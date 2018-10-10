@@ -36,8 +36,6 @@ import org.springframework.cloud.stream.binder.ExtendedPropertiesBinder;
 import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaConsumerProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaProducerProperties;
-import org.springframework.cloud.stream.messaging.Processor;
-import org.springframework.cloud.stream.messaging.Sink;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.kafka.test.rule.EmbeddedKafkaRule;
 import org.springframework.messaging.MessageChannel;
@@ -52,20 +50,19 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE,
-properties = {"spring.cloud.stream.kafka.bindings.output.producer.configuration.key.serializer=FooSerializer.class",
+properties = {"spring.cloud.stream.kafka.bindings.standard-out.producer.configuration.key.serializer=FooSerializer.class",
 		"spring.cloud.stream.kafka.default.producer.configuration.key.serializer=BarSerializer.class",
 		"spring.cloud.stream.kafka.default.producer.configuration.value.serializer=BarSerializer.class",
-		"spring.cloud.stream.kafka.bindings.input.consumer.configuration.key.serializer=FooSerializer.class",
+		"spring.cloud.stream.kafka.bindings.standard-in.consumer.configuration.key.serializer=FooSerializer.class",
 		"spring.cloud.stream.kafka.default.consumer.configuration.key.serializer=BarSerializer.class",
 		"spring.cloud.stream.kafka.default.consumer.configuration.value.serializer=BarSerializer.class",
 		"spring.cloud.stream.kafka.default.producer.configuration.foo=bar",
-		"spring.cloud.stream.kafka.bindings.output.producer.configuration.foo=bindingSpecificPropertyShouldWinOverDefault",
+		"spring.cloud.stream.kafka.bindings.standard-out.producer.configuration.foo=bindingSpecificPropertyShouldWinOverDefault",
 		"spring.cloud.stream.kafka.default.consumer.ackEachRecord=true",
 		"spring.cloud.stream.kafka.bindings.custom-in.consumer.ackEachRecord=false"})
 public class KafkaBinderExtendedPropertiesTest {
 
 	private static final String KAFKA_BROKERS_PROPERTY = "spring.cloud.stream.kafka.binder.brokers";
-	private static final String ZK_NODE_PROPERTY = "spring.cloud.stream.kafka.binder.zkNodes";
 
 	@ClassRule
 	public static EmbeddedKafkaRule kafkaEmbedded = new EmbeddedKafkaRule(1, true);
@@ -73,13 +70,11 @@ public class KafkaBinderExtendedPropertiesTest {
 	@BeforeClass
 	public static void setup() {
 		System.setProperty(KAFKA_BROKERS_PROPERTY, kafkaEmbedded.getEmbeddedKafka().getBrokersAsString());
-		System.setProperty(ZK_NODE_PROPERTY, kafkaEmbedded.getEmbeddedKafka().getZookeeperConnectionString());
 	}
 
 	@AfterClass
 	public static void clean() {
 		System.clearProperty(KAFKA_BROKERS_PROPERTY);
-		System.clearProperty(ZK_NODE_PROPERTY);
 	}
 
 	@Autowired
@@ -93,25 +88,25 @@ public class KafkaBinderExtendedPropertiesTest {
 				binderFactory.getBinder("kafka", MessageChannel.class);
 
 		KafkaProducerProperties kafkaProducerProperties =
-				(KafkaProducerProperties)((ExtendedPropertiesBinder) kafkaBinder).getExtendedProducerProperties("output");
+				(KafkaProducerProperties)((ExtendedPropertiesBinder) kafkaBinder).getExtendedProducerProperties("standard-out");
 
-		//binding "output" gets FooSerializer defined on the binding itself and BarSerializer through default property.
+		//binding "standard-out" gets FooSerializer defined on the binding itself and BarSerializer through default property.
 		assertThat(kafkaProducerProperties.getConfiguration().get("key.serializer")).isEqualTo("FooSerializer.class");
 		assertThat(kafkaProducerProperties.getConfiguration().get("value.serializer")).isEqualTo("BarSerializer.class");
 
 		assertThat(kafkaProducerProperties.getConfiguration().get("foo")).isEqualTo("bindingSpecificPropertyShouldWinOverDefault");
 
 		KafkaConsumerProperties kafkaConsumerProperties =
-				(KafkaConsumerProperties)((ExtendedPropertiesBinder) kafkaBinder).getExtendedConsumerProperties("input");
+				(KafkaConsumerProperties)((ExtendedPropertiesBinder) kafkaBinder).getExtendedConsumerProperties("standard-in");
 
-		//binding "input" gets FooSerializer defined on the binding itself and BarSerializer through default property.
+		//binding "standard-in" gets FooSerializer defined on the binding itself and BarSerializer through default property.
 		assertThat(kafkaConsumerProperties.getConfiguration().get("key.serializer")).isEqualTo("FooSerializer.class");
 		assertThat(kafkaConsumerProperties.getConfiguration().get("value.serializer")).isEqualTo("BarSerializer.class");
 
 		KafkaProducerProperties customKafkaProducerProperties =
 				(KafkaProducerProperties)((ExtendedPropertiesBinder) kafkaBinder).getExtendedProducerProperties("custom-out");
 
-		//binding "output" gets BarSerializer and BarSerializer for ker.serializer/value.serializer through default properties.
+		//binding "standard-out" gets BarSerializer and BarSerializer for ker.serializer/value.serializer through default properties.
 		assertThat(customKafkaProducerProperties.getConfiguration().get("key.serializer")).isEqualTo("BarSerializer.class");
 		assertThat(customKafkaProducerProperties.getConfiguration().get("value.serializer")).isEqualTo("BarSerializer.class");
 
@@ -121,7 +116,7 @@ public class KafkaBinderExtendedPropertiesTest {
 		KafkaConsumerProperties customKafkaConsumerProperties =
 				(KafkaConsumerProperties)((ExtendedPropertiesBinder) kafkaBinder).getExtendedConsumerProperties("custom-in");
 
-		//binding "input" gets BarSerializer and BarSerializer for ker.serializer/value.serializer through default properties.
+		//binding "standard-in" gets BarSerializer and BarSerializer for ker.serializer/value.serializer through default properties.
 		assertThat(customKafkaConsumerProperties.getConfiguration().get("key.serializer")).isEqualTo("BarSerializer.class");
 		assertThat(customKafkaConsumerProperties.getConfiguration().get("value.serializer")).isEqualTo("BarSerializer.class");
 
@@ -133,8 +128,8 @@ public class KafkaBinderExtendedPropertiesTest {
 	@EnableAutoConfiguration
 	public static class KafkaMetricsTestConfig {
 
-		@StreamListener(Sink.INPUT)
-		@SendTo(Processor.OUTPUT)
+		@StreamListener("standard-in")
+		@SendTo("standard-out")
 		public String process(String payload) {
 			return payload;
 		}
@@ -147,14 +142,18 @@ public class KafkaBinderExtendedPropertiesTest {
 
 	}
 
-	interface CustomBindingForExtendedPropertyTesting extends Processor{
+	interface CustomBindingForExtendedPropertyTesting {
 
-		@Output("custom-out")
-		MessageChannel customOut();
+		@Input("standard-in")
+		SubscribableChannel standardIn();
+
+		@Output("standard-out")
+		MessageChannel standardOut();
 
 		@Input("custom-in")
 		SubscribableChannel customIn();
 
+		@Output("custom-out")
+		MessageChannel customOut();
 	}
-
 }

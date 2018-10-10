@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import java.util.Map;
 
 import javax.security.auth.login.AppConfigurationEntry;
 
+import org.springframework.kafka.security.jaas.KafkaJaasLoginModuleInitializer;
 import org.springframework.util.Assert;
 
 /**
@@ -28,12 +29,13 @@ import org.springframework.util.Assert;
  * for the Kafka or Zookeeper client.
  *
  * @author Marius Bogoevici
+ * @author Soby Chacko
  */
 public class JaasLoginModuleConfiguration {
 
 	private String loginModule = "com.sun.security.auth.module.Krb5LoginModule";
 
-	private AppConfigurationEntry.LoginModuleControlFlag controlFlag = AppConfigurationEntry.LoginModuleControlFlag.REQUIRED;
+	private KafkaJaasLoginModuleInitializer.ControlFlag controlFlag = KafkaJaasLoginModuleInitializer.ControlFlag.REQUIRED;
 
 	private Map<String,String> options = new HashMap<>();
 
@@ -46,31 +48,13 @@ public class JaasLoginModuleConfiguration {
 		this.loginModule = loginModule;
 	}
 
-	public String getControlFlag() {
-		return controlFlag.toString();
-	}
-
-	public AppConfigurationEntry.LoginModuleControlFlag getControlFlagValue() {
+	public KafkaJaasLoginModuleInitializer.ControlFlag getControlFlag() {
 		return controlFlag;
 	}
 
 	public void setControlFlag(String controlFlag) {
 		Assert.notNull(controlFlag, "cannot be null");
-		if (AppConfigurationEntry.LoginModuleControlFlag.OPTIONAL.equals(controlFlag)) {
-			this.controlFlag = AppConfigurationEntry.LoginModuleControlFlag.OPTIONAL;
-		}
-		else if (AppConfigurationEntry.LoginModuleControlFlag.REQUIRED.equals(controlFlag)) {
-			this.controlFlag = AppConfigurationEntry.LoginModuleControlFlag.REQUIRED;
-		}
-		else if (AppConfigurationEntry.LoginModuleControlFlag.REQUISITE.equals(controlFlag)) {
-			this.controlFlag = AppConfigurationEntry.LoginModuleControlFlag.REQUISITE;
-		}
-		else if (AppConfigurationEntry.LoginModuleControlFlag.SUFFICIENT.equals(controlFlag)) {
-			this.controlFlag = AppConfigurationEntry.LoginModuleControlFlag.SUFFICIENT;
-		}
-		else {
-			throw new IllegalArgumentException(controlFlag + " is not a supported control flag");
-		}
+		this.controlFlag = KafkaJaasLoginModuleInitializer.ControlFlag.valueOf(controlFlag.toUpperCase());
 	}
 
 	public Map<String, String> getOptions() {

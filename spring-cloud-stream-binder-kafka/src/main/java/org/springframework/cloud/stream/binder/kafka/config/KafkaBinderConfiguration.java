@@ -18,8 +18,6 @@ package org.springframework.cloud.stream.binder.kafka.config;
 
 import java.io.IOException;
 
-import javax.security.auth.login.AppConfigurationEntry;
-
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.binder.MeterBinder;
 
@@ -113,21 +111,8 @@ public class KafkaBinderConfiguration {
 		if (jaas != null) {
 			kafkaJaasLoginModuleInitializer.setLoginModule(jaas.getLoginModule());
 
-			KafkaJaasLoginModuleInitializer.ControlFlag controlFlag = null;
-			AppConfigurationEntry.LoginModuleControlFlag controlFlagValue = jaas.getControlFlagValue();
+			KafkaJaasLoginModuleInitializer.ControlFlag controlFlag = jaas.getControlFlag();
 
-			if (AppConfigurationEntry.LoginModuleControlFlag.OPTIONAL.equals(controlFlagValue)) {
-				controlFlag = KafkaJaasLoginModuleInitializer.ControlFlag.OPTIONAL;
-			}
-			else if (AppConfigurationEntry.LoginModuleControlFlag.REQUIRED.equals(controlFlagValue)) {
-				controlFlag = KafkaJaasLoginModuleInitializer.ControlFlag.REQUIRED;
-			}
-			else if (AppConfigurationEntry.LoginModuleControlFlag.REQUISITE.equals(controlFlagValue)) {
-				controlFlag = KafkaJaasLoginModuleInitializer.ControlFlag.REQUISITE;
-			}
-			else if (AppConfigurationEntry.LoginModuleControlFlag.SUFFICIENT.equals(controlFlagValue)) {
-				controlFlag = KafkaJaasLoginModuleInitializer.ControlFlag.SUFFICIENT;
-			}
 			if (controlFlag != null) {
 				kafkaJaasLoginModuleInitializer.setControlFlag(controlFlag);
 			}
