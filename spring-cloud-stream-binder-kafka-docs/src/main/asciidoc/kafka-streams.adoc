@@ -339,18 +339,17 @@ spring.cloud.stream.bindings.input:
     headerMode: raw
 ----
 
-== Message Conversion
+== Record Value Conversion
 
-Similar to message-channel based binder applications, the Kafka Streams binder adapts to the out-of-the-box content-type
-conversions without any compromise.
+Kafka Streams binder can marshal producer/consumer values based on a content type and the converters provided out of the box in Spring Cloud Stream.
 
-It is typical for Kafka Streams operations to know the type of SerDe’s used to transform the key and value correctly.
-Therefore, it may be more natural to rely on the SerDe facilities provided by the Apache Kafka Streams library itself at
-the inbound and outbound conversions rather than using the content-type conversions offered by the framework.
-On the other hand, you might be already familiar with the content-type conversion patterns provided by the framework, and
-that, you'd like to continue using for inbound and outbound conversions.
+It is typical for Kafka Streams applications to provide `Serde` classes.
+Therefore, it may be more natural to rely on the SerDe facilities provided by the Apache Kafka Streams library itself for data conversion on inbound and outbound
+rather than rely on the content-type conversions offered by the binder.
+On the other hand, you might be already familiar with the content-type conversion patterns provided by Spring Cloud Stream and
+would like to continue using that for inbound and outbound conversions.
 
-Both the options are supported in the Kafka Streams binder implementation.
+Both the options are supported in the Kafka Streams binder implementation. See below for more details.
 
 ==== Outbound serialization
 
