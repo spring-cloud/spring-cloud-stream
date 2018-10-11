@@ -18,8 +18,8 @@ package org.springframework.cloud.stream.binder.kafka;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -42,6 +42,7 @@ import org.springframework.kafka.core.ConsumerFactory;
  * @author Henryk Konsek
  * @author Gary Russell
  * @author Laur Aliste
+ * @author Soby Chacko
  */
 public class KafkaBinderHealthIndicator implements HealthIndicator {
 
@@ -72,44 +73,44 @@ public class KafkaBinderHealthIndicator implements HealthIndicator {
 	@Override
 	public Health health() {
 		ExecutorService exec = Executors.newSingleThreadExecutor();
-		Future<Health> future = exec.submit(new Callable<Health>() {
-
-			@Override
-			public Health call() {
-				try {
-					if (metadataConsumer == null) {
-						synchronized(KafkaBinderHealthIndicator.this) {
-							if (metadataConsumer == null) {
-								metadataConsumer = consumerFactory.createConsumer();
-							}
+		Future<Health> future = exec.submit(() -> {
+			try {
+				if (metadataConsumer == null) {
+					synchronized(KafkaBinderHealthIndicator.this) {
+						if (metadataConsumer == null) {
+							metadataConsumer = consumerFactory.createConsumer();
 						}
 					}
-					synchronized (metadataConsumer) {
-						Set<String> downMessages = new HashSet<>();
-						for (String topic : KafkaBinderHealthIndicator.this.binder.getTopicsInUse().keySet()) {
+				}
+				synchronized (metadataConsumer) {
+					Set<String> downMessages = new HashSet<>();
+					final Map<String, KafkaMessageChannelBinder.TopicInformation> topicsInUse =
+							KafkaBinderHealthIndicator.this.binder.getTopicsInUse();
+					for (String topic : topicsInUse.keySet()) {
+						KafkaMessageChannelBinder.TopicInformation topicInformation = topicsInUse.get(topic);
+						if (!topicInformation.isTopicPattern()) {
 							List<PartitionInfo> partitionInfos = metadataConsumer.partitionsFor(topic);
 							for (PartitionInfo partitionInfo : partitionInfos) {
-								if (KafkaBinderHealthIndicator.this.binder.getTopicsInUse().get(topic).getPartitionInfos()
+								if (topicInformation.getPartitionInfos()
 										.contains(partitionInfo) && partitionInfo.leader().id() == -1) {
 									downMessages.add(partitionInfo.toString());
 								}
 							}
 						}
-						if (downMessages.isEmpty()) {
-							return Health.up().build();
-						}
-						else {
-							return Health.down()
-								.withDetail("Following partitions in use have no leaders: ", downMessages.toString())
-								.build();
-						}
+					}
+					if (downMessages.isEmpty()) {
+						return Health.up().build();
+					}
+					else {
+						return Health.down()
+							.withDetail("Following partitions in use have no leaders: ", downMessages.toString())
+							.build();
 					}
 				}
-				catch (Exception e) {
-					return Health.down(e).build();
-				}
 			}
-
+			catch (Exception e) {
+				return Health.down(e).build();
+			}
 		});
 		try {
 			return future.get(this.timeout, TimeUnit.SECONDS);

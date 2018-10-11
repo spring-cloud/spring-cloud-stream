@@ -255,7 +255,7 @@ public class KafkaMessageChannelBinder extends
 					((DisposableBean) producerFB).destroy();
 					return partitionsFor;
 				});
-		this.topicsInUse.put(destination.getName(), new TopicInformation(null, partitions));
+		this.topicsInUse.put(destination.getName(), new TopicInformation(null, partitions, false));
 		if (producerProperties.isPartitioned() && producerProperties.getPartitionCount() < partitions.size()) {
 			if (this.logger.isInfoEnabled()) {
 				this.logger.info("The `partitionCount` of the producer for topic " + destination.getName() + " is "
@@ -488,7 +488,7 @@ public class KafkaMessageChannelBinder extends
 				}
 			}
 		}
-		this.topicsInUse.put(topic, new TopicInformation(group, listenedPartitions));
+		this.topicsInUse.put(topic, new TopicInformation(group, listenedPartitions, usingPatterns));
 		return listenedPartitions;
 	}
 
@@ -567,13 +567,13 @@ public class KafkaMessageChannelBinder extends
 			// not just the ones this binding is listening to; doesn't seem right for a health check.
 			Collection<PartitionInfo> partitionInfos = getPartitionInfo(destination.getName(), consumerProperties,
 					consumerFactory, -1);
-			this.topicsInUse.put(destination.getName(), new TopicInformation(group, partitionInfos));
+			this.topicsInUse.put(destination.getName(), new TopicInformation(group, partitionInfos, false));
 		}
 		else {
 			for (int i = 0; i < topics.length; i++) {
 				Collection<PartitionInfo> partitionInfos = getPartitionInfo(topics[i], consumerProperties,
 						consumerFactory, -1);
-				this.topicsInUse.put(topics[i], new TopicInformation(group, partitionInfos));
+				this.topicsInUse.put(topics[i], new TopicInformation(group, partitionInfos, false));
 			}
 		}
 
@@ -938,9 +938,12 @@ public class KafkaMessageChannelBinder extends
 
 		private final Collection<PartitionInfo> partitionInfos;
 
-		TopicInformation(String consumerGroup, Collection<PartitionInfo> partitionInfos) {
+		private final boolean isTopicPattern;
+
+		TopicInformation(String consumerGroup, Collection<PartitionInfo> partitionInfos, boolean isTopicPattern) {
 			this.consumerGroup = consumerGroup;
 			this.partitionInfos = partitionInfos;
+			this.isTopicPattern = isTopicPattern;
 		}
 
 		String getConsumerGroup() {
@@ -949,6 +952,10 @@ public class KafkaMessageChannelBinder extends
 
 		boolean isConsumerTopic() {
 			return consumerGroup != null;
+		}
+
+		boolean isTopicPattern() {
+			return isTopicPattern;
 		}
 
 		Collection<PartitionInfo> getPartitionInfos() {

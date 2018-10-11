@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2017 the original author or authors.
+ * Copyright 2016-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,6 +46,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * @author Henryk Konsek
  * @author Thomas Cheyney
+ * @author Soby Chacko
  */
 public class KafkaBinderMetricsTest {
 
@@ -83,7 +84,7 @@ public class KafkaBinderMetricsTest {
 	public void shouldIndicateLag() {
 		org.mockito.BDDMockito.given(consumer.committed(ArgumentMatchers.any(TopicPartition.class))).willReturn(new OffsetAndMetadata(500));
 		List<PartitionInfo> partitions = partitions(new Node(0, null, 0));
-		topicsInUse.put(TEST_TOPIC, new TopicInformation("group1-metrics", partitions));
+		topicsInUse.put(TEST_TOPIC, new TopicInformation("group1-metrics", partitions, false));
 		org.mockito.BDDMockito.given(consumer.partitionsFor(TEST_TOPIC)).willReturn(partitions);
 		metrics.bindTo(meterRegistry);
 		assertThat(meterRegistry.getMeters()).hasSize(1);
@@ -99,7 +100,7 @@ public class KafkaBinderMetricsTest {
 		org.mockito.BDDMockito.given(consumer.endOffsets(ArgumentMatchers.anyCollection())).willReturn(endOffsets);
 		org.mockito.BDDMockito.given(consumer.committed(ArgumentMatchers.any(TopicPartition.class))).willReturn(new OffsetAndMetadata(500));
 		List<PartitionInfo> partitions = partitions(new Node(0, null, 0), new Node(0, null, 0));
-		topicsInUse.put(TEST_TOPIC, new TopicInformation("group2-metrics", partitions));
+		topicsInUse.put(TEST_TOPIC, new TopicInformation("group2-metrics", partitions, false));
 		org.mockito.BDDMockito.given(consumer.partitionsFor(TEST_TOPIC)).willReturn(partitions);
 		metrics.bindTo(meterRegistry);
 		assertThat(meterRegistry.getMeters()).hasSize(1);
@@ -110,7 +111,7 @@ public class KafkaBinderMetricsTest {
 	@Test
 	public void shouldIndicateFullLagForNotCommittedGroups() {
 		List<PartitionInfo> partitions = partitions(new Node(0, null, 0));
-		topicsInUse.put(TEST_TOPIC, new TopicInformation("group3-metrics", partitions));
+		topicsInUse.put(TEST_TOPIC, new TopicInformation("group3-metrics", partitions, false));
 		org.mockito.BDDMockito.given(consumer.partitionsFor(TEST_TOPIC)).willReturn(partitions);
 		metrics.bindTo(meterRegistry);
 		assertThat(meterRegistry.getMeters()).hasSize(1);
@@ -121,7 +122,7 @@ public class KafkaBinderMetricsTest {
 	@Test
 	public void shouldNotCalculateLagForProducerTopics() {
 		List<PartitionInfo> partitions = partitions(new Node(0, null, 0));
-		topicsInUse.put(TEST_TOPIC, new TopicInformation(null, partitions));
+		topicsInUse.put(TEST_TOPIC, new TopicInformation(null, partitions, false));
 		metrics.bindTo(meterRegistry);
 		assertThat(meterRegistry.getMeters()).isEmpty();
 	}
@@ -129,7 +130,7 @@ public class KafkaBinderMetricsTest {
 	@Test
 	public void createsConsumerOnceWhenInvokedMultipleTimes() {
 		final List<PartitionInfo> partitions = partitions(new Node(0, null, 0));
-		topicsInUse.put(TEST_TOPIC, new TopicInformation("group4-metrics", partitions));
+		topicsInUse.put(TEST_TOPIC, new TopicInformation("group4-metrics", partitions, false));
 
 		metrics.bindTo(meterRegistry);
 
@@ -146,7 +147,7 @@ public class KafkaBinderMetricsTest {
 				.willReturn(consumer);
 
 		final List<PartitionInfo> partitions = partitions(new Node(0, null, 0));
-		topicsInUse.put(TEST_TOPIC, new TopicInformation("group5-metrics", partitions));
+		topicsInUse.put(TEST_TOPIC, new TopicInformation("group5-metrics", partitions, false));
 
 		metrics.bindTo(meterRegistry);
 

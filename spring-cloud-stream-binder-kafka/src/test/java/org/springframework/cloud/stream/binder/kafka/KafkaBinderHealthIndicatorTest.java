@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2017-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,10 +43,13 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Barry Commins
  * @author Gary Russell
  * @author Laur Aliste
+ * @author Soby Chacko
  */
 public class KafkaBinderHealthIndicatorTest {
 
 	private static final String TEST_TOPIC = "test";
+
+	private static final String REGEX_TOPIC = "regex*";
 
 	private KafkaBinderHealthIndicator indicator;
 
@@ -73,16 +76,26 @@ public class KafkaBinderHealthIndicatorTest {
 	@Test
 	public void kafkaBinderIsUp() {
 		final List<PartitionInfo> partitions = partitions(new Node(0, null, 0));
-		topicsInUse.put(TEST_TOPIC, new KafkaMessageChannelBinder.TopicInformation("group1-healthIndicator", partitions));
+		topicsInUse.put(TEST_TOPIC, new KafkaMessageChannelBinder.TopicInformation("group1-healthIndicator", partitions, false));
 		org.mockito.BDDMockito.given(consumer.partitionsFor(TEST_TOPIC)).willReturn(partitions);
 		Health health = indicator.health();
 		assertThat(health.getStatus()).isEqualTo(Status.UP);
 	}
 
 	@Test
+	public void kafkaBinderIsUpWithRegexTopic() {
+		topicsInUse.put(REGEX_TOPIC, new KafkaMessageChannelBinder.TopicInformation("regex-healthIndicator", null, true));
+		Health health = indicator.health();
+		//verify no consumer interaction for retrieving partitions
+		org.mockito.BDDMockito.verify(consumer, Mockito.never()).partitionsFor(REGEX_TOPIC);
+		//Ensuring the normal health check returns with status "up"
+		assertThat(health.getStatus()).isEqualTo(Status.UP);
+	}
+
+	@Test
 	public void kafkaBinderIsDown() {
 		final List<PartitionInfo> partitions = partitions(new Node(-1, null, 0));
-		topicsInUse.put(TEST_TOPIC, new KafkaMessageChannelBinder.TopicInformation("group2-healthIndicator", partitions));
+		topicsInUse.put(TEST_TOPIC, new KafkaMessageChannelBinder.TopicInformation("group2-healthIndicator", partitions, false));
 		org.mockito.BDDMockito.given(consumer.partitionsFor(TEST_TOPIC)).willReturn(partitions);
 		Health health = indicator.health();
 		assertThat(health.getStatus()).isEqualTo(Status.DOWN);
@@ -91,7 +104,7 @@ public class KafkaBinderHealthIndicatorTest {
 	@Test(timeout = 5000)
 	public void kafkaBinderDoesNotAnswer() {
 		final List<PartitionInfo> partitions = partitions(new Node(-1, null, 0));
-		topicsInUse.put(TEST_TOPIC, new KafkaMessageChannelBinder.TopicInformation("group3-healthIndicator", partitions));
+		topicsInUse.put(TEST_TOPIC, new KafkaMessageChannelBinder.TopicInformation("group3-healthIndicator", partitions, false));
 		org.mockito.BDDMockito.given(consumer.partitionsFor(TEST_TOPIC)).willAnswer(new Answer<Object>() {
 
 			@Override
@@ -110,7 +123,7 @@ public class KafkaBinderHealthIndicatorTest {
 	@Test
 	public void createsConsumerOnceWhenInvokedMultipleTimes() {
 		final List<PartitionInfo> partitions = partitions(new Node(0, null, 0));
-		topicsInUse.put(TEST_TOPIC, new KafkaMessageChannelBinder.TopicInformation("group4-healthIndicator", partitions));
+		topicsInUse.put(TEST_TOPIC, new KafkaMessageChannelBinder.TopicInformation("group4-healthIndicator", partitions, false));
 		org.mockito.BDDMockito.given(consumer.partitionsFor(TEST_TOPIC)).willReturn(partitions);
 
 		indicator.health();
