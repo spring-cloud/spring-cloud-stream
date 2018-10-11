@@ -2468,10 +2468,26 @@ When autoconfiguration is disabled, the test binder is available on the classpat
 Spring Cloud Stream provides a health indicator for binders.
 It is registered under the name `binders` and can be enabled or disabled by setting the `management.health.binders.enabled` property.
 
-By default `management.health.binders.enabled` is set to 	`false`.
-Setting `management.health.binders.enabled` to `true` enables the health indicator, allowing you to access the `/health` endpoint to retrieve the binder health indicators.
+You need to provide the required actuator dependencies in your application to enable health check - `spring-boot-starter-actuator` and `spring-boot-starter-web`.
+
+If `management.health.binders.enabled` is not set explicitly by the application, then `management.health.defaults.enabled` is matched as true and the binder health indicators are enabled.
+If you want to disable health indicator completely, then you have to set `management.health.binders.enabled` to `false`.
+
+You can use Spring Boot actuator health endpoint to access the health indicator - `/actuator/health`.
+By default, you will only receive the top level application status when you hit the above endpoint.
+In order to receive the full details from the binder specific health indicators, you need to include the property `management.endpoint.health.show-details` with the value `ALWAYS` in your application.
 
 Health indicators are binder-specific and certain binder implementations may not necessarily provide a health indicator.
+
+If you want to completely disable all the out of the box health indicators support from Spring Cloud Stream and instead provide your own health indicators,
+you can do that by setting the property `management.health.binders.enabled` to false and then provide your own `HealthIndicator` beans in your application.
+In this case, the health indicator infrastructure from Spring Boot will still pick up these custom beans.
+Even if you are not disabling the binder health indicators, you can still enhance the health checks by providing your own `HealthIndicator` beans in addition to the out of the box health checks.
+
+When you have multiple binders in the same application, health indicators are enabled by default unless the application turns them off by setting `management.health.binders.enabled` to `false`.
+In this case, if the user wants to disable health check for a subset of the binders, then that should be done by setting `management.health.binders.enabled` to `false` in the multi binder configurations's environment.
+See <<multiple-systems,Connecting to Multiple Systems>> for details on how environment specific properties can be provided.
+
 
 [[spring-cloud-stream-overview-metrics-emitter]]
 == Metrics Emitter
