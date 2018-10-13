@@ -28,14 +28,12 @@ import javax.validation.constraints.NotNull;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 
-import org.springframework.beans.BeansException;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.DeprecatedConfigurationProperty;
 import org.springframework.cloud.stream.binder.HeaderMode;
 import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaProducerProperties.CompressionType;
-import org.springframework.cloud.stream.config.MergableProperties;
 import org.springframework.expression.Expression;
 import org.springframework.util.Assert;
 import org.springframework.util.ObjectUtils;
@@ -619,10 +617,6 @@ public class KafkaBinderConfigurationProperties {
 
 		private final KafkaProducerProperties kafkaProducerProperties = new KafkaProducerProperties();
 
-		public void merge(MergableProperties mergable) {
-			this.producerProperties.merge(mergable);
-		}
-
 		public Expression getPartitionKeyExpression() {
 			return this.producerProperties.getPartitionKeyExpression();
 		}
@@ -633,10 +627,6 @@ public class KafkaBinderConfigurationProperties {
 
 		public boolean isPartitioned() {
 			return this.producerProperties.isPartitioned();
-		}
-
-		public void copyProperties(Object source, Object target) throws BeansException {
-			this.producerProperties.copyProperties(source, target);
 		}
 
 		public Expression getPartitionSelectorExpression() {

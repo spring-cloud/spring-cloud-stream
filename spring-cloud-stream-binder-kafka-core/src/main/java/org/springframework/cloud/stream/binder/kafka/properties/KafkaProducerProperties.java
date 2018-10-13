@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2017 the original author or authors.
+ * Copyright 2016-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import java.util.Map;
 
 import javax.validation.constraints.NotNull;
 
-import org.springframework.cloud.stream.config.MergableProperties;
 import org.springframework.expression.Expression;
 
 /**
@@ -29,7 +28,7 @@ import org.springframework.expression.Expression;
  * @author Henryk Konsek
  * @author Gary Russell
  */
-public class KafkaProducerProperties implements MergableProperties {
+public class KafkaProducerProperties {
 
 	private int bufferSize = 16384;
 

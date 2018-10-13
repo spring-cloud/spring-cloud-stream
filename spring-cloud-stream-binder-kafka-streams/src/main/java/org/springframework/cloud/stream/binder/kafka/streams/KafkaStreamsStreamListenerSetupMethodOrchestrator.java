@@ -38,19 +38,14 @@ import org.apache.kafka.streams.state.KeyValueStore;
 import org.apache.kafka.streams.state.StoreBuilder;
 import org.apache.kafka.streams.state.Stores;
 
-import org.springframework.beans.BeanUtils;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanInitializationException;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
-import org.springframework.boot.context.properties.bind.Bindable;
-import org.springframework.boot.context.properties.bind.PropertySourcesPlaceholdersResolver;
-import org.springframework.boot.context.properties.source.ConfigurationPropertySources;
 import org.springframework.cloud.stream.annotation.Input;
 import org.springframework.cloud.stream.annotation.StreamListener;
-import org.springframework.cloud.stream.binder.BinderSpecificPropertiesProvider;
 import org.springframework.cloud.stream.binder.ConsumerProperties;
 import org.springframework.cloud.stream.binder.kafka.streams.annotations.KafkaStreamsStateStore;
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsConsumerProperties;
@@ -62,13 +57,11 @@ import org.springframework.cloud.stream.binding.StreamListenerResultAdapter;
 import org.springframework.cloud.stream.binding.StreamListenerSetupMethodOrchestrator;
 import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
-import org.springframework.cloud.stream.config.MergableProperties;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.MethodParameter;
 import org.springframework.core.annotation.AnnotationUtils;
-import org.springframework.integration.support.utils.IntegrationUtils;
 import org.springframework.kafka.config.KafkaStreamsConfiguration;
 import org.springframework.kafka.config.StreamsBuilderFactoryBean;
 import org.springframework.kafka.core.CleanupConfig;
@@ -410,9 +403,6 @@ class KafkaStreamsStreamListenerSetupMethodOrchestrator implements StreamListene
 		Map<String, Object> streamConfigGlobalProperties = applicationContext.getBean("streamConfigGlobalProperties", Map.class);
 
 		KafkaStreamsConsumerProperties extendedConsumerProperties = kafkaStreamsExtendedBindingProperties.getExtendedConsumerProperties(inboundName);
-		//Need to apply the default extended properties here as it is not yet done by the BindingService in the binding lifecycle.
-		handleExtendedDefaultProperties(kafkaStreamsExtendedBindingProperties,
-				extendedConsumerProperties);
 
 		String applicationId = extendedConsumerProperties.getApplicationId();
 
@@ -442,28 +432,6 @@ class KafkaStreamsStreamListenerSetupMethodOrchestrator implements StreamListene
 		((BeanDefinitionRegistry) beanFactory).registerBeanDefinition("stream-builder-" + method.getName(), streamsBuilderBeanDefinition);
 		StreamsBuilderFactoryBean streamsBuilderX = applicationContext.getBean("&stream-builder-" + method.getName(), StreamsBuilderFactoryBean.class);
 		methodStreamsBuilderFactoryBeanMap.put(method, streamsBuilderX);
-	}
-
-	// This method is mostly copied from core. We should refactor the original method in core so that it is publicly available
-	// as a utility method. This is currently hidden as a private method in BindingService.
-	private void handleExtendedDefaultProperties(KafkaStreamsExtendedBindingProperties kafkaStreamsExtendedBindingProperties,
-												MergableProperties extendedProperties) {
-		String defaultsPrefix = kafkaStreamsExtendedBindingProperties.getDefaultsPrefix();
-
-		if (defaultsPrefix != null) {
-			Class<? extends BinderSpecificPropertiesProvider> extendedPropertiesEntryClass = kafkaStreamsExtendedBindingProperties.getExtendedPropertiesEntryClass();
-			if (BinderSpecificPropertiesProvider.class.isAssignableFrom(extendedPropertiesEntryClass)) {
-				org.springframework.boot.context.properties.bind.Binder extendedPropertiesResolverBinder =
-						new org.springframework.boot.context.properties.bind.Binder(ConfigurationPropertySources.get(applicationContext.getEnvironment()),
-								new PropertySourcesPlaceholdersResolver(applicationContext.getEnvironment()),
-								IntegrationUtils.getConversionService(this.applicationContext.getBeanFactory()), null);
-				BinderSpecificPropertiesProvider defaultProperties = BeanUtils.instantiateClass(extendedPropertiesEntryClass);
-				extendedPropertiesResolverBinder.bind(defaultsPrefix, Bindable.ofInstance(defaultProperties));
-
-				Object binderExtendedProperties = defaultProperties.getConsumer();
-				((MergableProperties)binderExtendedProperties).merge(extendedProperties);
-			}
-		}
 	}
 
 	@Override

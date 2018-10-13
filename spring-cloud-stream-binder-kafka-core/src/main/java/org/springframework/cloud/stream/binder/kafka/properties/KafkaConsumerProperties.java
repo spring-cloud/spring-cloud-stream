@@ -19,7 +19,6 @@ package org.springframework.cloud.stream.binder.kafka.properties;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.springframework.cloud.stream.config.MergableProperties;
 
 /**
  * @author Marius Bogoevici
@@ -31,7 +30,7 @@ import org.springframework.cloud.stream.config.MergableProperties;
  * Thanks to Laszlo Szabo for providing the initial patch for generic property support.
  * </p>
  */
-public class KafkaConsumerProperties implements MergableProperties {
+public class KafkaConsumerProperties {
 
 	public enum StartOffset {
 		earliest(-2L),

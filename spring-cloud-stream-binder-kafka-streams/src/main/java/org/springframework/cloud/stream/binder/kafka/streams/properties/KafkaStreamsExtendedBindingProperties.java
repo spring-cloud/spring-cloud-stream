@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2017-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,51 +16,18 @@
 
 package org.springframework.cloud.stream.binder.kafka.streams.properties;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.cloud.stream.binder.AbstractExtendedBindingProperties;
 import org.springframework.cloud.stream.binder.BinderSpecificPropertiesProvider;
-import org.springframework.cloud.stream.binder.ExtendedBindingProperties;
-
 /**
  * @author Marius Bogoevici
+ * @author Oleg Zhurakousky
  */
 @ConfigurationProperties("spring.cloud.stream.kafka.streams")
 public class KafkaStreamsExtendedBindingProperties
-		implements ExtendedBindingProperties<KafkaStreamsConsumerProperties, KafkaStreamsProducerProperties> {
+		extends AbstractExtendedBindingProperties<KafkaStreamsConsumerProperties, KafkaStreamsProducerProperties, KafkaStreamsBindingProperties> {
 
 	private static final String DEFAULTS_PREFIX = "spring.cloud.stream.kafka.streams.default";
-
-	private Map<String, KafkaStreamsBindingProperties> bindings = new HashMap<>();
-
-	public Map<String, KafkaStreamsBindingProperties> getBindings() {
-		return this.bindings;
-	}
-
-	public void setBindings(Map<String, KafkaStreamsBindingProperties> bindings) {
-		this.bindings = bindings;
-	}
-
-	@Override
-	public KafkaStreamsConsumerProperties getExtendedConsumerProperties(String binding) {
-		if (this.bindings.containsKey(binding) && this.bindings.get(binding).getConsumer() != null) {
-			return this.bindings.get(binding).getConsumer();
-		}
-		else {
-			return new KafkaStreamsConsumerProperties();
-		}
-	}
-
-	@Override
-	public KafkaStreamsProducerProperties getExtendedProducerProperties(String binding) {
-		if (this.bindings.containsKey(binding) && this.bindings.get(binding).getProducer() != null) {
-			return this.bindings.get(binding).getProducer();
-		}
-		else {
-			return new KafkaStreamsProducerProperties();
-		}
-	}
 
 	@Override
 	public String getDefaultsPrefix() {

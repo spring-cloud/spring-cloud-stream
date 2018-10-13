@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,75 +16,21 @@
 
 package org.springframework.cloud.stream.binder.kafka.properties;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.cloud.stream.binder.AbstractExtendedBindingProperties;
 import org.springframework.cloud.stream.binder.BinderSpecificPropertiesProvider;
-import org.springframework.cloud.stream.binder.ExtendedBindingProperties;
 
 /**
  * @author Marius Bogoevici
  * @author Gary Russell
  * @author Soby Chacko
+ * @author Oleg Zhurakousky
  */
 @ConfigurationProperties("spring.cloud.stream.kafka")
 public class KafkaExtendedBindingProperties
-		implements ExtendedBindingProperties<KafkaConsumerProperties, KafkaProducerProperties> {
+	extends AbstractExtendedBindingProperties<KafkaConsumerProperties, KafkaProducerProperties, KafkaBindingProperties> {
 
 	private static final String DEFAULTS_PREFIX = "spring.cloud.stream.kafka.default";
-
-	private Map<String, KafkaBindingProperties> bindings = new HashMap<>();
-
-	public Map<String, KafkaBindingProperties> getBindings() {
-		return this.bindings;
-	}
-
-	public void setBindings(Map<String, KafkaBindingProperties> bindings) {
-		this.bindings = bindings;
-	}
-
-	@Override
-	public synchronized KafkaConsumerProperties getExtendedConsumerProperties(String channelName) {
-		if (bindings.containsKey(channelName)) {
-			if (bindings.get(channelName).getConsumer() != null) {
-				return bindings.get(channelName).getConsumer();
-			}
-			else {
-				KafkaConsumerProperties properties = new KafkaConsumerProperties();
-				this.bindings.get(channelName).setConsumer(properties);
-				return properties;
-			}
-		}
-		else {
-			KafkaConsumerProperties properties = new KafkaConsumerProperties();
-			KafkaBindingProperties rbp = new KafkaBindingProperties();
-			rbp.setConsumer(properties);
-			bindings.put(channelName, rbp);
-			return properties;
-		}
-	}
-
-	@Override
-	public synchronized KafkaProducerProperties getExtendedProducerProperties(String channelName) {
-		if (bindings.containsKey(channelName)) {
-			if (bindings.get(channelName).getProducer() != null) {
-				return bindings.get(channelName).getProducer();
-			}
-			else {
-				KafkaProducerProperties properties = new KafkaProducerProperties();
-				this.bindings.get(channelName).setProducer(properties);
-				return properties;
-			}
-		}
-		else {
-			KafkaProducerProperties properties = new KafkaProducerProperties();
-			KafkaBindingProperties rbp = new KafkaBindingProperties();
-			rbp.setProducer(properties);
-			bindings.put(channelName, rbp);
-			return properties;
-		}
-	}
 
 	@Override
 	public String getDefaultsPrefix() {
@@ -95,5 +41,4 @@ public class KafkaExtendedBindingProperties
 	public Class<? extends BinderSpecificPropertiesProvider> getExtendedPropertiesEntryClass() {
 		return KafkaBindingProperties.class;
 	}
-
 }
