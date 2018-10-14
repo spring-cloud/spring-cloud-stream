@@ -23,20 +23,23 @@ import java.util.TreeMap;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
-import org.springframework.beans.BeanUtils;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.bind.Bindable;
+import org.springframework.boot.context.properties.bind.Binder;
+import org.springframework.boot.context.properties.bind.PropertySourcesPlaceholdersResolver;
+import org.springframework.boot.context.properties.source.ConfigurationPropertySources;
 import org.springframework.cloud.stream.binder.ConsumerProperties;
 import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.core.convert.support.GenericConversionService;
-import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.integration.support.utils.IntegrationUtils;
 import org.springframework.util.Assert;
 
@@ -104,7 +107,7 @@ public class BindingServiceProperties implements ApplicationContextAware, Initia
 	 */
 	private int bindingRetryInterval = DEFAULT_BINDING_RETRY_INTERVAL;
 
-	private ConfigurableApplicationContext applicationContext;
+	private ConfigurableApplicationContext applicationContext = new GenericApplicationContext();
 
 	private ConversionService conversionService;
 
@@ -113,7 +116,7 @@ public class BindingServiceProperties implements ApplicationContextAware, Initia
 	}
 
 	public void setBindings(Map<String, BindingProperties> bindings) {
-		this.bindings = bindings;
+		this.bindings.putAll(bindings);
 	}
 
 	public Map<String, BinderProperties> getBinders() {
@@ -164,17 +167,6 @@ public class BindingServiceProperties implements ApplicationContextAware, Initia
 		if (this.applicationContext.containsBean("spelConverter")) {
 			Converter<?,?> converter = (Converter<?, ?>) this.applicationContext.getBean("spelConverter");
 			cs.addConverter(converter);
-		}
-
-		if (this.applicationContext.getEnvironment() instanceof ConfigurableEnvironment) {
-			// override the bindings store with the environment-initializing version if in
-			// a Spring context
-			Map<String, BindingProperties> delegate = new TreeMap<String, BindingProperties>(
-					String.CASE_INSENSITIVE_ORDER);
-			delegate.putAll(this.bindings);
-			this.bindings = new EnvironmentEntryInitializingTreeMap<>(this.applicationContext.getEnvironment(),
-					BindingProperties.class, "spring.cloud.stream.default", delegate,
-					IntegrationUtils.getConversionService(this.applicationContext.getBeanFactory()));
 		}
 	}
 
@@ -244,10 +236,8 @@ public class BindingServiceProperties implements ApplicationContextAware, Initia
 	}
 
 	public BindingProperties getBindingProperties(String bindingName) {
-		BindingProperties bindingProperties = new BindingProperties();
-		if (this.bindings.containsKey(bindingName)) {
-			BeanUtils.copyProperties(this.bindings.get(bindingName), bindingProperties);
-		}
+		this.bindIfNecessary(bindingName);
+		BindingProperties bindingProperties = this.bindings.get(bindingName);
 		if (bindingProperties.getDestination() == null) {
 			bindingProperties.setDestination(bindingName);
 		}
@@ -274,6 +264,24 @@ public class BindingServiceProperties implements ApplicationContextAware, Initia
 		if (this.bindings.containsKey(bindingName)) {
 			this.bindings.get(bindingName).setProducer(producerProperties);
 		}
+	}
+
+	/*
+	 * The "necessary" implies the scenario where only defaults are defined.
+	 */
+	private void bindIfNecessary(String bindingName) {
+		if (!bindings.containsKey(bindingName)) {
+			this.bindToDefault(bindingName);
+		}
+	}
+
+	private void bindToDefault(String binding) {
+		BindingProperties bindingPropertiesTarget = new BindingProperties();
+		Binder binder = new Binder(ConfigurationPropertySources.get(applicationContext.getEnvironment()),
+				new PropertySourcesPlaceholdersResolver(applicationContext.getEnvironment()),
+				IntegrationUtils.getConversionService(applicationContext.getBeanFactory()), null);
+		binder.bind("spring.cloud.stream.default", Bindable.ofInstance(bindingPropertiesTarget));
+		this.bindings.put(binding, bindingPropertiesTarget);
 	}
 
 }

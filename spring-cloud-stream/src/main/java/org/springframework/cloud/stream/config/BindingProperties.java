@@ -37,7 +37,7 @@ import org.springframework.validation.annotation.Validated;
  */
 @JsonInclude(Include.NON_DEFAULT)
 @Validated
-public class BindingProperties implements MergableProperties {
+public class BindingProperties  {
 
 	public static final MimeType DEFAULT_CONTENT_TYPE = MimeTypeUtils.APPLICATION_JSON;
 

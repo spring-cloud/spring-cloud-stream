@@ -28,7 +28,6 @@ import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
-import org.springframework.cloud.stream.config.MergableProperties;
 import org.springframework.expression.Expression;
 
 /**
@@ -40,7 +39,7 @@ import org.springframework.expression.Expression;
  * @author Oleg Zhurakousky
  */
 @JsonInclude(Include.NON_DEFAULT)
-public class ProducerProperties implements MergableProperties {
+public class ProducerProperties {
 
 	@JsonSerialize(using = ExpressionSerializer.class)
 	private Expression partitionKeyExpression;

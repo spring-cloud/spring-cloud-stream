@@ -29,6 +29,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.SearchStrategy;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.context.properties.source.ConfigurationPropertyName;
 import org.springframework.cloud.stream.binder.BinderConfiguration;
 import org.springframework.cloud.stream.binder.BinderFactory;
 import org.springframework.cloud.stream.binder.BinderType;
@@ -44,6 +45,7 @@ import org.springframework.cloud.stream.binding.InputBindingLifecycle;
 import org.springframework.cloud.stream.binding.MessageChannelStreamListenerResultAdapter;
 import org.springframework.cloud.stream.binding.OutputBindingLifecycle;
 import org.springframework.cloud.stream.binding.StreamListenerAnnotationBeanPostProcessor;
+import org.springframework.cloud.stream.config.BindingHandlerAdvise.MappingsProvider;
 import org.springframework.cloud.stream.function.StreamFunctionProperties;
 import org.springframework.cloud.stream.micrometer.DestinationPublishingMetricsAutoConfiguration;
 import org.springframework.context.ApplicationListener;
@@ -60,6 +62,7 @@ import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.core.DestinationResolver;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.util.Assert;
+import org.springframework.util.ObjectUtils;
 
 
 /**
@@ -87,6 +90,18 @@ public class BindingServiceConfiguration {
 
 	@Autowired(required = false)
 	private Collection<DefaultBinderFactory.Listener> binderFactoryListeners;
+
+	@Bean
+	public BindingHandlerAdvise BindingHandlerAdvise(@Nullable MappingsProvider[] providers) {
+		Map<ConfigurationPropertyName, ConfigurationPropertyName> additionalMappings = new HashMap<>();
+		if (!ObjectUtils.isEmpty(providers)) {
+			for (int i = 0; i < providers.length; i++) {
+				MappingsProvider mappingsProvider = providers[i];
+				additionalMappings.putAll(mappingsProvider.getDefaultMappings());
+			}
+		}
+		return new BindingHandlerAdvise(additionalMappings);
+	}
 
 	@Bean
 	@ConditionalOnMissingBean(BinderFactory.class)

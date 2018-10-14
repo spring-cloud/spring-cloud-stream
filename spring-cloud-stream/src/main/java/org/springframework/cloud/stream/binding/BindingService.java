@@ -23,23 +23,13 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.SortedSet;
-import java.util.TreeSet;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.springframework.beans.BeanUtils;
-import org.springframework.beans.BeansException;
-import org.springframework.boot.context.properties.bind.BindContext;
-import org.springframework.boot.context.properties.bind.BindHandler;
-import org.springframework.boot.context.properties.bind.Bindable;
-import org.springframework.boot.context.properties.bind.PropertySourcesPlaceholdersResolver;
-import org.springframework.boot.context.properties.source.ConfigurationPropertyName;
-import org.springframework.boot.context.properties.source.ConfigurationPropertySources;
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.BinderFactory;
-import org.springframework.cloud.stream.binder.BinderSpecificPropertiesProvider;
 import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binder.ConsumerProperties;
 import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
@@ -49,11 +39,6 @@ import org.springframework.cloud.stream.binder.PollableConsumerBinder;
 import org.springframework.cloud.stream.binder.PollableSource;
 import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
-import org.springframework.cloud.stream.config.MergableProperties;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
-import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.integration.support.utils.IntegrationUtils;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
@@ -71,7 +56,7 @@ import org.springframework.validation.beanvalidation.CustomValidatorBean;
  * @author Janne Valkealahti
  * @author Soby Chacko
  */
-public class BindingService implements ApplicationContextAware {
+public class BindingService {
 
 	private final CustomValidatorBean validator;
 
@@ -86,8 +71,6 @@ public class BindingService implements ApplicationContextAware {
 	private final TaskScheduler taskScheduler;
 
 	private final BinderFactory binderFactory;
-
-	private ConfigurableApplicationContext applicationContext;
 
 	public BindingService(
 			BindingServiceProperties bindingServiceProperties,
@@ -105,11 +88,6 @@ public class BindingService implements ApplicationContextAware {
 		this.taskScheduler = taskScheduler;
 	}
 
-	@Override
-	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-		this.applicationContext = (ConfigurableApplicationContext) applicationContext;
-	}
-
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public <T> Collection<Binding<T>> bindConsumer(T input, String inputName) {
 		Collection<Binding<T>> bindings = new ArrayList<>();
@@ -123,11 +101,6 @@ public class BindingService implements ApplicationContextAware {
 			ExtendedConsumerProperties extendedConsumerProperties = new ExtendedConsumerProperties(
 					extension);
 			BeanUtils.copyProperties(consumerProperties, extendedConsumerProperties);
-
-			if (MergableProperties.class.isAssignableFrom(extendedConsumerProperties.getExtension().getClass())) {
-				handleExtendedDefaultProperties((ExtendedPropertiesBinder) binder,
-						(MergableProperties) extendedConsumerProperties.getExtension(), false, inputName);
-			}
 
 			consumerProperties = extendedConsumerProperties;
 		}
@@ -249,58 +222,12 @@ public class BindingService implements ApplicationContextAware {
 					extension);
 			BeanUtils.copyProperties(producerProperties, extendedProducerProperties);
 
-			if (MergableProperties.class.isAssignableFrom(extendedProducerProperties.getExtension().getClass())) {
-				handleExtendedDefaultProperties((ExtendedPropertiesBinder) binder,
-						(MergableProperties) extendedProducerProperties.getExtension(), true, outputName);
-			}
 			producerProperties = extendedProducerProperties;
 		}
 		validate(producerProperties);
 		Binding<T> binding = doBindProducer(output, bindingTarget, binder, producerProperties);
 		this.producerBindings.put(outputName, binding);
 		return binding;
-	}
-
-	private void handleExtendedDefaultProperties(ExtendedPropertiesBinder<?,?,?> binder, MergableProperties extendedProperties, boolean producer, String bindingName) {
-		String defaultsPrefix = binder.getDefaultsPrefix();
-
-		if (defaultsPrefix != null) {
-			Class<? extends BinderSpecificPropertiesProvider> extendedPropertiesEntryClass = binder.getExtendedPropertiesEntryClass();
-			if (BinderSpecificPropertiesProvider.class.isAssignableFrom(extendedPropertiesEntryClass)) {
-				org.springframework.boot.context.properties.bind.Binder extendedPropertiesResolverBinder =
-						new org.springframework.boot.context.properties.bind.Binder(ConfigurationPropertySources.get(applicationContext.getEnvironment()),
-								new PropertySourcesPlaceholdersResolver(applicationContext.getEnvironment()),
-								IntegrationUtils.getConversionService(this.applicationContext.getBeanFactory()), null);
-
-				//filter in the properties explicitly set by the user on custom bindings.
-				String bindingPropertyPrefixOnBinder = getBindingPropertyPrefix(bindingName, defaultsPrefix);
-				SortedSet<String> setProperties = new TreeSet<>();
-				BindHandler handler = new BindHandler() {
-					@Override
-					public Object onSuccess(ConfigurationPropertyName name, Bindable<?> target,
-											BindContext context, Object result) {
-						setProperties.add(name.getLastElement(ConfigurationPropertyName.Form.UNIFORM));
-						return result;
-					}
-				};
-				//Re-bind extended properties to check which properties are really provided by the application
-				String configElements = producer ? bindingPropertyPrefixOnBinder + ".producer" : bindingPropertyPrefixOnBinder + ".consumer";
-				String uniformConfigElements = StringUtils.replace(configElements, "_", "").toLowerCase();
-				extendedPropertiesResolverBinder.bind(uniformConfigElements, Bindable.ofInstance(extendedProperties), handler);
-
-				BinderSpecificPropertiesProvider defaultProperties = BeanUtils.instantiateClass(extendedPropertiesEntryClass);
-				extendedPropertiesResolverBinder.bind(defaultsPrefix, Bindable.ofInstance(defaultProperties));
-
-				Object binderExtendedProperties = producer ? defaultProperties.getProducer() : defaultProperties.getConsumer();
-				((MergableProperties)binderExtendedProperties).merge(extendedProperties, setProperties.toArray(new String[0]));
-			}
-		}
-	}
-
-	private String getBindingPropertyPrefix(String bindingName, String defaultsPrefix) {
-		int lastIndexOfDot = defaultsPrefix.lastIndexOf('.');
-		String springCloudStreamBinderPrefix = defaultsPrefix.substring(0, lastIndexOfDot);
-		return springCloudStreamBinderPrefix + ".bindings." + bindingName;
 	}
 
 	@SuppressWarnings("rawtypes")
