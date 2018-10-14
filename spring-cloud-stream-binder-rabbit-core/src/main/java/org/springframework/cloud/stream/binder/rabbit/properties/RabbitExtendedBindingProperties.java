@@ -16,12 +16,9 @@
 
 package org.springframework.cloud.stream.binder.rabbit.properties;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.cloud.stream.binder.AbstractExtendedBindingProperties;
 import org.springframework.cloud.stream.binder.BinderSpecificPropertiesProvider;
-import org.springframework.cloud.stream.binder.ExtendedBindingProperties;
 
 /**
  * @author Marius Bogoevici
@@ -30,61 +27,10 @@ import org.springframework.cloud.stream.binder.ExtendedBindingProperties;
  * @author Soby Chacko
  */
 @ConfigurationProperties("spring.cloud.stream.rabbit")
-public class RabbitExtendedBindingProperties implements ExtendedBindingProperties<RabbitConsumerProperties, RabbitProducerProperties> {
+public class RabbitExtendedBindingProperties
+		extends AbstractExtendedBindingProperties<RabbitConsumerProperties, RabbitProducerProperties, RabbitBindingProperties> {
 
 	private static final String DEFAULTS_PREFIX = "spring.cloud.stream.rabbit.default";
-
-	private Map<String, RabbitBindingProperties> bindings = new HashMap<>();
-
-	public Map<String, RabbitBindingProperties> getBindings() {
-		return bindings;
-	}
-
-	public void setBindings(Map<String, RabbitBindingProperties> bindings) {
-		this.bindings = bindings;
-	}
-
-	@Override
-	public synchronized RabbitConsumerProperties getExtendedConsumerProperties(String channelName) {
-		RabbitConsumerProperties properties;
-		if (bindings.containsKey(channelName)) {
-			if (bindings.get(channelName).getConsumer() != null) {
-				properties = bindings.get(channelName).getConsumer();
-			}
-			else {
-				properties = new RabbitConsumerProperties();
-				this.bindings.get(channelName).setConsumer(properties);
-			}
-		}
-		else {
-			properties = new RabbitConsumerProperties();
-			RabbitBindingProperties rbp = new RabbitBindingProperties();
-			rbp.setConsumer(properties);
-			bindings.put(channelName, rbp);
-		}
-		return properties;
-	}
-
-	@Override
-	public synchronized RabbitProducerProperties getExtendedProducerProperties(String channelName) {
-		RabbitProducerProperties properties;
-		if (bindings.containsKey(channelName)) {
-			if (bindings.get(channelName).getProducer() != null) {
-				properties = bindings.get(channelName).getProducer();
-			}
-			else {
-				properties = new RabbitProducerProperties();
-				this.bindings.get(channelName).setProducer(properties);
-			}
-		}
-		else {
-			properties = new RabbitProducerProperties();
-			RabbitBindingProperties rbp = new RabbitBindingProperties();
-			rbp.setProducer(properties);
-			bindings.put(channelName, rbp);
-		}
-		return properties;
-	}
 
 	@Override
 	public String getDefaultsPrefix() {
@@ -95,5 +41,4 @@ public class RabbitExtendedBindingProperties implements ExtendedBindingPropertie
 	public Class<? extends BinderSpecificPropertiesProvider> getExtendedPropertiesEntryClass() {
 		return RabbitBindingProperties.class;
 	}
-
 }

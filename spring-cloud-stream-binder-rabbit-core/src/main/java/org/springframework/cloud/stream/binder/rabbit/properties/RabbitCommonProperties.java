@@ -19,7 +19,6 @@ package org.springframework.cloud.stream.binder.rabbit.properties;
 import org.hibernate.validator.constraints.Range;
 
 import org.springframework.amqp.core.ExchangeTypes;
-import org.springframework.cloud.stream.config.MergableProperties;
 
 /**
  * @author Gary Russell
@@ -27,7 +26,7 @@ import org.springframework.cloud.stream.config.MergableProperties;
  * @since 1.2
  *
  */
-public abstract class RabbitCommonProperties implements MergableProperties {
+public abstract class RabbitCommonProperties  {
 
 	public static final String DEAD_LETTER_EXCHANGE = "DLX";
 
