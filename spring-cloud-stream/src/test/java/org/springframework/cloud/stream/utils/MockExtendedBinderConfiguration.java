@@ -16,12 +16,20 @@
 
 package org.springframework.cloud.stream.utils;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.mockito.Mockito;
 
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.ExtendedPropertiesBinder;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.support.GenericApplicationContext;
+import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.core.env.MapPropertySource;
+import org.springframework.core.env.StandardEnvironment;
 
 import static org.mockito.Mockito.when;
 
@@ -36,14 +44,27 @@ public class MockExtendedBinderConfiguration {
 	public Binder<?, ?, ?> extendedPropertiesBinder() {
 		Binder mock = Mockito.mock(Binder.class, Mockito.withSettings().defaultAnswer(Mockito.RETURNS_MOCKS)
 				.extraInterfaces(ExtendedPropertiesBinder.class));
-		when (((ExtendedPropertiesBinder)mock).getExtendedProducerProperties("output"))
-				.thenReturn(new FooExtendedProducerProperties());
+		ConfigurableEnvironment environment = new StandardEnvironment();
+		Map<String, Object> propertiesToAdd = new HashMap<>();
+		propertiesToAdd.put("spring.cloud.stream.foo.default.consumer.extendedProperty", "someFancyExtension");
+		propertiesToAdd.put("spring.cloud.stream.foo.default.producer.extendedProperty", "someFancyExtension");
+		environment.getPropertySources().addLast(new MapPropertySource("extPropertiesConfig", propertiesToAdd));
+
+		ConfigurableApplicationContext applicationContext = new GenericApplicationContext();
+		applicationContext.setEnvironment(environment);
+
+		FooExtendedBindingProperties fooExtendedBindingProperties = new FooExtendedBindingProperties();
+		fooExtendedBindingProperties.setApplicationContext(applicationContext);
+
+		final FooConsumerProperties fooConsumerProperties = fooExtendedBindingProperties.getExtendedConsumerProperties("input");
+		final FooProducerProperties fooProducerProperties = fooExtendedBindingProperties.getExtendedProducerProperties("output");
+
 		when (((ExtendedPropertiesBinder)mock).getExtendedConsumerProperties("input"))
-				.thenReturn(new FooExtendedConsumerProperties());
-		when (((ExtendedPropertiesBinder)mock).getDefaultsPrefix())
-				.thenReturn("spring.cloud.stream.foo.default");
-		when (((ExtendedPropertiesBinder)mock).getExtendedPropertiesEntryClass())
-				.thenReturn(FooBindingProperties.class);
+				.thenReturn(fooConsumerProperties);
+
+		when (((ExtendedPropertiesBinder)mock).getExtendedProducerProperties("output"))
+				.thenReturn(fooProducerProperties);
+
 		return mock;
 	}
 

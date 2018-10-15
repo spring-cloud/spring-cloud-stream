@@ -16,11 +16,10 @@
 
 package org.springframework.cloud.stream.utils;
 
-
 /**
  * @author Soby Chacko
  */
-public class FooExtendedProducerProperties {
+public class FooProducerProperties {
 
 	String extendedProperty;
 

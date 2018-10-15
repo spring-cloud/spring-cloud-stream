@@ -16,30 +16,26 @@
 
 package org.springframework.cloud.stream.utils;
 
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.cloud.stream.binder.AbstractExtendedBindingProperties;
 import org.springframework.cloud.stream.binder.BinderSpecificPropertiesProvider;
 
 /**
  * @author Soby Chacko
  */
-public class FooBindingProperties implements BinderSpecificPropertiesProvider {
+@ConfigurationProperties("spring.cloud.stream.foo")
+public class FooExtendedBindingProperties extends AbstractExtendedBindingProperties<FooConsumerProperties, FooProducerProperties, FooBindingProperties> {
 
-	private FooProducerProperties producer = new FooProducerProperties();
+	private static final String DEFAULTS_PREFIX = "spring.cloud.stream.foo.default";
 
-	private FooConsumerProperties consumer = new FooConsumerProperties();
-
-	public FooProducerProperties getProducer() {
-		return producer;
+	@Override
+	public String getDefaultsPrefix() {
+		return DEFAULTS_PREFIX;
 	}
 
-	public void setProducer(FooProducerProperties producer) {
-		this.producer = producer;
-	}
-
-	public FooConsumerProperties getConsumer() {
-		return consumer;
-	}
-
-	public void setConsumer(FooConsumerProperties consumer) {
-		this.consumer = consumer;
+	@Override
+	public Class<? extends BinderSpecificPropertiesProvider> getExtendedPropertiesEntryClass() {
+		return FooBindingProperties.class;
 	}
 }
+

@@ -32,7 +32,7 @@ import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.integration.support.utils.IntegrationUtils;
 
 /**
- * Vase implementation of {@link ExtendedBindingProperties}
+ * Base implementation of {@link ExtendedBindingProperties}
  *
  * @author Oleg Zhurakousky
  *
