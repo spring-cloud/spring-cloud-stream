@@ -130,7 +130,7 @@ For partitioned destinations, `-<instanceIndex>` is appended.
 +
 Default: `#`.
 bindQueue::
-Whether to bind the queue to the destination exchange.
+Whether to declare the queue and bind it to the destination exchange.
 Set it to `false` if you have set up your own infrastructure and have previously created and bound the queue.
 +
 Default: `true`.
@@ -380,7 +380,7 @@ Only applies if `requiredGroups` are provided and then only to those groups.
 +
 Default: `#`.
 bindQueue::
-Whether to bind the queue to the destination exchange.
+Whether to declare the queue and bind it to the destination exchange.
 Set it to `false` if you have set up your own infrastructure and have previously created and bound the queue.
 Only applies if `requiredGroups` are provided and then only to those groups.
 +

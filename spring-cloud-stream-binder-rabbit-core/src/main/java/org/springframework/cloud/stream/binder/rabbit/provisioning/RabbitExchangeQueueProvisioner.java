@@ -101,11 +101,11 @@ public class RabbitExchangeQueueProvisioner implements ApplicationListener<Decla
 			String baseQueueName = producerProperties.getExtension().isQueueNameGroupOnly()
 					? requiredGroupName : (exchangeName + "." + requiredGroupName);
 			if (!producerProperties.isPartitioned()) {
-				Queue queue = new Queue(baseQueueName, true, false, false,
-						queueArgs(baseQueueName, producerProperties.getExtension(), false));
-				declareQueue(baseQueueName, queue);
 				autoBindDLQ(baseQueueName, baseQueueName, producerProperties.getExtension());
 				if (producerProperties.getExtension().isBindQueue()) {
+					Queue queue = new Queue(baseQueueName, true, false, false,
+							queueArgs(baseQueueName, producerProperties.getExtension(), false));
+					declareQueue(baseQueueName, queue);
 					binding = notPartitionedBinding(exchange, queue, producerProperties.getExtension());
 				}
 			}
@@ -114,11 +114,11 @@ public class RabbitExchangeQueueProvisioner implements ApplicationListener<Decla
 				for (int i = 0; i < producerProperties.getPartitionCount(); i++) {
 					String partitionSuffix = "-" + i;
 					String partitionQueueName = baseQueueName + partitionSuffix;
-					Queue queue = new Queue(partitionQueueName, true, false, false,
-							queueArgs(partitionQueueName, producerProperties.getExtension(), false));
-					declareQueue(queue.getName(), queue);
 					autoBindDLQ(baseQueueName, baseQueueName + partitionSuffix, producerProperties.getExtension());
 					if (producerProperties.getExtension().isBindQueue()) {
+						Queue queue = new Queue(partitionQueueName, true, false, false,
+								queueArgs(partitionQueueName, producerProperties.getExtension(), false));
+						declareQueue(queue.getName(), queue);
 						String prefix = producerProperties.getExtension().getPrefix();
 						String destination = StringUtils.isEmpty(prefix) ? exchangeName : exchangeName.substring(prefix.length());
 						binding = partitionedBinding(destination, exchange, queue, producerProperties.getExtension(), i);
@@ -180,9 +180,9 @@ public class RabbitExchangeQueueProvisioner implements ApplicationListener<Decla
 						queueArgs(queueName, properties.getExtension(), false));
 			}
 		}
-		declareQueue(queueName, queue);
 		Binding binding = null;
 		if (properties.getExtension().isBindQueue()) {
+			declareQueue(queueName, queue);
 			binding = declareConsumerBindings(name, properties, exchange, partitioned, queue);
 		}
 		if (durable) {
