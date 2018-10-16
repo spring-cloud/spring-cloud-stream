@@ -13,6 +13,10 @@
 		<version>2.1.0.BUILD-SNAPSHOT</version>
 	</parent>
 
+	<properties>
+		<avro.version>1.8.2</avro.version>
+	</properties>
+
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
@@ -76,5 +80,40 @@
 			<classifier>test</classifier>
 			<scope>test</scope>
 		</dependency>
+		<!-- Following dependencies are only provided for testing and won't be packaged with the binder apps-->
+		<dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-stream-schema</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.avro</groupId>
+			<artifactId>avro</artifactId>
+			<version>${avro.version}</version>
+			<scope>provided</scope>
+		</dependency>
 	</dependencies>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.avro</groupId>
+				<artifactId>avro-maven-plugin</artifactId>
+				<version>${avro.version}</version>
+				<executions>
+					<execution>
+						<phase>generate-sources</phase>
+						<goals>
+							<goal>schema</goal>
+							<goal>protocol</goal>
+							<goal>idl-protocol</goal>
+						</goals>
+						<configuration>
+							<sourceDirectory>src/test/resources/avro</sourceDirectory>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
 </project>

@@ -21,6 +21,8 @@ import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.kafka.common.header.Header;
+import org.apache.kafka.common.header.Headers;
 import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.processor.Processor;
@@ -92,7 +94,7 @@ public class KafkaStreamsMessageConversionDelegate {
 	}
 
 	/**
-	 * Deserialize incoming {@link KStream} based on contentType.
+	 * Deserialize incoming {@link KStream} based on content type.
 	 *
 	 * @param valueClass on KStream value
 	 * @param bindingTarget inbound KStream target
@@ -101,6 +103,9 @@ public class KafkaStreamsMessageConversionDelegate {
 	@SuppressWarnings("unchecked")
 	public KStream deserializeOnInbound(Class<?> valueClass, KStream<?, ?> bindingTarget) {
 		MessageConverter messageConverter = compositeMessageConverterFactory.getMessageConverterForAllRegistered();
+		final PerRecordContentTypeHolder perRecordContentTypeHolder = new PerRecordContentTypeHolder();
+
+		resolvePerRecordContentType(bindingTarget, perRecordContentTypeHolder);
 
 		//Deserialize using a branching strategy
 		KStream<?, ?>[] branch = bindingTarget.branch(
@@ -113,16 +118,26 @@ public class KafkaStreamsMessageConversionDelegate {
 					if (o2 != null) {
 						if (valueClass.isAssignableFrom(o2.getClass())) {
 							keyValueThreadLocal.set(new KeyValue<>(o, o2));
-						} else if (o2 instanceof Message) {
-							if (valueClass.isAssignableFrom(((Message) o2).getPayload().getClass())) {
-								keyValueThreadLocal.set(new KeyValue<>(o, ((Message) o2).getPayload()));
-							} else {
-								convertAndSetMessage(o, valueClass, messageConverter, (Message) o2);
+						}
+						else if (o2 instanceof Message) {
+							Message<?> m1 = (Message) o2;
+							if (perRecordContentTypeHolder.contentType != null) {
+								m1 = MessageBuilder.fromMessage(m1).setHeader("contentType", perRecordContentTypeHolder.contentType).build();
 							}
-						} else if (o2 instanceof String || o2 instanceof byte[]) {
-							Message<?> message = MessageBuilder.withPayload(o2).build();
+
+							if (valueClass.isAssignableFrom(m1.getPayload().getClass())) {
+								keyValueThreadLocal.set(new KeyValue<>(o, m1.getPayload()));
+							}
+							else {
+								convertAndSetMessage(o, valueClass, messageConverter, m1);
+							}
+						}
+						else if (o2 instanceof String || o2 instanceof byte[]) {
+							Message<?> message = perRecordContentTypeHolder.contentType != null ? MessageBuilder.withPayload(o2)
+									.setHeader("contentType", perRecordContentTypeHolder.contentType).build() : MessageBuilder.withPayload(o2).build();
 							convertAndSetMessage(o, valueClass, messageConverter, message);
-						} else {
+						}
+						else {
 							keyValueThreadLocal.set(new KeyValue<>(o, o2));
 						}
 						isValidRecord = true;
@@ -147,6 +162,45 @@ public class KafkaStreamsMessageConversionDelegate {
 			Object objectValue = keyValueThreadLocal.get().value;
 			keyValueThreadLocal.remove();
 			return objectValue;
+		});
+	}
+
+	private static class PerRecordContentTypeHolder {
+
+		String contentType;
+
+		void setContentType(String contentType) {
+			this.contentType = contentType;
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	private void resolvePerRecordContentType(KStream<?, ?> outboundBindTarget, PerRecordContentTypeHolder perRecordContentTypeHolder) {
+		outboundBindTarget.process(() -> new Processor() {
+
+			ProcessorContext context;
+
+			@Override
+			public void init(ProcessorContext context) {
+				this.context = context;
+			}
+
+			@Override
+			public void process(Object key, Object value) {
+				final Headers headers = context.headers();
+				final Iterable<Header> contentTypes = headers.headers("contentType");
+				if (contentTypes != null && contentTypes.iterator().hasNext()) {
+					final String contentType = new String(contentTypes.iterator().next().value());
+					//remove leading and trailing quotes
+					final String cleanContentType = StringUtils.replace(contentType, "\"", "");
+					perRecordContentTypeHolder.setContentType(cleanContentType);
+				}
+			}
+
+			@Override
+			public void close() {
+
+			}
 		});
 	}
 
