@@ -567,13 +567,13 @@ public class KafkaMessageChannelBinder extends
 			// not just the ones this binding is listening to; doesn't seem right for a health check.
 			Collection<PartitionInfo> partitionInfos = getPartitionInfo(destination.getName(), consumerProperties,
 					consumerFactory, -1);
-			this.topicsInUse.put(destination.getName(), new TopicInformation(group, partitionInfos, false));
+			this.topicsInUse.put(destination.getName(), new TopicInformation(consumerGroup, partitionInfos, false));
 		}
 		else {
 			for (int i = 0; i < topics.length; i++) {
 				Collection<PartitionInfo> partitionInfos = getPartitionInfo(topics[i], consumerProperties,
 						consumerFactory, -1);
-				this.topicsInUse.put(topics[i], new TopicInformation(group, partitionInfos, false));
+				this.topicsInUse.put(topics[i], new TopicInformation(consumerGroup, partitionInfos, false));
 			}
 		}
 
