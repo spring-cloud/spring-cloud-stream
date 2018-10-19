@@ -443,12 +443,18 @@ class KafkaStreamsStreamListenerSetupMethodOrchestrator implements StreamListene
 		Map<String, Object> streamConfigGlobalProperties = applicationContext.getBean("streamConfigGlobalProperties", Map.class);
 
 		KafkaStreamsConsumerProperties extendedConsumerProperties = kafkaStreamsExtendedBindingProperties.getExtendedConsumerProperties(inboundName);
+		streamConfigGlobalProperties.putAll(extendedConsumerProperties.getConfiguration());
 
 		String applicationId = extendedConsumerProperties.getApplicationId();
-
 		//override application.id if set at the individual binding level.
 		if (StringUtils.hasText(applicationId)) {
 			streamConfigGlobalProperties.put(StreamsConfig.APPLICATION_ID_CONFIG, applicationId);
+		}
+
+		int concurrency = bindingServiceProperties.getConsumerProperties(inboundName).getConcurrency();
+		// override concurrency if set at the individual binding level.
+		if (concurrency > 1) {
+			streamConfigGlobalProperties.put(StreamsConfig.NUM_STREAM_THREADS_CONFIG, concurrency);
 		}
 
 		Map<String, KafkaStreamsDlqDispatch> kafkaStreamsDlqDispatchers = applicationContext.getBean("kafkaStreamsDlqDispatchers", Map.class);

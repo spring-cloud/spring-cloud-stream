@@ -28,6 +28,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.KeyValue;
+import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.Materialized;
 import org.apache.kafka.streams.kstream.Serialized;
@@ -132,6 +133,7 @@ public class KafkaStreamsBinderWordCountIntegrationTests {
 				"--spring.cloud.stream.kafka.streams.binder.configuration.default.value.serde=org.apache.kafka.common.serialization.Serdes$StringSerde",
 				"--spring.cloud.stream.kafka.streams.timeWindow.length=5000",
 				"--spring.cloud.stream.kafka.streams.timeWindow.advanceBy=0",
+				"--spring.cloud.stream.bindings.input.consumer.concurrency=2",
 				"--spring.cloud.stream.kafka.streams.binder.brokers=" + embeddedKafka.getBrokersAsString(),
 				"--spring.cloud.stream.kafka.streams.binder.zkNodes=" + embeddedKafka.getZookeeperConnectionString())) {
 			receiveAndValidate(context);
@@ -140,6 +142,12 @@ public class KafkaStreamsBinderWordCountIntegrationTests {
 			KafkaStreams kafkaStreams = streamsBuilderFactoryBean.getKafkaStreams();
 			ReadOnlyWindowStore<Object, Object> store = kafkaStreams.store("foo-WordCounts", QueryableStoreTypes.windowStore());
 			assertThat(store).isNotNull();
+
+			Map streamConfigGlobalProperties = context.getBean("streamConfigGlobalProperties", Map.class);
+
+			//Ensure that concurrency settings are mapped to number of stream task threads in Kafka Streams.
+			final Integer concurrency = (Integer)streamConfigGlobalProperties.get(StreamsConfig.NUM_STREAM_THREADS_CONFIG);
+			assertThat(concurrency).isEqualTo(2);
 
 			sendTombStoneRecordsAndVerifyGracefulHandling();
 
