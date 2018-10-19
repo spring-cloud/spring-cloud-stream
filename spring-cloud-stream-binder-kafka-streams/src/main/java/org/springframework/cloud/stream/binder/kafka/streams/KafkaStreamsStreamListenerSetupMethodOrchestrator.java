@@ -29,6 +29,7 @@ import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.utils.Bytes;
 import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.StreamsConfig;
+import org.apache.kafka.streams.Topology;
 import org.apache.kafka.streams.kstream.Consumed;
 import org.apache.kafka.streams.kstream.GlobalKTable;
 import org.apache.kafka.streams.kstream.KStream;
@@ -47,6 +48,7 @@ import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.cloud.stream.annotation.Input;
 import org.springframework.cloud.stream.annotation.StreamListener;
 import org.springframework.cloud.stream.binder.ConsumerProperties;
+import org.springframework.cloud.stream.binder.kafka.properties.KafkaConsumerProperties;
 import org.springframework.cloud.stream.binder.kafka.streams.annotations.KafkaStreamsStateStore;
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsConsumerProperties;
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsExtendedBindingProperties;
@@ -241,8 +243,26 @@ class KafkaStreamsStreamListenerSetupMethodOrchestrator implements StreamListene
 					KafkaStreamsStateStoreProperties spec = buildStateStoreSpec(method);
 					Serde<?> keySerde = this.keyValueSerdeResolver.getInboundKeySerde(extendedConsumerProperties);
 					Serde<?> valueSerde = this.keyValueSerdeResolver.getInboundValueSerde(bindingProperties.getConsumer(), extendedConsumerProperties);
+
+					final KafkaConsumerProperties.StartOffset startOffset = extendedConsumerProperties.getStartOffset();
+					Topology.AutoOffsetReset autoOffsetReset = null;
+					if (startOffset != null) {
+						switch (startOffset) {
+							case earliest : autoOffsetReset = Topology.AutoOffsetReset.EARLIEST;
+								break;
+							case latest : autoOffsetReset = Topology.AutoOffsetReset.LATEST;
+								break;
+							default: break;
+						}
+					}
+					if (extendedConsumerProperties.isResetOffsets()) {
+						LOG.warn("Detected resetOffsets configured on binding " + inboundName + ". "
+								+ "Setting resetOffsets in Kafka Streams binder does not have any effect.");
+					}
+
 					if (parameterType.isAssignableFrom(KStream.class)) {
-						KStream<?, ?> stream = getkStream(inboundName, spec, bindingProperties, streamsBuilder, keySerde, valueSerde);
+						KStream<?, ?> stream = getkStream(inboundName, spec, bindingProperties,
+												streamsBuilder, keySerde, valueSerde, autoOffsetReset);
 						KStreamBoundElementFactory.KStreamWrapper kStreamWrapper = (KStreamBoundElementFactory.KStreamWrapper) targetBean;
 						//wrap the proxy created during the initial target type binding with real object (KStream)
 						kStreamWrapper.wrap((KStream<Object, Object>) stream);
@@ -262,10 +282,8 @@ class KafkaStreamsStreamListenerSetupMethodOrchestrator implements StreamListene
 					else if (parameterType.isAssignableFrom(KTable.class)) {
 						String materializedAs = extendedConsumerProperties.getMaterializedAs();
 						String bindingDestination = bindingServiceProperties.getBindingDestination(inboundName);
-						KTable<?, ?> table = materializedAs != null ?
-								materializedAs(streamsBuilder, bindingDestination, materializedAs, keySerde, valueSerde ) :
-								streamsBuilder.table(bindingDestination,
-										Consumed.with(keySerde, valueSerde));
+						KTable<?, ?> table = getKTable(streamsBuilder, keySerde, valueSerde, materializedAs,
+								bindingDestination, autoOffsetReset);
 						KTableBoundElementFactory.KTableWrapper kTableWrapper = (KTableBoundElementFactory.KTableWrapper) targetBean;
 						//wrap the proxy created during the initial target type binding with real object (KTable)
 						kTableWrapper.wrap((KTable<Object, Object>) table);
@@ -275,10 +293,8 @@ class KafkaStreamsStreamListenerSetupMethodOrchestrator implements StreamListene
 					else if (parameterType.isAssignableFrom(GlobalKTable.class)) {
 						String materializedAs = extendedConsumerProperties.getMaterializedAs();
 						String bindingDestination = bindingServiceProperties.getBindingDestination(inboundName);
-						GlobalKTable<?, ?> table = materializedAs != null ?
-								materializedAsGlobalKTable(streamsBuilder, bindingDestination, materializedAs, keySerde, valueSerde ) :
-								streamsBuilder.globalTable(bindingDestination,
-										Consumed.with(keySerde, valueSerde));
+						GlobalKTable<?, ?> table = getGlobalKTable(streamsBuilder, keySerde, valueSerde, materializedAs,
+								bindingDestination, autoOffsetReset);
 						GlobalKTableBoundElementFactory.GlobalKTableWrapper globalKTableWrapper = (GlobalKTableBoundElementFactory.GlobalKTableWrapper) targetBean;
 						//wrap the proxy created during the initial target type binding with real object (KTable)
 						globalKTableWrapper.wrap((GlobalKTable<Object, Object>) table);
@@ -297,13 +313,33 @@ class KafkaStreamsStreamListenerSetupMethodOrchestrator implements StreamListene
 		return arguments;
 	}
 
-	private <K,V> KTable<K,V> materializedAs(StreamsBuilder streamsBuilder, String destination, String storeName, Serde<K> k, Serde<V> v) {
+	private GlobalKTable<?, ?> getGlobalKTable(StreamsBuilder streamsBuilder, Serde<?> keySerde, Serde<?> valueSerde, String materializedAs,
+											   String bindingDestination, Topology.AutoOffsetReset autoOffsetReset) {
+		return materializedAs != null ?
+				materializedAsGlobalKTable(streamsBuilder, bindingDestination, materializedAs, keySerde, valueSerde, autoOffsetReset) :
+				streamsBuilder.globalTable(bindingDestination,
+						Consumed.with(keySerde, valueSerde).withOffsetResetPolicy(autoOffsetReset));
+	}
+
+	private KTable<?, ?> getKTable(StreamsBuilder streamsBuilder, Serde<?> keySerde, Serde<?> valueSerde, String materializedAs,
+								   String bindingDestination, Topology.AutoOffsetReset autoOffsetReset) {
+		return materializedAs != null ?
+				materializedAs(streamsBuilder, bindingDestination, materializedAs, keySerde, valueSerde, autoOffsetReset ) :
+				streamsBuilder.table(bindingDestination,
+						Consumed.with(keySerde, valueSerde).withOffsetResetPolicy(autoOffsetReset));
+	}
+
+	private <K,V> KTable<K,V> materializedAs(StreamsBuilder streamsBuilder, String destination, String storeName, Serde<K> k, Serde<V> v,
+											 Topology.AutoOffsetReset autoOffsetReset) {
 		return streamsBuilder.table(bindingServiceProperties.getBindingDestination(destination),
+				Consumed.with(k,v).withOffsetResetPolicy(autoOffsetReset),
 				getMaterialized(storeName, k, v));
 	}
 
-	private <K,V> GlobalKTable<K,V> materializedAsGlobalKTable(StreamsBuilder streamsBuilder, String destination, String storeName, Serde<K> k, Serde<V> v) {
+	private <K,V> GlobalKTable<K,V> materializedAsGlobalKTable(StreamsBuilder streamsBuilder, String destination, String storeName, Serde<K> k, Serde<V> v,
+															   Topology.AutoOffsetReset autoOffsetReset) {
 		return streamsBuilder.globalTable(bindingServiceProperties.getBindingDestination(destination),
+				Consumed.with(k,v).withOffsetResetPolicy(autoOffsetReset),
 				getMaterialized(storeName, k, v));
 	}
 
@@ -349,8 +385,9 @@ class KafkaStreamsStreamListenerSetupMethodOrchestrator implements StreamListene
 	}
 
 	private KStream<?, ?> getkStream(String inboundName, KafkaStreamsStateStoreProperties storeSpec,
-									BindingProperties bindingProperties, StreamsBuilder streamsBuilder,
-									Serde<?> keySerde, Serde<?> valueSerde) {
+									BindingProperties bindingProperties,
+									 StreamsBuilder streamsBuilder,
+									Serde<?> keySerde, Serde<?> valueSerde, Topology.AutoOffsetReset autoOffsetReset) {
 		if (storeSpec != null) {
 			StoreBuilder storeBuilder = buildStateStore(storeSpec);
 			streamsBuilder.addStateStore(storeBuilder);
@@ -360,8 +397,11 @@ class KafkaStreamsStreamListenerSetupMethodOrchestrator implements StreamListene
 		}
 		String[] bindingTargets = StringUtils
 				.commaDelimitedListToStringArray(bindingServiceProperties.getBindingDestination(inboundName));
-		KStream<?, ?> stream = streamsBuilder.stream(Arrays.asList(bindingTargets),
-				Consumed.with(keySerde, valueSerde));
+
+		KStream<?, ?> stream =
+					streamsBuilder.stream(Arrays.asList(bindingTargets),
+									Consumed.with(keySerde, valueSerde)
+											.withOffsetResetPolicy(autoOffsetReset));
 		final boolean nativeDecoding = bindingServiceProperties.getConsumerProperties(inboundName).isUseNativeDecoding();
 		if (nativeDecoding){
 			LOG.info("Native decoding is enabled for " + inboundName + ". Inbound deserialization done at the broker.");

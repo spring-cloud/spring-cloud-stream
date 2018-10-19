@@ -163,6 +163,15 @@ dlqName::
   DLQ topic name.
 +
 Default: `none`.
+startOffset::
+  Offset to start from if there is no committed offset to consume from.
+  This is mostly used when the consumer is consuming from a topic for the first time. Kafka Streams uses `earliest` as the default strategy and
+  the binder uses the same default. This can be overridden to `latest` using this property.
++
+Default: `earliest`.
+
+Note: Using `resetOffsets` on the consumer does not have any effect on Kafka Streams binder.
+Unlike the message channel based binder, Kafka Streams binder does not seek to beginning or end on demand.
 
 === TimeWindow properties:
 
