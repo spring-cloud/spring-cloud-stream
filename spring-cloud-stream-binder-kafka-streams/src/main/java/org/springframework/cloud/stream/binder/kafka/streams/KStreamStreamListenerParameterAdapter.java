@@ -16,9 +16,7 @@
 
 package org.springframework.cloud.stream.binder.kafka.streams;
 
-import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.kstream.KStream;
-import org.apache.kafka.streams.kstream.KeyValueMapper;
 
 import org.springframework.cloud.stream.binding.StreamListenerParameterAdapter;
 import org.springframework.core.MethodParameter;
@@ -52,7 +50,7 @@ class KStreamStreamListenerParameterAdapter implements StreamListenerParameterAd
 		final Class<?> valueClass = (resolvableType.getGeneric(1).getRawClass() != null)
 				? (resolvableType.getGeneric(1).getRawClass()) : Object.class;
 		if (this.KafkaStreamsBindingInformationCatalogue.isUseNativeDecoding(bindingTarget)) {
-			return bindingTarget.map((KeyValueMapper) KeyValue::new);
+			return bindingTarget;
 		}
 		else {
 			return kafkaStreamsMessageConversionDelegate.deserializeOnInbound(valueClass, bindingTarget);

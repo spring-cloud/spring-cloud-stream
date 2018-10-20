@@ -19,7 +19,6 @@ package org.springframework.cloud.stream.binder.kafka.streams;
 import java.io.Closeable;
 import java.io.IOException;
 
-import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.kstream.KStream;
 
 import org.springframework.cloud.stream.binding.StreamListenerResultAdapter;
@@ -38,7 +37,7 @@ class KStreamStreamListenerResultAdapter implements StreamListenerResultAdapter<
 	@Override
 	@SuppressWarnings("unchecked")
 	public Closeable adapt(KStream streamListenerResult, KStreamBoundElementFactory.KStreamWrapper boundElement) {
-		boundElement.wrap(streamListenerResult.map(KeyValue::new));
+		boundElement.wrap(streamListenerResult);
 		return new NoOpCloseable();
 	}
 

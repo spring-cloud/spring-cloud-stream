@@ -129,7 +129,31 @@ public class StreamToTableJoinIntegrationTests {
 				"--spring.cloud.stream.kafka.streams.bindings.input.consumer.applicationId=StreamToTableJoinIntegrationTests-abc",
 				"--spring.cloud.stream.kafka.streams.binder.brokers=" + embeddedKafka.getBrokersAsString(),
 				"--spring.cloud.stream.kafka.streams.binder.zkNodes=" + embeddedKafka.getZookeeperConnectionString())) {
-			// Input 1: Clicks per user (multiple records allowed per user).
+
+			// Input 1: Region per user (multiple records allowed per user).
+			List<KeyValue<String, String>> userRegions = Arrays.asList(
+					new KeyValue<>("alice", "asia"),   /* Alice lived in Asia originally... */
+					new KeyValue<>("bob", "americas"),
+					new KeyValue<>("chao", "asia"),
+					new KeyValue<>("dave", "europe"),
+					new KeyValue<>("alice", "europe"), /* ...but moved to Europe some time later. */
+					new KeyValue<>("eve", "americas"),
+					new KeyValue<>("fang", "asia")
+			);
+
+			Map<String, Object> senderProps1 = KafkaTestUtils.producerProps(embeddedKafka);
+			senderProps1.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+			senderProps1.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+
+			DefaultKafkaProducerFactory<String, String> pf1 = new DefaultKafkaProducerFactory<>(senderProps1);
+			KafkaTemplate<String, String> template1 = new KafkaTemplate<>(pf1, true);
+			template1.setDefaultTopic("user-regions-1");
+
+			for (KeyValue<String, String> keyValue : userRegions) {
+				template1.sendDefault(keyValue.key, keyValue.value);
+			}
+
+			// Input 2: Clicks per user (multiple records allowed per user).
 			List<KeyValue<String, Long>> userClicks = Arrays.asList(
 					new KeyValue<>("alice", 13L),
 					new KeyValue<>("bob", 4L),
@@ -151,29 +175,6 @@ public class StreamToTableJoinIntegrationTests {
 
 			for (KeyValue<String, Long> keyValue : userClicks) {
 				template.sendDefault(keyValue.key, keyValue.value);
-			}
-
-			// Input 2: Region per user (multiple records allowed per user).
-			List<KeyValue<String, String>> userRegions = Arrays.asList(
-					new KeyValue<>("alice", "asia"),   /* Alice lived in Asia originally... */
-					new KeyValue<>("bob", "americas"),
-					new KeyValue<>("chao", "asia"),
-					new KeyValue<>("dave", "europe"),
-					new KeyValue<>("alice", "europe"), /* ...but moved to Europe some time later. */
-					new KeyValue<>("eve", "americas"),
-					new KeyValue<>("fang", "asia")
-			);
-
-			Map<String, Object> senderProps1 = KafkaTestUtils.producerProps(embeddedKafka);
-			senderProps1.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
-			senderProps1.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
-
-			DefaultKafkaProducerFactory<String, String> pf1 = new DefaultKafkaProducerFactory<>(senderProps1);
-			KafkaTemplate<String, String> template1 = new KafkaTemplate<>(pf1, true);
-			template1.setDefaultTopic("user-regions-1");
-
-			for (KeyValue<String, String> keyValue : userRegions) {
-				template1.sendDefault(keyValue.key, keyValue.value);
 			}
 
 			List<KeyValue<String, Long>> expectedClicksPerRegion = Arrays.asList(
@@ -267,19 +268,6 @@ public class StreamToTableJoinIntegrationTests {
 				"--spring.cloud.stream.kafka.streams.binder.brokers=" + embeddedKafka.getBrokersAsString(),
 				"--spring.cloud.stream.kafka.streams.binder.zkNodes=" + embeddedKafka.getZookeeperConnectionString())) {
 			Thread.sleep(1000L);
-			// Input 1: Clicks per user (multiple records allowed per user).
-			List<KeyValue<String, Long>> userClicks1 = Arrays.asList(
-					new KeyValue<>("bob", 4L),
-					new KeyValue<>("chao", 25L),
-					new KeyValue<>("bob", 19L),
-					new KeyValue<>("dave", 56L),
-					new KeyValue<>("eve", 78L),
-					new KeyValue<>("fang", 99L)
-			);
-
-			for (KeyValue<String, Long> keyValue : userClicks1) {
-				template.sendDefault(keyValue.key, keyValue.value);
-			}
 
 			// Input 2: Region per user (multiple records allowed per user).
 			List<KeyValue<String, String>> userRegions = Arrays.asList(
@@ -303,6 +291,24 @@ public class StreamToTableJoinIntegrationTests {
 			for (KeyValue<String, String> keyValue : userRegions) {
 				template1.sendDefault(keyValue.key, keyValue.value);
 			}
+
+
+
+			// Input 1: Clicks per user (multiple records allowed per user).
+			List<KeyValue<String, Long>> userClicks1 = Arrays.asList(
+					new KeyValue<>("bob", 4L),
+					new KeyValue<>("chao", 25L),
+					new KeyValue<>("bob", 19L),
+					new KeyValue<>("dave", 56L),
+					new KeyValue<>("eve", 78L),
+					new KeyValue<>("fang", 99L)
+			);
+
+			for (KeyValue<String, Long> keyValue : userClicks1) {
+				template.sendDefault(keyValue.key, keyValue.value);
+			}
+
+
 
 			List<KeyValue<String, Long>> expectedClicksPerRegion = Arrays.asList(
 					new KeyValue<>("americas", 101L),
