@@ -34,6 +34,7 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.messaging.support.MessageBuilder;
+import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
 /**
@@ -75,6 +76,7 @@ public class KafkaStreamsMessageConversionDelegate {
 	 * @param outboundBindTarget outbound KStream target
 	 * @return serialized KStream
 	 */
+	@SuppressWarnings("rawtypes")
 	public KStream serializeOnOutbound(KStream<?,?> outboundBindTarget) {
 		String contentType = this.kstreamBindingInformationCatalogue.getContentType(outboundBindTarget);
 		MessageConverter messageConverter = compositeMessageConverterFactory.getMessageConverterForAllRegistered();
@@ -87,7 +89,7 @@ public class KafkaStreamsMessageConversionDelegate {
 				headers.put(MessageHeaders.CONTENT_TYPE, contentType);
 			}
 			MessageHeaders messageHeaders = new MessageHeaders(headers);
-			return 
+			return
 					messageConverter.toMessage(message.getPayload(),
 							messageHeaders).getPayload();
 		});
@@ -100,7 +102,7 @@ public class KafkaStreamsMessageConversionDelegate {
 	 * @param bindingTarget inbound KStream target
 	 * @return deserialized KStream
 	 */
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public KStream deserializeOnInbound(Class<?> valueClass, KStream<?, ?> bindingTarget) {
 		MessageConverter messageConverter = compositeMessageConverterFactory.getMessageConverterForAllRegistered();
 		final PerRecordContentTypeHolder perRecordContentTypeHolder = new PerRecordContentTypeHolder();
@@ -116,26 +118,17 @@ public class KafkaStreamsMessageConversionDelegate {
 				try {
 					//if the record is a tombstone, ignore and exit from processing further.
 					if (o2 != null) {
-						if (valueClass.isAssignableFrom(o2.getClass())) {
-							keyValueThreadLocal.set(new KeyValue<>(o, o2));
-						}
-						else if (o2 instanceof Message) {
-							Message<?> m1 = (Message) o2;
-							if (perRecordContentTypeHolder.contentType != null) {
-								m1 = MessageBuilder.fromMessage(m1).setHeader("contentType", perRecordContentTypeHolder.contentType).build();
-							}
-
-							if (valueClass.isAssignableFrom(m1.getPayload().getClass())) {
-								keyValueThreadLocal.set(new KeyValue<>(o, m1.getPayload()));
+						if (o2 instanceof Message || o2 instanceof String || o2 instanceof byte[]) {
+							Message<?> m1 = null;
+							if (o2 instanceof Message) {
+								m1 = perRecordContentTypeHolder.contentType != null
+										? MessageBuilder.fromMessage((Message<?>) o2).setHeader(MessageHeaders.CONTENT_TYPE, perRecordContentTypeHolder.contentType).build() : (Message<?>)o2;
 							}
 							else {
-								convertAndSetMessage(o, valueClass, messageConverter, m1);
+								m1 = perRecordContentTypeHolder.contentType != null ? MessageBuilder.withPayload(o2)
+										.setHeader(MessageHeaders.CONTENT_TYPE, perRecordContentTypeHolder.contentType).build() : MessageBuilder.withPayload(o2).build();
 							}
-						}
-						else if (o2 instanceof String || o2 instanceof byte[]) {
-							Message<?> message = perRecordContentTypeHolder.contentType != null ? MessageBuilder.withPayload(o2)
-									.setHeader("contentType", perRecordContentTypeHolder.contentType).build() : MessageBuilder.withPayload(o2).build();
-							convertAndSetMessage(o, valueClass, messageConverter, message);
+							convertAndSetMessage(o, valueClass, messageConverter, m1);
 						}
 						else {
 							keyValueThreadLocal.set(new KeyValue<>(o, o2));
@@ -174,7 +167,7 @@ public class KafkaStreamsMessageConversionDelegate {
 		}
 	}
 
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	private void resolvePerRecordContentType(KStream<?, ?> outboundBindTarget, PerRecordContentTypeHolder perRecordContentTypeHolder) {
 		outboundBindTarget.process(() -> new Processor() {
 
@@ -188,7 +181,7 @@ public class KafkaStreamsMessageConversionDelegate {
 			@Override
 			public void process(Object key, Object value) {
 				final Headers headers = context.headers();
-				final Iterable<Header> contentTypes = headers.headers("contentType");
+				final Iterable<Header> contentTypes = headers.headers(MessageHeaders.CONTENT_TYPE);
 				if (contentTypes != null && contentTypes.iterator().hasNext()) {
 					final String contentType = new String(contentTypes.iterator().next().value());
 					//remove leading and trailing quotes
@@ -205,14 +198,15 @@ public class KafkaStreamsMessageConversionDelegate {
 	}
 
 	private void convertAndSetMessage(Object o, Class<?> valueClass, MessageConverter messageConverter, Message<?> msg) {
-		Object messageConverted = messageConverter.fromMessage(msg, valueClass);
-		if (messageConverted == null) {
-			throw new IllegalStateException("Inbound data conversion failed.");
-		}
-		keyValueThreadLocal.set(new KeyValue<>(o, messageConverted));
+		Object result = valueClass.isAssignableFrom(msg.getPayload().getClass())
+				? msg.getPayload() : messageConverter.fromMessage(msg, valueClass);
+
+		Assert.notNull(result, "Failed to convert message " + msg);
+
+		keyValueThreadLocal.set(new KeyValue<>(o, result));
 	}
 
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	private void processErrorFromDeserialization(KStream<?, ?> bindingTarget, KStream<?, ?> branch) {
 		branch.process(() -> new Processor() {
 			ProcessorContext context;
@@ -231,12 +225,15 @@ public class KafkaStreamsMessageConversionDelegate {
 						if (o2 instanceof Message) {
 							Message message = (Message) o2;
 							sendToDlqAndContinue.sendToDlq(destination, (byte[]) o, (byte[]) message.getPayload(), context.partition());
-						} else {
+						}
+						else {
 							sendToDlqAndContinue.sendToDlq(destination, (byte[]) o, (byte[]) o2, context.partition());
 						}
-					} else if (kstreamBinderConfigurationProperties.getSerdeError() == KafkaStreamsBinderConfigurationProperties.SerdeError.logAndFail) {
+					}
+					else if (kstreamBinderConfigurationProperties.getSerdeError() == KafkaStreamsBinderConfigurationProperties.SerdeError.logAndFail) {
 						throw new IllegalStateException("Inbound deserialization failed.");
-					} else if (kstreamBinderConfigurationProperties.getSerdeError() == KafkaStreamsBinderConfigurationProperties.SerdeError.logAndContinue) {
+					}
+					else if (kstreamBinderConfigurationProperties.getSerdeError() == KafkaStreamsBinderConfigurationProperties.SerdeError.logAndContinue) {
 						//quietly pass through. No action needed, this is similar to log and continue.
 					}
 				}

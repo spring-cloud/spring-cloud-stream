@@ -69,10 +69,9 @@ import org.springframework.util.MimeTypeUtils;
  * can autowire that bean. This is the expected usage pattern of this class.
  *
  * @author Soby Chacko
+ * @since 2.1
  */
 public class CompositeNonNativeSerde<T> implements Serde<T> {
-
-	private static final String CONTENT_TYPE_HEADER = "contentType";
 
 	private static final String VALUE_CLASS_HEADER = "valueClass";
 
@@ -111,8 +110,8 @@ public class CompositeNonNativeSerde<T> implements Serde<T> {
 	}
 
 	private static MimeType resolveMimeType(Map<String, ?> configs) {
-		if (configs.containsKey(CONTENT_TYPE_HEADER)){
-			String contentType = (String)configs.get(CONTENT_TYPE_HEADER);
+		if (configs.containsKey(MessageHeaders.CONTENT_TYPE)){
+			String contentType = (String)configs.get(MessageHeaders.CONTENT_TYPE);
 			if (DEFAULT_AVRO_MIME_TYPE.equals(MimeTypeUtils.parseMimeType(contentType))) {
 				return DEFAULT_AVRO_MIME_TYPE;
 			}
@@ -158,11 +157,9 @@ public class CompositeNonNativeSerde<T> implements Serde<T> {
 		@Override
 		public U deserialize(String topic, byte[] data) {
 			Message<?> message = MessageBuilder.withPayload(data)
-					.setHeader(CONTENT_TYPE_HEADER, this.mimeType.toString()).build();
+					.setHeader(MessageHeaders.CONTENT_TYPE, this.mimeType.toString()).build();
 			U messageConverted = (U)messageConverter.fromMessage(message, this.valueClass);
-			if (messageConverted == null) {
-				throw new IllegalStateException("Deserialization failed.");
-			}
+			Assert.notNull(messageConverted, "Deserialization failed.");
 			return messageConverted;
 		}
 

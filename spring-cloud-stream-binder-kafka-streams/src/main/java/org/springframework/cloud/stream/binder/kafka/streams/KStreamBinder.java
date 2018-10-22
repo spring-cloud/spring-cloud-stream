@@ -83,7 +83,6 @@ class KStreamBinder extends
 	}
 
 	@Override
-	@SuppressWarnings("unchecked")
 	protected Binding<KStream<Object, Object>> doBindConsumer(String name, String group,
 															KStream<Object, Object> inputTarget,
 															ExtendedConsumerProperties<KafkaStreamsConsumerProperties> properties) {
