@@ -1978,7 +1978,7 @@ Default:: `http://localhost:8990/`
 Normally set to `false`, as the caching happens in the message converter.
 Clients using the schema registry client should set this to `true`.
 +
-Default:: `true`
+Default:: `false`
 
 === Avro Schema Registry Client Message Converters
 
