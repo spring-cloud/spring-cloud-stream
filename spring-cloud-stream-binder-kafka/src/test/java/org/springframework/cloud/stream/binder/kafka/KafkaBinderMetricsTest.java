@@ -42,6 +42,7 @@ import org.springframework.cloud.stream.binder.kafka.properties.KafkaBinderConfi
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 
 /**
  * @author Henryk Konsek
@@ -73,7 +74,7 @@ public class KafkaBinderMetricsTest {
 	@Before
 	public void setup() {
 		MockitoAnnotations.initMocks(this);
-		org.mockito.BDDMockito.given(consumerFactory.createConsumer()).willReturn(consumer);
+		org.mockito.BDDMockito.given(consumerFactory.createConsumer(ArgumentMatchers.any(), ArgumentMatchers.any())).willReturn(consumer);
 		org.mockito.BDDMockito.given(binder.getTopicsInUse()).willReturn(topicsInUse);
 		metrics = new KafkaBinderMetrics(binder, kafkaBinderConfigurationProperties, consumerFactory, null);
 		org.mockito.BDDMockito.given(consumer.endOffsets(ArgumentMatchers.anyCollection()))
@@ -138,12 +139,12 @@ public class KafkaBinderMetricsTest {
 		gauge.value();
 		assertThat(gauge.value()).isEqualTo(1000.0);
 
-		org.mockito.Mockito.verify(this.consumerFactory).createConsumer();
+		org.mockito.Mockito.verify(this.consumerFactory).createConsumer(ArgumentMatchers.any(), ArgumentMatchers.any());
 	}
 
 	@Test
 	public void consumerCreationFailsFirstTime() {
-		org.mockito.BDDMockito.given(consumerFactory.createConsumer()).willThrow(KafkaException.class)
+		org.mockito.BDDMockito.given(consumerFactory.createConsumer(ArgumentMatchers.any(), ArgumentMatchers.any())).willThrow(KafkaException.class)
 				.willReturn(consumer);
 
 		final List<PartitionInfo> partitions = partitions(new Node(0, null, 0));
@@ -155,7 +156,33 @@ public class KafkaBinderMetricsTest {
 		assertThat(gauge.value()).isEqualTo(0);
 		assertThat(gauge.value()).isEqualTo(1000.0);
 
-		org.mockito.Mockito.verify(this.consumerFactory, Mockito.times(2)).createConsumer();
+		org.mockito.Mockito.verify(this.consumerFactory, Mockito.times(2)).createConsumer(ArgumentMatchers.any(), ArgumentMatchers.any());
+	}
+	
+	@Test
+	public void createOneConsumerPerGroup() {
+		final List<PartitionInfo> partitions1 = partitions(new Node(0, null, 0));
+		final List<PartitionInfo> partitions2 = partitions(new Node(0, null, 0));
+		topicsInUse.put(TEST_TOPIC, new TopicInformation("group1-metrics", partitions1, false));
+		topicsInUse.put("test2", new TopicInformation("group2-metrics", partitions2, false));
+
+		metrics.bindTo(meterRegistry);
+		
+		KafkaConsumer consumer2 = mock(KafkaConsumer.class);
+		org.mockito.BDDMockito.given(consumerFactory.createConsumer(ArgumentMatchers.eq("group2-metrics"), ArgumentMatchers.any()))
+				.willReturn(consumer2);
+		org.mockito.BDDMockito.given(consumer2.endOffsets(ArgumentMatchers.anyCollection()))
+				.willReturn(java.util.Collections.singletonMap(new TopicPartition("test2", 0), 50L));
+
+		Gauge gauge1 = meterRegistry.get(KafkaBinderMetrics.METRIC_NAME).tag("group", "group1-metrics").tag("topic", TEST_TOPIC).gauge();
+		Gauge gauge2 = meterRegistry.get(KafkaBinderMetrics.METRIC_NAME).tag("group", "group2-metrics").tag("topic", "test2").gauge();
+		gauge1.value();
+		gauge2.value();
+		assertThat(gauge1.value()).isEqualTo(1000.0);
+		assertThat(gauge2.value()).isEqualTo(50.0);
+
+		org.mockito.Mockito.verify(this.consumerFactory).createConsumer(ArgumentMatchers.eq("group1-metrics"), ArgumentMatchers.any());
+		org.mockito.Mockito.verify(this.consumerFactory).createConsumer(ArgumentMatchers.eq("group2-metrics"), ArgumentMatchers.any());
 	}
 
 	private List<PartitionInfo> partitions(Node... nodes) {

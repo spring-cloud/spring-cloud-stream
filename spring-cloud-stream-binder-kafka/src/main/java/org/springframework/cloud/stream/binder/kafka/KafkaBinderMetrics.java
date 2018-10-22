@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -75,10 +76,10 @@ public class KafkaBinderMetrics implements MeterBinder, ApplicationListener<Bind
 
 	private final MeterRegistry meterRegistry;
 
-	private Consumer<?, ?> metadataConsumer;
+	private Map<String, Consumer<?, ?>> metadataConsumers;
 
 	private int timeout = DEFAULT_TIMEOUT;
-
+	
 	public KafkaBinderMetrics(KafkaMessageChannelBinder binder,
 			KafkaBinderConfigurationProperties binderConfigurationProperties,
 			ConsumerFactory<?, ?> defaultConsumerFactory, @Nullable MeterRegistry meterRegistry) {
@@ -87,6 +88,7 @@ public class KafkaBinderMetrics implements MeterBinder, ApplicationListener<Bind
 		this.binderConfigurationProperties = binderConfigurationProperties;
 		this.defaultConsumerFactory = defaultConsumerFactory;
 		this.meterRegistry = meterRegistry;
+		this.metadataConsumers = new ConcurrentHashMap<>();
 	}
 
 	public KafkaBinderMetrics(KafkaMessageChannelBinder binder,
@@ -126,13 +128,9 @@ public class KafkaBinderMetrics implements MeterBinder, ApplicationListener<Bind
 
 			long lag = 0;
 			try {
-				if (metadataConsumer == null) {
-					synchronized(KafkaBinderMetrics.this) {
-						if (metadataConsumer == null) {
-							metadataConsumer = createConsumerFactory(group).createConsumer();
-						}
-					}
-				}
+				Consumer<?, ?> metadataConsumer = metadataConsumers.computeIfAbsent(
+						group, 
+						g -> createConsumerFactory().createConsumer(g, "monitoring"));
 				synchronized (metadataConsumer) {
 					List<PartitionInfo> partitionInfos = metadataConsumer.partitionsFor(topic);
 					List<TopicPartition> topicPartitions = new LinkedList<>();
@@ -171,21 +169,24 @@ public class KafkaBinderMetrics implements MeterBinder, ApplicationListener<Bind
 		}
 	}
 
-	private ConsumerFactory<?, ?> createConsumerFactory(String group) {
+	private ConsumerFactory<?, ?> createConsumerFactory() {
 		if (this.defaultConsumerFactory == null) {
-			Map<String, Object> props = new HashMap<>();
-			props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class);
-			props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class);
-			Map<String, Object> mergedConfig = this.binderConfigurationProperties.mergedConsumerConfiguration();
-			if (!ObjectUtils.isEmpty(mergedConfig)) {
-				props.putAll(mergedConfig);
+			synchronized (this) {			
+				if (this.defaultConsumerFactory == null) {
+					Map<String, Object> props = new HashMap<>();
+					props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class);
+					props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class);
+					Map<String, Object> mergedConfig = this.binderConfigurationProperties.mergedConsumerConfiguration();
+					if (!ObjectUtils.isEmpty(mergedConfig)) {
+						props.putAll(mergedConfig);
+					}
+					if (!props.containsKey(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG)) {
+						props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG,
+								this.binderConfigurationProperties.getKafkaConnectionString());
+					}
+					this.defaultConsumerFactory = new DefaultKafkaConsumerFactory<>(props);
+				}
 			}
-			if (!props.containsKey(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG)) {
-				props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG,
-						this.binderConfigurationProperties.getKafkaConnectionString());
-			}
-			props.put("group.id", group);
-			this.defaultConsumerFactory = new DefaultKafkaConsumerFactory<>(props);
 		}
 
 		return this.defaultConsumerFactory;
