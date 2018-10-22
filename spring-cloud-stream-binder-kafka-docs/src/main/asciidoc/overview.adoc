@@ -63,11 +63,13 @@ Default: `9092`.
 spring.cloud.stream.kafka.binder.configuration::
 Key/Value map of client properties (both producers and consumer) passed to all clients created by the binder.
 Due to the fact that these properties are used by both producers and consumers, usage should be restricted to common properties -- for example, security settings.
+Unknown Kafka producer or consumer properties provided through this configuration are filtered out and not allowed to propagate.
 Properties here supersede any properties set in boot.
 +
 Default: Empty map.
 spring.cloud.stream.kafka.binder.consumerProperties::
 Key/Value map of arbitrary Kafka client consumer properties.
+In addition to support known Kafka consumer properties, unknown consumer properties are allowed here as well.
 Properties here supersede any properties set in boot and in the `configuration` property above.
 +
 Default: Empty map.
@@ -94,6 +96,7 @@ It can be superseded by the `partitionCount` setting of the producer or by the v
 Default: `1`.
 spring.cloud.stream.kafka.binder.producerProperties::
 Key/Value map of arbitrary Kafka client producer properties.
+In addition to support known Kafka producer properties, unknown producer properties are allowed here as well.
 Properties here supersede any properties set in boot and in the `configuration` property above.
 +
 Default: Empty map.
@@ -212,6 +215,8 @@ Starting with version 2.0, messages sent to the DLQ topic are enhanced with the 
 Default: `false`.
 configuration::
 Map with a key/value pair containing generic Kafka consumer properties.
+In addition to having Kafka consumer properties, other configuration properties can be passed here.
+For example some properties needed by the application such as `spring.cloud.stream.kafka.bindings.input.consumer.configuration.foo=bar`.
 +
 Default: Empty map.
 dlqName::
