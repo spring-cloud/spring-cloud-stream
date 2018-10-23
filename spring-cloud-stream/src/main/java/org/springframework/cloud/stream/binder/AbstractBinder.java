@@ -27,6 +27,7 @@ import org.springframework.cloud.stream.annotation.StreamRetryTemplate;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.support.AbstractApplicationContext;
+import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.expression.EvaluationContext;
 import org.springframework.integration.expression.ExpressionUtils;
 import org.springframework.messaging.Message;
@@ -60,7 +61,7 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 
 	protected final Log logger = LogFactory.getLog(getClass());
 
-	private volatile AbstractApplicationContext applicationContext;
+	private volatile GenericApplicationContext applicationContext;
 
 	private volatile EvaluationContext evaluationContext;
 
@@ -94,8 +95,8 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 
 	@Override
 	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-		Assert.isInstanceOf(AbstractApplicationContext.class, applicationContext);
-		this.applicationContext = (AbstractApplicationContext) applicationContext;
+		Assert.isInstanceOf(GenericApplicationContext.class, applicationContext);
+		this.applicationContext = (GenericApplicationContext) applicationContext;
 	}
 
 	protected ConfigurableListableBeanFactory getBeanFactory() {
