@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,9 @@
 
 package org.springframework.cloud.stream.binding;
 
-import org.springframework.integration.channel.DirectChannel;
+import org.springframework.cloud.stream.messaging.DirectWithAttributesChannel;
+import org.springframework.cloud.stream.messaging.Sink;
+import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.messaging.SubscribableChannel;
 
 /**
@@ -26,6 +28,7 @@ import org.springframework.messaging.SubscribableChannel;
  * @author Marius Bogoevici
  * @author David Syer
  * @author Ilayaperumal Gopinathan
+ * @author Oleg Zhurakousky
  */
 public class SubscribableChannelBindingTargetFactory extends AbstractBindingTargetFactory<SubscribableChannel> {
 
@@ -38,14 +41,16 @@ public class SubscribableChannelBindingTargetFactory extends AbstractBindingTarg
 
 	@Override
 	public SubscribableChannel createInput(String name) {
-		SubscribableChannel subscribableChannel = new DirectChannel();
+		DirectWithAttributesChannel subscribableChannel = new DirectWithAttributesChannel();
+		subscribableChannel.setAttribute("type", Sink.INPUT);
 		this.messageChannelConfigurer.configureInputChannel(subscribableChannel, name);
 		return subscribableChannel;
 	}
 
 	@Override
 	public SubscribableChannel createOutput(String name) {
-		SubscribableChannel subscribableChannel = new DirectChannel();
+		DirectWithAttributesChannel subscribableChannel = new DirectWithAttributesChannel();
+		subscribableChannel.setAttribute("type", Source.OUTPUT);
 		this.messageChannelConfigurer.configureOutputChannel(subscribableChannel, name);
 		return subscribableChannel;
 	}

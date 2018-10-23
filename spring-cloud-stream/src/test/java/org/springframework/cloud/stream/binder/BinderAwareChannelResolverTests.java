@@ -38,6 +38,7 @@ import org.springframework.cloud.stream.binding.DynamicDestinationsBindable;
 import org.springframework.cloud.stream.binding.SubscribableChannelBindingTargetFactory;
 import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
+import org.springframework.cloud.stream.messaging.DirectWithAttributesChannel;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -176,8 +177,8 @@ public class BinderAwareChannelResolverTests {
 				matches("foo"), any(DirectChannel.class), any(ProducerProperties.class))).thenReturn(fooBinding);
 		when(binder2.bindProducer(
 				matches("bar"), any(DirectChannel.class), any(ProducerProperties.class))).thenReturn(barBinding);
-		when(mockBinderFactory.getBinder(null, DirectChannel.class)).thenReturn(binder);
-		when(mockBinderFactory.getBinder("someTransport", DirectChannel.class)).thenReturn(binder2);
+		when(mockBinderFactory.getBinder(null, DirectWithAttributesChannel.class)).thenReturn(binder);
+		when(mockBinderFactory.getBinder("someTransport", DirectWithAttributesChannel.class)).thenReturn(binder2);
 		BindingService bindingService = new BindingService(bindingServiceProperties,
 				mockBinderFactory);
 		BinderAwareChannelResolver resolver = new BinderAwareChannelResolver(bindingService, this.bindingTargetFactory,

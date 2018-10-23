@@ -31,6 +31,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.binder.BinderHeaders;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
+import org.springframework.cloud.stream.messaging.DirectWithAttributesChannel;
 import org.springframework.cloud.stream.messaging.Sink;
 import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.cloud.stream.test.binder.MessageCollector;
@@ -67,6 +68,14 @@ public class MessageChannelConfigurerTests {
 
 	@Autowired
 	private MessageCollector messageCollector;
+
+	@Test
+	public void testChannelTypes() throws Exception {
+		DirectWithAttributesChannel inputChannel = (DirectWithAttributesChannel) testSink.input();
+		DirectWithAttributesChannel outputChannel = (DirectWithAttributesChannel) testSource.output();
+		assertThat(inputChannel.getAttribute("type")).isEqualTo(Sink.INPUT);
+		assertThat(outputChannel.getAttribute("type")).isEqualTo(Source.OUTPUT);
+	}
 
 	@Test
 	public void testMessageConverterConfigurer() throws Exception {
