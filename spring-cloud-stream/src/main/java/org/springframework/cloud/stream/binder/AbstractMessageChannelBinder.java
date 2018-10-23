@@ -44,6 +44,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.ApplicationEventPublisherAware;
 import org.springframework.context.Lifecycle;
 import org.springframework.integration.channel.AbstractMessageChannel;
+import org.springframework.integration.channel.AbstractSubscribableChannel;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.channel.MessageChannelReactiveUtils;
 import org.springframework.integration.channel.PublishSubscribeChannel;
@@ -607,20 +608,44 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 			handler = getDefaultErrorMessageHandler((LastSubscriberAwareChannel) errorChannel, defaultErrorChannel != null);
 		}
 		String errorMessageHandlerName = getErrorMessageHandlerName(destination, group, consumerProperties);
+
 		if (handler != null) {
-			this.registerComponentWithBeanFactory(errorMessageHandlerName, handler);
-			beanFactory.initializeBean(handler, errorMessageHandlerName);
-			errorChannel.subscribe(handler);
+			if (this.isSubscribable(errorChannel)) {
+				this.registerComponentWithBeanFactory(errorMessageHandlerName, handler);
+				beanFactory.initializeBean(handler, errorMessageHandlerName);
+				errorChannel.subscribe(handler);
+			}
+			else {
+				logger.warn("The provided errorChannel '" + errorChannelName + "' is an instance of DirectChannel, "
+						+ "so no more subscribers could be added which may affect DLQ processing. Resolution: Configure your own errorChannel as "
+						+ "an instance of PublishSubscribeChannel");
+			}
 		}
+
 		if (defaultErrorChannel != null) {
-			BridgeHandler errorBridge = new BridgeHandler();
-			errorBridge.setOutputChannel(defaultErrorChannel);
-			errorChannel.subscribe(errorBridge);
-			String errorBridgeHandlerName = getErrorBridgeName(destination, group, consumerProperties);
-			this.registerComponentWithBeanFactory(errorBridgeHandlerName, errorBridge);
-			beanFactory.initializeBean(errorBridge, errorBridgeHandlerName);
+			if (this.isSubscribable(errorChannel)) {
+				BridgeHandler errorBridge = new BridgeHandler();
+				errorBridge.setOutputChannel(defaultErrorChannel);
+				errorChannel.subscribe(errorBridge);
+				String errorBridgeHandlerName = getErrorBridgeName(destination, group, consumerProperties);
+				this.registerComponentWithBeanFactory(errorBridgeHandlerName, errorBridge);
+				beanFactory.initializeBean(errorBridge, errorBridgeHandlerName);
+			}
+			else {
+				logger.warn("The provided errorChannel '" + errorChannelName + "' is an instance of DirectChannel, "
+						+ "so no more subscribers could be added and no error messages will be sent to global error channel. Resolution: Configure your own errorChannel as "
+						+ "an instance of PublishSubscribeChannel");
+			}
 		}
 		return new ErrorInfrastructure(errorChannel, recoverer, handler);
+	}
+
+	private boolean isSubscribable(SubscribableChannel errorChannel) {
+		if (errorChannel instanceof PublishSubscribeChannel) {
+			return true;
+		}
+		return errorChannel instanceof AbstractSubscribableChannel
+				? ((AbstractSubscribableChannel)errorChannel).getSubscriberCount() == 0 : true;
 	}
 
 	private void destroyErrorInfrastructure(ProducerDestination destination) {
@@ -785,7 +810,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 
 	private SubscribableChannel postProcessOutboundChannelForFunction(MessageChannel outputChannel) {
 		if (this.integrationFlowFunctionSupport != null) {
-			Publisher publisher = MessageChannelReactiveUtils.toPublisher(outputChannel);
+			Publisher<?> publisher = MessageChannelReactiveUtils.toPublisher(outputChannel);
 			// If the app has an explicit Supplier bean defined, make that as the publisher
 			if (this.integrationFlowFunctionSupport.containsFunction(Supplier.class)) {
 				IntegrationFlowBuilder integrationFlowBuilder = IntegrationFlows.from(outputChannel).bridge();
