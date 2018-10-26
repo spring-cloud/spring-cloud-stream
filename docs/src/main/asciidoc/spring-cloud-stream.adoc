@@ -26,7 +26,7 @@ Sabby Anandan; Marius Bogoevici; Eric Bottard; Mark Fisher; Ilayaperumal Gopinat
 include::preface.adoc[]
 
 = Reference Guide
-include::spring-cloud-stream-overview.adoc[]
+include::README.adoc[]
 
 
 = Appendices
