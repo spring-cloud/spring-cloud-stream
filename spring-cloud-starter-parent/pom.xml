@@ -8,20 +8,11 @@
 		<version>2.1.0.RC1</version>
 	</parent>
 	<groupId>org.springframework.cloud</groupId>
-	<artifactId>spring-cloud-please-ignore-me-starter-parent</artifactId>
-	<version>Fishtown.M4</version>
-	<name>spring-cloud-please-ignore-me-starter-parent</name>
-	<description>Spring Cloud Please Ignore me Starter Parent</description>
+	<artifactId>spring-cloud-stream-starter-parent</artifactId>
+	<version>Fishtown.BUILD-SNAPSHOT</version>
+	<name>spring-cloud-stream-starter-parent</name>
+	<description>Specifies Boot version for the releaser</description>
 	<packaging>pom</packaging>
-	<url>https://projects.spring.io/spring-cloud</url>
-	<organization>
-		<name>Pivotal Software, Inc.</name>
-		<url>https://www.spring.io</url>
-	</organization>
-	<properties>
-		<main.basedir>${basedir}/../..</main.basedir>
-		<spring-cloud.version>Fishtown.BUILD-SNAPSHOT</spring-cloud.version>
-	</properties>
 	<profiles>
 		<profile>
 			<id>spring</id>
@@ -69,58 +60,6 @@
 					</snapshots>
 				</pluginRepository>
 			</pluginRepositories>
-		</profile>
-		<profile>
-			<id>milestone</id>
-			<distributionManagement>
-				<repository>
-					<id>repo.spring.io</id>
-					<name>Spring Milestone Repository</name>
-					<url>https://repo.spring.io/libs-milestone-local</url>
-				</repository>
-			</distributionManagement>
-		</profile>
-		<profile>
-			<id>bintray</id>
-			<distributionManagement>
-				<repository>
-					<id>bintray</id>
-					<name>Jcenter Repository</name>
-					<url>https://api.bintray.com/maven/spring/jars/org.springframework.cloud:${bintray.package}</url>
-				</repository>
-			</distributionManagement>
-		</profile>
-		<profile>
-			<id>central</id>
-			<build>
-				<plugins>
-					<plugin>
-						<groupId>org.apache.maven.plugins</groupId>
-						<artifactId>maven-gpg-plugin</artifactId>
-						<executions>
-							<execution>
-								<id>sign-artifacts</id>
-								<phase>verify</phase>
-								<goals>
-									<goal>sign</goal>
-								</goals>
-							</execution>
-						</executions>
-					</plugin>
-				</plugins>
-			</build>
-			<distributionManagement>
-				<snapshotRepository>
-					<id>sonatype-nexus-snapshots</id>
-					<name>Sonatype Nexus Snapshots</name>
-					<url>https://oss.sonatype.org/content/repositories/snapshots/</url>
-				</snapshotRepository>
-				<repository>
-					<id>sonatype-nexus-staging</id>
-					<name>Nexus Release Repository</name>
-					<url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-				</repository>
-			</distributionManagement>
 		</profile>
 	</profiles>
 </project>
