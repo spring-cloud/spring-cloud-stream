@@ -1,0 +1,61 @@
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+   <title>Appendix&nbsp;A.&nbsp;Building</title><link rel="stylesheet" type="text/css" href="css/manual-multipage.css"><meta name="generator" content="DocBook XSL Stylesheets V1.79.1"><link rel="home" href="multi_spring-cloud-stream.html" title="Spring Cloud Stream Reference Guide"><link rel="up" href="multi__appendices.html" title="Part&nbsp;III.&nbsp;Appendices"><link rel="prev" href="multi__appendices.html" title="Part&nbsp;III.&nbsp;Appendices"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Appendix&nbsp;A.&nbsp;Building</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="multi__appendices.html">Prev</a>&nbsp;</td><th width="60%" align="center">Part&nbsp;III.&nbsp;Appendices</th><td width="20%" align="right">&nbsp;</td></tr></table><hr></div><div class="appendix"><div class="titlepage"><div><div><h2 class="title"><a name="building" href="#building"></a>Appendix&nbsp;A.&nbsp;Building</h2></div></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="_basic_compile_and_test" href="#_basic_compile_and_test"></a>A.1&nbsp;Basic Compile and Test</h2></div></div></div><p>To build the source you will need to install JDK 1.7.</p><p>The build uses the Maven wrapper so you don&#8217;t have to install a specific
+version of Maven.  To enable the tests for Redis, Rabbit, and Kafka bindings you
+should have those servers running before building. See below for more
+information on running the servers.</p><p>The main build command is</p><pre class="screen">$ ./mvnw clean install</pre><p>You can also add '-DskipTests' if you like, to avoid running the tests.</p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Note"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Note]" src="images/note.png"></td><th align="left">Note</th></tr><tr><td align="left" valign="top"><p>You can also install Maven (&gt;=3.3.3) yourself and run the <code class="literal">mvn</code> command
+in place of <code class="literal">./mvnw</code> in the examples below. If you do that you also
+might need to add <code class="literal">-P spring</code> if your local Maven settings do not
+contain repository declarations for spring pre-release artifacts.</p></td></tr></table></div><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Note"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Note]" src="images/note.png"></td><th align="left">Note</th></tr><tr><td align="left" valign="top"><p>Be aware that you might need to increase the amount of memory
+available to Maven by setting a <code class="literal">MAVEN_OPTS</code> environment variable with
+a value like <code class="literal">-Xmx512m -XX:MaxPermSize=128m</code>. We try to cover this in
+the <code class="literal">.mvn</code> configuration, so if you find you have to do it to make a
+build succeed, please raise a ticket to get the settings added to
+source control.</p></td></tr></table></div><p>The projects that require middleware generally include a
+<code class="literal">docker-compose.yml</code>, so consider using
+<a class="link" href="http://compose.docker.io/" target="_top">Docker Compose</a> to run the middeware servers
+in Docker containers. See the README in the
+<a class="link" href="https://github.com/spring-cloud-samples/scripts" target="_top">scripts demo
+repository</a> for specific instructions about the common cases of mongo,
+rabbit and redis.</p></div><div class="section"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="_documentation" href="#_documentation"></a>A.2&nbsp;Documentation</h2></div></div></div><p>There is a "full" profile that will generate documentation.</p></div><div class="section"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="_working_with_the_code" href="#_working_with_the_code"></a>A.3&nbsp;Working with the code</h2></div></div></div><p>If you don&#8217;t have an IDE preference we would recommend that you use
+<a class="link" href="http://www.springsource.com/developer/sts" target="_top">Spring Tools Suite</a> or
+<a class="link" href="http://eclipse.org" target="_top">Eclipse</a> when working with the code. We use the
+<a class="link" href="http://eclipse.org/m2e/" target="_top">m2eclipe</a> eclipse plugin for maven support. Other IDEs and tools
+should also work without issue.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="_importing_into_eclipse_with_m2eclipse" href="#_importing_into_eclipse_with_m2eclipse"></a>A.3.1&nbsp;Importing into eclipse with m2eclipse</h3></div></div></div><p>We recommend the <a class="link" href="http://eclipse.org/m2e/" target="_top">m2eclipe</a> eclipse plugin when working with
+eclipse. If you don&#8217;t already have m2eclipse installed it is available from the "eclipse
+marketplace".</p><p>Unfortunately m2e does not yet support Maven 3.3, so once the projects
+are imported into Eclipse you will also need to tell m2eclipse to use
+the <code class="literal">.settings.xml</code> file for the projects.  If you do not do this you
+may see many different errors related to the POMs in the
+projects.  Open your Eclipse preferences, expand the Maven
+preferences, and select User Settings.  In the User Settings field
+click Browse and navigate to the Spring Cloud project you imported
+selecting the <code class="literal">.settings.xml</code> file in that project.  Click Apply and
+then OK to save the preference changes.</p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Note"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Note]" src="images/note.png"></td><th align="left">Note</th></tr><tr><td align="left" valign="top"><p>Alternatively you can copy the repository settings from <a class="link" href="https://github.com/spring-cloud/spring-cloud-build/blob/master/.settings.xml" target="_top"><code class="literal">.settings.xml</code></a> into your own <code class="literal">~/.m2/settings.xml</code>.</p></td></tr></table></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="_importing_into_eclipse_without_m2eclipse" href="#_importing_into_eclipse_without_m2eclipse"></a>A.3.2&nbsp;Importing into eclipse without m2eclipse</h3></div></div></div><p>If you prefer not to use m2eclipse you can generate eclipse project metadata using the
+following command:</p><pre class="screen">$ ./mvnw eclipse:eclipse</pre><p>The generated eclipse projects can be imported by selecting <code class="literal">import existing projects</code>
+from the <code class="literal">file</code> menu.
+[[contributing]
+== Contributing</p><p>Spring Cloud is released under the non-restrictive Apache 2.0 license,
+and follows a very standard Github development process, using Github
+tracker for issues and merging pull requests into master. If you want
+to contribute even something trivial please do not hesitate, but
+follow the guidelines below.</p></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="_sign_the_contributor_license_agreement" href="#_sign_the_contributor_license_agreement"></a>A.4&nbsp;Sign the Contributor License Agreement</h2></div></div></div><p>Before we accept a non-trivial patch or pull request we will need you to sign the
+<a class="link" href="https://support.springsource.com/spring_committer_signup" target="_top">contributor&#8217;s agreement</a>.
+Signing the contributor&#8217;s agreement does not grant anyone commit rights to the main
+repository, but it does mean that we can accept your contributions, and you will get an
+author credit if we do.  Active contributors might be asked to join the core team, and
+given the ability to merge pull requests.</p></div><div class="section"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="_code_conventions_and_housekeeping" href="#_code_conventions_and_housekeeping"></a>A.5&nbsp;Code Conventions and Housekeeping</h2></div></div></div><p>None of these is essential for a pull request, but they will all help.  They can also be
+added after the original pull request but before a merge.</p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem">Use the Spring Framework code format conventions. If you use Eclipse
+you can import formatter settings using the
+<code class="literal">eclipse-code-formatter.xml</code> file from the
+<a class="link" href="https://github.com/spring-cloud/build/tree/master/eclipse-coding-conventions.xml" target="_top">Spring
+Cloud Build</a> project. If using IntelliJ, you can use the
+<a class="link" href="http://plugins.jetbrains.com/plugin/6546" target="_top">Eclipse Code Formatter
+Plugin</a> to import the same file.</li><li class="listitem">Make sure all new <code class="literal">.java</code> files to have a simple Javadoc class comment with at least an
+<code class="literal">@author</code> tag identifying you, and preferably at least a paragraph on what the class is
+for.</li><li class="listitem">Add the ASF license header comment to all new <code class="literal">.java</code> files (copy from existing files
+in the project)</li><li class="listitem">Add yourself as an <code class="literal">@author</code> to the .java files that you modify substantially (more
+than cosmetic changes).</li><li class="listitem">Add some Javadocs and, if you change the namespace, some XSD doc elements.</li><li class="listitem">A few unit tests would help a lot as well&#8201;&#8212;&#8201;someone has to do it.</li><li class="listitem">If no-one else is using your branch, please rebase it against the current master (or
+other target branch in the main project).</li><li class="listitem">When writing a commit message please follow <a class="link" href="http://tbaggery.com/2008/04/19/a-note-about-git-commit-messages.html" target="_top">these conventions</a>,
+if you are fixing an existing issue please add <code class="literal">Fixes gh-XXXX</code> at the end of the commit
+message (where XXXX is the issue number).</li></ul></div></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="multi__appendices.html">Prev</a>&nbsp;</td><td width="20%" align="center"><a accesskey="u" href="multi__appendices.html">Up</a></td><td width="40%" align="right">&nbsp;</td></tr><tr><td width="40%" align="left" valign="top">Part&nbsp;III.&nbsp;Appendices&nbsp;</td><td width="20%" align="center"><a accesskey="h" href="multi_spring-cloud-stream.html">Home</a></td><td width="40%" align="right" valign="top">&nbsp;</td></tr></table></div></body></html>
