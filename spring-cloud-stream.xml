@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<?asciidoc-toc maxdepth="4"?>
+<?asciidoc-toc maxdepth="8"?>
 <?asciidoc-numbered?>
 <book xmlns="http://docbook.org/ns/docbook" xmlns:xl="http://www.w3.org/1999/xlink" version="5.0" xml:lang="en">
 <info>
@@ -376,7 +376,7 @@ We also wanted to draw the attention to the fact that Consumers and Producers ma
 </section>
 <section xml:id="spring-cloud-stream-preface-deprecation-classes-methods">
 <title>Deprecated Classes and Methods</title>
-<simpara>The following is a quick summary of notable deprecations. See the corresponding <link xl:href="https://docs.spring.io/spring-cloud-stream/docs/current-snapshot/api/">javadoc</link> for more details.</simpara>
+<simpara>The following is a quick summary of notable deprecations. See the corresponding {spring-cloud-stream-javadoc-current}[javadoc] for more details.</simpara>
 <itemizedlist>
 <listitem>
 <simpara><literal>SharedChannelRegistry</literal>. Use <literal>SharedBindingTargetRegistry</literal>.</simpara>
@@ -407,16 +407,10 @@ This change ensures that both components are Spring configured and managed and a
 <simpara><literal>BinderProperties.setEnvironment(Properties environment)</literal>. Use <literal>BinderProperties.setEnvironment(Map&lt;String, Object&gt; environment)</literal>.</simpara>
 </listitem>
 </itemizedlist>
+
 </section>
 </section>
 </chapter>
-</part>
-<part xml:id="_reference_guide">
-<title>Reference Guide</title>
-<partintro>
-<simpara>This section goes into more detail about how you can work with Spring Cloud Stream.
-It covers topics such as creating and running stream applications.</simpara>
-</partintro>
 <chapter xml:id="spring-cloud-stream-overview-introducing">
 <title>Introducing Spring Cloud Stream</title>
 <simpara>Spring Cloud Stream is a framework for building message-driven microservice applications.
@@ -1533,14 +1527,14 @@ application will not start due to health check failures.</simpara>
 : Mapped "{[/actuator/bindings],methods=[GET]. . .
 : Mapped "{[/actuator/bindings/{name}],methods=[GET]. . .</literallayout>
 <simpara>To visualize the current bindings, access the following URL:
-<literal><link xl:href="http://&lt;host&gt;:&lt;port&gt;/actuator/bindings">&lt;host&gt;:&lt;port&gt;/actuator/bindings</link></literal></simpara>
+<literal><link xl:href="http://&lt;host&gt;:&lt;port&gt;/actuator/bindings">http://&lt;host&gt;:&lt;port&gt;/actuator/bindings</link></literal></simpara>
 <simpara>Alternative, to see a single binding, access one of the URLs similar to the following:
-<literal><link xl:href="http://&lt;host&gt;:&lt;port&gt;/actuator/bindings/myBindingName">&lt;host&gt;:&lt;port&gt;/actuator/bindings/myBindingName</link></literal></simpara>
+<literal><link xl:href="http://&lt;host&gt;:&lt;port&gt;/actuator/bindings/myBindingName">http://&lt;host&gt;:&lt;port&gt;/actuator/bindings/myBindingName</link></literal></simpara>
 <simpara>You can also stop, start, pause, and resume individual bindings by posting to the same URL while providing a <literal>state</literal> argument as JSON, as shown in the following examples:</simpara>
-<simpara>curl -d '{"state":"STOPPED"}' -H "Content-Type: application/json" -X POST <link xl:href="http://&lt;host&gt;:&lt;port&gt;/actuator/bindings/myBindingName">&lt;host&gt;:&lt;port&gt;/actuator/bindings/myBindingName</link>
-curl -d '{"state":"STARTED"}' -H "Content-Type: application/json" -X POST <link xl:href="http://&lt;host&gt;:&lt;port&gt;/actuator/bindings/myBindingName">&lt;host&gt;:&lt;port&gt;/actuator/bindings/myBindingName</link>
-curl -d '{"state":"PAUSED"}' -H "Content-Type: application/json" -X POST <link xl:href="http://&lt;host&gt;:&lt;port&gt;/actuator/bindings/myBindingName">&lt;host&gt;:&lt;port&gt;/actuator/bindings/myBindingName</link>
-curl -d '{"state":"RESUMED"}' -H "Content-Type: application/json" -X POST <link xl:href="http://&lt;host&gt;:&lt;port&gt;/actuator/bindings/myBindingName">&lt;host&gt;:&lt;port&gt;/actuator/bindings/myBindingName</link></simpara>
+<simpara>curl -d '{"state":"STOPPED"}' -H "Content-Type: application/json" -X POST <link xl:href="http://&lt;host&gt;:&lt;port&gt;/actuator/bindings/myBindingName">http://&lt;host&gt;:&lt;port&gt;/actuator/bindings/myBindingName</link>
+curl -d '{"state":"STARTED"}' -H "Content-Type: application/json" -X POST <link xl:href="http://&lt;host&gt;:&lt;port&gt;/actuator/bindings/myBindingName">http://&lt;host&gt;:&lt;port&gt;/actuator/bindings/myBindingName</link>
+curl -d '{"state":"PAUSED"}' -H "Content-Type: application/json" -X POST <link xl:href="http://&lt;host&gt;:&lt;port&gt;/actuator/bindings/myBindingName">http://&lt;host&gt;:&lt;port&gt;/actuator/bindings/myBindingName</link>
+curl -d '{"state":"RESUMED"}' -H "Content-Type: application/json" -X POST <link xl:href="http://&lt;host&gt;:&lt;port&gt;/actuator/bindings/myBindingName">http://&lt;host&gt;:&lt;port&gt;/actuator/bindings/myBindingName</link></simpara>
 <note>
 <simpara><literal>PAUSED</literal> and <literal>RESUMED</literal> work only when the corresponding binder and its underlying technology supports it. Otherwise, you see the warning message in the logs.
 Currently, only Kafka binder supports the <literal>PAUSED</literal> and <literal>RESUMED</literal> states.</simpara>
@@ -2223,7 +2217,7 @@ When setting this, use a full URL, including protocol (<literal>http</literal> o
 <varlistentry>
 <term>Default</term>
 <listitem>
-<simpara><literal><link xl:href="http://localhost:8990/">localhost:8990/</link></literal></simpara>
+<simpara><literal><link xl:href="http://localhost:8990/">http://localhost:8990/</link></literal></simpara>
 </listitem>
 </varlistentry>
 <varlistentry>
@@ -2875,141 +2869,5 @@ a <literal>STREAM_CLOUD_STREAM_VERSION</literal> header set to <literal>2.x</lit
 <simpara>When configuring your binder connections, you can use the values from an environment variable as explained on the <link xl:href="http://docs.spring.io/spring-cloud-dataflow-server-cloudfoundry/docs/current-SNAPSHOT/reference/htmlsingle/#getting-started-ups">dataflow Cloud Foundry Server</link> docs.</simpara>
 </section>
 </chapter>
-</part>
-<part xml:id="_appendices">
-<title>Appendices</title>
-<appendix xml:id="building">
-<title>Building</title>
-<section xml:id="_basic_compile_and_test">
-<title>Basic Compile and Test</title>
-<simpara>To build the source you will need to install JDK 1.7.</simpara>
-<simpara>The build uses the Maven wrapper so you don&#8217;t have to install a specific
-version of Maven.  To enable the tests for Redis, Rabbit, and Kafka bindings you
-should have those servers running before building. See below for more
-information on running the servers.</simpara>
-<simpara>The main build command is</simpara>
-<screen>$ ./mvnw clean install</screen>
-<simpara>You can also add '-DskipTests' if you like, to avoid running the tests.</simpara>
-<note>
-<simpara>You can also install Maven (&gt;=3.3.3) yourself and run the <literal>mvn</literal> command
-in place of <literal>./mvnw</literal> in the examples below. If you do that you also
-might need to add <literal>-P spring</literal> if your local Maven settings do not
-contain repository declarations for spring pre-release artifacts.</simpara>
-</note>
-<note>
-<simpara>Be aware that you might need to increase the amount of memory
-available to Maven by setting a <literal>MAVEN_OPTS</literal> environment variable with
-a value like <literal>-Xmx512m -XX:MaxPermSize=128m</literal>. We try to cover this in
-the <literal>.mvn</literal> configuration, so if you find you have to do it to make a
-build succeed, please raise a ticket to get the settings added to
-source control.</simpara>
-</note>
-<simpara>The projects that require middleware generally include a
-<literal>docker-compose.yml</literal>, so consider using
-<link xl:href="http://compose.docker.io/">Docker Compose</link> to run the middeware servers
-in Docker containers. See the README in the
-<link xl:href="https://github.com/spring-cloud-samples/scripts">scripts demo
-repository</link> for specific instructions about the common cases of mongo,
-rabbit and redis.</simpara>
-</section>
-<section xml:id="_documentation">
-<title>Documentation</title>
-<simpara>There is a "full" profile that will generate documentation.</simpara>
-</section>
-<section xml:id="_working_with_the_code">
-<title>Working with the code</title>
-<simpara>If you don&#8217;t have an IDE preference we would recommend that you use
-<link xl:href="http://www.springsource.com/developer/sts">Spring Tools Suite</link> or
-<link xl:href="http://eclipse.org">Eclipse</link> when working with the code. We use the
-<link xl:href="http://eclipse.org/m2e/">m2eclipe</link> eclipse plugin for maven support. Other IDEs and tools
-should also work without issue.</simpara>
-<section xml:id="_importing_into_eclipse_with_m2eclipse">
-<title>Importing into eclipse with m2eclipse</title>
-<simpara>We recommend the <link xl:href="http://eclipse.org/m2e/">m2eclipe</link> eclipse plugin when working with
-eclipse. If you don&#8217;t already have m2eclipse installed it is available from the "eclipse
-marketplace".</simpara>
-<simpara>Unfortunately m2e does not yet support Maven 3.3, so once the projects
-are imported into Eclipse you will also need to tell m2eclipse to use
-the <literal>.settings.xml</literal> file for the projects.  If you do not do this you
-may see many different errors related to the POMs in the
-projects.  Open your Eclipse preferences, expand the Maven
-preferences, and select User Settings.  In the User Settings field
-click Browse and navigate to the Spring Cloud project you imported
-selecting the <literal>.settings.xml</literal> file in that project.  Click Apply and
-then OK to save the preference changes.</simpara>
-<note>
-<simpara>Alternatively you can copy the repository settings from <link xl:href="https://github.com/spring-cloud/spring-cloud-build/blob/master/.settings.xml"><literal>.settings.xml</literal></link> into your own <literal>~/.m2/settings.xml</literal>.</simpara>
-</note>
-</section>
-<section xml:id="_importing_into_eclipse_without_m2eclipse">
-<title>Importing into eclipse without m2eclipse</title>
-<simpara>If you prefer not to use m2eclipse you can generate eclipse project metadata using the
-following command:</simpara>
-<screen>$ ./mvnw eclipse:eclipse</screen>
-<simpara>The generated eclipse projects can be imported by selecting <literal>import existing projects</literal>
-from the <literal>file</literal> menu.
-[[contributing]
-== Contributing</simpara>
-<simpara>Spring Cloud is released under the non-restrictive Apache 2.0 license,
-and follows a very standard Github development process, using Github
-tracker for issues and merging pull requests into master. If you want
-to contribute even something trivial please do not hesitate, but
-follow the guidelines below.</simpara>
-</section>
-</section>
-<section xml:id="_sign_the_contributor_license_agreement">
-<title>Sign the Contributor License Agreement</title>
-<simpara>Before we accept a non-trivial patch or pull request we will need you to sign the
-<link xl:href="https://support.springsource.com/spring_committer_signup">contributor&#8217;s agreement</link>.
-Signing the contributor&#8217;s agreement does not grant anyone commit rights to the main
-repository, but it does mean that we can accept your contributions, and you will get an
-author credit if we do.  Active contributors might be asked to join the core team, and
-given the ability to merge pull requests.</simpara>
-</section>
-<section xml:id="_code_conventions_and_housekeeping">
-<title>Code Conventions and Housekeeping</title>
-<simpara>None of these is essential for a pull request, but they will all help.  They can also be
-added after the original pull request but before a merge.</simpara>
-<itemizedlist>
-<listitem>
-<simpara>Use the Spring Framework code format conventions. If you use Eclipse
-you can import formatter settings using the
-<literal>eclipse-code-formatter.xml</literal> file from the
-<link xl:href="https://github.com/spring-cloud/build/tree/master/eclipse-coding-conventions.xml">Spring
-Cloud Build</link> project. If using IntelliJ, you can use the
-<link xl:href="http://plugins.jetbrains.com/plugin/6546">Eclipse Code Formatter
-Plugin</link> to import the same file.</simpara>
-</listitem>
-<listitem>
-<simpara>Make sure all new <literal>.java</literal> files to have a simple Javadoc class comment with at least an
-<literal>@author</literal> tag identifying you, and preferably at least a paragraph on what the class is
-for.</simpara>
-</listitem>
-<listitem>
-<simpara>Add the ASF license header comment to all new <literal>.java</literal> files (copy from existing files
-in the project)</simpara>
-</listitem>
-<listitem>
-<simpara>Add yourself as an <literal>@author</literal> to the .java files that you modify substantially (more
-than cosmetic changes).</simpara>
-</listitem>
-<listitem>
-<simpara>Add some Javadocs and, if you change the namespace, some XSD doc elements.</simpara>
-</listitem>
-<listitem>
-<simpara>A few unit tests would help a lot as well&#8201;&#8212;&#8201;someone has to do it.</simpara>
-</listitem>
-<listitem>
-<simpara>If no-one else is using your branch, please rebase it against the current master (or
-other target branch in the main project).</simpara>
-</listitem>
-<listitem>
-<simpara>When writing a commit message please follow <link xl:href="http://tbaggery.com/2008/04/19/a-note-about-git-commit-messages.html">these conventions</link>,
-if you are fixing an existing issue please add <literal>Fixes gh-XXXX</literal> at the end of the commit
-message (where XXXX is the issue number).</simpara>
-</listitem>
-</itemizedlist>
-</section>
-</appendix>
 </part>
 </book>
