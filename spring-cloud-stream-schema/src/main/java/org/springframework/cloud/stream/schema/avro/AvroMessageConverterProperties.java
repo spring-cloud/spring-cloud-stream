@@ -32,6 +32,8 @@ public class AvroMessageConverterProperties {
 
 	private Resource[] schemaLocations;
 
+	private Resource[] schemaImports;
+
 	private String prefix = "vnd";
 
 	private Class<? extends SubjectNamingStrategy> subjectNamingStrategy = DefaultSubjectNamingStrategy.class;
@@ -58,7 +60,8 @@ public class AvroMessageConverterProperties {
 		return this.dynamicSchemaGenerationEnabled;
 	}
 
-	public void setDynamicSchemaGenerationEnabled(boolean dynamicSchemaGenerationEnabled) {
+	public void setDynamicSchemaGenerationEnabled(
+			boolean dynamicSchemaGenerationEnabled) {
 		this.dynamicSchemaGenerationEnabled = dynamicSchemaGenerationEnabled;
 	}
 
@@ -74,8 +77,18 @@ public class AvroMessageConverterProperties {
 		return subjectNamingStrategy;
 	}
 
-	public void setSubjectNamingStrategy(Class<? extends SubjectNamingStrategy>  subjectNamingStrategy) {
+	public void setSubjectNamingStrategy(
+			Class<? extends SubjectNamingStrategy> subjectNamingStrategy) {
 		Assert.notNull(subjectNamingStrategy, "cannot be null");
 		this.subjectNamingStrategy = subjectNamingStrategy;
 	}
+
+	public Resource[] getSchemaImports() {
+		return schemaImports;
+	}
+
+	public void setSchemaImports(Resource[] schemaImports) {
+		this.schemaImports = schemaImports;
+	}
+
 }

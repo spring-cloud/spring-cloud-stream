@@ -66,4 +66,5 @@ public class User2 {
 	public void setFavoritePlace(String favoritePlace) {
 		this.favoritePlace = favoritePlace;
 	}
+
 }

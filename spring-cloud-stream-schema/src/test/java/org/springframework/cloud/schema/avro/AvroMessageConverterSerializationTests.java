@@ -67,8 +67,9 @@ public class AvroMessageConverterSerializationTests {
 
 	@Before
 	public void setup() {
-		schemaRegistryServerContext = SpringApplication
-				.run(SchemaRegistryServerApplication.class, "--spring.main.allow-bean-definition-overriding=true");
+		schemaRegistryServerContext = SpringApplication.run(
+				SchemaRegistryServerApplication.class,
+				"--spring.main.allow-bean-definition-overriding=true");
 	}
 
 	@After
@@ -93,13 +94,13 @@ public class AvroMessageConverterSerializationTests {
 		converter.afterPropertiesSet();
 
 		Message specificMessage = converter.toMessage(specificRecord,
-				new MutableMessageHeaders(Collections.<String, Object> emptyMap()),
+				new MutableMessageHeaders(Collections.<String, Object>emptyMap()),
 				MimeTypeUtils.parseMimeType("application/*+avro"));
 		SchemaReference specificRef = extractSchemaReference(MimeTypeUtils.parseMimeType(
 				specificMessage.getHeaders().get("contentType").toString()));
 
 		Message genericMessage = converter.toMessage(genericRecord,
-				new MutableMessageHeaders(Collections.<String, Object> emptyMap()),
+				new MutableMessageHeaders(Collections.<String, Object>emptyMap()),
 				MimeTypeUtils.parseMimeType("application/*+avro"));
 		SchemaReference genericRef = extractSchemaReference(MimeTypeUtils.parseMimeType(
 				genericMessage.getHeaders().get("contentType").toString()));

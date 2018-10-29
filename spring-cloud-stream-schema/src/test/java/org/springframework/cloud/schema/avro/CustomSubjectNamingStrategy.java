@@ -32,4 +32,5 @@ class CustomSubjectNamingStrategy implements SubjectNamingStrategy {
 	public String toSubject(Schema schema) {
 		return schema.getFullName();
 	}
+
 }

@@ -54,4 +54,5 @@ public class User1 {
 	public void setFavoriteColor(String favoriteColor) {
 		this.favoriteColor = favoriteColor;
 	}
+
 }

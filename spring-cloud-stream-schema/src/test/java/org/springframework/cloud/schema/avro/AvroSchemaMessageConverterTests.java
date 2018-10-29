@@ -54,8 +54,8 @@ public class AvroSchemaMessageConverterTests {
 
 	@Test
 	public void testSendMessageWithLocation() throws Exception {
-		ConfigurableApplicationContext sourceContext = SpringApplication.run(AvroSourceApplication.class,
-				"--server.port=0",
+		ConfigurableApplicationContext sourceContext = SpringApplication.run(
+				AvroSourceApplication.class, "--server.port=0",
 				"--spring.jmx.enabled=false",
 				"--schemaLocation=classpath:schemas/users_v1.schema",
 				"--spring.cloud.stream.schemaRegistryClient.enabled=false",
@@ -65,12 +65,13 @@ public class AvroSchemaMessageConverterTests {
 		firstOutboundFoo.setName("foo" + UUID.randomUUID().toString());
 		firstOutboundFoo.setFavoriteColor("foo" + UUID.randomUUID().toString());
 		source.output().send(MessageBuilder.withPayload(firstOutboundFoo).build());
-		MessageCollector sourceMessageCollector = sourceContext.getBean(MessageCollector.class);
-		Message<?> outboundMessage = sourceMessageCollector.forChannel(source.output()).poll(1000,
-				TimeUnit.MILLISECONDS);
+		MessageCollector sourceMessageCollector = sourceContext
+				.getBean(MessageCollector.class);
+		Message<?> outboundMessage = sourceMessageCollector.forChannel(source.output())
+				.poll(1000, TimeUnit.MILLISECONDS);
 
-		ConfigurableApplicationContext barSourceContext = SpringApplication.run(AvroSourceApplication.class,
-				"--server.port=0",
+		ConfigurableApplicationContext barSourceContext = SpringApplication.run(
+				AvroSourceApplication.class, "--server.port=0",
 				"--spring.jmx.enabled=false",
 				"--schemaLocation=classpath:schemas/users_v1.schema",
 				"--spring.cloud.stream.schemaRegistryClient.enabled=false",
@@ -81,9 +82,10 @@ public class AvroSchemaMessageConverterTests {
 		firstOutboundUser2.setFavoritePlace("foo" + UUID.randomUUID().toString());
 		firstOutboundUser2.setName("foo" + UUID.randomUUID().toString());
 		barSource.output().send(MessageBuilder.withPayload(firstOutboundUser2).build());
-		MessageCollector barSourceMessageCollector = barSourceContext.getBean(MessageCollector.class);
-		Message<?> barOutboundMessage = barSourceMessageCollector.forChannel(barSource.output()).poll(1000,
-				TimeUnit.MILLISECONDS);
+		MessageCollector barSourceMessageCollector = barSourceContext
+				.getBean(MessageCollector.class);
+		Message<?> barOutboundMessage = barSourceMessageCollector
+				.forChannel(barSource.output()).poll(1000, TimeUnit.MILLISECONDS);
 
 		assertThat(barOutboundMessage).isNotNull();
 
@@ -92,11 +94,11 @@ public class AvroSchemaMessageConverterTests {
 		secondUser2OutboundPojo.setFavoritePlace("foo" + UUID.randomUUID().toString());
 		secondUser2OutboundPojo.setName("foo" + UUID.randomUUID().toString());
 		source.output().send(MessageBuilder.withPayload(secondUser2OutboundPojo).build());
-		Message<?> secondBarOutboundMessage = sourceMessageCollector.forChannel(source.output()).poll(1000,
-				TimeUnit.MILLISECONDS);
+		Message<?> secondBarOutboundMessage = sourceMessageCollector
+				.forChannel(source.output()).poll(1000, TimeUnit.MILLISECONDS);
 
-		ConfigurableApplicationContext sinkContext = SpringApplication.run(AvroSinkApplication.class,
-				"--server.port=0",
+		ConfigurableApplicationContext sinkContext = SpringApplication.run(
+				AvroSinkApplication.class, "--server.port=0",
 				"--spring.jmx.enabled=false",
 				"--spring.cloud.stream.schemaRegistryClient.enabled=false",
 				"--schemaLocation=classpath:schemas/users_v1.schema");
@@ -104,27 +106,33 @@ public class AvroSchemaMessageConverterTests {
 		sink.input().send(outboundMessage);
 		sink.input().send(barOutboundMessage);
 		sink.input().send(secondBarOutboundMessage);
-		List<User1> receivedUsers = sinkContext.getBean(AvroSinkApplication.class).receivedUsers;
+		List<User1> receivedUsers = sinkContext
+				.getBean(AvroSinkApplication.class).receivedUsers;
 		assertThat(receivedUsers).hasSize(3);
 		assertThat(receivedUsers.get(0)).isNotSameAs(firstOutboundFoo);
-		assertThat(receivedUsers.get(0).getFavoriteColor()).isEqualTo(firstOutboundFoo.getFavoriteColor());
+		assertThat(receivedUsers.get(0).getFavoriteColor())
+				.isEqualTo(firstOutboundFoo.getFavoriteColor());
 		assertThat(receivedUsers.get(0).getName()).isEqualTo(firstOutboundFoo.getName());
 
 		assertThat(receivedUsers.get(1)).isNotSameAs(firstOutboundUser2);
-		assertThat(receivedUsers.get(1).getFavoriteColor()).isEqualTo(firstOutboundUser2.getFavoriteColor());
-		assertThat(receivedUsers.get(1).getName()).isEqualTo(firstOutboundUser2.getName());
+		assertThat(receivedUsers.get(1).getFavoriteColor())
+				.isEqualTo(firstOutboundUser2.getFavoriteColor());
+		assertThat(receivedUsers.get(1).getName())
+				.isEqualTo(firstOutboundUser2.getName());
 
 		assertThat(receivedUsers.get(2)).isNotSameAs(secondUser2OutboundPojo);
-		assertThat(receivedUsers.get(2).getFavoriteColor()).isEqualTo(secondUser2OutboundPojo.getFavoriteColor());
-		assertThat(receivedUsers.get(2).getName()).isEqualTo(secondUser2OutboundPojo.getName());
+		assertThat(receivedUsers.get(2).getFavoriteColor())
+				.isEqualTo(secondUser2OutboundPojo.getFavoriteColor());
+		assertThat(receivedUsers.get(2).getName())
+				.isEqualTo(secondUser2OutboundPojo.getName());
 
 		sourceContext.close();
 	}
 
 	@Test
 	public void testSendMessageWithoutLocation() throws Exception {
-		ConfigurableApplicationContext sourceContext = SpringApplication.run(AvroSourceApplication.class,
-				"--server.port=0",
+		ConfigurableApplicationContext sourceContext = SpringApplication.run(
+				AvroSourceApplication.class, "--server.port=0",
 				"--spring.jmx.enabled=false",
 				"--spring.cloud.stream.schemaRegistryClient.enabled=false",
 				"--spring.cloud.stream.bindings.output.contentType=avro/bytes");
@@ -133,12 +141,13 @@ public class AvroSchemaMessageConverterTests {
 		firstOutboundFoo.setName("foo" + UUID.randomUUID().toString());
 		firstOutboundFoo.setFavoriteColor("foo" + UUID.randomUUID().toString());
 		source.output().send(MessageBuilder.withPayload(firstOutboundFoo).build());
-		MessageCollector sourceMessageCollector = sourceContext.getBean(MessageCollector.class);
-		Message<?> outboundMessage = sourceMessageCollector.forChannel(source.output()).poll(1000,
-				TimeUnit.MILLISECONDS);
+		MessageCollector sourceMessageCollector = sourceContext
+				.getBean(MessageCollector.class);
+		Message<?> outboundMessage = sourceMessageCollector.forChannel(source.output())
+				.poll(1000, TimeUnit.MILLISECONDS);
 
-		ConfigurableApplicationContext barSourceContext = SpringApplication.run(AvroSourceApplication.class,
-				"--server.port=0",
+		ConfigurableApplicationContext barSourceContext = SpringApplication.run(
+				AvroSourceApplication.class, "--server.port=0",
 				"--spring.jmx.enabled=false",
 				"--spring.cloud.stream.schemaRegistryClient.enabled=false",
 				"--spring.cloud.stream.bindings.output.contentType=avro/bytes");
@@ -148,9 +157,10 @@ public class AvroSchemaMessageConverterTests {
 		firstOutboundUser2.setFavoritePlace("foo" + UUID.randomUUID().toString());
 		firstOutboundUser2.setName("foo" + UUID.randomUUID().toString());
 		barSource.output().send(MessageBuilder.withPayload(firstOutboundUser2).build());
-		MessageCollector barSourceMessageCollector = barSourceContext.getBean(MessageCollector.class);
-		Message<?> barOutboundMessage = barSourceMessageCollector.forChannel(barSource.output()).poll(1000,
-				TimeUnit.MILLISECONDS);
+		MessageCollector barSourceMessageCollector = barSourceContext
+				.getBean(MessageCollector.class);
+		Message<?> barOutboundMessage = barSourceMessageCollector
+				.forChannel(barSource.output()).poll(1000, TimeUnit.MILLISECONDS);
 
 		assertThat(barOutboundMessage).isNotNull();
 
@@ -159,30 +169,36 @@ public class AvroSchemaMessageConverterTests {
 		secondUser2OutboundPojo.setFavoritePlace("foo" + UUID.randomUUID().toString());
 		secondUser2OutboundPojo.setName("foo" + UUID.randomUUID().toString());
 		source.output().send(MessageBuilder.withPayload(secondUser2OutboundPojo).build());
-		Message<?> secondBarOutboundMessage = sourceMessageCollector.forChannel(source.output()).poll(1000,
-				TimeUnit.MILLISECONDS);
+		Message<?> secondBarOutboundMessage = sourceMessageCollector
+				.forChannel(source.output()).poll(1000, TimeUnit.MILLISECONDS);
 
-		ConfigurableApplicationContext sinkContext = SpringApplication.run(AvroSinkApplication.class,
-				"--server.port=0",
+		ConfigurableApplicationContext sinkContext = SpringApplication.run(
+				AvroSinkApplication.class, "--server.port=0",
 				"--spring.jmx.enabled=false",
 				"--spring.cloud.stream.schemaRegistryClient.enabled=false");
 		Sink sink = sinkContext.getBean(Sink.class);
 		sink.input().send(outboundMessage);
 		sink.input().send(barOutboundMessage);
 		sink.input().send(secondBarOutboundMessage);
-		List<User1> receivedUsers = sinkContext.getBean(AvroSinkApplication.class).receivedUsers;
+		List<User1> receivedUsers = sinkContext
+				.getBean(AvroSinkApplication.class).receivedUsers;
 		assertThat(receivedUsers).hasSize(3);
 		assertThat(receivedUsers.get(0)).isNotSameAs(firstOutboundFoo);
-		assertThat(receivedUsers.get(0).getFavoriteColor()).isEqualTo(firstOutboundFoo.getFavoriteColor());
+		assertThat(receivedUsers.get(0).getFavoriteColor())
+				.isEqualTo(firstOutboundFoo.getFavoriteColor());
 		assertThat(receivedUsers.get(0).getName()).isEqualTo(firstOutboundFoo.getName());
 
 		assertThat(receivedUsers.get(1)).isNotSameAs(firstOutboundUser2);
-		assertThat(receivedUsers.get(1).getFavoriteColor()).isEqualTo(firstOutboundUser2.getFavoriteColor());
-		assertThat(receivedUsers.get(1).getName()).isEqualTo(firstOutboundUser2.getName());
+		assertThat(receivedUsers.get(1).getFavoriteColor())
+				.isEqualTo(firstOutboundUser2.getFavoriteColor());
+		assertThat(receivedUsers.get(1).getName())
+				.isEqualTo(firstOutboundUser2.getName());
 
 		assertThat(receivedUsers.get(2)).isNotSameAs(secondUser2OutboundPojo);
-		assertThat(receivedUsers.get(2).getFavoriteColor()).isEqualTo(secondUser2OutboundPojo.getFavoriteColor());
-		assertThat(receivedUsers.get(2).getName()).isEqualTo(secondUser2OutboundPojo.getName());
+		assertThat(receivedUsers.get(2).getFavoriteColor())
+				.isEqualTo(secondUser2OutboundPojo.getFavoriteColor());
+		assertThat(receivedUsers.get(2).getName())
+				.isEqualTo(secondUser2OutboundPojo.getName());
 
 		sourceContext.close();
 	}
@@ -213,6 +229,7 @@ public class AvroSchemaMessageConverterTests {
 			}
 			return avroSchemaMessageConverter;
 		}
+
 	}
 
 	@EnableBinding(Sink.class)
@@ -245,4 +262,5 @@ public class AvroSchemaMessageConverterTests {
 		}
 
 	}
+
 }
