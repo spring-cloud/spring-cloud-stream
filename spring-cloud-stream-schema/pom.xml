@@ -68,8 +68,17 @@
 					</execution>
 				</executions>
 				<configuration>
+					<outputDirectory>${project.basedir}/target/generated-test-sources</outputDirectory>
 					<testOutputDirectory>${project.basedir}/target/generated-test-sources</testOutputDirectory>
 					<testSourceDirectory>${project.basedir}/src/test/resources/schemas</testSourceDirectory>
+					<testIncludes>
+						<testInclude>**/*.avsc</testInclude>
+					</testIncludes>
+					<imports>
+						<import>${project.basedir}/src/test/resources/schemas/imports/Email.avsc</import>
+						<import>${project.basedir}/src/test/resources/schemas/imports/Sms.avsc</import>
+						<import>${project.basedir}/src/test/resources/schemas/imports/PushNotification.avsc</import>
+					</imports>
 				</configuration>
 			</plugin>
 		</plugins>

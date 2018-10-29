@@ -43,14 +43,23 @@ import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.converter.AbstractMessageConverter;
 import org.springframework.messaging.converter.MessageConversionException;
 import org.springframework.util.MimeType;
+import org.springframework.util.ObjectUtils;
 
 /**
  * Base class for Apache Avro
  * {@link org.springframework.messaging.converter.MessageConverter} implementations.
  * @author Marius Bogoevici
  * @author Vinicius Carvalho
+ * @author Sercan Karaoglu
  */
 public abstract class AbstractAvroMessageConverter extends AbstractMessageConverter {
+
+	/**
+	 * common parser will let user to import external schemas.
+	 */
+	private Schema.Parser schemaParser = new Schema.Parser();
+
+	protected Resource[] schemaImports = new Resource[]{};
 
 	protected AbstractAvroMessageConverter(MimeType supportedMimeType) {
 		this(Collections.singletonList(supportedMimeType));
@@ -61,8 +70,17 @@ public abstract class AbstractAvroMessageConverter extends AbstractMessageConver
 		setContentTypeResolver(new OriginalContentTypeResolver());
 	}
 
-	protected static Schema parseSchema(Resource r) throws IOException {
-		return new Schema.Parser().parse(r.getInputStream());
+	protected Schema parseSchema(Resource r) throws IOException {
+		if (ObjectUtils.isEmpty(schemaImports)) {
+			return new Schema.Parser().parse(r.getInputStream());
+		}
+		else {
+			return schemaParser.parse(r.getInputStream());
+		}
+	}
+
+	protected void setSchemaImports(Resource[] imports) {
+		this.schemaImports = imports;
 	}
 
 	@Override

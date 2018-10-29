@@ -36,6 +36,7 @@ import org.springframework.util.ReflectionUtils;
 /**
  * @author Marius Bogoevici
  * @author Vinicius Carvalho
+ * @author Sercan Karaoglu
  */
 @Configuration
 @ConditionalOnClass(name = "org.apache.avro.Schema")
@@ -63,6 +64,10 @@ public class AvroMessageConverterAutoConfiguration {
 		if (!ObjectUtils.isEmpty(this.avroMessageConverterProperties.getSchemaLocations())) {
 			avroSchemaRegistryClientMessageConverter.setSchemaLocations(
 					this.avroMessageConverterProperties.getSchemaLocations());
+		}
+		if (!ObjectUtils.isEmpty(this.avroMessageConverterProperties.getSchemaImports())) {
+			avroSchemaRegistryClientMessageConverter.setSchemaImports(
+					this.avroMessageConverterProperties.getSchemaImports());
 		}
 		avroSchemaRegistryClientMessageConverter.setPrefix(this.avroMessageConverterProperties.getPrefix());
 

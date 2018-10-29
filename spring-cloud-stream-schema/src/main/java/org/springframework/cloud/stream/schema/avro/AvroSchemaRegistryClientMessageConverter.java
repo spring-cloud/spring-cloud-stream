@@ -18,10 +18,12 @@ package org.springframework.cloud.stream.schema.avro;
 
 import java.io.IOException;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericContainer;
@@ -71,6 +73,7 @@ import org.springframework.util.ObjectUtils;
  * @author Marius Bogoevici
  * @author Vinicius Carvalho
  * @author Oleg Zhurakousky
+ * @author Sercan Karaoglu
  */
 public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessageConverter
 		implements InitializingBean {
@@ -148,6 +151,16 @@ public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessag
 	}
 
 	/**
+	 * A set of schema locations where should be imported first. Schemas provided at these
+	 * locations will be reference, thus they should not reference each other.
+	 *
+	 * @param schemaImports
+	 */
+	public void setSchemaImports(Resource[] schemaImports) {
+		this.schemaImports = schemaImports;
+	}
+
+	/**
 	 * Set the prefix to be used in the publised subtype. Default 'vnd'.
 	 * @param prefix
 	 */
@@ -162,28 +175,35 @@ public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessag
 	public void afterPropertiesSet() throws Exception {
 		this.versionedSchema = Pattern.compile("application/" + this.prefix
 				+ "\\.([\\p{Alnum}\\$\\.]+)\\.v(\\p{Digit}+)\\+"+AVRO_FORMAT);
-		if (!ObjectUtils.isEmpty(this.schemaLocations)) {
-			this.logger.info("Scanning avro schema resources on classpath");
-			if (this.logger.isInfoEnabled()) {
-				this.logger.info("Parsing" + this.schemaLocations.length);
-			}
-			for (Resource schemaLocation : this.schemaLocations) {
-				try {
-					Schema schema = parseSchema(schemaLocation);
-					if (schema.getType().equals(Schema.Type.UNION)) {
-						schema.getTypes().forEach(innerSchema -> registerSchema(schemaLocation, innerSchema));
-					} else {
-						registerSchema(schemaLocation, schema);
+
+		Stream.of(this.schemaImports, this.schemaLocations)
+				.filter(arr -> !ObjectUtils.isEmpty(arr))
+				.distinct()
+				.peek(resources -> {
+					this.logger.info("Scanning avro schema resources on classpath");
+					if (this.logger.isInfoEnabled()) {
+						this.logger.info("Parsing" + this.schemaImports.length);
 					}
+				}).flatMap(Arrays::stream).forEach(resource -> {
+			try {
+				Schema schema = parseSchema(resource);
+				if (schema.getType().equals(Schema.Type.UNION)) {
+					schema.getTypes().forEach(
+							innerSchema -> registerSchema(resource, innerSchema));
 				}
-				catch (IOException e) {
-					if (this.logger.isWarnEnabled()) {
-						this.logger.warn("Failed to parse schema at "
-								+ schemaLocation.getFilename(), e);
-					}
+				else {
+					registerSchema(resource, schema);
 				}
 			}
-		}
+			catch (IOException e) {
+				if (this.logger.isWarnEnabled()) {
+					this.logger.warn(
+							"Failed to parse schema at " + resource.getFilename(),
+							e);
+				}
+			}
+		});
+
 		if (this.cacheManager instanceof NoOpCacheManager) {
 			logger.warn("Schema caching is effectively disabled "
 					+ "since configured cache manager is a NoOpCacheManager. If this was not "

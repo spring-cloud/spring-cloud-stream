@@ -21,6 +21,10 @@ import java.util.Collections;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import example.avro.Command;
+import example.avro.Email;
+import example.avro.PushNotification;
+import example.avro.Sms;
 import example.avro.User;
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericData;
@@ -55,101 +59,168 @@ import org.springframework.util.MimeTypeUtils;
 
 /**
  * @author Vinicius Carvalho
+ * @author Sercan Karaoglu
  */
 public class AvroMessageConverterSerializationTests {
 
-	Pattern versionedSchema = Pattern.compile(
-			"application/" + "vnd" + "\\.([\\p{Alnum}\\$\\.]+)\\.v(\\p{Digit}+)\\+avro");
+		Pattern versionedSchema = Pattern.compile("application/" + "vnd"
+				+ "\\.([\\p{Alnum}\\$\\.]+)\\.v(\\p{Digit}+)\\+avro");
 
-	Log logger = LogFactory.getLog(getClass());
+		Log logger = LogFactory.getLog(getClass());
 
-	private ConfigurableApplicationContext schemaRegistryServerContext;
+		private ConfigurableApplicationContext schemaRegistryServerContext;
 
-	@Before
-	public void setup() {
-		schemaRegistryServerContext = SpringApplication
-				.run(SchemaRegistryServerApplication.class, "--spring.main.allow-bean-definition-overriding=true");
-	}
-
-	@After
-	public void tearDown() {
-		schemaRegistryServerContext.close();
-	}
-
-	@Test
-	public void sourceWriteSameVersion() throws Exception {
-		User specificRecord = new User();
-		specificRecord.setName("joe");
-		Schema v1 = new Schema.Parser().parse(AvroMessageConverterSerializationTests.class
-				.getClassLoader().getResourceAsStream("schemas/user.avsc"));
-		GenericRecord genericRecord = new GenericData.Record(v1);
-		genericRecord.put("name", "joe");
-		SchemaRegistryClient client = new DefaultSchemaRegistryClient();
-		AvroSchemaRegistryClientMessageConverter converter = new AvroSchemaRegistryClientMessageConverter(
-				client, new NoOpCacheManager());
-
-		converter.setSubjectNamingStrategy(new DefaultSubjectNamingStrategy());
-		converter.setDynamicSchemaGenerationEnabled(false);
-		converter.afterPropertiesSet();
-
-		Message specificMessage = converter.toMessage(specificRecord,
-				new MutableMessageHeaders(Collections.<String, Object> emptyMap()),
-				MimeTypeUtils.parseMimeType("application/*+avro"));
-		SchemaReference specificRef = extractSchemaReference(MimeTypeUtils.parseMimeType(
-				specificMessage.getHeaders().get("contentType").toString()));
-
-		Message genericMessage = converter.toMessage(genericRecord,
-				new MutableMessageHeaders(Collections.<String, Object> emptyMap()),
-				MimeTypeUtils.parseMimeType("application/*+avro"));
-		SchemaReference genericRef = extractSchemaReference(MimeTypeUtils.parseMimeType(
-				genericMessage.getHeaders().get("contentType").toString()));
-
-		Assert.assertEquals(genericRef, specificRef);
-		Assert.assertEquals(1, genericRef.getVersion());
-	}
-
-	@Test
-	public void testOriginalContentTypeHeaderOnly() throws Exception {
-		User specificRecord = new User();
-		specificRecord.setName("joe");
-		Schema v1 = new Schema.Parser().parse(AvroMessageConverterSerializationTests.class
-				.getClassLoader().getResourceAsStream("schemas/user.avsc"));
-		GenericRecord genericRecord = new GenericData.Record(v1);
-		genericRecord.put("name", "joe");
-		SchemaRegistryClient client = new DefaultSchemaRegistryClient();
-		client.register("user", "avro", v1.toString());
-		AvroSchemaRegistryClientMessageConverter converter = new AvroSchemaRegistryClientMessageConverter(
-				client, new NoOpCacheManager());
-		converter.setDynamicSchemaGenerationEnabled(false);
-		converter.afterPropertiesSet();
-		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		DatumWriter<User> writer = new SpecificDatumWriter<>(User.class);
-		Encoder encoder = EncoderFactory.get().binaryEncoder(baos, null);
-		writer.write(specificRecord, encoder);
-		encoder.flush();
-		Message source = MessageBuilder.withPayload(baos.toByteArray())
-				.setHeader(MessageHeaders.CONTENT_TYPE,
-						MimeTypeUtils.APPLICATION_OCTET_STREAM)
-				.setHeader(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE,
-						"application/vnd.user.v1+avro")
-				.build();
-		Object converted = converter.fromMessage(source, User.class);
-		Assert.assertNotNull(converted);
-		Assert.assertEquals(specificRecord.getName().toString(),
-				((User) converted).getName().toString());
-
-	}
-
-	private SchemaReference extractSchemaReference(MimeType mimeType) {
-		SchemaReference schemaReference = null;
-		Matcher schemaMatcher = this.versionedSchema.matcher(mimeType.toString());
-		if (schemaMatcher.find()) {
-			String subject = schemaMatcher.group(1);
-			Integer version = Integer.parseInt(schemaMatcher.group(2));
-			schemaReference = new SchemaReference(subject, version,
-					AvroSchemaRegistryClientMessageConverter.AVRO_FORMAT);
+		@Before
+		public void setup() {
+				schemaRegistryServerContext = SpringApplication
+						.run(SchemaRegistryServerApplication.class,
+								"--spring.main.allow-bean-definition-overriding=true");
 		}
-		return schemaReference;
-	}
+
+		@After
+		public void tearDown() {
+				schemaRegistryServerContext.close();
+		}
+
+		@Test
+		public void testSchemaImport() throws Exception {
+				SchemaRegistryClient client = new DefaultSchemaRegistryClient();
+				AvroSchemaRegistryClientMessageConverter converter = new AvroSchemaRegistryClientMessageConverter(
+						client, new NoOpCacheManager());
+				converter.setSubjectNamingStrategy(new DefaultSubjectNamingStrategy());
+				converter.setDynamicSchemaGenerationEnabled(false);
+				converter.setSchemaLocations(schemaRegistryServerContext
+						.getResources("classpath:schemas/Command.avsc"));
+				converter.setSchemaImports(schemaRegistryServerContext
+						.getResources("classpath:schemas/imports/*.avsc"));
+				converter.afterPropertiesSet();
+				Command notification = notification();
+				Message specificMessage = converter.toMessage(notification,
+						new MutableMessageHeaders(
+								Collections.<String, Object> emptyMap()));
+				Object o = converter.fromMessage(specificMessage, Command.class);
+
+				Assert.assertEquals("Serialization issue when use schema-imports", o, notification);
+		}
+
+		@Test
+		public void sourceWriteSameVersion() throws Exception {
+				User specificRecord = new User();
+				specificRecord.setName("joe");
+				Schema v1 = new Schema.Parser()
+						.parse(AvroMessageConverterSerializationTests.class
+								.getClassLoader()
+								.getResourceAsStream("schemas/user.avsc"));
+				GenericRecord genericRecord = new GenericData.Record(v1);
+				genericRecord.put("name", "joe");
+				SchemaRegistryClient client = new DefaultSchemaRegistryClient();
+				AvroSchemaRegistryClientMessageConverter converter = new AvroSchemaRegistryClientMessageConverter(
+						client, new NoOpCacheManager());
+
+				converter.setSubjectNamingStrategy(new DefaultSubjectNamingStrategy());
+				converter.setDynamicSchemaGenerationEnabled(false);
+				converter.afterPropertiesSet();
+
+				Message specificMessage = converter.toMessage(specificRecord,
+						new MutableMessageHeaders(
+								Collections.<String, Object> emptyMap()),
+						MimeTypeUtils.parseMimeType("application/*+avro"));
+				SchemaReference specificRef = extractSchemaReference(MimeTypeUtils
+						.parseMimeType(specificMessage.getHeaders().get("contentType")
+								.toString()));
+
+				Message genericMessage = converter.toMessage(genericRecord,
+						new MutableMessageHeaders(
+								Collections.<String, Object> emptyMap()),
+						MimeTypeUtils.parseMimeType("application/*+avro"));
+				SchemaReference genericRef = extractSchemaReference(MimeTypeUtils
+						.parseMimeType(genericMessage.getHeaders().get("contentType")
+								.toString()));
+
+				Assert.assertEquals(genericRef, specificRef);
+				Assert.assertEquals(1, genericRef.getVersion());
+		}
+
+		@Test
+		public void testOriginalContentTypeHeaderOnly() throws Exception {
+				User specificRecord = new User();
+				specificRecord.setName("joe");
+				Schema v1 = new Schema.Parser()
+						.parse(AvroMessageConverterSerializationTests.class
+								.getClassLoader()
+								.getResourceAsStream("schemas/user.avsc"));
+				GenericRecord genericRecord = new GenericData.Record(v1);
+				genericRecord.put("name", "joe");
+				SchemaRegistryClient client = new DefaultSchemaRegistryClient();
+				client.register("user", "avro", v1.toString());
+				AvroSchemaRegistryClientMessageConverter converter = new AvroSchemaRegistryClientMessageConverter(
+						client, new NoOpCacheManager());
+				converter.setDynamicSchemaGenerationEnabled(false);
+				converter.afterPropertiesSet();
+				ByteArrayOutputStream baos = new ByteArrayOutputStream();
+				DatumWriter<User> writer = new SpecificDatumWriter<>(User.class);
+				Encoder encoder = EncoderFactory.get().binaryEncoder(baos, null);
+				writer.write(specificRecord, encoder);
+				encoder.flush();
+				Message source = MessageBuilder.withPayload(baos.toByteArray())
+						.setHeader(MessageHeaders.CONTENT_TYPE,
+								MimeTypeUtils.APPLICATION_OCTET_STREAM)
+						.setHeader(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE,
+								"application/vnd.user.v1+avro").build();
+				Object converted = converter.fromMessage(source, User.class);
+				Assert.assertNotNull(converted);
+				Assert.assertEquals(specificRecord.getName().toString(),
+						((User) converted).getName().toString());
+
+		}
+
+		private SchemaReference extractSchemaReference(MimeType mimeType) {
+				SchemaReference schemaReference = null;
+				Matcher schemaMatcher = this.versionedSchema.matcher(mimeType.toString());
+				if (schemaMatcher.find()) {
+						String subject = schemaMatcher.group(1);
+						Integer version = Integer.parseInt(schemaMatcher.group(2));
+						schemaReference = new SchemaReference(subject, version,
+								AvroSchemaRegistryClientMessageConverter.AVRO_FORMAT);
+				}
+				return schemaReference;
+		}
+
+		public static Command notification() {
+				Command messageToSend = getCommandToSend();
+				messageToSend.setType("notification");
+				PushNotification pushNotification = new PushNotification();
+				pushNotification.setArn("google");
+				pushNotification.setText("hello");
+				messageToSend.setPayload(pushNotification);
+				return messageToSend;
+		}
+
+		public static Command sms() {
+				Command messageToSend = getCommandToSend();
+				messageToSend.setType("sms");
+				Sms sms = new Sms();
+				sms.setPhoneNumber("6141231212");
+				sms.setText("hello");
+				messageToSend.setPayload(sms);
+				return messageToSend;
+		}
+
+		public static Command email() {
+				Command messageToSend = getCommandToSend();
+				messageToSend.setType("email");
+				Email email = new Email();
+				email.setAddressTo("sercan");
+				email.setText("hello");
+				email.setTitle("hi");
+				messageToSend.setPayload(email);
+				return messageToSend;
+		}
+
+		public static Command getCommandToSend() {
+				Command messageToSend = new Command();
+				messageToSend.setCorrelationId("abc");
+				return messageToSend;
+		}
 
 }
