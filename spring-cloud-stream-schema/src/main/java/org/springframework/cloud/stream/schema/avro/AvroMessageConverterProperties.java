@@ -22,6 +22,7 @@ import org.springframework.util.Assert;
 
 /**
  * @author Vinicius Carvalho
+ * @author Sercan Karaoglu
  */
 @ConfigurationProperties(prefix = "spring.cloud.stream.schema.avro")
 public class AvroMessageConverterProperties {
@@ -30,7 +31,21 @@ public class AvroMessageConverterProperties {
 
 	private Resource readerSchema;
 
+	/**
+	 * The source directory of Apache Avro schema. This schema is used by this
+	 * converter. If this schema depends on other schemas consider defining those
+	 * those dependent ones in the {@link #schemaImports}
+	 * @parameter
+	 */
 	private Resource[] schemaLocations;
+
+	/**
+	 * A list of files or directories that should be loaded first thus making
+	 * them importable by subsequent schemas. Note that imported files
+	 * should not reference each other.
+	 * @parameter
+	 */
+	private Resource[] schemaImports;
 
 	private String prefix = "vnd";
 
@@ -78,4 +93,13 @@ public class AvroMessageConverterProperties {
 		Assert.notNull(subjectNamingStrategy, "cannot be null");
 		this.subjectNamingStrategy = subjectNamingStrategy;
 	}
+
+	public Resource[] getSchemaImports() {
+		return schemaImports;
+	}
+
+	public void setSchemaImports(Resource[] schemaImports) {
+		this.schemaImports = schemaImports;
+	}
+
 }

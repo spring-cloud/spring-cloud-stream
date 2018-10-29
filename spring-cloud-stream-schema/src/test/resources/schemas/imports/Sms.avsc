@@ -1,0 +1,14 @@
+{
+ "namespace":"example.avro",
+ "name": "Sms",
+ "type": "record",
+ "fields":[
+        {
+        "name":"phoneNumber",
+        "type":"string"
+        },{
+        "name":"text",
+        "type":"string"
+        }
+ ]
+}

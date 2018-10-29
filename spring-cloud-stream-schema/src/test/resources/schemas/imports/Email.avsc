@@ -1,0 +1,19 @@
+{
+ "namespace":"example.avro",
+ "name": "Email",
+ "type": "record",
+ "fields":[
+     {
+        "name":"addressTo",
+        "type":"string"
+     },
+     {
+        "name":"title",
+        "type":"string"
+     },
+     {
+        "name":"text",
+        "type":"string"
+     }
+ ]
+}
