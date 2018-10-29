@@ -1,3 +1,12 @@
+:github-tag: master
+:github-repo: spring-cloud/spring-cloud-stream
+:github-raw: https://raw.githubusercontent.com/{github-repo}/{github-tag}
+:github-code: https://github.com/{github-repo}/tree/{github-tag}
+:toc: left
+:toclevels: 8
+:nofooter:
+:sectlinks: true
+
 [[spring-cloud-stream-binder-rabbit-reference]]
 = Spring Cloud Stream RabbitMQ Binder Reference Guide
 Sabby Anandan, Marius Bogoevici, Eric Bottard, Mark Fisher, Ilayaperumal Gopinathan, Gunnar Hillert, Mark Pollack, Patrick Peralta, Glenn Renfro, Thomas Risberg, Dave Syer, David Turanski, Janne Valkealahti, Benjamin Klein, Gary Russell, Jay Bryant

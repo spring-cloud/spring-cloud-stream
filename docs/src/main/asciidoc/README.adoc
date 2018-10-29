@@ -1,0 +1,22 @@
+:jdkversion: 1.8
+:github-tag: master
+:github-repo: spring-cloud/spring-cloud-stream-binder-rabbit
+
+:github-raw: https://raw.githubusercontent.com/{github-repo}/{github-tag}
+:github-code: https://github.com/{github-repo}/tree/{github-tag}
+
+image::https://circleci.com/gh/spring-cloud/spring-cloud-stream-binder-rabbit.svg?style=svg["CircleCI", link="https://circleci.com/gh/spring-cloud/spring-cloud-stream-binder-rabbit"]
+image::https://codecov.io/gh/spring-cloud/spring-cloud-stream-binder-rabbit/branch/{github-tag}/graph/badge.svg["codecov", link="https://codecov.io/gh/spring-cloud/spring-cloud-stream-binder-rabbit"]
+image::https://badges.gitter.im/spring-cloud/spring-cloud-stream-binder-rabbit.svg[Gitter, link="https://gitter.im/spring-cloud/spring-cloud-stream-binder-rabbit?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge"]
+
+// ======================================================================================
+
+//= Overview
+include::overview.adoc[]
+
+= Appendices
+[appendix]
+include::building.adoc[]
+include::contributing.adoc[]
+
+// ======================================================================================
