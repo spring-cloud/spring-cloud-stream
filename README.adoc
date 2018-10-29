@@ -47,7 +47,7 @@ Alternatively, you can use the Spring Cloud Stream RabbitMQ Starter, as follows:
 The following simplified diagram shows how the RabbitMQ binder operates:
 
 .RabbitMQ Binder
-image::rabbit-binder.png[width=300,scaledwidth="50%"]
+image::{github-raw}/docs/src/main/asciidoc/images/rabbit-binder.png[width=300,scaledwidth="50%"]
 
 By default, the RabbitMQ Binder implementation maps each destination to a `TopicExchange`.
 For each consumer group, a `Queue` is bound to that `TopicExchange`.
