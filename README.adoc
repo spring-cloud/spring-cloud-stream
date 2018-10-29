@@ -67,6 +67,9 @@ You can republish a failed message after just one attempt.
 Starting with version 1.2, you can configure the delivery mode of republished messages.
 See the <<spring-cloud-stream-rabbit-republish-delivery-mode,`republishDeliveryMode` property>>.
 
+If the stream listener throws an `ImmediateAcknowledgeAmqpException`, the DLQ is bypassed and the message simply discarded.
+Starting with version 2.1, this is true regardless of the setting of `republishToDlq`; previously it was only the case when `republishToDlq` was `false`.
+
 IMPORTANT: Setting `requeueRejected` to `true` (with `republishToDlq=false` ) causes the message to be re-queued and redelivered continually, which is likely not what you want unless the reason for the failure is transient.
 In general, you should enable retry within the binder by setting `maxAttempts` to greater than one or by setting `republishToDlq` to `true`.
 
