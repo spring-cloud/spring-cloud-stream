@@ -1,0 +1,50 @@
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+   <title>14.&nbsp;Metrics Emitter</title><link rel="stylesheet" type="text/css" href="css/manual-multipage.css"><meta name="generator" content="DocBook XSL Stylesheets V1.79.1"><link rel="home" href="multi_spring-cloud-stream.html" title="Spring Cloud Stream Reference Guide"><link rel="up" href="multi__preface.html" title="Part&nbsp;I.&nbsp;Preface"><link rel="prev" href="multi__health_indicator.html" title="13.&nbsp;Health Indicator"><link rel="next" href="multi__samples.html" title="15.&nbsp;Samples"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">14.&nbsp;Metrics Emitter</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="multi__health_indicator.html">Prev</a>&nbsp;</td><th width="60%" align="center">Part&nbsp;I.&nbsp;Preface</th><td width="20%" align="right">&nbsp;<a accesskey="n" href="multi__samples.html">Next</a></td></tr></table><hr></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a name="spring-cloud-stream-overview-metrics-emitter" href="#spring-cloud-stream-overview-metrics-emitter"></a>14.&nbsp;Metrics Emitter</h2></div></div></div><p>Spring Boot Actuator provides dependency management and auto-configuration for <a class="link" href="https://micrometer.io/" target="_top">Micrometer</a>, an application metrics
+facade that supports numerous <a class="link" href="https://docs.spring.io/spring-boot/docs/2.0.0.RELEASE/reference/htmlsingle/#production-ready-metrics" target="_top">monitoring systems</a>.</p><p>Spring Cloud Stream provides support for emitting any available micrometer-based metrics to a binding destination, allowing for periodic
+collection of metric data from stream applications without relying on polling individual endpoints.</p><p>Metrics Emitter is activated by defining the <code class="literal">spring.cloud.stream.bindings.applicationMetrics.destination</code> property,
+which specifies the name of the binding destination used by the current binder to publish metric messages.</p><p>For example:</p><pre class="programlisting">spring.cloud.stream.bindings.applicationMetrics.destination=myMetricDestination</pre><p>The preceding example instructs the binder to bind to <code class="literal">myMetricDestination</code> (that is, Rabbit exchange, Kafka topic, and others).</p><p>The following properties can be used for customizing the emission of metrics:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">spring.cloud.stream.metrics.key</span></dt><dd><p class="simpara">The name of the metric being emitted. Should be a unique value per application.</p><p class="simpara">Default: <code class="literal">${spring.application.name:${vcap.application.name:${spring.config.name:application}}}</code></p></dd><dt><span class="term">spring.cloud.stream.metrics.properties</span></dt><dd><p class="simpara">Allows white listing application properties that are added to the metrics payload</p><p class="simpara">Default: null.</p></dd><dt><span class="term">spring.cloud.stream.metrics.meter-filter</span></dt><dd><p class="simpara">Pattern to control the 'meters' one wants to capture.
+For example, specifying <code class="literal">spring.integration.*</code> captures metric information for meters whose name starts with <code class="literal">spring.integration.</code></p><p class="simpara">Default: all 'meters' are captured.</p></dd><dt><span class="term">spring.cloud.stream.metrics.schedule-interval</span></dt><dd><p class="simpara">Interval to control the rate of publishing metric data.</p><p class="simpara">Default: 1 min</p></dd></dl></div><p>Consider the following:</p><pre class="programlisting">java -jar time-source.jar \
+    --spring.cloud.stream.bindings.applicationMetrics.destination=someMetrics \
+    --spring.cloud.stream.metrics.properties=spring.application** \
+    --spring.cloud.stream.metrics.meter-filter=spring.integration.*</pre><p>The following example shows the payload of the data published to the binding destination as a result of the preceding command:</p><pre class="programlisting">{
+	<span xmlns:d="http://docbook.org/ns/docbook" class="hl-string">"name"</span>: <span xmlns:d="http://docbook.org/ns/docbook" class="hl-string">"application"</span>,
+	<span xmlns:d="http://docbook.org/ns/docbook" class="hl-string">"createdTime"</span>: <span xmlns:d="http://docbook.org/ns/docbook" class="hl-string">"2018-03-23T14:48:12.700Z"</span>,
+	<span xmlns:d="http://docbook.org/ns/docbook" class="hl-string">"properties"</span>: {
+	},
+	<span xmlns:d="http://docbook.org/ns/docbook" class="hl-string">"metrics"</span>: [
+		{
+			<span xmlns:d="http://docbook.org/ns/docbook" class="hl-string">"id"</span>: {
+				<span xmlns:d="http://docbook.org/ns/docbook" class="hl-string">"name"</span>: <span xmlns:d="http://docbook.org/ns/docbook" class="hl-string">"spring.integration.send"</span>,
+				<span xmlns:d="http://docbook.org/ns/docbook" class="hl-string">"tags"</span>: [
+					{
+						<span xmlns:d="http://docbook.org/ns/docbook" class="hl-string">"key"</span>: <span xmlns:d="http://docbook.org/ns/docbook" class="hl-string">"exception"</span>,
+						<span xmlns:d="http://docbook.org/ns/docbook" class="hl-string">"value"</span>: <span xmlns:d="http://docbook.org/ns/docbook" class="hl-string">"none"</span>
+					},
+					{
+						<span xmlns:d="http://docbook.org/ns/docbook" class="hl-string">"key"</span>: <span xmlns:d="http://docbook.org/ns/docbook" class="hl-string">"name"</span>,
+						<span xmlns:d="http://docbook.org/ns/docbook" class="hl-string">"value"</span>: <span xmlns:d="http://docbook.org/ns/docbook" class="hl-string">"input"</span>
+					},
+					{
+						<span xmlns:d="http://docbook.org/ns/docbook" class="hl-string">"key"</span>: <span xmlns:d="http://docbook.org/ns/docbook" class="hl-string">"result"</span>,
+						<span xmlns:d="http://docbook.org/ns/docbook" class="hl-string">"value"</span>: <span xmlns:d="http://docbook.org/ns/docbook" class="hl-string">"success"</span>
+					},
+					{
+						<span xmlns:d="http://docbook.org/ns/docbook" class="hl-string">"key"</span>: <span xmlns:d="http://docbook.org/ns/docbook" class="hl-string">"type"</span>,
+						<span xmlns:d="http://docbook.org/ns/docbook" class="hl-string">"value"</span>: <span xmlns:d="http://docbook.org/ns/docbook" class="hl-string">"channel"</span>
+					}
+				],
+				<span xmlns:d="http://docbook.org/ns/docbook" class="hl-string">"type"</span>: <span xmlns:d="http://docbook.org/ns/docbook" class="hl-string">"TIMER"</span>,
+				<span xmlns:d="http://docbook.org/ns/docbook" class="hl-string">"description"</span>: <span xmlns:d="http://docbook.org/ns/docbook" class="hl-string">"Send processing time"</span>,
+				<span xmlns:d="http://docbook.org/ns/docbook" class="hl-string">"baseUnit"</span>: <span xmlns:d="http://docbook.org/ns/docbook" class="hl-string">"milliseconds"</span>
+			},
+			<span xmlns:d="http://docbook.org/ns/docbook" class="hl-string">"timestamp"</span>: <span xmlns:d="http://docbook.org/ns/docbook" class="hl-string">"2018-03-23T14:48:12.697Z"</span>,
+			<span xmlns:d="http://docbook.org/ns/docbook" class="hl-string">"sum"</span>: <span class="hl-number">130.340546</span>,
+			<span xmlns:d="http://docbook.org/ns/docbook" class="hl-string">"count"</span>: <span class="hl-number">6</span>,
+			<span xmlns:d="http://docbook.org/ns/docbook" class="hl-string">"mean"</span>: <span class="hl-number">21.72342433333333</span>,
+			<span xmlns:d="http://docbook.org/ns/docbook" class="hl-string">"upper"</span>: <span class="hl-number">116.176299</span>,
+			<span xmlns:d="http://docbook.org/ns/docbook" class="hl-string">"total"</span>: <span class="hl-number">130.340546</span>
+		}
+	]
+}</pre><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Note"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Note]" src="images/note.png"></td><th align="left">Note</th></tr><tr><td align="left" valign="top"><p>Given that the format of the Metric message has slightly changed after migrating to Micrometer, the published message will also have
+a <code class="literal">STREAM_CLOUD_STREAM_VERSION</code> header set to <code class="literal">2.x</code> to help distinguish between Metric messages from the older versions of the Spring Cloud Stream.</p></td></tr></table></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="multi__health_indicator.html">Prev</a>&nbsp;</td><td width="20%" align="center"><a accesskey="u" href="multi__preface.html">Up</a></td><td width="40%" align="right">&nbsp;<a accesskey="n" href="multi__samples.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">13.&nbsp;Health Indicator&nbsp;</td><td width="20%" align="center"><a accesskey="h" href="multi_spring-cloud-stream.html">Home</a></td><td width="40%" align="right" valign="top">&nbsp;15.&nbsp;Samples</td></tr></table></div></body></html>
