@@ -20,9 +20,9 @@
 	<modules>
 		<module>spring-cloud-stream-binder-kafka</module>
 		<module>spring-cloud-starter-stream-kafka</module>
-		<module>spring-cloud-stream-binder-kafka-docs</module>
 		<module>spring-cloud-stream-binder-kafka-core</module>
 		<module>spring-cloud-stream-binder-kafka-streams</module>
+		<module>docs</module>
     </modules>
 
 	<dependencyManagement>
