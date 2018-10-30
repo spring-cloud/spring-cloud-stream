@@ -9,7 +9,7 @@
     </parent>
 
     <artifactId>spring-cloud-stream-tools</artifactId>
-    <version>2.1.0.BUILD-SNAPSHOT</version>
+    <version>2.1.0.RC1</version>
     <name>spring-cloud-stream-build-tools</name>
     <description>Spring Cloud Stream Build Tools</description>
 
