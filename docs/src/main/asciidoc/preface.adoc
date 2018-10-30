@@ -47,7 +47,8 @@ For example, you can choose Gradle as your build tool instead of Maven (the defa
 The value of the *Artifact* field becomes the application name.
 If you chose RabbitMQ for the middleware, your Spring Initializr should now be as follows:
 +
-image::{github-raw}/docs/src/main/asciidoc/images/stream-initializr.png[]
+image::{github-raw}/docs/src/main/asciidoc/images/stream-initializr.png[width=800,scaledwidth="75%",align="center"]
+
 . Click the *Generate Project* button.
 +
 Doing so downloads the zipped version of the generated project to your hard drive.
