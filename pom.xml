@@ -2,7 +2,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<artifactId>spring-cloud-stream-binder-kafka-parent</artifactId>
-	<version>2.1.0.RC1</version>
+	<version>2.1.0.BUILD-SNAPSHOT</version>
 	<packaging>pom</packaging>
 	<parent>
 		<groupId>org.springframework.cloud</groupId>
@@ -15,7 +15,7 @@
 		<spring-kafka.version>2.2.0.RELEASE</spring-kafka.version>
 		<spring-integration-kafka.version>3.1.0.RELEASE</spring-integration-kafka.version>
 		<kafka.version>2.0.0</kafka.version>
-		<spring-cloud-stream.version>2.1.0.RC1</spring-cloud-stream.version>
+		<spring-cloud-stream.version>2.1.0.BUILD-SNAPSHOT</spring-cloud-stream.version>
 	</properties>
 	<modules>
 		<module>spring-cloud-stream-binder-kafka</module>
