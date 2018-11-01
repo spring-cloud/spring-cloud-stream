@@ -97,7 +97,7 @@ public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessag
 
 	private boolean dynamicSchemaGenerationEnabled;
 
-	private CacheManager cacheManager;
+	private final CacheManager cacheManager;
 
 	private Schema readerSchema;
 
@@ -108,6 +108,8 @@ public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessag
 	private String prefix = "vnd";
 
 	private SubjectNamingStrategy subjectNamingStrategy;
+
+	protected Resource[] schemaImports = new Resource[]{};
 
 	/**
 	 * Creates a new instance, configuring it with {@link SchemaRegistryClient} and
@@ -171,6 +173,20 @@ public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessag
 		this.prefix = prefix;
 	}
 
+	public void setReaderSchema(Resource readerSchema) {
+		Assert.notNull(readerSchema, "cannot be null");
+		try {
+			this.readerSchema = parseSchema(readerSchema);
+		}
+		catch (IOException e) {
+			throw new BeanInitializationException("Cannot initialize reader schema", e);
+		}
+	}
+
+	public void setSubjectNamingStrategy(SubjectNamingStrategy subjectNamingStrategy) {
+		this.subjectNamingStrategy = subjectNamingStrategy;
+	}
+
 	@Override
 	public void afterPropertiesSet() throws Exception {
 		this.versionedSchema = Pattern.compile("application/" + this.prefix
@@ -210,22 +226,6 @@ public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessag
 					+ "the intention, please provide the appropriate instance of CacheManager "
 					+ "(i.e., ConcurrentMapCacheManager).");
 		}
-	}
-
-	private void registerSchema(Resource schemaLocation, Schema schema) {
-		if (this.logger.isInfoEnabled()) {
-			this.logger.info("Resource " + schemaLocation.getFilename()
-					+ " parsed into schema " + schema.getNamespace() + "."
-					+ schema.getName());
-		}
-		this.schemaRegistryClient.register(toSubject(schema), AVRO_FORMAT,
-				schema.toString());
-		if (this.logger.isInfoEnabled()) {
-			this.logger.info("Schema " + schema.getName()
-					+ " registered with id " + schema);
-		}
-		this.cacheManager.getCache(REFLECTION_CACHE_NAME)
-				.put(schema.getNamespace() + "." + schema.getName(), schema);
 	}
 
 	protected String toSubject(Schema schema) {
@@ -282,17 +282,6 @@ public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessag
 		return schema;
 	}
 
-	private SchemaReference extractSchemaReference(MimeType mimeType) {
-		SchemaReference schemaReference = null;
-		Matcher schemaMatcher = this.versionedSchema.matcher(mimeType.toString());
-		if (schemaMatcher.find()) {
-			String subject = schemaMatcher.group(1);
-			Integer version = Integer.parseInt(schemaMatcher.group(2));
-			schemaReference = new SchemaReference(subject, version, AVRO_FORMAT);
-		}
-		return schemaReference;
-	}
-
 	@Override
 	protected Schema resolveWriterSchemaForDeserialization(MimeType mimeType) {
 		if (this.readerSchema == null) {
@@ -318,16 +307,6 @@ public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessag
 	@Override
 	protected Schema resolveReaderSchemaForDeserialization(Class<?> targetClass) {
 		return this.readerSchema;
-	}
-
-	public void setReaderSchema(Resource readerSchema) {
-		Assert.notNull(readerSchema, "cannot be null");
-		try {
-			this.readerSchema = parseSchema(readerSchema);
-		}
-		catch (IOException e) {
-			throw new BeanInitializationException("Cannot initialize reader schema", e);
-		}
 	}
 
 	private Schema extractSchemaForWriting(Object payload) {
@@ -360,16 +339,30 @@ public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessag
 		return schema;
 	}
 
-	/**
-	 * @deprecated as of release 1.0.4. Please use the constructor to inject CacheManager
-	 */
-	@Deprecated
-	public void setCacheManager(CacheManager cacheManager) {
-		Assert.notNull(cacheManager, "'cacheManager' cannot be null");
-		this.cacheManager = cacheManager;
+	private void registerSchema(Resource schemaLocation, Schema schema) {
+		if (this.logger.isInfoEnabled()) {
+			this.logger.info("Resource " + schemaLocation.getFilename()
+					+ " parsed into schema " + schema.getNamespace() + "."
+					+ schema.getName());
+		}
+		this.schemaRegistryClient.register(toSubject(schema), AVRO_FORMAT,
+				schema.toString());
+		if (this.logger.isInfoEnabled()) {
+			this.logger.info("Schema " + schema.getName()
+					+ " registered with id " + schema);
+		}
+		this.cacheManager.getCache(REFLECTION_CACHE_NAME)
+				.put(schema.getNamespace() + "." + schema.getName(), schema);
 	}
 
-	public void setSubjectNamingStrategy(SubjectNamingStrategy subjectNamingStrategy) {
-		this.subjectNamingStrategy = subjectNamingStrategy;
+	private SchemaReference extractSchemaReference(MimeType mimeType) {
+		SchemaReference schemaReference = null;
+		Matcher schemaMatcher = this.versionedSchema.matcher(mimeType.toString());
+		if (schemaMatcher.find()) {
+			String subject = schemaMatcher.group(1);
+			Integer version = Integer.parseInt(schemaMatcher.group(2));
+			schemaReference = new SchemaReference(subject, version, AVRO_FORMAT);
+		}
+		return schemaReference;
 	}
 }
