@@ -24,6 +24,8 @@ import javax.validation.constraints.NotNull;
 import org.springframework.expression.Expression;
 
 /**
+ * Extended producer properties for Kafka binder.
+ *
  * @author Marius Bogoevici
  * @author Henryk Konsek
  * @author Gary Russell
@@ -80,7 +82,7 @@ public class KafkaProducerProperties {
 	}
 
 	public Expression getMessageKeyExpression() {
-		return messageKeyExpression;
+		return this.messageKeyExpression;
 	}
 
 	public void setMessageKeyExpression(Expression messageKeyExpression) {
@@ -111,10 +113,21 @@ public class KafkaProducerProperties {
 		this.admin = admin;
 	}
 
-
+	/**
+	 * Enumeration for compression types.
+	 */
 	public enum CompressionType {
+		/**
+		 * No compression.
+		 */
 		none,
+		/**
+		 * gzip based compression.
+		 */
 		gzip,
+		/**
+		 * snappy based compression.
+		 */
 		snappy
 	}
 }

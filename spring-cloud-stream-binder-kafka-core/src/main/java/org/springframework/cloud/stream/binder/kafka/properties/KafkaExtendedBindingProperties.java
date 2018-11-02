@@ -21,6 +21,8 @@ import org.springframework.cloud.stream.binder.AbstractExtendedBindingProperties
 import org.springframework.cloud.stream.binder.BinderSpecificPropertiesProvider;
 
 /**
+ * Kafka specific extended binding properties class that extends from {@link AbstractExtendedBindingProperties}.
+ *
  * @author Marius Bogoevici
  * @author Gary Russell
  * @author Soby Chacko

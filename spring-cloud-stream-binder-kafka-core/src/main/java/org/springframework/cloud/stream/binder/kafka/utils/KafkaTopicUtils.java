@@ -19,6 +19,8 @@ package org.springframework.cloud.stream.binder.kafka.utils;
 import java.io.UnsupportedEncodingException;
 
 /**
+ * Utility methods releated to Kafka topics.
+ *
  * @author Soby Chacko
  */
 public final class KafkaTopicUtils {
@@ -28,7 +30,10 @@ public final class KafkaTopicUtils {
 	}
 
 	/**
+	 * Validate topic name.
 	 * Allowed chars are ASCII alphanumerics, '.', '_' and '-'.
+	 *
+	 * @param topicName name of the topic
 	 */
 	public static void validateTopicName(String topicName) {
 		try {
@@ -42,8 +47,8 @@ public final class KafkaTopicUtils {
 				}
 			}
 		}
-		catch (UnsupportedEncodingException e) {
-			throw new AssertionError(e); // Can't happen
+		catch (UnsupportedEncodingException ex) {
+			throw new AssertionError(ex); // Can't happen
 		}
 	}
 }

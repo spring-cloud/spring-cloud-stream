@@ -40,6 +40,9 @@ import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 
 /**
+ * Configuration properties for the Kafka binder.
+ * The properties in this class are prefixed with <b>spring.cloud.stream.kafka.binder</b>.
+ *
  * @author David Turanski
  * @author Ilayaperumal Gopinathan
  * @author Marius Bogoevici
@@ -134,7 +137,7 @@ public class KafkaBinderConfigurationProperties {
 	}
 
 	public KafkaProperties getKafkaProperties() {
-		return kafkaProperties;
+		return this.kafkaProperties;
 	}
 
 	public Transaction getTransaction() {
@@ -167,7 +170,7 @@ public class KafkaBinderConfigurationProperties {
 	/**
 	 * No longer used.
 	 * @return the window.
-	 * @deprecated
+	 * @deprecated No longer used by the binder
 	 */
 	@Deprecated
 	@DeprecatedConfigurationProperty(reason = "Not used since 2.0")
@@ -178,7 +181,7 @@ public class KafkaBinderConfigurationProperties {
 	/**
 	 * No longer used.
 	 * @return the count.
-	 * @deprecated
+	 * @deprecated No longer used by the binder
 	 */
 	@Deprecated
 	@DeprecatedConfigurationProperty(reason = "Not used since 2.0")
@@ -189,7 +192,7 @@ public class KafkaBinderConfigurationProperties {
 	/**
 	 * No longer used.
 	 * @return the timeout.
-	 * @deprecated
+	 * @deprecated No longer used by the binder
 	 */
 	@Deprecated
 	@DeprecatedConfigurationProperty(reason = "Not used since 2.0")
@@ -249,7 +252,7 @@ public class KafkaBinderConfigurationProperties {
 	/**
 	 * No longer used.
 	 * @param offsetUpdateTimeWindow the window.
-	 * @deprecated
+	 * @deprecated No longer used by the binder
 	 */
 	@Deprecated
 	@DeprecatedConfigurationProperty(reason = "Not used since 2.0")
@@ -260,7 +263,7 @@ public class KafkaBinderConfigurationProperties {
 	/**
 	 * No longer used.
 	 * @param offsetUpdateCount the count.
-	 * @deprecated
+	 * @deprecated No longer used by the binder
 	 */
 	@Deprecated
 	@DeprecatedConfigurationProperty(reason = "Not used since 2.0")
@@ -271,7 +274,7 @@ public class KafkaBinderConfigurationProperties {
 	/**
 	 * No longer used.
 	 * @param offsetUpdateShutdownTimeout the timeout.
-	 * @deprecated
+	 * @deprecated No longer used by the binder
 	 */
 	@Deprecated
 	@DeprecatedConfigurationProperty(reason = "Not used since 2.0")
@@ -325,8 +328,11 @@ public class KafkaBinderConfigurationProperties {
 
 	/**
 	 * Converts an array of host values to a comma-separated String.
-	 *
 	 * It will append the default port value, if not already specified.
+	 *
+	 * @param hosts host string
+	 * @param defaultPort port
+	 * @return formatted connection string
 	 */
 	private String toConnectionString(String[] hosts, String defaultPort) {
 		String[] fullyFormattedHosts = new String[hosts.length];
@@ -344,7 +350,7 @@ public class KafkaBinderConfigurationProperties {
 	/**
 	 * No longer used.
 	 * @return the wait.
-	 * @deprecated
+	 * @deprecated No longer used by the binder
 	 */
 	@Deprecated
 	@DeprecatedConfigurationProperty(reason = "Not used since 2.0")
@@ -355,7 +361,7 @@ public class KafkaBinderConfigurationProperties {
 	/**
 	 * No longer user.
 	 * @param maxWait the wait.
-	 * @deprecated
+	 * @deprecated No longer used by the binder
 	 */
 	@Deprecated
 	@DeprecatedConfigurationProperty(reason = "Not used since 2.0")
@@ -386,7 +392,7 @@ public class KafkaBinderConfigurationProperties {
 	/**
 	 * No longer used.
 	 * @return the size.
-	 * @deprecated
+	 * @deprecated No longer used by the binder
 	 */
 	@Deprecated
 	@DeprecatedConfigurationProperty(reason = "Not used since 2.0")
@@ -397,7 +403,7 @@ public class KafkaBinderConfigurationProperties {
 	/**
 	 * No longer used.
 	 * @param fetchSize the size.
-	 * @deprecated
+	 * @deprecated No longer used by the binder
 	 */
 	@Deprecated
 	@DeprecatedConfigurationProperty(reason = "Not used since 2.0")
@@ -424,7 +430,7 @@ public class KafkaBinderConfigurationProperties {
 	/**
 	 * No longer used.
 	 * @return the queue size.
-	 * @deprecated
+	 * @deprecated No longer used by the binder
 	 */
 	@Deprecated
 	@DeprecatedConfigurationProperty(reason = "Not used since 2.0")
@@ -435,7 +441,7 @@ public class KafkaBinderConfigurationProperties {
 	/**
 	 * No longer used.
 	 * @param queueSize the queue size.
-	 * @deprecated
+	 * @deprecated No longer used by the binder
 	 */
 	@Deprecated
 	@DeprecatedConfigurationProperty(reason = "Not used since 2.0")
@@ -463,7 +469,7 @@ public class KafkaBinderConfigurationProperties {
 	 * No longer used; set properties such as this via {@link #getConfiguration()
 	 * configuration}.
 	 * @return the size.
-	 * @deprecated
+	 * @deprecated No longer used by the binder
 	 */
 	@Deprecated
 	@DeprecatedConfigurationProperty(reason = "Not used since 2.0, set properties such as this via 'configuration'")
@@ -475,7 +481,7 @@ public class KafkaBinderConfigurationProperties {
 	 * No longer used; set properties such as this via {@link #getConfiguration()
 	 * configuration}.
 	 * @param socketBufferSize the size.
-	 * @deprecated
+	 * @deprecated No longer used by the binder
 	 */
 	@Deprecated
 	@DeprecatedConfigurationProperty(reason = "Not used since 2.0, set properties such as this via 'configuration'")
@@ -484,7 +490,7 @@ public class KafkaBinderConfigurationProperties {
 	}
 
 	public Map<String, String> getConfiguration() {
-		return configuration;
+		return this.configuration;
 	}
 
 	public void setConfiguration(Map<String, String> configuration) {
@@ -540,7 +546,7 @@ public class KafkaBinderConfigurationProperties {
 		Map<String, Object> producerConfiguration = new HashMap<>();
 		producerConfiguration.putAll(this.kafkaProperties.buildProducerProperties());
 		// Copy configured binder properties that apply to producers
-		for (Map.Entry<String, String> configurationEntry : configuration.entrySet()) {
+		for (Map.Entry<String, String> configurationEntry : this.configuration.entrySet()) {
 			if (ProducerConfig.configNames().contains(configurationEntry.getKey())) {
 				producerConfiguration.put(configurationEntry.getKey(), configurationEntry.getValue());
 			}
@@ -585,6 +591,9 @@ public class KafkaBinderConfigurationProperties {
 		this.headerMapperBeanName = headerMapperBeanName;
 	}
 
+	/**
+	 * Domain class that models transaction capabilities in Kafka.
+	 */
 	public static class Transaction {
 
 		private final CombinedProducerProperties producer = new CombinedProducerProperties();

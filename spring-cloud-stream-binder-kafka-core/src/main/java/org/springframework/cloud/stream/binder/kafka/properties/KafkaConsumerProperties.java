@@ -21,6 +21,8 @@ import java.util.Map;
 
 
 /**
+ * Extended consumer properties for Kafka binder.
+ *
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
  * @author Soby Chacko
@@ -32,8 +34,17 @@ import java.util.Map;
  */
 public class KafkaConsumerProperties {
 
+	/**
+	 * Enumeration for starting consumer offset.
+	 */
 	public enum StartOffset {
+		/**
+		 * Starting from earliest offset.
+		 */
 		earliest(-2L),
+		/**
+		 * Starting from latest offset.
+		 */
 		latest(-1L);
 
 		private final long referencePoint;
@@ -47,10 +58,25 @@ public class KafkaConsumerProperties {
 		}
 	}
 
+	/**
+	 * Standard headers for the message.
+	 */
 	public enum StandardHeaders {
+		/**
+		 * No headers.
+		 */
 		none,
+		/**
+		 * Message header representing ID.
+		 */
 		id,
+		/**
+		 * Message header representing timestamp.
+		 */
 		timestamp,
+		/**
+		 * Indicating both ID and timestamp headers.
+		 */
 		both
 	}
 
@@ -139,7 +165,7 @@ public class KafkaConsumerProperties {
 	/**
 	 * No longer used.
 	 * @return the interval.
-	 * @deprecated
+	 * @deprecated No longer used by the binder
 	 */
 	@Deprecated
 	public int getRecoveryInterval() {
@@ -149,7 +175,7 @@ public class KafkaConsumerProperties {
 	/**
 	 * No longer used.
 	 * @param recoveryInterval the interval.
-	 * @deprecated
+	 * @deprecated No longer needed by the binder
 	 */
 	@Deprecated
 	public void setRecoveryInterval(int recoveryInterval) {
@@ -173,7 +199,7 @@ public class KafkaConsumerProperties {
 	}
 
 	public String getDlqName() {
-		return dlqName;
+		return this.dlqName;
 	}
 
 	public void setDlqName(String dlqName) {
@@ -181,7 +207,7 @@ public class KafkaConsumerProperties {
 	}
 
 	public String[] getTrustedPackages() {
-		return trustedPackages;
+		return this.trustedPackages;
 	}
 
 	public void setTrustedPackages(String[] trustedPackages) {
@@ -189,7 +215,7 @@ public class KafkaConsumerProperties {
 	}
 
 	public KafkaProducerProperties getDlqProducerProperties() {
-		return dlqProducerProperties;
+		return this.dlqProducerProperties;
 	}
 
 	public void setDlqProducerProperties(KafkaProducerProperties dlqProducerProperties) {

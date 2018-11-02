@@ -37,10 +37,10 @@ public class JaasLoginModuleConfiguration {
 
 	private KafkaJaasLoginModuleInitializer.ControlFlag controlFlag = KafkaJaasLoginModuleInitializer.ControlFlag.REQUIRED;
 
-	private Map<String,String> options = new HashMap<>();
+	private Map<String, String> options = new HashMap<>();
 
 	public String getLoginModule() {
-		return loginModule;
+		return this.loginModule;
 	}
 
 	public void setLoginModule(String loginModule) {
@@ -49,7 +49,7 @@ public class JaasLoginModuleConfiguration {
 	}
 
 	public KafkaJaasLoginModuleInitializer.ControlFlag getControlFlag() {
-		return controlFlag;
+		return this.controlFlag;
 	}
 
 	public void setControlFlag(String controlFlag) {
@@ -58,7 +58,7 @@ public class JaasLoginModuleConfiguration {
 	}
 
 	public Map<String, String> getOptions() {
-		return options;
+		return this.options;
 	}
 
 	public void setOptions(Map<String, String> options) {

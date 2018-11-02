@@ -19,17 +19,19 @@ package org.springframework.cloud.stream.binder.kafka.properties;
 import org.springframework.cloud.stream.binder.BinderSpecificPropertiesProvider;
 
 /**
+ * Container object for Kafka specific extended producer and consumer binding properties.
+ *
  * @author Marius Bogoevici
  * @author Oleg Zhurakousky
  */
-public class KafkaBindingProperties implements BinderSpecificPropertiesProvider{
+public class KafkaBindingProperties implements BinderSpecificPropertiesProvider {
 
 	private KafkaConsumerProperties consumer = new KafkaConsumerProperties();
 
 	private KafkaProducerProperties producer = new KafkaProducerProperties();
 
 	public KafkaConsumerProperties getConsumer() {
-		return consumer;
+		return this.consumer;
 	}
 
 	public void setConsumer(KafkaConsumerProperties consumer) {
@@ -37,7 +39,7 @@ public class KafkaBindingProperties implements BinderSpecificPropertiesProvider{
 	}
 
 	public KafkaProducerProperties getProducer() {
-		return producer;
+		return this.producer;
 	}
 
 	public void setProducer(KafkaProducerProperties producer) {
