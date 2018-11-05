@@ -35,7 +35,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.admin.CreateTopicsResult;
@@ -50,6 +49,7 @@ import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.KafkaFuture;
+import org.apache.kafka.common.errors.TopicExistsException;
 import org.apache.kafka.common.record.TimestampType;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
@@ -2646,6 +2646,21 @@ public class KafkaBinderTests extends
 			assertThat(topic.get()).isEqualTo("topicPatterns.1");
 			consumerBinding.unbind();
 			pf.destroy();
+		}
+	}
+
+	@Test (expected = TopicExistsException.class)
+	public void testSameTopicCannotBeProvisionedAgain() throws Throwable {
+		try (AdminClient admin = AdminClient.create(Collections.singletonMap(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG,
+				embeddedKafka.getEmbeddedKafka().getBrokersAsString()))) {
+			admin.createTopics(Collections.singletonList(new NewTopic("fooUniqueTopic", 1, (short) 1))).all().get();
+			try {
+				admin.createTopics(Collections.singletonList(new NewTopic("fooUniqueTopic", 1, (short) 1))).all().get();
+			}
+			catch (Exception ex) {
+				assertThat(ex.getCause() instanceof TopicExistsException).isTrue();
+				throw ex.getCause();
+			}
 		}
 	}
 

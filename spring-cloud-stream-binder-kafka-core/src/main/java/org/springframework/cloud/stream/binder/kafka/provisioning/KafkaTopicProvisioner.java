@@ -39,6 +39,7 @@ import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.admin.TopicDescription;
 import org.apache.kafka.common.KafkaFuture;
 import org.apache.kafka.common.PartitionInfo;
+import org.apache.kafka.common.errors.TopicExistsException;
 
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
@@ -370,8 +371,7 @@ public class KafkaTopicProvisioner implements ProvisioningProvider<ExtendedConsu
 				}
 				catch (Exception ex) {
 					if (ex instanceof ExecutionException) {
-						String exceptionMessage = ex.getMessage();
-						if (exceptionMessage.contains("org.apache.kafka.common.errors.TopicExistsException")) {
+						if (ex.getCause() instanceof TopicExistsException) {
 							if (this.logger.isWarnEnabled()) {
 								this.logger.warn("Attempt to create topic: " + topicName + ". Topic already exists.");
 							}
