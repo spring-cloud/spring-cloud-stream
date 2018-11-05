@@ -504,7 +504,7 @@ public class KafkaMessageChannelBinder extends
 		boolean resetOffsets = extendedConsumerProperties.getExtension().isResetOffsets();
 		final Object resetTo = consumerFactory.getConfigurationProperties().get(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG);
 		final AtomicBoolean initialAssignment = new AtomicBoolean(true);
-		if (!"earliest".equals(resetTo) && "!latest".equals(resetTo)) {
+		if (!"earliest".equals(resetTo) && !"latest".equals(resetTo)) {
 			logger.warn("no (or unknown) " + ConsumerConfig.AUTO_OFFSET_RESET_CONFIG +
 					" property cannot reset");
 			resetOffsets = false;
