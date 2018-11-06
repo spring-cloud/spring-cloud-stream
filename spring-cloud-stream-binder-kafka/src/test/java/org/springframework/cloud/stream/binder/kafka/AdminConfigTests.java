@@ -26,7 +26,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cloud.stream.binder.kafka.config.KafkaBinderConfiguration;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaAdminProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaConsumerProperties;
-import org.springframework.cloud.stream.config.BinderFactoryConfiguration;
 import org.springframework.cloud.stream.config.BindingServiceConfiguration;
 import org.springframework.integration.config.EnableIntegration;
 import org.springframework.test.context.TestPropertySource;
@@ -41,7 +40,6 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = {KafkaBinderConfiguration.class,
-		BinderFactoryConfiguration.class,
 		BindingServiceConfiguration.class })
 @TestPropertySource(properties = {
 		"spring.cloud.stream.kafka.bindings.input.consumer.admin.replication-factor=2",

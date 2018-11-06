@@ -134,20 +134,44 @@ public class KafkaMessageChannelBinder extends
 		AbstractMessageChannelBinder<ExtendedConsumerProperties<KafkaConsumerProperties>, ExtendedProducerProperties<KafkaProducerProperties>, KafkaTopicProvisioner>
 		implements ExtendedPropertiesBinder<MessageChannel, KafkaConsumerProperties, KafkaProducerProperties> {
 
+	/**
+	 * Kafka header for x-exception-fqcn.
+	 */
 	public static final String X_EXCEPTION_FQCN = "x-exception-fqcn";
 
+	/**
+	 * Kafka header for x-exception-stacktrace.
+	 */
 	public static final String X_EXCEPTION_STACKTRACE = "x-exception-stacktrace";
 
+	/**
+	 * Kafka header for x-exception-message.
+	 */
 	public static final String X_EXCEPTION_MESSAGE = "x-exception-message";
 
+	/**
+	 * Kafka header for x-original-topic.
+	 */
 	public static final String X_ORIGINAL_TOPIC = "x-original-topic";
 
+	/**
+	 * Kafka header for x-original-partition.
+	 */
 	public static final String X_ORIGINAL_PARTITION = "x-original-partition";
 
+	/**
+	 * Kafka header for x-original-offset.
+	 */
 	public static final String X_ORIGINAL_OFFSET = "x-original-offset";
 
+	/**
+	 * Kafka header for x-original-timestamp.
+	 */
 	public static final String X_ORIGINAL_TIMESTAMP = "x-original-timestamp";
 
+	/**
+	 * Kafka header for x-original-timestamp-type.
+	 */
 	public static final String X_ORIGINAL_TIMESTAMP_TYPE = "x-original-timestamp-type";
 
 	private static final ThreadLocal<String> bindingNameHolder = new ThreadLocal<>();
@@ -275,7 +299,7 @@ public class KafkaMessageChannelBinder extends
 						+ partitions.size() + " for the topic. The larger number will be used instead.");
 			}
 			List<ChannelInterceptor> interceptors = ((ChannelInterceptorAware) channel).getChannelInterceptors();
-			interceptors.forEach(interceptor -> {
+			interceptors.forEach((interceptor) -> {
 				if (interceptor instanceof PartitioningInterceptor) {
 					((PartitioningInterceptor) interceptor).setPartitionCount(partitions.size());
 				}
@@ -675,8 +699,8 @@ public class KafkaMessageChannelBinder extends
 					extendedConsumerProperties.getExtension().getConverterBeanName(),
 						MessagingMessageConverter.class);
 			}
-			catch (NoSuchBeanDefinitionException e) {
-				throw new IllegalStateException("Converter bean not present in application context", e);
+			catch (NoSuchBeanDefinitionException ex) {
+				throw new IllegalStateException("Converter bean not present in application context", ex);
 			}
 		}
 		messageConverter.setHeaderMapper(getHeaderMapper(extendedConsumerProperties));
@@ -737,16 +761,16 @@ public class KafkaMessageChannelBinder extends
 		KafkaConsumerProperties kafkaConsumerProperties = properties.getExtension();
 		if (kafkaConsumerProperties.isEnableDlq()) {
 			KafkaProducerProperties dlqProducerProperties = kafkaConsumerProperties.getDlqProducerProperties();
-			ProducerFactory<?,?> producerFactory = this.transactionManager != null
+			ProducerFactory<?, ?> producerFactory = this.transactionManager != null
 					? this.transactionManager.getProducerFactory()
 					: getProducerFactory(null,
 						new ExtendedProducerProperties<>(dlqProducerProperties));
-			final KafkaTemplate<?,?> kafkaTemplate = new KafkaTemplate<>(producerFactory);
+			final KafkaTemplate<?, ?> kafkaTemplate = new KafkaTemplate<>(producerFactory);
 
 			@SuppressWarnings("rawtypes")
-			DlqSender<?,?> dlqSender = new DlqSender(kafkaTemplate);
+			DlqSender<?, ?> dlqSender = new DlqSender(kafkaTemplate);
 
-			return message -> {
+			return (message) -> {
 
 				final ConsumerRecord<Object, Object> record = message.getHeaders()
 						.get(KafkaHeaders.RAW_DATA, ConsumerRecord.class);
@@ -818,8 +842,8 @@ public class KafkaMessageChannelBinder extends
 							recordToSend.set(new ConsumerRecord<Object, Object>(record.topic(), record.partition(),
 									record.offset(), record.key(), payload));
 						}
-						catch (Exception e) {
-							throw new RuntimeException(e);
+						catch (Exception ex) {
+							throw new RuntimeException(ex);
 						}
 					}
 				}
@@ -838,7 +862,7 @@ public class KafkaMessageChannelBinder extends
 			return getErrorMessageHandler(destination, group, properties);
 		}
 		final MessageHandler superHandler = super.getErrorMessageHandler(destination, group, properties);
-		return message -> {
+		return (message) -> {
 			ConsumerRecord<?, ?> record = (ConsumerRecord<?, ?>) message.getHeaders().get(KafkaHeaders.RAW_DATA);
 			if (!(message instanceof ErrorMessage)) {
 				logger.error("Expected an ErrorMessage, not a " + message.getClass().toString() + " for: "
@@ -885,7 +909,7 @@ public class KafkaMessageChannelBinder extends
 		props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, anonymous ? "latest" : "earliest");
 		props.put(ConsumerConfig.GROUP_ID_CONFIG, consumerGroup);
 
-		Map<String, Object> mergedConfig = configurationProperties.mergedConsumerConfiguration();
+		Map<String, Object> mergedConfig = this.configurationProperties.mergedConsumerConfiguration();
 		if (!ObjectUtils.isEmpty(mergedConfig)) {
 			props.putAll(mergedConfig);
 		}
@@ -965,9 +989,9 @@ public class KafkaMessageChannelBinder extends
 			try {
 				super.onInit();
 			}
-			catch (Exception e) {
-				this.logger.error("Initialization errors: ", e);
-				throw new RuntimeException(e);
+			catch (Exception ex) {
+				this.logger.error("Initialization errors: ", ex);
+				throw new RuntimeException(ex);
 			}
 		}
 
@@ -986,6 +1010,9 @@ public class KafkaMessageChannelBinder extends
 
 	}
 
+	/**
+	 * Inner class to capture topic details.
+	 */
 	static class TopicInformation {
 
 		private final String consumerGroup;
@@ -1001,26 +1028,32 @@ public class KafkaMessageChannelBinder extends
 		}
 
 		String getConsumerGroup() {
-			return consumerGroup;
+			return this.consumerGroup;
 		}
 
 		boolean isConsumerTopic() {
-			return consumerGroup != null;
+			return this.consumerGroup != null;
 		}
 
 		boolean isTopicPattern() {
-			return isTopicPattern;
+			return this.isTopicPattern;
 		}
 
 		Collection<PartitionInfo> getPartitionInfos() {
-			return partitionInfos;
+			return this.partitionInfos;
 		}
 
 	}
 
-	private final class DlqSender<K,V> {
+	/**
+	 * Helper class to send to DLQ.
+	 *
+	 * @param <K> generic type for key
+	 * @param <V> generic type for value
+	 */
+	private final class DlqSender<K, V> {
 
-		private final KafkaTemplate<K,V> kafkaTemplate;
+		private final KafkaTemplate<K, V> kafkaTemplate;
 
 		DlqSender(KafkaTemplate<K, V> kafkaTemplate) {
 			this.kafkaTemplate = kafkaTemplate;
@@ -1028,9 +1061,9 @@ public class KafkaMessageChannelBinder extends
 
 		@SuppressWarnings("unchecked")
 		void sendToDlq(ConsumerRecord<?, ?> consumerRecord, Headers headers, String dlqName) {
-			K key = (K)consumerRecord.key();
-			V value = (V)consumerRecord.value();
-			ProducerRecord<K,V> producerRecord = new ProducerRecord<>(dlqName, consumerRecord.partition(),
+			K key = (K) consumerRecord.key();
+			V value = (V) consumerRecord.value();
+			ProducerRecord<K, V> producerRecord = new ProducerRecord<>(dlqName, consumerRecord.partition(),
 					key, value, headers);
 
 			StringBuilder sb = new StringBuilder().append(" a message with key='")

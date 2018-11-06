@@ -75,21 +75,21 @@ public class KafkaBinderHealthIndicator implements HealthIndicator {
 		ExecutorService exec = Executors.newSingleThreadExecutor();
 		Future<Health> future = exec.submit(() -> {
 			try {
-				if (metadataConsumer == null) {
-					synchronized(KafkaBinderHealthIndicator.this) {
-						if (metadataConsumer == null) {
-							metadataConsumer = consumerFactory.createConsumer();
+				if (this.metadataConsumer == null) {
+					synchronized (KafkaBinderHealthIndicator.this) {
+						if (this.metadataConsumer == null) {
+							this.metadataConsumer = this.consumerFactory.createConsumer();
 						}
 					}
 				}
-				synchronized (metadataConsumer) {
+				synchronized (this.metadataConsumer) {
 					Set<String> downMessages = new HashSet<>();
 					final Map<String, KafkaMessageChannelBinder.TopicInformation> topicsInUse =
 							KafkaBinderHealthIndicator.this.binder.getTopicsInUse();
 					for (String topic : topicsInUse.keySet()) {
 						KafkaMessageChannelBinder.TopicInformation topicInformation = topicsInUse.get(topic);
 						if (!topicInformation.isTopicPattern()) {
-							List<PartitionInfo> partitionInfos = metadataConsumer.partitionsFor(topic);
+							List<PartitionInfo> partitionInfos = this.metadataConsumer.partitionsFor(topic);
 							for (PartitionInfo partitionInfo : partitionInfos) {
 								if (topicInformation.getPartitionInfos()
 										.contains(partitionInfo) && partitionInfo.leader().id() == -1) {
@@ -108,23 +108,23 @@ public class KafkaBinderHealthIndicator implements HealthIndicator {
 					}
 				}
 			}
-			catch (Exception e) {
-				return Health.down(e).build();
+			catch (Exception ex) {
+				return Health.down(ex).build();
 			}
 		});
 		try {
 			return future.get(this.timeout, TimeUnit.SECONDS);
 		}
-		catch (InterruptedException e) {
+		catch (InterruptedException ex) {
 			Thread.currentThread().interrupt();
 			return Health.down()
 					.withDetail("Interrupted while waiting for partition information in", this.timeout + " seconds")
 					.build();
 		}
-		catch (ExecutionException e) {
-			return Health.down(e).build();
+		catch (ExecutionException ex) {
+			return Health.down(ex).build();
 		}
-		catch (TimeoutException e) {
+		catch (TimeoutException ex) {
 			return Health.down()
 					.withDetail("Failed to retrieve partition information in", this.timeout + " seconds")
 					.build();

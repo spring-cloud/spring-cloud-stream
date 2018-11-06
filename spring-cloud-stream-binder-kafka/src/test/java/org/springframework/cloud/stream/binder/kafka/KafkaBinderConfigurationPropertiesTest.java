@@ -58,6 +58,7 @@ public class KafkaBinderConfigurationPropertiesTest {
 	private KafkaMessageChannelBinder kafkaMessageChannelBinder;
 
 	@Test
+	@SuppressWarnings("unchecked")
 	public void testKafkaBinderConfigurationProperties() throws Exception {
 		assertNotNull(this.kafkaMessageChannelBinder);
 		KafkaProducerProperties kafkaProducerProperties = new KafkaProducerProperties();

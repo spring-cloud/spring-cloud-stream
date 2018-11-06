@@ -48,6 +48,8 @@ import org.springframework.kafka.support.ProducerListener;
 import org.springframework.lang.Nullable;
 
 /**
+ * Kafka binder configuration class.
+ *
  * @author David Turanski
  * @author Marius Bogoevici
  * @author Soby Chacko
@@ -95,7 +97,7 @@ public class KafkaBinderConfiguration {
 		KafkaMessageChannelBinder kafkaMessageChannelBinder = new KafkaMessageChannelBinder(
 				configurationProperties, provisioningProvider, listenerContainerCustomizer,
 				rebalanceListener.getIfUnique());
-		kafkaMessageChannelBinder.setProducerListener(producerListener);
+		kafkaMessageChannelBinder.setProducerListener(this.producerListener);
 		kafkaMessageChannelBinder.setExtendedBindingProperties(this.kafkaExtendedBindingProperties);
 		return kafkaMessageChannelBinder;
 	}
@@ -146,6 +148,9 @@ public class KafkaBinderConfiguration {
 
 	}
 
+	/**
+	 * Properties configuration for Jaas.
+	 */
 	@SuppressWarnings("unused")
 	public static class JaasConfigurationProperties {
 

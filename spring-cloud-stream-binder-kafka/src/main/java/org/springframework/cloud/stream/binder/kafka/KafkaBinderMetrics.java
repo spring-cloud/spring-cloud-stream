@@ -28,10 +28,9 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.binder.MeterBinder;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.kafka.clients.consumer.Consumer;
@@ -64,7 +63,7 @@ public class KafkaBinderMetrics implements MeterBinder, ApplicationListener<Bind
 
 	private static final int DEFAULT_TIMEOUT = 60;
 
-	private final static Log LOG = LogFactory.getLog(KafkaBinderMetrics.class);
+	private static final Log LOG = LogFactory.getLog(KafkaBinderMetrics.class);
 
 	static final String METRIC_NAME = "spring.cloud.stream.binder.kafka.offset";
 
@@ -79,7 +78,7 @@ public class KafkaBinderMetrics implements MeterBinder, ApplicationListener<Bind
 	private Map<String, Consumer<?, ?>> metadataConsumers;
 
 	private int timeout = DEFAULT_TIMEOUT;
-	
+
 	public KafkaBinderMetrics(KafkaMessageChannelBinder binder,
 			KafkaBinderConfigurationProperties binderConfigurationProperties,
 			ConsumerFactory<?, ?> defaultConsumerFactory, @Nullable MeterRegistry meterRegistry) {
@@ -114,7 +113,7 @@ public class KafkaBinderMetrics implements MeterBinder, ApplicationListener<Bind
 			String group = topicInfo.getValue().getConsumerGroup();
 
 			Gauge.builder(METRIC_NAME, this,
-						o -> computeUnconsumedMessages(topic, group))
+					(o) -> computeUnconsumedMessages(topic, group))
 					.tag("group", group)
 					.tag("topic", topic)
 					.description("Unconsumed messages for a particular group and topic")
@@ -128,9 +127,9 @@ public class KafkaBinderMetrics implements MeterBinder, ApplicationListener<Bind
 
 			long lag = 0;
 			try {
-				Consumer<?, ?> metadataConsumer = metadataConsumers.computeIfAbsent(
-						group, 
-						g -> createConsumerFactory().createConsumer(g, "monitoring"));
+				Consumer<?, ?> metadataConsumer = this.metadataConsumers.computeIfAbsent(
+						group,
+						(g) -> createConsumerFactory().createConsumer(g, "monitoring"));
 				synchronized (metadataConsumer) {
 					List<PartitionInfo> partitionInfos = metadataConsumer.partitionsFor(topic);
 					List<TopicPartition> topicPartitions = new LinkedList<>();
@@ -149,19 +148,19 @@ public class KafkaBinderMetrics implements MeterBinder, ApplicationListener<Bind
 					}
 				}
 			}
-			catch (Exception e) {
-				LOG.debug("Cannot generate metric for topic: " + topic, e);
+			catch (Exception ex) {
+				LOG.debug("Cannot generate metric for topic: " + topic, ex);
 			}
 			return lag;
 		});
 		try {
 			return future.get(this.timeout, TimeUnit.SECONDS);
 		}
-		catch (InterruptedException e) {
+		catch (InterruptedException ex) {
 			Thread.currentThread().interrupt();
 			return 0L;
 		}
-		catch (ExecutionException | TimeoutException e) {
+		catch (ExecutionException | TimeoutException ex) {
 			return 0L;
 		}
 		finally {
@@ -171,7 +170,7 @@ public class KafkaBinderMetrics implements MeterBinder, ApplicationListener<Bind
 
 	private ConsumerFactory<?, ?> createConsumerFactory() {
 		if (this.defaultConsumerFactory == null) {
-			synchronized (this) {			
+			synchronized (this) {
 				if (this.defaultConsumerFactory == null) {
 					Map<String, Object> props = new HashMap<>();
 					props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class);

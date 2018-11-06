@@ -35,19 +35,19 @@ import org.springframework.core.env.MapPropertySource;
  */
 public class KafkaBinderEnvironmentPostProcessor implements EnvironmentPostProcessor {
 
-	public final static String SPRING_KAFKA = "spring.kafka";
+	private static final String SPRING_KAFKA = "spring.kafka";
 
-	public final static String SPRING_KAFKA_PRODUCER = SPRING_KAFKA + ".producer";
+	private static final String SPRING_KAFKA_PRODUCER = SPRING_KAFKA + ".producer";
 
-	public final static String SPRING_KAFKA_CONSUMER = SPRING_KAFKA + ".consumer";
+	private static final String SPRING_KAFKA_CONSUMER = SPRING_KAFKA + ".consumer";
 
-	public final static String SPRING_KAFKA_PRODUCER_KEY_SERIALIZER = SPRING_KAFKA_PRODUCER + "." + "keySerializer";
+	private static final String SPRING_KAFKA_PRODUCER_KEY_SERIALIZER = SPRING_KAFKA_PRODUCER + "." + "keySerializer";
 
-	public final static String SPRING_KAFKA_PRODUCER_VALUE_SERIALIZER = SPRING_KAFKA_PRODUCER + "." + "valueSerializer";
+	private static final String SPRING_KAFKA_PRODUCER_VALUE_SERIALIZER = SPRING_KAFKA_PRODUCER + "." + "valueSerializer";
 
-	public final static String SPRING_KAFKA_CONSUMER_KEY_DESERIALIZER = SPRING_KAFKA_CONSUMER + "." + "keyDeserializer";
+	private static final String SPRING_KAFKA_CONSUMER_KEY_DESERIALIZER = SPRING_KAFKA_CONSUMER + "." + "keyDeserializer";
 
-	public final static String SPRING_KAFKA_CONSUMER_VALUE_DESERIALIZER = SPRING_KAFKA_CONSUMER + "." + "valueDeserializer";
+	private static final String SPRING_KAFKA_CONSUMER_VALUE_DESERIALIZER = SPRING_KAFKA_CONSUMER + "." + "valueDeserializer";
 
 	private static final String KAFKA_BINDER_DEFAULT_PROPERTIES = "kafkaBinderDefaultProperties";
 

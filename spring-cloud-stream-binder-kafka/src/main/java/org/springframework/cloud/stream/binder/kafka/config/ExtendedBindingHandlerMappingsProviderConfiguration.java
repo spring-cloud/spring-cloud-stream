@@ -25,9 +25,9 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
+ * Configuration for extended binding metadata.
  *
  * @author Oleg Zhurakousky
- *
  */
 
 @Configuration

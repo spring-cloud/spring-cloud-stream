@@ -34,19 +34,19 @@ import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.util.ObjectUtils;
 
 /**
+ * Configuration class for Kafka binder health indicator beans.
  *
  * @author Oleg Zhurakousky
- *
  */
 
 @Configuration
-@ConditionalOnClass(name="org.springframework.boot.actuate.health.HealthIndicator")
+@ConditionalOnClass(name = "org.springframework.boot.actuate.health.HealthIndicator")
 @ConditionalOnEnabledHealthIndicator("binders")
 class KafkaBinderHealthIndicatorConfiguration {
 
 	@Bean
 	KafkaBinderHealthIndicator kafkaBinderHealthIndicator(KafkaMessageChannelBinder kafkaMessageChannelBinder,
-														  KafkaBinderConfigurationProperties configurationProperties) {
+														KafkaBinderConfigurationProperties configurationProperties) {
 		Map<String, Object> props = new HashMap<>();
 		props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class);
 		props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class);
