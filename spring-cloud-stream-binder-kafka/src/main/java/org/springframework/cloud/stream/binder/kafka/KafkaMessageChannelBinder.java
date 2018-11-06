@@ -101,6 +101,7 @@ import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.kafka.support.ProducerListener;
 import org.springframework.kafka.support.SendResult;
 import org.springframework.kafka.support.TopicPartitionInitialOffset;
+import org.springframework.kafka.support.TopicPartitionInitialOffset.SeekPosition;
 import org.springframework.kafka.support.converter.MessagingMessageConverter;
 import org.springframework.kafka.transaction.KafkaTransactionManager;
 import org.springframework.messaging.MessageChannel;
@@ -591,8 +592,7 @@ public class KafkaMessageChannelBinder extends
 		else if (resetOffsets) {
 			Arrays.stream(containerProperties.getTopicPartitions())
 					.map(tpio -> new TopicPartitionInitialOffset(tpio.topic(), tpio.partition(),
-							// SK GH-599	 "earliest".equals(resetTo) ? SeekPosition.BEGINNING : SeekPosition.END))
-							"earliest".equals(resetTo) ? 0L : Long.MAX_VALUE))
+							"earliest".equals(resetTo) ? SeekPosition.BEGINNING : SeekPosition.END))
 					.collect(Collectors.toList()).toArray(containerProperties.getTopicPartitions());
 		}
 	}

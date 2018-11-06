@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2017-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -35,6 +36,7 @@ import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.cloud.stream.binder.Binding;
@@ -53,7 +55,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
@@ -169,7 +170,7 @@ public class KafkaBinderUnitTests {
 		}).given(provisioningProvider).getPartitionsForTopic(anyInt(), anyBoolean(), any());
 		@SuppressWarnings("unchecked")
 		final Consumer<byte[], byte[]> consumer = mock(Consumer.class);
-		final CountDownLatch latch = new CountDownLatch(2);
+		final CountDownLatch latch = new CountDownLatch(1);
 		willAnswer(i -> {
 			try {
 				Thread.sleep(100);
@@ -183,14 +184,16 @@ public class KafkaBinderUnitTests {
 			((org.apache.kafka.clients.consumer.ConsumerRebalanceListener) i.getArgument(1))
 					.onPartitionsAssigned(partitions);
 			latch.countDown();
-			latch.countDown();
 			return null;
-		}).given(consumer).subscribe(eq(Collections.singletonList(topic)),
-				any(org.apache.kafka.clients.consumer.ConsumerRebalanceListener.class));
+		}).given(consumer).subscribe(eq(Collections.singletonList(topic)), any());
 		willAnswer(i -> {
 			latch.countDown();
 			return null;
-		}).given(consumer).seek(any(), anyLong());
+		}).given(consumer).seekToBeginning(any());
+		willAnswer(i -> {
+			latch.countDown();
+			return null;
+		}).given(consumer).seekToEnd(any());
 		KafkaMessageChannelBinder binder = new KafkaMessageChannelBinder(configurationProperties, provisioningProvider) {
 
 			@Override
@@ -249,24 +252,15 @@ public class KafkaBinderUnitTests {
 		consumerProperties.setInstanceCount(1);
 		Binding<MessageChannel> messageChannelBinding = binder.bindConsumer(topic, group, channel, consumerProperties);
 		assertThat(latch.await(10, TimeUnit.SECONDS)).isTrue();
-		if (groupManage) {
-			if (earliest) {
-				verify(consumer).seekToBeginning(partitions);
-			}
-			else {
-				verify(consumer).seekToEnd(partitions);
-			}
+		@SuppressWarnings("unchecked")
+		ArgumentCaptor<Set<TopicPartition>> captor = ArgumentCaptor.forClass(Set.class);
+		if (earliest) {
+			verify(consumer).seekToBeginning(captor.capture());
 		}
 		else {
-			if (earliest) {
-				verify(consumer).seek(partitions.get(0), 0L);
-				verify(consumer).seek(partitions.get(1), 0L);
-			}
-			else {
-				verify(consumer).seek(partitions.get(0), Long.MAX_VALUE);
-				verify(consumer).seek(partitions.get(1), Long.MAX_VALUE);
-			}
+			verify(consumer).seekToEnd(captor.capture());
 		}
+		assertThat(captor.getValue()).containsExactlyInAnyOrderElementsOf(partitions);
 		messageChannelBinding.unbind();
 	}
 
