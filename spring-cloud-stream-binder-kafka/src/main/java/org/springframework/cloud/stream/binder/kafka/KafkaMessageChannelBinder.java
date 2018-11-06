@@ -149,22 +149,31 @@ public class KafkaMessageChannelBinder extends
 
 	public static final String X_ORIGINAL_TIMESTAMP_TYPE = "x-original-timestamp-type";
 
+	private static final ThreadLocal<String> bindingNameHolder = new ThreadLocal<>();
+
 	private final KafkaBinderConfigurationProperties configurationProperties;
 
 	private final Map<String, TopicInformation> topicsInUse = new ConcurrentHashMap<>();
 
 	private final KafkaTransactionManager<byte[], byte[]> transactionManager;
 
+	private final KafkaBindingRebalanceListener rebalanceListener;
+
 	private ProducerListener<byte[], byte[]> producerListener;
 
 	private KafkaExtendedBindingProperties extendedBindingProperties = new KafkaExtendedBindingProperties();
 
-	public KafkaMessageChannelBinder(KafkaBinderConfigurationProperties configurationProperties, KafkaTopicProvisioner provisioningProvider) {
-		this(configurationProperties, provisioningProvider, null);
+	public KafkaMessageChannelBinder(KafkaBinderConfigurationProperties configurationProperties,
+			KafkaTopicProvisioner provisioningProvider) {
+
+		this(configurationProperties, provisioningProvider, null, null);
 	}
 
 	public KafkaMessageChannelBinder(KafkaBinderConfigurationProperties configurationProperties,
-			KafkaTopicProvisioner provisioningProvider, ListenerContainerCustomizer<AbstractMessageListenerContainer<?, ?>> containerCustomizer) {
+			KafkaTopicProvisioner provisioningProvider,
+			ListenerContainerCustomizer<AbstractMessageListenerContainer<?, ?>> containerCustomizer,
+			KafkaBindingRebalanceListener rebalanceListener) {
+
 		super(headersToMap(configurationProperties), provisioningProvider, containerCustomizer);
 		this.configurationProperties = configurationProperties;
 		if (StringUtils.hasText(configurationProperties.getTransaction().getTransactionIdPrefix())) {
@@ -175,6 +184,7 @@ public class KafkaMessageChannelBinder extends
 		else {
 			this.transactionManager = null;
 		}
+		this.rebalanceListener = rebalanceListener;
 	}
 
 	private static String[] headersToMap(KafkaBinderConfigurationProperties configurationProperties) {
@@ -207,6 +217,7 @@ public class KafkaMessageChannelBinder extends
 
 	@Override
 	public KafkaConsumerProperties getExtendedConsumerProperties(String channelName) {
+		bindingNameHolder.set(channelName);
 		return this.extendedBindingProperties.getExtendedConsumerProperties(channelName);
 	}
 
@@ -362,7 +373,6 @@ public class KafkaMessageChannelBinder extends
 	@SuppressWarnings("unchecked")
 	protected MessageProducer createConsumerEndpoint(final ConsumerDestination destination, final String group,
 			final ExtendedConsumerProperties<KafkaConsumerProperties> extendedConsumerProperties) {
-
 		boolean anonymous = !StringUtils.hasText(group);
 		Assert.isTrue(!anonymous || !extendedConsumerProperties.getExtension().isEnableDlq(),
 				"DLQ support is not available for anonymous subscriptions");
@@ -407,6 +417,9 @@ public class KafkaMessageChannelBinder extends
 						: new ContainerProperties(topicPartitionInitialOffsets);
 		if (this.transactionManager != null) {
 			containerProperties.setTransactionManager(this.transactionManager);
+		}
+		if (this.rebalanceListener != null) {
+			setupRebalanceListener(extendedConsumerProperties, containerProperties);
 		}
 		containerProperties.setIdleEventInterval(extendedConsumerProperties.getExtension().getIdleEventInterval());
 		int concurrency = usingPatterns ? extendedConsumerProperties.getConcurrency()
@@ -463,6 +476,46 @@ public class KafkaMessageChannelBinder extends
 			kafkaMessageDrivenChannelAdapter.setErrorChannel(errorInfrastructure.getErrorChannel());
 		}
 		return kafkaMessageDrivenChannelAdapter;
+	}
+
+	public void setupRebalanceListener(
+			final ExtendedConsumerProperties<KafkaConsumerProperties> extendedConsumerProperties,
+			final ContainerProperties containerProperties) {
+		Assert.isTrue(!extendedConsumerProperties.getExtension().isResetOffsets(),
+				"'resetOffsets' cannot be set when a KafkaBindingRebalanceListener is provided");
+		final String bindingName = bindingNameHolder.get();
+		bindingNameHolder.remove();
+		Assert.notNull(bindingName, "'bindingName' cannot be null");
+		final KafkaBindingRebalanceListener userRebalanceListener = this.rebalanceListener;
+		containerProperties.setConsumerRebalanceListener(new ConsumerAwareRebalanceListener() {
+
+			private boolean initial = true;
+
+			@Override
+			public void onPartitionsRevokedBeforeCommit(Consumer<?, ?> consumer,
+					Collection<TopicPartition> partitions) {
+
+				userRebalanceListener.onPartitionsRevokedBeforeCommit(bindingName, consumer, partitions);
+			}
+
+			@Override
+			public void onPartitionsRevokedAfterCommit(Consumer<?, ?> consumer,
+					Collection<TopicPartition> partitions) {
+
+				userRebalanceListener.onPartitionsRevokedAfterCommit(bindingName, consumer, partitions);
+			}
+
+			@Override
+			public void onPartitionsAssigned(Consumer<?, ?> consumer, Collection<TopicPartition> partitions) {
+				try {
+					userRebalanceListener.onPartitionsAssigned(bindingName, consumer, partitions, this.initial);
+				}
+				finally {
+					this.initial = false;
+				}
+			}
+
+		});
 	}
 
 	public Collection<PartitionInfo> processTopic(final String group,
@@ -553,7 +606,8 @@ public class KafkaMessageChannelBinder extends
 		String consumerGroup = anonymous ? "anonymous." + UUID.randomUUID().toString() : group;
 		final ConsumerFactory<?, ?> consumerFactory = createKafkaConsumerFactory(anonymous, consumerGroup,
 				consumerProperties);
-		String[] topics = consumerProperties.isMultiplex() ? StringUtils.commaDelimitedListToStringArray(destination.getName())
+		String[] topics = consumerProperties.isMultiplex()
+				? StringUtils.commaDelimitedListToStringArray(destination.getName())
 				: new String[] { destination.getName() };
 		for (int i = 0; i < topics.length; i++) {
 			topics[i] = topics[i].trim();

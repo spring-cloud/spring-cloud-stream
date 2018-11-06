@@ -16,6 +16,14 @@
 
 package org.springframework.cloud.stream.binder.kafka.integration;
 
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+
+import org.apache.kafka.clients.consumer.Consumer;
+import org.apache.kafka.common.TopicPartition;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
@@ -34,9 +42,11 @@ import org.springframework.cloud.stream.binder.BinderFactory;
 import org.springframework.cloud.stream.binder.ConsumerProperties;
 import org.springframework.cloud.stream.binder.ExtendedPropertiesBinder;
 import org.springframework.cloud.stream.binder.ProducerProperties;
+import org.springframework.cloud.stream.binder.kafka.KafkaBindingRebalanceListener;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaConsumerProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaProducerProperties;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.annotation.Bean;
 import org.springframework.kafka.test.rule.EmbeddedKafkaRule;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.SubscribableChannel;
@@ -47,6 +57,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Soby Chacko
+ * @author Gary Russell
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE,
@@ -81,7 +92,7 @@ public class KafkaBinderExtendedPropertiesTest {
 	private ConfigurableApplicationContext context;
 
 	@Test
-	public void testKafkaBinderExtendedProperties() {
+	public void testKafkaBinderExtendedProperties() throws Exception {
 
 		BinderFactory binderFactory = context.getBeanFactory().getBean(BinderFactory.class);
 		Binder<MessageChannel, ? extends ConsumerProperties, ? extends ProducerProperties> kafkaBinder =
@@ -122,6 +133,11 @@ public class KafkaBinderExtendedPropertiesTest {
 
 		assertThat(kafkaConsumerProperties.isAckEachRecord()).isEqualTo(true);
 		assertThat(customKafkaConsumerProperties.isAckEachRecord()).isEqualTo(false);
+
+		RebalanceListener rebalanceListener = context.getBean(RebalanceListener.class);
+		assertThat(rebalanceListener.latch.await(10, TimeUnit.SECONDS)).isTrue();
+		assertThat(rebalanceListener.bindings.keySet()).contains("standard-in", "custom-in");
+		assertThat(rebalanceListener.bindings.values()).containsExactly(Boolean.TRUE, Boolean.TRUE);
 	}
 
 	@EnableBinding(CustomBindingForExtendedPropertyTesting.class)
@@ -140,6 +156,11 @@ public class KafkaBinderExtendedPropertiesTest {
 			return payload;
 		}
 
+		@Bean
+		public RebalanceListener rebalanceListener() {
+			return new RebalanceListener();
+		}
+
 	}
 
 	interface CustomBindingForExtendedPropertyTesting {
@@ -156,4 +177,33 @@ public class KafkaBinderExtendedPropertiesTest {
 		@Output("custom-out")
 		MessageChannel customOut();
 	}
+
+	public static class RebalanceListener implements KafkaBindingRebalanceListener {
+
+		private final Map<String, Boolean> bindings = new HashMap<>();
+
+		private final CountDownLatch latch = new CountDownLatch(2);
+
+		@Override
+		public void onPartitionsRevokedBeforeCommit(String bindingName, Consumer<?, ?> consumer,
+				Collection<TopicPartition> partitions) {
+
+		}
+
+		@Override
+		public void onPartitionsRevokedAfterCommit(String bindingName, Consumer<?, ?> consumer,
+				Collection<TopicPartition> partitions) {
+
+		}
+
+		@Override
+		public void onPartitionsAssigned(String bindingName, Consumer<?, ?> consumer,
+				Collection<TopicPartition> partitions, boolean initial) {
+
+			this.bindings.put(bindingName, initial);
+			this.latch.countDown();
+		}
+
+	}
+
 }
