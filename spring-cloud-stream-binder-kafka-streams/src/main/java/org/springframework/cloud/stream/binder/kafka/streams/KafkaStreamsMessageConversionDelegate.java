@@ -231,10 +231,11 @@ public class KafkaStreamsMessageConversionDelegate {
 						}
 					}
 					else if (kstreamBinderConfigurationProperties.getSerdeError() == KafkaStreamsBinderConfigurationProperties.SerdeError.logAndFail) {
-						throw new IllegalStateException("Inbound deserialization failed.");
+						throw new IllegalStateException("Inbound deserialization failed. Stopping further processing of records.");
 					}
 					else if (kstreamBinderConfigurationProperties.getSerdeError() == KafkaStreamsBinderConfigurationProperties.SerdeError.logAndContinue) {
-						//quietly pass through. No action needed, this is similar to log and continue.
+						//quietly passing through. No action needed, this is similar to log and continue.
+						LOG.error("Inbound deserialization failed. Skipping this record and continuing.");
 					}
 				}
 			}
