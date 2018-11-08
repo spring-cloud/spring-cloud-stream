@@ -738,7 +738,7 @@ public class KafkaMessageChannelBinder extends
 	private Collection<PartitionInfo> getPartitionInfo(String topic,
 			final ExtendedConsumerProperties<KafkaConsumerProperties> extendedConsumerProperties,
 			final ConsumerFactory<?, ?> consumerFactory, int partitionCount) {
-		Collection<PartitionInfo> allPartitions = provisioningProvider.getPartitionsForTopic(partitionCount,
+		return provisioningProvider.getPartitionsForTopic(partitionCount,
 				extendedConsumerProperties.getExtension().isAutoRebalanceEnabled(),
 				() -> {
 					try (Consumer<?, ?> consumer = consumerFactory.createConsumer()) {
@@ -746,7 +746,6 @@ public class KafkaMessageChannelBinder extends
 						return partitionsFor;
 					}
 				});
-		return allPartitions;
 	}
 
 	@Override

@@ -30,8 +30,6 @@ import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.Status;
@@ -105,15 +103,10 @@ public class KafkaBinderHealthIndicatorTest {
 	public void kafkaBinderDoesNotAnswer() {
 		final List<PartitionInfo> partitions = partitions(new Node(-1, null, 0));
 		topicsInUse.put(TEST_TOPIC, new KafkaMessageChannelBinder.TopicInformation("group3-healthIndicator", partitions, false));
-		org.mockito.BDDMockito.given(consumer.partitionsFor(TEST_TOPIC)).willAnswer(new Answer<Object>() {
-
-			@Override
-			public Object answer(InvocationOnMock invocation) throws Throwable {
-				final int fiveMinutes = 1000 * 60 * 5;
-				Thread.sleep(fiveMinutes);
-				return partitions;
-			}
-
+		org.mockito.BDDMockito.given(consumer.partitionsFor(TEST_TOPIC)).willAnswer(invocation -> {
+			final int fiveMinutes = 1000 * 60 * 5;
+			Thread.sleep(fiveMinutes);
+			return partitions;
 		});
 		this.indicator.setTimeout(1);
 		Health health = indicator.health();
@@ -135,6 +128,9 @@ public class KafkaBinderHealthIndicatorTest {
 
 	@Test
 	public void consumerCreationFailsFirstTime() {
+		final List<PartitionInfo> partitions = partitions(new Node(0, null, 0));
+		topicsInUse.put(TEST_TOPIC, new KafkaMessageChannelBinder.TopicInformation("foo-healthIndicator", partitions, false));
+
 		org.mockito.BDDMockito.given(consumerFactory.createConsumer()).willThrow(KafkaException.class)
 				.willReturn(consumer);
 
@@ -145,6 +141,12 @@ public class KafkaBinderHealthIndicatorTest {
 		assertThat(health.getStatus()).isEqualTo(Status.UP);
 
 		org.mockito.Mockito.verify(this.consumerFactory, Mockito.times(2)).createConsumer();
+	}
+
+	@Test
+	public void testIfNoTopicsRegisteredByTheBinderProvidesDownStatus() {
+		Health health = indicator.health();
+		assertThat(health.getStatus()).isEqualTo(Status.DOWN);
 	}
 
 	private List<PartitionInfo> partitions(Node leader) {

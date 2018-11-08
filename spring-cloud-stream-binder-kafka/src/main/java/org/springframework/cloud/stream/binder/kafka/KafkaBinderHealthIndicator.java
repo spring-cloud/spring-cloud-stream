@@ -86,14 +86,21 @@ public class KafkaBinderHealthIndicator implements HealthIndicator {
 					Set<String> downMessages = new HashSet<>();
 					final Map<String, KafkaMessageChannelBinder.TopicInformation> topicsInUse =
 							KafkaBinderHealthIndicator.this.binder.getTopicsInUse();
-					for (String topic : topicsInUse.keySet()) {
-						KafkaMessageChannelBinder.TopicInformation topicInformation = topicsInUse.get(topic);
-						if (!topicInformation.isTopicPattern()) {
-							List<PartitionInfo> partitionInfos = this.metadataConsumer.partitionsFor(topic);
-							for (PartitionInfo partitionInfo : partitionInfos) {
-								if (topicInformation.getPartitionInfos()
-										.contains(partitionInfo) && partitionInfo.leader().id() == -1) {
-									downMessages.add(partitionInfo.toString());
+					if (topicsInUse.isEmpty()) {
+						return Health.down()
+								.withDetail("No topic information available", "Kafka broker is not reachable")
+								.build();
+					}
+					else {
+						for (String topic : topicsInUse.keySet()) {
+							KafkaMessageChannelBinder.TopicInformation topicInformation = topicsInUse.get(topic);
+							if (!topicInformation.isTopicPattern()) {
+								List<PartitionInfo> partitionInfos = this.metadataConsumer.partitionsFor(topic);
+								for (PartitionInfo partitionInfo : partitionInfos) {
+									if (topicInformation.getPartitionInfos()
+											.contains(partitionInfo) && partitionInfo.leader().id() == -1) {
+										downMessages.add(partitionInfo.toString());
+									}
 								}
 							}
 						}
