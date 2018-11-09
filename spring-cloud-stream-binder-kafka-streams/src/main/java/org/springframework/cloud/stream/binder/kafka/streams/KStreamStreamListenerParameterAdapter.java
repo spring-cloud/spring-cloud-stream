@@ -23,10 +23,12 @@ import org.springframework.core.MethodParameter;
 import org.springframework.core.ResolvableType;
 
 /**
+ * {@link StreamListenerParameterAdapter} for KStream.
+ *
  * @author Marius Bogoevici
  * @author Soby Chacko
  */
-class KStreamStreamListenerParameterAdapter implements StreamListenerParameterAdapter<KStream<?,?>, KStream<?, ?>> {
+class KStreamStreamListenerParameterAdapter implements StreamListenerParameterAdapter<KStream<?, ?>, KStream<?, ?>> {
 
 	private final KafkaStreamsMessageConversionDelegate kafkaStreamsMessageConversionDelegate;
 	private final KafkaStreamsBindingInformationCatalogue KafkaStreamsBindingInformationCatalogue;
@@ -53,7 +55,7 @@ class KStreamStreamListenerParameterAdapter implements StreamListenerParameterAd
 			return bindingTarget;
 		}
 		else {
-			return kafkaStreamsMessageConversionDelegate.deserializeOnInbound(valueClass, bindingTarget);
+			return this.kafkaStreamsMessageConversionDelegate.deserializeOnInbound(valueClass, bindingTarget);
 		}
 	}
 }

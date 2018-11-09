@@ -16,11 +16,6 @@
 
 package org.springframework.cloud.stream.binder.kafka.streams;
 
-/**
- * @author Soby Chacko
- * @author Rafal Zukowski
- * @author Gary Russell
- */
 import java.util.HashMap;
 import java.util.Map;
 
@@ -42,18 +37,25 @@ import org.springframework.util.ObjectUtils;
 import org.springframework.util.concurrent.ListenableFuture;
 import org.springframework.util.concurrent.ListenableFutureCallback;
 
+/**
+ * Send records in error to a DLQ.
+ *
+ * @author Soby Chacko
+ * @author Rafal Zukowski
+ * @author Gary Russell
+ */
 class KafkaStreamsDlqDispatch {
 
 	private final Log logger = LogFactory.getLog(getClass());
 
-	private final KafkaTemplate<byte[],byte[]> kafkaTemplate;
+	private final KafkaTemplate<byte[], byte[]> kafkaTemplate;
 
 	private final String dlqName;
 
 	KafkaStreamsDlqDispatch(String dlqName,
 							KafkaBinderConfigurationProperties kafkaBinderConfigurationProperties,
 							KafkaConsumerProperties kafkaConsumerProperties) {
-		ProducerFactory<byte[],byte[]> producerFactory = getProducerFactory(
+		ProducerFactory<byte[], byte[]> producerFactory = getProducerFactory(
 				new ExtendedProducerProperties<>(kafkaConsumerProperties.getDlqProducerProperties()),
 				kafkaBinderConfigurationProperties);
 
@@ -63,7 +65,7 @@ class KafkaStreamsDlqDispatch {
 
 	@SuppressWarnings("unchecked")
 	public void sendToDlq(byte[] key, byte[] value, int partittion) {
-		ProducerRecord<byte[],byte[]> producerRecord = new ProducerRecord<>(this.dlqName, partittion,
+		ProducerRecord<byte[], byte[]> producerRecord = new ProducerRecord<>(this.dlqName, partittion,
 				key, value, null);
 
 		StringBuilder sb = new StringBuilder().append(" a message with key='")
@@ -72,10 +74,10 @@ class KafkaStreamsDlqDispatch {
 				.append(toDisplayString(ObjectUtils.nullSafeToString(value)))
 				.append("'").append(" received from ")
 				.append(partittion);
-		ListenableFuture<SendResult<byte[],byte[]>> sentDlq = null;
+		ListenableFuture<SendResult<byte[], byte[]>> sentDlq = null;
 		try {
 			sentDlq = this.kafkaTemplate.send(producerRecord);
-			sentDlq.addCallback(new ListenableFutureCallback<SendResult<byte[],byte[]>>() {
+			sentDlq.addCallback(new ListenableFutureCallback<SendResult<byte[], byte[]>>() {
 
 				@Override
 				public void onFailure(Throwable ex) {
@@ -84,7 +86,7 @@ class KafkaStreamsDlqDispatch {
 				}
 
 				@Override
-				public void onSuccess(SendResult<byte[],byte[]> result) {
+				public void onSuccess(SendResult<byte[], byte[]> result) {
 					if (KafkaStreamsDlqDispatch.this.logger.isDebugEnabled()) {
 						KafkaStreamsDlqDispatch.this.logger.debug(
 								"Sent to DLQ " + sb.toString());
@@ -100,7 +102,7 @@ class KafkaStreamsDlqDispatch {
 		}
 	}
 
-	private DefaultKafkaProducerFactory<byte[],byte[]> getProducerFactory(ExtendedProducerProperties<KafkaProducerProperties> producerProperties,
+	private DefaultKafkaProducerFactory<byte[], byte[]> getProducerFactory(ExtendedProducerProperties<KafkaProducerProperties> producerProperties,
 																		KafkaBinderConfigurationProperties configurationProperties) {
 		Map<String, Object> props = new HashMap<>();
 		props.put(ProducerConfig.RETRIES_CONFIG, 0);

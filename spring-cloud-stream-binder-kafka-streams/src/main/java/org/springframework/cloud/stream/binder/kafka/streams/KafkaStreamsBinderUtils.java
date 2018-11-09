@@ -33,15 +33,21 @@ import org.springframework.core.type.AnnotationMetadata;
 import org.springframework.util.StringUtils;
 
 /**
+ * Common methods used by various Kafka Streams types across the binders.
+ *
  * @author Soby Chacko
  */
-class KafkaStreamsBinderUtils {
+final class KafkaStreamsBinderUtils {
+
+	private KafkaStreamsBinderUtils() {
+
+	}
 
 	static void prepareConsumerBinding(String name, String group, ApplicationContext context,
 											KafkaTopicProvisioner kafkaTopicProvisioner,
 											KafkaStreamsBinderConfigurationProperties binderConfigurationProperties,
 											ExtendedConsumerProperties<KafkaStreamsConsumerProperties> properties,
-									   Map<String, KafkaStreamsDlqDispatch> kafkaStreamsDlqDispatchers) {
+											Map<String, KafkaStreamsDlqDispatch> kafkaStreamsDlqDispatchers) {
 		ExtendedConsumerProperties<KafkaConsumerProperties> extendedConsumerProperties = new ExtendedConsumerProperties<>(
 				properties.getExtension());
 		if (binderConfigurationProperties.getSerdeError() == KafkaStreamsBinderConfigurationProperties.SerdeError.sendToDlq) {
@@ -72,6 +78,9 @@ class KafkaStreamsBinderUtils {
 		}
 	}
 
+	/**
+	 * Helper lass for missing bean registration.
+	 */
 	static class KafkaStreamsMissingBeansRegistrar implements ImportBeanDefinitionRegistrar {
 
 		private static final String BEAN_NAME = "outerContext";

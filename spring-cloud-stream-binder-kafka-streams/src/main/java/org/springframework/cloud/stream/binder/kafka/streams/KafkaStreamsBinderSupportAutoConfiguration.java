@@ -50,6 +50,8 @@ import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 
 /**
+ * Kafka Streams binder configuration.
+ *
  * @author Marius Bogoevici
  * @author Soby Chacko
  * @author Gary Russell
@@ -112,10 +114,12 @@ public class KafkaStreamsBinderSupportAutoConfiguration {
 		if (binderConfigurationProperties.getSerdeError() == KafkaStreamsBinderConfigurationProperties.SerdeError.logAndContinue) {
 			properties.put(StreamsConfig.DEFAULT_DESERIALIZATION_EXCEPTION_HANDLER_CLASS_CONFIG,
 					LogAndContinueExceptionHandler.class.getName());
-		} else if (binderConfigurationProperties.getSerdeError() == KafkaStreamsBinderConfigurationProperties.SerdeError.logAndFail) {
+		}
+		else if (binderConfigurationProperties.getSerdeError() == KafkaStreamsBinderConfigurationProperties.SerdeError.logAndFail) {
 			properties.put(StreamsConfig.DEFAULT_DESERIALIZATION_EXCEPTION_HANDLER_CLASS_CONFIG,
 					LogAndFailExceptionHandler.class.getName());
-		} else if (binderConfigurationProperties.getSerdeError() == KafkaStreamsBinderConfigurationProperties.SerdeError.sendToDlq) {
+		}
+		else if (binderConfigurationProperties.getSerdeError() == KafkaStreamsBinderConfigurationProperties.SerdeError.sendToDlq) {
 			properties.put(StreamsConfig.DEFAULT_DESERIALIZATION_EXCEPTION_HANDLER_CLASS_CONFIG,
 					SendToDlqAndContinue.class.getName());
 		}
@@ -124,7 +128,7 @@ public class KafkaStreamsBinderSupportAutoConfiguration {
 			properties.putAll(binderConfigurationProperties.getConfiguration());
 		}
 		return properties.entrySet().stream().collect(
-				Collectors.toMap(e -> String.valueOf(e.getKey()), Map.Entry::getValue));
+				Collectors.toMap((e) -> String.valueOf(e.getKey()), Map.Entry::getValue));
 	}
 
 	@Bean

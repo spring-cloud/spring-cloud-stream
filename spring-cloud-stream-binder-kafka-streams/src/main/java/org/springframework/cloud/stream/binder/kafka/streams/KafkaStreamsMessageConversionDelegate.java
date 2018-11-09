@@ -48,7 +48,7 @@ import org.springframework.util.StringUtils;
  */
 public class KafkaStreamsMessageConversionDelegate {
 
-	private final static Log LOG = LogFactory.getLog(KafkaStreamsMessageConversionDelegate.class);
+	private static final Log LOG = LogFactory.getLog(KafkaStreamsMessageConversionDelegate.class);
 
 	private static final ThreadLocal<KeyValue<Object, Object>> keyValueThreadLocal = new ThreadLocal<>();
 
@@ -77,9 +77,9 @@ public class KafkaStreamsMessageConversionDelegate {
 	 * @return serialized KStream
 	 */
 	@SuppressWarnings("rawtypes")
-	public KStream serializeOnOutbound(KStream<?,?> outboundBindTarget) {
+	public KStream serializeOnOutbound(KStream<?, ?> outboundBindTarget) {
 		String contentType = this.kstreamBindingInformationCatalogue.getContentType(outboundBindTarget);
-		MessageConverter messageConverter = compositeMessageConverterFactory.getMessageConverterForAllRegistered();
+		MessageConverter messageConverter = this.compositeMessageConverterFactory.getMessageConverterForAllRegistered();
 
 		return outboundBindTarget.mapValues((v) -> {
 			Message<?> message = v instanceof Message<?> ? (Message<?>) v :
@@ -104,7 +104,7 @@ public class KafkaStreamsMessageConversionDelegate {
 	 */
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public KStream deserializeOnInbound(Class<?> valueClass, KStream<?, ?> bindingTarget) {
-		MessageConverter messageConverter = compositeMessageConverterFactory.getMessageConverterForAllRegistered();
+		MessageConverter messageConverter = this.compositeMessageConverterFactory.getMessageConverterForAllRegistered();
 		final PerRecordContentTypeHolder perRecordContentTypeHolder = new PerRecordContentTypeHolder();
 
 		resolvePerRecordContentType(bindingTarget, perRecordContentTypeHolder);
@@ -122,7 +122,8 @@ public class KafkaStreamsMessageConversionDelegate {
 							Message<?> m1 = null;
 							if (o2 instanceof Message) {
 								m1 = perRecordContentTypeHolder.contentType != null
-										? MessageBuilder.fromMessage((Message<?>) o2).setHeader(MessageHeaders.CONTENT_TYPE, perRecordContentTypeHolder.contentType).build() : (Message<?>)o2;
+										? MessageBuilder.fromMessage((Message<?>) o2).setHeader(MessageHeaders.CONTENT_TYPE,
+										perRecordContentTypeHolder.contentType).build() : (Message<?>) o2;
 							}
 							else {
 								m1 = perRecordContentTypeHolder.contentType != null ? MessageBuilder.withPayload(o2)
@@ -158,15 +159,6 @@ public class KafkaStreamsMessageConversionDelegate {
 		});
 	}
 
-	private static class PerRecordContentTypeHolder {
-
-		String contentType;
-
-		void setContentType(String contentType) {
-			this.contentType = contentType;
-		}
-	}
-
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	private void resolvePerRecordContentType(KStream<?, ?> outboundBindTarget, PerRecordContentTypeHolder perRecordContentTypeHolder) {
 		outboundBindTarget.process(() -> new Processor() {
@@ -180,7 +172,7 @@ public class KafkaStreamsMessageConversionDelegate {
 
 			@Override
 			public void process(Object key, Object value) {
-				final Headers headers = context.headers();
+				final Headers headers = this.context.headers();
 				final Iterable<Header> contentTypes = headers.headers(MessageHeaders.CONTENT_TYPE);
 				if (contentTypes != null && contentTypes.iterator().hasNext()) {
 					final String contentType = new String(contentTypes.iterator().next().value());
@@ -220,20 +212,20 @@ public class KafkaStreamsMessageConversionDelegate {
 			public void process(Object o, Object o2) {
 				//Only continue if the record was not a tombstone.
 				if (o2 != null) {
-					if (kstreamBindingInformationCatalogue.isDlqEnabled(bindingTarget)) {
-						String destination = context.topic();
+					if (KafkaStreamsMessageConversionDelegate.this.kstreamBindingInformationCatalogue.isDlqEnabled(bindingTarget)) {
+						String destination = this.context.topic();
 						if (o2 instanceof Message) {
 							Message message = (Message) o2;
-							sendToDlqAndContinue.sendToDlq(destination, (byte[]) o, (byte[]) message.getPayload(), context.partition());
+							KafkaStreamsMessageConversionDelegate.this.sendToDlqAndContinue.sendToDlq(destination, (byte[]) o, (byte[]) message.getPayload(), this.context.partition());
 						}
 						else {
-							sendToDlqAndContinue.sendToDlq(destination, (byte[]) o, (byte[]) o2, context.partition());
+							KafkaStreamsMessageConversionDelegate.this.sendToDlqAndContinue.sendToDlq(destination, (byte[]) o, (byte[]) o2, this.context.partition());
 						}
 					}
-					else if (kstreamBinderConfigurationProperties.getSerdeError() == KafkaStreamsBinderConfigurationProperties.SerdeError.logAndFail) {
+					else if (KafkaStreamsMessageConversionDelegate.this.kstreamBinderConfigurationProperties.getSerdeError() == KafkaStreamsBinderConfigurationProperties.SerdeError.logAndFail) {
 						throw new IllegalStateException("Inbound deserialization failed. Stopping further processing of records.");
 					}
-					else if (kstreamBinderConfigurationProperties.getSerdeError() == KafkaStreamsBinderConfigurationProperties.SerdeError.logAndContinue) {
+					else if (KafkaStreamsMessageConversionDelegate.this.kstreamBinderConfigurationProperties.getSerdeError() == KafkaStreamsBinderConfigurationProperties.SerdeError.logAndContinue) {
 						//quietly passing through. No action needed, this is similar to log and continue.
 						LOG.error("Inbound deserialization failed. Skipping this record and continuing.");
 					}
@@ -245,5 +237,14 @@ public class KafkaStreamsMessageConversionDelegate {
 
 			}
 		});
+	}
+
+	private static class PerRecordContentTypeHolder {
+
+		String contentType;
+
+		void setContentType(String contentType) {
+			this.contentType = contentType;
+		}
 	}
 }

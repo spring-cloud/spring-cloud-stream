@@ -34,16 +34,16 @@ import org.springframework.cloud.stream.annotation.Output;
  * <pre class="code">
  *     interface KStreamBranchProcessor {
  *         &#064;Input("input")
- *         KStream<?, ?> input();
+ *         KStream&lt;?, ?&gt; input();
  *
  *         &#064;Output("output-1")
- *         KStream<?, ?> output1();
+ *         KStream&lt;?, ?&gt; output1();
  *
  *         &#064;Output("output-2")
- *         KStream<?, ?> output2();
+ *         KStream&lt;?, ?&gt; output2();
  *
  *         &#064;Output("output-3")
- *         KStream<?, ?> output3();
+ *         KStream&lt;?, ?&gt; output3();
  *
  *         ......
  *
@@ -53,13 +53,13 @@ import org.springframework.cloud.stream.annotation.Output;
  * <pre class="code">
  *     interface KStreamKtableProcessor {
  *         &#064;Input("input-1")
- *         KStream<?, ?> input1();
+ *         KStream&lt;?, ?&gt; input1();
  *
  *         &#064;Input("input-2")
- *         KTable<?, ?> input2();
+ *         KTable&lt;?, ?&gt; input2();
  *
  *         &#064;Output("output")
- *         KStream<?, ?> output();
+ *         KStream&lt;?, ?&gt; output();
  *
  *         ......
  *
@@ -72,12 +72,16 @@ import org.springframework.cloud.stream.annotation.Output;
 public interface KafkaStreamsProcessor {
 
 	/**
+	 * Input binding.
+	 *
 	 * @return {@link Input} binding for {@link KStream} type.
 	 */
 	@Input("input")
 	KStream<?, ?> input();
 
 	/**
+	 * Output binding.
+	 *
 	 * @return {@link Output} binding for {@link KStream} type.
 	 */
 	@Output("output")

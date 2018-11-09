@@ -19,6 +19,8 @@ package org.springframework.cloud.stream.binder.kafka.streams.properties;
 import org.springframework.cloud.stream.binder.BinderSpecificPropertiesProvider;
 
 /**
+ * Extended binding properties holder that delegates to Kafka Streams producer and consumer properties.
+ *
  * @author Marius Bogoevici
  */
 public class KafkaStreamsBindingProperties implements BinderSpecificPropertiesProvider {
@@ -28,7 +30,7 @@ public class KafkaStreamsBindingProperties implements BinderSpecificPropertiesPr
 	private KafkaStreamsProducerProperties producer = new KafkaStreamsProducerProperties();
 
 	public KafkaStreamsConsumerProperties getConsumer() {
-		return consumer;
+		return this.consumer;
 	}
 
 	public void setConsumer(KafkaStreamsConsumerProperties consumer) {
@@ -36,7 +38,7 @@ public class KafkaStreamsBindingProperties implements BinderSpecificPropertiesPr
 	}
 
 	public KafkaStreamsProducerProperties getProducer() {
-		return producer;
+		return this.producer;
 	}
 
 	public void setProducer(KafkaStreamsProducerProperties producer) {

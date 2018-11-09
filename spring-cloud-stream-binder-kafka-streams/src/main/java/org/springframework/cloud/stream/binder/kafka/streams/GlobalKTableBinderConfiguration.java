@@ -28,6 +28,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 
 /**
+ * Configuration for GlobalKTable binder.
+ *
  * @author Soby Chacko
  * @since 2.1.0
  */

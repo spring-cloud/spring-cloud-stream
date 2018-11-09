@@ -31,6 +31,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 
 /**
+ * Configuration for KTable binder.
+ *
  * @author Soby Chacko
  */
 @SuppressWarnings("ALL")
@@ -41,7 +43,7 @@ public class KTableBinderConfiguration {
 	@Bean
 	@ConditionalOnBean(name = "outerContext")
 	public BeanFactoryPostProcessor outerContextBeanFactoryPostProcessor() {
-		return beanFactory -> {
+		return (beanFactory) -> {
 			ApplicationContext outerContext = (ApplicationContext) beanFactory.getBean("outerContext");
 			beanFactory.registerSingleton(KafkaStreamsBinderConfigurationProperties.class.getSimpleName(), outerContext
 					.getBean(KafkaStreamsBinderConfigurationProperties.class));
@@ -59,7 +61,7 @@ public class KTableBinderConfiguration {
 	@Bean
 	public KTableBinder kTableBinder(KafkaStreamsBinderConfigurationProperties binderConfigurationProperties,
 									KafkaTopicProvisioner kafkaTopicProvisioner,
-									 @Qualifier("kafkaStreamsDlqDispatchers") Map<String, KafkaStreamsDlqDispatch> kafkaStreamsDlqDispatchers) {
+									@Qualifier("kafkaStreamsDlqDispatchers") Map<String, KafkaStreamsDlqDispatch> kafkaStreamsDlqDispatchers) {
 		KTableBinder kStreamBinder = new KTableBinder(binderConfigurationProperties, kafkaTopicProvisioner, kafkaStreamsDlqDispatchers);
 		return kStreamBinder;
 	}

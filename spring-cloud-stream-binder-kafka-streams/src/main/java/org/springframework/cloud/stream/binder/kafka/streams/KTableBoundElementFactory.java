@@ -48,7 +48,7 @@ class KTableBoundElementFactory extends AbstractBindingTargetFactory<KTable> {
 		//Always set multiplex to true in the kafka streams binder
 		consumerProperties.setMultiplex(true);
 
-		KTableBoundElementFactory.KTableWrapperHandler wrapper= new KTableBoundElementFactory.KTableWrapperHandler();
+		KTableBoundElementFactory.KTableWrapperHandler wrapper = new KTableBoundElementFactory.KTableWrapperHandler();
 		ProxyFactory proxyFactory = new ProxyFactory(KTableBoundElementFactory.KTableWrapper.class, KTable.class);
 		proxyFactory.addAdvice(wrapper);
 
@@ -61,6 +61,9 @@ class KTableBoundElementFactory extends AbstractBindingTargetFactory<KTable> {
 		throw new UnsupportedOperationException("Outbound operations are not allowed on target type KTable");
 	}
 
+	/**
+	 * Wrapper for KTable proxy.
+	 */
 	public interface KTableWrapper {
 		void wrap(KTable<Object, Object> delegate);
 	}
@@ -78,9 +81,9 @@ class KTableBoundElementFactory extends AbstractBindingTargetFactory<KTable> {
 		@Override
 		public Object invoke(MethodInvocation methodInvocation) throws Throwable {
 			if (methodInvocation.getMethod().getDeclaringClass().equals(KTable.class)) {
-				Assert.notNull(delegate, "Trying to prepareConsumerBinding " + methodInvocation
+				Assert.notNull(this.delegate, "Trying to prepareConsumerBinding " + methodInvocation
 						.getMethod() + "  but no delegate has been set.");
-				return methodInvocation.getMethod().invoke(delegate, methodInvocation.getArguments());
+				return methodInvocation.getMethod().invoke(this.delegate, methodInvocation.getArguments());
 			}
 			else if (methodInvocation.getMethod().getDeclaringClass().equals(KTableBoundElementFactory.KTableWrapper.class)) {
 				return methodInvocation.getMethod().invoke(this, methodInvocation.getArguments());

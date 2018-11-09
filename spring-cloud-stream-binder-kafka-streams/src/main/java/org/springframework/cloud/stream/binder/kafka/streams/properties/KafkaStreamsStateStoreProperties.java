@@ -18,39 +18,49 @@ package org.springframework.cloud.stream.binder.kafka.streams.properties;
 
 
 /**
+ * Properties for Kafka Streams state store.
+ *
  * @author Lei Chen
  */
 public class KafkaStreamsStateStoreProperties {
 
+	/**
+	 * Enumeration for store type.
+	 */
 	public enum StoreType {
+		/**
+		 * Key value store.
+		 */
 		KEYVALUE("keyvalue"),
+		/**
+		 * Window store.
+		 */
 		WINDOW("window"),
-		SESSION("session")
-		;
+		/**
+		 * Session store.
+		 */
+		SESSION("session");
 
 		private final String type;
 
-		/**
-		 * @param type
-		 */
 		StoreType(final String type) {
 			this.type = type;
 		}
 
 		@Override
 		public String toString() {
-			return type;
+			return this.type;
 		}
 	}
 
 
 	/**
-	 * name for this state store
+	 * Name for this state store.
 	 */
 	private String name;
 
 	/**
-	 * type for this state store
+	 * Type for this state store.
 	 */
 	private StoreType type;
 
@@ -75,18 +85,18 @@ public class KafkaStreamsStateStoreProperties {
 	private String valueSerdeString;
 
 	/**
-	 * Whether enable cache in this state store.
+	 * Whether caching is enabled on this state store.
 	 */
 	private boolean cacheEnabled;
 
 	/**
-	 * Whether enable logging in this state store.
+	 * Whether logging is enabled on this state store.
 	 */
 	private boolean loggingDisabled;
 
 
 	public String getName() {
-		return name;
+		return this.name;
 	}
 
 	public void setName(String name) {
@@ -94,7 +104,7 @@ public class KafkaStreamsStateStoreProperties {
 	}
 
 	public StoreType getType() {
-		return type;
+		return this.type;
 	}
 
 	public void setType(StoreType type) {
@@ -102,7 +112,7 @@ public class KafkaStreamsStateStoreProperties {
 	}
 
 	public long getLength() {
-		return length;
+		return this.length;
 	}
 
 	public void setLength(long length) {
@@ -110,7 +120,7 @@ public class KafkaStreamsStateStoreProperties {
 	}
 
 	public long getRetention() {
-		return retention;
+		return this.retention;
 	}
 
 	public void setRetention(long retention) {
@@ -118,7 +128,7 @@ public class KafkaStreamsStateStoreProperties {
 	}
 
 	public String getKeySerdeString() {
-		return keySerdeString;
+		return this.keySerdeString;
 	}
 
 	public void setKeySerdeString(String keySerdeString) {
@@ -126,7 +136,7 @@ public class KafkaStreamsStateStoreProperties {
 	}
 
 	public String getValueSerdeString() {
-		return valueSerdeString;
+		return this.valueSerdeString;
 	}
 
 	public void setValueSerdeString(String valueSerdeString) {
@@ -134,7 +144,7 @@ public class KafkaStreamsStateStoreProperties {
 	}
 
 	public boolean isCacheEnabled() {
-		return cacheEnabled;
+		return this.cacheEnabled;
 	}
 
 	public void setCacheEnabled(boolean cacheEnabled) {
@@ -142,7 +152,7 @@ public class KafkaStreamsStateStoreProperties {
 	}
 
 	public boolean isLoggingDisabled() {
-		return loggingDisabled;
+		return this.loggingDisabled;
 	}
 
 	public void setLoggingDisabled(boolean loggingDisabled) {

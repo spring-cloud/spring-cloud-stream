@@ -24,7 +24,6 @@ import java.lang.annotation.Target;
 
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsStateStoreProperties;
 
-
 /**
  * Interface for Kafka Stream state store.
  *
@@ -37,23 +36,23 @@ import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStr
  * <pre class="code">
  *     &#064;StreamListener("input")
  *     &#064;KafkaStreamsStateStore(name="mystate", type= KafkaStreamsStateStoreProperties.StoreType.WINDOW, size=300000)
- *	   public void process(KStream<Object, Product> input) {
+ *	   public void process(KStream&lt;Object, Product&gt; input) {
  *         ......
  *     }
- *</pre>
+ * </pre>
  *
  * With that, you should be able to read/write this state store in your processor/transformer code.
  *
  * <pre class="code">
- * 		new Processor<Object, Product>() {
- * 			WindowStore<Object, String> state;
+ * 		new Processor&lt;Object, Product&gt;() {
+ * 			WindowStore&lt;Object, String&gt; state;
  * 			&#064;Override
  *			public void init(ProcessorContext processorContext) {
  *			state = (WindowStore)processorContext.getStateStore("mystate");
  *				......
  *			}
  *		}
- *</pre>
+ * </pre>
  *
  * @author Lei Chen
  */
@@ -64,41 +63,57 @@ import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStr
 public @interface KafkaStreamsStateStore {
 
 	/**
+	 * Provides name of the state store.
+	 *
 	 * @return name of state store.
 	 */
 	String name() default "";
 
 	/**
+	 * State store type.
+	 *
 	 * @return {@link KafkaStreamsStateStoreProperties.StoreType} of state store.
 	 */
 	KafkaStreamsStateStoreProperties.StoreType type() default KafkaStreamsStateStoreProperties.StoreType.KEYVALUE;
 
 	/**
+	 * Serde used for key.
+	 *
 	 * @return key serde of state store.
 	 */
 	String keySerde() default "org.apache.kafka.common.serialization.Serdes$StringSerde";
 
 	/**
+	 * Serde used for value.
+	 *
 	 * @return value serde of state store.
 	 */
 	String valueSerde() default "org.apache.kafka.common.serialization.Serdes$StringSerde";
 
 	/**
+	 * Length in milli-second of Windowed store window.
+	 *
 	 * @return length in milli-second of window(for windowed store).
 	 */
 	long lengthMs() default 0;
 
 	/**
+	 * Retention period for Windowed store windows.
+	 *
 	 * @return the maximum period of time in milli-second to keep each window in this store(for windowed store).
 	 */
 	long retentionMs() default 0;
 
 	/**
+	 * Whether catching is enabled or not.
+	 *
 	 * @return whether caching should be enabled on the created store.
 	 */
 	boolean cache() default false;
 
 	/**
+	 * Whether logging is enabled or not.
+	 *
 	 * @return whether logging should be enabled on the created store.
 	 */
 	boolean logging() default true;

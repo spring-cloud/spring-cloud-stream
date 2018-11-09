@@ -19,6 +19,8 @@ package org.springframework.cloud.stream.binder.kafka.streams.properties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaConsumerProperties;
 
 /**
+ * Extended properties for Kafka Streams consumer.
+ *
  * @author Marius Bogoevici
  * @author Soby Chacko
  */
@@ -37,12 +39,12 @@ public class KafkaStreamsConsumerProperties extends KafkaConsumerProperties {
 	private String valueSerde;
 
 	/**
-	 * Materialized as a KeyValueStore
+	 * Materialized as a KeyValueStore.
 	 */
 	private String materializedAs;
 
 	public String getApplicationId() {
-		return applicationId;
+		return this.applicationId;
 	}
 
 	public void setApplicationId(String applicationId) {
@@ -50,7 +52,7 @@ public class KafkaStreamsConsumerProperties extends KafkaConsumerProperties {
 	}
 
 	public String getKeySerde() {
-		return keySerde;
+		return this.keySerde;
 	}
 
 	public void setKeySerde(String keySerde) {
@@ -58,7 +60,7 @@ public class KafkaStreamsConsumerProperties extends KafkaConsumerProperties {
 	}
 
 	public String getValueSerde() {
-		return valueSerde;
+		return this.valueSerde;
 	}
 
 	public void setValueSerde(String valueSerde) {
@@ -66,7 +68,7 @@ public class KafkaStreamsConsumerProperties extends KafkaConsumerProperties {
 	}
 
 	public String getMaterializedAs() {
-		return materializedAs;
+		return this.materializedAs;
 	}
 
 	public void setMaterializedAs(String materializedAs) {

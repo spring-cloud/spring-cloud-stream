@@ -20,6 +20,8 @@ import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaBinderConfigurationProperties;
 
 /**
+ * Kafka Streams binder configuration properties.
+ *
  * @author Soby Chacko
  * @author Gary Russell
  */
@@ -29,16 +31,28 @@ public class KafkaStreamsBinderConfigurationProperties extends KafkaBinderConfig
 		super(kafkaProperties);
 	}
 
+	/**
+	 * Enumeration for various Serde errors.
+	 */
 	public enum SerdeError {
+		/**
+		 * Deserialization error handler with log and continue.
+		 */
 		logAndContinue,
+		/**
+		 * Deserialization error handler with log and fail.
+		 */
 		logAndFail,
+		/**
+		 * Deserialization error handler with DLQ send.
+		 */
 		sendToDlq
 	}
 
 	private String applicationId;
 
 	public String getApplicationId() {
-		return applicationId;
+		return this.applicationId;
 	}
 
 	public void setApplicationId(String applicationId) {
@@ -53,7 +67,7 @@ public class KafkaStreamsBinderConfigurationProperties extends KafkaBinderConfig
 	private KafkaStreamsBinderConfigurationProperties.SerdeError serdeError;
 
 	public KafkaStreamsBinderConfigurationProperties.SerdeError getSerdeError() {
-		return serdeError;
+		return this.serdeError;
 	}
 
 	public void setSerdeError(KafkaStreamsBinderConfigurationProperties.SerdeError serdeError) {

@@ -19,6 +19,8 @@ package org.springframework.cloud.stream.binder.kafka.streams.properties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaProducerProperties;
 
 /**
+ * Extended properties for Kafka Streams producer.
+ *
  * @author Marius Bogoevici
  * @author Soby Chacko
  */
@@ -35,7 +37,7 @@ public class KafkaStreamsProducerProperties extends KafkaProducerProperties {
 	private String valueSerde;
 
 	public String getKeySerde() {
-		return keySerde;
+		return this.keySerde;
 	}
 
 	public void setKeySerde(String keySerde) {
@@ -43,7 +45,7 @@ public class KafkaStreamsProducerProperties extends KafkaProducerProperties {
 	}
 
 	public String getValueSerde() {
-		return valueSerde;
+		return this.valueSerde;
 	}
 
 	public void setValueSerde(String valueSerde) {

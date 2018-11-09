@@ -25,6 +25,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
+ * Application support configuration for Kafka Streams binder.
+ *
  * @author Soby Chacko
  */
 @Configuration

@@ -68,11 +68,12 @@ class StreamsBuilderFactoryManager implements SmartLifecycle {
 				Set<StreamsBuilderFactoryBean> streamsBuilderFactoryBeans = this.kafkaStreamsBindingInformationCatalogue.getStreamsBuilderFactoryBeans();
 				for (StreamsBuilderFactoryBean streamsBuilderFactoryBean : streamsBuilderFactoryBeans) {
 					streamsBuilderFactoryBean.start();
-					kafkaStreamsRegistry.registerKafkaStreams(streamsBuilderFactoryBean.getKafkaStreams());
+					this.kafkaStreamsRegistry.registerKafkaStreams(streamsBuilderFactoryBean.getKafkaStreams());
 				}
 				this.running = true;
-			} catch (Exception e) {
-				throw new KafkaException("Could not start stream: ", e);
+			}
+			catch (Exception ex) {
+				throw new KafkaException("Could not start stream: ", ex);
 			}
 		}
 	}
@@ -86,8 +87,8 @@ class StreamsBuilderFactoryManager implements SmartLifecycle {
 						streamsBuilderFactoryBean.stop();
 					}
 				}
-				catch (Exception e) {
-					throw new IllegalStateException(e);
+				catch (Exception ex) {
+					throw new IllegalStateException(ex);
 				}
 				finally {
 					this.running = false;

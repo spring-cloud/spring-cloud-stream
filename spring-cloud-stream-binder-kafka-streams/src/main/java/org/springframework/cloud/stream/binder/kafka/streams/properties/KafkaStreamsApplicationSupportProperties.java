@@ -32,13 +32,16 @@ public class KafkaStreamsApplicationSupportProperties {
 	private TimeWindow timeWindow;
 
 	public TimeWindow getTimeWindow() {
-		return timeWindow;
+		return this.timeWindow;
 	}
 
 	public void setTimeWindow(TimeWindow timeWindow) {
 		this.timeWindow = timeWindow;
 	}
 
+	/**
+	 * Properties required by time windows.
+	 */
 	public static class TimeWindow {
 
 		private int length;
@@ -46,7 +49,7 @@ public class KafkaStreamsApplicationSupportProperties {
 		private int advanceBy;
 
 		public int getLength() {
-			return length;
+			return this.length;
 		}
 
 		public void setLength(int length) {
@@ -54,7 +57,7 @@ public class KafkaStreamsApplicationSupportProperties {
 		}
 
 		public int getAdvanceBy() {
-			return advanceBy;
+			return this.advanceBy;
 		}
 
 		public void setAdvanceBy(int advanceBy) {

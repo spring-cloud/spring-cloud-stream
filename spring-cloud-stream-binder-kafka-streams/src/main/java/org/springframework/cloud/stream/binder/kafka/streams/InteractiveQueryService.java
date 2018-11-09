@@ -45,9 +45,10 @@ public class InteractiveQueryService {
 	private final KafkaStreamsBinderConfigurationProperties binderConfigurationProperties;
 
 	/**
+	 * Constructor for InteractiveQueryService.
 	 *
 	 * @param kafkaStreamsRegistry holding {@link KafkaStreamsRegistry}
-	 * @param binderConfigurationProperties Kafka Streams binder configuration properties
+	 * @param binderConfigurationProperties kafka Streams binder configuration properties
 	 */
 	public InteractiveQueryService(KafkaStreamsRegistry kafkaStreamsRegistry,
 								KafkaStreamsBinderConfigurationProperties binderConfigurationProperties) {
@@ -60,12 +61,12 @@ public class InteractiveQueryService {
 	 *
 	 * @param storeName name of the queryable store
 	 * @param storeType type of the queryable store
-	 * @param <T>       generic queryable store
+	 * @param <T> generic queryable store
 	 * @return queryable store.
 	 */
 	public <T> T getQueryableStore(String storeName, QueryableStoreType<T> storeType) {
 		for (KafkaStreams kafkaStream : this.kafkaStreamsRegistry.getKafkaStreams()) {
-			try{
+			try {
 				T store = kafkaStream.store(storeName, storeType);
 				if (store != null) {
 					return store;
@@ -106,6 +107,7 @@ public class InteractiveQueryService {
 	 * Note that the end user applications must provide `applicaiton.server` as a configuration property
 	 * for all the application instances when calling this method. If this is not available, then null maybe returned.
 	 *
+	 * @param <K> generic type for key
 	 * @param store store name
 	 * @param key key to look for
 	 * @param serializer {@link Serializer} for the key
@@ -114,7 +116,7 @@ public class InteractiveQueryService {
 	public <K> HostInfo getHostInfo(String store, K key, Serializer<K> serializer) {
 		StreamsMetadata streamsMetadata = this.kafkaStreamsRegistry.getKafkaStreams()
 				.stream()
-				.map(k -> Optional.ofNullable(k.metadataForKey(store, key, serializer)))
+				.map((k) -> Optional.ofNullable(k.metadataForKey(store, key, serializer)))
 				.filter(Optional::isPresent)
 				.map(Optional::get)
 				.findFirst()

@@ -49,7 +49,7 @@ public class QueryableStoreRegistry {
 	public <T> T getQueryableStoreType(String storeName, QueryableStoreType<T> storeType) {
 
 		for (KafkaStreams kafkaStream : this.kafkaStreamsRegistry.getKafkaStreams()) {
-			try{
+			try {
 				T store = kafkaStream.store(storeName, storeType);
 				if (store != null) {
 					return store;

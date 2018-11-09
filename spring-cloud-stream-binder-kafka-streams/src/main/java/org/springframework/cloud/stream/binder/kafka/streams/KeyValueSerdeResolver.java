@@ -44,25 +44,26 @@ import org.springframework.util.StringUtils;
  * If native encoding is disabled, then the binder will do serialization using a contentType. Keys are always serialized
  * by the broker.
  *
- * For state store, use serdes class specified in {@link KafkaStreamsStateStore} to create Serde accordingly.
+ * For state store, use serdes class specified in
+ * {@link org.springframework.cloud.stream.binder.kafka.streams.annotations.KafkaStreamsStateStore} to create Serde accordingly.
  *
  * @author Soby Chacko
  * @author Lei Chen
  */
 class KeyValueSerdeResolver {
 
-	private final Map<String,Object> streamConfigGlobalProperties;
+	private final Map<String, Object> streamConfigGlobalProperties;
 
 	private final KafkaStreamsBinderConfigurationProperties binderConfigurationProperties;
 
-	KeyValueSerdeResolver(Map<String,Object> streamConfigGlobalProperties,
+	KeyValueSerdeResolver(Map<String, Object> streamConfigGlobalProperties,
 							KafkaStreamsBinderConfigurationProperties binderConfigurationProperties) {
 		this.streamConfigGlobalProperties = streamConfigGlobalProperties;
 		this.binderConfigurationProperties = binderConfigurationProperties;
 	}
 
 	/**
-	 * Provide the {@link Serde} for inbound key
+	 * Provide the {@link Serde} for inbound key.
 	 *
 	 * @param extendedConsumerProperties binding level extended {@link KafkaStreamsConsumerProperties}
 	 * @return configurd {@link Serde} for the inbound key.
@@ -74,7 +75,7 @@ class KeyValueSerdeResolver {
 	}
 
 	/**
-	 * Provide the {@link Serde} for inbound value
+	 * Provide the {@link Serde} for inbound value.
 	 *
 	 * @param consumerProperties {@link ConsumerProperties} on binding
 	 * @param extendedConsumerProperties binding level extended {@link KafkaStreamsConsumerProperties}
@@ -92,16 +93,16 @@ class KeyValueSerdeResolver {
 			else {
 				valueSerde = Serdes.ByteArray();
 			}
-			valueSerde.configure(streamConfigGlobalProperties, false);
+			valueSerde.configure(this.streamConfigGlobalProperties, false);
 		}
-		catch (ClassNotFoundException e) {
-			throw new IllegalStateException("Serde class not found: ", e);
+		catch (ClassNotFoundException ex) {
+			throw new IllegalStateException("Serde class not found: ", ex);
 		}
 		return valueSerde;
 	}
 
 	/**
-	 * Provide the {@link Serde} for outbound key
+	 * Provide the {@link Serde} for outbound key.
 	 *
 	 * @param properties binding level extended {@link KafkaStreamsProducerProperties}
 	 * @return configurd {@link Serde} for the outbound key.
@@ -111,7 +112,7 @@ class KeyValueSerdeResolver {
 	}
 
 	/**
-	 * Provide the {@link Serde} for outbound value
+	 * Provide the {@link Serde} for outbound value.
 	 *
 	 * @param producerProperties {@link ProducerProperties} on binding
 	 * @param kafkaStreamsProducerProperties binding level extended {@link KafkaStreamsProducerProperties}
@@ -126,16 +127,16 @@ class KeyValueSerdeResolver {
 			else {
 				valueSerde = Serdes.ByteArray();
 			}
-			valueSerde.configure(streamConfigGlobalProperties, false);
+			valueSerde.configure(this.streamConfigGlobalProperties, false);
 		}
-		catch (ClassNotFoundException e) {
-			throw new IllegalStateException("Serde class not found: ", e);
+		catch (ClassNotFoundException ex) {
+			throw new IllegalStateException("Serde class not found: ", ex);
 		}
 		return valueSerde;
 	}
 
 	/**
-	 * Provide the {@link Serde} for state store
+	 * Provide the {@link Serde} for state store.
 	 *
 	 * @param keySerdeString serde class used for key
 	 * @return {@link Serde} for the state store key.
@@ -145,7 +146,7 @@ class KeyValueSerdeResolver {
 	}
 
 	/**
-	 * Provide the {@link Serde} for state store value
+	 * Provide the {@link Serde} for state store value.
 	 *
 	 * @param valueSerdeString serde class used for value
 	 * @return {@link Serde} for the state store value.
@@ -154,8 +155,8 @@ class KeyValueSerdeResolver {
 		try {
 			return getValueSerde(valueSerdeString);
 		}
-		catch (ClassNotFoundException e) {
-			throw new IllegalStateException("Serde class not found: ", e);
+		catch (ClassNotFoundException ex) {
+			throw new IllegalStateException("Serde class not found: ", ex);
 		}
 	}
 
@@ -169,11 +170,11 @@ class KeyValueSerdeResolver {
 				keySerde = this.binderConfigurationProperties.getConfiguration().containsKey("default.key.serde") ?
 						Utils.newInstance(this.binderConfigurationProperties.getConfiguration().get("default.key.serde"), Serde.class) : Serdes.ByteArray();
 			}
-			keySerde.configure(streamConfigGlobalProperties, true);
+			keySerde.configure(this.streamConfigGlobalProperties, true);
 
 		}
-		catch (ClassNotFoundException e) {
-			throw new IllegalStateException("Serde class not found: ", e);
+		catch (ClassNotFoundException ex) {
+			throw new IllegalStateException("Serde class not found: ", ex);
 		}
 		return keySerde;
 	}

@@ -55,7 +55,7 @@ class KTableBinder extends
 	private KafkaStreamsExtendedBindingProperties kafkaStreamsExtendedBindingProperties = new KafkaStreamsExtendedBindingProperties();
 
 	KTableBinder(KafkaStreamsBinderConfigurationProperties binderConfigurationProperties, KafkaTopicProvisioner kafkaTopicProvisioner,
-				 Map<String, KafkaStreamsDlqDispatch> kafkaStreamsDlqDispatchers) {
+				Map<String, KafkaStreamsDlqDispatch> kafkaStreamsDlqDispatchers) {
 		this.binderConfigurationProperties = binderConfigurationProperties;
 		this.kafkaTopicProvisioner = kafkaTopicProvisioner;
 		this.kafkaStreamsDlqDispatchers = kafkaStreamsDlqDispatchers;
@@ -66,11 +66,11 @@ class KTableBinder extends
 	protected Binding<KTable<Object, Object>> doBindConsumer(String name, String group, KTable<Object, Object> inputTarget,
 															ExtendedConsumerProperties<KafkaStreamsConsumerProperties> properties) {
 		if (!StringUtils.hasText(group)) {
-			group = binderConfigurationProperties.getApplicationId();
+			group = this.binderConfigurationProperties.getApplicationId();
 		}
 		KafkaStreamsBinderUtils.prepareConsumerBinding(name, group, getApplicationContext(),
-				kafkaTopicProvisioner,
-				binderConfigurationProperties, properties, kafkaStreamsDlqDispatchers);
+				this.kafkaTopicProvisioner,
+				this.binderConfigurationProperties, properties, this.kafkaStreamsDlqDispatchers);
 		return new DefaultBinding<>(name, group, inputTarget, null);
 	}
 

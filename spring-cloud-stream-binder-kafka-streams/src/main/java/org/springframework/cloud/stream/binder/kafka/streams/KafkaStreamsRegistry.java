@@ -32,7 +32,7 @@ class KafkaStreamsRegistry {
 	private final Set<KafkaStreams> kafkaStreams = new HashSet<>();
 
 	Set<KafkaStreams> getKafkaStreams() {
-		return kafkaStreams;
+		return this.kafkaStreams;
 	}
 
 	/**

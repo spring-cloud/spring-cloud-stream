@@ -49,10 +49,10 @@ class KafkaStreamsBindingInformationCatalogue {
 	 * For a given bounded {@link KStream}, retrieve it's corresponding destination
 	 * on the broker.
 	 *
-	 * @param bindingTarget KStream binding target
+	 * @param bindingTarget binding target for KStream
 	 * @return destination topic on Kafka
 	 */
-	String getDestination(KStream<?,?> bindingTarget) {
+	String getDestination(KStream<?, ?> bindingTarget) {
 		BindingProperties bindingProperties = this.bindingProperties.get(bindingTarget);
 		return bindingProperties.getDestination();
 	}
@@ -60,10 +60,10 @@ class KafkaStreamsBindingInformationCatalogue {
 	/**
 	 * Is native decoding is enabled on this {@link KStream}.
 	 *
-	 * @param bindingTarget KStream binding target
+	 * @param bindingTarget binding target for KStream
 	 * @return true if native decoding is enabled, fasle otherwise.
 	 */
-	boolean isUseNativeDecoding(KStream<?,?> bindingTarget) {
+	boolean isUseNativeDecoding(KStream<?, ?> bindingTarget) {
 		BindingProperties bindingProperties = this.bindingProperties.get(bindingTarget);
 		if (bindingProperties.getConsumer() == null) {
 			bindingProperties.setConsumer(new ConsumerProperties());
@@ -72,48 +72,48 @@ class KafkaStreamsBindingInformationCatalogue {
 	}
 
 	/**
-	 * Is DLQ enabled for this {@link KStream}
+	 * Is DLQ enabled for this {@link KStream}.
 	 *
-	 * @param bindingTarget KStream binding target
+	 * @param bindingTarget binding target for KStream
 	 * @return true if DLQ is enabled, false otherwise.
 	 */
-	boolean isDlqEnabled(KStream<?,?> bindingTarget) {
-		return consumerProperties.get(bindingTarget).isEnableDlq();
+	boolean isDlqEnabled(KStream<?, ?> bindingTarget) {
+		return this.consumerProperties.get(bindingTarget).isEnableDlq();
 	}
 
 	/**
-	 * Retrieve the content type associated with a given {@link KStream}
+	 * Retrieve the content type associated with a given {@link KStream}.
 	 *
-	 * @param bindingTarget KStream binding target
+	 * @param bindingTarget binding target for KStream
 	 * @return content Type associated.
 	 */
-	String getContentType(KStream<?,?> bindingTarget) {
+	String getContentType(KStream<?, ?> bindingTarget) {
 		BindingProperties bindingProperties = this.bindingProperties.get(bindingTarget);
 		return bindingProperties.getContentType();
 	}
 
 	/**
-	 * Register a cache for bounded KStream -> {@link BindingProperties}
+	 * Register a cache for bounded KStream -> {@link BindingProperties}.
 	 *
-	 * @param bindingTarget KStream binding target
+	 * @param bindingTarget binding target for KStream
 	 * @param bindingProperties {@link BindingProperties} for this KStream
 	 */
-	void registerBindingProperties(KStream<?,?> bindingTarget, BindingProperties bindingProperties) {
+	void registerBindingProperties(KStream<?, ?> bindingTarget, BindingProperties bindingProperties) {
 		this.bindingProperties.put(bindingTarget, bindingProperties);
 	}
 
 	/**
-	 * Register a cache for bounded KStream -> {@link KafkaStreamsConsumerProperties}
+	 * Register a cache for bounded KStream -> {@link KafkaStreamsConsumerProperties}.
 	 *
-	 * @param bindingTarget KStream binding target
-	 * @param kafkaStreamsConsumerProperties Consumer properties for this KStream
+	 * @param bindingTarget binding target for KStream
+	 * @param kafkaStreamsConsumerProperties consumer properties for this KStream
 	 */
-	void registerConsumerProperties(KStream<?,?> bindingTarget, KafkaStreamsConsumerProperties kafkaStreamsConsumerProperties) {
+	void registerConsumerProperties(KStream<?, ?> bindingTarget, KafkaStreamsConsumerProperties kafkaStreamsConsumerProperties) {
 		this.consumerProperties.put(bindingTarget, kafkaStreamsConsumerProperties);
 	}
 
 	/**
-	 * Adds a mapping for KStream -> {@link StreamsBuilderFactoryBean}
+	 * Adds a mapping for KStream -> {@link StreamsBuilderFactoryBean}.
 	 *
 	 * @param streamsBuilderFactoryBean provides the {@link StreamsBuilderFactoryBean} mapped to the KStream
 	 */
@@ -122,6 +122,6 @@ class KafkaStreamsBindingInformationCatalogue {
 	}
 
 	Set<StreamsBuilderFactoryBean> getStreamsBuilderFactoryBeans() {
-		return streamsBuilderFactoryBeans;
+		return this.streamsBuilderFactoryBeans;
 	}
 }

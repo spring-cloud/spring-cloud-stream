@@ -35,6 +35,8 @@ import org.springframework.context.annotation.Import;
 import org.springframework.core.type.AnnotationMetadata;
 
 /**
+ * Configuration for KStream binder.
+ *
  * @author Marius Bogoevici
  * @author Gary Russell
  * @author Soby Chacko
@@ -43,6 +45,30 @@ import org.springframework.core.type.AnnotationMetadata;
 @Import({KafkaAutoConfiguration.class, KStreamBinderConfiguration.KStreamMissingBeansRegistrar.class})
 public class KStreamBinderConfiguration {
 
+	@Bean
+	public KafkaTopicProvisioner provisioningProvider(KafkaBinderConfigurationProperties binderConfigurationProperties,
+													KafkaProperties kafkaProperties) {
+		return new KafkaTopicProvisioner(binderConfigurationProperties, kafkaProperties);
+	}
+
+	@Bean
+	public KStreamBinder kStreamBinder(KafkaStreamsBinderConfigurationProperties binderConfigurationProperties,
+									KafkaTopicProvisioner kafkaTopicProvisioner,
+									KafkaStreamsMessageConversionDelegate KafkaStreamsMessageConversionDelegate,
+									KafkaStreamsBindingInformationCatalogue KafkaStreamsBindingInformationCatalogue,
+									KeyValueSerdeResolver keyValueSerdeResolver,
+									KafkaStreamsExtendedBindingProperties kafkaStreamsExtendedBindingProperties,
+									@Qualifier("kafkaStreamsDlqDispatchers") Map<String, KafkaStreamsDlqDispatch> kafkaStreamsDlqDispatchers) {
+		KStreamBinder kStreamBinder = new KStreamBinder(binderConfigurationProperties, kafkaTopicProvisioner,
+				KafkaStreamsMessageConversionDelegate, KafkaStreamsBindingInformationCatalogue,
+				keyValueSerdeResolver, kafkaStreamsDlqDispatchers);
+		kStreamBinder.setKafkaStreamsExtendedBindingProperties(kafkaStreamsExtendedBindingProperties);
+		return kStreamBinder;
+	}
+
+	/**
+	 * Registrar for missing beans when there are multiple binders in the application.
+	 */
 	static class KStreamMissingBeansRegistrar extends KafkaStreamsBinderUtils.KafkaStreamsMissingBeansRegistrar {
 
 		private static final String BEAN_NAME = "outerContext";
@@ -79,27 +105,6 @@ public class KStreamBinderConfiguration {
 				registry.registerBeanDefinition(KafkaStreamsExtendedBindingProperties.class.getSimpleName(), kafkaStreamsExtendedBindingPropertiesBean);
 			}
 		}
-	}
-
-	@Bean
-	public KafkaTopicProvisioner provisioningProvider(KafkaBinderConfigurationProperties binderConfigurationProperties,
-													KafkaProperties kafkaProperties) {
-		return new KafkaTopicProvisioner(binderConfigurationProperties, kafkaProperties);
-	}
-
-	@Bean
-	public KStreamBinder kStreamBinder(KafkaStreamsBinderConfigurationProperties binderConfigurationProperties,
-									   KafkaTopicProvisioner kafkaTopicProvisioner,
-									   KafkaStreamsMessageConversionDelegate KafkaStreamsMessageConversionDelegate,
-									   KafkaStreamsBindingInformationCatalogue KafkaStreamsBindingInformationCatalogue,
-									   KeyValueSerdeResolver keyValueSerdeResolver,
-									   KafkaStreamsExtendedBindingProperties kafkaStreamsExtendedBindingProperties,
-									   @Qualifier("kafkaStreamsDlqDispatchers") Map<String, KafkaStreamsDlqDispatch> kafkaStreamsDlqDispatchers) {
-		KStreamBinder kStreamBinder = new KStreamBinder(binderConfigurationProperties, kafkaTopicProvisioner,
-				KafkaStreamsMessageConversionDelegate, KafkaStreamsBindingInformationCatalogue,
-				keyValueSerdeResolver, kafkaStreamsDlqDispatchers);
-		kStreamBinder.setKafkaStreamsExtendedBindingProperties(kafkaStreamsExtendedBindingProperties);
-		return kStreamBinder;
 	}
 
 }

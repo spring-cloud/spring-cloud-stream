@@ -24,6 +24,8 @@ import org.apache.kafka.streams.kstream.KStream;
 import org.springframework.cloud.stream.binding.StreamListenerResultAdapter;
 
 /**
+ * {@link StreamListenerResultAdapter} for KStream.
+ *
  * @author Marius Bogoevici
  * @author Soby Chacko
  */

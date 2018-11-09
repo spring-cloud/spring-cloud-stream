@@ -55,7 +55,7 @@ import org.springframework.util.MimeTypeUtils;
  * to be included in the configuration map with the key "contentType". For example,
  *
  * <pre class="code">
- * Map<String, Object> config = new HashMap<>();
+ * Map&lt;String, Object&gt; config = new HashMap&lt;&gt;();
  * config.put("valueClass", Foo.class);
  * config.put("contentType", "application/avro");
  * </pre>
@@ -67,6 +67,8 @@ import org.springframework.util.MimeTypeUtils;
  *
  * An instance of this class is provided as a bean by the binder configuration and typically the applications
  * can autowire that bean. This is the expected usage pattern of this class.
+ *
+ * @param <T> type of the object to marshall
  *
  * @author Soby Chacko
  * @since 2.1
@@ -110,12 +112,12 @@ public class CompositeNonNativeSerde<T> implements Serde<T> {
 	}
 
 	private static MimeType resolveMimeType(Map<String, ?> configs) {
-		if (configs.containsKey(MessageHeaders.CONTENT_TYPE)){
-			String contentType = (String)configs.get(MessageHeaders.CONTENT_TYPE);
+		if (configs.containsKey(MessageHeaders.CONTENT_TYPE)) {
+			String contentType = (String) configs.get(MessageHeaders.CONTENT_TYPE);
 			if (DEFAULT_AVRO_MIME_TYPE.equals(MimeTypeUtils.parseMimeType(contentType))) {
 				return DEFAULT_AVRO_MIME_TYPE;
 			}
-			else if(contentType.contains("avro")) {
+			else if (contentType.contains("avro")) {
 				return MimeTypeUtils.parseMimeType("application/avro");
 			}
 			else {
@@ -130,7 +132,7 @@ public class CompositeNonNativeSerde<T> implements Serde<T> {
 	/**
 	 * Custom {@link Deserializer} that uses the {@link CompositeMessageConverterFactory}.
 	 *
-	 * @param <U> Parameterized target type for deserialization
+	 * @param <U> parameterized target type for deserialization
 	 */
 	private static class CompositeNonNativeDeserializer<U> implements Deserializer<U> {
 
@@ -158,7 +160,7 @@ public class CompositeNonNativeSerde<T> implements Serde<T> {
 		public U deserialize(String topic, byte[] data) {
 			Message<?> message = MessageBuilder.withPayload(data)
 					.setHeader(MessageHeaders.CONTENT_TYPE, this.mimeType.toString()).build();
-			U messageConverted = (U)messageConverter.fromMessage(message, this.valueClass);
+			U messageConverted = (U) this.messageConverter.fromMessage(message, this.valueClass);
 			Assert.notNull(messageConverted, "Deserialization failed.");
 			return messageConverted;
 		}
@@ -172,7 +174,7 @@ public class CompositeNonNativeSerde<T> implements Serde<T> {
 	/**
 	 * Custom {@link Serializer} that uses the {@link CompositeMessageConverterFactory}.
 	 *
-	 * @param <V>  Parameterized type for serialization
+	 * @param <V> parameterized type for serialization
 	 */
 	private static class CompositeNonNativeSerializer<V> implements Serializer<V> {
 
@@ -194,9 +196,9 @@ public class CompositeNonNativeSerde<T> implements Serde<T> {
 			Map<String, Object> headers = new HashMap<>(message.getHeaders());
 			headers.put(MessageHeaders.CONTENT_TYPE, this.mimeType.toString());
 			MessageHeaders messageHeaders = new MessageHeaders(headers);
-			final Object payload = messageConverter.toMessage(message.getPayload(),
+			final Object payload = this.messageConverter.toMessage(message.getPayload(),
 					messageHeaders).getPayload();
-			return (byte[])payload;
+			return (byte[]) payload;
 		}
 
 		@Override

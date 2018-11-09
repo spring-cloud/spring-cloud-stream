@@ -102,14 +102,14 @@
 				<version>${avro.version}</version>
 				<executions>
 					<execution>
-						<phase>generate-sources</phase>
+						<phase>generate-test-sources</phase>
 						<goals>
 							<goal>schema</goal>
-							<goal>protocol</goal>
-							<goal>idl-protocol</goal>
 						</goals>
 						<configuration>
-							<sourceDirectory>src/test/resources/avro</sourceDirectory>
+							<outputDirectory>${project.basedir}/target/generated-test-sources</outputDirectory>
+							<testOutputDirectory>${project.basedir}/target/generated-test-sources</testOutputDirectory>
+							<testSourceDirectory>${project.basedir}/src/test/resources/avro</testSourceDirectory>
 						</configuration>
 					</execution>
 				</executions>

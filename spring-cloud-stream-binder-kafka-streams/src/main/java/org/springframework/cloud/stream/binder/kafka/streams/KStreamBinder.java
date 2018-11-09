@@ -52,7 +52,7 @@ class KStreamBinder extends
 		AbstractBinder<KStream<Object, Object>, ExtendedConsumerProperties<KafkaStreamsConsumerProperties>, ExtendedProducerProperties<KafkaStreamsProducerProperties>>
 		implements ExtendedPropertiesBinder<KStream<Object, Object>, KafkaStreamsConsumerProperties, KafkaStreamsProducerProperties> {
 
-	private final static Log LOG = LogFactory.getLog(KStreamBinder.class);
+	private static final Log LOG = LogFactory.getLog(KStreamBinder.class);
 
 	private final KafkaTopicProvisioner kafkaTopicProvisioner;
 
@@ -73,7 +73,7 @@ class KStreamBinder extends
 				KafkaStreamsMessageConversionDelegate kafkaStreamsMessageConversionDelegate,
 				KafkaStreamsBindingInformationCatalogue KafkaStreamsBindingInformationCatalogue,
 				KeyValueSerdeResolver keyValueSerdeResolver,
-				  Map<String, KafkaStreamsDlqDispatch> kafkaStreamsDlqDispatchers) {
+				Map<String, KafkaStreamsDlqDispatch> kafkaStreamsDlqDispatchers) {
 		this.binderConfigurationProperties = binderConfigurationProperties;
 		this.kafkaTopicProvisioner = kafkaTopicProvisioner;
 		this.kafkaStreamsMessageConversionDelegate = kafkaStreamsMessageConversionDelegate;
@@ -88,11 +88,11 @@ class KStreamBinder extends
 															ExtendedConsumerProperties<KafkaStreamsConsumerProperties> properties) {
 		this.kafkaStreamsBindingInformationCatalogue.registerConsumerProperties(inputTarget, properties.getExtension());
 		if (!StringUtils.hasText(group)) {
-			group = binderConfigurationProperties.getApplicationId();
+			group = this.binderConfigurationProperties.getApplicationId();
 		}
 		KafkaStreamsBinderUtils.prepareConsumerBinding(name, group, getApplicationContext(),
-				kafkaTopicProvisioner,
-				binderConfigurationProperties, properties, kafkaStreamsDlqDispatchers);
+				this.kafkaTopicProvisioner,
+				this.binderConfigurationProperties, properties, this.kafkaStreamsDlqDispatchers);
 
 		return new DefaultBinding<>(name, group, inputTarget, null);
 	}
@@ -115,9 +115,10 @@ class KStreamBinder extends
 					Serde<Object> keySerde, Serde<Object> valueSerde) {
 		if (!isNativeEncoding) {
 			LOG.info("Native encoding is disabled for " + name + ". Outbound message conversion done by Spring Cloud Stream.");
-			kafkaStreamsMessageConversionDelegate.serializeOnOutbound(outboundBindTarget)
+			this.kafkaStreamsMessageConversionDelegate.serializeOnOutbound(outboundBindTarget)
 					.to(name, Produced.with(keySerde, valueSerde));
-		} else {
+		}
+		else {
 			LOG.info("Native encoding is enabled for " + name + ". Outbound serialization done at the broker.");
 			outboundBindTarget.to(name, Produced.with(keySerde, valueSerde));
 		}

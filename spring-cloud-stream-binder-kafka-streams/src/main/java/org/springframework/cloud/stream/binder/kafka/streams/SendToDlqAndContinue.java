@@ -35,12 +35,14 @@ import org.springframework.util.ReflectionUtils;
  * Custom implementation for {@link DeserializationExceptionHandler} that sends the records
  * in error to a DLQ topic, then continue stream processing on new records.
  *
- * @since 2.0.0
- *
  * @author Soby Chacko
+ * @since 2.0.0
  */
-public class SendToDlqAndContinue implements DeserializationExceptionHandler{
+public class SendToDlqAndContinue implements DeserializationExceptionHandler {
 
+	/**
+	 * Key used for DLQ dispatchers.
+	 */
 	public static final String KAFKA_STREAMS_DLQ_DISPATCHERS = "spring.cloud.stream.kafka.streams.dlq.dispatchers";
 
 	/**
@@ -57,9 +59,9 @@ public class SendToDlqAndContinue implements DeserializationExceptionHandler{
 	 * @param value to send
 	 * @param partition for the topic where this record should be sent
 	 */
-	public void sendToDlq(String topic, byte[] key, byte[] value, int partition){
+	public void sendToDlq(String topic, byte[] key, byte[] value, int partition) {
 		KafkaStreamsDlqDispatch kafkaStreamsDlqDispatch = this.dlqDispatchers.get(topic);
-		kafkaStreamsDlqDispatch.sendToDlq(key,value, partition);
+		kafkaStreamsDlqDispatch.sendToDlq(key, value, partition);
 	}
 
 	@Override
@@ -75,19 +77,19 @@ public class SendToDlqAndContinue implements DeserializationExceptionHandler{
 		// following code will use reflection to get access to the underlying KafkaConsumer.
 		// It works with Kafka 1.0.0, but there is no guarantee it will work in future versions of kafka as
 		// we access private fields by name using reflection, but it is a temporary fix.
-		if (context instanceof ProcessorContextImpl){
-			ProcessorContextImpl processorContextImpl = (ProcessorContextImpl)context;
+		if (context instanceof ProcessorContextImpl) {
+			ProcessorContextImpl processorContextImpl = (ProcessorContextImpl) context;
 			Field task = ReflectionUtils.findField(ProcessorContextImpl.class, "task");
 			ReflectionUtils.makeAccessible(task);
 			Object taskField = ReflectionUtils.getField(task, processorContextImpl);
 
-			if (taskField.getClass().isAssignableFrom(StreamTask.class)){
-				StreamTask streamTask = (StreamTask)taskField;
+			if (taskField.getClass().isAssignableFrom(StreamTask.class)) {
+				StreamTask streamTask = (StreamTask) taskField;
 				Field consumer = ReflectionUtils.findField(StreamTask.class, "consumer");
 				ReflectionUtils.makeAccessible(consumer);
 				Object kafkaConsumerField = ReflectionUtils.getField(consumer, streamTask);
-				if (kafkaConsumerField.getClass().isAssignableFrom(KafkaConsumer.class)){
-					KafkaConsumer kafkaConsumer = (KafkaConsumer)kafkaConsumerField;
+				if (kafkaConsumerField.getClass().isAssignableFrom(KafkaConsumer.class)) {
+					KafkaConsumer kafkaConsumer = (KafkaConsumer) kafkaConsumerField;
 					final Map<TopicPartition, OffsetAndMetadata> consumedOffsetsAndMetadata = new HashMap<>();
 					TopicPartition tp = new TopicPartition(record.topic(), record.partition());
 					OffsetAndMetadata oam = new OffsetAndMetadata(record.offset() + 1);
@@ -105,7 +107,7 @@ public class SendToDlqAndContinue implements DeserializationExceptionHandler{
 		this.dlqDispatchers = (Map<String, KafkaStreamsDlqDispatch>) configs.get(KAFKA_STREAMS_DLQ_DISPATCHERS);
 	}
 
-	void addKStreamDlqDispatch(String topic, KafkaStreamsDlqDispatch kafkaStreamsDlqDispatch){
+	void addKStreamDlqDispatch(String topic, KafkaStreamsDlqDispatch kafkaStreamsDlqDispatch) {
 		this.dlqDispatchers.put(topic, kafkaStreamsDlqDispatch);
 	}
 

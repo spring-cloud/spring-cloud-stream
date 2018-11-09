@@ -64,18 +64,21 @@ class KStreamBoundElementFactory extends AbstractBindingTargetFactory<KStream> {
 	}
 
 	private KStream createProxyForKStream(String name) {
-		KStreamWrapperHandler wrapper= new KStreamWrapperHandler();
+		KStreamWrapperHandler wrapper = new KStreamWrapperHandler();
 		ProxyFactory proxyFactory = new ProxyFactory(KStreamWrapper.class, KStream.class);
 		proxyFactory.addAdvice(wrapper);
 
 		KStream proxy = (KStream) proxyFactory.getProxy();
 
 		//Add the binding properties to the catalogue for later retrieval during further binding steps downstream.
-		BindingProperties bindingProperties = bindingServiceProperties.getBindingProperties(name);
+		BindingProperties bindingProperties = this.bindingServiceProperties.getBindingProperties(name);
 		this.kafkaStreamsBindingInformationCatalogue.registerBindingProperties(proxy, bindingProperties);
 		return proxy;
 	}
 
+	/**
+	 * Wrapper object for KStream proxy.
+	 */
 	public interface KStreamWrapper {
 
 		void wrap(KStream<Object, Object> delegate);
@@ -95,9 +98,9 @@ class KStreamBoundElementFactory extends AbstractBindingTargetFactory<KStream> {
 		@Override
 		public Object invoke(MethodInvocation methodInvocation) throws Throwable {
 			if (methodInvocation.getMethod().getDeclaringClass().equals(KStream.class)) {
-				Assert.notNull(delegate, "Trying to prepareConsumerBinding " + methodInvocation
+				Assert.notNull(this.delegate, "Trying to prepareConsumerBinding " + methodInvocation
 						.getMethod() + "  but no delegate has been set.");
-				return methodInvocation.getMethod().invoke(delegate, methodInvocation.getArguments());
+				return methodInvocation.getMethod().invoke(this.delegate, methodInvocation.getArguments());
 			}
 			else if (methodInvocation.getMethod().getDeclaringClass().equals(KStreamWrapper.class)) {
 				return methodInvocation.getMethod().invoke(this, methodInvocation.getArguments());

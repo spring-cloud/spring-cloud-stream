@@ -73,52 +73,7 @@ public class KafkaBinderHealthIndicator implements HealthIndicator {
 	@Override
 	public Health health() {
 		ExecutorService exec = Executors.newSingleThreadExecutor();
-		Future<Health> future = exec.submit(() -> {
-			try {
-				if (this.metadataConsumer == null) {
-					synchronized (KafkaBinderHealthIndicator.this) {
-						if (this.metadataConsumer == null) {
-							this.metadataConsumer = this.consumerFactory.createConsumer();
-						}
-					}
-				}
-				synchronized (this.metadataConsumer) {
-					Set<String> downMessages = new HashSet<>();
-					final Map<String, KafkaMessageChannelBinder.TopicInformation> topicsInUse =
-							KafkaBinderHealthIndicator.this.binder.getTopicsInUse();
-					if (topicsInUse.isEmpty()) {
-						return Health.down()
-								.withDetail("No topic information available", "Kafka broker is not reachable")
-								.build();
-					}
-					else {
-						for (String topic : topicsInUse.keySet()) {
-							KafkaMessageChannelBinder.TopicInformation topicInformation = topicsInUse.get(topic);
-							if (!topicInformation.isTopicPattern()) {
-								List<PartitionInfo> partitionInfos = this.metadataConsumer.partitionsFor(topic);
-								for (PartitionInfo partitionInfo : partitionInfos) {
-									if (topicInformation.getPartitionInfos()
-											.contains(partitionInfo) && partitionInfo.leader().id() == -1) {
-										downMessages.add(partitionInfo.toString());
-									}
-								}
-							}
-						}
-					}
-					if (downMessages.isEmpty()) {
-						return Health.up().build();
-					}
-					else {
-						return Health.down()
-							.withDetail("Following partitions in use have no leaders: ", downMessages.toString())
-							.build();
-					}
-				}
-			}
-			catch (Exception ex) {
-				return Health.down(ex).build();
-			}
-		});
+		Future<Health> future = exec.submit(this::buildHealthStatus);
 		try {
 			return future.get(this.timeout, TimeUnit.SECONDS);
 		}
@@ -138,6 +93,53 @@ public class KafkaBinderHealthIndicator implements HealthIndicator {
 		}
 		finally {
 			exec.shutdownNow();
+		}
+	}
+
+	private Health buildHealthStatus() {
+		try {
+			if (this.metadataConsumer == null) {
+				synchronized (KafkaBinderHealthIndicator.this) {
+					if (this.metadataConsumer == null) {
+						this.metadataConsumer = this.consumerFactory.createConsumer();
+					}
+				}
+			}
+			synchronized (this.metadataConsumer) {
+				Set<String> downMessages = new HashSet<>();
+				final Map<String, KafkaMessageChannelBinder.TopicInformation> topicsInUse =
+						KafkaBinderHealthIndicator.this.binder.getTopicsInUse();
+				if (topicsInUse.isEmpty()) {
+					return Health.down()
+							.withDetail("No topic information available", "Kafka broker is not reachable")
+							.build();
+				}
+				else {
+					for (String topic : topicsInUse.keySet()) {
+						KafkaMessageChannelBinder.TopicInformation topicInformation = topicsInUse.get(topic);
+						if (!topicInformation.isTopicPattern()) {
+							List<PartitionInfo> partitionInfos = this.metadataConsumer.partitionsFor(topic);
+							for (PartitionInfo partitionInfo : partitionInfos) {
+								if (topicInformation.getPartitionInfos()
+										.contains(partitionInfo) && partitionInfo.leader().id() == -1) {
+									downMessages.add(partitionInfo.toString());
+								}
+							}
+						}
+					}
+				}
+				if (downMessages.isEmpty()) {
+					return Health.up().build();
+				}
+				else {
+					return Health.down()
+						.withDetail("Following partitions in use have no leaders: ", downMessages.toString())
+						.build();
+				}
+			}
+		}
+		catch (Exception ex) {
+			return Health.down(ex).build();
 		}
 	}
 
