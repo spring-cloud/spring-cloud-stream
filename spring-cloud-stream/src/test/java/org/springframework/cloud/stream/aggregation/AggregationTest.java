@@ -24,6 +24,7 @@ import java.util.Map;
 
 import org.junit.After;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import org.springframework.beans.DirectFieldAccessor;
@@ -56,6 +57,7 @@ import static org.junit.Assert.assertTrue;
  * @author Gary Russell
  * @author Soby Chacko
  */
+@Ignore
 public class AggregationTest {
 
 	private ConfigurableApplicationContext aggregatedApplicationContext;
