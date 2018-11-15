@@ -19,7 +19,6 @@ package org.springframework.cloud.stream.binder;
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -182,10 +181,10 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 		binderBindUnbindLatency();
 
 		CountDownLatch latch = new CountDownLatch(1);
-		AtomicReference<Message<byte[]>> inboundMessageRef = new AtomicReference<Message<byte[]>>();
+		AtomicReference<Message<String>> inboundMessageRef = new AtomicReference<Message<String>>();
 		moduleInputChannel.subscribe(message1 -> {
 			try {
-				inboundMessageRef.set((Message<byte[]>) message1);
+				inboundMessageRef.set((Message<String>) message1);
 			}
 			finally {
 				latch.countDown();
@@ -195,7 +194,7 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 		moduleOutputChannel.send(message);
 		Assert.isTrue(latch.await(5, TimeUnit.SECONDS), "Failed to receive message");
 
-		assertThat(inboundMessageRef.get().getPayload()).isEqualTo("foo".getBytes(StandardCharsets.UTF_8));
+		assertThat(inboundMessageRef.get().getPayload()).isEqualTo("foo");
 		assertThat(inboundMessageRef.get().getHeaders().get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE)).isNull();
 		assertThat(inboundMessageRef.get().getHeaders().get(MessageHeaders.CONTENT_TYPE).toString()).isEqualTo("text/plain");
 		producerBinding.unbind();
@@ -387,10 +386,10 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 				.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN).build();
 		moduleOutputChannel.send(message);
 		CountDownLatch latch = new CountDownLatch(1);
-		AtomicReference<Message<byte[]>> inboundMessageRef = new AtomicReference<Message<byte[]>>();
+		AtomicReference<Message<String>> inboundMessageRef = new AtomicReference<Message<String>>();
 		moduleInputChannel.subscribe(message1 -> {
 			try {
-				inboundMessageRef.set((Message<byte[]>) message1);
+				inboundMessageRef.set((Message<String>) message1);
 			}
 			finally {
 				latch.countDown();
@@ -400,7 +399,7 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 		moduleOutputChannel.send(message);
 		Assert.isTrue(latch.await(5, TimeUnit.SECONDS), "Failed to receive message");
 		assertThat(inboundMessageRef.get()).isNotNull();
-		assertThat(new String(inboundMessageRef.get().getPayload(), StandardCharsets.UTF_8)).isEqualTo("foo");
+		assertThat(inboundMessageRef.get().getPayload()).isEqualTo("foo");
 		assertThat(inboundMessageRef.get().getHeaders().get(MessageHeaders.CONTENT_TYPE).toString())
 				.isEqualTo(MimeTypeUtils.TEXT_PLAIN_VALUE);
 		producerBinding.unbind();
