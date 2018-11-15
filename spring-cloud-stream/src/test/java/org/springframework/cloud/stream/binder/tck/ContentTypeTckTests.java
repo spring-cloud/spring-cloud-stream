@@ -47,6 +47,7 @@ import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHeaders;
+import org.springframework.messaging.MessagingException;
 import org.springframework.messaging.converter.AbstractMessageConverter;
 import org.springframework.messaging.converter.MessageConversionException;
 import org.springframework.messaging.handler.annotation.Payload;
@@ -216,6 +217,22 @@ public class ContentTypeTckTests {
 		assertEquals(MimeTypeUtils.APPLICATION_JSON, outputMessage.getHeaders().get(MessageHeaders.CONTENT_TYPE));
 		assertEquals(jsonPayload, new String(outputMessage.getPayload(), StandardCharsets.UTF_8));
 	}
+
+	@Test
+	public void typelessToPojoInboundContentTypeBinding() {
+		ApplicationContext context = new SpringApplicationBuilder(TypelessToPojoStreamListener.class)
+				.web(WebApplicationType.NONE)
+				.run("--spring.cloud.stream.bindings.input.contentType=text/plain", "--spring.jmx.enabled=false");
+		InputDestination source = context.getBean(InputDestination.class);
+		OutputDestination target = context.getBean(OutputDestination.class);
+		String jsonPayload = "{\"name\":\"oleg\"}";
+		source.send(new GenericMessage<>(jsonPayload.getBytes()));
+		Message<byte[]> outputMessage = target.receive();
+		assertEquals(MimeTypeUtils.APPLICATION_JSON, outputMessage.getHeaders().get(MessageHeaders.CONTENT_TYPE));
+		assertEquals(jsonPayload, new String(outputMessage.getPayload(), StandardCharsets.UTF_8));
+	}
+
+
 
 	@Test
 	public void stringToPojoInboundContentTypeHeader() {
@@ -433,7 +450,7 @@ public class ContentTypeTckTests {
 		TestChannelBinder binder = context.getBean(TestChannelBinder.class);
 		String jsonPayload = "{\"name\":\"oleg\"}";
 		source.send(new GenericMessage<>(jsonPayload.getBytes()));
-		assertTrue(binder.getLastError().getPayload() instanceof MessageConversionException);
+		assertTrue(binder.getLastError().getPayload() instanceof MessagingException);
 	}
 
 	@Test
@@ -532,6 +549,18 @@ public class ContentTypeTckTests {
 		public Person echo(String value) throws Exception {
 			ObjectMapper mapper = new ObjectMapper();
 			return mapper.readValue(value, Person.class);
+		}
+	}
+
+	@EnableBinding(Processor.class)
+	@Import(TestChannelBinderConfiguration.class)
+	public static class TypelessToPojoStreamListener {
+		@StreamListener(Processor.INPUT)
+		@SendTo(Processor.OUTPUT)
+		public Person echo(Object value) throws Exception {
+			ObjectMapper mapper = new ObjectMapper();
+			//assume it is string because CT is text/plain
+			return mapper.readValue((String)value, Person.class);
 		}
 	}
 

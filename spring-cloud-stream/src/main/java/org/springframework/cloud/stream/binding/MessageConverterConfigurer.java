@@ -17,6 +17,7 @@
 package org.springframework.cloud.stream.binding;
 
 import java.lang.reflect.Field;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 import org.apache.commons.logging.Log;
@@ -52,6 +53,7 @@ import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.messaging.handler.invocation.InvocableHandlerMethod;
 import org.springframework.messaging.support.ChannelInterceptorAdapter;
 import org.springframework.messaging.support.ErrorMessage;
+import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.MimeType;
@@ -280,6 +282,10 @@ public class MessageConverterConfigurer implements MessageChannelAndSourceConfig
 			}
 			else if (message.getHeaders().get(MessageHeaders.CONTENT_TYPE) instanceof String) {
 				headersMap.put(MessageHeaders.CONTENT_TYPE, MimeType.valueOf((String)message.getHeaders().get(MessageHeaders.CONTENT_TYPE)));
+			}
+
+			if (message.getHeaders().get(MessageHeaders.CONTENT_TYPE).toString().startsWith("text") && message.getPayload() instanceof byte[]) {
+				message = MessageBuilder.withPayload(new String((byte[])message.getPayload(), StandardCharsets.UTF_8)).copyHeaders(message.getHeaders()).build();
 			}
 
 			return message;
