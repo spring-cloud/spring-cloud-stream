@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.function;
 
+import java.time.Duration;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
@@ -23,9 +24,11 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import org.springframework.cloud.function.context.FunctionType;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
+import org.springframework.cloud.stream.binder.ConsumerProperties;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
@@ -61,14 +64,16 @@ class FunctionInvoker<I, O> implements Function<Flux<Message<I>>, Flux<Message<O
 
 	private final boolean isInputArgumentMessage;
 
-	FunctionInvoker(String functionName, FunctionCatalogWrapper functionCatalog, FunctionInspector functionInspector,
+	private final ConsumerProperties consumerProperties;
+
+	FunctionInvoker(StreamFunctionProperties functionProperties, FunctionCatalogWrapper functionCatalog, FunctionInspector functionInspector,
 			CompositeMessageConverterFactory compositeMessageConverterFactory) {
-		this(functionName, functionCatalog, functionInspector, compositeMessageConverterFactory, null);
+		this(functionProperties, functionCatalog, functionInspector, compositeMessageConverterFactory, null);
 	}
 
-	FunctionInvoker(String functionName, FunctionCatalogWrapper functionCatalog, FunctionInspector functionInspector,
+	FunctionInvoker(StreamFunctionProperties functionProperties, FunctionCatalogWrapper functionCatalog, FunctionInspector functionInspector,
 			CompositeMessageConverterFactory compositeMessageConverterFactory, MessageChannel errorChannel) {
-		this.userFunction = functionCatalog.lookup(functionName);
+		this.userFunction = functionCatalog.lookup(functionProperties.getDefinition());
 		Assert.isInstanceOf(Function.class, this.userFunction);
 		this.messageConverter = compositeMessageConverterFactory.getMessageConverterForAllRegistered();
 		FunctionType functionType = functionInspector.getRegistration(this.userFunction).getType();
@@ -76,19 +81,27 @@ class FunctionInvoker<I, O> implements Function<Flux<Message<I>>, Flux<Message<O
 		this.inputClass = functionType.getInputType();
 		this.outputClass = functionType.getOutputType();
 		this.errorChannel = errorChannel;
+		this.consumerProperties = functionProperties.getConsumerProperties() == null
+				? new ConsumerProperties() : functionProperties.getConsumerProperties();
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
 	public Flux<Message<O>> apply(Flux<Message<I>> input) {
 		AtomicReference<Message<I>> originalMessageRef = new AtomicReference<>();
-		return input
-				.doOnNext(originalMessageRef::set)        // to preserve the original message
-				.map(this::resolveArgument)                // resolves argument type before invocation of user function
-				.onErrorContinue((x, y) -> onError(x, (Message<I>) y))
-				.transform(this.userFunction::apply)    // invoke user function
-				.onErrorContinue((x, y) -> onError(x, (Message<I>) y))
-				.map(resultMessage -> toMessage(resultMessage, originalMessageRef.get())); // create output message
+
+		return input.concatMap(message -> {
+			return Flux.just(message)
+						.doOnNext(originalMessageRef::set)
+						.map(this::resolveArgument)
+						.transform(this.userFunction::apply)
+						.retryBackoff(consumerProperties.getMaxAttempts(),
+								Duration.ofMillis(consumerProperties.getBackOffInitialInterval()),
+								Duration.ofMillis(consumerProperties.getBackOffMaxInterval()))
+						.onErrorResume(e -> {
+							onError(e, originalMessageRef.get());
+							return Mono.empty();
+						});
+		}).log().map(resultMessage -> toMessage(resultMessage, originalMessageRef.get())); // create output message
 	}
 
 	private void onError(Throwable t, Message<I> originalMessage) {
@@ -138,7 +151,7 @@ class FunctionInvoker<I, O> implements Function<Flux<Message<I>>, Flux<Message<O
 
 	private boolean shouldConvertFromMessage(Message<?> message) {
 		return !this.inputClass.isAssignableFrom(Message.class) &&
-				!message.getPayload().getClass().isAssignableFrom(this.inputClass) &&
+				!this.inputClass.isAssignableFrom(message.getPayload().getClass()) &&
 				!this.inputClass.isAssignableFrom(Object.class);
 	}
 

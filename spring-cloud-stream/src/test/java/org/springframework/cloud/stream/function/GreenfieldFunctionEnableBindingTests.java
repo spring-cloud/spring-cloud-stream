@@ -132,7 +132,7 @@ public class GreenfieldFunctionEnableBindingTests {
 			ObjectMapper mapper = context.getBean(ObjectMapper.class);
 
 			input.send(MessageBuilder.withPayload("bar").build());
-			byte[] payload = target.receive(10000).getPayload();
+			byte[] payload = target.receive(2000).getPayload();
 
 			Foo result = mapper.readValue(payload, Foo.class);
 

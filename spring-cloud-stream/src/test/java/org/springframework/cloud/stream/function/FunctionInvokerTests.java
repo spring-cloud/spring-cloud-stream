@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.function;
 
+import java.lang.reflect.Field;
 import java.util.function.Function;
 
 import org.junit.Test;
@@ -27,6 +28,7 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
+import org.springframework.cloud.stream.binder.ConsumerProperties;
 import org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -34,6 +36,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.GenericMessage;
+import org.springframework.util.ReflectionUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -53,20 +56,49 @@ public class FunctionInvokerTests {
 
 			Message<Foo> inputMessage = new GenericMessage<>(new Foo());
 
-			FunctionInvoker<Foo, Foo> messageToMessageSameType = new FunctionInvoker<>("messageToMessageSameType",
+			StreamFunctionProperties functionProperties = createStreamFunctionProperties();
+
+			functionProperties.setDefinition("messageToMessageSameType");
+			FunctionInvoker<Foo, Foo> messageToMessageSameType = new FunctionInvoker<>(functionProperties,
 					new FunctionCatalogWrapper(context.getBean(FunctionCatalog.class)), context.getBean(FunctionInspector.class), context.getBean(CompositeMessageConverterFactory.class));
 			Message<Foo> outputMessage = messageToMessageSameType.apply(Flux.just(inputMessage)).blockFirst();
 			assertThat(inputMessage).isSameAs(outputMessage);
 
-			FunctionInvoker<Foo, Foo> pojoToPojoSameType = new FunctionInvoker<>("pojoToPojoSameType",
+			functionProperties.setDefinition("pojoToPojoSameType");
+			FunctionInvoker<Foo, Foo> pojoToPojoSameType = new FunctionInvoker<>(functionProperties,
 					new FunctionCatalogWrapper(context.getBean(FunctionCatalog.class)), context.getBean(FunctionInspector.class), context.getBean(CompositeMessageConverterFactory.class));
 			outputMessage = pojoToPojoSameType.apply(Flux.just(inputMessage)).blockFirst();
 			assertThat(inputMessage.getPayload()).isEqualTo(outputMessage.getPayload());
 
-			FunctionInvoker<Foo, Foo> messageToMessageNoType = new FunctionInvoker<>("messageToMessageNoType",
+
+			functionProperties.setDefinition("messageToMessageNoType");
+			FunctionInvoker<Foo, Foo> messageToMessageNoType = new FunctionInvoker<>(functionProperties,
 					new FunctionCatalogWrapper(context.getBean(FunctionCatalog.class)), context.getBean(FunctionInspector.class), context.getBean(CompositeMessageConverterFactory.class));
 			outputMessage = messageToMessageNoType.apply(Flux.just(inputMessage)).blockFirst();
 			assertThat(outputMessage).isInstanceOf(Message.class);
+
+			functionProperties.setDefinition("withException");
+			FunctionInvoker<Foo, Foo> withException = new FunctionInvoker<>(functionProperties,
+					new FunctionCatalogWrapper(context.getBean(FunctionCatalog.class)), context.getBean(FunctionInspector.class), context.getBean(CompositeMessageConverterFactory.class));
+
+			Flux<Message<Foo>> fluxOfMessages = Flux.just(new GenericMessage<>(new ErrorFoo()), inputMessage);
+			Message<Foo> resultMessage = withException.apply(fluxOfMessages).blockFirst();
+			assertThat(resultMessage.getPayload()).isNotInstanceOf(ErrorFoo.class);
+		}
+	}
+
+	private StreamFunctionProperties createStreamFunctionProperties() {
+		StreamFunctionProperties functionProperties = new StreamFunctionProperties();
+		ConsumerProperties consumerProperties = new ConsumerProperties();
+		consumerProperties.setMaxAttempts(3);
+		try {
+			Field f = ReflectionUtils.findField(StreamFunctionProperties.class, "consumerProperties");
+			f.setAccessible(true);
+			f.set(functionProperties, consumerProperties);
+			return functionProperties;
+		}
+		catch (Exception e) {
+			throw new IllegalStateException(e);
 		}
 	}
 
@@ -98,9 +130,27 @@ public class FunctionInvokerTests {
 			return x -> x;
 		}
 
+		@Bean
+		public Function<Foo, Foo> withException() {
+			return x -> {
+				if (x instanceof ErrorFoo) {
+					System.out.println("Throwing exception ");
+					throw new RuntimeException("Boom!");
+				}
+				else {
+					System.out.println("All is good ");
+					return x;
+				}
+			};
+		}
+
 	}
 
 	private static class Foo {
+
+	}
+
+	private static class ErrorFoo extends Foo {
 
 	}
 

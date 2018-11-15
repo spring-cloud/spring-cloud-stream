@@ -101,7 +101,7 @@ public class SourceToFunctionsSupportTests {
 			PollableChannel errorChannel = context.getBean("errorChannel", PollableChannel.class);
 			OutputDestination target = context.getBean(OutputDestination.class);
 			assertNull(target.receive(1000));
-			assertNotNull(errorChannel.receive(1000));
+			assertNotNull(errorChannel.receive(10000));
 		}
 	}
 
@@ -115,7 +115,7 @@ public class SourceToFunctionsSupportTests {
 			PollableChannel errorChannel = context.getBean("errorChannel", PollableChannel.class);
 			OutputDestination target = context.getBean(OutputDestination.class);
 			assertNull(target.receive(1000));
-			assertNotNull(errorChannel.receive(1000));
+			assertNotNull(errorChannel.receive(10000));
 		}
 	}
 

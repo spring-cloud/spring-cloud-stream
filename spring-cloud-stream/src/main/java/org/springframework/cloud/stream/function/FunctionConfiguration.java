@@ -27,7 +27,6 @@ import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
 import org.springframework.cloud.stream.messaging.Processor;
-import org.springframework.cloud.stream.messaging.Sink;
 import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -49,9 +48,6 @@ public class FunctionConfiguration {
 
 	@Autowired(required = false)
 	private Processor processor;
-
-	@Autowired(required = false)
-	private Sink sink;
 
 	@Bean
 	public IntegrationFlowFunctionSupport functionSupport(FunctionCatalogWrapper functionCatalog,

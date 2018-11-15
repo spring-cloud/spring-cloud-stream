@@ -17,6 +17,7 @@
 package org.springframework.cloud.stream.function;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.cloud.stream.binder.ConsumerProperties;
 
 /**
  *
@@ -32,11 +33,17 @@ public class StreamFunctionProperties {
 	 */
 	private String definition;
 
+	private ConsumerProperties consumerProperties;
+
 	public String getDefinition() {
 		return this.definition;
 	}
 
 	public void setDefinition(String definition) {
 		this.definition = definition;
+	}
+
+	protected ConsumerProperties getConsumerProperties() {
+		return consumerProperties;
 	}
 }

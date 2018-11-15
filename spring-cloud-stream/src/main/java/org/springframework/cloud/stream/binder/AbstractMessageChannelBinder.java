@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.binder;
 
+import java.lang.reflect.Field;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -65,6 +66,7 @@ import org.springframework.messaging.SubscribableChannel;
 import org.springframework.messaging.support.ChannelInterceptor;
 import org.springframework.retry.RecoveryCallback;
 import org.springframework.util.Assert;
+import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
 
 /**
@@ -345,7 +347,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 			ConsumerDestination destination = this.provisioningProvider.provisionConsumerDestination(name, group, properties);
 			// the function support for the inbound channel is only for Sink
 			if (this.streamFunctionProperties != null && StringUtils.hasText(this.streamFunctionProperties.getDefinition()) && this.processor == null) {
-				inputChannel = this.postProcessInboundChannelForFunction(inputChannel);
+				inputChannel = this.postProcessInboundChannelForFunction(inputChannel, (ConsumerProperties) properties);
 			}
 			if (HeaderMode.embeddedHeaders.equals(properties.getHeaderMode())) {
 				enhanceMessageChannel(inputChannel);
@@ -823,14 +825,14 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 					moveChannelInterceptors((AbstractMessageChannel) outputChannel, actualOutputChannel);
 				}
 				this.integrationFlowFunctionSupport.andThenFunction(publisher, actualOutputChannel,
-						this.streamFunctionProperties.getDefinition());
+						this.streamFunctionProperties);
 				return actualOutputChannel;
 			}
 		}
 		return (SubscribableChannel) outputChannel;
 	}
 
-	private SubscribableChannel postProcessInboundChannelForFunction(MessageChannel inputChannel) {
+	private SubscribableChannel postProcessInboundChannelForFunction(MessageChannel inputChannel, ConsumerProperties consumerProperties) {
 		if (this.integrationFlowFunctionSupport != null &&
 				(this.integrationFlowFunctionSupport.containsFunction(Consumer.class) ||
 						this.integrationFlowFunctionSupport.containsFunction(Function.class))) {
@@ -838,11 +840,24 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 			if (inputChannel instanceof AbstractMessageChannel) {
 				moveChannelInterceptors((AbstractMessageChannel) inputChannel, actualInputChannel);
 			}
+			this.propagateConsumerPropertiesToFunction(consumerProperties);
 			this.integrationFlowFunctionSupport.andThenFunction(MessageChannelReactiveUtils.toPublisher(actualInputChannel),
-					inputChannel, this.streamFunctionProperties.getDefinition());
+					inputChannel, this.streamFunctionProperties);
 			return actualInputChannel;
 		}
 		return (SubscribableChannel) inputChannel;
+	}
+
+	// we're doing it reflectively so we don't expose this as a property to the user
+	private void propagateConsumerPropertiesToFunction(ConsumerProperties consumerProperties) {
+		try {
+			Field f = ReflectionUtils.findField(StreamFunctionProperties.class, "consumerProperties");
+			f.setAccessible(true);
+			f.set(this.streamFunctionProperties, consumerProperties);
+		}
+		catch (Exception e) {
+			throw new IllegalStateException(e);
+		}
 	}
 
 	private void moveChannelInterceptors(AbstractMessageChannel existingMessageChannel,

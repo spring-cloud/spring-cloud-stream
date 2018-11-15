@@ -30,9 +30,6 @@ import org.springframework.cloud.function.context.FunctionType;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
 import org.springframework.cloud.function.core.FluxSupplier;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
-import org.springframework.cloud.stream.messaging.Processor;
-import org.springframework.cloud.stream.messaging.Sink;
-import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.integration.dsl.IntegrationFlowBuilder;
 import org.springframework.integration.dsl.IntegrationFlows;
 import org.springframework.messaging.Message;
@@ -61,15 +58,6 @@ public class IntegrationFlowFunctionSupport {
 
 	@Autowired
 	private MessageChannel errorChannel;
-
-	@Autowired(required = false)
-	private Source source;
-
-	@Autowired(required = false)
-	private Processor processor;
-
-	@Autowired(required = false)
-	private Sink sink;
 
 	/**
 	 * @param functionCatalog
@@ -162,7 +150,7 @@ public class IntegrationFlowFunctionSupport {
 			MessageChannel outputChannel) {
 		IntegrationFlowBuilder flowBuilder = IntegrationFlows.from(inputChannel).bridge();
 
-		if (!this.andThenFunction(flowBuilder, outputChannel, this.functionProperties.getDefinition())) {
+		if (!this.andThenFunction(flowBuilder, outputChannel, this.functionProperties)) {
 			flowBuilder = flowBuilder.channel(outputChannel);
 		}
 		return flowBuilder;
@@ -182,17 +170,17 @@ public class IntegrationFlowFunctionSupport {
 	 * @return true if {@link Function} was located and added and false if it wasn't.
 	 */
 	public <I,O> boolean andThenFunction(IntegrationFlowBuilder flowBuilder, MessageChannel outputChannel,
-			String functionName) {
-		return andThenFunction(flowBuilder.toReactivePublisher(), outputChannel, functionName);
+			StreamFunctionProperties functionProperties) {
+		return andThenFunction(flowBuilder.toReactivePublisher(), outputChannel, functionProperties);
 	}
 
 	public <I,O> boolean andThenFunction(Publisher<?> publisher, MessageChannel outputChannel,
-			String functionName) {
-		if (!StringUtils.hasText(functionName)) {
+			StreamFunctionProperties functionProperties) {
+		if (!StringUtils.hasText(functionProperties.getDefinition())) {
 			return false;
 		}
 		FunctionInvoker<I, O> functionInvoker =
-				new FunctionInvoker<>(functionName, this.functionCatalog,
+				new FunctionInvoker<>(functionProperties, this.functionCatalog,
 						this.functionInspector, this.messageConverterFactory, this.errorChannel);
 
 		if (outputChannel != null) {
