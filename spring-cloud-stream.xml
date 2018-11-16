@@ -175,9 +175,9 @@ If you chose RabbitMQ for the middleware, your Spring Initializr should now be a
 <informalfigure>
 <mediaobject>
 <imageobject>
-<imagedata fileref="https://raw.githubusercontent.com/spring-cloud/spring-cloud-stream/master/docs/src/main/asciidoc/images/stream-initializr.png"/>
+<imagedata fileref="https://raw.githubusercontent.com/spring-cloud/spring-cloud-stream/master/docs/src/main/asciidoc/images/spring-initializr.png"/>
 </imageobject>
-<textobject><phrase>stream initializr</phrase></textobject>
+<textobject><phrase>Spring Initializr</phrase></textobject>
 </mediaobject>
 </informalfigure>
 </listitem>
