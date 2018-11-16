@@ -46,8 +46,8 @@ public class InputOutputBindingOrderTest {
 	@Test
 	public void testInputOutputBindingOrder() {
 		ConfigurableApplicationContext applicationContext = SpringApplication.run(TestSource.class,
-				"--spring.cloud.stream.defaultBinder=mock");
-		@SuppressWarnings("rawtypes")
+				"--spring.cloud.stream.defaultBinder=mock",
+				"--spring.jmx.enabled=false");
 		Binder binder = applicationContext.getBean(BinderFactory.class).getBinder(null, MessageChannel.class);
 		Processor processor = applicationContext.getBean(Processor.class);
 		// input is bound after the context has been started

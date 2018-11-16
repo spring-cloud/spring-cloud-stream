@@ -104,7 +104,8 @@ public class HealthIndicatorsConfigurationTests {
 		ConfigurableApplicationContext context = createBinderTestContext(
 				new String[] { "binder1", "binder2" },
 				"spring.cloud.stream.defaultBinder:binder2",
-				"management.health.binders.enabled:false");
+				"management.health.binders.enabled:false",
+				"--spring.jmx.enabled=false");
 
 		Binder binder1 = context.getBean(BinderFactory.class).getBinder("binder1", MessageChannel.class);
 		assertThat(binder1).isInstanceOf(StubBinder1.class);
