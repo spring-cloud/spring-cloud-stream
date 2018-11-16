@@ -66,6 +66,7 @@ public class HealthIndicatorsConfigurationTests {
 		}
 		ClassLoader classLoader = new URLClassLoader(urls,
 				BinderFactoryConfigurationTests.class.getClassLoader());
+
 		return new SpringApplicationBuilder(SimpleSource.class)
 				.resourceLoader(new DefaultResourceLoader(classLoader))
 				.properties(properties).web(WebApplicationType.NONE).run();
@@ -75,7 +76,7 @@ public class HealthIndicatorsConfigurationTests {
 	@Test
 	public void healthIndicatorsCheck() throws Exception {
 		ConfigurableApplicationContext context = createBinderTestContext(new String[] { "binder1", "binder2" },
-				"spring.cloud.stream.defaultBinder:binder2");
+				"spring.cloud.stream.defaultBinder:binder2", "--spring.jmx.enabled=false");
 		Binder binder1 = context.getBean(BinderFactory.class).getBinder("binder1", MessageChannel.class);
 		assertThat(binder1).isInstanceOf(StubBinder1.class);
 		Binder binder2 = context.getBean(BinderFactory.class).getBinder("binder2", MessageChannel.class);
