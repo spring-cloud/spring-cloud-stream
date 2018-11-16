@@ -37,7 +37,7 @@ public class LifecycleBinderTests {
 	@Test
 	public void testOnlySmartLifecyclesStarted() {
 		ConfigurableApplicationContext applicationContext = SpringApplication.run(TestSource.class,
-				"--server.port=-1", "--spring.cloud.stream.defaultBinder=mock");
+				"--server.port=-1", "--spring.cloud.stream.defaultBinder=mock", "--spring.jmx.enabled=false");
 		SimpleLifecycle simpleLifecycle = applicationContext.getBean(SimpleLifecycle.class);
 		assertThat(simpleLifecycle.isRunning()).isFalse();
 		applicationContext.close();
