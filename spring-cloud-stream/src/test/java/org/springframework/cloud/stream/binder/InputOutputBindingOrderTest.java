@@ -20,8 +20,9 @@ import org.junit.Test;
 import org.mockito.Mockito;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.SpringApplication;
+import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.messaging.Processor;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -45,8 +46,9 @@ public class InputOutputBindingOrderTest {
 	@SuppressWarnings({"rawtypes", "unchecked"})
 	@Test
 	public void testInputOutputBindingOrder() {
-		ConfigurableApplicationContext applicationContext = SpringApplication.run(TestSource.class,
-				"--spring.cloud.stream.defaultBinder=mock",
+		ConfigurableApplicationContext applicationContext = new SpringApplicationBuilder(TestSource.class)
+				.web(WebApplicationType.NONE)
+				.run("--spring.cloud.stream.defaultBinder=mock",
 				"--spring.jmx.enabled=false");
 		Binder binder = applicationContext.getBean(BinderFactory.class).getBinder(null, MessageChannel.class);
 		Processor processor = applicationContext.getBean(Processor.class);
