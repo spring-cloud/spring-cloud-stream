@@ -18,6 +18,7 @@ package org.springframework.cloud.stream.test.aggregate.main;
 
 import java.util.concurrent.TimeUnit;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,6 +41,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Marius Bogoevici
  * @author Artem Bilan
  */
+@Ignore
 public class AggregateWithMainTest {
 
 	@SuppressWarnings("unchecked")

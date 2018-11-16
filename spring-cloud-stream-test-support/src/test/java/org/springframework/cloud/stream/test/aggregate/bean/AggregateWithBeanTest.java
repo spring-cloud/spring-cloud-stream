@@ -18,6 +18,7 @@ package org.springframework.cloud.stream.test.aggregate.bean;
 
 import java.util.concurrent.TimeUnit;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -45,6 +46,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest(classes = AggregateWithBeanTest.ChainedProcessors.class, properties = { "server.port=-1","--spring.cloud.stream.bindings.input.contentType=text/plain",
 		"--spring.cloud.stream.bindings.output.contentType=text/plain"})
+@Ignore
 public class AggregateWithBeanTest {
 
 	@Autowired
