@@ -23,12 +23,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.actuate.autoconfigure.endpoint.condition.ConditionalOnEnabledEndpoint;
 import org.springframework.boot.actuate.endpoint.annotation.Endpoint;
 import org.springframework.boot.actuate.trace.http.HttpTraceRepository;
+import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.cloud.autoconfigure.LifecycleMvcEndpointAutoConfiguration;
 import org.springframework.cloud.bus.endpoint.EnvironmentBusEndpoint;
 import org.springframework.cloud.bus.endpoint.RefreshBusEndpoint;
 import org.springframework.cloud.bus.event.AckRemoteApplicationEvent;
@@ -65,7 +67,8 @@ import org.springframework.util.PathMatcher;
 @ConditionalOnBusEnabled
 @EnableBinding(SpringCloudBusClient.class)
 @EnableConfigurationProperties(BusProperties.class)
-@AutoConfigureBefore(BindingServiceConfiguration.class)
+@AutoConfigureBefore(BindingServiceConfiguration.class) // so stream bindings work properly
+@AutoConfigureAfter(LifecycleMvcEndpointAutoConfiguration.class) // so actuator endpoints have needed dependencies
 public class BusAutoConfiguration implements ApplicationEventPublisherAware {
 
 	public static final String BUS_PATH_MATCHER_NAME = "busPathMatcher";
