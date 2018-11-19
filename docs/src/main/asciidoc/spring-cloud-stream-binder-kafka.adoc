@@ -38,6 +38,8 @@ include::dlq.adoc[]
 
 include::partitions.adoc[]
 
+include::kafka-streams.adoc[]
+
 = Appendices
 [appendix]
 include::building.adoc[]

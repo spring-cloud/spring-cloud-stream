@@ -5,7 +5,9 @@ It contains information about its design, usage, and configuration options, as w
 In addition, this guide explains the Kafka Streams binding capabilities of Spring Cloud Stream.
 --
 
-== Usage
+== Apache Kafka Binder
+
+=== Usage
 
 To use Apache Kafka binder, you need to add `spring-cloud-stream-binder-kafka` as a dependency to your Spring Cloud Stream application, as shown in the following example for Maven:
 
@@ -27,7 +29,7 @@ Alternatively, you can also use the Spring Cloud Stream Kafka Starter, as shown 
 </dependency>
 ----
 
-== Apache Kafka Binder Overview
+=== Overview
 
 The following image shows a simplified diagram of how the Apache Kafka binder operates:
 
@@ -43,13 +45,13 @@ This client can communicate with older brokers (see the Kafka documentation), bu
 For example, with versions earlier than 0.11.x.x, native headers are not supported.
 Also, 0.11.x.x does not support the `autoAddPartitions` property.
 
-== Configuration Options
+=== Configuration Options
 
 This section contains the configuration options used by the Apache Kafka binder.
 
 For common configuration options and properties pertaining to binder, see the <<binding-properties,core documentation>>.
 
-=== Kafka Binder Properties
+==== Kafka Binder Properties
 
 spring.cloud.stream.kafka.binder.brokers::
 A list of brokers to which the Kafka binder connects.
@@ -138,7 +140,7 @@ Use this, for example, if you wish to customize the trusted packages in a `Defau
 Default: none.
 
 [[kafka-consumer-properties]]
-=== Kafka Consumer Properties
+==== Kafka Consumer Properties
 
 The following properties are available for Kafka consumers only and
 must be prefixed with `spring.cloud.stream.kafka.bindings.<channelName>.consumer.`.
@@ -254,7 +256,7 @@ This can be configured using the `configuration` property above.
 Default: `false`
 
 [[kafka-producer-properties]]
-=== Kafka Producer Properties
+==== Kafka Producer Properties
 
 The following properties are available for Kafka producers only and
 must be prefixed with `spring.cloud.stream.kafka.bindings.<channelName>.producer.`.
@@ -315,11 +317,11 @@ If a topic already exists with a smaller partition count and `autoAddPartitions`
 If a topic already exists with a smaller partition count and `autoAddPartitions` is enabled, new partitions are added.
 If a topic already exists with a larger number of partitions than the maximum of (`minPartitionCount` or `partitionCount`), the existing partition count is used.
 
-=== Usage examples
+==== Usage examples
 
 In this section, we show the use of the preceding properties for specific scenarios.
 
-==== Example: Setting `autoCommitOffset` to `false` and Relying on Manual Acking
+===== Example: Setting `autoCommitOffset` to `false` and Relying on Manual Acking
 
 This example illustrates how one may manually acknowledge offsets in a consumer application.
 
@@ -347,7 +349,7 @@ public class ManuallyAcknowdledgingConsumer {
 }
 ----
 
-==== Example: Security Configuration
+===== Example: Security Configuration
 
 Apache Kafka 0.9 supports secure connections between client and brokers.
 To take advantage of this feature, follow the guidelines in the http://kafka.apache.org/090/documentation.html#security_configclients[Apache Kafka Documentation] as well as the Kafka 0.9 http://docs.confluent.io/2.0.0/kafka/security.html[security guidelines from the Confluent documentation].
@@ -366,7 +368,7 @@ When using Kerberos, follow the instructions in the http://kafka.apache.org/090/
 
 Spring Cloud Stream supports passing JAAS configuration information to the application by using a JAAS configuration file and using Spring Boot properties.
 
-===== Using JAAS Configuration Files
+====== Using JAAS Configuration Files
 
 The JAAS and (optionally) krb5 file locations can be set for Spring Cloud Stream applications by using system properties.
 The following example shows how to launch a Spring Cloud Stream application with SASL and Kerberos by using a JAAS configuration file:
@@ -379,7 +381,7 @@ The following example shows how to launch a Spring Cloud Stream application with
    --spring.cloud.stream.kafka.binder.configuration.security.protocol=SASL_PLAINTEXT
 ----
 
-===== Using Spring Boot Properties
+====== Using Spring Boot Properties
 
 As an alternative to having a JAAS configuration file, Spring Cloud Stream provides a mechanism for setting up the JAAS configuration for Spring Cloud Stream applications by using Spring Boot properties.
 
@@ -436,7 +438,7 @@ Consequently, relying on Spring Cloud Stream to create/modify topics may fail.
 In secure environments, we strongly recommend creating topics and managing ACLs administratively by using Kafka tooling.
 
 [[pause-resume]]
-==== Example: Pausing and Resuming the Consumer
+===== Example: Pausing and Resuming the Consumer
 
 If you wish to suspend consumption but not cause a partition rebalance, you can pause and resume the consumer.
 This is facilitated by adding the `Consumer` as a parameter to your `@StreamListener`.
@@ -476,7 +478,7 @@ public class Application {
 ----
 
 [[kafka-error-channels]]
-== Error Channels
+=== Error Channels
 
 Starting with version 1.3, the binder unconditionally sends exceptions to an error channel for each consumer destination and can also be configured to send async producer send failures to an error channel.
 See <<spring-cloud-stream-overview-error-handling>> for more information.
@@ -490,7 +492,7 @@ There is no automatic handling of producer exceptions (such as sending to a <<ka
 You can consume these exceptions with your own Spring Integration flow.
 
 [[kafka-metrics]]
-== Kafka Metrics
+=== Kafka Metrics
 
 Kafka binder module exposes the following metrics:
 
@@ -499,7 +501,7 @@ The metrics provided are based on the Mircometer metrics library. The metric con
 This metric is particularly useful for providing auto-scaling feedback to a PaaS platform.
 
 [[kafka-tombstones]]
-== Tombstone Records (null record values)
+=== Tombstone Records (null record values)
 
 When using compacted topics, a record with a `null` value (also called a tombstone record) represents the deletion of a key.
 To receive such messages in a `@StreamListener` method, the parameter must be marked as not required to receive a `null` value argument.
@@ -517,7 +519,7 @@ public void in(@Header(KafkaHeaders.RECEIVED_MESSAGE_KEY) byte[] key,
 ====
 
 [[rebalance-listener]]
-== Using a KafkaRebalanceListener
+=== Using a KafkaRebalanceListener
 
 Applications may wish to seek topics/partitions to arbitrary offsets when the partitions are initially assigned, or perform other operations on the consumer.
 Starting with version 2.1, if you provide a single `KafkaRebalanceListener` bean in the application context, it will be wired into all Kafka consumer bindings.

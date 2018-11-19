@@ -1,4 +1,6 @@
-== Usage
+== Kafka Streams Binder
+
+=== Usage
 
 For using the Kafka Streams binder, you just need to add it to your Spring Cloud Stream application, using the following
 Maven coordinates:
@@ -11,7 +13,8 @@ Maven coordinates:
 </dependency>
 ----
 
-== Kafka Streams Binder Overview
+
+=== Overview
 
 Spring Cloud Stream's Apache Kafka support also includes a binder implementation designed explicitly for Apache Kafka
 Streams binding. With this native integration, a Spring Cloud Stream "processor" application can directly use the
@@ -32,7 +35,7 @@ As noted early-on, Kafka Streams support in Spring Cloud Stream is strictly only
 A model in which the messages read from an inbound topic, business processing can be applied, and the transformed messages
 can be written to an outbound topic. It can also be used in Processor applications with a no-outbound destination.
 
-=== Streams DSL
+==== Streams DSL
 
 This application consumes data from a Kafka topic (e.g., `words`), computes word count for each unique word in a 5 seconds
 time window, and the computed results are sent to a downstream topic (e.g., `counts`) for further processing.
@@ -75,13 +78,13 @@ KStream objects. As a developer, you can exclusively focus on the business aspec
 required in the processor. Setting up the Streams DSL specific configuration required by the Kafka Streams infrastructure
 is automatically handled by the framework.
 
-== Configuration Options
+=== Configuration Options
 
 This section contains the configuration options used by the Kafka Streams binder.
 
 For common configuration options and properties pertaining to binder, refer to the <<binding-properties,core documentation>>.
 
-=== Kafka Streams Properties
+==== Kafka Streams Properties
 
 The following properties are available at the binder level and must be prefixed with `spring.cloud.stream.kafka.streams.binder.`
 
@@ -172,7 +175,7 @@ Default: `earliest`.
 Note: Using `resetOffsets` on the consumer does not have any effect on Kafka Streams binder.
 Unlike the message channel based binder, Kafka Streams binder does not seek to beginning or end on demand.
 
-=== TimeWindow properties:
+==== TimeWindow properties:
 
 Windowing is an important concept in stream processing applications. Following properties are available to configure
 time-window computations.
@@ -187,14 +190,14 @@ spring.cloud.stream.kafka.streams.timeWindow.advanceBy::
 +
 Default: `none`.
 
-== Multiple Input Bindings
+=== Multiple Input Bindings
 
 For use cases that requires multiple incoming KStream objects or a combination of KStream and KTable objects, the Kafka
 Streams binder provides multiple bindings support.
 
 Let's see it in action.
 
-=== Multiple Input Bindings as a Sink
+==== Multiple Input Bindings as a Sink
 
 [source]
 ----
@@ -261,7 +264,7 @@ interface KStreamKTableBinding extends KafkaStreamsProcessor {
 
 ----
 
-== Multiple Output Bindings (aka Branching)
+=== Multiple Output Bindings (aka Branching)
 
 Kafka Streams allow outbound data to be split into multiple topics based on some predicates. The Kafka Streams binder provides
 support for this feature without compromising the programming model exposed through `StreamListener` in the end user application.
@@ -347,7 +350,7 @@ spring.cloud.stream.bindings.input:
     headerMode: raw
 ----
 
-== Record Value Conversion
+=== Record Value Conversion
 
 Kafka Streams binder can marshal producer/consumer values based on a content type and the converters provided out of the box in Spring Cloud Stream.
 
@@ -359,7 +362,7 @@ would like to continue using that for inbound and outbound conversions.
 
 Both the options are supported in the Kafka Streams binder implementation. See below for more details.
 
-==== Outbound serialization
+===== Outbound serialization
 
 If native encoding is disabled (which is the default), then the framework will convert the message using the contentType
 set by the user (otherwise, the default `application/json` will be applied). It will ignore any SerDe set on the outbound
@@ -448,7 +451,7 @@ spring.cloud.stream.bindings.output2.contentType: application/java-serialzied-ob
 spring.cloud.stream.bindings.output3.contentType: application/octet-stream
 ----
 
-==== Inbound Deserialization
+===== Inbound Deserialization
 
 Similar rules apply to data deserialization on the inbound.
 
@@ -503,7 +506,7 @@ As in the case of KStream branching on the outbound, the benefit of setting valu
 multiple input bindings (multiple KStreams object) and they all require separate value SerDe's, then you can configure
 them individually. If you use the common configuration approach, then this feature won't be applicable.
 
-== Error Handling
+=== Error Handling
 
 Apache Kafka Streams provide the capability for natively handling exceptions from deserialization errors.
 For details on this support, please see https://cwiki.apache.org/confluence/display/KAFKA/KIP-161%3A+streams+deserialization+exception+handlers[this]
@@ -544,7 +547,7 @@ that if there are multiple `StreamListener` methods in the same application, thi
 * The exception handling for deserialization works consistently with native deserialization and framework provided message
 conversion.
 
-=== Handling Non-Deserialization Exceptions
+==== Handling Non-Deserialization Exceptions
 
 For general error handling in Kafka Streams binder, it is up to the end user applications to handle application level errors.
 As a side effect of providing a DLQ for deserialization exception handlers, Kafka Streams binder provides a way to get
@@ -594,7 +597,7 @@ public KStream<?, WordCount> process(KStream<Object, String> input) {
 }
 ----
 
-== State Store
+=== State Store
 
 State store is created automatically by Kafka Streams when the DSL is used.
 When processor API is used, you need to register a state store manually. In order to do so, you can use `KafkaStreamsStateStore` annotation.
@@ -626,7 +629,7 @@ Processor<Object, Product>() {
 }
 ----
 
-== Interactive Queries
+=== Interactive Queries
 
 As part of the public Kafka Streams binder API, we expose a class called `InteractiveQueryService`.
 You can access this as a Spring bean in your application. An easy way to get access to this bean from your application is to "autowire" the bean.
@@ -671,7 +674,7 @@ else {
 }
 ----
 
-== Accessing the underlying KafkaStreams object
+=== Accessing the underlying KafkaStreams object
 
 `StreamBuilderFactoryBean` from spring-kafka that is responsible for constructing the `KafkaStreams` object can be accessed programmatically.
 Each `StreamBuilderFactoryBean` is registered as `stream-builder` and appended with the `StreamListener` method name.
@@ -685,7 +688,7 @@ StreamsBuilderFactoryBean streamsBuilderFactoryBean = context.getBean("&stream-b
 			KafkaStreams kafkaStreams = streamsBuilderFactoryBean.getKafkaStreams();
 ----
 
-== State Cleanup
+=== State Cleanup
 
 By default, the `Kafkastreams.cleanup()` method is called when the binding is stopped.
 See https://docs.spring.io/spring-kafka/reference/html/_reference.html#_configuration[the Spring Kafka documentation].

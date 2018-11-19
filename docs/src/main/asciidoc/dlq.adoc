@@ -1,5 +1,5 @@
 [[kafka-dlq-processing]]
-== Dead-Letter Topic Processing
+=== Dead-Letter Topic Processing
 
 Because you cannot anticipate how users would want to dispose of dead-lettered messages, the framework does not provide any standard mechanism to handle them.
 If the reason for the dead-lettering is transient, you may wish to route the messages back to the original topic.
