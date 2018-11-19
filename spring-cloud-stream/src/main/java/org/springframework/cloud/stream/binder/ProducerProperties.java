@@ -105,8 +105,8 @@ public class ProducerProperties implements MergableProperties {
 	}
 
 	public boolean isPartitioned() {
-		return this.partitionCount > 1 || this.partitionKeyExpression != null
-				|| this.partitionKeyExtractorName != null || this.partitionKeyExtractorClass != null;
+		return this.partitionKeyExpression != null || this.partitionKeyExtractorName != null
+				|| this.partitionKeyExtractorClass != null;
 	}
 
 	@Deprecated
