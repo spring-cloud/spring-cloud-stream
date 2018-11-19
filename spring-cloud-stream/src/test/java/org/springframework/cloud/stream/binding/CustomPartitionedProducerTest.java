@@ -19,6 +19,7 @@ package org.springframework.cloud.stream.binding;
 import java.lang.reflect.Field;
 
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import org.springframework.boot.SpringApplication;
@@ -173,6 +174,7 @@ public class CustomPartitionedProducerTest {
 	@Test(expected=Exception.class)
 	// It actually throws UnsatisfiedDependencyException, but it is confusing when it comes to test
 	// But for the purposes of the test all we care about is that it fails
+	@Ignore
 	public void testCustomPartitionedProducerMultipleInstancesFailNoFilter() {
 		SpringApplication.run(CustomPartitionedProducerTest.TestSourceMultipleStrategies.class,
 				"--spring.jmx.enabled=false", "--spring.main.web-application-type=none");
