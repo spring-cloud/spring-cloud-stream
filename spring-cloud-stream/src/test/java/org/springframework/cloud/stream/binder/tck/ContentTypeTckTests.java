@@ -234,6 +234,52 @@ public class ContentTypeTckTests {
 		assertEquals(jsonPayload, new String(outputMessage.getPayload(), StandardCharsets.UTF_8));
 	}
 
+	@Test
+	public void typelessToPojoWithTextHeaderContentTypeBinding() {
+		ApplicationContext context = new SpringApplicationBuilder(TypelessToPojoStreamListener.class)
+				.web(WebApplicationType.NONE)
+				.run("--spring.jmx.enabled=false");
+		InputDestination source = context.getBean(InputDestination.class);
+		OutputDestination target = context.getBean(OutputDestination.class);
+		String jsonPayload = "{\"name\":\"oleg\"}";
+		source.send(MessageBuilder.withPayload(jsonPayload.getBytes()).setHeader(MessageHeaders.CONTENT_TYPE, MimeType.valueOf("text/plain")).build());
+		Message<byte[]> outputMessage = target.receive();
+		assertEquals(MimeTypeUtils.APPLICATION_JSON, outputMessage.getHeaders().get(MessageHeaders.CONTENT_TYPE));
+		assertEquals(jsonPayload, new String(outputMessage.getPayload(), StandardCharsets.UTF_8));
+	}
+
+	@Test
+	public void typelessToPojoOutboundContentTypeBinding() {
+		ApplicationContext context = new SpringApplicationBuilder(TypelessToMessageStreamListener.class)
+				.web(WebApplicationType.NONE)
+				.run("--spring.cloud.stream.bindings.output.contentType=text/plain", "--spring.jmx.enabled=false");
+		InputDestination source = context.getBean(InputDestination.class);
+		OutputDestination target = context.getBean(OutputDestination.class);
+		String jsonPayload = "{\"name\":\"oleg\"}";
+		//source.send(MessageBuilder.withPayload(jsonPayload.getBytes()).setHeader(MessageHeaders.CONTENT_TYPE, MimeType.valueOf("text/*")).build());
+		source.send(MessageBuilder.withPayload(jsonPayload.getBytes()).setHeader("contentType", new MimeType("text", "plain")).build());
+
+		Message<byte[]> outputMessage = target.receive();
+		//assertEquals(MimeTypeUtils.APPLICATION_JSON, outputMessage.getHeaders().get(MessageHeaders.CONTENT_TYPE));
+		assertEquals(jsonPayload, new String(outputMessage.getPayload(), StandardCharsets.UTF_8));
+	}
+
+	@Test
+	public void outboundMessageWithTextContentTypeOnly() {
+		ApplicationContext context = new SpringApplicationBuilder(TypelessToMessageTextOnlyContentTypeStreamListener.class)
+				.web(WebApplicationType.NONE)
+				.run("--spring.jmx.enabled=false");
+		InputDestination source = context.getBean(InputDestination.class);
+		OutputDestination target = context.getBean(OutputDestination.class);
+		String jsonPayload = "{\"name\":\"oleg\"}";
+		//source.send(MessageBuilder.withPayload(jsonPayload.getBytes()).setHeader(MessageHeaders.CONTENT_TYPE, MimeType.valueOf("text/*")).build());
+		source.send(MessageBuilder.withPayload(jsonPayload.getBytes()).setHeader("contentType", new MimeType("text")).build());
+
+		Message<byte[]> outputMessage = target.receive();
+		//assertEquals(MimeTypeUtils.APPLICATION_JSON, outputMessage.getHeaders().get(MessageHeaders.CONTENT_TYPE));
+		assertEquals(jsonPayload, new String(outputMessage.getPayload(), StandardCharsets.UTF_8));
+	}
+
 
 
 	@Test
@@ -571,6 +617,28 @@ public class ContentTypeTckTests {
 			ObjectMapper mapper = new ObjectMapper();
 			//assume it is string because CT is text/plain
 			return mapper.readValue((String)value, Person.class);
+		}
+	}
+
+	@EnableBinding(Processor.class)
+	@Import(TestChannelBinderConfiguration.class)
+	@EnableAutoConfiguration
+	public static class TypelessToMessageStreamListener {
+		@StreamListener(Processor.INPUT)
+		@SendTo(Processor.OUTPUT)
+		public Message<?> echo(Object value) throws Exception {
+			return MessageBuilder.withPayload(value.toString()).setHeader("contentType", new MimeType("text", "plain")).build();
+		}
+	}
+
+	@EnableBinding(Processor.class)
+	@Import(TestChannelBinderConfiguration.class)
+	@EnableAutoConfiguration
+	public static class TypelessToMessageTextOnlyContentTypeStreamListener {
+		@StreamListener(Processor.INPUT)
+		@SendTo(Processor.OUTPUT)
+		public Message<?> echo(Object value) throws Exception {
+			return MessageBuilder.withPayload(value.toString()).setHeader("contentType", new MimeType("text")).build();
 		}
 	}
 

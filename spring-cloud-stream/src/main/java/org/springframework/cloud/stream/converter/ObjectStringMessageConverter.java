@@ -57,7 +57,7 @@ public class ObjectStringMessageConverter extends AbstractMessageConverter {
 	@Override
 	protected boolean supportsMimeType(@Nullable MessageHeaders headers) {
 		MimeType mimeType = getMimeType(headers);
-		if (mimeType != null && !super.supportsMimeType(headers)) {
+		if (mimeType != null) {
 			for (MimeType current : getSupportedMimeTypes()) {
 				if (current.getType().equals(mimeType.getType())) {
 					return true;
@@ -65,7 +65,7 @@ public class ObjectStringMessageConverter extends AbstractMessageConverter {
 			}
 		}
 
-		return false;
+		return super.supportsMimeType(headers);
 	}
 
 	protected Object convertFromInternal(Message<?> message, Class<?> targetClass, Object conversionHint) {
