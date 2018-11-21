@@ -35,6 +35,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.admin.CreateTopicsResult;
@@ -1588,6 +1589,35 @@ public class KafkaBinderTests extends
 		input0Binding.unbind();
 		input1Binding.unbind();
 		input2Binding.unbind();
+		outputBinding.unbind();
+	}
+
+	@Test
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	public void testPartitionedNative() throws Exception {
+		Binder binder = getBinder();
+		ExtendedProducerProperties<KafkaProducerProperties> properties = createProducerProperties();
+		properties.setPartitionCount(6);
+
+		DirectChannel output = createBindableChannel("output", createProducerBindingProperties(properties));
+		output.setBeanName("test.output");
+		Binding<MessageChannel> outputBinding = binder.bindProducer("partNative.raw.0", output, properties);
+
+		ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = createConsumerProperties();
+		QueueChannel input0 = new QueueChannel();
+		input0.setBeanName("test.inputNative");
+		Binding<MessageChannel> inputBinding = binder.bindConsumer("partNative.raw.0", "test", input0, consumerProperties);
+
+		output.send(
+				new GenericMessage<>("foo".getBytes(), Collections.singletonMap(KafkaHeaders.PARTITION_ID, 5)));
+
+		Message<?> received = receive(input0);
+		assertThat(received).isNotNull();
+
+		assertThat(received.getPayload()).isEqualTo("foo".getBytes());
+		assertThat(received.getHeaders().get(KafkaHeaders.RECEIVED_PARTITION_ID)).isEqualTo(5);
+
+		inputBinding.unbind();
 		outputBinding.unbind();
 	}
 
