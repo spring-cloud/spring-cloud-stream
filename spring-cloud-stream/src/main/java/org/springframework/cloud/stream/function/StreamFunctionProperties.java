@@ -54,7 +54,7 @@ public class StreamFunctionProperties {
 		this.consumerProperties = consumerProperties;
 	}
 
-	public ProducerProperties getProducerProperties() {
+	protected ProducerProperties getProducerProperties() {
 		return producerProperties;
 	}
 
