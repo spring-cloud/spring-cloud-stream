@@ -19,6 +19,7 @@ package org.springframework.cloud.stream.function.pojo;
 
 /**
  * Serializable pojo with object mapper.
+ * @author Tolga Kavukcu
  */
 public class ErrorBaz extends Baz{
 	private String baz = "bazError";

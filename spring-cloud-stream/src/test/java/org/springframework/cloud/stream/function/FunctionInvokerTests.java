@@ -21,7 +21,7 @@ import java.util.function.Function;
 
 import org.junit.Test;
 
-import org.springframework.cloud.stream.function.pojo.ErrorBaz;
+
 import reactor.core.publisher.Flux;
 
 import org.springframework.boot.WebApplicationType;
@@ -34,6 +34,7 @@ import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
 import org.springframework.cloud.stream.function.pojo.Baz;
+import org.springframework.cloud.stream.function.pojo.ErrorBaz;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.integration.support.MessageBuilder;
@@ -46,6 +47,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  *
  * @author Oleg Zhurakousky
+ * @author Tolga Kavukcu
  *
  */
 public class FunctionInvokerTests {
