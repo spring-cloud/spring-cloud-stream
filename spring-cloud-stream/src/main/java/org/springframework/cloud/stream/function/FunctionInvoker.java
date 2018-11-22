@@ -124,8 +124,8 @@ class FunctionInvoker<I, O> implements Function<Flux<Message<I>>, Flux<Message<O
 		if(producerProperties.isUseNativeEncoding()){
 			if (logger.isDebugEnabled()) {
 				logger.debug("Native encoding enabled wrapping result to message using the original message: " + originalMessage);
-				return wrapOutputToMessage(value,originalMessage);
 			}
+			return wrapOutputToMessage(value,originalMessage);
 		}
 		if (logger.isDebugEnabled()) {
 			logger.debug("Converting result back to message using the original message: " + originalMessage);
