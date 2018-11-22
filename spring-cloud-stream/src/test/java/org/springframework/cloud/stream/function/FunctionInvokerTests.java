@@ -106,6 +106,14 @@ public class FunctionInvokerTests {
 			Message<Baz> outputMessage = pojoToPojoSameType.apply(Flux.just(inputMessage)).blockFirst();
 			assertThat(inputMessage.getPayload()).isEqualTo(outputMessage.getPayload());
 
+			Message<Baz> inputMessageWithBaz = new GenericMessage<>(new Baz());
+
+			functionProperties.setDefinition("messageToMessageNoType");
+			FunctionInvoker<Baz, Baz> messageToMessageNoType = new FunctionInvoker<>(functionProperties,
+					new FunctionCatalogWrapper(context.getBean(FunctionCatalog.class)), context.getBean(FunctionInspector.class), context.getBean(CompositeMessageConverterFactory.class));
+			outputMessage = messageToMessageNoType.apply(Flux.just(inputMessageWithBaz)).blockFirst();
+			assertThat(outputMessage).isInstanceOf(Message.class);
+
 		}
 	}
 
