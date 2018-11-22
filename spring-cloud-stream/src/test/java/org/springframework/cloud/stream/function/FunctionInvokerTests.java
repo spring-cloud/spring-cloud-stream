@@ -21,6 +21,7 @@ import java.util.function.Function;
 
 import org.junit.Test;
 
+import org.springframework.cloud.stream.function.pojo.ErrorBaz;
 import reactor.core.publisher.Flux;
 
 import org.springframework.boot.WebApplicationType;
@@ -114,6 +115,14 @@ public class FunctionInvokerTests {
 			outputMessage = messageToMessageNoType.apply(Flux.just(inputMessageWithBaz)).blockFirst();
 			assertThat(outputMessage).isInstanceOf(Message.class);
 
+			functionProperties.setDefinition("withExceptionNativeEncodingEnabled");
+			FunctionInvoker<Baz, Baz> withException = new FunctionInvoker<>(functionProperties,
+					new FunctionCatalogWrapper(context.getBean(FunctionCatalog.class)),
+					context.getBean(FunctionInspector.class), context.getBean(CompositeMessageConverterFactory.class));
+
+			Flux<Message<Baz>> fluxOfMessages = Flux.just(new GenericMessage<>(new ErrorBaz()), inputMessage);
+			Message<Baz> resultMessage = withException.apply(fluxOfMessages).blockFirst();
+			assertThat(resultMessage.getPayload()).isNotInstanceOf(ErrorFoo.class);
 		}
 	}
 
@@ -211,6 +220,19 @@ public class FunctionInvokerTests {
 					throw new RuntimeException("Boom!");
 				}
 				else {
+					System.out.println("All is good ");
+					return x;
+				}
+			};
+		}
+
+		@Bean
+		public Function<Baz, Baz> withExceptionNativeEncodingEnabled() {
+			return x -> {
+				if (x instanceof ErrorBaz) {
+					System.out.println("Throwing exception ");
+					throw new RuntimeException("Boom!");
+				} else {
 					System.out.println("All is good ");
 					return x;
 				}
