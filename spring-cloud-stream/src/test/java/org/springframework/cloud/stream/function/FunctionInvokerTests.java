@@ -21,6 +21,7 @@ import java.util.function.Function;
 
 import org.junit.Test;
 
+
 import reactor.core.publisher.Flux;
 
 import org.springframework.boot.WebApplicationType;
@@ -29,8 +30,11 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
 import org.springframework.cloud.stream.binder.ConsumerProperties;
+import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
+import org.springframework.cloud.stream.function.pojo.Baz;
+import org.springframework.cloud.stream.function.pojo.ErrorBaz;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.integration.support.MessageBuilder;
@@ -43,6 +47,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  *
  * @author Oleg Zhurakousky
+ * @author Tolga Kavukcu
  *
  */
 public class FunctionInvokerTests {
@@ -87,6 +92,62 @@ public class FunctionInvokerTests {
 		}
 	}
 
+	@Test
+	public void testNativeEncodingEnabled() {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+				TestChannelBinderConfiguration.getCompleteConfiguration(MyFunctionsConfiguration.class))
+						.web(WebApplicationType.NONE).run("--spring.jmx.enabled=false")) {
+
+			Message<Baz> inputMessage = new GenericMessage<>(new Baz());
+
+			StreamFunctionProperties functionProperties = createStreamFunctionPropertiesWithNativeEncoding();
+
+			functionProperties.setDefinition("pojoToPojoNonEmptyPojo");
+			FunctionInvoker<Baz, Baz> pojoToPojoSameType = new FunctionInvoker<>(functionProperties,
+					new FunctionCatalogWrapper(context.getBean(FunctionCatalog.class)),
+					context.getBean(FunctionInspector.class), context.getBean(CompositeMessageConverterFactory.class));
+			Message<Baz> outputMessage = pojoToPojoSameType.apply(Flux.just(inputMessage)).blockFirst();
+			assertThat(inputMessage.getPayload()).isEqualTo(outputMessage.getPayload());
+
+			Message<Baz> inputMessageWithBaz = new GenericMessage<>(new Baz());
+
+			functionProperties.setDefinition("messageToMessageNoType");
+			FunctionInvoker<Baz, Baz> messageToMessageNoType = new FunctionInvoker<>(functionProperties,
+					new FunctionCatalogWrapper(context.getBean(FunctionCatalog.class)), context.getBean(FunctionInspector.class), context.getBean(CompositeMessageConverterFactory.class));
+			outputMessage = messageToMessageNoType.apply(Flux.just(inputMessageWithBaz)).blockFirst();
+			assertThat(outputMessage).isInstanceOf(Message.class);
+
+			functionProperties.setDefinition("withExceptionNativeEncodingEnabled");
+			FunctionInvoker<Baz, Baz> withException = new FunctionInvoker<>(functionProperties,
+					new FunctionCatalogWrapper(context.getBean(FunctionCatalog.class)),
+					context.getBean(FunctionInspector.class), context.getBean(CompositeMessageConverterFactory.class));
+
+			Flux<Message<Baz>> fluxOfMessages = Flux.just(new GenericMessage<>(new ErrorBaz()), inputMessage);
+			Message<Baz> resultMessage = withException.apply(fluxOfMessages).blockFirst();
+			assertThat(resultMessage.getPayload()).isNotInstanceOf(ErrorFoo.class);
+		}
+	}
+
+	@Test
+	public void testWithOutNativeEncodingEnabled() {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+				TestChannelBinderConfiguration.getCompleteConfiguration(MyFunctionsConfiguration.class))
+						.web(WebApplicationType.NONE).run("--spring.jmx.enabled=false")) {
+
+			Message<Baz> inputMessage = new GenericMessage<>(new Baz());
+
+			StreamFunctionProperties functionProperties = createStreamFunctionProperties();
+
+			functionProperties.setDefinition("pojoToPojoNonEmptyPojo");
+			FunctionInvoker<Baz, Baz> pojoToPojoSameType = new FunctionInvoker<>(functionProperties,
+					new FunctionCatalogWrapper(context.getBean(FunctionCatalog.class)),
+					context.getBean(FunctionInspector.class), context.getBean(CompositeMessageConverterFactory.class));
+			Message<Baz> outputMessage = pojoToPojoSameType.apply(Flux.just(inputMessage)).blockFirst();
+			assertThat(inputMessage.getPayload()).isNotEqualTo(outputMessage.getPayload());
+
+		}
+	}
+
 	private StreamFunctionProperties createStreamFunctionProperties() {
 		StreamFunctionProperties functionProperties = new StreamFunctionProperties();
 		ConsumerProperties consumerProperties = new ConsumerProperties();
@@ -96,8 +157,26 @@ public class FunctionInvokerTests {
 			f.setAccessible(true);
 			f.set(functionProperties, consumerProperties);
 			return functionProperties;
+		} catch (Exception e) {
+			throw new IllegalStateException(e);
 		}
-		catch (Exception e) {
+	}
+
+	private StreamFunctionProperties createStreamFunctionPropertiesWithNativeEncoding() {
+		StreamFunctionProperties functionProperties = new StreamFunctionProperties();
+		ConsumerProperties consumerProperties = new ConsumerProperties();
+		consumerProperties.setMaxAttempts(3);
+		ProducerProperties producerProperties = new ProducerProperties();
+		producerProperties.setUseNativeEncoding(true);
+		try {
+			Field c = ReflectionUtils.findField(StreamFunctionProperties.class, "consumerProperties");
+			Field p = ReflectionUtils.findField(StreamFunctionProperties.class, "producerProperties");
+			c.setAccessible(true);
+			c.set(functionProperties, consumerProperties);
+			p.setAccessible(true);
+			p.set(functionProperties, producerProperties);
+			return functionProperties;
+		} catch (Exception e) {
 			throw new IllegalStateException(e);
 		}
 	}
@@ -131,6 +210,11 @@ public class FunctionInvokerTests {
 		}
 
 		@Bean
+		public Function<Baz, Baz> pojoToPojoNonEmptyPojo() {
+			return x -> x;
+		}
+
+		@Bean
 		public Function<Foo, Foo> withException() {
 			return x -> {
 				if (x instanceof ErrorFoo) {
@@ -138,6 +222,19 @@ public class FunctionInvokerTests {
 					throw new RuntimeException("Boom!");
 				}
 				else {
+					System.out.println("All is good ");
+					return x;
+				}
+			};
+		}
+
+		@Bean
+		public Function<Baz, Baz> withExceptionNativeEncodingEnabled() {
+			return x -> {
+				if (x instanceof ErrorBaz) {
+					System.out.println("Throwing exception ");
+					throw new RuntimeException("Boom!");
+				} else {
 					System.out.println("All is good ");
 					return x;
 				}

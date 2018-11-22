@@ -18,6 +18,7 @@ package org.springframework.cloud.stream.function;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.cloud.stream.binder.ConsumerProperties;
+import org.springframework.cloud.stream.binder.ProducerProperties;
 
 /**
  *
@@ -35,6 +36,8 @@ public class StreamFunctionProperties {
 
 	private ConsumerProperties consumerProperties;
 
+	private ProducerProperties producerProperties;
+
 	public String getDefinition() {
 		return this.definition;
 	}
@@ -45,5 +48,17 @@ public class StreamFunctionProperties {
 
 	protected ConsumerProperties getConsumerProperties() {
 		return consumerProperties;
+	}
+
+	public void setConsumerProperties(ConsumerProperties consumerProperties) {
+		this.consumerProperties = consumerProperties;
+	}
+
+	protected ProducerProperties getProducerProperties() {
+		return producerProperties;
+	}
+
+	public void setProducerProperties(ProducerProperties producerProperties) {
+		this.producerProperties = producerProperties;
 	}
 }
