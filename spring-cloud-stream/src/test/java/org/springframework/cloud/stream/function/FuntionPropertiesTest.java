@@ -31,6 +31,11 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+/**
+ *
+ * @author Tolga Kavukcu
+ *
+ */
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest(classes = { FuntionPropertiesTest.MyFunctionsConfiguration.class })
 public class FuntionPropertiesTest {
