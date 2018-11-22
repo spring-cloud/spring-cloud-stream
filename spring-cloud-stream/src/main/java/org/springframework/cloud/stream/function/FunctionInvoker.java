@@ -22,13 +22,13 @@ import java.util.function.Function;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import org.springframework.cloud.function.context.FunctionType;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
 import org.springframework.cloud.stream.binder.ConsumerProperties;
+import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
@@ -66,6 +66,8 @@ class FunctionInvoker<I, O> implements Function<Flux<Message<I>>, Flux<Message<O
 
 	private final ConsumerProperties consumerProperties;
 
+	private final ProducerProperties producerProperties;
+
 	FunctionInvoker(StreamFunctionProperties functionProperties, FunctionCatalogWrapper functionCatalog, FunctionInspector functionInspector,
 			CompositeMessageConverterFactory compositeMessageConverterFactory) {
 		this(functionProperties, functionCatalog, functionInspector, compositeMessageConverterFactory, null);
@@ -83,6 +85,8 @@ class FunctionInvoker<I, O> implements Function<Flux<Message<I>>, Flux<Message<O
 		this.errorChannel = errorChannel;
 		this.consumerProperties = functionProperties.getConsumerProperties() == null
 				? new ConsumerProperties() : functionProperties.getConsumerProperties();
+		this.producerProperties = functionProperties.getProducerProperties() == null
+				? new ProducerProperties() : functionProperties.getProducerProperties();
 	}
 
 	@Override
@@ -117,6 +121,12 @@ class FunctionInvoker<I, O> implements Function<Flux<Message<I>>, Flux<Message<O
 
 	@SuppressWarnings("unchecked")
 	private <T> Message<O> toMessage(T value, Message<I> originalMessage) {
+		if(producerProperties.isUseNativeEncoding()){
+			if (logger.isDebugEnabled()) {
+				logger.debug("Native encoding enabled wrapping result to message using the original message: " + originalMessage);
+				return wrapOutputToMessage(value,originalMessage);
+			}
+		}
 		if (logger.isDebugEnabled()) {
 			logger.debug("Converting result back to message using the original message: " + originalMessage);
 		}
@@ -126,10 +136,16 @@ class FunctionInvoker<I, O> implements Function<Flux<Message<I>>, Flux<Message<O
 						: this.messageConverter.toMessage(value, originalMessage.getHeaders(), this.outputClass));
 		if (returnMessage == null) {
 			if (value.getClass().isAssignableFrom(this.outputClass)) {
-				returnMessage = (Message<O>) MessageBuilder.withPayload(value).copyHeaders(originalMessage.getHeaders()).removeHeader(MessageHeaders.CONTENT_TYPE).build();
+				returnMessage = wrapOutputToMessage(value, originalMessage);
 			}
 		}
 		Assert.notNull(returnMessage, "Failed to convert result value '" + value + "' to message.");
+		return returnMessage;
+	}
+
+	private <T> Message<O> wrapOutputToMessage(T value, Message<I> originalMessage) {
+		Message<O> returnMessage;
+		returnMessage = (Message<O>) MessageBuilder.withPayload(value).copyHeaders(originalMessage.getHeaders()).removeHeader(MessageHeaders.CONTENT_TYPE).build();
 		return returnMessage;
 	}
 
