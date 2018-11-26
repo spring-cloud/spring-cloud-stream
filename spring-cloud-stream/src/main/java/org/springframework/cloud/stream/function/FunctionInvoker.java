@@ -42,6 +42,7 @@ import org.springframework.util.Assert;
  *
  * @author Oleg Zhurakousky
  * @author David Turanski
+ * @author Tolga Kavukcu
  *
  * @param <I> the payload type of the input Message
  * @param <O> the payload type of the output Message
@@ -73,12 +74,16 @@ class FunctionInvoker<I, O> implements Function<Flux<Message<I>>, Flux<Message<O
 		this(functionProperties, functionCatalog, functionInspector, compositeMessageConverterFactory, null);
 	}
 
+	@SuppressWarnings("unchecked")
 	FunctionInvoker(StreamFunctionProperties functionProperties, FunctionCatalogWrapper functionCatalog, FunctionInspector functionInspector,
 			CompositeMessageConverterFactory compositeMessageConverterFactory, MessageChannel errorChannel) {
-		this.userFunction = functionCatalog.lookup(functionProperties.getDefinition());
+		Object originalUserFunction = functionCatalog.lookup(functionProperties.getDefinition());
+
+		//TODO needs handling for when not a FluxWrapper
+		this.userFunction = (Function<Flux<?>, Flux<?>>) originalUserFunction;
 		Assert.isInstanceOf(Function.class, this.userFunction);
 		this.messageConverter = compositeMessageConverterFactory.getMessageConverterForAllRegistered();
-		FunctionType functionType = functionInspector.getRegistration(this.userFunction).getType();
+		FunctionType functionType = functionInspector.getRegistration(originalUserFunction).getType();
 		this.isInputArgumentMessage = functionType.isMessage();
 		this.inputClass = functionType.getInputType();
 		this.outputClass = functionType.getOutputType();
@@ -121,31 +126,36 @@ class FunctionInvoker<I, O> implements Function<Flux<Message<I>>, Flux<Message<O
 
 	@SuppressWarnings("unchecked")
 	private <T> Message<O> toMessage(T value, Message<I> originalMessage) {
+		if (logger.isDebugEnabled()) {
+			logger.debug("Converting result back to message using the original message: " + originalMessage);
+		}
+
+		Message<O> returnMessage;
 		if(producerProperties.isUseNativeEncoding()){
 			if (logger.isDebugEnabled()) {
 				logger.debug("Native encoding enabled wrapping result to message using the original message: " + originalMessage);
 			}
-			return wrapOutputToMessage(value,originalMessage);
+			returnMessage = wrapOutputToMessage(value,originalMessage);
 		}
-		if (logger.isDebugEnabled()) {
-			logger.debug("Converting result back to message using the original message: " + originalMessage);
-		}
-		Message<O> returnMessage = (Message<O>)
-				(value instanceof Message
-						? value
-						: this.messageConverter.toMessage(value, originalMessage.getHeaders(), this.outputClass));
-		if (returnMessage == null) {
-			if (value.getClass().isAssignableFrom(this.outputClass)) {
-				returnMessage = wrapOutputToMessage(value, originalMessage);
+		else {
+			returnMessage = (Message<O>)
+					(value instanceof Message
+							? value
+							: this.messageConverter.toMessage(value, originalMessage.getHeaders(), this.outputClass));
+			if (returnMessage == null) {
+				if (value.getClass().isAssignableFrom(this.outputClass)) {
+					returnMessage = wrapOutputToMessage(value, originalMessage);
+				}
 			}
+			Assert.notNull(returnMessage, "Failed to convert result value '" + value + "' to message.");
 		}
-		Assert.notNull(returnMessage, "Failed to convert result value '" + value + "' to message.");
 		return returnMessage;
 	}
 
+	@SuppressWarnings("unchecked")
 	private <T> Message<O> wrapOutputToMessage(T value, Message<I> originalMessage) {
-		Message<O> returnMessage;
-		returnMessage = (Message<O>) MessageBuilder.withPayload(value).copyHeaders(originalMessage.getHeaders()).removeHeader(MessageHeaders.CONTENT_TYPE).build();
+		Message<O> returnMessage = (Message<O>) MessageBuilder.withPayload(value).copyHeaders(originalMessage.getHeaders())
+				.removeHeader(MessageHeaders.CONTENT_TYPE).build();
 		return returnMessage;
 	}
 

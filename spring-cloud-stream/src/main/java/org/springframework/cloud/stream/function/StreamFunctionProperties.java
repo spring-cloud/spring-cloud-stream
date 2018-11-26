@@ -23,6 +23,8 @@ import org.springframework.cloud.stream.binder.ProducerProperties;
 /**
  *
  * @author Oleg Zhurakousky
+ * @author Tolga Kavukcu
+ *
  * @since 2.1
  */
 @ConfigurationProperties("spring.cloud.stream.function")
@@ -50,7 +52,7 @@ public class StreamFunctionProperties {
 		return consumerProperties;
 	}
 
-	public void setConsumerProperties(ConsumerProperties consumerProperties) {
+	void setConsumerProperties(ConsumerProperties consumerProperties) {
 		this.consumerProperties = consumerProperties;
 	}
 
@@ -58,7 +60,7 @@ public class StreamFunctionProperties {
 		return producerProperties;
 	}
 
-	public void setProducerProperties(ProducerProperties producerProperties) {
+	void setProducerProperties(ProducerProperties producerProperties) {
 		this.producerProperties = producerProperties;
 	}
 }

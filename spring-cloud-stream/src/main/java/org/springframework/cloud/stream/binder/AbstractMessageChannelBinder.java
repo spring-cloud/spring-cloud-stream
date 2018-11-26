@@ -16,7 +16,7 @@
 
 package org.springframework.cloud.stream.binder;
 
-import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -198,7 +198,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		this.postProcessOutputChannel(outputChannel, producerProperties);
 
 		if (this.streamFunctionProperties != null && StringUtils.hasText(this.streamFunctionProperties.getDefinition()) && this.processor == null) {
-			outputChannel = this.postProcessOutboundChannelForFunction(outputChannel);
+			outputChannel = this.postProcessOutboundChannelForFunction(outputChannel, producerProperties);
 		}
 
 		((SubscribableChannel) outputChannel).subscribe(
@@ -810,7 +810,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		}
 	}
 
-	private SubscribableChannel postProcessOutboundChannelForFunction(MessageChannel outputChannel) {
+	private SubscribableChannel postProcessOutboundChannelForFunction(MessageChannel outputChannel, ProducerProperties producerProperties) {
 		if (this.integrationFlowFunctionSupport != null) {
 			Publisher<?> publisher = MessageChannelReactiveUtils.toPublisher(outputChannel);
 			// If the app has an explicit Supplier bean defined, make that as the publisher
@@ -818,6 +818,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 				IntegrationFlowBuilder integrationFlowBuilder = IntegrationFlows.from(outputChannel).bridge();
 				publisher = integrationFlowBuilder.toReactivePublisher();
 			}
+			this.propagateProducerPropertiesToFunction(producerProperties);
 			if (this.integrationFlowFunctionSupport.containsFunction(Function.class,
 					this.streamFunctionProperties.getDefinition())) {
 				DirectChannel actualOutputChannel = new DirectChannel();
@@ -851,9 +852,20 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 	// we're doing it reflectively so we don't expose this as a property to the user
 	private void propagateConsumerPropertiesToFunction(ConsumerProperties consumerProperties) {
 		try {
-			Field f = ReflectionUtils.findField(StreamFunctionProperties.class, "consumerProperties");
-			f.setAccessible(true);
-			f.set(this.streamFunctionProperties, consumerProperties);
+			Method setConsumerProperties = ReflectionUtils.findMethod(StreamFunctionProperties.class, "setConsumerProperties", ConsumerProperties.class);
+			setConsumerProperties.setAccessible(true);
+			setConsumerProperties.invoke(this.streamFunctionProperties, consumerProperties);
+		}
+		catch (Exception e) {
+			throw new IllegalStateException(e);
+		}
+	}
+	// we're doing it reflectively so we don't expose this as a property to the user
+	private void propagateProducerPropertiesToFunction(ProducerProperties producerProperties) {
+		try {
+			Method setProducerProperties = ReflectionUtils.findMethod(StreamFunctionProperties.class, "setProducerProperties", ProducerProperties.class);
+			setProducerProperties.setAccessible(true);
+			setProducerProperties.invoke(this.streamFunctionProperties, producerProperties);
 		}
 		catch (Exception e) {
 			throw new IllegalStateException(e);
