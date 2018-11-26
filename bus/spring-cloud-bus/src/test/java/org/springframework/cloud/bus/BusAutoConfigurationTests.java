@@ -17,6 +17,7 @@
 
 package org.springframework.cloud.bus;
 
+import java.util.HashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -36,6 +37,8 @@ import org.springframework.cloud.bus.event.SentApplicationEvent;
 import org.springframework.cloud.bus.event.UnknownRemoteApplicationEvent;
 import org.springframework.cloud.context.refresh.ContextRefresher;
 import org.springframework.cloud.stream.annotation.Output;
+import org.springframework.cloud.stream.config.BindingProperties;
+import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.cloud.stream.test.binder.TestSupportBinderAutoConfiguration;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -55,6 +58,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class BusAutoConfigurationTests {
 
@@ -229,6 +234,67 @@ public class BusAutoConfigurationTests {
 				.send(new GenericMessage<>(new UnknownRemoteApplicationEvent(this,
 						"UnknownEvent", "yada".getBytes())));
 		// No Exception expected
+	}
+
+	@Test
+	public void initSetsBindingDestinationIfNullDefault() {
+		HashMap<String, BindingProperties> properties = new HashMap<>();
+		properties.put(SpringCloudBusClient.INPUT, new BindingProperties());
+		properties.put(SpringCloudBusClient.OUTPUT, new BindingProperties());
+
+		testDestinations(properties);
+	}
+
+	@Test
+	public void initSetsBindingDestinationIfNotNullDefault() {
+		HashMap<String, BindingProperties> properties = new HashMap<>();
+		BindingProperties input = new BindingProperties();
+		input.setDestination(SpringCloudBusClient.INPUT);
+		properties.put(SpringCloudBusClient.INPUT, input);
+		BindingProperties output = new BindingProperties();
+		output.setDestination(SpringCloudBusClient.OUTPUT);
+		properties.put(SpringCloudBusClient.OUTPUT, output);
+
+		testDestinations(properties);
+	}
+
+	@Test
+	public void initDoesNotOverrideCustomDestination() {
+		HashMap<String, BindingProperties> properties = new HashMap<>();
+		BindingProperties input = new BindingProperties();
+		input.setDestination("mydestination");
+		properties.put(SpringCloudBusClient.INPUT, input);
+		BindingProperties output = new BindingProperties();
+		output.setDestination("mydestination");
+		properties.put(SpringCloudBusClient.OUTPUT, output);
+
+		setupBusAutoConfig(properties);
+
+		BindingProperties inputProps = properties.get(SpringCloudBusClient.INPUT);
+		assertThat(inputProps.getDestination()).isEqualTo("mydestination");
+
+		BindingProperties outputProps = properties.get(SpringCloudBusClient.OUTPUT);
+		assertThat(outputProps.getDestination()).isEqualTo("mydestination");
+	}
+
+	private void testDestinations(HashMap<String, BindingProperties> properties) {
+		BusProperties bus = setupBusAutoConfig(properties);
+
+		BindingProperties input = properties.get(SpringCloudBusClient.INPUT);
+		assertThat(input.getDestination()).isEqualTo(bus.getDestination());
+
+		BindingProperties output = properties.get(SpringCloudBusClient.OUTPUT);
+		assertThat(output.getDestination()).isEqualTo(bus.getDestination());
+	}
+
+	private BusProperties setupBusAutoConfig(HashMap<String, BindingProperties> properties) {
+		BindingServiceProperties serviceProperties = mock(BindingServiceProperties.class);
+		when(serviceProperties.getBindings()).thenReturn(properties);
+
+		BusProperties bus = new BusProperties();
+		BusAutoConfiguration configuration = new BusAutoConfiguration(mock(ServiceMatcher.class), serviceProperties, bus);
+		configuration.init();
+		return bus;
 	}
 
 	// see https://github.com/spring-cloud/spring-cloud-bus/issues/101

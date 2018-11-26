@@ -73,20 +73,21 @@ public class BusAutoConfiguration implements ApplicationEventPublisherAware {
 
 	public static final String BUS_PATH_MATCHER_NAME = "busPathMatcher";
 
-	@Autowired
-	@Output(SpringCloudBusClient.OUTPUT)
 	private MessageChannel cloudBusOutboundChannel;
 
-	@Autowired
-	private ServiceMatcher serviceMatcher;
-
-	@Autowired
-	private BindingServiceProperties bindings;
-
-	@Autowired
-	private BusProperties bus;
-
 	private ApplicationEventPublisher applicationEventPublisher;
+
+	private final ServiceMatcher serviceMatcher;
+
+	private final BindingServiceProperties bindings;
+
+	private final BusProperties bus;
+
+	public BusAutoConfiguration(ServiceMatcher serviceMatcher, BindingServiceProperties bindings, BusProperties bus) {
+		this.serviceMatcher = serviceMatcher;
+		this.bindings = bindings;
+		this.bus = bus;
+	}
 
 	@PostConstruct
 	public void init() {
@@ -98,7 +99,7 @@ public class BusAutoConfiguration implements ApplicationEventPublisherAware {
 		}
 		BindingProperties input = this.bindings.getBindings()
 				.get(SpringCloudBusClient.INPUT);
-		if (input.getDestination() == null) {
+		if (input.getDestination() == null || input.getDestination().equals(SpringCloudBusClient.INPUT)) {
 			input.setDestination(this.bus.getDestination());
 		}
 		BindingProperties outputBinding = this.bindings.getBindings()
@@ -109,7 +110,7 @@ public class BusAutoConfiguration implements ApplicationEventPublisherAware {
 		}
 		BindingProperties output = this.bindings.getBindings()
 				.get(SpringCloudBusClient.OUTPUT);
-		if (output.getDestination() == null) {
+		if (output.getDestination() == null || output.getDestination().equals(SpringCloudBusClient.OUTPUT)) {
 			output.setDestination(this.bus.getDestination());
 		}
 	}
@@ -118,6 +119,12 @@ public class BusAutoConfiguration implements ApplicationEventPublisherAware {
 	public void setApplicationEventPublisher(
 			ApplicationEventPublisher applicationEventPublisher) {
 		this.applicationEventPublisher = applicationEventPublisher;
+	}
+
+	@Autowired
+	@Output(SpringCloudBusClient.OUTPUT)
+	public void setCloudBusOutboundChannel(MessageChannel cloudBusOutboundChannel) {
+		this.cloudBusOutboundChannel = cloudBusOutboundChannel;
 	}
 
 	@EventListener(classes = RemoteApplicationEvent.class)
