@@ -124,7 +124,7 @@ public class BindingsEndpoint {
 			.orElse(null);
 	}
 
-	private enum State {
+	public enum State {
 		STARTED,
 		STOPPED,
 		PAUSED,
