@@ -18,7 +18,6 @@ package org.springframework.cloud.stream.binder.kafka.streams.bootstrap;
 
 import org.apache.kafka.streams.kstream.KStream;
 import org.junit.ClassRule;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import org.springframework.boot.WebApplicationType;
@@ -33,7 +32,6 @@ import org.springframework.kafka.test.rule.KafkaEmbedded;
 /**
  * @author Soby Chacko
  */
-@Ignore("Temporarily disabling the test as builds are getting slower due to this.")
 public class KafkaStreamsBinderBootstrapTest {
 
 	@ClassRule
@@ -43,7 +41,8 @@ public class KafkaStreamsBinderBootstrapTest {
 	public void testKafkaStreamsBinderWithCustomEnvironmentCanStart() {
 		ConfigurableApplicationContext applicationContext = new SpringApplicationBuilder(SimpleApplication.class)
 				.web(WebApplicationType.NONE)
-				.run("--spring.cloud.stream.bindings.input.destination=foo",
+				.run("--spring.cloud.stream.kafka.streams.default.consumer.application-id=testKafkaStreamsBinderWithCustomEnvironmentCanStart",
+						"--spring.cloud.stream.bindings.input.destination=foo",
 						"--spring.cloud.stream.bindings.input.binder=kBind1",
 						"--spring.cloud.stream.binders.kBind1.type=kstream",
 						"--spring.cloud.stream.binders.kBind1.environment.spring.cloud.stream.kafka.streams.binder.brokers=" + embeddedKafka.getBrokersAsString(),
@@ -56,7 +55,8 @@ public class KafkaStreamsBinderBootstrapTest {
 	public void testKafkaStreamsBinderWithStandardConfigurationCanStart() {
 		ConfigurableApplicationContext applicationContext = new SpringApplicationBuilder(SimpleApplication.class)
 				.web(WebApplicationType.NONE)
-				.run("--spring.cloud.stream.bindings.input.destination=foo",
+				.run("--spring.cloud.stream.kafka.streams.default.consumer.application-id=testKafkaStreamsBinderWithStandardConfigurationCanStart",
+						"--spring.cloud.stream.bindings.input.destination=foo",
 						"--spring.cloud.stream.kafka.streams.binder.brokers=" + embeddedKafka.getBrokersAsString(),
 						"--spring.cloud.stream.kafka.streams.binder.zkNodes=" + embeddedKafka.getZookeeperConnectionString());
 

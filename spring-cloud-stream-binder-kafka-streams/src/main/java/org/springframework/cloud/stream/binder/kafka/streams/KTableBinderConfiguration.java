@@ -28,7 +28,6 @@ import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStr
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
 
 /**
  * Configuration for KTable binder.
@@ -37,13 +36,14 @@ import org.springframework.context.annotation.Import;
  */
 @SuppressWarnings("ALL")
 @Configuration
-@Import(KafkaStreamsBinderUtils.KafkaStreamsMissingBeansRegistrar.class)
 public class KTableBinderConfiguration {
 
 	@Bean
 	@ConditionalOnBean(name = "outerContext")
-	public BeanFactoryPostProcessor outerContextBeanFactoryPostProcessor() {
+	public static BeanFactoryPostProcessor outerContextBeanFactoryPostProcessor() {
 		return (beanFactory) -> {
+			// It is safe to call getBean("outerContext") here, because this bean is registered as first
+			// and as independent from the parent context.
 			ApplicationContext outerContext = (ApplicationContext) beanFactory.getBean("outerContext");
 			beanFactory.registerSingleton(KafkaStreamsBinderConfigurationProperties.class.getSimpleName(), outerContext
 					.getBean(KafkaStreamsBinderConfigurationProperties.class));

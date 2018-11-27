@@ -19,20 +19,17 @@ package org.springframework.cloud.stream.binder.kafka.streams;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.config.MethodInvokingFactoryBean;
-import org.springframework.beans.factory.support.AbstractBeanDefinition;
-import org.springframework.beans.factory.support.BeanDefinitionBuilder;
-import org.springframework.beans.factory.support.BeanDefinitionRegistry;
+import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
-import org.springframework.cloud.stream.binder.kafka.properties.KafkaBinderConfigurationProperties;
 import org.springframework.cloud.stream.binder.kafka.provisioning.KafkaTopicProvisioner;
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsBinderConfigurationProperties;
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsExtendedBindingProperties;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
-import org.springframework.core.type.AnnotationMetadata;
 
 /**
  * Configuration for KStream binder.
@@ -42,13 +39,14 @@ import org.springframework.core.type.AnnotationMetadata;
  * @author Soby Chacko
  */
 @Configuration
-@Import({KafkaAutoConfiguration.class, KStreamBinderConfiguration.KStreamMissingBeansRegistrar.class})
+@Import({KafkaAutoConfiguration.class})
 public class KStreamBinderConfiguration {
 
+
 	@Bean
-	public KafkaTopicProvisioner provisioningProvider(KafkaBinderConfigurationProperties binderConfigurationProperties,
+	public KafkaTopicProvisioner provisioningProvider(KafkaStreamsBinderConfigurationProperties kafkaStreamsBinderConfigurationProperties,
 													KafkaProperties kafkaProperties) {
-		return new KafkaTopicProvisioner(binderConfigurationProperties, kafkaProperties);
+		return new KafkaTopicProvisioner(kafkaStreamsBinderConfigurationProperties, kafkaProperties);
 	}
 
 	@Bean
@@ -66,45 +64,25 @@ public class KStreamBinderConfiguration {
 		return kStreamBinder;
 	}
 
-	/**
-	 * Registrar for missing beans when there are multiple binders in the application.
-	 */
-	static class KStreamMissingBeansRegistrar extends KafkaStreamsBinderUtils.KafkaStreamsMissingBeansRegistrar {
+	@Bean
+	@ConditionalOnBean(name = "outerContext")
+	public static BeanFactoryPostProcessor outerContextBeanFactoryPostProcessor() {
+		return beanFactory -> {
 
-		private static final String BEAN_NAME = "outerContext";
-
-		@Override
-		public void registerBeanDefinitions(AnnotationMetadata importingClassMetadata,
-											BeanDefinitionRegistry registry) {
-			super.registerBeanDefinitions(importingClassMetadata, registry);
-
-			if (registry.containsBeanDefinition(BEAN_NAME)) {
-
-				AbstractBeanDefinition converstionDelegateBean = BeanDefinitionBuilder.genericBeanDefinition(MethodInvokingFactoryBean.class)
-						.addPropertyReference("targetObject", BEAN_NAME)
-						.addPropertyValue("targetMethod", "getBean")
-						.addPropertyValue("arguments", KafkaStreamsMessageConversionDelegate.class)
-						.getBeanDefinition();
-
-				registry.registerBeanDefinition(KafkaStreamsMessageConversionDelegate.class.getSimpleName(), converstionDelegateBean);
-
-				AbstractBeanDefinition keyValueSerdeResolverBean = BeanDefinitionBuilder.genericBeanDefinition(MethodInvokingFactoryBean.class)
-						.addPropertyReference("targetObject", BEAN_NAME)
-						.addPropertyValue("targetMethod", "getBean")
-						.addPropertyValue("arguments", KeyValueSerdeResolver.class)
-						.getBeanDefinition();
-
-				registry.registerBeanDefinition(KeyValueSerdeResolver.class.getSimpleName(), keyValueSerdeResolverBean);
-
-				AbstractBeanDefinition kafkaStreamsExtendedBindingPropertiesBean = BeanDefinitionBuilder.genericBeanDefinition(MethodInvokingFactoryBean.class)
-						.addPropertyReference("targetObject", BEAN_NAME)
-						.addPropertyValue("targetMethod", "getBean")
-						.addPropertyValue("arguments", KafkaStreamsExtendedBindingProperties.class)
-						.getBeanDefinition();
-
-				registry.registerBeanDefinition(KafkaStreamsExtendedBindingProperties.class.getSimpleName(), kafkaStreamsExtendedBindingPropertiesBean);
-			}
-		}
+			// It is safe to call getBean("outerContext") here, because this bean is registered as first
+			// and as independent from the parent context.
+			ApplicationContext outerContext = (ApplicationContext) beanFactory.getBean("outerContext");
+			beanFactory.registerSingleton(KafkaStreamsBinderConfigurationProperties.class.getSimpleName(), outerContext
+					.getBean(KafkaStreamsBinderConfigurationProperties.class));
+			beanFactory.registerSingleton(KafkaStreamsMessageConversionDelegate.class.getSimpleName(), outerContext
+					.getBean(KafkaStreamsMessageConversionDelegate.class));
+			beanFactory.registerSingleton(KafkaStreamsBindingInformationCatalogue.class.getSimpleName(), outerContext
+					.getBean(KafkaStreamsBindingInformationCatalogue.class));
+			beanFactory.registerSingleton(KeyValueSerdeResolver.class.getSimpleName(), outerContext
+					.getBean(KeyValueSerdeResolver.class));
+			beanFactory.registerSingleton(KafkaStreamsExtendedBindingProperties.class.getSimpleName(), outerContext
+					.getBean(KafkaStreamsExtendedBindingProperties.class));
+		};
 	}
 
 }
