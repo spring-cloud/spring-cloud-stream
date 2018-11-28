@@ -34,16 +34,20 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.cloud.stream.binder.BinderConfiguration;
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsBinderConfigurationProperties;
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsExtendedBindingProperties;
 import org.springframework.cloud.stream.binder.kafka.streams.serde.CompositeNonNativeSerde;
 import org.springframework.cloud.stream.binding.BindingService;
 import org.springframework.cloud.stream.binding.StreamListenerResultAdapter;
+import org.springframework.cloud.stream.config.BinderProperties;
 import org.springframework.cloud.stream.config.BindingServiceConfiguration;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
 import org.springframework.context.annotation.Bean;
+import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.Environment;
+import org.springframework.core.env.MapPropertySource;
 import org.springframework.kafka.config.KafkaStreamsConfiguration;
 import org.springframework.kafka.core.CleanupConfig;
 import org.springframework.util.ObjectUtils;
@@ -61,10 +65,55 @@ import org.springframework.util.StringUtils;
 @AutoConfigureAfter(BindingServiceConfiguration.class)
 public class KafkaStreamsBinderSupportAutoConfiguration {
 
+	private static final String KSTREAM_BINDER_TYPE = "kstream";
+	private static final String KTABLE_BINDER_TYPE = "ktable";
+	private static final String GLOBALKTABLE_BINDER_TYPE = "globalktable";
+
 	@Bean
 	@ConfigurationProperties(prefix = "spring.cloud.stream.kafka.streams.binder")
-	public KafkaStreamsBinderConfigurationProperties binderConfigurationProperties(KafkaProperties kafkaProperties) {
+	public KafkaStreamsBinderConfigurationProperties binderConfigurationProperties(KafkaProperties kafkaProperties,
+																				ConfigurableEnvironment environment,
+																				BindingServiceProperties bindingServiceProperties) {
+		final Map<String, BinderConfiguration> binderConfigurations = getBinderConfigurations(bindingServiceProperties);
+		for (Map.Entry<String, BinderConfiguration> entry : binderConfigurations.entrySet()) {
+			final BinderConfiguration binderConfiguration = entry.getValue();
+			final String binderType = binderConfiguration.getBinderType();
+			if (binderType.equals(KSTREAM_BINDER_TYPE) ||
+					binderType.equals(KTABLE_BINDER_TYPE) ||
+					binderType.equals(GLOBALKTABLE_BINDER_TYPE)) {
+				Map<String, Object> binderProperties = new HashMap<>();
+				this.flatten(null, binderConfiguration.getProperties(), binderProperties);
+				environment.getPropertySources().addFirst(new MapPropertySource("kafkaStreamsBinderEnv", binderProperties));
+			}
+		}
 		return new KafkaStreamsBinderConfigurationProperties(kafkaProperties);
+	}
+
+	//TODO: Lifted from core - good candidate for exposing as a utility method in core.
+	private static Map<String, BinderConfiguration> getBinderConfigurations(BindingServiceProperties bindingServiceProperties) {
+
+		Map<String, BinderConfiguration> binderConfigurations = new HashMap<>();
+		Map<String, BinderProperties> declaredBinders = bindingServiceProperties.getBinders();
+
+		for (Map.Entry<String, BinderProperties> binderEntry : declaredBinders.entrySet()) {
+			BinderProperties binderProperties = binderEntry.getValue();
+			binderConfigurations.put(binderEntry.getKey(),
+					new BinderConfiguration(binderProperties.getType(), binderProperties.getEnvironment(),
+							binderProperties.isInheritEnvironment(), binderProperties.isDefaultCandidate()));
+		}
+		return binderConfigurations;
+	}
+
+	//TODO: Lifted from core - good candidate for exposing as a utility method in core.
+	@SuppressWarnings("unchecked")
+	private void flatten(String propertyName, Object value, Map<String, Object> flattenedProperties) {
+		if (value instanceof Map) {
+			((Map<Object, Object>) value)
+					.forEach((k, v) -> flatten((propertyName != null ? propertyName + "." : "") + k, v, flattenedProperties));
+		}
+		else {
+			flattenedProperties.put(propertyName, value.toString());
+		}
 	}
 
 	@Bean
