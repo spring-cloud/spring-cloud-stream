@@ -35,7 +35,6 @@ import org.springframework.beans.factory.support.DefaultSingletonBeanRegistry;
 import org.springframework.cloud.stream.config.ListenerContainerCustomizer;
 import org.springframework.cloud.stream.function.IntegrationFlowFunctionSupport;
 import org.springframework.cloud.stream.function.StreamFunctionProperties;
-import org.springframework.cloud.stream.messaging.Processor;
 import org.springframework.cloud.stream.provisioning.ConsumerDestination;
 import org.springframework.cloud.stream.provisioning.ProducerDestination;
 import org.springframework.cloud.stream.provisioning.ProvisioningException;
@@ -113,9 +112,6 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 	private final ListenerContainerCustomizer<?> containerCustomizer;
 
 	private ApplicationEventPublisher applicationEventPublisher;
-
-	@Autowired(required = false)
-	private Processor processor;
 
 	@Autowired(required = false)
 	private IntegrationFlowFunctionSupport integrationFlowFunctionSupport;
@@ -197,7 +193,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		}
 		this.postProcessOutputChannel(outputChannel, producerProperties);
 
-		if (this.streamFunctionProperties != null && StringUtils.hasText(this.streamFunctionProperties.getDefinition()) && this.processor == null) {
+		if (this.streamFunctionProperties != null && StringUtils.hasText(this.streamFunctionProperties.getDefinition())) {
 			outputChannel = this.postProcessOutboundChannelForFunction(outputChannel, producerProperties);
 		}
 
@@ -346,7 +342,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		try {
 			ConsumerDestination destination = this.provisioningProvider.provisionConsumerDestination(name, group, properties);
 			// the function support for the inbound channel is only for Sink
-			if (this.streamFunctionProperties != null && StringUtils.hasText(this.streamFunctionProperties.getDefinition()) && this.processor == null) {
+			if (this.streamFunctionProperties != null && StringUtils.hasText(this.streamFunctionProperties.getDefinition())) {
 				inputChannel = this.postProcessInboundChannelForFunction(inputChannel, (ConsumerProperties) properties);
 			}
 			if (HeaderMode.embeddedHeaders.equals(properties.getHeaderMode())) {
