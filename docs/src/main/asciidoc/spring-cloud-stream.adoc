@@ -729,7 +729,8 @@ public ApplicationRunner poller(PollableMessageSource destIn, MessageChannel des
 The `PollableMessageSource.poll()` method takes a `MessageHandler` argument (often a lambda expression, as shown here).
 It returns `true` if the message was received and successfully processed.
 
-As with message-driven consumers, if the `MessageHandler` throws an exception, messages are published to error channels, as discussed in "`<<binder-error-channels>>`".
+As with message-driven consumers, if the `MessageHandler` throws an exception, messages are published to error channels,
+as discussed in `<<spring-cloud-stream-overview-error-handling>>`.
 
 Normally, the `poll()` method acknowledges the message when the `MessageHandler` exits.
 If the method exits abnormally, the message is rejected (not re-queued), but see <<polled-errors>>.
@@ -1633,7 +1634,7 @@ See the consumer property `useNativeDecoding`.
 Default: `false`.
 errorChannelEnabled::
 When set to `true`, if the binder supports asynchroous send results, send failures are sent to an error channel for the destination.
-See "`<<binder-error-channels>>`" for more information.
+See `<<spring-cloud-stream-overview-error-handling>>` for more information.
 +
 Default: `false`.
 
