@@ -17,6 +17,7 @@
 package org.springframework.cloud.stream.function;
 
 import java.lang.reflect.Field;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import org.junit.Test;
@@ -43,6 +44,7 @@ import org.springframework.messaging.support.GenericMessage;
 import org.springframework.util.ReflectionUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertEquals;
 
 /**
  *
@@ -148,6 +150,30 @@ public class FunctionInvokerTests {
 		}
 	}
 
+	private static String testWithFluxedConsumerValue;
+
+	@Test
+	public void testWithFluxedConsumer() {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+				TestChannelBinderConfiguration.getCompleteConfiguration(MyFunctionsConfiguration.class))
+						.web(WebApplicationType.NONE).run("--spring.jmx.enabled=false")) {
+
+			String value = "Hello";
+			Message<String> inputMessage = new GenericMessage<>(value);
+
+			StreamFunctionProperties functionProperties = createStreamFunctionProperties();
+
+			functionProperties.setDefinition("fluxConsumer");
+			FunctionInvoker<String, Void> fluxedConsumer = new FunctionInvoker<>(functionProperties,
+					new FunctionCatalogWrapper(context.getBean(FunctionCatalog.class)),
+					context.getBean(FunctionInspector.class), context.getBean(CompositeMessageConverterFactory.class));
+
+			fluxedConsumer.apply(Flux.just(inputMessage)).blockFirst();
+
+			assertEquals(value, testWithFluxedConsumerValue);
+		}
+	}
+
 	private StreamFunctionProperties createStreamFunctionProperties() {
 		StreamFunctionProperties functionProperties = new StreamFunctionProperties();
 		ConsumerProperties consumerProperties = new ConsumerProperties();
@@ -183,6 +209,14 @@ public class FunctionInvokerTests {
 
 	@EnableAutoConfiguration
 	public static class MyFunctionsConfiguration {
+
+		@Bean
+		public Consumer<Flux<String>> fluxConsumer() {
+			return f -> f.subscribe(v -> {
+				System.out.println("Consuming flux: " + v);
+				testWithFluxedConsumerValue = v;
+			});
+		}
 
 		@Bean
 		public Function<Message<Foo>, Message<Bar>> messageToMessageDifferentType() {

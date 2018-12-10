@@ -18,6 +18,7 @@ package org.springframework.cloud.stream.function;
 
 import java.time.Duration;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import org.apache.commons.logging.Log;
@@ -74,13 +75,15 @@ class FunctionInvoker<I, O> implements Function<Flux<Message<I>>, Flux<Message<O
 		this(functionProperties, functionCatalog, functionInspector, compositeMessageConverterFactory, null);
 	}
 
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	FunctionInvoker(StreamFunctionProperties functionProperties, FunctionCatalogWrapper functionCatalog, FunctionInspector functionInspector,
 			CompositeMessageConverterFactory compositeMessageConverterFactory, MessageChannel errorChannel) {
 		Object originalUserFunction = functionCatalog.lookup(functionProperties.getDefinition());
 
-		//TODO needs handling for when not a FluxWrapper
-		this.userFunction = (Function<Flux<?>, Flux<?>>) originalUserFunction;
+		this.userFunction = originalUserFunction instanceof Consumer
+				? new FluxedConsumerWrapper<>((Consumer) originalUserFunction)
+						: (Function<Flux<?>, Flux<?>>) originalUserFunction;
+
 		Assert.isInstanceOf(Function.class, this.userFunction);
 		this.messageConverter = compositeMessageConverterFactory.getMessageConverterForAllRegistered();
 		FunctionType functionType = functionInspector.getRegistration(originalUserFunction).getType();
