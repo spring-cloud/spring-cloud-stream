@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.function;
 
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -25,12 +26,17 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
+import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
 import org.springframework.cloud.stream.messaging.Processor;
+import org.springframework.cloud.stream.messaging.Sink;
 import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.integration.channel.NullChannel;
 import org.springframework.integration.dsl.IntegrationFlow;
+import org.springframework.messaging.MessageChannel;
+import org.springframework.messaging.SubscribableChannel;
 
 /**
  * @author Oleg Zhurakousky
@@ -49,12 +55,15 @@ public class FunctionConfiguration {
 	@Autowired(required = false)
 	private Processor processor;
 
+	@Autowired(required = false)
+	private Sink sink;
+
 	@Bean
 	public IntegrationFlowFunctionSupport functionSupport(FunctionCatalogWrapper functionCatalog,
 		FunctionInspector functionInspector, CompositeMessageConverterFactory messageConverterFactory,
-		StreamFunctionProperties functionProperties) {
+		StreamFunctionProperties functionProperties, BindingServiceProperties bindingServiceProperties) {
 		return new IntegrationFlowFunctionSupport(functionCatalog, functionInspector, messageConverterFactory,
-			functionProperties);
+			functionProperties, bindingServiceProperties);
 	}
 
 	@Bean
@@ -63,19 +72,42 @@ public class FunctionConfiguration {
 	}
 
 	/**
-	 * This configuration creates an instance of {@link IntegrationFlow} appropriate for binding declared using EnableBinding.
+	 * This configuration creates an instance of the {@link IntegrationFlow} from standard
+	 * Spring Cloud Stream bindings such as {@link Source}, {@link Processor} and {@link Sink}
+	 * ONLY if there are no existing instances of the {@link IntegrationFlow} already available
+	 * in the context. This means that it only plays a role in green-field Spring Cloud Stream apps.
+	 *
+	 * For logic to compose functions into the existing apps please see "FUNCTION-TO-EXISTING-APP"
+	 * section of AbstractMessageChannelBinder.
+	 *
+	 * The @ConditionalOnMissingBean ensures it does not collide with the the instance of the IntegrationFlow
+	 * that may have been already defined by the existing (extended) app.
 	 */
 	@ConditionalOnMissingBean
 	@Bean
 	public IntegrationFlow integrationFlowCreator(IntegrationFlowFunctionSupport functionSupport) {
-		if (this.processor != null) {
-			return functionSupport.containsFunction(Function.class) ?
-					functionSupport.integrationFlowForFunction(this.processor.input(), this.processor.output()).get() : null;
+		if (functionSupport.containsFunction(Consumer.class) && consumerBindingPresent()) {
+			return functionSupport.integrationFlowForFunction(getInputChannel(), getOutputChannel()).get();
 		}
-		else if (this.source != null && this.processor == null) {
-			return functionSupport.containsFunction(Supplier.class) ?
-				functionSupport.integrationFlowFromNamedSupplier().channel(this.source.output()).get() : null;
+		else if (functionSupport.containsFunction(Function.class) && consumerBindingPresent()) {
+			return functionSupport.integrationFlowForFunction(getInputChannel(), getOutputChannel()).get();
+		}
+		else if (functionSupport.containsFunction(Supplier.class)) {
+			return functionSupport.integrationFlowFromNamedSupplier().channel(getOutputChannel()).get();
 		}
 		return null;
+	}
+
+	private boolean consumerBindingPresent() {
+		return this.processor != null || this.sink != null;
+	}
+
+	private SubscribableChannel getInputChannel() {
+		return this.processor != null ? this.processor.input() : this.sink.input();
+	}
+
+	private MessageChannel getOutputChannel() {
+		return this.processor != null ? this.processor.output()
+				: (this.source != null ? this.source.output() : new NullChannel());
 	}
 }

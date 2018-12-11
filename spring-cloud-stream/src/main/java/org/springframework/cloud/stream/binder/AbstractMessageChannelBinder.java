@@ -51,6 +51,7 @@ import org.springframework.integration.channel.PublishSubscribeChannel;
 import org.springframework.integration.context.IntegrationContextUtils;
 import org.springframework.integration.core.MessageProducer;
 import org.springframework.integration.core.MessageSource;
+import org.springframework.integration.dsl.IntegrationFlow;
 import org.springframework.integration.dsl.IntegrationFlowBuilder;
 import org.springframework.integration.dsl.IntegrationFlows;
 import org.springframework.integration.handler.AbstractMessageHandler;
@@ -118,6 +119,9 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 
 	@Autowired(required = false)
 	private StreamFunctionProperties streamFunctionProperties;
+
+	@Autowired(required = false)
+	private IntegrationFlow integrationFlow;
 
 	public AbstractMessageChannelBinder(String[] headersToEmbed, PP provisioningProvider) {
 		this(headersToEmbed, provisioningProvider, null);
@@ -193,7 +197,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		}
 		this.postProcessOutputChannel(outputChannel, producerProperties);
 
-		if (this.streamFunctionProperties != null && StringUtils.hasText(this.streamFunctionProperties.getDefinition())) {
+		if (this.streamFunctionProperties != null && StringUtils.hasText(this.streamFunctionProperties.getDefinition()) && isInheritedIntegrationFlow()) {
 			outputChannel = this.postProcessOutboundChannelForFunction(outputChannel, producerProperties);
 		}
 
@@ -342,7 +346,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		try {
 			ConsumerDestination destination = this.provisioningProvider.provisionConsumerDestination(name, group, properties);
 			// the function support for the inbound channel is only for Sink
-			if (this.streamFunctionProperties != null && StringUtils.hasText(this.streamFunctionProperties.getDefinition())) {
+			if (this.streamFunctionProperties != null && StringUtils.hasText(this.streamFunctionProperties.getDefinition()) && isInheritedIntegrationFlow()) {
 				inputChannel = this.postProcessInboundChannelForFunction(inputChannel, (ConsumerProperties) properties);
 			}
 			if (HeaderMode.embeddedHeaders.equals(properties.getHeaderMode())) {
@@ -806,6 +810,19 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		}
 	}
 
+	/*
+	 * FUNCTION-TO-EXISTING-APP section
+	 *
+	 * To support composing functions into the existing apps.
+	 * These methods do/should not participate in any way with general function
+	 * bootstrap (e.g. brand new function based app). For that please see
+	 * FunctionConfiguration.integrationFlowCreator
+	 */
+
+	private boolean isInheritedIntegrationFlow() {
+		return !this.getApplicationContext().containsBean("integrationFlowCreator") || integrationFlow == null;
+	}
+
 	private SubscribableChannel postProcessOutboundChannelForFunction(MessageChannel outputChannel, ProducerProperties producerProperties) {
 		if (this.integrationFlowFunctionSupport != null) {
 			Publisher<?> publisher = MessageChannelReactiveUtils.toPublisher(outputChannel);
@@ -846,22 +863,25 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 	}
 
 	// we're doing it reflectively so we don't expose this as a property to the user
-	private void propagateConsumerPropertiesToFunction(ConsumerProperties consumerProperties) {
+	private void propagateProducerPropertiesToFunction(ProducerProperties producerProperties) {
 		try {
-			Method setConsumerProperties = ReflectionUtils.findMethod(StreamFunctionProperties.class, "setConsumerProperties", ConsumerProperties.class);
-			setConsumerProperties.setAccessible(true);
-			setConsumerProperties.invoke(this.streamFunctionProperties, consumerProperties);
+			Method setProducerProperties = ReflectionUtils.findMethod(StreamFunctionProperties.class,
+					"setProducerProperties", ProducerProperties.class);
+			setProducerProperties.setAccessible(true);
+			setProducerProperties.invoke(this.streamFunctionProperties, producerProperties);
 		}
 		catch (Exception e) {
 			throw new IllegalStateException(e);
 		}
 	}
+
 	// we're doing it reflectively so we don't expose this as a property to the user
-	private void propagateProducerPropertiesToFunction(ProducerProperties producerProperties) {
+	private void propagateConsumerPropertiesToFunction(ConsumerProperties consumerProperties) {
 		try {
-			Method setProducerProperties = ReflectionUtils.findMethod(StreamFunctionProperties.class, "setProducerProperties", ProducerProperties.class);
-			setProducerProperties.setAccessible(true);
-			setProducerProperties.invoke(this.streamFunctionProperties, producerProperties);
+			Method setConsumerProperties = ReflectionUtils.findMethod(StreamFunctionProperties.class,
+					"setConsumerProperties", ConsumerProperties.class);
+			setConsumerProperties.setAccessible(true);
+			setConsumerProperties.invoke(this.streamFunctionProperties, consumerProperties);
 		}
 		catch (Exception e) {
 			throw new IllegalStateException(e);
@@ -875,6 +895,8 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 			existingMessageChannel.removeInterceptor(channelInterceptor);
 		}
 	}
+
+	// END FUNCTION-TO-EXISTING-APP section
 
 	private final class SendingHandler extends AbstractMessageHandler implements Lifecycle {
 

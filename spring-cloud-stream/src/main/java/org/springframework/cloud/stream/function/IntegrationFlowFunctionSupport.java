@@ -29,7 +29,9 @@ import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionType;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
 import org.springframework.cloud.function.core.FluxSupplier;
+import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
+import org.springframework.integration.context.IntegrationObjectSupport;
 import org.springframework.integration.dsl.IntegrationFlowBuilder;
 import org.springframework.integration.dsl.IntegrationFlows;
 import org.springframework.messaging.Message;
@@ -56,6 +58,8 @@ public class IntegrationFlowFunctionSupport {
 
 	private final StreamFunctionProperties functionProperties;
 
+	private final BindingServiceProperties bindingServiceProperties;
+
 	@Autowired
 	private MessageChannel errorChannel;
 
@@ -66,7 +70,8 @@ public class IntegrationFlowFunctionSupport {
 	 * @param functionProperties
 	 */
 	IntegrationFlowFunctionSupport(FunctionCatalogWrapper functionCatalog, FunctionInspector functionInspector,
-			CompositeMessageConverterFactory messageConverterFactory, StreamFunctionProperties functionProperties) {
+			CompositeMessageConverterFactory messageConverterFactory, StreamFunctionProperties functionProperties,
+			BindingServiceProperties bindingServiceProperties) {
 
 		Assert.notNull(functionCatalog, "'functionCatalog' must not be null");
 		Assert.notNull(functionInspector, "'functionInspector' must not be null");
@@ -76,6 +81,7 @@ public class IntegrationFlowFunctionSupport {
 		this.functionInspector = functionInspector;
 		this.messageConverterFactory = messageConverterFactory;
 		this.functionProperties = functionProperties;
+		this.bindingServiceProperties = bindingServiceProperties;
 	}
 
 	/**
@@ -148,6 +154,21 @@ public class IntegrationFlowFunctionSupport {
 
 	public <O> IntegrationFlowBuilder integrationFlowForFunction(SubscribableChannel inputChannel,
 			MessageChannel outputChannel) {
+
+		if (inputChannel instanceof IntegrationObjectSupport) {
+			String inputBindingName = ((IntegrationObjectSupport)inputChannel).getComponentName();
+			if (StringUtils.hasText(inputBindingName)) {
+				this.functionProperties.setConsumerProperties(this.bindingServiceProperties.getConsumerProperties(inputBindingName));
+			}
+		}
+
+		if (outputChannel instanceof IntegrationObjectSupport) {
+			String outputBindingName = ((IntegrationObjectSupport)outputChannel).getComponentName();
+			if (StringUtils.hasText(outputBindingName)) {
+				this.functionProperties.setProducerProperties(this.bindingServiceProperties.getProducerProperties(outputBindingName));
+			}
+		}
+
 		IntegrationFlowBuilder flowBuilder = IntegrationFlows.from(inputChannel).bridge();
 
 		if (!this.andThenFunction(flowBuilder, outputChannel, this.functionProperties)) {

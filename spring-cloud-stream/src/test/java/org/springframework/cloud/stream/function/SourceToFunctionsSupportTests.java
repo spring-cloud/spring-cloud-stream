@@ -26,7 +26,6 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import reactor.core.publisher.Flux;
 
-import org.springframework.beans.BeanInstantiationException;
 import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.WebApplicationType;
@@ -49,10 +48,6 @@ import org.springframework.util.Assert;
 import org.springframework.util.MimeTypeUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.hamcrest.CoreMatchers.allOf;
-import static org.hamcrest.CoreMatchers.endsWith;
-import static org.hamcrest.CoreMatchers.isA;
-import static org.hamcrest.Matchers.hasProperty;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
@@ -169,9 +164,6 @@ public class SourceToFunctionsSupportTests {
 	public void testFunctionDoesNotExist() {
 
 		expectedException.expect(BeanCreationException.class);
-		expectedException.expectCause(
-			allOf(isA(BeanInstantiationException.class), hasProperty("cause", isA(IllegalArgumentException.class)),
-				hasProperty("message", endsWith("'doesNotExist' cannot be located."))));
 
 		new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(SupplierConfiguration.class)).web(
