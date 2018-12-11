@@ -24,7 +24,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.springframework.amqp.AmqpConnectException;
-import org.springframework.amqp.core.AnonymousQueue;
+import org.springframework.amqp.core.Base64UrlNamingStrategy;
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.Binding.DestinationType;
 import org.springframework.amqp.core.BindingBuilder;
@@ -64,8 +64,8 @@ public class RabbitExchangeQueueProvisioner implements ApplicationListener<Decla
 		ProvisioningProvider<ExtendedConsumerProperties<RabbitConsumerProperties>,
 							ExtendedProducerProperties<RabbitProducerProperties>> {
 
-	private static final AnonymousQueue.Base64UrlNamingStrategy ANONYMOUS_GROUP_NAME_GENERATOR
-			= new AnonymousQueue.Base64UrlNamingStrategy("anonymous.");
+	private static final Base64UrlNamingStrategy ANONYMOUS_GROUP_NAME_GENERATOR
+			= new Base64UrlNamingStrategy("anonymous.");
 
 	/**
 	 * The delimiter between a group and index when constructing a binder
@@ -148,8 +148,13 @@ public class RabbitExchangeQueueProvisioner implements ApplicationListener<Decla
 	private ConsumerDestination doProvisionConsumerDestination(String name, String group,
 			ExtendedConsumerProperties<RabbitConsumerProperties> properties) {
 		boolean anonymous = !StringUtils.hasText(group);
-		String  baseQueueName = anonymous ? groupedName(name, ANONYMOUS_GROUP_NAME_GENERATOR.generateName())
-					: properties.getExtension().isQueueNameGroupOnly() ? group : groupedName(name, group);
+		String  baseQueueName;
+		if (properties.getExtension().isQueueNameGroupOnly()) {
+				baseQueueName =  anonymous ? ANONYMOUS_GROUP_NAME_GENERATOR.generateName() : group;
+		}
+		else {
+				baseQueueName = groupedName(name, anonymous ? ANONYMOUS_GROUP_NAME_GENERATOR.generateName() : group);
+		}
 		if (this.logger.isInfoEnabled()) {
 			this.logger.info("declaring queue for inbound: " + baseQueueName + ", bound to: " + name);
 		}
