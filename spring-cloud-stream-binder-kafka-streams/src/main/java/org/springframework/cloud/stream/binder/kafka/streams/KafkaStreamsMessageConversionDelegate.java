@@ -140,7 +140,8 @@ public class KafkaStreamsMessageConversionDelegate {
 						LOG.info("Received a tombstone record. This will be skipped from further processing.");
 					}
 				}
-				catch (Exception ignored) {
+				catch (Exception e) {
+					LOG.warn("Deserialization has failed. This will be skipped from further processing.", e);
 					//pass through
 				}
 				return isValidRecord;
