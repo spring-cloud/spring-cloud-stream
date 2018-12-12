@@ -40,6 +40,7 @@ import org.apache.kafka.clients.admin.TopicDescription;
 import org.apache.kafka.common.KafkaFuture;
 import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.errors.TopicExistsException;
+import org.apache.kafka.common.errors.UnknownTopicOrPartitionException;
 
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
@@ -60,6 +61,7 @@ import org.springframework.retry.backoff.ExponentialBackOffPolicy;
 import org.springframework.retry.policy.SimpleRetryPolicy;
 import org.springframework.retry.support.RetryTemplate;
 import org.springframework.util.Assert;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 
@@ -277,12 +279,14 @@ public class KafkaTopicProvisioner implements ProvisioningProvider<ExtendedConsu
 		try {
 			createTopicIfNecessary(adminClient, name, partitionCount, tolerateLowerPartitionsOnBroker, properties);
 		}
+		//TODO: Remove catching Throwable. See this thread: https://github.com/spring-cloud/spring-cloud-stream-binder-kafka/pull/514#discussion_r241075940
 		catch (Throwable throwable) {
 			if (throwable instanceof Error) {
 				throw (Error) throwable;
 			}
 			else {
-				throw new ProvisioningException("provisioning exception", throwable);
+				//TODO: https://github.com/spring-cloud/spring-cloud-stream-binder-kafka/pull/514#discussion_r241075940
+				throw new ProvisioningException("Provisioning exception", throwable);
 			}
 		}
 	}
@@ -393,11 +397,38 @@ public class KafkaTopicProvisioner implements ProvisioningProvider<ExtendedConsu
 
 	public Collection<PartitionInfo> getPartitionsForTopic(final int partitionCount,
 														final boolean tolerateLowerPartitionsOnBroker,
-														final Callable<Collection<PartitionInfo>> callable) {
+														final Callable<Collection<PartitionInfo>> callable,
+														final String topicName) {
 		try {
 			return this.metadataRetryOperations
 					.execute((context) -> {
-						Collection<PartitionInfo> partitions = callable.call();
+						Collection<PartitionInfo> partitions = Collections.emptyList();
+
+						try {
+							//This call may return null or throw an exception.
+							partitions = callable.call();
+						}
+						catch (Exception ex) {
+							//The above call can potentially throw exceptions such as timeout. If we can determine
+							//that the exception was due to an unknown topic on the broker, just simply rethrow that.
+							if (ex instanceof UnknownTopicOrPartitionException) {
+								throw ex;
+							}
+						}
+						if (CollectionUtils.isEmpty(partitions)) {
+							final AdminClient adminClient = AdminClient.create(this.adminClientProperties);
+							final DescribeTopicsResult describeTopicsResult = adminClient.describeTopics(Collections.singletonList(topicName));
+							try {
+								describeTopicsResult.all().get();
+							}
+							catch (ExecutionException ex) {
+								if (ex.getCause() instanceof UnknownTopicOrPartitionException) {
+									throw new Exception(ex.getCause());
+								} else {
+									logger.warn("No partitions have been retrieved for the topic (" + topicName + "). This will affect the health check.");
+								}
+							}
+						}
 						// do a sanity check on the partition set
 						int partitionSize = partitions.size();
 						if (partitionSize < partitionCount) {

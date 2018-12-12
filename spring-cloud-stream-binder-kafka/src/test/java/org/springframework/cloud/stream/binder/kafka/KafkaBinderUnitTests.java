@@ -167,7 +167,7 @@ public class KafkaBinderUnitTests {
 			return partitions.stream()
 					.map(p -> new PartitionInfo(topic, part.getAndIncrement(), null, null, null))
 					.collect(Collectors.toList());
-		}).given(provisioningProvider).getPartitionsForTopic(anyInt(), anyBoolean(), any());
+		}).given(provisioningProvider).getPartitionsForTopic(anyInt(), anyBoolean(), any(), any());
 		@SuppressWarnings("unchecked")
 		final Consumer<byte[], byte[]> consumer = mock(Consumer.class);
 		final CountDownLatch latch = new CountDownLatch(1);

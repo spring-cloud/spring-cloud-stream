@@ -289,7 +289,7 @@ public class KafkaMessageChannelBinder extends
 					producer.close();
 					((DisposableBean) producerFB).destroy();
 					return partitionsFor;
-				});
+				}, destination.getName());
 		this.topicsInUse.put(destination.getName(), new TopicInformation(null, partitions, false));
 		if (producerProperties.isPartitioned() && producerProperties.getPartitionCount() < partitions.size()) {
 			if (this.logger.isInfoEnabled()) {
@@ -744,7 +744,7 @@ public class KafkaMessageChannelBinder extends
 						List<PartitionInfo> partitionsFor = consumer.partitionsFor(topic);
 						return partitionsFor;
 					}
-				});
+				}, topic);
 	}
 
 	@Override
