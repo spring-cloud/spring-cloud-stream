@@ -4,7 +4,7 @@
 <book xmlns="http://docbook.org/ns/docbook" xmlns:xl="http://www.w3.org/1999/xlink" version="5.0" xml:lang="en">
 <info>
 <title>Spring Cloud Stream Reference Guide</title>
-<date>2018-11-16</date>
+<date>2018-12-12</date>
 <authorgroup>
 <author>
 <personname>
@@ -172,15 +172,17 @@ For example, you can choose Gradle as your build tool instead of Maven (the defa
 <simpara>In the <emphasis role="strong">Artifact</emphasis> field, type 'logging-consumer'.</simpara>
 <simpara>The value of the <emphasis role="strong">Artifact</emphasis> field becomes the application name.
 If you chose RabbitMQ for the middleware, your Spring Initializr should now be as follows:</simpara>
+</listitem>
+</orderedlist>
 <informalfigure>
 <mediaobject>
 <imageobject>
-<imagedata fileref="https://raw.githubusercontent.com/spring-cloud/spring-cloud-stream/master/docs/src/main/asciidoc/images/spring-initializr.png"/>
+<imagedata fileref="https://raw.githubusercontent.com/spring-cloud/spring-cloud-stream/master/docs/src/main/asciidoc/images/spring-initializr.png" align="center"/>
 </imageobject>
-<textobject><phrase>Spring Initializr</phrase></textobject>
+<textobject><phrase>spring initializr</phrase></textobject>
 </mediaobject>
 </informalfigure>
-</listitem>
+<orderedlist numeration="arabic">
 <listitem>
 <simpara>Click the <emphasis role="strong">Generate Project</emphasis> button.</simpara>
 <simpara>Doing so downloads the zipped version of the generated project to your hard drive.</simpara>
@@ -993,7 +995,8 @@ public ApplicationRunner poller(PollableMessageSource destIn, MessageChannel des
 }</programlisting>
 <simpara>The <literal>PollableMessageSource.poll()</literal> method takes a <literal>MessageHandler</literal> argument (often a lambda expression, as shown here).
 It returns <literal>true</literal> if the message was received and successfully processed.</simpara>
-<simpara>As with message-driven consumers, if the <literal>MessageHandler</literal> throws an exception, messages are published to error channels, as discussed in <quote><xref linkend="binder-error-channels"/></quote>.</simpara>
+<simpara>As with message-driven consumers, if the <literal>MessageHandler</literal> throws an exception, messages are published to error channels,
+as discussed in <literal><xref linkend="spring-cloud-stream-overview-error-handling"/></literal>.</simpara>
 <simpara>Normally, the <literal>poll()</literal> method acknowledges the message when the <literal>MessageHandler</literal> exits.
 If the method exits abnormally, the message is rejected (not re-queued), but see <xref linkend="polled-errors"/>.
 You can override that behavior by taking responsibility for the acknowledgment, as shown in the following example:</simpara>
@@ -1884,7 +1887,7 @@ See the consumer property <literal>useNativeDecoding</literal>.</simpara>
 <term>errorChannelEnabled</term>
 <listitem>
 <simpara>When set to <literal>true</literal>, if the binder supports asynchroous send results, send failures are sent to an error channel for the destination.
-See <quote><xref linkend="binder-error-channels"/></quote> for more information.</simpara>
+See <literal><xref linkend="spring-cloud-stream-overview-error-handling"/></literal> for more information.</simpara>
 <simpara>Default: <literal>false</literal>.</simpara>
 </listitem>
 </varlistentry>
@@ -2874,22 +2877,22 @@ a <literal>STREAM_CLOUD_STREAM_VERSION</literal> header set to <literal>2.x</lit
 <simpara>The following is the list of available binder implementations</simpara>
 <itemizedlist>
 <listitem>
-<simpara>[RabbitMQ](<link xl:href="https://cloud.spring.io/spring-cloud-stream-binder-rabbit/">https://cloud.spring.io/spring-cloud-stream-binder-rabbit/</link>)</simpara>
+<simpara><link xl:href="https://cloud.spring.io/spring-cloud-stream-binder-rabbit/">RabbitMQ</link></simpara>
 </listitem>
 <listitem>
-<simpara>[Apache Kafka](<link xl:href="https://cloud.spring.io/spring-cloud-stream-binder-kafka/">https://cloud.spring.io/spring-cloud-stream-binder-kafka/</link>)</simpara>
+<simpara><link xl:href="https://cloud.spring.io/spring-cloud-stream-binder-kafka/">Apache Kafka</link></simpara>
 </listitem>
 <listitem>
-<simpara>[Amazon Kinesis](<link xl:href="https://github.com/spring-cloud/spring-cloud-stream-binder-aws-kinesis">https://github.com/spring-cloud/spring-cloud-stream-binder-aws-kinesis</link>)</simpara>
+<simpara><link xl:href="https://github.com/spring-cloud/spring-cloud-stream-binder-aws-kinesis">Amazon Kinesis</link></simpara>
 </listitem>
 <listitem>
-<simpara>[Google PubSub <emphasis>(partner maintained)</emphasis>](<link xl:href="https://github.com/spring-cloud/spring-cloud-gcp/tree/master/spring-cloud-gcp-pubsub-stream-binder">https://github.com/spring-cloud/spring-cloud-gcp/tree/master/spring-cloud-gcp-pubsub-stream-binder</link>)</simpara>
+<simpara><link xl:href="https://github.com/spring-cloud/spring-cloud-gcp/tree/master/spring-cloud-gcp-pubsub-stream-binder">Google PubSub <emphasis>(partner maintained)</emphasis></link></simpara>
 </listitem>
 <listitem>
-<simpara>[Solace PubSub+ <emphasis>(partner maintained)</emphasis>](<link xl:href="https://github.com/SolaceProducts/spring-cloud-stream-binder-solace">https://github.com/SolaceProducts/spring-cloud-stream-binder-solace</link>)</simpara>
+<simpara><link xl:href="https://github.com/SolaceProducts/spring-cloud-stream-binder-solace">Solace PubSub+ <emphasis>(partner maintained)</emphasis></link></simpara>
 </listitem>
 <listitem>
-<simpara>[Azure Event Hubs <emphasis>(partner maintained)</emphasis>](<link xl:href="https://github.com/Microsoft/spring-cloud-azure/tree/master/spring-cloud-azure-eventhub-stream-binder">https://github.com/Microsoft/spring-cloud-azure/tree/master/spring-cloud-azure-eventhub-stream-binder</link>)</simpara>
+<simpara><link xl:href="https://github.com/Microsoft/spring-cloud-azure/tree/master/spring-cloud-azure-eventhub-stream-binder">Azure Event Hubs <emphasis>(partner maintained)</emphasis></link></simpara>
 </listitem>
 </itemizedlist>
 </chapter>
