@@ -148,8 +148,6 @@ public class ContentTypeTests {
 					.build());
 			Message<byte[]> message = (Message<byte[]>) collector
 					.forChannel(source.output()).poll(1, TimeUnit.SECONDS);
-			assertThat(message.getHeaders().get(MessageHeaders.CONTENT_TYPE, MimeType.class)
-							.includes(MimeTypeUtils.IMAGE_JPEG));
 			assertThat(message.getPayload()).isEqualTo(data);
 		}
 	}
