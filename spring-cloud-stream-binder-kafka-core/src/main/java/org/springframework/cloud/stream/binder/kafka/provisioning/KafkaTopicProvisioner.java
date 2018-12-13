@@ -423,7 +423,7 @@ public class KafkaTopicProvisioner implements ProvisioningProvider<ExtendedConsu
 							}
 							catch (ExecutionException ex) {
 								if (ex.getCause() instanceof UnknownTopicOrPartitionException) {
-									throw new Exception(ex.getCause());
+									throw (UnknownTopicOrPartitionException)ex.getCause();
 								} else {
 									logger.warn("No partitions have been retrieved for the topic (" + topicName + "). This will affect the health check.");
 								}
