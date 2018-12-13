@@ -68,10 +68,10 @@ public class TextPlainConversionTest {
 	public void testByteArrayConversionOnOutput() throws Exception {
 		testProcessor.output().send(MessageBuilder.withPayload("Bar".getBytes()).build());
 		@SuppressWarnings("unchecked")
-		Message<byte[]> received = (Message<byte[]>)((TestSupportBinder) binderFactory.getBinder(null, MessageChannel.class))
+		Message<String> received = (Message<String>)((TestSupportBinder) binderFactory.getBinder(null, MessageChannel.class))
 				.messageCollector().forChannel(testProcessor.output()).poll(1, TimeUnit.SECONDS);
 		assertThat(received).isNotNull();
-		assertThat(received.getPayload()).isEqualTo("Bar".getBytes());
+		assertThat(received.getPayload()).isEqualTo("Bar");
 	}
 
 	@Test

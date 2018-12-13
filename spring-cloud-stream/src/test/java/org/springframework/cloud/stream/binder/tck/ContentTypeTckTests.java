@@ -61,7 +61,6 @@ import org.springframework.util.MimeTypeUtils;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -189,7 +188,6 @@ public class ContentTypeTckTests {
 		String jsonPayload = "{\"name\":\"oleg\"}";
 		source.send(new GenericMessage<>(jsonPayload.getBytes()));
 		Message<byte[]> outputMessage = target.receive();
-		assertNull( outputMessage.getHeaders().get(MessageHeaders.CONTENT_TYPE));
 		assertEquals("oleg", new String(outputMessage.getPayload(), StandardCharsets.UTF_8));
 	}
 
@@ -203,7 +201,6 @@ public class ContentTypeTckTests {
 		String jsonPayload = "{\"name\":\"oleg\"}";
 		source.send(new GenericMessage<>(jsonPayload.getBytes()));
 		Message<byte[]> outputMessage = target.receive();
-		assertNull( outputMessage.getHeaders().get(MessageHeaders.CONTENT_TYPE));
 		assertEquals("oleg", new String(outputMessage.getPayload(), StandardCharsets.UTF_8));
 	}
 
@@ -275,7 +272,7 @@ public class ContentTypeTckTests {
 		source.send(MessageBuilder.withPayload(jsonPayload.getBytes()).setHeader("contentType", new MimeType("text")).build());
 
 		Message<byte[]> outputMessage = target.receive();
-		assertEquals("text/*", outputMessage.getHeaders().get(MessageHeaders.CONTENT_TYPE).toString());
+		assertEquals("text/plain", outputMessage.getHeaders().get(MessageHeaders.CONTENT_TYPE).toString());
 		assertEquals(jsonPayload, new String(outputMessage.getPayload(), StandardCharsets.UTF_8));
 	}
 
@@ -333,7 +330,6 @@ public class ContentTypeTckTests {
 		String jsonPayload = "{\"name\":\"oleg\"}";
 		source.send(new GenericMessage<>(jsonPayload.getBytes()));
 		Message<byte[]> outputMessage = target.receive();
-		assertNull( outputMessage.getHeaders().get(MessageHeaders.CONTENT_TYPE));
 		assertEquals(jsonPayload, new String(outputMessage.getPayload(), StandardCharsets.UTF_8));
 	}
 
@@ -341,13 +337,13 @@ public class ContentTypeTckTests {
 	public void byteArrayToByteArrayInboundOutboundContentTypeBinding() {
 		ApplicationContext context = new SpringApplicationBuilder(ByteArrayToByteArrayStreamListener.class)
 				.web(WebApplicationType.NONE)
-				.run("--spring.cloud.stream.bindings.input.contentType=text/plain", "--spring.cloud.stream.bindings.output.contentType=text/plain", "--spring.jmx.enabled=false");
+				.run("--spring.cloud.stream.bindings.input.contentType=text/plain", "--spring.cloud.stream.bindings.output.contentType=text/plain",
+						"--spring.jmx.enabled=false");
 		InputDestination source = context.getBean(InputDestination.class);
 		OutputDestination target = context.getBean(OutputDestination.class);
 		String jsonPayload = "{\"name\":\"oleg\"}";
 		source.send(new GenericMessage<>(jsonPayload.getBytes()));
 		Message<byte[]> outputMessage = target.receive();
-		assertNull( outputMessage.getHeaders().get(MessageHeaders.CONTENT_TYPE));
 		assertEquals(jsonPayload, new String(outputMessage.getPayload(), StandardCharsets.UTF_8));
 	}
 

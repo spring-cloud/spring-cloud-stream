@@ -45,7 +45,6 @@ import org.springframework.integration.channel.AbstractMessageChannel;
 import org.springframework.integration.expression.ExpressionUtils;
 import org.springframework.integration.support.MessageBuilderFactory;
 import org.springframework.integration.support.MutableMessageBuilderFactory;
-import org.springframework.integration.support.MutableMessageHeaders;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHeaders;
@@ -329,14 +328,15 @@ public class MessageConverterConfigurer implements MessageChannelAndSourceConfig
 			// ===== END 1.3 backward compatibility code part-1 ===
 
 
-			MutableMessageHeaders headers = new MutableMessageHeaders(message.getHeaders());
-			if (!headers.containsKey(MessageHeaders.CONTENT_TYPE)) {
-				headers.put(MessageHeaders.CONTENT_TYPE, this.mimeType);
+			if (!message.getHeaders().containsKey(MessageHeaders.CONTENT_TYPE)) {
+				@SuppressWarnings("unchecked")
+				Map<String, Object> headersMap = (Map<String, Object>) ReflectionUtils.getField(MessageConverterConfigurer.this.headersField, message.getHeaders());
+				headersMap.put(MessageHeaders.CONTENT_TYPE, this.mimeType);
 			}
 
 			@SuppressWarnings("unchecked")
 			Message<byte[]> outboundMessage = message.getPayload() instanceof byte[]
-					? (Message<byte[]>)message : (Message<byte[]>) this.messageConverter.toMessage(message.getPayload(), headers);
+					? (Message<byte[]>)message : (Message<byte[]>) this.messageConverter.toMessage(message.getPayload(), message.getHeaders());
 			if (outboundMessage == null) {
 				throw new IllegalStateException("Failed to convert message: '" + message + "' to outbound message.");
 			}
@@ -345,7 +345,8 @@ public class MessageConverterConfigurer implements MessageChannelAndSourceConfig
 			if (propagateOriginalContentType) {
 				if (ct != null && !ct.equals(oct) && oct != null) {
 					@SuppressWarnings("unchecked")
-					Map<String, Object> headersMap = (Map<String, Object>) ReflectionUtils.getField(MessageConverterConfigurer.this.headersField, message.getHeaders());
+					Map<String, Object> headersMap = (Map<String, Object>) ReflectionUtils.getField(MessageConverterConfigurer.this.headersField,
+							outboundMessage.getHeaders());
 					headersMap.put(MessageHeaders.CONTENT_TYPE, MimeType.valueOf(ct));
 					headersMap.put(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE, MimeType.valueOf(oct));
 				}
@@ -353,11 +354,9 @@ public class MessageConverterConfigurer implements MessageChannelAndSourceConfig
 			else {
 				if (!contentTypeHeaderSet) {
 					@SuppressWarnings("unchecked")
-					Map<String, Object> headersMap = (Map<String, Object>) ReflectionUtils.getField(MessageConverterConfigurer.this.headersField, message.getHeaders());
+					Map<String, Object> headersMap = (Map<String, Object>) ReflectionUtils.getField(MessageConverterConfigurer.this.headersField,
+							outboundMessage.getHeaders());
 					headersMap.remove(MessageHeaders.CONTENT_TYPE);
-				}
-				else {
-					System.out.println();
 				}
 			}
 			// ===== END 1.3 backward compatibility code part-2 ===

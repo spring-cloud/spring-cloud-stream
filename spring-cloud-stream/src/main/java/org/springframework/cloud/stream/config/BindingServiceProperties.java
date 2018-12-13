@@ -66,7 +66,7 @@ public class BindingServiceProperties implements ApplicationContextAware, Initia
 	 * Default: true
 	 */
 	@Deprecated
-	private boolean propagateOriginalContentType;
+	private boolean propagateOriginalContentType = true;
 
 	/**
 	 * The instance id of the application: a number from 0 to instanceCount-1.
