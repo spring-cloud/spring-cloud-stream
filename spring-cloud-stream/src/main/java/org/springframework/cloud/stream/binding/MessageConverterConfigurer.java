@@ -314,8 +314,6 @@ public class MessageConverterConfigurer implements MessageChannelAndSourceConfig
 			boolean propagateOriginalContentType =
 					MessageConverterConfigurer.this.bindingServiceProperties.isPropagateOriginalContentType();
 
-			boolean contentTypeHeaderSet = message.getHeaders().containsKey(MessageHeaders.CONTENT_TYPE);
-
 			// ===== 1.3 backward compatibility code part-1 ===
 			String ct = null;
 			String oct = null;
