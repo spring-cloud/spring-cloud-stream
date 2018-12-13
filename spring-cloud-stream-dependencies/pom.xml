@@ -8,15 +8,15 @@
         <relativePath />
     </parent>
     <artifactId>spring-cloud-stream-dependencies</artifactId>
-    <version>Fishtown.BUILD-SNAPSHOT</version>
+    <version>Fishtown.RC3</version>
     <packaging>pom</packaging>
     <name>spring-cloud-stream-dependencies</name>
     <description>Spring Cloud Stream Dependencies</description>
     <properties>
-        <spring-cloud-stream.version>2.1.0.BUILD-SNAPSHOT</spring-cloud-stream.version>
-        <spring-cloud-stream-binder-kafka.version>2.1.0.BUILD-SNAPSHOT</spring-cloud-stream-binder-kafka.version>
-        <spring-cloud-stream-binder-rabbit.version>2.1.0.BUILD-SNAPSHOT</spring-cloud-stream-binder-rabbit.version>
-		<spring-cloud-stream-dependencies.version>Fishtown.BUILD-SNAPSHOT</spring-cloud-stream-dependencies.version>
+        <spring-cloud-stream.version>2.1.0.RC3</spring-cloud-stream.version>
+        <spring-cloud-stream-binder-kafka.version>2.1.0.RC3</spring-cloud-stream-binder-kafka.version>
+        <spring-cloud-stream-binder-rabbit.version>2.1.0.RC3</spring-cloud-stream-binder-rabbit.version>
+		<spring-cloud-stream-dependencies.version>Fishtown.RC3</spring-cloud-stream-dependencies.version>
     </properties>
     <dependencyManagement>
         <dependencies>
