@@ -176,8 +176,8 @@ public class TestSupportBinder implements Binder<MessageChannel, ConsumerPropert
 			Class<?> targetClass = null;
 			MessageConverter converter = null;
 			MimeType contentType = message.getHeaders().containsKey(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE)
-						? MimeType.valueOf((String)message.getHeaders().get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE))
-								: contentTypeResolver.resolve(message.getHeaders());
+						? MimeType.valueOf(message.getHeaders().get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE).toString())
+								: MimeType.valueOf(contentTypeResolver.resolve(message.getHeaders()).toString());
 
 			if (contentType != null){
 				if (equalTypeAndSubType(MessageConverterUtils.X_JAVA_SERIALIZED_OBJECT, contentType) ||
