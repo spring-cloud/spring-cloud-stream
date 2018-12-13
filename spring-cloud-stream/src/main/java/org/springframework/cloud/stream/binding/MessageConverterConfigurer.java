@@ -352,12 +352,10 @@ public class MessageConverterConfigurer implements MessageChannelAndSourceConfig
 				}
 			}
 			else {
-				if (!contentTypeHeaderSet) {
-					@SuppressWarnings("unchecked")
-					Map<String, Object> headersMap = (Map<String, Object>) ReflectionUtils.getField(MessageConverterConfigurer.this.headersField,
-							outboundMessage.getHeaders());
-					headersMap.remove(MessageHeaders.CONTENT_TYPE);
-				}
+				@SuppressWarnings("unchecked")
+				Map<String, Object> headersMap = (Map<String, Object>) ReflectionUtils.getField(MessageConverterConfigurer.this.headersField,
+						outboundMessage.getHeaders());
+				headersMap.remove(MessageHeaders.CONTENT_TYPE);
 			}
 			// ===== END 1.3 backward compatibility code part-2 ===
 			return outboundMessage;
