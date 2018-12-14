@@ -153,8 +153,12 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 						this.defaultBinderForBindingTargetType.put(bindingTargetType.getName(), configurationName);
 					}
 					else {
-						throw new IllegalStateException("A default binder has been requested, but there is more than "
-								+ "one binder available for '" + bindingTargetType.getName() + "' : "
+						String countMsg = (candidatesForBindableType.size() == 0)
+								? "are no binders"
+								: "is more than one binder";
+						throw new IllegalStateException(
+								"A default binder has been requested, but there " + countMsg
+								+ " available for '" + bindingTargetType.getName() + "' : "
 								+ StringUtils.collectionToCommaDelimitedString(candidatesForBindableType)
 								+ ", and no default binder has been set.");
 					}
