@@ -17,7 +17,6 @@
 package org.springframework.cloud.stream.binding;
 
 import java.lang.reflect.Field;
-import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 import org.apache.commons.logging.Log;
@@ -53,7 +52,6 @@ import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.messaging.handler.invocation.InvocableHandlerMethod;
 import org.springframework.messaging.support.ChannelInterceptor;
 import org.springframework.messaging.support.ErrorMessage;
-import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.MimeType;
@@ -284,10 +282,6 @@ public class MessageConverterConfigurer implements MessageChannelAndSourceConfig
 				headersMap.put(MessageHeaders.CONTENT_TYPE, MimeType.valueOf((String)message.getHeaders().get(MessageHeaders.CONTENT_TYPE)));
 			}
 
-			if (message.getHeaders().get(MessageHeaders.CONTENT_TYPE).toString().startsWith("text") && message.getPayload() instanceof byte[]) {
-				message = MessageBuilder.withPayload(new String((byte[])message.getPayload(), StandardCharsets.UTF_8)).copyHeaders(message.getHeaders()).build();
-			}
-
 			return message;
 		}
 	}
@@ -310,19 +304,11 @@ public class MessageConverterConfigurer implements MessageChannelAndSourceConfig
 
 		@Override
 		public Message<?> doPreSend(Message<?> message, MessageChannel channel) {
-			@SuppressWarnings("deprecation")
-			boolean propagateOriginalContentType =
-					MessageConverterConfigurer.this.bindingServiceProperties.isPropagateOriginalContentType();
-
 			// ===== 1.3 backward compatibility code part-1 ===
-			String ct = null;
-			String oct = null;
-			if (propagateOriginalContentType) {
-				oct = message.getHeaders().containsKey(MessageHeaders.CONTENT_TYPE) ? message.getHeaders().get(MessageHeaders.CONTENT_TYPE).toString() : null;
-				ct = message.getPayload() instanceof String
+			String oct = message.getHeaders().containsKey(MessageHeaders.CONTENT_TYPE) ? message.getHeaders().get(MessageHeaders.CONTENT_TYPE).toString() : null;
+			String ct = message.getPayload() instanceof String
 						? ct = JavaClassMimeTypeUtils.mimeTypeFromObject(message.getPayload(), ObjectUtils.nullSafeToString(oct)).toString()
 						: oct;
-			}
 			// ===== END 1.3 backward compatibility code part-1 ===
 
 
@@ -340,20 +326,12 @@ public class MessageConverterConfigurer implements MessageChannelAndSourceConfig
 			}
 
 			/// ===== 1.3 backward compatibility code part-2 ===
-			if (propagateOriginalContentType) {
-				if (ct != null && !ct.equals(oct) && oct != null) {
-					@SuppressWarnings("unchecked")
-					Map<String, Object> headersMap = (Map<String, Object>) ReflectionUtils.getField(MessageConverterConfigurer.this.headersField,
-							outboundMessage.getHeaders());
-					headersMap.put(MessageHeaders.CONTENT_TYPE, MimeType.valueOf(ct));
-					headersMap.put(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE, MimeType.valueOf(oct));
-				}
-			}
-			else {
+			if (ct != null && !ct.equals(oct) && oct != null) {
 				@SuppressWarnings("unchecked")
 				Map<String, Object> headersMap = (Map<String, Object>) ReflectionUtils.getField(MessageConverterConfigurer.this.headersField,
 						outboundMessage.getHeaders());
-				headersMap.remove(MessageHeaders.CONTENT_TYPE);
+				headersMap.put(MessageHeaders.CONTENT_TYPE, MimeType.valueOf(ct));
+				headersMap.put(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE, MimeType.valueOf(oct));
 			}
 			// ===== END 1.3 backward compatibility code part-2 ===
 			return outboundMessage;

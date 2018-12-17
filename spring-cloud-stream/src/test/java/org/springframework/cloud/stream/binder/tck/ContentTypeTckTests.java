@@ -231,7 +231,21 @@ public class ContentTypeTckTests {
 		assertEquals(MimeTypeUtils.APPLICATION_JSON, outputMessage.getHeaders().get(MessageHeaders.CONTENT_TYPE));
 		assertEquals(jsonPayload, new String(outputMessage.getPayload(), StandardCharsets.UTF_8));
 	}
-
+	
+	@Test
+	public void typelessMessageToPojoInboundContentTypeBinding() {
+		ApplicationContext context = new SpringApplicationBuilder(TypelessMessageToPojoStreamListener.class)
+				.web(WebApplicationType.NONE)
+				.run("--spring.cloud.stream.bindings.input.contentType=text/plain", "--spring.jmx.enabled=false");
+		InputDestination source = context.getBean(InputDestination.class);
+		OutputDestination target = context.getBean(OutputDestination.class);
+		String jsonPayload = "{\"name\":\"oleg\"}";
+		source.send(new GenericMessage<>(jsonPayload.getBytes()));
+		Message<byte[]> outputMessage = target.receive();
+		assertEquals(MimeTypeUtils.APPLICATION_JSON, outputMessage.getHeaders().get(MessageHeaders.CONTENT_TYPE));
+		assertEquals(jsonPayload, new String(outputMessage.getPayload(), StandardCharsets.UTF_8));
+	}
+	
 	@Test
 	public void typelessToPojoWithTextHeaderContentTypeBinding() {
 		ApplicationContext context = new SpringApplicationBuilder(TypelessToPojoStreamListener.class)
@@ -612,6 +626,19 @@ public class ContentTypeTckTests {
 			ObjectMapper mapper = new ObjectMapper();
 			//assume it is string because CT is text/plain
 			return mapper.readValue((String)value, Person.class);
+		}
+	}
+	
+	@EnableBinding(Processor.class)
+	@Import(TestChannelBinderConfiguration.class)
+	@EnableAutoConfiguration
+	public static class TypelessMessageToPojoStreamListener {
+		@StreamListener(Processor.INPUT)
+		@SendTo(Processor.OUTPUT)
+		public Person echo(Message<?> message) throws Exception {
+			ObjectMapper mapper = new ObjectMapper();
+			//assume it is string because CT is text/plain
+			return mapper.readValue((String)message.getPayload(), Person.class);
 		}
 	}
 

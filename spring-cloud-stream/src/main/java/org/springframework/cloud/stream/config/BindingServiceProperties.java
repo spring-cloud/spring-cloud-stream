@@ -57,18 +57,6 @@ public class BindingServiceProperties implements ApplicationContextAware, Initia
 	private static final int DEFAULT_BINDING_RETRY_INTERVAL = 30;
 
 	/**
-	 * Setting it to true ensures that the original content-type of the message is propagated
-	 * to the outgoing message as `originalContentType` header.
-	 *
-	 * This deprecated feature primarily exists for backward compatibility
-	 * and will not be supported in future versions.
-	 *
-	 * Default: true
-	 */
-	@Deprecated
-	private boolean propagateOriginalContentType = true;
-
-	/**
 	 * The instance id of the application: a number from 0 to instanceCount-1.
 	 * Used for partitioning and with Kafka.
 	 * NOTE: Could also be managed per individual binding
@@ -295,15 +283,4 @@ public class BindingServiceProperties implements ApplicationContextAware, Initia
 		binder.bind("spring.cloud.stream.default", Bindable.ofInstance(bindingPropertiesTarget));
 		this.bindings.put(binding, bindingPropertiesTarget);
 	}
-
-	@Deprecated
-	public boolean isPropagateOriginalContentType() {
-		return propagateOriginalContentType;
-	}
-
-	@Deprecated
-	public void setPropagateOriginalContentType(boolean propagateOriginalContentType) {
-		this.propagateOriginalContentType = propagateOriginalContentType;
-	}
-
 }
