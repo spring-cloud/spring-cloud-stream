@@ -166,6 +166,9 @@ class BusJacksonMessageConverter extends AbstractMessageConverter
 				} catch (InvalidTypeIdException e) {
 					return new UnknownRemoteApplicationEvent(new Object(), e.getTypeId(), ((String) payload).getBytes());
 				}
+			// workaround for https://github.com/spring-cloud/spring-cloud-stream/issues/1564
+			} else if (payload instanceof RemoteApplicationEvent) {
+				return payload;
 			}
 		}
 		catch (Exception e) {
