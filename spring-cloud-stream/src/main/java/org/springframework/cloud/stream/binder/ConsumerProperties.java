@@ -168,7 +168,7 @@ public class ConsumerProperties {
 		this.partitioned = partitioned;
 	}
 
-	@Min(value = 1, message = "Instance count should be greater than zero.")
+	@Min(value = -1, message = "Instance count should be greater than or equal to -1.")
 	public int getInstanceCount() {
 		return instanceCount;
 	}
@@ -177,7 +177,7 @@ public class ConsumerProperties {
 		this.instanceCount = instanceCount;
 	}
 
-	@Min(value = 0, message = "Instance index should be greater than or equal to 0")
+	@Min(value = -1, message = "Instance index should be greater than or equal to -1")
 	public int getInstanceIndex() {
 		return instanceIndex;
 	}

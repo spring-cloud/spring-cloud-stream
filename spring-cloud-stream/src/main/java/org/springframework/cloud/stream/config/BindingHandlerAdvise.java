@@ -24,9 +24,12 @@ import org.springframework.boot.context.properties.bind.BindContext;
 import org.springframework.boot.context.properties.bind.BindHandler;
 import org.springframework.boot.context.properties.bind.BindResult;
 import org.springframework.boot.context.properties.bind.Bindable;
+import org.springframework.boot.context.properties.bind.validation.ValidationBindHandler;
 import org.springframework.boot.context.properties.source.ConfigurationPropertyName;
 import org.springframework.boot.context.properties.source.ConfigurationPropertyName.Form;
+import org.springframework.lang.Nullable;
 import org.springframework.util.CollectionUtils;
+import org.springframework.validation.Validator;
 
 /**
  *
@@ -38,19 +41,22 @@ import org.springframework.util.CollectionUtils;
 public class BindingHandlerAdvise implements ConfigurationPropertiesBindHandlerAdvisor{
 
 	private final Map<ConfigurationPropertyName, ConfigurationPropertyName> mappings;
+	
+	private final Validator[] validator;
 
-	BindingHandlerAdvise(Map<ConfigurationPropertyName, ConfigurationPropertyName> additionalMappings) {
+	BindingHandlerAdvise(Map<ConfigurationPropertyName, ConfigurationPropertyName> additionalMappings, @Nullable Validator validator) {
 		this.mappings = new LinkedHashMap<>();
 		this.mappings.put(ConfigurationPropertyName.of("spring.cloud.stream.bindings"),
 				ConfigurationPropertyName.of("spring.cloud.stream.default"));
 		if (!CollectionUtils.isEmpty(additionalMappings)) {
 			this.mappings.putAll(additionalMappings);
 		}
+		this.validator = validator != null ? new Validator[] {validator} : new Validator[] {};
 	}
 
 	@Override
 	public BindHandler apply(BindHandler bindHandler) {
-		BindHandler handler = new BindHandler() {
+		BindHandler handler = new ValidationBindHandler(validator) {
 			@Override
 			public <T> Bindable<T> onStart(ConfigurationPropertyName name, Bindable<T> target, BindContext context) {
 				ConfigurationPropertyName defaultName = getDefaultName(name);

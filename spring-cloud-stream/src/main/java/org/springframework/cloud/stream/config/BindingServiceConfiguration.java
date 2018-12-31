@@ -63,6 +63,7 @@ import org.springframework.messaging.core.DestinationResolver;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.util.Assert;
 import org.springframework.util.ObjectUtils;
+import org.springframework.validation.Validator;
 
 
 /**
@@ -92,7 +93,7 @@ public class BindingServiceConfiguration {
 	private Collection<DefaultBinderFactory.Listener> binderFactoryListeners;
 
 	@Bean
-	public BindingHandlerAdvise BindingHandlerAdvise(@Nullable MappingsProvider[] providers) {
+	public BindingHandlerAdvise BindingHandlerAdvise(@Nullable MappingsProvider[] providers, @Nullable Validator validator) {
 		Map<ConfigurationPropertyName, ConfigurationPropertyName> additionalMappings = new HashMap<>();
 		if (!ObjectUtils.isEmpty(providers)) {
 			for (int i = 0; i < providers.length; i++) {
@@ -100,7 +101,7 @@ public class BindingServiceConfiguration {
 				additionalMappings.putAll(mappingsProvider.getDefaultMappings());
 			}
 		}
-		return new BindingHandlerAdvise(additionalMappings);
+		return new BindingHandlerAdvise(additionalMappings, validator);
 	}
 
 	@Bean
