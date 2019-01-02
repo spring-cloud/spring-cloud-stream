@@ -151,8 +151,12 @@ You can also build and package your application into a boot jar (by using `./mvn
 
 Now you have a working (albeit very basic) Spring Cloud Stream application.
 
-== What's New in 2.0?
-Spring Cloud Stream introduces a number of new features, enhancements, and changes. The following sections outline the most notable ones:
+== What's New in 2.1?
+Spring Cloud Stream introduces a number of new features, enhancements, and changes in addition to the once already introduced in 
+https://docs.spring.io/spring-cloud-stream/docs/Elmhurst.SR2/reference/htmlsingle/#_what_s_new_in_2_0[version 2.0]
+
+
+The following sections outline the most notable ones:
 
 * <<spring-cloud-stream-preface-new-features>>
 * <<spring-cloud-stream-preface-notable-enhancements>>
@@ -160,110 +164,43 @@ Spring Cloud Stream introduces a number of new features, enhancements, and chang
 [[spring-cloud-stream-preface-new-features]]
 === New Features and Components
 
-* *Polling Consumers*: Introduction of polled consumers, which lets the application control message processing rates.
-See "`<<spring-cloud-streams-overview-using-polled-consumers>>`" for more details.
-You can also read https://spring.io/blog/2018/02/27/spring-cloud-stream-2-0-polled-consumers[this blog post] for more details.
+* *Spring Cloud Function*: One of the core themes of the 2.1.x release is the introduction of programming model based on https://cloud.spring.io/spring-cloud-function/[Spring Cloud Function] project. 
+For more details you can jump right into the <<spring_cloud_function, relevant section>>. 
+You can also read https://spring.io/blog/2018/10/30/spring-cloud-stream-fishtown-rc1-2-1-0-rc1-release-announcement[this blog post] for more details.
 
-* *Micrometer Support*: Metrics has been switched to use https://micrometer.io/[Micrometer].
-`MeterRegistry` is also provided as a bean so that custom applications can autowire it to capture custom metrics.
-See "`<<spring-cloud-stream-overview-metrics-emitter>>`" for more details.
-
-* *New Actuator Binding Controls*: New actuator binding controls let you both visualize and control the Bindings lifecycle.
-For more details, see <<Binding visualization and control>>.
-
-* *Configurable RetryTemplate*: Aside from providing properties to configure `RetryTemplate`, we now let you provide your own template, effectively overriding the one provided by the framework.
-To use it, configure it as a `@Bean` in your application.
+* *Simplified Test Binder*: In addition to an already existing testing  support via `spring-cloud-stream-test-support`, this release also introduces a simpler implementation of a test binder that is 
+more aligned with the current binder API providing for a better integration testing as it is touches on all aspects of binding API. 
+This binder was primarily designed for internal use, but found its usages outside. For more information on how to use it and how it can help you please refer to <<spring_integration_test_binder, this section>> of user guide.
 
 [[spring-cloud-stream-preface-notable-enhancements]]
 === Notable Enhancements
 
-This version includes the following notable enhancements:
+* *Improved Reactive Support*: Given that https://projectreactor.io/[Project Reactor] primitives such as `Flux` and `Mono` are at the core 
+of https://cloud.spring.io/spring-cloud-function/[Spring Cloud Function] project, you no longer 
+have to use or draw any distinction between _reactive_ and _conventional_ stream handler design, 
+hence you no longer need to explicitly rely on `spring-cloud-stream-reactive` module, which we're now
+considering for deprecation. For more details please refer to <<spring_cloud_function, Spring Cloud Function>> section of this user guide.
 
-* <<spring-cloud-stream-preface-actuator-web-dependencies>>
-* <<spring-cloud-stream-preface-content-type-negotiation-improvements>>
-* <<spring-cloud-stream-preface-notable-deprecations>>
+* *Enhanced properties binding support*: This version of Spring Cloud Stream introduces significant 
+enhancements to configuration properties bindings primarily to ensure consistency between the default and binding specific properties.
+A particular emphasis was given to maintaining the _precedence_ and _inheritance_ aspects where:
+	- _precedence_ - binding specific properties always take precedence over the default properties, effectively allowing binding specific properties to override the default ones
+	- _inheritance_ - default will propagate to individual binding properties unless explicitly overriden by the binding specific properties
 
-[[spring-cloud-stream-preface-actuator-web-dependencies]]
-==== Both Actuator and Web Dependencies Are Now Optional
-
-This change slims down the footprint of the deployed application in the event neither actuator nor web dependencies required.
-It also lets you switch between the reactive and conventional web paradigms by manually adding one of the following dependencies.
-
-The following listing shows how to add the conventional web framework:
-[source,xml]
-----
-<dependency>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-web</artifactId>
-</dependency>
-----
-
-The following listing shows how to add the reactive web framework:
-
-[source,xml]
-----
-<dependency>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-webflux</artifactId>
-</dependency>
-----
-
-The following list shows how to add the actuator dependency:
-[source,xml]
-----
-<dependency>
-    <groupId>org.springframework.boot</groupId>
-    <artifactId>spring-boot-starter-actuator</artifactId>
-</dependency>
-----
-
-[[spring-cloud-stream-preface-content-type-negotiation-improvements]]
-==== Content-type Negotiation Improvements
-
-One of the core themes for verion 2.0 is improvements (in both consistency and performance) around content-type negotiation and message conversion.
-The following summary outlines the notable changes and improvements in this area.
-See the "`<<content-type-management>>`" section for more details.
-Also https://spring.io/blog/2018/02/26/spring-cloud-stream-2-0-content-type-negotiation-and-transformation[this blog post] contains more detail.
-
-* All message conversion is now handled *only* by `MessageConverter` objects.
-* We introduced the `@StreamMessageConverter` annotation to provide custom `MessageConverter` objects.
-* We introduced the default `Content Type` as `application/json`, which needs to be taken into consideration when migrating 1.3 application or operating in the mixed mode (that is, 1.3 producer -> 2.0 consumer).
-* Messages with textual payloads and a `contentType` of `text/...` or `.../json` are no longer converted to `Message<String>` for cases where the argument type of the provided `MessageHandler` can not be determined (that is, `public void handle(Message<?> message)` or `public void handle(Object payload)`).
-Furthermore, a strong argument type may not be enough to properly convert messages, so the `contentType` header may be used as a supplement by some `MessageConverters`.
+* *Additional Content-Type Negotiation Improvements*: One of the core themes for 2.0.x release was an improved content-type negotiation.
+This release introduces few more significant enhancements to introduce more consistency. One such enhancement is 
+the delegation of type conversion to MessageConverters in _all_ cases, including the ones where the target type of the handler method is not known. 
+To you (the end user) it simply means that starting with this release extending content-type negotiation via `@StreamMessageConverter` is available for all type conversion cases.
+NOTE: Keep in mind that most of the content-type work at the moment also preserves compatibility with 1.3.x version of Spring Cloud Stream, thus will be further simplified once 1.3.x line goes EOL.
 
 [[spring-cloud-stream-preface-notable-deprecations]]
 === Notable Deprecations
 
-As of version 2.0, the following items have been deprecated:
+As of version 2.1, the following items have been deprecated:
 
-* <<spring-cloud-stream-preface-deprecation-java-serialization>>
-* <<spring-cloud-stream-preface-deprecation-classes-methods>>
+- Aggregator Builder support is deprecated in favor of application composition via <<spring_cloud_function,Spring Cloud Function>> programming model.
+- As mentioned earlier we're also considering the deprecation of `spring-cloud-stream-reactive` module in favor of the adequate support already provided by <<spring_cloud_function,Spring Cloud Function>>.
 
-[[spring-cloud-stream-preface-deprecation-java-serialization]]
-==== Java Serialization (Java Native and Kryo)
-
-`JavaSerializationMessageConverter` and `KryoMessageConverter` remain for now. However, we plan to move them out of the core packages and support in the future.
-The main reason for this deprecation is to flag the issue that type-based, language-specific serialization could cause in distributed environments, where Producers and Consumers may depend on different JVM versions or have different versions of supporting libraries (that is, Kryo).
-We also wanted to draw the attention to the fact that Consumers and Producers may not even be Java-based, so polyglot style serialization (i.e., JSON) is better suited.
-
-[[spring-cloud-stream-preface-deprecation-classes-methods]]
-==== Deprecated Classes and Methods
-The following is a quick summary of notable deprecations. See the corresponding {spring-cloud-stream-javadoc-current}[javadoc] for more details.
-
-* `SharedChannelRegistry`. Use `SharedBindingTargetRegistry`.
-* `Bindings`.
-Beans qualified by it are already uniquely identified by their type -- for example, provided `Source`, `Processor`, or custom bindings:
-[source,java]
-----
-public interface Sample {
-	String OUTPUT = "sampleOutput";
-
-	@Output(Sample.OUTPUT)
-	MessageChannel output();
-}
-----
-* `HeaderMode.raw`. Use `none`, `headers` or `embeddedHeaders`
-* `ProducerProperties.partitionKeyExtractorClass` in favor of `partitionKeyExtractorName` and `ProducerProperties.partitionSelectorClass` in favor of `partitionSelectorName`.
-This change ensures that both components are Spring configured and managed and are referenced in a Spring-friendly way.
-* `BinderAwareRouterBeanPostProcessor`. While the component remains, it is no longer a `BeanPostProcessor` and will be renamed in the future.
-* `BinderProperties.setEnvironment(Properties environment)`. Use `BinderProperties.setEnvironment(Map<String, Object> environment)`.
+== Notes on migrating from 1.x to 2.x?
+- Due to the improvements in content-type negotiation, the `originalContentType` header is not used (ignored) since 2.x and only exists for maintaining compatibility with 1.x versions
+- Introduction of `@StreamRetryTemplate` qualifier. While configuring custom instance of the `RetryTemplate` and to avoid conflicts you must qualify the instance of such `RetryTemplate` with this qualifier. See <<Retry Template, Retry Template>> for more details.

@@ -2461,6 +2461,116 @@ The bound interface is injected into the test so that we can have access to both
 We send a message on the input channel, and we use the `MessageCollector` provided by Spring Cloud Stream's test support to capture that the message has been sent to the output channel as a result.
 Once we have received the message, we can validate that the component functions correctly.
 
+[[spring_integration_test_binder]]
+=== Spring Integration test binder
+Current test binder was specifically designed to facilitate _unit testing_ and thus bypasses some of the core functionality of the binder API and strictly concentrates on validating user code. 
+While such light-weight approach is sufficient for most cases, it usually requires additional _integration testing_ with real binders (e.g., Rabbit, Kafka etc). 
+
+To begin bridging the gap between _unit_ and _integration_ testing we've developed a new test binder which uses https://spring.io/projects/spring-integration[Spring Integration] framework
+as an in-JVM Message Broker essentially giving you the best of both worlds - a real binder without the networking.
+
+Also, this binder is implemented as part of the 
+`spring-cloud-stream` module, however it does require some additional Maven/Gradle entries before you can use it. So let's take a look.
+
+To enable Spring Integration Test Binder you must 
+
+- Add required dependencies 
+- Remove the dependency for `spring-cloud-stream-test-support`
+
+***Add required dependencies***
+
+Below is the example of the required Maven POM entries which could be easily retrofitted into Gradle. 
+
+[source,xml]
+----
+<dependency>
+    <groupId>org.springframework.cloud</groupId>
+    <artifactId>spring-cloud-stream</artifactId>
+    <version>${spring.cloud.strea.version}</version>
+    <type>test-jar</type>
+    <scope>test</scope>
+    <classifier>test-binder</classifier>
+</dependency>
+. . .
+<plugins>
+    <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <executions>
+	    <execution>
+		<configuration>
+		    <includes>
+			 <include>**/integration/*</include>
+		    </includes>
+		    <classifier>test-binder</classifier>
+		</configuration>
+                <goals>
+                    <goal>test-jar</goal>
+                </goals>
+            </execution>
+        </executions>
+    </plugin>
+</plugins>
+----
+
+***Remove the dependency for `spring-cloud-stream-test-support`***
+
+To avoid conflicts with the existing test binder you must eremove the following entry
+
+[source,xml]
+----
+<dependency>
+	<groupId>org.springframework.cloud</groupId>
+	<artifactId>spring-cloud-stream-test-support</artifactId>
+	<scope>test</scope>
+</dependency>
+----
+
+Now you can test your microservice as a simple unit test
+
+
+[source,java]
+----
+@SpringBootApplication
+@EnableBinding(Processor.class)
+public class DemoTestBinderApplication {
+
+	public static void main(String[] args) {
+		SpringApplication.run(DemoTestBinderApplication.class, args);
+	}
+
+	@StreamListener(Processor.INPUT)
+	@SendTo(Processor.OUTPUT)
+	public String echo(String value) {
+		return value;
+	}
+}
+
+. . .
+
+@Test
+public void sampleTest() {
+	ApplicationContext context = new SpringApplicationBuilder(
+					TestChannelBinderConfiguration.class, 
+					DemoTestBinderApplication.class)
+				.web(WebApplicationType.NONE).run();
+	InputDestination source = context.getBean(InputDestination.class);
+	OutputDestination target = context.getBean(OutputDestination.class);
+	source.send(new GenericMessage<byte[]>("hello".getBytes()));
+	System.out.println("Result: " + new String(target.receive().getPayload()));
+}
+----
+
+In the above you simply create an ApplicationContext with yoru configuration (your application) while additionally supplying `TestChannelBinderConfiguration` 
+provided by the framework. Then you access `InputDestination` and `OutputDestination` beans to send/receive messages. In the context of this binder
+`InputDestination` and `OutputDestination` emulate remote destinations such as Rabbit _exchange/queue_ or Kafka _topic_.
+
+In the future we plan to simplify the API.
+
+NOTE: In its current state Spring Integration Test Binder only supports the three bindings provided by the framework (Source, Processor, Sink) specifically to promote 
+light-weight microservices architectures rather then general purpose messaging applications.
+ 
+
 === Disabling the Test Binder Autoconfiguration
 
 The intent behind the test binder superseding all the other binders on the classpath is to make it easy to test your applications without making changes to your production dependencies.
