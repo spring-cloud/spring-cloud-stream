@@ -120,6 +120,7 @@ public class TestChannelBinder extends AbstractMessageChannelBinder<ConsumerProp
 	 * Set a delegate {@link MessageSource} for pollable consumers.
 	 * @param messageSourceDelegate the delegate.
 	 */
+	@Autowired(required=false)
 	public void setMessageSourceDelegate(MessageSource<byte[]> messageSourceDelegate) {
 		this.messageSourceDelegate = messageSourceDelegate;
 	}
