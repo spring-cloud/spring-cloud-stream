@@ -78,9 +78,9 @@ public class KafkaStreamsBinderSupportAutoConfiguration {
 		for (Map.Entry<String, BinderConfiguration> entry : binderConfigurations.entrySet()) {
 			final BinderConfiguration binderConfiguration = entry.getValue();
 			final String binderType = binderConfiguration.getBinderType();
-			if (binderType.equals(KSTREAM_BINDER_TYPE) ||
+			if (binderType != null && (binderType.equals(KSTREAM_BINDER_TYPE) ||
 					binderType.equals(KTABLE_BINDER_TYPE) ||
-					binderType.equals(GLOBALKTABLE_BINDER_TYPE)) {
+					binderType.equals(GLOBALKTABLE_BINDER_TYPE))) {
 				Map<String, Object> binderProperties = new HashMap<>();
 				this.flatten(null, binderConfiguration.getProperties(), binderProperties);
 				environment.getPropertySources().addFirst(new MapPropertySource("kafkaStreamsBinderEnv", binderProperties));
