@@ -60,6 +60,7 @@ import org.springframework.util.MimeTypeUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -923,6 +924,131 @@ public class ContentTypeTckTests {
 				return ((String)payload).getBytes(StandardCharsets.UTF_8);
 			}
 
+		}
+	}
+	//======
+	@Test
+	public void testWithMapInputParameter() {
+		ApplicationContext context = new SpringApplicationBuilder(MapInputConfiguration.class)
+				.web(WebApplicationType.NONE)
+				.run("--spring.jmx.enabled=false");
+		InputDestination source = context.getBean(InputDestination.class);
+		OutputDestination target = context.getBean(OutputDestination.class);
+		String jsonPayload = "{\"name\":\"oleg\"}";
+		source.send(new GenericMessage<>(jsonPayload.getBytes()));
+		Message<byte[]> outputMessage = target.receive();
+		assertEquals(jsonPayload, new String(outputMessage.getPayload(), StandardCharsets.UTF_8));
+	}
+	
+	@EnableBinding(Processor.class)
+	@Import(TestChannelBinderConfiguration.class)
+	@EnableAutoConfiguration
+	public static class MapInputConfiguration {
+		@StreamListener(Processor.INPUT)
+		@SendTo(Processor.OUTPUT)
+		public Map<?, ?> echo(Map<?, ?> value) throws Exception {
+			return value;
+		}
+	}
+	
+	@Test
+	public void testWithMapPayloadParameter() {
+		ApplicationContext context = new SpringApplicationBuilder(MapInputConfiguration.class)
+				.web(WebApplicationType.NONE)
+				.run("--spring.jmx.enabled=false");
+		InputDestination source = context.getBean(InputDestination.class);
+		OutputDestination target = context.getBean(OutputDestination.class);
+		String jsonPayload = "{\"name\":\"oleg\"}";
+		source.send(new GenericMessage<>(jsonPayload.getBytes()));
+		Message<byte[]> outputMessage = target.receive();
+		assertEquals(jsonPayload, new String(outputMessage.getPayload(), StandardCharsets.UTF_8));
+	}
+	
+	@EnableBinding(Processor.class)
+	@Import(TestChannelBinderConfiguration.class)
+	@EnableAutoConfiguration
+	public static class MapPayloadConfiguration {
+		@StreamListener(Processor.INPUT)
+		@SendTo(Processor.OUTPUT)
+		public Map<?, ?> echo(Message<Map<?, ?>> value) throws Exception {
+			return value.getPayload();
+		}
+	}
+	
+	@Test
+	public void testWithListInputParameter() {
+		ApplicationContext context = new SpringApplicationBuilder(ListInputConfiguration.class)
+				.web(WebApplicationType.NONE)
+				.run("--spring.jmx.enabled=false");
+		InputDestination source = context.getBean(InputDestination.class);
+		OutputDestination target = context.getBean(OutputDestination.class);
+		String jsonPayload = "[\"foo\",\"bar\"]";
+		source.send(new GenericMessage<>(jsonPayload.getBytes()));
+		Message<byte[]> outputMessage = target.receive();
+		assertEquals(jsonPayload, new String(outputMessage.getPayload(), StandardCharsets.UTF_8));
+	}
+	
+	@EnableBinding(Processor.class)
+	@Import(TestChannelBinderConfiguration.class)
+	@EnableAutoConfiguration
+	public static class ListInputConfiguration {
+		@StreamListener(Processor.INPUT)
+		@SendTo(Processor.OUTPUT)
+		public List<?> echo(List<?> value) throws Exception {
+			return value;
+		}
+	}
+	
+	
+	@Test
+	public void testWithMessageHeadersInputParameter() {
+		ApplicationContext context = new SpringApplicationBuilder(MessageHeadersInputConfiguration.class)
+				.web(WebApplicationType.NONE)
+				.run("--spring.jmx.enabled=false");
+		InputDestination source = context.getBean(InputDestination.class);
+		OutputDestination target = context.getBean(OutputDestination.class);
+		String jsonPayload = "{\"name\":\"oleg\"}";
+		source.send(new GenericMessage<>(jsonPayload.getBytes()));
+		Message<byte[]> outputMessage = target.receive();
+		assertNotEquals(jsonPayload, new String(outputMessage.getPayload(), StandardCharsets.UTF_8));
+		assertTrue(outputMessage.getHeaders().containsKey(MessageHeaders.ID));
+		assertTrue(outputMessage.getHeaders().containsKey(MessageHeaders.CONTENT_TYPE));
+	}
+	
+	@EnableBinding(Processor.class)
+	@Import(TestChannelBinderConfiguration.class)
+	@EnableAutoConfiguration
+	public static class MessageHeadersInputConfiguration {
+		@StreamListener(Processor.INPUT)
+		@SendTo(Processor.OUTPUT)
+		public Map<?, ?> echo(MessageHeaders value) throws Exception {
+			return value;
+		}
+	}
+	
+	@Test
+	public void testWithTypelessInputParameterAndOctetStream() {
+		ApplicationContext context = new SpringApplicationBuilder(TypelessPayloadConfiguration.class)
+				.web(WebApplicationType.NONE)
+				.run("--spring.jmx.enabled=false");
+		InputDestination source = context.getBean(InputDestination.class);
+		OutputDestination target = context.getBean(OutputDestination.class);
+		String jsonPayload = "[\"foo\",\"bar\"]";
+		source.send(MessageBuilder.withPayload(jsonPayload.getBytes())
+				.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.APPLICATION_OCTET_STREAM).build());
+		Message<byte[]> outputMessage = target.receive();
+		assertEquals(jsonPayload, new String(outputMessage.getPayload(), StandardCharsets.UTF_8));
+	}
+	
+	@EnableBinding(Processor.class)
+	@Import(TestChannelBinderConfiguration.class)
+	@EnableAutoConfiguration
+	public static class TypelessPayloadConfiguration {
+		@StreamListener(Processor.INPUT)
+		@SendTo(Processor.OUTPUT)
+		public Object echo(Object value) throws Exception {
+			System.out.println(value);
+			return value;
 		}
 	}
 }

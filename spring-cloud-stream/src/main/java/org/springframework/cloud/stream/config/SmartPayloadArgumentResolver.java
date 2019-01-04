@@ -19,6 +19,7 @@ package org.springframework.cloud.stream.config;
 import org.springframework.core.MethodParameter;
 import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.converter.MessageConversionException;
 import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.messaging.converter.SmartMessageConverter;
@@ -64,6 +65,7 @@ class SmartPayloadArgumentResolver extends PayloadArgumentResolver {
 	@Override
 	public boolean supportsParameter(MethodParameter parameter) {
 		return (!Message.class.isAssignableFrom(parameter.getParameterType()) 
+				&& !MessageHeaders.class.isAssignableFrom(parameter.getParameterType()) 
 				&& !parameter.hasParameterAnnotation(Header.class) 
 				&& !parameter.hasParameterAnnotation(Headers.class));
 	}
