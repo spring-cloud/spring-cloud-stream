@@ -17,6 +17,7 @@
 package org.springframework.cloud.stream.config;
 
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -62,6 +63,7 @@ import org.springframework.messaging.handler.annotation.support.HeadersMethodArg
 import org.springframework.messaging.handler.annotation.support.MessageHandlerMethodFactory;
 import org.springframework.messaging.handler.invocation.HandlerMethodArgumentResolver;
 import org.springframework.util.ClassUtils;
+import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.Validator;
 
@@ -188,6 +190,13 @@ public class BinderFactoryConfiguration {
 		resolvers.add(new HeaderMethodArgumentResolver(null, clbf));
 		resolvers.add(new HeadersMethodArgumentResolver());
 		resolvers.addAll(ahmar.getResolvers());
+		
+		// modify HandlerMethodArgumentResolversHolder
+		Field field = ReflectionUtils.findField(HandlerMethodArgumentResolversHolder.class, "resolvers");
+		field.setAccessible(true);
+		((List<?>) ReflectionUtils.getField(field, ahmar)).clear();	
+		resolvers.forEach(ahmar::addResolver);
+		// --
 		
 		messageHandlerMethodFactory.setArgumentResolvers(resolvers);
 		messageHandlerMethodFactory.setValidator(validator);

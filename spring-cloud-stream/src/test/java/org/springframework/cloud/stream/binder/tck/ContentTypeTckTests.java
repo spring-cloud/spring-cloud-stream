@@ -1051,4 +1051,28 @@ public class ContentTypeTckTests {
 			return value;
 		}
 	}
+	
+	@Test
+	public void testWithTypelessInputParameterAndServiceActivator() {
+		ApplicationContext context = new SpringApplicationBuilder(TypelessPayloadConfigurationSA.class)
+				.web(WebApplicationType.NONE)
+				.run("--spring.jmx.enabled=false");
+		InputDestination source = context.getBean(InputDestination.class);
+		OutputDestination target = context.getBean(OutputDestination.class);
+		String jsonPayload = "[\"foo\",\"bar\"]";
+		source.send(MessageBuilder.withPayload(jsonPayload.getBytes()).build());
+		Message<byte[]> outputMessage = target.receive();
+		assertEquals(jsonPayload, new String(outputMessage.getPayload(), StandardCharsets.UTF_8));
+	}
+	
+	@EnableBinding(Processor.class)
+	@Import(TestChannelBinderConfiguration.class)
+	@EnableAutoConfiguration
+	public static class TypelessPayloadConfigurationSA {
+		@ServiceActivator(inputChannel=Processor.INPUT, outputChannel=Processor.OUTPUT)
+		public Object echo(Object value) throws Exception {
+			System.out.println(value);
+			return value;
+		}
+	}
 }
