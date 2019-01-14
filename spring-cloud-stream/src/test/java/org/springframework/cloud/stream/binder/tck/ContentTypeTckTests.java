@@ -26,6 +26,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Test;
 
 import org.springframework.boot.WebApplicationType;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.StreamListener;
@@ -612,8 +613,6 @@ public class ContentTypeTckTests {
 
 	@EnableBinding(Processor.class)
 	@Import(TestChannelBinderConfiguration.class)
-<<<<<<< HEAD
-=======
 	@EnableAutoConfiguration
 	public static class TypelessToMessageStreamListener {
 		@StreamListener(Processor.INPUT)
@@ -637,7 +636,6 @@ public class ContentTypeTckTests {
 	@EnableBinding(Processor.class)
 	@Import(TestChannelBinderConfiguration.class)
 	@EnableAutoConfiguration
->>>>>>> f6381d72... GH-1533 Fixed regression in ObjectStringMessageConverter
 	public static class ByteArrayToByteArrayStreamListener {
 		@StreamListener(Processor.INPUT)
 		@SendTo(Processor.OUTPUT)
