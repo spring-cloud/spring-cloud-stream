@@ -190,8 +190,7 @@ public class StreamToTableJoinIntegrationTests {
 
 			assertThat(count == expectedClicksPerRegion.size()).isTrue();
 			assertThat(actualClicksPerRegion).hasSameElementsAs(expectedClicksPerRegion);
-		}
-		finally {
+		} finally {
 			consumer.close();
 		}
 	}
@@ -337,8 +336,7 @@ public class StreamToTableJoinIntegrationTests {
 
 			assertThat(count).isEqualTo(expectedClicksPerRegion.size());
 			assertThat(actualClicksPerRegion).hasSameElementsAs(expectedClicksPerRegion);
-		}
-		finally {
+		} finally {
 			consumer.close();
 		}
 	}

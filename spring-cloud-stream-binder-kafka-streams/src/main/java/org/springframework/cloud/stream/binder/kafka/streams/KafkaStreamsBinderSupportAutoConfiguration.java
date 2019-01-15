@@ -34,10 +34,12 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.stream.binder.BinderConfiguration;
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsBinderConfigurationProperties;
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsExtendedBindingProperties;
 import org.springframework.cloud.stream.binder.kafka.streams.serde.CompositeNonNativeSerde;
+import org.springframework.cloud.stream.binding.BindableProxyFactory;
 import org.springframework.cloud.stream.binding.BindingService;
 import org.springframework.cloud.stream.binding.StreamListenerResultAdapter;
 import org.springframework.cloud.stream.config.BinderProperties;
@@ -236,15 +238,23 @@ public class KafkaStreamsBinderSupportAutoConfiguration {
 				cleanupConfig.getIfUnique());
 	}
 
+	public KafkaStreamsFunctionProcessor kafkaStreamsFunctionProcessor(BindingServiceProperties bindingServiceProperties, KafkaStreamsExtendedBindingProperties kafkaStreamsExtendedBindingProperties,
+																		KeyValueSerdeResolver keyValueSerdeResolver, KafkaStreamsBindingInformationCatalogue kafkaStreamsBindingInformationCatalogue,
+																		KafkaStreamsMessageConversionDelegate kafkaStreamsMessageConversionDelegate,
+																		ObjectProvider<CleanupConfig> cleanupConfig,
+																		FunctionCatalog functionCatalog, BindableProxyFactory bindableProxyFactory){
+		return new KafkaStreamsFunctionProcessor(bindingServiceProperties, kafkaStreamsExtendedBindingProperties,
+				keyValueSerdeResolver, kafkaStreamsBindingInformationCatalogue, kafkaStreamsMessageConversionDelegate,
+				cleanupConfig.getIfUnique(), functionCatalog, bindableProxyFactory);
+	}
+
 	@Bean
-	public KafkaStreamsMessageConversionDelegate messageConversionDelegate(
-			CompositeMessageConverterFactory compositeMessageConverterFactory,
-			SendToDlqAndContinue sendToDlqAndContinue,
-			KafkaStreamsBindingInformationCatalogue KafkaStreamsBindingInformationCatalogue,
-			KafkaStreamsBinderConfigurationProperties binderConfigurationProperties) {
-		return new KafkaStreamsMessageConversionDelegate(compositeMessageConverterFactory,
-				sendToDlqAndContinue, KafkaStreamsBindingInformationCatalogue,
-				binderConfigurationProperties);
+	public KafkaStreamsMessageConversionDelegate messageConversionDelegate(CompositeMessageConverterFactory compositeMessageConverterFactory,
+																		SendToDlqAndContinue sendToDlqAndContinue,
+																		KafkaStreamsBindingInformationCatalogue KafkaStreamsBindingInformationCatalogue,
+																		KafkaStreamsBinderConfigurationProperties binderConfigurationProperties) {
+		return new KafkaStreamsMessageConversionDelegate(compositeMessageConverterFactory, sendToDlqAndContinue,
+				KafkaStreamsBindingInformationCatalogue, binderConfigurationProperties);
 	}
 
 	@Bean

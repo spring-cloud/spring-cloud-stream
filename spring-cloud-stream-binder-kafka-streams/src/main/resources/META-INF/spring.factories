@@ -1,5 +1,9 @@
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
   org.springframework.cloud.stream.binder.kafka.streams.KafkaStreamsBinderSupportAutoConfiguration,\
-  org.springframework.cloud.stream.binder.kafka.streams.KafkaStreamsApplicationSupportAutoConfiguration
+  org.springframework.cloud.stream.binder.kafka.streams.KafkaStreamsApplicationSupportAutoConfiguration,\
+  org.springframework.cloud.stream.binder.kafka.streams.function.KafkaStreamsFunctionAutoConfiguration
+
+org.springframework.cloud.function.context.WrapperDetector=\
+  org.springframework.cloud.stream.binder.kafka.streams.function.KafkaStreamsFunctionWrapperDetector
 
   
