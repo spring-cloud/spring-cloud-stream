@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 the original author or authors.
+ * Copyright 2018-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,6 +61,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * This test validates proper function binding for applications where EnableBinding is declared.
  *
  * @author Oleg Zhurakousky
+ * @author Artem Bilan
  */
 public class GreenfieldFunctionEnableBindingTests {
 
@@ -110,10 +111,14 @@ public class GreenfieldFunctionEnableBindingTests {
 	@Test
 	public void testHttpEndpoint() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
-			TestChannelBinderConfiguration.getCompleteConfiguration(HttpInboundEndpoint.class)).web(
-			WebApplicationType.SERVLET).run("--spring.cloud.stream.function.definition=upperCase",  "--spring.jmx.enabled=false")) {
+			TestChannelBinderConfiguration.getCompleteConfiguration(HttpInboundEndpoint.class))
+				.web(WebApplicationType.SERVLET)
+				.run("--spring.cloud.stream.function.definition=upperCase",
+						"--spring.jmx.enabled=false",
+						"--server.port=0")) {
 			TestRestTemplate restTemplate = new TestRestTemplate();
-			restTemplate.postForLocation("http://localhost:8080", "hello");
+			restTemplate.postForLocation(
+					"http://localhost:" + context.getEnvironment().getProperty("local.server.port"), "hello");
 
 			OutputDestination target = context.getBean(OutputDestination.class);
 			String result = new String(target.receive(10000).getPayload());
@@ -139,7 +144,6 @@ public class GreenfieldFunctionEnableBindingTests {
 			Foo result = mapper.readValue(payload, Foo.class);
 
 			assertThat(result.getBar()).isEqualTo("bar");
-
 		}
 	}
 
@@ -147,24 +151,29 @@ public class GreenfieldFunctionEnableBindingTests {
 	@EnableAutoConfiguration
 	@EnableBinding(Source.class)
 	public static class SourceFromSupplier {
+
 		@Bean
 		public Supplier<Date> date() {
 			return () -> new Date(12345L);
 		}
+
 	}
 
 	@EnableAutoConfiguration
 	@EnableBinding(Processor.class)
 	public static class ProcessorFromFunction {
+
 		@Bean
 		public Function<String, String> toUpperCase() {
-			return s -> s.toUpperCase();
+			return String::toUpperCase;
 		}
+
 	}
 
 	@EnableAutoConfiguration
 	@EnableBinding(Sink.class)
 	public static class SinkFromConsumer {
+
 		@Bean
 		public PollableChannel result() {
 			return new QueueChannel();
@@ -177,6 +186,7 @@ public class GreenfieldFunctionEnableBindingTests {
 				System.out.println(s);
 			};
 		}
+
 	}
 
 	@EnableAutoConfiguration
@@ -188,7 +198,7 @@ public class GreenfieldFunctionEnableBindingTests {
 
 		@Bean
 		public Function<String, String> upperCase() {
-			return s -> s.toUpperCase();
+			return String::toUpperCase;
 		}
 
 		@Bean
@@ -200,6 +210,7 @@ public class GreenfieldFunctionEnableBindingTests {
 					.requestChannel(this.source.output());
 			return httpRequestHandler.get();
 		}
+
 	}
 
 	@EnableAutoConfiguration
@@ -225,9 +236,11 @@ public class GreenfieldFunctionEnableBindingTests {
 				return MessageBuilder.withPayload(foo).setHeader("foo","foo").build();
 			};
 		}
+
 	}
 
 	static class Foo {
+
 		String bar;
 
 		public String getBar() {
@@ -238,4 +251,5 @@ public class GreenfieldFunctionEnableBindingTests {
 			this.bar = bar;
 		}
 	}
+
 }
