@@ -1208,6 +1208,16 @@ environment:
            sources: com.acme.config.MyCustomBinderConfiguration
 ----
 
+To activate some specific profile for the particular binder environment, you should use a `spring.profiles.active` property:
+
+[source, yaml]
+----
+environment:
+    spring:
+        profiles:
+           active: myBinderProfile
+----
+
 === Binding visualization and control
 Since version 2.0, Spring Cloud Stream supports visualization and control of the Bindings through Actuator endpoints.
 
