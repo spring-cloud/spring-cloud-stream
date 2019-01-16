@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2018 the original author or authors.
+ * Copyright 2013-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,6 +38,7 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.rabbit.core.support.BatchingStrategy;
 import org.springframework.amqp.rabbit.core.support.SimpleBatchingStrategy;
 import org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer;
+import org.springframework.amqp.rabbit.listener.DirectMessageListenerContainer;
 import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
 import org.springframework.amqp.rabbit.listener.exception.ListenerExecutionFailedException;
 import org.springframework.amqp.rabbit.retry.RejectAndDontRequeueRecoverer;
@@ -51,6 +52,7 @@ import org.springframework.amqp.support.postprocessor.DelegatingDecompressingPos
 import org.springframework.amqp.support.postprocessor.GZipPostProcessor;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.boot.autoconfigure.amqp.RabbitProperties;
+import org.springframework.boot.autoconfigure.amqp.RabbitProperties.ContainerType;
 import org.springframework.boot.autoconfigure.amqp.RabbitProperties.Retry;
 import org.springframework.cloud.stream.binder.AbstractMessageChannelBinder;
 import org.springframework.cloud.stream.binder.BinderHeaders;
@@ -70,11 +72,11 @@ import org.springframework.cloud.stream.provisioning.ConsumerDestination;
 import org.springframework.cloud.stream.provisioning.ProducerDestination;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.core.task.SimpleAsyncTaskExecutor;
+import org.springframework.expression.Expression;
+import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.integration.StaticMessageHeaderAccessor;
 import org.springframework.integration.acks.AcknowledgmentCallback;
 import org.springframework.integration.acks.AcknowledgmentCallback.Status;
-import org.springframework.expression.Expression;
-import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.integration.amqp.inbound.AmqpInboundChannelAdapter;
 import org.springframework.integration.amqp.inbound.AmqpMessageSource;
 import org.springframework.integration.amqp.outbound.AmqpOutboundEndpoint;
@@ -389,21 +391,23 @@ public class RabbitMessageChannelBinder
 		Assert.state(!HeaderMode.embeddedHeaders.equals(properties.getHeaderMode()),
 				"the RabbitMQ binder does not support embedded headers since RabbitMQ supports headers natively");
 		String destination = consumerDestination.getName();
-		SimpleMessageListenerContainer listenerContainer = new SimpleMessageListenerContainer(
-				this.connectionFactory);
+		boolean directContainer = properties.getExtension().getContainerType().equals(ContainerType.DIRECT);
+		AbstractMessageListenerContainer listenerContainer = directContainer
+				? new DirectMessageListenerContainer(this.connectionFactory)
+				: new SimpleMessageListenerContainer(this.connectionFactory);
 		listenerContainer.setAcknowledgeMode(properties.getExtension().getAcknowledgeMode());
 		listenerContainer.setChannelTransacted(properties.getExtension().isTransacted());
 		listenerContainer.setDefaultRequeueRejected(properties.getExtension().isRequeueRejected());
 		int concurrency = properties.getConcurrency();
 		concurrency = concurrency > 0 ? concurrency : 1;
-		listenerContainer.setConcurrentConsumers(concurrency);
-		int maxConcurrency = properties.getExtension().getMaxConcurrency();
-		if (maxConcurrency > concurrency) {
-			listenerContainer.setMaxConcurrentConsumers(maxConcurrency);
+		if (directContainer) {
+			setDMLCProperties(properties, (DirectMessageListenerContainer) listenerContainer, concurrency);
+		}
+		else {
+			setSMLCProperties(properties, (SimpleMessageListenerContainer) listenerContainer, concurrency);
 		}
 		listenerContainer.setPrefetchCount(properties.getExtension().getPrefetch());
 		listenerContainer.setRecoveryInterval(properties.getExtension().getRecoveryInterval());
-		listenerContainer.setTxSize(properties.getExtension().getTxSize());
 		listenerContainer.setTaskExecutor(new SimpleAsyncTaskExecutor(consumerDestination.getName() + "-"));
 		String[] queues = StringUtils.tokenizeToStringArray(destination, ",", true, true);
 		listenerContainer.setQueueNames(queues);
@@ -412,9 +416,6 @@ public class RabbitMessageChannelBinder
 				RabbitMessageChannelBinder.inboundMessagePropertiesConverter);
 		listenerContainer.setExclusive(properties.getExtension().isExclusive());
 		listenerContainer.setMissingQueuesFatal(properties.getExtension().getMissingQueuesFatal());
-		if (properties.getExtension().getQueueDeclarationRetries() != null) {
-			listenerContainer.setDeclarationRetries(properties.getExtension().getQueueDeclarationRetries());
-		}
 		if (properties.getExtension().getFailedDeclarationRetryInterval() != null) {
 			listenerContainer.setFailedDeclarationRetryInterval(
 					properties.getExtension().getFailedDeclarationRetryInterval());
@@ -450,6 +451,35 @@ public class RabbitMessageChannelBinder
 		}
 		adapter.setMessageConverter(passThoughConverter);
 		return adapter;
+	}
+
+	private void setSMLCProperties(ExtendedConsumerProperties<RabbitConsumerProperties> properties,
+			SimpleMessageListenerContainer listenerContainer, int concurrency) {
+
+		listenerContainer.setConcurrentConsumers(concurrency);
+		int maxConcurrency = properties.getExtension().getMaxConcurrency();
+		if (maxConcurrency > concurrency) {
+			listenerContainer.setMaxConcurrentConsumers(maxConcurrency);
+		}
+		listenerContainer.setTxSize(properties.getExtension().getTxSize());
+		if (properties.getExtension().getQueueDeclarationRetries() != null) {
+			listenerContainer.setDeclarationRetries(properties.getExtension().getQueueDeclarationRetries());
+		}
+	}
+
+	private void setDMLCProperties(ExtendedConsumerProperties<RabbitConsumerProperties> properties,
+			DirectMessageListenerContainer listenerContainer, int concurrency) {
+
+		listenerContainer.setConsumersPerQueue(concurrency);
+		if (properties.getExtension().getMaxConcurrency() > concurrency) {
+			this.logger.warn("maxConcurrency is not supported with a direct container type");
+		}
+		if (properties.getExtension().getTxSize() > 1) {
+			this.logger.warn("txSize is not supported with a direct container type");
+		}
+		if (properties.getExtension().getQueueDeclarationRetries() != null) {
+			this.logger.warn("queueDeclarationRetries is not supported with a direct container type");
+		}
 	}
 
 	@Override

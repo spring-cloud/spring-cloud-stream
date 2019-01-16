@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2018 the original author or authors.
+ * Copyright 2013-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,10 +51,10 @@ import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.connection.RabbitUtils;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
-import org.springframework.amqp.rabbit.core.RabbitManagementTemplate;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer;
 import org.springframework.amqp.rabbit.listener.AsyncConsumerStartedEvent;
+import org.springframework.amqp.rabbit.listener.DirectMessageListenerContainer;
 import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
 import org.springframework.amqp.rabbit.retry.RepublishMessageRecoverer;
 import org.springframework.amqp.support.AmqpHeaders;
@@ -63,6 +63,7 @@ import org.springframework.amqp.utils.test.TestUtils;
 import org.springframework.beans.DirectFieldAccessor;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.boot.autoconfigure.amqp.RabbitProperties;
+import org.springframework.boot.autoconfigure.amqp.RabbitProperties.ContainerType;
 import org.springframework.cloud.stream.binder.BinderException;
 import org.springframework.cloud.stream.binder.BinderHeaders;
 import org.springframework.cloud.stream.binder.Binding;
@@ -186,10 +187,14 @@ public class RabbitBinderTests extends
 			.isTrue();
 		assertThat(TestUtils.getPropertyValue(producerBinding, "lifecycle.amqpTemplate.messageConverter")
 				.getClass().getName()).contains("Passthrough");
+		ExtendedConsumerProperties<RabbitConsumerProperties> consumerProps = createConsumerProperties();
+		consumerProps.getExtension().setContainerType(ContainerType.DIRECT);
 		Binding<MessageChannel> consumerBinding = binder.bindConsumer("bad.0", "test", moduleInputChannel,
-				createConsumerProperties());
-		assertThat(TestUtils.getPropertyValue(consumerBinding, "lifecycle.messageConverter")
-				.getClass().getName()).contains("Passthrough");
+				consumerProps);
+		assertThat(TestUtils.getPropertyValue(consumerBinding, "lifecycle.messageConverter").getClass().getName())
+				.contains("Passthrough");
+		assertThat(TestUtils.getPropertyValue(consumerBinding, "lifecycle.messageListenerContainer"))
+				.isInstanceOf(DirectMessageListenerContainer.class);
 		Message<?> message = MessageBuilder.withPayload("bad".getBytes()).setHeader(MessageHeaders.CONTENT_TYPE, "foo/bar").build();
 		final CountDownLatch latch = new CountDownLatch(3);
 		moduleInputChannel.subscribe(new MessageHandler() {
@@ -363,6 +368,7 @@ public class RabbitBinderTests extends
 		assertThat(endpoint.isRunning()).isFalse();
 	}
 
+	@SuppressWarnings("deprecation")
 	@Test
 	public void testConsumerPropertiesWithUserInfrastructureNoBind() throws Exception {
 		RabbitAdmin admin = new RabbitAdmin(this.rabbitAvailableRule.getResource());
@@ -386,7 +392,8 @@ public class RabbitBinderTests extends
 		assertThat(container.isRunning()).isTrue();
 		consumerBinding.unbind();
 		assertThat(container.isRunning()).isFalse();
-		RabbitManagementTemplate rmt = new RabbitManagementTemplate();
+		org.springframework.amqp.rabbit.core.RabbitManagementTemplate rmt =
+				new org.springframework.amqp.rabbit.core.RabbitManagementTemplate();
 		List<org.springframework.amqp.core.Binding> bindings = rmt.getBindingsForExchange("/", exchange.getName());
 		assertThat(bindings.size()).isEqualTo(1);
 	}
@@ -410,6 +417,7 @@ public class RabbitBinderTests extends
 		assertThat(container.isRunning()).isFalse();
 	}
 
+	@SuppressWarnings("deprecation")
 	@Test
 	public void testConsumerPropertiesWithUserInfrastructureCustomExchangeAndRK() throws Exception {
 		RabbitTestBinder binder = getBinder();
@@ -429,7 +437,8 @@ public class RabbitBinderTests extends
 		consumerBinding.unbind();
 		assertThat(container.isRunning()).isFalse();
 		assertThat(container.getQueueNames()[0]).isEqualTo(group);
-		RabbitManagementTemplate rmt = new RabbitManagementTemplate();
+		org.springframework.amqp.rabbit.core.RabbitManagementTemplate rmt =
+				new org.springframework.amqp.rabbit.core.RabbitManagementTemplate();
 		List<org.springframework.amqp.core.Binding> bindings = rmt.getBindingsForExchange("/", "propsUser2");
 		int n = 0;
 		while (n++ < 100 && bindings == null || bindings.size() < 1) {
@@ -457,6 +466,7 @@ public class RabbitBinderTests extends
 		assertThat(exchange.isAutoDelete()).isEqualTo(false);
 	}
 
+	@SuppressWarnings("deprecation")
 	@Test
 	public void testConsumerPropertiesWithUserInfrastructureCustomQueueArgs() throws Exception {
 		RabbitTestBinder binder = getBinder();
@@ -496,7 +506,8 @@ public class RabbitBinderTests extends
 		SimpleMessageListenerContainer container = TestUtils.getPropertyValue(endpoint, "messageListenerContainer",
 				SimpleMessageListenerContainer.class);
 		assertThat(container.isRunning()).isTrue();
-		RabbitManagementTemplate rmt = new RabbitManagementTemplate();
+		org.springframework.amqp.rabbit.core.RabbitManagementTemplate rmt =
+				new org.springframework.amqp.rabbit.core.RabbitManagementTemplate();
 		List<org.springframework.amqp.core.Binding> bindings = rmt.getBindingsForExchange("/", "propsUser3");
 		int n = 0;
 		while (n++ < 100 && bindings == null || bindings.size() < 1) {
@@ -570,6 +581,7 @@ public class RabbitBinderTests extends
 		assertThat(container.isRunning()).isFalse();
 	}
 
+	@SuppressWarnings("deprecation")
 	@Test
 	public void testProducerProperties() throws Exception {
 		RabbitTestBinder binder = getBinder();
@@ -765,6 +777,7 @@ public class RabbitBinderTests extends
 		assertThat(context.containsBean(TEST_PREFIX + "dlqtest.default.dlq")).isFalse();
 	}
 
+	@SuppressWarnings("deprecation")
 	@Test
 	public void testAutoBindDLQPartionedConsumerFirst() throws Exception {
 		RabbitTestBinder binder = getBinder();
@@ -866,6 +879,7 @@ public class RabbitBinderTests extends
 		testAutoBindDLQPartionedConsumerFirstWithRepublishGuts(true);
 	}
 
+	@SuppressWarnings("deprecation")
 	private void testAutoBindDLQPartionedConsumerFirstWithRepublishGuts(final boolean withRetry) throws Exception {
 		RabbitTestBinder binder = getBinder();
 		ExtendedConsumerProperties<RabbitConsumerProperties> properties = createConsumerProperties();
@@ -992,6 +1006,7 @@ public class RabbitBinderTests extends
 		outputBinding.unbind();
 	}
 
+	@SuppressWarnings("deprecation")
 	@Test
 	public void testAutoBindDLQPartitionedProducerFirst() throws Exception {
 		RabbitTestBinder binder = getBinder();

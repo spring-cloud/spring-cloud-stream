@@ -20,6 +20,7 @@ import javax.validation.constraints.Min;
 
 import org.springframework.amqp.core.AcknowledgeMode;
 import org.springframework.amqp.core.MessageDeliveryMode;
+import org.springframework.boot.autoconfigure.amqp.RabbitProperties.ContainerType;
 import org.springframework.util.Assert;
 
 /**
@@ -113,6 +114,11 @@ public class RabbitConsumerProperties extends RabbitCommonProperties {
 	 * Room to leave for other headers after adding the stack trace to a DLQ message.
 	 */
 	private int frameMaxHeadroom = 20_000;
+
+	/**
+	 * The container type, SIMPLE or DIRECT.
+	 */
+	private ContainerType containerType = ContainerType.SIMPLE;
 
 	public boolean isTransacted() {
 		return transacted;
@@ -270,6 +276,14 @@ public class RabbitConsumerProperties extends RabbitCommonProperties {
 
 	public void setFrameMaxHeadroom(int frameMaxHeadroom) {
 		this.frameMaxHeadroom = frameMaxHeadroom;
+	}
+
+	public ContainerType getContainerType() {
+		return this.containerType;
+	}
+
+	public void setContainerType(ContainerType containerType) {
+		this.containerType = containerType;
 	}
 
 }

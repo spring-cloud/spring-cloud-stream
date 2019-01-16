@@ -139,6 +139,11 @@ Used to create the consumer tag(s); will be appended by `#n` where `n` increment
 Example: `${spring.application.name}-${spring.cloud.stream.bindings.input.group}-${spring.cloud.stream.instance-index}`.
 +
 Default: none - the broker will generate random consumer tags.
+containerType::
+Select the type of listener container to be used.
+See https://docs.spring.io/spring-amqp/reference/html/_reference.html#choose-container[Choosing a Container] in the Spring AMQP documentation for more information.
++
+Default: `simple`
 deadLetterQueueName::
 The name of the DLQ
 +
@@ -264,6 +269,7 @@ Consider using a policy instead of this setting, because using a policy allows c
 Default: `false`.
 maxConcurrency::
 The maximum number of consumers.
+Not supported when the `containerType` is `direct`.
 +
 Default: `1`.
 maxLength::
@@ -299,6 +305,7 @@ queueDeclarationRetries::
 The number of times to retry consuming from a queue if it is missing.
 Relevant only when `missingQueuesFatal` is `true`.
 Otherwise, the container keeps retrying indefinitely.
+Not supported when the `containerType` is `direct`.
 +
 Default: `3`
 queueNameGroupOnly::
@@ -337,6 +344,7 @@ Default time to live to apply to the queue when declared (in milliseconds).
 Default: `no limit`
 txSize::
 The number of deliveries between acks.
+Not supported when the `containerType` is `direct`.
 +
 Default: `1`.
 
