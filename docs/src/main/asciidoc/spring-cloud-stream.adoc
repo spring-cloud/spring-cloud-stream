@@ -1321,8 +1321,8 @@ spring:
               rabbitmq:
                 host: <host2>
 ----
-NOTE: The `environment` property of the particular binder can also be used for any Spring Boot property, 
-including this `spring.main.sources` which can be useful for adding additional configurations for the 
+NOTE: The `environment` property of the particular binder can also be used for any Spring Boot property,
+including this `spring.main.sources` which can be useful for adding additional configurations for the
 particular binders, e.g. overriding auto-configured beans.
 
 For example;
@@ -1332,6 +1332,16 @@ environment:
     spring:
         main:
            sources: com.acme.config.MyCustomBinderConfiguration
+----
+
+To activate some specific profile for the particular binder environment, you should use a `spring.profiles.active` property:
+
+[source, yaml]
+----
+environment:
+    spring:
+        profiles:
+           active: myBinderProfile
 ----
 
 === Binding visualization and control
@@ -2499,20 +2509,20 @@ When autoconfiguration is disabled, the test binder is available on the classpat
 
 [[spring_integration_test_binder]]
 === Spring Integration Test Binder
-Current test binder was specifically designed to facilitate _unit testing_ of the actual messaging components and thus bypasses some of the core functionality of the binder API. 
-While such light-weight approach is sufficient for a lot of cases, it usually requires additional _integration testing_ with real binders (e.g., Rabbit, Kafka etc). 
+Current test binder was specifically designed to facilitate _unit testing_ of the actual messaging components and thus bypasses some of the core functionality of the binder API.
+While such light-weight approach is sufficient for a lot of cases, it usually requires additional _integration testing_ with real binders (e.g., Rabbit, Kafka etc).
 
 To begin bridging the gap between _unit_ and _integration_ testing we've developed a new test binder which uses https://spring.io/projects/spring-integration[Spring Integration] framework
 as an in-JVM Message Broker essentially giving you the best of both worlds - a real binder without the networking.
 
 To enable Spring Integration Test Binder all you need is:
 
-- Add required dependencies 
+- Add required dependencies
 - Remove the dependency for `spring-cloud-stream-test-support`
 
 ***Add required dependencies***
 
-Below is the example of the required Maven POM entries which could be easily retrofitted into Gradle. 
+Below is the example of the required Maven POM entries which could be easily retrofitted into Gradle.
 
 [source,xml]
 ----
@@ -2584,7 +2594,7 @@ public class DemoTestBinderApplication {
 @Test
 public void sampleTest() {
 	ApplicationContext context = new SpringApplicationBuilder(
-					TestChannelBinderConfiguration.class, 
+					TestChannelBinderConfiguration.class,
 					DemoTestBinderApplication.class)
 				.web(WebApplicationType.NONE).run();
 	InputDestination source = context.getBean(InputDestination.class);
@@ -2594,20 +2604,20 @@ public void sampleTest() {
 }
 ----
 
-In the above you simply create an ApplicationContext with your configuration (your application) while additionally supplying `TestChannelBinderConfiguration` 
+In the above you simply create an ApplicationContext with your configuration (your application) while additionally supplying `TestChannelBinderConfiguration`
 provided by the framework. Then you access `InputDestination` and `OutputDestination` beans to send/receive messages. In the context of this binder
 `InputDestination` and `OutputDestination` emulate remote destinations such as Rabbit _exchange/queue_ or Kafka _topic_.
 
 In the future we plan to simplify the API.
 
-NOTE: In its current state Spring Integration Test Binder only supports the three bindings provided by the framework (Source, Processor, Sink) specifically to promote 
+NOTE: In its current state Spring Integration Test Binder only supports the three bindings provided by the framework (Source, Processor, Sink) specifically to promote
 light-weight microservices architectures rather then general purpose messaging applications.
- 
+
 ==== Spring Integration Test Binder and PollableMessageSource
 Spring Integration Test Binder also allows you to write tests when working with `PollableMessageSource` (see <<Using Polled Consumers>> for more details).
 
-The important thing that needs to be understood though is that polling is not event-driven, and that `PollableMessageSource` is a strategy which exposes operation to produce (poll for) a Message (singular). 
-How often you poll or how many threads you use or where you're polling from (message queue or file system) is entirely up to you; 
+The important thing that needs to be understood though is that polling is not event-driven, and that `PollableMessageSource` is a strategy which exposes operation to produce (poll for) a Message (singular).
+How often you poll or how many threads you use or where you're polling from (message queue or file system) is entirely up to you;
 In other words it is your responsibility to configure Poller or Threads or the actual source of Message. Luckily Spring has plenty of abstractions to configure exactly that.
 
 Let's look at the example:
@@ -2624,7 +2634,7 @@ public void samplePollingTest() {
 	System.out.println("Message 2: " + new String(destination.receive().getPayload()));
 	System.out.println("Message 3: " + new String(destination.receive().getPayload()));
 }
-	
+
 @EnableBinding(SamplePolledConfiguration.PolledConsumer.class)
 @Import(TestChannelBinderConfiguration.class)
 @EnableAutoConfiguration
@@ -2641,7 +2651,7 @@ public static class SamplePolledConfiguration {
 						})) {
 							Thread.sleep(2000);
 						}
-					} 
+					}
 					catch (Exception e) {
 						// handle failure
 					}
@@ -2649,7 +2659,7 @@ public static class SamplePolledConfiguration {
 			});
 		};
 	}
-		
+
 	public static interface PolledConsumer extends Source {
 		@Input
 		PollableMessageSource pollableSource();
@@ -2657,7 +2667,7 @@ public static class SamplePolledConfiguration {
 }
 ----
 
-The above (very rudimentary) example will produce 3 messages in 2 second intervals sending them to the output destination of `Source` 
+The above (very rudimentary) example will produce 3 messages in 2 second intervals sending them to the output destination of `Source`
 which this binder sends to `OutputDestination` where we retrieve them (for any assertions).
 Currently it prints the following:
 [source, text]
@@ -2666,9 +2676,9 @@ Message 1: POLLED DATA
 Message 2: POLLED DATA
 Message 3: POLLED DATA
 ----
-As you can see the data is the same. That is because this binder defines a default implementation of the actual `MessageSource` - the source 
-from which the Messages are polled using `poll()` operation. While sufficient for most testing scenarios, there are cases where you may want 
-to define your own `MessageSource`. To do so simply configure a bean of type `MessageSource` in your test configuration providing your own 
+As you can see the data is the same. That is because this binder defines a default implementation of the actual `MessageSource` - the source
+from which the Messages are polled using `poll()` operation. While sufficient for most testing scenarios, there are cases where you may want
+to define your own `MessageSource`. To do so simply configure a bean of type `MessageSource` in your test configuration providing your own
 implementation of Message sourcing.
 
 Here is the example:
@@ -2688,7 +2698,7 @@ Message 2: MY OWN DATA D8F3A477-5547-41B4-9434-E69DA7616FEE
 Message 3: MY OWN DATA 20BF2E64-7FF4-4CB6-A823-4053D30B5C74
 ----
 
-NOTE: DO NOT name this bean `messageSource` as it is going to be in conflict with the bean of the same name (different type) 
+NOTE: DO NOT name this bean `messageSource` as it is going to be in conflict with the bean of the same name (different type)
 provided by Spring Boot for unrelated reasons.
 
 

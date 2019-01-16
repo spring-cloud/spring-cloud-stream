@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2017 the original author or authors.
+ * Copyright 2016-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,11 +18,13 @@ package org.springframework.cloud.stream.config;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
 import javax.validation.Valid;
 
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import org.springframework.boot.SpringApplication;
@@ -49,12 +51,18 @@ import static org.springframework.cloud.stream.binding.StreamListenerErrorMessag
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
  * @author Oleg Zhurakousky
+ * @author Artem Bilan
  */
 public class StreamListenerAnnotatedMethodArgumentsTests {
 
+	@BeforeClass
+	public static void init() {
+		Locale.setDefault(Locale.US);
+	}
+
 	@Test
 	@SuppressWarnings("unchecked")
-	public void testAnnotatedArguments() throws Exception {
+	public void testAnnotatedArguments() {
 		ConfigurableApplicationContext context = SpringApplication.run(TestPojoWithAnnotatedArguments.class,
 				"--server.port=0");
 
@@ -79,7 +87,7 @@ public class StreamListenerAnnotatedMethodArgumentsTests {
 	}
 
 	@Test
-	public void testInputAnnotationAtMethodParameter() throws Exception {
+	public void testInputAnnotationAtMethodParameter() {
 		try {
 			SpringApplication.run(TestPojoWithInvalidInputAnnotatedArgument.class, "--server.port=0");
 			fail("Exception expected: " + INVALID_DECLARATIVE_METHOD_PARAMETERS);
