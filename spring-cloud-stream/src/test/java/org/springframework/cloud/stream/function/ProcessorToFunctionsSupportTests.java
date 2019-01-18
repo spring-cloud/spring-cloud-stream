@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 the original author or authors.
+ * Copyright 2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 import org.junit.After;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import org.springframework.beans.DirectFieldAccessor;
@@ -70,7 +69,6 @@ public class ProcessorToFunctionsSupportTests {
 	}
 
 	@Test
-	@Ignore
 	public void testSingleFunction() {
 		context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(FunctionsConfiguration.class)).web(
@@ -84,7 +82,6 @@ public class ProcessorToFunctionsSupportTests {
 	}
 
 	@Test
-	@Ignore
 	public void testComposedFunction() {
 	context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(FunctionsConfiguration.class)).web(
@@ -95,7 +92,9 @@ public class ProcessorToFunctionsSupportTests {
 		InputDestination source = context.getBean(InputDestination.class);
 		OutputDestination target = context.getBean(OutputDestination.class);
 		source.send(new GenericMessage<byte[]>("hello".getBytes(StandardCharsets.UTF_8)));
-		assertThat(target.receive(1000).getPayload()).isEqualTo("HELLO:HELLO".getBytes(StandardCharsets.UTF_8));
+		String result = new String(target.receive(1000).getPayload());
+		System.out.println(result);
+		assertThat(result).isEqualTo("HELLO:HELLO");
 	}
 
 	@Test

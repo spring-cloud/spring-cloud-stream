@@ -116,7 +116,9 @@ public class GreenfieldFunctionEnableBindingTests {
 			restTemplate.postForLocation("http://localhost:8080", "hello");
 
 			OutputDestination target = context.getBean(OutputDestination.class);
-			assertThat(target.receive(10000).getPayload()).isEqualTo("HELLO".getBytes(StandardCharsets.UTF_8));
+			String result = new String(target.receive(10000).getPayload());
+			System.out.println(result);
+			assertThat(result).isEqualTo("HELLO");
 		}
 	}
 

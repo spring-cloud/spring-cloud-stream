@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2018 the original author or authors.
+ * Copyright 2016-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,7 +51,6 @@ import org.springframework.integration.channel.PublishSubscribeChannel;
 import org.springframework.integration.context.IntegrationContextUtils;
 import org.springframework.integration.core.MessageProducer;
 import org.springframework.integration.core.MessageSource;
-import org.springframework.integration.dsl.IntegrationFlow;
 import org.springframework.integration.dsl.IntegrationFlowBuilder;
 import org.springframework.integration.dsl.IntegrationFlows;
 import org.springframework.integration.handler.AbstractMessageHandler;
@@ -120,8 +119,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 	@Autowired(required = false)
 	private StreamFunctionProperties streamFunctionProperties;
 
-	@Autowired(required = false)
-	private IntegrationFlow integrationFlow;
+	private boolean producerBindingExist;
 
 	public AbstractMessageChannelBinder(String[] headersToEmbed, PP provisioningProvider) {
 		this(headersToEmbed, provisioningProvider, null);
@@ -197,7 +195,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		}
 		this.postProcessOutputChannel(outputChannel, producerProperties);
 
-		if (this.streamFunctionProperties != null && StringUtils.hasText(this.streamFunctionProperties.getDefinition()) && isInheritedIntegrationFlow()) {
+		if (shouldWireDunctionToChannel(true)) {
 			outputChannel = this.postProcessOutboundChannelForFunction(outputChannel, producerProperties);
 		}
 
@@ -232,6 +230,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		};
 
 		doPublishEvent(new BindingCreatedEvent(binding));
+		this.producerBindingExist = true;
 		return binding;
 	}
 
@@ -346,7 +345,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		try {
 			ConsumerDestination destination = this.provisioningProvider.provisionConsumerDestination(name, group, properties);
 			// the function support for the inbound channel is only for Sink
-			if (this.streamFunctionProperties != null && StringUtils.hasText(this.streamFunctionProperties.getDefinition()) && isInheritedIntegrationFlow()) {
+			if (shouldWireDunctionToChannel(false)) {
 				inputChannel = this.postProcessInboundChannelForFunction(inputChannel, (ConsumerProperties) properties);
 			}
 			if (HeaderMode.embeddedHeaders.equals(properties.getHeaderMode())) {
@@ -818,9 +817,18 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 	 * bootstrap (e.g. brand new function based app). For that please see
 	 * FunctionConfiguration.integrationFlowCreator
 	 */
-
-	private boolean isInheritedIntegrationFlow() {
-		return !this.getApplicationContext().containsBean("integrationFlowCreator") || integrationFlow == null;
+	private boolean shouldWireDunctionToChannel(boolean producer) {
+		if (!producer && this.producerBindingExist) {
+			return false;
+		}
+		else {
+			return this.streamFunctionProperties != null
+					&& StringUtils.hasText(this.streamFunctionProperties.getDefinition())
+					&& (
+							!this.getApplicationContext().containsBean("integrationFlowCreator")
+							|| this.getApplicationContext().getBean("integrationFlowCreator").equals(null)
+						);
+		}
 	}
 
 	private SubscribableChannel postProcessOutboundChannelForFunction(MessageChannel outputChannel, ProducerProperties producerProperties) {
