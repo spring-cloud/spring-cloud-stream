@@ -20,6 +20,7 @@ package org.springframework.cloud.bus;
 import javax.annotation.PostConstruct;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.actuate.autoconfigure.endpoint.condition.ConditionalOnEnabledEndpoint;
 import org.springframework.boot.actuate.endpoint.annotation.Endpoint;
 import org.springframework.boot.actuate.trace.http.HttpTraceRepository;
@@ -54,6 +55,7 @@ import org.springframework.context.ApplicationEventPublisherAware;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.event.EventListener;
+import org.springframework.core.env.Environment;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.AntPathMatcher;
@@ -72,6 +74,8 @@ import org.springframework.util.PathMatcher;
 public class BusAutoConfiguration implements ApplicationEventPublisherAware {
 
 	public static final String BUS_PATH_MATCHER_NAME = "busPathMatcher";
+
+	public static final String CLOUD_CONFIG_NAME_PROPERTY = "spring.cloud.config.name";
 
 	private MessageChannel cloudBusOutboundChannel;
 
@@ -182,8 +186,11 @@ public class BusAutoConfiguration implements ApplicationEventPublisherAware {
 
 		@Bean
 		public ServiceMatcher serviceMatcher(@BusPathMatcher PathMatcher pathMatcher,
-				BusProperties properties) {
-			ServiceMatcher serviceMatcher = new ServiceMatcher(pathMatcher, properties.getId());
+				BusProperties properties, Environment environment) {
+			String[] configNames = environment.getProperty(CLOUD_CONFIG_NAME_PROPERTY,
+					String[].class, new String[] {});
+			ServiceMatcher serviceMatcher = new ServiceMatcher(pathMatcher,
+					properties.getId(), configNames);
 			return serviceMatcher;
 		}
 
