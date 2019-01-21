@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 the original author or authors.
+ * Copyright 2018-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -202,18 +202,7 @@ public class DefaultPollableMessageSource implements PollableMessageSource, Life
 				.getAcknowledgmentCallback(message);
 		try {
 			if (this.retryTemplate == null) {
-				if (this.errorChannel == null) {
-					this.handle(message, handler);
-				}
-				else {
-					try {
-						this.handle(message, handler);
-					}
-					catch (Exception e) {
-						this.messagingTemplate
-							.send(this.errorChannel, this.errorMessageStrategy.buildErrorMessage(e, attributesHolder.get()));
-					}
-				}
+				this.handle(message, handler);
 			}
 			else {
 				this.retryTemplate.execute(context -> {
@@ -224,8 +213,14 @@ public class DefaultPollableMessageSource implements PollableMessageSource, Life
 			return true;
 		}
 		catch (MessagingException e) {
-			if (!ackCallback.isAcknowledged() && shouldRequeue(e)) {
+			if (this.retryTemplate == null && !shouldRequeue(e)) {
+				this.messagingTemplate
+					.send(this.errorChannel, this.errorMessageStrategy.buildErrorMessage(e, attributesHolder.get()));
+				return true;
+			}
+			else if (!ackCallback.isAcknowledged() && shouldRequeue(e)) {
 				AckUtils.requeue(ackCallback);
+				return true;
 			}
 			else {
 				AckUtils.autoNack(ackCallback);
