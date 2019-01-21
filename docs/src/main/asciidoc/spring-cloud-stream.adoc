@@ -1208,7 +1208,7 @@ environment:
            sources: com.acme.config.MyCustomBinderConfiguration
 ----
 
-To activate some specific profile for the particular binder environment, you should use a `spring.profiles.active` property:
+To activate a specific profile for the particular binder environment, you should use a `spring.profiles.active` property:
 
 [source, yaml]
 ----
