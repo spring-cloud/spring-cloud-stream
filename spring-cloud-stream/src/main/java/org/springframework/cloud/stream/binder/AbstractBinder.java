@@ -180,6 +180,10 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 	 */
 	protected RetryTemplate buildRetryTemplate(ConsumerProperties properties) {
 		RetryTemplate rt = this.consumerBindingRetryTemplate;
+		rt = properties.getRetryTemplate() == null ?
+        rt :
+        getBeanFactory().getBean(properties.getRetryTemplate(), RetryTemplate.class);
+
 		if (rt == null) {
 			rt = new RetryTemplate();
 			SimpleRetryPolicy retryPolicy = CollectionUtils.isEmpty(properties.getRetryableExceptions())
