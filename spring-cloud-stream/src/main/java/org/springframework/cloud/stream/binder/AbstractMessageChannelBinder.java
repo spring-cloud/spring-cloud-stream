@@ -214,6 +214,11 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 			}
 
 			@Override
+			public boolean isInput() {
+				return false;
+			}
+
+			@Override
 			public void afterUnbind() {
 				try {
 					destroyErrorInfrastructure(producerDestination);
@@ -369,6 +374,11 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 				}
 
 				@Override
+				public boolean isInput() {
+					return true;
+				}
+
+				@Override
 				protected void afterUnbind() {
 					try {
 						if (getEndpoint() instanceof DisposableBean) {
@@ -439,6 +449,11 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 			@Override
 			public Map<String, Object> getExtendedInfo() {
 				return doGetExtendedInfo(destination, properties);
+			}
+
+			@Override
+			public boolean isInput() {
+				return true;
 			}
 
 			@Override

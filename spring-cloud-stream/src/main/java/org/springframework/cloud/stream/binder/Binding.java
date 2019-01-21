@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2018 the original author or authors.
+ * Copyright 2016-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -100,7 +100,6 @@ public interface Binding<T> extends Pausable {
 		return null;
 	}
 
-
 	/**
 	 * Unbinds the target component represented by this instance and stops any active
 	 * components. Implementations must be idempotent. After this method is invoked, the
@@ -108,4 +107,15 @@ public interface Binding<T> extends Pausable {
 	 * and a new Binding should be created instead.
 	 */
 	void unbind();
+
+	/**
+	 * Returns boolean flag representing this binding's type. If 'true' this binding is an 'input' binding
+	 * otherwise it is 'output' (as in binding annotated with either @Input or @Output).
+	 *
+	 * @return 'true' if this binding represents an input binding.
+	 */
+	default boolean isInput() {
+		throw new UnsupportedOperationException("Binding implementation `" + this.getClass().getName()
+				+ "` must implement this operation before it is called");
+	}
 }
