@@ -80,6 +80,8 @@ public class ConsumerProperties {
 	 * Default: 3. Set to 1 to disable retry. You can also provide custom RetryTemplate
 	 * in the event you want to take complete control of the RetryTemplate. Simply configure
 	 * it as @Bean inside your application configuration.
+	 * If you need to be binding specific, then you can reference a specific RetryTemplate by name
+	 * with the retry-template configuration.
 	 */
 	private int maxAttempts = 3;
 
@@ -120,6 +122,13 @@ public class ConsumerProperties {
 	private boolean defaultRetryable = true;
 
 	/**
+	 * Instead of relying on the framework default or global RetryTemplate specified by
+	 * StreamRetryTemplate, you can provide the framework a bean by name to look up in the
+	 * ApplicationContext.
+	 */
+	private String retryTemplate = null;
+
+	/**
 	 * A map of Throwable class names in the key and a boolean in the value.
 	 * Specify those exceptions (and subclasses) that will or won't be retried.
 	 */
@@ -157,6 +166,14 @@ public class ConsumerProperties {
 	 * not expected to enable or disable this property directly.
 	 */
 	private boolean multiplex;
+
+	public String getRetryTemplate(){
+		return retryTemplate;
+	}
+
+	public void setRetryTemplate(String retryTemplate){
+		this.retryTemplate = retryTemplate;
+	}
 
 	@Min(value = 1, message = "Concurrency should be greater than zero.")
 	public int getConcurrency() {
