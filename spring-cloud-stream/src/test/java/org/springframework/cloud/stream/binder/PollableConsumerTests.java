@@ -356,7 +356,7 @@ public class PollableConsumerTests {
 				count.incrementAndGet();
 				throw new RequeueCurrentMessageException("test retry");
 			})).isTrue();
-			fail("Expected exception");
+			//fail("Expected exception"); // see GH-1578
 		}
 		catch (Exception e) {
 			// no op
