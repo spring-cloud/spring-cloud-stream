@@ -37,6 +37,13 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 public class ConsumerProperties {
 
 	/**
+	 * Signals if this consumer needs to be started automatically
+	 *
+	 * Default: true
+	 */
+	private boolean autoStartup = true;
+
+	/**
 	 * The concurrency setting of the consumer. Default: 1.
 	 */
 	private int concurrency = 1;
@@ -260,5 +267,13 @@ public class ConsumerProperties {
 
 	public void setMultiplex(boolean multiplex) {
 		this.multiplex = multiplex;
+	}
+
+	public boolean isAutoStartup() {
+		return autoStartup;
+	}
+
+	public void setAutoStartup(boolean autoStartup) {
+		this.autoStartup = autoStartup;
 	}
 }

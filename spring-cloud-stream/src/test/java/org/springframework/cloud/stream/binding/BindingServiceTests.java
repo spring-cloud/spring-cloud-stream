@@ -16,10 +16,12 @@
 
 package org.springframework.cloud.stream.binding;
 
+import java.lang.reflect.Field;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
@@ -37,7 +39,9 @@ import org.mockito.stubbing.Answer;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.boot.SpringApplication;
+import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.context.properties.source.MapConfigurationPropertySource;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.Input;
@@ -54,22 +58,31 @@ import org.springframework.cloud.stream.binder.DefaultBinderTypeRegistry;
 import org.springframework.cloud.stream.binder.ExtendedProducerProperties;
 import org.springframework.cloud.stream.binder.ExtendedPropertiesBinder;
 import org.springframework.cloud.stream.binder.ProducerProperties;
+import org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration;
 import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.cloud.stream.config.BindingServiceConfiguration;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
+import org.springframework.cloud.stream.messaging.Processor;
+import org.springframework.cloud.stream.messaging.Sink;
 import org.springframework.cloud.stream.reflection.GenericsUtils;
 import org.springframework.cloud.stream.utils.MockBinderConfiguration;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Import;
+import org.springframework.integration.annotation.ServiceActivator;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.test.util.TestUtils;
+import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.SubscribableChannel;
 import org.springframework.messaging.core.DestinationResolutionException;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
+import org.springframework.util.ReflectionUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -609,6 +622,30 @@ public class BindingServiceTests {
 		verify(delegate).unbind();
 		binderFactory.destroy();
 		scheduler.destroy();
+	}
+
+	@SuppressWarnings("unchecked")
+	@Test
+	public void testBindingAutostartup() throws Exception {
+		ApplicationContext context = new SpringApplicationBuilder(FooConfiguration.class)
+				.web(WebApplicationType.NONE)
+				.run("--spring.jmx.enabled=false", "--spring.cloud.stream.bindings.input.consumer.auto-startup=false");
+		BindingService bindingService = context.getBean(BindingService.class);
+
+		Field cbField = ReflectionUtils.findField(BindingService.class, "consumerBindings");
+		cbField.setAccessible(true);
+		Map<String, Object> cbMap = (Map<String, Object>) cbField.get(bindingService);
+		Binding<?> inputBinding = ((List<Binding<?>>)cbMap.get("input")).get(0);
+		assertFalse(inputBinding.isRunning());
+	}
+
+	@EnableBinding(Sink.class)
+	@Import(TestChannelBinderConfiguration.class)
+	@EnableAutoConfiguration
+	public static class FooConfiguration {
+		@ServiceActivator(inputChannel=Processor.INPUT)
+		public void echo(Message<?> value) throws Exception {
+		}
 	}
 
 	private DefaultBinderFactory createMockBinderFactory() {

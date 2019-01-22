@@ -1404,6 +1404,10 @@ The following binding properties are available for input bindings only and must 
 
 Default values can be set by using the `spring.cloud.stream.default.consumer` prefix (for example, `spring.cloud.stream.default.consumer.headerMode=none`).
 
+autoStartup::
+Signals if this consumer needs to be started automatically
++
+Default: `true`.
 concurrency::
 The concurrency of the inbound consumer.
 +
@@ -1478,6 +1482,10 @@ The following binding properties are available for output bindings only and must
 
 Default values can be set by using the prefix `spring.cloud.stream.default.producer` (for example, `spring.cloud.stream.default.producer.partitionKeyExpression=payload.id`).
 
+autoStartup::
+Signals if this consumer needs to be started automatically
++
+Default: `true`.
 partitionKeyExpression::
 A SpEL expression that determines how to partition outbound data.
 If set, or if `partitionKeyExtractorClass` is set, outbound data on this channel is partitioned. `partitionCount` must be set to a value greater than 1 to be effective.
