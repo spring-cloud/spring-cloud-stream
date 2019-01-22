@@ -40,7 +40,7 @@ import org.springframework.util.StringUtils;
  *
  * @see org.springframework.cloud.stream.annotation.EnableBinding
  */
-@JsonPropertyOrder({ "name", "bindingName", "group", "pausable", "state"})
+@JsonPropertyOrder({"bindingName", "name", "group", "pausable", "state"})
 @JsonIgnoreProperties("running")
 public class DefaultBinding<T> implements Binding<T> {
 

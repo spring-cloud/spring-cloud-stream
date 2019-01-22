@@ -1266,7 +1266,7 @@ To visualize the current bindings, access the following URL:
 `http://<host>:<port>/actuator/bindings`
 
 Alternative, to see a single binding, access one of the URLs similar to the following:
-`http://<host>:<port>/actuator/bindings/myBindingName`
+`http://<host>:<port>/actuator/bindings/<bindingName>`
 
 You can also stop, start, pause, and resume individual bindings by posting to the same URL while providing a `state` argument as JSON, as shown in the following examples:
 
