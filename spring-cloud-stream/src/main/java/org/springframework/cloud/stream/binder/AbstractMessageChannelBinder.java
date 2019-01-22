@@ -190,7 +190,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 				throw new BinderException("Exception thrown while building outbound endpoint", e);
 			}
 		}
-		if (producerMessageHandler instanceof Lifecycle) {
+		if (producerProperties.isAutoStartup() && producerMessageHandler instanceof Lifecycle) {
 			((Lifecycle) producerMessageHandler).start();
 		}
 		this.postProcessOutputChannel(outputChannel, producerProperties);
@@ -361,7 +361,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 			if (consumerEndpoint instanceof InitializingBean) {
 				((InitializingBean) consumerEndpoint).afterPropertiesSet();
 			}
-			if (consumerEndpoint instanceof Lifecycle) {
+			if (properties.isAutoStartup() && consumerEndpoint instanceof Lifecycle) {
 				((Lifecycle) consumerEndpoint).start();
 			}
 

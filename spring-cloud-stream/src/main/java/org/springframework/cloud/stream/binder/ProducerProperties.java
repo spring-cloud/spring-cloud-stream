@@ -41,6 +41,13 @@ import org.springframework.expression.Expression;
 @JsonInclude(Include.NON_DEFAULT)
 public class ProducerProperties {
 
+	/**
+	 * Signals if this producer needs to be started automatically
+	 *
+	 * Default: true
+	 */
+	private boolean autoStartup = true;
+
 	@JsonSerialize(using = ExpressionSerializer.class)
 	private Expression partitionKeyExpression;
 
@@ -191,6 +198,14 @@ public class ProducerProperties {
 
 	public void setPartitionSelectorName(String partitionSelectorName) {
 		this.partitionSelectorName = partitionSelectorName;
+	}
+
+	public boolean isAutoStartup() {
+		return autoStartup;
+	}
+
+	public void setAutoStartup(boolean autoStartup) {
+		this.autoStartup = autoStartup;
 	}
 
 	static class ExpressionSerializer extends JsonSerializer<Expression> {
