@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 the original author or authors.
+ * Copyright 2018-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -116,10 +116,10 @@ public class BindingsEndpoint {
 		return outputBindings;
 	}
 
-	private Binding<?> locateBinding(String name) {
+	private Binding<?> locateBinding(String bindingName) {
 		Stream<Binding<?>> bindings = Stream.concat(this.gatherInputBindings().stream(), this.gatherOutputBindings().stream());
 		return bindings
-			.filter(binding -> name.equals(binding.getName()))
+			.filter(binding -> bindingName.equals(binding.getBindingName()))
 			.findFirst()
 			.orElse(null);
 	}

@@ -92,11 +92,22 @@ public interface Binding<T> extends Pausable {
 	}
 
 	/**
-	 * Returns the name of this binding  (i.e., channel name)
+	 * Returns the name of the destination for this binding
 	 *
-	 * @return binding name
+	 * @return destination name
 	 */
 	default String getName() {
+		return null;
+	}
+
+	/**
+	 * Returns the name of the target for this binding  (i.e., channel name)
+	 *
+	 * @return binding name
+	 *
+	 * @since 2.2
+	 */
+	default String getBindingName() {
 		return null;
 	}
 

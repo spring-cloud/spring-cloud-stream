@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2018 the original author or authors.
+ * Copyright 2013-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.springframework.context.Lifecycle;
+import org.springframework.integration.context.IntegrationObjectSupport;
 import org.springframework.integration.endpoint.Pausable;
 import org.springframework.integration.support.context.NamedComponent;
 import org.springframework.util.Assert;
@@ -39,7 +40,7 @@ import org.springframework.util.StringUtils;
  *
  * @see org.springframework.cloud.stream.annotation.EnableBinding
  */
-@JsonPropertyOrder({ "name", "group", "pausable", "state"})
+@JsonPropertyOrder({ "name", "bindingName", "group", "pausable", "state"})
 @JsonIgnoreProperties("running")
 public class DefaultBinding<T> implements Binding<T> {
 
@@ -82,6 +83,12 @@ public class DefaultBinding<T> implements Binding<T> {
 
 	public String getName() {
 		return this.name;
+	}
+
+	public String getBindingName() {
+		String resolvedName = (this.target instanceof IntegrationObjectSupport)
+				? ((IntegrationObjectSupport)this.target).getComponentName() : getName();
+		return resolvedName == null ? getName() : resolvedName;
 	}
 
 	public String getGroup() {
