@@ -59,6 +59,7 @@ import org.springframework.util.Assert;
  *
  * @author Gary Russell
  * @author Oleg Zhurakousky
+ * @author David Turanski
  * @since 2.0
  *
  */
@@ -70,7 +71,7 @@ public class DefaultPollableMessageSource implements PollableMessageSource, Life
 		dummyChannel.setBeanName("dummy.required.by.nonnull.api");
 	}
 
-	protected static final ThreadLocal<AttributeAccessor> attributesHolder = new ThreadLocal<AttributeAccessor>();
+	protected static final ThreadLocal<AttributeAccessor> attributesHolder = new ThreadLocal<>();
 
 	private final List<ChannelInterceptor> interceptors = new ArrayList<>();
 
@@ -277,7 +278,12 @@ public class DefaultPollableMessageSource implements PollableMessageSource, Life
 	 * Receives Message from the source and converts its payload to a provided type.
 	 * Can return null
 	 */
-	private Message<?> receive(ParameterizedTypeReference<?> type) {
+	@Override
+	public Message<?> receive(ParameterizedTypeReference<?> type) {
+		//Prevent a race condition if this is called before setSource().
+		if (this.source == null) {
+			return null;
+		}
 		Message<?> message = this.source.receive();
 		if (message != null && type != null && this.messageConverter != null) {
 			Class<?> targetType = type == null ? Object.class :

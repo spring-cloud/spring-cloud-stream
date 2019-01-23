@@ -55,7 +55,7 @@ public class SourceBindingWithGlobalPropertiesTest {
 		Assertions.assertThat(bindingProperties.getContentType()).isEqualTo("application/json");
 		Assertions.assertThat(bindingProperties.getDestination()).isEqualTo("ticktock");
 		Assertions.assertThat(bindingProperties.getProducer().getRequiredGroups()).containsExactly("someGroup"); // default propagates to producer
-		Assertions.assertThat(bindingProperties.getProducer().getPartitionCount()).isEqualTo(4); // validates binding property takes precedence over default
+		Assertions.assertThat(bindingProperties.getProducer().getPartitionCount()).isEqualTo(4); // validates configuredPoller property takes precedence over default
 		Assertions.assertThat(bindingProperties.getProducer().getHeaderMode()).isEqualTo(HeaderMode.none);
 	}
 

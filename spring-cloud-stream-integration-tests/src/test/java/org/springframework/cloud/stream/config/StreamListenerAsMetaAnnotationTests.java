@@ -47,15 +47,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 @StreamListener
 @interface EventHandler {
 	/**
-	 * The name of the binding target (e.g. channel) that the method subscribes to.
-	 * @return the name of the binding target.
+	 * The name of the configuredPoller target (e.g. channel) that the method subscribes to.
+	 * @return the name of the configuredPoller target.
 	 */
 	@AliasFor(annotation = StreamListener.class, attribute = "target")
 	String value() default "";
 
 	/**
-	 * The name of the binding target (e.g. channel) that the method subscribes to.
-	 * @return the name of the binding target.
+	 * The name of the configuredPoller target (e.g. channel) that the method subscribes to.
+	 * @return the name of the configuredPoller target.
 	 */
 	@AliasFor(annotation = StreamListener.class, attribute = "target")
 	String target() default "";

@@ -58,7 +58,7 @@ import org.springframework.messaging.support.MessageBuilder;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * This test validates proper function binding for applications where EnableBinding is declared.
+ * This test validates proper function configuredPoller for applications where EnableBinding is declared.
  *
  * @author Oleg Zhurakousky
  * @author Artem Bilan
