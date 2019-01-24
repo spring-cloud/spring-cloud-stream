@@ -777,6 +777,52 @@ boolean result = pollableSource.poll(received -> {
 		}, new ParameterizedTypeReference<Map<String, Foo>>() {});
 ----
 
+[[pollable-consumer-poller]]
+==== Configuring a Poller for a PollableMessageSource
+
+As the above examples show, the PollableConsumer's `receive` method returns immediately whether there is a message or not.
+It requires a enclosing loop to invoke it periodically, typically running in a separate thread.
+The `PollableMessageSourcePoller` serves this purpose.
+The following example shows how to configure a PollableMessageSourcePoller which will run a scheduled task, configured via PollerMetadata, to invoke a MessageHandler for every message received.
+
+[source,java]
+----
+@SpringBootApplication
+@EnableBinding(PollerApplication.PolledSource.class)
+public class PollerApplication {
+
+    @Bean
+    PollerMetadata pollerMetadata() {
+        PollerMetadata pollerMetadata = new PollerMetadata();
+        pollerMetadata.setTrigger(new PeriodicTrigger(1, TimeUnit.SECONDS));
+        pollerMetadata.setMaxMessagesPerPoll(1);
+        return pollerMetadata;
+    }
+
+    @Bean
+    MessageHandler messageHandler() {
+        return m -> {
+            ...
+        };
+    }
+
+    @Bean
+    public PollableMessageSourcePoller pollingEndpoint(PollableMessageSource source,
+        PollerMetadata pollerMetadata, MessageHandler messageHandler) {
+        return new PollableMessageSourcePoller(pollerMetadata,
+            source, messageHandler, new ParameterizedTypeReference<String>() {
+        });
+    }
+
+    public interface PolledSource {
+
+            @Input
+            PollableMessageSource source();
+    }
+}
+
+----
+
 [[polled-errors]]
 ===== Handling Errors
 
