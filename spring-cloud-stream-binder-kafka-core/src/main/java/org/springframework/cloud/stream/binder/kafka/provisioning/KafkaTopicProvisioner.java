@@ -47,10 +47,10 @@ import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.cloud.stream.binder.BinderException;
 import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
 import org.springframework.cloud.stream.binder.ExtendedProducerProperties;
-import org.springframework.cloud.stream.binder.kafka.properties.KafkaAdminProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaBinderConfigurationProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaConsumerProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaProducerProperties;
+import org.springframework.cloud.stream.binder.kafka.properties.KafkaTopicProperties;
 import org.springframework.cloud.stream.binder.kafka.utils.KafkaTopicUtils;
 import org.springframework.cloud.stream.provisioning.ConsumerDestination;
 import org.springframework.cloud.stream.provisioning.ProducerDestination;
@@ -73,6 +73,7 @@ import org.springframework.util.StringUtils;
  * @author Ilayaperumal Gopinathan
  * @author Simon Flandergan
  * @author Oleg Zhurakousky
+ * @author Aldo Sinanaj
  */
 public class KafkaTopicProvisioner implements ProvisioningProvider<ExtendedConsumerProperties<KafkaConsumerProperties>,
 		ExtendedProducerProperties<KafkaProducerProperties>>, InitializingBean {
@@ -133,7 +134,7 @@ public class KafkaTopicProvisioner implements ProvisioningProvider<ExtendedConsu
 		}
 		KafkaTopicUtils.validateTopicName(name);
 		try (AdminClient adminClient = AdminClient.create(this.adminClientProperties)) {
-			createTopic(adminClient, name, properties.getPartitionCount(), false, properties.getExtension().getAdmin());
+			createTopic(adminClient, name, properties.getPartitionCount(), false, properties.getExtension().getTopic());
 			int partitions = 0;
 			if (this.configurationProperties.isAutoCreateTopics()) {
 				DescribeTopicsResult describeTopicsResult = adminClient.describeTopics(Collections.singletonList(name));
@@ -191,7 +192,7 @@ public class KafkaTopicProvisioner implements ProvisioningProvider<ExtendedConsu
 		ConsumerDestination consumerDestination = new KafkaConsumerDestination(name);
 		try (AdminClient adminClient = createAdminClient()) {
 			createTopic(adminClient, name, partitionCount, properties.getExtension().isAutoRebalanceEnabled(),
-					properties.getExtension().getAdmin());
+					properties.getExtension().getTopic());
 			if (this.configurationProperties.isAutoCreateTopics()) {
 				DescribeTopicsResult describeTopicsResult = adminClient.describeTopics(Collections.singletonList(name));
 				KafkaFuture<Map<String, TopicDescription>> all = describeTopicsResult.all();
@@ -259,7 +260,7 @@ public class KafkaTopicProvisioner implements ProvisioningProvider<ExtendedConsu
 					properties.getExtension().getDlqName() : "error." + name + "." + group;
 			try {
 				createTopicAndPartitions(adminClient, dlqTopic, partitions,
-						properties.getExtension().isAutoRebalanceEnabled(), properties.getExtension().getAdmin());
+						properties.getExtension().isAutoRebalanceEnabled(), properties.getExtension().getTopic());
 			}
 			catch (Throwable throwable) {
 				if (throwable instanceof Error) {
@@ -275,7 +276,7 @@ public class KafkaTopicProvisioner implements ProvisioningProvider<ExtendedConsu
 	}
 
 	private void createTopic(AdminClient adminClient, String name, int partitionCount, boolean tolerateLowerPartitionsOnBroker,
-			KafkaAdminProperties properties) {
+			KafkaTopicProperties properties) {
 		try {
 			createTopicIfNecessary(adminClient, name, partitionCount, tolerateLowerPartitionsOnBroker, properties);
 		}
@@ -292,7 +293,7 @@ public class KafkaTopicProvisioner implements ProvisioningProvider<ExtendedConsu
 	}
 
 	private void createTopicIfNecessary(AdminClient adminClient, final String topicName, final int partitionCount,
-			boolean tolerateLowerPartitionsOnBroker, KafkaAdminProperties properties) throws Throwable {
+			boolean tolerateLowerPartitionsOnBroker, KafkaTopicProperties properties) throws Throwable {
 
 		if (this.configurationProperties.isAutoCreateTopics()) {
 			createTopicAndPartitions(adminClient, topicName, partitionCount, tolerateLowerPartitionsOnBroker,
@@ -310,11 +311,11 @@ public class KafkaTopicProvisioner implements ProvisioningProvider<ExtendedConsu
 	 * @param topicName topic name
 	 * @param partitionCount partition count
 	 * @param tolerateLowerPartitionsOnBroker whether lower partitions count on broker is tolerated ot not
-	 * @param adminProperties kafka admin properties
+	 * @param topicProperties kafka topic properties
 	 * @throws Throwable from topic creation
 	 */
 	private void createTopicAndPartitions(AdminClient adminClient, final String topicName, final int partitionCount,
-			boolean tolerateLowerPartitionsOnBroker, KafkaAdminProperties adminProperties) throws Throwable {
+			boolean tolerateLowerPartitionsOnBroker, KafkaTopicProperties topicProperties) throws Throwable {
 
 		ListTopicsResult listTopicsResult = adminClient.listTopics();
 		KafkaFuture<Set<String>> namesFutures = listTopicsResult.names();
@@ -356,18 +357,18 @@ public class KafkaTopicProvisioner implements ProvisioningProvider<ExtendedConsu
 			this.metadataRetryOperations.execute((context) -> {
 
 				NewTopic newTopic;
-				Map<Integer, List<Integer>> replicasAssignments = adminProperties.getReplicasAssignments();
+				Map<Integer, List<Integer>> replicasAssignments = topicProperties.getReplicasAssignments();
 				if (replicasAssignments != null &&  replicasAssignments.size() > 0) {
-					newTopic = new NewTopic(topicName, adminProperties.getReplicasAssignments());
+					newTopic = new NewTopic(topicName, topicProperties.getReplicasAssignments());
 				}
 				else {
 					newTopic = new NewTopic(topicName, effectivePartitionCount,
-							adminProperties.getReplicationFactor() != null
-									? adminProperties.getReplicationFactor()
+							topicProperties.getReplicationFactor() != null
+									? topicProperties.getReplicationFactor()
 									: this.configurationProperties.getReplicationFactor());
 				}
-				if (adminProperties.getConfiguration().size() > 0) {
-					newTopic.configs(adminProperties.getConfiguration());
+				if (topicProperties.getProperties().size() > 0) {
+					newTopic.configs(topicProperties.getProperties());
 				}
 				CreateTopicsResult createTopicsResult = adminClient.createTopics(Collections.singletonList(newTopic));
 				try {

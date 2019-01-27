@@ -21,6 +21,7 @@ import java.util.Map;
 
 import javax.validation.constraints.NotNull;
 
+import org.springframework.boot.context.properties.DeprecatedConfigurationProperty;
 import org.springframework.expression.Expression;
 
 /**
@@ -29,6 +30,7 @@ import org.springframework.expression.Expression;
  * @author Marius Bogoevici
  * @author Henryk Konsek
  * @author Gary Russell
+ * @author Aldo Sinanaj
  */
 public class KafkaProducerProperties {
 
@@ -46,7 +48,7 @@ public class KafkaProducerProperties {
 
 	private Map<String, String> configuration = new HashMap<>();
 
-	private KafkaAdminProperties admin = new KafkaAdminProperties();
+	private KafkaTopicProperties topic = new KafkaTopicProperties();
 
 	public int getBufferSize() {
 		return this.bufferSize;
@@ -105,12 +107,35 @@ public class KafkaProducerProperties {
 		this.configuration = configuration;
 	}
 
+	/**
+	 * No longer used; get properties such as this via {@link #getTopic()}.
+	 * @return Kafka admin properties
+	 * @deprecated No longer used
+	 */
+	@Deprecated
+	@DeprecatedConfigurationProperty(reason = "Not used since 2.1.1, set properties such as this via 'topic'")
+	@SuppressWarnings("deprecation")
 	public KafkaAdminProperties getAdmin() {
-		return this.admin;
+		// Temporary workaround to copy the topic properties to the admin one.
+		final KafkaAdminProperties kafkaAdminProperties = new KafkaAdminProperties();
+		kafkaAdminProperties.setReplicationFactor(this.topic.getReplicationFactor());
+		kafkaAdminProperties.setReplicasAssignments(this.topic.getReplicasAssignments());
+		kafkaAdminProperties.setConfiguration(this.topic.getProperties());
+		return kafkaAdminProperties;
 	}
 
+	@Deprecated
+	@SuppressWarnings("deprecation")
 	public void setAdmin(KafkaAdminProperties admin) {
-		this.admin = admin;
+		this.topic = admin;
+	}
+
+	public KafkaTopicProperties getTopic() {
+		return this.topic;
+	}
+
+	public void setTopic(KafkaTopicProperties topic) {
+		this.topic = topic;
 	}
 
 	/**

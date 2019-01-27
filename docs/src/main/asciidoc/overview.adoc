@@ -146,22 +146,13 @@ The following properties are available for Kafka consumers only and
 must be prefixed with `spring.cloud.stream.kafka.bindings.<channelName>.consumer.`.
 
 admin.configuration::
-A `Map` of Kafka topic properties used when provisioning topics -- for example, `spring.cloud.stream.kafka.bindings.input.consumer.admin.configuration.message.format.version=0.9.0.0`
-+
-Default: none.
+Since version 2.1.1, this property is deprecated in favor of `topic.properties`, and support for it will be removed in a future version.
 
 admin.replicas-assignment::
-A Map<Integer, List<Integer>> of replica assignments, with the key being the partition and the value being the assignments.
-Used when provisioning new topics.
-See the `NewTopic` Javadocs in the `kafka-clients` jar.
-+
-Default: none.
+Since version 2.1.1, this property is deprecated in favor of `topic.replicas-assignment`, and support for it will be removed in a future version.
 
 admin.replication-factor::
-The replication factor to use when provisioning topics. Overrides the binder-wide setting.
-Ignored if `replicas-assignments` is present.
-+
-Default: none (the binder-wide default of 1 is used).
+Since version 2.1.1, this property is deprecated in favor of `topic.replication-factor`, and support for it will be removed in a future version.
 
 autoRebalanceEnabled::
 When `true`, topic partitions is automatically rebalanced between the members of a consumer group.
@@ -254,6 +245,21 @@ Note, the time taken to detect new topics that match the pattern is controlled b
 This can be configured using the `configuration` property above.
 +
 Default: `false`
+topic.properties::
+A `Map` of Kafka topic properties used when provisioning new topics -- for example, `spring.cloud.stream.kafka.bindings.input.consumer.topic.properties.message.format.version=0.9.0.0`
++
+Default: none.
+topic.replicas-assignment::
+A Map<Integer, List<Integer>> of replica assignments, with the key being the partition and the value being the assignments.
+Used when provisioning new topics.
+See the `NewTopic` Javadocs in the `kafka-clients` jar.
++
+Default: none.
+topic.replication-factor::
+The replication factor to use when provisioning topics. Overrides the binder-wide setting.
+Ignored if `replicas-assignments` is present.
++
+Default: none (the binder-wide default of 1 is used).
 
 [[kafka-producer-properties]]
 ==== Kafka Producer Properties
@@ -262,22 +268,13 @@ The following properties are available for Kafka producers only and
 must be prefixed with `spring.cloud.stream.kafka.bindings.<channelName>.producer.`.
 
 admin.configuration::
-A `Map` of Kafka topic properties used when provisioning new topics -- for example, `spring.cloud.stream.kafka.bindings.input.consumer.admin.configuration.message.format.version=0.9.0.0`
-+
-Default: none.
+Since version 2.1.1, this property is deprecated in favor of `topic.properties`, and support for it will be removed in a future version.
 
 admin.replicas-assignment::
-A Map<Integer, List<Integer>> of replica assignments, with the key being the partition and the value being the assignments.
-Used when provisioning new topics.
-See `NewTopic` javadocs in the `kafka-clients` jar.
-+
-Default: none.
+Since version 2.1.1, this property is deprecated in favor of `topic.replicas-assignment`, and support for it will be removed in a future version.
 
 admin.replication-factor::
-The replication factor to use when provisioning new topics. Overrides the binder-wide setting.
-Ignored if `replicas-assignments` is present.
-+
-Default: none (the binder-wide default of 1 is used).
+Since version 2.1.1, this property is deprecated in favor of `topic.replication-factor`, and support for it will be removed in a future version.
 
 bufferSize::
 Upper limit, in bytes, of how much data the Kafka producer attempts to batch before sending.
@@ -310,6 +307,21 @@ configuration::
 Map with a key/value pair containing generic Kafka producer properties.
 +
 Default: Empty map.
+topic.properties::
+A `Map` of Kafka topic properties used when provisioning new topics -- for example, `spring.cloud.stream.kafka.bindings.output.producer.topic.properties.message.format.version=0.9.0.0`
++
+topic.replicas-assignment::
+A Map<Integer, List<Integer>> of replica assignments, with the key being the partition and the value being the assignments.
+Used when provisioning new topics.
+See the `NewTopic` Javadocs in the `kafka-clients` jar.
++
+Default: none.
+topic.replication-factor::
+The replication factor to use when provisioning topics. Overrides the binder-wide setting.
+Ignored if `replicas-assignments` is present.
++
+Default: none (the binder-wide default of 1 is used).
+
 
 NOTE: The Kafka binder uses the `partitionCount` setting of the producer as a hint to create a topic with the given partition count (in conjunction with the `minPartitionCount`, the maximum of the two being the value being used).
 Exercise caution when configuring both `minPartitionCount` for a binder and `partitionCount` for an application, as the larger value is used.

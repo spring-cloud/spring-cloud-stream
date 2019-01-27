@@ -16,8 +16,6 @@
 
 package org.springframework.cloud.stream.binder.kafka.properties;
 
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -26,37 +24,17 @@ import java.util.Map;
  * @author Gary Russell
  * @since 2.0
  *
+ * @deprecated in favor of {@link KafkaTopicProperties}
  */
-public class KafkaAdminProperties {
-
-	private Short replicationFactor;
-
-	private Map<Integer, List<Integer>> replicasAssignments = new HashMap<>();
-
-	private Map<String, String> configuration = new HashMap<>();
-
-	public Short getReplicationFactor() {
-		return this.replicationFactor;
-	}
-
-	public void setReplicationFactor(Short replicationFactor) {
-		this.replicationFactor = replicationFactor;
-	}
-
-	public Map<Integer, List<Integer>> getReplicasAssignments() {
-		return this.replicasAssignments;
-	}
-
-	public void setReplicasAssignments(Map<Integer, List<Integer>> replicasAssignments) {
-		this.replicasAssignments = replicasAssignments;
-	}
+@Deprecated
+public class KafkaAdminProperties extends KafkaTopicProperties {
 
 	public Map<String, String> getConfiguration() {
-		return this.configuration;
+		return getProperties();
 	}
 
 	public void setConfiguration(Map<String, String> configuration) {
-		this.configuration = configuration;
+		setProperties(configuration);
 	}
 
 }
