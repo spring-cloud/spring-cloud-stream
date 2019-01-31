@@ -1124,7 +1124,7 @@ public static class HelloWorldEmitter {
 
 In the preceding example, the resulting messages in the `Flux` are sent to the output channel of the `Source`.
 
-The next example is another flavor of an `@StreamEmmitter` that sends a Reactor `Flux`.
+The next example is another flavor of an `@StreamEmitter` that sends a Reactor `Flux`.
 Instead of returning a `Flux`, the following method uses a `FluxSender` to programmatically send a `Flux` from a source:
 
 [source, java]
