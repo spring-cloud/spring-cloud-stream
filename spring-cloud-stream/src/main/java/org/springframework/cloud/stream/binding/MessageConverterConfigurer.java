@@ -301,9 +301,17 @@ public class MessageConverterConfigurer implements MessageChannelAndSourceConfig
 			this.messageConverter = messageConverter;
 		}
 
-
 		@Override
 		public Message<?> doPreSend(Message<?> message, MessageChannel channel) {
+
+			// If handler is a function, FunctionInvoker will already perform message conversion.
+			// In fact in the future we should consider propagating knowledge of the default content type
+			//to MessageConverters instead of interceptors
+			if (message.getPayload() instanceof byte[] && message.getHeaders().containsKey(MessageHeaders.CONTENT_TYPE)) {
+				return message;
+			}
+
+
 			// ===== 1.3 backward compatibility code part-1 ===
 			String oct = message.getHeaders().containsKey(MessageHeaders.CONTENT_TYPE) ? message.getHeaders().get(MessageHeaders.CONTENT_TYPE).toString() : null;
 			String ct = message.getPayload() instanceof String
