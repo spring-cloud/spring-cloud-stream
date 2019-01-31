@@ -92,7 +92,6 @@ public class FunctionInvokerTests {
 		}
 
 		@StreamMessageConverter
-		@Bean
 		public MessageConverter customConverter() {
 			return new MessageConverter() {
 
@@ -145,7 +144,6 @@ public class FunctionInvokerTests {
 		}
 
 		@StreamMessageConverter
-		@Bean
 		public MessageConverter customConverter() {
 			return new MessageConverter() {
 
