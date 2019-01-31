@@ -16,7 +16,6 @@
 
 package org.springframework.cloud.stream.binder;
 
-import java.lang.reflect.Method;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -65,7 +64,6 @@ import org.springframework.messaging.SubscribableChannel;
 import org.springframework.messaging.support.ChannelInterceptor;
 import org.springframework.retry.RecoveryCallback;
 import org.springframework.util.Assert;
-import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
 
 /**
@@ -835,7 +833,6 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 				IntegrationFlowBuilder integrationFlowBuilder = IntegrationFlows.from(outputChannel).bridge();
 				publisher = integrationFlowBuilder.toReactivePublisher();
 			}
-			this.propagateProducerPropertiesToFunction(producerProperties);
 			if (this.integrationFlowFunctionSupport.containsFunction(Function.class,
 					this.streamFunctionProperties.getDefinition())) {
 				DirectChannel actualOutputChannel = new DirectChannel();
@@ -858,38 +855,11 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 			if (inputChannel instanceof AbstractMessageChannel) {
 				moveChannelInterceptors((AbstractMessageChannel) inputChannel, actualInputChannel);
 			}
-			this.propagateConsumerPropertiesToFunction(consumerProperties);
 			this.integrationFlowFunctionSupport.andThenFunction(MessageChannelReactiveUtils.toPublisher(actualInputChannel),
 					inputChannel, this.streamFunctionProperties);
 			return actualInputChannel;
 		}
 		return (SubscribableChannel) inputChannel;
-	}
-
-	// we're doing it reflectively so we don't expose this as a property to the user
-	private void propagateProducerPropertiesToFunction(ProducerProperties producerProperties) {
-		try {
-			Method setProducerProperties = ReflectionUtils.findMethod(StreamFunctionProperties.class,
-					"setProducerProperties", ProducerProperties.class);
-			setProducerProperties.setAccessible(true);
-			setProducerProperties.invoke(this.streamFunctionProperties, producerProperties);
-		}
-		catch (Exception e) {
-			throw new IllegalStateException(e);
-		}
-	}
-
-	// we're doing it reflectively so we don't expose this as a property to the user
-	private void propagateConsumerPropertiesToFunction(ConsumerProperties consumerProperties) {
-		try {
-			Method setConsumerProperties = ReflectionUtils.findMethod(StreamFunctionProperties.class,
-					"setConsumerProperties", ConsumerProperties.class);
-			setConsumerProperties.setAccessible(true);
-			setConsumerProperties.invoke(this.streamFunctionProperties, consumerProperties);
-		}
-		catch (Exception e) {
-			throw new IllegalStateException(e);
-		}
 	}
 
 	private void moveChannelInterceptors(AbstractMessageChannel existingMessageChannel,

@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 the original author or authors.
+ * Copyright 2018-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,16 +30,22 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
-import org.springframework.cloud.stream.binder.ConsumerProperties;
-import org.springframework.cloud.stream.binder.ProducerProperties;
+import org.springframework.cloud.stream.annotation.EnableBinding;
+import org.springframework.cloud.stream.annotation.StreamMessageConverter;
+import org.springframework.cloud.stream.binder.test.InputDestination;
+import org.springframework.cloud.stream.binder.test.OutputDestination;
 import org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration;
+import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
 import org.springframework.cloud.stream.function.pojo.Baz;
 import org.springframework.cloud.stream.function.pojo.ErrorBaz;
+import org.springframework.cloud.stream.messaging.Processor;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageHeaders;
+import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.messaging.support.GenericMessage;
 import org.springframework.util.ReflectionUtils;
 
@@ -53,6 +59,112 @@ import static org.junit.Assert.assertEquals;
  *
  */
 public class FunctionInvokerTests {
+
+	@Test
+	public void testFunctionHonorsOutboundBindingContentType() {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+				TestChannelBinderConfiguration.getCompleteConfiguration(ConverterDoesNotProduceCTConfiguration.class)).web(
+				WebApplicationType.NONE)
+				.run("--spring.jmx.enabled=false",
+						"--spring.cloud.stream.function.definition=func",
+						"--spring.cloud.stream.bindings.output.contentType=text/plain")) {
+
+			InputDestination inputDestination = context.getBean(InputDestination.class);
+			OutputDestination outputDestination = context.getBean(OutputDestination.class);
+
+			Message<byte[]> inputMessage = MessageBuilder.withPayload("{\"name\":\"bob\"}".getBytes())
+					.setHeader(MessageHeaders.CONTENT_TYPE, "foo/bar").build();
+			inputDestination.send(inputMessage);
+
+			Message<byte[]> outputMessage = outputDestination.receive();
+			assertEquals("text/plain", outputMessage.getHeaders().get(MessageHeaders.CONTENT_TYPE).toString());
+
+		}
+	}
+
+	@EnableAutoConfiguration
+	@EnableBinding(Processor.class)
+	public static class ConverterDoesNotProduceCTConfiguration {
+
+		@Bean
+		public Function<String, String> func() {
+			return x -> x;
+		}
+
+		@StreamMessageConverter
+		@Bean
+		public MessageConverter customConverter() {
+			return new MessageConverter() {
+
+				@Override
+				public Message<?> toMessage(Object payload, MessageHeaders headers) {
+					return new GenericMessage<byte[]>(((String)payload).getBytes());
+				}
+
+				@Override
+				public Object fromMessage(Message<?> message, Class<?> targetClass) {
+					String contentType = (String) message.getHeaders().get(MessageHeaders.CONTENT_TYPE).toString();
+					if (contentType.equals("foo/bar")) {
+						return new String((byte[])message.getPayload());
+					}
+					return null;
+				}
+			};
+		}
+	}
+
+	@Test
+	public void testFunctionHonorsConverterSetContentType() {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+				TestChannelBinderConfiguration.getCompleteConfiguration(ConverterInjectingCTConfiguration.class)).web(
+				WebApplicationType.NONE)
+				.run("--spring.jmx.enabled=false",
+						"--spring.cloud.stream.function.definition=func",
+						"--spring.cloud.stream.bindings.output.contentType=text/plain")) {
+
+			InputDestination inputDestination = context.getBean(InputDestination.class);
+			OutputDestination outputDestination = context.getBean(OutputDestination.class);
+
+			Message<byte[]> inputMessage = MessageBuilder.withPayload("{\"name\":\"bob\"}".getBytes())
+					.setHeader(MessageHeaders.CONTENT_TYPE, "foo/bar").build();
+			inputDestination.send(inputMessage);
+
+			Message<byte[]> outputMessage = outputDestination.receive();
+			assertEquals("ping/pong", outputMessage.getHeaders().get(MessageHeaders.CONTENT_TYPE).toString());
+
+		}
+	}
+
+	@EnableAutoConfiguration
+	@EnableBinding(Processor.class)
+	public static class ConverterInjectingCTConfiguration {
+
+		@Bean
+		public Function<String, String> func() {
+			return x -> x;
+		}
+
+		@StreamMessageConverter
+		@Bean
+		public MessageConverter customConverter() {
+			return new MessageConverter() {
+
+				@Override
+				public Message<?> toMessage(Object payload, MessageHeaders headers) {
+					return MessageBuilder.withPayload(((String)payload).getBytes()).setHeader(MessageHeaders.CONTENT_TYPE, "ping/pong").build();
+				}
+
+				@Override
+				public Object fromMessage(Message<?> message, Class<?> targetClass) {
+					String contentType = (String) message.getHeaders().get(MessageHeaders.CONTENT_TYPE).toString();
+					if (contentType.equals("foo/bar")) {
+						return new String((byte[])message.getPayload());
+					}
+					return null;
+				}
+			};
+		}
+	}
 
 	@Test
 	public void testSameMessageTypesAreNotConverted() {
@@ -176,12 +288,14 @@ public class FunctionInvokerTests {
 
 	private StreamFunctionProperties createStreamFunctionProperties() {
 		StreamFunctionProperties functionProperties = new StreamFunctionProperties();
-		ConsumerProperties consumerProperties = new ConsumerProperties();
-		consumerProperties.setMaxAttempts(3);
+		functionProperties.setInputDestinationName("input");
+		functionProperties.setOutputDestinationName("output");
+		BindingServiceProperties bindingServiceProperties = new BindingServiceProperties();
+		bindingServiceProperties.getConsumerProperties("input").setMaxAttempts(3);
 		try {
-			Field f = ReflectionUtils.findField(StreamFunctionProperties.class, "consumerProperties");
+			Field f = ReflectionUtils.findField(StreamFunctionProperties.class, "bindingServiceProperties");
 			f.setAccessible(true);
-			f.set(functionProperties, consumerProperties);
+			f.set(functionProperties, bindingServiceProperties);
 			return functionProperties;
 		} catch (Exception e) {
 			throw new IllegalStateException(e);
@@ -190,17 +304,15 @@ public class FunctionInvokerTests {
 
 	private StreamFunctionProperties createStreamFunctionPropertiesWithNativeEncoding() {
 		StreamFunctionProperties functionProperties = new StreamFunctionProperties();
-		ConsumerProperties consumerProperties = new ConsumerProperties();
-		consumerProperties.setMaxAttempts(3);
-		ProducerProperties producerProperties = new ProducerProperties();
-		producerProperties.setUseNativeEncoding(true);
+		functionProperties.setInputDestinationName("input");
+		functionProperties.setOutputDestinationName("output");
+		BindingServiceProperties bindingServiceProperties = new BindingServiceProperties();
+		bindingServiceProperties.getConsumerProperties("input").setMaxAttempts(3);
+		bindingServiceProperties.getProducerProperties("output").setUseNativeEncoding(true);
 		try {
-			Field c = ReflectionUtils.findField(StreamFunctionProperties.class, "consumerProperties");
-			Field p = ReflectionUtils.findField(StreamFunctionProperties.class, "producerProperties");
-			c.setAccessible(true);
-			c.set(functionProperties, consumerProperties);
-			p.setAccessible(true);
-			p.set(functionProperties, producerProperties);
+			Field bspField = ReflectionUtils.findField(StreamFunctionProperties.class, "bindingServiceProperties");
+			bspField.setAccessible(true);
+			bspField.set(functionProperties, bindingServiceProperties);
 			return functionProperties;
 		} catch (Exception e) {
 			throw new IllegalStateException(e);

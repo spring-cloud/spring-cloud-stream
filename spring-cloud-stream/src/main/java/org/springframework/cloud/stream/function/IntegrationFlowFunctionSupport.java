@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 the original author or authors.
+ * Copyright 2018-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,8 +58,6 @@ public class IntegrationFlowFunctionSupport {
 
 	private final StreamFunctionProperties functionProperties;
 
-	private final BindingServiceProperties bindingServiceProperties;
-
 	@Autowired
 	private MessageChannel errorChannel;
 
@@ -81,7 +79,7 @@ public class IntegrationFlowFunctionSupport {
 		this.functionInspector = functionInspector;
 		this.messageConverterFactory = messageConverterFactory;
 		this.functionProperties = functionProperties;
-		this.bindingServiceProperties = bindingServiceProperties;
+		this.functionProperties.setBindingServiceProperties(bindingServiceProperties);
 	}
 
 	/**
@@ -158,14 +156,14 @@ public class IntegrationFlowFunctionSupport {
 		if (inputChannel instanceof IntegrationObjectSupport) {
 			String inputBindingName = ((IntegrationObjectSupport)inputChannel).getComponentName();
 			if (StringUtils.hasText(inputBindingName)) {
-				this.functionProperties.setConsumerProperties(this.bindingServiceProperties.getConsumerProperties(inputBindingName));
+				this.functionProperties.setInputDestinationName(inputBindingName);
 			}
 		}
 
 		if (outputChannel instanceof IntegrationObjectSupport) {
 			String outputBindingName = ((IntegrationObjectSupport)outputChannel).getComponentName();
 			if (StringUtils.hasText(outputBindingName)) {
-				this.functionProperties.setProducerProperties(this.bindingServiceProperties.getProducerProperties(outputBindingName));
+				this.functionProperties.setOutputDestinationName(outputBindingName);
 			}
 		}
 
