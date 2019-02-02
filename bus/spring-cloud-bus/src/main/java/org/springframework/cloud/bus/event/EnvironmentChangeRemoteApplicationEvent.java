@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2017 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,7 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
 package org.springframework.cloud.bus.event;
@@ -30,7 +29,7 @@ public class EnvironmentChangeRemoteApplicationEvent extends RemoteApplicationEv
 	@SuppressWarnings("unused")
 	private EnvironmentChangeRemoteApplicationEvent() {
 		// for serializers
-		values = null;
+		this.values = null;
 	}
 
 	public EnvironmentChangeRemoteApplicationEvent(Object source, String originService,
@@ -40,32 +39,37 @@ public class EnvironmentChangeRemoteApplicationEvent extends RemoteApplicationEv
 	}
 
 	public Map<String, String> getValues() {
-		return values;
+		return this.values;
 	}
 
 	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = super.hashCode();
-		result = prime * result + ((values == null) ? 0 : values.hashCode());
+		result = prime * result + ((this.values == null) ? 0 : this.values.hashCode());
 		return result;
 	}
 
 	@Override
 	public boolean equals(Object obj) {
-		if (this == obj)
+		if (this == obj) {
 			return true;
-		if (!super.equals(obj))
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
-		EnvironmentChangeRemoteApplicationEvent other = (EnvironmentChangeRemoteApplicationEvent) obj;
-		if (values == null) {
-			if (other.values != null)
-				return false;
 		}
-		else if (!values.equals(other.values))
+		if (!super.equals(obj)) {
 			return false;
+		}
+		if (getClass() != obj.getClass()) {
+			return false;
+		}
+		EnvironmentChangeRemoteApplicationEvent other = (EnvironmentChangeRemoteApplicationEvent) obj;
+		if (this.values == null) {
+			if (other.values != null) {
+				return false;
+			}
+		}
+		else if (!this.values.equals(other.values)) {
+			return false;
+		}
 		return true;
 	}
 

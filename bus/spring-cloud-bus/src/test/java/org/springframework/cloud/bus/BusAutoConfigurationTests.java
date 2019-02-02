@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2017 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,7 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
 package org.springframework.cloud.bus;
@@ -74,8 +73,9 @@ public class BusAutoConfigurationTests {
 
 	@Test
 	public void defaultId() {
-		this.context = SpringApplication.run(InboundMessageHandlerConfiguration.class, "--server.port=0");
-		assertTrue("Wrong ID: " + context.getBean(BusProperties.class).getId(),
+		this.context = SpringApplication.run(InboundMessageHandlerConfiguration.class,
+				"--server.port=0");
+		assertTrue("Wrong ID: " + this.context.getBean(BusProperties.class).getId(),
 				this.context.getBean(BusProperties.class).getId()
 						.startsWith("application:0:"));
 	}
@@ -287,12 +287,14 @@ public class BusAutoConfigurationTests {
 		assertThat(output.getDestination()).isEqualTo(bus.getDestination());
 	}
 
-	private BusProperties setupBusAutoConfig(HashMap<String, BindingProperties> properties) {
+	private BusProperties setupBusAutoConfig(
+			HashMap<String, BindingProperties> properties) {
 		BindingServiceProperties serviceProperties = mock(BindingServiceProperties.class);
 		when(serviceProperties.getBindings()).thenReturn(properties);
 
 		BusProperties bus = new BusProperties();
-		BusAutoConfiguration configuration = new BusAutoConfiguration(mock(ServiceMatcher.class), serviceProperties, bus);
+		BusAutoConfiguration configuration = new BusAutoConfiguration(
+				mock(ServiceMatcher.class), serviceProperties, bus);
 		configuration.init();
 		return bus;
 	}
@@ -302,7 +304,7 @@ public class BusAutoConfigurationTests {
 	@Ignore // TODO: replicate problem
 	public void serviceMatcherIdIsConstantAfterRefresh() {
 		this.context = SpringApplication.run(new Class[] { RefreshConfig.class, },
-				new String[] {"--spring.main.allow-bean-definition-overriding=true"});
+				new String[] { "--spring.main.allow-bean-definition-overriding=true" });
 		String originalServiceId = this.context.getBean(ServiceMatcher.class)
 				.getServiceId();
 		this.context.getBean(ContextRefresher.class).refresh();
@@ -313,6 +315,7 @@ public class BusAutoConfigurationTests {
 	@Configuration
 	@EnableAutoConfiguration
 	protected static class RefreshConfig {
+
 	}
 
 	@Configuration
@@ -363,7 +366,8 @@ public class BusAutoConfigurationTests {
 	@Import({ MessageConsumer.class, BusAutoConfiguration.class,
 			TestSupportBinderAutoConfiguration.class,
 			PropertyPlaceholderAutoConfiguration.class })
-	protected static class InboundMessageHandlerConfiguration implements ApplicationListener<RefreshRemoteApplicationEvent> {
+	protected static class InboundMessageHandlerConfiguration
+			implements ApplicationListener<RefreshRemoteApplicationEvent> {
 
 		private RefreshRemoteApplicationEvent refresh;
 
@@ -375,8 +379,11 @@ public class BusAutoConfigurationTests {
 	}
 
 	@Configuration
-	protected static class SentMessageConfiguration implements ApplicationListener<SentApplicationEvent> {
+	protected static class SentMessageConfiguration
+			implements ApplicationListener<SentApplicationEvent> {
+
 		private SentApplicationEvent event;
+
 		private int count;
 
 		@Override
@@ -384,11 +391,15 @@ public class BusAutoConfigurationTests {
 			this.event = event;
 			this.count++;
 		}
+
 	}
 
 	@Configuration
-	protected static class AckMessageConfiguration implements ApplicationListener<AckRemoteApplicationEvent> {
+	protected static class AckMessageConfiguration
+			implements ApplicationListener<AckRemoteApplicationEvent> {
+
 		private AckRemoteApplicationEvent event;
+
 		private int count;
 
 		@Override
@@ -396,6 +407,7 @@ public class BusAutoConfigurationTests {
 			this.event = event;
 			this.count++;
 		}
+
 	}
 
 }

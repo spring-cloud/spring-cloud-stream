@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2017 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,7 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
 package org.springframework.cloud.bus.event;
@@ -32,7 +31,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public class AckRemoteApplicationEvent extends RemoteApplicationEvent {
 
 	private final String ackId;
+
 	private final String ackDestinationService;
+
 	private Class<? extends RemoteApplicationEvent> event;
 
 	@SuppressWarnings("unused")
@@ -53,29 +54,31 @@ public class AckRemoteApplicationEvent extends RemoteApplicationEvent {
 	}
 
 	public String getAckId() {
-		return ackId;
+		return this.ackId;
 	}
 
 	public String getAckDestinationService() {
-		return ackDestinationService;
+		return this.ackDestinationService;
 	}
 
 	public Class<? extends RemoteApplicationEvent> getEvent() {
-		return event;
+		return this.event;
 	}
 
 	/**
-	 * Used by Jackson to set the remote class name of the event implementation. If the implementing class is unknown to
-	 * this app, set the event to {@link UnknownRemoteApplicationEvent}.
-	 *
-	 * @param eventName  the fq class name of the event implementation, not null
+	 * Used by Jackson to set the remote class name of the event implementation. If the
+	 * implementing class is unknown to this app, set the event to
+	 * {@link UnknownRemoteApplicationEvent}.
+	 * @param eventName the fq class name of the event implementation, not null
 	 */
 	@JsonProperty("event")
 	public void setEventName(String eventName) {
 		try {
-			event = (Class<? extends RemoteApplicationEvent>) Class.forName(eventName);
-		} catch (ClassNotFoundException e) {
-			event = UnknownRemoteApplicationEvent.class;
+			this.event = (Class<? extends RemoteApplicationEvent>) Class
+					.forName(eventName);
+		}
+		catch (ClassNotFoundException e) {
+			this.event = UnknownRemoteApplicationEvent.class;
 		}
 	}
 
@@ -83,40 +86,50 @@ public class AckRemoteApplicationEvent extends RemoteApplicationEvent {
 	public int hashCode() {
 		final int prime = 31;
 		int result = super.hashCode();
-		result = prime * result + ((ackDestinationService == null) ? 0
-				: ackDestinationService.hashCode());
-		result = prime * result + ((ackId == null) ? 0 : ackId.hashCode());
-		result = prime * result + ((event == null) ? 0 : event.hashCode());
+		result = prime * result + ((this.ackDestinationService == null) ? 0
+				: this.ackDestinationService.hashCode());
+		result = prime * result + ((this.ackId == null) ? 0 : this.ackId.hashCode());
+		result = prime * result + ((this.event == null) ? 0 : this.event.hashCode());
 		return result;
 	}
 
 	@Override
 	public boolean equals(Object obj) {
-		if (this == obj)
+		if (this == obj) {
 			return true;
-		if (!super.equals(obj))
+		}
+		if (!super.equals(obj)) {
 			return false;
-		if (getClass() != obj.getClass())
+		}
+		if (getClass() != obj.getClass()) {
 			return false;
+		}
 		AckRemoteApplicationEvent other = (AckRemoteApplicationEvent) obj;
-		if (ackDestinationService == null) {
-			if (other.ackDestinationService != null)
+		if (this.ackDestinationService == null) {
+			if (other.ackDestinationService != null) {
 				return false;
+			}
 		}
-		else if (!ackDestinationService.equals(other.ackDestinationService))
+		else if (!this.ackDestinationService.equals(other.ackDestinationService)) {
 			return false;
-		if (ackId == null) {
-			if (other.ackId != null)
+		}
+		if (this.ackId == null) {
+			if (other.ackId != null) {
 				return false;
+			}
 		}
-		else if (!ackId.equals(other.ackId))
+		else if (!this.ackId.equals(other.ackId)) {
 			return false;
-		if (event == null) {
-			if (other.event != null)
+		}
+		if (this.event == null) {
+			if (other.event != null) {
 				return false;
+			}
 		}
-		else if (!event.equals(other.event))
+		else if (!this.event.equals(other.event)) {
 			return false;
+		}
 		return true;
 	}
+
 }

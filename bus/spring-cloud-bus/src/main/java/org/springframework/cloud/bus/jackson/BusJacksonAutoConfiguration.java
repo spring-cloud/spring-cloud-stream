@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2018 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,7 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
 package org.springframework.cloud.bus.jackson;
@@ -59,17 +58,19 @@ import org.springframework.util.MimeTypeUtils;
 @Configuration
 @ConditionalOnBusEnabled
 @ConditionalOnClass({ RefreshBusEndpoint.class, ObjectMapper.class })
-@AutoConfigureBefore({ BusAutoConfiguration.class, JacksonAutoConfiguration.class})
+@AutoConfigureBefore({ BusAutoConfiguration.class, JacksonAutoConfiguration.class })
 public class BusJacksonAutoConfiguration {
 
 	// needed in the case where @RemoteApplicationEventScan is not used
 	// otherwise RemoteApplicationEventRegistrar will register the bean
-    @Bean
-    @ConditionalOnMissingBean(name = "busJsonConverter")
-    @StreamMessageConverter
-    public AbstractMessageConverter busJsonConverter(@Autowired(required = false) ObjectMapper objectMapper) {
-        return new BusJacksonMessageConverter(objectMapper);
-    }
+	@Bean
+	@ConditionalOnMissingBean(name = "busJsonConverter")
+	@StreamMessageConverter
+	public AbstractMessageConverter busJsonConverter(
+			@Autowired(required = false) ObjectMapper objectMapper) {
+		return new BusJacksonMessageConverter(objectMapper);
+	}
+
 }
 
 class BusJacksonMessageConverter extends AbstractMessageConverter
@@ -81,29 +82,31 @@ class BusJacksonMessageConverter extends AbstractMessageConverter
 			.getPackageName(RemoteApplicationEvent.class);
 
 	private final ObjectMapper mapper;
+
 	private final boolean mapperCreated;
 
 	private String[] packagesToScan = new String[] { DEFAULT_PACKAGE };
 
-	public BusJacksonMessageConverter() {
+	BusJacksonMessageConverter() {
 		this(null);
-    }
+	}
 
-    @Autowired(required = false)
-	public BusJacksonMessageConverter(ObjectMapper objectMapper) {
+	@Autowired(required = false)
+	BusJacksonMessageConverter(ObjectMapper objectMapper) {
 		super(MimeTypeUtils.APPLICATION_JSON);
 
 		if (objectMapper != null) {
 			this.mapper = objectMapper;
 			this.mapperCreated = false;
-		} else {
+		}
+		else {
 			this.mapper = new ObjectMapper();
 			this.mapperCreated = true;
 		}
 	}
 
 	public boolean isMapperCreated() {
-		return mapperCreated;
+		return this.mapperCreated;
 	}
 
 	public void setPackagesToScan(String[] packagesToScan) {
@@ -136,7 +139,7 @@ class BusJacksonMessageConverter extends AbstractMessageConverter
 			}
 		}
 		if (log.isDebugEnabled()) {
-			log.debug("Found sub types: "+types);
+			log.debug("Found sub types: " + types);
 		}
 		return types.toArray(new Class<?>[0]);
 	}
@@ -157,17 +160,24 @@ class BusJacksonMessageConverter extends AbstractMessageConverter
 			if (payload instanceof byte[]) {
 				try {
 					result = this.mapper.readValue((byte[]) payload, targetClass);
-				} catch (InvalidTypeIdException e) {
-					return new UnknownRemoteApplicationEvent(new Object(), e.getTypeId(), (byte[]) payload);
 				}
-			} else if (payload instanceof String) {
+				catch (InvalidTypeIdException e) {
+					return new UnknownRemoteApplicationEvent(new Object(), e.getTypeId(),
+							(byte[]) payload);
+				}
+			}
+			else if (payload instanceof String) {
 				try {
 					result = this.mapper.readValue((String) payload, targetClass);
-				} catch (InvalidTypeIdException e) {
-					return new UnknownRemoteApplicationEvent(new Object(), e.getTypeId(), ((String) payload).getBytes());
 				}
-			// workaround for https://github.com/spring-cloud/spring-cloud-stream/issues/1564
-			} else if (payload instanceof RemoteApplicationEvent) {
+				catch (InvalidTypeIdException e) {
+					return new UnknownRemoteApplicationEvent(new Object(), e.getTypeId(),
+							((String) payload).getBytes());
+				}
+				// workaround for
+				// https://github.com/spring-cloud/spring-cloud-stream/issues/1564
+			}
+			else if (payload instanceof RemoteApplicationEvent) {
 				return payload;
 			}
 		}
@@ -183,4 +193,5 @@ class BusJacksonMessageConverter extends AbstractMessageConverter
 		this.mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
 		this.mapper.registerModule(new SubtypeModule(findSubTypes()));
 	}
+
 }

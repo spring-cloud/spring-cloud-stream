@@ -2,6 +2,7 @@ package org.springframework.cloud.bus;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -13,7 +14,8 @@ import org.springframework.test.context.junit4.SpringRunner;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(SpringRunner.class)
-@SpringBootTest(properties = { "spring.jmx.enabled=true", "endpoints.default.jmx.enabled=true" })
+@SpringBootTest(properties = { "spring.jmx.enabled=true",
+		"endpoints.default.jmx.enabled=true" })
 public class BusJmxEndpointTests {
 
 	@Autowired(required = false)
@@ -30,5 +32,8 @@ public class BusJmxEndpointTests {
 
 	@SpringBootConfiguration
 	@EnableAutoConfiguration
-	protected static class TestConfig {}
+	protected static class TestConfig {
+
+	}
+
 }

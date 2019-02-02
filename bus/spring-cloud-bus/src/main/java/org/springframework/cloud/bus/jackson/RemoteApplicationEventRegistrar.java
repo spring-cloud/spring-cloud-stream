@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2017 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,7 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
 package org.springframework.cloud.bus.jackson;
@@ -36,39 +35,45 @@ import org.springframework.util.StringUtils;
  */
 public class RemoteApplicationEventRegistrar implements ImportBeanDefinitionRegistrar {
 
-    // patterned after Spring Integration IntegrationComponentScanRegistrar
+	// patterned after Spring Integration IntegrationComponentScanRegistrar
 
-    @Override
-    public void registerBeanDefinitions(final AnnotationMetadata importingClassMetadata,
-            final BeanDefinitionRegistry registry) {
+	@Override
+	public void registerBeanDefinitions(final AnnotationMetadata importingClassMetadata,
+			final BeanDefinitionRegistry registry) {
 
-        Map<String, Object> componentScan = importingClassMetadata
-                .getAnnotationAttributes(RemoteApplicationEventScan.class.getName(), false);
+		Map<String, Object> componentScan = importingClassMetadata
+				.getAnnotationAttributes(RemoteApplicationEventScan.class.getName(),
+						false);
 
-        Set<String> basePackages = new HashSet<>();
-        for (String pkg : (String[]) componentScan.get("value")) {
-            if (StringUtils.hasText(pkg)) {
-                basePackages.add(pkg);
-            }
-        }
-        for (String pkg : (String[]) componentScan.get("basePackages")) {
-            if (StringUtils.hasText(pkg)) {
-                basePackages.add(pkg);
-            }
-        }
-        for (Class<?> clazz : (Class[]) componentScan.get("basePackageClasses")) {
-            basePackages.add(ClassUtils.getPackageName(clazz));
-        }
+		Set<String> basePackages = new HashSet<>();
+		for (String pkg : (String[]) componentScan.get("value")) {
+			if (StringUtils.hasText(pkg)) {
+				basePackages.add(pkg);
+			}
+		}
+		for (String pkg : (String[]) componentScan.get("basePackages")) {
+			if (StringUtils.hasText(pkg)) {
+				basePackages.add(pkg);
+			}
+		}
+		for (Class<?> clazz : (Class[]) componentScan.get("basePackageClasses")) {
+			basePackages.add(ClassUtils.getPackageName(clazz));
+		}
 
-        if (basePackages.isEmpty()) {
-            basePackages.add(ClassUtils.getPackageName(importingClassMetadata.getClassName()));
-        }
+		if (basePackages.isEmpty()) {
+			basePackages.add(
+					ClassUtils.getPackageName(importingClassMetadata.getClassName()));
+		}
 
-        BeanDefinitionBuilder beanDefinitionBuilder = BeanDefinitionBuilder.genericBeanDefinition(BusJacksonMessageConverter.class);
-        beanDefinitionBuilder.addPropertyValue("packagesToScan", basePackages.toArray(new String[basePackages.size()]));
-        AbstractBeanDefinition beanDefinition = beanDefinitionBuilder.getBeanDefinition();
+		BeanDefinitionBuilder beanDefinitionBuilder = BeanDefinitionBuilder
+				.genericBeanDefinition(BusJacksonMessageConverter.class);
+		beanDefinitionBuilder.addPropertyValue("packagesToScan",
+				basePackages.toArray(new String[basePackages.size()]));
+		AbstractBeanDefinition beanDefinition = beanDefinitionBuilder.getBeanDefinition();
 
-        BeanDefinitionHolder holder = new BeanDefinitionHolder(beanDefinition, "busJsonConverter");
-        BeanDefinitionReaderUtils.registerBeanDefinition(holder, registry);
-    }
+		BeanDefinitionHolder holder = new BeanDefinitionHolder(beanDefinition,
+				"busJsonConverter");
+		BeanDefinitionReaderUtils.registerBeanDefinition(holder, registry);
+	}
+
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2017 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,7 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
 package org.springframework.cloud.bus.jackson;
@@ -22,7 +21,11 @@ import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.jsontype.NamedType;
 import org.junit.Test;
+import test.foo.bar.FooBarTestRemoteApplicationEvent;
+
 import org.springframework.boot.Banner;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.builder.SpringApplicationBuilder;
@@ -38,14 +41,9 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.jsontype.NamedType;
-
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
-
-import test.foo.bar.FooBarTestRemoteApplicationEvent;
 
 public class RemoteApplicationEventScanTests {
 
@@ -53,7 +51,7 @@ public class RemoteApplicationEventScanTests {
 
 	@Test
 	public void importingClassMetadataPackageRegistered() {
-		converter = createTestContext(DefaultConfig.class)
+		this.converter = createTestContext(DefaultConfig.class)
 				.getBean(BusJacksonMessageConverter.class);
 
 		assertConverterBeanAfterPropertiesSet(
@@ -65,7 +63,7 @@ public class RemoteApplicationEventScanTests {
 
 	@Test
 	public void annotationValuePackagesRegistered() {
-		converter = createTestContext(ValueConfig.class)
+		this.converter = createTestContext(ValueConfig.class)
 				.getBean(BusJacksonMessageConverter.class);
 
 		assertConverterBeanAfterPropertiesSet(
@@ -77,7 +75,7 @@ public class RemoteApplicationEventScanTests {
 
 	@Test
 	public void annotationValueBasePackagesRegistered() {
-		converter = createTestContext(BasePackagesConfig.class)
+		this.converter = createTestContext(BasePackagesConfig.class)
 				.getBean(BusJacksonMessageConverter.class);
 
 		assertConverterBeanAfterPropertiesSet(
@@ -89,7 +87,7 @@ public class RemoteApplicationEventScanTests {
 
 	@Test
 	public void annotationBasePackagesRegistered() {
-		converter = createTestContext(BasePackageClassesConfig.class)
+		this.converter = createTestContext(BasePackageClassesConfig.class)
 				.getBean(BusJacksonMessageConverter.class);
 
 		assertConverterBeanAfterPropertiesSet(
@@ -106,8 +104,8 @@ public class RemoteApplicationEventScanTests {
 	private void assertConverterBeanAfterPropertiesSet(
 			final String[] expectedPackageToScan,
 			final Class<?>... expectedRegisterdClasses) {
-		final ObjectMapper mapper = (ObjectMapper) ReflectionTestUtils.getField(converter,
-				"mapper");
+		final ObjectMapper mapper = (ObjectMapper) ReflectionTestUtils
+				.getField(this.converter, "mapper");
 
 		@SuppressWarnings("unchecked")
 		final LinkedHashSet<NamedType> registeredSubtypes = (LinkedHashSet<NamedType>) ReflectionTestUtils
@@ -125,7 +123,8 @@ public class RemoteApplicationEventScanTests {
 		}
 
 		assertThat("RemoteApplicationEvent packages not registered",
-				Arrays.asList((String[]) ReflectionTestUtils.getField(converter, "packagesToScan")),
+				Arrays.asList((String[]) ReflectionTestUtils.getField(this.converter,
+						"packagesToScan")),
 				containsInAnyOrder(expectedPackageToScan));
 
 	}
@@ -141,20 +140,26 @@ public class RemoteApplicationEventScanTests {
 	@Configuration
 	@RemoteApplicationEventScan
 	static class DefaultConfig {
+
 	}
 
 	@Configuration
 	@RemoteApplicationEventScan({ "com.acme", "test.foo.bar" })
 	static class ValueConfig {
+
 	}
 
 	@Configuration
-	@RemoteApplicationEventScan(basePackages = { "com.acme", "test.foo.bar", "fizz.buzz" })
+	@RemoteApplicationEventScan(basePackages = { "com.acme", "test.foo.bar",
+			"fizz.buzz" })
 	static class BasePackagesConfig {
+
 	}
 
 	@Configuration
 	@RemoteApplicationEventScan(basePackageClasses = TestRemoteApplicationEvent.class)
 	static class BasePackageClassesConfig {
+
 	}
+
 }

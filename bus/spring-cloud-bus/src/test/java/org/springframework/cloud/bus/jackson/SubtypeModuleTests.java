@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2018 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,22 +12,21 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
 package org.springframework.cloud.bus.jackson;
 
+import com.fasterxml.jackson.annotation.JsonTypeName;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import org.junit.Test;
+
 import org.springframework.cloud.bus.event.AckRemoteApplicationEvent;
 import org.springframework.cloud.bus.event.RemoteApplicationEvent;
 import org.springframework.cloud.bus.event.UnknownRemoteApplicationEvent;
 import org.springframework.cloud.bus.event.test.TestRemoteApplicationEvent;
 import org.springframework.cloud.bus.event.test.TypedRemoteApplicationEvent;
 import org.springframework.messaging.support.MessageBuilder;
-
-import com.fasterxml.jackson.annotation.JsonTypeName;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
@@ -70,21 +69,20 @@ public class SubtypeModuleTests {
 
 		BusJacksonMessageConverter converter = new BusJacksonMessageConverter(mapper);
 		converter.afterPropertiesSet();
-		Object event = converter.fromMessage(
-				MessageBuilder.withPayload("{\"type\":\"TestRemoteApplicationEvent\", \"origin_service\":\"myorigin\"}").build(),
-				RemoteApplicationEvent.class);
-		assertThat(event)
-				.isNotNull()
-				.isInstanceOf(TestRemoteApplicationEvent.class);
-		assertThat(TestRemoteApplicationEvent.class.cast(event).getOriginService()).isEqualTo("myorigin");
+		Object event = converter.fromMessage(MessageBuilder.withPayload(
+				"{\"type\":\"TestRemoteApplicationEvent\", \"origin_service\":\"myorigin\"}")
+				.build(), RemoteApplicationEvent.class);
+		assertThat(event).isNotNull().isInstanceOf(TestRemoteApplicationEvent.class);
+		assertThat(TestRemoteApplicationEvent.class.cast(event).getOriginService())
+				.isEqualTo("myorigin");
 	}
 
 	@Test
 	public void testDeserializeWithMessageConverter() throws Exception {
 		BusJacksonMessageConverter converter = new BusJacksonMessageConverter();
 		converter.afterPropertiesSet();
-		Object event = converter.fromMessage(
-				MessageBuilder.withPayload("{\"type\":\"TestRemoteApplicationEvent\"}").build(),
+		Object event = converter.fromMessage(MessageBuilder
+				.withPayload("{\"type\":\"TestRemoteApplicationEvent\"}").build(),
 				RemoteApplicationEvent.class);
 		assertTrue("event is wrong type", event instanceof TestRemoteApplicationEvent);
 	}
@@ -93,12 +91,15 @@ public class SubtypeModuleTests {
 	public void testDeserializeUnknownTypeWithMessageConverter() throws Exception {
 		BusJacksonMessageConverter converter = new BusJacksonMessageConverter();
 		converter.afterPropertiesSet();
-		Object event = converter.fromMessage(
-				MessageBuilder.withPayload("{\"type\":\"NotDefinedTestRemoteApplicationEvent\"}").build(),
-				RemoteApplicationEvent.class);
+		Object event = converter.fromMessage(MessageBuilder
+				.withPayload("{\"type\":\"NotDefinedTestRemoteApplicationEvent\"}")
+				.build(), RemoteApplicationEvent.class);
 		assertTrue("event is wrong type", event instanceof UnknownRemoteApplicationEvent);
-		assertEquals("type information is wrong", "NotDefinedTestRemoteApplicationEvent", ((UnknownRemoteApplicationEvent)event).getTypeInfo());
-		assertEquals("payload is wrong", "{\"type\":\"NotDefinedTestRemoteApplicationEvent\"}", ((UnknownRemoteApplicationEvent)event).getPayloadAsString());
+		assertEquals("type information is wrong", "NotDefinedTestRemoteApplicationEvent",
+				((UnknownRemoteApplicationEvent) event).getTypeInfo());
+		assertEquals("payload is wrong",
+				"{\"type\":\"NotDefinedTestRemoteApplicationEvent\"}",
+				((UnknownRemoteApplicationEvent) event).getPayloadAsString());
 	}
 
 	@Test
@@ -123,27 +124,31 @@ public class SubtypeModuleTests {
 				.build(), RemoteApplicationEvent.class);
 		assertTrue("event is no ack", event instanceof AckRemoteApplicationEvent);
 		AckRemoteApplicationEvent ackEvent = AckRemoteApplicationEvent.class.cast(event);
-		assertEquals("inner ack event has wrong type", TestRemoteApplicationEvent.class, ackEvent.getEvent());
+		assertEquals("inner ack event has wrong type", TestRemoteApplicationEvent.class,
+				ackEvent.getEvent());
 	}
 
 	/**
 	 * see https://github.com/spring-cloud/spring-cloud-bus/issues/74
 	 */
 	@Test
-	public void testDeserializeAckRemoteApplicationEventWithUnknownType() throws Exception {
+	public void testDeserializeAckRemoteApplicationEventWithUnknownType()
+			throws Exception {
 		BusJacksonMessageConverter converter = new BusJacksonMessageConverter();
 		converter.afterPropertiesSet();
 		Object event = converter.fromMessage(MessageBuilder.withPayload(
-				"{\"type\":\"AckRemoteApplicationEvent\", \"event\":\"foo.bar.TestRemoteApplicationEvent\"}").build(),
-				RemoteApplicationEvent.class);
+				"{\"type\":\"AckRemoteApplicationEvent\", \"event\":\"foo.bar.TestRemoteApplicationEvent\"}")
+				.build(), RemoteApplicationEvent.class);
 		assertTrue("event is no ack", event instanceof AckRemoteApplicationEvent);
 		AckRemoteApplicationEvent ackEvent = AckRemoteApplicationEvent.class.cast(event);
-		assertEquals("inner ack event has wrong type", UnknownRemoteApplicationEvent.class, ackEvent.getEvent());
+		assertEquals("inner ack event has wrong type",
+				UnknownRemoteApplicationEvent.class, ackEvent.getEvent());
 	}
 
 	@SuppressWarnings("serial")
 	@JsonTypeName("my")
 	public static class MyRemoteApplicationEvent extends RemoteApplicationEvent {
+
 		@SuppressWarnings("unused")
 		private MyRemoteApplicationEvent() {
 		}
@@ -156,11 +161,13 @@ public class SubtypeModuleTests {
 		protected MyRemoteApplicationEvent(Object source, String originService) {
 			super(source, originService);
 		}
+
 	}
 
 	@SuppressWarnings("serial")
 	@JsonTypeName("another")
 	public static class AnotherRemoteApplicationEvent extends RemoteApplicationEvent {
+
 		@SuppressWarnings("unused")
 		private AnotherRemoteApplicationEvent() {
 		}
@@ -173,5 +180,7 @@ public class SubtypeModuleTests {
 		protected AnotherRemoteApplicationEvent(Object source, String originService) {
 			super(source, originService);
 		}
+
 	}
+
 }

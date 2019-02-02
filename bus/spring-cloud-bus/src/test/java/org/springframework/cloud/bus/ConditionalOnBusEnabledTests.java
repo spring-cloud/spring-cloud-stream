@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2017 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,7 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
 package org.springframework.cloud.bus;
@@ -49,7 +48,8 @@ public class ConditionalOnBusEnabledTests {
 
 	@Test
 	public void busEnabledTrue() {
-		load(MyBusEnabledConfig.class, ConditionalOnBusEnabled.SPRING_CLOUD_BUS_ENABLED+":true");
+		load(MyBusEnabledConfig.class,
+				ConditionalOnBusEnabled.SPRING_CLOUD_BUS_ENABLED + ":true");
 		assertTrue("missing bean from @ConditionalOnBusEnabled config",
 				this.context.containsBean("foo"));
 	}
@@ -63,9 +63,17 @@ public class ConditionalOnBusEnabledTests {
 
 	@Test
 	public void busDisabled() {
-		load(MyBusEnabledConfig.class, ConditionalOnBusEnabled.SPRING_CLOUD_BUS_ENABLED+":false");
+		load(MyBusEnabledConfig.class,
+				ConditionalOnBusEnabled.SPRING_CLOUD_BUS_ENABLED + ":false");
 		assertFalse("bean exists from disabled @ConditionalOnBusEnabled config",
 				this.context.containsBean("foo"));
+	}
+
+	private void load(Class<?> config, String... environment) {
+		this.context = new AnnotationConfigApplicationContext();
+		TestPropertyValues.of(environment).applyTo(this.context);
+		this.context.register(config);
+		this.context.refresh();
 	}
 
 	@Configuration
@@ -79,10 +87,4 @@ public class ConditionalOnBusEnabledTests {
 
 	}
 
-	private void load(Class<?> config, String... environment) {
-		this.context = new AnnotationConfigApplicationContext();
-		TestPropertyValues.of(environment).applyTo(this.context);
-		this.context.register(config);
-		this.context.refresh();
-	}
 }
