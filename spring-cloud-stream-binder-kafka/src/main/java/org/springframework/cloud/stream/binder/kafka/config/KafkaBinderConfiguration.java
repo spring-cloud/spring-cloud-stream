@@ -29,10 +29,12 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.cloud.stream.annotation.StreamMessageConverter;
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.kafka.KafkaBinderMetrics;
 import org.springframework.cloud.stream.binder.kafka.KafkaBindingRebalanceListener;
 import org.springframework.cloud.stream.binder.kafka.KafkaMessageChannelBinder;
+import org.springframework.cloud.stream.binder.kafka.KafkaNullConverter;
 import org.springframework.cloud.stream.binder.kafka.properties.JaasLoginModuleConfiguration;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaBinderConfigurationProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaExtendedBindingProperties;
@@ -46,6 +48,7 @@ import org.springframework.kafka.security.jaas.KafkaJaasLoginModuleInitializer;
 import org.springframework.kafka.support.LoggingProducerListener;
 import org.springframework.kafka.support.ProducerListener;
 import org.springframework.lang.Nullable;
+import org.springframework.messaging.converter.MessageConverter;
 
 /**
  * Kafka binder configuration class.
@@ -59,6 +62,7 @@ import org.springframework.lang.Nullable;
  * @author Gary Russell
  * @author Oleg Zhurakousky
  * @author Artem Bilan
+ * @author Aldo Sinanaj
  */
 @Configuration
 @ConditionalOnMissingBean(Binder.class)
@@ -110,6 +114,13 @@ public class KafkaBinderConfiguration {
 	@ConditionalOnMissingBean(ProducerListener.class)
 	ProducerListener producerListener() {
 		return new LoggingProducerListener();
+	}
+
+	@Bean
+	@StreamMessageConverter
+	@ConditionalOnMissingBean(KafkaNullConverter.class)
+	MessageConverter kafkaNullConverter() {
+		return new KafkaNullConverter();
 	}
 
 	@Bean
