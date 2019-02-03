@@ -26,8 +26,7 @@ import org.springframework.context.annotation.AnnotationConfigApplicationContext
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Spencer Gibb
@@ -50,23 +49,24 @@ public class ConditionalOnBusEnabledTests {
 	public void busEnabledTrue() {
 		load(MyBusEnabledConfig.class,
 				ConditionalOnBusEnabled.SPRING_CLOUD_BUS_ENABLED + ":true");
-		assertTrue("missing bean from @ConditionalOnBusEnabled config",
-				this.context.containsBean("foo"));
+		assertThat(this.context.containsBean("foo"))
+				.as("missing bean from @ConditionalOnBusEnabled config").isTrue();
 	}
 
 	@Test
 	public void busEnabledMissing() {
 		load(MyBusEnabledConfig.class);
-		assertTrue("missing bean from @ConditionalOnBusEnabled config",
-				this.context.containsBean("foo"));
+		assertThat(this.context.containsBean("foo"))
+				.as("missing bean from @ConditionalOnBusEnabled config").isTrue();
 	}
 
 	@Test
 	public void busDisabled() {
 		load(MyBusEnabledConfig.class,
 				ConditionalOnBusEnabled.SPRING_CLOUD_BUS_ENABLED + ":false");
-		assertFalse("bean exists from disabled @ConditionalOnBusEnabled config",
-				this.context.containsBean("foo"));
+		assertThat(this.context.containsBean("foo"))
+				.as("bean exists from disabled @ConditionalOnBusEnabled config")
+				.isFalse();
 	}
 
 	private void load(Class<?> config, String... environment) {

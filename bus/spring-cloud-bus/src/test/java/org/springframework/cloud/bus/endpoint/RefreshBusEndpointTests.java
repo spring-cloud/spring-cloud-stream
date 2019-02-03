@@ -18,7 +18,7 @@ package org.springframework.cloud.bus.endpoint;
 
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Dave Syer
@@ -28,7 +28,7 @@ public class RefreshBusEndpointTests {
 	@Test
 	public void instanceId() throws Exception {
 		RefreshBusEndpoint endpoint = new RefreshBusEndpoint(null, "foo");
-		assertEquals("foo", endpoint.getInstanceId());
+		assertThat(endpoint.getInstanceId()).isEqualTo("foo");
 	}
 
 }

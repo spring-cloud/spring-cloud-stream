@@ -41,9 +41,7 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class RemoteApplicationEventScanTests {
 
@@ -115,17 +113,18 @@ public class RemoteApplicationEventScanTests {
 				Arrays.asList(expectedRegisterdClasses));
 		addStandardSpringCloudEventBusEvents(expectedRegisterdClassesAsList);
 
-		assertTrue("Wrong RemoteApplicationEvent classes are registerd in object mapper",
-				expectedRegisterdClassesAsList.size() == registeredSubtypes.size());
+		assertThat(expectedRegisterdClassesAsList.size() == registeredSubtypes.size())
+				.as("Wrong RemoteApplicationEvent classes are registerd in object mapper")
+				.isTrue();
 
 		for (final NamedType namedType : registeredSubtypes) {
-			assertTrue(expectedRegisterdClassesAsList.contains(namedType.getType()));
+			assertThat(expectedRegisterdClassesAsList.contains(namedType.getType()))
+					.isTrue();
 		}
 
-		assertThat("RemoteApplicationEvent packages not registered",
-				Arrays.asList((String[]) ReflectionTestUtils.getField(this.converter,
-						"packagesToScan")),
-				containsInAnyOrder(expectedPackageToScan));
+		assertThat(Arrays.asList((String[]) ReflectionTestUtils.getField(this.converter,
+				"packagesToScan"))).as("RemoteApplicationEvent packages not registered")
+						.contains(expectedPackageToScan);
 
 	}
 

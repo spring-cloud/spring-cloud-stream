@@ -29,8 +29,6 @@ import org.springframework.cloud.bus.event.test.TypedRemoteApplicationEvent;
 import org.springframework.messaging.support.MessageBuilder;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 /**
  * @author Spencer Gibb
@@ -46,11 +44,13 @@ public class SubtypeModuleTests {
 		RemoteApplicationEvent event = mapper.readValue(
 				"{\"type\":\"my\", \"destinationService\":\"myservice\", \"originService\":\"myorigin\"}",
 				RemoteApplicationEvent.class);
-		assertTrue("event is wrong type", event instanceof MyRemoteApplicationEvent);
+		assertThat(event instanceof MyRemoteApplicationEvent).as("event is wrong type")
+				.isTrue();
 		MyRemoteApplicationEvent myEvent = MyRemoteApplicationEvent.class.cast(event);
-		assertEquals("originService was wrong", "myorigin", myEvent.getOriginService());
-		assertEquals("destinationService was wrong", "myservice",
-				myEvent.getDestinationService());
+		assertThat(myEvent.getOriginService()).as("originService was wrong")
+				.isEqualTo("myorigin");
+		assertThat(myEvent.getDestinationService()).as("destinationService was wrong")
+				.isEqualTo("myservice");
 	}
 
 	@Test
@@ -59,7 +59,8 @@ public class SubtypeModuleTests {
 
 		RemoteApplicationEvent event = mapper.readValue("{\"type\":\"another\"}",
 				AnotherRemoteApplicationEvent.class);
-		assertTrue("event is wrong type", event instanceof AnotherRemoteApplicationEvent);
+		assertThat(event instanceof AnotherRemoteApplicationEvent)
+				.as("event is wrong type").isTrue();
 	}
 
 	@Test
@@ -84,7 +85,8 @@ public class SubtypeModuleTests {
 		Object event = converter.fromMessage(MessageBuilder
 				.withPayload("{\"type\":\"TestRemoteApplicationEvent\"}").build(),
 				RemoteApplicationEvent.class);
-		assertTrue("event is wrong type", event instanceof TestRemoteApplicationEvent);
+		assertThat(event instanceof TestRemoteApplicationEvent).as("event is wrong type")
+				.isTrue();
 	}
 
 	@Test
@@ -94,12 +96,14 @@ public class SubtypeModuleTests {
 		Object event = converter.fromMessage(MessageBuilder
 				.withPayload("{\"type\":\"NotDefinedTestRemoteApplicationEvent\"}")
 				.build(), RemoteApplicationEvent.class);
-		assertTrue("event is wrong type", event instanceof UnknownRemoteApplicationEvent);
-		assertEquals("type information is wrong", "NotDefinedTestRemoteApplicationEvent",
-				((UnknownRemoteApplicationEvent) event).getTypeInfo());
-		assertEquals("payload is wrong",
-				"{\"type\":\"NotDefinedTestRemoteApplicationEvent\"}",
-				((UnknownRemoteApplicationEvent) event).getPayloadAsString());
+		assertThat(event instanceof UnknownRemoteApplicationEvent)
+				.as("event is wrong type").isTrue();
+		assertThat(((UnknownRemoteApplicationEvent) event).getTypeInfo())
+				.as("type information is wrong")
+				.isEqualTo("NotDefinedTestRemoteApplicationEvent");
+		assertThat(((UnknownRemoteApplicationEvent) event).getPayloadAsString())
+				.as("payload is wrong")
+				.isEqualTo("{\"type\":\"NotDefinedTestRemoteApplicationEvent\"}");
 	}
 
 	@Test
@@ -109,7 +113,8 @@ public class SubtypeModuleTests {
 		Object event = converter.fromMessage(
 				MessageBuilder.withPayload("{\"type\":\"typed\"}").build(),
 				RemoteApplicationEvent.class);
-		assertTrue("event is wrong type", event instanceof TypedRemoteApplicationEvent);
+		assertThat(event instanceof TypedRemoteApplicationEvent).as("event is wrong type")
+				.isTrue();
 	}
 
 	/**
@@ -119,13 +124,15 @@ public class SubtypeModuleTests {
 	public void testDeserializeAckRemoteApplicationEventWithKnownType() throws Exception {
 		BusJacksonMessageConverter converter = new BusJacksonMessageConverter();
 		converter.afterPropertiesSet();
-		Object event = converter.fromMessage(MessageBuilder.withPayload(
-				"{\"type\":\"AckRemoteApplicationEvent\", \"event\":\"org.springframework.cloud.bus.event.test.TestRemoteApplicationEvent\"}")
+		Object event = converter.fromMessage(MessageBuilder
+				.withPayload("{\"type\":\"AckRemoteApplicationEvent\", "
+						+ "\"event\":\"org.springframework.cloud.bus.event.test.TestRemoteApplicationEvent\"}")
 				.build(), RemoteApplicationEvent.class);
-		assertTrue("event is no ack", event instanceof AckRemoteApplicationEvent);
+		assertThat(event instanceof AckRemoteApplicationEvent).as("event is no ack")
+				.isTrue();
 		AckRemoteApplicationEvent ackEvent = AckRemoteApplicationEvent.class.cast(event);
-		assertEquals("inner ack event has wrong type", TestRemoteApplicationEvent.class,
-				ackEvent.getEvent());
+		assertThat(ackEvent.getEvent()).as("inner ack event has wrong type")
+				.isEqualTo(TestRemoteApplicationEvent.class);
 	}
 
 	/**
@@ -139,10 +146,11 @@ public class SubtypeModuleTests {
 		Object event = converter.fromMessage(MessageBuilder.withPayload(
 				"{\"type\":\"AckRemoteApplicationEvent\", \"event\":\"foo.bar.TestRemoteApplicationEvent\"}")
 				.build(), RemoteApplicationEvent.class);
-		assertTrue("event is no ack", event instanceof AckRemoteApplicationEvent);
+		assertThat(event instanceof AckRemoteApplicationEvent).as("event is no ack")
+				.isTrue();
 		AckRemoteApplicationEvent ackEvent = AckRemoteApplicationEvent.class.cast(event);
-		assertEquals("inner ack event has wrong type",
-				UnknownRemoteApplicationEvent.class, ackEvent.getEvent());
+		assertThat(ackEvent.getEvent()).as("inner ack event has wrong type")
+				.isEqualTo(UnknownRemoteApplicationEvent.class);
 	}
 
 	@SuppressWarnings("serial")

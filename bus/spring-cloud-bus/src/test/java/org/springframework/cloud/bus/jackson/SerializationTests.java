@@ -25,9 +25,7 @@ import org.springframework.cloud.bus.event.EnvironmentChangeRemoteApplicationEve
 import org.springframework.cloud.bus.event.RefreshRemoteApplicationEvent;
 import org.springframework.cloud.bus.event.RemoteApplicationEvent;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Dave Syer
@@ -46,9 +44,9 @@ public class SerializationTests {
 		String value = this.mapper.writeValueAsString(source);
 		RemoteApplicationEvent event = this.mapper.readValue(value,
 				RemoteApplicationEvent.class);
-		assertTrue(event instanceof EnvironmentChangeRemoteApplicationEvent);
-		assertNotNull(event.getId());
-		assertTrue(event.getId().equals(source.getId()));
+		assertThat(event instanceof EnvironmentChangeRemoteApplicationEvent).isTrue();
+		assertThat(event.getId()).isNotNull();
+		assertThat(event.getId().equals(source.getId())).isTrue();
 	}
 
 	@Test
@@ -61,9 +59,9 @@ public class SerializationTests {
 		value = value.replaceAll(",\"id\":\"[a-f0-9-]*\"", "");
 		RemoteApplicationEvent event = this.mapper.readValue(value,
 				RemoteApplicationEvent.class);
-		assertTrue(event instanceof EnvironmentChangeRemoteApplicationEvent);
-		assertNotNull(event.getId());
-		assertFalse(event.getId().equals(source.getId()));
+		assertThat(event instanceof EnvironmentChangeRemoteApplicationEvent).isTrue();
+		assertThat(event.getId()).isNotNull();
+		assertThat(event.getId().equals(source.getId())).isFalse();
 	}
 
 }

@@ -53,10 +53,6 @@ import org.springframework.messaging.support.ChannelInterceptorAdapter;
 import org.springframework.messaging.support.GenericMessage;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -75,9 +71,10 @@ public class BusAutoConfigurationTests {
 	public void defaultId() {
 		this.context = SpringApplication.run(InboundMessageHandlerConfiguration.class,
 				"--server.port=0");
-		assertTrue("Wrong ID: " + this.context.getBean(BusProperties.class).getId(),
-				this.context.getBean(BusProperties.class).getId()
-						.startsWith("application:0:"));
+		assertThat(this.context.getBean(BusProperties.class).getId()
+				.startsWith("application:0:")).as(
+						"Wrong ID: " + this.context.getBean(BusProperties.class).getId())
+						.isTrue();
 	}
 
 	@Test
@@ -87,8 +84,8 @@ public class BusAutoConfigurationTests {
 		this.context.getBean(SpringCloudBusClient.INPUT, MessageChannel.class)
 				.send(new GenericMessage<>(
 						new RefreshRemoteApplicationEvent(this, "bar", "bar")));
-		assertNull(
-				this.context.getBean(InboundMessageHandlerConfiguration.class).refresh);
+		assertThat(this.context.getBean(InboundMessageHandlerConfiguration.class).refresh)
+				.isNull();
 	}
 
 	@Test
@@ -98,8 +95,8 @@ public class BusAutoConfigurationTests {
 		this.context.getBean(SpringCloudBusClient.INPUT, MessageChannel.class)
 				.send(new GenericMessage<>(
 						new RefreshRemoteApplicationEvent(this, "foo", null)));
-		assertNull(
-				this.context.getBean(InboundMessageHandlerConfiguration.class).refresh);
+		assertThat(this.context.getBean(InboundMessageHandlerConfiguration.class).refresh)
+				.isNull();
 	}
 
 	@Test
@@ -109,8 +106,8 @@ public class BusAutoConfigurationTests {
 		this.context.getBean(SpringCloudBusClient.INPUT, MessageChannel.class)
 				.send(new GenericMessage<>(
 						new RefreshRemoteApplicationEvent(this, "foo", null)));
-		assertNotNull(
-				this.context.getBean(InboundMessageHandlerConfiguration.class).refresh);
+		assertThat(this.context.getBean(InboundMessageHandlerConfiguration.class).refresh)
+				.isNotNull();
 	}
 
 	@Test
@@ -125,13 +122,13 @@ public class BusAutoConfigurationTests {
 						new RefreshRemoteApplicationEvent(this, "foo", null)));
 		RefreshRemoteApplicationEvent refresh = this.context
 				.getBean(InboundMessageHandlerConfiguration.class).refresh;
-		assertNotNull(refresh);
+		assertThat(refresh).isNotNull();
 		OutboundMessageHandlerConfiguration outbound = this.context
 				.getBean(OutboundMessageHandlerConfiguration.class);
 		outbound.latch.await(2000L, TimeUnit.MILLISECONDS);
 		String message = (String) outbound.message.getPayload();
-		assertTrue("Wrong ackId: " + message,
-				message.contains("\"ackId\":\"" + refresh.getId()));
+		assertThat(message.contains("\"ackId\":\"" + refresh.getId()))
+				.as("Wrong ackId: " + message).isTrue();
 	}
 
 	@Test
@@ -147,11 +144,11 @@ public class BusAutoConfigurationTests {
 						new RefreshRemoteApplicationEvent(this, "foo", null)));
 		RefreshRemoteApplicationEvent refresh = this.context
 				.getBean(InboundMessageHandlerConfiguration.class).refresh;
-		assertNotNull(refresh);
+		assertThat(refresh).isNotNull();
 		SentMessageConfiguration sent = this.context
 				.getBean(SentMessageConfiguration.class);
-		assertNotNull(sent.event);
-		assertEquals(1, sent.count);
+		assertThat(sent.event).isNotNull();
+		assertThat(sent.count).isEqualTo(1);
 	}
 
 	@Test
@@ -168,8 +165,8 @@ public class BusAutoConfigurationTests {
 						null, "ID", "bar", RefreshRemoteApplicationEvent.class)));
 		AckMessageConfiguration sent = this.context
 				.getBean(AckMessageConfiguration.class);
-		assertNotNull(sent.event);
-		assertEquals(1, sent.count);
+		assertThat(sent.event).isNotNull();
+		assertThat(sent.count).isEqualTo(1);
 	}
 
 	@Test
@@ -180,7 +177,7 @@ public class BusAutoConfigurationTests {
 		OutboundMessageHandlerConfiguration outbound = this.context
 				.getBean(OutboundMessageHandlerConfiguration.class);
 		outbound.latch.await(2000L, TimeUnit.MILLISECONDS);
-		assertNotNull("message was null", outbound.message);
+		assertThat(outbound.message).as("message was null").isNotNull();
 	}
 
 	@Test
@@ -188,8 +185,9 @@ public class BusAutoConfigurationTests {
 		this.context = SpringApplication.run(OutboundMessageHandlerConfiguration.class,
 				"--spring.cloud.bus.id=bar", "--server.port=0");
 		this.context.publishEvent(new RefreshRemoteApplicationEvent(this, "foo", null));
-		assertNull(
-				this.context.getBean(OutboundMessageHandlerConfiguration.class).message);
+		assertThat(
+				this.context.getBean(OutboundMessageHandlerConfiguration.class).message)
+						.isNull();
 	}
 
 	@Test
@@ -199,8 +197,8 @@ public class BusAutoConfigurationTests {
 		this.context.getBean(SpringCloudBusClient.INPUT, MessageChannel.class)
 				.send(new GenericMessage<>(
 						new RefreshRemoteApplicationEvent(this, "foo", "bar:*")));
-		assertNotNull(
-				this.context.getBean(InboundMessageHandlerConfiguration.class).refresh);
+		assertThat(this.context.getBean(InboundMessageHandlerConfiguration.class).refresh)
+				.isNotNull();
 	}
 
 	@Test
@@ -210,8 +208,8 @@ public class BusAutoConfigurationTests {
 		this.context.getBean(SpringCloudBusClient.INPUT, MessageChannel.class)
 				.send(new GenericMessage<>(
 						new RefreshRemoteApplicationEvent(this, "foo", "bar:**")));
-		assertNotNull(
-				this.context.getBean(InboundMessageHandlerConfiguration.class).refresh);
+		assertThat(this.context.getBean(InboundMessageHandlerConfiguration.class).refresh)
+				.isNotNull();
 	}
 
 	@Test
@@ -221,8 +219,8 @@ public class BusAutoConfigurationTests {
 		this.context.getBean(SpringCloudBusClient.INPUT, MessageChannel.class)
 				.send(new GenericMessage<>(
 						new RefreshRemoteApplicationEvent(this, "foo", "bar*")));
-		assertNotNull(
-				this.context.getBean(InboundMessageHandlerConfiguration.class).refresh);
+		assertThat(this.context.getBean(InboundMessageHandlerConfiguration.class).refresh)
+				.isNotNull();
 	}
 
 	// see https://github.com/spring-cloud/spring-cloud-bus/issues/74
