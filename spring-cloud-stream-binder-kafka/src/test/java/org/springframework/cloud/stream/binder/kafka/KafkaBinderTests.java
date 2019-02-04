@@ -2606,7 +2606,6 @@ public class KafkaBinderTests extends
 					throw new RequeueCurrentMessageException();
 				});
 			}
-			fail("Expected exception");
 		}
 		catch (MessageHandlingException e) {
 			assertThat(e.getCause()).isInstanceOf(RequeueCurrentMessageException.class);
