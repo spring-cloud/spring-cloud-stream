@@ -31,13 +31,15 @@ import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.cloud.stream.test.junit.AbstractExternalResourceTestSupport;
 
 /**
- * JUnit {@link org.junit.Rule} that detects the fact that RabbitMQ is available on localhost.
+ * JUnit {@link org.junit.Rule} that detects the fact that RabbitMQ is available on
+ * localhost.
  *
  * @author Mark Fisher
  * @author Gary Russell
  * @author Eric Bottard
  */
-public class RabbitTestSupport extends AbstractExternalResourceTestSupport<CachingConnectionFactory> {
+public class RabbitTestSupport
+		extends AbstractExternalResourceTestSupport<CachingConnectionFactory> {
 
 	private final boolean management;
 
@@ -79,7 +81,8 @@ public class RabbitTestSupport extends AbstractExternalResourceTestSupport<Cachi
 		private volatile ServerSocket serverSocket;
 
 		public RabbitProxy() throws IOException {
-			ServerSocket serverSocket = ServerSocketFactory.getDefault().createServerSocket(0);
+			ServerSocket serverSocket = ServerSocketFactory.getDefault()
+					.createServerSocket(0);
 			this.port = serverSocket.getLocalPort();
 			serverSocket.close();
 		}
@@ -89,7 +92,8 @@ public class RabbitTestSupport extends AbstractExternalResourceTestSupport<Cachi
 		}
 
 		public void start() throws IOException {
-			this.serverSocket = ServerSocketFactory.getDefault().createServerSocket(this.port);
+			this.serverSocket = ServerSocketFactory.getDefault()
+					.createServerSocket(this.port);
 			this.serverExec.execute(new Runnable() {
 
 				@Override
@@ -102,15 +106,18 @@ public class RabbitTestSupport extends AbstractExternalResourceTestSupport<Cachi
 								@Override
 								public void run() {
 									try {
-										final Socket rabbitSocket = SocketFactory.getDefault().createSocket("localhost",
-												5672);
+										final Socket rabbitSocket = SocketFactory
+												.getDefault()
+												.createSocket("localhost", 5672);
 										socketExec.execute(new Runnable() {
 
 											@Override
 											public void run() {
 												try {
-													InputStream is = rabbitSocket.getInputStream();
-													OutputStream os = socket.getOutputStream();
+													InputStream is = rabbitSocket
+															.getInputStream();
+													OutputStream os = socket
+															.getOutputStream();
 													int c;
 													while ((c = is.read()) >= 0) {
 														os.write(c);

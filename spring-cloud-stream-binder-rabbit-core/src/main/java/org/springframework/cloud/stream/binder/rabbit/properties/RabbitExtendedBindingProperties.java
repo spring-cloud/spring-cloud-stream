@@ -27,8 +27,8 @@ import org.springframework.cloud.stream.binder.BinderSpecificPropertiesProvider;
  * @author Soby Chacko
  */
 @ConfigurationProperties("spring.cloud.stream.rabbit")
-public class RabbitExtendedBindingProperties
-		extends AbstractExtendedBindingProperties<RabbitConsumerProperties, RabbitProducerProperties, RabbitBindingProperties> {
+public class RabbitExtendedBindingProperties extends
+		AbstractExtendedBindingProperties<RabbitConsumerProperties, RabbitProducerProperties, RabbitBindingProperties> {
 
 	private static final String DEFAULTS_PREFIX = "spring.cloud.stream.rabbit.default";
 
@@ -41,4 +41,5 @@ public class RabbitExtendedBindingProperties
 	public Class<? extends BinderSpecificPropertiesProvider> getExtendedPropertiesEntryClass() {
 		return RabbitBindingProperties.class;
 	}
+
 }

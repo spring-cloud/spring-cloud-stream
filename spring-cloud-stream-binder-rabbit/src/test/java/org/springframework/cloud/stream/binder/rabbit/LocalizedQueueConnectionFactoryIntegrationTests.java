@@ -32,9 +32,7 @@ import org.springframework.cloud.stream.binder.test.junit.rabbit.RabbitTestSuppo
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-
 /**
- *
  * @author Gary Russell
  */
 public class LocalizedQueueConnectionFactoryIntegrationTests {
@@ -48,13 +46,15 @@ public class LocalizedQueueConnectionFactoryIntegrationTests {
 	public void setup() {
 		ConnectionFactory defaultConnectionFactory = rabbitAvailableRule.getResource();
 		String[] addresses = new String[] { "localhost:9999", "localhost:5672" };
-		String[] adminAddresses = new String[] { "http://localhost:15672", "http://localhost:15672" };
+		String[] adminAddresses = new String[] { "http://localhost:15672",
+				"http://localhost:15672" };
 		String[] nodes = new String[] { "foo@bar", "rabbit@localhost" };
 		String vhost = "/";
 		String username = "guest";
 		String password = "guest";
-		this.lqcf = new LocalizedQueueConnectionFactory(defaultConnectionFactory, addresses,
-				adminAddresses, nodes, vhost, username, password, false, null, null, null, null);
+		this.lqcf = new LocalizedQueueConnectionFactory(defaultConnectionFactory,
+				addresses, adminAddresses, nodes, vhost, username, password, false, null,
+				null, null, null);
 	}
 
 	@Test
@@ -62,7 +62,8 @@ public class LocalizedQueueConnectionFactoryIntegrationTests {
 		RabbitAdmin admin = new RabbitAdmin(this.lqcf);
 		Queue queue = new Queue(UUID.randomUUID().toString(), false, false, true);
 		admin.declareQueue(queue);
-		ConnectionFactory targetConnectionFactory = this.lqcf.getTargetConnectionFactory("[" + queue.getName() + "]");
+		ConnectionFactory targetConnectionFactory = this.lqcf
+				.getTargetConnectionFactory("[" + queue.getName() + "]");
 		RabbitTemplate template = new RabbitTemplate(targetConnectionFactory);
 		template.convertAndSend("", queue.getName(), "foo");
 		assertThat(template.receiveAndConvert(queue.getName())).isEqualTo("foo");

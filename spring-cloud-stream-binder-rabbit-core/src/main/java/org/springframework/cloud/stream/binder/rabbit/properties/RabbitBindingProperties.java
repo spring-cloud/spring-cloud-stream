@@ -22,7 +22,7 @@ import org.springframework.cloud.stream.binder.BinderSpecificPropertiesProvider;
  * @author Marius Bogoevici
  * @author Oleg Zhurakousky
  */
-public class RabbitBindingProperties implements BinderSpecificPropertiesProvider{
+public class RabbitBindingProperties implements BinderSpecificPropertiesProvider {
 
 	private RabbitConsumerProperties consumer = new RabbitConsumerProperties();
 
@@ -43,4 +43,5 @@ public class RabbitBindingProperties implements BinderSpecificPropertiesProvider
 	public void setProducer(RabbitProducerProperties producer) {
 		this.producer = producer;
 	}
+
 }

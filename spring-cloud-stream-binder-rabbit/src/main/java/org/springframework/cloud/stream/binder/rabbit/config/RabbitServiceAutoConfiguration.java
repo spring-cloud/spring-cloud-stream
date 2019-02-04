@@ -68,8 +68,8 @@ public class RabbitServiceAutoConfiguration {
 	protected static class CloudProfile {
 
 		/**
-		 * Configuration to be used when the cloud profile is set, and Cloud Connectors are found
-		 * on the classpath.
+		 * Configuration to be used when the cloud profile is set, and Cloud Connectors
+		 * are found on the classpath.
 		 */
 		@Configuration
 		@ConditionalOnClass(Cloud.class)
@@ -82,8 +82,8 @@ public class RabbitServiceAutoConfiguration {
 			}
 
 			/**
-			 * Active only if {@code spring.cloud.stream.override-cloud-connectors} is not set to
-			 * {@code true}.
+			 * Active only if {@code spring.cloud.stream.override-cloud-connectors} is not
+			 * set to {@code true}.
 			 */
 			@Configuration
 			@ConditionalOnProperty(value = "spring.cloud.stream.override-cloud-connectors", havingValue = "false", matchIfMissing = true)
@@ -94,7 +94,8 @@ public class RabbitServiceAutoConfiguration {
 			protected static class UseCloudConnectors {
 
 				/**
-				 * Creates a {@link ConnectionFactory} using the singleton service connector.
+				 * Creates a {@link ConnectionFactory} using the singleton service
+				 * connector.
 				 * @param cloud {@link Cloud} instance to be used for accessing services.
 				 * @param connectorConfigObjectProvider the {@link ObjectProvider} for the
 				 * {@link RabbitConnectionFactoryConfig}.
@@ -107,10 +108,12 @@ public class RabbitServiceAutoConfiguration {
 						ConfigurableApplicationContext applicationContext,
 						RabbitProperties rabbitProperties) throws Exception {
 
-					ConnectionFactory connectionFactory = cloud.getSingletonServiceConnector(ConnectionFactory.class,
-							connectorConfigObjectProvider.getIfUnique());
+					ConnectionFactory connectionFactory = cloud
+							.getSingletonServiceConnector(ConnectionFactory.class,
+									connectorConfigObjectProvider.getIfUnique());
 
-					configureCachingConnectionFactory((CachingConnectionFactory) connectionFactory,
+					configureCachingConnectionFactory(
+							(CachingConnectionFactory) connectionFactory,
 							applicationContext, rabbitProperties);
 
 					return connectionFactory;
@@ -121,11 +124,13 @@ public class RabbitServiceAutoConfiguration {
 				RabbitTemplate rabbitTemplate(ConnectionFactory connectionFactory) {
 					return new RabbitTemplate(connectionFactory);
 				}
+
 			}
 
 			/**
-			 * Configuration to be used if {@code spring.cloud.stream.override-cloud-connectors} is set
-			 * to {@code true}. Defers to Spring Boot auto-configuration.
+			 * Configuration to be used if
+			 * {@code spring.cloud.stream.override-cloud-connectors} is set to
+			 * {@code true}. Defers to Spring Boot auto-configuration.
 			 */
 			@Configuration
 			@ConditionalOnProperty("spring.cloud.stream.override-cloud-connectors")
@@ -153,6 +158,7 @@ public class RabbitServiceAutoConfiguration {
 	@Profile("!cloud")
 	@Import(RabbitAutoConfiguration.class)
 	protected static class NoCloudProfile {
+
 	}
 
 	@Configuration
@@ -166,8 +172,10 @@ public class RabbitServiceAutoConfiguration {
 
 	}
 
-	static void configureCachingConnectionFactory(CachingConnectionFactory connectionFactory,
-			ConfigurableApplicationContext applicationContext, RabbitProperties rabbitProperties) throws Exception {
+	static void configureCachingConnectionFactory(
+			CachingConnectionFactory connectionFactory,
+			ConfigurableApplicationContext applicationContext,
+			RabbitProperties rabbitProperties) throws Exception {
 
 		if (StringUtils.hasText(rabbitProperties.getAddresses())) {
 			connectionFactory.setAddresses(rabbitProperties.determineAddresses());
@@ -176,18 +184,20 @@ public class RabbitServiceAutoConfiguration {
 		connectionFactory.setPublisherConfirms(rabbitProperties.isPublisherConfirms());
 		connectionFactory.setPublisherReturns(rabbitProperties.isPublisherReturns());
 		if (rabbitProperties.getCache().getChannel().getSize() != null) {
-			connectionFactory.setChannelCacheSize(rabbitProperties.getCache().getChannel().getSize());
+			connectionFactory.setChannelCacheSize(
+					rabbitProperties.getCache().getChannel().getSize());
 		}
 		if (rabbitProperties.getCache().getConnection().getMode() != null) {
-			connectionFactory.setCacheMode(rabbitProperties.getCache().getConnection().getMode());
+			connectionFactory
+					.setCacheMode(rabbitProperties.getCache().getConnection().getMode());
 		}
 		if (rabbitProperties.getCache().getConnection().getSize() != null) {
 			connectionFactory.setConnectionCacheSize(
 					rabbitProperties.getCache().getConnection().getSize());
 		}
 		if (rabbitProperties.getCache().getChannel().getCheckoutTimeout() != null) {
-			connectionFactory.setChannelCheckoutTimeout(
-					rabbitProperties.getCache().getChannel().getCheckoutTimeout().toMillis());
+			connectionFactory.setChannelCheckoutTimeout(rabbitProperties.getCache()
+					.getChannel().getCheckoutTimeout().toMillis());
 		}
 		connectionFactory.setApplicationContext(applicationContext);
 		applicationContext.addApplicationListener(connectionFactory);

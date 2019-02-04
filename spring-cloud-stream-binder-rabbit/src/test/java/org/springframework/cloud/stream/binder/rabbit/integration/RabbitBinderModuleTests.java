@@ -78,8 +78,8 @@ public class RabbitBinderModuleTests {
 
 	private ConfigurableApplicationContext context;
 
-	public static final ConnectionFactory MOCK_CONNECTION_FACTORY = mock(ConnectionFactory.class,
-			Mockito.RETURNS_MOCKS);
+	public static final ConnectionFactory MOCK_CONNECTION_FACTORY = mock(
+			ConnectionFactory.class, Mockito.RETURNS_MOCKS);
 
 	@After
 	public void tearDown() {
@@ -95,8 +95,8 @@ public class RabbitBinderModuleTests {
 	@Test
 	public void testParentConnectionFactoryInheritedByDefault() {
 		context = new SpringApplicationBuilder(SimpleProcessor.class)
-				.web(WebApplicationType.NONE)
-				.run("--server.port=0", "--spring.cloud.stream.rabbit.binder.connection-name-prefix=foo");
+				.web(WebApplicationType.NONE).run("--server.port=0",
+						"--spring.cloud.stream.rabbit.binder.connection-name-prefix=foo");
 		BinderFactory binderFactory = context.getBean(BinderFactory.class);
 		Binder<?, ?, ?> binder = binderFactory.getBinder(null, MessageChannel.class);
 		assertThat(binder).isInstanceOf(RabbitMessageChannelBinder.class);
@@ -107,29 +107,35 @@ public class RabbitBinderModuleTests {
 		ConnectionFactory connectionFactory = context.getBean(ConnectionFactory.class);
 		assertThat(binderConnectionFactory).isSameAs(connectionFactory);
 
-		CompositeHealthIndicator bindersHealthIndicator = context.getBean("bindersHealthIndicator",
-				CompositeHealthIndicator.class);
-		DirectFieldAccessor directFieldAccessor = new DirectFieldAccessor(bindersHealthIndicator);
+		CompositeHealthIndicator bindersHealthIndicator = context
+				.getBean("bindersHealthIndicator", CompositeHealthIndicator.class);
+		DirectFieldAccessor directFieldAccessor = new DirectFieldAccessor(
+				bindersHealthIndicator);
 		assertThat(bindersHealthIndicator).isNotNull();
 		@SuppressWarnings("unchecked")
 		Map<String, HealthIndicator> healthIndicators = (Map<String, HealthIndicator>) directFieldAccessor
 				.getPropertyValue("registry.healthIndicators");
 		assertThat(healthIndicators).containsKey(("rabbit"));
-		assertThat(healthIndicators.get("rabbit").health().getStatus()).isEqualTo((Status.UP));
+		assertThat(healthIndicators.get("rabbit").health().getStatus())
+				.isEqualTo((Status.UP));
 
-		ConnectionFactory publisherConnectionFactory = binderConnectionFactory.getPublisherConnectionFactory();
-		assertThat(TestUtils.getPropertyValue(publisherConnectionFactory, "connection.target")).isNull();
+		ConnectionFactory publisherConnectionFactory = binderConnectionFactory
+				.getPublisherConnectionFactory();
+		assertThat(TestUtils.getPropertyValue(publisherConnectionFactory,
+				"connection.target")).isNull();
 		DirectChannel checkPf = new DirectChannel();
-		Binding<MessageChannel> binding = ((RabbitMessageChannelBinder) binder).bindProducer("checkPF", checkPf,
-				new ExtendedProducerProperties<>(
-						new RabbitProducerProperties()));
+		Binding<MessageChannel> binding = ((RabbitMessageChannelBinder) binder)
+				.bindProducer("checkPF", checkPf,
+						new ExtendedProducerProperties<>(new RabbitProducerProperties()));
 		checkPf.send(new GenericMessage<>("foo".getBytes()));
 		binding.unbind();
-		assertThat(TestUtils.getPropertyValue(publisherConnectionFactory, "connection.target")).isNotNull();
+		assertThat(TestUtils.getPropertyValue(publisherConnectionFactory,
+				"connection.target")).isNotNull();
 
-		CachingConnectionFactory cf = this.context.getBean(CachingConnectionFactory.class);
-		ConnectionNameStrategy cns = TestUtils.getPropertyValue(cf, "connectionNameStrategy",
-				ConnectionNameStrategy.class);
+		CachingConnectionFactory cf = this.context
+				.getBean(CachingConnectionFactory.class);
+		ConnectionNameStrategy cns = TestUtils.getPropertyValue(cf,
+				"connectionNameStrategy", ConnectionNameStrategy.class);
 		assertThat(cns.obtainNewConnectionName(cf)).isEqualTo("foo#2");
 		new RabbitAdmin(rabbitTestSupport.getResource()).deleteExchange("checkPF");
 	}
@@ -138,8 +144,7 @@ public class RabbitBinderModuleTests {
 	@SuppressWarnings("unchecked")
 	public void testParentConnectionFactoryInheritedByDefaultAndRabbitSettingsPropagated() {
 		context = new SpringApplicationBuilder(SimpleProcessor.class)
-				.web(WebApplicationType.NONE)
-				.run("--server.port=0",
+				.web(WebApplicationType.NONE).run("--server.port=0",
 						"--spring.cloud.stream.bindings.input.group=someGroup",
 						"--spring.cloud.stream.rabbit.bindings.input.consumer.transacted=true",
 						"--spring.cloud.stream.rabbit.bindings.output.producer.transacted=true");
@@ -147,46 +152,52 @@ public class RabbitBinderModuleTests {
 		Binder<?, ?, ?> binder = binderFactory.getBinder(null, MessageChannel.class);
 		assertThat(binder).isInstanceOf(RabbitMessageChannelBinder.class);
 		BindingService bindingService = context.getBean(BindingService.class);
-		DirectFieldAccessor channelBindingServiceAccessor = new DirectFieldAccessor(bindingService);
+		DirectFieldAccessor channelBindingServiceAccessor = new DirectFieldAccessor(
+				bindingService);
 		Map<String, List<Binding<MessageChannel>>> consumerBindings = (Map<String, List<Binding<MessageChannel>>>) channelBindingServiceAccessor
 				.getPropertyValue("consumerBindings");
 		Binding<MessageChannel> inputBinding = consumerBindings.get("input").get(0);
-		SimpleMessageListenerContainer container = TestUtils.getPropertyValue(inputBinding,
-				"lifecycle.messageListenerContainer", SimpleMessageListenerContainer.class);
+		SimpleMessageListenerContainer container = TestUtils.getPropertyValue(
+				inputBinding, "lifecycle.messageListenerContainer",
+				SimpleMessageListenerContainer.class);
 		assertThat(TestUtils.getPropertyValue(container, "beanName"))
-			.isEqualTo("setByCustomizerForQueue:input.someGroup,andGroup:someGroup");
-		assertThat(TestUtils.getPropertyValue(container, "transactional", Boolean.class)).isTrue();
+				.isEqualTo("setByCustomizerForQueue:input.someGroup,andGroup:someGroup");
+		assertThat(TestUtils.getPropertyValue(container, "transactional", Boolean.class))
+				.isTrue();
 		Map<String, Binding<MessageChannel>> producerBindings = (Map<String, Binding<MessageChannel>>) TestUtils
 				.getPropertyValue(bindingService, "producerBindings");
 		Binding<MessageChannel> outputBinding = producerBindings.get("output");
-		assertThat(TestUtils.getPropertyValue(outputBinding, "lifecycle.amqpTemplate.transactional",
-				Boolean.class)).isTrue();
+		assertThat(TestUtils.getPropertyValue(outputBinding,
+				"lifecycle.amqpTemplate.transactional", Boolean.class)).isTrue();
 		DirectFieldAccessor binderFieldAccessor = new DirectFieldAccessor(binder);
 		ConnectionFactory binderConnectionFactory = (ConnectionFactory) binderFieldAccessor
 				.getPropertyValue("connectionFactory");
 		assertThat(binderConnectionFactory).isInstanceOf(CachingConnectionFactory.class);
 		ConnectionFactory connectionFactory = context.getBean(ConnectionFactory.class);
 		assertThat(binderConnectionFactory).isSameAs(connectionFactory);
-		CompositeHealthIndicator bindersHealthIndicator = context.getBean("bindersHealthIndicator",
-				CompositeHealthIndicator.class);
-		DirectFieldAccessor directFieldAccessor = new DirectFieldAccessor(bindersHealthIndicator);
+		CompositeHealthIndicator bindersHealthIndicator = context
+				.getBean("bindersHealthIndicator", CompositeHealthIndicator.class);
+		DirectFieldAccessor directFieldAccessor = new DirectFieldAccessor(
+				bindersHealthIndicator);
 		assertThat(bindersHealthIndicator).isNotNull();
 		Map<String, HealthIndicator> healthIndicators = (Map<String, HealthIndicator>) directFieldAccessor
 				.getPropertyValue("registry.healthIndicators");
 		assertThat(healthIndicators).containsKey("rabbit");
-		assertThat(healthIndicators.get("rabbit").health().getStatus()).isEqualTo(Status.UP);
+		assertThat(healthIndicators.get("rabbit").health().getStatus())
+				.isEqualTo(Status.UP);
 
-		CachingConnectionFactory cf = this.context.getBean(CachingConnectionFactory.class);
-		ConnectionNameStrategy cns = TestUtils.getPropertyValue(cf, "connectionNameStrategy",
-				ConnectionNameStrategy.class);
+		CachingConnectionFactory cf = this.context
+				.getBean(CachingConnectionFactory.class);
+		ConnectionNameStrategy cns = TestUtils.getPropertyValue(cf,
+				"connectionNameStrategy", ConnectionNameStrategy.class);
 		assertThat(cns.obtainNewConnectionName(cf)).startsWith("rabbitConnectionFactory");
 	}
 
 	@Test
 	public void testParentConnectionFactoryInheritedIfOverridden() {
-		context = new SpringApplicationBuilder(SimpleProcessor.class, ConnectionFactoryConfiguration.class)
-				.web(WebApplicationType.NONE)
-				.run("--server.port=0");
+		context = new SpringApplicationBuilder(SimpleProcessor.class,
+				ConnectionFactoryConfiguration.class).web(WebApplicationType.NONE)
+						.run("--server.port=0");
 		BinderFactory binderFactory = context.getBean(BinderFactory.class);
 		Binder<?, ?, ?> binder = binderFactory.getBinder(null, MessageChannel.class);
 		assertThat(binder).isInstanceOf(RabbitMessageChannelBinder.class);
@@ -196,16 +207,18 @@ public class RabbitBinderModuleTests {
 		assertThat(binderConnectionFactory).isSameAs(MOCK_CONNECTION_FACTORY);
 		ConnectionFactory connectionFactory = context.getBean(ConnectionFactory.class);
 		assertThat(binderConnectionFactory).isSameAs(connectionFactory);
-		CompositeHealthIndicator bindersHealthIndicator = context.getBean("bindersHealthIndicator",
-				CompositeHealthIndicator.class);
+		CompositeHealthIndicator bindersHealthIndicator = context
+				.getBean("bindersHealthIndicator", CompositeHealthIndicator.class);
 		assertThat(bindersHealthIndicator).isNotNull();
-		DirectFieldAccessor directFieldAccessor = new DirectFieldAccessor(bindersHealthIndicator);
+		DirectFieldAccessor directFieldAccessor = new DirectFieldAccessor(
+				bindersHealthIndicator);
 		@SuppressWarnings("unchecked")
 		Map<String, HealthIndicator> healthIndicators = (Map<String, HealthIndicator>) directFieldAccessor
 				.getPropertyValue("registry.healthIndicators");
 		assertThat(healthIndicators).containsKey("rabbit");
 		// mock connection factory behaves as if down
-		assertThat(healthIndicators.get("rabbit").health().getStatus()).isEqualTo(Status.DOWN);
+		assertThat(healthIndicators.get("rabbit").health().getStatus())
+				.isEqualTo(Status.DOWN);
 	}
 
 	@Test
@@ -234,24 +247,27 @@ public class RabbitBinderModuleTests {
 				.getPropertyValue("connectionFactory");
 		ConnectionFactory connectionFactory = context.getBean(ConnectionFactory.class);
 		assertThat(binderConnectionFactory).isNotSameAs(connectionFactory);
-		CompositeHealthIndicator bindersHealthIndicator = context.getBean("bindersHealthIndicator",
-				CompositeHealthIndicator.class);
+		CompositeHealthIndicator bindersHealthIndicator = context
+				.getBean("bindersHealthIndicator", CompositeHealthIndicator.class);
 		assertThat(bindersHealthIndicator);
-		DirectFieldAccessor directFieldAccessor = new DirectFieldAccessor(bindersHealthIndicator);
+		DirectFieldAccessor directFieldAccessor = new DirectFieldAccessor(
+				bindersHealthIndicator);
 		@SuppressWarnings("unchecked")
 		Map<String, HealthIndicator> healthIndicators = (Map<String, HealthIndicator>) directFieldAccessor
 				.getPropertyValue("registry.healthIndicators");
 		assertThat(healthIndicators).containsKey("custom");
-		assertThat(healthIndicators.get("custom").health().getStatus()).isEqualTo(Status.UP);
+		assertThat(healthIndicators.get("custom").health().getStatus())
+				.isEqualTo(Status.UP);
 		String name = UUID.randomUUID().toString();
 		Binding<MessageChannel> binding = binder.bindProducer(name, new DirectChannel(),
 				new ExtendedProducerProperties<>(new RabbitProducerProperties()));
-		RetryTemplate template = TestUtils.getPropertyValue(binding, "lifecycle.amqpTemplate.retryTemplate",
-				RetryTemplate.class);
+		RetryTemplate template = TestUtils.getPropertyValue(binding,
+				"lifecycle.amqpTemplate.retryTemplate", RetryTemplate.class);
 		assertThat(template).isNotNull();
-		SimpleRetryPolicy retryPolicy = TestUtils.getPropertyValue(template, "retryPolicy", SimpleRetryPolicy.class);
-		ExponentialBackOffPolicy backOff = TestUtils.getPropertyValue(template, "backOffPolicy",
-				ExponentialBackOffPolicy.class);
+		SimpleRetryPolicy retryPolicy = TestUtils.getPropertyValue(template,
+				"retryPolicy", SimpleRetryPolicy.class);
+		ExponentialBackOffPolicy backOff = TestUtils.getPropertyValue(template,
+				"backOffPolicy", ExponentialBackOffPolicy.class);
 		assertThat(retryPolicy.getMaxAttempts()).isEqualTo(2);
 		assertThat(backOff.getInitialInterval()).isEqualTo(1000L);
 		assertThat(backOff.getMultiplier()).isEqualTo(1.1);
@@ -263,22 +279,24 @@ public class RabbitBinderModuleTests {
 
 	@Test
 	public void testCloudProfile() {
-		this.context = new SpringApplicationBuilder(SimpleProcessor.class, MockCloudConfiguration.class)
-				.web(WebApplicationType.NONE)
-				.profiles("cloud")
-				.run();
+		this.context = new SpringApplicationBuilder(SimpleProcessor.class,
+				MockCloudConfiguration.class).web(WebApplicationType.NONE)
+						.profiles("cloud").run();
 		BinderFactory binderFactory = this.context.getBean(BinderFactory.class);
 		Binder<?, ?, ?> binder = binderFactory.getBinder(null, MessageChannel.class);
 		assertThat(binder).isInstanceOf(RabbitMessageChannelBinder.class);
 		DirectFieldAccessor binderFieldAccessor = new DirectFieldAccessor(binder);
 		ConnectionFactory binderConnectionFactory = (ConnectionFactory) binderFieldAccessor
 				.getPropertyValue("connectionFactory");
-		ConnectionFactory connectionFactory = this.context.getBean(ConnectionFactory.class);
+		ConnectionFactory connectionFactory = this.context
+				.getBean(ConnectionFactory.class);
 
 		assertThat(binderConnectionFactory).isNotSameAs(connectionFactory);
 
-		assertThat(TestUtils.getPropertyValue(connectionFactory, "addresses")).isNotNull();
-		assertThat(TestUtils.getPropertyValue(binderConnectionFactory, "addresses")).isNull();
+		assertThat(TestUtils.getPropertyValue(connectionFactory, "addresses"))
+				.isNotNull();
+		assertThat(TestUtils.getPropertyValue(binderConnectionFactory, "addresses"))
+				.isNull();
 
 		Cloud cloud = this.context.getBean(Cloud.class);
 
@@ -288,24 +306,28 @@ public class RabbitBinderModuleTests {
 	@Test
 	public void testExtendedProperties() {
 		context = new SpringApplicationBuilder(SimpleProcessor.class)
-				.web(WebApplicationType.NONE)
-				.run("--server.port=0", "--spring.cloud.stream.rabbit.default.producer.routing-key-expression=fooRoutingKey",
+				.web(WebApplicationType.NONE).run("--server.port=0",
+						"--spring.cloud.stream.rabbit.default.producer.routing-key-expression=fooRoutingKey",
 						"--spring.cloud.stream.rabbit.bindings.output.producer.batch-size=512",
 						"--spring.cloud.stream.rabbit.default.consumer.max-concurrency=4",
 						"--spring.cloud.stream.rabbit.bindings.input.consumer.exchange-type=fanout");
 		BinderFactory binderFactory = context.getBean(BinderFactory.class);
-		Binder<?, ?, ?> rabbitBinder = binderFactory.getBinder(null, MessageChannel.class);
+		Binder<?, ?, ?> rabbitBinder = binderFactory.getBinder(null,
+				MessageChannel.class);
 
-		RabbitProducerProperties rabbitProducerProperties =
-				(RabbitProducerProperties)((ExtendedPropertiesBinder) rabbitBinder).getExtendedProducerProperties("output");
+		RabbitProducerProperties rabbitProducerProperties = (RabbitProducerProperties) ((ExtendedPropertiesBinder) rabbitBinder)
+				.getExtendedProducerProperties("output");
 
-		assertThat(rabbitProducerProperties.getRoutingKeyExpression().getExpressionString()).isEqualTo("fooRoutingKey");
+		assertThat(
+				rabbitProducerProperties.getRoutingKeyExpression().getExpressionString())
+						.isEqualTo("fooRoutingKey");
 		assertThat(rabbitProducerProperties.getBatchSize()).isEqualTo(512);
 
-		RabbitConsumerProperties rabbitConsumerProperties =
-				(RabbitConsumerProperties)((ExtendedPropertiesBinder) rabbitBinder).getExtendedConsumerProperties("input");
+		RabbitConsumerProperties rabbitConsumerProperties = (RabbitConsumerProperties) ((ExtendedPropertiesBinder) rabbitBinder)
+				.getExtendedConsumerProperties("input");
 
-		assertThat(rabbitConsumerProperties.getExchangeType()).isEqualTo(ExchangeTypes.FANOUT);
+		assertThat(rabbitConsumerProperties.getExchangeType())
+				.isEqualTo(ExchangeTypes.FANOUT);
 		assertThat(rabbitConsumerProperties.getMaxConcurrency()).isEqualTo(4);
 	}
 
@@ -315,8 +337,8 @@ public class RabbitBinderModuleTests {
 
 		@Bean
 		public ListenerContainerCustomizer<AbstractMessageListenerContainer> containerCustomizer() {
-			return (c, q, g) -> c.setBeanName("setByCustomizerForQueue:" + q +
-					(g == null ? "" : ",andGroup:" + g));
+			return (c, q, g) -> c.setBeanName(
+					"setByCustomizerForQueue:" + q + (g == null ? "" : ",andGroup:" + g));
 		}
 
 	}
@@ -336,9 +358,8 @@ public class RabbitBinderModuleTests {
 		public Cloud cloud() {
 			Cloud cloud = mock(Cloud.class);
 
-			willReturn(new CachingConnectionFactory("localhost"))
-							.given(cloud)
-							.getSingletonServiceConnector(ConnectionFactory.class, null);
+			willReturn(new CachingConnectionFactory("localhost")).given(cloud)
+					.getSingletonServiceConnector(ConnectionFactory.class, null);
 
 			return cloud;
 		}

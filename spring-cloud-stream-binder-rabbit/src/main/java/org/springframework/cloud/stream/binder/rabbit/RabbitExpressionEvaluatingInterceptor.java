@@ -49,14 +49,14 @@ public class RabbitExpressionEvaluatingInterceptor implements ChannelInterceptor
 	private final EvaluationContext evaluationContext;
 
 	/**
-	 * Construct an instance with the provided expressions and evaluation context.
-	 * At least one expression muse be non-null.
+	 * Construct an instance with the provided expressions and evaluation context. At
+	 * least one expression muse be non-null.
 	 * @param routingKeyExpression the routing key expresssion.
 	 * @param delayExpression the delay expression.
 	 * @param evaluationContext the evaluation context.
 	 */
-	public RabbitExpressionEvaluatingInterceptor(Expression routingKeyExpression, Expression delayExpression,
-			EvaluationContext evaluationContext) {
+	public RabbitExpressionEvaluatingInterceptor(Expression routingKeyExpression,
+			Expression delayExpression, EvaluationContext evaluationContext) {
 		Assert.isTrue(routingKeyExpression != null || delayExpression != null,
 				"At least one expression is required");
 		Assert.notNull(evaluationContext, "the 'evaluationContext' cannot be null");
@@ -83,7 +83,8 @@ public class RabbitExpressionEvaluatingInterceptor implements ChannelInterceptor
 					this.routingKeyExpression.getValue(this.evaluationContext, message));
 		}
 		if (this.delayExpression != null) {
-			builder.setHeader(DELAY_HEADER, this.delayExpression.getValue(this.evaluationContext, message));
+			builder.setHeader(DELAY_HEADER,
+					this.delayExpression.getValue(this.evaluationContext, message));
 		}
 		return builder.build();
 	}

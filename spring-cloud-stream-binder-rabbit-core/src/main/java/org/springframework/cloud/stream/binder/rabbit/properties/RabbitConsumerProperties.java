@@ -77,7 +77,7 @@ public class RabbitConsumerProperties extends RabbitCommonProperties {
 	/**
 	 * patterns to match which headers are mapped (inbound)
 	 */
-	private String[] headerPatterns = new String[] {"*"};
+	private String[] headerPatterns = new String[] { "*" };
 
 	/**
 	 * interval between reconnection attempts
@@ -102,7 +102,7 @@ public class RabbitConsumerProperties extends RabbitCommonProperties {
 	/**
 	 * interval between attempts to passively declare missing queues
 	 */
-	private Long  failedDeclarationRetryInterval;
+	private Long failedDeclarationRetryInterval;
 
 	/**
 	 * Used to create the consumer tags; will be appended by '#n' where 'n' increments for

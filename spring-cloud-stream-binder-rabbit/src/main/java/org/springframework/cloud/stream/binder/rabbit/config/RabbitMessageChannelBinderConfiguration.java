@@ -52,7 +52,8 @@ import org.springframework.lang.Nullable;
  */
 @Configuration
 @Import({ PropertyPlaceholderAutoConfiguration.class })
-@EnableConfigurationProperties({ RabbitBinderConfigurationProperties.class, RabbitExtendedBindingProperties.class })
+@EnableConfigurationProperties({ RabbitBinderConfigurationProperties.class,
+		RabbitExtendedBindingProperties.class })
 public class RabbitMessageChannelBinderConfiguration {
 
 	@Autowired
@@ -68,10 +69,14 @@ public class RabbitMessageChannelBinderConfiguration {
 	private RabbitExtendedBindingProperties rabbitExtendedBindingProperties;
 
 	@Bean
-	RabbitMessageChannelBinder rabbitMessageChannelBinder(@Nullable ListenerContainerCustomizer<AbstractMessageListenerContainer> listenerContainerCustomizer) throws Exception {
-		RabbitMessageChannelBinder binder = new RabbitMessageChannelBinder(this.rabbitConnectionFactory,
-				this.rabbitProperties, provisioningProvider(), listenerContainerCustomizer);
-		binder.setAdminAddresses(this.rabbitBinderConfigurationProperties.getAdminAddresses());
+	RabbitMessageChannelBinder rabbitMessageChannelBinder(
+			@Nullable ListenerContainerCustomizer<AbstractMessageListenerContainer> listenerContainerCustomizer)
+			throws Exception {
+		RabbitMessageChannelBinder binder = new RabbitMessageChannelBinder(
+				this.rabbitConnectionFactory, this.rabbitProperties,
+				provisioningProvider(), listenerContainerCustomizer);
+		binder.setAdminAddresses(
+				this.rabbitBinderConfigurationProperties.getAdminAddresses());
 		binder.setCompressingPostProcessor(gZipPostProcessor());
 		binder.setDecompressingPostProcessor(deCompressingPostProcessor());
 		binder.setNodes(this.rabbitBinderConfigurationProperties.getNodes());
@@ -87,7 +92,8 @@ public class RabbitMessageChannelBinderConfiguration {
 	@Bean
 	MessagePostProcessor gZipPostProcessor() {
 		GZipPostProcessor gZipPostProcessor = new GZipPostProcessor();
-		gZipPostProcessor.setLevel(this.rabbitBinderConfigurationProperties.getCompressionLevel());
+		gZipPostProcessor
+				.setLevel(this.rabbitBinderConfigurationProperties.getCompressionLevel());
 		return gZipPostProcessor;
 	}
 
@@ -101,8 +107,8 @@ public class RabbitMessageChannelBinderConfiguration {
 	@ConditionalOnProperty("spring.cloud.stream.rabbit.binder.connection-name-prefix")
 	public ConnectionNameStrategy connectionNamer(CachingConnectionFactory cf) {
 		final AtomicInteger nameIncrementer = new AtomicInteger();
-		ConnectionNameStrategy namer = f -> this.rabbitBinderConfigurationProperties.getConnectionNamePrefix()
-				+ "#" + nameIncrementer.getAndIncrement();
+		ConnectionNameStrategy namer = f -> this.rabbitBinderConfigurationProperties
+				.getConnectionNamePrefix() + "#" + nameIncrementer.getAndIncrement();
 		// TODO: this can be removed when Boot 2.0.1 wires it in
 		cf.setConnectionNameStrategy(namer);
 		return namer;

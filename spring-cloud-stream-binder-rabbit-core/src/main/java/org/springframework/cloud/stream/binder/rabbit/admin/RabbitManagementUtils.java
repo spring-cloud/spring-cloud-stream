@@ -44,13 +44,16 @@ import org.springframework.web.client.RestTemplate;
  */
 public abstract class RabbitManagementUtils {
 
-	public static RestTemplate buildRestTemplate(String adminUri, String user, String password) {
+	public static RestTemplate buildRestTemplate(String adminUri, String user,
+			String password) {
 		BasicCredentialsProvider credsProvider = new BasicCredentialsProvider();
 		credsProvider.setCredentials(
 				new AuthScope(AuthScope.ANY_HOST, AuthScope.ANY_PORT),
 				new UsernamePasswordCredentials(user, password));
-		HttpClient httpClient = HttpClients.custom().setDefaultCredentialsProvider(credsProvider).build();
-		// Set up pre-emptive basic Auth because the rabbit plugin doesn't currently support challenge/response for PUT
+		HttpClient httpClient = HttpClients.custom()
+				.setDefaultCredentialsProvider(credsProvider).build();
+		// Set up pre-emptive basic Auth because the rabbit plugin doesn't currently
+		// support challenge/response for PUT
 		// Create AuthCache instance
 		AuthCache authCache = new BasicAuthCache();
 		// Generate BASIC scheme object and add it to the local; from the apache docs...
@@ -63,20 +66,24 @@ public abstract class RabbitManagementUtils {
 		catch (URISyntaxException e) {
 			throw new RabbitAdminException("Invalid URI", e);
 		}
-		authCache.put(new HttpHost(uri.getHost(), uri.getPort(), uri.getScheme()), basicAuth);
+		authCache.put(new HttpHost(uri.getHost(), uri.getPort(), uri.getScheme()),
+				basicAuth);
 		// Add AuthCache to the execution context
 		final HttpClientContext localContext = HttpClientContext.create();
 		localContext.setAuthCache(authCache);
-		RestTemplate restTemplate = new RestTemplate(new HttpComponentsClientHttpRequestFactory(httpClient) {
+		RestTemplate restTemplate = new RestTemplate(
+				new HttpComponentsClientHttpRequestFactory(httpClient) {
 
-			@Override
-			protected HttpContext createHttpContext(HttpMethod httpMethod, URI uri) {
-				return localContext;
-			}
+					@Override
+					protected HttpContext createHttpContext(HttpMethod httpMethod,
+							URI uri) {
+						return localContext;
+					}
 
-		});
-		restTemplate.setMessageConverters(Collections.<HttpMessageConverter<?>>singletonList(
-				new MappingJackson2HttpMessageConverter()));
+				});
+		restTemplate
+				.setMessageConverters(Collections.<HttpMessageConverter<?>>singletonList(
+						new MappingJackson2HttpMessageConverter()));
 		return restTemplate;
 	}
 

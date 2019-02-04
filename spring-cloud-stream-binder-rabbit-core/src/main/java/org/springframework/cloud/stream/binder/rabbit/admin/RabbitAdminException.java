@@ -16,9 +16,9 @@
 
 package org.springframework.cloud.stream.binder.rabbit.admin;
 
-
 /**
  * Exceptions thrown while interfacing with the RabbitMQ admin plugin.
+ *
  * @author Gary Russell
  * @since 1.2
  */

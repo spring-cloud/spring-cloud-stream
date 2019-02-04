@@ -59,64 +59,74 @@ public class RabbitBinderCleanerTests {
 	@Test
 	public void testCleanStream() {
 		final RabbitBindingCleaner cleaner = new RabbitBindingCleaner();
-		final RestTemplate template = RabbitManagementUtils.buildRestTemplate("http://localhost:15672", "guest",
-				"guest");
+		final RestTemplate template = RabbitManagementUtils
+				.buildRestTemplate("http://localhost:15672", "guest", "guest");
 		final String stream1 = UUID.randomUUID().toString();
 		String stream2 = stream1 + "-1";
 		String firstQueue = null;
 		CachingConnectionFactory connectionFactory = rabbitWithMgmtEnabled.getResource();
 		RabbitAdmin rabbitAdmin = new RabbitAdmin(connectionFactory);
 		for (int i = 0; i < 5; i++) {
-			String queue1Name = AbstractBinder.applyPrefix(BINDER_PREFIX, stream1 + ".default." + i);
-			String queue2Name = AbstractBinder.applyPrefix(BINDER_PREFIX, stream2 + ".default." + i);
+			String queue1Name = AbstractBinder.applyPrefix(BINDER_PREFIX,
+					stream1 + ".default." + i);
+			String queue2Name = AbstractBinder.applyPrefix(BINDER_PREFIX,
+					stream2 + ".default." + i);
 			if (firstQueue == null) {
 				firstQueue = queue1Name;
 			}
-			URI uri = UriComponentsBuilder.fromUriString("http://localhost:15672/api/queues")
-					.pathSegment("{vhost}", "{queue}")
-					.buildAndExpand("/", queue1Name)
+			URI uri = UriComponentsBuilder
+					.fromUriString("http://localhost:15672/api/queues")
+					.pathSegment("{vhost}", "{queue}").buildAndExpand("/", queue1Name)
+					.encode().toUri();
+			template.put(uri, new AmqpQueue(false, true));
+			uri = UriComponentsBuilder.fromUriString("http://localhost:15672/api/queues")
+					.pathSegment("{vhost}", "{queue}").buildAndExpand("/", queue2Name)
 					.encode().toUri();
 			template.put(uri, new AmqpQueue(false, true));
 			uri = UriComponentsBuilder.fromUriString("http://localhost:15672/api/queues")
 					.pathSegment("{vhost}", "{queue}")
-					.buildAndExpand("/", queue2Name)
+					.buildAndExpand("/", AbstractBinder.constructDLQName(queue1Name))
 					.encode().toUri();
-			template.put(uri, new AmqpQueue(false, true));
-			uri = UriComponentsBuilder.fromUriString("http://localhost:15672/api/queues")
-					.pathSegment("{vhost}", "{queue}")
-					.buildAndExpand("/", AbstractBinder.constructDLQName(queue1Name)).encode().toUri();
 			template.put(uri, new AmqpQueue(false, true));
 			TopicExchange exchange = new TopicExchange(queue1Name);
 			rabbitAdmin.declareExchange(exchange);
-			rabbitAdmin.declareBinding(BindingBuilder.bind(new Queue(queue1Name)).to(exchange).with(queue1Name));
+			rabbitAdmin.declareBinding(BindingBuilder.bind(new Queue(queue1Name))
+					.to(exchange).with(queue1Name));
 			exchange = new TopicExchange(queue2Name);
 			rabbitAdmin.declareExchange(exchange);
-			rabbitAdmin.declareBinding(BindingBuilder.bind(new Queue(queue2Name)).to(exchange).with(queue2Name));
+			rabbitAdmin.declareBinding(BindingBuilder.bind(new Queue(queue2Name))
+					.to(exchange).with(queue2Name));
 		}
 		final TopicExchange topic1 = new TopicExchange(
 				AbstractBinder.applyPrefix(BINDER_PREFIX, stream1 + ".foo.bar"));
 		rabbitAdmin.declareExchange(topic1);
-		rabbitAdmin.declareBinding(BindingBuilder.bind(new Queue(firstQueue)).to(topic1).with("#"));
+		rabbitAdmin.declareBinding(
+				BindingBuilder.bind(new Queue(firstQueue)).to(topic1).with("#"));
 		String foreignQueue = UUID.randomUUID().toString();
 		rabbitAdmin.declareQueue(new Queue(foreignQueue));
-		rabbitAdmin.declareBinding(BindingBuilder.bind(new Queue(foreignQueue)).to(topic1).with("#"));
+		rabbitAdmin.declareBinding(
+				BindingBuilder.bind(new Queue(foreignQueue)).to(topic1).with("#"));
 		final TopicExchange topic2 = new TopicExchange(
 				AbstractBinder.applyPrefix(BINDER_PREFIX, stream2 + ".foo.bar"));
 		rabbitAdmin.declareExchange(topic2);
-		rabbitAdmin.declareBinding(BindingBuilder.bind(new Queue(firstQueue)).to(topic2).with("#"));
+		rabbitAdmin.declareBinding(
+				BindingBuilder.bind(new Queue(firstQueue)).to(topic2).with("#"));
 		new RabbitTemplate(connectionFactory).execute(new ChannelCallback<Void>() {
 
 			@Override
 			public Void doInRabbit(Channel channel) throws Exception {
-				String queueName = AbstractBinder.applyPrefix(BINDER_PREFIX, stream1 + ".default." + 4);
-				String consumerTag = channel.basicConsume(queueName, new DefaultConsumer(channel));
+				String queueName = AbstractBinder.applyPrefix(BINDER_PREFIX,
+						stream1 + ".default." + 4);
+				String consumerTag = channel.basicConsume(queueName,
+						new DefaultConsumer(channel));
 				try {
 					waitForConsumerStateNot(queueName, 0);
 					cleaner.clean(stream1, false);
 					fail("Expected exception");
 				}
 				catch (RabbitAdminException e) {
-					assertThat(e).hasMessageContaining("Queue " + queueName + " is in use");
+					assertThat(e)
+							.hasMessageContaining("Queue " + queueName + " is in use");
 				}
 				channel.basicCancel(consumerTag);
 				waitForConsumerStateNot(queueName, 1);
@@ -131,14 +141,17 @@ public class RabbitBinderCleanerTests {
 				return null;
 			}
 
-			private void waitForConsumerStateNot(String queueName, int state) throws InterruptedException {
+			private void waitForConsumerStateNot(String queueName, int state)
+					throws InterruptedException {
 				int n = 0;
-				URI uri = UriComponentsBuilder.fromUriString("http://localhost:15672/api/queues").pathSegment(
-						"{vhost}", "{queue}")
-						.buildAndExpand("/", queueName).encode().toUri();
+				URI uri = UriComponentsBuilder
+						.fromUriString("http://localhost:15672/api/queues")
+						.pathSegment("{vhost}", "{queue}").buildAndExpand("/", queueName)
+						.encode().toUri();
 
 				Object consumers = null;
-				while (n++ < 100 && (consumers == null || consumers.equals(Integer.valueOf(state)))) {
+				while (n++ < 100 && (consumers == null
+						|| consumers.equals(Integer.valueOf(state)))) {
 					Map<String, Object> queueInfo = template.getForObject(uri, Map.class);
 					consumers = queueInfo.get("consumers");
 					if (consumers == null || consumers.equals(Integer.valueOf(state))) {
@@ -147,7 +160,8 @@ public class RabbitBinderCleanerTests {
 				}
 				assertThat(consumers).isNotNull();
 
-				assertThat(n).withFailMessage("Consumer state remained at " + state + " after 10 seconds")
+				assertThat(n).withFailMessage(
+						"Consumer state remained at " + state + " after 10 seconds")
 						.isLessThan(100);
 			}
 
@@ -162,8 +176,10 @@ public class RabbitBinderCleanerTests {
 		// should *not* clean stream2
 		assertThat(cleanedQueues).hasSize(10);
 		for (int i = 0; i < 5; i++) {
-			assertThat(cleanedQueues.get(i * 2)).isEqualTo(BINDER_PREFIX + stream1 + ".default." + i);
-			assertThat(cleanedQueues.get(i * 2 + 1)).isEqualTo(BINDER_PREFIX + stream1 + ".default." + i + ".dlq");
+			assertThat(cleanedQueues.get(i * 2))
+					.isEqualTo(BINDER_PREFIX + stream1 + ".default." + i);
+			assertThat(cleanedQueues.get(i * 2 + 1))
+					.isEqualTo(BINDER_PREFIX + stream1 + ".default." + i + ".dlq");
 		}
 		List<String> cleanedExchanges = cleanedMap.get("exchanges");
 		assertThat(cleanedExchanges).hasSize(6);
@@ -174,7 +190,8 @@ public class RabbitBinderCleanerTests {
 		cleanedQueues = cleanedMap.get("queues");
 		assertThat(cleanedQueues).hasSize(5);
 		for (int i = 0; i < 5; i++) {
-			assertThat(cleanedQueues.get(i)).isEqualTo(BINDER_PREFIX + stream2 + ".default." + i);
+			assertThat(cleanedQueues.get(i))
+					.isEqualTo(BINDER_PREFIX + stream2 + ".default." + i);
 		}
 		cleanedExchanges = cleanedMap.get("exchanges");
 		assertThat(cleanedExchanges).hasSize(6);
@@ -191,22 +208,18 @@ public class RabbitBinderCleanerTests {
 			this.durable = durable;
 		}
 
-
 		@JsonProperty("auto_delete")
 		protected boolean isAutoDelete() {
 			return autoDelete;
 		}
 
-
 		protected void setAutoDelete(boolean autoDelete) {
 			this.autoDelete = autoDelete;
 		}
 
-
 		protected boolean isDurable() {
 			return durable;
 		}
-
 
 		protected void setDurable(boolean durable) {
 			this.durable = durable;

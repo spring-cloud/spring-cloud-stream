@@ -128,11 +128,13 @@ import static org.mockito.Mockito.when;
 public class RabbitBinderTests extends
 		PartitionCapableBinderTests<RabbitTestBinder, ExtendedConsumerProperties<RabbitConsumerProperties>, ExtendedProducerProperties<RabbitProducerProperties>> {
 
-	private final String CLASS_UNDER_TEST_NAME = RabbitMessageChannelBinder.class.getSimpleName();
+	private final String CLASS_UNDER_TEST_NAME = RabbitMessageChannelBinder.class
+			.getSimpleName();
 
 	public static final String TEST_PREFIX = "bindertest.";
 
-	private static final String BIG_EXCEPTION_MESSAGE = new String(new byte[10_000]).replaceAll("\u0000", "x");
+	private static final String BIG_EXCEPTION_MESSAGE = new String(new byte[10_000])
+			.replaceAll("\u0000", "x");
 
 	private int maxStackTraceSize;
 
@@ -148,7 +150,8 @@ public class RabbitBinderTests extends
 			RabbitProperties rabbitProperties = new RabbitProperties();
 			rabbitProperties.setPublisherConfirms(true);
 			rabbitProperties.setPublisherReturns(true);
-			this.testBinder = new RabbitTestBinder(rabbitAvailableRule.getResource(), rabbitProperties);
+			this.testBinder = new RabbitTestBinder(rabbitAvailableRule.getResource(),
+					rabbitProperties);
 		}
 		return this.testBinder;
 	}
@@ -163,7 +166,8 @@ public class RabbitBinderTests extends
 		ExtendedProducerProperties<RabbitProducerProperties> props = new ExtendedProducerProperties<>(
 				new RabbitProducerProperties());
 		if (testName.getMethodName().equals("testPartitionedModuleSpEL")) {
-			props.getExtension().setRoutingKeyExpression(spelExpressionParser.parseExpression("'part.0'"));
+			props.getExtension().setRoutingKeyExpression(
+					spelExpressionParser.parseExpression("'part.0'"));
 		}
 		return props;
 	}
@@ -179,23 +183,31 @@ public class RabbitBinderTests extends
 		final AtomicReference<AsyncConsumerStartedEvent> event = new AtomicReference<>();
 		binder.getApplicationContext().addApplicationListener(
 				(ApplicationListener<AsyncConsumerStartedEvent>) e -> event.set(e));
-		DirectChannel moduleOutputChannel = createBindableChannel("output", new BindingProperties());
-		DirectChannel moduleInputChannel = createBindableChannel("input", new BindingProperties());
-		Binding<MessageChannel> producerBinding = binder.bindProducer("bad.0", moduleOutputChannel,
-				createProducerProperties());
-		assertThat(TestUtils.getPropertyValue(producerBinding, "lifecycle.headersMappedLast", Boolean.class))
-			.isTrue();
-		assertThat(TestUtils.getPropertyValue(producerBinding, "lifecycle.amqpTemplate.messageConverter")
-				.getClass().getName()).contains("Passthrough");
+		DirectChannel moduleOutputChannel = createBindableChannel("output",
+				new BindingProperties());
+		DirectChannel moduleInputChannel = createBindableChannel("input",
+				new BindingProperties());
+		Binding<MessageChannel> producerBinding = binder.bindProducer("bad.0",
+				moduleOutputChannel, createProducerProperties());
+		assertThat(TestUtils.getPropertyValue(producerBinding,
+				"lifecycle.headersMappedLast", Boolean.class)).isTrue();
+		assertThat(
+				TestUtils
+						.getPropertyValue(producerBinding,
+								"lifecycle.amqpTemplate.messageConverter")
+						.getClass().getName()).contains("Passthrough");
 		ExtendedConsumerProperties<RabbitConsumerProperties> consumerProps = createConsumerProperties();
 		consumerProps.getExtension().setContainerType(ContainerType.DIRECT);
-		Binding<MessageChannel> consumerBinding = binder.bindConsumer("bad.0", "test", moduleInputChannel,
-				consumerProps);
-		assertThat(TestUtils.getPropertyValue(consumerBinding, "lifecycle.messageConverter").getClass().getName())
-				.contains("Passthrough");
-		assertThat(TestUtils.getPropertyValue(consumerBinding, "lifecycle.messageListenerContainer"))
-				.isInstanceOf(DirectMessageListenerContainer.class);
-		Message<?> message = MessageBuilder.withPayload("bad".getBytes()).setHeader(MessageHeaders.CONTENT_TYPE, "foo/bar").build();
+		Binding<MessageChannel> consumerBinding = binder.bindConsumer("bad.0", "test",
+				moduleInputChannel, consumerProps);
+		assertThat(
+				TestUtils.getPropertyValue(consumerBinding, "lifecycle.messageConverter")
+						.getClass().getName()).contains("Passthrough");
+		assertThat(TestUtils.getPropertyValue(consumerBinding,
+				"lifecycle.messageListenerContainer"))
+						.isInstanceOf(DirectMessageListenerContainer.class);
+		Message<?> message = MessageBuilder.withPayload("bad".getBytes())
+				.setHeader(MessageHeaders.CONTENT_TYPE, "foo/bar").build();
 		final CountDownLatch latch = new CountDownLatch(3);
 		moduleInputChannel.subscribe(new MessageHandler() {
 
@@ -219,13 +231,16 @@ public class RabbitBinderTests extends
 		ccf.setPublisherReturns(true);
 		ccf.setPublisherConfirms(true);
 		ccf.resetConnection();
-		DirectChannel moduleOutputChannel = createBindableChannel("output", new BindingProperties());
+		DirectChannel moduleOutputChannel = createBindableChannel("output",
+				new BindingProperties());
 		ExtendedProducerProperties<RabbitProducerProperties> producerProps = createProducerProperties();
 		producerProps.setErrorChannelEnabled(true);
-		Binding<MessageChannel> producerBinding = binder.bindProducer("ec.0", moduleOutputChannel, producerProps);
-		final Message<?> message = MessageBuilder.withPayload("bad".getBytes()).setHeader(MessageHeaders.CONTENT_TYPE, "foo/bar")
-				.build();
-		SubscribableChannel ec = binder.getApplicationContext().getBean("ec.0.errors", SubscribableChannel.class);
+		Binding<MessageChannel> producerBinding = binder.bindProducer("ec.0",
+				moduleOutputChannel, producerProps);
+		final Message<?> message = MessageBuilder.withPayload("bad".getBytes())
+				.setHeader(MessageHeaders.CONTENT_TYPE, "foo/bar").build();
+		SubscribableChannel ec = binder.getApplicationContext().getBean("ec.0.errors",
+				SubscribableChannel.class);
 		final AtomicReference<Message<?>> errorMessage = new AtomicReference<>();
 		final CountDownLatch latch = new CountDownLatch(2);
 		ec.subscribe(new MessageHandler() {
@@ -237,8 +252,9 @@ public class RabbitBinderTests extends
 			}
 
 		});
-		SubscribableChannel globalEc = binder.getApplicationContext()
-				.getBean(IntegrationContextUtils.ERROR_CHANNEL_BEAN_NAME, SubscribableChannel.class);
+		SubscribableChannel globalEc = binder.getApplicationContext().getBean(
+				IntegrationContextUtils.ERROR_CHANNEL_BEAN_NAME,
+				SubscribableChannel.class);
 		globalEc.subscribe(new MessageHandler() {
 
 			@Override
@@ -250,15 +266,17 @@ public class RabbitBinderTests extends
 		moduleOutputChannel.send(message);
 		assertThat(latch.await(10, TimeUnit.SECONDS)).isTrue();
 		assertThat(errorMessage.get()).isInstanceOf(ErrorMessage.class);
-		assertThat(errorMessage.get().getPayload()).isInstanceOf(ReturnedAmqpMessageException.class);
-		ReturnedAmqpMessageException exception = (ReturnedAmqpMessageException) errorMessage.get().getPayload();
+		assertThat(errorMessage.get().getPayload())
+				.isInstanceOf(ReturnedAmqpMessageException.class);
+		ReturnedAmqpMessageException exception = (ReturnedAmqpMessageException) errorMessage
+				.get().getPayload();
 		assertThat(exception.getReplyCode()).isEqualTo(312);
 		assertThat(exception.getReplyText()).isEqualTo("NO_ROUTE");
 
-		AmqpOutboundEndpoint endpoint = TestUtils.getPropertyValue(producerBinding, "lifecycle",
-				AmqpOutboundEndpoint.class);
-		assertThat(TestUtils.getPropertyValue(endpoint, "confirmCorrelationExpression.expression"))
-				.isEqualTo("#root");
+		AmqpOutboundEndpoint endpoint = TestUtils.getPropertyValue(producerBinding,
+				"lifecycle", AmqpOutboundEndpoint.class);
+		assertThat(TestUtils.getPropertyValue(endpoint,
+				"confirmCorrelationExpression.expression")).isEqualTo("#root");
 		class WrapperAccessor extends AmqpOutboundEndpoint {
 
 			public WrapperAccessor(AmqpTemplate amqpTemplate) {
@@ -266,17 +284,21 @@ public class RabbitBinderTests extends
 			}
 
 			public CorrelationDataWrapper getWrapper() throws Exception {
-				Constructor<CorrelationDataWrapper> constructor = CorrelationDataWrapper.class.getDeclaredConstructor(
-						String.class, Object.class, Message.class);
+				Constructor<CorrelationDataWrapper> constructor = CorrelationDataWrapper.class
+						.getDeclaredConstructor(String.class, Object.class,
+								Message.class);
 				ReflectionUtils.makeAccessible(constructor);
 				return constructor.newInstance(null, message, message);
 			}
 
 		}
-		endpoint.confirm(new WrapperAccessor(mock(AmqpTemplate.class)).getWrapper(), false, "Mock NACK");
+		endpoint.confirm(new WrapperAccessor(mock(AmqpTemplate.class)).getWrapper(),
+				false, "Mock NACK");
 		assertThat(errorMessage.get()).isInstanceOf(ErrorMessage.class);
-		assertThat(errorMessage.get().getPayload()).isInstanceOf(NackedAmqpMessageException.class);
-		NackedAmqpMessageException nack = (NackedAmqpMessageException) errorMessage.get().getPayload();
+		assertThat(errorMessage.get().getPayload())
+				.isInstanceOf(NackedAmqpMessageException.class);
+		NackedAmqpMessageException nack = (NackedAmqpMessageException) errorMessage.get()
+				.getPayload();
 		assertThat(nack.getNackReason()).isEqualTo("Mock NACK");
 		assertThat(nack.getCorrelationData()).isEqualTo(message);
 		assertThat(nack.getFailedMessage()).isEqualTo(message);
@@ -290,18 +312,22 @@ public class RabbitBinderTests extends
 		ccf.setPublisherReturns(true);
 		ccf.setPublisherConfirms(true);
 		ccf.resetConnection();
-		DirectChannel moduleOutputChannel = createBindableChannel("output", new BindingProperties());
+		DirectChannel moduleOutputChannel = createBindableChannel("output",
+				new BindingProperties());
 		ExtendedProducerProperties<RabbitProducerProperties> producerProps = createProducerProperties();
 		producerProps.setErrorChannelEnabled(true);
 		producerProps.getExtension().setConfirmAckChannel("acksChannel");
-		Binding<MessageChannel> producerBinding = binder.bindProducer("acks.0", moduleOutputChannel, producerProps);
-		final Message<?> message = MessageBuilder.withPayload("acksMessage".getBytes()).build();
+		Binding<MessageChannel> producerBinding = binder.bindProducer("acks.0",
+				moduleOutputChannel, producerProps);
+		final Message<?> message = MessageBuilder.withPayload("acksMessage".getBytes())
+				.build();
 		final AtomicReference<Message<?>> confirm = new AtomicReference<>();
 		final CountDownLatch confirmLatch = new CountDownLatch(1);
-		binder.getApplicationContext().getBean("acksChannel", DirectChannel.class).subscribe(m -> {
-			confirm.set(m);
-			confirmLatch.countDown();
-		});
+		binder.getApplicationContext().getBean("acksChannel", DirectChannel.class)
+				.subscribe(m -> {
+					confirm.set(m);
+					confirmLatch.countDown();
+				});
 		moduleOutputChannel.send(message);
 		assertThat(confirmLatch.await(10, TimeUnit.SECONDS)).isTrue();
 		assertThat(confirm.get().getPayload()).isEqualTo("acksMessage".getBytes());
@@ -321,25 +347,40 @@ public class RabbitBinderTests extends
 		Binding<MessageChannel> consumerBinding = binder.bindConsumer("props.0", null,
 				createBindableChannel("input", new BindingProperties()), properties);
 		Lifecycle endpoint = extractEndpoint(consumerBinding);
-		SimpleMessageListenerContainer container = TestUtils.getPropertyValue(endpoint, "messageListenerContainer",
-				SimpleMessageListenerContainer.class);
+		SimpleMessageListenerContainer container = TestUtils.getPropertyValue(endpoint,
+				"messageListenerContainer", SimpleMessageListenerContainer.class);
 		assertThat(container.getAcknowledgeMode()).isEqualTo(AcknowledgeMode.AUTO);
-		assertThat(container.getQueueNames()[0]).startsWith(properties.getExtension().getPrefix());
-		assertThat(TestUtils.getPropertyValue(container, "transactional", Boolean.class)).isTrue();
-		assertThat(TestUtils.getPropertyValue(container, "exclusive", Boolean.class)).isTrue();
-		assertThat(TestUtils.getPropertyValue(container, "concurrentConsumers")).isEqualTo(1);
-		assertThat(TestUtils.getPropertyValue(container, "maxConcurrentConsumers")).isNull();
-		assertThat(TestUtils.getPropertyValue(container, "defaultRequeueRejected", Boolean.class)).isTrue();
+		assertThat(container.getQueueNames()[0])
+				.startsWith(properties.getExtension().getPrefix());
+		assertThat(TestUtils.getPropertyValue(container, "transactional", Boolean.class))
+				.isTrue();
+		assertThat(TestUtils.getPropertyValue(container, "exclusive", Boolean.class))
+				.isTrue();
+		assertThat(TestUtils.getPropertyValue(container, "concurrentConsumers"))
+				.isEqualTo(1);
+		assertThat(TestUtils.getPropertyValue(container, "maxConcurrentConsumers"))
+				.isNull();
+		assertThat(TestUtils.getPropertyValue(container, "defaultRequeueRejected",
+				Boolean.class)).isTrue();
 		assertThat(TestUtils.getPropertyValue(container, "prefetchCount")).isEqualTo(1);
 		assertThat(TestUtils.getPropertyValue(container, "txSize")).isEqualTo(1);
-		assertThat(TestUtils.getPropertyValue(container, "missingQueuesFatal", Boolean.class)).isTrue();
-		assertThat(TestUtils.getPropertyValue(container, "failedDeclarationRetryInterval")).isEqualTo(1500L);
-		assertThat(TestUtils.getPropertyValue(container, "declarationRetries")).isEqualTo(23);
-		RetryTemplate retry = TestUtils.getPropertyValue(endpoint, "retryTemplate", RetryTemplate.class);
-		assertThat(TestUtils.getPropertyValue(retry, "retryPolicy.maxAttempts")).isEqualTo(3);
-		assertThat(TestUtils.getPropertyValue(retry, "backOffPolicy.initialInterval")).isEqualTo(1000L);
-		assertThat(TestUtils.getPropertyValue(retry, "backOffPolicy.maxInterval")).isEqualTo(10000L);
-		assertThat(TestUtils.getPropertyValue(retry, "backOffPolicy.multiplier")).isEqualTo(2.0);
+		assertThat(TestUtils.getPropertyValue(container, "missingQueuesFatal",
+				Boolean.class)).isTrue();
+		assertThat(
+				TestUtils.getPropertyValue(container, "failedDeclarationRetryInterval"))
+						.isEqualTo(1500L);
+		assertThat(TestUtils.getPropertyValue(container, "declarationRetries"))
+				.isEqualTo(23);
+		RetryTemplate retry = TestUtils.getPropertyValue(endpoint, "retryTemplate",
+				RetryTemplate.class);
+		assertThat(TestUtils.getPropertyValue(retry, "retryPolicy.maxAttempts"))
+				.isEqualTo(3);
+		assertThat(TestUtils.getPropertyValue(retry, "backOffPolicy.initialInterval"))
+				.isEqualTo(1000L);
+		assertThat(TestUtils.getPropertyValue(retry, "backOffPolicy.maxInterval"))
+				.isEqualTo(10000L);
+		assertThat(TestUtils.getPropertyValue(retry, "backOffPolicy.multiplier"))
+				.isEqualTo(2.0);
 		consumerBinding.unbind();
 		assertThat(endpoint.isRunning()).isFalse();
 
@@ -356,8 +397,8 @@ public class RabbitBinderTests extends
 		properties.getExtension().setHeaderPatterns(new String[] { "foo" });
 		properties.getExtension().setTxSize(10);
 		properties.setInstanceIndex(0);
-		consumerBinding = binder.bindConsumer("props.0", "test", createBindableChannel("input", new BindingProperties()),
-				properties);
+		consumerBinding = binder.bindConsumer("props.0", "test",
+				createBindableChannel("input", new BindingProperties()), properties);
 
 		endpoint = extractEndpoint(consumerBinding);
 		container = verifyContainer(endpoint);
@@ -383,18 +424,20 @@ public class RabbitBinderTests extends
 		properties.getExtension().setDeclareExchange(false);
 		properties.getExtension().setBindQueue(false);
 
-		Binding<MessageChannel> consumerBinding = binder.bindConsumer("propsUser1", "infra",
-				createBindableChannel("input", new BindingProperties()), properties);
+		Binding<MessageChannel> consumerBinding = binder.bindConsumer("propsUser1",
+				"infra", createBindableChannel("input", new BindingProperties()),
+				properties);
 		Lifecycle endpoint = extractEndpoint(consumerBinding);
-		SimpleMessageListenerContainer container = TestUtils.getPropertyValue(endpoint, "messageListenerContainer",
-				SimpleMessageListenerContainer.class);
-		assertThat(TestUtils.getPropertyValue(container, "missingQueuesFatal", Boolean.class)).isFalse();
+		SimpleMessageListenerContainer container = TestUtils.getPropertyValue(endpoint,
+				"messageListenerContainer", SimpleMessageListenerContainer.class);
+		assertThat(TestUtils.getPropertyValue(container, "missingQueuesFatal",
+				Boolean.class)).isFalse();
 		assertThat(container.isRunning()).isTrue();
 		consumerBinding.unbind();
 		assertThat(container.isRunning()).isFalse();
-		org.springframework.amqp.rabbit.core.RabbitManagementTemplate rmt =
-				new org.springframework.amqp.rabbit.core.RabbitManagementTemplate();
-		List<org.springframework.amqp.core.Binding> bindings = rmt.getBindingsForExchange("/", exchange.getName());
+		org.springframework.amqp.rabbit.core.RabbitManagementTemplate rmt = new org.springframework.amqp.rabbit.core.RabbitManagementTemplate();
+		List<org.springframework.amqp.core.Binding> bindings = rmt
+				.getBindingsForExchange("/", exchange.getName());
 		assertThat(bindings.size()).isEqualTo(1);
 	}
 
@@ -408,8 +451,8 @@ public class RabbitBinderTests extends
 		Binding<MessageChannel> consumerBinding = binder.bindConsumer("amq.topic", null,
 				createBindableChannel("input", new BindingProperties()), properties);
 		Lifecycle endpoint = extractEndpoint(consumerBinding);
-		SimpleMessageListenerContainer container = TestUtils.getPropertyValue(endpoint, "messageListenerContainer",
-				SimpleMessageListenerContainer.class);
+		SimpleMessageListenerContainer container = TestUtils.getPropertyValue(endpoint,
+				"messageListenerContainer", SimpleMessageListenerContainer.class);
 		String queueName = container.getQueueNames()[0];
 		assertThat(queueName).startsWith("anonymous.");
 		assertThat(container.isRunning()).isTrue();
@@ -419,27 +462,29 @@ public class RabbitBinderTests extends
 
 	@SuppressWarnings("deprecation")
 	@Test
-	public void testConsumerPropertiesWithUserInfrastructureCustomExchangeAndRK() throws Exception {
+	public void testConsumerPropertiesWithUserInfrastructureCustomExchangeAndRK()
+			throws Exception {
 		RabbitTestBinder binder = getBinder();
 		ExtendedConsumerProperties<RabbitConsumerProperties> properties = createConsumerProperties();
 		properties.getExtension().setExchangeType(ExchangeTypes.DIRECT);
 		properties.getExtension().setBindingRoutingKey("foo");
 		properties.getExtension().setQueueNameGroupOnly(true);
-//		properties.getExtension().setDelayedExchange(true); // requires delayed message exchange plugin; tested locally
+		// properties.getExtension().setDelayedExchange(true); // requires delayed message
+		// exchange plugin; tested locally
 
 		String group = "infra";
 		Binding<MessageChannel> consumerBinding = binder.bindConsumer("propsUser2", group,
 				createBindableChannel("input", new BindingProperties()), properties);
 		Lifecycle endpoint = extractEndpoint(consumerBinding);
-		SimpleMessageListenerContainer container = TestUtils.getPropertyValue(endpoint, "messageListenerContainer",
-				SimpleMessageListenerContainer.class);
+		SimpleMessageListenerContainer container = TestUtils.getPropertyValue(endpoint,
+				"messageListenerContainer", SimpleMessageListenerContainer.class);
 		assertThat(container.isRunning()).isTrue();
 		consumerBinding.unbind();
 		assertThat(container.isRunning()).isFalse();
 		assertThat(container.getQueueNames()[0]).isEqualTo(group);
-		org.springframework.amqp.rabbit.core.RabbitManagementTemplate rmt =
-				new org.springframework.amqp.rabbit.core.RabbitManagementTemplate();
-		List<org.springframework.amqp.core.Binding> bindings = rmt.getBindingsForExchange("/", "propsUser2");
+		org.springframework.amqp.rabbit.core.RabbitManagementTemplate rmt = new org.springframework.amqp.rabbit.core.RabbitManagementTemplate();
+		List<org.springframework.amqp.core.Binding> bindings = rmt
+				.getBindingsForExchange("/", "propsUser2");
 		int n = 0;
 		while (n++ < 100 && bindings == null || bindings.size() < 1) {
 			Thread.sleep(100);
@@ -450,11 +495,12 @@ public class RabbitBinderTests extends
 		assertThat(bindings.get(0).getDestination()).isEqualTo(group);
 		assertThat(bindings.get(0).getRoutingKey()).isEqualTo("foo");
 
-//		// TODO: AMQP-696
-//		// Exchange exchange = rmt.getExchange("propsUser2");
-//		ExchangeInfo ei = rmt.getClient().getExchange("/", "propsUser2"); // requires delayed message exchange plugin
-//		assertThat(ei.getType()).isEqualTo("x-delayed-message");
-//		assertThat(ei.getArguments().get("x-delayed-type")).isEqualTo("direct");
+		// // TODO: AMQP-696
+		// // Exchange exchange = rmt.getExchange("propsUser2");
+		// ExchangeInfo ei = rmt.getClient().getExchange("/", "propsUser2"); // requires
+		// delayed message exchange plugin
+		// assertThat(ei.getType()).isEqualTo("x-delayed-message");
+		// assertThat(ei.getArguments().get("x-delayed-type")).isEqualTo("direct");
 
 		Exchange exchange = rmt.getExchange("propsUser2");
 		while (n++ < 100 && exchange == null) {
@@ -468,7 +514,8 @@ public class RabbitBinderTests extends
 
 	@SuppressWarnings("deprecation")
 	@Test
-	public void testConsumerPropertiesWithUserInfrastructureCustomQueueArgs() throws Exception {
+	public void testConsumerPropertiesWithUserInfrastructureCustomQueueArgs()
+			throws Exception {
 		RabbitTestBinder binder = getBinder();
 		ExtendedConsumerProperties<RabbitConsumerProperties> properties = createConsumerProperties();
 		RabbitConsumerProperties extProps = properties.getExtension();
@@ -500,15 +547,16 @@ public class RabbitBinderTests extends
 		extProps.setConsumerTagPrefix("testConsumerTag");
 		extProps.setExclusive(true);
 
-		Binding<MessageChannel> consumerBinding = binder.bindConsumer("propsUser3", "infra",
-				createBindableChannel("input", new BindingProperties()), properties);
+		Binding<MessageChannel> consumerBinding = binder.bindConsumer("propsUser3",
+				"infra", createBindableChannel("input", new BindingProperties()),
+				properties);
 		Lifecycle endpoint = extractEndpoint(consumerBinding);
-		SimpleMessageListenerContainer container = TestUtils.getPropertyValue(endpoint, "messageListenerContainer",
-				SimpleMessageListenerContainer.class);
+		SimpleMessageListenerContainer container = TestUtils.getPropertyValue(endpoint,
+				"messageListenerContainer", SimpleMessageListenerContainer.class);
 		assertThat(container.isRunning()).isTrue();
-		org.springframework.amqp.rabbit.core.RabbitManagementTemplate rmt =
-				new org.springframework.amqp.rabbit.core.RabbitManagementTemplate();
-		List<org.springframework.amqp.core.Binding> bindings = rmt.getBindingsForExchange("/", "propsUser3");
+		org.springframework.amqp.rabbit.core.RabbitManagementTemplate rmt = new org.springframework.amqp.rabbit.core.RabbitManagementTemplate();
+		List<org.springframework.amqp.core.Binding> bindings = rmt
+				.getBindingsForExchange("/", "propsUser3");
 		int n = 0;
 		while (n++ < 100 && bindings == null || bindings.size() < 1) {
 			Thread.sleep(100);
@@ -589,54 +637,64 @@ public class RabbitBinderTests extends
 				createBindableChannel("input", new BindingProperties()),
 				createProducerProperties());
 		Lifecycle endpoint = extractEndpoint(producerBinding);
-		MessageDeliveryMode mode = TestUtils.getPropertyValue(endpoint, "defaultDeliveryMode",
-				MessageDeliveryMode.class);
+		MessageDeliveryMode mode = TestUtils.getPropertyValue(endpoint,
+				"defaultDeliveryMode", MessageDeliveryMode.class);
 		assertThat(mode).isEqualTo(MessageDeliveryMode.PERSISTENT);
 		List<?> requestHeaders = TestUtils.getPropertyValue(endpoint,
 				"headerMapper.requestHeaderMatcher.matchers", List.class);
 		assertThat(requestHeaders).hasSize(2);
 		producerBinding.unbind();
 		assertThat(endpoint.isRunning()).isFalse();
-		assertThat(TestUtils.getPropertyValue(endpoint, "amqpTemplate.transactional", Boolean.class))
-				.isFalse();
+		assertThat(TestUtils.getPropertyValue(endpoint, "amqpTemplate.transactional",
+				Boolean.class)).isFalse();
 
 		ExtendedProducerProperties<RabbitProducerProperties> producerProperties = createProducerProperties();
 		producerProperties.getExtension().setPrefix("foo.");
-		producerProperties.getExtension().setDeliveryMode(MessageDeliveryMode.NON_PERSISTENT);
+		producerProperties.getExtension()
+				.setDeliveryMode(MessageDeliveryMode.NON_PERSISTENT);
 		producerProperties.getExtension().setHeaderPatterns(new String[] { "foo" });
-		producerProperties.setPartitionKeyExpression(spelExpressionParser.parseExpression("'foo'"));
-		producerProperties.setPartitionKeyExtractorClass(TestPartitionKeyExtractorClass.class);
-		producerProperties.setPartitionSelectorExpression(spelExpressionParser.parseExpression("0"));
+		producerProperties
+				.setPartitionKeyExpression(spelExpressionParser.parseExpression("'foo'"));
+		producerProperties
+				.setPartitionKeyExtractorClass(TestPartitionKeyExtractorClass.class);
+		producerProperties.setPartitionSelectorExpression(
+				spelExpressionParser.parseExpression("0"));
 		producerProperties.setPartitionSelectorClass(TestPartitionSelectorClass.class);
 		producerProperties.setPartitionCount(1);
 		producerProperties.getExtension().setTransacted(true);
-		producerProperties.getExtension().setDelayExpression(spelExpressionParser.parseExpression("42"));
+		producerProperties.getExtension()
+				.setDelayExpression(spelExpressionParser.parseExpression("42"));
 		producerProperties.setRequiredGroups("prodPropsRequired");
 
-		BindingProperties producerBindingProperties = createProducerBindingProperties(producerProperties);
-		DirectChannel channel = createBindableChannel("output", producerBindingProperties);
+		BindingProperties producerBindingProperties = createProducerBindingProperties(
+				producerProperties);
+		DirectChannel channel = createBindableChannel("output",
+				producerBindingProperties);
 		producerBinding = binder.bindProducer("props.0", channel, producerProperties);
 
-		ConnectionFactory producerConnectionFactory =
-				TestUtils.getPropertyValue(producerBinding, "lifecycle.amqpTemplate.connectionFactory",
-						ConnectionFactory.class);
+		ConnectionFactory producerConnectionFactory = TestUtils.getPropertyValue(
+				producerBinding, "lifecycle.amqpTemplate.connectionFactory",
+				ConnectionFactory.class);
 
 		assertThat(this.rabbitAvailableRule.getResource())
 				.isSameAs(producerConnectionFactory);
 
 		endpoint = extractEndpoint(producerBinding);
-		assertThat(getEndpointRouting(endpoint))
-				.isEqualTo("'props.0-' + headers['" + BinderHeaders.PARTITION_HEADER + "']");
-		assertThat(TestUtils.getPropertyValue(endpoint, "delayExpression", SpelExpression.class)
+		assertThat(getEndpointRouting(endpoint)).isEqualTo(
+				"'props.0-' + headers['" + BinderHeaders.PARTITION_HEADER + "']");
+		assertThat(TestUtils
+				.getPropertyValue(endpoint, "delayExpression", SpelExpression.class)
 				.getExpressionString()).isEqualTo("42");
-		mode = TestUtils.getPropertyValue(endpoint, "defaultDeliveryMode", MessageDeliveryMode.class);
+		mode = TestUtils.getPropertyValue(endpoint, "defaultDeliveryMode",
+				MessageDeliveryMode.class);
 		assertThat(mode).isEqualTo(MessageDeliveryMode.NON_PERSISTENT);
-		assertThat(TestUtils.getPropertyValue(endpoint, "amqpTemplate.transactional", Boolean.class))
-				.isTrue();
+		assertThat(TestUtils.getPropertyValue(endpoint, "amqpTemplate.transactional",
+				Boolean.class)).isTrue();
 		verifyFooRequestProducer(endpoint);
 		channel.send(new GenericMessage<>("foo"));
-		org.springframework.amqp.core.Message received = new RabbitTemplate(this.rabbitAvailableRule.getResource())
-				.receive("foo.props.0.prodPropsRequired-0", 10_000);
+		org.springframework.amqp.core.Message received = new RabbitTemplate(
+				this.rabbitAvailableRule.getResource())
+						.receive("foo.props.0.prodPropsRequired-0", 10_000);
 		assertThat(received).isNotNull();
 		assertThat(received.getMessageProperties().getReceivedDelay()).isEqualTo(42);
 
@@ -655,7 +713,8 @@ public class RabbitBinderTests extends
 		consumerProperties.getExtension().setAutoBindDlq(true);
 		consumerProperties.getExtension().setDurableSubscription(true);
 		consumerProperties.setMaxAttempts(1); // disable retry
-		DirectChannel moduleInputChannel = createBindableChannel("input", createConsumerBindingProperties(consumerProperties));
+		DirectChannel moduleInputChannel = createBindableChannel("input",
+				createConsumerBindingProperties(consumerProperties));
 		moduleInputChannel.setBeanName("durableTest");
 		moduleInputChannel.subscribe(new MessageHandler() {
 
@@ -665,15 +724,17 @@ public class RabbitBinderTests extends
 			}
 
 		});
-		Binding<MessageChannel> consumerBinding = binder.bindConsumer("durabletest.0", "tgroup", moduleInputChannel,
-				consumerProperties);
+		Binding<MessageChannel> consumerBinding = binder.bindConsumer("durabletest.0",
+				"tgroup", moduleInputChannel, consumerProperties);
 
-		RabbitTemplate template = new RabbitTemplate(this.rabbitAvailableRule.getResource());
+		RabbitTemplate template = new RabbitTemplate(
+				this.rabbitAvailableRule.getResource());
 		template.convertAndSend(TEST_PREFIX + "durabletest.0", "", "foo");
 
 		int n = 0;
 		while (n++ < 100) {
-			Object deadLetter = template.receiveAndConvert(TEST_PREFIX + "durabletest.0.tgroup.dlq");
+			Object deadLetter = template
+					.receiveAndConvert(TEST_PREFIX + "durabletest.0.tgroup.dlq");
 			if (deadLetter != null) {
 				assertThat(deadLetter).isEqualTo("foo");
 				break;
@@ -683,7 +744,8 @@ public class RabbitBinderTests extends
 		assertThat(n).isLessThan(100);
 
 		consumerBinding.unbind();
-		assertThat(admin.getQueueProperties(TEST_PREFIX + "durabletest.0.tgroup.dlq")).isNotNull();
+		assertThat(admin.getQueueProperties(TEST_PREFIX + "durabletest.0.tgroup.dlq"))
+				.isNotNull();
 	}
 
 	@Test
@@ -696,8 +758,10 @@ public class RabbitBinderTests extends
 		consumerProperties.getExtension().setAutoBindDlq(true);
 		consumerProperties.getExtension().setDurableSubscription(false);
 		consumerProperties.setMaxAttempts(1); // disable retry
-		BindingProperties bindingProperties = createConsumerBindingProperties(consumerProperties);
-		DirectChannel moduleInputChannel = createBindableChannel("input", bindingProperties);
+		BindingProperties bindingProperties = createConsumerBindingProperties(
+				consumerProperties);
+		DirectChannel moduleInputChannel = createBindableChannel("input",
+				bindingProperties);
 		moduleInputChannel.setBeanName("nondurabletest");
 		moduleInputChannel.subscribe(new MessageHandler() {
 
@@ -707,11 +771,12 @@ public class RabbitBinderTests extends
 			}
 
 		});
-		Binding<MessageChannel> consumerBinding = binder.bindConsumer("nondurabletest.0", "tgroup", moduleInputChannel,
-				consumerProperties);
+		Binding<MessageChannel> consumerBinding = binder.bindConsumer("nondurabletest.0",
+				"tgroup", moduleInputChannel, consumerProperties);
 
 		consumerBinding.unbind();
-		assertThat(admin.getQueueProperties(TEST_PREFIX + "nondurabletest.0.dlq")).isNull();
+		assertThat(admin.getQueueProperties(TEST_PREFIX + "nondurabletest.0.dlq"))
+				.isNull();
 	}
 
 	@Test
@@ -722,8 +787,10 @@ public class RabbitBinderTests extends
 		consumerProperties.getExtension().setAutoBindDlq(true);
 		consumerProperties.setMaxAttempts(1); // disable retry
 		consumerProperties.getExtension().setDurableSubscription(true);
-		BindingProperties bindingProperties = createConsumerBindingProperties(consumerProperties);
-		DirectChannel moduleInputChannel = createBindableChannel("input", bindingProperties);
+		BindingProperties bindingProperties = createConsumerBindingProperties(
+				consumerProperties);
+		DirectChannel moduleInputChannel = createBindableChannel("input",
+				bindingProperties);
 		moduleInputChannel.setBeanName("dlqTest");
 		moduleInputChannel.subscribe(new MessageHandler() {
 
@@ -734,18 +801,21 @@ public class RabbitBinderTests extends
 
 		});
 		consumerProperties.setMultiplex(true);
-		Binding<MessageChannel> consumerBinding = binder.bindConsumer("dlqtest,dlqtest2", "default",
-				moduleInputChannel, consumerProperties);
-		AbstractMessageListenerContainer container = TestUtils.getPropertyValue(consumerBinding,
-				"lifecycle.messageListenerContainer", AbstractMessageListenerContainer.class);
+		Binding<MessageChannel> consumerBinding = binder.bindConsumer("dlqtest,dlqtest2",
+				"default", moduleInputChannel, consumerProperties);
+		AbstractMessageListenerContainer container = TestUtils.getPropertyValue(
+				consumerBinding, "lifecycle.messageListenerContainer",
+				AbstractMessageListenerContainer.class);
 		assertThat(container.getQueueNames().length).isEqualTo(2);
 
-		RabbitTemplate template = new RabbitTemplate(this.rabbitAvailableRule.getResource());
+		RabbitTemplate template = new RabbitTemplate(
+				this.rabbitAvailableRule.getResource());
 		template.convertAndSend("", TEST_PREFIX + "dlqtest.default", "foo");
 
 		int n = 0;
 		while (n++ < 100) {
-			Object deadLetter = template.receiveAndConvert(TEST_PREFIX + "dlqtest.default.dlq");
+			Object deadLetter = template
+					.receiveAndConvert(TEST_PREFIX + "dlqtest.default.dlq");
 			if (deadLetter != null) {
 				assertThat(deadLetter).isEqualTo("foo");
 				break;
@@ -758,7 +828,8 @@ public class RabbitBinderTests extends
 
 		n = 0;
 		while (n++ < 100) {
-			Object deadLetter = template.receiveAndConvert(TEST_PREFIX + "dlqtest2.default.dlq");
+			Object deadLetter = template
+					.receiveAndConvert(TEST_PREFIX + "dlqtest2.default.dlq");
 			if (deadLetter != null) {
 				assertThat(deadLetter).isEqualTo("bar");
 				break;
@@ -769,11 +840,14 @@ public class RabbitBinderTests extends
 
 		consumerBinding.unbind();
 
-		ApplicationContext context = TestUtils.getPropertyValue(binder, "binder.provisioningProvider.autoDeclareContext",
+		ApplicationContext context = TestUtils.getPropertyValue(binder,
+				"binder.provisioningProvider.autoDeclareContext",
 				ApplicationContext.class);
-		assertThat(context.containsBean(TEST_PREFIX + "dlqtest.default.binding")).isFalse();
+		assertThat(context.containsBean(TEST_PREFIX + "dlqtest.default.binding"))
+				.isFalse();
 		assertThat(context.containsBean(TEST_PREFIX + "dlqtest.default")).isFalse();
-		assertThat(context.containsBean(TEST_PREFIX + "dlqtest.default.dlq.binding")).isFalse();
+		assertThat(context.containsBean(TEST_PREFIX + "dlqtest.default.dlq.binding"))
+				.isFalse();
 		assertThat(context.containsBean(TEST_PREFIX + "dlqtest.default.dlq")).isFalse();
 	}
 
@@ -787,17 +861,21 @@ public class RabbitBinderTests extends
 		properties.setMaxAttempts(1); // disable retry
 		properties.setPartitioned(true);
 		properties.setInstanceIndex(0);
-		DirectChannel input0 = createBindableChannel("input", createConsumerBindingProperties(properties));
+		DirectChannel input0 = createBindableChannel("input",
+				createConsumerBindingProperties(properties));
 		input0.setBeanName("test.input0DLQ");
-		Binding<MessageChannel> input0Binding = binder.bindConsumer("partDLQ.0", "dlqPartGrp", input0, properties);
-		Binding<MessageChannel> defaultConsumerBinding1 = binder.bindConsumer("partDLQ.0", "default",
-				new QueueChannel(), properties);
+		Binding<MessageChannel> input0Binding = binder.bindConsumer("partDLQ.0",
+				"dlqPartGrp", input0, properties);
+		Binding<MessageChannel> defaultConsumerBinding1 = binder.bindConsumer("partDLQ.0",
+				"default", new QueueChannel(), properties);
 		properties.setInstanceIndex(1);
-		DirectChannel input1 = createBindableChannel("input1", createConsumerBindingProperties(properties));
+		DirectChannel input1 = createBindableChannel("input1",
+				createConsumerBindingProperties(properties));
 		input1.setBeanName("test.input1DLQ");
-		Binding<MessageChannel> input1Binding = binder.bindConsumer("partDLQ.0", "dlqPartGrp", input1, properties);
-		Binding<MessageChannel> defaultConsumerBinding2 = binder.bindConsumer("partDLQ.0", "default",
-				new QueueChannel(), properties);
+		Binding<MessageChannel> input1Binding = binder.bindConsumer("partDLQ.0",
+				"dlqPartGrp", input1, properties);
+		Binding<MessageChannel> defaultConsumerBinding2 = binder.bindConsumer("partDLQ.0",
+				"default", new QueueChannel(), properties);
 
 		ExtendedProducerProperties<RabbitProducerProperties> producerProperties = createProducerProperties();
 		producerProperties.getExtension().setPrefix("bindertest.");
@@ -805,10 +883,12 @@ public class RabbitBinderTests extends
 		producerProperties.setPartitionKeyExtractorClass(PartitionTestSupport.class);
 		producerProperties.setPartitionSelectorClass(PartitionTestSupport.class);
 		producerProperties.setPartitionCount(2);
-		BindingProperties bindingProperties = createProducerBindingProperties(producerProperties);
+		BindingProperties bindingProperties = createProducerBindingProperties(
+				producerProperties);
 		DirectChannel output = createBindableChannel("output", bindingProperties);
 		output.setBeanName("test.output");
-		Binding<MessageChannel> outputBinding = binder.bindProducer("partDLQ.0", output, producerProperties);
+		Binding<MessageChannel> outputBinding = binder.bindProducer("partDLQ.0", output,
+				producerProperties);
 
 		final CountDownLatch latch0 = new CountDownLatch(1);
 		input0.subscribe(new MessageHandler() {
@@ -844,7 +924,8 @@ public class RabbitBinderTests extends
 
 		output.send(new GenericMessage<>(1));
 
-		RabbitTemplate template = new RabbitTemplate(this.rabbitAvailableRule.getResource());
+		RabbitTemplate template = new RabbitTemplate(
+				this.rabbitAvailableRule.getResource());
 		template.setReceiveTimeout(10000);
 
 		String streamDLQName = "bindertest.partDLQ.0.dlqPartGrp.dlq";
@@ -853,14 +934,16 @@ public class RabbitBinderTests extends
 		assertThat(received).isNotNull();
 		assertThat(received.getMessageProperties().getReceivedRoutingKey())
 				.isEqualTo("bindertest.partDLQ.0.dlqPartGrp-1");
-		assertThat(received.getMessageProperties().getHeaders()).doesNotContainKey(BinderHeaders.PARTITION_HEADER);
+		assertThat(received.getMessageProperties().getHeaders())
+				.doesNotContainKey(BinderHeaders.PARTITION_HEADER);
 
 		output.send(new GenericMessage<>(0));
 		received = template.receive(streamDLQName);
 		assertThat(received).isNotNull();
 		assertThat(received.getMessageProperties().getReceivedRoutingKey())
 				.isEqualTo("bindertest.partDLQ.0.dlqPartGrp-0");
-		assertThat(received.getMessageProperties().getHeaders()).doesNotContainKey(BinderHeaders.PARTITION_HEADER);
+		assertThat(received.getMessageProperties().getHeaders())
+				.doesNotContainKey(BinderHeaders.PARTITION_HEADER);
 
 		input0Binding.unbind();
 		input1Binding.unbind();
@@ -870,37 +953,45 @@ public class RabbitBinderTests extends
 	}
 
 	@Test
-	public void testAutoBindDLQPartitionedConsumerFirstWithRepublishNoRetry() throws Exception {
+	public void testAutoBindDLQPartitionedConsumerFirstWithRepublishNoRetry()
+			throws Exception {
 		testAutoBindDLQPartionedConsumerFirstWithRepublishGuts(false);
 	}
 
 	@Test
-	public void testAutoBindDLQPartitionedConsumerFirstWithRepublishWithRetry() throws Exception {
+	public void testAutoBindDLQPartitionedConsumerFirstWithRepublishWithRetry()
+			throws Exception {
 		testAutoBindDLQPartionedConsumerFirstWithRepublishGuts(true);
 	}
 
 	@SuppressWarnings("deprecation")
-	private void testAutoBindDLQPartionedConsumerFirstWithRepublishGuts(final boolean withRetry) throws Exception {
+	private void testAutoBindDLQPartionedConsumerFirstWithRepublishGuts(
+			final boolean withRetry) throws Exception {
 		RabbitTestBinder binder = getBinder();
 		ExtendedConsumerProperties<RabbitConsumerProperties> properties = createConsumerProperties();
 		properties.getExtension().setPrefix("bindertest.");
 		properties.getExtension().setAutoBindDlq(true);
 		properties.getExtension().setRepublishToDlq(true);
-		properties.getExtension().setRepublishDeliveyMode(MessageDeliveryMode.NON_PERSISTENT);
+		properties.getExtension()
+				.setRepublishDeliveyMode(MessageDeliveryMode.NON_PERSISTENT);
 		properties.setMaxAttempts(withRetry ? 2 : 1);
 		properties.setPartitioned(true);
 		properties.setInstanceIndex(0);
-		DirectChannel input0 = createBindableChannel("input", createConsumerBindingProperties(properties));
+		DirectChannel input0 = createBindableChannel("input",
+				createConsumerBindingProperties(properties));
 		input0.setBeanName("test.input0DLQ");
-		Binding<MessageChannel> input0Binding = binder.bindConsumer("partPubDLQ.0", "dlqPartGrp", input0, properties);
-		Binding<MessageChannel> defaultConsumerBinding1 = binder.bindConsumer("partPubDLQ.0", "default",
-				new QueueChannel(), properties);
+		Binding<MessageChannel> input0Binding = binder.bindConsumer("partPubDLQ.0",
+				"dlqPartGrp", input0, properties);
+		Binding<MessageChannel> defaultConsumerBinding1 = binder
+				.bindConsumer("partPubDLQ.0", "default", new QueueChannel(), properties);
 		properties.setInstanceIndex(1);
-		DirectChannel input1 = createBindableChannel("input1", createConsumerBindingProperties(properties));
+		DirectChannel input1 = createBindableChannel("input1",
+				createConsumerBindingProperties(properties));
 		input1.setBeanName("test.input1DLQ");
-		Binding<MessageChannel> input1Binding = binder.bindConsumer("partPubDLQ.0", "dlqPartGrp", input1, properties);
-		Binding<MessageChannel> defaultConsumerBinding2 = binder.bindConsumer("partPubDLQ.0", "default",
-				new QueueChannel(), properties);
+		Binding<MessageChannel> input1Binding = binder.bindConsumer("partPubDLQ.0",
+				"dlqPartGrp", input1, properties);
+		Binding<MessageChannel> defaultConsumerBinding2 = binder
+				.bindConsumer("partPubDLQ.0", "default", new QueueChannel(), properties);
 
 		ExtendedProducerProperties<RabbitProducerProperties> producerProperties = createProducerProperties();
 		producerProperties.getExtension().setPrefix("bindertest.");
@@ -908,10 +999,12 @@ public class RabbitBinderTests extends
 		producerProperties.setPartitionKeyExtractorClass(PartitionTestSupport.class);
 		producerProperties.setPartitionSelectorClass(PartitionTestSupport.class);
 		producerProperties.setPartitionCount(2);
-		BindingProperties bindingProperties = createProducerBindingProperties(producerProperties);
+		BindingProperties bindingProperties = createProducerBindingProperties(
+				producerProperties);
 		DirectChannel output = createBindableChannel("output", bindingProperties);
 		output.setBeanName("test.output");
-		Binding<MessageChannel> outputBinding = binder.bindProducer("partPubDLQ.0", output, producerProperties);
+		Binding<MessageChannel> outputBinding = binder.bindProducer("partPubDLQ.0",
+				output, producerProperties);
 
 		final CountDownLatch latch0 = new CountDownLatch(1);
 		input0.subscribe(new MessageHandler() {
@@ -939,11 +1032,12 @@ public class RabbitBinderTests extends
 
 		});
 
-		ApplicationContext context = TestUtils.getPropertyValue(binder.getBinder(), "applicationContext",
-				ApplicationContext.class);
-		SubscribableChannel boundErrorChannel = context
-				.getBean("bindertest.partPubDLQ.0.dlqPartGrp-0.errors", SubscribableChannel.class);
-		SubscribableChannel globalErrorChannel = context.getBean("errorChannel", SubscribableChannel.class);
+		ApplicationContext context = TestUtils.getPropertyValue(binder.getBinder(),
+				"applicationContext", ApplicationContext.class);
+		SubscribableChannel boundErrorChannel = context.getBean(
+				"bindertest.partPubDLQ.0.dlqPartGrp-0.errors", SubscribableChannel.class);
+		SubscribableChannel globalErrorChannel = context.getBean("errorChannel",
+				SubscribableChannel.class);
 		final AtomicReference<Message<?>> boundErrorChannelMessage = new AtomicReference<>();
 		final AtomicReference<Message<?>> globalErrorChannelMessage = new AtomicReference<>();
 		final AtomicBoolean hasRecovererInCallStack = new AtomicBoolean(!withRetry);
@@ -952,8 +1046,10 @@ public class RabbitBinderTests extends
 			@Override
 			public void handleMessage(Message<?> message) throws MessagingException {
 				boundErrorChannelMessage.set(message);
-				String stackTrace = Arrays.toString(new RuntimeException().getStackTrace());
-				hasRecovererInCallStack.set(stackTrace.contains("ErrorMessageSendingRecoverer"));
+				String stackTrace = Arrays
+						.toString(new RuntimeException().getStackTrace());
+				hasRecovererInCallStack
+						.set(stackTrace.contains("ErrorMessageSendingRecoverer"));
 			}
 
 		});
@@ -974,27 +1070,33 @@ public class RabbitBinderTests extends
 
 		output.send(new GenericMessage<>(1));
 
-		RabbitTemplate template = new RabbitTemplate(this.rabbitAvailableRule.getResource());
+		RabbitTemplate template = new RabbitTemplate(
+				this.rabbitAvailableRule.getResource());
 		template.setReceiveTimeout(10000);
 
 		String streamDLQName = "bindertest.partPubDLQ.0.dlqPartGrp.dlq";
 
 		org.springframework.amqp.core.Message received = template.receive(streamDLQName);
 		assertThat(received).isNotNull();
-		assertThat(received.getMessageProperties().getHeaders().get("x-original-routingKey"))
-				.isEqualTo("partPubDLQ.0-1");
-		assertThat(received.getMessageProperties().getHeaders()).doesNotContainKey(BinderHeaders.PARTITION_HEADER);
+		assertThat(
+				received.getMessageProperties().getHeaders().get("x-original-routingKey"))
+						.isEqualTo("partPubDLQ.0-1");
+		assertThat(received.getMessageProperties().getHeaders())
+				.doesNotContainKey(BinderHeaders.PARTITION_HEADER);
 		assertThat(received.getMessageProperties().getReceivedDeliveryMode())
 				.isEqualTo(MessageDeliveryMode.NON_PERSISTENT);
 
 		output.send(new GenericMessage<>(0));
 		received = template.receive(streamDLQName);
 		assertThat(received).isNotNull();
-		assertThat(received.getMessageProperties().getHeaders().get("x-original-routingKey"))
-			.isEqualTo("partPubDLQ.0-0");
-		assertThat(received.getMessageProperties().getHeaders()).doesNotContainKey(BinderHeaders.PARTITION_HEADER);
+		assertThat(
+				received.getMessageProperties().getHeaders().get("x-original-routingKey"))
+						.isEqualTo("partPubDLQ.0-0");
+		assertThat(received.getMessageProperties().getHeaders())
+				.doesNotContainKey(BinderHeaders.PARTITION_HEADER);
 
-		// verify we got a message on the dedicated error channel and the global (via bridge)
+		// verify we got a message on the dedicated error channel and the global (via
+		// bridge)
 		assertThat(boundErrorChannelMessage.get()).isNotNull();
 		assertThat(globalErrorChannelMessage.get()).isNotNull();
 		assertThat(hasRecovererInCallStack.get()).isEqualTo(withRetry);
@@ -1018,9 +1120,11 @@ public class RabbitBinderTests extends
 		properties.setPartitionKeyExtractorClass(PartitionTestSupport.class);
 		properties.setPartitionSelectorClass(PartitionTestSupport.class);
 		properties.setPartitionCount(2);
-		DirectChannel output = createBindableChannel("output", createProducerBindingProperties(properties));
+		DirectChannel output = createBindableChannel("output",
+				createProducerBindingProperties(properties));
 		output.setBeanName("test.output");
-		Binding<MessageChannel> outputBinding = binder.bindProducer("partDLQ.1", output, properties);
+		Binding<MessageChannel> outputBinding = binder.bindProducer("partDLQ.1", output,
+				properties);
 
 		ExtendedConsumerProperties<RabbitConsumerProperties> consumerProperties = createConsumerProperties();
 		consumerProperties.getExtension().setPrefix("bindertest.");
@@ -1028,19 +1132,21 @@ public class RabbitBinderTests extends
 		consumerProperties.setMaxAttempts(1); // disable retry
 		consumerProperties.setPartitioned(true);
 		consumerProperties.setInstanceIndex(0);
-		DirectChannel input0 = createBindableChannel("input", createConsumerBindingProperties(consumerProperties));
+		DirectChannel input0 = createBindableChannel("input",
+				createConsumerBindingProperties(consumerProperties));
 		input0.setBeanName("test.input0DLQ");
-		Binding<MessageChannel> input0Binding = binder.bindConsumer("partDLQ.1", "dlqPartGrp", input0,
-				consumerProperties);
-		Binding<MessageChannel> defaultConsumerBinding1 = binder.bindConsumer("partDLQ.1", "defaultConsumer",
-				new QueueChannel(), consumerProperties);
+		Binding<MessageChannel> input0Binding = binder.bindConsumer("partDLQ.1",
+				"dlqPartGrp", input0, consumerProperties);
+		Binding<MessageChannel> defaultConsumerBinding1 = binder.bindConsumer("partDLQ.1",
+				"defaultConsumer", new QueueChannel(), consumerProperties);
 		consumerProperties.setInstanceIndex(1);
-		DirectChannel input1 = createBindableChannel("input1", createConsumerBindingProperties(consumerProperties));
+		DirectChannel input1 = createBindableChannel("input1",
+				createConsumerBindingProperties(consumerProperties));
 		input1.setBeanName("test.input1DLQ");
-		Binding<MessageChannel> input1Binding = binder.bindConsumer("partDLQ.1", "dlqPartGrp", input1,
-				consumerProperties);
-		Binding<MessageChannel> defaultConsumerBinding2 = binder.bindConsumer("partDLQ.1", "defaultConsumer",
-				new QueueChannel(), consumerProperties);
+		Binding<MessageChannel> input1Binding = binder.bindConsumer("partDLQ.1",
+				"dlqPartGrp", input1, consumerProperties);
+		Binding<MessageChannel> defaultConsumerBinding2 = binder.bindConsumer("partDLQ.1",
+				"defaultConsumer", new QueueChannel(), consumerProperties);
 
 		final CountDownLatch latch0 = new CountDownLatch(1);
 		input0.subscribe(new MessageHandler() {
@@ -1076,7 +1182,8 @@ public class RabbitBinderTests extends
 
 		output.send(new GenericMessage<Integer>(1));
 
-		RabbitTemplate template = new RabbitTemplate(this.rabbitAvailableRule.getResource());
+		RabbitTemplate template = new RabbitTemplate(
+				this.rabbitAvailableRule.getResource());
 		template.setReceiveTimeout(10000);
 
 		String streamDLQName = "bindertest.partDLQ.1.dlqPartGrp.dlq";
@@ -1085,15 +1192,18 @@ public class RabbitBinderTests extends
 		assertThat(received).isNotNull();
 		assertThat(received.getMessageProperties().getReceivedRoutingKey())
 				.isEqualTo("bindertest.partDLQ.1.dlqPartGrp-1");
-		assertThat(received.getMessageProperties().getHeaders()).doesNotContainKey(BinderHeaders.PARTITION_HEADER);
-		assertThat(received.getMessageProperties().getReceivedDeliveryMode()).isEqualTo(MessageDeliveryMode.PERSISTENT);
+		assertThat(received.getMessageProperties().getHeaders())
+				.doesNotContainKey(BinderHeaders.PARTITION_HEADER);
+		assertThat(received.getMessageProperties().getReceivedDeliveryMode())
+				.isEqualTo(MessageDeliveryMode.PERSISTENT);
 
 		output.send(new GenericMessage<Integer>(0));
 		received = template.receive(streamDLQName);
 		assertThat(received).isNotNull();
 		assertThat(received.getMessageProperties().getReceivedRoutingKey())
-			.isEqualTo("bindertest.partDLQ.1.dlqPartGrp-0");
-		assertThat(received.getMessageProperties().getHeaders()).doesNotContainKey(BinderHeaders.PARTITION_HEADER);
+				.isEqualTo("bindertest.partDLQ.1.dlqPartGrp-0");
+		assertThat(received.getMessageProperties().getHeaders())
+				.doesNotContainKey(BinderHeaders.PARTITION_HEADER);
 
 		input0Binding.unbind();
 		input1Binding.unbind();
@@ -1104,7 +1214,8 @@ public class RabbitBinderTests extends
 
 	@Test
 	public void testAutoBindDLQwithRepublish() throws Exception {
-		this.maxStackTraceSize = RabbitUtils.getMaxFrame(rabbitAvailableRule.getResource()) - 20_000;
+		this.maxStackTraceSize = RabbitUtils
+				.getMaxFrame(rabbitAvailableRule.getResource()) - 20_000;
 		assertThat(this.maxStackTraceSize).isGreaterThan(0);
 
 		RabbitTestBinder binder = getBinder();
@@ -1114,10 +1225,13 @@ public class RabbitBinderTests extends
 		consumerProperties.getExtension().setRepublishToDlq(true);
 		consumerProperties.setMaxAttempts(1); // disable retry
 		consumerProperties.getExtension().setDurableSubscription(true);
-		DirectChannel moduleInputChannel = createBindableChannel("input", createConsumerBindingProperties(consumerProperties));
+		DirectChannel moduleInputChannel = createBindableChannel("input",
+				createConsumerBindingProperties(consumerProperties));
 		moduleInputChannel.setBeanName("dlqPubTest");
-		RuntimeException exception = bigCause(new RuntimeException(BIG_EXCEPTION_MESSAGE));
-		assertThat(getStackTraceAsString(exception).length()).isGreaterThan(this.maxStackTraceSize);
+		RuntimeException exception = bigCause(
+				new RuntimeException(BIG_EXCEPTION_MESSAGE));
+		assertThat(getStackTraceAsString(exception).length())
+				.isGreaterThan(this.maxStackTraceSize);
 		AtomicBoolean dontRepublish = new AtomicBoolean();
 		moduleInputChannel.subscribe(new MessageHandler() {
 
@@ -1131,27 +1245,32 @@ public class RabbitBinderTests extends
 
 		});
 		consumerProperties.setMultiplex(true);
-		Binding<MessageChannel> consumerBinding = binder.bindConsumer("foo.dlqpubtest,foo.dlqpubtest2", "foo",
-				moduleInputChannel, consumerProperties);
+		Binding<MessageChannel> consumerBinding = binder.bindConsumer(
+				"foo.dlqpubtest,foo.dlqpubtest2", "foo", moduleInputChannel,
+				consumerProperties);
 
-		RabbitTemplate template = new RabbitTemplate(this.rabbitAvailableRule.getResource());
+		RabbitTemplate template = new RabbitTemplate(
+				this.rabbitAvailableRule.getResource());
 		template.convertAndSend("", TEST_PREFIX + "foo.dlqpubtest.foo", "foo");
 
 		template.setReceiveTimeout(10_000);
-		org.springframework.amqp.core.Message deadLetter = template.receive(TEST_PREFIX + "foo.dlqpubtest.foo.dlq");
+		org.springframework.amqp.core.Message deadLetter = template
+				.receive(TEST_PREFIX + "foo.dlqpubtest.foo.dlq");
 		assertThat(deadLetter).isNotNull();
 		assertThat(new String(deadLetter.getBody())).isEqualTo("foo");
 		assertThat(deadLetter.getMessageProperties().getHeaders())
 				.containsKey((RepublishMessageRecoverer.X_EXCEPTION_STACKTRACE));
 		assertThat(((LongString) deadLetter.getMessageProperties().getHeaders()
-				.get(RepublishMessageRecoverer.X_EXCEPTION_STACKTRACE)).length()).isEqualTo(this.maxStackTraceSize);
+				.get(RepublishMessageRecoverer.X_EXCEPTION_STACKTRACE)).length())
+						.isEqualTo(this.maxStackTraceSize);
 
 		template.convertAndSend("", TEST_PREFIX + "foo.dlqpubtest2.foo", "bar");
 
 		deadLetter = template.receive(TEST_PREFIX + "foo.dlqpubtest2.foo.dlq");
 		assertThat(deadLetter).isNotNull();
 		assertThat(new String(deadLetter.getBody())).isEqualTo("bar");
-		assertThat(deadLetter.getMessageProperties().getHeaders()).containsKey(("x-exception-stacktrace"));
+		assertThat(deadLetter.getMessageProperties().getHeaders())
+				.containsKey(("x-exception-stacktrace"));
 
 		dontRepublish.set(true);
 		template.convertAndSend("", TEST_PREFIX + "foo.dlqpubtest2.foo", "baz");
@@ -1166,7 +1285,8 @@ public class RabbitBinderTests extends
 	public void testBatchingAndCompression() throws Exception {
 		RabbitTestBinder binder = getBinder();
 		ExtendedProducerProperties<RabbitProducerProperties> producerProperties = createProducerProperties();
-		producerProperties.getExtension().setDeliveryMode(MessageDeliveryMode.NON_PERSISTENT);
+		producerProperties.getExtension()
+				.setDeliveryMode(MessageDeliveryMode.NON_PERSISTENT);
 		producerProperties.getExtension().setBatchingEnabled(true);
 		producerProperties.getExtension().setBatchSize(2);
 		producerProperties.getExtension().setBatchBufferLimit(100000);
@@ -1174,24 +1294,29 @@ public class RabbitBinderTests extends
 		producerProperties.getExtension().setCompress(true);
 		producerProperties.setRequiredGroups("default");
 
-		DirectChannel output = createBindableChannel("output", createProducerBindingProperties(producerProperties));
+		DirectChannel output = createBindableChannel("output",
+				createProducerBindingProperties(producerProperties));
 		output.setBeanName("batchingProducer");
-		Binding<MessageChannel> producerBinding = binder.bindProducer("batching.0", output, producerProperties);
+		Binding<MessageChannel> producerBinding = binder.bindProducer("batching.0",
+				output, producerProperties);
 
-		Log logger = spy(TestUtils.getPropertyValue(binder, "binder.compressingPostProcessor.logger", Log.class));
-		new DirectFieldAccessor(TestUtils.getPropertyValue(binder, "binder.compressingPostProcessor"))
-				.setPropertyValue("logger", logger);
+		Log logger = spy(TestUtils.getPropertyValue(binder,
+				"binder.compressingPostProcessor.logger", Log.class));
+		new DirectFieldAccessor(
+				TestUtils.getPropertyValue(binder, "binder.compressingPostProcessor"))
+						.setPropertyValue("logger", logger);
 		when(logger.isTraceEnabled()).thenReturn(true);
 
-		assertThat(TestUtils.getPropertyValue(binder, "binder.compressingPostProcessor.level"))
-				.isEqualTo(Deflater.BEST_SPEED);
+		assertThat(TestUtils.getPropertyValue(binder,
+				"binder.compressingPostProcessor.level")).isEqualTo(Deflater.BEST_SPEED);
 
 		output.send(new GenericMessage<>("foo".getBytes()));
 		output.send(new GenericMessage<>("bar".getBytes()));
 
 		Object out = spyOn("batching.0.default").receive(false);
 		assertThat(out).isInstanceOf(byte[].class);
-		assertThat(new String((byte[]) out)).isEqualTo("\u0000\u0000\u0000\u0003foo\u0000\u0000\u0000\u0003bar");
+		assertThat(new String((byte[]) out))
+				.isEqualTo("\u0000\u0000\u0000\u0003foo\u0000\u0000\u0000\u0003bar");
 
 		ArgumentCaptor<Object> captor = ArgumentCaptor.forClass(Object.class);
 		verify(logger).trace(captor.capture());
@@ -1199,8 +1324,8 @@ public class RabbitBinderTests extends
 
 		QueueChannel input = new QueueChannel();
 		input.setBeanName("batchingConsumer");
-		Binding<MessageChannel> consumerBinding = binder.bindConsumer("batching.0", "test", input,
-				createConsumerProperties());
+		Binding<MessageChannel> consumerBinding = binder.bindConsumer("batching.0",
+				"test", input, createConsumerProperties());
 
 		output.send(new GenericMessage<>("foo".getBytes()));
 		output.send(new GenericMessage<>("bar".getBytes()));
@@ -1224,10 +1349,11 @@ public class RabbitBinderTests extends
 	@Test
 	public void testLateBinding() throws Exception {
 		RabbitTestSupport.RabbitProxy proxy = new RabbitTestSupport.RabbitProxy();
-		CachingConnectionFactory cf = new CachingConnectionFactory("localhost", proxy.getPort());
+		CachingConnectionFactory cf = new CachingConnectionFactory("localhost",
+				proxy.getPort());
 
-		RabbitMessageChannelBinder rabbitBinder = new RabbitMessageChannelBinder(cf, new RabbitProperties(),
-				new RabbitExchangeQueueProvisioner(cf));
+		RabbitMessageChannelBinder rabbitBinder = new RabbitMessageChannelBinder(cf,
+				new RabbitProperties(), new RabbitExchangeQueueProvisioner(cf));
 		RabbitTestBinder binder = new RabbitTestBinder(cf, rabbitBinder);
 
 		ExtendedProducerProperties<RabbitProducerProperties> producerProperties = createProducerProperties();
@@ -1235,22 +1361,27 @@ public class RabbitBinderTests extends
 		producerProperties.getExtension().setAutoBindDlq(true);
 		producerProperties.getExtension().setTransacted(true);
 
-		MessageChannel moduleOutputChannel = createBindableChannel("output", createProducerBindingProperties(producerProperties));
-		Binding<MessageChannel> late0ProducerBinding = binder.bindProducer("late.0", moduleOutputChannel, producerProperties);
+		MessageChannel moduleOutputChannel = createBindableChannel("output",
+				createProducerBindingProperties(producerProperties));
+		Binding<MessageChannel> late0ProducerBinding = binder.bindProducer("late.0",
+				moduleOutputChannel, producerProperties);
 
 		QueueChannel moduleInputChannel = new QueueChannel();
 		ExtendedConsumerProperties<RabbitConsumerProperties> rabbitConsumerProperties = createConsumerProperties();
 		rabbitConsumerProperties.getExtension().setPrefix("latebinder.");
-		Binding<MessageChannel> late0ConsumerBinding = binder.bindConsumer("late.0", "test", moduleInputChannel,
-				rabbitConsumerProperties);
+		Binding<MessageChannel> late0ConsumerBinding = binder.bindConsumer("late.0",
+				"test", moduleInputChannel, rabbitConsumerProperties);
 
-		producerProperties.setPartitionKeyExpression(spelExpressionParser.parseExpression("payload.equals('0') ? 0 : 1"));
-		producerProperties.setPartitionSelectorExpression(spelExpressionParser.parseExpression("hashCode()"));
+		producerProperties.setPartitionKeyExpression(
+				spelExpressionParser.parseExpression("payload.equals('0') ? 0 : 1"));
+		producerProperties.setPartitionSelectorExpression(
+				spelExpressionParser.parseExpression("hashCode()"));
 		producerProperties.setPartitionCount(2);
 
-		MessageChannel partOutputChannel = createBindableChannel("output", createProducerBindingProperties(producerProperties));
-		Binding<MessageChannel> partlate0ProducerBinding = binder.bindProducer("partlate.0", partOutputChannel,
-				producerProperties);
+		MessageChannel partOutputChannel = createBindableChannel("output",
+				createProducerBindingProperties(producerProperties));
+		Binding<MessageChannel> partlate0ProducerBinding = binder
+				.bindProducer("partlate.0", partOutputChannel, producerProperties);
 
 		QueueChannel partInputChannel0 = new QueueChannel();
 		QueueChannel partInputChannel1 = new QueueChannel();
@@ -1259,50 +1390,57 @@ public class RabbitBinderTests extends
 		partLateConsumerProperties.getExtension().setPrefix("latebinder.");
 		partLateConsumerProperties.setPartitioned(true);
 		partLateConsumerProperties.setInstanceIndex(0);
-		Binding<MessageChannel> partlate0Consumer0Binding = binder.bindConsumer("partlate.0", "test", partInputChannel0,
-				partLateConsumerProperties);
+		Binding<MessageChannel> partlate0Consumer0Binding = binder.bindConsumer(
+				"partlate.0", "test", partInputChannel0, partLateConsumerProperties);
 		partLateConsumerProperties.setInstanceIndex(1);
-		Binding<MessageChannel> partlate0Consumer1Binding = binder.bindConsumer("partlate.0", "test", partInputChannel1,
-				partLateConsumerProperties);
+		Binding<MessageChannel> partlate0Consumer1Binding = binder.bindConsumer(
+				"partlate.0", "test", partInputChannel1, partLateConsumerProperties);
 
 		ExtendedProducerProperties<RabbitProducerProperties> noDlqProducerProperties = createProducerProperties();
 		noDlqProducerProperties.getExtension().setPrefix("latebinder.");
 		MessageChannel noDLQOutputChannel = createBindableChannel("output",
 				createProducerBindingProperties(noDlqProducerProperties));
-		Binding<MessageChannel> noDlqProducerBinding = binder.bindProducer("lateNoDLQ.0", noDLQOutputChannel,
-				noDlqProducerProperties);
+		Binding<MessageChannel> noDlqProducerBinding = binder.bindProducer("lateNoDLQ.0",
+				noDLQOutputChannel, noDlqProducerProperties);
 
 		QueueChannel noDLQInputChannel = new QueueChannel();
 		ExtendedConsumerProperties<RabbitConsumerProperties> noDlqConsumerProperties = createConsumerProperties();
 		noDlqConsumerProperties.getExtension().setPrefix("latebinder.");
-		Binding<MessageChannel> noDlqConsumerBinding = binder.bindConsumer("lateNoDLQ.0", "test", noDLQInputChannel,
-				noDlqConsumerProperties);
+		Binding<MessageChannel> noDlqConsumerBinding = binder.bindConsumer("lateNoDLQ.0",
+				"test", noDLQInputChannel, noDlqConsumerProperties);
 
-		MessageChannel outputChannel = createBindableChannel("output", createProducerBindingProperties(noDlqProducerProperties));
-		Binding<MessageChannel> pubSubProducerBinding = binder.bindProducer("latePubSub", outputChannel,
-				noDlqProducerProperties);
+		MessageChannel outputChannel = createBindableChannel("output",
+				createProducerBindingProperties(noDlqProducerProperties));
+		Binding<MessageChannel> pubSubProducerBinding = binder.bindProducer("latePubSub",
+				outputChannel, noDlqProducerProperties);
 		QueueChannel pubSubInputChannel = new QueueChannel();
 		noDlqConsumerProperties.getExtension().setDurableSubscription(false);
-		Binding<MessageChannel> nonDurableConsumerBinding = binder.bindConsumer("latePubSub", "lategroup",
-				pubSubInputChannel, noDlqConsumerProperties);
+		Binding<MessageChannel> nonDurableConsumerBinding = binder.bindConsumer(
+				"latePubSub", "lategroup", pubSubInputChannel, noDlqConsumerProperties);
 		QueueChannel durablePubSubInputChannel = new QueueChannel();
 		noDlqConsumerProperties.getExtension().setDurableSubscription(true);
-		Binding<MessageChannel> durableConsumerBinding = binder.bindConsumer("latePubSub", "lateDurableGroup",
-				durablePubSubInputChannel, noDlqConsumerProperties);
+		Binding<MessageChannel> durableConsumerBinding = binder.bindConsumer("latePubSub",
+				"lateDurableGroup", durablePubSubInputChannel, noDlqConsumerProperties);
 
 		proxy.start();
 
-		moduleOutputChannel.send(MessageBuilder.withPayload("foo").setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN).build());
+		moduleOutputChannel.send(MessageBuilder.withPayload("foo")
+				.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN)
+				.build());
 		Message<?> message = moduleInputChannel.receive(10000);
 		assertThat(message).isNotNull();
 		assertThat(message.getPayload()).isNotNull();
 
-		noDLQOutputChannel.send(MessageBuilder.withPayload("bar").setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN).build());
+		noDLQOutputChannel.send(MessageBuilder.withPayload("bar")
+				.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN)
+				.build());
 		message = noDLQInputChannel.receive(10000);
 		assertThat(message);
 		assertThat(message.getPayload()).isEqualTo("bar".getBytes());
 
-		outputChannel.send(MessageBuilder.withPayload("baz").setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN).build());
+		outputChannel.send(MessageBuilder.withPayload("baz")
+				.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN)
+				.build());
 		message = pubSubInputChannel.receive(10000);
 		assertThat(message);
 		assertThat(message.getPayload()).isEqualTo("baz".getBytes());
@@ -1310,8 +1448,12 @@ public class RabbitBinderTests extends
 		assertThat(message).isNotNull();
 		assertThat(message.getPayload()).isEqualTo("baz".getBytes());
 
-		partOutputChannel.send(MessageBuilder.withPayload("0").setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN).build());
-		partOutputChannel.send(MessageBuilder.withPayload("1").setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN).build());
+		partOutputChannel.send(MessageBuilder.withPayload("0")
+				.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN)
+				.build());
+		partOutputChannel.send(MessageBuilder.withPayload("1")
+				.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN)
+				.build());
 		message = partInputChannel0.receive(10000);
 		assertThat(message).isNotNull();
 		assertThat(message.getPayload()).isEqualTo("0".getBytes());
@@ -1343,10 +1485,11 @@ public class RabbitBinderTests extends
 		RabbitTestBinder binder = getBinder();
 		ConfigurableApplicationContext context = binder.getApplicationContext();
 		ConfigurableListableBeanFactory bf = context.getBeanFactory();
-		bf.registerSingleton("testBadUserDeclarationsFatal", new Queue("testBadUserDeclarationsFatal", false));
+		bf.registerSingleton("testBadUserDeclarationsFatal",
+				new Queue("testBadUserDeclarationsFatal", false));
 		bf.registerSingleton("binder", binder);
-		RabbitExchangeQueueProvisioner provisioner = TestUtils.getPropertyValue(binder, "binder.provisioningProvider",
-				RabbitExchangeQueueProvisioner.class);
+		RabbitExchangeQueueProvisioner provisioner = TestUtils.getPropertyValue(binder,
+				"binder.provisioningProvider", RabbitExchangeQueueProvisioner.class);
 		bf.initializeBean(provisioner, "provisioner");
 		bf.registerSingleton("provisioner", provisioner);
 		context.addApplicationListener(provisioner);
@@ -1360,7 +1503,9 @@ public class RabbitBinderTests extends
 		// the mis-configured queue should be fatal
 		Binding<?> binding = null;
 		try {
-			binding = binder.bindConsumer("input", "baddecls", this.createBindableChannel("input", new BindingProperties()), createConsumerProperties());
+			binding = binder.bindConsumer("input", "baddecls",
+					this.createBindableChannel("input", new BindingProperties()),
+					createConsumerProperties());
 			fail("Expected exception");
 		}
 		catch (BinderException e) {
@@ -1378,16 +1523,20 @@ public class RabbitBinderTests extends
 	public void testRoutingKeyExpression() throws Exception {
 		RabbitTestBinder binder = getBinder();
 		ExtendedProducerProperties<RabbitProducerProperties> producerProperties = createProducerProperties();
-		producerProperties.getExtension().setRoutingKeyExpression(spelExpressionParser.parseExpression("payload.field"));
+		producerProperties.getExtension().setRoutingKeyExpression(
+				spelExpressionParser.parseExpression("payload.field"));
 
-		DirectChannel output = createBindableChannel("output", createProducerBindingProperties(producerProperties));
+		DirectChannel output = createBindableChannel("output",
+				createProducerBindingProperties(producerProperties));
 		output.setBeanName("rkeProducer");
-		Binding<MessageChannel> producerBinding = binder.bindProducer("rke", output, producerProperties);
+		Binding<MessageChannel> producerBinding = binder.bindProducer("rke", output,
+				producerProperties);
 
 		RabbitAdmin admin = new RabbitAdmin(this.rabbitAvailableRule.getResource());
 		Queue queue = new AnonymousQueue();
 		TopicExchange exchange = new TopicExchange("rke");
-		org.springframework.amqp.core.Binding binding = BindingBuilder.bind(queue).to(exchange).with("rkeTest");
+		org.springframework.amqp.core.Binding binding = BindingBuilder.bind(queue)
+				.to(exchange).with("rkeTest");
 		admin.declareQueue(queue);
 		admin.declareBinding(binding);
 
@@ -1395,8 +1544,9 @@ public class RabbitBinderTests extends
 
 			@Override
 			public Message<?> preSend(Message<?> message, MessageChannel channel) {
-				assertThat(message.getHeaders().get(RabbitExpressionEvaluatingInterceptor.ROUTING_KEY_HEADER))
-					.isEqualTo("rkeTest");
+				assertThat(message.getHeaders()
+						.get(RabbitExpressionEvaluatingInterceptor.ROUTING_KEY_HEADER))
+								.isEqualTo("rkeTest");
 				return message;
 			}
 
@@ -1406,7 +1556,8 @@ public class RabbitBinderTests extends
 
 		Object out = spyOn(queue.getName()).receive(false);
 		assertThat(out).isInstanceOf(byte[].class);
-		assertThat(new String((byte[]) out, StandardCharsets.UTF_8)).isEqualTo("{\"field\":\"rkeTest\"}");
+		assertThat(new String((byte[]) out, StandardCharsets.UTF_8))
+				.isEqualTo("{\"field\":\"rkeTest\"}");
 
 		producerBinding.unbind();
 	}
@@ -1415,21 +1566,25 @@ public class RabbitBinderTests extends
 	public void testRoutingKeyExpressionPartitionedAndDelay() throws Exception {
 		RabbitTestBinder binder = getBinder();
 		ExtendedProducerProperties<RabbitProducerProperties> producerProperties = createProducerProperties();
-		producerProperties.getExtension().setRoutingKeyExpression(spelExpressionParser.parseExpression("payload.field"));
+		producerProperties.getExtension().setRoutingKeyExpression(
+				spelExpressionParser.parseExpression("payload.field"));
 		// requires delayed message exchange plugin; tested locally
-//		producerProperties.getExtension().setDelayedExchange(true);
-		producerProperties.getExtension().setDelayExpression(spelExpressionParser.parseExpression("1000"));
+		// producerProperties.getExtension().setDelayedExchange(true);
+		producerProperties.getExtension()
+				.setDelayExpression(spelExpressionParser.parseExpression("1000"));
 		producerProperties.setPartitionKeyExpression(new ValueExpression<>(0));
 
-		DirectChannel output = createBindableChannel("output", createProducerBindingProperties(producerProperties));
+		DirectChannel output = createBindableChannel("output",
+				createProducerBindingProperties(producerProperties));
 		output.setBeanName("rkeProducer");
-		Binding<MessageChannel> producerBinding = binder.bindProducer("rkep", output, producerProperties);
+		Binding<MessageChannel> producerBinding = binder.bindProducer("rkep", output,
+				producerProperties);
 
 		RabbitAdmin admin = new RabbitAdmin(this.rabbitAvailableRule.getResource());
 		Queue queue = new AnonymousQueue();
 		TopicExchange exchange = new TopicExchange("rkep");
-		org.springframework.amqp.core.Binding binding =
-				BindingBuilder.bind(queue).to(exchange).with("rkepTest-0");
+		org.springframework.amqp.core.Binding binding = BindingBuilder.bind(queue)
+				.to(exchange).with("rkepTest-0");
 		admin.declareQueue(queue);
 		admin.declareBinding(binding);
 
@@ -1437,10 +1592,12 @@ public class RabbitBinderTests extends
 
 			@Override
 			public Message<?> preSend(Message<?> message, MessageChannel channel) {
-				assertThat(message.getHeaders().get(RabbitExpressionEvaluatingInterceptor.ROUTING_KEY_HEADER))
-					.isEqualTo("rkepTest");
-				assertThat(message.getHeaders().get(RabbitExpressionEvaluatingInterceptor.DELAY_HEADER))
-					.isEqualTo(1000);
+				assertThat(message.getHeaders()
+						.get(RabbitExpressionEvaluatingInterceptor.ROUTING_KEY_HEADER))
+								.isEqualTo("rkepTest");
+				assertThat(message.getHeaders()
+						.get(RabbitExpressionEvaluatingInterceptor.DELAY_HEADER))
+								.isEqualTo(1000);
 				return message;
 			}
 
@@ -1450,7 +1607,8 @@ public class RabbitBinderTests extends
 
 		Object out = spyOn(queue.getName()).receive(false);
 		assertThat(out).isInstanceOf(byte[].class);
-		assertThat(new String((byte[]) out, StandardCharsets.UTF_8)).isEqualTo("{\"field\":\"rkepTest\"}");
+		assertThat(new String((byte[]) out, StandardCharsets.UTF_8))
+				.isEqualTo("{\"field\":\"rkepTest\"}");
 
 		producerBinding.unbind();
 	}
@@ -1458,10 +1616,12 @@ public class RabbitBinderTests extends
 	@Test
 	public void testPolledConsumer() throws Exception {
 		RabbitTestBinder binder = getBinder();
-		PollableSource<MessageHandler> inboundBindTarget = new DefaultPollableMessageSource(this.messageConverter);
-		Binding<PollableSource<MessageHandler>> binding = binder.bindPollableConsumer("pollable", "group",
-				inboundBindTarget, createConsumerProperties());
-		RabbitTemplate template = new RabbitTemplate(this.rabbitAvailableRule.getResource());
+		PollableSource<MessageHandler> inboundBindTarget = new DefaultPollableMessageSource(
+				this.messageConverter);
+		Binding<PollableSource<MessageHandler>> binding = binder.bindPollableConsumer(
+				"pollable", "group", inboundBindTarget, createConsumerProperties());
+		RabbitTemplate template = new RabbitTemplate(
+				this.rabbitAvailableRule.getResource());
 		template.convertAndSend("pollable.group", "testPollable");
 		boolean polled = inboundBindTarget.poll(m -> {
 			assertThat(m.getPayload()).isEqualTo("testPollable");
@@ -1479,11 +1639,13 @@ public class RabbitBinderTests extends
 	@Test
 	public void testPolledConsumerRequeue() throws Exception {
 		RabbitTestBinder binder = getBinder();
-		PollableSource<MessageHandler> inboundBindTarget = new DefaultPollableMessageSource(this.messageConverter);
+		PollableSource<MessageHandler> inboundBindTarget = new DefaultPollableMessageSource(
+				this.messageConverter);
 		ExtendedConsumerProperties<RabbitConsumerProperties> properties = createConsumerProperties();
-		Binding<PollableSource<MessageHandler>> binding = binder.bindPollableConsumer("pollableRequeue", "group",
-				inboundBindTarget, properties);
-		RabbitTemplate template = new RabbitTemplate(this.rabbitAvailableRule.getResource());
+		Binding<PollableSource<MessageHandler>> binding = binder.bindPollableConsumer(
+				"pollableRequeue", "group", inboundBindTarget, properties);
+		RabbitTemplate template = new RabbitTemplate(
+				this.rabbitAvailableRule.getResource());
 		template.convertAndSend("pollableRequeue.group", "testPollable");
 		try {
 			boolean polled = false;
@@ -1508,14 +1670,16 @@ public class RabbitBinderTests extends
 	@Test
 	public void testPolledConsumerWithDlq() throws Exception {
 		RabbitTestBinder binder = getBinder();
-		PollableSource<MessageHandler> inboundBindTarget = new DefaultPollableMessageSource(this.messageConverter);
+		PollableSource<MessageHandler> inboundBindTarget = new DefaultPollableMessageSource(
+				this.messageConverter);
 		ExtendedConsumerProperties<RabbitConsumerProperties> properties = createConsumerProperties();
 		properties.setMaxAttempts(2);
 		properties.setBackOffInitialInterval(0);
 		properties.getExtension().setAutoBindDlq(true);
-		Binding<PollableSource<MessageHandler>> binding = binder.bindPollableConsumer("pollableDlq", "group",
-				inboundBindTarget, properties);
-		RabbitTemplate template = new RabbitTemplate(this.rabbitAvailableRule.getResource());
+		Binding<PollableSource<MessageHandler>> binding = binder.bindPollableConsumer(
+				"pollableDlq", "group", inboundBindTarget, properties);
+		RabbitTemplate template = new RabbitTemplate(
+				this.rabbitAvailableRule.getResource());
 		template.convertAndSend("pollableDlq.group", "testPollable");
 		try {
 			int n = 0;
@@ -1527,10 +1691,12 @@ public class RabbitBinderTests extends
 			}
 		}
 		catch (MessageHandlingException e) {
-			assertThat(e.getCause().getCause().getCause().getCause().getCause().getMessage())
-					.isEqualTo("test DLQ");
+			assertThat(
+					e.getCause().getCause().getCause().getCause().getCause().getMessage())
+							.isEqualTo("test DLQ");
 		}
-		org.springframework.amqp.core.Message deadLetter = template.receive("pollableDlq.group.dlq", 10_000);
+		org.springframework.amqp.core.Message deadLetter = template
+				.receive("pollableDlq.group.dlq", 10_000);
 		assertThat(deadLetter).isNotNull();
 		binding.unbind();
 	}
@@ -1538,14 +1704,16 @@ public class RabbitBinderTests extends
 	@Test
 	public void testPolledConsumerWithDlqNoRetry() throws Exception {
 		RabbitTestBinder binder = getBinder();
-		PollableSource<MessageHandler> inboundBindTarget = new DefaultPollableMessageSource(this.messageConverter);
+		PollableSource<MessageHandler> inboundBindTarget = new DefaultPollableMessageSource(
+				this.messageConverter);
 		ExtendedConsumerProperties<RabbitConsumerProperties> properties = createConsumerProperties();
 		properties.setMaxAttempts(1);
-//		properties.getExtension().setRequeueRejected(true); // loops, correctly
+		// properties.getExtension().setRequeueRejected(true); // loops, correctly
 		properties.getExtension().setAutoBindDlq(true);
-		Binding<PollableSource<MessageHandler>> binding = binder.bindPollableConsumer("pollableDlqNoRetry", "group",
-				inboundBindTarget, properties);
-		RabbitTemplate template = new RabbitTemplate(this.rabbitAvailableRule.getResource());
+		Binding<PollableSource<MessageHandler>> binding = binder.bindPollableConsumer(
+				"pollableDlqNoRetry", "group", inboundBindTarget, properties);
+		RabbitTemplate template = new RabbitTemplate(
+				this.rabbitAvailableRule.getResource());
 		template.convertAndSend("pollableDlqNoRetry.group", "testPollable");
 		try {
 			int n = 0;
@@ -1559,7 +1727,8 @@ public class RabbitBinderTests extends
 		catch (MessageHandlingException e) {
 			assertThat(e.getCause().getMessage()).isEqualTo("test DLQ");
 		}
-		org.springframework.amqp.core.Message deadLetter = template.receive("pollableDlqNoRetry.group.dlq", 10_000);
+		org.springframework.amqp.core.Message deadLetter = template
+				.receive("pollableDlqNoRetry.group.dlq", 10_000);
 		assertThat(deadLetter).isNotNull();
 		binding.unbind();
 	}
@@ -1567,15 +1736,17 @@ public class RabbitBinderTests extends
 	@Test
 	public void testPolledConsumerWithDlqRePub() throws Exception {
 		RabbitTestBinder binder = getBinder();
-		PollableSource<MessageHandler> inboundBindTarget = new DefaultPollableMessageSource(this.messageConverter);
+		PollableSource<MessageHandler> inboundBindTarget = new DefaultPollableMessageSource(
+				this.messageConverter);
 		ExtendedConsumerProperties<RabbitConsumerProperties> properties = createConsumerProperties();
 		properties.setMaxAttempts(2);
 		properties.setBackOffInitialInterval(0);
 		properties.getExtension().setAutoBindDlq(true);
 		properties.getExtension().setRepublishToDlq(true);
-		Binding<PollableSource<MessageHandler>> binding = binder.bindPollableConsumer("pollableDlqRePub", "group",
-				inboundBindTarget, properties);
-		RabbitTemplate template = new RabbitTemplate(this.rabbitAvailableRule.getResource());
+		Binding<PollableSource<MessageHandler>> binding = binder.bindPollableConsumer(
+				"pollableDlqRePub", "group", inboundBindTarget, properties);
+		RabbitTemplate template = new RabbitTemplate(
+				this.rabbitAvailableRule.getResource());
 		template.convertAndSend("pollableDlqRePub.group", "testPollable");
 		boolean polled = false;
 		int n = 0;
@@ -1586,7 +1757,8 @@ public class RabbitBinderTests extends
 			});
 		}
 		assertThat(polled).isTrue();
-		org.springframework.amqp.core.Message deadLetter = template.receive("pollableDlqRePub.group.dlq", 10_000);
+		org.springframework.amqp.core.Message deadLetter = template
+				.receive("pollableDlqRePub.group.dlq", 10_000);
 		assertThat(deadLetter).isNotNull();
 		binding.unbind();
 	}
@@ -1598,22 +1770,32 @@ public class RabbitBinderTests extends
 				SimpleMessageListenerContainer.class);
 		assertThat(container.getAcknowledgeMode()).isEqualTo(AcknowledgeMode.NONE);
 		assertThat(container.getQueueNames()[0]).startsWith("foo.props.0");
-		assertThat(TestUtils.getPropertyValue(container, "transactional", Boolean.class)).isFalse();
-		assertThat(TestUtils.getPropertyValue(container, "concurrentConsumers")).isEqualTo(2);
-		assertThat(TestUtils.getPropertyValue(container, "maxConcurrentConsumers")).isEqualTo(3);
-		assertThat(TestUtils.getPropertyValue(container, "defaultRequeueRejected", Boolean.class)).isFalse();
+		assertThat(TestUtils.getPropertyValue(container, "transactional", Boolean.class))
+				.isFalse();
+		assertThat(TestUtils.getPropertyValue(container, "concurrentConsumers"))
+				.isEqualTo(2);
+		assertThat(TestUtils.getPropertyValue(container, "maxConcurrentConsumers"))
+				.isEqualTo(3);
+		assertThat(TestUtils.getPropertyValue(container, "defaultRequeueRejected",
+				Boolean.class)).isFalse();
 		assertThat(TestUtils.getPropertyValue(container, "prefetchCount")).isEqualTo(20);
 		assertThat(TestUtils.getPropertyValue(container, "txSize")).isEqualTo(10);
-		retry = TestUtils.getPropertyValue(endpoint, "retryTemplate", RetryTemplate.class);
-		assertThat(TestUtils.getPropertyValue(retry, "retryPolicy.maxAttempts")).isEqualTo(23);
-		assertThat(TestUtils.getPropertyValue(retry, "backOffPolicy.initialInterval")).isEqualTo(2000L);
-		assertThat(TestUtils.getPropertyValue(retry, "backOffPolicy.maxInterval")).isEqualTo(20000L);
-		assertThat(TestUtils.getPropertyValue(retry, "backOffPolicy.multiplier")).isEqualTo(5.0);
+		retry = TestUtils.getPropertyValue(endpoint, "retryTemplate",
+				RetryTemplate.class);
+		assertThat(TestUtils.getPropertyValue(retry, "retryPolicy.maxAttempts"))
+				.isEqualTo(23);
+		assertThat(TestUtils.getPropertyValue(retry, "backOffPolicy.initialInterval"))
+				.isEqualTo(2000L);
+		assertThat(TestUtils.getPropertyValue(retry, "backOffPolicy.maxInterval"))
+				.isEqualTo(20000L);
+		assertThat(TestUtils.getPropertyValue(retry, "backOffPolicy.multiplier"))
+				.isEqualTo(5.0);
 
-		List<?> requestMatchers = TestUtils.getPropertyValue(endpoint, "headerMapper.requestHeaderMatcher.matchers",
-				List.class);
+		List<?> requestMatchers = TestUtils.getPropertyValue(endpoint,
+				"headerMapper.requestHeaderMatcher.matchers", List.class);
 		assertThat(requestMatchers).hasSize(1);
-		assertThat(TestUtils.getPropertyValue(requestMatchers.get(0), "pattern")).isEqualTo("foo");
+		assertThat(TestUtils.getPropertyValue(requestMatchers.get(0), "pattern"))
+				.isEqualTo("foo");
 
 		return container;
 	}
@@ -1622,12 +1804,14 @@ public class RabbitBinderTests extends
 		List<?> requestMatchers = TestUtils.getPropertyValue(endpoint,
 				"headerMapper.requestHeaderMatcher.matchers", List.class);
 		assertThat(requestMatchers).hasSize(2);
-		assertThat(TestUtils.getPropertyValue(requestMatchers.get(1), "pattern")).isEqualTo("foo");
+		assertThat(TestUtils.getPropertyValue(requestMatchers.get(1), "pattern"))
+				.isEqualTo("foo");
 	}
 
 	@Override
 	protected String getEndpointRouting(Object endpoint) {
-		return TestUtils.getPropertyValue(endpoint, "routingKeyExpression", SpelExpression.class)
+		return TestUtils
+				.getPropertyValue(endpoint, "routingKeyExpression", SpelExpression.class)
 				.getExpressionString();
 	}
 
@@ -1643,29 +1827,35 @@ public class RabbitBinderTests extends
 
 	@Override
 	protected void checkRkExpressionForPartitionedModuleSpEL(Object endpoint) {
-		assertThat(getEndpointRouting(endpoint)).contains(getExpectedRoutingBaseDestination("'part.0'", "test")
-				+ " + '-' + headers['" + BinderHeaders.PARTITION_HEADER + "']");
+		assertThat(getEndpointRouting(endpoint))
+				.contains(getExpectedRoutingBaseDestination("'part.0'", "test")
+						+ " + '-' + headers['" + BinderHeaders.PARTITION_HEADER + "']");
 	}
 
 	@Override
 	public Spy spyOn(final String queue) {
-		final RabbitTemplate template = new RabbitTemplate(this.rabbitAvailableRule.getResource());
-		template.setAfterReceivePostProcessors(new DelegatingDecompressingPostProcessor());
+		final RabbitTemplate template = new RabbitTemplate(
+				this.rabbitAvailableRule.getResource());
+		template.setAfterReceivePostProcessors(
+				new DelegatingDecompressingPostProcessor());
 		return new Spy() {
 
 			@Override
 			public Object receive(boolean expectNull) throws Exception {
 				if (expectNull) {
 					Thread.sleep(50);
-					return template.receiveAndConvert(new RabbitConsumerProperties().getPrefix() + queue);
+					return template.receiveAndConvert(
+							new RabbitConsumerProperties().getPrefix() + queue);
 				}
 				Object bar = null;
 				int n = 0;
 				while (n++ < 100 && bar == null) {
-					bar = template.receiveAndConvert(new RabbitConsumerProperties().getPrefix() + queue);
+					bar = template.receiveAndConvert(
+							new RabbitConsumerProperties().getPrefix() + queue);
 					Thread.sleep(100);
 				}
-				assertThat(n).isLessThan(100).withFailMessage("Message did not arrive in RabbitMQ");
+				assertThat(n).isLessThan(100)
+						.withFailMessage("Message did not arrive in RabbitMQ");
 				return bar;
 			}
 
@@ -1686,7 +1876,8 @@ public class RabbitBinderTests extends
 		return stringWriter.getBuffer().toString();
 	}
 
-	public static class TestPartitionKeyExtractorClass implements PartitionKeyExtractorStrategy {
+	public static class TestPartitionKeyExtractorClass
+			implements PartitionKeyExtractorStrategy {
 
 		@Override
 		public Object extractKey(Message<?> message) {
@@ -1712,16 +1903,13 @@ public class RabbitBinderTests extends
 			super();
 		}
 
-
 		public Pojo(String field) {
 			this.field = field;
 		}
 
-
 		public String getField() {
 			return this.field;
 		}
-
 
 		public void setField(String field) {
 			this.field = field;

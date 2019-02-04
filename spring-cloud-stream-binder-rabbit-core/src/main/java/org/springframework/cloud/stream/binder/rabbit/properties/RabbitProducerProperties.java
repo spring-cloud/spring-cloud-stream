@@ -65,21 +65,24 @@ public class RabbitProducerProperties extends RabbitCommonProperties {
 	/**
 	 * patterns to match which headers are mapped (inbound)
 	 */
-	private String[] headerPatterns = new String[] {"*"};
+	private String[] headerPatterns = new String[] { "*" };
 
 	/**
-	 * when using a delayed message exchange, a SpEL expression to determine the delay to apply to messages
+	 * when using a delayed message exchange, a SpEL expression to determine the delay to
+	 * apply to messages
 	 */
 	private Expression delayExpression;
 
 	/**
-	 * a custom routing key when publishing messages; default is the destination name; suffixed by "-partition" when partitioned
+	 * a custom routing key when publishing messages; default is the destination name;
+	 * suffixed by "-partition" when partitioned
 	 */
 	private Expression routingKeyExpression;
 
 	/**
 	 * the channel name to which to send publisher confirms (acks) if the connection
-	 * factory is so configured; default 'nullChannel'; requires 'errorChannelEnabled=true'
+	 * factory is so configured; default 'nullChannel'; requires
+	 * 'errorChannelEnabled=true'
 	 */
 	private String confirmAckChannel;
 

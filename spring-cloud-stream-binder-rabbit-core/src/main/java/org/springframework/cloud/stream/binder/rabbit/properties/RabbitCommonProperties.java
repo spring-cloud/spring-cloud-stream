@@ -26,7 +26,7 @@ import org.springframework.amqp.core.ExchangeTypes;
  * @since 1.2
  *
  */
-public abstract class RabbitCommonProperties  {
+public abstract class RabbitCommonProperties {
 
 	public static final String DEAD_LETTER_EXCHANGE = "DLX";
 
@@ -66,7 +66,8 @@ public abstract class RabbitCommonProperties  {
 	private boolean bindQueue = true;
 
 	/**
-	 * routing key to bind (default # for non-partitioned, destination-instanceIndex for partitioned)
+	 * routing key to bind (default # for non-partitioned, destination-instanceIndex for
+	 * partitioned)
 	 */
 	private String bindingRoutingKey;
 
@@ -116,7 +117,8 @@ public abstract class RabbitCommonProperties  {
 	private boolean declareDlx = true;
 
 	/**
-	 * a dead letter routing key to assign to that queue; if autoBindDlq is true, defaults to destination
+	 * a dead letter routing key to assign to that queue; if autoBindDlq is true, defaults
+	 * to destination
 	 */
 	private String deadLetterRoutingKey;
 
@@ -151,7 +153,8 @@ public abstract class RabbitCommonProperties  {
 	private String dlqDeadLetterExchange;
 
 	/**
-	 * if a DLQ is declared, a dead letter routing key to assign to that queue; default none
+	 * if a DLQ is declared, a dead letter routing key to assign to that queue; default
+	 * none
 	 */
 	private String dlqDeadLetterRoutingKey;
 

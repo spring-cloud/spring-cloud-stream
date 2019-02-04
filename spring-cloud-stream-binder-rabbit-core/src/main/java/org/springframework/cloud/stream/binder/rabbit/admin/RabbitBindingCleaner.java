@@ -30,9 +30,10 @@ import org.springframework.cloud.stream.binder.BindingCleaner;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
-
 /**
- * Implementation of {@link org.springframework.cloud.stream.binder.BindingCleaner} for the {@code RabbitBinder}.
+ * Implementation of {@link org.springframework.cloud.stream.binder.BindingCleaner} for
+ * the {@code RabbitBinder}.
+ *
  * @author Gary Russell
  * @author David Turanski
  * @since 1.2
@@ -47,28 +48,28 @@ public class RabbitBindingCleaner implements BindingCleaner {
 
 	@Override
 	public Map<String, List<String>> clean(String entity, boolean isJob) {
-		return clean("http://localhost:15672", "guest", "guest", "/", BINDER_PREFIX, entity, isJob);
-	}
-
-	public Map<String, List<String>> clean(String adminUri, String user, String pw, String vhost,
-			String binderPrefix, String entity, boolean isJob) {
-		return doClean(
-				adminUri == null ? "http://localhost:15672" : adminUri,
-				user == null ? "guest" : user,
-				pw == null ? "guest" : pw,
-				vhost == null ? "/" : vhost,
-				binderPrefix == null ? BINDER_PREFIX  : binderPrefix,
+		return clean("http://localhost:15672", "guest", "guest", "/", BINDER_PREFIX,
 				entity, isJob);
 	}
 
-	private Map<String, List<String>> doClean(String adminUri, String user, String pw, String vhost,
-			String binderPrefix, String entity, boolean isJob) {
-		RestTemplate restTemplate = RabbitManagementUtils.buildRestTemplate(adminUri, user, pw);
-		List<String> removedQueues = isJob
-				? null
+	public Map<String, List<String>> clean(String adminUri, String user, String pw,
+			String vhost, String binderPrefix, String entity, boolean isJob) {
+		return doClean(adminUri == null ? "http://localhost:15672" : adminUri,
+				user == null ? "guest" : user, pw == null ? "guest" : pw,
+				vhost == null ? "/" : vhost,
+				binderPrefix == null ? BINDER_PREFIX : binderPrefix, entity, isJob);
+	}
+
+	private Map<String, List<String>> doClean(String adminUri, String user, String pw,
+			String vhost, String binderPrefix, String entity, boolean isJob) {
+		RestTemplate restTemplate = RabbitManagementUtils.buildRestTemplate(adminUri,
+				user, pw);
+		List<String> removedQueues = isJob ? null
 				: findStreamQueues(adminUri, vhost, binderPrefix, entity, restTemplate);
-		List<String> removedExchanges = findExchanges(adminUri, vhost, binderPrefix, entity, restTemplate);
-		// Delete the queues in reverse order to enable re-running after a partial success.
+		List<String> removedExchanges = findExchanges(adminUri, vhost, binderPrefix,
+				entity, restTemplate);
+		// Delete the queues in reverse order to enable re-running after a partial
+		// success.
 		// The queue search above starts with 0 and terminates on a not found.
 		for (int i = removedQueues.size() - 1; i >= 0; i--) {
 			String queueName = removedQueues.get(i);
@@ -100,9 +101,10 @@ public class RabbitBindingCleaner implements BindingCleaner {
 		return results;
 	}
 
-	private List<String> findStreamQueues(String adminUri, String vhost, String binderPrefix, String stream,
-			RestTemplate restTemplate) {
-		String queueNamePrefix = adjustPrefix(AbstractBinder.applyPrefix(binderPrefix, stream));
+	private List<String> findStreamQueues(String adminUri, String vhost,
+			String binderPrefix, String stream, RestTemplate restTemplate) {
+		String queueNamePrefix = adjustPrefix(
+				AbstractBinder.applyPrefix(binderPrefix, stream));
 		List<Map<String, Object>> queues = listAllQueues(adminUri, vhost, restTemplate);
 		List<String> removedQueues = new ArrayList<>();
 		for (Map<String, Object> queue : queues) {
@@ -115,10 +117,10 @@ public class RabbitBindingCleaner implements BindingCleaner {
 		return removedQueues;
 	}
 
-	private List<Map<String, Object>> listAllQueues(String adminUri, String vhost, RestTemplate restTemplate) {
+	private List<Map<String, Object>> listAllQueues(String adminUri, String vhost,
+			RestTemplate restTemplate) {
 		URI uri = UriComponentsBuilder.fromUriString(adminUri + "/api")
-				.pathSegment("queues", "{vhost}")
-				.buildAndExpand(vhost).encode().toUri();
+				.pathSegment("queues", "{vhost}").buildAndExpand(vhost).encode().toUri();
 		List<Map<String, Object>> queues = restTemplate.getForObject(uri, List.class);
 		return queues;
 	}
@@ -138,51 +140,57 @@ public class RabbitBindingCleaner implements BindingCleaner {
 		}
 	}
 
-	private List<String> findExchanges(String adminUri, String vhost, String binderPrefix, String entity,
-			RestTemplate restTemplate) {
+	private List<String> findExchanges(String adminUri, String vhost, String binderPrefix,
+			String entity, RestTemplate restTemplate) {
 		List<String> removedExchanges = new ArrayList<>();
 		URI uri = UriComponentsBuilder.fromUriString(adminUri + "/api")
-				.pathSegment("exchanges", "{vhost}")
-				.buildAndExpand(vhost).encode().toUri();
+				.pathSegment("exchanges", "{vhost}").buildAndExpand(vhost).encode()
+				.toUri();
 		List<Map<String, Object>> exchanges = restTemplate.getForObject(uri, List.class);
-		String exchangeNamePrefix = adjustPrefix(AbstractBinder.applyPrefix(binderPrefix, entity));
+		String exchangeNamePrefix = adjustPrefix(
+				AbstractBinder.applyPrefix(binderPrefix, entity));
 		for (Map<String, Object> exchange : exchanges) {
 			String exchangeName = (String) exchange.get("name");
 			if (exchangeName.startsWith(exchangeNamePrefix)) {
 				uri = UriComponentsBuilder.fromUriString(adminUri + "/api")
-						.pathSegment("exchanges", "{vhost}", "{name}", "bindings", "source")
+						.pathSegment("exchanges", "{vhost}", "{name}", "bindings",
+								"source")
 						.buildAndExpand(vhost, exchangeName).encode().toUri();
-				List<Map<String, Object>> bindings = restTemplate.getForObject(uri, List.class);
+				List<Map<String, Object>> bindings = restTemplate.getForObject(uri,
+						List.class);
 				if (hasNoForeignBindings(bindings, exchangeNamePrefix)) {
 					uri = UriComponentsBuilder.fromUriString(adminUri + "/api")
-							.pathSegment("exchanges", "{vhost}", "{name}", "bindings", "destination")
+							.pathSegment("exchanges", "{vhost}", "{name}", "bindings",
+									"destination")
 							.buildAndExpand(vhost, exchangeName).encode().toUri();
 					bindings = restTemplate.getForObject(uri, List.class);
 					if (bindings.size() == 0) {
 						removedExchanges.add((String) exchange.get("name"));
 					}
 					else {
-						throw new RabbitAdminException("Cannot delete exchange " + exchangeName
-								+ "; it is a destination: " + bindings);
+						throw new RabbitAdminException("Cannot delete exchange "
+								+ exchangeName + "; it is a destination: " + bindings);
 					}
 				}
 				else {
-					throw new RabbitAdminException("Cannot delete exchange " + exchangeName + "; it has bindings: "
-							+ bindings);
+					throw new RabbitAdminException("Cannot delete exchange "
+							+ exchangeName + "; it has bindings: " + bindings);
 				}
 			}
 		}
 		return removedExchanges;
 	}
 
-	private boolean hasNoForeignBindings(List<Map<String, Object>> bindings, String exchangeNamePrefix) {
+	private boolean hasNoForeignBindings(List<Map<String, Object>> bindings,
+			String exchangeNamePrefix) {
 		if (bindings.size() == 0) {
 			return true;
 		}
 		boolean noForeign = true;
 		for (Map<String, Object> binding : bindings) {
 			if (!("queue".equals(binding.get("destination_type")))
-					|| !((String) binding.get("destination")).startsWith(exchangeNamePrefix)) {
+					|| !((String) binding.get("destination"))
+							.startsWith(exchangeNamePrefix)) {
 				noForeign = false;
 				break;
 			}

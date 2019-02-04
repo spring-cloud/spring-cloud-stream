@@ -47,8 +47,7 @@ import org.springframework.util.StringUtils;
  * @author Mark Fisher
  */
 public class RabbitTestBinder extends
-		AbstractPollableConsumerTestBinder<RabbitMessageChannelBinder,
-		ExtendedConsumerProperties<RabbitConsumerProperties>, ExtendedProducerProperties<RabbitProducerProperties>> {
+		AbstractPollableConsumerTestBinder<RabbitMessageChannelBinder, ExtendedConsumerProperties<RabbitConsumerProperties>, ExtendedProducerProperties<RabbitProducerProperties>> {
 
 	private final RabbitAdmin rabbitAdmin;
 
@@ -60,12 +59,14 @@ public class RabbitTestBinder extends
 
 	private final AnnotationConfigApplicationContext applicationContext;
 
-	public RabbitTestBinder(ConnectionFactory connectionFactory, RabbitProperties rabbitProperties) {
-		this(connectionFactory, new RabbitMessageChannelBinder(connectionFactory, rabbitProperties,
-				new RabbitExchangeQueueProvisioner(connectionFactory)));
+	public RabbitTestBinder(ConnectionFactory connectionFactory,
+			RabbitProperties rabbitProperties) {
+		this(connectionFactory, new RabbitMessageChannelBinder(connectionFactory,
+				rabbitProperties, new RabbitExchangeQueueProvisioner(connectionFactory)));
 	}
 
-	public RabbitTestBinder(ConnectionFactory connectionFactory, RabbitMessageChannelBinder binder) {
+	public RabbitTestBinder(ConnectionFactory connectionFactory,
+			RabbitMessageChannelBinder binder) {
 		this.applicationContext = new AnnotationConfigApplicationContext(Config.class);
 		binder.setApplicationContext(this.applicationContext);
 		this.setPollableConsumerBinder(binder);
@@ -77,15 +78,16 @@ public class RabbitTestBinder extends
 	}
 
 	@Override
-	public Binding<MessageChannel> bindConsumer(String name, String group, MessageChannel moduleInputChannel,
+	public Binding<MessageChannel> bindConsumer(String name, String group,
+			MessageChannel moduleInputChannel,
 			ExtendedConsumerProperties<RabbitConsumerProperties> properties) {
 		captureConsumerResources(name, group, properties);
 		return super.bindConsumer(name, group, moduleInputChannel, properties);
 	}
 
 	@Override
-	public Binding<PollableSource<MessageHandler>> bindPollableConsumer(String name, String group,
-			PollableSource<MessageHandler> inboundBindTarget,
+	public Binding<PollableSource<MessageHandler>> bindPollableConsumer(String name,
+			String group, PollableSource<MessageHandler> inboundBindTarget,
 			ExtendedConsumerProperties<RabbitConsumerProperties> properties) {
 		captureConsumerResources(name, group, properties);
 		return super.bindPollableConsumer(name, group, inboundBindTarget, properties);
@@ -102,11 +104,13 @@ public class RabbitTestBinder extends
 				if (properties.isMultiplex()) {
 					names = StringUtils.commaDelimitedListToStringArray(name);
 					for (String nayme : names) {
-						this.queues.add(properties.getExtension().getPrefix() + nayme.trim() + "." + group);
+						this.queues.add(properties.getExtension().getPrefix()
+								+ nayme.trim() + "." + group);
 					}
 				}
 				else {
-					this.queues.add(properties.getExtension().getPrefix() + name + "." + group);
+					this.queues.add(
+							properties.getExtension().getPrefix() + name + "." + group);
 				}
 			}
 		}
@@ -123,7 +127,8 @@ public class RabbitTestBinder extends
 	}
 
 	@Override
-	public Binding<MessageChannel> bindProducer(String name, MessageChannel moduleOutputChannel,
+	public Binding<MessageChannel> bindProducer(String name,
+			MessageChannel moduleOutputChannel,
 			ExtendedProducerProperties<RabbitProducerProperties> properties) {
 		this.queues.add(properties.getExtension().getPrefix() + name + ".default");
 		this.exchanges.add(properties.getExtension().getPrefix() + name);
@@ -133,7 +138,8 @@ public class RabbitTestBinder extends
 					this.queues.add(properties.getExtension().getPrefix() + group);
 				}
 				else {
-					this.queues.add(properties.getExtension().getPrefix() + name + "." + group);
+					this.queues.add(
+							properties.getExtension().getPrefix() + name + "." + group);
 				}
 			}
 		}
