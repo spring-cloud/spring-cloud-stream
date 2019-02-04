@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2018 the original author or authors.
+ * Copyright 2016-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,13 +24,14 @@ import javax.validation.constraints.Min;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 /**
- * Common consumer properties.
+ * Common consumer properties - spring.cloud.stream.bindings.[destinationName].consumer.
  *
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
  * @author Gary Russell
  * @author Soby Chacko
  * @author Oleg Zhurakousky
+ * @author Nicolas Homble
  */
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 public class ConsumerProperties {
@@ -71,11 +72,22 @@ public class ConsumerProperties {
 	private int instanceIndex = -1;
 
 	/**
+<<<<<<< HEAD
 	 * The number of attempts to process the message (including the first) in the event of
 	 * processing failures. This is a RetryTemplate configuration which is provided by the
 	 * framework. Default: 3. Set to 1 to disable retry. You can also provide custom
 	 * RetryTemplate in the event you want to take complete control of the RetryTemplate.
 	 * Simply configure it as @Bean inside your application configuration.
+=======
+	 * The number of attempts to process the message (including the first)
+	 * in the event of processing failures. This is a  RetryTemplate configuration
+	 * which is provided by the framework.
+	 * Default: 3. Set to 1 to disable retry. You can also provide custom RetryTemplate
+	 * in the event you want to take complete control of the RetryTemplate. Simply configure
+	 * it as @Bean inside your application configuration.
+	 * If you need to be binding specific, then you can reference a specific RetryTemplate by name
+	 * with the retry-template configuration.
+>>>>>>> 2.2.x
 	 */
 	private int maxAttempts = 3;
 
@@ -110,8 +122,18 @@ public class ConsumerProperties {
 	private boolean defaultRetryable = true;
 
 	/**
+<<<<<<< HEAD
 	 * A map of Throwable class names in the key and a boolean in the value. Specify those
 	 * exceptions (and subclasses) that will or won't be retried.
+=======
+	 * Allows you to further qualify which RetryTemplate to use for a specific consumer binding..
+	 */
+	private String retryTemplateName;
+
+	/**
+	 * A map of Throwable class names in the key and a boolean in the value.
+	 * Specify those exceptions (and subclasses) that will or won't be retried.
+>>>>>>> 2.2.x
 	 */
 	private Map<Class<? extends Throwable>, Boolean> retryableExceptions = new LinkedHashMap<>();
 
@@ -149,6 +171,14 @@ public class ConsumerProperties {
 	 * users are not expected to enable or disable this property directly.
 	 */
 	private boolean multiplex;
+
+	public String getRetryTemplateName(){
+		return retryTemplateName;
+	}
+
+	public void setRetryTemplateName(String retryTemplateName){
+		this.retryTemplateName = retryTemplateName;
+	}
 
 	@Min(value = 1, message = "Concurrency should be greater than zero.")
 	public int getConcurrency() {
@@ -269,5 +299,4 @@ public class ConsumerProperties {
 	public void setAutoStartup(boolean autoStartup) {
 		this.autoStartup = autoStartup;
 	}
-
 }

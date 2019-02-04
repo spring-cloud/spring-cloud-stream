@@ -42,6 +42,7 @@ import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.ApplicationEventPublisherAware;
 import org.springframework.context.Lifecycle;
+import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.integration.channel.AbstractMessageChannel;
 import org.springframework.integration.channel.AbstractSubscribableChannel;
 import org.springframework.integration.channel.DirectChannel;
@@ -199,6 +200,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 						"Exception thrown while building outbound endpoint", e);
 			}
 		}
+
 		if (producerProperties.isAutoStartup()
 				&& producerMessageHandler instanceof Lifecycle) {
 			((Lifecycle) producerMessageHandler).start();
@@ -541,10 +543,9 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 	 */
 	private SubscribableChannel registerErrorInfrastructure(
 			ProducerDestination destination) {
-		ConfigurableListableBeanFactory beanFactory = getApplicationContext()
-				.getBeanFactory();
+
 		String errorChannelName = errorsBaseName(destination);
-		SubscribableChannel errorChannel = null;
+		SubscribableChannel errorChannel;
 		if (getApplicationContext().containsBean(errorChannelName)) {
 			Object errorChannelObject = getApplicationContext().getBean(errorChannelName);
 			if (!(errorChannelObject instanceof SubscribableChannel)) {
@@ -555,9 +556,8 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		}
 		else {
 			errorChannel = new PublishSubscribeChannel();
-			this.registerComponentWithBeanFactory(errorChannelName, errorChannel);
-			errorChannel = (PublishSubscribeChannel) beanFactory
-					.initializeBean(errorChannel, errorChannelName);
+			((GenericApplicationContext)getApplicationContext()).
+				registerBean(errorChannelName, SubscribableChannel.class, () -> errorChannel);
 		}
 		MessageChannel defaultErrorChannel = null;
 		if (getApplicationContext()
@@ -571,8 +571,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 			errorBridge.setOutputChannel(defaultErrorChannel);
 			errorChannel.subscribe(errorBridge);
 			String errorBridgeHandlerName = getErrorBridgeName(destination);
-			this.registerComponentWithBeanFactory(errorBridgeHandlerName, errorBridge);
-			beanFactory.initializeBean(errorBridge, errorBridgeHandlerName);
+			((GenericApplicationContext)getApplicationContext()).registerBean(errorBridgeHandlerName, BridgeHandler.class, () -> errorBridge);
 		}
 		return errorChannel;
 	}
@@ -607,23 +606,21 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 			boolean polled) {
 
 		ErrorMessageStrategy errorMessageStrategy = getErrorMessageStrategy();
-		ConfigurableListableBeanFactory beanFactory = getApplicationContext()
-				.getBeanFactory();
+
 		String errorChannelName = errorsBaseName(destination, group, consumerProperties);
-		SubscribableChannel errorChannel = null;
+		SubscribableChannel errorChannel;
 		if (getApplicationContext().containsBean(errorChannelName)) {
 			Object errorChannelObject = getApplicationContext().getBean(errorChannelName);
-			if (!(errorChannelObject instanceof SubscribableChannel)) {
-				throw new IllegalStateException("Error channel '" + errorChannelName
-						+ "' must be a SubscribableChannel");
-			}
+
+			Assert.isInstanceOf(SubscribableChannel.class, errorChannelObject,
+					"Error channel '" + errorChannelName + "' must be a SubscribableChannel");
 			errorChannel = (SubscribableChannel) errorChannelObject;
 		}
 		else {
 			errorChannel = new BinderErrorChannel();
-			this.registerComponentWithBeanFactory(errorChannelName, errorChannel);
-			errorChannel = (LastSubscriberAwareChannel) beanFactory
-					.initializeBean(errorChannel, errorChannelName);
+
+			((GenericApplicationContext)getApplicationContext())
+				.registerBean(errorChannelName, SubscribableChannel.class, () -> errorChannel);
 		}
 		ErrorMessageSendingRecoverer recoverer;
 		if (errorMessageStrategy == null) {
@@ -633,10 +630,10 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 			recoverer = new ErrorMessageSendingRecoverer(errorChannel,
 					errorMessageStrategy);
 		}
-		String recovererBeanName = getErrorRecovererName(destination, group,
-				consumerProperties);
-		this.registerComponentWithBeanFactory(recovererBeanName, recoverer);
-		beanFactory.initializeBean(recoverer, recovererBeanName);
+
+		String recovererBeanName = getErrorRecovererName(destination, group, consumerProperties);
+		((GenericApplicationContext)getApplicationContext())
+			.registerBean(recovererBeanName, ErrorMessageSendingRecoverer.class, () -> recoverer);
 		MessageHandler handler;
 		if (polled) {
 			handler = getPolledConsumerErrorMessageHandler(destination, group,
@@ -662,8 +659,8 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 
 		if (handler != null) {
 			if (this.isSubscribable(errorChannel)) {
-				this.registerComponentWithBeanFactory(errorMessageHandlerName, handler);
-				beanFactory.initializeBean(handler, errorMessageHandlerName);
+				MessageHandler errorHandler = handler;
+				((GenericApplicationContext)getApplicationContext()).registerBean(errorMessageHandlerName, MessageHandler.class, () -> errorHandler);
 				errorChannel.subscribe(handler);
 			}
 			else {
@@ -680,11 +677,10 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 				BridgeHandler errorBridge = new BridgeHandler();
 				errorBridge.setOutputChannel(defaultErrorChannel);
 				errorChannel.subscribe(errorBridge);
-				String errorBridgeHandlerName = getErrorBridgeName(destination, group,
-						consumerProperties);
-				this.registerComponentWithBeanFactory(errorBridgeHandlerName,
-						errorBridge);
-				beanFactory.initializeBean(errorBridge, errorBridgeHandlerName);
+
+				String errorBridgeHandlerName = getErrorBridgeName(destination, group, consumerProperties);
+				((GenericApplicationContext)getApplicationContext())
+					.registerBean(errorBridgeHandlerName, BridgeHandler.class, () -> errorBridge);
 			}
 			else {
 				this.logger.warn("The provided errorChannel '" + errorChannelName
@@ -731,10 +727,9 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 			C properties) {
 		try {
 			String recoverer = getErrorRecovererName(destination, group, properties);
-			if (getApplicationContext().containsBean(recoverer)) {
-				((DefaultSingletonBeanRegistry) getApplicationContext().getBeanFactory())
-						.destroySingleton(recoverer);
-			}
+
+			destroyBean(recoverer);
+
 			String errorChannelName = errorsBaseName(destination, group, properties);
 			String errorMessageHandlerName = getErrorMessageHandlerName(destination,
 					group, properties);
@@ -755,20 +750,24 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 						.getBean(errorChannelName, SubscribableChannel.class);
 				if (bridgeHandler != null) {
 					channel.unsubscribe(bridgeHandler);
-					((DefaultSingletonBeanRegistry) getApplicationContext()
-							.getBeanFactory()).destroySingleton(errorBridgeHandlerName);
+					destroyBean(errorBridgeHandlerName);
 				}
 				if (handler != null) {
 					channel.unsubscribe(handler);
-					((DefaultSingletonBeanRegistry) getApplicationContext()
-							.getBeanFactory()).destroySingleton(errorMessageHandlerName);
+					destroyBean(errorMessageHandlerName);
 				}
-				((DefaultSingletonBeanRegistry) getApplicationContext().getBeanFactory())
-						.destroySingleton(errorChannelName);
+				destroyBean(errorChannelName);
 			}
 		}
 		catch (IllegalStateException e) {
 			// context is shutting down.
+		}
+	}
+
+	private void destroyBean(String beanName) {
+		if (getApplicationContext().containsBean(beanName)) {
+			((DefaultSingletonBeanRegistry) getApplicationContext().getBeanFactory()).destroySingleton(beanName);
+			((GenericApplicationContext)getApplicationContext()).removeBeanDefinition(beanName);
 		}
 	}
 
@@ -865,20 +864,6 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		}
 	}
 
-	private void registerComponentWithBeanFactory(String name, Object component) {
-		if (getApplicationContext().getBeanFactory().containsBean(name)) {
-			throw new IllegalStateException("Failed to register bean with name '" + name
-					+ "', since bean with the same name already exists. Possible reason: "
-					+ "You may have multiple bindings with the same 'destination' and 'group' name (consumer side) "
-					+ "and multiple bindings with the same 'destination' name (producer side). "
-					+ "Solution: ensure each binding uses different group name (consumer side) "
-					+ "or 'destination' name (producer side).");
-		}
-		else {
-			getApplicationContext().getBeanFactory().registerSingleton(name, component);
-		}
-	}
-
 	/*
 	 * FUNCTION-TO-EXISTING-APP section
 	 *
@@ -938,6 +923,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 				moveChannelInterceptors((AbstractMessageChannel) inputChannel,
 						actualInputChannel);
 			}
+
 			this.integrationFlowFunctionSupport.andThenFunction(
 					MessageChannelReactiveUtils.toPublisher(actualInputChannel),
 					inputChannel, this.streamFunctionProperties);

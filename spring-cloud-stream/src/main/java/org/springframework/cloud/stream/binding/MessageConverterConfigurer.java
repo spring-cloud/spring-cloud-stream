@@ -352,7 +352,6 @@ public class MessageConverterConfigurer
 
 		@Override
 		public Message<?> doPreSend(Message<?> message, MessageChannel channel) {
-
 			// If handler is a function, FunctionInvoker will already perform message
 			// conversion.
 			// In fact in the future we should consider propagating knowledge of the

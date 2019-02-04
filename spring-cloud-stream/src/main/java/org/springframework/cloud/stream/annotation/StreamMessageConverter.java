@@ -23,6 +23,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.Bean;
 
 /**
  * Marker to tag {@link org.springframework.messaging.converter.MessageConverter} beans
@@ -36,6 +37,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 @Qualifier
+@Bean
 public @interface StreamMessageConverter {
 
 }

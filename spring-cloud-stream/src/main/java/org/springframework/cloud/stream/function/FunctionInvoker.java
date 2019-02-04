@@ -189,12 +189,14 @@ class FunctionInvoker<I, O> implements Function<Flux<Message<I>>, Flux<Message<O
 								MimeType.valueOf(this.bindingServiceProperties
 										.getBindingProperties("output")
 										.getContentType()));
+
 			}
 			Assert.notNull(returnMessage,
 					"Failed to convert result value '" + value + "' to message.");
 		}
 		return returnMessage;
 	}
+
 
 	@SuppressWarnings("unchecked")
 	private <T> Message<O> wrapOutputToMessage(T value, Message<I> originalMessage) {

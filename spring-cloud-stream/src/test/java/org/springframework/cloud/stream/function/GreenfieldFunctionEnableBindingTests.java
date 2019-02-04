@@ -134,7 +134,6 @@ public class GreenfieldFunctionEnableBindingTests {
 					"http://localhost:"
 							+ context.getEnvironment().getProperty("local.server.port"),
 					"hello");
-
 			OutputDestination target = context.getBean(OutputDestination.class);
 			String result = new String(target.receive(10000).getPayload());
 			System.out.println(result);

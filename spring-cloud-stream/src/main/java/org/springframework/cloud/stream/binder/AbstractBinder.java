@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2018 the original author or authors.
+ * Copyright 2013-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
  */
 
 package org.springframework.cloud.stream.binder;
+
+import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -52,6 +54,7 @@ import org.springframework.util.StringUtils;
  * @author Soby Chacko
  * @author Vinicius Carvalho
  * @author Oleg Zhurakousky
+ * @author Nicolas Homble
  */
 public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends ProducerProperties>
 		implements ApplicationContextAware, InitializingBean, Binder<T, C, P> {
@@ -68,10 +71,9 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 
 	private volatile EvaluationContext evaluationContext;
 
-	@Autowired(required = false) // this would need to be refactored into constructor in
-									// the future
+	@Autowired(required = false)
 	@StreamRetryTemplate
-	private RetryTemplate consumerBindingRetryTemplate;
+	private Map<String, RetryTemplate> consumerBindingRetryTemplates;
 
 	/**
 	 * For binder implementations that support a prefix, apply the prefix to the name.
@@ -196,8 +198,8 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 	 * @return The retry template
 	 */
 	protected RetryTemplate buildRetryTemplate(ConsumerProperties properties) {
-		RetryTemplate rt = this.consumerBindingRetryTemplate;
-		if (rt == null) {
+		RetryTemplate rt;
+		if (CollectionUtils.isEmpty(this.consumerBindingRetryTemplates)) {
 			rt = new RetryTemplate();
 			SimpleRetryPolicy retryPolicy = CollectionUtils
 					.isEmpty(properties.getRetryableExceptions())
@@ -212,6 +214,11 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 			backOffPolicy.setMaxInterval(properties.getBackOffMaxInterval());
 			rt.setRetryPolicy(retryPolicy);
 			rt.setBackOffPolicy(backOffPolicy);
+		}
+		else {
+			rt = StringUtils.hasText(properties.getRetryTemplateName())
+					? this.consumerBindingRetryTemplates.get(properties.getRetryTemplateName())
+							: this.consumerBindingRetryTemplates.values().iterator().next();
 		}
 		return rt;
 	}
