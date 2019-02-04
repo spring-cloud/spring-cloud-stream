@@ -57,30 +57,35 @@ public class StreamListenerReactiveReturnWithFailureTests {
 
 	@Parameterized.Parameters
 	public static Collection<?> InputConfigs() {
-		return Arrays.asList(ReactorTestReturnWithFailure1.class, ReactorTestReturnWithFailure2.class,
-				ReactorTestReturnWithFailure3.class, ReactorTestReturnWithFailure4.class);
+		return Arrays.asList(ReactorTestReturnWithFailure1.class,
+				ReactorTestReturnWithFailure2.class, ReactorTestReturnWithFailure3.class,
+				ReactorTestReturnWithFailure4.class);
 	}
 
 	@SuppressWarnings("unchecked")
-	private static void sendMessageAndValidate(ConfigurableApplicationContext context) throws InterruptedException {
+	private static void sendMessageAndValidate(ConfigurableApplicationContext context)
+			throws InterruptedException {
 		Processor processor = context.getBean(Processor.class);
 		String sentPayload = "hello " + UUID.randomUUID().toString();
-		processor.input().send(MessageBuilder.withPayload(sentPayload).setHeader("contentType", "text/plain").build());
+		processor.input().send(MessageBuilder.withPayload(sentPayload)
+				.setHeader("contentType", "text/plain").build());
 		MessageCollector messageCollector = context.getBean(MessageCollector.class);
-		Message<String> result = (Message<String>) messageCollector.forChannel(processor.output()).poll(1000, TimeUnit.MILLISECONDS);
+		Message<String> result = (Message<String>) messageCollector
+				.forChannel(processor.output()).poll(1000, TimeUnit.MILLISECONDS);
 		assertThat(result).isNotNull();
 		assertThat(result.getPayload()).isEqualTo(sentPayload.toUpperCase());
 	}
 
 	private static void sendFailingMessage(ConfigurableApplicationContext context) {
 		Processor processor = context.getBean(Processor.class);
-		processor.input().send(MessageBuilder.withPayload("fail").setHeader("contentType", "text/plain").build());
+		processor.input().send(MessageBuilder.withPayload("fail")
+				.setHeader("contentType", "text/plain").build());
 	}
 
 	@Test
 	public void testReturnWithFailure() throws Exception {
-		ConfigurableApplicationContext context = SpringApplication.run(this.configClass, "--server.port=0",
-				"--spring.jmx.enabled=false",
+		ConfigurableApplicationContext context = SpringApplication.run(this.configClass,
+				"--server.port=0", "--spring.jmx.enabled=false",
 				"--spring.cloud.stream.bindings.input.contentType=text/plain",
 				"--spring.cloud.stream.bindings.output.contentType=text/plain");
 		sendMessageAndValidate(context);
@@ -96,16 +101,18 @@ public class StreamListenerReactiveReturnWithFailureTests {
 	public static class ReactorTestReturnWithFailure1 {
 
 		@StreamListener
-		public @Output(Processor.OUTPUT)
-		Flux<String> receive(@Input(Processor.INPUT) Flux<String> input) {
+		public @Output(Processor.OUTPUT) Flux<String> receive(
+				@Input(Processor.INPUT) Flux<String> input) {
 			return input.map(m -> {
 				if (!m.equals("fail")) {
 					return m.toUpperCase();
-				} else {
+				}
+				else {
 					throw new RuntimeException();
 				}
 			});
 		}
+
 	}
 
 	@EnableBinding(Processor.class)
@@ -113,16 +120,17 @@ public class StreamListenerReactiveReturnWithFailureTests {
 	public static class ReactorTestReturnWithFailure2 {
 
 		@StreamListener(Processor.INPUT)
-		public @Output(Processor.OUTPUT)
-		Flux<String> receive(Flux<String> input) {
+		public @Output(Processor.OUTPUT) Flux<String> receive(Flux<String> input) {
 			return input.map(m -> {
 				if (!m.equals("fail")) {
 					return m.toUpperCase();
-				} else {
+				}
+				else {
 					throw new RuntimeException();
 				}
 			});
 		}
+
 	}
 
 	@EnableBinding(Processor.class)
@@ -130,16 +138,17 @@ public class StreamListenerReactiveReturnWithFailureTests {
 	public static class ReactorTestReturnWithFailure3 {
 
 		@StreamListener(Processor.INPUT)
-		public @SendTo(Processor.OUTPUT)
-		Flux<String> receive(Flux<String> input) {
+		public @SendTo(Processor.OUTPUT) Flux<String> receive(Flux<String> input) {
 			return input.map(m -> {
 				if (!m.equals("fail")) {
 					return m.toUpperCase();
-				} else {
+				}
+				else {
 					throw new RuntimeException();
 				}
 			});
 		}
+
 	}
 
 	@EnableBinding(Processor.class)
@@ -147,15 +156,18 @@ public class StreamListenerReactiveReturnWithFailureTests {
 	public static class ReactorTestReturnWithFailure4 {
 
 		@StreamListener
-		public @SendTo(Processor.OUTPUT)
-		Flux<String> receive(@Input(Processor.INPUT) Flux<String> input) {
+		public @SendTo(Processor.OUTPUT) Flux<String> receive(
+				@Input(Processor.INPUT) Flux<String> input) {
 			return input.map(m -> {
 				if (!m.equals("fail")) {
 					return m.toUpperCase();
-				} else {
+				}
+				else {
 					throw new RuntimeException();
 				}
 			});
 		}
+
 	}
+
 }

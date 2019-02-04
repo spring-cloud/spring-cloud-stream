@@ -24,27 +24,24 @@ import org.springframework.cloud.stream.binding.StreamAnnotationErrorMessages;
  */
 abstract class StreamEmitterErrorMessages extends StreamAnnotationErrorMessages {
 
-	private static final String PREFIX = "A method annotated with @StreamEmitter ";
-
-	static final String RETURN_TYPE_NO_OUTBOUND_SPECIFIED = PREFIX
-			+ "having a return type should also have an outbound target specified at the method level.";
-
-	static final String RETURN_TYPE_METHOD_ARGUMENTS = PREFIX
-			+ "having a return type should not have any method arguments";
-
 	static final String INVALID_OUTPUT_METHOD_PARAMETERS = "@Output annotations are not permitted on "
 			+ "method parameters while using the @StreamEmitter and a method-level output specification";
-
 	static final String NO_OUTPUT_SPECIFIED = "No method level or parameter level @Output annotations are detected. "
 			+ "@StreamEmitter requires a method or parameter level @Output annotation.";
 
+	// @checkstyle:off
+	static final String CANNOT_CONVERT_RETURN_TYPE_TO_ANY_AVAILABLE_RESULT_ADAPTERS = "No suitable adapters are found that can convert the return type";
+
+	// @checkstyle:on
+
+	private static final String PREFIX = "A method annotated with @StreamEmitter ";
+	static final String RETURN_TYPE_NO_OUTBOUND_SPECIFIED = PREFIX
+			+ "having a return type should also have an outbound target specified at the method level.";
+	static final String RETURN_TYPE_METHOD_ARGUMENTS = PREFIX
+			+ "having a return type should not have any method arguments";
 	static final String OUTPUT_ANNOTATION_MISSING_ON_METHOD_PARAMETERS_VOID_RETURN_TYPE = PREFIX
 			+ "and void return type without method level @Output annotation requires @Output on each of the method parameter";
-
 	static final String INPUT_ANNOTATIONS_ARE_NOT_ALLOWED = PREFIX
 			+ "cannot contain @Input annotations";
-
-	static final String CANNOT_CONVERT_RETURN_TYPE_TO_ANY_AVAILABLE_RESULT_ADAPTERS =
-			"No suitable adapters are found that can convert the return type";
 
 }

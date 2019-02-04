@@ -18,7 +18,6 @@ package org.springframework.cloud.stream.binder;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -31,19 +30,18 @@ import org.springframework.util.StringUtils;
 
 /**
  * Default implementation for a {@link Binding}.
+ *
+ * @param <T> type of binding
  * @author Jennifer Hickey
  * @author Mark Fisher
  * @author Gary Russell
  * @author Marius Bogoevici
  * @author Oleg Zhurakousky
- *
  * @see org.springframework.cloud.stream.annotation.EnableBinding
  */
-@JsonPropertyOrder({ "name", "group", "pausable", "state"})
+@JsonPropertyOrder({ "name", "group", "pausable", "state" })
 @JsonIgnoreProperties("running")
 public class DefaultBinding<T> implements Binding<T> {
-
-	private final Log logger = LogFactory.getLog(this.getClass().getName());
 
 	protected final String name;
 
@@ -53,6 +51,8 @@ public class DefaultBinding<T> implements Binding<T> {
 
 	protected final Lifecycle lifecycle;
 
+	private final Log logger = LogFactory.getLog(this.getClass().getName());
+
 	private boolean paused;
 
 	private boolean restartable;
@@ -60,11 +60,11 @@ public class DefaultBinding<T> implements Binding<T> {
 	/**
 	 * Creates an instance that associates a given name, group and binding target with an
 	 * optional {@link Lifecycle} component, which will be stopped during unbinding.
-	 *
 	 * @param name the name of the binding target
 	 * @param group the group (only for input targets)
 	 * @param target the binding target
-	 * @param lifecycle {@link Lifecycle} that runs while the binding is active and will be stopped during unbinding
+	 * @param lifecycle {@link Lifecycle} that runs while the binding is active and will
+	 * be stopped during unbinding
 	 */
 	public DefaultBinding(String name, String group, T target, Lifecycle lifecycle) {
 		Assert.notNull(target, "target must not be null");
@@ -116,7 +116,7 @@ public class DefaultBinding<T> implements Binding<T> {
 				this.lifecycle.start();
 			}
 			else {
-				logger.warn("Can not re-bind an anonymous binding");
+				this.logger.warn("Can not re-bind an anonymous binding");
 			}
 		}
 	}
@@ -131,22 +131,26 @@ public class DefaultBinding<T> implements Binding<T> {
 	@Override
 	public final synchronized void pause() {
 		if (this.lifecycle instanceof Pausable) {
-			( (Pausable) this.lifecycle).pause();
+			((Pausable) this.lifecycle).pause();
 			this.paused = true;
 		}
 		else {
-			logger.warn("Attempted to pause a component that does not support Pausable " + this.lifecycle);
+			this.logger
+					.warn("Attempted to pause a component that does not support Pausable "
+							+ this.lifecycle);
 		}
 	}
 
 	@Override
 	public final synchronized void resume() {
 		if (this.lifecycle instanceof Pausable) {
-			( (Pausable) this.lifecycle).resume();
+			((Pausable) this.lifecycle).resume();
 			this.paused = false;
 		}
 		else {
-			logger.warn("Attempted to resume a component that does not support Pausable " + this.lifecycle);
+			this.logger.warn(
+					"Attempted to resume a component that does not support Pausable "
+							+ this.lifecycle);
 		}
 	}
 
@@ -179,4 +183,5 @@ public class DefaultBinding<T> implements Binding<T> {
 	private String getRunningState() {
 		return isRunning() ? "running" : "stopped";
 	}
+
 }

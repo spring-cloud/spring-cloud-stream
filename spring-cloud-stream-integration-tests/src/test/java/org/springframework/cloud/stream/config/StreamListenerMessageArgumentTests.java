@@ -58,14 +58,17 @@ public class StreamListenerMessageArgumentTests {
 
 	@Parameterized.Parameters
 	public static Collection<?> InputConfigs() {
-		return Arrays.asList(new Class[] { TestPojoWithMessageArgument1.class, TestPojoWithMessageArgument2.class });
+		return Arrays.asList(new Class[] { TestPojoWithMessageArgument1.class,
+				TestPojoWithMessageArgument2.class });
 	}
 
 	@Test
 	@SuppressWarnings("unchecked")
 	public void testMessageArgument() throws Exception {
-		ConfigurableApplicationContext context = SpringApplication
-				.run(this.configClass, "--server.port=0", "--spring.cloud.stream.bindings.output.contentType=text/plain","--spring.jmx.enabled=false");
+		ConfigurableApplicationContext context = SpringApplication.run(this.configClass,
+				"--server.port=0",
+				"--spring.cloud.stream.bindings.output.contentType=text/plain",
+				"--spring.jmx.enabled=false");
 		MessageCollector collector = context.getBean(MessageCollector.class);
 		Processor processor = context.getBean(Processor.class);
 		String id = UUID.randomUUID().toString();
@@ -74,7 +77,8 @@ public class StreamListenerMessageArgumentTests {
 		TestPojoWithMessageArgument testPojoWithMessageArgument = context
 				.getBean(TestPojoWithMessageArgument.class);
 		assertThat(testPojoWithMessageArgument.receivedMessages).hasSize(1);
-		assertThat(testPojoWithMessageArgument.receivedMessages.get(0).getPayload()).isEqualTo("barbar" + id);
+		assertThat(testPojoWithMessageArgument.receivedMessages.get(0).getPayload())
+				.isEqualTo("barbar" + id);
 		Message<String> message = (Message<String>) collector
 				.forChannel(processor.output()).poll(1, TimeUnit.SECONDS);
 		assertThat(message).isNotNull();
@@ -94,6 +98,7 @@ public class StreamListenerMessageArgumentTests {
 			barPojo.setBar(fooMessage.getPayload());
 			return barPojo;
 		}
+
 	}
 
 	@EnableBinding(Processor.class)
@@ -108,10 +113,13 @@ public class StreamListenerMessageArgumentTests {
 			barPojo.setBar(fooMessage.getPayload());
 			return barPojo;
 		}
+
 	}
 
 	public static class TestPojoWithMessageArgument {
+
 		List<Message<String>> receivedMessages = new ArrayList<>();
+
 	}
 
 }

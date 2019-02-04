@@ -38,8 +38,9 @@ import static org.mockito.Mockito.verify;
  * @author Janne Valkealahti
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringBootTest(classes = ProcessorBindingWithBindingTargetsTests.TestProcessor.class,
-		properties = "spring.cloud.stream.defaultBinder=mock")
+// @checkstyle:off
+@SpringBootTest(classes = ProcessorBindingWithBindingTargetsTests.TestProcessor.class, properties = "spring.cloud.stream.defaultBinder=mock")
+// @checkstyle:on
 public class ProcessorBindingWithBindingTargetsTests {
 
 	@Autowired
@@ -48,10 +49,10 @@ public class ProcessorBindingWithBindingTargetsTests {
 	@Autowired
 	private Processor testProcessor;
 
-	@SuppressWarnings({"rawtypes", "unchecked"})
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Test
 	public void testSourceOutputChannelBound() {
-		final Binder binder = binderFactory.getBinder(null, MessageChannel.class);
+		final Binder binder = this.binderFactory.getBinder(null, MessageChannel.class);
 		verify(binder).bindConsumer(eq("testtock.0"), isNull(),
 				eq(this.testProcessor.input()), Mockito.any());
 		verify(binder).bindProducer(eq("testtock.1"), eq(this.testProcessor.output()),
@@ -64,4 +65,5 @@ public class ProcessorBindingWithBindingTargetsTests {
 	public static class TestProcessor {
 
 	}
+
 }

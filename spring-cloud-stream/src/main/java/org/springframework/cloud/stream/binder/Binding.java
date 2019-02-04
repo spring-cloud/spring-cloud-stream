@@ -28,12 +28,12 @@ import org.springframework.integration.endpoint.Pausable;
  * represents a connection from an adapter to an input. A producer binding represents a
  * connection from an output to an adapter.
  *
+ * @param <T> type of a binding
  * @author Jennifer Hickey
  * @author Mark Fisher
  * @author Gary Russell
  * @author Marius Bogoevici
  * @author Oleg Zhurakousky
- *
  * @see org.springframework.cloud.stream.annotation.EnableBinding
  */
 public interface Binding<T> extends Pausable {
@@ -43,28 +43,30 @@ public interface Binding<T> extends Pausable {
 	}
 
 	/**
-	 * Stops the target component represented by this instance.
-	 * NOTE: At the time the instance is created the component is already started.
-	 * This operation is typically used by actuator to re-bind/re-start.
+	 * Stops the target component represented by this instance. NOTE: At the time the
+	 * instance is created the component is already started. This operation is typically
+	 * used by actuator to re-bind/re-start.
 	 *
 	 * @see BindingsEndpoint
 	 */
-	default void start() {}
+	default void start() {
+	}
 
 	/**
-	 * Starts the target component represented by this instance.
-	 * NOTE: At the time the instance is created the component is already started.
-	 * This operation is typically used by actuator to re-bind/re-start.
+	 * Starts the target component represented by this instance. NOTE: At the time the
+	 * instance is created the component is already started. This operation is typically
+	 * used by actuator to re-bind/re-start.
 	 *
 	 * @see BindingsEndpoint
 	 */
-	default void stop() {}
+	default void stop() {
+	}
 
 	/**
-	 * Pauses the target component represented by this instance if and only if the component
-	 * implements {@link Pausable} interface
-	 * NOTE: At the time the instance is created the component is already started and active.
-	 * This operation is typically used by actuator to pause/resume.
+	 * Pauses the target component represented by this instance if and only if the
+	 * component implements {@link Pausable} interface NOTE: At the time the instance is
+	 * created the component is already started and active. This operation is typically
+	 * used by actuator to pause/resume.
 	 *
 	 * @see BindingsEndpoint
 	 */
@@ -73,10 +75,10 @@ public interface Binding<T> extends Pausable {
 	}
 
 	/**
-	 * Resumes the target component represented by this instance if and only if the component
-	 * implements {@link Pausable} interface
-	 * NOTE: At the time the instance is created the component is already started and active.
-	 * This operation is typically used by actuator to pause/resume.
+	 * Resumes the target component represented by this instance if and only if the
+	 * component implements {@link Pausable} interface NOTE: At the time the instance is
+	 * created the component is already started and active. This operation is typically
+	 * used by actuator to pause/resume.
 	 *
 	 * @see BindingsEndpoint
 	 */
@@ -85,15 +87,14 @@ public interface Binding<T> extends Pausable {
 	}
 
 	/**
-	 * Returns 'true' if the target component represented by this instance is running.
+	 * @return 'true' if the target component represented by this instance is running.
 	 */
 	default boolean isRunning() {
 		return false;
 	}
 
 	/**
-	 * Returns the name of this binding  (i.e., channel name)
-	 *
+	 * Returns the name of this binding (i.e., channel name).
 	 * @return binding name
 	 */
 	default String getName() {
@@ -109,13 +110,15 @@ public interface Binding<T> extends Pausable {
 	void unbind();
 
 	/**
-	 * Returns boolean flag representing this binding's type. If 'true' this binding is an 'input' binding
-	 * otherwise it is 'output' (as in binding annotated with either @Input or @Output).
-	 *
+	 * Returns boolean flag representing this binding's type. If 'true' this binding is an
+	 * 'input' binding otherwise it is 'output' (as in binding annotated with
+	 * either @Input or @Output).
 	 * @return 'true' if this binding represents an input binding.
 	 */
 	default boolean isInput() {
-		throw new UnsupportedOperationException("Binding implementation `" + this.getClass().getName()
-				+ "` must implement this operation before it is called");
+		throw new UnsupportedOperationException(
+				"Binding implementation `" + this.getClass().getName()
+						+ "` must implement this operation before it is called");
 	}
+
 }

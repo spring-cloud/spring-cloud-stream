@@ -35,10 +35,11 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.support.GenericMessage;
 
-import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Sample spring cloud stream application that demonstrates the usage of {@link TestChannelBinder}.
+ * Sample spring cloud stream application that demonstrates the usage of
+ * {@link TestChannelBinder}.
  *
  * @author Oleg Zhurakousky
  * @author Gary Russell
@@ -50,14 +51,15 @@ import static org.junit.Assert.assertEquals;
 public class SampleStreamApp {
 
 	public static void main(String[] args) {
-		ApplicationContext context = new SpringApplicationBuilder(SampleStreamApp.class).web(WebApplicationType.NONE)
-				.run("--server.port=0");
+		ApplicationContext context = new SpringApplicationBuilder(SampleStreamApp.class)
+				.web(WebApplicationType.NONE).run("--server.port=0");
 		InputDestination source = context.getBean(InputDestination.class);
 		OutputDestination target = context.getBean(OutputDestination.class);
 		source.send(new GenericMessage<byte[]>("Hello".getBytes()));
 
 		Message<?> message = target.receive();
-		assertEquals("Hello", new String((byte[])message.getPayload(), StandardCharsets.UTF_8));
+		assertThat(new String((byte[]) message.getPayload(), StandardCharsets.UTF_8))
+				.isEqualTo("Hello");
 	}
 
 	@Bean
@@ -74,7 +76,7 @@ public class SampleStreamApp {
 		return value;
 	}
 
-	@ServiceActivator(inputChannel="input.anonymous.errors")
+	@ServiceActivator(inputChannel = "input.anonymous.errors")
 	public void error(String value) {
 		System.out.println("Handling ERROR payload: " + value);
 	}
@@ -87,5 +89,3 @@ public class SampleStreamApp {
 	}
 
 }
-
-

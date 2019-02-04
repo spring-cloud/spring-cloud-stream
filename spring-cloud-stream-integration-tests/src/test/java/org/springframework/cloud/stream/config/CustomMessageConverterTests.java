@@ -19,7 +19,6 @@ package org.springframework.cloud.stream.config;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -44,7 +43,6 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.util.MimeType;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.hamcrest.Matchers.notNullValue;
 
 /**
  * @author Ilayaperumal Gopinathan
@@ -66,16 +64,17 @@ public class CustomMessageConverterTests {
 
 	@Test
 	public void testCustomMessageConverter() throws Exception {
-		assertThat(customMessageConverters).hasSize(2);
-		assertThat(customMessageConverters).extracting("class").contains(FooConverter.class,
-				BarConverter.class);
-		testSource.output().send(MessageBuilder.withPayload(new Foo("hi")).build());
+		assertThat(this.customMessageConverters).hasSize(2);
+		assertThat(this.customMessageConverters).extracting("class")
+				.contains(FooConverter.class, BarConverter.class);
+		this.testSource.output().send(MessageBuilder.withPayload(new Foo("hi")).build());
 		@SuppressWarnings("unchecked")
-		Message<String> received = (Message<String>) ((TestSupportBinder) binderFactory.getBinder(null,
-				MessageChannel.class))
-						.messageCollector().forChannel(testSource.output()).poll(1, TimeUnit.SECONDS);
-		Assert.assertThat(received, notNullValue());
-		assertThat(received.getHeaders().get(MessageHeaders.CONTENT_TYPE)).isEqualTo(MimeType.valueOf("test/foo"));
+		Message<String> received = (Message<String>) ((TestSupportBinder) this.binderFactory
+				.getBinder(null, MessageChannel.class)).messageCollector()
+						.forChannel(this.testSource.output()).poll(1, TimeUnit.SECONDS);
+		assertThat(received).isNotNull();
+		assertThat(received.getHeaders().get(MessageHeaders.CONTENT_TYPE))
+				.isEqualTo(MimeType.valueOf("test/foo"));
 	}
 
 	@EnableBinding(Source.class)
@@ -95,6 +94,7 @@ public class CustomMessageConverterTests {
 		public MessageConverter barConverter() {
 			return new BarConverter();
 		}
+
 	}
 
 	public static class FooConverter extends AbstractMessageConverter {
@@ -109,7 +109,8 @@ public class CustomMessageConverterTests {
 		}
 
 		@Override
-		protected Object convertToInternal(Object payload, MessageHeaders headers, Object conversionHint) {
+		protected Object convertToInternal(Object payload, MessageHeaders headers,
+				Object conversionHint) {
 			Object result = null;
 			try {
 				if (payload instanceof Foo) {
@@ -118,11 +119,12 @@ public class CustomMessageConverterTests {
 				}
 			}
 			catch (Exception e) {
-				logger.error(e.getMessage(), e);
+				this.logger.error(e.getMessage(), e);
 				return null;
 			}
 			return result;
 		}
+
 	}
 
 	public static class BarConverter extends AbstractMessageConverter {
@@ -137,7 +139,8 @@ public class CustomMessageConverterTests {
 		}
 
 		@Override
-		protected Object convertToInternal(Object payload, MessageHeaders headers, Object conversionHint) {
+		protected Object convertToInternal(Object payload, MessageHeaders headers,
+				Object conversionHint) {
 			Object result = null;
 			try {
 				if (payload instanceof Bar) {
@@ -146,11 +149,12 @@ public class CustomMessageConverterTests {
 				}
 			}
 			catch (Exception e) {
-				logger.error(e.getMessage(), e);
+				this.logger.error(e.getMessage(), e);
 				return null;
 			}
 			return result;
 		}
+
 	}
 
 	public static class Foo {
@@ -170,5 +174,7 @@ public class CustomMessageConverterTests {
 		public Bar(String testing) {
 			this.testing = testing;
 		}
+
 	}
+
 }

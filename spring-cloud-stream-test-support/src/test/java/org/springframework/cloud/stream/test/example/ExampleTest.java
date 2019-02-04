@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,10 +39,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  * correctly.
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringBootTest(classes = ExampleTest.MyProcessor.class, webEnvironment = SpringBootTest.WebEnvironment.NONE,
-		properties = {
+// @checkstyle:off
+@SpringBootTest(classes = ExampleTest.MyProcessor.class, webEnvironment = SpringBootTest.WebEnvironment.NONE, properties = {
 		"--spring.cloud.stream.bindings.input.contentType=text/plain",
-		"--spring.cloud.stream.bindings.output.contentType=text/plain"})
+		"--spring.cloud.stream.bindings.output.contentType=text/plain" })
+// @checkstyle:on
 @DirtiesContext
 public class ExampleTest {
 
@@ -57,7 +58,8 @@ public class ExampleTest {
 	public void testWiring() {
 		Message<String> message = new GenericMessage<>("hello");
 		this.processor.input().send(message);
-		Message<String> received = (Message<String>) this.messageCollector.forChannel(this.processor.output()).poll();
+		Message<String> received = (Message<String>) this.messageCollector
+				.forChannel(this.processor.output()).poll();
 		assertThat(received.getPayload()).isEqualTo("hello world");
 	}
 
@@ -69,6 +71,7 @@ public class ExampleTest {
 		public String transform(String in) {
 			return in + " world";
 		}
+
 	}
 
 }

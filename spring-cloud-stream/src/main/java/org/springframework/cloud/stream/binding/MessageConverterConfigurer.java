@@ -73,7 +73,8 @@ import org.springframework.util.StringUtils;
  * @author Soby Chacko
  * @author Oleg Zhurakousky
  */
-public class MessageConverterConfigurer implements MessageChannelAndSourceConfigurer, BeanFactoryAware {
+public class MessageConverterConfigurer
+		implements MessageChannelAndSourceConfigurer, BeanFactoryAware {
 
 	private final Log logger = LogFactory.getLog(getClass());
 
@@ -83,9 +84,9 @@ public class MessageConverterConfigurer implements MessageChannelAndSourceConfig
 
 	private final BindingServiceProperties bindingServiceProperties;
 
-	private ConfigurableListableBeanFactory beanFactory;
-
 	private final Field headersField;
+
+	private ConfigurableListableBeanFactory beanFactory;
 
 	public MessageConverterConfigurer(BindingServiceProperties bindingServiceProperties,
 			CompositeMessageConverterFactory compositeMessageConverterFactory) {
@@ -95,7 +96,7 @@ public class MessageConverterConfigurer implements MessageChannelAndSourceConfig
 		this.compositeMessageConverterFactory = compositeMessageConverterFactory;
 
 		this.headersField = ReflectionUtils.findField(MessageHeaders.class, "headers");
-		headersField.setAccessible(true);
+		this.headersField.setAccessible(true);
 	}
 
 	@Override
@@ -116,105 +117,137 @@ public class MessageConverterConfigurer implements MessageChannelAndSourceConfig
 
 	@Override
 	public void configurePolledMessageSource(PollableMessageSource binding, String name) {
-		BindingProperties bindingProperties = this.bindingServiceProperties.getBindingProperties(name);
+		BindingProperties bindingProperties = this.bindingServiceProperties
+				.getBindingProperties(name);
 		String contentType = bindingProperties.getContentType();
 		ConsumerProperties consumerProperties = bindingProperties.getConsumer();
 		if ((consumerProperties == null || !consumerProperties.isUseNativeDecoding())
 				&& binding instanceof DefaultPollableMessageSource) {
-			((DefaultPollableMessageSource) binding).addInterceptor(new InboundContentTypeEnhancingInterceptor(contentType));
+			((DefaultPollableMessageSource) binding).addInterceptor(
+					new InboundContentTypeEnhancingInterceptor(contentType));
 		}
 	}
 
 	/**
 	 * Setup data-type and message converters for the given message channel.
-	 *
 	 * @param channel message channel to set the data-type and message converters
 	 * @param channelName the channel name
 	 * @param inbound inbound (i.e., "input") or outbound channel
 	 */
-	private void configureMessageChannel(MessageChannel channel, String channelName, boolean inbound) {
+	private void configureMessageChannel(MessageChannel channel, String channelName,
+			boolean inbound) {
 		Assert.isAssignable(AbstractMessageChannel.class, channel.getClass());
 		AbstractMessageChannel messageChannel = (AbstractMessageChannel) channel;
-		BindingProperties bindingProperties = this.bindingServiceProperties.getBindingProperties(channelName);
+		BindingProperties bindingProperties = this.bindingServiceProperties
+				.getBindingProperties(channelName);
 		String contentType = bindingProperties.getContentType();
 		ProducerProperties producerProperties = bindingProperties.getProducer();
-		if (!inbound && producerProperties != null && producerProperties.isPartitioned()) {
+		if (!inbound && producerProperties != null
+				&& producerProperties.isPartitioned()) {
 			messageChannel.addInterceptor(new PartitioningInterceptor(bindingProperties,
 					getPartitionKeyExtractorStrategy(producerProperties),
 					getPartitionSelectorStrategy(producerProperties)));
 		}
 
 		ConsumerProperties consumerProperties = bindingProperties.getConsumer();
-		if (this.isNativeEncodingNotSet(producerProperties, consumerProperties, inbound)) {
+		if (this.isNativeEncodingNotSet(producerProperties, consumerProperties,
+				inbound)) {
 			if (inbound) {
-				messageChannel.addInterceptor(new InboundContentTypeEnhancingInterceptor(contentType));
+				messageChannel.addInterceptor(
+						new InboundContentTypeEnhancingInterceptor(contentType));
 			}
 			else {
-				messageChannel.addInterceptor(new OutboundContentTypeConvertingInterceptor(contentType, this.compositeMessageConverterFactory
-						.getMessageConverterForAllRegistered()));
+				messageChannel.addInterceptor(
+						new OutboundContentTypeConvertingInterceptor(contentType,
+								this.compositeMessageConverterFactory
+										.getMessageConverterForAllRegistered()));
 			}
 		}
 	}
 
-	private boolean isNativeEncodingNotSet(ProducerProperties producerProperties, ConsumerProperties consumerProperties, boolean input) {
+	private boolean isNativeEncodingNotSet(ProducerProperties producerProperties,
+			ConsumerProperties consumerProperties, boolean input) {
 		if (input) {
-			return consumerProperties == null || !consumerProperties.isUseNativeDecoding();
+			return consumerProperties == null
+					|| !consumerProperties.isUseNativeDecoding();
 		}
 		else {
-			return producerProperties == null || !producerProperties.isUseNativeEncoding();
+			return producerProperties == null
+					|| !producerProperties.isUseNativeEncoding();
 		}
 	}
 
 	@SuppressWarnings("deprecation")
-	private PartitionKeyExtractorStrategy getPartitionKeyExtractorStrategy(ProducerProperties producerProperties) {
+	private PartitionKeyExtractorStrategy getPartitionKeyExtractorStrategy(
+			ProducerProperties producerProperties) {
 		PartitionKeyExtractorStrategy partitionKeyExtractor;
 		if (producerProperties.getPartitionKeyExtractorClass() != null) {
-			logger.warn("'partitionKeyExtractorClass' option is deprecated as of v2.0. Please configure partition "
-					+ "key extractor as a @Bean that implements 'PartitionKeyExtractorStrategy'. Additionally you can "
-					+ "specify 'spring.cloud.stream.bindings.output.producer.partitionKeyExtractorName' to specify which "
-					+ "bean to use in the event there are more then one.");
-			partitionKeyExtractor = instantiate(producerProperties.getPartitionKeyExtractorClass(), PartitionKeyExtractorStrategy.class);
+			this.logger.warn(
+					"'partitionKeyExtractorClass' option is deprecated as of v2.0. Please configure partition "
+							+ "key extractor as a @Bean that implements 'PartitionKeyExtractorStrategy'. Additionally you can "
+							+ "specify 'spring.cloud.stream.bindings.output.producer.partitionKeyExtractorName' to specify which "
+							+ "bean to use in the event there are more then one.");
+			partitionKeyExtractor = instantiate(
+					producerProperties.getPartitionKeyExtractorClass(),
+					PartitionKeyExtractorStrategy.class);
 		}
 		else if (StringUtils.hasText(producerProperties.getPartitionKeyExtractorName())) {
-			partitionKeyExtractor = this.beanFactory.getBean(producerProperties.getPartitionKeyExtractorName(), PartitionKeyExtractorStrategy.class);
-			Assert.notNull(partitionKeyExtractor, "PartitionKeyExtractorStrategy bean with the name '" + producerProperties.getPartitionKeyExtractorName()
-				+ "' can not be found. Has it been configured (e.g., @Bean)?");
+			partitionKeyExtractor = this.beanFactory.getBean(
+					producerProperties.getPartitionKeyExtractorName(),
+					PartitionKeyExtractorStrategy.class);
+			Assert.notNull(partitionKeyExtractor,
+					"PartitionKeyExtractorStrategy bean with the name '"
+							+ producerProperties.getPartitionKeyExtractorName()
+							+ "' can not be found. Has it been configured (e.g., @Bean)?");
 		}
 		else {
-			Map<String, PartitionKeyExtractorStrategy> extractors = this.beanFactory.getBeansOfType(PartitionKeyExtractorStrategy.class);
+			Map<String, PartitionKeyExtractorStrategy> extractors = this.beanFactory
+					.getBeansOfType(PartitionKeyExtractorStrategy.class);
 			Assert.isTrue(extractors.size() <= 1,
-					"Multiple  beans of type 'PartitionKeyExtractorStrategy' found. " + extractors + ". Please "
+					"Multiple  beans of type 'PartitionKeyExtractorStrategy' found. "
+							+ extractors + ". Please "
 							+ "use 'spring.cloud.stream.bindings.output.producer.partitionKeyExtractorName' property to specify "
 							+ "the name of the bean to be used.");
-			partitionKeyExtractor = CollectionUtils.isEmpty(extractors) ? null : extractors.values().iterator().next();
+			partitionKeyExtractor = CollectionUtils.isEmpty(extractors) ? null
+					: extractors.values().iterator().next();
 		}
 		return partitionKeyExtractor;
 	}
 
 	@SuppressWarnings("deprecation")
-	private PartitionSelectorStrategy getPartitionSelectorStrategy(ProducerProperties producerProperties) {
+	private PartitionSelectorStrategy getPartitionSelectorStrategy(
+			ProducerProperties producerProperties) {
 		PartitionSelectorStrategy partitionSelector;
 		if (producerProperties.getPartitionSelectorClass() != null) {
-			logger.warn("'partitionSelectorClass' option is deprecated as of v2.0. Please configure partition "
-					+ "selector as a @Bean that implements 'PartitionSelectorStrategy'. Additionally you can "
-					+ "specify 'spring.cloud.stream.bindings.output.producer.partitionSelectorName' to specify which "
-					+ "bean to use in the event there are more then one.");
-			partitionSelector = instantiate(producerProperties.getPartitionSelectorClass(),
+			this.logger.warn(
+					"'partitionSelectorClass' option is deprecated as of v2.0. Please configure partition "
+							+ "selector as a @Bean that implements 'PartitionSelectorStrategy'. Additionally you can "
+							+ "specify 'spring.cloud.stream.bindings.output.producer.partitionSelectorName' to specify which "
+							+ "bean to use in the event there are more then one.");
+			partitionSelector = instantiate(
+					producerProperties.getPartitionSelectorClass(),
 					PartitionSelectorStrategy.class);
 		}
 		else if (StringUtils.hasText(producerProperties.getPartitionSelectorName())) {
-			partitionSelector = this.beanFactory.getBean(producerProperties.getPartitionSelectorName(), PartitionSelectorStrategy.class);
+			partitionSelector = this.beanFactory.getBean(
+					producerProperties.getPartitionSelectorName(),
+					PartitionSelectorStrategy.class);
 			Assert.notNull(partitionSelector,
-					"PartitionSelectorStrategy bean with the name '" + producerProperties.getPartitionSelectorName()
+					"PartitionSelectorStrategy bean with the name '"
+							+ producerProperties.getPartitionSelectorName()
 							+ "' can not be found. Has it been configured (e.g., @Bean)?");
 		}
 		else {
-			Map<String, PartitionSelectorStrategy> selectors = this.beanFactory.getBeansOfType(PartitionSelectorStrategy.class);
+			Map<String, PartitionSelectorStrategy> selectors = this.beanFactory
+					.getBeansOfType(PartitionSelectorStrategy.class);
 			Assert.isTrue(selectors.size() <= 1,
-				"Multiple  beans of type 'PartitionSelectorStrategy' found. " + selectors + ". Please "
-					+ "use 'spring.cloud.stream.bindings.output.producer.partitionSelectorName' property to specify "
-					+ "the name of the bean to be used.");
-			partitionSelector = CollectionUtils.isEmpty(selectors) ? new DefaultPartitionSelector() : selectors.values().iterator().next();
+					"Multiple  beans of type 'PartitionSelectorStrategy' found. "
+							+ selectors + ". Please "
+							+ "use 'spring.cloud.stream.bindings.output.producer.partitionSelectorName' property to specify "
+							+ "the name of the bean to be used.");
+			partitionSelector = CollectionUtils.isEmpty(selectors)
+					? new DefaultPartitionSelector()
+					: selectors.values().iterator().next();
 		}
 		return partitionSelector;
 	}
@@ -225,7 +258,8 @@ public class MessageConverterConfigurer implements MessageChannelAndSourceConfig
 			return (T) implClass.newInstance();
 		}
 		catch (Exception e) {
-			throw new BinderException("Failed to instantiate class: " + implClass.getName(), e);
+			throw new BinderException(
+					"Failed to instantiate class: " + implClass.getName(), e);
 		}
 	}
 
@@ -243,16 +277,19 @@ public class MessageConverterConfigurer implements MessageChannelAndSourceConfig
 			}
 			return Math.abs(hashCode);
 		}
+
 	}
 
 	/**
-	 * Primary purpose of this interceptor is to enhance/enrich Message that sent to the *inbound*
-	 * channel with 'contentType' header for cases where 'contentType' is not present in the Message
-	 * itself but set on such channel via {@link BindingProperties#setContentType(String)}.
-	 * <br>
-	 * Secondary purpose of this interceptor is to provide backward compatibility with previous versions of SCSt.
+	 * Primary purpose of this interceptor is to enhance/enrich Message that sent to the
+	 * *inbound* channel with 'contentType' header for cases where 'contentType' is not
+	 * present in the Message itself but set on such channel via
+	 * {@link BindingProperties#setContentType(String)}. <br>
+	 * Secondary purpose of this interceptor is to provide backward compatibility with
+	 * previous versions of SCSt.
 	 */
-	private final class InboundContentTypeEnhancingInterceptor extends AbstractContentTypeInterceptor {
+	private final class InboundContentTypeEnhancingInterceptor
+			extends AbstractContentTypeInterceptor {
 
 		private InboundContentTypeEnhancingInterceptor(String contentType) {
 			super(contentType);
@@ -261,15 +298,21 @@ public class MessageConverterConfigurer implements MessageChannelAndSourceConfig
 		@Override
 		public Message<?> doPreSend(Message<?> message, MessageChannel channel) {
 			@SuppressWarnings("unchecked")
-			Map<String, Object> headersMap = (Map<String, Object>) ReflectionUtils.getField(MessageConverterConfigurer.this.headersField, message.getHeaders());
+			Map<String, Object> headersMap = (Map<String, Object>) ReflectionUtils
+					.getField(MessageConverterConfigurer.this.headersField,
+							message.getHeaders());
 			MimeType contentType = this.mimeType;
 			/*
-			 * NOTE: The below code for BINDER_ORIGINAL_CONTENT_TYPE is to support legacy message format established
-			 * in 1.x version of the framework and should/will no longer be supported in 3.x
+			 * NOTE: The below code for BINDER_ORIGINAL_CONTENT_TYPE is to support legacy
+			 * message format established in 1.x version of the framework and should/will
+			 * no longer be supported in 3.x
 			 */
-			if (message.getHeaders().containsKey(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE)) {
-				Object ct = message.getHeaders().get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE);
-				contentType = ct instanceof String ? MimeType.valueOf((String)ct) : (ct == null ? this.mimeType : (MimeType)ct);
+			if (message.getHeaders()
+					.containsKey(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE)) {
+				Object ct = message.getHeaders()
+						.get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE);
+				contentType = ct instanceof String ? MimeType.valueOf((String) ct)
+						: (ct == null ? this.mimeType : (MimeType) ct);
 				headersMap.put(MessageHeaders.CONTENT_TYPE, contentType);
 				headersMap.remove(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE);
 			}
@@ -278,25 +321,31 @@ public class MessageConverterConfigurer implements MessageChannelAndSourceConfig
 			if (!message.getHeaders().containsKey(MessageHeaders.CONTENT_TYPE)) {
 				headersMap.put(MessageHeaders.CONTENT_TYPE, contentType);
 			}
-			else if (message.getHeaders().get(MessageHeaders.CONTENT_TYPE) instanceof String) {
-				headersMap.put(MessageHeaders.CONTENT_TYPE, MimeType.valueOf((String)message.getHeaders().get(MessageHeaders.CONTENT_TYPE)));
+			else if (message.getHeaders()
+					.get(MessageHeaders.CONTENT_TYPE) instanceof String) {
+				headersMap.put(MessageHeaders.CONTENT_TYPE, MimeType.valueOf(
+						(String) message.getHeaders().get(MessageHeaders.CONTENT_TYPE)));
 			}
 
 			return message;
 		}
+
 	}
 
 	/**
-	 * Unlike INBOUND where the target type is known and conversion is typically done by argument
-	 * resolvers of {@link InvocableHandlerMethod} for the OUTBOUND case it is not known so we simply
-	 * rely on provided MessageConverters that will use the provided 'contentType' and convert messages
-	 * to a type dictated by the Binders (i.e., byte[]).
+	 * Unlike INBOUND where the target type is known and conversion is typically done by
+	 * argument resolvers of {@link InvocableHandlerMethod} for the OUTBOUND case it is
+	 * not known so we simply rely on provided MessageConverters that will use the
+	 * provided 'contentType' and convert messages to a type dictated by the Binders
+	 * (i.e., byte[]).
 	 */
-	private final class OutboundContentTypeConvertingInterceptor extends AbstractContentTypeInterceptor {
+	private final class OutboundContentTypeConvertingInterceptor
+			extends AbstractContentTypeInterceptor {
 
 		private final MessageConverter messageConverter;
 
-		private OutboundContentTypeConvertingInterceptor(String contentType, CompositeMessageConverter messageConverter) {
+		private OutboundContentTypeConvertingInterceptor(String contentType,
+				CompositeMessageConverter messageConverter) {
 			super(contentType);
 			this.messageConverter = messageConverter;
 		}
@@ -304,52 +353,64 @@ public class MessageConverterConfigurer implements MessageChannelAndSourceConfig
 		@Override
 		public Message<?> doPreSend(Message<?> message, MessageChannel channel) {
 
-			// If handler is a function, FunctionInvoker will already perform message conversion.
-			// In fact in the future we should consider propagating knowledge of the default content type
-			//to MessageConverters instead of interceptors
-			if (message.getPayload() instanceof byte[] && message.getHeaders().containsKey(MessageHeaders.CONTENT_TYPE)) {
+			// If handler is a function, FunctionInvoker will already perform message
+			// conversion.
+			// In fact in the future we should consider propagating knowledge of the
+			// default content type
+			// to MessageConverters instead of interceptors
+			if (message.getPayload() instanceof byte[]
+					&& message.getHeaders().containsKey(MessageHeaders.CONTENT_TYPE)) {
 				return message;
 			}
 
-
 			// ===== 1.3 backward compatibility code part-1 ===
-			String oct = message.getHeaders().containsKey(MessageHeaders.CONTENT_TYPE) ? message.getHeaders().get(MessageHeaders.CONTENT_TYPE).toString() : null;
+			String oct = message.getHeaders().containsKey(MessageHeaders.CONTENT_TYPE)
+					? message.getHeaders().get(MessageHeaders.CONTENT_TYPE).toString()
+					: null;
 			String ct = message.getPayload() instanceof String
-						? ct = JavaClassMimeTypeUtils.mimeTypeFromObject(message.getPayload(), ObjectUtils.nullSafeToString(oct)).toString()
-						: oct;
+					? JavaClassMimeTypeUtils.mimeTypeFromObject(message.getPayload(),
+							ObjectUtils.nullSafeToString(oct)).toString()
+					: oct;
 			// ===== END 1.3 backward compatibility code part-1 ===
-
 
 			if (!message.getHeaders().containsKey(MessageHeaders.CONTENT_TYPE)) {
 				@SuppressWarnings("unchecked")
-				Map<String, Object> headersMap = (Map<String, Object>) ReflectionUtils.getField(MessageConverterConfigurer.this.headersField, message.getHeaders());
+				Map<String, Object> headersMap = (Map<String, Object>) ReflectionUtils
+						.getField(MessageConverterConfigurer.this.headersField,
+								message.getHeaders());
 				headersMap.put(MessageHeaders.CONTENT_TYPE, this.mimeType);
 			}
 
 			@SuppressWarnings("unchecked")
 			Message<byte[]> outboundMessage = message.getPayload() instanceof byte[]
-					? (Message<byte[]>)message : (Message<byte[]>) this.messageConverter.toMessage(message.getPayload(), message.getHeaders());
+					? (Message<byte[]>) message : (Message<byte[]>) this.messageConverter
+							.toMessage(message.getPayload(), message.getHeaders());
 			if (outboundMessage == null) {
-				throw new IllegalStateException("Failed to convert message: '" + message + "' to outbound message.");
+				throw new IllegalStateException("Failed to convert message: '" + message
+						+ "' to outbound message.");
 			}
 
 			/// ===== 1.3 backward compatibility code part-2 ===
 			if (ct != null && !ct.equals(oct) && oct != null) {
 				@SuppressWarnings("unchecked")
-				Map<String, Object> headersMap = (Map<String, Object>) ReflectionUtils.getField(MessageConverterConfigurer.this.headersField,
-						outboundMessage.getHeaders());
+				Map<String, Object> headersMap = (Map<String, Object>) ReflectionUtils
+						.getField(MessageConverterConfigurer.this.headersField,
+								outboundMessage.getHeaders());
 				headersMap.put(MessageHeaders.CONTENT_TYPE, MimeType.valueOf(ct));
-				headersMap.put(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE, MimeType.valueOf(oct));
+				headersMap.put(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE,
+						MimeType.valueOf(oct));
 			}
 			// ===== END 1.3 backward compatibility code part-2 ===
 			return outboundMessage;
 		}
+
 	}
 
 	/**
 	 *
 	 */
 	private abstract class AbstractContentTypeInterceptor implements ChannelInterceptor {
+
 		final MimeType mimeType;
 
 		private AbstractContentTypeInterceptor(String contentType) {
@@ -358,12 +419,18 @@ public class MessageConverterConfigurer implements MessageChannelAndSourceConfig
 
 		@Override
 		public Message<?> preSend(Message<?> message, MessageChannel channel) {
-			return message instanceof ErrorMessage ? message : this.doPreSend(message, channel);
+			return message instanceof ErrorMessage ? message
+					: this.doPreSend(message, channel);
 		}
 
-		protected abstract Message<?> doPreSend(Message<?> message, MessageChannel channel);
+		protected abstract Message<?> doPreSend(Message<?> message,
+				MessageChannel channel);
+
 	}
 
+	/**
+	 * Partitioning channel interceptor.
+	 */
 	public final class PartitioningInterceptor implements ChannelInterceptor {
 
 		private final BindingProperties bindingProperties;
@@ -402,6 +469,7 @@ public class MessageConverterConfigurer implements MessageChannelAndSourceConfig
 						.removeHeader(BinderHeaders.PARTITION_OVERRIDE).build();
 			}
 		}
+
 	}
 
 }

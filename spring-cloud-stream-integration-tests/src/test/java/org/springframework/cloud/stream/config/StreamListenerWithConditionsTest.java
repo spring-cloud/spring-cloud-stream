@@ -44,28 +44,28 @@ public class StreamListenerWithConditionsTest {
 
 	@Test
 	public void testAnnotatedArgumentsWithConditionalClass() throws Exception {
-		ConfigurableApplicationContext context = SpringApplication.run(TestPojoWithAnnotatedArguments.class,
-				"--server.port=0");
+		ConfigurableApplicationContext context = SpringApplication
+				.run(TestPojoWithAnnotatedArguments.class, "--server.port=0");
 
 		TestPojoWithAnnotatedArguments testPojoWithAnnotatedArguments = context
 				.getBean(TestPojoWithAnnotatedArguments.class);
 		Sink sink = context.getBean(Sink.class);
 		String id = UUID.randomUUID().toString();
 		sink.input().send(MessageBuilder.withPayload("{\"foo\":\"barbar" + id + "\"}")
-				.setHeader("contentType", "application/json").setHeader("testHeader", "testValue")
-				.setHeader("type", "foo").build());
+				.setHeader("contentType", "application/json")
+				.setHeader("testHeader", "testValue").setHeader("type", "foo").build());
 		sink.input().send(MessageBuilder.withPayload("{\"bar\":\"foofoo" + id + "\"}")
-				.setHeader("contentType", "application/json").setHeader("testHeader", "testValue")
-				.setHeader("type", "bar").build());
+				.setHeader("contentType", "application/json")
+				.setHeader("testHeader", "testValue").setHeader("type", "bar").build());
 		sink.input().send(MessageBuilder.withPayload("{\"bar\":\"foofoo" + id + "\"}")
-				.setHeader("contentType", "application/json").setHeader("testHeader", "testValue")
-				.setHeader("type", "qux").build());
+				.setHeader("contentType", "application/json")
+				.setHeader("testHeader", "testValue").setHeader("type", "qux").build());
 		assertThat(testPojoWithAnnotatedArguments.receivedFoo).hasSize(1);
-		assertThat(testPojoWithAnnotatedArguments.receivedFoo.get(0)).hasFieldOrPropertyWithValue("foo",
-				"barbar" + id);
+		assertThat(testPojoWithAnnotatedArguments.receivedFoo.get(0))
+				.hasFieldOrPropertyWithValue("foo", "barbar" + id);
 		assertThat(testPojoWithAnnotatedArguments.receivedBar).hasSize(1);
-		assertThat(testPojoWithAnnotatedArguments.receivedBar.get(0)).hasFieldOrPropertyWithValue("bar",
-				"foofoo" + id);
+		assertThat(testPojoWithAnnotatedArguments.receivedBar.get(0))
+				.hasFieldOrPropertyWithValue("bar", "foofoo" + id);
 		context.close();
 	}
 
@@ -73,13 +73,13 @@ public class StreamListenerWithConditionsTest {
 	public void testConditionalFailsWithReturnValue() throws Exception {
 		try {
 			ConfigurableApplicationContext context = SpringApplication.run(
-					TestConditionalOnMethodWithReturnValueFails.class,
-					"--server.port=0");
+					TestConditionalOnMethodWithReturnValueFails.class, "--server.port=0");
 			context.close();
 			fail("Context creation failure expected");
 		}
 		catch (IllegalArgumentException e) {
-			assertThat(e.getMessage()).contains(StreamListenerErrorMessages.CONDITION_ON_METHOD_RETURNING_VALUE);
+			assertThat(e.getMessage()).contains(
+					StreamListenerErrorMessages.CONDITION_ON_METHOD_RETURNING_VALUE);
 		}
 	}
 
@@ -87,13 +87,13 @@ public class StreamListenerWithConditionsTest {
 	public void testConditionalFailsWithDeclarativeMethod() throws Exception {
 		try {
 			ConfigurableApplicationContext context = SpringApplication.run(
-					TestConditionalOnDeclarativeMethodFails.class,
-					"--server.port=0");
+					TestConditionalOnDeclarativeMethodFails.class, "--server.port=0");
 			context.close();
 			fail("Context creation failure expected");
 		}
 		catch (IllegalArgumentException e) {
-			assertThat(e.getMessage()).contains(StreamListenerErrorMessages.CONDITION_ON_DECLARATIVE_METHOD);
+			assertThat(e.getMessage()).contains(
+					StreamListenerErrorMessages.CONDITION_ON_DECLARATIVE_METHOD);
 		}
 	}
 
@@ -125,6 +125,7 @@ public class StreamListenerWithConditionsTest {
 		public void receive(@Input("input") MessageChannel input) {
 			// do nothing
 		}
+
 	}
 
 	@EnableBinding(Sink.class)
@@ -135,5 +136,7 @@ public class StreamListenerWithConditionsTest {
 		public String receive(String value) {
 			return null;
 		}
+
 	}
+
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,10 +51,12 @@ public class SchemaServerConfiguration {
 		return new BeanFactoryPostProcessor() {
 
 			@Override
-			public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
+			public void postProcessBeanFactory(
+					ConfigurableListableBeanFactory beanFactory) throws BeansException {
 				if (beanFactory instanceof BeanDefinitionRegistry) {
 					EntityScanPackages.register((BeanDefinitionRegistry) beanFactory,
-							Collections.singletonList(Schema.class.getPackage().getName()));
+							Collections
+									.singletonList(Schema.class.getPackage().getName()));
 				}
 			}
 		};

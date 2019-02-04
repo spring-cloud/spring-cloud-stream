@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2017-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
  */
 
 package org.springframework.cloud.stream.reactive;
-
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -51,10 +50,87 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 public class StreamEmitterBasicTests {
 
+	private static void receiveAndValidate(ConfigurableApplicationContext context)
+			throws InterruptedException {
+		Source source = context.getBean(Source.class);
+		MessageCollector messageCollector = context.getBean(MessageCollector.class);
+		List<String> messages = new ArrayList<>();
+		for (int i = 0; i < 1000; i++) {
+			messages.add((String) messageCollector.forChannel(source.output())
+					.poll(5000, TimeUnit.MILLISECONDS).getPayload());
+		}
+		for (int i = 0; i < 1000; i++) {
+			assertThat(new String(messages.get(i))).isEqualTo("HELLO WORLD!!" + i);
+		}
+	}
+
+	private static void receiveAndValidateMultipleOutputs(
+			ConfigurableApplicationContext context) throws InterruptedException {
+		TestMultiOutboundChannels source = context
+				.getBean(TestMultiOutboundChannels.class);
+		MessageCollector messageCollector = context.getBean(MessageCollector.class);
+		List<String> messages = new ArrayList<>();
+		assertMessages(source.output1(), messageCollector, messages);
+		messages.clear();
+		assertMessages(source.output2(), messageCollector, messages);
+		messages.clear();
+		assertMessages(source.output3(), messageCollector, messages);
+		messages.clear();
+	}
+
+	private static void receiveAndValidateMultiStreamEmittersInSameContext(
+			ConfigurableApplicationContext context1) throws InterruptedException {
+		TestMultiOutboundChannels source1 = context1
+				.getBean(TestMultiOutboundChannels.class);
+		MessageCollector messageCollector = context1.getBean(MessageCollector.class);
+
+		List<String> messages = new ArrayList<>();
+		assertMessagesX(source1.output1(), messageCollector, messages);
+		messages.clear();
+		assertMessagesY(source1.output2(), messageCollector, messages);
+		messages.clear();
+	}
+
+	private static void assertMessages(MessageChannel channel,
+			MessageCollector messageCollector, List<String> messages)
+			throws InterruptedException {
+		for (int i = 0; i < 1000; i++) {
+			messages.add((String) messageCollector.forChannel(channel)
+					.poll(5000, TimeUnit.MILLISECONDS).getPayload());
+		}
+		for (int i = 0; i < 1000; i++) {
+			assertThat(new String(messages.get(i))).isEqualTo("Hello World!!" + i);
+		}
+	}
+
+	private static void assertMessagesX(MessageChannel channel,
+			MessageCollector messageCollector, List<String> messages)
+			throws InterruptedException {
+		for (int i = 0; i < 1000; i++) {
+			messages.add((String) messageCollector.forChannel(channel)
+					.poll(5000, TimeUnit.MILLISECONDS).getPayload());
+		}
+		for (int i = 0; i < 1000; i++) {
+			assertThat(new String(messages.get(i))).isEqualTo("Hello World!!" + i);
+		}
+	}
+
+	private static void assertMessagesY(MessageChannel channel,
+			MessageCollector messageCollector, List<String> messages)
+			throws InterruptedException {
+		for (int i = 0; i < 1000; i++) {
+			messages.add((String) messageCollector.forChannel(channel)
+					.poll(5000, TimeUnit.MILLISECONDS).getPayload());
+		}
+		for (int i = 0; i < 1000; i++) {
+			assertThat(new String(messages.get(i))).isEqualTo("Hello FooBar!!" + i);
+		}
+	}
+
 	@Test
 	public void testFluxReturnAndOutputMethodLevel() throws Exception {
-		ConfigurableApplicationContext context = SpringApplication.run(TestFluxReturnAndOutputMethodLevel.class,
-				"--server.port=0",
+		ConfigurableApplicationContext context = SpringApplication.run(
+				TestFluxReturnAndOutputMethodLevel.class, "--server.port=0",
 				"--spring.jmx.enabled=false",
 				"--spring.cloud.stream.bindings.input.contentType=text/plain",
 				"--spring.cloud.stream.bindings.output.contentType=text/plain");
@@ -64,8 +140,8 @@ public class StreamEmitterBasicTests {
 
 	@Test
 	public void testVoidReturnAndOutputMethodParameter() throws Exception {
-		ConfigurableApplicationContext context = SpringApplication.run(TestVoidReturnAndOutputMethodParameter.class,
-				"--server.port=0",
+		ConfigurableApplicationContext context = SpringApplication.run(
+				TestVoidReturnAndOutputMethodParameter.class, "--server.port=0",
 				"--spring.jmx.enabled=false",
 				"--spring.cloud.stream.bindings.input.contentType=text/plain",
 				"--spring.cloud.stream.bindings.output.contentType=text/plain");
@@ -75,8 +151,8 @@ public class StreamEmitterBasicTests {
 
 	@Test
 	public void testVoidReturnAndOutputAtMethodLevel() throws Exception {
-		ConfigurableApplicationContext context = SpringApplication.run(TestVoidReturnAndOutputAtMethodLevel.class,
-				"--server.port=0",
+		ConfigurableApplicationContext context = SpringApplication.run(
+				TestVoidReturnAndOutputAtMethodLevel.class, "--server.port=0",
 				"--spring.jmx.enabled=false",
 				"--spring.cloud.stream.bindings.input.contentType=text/plain",
 				"--spring.cloud.stream.bindings.output.contentType=text/plain");
@@ -86,8 +162,8 @@ public class StreamEmitterBasicTests {
 
 	@Test
 	public void testVoidReturnAndMultipleOutputMethodParameters() throws Exception {
-		ConfigurableApplicationContext context = SpringApplication.run(TestVoidReturnAndMultipleOutputMethodParameters.class,
-				"--server.port=0",
+		ConfigurableApplicationContext context = SpringApplication.run(
+				TestVoidReturnAndMultipleOutputMethodParameters.class, "--server.port=0",
 				"--spring.jmx.enabled=false",
 				"--spring.cloud.stream.bindings.input.contentType=text/plain",
 				"--spring.cloud.stream.bindings.output.contentType=text/plain",
@@ -100,8 +176,8 @@ public class StreamEmitterBasicTests {
 
 	@Test
 	public void testMultipleStreamEmitterMethods() throws Exception {
-		ConfigurableApplicationContext context = SpringApplication.run(TestMultipleStreamEmitterMethods.class,
-				"--server.port=0",
+		ConfigurableApplicationContext context = SpringApplication.run(
+				TestMultipleStreamEmitterMethods.class, "--server.port=0",
 				"--spring.jmx.enabled=false",
 				"--spring.cloud.stream.bindings.input.contentType=text/plain",
 				"--spring.cloud.stream.bindings.output.contentType=text/plain",
@@ -114,8 +190,8 @@ public class StreamEmitterBasicTests {
 
 	@Test
 	public void testSameAppContextWithMultipleStreamEmitters() throws Exception {
-		ConfigurableApplicationContext context = SpringApplication.run(TestSameAppContextWithMultipleStreamEmitters.class,
-				"--server.port=0",
+		ConfigurableApplicationContext context = SpringApplication.run(
+				TestSameAppContextWithMultipleStreamEmitters.class, "--server.port=0",
 				"--spring.jmx.enabled=false",
 				"--spring.cloud.stream.bindings.input.contentType=text/plain",
 				"--spring.cloud.stream.bindings.output.contentType=text/plain",
@@ -126,66 +202,23 @@ public class StreamEmitterBasicTests {
 		context.close();
 	}
 
-	private static void receiveAndValidate(ConfigurableApplicationContext context) throws InterruptedException {
-		Source source = context.getBean(Source.class);
-		MessageCollector messageCollector = context.getBean(MessageCollector.class);
-		List<String> messages = new ArrayList<>();
-		for (int i = 0; i < 1000; i++) {
-			messages.add((String) messageCollector.forChannel(source.output()).poll(5000, TimeUnit.MILLISECONDS).getPayload());
-		}
-		for (int i = 0; i < 1000; i++) {
-			assertThat(new String(messages.get(i))).isEqualTo("HELLO WORLD!!" + i);
-		}
-	}
+	interface TestMultiOutboundChannels {
 
-	private static void receiveAndValidateMultipleOutputs(ConfigurableApplicationContext context) throws InterruptedException {
-		TestMultiOutboundChannels source = context.getBean(TestMultiOutboundChannels.class);
-		MessageCollector messageCollector = context.getBean(MessageCollector.class);
-		List<String> messages = new ArrayList<>();
-		assertMessages(source.output1(), messageCollector, messages);
-		messages.clear();
-		assertMessages(source.output2(), messageCollector, messages);
-		messages.clear();
-		assertMessages(source.output3(), messageCollector, messages);
-		messages.clear();
-	}
+		String OUTPUT1 = "output1";
 
-	private static void receiveAndValidateMultiStreamEmittersInSameContext(ConfigurableApplicationContext context1) throws InterruptedException {
-		TestMultiOutboundChannels source1 = context1.getBean(TestMultiOutboundChannels.class);
-		MessageCollector messageCollector = context1.getBean(MessageCollector.class);
+		String OUTPUT2 = "output2";
 
-		List<String> messages = new ArrayList<>();
-		assertMessagesX(source1.output1(), messageCollector, messages);
-		messages.clear();
-		assertMessagesY(source1.output2(), messageCollector, messages);
-		messages.clear();
-	}
+		String OUTPUT3 = "output3";
 
-	private static void assertMessages(MessageChannel channel, MessageCollector messageCollector, List<String> messages) throws InterruptedException {
-		for (int i = 0; i < 1000; i++) {
-			messages.add((String) messageCollector.forChannel(channel).poll(5000, TimeUnit.MILLISECONDS).getPayload());
-		}
-		for (int i = 0; i < 1000; i++) {
-			assertThat(new String(messages.get(i))).isEqualTo("Hello World!!" + i);
-		}
-	}
+		@Output(TestMultiOutboundChannels.OUTPUT1)
+		MessageChannel output1();
 
-	private static void assertMessagesX(MessageChannel channel, MessageCollector messageCollector, List<String> messages) throws InterruptedException {
-		for (int i = 0; i < 1000; i++) {
-			messages.add((String) messageCollector.forChannel(channel).poll(5000, TimeUnit.MILLISECONDS).getPayload());
-		}
-		for (int i = 0; i < 1000; i++) {
-			assertThat(new String(messages.get(i))).isEqualTo("Hello World!!" + i);
-		}
-	}
+		@Output(TestMultiOutboundChannels.OUTPUT2)
+		MessageChannel output2();
 
-	private static void assertMessagesY(MessageChannel channel, MessageCollector messageCollector, List<String> messages) throws InterruptedException {
-		for (int i = 0; i < 1000; i++) {
-			messages.add((String) messageCollector.forChannel(channel).poll(5000, TimeUnit.MILLISECONDS).getPayload());
-		}
-		for (int i = 0; i < 1000; i++) {
-			assertThat(new String(messages.get(i))).isEqualTo("Hello FooBar!!" + i);
-		}
+		@Output(TestMultiOutboundChannels.OUTPUT3)
+		MessageChannel output3();
+
 	}
 
 	@EnableBinding(Processor.class)
@@ -197,11 +230,11 @@ public class StreamEmitterBasicTests {
 		@Bean
 		public Publisher<Message<String>> emit() {
 			AtomicInteger atomicInteger = new AtomicInteger();
-			return IntegrationFlows.from(() ->
-							new GenericMessage<>("Hello World!!" + atomicInteger.getAndIncrement()),
-					e -> e.poller(p -> p.fixedDelay(1)))
-					.<String, String>transform(String::toUpperCase)
-					.toReactivePublisher();
+			return IntegrationFlows
+					.from(() -> new GenericMessage<>(
+							"Hello World!!" + atomicInteger.getAndIncrement()),
+							e -> e.poller(p -> p.fixedDelay(1)))
+					.<String, String>transform(String::toUpperCase).toReactivePublisher();
 		}
 
 	}
@@ -212,10 +245,10 @@ public class StreamEmitterBasicTests {
 
 		@StreamEmitter
 		public void emit(@Output(Source.OUTPUT) FluxSender output) {
-			output.send(Flux.interval(Duration.ofMillis(1))
-					.map(l -> "Hello World!!" + l)
+			output.send(Flux.interval(Duration.ofMillis(1)).map(l -> "Hello World!!" + l)
 					.map(String::toUpperCase));
 		}
+
 	}
 
 	@EnableBinding(Processor.class)
@@ -225,10 +258,10 @@ public class StreamEmitterBasicTests {
 		@StreamEmitter
 		@Output(Source.OUTPUT)
 		public void emit(FluxSender output) {
-			output.send(Flux.interval(Duration.ofMillis(1))
-					.map(l -> "Hello World!!" + l)
+			output.send(Flux.interval(Duration.ofMillis(1)).map(l -> "Hello World!!" + l)
 					.map(String::toUpperCase));
 		}
+
 	}
 
 	@EnableBinding(TestMultiOutboundChannels.class)
@@ -239,13 +272,14 @@ public class StreamEmitterBasicTests {
 		public void emit(@Output(TestMultiOutboundChannels.OUTPUT1) FluxSender output1,
 				@Output(TestMultiOutboundChannels.OUTPUT2) FluxSender output2,
 				@Output(TestMultiOutboundChannels.OUTPUT3) FluxSender output3) {
-			output1.send(Flux.interval(Duration.ofMillis(1))
-					.map(l -> "Hello World!!" + l));
-			output2.send(Flux.interval(Duration.ofMillis(1))
-					.map(l -> "Hello World!!" + l));
-			output3.send(Flux.interval(Duration.ofMillis(1))
-					.map(l -> "Hello World!!" + l));
+			output1.send(
+					Flux.interval(Duration.ofMillis(1)).map(l -> "Hello World!!" + l));
+			output2.send(
+					Flux.interval(Duration.ofMillis(1)).map(l -> "Hello World!!" + l));
+			output3.send(
+					Flux.interval(Duration.ofMillis(1)).map(l -> "Hello World!!" + l));
 		}
+
 	}
 
 	@EnableBinding(TestMultiOutboundChannels.class)
@@ -255,22 +289,21 @@ public class StreamEmitterBasicTests {
 		@StreamEmitter
 		@Output(TestMultiOutboundChannels.OUTPUT1)
 		public Flux<String> emit1() {
-			return Flux.interval(Duration.ofMillis(1))
-					.map(l -> "Hello World!!" + l);
+			return Flux.interval(Duration.ofMillis(1)).map(l -> "Hello World!!" + l);
 		}
 
 		@StreamEmitter
 		@Output(TestMultiOutboundChannels.OUTPUT2)
 		public Flux<String> emit2() {
-			return Flux.interval(Duration.ofMillis(1))
-					.map(l -> "Hello World!!" + l);
+			return Flux.interval(Duration.ofMillis(1)).map(l -> "Hello World!!" + l);
 		}
 
 		@StreamEmitter
 		public void emit3(@Output(TestMultiOutboundChannels.OUTPUT3) FluxSender outputX) {
-			outputX.send(Flux.interval(Duration.ofMillis(1))
-					.map(l -> "Hello World!!" + l));
+			outputX.send(
+					Flux.interval(Duration.ofMillis(1)).map(l -> "Hello World!!" + l));
 		}
+
 	}
 
 	@EnableBinding(TestMultiOutboundChannels.class)
@@ -292,9 +325,9 @@ public class StreamEmitterBasicTests {
 			@StreamEmitter
 			@Output(TestMultiOutboundChannels.OUTPUT1)
 			public Flux<String> emit1() {
-				return Flux.interval(Duration.ofMillis(1))
-						.map(l -> "Hello World!!" + l);
+				return Flux.interval(Duration.ofMillis(1)).map(l -> "Hello World!!" + l);
 			}
+
 		}
 
 		static class Bar {
@@ -302,28 +335,11 @@ public class StreamEmitterBasicTests {
 			@StreamEmitter
 			@Output(TestMultiOutboundChannels.OUTPUT2)
 			public Flux<String> emit2() {
-				return Flux.interval(Duration.ofMillis(1))
-						.map(l -> "Hello FooBar!!" + l);
+				return Flux.interval(Duration.ofMillis(1)).map(l -> "Hello FooBar!!" + l);
 			}
+
 		}
-	}
-
-	interface TestMultiOutboundChannels {
-
-		String OUTPUT1 = "output1";
-
-		String OUTPUT2 = "output2";
-
-		String OUTPUT3 = "output3";
-
-		@Output(TestMultiOutboundChannels.OUTPUT1)
-		MessageChannel output1();
-
-		@Output(TestMultiOutboundChannels.OUTPUT2)
-		MessageChannel output2();
-
-		@Output(TestMultiOutboundChannels.OUTPUT3)
-		MessageChannel output3();
 
 	}
+
 }

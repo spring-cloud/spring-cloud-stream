@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2017-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,8 +38,8 @@ import org.springframework.integration.config.EnableIntegration;
  *
  * Please see {@link TestChannelBinder} for more details.
  *
+ * @param <T> binding type
  * @author Oleg Zhurakousky
- *
  * @see TestChannelBinder
  */
 @Configuration
@@ -50,18 +50,25 @@ public class TestChannelBinderConfiguration<T> {
 	public static final String NAME = "integration";
 
 	/**
-	 * Utility operation to return an array of configuration classes
-	 * defined in {@link EnableBinding} annotation.
-	 * Typically used for tests that do not rely on creating an SCSt boot
-	 * application annotated with {@link EnableBinding}, yet require
+	 * Utility operation to return an array of configuration classes defined in
+	 * {@link EnableBinding} annotation. Typically used for tests that do not rely on
+	 * creating an SCSt boot application annotated with {@link EnableBinding}, yet require
 	 * full {@link Binder} configuration.
+	 * @param additionalConfigurationClasses config classes to be added to the default
+	 * config
+	 * @return an array of configuration classes defined in {@link EnableBinding}
+	 * annotation
 	 */
-	public static Class<?>[] getCompleteConfiguration(Class<?>... additionalConfigurationClasses) {
+	public static Class<?>[] getCompleteConfiguration(
+			Class<?>... additionalConfigurationClasses) {
 		List<Class<?>> configClasses = new ArrayList<>();
 		configClasses.add(TestChannelBinderConfiguration.class);
-		Import annotation = AnnotationUtils.getAnnotation(EnableBinding.class, Import.class);
-		Map<String, Object> annotationAttributes = AnnotationUtils.getAnnotationAttributes(annotation);
-		configClasses.addAll(Arrays.asList((Class<?>[])annotationAttributes.get("value")));
+		Import annotation = AnnotationUtils.getAnnotation(EnableBinding.class,
+				Import.class);
+		Map<String, Object> annotationAttributes = AnnotationUtils
+				.getAnnotationAttributes(annotation);
+		configClasses
+				.addAll(Arrays.asList((Class<?>[]) annotationAttributes.get("value")));
 		configClasses.add(BindingServiceConfiguration.class);
 		if (additionalConfigurationClasses != null) {
 			configClasses.addAll(Arrays.asList(additionalConfigurationClasses));
@@ -81,8 +88,10 @@ public class TestChannelBinderConfiguration<T> {
 
 	@SuppressWarnings("unchecked")
 	@Bean
-	public Binder<T, ? extends ConsumerProperties, ? extends ProducerProperties> springIntegrationChannelBinder(TestChannelBinderProvisioner provisioner) {
-		return (Binder<T, ? extends ConsumerProperties, ? extends ProducerProperties>) new TestChannelBinder(provisioner);
+	public Binder<T, ? extends ConsumerProperties, ? extends ProducerProperties> springIntegrationChannelBinder(
+			TestChannelBinderProvisioner provisioner) {
+		return (Binder<T, ? extends ConsumerProperties, ? extends ProducerProperties>) new TestChannelBinder(
+				provisioner);
 	}
 
 	@Bean

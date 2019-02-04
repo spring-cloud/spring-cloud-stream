@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 the original author or authors.
+ * Copyright 2018-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,32 +69,43 @@ public class StreamListenerMethodSetupOrchestratorTests {
 
 	@Test
 	@SuppressWarnings("unchecked")
-	public void testCustomStreamListenerOrchestratorAndDefaultTogetherInSameContext() throws Exception {
+	public void testCustomStreamListenerOrchestratorAndDefaultTogetherInSameContext()
+			throws Exception {
 
-		//Two StreamListener methods, so 2 invocations
-		verify(customOrchestrator, times(2)).supports(any());
+		// Two StreamListener methods, so 2 invocations
+		verify(this.customOrchestrator, times(2)).supports(any());
 
-		Method method = multipleStreamListenerProcessor.getClass().getMethod("handleMessage");
-		StreamListener streamListener = AnnotatedElementUtils.findMergedAnnotation(method, StreamListener.class);
-		//verify that the invocation happened on the custom Orchestrator
-		verify(customOrchestrator).orchestrateStreamListenerSetupMethod(streamListener, method, multipleStreamListenerProcessor);
+		Method method = this.multipleStreamListenerProcessor.getClass()
+				.getMethod("handleMessage");
+		StreamListener streamListener = AnnotatedElementUtils.findMergedAnnotation(method,
+				StreamListener.class);
+		// verify that the invocation happened on the custom Orchestrator
+		verify(this.customOrchestrator).orchestrateStreamListenerSetupMethod(
+				streamListener, method, this.multipleStreamListenerProcessor);
 
-		Method method1 = multipleStreamListenerProcessor.getClass().getMethod("produceString");
-		StreamListener streamListener1 = AnnotatedElementUtils.findMergedAnnotation(method, StreamListener.class);
+		Method method1 = this.multipleStreamListenerProcessor.getClass()
+				.getMethod("produceString");
+		StreamListener streamListener1 = AnnotatedElementUtils
+				.findMergedAnnotation(method, StreamListener.class);
 
-		//Verify that the invocation did not happen on the custom orchestrator
-		verify(customOrchestrator, never()).orchestrateStreamListenerSetupMethod(streamListener1, method1, multipleStreamListenerProcessor);
+		// Verify that the invocation did not happen on the custom orchestrator
+		verify(this.customOrchestrator, never()).orchestrateStreamListenerSetupMethod(
+				streamListener1, method1, this.multipleStreamListenerProcessor);
 
-		Field field = ReflectionUtils.findField(streamListenerAnnotationBeanPostProcessor.getClass(), "streamListenerSetupMethodOrchestrators");
+		Field field = ReflectionUtils.findField(
+				this.streamListenerAnnotationBeanPostProcessor.getClass(),
+				"streamListenerSetupMethodOrchestrators");
 		ReflectionUtils.makeAccessible(field);
 
-		Set<StreamListenerSetupMethodOrchestrator> field1 =
-				(LinkedHashSet<StreamListenerSetupMethodOrchestrator>)ReflectionUtils.getField(field, streamListenerAnnotationBeanPostProcessor);
+		Set<StreamListenerSetupMethodOrchestrator> field1;
+		field1 = (LinkedHashSet<StreamListenerSetupMethodOrchestrator>) ReflectionUtils
+				.getField(field, this.streamListenerAnnotationBeanPostProcessor);
 		List<StreamListenerSetupMethodOrchestrator> list = new ArrayList<>(field1);
 
-		//Ensure that the custom orchestrator did not support this request
+		// Ensure that the custom orchestrator did not support this request
 		assertThat(list.get(0).supports(method1)).isEqualTo(false);
-		//Ensure that we are using the default Orchestrator in StreamListenerAnnoatationBeanPostProcessor
+		// Ensure that we are using the default Orchestrator in
+		// StreamListenerAnnoatationBeanPostProcessor
 		assertThat(list.get(1).supports(method1)).isEqualTo(true);
 	}
 
@@ -121,7 +132,7 @@ public class StreamListenerMethodSetupOrchestratorTests {
 
 		@StreamListener("foobar")
 		@SendTo("output")
-		public String produceString(){
+		public String produceString() {
 			return "foobar";
 		}
 
@@ -140,8 +151,11 @@ public class StreamListenerMethodSetupOrchestratorTests {
 		}
 
 		@Override
-		public void orchestrateStreamListenerSetupMethod(StreamListener streamListener, Method method, Object bean) {
-			//stub method
+		public void orchestrateStreamListenerSetupMethod(StreamListener streamListener,
+				Method method, Object bean) {
+			// stub method
 		}
+
 	}
+
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2017-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,15 +39,11 @@ import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.SubscribableChannel;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 
 /**
  * @author Marius Bogoevici
  * @author Gary Russell
  * @author Oleg Zhurakousky
- *
  * @since 1.2.2
  */
 public class AbstractMessageChannelBinderTests {
@@ -56,71 +52,87 @@ public class AbstractMessageChannelBinderTests {
 
 	@Before
 	public void prepare() {
-		this.context = new SpringApplicationBuilder(TestChannelBinderConfiguration.getCompleteConfiguration())
-				.web(WebApplicationType.NONE)
-				.run();
+		this.context = new SpringApplicationBuilder(
+				TestChannelBinderConfiguration.getCompleteConfiguration())
+						.web(WebApplicationType.NONE).run();
 	}
 
 	@Test
 	@SuppressWarnings("unchecked")
 	public void testEndpointLifecycle() throws Exception {
-		AbstractMessageChannelBinder<ConsumerProperties, ProducerProperties, ProvisioningProvider<ConsumerProperties, ProducerProperties>> binder =
-				context.getBean(AbstractMessageChannelBinder.class);
+		// @checkstyle:off
+		AbstractMessageChannelBinder<ConsumerProperties, ProducerProperties, ProvisioningProvider<ConsumerProperties, ProducerProperties>> binder = this.context
+				.getBean(AbstractMessageChannelBinder.class);
+		// @checkstyle:on
 
 		ConsumerProperties consumerProperties = new ConsumerProperties();
 		consumerProperties.setMaxAttempts(1); // to force error infrastructure creation
 
-		Binding<MessageChannel> consumerBinding = binder.bindConsumer("foo", "fooGroup", new DirectChannel(), consumerProperties);
-		DirectFieldAccessor consumerBindingAccessor = new DirectFieldAccessor(consumerBinding);
-		MessageProducer messageProducer = (MessageProducer) consumerBindingAccessor.getPropertyValue("lifecycle");
-		assertTrue(((Lifecycle)messageProducer).isRunning());
-		assertNotNull(messageProducer.getOutputChannel());
+		Binding<MessageChannel> consumerBinding = binder.bindConsumer("foo", "fooGroup",
+				new DirectChannel(), consumerProperties);
+		DirectFieldAccessor consumerBindingAccessor = new DirectFieldAccessor(
+				consumerBinding);
+		MessageProducer messageProducer = (MessageProducer) consumerBindingAccessor
+				.getPropertyValue("lifecycle");
+		assertThat(((Lifecycle) messageProducer).isRunning()).isTrue();
+		assertThat(messageProducer.getOutputChannel()).isNotNull();
 
-		SubscribableChannel errorChannel = (SubscribableChannel) consumerBindingAccessor.getPropertyValue("lifecycle.errorChannel");
+		SubscribableChannel errorChannel = (SubscribableChannel) consumerBindingAccessor
+				.getPropertyValue("lifecycle.errorChannel");
 		assertThat(errorChannel).isNotNull();
-		Set<MessageHandler> handlers = TestUtils.getPropertyValue(errorChannel, "dispatcher.handlers", Set.class);
+		Set<MessageHandler> handlers = TestUtils.getPropertyValue(errorChannel,
+				"dispatcher.handlers", Set.class);
 		assertThat(handlers.size()).isEqualTo(2);
 		Iterator<MessageHandler> iterator = handlers.iterator();
 		assertThat(iterator.next()).isInstanceOf(BridgeHandler.class);
 		assertThat(iterator.next()).isInstanceOf(LastSubscriberMessageHandler.class);
-		assertThat(context.containsBean("foo.fooGroup.errors")).isTrue();
-		assertThat(context.containsBean("foo.fooGroup.errors.recoverer")).isTrue();
-		assertThat(context.containsBean("foo.fooGroup.errors.handler")).isTrue();
-		assertThat(context.containsBean("foo.fooGroup.errors.bridge")).isTrue();
+		assertThat(this.context.containsBean("foo.fooGroup.errors")).isTrue();
+		assertThat(this.context.containsBean("foo.fooGroup.errors.recoverer")).isTrue();
+		assertThat(this.context.containsBean("foo.fooGroup.errors.handler")).isTrue();
+		assertThat(this.context.containsBean("foo.fooGroup.errors.bridge")).isTrue();
 		consumerBinding.unbind();
-		assertThat(context.containsBean("foo.fooGroup.errors")).isFalse();
-		assertThat(context.containsBean("foo.fooGroup.errors.recoverer")).isFalse();
-		assertThat(context.containsBean("foo.fooGroup.errors.handler")).isFalse();
-		assertThat(context.containsBean("foo.fooGroup.errors.bridge")).isFalse();
+		assertThat(this.context.containsBean("foo.fooGroup.errors")).isFalse();
+		assertThat(this.context.containsBean("foo.fooGroup.errors.recoverer")).isFalse();
+		assertThat(this.context.containsBean("foo.fooGroup.errors.handler")).isFalse();
+		assertThat(this.context.containsBean("foo.fooGroup.errors.bridge")).isFalse();
 
-		assertFalse(((Lifecycle) messageProducer).isRunning());
+		assertThat(((Lifecycle) messageProducer).isRunning()).isFalse();
 
 		ProducerProperties producerProps = new ProducerProperties();
 		producerProps.setErrorChannelEnabled(true);
-		Binding<MessageChannel> producerBinding = binder.bindProducer("bar", new DirectChannel(), producerProps);
-		assertThat(context.containsBean("bar.errors")).isTrue();
-		assertThat(context.containsBean("bar.errors.bridge")).isTrue();
+		Binding<MessageChannel> producerBinding = binder.bindProducer("bar",
+				new DirectChannel(), producerProps);
+		assertThat(this.context.containsBean("bar.errors")).isTrue();
+		assertThat(this.context.containsBean("bar.errors.bridge")).isTrue();
 		producerBinding.unbind();
-		assertThat(context.containsBean("bar.errors")).isFalse();
-		assertThat(context.containsBean("bar.errors.bridge")).isFalse();
+		assertThat(this.context.containsBean("bar.errors")).isFalse();
+		assertThat(this.context.containsBean("bar.errors.bridge")).isFalse();
 	}
 
 	@Test
 	@SuppressWarnings("unchecked")
 	public void testEndpointBinderHasRecoverer() throws Exception {
-		ConfigurableApplicationContext context =
-				new SpringApplicationBuilder(TestChannelBinderConfiguration.getCompleteConfiguration()).web(WebApplicationType.NONE).run();
+		// @checkstyle:off
+		ConfigurableApplicationContext context = new SpringApplicationBuilder(
+				TestChannelBinderConfiguration.getCompleteConfiguration())
+						.web(WebApplicationType.NONE).run();
 
-		AbstractMessageChannelBinder<ConsumerProperties, ProducerProperties, ProvisioningProvider<ConsumerProperties, ProducerProperties>> binder =
-				context.getBean(AbstractMessageChannelBinder.class);
+		AbstractMessageChannelBinder<ConsumerProperties, ProducerProperties, ProvisioningProvider<ConsumerProperties, ProducerProperties>> binder = context
+				.getBean(AbstractMessageChannelBinder.class);
+		// @checkstyle:on
 
-		Binding<MessageChannel> consumerBinding = binder.bindConsumer("foo", "fooGroup", new DirectChannel(), new ConsumerProperties());
-		DirectFieldAccessor consumerBindingAccessor = new DirectFieldAccessor(consumerBinding);
-		SubscribableChannel errorChannel = (SubscribableChannel) consumerBindingAccessor.getPropertyValue("lifecycle.errorChannel");
+		Binding<MessageChannel> consumerBinding = binder.bindConsumer("foo", "fooGroup",
+				new DirectChannel(), new ConsumerProperties());
+		DirectFieldAccessor consumerBindingAccessor = new DirectFieldAccessor(
+				consumerBinding);
+		SubscribableChannel errorChannel = (SubscribableChannel) consumerBindingAccessor
+				.getPropertyValue("lifecycle.errorChannel");
 		assertThat(errorChannel).isNull();
-		errorChannel = (SubscribableChannel) consumerBindingAccessor.getPropertyValue("lifecycle.recoveryCallback.channel");
+		errorChannel = (SubscribableChannel) consumerBindingAccessor
+				.getPropertyValue("lifecycle.recoveryCallback.channel");
 		assertThat(errorChannel).isNotNull();
-		Set<MessageHandler> handlers = TestUtils.getPropertyValue(errorChannel, "dispatcher.handlers", Set.class);
+		Set<MessageHandler> handlers = TestUtils.getPropertyValue(errorChannel,
+				"dispatcher.handlers", Set.class);
 		assertThat(handlers.size()).isEqualTo(2);
 		Iterator<MessageHandler> iterator = handlers.iterator();
 		assertThat(iterator.next()).isInstanceOf(BridgeHandler.class);
@@ -135,4 +147,5 @@ public class AbstractMessageChannelBinderTests {
 		assertThat(context.containsBean("foo.fooGroup.errors.handler")).isFalse();
 		assertThat(context.containsBean("foo.fooGroup.errors.bridge")).isFalse();
 	}
+
 }

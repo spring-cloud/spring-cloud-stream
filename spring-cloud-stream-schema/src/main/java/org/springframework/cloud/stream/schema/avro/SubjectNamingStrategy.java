@@ -20,14 +20,17 @@ import org.apache.avro.Schema;
 
 /**
  * Provides function towards naming schema registry subjects for Avro files.
+ *
  * @author David Kalosi
  */
 public interface SubjectNamingStrategy {
 
 	/**
-	 * Takes the Avro schema on input and returns the generated subject under which the schema should be registered.
-	 * @param schema
+	 * Takes the Avro schema on input and returns the generated subject under which the
+	 * schema should be registered.
+	 * @param schema schema to register
 	 * @return subject name
 	 */
 	String toSubject(Schema schema);
+
 }

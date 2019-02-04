@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 the original author or authors.
+ * Copyright 2018-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,16 +17,14 @@
 package org.springframework.cloud.stream.config;
 
 /**
- * If a single bean of this type is in the application context, listener
- * containers created by the binder can be further customized after all
- * the properties are set. For example, to configure less-common
- * properties.
+ * If a single bean of this type is in the application context, listener containers
+ * created by the binder can be further customized after all the properties are set. For
+ * example, to configure less-common properties.
  *
+ * @param <T> container type
  * @author Gary Russell
  * @author Oleg Zhurakousky
- *
  * @since 2.1
- *
  */
 @FunctionalInterface
 public interface ListenerContainerCustomizer<T> {

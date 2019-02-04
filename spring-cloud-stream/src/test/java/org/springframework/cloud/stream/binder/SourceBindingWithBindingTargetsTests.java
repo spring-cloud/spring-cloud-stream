@@ -41,8 +41,9 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
  * @author Ilayaperumal Gopinathan
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringBootTest(classes = SourceBindingWithBindingTargetsTests.TestSource.class,
-		properties = "spring.cloud.stream.defaultBinder=mock")
+// @checkstyle:off
+@SpringBootTest(classes = SourceBindingWithBindingTargetsTests.TestSource.class, properties = "spring.cloud.stream.defaultBinder=mock")
+// @checkstyle:on
 public class SourceBindingWithBindingTargetsTests {
 
 	@Autowired
@@ -56,9 +57,9 @@ public class SourceBindingWithBindingTargetsTests {
 	private PublishSubscribeChannel errorChannel;
 
 	@Test
-	@SuppressWarnings({"rawtypes", "unchecked"})
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public void testSourceOutputChannelBound() {
-		Binder binder = binderFactory.getBinder(null, MessageChannel.class);
+		Binder binder = this.binderFactory.getBinder(null, MessageChannel.class);
 		verify(binder).bindProducer(eq("testtock"), eq(this.testSource.output()),
 				Mockito.any());
 		verifyNoMoreInteractions(binder);
@@ -70,4 +71,5 @@ public class SourceBindingWithBindingTargetsTests {
 	public static class TestSource {
 
 	}
+
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 the original author or authors.
+ * Copyright 2018-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,14 +35,12 @@ import org.springframework.messaging.converter.MessageConversionException;
 
 /**
  * Variation of {@link MappingJackson2MessageConverter} to support marshalling and
- * unmarshalling of Messages's payload from 'String' or 'byte[]' to an instance of a 'targetClass'
- * and and back to 'byte[]'
- *
+ * unmarshalling of Messages's payload from 'String' or 'byte[]' to an instance of a
+ * 'targetClass' and and back to 'byte[]'.
  *
  * @author Oleg Zhurakousky
  * @author Gary Russell
  * @since 2.0
- *
  */
 class ApplicationJsonMessageMarshallingConverter extends MappingJackson2MessageConverter {
 
@@ -55,12 +53,13 @@ class ApplicationJsonMessageMarshallingConverter extends MappingJackson2MessageC
 	}
 
 	@Override
-	protected Object convertToInternal(Object payload, @Nullable MessageHeaders headers, @Nullable Object conversionHint) {
+	protected Object convertToInternal(Object payload, @Nullable MessageHeaders headers,
+			@Nullable Object conversionHint) {
 		if (payload instanceof byte[]) {
 			return payload;
 		}
 		else if (payload instanceof String) {
-			return ((String)payload).getBytes(StandardCharsets.UTF_8);
+			return ((String) payload).getBytes(StandardCharsets.UTF_8);
 		}
 		else {
 			return super.convertToInternal(payload, headers, conversionHint);
@@ -68,30 +67,39 @@ class ApplicationJsonMessageMarshallingConverter extends MappingJackson2MessageC
 	}
 
 	@Override
-	protected Object convertFromInternal(Message<?> message, Class<?> targetClass, @Nullable Object conversionHint) {
+	protected Object convertFromInternal(Message<?> message, Class<?> targetClass,
+			@Nullable Object conversionHint) {
 		Object result = null;
 		if (conversionHint instanceof MethodParameter) {
-			Class<?> conversionHintType = ((MethodParameter)conversionHint).getParameterType();
+			Class<?> conversionHintType = ((MethodParameter) conversionHint)
+					.getParameterType();
 			if (Message.class.isAssignableFrom(conversionHintType)) {
 				/*
-				 * Ensures that super won't attempt to create Message as a result of conversion
-				 * and stays at payload conversion only.
-				 * The Message will eventually be created in MessageMethodArgumentResolver.resolveArgument(..)
+				 * Ensures that super won't attempt to create Message as a result of
+				 * conversion and stays at payload conversion only. The Message will
+				 * eventually be created in
+				 * MessageMethodArgumentResolver.resolveArgument(..)
 				 */
 				conversionHint = null;
 			}
-			else if (((MethodParameter)conversionHint).getGenericParameterType() instanceof ParameterizedType) {
-				ParameterizedTypeReference<Object> forType = ParameterizedTypeReference.forType(((MethodParameter)conversionHint).getGenericParameterType());
+			else if (((MethodParameter) conversionHint)
+					.getGenericParameterType() instanceof ParameterizedType) {
+				ParameterizedTypeReference<Object> forType = ParameterizedTypeReference
+						.forType(((MethodParameter) conversionHint)
+								.getGenericParameterType());
 				result = convertParameterizedType(message, targetClass, forType);
 			}
 		}
 		else if (conversionHint instanceof ParameterizedTypeReference) {
-			result = convertParameterizedType(message, targetClass, (ParameterizedTypeReference<?>)conversionHint);
+			result = convertParameterizedType(message, targetClass,
+					(ParameterizedTypeReference<?>) conversionHint);
 		}
 
 		if (result == null) {
-			if (message.getPayload() instanceof byte[] &&  targetClass.isAssignableFrom(String.class)) {
-				result = new String((byte[])message.getPayload(), StandardCharsets.UTF_8);
+			if (message.getPayload() instanceof byte[]
+					&& targetClass.isAssignableFrom(String.class)) {
+				result = new String((byte[]) message.getPayload(),
+						StandardCharsets.UTF_8);
 			}
 			else {
 				result = super.convertFromInternal(message, targetClass, conversionHint);
@@ -101,13 +109,15 @@ class ApplicationJsonMessageMarshallingConverter extends MappingJackson2MessageC
 		return result;
 	}
 
-	private Object convertParameterizedType(Message<?> message, Class<?> targetClass, ParameterizedTypeReference<?> conversionHint) {
+	private Object convertParameterizedType(Message<?> message, Class<?> targetClass,
+			ParameterizedTypeReference<?> conversionHint) {
 		ObjectMapper objectMapper = this.getObjectMapper();
 		Object payload = message.getPayload();
 		try {
 			JavaType type = this.typeCache.get(conversionHint);
 			if (type == null) {
-				type = objectMapper.getTypeFactory().constructType((conversionHint).getType());
+				type = objectMapper.getTypeFactory()
+						.constructType((conversionHint).getType());
 				this.typeCache.put(conversionHint, type);
 			}
 			if (payload instanceof byte[]) {
@@ -124,4 +134,5 @@ class ApplicationJsonMessageMarshallingConverter extends MappingJackson2MessageC
 			throw new MessageConversionException("Cannot parse payload ", e);
 		}
 	}
+
 }

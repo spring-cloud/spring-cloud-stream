@@ -38,8 +38,9 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
  * @author Janne Valkealahti
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringBootTest(classes = SinkBindingWithDefaultsTests.TestSink.class,
-		properties = "spring.cloud.stream.defaultBinder=mock")
+// @checkstyle:off
+@SpringBootTest(classes = SinkBindingWithDefaultsTests.TestSink.class, properties = "spring.cloud.stream.defaultBinder=mock")
+// @checkstyle:on
 public class SinkBindingWithDefaultsTests {
 
 	@Autowired
@@ -48,10 +49,10 @@ public class SinkBindingWithDefaultsTests {
 	@Autowired
 	private Sink testSink;
 
-	@SuppressWarnings({"rawtypes", "unchecked"})
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Test
 	public void testSourceOutputChannelBound() {
-		Binder binder = binderFactory.getBinder(null, MessageChannel.class);
+		Binder binder = this.binderFactory.getBinder(null, MessageChannel.class);
 		verify(binder).bindConsumer(eq("input"), isNull(), eq(this.testSink.input()),
 				Mockito.any());
 		verifyNoMoreInteractions(binder);
@@ -62,4 +63,5 @@ public class SinkBindingWithDefaultsTests {
 	public static class TestSink {
 
 	}
+
 }

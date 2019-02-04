@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 the original author or authors.
+ * Copyright 2018-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,11 +26,10 @@ import org.junit.Test;
 import org.springframework.beans.DirectFieldAccessor;
 import org.springframework.cloud.stream.binder.Binding;
 
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
 /**
- *
  * @author Oleg Zhurakousky
  *
  */
@@ -41,27 +40,32 @@ public class BindingLifecycleTests {
 		Map<String, Bindable> bindables = new HashMap<>();
 
 		Bindable bindableWithTwo = new Bindable() {
-			public Collection<Binding<Object>> createAndBindInputs(BindingService adapter) {
+			public Collection<Binding<Object>> createAndBindInputs(
+					BindingService adapter) {
 				return Arrays.asList(mock(Binding.class), mock(Binding.class));
 			}
 		};
 		Bindable bindableWithThree = new Bindable() {
-			public Collection<Binding<Object>> createAndBindInputs(BindingService adapter) {
-				return Arrays.asList(mock(Binding.class), mock(Binding.class), mock(Binding.class));
+			public Collection<Binding<Object>> createAndBindInputs(
+					BindingService adapter) {
+				return Arrays.asList(mock(Binding.class), mock(Binding.class),
+						mock(Binding.class));
 			}
 		};
-		Bindable bindableEmpty = new Bindable() {};
+		Bindable bindableEmpty = new Bindable() {
+		};
 
 		bindables.put("two", bindableWithTwo);
 		bindables.put("empty", bindableEmpty);
 		bindables.put("three", bindableWithThree);
 
-		InputBindingLifecycle lifecycle = new InputBindingLifecycle(mock(BindingService.class), bindables);
+		InputBindingLifecycle lifecycle = new InputBindingLifecycle(
+				mock(BindingService.class), bindables);
 		lifecycle.start();
 
-		Collection<Binding<?>> lifecycleInputBindings =
-				(Collection<Binding<?>>) new DirectFieldAccessor(lifecycle).getPropertyValue("inputBindings");
-		assertTrue(lifecycleInputBindings.size() == 5);
+		Collection<Binding<?>> lifecycleInputBindings = (Collection<Binding<?>>) new DirectFieldAccessor(
+				lifecycle).getPropertyValue("inputBindings");
+		assertThat(lifecycleInputBindings.size() == 5).isTrue();
 		lifecycle.stop();
 	}
 
@@ -70,27 +74,33 @@ public class BindingLifecycleTests {
 		Map<String, Bindable> bindables = new HashMap<>();
 
 		Bindable bindableWithTwo = new Bindable() {
-			public Collection<Binding<Object>> createAndBindOutputs(BindingService adapter) {
+			public Collection<Binding<Object>> createAndBindOutputs(
+					BindingService adapter) {
 				return Arrays.asList(mock(Binding.class), mock(Binding.class));
 			}
 		};
 		Bindable bindableWithThree = new Bindable() {
-			public Collection<Binding<Object>> createAndBindOutputs(BindingService adapter) {
-				return Arrays.asList(mock(Binding.class), mock(Binding.class), mock(Binding.class));
+			public Collection<Binding<Object>> createAndBindOutputs(
+					BindingService adapter) {
+				return Arrays.asList(mock(Binding.class), mock(Binding.class),
+						mock(Binding.class));
 			}
 		};
-		Bindable bindableEmpty = new Bindable() {};
+		Bindable bindableEmpty = new Bindable() {
+		};
 
 		bindables.put("two", bindableWithTwo);
 		bindables.put("empty", bindableEmpty);
 		bindables.put("three", bindableWithThree);
 
-		OutputBindingLifecycle lifecycle = new OutputBindingLifecycle(mock(BindingService.class), bindables);
+		OutputBindingLifecycle lifecycle = new OutputBindingLifecycle(
+				mock(BindingService.class), bindables);
 		lifecycle.start();
 
-		Collection<Binding<?>> lifecycleOutputBindings =
-				(Collection<Binding<?>>) new DirectFieldAccessor(lifecycle).getPropertyValue("outputBindings");
-		assertTrue(lifecycleOutputBindings.size() == 5);
+		Collection<Binding<?>> lifecycleOutputBindings = (Collection<Binding<?>>) new DirectFieldAccessor(
+				lifecycle).getPropertyValue("outputBindings");
+		assertThat(lifecycleOutputBindings.size() == 5).isTrue();
 		lifecycle.stop();
 	}
+
 }

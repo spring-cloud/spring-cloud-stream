@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ import org.springframework.util.MimeType;
  * class for {@link org.apache.avro.specific.SpecificRecord} and regular classes, unless a
  * specific schema is set, case in which that schema will be used instead. For converting
  * to {@link org.apache.avro.generic.GenericRecord} targets, a schema must be set.s
+ *
  * @author Marius Bogoevici
  */
 
@@ -50,6 +51,8 @@ public class AvroSchemaMessageConverter extends AbstractAvroMessageConverter {
 	/**
 	 * Create a {@link AvroSchemaMessageConverter}. The converter will be used for the
 	 * provided {@link MimeType}.
+	 * @param supportedMimeType mime type to be supported by
+	 * {@link AvroSchemaMessageConverter}
 	 */
 	public AvroSchemaMessageConverter(MimeType supportedMimeType) {
 		super(supportedMimeType);
@@ -111,4 +114,5 @@ public class AvroSchemaMessageConverter extends AbstractAvroMessageConverter {
 			MimeType hintedContentType) {
 		return this.schema;
 	}
+
 }

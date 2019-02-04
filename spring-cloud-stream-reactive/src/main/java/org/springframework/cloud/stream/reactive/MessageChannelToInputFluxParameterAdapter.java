@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ import org.springframework.util.Assert;
 /**
  * Adapts an {@link org.springframework.cloud.stream.annotation.Input} annotated
  * {@link MessageChannel} to a {@link Flux}.
+ *
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
  * @author Vinicius Carvalho
@@ -41,7 +42,8 @@ public class MessageChannelToInputFluxParameterAdapter
 
 	private final CompositeMessageConverter messageConverter;
 
-	public MessageChannelToInputFluxParameterAdapter(CompositeMessageConverter messageConverter) {
+	public MessageChannelToInputFluxParameterAdapter(
+			CompositeMessageConverter messageConverter) {
 		Assert.notNull(messageConverter, "cannot not be null");
 		this.messageConverter = messageConverter;
 	}
@@ -53,19 +55,22 @@ public class MessageChannelToInputFluxParameterAdapter
 	}
 
 	@Override
-	public Flux<?> adapt(final SubscribableChannel bindingTarget, MethodParameter parameter) {
-		final ResolvableType fluxResolvableType = ResolvableType.forMethodParameter(parameter);
+	public Flux<?> adapt(final SubscribableChannel bindingTarget,
+			MethodParameter parameter) {
+		final ResolvableType fluxResolvableType = ResolvableType
+				.forMethodParameter(parameter);
 		final ResolvableType fluxTypeParameter = fluxResolvableType.getGeneric(0);
 		final Class<?> fluxTypeParameterRawClass = fluxTypeParameter.getRawClass();
-		final Class<?> fluxTypeParameterClass = (fluxTypeParameterRawClass != null) ? fluxTypeParameterRawClass
-				: Object.class;
+		final Class<?> fluxTypeParameterClass = (fluxTypeParameterRawClass != null)
+				? fluxTypeParameterRawClass : Object.class;
 
 		final Object monitor = new Object();
 
 		if (Message.class.isAssignableFrom(fluxTypeParameterClass)) {
 
 			final ResolvableType payloadTypeParameter = fluxTypeParameter.getGeneric(0);
-			final Class<?> payloadTypeParameterRawClass = payloadTypeParameter.getRawClass();
+			final Class<?> payloadTypeParameterRawClass = payloadTypeParameter
+					.getRawClass();
 			final Class<?> payloadTypeParameterClass = (payloadTypeParameterRawClass != null)
 					? payloadTypeParameterRawClass : Object.class;
 
@@ -73,12 +78,14 @@ public class MessageChannelToInputFluxParameterAdapter
 				MessageHandler messageHandler = message -> {
 					synchronized (monitor) {
 
-						if (payloadTypeParameterClass.isAssignableFrom(message.getPayload().getClass())) {
+						if (payloadTypeParameterClass
+								.isAssignableFrom(message.getPayload().getClass())) {
 							emitter.next(message);
 						}
 						else {
 							emitter.next(MessageBuilder.createMessage(
-									this.messageConverter.fromMessage(message, payloadTypeParameterClass),
+									this.messageConverter.fromMessage(message,
+											payloadTypeParameterClass),
 									message.getHeaders()));
 						}
 					}
@@ -91,11 +98,13 @@ public class MessageChannelToInputFluxParameterAdapter
 			return Flux.create(emitter -> {
 				MessageHandler messageHandler = message -> {
 					synchronized (monitor) {
-						if (fluxTypeParameterClass.isAssignableFrom(message.getPayload().getClass())) {
+						if (fluxTypeParameterClass
+								.isAssignableFrom(message.getPayload().getClass())) {
 							emitter.next(message.getPayload());
 						}
 						else {
-							emitter.next(this.messageConverter.fromMessage(message, fluxTypeParameterClass));
+							emitter.next(this.messageConverter.fromMessage(message,
+									fluxTypeParameterClass));
 						}
 					}
 				};
@@ -104,4 +113,5 @@ public class MessageChannelToInputFluxParameterAdapter
 			}).publish().autoConnect();
 		}
 	}
+
 }

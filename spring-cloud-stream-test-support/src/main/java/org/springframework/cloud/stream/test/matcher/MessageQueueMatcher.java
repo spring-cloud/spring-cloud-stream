@@ -57,6 +57,7 @@ import org.springframework.messaging.Message;
  * </pre>
  * </p>
  *
+ * @param <T> return type
  * @author Eric Bottard
  * @author Janne Valkealahti
  */
@@ -72,7 +73,8 @@ public class MessageQueueMatcher<T> extends BaseMatcher<BlockingQueue<Message<?>
 
 	private Map<BlockingQueue<Message<?>>, T> actuallyReceived = new HashMap<>();
 
-	public MessageQueueMatcher(Matcher<T> delegate, long timeout, TimeUnit unit, Extractor<Message<?>, T> extractor) {
+	public MessageQueueMatcher(Matcher<T> delegate, long timeout, TimeUnit unit,
+			Extractor<Message<?>, T> extractor) {
 		this.delegate = delegate;
 		this.timeout = timeout;
 		this.unit = (unit != null ? unit : TimeUnit.SECONDS);
@@ -80,7 +82,8 @@ public class MessageQueueMatcher<T> extends BaseMatcher<BlockingQueue<Message<?>
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	public static <P> MessageQueueMatcher<P> receivesMessageThat(Matcher<Message<P>> messageMatcher) {
+	public static <P> MessageQueueMatcher<P> receivesMessageThat(
+			Matcher<Message<P>> messageMatcher) {
 		return new MessageQueueMatcher(messageMatcher, 5, TimeUnit.SECONDS,
 				new Extractor<Message<P>, Message<P>>("a message that ") {
 					@Override
@@ -91,7 +94,8 @@ public class MessageQueueMatcher<T> extends BaseMatcher<BlockingQueue<Message<?>
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	public static <P> MessageQueueMatcher<P> receivesPayloadThat(Matcher<P> payloadMatcher) {
+	public static <P> MessageQueueMatcher<P> receivesPayloadThat(
+			Matcher<P> payloadMatcher) {
 		return new MessageQueueMatcher(payloadMatcher, 5, TimeUnit.SECONDS,
 				new Extractor<Message<P>, P>("a message whose payload ") {
 					@Override
@@ -107,10 +111,10 @@ public class MessageQueueMatcher<T> extends BaseMatcher<BlockingQueue<Message<?>
 		BlockingQueue<Message<?>> queue = (BlockingQueue<Message<?>>) item;
 		Message<?> received = null;
 		try {
-			if (timeout > 0) {
-				received = queue.poll(timeout, unit);
+			if (this.timeout > 0) {
+				received = queue.poll(this.timeout, this.unit);
 			}
-			else if (timeout == 0) {
+			else if (this.timeout == 0) {
 				received = queue.poll();
 			}
 			else {
@@ -120,21 +124,22 @@ public class MessageQueueMatcher<T> extends BaseMatcher<BlockingQueue<Message<?>
 		catch (InterruptedException e) {
 			return false;
 		}
-		T unwrapped = extractor.apply(received);
-		actuallyReceived.put(queue, unwrapped);
-		return delegate.matches(unwrapped);
+		T unwrapped = this.extractor.apply(received);
+		this.actuallyReceived.put(queue, unwrapped);
+		return this.delegate.matches(unwrapped);
 	}
 
 	@Override
 	public void describeMismatch(Object item, Description description) {
 		@SuppressWarnings("unchecked")
 		BlockingQueue<Message<?>> queue = (BlockingQueue<Message<?>>) item;
-		T value = actuallyReceived.get(queue);
+		T value = this.actuallyReceived.get(queue);
 		if (value != null) {
 			description.appendText("received: ").appendValue(value);
 		}
 		else {
-			description.appendText("timed out after " + timeout + " " + unit.name().toLowerCase());
+			description.appendText("timed out after " + this.timeout + " "
+					+ this.unit.name().toLowerCase());
 		}
 	}
 
@@ -152,14 +157,19 @@ public class MessageQueueMatcher<T> extends BaseMatcher<BlockingQueue<Message<?>
 
 	@Override
 	public void describeTo(Description description) {
-		description.appendText("Channel to receive ").appendDescriptionOf(extractor).appendDescriptionOf(delegate);
+		description.appendText("Channel to receive ").appendDescriptionOf(this.extractor)
+				.appendDescriptionOf(this.delegate);
 	}
 
 	/**
 	 * A transformation to be applied to a received message before asserting, <i>e.g.</i>
 	 * to only inspect the payload.
+	 *
+	 * @param <R> input type
+	 * @param <T> return type
 	 */
-	public static abstract class Extractor<R, T> implements Function<R, T>, SelfDescribing {
+	public static abstract class Extractor<R, T>
+			implements Function<R, T>, SelfDescribing {
 
 		private final String behaviorDescription;
 
@@ -169,8 +179,9 @@ public class MessageQueueMatcher<T> extends BaseMatcher<BlockingQueue<Message<?>
 
 		@Override
 		public void describeTo(Description description) {
-			description.appendText(behaviorDescription);
+			description.appendText(this.behaviorDescription);
 		}
+
 	}
 
 }

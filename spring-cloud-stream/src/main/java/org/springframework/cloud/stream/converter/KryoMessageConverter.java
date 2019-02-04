@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2017-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,10 +48,16 @@ import org.springframework.util.MimeType;
 
 /**
  * @author Vinicius Carvalho
- * @deprecated as of 2.0 all language specific type converters (kryo, java etc) are deprecated and won't be supported in the future.
+ * @deprecated as of 2.0 all language specific type converters (kryo, java etc) are
+ * deprecated and won't be supported in the future.
  */
 @Deprecated
 public class KryoMessageConverter implements SmartMessageConverter {
+
+	/**
+	 * Kryo mime type.
+	 */
+	public static final String KRYO_MIME_TYPE = "application/x-java-object";
 
 	protected final KryoPool pool;
 
@@ -59,60 +65,65 @@ public class KryoMessageConverter implements SmartMessageConverter {
 
 	private final boolean useReferences;
 
-	private ConcurrentMap<String, MimeType> mimeTypesCache = new ConcurrentHashMap<>();
-
 	private final List<MimeType> supportedMimeTypes;
 
-	public static final String KRYO_MIME_TYPE = "application/x-java-object";
+	private ConcurrentMap<String, MimeType> mimeTypesCache = new ConcurrentHashMap<>();
 
 	private ContentTypeResolver contentTypeResolver = new DefaultContentTypeResolver();
 
-	public KryoMessageConverter(List<KryoRegistrar> kryoRegistrars, boolean useReferences) {
+	public KryoMessageConverter(List<KryoRegistrar> kryoRegistrars,
+			boolean useReferences) {
 		this.useReferences = useReferences;
-		this.kryoRegistrar = CollectionUtils.isEmpty(kryoRegistrars) ? null :
-				new CompositeKryoRegistrar(kryoRegistrars);
+		this.kryoRegistrar = CollectionUtils.isEmpty(kryoRegistrars) ? null
+				: new CompositeKryoRegistrar(kryoRegistrars);
 		KryoFactory factory = () -> {
 			Kryo kryo = new Kryo();
 			configureKryoInstance(kryo);
 			return kryo;
 		};
 		this.pool = new KryoPool.Builder(factory).softReferences().build();
-		this.supportedMimeTypes = Collections.singletonList(MimeType.valueOf(KRYO_MIME_TYPE));
+		this.supportedMimeTypes = Collections
+				.singletonList(MimeType.valueOf(KRYO_MIME_TYPE));
 	}
 
 	@Nullable
 	@Override
-	public Object fromMessage(Message<?> message, Class<?> targetClass, @Nullable Object conversionHint) {
+	public Object fromMessage(Message<?> message, Class<?> targetClass,
+			@Nullable Object conversionHint) {
 		if (!canConvertFrom(message, targetClass)) {
 			return null;
 		}
-		if(!message.getPayload().getClass().isAssignableFrom(byte[].class)){
-			throw new MessageConversionException("This converter can only convert messages with byte[] payload");
+		if (!message.getPayload().getClass().isAssignableFrom(byte[].class)) {
+			throw new MessageConversionException(
+					"This converter can only convert messages with byte[] payload");
 		}
-		byte[] payload = (byte[])message.getPayload();
+		byte[] payload = (byte[]) message.getPayload();
 		try {
 			return deserialize(payload, targetClass);
 		}
 		catch (IOException e) {
-			throw new MessageConversionException("Could not deserialize payload",e);
+			throw new MessageConversionException("Could not deserialize payload", e);
 		}
 	}
 
 	@Nullable
 	@Override
-	public Message<?> toMessage(Object payload, @Nullable MessageHeaders headers, @Nullable Object conversionHint) {
+	public Message<?> toMessage(Object payload, @Nullable MessageHeaders headers,
+			@Nullable Object conversionHint) {
 		if (!canConvertTo(payload, headers)) {
 			return null;
 		}
 		byte[] payloadToUse = serialize(payload);
 		MimeType mimeType = getDefaultContentType(payload);
 		if (headers != null) {
-			MessageHeaderAccessor accessor = MessageHeaderAccessor.getAccessor(headers, MessageHeaderAccessor.class);
+			MessageHeaderAccessor accessor = MessageHeaderAccessor.getAccessor(headers,
+					MessageHeaderAccessor.class);
 			if (accessor != null && accessor.isMutable()) {
 				if (mimeType != null) {
 					accessor.setHeader(MessageHeaders.CONTENT_TYPE, mimeType);
 				}
-				return MessageBuilder.createMessage(payloadToUse, accessor.getMessageHeaders());
+				return MessageBuilder.createMessage(payloadToUse,
+						accessor.getMessageHeaders());
 			}
 		}
 		MessageBuilder<?> builder = MessageBuilder.withPayload(payloadToUse);
@@ -134,20 +145,18 @@ public class KryoMessageConverter implements SmartMessageConverter {
 		return mimeTypeFromObject(payload);
 	}
 
-
-
 	protected byte[] serialize(Object payload) {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		final Output output = new Output(baos);
 		this.pool.run(kryo -> {
-			kryo.writeObject(output,payload);
+			kryo.writeObject(output, payload);
 			return Void.TYPE;
 		});
 		output.close();
-		return 	baos.toByteArray();
+		return baos.toByteArray();
 	}
 
-	protected  <T> T deserialize(byte[] bytes, Class<T> type) throws IOException {
+	protected <T> T deserialize(byte[] bytes, Class<T> type) throws IOException {
 		Assert.notNull(bytes, "'bytes' cannot be null");
 		final Input input = new Input(bytes);
 		try {
@@ -158,13 +167,15 @@ public class KryoMessageConverter implements SmartMessageConverter {
 		}
 	}
 
-	protected  <T> T deserialize(InputStream inputStream, final Class<T> type) throws IOException {
+	protected <T> T deserialize(InputStream inputStream, final Class<T> type)
+			throws IOException {
 		Assert.notNull(inputStream, "'inputStream' cannot be null");
 		Assert.notNull(type, "'type' cannot be null");
-		final Input input = (inputStream instanceof Input ? (Input) inputStream : new Input(inputStream));
+		final Input input = (inputStream instanceof Input ? (Input) inputStream
+				: new Input(inputStream));
 		T result = null;
 		try {
-			result = this.pool.run(kryo -> kryo.readObject(input,type));
+			result = this.pool.run(kryo -> kryo.readObject(input, type));
 		}
 		finally {
 			input.close();
@@ -173,18 +184,18 @@ public class KryoMessageConverter implements SmartMessageConverter {
 	}
 
 	protected void configureKryoInstance(Kryo kryo) {
-		kryo.setInstantiatorStrategy(new Kryo.DefaultInstantiatorStrategy(new StdInstantiatorStrategy()));
+		kryo.setInstantiatorStrategy(
+				new Kryo.DefaultInstantiatorStrategy(new StdInstantiatorStrategy()));
 		if (this.kryoRegistrar != null) {
 			this.kryoRegistrar.registerTypes(kryo);
 		}
 		kryo.setReferences(this.useReferences);
 	}
 
-
-	protected  MimeType mimeTypeFromObject(Object payload) {
+	protected MimeType mimeTypeFromObject(Object payload) {
 		Assert.notNull(payload, "payload object cannot be null.");
 		String className = payload.getClass().getName();
-		MimeType mimeType = mimeTypesCache.get(className);
+		MimeType mimeType = this.mimeTypesCache.get(className);
 		if (mimeType == null) {
 			String modifiedClassName = className;
 			if (payload.getClass().isArray()) {
@@ -192,17 +203,17 @@ public class KryoMessageConverter implements SmartMessageConverter {
 				// "[Ljava.lang.String;" or multi-dimensional
 				// "[[[Ljava.lang.String;"
 				if (modifiedClassName.endsWith(";")) {
-					modifiedClassName = modifiedClassName.substring(0, modifiedClassName.length() - 1);
+					modifiedClassName = modifiedClassName.substring(0,
+							modifiedClassName.length() - 1);
 				}
 				// Wrap in quotes to handle the illegal '[' character
 				modifiedClassName = "\"" + modifiedClassName + "\"";
 			}
-			mimeType = MimeType.valueOf(KRYO_MIME_TYPE+";type=" + modifiedClassName);
-			mimeTypesCache.put(className, mimeType);
+			mimeType = MimeType.valueOf(KRYO_MIME_TYPE + ";type=" + modifiedClassName);
+			this.mimeTypesCache.put(className, mimeType);
 		}
 		return mimeType;
 	}
-
 
 	protected boolean canConvertFrom(Message<?> message, Class<?> targetClass) {
 		return (supports(targetClass) && supportsMimeType(message.getHeaders()));
@@ -217,7 +228,8 @@ public class KryoMessageConverter implements SmartMessageConverter {
 			return false;
 		}
 		for (MimeType current : getSupportedMimeTypes()) {
-			if (current.getType().equals(mimeType.getType()) && current.getSubtype().equals(mimeType.getSubtype())) {
+			if (current.getType().equals(mimeType.getType())
+					&& current.getSubtype().equals(mimeType.getSubtype())) {
 				return true;
 			}
 		}
@@ -226,7 +238,8 @@ public class KryoMessageConverter implements SmartMessageConverter {
 
 	@Nullable
 	protected MimeType getMimeType(@Nullable MessageHeaders headers) {
-		return (headers != null && this.contentTypeResolver != null ? this.contentTypeResolver.resolve(headers) : null);
+		return (headers != null && this.contentTypeResolver != null
+				? this.contentTypeResolver.resolve(headers) : null);
 	}
 
 	private boolean supports(Class<?> targetClass) {
@@ -242,10 +255,11 @@ public class KryoMessageConverter implements SmartMessageConverter {
 	@Nullable
 	@Override
 	public Message<?> toMessage(Object payload, @Nullable MessageHeaders headers) {
-		return toMessage(payload,headers,null);
+		return toMessage(payload, headers, null);
 	}
 
 	public List<MimeType> getSupportedMimeTypes() {
-		return supportedMimeTypes;
+		return this.supportedMimeTypes;
 	}
+
 }

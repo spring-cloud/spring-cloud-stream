@@ -18,7 +18,6 @@ package org.springframework.cloud.stream.schema.server;
 
 import java.util.List;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -44,8 +43,9 @@ import static org.springframework.test.annotation.DirtiesContext.ClassMode.AFTER
  * @author Ilayaperumal Gopinathan
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT,
-				properties = "spring.main.allow-bean-definition-overriding=true")
+// @checkstyle:off
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT, properties = "spring.main.allow-bean-definition-overriding=true")
+// @checkstyle:on
 @DirtiesContext(classMode = AFTER_EACH_TEST_METHOD)
 public class SchemaRegistryServerAvroTests {
 
@@ -76,9 +76,9 @@ public class SchemaRegistryServerAvroTests {
 		Schema schema = new Schema();
 		schema.setFormat("spring");
 		schema.setSubject("boot");
-		ResponseEntity<Schema> response = client.postForEntity("http://localhost:8990/",
-				schema, Schema.class);
-		Assert.assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+		ResponseEntity<Schema> response = this.client
+				.postForEntity("http://localhost:8990/", schema, Schema.class);
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
 	}
 
 	@Test
@@ -87,9 +87,9 @@ public class SchemaRegistryServerAvroTests {
 		schema.setFormat("avro");
 		schema.setSubject("boot");
 		schema.setDefinition("{}");
-		ResponseEntity<Schema> response = client.postForEntity("http://localhost:8990/",
-				schema, Schema.class);
-		Assert.assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+		ResponseEntity<Schema> response = this.client
+				.postForEntity("http://localhost:8990/", schema, Schema.class);
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
 	}
 
 	@Test
@@ -97,17 +97,17 @@ public class SchemaRegistryServerAvroTests {
 		Schema schema = new Schema();
 		schema.setFormat("avro");
 		schema.setSubject("org.springframework.cloud.stream.schema.User");
-		schema.setDefinition(USER_SCHEMA_V1);
-		ResponseEntity<Schema> response = client.postForEntity("http://localhost:8990/",
-				schema, Schema.class);
-		Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
-		Assert.assertEquals(new Integer(1), response.getBody().getVersion());
+		schema.setDefinition(this.USER_SCHEMA_V1);
+		ResponseEntity<Schema> response = this.client
+				.postForEntity("http://localhost:8990/", schema, Schema.class);
+		assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
+		assertThat(response.getBody().getVersion()).isEqualTo(new Integer(1));
 		List<String> location = response.getHeaders().get(HttpHeaders.LOCATION);
-		Assert.assertNotNull(location);
-		ResponseEntity<Schema> persistedSchema = client.getForEntity(location.get(0),
+		assertThat(location).isNotNull();
+		ResponseEntity<Schema> persistedSchema = this.client.getForEntity(location.get(0),
 				Schema.class);
-		Assert.assertEquals(response.getBody().getId(),
-				persistedSchema.getBody().getId());
+		assertThat(persistedSchema.getBody().getId())
+				.isEqualTo(response.getBody().getId());
 
 	}
 
@@ -116,26 +116,26 @@ public class SchemaRegistryServerAvroTests {
 		Schema schema = new Schema();
 		schema.setFormat("avro");
 		schema.setSubject("org.springframework.cloud.stream.schema.User");
-		schema.setDefinition(USER_SCHEMA_V1);
+		schema.setDefinition(this.USER_SCHEMA_V1);
 
 		Schema schema2 = new Schema();
 		schema2.setFormat("avro");
 		schema2.setSubject("org.springframework.cloud.stream.schema.User");
-		schema2.setDefinition(USER_SCHEMA_V2);
+		schema2.setDefinition(this.USER_SCHEMA_V2);
 
-		ResponseEntity<Schema> response = client.postForEntity("http://localhost:8990/",
-				schema, Schema.class);
-		Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
-		Assert.assertEquals(new Integer(1), response.getBody().getVersion());
+		ResponseEntity<Schema> response = this.client
+				.postForEntity("http://localhost:8990/", schema, Schema.class);
+		assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
+		assertThat(response.getBody().getVersion()).isEqualTo(new Integer(1));
 		List<String> location = response.getHeaders().get(HttpHeaders.LOCATION);
-		Assert.assertNotNull(location);
+		assertThat(location).isNotNull();
 
-		ResponseEntity<Schema> response2 = client.postForEntity("http://localhost:8990/",
-				schema2, Schema.class);
-		Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
-		Assert.assertEquals(new Integer(2), response2.getBody().getVersion());
+		ResponseEntity<Schema> response2 = this.client
+				.postForEntity("http://localhost:8990/", schema2, Schema.class);
+		assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
+		assertThat(response2.getBody().getVersion()).isEqualTo(new Integer(2));
 		List<String> location2 = response2.getHeaders().get(HttpHeaders.LOCATION);
-		Assert.assertNotNull(location2);
+		assertThat(location2).isNotNull();
 
 	}
 
@@ -144,24 +144,24 @@ public class SchemaRegistryServerAvroTests {
 		Schema schema = new Schema();
 		schema.setFormat("avro");
 		schema.setSubject("org.springframework.cloud.stream.schema.User");
-		schema.setDefinition(USER_SCHEMA_V1);
-		ResponseEntity<Schema> response = client.postForEntity("http://localhost:8990/",
-				schema, Schema.class);
-		Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
-		Assert.assertEquals(new Integer(1), response.getBody().getVersion());
+		schema.setDefinition(this.USER_SCHEMA_V1);
+		ResponseEntity<Schema> response = this.client
+				.postForEntity("http://localhost:8990/", schema, Schema.class);
+		assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
+		assertThat(response.getBody().getVersion()).isEqualTo(new Integer(1));
 		List<String> location = response.getHeaders().get(HttpHeaders.LOCATION);
-		Assert.assertNotNull(location);
-		ResponseEntity<Schema> response2 = client.postForEntity("http://localhost:8990/",
-				schema, Schema.class);
-		Assert.assertEquals(response.getBody().getId(), response2.getBody().getId());
+		assertThat(location).isNotNull();
+		ResponseEntity<Schema> response2 = this.client
+				.postForEntity("http://localhost:8990/", schema, Schema.class);
+		assertThat(response2.getBody().getId()).isEqualTo(response.getBody().getId());
 
 	}
 
 	@Test
 	public void testSchemaNotfound() throws Exception {
-		ResponseEntity<Schema> response = client
+		ResponseEntity<Schema> response = this.client
 				.getForEntity("http://localhost:8990/foo/avro/v42", Schema.class);
-		Assert.assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
 	}
 
 	@Test
@@ -169,15 +169,15 @@ public class SchemaRegistryServerAvroTests {
 		Schema schema = new Schema();
 		schema.setFormat("avro");
 		schema.setSubject("test");
-		schema.setDefinition(USER_SCHEMA_V1);
-		ResponseEntity<Schema> response1 = client.postForEntity("http://localhost:8990/",
-				schema, Schema.class);
-		Assert.assertTrue(response1.getStatusCode().is2xxSuccessful());
-		schemaServerProperties.setAllowSchemaDeletion(true);
-		client.delete("http://localhost:8990/test/avro/v1");
-		ResponseEntity<Schema> response2 = client
+		schema.setDefinition(this.USER_SCHEMA_V1);
+		ResponseEntity<Schema> response1 = this.client
+				.postForEntity("http://localhost:8990/", schema, Schema.class);
+		assertThat(response1.getStatusCode().is2xxSuccessful()).isTrue();
+		this.schemaServerProperties.setAllowSchemaDeletion(true);
+		this.client.delete("http://localhost:8990/test/avro/v1");
+		ResponseEntity<Schema> response2 = this.client
 				.getForEntity("http://localhost:8990/test/avro/v1", Schema.class);
-		Assert.assertEquals(HttpStatus.NOT_FOUND, response2.getStatusCode());
+		assertThat(response2.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
 	}
 
 	@Test
@@ -185,18 +185,18 @@ public class SchemaRegistryServerAvroTests {
 		Schema schema = new Schema();
 		schema.setFormat("avro");
 		schema.setSubject("test");
-		schema.setDefinition(USER_SCHEMA_V1);
-		ResponseEntity<Schema> response1 = client.postForEntity("http://localhost:8990/",
-				schema, Schema.class);
-		Assert.assertTrue(response1.getStatusCode().is2xxSuccessful());
-		ResponseEntity<Schema> response2 = client
+		schema.setDefinition(this.USER_SCHEMA_V1);
+		ResponseEntity<Schema> response1 = this.client
+				.postForEntity("http://localhost:8990/", schema, Schema.class);
+		assertThat(response1.getStatusCode().is2xxSuccessful()).isTrue();
+		ResponseEntity<Schema> response2 = this.client
 				.getForEntity("http://localhost:8990/test/avro/v1", Schema.class);
-		Assert.assertEquals(HttpStatus.OK, response2.getStatusCode());
-		schemaServerProperties.setAllowSchemaDeletion(true);
-		client.delete("http://localhost:8990/schemas/1");
-		ResponseEntity<Schema> response3 = client
+		assertThat(response2.getStatusCode()).isEqualTo(HttpStatus.OK);
+		this.schemaServerProperties.setAllowSchemaDeletion(true);
+		this.client.delete("http://localhost:8990/schemas/1");
+		ResponseEntity<Schema> response3 = this.client
 				.getForEntity("http://localhost:8990/test/avro/1", Schema.class);
-		Assert.assertEquals(HttpStatus.NOT_FOUND, response3.getStatusCode());
+		assertThat(response3.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
 	}
 
 	@Test
@@ -204,30 +204,32 @@ public class SchemaRegistryServerAvroTests {
 		Schema schema1 = new Schema();
 		schema1.setFormat("avro");
 		schema1.setSubject("test");
-		schema1.setDefinition(USER_SCHEMA_V1);
-		ResponseEntity<Schema> response1 = client.postForEntity("http://localhost:8990/",
-				schema1, Schema.class);
-		Assert.assertTrue(response1.getStatusCode().is2xxSuccessful());
-		Assert.assertEquals(HttpStatus.OK,
-				client.getForEntity("http://localhost:8990/test/avro/v1", Schema.class).getStatusCode());
-		client.getForEntity("http://localhost:8990/test/avro/1", Schema.class);
+		schema1.setDefinition(this.USER_SCHEMA_V1);
+		ResponseEntity<Schema> response1 = this.client
+				.postForEntity("http://localhost:8990/", schema1, Schema.class);
+		assertThat(response1.getStatusCode().is2xxSuccessful()).isTrue();
+		assertThat(this.client
+				.getForEntity("http://localhost:8990/test/avro/v1", Schema.class)
+				.getStatusCode()).isEqualTo(HttpStatus.OK);
+		this.client.getForEntity("http://localhost:8990/test/avro/1", Schema.class);
 		Schema schema2 = new Schema();
 		schema2.setFormat("avro");
 		schema2.setSubject("test");
-		schema2.setDefinition(USER_SCHEMA_V2);
-		ResponseEntity<Schema> response2 = client.postForEntity("http://localhost:8990/",
-				schema2, Schema.class);
-		Assert.assertTrue(response2.getStatusCode().is2xxSuccessful());
-		Assert.assertEquals(HttpStatus.OK,
-				client.getForEntity("http://localhost:8990/test/avro/v2", Schema.class).getStatusCode());
-		schemaServerProperties.setAllowSchemaDeletion(true);
-		client.delete("http://localhost:8990/test");
-		ResponseEntity<Schema> response4 = client
+		schema2.setDefinition(this.USER_SCHEMA_V2);
+		ResponseEntity<Schema> response2 = this.client
+				.postForEntity("http://localhost:8990/", schema2, Schema.class);
+		assertThat(response2.getStatusCode().is2xxSuccessful()).isTrue();
+		assertThat(this.client
+				.getForEntity("http://localhost:8990/test/avro/v2", Schema.class)
+				.getStatusCode()).isEqualTo(HttpStatus.OK);
+		this.schemaServerProperties.setAllowSchemaDeletion(true);
+		this.client.delete("http://localhost:8990/test");
+		ResponseEntity<Schema> response4 = this.client
 				.getForEntity("http://localhost:8990/test/avro/v1", Schema.class);
-		Assert.assertEquals(HttpStatus.NOT_FOUND, response4.getStatusCode());
-		ResponseEntity<Schema> response5 = client
+		assertThat(response4.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+		ResponseEntity<Schema> response5 = this.client
 				.getForEntity("http://localhost:8990/test/avro/v2", Schema.class);
-		Assert.assertEquals(HttpStatus.NOT_FOUND, response5.getStatusCode());
+		assertThat(response5.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
 	}
 
 	@Test
@@ -235,19 +237,21 @@ public class SchemaRegistryServerAvroTests {
 		Schema schema = new Schema();
 		schema.setFormat("avro");
 		schema.setSubject("test");
-		schema.setDefinition(USER_SCHEMA_V1);
-		ResponseEntity<Schema> response1 = client.postForEntity("http://localhost:8990/",
-				schema, Schema.class);
-		Assert.assertTrue(response1.getStatusCode().is2xxSuccessful());
-		ResponseEntity<Object> deleteBySubjectFormatVersion = client.exchange("http://localhost:8990/test/avro/v1",
-				HttpMethod.DELETE,
-				null, Object.class);
-		assertThat(deleteBySubjectFormatVersion.getStatusCode()).isEqualTo(HttpStatus.METHOD_NOT_ALLOWED);
-		ResponseEntity<Object> deleteBySubject = client.exchange("http://localhost:8990/test", HttpMethod.DELETE,
-				null, Object.class);
-		assertThat(deleteBySubject.getStatusCode()).isEqualTo(HttpStatus.METHOD_NOT_ALLOWED);
-		ResponseEntity<Object> deleteById = client.exchange("http://localhost:8990/schemas/1", HttpMethod.DELETE,
-				null, Object.class);
+		schema.setDefinition(this.USER_SCHEMA_V1);
+		ResponseEntity<Schema> response1 = this.client
+				.postForEntity("http://localhost:8990/", schema, Schema.class);
+		assertThat(response1.getStatusCode().is2xxSuccessful()).isTrue();
+		ResponseEntity<Object> deleteBySubjectFormatVersion = this.client.exchange(
+				"http://localhost:8990/test/avro/v1", HttpMethod.DELETE, null,
+				Object.class);
+		assertThat(deleteBySubjectFormatVersion.getStatusCode())
+				.isEqualTo(HttpStatus.METHOD_NOT_ALLOWED);
+		ResponseEntity<Object> deleteBySubject = this.client.exchange(
+				"http://localhost:8990/test", HttpMethod.DELETE, null, Object.class);
+		assertThat(deleteBySubject.getStatusCode())
+				.isEqualTo(HttpStatus.METHOD_NOT_ALLOWED);
+		ResponseEntity<Object> deleteById = this.client.exchange(
+				"http://localhost:8990/schemas/1", HttpMethod.DELETE, null, Object.class);
 		assertThat(deleteById.getStatusCode()).isEqualTo(HttpStatus.METHOD_NOT_ALLOWED);
 	}
 
@@ -256,26 +260,27 @@ public class SchemaRegistryServerAvroTests {
 		Schema v1 = new Schema();
 		v1.setFormat("avro");
 		v1.setSubject("test");
-		v1.setDefinition(USER_SCHEMA_V1);
-		ResponseEntity<Schema> response1 = client.postForEntity("http://localhost:8990/",
-				v1, Schema.class);
-		Assert.assertTrue(response1.getStatusCode().is2xxSuccessful());
+		v1.setDefinition(this.USER_SCHEMA_V1);
+		ResponseEntity<Schema> response1 = this.client
+				.postForEntity("http://localhost:8990/", v1, Schema.class);
+		assertThat(response1.getStatusCode().is2xxSuccessful()).isTrue();
 
 		Schema v2 = new Schema();
 		v2.setFormat("avro");
 		v2.setSubject("test");
-		v2.setDefinition(USER_SCHEMA_V2);
+		v2.setDefinition(this.USER_SCHEMA_V2);
 
-		ResponseEntity<Schema> response2 = client.postForEntity("http://localhost:8990/",
-				v2, Schema.class);
-		Assert.assertTrue(response2.getStatusCode().is2xxSuccessful());
+		ResponseEntity<Schema> response2 = this.client
+				.postForEntity("http://localhost:8990/", v2, Schema.class);
+		assertThat(response2.getStatusCode().is2xxSuccessful()).isTrue();
 
-		ResponseEntity<List<Schema>> schemaResponse = client.exchange("http://localhost:8990/test/avro", HttpMethod.GET,
-				null, new ParameterizedTypeReference<List<Schema>>() {
+		ResponseEntity<List<Schema>> schemaResponse = this.client.exchange(
+				"http://localhost:8990/test/avro", HttpMethod.GET, null,
+				new ParameterizedTypeReference<List<Schema>>() {
 				});
 
-		Assert.assertTrue(schemaResponse.getStatusCode().is2xxSuccessful());
-		Assert.assertEquals(2, schemaResponse.getBody().size());
+		assertThat(schemaResponse.getStatusCode().is2xxSuccessful()).isTrue();
+		assertThat(schemaResponse.getBody().size()).isEqualTo(2);
 	}
 
 }

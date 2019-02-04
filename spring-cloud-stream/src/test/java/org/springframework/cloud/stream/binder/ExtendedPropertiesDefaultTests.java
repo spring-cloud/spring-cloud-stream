@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 the original author or authors.
+ * Copyright 2018-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,34 +36,39 @@ public class ExtendedPropertiesDefaultTests {
 	@Test
 	public void testExtendedDefaultProducerProperties() {
 		DefaultBinderFactory binderFactory = createMockExtendedBinderFactory();
-		Binder<MessageChannel, ?, ?> binder = binderFactory.getBinder(null, MessageChannel.class);
-		FooProducerProperties fooProducerProperties =
-				(FooProducerProperties) ((ExtendedPropertiesBinder<?, ?, ?>) binder)
-						.getExtendedProducerProperties("output");
+		Binder<MessageChannel, ?, ?> binder = binderFactory.getBinder(null,
+				MessageChannel.class);
+		FooProducerProperties fooProducerProperties = (FooProducerProperties) ((ExtendedPropertiesBinder<?, ?, ?>) binder)
+				.getExtendedProducerProperties("output");
 		// Expectations are set in the mock configuration for the binder factory
-		assertThat(fooProducerProperties.getExtendedProperty()).isEqualTo("someFancyExtension");
+		assertThat(fooProducerProperties.getExtendedProperty())
+				.isEqualTo("someFancyExtension");
 	}
 
 	@Test
 	public void testExtendedDefaultConsumerProperties() {
 		DefaultBinderFactory binderFactory = createMockExtendedBinderFactory();
-		Binder<MessageChannel, ?, ?> binder = binderFactory.getBinder(null, MessageChannel.class);
-		FooConsumerProperties fooConsumerProperties =
-				(FooConsumerProperties)((ExtendedPropertiesBinder<?,?,?>)binder)
-						.getExtendedConsumerProperties("input");
+		Binder<MessageChannel, ?, ?> binder = binderFactory.getBinder(null,
+				MessageChannel.class);
+		FooConsumerProperties fooConsumerProperties = (FooConsumerProperties) ((ExtendedPropertiesBinder<?, ?, ?>) binder)
+				.getExtendedConsumerProperties("input");
 		// Expectations are set in the mock configuration for the binder factory
-		assertThat(fooConsumerProperties.getExtendedProperty()).isEqualTo("someFancyExtension");
+		assertThat(fooConsumerProperties.getExtendedProperty())
+				.isEqualTo("someFancyExtension");
 	}
 
 	private DefaultBinderFactory createMockExtendedBinderFactory() {
 		BinderTypeRegistry binderTypeRegistry = createMockExtendedBinderTypeRegistry();
 		return new DefaultBinderFactory(
-				Collections.singletonMap("mock", new BinderConfiguration("mock", new HashMap<>(), true, true)),
+				Collections.singletonMap("mock",
+						new BinderConfiguration("mock", new HashMap<>(), true, true)),
 				binderTypeRegistry);
 	}
 
 	private DefaultBinderTypeRegistry createMockExtendedBinderTypeRegistry() {
-		return new DefaultBinderTypeRegistry(Collections.singletonMap("mock",
-				new BinderType("mock", new Class[] { MockExtendedBinderConfiguration.class })));
+		return new DefaultBinderTypeRegistry(
+				Collections.singletonMap("mock", new BinderType("mock",
+						new Class[] { MockExtendedBinderConfiguration.class })));
 	}
+
 }

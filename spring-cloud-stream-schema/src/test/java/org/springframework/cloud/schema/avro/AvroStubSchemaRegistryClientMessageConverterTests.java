@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,9 +47,8 @@ public class AvroStubSchemaRegistryClientMessageConverterTests {
 
 	@Test
 	public void testSendMessage() throws Exception {
-		ConfigurableApplicationContext sourceContext = SpringApplication.run(AvroSourceApplication.class,
-				"--server.port=0",
-				"--debug",
+		ConfigurableApplicationContext sourceContext = SpringApplication.run(
+				AvroSourceApplication.class, "--server.port=0", "--debug",
 				"--spring.jmx.enabled=false",
 				"--spring.cloud.stream.bindings.output.contentType=application/*+avro",
 				"--spring.cloud.stream.schema.avro.dynamicSchemaGenerationEnabled=true");
@@ -58,12 +57,13 @@ public class AvroStubSchemaRegistryClientMessageConverterTests {
 		firstOutboundFoo.setFavoriteColor("foo" + UUID.randomUUID().toString());
 		firstOutboundFoo.setName("foo" + UUID.randomUUID().toString());
 		source.output().send(MessageBuilder.withPayload(firstOutboundFoo).build());
-		MessageCollector sourceMessageCollector = sourceContext.getBean(MessageCollector.class);
-		Message<?> outboundMessage = sourceMessageCollector.forChannel(source.output()).poll(1000,
-				TimeUnit.MILLISECONDS);
+		MessageCollector sourceMessageCollector = sourceContext
+				.getBean(MessageCollector.class);
+		Message<?> outboundMessage = sourceMessageCollector.forChannel(source.output())
+				.poll(1000, TimeUnit.MILLISECONDS);
 
-		ConfigurableApplicationContext barSourceContext = SpringApplication.run(AvroSourceApplication.class,
-				"--server.port=0",
+		ConfigurableApplicationContext barSourceContext = SpringApplication.run(
+				AvroSourceApplication.class, "--server.port=0",
 				"--spring.jmx.enabled=false",
 				"--spring.cloud.stream.bindings.output.contentType=application/vnd.user1.v1+avro",
 				"--spring.cloud.stream.schema.avro.dynamicSchemaGenerationEnabled=true");
@@ -72,9 +72,10 @@ public class AvroStubSchemaRegistryClientMessageConverterTests {
 		firstOutboundUser2.setFavoriteColor("foo" + UUID.randomUUID().toString());
 		firstOutboundUser2.setName("foo" + UUID.randomUUID().toString());
 		barSource.output().send(MessageBuilder.withPayload(firstOutboundUser2).build());
-		MessageCollector barSourceMessageCollector = barSourceContext.getBean(MessageCollector.class);
-		Message<?> barOutboundMessage = barSourceMessageCollector.forChannel(barSource.output()).poll(1000,
-				TimeUnit.MILLISECONDS);
+		MessageCollector barSourceMessageCollector = barSourceContext
+				.getBean(MessageCollector.class);
+		Message<?> barOutboundMessage = barSourceMessageCollector
+				.forChannel(barSource.output()).poll(1000, TimeUnit.MILLISECONDS);
 
 		assertThat(barOutboundMessage).isNotNull();
 
@@ -82,31 +83,39 @@ public class AvroStubSchemaRegistryClientMessageConverterTests {
 		secondBarOutboundPojo.setFavoriteColor("foo" + UUID.randomUUID().toString());
 		secondBarOutboundPojo.setName("foo" + UUID.randomUUID().toString());
 		source.output().send(MessageBuilder.withPayload(secondBarOutboundPojo).build());
-		Message<?> secondBarOutboundMessage = sourceMessageCollector.forChannel(source.output()).poll(1000,
-				TimeUnit.MILLISECONDS);
+		Message<?> secondBarOutboundMessage = sourceMessageCollector
+				.forChannel(source.output()).poll(1000, TimeUnit.MILLISECONDS);
 
-		ConfigurableApplicationContext sinkContext = SpringApplication.run(AvroSinkApplication.class,
-				"--server.port=0", "--spring.jmx.enabled=false");
+		ConfigurableApplicationContext sinkContext = SpringApplication.run(
+				AvroSinkApplication.class, "--server.port=0",
+				"--spring.jmx.enabled=false");
 		Sink sink = sinkContext.getBean(Sink.class);
 		sink.input().send(outboundMessage);
 		sink.input().send(barOutboundMessage);
 		sink.input().send(secondBarOutboundMessage);
-		List<User2> receivedPojos = sinkContext.getBean(AvroSinkApplication.class).receivedPojos;
+		List<User2> receivedPojos = sinkContext
+				.getBean(AvroSinkApplication.class).receivedPojos;
 		assertThat(receivedPojos).hasSize(3);
 		assertThat(receivedPojos.get(0)).isNotSameAs(firstOutboundFoo);
-		assertThat(receivedPojos.get(0).getFavoriteColor()).isEqualTo(firstOutboundFoo.getFavoriteColor());
+		assertThat(receivedPojos.get(0).getFavoriteColor())
+				.isEqualTo(firstOutboundFoo.getFavoriteColor());
 		assertThat(receivedPojos.get(0).getName()).isEqualTo(firstOutboundFoo.getName());
 		assertThat(receivedPojos.get(0).getFavoritePlace()).isEqualTo("NYC");
 
 		assertThat(receivedPojos.get(1)).isNotSameAs(firstOutboundUser2);
-		assertThat(receivedPojos.get(1).getFavoriteColor()).isEqualTo(firstOutboundUser2.getFavoriteColor());
-		assertThat(receivedPojos.get(1).getName()).isEqualTo(firstOutboundUser2.getName());
+		assertThat(receivedPojos.get(1).getFavoriteColor())
+				.isEqualTo(firstOutboundUser2.getFavoriteColor());
+		assertThat(receivedPojos.get(1).getName())
+				.isEqualTo(firstOutboundUser2.getName());
 		assertThat(receivedPojos.get(1).getFavoritePlace()).isEqualTo("Boston");
 
 		assertThat(receivedPojos.get(2)).isNotSameAs(secondBarOutboundPojo);
-		assertThat(receivedPojos.get(2).getFavoriteColor()).isEqualTo(secondBarOutboundPojo.getFavoriteColor());
-		assertThat(receivedPojos.get(2).getName()).isEqualTo(secondBarOutboundPojo.getName());
-		assertThat(receivedPojos.get(2).getFavoritePlace()).isEqualTo(secondBarOutboundPojo.getFavoritePlace());
+		assertThat(receivedPojos.get(2).getFavoriteColor())
+				.isEqualTo(secondBarOutboundPojo.getFavoriteColor());
+		assertThat(receivedPojos.get(2).getName())
+				.isEqualTo(secondBarOutboundPojo.getName());
+		assertThat(receivedPojos.get(2).getFavoritePlace())
+				.isEqualTo(secondBarOutboundPojo.getFavoritePlace());
 
 		sourceContext.close();
 	}
@@ -119,6 +128,7 @@ public class AvroStubSchemaRegistryClientMessageConverterTests {
 		public SchemaRegistryClient schemaRegistryClient() {
 			return stubSchemaRegistryClient;
 		}
+
 	}
 
 	@EnableBinding(Sink.class)
@@ -129,7 +139,7 @@ public class AvroStubSchemaRegistryClientMessageConverterTests {
 
 		@StreamListener(Sink.INPUT)
 		public void listen(User2 fooPojo) {
-			receivedPojos.add(fooPojo);
+			this.receivedPojos.add(fooPojo);
 		}
 
 		@Bean
@@ -138,4 +148,5 @@ public class AvroStubSchemaRegistryClientMessageConverterTests {
 		}
 
 	}
+
 }

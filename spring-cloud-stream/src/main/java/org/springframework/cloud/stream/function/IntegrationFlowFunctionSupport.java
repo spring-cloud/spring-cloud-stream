@@ -41,11 +41,9 @@ import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
 /**
- *
  * @author Oleg Zhurakousky
  * @author David Turanski
  * @author Ilayaperumal Gopinathan
- *
  * @since 2.1
  */
 public class IntegrationFlowFunctionSupport {
@@ -61,19 +59,15 @@ public class IntegrationFlowFunctionSupport {
 	@Autowired
 	private MessageChannel errorChannel;
 
-	/**
-	 * @param functionCatalog
-	 * @param functionInspector
-	 * @param messageConverterFactory
-	 * @param functionProperties
-	 */
-	IntegrationFlowFunctionSupport(FunctionCatalogWrapper functionCatalog, FunctionInspector functionInspector,
-			CompositeMessageConverterFactory messageConverterFactory, StreamFunctionProperties functionProperties,
+	IntegrationFlowFunctionSupport(FunctionCatalogWrapper functionCatalog,
+			FunctionInspector functionInspector,
+			CompositeMessageConverterFactory messageConverterFactory,
+			StreamFunctionProperties functionProperties,
 			BindingServiceProperties bindingServiceProperties) {
-
 		Assert.notNull(functionCatalog, "'functionCatalog' must not be null");
 		Assert.notNull(functionInspector, "'functionInspector' must not be null");
-		Assert.notNull(messageConverterFactory, "'messageConverterFactory' must not be null");
+		Assert.notNull(messageConverterFactory,
+				"'messageConverterFactory' must not be null");
 		Assert.notNull(functionProperties, "'functionProperties' must not be null");
 		this.functionCatalog = functionCatalog;
 		this.functionInspector = functionInspector;
@@ -84,49 +78,55 @@ public class IntegrationFlowFunctionSupport {
 
 	/**
 	 * Determines if function specified via 'spring.cloud.stream.function.definition'
-	 * property can be located in {@link FunctionCatalog}
-	 *
+	 * property can be located in {@link FunctionCatalog}s.
+	 * @param <T> type of function
 	 * @param typeOfFunction must be Supplier, Function or Consumer
-	 * @return
+	 * @return {@code true} if function is already stored
 	 */
 	public <T> boolean containsFunction(Class<T> typeOfFunction) {
 		return StringUtils.hasText(this.functionProperties.getDefinition())
-				&& this.functionCatalog.contains(typeOfFunction, this.functionProperties.getDefinition());
+				&& this.functionCatalog.contains(typeOfFunction,
+						this.functionProperties.getDefinition());
 	}
 
 	/**
 	 * Determines if function specified via 'spring.cloud.stream.function.definition'
-	 * property can be located in {@link FunctionCatalog}
-	 *
+	 * property can be located in {@link FunctionCatalog}.
+	 * @param <T> type of function
 	 * @param typeOfFunction must be Supplier, Function or Consumer
 	 * @param functionName the function name to check
-	 * @return
+	 * @return {@code true} if function is already stored
 	 */
 	public <T> boolean containsFunction(Class<T> typeOfFunction, String functionName) {
 		return StringUtils.hasText(functionName)
 				&& this.functionCatalog.contains(typeOfFunction, functionName);
 	}
 
+	/**
+	 * @return the function type basing on the function definition.
+	 */
 	public FunctionType getCurrentFunctionType() {
-		FunctionType functionType = functionInspector.getRegistration(
-				functionCatalog.lookup(this.functionProperties.getDefinition())).getType();
+		FunctionType functionType = this.functionInspector.getRegistration(
+				this.functionCatalog.lookup(this.functionProperties.getDefinition()))
+				.getType();
 		return functionType;
 	}
 
 	/**
-	 * Create an instance of the {@link IntegrationFlowBuilder} from a {@link Supplier} bean available in the context.
-	 * The name of the bean must be provided via `spring.cloud.stream.function.definition` property.
+	 * Create an instance of the {@link IntegrationFlowBuilder} from a {@link Supplier}
+	 * bean available in the context. The name of the bean must be provided via
+	 * `spring.cloud.stream.function.definition` property.
 	 * @return instance of {@link IntegrationFlowBuilder}
 	 * @throws IllegalStateException if the named Supplier can not be located.
 	 */
 	public IntegrationFlowBuilder integrationFlowFromNamedSupplier() {
 		if (StringUtils.hasText(this.functionProperties.getDefinition())) {
-			Supplier<?> supplier = functionCatalog.lookup(Supplier.class, this.functionProperties.getDefinition());
+			Supplier<?> supplier = this.functionCatalog.lookup(Supplier.class,
+					this.functionProperties.getDefinition());
 			if (supplier instanceof FluxSupplier) {
-				supplier = ((FluxSupplier<?>)supplier).getTarget();
+				supplier = ((FluxSupplier<?>) supplier).getTarget();
 			}
-			return integrationFlowFromProvidedSupplier(supplier)
-					.split();
+			return integrationFlowFromProvidedSupplier(supplier).split();
 		}
 
 		throw new IllegalStateException(
@@ -134,34 +134,45 @@ public class IntegrationFlowFunctionSupport {
 	}
 
 	/**
-	 * Create an instance of the {@link IntegrationFlowBuilder} from a provided {@link Supplier}.
+	 * Create an instance of the {@link IntegrationFlowBuilder} from a provided
+	 * {@link Supplier}.
+	 * @param supplier supplier from which the flow builder will be built
 	 * @return instance of {@link IntegrationFlowBuilder}
 	 */
-	public IntegrationFlowBuilder integrationFlowFromProvidedSupplier(Supplier<?> supplier) {
+	public IntegrationFlowBuilder integrationFlowFromProvidedSupplier(
+			Supplier<?> supplier) {
 		return IntegrationFlows.from(supplier);
 	}
 
 	/**
-	 * @param inputChannel
-	 * @return
+	 * @param inputChannel channel for which flow we be built
+	 * @return instance of {@link IntegrationFlowBuilder}
 	 */
-	public <O> IntegrationFlowBuilder integrationFlowFromChannel(SubscribableChannel inputChannel) {
+	public IntegrationFlowBuilder integrationFlowFromChannel(
+			SubscribableChannel inputChannel) {
 		IntegrationFlowBuilder flowBuilder = IntegrationFlows.from(inputChannel).bridge();
 		return flowBuilder;
 	}
 
-	public <O> IntegrationFlowBuilder integrationFlowForFunction(SubscribableChannel inputChannel,
-			MessageChannel outputChannel) {
+	/**
+	 * @param inputChannel channel for which flow we be built
+	 * @param outputChannel channel for which flow we be built
+	 * @return instance of {@link IntegrationFlowBuilder}
+	 */
+	public IntegrationFlowBuilder integrationFlowForFunction(
+			SubscribableChannel inputChannel, MessageChannel outputChannel) {
 
 		if (inputChannel instanceof IntegrationObjectSupport) {
-			String inputBindingName = ((IntegrationObjectSupport)inputChannel).getComponentName();
+			String inputBindingName = ((IntegrationObjectSupport) inputChannel)
+					.getComponentName();
 			if (StringUtils.hasText(inputBindingName)) {
 				this.functionProperties.setInputDestinationName(inputBindingName);
 			}
 		}
 
 		if (outputChannel instanceof IntegrationObjectSupport) {
-			String outputBindingName = ((IntegrationObjectSupport)outputChannel).getComponentName();
+			String outputBindingName = ((IntegrationObjectSupport) outputChannel)
+					.getComponentName();
 			if (StringUtils.hasText(outputBindingName)) {
 				this.functionProperties.setOutputDestinationName(outputBindingName);
 			}
@@ -176,31 +187,40 @@ public class IntegrationFlowFunctionSupport {
 	}
 
 	/**
-	 * Add a {@link Function} bean to the end of an integration flow.
-	 * The name of the bean must be provided via `spring.cloud.stream.function.definition` property.
+	 * Add a {@link Function} bean to the end of an integration flow. The name of the bean
+	 * must be provided via `spring.cloud.stream.function.definition` property.
 	 * <p>
-	 * NOTE: If this method returns true, the integration flow is now represented
-	 * as a Reactive Streams {@link Publisher} bean.
+	 * NOTE: If this method returns true, the integration flow is now represented as a
+	 * Reactive Streams {@link Publisher} bean.
 	 * </p>
-	 * @param flowBuilder instance of the {@link IntegrationFlowBuilder} representing
-	 *                       the current state of the integration flow
+	 * @param flowBuilder instance of the {@link IntegrationFlowBuilder} representing the
+	 * current state of the integration flow
 	 * @param outputChannel channel where the output of a function will be sent
-	 * @param functionName the function name to use
+	 * @param functionProperties the function properties
 	 * @return true if {@link Function} was located and added and false if it wasn't.
 	 */
-	public <I,O> boolean andThenFunction(IntegrationFlowBuilder flowBuilder, MessageChannel outputChannel,
-			StreamFunctionProperties functionProperties) {
-		return andThenFunction(flowBuilder.toReactivePublisher(), outputChannel, functionProperties);
+	public boolean andThenFunction(IntegrationFlowBuilder flowBuilder,
+			MessageChannel outputChannel, StreamFunctionProperties functionProperties) {
+		return andThenFunction(flowBuilder.toReactivePublisher(), outputChannel,
+				functionProperties);
 	}
 
-	public <I,O> boolean andThenFunction(Publisher<?> publisher, MessageChannel outputChannel,
-			StreamFunctionProperties functionProperties) {
+	/**
+	 * @param publisher publisher to subscribe to
+	 * @param outputChannel output channel to which a message will be sent
+	 * @param functionProperties function properties
+	 * @param <I> input of the function
+	 * @param <O> output of the function
+	 * @return whether the function was properly invoked
+	 */
+	public <I, O> boolean andThenFunction(Publisher<?> publisher,
+			MessageChannel outputChannel, StreamFunctionProperties functionProperties) {
 		if (!StringUtils.hasText(functionProperties.getDefinition())) {
 			return false;
 		}
-		FunctionInvoker<I, O> functionInvoker =
-				new FunctionInvoker<>(functionProperties, this.functionCatalog,
-						this.functionInspector, this.messageConverterFactory, this.errorChannel);
+		FunctionInvoker<I, O> functionInvoker = new FunctionInvoker<>(functionProperties,
+				this.functionCatalog, this.functionInspector,
+				this.messageConverterFactory, this.errorChannel);
 
 		if (outputChannel != null) {
 			subscribeToInput(functionInvoker, publisher, outputChannel::send);
@@ -214,17 +234,18 @@ public class IntegrationFlowFunctionSupport {
 	private <O> Mono<Void> subscribeToOutput(Consumer<Message<O>> outputProcessor,
 			Publisher<Message<O>> outputPublisher) {
 
-		Flux<Message<O>> output = outputProcessor == null
-				? Flux.from(outputPublisher)
-						: Flux.from(outputPublisher).doOnNext(outputProcessor);
+		Flux<Message<O>> output = outputProcessor == null ? Flux.from(outputPublisher)
+				: Flux.from(outputPublisher).doOnNext(outputProcessor);
 		return output.then();
 	}
 
 	@SuppressWarnings("unchecked")
-	private <I,O> void subscribeToInput(FunctionInvoker<I,O> functionInvoker, Publisher<?> publisher,
-			Consumer<Message<O>> outputProcessor) {
+	private <I, O> void subscribeToInput(FunctionInvoker<I, O> functionInvoker,
+			Publisher<?> publisher, Consumer<Message<O>> outputProcessor) {
 
 		Flux<?> inputPublisher = Flux.from(publisher);
-		subscribeToOutput(outputProcessor, functionInvoker.apply((Flux<Message<I>>) inputPublisher)).subscribe();
+		subscribeToOutput(outputProcessor,
+				functionInvoker.apply((Flux<Message<I>>) inputPublisher)).subscribe();
 	}
+
 }

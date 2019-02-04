@@ -61,8 +61,8 @@ abstract class AggregateApplicationUtils {
 	protected static SpringApplicationBuilder embedApp(
 			ConfigurableApplicationContext parentContext, String namespace,
 			Class<?> app) {
-		return new SpringApplicationBuilder(app).web(WebApplicationType.NONE).main(app).bannerMode(Mode.OFF)
-				.properties("spring.jmx.default-domain=" + namespace)
+		return new SpringApplicationBuilder(app).web(WebApplicationType.NONE).main(app)
+				.bannerMode(Mode.OFF).properties("spring.jmx.default-domain=" + namespace)
 				.properties(
 						InternalPropertyNames.NAMESPACE_PROPERTY_NAME + "=" + namespace)
 				.registerShutdownHook(false).parent(parentContext);
@@ -81,8 +81,8 @@ abstract class AggregateApplicationUtils {
 			}
 			sharedChannel = new DirectChannel();
 			if (i < appsWithNamespace.size() - 1) {
-				sharedBindingTargetRegistry.register(namespace + "." + OUTPUT_BINDING_NAME,
-						sharedChannel);
+				sharedBindingTargetRegistry
+						.register(namespace + "." + OUTPUT_BINDING_NAME, sharedChannel);
 			}
 			i++;
 		}

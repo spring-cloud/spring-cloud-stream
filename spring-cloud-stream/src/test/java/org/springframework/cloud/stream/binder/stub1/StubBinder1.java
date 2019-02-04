@@ -27,14 +27,15 @@ import org.springframework.context.ConfigurableApplicationContext;
  * @author Mark Fisher
  * @author Soby Chacko
  */
-public class StubBinder1 implements Binder<Object, ConsumerProperties, ProducerProperties> {
+public class StubBinder1
+		implements Binder<Object, ConsumerProperties, ProducerProperties> {
 
 	private String name;
 
 	private ConfigurableApplicationContext outerContext;
 
 	public ConfigurableApplicationContext getOuterContext() {
-		return outerContext;
+		return this.outerContext;
 	}
 
 	public void setOuterContext(ConfigurableApplicationContext outerContext) {
@@ -50,13 +51,14 @@ public class StubBinder1 implements Binder<Object, ConsumerProperties, ProducerP
 	}
 
 	@Override
-	public Binding<Object> bindConsumer(String name, String group, Object inboundBindTarget,
-			ConsumerProperties properties) {
+	public Binding<Object> bindConsumer(String name, String group,
+			Object inboundBindTarget, ConsumerProperties properties) {
 		return null;
 	}
 
 	@Override
-	public Binding<Object> bindProducer(String name, Object outboundBindTarget, ProducerProperties properties) {
+	public Binding<Object> bindProducer(String name, Object outboundBindTarget,
+			ProducerProperties properties) {
 		return null;
 	}
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 the original author or authors.
+ * Copyright 2018-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,11 +59,13 @@ public class FunctionConfiguration {
 	private Sink sink;
 
 	@Bean
-	public IntegrationFlowFunctionSupport functionSupport(FunctionCatalogWrapper functionCatalog,
-		FunctionInspector functionInspector, CompositeMessageConverterFactory messageConverterFactory,
-		StreamFunctionProperties functionProperties, BindingServiceProperties bindingServiceProperties) {
-		return new IntegrationFlowFunctionSupport(functionCatalog, functionInspector, messageConverterFactory,
-			functionProperties, bindingServiceProperties);
+	public IntegrationFlowFunctionSupport functionSupport(
+			FunctionCatalogWrapper functionCatalog, FunctionInspector functionInspector,
+			CompositeMessageConverterFactory messageConverterFactory,
+			StreamFunctionProperties functionProperties,
+			BindingServiceProperties bindingServiceProperties) {
+		return new IntegrationFlowFunctionSupport(functionCatalog, functionInspector,
+				messageConverterFactory, functionProperties, bindingServiceProperties);
 	}
 
 	@Bean
@@ -73,27 +75,39 @@ public class FunctionConfiguration {
 
 	/**
 	 * This configuration creates an instance of the {@link IntegrationFlow} from standard
-	 * Spring Cloud Stream bindings such as {@link Source}, {@link Processor} and {@link Sink}
-	 * ONLY if there are no existing instances of the {@link IntegrationFlow} already available
-	 * in the context. This means that it only plays a role in green-field Spring Cloud Stream apps.
+	 * Spring Cloud Stream bindings such as {@link Source}, {@link Processor} and
+	 * {@link Sink} ONLY if there are no existing instances of the {@link IntegrationFlow}
+	 * already available in the context. This means that it only plays a role in
+	 * green-field Spring Cloud Stream apps.
 	 *
-	 * For logic to compose functions into the existing apps please see "FUNCTION-TO-EXISTING-APP"
-	 * section of AbstractMessageChannelBinder.
+	 * For logic to compose functions into the existing apps please see
+	 * "FUNCTION-TO-EXISTING-APP" section of AbstractMessageChannelBinder.
 	 *
-	 * The @ConditionalOnMissingBean ensures it does not collide with the the instance of the IntegrationFlow
-	 * that may have been already defined by the existing (extended) app.
+	 * The @ConditionalOnMissingBean ensures it does not collide with the the instance of
+	 * the IntegrationFlow that may have been already defined by the existing (extended)
+	 * app.
+	 * @param functionSupport support for registering beans
+	 * @return integration flow for Stream
 	 */
 	@ConditionalOnMissingBean
 	@Bean
-	public IntegrationFlow integrationFlowCreator(IntegrationFlowFunctionSupport functionSupport) {
-		if (functionSupport.containsFunction(Consumer.class) && consumerBindingPresent()) {
-			return functionSupport.integrationFlowForFunction(getInputChannel(), getOutputChannel()).get();
+	public IntegrationFlow integrationFlowCreator(
+			IntegrationFlowFunctionSupport functionSupport) {
+		if (functionSupport.containsFunction(Consumer.class)
+				&& consumerBindingPresent()) {
+			return functionSupport
+					.integrationFlowForFunction(getInputChannel(), getOutputChannel())
+					.get();
 		}
-		else if (functionSupport.containsFunction(Function.class) && consumerBindingPresent()) {
-			return functionSupport.integrationFlowForFunction(getInputChannel(), getOutputChannel()).get();
+		else if (functionSupport.containsFunction(Function.class)
+				&& consumerBindingPresent()) {
+			return functionSupport
+					.integrationFlowForFunction(getInputChannel(), getOutputChannel())
+					.get();
 		}
 		else if (functionSupport.containsFunction(Supplier.class)) {
-			return functionSupport.integrationFlowFromNamedSupplier().channel(getOutputChannel()).get();
+			return functionSupport.integrationFlowFromNamedSupplier()
+					.channel(getOutputChannel()).get();
 		}
 		return null;
 	}
@@ -110,4 +124,5 @@ public class FunctionConfiguration {
 		return this.processor != null ? this.processor.output()
 				: (this.source != null ? this.source.output() : new NullChannel());
 	}
+
 }

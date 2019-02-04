@@ -46,21 +46,27 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
  * @author Oleg Zhurakousky
  */
 @RunWith(SpringJUnit4ClassRunner.class)
+// @checkstyle:off
 @SpringBootTest(classes = BoundChannelsInterceptedTest.Foo.class, properties = "spring.cloud.stream.default-binder=mock")
 public class BoundChannelsInterceptedTest {
 
-	public static final Message<?> TEST_MESSAGE = MessageBuilder.withPayload("bar").setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.APPLICATION_JSON).build();
+	// @checkstyle:on
 
-	@Autowired
-	private Sink sink;
+	public static final Message<?> TEST_MESSAGE = MessageBuilder.withPayload("bar")
+			.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.APPLICATION_JSON)
+			.build();
 
 	@Autowired
 	ChannelInterceptor channelInterceptor;
 
+	@Autowired
+	private Sink sink;
+
 	@Test
 	public void testBoundChannelsIntercepted() {
-		sink.input().send(TEST_MESSAGE);
-		verify(this.channelInterceptor).preSend(Mockito.any(), Mockito.eq(this.sink.input()));
+		this.sink.input().send(TEST_MESSAGE);
+		verify(this.channelInterceptor).preSend(Mockito.any(),
+				Mockito.eq(this.sink.input()));
 		verifyNoMoreInteractions(this.channelInterceptor);
 	}
 
@@ -79,4 +85,5 @@ public class BoundChannelsInterceptedTest {
 		}
 
 	}
+
 }

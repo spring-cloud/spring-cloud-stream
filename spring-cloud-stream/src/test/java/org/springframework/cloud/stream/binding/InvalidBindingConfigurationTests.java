@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2017-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,27 +31,17 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * @author Artem Bilan
- *
  * @since 1.3
  */
 public class InvalidBindingConfigurationTests {
 
 	@Test
 	public void testDuplicateBeanByBindingConfig() {
-		assertThatThrownBy(
-				() -> SpringApplication.run(TestBindingConfig.class))
+		assertThatThrownBy(() -> SpringApplication.run(TestBindingConfig.class))
 				.isInstanceOf(BeanDefinitionStoreException.class)
 				.hasMessageContaining("bean definition with this name already exists")
-				.hasMessageContaining(TestInvalidBinding.NAME)
-				.hasNoCause();
+				.hasMessageContaining(TestInvalidBinding.NAME).hasNoCause();
 	}
-
-	@EnableBinding(TestInvalidBinding.class)
-	@EnableAutoConfiguration
-	public static class TestBindingConfig {
-
-	}
-
 
 	public interface TestInvalidBinding {
 
@@ -62,6 +52,12 @@ public class InvalidBindingConfigurationTests {
 
 		@Output(NAME)
 		MessageChannel out();
+
+	}
+
+	@EnableBinding(TestInvalidBinding.class)
+	@EnableAutoConfiguration
+	public static class TestBindingConfig {
 
 	}
 

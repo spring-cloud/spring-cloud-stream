@@ -73,28 +73,28 @@ import org.springframework.validation.Validator;
  * @author Oleg Zhurakousky
  * @author Soby Chacko
  * @author David Harrigan
- *
- * @deprecated since it really represents 'auto-configuration' it will be renamed/restructured in the next release.
+ * @deprecated since it really represents 'auto-configuration' it will be
+ * renamed/restructured in the next release.
  */
 @Configuration
 @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
 @EnableConfigurationProperties({ BindingServiceProperties.class })
-@Import({ContentTypeConfiguration.class})
+@Import({ ContentTypeConfiguration.class })
 @Deprecated
 public class BinderFactoryConfiguration {
-
-	protected final Log logger = LogFactory.getLog(getClass());
 
 	private static final String SPRING_CLOUD_STREAM_INTERNAL_PREFIX = "spring.cloud.stream.internal";
 
 	private static final String SELF_CONTAINED_APP_PROPERTY_NAME = SPRING_CLOUD_STREAM_INTERNAL_PREFIX
 			+ ".selfContained";
 
+	protected final Log logger = LogFactory.getLog(getClass());
+
 	@Value("${" + SELF_CONTAINED_APP_PROPERTY_NAME + ":}")
 	private String selfContained;
 
-	static Collection<BinderType> parseBinderConfigurations(ClassLoader classLoader, Resource resource)
-			throws IOException, ClassNotFoundException {
+	static Collection<BinderType> parseBinderConfigurations(ClassLoader classLoader,
+			Resource resource) throws IOException, ClassNotFoundException {
 		Properties properties = PropertiesLoaderUtils.loadProperties(resource);
 		Collection<BinderType> parsedBinderConfigurations = new ArrayList<>();
 		for (Map.Entry<?, ?> entry : properties.entrySet()) {
@@ -104,29 +104,83 @@ public class BinderFactoryConfiguration {
 			Class<?>[] binderConfigurationClasses = new Class[binderConfigurationClassNames.length];
 			int i = 0;
 			for (String binderConfigurationClassName : binderConfigurationClassNames) {
-				binderConfigurationClasses[i++] = ClassUtils.forName(binderConfigurationClassName, classLoader);
+				binderConfigurationClasses[i++] = ClassUtils
+						.forName(binderConfigurationClassName, classLoader);
 			}
-			parsedBinderConfigurations.add(new BinderType(binderType, binderConfigurationClasses));
+			parsedBinderConfigurations
+					.add(new BinderType(binderType, binderConfigurationClasses));
 		}
 		return parsedBinderConfigurations;
 	}
 
 	@Bean
-	public BinderTypeRegistry binderTypeRegistry(ConfigurableApplicationContext configurableApplicationContext) {
+	public static MessageHandlerMethodFactory messageHandlerMethodFactory(
+			CompositeMessageConverterFactory compositeMessageConverterFactory,
+			@Qualifier(IntegrationContextUtils.ARGUMENT_RESOLVERS_BEAN_NAME) HandlerMethodArgumentResolversHolder ahmar,
+			@Nullable Validator validator, ConfigurableListableBeanFactory clbf) {
+
+		DefaultMessageHandlerMethodFactory messageHandlerMethodFactory = new DefaultMessageHandlerMethodFactory();
+		messageHandlerMethodFactory.setMessageConverter(
+				compositeMessageConverterFactory.getMessageConverterForAllRegistered());
+
+		/*
+		 * We essentially do the same thing as the
+		 * DefaultMessageHandlerMethodFactory.initArgumentResolvers(..). We can't do it as
+		 * custom resolvers for two reasons. 1. We would have two duplicate (compatible)
+		 * resolvers, so they would need to be ordered properly to ensure these new
+		 * resolvers take precedence. 2.
+		 * DefaultMessageHandlerMethodFactory.initArgumentResolvers(..) puts
+		 * MessageMethodArgumentResolver before custom converters thus not allowing an
+		 * override which kind of proves #1.
+		 *
+		 * In all, all this will be obsolete once https://jira.spring.io/browse/SPR-17503
+		 * is addressed and we can fall back on core resolvers
+		 */
+		List<HandlerMethodArgumentResolver> resolvers = new LinkedList<>();
+		resolvers.add(new SmartPayloadArgumentResolver(
+				compositeMessageConverterFactory.getMessageConverterForAllRegistered(),
+				validator));
+		resolvers.add(new SmartMessageMethodArgumentResolver(
+				compositeMessageConverterFactory.getMessageConverterForAllRegistered()));
+		resolvers.add(new HeaderMethodArgumentResolver(null, clbf));
+		resolvers.add(new HeadersMethodArgumentResolver());
+		resolvers.addAll(ahmar.getResolvers());
+
+		// modify HandlerMethodArgumentResolversHolder
+		Field field = ReflectionUtils
+				.findField(HandlerMethodArgumentResolversHolder.class, "resolvers");
+		field.setAccessible(true);
+		((List<?>) ReflectionUtils.getField(field, ahmar)).clear();
+		resolvers.forEach(ahmar::addResolver);
+		// --
+
+		messageHandlerMethodFactory.setArgumentResolvers(resolvers);
+		messageHandlerMethodFactory.setValidator(validator);
+		return messageHandlerMethodFactory;
+	}
+
+	@Bean
+	public BinderTypeRegistry binderTypeRegistry(
+			ConfigurableApplicationContext configurableApplicationContext) {
 		Map<String, BinderType> binderTypes = new HashMap<>();
 		ClassLoader classLoader = configurableApplicationContext.getClassLoader();
-		// the above can never be null since it will default to ClassUtils.getDefaultClassLoader(..)
+		// the above can never be null since it will default to
+		// ClassUtils.getDefaultClassLoader(..)
 		try {
-			Enumeration<URL> resources = classLoader.getResources("META-INF/spring.binders");
-			if (!Boolean.valueOf(this.selfContained) && (resources == null || !resources.hasMoreElements())) {
-				this.logger.debug("Failed to locate 'META-INF/spring.binders' resources on the classpath."
-						+ " Assuming standard boot 'META-INF/spring.factories' configuration is used");
+			Enumeration<URL> resources = classLoader
+					.getResources("META-INF/spring.binders");
+			if (!Boolean.valueOf(this.selfContained)
+					&& (resources == null || !resources.hasMoreElements())) {
+				this.logger.debug(
+						"Failed to locate 'META-INF/spring.binders' resources on the classpath."
+								+ " Assuming standard boot 'META-INF/spring.factories' configuration is used");
 			}
 			else {
 				while (resources.hasMoreElements()) {
 					URL url = resources.nextElement();
 					UrlResource resource = new UrlResource(url);
-					for (BinderType binderType : parseBinderConfigurations(classLoader, resource)) {
+					for (BinderType binderType : parseBinderConfigurations(classLoader,
+							resource)) {
 						binderTypes.put(binderType.getDefaultName(), binderType);
 					}
 				}
@@ -140,21 +194,27 @@ public class BinderFactoryConfiguration {
 	}
 
 	@Bean
-	public MessageConverterConfigurer messageConverterConfigurer(BindingServiceProperties bindingServiceProperties,
-								CompositeMessageConverterFactory compositeMessageConverterFactory) {
-		return new MessageConverterConfigurer(bindingServiceProperties, compositeMessageConverterFactory);
+	public MessageConverterConfigurer messageConverterConfigurer(
+			BindingServiceProperties bindingServiceProperties,
+			CompositeMessageConverterFactory compositeMessageConverterFactory) {
+		return new MessageConverterConfigurer(bindingServiceProperties,
+				compositeMessageConverterFactory);
 	}
 
 	@Bean
 	public SubscribableChannelBindingTargetFactory channelFactory(
 			CompositeMessageChannelConfigurer compositeMessageChannelConfigurer) {
-		return new SubscribableChannelBindingTargetFactory(compositeMessageChannelConfigurer);
+		return new SubscribableChannelBindingTargetFactory(
+				compositeMessageChannelConfigurer);
 	}
 
 	@Bean
-	public MessageSourceBindingTargetFactory messageSourceFactory(CompositeMessageConverterFactory compositeMessageConverterFactory,
-								CompositeMessageChannelConfigurer compositeMessageChannelConfigurer) {
-		return new MessageSourceBindingTargetFactory(compositeMessageConverterFactory.getMessageConverterForAllRegistered(), compositeMessageChannelConfigurer);
+	public MessageSourceBindingTargetFactory messageSourceFactory(
+			CompositeMessageConverterFactory compositeMessageConverterFactory,
+			CompositeMessageChannelConfigurer compositeMessageChannelConfigurer) {
+		return new MessageSourceBindingTargetFactory(
+				compositeMessageConverterFactory.getMessageConverterForAllRegistered(),
+				compositeMessageChannelConfigurer);
 	}
 
 	@Bean
@@ -165,43 +225,4 @@ public class BinderFactoryConfiguration {
 		return new CompositeMessageChannelConfigurer(configurerList);
 	}
 
-	@Bean
-	public static MessageHandlerMethodFactory messageHandlerMethodFactory(CompositeMessageConverterFactory compositeMessageConverterFactory,
-								@Qualifier(IntegrationContextUtils.ARGUMENT_RESOLVERS_BEAN_NAME) HandlerMethodArgumentResolversHolder ahmar,
-								@Nullable Validator validator,  ConfigurableListableBeanFactory clbf) {
-	
-		DefaultMessageHandlerMethodFactory messageHandlerMethodFactory = new DefaultMessageHandlerMethodFactory();
-		messageHandlerMethodFactory.setMessageConverter(compositeMessageConverterFactory.getMessageConverterForAllRegistered());
-		
-		/*
-		 * We essentially do the same thing as the DefaultMessageHandlerMethodFactory.initArgumentResolvers(..).
-		 * We can't do it as custom resolvers for two reasons. 
-		 * 1. We would have two duplicate (compatible) resolvers, so they would need to be ordered properly 
-		 *    to ensure these new resolvers take precedence.
-		 * 2. DefaultMessageHandlerMethodFactory.initArgumentResolvers(..) puts MessageMethodArgumentResolver 
-		 * before custom converters thus not allowing an override which kind of proves #1.
-		 * 
-		 * In all, all this will be obsolete once https://jira.spring.io/browse/SPR-17503 is addressed and we can fall back on 
-		 * core resolvers
-		 */
-		List<HandlerMethodArgumentResolver> resolvers = new LinkedList<>();
-		resolvers.add(new SmartPayloadArgumentResolver(compositeMessageConverterFactory.getMessageConverterForAllRegistered(), validator));
-		resolvers.add(new SmartMessageMethodArgumentResolver(compositeMessageConverterFactory.getMessageConverterForAllRegistered()));
-		resolvers.add(new HeaderMethodArgumentResolver(null, clbf));
-		resolvers.add(new HeadersMethodArgumentResolver());
-		resolvers.addAll(ahmar.getResolvers());
-		
-		// modify HandlerMethodArgumentResolversHolder
-		Field field = ReflectionUtils.findField(HandlerMethodArgumentResolversHolder.class, "resolvers");
-		field.setAccessible(true);
-		((List<?>) ReflectionUtils.getField(field, ahmar)).clear();	
-		resolvers.forEach(ahmar::addResolver);
-		// --
-		
-		messageHandlerMethodFactory.setArgumentResolvers(resolvers);
-		messageHandlerMethodFactory.setValidator(validator);
-		return messageHandlerMethodFactory;
-	}
-
-	
 }

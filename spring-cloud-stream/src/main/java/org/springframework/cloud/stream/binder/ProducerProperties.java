@@ -42,7 +42,7 @@ import org.springframework.expression.Expression;
 public class ProducerProperties {
 
 	/**
-	 * Signals if this producer needs to be started automatically
+	 * Signals if this producer needs to be started automatically.
 	 *
 	 * Default: true
 	 */
@@ -58,9 +58,8 @@ public class ProducerProperties {
 	private Class<?> partitionKeyExtractorClass;
 
 	/**
-	 * The name of the bean that implements {@link PartitionKeyExtractorStrategy}\.
-	 * Used to extract a key used to compute the partition id (see 'partitionSelector*')
-	 * <br>
+	 * The name of the bean that implements {@link PartitionKeyExtractorStrategy}\. Used
+	 * to extract a key used to compute the partition id (see 'partitionSelector*') <br>
 	 * Mutually exclusive with 'partitionKeyExpression'.
 	 */
 	private String partitionKeyExtractorName;
@@ -72,9 +71,8 @@ public class ProducerProperties {
 	private Class<?> partitionSelectorClass;
 
 	/**
-	 * The name of the bean that implements {@link PartitionSelectorStrategy}\.
-	 * Used to determine partition id based on partition key (see 'partitionKeyExtractor*').
-	 * <br>
+	 * The name of the bean that implements {@link PartitionSelectorStrategy}\. Used to
+	 * determine partition id based on partition key (see 'partitionKeyExtractor*'). <br>
 	 * Mutually exclusive with 'partitionSelectorExpression'.
 	 */
 	private String partitionSelectorName;
@@ -93,7 +91,7 @@ public class ProducerProperties {
 	private boolean errorChannelEnabled = false;
 
 	public Expression getPartitionKeyExpression() {
-		return partitionKeyExpression;
+		return this.partitionKeyExpression;
 	}
 
 	public void setPartitionKeyExpression(Expression partitionKeyExpression) {
@@ -102,7 +100,7 @@ public class ProducerProperties {
 
 	@Deprecated
 	public Class<?> getPartitionKeyExtractorClass() {
-		return partitionKeyExtractorClass;
+		return this.partitionKeyExtractorClass;
 	}
 
 	@Deprecated
@@ -111,13 +109,14 @@ public class ProducerProperties {
 	}
 
 	public boolean isPartitioned() {
-		return this.partitionKeyExpression != null || this.partitionKeyExtractorName != null
+		return this.partitionKeyExpression != null
+				|| this.partitionKeyExtractorName != null
 				|| this.partitionKeyExtractorClass != null;
 	}
 
 	@Deprecated
 	public Class<?> getPartitionSelectorClass() {
-		return partitionSelectorClass;
+		return this.partitionSelectorClass;
 	}
 
 	@Deprecated
@@ -126,7 +125,7 @@ public class ProducerProperties {
 	}
 
 	public Expression getPartitionSelectorExpression() {
-		return partitionSelectorExpression;
+		return this.partitionSelectorExpression;
 	}
 
 	public void setPartitionSelectorExpression(Expression partitionSelectorExpression) {
@@ -135,7 +134,7 @@ public class ProducerProperties {
 
 	@Min(value = 1, message = "Partition count should be greater than zero.")
 	public int getPartitionCount() {
-		return partitionCount;
+		return this.partitionCount;
 	}
 
 	public void setPartitionCount(int partitionCount) {
@@ -143,7 +142,7 @@ public class ProducerProperties {
 	}
 
 	public String[] getRequiredGroups() {
-		return requiredGroups;
+		return this.requiredGroups;
 	}
 
 	public void setRequiredGroups(String... requiredGroups) {
@@ -152,12 +151,14 @@ public class ProducerProperties {
 
 	@AssertTrue(message = "Partition key expression and partition key extractor class properties are mutually exclusive.")
 	public boolean isValidPartitionKeyProperty() {
-		return (this.partitionKeyExpression == null) || (this.partitionKeyExtractorClass == null);
+		return (this.partitionKeyExpression == null)
+				|| (this.partitionKeyExtractorClass == null);
 	}
 
 	@AssertTrue(message = "Partition selector class and partition selector expression properties are mutually exclusive.")
 	public boolean isValidPartitionSelectorProperty() {
-		return (this.partitionSelectorClass == null) || (this.partitionSelectorExpression == null);
+		return (this.partitionSelectorClass == null)
+				|| (this.partitionSelectorExpression == null);
 	}
 
 	public HeaderMode getHeaderMode() {
@@ -185,7 +186,7 @@ public class ProducerProperties {
 	}
 
 	public String getPartitionKeyExtractorName() {
-		return partitionKeyExtractorName;
+		return this.partitionKeyExtractorName;
 	}
 
 	public void setPartitionKeyExtractorName(String partitionKeyExtractorName) {
@@ -193,7 +194,7 @@ public class ProducerProperties {
 	}
 
 	public String getPartitionSelectorName() {
-		return partitionSelectorName;
+		return this.partitionSelectorName;
 	}
 
 	public void setPartitionSelectorName(String partitionSelectorName) {
@@ -201,7 +202,7 @@ public class ProducerProperties {
 	}
 
 	public boolean isAutoStartup() {
-		return autoStartup;
+		return this.autoStartup;
 	}
 
 	public void setAutoStartup(boolean autoStartup) {
@@ -211,11 +212,13 @@ public class ProducerProperties {
 	static class ExpressionSerializer extends JsonSerializer<Expression> {
 
 		@Override
-		public void serialize(Expression expression, JsonGenerator jsonGenerator, SerializerProvider serializerProvider)
-				throws IOException {
+		public void serialize(Expression expression, JsonGenerator jsonGenerator,
+				SerializerProvider serializerProvider) throws IOException {
 			if (expression != null) {
 				jsonGenerator.writeString(expression.getExpressionString());
 			}
 		}
+
 	}
+
 }

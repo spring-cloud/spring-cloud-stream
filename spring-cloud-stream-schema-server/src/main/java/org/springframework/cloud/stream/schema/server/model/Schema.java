@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,7 +51,7 @@ public class Schema {
 	private String definition;
 
 	public Integer getId() {
-		return id;
+		return this.id;
 	}
 
 	public void setId(Integer id) {
@@ -59,7 +59,7 @@ public class Schema {
 	}
 
 	public Integer getVersion() {
-		return version;
+		return this.version;
 	}
 
 	public void setVersion(Integer version) {
@@ -67,7 +67,7 @@ public class Schema {
 	}
 
 	public String getSubject() {
-		return subject;
+		return this.subject;
 	}
 
 	public void setSubject(String subject) {
@@ -75,7 +75,7 @@ public class Schema {
 	}
 
 	public String getFormat() {
-		return format;
+		return this.format;
 	}
 
 	public void setFormat(String format) {
@@ -83,10 +83,11 @@ public class Schema {
 	}
 
 	public String getDefinition() {
-		return definition;
+		return this.definition;
 	}
 
 	public void setDefinition(String definition) {
 		this.definition = definition;
 	}
+
 }

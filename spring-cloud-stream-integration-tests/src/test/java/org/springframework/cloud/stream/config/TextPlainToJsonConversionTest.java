@@ -47,9 +47,9 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @since 1.2
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringBootTest(classes = TextPlainToJsonConversionTest.FooProcessor.class,
-		webEnvironment = SpringBootTest.WebEnvironment.NONE
-)
+// @checkstyle:off
+@SpringBootTest(classes = TextPlainToJsonConversionTest.FooProcessor.class, webEnvironment = SpringBootTest.WebEnvironment.NONE)
+// @checkstyle:on
 public class TextPlainToJsonConversionTest {
 
 	@Autowired
@@ -63,21 +63,24 @@ public class TextPlainToJsonConversionTest {
 	@SuppressWarnings("unchecked")
 	@Test
 	public void testNoContentTypeToJsonConversionOnInput() throws Exception {
-		testProcessor.input().send(MessageBuilder.withPayload("{\"name\":\"Bar\"}").build());
-		Message<String> received = (Message<String>) ((TestSupportBinder) binderFactory.getBinder(null, MessageChannel.class))
-				.messageCollector().forChannel(testProcessor.output()).poll(1, TimeUnit.SECONDS);
+		this.testProcessor.input()
+				.send(MessageBuilder.withPayload("{\"name\":\"Bar\"}").build());
+		Message<String> received = (Message<String>) ((TestSupportBinder) this.binderFactory
+				.getBinder(null, MessageChannel.class)).messageCollector()
+						.forChannel(this.testProcessor.output())
+						.poll(1, TimeUnit.SECONDS);
 		assertThat(received).isNotNull();
-		Foo foo = mapper.readValue(received.getPayload(),Foo.class);
+		Foo foo = this.mapper.readValue(received.getPayload(), Foo.class);
 		assertThat(foo.getName()).isEqualTo("transformed-Bar");
 	}
 
 	/**
-	 * @since 2.0: Conversion from text/plain -> json is no longer supported. Strict contentType only.
-	 * @throws Exception
+	 * @since 2.0: Conversion from text/plain -> json is no longer supported. Strict
+	 * contentType only.
 	 */
 	@Test(expected = MessagingException.class)
-	public void testTextPlainToJsonConversionOnInput() throws Exception {
-		testProcessor.input().send(MessageBuilder.withPayload("{\"name\":\"Bar\"}")
+	public void testTextPlainToJsonConversionOnInput() {
+		this.testProcessor.input().send(MessageBuilder.withPayload("{\"name\":\"Bar\"}")
 				.setHeader(MessageHeaders.CONTENT_TYPE, "text/plain").build());
 	}
 
@@ -103,7 +106,7 @@ public class TextPlainToJsonConversionTest {
 		}
 
 		public String getName() {
-			return name;
+			return this.name;
 		}
 
 		public void setName(String name) {
@@ -112,7 +115,7 @@ public class TextPlainToJsonConversionTest {
 
 		@Override
 		public String toString() {
-			return "Foo{name='" + name + "'}";
+			return "Foo{name='" + this.name + "'}";
 		}
 
 	}

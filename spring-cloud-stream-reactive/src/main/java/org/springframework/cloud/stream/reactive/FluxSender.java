@@ -22,12 +22,11 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 /**
- * Used for {@link org.springframework.cloud.stream.annotation.StreamListener}
- * and {@link org.springframework.cloud.stream.reactive.StreamEmitter} arguments
- * annotated with {@link org.springframework.cloud.stream.annotation.Output}.
+ * Used for {@link org.springframework.cloud.stream.annotation.StreamListener} and
+ * {@link org.springframework.cloud.stream.reactive.StreamEmitter} arguments annotated
+ * with {@link org.springframework.cloud.stream.annotation.Output}.
  *
  * @author Marius Bogoevici
- *
  * @see reactor.core.Disposable
  */
 public interface FluxSender extends Closeable {

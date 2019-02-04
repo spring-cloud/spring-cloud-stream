@@ -38,7 +38,8 @@ import org.springframework.util.ObjectUtils;
  * @author Ilayaperumal Gopinathan
  * @author Oleg Zhurakousky
  */
-public class BinderAwareChannelResolver extends BeanFactoryMessageChannelDestinationResolver {
+public class BinderAwareChannelResolver
+		extends BeanFactoryMessageChannelDestinationResolver {
 
 	private final BindingService bindingService;
 
@@ -54,24 +55,36 @@ public class BinderAwareChannelResolver extends BeanFactoryMessageChannelDestina
 	public BinderAwareChannelResolver(BindingService bindingService,
 			AbstractBindingTargetFactory<? extends MessageChannel> bindingTargetFactory,
 			DynamicDestinationsBindable dynamicDestinationsBindable) {
-		this(bindingService, bindingTargetFactory, dynamicDestinationsBindable, null, null);
+		this(bindingService, bindingTargetFactory, dynamicDestinationsBindable, null,
+				null);
 	}
 
 	@SuppressWarnings("rawtypes")
 	public BinderAwareChannelResolver(BindingService bindingService,
 			AbstractBindingTargetFactory<? extends MessageChannel> bindingTargetFactory,
-			DynamicDestinationsBindable dynamicDestinationsBindable, NewDestinationBindingCallback callback) {
-		this(bindingService, bindingTargetFactory, dynamicDestinationsBindable, callback, null);
+			DynamicDestinationsBindable dynamicDestinationsBindable,
+			NewDestinationBindingCallback callback) {
+		this(bindingService, bindingTargetFactory, dynamicDestinationsBindable, callback,
+				null);
 	}
 
 	/**
 	 * @deprecated since GlobalChannelInterceptorProcessor is no longer used
+	 * @param bindingService service to bind inputs and outputs
+	 * @param bindingTargetFactory implementation that restricts the type of binding
+	 * target to a specified class and its supertypes
+	 * @param dynamicDestinationsBindable stores the dynamic destination names and handles
+	 * their unbinding.
+	 * @param callback used to configure a new destination before it is bound.
+	 * @param globalChannelInterceptorProcessor applies global interceptors to message
+	 * channel beans
 	 */
 	@SuppressWarnings("rawtypes")
 	@Deprecated
 	public BinderAwareChannelResolver(BindingService bindingService,
 			AbstractBindingTargetFactory<? extends MessageChannel> bindingTargetFactory,
-			DynamicDestinationsBindable dynamicDestinationsBindable, NewDestinationBindingCallback callback,
+			DynamicDestinationsBindable dynamicDestinationsBindable,
+			NewDestinationBindingCallback callback,
 			GlobalChannelInterceptorProcessor globalChannelInterceptorProcessor) {
 		this.dynamicDestinationsBindable = dynamicDestinationsBindable;
 		Assert.notNull(bindingService, "'bindingService' cannot be null");
@@ -84,7 +97,8 @@ public class BinderAwareChannelResolver extends BeanFactoryMessageChannelDestina
 	@Override
 	public void setBeanFactory(BeanFactory beanFactory) {
 		super.setBeanFactory(beanFactory);
-		Assert.isTrue(beanFactory instanceof ConfigurableListableBeanFactory, "'beanFactory' must be an instance of ConfigurableListableBeanFactory");
+		Assert.isTrue(beanFactory instanceof ConfigurableListableBeanFactory,
+				"'beanFactory' must be an instance of ConfigurableListableBeanFactory");
 		this.beanFactory = (ConfigurableListableBeanFactory) beanFactory;
 	}
 
@@ -98,9 +112,12 @@ public class BinderAwareChannelResolver extends BeanFactoryMessageChannelDestina
 			// intentionally empty; will check again while holding the monitor
 		}
 		synchronized (this) {
-			BindingServiceProperties bindingServiceProperties = this.bindingService.getBindingServiceProperties();
-			String[] dynamicDestinations = bindingServiceProperties.getDynamicDestinations();
-			boolean dynamicAllowed = ObjectUtils.isEmpty(dynamicDestinations) || ObjectUtils.containsElement(dynamicDestinations, channelName);
+			BindingServiceProperties bindingServiceProperties = this.bindingService
+					.getBindingServiceProperties();
+			String[] dynamicDestinations = bindingServiceProperties
+					.getDynamicDestinations();
+			boolean dynamicAllowed = ObjectUtils.isEmpty(dynamicDestinations)
+					|| ObjectUtils.containsElement(dynamicDestinations, channelName);
 			try {
 				return super.resolveDestination(channelName);
 			}
@@ -113,18 +130,25 @@ public class BinderAwareChannelResolver extends BeanFactoryMessageChannelDestina
 			MessageChannel channel = this.bindingTargetFactory.createOutput(channelName);
 			this.beanFactory.registerSingleton(channelName, channel);
 
-			//TODO: Investigate if the following call is necessary.
-			//initializeBean call on the next line also calling the addMatchingInterceptors method in GlobalChannelInterceptorProcessor
-			//this.instrumentChannelWithGlobalInterceptors(channel, channelName);
+			// TODO: Investigate if the following call is necessary.
+			// initializeBean call on the next line also calling the
+			// addMatchingInterceptors method in GlobalChannelInterceptorProcessor
+			// this.instrumentChannelWithGlobalInterceptors(channel, channelName);
 
-			channel = (MessageChannel) this.beanFactory.initializeBean(channel, channelName);
+			channel = (MessageChannel) this.beanFactory.initializeBean(channel,
+					channelName);
 			if (this.newBindingCallback != null) {
-				ProducerProperties producerProperties = bindingServiceProperties.getProducerProperties(channelName);
-				Object extendedProducerProperties = this.bindingService.getExtendedProducerProperties(channel, channelName);
-				this.newBindingCallback.configure(channelName, channel, producerProperties, extendedProducerProperties);
-				bindingServiceProperties.updateProducerProperties(channelName, producerProperties);
+				ProducerProperties producerProperties = bindingServiceProperties
+						.getProducerProperties(channelName);
+				Object extendedProducerProperties = this.bindingService
+						.getExtendedProducerProperties(channel, channelName);
+				this.newBindingCallback.configure(channelName, channel,
+						producerProperties, extendedProducerProperties);
+				bindingServiceProperties.updateProducerProperties(channelName,
+						producerProperties);
 			}
-			Binding<MessageChannel> binding = this.bindingService.bindProducer(channel, channelName);
+			Binding<MessageChannel> binding = this.bindingService.bindProducer(channel,
+					channelName);
 			this.dynamicDestinationsBindable.addOutputBinding(channelName, binding);
 
 			return channel;
@@ -133,9 +157,9 @@ public class BinderAwareChannelResolver extends BeanFactoryMessageChannelDestina
 
 	/**
 	 * Configure a new destination before it is bound.
+	 *
 	 * @param <T> the extended properties type. If you need to support dynamic binding
 	 * with multiple binders, use {@link Object} and cast as needed.
-	 *
 	 * @since 2.0
 	 *
 	 */
@@ -148,11 +172,12 @@ public class BinderAwareChannelResolver extends BeanFactoryMessageChannelDestina
 		 * @param channel the channel that is about to be bound.
 		 * @param producerProperties the producer properties.
 		 * @param extendedProducerProperties the extended producer properties (type
-		 * depends on binder type and may be null if the binder doesn't support
-		 * extended properties).
+		 * depends on binder type and may be null if the binder doesn't support extended
+		 * properties).
 		 */
-		void configure(String channelName, MessageChannel channel, ProducerProperties producerProperties,
-				T extendedProducerProperties);
+		void configure(String channelName, MessageChannel channel,
+				ProducerProperties producerProperties, T extendedProducerProperties);
 
 	}
+
 }

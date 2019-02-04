@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2017-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,8 @@ public class User implements Serializable {
 
 	private String name;
 
-	public User(){}
+	public User() {
+	}
 
 	@JsonCreator
 	public User(@JsonProperty("name") String name) {
@@ -38,7 +39,7 @@ public class User implements Serializable {
 	}
 
 	public String getName() {
-		return name;
+		return this.name;
 	}
 
 	public void setName(String name) {
@@ -48,8 +49,9 @@ public class User implements Serializable {
 	@Override
 	public String toString() {
 		final StringBuffer sb = new StringBuffer("User{");
-		sb.append("name='").append(name).append('\'');
+		sb.append("name='").append(this.name).append('\'');
 		sb.append('}');
 		return sb.toString();
 	}
+
 }

@@ -29,6 +29,7 @@ import org.springframework.util.Assert;
 /**
  * A mutable type for allowing {@link Binder} implementations to transform and enrich
  * message content more efficiently.
+ *
  * @author David Turanski
  * @author Marius Bogoevici
  */
@@ -58,11 +59,11 @@ public class MessageValues implements Map<String, Object> {
 	 * @return the payload
 	 */
 	public Object getPayload() {
-		return payload;
+		return this.payload;
 	}
 
 	/**
-	 * Set the payload
+	 * Set the payload.
 	 * @param payload any non null object.
 	 */
 	public void setPayload(Object payload) {
@@ -71,7 +72,7 @@ public class MessageValues implements Map<String, Object> {
 	}
 
 	public Map<String, Object> getHeaders() {
-		return headers;
+		return this.headers;
 	}
 
 	/**
@@ -81,7 +82,8 @@ public class MessageValues implements Map<String, Object> {
 	 * @return the Message
 	 */
 	public Message<?> toMessage(MessageBuilderFactory messageBuilderFactory) {
-		return messageBuilderFactory.withPayload(this.payload).copyHeaders(this.headers).build();
+		return messageBuilderFactory.withPayload(this.payload).copyHeaders(this.headers)
+				.build();
 	}
 
 	/**
@@ -95,62 +97,62 @@ public class MessageValues implements Map<String, Object> {
 
 	@Override
 	public int size() {
-		return headers.size();
+		return this.headers.size();
 	}
 
 	@Override
 	public boolean isEmpty() {
-		return headers.isEmpty();
+		return this.headers.isEmpty();
 	}
 
 	@Override
 	public boolean containsKey(Object key) {
-		return headers.containsKey(key);
+		return this.headers.containsKey(key);
 	}
 
 	@Override
 	public boolean containsValue(Object value) {
-		return headers.containsValue(value);
+		return this.headers.containsValue(value);
 	}
 
 	@Override
 	public Object get(Object key) {
-		return headers.get(key);
+		return this.headers.get(key);
 	}
 
 	@Override
 	public Object put(String key, Object value) {
-		return headers.put(key, value);
+		return this.headers.put(key, value);
 	}
 
 	@Override
 	public Object remove(Object key) {
-		return headers.remove(key);
+		return this.headers.remove(key);
 	}
 
 	@Override
 	public void putAll(Map<? extends String, ?> m) {
-		headers.putAll(m);
+		this.headers.putAll(m);
 	}
 
 	@Override
 	public void clear() {
-		headers.clear();
+		this.headers.clear();
 	}
 
 	@Override
 	public Set<String> keySet() {
-		return headers.keySet();
+		return this.headers.keySet();
 	}
 
 	@Override
 	public Collection<Object> values() {
-		return headers.values();
+		return this.headers.values();
 	}
 
 	@Override
 	public Set<Entry<String, Object>> entrySet() {
-		return headers.entrySet();
+		return this.headers.entrySet();
 	}
 
 	public void copyHeadersIfAbsent(Map<String, Object> headersToCopy) {
@@ -160,4 +162,5 @@ public class MessageValues implements Map<String, Object> {
 			}
 		}
 	}
+
 }

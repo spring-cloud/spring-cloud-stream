@@ -42,19 +42,21 @@ public class JavaSerializationMessageConverter extends AbstractMessageConverter 
 
 	@Override
 	protected boolean supports(Class<?> clazz) {
-		if (clazz != null){
+		if (clazz != null) {
 			return Serializable.class.isAssignableFrom(clazz);
 		}
 		return true;
 	}
 
 	@Override
-	public Object convertFromInternal(Message<?> message, Class<?> targetClass, Object conversionHint) {
+	public Object convertFromInternal(Message<?> message, Class<?> targetClass,
+			Object conversionHint) {
 		if (!(message.getPayload() instanceof byte[])) {
 			return null;
 		}
 		try {
-			ByteArrayInputStream bis = new ByteArrayInputStream((byte[]) (message.getPayload()));
+			ByteArrayInputStream bis = new ByteArrayInputStream(
+					(byte[]) (message.getPayload()));
 			return new ObjectInputStream(bis).readObject();
 		}
 		catch (Exception e) {
@@ -64,7 +66,8 @@ public class JavaSerializationMessageConverter extends AbstractMessageConverter 
 	}
 
 	@Override
-	protected Object convertToInternal(Object payload, MessageHeaders headers, Object conversionHint) {
+	protected Object convertToInternal(Object payload, MessageHeaders headers,
+			Object conversionHint) {
 		ByteArrayOutputStream bos = new ByteArrayOutputStream();
 		try {
 			new ObjectOutputStream(bos).writeObject(payload);

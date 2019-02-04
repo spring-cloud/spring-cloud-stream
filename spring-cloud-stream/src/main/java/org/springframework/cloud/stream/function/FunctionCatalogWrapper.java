@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 the original author or authors.
+ * Copyright 2018-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import org.springframework.util.Assert;
 /**
  * @author David Turanski
  * @author Oleg Zhurakousky
- *
  * @since 2.1
  **/
 class FunctionCatalogWrapper {
@@ -34,10 +33,13 @@ class FunctionCatalogWrapper {
 	}
 
 	<T> T lookup(Class<T> functionType, String name) {
-		T function = catalog.lookup(functionType, name);
-		Assert.notNull(function, functionType == null ?
-			String.format("User provided Function '%s' cannot be located.", name) :
-			String.format("User provided %s '%s' cannot be located.", functionType.getSimpleName(), name));
+		T function = this.catalog.lookup(functionType, name);
+		Assert.notNull(function,
+				functionType == null
+						? String.format("User provided Function '%s' cannot be located.",
+								name)
+						: String.format("User provided %s '%s' cannot be located.",
+								functionType.getSimpleName(), name));
 		return function;
 	}
 
@@ -46,6 +48,7 @@ class FunctionCatalogWrapper {
 	}
 
 	<T> boolean contains(Class<T> functionType, String name) {
-		return catalog.lookup(functionType, name) != null;
+		return this.catalog.lookup(functionType, name) != null;
 	}
+
 }

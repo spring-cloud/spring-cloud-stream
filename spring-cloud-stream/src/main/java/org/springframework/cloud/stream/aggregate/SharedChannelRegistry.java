@@ -36,7 +36,8 @@ public class SharedChannelRegistry {
 
 	private final SharedBindingTargetRegistry sharedBindingTargetRegistry;
 
-	public SharedChannelRegistry(SharedBindingTargetRegistry sharedBindingTargetRegistry) {
+	public SharedChannelRegistry(
+			SharedBindingTargetRegistry sharedBindingTargetRegistry) {
 		this.sharedBindingTargetRegistry = sharedBindingTargetRegistry;
 	}
 
@@ -49,14 +50,18 @@ public class SharedChannelRegistry {
 	}
 
 	public Map<String, MessageChannel> getAll() {
-		Map<String, Object> sharedBindingTargets = this.sharedBindingTargetRegistry.getAll();
+		Map<String, Object> sharedBindingTargets = this.sharedBindingTargetRegistry
+				.getAll();
 		Map<String, MessageChannel> sharedMessageChannels = new HashMap<>();
-		for (Map.Entry<String, Object> sharedBindingTargetEntry : sharedBindingTargets.entrySet()) {
-			if (MessageChannel.class.isAssignableFrom(sharedBindingTargetEntry.getValue().getClass())) {
+		for (Map.Entry<String, Object> sharedBindingTargetEntry : sharedBindingTargets
+				.entrySet()) {
+			if (MessageChannel.class
+					.isAssignableFrom(sharedBindingTargetEntry.getValue().getClass())) {
 				sharedMessageChannels.put(sharedBindingTargetEntry.getKey(),
 						(MessageChannel) sharedBindingTargetEntry.getValue());
 			}
 		}
 		return Collections.unmodifiableMap(sharedMessageChannels);
 	}
+
 }

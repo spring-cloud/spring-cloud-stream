@@ -47,6 +47,7 @@ import org.springframework.util.MimeType;
 /**
  * Base class for Apache Avro
  * {@link org.springframework.messaging.converter.MessageConverter} implementations.
+ *
  * @author Marius Bogoevici
  * @author Vinicius Carvalho
  * @author Sercan Karaoglu
@@ -73,11 +74,13 @@ public abstract class AbstractAvroMessageConverter extends AbstractMessageConver
 
 	@Override
 	protected boolean canConvertFrom(Message<?> message, Class<?> targetClass) {
-		return super.canConvertFrom(message, targetClass) && (message.getPayload() instanceof byte[]);
+		return super.canConvertFrom(message, targetClass)
+				&& (message.getPayload() instanceof byte[]);
 	}
 
 	@Override
-	protected Object convertFromInternal(Message<?> message, Class<?> targetClass, Object conversionHint) {
+	protected Object convertFromInternal(Message<?> message, Class<?> targetClass,
+			Object conversionHint) {
 		Object result = null;
 		try {
 			byte[] payload = (byte[]) message.getPayload();
@@ -96,7 +99,8 @@ public abstract class AbstractAvroMessageConverter extends AbstractMessageConver
 			Schema readerSchema = resolveReaderSchemaForDeserialization(targetClass);
 
 			@SuppressWarnings("unchecked")
-			DatumReader<Object> reader = getDatumReader((Class<Object>) targetClass, readerSchema, writerSchema);
+			DatumReader<Object> reader = getDatumReader((Class<Object>) targetClass,
+					readerSchema, writerSchema);
 			Decoder decoder = DecoderFactory.get().binaryDecoder(payload, null);
 			result = reader.read(null, decoder);
 		}
@@ -132,7 +136,8 @@ public abstract class AbstractAvroMessageConverter extends AbstractMessageConver
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	protected DatumReader<Object> getDatumReader(Class<Object> type, Schema schema, Schema writerSchema) {
+	protected DatumReader<Object> getDatumReader(Class<Object> type, Schema schema,
+			Schema writerSchema) {
 		DatumReader<Object> reader = null;
 		if (SpecificRecord.class.isAssignableFrom(type)) {
 			if (schema != null) {
@@ -167,15 +172,15 @@ public abstract class AbstractAvroMessageConverter extends AbstractMessageConver
 			}
 		}
 		if (reader == null) {
-			throw new MessageConversionException(
-					"No schema can be inferred from type " + type
-							.getName() + " and no schema has been explicitly configured.");
+			throw new MessageConversionException("No schema can be inferred from type "
+					+ type.getName() + " and no schema has been explicitly configured.");
 		}
 		return reader;
 	}
 
 	@Override
-	protected Object convertToInternal(Object payload, MessageHeaders headers, Object conversionHint) {
+	protected Object convertToInternal(Object payload, MessageHeaders headers,
+			Object conversionHint) {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		try {
 			MimeType hintedContentType = null;
@@ -184,7 +189,8 @@ public abstract class AbstractAvroMessageConverter extends AbstractMessageConver
 			}
 			Schema schema = resolveSchemaForWriting(payload, headers, hintedContentType);
 			@SuppressWarnings("unchecked")
-			DatumWriter<Object> writer = getDatumWriter((Class<Object>) payload.getClass(), schema);
+			DatumWriter<Object> writer = getDatumWriter(
+					(Class<Object>) payload.getClass(), schema);
 			Encoder encoder = EncoderFactory.get().binaryEncoder(baos, null);
 			writer.write(payload, encoder);
 			encoder.flush();
@@ -195,10 +201,11 @@ public abstract class AbstractAvroMessageConverter extends AbstractMessageConver
 		return baos.toByteArray();
 	}
 
-	protected abstract Schema resolveSchemaForWriting(Object payload, MessageHeaders headers,
-			MimeType hintedContentType);
+	protected abstract Schema resolveSchemaForWriting(Object payload,
+			MessageHeaders headers, MimeType hintedContentType);
 
 	protected abstract Schema resolveWriterSchemaForDeserialization(MimeType mimeType);
 
 	protected abstract Schema resolveReaderSchemaForDeserialization(Class<?> targetClass);
+
 }

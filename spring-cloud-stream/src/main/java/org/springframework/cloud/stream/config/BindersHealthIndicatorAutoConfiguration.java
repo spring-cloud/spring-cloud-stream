@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2017-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,7 +52,8 @@ public class BindersHealthIndicatorAutoConfiguration {
 	@Bean
 	@ConditionalOnMissingBean(name = "bindersHealthIndicator")
 	public CompositeHealthIndicator bindersHealthIndicator() {
-		return new CompositeHealthIndicator(new OrderedHealthAggregator(), new DefaultHealthIndicatorRegistry());
+		return new CompositeHealthIndicator(new OrderedHealthAggregator(),
+				new DefaultHealthIndicatorRegistry());
 	}
 
 	@Bean
@@ -67,7 +68,8 @@ public class BindersHealthIndicatorAutoConfiguration {
 	 *
 	 * @author Ilayaperumal Gopinathan
 	 */
-	private static class BindersHealthIndicatorListener implements DefaultBinderFactory.Listener {
+	private static class BindersHealthIndicatorListener
+			implements DefaultBinderFactory.Listener {
 
 		private final CompositeHealthIndicator bindersHealthIndicator;
 
@@ -80,13 +82,16 @@ public class BindersHealthIndicatorAutoConfiguration {
 				ConfigurableApplicationContext binderContext) {
 			if (this.bindersHealthIndicator != null) {
 				OrderedHealthAggregator healthAggregator = new OrderedHealthAggregator();
-				Map<String, HealthIndicator> indicators = binderContext.getBeansOfType(HealthIndicator.class);
+				Map<String, HealthIndicator> indicators = binderContext
+						.getBeansOfType(HealthIndicator.class);
 				// if there are no health indicators in the child context, we just mark
 				// the binder's health as unknown
 				// this can happen due to the fact that configuration is inherited
-				HealthIndicator binderHealthIndicator = indicators.isEmpty() ? new DefaultHealthIndicator()
+				HealthIndicator binderHealthIndicator = indicators.isEmpty()
+						? new DefaultHealthIndicator()
 						: new CompositeHealthIndicator(healthAggregator, indicators);
-				bindersHealthIndicator.getRegistry().register(binderConfigurationName, binderHealthIndicator);
+				this.bindersHealthIndicator.getRegistry()
+						.register(binderConfigurationName, binderHealthIndicator);
 			}
 		}
 
@@ -96,6 +101,9 @@ public class BindersHealthIndicatorAutoConfiguration {
 			protected void doHealthCheck(Health.Builder builder) throws Exception {
 				builder.unknown();
 			}
+
 		}
+
 	}
+
 }

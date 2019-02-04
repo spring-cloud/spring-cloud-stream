@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,8 +36,9 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
  * @author Marius Bogoevici
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringBootTest(classes = SourceBindingWithDefaultsTests.TestSource.class,
-		properties = "spring.cloud.stream.defaultBinder=mock")
+// @checkstyle:off
+@SpringBootTest(classes = SourceBindingWithDefaultsTests.TestSource.class, properties = "spring.cloud.stream.defaultBinder=mock")
+// @checkstyle:on
 public class SourceBindingWithDefaultsTests {
 
 	@Autowired
@@ -46,11 +47,12 @@ public class SourceBindingWithDefaultsTests {
 	@Autowired
 	private Source testSource;
 
-	@SuppressWarnings({"rawtypes", "unchecked"})
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Test
 	public void testSourceOutputChannelBound() {
-		Binder binder = binderFactory.getBinder(null, MessageChannel.class);
-		verify(binder).bindProducer(eq("output"), eq(this.testSource.output()), Mockito.any());
+		Binder binder = this.binderFactory.getBinder(null, MessageChannel.class);
+		verify(binder).bindProducer(eq("output"), eq(this.testSource.output()),
+				Mockito.any());
 		verifyNoMoreInteractions(binder);
 	}
 
@@ -59,4 +61,5 @@ public class SourceBindingWithDefaultsTests {
 	public static class TestSource {
 
 	}
+
 }

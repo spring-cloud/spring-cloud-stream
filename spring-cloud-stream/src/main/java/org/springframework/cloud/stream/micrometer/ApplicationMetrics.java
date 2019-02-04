@@ -25,7 +25,6 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
-
 /**
  * @author Vinicius Carvalho
  * @author Oleg Zhurakousky
@@ -45,14 +44,15 @@ class ApplicationMetrics {
 	private Map<String, Object> properties;
 
 	@JsonCreator
-	ApplicationMetrics(@JsonProperty("name") String name, @JsonProperty("metrics") Collection<Metric<Number>> metrics) {
+	ApplicationMetrics(@JsonProperty("name") String name,
+			@JsonProperty("metrics") Collection<Metric<Number>> metrics) {
 		this.name = name;
 		this.metrics = metrics;
 		this.createdTime = new Date();
 	}
 
 	public String getName() {
-		return name;
+		return this.name;
 	}
 
 	public void setName(String name) {
@@ -60,7 +60,7 @@ class ApplicationMetrics {
 	}
 
 	public Collection<Metric<Number>> getMetrics() {
-		return metrics;
+		return this.metrics;
 	}
 
 	public void setMetrics(Collection<Metric<Number>> metrics) {
@@ -68,11 +68,11 @@ class ApplicationMetrics {
 	}
 
 	public Date getCreatedTime() {
-		return createdTime;
+		return this.createdTime;
 	}
 
 	public Map<String, Object> getProperties() {
-		return properties;
+		return this.properties;
 	}
 
 	public void setProperties(Map<String, Object> properties) {
@@ -80,10 +80,11 @@ class ApplicationMetrics {
 	}
 
 	public long getInterval() {
-		return interval;
+		return this.interval;
 	}
 
 	public void setInterval(long interval) {
 		this.interval = interval;
 	}
+
 }

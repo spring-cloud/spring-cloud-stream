@@ -37,14 +37,18 @@ public abstract class StreamAnnotationCommonMethodUtils {
 	public static String getOutboundBindingTargetName(Method method) {
 		SendTo sendTo = AnnotationUtils.findAnnotation(method, SendTo.class);
 		if (sendTo != null) {
-			Assert.isTrue(!ObjectUtils.isEmpty(sendTo.value()), StreamAnnotationErrorMessages.ATLEAST_ONE_OUTPUT);
-			Assert.isTrue(sendTo.value().length == 1, StreamAnnotationErrorMessages.SEND_TO_MULTIPLE_DESTINATIONS);
-			Assert.hasText(sendTo.value()[0], StreamAnnotationErrorMessages.SEND_TO_EMPTY_DESTINATION);
+			Assert.isTrue(!ObjectUtils.isEmpty(sendTo.value()),
+					StreamAnnotationErrorMessages.ATLEAST_ONE_OUTPUT);
+			Assert.isTrue(sendTo.value().length == 1,
+					StreamAnnotationErrorMessages.SEND_TO_MULTIPLE_DESTINATIONS);
+			Assert.hasText(sendTo.value()[0],
+					StreamAnnotationErrorMessages.SEND_TO_EMPTY_DESTINATION);
 			return sendTo.value()[0];
 		}
 		Output output = AnnotationUtils.findAnnotation(method, Output.class);
 		if (output != null) {
-			Assert.isTrue(StringUtils.hasText(output.value()), StreamAnnotationErrorMessages.ATLEAST_ONE_OUTPUT);
+			Assert.isTrue(StringUtils.hasText(output.value()),
+					StreamAnnotationErrorMessages.ATLEAST_ONE_OUTPUT);
 			return output.value();
 		}
 		return null;
@@ -52,12 +56,15 @@ public abstract class StreamAnnotationCommonMethodUtils {
 
 	public static int outputAnnotationCount(Method method) {
 		int outputAnnotationCount = 0;
-		for (int parameterIndex = 0; parameterIndex < method.getParameterTypes().length; parameterIndex++) {
-			MethodParameter methodParameter = MethodParameter.forExecutable(method, parameterIndex);
+		for (int parameterIndex = 0; parameterIndex < method
+				.getParameterTypes().length; parameterIndex++) {
+			MethodParameter methodParameter = MethodParameter.forExecutable(method,
+					parameterIndex);
 			if (methodParameter.hasParameterAnnotation(Output.class)) {
 				outputAnnotationCount++;
 			}
 		}
 		return outputAnnotationCount;
 	}
+
 }

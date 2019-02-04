@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2017-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.MimeType;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.fail;
+import static org.assertj.core.api.Assertions.fail;
 
 /**
  * @author Gary Russell
@@ -46,8 +46,7 @@ import static org.junit.Assert.fail;
  */
 public class MessageConverterConfigurerTests {
 
-
-	//@Test
+	// @Test
 	public void testConfigureOutputChannelWithBadContentType() {
 		BindingServiceProperties props = new BindingServiceProperties();
 		BindingProperties bindingProps = new BindingProperties();
@@ -55,11 +54,12 @@ public class MessageConverterConfigurerTests {
 		props.setBindings(Collections.singletonMap("foo", bindingProps));
 		CompositeMessageConverterFactory converterFactory = new CompositeMessageConverterFactory(
 				Collections.<MessageConverter>emptyList(), null);
-		MessageConverterConfigurer configurer = new MessageConverterConfigurer(props, converterFactory);
+		MessageConverterConfigurer configurer = new MessageConverterConfigurer(props,
+				converterFactory);
 		QueueChannel out = new QueueChannel();
 		configurer.configureOutputChannel(out, "foo");
-		out.send(new GenericMessage<Foo>(new Foo(),
-				Collections.<String, Object> singletonMap(MessageHeaders.CONTENT_TYPE, "bad/ct")));
+		out.send(new GenericMessage<Foo>(new Foo(), Collections
+				.<String, Object>singletonMap(MessageHeaders.CONTENT_TYPE, "bad/ct")));
 		Message<?> received = out.receive(0);
 		assertThat(received).isNotNull();
 		assertThat(received.getPayload()).isInstanceOf(Foo.class);
@@ -72,7 +72,8 @@ public class MessageConverterConfigurerTests {
 		BindingProperties bindingProps = new BindingProperties();
 		bindingProps.setContentType("foo/bar");
 		props.setBindings(Collections.singletonMap("foo", bindingProps));
-		MessageConverter converter = new AbstractMessageConverter(new MimeType("foo", "bar")) {
+		MessageConverter converter = new AbstractMessageConverter(
+				new MimeType("foo", "bar")) {
 
 			@Override
 			protected boolean supports(Class<?> clazz) {
@@ -80,23 +81,27 @@ public class MessageConverterConfigurerTests {
 			}
 
 			@Override
-			protected Object convertToInternal(Object payload, MessageHeaders headers, Object conversionHint) {
+			protected Object convertToInternal(Object payload, MessageHeaders headers,
+					Object conversionHint) {
 				return null;
 			}
 
 		};
 		CompositeMessageConverterFactory converterFactory = new CompositeMessageConverterFactory(
 				Collections.<MessageConverter>singletonList(converter), null);
-		MessageConverterConfigurer configurer = new MessageConverterConfigurer(props, converterFactory);
+		MessageConverterConfigurer configurer = new MessageConverterConfigurer(props,
+				converterFactory);
 		QueueChannel out = new QueueChannel();
 		configurer.configureOutputChannel(out, "foo");
 		try {
 			out.send(new GenericMessage<Foo>(new Foo(),
-					Collections.<String, Object> singletonMap(MessageHeaders.CONTENT_TYPE, "bad/ct")));
+					Collections.<String, Object>singletonMap(MessageHeaders.CONTENT_TYPE,
+							"bad/ct")));
 			fail("Expected MessageConversionException: " + out.receive(0));
 		}
 		catch (MessageConversionException e) {
-			assertThat(e.getMessage()).endsWith("to the configured output type: 'foo/bar'");
+			assertThat(e.getMessage())
+					.endsWith("to the configured output type: 'foo/bar'");
 		}
 	}
 
@@ -108,19 +113,19 @@ public class MessageConverterConfigurerTests {
 		props.setBindings(Collections.singletonMap("foo", bindingProps));
 		CompositeMessageConverterFactory converterFactory = new CompositeMessageConverterFactory(
 				Collections.<MessageConverter>emptyList(), null);
-		MessageConverterConfigurer configurer = new MessageConverterConfigurer(props, converterFactory);
+		MessageConverterConfigurer configurer = new MessageConverterConfigurer(props,
+				converterFactory);
 		QueueChannel in = new QueueChannel();
 		configurer.configureInputChannel(in, "foo");
 		Foo foo = new Foo();
-		in.send(
-				MessageBuilder.withPayload(foo)
-					.setHeader(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE, "application/json")
-					.setHeader(BinderHeaders.SCST_VERSION, "1.x")
-					.build());
+		in.send(MessageBuilder.withPayload(foo)
+				.setHeader(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE, "application/json")
+				.setHeader(BinderHeaders.SCST_VERSION, "1.x").build());
 		Message<?> received = in.receive(0);
 		assertThat(received).isNotNull();
 		assertThat(received.getPayload()).isEqualTo(foo);
-		assertThat(received.getHeaders().get(MessageHeaders.CONTENT_TYPE).toString()).isEqualTo("application/json");
+		assertThat(received.getHeaders().get(MessageHeaders.CONTENT_TYPE).toString())
+				.isEqualTo("application/json");
 	}
 
 	public static class Foo {

@@ -38,10 +38,11 @@ public class SchemaRegistryClientProperties {
 	}
 
 	public boolean isCached() {
-		return cached;
+		return this.cached;
 	}
 
 	public void setCached(boolean cached) {
 		this.cached = cached;
 	}
+
 }

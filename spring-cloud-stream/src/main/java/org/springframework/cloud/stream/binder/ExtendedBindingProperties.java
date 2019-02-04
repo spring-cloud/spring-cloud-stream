@@ -20,6 +20,8 @@ package org.springframework.cloud.stream.binder;
  * Properties that extend the common binding properties for a particular binder
  * implementation.
  *
+ * @param <C> consumer properties type
+ * @param <P> producer properties type
  * @author Marius Bogoevici
  * @author Mark Fisher
  * @author Soby Chacko
@@ -32,14 +34,14 @@ public interface ExtendedBindingProperties<C, P> {
 
 	/**
 	 * Extended binding properties can define a default prefix to place all the extended
-	 * common producer and consumer properties. For example, if the binder type is foo
-	 * it is convenient to specify common extended properties for the producer or consumer
-	 * across multiple bindings in the form of `spring.cloud.stream.foo.default.producer.x=y`
-	 * or `spring.cloud.stream.foo.default.consumer.x=y`.
+	 * common producer and consumer properties. For example, if the binder type is foo it
+	 * is convenient to specify common extended properties for the producer or consumer
+	 * across multiple bindings in the form of
+	 * `spring.cloud.stream.foo.default.producer.x=y` or
+	 * `spring.cloud.stream.foo.default.consumer.x=y`.
 	 *
 	 * The binding process will use this defaults prefix to resolve any common extended
 	 * producer and consumer properties.
-	 *
 	 * @return default prefix for extended properties
 	 * @since 2.1.0
 	 */
@@ -47,12 +49,13 @@ public interface ExtendedBindingProperties<C, P> {
 
 	/**
 	 *
-	 * Extended properties class which should be a subclass of {@link BinderSpecificPropertiesProvider}
-	 * against which default extended producer and consumer properties
-	 * are resolved.
-	 *
-	 * @return extended properties class that contains extended producer/consumer properties
+	 * Extended properties class which should be a subclass of
+	 * {@link BinderSpecificPropertiesProvider} against which default extended producer
+	 * and consumer properties are resolved.
+	 * @return extended properties class that contains extended producer/consumer
+	 * properties
 	 * @since 2.1.0
 	 */
 	Class<? extends BinderSpecificPropertiesProvider> getExtendedPropertiesEntryClass();
+
 }

@@ -41,18 +41,15 @@ public final class GenericsUtils {
 	 * For a specific class that implements or extends a parameterized type, return the
 	 * parameter of that interface at a given position. For example, for this class:
 	 *
-	 * <pre>
-	 * {@code
+	 * <pre> {@code
 	 * class MessageChannelBinder implements Binder<MessageChannel, ?, ?>
-	 * }
+	 * } </pre>
 	 *
-	 * <pre>
-	 * {@code
+	 * <pre> {@code
 	 * getParameterType(MessageChannelBinder.class, Binder.class, 0);
-	 * }
+	 * } </pre>
 	 *
 	 * will return {@code Binder}
-	 *
 	 * @param evaluatedClass the evaluated class
 	 * @param interfaceClass the parametrized interface
 	 * @param position the position
@@ -60,11 +57,14 @@ public final class GenericsUtils {
 	 * @throws IllegalStateException if the evaluated class does not implement the
 	 * interface or
 	 */
-	public static Class<?> getParameterType(Class<?> evaluatedClass, Class<?> interfaceClass, int position) {
+	public static Class<?> getParameterType(Class<?> evaluatedClass,
+			Class<?> interfaceClass, int position) {
 		Class<?> bindableType = null;
-		Assert.isTrue(interfaceClass.isInterface(), "'interfaceClass' must be an interface");
+		Assert.isTrue(interfaceClass.isInterface(),
+				"'interfaceClass' must be an interface");
 		if (!interfaceClass.isAssignableFrom(evaluatedClass)) {
-			throw new IllegalStateException(evaluatedClass + " does not implement " + interfaceClass);
+			throw new IllegalStateException(
+					evaluatedClass + " does not implement " + interfaceClass);
 		}
 		ResolvableType currentType = ResolvableType.forType(evaluatedClass);
 		while (!Object.class.equals(currentType.getRawClass()) && bindableType == null) {
@@ -92,30 +92,31 @@ public final class GenericsUtils {
 			}
 		}
 		if (bindableType == null) {
-			throw new IllegalStateException("Cannot find parameter of " + evaluatedClass.getName() + " for "
-					+ interfaceClass + " at position " + position);
+			throw new IllegalStateException(
+					"Cannot find parameter of " + evaluatedClass.getName() + " for "
+							+ interfaceClass + " at position " + position);
 		}
 		return bindableType;
 	}
 
 	/**
-	 * Return the generic type of PollableSource to determine if it is appropriate
-	 * for the binder.
-	 * e.g., with PollableMessageSource extends PollableSource<MessageHandler>
-	 * and  AbstractMessageChannelBinder
-	 *             implements PollableConsumerBinder<MessageHandler, C>
-	 * We're checking that the the generic type (MessageHandler) matches.
-	 *
+	 * Return the generic type of PollableSource to determine if it is appropriate for the
+	 * binder. e.g., with PollableMessageSource extends
+	 * PollableSource&lt;MessageHandler&gt; and AbstractMessageChannelBinder implements
+	 * PollableConsumerBinder&lt;MessageHandler, C&gt; We're checking that the the generic
+	 * type (MessageHandler) matches.
 	 * @param binderInstance the binder.
 	 * @param bindingTargetType the binding target type.
 	 * @return true if found, false otherwise.
 	 */
 	@SuppressWarnings("rawtypes")
-	public static boolean checkCompatiblePollableBinder(Binder binderInstance, Class<?> bindingTargetType) {
+	public static boolean checkCompatiblePollableBinder(Binder binderInstance,
+			Class<?> bindingTargetType) {
 		Class<?>[] binderInterfaces = ClassUtils.getAllInterfaces(binderInstance);
 		for (Class<?> intf : binderInterfaces) {
 			if (PollableConsumerBinder.class.isAssignableFrom(intf)) {
-				Class<?>[] targetInterfaces = ClassUtils.getAllInterfacesForClass(bindingTargetType);
+				Class<?>[] targetInterfaces = ClassUtils
+						.getAllInterfacesForClass(bindingTargetType);
 				Class<?> psType = findPollableSourceType(targetInterfaces);
 				if (psType != null) {
 					return getParameterType(binderInstance.getClass(), intf, 0)

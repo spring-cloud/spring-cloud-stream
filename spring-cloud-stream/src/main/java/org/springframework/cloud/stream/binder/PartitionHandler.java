@@ -46,7 +46,6 @@ public class PartitionHandler {
 
 	/**
 	 * Construct a {@code PartitionHandler}.
-	 *
 	 * @param evaluationContext evaluation context for binder
 	 * @param properties binder properties
 	 * @param partitionKeyExtractorStrategy PartitionKeyExtractor strategy
@@ -60,7 +59,7 @@ public class PartitionHandler {
 		this.producerProperties = properties;
 		this.partitionKeyExtractorStrategy = partitionKeyExtractorStrategy;
 		this.partitionSelectorStrategy = partitionSelectorStrategy;
-		this.partitionCount = producerProperties.getPartitionCount();
+		this.partitionCount = this.producerProperties.getPartitionCount();
 	}
 
 	/**
@@ -70,7 +69,6 @@ public class PartitionHandler {
 	public void setPartitionCount(int partitionCount) {
 		this.partitionCount = partitionCount;
 	}
-
 
 	/**
 	 * Determine the partition to which to send this message.
@@ -85,7 +83,6 @@ public class PartitionHandler {
 	 * expression is provided, the key will be passed to the binder partition strategy
 	 * along with the {@code partitionCount}. The default partition strategy uses
 	 * {@code key.hashCode()}, and the result will be the mod of that value.
-	 *
 	 * @param message the message.
 	 * @return the partition
 	 */
@@ -94,11 +91,12 @@ public class PartitionHandler {
 
 		int partition;
 		if (this.producerProperties.getPartitionSelectorExpression() != null) {
-			partition = this.producerProperties.getPartitionSelectorExpression().getValue(
-					this.evaluationContext, key, Integer.class);
+			partition = this.producerProperties.getPartitionSelectorExpression()
+					.getValue(this.evaluationContext, key, Integer.class);
 		}
 		else {
-			partition = this.partitionSelectorStrategy.selectPartition(key, this.partitionCount);
+			partition = this.partitionSelectorStrategy.selectPartition(key,
+					this.partitionCount);
 		}
 		// protection in case a user selector returns a negative.
 		return Math.abs(partition % this.partitionCount);
@@ -107,7 +105,8 @@ public class PartitionHandler {
 	private Object extractKey(Message<?> message) {
 		Object key = invokeKeyExtractor(message);
 		if (key == null && this.producerProperties.getPartitionKeyExpression() != null) {
-			key = this.producerProperties.getPartitionKeyExpression().getValue(this.evaluationContext, message);
+			key = this.producerProperties.getPartitionKeyExpression()
+					.getValue(this.evaluationContext, message);
 		}
 		Assert.notNull(key, "Partition key cannot be null");
 
@@ -115,7 +114,7 @@ public class PartitionHandler {
 	}
 
 	private Object invokeKeyExtractor(Message<?> message) {
-		if (partitionKeyExtractorStrategy != null) {
+		if (this.partitionKeyExtractorStrategy != null) {
 			return this.partitionKeyExtractorStrategy.extractKey(message);
 		}
 		return null;

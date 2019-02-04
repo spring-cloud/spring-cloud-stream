@@ -45,7 +45,6 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.util.MimeTypeUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertNull;
 
 /**
  * @author Ilayaperumal Gopinathan
@@ -54,7 +53,8 @@ import static org.junit.Assert.assertNull;
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest(classes = { MessageChannelConfigurerTests.TestSink.class,
-		MessageChannelConfigurerTests.TestSource.class, SpelExpressionConverterConfiguration.class})
+		MessageChannelConfigurerTests.TestSource.class,
+		SpelExpressionConverterConfiguration.class })
 public class MessageChannelConfigurerTests {
 
 	@Autowired
@@ -71,8 +71,10 @@ public class MessageChannelConfigurerTests {
 
 	@Test
 	public void testChannelTypes() throws Exception {
-		DirectWithAttributesChannel inputChannel = (DirectWithAttributesChannel) testSink.input();
-		DirectWithAttributesChannel outputChannel = (DirectWithAttributesChannel) testSource.output();
+		DirectWithAttributesChannel inputChannel = (DirectWithAttributesChannel) this.testSink
+				.input();
+		DirectWithAttributesChannel outputChannel = (DirectWithAttributesChannel) this.testSource
+				.output();
 		assertThat(inputChannel.getAttribute("type")).isEqualTo(Sink.INPUT);
 		assertThat(outputChannel.getAttribute("type")).isEqualTo(Source.OUTPUT);
 	}
@@ -85,42 +87,48 @@ public class MessageChannelConfigurerTests {
 			assertThat(message.getPayload()).isEqualTo("{\"message\":\"Hi\"}".getBytes());
 			latch.countDown();
 		};
-		testSink.input().subscribe(messageHandler);
-		testSink.input().send(MessageBuilder.withPayload("{\"message\":\"Hi\"}".getBytes()).build());
+		this.testSink.input().subscribe(messageHandler);
+		this.testSink.input().send(
+				MessageBuilder.withPayload("{\"message\":\"Hi\"}".getBytes()).build());
 		assertThat(latch.await(10, TimeUnit.SECONDS)).isTrue();
-		testSink.input().unsubscribe(messageHandler);
+		this.testSink.input().unsubscribe(messageHandler);
 	}
 
 	@Test
 	public void testObjectMapperConfig() throws Exception {
-		CompositeMessageConverter converters = (CompositeMessageConverter) messageConverterFactory
+		CompositeMessageConverter converters = (CompositeMessageConverter) this.messageConverterFactory
 				.getMessageConverterForType(MimeTypeUtils.APPLICATION_JSON);
 		for (MessageConverter converter : converters.getConverters()) {
 			DirectFieldAccessor converterAccessor = new DirectFieldAccessor(converter);
-			ObjectMapper objectMapper = (ObjectMapper) converterAccessor.getPropertyValue("objectMapper");
+			ObjectMapper objectMapper = (ObjectMapper) converterAccessor
+					.getPropertyValue("objectMapper");
 			// assert that the ObjectMapper used by the converters is compliant with the
 			// Boot configuration
-			assertThat(!objectMapper.getSerializationConfig().isEnabled(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS))
-					.withFailMessage("SerializationFeature 'WRITE_DATES_AS_TIMESTAMPS' should be disabled");
+			assertThat(!objectMapper.getSerializationConfig().isEnabled(
+					SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)).withFailMessage(
+							"SerializationFeature 'WRITE_DATES_AS_TIMESTAMPS' should be disabled");
 			// assert that the globally set bean is used by the converters
 		}
 	}
 
 	@Test
 	public void testPartitionHeader() throws Exception {
-		this.testSource.output().send(MessageBuilder.withPayload("{\"message\":\"Hi\"}").build());
-		Message<?> message = this.messageCollector.forChannel(testSource.output()).poll(1, TimeUnit.SECONDS);
+		this.testSource.output()
+				.send(MessageBuilder.withPayload("{\"message\":\"Hi\"}").build());
+		Message<?> message = this.messageCollector.forChannel(this.testSource.output())
+				.poll(1, TimeUnit.SECONDS);
 		assertThat(message.getHeaders().get(BinderHeaders.PARTITION_HEADER).equals(0));
-		assertNull(message.getHeaders().get(BinderHeaders.PARTITION_OVERRIDE));
+		assertThat(message.getHeaders().get(BinderHeaders.PARTITION_OVERRIDE)).isNull();
 	}
 
 	@Test
 	public void testPartitionHeaderWithPartitionOverride() throws Exception {
 		this.testSource.output().send(MessageBuilder.withPayload("{\"message\":\"Hi\"}")
 				.setHeader(BinderHeaders.PARTITION_OVERRIDE, 123).build());
-		Message<?> message = this.messageCollector.forChannel(testSource.output()).poll(1, TimeUnit.SECONDS);
+		Message<?> message = this.messageCollector.forChannel(this.testSource.output())
+				.poll(1, TimeUnit.SECONDS);
 		assertThat(message.getHeaders().get(BinderHeaders.PARTITION_HEADER).equals(123));
-		assertNull(message.getHeaders().get(BinderHeaders.PARTITION_OVERRIDE));
+		assertThat(message.getHeaders().get(BinderHeaders.PARTITION_OVERRIDE)).isNull();
 	}
 
 	@EnableBinding(Sink.class)
@@ -136,4 +144,5 @@ public class MessageChannelConfigurerTests {
 	public static class TestSource {
 
 	}
+
 }

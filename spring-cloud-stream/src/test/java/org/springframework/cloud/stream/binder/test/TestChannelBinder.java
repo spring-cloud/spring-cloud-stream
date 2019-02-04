@@ -52,13 +52,13 @@ import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
 /**
- * Implementation of {@link Binder} backed by Spring Integration framework.
- * It is useful for localized demos and testing.
+ * Implementation of {@link Binder} backed by Spring Integration framework. It is useful
+ * for localized demos and testing.
  * <p>
  * This binder extends from the same base class ({@link AbstractMessageChannelBinder}) as
- * other binders (i.e., Rabbit, Kafka etc). Interaction with this binder is done via source
- * and target destination which emulate real binder's destinations (i.e., Kafka topic)
- * <br>
+ * other binders (i.e., Rabbit, Kafka etc). Interaction with this binder is done via
+ * source and target destination which emulate real binder's destinations (i.e., Kafka
+ * topic) <br>
  * The destination classes are
  * <ul>
  * <li>{@link InputDestination}</li>
@@ -66,9 +66,8 @@ import org.springframework.util.StringUtils;
  * </ul>
  * Simply autowire them in your your application and send/receive messages.
  * </p>
- * You must also add {@link TestChannelBinderConfiguration} to your configuration.
- * Below is the example using Spring Boot test.
- * <pre class="code">
+ * You must also add {@link TestChannelBinderConfiguration} to your configuration. Below
+ * is the example using Spring Boot test. <pre class="code">
  *
  * &#064;RunWith(SpringJUnit4ClassRunner.class)
  * &#064;SpringBootTest(classes = {SpringIntegrationBinderConfiguration.class, TestWithSIBinder.MyProcessor.class})
@@ -81,8 +80,9 @@ import org.springframework.util.StringUtils;
  *
  *     &#064;Test
  *     public void testWiring() {
- *         sourceDestination.send(new GenericMessage<String>("Hello"));
- *         assertEquals("Hello world", new String((byte[])targetDestination.receive().getPayload(), StandardCharsets.UTF_8));
+ *         sourceDestination.send(new GenericMessage&lt;String&gt;("Hello"));
+ *         assertEquals("Hello world",
+ *             new String((byte[])targetDestination.receive().getPayload(), StandardCharsets.UTF_8));
  *     }
  *
  *     &#064;SpringBootApplication
@@ -101,15 +101,16 @@ import org.springframework.util.StringUtils;
  * @author Gary Russell
  *
  */
-public class TestChannelBinder extends AbstractMessageChannelBinder<ConsumerProperties,
-	ProducerProperties, TestChannelBinderProvisioner> {
+public class TestChannelBinder extends
+		AbstractMessageChannelBinder<ConsumerProperties, ProducerProperties, TestChannelBinderProvisioner> {
 
 	@Autowired
 	private BeanFactory beanFactory;
 
 	private Message<?> lastError;
 
-	private MessageSource<?> messageSourceDelegate = () -> new GenericMessage<>("polled data",
+	private MessageSource<?> messageSourceDelegate = () -> new GenericMessage<>(
+			"polled data",
 			Collections.singletonMap(MessageHeaders.CONTENT_TYPE, "text/plain"));
 
 	public TestChannelBinder(TestChannelBinderProvisioner provisioningProvider) {
@@ -120,7 +121,7 @@ public class TestChannelBinder extends AbstractMessageChannelBinder<ConsumerProp
 	 * Set a delegate {@link MessageSource} for pollable consumers.
 	 * @param messageSourceDelegate the delegate.
 	 */
-	@Autowired(required=false)
+	@Autowired(required = false)
 	public void setMessageSourceDelegate(MessageSource<byte[]> messageSourceDelegate) {
 		this.messageSourceDelegate = messageSourceDelegate;
 	}
@@ -131,24 +132,29 @@ public class TestChannelBinder extends AbstractMessageChannelBinder<ConsumerProp
 
 	@Override
 	protected MessageHandler createProducerMessageHandler(ProducerDestination destination,
-			ProducerProperties producerProperties, MessageChannel errorChannel) throws Exception {
+			ProducerProperties producerProperties, MessageChannel errorChannel)
+			throws Exception {
 		BridgeHandler handler = new BridgeHandler();
 		handler.setBeanFactory(this.beanFactory);
-		handler.setOutputChannel(((SpringIntegrationProducerDestination)destination).getChannel());
+		handler.setOutputChannel(
+				((SpringIntegrationProducerDestination) destination).getChannel());
 		return handler;
 	}
 
 	@Override
-	protected MessageProducer createConsumerEndpoint(ConsumerDestination destination, String group, ConsumerProperties properties)
-			throws Exception {
+	protected MessageProducer createConsumerEndpoint(ConsumerDestination destination,
+			String group, ConsumerProperties properties) throws Exception {
 		ErrorMessageStrategy errorMessageStrategy = new DefaultErrorMessageStrategy();
-		SubscribableChannel siBinderInputChannel = ((SpringIntegrationConsumerDestination)destination).getChannel();
+		SubscribableChannel siBinderInputChannel = ((SpringIntegrationConsumerDestination) destination)
+				.getChannel();
 
 		IntegrationMessageListeningContainer messageListenerContainer = new IntegrationMessageListeningContainer();
-		IntegrationBinderInboundChannelAdapter adapter = new IntegrationBinderInboundChannelAdapter(messageListenerContainer);
+		IntegrationBinderInboundChannelAdapter adapter = new IntegrationBinderInboundChannelAdapter(
+				messageListenerContainer);
 
 		String groupName = StringUtils.hasText(group) ? group : "anonymous";
-		ErrorInfrastructure errorInfrastructure = registerErrorInfrastructure(destination, groupName, properties);
+		ErrorInfrastructure errorInfrastructure = registerErrorInfrastructure(destination,
+				groupName, properties);
 		if (properties.getMaxAttempts() > 1) {
 			adapter.setRetryTemplate(buildRetryTemplate(properties));
 			adapter.setRecoveryCallback(errorInfrastructure.getRecoverer());
@@ -164,15 +170,16 @@ public class TestChannelBinder extends AbstractMessageChannelBinder<ConsumerProp
 	}
 
 	@Override
-	protected PolledConsumerResources createPolledConsumerResources(String name, String group, ConsumerDestination destination,
+	protected PolledConsumerResources createPolledConsumerResources(String name,
+			String group, ConsumerDestination destination,
 			ConsumerProperties consumerProperties) {
 		return new PolledConsumerResources(this.messageSourceDelegate,
 				registerErrorInfrastructure(destination, group, consumerProperties));
 	}
 
 	@Override
-	protected MessageHandler getErrorMessageHandler(ConsumerDestination destination, String group,
-			ConsumerProperties consumerProperties) {
+	protected MessageHandler getErrorMessageHandler(ConsumerDestination destination,
+			String group, ConsumerProperties consumerProperties) {
 		return m -> {
 			this.logger.debug("Error handled: " + m);
 			this.lastError = m;
@@ -180,7 +187,8 @@ public class TestChannelBinder extends AbstractMessageChannelBinder<ConsumerProp
 	}
 
 	/**
-	 * Implementation of simple message listener container modeled after AMQP SimpleMessageListenerContainer
+	 * Implementation of simple message listener container modeled after AMQP
+	 * SimpleMessageListenerContainer.
 	 */
 	private static class IntegrationMessageListeningContainer implements MessageHandler {
 
@@ -194,12 +202,14 @@ public class TestChannelBinder extends AbstractMessageChannelBinder<ConsumerProp
 		public void setMessageListener(Consumer<Message<?>> listener) {
 			this.listener = listener;
 		}
+
 	}
 
 	/**
-	 * Implementation of inbound channel adapter modeled after AmqpInboundChannelAdapter
+	 * Implementation of inbound channel adapter modeled after AmqpInboundChannelAdapter.
 	 */
-	private static class IntegrationBinderInboundChannelAdapter extends MessageProducerSupport {
+	private static class IntegrationBinderInboundChannelAdapter
+			extends MessageProducerSupport {
 
 		private static final ThreadLocal<AttributeAccessor> attributesHolder = new ThreadLocal<AttributeAccessor>();
 
@@ -209,13 +219,15 @@ public class TestChannelBinder extends AbstractMessageChannelBinder<ConsumerProp
 
 		private RecoveryCallback<? extends Object> recoveryCallback;
 
-		IntegrationBinderInboundChannelAdapter(IntegrationMessageListeningContainer listenerContainer) {
+		IntegrationBinderInboundChannelAdapter(
+				IntegrationMessageListeningContainer listenerContainer) {
 			this.listenerContainer = listenerContainer;
 		}
 
 		@SuppressWarnings("unused")
 		// Temporarily unused until DLQ strategy for this binder becomes a requirement
-		public void setRecoveryCallback(RecoveryCallback<? extends Object> recoveryCallback) {
+		public void setRecoveryCallback(
+				RecoveryCallback<? extends Object> recoveryCallback) {
 			this.recoveryCallback = recoveryCallback;
 		}
 
@@ -226,9 +238,10 @@ public class TestChannelBinder extends AbstractMessageChannelBinder<ConsumerProp
 		@Override
 		protected void onInit() {
 			if (this.retryTemplate != null) {
-				Assert.state(getErrorChannel() == null, "Cannot have an 'errorChannel' property when a 'RetryTemplate' is "
-						+ "provided; use an 'ErrorMessageSendingRecoverer' in the 'recoveryCallback' property to "
-						+ "send an error message when retries are exhausted");
+				Assert.state(getErrorChannel() == null,
+						"Cannot have an 'errorChannel' property when a 'RetryTemplate' is "
+								+ "provided; use an 'ErrorMessageSendingRecoverer' in the 'recoveryCallback' property to "
+								+ "send an error message when retries are exhausted");
 			}
 			Listener messageListener = new Listener();
 			if (this.retryTemplate != null) {
@@ -252,17 +265,20 @@ public class TestChannelBinder extends AbstractMessageChannelBinder<ConsumerProp
 						}
 					}
 					else {
-						IntegrationBinderInboundChannelAdapter.this.retryTemplate.execute(context -> {
+						IntegrationBinderInboundChannelAdapter.this.retryTemplate
+								.execute(context -> {
 									processMessage(message);
 									return null;
-								},
-								(RecoveryCallback<Object>) IntegrationBinderInboundChannelAdapter.this.recoveryCallback);
+								}, (RecoveryCallback<Object>) IntegrationBinderInboundChannelAdapter.this.recoveryCallback);
 					}
 				}
 				catch (RuntimeException e) {
 					if (getErrorChannel() != null) {
-						getMessagingTemplate().send(getErrorChannel(), buildErrorMessage(null,
-								new IllegalStateException("Message conversion failed: " + message, e)));
+						getMessagingTemplate()
+								.send(getErrorChannel(),
+										buildErrorMessage(null, new IllegalStateException(
+												"Message conversion failed: " + message,
+												e)));
 					}
 					else {
 						throw e;
@@ -275,7 +291,8 @@ public class TestChannelBinder extends AbstractMessageChannelBinder<ConsumerProp
 			}
 
 			@Override
-			public <T, E extends Throwable> boolean open(RetryContext context, RetryCallback<T, E> callback) {
+			public <T, E extends Throwable> boolean open(RetryContext context,
+					RetryCallback<T, E> callback) {
 				if (IntegrationBinderInboundChannelAdapter.this.recoveryCallback != null) {
 					attributesHolder.set(context);
 				}
@@ -283,16 +300,19 @@ public class TestChannelBinder extends AbstractMessageChannelBinder<ConsumerProp
 			}
 
 			@Override
-			public <T, E extends Throwable> void close(RetryContext context, RetryCallback<T, E> callback,
-					Throwable throwable) {
+			public <T, E extends Throwable> void close(RetryContext context,
+					RetryCallback<T, E> callback, Throwable throwable) {
 				attributesHolder.remove();
 			}
 
 			@Override
-			public <T, E extends Throwable> void onError(RetryContext context, RetryCallback<T, E> callback,
-					Throwable throwable) {
+			public <T, E extends Throwable> void onError(RetryContext context,
+					RetryCallback<T, E> callback, Throwable throwable) {
 				// Empty
 			}
+
 		}
+
 	}
+
 }

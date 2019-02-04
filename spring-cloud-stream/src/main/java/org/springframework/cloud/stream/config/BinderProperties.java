@@ -31,29 +31,31 @@ public class BinderProperties {
 
 	/**
 	 * The binder type. It typically references one of the binders found on the classpath,
-	 * in particular a key in a META-INF/spring.binders file.
-	 * By default, it has the same value as the configuration name.
+	 * in particular a key in a META-INF/spring.binders file. By default, it has the same
+	 * value as the configuration name.
 	 */
 	private String type;
 
 	/**
-	 * Root for a set of properties that can be used to customize the environment of the binder.
+	 * Root for a set of properties that can be used to customize the environment of the
+	 * binder.
 	 */
 	private Map<String, Object> environment = new HashMap<>();
 
 	/**
-	 * Whether the configuration will inherit the environment of the application itself. Default: true
+	 * Whether the configuration will inherit the environment of the application itself.
+	 * Default: true
 	 */
 	private boolean inheritEnvironment = true;
 
 	/**
-	 * Whether the binder configuration is a candidate for being considered a default binder,
-	 * or can be used only when explicitly referenced. Defaulys: true
+	 * Whether the binder configuration is a candidate for being considered a default
+	 * binder, or can be used only when explicitly referenced. Defaulys: true
 	 */
 	private boolean defaultCandidate = true;
 
 	public String getType() {
-		return type;
+		return this.type;
 	}
 
 	public void setType(String name) {
@@ -61,16 +63,18 @@ public class BinderProperties {
 	}
 
 	public Map<String, Object> getEnvironment() {
-		return environment;
+		return this.environment;
 	}
 
 	/**
 	 * @deprecated in 2.0.0 in preference to {@link #setEnvironment(Map)}
+	 * @param environment properties to which stream props will be added
 	 */
 	@Deprecated
 	public void setEnvironment(Properties environment) {
 		this.environment.clear();
-		this.environment.putAll(environment.entrySet().stream().collect(Collectors.toMap(e -> e.getKey().toString(), e -> e.getValue())));
+		this.environment.putAll(environment.entrySet().stream().collect(
+				Collectors.toMap(e -> e.getKey().toString(), e -> e.getValue())));
 	}
 
 	public void setEnvironment(Map<String, Object> environment) {
@@ -78,7 +82,7 @@ public class BinderProperties {
 	}
 
 	public boolean isInheritEnvironment() {
-		return inheritEnvironment;
+		return this.inheritEnvironment;
 	}
 
 	public void setInheritEnvironment(boolean inheritEnvironment) {
@@ -86,10 +90,11 @@ public class BinderProperties {
 	}
 
 	public boolean isDefaultCandidate() {
-		return defaultCandidate;
+		return this.defaultCandidate;
 	}
 
 	public void setDefaultCandidate(boolean defaultCandidate) {
 		this.defaultCandidate = defaultCandidate;
 	}
+
 }

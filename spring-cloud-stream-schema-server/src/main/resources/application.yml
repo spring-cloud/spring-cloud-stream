@@ -3,3 +3,4 @@ spring:
     name: SchemaRegistryServer
 server:
   port: 8990
+

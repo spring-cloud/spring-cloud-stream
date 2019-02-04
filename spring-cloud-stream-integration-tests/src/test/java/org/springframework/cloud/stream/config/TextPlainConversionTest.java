@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2017-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,12 +40,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * @author Marius Bogoevici
  * @author Oleg Zhurakousky
- *
  * @since 1.2
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringBootTest(classes = TextPlainConversionTest.FooProcessor.class,
-		webEnvironment = SpringBootTest.WebEnvironment.NONE)
+// @checkstyle:off
+@SpringBootTest(classes = TextPlainConversionTest.FooProcessor.class, webEnvironment = SpringBootTest.WebEnvironment.NONE)
+// @checkstyle:on
 public class TextPlainConversionTest {
 
 	@Autowired
@@ -56,30 +56,38 @@ public class TextPlainConversionTest {
 
 	@Test
 	public void testTextPlainConversionOnOutput() throws Exception {
-		testProcessor.input().send(MessageBuilder.withPayload("Bar").build());
+		this.testProcessor.input().send(MessageBuilder.withPayload("Bar").build());
 		@SuppressWarnings("unchecked")
-		Message<String> received = (Message<String>) ((TestSupportBinder) binderFactory.getBinder(null, MessageChannel.class))
-				.messageCollector().forChannel(testProcessor.output()).poll(1, TimeUnit.SECONDS);
+		Message<String> received = (Message<String>) ((TestSupportBinder) this.binderFactory
+				.getBinder(null, MessageChannel.class)).messageCollector()
+						.forChannel(this.testProcessor.output())
+						.poll(1, TimeUnit.SECONDS);
 		assertThat(received).isNotNull();
 		assertThat(received.getPayload()).isEqualTo("Foo{name='Bar'}");
 	}
 
 	@Test
 	public void testByteArrayConversionOnOutput() throws Exception {
-		testProcessor.output().send(MessageBuilder.withPayload("Bar".getBytes()).build());
+		this.testProcessor.output()
+				.send(MessageBuilder.withPayload("Bar".getBytes()).build());
 		@SuppressWarnings("unchecked")
-		Message<String> received = (Message<String>)((TestSupportBinder) binderFactory.getBinder(null, MessageChannel.class))
-				.messageCollector().forChannel(testProcessor.output()).poll(1, TimeUnit.SECONDS);
+		Message<String> received = (Message<String>) ((TestSupportBinder) this.binderFactory
+				.getBinder(null, MessageChannel.class)).messageCollector()
+						.forChannel(this.testProcessor.output())
+						.poll(1, TimeUnit.SECONDS);
 		assertThat(received).isNotNull();
 		assertThat(received.getPayload()).isEqualTo("Bar");
 	}
 
 	@Test
 	public void testTextPlainConversionOnInputAndOutput() throws Exception {
-		testProcessor.input().send(MessageBuilder.withPayload(new Foo("Bar")).build());
+		this.testProcessor.input()
+				.send(MessageBuilder.withPayload(new Foo("Bar")).build());
 		@SuppressWarnings("unchecked")
-		Message<String> received = (Message<String>) ((TestSupportBinder) binderFactory.getBinder(null, MessageChannel.class))
-				.messageCollector().forChannel(testProcessor.output()).poll(1, TimeUnit.SECONDS);
+		Message<String> received = (Message<String>) ((TestSupportBinder) this.binderFactory
+				.getBinder(null, MessageChannel.class)).messageCollector()
+						.forChannel(this.testProcessor.output())
+						.poll(1, TimeUnit.SECONDS);
 		assertThat(received).isNotNull();
 		assertThat(received.getPayload()).isEqualTo("Foo{name='Foo{name='Bar'}'}");
 	}
@@ -105,7 +113,7 @@ public class TextPlainConversionTest {
 		}
 
 		public String getName() {
-			return name;
+			return this.name;
 		}
 
 		public void setName(String name) {
@@ -114,7 +122,7 @@ public class TextPlainConversionTest {
 
 		@Override
 		public String toString() {
-			return "Foo{name='" + name + "'}";
+			return "Foo{name='" + this.name + "'}";
 		}
 
 	}

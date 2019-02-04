@@ -52,8 +52,8 @@ public class StreamListenerMethodRegisteredOnlyOnceTest {
 
 	@Test
 	public void should_handleSomeMessage() {
-		sink.channel().send(new GenericMessage<>("Payload"));
-		verify(handler).handleMessage(); //should only be invoked once.
+		this.sink.channel().send(new GenericMessage<>("Payload"));
+		verify(this.handler).handleMessage(); // should only be invoked once.
 	}
 
 	public interface SomeSink {
@@ -72,4 +72,5 @@ public class StreamListenerMethodRegisteredOnlyOnceTest {
 		}
 
 	}
+
 }

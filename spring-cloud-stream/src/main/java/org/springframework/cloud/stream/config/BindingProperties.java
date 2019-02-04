@@ -29,6 +29,7 @@ import org.springframework.validation.annotation.Validated;
 
 /**
  * Contains the properties of a binding.
+ *
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
  * @author Gary Russell
@@ -37,8 +38,11 @@ import org.springframework.validation.annotation.Validated;
  */
 @JsonInclude(Include.NON_DEFAULT)
 @Validated
-public class BindingProperties  {
+public class BindingProperties {
 
+	/**
+	 * Default content type for bindings.
+	 */
 	public static final MimeType DEFAULT_CONTENT_TYPE = MimeTypeUtils.APPLICATION_JSON;
 
 	private static final String COMMA = ",";
@@ -61,26 +65,26 @@ public class BindingProperties  {
 	// Properties for both input and output bindings
 
 	/**
-	 * Specifies content-type that will be used by this binding in the event
-	 * it is not specified in Message headers. Default: 'application/json'.
+	 * Specifies content-type that will be used by this binding in the event it is not
+	 * specified in Message headers. Default: 'application/json'.
 	 */
 	private String contentType = DEFAULT_CONTENT_TYPE.toString();
 
 	/**
-	 * The name of the binder to use for this binding in the event multiple binders available (e.g., 'rabbit');
+	 * The name of the binder to use for this binding in the event multiple binders
+	 * available (e.g., 'rabbit').
 	 */
 	private String binder;
 
 	/**
-	 * Additional consumer specific properties (see {@link ConsumerProperties})
+	 * Additional consumer specific properties (see {@link ConsumerProperties}).
 	 */
 	private ConsumerProperties consumer;
 
 	/**
-	 * Additional producer specific properties (see {@link ProducerProperties})
+	 * Additional producer specific properties (see {@link ProducerProperties}).
 	 */
 	private ProducerProperties producer;
-
 
 	public String getDestination() {
 		return this.destination;
@@ -91,7 +95,7 @@ public class BindingProperties  {
 	}
 
 	public String getGroup() {
-		return group;
+		return this.group;
 	}
 
 	public void setGroup(String group) {
@@ -107,7 +111,7 @@ public class BindingProperties  {
 	}
 
 	public String getBinder() {
-		return binder;
+		return this.binder;
 	}
 
 	public void setBinder(String binder) {
@@ -115,7 +119,7 @@ public class BindingProperties  {
 	}
 
 	public ConsumerProperties getConsumer() {
-		return consumer;
+		return this.consumer;
 	}
 
 	public void setConsumer(ConsumerProperties consumer) {
@@ -123,7 +127,7 @@ public class BindingProperties  {
 	}
 
 	public ProducerProperties getProducer() {
-		return producer;
+		return this.producer;
 	}
 
 	public void setProducer(ProducerProperties producer) {
@@ -132,7 +136,7 @@ public class BindingProperties  {
 
 	@AssertTrue(message = "A binding must not set both producer and consumer properties.")
 	public boolean onlyOneOfProducerOrConsumerSet() {
-		return consumer == null || producer == null;
+		return this.consumer == null || this.producer == null;
 	}
 
 	@Override
@@ -153,4 +157,5 @@ public class BindingProperties  {
 		sb.deleteCharAt(sb.lastIndexOf(COMMA));
 		return "BindingProperties{" + sb.toString() + "}";
 	}
+
 }

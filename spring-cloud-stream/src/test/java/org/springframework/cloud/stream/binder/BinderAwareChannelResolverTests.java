@@ -25,7 +25,6 @@ import java.util.concurrent.TimeUnit;
 
 import org.junit.Before;
 import org.junit.Test;
-
 import org.mockito.Mockito;
 
 import org.springframework.boot.WebApplicationType;
@@ -54,9 +53,7 @@ import org.springframework.messaging.SubscribableChannel;
 import org.springframework.messaging.support.ImmutableMessageChannelInterceptor;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.matches;
@@ -84,44 +81,42 @@ public class BinderAwareChannelResolverTests {
 
 	protected volatile DynamicDestinationsBindable dynamicDestinationsBindable;
 
-	@Configuration
-	public static class InterceptorConfiguration {
-		@Bean
-		public GlobalChannelInterceptorWrapper testInterceptor() {
-			return  new GlobalChannelInterceptorWrapper(new ImmutableMessageChannelInterceptor());
-		}
-	}
-
 	@SuppressWarnings("unchecked")
 	@Before
 	public void setupContext() throws Exception {
 
-		this.context = new SpringApplicationBuilder(TestChannelBinderConfiguration.getCompleteConfiguration(BinderAwareChannelResolverTests.InterceptorConfiguration.class))
-				.web(WebApplicationType.NONE).run();
+		this.context = new SpringApplicationBuilder(
+				TestChannelBinderConfiguration.getCompleteConfiguration(
+						BinderAwareChannelResolverTests.InterceptorConfiguration.class))
+								.web(WebApplicationType.NONE).run();
 
-		this.resolver = context.getBean(BinderAwareChannelResolver.class);
-		this.binder = context.getBean(Binder.class);
-		this.bindingServiceProperties = context.getBean(BindingServiceProperties.class);
-		this.bindingTargetFactory = context.getBean(SubscribableChannelBindingTargetFactory.class);
+		this.resolver = this.context.getBean(BinderAwareChannelResolver.class);
+		this.binder = this.context.getBean(Binder.class);
+		this.bindingServiceProperties = this.context
+				.getBean(BindingServiceProperties.class);
+		this.bindingTargetFactory = this.context
+				.getBean(SubscribableChannelBindingTargetFactory.class);
 	}
 
 	@Test
 	public void resolveChannel() {
-		Map<String, Bindable> bindables = context.getBeansOfType(Bindable.class);
+		Map<String, Bindable> bindables = this.context.getBeansOfType(Bindable.class);
 		assertThat(bindables).hasSize(1);
 		for (Bindable bindable : bindables.values()) {
-			assertEquals(0, bindable.getInputs().size()); // producer
-			assertEquals(0, bindable.getOutputs().size());// consumer
+			assertThat(bindable.getInputs().size()).isEqualTo(0); // producer
+			assertThat(bindable.getOutputs().size()).isEqualTo(0); // consumer
 		}
-		MessageChannel registered = resolver.resolveDestination("foo");
-		assertEquals(2, ((AbstractMessageChannel)registered).getChannelInterceptors().size());
-		assertTrue(((AbstractMessageChannel)registered).getChannelInterceptors().get(1) instanceof ImmutableMessageChannelInterceptor);
+		MessageChannel registered = this.resolver.resolveDestination("foo");
+		assertThat(((AbstractMessageChannel) registered).getChannelInterceptors().size())
+				.isEqualTo(2);
+		assertThat(((AbstractMessageChannel) registered).getChannelInterceptors()
+				.get(1) instanceof ImmutableMessageChannelInterceptor).isTrue();
 
-		bindables = context.getBeansOfType(Bindable.class);
+		bindables = this.context.getBeansOfType(Bindable.class);
 		assertThat(bindables).hasSize(1);
 		for (Bindable bindable : bindables.values()) {
-			assertEquals(0, bindable.getInputs().size()); // producer
-			assertEquals(1, bindable.getOutputs().size());// consumer
+			assertThat(bindable.getInputs().size()).isEqualTo(0); // producer
+			assertThat(bindable.getOutputs().size()).isEqualTo(1); // consumer
 		}
 		DirectChannel testChannel = new DirectChannel();
 		testChannel.setComponentName("INPUT");
@@ -145,18 +140,18 @@ public class BinderAwareChannelResolverTests {
 			fail("interrupted while awaiting latch");
 		}
 		assertThat(received).hasSize(1);
-		assertThat(new String((byte[])received.get(0).getPayload())).isEqualTo("hello");
+		assertThat(new String((byte[]) received.get(0).getPayload())).isEqualTo("hello");
 		this.context.close();
 		for (Bindable bindable : bindables.values()) {
-			assertEquals(0, bindable.getInputs().size());
-			assertEquals(0, bindable.getOutputs().size());//Must not be bound"
+			assertThat(bindable.getInputs().size()).isEqualTo(0);
+			assertThat(bindable.getOutputs().size()).isEqualTo(0); // Must not be bound"
 		}
 	}
 
 	@Test
 	public void resolveNonRegisteredChannel() {
-		MessageChannel other = resolver.resolveDestination("other");
-		assertThat(context.getBean("other")).isSameAs(other);
+		MessageChannel other = this.resolver.resolveDestination("other");
+		assertThat(this.context.getBean("other")).isSameAs(other);
 		this.context.close();
 	}
 
@@ -173,20 +168,37 @@ public class BinderAwareChannelResolverTests {
 		BinderFactory mockBinderFactory = Mockito.mock(BinderFactory.class);
 		Binding<MessageChannel> fooBinding = Mockito.mock(Binding.class);
 		Binding<MessageChannel> barBinding = Mockito.mock(Binding.class);
-		when(binder.bindProducer(
-				matches("foo"), any(DirectChannel.class), any(ProducerProperties.class))).thenReturn(fooBinding);
-		when(binder2.bindProducer(
-				matches("bar"), any(DirectChannel.class), any(ProducerProperties.class))).thenReturn(barBinding);
-		when(mockBinderFactory.getBinder(null, DirectWithAttributesChannel.class)).thenReturn(binder);
-		when(mockBinderFactory.getBinder("someTransport", DirectWithAttributesChannel.class)).thenReturn(binder2);
-		BindingService bindingService = new BindingService(bindingServiceProperties,
+		when(binder.bindProducer(matches("foo"), any(DirectChannel.class),
+				any(ProducerProperties.class))).thenReturn(fooBinding);
+		when(binder2.bindProducer(matches("bar"), any(DirectChannel.class),
+				any(ProducerProperties.class))).thenReturn(barBinding);
+		when(mockBinderFactory.getBinder(null, DirectWithAttributesChannel.class))
+				.thenReturn(binder);
+		when(mockBinderFactory.getBinder("someTransport",
+				DirectWithAttributesChannel.class)).thenReturn(binder2);
+		BindingService bindingService = new BindingService(this.bindingServiceProperties,
 				mockBinderFactory);
-		BinderAwareChannelResolver resolver = new BinderAwareChannelResolver(bindingService, this.bindingTargetFactory,
+		BinderAwareChannelResolver resolver = new BinderAwareChannelResolver(
+				bindingService, this.bindingTargetFactory,
 				new DynamicDestinationsBindable());
-		resolver.setBeanFactory(context.getBeanFactory());
-		SubscribableChannel resolved = (SubscribableChannel) resolver.resolveDestination("foo");
-		verify(binder).bindProducer(eq("foo"), any(MessageChannel.class), any(ProducerProperties.class));
-		assertThat(resolved).isSameAs(context.getBean("foo"));
+		resolver.setBeanFactory(this.context.getBeanFactory());
+		SubscribableChannel resolved = (SubscribableChannel) resolver
+				.resolveDestination("foo");
+		verify(binder).bindProducer(eq("foo"), any(MessageChannel.class),
+				any(ProducerProperties.class));
+		assertThat(resolved).isSameAs(this.context.getBean("foo"));
 		this.context.close();
 	}
+
+	@Configuration
+	public static class InterceptorConfiguration {
+
+		@Bean
+		public GlobalChannelInterceptorWrapper testInterceptor() {
+			return new GlobalChannelInterceptorWrapper(
+					new ImmutableMessageChannelInterceptor());
+		}
+
+	}
+
 }

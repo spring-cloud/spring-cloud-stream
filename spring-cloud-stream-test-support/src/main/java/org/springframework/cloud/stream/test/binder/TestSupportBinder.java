@@ -64,15 +64,16 @@ import org.springframework.util.StringUtils;
  * @author Soby Chacko
  * @see MessageQueueMatcher
  */
-public class TestSupportBinder implements Binder<MessageChannel, ConsumerProperties, ProducerProperties> {
+public class TestSupportBinder
+		implements Binder<MessageChannel, ConsumerProperties, ProducerProperties> {
 
 	private final MessageCollectorImpl messageCollector = new MessageCollectorImpl();
 
 	private final ConcurrentMap<String, MessageChannel> messageChannels = new ConcurrentHashMap<>();
 
 	@Override
-	public Binding<MessageChannel> bindConsumer(String name, String group, MessageChannel inboundBindTarget,
-			ConsumerProperties properties) {
+	public Binding<MessageChannel> bindConsumer(String name, String group,
+			MessageChannel inboundBindTarget, ConsumerProperties properties) {
 		return new TestBinding(inboundBindTarget, null);
 	}
 
@@ -81,9 +82,10 @@ public class TestSupportBinder implements Binder<MessageChannel, ConsumerPropert
 	 * retrieval and assertion in tests.
 	 */
 	@Override
-	public Binding<MessageChannel> bindProducer(String name, MessageChannel outboundBindTarget,
-			ProducerProperties properties) {
-		final BlockingQueue<Message<?>> queue = messageCollector.register(outboundBindTarget, properties.isUseNativeEncoding());
+	public Binding<MessageChannel> bindProducer(String name,
+			MessageChannel outboundBindTarget, ProducerProperties properties) {
+		final BlockingQueue<Message<?>> queue = this.messageCollector
+				.register(outboundBindTarget, properties.isUseNativeEncoding());
 		((SubscribableChannel) outboundBindTarget).subscribe(new MessageHandler() {
 			@Override
 			public void handleMessage(Message<?> message) throws MessagingException {
@@ -91,11 +93,11 @@ public class TestSupportBinder implements Binder<MessageChannel, ConsumerPropert
 			}
 		});
 		this.messageChannels.put(name, outboundBindTarget);
-		return new TestBinding(outboundBindTarget, messageCollector);
+		return new TestBinding(outboundBindTarget, this.messageCollector);
 	}
 
 	public MessageCollector messageCollector() {
-		return messageCollector;
+		return this.messageCollector;
 	}
 
 	public MessageChannel getChannelForName(String name) {
@@ -111,29 +113,36 @@ public class TestSupportBinder implements Binder<MessageChannel, ConsumerPropert
 
 		private final Map<MessageChannel, BlockingQueue<Message<?>>> results = new HashMap<>();
 
-		private BlockingQueue<Message<?>> register(MessageChannel channel, boolean useNativeEncoding) {
-			// we need to add this interceptor to ensure MessageCollector's compatibility with
+		private BlockingQueue<Message<?>> register(MessageChannel channel,
+				boolean useNativeEncoding) {
+			// we need to add this interceptor to ensure MessageCollector's compatibility
+			// with
 			// previous versions of SCSt when native encoding is disabled.
 			if (!useNativeEncoding) {
-				((AbstractMessageChannel) channel).addInterceptor(new InboundMessageConvertingInterceptor());
+				((AbstractMessageChannel) channel)
+						.addInterceptor(new InboundMessageConvertingInterceptor());
 			}
 			LinkedBlockingDeque<Message<?>> result = new LinkedBlockingDeque<>();
-			Assert.isTrue(!results.containsKey(channel), "Channel [" + channel + "] was already bound");
-			results.put(channel, result);
+			Assert.isTrue(!this.results.containsKey(channel),
+					"Channel [" + channel + "] was already bound");
+			this.results.put(channel, result);
 			return result;
 		}
 
 		private void unregister(MessageChannel channel) {
-			Assert.notNull(results.remove(channel),
-					"Trying to unregister a mapping for an unknown channel [" + channel + "]");
+			Assert.notNull(this.results.remove(channel),
+					"Trying to unregister a mapping for an unknown channel [" + channel
+							+ "]");
 		}
 
 		@Override
 		public BlockingQueue<Message<?>> forChannel(MessageChannel channel) {
-			BlockingQueue<Message<?>> queue = results.get(channel);
-			Assert.notNull(queue, "Channel [" + channel + "] was not bound by " + TestSupportBinder.class);
+			BlockingQueue<Message<?>> queue = this.results.get(channel);
+			Assert.notNull(queue, "Channel [" + channel + "] was not bound by "
+					+ TestSupportBinder.class);
 			return queue;
 		}
+
 	}
 
 	/**
@@ -145,56 +154,80 @@ public class TestSupportBinder implements Binder<MessageChannel, ConsumerPropert
 
 		private final MessageCollectorImpl messageCollector;
 
-		private TestBinding(MessageChannel target, MessageCollectorImpl messageCollector) {
+		private TestBinding(MessageChannel target,
+				MessageCollectorImpl messageCollector) {
 			this.target = target;
 			this.messageCollector = messageCollector;
 		}
 
 		@Override
 		public void unbind() {
-			if (messageCollector != null) {
-				messageCollector.unregister(target);
+			if (this.messageCollector != null) {
+				this.messageCollector.unregister(this.target);
 			}
 		}
+
 	}
 
 	/**
 	 * This is really an interceptor to maintain MessageCollector's backward compatibility
-	 * with the behavior established in 1.3
-	 * - BINDER_ORIGINAL_CONTENT_TYPE
-	 * - Kryo and Java deserialization
-	 * - byte[] to String conversion
-	 * - etc
+	 * with the behavior established in 1.3 - BINDER_ORIGINAL_CONTENT_TYPE - Kryo and Java
+	 * deserialization - byte[] to String conversion - etc.
 	 */
-	private final static class InboundMessageConvertingInterceptor implements ChannelInterceptor {
+	private final static class InboundMessageConvertingInterceptor
+			implements ChannelInterceptor {
 
 		private final DefaultContentTypeResolver contentTypeResolver = new DefaultContentTypeResolver();
+
 		private final CompositeMessageConverterFactory converterFactory = new CompositeMessageConverterFactory();
+
+		/*
+		 * Candidate to go into some utils class
+		 */
+		private static boolean equalTypeAndSubType(MimeType m1, MimeType m2) {
+			return m1 != null && m2 != null && m1.getType().equalsIgnoreCase(m2.getType())
+					&& m1.getSubtype().equalsIgnoreCase(m2.getSubtype());
+		}
 
 		@Override
 		public Message<?> preSend(Message<?> message, MessageChannel channel) {
 			Class<?> targetClass = null;
 			MessageConverter converter = null;
-			MimeType contentType = message.getHeaders().containsKey(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE)
-						? MimeType.valueOf(message.getHeaders().get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE).toString())
-								: MimeType.valueOf(contentTypeResolver.resolve(message.getHeaders()).toString());
+			MimeType contentType = message.getHeaders()
+					.containsKey(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE)
+							? MimeType.valueOf(message.getHeaders()
+									.get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE)
+									.toString())
+							: MimeType.valueOf(this.contentTypeResolver
+									.resolve(message.getHeaders()).toString());
 
-			if (contentType != null){
-				if (equalTypeAndSubType(MessageConverterUtils.X_JAVA_SERIALIZED_OBJECT, contentType) ||
-						equalTypeAndSubType(MessageConverterUtils.X_JAVA_OBJECT, contentType)) {
-					// for Java and Kryo de-serialization we need to reset the content type
-					message = MessageBuilder.fromMessage(message).setHeader(MessageHeaders.CONTENT_TYPE, contentType).build();
-					converter = equalTypeAndSubType(MessageConverterUtils.X_JAVA_SERIALIZED_OBJECT, contentType)
-							? converterFactory.getMessageConverterForType(contentType)
-									: converterFactory.getMessageConverterForAllRegistered();
+			if (contentType != null) {
+				if (equalTypeAndSubType(MessageConverterUtils.X_JAVA_SERIALIZED_OBJECT,
+						contentType)
+						|| equalTypeAndSubType(MessageConverterUtils.X_JAVA_OBJECT,
+								contentType)) {
+					// for Java and Kryo de-serialization we need to reset the content
+					// type
+					message = MessageBuilder.fromMessage(message)
+							.setHeader(MessageHeaders.CONTENT_TYPE, contentType).build();
+					converter = equalTypeAndSubType(
+							MessageConverterUtils.X_JAVA_SERIALIZED_OBJECT, contentType)
+									? this.converterFactory
+											.getMessageConverterForType(contentType)
+									: this.converterFactory
+											.getMessageConverterForAllRegistered();
 					String targetClassName = contentType.getParameter("type");
 					if (StringUtils.hasText(targetClassName)) {
 						try {
-							targetClass = Class.forName(targetClassName, false, Thread.currentThread().getContextClassLoader());
+							targetClass = Class.forName(targetClassName, false,
+									Thread.currentThread().getContextClassLoader());
 						}
 						catch (Exception e) {
-							throw new IllegalStateException("Failed to determine class name for contentType: "
-									+ message.getHeaders().get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE), e);
+							throw new IllegalStateException(
+									"Failed to determine class name for contentType: "
+											+ message.getHeaders().get(
+													BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE),
+									e);
 						}
 					}
 				}
@@ -202,41 +235,41 @@ public class TestSupportBinder implements Binder<MessageChannel, ConsumerPropert
 			}
 
 			Object payload;
-			if (converter != null){
-				Assert.isTrue(!(equalTypeAndSubType(MessageConverterUtils.X_JAVA_OBJECT, contentType) && targetClass == null),
+			if (converter != null) {
+				Assert.isTrue(
+						!(equalTypeAndSubType(MessageConverterUtils.X_JAVA_OBJECT,
+								contentType) && targetClass == null),
 						"Cannot deserialize into message since 'contentType` is not "
-							+ "encoded with the actual target type."
-							+ "Consider 'application/x-java-object; type=foo.bar.MyClass'");
+								+ "encoded with the actual target type."
+								+ "Consider 'application/x-java-object; type=foo.bar.MyClass'");
 				payload = converter.fromMessage(message, targetClass);
 			}
 			else {
-				MimeType deserializeContentType = contentTypeResolver.resolve(message.getHeaders());
+				MimeType deserializeContentType = this.contentTypeResolver
+						.resolve(message.getHeaders());
 				if (deserializeContentType == null) {
 					deserializeContentType = contentType;
 				}
-				payload = deserializeContentType == null ? message.getPayload() : this.deserializePayload(message.getPayload(), deserializeContentType);
+				payload = deserializeContentType == null ? message.getPayload() : this
+						.deserializePayload(message.getPayload(), deserializeContentType);
 			}
 			message = MessageBuilder.withPayload(payload)
 					.copyHeaders(message.getHeaders())
 					.setHeader(MessageHeaders.CONTENT_TYPE, contentType)
-					.removeHeader(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE)
-					.build();
+					.removeHeader(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE).build();
 			return message;
 		}
 
 		private Object deserializePayload(Object payload, MimeType contentType) {
-			if (payload instanceof byte[] && ("text".equalsIgnoreCase(contentType.getType()) ||
-					equalTypeAndSubType(MimeTypeUtils.APPLICATION_JSON, contentType))) {
-				payload = new String((byte[])payload, StandardCharsets.UTF_8);
+			if (payload instanceof byte[]
+					&& ("text".equalsIgnoreCase(contentType.getType())
+							|| equalTypeAndSubType(MimeTypeUtils.APPLICATION_JSON,
+									contentType))) {
+				payload = new String((byte[]) payload, StandardCharsets.UTF_8);
 			}
 			return payload;
 		}
 
-		/*
-		 * Candidate to go into some utils class
-		 */
-		private static boolean equalTypeAndSubType(MimeType m1, MimeType m2) {
-			return m1 != null && m2 != null && m1.getType().equalsIgnoreCase(m2.getType()) && m1.getSubtype().equalsIgnoreCase(m2.getSubtype());
-		}
 	}
+
 }

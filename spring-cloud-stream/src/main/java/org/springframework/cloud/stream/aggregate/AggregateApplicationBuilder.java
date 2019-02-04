@@ -105,6 +105,7 @@ public class AggregateApplicationBuilder implements AggregateApplication,
 	/**
 	 * Adding auto configuration classes to parent sources excluding the configuration
 	 * classes related to binder/binding.
+	 * @param sources sources to which parent sources will be added
 	 */
 	private void addParentSources(Object[] sources) {
 		if (!this.parentSources.contains(ParentConfiguration.class)) {
@@ -130,7 +131,6 @@ public class AggregateApplicationBuilder implements AggregateApplication,
 
 	/**
 	 * Flag to explicitly request a web or non-web environment.
-	 *
 	 * @param webEnvironment true if the application has a web environment
 	 * @return the AggregateApplicationBuilder being constructed
 	 * @see SpringApplicationBuilder#web(boolean)
@@ -142,7 +142,6 @@ public class AggregateApplicationBuilder implements AggregateApplication,
 
 	/**
 	 * Configures the headless attribute of the build application.
-	 *
 	 * @param headless true if the application is headless
 	 * @return the AggregateApplicationBuilder being constructed
 	 * @see SpringApplicationBuilder#headless(boolean)
@@ -165,12 +164,12 @@ public class AggregateApplicationBuilder implements AggregateApplication,
 
 	@Override
 	public <T> T getBinding(Class<T> bindableType, String namespace) {
-		if (parentContext == null) {
+		if (this.parentContext == null) {
 			throw new IllegalStateException(
 					"The aggregate application has not been started yet");
 		}
 		try {
-			ChildContextHolder contextHolder = parentContext
+			ChildContextHolder contextHolder = this.parentContext
 					.getBean(namespace + CHILD_CONTEXT_SUFFIX, ChildContextHolder.class);
 			return contextHolder.getChildContext().getBean(bindableType);
 		}
@@ -190,15 +189,15 @@ public class AggregateApplicationBuilder implements AggregateApplication,
 		this.parentArgs.addAll(Arrays.asList(parentArgs));
 		List<AppConfigurer<?>> apps = new ArrayList<>();
 		if (this.sourceConfigurer != null) {
-			apps.add(sourceConfigurer);
+			apps.add(this.sourceConfigurer);
 		}
-		if (!processorConfigurers.isEmpty()) {
-			for (ProcessorConfigurer processorConfigurer : processorConfigurers) {
+		if (!this.processorConfigurers.isEmpty()) {
+			for (ProcessorConfigurer processorConfigurer : this.processorConfigurers) {
 				apps.add(processorConfigurer);
 			}
 		}
 		if (this.sinkConfigurer != null) {
-			apps.add(sinkConfigurer);
+			apps.add(this.sinkConfigurer);
 		}
 		LinkedHashMap<Class<?>, String> appsToEmbed = new LinkedHashMap<>();
 		LinkedHashMap<AppConfigurer<?>, String> appConfigurers = new LinkedHashMap<>();
@@ -211,7 +210,9 @@ public class AggregateApplicationBuilder implements AggregateApplication,
 				// binder
 				// org.springframework.cloud.stream.aggregation.AggregationTest$TestSource
 				appConfigurer.namespace = AggregateApplicationUtils.getDefaultNamespace(
-						DOLLAR_ESCAPE_PATTERN.matcher(appConfigurer.getApp().getName()).replaceAll("."), i);
+						DOLLAR_ESCAPE_PATTERN.matcher(appConfigurer.getApp().getName())
+								.replaceAll("."),
+						i);
 			}
 			appsToEmbed.put(appToEmbed, appConfigurer.namespace);
 			appConfigurers.put(appConfigurer, appConfigurer.namespace);
@@ -313,29 +314,42 @@ public class AggregateApplicationBuilder implements AggregateApplication,
 		}
 
 		public ConfigurableApplicationContext getChildContext() {
-			return childContext;
+			return this.childContext;
 		}
+
 	}
 
+	/**
+	 * Auto configuration for {@link SharedBindingTargetRegistry}.
+	 */
 	@ImportAutoConfiguration(ChannelBindingAutoConfiguration.class)
 	@EnableBinding
 	public static class ParentConfiguration {
+
 		@Bean
 		@ConditionalOnMissingBean(SharedBindingTargetRegistry.class)
 		public SharedBindingTargetRegistry sharedBindingTargetRegistry() {
 			return new SharedBindingTargetRegistry();
 		}
+
 	}
 
+	/**
+	 * Auto configuration for {@link EndpointAutoConfiguration}.
+	 */
 	@ImportAutoConfiguration(EndpointAutoConfiguration.class)
 	public static class ParentActuatorConfiguration {
+
 	}
 
+	/**
+	 * Source configurer.
+	 */
 	public class SourceConfigurer extends AppConfigurer<SourceConfigurer> {
 
 		public SourceConfigurer(Class<?> app) {
 			this.app = app;
-			sourceConfigurer = this;
+			AggregateApplicationBuilder.this.sourceConfigurer = this;
 		}
 
 		public SinkConfigurer to(Class<?> sink) {
@@ -348,20 +362,26 @@ public class AggregateApplicationBuilder implements AggregateApplication,
 
 	}
 
+	/**
+	 * Sink configurer.
+	 */
 	public class SinkConfigurer extends AppConfigurer<SinkConfigurer> {
 
 		public SinkConfigurer(Class<?> app) {
 			this.app = app;
-			sinkConfigurer = this;
+			AggregateApplicationBuilder.this.sinkConfigurer = this;
 		}
 
 	}
 
+	/**
+	 * Processor configurer.
+	 */
 	public class ProcessorConfigurer extends AppConfigurer<ProcessorConfigurer> {
 
 		public ProcessorConfigurer(Class<?> app) {
 			this.app = app;
-			processorConfigurers.add(this);
+			AggregateApplicationBuilder.this.processorConfigurers.add(this);
 		}
 
 		public SinkConfigurer to(Class<?> sink) {
@@ -374,6 +394,11 @@ public class AggregateApplicationBuilder implements AggregateApplication,
 
 	}
 
+	/**
+	 * Abstraction over configuration of an applciation.
+	 *
+	 * @param <T> type of a configurer
+	 */
 	public abstract class AppConfigurer<T extends AppConfigurer<T>> {
 
 		Class<?> app;
@@ -416,7 +441,7 @@ public class AggregateApplicationBuilder implements AggregateApplication,
 		}
 
 		public ConfigurableApplicationContext run(String... args) {
-			return applicationBuilder.run(args);
+			return AggregateApplicationBuilder.this.applicationBuilder.run(args);
 		}
 
 		void embed() {
@@ -446,7 +471,7 @@ public class AggregateApplicationBuilder implements AggregateApplication,
 		}
 
 		public AggregateApplication build() {
-			return applicationBuilder;
+			return AggregateApplicationBuilder.this.applicationBuilder;
 		}
 
 		public String[] getArgs() {
@@ -456,6 +481,7 @@ public class AggregateApplicationBuilder implements AggregateApplication,
 		public String getNamespace() {
 			return this.namespace;
 		}
+
 	}
 
 	private final class ChildContextBuilder {

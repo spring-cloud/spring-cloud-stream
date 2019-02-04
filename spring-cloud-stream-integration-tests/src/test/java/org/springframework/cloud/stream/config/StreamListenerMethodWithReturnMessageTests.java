@@ -59,14 +59,15 @@ public class StreamListenerMethodWithReturnMessageTests {
 
 	@Parameterized.Parameters
 	public static Collection<?> InputConfigs() {
-		return Arrays.asList(new Class[] { TestPojoWithMessageReturn1.class, TestPojoWithMessageReturn2.class });
+		return Arrays.asList(new Class[] { TestPojoWithMessageReturn1.class,
+				TestPojoWithMessageReturn2.class });
 	}
 
 	@Test
 	@SuppressWarnings("unchecked")
 	public void testReturnMessage() throws Exception {
-		ConfigurableApplicationContext context = SpringApplication
-				.run(this.configClass, "--server.port=0","--spring.jmx.enabled=false");
+		ConfigurableApplicationContext context = SpringApplication.run(this.configClass,
+				"--server.port=0", "--spring.jmx.enabled=false");
 		MessageCollector collector = context.getBean(MessageCollector.class);
 		Processor processor = context.getBean(Processor.class);
 		String id = UUID.randomUUID().toString();
@@ -76,7 +77,8 @@ public class StreamListenerMethodWithReturnMessageTests {
 		TestPojoWithMessageReturn testPojoWithMessageReturn = context
 				.getBean(TestPojoWithMessageReturn.class);
 		Assertions.assertThat(testPojoWithMessageReturn.receivedPojos).hasSize(1);
-		Assertions.assertThat(testPojoWithMessageReturn.receivedPojos.get(0)).hasFieldOrPropertyWithValue("foo", "barbar" + id);
+		Assertions.assertThat(testPojoWithMessageReturn.receivedPojos.get(0))
+				.hasFieldOrPropertyWithValue("foo", "barbar" + id);
 		Message<String> message = (Message<String>) collector
 				.forChannel(processor.output()).poll(1, TimeUnit.SECONDS);
 		assertThat(message).isNotNull();
@@ -96,6 +98,7 @@ public class StreamListenerMethodWithReturnMessageTests {
 			barPojo.setBar(fooPojo.getFoo());
 			return MessageBuilder.withPayload(barPojo).setHeader("foo", "bar").build();
 		}
+
 	}
 
 	@EnableBinding(Processor.class)
@@ -110,10 +113,13 @@ public class StreamListenerMethodWithReturnMessageTests {
 			bazPojo.setBar(fooPojo.getFoo());
 			return MessageBuilder.withPayload(bazPojo).setHeader("foo", "bar").build();
 		}
+
 	}
 
 	public static class TestPojoWithMessageReturn {
+
 		List<StreamListenerTestUtils.FooPojo> receivedPojos = new ArrayList<>();
+
 	}
 
 }

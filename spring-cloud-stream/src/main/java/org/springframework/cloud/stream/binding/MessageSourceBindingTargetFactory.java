@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 the original author or authors.
+ * Copyright 2018-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,16 +34,19 @@ public class MessageSourceBindingTargetFactory
 
 	private final SmartMessageConverter messageConverter;
 
-	public MessageSourceBindingTargetFactory(SmartMessageConverter messageConverter, MessageChannelConfigurer messageSourceConfigurer) {
+	public MessageSourceBindingTargetFactory(SmartMessageConverter messageConverter,
+			MessageChannelConfigurer messageSourceConfigurer) {
 		super(PollableMessageSource.class);
-		Assert.isInstanceOf(MessageChannelAndSourceConfigurer.class, messageSourceConfigurer);
+		Assert.isInstanceOf(MessageChannelAndSourceConfigurer.class,
+				messageSourceConfigurer);
 		this.messageSourceConfigurer = (MessageChannelAndSourceConfigurer) messageSourceConfigurer;
 		this.messageConverter = messageConverter;
 	}
 
 	@Override
 	public PollableMessageSource createInput(String name) {
-		DefaultPollableMessageSource binding = new DefaultPollableMessageSource(this.messageConverter);
+		DefaultPollableMessageSource binding = new DefaultPollableMessageSource(
+				this.messageConverter);
 		this.messageSourceConfigurer.configurePolledMessageSource(binding, name);
 		return binding;
 	}

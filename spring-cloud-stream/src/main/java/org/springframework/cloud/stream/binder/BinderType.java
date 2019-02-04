@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,11 +40,11 @@ public class BinderType {
 	}
 
 	public String getDefaultName() {
-		return defaultName;
+		return this.defaultName;
 	}
 
 	public Class<?>[] getConfigurationClasses() {
-		return configurationClasses;
+		return this.configurationClasses;
 	}
 
 	@Override
@@ -56,17 +56,18 @@ public class BinderType {
 			return false;
 		}
 		BinderType that = (BinderType) o;
-		if (!defaultName.equals(that.defaultName)) {
+		if (!this.defaultName.equals(that.defaultName)) {
 			return false;
 		}
-		return Arrays.equals(configurationClasses, that.configurationClasses);
+		return Arrays.equals(this.configurationClasses, that.configurationClasses);
 
 	}
 
 	@Override
 	public int hashCode() {
-		int result = defaultName.hashCode();
-		result = 31 * result + Arrays.hashCode(configurationClasses);
+		int result = this.defaultName.hashCode();
+		result = 31 * result + Arrays.hashCode(this.configurationClasses);
 		return result;
 	}
+
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 the original author or authors.
+ * Copyright 2018-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,18 +32,16 @@ import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.integration.support.utils.IntegrationUtils;
 
 /**
- * Base implementation of {@link ExtendedBindingProperties}
- *
- * @author Oleg Zhurakousky
- *
- * @since 2.1
+ * Base implementation of {@link ExtendedBindingProperties}.
  *
  * @param <C> - consumer properties type
  * @param <P> - producer properties type
  * @param <T> - type which provides the consumer and producer properties
+ * @author Oleg Zhurakousky
+ * @since 2.1
  */
 public abstract class AbstractExtendedBindingProperties<C, P, T extends BinderSpecificPropertiesProvider>
-			implements ExtendedBindingProperties<C, P>, ApplicationContextAware {
+		implements ExtendedBindingProperties<C, P>, ApplicationContextAware {
 
 	private final Map<String, T> bindings = new HashMap<>();
 
@@ -61,18 +59,19 @@ public abstract class AbstractExtendedBindingProperties<C, P, T extends BinderSp
 	@Override
 	public C getExtendedConsumerProperties(String binding) {
 		this.bindIfNecessary(binding);
-		return (C) bindings.get(binding).getConsumer();
+		return (C) this.bindings.get(binding).getConsumer();
 	}
 
 	@SuppressWarnings("unchecked")
 	@Override
 	public P getExtendedProducerProperties(String binding) {
 		this.bindIfNecessary(binding);
-		return (P) bindings.get(binding).getProducer();
+		return (P) this.bindings.get(binding).getProducer();
 	}
 
 	@Override
-	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+	public void setApplicationContext(ApplicationContext applicationContext)
+			throws BeansException {
 		this.applicationContext = (ConfigurableApplicationContext) applicationContext;
 	}
 
@@ -80,18 +79,26 @@ public abstract class AbstractExtendedBindingProperties<C, P, T extends BinderSp
 	 * The "necessary" implies the scenario where only defaults are defined.
 	 */
 	private void bindIfNecessary(String bindingName) {
-		if (!bindings.containsKey(bindingName)) {
+		if (!this.bindings.containsKey(bindingName)) {
 			this.bindToDefault(bindingName);
 		}
 	}
 
 	@SuppressWarnings("unchecked")
 	private void bindToDefault(String binding) {
-		T extendedBindingPropertiesTarget = (T) BeanUtils.instantiateClass(this.getExtendedPropertiesEntryClass());
-		Binder binder = new Binder(ConfigurationPropertySources.get(applicationContext.getEnvironment()),
-				new PropertySourcesPlaceholdersResolver(applicationContext.getEnvironment()),
-				IntegrationUtils.getConversionService(applicationContext.getBeanFactory()), null);
-		binder.bind(this.getDefaultsPrefix(), Bindable.ofInstance(extendedBindingPropertiesTarget));
+		T extendedBindingPropertiesTarget = (T) BeanUtils
+				.instantiateClass(this.getExtendedPropertiesEntryClass());
+		Binder binder = new Binder(
+				ConfigurationPropertySources
+						.get(this.applicationContext.getEnvironment()),
+				new PropertySourcesPlaceholdersResolver(
+						this.applicationContext.getEnvironment()),
+				IntegrationUtils.getConversionService(
+						this.applicationContext.getBeanFactory()),
+				null);
+		binder.bind(this.getDefaultsPrefix(),
+				Bindable.ofInstance(extendedBindingPropertiesTarget));
 		this.bindings.put(binding, extendedBindingPropertiesTarget);
 	}
+
 }

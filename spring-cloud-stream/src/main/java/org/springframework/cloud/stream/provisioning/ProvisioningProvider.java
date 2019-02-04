@@ -33,9 +33,7 @@ import org.springframework.cloud.stream.binder.ProducerProperties;
  *
  * @param <C> the consumer properties type
  * @param <P> the producer properties type
- *
  * @author Soby Chacko
- *
  * @since 1.2
  */
 public interface ProvisioningProvider<C extends ConsumerProperties, P extends ProducerProperties> {
@@ -43,25 +41,24 @@ public interface ProvisioningProvider<C extends ConsumerProperties, P extends Pr
 	/**
 	 * Creates middleware destination on the physical broker for the producer to send
 	 * data. The implementation is middleware-specific.
-	 *
 	 * @param name the name of the producer destination
 	 * @param properties producer properties
 	 * @return reference to {@link ProducerDestination} that represents a producer
 	 * @throws ProvisioningException on underlying provisioning errors from the middleware
 	 */
-	ProducerDestination provisionProducerDestination(String name, P properties) throws ProvisioningException;
+	ProducerDestination provisionProducerDestination(String name, P properties)
+			throws ProvisioningException;
 
 	/**
 	 * Creates the middleware destination on the physical broker for the consumer to
 	 * consume data. The implementation is middleware-specific.
-	 *
 	 * @param name the name of the destination
 	 * @param group the consumer group
 	 * @param properties consumer properties
 	 * @return reference to {@link ConsumerDestination} that represents a consumer
 	 * @throws ProvisioningException on underlying provisioning errors from the middleware
 	 */
-	ConsumerDestination provisionConsumerDestination(String name, String group, C properties)
-			throws ProvisioningException;
+	ConsumerDestination provisionConsumerDestination(String name, String group,
+			C properties) throws ProvisioningException;
 
 }

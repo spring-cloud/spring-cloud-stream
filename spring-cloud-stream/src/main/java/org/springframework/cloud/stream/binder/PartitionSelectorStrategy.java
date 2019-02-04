@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 the original author or authors.
+ * Copyright 2014-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,10 +29,8 @@ public interface PartitionSelectorStrategy {
 	 * {@code someValue % partitionCount}. The caller will apply that same modulo
 	 * operation (as well as enforcing absolute value) if the value exceeds partitionCount
 	 * - 1.
-	 *
 	 * @param key the key
 	 * @param partitionCount the number of partitions
-	 *
 	 * @return the partition
 	 */
 	int selectPartition(Object key, int partitionCount);

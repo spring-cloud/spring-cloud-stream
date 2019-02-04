@@ -58,14 +58,15 @@ public class StreamListenerMethodWithReturnValueTests {
 
 	@Parameterized.Parameters
 	public static Collection<?> InputConfigs() {
-		return Arrays.asList(new Class[] { TestStringProcessor1.class, TestStringProcessor2.class });
+		return Arrays.asList(
+				new Class[] { TestStringProcessor1.class, TestStringProcessor2.class });
 	}
 
 	@Test
 	@SuppressWarnings("unchecked")
 	public void testReturn() throws Exception {
-		ConfigurableApplicationContext context = SpringApplication
-				.run(this.configClass, "--server.port=0","--spring.jmx.enabled=false");
+		ConfigurableApplicationContext context = SpringApplication.run(this.configClass,
+				"--server.port=0", "--spring.jmx.enabled=false");
 		MessageCollector collector = context.getBean(MessageCollector.class);
 		Processor processor = context.getBean(Processor.class);
 		String id = UUID.randomUUID().toString();
@@ -77,7 +78,8 @@ public class StreamListenerMethodWithReturnValueTests {
 		TestStringProcessor testStringProcessor = context
 				.getBean(TestStringProcessor.class);
 		Assertions.assertThat(testStringProcessor.receivedPojos).hasSize(1);
-		Assertions.assertThat(testStringProcessor.receivedPojos.get(0)).hasFieldOrPropertyWithValue("foo", "barbar" + id);
+		Assertions.assertThat(testStringProcessor.receivedPojos.get(0))
+				.hasFieldOrPropertyWithValue("foo", "barbar" + id);
 		assertThat(message).isNotNull();
 		assertThat(message.getPayload()).contains("barbar" + id);
 		context.close();
@@ -93,6 +95,7 @@ public class StreamListenerMethodWithReturnValueTests {
 			this.receivedPojos.add(fooPojo);
 			return fooPojo.getFoo();
 		}
+
 	}
 
 	@EnableBinding(Processor.class)
@@ -105,10 +108,13 @@ public class StreamListenerMethodWithReturnValueTests {
 			this.receivedPojos.add(fooPojo);
 			return fooPojo.getFoo();
 		}
+
 	}
 
 	public static class TestStringProcessor {
+
 		List<StreamListenerTestUtils.FooPojo> receivedPojos = new ArrayList<>();
+
 	}
 
 }

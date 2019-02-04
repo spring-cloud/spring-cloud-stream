@@ -41,73 +41,85 @@ import org.springframework.util.StringUtils;
 @SuppressWarnings("deprecation")
 public abstract class BindingBeanDefinitionRegistryUtils {
 
-	public static void registerInputBindingTargetBeanDefinition(String qualifierValue, String name,
-			String bindingTargetInterfaceBeanName, String bindingTargetInterfaceMethodName,
-			BeanDefinitionRegistry registry) {
-		registerBindingTargetBeanDefinition(Input.class, qualifierValue, name, bindingTargetInterfaceBeanName,
-				bindingTargetInterfaceMethodName, registry);
+	public static void registerInputBindingTargetBeanDefinition(String qualifierValue,
+			String name, String bindingTargetInterfaceBeanName,
+			String bindingTargetInterfaceMethodName, BeanDefinitionRegistry registry) {
+		registerBindingTargetBeanDefinition(Input.class, qualifierValue, name,
+				bindingTargetInterfaceBeanName, bindingTargetInterfaceMethodName,
+				registry);
 	}
 
-	public static void registerOutputBindingTargetBeanDefinition(String qualifierValue, String name,
-			String bindingTargetInterfaceBeanName, String bindingTargetInterfaceMethodName,
-			BeanDefinitionRegistry registry) {
-		registerBindingTargetBeanDefinition(Output.class, qualifierValue, name, bindingTargetInterfaceBeanName,
-				bindingTargetInterfaceMethodName, registry);
+	public static void registerOutputBindingTargetBeanDefinition(String qualifierValue,
+			String name, String bindingTargetInterfaceBeanName,
+			String bindingTargetInterfaceMethodName, BeanDefinitionRegistry registry) {
+		registerBindingTargetBeanDefinition(Output.class, qualifierValue, name,
+				bindingTargetInterfaceBeanName, bindingTargetInterfaceMethodName,
+				registry);
 	}
 
-	private static void registerBindingTargetBeanDefinition(Class<? extends Annotation> qualifier,
-			String qualifierValue, String name, String bindingTargetInterfaceBeanName,
+	private static void registerBindingTargetBeanDefinition(
+			Class<? extends Annotation> qualifier, String qualifierValue, String name,
+			String bindingTargetInterfaceBeanName,
 			String bindingTargetInterfaceMethodName, BeanDefinitionRegistry registry) {
 
 		if (registry.containsBeanDefinition(name)) {
 			throw new BeanDefinitionStoreException(bindingTargetInterfaceBeanName, name,
-					"bean definition with this name already exists - " + registry.getBeanDefinition(name));
+					"bean definition with this name already exists - "
+							+ registry.getBeanDefinition(name));
 		}
 
 		RootBeanDefinition rootBeanDefinition = new RootBeanDefinition();
 		rootBeanDefinition.setFactoryBeanName(bindingTargetInterfaceBeanName);
 		rootBeanDefinition.setUniqueFactoryMethodName(bindingTargetInterfaceMethodName);
-		rootBeanDefinition.addQualifier(new AutowireCandidateQualifier(qualifier, qualifierValue));
+		rootBeanDefinition
+				.addQualifier(new AutowireCandidateQualifier(qualifier, qualifierValue));
 		registry.registerBeanDefinition(name, rootBeanDefinition);
 	}
 
-	public static void registerBindingTargetBeanDefinitions(Class<?> type, final String bindingTargetInterfaceBeanName,
+	public static void registerBindingTargetBeanDefinitions(Class<?> type,
+			final String bindingTargetInterfaceBeanName,
 			final BeanDefinitionRegistry registry) {
 		ReflectionUtils.doWithMethods(type, method -> {
 			Input input = AnnotationUtils.findAnnotation(method, Input.class);
 			if (input != null) {
 				String name = getBindingTargetName(input, method);
-				registerInputBindingTargetBeanDefinition(input.value(), name, bindingTargetInterfaceBeanName,
-						method.getName(), registry);
+				registerInputBindingTargetBeanDefinition(input.value(), name,
+						bindingTargetInterfaceBeanName, method.getName(), registry);
 			}
 			Output output = AnnotationUtils.findAnnotation(method, Output.class);
 			if (output != null) {
 				String name = getBindingTargetName(output, method);
-				registerOutputBindingTargetBeanDefinition(output.value(), name, bindingTargetInterfaceBeanName,
-						method.getName(), registry);
+				registerOutputBindingTargetBeanDefinition(output.value(), name,
+						bindingTargetInterfaceBeanName, method.getName(), registry);
 			}
 		});
 	}
 
-	public static void registerBindingTargetsQualifiedBeanDefinitions(Class<?> parent, Class<?> type,
-			final BeanDefinitionRegistry registry) {
+	public static void registerBindingTargetsQualifiedBeanDefinitions(Class<?> parent,
+			Class<?> type, final BeanDefinitionRegistry registry) {
 
 		if (type.isInterface()) {
-			RootBeanDefinition rootBeanDefinition = new RootBeanDefinition(BindableProxyFactory.class);
-			rootBeanDefinition.addQualifier(new AutowireCandidateQualifier(Bindings.class, parent));
-			rootBeanDefinition.getConstructorArgumentValues().addGenericArgumentValue(type);
+			RootBeanDefinition rootBeanDefinition = new RootBeanDefinition(
+					BindableProxyFactory.class);
+			rootBeanDefinition
+					.addQualifier(new AutowireCandidateQualifier(Bindings.class, parent));
+			rootBeanDefinition.getConstructorArgumentValues()
+					.addGenericArgumentValue(type);
 			registry.registerBeanDefinition(type.getName(), rootBeanDefinition);
 		}
 		else {
 			RootBeanDefinition rootBeanDefinition = new RootBeanDefinition(type);
-			rootBeanDefinition.addQualifier(new AutowireCandidateQualifier(Bindings.class, parent));
+			rootBeanDefinition
+					.addQualifier(new AutowireCandidateQualifier(Bindings.class, parent));
 			registry.registerBeanDefinition(type.getName(), rootBeanDefinition);
 		}
 	}
 
 	public static String getBindingTargetName(Annotation annotation, Method method) {
-		Map<String, Object> attrs = AnnotationUtils.getAnnotationAttributes(annotation, false);
-		if (attrs.containsKey("value") && StringUtils.hasText((CharSequence) attrs.get("value"))) {
+		Map<String, Object> attrs = AnnotationUtils.getAnnotationAttributes(annotation,
+				false);
+		if (attrs.containsKey("value")
+				&& StringUtils.hasText((CharSequence) attrs.get("value"))) {
 			return (String) attrs.get("value");
 		}
 		return method.getName();

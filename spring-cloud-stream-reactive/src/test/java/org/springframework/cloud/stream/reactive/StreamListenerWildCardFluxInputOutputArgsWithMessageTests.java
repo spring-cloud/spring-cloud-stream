@@ -47,20 +47,24 @@ import static org.springframework.cloud.stream.binding.StreamListenerErrorMessag
 public class StreamListenerWildCardFluxInputOutputArgsWithMessageTests {
 
 	@SuppressWarnings("unchecked")
-	private static void sendMessageAndValidate(ConfigurableApplicationContext context) throws InterruptedException {
+	private static void sendMessageAndValidate(ConfigurableApplicationContext context)
+			throws InterruptedException {
 		Processor processor = context.getBean(Processor.class);
 		String sentPayload = "hello " + UUID.randomUUID().toString();
-		processor.input().send(MessageBuilder.withPayload(sentPayload).setHeader("contentType", "text/plain").build());
+		processor.input().send(MessageBuilder.withPayload(sentPayload)
+				.setHeader("contentType", "text/plain").build());
 		MessageCollector messageCollector = context.getBean(MessageCollector.class);
-		Message<String> result = (Message<String>) messageCollector.forChannel(processor.output()).poll(1000, TimeUnit.MILLISECONDS);
+		Message<String> result = (Message<String>) messageCollector
+				.forChannel(processor.output()).poll(1000, TimeUnit.MILLISECONDS);
 		assertThat(result).isNotNull();
 		assertThat(result.getPayload()).isEqualTo(sentPayload.toUpperCase());
 	}
 
 	@Test
 	public void testWildCardFluxInputOutputArgsWithMessage() throws Exception {
-		ConfigurableApplicationContext context = SpringApplication
-				.run(TestWildCardFluxInputOutputArgsWithMessage1.class, "--server.port=0","--spring.cloud.stream.bindings.output.contentType=text/plain");
+		ConfigurableApplicationContext context = SpringApplication.run(
+				TestWildCardFluxInputOutputArgsWithMessage1.class, "--server.port=0",
+				"--spring.cloud.stream.bindings.output.contentType=text/plain");
 		sendMessageAndValidate(context);
 		context.close();
 	}
@@ -68,18 +72,21 @@ public class StreamListenerWildCardFluxInputOutputArgsWithMessageTests {
 	@Test
 	public void testInputAsStreamListenerAndOutputAsParameterUsage() {
 		try {
-			SpringApplication.run(TestWildCardFluxInputOutputArgsWithMessage2.class, "--server.port=0");
+			SpringApplication.run(TestWildCardFluxInputOutputArgsWithMessage2.class,
+					"--server.port=0");
 			fail("Expected exception: " + INVALID_INPUT_VALUE_WITH_OUTPUT_METHOD_PARAM);
 		}
 		catch (Exception e) {
-			assertThat(e.getMessage()).contains(INVALID_INPUT_VALUE_WITH_OUTPUT_METHOD_PARAM);
+			assertThat(e.getMessage())
+					.contains(INVALID_INPUT_VALUE_WITH_OUTPUT_METHOD_PARAM);
 		}
 	}
 
 	@Test
 	public void testIncorrectUsage1() throws Exception {
 		try {
-			SpringApplication.run(TestWildCardFluxInputOutputArgsWithMessage3.class, "--server.port=0");
+			SpringApplication.run(TestWildCardFluxInputOutputArgsWithMessage3.class,
+					"--server.port=0");
 			fail("Expected exception: " + INVALID_DECLARATIVE_METHOD_PARAMETERS);
 		}
 		catch (Exception e) {
@@ -94,8 +101,10 @@ public class StreamListenerWildCardFluxInputOutputArgsWithMessageTests {
 		@StreamListener
 		public void receive(@Input(Processor.INPUT) Flux<?> input,
 				@Output(Processor.OUTPUT) FluxSender output) {
-			output.send(input.map(m -> MessageBuilder.withPayload(m.toString().toUpperCase()).build()));
+			output.send(input.map(
+					m -> MessageBuilder.withPayload(m.toString().toUpperCase()).build()));
 		}
+
 	}
 
 	@EnableBinding(Processor.class)
@@ -104,8 +113,10 @@ public class StreamListenerWildCardFluxInputOutputArgsWithMessageTests {
 
 		@StreamListener(Processor.INPUT)
 		public void receive(Flux<?> input, @Output(Processor.OUTPUT) FluxSender output) {
-			output.send(input.map(m -> MessageBuilder.withPayload(m.toString().toUpperCase()).build()));
+			output.send(input.map(
+					m -> MessageBuilder.withPayload(m.toString().toUpperCase()).build()));
 		}
+
 	}
 
 	@EnableBinding(Processor.class)
@@ -115,7 +126,10 @@ public class StreamListenerWildCardFluxInputOutputArgsWithMessageTests {
 		@StreamListener(Processor.INPUT)
 		@SendTo(Processor.OUTPUT)
 		public void receive(Flux<?> input, FluxSender output) {
-			output.send(input.map(m -> MessageBuilder.withPayload(m.toString().toUpperCase()).build()));
+			output.send(input.map(
+					m -> MessageBuilder.withPayload(m.toString().toUpperCase()).build()));
 		}
+
 	}
+
 }

@@ -28,13 +28,14 @@ import org.springframework.messaging.core.DestinationResolver;
  * @author Mark Fisher
  * @author Gary Russell
  * @author Oleg Zhurakousky
- *
- * @deprecated as of 2.0, will be renamed/replaced as it is no longer a BPP and naming is a bit confusing
+ * @deprecated as of 2.0, will be renamed/replaced as it is no longer a BPP and naming is
+ * a bit confusing
  */
 @Deprecated
 public class BinderAwareRouterBeanPostProcessor {
 
-	public BinderAwareRouterBeanPostProcessor(AbstractMappingMessageRouter[] routers, DestinationResolver<MessageChannel> channelResolver) {
+	public BinderAwareRouterBeanPostProcessor(AbstractMappingMessageRouter[] routers,
+			DestinationResolver<MessageChannel> channelResolver) {
 		if (routers != null) {
 			for (AbstractMappingMessageRouter router : routers) {
 				router.setChannelResolver(channelResolver);

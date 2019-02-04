@@ -41,10 +41,11 @@ public class StubBinder1Configuration {
 		StubBinder1 stubBinder1 = new StubBinder1();
 		ConfigurableApplicationContext outerContext = null;
 		try {
-			outerContext = (ConfigurableApplicationContext) beanFactory.getBean("outerContext");
+			outerContext = (ConfigurableApplicationContext) beanFactory
+					.getBean("outerContext");
 		}
 		catch (BeansException be) {
-			//Pass through
+			// Pass through
 		}
 		if (outerContext != null) {
 			stubBinder1.setOuterContext(outerContext);
@@ -56,4 +57,5 @@ public class StubBinder1Configuration {
 	public HealthIndicator binderHealthIndicator() {
 		return new ApplicationHealthIndicator();
 	}
+
 }

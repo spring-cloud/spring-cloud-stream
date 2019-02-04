@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,15 +34,18 @@ public class ContextStartAfterRefreshListener
 	private ApplicationContext applicationContext;
 
 	@Override
-	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+	public void setApplicationContext(ApplicationContext applicationContext)
+			throws BeansException {
 		this.applicationContext = applicationContext;
 	}
 
 	@Override
 	public void onApplicationEvent(ContextRefreshedEvent event) {
-		ConfigurableApplicationContext source = (ConfigurableApplicationContext) event.getSource();
+		ConfigurableApplicationContext source = (ConfigurableApplicationContext) event
+				.getSource();
 		if (source == this.applicationContext && !source.isRunning()) {
 			source.start();
 		}
 	}
+
 }

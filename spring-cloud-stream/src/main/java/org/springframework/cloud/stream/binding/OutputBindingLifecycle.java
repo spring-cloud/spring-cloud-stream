@@ -34,10 +34,12 @@ import org.springframework.util.CollectionUtils;
 public class OutputBindingLifecycle extends AbstractBindingLifecycle {
 
 	@SuppressWarnings("unused")
-	//It is actually used reflectively since at the moment we do not want to expose it via public method
+	// It is actually used reflectively since at the moment we do not want to expose it
+	// via public method
 	private Collection<Binding<Object>> outputBindings = new ArrayList<Binding<Object>>();
 
-	public OutputBindingLifecycle(BindingService bindingService, Map<String, Bindable> bindables) {
+	public OutputBindingLifecycle(BindingService bindingService,
+			Map<String, Bindable> bindables) {
 		super(bindingService, bindables);
 	}
 
@@ -52,7 +54,8 @@ public class OutputBindingLifecycle extends AbstractBindingLifecycle {
 
 	@Override
 	void doStartWithBindable(Bindable bindable) {
-		Collection<Binding<Object>> bindableBindings = bindable.createAndBindOutputs(bindingService);
+		Collection<Binding<Object>> bindableBindings = bindable
+				.createAndBindOutputs(this.bindingService);
 		if (!CollectionUtils.isEmpty(bindableBindings)) {
 			this.outputBindings.addAll(bindableBindings);
 		}
@@ -60,6 +63,7 @@ public class OutputBindingLifecycle extends AbstractBindingLifecycle {
 
 	@Override
 	void doStopWithBindable(Bindable bindable) {
-		bindable.unbindOutputs(bindingService);
+		bindable.unbindOutputs(this.bindingService);
 	}
+
 }

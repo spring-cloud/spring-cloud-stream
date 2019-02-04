@@ -21,18 +21,16 @@ import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.cloud.stream.messaging.Processor;
 
 /**
- *
  * @author Oleg Zhurakousky
  * @author Tolga Kavukcu
- *
  * @since 2.1
  */
 @ConfigurationProperties("spring.cloud.stream.function")
 public class StreamFunctionProperties {
 
 	/**
-	 * Definition of functions to bind. If several functions need to be composed
-	 * into one, use pipes (e.g., 'fooFunc|barFunc')
+	 * Definition of functions to bind. If several functions need to be composed into one,
+	 * use pipes (e.g., 'fooFunc|barFunc')
 	 */
 	private String definition;
 
@@ -51,7 +49,7 @@ public class StreamFunctionProperties {
 	}
 
 	BindingServiceProperties getBindingServiceProperties() {
-		return bindingServiceProperties;
+		return this.bindingServiceProperties;
 	}
 
 	void setBindingServiceProperties(BindingServiceProperties bindingServiceProperties) {
@@ -59,7 +57,7 @@ public class StreamFunctionProperties {
 	}
 
 	String getInputDestinationName() {
-		return inputDestinationName;
+		return this.inputDestinationName;
 	}
 
 	void setInputDestinationName(String inputDestinationName) {
@@ -67,10 +65,11 @@ public class StreamFunctionProperties {
 	}
 
 	String getOutputDestinationName() {
-		return outputDestinationName;
+		return this.outputDestinationName;
 	}
 
 	void setOutputDestinationName(String outputDestinationName) {
 		this.outputDestinationName = outputDestinationName;
 	}
+
 }

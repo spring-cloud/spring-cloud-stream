@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2017-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,23 +45,25 @@ public class CachingRegistryClient implements SchemaRegistryClient {
 	}
 
 	@Override
-	public SchemaRegistrationResponse register(String subject, String format, String schema) {
-		SchemaRegistrationResponse response = delegate.register(subject, format, schema);
-		cacheManager.getCache(ID_CACHE).put(response.getId(), schema);
-		cacheManager.getCache(REF_CACHE).put(response.getSchemaReference(), schema);
+	public SchemaRegistrationResponse register(String subject, String format,
+			String schema) {
+		SchemaRegistrationResponse response = this.delegate.register(subject, format,
+				schema);
+		this.cacheManager.getCache(ID_CACHE).put(response.getId(), schema);
+		this.cacheManager.getCache(REF_CACHE).put(response.getSchemaReference(), schema);
 		return response;
 	}
 
 	@Override
 	@Cacheable(cacheNames = REF_CACHE)
 	public String fetch(SchemaReference schemaReference) {
-		return delegate.fetch(schemaReference);
+		return this.delegate.fetch(schemaReference);
 	}
 
 	@Override
 	@Cacheable(cacheNames = ID_CACHE)
 	public String fetch(int id) {
-		return delegate.fetch(id);
+		return this.delegate.fetch(id);
 	}
 
 }

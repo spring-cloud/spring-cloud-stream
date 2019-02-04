@@ -53,7 +53,8 @@ public class AvroMessageConverterAutoConfiguration {
 	@StreamMessageConverter
 	public AvroSchemaRegistryClientMessageConverter avroSchemaMessageConverter(
 			SchemaRegistryClient schemaRegistryClient) {
-		AvroSchemaRegistryClientMessageConverter avroSchemaRegistryClientMessageConverter = new AvroSchemaRegistryClientMessageConverter(
+		AvroSchemaRegistryClientMessageConverter avroSchemaRegistryClientMessageConverter;
+		avroSchemaRegistryClientMessageConverter = new AvroSchemaRegistryClientMessageConverter(
 				schemaRegistryClient, cacheManager());
 		avroSchemaRegistryClientMessageConverter.setDynamicSchemaGenerationEnabled(
 				this.avroMessageConverterProperties.isDynamicSchemaGenerationEnabled());
@@ -61,28 +62,32 @@ public class AvroMessageConverterAutoConfiguration {
 			avroSchemaRegistryClientMessageConverter.setReaderSchema(
 					this.avroMessageConverterProperties.getReaderSchema());
 		}
-		if (!ObjectUtils.isEmpty(this.avroMessageConverterProperties.getSchemaLocations())) {
+		if (!ObjectUtils
+				.isEmpty(this.avroMessageConverterProperties.getSchemaLocations())) {
 			avroSchemaRegistryClientMessageConverter.setSchemaLocations(
 					this.avroMessageConverterProperties.getSchemaLocations());
 		}
-		if (!ObjectUtils.isEmpty(this.avroMessageConverterProperties.getSchemaImports())) {
+		if (!ObjectUtils
+				.isEmpty(this.avroMessageConverterProperties.getSchemaImports())) {
 			avroSchemaRegistryClientMessageConverter.setSchemaImports(
 					this.avroMessageConverterProperties.getSchemaImports());
 		}
-		avroSchemaRegistryClientMessageConverter.setPrefix(this.avroMessageConverterProperties.getPrefix());
+		avroSchemaRegistryClientMessageConverter
+				.setPrefix(this.avroMessageConverterProperties.getPrefix());
 
 		try {
-			Class<?> clazz = this.avroMessageConverterProperties.getSubjectNamingStrategy();
+			Class<?> clazz = this.avroMessageConverterProperties
+					.getSubjectNamingStrategy();
 			Constructor constructor = ReflectionUtils.accessibleConstructor(clazz);
 
 			avroSchemaRegistryClientMessageConverter.setSubjectNamingStrategy(
-					(SubjectNamingStrategy) constructor.newInstance()
-			);
-		} catch (Exception ex) {
-			throw new IllegalStateException("Unable to create SubjectNamingStrategy " +
-					this.avroMessageConverterProperties.getSubjectNamingStrategy().toString(),
-					ex
-			);
+					(SubjectNamingStrategy) constructor.newInstance());
+		}
+		catch (Exception ex) {
+			throw new IllegalStateException("Unable to create SubjectNamingStrategy "
+					+ this.avroMessageConverterProperties.getSubjectNamingStrategy()
+							.toString(),
+					ex);
 		}
 
 		return avroSchemaRegistryClientMessageConverter;
@@ -93,4 +98,5 @@ public class AvroMessageConverterAutoConfiguration {
 	public CacheManager cacheManager() {
 		return new ConcurrentMapCacheManager();
 	}
+
 }

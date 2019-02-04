@@ -43,17 +43,19 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
  */
 public class InputOutputBindingOrderTest {
 
-	@SuppressWarnings({"rawtypes", "unchecked"})
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Test
 	public void testInputOutputBindingOrder() {
-		ConfigurableApplicationContext applicationContext = new SpringApplicationBuilder(TestSource.class)
-				.web(WebApplicationType.NONE)
-				.run("--spring.cloud.stream.defaultBinder=mock",
-				"--spring.jmx.enabled=false");
-		Binder binder = applicationContext.getBean(BinderFactory.class).getBinder(null, MessageChannel.class);
+		ConfigurableApplicationContext applicationContext = new SpringApplicationBuilder(
+				TestSource.class).web(WebApplicationType.NONE).run(
+						"--spring.cloud.stream.defaultBinder=mock",
+						"--spring.jmx.enabled=false");
+		Binder binder = applicationContext.getBean(BinderFactory.class).getBinder(null,
+				MessageChannel.class);
 		Processor processor = applicationContext.getBean(Processor.class);
 		// input is bound after the context has been started
-		verify(binder).bindConsumer(eq("input"), isNull(), eq(processor.input()), Mockito.any());
+		verify(binder).bindConsumer(eq("input"), isNull(), eq(processor.input()),
+				Mockito.any());
 		SomeLifecycle someLifecycle = applicationContext.getBean(SomeLifecycle.class);
 		assertThat(someLifecycle.isRunning());
 		applicationContext.close();
@@ -69,6 +71,7 @@ public class InputOutputBindingOrderTest {
 		public SomeLifecycle someLifecycle() {
 			return new SomeLifecycle();
 		}
+
 	}
 
 	public static class SomeLifecycle implements SmartLifecycle {
@@ -82,10 +85,11 @@ public class InputOutputBindingOrderTest {
 		private boolean running;
 
 		@Override
-		@SuppressWarnings({"rawtypes", "unchecked"})
+		@SuppressWarnings({ "rawtypes", "unchecked" })
 		public synchronized void start() {
 			Binder binder = this.binderFactory.getBinder(null, MessageChannel.class);
-			verify(binder).bindProducer(eq("output"), eq(this.processor.output()), Mockito.any());
+			verify(binder).bindProducer(eq("output"), eq(this.processor.output()),
+					Mockito.any());
 			// input was not bound yet
 			verifyNoMoreInteractions(binder);
 			this.running = true;
@@ -118,5 +122,7 @@ public class InputOutputBindingOrderTest {
 		public int getPhase() {
 			return 0;
 		}
+
 	}
+
 }

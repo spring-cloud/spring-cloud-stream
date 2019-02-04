@@ -46,7 +46,8 @@ public class ChannelsEndpoint {
 
 	private BindingServiceProperties properties;
 
-	public ChannelsEndpoint(List<Bindable> adapters, BindingServiceProperties properties) {
+	public ChannelsEndpoint(List<Bindable> adapters,
+			BindingServiceProperties properties) {
 		this.adapters = adapters;
 		this.properties = properties;
 	}
@@ -64,10 +65,14 @@ public class ChannelsEndpoint {
 				outputs.put(name, this.properties.getBindingProperties(name));
 			}
 		}
-		return new ObjectMapper().convertValue(map, new TypeReference<Map<String, Object>>() {
-		});
+		return new ObjectMapper().convertValue(map,
+				new TypeReference<Map<String, Object>>() {
+				});
 	}
 
+	/**
+	 * Meta data for channels. Contains e.g. input and outputs.
+	 */
 	@JsonInclude(Include.NON_DEFAULT)
 	public static class ChannelsMetaData {
 
@@ -82,6 +87,7 @@ public class ChannelsEndpoint {
 		public Map<String, BindingProperties> getOutputs() {
 			return this.outputs;
 		}
+
 	}
 
 }

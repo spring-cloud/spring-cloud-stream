@@ -21,7 +21,6 @@ import java.util.Collections;
 import java.util.List;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -36,7 +35,8 @@ import org.springframework.util.MimeType;
 
 /**
  * A factory for creating an instance of {@link CompositeMessageConverter} for a given
- * target MIME type
+ * target MIME type.
+ *
  * @author David Turanski
  * @author Ilayaperumal Gopinathan
  * @author Marius Bogoevici
@@ -57,8 +57,10 @@ public class CompositeMessageConverterFactory {
 
 	/**
 	 * @param customConverters a list of {@link AbstractMessageConverter}
+	 * @param objectMapper object mapper for for serialization / deserialization
 	 */
-	public CompositeMessageConverterFactory(List<? extends MessageConverter> customConverters,
+	public CompositeMessageConverterFactory(
+			List<? extends MessageConverter> customConverters,
 			ObjectMapper objectMapper) {
 		this.objectMapper = objectMapper;
 		if (!CollectionUtils.isEmpty(customConverters)) {
@@ -71,14 +73,15 @@ public class CompositeMessageConverterFactory {
 
 		DefaultContentTypeResolver resolver = new DefaultContentTypeResolver();
 		resolver.setDefaultMimeType(BindingProperties.DEFAULT_CONTENT_TYPE);
-		this.converters.stream()
-			.filter(mc -> mc instanceof AbstractMessageConverter)
-			.forEach(mc -> ((AbstractMessageConverter)mc).setContentTypeResolver(resolver));
+		this.converters.stream().filter(mc -> mc instanceof AbstractMessageConverter)
+				.forEach(mc -> ((AbstractMessageConverter) mc)
+						.setContentTypeResolver(resolver));
 	}
 
 	@SuppressWarnings("deprecation")
 	private void initDefaultConverters() {
-		ApplicationJsonMessageMarshallingConverter applicationJsonConverter = new ApplicationJsonMessageMarshallingConverter(this.objectMapper);
+		ApplicationJsonMessageMarshallingConverter applicationJsonConverter = new ApplicationJsonMessageMarshallingConverter(
+				this.objectMapper);
 		applicationJsonConverter.setStrictContentTypeMatch(true);
 		this.converters.add(applicationJsonConverter);
 		this.converters.add(new TupleJsonMessageConverter(this.objectMapper));
@@ -95,7 +98,7 @@ public class CompositeMessageConverterFactory {
 
 		// Deprecated converters
 		this.converters.add(new JavaSerializationMessageConverter());
-		this.converters.add(new KryoMessageConverter(null,true));
+		this.converters.add(new KryoMessageConverter(null, true));
 		this.converters.add(new JsonUnmarshallingConverter(this.objectMapper));
 	}
 
@@ -108,7 +111,8 @@ public class CompositeMessageConverterFactory {
 		List<MessageConverter> converters = new ArrayList<>();
 		for (MessageConverter converter : this.converters) {
 			if (converter instanceof AbstractMessageConverter) {
-				for (MimeType type : ((AbstractMessageConverter) converter).getSupportedMimeTypes()) {
+				for (MimeType type : ((AbstractMessageConverter) converter)
+						.getSupportedMimeTypes()) {
 					if (type.includes(mimeType)) {
 						converters.add(converter);
 					}
@@ -116,14 +120,16 @@ public class CompositeMessageConverterFactory {
 			}
 			else {
 				if (this.log.isDebugEnabled()) {
-					this.log.debug("Ommitted " + converter + " of type " + converter.getClass().toString() +
-							" for '" + mimeType.toString() + "' as it is not an AbstractMessageConverter");
+					this.log.debug("Ommitted " + converter + " of type "
+							+ converter.getClass().toString() + " for '"
+							+ mimeType.toString()
+							+ "' as it is not an AbstractMessageConverter");
 				}
 			}
 		}
 		if (CollectionUtils.isEmpty(converters)) {
-			throw new ConversionException("No message converter is registered for "
-					+ mimeType.toString());
+			throw new ConversionException(
+					"No message converter is registered for " + mimeType.toString());
 		}
 		if (converters.size() > 1) {
 			return new CompositeMessageConverter(converters);

@@ -36,14 +36,12 @@ import org.springframework.validation.ObjectError;
 import org.springframework.validation.Validator;
 
 /**
- * 
  * @author Oleg Zhurakousky
- * 
  * @deprecated will be removed once https://jira.spring.io/browse/SPR-17503 is addressed
  */
 @Deprecated
 class SmartPayloadArgumentResolver extends PayloadArgumentResolver {
-	
+
 	private final MessageConverter messageConverter;
 
 	SmartPayloadArgumentResolver(MessageConverter messageConverter) {
@@ -61,30 +59,35 @@ class SmartPayloadArgumentResolver extends PayloadArgumentResolver {
 		super(messageConverter, validator, useDefaultResolution);
 		this.messageConverter = messageConverter;
 	}
-	
+
 	@Override
 	public boolean supportsParameter(MethodParameter parameter) {
-		return (!Message.class.isAssignableFrom(parameter.getParameterType()) 
-				&& !MessageHeaders.class.isAssignableFrom(parameter.getParameterType()) 
-				&& !parameter.hasParameterAnnotation(Header.class) 
+		return (!Message.class.isAssignableFrom(parameter.getParameterType())
+				&& !MessageHeaders.class.isAssignableFrom(parameter.getParameterType())
+				&& !parameter.hasParameterAnnotation(Header.class)
 				&& !parameter.hasParameterAnnotation(Headers.class));
 	}
-	
+
 	@Override
 	@Nullable
-	public Object resolveArgument(MethodParameter parameter, Message<?> message) throws Exception {
+	public Object resolveArgument(MethodParameter parameter, Message<?> message)
+			throws Exception {
 		Payload ann = parameter.getParameterAnnotation(Payload.class);
 		if (ann != null && StringUtils.hasText(ann.expression())) {
-			throw new IllegalStateException("@Payload SpEL expressions not supported by this resolver");
+			throw new IllegalStateException(
+					"@Payload SpEL expressions not supported by this resolver");
 		}
 
 		Object payload = message.getPayload();
 		if (isEmptyPayload(payload)) {
 			if (ann == null || ann.required()) {
 				String paramName = getParameterName(parameter);
-				BindingResult bindingResult = new BeanPropertyBindingResult(payload, paramName);
-				bindingResult.addError(new ObjectError(paramName, "Payload value must not be empty"));
-				throw new MethodArgumentNotValidException(message, parameter, bindingResult);
+				BindingResult bindingResult = new BeanPropertyBindingResult(payload,
+						paramName);
+				bindingResult.addError(
+						new ObjectError(paramName, "Payload value must not be empty"));
+				throw new MethodArgumentNotValidException(message, parameter,
+						bindingResult);
 			}
 			else {
 				return null;
@@ -106,16 +109,18 @@ class SmartPayloadArgumentResolver extends PayloadArgumentResolver {
 				payload = this.messageConverter.fromMessage(message, targetClass);
 			}
 			if (payload == null) {
-				throw new MessageConversionException(message, "Cannot convert from [" +
-						payloadClass.getName() + "] to [" + targetClass.getName() + "] for " + message);
+				throw new MessageConversionException(message,
+						"Cannot convert from [" + payloadClass.getName() + "] to ["
+								+ targetClass.getName() + "] for " + message);
 			}
 			validate(message, parameter, payload);
 			return payload;
 		}
 	}
-	
+
 	private String getParameterName(MethodParameter param) {
 		String paramName = param.getParameterName();
 		return (paramName != null ? paramName : "Arg " + param.getParameterIndex());
 	}
+
 }

@@ -38,7 +38,6 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 
-
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -61,20 +60,23 @@ public class StreamListenerReactiveInputOutputArgsWithMessageTests {
 	}
 
 	@SuppressWarnings("unchecked")
-	private static void sendMessageAndValidate(ConfigurableApplicationContext context) throws InterruptedException {
+	private static void sendMessageAndValidate(ConfigurableApplicationContext context)
+			throws InterruptedException {
 		Processor processor = context.getBean(Processor.class);
 		String sentPayload = "hello " + UUID.randomUUID().toString();
-		processor.input().send(MessageBuilder.withPayload(sentPayload).setHeader("contentType", "text/plain").build());
+		processor.input().send(MessageBuilder.withPayload(sentPayload)
+				.setHeader("contentType", "text/plain").build());
 		MessageCollector messageCollector = context.getBean(MessageCollector.class);
-		Message<String> result = (Message<String>) messageCollector.forChannel(processor.output()).poll(1000, TimeUnit.MILLISECONDS);
+		Message<String> result = (Message<String>) messageCollector
+				.forChannel(processor.output()).poll(1000, TimeUnit.MILLISECONDS);
 		assertThat(result).isNotNull();
 		assertThat(result.getPayload()).isEqualTo(sentPayload.toUpperCase());
 	}
 
 	@Test
 	public void testInputOutputArgs() throws Exception {
-		ConfigurableApplicationContext context = SpringApplication.run(this.configClass, "--server.port=0",
-				"--spring.jmx.enabled=false",
+		ConfigurableApplicationContext context = SpringApplication.run(this.configClass,
+				"--server.port=0", "--spring.jmx.enabled=false",
 				"--spring.cloud.stream.bindings.input.contentType=text/plain",
 				"--spring.cloud.stream.bindings.output.contentType=text/plain");
 		sendMessageAndValidate(context);
@@ -91,5 +93,7 @@ public class StreamListenerReactiveInputOutputArgsWithMessageTests {
 			output.send(input.map(m -> MessageBuilder
 					.withPayload(m.getPayload().toString().toUpperCase()).build()));
 		}
+
 	}
+
 }

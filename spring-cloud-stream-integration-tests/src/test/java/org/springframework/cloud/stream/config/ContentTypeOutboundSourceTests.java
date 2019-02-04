@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,11 +53,13 @@ public class ContentTypeOutboundSourceTests {
 	@Test
 	@SuppressWarnings("unchecked")
 	public void testMessageHeaderWhenNoExplicitContentTypeOnMessage() throws Exception {
-		testSource.output().send(MessageBuilder.withPayload("{\"message\":\"Hi\"}").setHeader(MessageHeaders.CONTENT_TYPE,"text/plain").build());
-		Message<String> received = (Message<String>) ((TestSupportBinder) binderFactory.getBinder(null,
-				MessageChannel.class))
-						.messageCollector().forChannel(testSource.output()).poll();
-		assertThat(received.getHeaders().get(MessageHeaders.CONTENT_TYPE).toString()).contains("text/plain");
+		this.testSource.output().send(MessageBuilder.withPayload("{\"message\":\"Hi\"}")
+				.setHeader(MessageHeaders.CONTENT_TYPE, "text/plain").build());
+		Message<String> received = (Message<String>) ((TestSupportBinder) this.binderFactory
+				.getBinder(null, MessageChannel.class)).messageCollector()
+						.forChannel(this.testSource.output()).poll();
+		assertThat(received.getHeaders().get(MessageHeaders.CONTENT_TYPE).toString())
+				.contains("text/plain");
 		assertThat("{\"message\":\"Hi\"}").isEqualTo(received.getPayload());
 	}
 
@@ -67,4 +69,5 @@ public class ContentTypeOutboundSourceTests {
 	public static class TestSource {
 
 	}
+
 }

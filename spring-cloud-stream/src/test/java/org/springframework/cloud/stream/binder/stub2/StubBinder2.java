@@ -25,7 +25,8 @@ import org.springframework.cloud.stream.binder.ProducerProperties;
  * @author Marius Bogoevici
  * @author Mark Fisher
  */
-public class StubBinder2 implements Binder<Object, ConsumerProperties, ProducerProperties> {
+public class StubBinder2
+		implements Binder<Object, ConsumerProperties, ProducerProperties> {
 
 	@SuppressWarnings("unused")
 	private final StubBinder2Dependency stubBinder2Dependency;
@@ -35,13 +36,14 @@ public class StubBinder2 implements Binder<Object, ConsumerProperties, ProducerP
 	}
 
 	@Override
-	public Binding<Object> bindConsumer(String name, String group, Object inboundBindTarget,
-			ConsumerProperties properties) {
+	public Binding<Object> bindConsumer(String name, String group,
+			Object inboundBindTarget, ConsumerProperties properties) {
 		return null;
 	}
 
 	@Override
-	public Binding<Object> bindProducer(String name, Object outboundBindTarget, ProducerProperties properties) {
+	public Binding<Object> bindProducer(String name, Object outboundBindTarget,
+			ProducerProperties properties) {
 		return null;
 	}
 

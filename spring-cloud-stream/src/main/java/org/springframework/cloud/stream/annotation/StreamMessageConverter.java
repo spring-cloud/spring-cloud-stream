@@ -26,7 +26,8 @@ import org.springframework.beans.factory.annotation.Qualifier;
 
 /**
  * Marker to tag {@link org.springframework.messaging.converter.MessageConverter} beans
- * that will be added to the {@link org.springframework.cloud.stream.converter.CompositeMessageConverterFactory}.
+ * that will be added to the
+ * {@link org.springframework.cloud.stream.converter.CompositeMessageConverterFactory}.
  *
  * @author Vinicius Carvalho
  * @author Arten Bilan

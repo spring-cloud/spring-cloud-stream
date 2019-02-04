@@ -21,17 +21,15 @@ import org.springframework.cloud.stream.binder.ProducerProperties;
 /**
  * Represents a ProducerDestination that provides the information about the destination
  * that is physically provisioned through
- * {@link ProvisioningProvider#provisionProducerDestination(String, ProducerProperties)}
+ * {@link ProvisioningProvider#provisionProducerDestination(String, ProducerProperties)}.
  *
  * @author Soby Chacko
- *
  * @since 1.2
  */
 public interface ProducerDestination {
 
 	/**
 	 * Provides the destination name.
-	 *
 	 * @return destination name
 	 */
 	String getName();
@@ -49,9 +47,9 @@ public interface ProducerDestination {
 	 * On certain brokers (for instance, Kafka), this behavior is completely skipped and
 	 * there is a one-to-one correspondence between the destination name in the
 	 * provisioner and the physical destination on the broker.
-	 *
 	 * @param partition the partition to find destination for
 	 * @return destination name for the given partition
 	 */
 	String getNameForPartition(int partition);
+
 }

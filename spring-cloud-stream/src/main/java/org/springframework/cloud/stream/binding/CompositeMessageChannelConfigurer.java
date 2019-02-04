@@ -23,13 +23,16 @@ import org.springframework.messaging.MessageChannel;
 
 /**
  * {@link MessageChannelConfigurer} that composes all the message channel configurers.
+ *
  * @author Ilayaperumal Gopinathan
  */
-public class CompositeMessageChannelConfigurer implements MessageChannelAndSourceConfigurer {
+public class CompositeMessageChannelConfigurer
+		implements MessageChannelAndSourceConfigurer {
 
 	private final List<MessageChannelConfigurer> messageChannelConfigurers;
 
-	public CompositeMessageChannelConfigurer(List<MessageChannelConfigurer> messageChannelConfigurers) {
+	public CompositeMessageChannelConfigurer(
+			List<MessageChannelConfigurer> messageChannelConfigurers) {
 		this.messageChannelConfigurers = messageChannelConfigurers;
 	}
 
@@ -41,18 +44,19 @@ public class CompositeMessageChannelConfigurer implements MessageChannelAndSourc
 	}
 
 	@Override
-	public void configureOutputChannel(MessageChannel messageChannel, String channelName) {
+	public void configureOutputChannel(MessageChannel messageChannel,
+			String channelName) {
 		for (MessageChannelConfigurer messageChannelConfigurer : this.messageChannelConfigurers) {
 			messageChannelConfigurer.configureOutputChannel(messageChannel, channelName);
 		}
 	}
 
 	@Override
-	public void configurePolledMessageSource(PollableMessageSource binding,
-			String name) {
+	public void configurePolledMessageSource(PollableMessageSource binding, String name) {
 		this.messageChannelConfigurers.forEach(cconfigurer -> {
 			if (cconfigurer instanceof MessageChannelAndSourceConfigurer) {
-				((MessageChannelAndSourceConfigurer) cconfigurer).configurePolledMessageSource(binding, name);
+				((MessageChannelAndSourceConfigurer) cconfigurer)
+						.configurePolledMessageSource(binding, name);
 			}
 		});
 	}

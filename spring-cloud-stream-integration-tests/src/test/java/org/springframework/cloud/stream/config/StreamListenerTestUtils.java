@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,8 +22,6 @@ import org.springframework.cloud.stream.annotation.Input;
 import org.springframework.cloud.stream.annotation.Output;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.SubscribableChannel;
-
-
 
 /**
  * @author Ilayaperumal Gopinathan
@@ -63,10 +61,11 @@ public class StreamListenerTestUtils {
 		@Override
 		public String toString() {
 			final StringBuffer sb = new StringBuffer("FooPojo{");
-			sb.append("foo='").append(foo).append('\'');
+			sb.append("foo='").append(this.foo).append('\'');
 			sb.append('}');
 			return sb.toString();
 		}
+
 	}
 
 	public static class BarPojo {
@@ -84,10 +83,11 @@ public class StreamListenerTestUtils {
 		@Override
 		public String toString() {
 			final StringBuffer sb = new StringBuffer("BarPojo{");
-			sb.append("bar='").append(bar).append('\'');
+			sb.append("bar='").append(this.bar).append('\'');
 			sb.append('}');
 			return sb.toString();
 		}
+
 	}
 
 	public static class PojoWithValidation {
@@ -95,9 +95,13 @@ public class StreamListenerTestUtils {
 		@NotBlank
 		private String foo;
 
-		public String getFoo() { return this.foo; }
+		public String getFoo() {
+			return this.foo;
+		}
 
-		public void setFoo(String foo) { this.foo = foo; }
+		public void setFoo(String foo) {
+			this.foo = foo;
+		}
 
 	}
 

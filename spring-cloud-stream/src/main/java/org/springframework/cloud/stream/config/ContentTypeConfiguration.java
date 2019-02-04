@@ -52,7 +52,8 @@ class ContentTypeConfiguration {
 	public ConfigurableCompositeMessageConverter configurableCompositeMessageConverter(
 			CompositeMessageConverterFactory factory) {
 
-		return new ConfigurableCompositeMessageConverter(factory.getMessageConverterForAllRegistered().getConverters());
+		return new ConfigurableCompositeMessageConverter(
+				factory.getMessageConverterForAllRegistered().getConverters());
 	}
 
 }

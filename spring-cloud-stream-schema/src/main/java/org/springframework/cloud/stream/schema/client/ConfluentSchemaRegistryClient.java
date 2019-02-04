@@ -43,7 +43,8 @@ import org.springframework.web.client.RestTemplate;
  */
 public class ConfluentSchemaRegistryClient implements SchemaRegistryClient {
 
-	private static final List<String> ACCEPT_HEADERS = Arrays.asList("application/vnd.schemaregistry.v1+json",
+	private static final List<String> ACCEPT_HEADERS = Arrays.asList(
+			"application/vnd.schemaregistry.v1+json",
 			"application/vnd.schemaregistry+json", "application/json");
 
 	private RestTemplate template;
@@ -95,11 +96,9 @@ public class ConfluentSchemaRegistryClient implements SchemaRegistryClient {
 			version = getSubjectVersion(subject, payload);
 		}
 		catch (HttpStatusCodeException httpException) {
-			throw new RuntimeException(
-					String.format(
-							"Failed to register subject %s, server replied with status %d",
-							subject, httpException.getStatusCode().value()),
-					httpException);
+			throw new RuntimeException(String.format(
+					"Failed to register subject %s, server replied with status %d",
+					subject, httpException.getStatusCode().value()), httpException);
 		}
 		SchemaRegistrationResponse schemaRegistrationResponse = new SchemaRegistrationResponse();
 		schemaRegistrationResponse.setId(id);
@@ -112,7 +111,8 @@ public class ConfluentSchemaRegistryClient implements SchemaRegistryClient {
 	 * Confluent register API returns the id, but we need the version of a given schema
 	 * subject. After a successful registration we can inquire the server to get the
 	 * version of a schema
-	 * @param subject
+	 * @param subject the schema subject
+	 * @param payload payload to send
 	 * @return the version of the returned schema
 	 */
 	private Integer getSubjectVersion(String subject, String payload) {
@@ -129,11 +129,9 @@ public class ConfluentSchemaRegistryClient implements SchemaRegistryClient {
 			version = (Integer) response.getBody().get("version");
 		}
 		catch (HttpStatusCodeException httpException) {
-			throw new RuntimeException(
-					String.format(
-							"Failed to register subject %s, server replied with status %d",
-							subject, httpException.getStatusCode().value()),
-					httpException);
+			throw new RuntimeException(String.format(
+					"Failed to register subject %s, server replied with status %d",
+					subject, httpException.getStatusCode().value()), httpException);
 		}
 		return version;
 	}
@@ -184,4 +182,5 @@ public class ConfluentSchemaRegistryClient implements SchemaRegistryClient {
 			}
 		}
 	}
+
 }

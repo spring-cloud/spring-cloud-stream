@@ -17,7 +17,6 @@
 package org.springframework.cloud.stream.schema.avro;
 
 import java.io.IOException;
-
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
@@ -78,26 +77,50 @@ import org.springframework.util.ObjectUtils;
 public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessageConverter
 		implements InitializingBean {
 
+	/**
+	 * Avro format defined in the Mime type.
+	 */
 	public static final String AVRO_FORMAT = "avro";
 
+	/**
+	 * Pattern for validating the prefix to be used in the publised subtype.
+	 */
 	public static final Pattern PREFIX_VALIDATION_PATTERN = Pattern
 			.compile("[\\p{Alnum}]");
 
+	/**
+	 * Spring Cloud Stream schema property prefix.
+	 */
 	public static final String CACHE_PREFIX = "org.springframework.cloud.stream.schema";
 
+	/**
+	 * Property for reflection cache.
+	 */
 	public static final String REFLECTION_CACHE_NAME = CACHE_PREFIX + ".reflectionCache";
 
+	/**
+	 * Property for schema cache.
+	 */
 	public static final String SCHEMA_CACHE_NAME = CACHE_PREFIX + ".schemaCache";
 
+	/**
+	 * Property for reference cache.
+	 */
 	public static final String REFERENCE_CACHE_NAME = CACHE_PREFIX + ".referenceCache";
 
-	public static final MimeType DEFAULT_AVRO_MIME_TYPE = new MimeType("application", "*+" + AVRO_FORMAT);
+	/**
+	 * Default Mime type for Avro.
+	 */
+	public static final MimeType DEFAULT_AVRO_MIME_TYPE = new MimeType("application",
+			"*+" + AVRO_FORMAT);
+
+	private final CacheManager cacheManager;
+
+	protected Resource[] schemaImports = new Resource[] {};
 
 	private Pattern versionedSchema;
 
 	private boolean dynamicSchemaGenerationEnabled;
-
-	private final CacheManager cacheManager;
 
 	private Schema readerSchema;
 
@@ -109,8 +132,6 @@ public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessag
 
 	private SubjectNamingStrategy subjectNamingStrategy;
 
-	protected Resource[] schemaImports = new Resource[]{};
-
 	/**
 	 * Creates a new instance, configuring it with {@link SchemaRegistryClient} and
 	 * {@link CacheManager}.
@@ -119,7 +140,8 @@ public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessag
 	 * @param cacheManager instance of {@link CacheManager} to cache parsed schemas. If
 	 * caching is not required use {@link NoOpCacheManager}
 	 */
-	public AvroSchemaRegistryClientMessageConverter(SchemaRegistryClient schemaRegistryClient, CacheManager cacheManager) {
+	public AvroSchemaRegistryClientMessageConverter(
+			SchemaRegistryClient schemaRegistryClient, CacheManager cacheManager) {
 		super(Collections.singletonList(DEFAULT_AVRO_MIME_TYPE));
 		Assert.notNull(schemaRegistryClient, "cannot be null");
 		Assert.notNull(cacheManager, "'cacheManager' cannot be null");
@@ -144,8 +166,7 @@ public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessag
 	/**
 	 * A set of locations where the converter can load schemas from. Schemas provided at
 	 * these locations will be registered automatically.
-	 *
-	 * @param schemaLocations
+	 * @param schemaLocations array of locations
 	 */
 	public void setSchemaLocations(Resource[] schemaLocations) {
 		Assert.notEmpty(schemaLocations, "cannot be empty");
@@ -155,16 +176,15 @@ public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessag
 	/**
 	 * A set of schema locations where should be imported first. Schemas provided at these
 	 * locations will be reference, thus they should not reference each other.
-	 *
-	 * @param schemaImports
+	 * @param schemaImports array of schema imports
 	 */
 	public void setSchemaImports(Resource[] schemaImports) {
 		this.schemaImports = schemaImports;
 	}
 
 	/**
-	 * Set the prefix to be used in the publised subtype. Default 'vnd'.
-	 * @param prefix
+	 * Set the prefix to be used in the published subtype. Default 'vnd'.
+	 * @param prefix prefix to be set
 	 */
 	public void setPrefix(String prefix) {
 		Assert.hasText(prefix, "Prefix cannot be empty");
@@ -190,38 +210,36 @@ public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessag
 	@Override
 	public void afterPropertiesSet() throws Exception {
 		this.versionedSchema = Pattern.compile("application/" + this.prefix
-				+ "\\.([\\p{Alnum}\\$\\.]+)\\.v(\\p{Digit}+)\\+"+AVRO_FORMAT);
+				+ "\\.([\\p{Alnum}\\$\\.]+)\\.v(\\p{Digit}+)\\+" + AVRO_FORMAT);
 
 		Stream.of(this.schemaImports, this.schemaLocations)
-				.filter(arr -> !ObjectUtils.isEmpty(arr))
-				.distinct()
-				.peek(resources -> {
+				.filter(arr -> !ObjectUtils.isEmpty(arr)).distinct().peek(resources -> {
 					this.logger.info("Scanning avro schema resources on classpath");
 					if (this.logger.isInfoEnabled()) {
 						this.logger.info("Parsing" + this.schemaImports.length);
 					}
 				}).flatMap(Arrays::stream).forEach(resource -> {
-			try {
-				Schema schema = parseSchema(resource);
-				if (schema.getType().equals(Schema.Type.UNION)) {
-					schema.getTypes().forEach(
-							innerSchema -> registerSchema(resource, innerSchema));
-				}
-				else {
-					registerSchema(resource, schema);
-				}
-			}
-			catch (IOException e) {
-				if (this.logger.isWarnEnabled()) {
-					this.logger.warn(
-							"Failed to parse schema at " + resource.getFilename(),
-							e);
-				}
-			}
-		});
+					try {
+						Schema schema = parseSchema(resource);
+						if (schema.getType().equals(Schema.Type.UNION)) {
+							schema.getTypes().forEach(
+									innerSchema -> registerSchema(resource, innerSchema));
+						}
+						else {
+							registerSchema(resource, schema);
+						}
+					}
+					catch (IOException e) {
+						if (this.logger.isWarnEnabled()) {
+							this.logger.warn(
+									"Failed to parse schema at " + resource.getFilename(),
+									e);
+						}
+					}
+				});
 
 		if (this.cacheManager instanceof NoOpCacheManager) {
-			logger.warn("Schema caching is effectively disabled "
+			this.logger.warn("Schema caching is effectively disabled "
 					+ "since configured cache manager is a NoOpCacheManager. If this was not "
 					+ "the intention, please provide the appropriate instance of CacheManager "
 					+ "(i.e., ConcurrentMapCacheManager).");
@@ -229,7 +247,7 @@ public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessag
 	}
 
 	protected String toSubject(Schema schema) {
-		return subjectNamingStrategy.toSubject(schema);
+		return this.subjectNamingStrategy.toSubject(schema);
 	}
 
 	@Override
@@ -274,10 +292,11 @@ public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessag
 
 		DirectFieldAccessor dfa = new DirectFieldAccessor(headers);
 		@SuppressWarnings("unchecked")
-		Map<String, Object> _headers = (Map<String, Object>) dfa.getPropertyValue("headers");
+		Map<String, Object> _headers = (Map<String, Object>) dfa
+				.getPropertyValue("headers");
 		_headers.put(MessageHeaders.CONTENT_TYPE,
-				"application/" + this.prefix + "." + schemaReference.getSubject()
-				+ ".v" + schemaReference.getVersion() + "+" + AVRO_FORMAT);
+				"application/" + this.prefix + "." + schemaReference.getSubject() + ".v"
+						+ schemaReference.getVersion() + "+" + AVRO_FORMAT);
 
 		return schema;
 	}
@@ -287,13 +306,17 @@ public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessag
 		if (this.readerSchema == null) {
 			SchemaReference schemaReference = extractSchemaReference(mimeType);
 			if (schemaReference != null) {
-				ParsedSchema parsedSchema = cacheManager.getCache(REFERENCE_CACHE_NAME).get(schemaReference, ParsedSchema.class);
+				ParsedSchema parsedSchema = this.cacheManager
+						.getCache(REFERENCE_CACHE_NAME)
+						.get(schemaReference, ParsedSchema.class);
 				if (parsedSchema == null) {
-					String schemaContent = this.schemaRegistryClient.fetch(schemaReference);
+					String schemaContent = this.schemaRegistryClient
+							.fetch(schemaReference);
 					if (schemaContent != null) {
 						Schema schema = new Schema.Parser().parse(schemaContent);
 						parsedSchema = new ParsedSchema(schema);
-						cacheManager.getCache(REFERENCE_CACHE_NAME).putIfAbsent(schemaReference, parsedSchema);
+						this.cacheManager.getCache(REFERENCE_CACHE_NAME)
+								.putIfAbsent(schemaReference, parsedSchema);
 					}
 				}
 				if (parsedSchema != null) {
@@ -325,9 +348,10 @@ public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessag
 					.get(payload.getClass().getName(), Schema.class);
 			if (schema == null) {
 				if (!isDynamicSchemaGenerationEnabled()) {
-					throw new SchemaNotFoundException(String
-							.format("No schema found in the local cache for %s, and dynamic schema generation "
-									+ "is not enabled", payload.getClass()));
+					throw new SchemaNotFoundException(String.format(
+							"No schema found in the local cache for %s, and dynamic schema generation "
+									+ "is not enabled",
+							payload.getClass()));
 				}
 				else {
 					schema = ReflectData.get().getSchema(payload.getClass());
@@ -341,15 +365,15 @@ public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessag
 
 	private void registerSchema(Resource schemaLocation, Schema schema) {
 		if (this.logger.isInfoEnabled()) {
-			this.logger.info("Resource " + schemaLocation.getFilename()
-					+ " parsed into schema " + schema.getNamespace() + "."
-					+ schema.getName());
+			this.logger.info(
+					"Resource " + schemaLocation.getFilename() + " parsed into schema "
+							+ schema.getNamespace() + "." + schema.getName());
 		}
 		this.schemaRegistryClient.register(toSubject(schema), AVRO_FORMAT,
 				schema.toString());
 		if (this.logger.isInfoEnabled()) {
-			this.logger.info("Schema " + schema.getName()
-					+ " registered with id " + schema);
+			this.logger
+					.info("Schema " + schema.getName() + " registered with id " + schema);
 		}
 		this.cacheManager.getCache(REFLECTION_CACHE_NAME)
 				.put(schema.getNamespace() + "." + schema.getName(), schema);
@@ -365,4 +389,5 @@ public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessag
 		}
 		return schemaReference;
 	}
+
 }

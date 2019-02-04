@@ -34,7 +34,6 @@ import org.springframework.util.MimeType;
  *
  * @author Marius Bogoevici
  * @author Oleg Zhurakousky
- *
  * @since 1.2
  */
 public class ObjectStringMessageConverter extends AbstractMessageConverter {
@@ -68,19 +67,22 @@ public class ObjectStringMessageConverter extends AbstractMessageConverter {
 		return super.supportsMimeType(headers);
 	}
 
-	protected Object convertFromInternal(Message<?> message, Class<?> targetClass, Object conversionHint) {
+	protected Object convertFromInternal(Message<?> message, Class<?> targetClass,
+			Object conversionHint) {
 		if (message.getPayload() != null) {
 			if (message.getPayload() instanceof byte[]) {
 				if (byte[].class.isAssignableFrom(targetClass)) {
 					return message.getPayload();
 				}
 				else {
-					return new String((byte[]) message.getPayload(), StandardCharsets.UTF_8);
+					return new String((byte[]) message.getPayload(),
+							StandardCharsets.UTF_8);
 				}
 			}
 			else {
 				if (byte[].class.isAssignableFrom(targetClass)) {
-					return message.getPayload().toString().getBytes(StandardCharsets.UTF_8);
+					return message.getPayload().toString()
+							.getBytes(StandardCharsets.UTF_8);
 				}
 				else {
 					return message.getPayload();
@@ -90,7 +92,8 @@ public class ObjectStringMessageConverter extends AbstractMessageConverter {
 		return null;
 	}
 
-	protected Object convertToInternal(Object payload, MessageHeaders headers, Object conversionHint) {
+	protected Object convertToInternal(Object payload, MessageHeaders headers,
+			Object conversionHint) {
 		if (payload != null) {
 			if ((payload instanceof byte[])) {
 				return payload;

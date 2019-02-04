@@ -60,38 +60,38 @@ public class BinderFactoryConfigurationTests {
 				: new URL[additionalClasspathDirectories.length];
 		if (!ObjectUtils.isEmpty(additionalClasspathDirectories)) {
 			for (int i = 0; i < additionalClasspathDirectories.length; i++) {
-				urls[i] = new URL(new ClassPathResource(additionalClasspathDirectories[i]).getURL().toString() + "/");
+				urls[i] = new URL(new ClassPathResource(additionalClasspathDirectories[i])
+						.getURL().toString() + "/");
 			}
 		}
-		return new URLClassLoader(urls, BinderFactoryConfigurationTests.class.getClassLoader());
+		return new URLClassLoader(urls,
+				BinderFactoryConfigurationTests.class.getClassLoader());
 	}
 
-	private static ConfigurableApplicationContext createBinderTestContext(String[] additionalClasspathDirectories,
-			String... properties) throws IOException {
-		ClassLoader classLoader = createClassLoader(additionalClasspathDirectories, properties);
+	private static ConfigurableApplicationContext createBinderTestContext(
+			String[] additionalClasspathDirectories, String... properties)
+			throws IOException {
+		ClassLoader classLoader = createClassLoader(additionalClasspathDirectories,
+				properties);
 		return new SpringApplicationBuilder(SimpleApplication.class)
 				.resourceLoader(new DefaultResourceLoader(classLoader))
-				.properties(properties)
-				.web(WebApplicationType.NONE)
-				.run();
+				.properties(properties).web(WebApplicationType.NONE).run();
 	}
 
-	private static ConfigurableApplicationContext createBinderTestContextWithSources(Class<?>[] sources,
-			String[] additionalClasspathDirectories,
+	private static ConfigurableApplicationContext createBinderTestContextWithSources(
+			Class<?>[] sources, String[] additionalClasspathDirectories,
 			String... properties) throws IOException {
-		ClassLoader classLoader = createClassLoader(additionalClasspathDirectories, properties);
+		ClassLoader classLoader = createClassLoader(additionalClasspathDirectories,
+				properties);
 		return new SpringApplicationBuilder(sources)
 				.resourceLoader(new DefaultResourceLoader(classLoader))
-				.properties(properties)
-				.web(WebApplicationType.NONE)
-				.run();
+				.properties(properties).web(WebApplicationType.NONE).run();
 	}
 
 	@Test
 	public void loadBinderTypeRegistryWithSelfContainedAggregatorApp() throws Exception {
-		createBinderTestContextWithSources(
-				new Class[] { SimpleApplication.class }, new String[] {},
-				"spring.cloud.stream.internal.selfContained=true");
+		createBinderTestContextWithSources(new Class[] { SimpleApplication.class },
+				new String[] {}, "spring.cloud.stream.internal.selfContained=true");
 	}
 
 	@SuppressWarnings("rawtypes")
@@ -118,7 +118,8 @@ public class BinderFactoryConfigurationTests {
 
 	@SuppressWarnings("rawtypes")
 	@Test
-	public void loadBinderTypeRegistryWithOneBinderAndSharedEnvironment() throws Exception {
+	public void loadBinderTypeRegistryWithOneBinderAndSharedEnvironment()
+			throws Exception {
 		ConfigurableApplicationContext context = createBinderTestContext(
 				new String[] { "binder1" }, "binder1.name=foo");
 
@@ -130,11 +131,13 @@ public class BinderFactoryConfigurationTests {
 
 	@SuppressWarnings("rawtypes")
 	@Test
-	public void loadBinderTypeRegistryWithOneCustomBinderAndSharedEnvironment() throws Exception {
+	public void loadBinderTypeRegistryWithOneCustomBinderAndSharedEnvironment()
+			throws Exception {
 		ConfigurableApplicationContext context = createBinderTestContext(
 				new String[] { "binder1" }, "binder1.name=foo",
 				"spring.cloud.stream.binders.custom.environment.foo=bar",
-				"spring.cloud.stream.binders.custom.environment.spring.main.sources=org.springframework.cloud.stream.binder.BinderFactoryConfigurationTests.AdditionalBinderConfiguration",
+				"spring.cloud.stream.binders.custom.environment.spring.main.sources="
+						+ "org.springframework.cloud.stream.binder.BinderFactoryConfigurationTests.AdditionalBinderConfiguration",
 				"spring.cloud.stream.binders.custom.type=binder1");
 
 		BinderFactory binderFactory = context.getBean(BinderFactory.class);
@@ -185,21 +188,24 @@ public class BinderFactoryConfigurationTests {
 	@SuppressWarnings("rawtypes")
 	@Test
 	public void loadBinderTypeRegistryWithTwoBinders() throws Exception {
-		ConfigurableApplicationContext context = createBinderTestContext(new String[] { "binder1", "binder2" });
+		ConfigurableApplicationContext context = createBinderTestContext(
+				new String[] { "binder1", "binder2" });
 		BinderTypeRegistry binderTypeRegistry = context.getBean(BinderTypeRegistry.class);
 		assertThat(binderTypeRegistry).isNotNull();
 		assertThat(binderTypeRegistry.getAll()).hasSize(4);
-		assertThat(binderTypeRegistry.getAll()).containsOnlyKeys("binder1", "binder2", "mock", "integration");
+		assertThat(binderTypeRegistry.getAll()).containsOnlyKeys("binder1", "binder2",
+				"mock", "integration");
 		assertThat((Class[]) binderTypeRegistry.get("binder1").getConfigurationClasses())
 				.containsExactly(StubBinder1Configuration.class);
 		assertThat((Class[]) binderTypeRegistry.get("binder2").getConfigurationClasses())
-				.containsExactlyInAnyOrder(StubBinder2ConfigurationA.class, StubBinder2ConfigurationB.class);
+				.containsExactlyInAnyOrder(StubBinder2ConfigurationA.class,
+						StubBinder2ConfigurationB.class);
 
 		BinderFactory binderFactory = context.getBean(BinderFactory.class);
 
 		try {
 			binderFactory.getBinder(null, MessageChannel.class);
-			fail();
+			fail("Should throw an exception");
 		}
 		catch (Exception e) {
 			assertThat(e).isInstanceOf(IllegalStateException.class);
@@ -250,11 +256,13 @@ public class BinderFactoryConfigurationTests {
 		BinderTypeRegistry binderTypeRegistry = context.getBean(BinderTypeRegistry.class);
 		assertThat(binderTypeRegistry).isNotNull();
 		assertThat(binderTypeRegistry.getAll()).hasSize(4);
-		assertThat(binderTypeRegistry.getAll()).containsOnlyKeys("binder1", "binder2", "mock", "integration");
+		assertThat(binderTypeRegistry.getAll()).containsOnlyKeys("binder1", "binder2",
+				"mock", "integration");
 		assertThat((Class[]) binderTypeRegistry.get("binder1").getConfigurationClasses())
 				.containsExactlyInAnyOrder(StubBinder1Configuration.class);
 		assertThat((Class[]) binderTypeRegistry.get("binder2").getConfigurationClasses())
-				.containsExactlyInAnyOrder(StubBinder2ConfigurationA.class, StubBinder2ConfigurationB.class);
+				.containsExactlyInAnyOrder(StubBinder2ConfigurationA.class,
+						StubBinder2ConfigurationB.class);
 
 		BinderFactory binderFactory = context.getBean(BinderFactory.class);
 
@@ -267,7 +275,9 @@ public class BinderFactoryConfigurationTests {
 		assertThat(defaultBinder).isSameAs(binder2);
 	}
 
-	@Import({ BinderFactoryConfiguration.class, PropertyPlaceholderAutoConfiguration.class, BindingServiceConfiguration.class})
+	@Import({ BinderFactoryConfiguration.class,
+			PropertyPlaceholderAutoConfiguration.class,
+			BindingServiceConfiguration.class })
 	@EnableBinding
 	public static class SimpleApplication {
 

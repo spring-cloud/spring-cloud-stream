@@ -30,11 +30,13 @@ import org.springframework.messaging.SubscribableChannel;
  * @author Ilayaperumal Gopinathan
  * @author Oleg Zhurakousky
  */
-public class SubscribableChannelBindingTargetFactory extends AbstractBindingTargetFactory<SubscribableChannel> {
+public class SubscribableChannelBindingTargetFactory
+		extends AbstractBindingTargetFactory<SubscribableChannel> {
 
 	private final MessageChannelConfigurer messageChannelConfigurer;
 
-	public SubscribableChannelBindingTargetFactory(MessageChannelConfigurer messageChannelConfigurer) {
+	public SubscribableChannelBindingTargetFactory(
+			MessageChannelConfigurer messageChannelConfigurer) {
 		super(SubscribableChannel.class);
 		this.messageChannelConfigurer = messageChannelConfigurer;
 	}

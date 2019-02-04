@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2017-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,14 +22,15 @@ import org.springframework.integration.channel.PublishSubscribeChannel;
 import org.springframework.messaging.MessageHandler;
 
 /**
- * A channel for errors. If it has a {@link LastSubscriberMessageHandler}
- * subscriber, it can only have one and it will always be the last subscriber.
+ * A channel for errors. If it has a {@link LastSubscriberMessageHandler} subscriber, it
+ * can only have one and it will always be the last subscriber.
  *
  * @author Gary Russell
  * @since 1.3
  *
  */
-class BinderErrorChannel extends PublishSubscribeChannel implements LastSubscriberAwareChannel {
+class BinderErrorChannel extends PublishSubscribeChannel
+		implements LastSubscriberAwareChannel {
 
 	private final AtomicInteger subscribers = new AtomicInteger();
 
@@ -38,17 +39,20 @@ class BinderErrorChannel extends PublishSubscribeChannel implements LastSubscrib
 	@Override
 	public boolean subscribe(MessageHandler handler) {
 		this.subscribers.incrementAndGet();
-		if (handler instanceof LastSubscriberMessageHandler && this.finalHandler != null) {
-			throw new IllegalStateException("Only one LastSubscriberMessageHandler is allowed");
+		if (handler instanceof LastSubscriberMessageHandler
+				&& this.finalHandler != null) {
+			throw new IllegalStateException(
+					"Only one LastSubscriberMessageHandler is allowed");
 		}
 		if (this.finalHandler != null) {
 			unsubscribe(this.finalHandler);
 		}
 		boolean result = super.subscribe(handler);
 		if (this.finalHandler != null) {
-			super.subscribe(finalHandler);
+			super.subscribe(this.finalHandler);
 		}
-		if (handler instanceof LastSubscriberMessageHandler && this.finalHandler == null) {
+		if (handler instanceof LastSubscriberMessageHandler
+				&& this.finalHandler == null) {
 			this.finalHandler = (LastSubscriberMessageHandler) handler;
 		}
 		return result;

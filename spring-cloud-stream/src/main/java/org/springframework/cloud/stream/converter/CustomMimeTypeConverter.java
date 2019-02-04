@@ -23,7 +23,6 @@ import org.springframework.util.MimeType;
  * A custom converter for {@link MimeType} that accepts a plain java class name as a
  * shorthand for {@code application/x-java-object;type=the.qualified.ClassName}.
  *
- *
  * @author Eric Bottard
  * @author David Turanski
  */

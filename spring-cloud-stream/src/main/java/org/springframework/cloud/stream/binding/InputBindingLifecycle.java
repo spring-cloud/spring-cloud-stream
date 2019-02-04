@@ -26,6 +26,7 @@ import org.springframework.util.CollectionUtils;
 /**
  * Coordinates binding/unbinding of input binding targets in accordance to the lifecycle
  * of the host context.
+ *
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
  * @author Oleg Zhurakousky
@@ -33,10 +34,12 @@ import org.springframework.util.CollectionUtils;
 public class InputBindingLifecycle extends AbstractBindingLifecycle {
 
 	@SuppressWarnings("unused")
-	//It is actually used reflectively since at the moment we do not want to expose it via public method
+	// It is actually used reflectively since at the moment we do not want to expose it
+	// via public method
 	private Collection<Binding<Object>> inputBindings = new ArrayList<Binding<Object>>();
 
-	public InputBindingLifecycle(BindingService bindingService, Map<String, Bindable> bindables) {
+	public InputBindingLifecycle(BindingService bindingService,
+			Map<String, Bindable> bindables) {
 		super(bindingService, bindables);
 	}
 
@@ -51,7 +54,8 @@ public class InputBindingLifecycle extends AbstractBindingLifecycle {
 
 	@Override
 	void doStartWithBindable(Bindable bindable) {
-		Collection<Binding<Object>> bindableBindings = bindable.createAndBindInputs(bindingService);
+		Collection<Binding<Object>> bindableBindings = bindable
+				.createAndBindInputs(this.bindingService);
 		if (!CollectionUtils.isEmpty(bindableBindings)) {
 			this.inputBindings.addAll(bindableBindings);
 		}
@@ -59,6 +63,7 @@ public class InputBindingLifecycle extends AbstractBindingLifecycle {
 
 	@Override
 	void doStopWithBindable(Bindable bindable) {
-		bindable.unbindInputs(bindingService);
+		bindable.unbindInputs(this.bindingService);
 	}
+
 }

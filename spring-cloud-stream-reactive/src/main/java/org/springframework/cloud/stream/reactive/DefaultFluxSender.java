@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2017-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,16 +33,15 @@ import org.springframework.util.Assert;
  * {@link reactor.core.publisher.Flux}.
  *
  * @author Soby Chacko
- *
  * @since 1.3.0
  */
 class DefaultFluxSender implements FluxSender {
 
+	private final Consumer<Object> consumer;
+
 	private Log log = LogFactory.getLog(DefaultFluxSender.class);
 
 	private volatile Disposable disposable;
-
-	private final Consumer<Object> consumer;
 
 	DefaultFluxSender(Consumer<Object> consumer) {
 		Assert.notNull(consumer, "Consumer must not be null");
@@ -54,12 +53,8 @@ class DefaultFluxSender implements FluxSender {
 		MonoProcessor<Void> sendResult = MonoProcessor.create();
 		// add error handling and reconnect in the event of an error
 		this.disposable = flux
-				.doOnError(e -> this.log.error("Error during processing: ", e))
-				.retry()
-				.subscribe(
-						this.consumer,
-						sendResult::onError,
-						sendResult::onComplete);
+				.doOnError(e -> this.log.error("Error during processing: ", e)).retry()
+				.subscribe(this.consumer, sendResult::onError, sendResult::onComplete);
 		return sendResult;
 	}
 

@@ -41,19 +41,21 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Soby Chacko
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringBootTest(classes = { MessageChannelWithNativeDecodingTests.NativeDecodingSink.class})
+@SpringBootTest(classes = {
+		MessageChannelWithNativeDecodingTests.NativeDecodingSink.class })
 public class MessageChannelWithNativeDecodingTests {
 
 	@Autowired
 	private Sink nativeDecodingSink;
 
 	@Test
-	public void testMessageConverterInterceptorsAreSkippedWhenNativeDecodingIsEnabled() throws Exception {
+	public void testMessageConverterInterceptorsAreSkippedWhenNativeDecodingIsEnabled()
+			throws Exception {
 		final CountDownLatch latch = new CountDownLatch(1);
 
 		byte[] serializedData;
 		ObjectOutput out;
-		try(ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
+		try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
 			out = new ObjectOutputStream(bos);
 			out.writeObject(123);
 			out.flush();
@@ -61,17 +63,18 @@ public class MessageChannelWithNativeDecodingTests {
 		}
 
 		MessageHandler messageHandler = message -> {
-			//ensure that the data is not deserialized becasue of native decoding
-			//and the content type set in the properties file didn't take any effect
+			// ensure that the data is not deserialized becasue of native decoding
+			// and the content type set in the properties file didn't take any effect
 			assertThat(message.getPayload()).isInstanceOf(byte[].class);
 			assertThat(message.getPayload()).isEqualTo(serializedData);
 			latch.countDown();
 		};
-		nativeDecodingSink.input().subscribe(messageHandler);
+		this.nativeDecodingSink.input().subscribe(messageHandler);
 
-		nativeDecodingSink.input().send(MessageBuilder.withPayload(serializedData).build());
+		this.nativeDecodingSink.input()
+				.send(MessageBuilder.withPayload(serializedData).build());
 		assertThat(latch.await(10, TimeUnit.SECONDS)).isTrue();
-		nativeDecodingSink.input().unsubscribe(messageHandler);
+		this.nativeDecodingSink.input().unsubscribe(messageHandler);
 	}
 
 	@EnableBinding(Sink.class)
@@ -80,4 +83,5 @@ public class MessageChannelWithNativeDecodingTests {
 	public static class NativeDecodingSink {
 
 	}
+
 }
