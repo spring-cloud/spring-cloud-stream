@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 the original author or authors.
+ * Copyright 2018-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,22 +61,28 @@ public class KafkaTransactionTests {
 	@Test
 	public void testProducerRunsInTx() {
 		KafkaProperties kafkaProperties = new TestKafkaProperties();
-		kafkaProperties.setBootstrapServers(Collections.singletonList(embeddedKafka.getEmbeddedKafka().getBrokersAsString()));
-		KafkaBinderConfigurationProperties configurationProperties =
-				new KafkaBinderConfigurationProperties(kafkaProperties);
+		kafkaProperties.setBootstrapServers(Collections
+				.singletonList(embeddedKafka.getEmbeddedKafka().getBrokersAsString()));
+		KafkaBinderConfigurationProperties configurationProperties = new KafkaBinderConfigurationProperties(
+				kafkaProperties);
 		configurationProperties.getTransaction().setTransactionIdPrefix("foo-");
 		configurationProperties.getTransaction().getProducer().setUseNativeEncoding(true);
-		KafkaTopicProvisioner provisioningProvider = new KafkaTopicProvisioner(configurationProperties, kafkaProperties);
+		KafkaTopicProvisioner provisioningProvider = new KafkaTopicProvisioner(
+				configurationProperties, kafkaProperties);
 		provisioningProvider.setMetadataRetryOperations(new RetryTemplate());
 		final Producer mockProducer = mock(Producer.class);
-		willReturn(Collections.singletonList(new TopicPartition("foo", 0))).given(mockProducer).partitionsFor(anyString());
-		KafkaMessageChannelBinder binder = new KafkaMessageChannelBinder(configurationProperties, provisioningProvider) {
+		willReturn(Collections.singletonList(new TopicPartition("foo", 0)))
+				.given(mockProducer).partitionsFor(anyString());
+		KafkaMessageChannelBinder binder = new KafkaMessageChannelBinder(
+				configurationProperties, provisioningProvider) {
 
 			@Override
-			protected DefaultKafkaProducerFactory<byte[], byte[]> getProducerFactory(String transactionIdPrefix,
+			protected DefaultKafkaProducerFactory<byte[], byte[]> getProducerFactory(
+					String transactionIdPrefix,
 					ExtendedProducerProperties<KafkaProducerProperties> producerProperties) {
-				DefaultKafkaProducerFactory<byte[], byte[]> producerFactory =
-						spy(super.getProducerFactory(transactionIdPrefix, producerProperties));
+				DefaultKafkaProducerFactory<byte[], byte[]> producerFactory = spy(
+						super.getProducerFactory(transactionIdPrefix,
+								producerProperties));
 				willReturn(mockProducer).given(producerFactory).createProducer();
 				return producerFactory;
 			}
@@ -87,7 +93,8 @@ public class KafkaTransactionTests {
 		binder.setApplicationContext(applicationContext);
 		DirectChannel channel = new DirectChannel();
 		KafkaProducerProperties extension = new KafkaProducerProperties();
-		ExtendedProducerProperties<KafkaProducerProperties> properties = new ExtendedProducerProperties<>(extension);
+		ExtendedProducerProperties<KafkaProducerProperties> properties = new ExtendedProducerProperties<>(
+				extension);
 		binder.bindProducer("foo", channel, properties);
 		channel.send(new GenericMessage<>("foo".getBytes()));
 		InOrder inOrder = inOrder(mockProducer);
@@ -96,8 +103,8 @@ public class KafkaTransactionTests {
 		inOrder.verify(mockProducer).commitTransaction();
 		inOrder.verify(mockProducer).close();
 		inOrder.verifyNoMoreInteractions();
-		assertThat(TestUtils.getPropertyValue(channel, "dispatcher.theOneHandler.useNativeEncoding", Boolean.class))
-				.isTrue();
+		assertThat(TestUtils.getPropertyValue(channel,
+				"dispatcher.theOneHandler.useNativeEncoding", Boolean.class)).isTrue();
 	}
 
 }

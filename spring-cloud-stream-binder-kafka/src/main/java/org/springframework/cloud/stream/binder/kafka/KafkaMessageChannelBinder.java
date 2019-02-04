@@ -117,7 +117,8 @@ import org.springframework.util.concurrent.ListenableFuture;
 import org.springframework.util.concurrent.ListenableFutureCallback;
 
 /**
- * A {@link org.springframework.cloud.stream.binder.Binder} that uses Kafka as the underlying middleware.
+ * A {@link org.springframework.cloud.stream.binder.Binder} that uses Kafka as the
+ * underlying middleware.
  *
  * @author Eric Bottard
  * @author Marius Bogoevici
@@ -130,8 +131,11 @@ import org.springframework.util.concurrent.ListenableFutureCallback;
  * @author Doug Saus
  */
 public class KafkaMessageChannelBinder extends
+		// @checkstyle:off
 		AbstractMessageChannelBinder<ExtendedConsumerProperties<KafkaConsumerProperties>, ExtendedProducerProperties<KafkaProducerProperties>, KafkaTopicProvisioner>
-		implements ExtendedPropertiesBinder<MessageChannel, KafkaConsumerProperties, KafkaProducerProperties> {
+		// @checkstyle:on
+		implements
+		ExtendedPropertiesBinder<MessageChannel, KafkaConsumerProperties, KafkaProducerProperties> {
 
 	/**
 	 * Kafka header for x-exception-fqcn.
@@ -187,23 +191,28 @@ public class KafkaMessageChannelBinder extends
 
 	private KafkaExtendedBindingProperties extendedBindingProperties = new KafkaExtendedBindingProperties();
 
-	public KafkaMessageChannelBinder(KafkaBinderConfigurationProperties configurationProperties,
+	public KafkaMessageChannelBinder(
+			KafkaBinderConfigurationProperties configurationProperties,
 			KafkaTopicProvisioner provisioningProvider) {
 
 		this(configurationProperties, provisioningProvider, null, null);
 	}
 
-	public KafkaMessageChannelBinder(KafkaBinderConfigurationProperties configurationProperties,
+	public KafkaMessageChannelBinder(
+			KafkaBinderConfigurationProperties configurationProperties,
 			KafkaTopicProvisioner provisioningProvider,
 			ListenerContainerCustomizer<AbstractMessageListenerContainer<?, ?>> containerCustomizer,
 			KafkaBindingRebalanceListener rebalanceListener) {
 
-		super(headersToMap(configurationProperties), provisioningProvider, containerCustomizer);
+		super(headersToMap(configurationProperties), provisioningProvider,
+				containerCustomizer);
 		this.configurationProperties = configurationProperties;
-		if (StringUtils.hasText(configurationProperties.getTransaction().getTransactionIdPrefix())) {
+		if (StringUtils.hasText(
+				configurationProperties.getTransaction().getTransactionIdPrefix())) {
 			this.transactionManager = new KafkaTransactionManager<>(getProducerFactory(
-					configurationProperties.getTransaction().getTransactionIdPrefix(), new ExtendedProducerProperties<>(
-							configurationProperties.getTransaction().getProducer().getExtension())));
+					configurationProperties.getTransaction().getTransactionIdPrefix(),
+					new ExtendedProducerProperties<>(configurationProperties
+							.getTransaction().getProducer().getExtension())));
 		}
 		else {
 			this.transactionManager = null;
@@ -211,23 +220,27 @@ public class KafkaMessageChannelBinder extends
 		this.rebalanceListener = rebalanceListener;
 	}
 
-	private static String[] headersToMap(KafkaBinderConfigurationProperties configurationProperties) {
+	private static String[] headersToMap(
+			KafkaBinderConfigurationProperties configurationProperties) {
 		String[] headersToMap;
 		if (ObjectUtils.isEmpty(configurationProperties.getHeaders())) {
 			headersToMap = BinderHeaders.STANDARD_HEADERS;
 		}
 		else {
-			String[] combinedHeadersToMap = Arrays.copyOfRange(BinderHeaders.STANDARD_HEADERS, 0,
-					BinderHeaders.STANDARD_HEADERS.length + configurationProperties.getHeaders().length);
-			System.arraycopy(configurationProperties.getHeaders(), 0, combinedHeadersToMap,
-					BinderHeaders.STANDARD_HEADERS.length,
+			String[] combinedHeadersToMap = Arrays.copyOfRange(
+					BinderHeaders.STANDARD_HEADERS, 0,
+					BinderHeaders.STANDARD_HEADERS.length
+							+ configurationProperties.getHeaders().length);
+			System.arraycopy(configurationProperties.getHeaders(), 0,
+					combinedHeadersToMap, BinderHeaders.STANDARD_HEADERS.length,
 					configurationProperties.getHeaders().length);
 			headersToMap = combinedHeadersToMap;
 		}
 		return headersToMap;
 	}
 
-	public void setExtendedBindingProperties(KafkaExtendedBindingProperties extendedBindingProperties) {
+	public void setExtendedBindingProperties(
+			KafkaExtendedBindingProperties extendedBindingProperties) {
 		this.extendedBindingProperties = extendedBindingProperties;
 	}
 
@@ -261,46 +274,56 @@ public class KafkaMessageChannelBinder extends
 	}
 
 	@Override
-	protected MessageHandler createProducerMessageHandler(final ProducerDestination destination,
-			ExtendedProducerProperties<KafkaProducerProperties> producerProperties, MessageChannel errorChannel)
-			throws Exception {
-		throw new IllegalStateException("The abstract binder should not call this method");
+	protected MessageHandler createProducerMessageHandler(
+			final ProducerDestination destination,
+			ExtendedProducerProperties<KafkaProducerProperties> producerProperties,
+			MessageChannel errorChannel) throws Exception {
+		throw new IllegalStateException(
+				"The abstract binder should not call this method");
 	}
 
 	@Override
-	protected MessageHandler createProducerMessageHandler(final ProducerDestination destination,
+	protected MessageHandler createProducerMessageHandler(
+			final ProducerDestination destination,
 			ExtendedProducerProperties<KafkaProducerProperties> producerProperties,
-			MessageChannel channel, MessageChannel errorChannel)
-			throws Exception {
+			MessageChannel channel, MessageChannel errorChannel) throws Exception {
 		/*
-		 * IMPORTANT: With a transactional binder, individual producer properties for Kafka are
-		 * ignored; the global binder (spring.cloud.stream.kafka.binder.transaction.producer.*)
-		 * properties are used instead, for all producers. A binder is transactional when
+		 * IMPORTANT: With a transactional binder, individual producer properties for
+		 * Kafka are ignored; the global binder
+		 * (spring.cloud.stream.kafka.binder.transaction.producer.*) properties are used
+		 * instead, for all producers. A binder is transactional when
 		 * 'spring.cloud.stream.kafka.binder.transaction.transaction-id-prefix' has text.
 		 */
 		final ProducerFactory<byte[], byte[]> producerFB = this.transactionManager != null
 				? this.transactionManager.getProducerFactory()
 				: getProducerFactory(null, producerProperties);
 		Collection<PartitionInfo> partitions = provisioningProvider.getPartitionsForTopic(
-				producerProperties.getPartitionCount(), false,
-				() -> {
+				producerProperties.getPartitionCount(), false, () -> {
 					Producer<byte[], byte[]> producer = producerFB.createProducer();
-					List<PartitionInfo> partitionsFor = producer.partitionsFor(destination.getName());
+					List<PartitionInfo> partitionsFor = producer
+							.partitionsFor(destination.getName());
 					producer.close();
 					((DisposableBean) producerFB).destroy();
 					return partitionsFor;
 				}, destination.getName());
-		this.topicsInUse.put(destination.getName(), new TopicInformation(null, partitions, false));
-		if (producerProperties.isPartitioned() && producerProperties.getPartitionCount() < partitions.size()) {
+		this.topicsInUse.put(destination.getName(),
+				new TopicInformation(null, partitions, false));
+		if (producerProperties.isPartitioned()
+				&& producerProperties.getPartitionCount() < partitions.size()) {
 			if (this.logger.isInfoEnabled()) {
-				this.logger.info("The `partitionCount` of the producer for topic " + destination.getName() + " is "
-						+ producerProperties.getPartitionCount() + ", smaller than the actual partition count of "
-						+ partitions.size() + " for the topic. The larger number will be used instead.");
+				this.logger.info("The `partitionCount` of the producer for topic "
+						+ destination.getName() + " is "
+						+ producerProperties.getPartitionCount()
+						+ ", smaller than the actual partition count of "
+						+ partitions.size()
+						+ " for the topic. The larger number will be used instead.");
 			}
-			List<ChannelInterceptor> interceptors = ((ChannelInterceptorAware) channel).getChannelInterceptors();
+			List<ChannelInterceptor> interceptors = ((ChannelInterceptorAware) channel)
+					.getChannelInterceptors();
 			interceptors.forEach((interceptor) -> {
 				if (interceptor instanceof PartitioningInterceptor) {
-					((PartitioningInterceptor) interceptor).setPartitionCount(partitions.size());
+					((PartitioningInterceptor) interceptor)
+							.setPartitionCount(partitions.size());
 				}
 			});
 		}
@@ -309,27 +332,29 @@ public class KafkaMessageChannelBinder extends
 		if (this.producerListener != null) {
 			kafkaTemplate.setProducerListener(this.producerListener);
 		}
-		ProducerConfigurationMessageHandler handler = new ProducerConfigurationMessageHandler(kafkaTemplate,
-				destination.getName(), producerProperties, producerFB);
+		ProducerConfigurationMessageHandler handler = new ProducerConfigurationMessageHandler(
+				kafkaTemplate, destination.getName(), producerProperties, producerFB);
 		if (errorChannel != null) {
 			handler.setSendFailureChannel(errorChannel);
 		}
 		KafkaHeaderMapper mapper = null;
 		if (this.configurationProperties.getHeaderMapperBeanName() != null) {
-			mapper = getApplicationContext().getBean(this.configurationProperties.getHeaderMapperBeanName(),
+			mapper = getApplicationContext().getBean(
+					this.configurationProperties.getHeaderMapperBeanName(),
 					KafkaHeaderMapper.class);
 		}
 		/*
-		 *  Even if the user configures a bean, we must not use it if the header
-		 *  mode is not the default (headers); setting the mapper to null
-		 *  disables populating headers in the message handler.
+		 * Even if the user configures a bean, we must not use it if the header mode is
+		 * not the default (headers); setting the mapper to null disables populating
+		 * headers in the message handler.
 		 */
 		if (producerProperties.getHeaderMode() != null
 				&& !HeaderMode.headers.equals(producerProperties.getHeaderMode())) {
 			mapper = null;
 		}
 		else if (mapper == null) {
-			String[] headerPatterns = producerProperties.getExtension().getHeaderPatterns();
+			String[] headerPatterns = producerProperties.getExtension()
+					.getHeaderPatterns();
 			if (headerPatterns != null && headerPatterns.length > 0) {
 				List<String> patterns = new LinkedList<>(Arrays.asList(headerPatterns));
 				if (!patterns.contains("!" + MessageHeaders.TIMESTAMP)) {
@@ -338,7 +363,8 @@ public class KafkaMessageChannelBinder extends
 				if (!patterns.contains("!" + MessageHeaders.ID)) {
 					patterns.add(0, "!" + MessageHeaders.ID);
 				}
-				mapper = new BinderHeaderMapper(patterns.toArray(new String[patterns.size()]));
+				mapper = new BinderHeaderMapper(
+						patterns.toArray(new String[patterns.size()]));
 			}
 			else {
 				mapper = new BinderHeaderMapper();
@@ -348,20 +374,25 @@ public class KafkaMessageChannelBinder extends
 		return handler;
 	}
 
-	protected DefaultKafkaProducerFactory<byte[], byte[]> getProducerFactory(String transactionIdPrefix,
+	protected DefaultKafkaProducerFactory<byte[], byte[]> getProducerFactory(
+			String transactionIdPrefix,
 			ExtendedProducerProperties<KafkaProducerProperties> producerProperties) {
 		Map<String, Object> props = new HashMap<>();
 		props.put(ProducerConfig.RETRIES_CONFIG, 0);
 		props.put(ProducerConfig.BUFFER_MEMORY_CONFIG, 33554432);
 		props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class);
-		props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class);
-		props.put(ProducerConfig.ACKS_CONFIG, String.valueOf(this.configurationProperties.getRequiredAcks()));
-		Map<String, Object> mergedConfig = this.configurationProperties.mergedProducerConfiguration();
+		props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG,
+				ByteArraySerializer.class);
+		props.put(ProducerConfig.ACKS_CONFIG,
+				String.valueOf(this.configurationProperties.getRequiredAcks()));
+		Map<String, Object> mergedConfig = this.configurationProperties
+				.mergedProducerConfiguration();
 		if (!ObjectUtils.isEmpty(mergedConfig)) {
 			props.putAll(mergedConfig);
 		}
 		if (ObjectUtils.isEmpty(props.get(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG))) {
-			props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, this.configurationProperties.getKafkaConnectionString());
+			props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG,
+					this.configurationProperties.getKafkaConnectionString());
 		}
 		if (ObjectUtils.isEmpty(props.get(ProducerConfig.BATCH_SIZE_CONFIG))) {
 			props.put(ProducerConfig.BATCH_SIZE_CONFIG,
@@ -378,7 +409,8 @@ public class KafkaMessageChannelBinder extends
 		if (!ObjectUtils.isEmpty(producerProperties.getExtension().getConfiguration())) {
 			props.putAll(producerProperties.getExtension().getConfiguration());
 		}
-		DefaultKafkaProducerFactory<byte[], byte[]> producerFactory = new DefaultKafkaProducerFactory<>(props);
+		DefaultKafkaProducerFactory<byte[], byte[]> producerFactory = new DefaultKafkaProducerFactory<>(
+				props);
 		if (transactionIdPrefix != null) {
 			producerFactory.setTransactionIdPrefix(transactionIdPrefix);
 		}
@@ -386,51 +418,62 @@ public class KafkaMessageChannelBinder extends
 	}
 
 	@Override
-	protected boolean useNativeEncoding(ExtendedProducerProperties<KafkaProducerProperties> producerProperties) {
+	protected boolean useNativeEncoding(
+			ExtendedProducerProperties<KafkaProducerProperties> producerProperties) {
 		if (this.transactionManager != null) {
-			return this.configurationProperties.getTransaction().getProducer().isUseNativeEncoding();
+			return this.configurationProperties.getTransaction().getProducer()
+					.isUseNativeEncoding();
 		}
 		return super.useNativeEncoding(producerProperties);
 	}
 
 	@Override
 	@SuppressWarnings("unchecked")
-	protected MessageProducer createConsumerEndpoint(final ConsumerDestination destination, final String group,
+	protected MessageProducer createConsumerEndpoint(
+			final ConsumerDestination destination, final String group,
 			final ExtendedConsumerProperties<KafkaConsumerProperties> extendedConsumerProperties) {
 		boolean anonymous = !StringUtils.hasText(group);
-		Assert.isTrue(!anonymous || !extendedConsumerProperties.getExtension().isEnableDlq(),
+		Assert.isTrue(
+				!anonymous || !extendedConsumerProperties.getExtension().isEnableDlq(),
 				"DLQ support is not available for anonymous subscriptions");
-		String consumerGroup = anonymous ? "anonymous." + UUID.randomUUID().toString() : group;
-		final ConsumerFactory<?, ?> consumerFactory = createKafkaConsumerFactory(anonymous, consumerGroup,
-				extendedConsumerProperties);
+		String consumerGroup = anonymous ? "anonymous." + UUID.randomUUID().toString()
+				: group;
+		final ConsumerFactory<?, ?> consumerFactory = createKafkaConsumerFactory(
+				anonymous, consumerGroup, extendedConsumerProperties);
 		int partitionCount = extendedConsumerProperties.getInstanceCount()
 				* extendedConsumerProperties.getConcurrency();
 
 		Collection<PartitionInfo> listenedPartitions = new ArrayList<>();
 
-		boolean usingPatterns = extendedConsumerProperties.getExtension().isDestinationIsPattern();
+		boolean usingPatterns = extendedConsumerProperties.getExtension()
+				.isDestinationIsPattern();
 		Assert.isTrue(!usingPatterns || !extendedConsumerProperties.isMultiplex(),
 				"Cannot use a pattern with multiplexed destinations; "
-				+ "use the regex pattern to specify multiple topics instead");
-		boolean groupManagement = extendedConsumerProperties.getExtension().isAutoRebalanceEnabled();
+						+ "use the regex pattern to specify multiple topics instead");
+		boolean groupManagement = extendedConsumerProperties.getExtension()
+				.isAutoRebalanceEnabled();
 		if (!extendedConsumerProperties.isMultiplex()) {
-			listenedPartitions.addAll(processTopic(consumerGroup, extendedConsumerProperties, consumerFactory,
-					partitionCount, usingPatterns, groupManagement, destination.getName()));
+			listenedPartitions.addAll(processTopic(consumerGroup,
+					extendedConsumerProperties, consumerFactory, partitionCount,
+					usingPatterns, groupManagement, destination.getName()));
 		}
 		else {
-			for (String name : StringUtils.commaDelimitedListToStringArray(destination.getName())) {
-				listenedPartitions.addAll(processTopic(consumerGroup, extendedConsumerProperties, consumerFactory,
-						partitionCount, usingPatterns, groupManagement, name.trim()));
+			for (String name : StringUtils
+					.commaDelimitedListToStringArray(destination.getName())) {
+				listenedPartitions.addAll(processTopic(consumerGroup,
+						extendedConsumerProperties, consumerFactory, partitionCount,
+						usingPatterns, groupManagement, name.trim()));
 			}
 		}
 
-		String[] topics = extendedConsumerProperties.isMultiplex() ? StringUtils.commaDelimitedListToStringArray(destination.getName())
+		String[] topics = extendedConsumerProperties.isMultiplex()
+				? StringUtils.commaDelimitedListToStringArray(destination.getName())
 				: new String[] { destination.getName() };
 		for (int i = 0; i < topics.length; i++) {
 			topics[i] = topics[i].trim();
 		}
-		Assert.isTrue(usingPatterns
-				|| !CollectionUtils.isEmpty(listenedPartitions), "A list of partitions must be provided");
+		Assert.isTrue(usingPatterns || !CollectionUtils.isEmpty(listenedPartitions),
+				"A list of partitions must be provided");
 		final TopicPartitionInitialOffset[] topicPartitionInitialOffsets = getTopicPartitionInitialOffsets(
 				listenedPartitions);
 		final ContainerProperties containerProperties = anonymous
@@ -445,13 +488,16 @@ public class KafkaMessageChannelBinder extends
 		if (this.rebalanceListener != null) {
 			setupRebalanceListener(extendedConsumerProperties, containerProperties);
 		}
-		containerProperties.setIdleEventInterval(extendedConsumerProperties.getExtension().getIdleEventInterval());
+		containerProperties.setIdleEventInterval(
+				extendedConsumerProperties.getExtension().getIdleEventInterval());
 		int concurrency = usingPatterns ? extendedConsumerProperties.getConcurrency()
-				: Math.min(extendedConsumerProperties.getConcurrency(), listenedPartitions.size());
-		resetOffsets(extendedConsumerProperties, consumerFactory, groupManagement, containerProperties);
+				: Math.min(extendedConsumerProperties.getConcurrency(),
+						listenedPartitions.size());
+		resetOffsets(extendedConsumerProperties, consumerFactory, groupManagement,
+				containerProperties);
 		@SuppressWarnings("rawtypes")
-		final ConcurrentMessageListenerContainer<?, ?> messageListenerContainer =
-				new ConcurrentMessageListenerContainer(consumerFactory, containerProperties) {
+		final ConcurrentMessageListenerContainer<?, ?> messageListenerContainer = new ConcurrentMessageListenerContainer(
+				consumerFactory, containerProperties) {
 
 			@Override
 			public void stop(Runnable callback) {
@@ -462,10 +508,12 @@ public class KafkaMessageChannelBinder extends
 		messageListenerContainer.setConcurrency(concurrency);
 		// these won't be needed if the container is made a bean
 		if (getApplicationEventPublisher() != null) {
-			messageListenerContainer.setApplicationEventPublisher(getApplicationEventPublisher());
+			messageListenerContainer
+					.setApplicationEventPublisher(getApplicationEventPublisher());
 		}
 		else if (getApplicationContext() != null) {
-			messageListenerContainer.setApplicationEventPublisher(getApplicationContext());
+			messageListenerContainer
+					.setApplicationEventPublisher(getApplicationContext());
 		}
 		messageListenerContainer.setBeanName(topics + ".container");
 		// end of these won't be needed...
@@ -478,26 +526,34 @@ public class KafkaMessageChannelBinder extends
 			messageListenerContainer.getContainerProperties()
 					.setAckOnError(isAutoCommitOnError(extendedConsumerProperties));
 			if (extendedConsumerProperties.getExtension().isAckEachRecord()) {
-				messageListenerContainer.getContainerProperties().setAckMode(ContainerProperties.AckMode.RECORD);
+				messageListenerContainer.getContainerProperties()
+						.setAckMode(ContainerProperties.AckMode.RECORD);
 			}
 		}
 		if (this.logger.isDebugEnabled()) {
-			this.logger.debug(
-					"Listened partitions: " + StringUtils.collectionToCommaDelimitedString(listenedPartitions));
+			this.logger.debug("Listened partitions: "
+					+ StringUtils.collectionToCommaDelimitedString(listenedPartitions));
 		}
-		this.getContainerCustomizer().configure(messageListenerContainer, destination.getName(), group);
-		final KafkaMessageDrivenChannelAdapter<?, ?> kafkaMessageDrivenChannelAdapter =
-				new KafkaMessageDrivenChannelAdapter<>(messageListenerContainer);
-		kafkaMessageDrivenChannelAdapter.setMessageConverter(getMessageConverter(extendedConsumerProperties));
+		this.getContainerCustomizer().configure(messageListenerContainer,
+				destination.getName(), group);
+		// @checkstyle:off
+		final KafkaMessageDrivenChannelAdapter<?, ?> kafkaMessageDrivenChannelAdapter = new KafkaMessageDrivenChannelAdapter<>(
+				messageListenerContainer);
+		// @checkstyle:on
+		kafkaMessageDrivenChannelAdapter
+				.setMessageConverter(getMessageConverter(extendedConsumerProperties));
 		kafkaMessageDrivenChannelAdapter.setBeanFactory(this.getBeanFactory());
-		ErrorInfrastructure errorInfrastructure = registerErrorInfrastructure(destination, consumerGroup,
-				extendedConsumerProperties);
+		ErrorInfrastructure errorInfrastructure = registerErrorInfrastructure(destination,
+				consumerGroup, extendedConsumerProperties);
 		if (extendedConsumerProperties.getMaxAttempts() > 1) {
-			kafkaMessageDrivenChannelAdapter.setRetryTemplate(buildRetryTemplate(extendedConsumerProperties));
-			kafkaMessageDrivenChannelAdapter.setRecoveryCallback(errorInfrastructure.getRecoverer());
+			kafkaMessageDrivenChannelAdapter
+					.setRetryTemplate(buildRetryTemplate(extendedConsumerProperties));
+			kafkaMessageDrivenChannelAdapter
+					.setRecoveryCallback(errorInfrastructure.getRecoverer());
 		}
 		else {
-			kafkaMessageDrivenChannelAdapter.setErrorChannel(errorInfrastructure.getErrorChannel());
+			kafkaMessageDrivenChannelAdapter
+					.setErrorChannel(errorInfrastructure.getErrorChannel());
 		}
 		return kafkaMessageDrivenChannelAdapter;
 	}
@@ -511,61 +567,67 @@ public class KafkaMessageChannelBinder extends
 		bindingNameHolder.remove();
 		Assert.notNull(bindingName, "'bindingName' cannot be null");
 		final KafkaBindingRebalanceListener userRebalanceListener = this.rebalanceListener;
-		containerProperties.setConsumerRebalanceListener(new ConsumerAwareRebalanceListener() {
+		containerProperties
+				.setConsumerRebalanceListener(new ConsumerAwareRebalanceListener() {
 
-			private boolean initial = true;
+					private boolean initial = true;
 
-			@Override
-			public void onPartitionsRevokedBeforeCommit(Consumer<?, ?> consumer,
-					Collection<TopicPartition> partitions) {
+					@Override
+					public void onPartitionsRevokedBeforeCommit(Consumer<?, ?> consumer,
+							Collection<TopicPartition> partitions) {
 
-				userRebalanceListener.onPartitionsRevokedBeforeCommit(bindingName, consumer, partitions);
-			}
+						userRebalanceListener.onPartitionsRevokedBeforeCommit(bindingName,
+								consumer, partitions);
+					}
 
-			@Override
-			public void onPartitionsRevokedAfterCommit(Consumer<?, ?> consumer,
-					Collection<TopicPartition> partitions) {
+					@Override
+					public void onPartitionsRevokedAfterCommit(Consumer<?, ?> consumer,
+							Collection<TopicPartition> partitions) {
 
-				userRebalanceListener.onPartitionsRevokedAfterCommit(bindingName, consumer, partitions);
-			}
+						userRebalanceListener.onPartitionsRevokedAfterCommit(bindingName,
+								consumer, partitions);
+					}
 
-			@Override
-			public void onPartitionsAssigned(Consumer<?, ?> consumer, Collection<TopicPartition> partitions) {
-				try {
-					userRebalanceListener.onPartitionsAssigned(bindingName, consumer, partitions, this.initial);
-				}
-				finally {
-					this.initial = false;
-				}
-			}
+					@Override
+					public void onPartitionsAssigned(Consumer<?, ?> consumer,
+							Collection<TopicPartition> partitions) {
+						try {
+							userRebalanceListener.onPartitionsAssigned(bindingName,
+									consumer, partitions, this.initial);
+						}
+						finally {
+							this.initial = false;
+						}
+					}
 
-		});
+				});
 	}
 
 	public Collection<PartitionInfo> processTopic(final String group,
 			final ExtendedConsumerProperties<KafkaConsumerProperties> extendedConsumerProperties,
-			final ConsumerFactory<?, ?> consumerFactory, int partitionCount, boolean usingPatterns,
-			boolean groupManagement, String topic) {
+			final ConsumerFactory<?, ?> consumerFactory, int partitionCount,
+			boolean usingPatterns, boolean groupManagement, String topic) {
 		Collection<PartitionInfo> listenedPartitions;
 		Collection<PartitionInfo> allPartitions = usingPatterns ? Collections.emptyList()
-				: getPartitionInfo(topic, extendedConsumerProperties, consumerFactory, partitionCount);
+				: getPartitionInfo(topic, extendedConsumerProperties, consumerFactory,
+						partitionCount);
 
-		if (groupManagement ||
-				extendedConsumerProperties.getInstanceCount() == 1) {
+		if (groupManagement || extendedConsumerProperties.getInstanceCount() == 1) {
 			listenedPartitions = allPartitions;
 		}
 		else {
 			listenedPartitions = new ArrayList<>();
 			for (PartitionInfo partition : allPartitions) {
 				// divide partitions across modules
-				if ((partition.partition()
-						% extendedConsumerProperties.getInstanceCount()) == extendedConsumerProperties
+				if ((partition.partition() % extendedConsumerProperties
+						.getInstanceCount()) == extendedConsumerProperties
 								.getInstanceIndex()) {
 					listenedPartitions.add(partition);
 				}
 			}
 		}
-		this.topicsInUse.put(topic, new TopicInformation(group, listenedPartitions, usingPatterns));
+		this.topicsInUse.put(topic,
+				new TopicInformation(group, listenedPartitions, usingPatterns));
 		return listenedPartitions;
 	}
 
@@ -579,84 +641,101 @@ public class KafkaMessageChannelBinder extends
 			final ContainerProperties containerProperties) {
 
 		boolean resetOffsets = extendedConsumerProperties.getExtension().isResetOffsets();
-		final Object resetTo = consumerFactory.getConfigurationProperties().get(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG);
+		final Object resetTo = consumerFactory.getConfigurationProperties()
+				.get(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG);
 		final AtomicBoolean initialAssignment = new AtomicBoolean(true);
 		if (!"earliest".equals(resetTo) && !"latest".equals(resetTo)) {
-			logger.warn("no (or unknown) " + ConsumerConfig.AUTO_OFFSET_RESET_CONFIG +
-					" property cannot reset");
+			logger.warn("no (or unknown) " + ConsumerConfig.AUTO_OFFSET_RESET_CONFIG
+					+ " property cannot reset");
 			resetOffsets = false;
 		}
 		if (groupManagement && resetOffsets) {
-			containerProperties.setConsumerRebalanceListener(new ConsumerAwareRebalanceListener() {
+			containerProperties
+					.setConsumerRebalanceListener(new ConsumerAwareRebalanceListener() {
 
-				@Override
-				public void onPartitionsRevokedBeforeCommit(Consumer<?, ?> consumer, Collection<TopicPartition> tps) {
-					// no op
-				}
-
-				@Override
-				public void onPartitionsRevokedAfterCommit(Consumer<?, ?> consumer, Collection<TopicPartition> tps) {
-					// no op
-				}
-
-				@Override
-				public void onPartitionsAssigned(Consumer<?, ?> consumer, Collection<TopicPartition> tps) {
-					if (initialAssignment.getAndSet(false)) {
-						if ("earliest".equals(resetTo)) {
-							consumer.seekToBeginning(tps);
+						@Override
+						public void onPartitionsRevokedBeforeCommit(
+								Consumer<?, ?> consumer, Collection<TopicPartition> tps) {
+							// no op
 						}
-						else if ("latest".equals(resetTo)) {
-							consumer.seekToEnd(tps);
+
+						@Override
+						public void onPartitionsRevokedAfterCommit(
+								Consumer<?, ?> consumer, Collection<TopicPartition> tps) {
+							// no op
 						}
-					}
-				}
-			});
+
+						@Override
+						public void onPartitionsAssigned(Consumer<?, ?> consumer,
+								Collection<TopicPartition> tps) {
+							if (initialAssignment.getAndSet(false)) {
+								if ("earliest".equals(resetTo)) {
+									consumer.seekToBeginning(tps);
+								}
+								else if ("latest".equals(resetTo)) {
+									consumer.seekToEnd(tps);
+								}
+							}
+						}
+					});
 		}
 		else if (resetOffsets) {
 			Arrays.stream(containerProperties.getTopicPartitions())
-					.map(tpio -> new TopicPartitionInitialOffset(tpio.topic(), tpio.partition(),
-							"earliest".equals(resetTo) ? SeekPosition.BEGINNING : SeekPosition.END))
-					.collect(Collectors.toList()).toArray(containerProperties.getTopicPartitions());
+					.map(tpio -> new TopicPartitionInitialOffset(tpio.topic(),
+							tpio.partition(),
+							"earliest".equals(resetTo) ? SeekPosition.BEGINNING
+									: SeekPosition.END))
+					.collect(Collectors.toList())
+					.toArray(containerProperties.getTopicPartitions());
 		}
 	}
 
 	@Override
-	protected PolledConsumerResources createPolledConsumerResources(String name, String group,
-			ConsumerDestination destination, ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties) {
+	protected PolledConsumerResources createPolledConsumerResources(String name,
+			String group, ConsumerDestination destination,
+			ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties) {
 
 		boolean anonymous = !StringUtils.hasText(group);
 		Assert.isTrue(!anonymous || !consumerProperties.getExtension().isEnableDlq(),
 				"DLQ support is not available for anonymous subscriptions");
-		String consumerGroup = anonymous ? "anonymous." + UUID.randomUUID().toString() : group;
-		final ConsumerFactory<?, ?> consumerFactory = createKafkaConsumerFactory(anonymous, consumerGroup,
-				consumerProperties);
+		String consumerGroup = anonymous ? "anonymous." + UUID.randomUUID().toString()
+				: group;
+		final ConsumerFactory<?, ?> consumerFactory = createKafkaConsumerFactory(
+				anonymous, consumerGroup, consumerProperties);
 		String[] topics = consumerProperties.isMultiplex()
 				? StringUtils.commaDelimitedListToStringArray(destination.getName())
 				: new String[] { destination.getName() };
 		for (int i = 0; i < topics.length; i++) {
 			topics[i] = topics[i].trim();
 		}
-		KafkaMessageSource<?, ?> source = new KafkaMessageSource<>(consumerFactory, topics);
+		KafkaMessageSource<?, ?> source = new KafkaMessageSource<>(consumerFactory,
+				topics);
 		source.setMessageConverter(getMessageConverter(consumerProperties));
 		source.setRawMessageHeader(consumerProperties.getExtension().isEnableDlq());
 		String clientId = name;
-		if (consumerProperties.getExtension().getConfiguration().containsKey(ConsumerConfig.CLIENT_ID_CONFIG)) {
-			clientId = consumerProperties.getExtension().getConfiguration().get(ConsumerConfig.CLIENT_ID_CONFIG);
+		if (consumerProperties.getExtension().getConfiguration()
+				.containsKey(ConsumerConfig.CLIENT_ID_CONFIG)) {
+			clientId = consumerProperties.getExtension().getConfiguration()
+					.get(ConsumerConfig.CLIENT_ID_CONFIG);
 		}
 		source.setClientId(clientId);
 
 		if (!consumerProperties.isMultiplex()) {
-			// I copied this from the regular consumer - it looks bogus to me - includes all partitions
-			// not just the ones this binding is listening to; doesn't seem right for a health check.
-			Collection<PartitionInfo> partitionInfos = getPartitionInfo(destination.getName(), consumerProperties,
-					consumerFactory, -1);
-			this.topicsInUse.put(destination.getName(), new TopicInformation(consumerGroup, partitionInfos, false));
+			// I copied this from the regular consumer - it looks bogus to me - includes
+			// all partitions
+			// not just the ones this binding is listening to; doesn't seem right for a
+			// health check.
+			Collection<PartitionInfo> partitionInfos = getPartitionInfo(
+					destination.getName(), consumerProperties, consumerFactory, -1);
+			this.topicsInUse.put(destination.getName(),
+					new TopicInformation(consumerGroup, partitionInfos, false));
 		}
 		else {
 			for (int i = 0; i < topics.length; i++) {
-				Collection<PartitionInfo> partitionInfos = getPartitionInfo(topics[i], consumerProperties,
-						consumerFactory, -1);
-				this.topicsInUse.put(topics[i], new TopicInformation(consumerGroup, partitionInfos, false));
+				Collection<PartitionInfo> partitionInfos = getPartitionInfo(topics[i],
+						consumerProperties, consumerFactory, -1);
+				this.topicsInUse.put(topics[i],
+						new TopicInformation(consumerGroup, partitionInfos, false));
 			}
 		}
 
@@ -673,8 +752,8 @@ public class KafkaMessageChannelBinder extends
 			}
 
 		});
-		return new PolledConsumerResources(source,
-				registerErrorInfrastructure(destination, group, consumerProperties, true));
+		return new PolledConsumerResources(source, registerErrorInfrastructure(
+				destination, group, consumerProperties, true));
 	}
 
 	@Override
@@ -692,20 +771,24 @@ public class KafkaMessageChannelBinder extends
 		MessagingMessageConverter messageConverter;
 		if (extendedConsumerProperties.getExtension().getConverterBeanName() == null) {
 			messageConverter = new MessagingMessageConverter();
-			StandardHeaders standardHeaders = extendedConsumerProperties.getExtension().getStandardHeaders();
-			messageConverter.setGenerateMessageId(StandardHeaders.id.equals(standardHeaders)
-					|| StandardHeaders.both.equals(standardHeaders));
-			messageConverter.setGenerateTimestamp(StandardHeaders.timestamp.equals(standardHeaders)
-					|| StandardHeaders.both.equals(standardHeaders));
+			StandardHeaders standardHeaders = extendedConsumerProperties.getExtension()
+					.getStandardHeaders();
+			messageConverter
+					.setGenerateMessageId(StandardHeaders.id.equals(standardHeaders)
+							|| StandardHeaders.both.equals(standardHeaders));
+			messageConverter.setGenerateTimestamp(
+					StandardHeaders.timestamp.equals(standardHeaders)
+							|| StandardHeaders.both.equals(standardHeaders));
 		}
 		else {
 			try {
 				messageConverter = getApplicationContext().getBean(
-					extendedConsumerProperties.getExtension().getConverterBeanName(),
+						extendedConsumerProperties.getExtension().getConverterBeanName(),
 						MessagingMessageConverter.class);
 			}
 			catch (NoSuchBeanDefinitionException ex) {
-				throw new IllegalStateException("Converter bean not present in application context", ex);
+				throw new IllegalStateException(
+						"Converter bean not present in application context", ex);
 			}
 		}
 		messageConverter.setHeaderMapper(getHeaderMapper(extendedConsumerProperties));
@@ -716,7 +799,8 @@ public class KafkaMessageChannelBinder extends
 			final ExtendedConsumerProperties<KafkaConsumerProperties> extendedConsumerProperties) {
 		KafkaHeaderMapper mapper = null;
 		if (this.configurationProperties.getHeaderMapperBeanName() != null) {
-			mapper = getApplicationContext().getBean(this.configurationProperties.getHeaderMapperBeanName(),
+			mapper = getApplicationContext().getBean(
+					this.configurationProperties.getHeaderMapperBeanName(),
 					KafkaHeaderMapper.class);
 		}
 		if (mapper == null) {
@@ -731,7 +815,8 @@ public class KafkaMessageChannelBinder extends
 				}
 
 			};
-			String[] trustedPackages = extendedConsumerProperties.getExtension().getTrustedPackages();
+			String[] trustedPackages = extendedConsumerProperties.getExtension()
+					.getTrustedPackages();
 			if (!StringUtils.isEmpty(trustedPackages)) {
 				headerMapper.addTrustedPackages(trustedPackages);
 			}
@@ -760,16 +845,19 @@ public class KafkaMessageChannelBinder extends
 
 	@SuppressWarnings("unchecked")
 	@Override
-	protected MessageHandler getErrorMessageHandler(final ConsumerDestination destination, final String group,
+	protected MessageHandler getErrorMessageHandler(final ConsumerDestination destination,
+			final String group,
 			final ExtendedConsumerProperties<KafkaConsumerProperties> properties) {
 		KafkaConsumerProperties kafkaConsumerProperties = properties.getExtension();
 		if (kafkaConsumerProperties.isEnableDlq()) {
-			KafkaProducerProperties dlqProducerProperties = kafkaConsumerProperties.getDlqProducerProperties();
+			KafkaProducerProperties dlqProducerProperties = kafkaConsumerProperties
+					.getDlqProducerProperties();
 			ProducerFactory<?, ?> producerFactory = this.transactionManager != null
 					? this.transactionManager.getProducerFactory()
 					: getProducerFactory(null,
-						new ExtendedProducerProperties<>(dlqProducerProperties));
-			final KafkaTemplate<?, ?> kafkaTemplate = new KafkaTemplate<>(producerFactory);
+							new ExtendedProducerProperties<>(dlqProducerProperties));
+			final KafkaTemplate<?, ?> kafkaTemplate = new KafkaTemplate<>(
+					producerFactory);
 
 			@SuppressWarnings("rawtypes")
 			DlqSender<?, ?> dlqSender = new DlqSender(kafkaTemplate);
@@ -781,16 +869,23 @@ public class KafkaMessageChannelBinder extends
 
 				if (properties.isUseNativeDecoding()) {
 					if (record != null) {
-						Map<String, String> configuration = this.transactionManager == null ? dlqProducerProperties.getConfiguration()
-								: this.configurationProperties.getTransaction().getProducer().getConfiguration();
-						if (record.key() != null && !record.key().getClass().isInstance(byte[].class)) {
-							ensureDlqMessageCanBeProperlySerialized(
-									configuration,
-									(Map<String, String> config) -> !config.containsKey("key.serializer"), "Key");
-						}
-						if (record.value() != null && !record.value().getClass().isInstance(byte[].class)) {
+						Map<String, String> configuration = this.transactionManager == null
+								? dlqProducerProperties.getConfiguration()
+								: this.configurationProperties.getTransaction()
+										.getProducer().getConfiguration();
+						if (record.key() != null
+								&& !record.key().getClass().isInstance(byte[].class)) {
 							ensureDlqMessageCanBeProperlySerialized(configuration,
-									(Map<String, String> config) -> !config.containsKey("value.serializer"), "Payload");
+									(Map<String, String> config) -> !config
+											.containsKey("key.serializer"),
+									"Key");
+						}
+						if (record.value() != null
+								&& !record.value().getClass().isInstance(byte[].class)) {
+							ensureDlqMessageCanBeProperlySerialized(configuration,
+									(Map<String, String> config) -> !config
+											.containsKey("value.serializer"),
+									"Payload");
 						}
 					}
 				}
@@ -800,7 +895,8 @@ public class KafkaMessageChannelBinder extends
 					return;
 				}
 				Headers kafkaHeaders = new RecordHeaders(record.headers().toArray());
-				AtomicReference<ConsumerRecord<?, ?>> recordToSend = new AtomicReference<>(record);
+				AtomicReference<ConsumerRecord<?, ?>> recordToSend = new AtomicReference<>(
+						record);
 				if (message.getPayload() instanceof Throwable) {
 
 					Throwable throwable = (Throwable) message.getPayload();
@@ -809,42 +905,55 @@ public class KafkaMessageChannelBinder extends
 
 					if (headerMode == null || HeaderMode.headers.equals(headerMode)) {
 
-						kafkaHeaders.add(
-								new RecordHeader(X_ORIGINAL_TOPIC, record.topic().getBytes(StandardCharsets.UTF_8)));
+						kafkaHeaders.add(new RecordHeader(X_ORIGINAL_TOPIC,
+								record.topic().getBytes(StandardCharsets.UTF_8)));
 						kafkaHeaders.add(new RecordHeader(X_ORIGINAL_PARTITION,
-								ByteBuffer.allocate(Integer.BYTES).putInt(record.partition()).array()));
-						kafkaHeaders.add(new RecordHeader(X_ORIGINAL_OFFSET,
-								ByteBuffer.allocate(Long.BYTES).putLong(record.offset()).array()));
+								ByteBuffer.allocate(Integer.BYTES)
+										.putInt(record.partition()).array()));
+						kafkaHeaders.add(new RecordHeader(X_ORIGINAL_OFFSET, ByteBuffer
+								.allocate(Long.BYTES).putLong(record.offset()).array()));
 						kafkaHeaders.add(new RecordHeader(X_ORIGINAL_TIMESTAMP,
-								ByteBuffer.allocate(Long.BYTES).putLong(record.timestamp()).array()));
+								ByteBuffer.allocate(Long.BYTES)
+										.putLong(record.timestamp()).array()));
 						kafkaHeaders.add(new RecordHeader(X_ORIGINAL_TIMESTAMP_TYPE,
-								record.timestampType().toString().getBytes(StandardCharsets.UTF_8)));
-						kafkaHeaders.add(new RecordHeader(X_EXCEPTION_FQCN,
-								throwable.getClass().getName().getBytes(StandardCharsets.UTF_8)));
+								record.timestampType().toString()
+										.getBytes(StandardCharsets.UTF_8)));
+						kafkaHeaders.add(new RecordHeader(X_EXCEPTION_FQCN, throwable
+								.getClass().getName().getBytes(StandardCharsets.UTF_8)));
 						kafkaHeaders.add(new RecordHeader(X_EXCEPTION_MESSAGE,
 								throwable.getMessage().getBytes(StandardCharsets.UTF_8)));
 						kafkaHeaders.add(new RecordHeader(X_EXCEPTION_STACKTRACE,
-								getStackTraceAsString(throwable).getBytes(StandardCharsets.UTF_8)));
+								getStackTraceAsString(throwable)
+										.getBytes(StandardCharsets.UTF_8)));
 					}
 					else if (HeaderMode.embeddedHeaders.equals(headerMode)) {
 						try {
 							MessageValues messageValues = EmbeddedHeaderUtils
-									.extractHeaders(MessageBuilder.withPayload((byte[]) record.value()).build(), false);
+									.extractHeaders(MessageBuilder
+											.withPayload((byte[]) record.value()).build(),
+											false);
 							messageValues.put(X_ORIGINAL_TOPIC, record.topic());
 							messageValues.put(X_ORIGINAL_PARTITION, record.partition());
 							messageValues.put(X_ORIGINAL_OFFSET, record.offset());
 							messageValues.put(X_ORIGINAL_TIMESTAMP, record.timestamp());
-							messageValues.put(X_ORIGINAL_TIMESTAMP_TYPE, record.timestampType().toString());
-							messageValues.put(X_EXCEPTION_FQCN, throwable.getClass().getName());
-							messageValues.put(X_EXCEPTION_MESSAGE, throwable.getMessage());
-							messageValues.put(X_EXCEPTION_STACKTRACE, getStackTraceAsString(throwable));
+							messageValues.put(X_ORIGINAL_TIMESTAMP_TYPE,
+									record.timestampType().toString());
+							messageValues.put(X_EXCEPTION_FQCN,
+									throwable.getClass().getName());
+							messageValues.put(X_EXCEPTION_MESSAGE,
+									throwable.getMessage());
+							messageValues.put(X_EXCEPTION_STACKTRACE,
+									getStackTraceAsString(throwable));
 
-							final String[] headersToEmbed = new ArrayList<>(messageValues.keySet())
-									.toArray(new String[messageValues.keySet().size()]);
-							byte[] payload = EmbeddedHeaderUtils.embedHeaders(messageValues,
+							final String[] headersToEmbed = new ArrayList<>(
+									messageValues.keySet()).toArray(
+											new String[messageValues.keySet().size()]);
+							byte[] payload = EmbeddedHeaderUtils.embedHeaders(
+									messageValues,
 									EmbeddedHeaderUtils.headersToEmbed(headersToEmbed));
-							recordToSend.set(new ConsumerRecord<Object, Object>(record.topic(), record.partition(),
-									record.offset(), record.key(), payload));
+							recordToSend.set(new ConsumerRecord<Object, Object>(
+									record.topic(), record.partition(), record.offset(),
+									record.key(), payload));
 						}
 						catch (Exception ex) {
 							throw new RuntimeException(ex);
@@ -852,7 +961,8 @@ public class KafkaMessageChannelBinder extends
 					}
 				}
 				String dlqName = StringUtils.hasText(kafkaConsumerProperties.getDlqName())
-						? kafkaConsumerProperties.getDlqName() : "error." + record.topic() + "." + group;
+						? kafkaConsumerProperties.getDlqName()
+						: "error." + record.topic() + "." + group;
 				dlqSender.sendToDlq(recordToSend.get(), kafkaHeaders, dlqName);
 			};
 		}
@@ -860,17 +970,20 @@ public class KafkaMessageChannelBinder extends
 	}
 
 	@Override
-	protected MessageHandler getPolledConsumerErrorMessageHandler(ConsumerDestination destination, String group,
+	protected MessageHandler getPolledConsumerErrorMessageHandler(
+			ConsumerDestination destination, String group,
 			ExtendedConsumerProperties<KafkaConsumerProperties> properties) {
 		if (properties.getExtension().isEnableDlq()) {
 			return getErrorMessageHandler(destination, group, properties);
 		}
-		final MessageHandler superHandler = super.getErrorMessageHandler(destination, group, properties);
+		final MessageHandler superHandler = super.getErrorMessageHandler(destination,
+				group, properties);
 		return (message) -> {
-			ConsumerRecord<?, ?> record = (ConsumerRecord<?, ?>) message.getHeaders().get(KafkaHeaders.RAW_DATA);
+			ConsumerRecord<?, ?> record = (ConsumerRecord<?, ?>) message.getHeaders()
+					.get(KafkaHeaders.RAW_DATA);
 			if (!(message instanceof ErrorMessage)) {
-				logger.error("Expected an ErrorMessage, not a " + message.getClass().toString() + " for: "
-						+ message);
+				logger.error("Expected an ErrorMessage, not a "
+						+ message.getClass().toString() + " for: " + message);
 			}
 			else if (record == null) {
 				if (superHandler != null) {
@@ -879,8 +992,10 @@ public class KafkaMessageChannelBinder extends
 			}
 			else {
 				if (message.getPayload() instanceof MessagingException) {
-					AcknowledgmentCallback ack = StaticMessageHeaderAccessor.getAcknowledgmentCallback(
-							((MessagingException) message.getPayload()).getFailedMessage());
+					AcknowledgmentCallback ack = StaticMessageHeaderAccessor
+							.getAcknowledgmentCallback(
+									((MessagingException) message.getPayload())
+											.getFailedMessage());
 					if (ack != null) {
 						if (isAutoCommitOnError(properties)) {
 							ack.acknowledge(AcknowledgmentCallback.Status.REJECT);
@@ -894,31 +1009,39 @@ public class KafkaMessageChannelBinder extends
 		};
 	}
 
-	private static void ensureDlqMessageCanBeProperlySerialized(Map<String, String> configuration,
-																Predicate<Map<String, String>> configPredicate,
-																String dataType) {
-			if (CollectionUtils.isEmpty(configuration) || configPredicate.test(configuration)) {
-				throw new IllegalArgumentException("Native decoding is used on the consumer. " +
-						dataType + " is not byte[] and no serializer is set on the DLQ producer.");
-			}
+	private static void ensureDlqMessageCanBeProperlySerialized(
+			Map<String, String> configuration,
+			Predicate<Map<String, String>> configPredicate, String dataType) {
+		if (CollectionUtils.isEmpty(configuration)
+				|| configPredicate.test(configuration)) {
+			throw new IllegalArgumentException("Native decoding is used on the consumer. "
+					+ dataType
+					+ " is not byte[] and no serializer is set on the DLQ producer.");
+		}
 	}
 
-	protected ConsumerFactory<?, ?> createKafkaConsumerFactory(boolean anonymous, String consumerGroup,
+	protected ConsumerFactory<?, ?> createKafkaConsumerFactory(boolean anonymous,
+			String consumerGroup,
 			ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties) {
 		Map<String, Object> props = new HashMap<>();
-		props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class);
-		props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class);
+		props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG,
+				ByteArrayDeserializer.class);
+		props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,
+				ByteArrayDeserializer.class);
 		props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
 		props.put(ConsumerConfig.AUTO_COMMIT_INTERVAL_MS_CONFIG, 100);
-		props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, anonymous ? "latest" : "earliest");
+		props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG,
+				anonymous ? "latest" : "earliest");
 		props.put(ConsumerConfig.GROUP_ID_CONFIG, consumerGroup);
 
-		Map<String, Object> mergedConfig = this.configurationProperties.mergedConsumerConfiguration();
+		Map<String, Object> mergedConfig = this.configurationProperties
+				.mergedConsumerConfiguration();
 		if (!ObjectUtils.isEmpty(mergedConfig)) {
 			props.putAll(mergedConfig);
 		}
 		if (ObjectUtils.isEmpty(props.get(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG))) {
-			props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, this.configurationProperties.getKafkaConnectionString());
+			props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG,
+					this.configurationProperties.getKafkaConnectionString());
 		}
 		if (!ObjectUtils.isEmpty(consumerProperties.getExtension().getConfiguration())) {
 			props.putAll(consumerProperties.getExtension().getConfiguration());
@@ -931,10 +1054,12 @@ public class KafkaMessageChannelBinder extends
 		return new DefaultKafkaConsumerFactory<>(props);
 	}
 
-	private boolean isAutoCommitOnError(ExtendedConsumerProperties<KafkaConsumerProperties> properties) {
+	private boolean isAutoCommitOnError(
+			ExtendedConsumerProperties<KafkaConsumerProperties> properties) {
 		return properties.getExtension().getAutoCommitOnError() != null
 				? properties.getExtension().getAutoCommitOnError()
-				: properties.getExtension().isAutoCommitOffset() && properties.getExtension().isEnableDlq();
+				: properties.getExtension().isAutoCommitOffset()
+						&& properties.getExtension().isEnableDlq();
 	}
 
 	private TopicPartitionInitialOffset[] getTopicPartitionInitialOffsets(
@@ -944,8 +1069,8 @@ public class KafkaMessageChannelBinder extends
 		int i = 0;
 		for (PartitionInfo partition : listenedPartitions) {
 
-			topicPartitionInitialOffsets[i++] = new TopicPartitionInitialOffset(partition.topic(),
-					partition.partition());
+			topicPartitionInitialOffsets[i++] = new TopicPartitionInitialOffset(
+					partition.topic(), partition.partition());
 		}
 		return topicPartitionInitialOffsets;
 	}
@@ -964,23 +1089,26 @@ public class KafkaMessageChannelBinder extends
 		return stringWriter.getBuffer().toString();
 	}
 
-	private final class ProducerConfigurationMessageHandler extends KafkaProducerMessageHandler<byte[], byte[]>
-			implements Lifecycle {
+	private final class ProducerConfigurationMessageHandler
+			extends KafkaProducerMessageHandler<byte[], byte[]> implements Lifecycle {
 
 		private boolean running = true;
 
 		private final ProducerFactory<byte[], byte[]> producerFactory;
 
-		ProducerConfigurationMessageHandler(KafkaTemplate<byte[], byte[]> kafkaTemplate, String topic,
+		ProducerConfigurationMessageHandler(KafkaTemplate<byte[], byte[]> kafkaTemplate,
+				String topic,
 				ExtendedProducerProperties<KafkaProducerProperties> producerProperties,
 				ProducerFactory<byte[], byte[]> producerFactory) {
 			super(kafkaTemplate);
 			setTopicExpression(new LiteralExpression(topic));
-			setMessageKeyExpression(producerProperties.getExtension().getMessageKeyExpression());
+			setMessageKeyExpression(
+					producerProperties.getExtension().getMessageKeyExpression());
 			setBeanFactory(KafkaMessageChannelBinder.this.getBeanFactory());
 			if (producerProperties.isPartitioned()) {
 				SpelExpressionParser parser = new SpelExpressionParser();
-				setPartitionIdExpression(parser.parseExpression("headers['" + BinderHeaders.PARTITION_HEADER + "']"));
+				setPartitionIdExpression(parser.parseExpression(
+						"headers['" + BinderHeaders.PARTITION_HEADER + "']"));
 			}
 			if (producerProperties.getExtension().isSync()) {
 				setSync(true);
@@ -1025,7 +1153,8 @@ public class KafkaMessageChannelBinder extends
 
 		private final boolean isTopicPattern;
 
-		TopicInformation(String consumerGroup, Collection<PartitionInfo> partitionInfos, boolean isTopicPattern) {
+		TopicInformation(String consumerGroup, Collection<PartitionInfo> partitionInfos,
+				boolean isTopicPattern) {
 			this.consumerGroup = consumerGroup;
 			this.partitionInfos = partitionInfos;
 			this.isTopicPattern = isTopicPattern;
@@ -1064,15 +1193,16 @@ public class KafkaMessageChannelBinder extends
 		}
 
 		@SuppressWarnings("unchecked")
-		void sendToDlq(ConsumerRecord<?, ?> consumerRecord, Headers headers, String dlqName) {
+		void sendToDlq(ConsumerRecord<?, ?> consumerRecord, Headers headers,
+				String dlqName) {
 			K key = (K) consumerRecord.key();
 			V value = (V) consumerRecord.value();
-			ProducerRecord<K, V> producerRecord = new ProducerRecord<>(dlqName, consumerRecord.partition(),
-					key, value, headers);
+			ProducerRecord<K, V> producerRecord = new ProducerRecord<>(dlqName,
+					consumerRecord.partition(), key, value, headers);
 
 			StringBuilder sb = new StringBuilder().append(" a message with key='")
-					.append(toDisplayString(ObjectUtils.nullSafeToString(key), 50)).append("'")
-					.append(" and payload='")
+					.append(toDisplayString(ObjectUtils.nullSafeToString(key), 50))
+					.append("'").append(" and payload='")
 					.append(toDisplayString(ObjectUtils.nullSafeToString(value), 50))
 					.append("'").append(" received from ")
 					.append(consumerRecord.partition());
@@ -1083,26 +1213,28 @@ public class KafkaMessageChannelBinder extends
 
 					@Override
 					public void onFailure(Throwable ex) {
-						KafkaMessageChannelBinder.this.logger.error(
-								"Error sending to DLQ " + sb.toString(), ex);
+						KafkaMessageChannelBinder.this.logger
+								.error("Error sending to DLQ " + sb.toString(), ex);
 					}
 
 					@Override
 					public void onSuccess(SendResult<K, V> result) {
 						if (KafkaMessageChannelBinder.this.logger.isDebugEnabled()) {
-							KafkaMessageChannelBinder.this.logger.debug(
-									"Sent to DLQ " + sb.toString());
+							KafkaMessageChannelBinder.this.logger
+									.debug("Sent to DLQ " + sb.toString());
 						}
 					}
 				});
 			}
 			catch (Exception ex) {
 				if (sentDlq == null) {
-					KafkaMessageChannelBinder.this.logger.error(
-							"Error sending to DLQ " + sb.toString(), ex);
+					KafkaMessageChannelBinder.this.logger
+							.error("Error sending to DLQ " + sb.toString(), ex);
 				}
 			}
 
 		}
+
 	}
+
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2017-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,16 +29,19 @@ import org.springframework.cloud.stream.binding.StreamListenerResultAdapter;
  * @author Marius Bogoevici
  * @author Soby Chacko
  */
-class KStreamStreamListenerResultAdapter implements StreamListenerResultAdapter<KStream, KStreamBoundElementFactory.KStreamWrapper> {
+class KStreamStreamListenerResultAdapter implements
+		StreamListenerResultAdapter<KStream, KStreamBoundElementFactory.KStreamWrapper> {
 
 	@Override
 	public boolean supports(Class<?> resultType, Class<?> boundElement) {
-		return KStream.class.isAssignableFrom(resultType) && KStream.class.isAssignableFrom(boundElement);
+		return KStream.class.isAssignableFrom(resultType)
+				&& KStream.class.isAssignableFrom(boundElement);
 	}
 
 	@Override
 	@SuppressWarnings("unchecked")
-	public Closeable adapt(KStream streamListenerResult, KStreamBoundElementFactory.KStreamWrapper boundElement) {
+	public Closeable adapt(KStream streamListenerResult,
+			KStreamBoundElementFactory.KStreamWrapper boundElement) {
 		boundElement.wrap(streamListenerResult);
 		return new NoOpCloseable();
 	}
@@ -51,4 +54,5 @@ class KStreamStreamListenerResultAdapter implements StreamListenerResultAdapter<
 		}
 
 	}
+
 }

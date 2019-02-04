@@ -29,14 +29,13 @@ import org.springframework.kafka.support.ProducerListener;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.util.ReflectionUtils;
 
-import static org.junit.Assert.assertNotNull;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Ilayaperumal Gopinathan
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringBootTest(classes = { KafkaBinderConfiguration.class,
-		KafkaAutoConfiguration.class,
+@SpringBootTest(classes = { KafkaBinderConfiguration.class, KafkaAutoConfiguration.class,
 		KafkaBinderConfigurationTest.class })
 public class KafkaBinderConfigurationTest {
 
@@ -45,14 +44,14 @@ public class KafkaBinderConfigurationTest {
 
 	@Test
 	public void testKafkaBinderProducerListener() {
-		assertNotNull(this.kafkaMessageChannelBinder);
+		assertThat(this.kafkaMessageChannelBinder).isNotNull();
 		Field producerListenerField = ReflectionUtils.findField(
 				KafkaMessageChannelBinder.class, "producerListener",
 				ProducerListener.class);
 		ReflectionUtils.makeAccessible(producerListenerField);
-		ProducerListener producerListener = (ProducerListener) ReflectionUtils.getField(
-				producerListenerField, this.kafkaMessageChannelBinder);
-		assertNotNull(producerListener);
+		ProducerListener producerListener = (ProducerListener) ReflectionUtils
+				.getField(producerListenerField, this.kafkaMessageChannelBinder);
+		assertThat(producerListener).isNotNull();
 	}
 
 }

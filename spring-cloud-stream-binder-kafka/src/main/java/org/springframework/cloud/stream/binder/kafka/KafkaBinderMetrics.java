@@ -59,7 +59,8 @@ import org.springframework.util.ObjectUtils;
  * @author Thomas Cheyney
  * @author Gary Russell
  */
-public class KafkaBinderMetrics implements MeterBinder, ApplicationListener<BindingCreatedEvent> {
+public class KafkaBinderMetrics
+		implements MeterBinder, ApplicationListener<BindingCreatedEvent> {
 
 	private static final int DEFAULT_TIMEOUT = 60;
 
@@ -81,7 +82,8 @@ public class KafkaBinderMetrics implements MeterBinder, ApplicationListener<Bind
 
 	public KafkaBinderMetrics(KafkaMessageChannelBinder binder,
 			KafkaBinderConfigurationProperties binderConfigurationProperties,
-			ConsumerFactory<?, ?> defaultConsumerFactory, @Nullable MeterRegistry meterRegistry) {
+			ConsumerFactory<?, ?> defaultConsumerFactory,
+			@Nullable MeterRegistry meterRegistry) {
 
 		this.binder = binder;
 		this.binderConfigurationProperties = binderConfigurationProperties;
@@ -102,8 +104,8 @@ public class KafkaBinderMetrics implements MeterBinder, ApplicationListener<Bind
 
 	@Override
 	public void bindTo(MeterRegistry registry) {
-		for (Map.Entry<String, KafkaMessageChannelBinder.TopicInformation> topicInfo : this.binder.getTopicsInUse()
-				.entrySet()) {
+		for (Map.Entry<String, KafkaMessageChannelBinder.TopicInformation> topicInfo : this.binder
+				.getTopicsInUse().entrySet()) {
 
 			if (!topicInfo.getValue().isConsumerTopic()) {
 				continue;
@@ -113,8 +115,7 @@ public class KafkaBinderMetrics implements MeterBinder, ApplicationListener<Bind
 			String group = topicInfo.getValue().getConsumerGroup();
 
 			Gauge.builder(METRIC_NAME, this,
-					(o) -> computeUnconsumedMessages(topic, group))
-					.tag("group", group)
+					(o) -> computeUnconsumedMessages(topic, group)).tag("group", group)
 					.tag("topic", topic)
 					.description("Unconsumed messages for a particular group and topic")
 					.register(registry);
@@ -131,16 +132,21 @@ public class KafkaBinderMetrics implements MeterBinder, ApplicationListener<Bind
 						group,
 						(g) -> createConsumerFactory().createConsumer(g, "monitoring"));
 				synchronized (metadataConsumer) {
-					List<PartitionInfo> partitionInfos = metadataConsumer.partitionsFor(topic);
+					List<PartitionInfo> partitionInfos = metadataConsumer
+							.partitionsFor(topic);
 					List<TopicPartition> topicPartitions = new LinkedList<>();
 					for (PartitionInfo partitionInfo : partitionInfos) {
-						topicPartitions.add(new TopicPartition(partitionInfo.topic(), partitionInfo.partition()));
+						topicPartitions.add(new TopicPartition(partitionInfo.topic(),
+								partitionInfo.partition()));
 					}
 
-					Map<TopicPartition, Long> endOffsets = metadataConsumer.endOffsets(topicPartitions);
+					Map<TopicPartition, Long> endOffsets = metadataConsumer
+							.endOffsets(topicPartitions);
 
-					for (Map.Entry<TopicPartition, Long> endOffset : endOffsets.entrySet()) {
-						OffsetAndMetadata current = metadataConsumer.committed(endOffset.getKey());
+					for (Map.Entry<TopicPartition, Long> endOffset : endOffsets
+							.entrySet()) {
+						OffsetAndMetadata current = metadataConsumer
+								.committed(endOffset.getKey());
 						lag += endOffset.getValue();
 						if (current != null) {
 							lag -= current.offset();
@@ -173,17 +179,22 @@ public class KafkaBinderMetrics implements MeterBinder, ApplicationListener<Bind
 			synchronized (this) {
 				if (this.defaultConsumerFactory == null) {
 					Map<String, Object> props = new HashMap<>();
-					props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class);
-					props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class);
-					Map<String, Object> mergedConfig = this.binderConfigurationProperties.mergedConsumerConfiguration();
+					props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG,
+							ByteArrayDeserializer.class);
+					props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,
+							ByteArrayDeserializer.class);
+					Map<String, Object> mergedConfig = this.binderConfigurationProperties
+							.mergedConsumerConfiguration();
 					if (!ObjectUtils.isEmpty(mergedConfig)) {
 						props.putAll(mergedConfig);
 					}
 					if (!props.containsKey(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG)) {
 						props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG,
-								this.binderConfigurationProperties.getKafkaConnectionString());
+								this.binderConfigurationProperties
+										.getKafkaConnectionString());
 					}
-					this.defaultConsumerFactory = new DefaultKafkaConsumerFactory<>(props);
+					this.defaultConsumerFactory = new DefaultKafkaConsumerFactory<>(
+							props);
 				}
 			}
 		}
@@ -194,7 +205,8 @@ public class KafkaBinderMetrics implements MeterBinder, ApplicationListener<Bind
 	@Override
 	public void onApplicationEvent(BindingCreatedEvent event) {
 		if (this.meterRegistry != null) {
-			// meters are idempotent when called with the same arguments so safe to call it multiple times
+			// meters are idempotent when called with the same arguments so safe to call
+			// it multiple times
 			this.bindTo(this.meterRegistry);
 		}
 	}

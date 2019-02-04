@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 the original author or authors.
+ * Copyright 2018-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,20 +32,23 @@ import org.springframework.util.StringUtils;
 /**
  * Resolver for key and value Serde.
  *
- * On the inbound, if native decoding is enabled, then any deserialization on the value is handled by Kafka.
- * First, we look for any key/value Serde set on the binding itself, if that is not available then look at the
- * common Serde set at the global level. If that fails, it falls back to byte[].
- * If native decoding is disabled, then the binder will do the deserialization on value and ignore any Serde set for value
- * and rely on the contentType provided. Keys are always deserialized at the broker.
+ * On the inbound, if native decoding is enabled, then any deserialization on the value is
+ * handled by Kafka. First, we look for any key/value Serde set on the binding itself, if
+ * that is not available then look at the common Serde set at the global level. If that
+ * fails, it falls back to byte[]. If native decoding is disabled, then the binder will do
+ * the deserialization on value and ignore any Serde set for value and rely on the
+ * contentType provided. Keys are always deserialized at the broker.
  *
  *
- * Same rules apply on the outbound. If native encoding is enabled, then value serialization is done at the broker using
- * any binder level Serde for value, if not using common Serde, if not, then byte[].
- * If native encoding is disabled, then the binder will do serialization using a contentType. Keys are always serialized
- * by the broker.
+ * Same rules apply on the outbound. If native encoding is enabled, then value
+ * serialization is done at the broker using any binder level Serde for value, if not
+ * using common Serde, if not, then byte[]. If native encoding is disabled, then the
+ * binder will do serialization using a contentType. Keys are always serialized by the
+ * broker.
  *
  * For state store, use serdes class specified in
- * {@link org.springframework.cloud.stream.binder.kafka.streams.annotations.KafkaStreamsStateStore} to create Serde accordingly.
+ * {@link org.springframework.cloud.stream.binder.kafka.streams.annotations.KafkaStreamsStateStore}
+ * to create Serde accordingly.
  *
  * @author Soby Chacko
  * @author Lei Chen
@@ -57,18 +60,19 @@ class KeyValueSerdeResolver {
 	private final KafkaStreamsBinderConfigurationProperties binderConfigurationProperties;
 
 	KeyValueSerdeResolver(Map<String, Object> streamConfigGlobalProperties,
-							KafkaStreamsBinderConfigurationProperties binderConfigurationProperties) {
+			KafkaStreamsBinderConfigurationProperties binderConfigurationProperties) {
 		this.streamConfigGlobalProperties = streamConfigGlobalProperties;
 		this.binderConfigurationProperties = binderConfigurationProperties;
 	}
 
 	/**
 	 * Provide the {@link Serde} for inbound key.
-	 *
-	 * @param extendedConsumerProperties binding level extended {@link KafkaStreamsConsumerProperties}
+	 * @param extendedConsumerProperties binding level extended
+	 * {@link KafkaStreamsConsumerProperties}
 	 * @return configurd {@link Serde} for the inbound key.
 	 */
-	public Serde<?> getInboundKeySerde(KafkaStreamsConsumerProperties extendedConsumerProperties) {
+	public Serde<?> getInboundKeySerde(
+			KafkaStreamsConsumerProperties extendedConsumerProperties) {
 		String keySerdeString = extendedConsumerProperties.getKeySerde();
 
 		return getKeySerde(keySerdeString);
@@ -76,18 +80,18 @@ class KeyValueSerdeResolver {
 
 	/**
 	 * Provide the {@link Serde} for inbound value.
-	 *
 	 * @param consumerProperties {@link ConsumerProperties} on binding
-	 * @param extendedConsumerProperties binding level extended {@link KafkaStreamsConsumerProperties}
+	 * @param extendedConsumerProperties binding level extended
+	 * {@link KafkaStreamsConsumerProperties}
 	 * @return configurd {@link Serde} for the inbound value.
 	 */
-	public Serde<?> getInboundValueSerde(ConsumerProperties consumerProperties, KafkaStreamsConsumerProperties extendedConsumerProperties) {
+	public Serde<?> getInboundValueSerde(ConsumerProperties consumerProperties,
+			KafkaStreamsConsumerProperties extendedConsumerProperties) {
 		Serde<?> valueSerde;
 
 		String valueSerdeString = extendedConsumerProperties.getValueSerde();
 		try {
-			if (consumerProperties != null &&
-					consumerProperties.isUseNativeDecoding()) {
+			if (consumerProperties != null && consumerProperties.isUseNativeDecoding()) {
 				valueSerde = getValueSerde(valueSerdeString);
 			}
 			else {
@@ -103,7 +107,6 @@ class KeyValueSerdeResolver {
 
 	/**
 	 * Provide the {@link Serde} for outbound key.
-	 *
 	 * @param properties binding level extended {@link KafkaStreamsProducerProperties}
 	 * @return configurd {@link Serde} for the outbound key.
 	 */
@@ -113,16 +116,18 @@ class KeyValueSerdeResolver {
 
 	/**
 	 * Provide the {@link Serde} for outbound value.
-	 *
 	 * @param producerProperties {@link ProducerProperties} on binding
-	 * @param kafkaStreamsProducerProperties binding level extended {@link KafkaStreamsProducerProperties}
+	 * @param kafkaStreamsProducerProperties binding level extended
+	 * {@link KafkaStreamsProducerProperties}
 	 * @return configurd {@link Serde} for the outbound value.
 	 */
-	public Serde<?> getOutboundValueSerde(ProducerProperties producerProperties, KafkaStreamsProducerProperties kafkaStreamsProducerProperties) {
+	public Serde<?> getOutboundValueSerde(ProducerProperties producerProperties,
+			KafkaStreamsProducerProperties kafkaStreamsProducerProperties) {
 		Serde<?> valueSerde;
 		try {
 			if (producerProperties.isUseNativeEncoding()) {
-				valueSerde = getValueSerde(kafkaStreamsProducerProperties.getValueSerde());
+				valueSerde = getValueSerde(
+						kafkaStreamsProducerProperties.getValueSerde());
 			}
 			else {
 				valueSerde = Serdes.ByteArray();
@@ -137,7 +142,6 @@ class KeyValueSerdeResolver {
 
 	/**
 	 * Provide the {@link Serde} for state store.
-	 *
 	 * @param keySerdeString serde class used for key
 	 * @return {@link Serde} for the state store key.
 	 */
@@ -147,7 +151,6 @@ class KeyValueSerdeResolver {
 
 	/**
 	 * Provide the {@link Serde} for state store value.
-	 *
 	 * @param valueSerdeString serde class used for value
 	 * @return {@link Serde} for the state store value.
 	 */
@@ -167,8 +170,12 @@ class KeyValueSerdeResolver {
 				keySerde = Utils.newInstance(keySerdeString, Serde.class);
 			}
 			else {
-				keySerde = this.binderConfigurationProperties.getConfiguration().containsKey("default.key.serde") ?
-						Utils.newInstance(this.binderConfigurationProperties.getConfiguration().get("default.key.serde"), Serde.class) : Serdes.ByteArray();
+				keySerde = this.binderConfigurationProperties.getConfiguration()
+						.containsKey("default.key.serde")
+								? Utils.newInstance(this.binderConfigurationProperties
+										.getConfiguration().get("default.key.serde"),
+										Serde.class)
+								: Serdes.ByteArray();
 			}
 			keySerde.configure(this.streamConfigGlobalProperties, true);
 
@@ -179,15 +186,21 @@ class KeyValueSerdeResolver {
 		return keySerde;
 	}
 
-	private Serde<?> getValueSerde(String valueSerdeString) throws ClassNotFoundException {
+	private Serde<?> getValueSerde(String valueSerdeString)
+			throws ClassNotFoundException {
 		Serde<?> valueSerde;
 		if (StringUtils.hasText(valueSerdeString)) {
 			valueSerde = Utils.newInstance(valueSerdeString, Serde.class);
 		}
 		else {
-			valueSerde = this.binderConfigurationProperties.getConfiguration().containsKey("default.value.serde") ?
-					Utils.newInstance(this.binderConfigurationProperties.getConfiguration().get("default.value.serde"), Serde.class) : Serdes.ByteArray();
+			valueSerde = this.binderConfigurationProperties.getConfiguration()
+					.containsKey("default.value.serde")
+							? Utils.newInstance(this.binderConfigurationProperties
+									.getConfiguration().get("default.value.serde"),
+									Serde.class)
+							: Serdes.ByteArray();
 		}
 		return valueSerde;
 	}
+
 }

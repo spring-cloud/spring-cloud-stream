@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 the original author or authors.
+ * Copyright 2018-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.springframework.cloud.stream.binder.kafka.streams.properties;
 
-
 /**
  * Properties for Kafka Streams state store.
  *
@@ -28,6 +27,7 @@ public class KafkaStreamsStateStoreProperties {
 	 * Enumeration for store type.
 	 */
 	public enum StoreType {
+
 		/**
 		 * Key value store.
 		 */
@@ -51,8 +51,8 @@ public class KafkaStreamsStateStoreProperties {
 		public String toString() {
 			return this.type;
 		}
-	}
 
+	}
 
 	/**
 	 * Name for this state store.
@@ -93,7 +93,6 @@ public class KafkaStreamsStateStoreProperties {
 	 * Whether logging is enabled on this state store.
 	 */
 	private boolean loggingDisabled;
-
 
 	public String getName() {
 		return this.name;
@@ -158,4 +157,5 @@ public class KafkaStreamsStateStoreProperties {
 	public void setLoggingDisabled(boolean loggingDisabled) {
 		this.loggingDisabled = loggingDisabled;
 	}
+
 }

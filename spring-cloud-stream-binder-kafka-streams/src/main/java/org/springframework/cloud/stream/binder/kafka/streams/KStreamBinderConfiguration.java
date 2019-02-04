@@ -39,28 +39,32 @@ import org.springframework.context.annotation.Import;
  * @author Soby Chacko
  */
 @Configuration
-@Import({KafkaAutoConfiguration.class})
+@Import({ KafkaAutoConfiguration.class })
 public class KStreamBinderConfiguration {
 
-
 	@Bean
-	public KafkaTopicProvisioner provisioningProvider(KafkaStreamsBinderConfigurationProperties kafkaStreamsBinderConfigurationProperties,
-													KafkaProperties kafkaProperties) {
-		return new KafkaTopicProvisioner(kafkaStreamsBinderConfigurationProperties, kafkaProperties);
+	public KafkaTopicProvisioner provisioningProvider(
+			KafkaStreamsBinderConfigurationProperties kafkaStreamsBinderConfigurationProperties,
+			KafkaProperties kafkaProperties) {
+		return new KafkaTopicProvisioner(kafkaStreamsBinderConfigurationProperties,
+				kafkaProperties);
 	}
 
 	@Bean
-	public KStreamBinder kStreamBinder(KafkaStreamsBinderConfigurationProperties binderConfigurationProperties,
-									KafkaTopicProvisioner kafkaTopicProvisioner,
-									KafkaStreamsMessageConversionDelegate KafkaStreamsMessageConversionDelegate,
-									KafkaStreamsBindingInformationCatalogue KafkaStreamsBindingInformationCatalogue,
-									KeyValueSerdeResolver keyValueSerdeResolver,
-									KafkaStreamsExtendedBindingProperties kafkaStreamsExtendedBindingProperties,
-									@Qualifier("kafkaStreamsDlqDispatchers") Map<String, KafkaStreamsDlqDispatch> kafkaStreamsDlqDispatchers) {
-		KStreamBinder kStreamBinder = new KStreamBinder(binderConfigurationProperties, kafkaTopicProvisioner,
-				KafkaStreamsMessageConversionDelegate, KafkaStreamsBindingInformationCatalogue,
-				keyValueSerdeResolver, kafkaStreamsDlqDispatchers);
-		kStreamBinder.setKafkaStreamsExtendedBindingProperties(kafkaStreamsExtendedBindingProperties);
+	public KStreamBinder kStreamBinder(
+			KafkaStreamsBinderConfigurationProperties binderConfigurationProperties,
+			KafkaTopicProvisioner kafkaTopicProvisioner,
+			KafkaStreamsMessageConversionDelegate KafkaStreamsMessageConversionDelegate,
+			KafkaStreamsBindingInformationCatalogue KafkaStreamsBindingInformationCatalogue,
+			KeyValueSerdeResolver keyValueSerdeResolver,
+			KafkaStreamsExtendedBindingProperties kafkaStreamsExtendedBindingProperties,
+			@Qualifier("kafkaStreamsDlqDispatchers") Map<String, KafkaStreamsDlqDispatch> kafkaStreamsDlqDispatchers) {
+		KStreamBinder kStreamBinder = new KStreamBinder(binderConfigurationProperties,
+				kafkaTopicProvisioner, KafkaStreamsMessageConversionDelegate,
+				KafkaStreamsBindingInformationCatalogue, keyValueSerdeResolver,
+				kafkaStreamsDlqDispatchers);
+		kStreamBinder.setKafkaStreamsExtendedBindingProperties(
+				kafkaStreamsExtendedBindingProperties);
 		return kStreamBinder;
 	}
 
@@ -69,19 +73,26 @@ public class KStreamBinderConfiguration {
 	public static BeanFactoryPostProcessor outerContextBeanFactoryPostProcessor() {
 		return beanFactory -> {
 
-			// It is safe to call getBean("outerContext") here, because this bean is registered as first
+			// It is safe to call getBean("outerContext") here, because this bean is
+			// registered as first
 			// and as independent from the parent context.
-			ApplicationContext outerContext = (ApplicationContext) beanFactory.getBean("outerContext");
-			beanFactory.registerSingleton(KafkaStreamsBinderConfigurationProperties.class.getSimpleName(), outerContext
-					.getBean(KafkaStreamsBinderConfigurationProperties.class));
-			beanFactory.registerSingleton(KafkaStreamsMessageConversionDelegate.class.getSimpleName(), outerContext
-					.getBean(KafkaStreamsMessageConversionDelegate.class));
-			beanFactory.registerSingleton(KafkaStreamsBindingInformationCatalogue.class.getSimpleName(), outerContext
-					.getBean(KafkaStreamsBindingInformationCatalogue.class));
-			beanFactory.registerSingleton(KeyValueSerdeResolver.class.getSimpleName(), outerContext
-					.getBean(KeyValueSerdeResolver.class));
-			beanFactory.registerSingleton(KafkaStreamsExtendedBindingProperties.class.getSimpleName(), outerContext
-					.getBean(KafkaStreamsExtendedBindingProperties.class));
+			ApplicationContext outerContext = (ApplicationContext) beanFactory
+					.getBean("outerContext");
+			beanFactory.registerSingleton(
+					KafkaStreamsBinderConfigurationProperties.class.getSimpleName(),
+					outerContext
+							.getBean(KafkaStreamsBinderConfigurationProperties.class));
+			beanFactory.registerSingleton(
+					KafkaStreamsMessageConversionDelegate.class.getSimpleName(),
+					outerContext.getBean(KafkaStreamsMessageConversionDelegate.class));
+			beanFactory.registerSingleton(
+					KafkaStreamsBindingInformationCatalogue.class.getSimpleName(),
+					outerContext.getBean(KafkaStreamsBindingInformationCatalogue.class));
+			beanFactory.registerSingleton(KeyValueSerdeResolver.class.getSimpleName(),
+					outerContext.getBean(KeyValueSerdeResolver.class));
+			beanFactory.registerSingleton(
+					KafkaStreamsExtendedBindingProperties.class.getSimpleName(),
+					outerContext.getBean(KafkaStreamsExtendedBindingProperties.class));
 		};
 	}
 

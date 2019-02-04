@@ -76,29 +76,32 @@ public class KafkaBinderConfiguration {
 	@Autowired
 	private KafkaProperties kafkaProperties;
 
-
 	@Bean
-	KafkaBinderConfigurationProperties configurationProperties(KafkaProperties kafkaProperties) {
+	KafkaBinderConfigurationProperties configurationProperties(
+			KafkaProperties kafkaProperties) {
 		return new KafkaBinderConfigurationProperties(kafkaProperties);
 	}
 
 	@Bean
-	KafkaTopicProvisioner provisioningProvider(KafkaBinderConfigurationProperties configurationProperties) {
+	KafkaTopicProvisioner provisioningProvider(
+			KafkaBinderConfigurationProperties configurationProperties) {
 		return new KafkaTopicProvisioner(configurationProperties, this.kafkaProperties);
 	}
 
 	@SuppressWarnings("unchecked")
 	@Bean
-	KafkaMessageChannelBinder kafkaMessageChannelBinder(KafkaBinderConfigurationProperties configurationProperties,
+	KafkaMessageChannelBinder kafkaMessageChannelBinder(
+			KafkaBinderConfigurationProperties configurationProperties,
 			KafkaTopicProvisioner provisioningProvider,
 			@Nullable ListenerContainerCustomizer<AbstractMessageListenerContainer<?, ?>> listenerContainerCustomizer,
 			ObjectProvider<KafkaBindingRebalanceListener> rebalanceListener) {
 
 		KafkaMessageChannelBinder kafkaMessageChannelBinder = new KafkaMessageChannelBinder(
-				configurationProperties, provisioningProvider, listenerContainerCustomizer,
-				rebalanceListener.getIfUnique());
+				configurationProperties, provisioningProvider,
+				listenerContainerCustomizer, rebalanceListener.getIfUnique());
 		kafkaMessageChannelBinder.setProducerListener(this.producerListener);
-		kafkaMessageChannelBinder.setExtendedBindingProperties(this.kafkaExtendedBindingProperties);
+		kafkaMessageChannelBinder
+				.setExtendedBindingProperties(this.kafkaExtendedBindingProperties);
 		return kafkaMessageChannelBinder;
 	}
 
@@ -111,13 +114,16 @@ public class KafkaBinderConfiguration {
 
 	@Bean
 	@ConditionalOnMissingBean(KafkaJaasLoginModuleInitializer.class)
-	public KafkaJaasLoginModuleInitializer jaasInitializer(KafkaBinderConfigurationProperties configurationProperties) throws IOException {
+	public KafkaJaasLoginModuleInitializer jaasInitializer(
+			KafkaBinderConfigurationProperties configurationProperties)
+			throws IOException {
 		KafkaJaasLoginModuleInitializer kafkaJaasLoginModuleInitializer = new KafkaJaasLoginModuleInitializer();
 		JaasLoginModuleConfiguration jaas = configurationProperties.getJaas();
 		if (jaas != null) {
 			kafkaJaasLoginModuleInitializer.setLoginModule(jaas.getLoginModule());
 
-			KafkaJaasLoginModuleInitializer.ControlFlag controlFlag = jaas.getControlFlag();
+			KafkaJaasLoginModuleInitializer.ControlFlag controlFlag = jaas
+					.getControlFlag();
 
 			if (controlFlag != null) {
 				kafkaJaasLoginModuleInitializer.setControlFlag(controlFlag);
@@ -129,8 +135,8 @@ public class KafkaBinderConfiguration {
 
 	/**
 	 * A conditional configuration for the {@link KafkaBinderMetrics} bean when the
-	 * {@link MeterRegistry} class is in classpath, as well as a {@link MeterRegistry} bean is
-	 * present in the application context.
+	 * {@link MeterRegistry} class is in classpath, as well as a {@link MeterRegistry}
+	 * bean is present in the application context.
 	 */
 	@Configuration
 	@ConditionalOnClass(MeterRegistry.class)
@@ -139,11 +145,13 @@ public class KafkaBinderConfiguration {
 
 		@Bean
 		@ConditionalOnMissingBean(KafkaBinderMetrics.class)
-		public MeterBinder kafkaBinderMetrics(KafkaMessageChannelBinder kafkaMessageChannelBinder,
+		public MeterBinder kafkaBinderMetrics(
+				KafkaMessageChannelBinder kafkaMessageChannelBinder,
 				KafkaBinderConfigurationProperties configurationProperties,
 				MeterRegistry meterRegistry) {
 
-			return new KafkaBinderMetrics(kafkaMessageChannelBinder, configurationProperties, null, meterRegistry);
+			return new KafkaBinderMetrics(kafkaMessageChannelBinder,
+					configurationProperties, null, meterRegistry);
 		}
 
 	}
@@ -157,6 +165,7 @@ public class KafkaBinderConfiguration {
 		private JaasLoginModuleConfiguration kafka;
 
 		private JaasLoginModuleConfiguration zookeeper;
+
 	}
 
 }

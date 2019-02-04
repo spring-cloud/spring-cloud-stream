@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 the original author or authors.
+ * Copyright 2018-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,61 +53,69 @@ public class AutoCreateTopicDisabledTests {
 			.brokerProperty(KafkaConfig.AutoCreateTopicsEnableProp(), "false");
 
 	@Test
-	public void testAutoCreateTopicDisabledFailsOnConsumerIfTopicNonExistentOnBroker() throws Throwable {
+	public void testAutoCreateTopicDisabledFailsOnConsumerIfTopicNonExistentOnBroker()
+			throws Throwable {
 
 		KafkaProperties kafkaProperties = new TestKafkaProperties();
-		kafkaProperties.setBootstrapServers(Collections.singletonList(embeddedKafka.getEmbeddedKafka().getBrokersAsString()));
-		KafkaBinderConfigurationProperties configurationProperties =
-				new KafkaBinderConfigurationProperties(kafkaProperties);
-		//disable auto create topic on the binder.
+		kafkaProperties.setBootstrapServers(Collections
+				.singletonList(embeddedKafka.getEmbeddedKafka().getBrokersAsString()));
+		KafkaBinderConfigurationProperties configurationProperties = new KafkaBinderConfigurationProperties(
+				kafkaProperties);
+		// disable auto create topic on the binder.
 		configurationProperties.setAutoCreateTopics(false);
 
-		KafkaTopicProvisioner provisioningProvider = new KafkaTopicProvisioner(configurationProperties, kafkaProperties);
+		KafkaTopicProvisioner provisioningProvider = new KafkaTopicProvisioner(
+				configurationProperties, kafkaProperties);
 		provisioningProvider.setMetadataRetryOperations(new RetryTemplate());
 
-		KafkaMessageChannelBinder binder = new KafkaMessageChannelBinder(configurationProperties, provisioningProvider);
+		KafkaMessageChannelBinder binder = new KafkaMessageChannelBinder(
+				configurationProperties, provisioningProvider);
 
 		final String testTopicName = "nonExistent" + System.currentTimeMillis();
 
-		ExtendedConsumerProperties<KafkaConsumerProperties> properties = new ExtendedConsumerProperties<>(new KafkaConsumerProperties());
+		ExtendedConsumerProperties<KafkaConsumerProperties> properties = new ExtendedConsumerProperties<>(
+				new KafkaConsumerProperties());
 
 		expectedException.expect(BinderException.class);
-		expectedException
-				.expectCause(isA(UnknownTopicOrPartitionException.class));
+		expectedException.expectCause(isA(UnknownTopicOrPartitionException.class));
 		binder.createConsumerEndpoint(() -> testTopicName, "group", properties);
 	}
 
-
 	@Test
-	public void testAutoCreateTopicDisabledFailsOnProducerIfTopicNonExistentOnBroker() throws Throwable {
+	public void testAutoCreateTopicDisabledFailsOnProducerIfTopicNonExistentOnBroker()
+			throws Throwable {
 
 		KafkaProperties kafkaProperties = new TestKafkaProperties();
-		kafkaProperties.setBootstrapServers(Collections.singletonList(embeddedKafka.getEmbeddedKafka().getBrokersAsString()));
+		kafkaProperties.setBootstrapServers(Collections
+				.singletonList(embeddedKafka.getEmbeddedKafka().getBrokersAsString()));
 
-		KafkaBinderConfigurationProperties configurationProperties =
-				new KafkaBinderConfigurationProperties(kafkaProperties);
-		//disable auto create topic on the binder.
+		KafkaBinderConfigurationProperties configurationProperties = new KafkaBinderConfigurationProperties(
+				kafkaProperties);
+		// disable auto create topic on the binder.
 		configurationProperties.setAutoCreateTopics(false);
-		//reduce the wait time on the producer blocking operations.
+		// reduce the wait time on the producer blocking operations.
 		configurationProperties.getConfiguration().put("max.block.ms", "3000");
 
-		KafkaTopicProvisioner provisioningProvider = new KafkaTopicProvisioner(configurationProperties, kafkaProperties);
+		KafkaTopicProvisioner provisioningProvider = new KafkaTopicProvisioner(
+				configurationProperties, kafkaProperties);
 		SimpleRetryPolicy simpleRetryPolicy = new SimpleRetryPolicy(1);
 		final RetryTemplate metadataRetryOperations = new RetryTemplate();
 		metadataRetryOperations.setRetryPolicy(simpleRetryPolicy);
 		provisioningProvider.setMetadataRetryOperations(metadataRetryOperations);
 
-		KafkaMessageChannelBinder binder = new KafkaMessageChannelBinder(configurationProperties, provisioningProvider);
+		KafkaMessageChannelBinder binder = new KafkaMessageChannelBinder(
+				configurationProperties, provisioningProvider);
 
 		final String testTopicName = "nonExistent" + System.currentTimeMillis();
 
-		ExtendedProducerProperties<KafkaProducerProperties> properties = new ExtendedProducerProperties<>(new KafkaProducerProperties());
+		ExtendedProducerProperties<KafkaProducerProperties> properties = new ExtendedProducerProperties<>(
+				new KafkaProducerProperties());
 
 		expectedException.expect(BinderException.class);
-		expectedException
-				.expectCause(isA(UnknownTopicOrPartitionException.class));
+		expectedException.expectCause(isA(UnknownTopicOrPartitionException.class));
 
 		binder.bindProducer(testTopicName, new DirectChannel(), properties);
 
 	}
+
 }

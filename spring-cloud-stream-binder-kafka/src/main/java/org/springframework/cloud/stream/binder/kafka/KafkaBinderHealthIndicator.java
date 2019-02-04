@@ -56,14 +56,14 @@ public class KafkaBinderHealthIndicator implements HealthIndicator {
 
 	private Consumer<?, ?> metadataConsumer;
 
-	public KafkaBinderHealthIndicator(KafkaMessageChannelBinder binder, ConsumerFactory<?, ?> consumerFactory) {
+	public KafkaBinderHealthIndicator(KafkaMessageChannelBinder binder,
+			ConsumerFactory<?, ?> consumerFactory) {
 		this.binder = binder;
 		this.consumerFactory = consumerFactory;
 	}
 
 	/**
 	 * Set the timeout in seconds to retrieve health information.
-	 *
 	 * @param timeout the timeout - default 60.
 	 */
 	public void setTimeout(int timeout) {
@@ -80,16 +80,16 @@ public class KafkaBinderHealthIndicator implements HealthIndicator {
 		catch (InterruptedException ex) {
 			Thread.currentThread().interrupt();
 			return Health.down()
-					.withDetail("Interrupted while waiting for partition information in", this.timeout + " seconds")
+					.withDetail("Interrupted while waiting for partition information in",
+							this.timeout + " seconds")
 					.build();
 		}
 		catch (ExecutionException ex) {
 			return Health.down(ex).build();
 		}
 		catch (TimeoutException ex) {
-			return Health.down()
-					.withDetail("Failed to retrieve partition information in", this.timeout + " seconds")
-					.build();
+			return Health.down().withDetail("Failed to retrieve partition information in",
+					this.timeout + " seconds").build();
 		}
 		finally {
 			exec.shutdownNow();
@@ -107,21 +107,23 @@ public class KafkaBinderHealthIndicator implements HealthIndicator {
 			}
 			synchronized (this.metadataConsumer) {
 				Set<String> downMessages = new HashSet<>();
-				final Map<String, KafkaMessageChannelBinder.TopicInformation> topicsInUse =
-						KafkaBinderHealthIndicator.this.binder.getTopicsInUse();
+				final Map<String, KafkaMessageChannelBinder.TopicInformation> topicsInUse = KafkaBinderHealthIndicator.this.binder
+						.getTopicsInUse();
 				if (topicsInUse.isEmpty()) {
-					return Health.down()
-							.withDetail("No topic information available", "Kafka broker is not reachable")
-							.build();
+					return Health.down().withDetail("No topic information available",
+							"Kafka broker is not reachable").build();
 				}
 				else {
 					for (String topic : topicsInUse.keySet()) {
-						KafkaMessageChannelBinder.TopicInformation topicInformation = topicsInUse.get(topic);
+						KafkaMessageChannelBinder.TopicInformation topicInformation = topicsInUse
+								.get(topic);
 						if (!topicInformation.isTopicPattern()) {
-							List<PartitionInfo> partitionInfos = this.metadataConsumer.partitionsFor(topic);
+							List<PartitionInfo> partitionInfos = this.metadataConsumer
+									.partitionsFor(topic);
 							for (PartitionInfo partitionInfo : partitionInfos) {
 								if (topicInformation.getPartitionInfos()
-										.contains(partitionInfo) && partitionInfo.leader().id() == -1) {
+										.contains(partitionInfo)
+										&& partitionInfo.leader().id() == -1) {
 									downMessages.add(partitionInfo.toString());
 								}
 							}
@@ -133,8 +135,9 @@ public class KafkaBinderHealthIndicator implements HealthIndicator {
 				}
 				else {
 					return Health.down()
-						.withDetail("Following partitions in use have no leaders: ", downMessages.toString())
-						.build();
+							.withDetail("Following partitions in use have no leaders: ",
+									downMessages.toString())
+							.build();
 				}
 			}
 		}

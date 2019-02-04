@@ -40,6 +40,7 @@ public class KafkaConsumerProperties {
 	 * Enumeration for starting consumer offset.
 	 */
 	public enum StartOffset {
+
 		/**
 		 * Starting from earliest offset.
 		 */
@@ -58,12 +59,14 @@ public class KafkaConsumerProperties {
 		public long getReferencePoint() {
 			return this.referencePoint;
 		}
+
 	}
 
 	/**
 	 * Standard headers for the message.
 	 */
 	public enum StandardHeaders {
+
 		/**
 		 * No headers.
 		 */
@@ -80,6 +83,7 @@ public class KafkaConsumerProperties {
 		 * Indicating both ID and timestamp headers.
 		 */
 		both
+
 	}
 
 	private boolean ackEachRecord;
@@ -223,6 +227,7 @@ public class KafkaConsumerProperties {
 	public void setDlqProducerProperties(KafkaProducerProperties dlqProducerProperties) {
 		this.dlqProducerProperties = dlqProducerProperties;
 	}
+
 	public StandardHeaders getStandardHeaders() {
 		return this.standardHeaders;
 	}

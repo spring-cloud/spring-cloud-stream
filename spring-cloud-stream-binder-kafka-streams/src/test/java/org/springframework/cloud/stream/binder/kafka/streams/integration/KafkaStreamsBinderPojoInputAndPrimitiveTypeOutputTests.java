@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2017-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,18 +57,23 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class KafkaStreamsBinderPojoInputAndPrimitiveTypeOutputTests {
 
 	@ClassRule
-	public static EmbeddedKafkaRule embeddedKafkaRule = new EmbeddedKafkaRule(1, true, "counts-id");
+	public static EmbeddedKafkaRule embeddedKafkaRule = new EmbeddedKafkaRule(1, true,
+			"counts-id");
 
-	private static EmbeddedKafkaBroker embeddedKafka = embeddedKafkaRule.getEmbeddedKafka();
+	private static EmbeddedKafkaBroker embeddedKafka = embeddedKafkaRule
+			.getEmbeddedKafka();
 
 	private static Consumer<Integer, String> consumer;
 
 	@BeforeClass
 	public static void setUp() throws Exception {
-		Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("group-id", "false", embeddedKafka);
-		//consumerProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, Deserializer.class.getName());
+		Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("group-id",
+				"false", embeddedKafka);
+		// consumerProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,
+		// Deserializer.class.getName());
 		consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
-		DefaultKafkaConsumerFactory<Integer, String> cf = new DefaultKafkaConsumerFactory<>(consumerProps);
+		DefaultKafkaConsumerFactory<Integer, String> cf = new DefaultKafkaConsumerFactory<>(
+				consumerProps);
 		consumer = cf.createConsumer();
 		embeddedKafka.consumeFromAnEmbeddedTopic(consumer, "counts-id");
 	}
@@ -87,26 +92,36 @@ public class KafkaStreamsBinderPojoInputAndPrimitiveTypeOutputTests {
 				"--spring.cloud.stream.bindings.input.destination=foos",
 				"--spring.cloud.stream.bindings.output.destination=counts-id",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.commit.interval.ms=1000",
-				"--spring.cloud.stream.kafka.streams.binder.configuration.default.key.serde=org.apache.kafka.common.serialization.Serdes$StringSerde",
-				"--spring.cloud.stream.kafka.streams.binder.configuration.default.value.serde=org.apache.kafka.common.serialization.Serdes$StringSerde",
-				"--spring.cloud.stream.kafka.streams.bindings.output.producer.keySerde=org.apache.kafka.common.serialization.Serdes$IntegerSerde",
-				"--spring.cloud.stream.kafka.streams.bindings.input.consumer.applicationId=KafkaStreamsBinderPojoInputAndPrimitiveTypeOutputTests-xyz",
-				"--spring.cloud.stream.kafka.streams.binder.brokers=" + embeddedKafka.getBrokersAsString(),
-				"--spring.cloud.stream.kafka.streams.binder.zkNodes=" + embeddedKafka.getZookeeperConnectionString());
+				"--spring.cloud.stream.kafka.streams.binder.configuration.default.key.serde="
+						+ "org.apache.kafka.common.serialization.Serdes$StringSerde",
+				"--spring.cloud.stream.kafka.streams.binder.configuration.default.value.serde="
+						+ "org.apache.kafka.common.serialization.Serdes$StringSerde",
+				"--spring.cloud.stream.kafka.streams.bindings.output.producer.keySerde="
+						+ "org.apache.kafka.common.serialization.Serdes$IntegerSerde",
+				"--spring.cloud.stream.kafka.streams.bindings.input.consumer.applicationId="
+						+ "KafkaStreamsBinderPojoInputAndPrimitiveTypeOutputTests-xyz",
+				"--spring.cloud.stream.kafka.streams.binder.brokers="
+						+ embeddedKafka.getBrokersAsString(),
+				"--spring.cloud.stream.kafka.streams.binder.zkNodes="
+						+ embeddedKafka.getZookeeperConnectionString());
 		try {
 			receiveAndValidateFoo(context);
-		} finally {
+		}
+		finally {
 			context.close();
 		}
 	}
 
-	private void receiveAndValidateFoo(ConfigurableApplicationContext context) throws Exception {
+	private void receiveAndValidateFoo(ConfigurableApplicationContext context)
+			throws Exception {
 		Map<String, Object> senderProps = KafkaTestUtils.producerProps(embeddedKafka);
-		DefaultKafkaProducerFactory<Integer, String> pf = new DefaultKafkaProducerFactory<>(senderProps);
+		DefaultKafkaProducerFactory<Integer, String> pf = new DefaultKafkaProducerFactory<>(
+				senderProps);
 		KafkaTemplate<Integer, String> template = new KafkaTemplate<>(pf, true);
 		template.setDefaultTopic("foos");
 		template.sendDefault("{\"id\":\"123\"}");
-		ConsumerRecord<Integer, String> cr = KafkaTestUtils.getSingleRecord(consumer, "counts-id");
+		ConsumerRecord<Integer, String> cr = KafkaTestUtils.getSingleRecord(consumer,
+				"counts-id");
 
 		assertThat(cr.key()).isEqualTo(123);
 		ObjectMapper om = new ObjectMapper();
@@ -121,15 +136,15 @@ public class KafkaStreamsBinderPojoInputAndPrimitiveTypeOutputTests {
 		@StreamListener("input")
 		@SendTo("output")
 		public KStream<Integer, Long> process(KStream<Object, Product> input) {
-			return input
-					.filter((key, product) -> product.getId() == 123)
+			return input.filter((key, product) -> product.getId() == 123)
 					.map((key, value) -> new KeyValue<>(value, value))
-					.groupByKey(Serialized.with(new JsonSerde<>(Product.class), new JsonSerde<>(Product.class)))
+					.groupByKey(Serialized.with(new JsonSerde<>(Product.class),
+							new JsonSerde<>(Product.class)))
 					.windowedBy(TimeWindows.of(5000))
-					.count(Materialized.as("id-count-store-x"))
-					.toStream()
+					.count(Materialized.as("id-count-store-x")).toStream()
 					.map((key, value) -> new KeyValue<>(key.key().id, value));
 		}
+
 	}
 
 	static class Product {
@@ -143,5 +158,7 @@ public class KafkaStreamsBinderPojoInputAndPrimitiveTypeOutputTests {
 		public void setId(Integer id) {
 			this.id = id;
 		}
+
 	}
+
 }

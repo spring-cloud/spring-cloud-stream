@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 the original author or authors.
+ * Copyright 2018-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,12 +52,13 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Artem Bilan
  * @author Oleg Zhurakousky
  * @author Jon Schneider
- *
  * @since 2.0
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE,
-		properties = "spring.cloud.stream.bindings.input.group=" + KafkaBinderActuatorTests.TEST_CONSUMER_GROUP)
+// @checkstyle:off
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE, properties = "spring.cloud.stream.bindings.input.group="
+		+ KafkaBinderActuatorTests.TEST_CONSUMER_GROUP)
+// @checkstyle:on
 public class KafkaBinderActuatorTests {
 
 	static final String TEST_CONSUMER_GROUP = "testGroup-actuatorTests";
@@ -69,7 +70,8 @@ public class KafkaBinderActuatorTests {
 
 	@BeforeClass
 	public static void setup() {
-		System.setProperty(KAFKA_BROKERS_PROPERTY, kafkaEmbedded.getEmbeddedKafka().getBrokersAsString());
+		System.setProperty(KAFKA_BROKERS_PROPERTY,
+				kafkaEmbedded.getEmbeddedKafka().getBrokersAsString());
 	}
 
 	@AfterClass
@@ -89,26 +91,30 @@ public class KafkaBinderActuatorTests {
 		this.kafkaTemplate.flush();
 
 		assertThat(this.meterRegistry.get("spring.cloud.stream.binder.kafka.offset")
-				.tag("group", TEST_CONSUMER_GROUP)
-				.tag("topic", Sink.INPUT)
-				.gauge().value()).isGreaterThan(0);
+				.tag("group", TEST_CONSUMER_GROUP).tag("topic", Sink.INPUT).gauge()
+				.value()).isGreaterThan(0);
 	}
 
 	@Test
 	public void testKafkaBinderMetricsWhenNoMicrometer() {
-		new ApplicationContextRunner()
-				.withUserConfiguration(KafkaMetricsTestConfig.class)
+		new ApplicationContextRunner().withUserConfiguration(KafkaMetricsTestConfig.class)
 				.withClassLoader(new FilteredClassLoader("io.micrometer.core"))
 				.run(context -> {
-					assertThat(context.getBeanNamesForType(MeterRegistry.class)).isEmpty();
+					assertThat(context.getBeanNamesForType(MeterRegistry.class))
+							.isEmpty();
 					assertThat(context.getBeanNamesForType(MeterBinder.class)).isEmpty();
 
-					DirectFieldAccessor channelBindingServiceAccessor = new DirectFieldAccessor(context.getBean(BindingService.class));
+					DirectFieldAccessor channelBindingServiceAccessor = new DirectFieldAccessor(
+							context.getBean(BindingService.class));
+					// @checkstyle:off
 					@SuppressWarnings("unchecked")
 					Map<String, List<Binding<MessageChannel>>> consumerBindings = (Map<String, List<Binding<MessageChannel>>>) channelBindingServiceAccessor
 							.getPropertyValue("consumerBindings");
-					assertThat(new DirectFieldAccessor(consumerBindings.get("input").get(0)).getPropertyValue("lifecycle.messageListenerContainer.beanName"))
-						.isEqualTo("setByCustomizer:input");
+					// @checkstyle:on
+					assertThat(new DirectFieldAccessor(
+							consumerBindings.get("input").get(0)).getPropertyValue(
+									"lifecycle.messageListenerContainer.beanName"))
+											.isEqualTo("setByCustomizer:input");
 				});
 	}
 

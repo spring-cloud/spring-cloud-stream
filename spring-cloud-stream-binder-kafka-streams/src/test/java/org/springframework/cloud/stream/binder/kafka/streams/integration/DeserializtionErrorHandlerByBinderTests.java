@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 the original author or authors.
+ * Copyright 2018-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,28 +63,35 @@ import static org.mockito.Mockito.verify;
 public abstract class DeserializtionErrorHandlerByBinderTests {
 
 	@ClassRule
-	public static EmbeddedKafkaRule embeddedKafkaRule = new EmbeddedKafkaRule(1, true, "counts-id", "error.foos.foobar-group",
-			"error.foos1.fooz-group", "error.foos2.fooz-group");
+	public static EmbeddedKafkaRule embeddedKafkaRule = new EmbeddedKafkaRule(1, true,
+			"counts-id", "error.foos.foobar-group", "error.foos1.fooz-group",
+			"error.foos2.fooz-group");
 
-	private static EmbeddedKafkaBroker embeddedKafka = embeddedKafkaRule.getEmbeddedKafka();
+	private static EmbeddedKafkaBroker embeddedKafka = embeddedKafkaRule
+			.getEmbeddedKafka();
 
 	@SpyBean
-	org.springframework.cloud.stream.binder.kafka.streams.KafkaStreamsMessageConversionDelegate KafkaStreamsMessageConversionDelegate;
+	org.springframework.cloud.stream.binder.kafka.streams.KafkaStreamsMessageConversionDelegate conversionDelegate;
 
 	private static Consumer<Integer, String> consumer;
 
 	@BeforeClass
 	public static void setUp() throws Exception {
-		System.setProperty("spring.cloud.stream.kafka.streams.binder.brokers", embeddedKafka.getBrokersAsString());
-		System.setProperty("spring.cloud.stream.kafka.streams.binder.zkNodes", embeddedKafka.getZookeeperConnectionString());
+		System.setProperty("spring.cloud.stream.kafka.streams.binder.brokers",
+				embeddedKafka.getBrokersAsString());
+		System.setProperty("spring.cloud.stream.kafka.streams.binder.zkNodes",
+				embeddedKafka.getZookeeperConnectionString());
 
-		System.setProperty("server.port","0");
-		System.setProperty("spring.jmx.enabled","false");
+		System.setProperty("server.port", "0");
+		System.setProperty("spring.jmx.enabled", "false");
 
-		Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("foob", "false", embeddedKafka);
-		//consumerProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, Deserializer.class.getName());
+		Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("foob", "false",
+				embeddedKafka);
+		// consumerProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,
+		// Deserializer.class.getName());
 		consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
-		DefaultKafkaConsumerFactory<Integer, String> cf = new DefaultKafkaConsumerFactory<>(consumerProps);
+		DefaultKafkaConsumerFactory<Integer, String> cf = new DefaultKafkaConsumerFactory<>(
+				consumerProps);
 		consumer = cf.createConsumer();
 		embeddedKafka.consumeFromAnEmbeddedTopic(consumer, "counts-id");
 	}
@@ -94,64 +101,77 @@ public abstract class DeserializtionErrorHandlerByBinderTests {
 		consumer.close();
 	}
 
-	@SpringBootTest(properties = {
-			"spring.cloud.stream.bindings.input.destination=foos",
+	@SpringBootTest(properties = { "spring.cloud.stream.bindings.input.destination=foos",
 			"spring.cloud.stream.bindings.output.destination=counts-id",
 			"spring.cloud.stream.kafka.streams.binder.configuration.commit.interval.ms=1000",
-			"spring.cloud.stream.kafka.streams.binder.configuration.default.key.serde=org.apache.kafka.common.serialization.Serdes$StringSerde",
-			"spring.cloud.stream.kafka.streams.binder.configuration.default.value.serde=org.apache.kafka.common.serialization.Serdes$StringSerde",
+			"spring.cloud.stream.kafka.streams.binder.configuration.default.key.serde"
+					+ "=org.apache.kafka.common.serialization.Serdes$StringSerde",
+			"spring.cloud.stream.kafka.streams.binder.configuration.default.value.serde"
+					+ "=org.apache.kafka.common.serialization.Serdes$StringSerde",
 			"spring.cloud.stream.bindings.output.producer.headerMode=raw",
-			"spring.cloud.stream.kafka.streams.bindings.output.producer.keySerde=org.apache.kafka.common.serialization.Serdes$IntegerSerde",
+			"spring.cloud.stream.kafka.streams.bindings.output.producer.keySerde"
+					+ "=org.apache.kafka.common.serialization.Serdes$IntegerSerde",
 			"spring.cloud.stream.bindings.input.consumer.headerMode=raw",
 			"spring.cloud.stream.kafka.streams.binder.serdeError=sendToDlq",
-			"spring.cloud.stream.kafka.streams.bindings.input.consumer.application-id=deserializationByBinderAndDlqTests",
-			"spring.cloud.stream.bindings.input.group=foobar-group"},
-			webEnvironment= SpringBootTest.WebEnvironment.NONE
-	)
-	public static class DeserializationByBinderAndDlqTests extends DeserializtionErrorHandlerByBinderTests {
+			"spring.cloud.stream.kafka.streams.bindings.input.consumer.application-id"
+					+ "=deserializationByBinderAndDlqTests",
+			"spring.cloud.stream.bindings.input.group=foobar-group" }, webEnvironment = SpringBootTest.WebEnvironment.NONE)
+	public static class DeserializationByBinderAndDlqTests
+			extends DeserializtionErrorHandlerByBinderTests {
 
 		@Test
 		@SuppressWarnings("unchecked")
 		public void test() throws Exception {
 			Map<String, Object> senderProps = KafkaTestUtils.producerProps(embeddedKafka);
-			DefaultKafkaProducerFactory<Integer, String> pf = new DefaultKafkaProducerFactory<>(senderProps);
+			DefaultKafkaProducerFactory<Integer, String> pf = new DefaultKafkaProducerFactory<>(
+					senderProps);
 			KafkaTemplate<Integer, String> template = new KafkaTemplate<>(pf, true);
 			template.setDefaultTopic("foos");
 			template.sendDefault("hello");
 
-			Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("foobar", "false", embeddedKafka);
+			Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("foobar",
+					"false", embeddedKafka);
 			consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
-			DefaultKafkaConsumerFactory<String, String> cf = new DefaultKafkaConsumerFactory<>(consumerProps);
+			DefaultKafkaConsumerFactory<String, String> cf = new DefaultKafkaConsumerFactory<>(
+					consumerProps);
 			Consumer<String, String> consumer1 = cf.createConsumer();
-			embeddedKafka.consumeFromAnEmbeddedTopic(consumer1, "error.foos.foobar-group");
+			embeddedKafka.consumeFromAnEmbeddedTopic(consumer1,
+					"error.foos.foobar-group");
 
-			ConsumerRecord<String, String> cr = KafkaTestUtils.getSingleRecord(consumer1, "error.foos.foobar-group");
+			ConsumerRecord<String, String> cr = KafkaTestUtils.getSingleRecord(consumer1,
+					"error.foos.foobar-group");
 			assertThat(cr.value().equals("hello")).isTrue();
 
-			//Ensuring that the deserialization was indeed done by the binder
-			verify(KafkaStreamsMessageConversionDelegate).deserializeOnInbound(any(Class.class), any(KStream.class));
+			// Ensuring that the deserialization was indeed done by the binder
+			verify(conversionDelegate).deserializeOnInbound(any(Class.class),
+					any(KStream.class));
 		}
+
 	}
 
 	@SpringBootTest(properties = {
 			"spring.cloud.stream.bindings.input.destination=foos1,foos2",
 			"spring.cloud.stream.bindings.output.destination=counts-id",
 			"spring.cloud.stream.kafka.streams.binder.configuration.commit.interval.ms=1000",
-			"spring.cloud.stream.kafka.streams.binder.configuration.default.key.serde=org.apache.kafka.common.serialization.Serdes$StringSerde",
-			"spring.cloud.stream.kafka.streams.binder.configuration.default.value.serde=org.apache.kafka.common.serialization.Serdes$StringSerde",
-			"spring.cloud.stream.kafka.streams.bindings.output.producer.keySerde=org.apache.kafka.common.serialization.Serdes$IntegerSerde",
+			"spring.cloud.stream.kafka.streams.binder.configuration.default.key.serde"
+					+ "=org.apache.kafka.common.serialization.Serdes$StringSerde",
+			"spring.cloud.stream.kafka.streams.binder.configuration.default.value.serde"
+					+ "=org.apache.kafka.common.serialization.Serdes$StringSerde",
+			"spring.cloud.stream.kafka.streams.bindings.output.producer.keySerde"
+					+ "=org.apache.kafka.common.serialization.Serdes$IntegerSerde",
 			"spring.cloud.stream.kafka.streams.binder.serdeError=sendToDlq",
-			"spring.cloud.stream.kafka.streams.bindings.input.consumer.application-id=deserializationByBinderAndDlqTestsWithMultipleInputs",
-			"spring.cloud.stream.bindings.input.group=fooz-group"},
-			webEnvironment= SpringBootTest.WebEnvironment.NONE
-	)
-	public static class DeserializationByBinderAndDlqTestsWithMultipleInputs extends DeserializtionErrorHandlerByBinderTests {
+			"spring.cloud.stream.kafka.streams.bindings.input.consumer.application-id"
+					+ "=deserializationByBinderAndDlqTestsWithMultipleInputs",
+			"spring.cloud.stream.bindings.input.group=fooz-group" }, webEnvironment = SpringBootTest.WebEnvironment.NONE)
+	public static class DeserializationByBinderAndDlqTestsWithMultipleInputs
+			extends DeserializtionErrorHandlerByBinderTests {
 
 		@Test
 		@SuppressWarnings("unchecked")
 		public void test() throws Exception {
 			Map<String, Object> senderProps = KafkaTestUtils.producerProps(embeddedKafka);
-			DefaultKafkaProducerFactory<Integer, String> pf = new DefaultKafkaProducerFactory<>(senderProps);
+			DefaultKafkaProducerFactory<Integer, String> pf = new DefaultKafkaProducerFactory<>(
+					senderProps);
 			KafkaTemplate<Integer, String> template = new KafkaTemplate<>(pf, true);
 			template.setDefaultTopic("foos1");
 			template.sendDefault("hello");
@@ -159,21 +179,28 @@ public abstract class DeserializtionErrorHandlerByBinderTests {
 			template.setDefaultTopic("foos2");
 			template.sendDefault("hello");
 
-			Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("foobar1", "false", embeddedKafka);
+			Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("foobar1",
+					"false", embeddedKafka);
 			consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
-			DefaultKafkaConsumerFactory<String, String> cf = new DefaultKafkaConsumerFactory<>(consumerProps);
+			DefaultKafkaConsumerFactory<String, String> cf = new DefaultKafkaConsumerFactory<>(
+					consumerProps);
 			Consumer<String, String> consumer1 = cf.createConsumer();
-			embeddedKafka.consumeFromEmbeddedTopics(consumer1, "error.foos1.fooz-group", "error.foos2.fooz-group");
+			embeddedKafka.consumeFromEmbeddedTopics(consumer1, "error.foos1.fooz-group",
+					"error.foos2.fooz-group");
 
-			ConsumerRecord<String, String> cr1 = KafkaTestUtils.getSingleRecord(consumer1, "error.foos1.fooz-group");
+			ConsumerRecord<String, String> cr1 = KafkaTestUtils.getSingleRecord(consumer1,
+					"error.foos1.fooz-group");
 			assertThat(cr1.value().equals("hello")).isTrue();
 
-			ConsumerRecord<String, String> cr2 = KafkaTestUtils.getSingleRecord(consumer1, "error.foos2.fooz-group");
+			ConsumerRecord<String, String> cr2 = KafkaTestUtils.getSingleRecord(consumer1,
+					"error.foos2.fooz-group");
 			assertThat(cr2.value().equals("hello")).isTrue();
 
-			//Ensuring that the deserialization was indeed done by the binder
-			verify(KafkaStreamsMessageConversionDelegate).deserializeOnInbound(any(Class.class), any(KStream.class));
+			// Ensuring that the deserialization was indeed done by the binder
+			verify(conversionDelegate).deserializeOnInbound(any(Class.class),
+					any(KStream.class));
 		}
+
 	}
 
 	@EnableBinding(KafkaStreamsProcessor.class)
@@ -183,16 +210,17 @@ public abstract class DeserializtionErrorHandlerByBinderTests {
 		@StreamListener("input")
 		@SendTo("output")
 		public KStream<Integer, Long> process(KStream<Object, Product> input) {
-			return input
-					.filter((key, product) -> product.getId() == 123)
+			return input.filter((key, product) -> product.getId() == 123)
 					.map((key, value) -> new KeyValue<>(value, value))
-					.groupByKey(Serialized.with(new JsonSerde<>(Product.class), new JsonSerde<>(Product.class)))
+					.groupByKey(Serialized.with(new JsonSerde<>(Product.class),
+							new JsonSerde<>(Product.class)))
 					.windowedBy(TimeWindows.of(5000))
-					.count(Materialized.as("id-count-store-x"))
-					.toStream()
+					.count(Materialized.as("id-count-store-x")).toStream()
 					.map((key, value) -> new KeyValue<>(key.key().id, value));
 		}
+
 	}
+
 	static class Product {
 
 		Integer id;
@@ -204,5 +232,7 @@ public abstract class DeserializtionErrorHandlerByBinderTests {
 		public void setId(Integer id) {
 			this.id = id;
 		}
+
 	}
+
 }

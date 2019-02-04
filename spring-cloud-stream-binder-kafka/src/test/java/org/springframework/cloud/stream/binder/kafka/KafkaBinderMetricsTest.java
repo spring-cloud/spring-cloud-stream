@@ -74,23 +74,33 @@ public class KafkaBinderMetricsTest {
 	@Before
 	public void setup() {
 		MockitoAnnotations.initMocks(this);
-		org.mockito.BDDMockito.given(consumerFactory.createConsumer(ArgumentMatchers.any(), ArgumentMatchers.any())).willReturn(consumer);
+		org.mockito.BDDMockito.given(consumerFactory
+				.createConsumer(ArgumentMatchers.any(), ArgumentMatchers.any()))
+				.willReturn(consumer);
 		org.mockito.BDDMockito.given(binder.getTopicsInUse()).willReturn(topicsInUse);
-		metrics = new KafkaBinderMetrics(binder, kafkaBinderConfigurationProperties, consumerFactory, null);
-		org.mockito.BDDMockito.given(consumer.endOffsets(ArgumentMatchers.anyCollection()))
-				.willReturn(java.util.Collections.singletonMap(new TopicPartition(TEST_TOPIC, 0), 1000L));
+		metrics = new KafkaBinderMetrics(binder, kafkaBinderConfigurationProperties,
+				consumerFactory, null);
+		org.mockito.BDDMockito
+				.given(consumer.endOffsets(ArgumentMatchers.anyCollection()))
+				.willReturn(java.util.Collections
+						.singletonMap(new TopicPartition(TEST_TOPIC, 0), 1000L));
 	}
 
 	@Test
 	public void shouldIndicateLag() {
-		org.mockito.BDDMockito.given(consumer.committed(ArgumentMatchers.any(TopicPartition.class))).willReturn(new OffsetAndMetadata(500));
+		org.mockito.BDDMockito
+				.given(consumer.committed(ArgumentMatchers.any(TopicPartition.class)))
+				.willReturn(new OffsetAndMetadata(500));
 		List<PartitionInfo> partitions = partitions(new Node(0, null, 0));
-		topicsInUse.put(TEST_TOPIC, new TopicInformation("group1-metrics", partitions, false));
-		org.mockito.BDDMockito.given(consumer.partitionsFor(TEST_TOPIC)).willReturn(partitions);
+		topicsInUse.put(TEST_TOPIC,
+				new TopicInformation("group1-metrics", partitions, false));
+		org.mockito.BDDMockito.given(consumer.partitionsFor(TEST_TOPIC))
+				.willReturn(partitions);
 		metrics.bindTo(meterRegistry);
 		assertThat(meterRegistry.getMeters()).hasSize(1);
-		assertThat(meterRegistry.get(KafkaBinderMetrics.METRIC_NAME).tag("group", "group1-metrics").tag("topic", TEST_TOPIC).gauge()
-				.value()).isEqualTo(500.0);
+		assertThat(meterRegistry.get(KafkaBinderMetrics.METRIC_NAME)
+				.tag("group", "group1-metrics").tag("topic", TEST_TOPIC).gauge().value())
+						.isEqualTo(500.0);
 	}
 
 	@Test
@@ -98,26 +108,37 @@ public class KafkaBinderMetricsTest {
 		Map<TopicPartition, Long> endOffsets = new HashMap<>();
 		endOffsets.put(new TopicPartition(TEST_TOPIC, 0), 1000L);
 		endOffsets.put(new TopicPartition(TEST_TOPIC, 1), 1000L);
-		org.mockito.BDDMockito.given(consumer.endOffsets(ArgumentMatchers.anyCollection())).willReturn(endOffsets);
-		org.mockito.BDDMockito.given(consumer.committed(ArgumentMatchers.any(TopicPartition.class))).willReturn(new OffsetAndMetadata(500));
-		List<PartitionInfo> partitions = partitions(new Node(0, null, 0), new Node(0, null, 0));
-		topicsInUse.put(TEST_TOPIC, new TopicInformation("group2-metrics", partitions, false));
-		org.mockito.BDDMockito.given(consumer.partitionsFor(TEST_TOPIC)).willReturn(partitions);
+		org.mockito.BDDMockito
+				.given(consumer.endOffsets(ArgumentMatchers.anyCollection()))
+				.willReturn(endOffsets);
+		org.mockito.BDDMockito
+				.given(consumer.committed(ArgumentMatchers.any(TopicPartition.class)))
+				.willReturn(new OffsetAndMetadata(500));
+		List<PartitionInfo> partitions = partitions(new Node(0, null, 0),
+				new Node(0, null, 0));
+		topicsInUse.put(TEST_TOPIC,
+				new TopicInformation("group2-metrics", partitions, false));
+		org.mockito.BDDMockito.given(consumer.partitionsFor(TEST_TOPIC))
+				.willReturn(partitions);
 		metrics.bindTo(meterRegistry);
 		assertThat(meterRegistry.getMeters()).hasSize(1);
-		assertThat(meterRegistry.get(KafkaBinderMetrics.METRIC_NAME).tag("group", "group2-metrics").tag("topic", TEST_TOPIC).gauge()
-				.value()).isEqualTo(1000.0);
+		assertThat(meterRegistry.get(KafkaBinderMetrics.METRIC_NAME)
+				.tag("group", "group2-metrics").tag("topic", TEST_TOPIC).gauge().value())
+						.isEqualTo(1000.0);
 	}
 
 	@Test
 	public void shouldIndicateFullLagForNotCommittedGroups() {
 		List<PartitionInfo> partitions = partitions(new Node(0, null, 0));
-		topicsInUse.put(TEST_TOPIC, new TopicInformation("group3-metrics", partitions, false));
-		org.mockito.BDDMockito.given(consumer.partitionsFor(TEST_TOPIC)).willReturn(partitions);
+		topicsInUse.put(TEST_TOPIC,
+				new TopicInformation("group3-metrics", partitions, false));
+		org.mockito.BDDMockito.given(consumer.partitionsFor(TEST_TOPIC))
+				.willReturn(partitions);
 		metrics.bindTo(meterRegistry);
 		assertThat(meterRegistry.getMeters()).hasSize(1);
-		assertThat(meterRegistry.get(KafkaBinderMetrics.METRIC_NAME).tag("group", "group3-metrics").tag("topic", TEST_TOPIC).gauge()
-				.value()).isEqualTo(1000.0);
+		assertThat(meterRegistry.get(KafkaBinderMetrics.METRIC_NAME)
+				.tag("group", "group3-metrics").tag("topic", TEST_TOPIC).gauge().value())
+						.isEqualTo(1000.0);
 	}
 
 	@Test
@@ -131,58 +152,76 @@ public class KafkaBinderMetricsTest {
 	@Test
 	public void createsConsumerOnceWhenInvokedMultipleTimes() {
 		final List<PartitionInfo> partitions = partitions(new Node(0, null, 0));
-		topicsInUse.put(TEST_TOPIC, new TopicInformation("group4-metrics", partitions, false));
+		topicsInUse.put(TEST_TOPIC,
+				new TopicInformation("group4-metrics", partitions, false));
 
 		metrics.bindTo(meterRegistry);
 
-		Gauge gauge = meterRegistry.get(KafkaBinderMetrics.METRIC_NAME).tag("group", "group4-metrics").tag("topic", TEST_TOPIC).gauge();
+		Gauge gauge = meterRegistry.get(KafkaBinderMetrics.METRIC_NAME)
+				.tag("group", "group4-metrics").tag("topic", TEST_TOPIC).gauge();
 		gauge.value();
 		assertThat(gauge.value()).isEqualTo(1000.0);
 
-		org.mockito.Mockito.verify(this.consumerFactory).createConsumer(ArgumentMatchers.any(), ArgumentMatchers.any());
+		org.mockito.Mockito.verify(this.consumerFactory)
+				.createConsumer(ArgumentMatchers.any(), ArgumentMatchers.any());
 	}
 
 	@Test
 	public void consumerCreationFailsFirstTime() {
-		org.mockito.BDDMockito.given(consumerFactory.createConsumer(ArgumentMatchers.any(), ArgumentMatchers.any())).willThrow(KafkaException.class)
-				.willReturn(consumer);
+		org.mockito.BDDMockito
+				.given(consumerFactory.createConsumer(ArgumentMatchers.any(),
+						ArgumentMatchers.any()))
+				.willThrow(KafkaException.class).willReturn(consumer);
 
 		final List<PartitionInfo> partitions = partitions(new Node(0, null, 0));
-		topicsInUse.put(TEST_TOPIC, new TopicInformation("group5-metrics", partitions, false));
+		topicsInUse.put(TEST_TOPIC,
+				new TopicInformation("group5-metrics", partitions, false));
 
 		metrics.bindTo(meterRegistry);
 
-		Gauge gauge = meterRegistry.get(KafkaBinderMetrics.METRIC_NAME).tag("group", "group5-metrics").tag("topic", TEST_TOPIC).gauge();
+		Gauge gauge = meterRegistry.get(KafkaBinderMetrics.METRIC_NAME)
+				.tag("group", "group5-metrics").tag("topic", TEST_TOPIC).gauge();
 		assertThat(gauge.value()).isEqualTo(0);
 		assertThat(gauge.value()).isEqualTo(1000.0);
 
-		org.mockito.Mockito.verify(this.consumerFactory, Mockito.times(2)).createConsumer(ArgumentMatchers.any(), ArgumentMatchers.any());
+		org.mockito.Mockito.verify(this.consumerFactory, Mockito.times(2))
+				.createConsumer(ArgumentMatchers.any(), ArgumentMatchers.any());
 	}
-	
+
 	@Test
 	public void createOneConsumerPerGroup() {
 		final List<PartitionInfo> partitions1 = partitions(new Node(0, null, 0));
 		final List<PartitionInfo> partitions2 = partitions(new Node(0, null, 0));
-		topicsInUse.put(TEST_TOPIC, new TopicInformation("group1-metrics", partitions1, false));
-		topicsInUse.put("test2", new TopicInformation("group2-metrics", partitions2, false));
+		topicsInUse.put(TEST_TOPIC,
+				new TopicInformation("group1-metrics", partitions1, false));
+		topicsInUse.put("test2",
+				new TopicInformation("group2-metrics", partitions2, false));
 
 		metrics.bindTo(meterRegistry);
-		
-		KafkaConsumer consumer2 = mock(KafkaConsumer.class);
-		org.mockito.BDDMockito.given(consumerFactory.createConsumer(ArgumentMatchers.eq("group2-metrics"), ArgumentMatchers.any()))
-				.willReturn(consumer2);
-		org.mockito.BDDMockito.given(consumer2.endOffsets(ArgumentMatchers.anyCollection()))
-				.willReturn(java.util.Collections.singletonMap(new TopicPartition("test2", 0), 50L));
 
-		Gauge gauge1 = meterRegistry.get(KafkaBinderMetrics.METRIC_NAME).tag("group", "group1-metrics").tag("topic", TEST_TOPIC).gauge();
-		Gauge gauge2 = meterRegistry.get(KafkaBinderMetrics.METRIC_NAME).tag("group", "group2-metrics").tag("topic", "test2").gauge();
+		KafkaConsumer consumer2 = mock(KafkaConsumer.class);
+		org.mockito.BDDMockito
+				.given(consumerFactory.createConsumer(
+						ArgumentMatchers.eq("group2-metrics"), ArgumentMatchers.any()))
+				.willReturn(consumer2);
+		org.mockito.BDDMockito
+				.given(consumer2.endOffsets(ArgumentMatchers.anyCollection()))
+				.willReturn(java.util.Collections
+						.singletonMap(new TopicPartition("test2", 0), 50L));
+
+		Gauge gauge1 = meterRegistry.get(KafkaBinderMetrics.METRIC_NAME)
+				.tag("group", "group1-metrics").tag("topic", TEST_TOPIC).gauge();
+		Gauge gauge2 = meterRegistry.get(KafkaBinderMetrics.METRIC_NAME)
+				.tag("group", "group2-metrics").tag("topic", "test2").gauge();
 		gauge1.value();
 		gauge2.value();
 		assertThat(gauge1.value()).isEqualTo(1000.0);
 		assertThat(gauge2.value()).isEqualTo(50.0);
 
-		org.mockito.Mockito.verify(this.consumerFactory).createConsumer(ArgumentMatchers.eq("group1-metrics"), ArgumentMatchers.any());
-		org.mockito.Mockito.verify(this.consumerFactory).createConsumer(ArgumentMatchers.eq("group2-metrics"), ArgumentMatchers.any());
+		org.mockito.Mockito.verify(this.consumerFactory).createConsumer(
+				ArgumentMatchers.eq("group1-metrics"), ArgumentMatchers.any());
+		org.mockito.Mockito.verify(this.consumerFactory).createConsumer(
+				ArgumentMatchers.eq("group2-metrics"), ArgumentMatchers.any());
 	}
 
 	private List<PartitionInfo> partitions(Node... nodes) {

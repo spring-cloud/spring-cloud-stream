@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 the original author or authors.
+ * Copyright 2018-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,8 @@ import org.springframework.cloud.stream.binder.kafka.properties.KafkaBinderConfi
  * @author Soby Chacko
  * @author Gary Russell
  */
-public class KafkaStreamsBinderConfigurationProperties extends KafkaBinderConfigurationProperties {
+public class KafkaStreamsBinderConfigurationProperties
+		extends KafkaBinderConfigurationProperties {
 
 	public KafkaStreamsBinderConfigurationProperties(KafkaProperties kafkaProperties) {
 		super(kafkaProperties);
@@ -35,6 +36,7 @@ public class KafkaStreamsBinderConfigurationProperties extends KafkaBinderConfig
 	 * Enumeration for various Serde errors.
 	 */
 	public enum SerdeError {
+
 		/**
 		 * Deserialization error handler with log and continue.
 		 */
@@ -47,6 +49,7 @@ public class KafkaStreamsBinderConfigurationProperties extends KafkaBinderConfig
 		 * Deserialization error handler with DLQ send.
 		 */
 		sendToDlq
+
 	}
 
 	private String applicationId;
@@ -60,9 +63,10 @@ public class KafkaStreamsBinderConfigurationProperties extends KafkaBinderConfig
 	}
 
 	/**
-	 * {@link org.apache.kafka.streams.errors.DeserializationExceptionHandler} to use
-	 * when there is a Serde error. {@link KafkaStreamsBinderConfigurationProperties.SerdeError}
-	 * values are used to provide the exception handler on consumer binding.
+	 * {@link org.apache.kafka.streams.errors.DeserializationExceptionHandler} to use when
+	 * there is a Serde error.
+	 * {@link KafkaStreamsBinderConfigurationProperties.SerdeError} values are used to
+	 * provide the exception handler on consumer binding.
 	 */
 	private KafkaStreamsBinderConfigurationProperties.SerdeError serdeError;
 
@@ -70,7 +74,8 @@ public class KafkaStreamsBinderConfigurationProperties extends KafkaBinderConfig
 		return this.serdeError;
 	}
 
-	public void setSerdeError(KafkaStreamsBinderConfigurationProperties.SerdeError serdeError) {
+	public void setSerdeError(
+			KafkaStreamsBinderConfigurationProperties.SerdeError serdeError) {
 		this.serdeError = serdeError;
 	}
 

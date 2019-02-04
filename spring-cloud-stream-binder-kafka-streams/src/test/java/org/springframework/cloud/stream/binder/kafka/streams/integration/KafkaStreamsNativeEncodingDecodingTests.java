@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 the original author or authors.
+ * Copyright 2018-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,26 +69,32 @@ import static org.mockito.Mockito.verify;
 public abstract class KafkaStreamsNativeEncodingDecodingTests {
 
 	@ClassRule
-	public static EmbeddedKafkaRule embeddedKafkaRule = new EmbeddedKafkaRule(1, true, "counts");
+	public static EmbeddedKafkaRule embeddedKafkaRule = new EmbeddedKafkaRule(1, true,
+			"counts");
 
-	private static EmbeddedKafkaBroker embeddedKafka = embeddedKafkaRule.getEmbeddedKafka();
+	private static EmbeddedKafkaBroker embeddedKafka = embeddedKafkaRule
+			.getEmbeddedKafka();
 
 	@SpyBean
-	org.springframework.cloud.stream.binder.kafka.streams.KafkaStreamsMessageConversionDelegate KafkaStreamsMessageConversionDelegate;
+	org.springframework.cloud.stream.binder.kafka.streams.KafkaStreamsMessageConversionDelegate conversionDelegate;
 
 	private static Consumer<String, String> consumer;
 
 	@BeforeClass
-	public static void setUp() throws Exception {
-		System.setProperty("spring.cloud.stream.kafka.streams.binder.brokers", embeddedKafka.getBrokersAsString());
-		System.setProperty("spring.cloud.stream.kafka.streams.binder.zkNodes", embeddedKafka.getZookeeperConnectionString());
+	public static void setUp() {
+		System.setProperty("spring.cloud.stream.kafka.streams.binder.brokers",
+				embeddedKafka.getBrokersAsString());
+		System.setProperty("spring.cloud.stream.kafka.streams.binder.zkNodes",
+				embeddedKafka.getZookeeperConnectionString());
 
-		System.setProperty("server.port","0");
-		System.setProperty("spring.jmx.enabled","false");
+		System.setProperty("server.port", "0");
+		System.setProperty("spring.jmx.enabled", "false");
 
-		Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("group", "false", embeddedKafka);
+		Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("group", "false",
+				embeddedKafka);
 		consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
-		DefaultKafkaConsumerFactory<String, String> cf = new DefaultKafkaConsumerFactory<>(consumerProps);
+		DefaultKafkaConsumerFactory<String, String> cf = new DefaultKafkaConsumerFactory<>(
+				consumerProps);
 		consumer = cf.createConsumer();
 		embeddedKafka.consumeFromAnEmbeddedTopic(consumer, "counts");
 	}
@@ -101,44 +107,54 @@ public abstract class KafkaStreamsNativeEncodingDecodingTests {
 	@SpringBootTest(properties = {
 			"spring.cloud.stream.bindings.input.consumer.useNativeDecoding=true",
 			"spring.cloud.stream.bindings.output.producer.useNativeEncoding=true",
-			"spring.cloud.stream.kafka.streams.bindings.input.consumer.applicationId=NativeEncodingDecodingEnabledTests-abc"
-	},
-			webEnvironment= SpringBootTest.WebEnvironment.NONE
-			)
-	public static class NativeEncodingDecodingEnabledTests extends KafkaStreamsNativeEncodingDecodingTests {
+			"spring.cloud.stream.kafka.streams.bindings.input.consumer.applicationId"
+					+ "=NativeEncodingDecodingEnabledTests-abc" }, webEnvironment = SpringBootTest.WebEnvironment.NONE)
+	public static class NativeEncodingDecodingEnabledTests
+			extends KafkaStreamsNativeEncodingDecodingTests {
 
 		@Test
 		public void test() throws Exception {
 			Map<String, Object> senderProps = KafkaTestUtils.producerProps(embeddedKafka);
-			DefaultKafkaProducerFactory<Integer, String> pf = new DefaultKafkaProducerFactory<>(senderProps);
+			DefaultKafkaProducerFactory<Integer, String> pf = new DefaultKafkaProducerFactory<>(
+					senderProps);
 			KafkaTemplate<Integer, String> template = new KafkaTemplate<>(pf, true);
 			template.setDefaultTopic("words");
 			template.sendDefault("foobar");
-			ConsumerRecord<String, String> cr = KafkaTestUtils.getSingleRecord(consumer, "counts");
+			ConsumerRecord<String, String> cr = KafkaTestUtils.getSingleRecord(consumer,
+					"counts");
 			assertThat(cr.value().equals("Count for foobar : 1")).isTrue();
 
-			verify(KafkaStreamsMessageConversionDelegate, never()).serializeOnOutbound(any(KStream.class));
-			verify(KafkaStreamsMessageConversionDelegate, never()).deserializeOnInbound(any(Class.class), any(KStream.class));
+			verify(conversionDelegate, never()).serializeOnOutbound(any(KStream.class));
+			verify(conversionDelegate, never()).deserializeOnInbound(any(Class.class),
+					any(KStream.class));
 		}
+
 	}
 
-	@SpringBootTest(webEnvironment= SpringBootTest.WebEnvironment.NONE,
-	properties = "spring.cloud.stream.kafka.streams.bindings.input.consumer.applicationId=NativeEncodingDecodingEnabledTests-xyz")
-	public static class NativeEncodingDecodingDisabledTests extends KafkaStreamsNativeEncodingDecodingTests {
+	// @checkstyle:off
+	@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE, properties = "spring.cloud.stream.kafka.streams.bindings.input.consumer.applicationId"
+			+ "=NativeEncodingDecodingEnabledTests-xyz")
+	// @checkstyle:on
+	public static class NativeEncodingDecodingDisabledTests
+			extends KafkaStreamsNativeEncodingDecodingTests {
 
 		@Test
 		public void test() throws Exception {
 			Map<String, Object> senderProps = KafkaTestUtils.producerProps(embeddedKafka);
-			DefaultKafkaProducerFactory<Integer, String> pf = new DefaultKafkaProducerFactory<>(senderProps);
+			DefaultKafkaProducerFactory<Integer, String> pf = new DefaultKafkaProducerFactory<>(
+					senderProps);
 			KafkaTemplate<Integer, String> template = new KafkaTemplate<>(pf, true);
 			template.setDefaultTopic("words");
 			template.sendDefault("foobar");
-			ConsumerRecord<String, String> cr = KafkaTestUtils.getSingleRecord(consumer, "counts");
+			ConsumerRecord<String, String> cr = KafkaTestUtils.getSingleRecord(consumer,
+					"counts");
 			assertThat(cr.value().equals("Count for foobar : 1")).isTrue();
 
-			verify(KafkaStreamsMessageConversionDelegate).serializeOnOutbound(any(KStream.class));
-			verify(KafkaStreamsMessageConversionDelegate).deserializeOnInbound(any(Class.class), any(KStream.class));
+			verify(conversionDelegate).serializeOnOutbound(any(KStream.class));
+			verify(conversionDelegate).deserializeOnInbound(any(Class.class),
+					any(KStream.class));
 		}
+
 	}
 
 	@EnableBinding(KafkaStreamsProcessor.class)
@@ -155,14 +171,15 @@ public abstract class KafkaStreamsNativeEncodingDecodingTests {
 		public KStream<?, String> process(KStream<Object, String> input) {
 
 			return input
-					.flatMapValues(value -> Arrays.asList(value.toLowerCase().split("\\W+")))
+					.flatMapValues(
+							value -> Arrays.asList(value.toLowerCase().split("\\W+")))
 					.map((key, value) -> new KeyValue<>(value, value))
 					.groupByKey(Serialized.with(Serdes.String(), Serdes.String()))
-					.windowedBy(timeWindows)
-					.count(Materialized.as("foo-WordCounts-x"))
-					.toStream()
-					.map((key, value) -> new KeyValue<>(null, "Count for " + key.key() + " : " + value));
+					.windowedBy(timeWindows).count(Materialized.as("foo-WordCounts-x"))
+					.toStream().map((key, value) -> new KeyValue<>(null,
+							"Count for " + key.key() + " : " + value));
 		}
+
 	}
 
 }

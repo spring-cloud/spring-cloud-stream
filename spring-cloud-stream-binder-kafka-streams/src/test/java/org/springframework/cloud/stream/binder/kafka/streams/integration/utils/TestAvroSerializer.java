@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 the original author or authors.
+ * Copyright 2018-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,13 +29,13 @@ import org.springframework.messaging.support.MessageBuilder;
 /**
  * Custom avro serializer intended to be used for testing only.
  *
- * @author Soby Chacko
- *
  * @param <S> Target type to serialize
+ * @author Soby Chacko
  */
 public class TestAvroSerializer<S> implements Serializer<S> {
 
-	public TestAvroSerializer() {}
+	public TestAvroSerializer() {
+	}
 
 	@Override
 	public void configure(Map<String, ?> configs, boolean isKey) {
@@ -49,13 +49,14 @@ public class TestAvroSerializer<S> implements Serializer<S> {
 		Map<String, Object> headers = new HashMap<>(message.getHeaders());
 		headers.put(MessageHeaders.CONTENT_TYPE, "application/avro");
 		MessageHeaders messageHeaders = new MessageHeaders(headers);
-		final Object payload = avroSchemaMessageConverter.toMessage(message.getPayload(),
-				messageHeaders).getPayload();
-		return (byte[])payload;
+		final Object payload = avroSchemaMessageConverter
+				.toMessage(message.getPayload(), messageHeaders).getPayload();
+		return (byte[]) payload;
 	}
 
 	@Override
 	public void close() {
 
 	}
+
 }

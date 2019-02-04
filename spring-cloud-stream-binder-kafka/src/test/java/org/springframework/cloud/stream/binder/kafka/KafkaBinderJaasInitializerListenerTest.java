@@ -48,7 +48,8 @@ public class KafkaBinderJaasInitializerListenerTest {
 
 	@BeforeClass
 	public static void setup() {
-		System.setProperty(KAFKA_BROKERS_PROPERTY, kafkaEmbedded.getEmbeddedKafka().getBrokersAsString());
+		System.setProperty(KAFKA_BROKERS_PROPERTY,
+				kafkaEmbedded.getEmbeddedKafka().getBrokersAsString());
 	}
 
 	@AfterClass
@@ -58,68 +59,83 @@ public class KafkaBinderJaasInitializerListenerTest {
 
 	@Test
 	@Ignore("CI randomly fails this test, need to investigate further. ")
-	public void testConfigurationParsedCorrectlyWithKafkaClientAndDefaultControlFlag() throws Exception {
-		ConfigFile configFile = new ConfigFile(new ClassPathResource("jaas-sample-kafka-only.conf").getURI());
-		final AppConfigurationEntry[] kafkaConfigurationArray = configFile.getAppConfigurationEntry("KafkaClient");
+	public void testConfigurationParsedCorrectlyWithKafkaClientAndDefaultControlFlag()
+			throws Exception {
+		ConfigFile configFile = new ConfigFile(
+				new ClassPathResource("jaas-sample-kafka-only.conf").getURI());
+		final AppConfigurationEntry[] kafkaConfigurationArray = configFile
+				.getAppConfigurationEntry("KafkaClient");
 
-		final ConfigurableApplicationContext context =
-				SpringApplication.run(SimpleApplication.class,
-						"--spring.cloud.stream.kafka.binder.jaas.options.useKeyTab=true",
-						"--spring.cloud.stream.kafka.binder.jaas.options.storeKey=true",
-						"--spring.cloud.stream.kafka.binder.jaas.options.keyTab=/etc/security/keytabs/kafka_client.keytab",
-						"--spring.cloud.stream.kafka.binder.jaas.options.principal=kafka-client-1@EXAMPLE.COM",
-						"--spring.jmx.enabled=false");
-		javax.security.auth.login.Configuration configuration = javax.security.auth.login.Configuration.getConfiguration();
+		final ConfigurableApplicationContext context = SpringApplication.run(
+				SimpleApplication.class,
+				"--spring.cloud.stream.kafka.binder.jaas.options.useKeyTab=true",
+				"--spring.cloud.stream.kafka.binder.jaas.options.storeKey=true",
+				"--spring.cloud.stream.kafka.binder.jaas.options.keyTab=/etc/security/keytabs/kafka_client.keytab",
+				"--spring.cloud.stream.kafka.binder.jaas.options.principal=kafka-client-1@EXAMPLE.COM",
+				"--spring.jmx.enabled=false");
+		javax.security.auth.login.Configuration configuration = javax.security.auth.login.Configuration
+				.getConfiguration();
 
-		final AppConfigurationEntry[] kafkaConfiguration = configuration.getAppConfigurationEntry("KafkaClient");
+		final AppConfigurationEntry[] kafkaConfiguration = configuration
+				.getAppConfigurationEntry("KafkaClient");
 		assertThat(kafkaConfiguration).hasSize(1);
-		assertThat(kafkaConfiguration[0].getOptions()).isEqualTo(kafkaConfigurationArray[0].getOptions());
-		assertThat(kafkaConfiguration[0].getControlFlag()).isEqualTo(AppConfigurationEntry.LoginModuleControlFlag.REQUIRED);
+		assertThat(kafkaConfiguration[0].getOptions())
+				.isEqualTo(kafkaConfigurationArray[0].getOptions());
+		assertThat(kafkaConfiguration[0].getControlFlag())
+				.isEqualTo(AppConfigurationEntry.LoginModuleControlFlag.REQUIRED);
 		context.close();
 	}
 
 	@Test
 	@Ignore("CI randomly fails this test, need to investigate further. ")
-	public void testConfigurationParsedCorrectlyWithKafkaClientAndNonDefaultControlFlag() throws Exception {
-		ConfigFile configFile = new ConfigFile(new ClassPathResource("jaas-sample-kafka-only.conf").getURI());
-		final AppConfigurationEntry[] kafkaConfigurationArray = configFile.getAppConfigurationEntry("KafkaClient");
+	public void testConfigurationParsedCorrectlyWithKafkaClientAndNonDefaultControlFlag()
+			throws Exception {
+		ConfigFile configFile = new ConfigFile(
+				new ClassPathResource("jaas-sample-kafka-only.conf").getURI());
+		final AppConfigurationEntry[] kafkaConfigurationArray = configFile
+				.getAppConfigurationEntry("KafkaClient");
 
-		final ConfigurableApplicationContext context =
-				SpringApplication.run(SimpleApplication.class,
-						"--spring.cloud.stream.kafka.binder.jaas.options.useKeyTab=true",
-						"--spring.cloud.stream.kafka.binder.jaas.controlFlag=requisite",
-						"--spring.cloud.stream.kafka.binder.jaas.options.storeKey=true",
-						"--spring.cloud.stream.kafka.binder.jaas.options.keyTab=/etc/security/keytabs/kafka_client.keytab",
-						"--spring.cloud.stream.kafka.binder.jaas.options.principal=kafka-client-1@EXAMPLE.COM",
-						"--spring.jmx.enabled=false");
-		javax.security.auth.login.Configuration configuration = javax.security.auth.login.Configuration.getConfiguration();
+		final ConfigurableApplicationContext context = SpringApplication.run(
+				SimpleApplication.class,
+				"--spring.cloud.stream.kafka.binder.jaas.options.useKeyTab=true",
+				"--spring.cloud.stream.kafka.binder.jaas.controlFlag=requisite",
+				"--spring.cloud.stream.kafka.binder.jaas.options.storeKey=true",
+				"--spring.cloud.stream.kafka.binder.jaas.options.keyTab=/etc/security/keytabs/kafka_client.keytab",
+				"--spring.cloud.stream.kafka.binder.jaas.options.principal=kafka-client-1@EXAMPLE.COM",
+				"--spring.jmx.enabled=false");
+		javax.security.auth.login.Configuration configuration = javax.security.auth.login.Configuration
+				.getConfiguration();
 
-		final AppConfigurationEntry[] kafkaConfiguration = configuration.getAppConfigurationEntry("KafkaClient");
+		final AppConfigurationEntry[] kafkaConfiguration = configuration
+				.getAppConfigurationEntry("KafkaClient");
 		assertThat(kafkaConfiguration).hasSize(1);
-		assertThat(kafkaConfiguration[0].getOptions()).isEqualTo(kafkaConfigurationArray[0].getOptions());
-		assertThat(kafkaConfiguration[0].getControlFlag()).isEqualTo(AppConfigurationEntry.LoginModuleControlFlag.REQUISITE);
+		assertThat(kafkaConfiguration[0].getOptions())
+				.isEqualTo(kafkaConfigurationArray[0].getOptions());
+		assertThat(kafkaConfiguration[0].getControlFlag())
+				.isEqualTo(AppConfigurationEntry.LoginModuleControlFlag.REQUISITE);
 		context.close();
 	}
 
 	@Test
 	public void testConfigurationWithUnknownControlFlag() throws Exception {
-		ConfigFile configFile = new ConfigFile(new ClassPathResource("jaas-sample-kafka-only.conf").getURI());
+		ConfigFile configFile = new ConfigFile(
+				new ClassPathResource("jaas-sample-kafka-only.conf").getURI());
 
-		assertThatThrownBy(
-				() -> SpringApplication.run(SimpleApplication.class,
-						"--spring.cloud.stream.kafka.binder.jaas.options.useKeyTab=true",
-						"--spring.cloud.stream.kafka.binder.jaas.controlFlag=unknown",
-						"--spring.cloud.stream.kafka.binder.jaas.options.storeKey=true",
-						"--spring.cloud.stream.kafka.binder.jaas.options.keyTab=/etc/security/keytabs/kafka_client.keytab",
-						"--spring.cloud.stream.kafka.binder.jaas.options.principal=kafka-client-1@EXAMPLE.COM",
-						"--spring.jmx.enabled=false"))
-				.isInstanceOf(ConfigurationPropertiesBindException.class)
-				.hasMessageContaining("Error creating bean with name 'configurationProperties'");
+		assertThatThrownBy(() -> SpringApplication.run(SimpleApplication.class,
+				"--spring.cloud.stream.kafka.binder.jaas.options.useKeyTab=true",
+				"--spring.cloud.stream.kafka.binder.jaas.controlFlag=unknown",
+				"--spring.cloud.stream.kafka.binder.jaas.options.storeKey=true",
+				"--spring.cloud.stream.kafka.binder.jaas.options.keyTab=/etc/security/keytabs/kafka_client.keytab",
+				"--spring.cloud.stream.kafka.binder.jaas.options.principal=kafka-client-1@EXAMPLE.COM",
+				"--spring.jmx.enabled=false"))
+						.isInstanceOf(ConfigurationPropertiesBindException.class)
+						.hasMessageContaining(
+								"Error creating bean with name 'configurationProperties'");
 	}
-
 
 	@SpringBootApplication
 	public static class SimpleApplication {
 
 	}
+
 }

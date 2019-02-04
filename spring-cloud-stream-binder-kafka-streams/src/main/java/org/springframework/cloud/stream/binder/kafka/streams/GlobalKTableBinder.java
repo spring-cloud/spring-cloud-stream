@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 the original author or authors.
+ * Copyright 2018-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,27 +36,35 @@ import org.springframework.util.StringUtils;
 
 /**
  * An {@link AbstractBinder} implementation for {@link GlobalKTable}.
- *
- * Provides only consumer binding for the bound {@link GlobalKTable}.
- * Output bindings are not allowed on this binder.
+ * <p>
+ * Provides only consumer binding for the bound {@link GlobalKTable}. Output bindings are
+ * not allowed on this binder.
  *
  * @author Soby Chacko
  * @since 2.1.0
  */
 public class GlobalKTableBinder extends
+		// @checkstyle:off
 		AbstractBinder<GlobalKTable<Object, Object>, ExtendedConsumerProperties<KafkaStreamsConsumerProperties>, ExtendedProducerProperties<KafkaStreamsProducerProperties>>
-		implements ExtendedPropertiesBinder<GlobalKTable<Object, Object>, KafkaStreamsConsumerProperties, KafkaStreamsProducerProperties> {
+		implements
+		ExtendedPropertiesBinder<GlobalKTable<Object, Object>, KafkaStreamsConsumerProperties, KafkaStreamsProducerProperties> {
 
+	// @checkstyle:on
 	private final KafkaStreamsBinderConfigurationProperties binderConfigurationProperties;
 
 	private final KafkaTopicProvisioner kafkaTopicProvisioner;
 
 	private final Map<String, KafkaStreamsDlqDispatch> kafkaStreamsDlqDispatchers;
 
+	// @checkstyle:off
 	private KafkaStreamsExtendedBindingProperties kafkaStreamsExtendedBindingProperties = new KafkaStreamsExtendedBindingProperties();
 
-	public GlobalKTableBinder(KafkaStreamsBinderConfigurationProperties binderConfigurationProperties, KafkaTopicProvisioner kafkaTopicProvisioner,
-							Map<String, KafkaStreamsDlqDispatch> kafkaStreamsDlqDispatchers) {
+	// @checkstyle:on
+
+	public GlobalKTableBinder(
+			KafkaStreamsBinderConfigurationProperties binderConfigurationProperties,
+			KafkaTopicProvisioner kafkaTopicProvisioner,
+			Map<String, KafkaStreamsDlqDispatch> kafkaStreamsDlqDispatchers) {
 		this.binderConfigurationProperties = binderConfigurationProperties;
 		this.kafkaTopicProvisioner = kafkaTopicProvisioner;
 		this.kafkaStreamsDlqDispatchers = kafkaStreamsDlqDispatchers;
@@ -64,31 +72,39 @@ public class GlobalKTableBinder extends
 
 	@Override
 	@SuppressWarnings("unchecked")
-	protected Binding<GlobalKTable<Object, Object>> doBindConsumer(String name, String group, GlobalKTable<Object, Object> inputTarget,
-															ExtendedConsumerProperties<KafkaStreamsConsumerProperties> properties) {
+	protected Binding<GlobalKTable<Object, Object>> doBindConsumer(String name,
+			String group, GlobalKTable<Object, Object> inputTarget,
+			ExtendedConsumerProperties<KafkaStreamsConsumerProperties> properties) {
 		if (!StringUtils.hasText(group)) {
 			group = this.binderConfigurationProperties.getApplicationId();
 		}
-		KafkaStreamsBinderUtils.prepareConsumerBinding(name, group, getApplicationContext(),
-				this.kafkaTopicProvisioner,
-				this.binderConfigurationProperties, properties, this.kafkaStreamsDlqDispatchers);
+		KafkaStreamsBinderUtils.prepareConsumerBinding(name, group,
+				getApplicationContext(), this.kafkaTopicProvisioner,
+				this.binderConfigurationProperties, properties,
+				this.kafkaStreamsDlqDispatchers);
 		return new DefaultBinding<>(name, group, inputTarget, null);
 	}
 
 	@Override
-	protected Binding<GlobalKTable<Object, Object>> doBindProducer(String name, GlobalKTable<Object, Object> outboundBindTarget,
-															ExtendedProducerProperties<KafkaStreamsProducerProperties> properties) {
-		throw new UnsupportedOperationException("No producer level binding is allowed for GlobalKTable");
+	protected Binding<GlobalKTable<Object, Object>> doBindProducer(String name,
+			GlobalKTable<Object, Object> outboundBindTarget,
+			ExtendedProducerProperties<KafkaStreamsProducerProperties> properties) {
+		throw new UnsupportedOperationException(
+				"No producer level binding is allowed for GlobalKTable");
 	}
 
 	@Override
-	public KafkaStreamsConsumerProperties getExtendedConsumerProperties(String channelName) {
-		return this.kafkaStreamsExtendedBindingProperties.getExtendedConsumerProperties(channelName);
+	public KafkaStreamsConsumerProperties getExtendedConsumerProperties(
+			String channelName) {
+		return this.kafkaStreamsExtendedBindingProperties
+				.getExtendedConsumerProperties(channelName);
 	}
 
 	@Override
-	public KafkaStreamsProducerProperties getExtendedProducerProperties(String channelName) {
-		throw new UnsupportedOperationException("No producer binding is allowed and therefore no properties");
+	public KafkaStreamsProducerProperties getExtendedProducerProperties(
+			String channelName) {
+		throw new UnsupportedOperationException(
+				"No producer binding is allowed and therefore no properties");
 	}
 
 	@Override
@@ -98,7 +114,8 @@ public class GlobalKTableBinder extends
 
 	@Override
 	public Class<? extends BinderSpecificPropertiesProvider> getExtendedPropertiesEntryClass() {
-		return this.kafkaStreamsExtendedBindingProperties.getExtendedPropertiesEntryClass();
+		return this.kafkaStreamsExtendedBindingProperties
+				.getExtendedPropertiesEntryClass();
 	}
 
 }

@@ -28,13 +28,16 @@ import org.springframework.core.ResolvableType;
  * @author Marius Bogoevici
  * @author Soby Chacko
  */
-class KStreamStreamListenerParameterAdapter implements StreamListenerParameterAdapter<KStream<?, ?>, KStream<?, ?>> {
+class KStreamStreamListenerParameterAdapter
+		implements StreamListenerParameterAdapter<KStream<?, ?>, KStream<?, ?>> {
 
 	private final KafkaStreamsMessageConversionDelegate kafkaStreamsMessageConversionDelegate;
+
 	private final KafkaStreamsBindingInformationCatalogue KafkaStreamsBindingInformationCatalogue;
 
-	KStreamStreamListenerParameterAdapter(KafkaStreamsMessageConversionDelegate kafkaStreamsMessageConversionDelegate,
-												KafkaStreamsBindingInformationCatalogue KafkaStreamsBindingInformationCatalogue) {
+	KStreamStreamListenerParameterAdapter(
+			KafkaStreamsMessageConversionDelegate kafkaStreamsMessageConversionDelegate,
+			KafkaStreamsBindingInformationCatalogue KafkaStreamsBindingInformationCatalogue) {
 		this.kafkaStreamsMessageConversionDelegate = kafkaStreamsMessageConversionDelegate;
 		this.KafkaStreamsBindingInformationCatalogue = KafkaStreamsBindingInformationCatalogue;
 	}
@@ -51,11 +54,14 @@ class KStreamStreamListenerParameterAdapter implements StreamListenerParameterAd
 		ResolvableType resolvableType = ResolvableType.forMethodParameter(parameter);
 		final Class<?> valueClass = (resolvableType.getGeneric(1).getRawClass() != null)
 				? (resolvableType.getGeneric(1).getRawClass()) : Object.class;
-		if (this.KafkaStreamsBindingInformationCatalogue.isUseNativeDecoding(bindingTarget)) {
+		if (this.KafkaStreamsBindingInformationCatalogue
+				.isUseNativeDecoding(bindingTarget)) {
 			return bindingTarget;
 		}
 		else {
-			return this.kafkaStreamsMessageConversionDelegate.deserializeOnInbound(valueClass, bindingTarget);
+			return this.kafkaStreamsMessageConversionDelegate
+					.deserializeOnInbound(valueClass, bindingTarget);
 		}
 	}
+
 }

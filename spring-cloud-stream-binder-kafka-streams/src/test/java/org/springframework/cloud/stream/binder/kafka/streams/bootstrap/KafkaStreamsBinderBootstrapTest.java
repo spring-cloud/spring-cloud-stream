@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 the original author or authors.
+ * Copyright 2018-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,26 +39,34 @@ public class KafkaStreamsBinderBootstrapTest {
 
 	@Test
 	public void testKafkaStreamsBinderWithCustomEnvironmentCanStart() {
-		ConfigurableApplicationContext applicationContext = new SpringApplicationBuilder(SimpleApplication.class)
-				.web(WebApplicationType.NONE)
-				.run("--spring.cloud.stream.kafka.streams.default.consumer.application-id=testKafkaStreamsBinderWithCustomEnvironmentCanStart",
+		ConfigurableApplicationContext applicationContext = new SpringApplicationBuilder(
+				SimpleApplication.class).web(WebApplicationType.NONE).run(
+						"--spring.cloud.stream.kafka.streams.default.consumer.application-id"
+								+ "=testKafkaStreamsBinderWithCustomEnvironmentCanStart",
 						"--spring.cloud.stream.bindings.input.destination=foo",
 						"--spring.cloud.stream.bindings.input.binder=kBind1",
 						"--spring.cloud.stream.binders.kBind1.type=kstream",
-						"--spring.cloud.stream.binders.kBind1.environment.spring.cloud.stream.kafka.streams.binder.brokers=" + embeddedKafka.getBrokersAsString(),
-						"--spring.cloud.stream.binders.kBind1.environment.spring.cloud.stream.kafka.streams.binder.zkNodes=" + embeddedKafka.getZookeeperConnectionString());
+						"--spring.cloud.stream.binders.kBind1.environment"
+								+ ".spring.cloud.stream.kafka.streams.binder.brokers"
+								+ "=" + embeddedKafka.getBrokersAsString(),
+						"--spring.cloud.stream.binders.kBind1.environment.spring"
+								+ ".cloud.stream.kafka.streams.binder.zkNodes="
+								+ embeddedKafka.getZookeeperConnectionString());
 
 		applicationContext.close();
 	}
 
 	@Test
 	public void testKafkaStreamsBinderWithStandardConfigurationCanStart() {
-		ConfigurableApplicationContext applicationContext = new SpringApplicationBuilder(SimpleApplication.class)
-				.web(WebApplicationType.NONE)
-				.run("--spring.cloud.stream.kafka.streams.default.consumer.application-id=testKafkaStreamsBinderWithStandardConfigurationCanStart",
+		ConfigurableApplicationContext applicationContext = new SpringApplicationBuilder(
+				SimpleApplication.class).web(WebApplicationType.NONE).run(
+						"--spring.cloud.stream.kafka.streams.default.consumer.application-id"
+								+ "=testKafkaStreamsBinderWithStandardConfigurationCanStart",
 						"--spring.cloud.stream.bindings.input.destination=foo",
-						"--spring.cloud.stream.kafka.streams.binder.brokers=" + embeddedKafka.getBrokersAsString(),
-						"--spring.cloud.stream.kafka.streams.binder.zkNodes=" + embeddedKafka.getZookeeperConnectionString());
+						"--spring.cloud.stream.kafka.streams.binder.brokers="
+								+ embeddedKafka.getBrokersAsString(),
+						"--spring.cloud.stream.kafka.streams.binder.zkNodes="
+								+ embeddedKafka.getZookeeperConnectionString());
 
 		applicationContext.close();
 	}
@@ -71,10 +79,14 @@ public class KafkaStreamsBinderBootstrapTest {
 		public void handle(@Input("input") KStream<Object, String> stream) {
 
 		}
+
 	}
 
 	interface StreamSourceProcessor {
+
 		@Input("input")
 		KStream<?, ?> inputStream();
+
 	}
+
 }

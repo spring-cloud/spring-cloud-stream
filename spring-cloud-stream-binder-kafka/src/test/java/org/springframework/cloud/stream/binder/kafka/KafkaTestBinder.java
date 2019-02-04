@@ -38,28 +38,31 @@ import org.springframework.kafka.support.ProducerListener;
  */
 public class KafkaTestBinder extends AbstractKafkaTestBinder {
 
-	@SuppressWarnings({"rawtypes", "unchecked"})
-	KafkaTestBinder(KafkaBinderConfigurationProperties binderConfiguration, KafkaTopicProvisioner kafkaTopicProvisioner) {
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	KafkaTestBinder(KafkaBinderConfigurationProperties binderConfiguration,
+			KafkaTopicProvisioner kafkaTopicProvisioner) {
 		try {
-			KafkaMessageChannelBinder binder = new KafkaMessageChannelBinder(binderConfiguration,
-					kafkaTopicProvisioner) {
+			KafkaMessageChannelBinder binder = new KafkaMessageChannelBinder(
+					binderConfiguration, kafkaTopicProvisioner) {
 
 				/*
-				 * Some tests use multiple instance indexes for the same topic; we need to make
-				 * the error infrastructure beans unique.
+				 * Some tests use multiple instance indexes for the same topic; we need to
+				 * make the error infrastructure beans unique.
 				 */
 				@Override
-				protected String errorsBaseName(ConsumerDestination destination, String group,
-												ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties) {
-					return super.errorsBaseName(destination, group, consumerProperties) + "-"
-							+ consumerProperties.getInstanceIndex();
+				protected String errorsBaseName(ConsumerDestination destination,
+						String group,
+						ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties) {
+					return super.errorsBaseName(destination, group, consumerProperties)
+							+ "-" + consumerProperties.getInstanceIndex();
 				}
 
 			};
 
 			ProducerListener producerListener = new LoggingProducerListener();
 			binder.setProducerListener(producerListener);
-			AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(Config.class);
+			AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(
+					Config.class);
 			setApplicationContext(context);
 			binder.setApplicationContext(context);
 			binder.afterPropertiesSet();

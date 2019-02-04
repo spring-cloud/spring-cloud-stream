@@ -66,21 +66,26 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class PerRecordAvroContentTypeTests {
 
 	@ClassRule
-	public static EmbeddedKafkaRule embeddedKafkaRule = new EmbeddedKafkaRule(1, true, "received-sensors");
+	public static EmbeddedKafkaRule embeddedKafkaRule = new EmbeddedKafkaRule(1, true,
+			"received-sensors");
 
-	private static EmbeddedKafkaBroker embeddedKafka = embeddedKafkaRule.getEmbeddedKafka();
+	private static EmbeddedKafkaBroker embeddedKafka = embeddedKafkaRule
+			.getEmbeddedKafka();
 
 	private static Consumer<String, byte[]> consumer;
 
 	@BeforeClass
 	public static void setUp() throws Exception {
-		Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("avro-ct-test", "false", embeddedKafka);
+		Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("avro-ct-test",
+				"false", embeddedKafka);
 
-		//Receive the data as byte[]
-		consumerProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class);
+		// Receive the data as byte[]
+		consumerProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,
+				ByteArrayDeserializer.class);
 
 		consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
-		DefaultKafkaConsumerFactory<String, byte[]> cf = new DefaultKafkaConsumerFactory<>(consumerProps);
+		DefaultKafkaConsumerFactory<String, byte[]> cf = new DefaultKafkaConsumerFactory<>(
+				consumerProps);
 		consumer = cf.createConsumer();
 		embeddedKafka.consumeFromAnEmbeddedTopic(consumer, "received-sensors");
 	}
@@ -102,12 +107,15 @@ public class PerRecordAvroContentTypeTests {
 				"--spring.cloud.stream.bindings.output.contentType=application/avro",
 				"--spring.cloud.stream.kafka.streams.bindings.input.consumer.application-id=per-record-avro-contentType-test",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.commit.interval.ms=1000",
-				"--spring.cloud.stream.kafka.streams.binder.brokers=" + embeddedKafka.getBrokersAsString())) {
+				"--spring.cloud.stream.kafka.streams.binder.brokers="
+						+ embeddedKafka.getBrokersAsString())) {
 
 			Map<String, Object> senderProps = KafkaTestUtils.producerProps(embeddedKafka);
-			//Use a custom avro test serializer
-			senderProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, TestAvroSerializer.class);
-			DefaultKafkaProducerFactory<Integer, Sensor> pf = new DefaultKafkaProducerFactory<>(senderProps);
+			// Use a custom avro test serializer
+			senderProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG,
+					TestAvroSerializer.class);
+			DefaultKafkaProducerFactory<Integer, Sensor> pf = new DefaultKafkaProducerFactory<>(
+					senderProps);
 			try {
 				KafkaTemplate<Integer, Sensor> template = new KafkaTemplate<>(pf, true);
 
@@ -117,26 +125,32 @@ public class PerRecordAvroContentTypeTests {
 				sensor.setAcceleration(random.nextFloat() * 10);
 				sensor.setVelocity(random.nextFloat() * 100);
 				sensor.setTemperature(random.nextFloat() * 50);
-				//Send with avro content type set.
+				// Send with avro content type set.
 				Message<?> message = MessageBuilder.withPayload(sensor)
-						.setHeader("contentType", "application/avro")
-						.build();
+						.setHeader("contentType", "application/avro").build();
 				template.setDefaultTopic("sensors");
 				template.send(message);
 
-				//Serialized byte[] ^^ is received by the binding process and deserialzed it using avro converter.
-				//Then finally, the data will be output to a return topic as byte[] (using the same avro converter).
+				// Serialized byte[] ^^ is received by the binding process and deserialzed
+				// it using avro converter.
+				// Then finally, the data will be output to a return topic as byte[]
+				// (using the same avro converter).
 
-				//Receive the byte[] from return topic
-				ConsumerRecord<String, byte[]> cr = KafkaTestUtils.getSingleRecord(consumer, "received-sensors");
+				// Receive the byte[] from return topic
+				ConsumerRecord<String, byte[]> cr = KafkaTestUtils
+						.getSingleRecord(consumer, "received-sensors");
 				final byte[] value = cr.value();
 
-				//Convert the byte[] received back to avro object and verify that it is the same as the one we sent ^^.
+				// Convert the byte[] received back to avro object and verify that it is
+				// the same as the one we sent ^^.
 				AvroSchemaMessageConverter avroSchemaMessageConverter = new AvroSchemaMessageConverter();
 
 				Message<?> receivedMessage = MessageBuilder.withPayload(value)
-						.setHeader("contentType", MimeTypeUtils.parseMimeType("application/avro")).build();
-				Sensor messageConverted = (Sensor)avroSchemaMessageConverter.fromMessage(receivedMessage, Sensor.class);
+						.setHeader("contentType",
+								MimeTypeUtils.parseMimeType("application/avro"))
+						.build();
+				Sensor messageConverted = (Sensor) avroSchemaMessageConverter
+						.fromMessage(receivedMessage, Sensor.class);
 				assertThat(messageConverted).isEqualTo(sensor);
 			}
 			finally {
@@ -152,7 +166,8 @@ public class PerRecordAvroContentTypeTests {
 		@StreamListener
 		@SendTo("output")
 		public KStream<?, Sensor> process(@Input("input") KStream<Object, Sensor> input) {
-			//return the same Sensor object unchanged so that we can do test verifications
+			// return the same Sensor object unchanged so that we can do test
+			// verifications
 			return input.map(KeyValue::new);
 		}
 
@@ -161,5 +176,7 @@ public class PerRecordAvroContentTypeTests {
 		public MessageConverter sensorMessageConverter() throws IOException {
 			return new AvroSchemaMessageConverter();
 		}
+
 	}
+
 }

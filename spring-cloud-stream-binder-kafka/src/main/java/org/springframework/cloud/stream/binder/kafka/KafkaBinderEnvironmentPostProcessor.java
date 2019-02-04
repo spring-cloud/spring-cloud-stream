@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2017-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,8 +28,8 @@ import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.MapPropertySource;
 
 /**
- * An {@link EnvironmentPostProcessor} that sets some common configuration properties (log config etc.,) for Kafka
- *  binder.
+ * An {@link EnvironmentPostProcessor} that sets some common configuration properties (log
+ * config etc.,) for Kafka binder.
  *
  * @author Ilayaperumal Gopinathan
  */
@@ -41,28 +41,42 @@ public class KafkaBinderEnvironmentPostProcessor implements EnvironmentPostProce
 
 	private static final String SPRING_KAFKA_CONSUMER = SPRING_KAFKA + ".consumer";
 
-	private static final String SPRING_KAFKA_PRODUCER_KEY_SERIALIZER = SPRING_KAFKA_PRODUCER + "." + "keySerializer";
+	private static final String SPRING_KAFKA_PRODUCER_KEY_SERIALIZER = SPRING_KAFKA_PRODUCER
+			+ "." + "keySerializer";
 
-	private static final String SPRING_KAFKA_PRODUCER_VALUE_SERIALIZER = SPRING_KAFKA_PRODUCER + "." + "valueSerializer";
+	private static final String SPRING_KAFKA_PRODUCER_VALUE_SERIALIZER = SPRING_KAFKA_PRODUCER
+			+ "." + "valueSerializer";
 
-	private static final String SPRING_KAFKA_CONSUMER_KEY_DESERIALIZER = SPRING_KAFKA_CONSUMER + "." + "keyDeserializer";
+	private static final String SPRING_KAFKA_CONSUMER_KEY_DESERIALIZER = SPRING_KAFKA_CONSUMER
+			+ "." + "keyDeserializer";
 
-	private static final String SPRING_KAFKA_CONSUMER_VALUE_DESERIALIZER = SPRING_KAFKA_CONSUMER + "." + "valueDeserializer";
+	private static final String SPRING_KAFKA_CONSUMER_VALUE_DESERIALIZER = SPRING_KAFKA_CONSUMER
+			+ "." + "valueDeserializer";
 
 	private static final String KAFKA_BINDER_DEFAULT_PROPERTIES = "kafkaBinderDefaultProperties";
 
 	@Override
-	public void postProcessEnvironment(ConfigurableEnvironment environment, SpringApplication application) {
+	public void postProcessEnvironment(ConfigurableEnvironment environment,
+			SpringApplication application) {
 		if (!environment.getPropertySources().contains(KAFKA_BINDER_DEFAULT_PROPERTIES)) {
 			Map<String, Object> kafkaBinderDefaultProperties = new HashMap<>();
-			kafkaBinderDefaultProperties.put("logging.level.org.I0Itec.zkclient", "ERROR");
-			kafkaBinderDefaultProperties.put("logging.level.kafka.server.KafkaConfig", "ERROR");
-			kafkaBinderDefaultProperties.put("logging.level.kafka.admin.AdminClient.AdminConfig", "ERROR");
-			kafkaBinderDefaultProperties.put(SPRING_KAFKA_PRODUCER_KEY_SERIALIZER, ByteArraySerializer.class.getName());
-			kafkaBinderDefaultProperties.put(SPRING_KAFKA_PRODUCER_VALUE_SERIALIZER, ByteArraySerializer.class.getName());
-			kafkaBinderDefaultProperties.put(SPRING_KAFKA_CONSUMER_KEY_DESERIALIZER, ByteArrayDeserializer.class.getName());
-			kafkaBinderDefaultProperties.put(SPRING_KAFKA_CONSUMER_VALUE_DESERIALIZER, ByteArrayDeserializer.class.getName());
-			environment.getPropertySources().addLast(new MapPropertySource(KAFKA_BINDER_DEFAULT_PROPERTIES, kafkaBinderDefaultProperties));
+			kafkaBinderDefaultProperties.put("logging.level.org.I0Itec.zkclient",
+					"ERROR");
+			kafkaBinderDefaultProperties.put("logging.level.kafka.server.KafkaConfig",
+					"ERROR");
+			kafkaBinderDefaultProperties
+					.put("logging.level.kafka.admin.AdminClient.AdminConfig", "ERROR");
+			kafkaBinderDefaultProperties.put(SPRING_KAFKA_PRODUCER_KEY_SERIALIZER,
+					ByteArraySerializer.class.getName());
+			kafkaBinderDefaultProperties.put(SPRING_KAFKA_PRODUCER_VALUE_SERIALIZER,
+					ByteArraySerializer.class.getName());
+			kafkaBinderDefaultProperties.put(SPRING_KAFKA_CONSUMER_KEY_DESERIALIZER,
+					ByteArrayDeserializer.class.getName());
+			kafkaBinderDefaultProperties.put(SPRING_KAFKA_CONSUMER_VALUE_DESERIALIZER,
+					ByteArrayDeserializer.class.getName());
+			environment.getPropertySources().addLast(new MapPropertySource(
+					KAFKA_BINDER_DEFAULT_PROPERTIES, kafkaBinderDefaultProperties));
 		}
 	}
+
 }

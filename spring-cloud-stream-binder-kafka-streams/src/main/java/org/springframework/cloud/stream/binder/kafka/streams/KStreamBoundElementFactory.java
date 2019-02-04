@@ -28,10 +28,11 @@ import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.util.Assert;
 
 /**
- * {@link org.springframework.cloud.stream.binding.BindingTargetFactory} for{@link KStream}.
+ * {@link org.springframework.cloud.stream.binding.BindingTargetFactory}
+ * for{@link KStream}.
  *
- * The implementation creates proxies for both input and output binding.
- * The actual target will be created downstream through further binding process.
+ * The implementation creates proxies for both input and output binding. The actual target
+ * will be created downstream through further binding process.
  *
  * @author Marius Bogoevici
  * @author Soby Chacko
@@ -43,7 +44,7 @@ class KStreamBoundElementFactory extends AbstractBindingTargetFactory<KStream> {
 	private final KafkaStreamsBindingInformationCatalogue kafkaStreamsBindingInformationCatalogue;
 
 	KStreamBoundElementFactory(BindingServiceProperties bindingServiceProperties,
-									KafkaStreamsBindingInformationCatalogue KafkaStreamsBindingInformationCatalogue) {
+			KafkaStreamsBindingInformationCatalogue KafkaStreamsBindingInformationCatalogue) {
 		super(KStream.class);
 		this.bindingServiceProperties = bindingServiceProperties;
 		this.kafkaStreamsBindingInformationCatalogue = KafkaStreamsBindingInformationCatalogue;
@@ -51,8 +52,9 @@ class KStreamBoundElementFactory extends AbstractBindingTargetFactory<KStream> {
 
 	@Override
 	public KStream createInput(String name) {
-		ConsumerProperties consumerProperties = this.bindingServiceProperties.getConsumerProperties(name);
-		//Always set multiplex to true in the kafka streams binder
+		ConsumerProperties consumerProperties = this.bindingServiceProperties
+				.getConsumerProperties(name);
+		// Always set multiplex to true in the kafka streams binder
 		consumerProperties.setMultiplex(true);
 		return createProxyForKStream(name);
 	}
@@ -70,9 +72,12 @@ class KStreamBoundElementFactory extends AbstractBindingTargetFactory<KStream> {
 
 		KStream proxy = (KStream) proxyFactory.getProxy();
 
-		//Add the binding properties to the catalogue for later retrieval during further binding steps downstream.
-		BindingProperties bindingProperties = this.bindingServiceProperties.getBindingProperties(name);
-		this.kafkaStreamsBindingInformationCatalogue.registerBindingProperties(proxy, bindingProperties);
+		// Add the binding properties to the catalogue for later retrieval during further
+		// binding steps downstream.
+		BindingProperties bindingProperties = this.bindingServiceProperties
+				.getBindingProperties(name);
+		this.kafkaStreamsBindingInformationCatalogue.registerBindingProperties(proxy,
+				bindingProperties);
 		return proxy;
 	}
 
@@ -85,7 +90,8 @@ class KStreamBoundElementFactory extends AbstractBindingTargetFactory<KStream> {
 
 	}
 
-	private static class KStreamWrapperHandler implements KStreamWrapper, MethodInterceptor {
+	private static class KStreamWrapperHandler
+			implements KStreamWrapper, MethodInterceptor {
 
 		private KStream<Object, Object> delegate;
 
@@ -98,16 +104,23 @@ class KStreamBoundElementFactory extends AbstractBindingTargetFactory<KStream> {
 		@Override
 		public Object invoke(MethodInvocation methodInvocation) throws Throwable {
 			if (methodInvocation.getMethod().getDeclaringClass().equals(KStream.class)) {
-				Assert.notNull(this.delegate, "Trying to prepareConsumerBinding " + methodInvocation
-						.getMethod() + "  but no delegate has been set.");
-				return methodInvocation.getMethod().invoke(this.delegate, methodInvocation.getArguments());
+				Assert.notNull(this.delegate,
+						"Trying to prepareConsumerBinding " + methodInvocation.getMethod()
+								+ "  but no delegate has been set.");
+				return methodInvocation.getMethod().invoke(this.delegate,
+						methodInvocation.getArguments());
 			}
-			else if (methodInvocation.getMethod().getDeclaringClass().equals(KStreamWrapper.class)) {
-				return methodInvocation.getMethod().invoke(this, methodInvocation.getArguments());
+			else if (methodInvocation.getMethod().getDeclaringClass()
+					.equals(KStreamWrapper.class)) {
+				return methodInvocation.getMethod().invoke(this,
+						methodInvocation.getArguments());
 			}
 			else {
-				throw new IllegalStateException("Only KStream method invocations are permitted");
+				throw new IllegalStateException(
+						"Only KStream method invocations are permitted");
 			}
 		}
+
 	}
+
 }

@@ -45,33 +45,24 @@ import org.springframework.util.ClassUtils;
 import org.springframework.util.MimeType;
 
 /**
- * Default header mapper for Apache Kafka.
- * Most headers in {@link KafkaHeaders} are not mapped on outbound messages.
- * The exceptions are correlation and reply headers for request/reply
- * messaging.
- * Header types are added to a special header {@link #JSON_TYPES}.
+ * Default header mapper for Apache Kafka. Most headers in {@link KafkaHeaders} are not
+ * mapped on outbound messages. The exceptions are correlation and reply headers for
+ * request/reply messaging. Header types are added to a special header
+ * {@link #JSON_TYPES}.
  *
  * @author Gary Russell
  * @author Artem Bilan
- *
  * @since 2.0
- * @deprecated will be removed in the next point release after 2.1.0.
- * See issue https://github.com/spring-cloud/spring-cloud-stream-binder-kafka/issues/509
+ * @deprecated will be removed in the next point release after 2.1.0. See issue
+ * https://github.com/spring-cloud/spring-cloud-stream-binder-kafka/issues/509
  */
 public class BinderHeaderMapper extends AbstractKafkaHeaderMapper {
 
-	private static final List<String> DEFAULT_TRUSTED_PACKAGES =
-			Arrays.asList(
-					"java.util",
-					"java.lang",
-					"org.springframework.util"
-			);
+	private static final List<String> DEFAULT_TRUSTED_PACKAGES = Arrays
+			.asList("java.util", "java.lang", "org.springframework.util");
 
-	private static final List<String> DEFAULT_TO_STRING_CLASSES =
-			Arrays.asList(
-					"org.springframework.util.MimeType",
-					"org.springframework.http.MediaType"
-			);
+	private static final List<String> DEFAULT_TO_STRING_CLASSES = Arrays.asList(
+			"org.springframework.util.MimeType", "org.springframework.http.MediaType");
 
 	/**
 	 * Header name for java types of other headers.
@@ -80,9 +71,11 @@ public class BinderHeaderMapper extends AbstractKafkaHeaderMapper {
 
 	private final ObjectMapper objectMapper;
 
-	private final Set<String> trustedPackages = new LinkedHashSet<>(DEFAULT_TRUSTED_PACKAGES);
+	private final Set<String> trustedPackages = new LinkedHashSet<>(
+			DEFAULT_TRUSTED_PACKAGES);
 
-	private final Set<String> toStringClasses = new LinkedHashSet<>(DEFAULT_TO_STRING_CLASSES);
+	private final Set<String> toStringClasses = new LinkedHashSet<>(
+			DEFAULT_TO_STRING_CLASSES);
 
 	/**
 	 * Construct an instance with the default object mapper and default header patterns
@@ -108,10 +101,7 @@ public class BinderHeaderMapper extends AbstractKafkaHeaderMapper {
 	 * @see org.springframework.util.PatternMatchUtils#simpleMatch(String, String)
 	 */
 	public BinderHeaderMapper(ObjectMapper objectMapper) {
-		this(objectMapper,
-				"!" + MessageHeaders.ID,
-				"!" + MessageHeaders.TIMESTAMP,
-				"*");
+		this(objectMapper, "!" + MessageHeaders.ID, "!" + MessageHeaders.TIMESTAMP, "*");
 	}
 
 	/**
@@ -119,9 +109,9 @@ public class BinderHeaderMapper extends AbstractKafkaHeaderMapper {
 	 * for outbound headers; all inbound headers are mapped. The patterns are applied in
 	 * order, stopping on the first match (positive or negative). Patterns are negated by
 	 * preceding them with "!". The patterns will replace the default patterns; you
-	 * generally should not map the {@code "id" and "timestamp"} headers. Note:
-	 * most of the headers in {@link KafkaHeaders} are ever mapped as headers since they
-	 * represent data in consumer/producer records.
+	 * generally should not map the {@code "id" and "timestamp"} headers. Note: most of
+	 * the headers in {@link KafkaHeaders} are ever mapped as headers since they represent
+	 * data in consumer/producer records.
 	 * @param patterns the patterns.
 	 * @see org.springframework.util.PatternMatchUtils#simpleMatch(String, String)
 	 */
@@ -146,8 +136,8 @@ public class BinderHeaderMapper extends AbstractKafkaHeaderMapper {
 		Assert.notNull(objectMapper, "'objectMapper' must not be null");
 		Assert.noNullElements(patterns, "'patterns' must not have null elements");
 		this.objectMapper = objectMapper;
-		this.objectMapper
-				.registerModule(new SimpleModule().addDeserializer(MimeType.class, new MimeTypeJsonDeserializer()));
+		this.objectMapper.registerModule(new SimpleModule()
+				.addDeserializer(MimeType.class, new MimeTypeJsonDeserializer()));
 	}
 
 	/**
@@ -177,11 +167,11 @@ public class BinderHeaderMapper extends AbstractKafkaHeaderMapper {
 	}
 
 	/**
-	 * Add packages to the trusted packages list (default {@code java.util, java.lang}) used
-	 * when constructing objects from JSON.
-	 * If any of the supplied packages is {@code "*"}, all packages are trusted.
-	 * If a class for a non-trusted package is encountered, the header is returned to the
-	 * application with value of type {@link NonTrustedHeaderType}.
+	 * Add packages to the trusted packages list (default {@code java.util, java.lang})
+	 * used when constructing objects from JSON. If any of the supplied packages is
+	 * {@code "*"}, all packages are trusted. If a class for a non-trusted package is
+	 * encountered, the header is returned to the application with value of type
+	 * {@link NonTrustedHeaderType}.
 	 * @param trustedPackages the packages to trust.
 	 */
 	public void addTrustedPackages(String... trustedPackages) {
@@ -224,12 +214,14 @@ public class BinderHeaderMapper extends AbstractKafkaHeaderMapper {
 							value = v.toString();
 							className = "java.lang.String";
 						}
-						target.add(new RecordHeader(k, getObjectMapper().writeValueAsBytes(value)));
+						target.add(new RecordHeader(k,
+								getObjectMapper().writeValueAsBytes(value)));
 						jsonHeaders.put(k, className);
 					}
 					catch (Exception e) {
 						if (logger.isDebugEnabled()) {
-							logger.debug("Could not map " + k + " with type " + v.getClass().getName());
+							logger.debug("Could not map " + k + " with type "
+									+ v.getClass().getName());
 						}
 					}
 				}
@@ -237,7 +229,8 @@ public class BinderHeaderMapper extends AbstractKafkaHeaderMapper {
 		});
 		if (jsonHeaders.size() > 0) {
 			try {
-				target.add(new RecordHeader(JSON_TYPES, getObjectMapper().writeValueAsBytes(jsonHeaders)));
+				target.add(new RecordHeader(JSON_TYPES,
+						getObjectMapper().writeValueAsBytes(jsonHeaders)));
 			}
 			catch (IllegalStateException | JsonProcessingException e) {
 				logger.error("Could not add json types header", e);
@@ -265,17 +258,18 @@ public class BinderHeaderMapper extends AbstractKafkaHeaderMapper {
 					}
 					if (trusted) {
 						try {
-							headers.put(h.key(), getObjectMapper().readValue(h.value(), type));
+							headers.put(h.key(),
+									getObjectMapper().readValue(h.value(), type));
 						}
 						catch (IOException e) {
-							logger.error("Could not decode json type: " + new String(h.value()) + " for key: " + h
-											.key(),
-									e);
+							logger.error("Could not decode json type: "
+									+ new String(h.value()) + " for key: " + h.key(), e);
 							headers.put(h.key(), h.value());
 						}
 					}
 					else {
-						headers.put(h.key(), new NonTrustedHeaderType(h.value(), requestedType));
+						headers.put(h.key(),
+								new NonTrustedHeaderType(h.value(), requestedType));
 					}
 				}
 				else {
@@ -297,7 +291,9 @@ public class BinderHeaderMapper extends AbstractKafkaHeaderMapper {
 					types = getObjectMapper().readValue(next.value(), Map.class);
 				}
 				catch (IOException e) {
-					logger.error("Could not decode json types: " + new String(next.value()), e);
+					logger.error(
+							"Could not decode json types: " + new String(next.value()),
+							e);
 				}
 				break;
 			}
@@ -313,7 +309,8 @@ public class BinderHeaderMapper extends AbstractKafkaHeaderMapper {
 			}
 			String packageName = requestedType.substring(0, lastDot);
 			for (String trustedPackage : this.trustedPackages) {
-				if (packageName.equals(trustedPackage) || packageName.startsWith(trustedPackage + ".")) {
+				if (packageName.equals(trustedPackage)
+						|| packageName.startsWith(trustedPackage + ".")) {
 					return true;
 				}
 			}
@@ -322,11 +319,10 @@ public class BinderHeaderMapper extends AbstractKafkaHeaderMapper {
 		return true;
 	}
 
-
 	/**
-	 * The {@link StdNodeBasedDeserializer} extension for {@link MimeType} deserialization.
-	 * It is presented here for backward compatibility when older producers send {@link MimeType}
-	 * headers as serialization version.
+	 * The {@link StdNodeBasedDeserializer} extension for {@link MimeType}
+	 * deserialization. It is presented here for backward compatibility when older
+	 * producers send {@link MimeType} headers as serialization version.
 	 */
 	private class MimeTypeJsonDeserializer extends StdNodeBasedDeserializer<MimeType> {
 
@@ -337,14 +333,14 @@ public class BinderHeaderMapper extends AbstractKafkaHeaderMapper {
 		}
 
 		@Override
-		public MimeType convert(JsonNode root, DeserializationContext ctxt) throws IOException {
+		public MimeType convert(JsonNode root, DeserializationContext ctxt)
+				throws IOException {
 			JsonNode type = root.get("type");
 			JsonNode subType = root.get("subtype");
 			JsonNode parameters = root.get("parameters");
-			Map<String, String> params =
-					BinderHeaderMapper.this.objectMapper.readValue(parameters.traverse(),
-							TypeFactory.defaultInstance()
-									.constructMapType(HashMap.class, String.class, String.class));
+			Map<String, String> params = BinderHeaderMapper.this.objectMapper
+					.readValue(parameters.traverse(), TypeFactory.defaultInstance()
+							.constructMapType(HashMap.class, String.class, String.class));
 			return new MimeType(type.asText(), subType.asText(), params);
 		}
 
@@ -375,14 +371,17 @@ public class BinderHeaderMapper extends AbstractKafkaHeaderMapper {
 		@Override
 		public String toString() {
 			try {
-				return "NonTrustedHeaderType [headerValue=" + new String(this.headerValue, StandardCharsets.UTF_8)
+				return "NonTrustedHeaderType [headerValue="
+						+ new String(this.headerValue, StandardCharsets.UTF_8)
 						+ ", untrustedType=" + this.untrustedType + "]";
 			}
 			catch (Exception e) {
-				return "NonTrustedHeaderType [headerValue=" + Arrays.toString(this.headerValue) + ", untrustedType="
+				return "NonTrustedHeaderType [headerValue="
+						+ Arrays.toString(this.headerValue) + ", untrustedType="
 						+ this.untrustedType + "]";
 			}
 		}
 
 	}
+
 }

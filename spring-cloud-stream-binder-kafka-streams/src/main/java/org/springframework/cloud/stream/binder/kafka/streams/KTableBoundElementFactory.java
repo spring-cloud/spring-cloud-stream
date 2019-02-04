@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 the original author or authors.
+ * Copyright 2018-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,8 @@ import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.util.Assert;
 
 /**
- * {@link org.springframework.cloud.stream.binding.BindingTargetFactory} for {@link KTable}
+ * {@link org.springframework.cloud.stream.binding.BindingTargetFactory} for
+ * {@link KTable}
  *
  * Input bindings are only created as output bindings on KTable are not allowed.
  *
@@ -44,12 +45,14 @@ class KTableBoundElementFactory extends AbstractBindingTargetFactory<KTable> {
 
 	@Override
 	public KTable createInput(String name) {
-		ConsumerProperties consumerProperties = this.bindingServiceProperties.getConsumerProperties(name);
-		//Always set multiplex to true in the kafka streams binder
+		ConsumerProperties consumerProperties = this.bindingServiceProperties
+				.getConsumerProperties(name);
+		// Always set multiplex to true in the kafka streams binder
 		consumerProperties.setMultiplex(true);
 
 		KTableBoundElementFactory.KTableWrapperHandler wrapper = new KTableBoundElementFactory.KTableWrapperHandler();
-		ProxyFactory proxyFactory = new ProxyFactory(KTableBoundElementFactory.KTableWrapper.class, KTable.class);
+		ProxyFactory proxyFactory = new ProxyFactory(
+				KTableBoundElementFactory.KTableWrapper.class, KTable.class);
 		proxyFactory.addAdvice(wrapper);
 
 		return (KTable) proxyFactory.getProxy();
@@ -58,17 +61,21 @@ class KTableBoundElementFactory extends AbstractBindingTargetFactory<KTable> {
 	@Override
 	@SuppressWarnings("unchecked")
 	public KTable createOutput(final String name) {
-		throw new UnsupportedOperationException("Outbound operations are not allowed on target type KTable");
+		throw new UnsupportedOperationException(
+				"Outbound operations are not allowed on target type KTable");
 	}
 
 	/**
 	 * Wrapper for KTable proxy.
 	 */
 	public interface KTableWrapper {
+
 		void wrap(KTable<Object, Object> delegate);
+
 	}
 
-	private static class KTableWrapperHandler implements KTableBoundElementFactory.KTableWrapper, MethodInterceptor {
+	private static class KTableWrapperHandler
+			implements KTableBoundElementFactory.KTableWrapper, MethodInterceptor {
 
 		private KTable<Object, Object> delegate;
 
@@ -81,16 +88,23 @@ class KTableBoundElementFactory extends AbstractBindingTargetFactory<KTable> {
 		@Override
 		public Object invoke(MethodInvocation methodInvocation) throws Throwable {
 			if (methodInvocation.getMethod().getDeclaringClass().equals(KTable.class)) {
-				Assert.notNull(this.delegate, "Trying to prepareConsumerBinding " + methodInvocation
-						.getMethod() + "  but no delegate has been set.");
-				return methodInvocation.getMethod().invoke(this.delegate, methodInvocation.getArguments());
+				Assert.notNull(this.delegate,
+						"Trying to prepareConsumerBinding " + methodInvocation.getMethod()
+								+ "  but no delegate has been set.");
+				return methodInvocation.getMethod().invoke(this.delegate,
+						methodInvocation.getArguments());
 			}
-			else if (methodInvocation.getMethod().getDeclaringClass().equals(KTableBoundElementFactory.KTableWrapper.class)) {
-				return methodInvocation.getMethod().invoke(this, methodInvocation.getArguments());
+			else if (methodInvocation.getMethod().getDeclaringClass()
+					.equals(KTableBoundElementFactory.KTableWrapper.class)) {
+				return methodInvocation.getMethod().invoke(this,
+						methodInvocation.getArguments());
 			}
 			else {
-				throw new IllegalStateException("Only KTable method invocations are permitted");
+				throw new IllegalStateException(
+						"Only KTable method invocations are permitted");
 			}
 		}
+
 	}
+
 }

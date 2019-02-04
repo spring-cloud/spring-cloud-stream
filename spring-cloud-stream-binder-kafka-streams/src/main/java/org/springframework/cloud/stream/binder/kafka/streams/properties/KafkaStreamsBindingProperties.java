@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2017-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,8 @@ package org.springframework.cloud.stream.binder.kafka.streams.properties;
 import org.springframework.cloud.stream.binder.BinderSpecificPropertiesProvider;
 
 /**
- * Extended binding properties holder that delegates to Kafka Streams producer and consumer properties.
+ * Extended binding properties holder that delegates to Kafka Streams producer and
+ * consumer properties.
  *
  * @author Marius Bogoevici
  */
@@ -44,4 +45,5 @@ public class KafkaStreamsBindingProperties implements BinderSpecificPropertiesPr
 	public void setProducer(KafkaStreamsProducerProperties producer) {
 		this.producer = producer;
 	}
+
 }

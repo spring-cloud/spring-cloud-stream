@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 the original author or authors.
+ * Copyright 2018-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,10 +30,11 @@ import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.kafka.config.StreamsBuilderFactoryBean;
 
 /**
- * A catalogue that provides binding information for Kafka Streams target types such as KStream.
- * It also keeps a catalogue for the underlying {@link StreamsBuilderFactoryBean} and
- * {@link StreamsConfig} associated with various {@link org.springframework.cloud.stream.annotation.StreamListener}
- * methods in the {@link org.springframework.context.ApplicationContext}.
+ * A catalogue that provides binding information for Kafka Streams target types such as
+ * KStream. It also keeps a catalogue for the underlying {@link StreamsBuilderFactoryBean}
+ * and {@link StreamsConfig} associated with various
+ * {@link org.springframework.cloud.stream.annotation.StreamListener} methods in the
+ * {@link org.springframework.context.ApplicationContext}.
  *
  * @author Soby Chacko
  */
@@ -46,9 +47,8 @@ class KafkaStreamsBindingInformationCatalogue {
 	private final Set<StreamsBuilderFactoryBean> streamsBuilderFactoryBeans = new HashSet<>();
 
 	/**
-	 * For a given bounded {@link KStream}, retrieve it's corresponding destination
-	 * on the broker.
-	 *
+	 * For a given bounded {@link KStream}, retrieve it's corresponding destination on the
+	 * broker.
 	 * @param bindingTarget binding target for KStream
 	 * @return destination topic on Kafka
 	 */
@@ -59,7 +59,6 @@ class KafkaStreamsBindingInformationCatalogue {
 
 	/**
 	 * Is native decoding is enabled on this {@link KStream}.
-	 *
 	 * @param bindingTarget binding target for KStream
 	 * @return true if native decoding is enabled, fasle otherwise.
 	 */
@@ -73,7 +72,6 @@ class KafkaStreamsBindingInformationCatalogue {
 
 	/**
 	 * Is DLQ enabled for this {@link KStream}.
-	 *
 	 * @param bindingTarget binding target for KStream
 	 * @return true if DLQ is enabled, false otherwise.
 	 */
@@ -83,7 +81,6 @@ class KafkaStreamsBindingInformationCatalogue {
 
 	/**
 	 * Retrieve the content type associated with a given {@link KStream}.
-	 *
 	 * @param bindingTarget binding target for KStream
 	 * @return content Type associated.
 	 */
@@ -94,28 +91,28 @@ class KafkaStreamsBindingInformationCatalogue {
 
 	/**
 	 * Register a cache for bounded KStream -> {@link BindingProperties}.
-	 *
 	 * @param bindingTarget binding target for KStream
 	 * @param bindingProperties {@link BindingProperties} for this KStream
 	 */
-	void registerBindingProperties(KStream<?, ?> bindingTarget, BindingProperties bindingProperties) {
+	void registerBindingProperties(KStream<?, ?> bindingTarget,
+			BindingProperties bindingProperties) {
 		this.bindingProperties.put(bindingTarget, bindingProperties);
 	}
 
 	/**
 	 * Register a cache for bounded KStream -> {@link KafkaStreamsConsumerProperties}.
-	 *
 	 * @param bindingTarget binding target for KStream
 	 * @param kafkaStreamsConsumerProperties consumer properties for this KStream
 	 */
-	void registerConsumerProperties(KStream<?, ?> bindingTarget, KafkaStreamsConsumerProperties kafkaStreamsConsumerProperties) {
+	void registerConsumerProperties(KStream<?, ?> bindingTarget,
+			KafkaStreamsConsumerProperties kafkaStreamsConsumerProperties) {
 		this.consumerProperties.put(bindingTarget, kafkaStreamsConsumerProperties);
 	}
 
 	/**
 	 * Adds a mapping for KStream -> {@link StreamsBuilderFactoryBean}.
-	 *
-	 * @param streamsBuilderFactoryBean provides the {@link StreamsBuilderFactoryBean} mapped to the KStream
+	 * @param streamsBuilderFactoryBean provides the {@link StreamsBuilderFactoryBean}
+	 * mapped to the KStream
 	 */
 	void addStreamBuilderFactory(StreamsBuilderFactoryBean streamsBuilderFactoryBean) {
 		this.streamsBuilderFactoryBeans.add(streamsBuilderFactoryBean);
@@ -124,4 +121,5 @@ class KafkaStreamsBindingInformationCatalogue {
 	Set<StreamsBuilderFactoryBean> getStreamsBuilderFactoryBeans() {
 		return this.streamsBuilderFactoryBeans;
 	}
+
 }

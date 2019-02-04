@@ -19,16 +19,21 @@ package org.springframework.cloud.stream.binder.kafka.streams.properties;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.cloud.stream.binder.AbstractExtendedBindingProperties;
 import org.springframework.cloud.stream.binder.BinderSpecificPropertiesProvider;
+
 /**
- * Kafka streams specific extended binding properties class that extends from {@link AbstractExtendedBindingProperties}.
+ * Kafka streams specific extended binding properties class that extends from
+ * {@link AbstractExtendedBindingProperties}.
  *
  * @author Marius Bogoevici
  * @author Oleg Zhurakousky
  */
 @ConfigurationProperties("spring.cloud.stream.kafka.streams")
 public class KafkaStreamsExtendedBindingProperties
-		extends AbstractExtendedBindingProperties<KafkaStreamsConsumerProperties, KafkaStreamsProducerProperties, KafkaStreamsBindingProperties> {
+		// @checkstyle:off
+		extends
+		AbstractExtendedBindingProperties<KafkaStreamsConsumerProperties, KafkaStreamsProducerProperties, KafkaStreamsBindingProperties> {
 
+	// @checkstyle:on
 	private static final String DEFAULTS_PREFIX = "spring.cloud.stream.kafka.streams.default";
 
 	@Override
@@ -40,4 +45,5 @@ public class KafkaStreamsExtendedBindingProperties
 	public Class<? extends BinderSpecificPropertiesProvider> getExtendedPropertiesEntryClass() {
 		return KafkaStreamsBindingProperties.class;
 	}
+
 }

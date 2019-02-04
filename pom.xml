@@ -16,6 +16,9 @@
 		<spring-integration-kafka.version>3.1.0.RELEASE</spring-integration-kafka.version>
 		<kafka.version>2.0.0</kafka.version>
 		<spring-cloud-stream.version>2.2.0.BUILD-SNAPSHOT</spring-cloud-stream.version>
+		<maven-checkstyle-plugin.failsOnError>true</maven-checkstyle-plugin.failsOnError>
+		<maven-checkstyle-plugin.failsOnViolation>true</maven-checkstyle-plugin.failsOnViolation>
+		<maven-checkstyle-plugin.includeTestSourceDirectory>true</maven-checkstyle-plugin.includeTestSourceDirectory>
 	</properties>
 	<modules>
 		<module>spring-cloud-stream-binder-kafka</module>
@@ -142,35 +145,14 @@
 			</plugins>
 		</pluginManagement>
 		<plugins>
-			<!--<plugin>-->
-				<!--<groupId>org.apache.maven.plugins</groupId>-->
-				<!--<artifactId>maven-checkstyle-plugin</artifactId>-->
-				<!--<dependencies>-->
-					<!--<dependency>-->
-						<!--<groupId>org.springframework.cloud</groupId>-->
-						<!--<artifactId>spring-cloud-stream-tools</artifactId>-->
-						<!--<version>${spring-cloud-stream.version}</version>-->
-					<!--</dependency>-->
-				<!--</dependencies>-->
-				<!--<executions>-->
-					<!--<execution>-->
-						<!--<id>checkstyle-validation</id>-->
-						<!--<phase>validate</phase>-->
-						<!--<configuration>-->
-							<!--<configLocation>checkstyle.xml</configLocation>-->
-							<!--<headerLocation>checkstyle-header.txt</headerLocation>-->
-							<!--<suppressionsLocation>checkstyle-suppressions.xml</suppressionsLocation>-->
-							<!--<encoding>UTF-8</encoding>-->
-							<!--<consoleOutput>true</consoleOutput>-->
-							<!--<failsOnError>true</failsOnError>-->
-							<!--<includeTestSourceDirectory>true</includeTestSourceDirectory>-->
-						<!--</configuration>-->
-						<!--<goals>-->
-							<!--<goal>check</goal>-->
-						<!--</goals>-->
-					<!--</execution>-->
-				<!--</executions>-->
-			<!--</plugin>-->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-checkstyle-plugin</artifactId>
+			</plugin>
+			<plugin>
+				<groupId>io.spring.javaformat</groupId>
+				<artifactId>spring-javaformat-maven-plugin</artifactId>
+			</plugin>
 		</plugins>
 	</build>
 
@@ -237,4 +219,12 @@
 			</pluginRepositories>
 		</profile>
 	</profiles>
+	<reporting>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-checkstyle-plugin</artifactId>
+			</plugin>
+		</plugins>
+	</reporting>
 </project>

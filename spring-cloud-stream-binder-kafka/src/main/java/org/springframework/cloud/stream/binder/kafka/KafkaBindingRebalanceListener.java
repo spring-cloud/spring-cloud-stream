@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 the original author or authors.
+ * Copyright 2018-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,8 +22,8 @@ import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.common.TopicPartition;
 
 /**
- * A rebalance listener that provides access to the binding name consumer object.
- * It can be used to perform seek operations on the consumer after a rebalance.
+ * A rebalance listener that provides access to the binding name consumer object. It can
+ * be used to perform seek operations on the consumer after a rebalance.
  *
  * @author Gary Russell
  * @since 2.1
@@ -37,8 +37,8 @@ public interface KafkaBindingRebalanceListener {
 	 * @param consumer the consumer.
 	 * @param partitions the partitions.
 	 */
-	default void onPartitionsRevokedBeforeCommit(String bindingName, Consumer<?, ?> consumer,
-			Collection<TopicPartition> partitions) {
+	default void onPartitionsRevokedBeforeCommit(String bindingName,
+			Consumer<?, ?> consumer, Collection<TopicPartition> partitions) {
 		// do nothing
 	}
 
@@ -48,20 +48,21 @@ public interface KafkaBindingRebalanceListener {
 	 * @param consumer the consumer.
 	 * @param partitions the partitions.
 	 */
-	default void onPartitionsRevokedAfterCommit(String bindingName, Consumer<?, ?> consumer, Collection<TopicPartition> partitions) {
+	default void onPartitionsRevokedAfterCommit(String bindingName,
+			Consumer<?, ?> consumer, Collection<TopicPartition> partitions) {
 		// do nothing
 	}
 
 	/**
-	 * Invoked when partitions are initially assigned or after a rebalance.
-	 * Applications might only want to perform seek operations on an initial assignment.
+	 * Invoked when partitions are initially assigned or after a rebalance. Applications
+	 * might only want to perform seek operations on an initial assignment.
 	 * @param bindingName the name of the binding.
 	 * @param consumer the consumer.
 	 * @param partitions the partitions.
 	 * @param initial true if this is the initial assignment.
 	 */
-	default void onPartitionsAssigned(String bindingName, Consumer<?, ?> consumer, Collection<TopicPartition> partitions,
-			boolean initial) {
+	default void onPartitionsAssigned(String bindingName, Consumer<?, ?> consumer,
+			Collection<TopicPartition> partitions, boolean initial) {
 		// do nothing
 	}
 

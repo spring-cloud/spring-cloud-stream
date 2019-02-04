@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 the original author or authors.
+ * Copyright 2018-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,27 +69,32 @@ import static org.mockito.Mockito.verify;
 public abstract class DeserializationErrorHandlerByKafkaTests {
 
 	@ClassRule
-	public static EmbeddedKafkaRule embeddedKafkaRule = new EmbeddedKafkaRule(1, true, "counts", "error.words.group",
-			"error.word1.groupx", "error.word2.groupx");
+	public static EmbeddedKafkaRule embeddedKafkaRule = new EmbeddedKafkaRule(1, true,
+			"counts", "error.words.group", "error.word1.groupx", "error.word2.groupx");
 
-	private static EmbeddedKafkaBroker embeddedKafka = embeddedKafkaRule.getEmbeddedKafka();
+	private static EmbeddedKafkaBroker embeddedKafka = embeddedKafkaRule
+			.getEmbeddedKafka();
 
 	@SpyBean
-	org.springframework.cloud.stream.binder.kafka.streams.KafkaStreamsMessageConversionDelegate KafkaStreamsMessageConversionDelegate;
+	org.springframework.cloud.stream.binder.kafka.streams.KafkaStreamsMessageConversionDelegate conversionDelegate;
 
 	private static Consumer<String, String> consumer;
 
 	@BeforeClass
 	public static void setUp() throws Exception {
-		System.setProperty("spring.cloud.stream.kafka.streams.binder.brokers", embeddedKafka.getBrokersAsString());
-		System.setProperty("spring.cloud.stream.kafka.streams.binder.zkNodes", embeddedKafka.getZookeeperConnectionString());
+		System.setProperty("spring.cloud.stream.kafka.streams.binder.brokers",
+				embeddedKafka.getBrokersAsString());
+		System.setProperty("spring.cloud.stream.kafka.streams.binder.zkNodes",
+				embeddedKafka.getZookeeperConnectionString());
 
-		System.setProperty("server.port","0");
-		System.setProperty("spring.jmx.enabled","false");
+		System.setProperty("server.port", "0");
+		System.setProperty("spring.jmx.enabled", "false");
 
-		Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("fooc", "false", embeddedKafka);
+		Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("fooc", "false",
+				embeddedKafka);
 		consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
-		DefaultKafkaConsumerFactory<String, String> cf = new DefaultKafkaConsumerFactory<>(consumerProps);
+		DefaultKafkaConsumerFactory<String, String> cf = new DefaultKafkaConsumerFactory<>(
+				consumerProps);
 		consumer = cf.createConsumer();
 		embeddedKafka.consumeFromAnEmbeddedTopic(consumer, "counts");
 	}
@@ -99,42 +104,50 @@ public abstract class DeserializationErrorHandlerByKafkaTests {
 		consumer.close();
 	}
 
+	// @checkstyle:off
 	@SpringBootTest(properties = {
 			"spring.cloud.stream.bindings.input.consumer.useNativeDecoding=true",
 			"spring.cloud.stream.bindings.output.producer.useNativeEncoding=true",
 			"spring.cloud.stream.kafka.streams.bindings.input.consumer.application-id=deser-kafka-dlq",
 			"spring.cloud.stream.bindings.input.group=group",
 			"spring.cloud.stream.kafka.streams.binder.serdeError=sendToDlq",
-			"spring.cloud.stream.kafka.streams.binder.configuration.default.value.serde=" +
-					"org.apache.kafka.common.serialization.Serdes$IntegerSerde"},
-			webEnvironment= SpringBootTest.WebEnvironment.NONE
-	)
-	public static class DeserializationByKafkaAndDlqTests extends DeserializationErrorHandlerByKafkaTests {
+			"spring.cloud.stream.kafka.streams.binder.configuration.default.value.serde="
+					+ "org.apache.kafka.common.serialization.Serdes$IntegerSerde" }, webEnvironment = SpringBootTest.WebEnvironment.NONE)
+	// @checkstyle:on
+	public static class DeserializationByKafkaAndDlqTests
+			extends DeserializationErrorHandlerByKafkaTests {
 
 		@Test
 		@SuppressWarnings("unchecked")
 		public void test() throws Exception {
 			Map<String, Object> senderProps = KafkaTestUtils.producerProps(embeddedKafka);
-			DefaultKafkaProducerFactory<Integer, String> pf = new DefaultKafkaProducerFactory<>(senderProps);
+			DefaultKafkaProducerFactory<Integer, String> pf = new DefaultKafkaProducerFactory<>(
+					senderProps);
 			KafkaTemplate<Integer, String> template = new KafkaTemplate<>(pf, true);
 			template.setDefaultTopic("words");
 			template.sendDefault("foobar");
 
-			Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("foobar", "false", embeddedKafka);
+			Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("foobar",
+					"false", embeddedKafka);
 			consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
-			DefaultKafkaConsumerFactory<String, String> cf = new DefaultKafkaConsumerFactory<>(consumerProps);
+			DefaultKafkaConsumerFactory<String, String> cf = new DefaultKafkaConsumerFactory<>(
+					consumerProps);
 			Consumer<String, String> consumer1 = cf.createConsumer();
 			embeddedKafka.consumeFromAnEmbeddedTopic(consumer1, "error.words.group");
 
-			ConsumerRecord<String, String> cr = KafkaTestUtils.getSingleRecord(consumer1, "error.words.group");
+			ConsumerRecord<String, String> cr = KafkaTestUtils.getSingleRecord(consumer1,
+					"error.words.group");
 			assertThat(cr.value().equals("foobar")).isTrue();
 
-			//Ensuring that the deserialization was indeed done by Kafka natively
-			verify(KafkaStreamsMessageConversionDelegate, never()).deserializeOnInbound(any(Class.class), any(KStream.class));
-			verify(KafkaStreamsMessageConversionDelegate, never()).serializeOnOutbound(any(KStream.class));
+			// Ensuring that the deserialization was indeed done by Kafka natively
+			verify(conversionDelegate, never()).deserializeOnInbound(any(Class.class),
+					any(KStream.class));
+			verify(conversionDelegate, never()).serializeOnOutbound(any(KStream.class));
 		}
+
 	}
 
+	// @checkstyle:off
 	@SpringBootTest(properties = {
 			"spring.cloud.stream.bindings.input.consumer.useNativeDecoding=true",
 			"spring.cloud.stream.bindings.output.producer.useNativeEncoding=true",
@@ -142,17 +155,18 @@ public abstract class DeserializationErrorHandlerByKafkaTests {
 			"spring.cloud.stream.kafka.streams.default.consumer.applicationId=deser-kafka-dlq-multi-input",
 			"spring.cloud.stream.bindings.input.group=groupx",
 			"spring.cloud.stream.kafka.streams.binder.serdeError=sendToDlq",
-			"spring.cloud.stream.kafka.streams.binder.configuration.default.value.serde=" +
-					"org.apache.kafka.common.serialization.Serdes$IntegerSerde"},
-			webEnvironment= SpringBootTest.WebEnvironment.NONE
-	)
-	public static class DeserializationByKafkaAndDlqTestsWithMultipleInputs extends DeserializationErrorHandlerByKafkaTests {
+			"spring.cloud.stream.kafka.streams.binder.configuration.default.value.serde="
+					+ "org.apache.kafka.common.serialization.Serdes$IntegerSerde" }, webEnvironment = SpringBootTest.WebEnvironment.NONE)
+	// @checkstyle:on
+	public static class DeserializationByKafkaAndDlqTestsWithMultipleInputs
+			extends DeserializationErrorHandlerByKafkaTests {
 
 		@Test
 		@SuppressWarnings("unchecked")
-		public void test() throws Exception {
+		public void test() {
 			Map<String, Object> senderProps = KafkaTestUtils.producerProps(embeddedKafka);
-			DefaultKafkaProducerFactory<Integer, String> pf = new DefaultKafkaProducerFactory<>(senderProps);
+			DefaultKafkaProducerFactory<Integer, String> pf = new DefaultKafkaProducerFactory<>(
+					senderProps);
 			KafkaTemplate<Integer, String> template = new KafkaTemplate<>(pf, true);
 			template.setDefaultTopic("word1");
 			template.sendDefault("foobar");
@@ -160,22 +174,30 @@ public abstract class DeserializationErrorHandlerByKafkaTests {
 			template.setDefaultTopic("word2");
 			template.sendDefault("foobar");
 
-			Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("foobarx", "false", embeddedKafka);
+			Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("foobarx",
+					"false", embeddedKafka);
 			consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
-			DefaultKafkaConsumerFactory<String, String> cf = new DefaultKafkaConsumerFactory<>(consumerProps);
+			DefaultKafkaConsumerFactory<String, String> cf = new DefaultKafkaConsumerFactory<>(
+					consumerProps);
 			Consumer<String, String> consumer1 = cf.createConsumer();
-			embeddedKafka.consumeFromEmbeddedTopics(consumer1, "error.word1.groupx", "error.word2.groupx");
+			embeddedKafka.consumeFromEmbeddedTopics(consumer1, "error.word1.groupx",
+					"error.word2.groupx");
 
-			//TODO: Investigate why the ordering matters below: i.e. if we consume from error.word1.groupx first, an exception is thrown.
-			ConsumerRecord<String, String> cr1 = KafkaTestUtils.getSingleRecord(consumer1, "error.word2.groupx");
+			// TODO: Investigate why the ordering matters below: i.e.
+			// if we consume from error.word1.groupx first, an exception is thrown.
+			ConsumerRecord<String, String> cr1 = KafkaTestUtils.getSingleRecord(consumer1,
+					"error.word2.groupx");
 			assertThat(cr1.value().equals("foobar")).isTrue();
-			ConsumerRecord<String, String> cr2 = KafkaTestUtils.getSingleRecord(consumer1, "error.word1.groupx");
+			ConsumerRecord<String, String> cr2 = KafkaTestUtils.getSingleRecord(consumer1,
+					"error.word1.groupx");
 			assertThat(cr2.value().equals("foobar")).isTrue();
 
-			//Ensuring that the deserialization was indeed done by Kafka natively
-			verify(KafkaStreamsMessageConversionDelegate, never()).deserializeOnInbound(any(Class.class), any(KStream.class));
-			verify(KafkaStreamsMessageConversionDelegate, never()).serializeOnOutbound(any(KStream.class));
+			// Ensuring that the deserialization was indeed done by Kafka natively
+			verify(conversionDelegate, never()).deserializeOnInbound(any(Class.class),
+					any(KStream.class));
+			verify(conversionDelegate, never()).serializeOnOutbound(any(KStream.class));
 		}
+
 	}
 
 	@EnableBinding(KafkaStreamsProcessor.class)
@@ -192,14 +214,15 @@ public abstract class DeserializationErrorHandlerByKafkaTests {
 		public KStream<?, String> process(KStream<Object, String> input) {
 
 			return input
-					.flatMapValues(value -> Arrays.asList(value.toLowerCase().split("\\W+")))
+					.flatMapValues(
+							value -> Arrays.asList(value.toLowerCase().split("\\W+")))
 					.map((key, value) -> new KeyValue<>(value, value))
 					.groupByKey(Serialized.with(Serdes.String(), Serdes.String()))
-					.windowedBy(timeWindows)
-					.count(Materialized.as("foo-WordCounts-x"))
-					.toStream()
-					.map((key, value) -> new KeyValue<>(null, "Count for " + key.key() + " : " + value));
+					.windowedBy(timeWindows).count(Materialized.as("foo-WordCounts-x"))
+					.toStream().map((key, value) -> new KeyValue<>(null,
+							"Count for " + key.key() + " : " + value));
 		}
 
 	}
+
 }

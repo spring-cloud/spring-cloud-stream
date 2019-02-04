@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 the original author or authors.
+ * Copyright 2018-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,35 +37,46 @@ final class KafkaStreamsBinderUtils {
 
 	}
 
-	static void prepareConsumerBinding(String name, String group, ApplicationContext context,
-											KafkaTopicProvisioner kafkaTopicProvisioner,
-											KafkaStreamsBinderConfigurationProperties binderConfigurationProperties,
-											ExtendedConsumerProperties<KafkaStreamsConsumerProperties> properties,
-											Map<String, KafkaStreamsDlqDispatch> kafkaStreamsDlqDispatchers) {
+	static void prepareConsumerBinding(String name, String group,
+			ApplicationContext context, KafkaTopicProvisioner kafkaTopicProvisioner,
+			KafkaStreamsBinderConfigurationProperties binderConfigurationProperties,
+			ExtendedConsumerProperties<KafkaStreamsConsumerProperties> properties,
+			Map<String, KafkaStreamsDlqDispatch> kafkaStreamsDlqDispatchers) {
 		ExtendedConsumerProperties<KafkaConsumerProperties> extendedConsumerProperties = new ExtendedConsumerProperties<>(
 				properties.getExtension());
-		if (binderConfigurationProperties.getSerdeError() == KafkaStreamsBinderConfigurationProperties.SerdeError.sendToDlq) {
+		if (binderConfigurationProperties
+				.getSerdeError() == KafkaStreamsBinderConfigurationProperties.SerdeError.sendToDlq) {
 			extendedConsumerProperties.getExtension().setEnableDlq(true);
 		}
 
 		String[] inputTopics = StringUtils.commaDelimitedListToStringArray(name);
 		for (String inputTopic : inputTopics) {
-			kafkaTopicProvisioner.provisionConsumerDestination(inputTopic, group, extendedConsumerProperties);
+			kafkaTopicProvisioner.provisionConsumerDestination(inputTopic, group,
+					extendedConsumerProperties);
 		}
 
 		if (extendedConsumerProperties.getExtension().isEnableDlq()) {
-			KafkaStreamsDlqDispatch kafkaStreamsDlqDispatch = !StringUtils.isEmpty(extendedConsumerProperties.getExtension().getDlqName()) ?
-					new KafkaStreamsDlqDispatch(extendedConsumerProperties.getExtension().getDlqName(), binderConfigurationProperties,
-							extendedConsumerProperties.getExtension()) : null;
+			KafkaStreamsDlqDispatch kafkaStreamsDlqDispatch = !StringUtils
+					.isEmpty(extendedConsumerProperties.getExtension().getDlqName())
+							? new KafkaStreamsDlqDispatch(
+									extendedConsumerProperties.getExtension()
+											.getDlqName(),
+									binderConfigurationProperties,
+									extendedConsumerProperties.getExtension())
+							: null;
 			for (String inputTopic : inputTopics) {
-				if (StringUtils.isEmpty(extendedConsumerProperties.getExtension().getDlqName())) {
+				if (StringUtils.isEmpty(
+						extendedConsumerProperties.getExtension().getDlqName())) {
 					String dlqName = "error." + inputTopic + "." + group;
-					kafkaStreamsDlqDispatch = new KafkaStreamsDlqDispatch(dlqName, binderConfigurationProperties,
+					kafkaStreamsDlqDispatch = new KafkaStreamsDlqDispatch(dlqName,
+							binderConfigurationProperties,
 							extendedConsumerProperties.getExtension());
 				}
 
-				SendToDlqAndContinue sendToDlqAndContinue = context.getBean(SendToDlqAndContinue.class);
-				sendToDlqAndContinue.addKStreamDlqDispatch(inputTopic, kafkaStreamsDlqDispatch);
+				SendToDlqAndContinue sendToDlqAndContinue = context
+						.getBean(SendToDlqAndContinue.class);
+				sendToDlqAndContinue.addKStreamDlqDispatch(inputTopic,
+						kafkaStreamsDlqDispatch);
 
 				kafkaStreamsDlqDispatchers.put(inputTopic, kafkaStreamsDlqDispatch);
 			}

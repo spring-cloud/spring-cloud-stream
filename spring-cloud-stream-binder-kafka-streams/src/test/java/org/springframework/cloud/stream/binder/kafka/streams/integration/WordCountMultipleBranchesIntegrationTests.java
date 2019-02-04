@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2017-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,17 +62,21 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class WordCountMultipleBranchesIntegrationTests {
 
 	@ClassRule
-	public static EmbeddedKafkaRule embeddedKafkaRule = new EmbeddedKafkaRule(1, true, "counts","foo","bar");
+	public static EmbeddedKafkaRule embeddedKafkaRule = new EmbeddedKafkaRule(1, true,
+			"counts", "foo", "bar");
 
-	private static EmbeddedKafkaBroker embeddedKafka = embeddedKafkaRule.getEmbeddedKafka();
+	private static EmbeddedKafkaBroker embeddedKafka = embeddedKafkaRule
+			.getEmbeddedKafka();
 
 	private static Consumer<String, String> consumer;
 
 	@BeforeClass
 	public static void setUp() throws Exception {
-		Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("groupx", "false", embeddedKafka);
+		Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("groupx",
+				"false", embeddedKafka);
 		consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
-		DefaultKafkaConsumerFactory<String, String> cf = new DefaultKafkaConsumerFactory<>(consumerProps);
+		DefaultKafkaConsumerFactory<String, String> cf = new DefaultKafkaConsumerFactory<>(
+				consumerProps);
 		consumer = cf.createConsumer();
 		embeddedKafka.consumeFromEmbeddedTopics(consumer, "counts", "foo", "bar");
 	}
@@ -80,6 +84,66 @@ public class WordCountMultipleBranchesIntegrationTests {
 	@AfterClass
 	public static void tearDown() {
 		consumer.close();
+	}
+
+	@Test
+	public void testKstreamWordCountWithStringInputAndPojoOuput() throws Exception {
+		SpringApplication app = new SpringApplication(
+				WordCountProcessorApplication.class);
+		app.setWebApplicationType(WebApplicationType.NONE);
+
+		ConfigurableApplicationContext context = app.run("--server.port=0",
+				"--spring.jmx.enabled=false",
+				"--spring.cloud.stream.bindings.input.destination=words",
+				"--spring.cloud.stream.bindings.output1.destination=counts",
+				"--spring.cloud.stream.bindings.output1.contentType=application/json",
+				"--spring.cloud.stream.bindings.output2.destination=foo",
+				"--spring.cloud.stream.bindings.output2.contentType=application/json",
+				"--spring.cloud.stream.bindings.output3.destination=bar",
+				"--spring.cloud.stream.bindings.output3.contentType=application/json",
+				"--spring.cloud.stream.kafka.streams.binder.configuration.commit.interval.ms=1000",
+				"--spring.cloud.stream.kafka.streams.binder.configuration.default.key.serde"
+						+ "=org.apache.kafka.common.serialization.Serdes$StringSerde",
+				"--spring.cloud.stream.kafka.streams.binder.configuration.default.value.serde"
+						+ "=org.apache.kafka.common.serialization.Serdes$StringSerde",
+				"--spring.cloud.stream.kafka.streams.timeWindow.length=5000",
+				"--spring.cloud.stream.kafka.streams.timeWindow.advanceBy=0",
+				"--spring.cloud.stream.kafka.streams.bindings.input.consumer.applicationId"
+						+ "=WordCountMultipleBranchesIntegrationTests-abc",
+				"--spring.cloud.stream.kafka.streams.binder.brokers="
+						+ embeddedKafka.getBrokersAsString(),
+				"--spring.cloud.stream.kafka.streams.binder.zkNodes="
+						+ embeddedKafka.getZookeeperConnectionString());
+		try {
+			receiveAndValidate(context);
+		}
+		finally {
+			context.close();
+		}
+	}
+
+	private void receiveAndValidate(ConfigurableApplicationContext context)
+			throws Exception {
+		Map<String, Object> senderProps = KafkaTestUtils.producerProps(embeddedKafka);
+		DefaultKafkaProducerFactory<Integer, String> pf = new DefaultKafkaProducerFactory<>(
+				senderProps);
+		KafkaTemplate<Integer, String> template = new KafkaTemplate<>(pf, true);
+		template.setDefaultTopic("words");
+		template.sendDefault("english");
+		ConsumerRecord<String, String> cr = KafkaTestUtils.getSingleRecord(consumer,
+				"counts");
+		assertThat(cr.value().contains("\"word\":\"english\",\"count\":1")).isTrue();
+
+		template.sendDefault("french");
+		template.sendDefault("french");
+		cr = KafkaTestUtils.getSingleRecord(consumer, "foo");
+		assertThat(cr.value().contains("\"word\":\"french\",\"count\":2")).isTrue();
+
+		template.sendDefault("spanish");
+		template.sendDefault("spanish");
+		template.sendDefault("spanish");
+		cr = KafkaTestUtils.getSingleRecord(consumer, "bar");
+		assertThat(cr.value().contains("\"word\":\"spanish\",\"count\":3")).isTrue();
 	}
 
 	@EnableBinding(KStreamProcessorX.class)
@@ -91,23 +155,26 @@ public class WordCountMultipleBranchesIntegrationTests {
 		private TimeWindows timeWindows;
 
 		@StreamListener("input")
-		@SendTo({"output1","output2","output3"})
+		@SendTo({ "output1", "output2", "output3" })
 		@SuppressWarnings("unchecked")
 		public KStream<?, WordCount>[] process(KStream<Object, String> input) {
 
 			Predicate<Object, WordCount> isEnglish = (k, v) -> v.word.equals("english");
-			Predicate<Object, WordCount> isFrench =  (k, v) -> v.word.equals("french");
+			Predicate<Object, WordCount> isFrench = (k, v) -> v.word.equals("french");
 			Predicate<Object, WordCount> isSpanish = (k, v) -> v.word.equals("spanish");
 
 			return input
-					.flatMapValues(value -> Arrays.asList(value.toLowerCase().split("\\W+")))
-					.groupBy((key, value) -> value)
-					.windowedBy(timeWindows)
-					.count(Materialized.as("WordCounts-multi"))
-					.toStream()
-					.map((key, value) -> new KeyValue<>(null, new WordCount(key.key(), value, new Date(key.window().start()), new Date(key.window().end()))))
+					.flatMapValues(
+							value -> Arrays.asList(value.toLowerCase().split("\\W+")))
+					.groupBy((key, value) -> value).windowedBy(timeWindows)
+					.count(Materialized.as("WordCounts-multi")).toStream()
+					.map((key, value) -> new KeyValue<>(null,
+							new WordCount(key.key(), value,
+									new Date(key.window().start()),
+									new Date(key.window().end()))))
 					.branch(isEnglish, isFrench, isSpanish);
 		}
+
 	}
 
 	interface KStreamProcessorX {
@@ -123,56 +190,7 @@ public class WordCountMultipleBranchesIntegrationTests {
 
 		@Output("output3")
 		KStream<?, ?> output3();
-	}
 
-	@Test
-	public void testKstreamWordCountWithStringInputAndPojoOuput() throws Exception {
-		SpringApplication app = new SpringApplication(WordCountProcessorApplication.class);
-		app.setWebApplicationType(WebApplicationType.NONE);
-
-		ConfigurableApplicationContext context = app.run("--server.port=0",
-				"--spring.jmx.enabled=false",
-				"--spring.cloud.stream.bindings.input.destination=words",
-				"--spring.cloud.stream.bindings.output1.destination=counts",
-				"--spring.cloud.stream.bindings.output1.contentType=application/json",
-				"--spring.cloud.stream.bindings.output2.destination=foo",
-				"--spring.cloud.stream.bindings.output2.contentType=application/json",
-				"--spring.cloud.stream.bindings.output3.destination=bar",
-				"--spring.cloud.stream.bindings.output3.contentType=application/json",
-				"--spring.cloud.stream.kafka.streams.binder.configuration.commit.interval.ms=1000",
-				"--spring.cloud.stream.kafka.streams.binder.configuration.default.key.serde=org.apache.kafka.common.serialization.Serdes$StringSerde",
-				"--spring.cloud.stream.kafka.streams.binder.configuration.default.value.serde=org.apache.kafka.common.serialization.Serdes$StringSerde",
-				"--spring.cloud.stream.kafka.streams.timeWindow.length=5000",
-				"--spring.cloud.stream.kafka.streams.timeWindow.advanceBy=0",
-				"--spring.cloud.stream.kafka.streams.bindings.input.consumer.applicationId=WordCountMultipleBranchesIntegrationTests-abc",
-				"--spring.cloud.stream.kafka.streams.binder.brokers=" + embeddedKafka.getBrokersAsString(),
-				"--spring.cloud.stream.kafka.streams.binder.zkNodes=" + embeddedKafka.getZookeeperConnectionString());
-		try {
-			receiveAndValidate(context);
-		} finally {
-			context.close();
-		}
-	}
-
-	private void receiveAndValidate(ConfigurableApplicationContext context) throws Exception {
-		Map<String, Object> senderProps = KafkaTestUtils.producerProps(embeddedKafka);
-		DefaultKafkaProducerFactory<Integer, String> pf = new DefaultKafkaProducerFactory<>(senderProps);
-		KafkaTemplate<Integer, String> template = new KafkaTemplate<>(pf, true);
-		template.setDefaultTopic("words");
-		template.sendDefault("english");
-		ConsumerRecord<String, String> cr = KafkaTestUtils.getSingleRecord(consumer, "counts");
-		assertThat(cr.value().contains("\"word\":\"english\",\"count\":1")).isTrue();
-
-		template.sendDefault("french");
-		template.sendDefault("french");
-		cr = KafkaTestUtils.getSingleRecord(consumer, "foo");
-		assertThat(cr.value().contains("\"word\":\"french\",\"count\":2")).isTrue();
-
-		template.sendDefault("spanish");
-		template.sendDefault("spanish");
-		template.sendDefault("spanish");
-		cr = KafkaTestUtils.getSingleRecord(consumer, "bar");
-		assertThat(cr.value().contains("\"word\":\"spanish\",\"count\":3")).isTrue();
 	}
 
 	static class WordCount {
@@ -223,6 +241,7 @@ public class WordCountMultipleBranchesIntegrationTests {
 		public void setEnd(Date end) {
 			this.end = end;
 		}
+
 	}
 
 }

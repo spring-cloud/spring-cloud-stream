@@ -75,8 +75,11 @@ import org.springframework.util.StringUtils;
  * @author Oleg Zhurakousky
  * @author Aldo Sinanaj
  */
-public class KafkaTopicProvisioner implements ProvisioningProvider<ExtendedConsumerProperties<KafkaConsumerProperties>,
-		ExtendedProducerProperties<KafkaProducerProperties>>, InitializingBean {
+public class KafkaTopicProvisioner implements
+		// @checkstyle:off
+		ProvisioningProvider<ExtendedConsumerProperties<KafkaConsumerProperties>, ExtendedProducerProperties<KafkaProducerProperties>>,
+		// @checkstyle:on
+		InitializingBean {
 
 	private static final int DEFAULT_OPERATION_TIMEOUT = 30;
 
@@ -90,17 +93,18 @@ public class KafkaTopicProvisioner implements ProvisioningProvider<ExtendedConsu
 
 	private RetryOperations metadataRetryOperations;
 
-	public KafkaTopicProvisioner(KafkaBinderConfigurationProperties kafkaBinderConfigurationProperties,
-								KafkaProperties kafkaProperties) {
+	public KafkaTopicProvisioner(
+			KafkaBinderConfigurationProperties kafkaBinderConfigurationProperties,
+			KafkaProperties kafkaProperties) {
 		Assert.isTrue(kafkaProperties != null, "KafkaProperties cannot be null");
 		this.adminClientProperties = kafkaProperties.buildAdminProperties();
 		this.configurationProperties = kafkaBinderConfigurationProperties;
-		normalalizeBootPropsWithBinder(this.adminClientProperties, kafkaProperties, kafkaBinderConfigurationProperties);
+		normalalizeBootPropsWithBinder(this.adminClientProperties, kafkaProperties,
+				kafkaBinderConfigurationProperties);
 	}
 
 	/**
 	 * Mutator for metadata retry operations.
-	 *
 	 * @param metadataRetryOperations the retry configuration
 	 */
 	public void setMetadataRetryOperations(RetryOperations metadataRetryOperations) {
@@ -134,18 +138,22 @@ public class KafkaTopicProvisioner implements ProvisioningProvider<ExtendedConsu
 		}
 		KafkaTopicUtils.validateTopicName(name);
 		try (AdminClient adminClient = AdminClient.create(this.adminClientProperties)) {
-			createTopic(adminClient, name, properties.getPartitionCount(), false, properties.getExtension().getTopic());
+			createTopic(adminClient, name, properties.getPartitionCount(), false,
+					properties.getExtension().getTopic());
 			int partitions = 0;
 			if (this.configurationProperties.isAutoCreateTopics()) {
-				DescribeTopicsResult describeTopicsResult = adminClient.describeTopics(Collections.singletonList(name));
-				KafkaFuture<Map<String, TopicDescription>> all = describeTopicsResult.all();
+				DescribeTopicsResult describeTopicsResult = adminClient
+						.describeTopics(Collections.singletonList(name));
+				KafkaFuture<Map<String, TopicDescription>> all = describeTopicsResult
+						.all();
 
 				Map<String, TopicDescription> topicDescriptions = null;
 				try {
 					topicDescriptions = all.get(this.operationTimeout, TimeUnit.SECONDS);
 				}
 				catch (Exception ex) {
-					throw new ProvisioningException("Problems encountered with partitions finding", ex);
+					throw new ProvisioningException(
+							"Problems encountered with partitions finding", ex);
 				}
 				TopicDescription topicDescription = topicDescriptions.get(name);
 				partitions = topicDescription.partitions().size();
@@ -155,7 +163,8 @@ public class KafkaTopicProvisioner implements ProvisioningProvider<ExtendedConsu
 	}
 
 	@Override
-	public ConsumerDestination provisionConsumerDestination(final String name, final String group,
+	public ConsumerDestination provisionConsumerDestination(final String name,
+			final String group,
 			ExtendedConsumerProperties<KafkaConsumerProperties> properties) {
 		if (!properties.isMultiplex()) {
 			return doProvisionConsumerDestination(name, group, properties);
@@ -169,7 +178,8 @@ public class KafkaTopicProvisioner implements ProvisioningProvider<ExtendedConsu
 		}
 	}
 
-	private ConsumerDestination doProvisionConsumerDestination(final String name, final String group,
+	private ConsumerDestination doProvisionConsumerDestination(final String name,
+			final String group,
 			ExtendedConsumerProperties<KafkaConsumerProperties> properties) {
 
 		if (properties.getExtension().isDestinationIsPattern()) {
@@ -191,18 +201,24 @@ public class KafkaTopicProvisioner implements ProvisioningProvider<ExtendedConsu
 		int partitionCount = properties.getInstanceCount() * properties.getConcurrency();
 		ConsumerDestination consumerDestination = new KafkaConsumerDestination(name);
 		try (AdminClient adminClient = createAdminClient()) {
-			createTopic(adminClient, name, partitionCount, properties.getExtension().isAutoRebalanceEnabled(),
+			createTopic(adminClient, name, partitionCount,
+					properties.getExtension().isAutoRebalanceEnabled(),
 					properties.getExtension().getTopic());
 			if (this.configurationProperties.isAutoCreateTopics()) {
-				DescribeTopicsResult describeTopicsResult = adminClient.describeTopics(Collections.singletonList(name));
-				KafkaFuture<Map<String, TopicDescription>> all = describeTopicsResult.all();
+				DescribeTopicsResult describeTopicsResult = adminClient
+						.describeTopics(Collections.singletonList(name));
+				KafkaFuture<Map<String, TopicDescription>> all = describeTopicsResult
+						.all();
 				try {
-					Map<String, TopicDescription> topicDescriptions = all.get(this.operationTimeout, TimeUnit.SECONDS);
+					Map<String, TopicDescription> topicDescriptions = all
+							.get(this.operationTimeout, TimeUnit.SECONDS);
 					TopicDescription topicDescription = topicDescriptions.get(name);
 					int partitions = topicDescription.partitions().size();
-					consumerDestination = createDlqIfNeedBe(adminClient, name, group, properties, anonymous, partitions);
+					consumerDestination = createDlqIfNeedBe(adminClient, name, group,
+							properties, anonymous, partitions);
 					if (consumerDestination == null) {
-						consumerDestination = new KafkaConsumerDestination(name, partitions);
+						consumerDestination = new KafkaConsumerDestination(name,
+								partitions);
 					}
 				}
 				catch (Exception ex) {
@@ -218,22 +234,24 @@ public class KafkaTopicProvisioner implements ProvisioningProvider<ExtendedConsu
 	}
 
 	/**
-	 * In general, binder properties supersede boot kafka properties.
-	 * The one exception is the bootstrap servers. In that case, we should only override
-	 * the boot properties if (there is a binder property AND it is a non-default value)
-	 * OR (if there is no boot property); this is needed because the binder property
-	 * never returns a null value.
+	 * In general, binder properties supersede boot kafka properties. The one exception is
+	 * the bootstrap servers. In that case, we should only override the boot properties if
+	 * (there is a binder property AND it is a non-default value) OR (if there is no boot
+	 * property); this is needed because the binder property never returns a null value.
 	 * @param adminProps the admin properties to normalize.
 	 * @param bootProps the boot kafka properties.
 	 * @param binderProps the binder kafka properties.
 	 */
-	private void normalalizeBootPropsWithBinder(Map<String, Object> adminProps, KafkaProperties bootProps,
-			KafkaBinderConfigurationProperties binderProps) {
+	private void normalalizeBootPropsWithBinder(Map<String, Object> adminProps,
+			KafkaProperties bootProps, KafkaBinderConfigurationProperties binderProps) {
 		// First deal with the outlier
 		String kafkaConnectionString = binderProps.getKafkaConnectionString();
-		if (ObjectUtils.isEmpty(adminProps.get(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG))
-				|| !kafkaConnectionString.equals(binderProps.getDefaultKafkaConnectionString())) {
-			adminProps.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaConnectionString);
+		if (ObjectUtils
+				.isEmpty(adminProps.get(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG))
+				|| !kafkaConnectionString
+						.equals(binderProps.getDefaultKafkaConnectionString())) {
+			adminProps.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG,
+					kafkaConnectionString);
 		}
 		// Now override any boot values with binder values
 		Map<String, String> binderProperties = binderProps.getConfiguration();
@@ -246,21 +264,24 @@ public class KafkaTopicProvisioner implements ProvisioningProvider<ExtendedConsu
 			if (adminConfigNames.contains(key)) {
 				Object replaced = adminProps.put(key, value);
 				if (replaced != null && this.logger.isDebugEnabled()) {
-					this.logger.debug("Overrode boot property: [" + key + "], from: [" + replaced + "] to: [" + value + "]");
+					this.logger.debug("Overrode boot property: [" + key + "], from: ["
+							+ replaced + "] to: [" + value + "]");
 				}
 			}
 		});
 	}
 
-	private ConsumerDestination createDlqIfNeedBe(AdminClient adminClient, String name, String group,
-												ExtendedConsumerProperties<KafkaConsumerProperties> properties,
-												boolean anonymous, int partitions) {
+	private ConsumerDestination createDlqIfNeedBe(AdminClient adminClient, String name,
+			String group, ExtendedConsumerProperties<KafkaConsumerProperties> properties,
+			boolean anonymous, int partitions) {
 		if (properties.getExtension().isEnableDlq() && !anonymous) {
-			String dlqTopic = StringUtils.hasText(properties.getExtension().getDlqName()) ?
-					properties.getExtension().getDlqName() : "error." + name + "." + group;
+			String dlqTopic = StringUtils.hasText(properties.getExtension().getDlqName())
+					? properties.getExtension().getDlqName()
+					: "error." + name + "." + group;
 			try {
 				createTopicAndPartitions(adminClient, dlqTopic, partitions,
-						properties.getExtension().isAutoRebalanceEnabled(), properties.getExtension().getTopic());
+						properties.getExtension().isAutoRebalanceEnabled(),
+						properties.getExtension().getTopic());
 			}
 			catch (Throwable throwable) {
 				if (throwable instanceof Error) {
@@ -275,29 +296,34 @@ public class KafkaTopicProvisioner implements ProvisioningProvider<ExtendedConsu
 		return null;
 	}
 
-	private void createTopic(AdminClient adminClient, String name, int partitionCount, boolean tolerateLowerPartitionsOnBroker,
-			KafkaTopicProperties properties) {
+	private void createTopic(AdminClient adminClient, String name, int partitionCount,
+			boolean tolerateLowerPartitionsOnBroker, KafkaTopicProperties properties) {
 		try {
-			createTopicIfNecessary(adminClient, name, partitionCount, tolerateLowerPartitionsOnBroker, properties);
+			createTopicIfNecessary(adminClient, name, partitionCount,
+					tolerateLowerPartitionsOnBroker, properties);
 		}
-		//TODO: Remove catching Throwable. See this thread: https://github.com/spring-cloud/spring-cloud-stream-binder-kafka/pull/514#discussion_r241075940
+		// TODO: Remove catching Throwable. See this thread:
+		// TODO:
+		// https://github.com/spring-cloud/spring-cloud-stream-binder-kafka/pull/514#discussion_r241075940
 		catch (Throwable throwable) {
 			if (throwable instanceof Error) {
 				throw (Error) throwable;
 			}
 			else {
-				//TODO: https://github.com/spring-cloud/spring-cloud-stream-binder-kafka/pull/514#discussion_r241075940
+				// TODO:
+				// https://github.com/spring-cloud/spring-cloud-stream-binder-kafka/pull/514#discussion_r241075940
 				throw new ProvisioningException("Provisioning exception", throwable);
 			}
 		}
 	}
 
-	private void createTopicIfNecessary(AdminClient adminClient, final String topicName, final int partitionCount,
-			boolean tolerateLowerPartitionsOnBroker, KafkaTopicProperties properties) throws Throwable {
+	private void createTopicIfNecessary(AdminClient adminClient, final String topicName,
+			final int partitionCount, boolean tolerateLowerPartitionsOnBroker,
+			KafkaTopicProperties properties) throws Throwable {
 
 		if (this.configurationProperties.isAutoCreateTopics()) {
-			createTopicAndPartitions(adminClient, topicName, partitionCount, tolerateLowerPartitionsOnBroker,
-					properties);
+			createTopicAndPartitions(adminClient, topicName, partitionCount,
+					tolerateLowerPartitionsOnBroker, properties);
 		}
 		else {
 			this.logger.info("Auto creation of topics is disabled.");
@@ -310,12 +336,14 @@ public class KafkaTopicProvisioner implements ProvisioningProvider<ExtendedConsu
 	 * @param adminClient kafka admin client
 	 * @param topicName topic name
 	 * @param partitionCount partition count
-	 * @param tolerateLowerPartitionsOnBroker whether lower partitions count on broker is tolerated ot not
+	 * @param tolerateLowerPartitionsOnBroker whether lower partitions count on broker is
+	 * tolerated ot not
 	 * @param topicProperties kafka topic properties
 	 * @throws Throwable from topic creation
 	 */
-	private void createTopicAndPartitions(AdminClient adminClient, final String topicName, final int partitionCount,
-			boolean tolerateLowerPartitionsOnBroker, KafkaTopicProperties topicProperties) throws Throwable {
+	private void createTopicAndPartitions(AdminClient adminClient, final String topicName,
+			final int partitionCount, boolean tolerateLowerPartitionsOnBroker,
+			KafkaTopicProperties topicProperties) throws Throwable {
 
 		ListTopicsResult listTopicsResult = adminClient.listTopics();
 		KafkaFuture<Set<String>> namesFutures = listTopicsResult.names();
@@ -323,54 +351,71 @@ public class KafkaTopicProvisioner implements ProvisioningProvider<ExtendedConsu
 		Set<String> names = namesFutures.get(this.operationTimeout, TimeUnit.SECONDS);
 		if (names.contains(topicName)) {
 			// only consider minPartitionCount for resizing if autoAddPartitions is true
-			int effectivePartitionCount = this.configurationProperties.isAutoAddPartitions()
-					? Math.max(this.configurationProperties.getMinPartitionCount(), partitionCount)
-					: partitionCount;
-			DescribeTopicsResult describeTopicsResult = adminClient.describeTopics(Collections.singletonList(topicName));
-			KafkaFuture<Map<String, TopicDescription>> topicDescriptionsFuture = describeTopicsResult.all();
-			Map<String, TopicDescription> topicDescriptions = topicDescriptionsFuture.get(this.operationTimeout, TimeUnit.SECONDS);
+			int effectivePartitionCount = this.configurationProperties
+					.isAutoAddPartitions()
+							? Math.max(
+									this.configurationProperties.getMinPartitionCount(),
+									partitionCount)
+							: partitionCount;
+			DescribeTopicsResult describeTopicsResult = adminClient
+					.describeTopics(Collections.singletonList(topicName));
+			KafkaFuture<Map<String, TopicDescription>> topicDescriptionsFuture = describeTopicsResult
+					.all();
+			Map<String, TopicDescription> topicDescriptions = topicDescriptionsFuture
+					.get(this.operationTimeout, TimeUnit.SECONDS);
 			TopicDescription topicDescription = topicDescriptions.get(topicName);
 			int partitionSize = topicDescription.partitions().size();
 			if (partitionSize < effectivePartitionCount) {
 				if (this.configurationProperties.isAutoAddPartitions()) {
-					CreatePartitionsResult partitions = adminClient.createPartitions(
-							Collections.singletonMap(topicName, NewPartitions.increaseTo(effectivePartitionCount)));
+					CreatePartitionsResult partitions = adminClient
+							.createPartitions(Collections.singletonMap(topicName,
+									NewPartitions.increaseTo(effectivePartitionCount)));
 					partitions.all().get(this.operationTimeout, TimeUnit.SECONDS);
 				}
 				else if (tolerateLowerPartitionsOnBroker) {
-					this.logger.warn("The number of expected partitions was: " + partitionCount + ", but "
-							+ partitionSize + (partitionSize > 1 ? " have " : " has ") + "been found instead."
-							+ "There will be " + (effectivePartitionCount - partitionSize) + " idle consumers");
+					this.logger.warn("The number of expected partitions was: "
+							+ partitionCount + ", but " + partitionSize
+							+ (partitionSize > 1 ? " have " : " has ")
+							+ "been found instead." + "There will be "
+							+ (effectivePartitionCount - partitionSize)
+							+ " idle consumers");
 				}
 				else {
-					throw new ProvisioningException("The number of expected partitions was: " + partitionCount + ", but "
-							+ partitionSize + (partitionSize > 1 ? " have " : " has ") + "been found instead."
-							+ "Consider either increasing the partition count of the topic or enabling " +
-							"`autoAddPartitions`");
+					throw new ProvisioningException(
+							"The number of expected partitions was: " + partitionCount
+									+ ", but " + partitionSize
+									+ (partitionSize > 1 ? " have " : " has ")
+									+ "been found instead."
+									+ "Consider either increasing the partition count of the topic or enabling "
+									+ "`autoAddPartitions`");
 				}
 			}
 		}
 		else {
 			// always consider minPartitionCount for topic creation
-			final int effectivePartitionCount = Math.max(this.configurationProperties.getMinPartitionCount(),
-					partitionCount);
+			final int effectivePartitionCount = Math.max(
+					this.configurationProperties.getMinPartitionCount(), partitionCount);
 			this.metadataRetryOperations.execute((context) -> {
 
 				NewTopic newTopic;
-				Map<Integer, List<Integer>> replicasAssignments = topicProperties.getReplicasAssignments();
-				if (replicasAssignments != null &&  replicasAssignments.size() > 0) {
-					newTopic = new NewTopic(topicName, topicProperties.getReplicasAssignments());
+				Map<Integer, List<Integer>> replicasAssignments = topicProperties
+						.getReplicasAssignments();
+				if (replicasAssignments != null && replicasAssignments.size() > 0) {
+					newTopic = new NewTopic(topicName,
+							topicProperties.getReplicasAssignments());
 				}
 				else {
 					newTopic = new NewTopic(topicName, effectivePartitionCount,
 							topicProperties.getReplicationFactor() != null
 									? topicProperties.getReplicationFactor()
-									: this.configurationProperties.getReplicationFactor());
+									: this.configurationProperties
+											.getReplicationFactor());
 				}
 				if (topicProperties.getProperties().size() > 0) {
 					newTopic.configs(topicProperties.getProperties());
 				}
-				CreateTopicsResult createTopicsResult = adminClient.createTopics(Collections.singletonList(newTopic));
+				CreateTopicsResult createTopicsResult = adminClient
+						.createTopics(Collections.singletonList(newTopic));
 				try {
 					createTopicsResult.all().get(this.operationTimeout, TimeUnit.SECONDS);
 				}
@@ -378,7 +423,8 @@ public class KafkaTopicProvisioner implements ProvisioningProvider<ExtendedConsu
 					if (ex instanceof ExecutionException) {
 						if (ex.getCause() instanceof TopicExistsException) {
 							if (this.logger.isWarnEnabled()) {
-								this.logger.warn("Attempt to create topic: " + topicName + ". Topic already exists.");
+								this.logger.warn("Attempt to create topic: " + topicName
+										+ ". Topic already exists.");
 							}
 						}
 						else {
@@ -397,56 +443,65 @@ public class KafkaTopicProvisioner implements ProvisioningProvider<ExtendedConsu
 	}
 
 	public Collection<PartitionInfo> getPartitionsForTopic(final int partitionCount,
-														final boolean tolerateLowerPartitionsOnBroker,
-														final Callable<Collection<PartitionInfo>> callable,
-														final String topicName) {
+			final boolean tolerateLowerPartitionsOnBroker,
+			final Callable<Collection<PartitionInfo>> callable, final String topicName) {
 		try {
-			return this.metadataRetryOperations
-					.execute((context) -> {
-						Collection<PartitionInfo> partitions = Collections.emptyList();
+			return this.metadataRetryOperations.execute((context) -> {
+				Collection<PartitionInfo> partitions = Collections.emptyList();
 
-						try {
-							//This call may return null or throw an exception.
-							partitions = callable.call();
+				try {
+					// This call may return null or throw an exception.
+					partitions = callable.call();
+				}
+				catch (Exception ex) {
+					// The above call can potentially throw exceptions such as timeout. If
+					// we can determine
+					// that the exception was due to an unknown topic on the broker, just
+					// simply rethrow that.
+					if (ex instanceof UnknownTopicOrPartitionException) {
+						throw ex;
+					}
+					this.logger.error("Failed to obtain partition information", ex);
+				}
+				if (CollectionUtils.isEmpty(partitions)) {
+					final AdminClient adminClient = AdminClient
+							.create(this.adminClientProperties);
+					final DescribeTopicsResult describeTopicsResult = adminClient
+							.describeTopics(Collections.singletonList(topicName));
+					try {
+						describeTopicsResult.all().get();
+					}
+					catch (ExecutionException ex) {
+						if (ex.getCause() instanceof UnknownTopicOrPartitionException) {
+							throw (UnknownTopicOrPartitionException) ex.getCause();
 						}
-						catch (Exception ex) {
-							//The above call can potentially throw exceptions such as timeout. If we can determine
-							//that the exception was due to an unknown topic on the broker, just simply rethrow that.
-							if (ex instanceof UnknownTopicOrPartitionException) {
-								throw ex;
-							}
-							this.logger.error("Failed to obtain partition information", ex);
+						else {
+							logger.warn("No partitions have been retrieved for the topic "
+									+ "(" + topicName
+									+ "). This will affect the health check.");
 						}
-						if (CollectionUtils.isEmpty(partitions)) {
-							final AdminClient adminClient = AdminClient.create(this.adminClientProperties);
-							final DescribeTopicsResult describeTopicsResult = adminClient.describeTopics(Collections.singletonList(topicName));
-							try {
-								describeTopicsResult.all().get();
-							}
-							catch (ExecutionException ex) {
-								if (ex.getCause() instanceof UnknownTopicOrPartitionException) {
-									throw (UnknownTopicOrPartitionException)ex.getCause();
-								} else {
-									logger.warn("No partitions have been retrieved for the topic (" + topicName + "). This will affect the health check.");
-								}
-							}
-						}
-						// do a sanity check on the partition set
-						int partitionSize = partitions.size();
-						if (partitionSize < partitionCount) {
-							if (tolerateLowerPartitionsOnBroker) {
-								this.logger.warn("The number of expected partitions was: " + partitionCount + ", but "
-										+ partitionSize + (partitionSize > 1 ? " have " : " has ") + "been found instead."
-										+ "There will be " + (partitionCount - partitionSize) + " idle consumers");
-							}
-							else {
-								throw new IllegalStateException("The number of expected partitions was: "
-										+ partitionCount + ", but " + partitionSize
-										+ (partitionSize > 1 ? " have " : " has ") + "been found instead");
-							}
-						}
-						return partitions;
-					});
+					}
+				}
+				// do a sanity check on the partition set
+				int partitionSize = partitions.size();
+				if (partitionSize < partitionCount) {
+					if (tolerateLowerPartitionsOnBroker) {
+						this.logger.warn("The number of expected partitions was: "
+								+ partitionCount + ", but " + partitionSize
+								+ (partitionSize > 1 ? " have " : " has ")
+								+ "been found instead." + "There will be "
+								+ (partitionCount - partitionSize) + " idle consumers");
+					}
+					else {
+						throw new IllegalStateException(
+								"The number of expected partitions was: " + partitionCount
+										+ ", but " + partitionSize
+										+ (partitionSize > 1 ? " have " : " has ")
+										+ "been found instead");
+					}
+				}
+				return partitions;
+			});
 		}
 		catch (Exception ex) {
 			this.logger.error("Cannot initialize Binder", ex);
@@ -477,11 +532,10 @@ public class KafkaTopicProvisioner implements ProvisioningProvider<ExtendedConsu
 
 		@Override
 		public String toString() {
-			return "KafkaProducerDestination{" +
-					"producerDestinationName='" + producerDestinationName + '\'' +
-					", partitions=" + partitions +
-					'}';
+			return "KafkaProducerDestination{" + "producerDestinationName='"
+					+ producerDestinationName + '\'' + ", partitions=" + partitions + '}';
 		}
+
 	}
 
 	private static final class KafkaConsumerDestination implements ConsumerDestination {
@@ -500,7 +554,8 @@ public class KafkaTopicProvisioner implements ProvisioningProvider<ExtendedConsu
 			this(consumerDestinationName, partitions, null);
 		}
 
-		KafkaConsumerDestination(String consumerDestinationName, Integer partitions, String dlqName) {
+		KafkaConsumerDestination(String consumerDestinationName, Integer partitions,
+				String dlqName) {
 			this.consumerDestinationName = consumerDestinationName;
 			this.partitions = partitions;
 			this.dlqName = dlqName;
@@ -513,11 +568,11 @@ public class KafkaTopicProvisioner implements ProvisioningProvider<ExtendedConsu
 
 		@Override
 		public String toString() {
-			return "KafkaConsumerDestination{" +
-					"consumerDestinationName='" + consumerDestinationName + '\'' +
-					", partitions=" + partitions +
-					", dlqName='" + dlqName + '\'' +
-					'}';
+			return "KafkaConsumerDestination{" + "consumerDestinationName='"
+					+ consumerDestinationName + '\'' + ", partitions=" + partitions
+					+ ", dlqName='" + dlqName + '\'' + '}';
 		}
+
 	}
+
 }

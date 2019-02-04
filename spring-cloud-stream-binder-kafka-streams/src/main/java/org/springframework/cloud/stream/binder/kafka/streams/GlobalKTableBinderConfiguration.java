@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 the original author or authors.
+ * Copyright 2018-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,26 +42,35 @@ public class GlobalKTableBinderConfiguration {
 	@ConditionalOnBean(name = "outerContext")
 	public static BeanFactoryPostProcessor outerContextBeanFactoryPostProcessor() {
 		return (beanFactory) -> {
-			// It is safe to call getBean("outerContext") here, because this bean is registered as first
+			// It is safe to call getBean("outerContext") here, because this bean is
+			// registered as first
 			// and as independent from the parent context.
-			ApplicationContext outerContext = (ApplicationContext) beanFactory.getBean("outerContext");
-			beanFactory.registerSingleton(KafkaStreamsBinderConfigurationProperties.class.getSimpleName(), outerContext
-					.getBean(KafkaStreamsBinderConfigurationProperties.class));
-			beanFactory.registerSingleton(KafkaStreamsBindingInformationCatalogue.class.getSimpleName(), outerContext
-					.getBean(KafkaStreamsBindingInformationCatalogue.class));
+			ApplicationContext outerContext = (ApplicationContext) beanFactory
+					.getBean("outerContext");
+			beanFactory.registerSingleton(
+					KafkaStreamsBinderConfigurationProperties.class.getSimpleName(),
+					outerContext
+							.getBean(KafkaStreamsBinderConfigurationProperties.class));
+			beanFactory.registerSingleton(
+					KafkaStreamsBindingInformationCatalogue.class.getSimpleName(),
+					outerContext.getBean(KafkaStreamsBindingInformationCatalogue.class));
 		};
 	}
 
 	@Bean
-	public KafkaTopicProvisioner provisioningProvider(KafkaBinderConfigurationProperties binderConfigurationProperties,
-													KafkaProperties kafkaProperties) {
+	public KafkaTopicProvisioner provisioningProvider(
+			KafkaBinderConfigurationProperties binderConfigurationProperties,
+			KafkaProperties kafkaProperties) {
 		return new KafkaTopicProvisioner(binderConfigurationProperties, kafkaProperties);
 	}
 
 	@Bean
-	public GlobalKTableBinder GlobalKTableBinder(KafkaStreamsBinderConfigurationProperties binderConfigurationProperties,
-									KafkaTopicProvisioner kafkaTopicProvisioner,
-									@Qualifier("kafkaStreamsDlqDispatchers") Map<String, KafkaStreamsDlqDispatch> kafkaStreamsDlqDispatchers) {
-		return new GlobalKTableBinder(binderConfigurationProperties, kafkaTopicProvisioner, kafkaStreamsDlqDispatchers);
+	public GlobalKTableBinder GlobalKTableBinder(
+			KafkaStreamsBinderConfigurationProperties binderConfigurationProperties,
+			KafkaTopicProvisioner kafkaTopicProvisioner,
+			@Qualifier("kafkaStreamsDlqDispatchers") Map<String, KafkaStreamsDlqDispatch> kafkaStreamsDlqDispatchers) {
+		return new GlobalKTableBinder(binderConfigurationProperties,
+				kafkaTopicProvisioner, kafkaStreamsDlqDispatchers);
 	}
+
 }

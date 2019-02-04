@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 the original author or authors.
+ * Copyright 2018-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,8 +32,8 @@ import org.apache.kafka.streams.processor.internals.StreamTask;
 import org.springframework.util.ReflectionUtils;
 
 /**
- * Custom implementation for {@link DeserializationExceptionHandler} that sends the records
- * in error to a DLQ topic, then continue stream processing on new records.
+ * Custom implementation for {@link DeserializationExceptionHandler} that sends the
+ * records in error to a DLQ topic, then continue stream processing on new records.
  *
  * @author Soby Chacko
  * @since 2.0.0
@@ -46,14 +46,13 @@ public class SendToDlqAndContinue implements DeserializationExceptionHandler {
 	public static final String KAFKA_STREAMS_DLQ_DISPATCHERS = "spring.cloud.stream.kafka.streams.dlq.dispatchers";
 
 	/**
-	 * DLQ dispatcher per topic in the application context. The key here is not the actual DLQ topic
-	 * but the incoming topic that caused the error.
+	 * DLQ dispatcher per topic in the application context. The key here is not the actual
+	 * DLQ topic but the incoming topic that caused the error.
 	 */
 	private Map<String, KafkaStreamsDlqDispatch> dlqDispatchers = new HashMap<>();
 
 	/**
 	 * For a given topic, send the key/value record to DLQ topic.
-	 *
 	 * @param topic incoming topic that caused the error
 	 * @param key to send
 	 * @param value to send
@@ -66,16 +65,23 @@ public class SendToDlqAndContinue implements DeserializationExceptionHandler {
 
 	@Override
 	@SuppressWarnings("unchecked")
-	public DeserializationHandlerResponse handle(ProcessorContext context, ConsumerRecord<byte[], byte[]> record, Exception exception) {
-		KafkaStreamsDlqDispatch kafkaStreamsDlqDispatch = this.dlqDispatchers.get(record.topic());
-		kafkaStreamsDlqDispatch.sendToDlq(record.key(), record.value(), record.partition());
+	public DeserializationHandlerResponse handle(ProcessorContext context,
+			ConsumerRecord<byte[], byte[]> record, Exception exception) {
+		KafkaStreamsDlqDispatch kafkaStreamsDlqDispatch = this.dlqDispatchers
+				.get(record.topic());
+		kafkaStreamsDlqDispatch.sendToDlq(record.key(), record.value(),
+				record.partition());
 		context.commit();
 
-		// The following conditional block should be reconsidered when we have a solution for this SO problem:
+		// The following conditional block should be reconsidered when we have a solution
+		// for this SO problem:
 		// https://stackoverflow.com/questions/48470899/kafka-streams-deserialization-handler
-		// Currently it seems like when deserialization error happens, there is no commits happening and the
-		// following code will use reflection to get access to the underlying KafkaConsumer.
-		// It works with Kafka 1.0.0, but there is no guarantee it will work in future versions of kafka as
+		// Currently it seems like when deserialization error happens, there is no commits
+		// happening and the
+		// following code will use reflection to get access to the underlying
+		// KafkaConsumer.
+		// It works with Kafka 1.0.0, but there is no guarantee it will work in future
+		// versions of kafka as
 		// we access private fields by name using reflection, but it is a temporary fix.
 		if (context instanceof ProcessorContextImpl) {
 			ProcessorContextImpl processorContextImpl = (ProcessorContextImpl) context;
@@ -87,11 +93,13 @@ public class SendToDlqAndContinue implements DeserializationExceptionHandler {
 				StreamTask streamTask = (StreamTask) taskField;
 				Field consumer = ReflectionUtils.findField(StreamTask.class, "consumer");
 				ReflectionUtils.makeAccessible(consumer);
-				Object kafkaConsumerField = ReflectionUtils.getField(consumer, streamTask);
+				Object kafkaConsumerField = ReflectionUtils.getField(consumer,
+						streamTask);
 				if (kafkaConsumerField.getClass().isAssignableFrom(KafkaConsumer.class)) {
 					KafkaConsumer kafkaConsumer = (KafkaConsumer) kafkaConsumerField;
 					final Map<TopicPartition, OffsetAndMetadata> consumedOffsetsAndMetadata = new HashMap<>();
-					TopicPartition tp = new TopicPartition(record.topic(), record.partition());
+					TopicPartition tp = new TopicPartition(record.topic(),
+							record.partition());
 					OffsetAndMetadata oam = new OffsetAndMetadata(record.offset() + 1);
 					consumedOffsetsAndMetadata.put(tp, oam);
 					kafkaConsumer.commitSync(consumedOffsetsAndMetadata);
@@ -104,10 +112,12 @@ public class SendToDlqAndContinue implements DeserializationExceptionHandler {
 	@Override
 	@SuppressWarnings("unchecked")
 	public void configure(Map<String, ?> configs) {
-		this.dlqDispatchers = (Map<String, KafkaStreamsDlqDispatch>) configs.get(KAFKA_STREAMS_DLQ_DISPATCHERS);
+		this.dlqDispatchers = (Map<String, KafkaStreamsDlqDispatch>) configs
+				.get(KAFKA_STREAMS_DLQ_DISPATCHERS);
 	}
 
-	void addKStreamDlqDispatch(String topic, KafkaStreamsDlqDispatch kafkaStreamsDlqDispatch) {
+	void addKStreamDlqDispatch(String topic,
+			KafkaStreamsDlqDispatch kafkaStreamsDlqDispatch) {
 		this.dlqDispatchers.put(topic, kafkaStreamsDlqDispatch);
 	}
 

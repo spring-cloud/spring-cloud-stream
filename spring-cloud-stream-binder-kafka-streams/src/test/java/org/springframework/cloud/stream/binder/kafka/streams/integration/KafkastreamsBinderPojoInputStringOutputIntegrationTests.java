@@ -60,17 +60,21 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class KafkastreamsBinderPojoInputStringOutputIntegrationTests {
 
 	@ClassRule
-	public static EmbeddedKafkaRule embeddedKafkaRule = new EmbeddedKafkaRule(1, true, "counts-id");
+	public static EmbeddedKafkaRule embeddedKafkaRule = new EmbeddedKafkaRule(1, true,
+			"counts-id");
 
-	private static EmbeddedKafkaBroker embeddedKafka = embeddedKafkaRule.getEmbeddedKafka();
+	private static EmbeddedKafkaBroker embeddedKafka = embeddedKafkaRule
+			.getEmbeddedKafka();
 
 	private static Consumer<String, String> consumer;
 
 	@BeforeClass
 	public static void setUp() throws Exception {
-		Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("group-id", "false", embeddedKafka);
+		Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("group-id",
+				"false", embeddedKafka);
 		consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
-		DefaultKafkaConsumerFactory<String, String> cf = new DefaultKafkaConsumerFactory<>(consumerProps);
+		DefaultKafkaConsumerFactory<String, String> cf = new DefaultKafkaConsumerFactory<>(
+				consumerProps);
 		consumer = cf.createConsumer();
 		embeddedKafka.consumeFromAnEmbeddedTopic(consumer, "counts-id");
 	}
@@ -89,19 +93,24 @@ public class KafkastreamsBinderPojoInputStringOutputIntegrationTests {
 				"--spring.cloud.stream.bindings.input.destination=foos",
 				"--spring.cloud.stream.bindings.output.destination=counts-id",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.commit.interval.ms=1000",
-				"--spring.cloud.stream.kafka.streams.binder.configuration.default.key.serde=org.apache.kafka.common.serialization.Serdes$StringSerde",
-				"--spring.cloud.stream.kafka.streams.binder.configuration.default.value.serde=org.apache.kafka.common.serialization.Serdes$StringSerde",
-				"--spring.cloud.stream.kafka.streams.bindings.output.producer.keySerde=org.apache.kafka.common.serialization.Serdes$IntegerSerde",
+				"--spring.cloud.stream.kafka.streams.binder.configuration.default.key.serde"
+						+ "=org.apache.kafka.common.serialization.Serdes$StringSerde",
+				"--spring.cloud.stream.kafka.streams.binder.configuration.default.value.serde"
+						+ "=org.apache.kafka.common.serialization.Serdes$StringSerde",
+				"--spring.cloud.stream.kafka.streams.bindings.output.producer.keySerde"
+						+ "=org.apache.kafka.common.serialization.Serdes$IntegerSerde",
 				"--spring.cloud.stream.kafka.streams.bindings.input.consumer.applicationId=ProductCountApplication-xyz",
-				"--spring.cloud.stream.kafka.streams.binder.brokers=" + embeddedKafka.getBrokersAsString(),
-				"--spring.cloud.stream.kafka.streams.binder.zkNodes=" + embeddedKafka.getZookeeperConnectionString());
+				"--spring.cloud.stream.kafka.streams.binder.brokers="
+						+ embeddedKafka.getBrokersAsString(),
+				"--spring.cloud.stream.kafka.streams.binder.zkNodes="
+						+ embeddedKafka.getZookeeperConnectionString());
 		try {
 			receiveAndValidateFoo(context);
-			//Assertions on StreamBuilderFactoryBean
-			StreamsBuilderFactoryBean streamsBuilderFactoryBean = context.getBean("&stream-builder-process",
-					StreamsBuilderFactoryBean.class);
-			CleanupConfig cleanup = TestUtils.getPropertyValue(streamsBuilderFactoryBean, "cleanupConfig",
-					CleanupConfig.class);
+			// Assertions on StreamBuilderFactoryBean
+			StreamsBuilderFactoryBean streamsBuilderFactoryBean = context
+					.getBean("&stream-builder-process", StreamsBuilderFactoryBean.class);
+			CleanupConfig cleanup = TestUtils.getPropertyValue(streamsBuilderFactoryBean,
+					"cleanupConfig", CleanupConfig.class);
 			assertThat(cleanup.cleanupOnStart()).isFalse();
 			assertThat(cleanup.cleanupOnStop()).isTrue();
 		}
@@ -110,13 +119,16 @@ public class KafkastreamsBinderPojoInputStringOutputIntegrationTests {
 		}
 	}
 
-	private void receiveAndValidateFoo(ConfigurableApplicationContext context) throws Exception {
+	private void receiveAndValidateFoo(ConfigurableApplicationContext context)
+			throws Exception {
 		Map<String, Object> senderProps = KafkaTestUtils.producerProps(embeddedKafka);
-		DefaultKafkaProducerFactory<Integer, String> pf = new DefaultKafkaProducerFactory<>(senderProps);
+		DefaultKafkaProducerFactory<Integer, String> pf = new DefaultKafkaProducerFactory<>(
+				senderProps);
 		KafkaTemplate<Integer, String> template = new KafkaTemplate<>(pf, true);
 		template.setDefaultTopic("foos");
 		template.sendDefault("{\"id\":\"123\"}");
-		ConsumerRecord<String, String> cr = KafkaTestUtils.getSingleRecord(consumer, "counts-id");
+		ConsumerRecord<String, String> cr = KafkaTestUtils.getSingleRecord(consumer,
+				"counts-id");
 		assertThat(cr.value().contains("Count for product with ID 123: 1")).isTrue();
 	}
 
@@ -128,15 +140,16 @@ public class KafkastreamsBinderPojoInputStringOutputIntegrationTests {
 		@SendTo("output")
 		public KStream<Integer, String> process(KStream<Object, Product> input) {
 
-			return input
-					.filter((key, product) -> product.getId() == 123)
+			return input.filter((key, product) -> product.getId() == 123)
 					.map((key, value) -> new KeyValue<>(value, value))
-					.groupByKey(Serialized.with(new JsonSerde<>(Product.class), new JsonSerde<>(Product.class)))
+					.groupByKey(Serialized.with(new JsonSerde<>(Product.class),
+							new JsonSerde<>(Product.class)))
 					.windowedBy(TimeWindows.of(5000))
-					.count(Materialized.as("id-count-store"))
-					.toStream()
-					.map((key, value) -> new KeyValue<>(key.key().id, "Count for product with ID 123: " + value));
+					.count(Materialized.as("id-count-store")).toStream()
+					.map((key, value) -> new KeyValue<>(key.key().id,
+							"Count for product with ID 123: " + value));
 		}
+
 	}
 
 	static class Product {
@@ -150,5 +163,7 @@ public class KafkastreamsBinderPojoInputStringOutputIntegrationTests {
 		public void setId(Integer id) {
 			this.id = id;
 		}
+
 	}
+
 }

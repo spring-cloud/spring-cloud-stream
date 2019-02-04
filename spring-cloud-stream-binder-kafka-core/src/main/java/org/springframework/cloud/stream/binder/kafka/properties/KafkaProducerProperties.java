@@ -159,14 +159,15 @@ public class KafkaProducerProperties {
 		snappy,
 
 		/**
-		 * lz4 compression
+		 * lz4 compression.
 		 */
 		lz4,
 
-		//		/** // TODO: uncomment and fix docs when kafka-clients 2.1.0 or newer is the default
-		//		 * zstd compression
-		//		 */
-		//		zstd
+		// /** // TODO: uncomment and fix docs when kafka-clients 2.1.0 or newer is the
+		// default
+		// * zstd compression
+		// */
+		// zstd
 
 	}
 

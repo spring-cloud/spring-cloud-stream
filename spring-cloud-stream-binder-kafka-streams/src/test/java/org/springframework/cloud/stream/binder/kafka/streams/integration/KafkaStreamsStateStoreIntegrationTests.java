@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 the original author or authors.
+ * Copyright 2018-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
  */
 
 package org.springframework.cloud.stream.binder.kafka.streams.integration;
-
 
 import java.util.Map;
 
@@ -50,9 +49,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class KafkaStreamsStateStoreIntegrationTests {
 
 	@ClassRule
-	public static EmbeddedKafkaRule embeddedKafkaRule = new EmbeddedKafkaRule(1, true, "counts-id");
+	public static EmbeddedKafkaRule embeddedKafkaRule = new EmbeddedKafkaRule(1, true,
+			"counts-id");
 
-	private static EmbeddedKafkaBroker embeddedKafka = embeddedKafkaRule.getEmbeddedKafka();
+	private static EmbeddedKafkaBroker embeddedKafka = embeddedKafkaRule
+			.getEmbeddedKafka();
 
 	@Test
 	public void testKstreamStateStore() throws Exception {
@@ -62,31 +63,41 @@ public class KafkaStreamsStateStoreIntegrationTests {
 				"--spring.jmx.enabled=false",
 				"--spring.cloud.stream.bindings.input.destination=foobar",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.commit.interval.ms=1000",
-				"--spring.cloud.stream.kafka.streams.binder.configuration.default.key.serde=org.apache.kafka.common.serialization.Serdes$StringSerde",
-				"--spring.cloud.stream.kafka.streams.binder.configuration.default.value.serde=org.apache.kafka.common.serialization.Serdes$StringSerde",
-				"--spring.cloud.stream.kafka.streams.bindings.input.consumer.applicationId=KafkaStreamsStateStoreIntegrationTests-abc",
-				"--spring.cloud.stream.kafka.streams.binder.brokers=" + embeddedKafka.getBrokersAsString(),
-				"--spring.cloud.stream.kafka.streams.binder.zkNodes=" + embeddedKafka.getZookeeperConnectionString());
+				"--spring.cloud.stream.kafka.streams.binder.configuration.default.key.serde"
+						+ "=org.apache.kafka.common.serialization.Serdes$StringSerde",
+				"--spring.cloud.stream.kafka.streams.binder.configuration.default.value.serde"
+						+ "=org.apache.kafka.common.serialization.Serdes$StringSerde",
+				"--spring.cloud.stream.kafka.streams.bindings.input.consumer.applicationId"
+						+ "=KafkaStreamsStateStoreIntegrationTests-abc",
+				"--spring.cloud.stream.kafka.streams.binder.brokers="
+						+ embeddedKafka.getBrokersAsString(),
+				"--spring.cloud.stream.kafka.streams.binder.zkNodes="
+						+ embeddedKafka.getZookeeperConnectionString());
 		try {
 			Thread.sleep(2000);
 			receiveAndValidateFoo(context);
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			throw e;
-		} finally {
+		}
+		finally {
 			context.close();
 		}
 	}
 
-	private void receiveAndValidateFoo(ConfigurableApplicationContext context) throws Exception {
+	private void receiveAndValidateFoo(ConfigurableApplicationContext context)
+			throws Exception {
 		Map<String, Object> senderProps = KafkaTestUtils.producerProps(embeddedKafka);
-		DefaultKafkaProducerFactory<Integer, String> pf = new DefaultKafkaProducerFactory<>(senderProps);
+		DefaultKafkaProducerFactory<Integer, String> pf = new DefaultKafkaProducerFactory<>(
+				senderProps);
 		KafkaTemplate<Integer, String> template = new KafkaTemplate<>(pf, true);
 		template.setDefaultTopic("foobar");
 		template.sendDefault("{\"id\":\"123\"}");
 		Thread.sleep(1000);
 
-		//assertions
-		ProductCountApplication productCount = context.getBean(ProductCountApplication.class);
+		// assertions
+		ProductCountApplication productCount = context
+				.getBean(ProductCountApplication.class);
 		WindowStore<Object, String> state = productCount.state;
 		assertThat(state != null).isTrue();
 		assertThat(state.name()).isEqualTo("mystate");
@@ -99,34 +110,35 @@ public class KafkaStreamsStateStoreIntegrationTests {
 	public static class ProductCountApplication {
 
 		WindowStore<Object, String> state;
+
 		boolean processed;
 
 		@StreamListener("input")
 		@KafkaStreamsStateStore(name = "mystate", type = KafkaStreamsStateStoreProperties.StoreType.WINDOW, lengthMs = 300000)
-		@SuppressWarnings({"deprecation", "unchecked"})
+		@SuppressWarnings({ "deprecation", "unchecked" })
 		public void process(KStream<Object, Product> input) {
 
-			input
-				.process(() -> new Processor<Object, Product>() {
+			input.process(() -> new Processor<Object, Product>() {
 
-					@Override
-					public void init(ProcessorContext processorContext) {
-						state = (WindowStore) processorContext.getStateStore("mystate");
-					}
+				@Override
+				public void init(ProcessorContext processorContext) {
+					state = (WindowStore) processorContext.getStateStore("mystate");
+				}
 
-					@Override
-					public void process(Object s, Product product) {
-						processed = true;
-					}
+				@Override
+				public void process(Object s, Product product) {
+					processed = true;
+				}
 
-					@Override
-					public void close() {
-						if (state != null) {
-							state.close();
-						}
+				@Override
+				public void close() {
+					if (state != null) {
+						state.close();
 					}
-				}, "mystate");
+				}
+			}, "mystate");
 		}
+
 	}
 
 	public static class Product {
@@ -140,11 +152,14 @@ public class KafkaStreamsStateStoreIntegrationTests {
 		public void setId(Integer id) {
 			this.id = id;
 		}
+
 	}
 
 	interface KafkaStreamsProcessorX {
 
 		@Input("input")
 		KStream<?, ?> input();
+
 	}
+
 }

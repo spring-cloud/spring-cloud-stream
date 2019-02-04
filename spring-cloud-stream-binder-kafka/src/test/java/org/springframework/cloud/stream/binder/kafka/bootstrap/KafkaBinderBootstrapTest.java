@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2017-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,15 +35,18 @@ public class KafkaBinderBootstrapTest {
 
 	@Test
 	public void testKafkaBinderConfiguration() throws Exception {
-		ConfigurableApplicationContext applicationContext = new SpringApplicationBuilder(SimpleApplication.class)
-				.web(WebApplicationType.NONE)
-				.run("--spring.cloud.stream.kafka.binder.brokers=" + embeddedKafka.getEmbeddedKafka().getBrokersAsString(),
-					"--spring.cloud.stream.kafka.binder.zkNodes=" + embeddedKafka.getEmbeddedKafka().getZookeeperConnectionString());
+		ConfigurableApplicationContext applicationContext = new SpringApplicationBuilder(
+				SimpleApplication.class).web(WebApplicationType.NONE).run(
+						"--spring.cloud.stream.kafka.binder.brokers="
+								+ embeddedKafka.getEmbeddedKafka().getBrokersAsString(),
+						"--spring.cloud.stream.kafka.binder.zkNodes=" + embeddedKafka
+								.getEmbeddedKafka().getZookeeperConnectionString());
 		applicationContext.close();
 	}
 
 	@SpringBootApplication
 	static class SimpleApplication {
+
 	}
 
 }

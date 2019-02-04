@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 the original author or authors.
+ * Copyright 2018-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,7 +42,7 @@ public class CompositeNonNativeSerdeTest {
 
 	@Test
 	@SuppressWarnings("unchecked")
-	public void testCompositeNonNativeSerdeUsingAvroContentType(){
+	public void testCompositeNonNativeSerdeUsingAvroContentType() {
 		Random random = new Random();
 		Sensor sensor = new Sensor();
 		sensor.setId(UUID.randomUUID().toString() + "-v1");
@@ -52,18 +52,22 @@ public class CompositeNonNativeSerdeTest {
 
 		List<MessageConverter> messageConverters = new ArrayList<>();
 		messageConverters.add(new AvroSchemaMessageConverter());
-		CompositeMessageConverterFactory compositeMessageConverterFactory =
-				new CompositeMessageConverterFactory(messageConverters, new ObjectMapper());
-		CompositeNonNativeSerde compositeNonNativeSerde = new CompositeNonNativeSerde(compositeMessageConverterFactory);
+		CompositeMessageConverterFactory compositeMessageConverterFactory = new CompositeMessageConverterFactory(
+				messageConverters, new ObjectMapper());
+		CompositeNonNativeSerde compositeNonNativeSerde = new CompositeNonNativeSerde(
+				compositeMessageConverterFactory);
 
 		Map<String, Object> configs = new HashMap<>();
 		configs.put("valueClass", Sensor.class);
 		configs.put("contentType", "application/avro");
 		compositeNonNativeSerde.configure(configs, false);
-		final byte[] serialized = compositeNonNativeSerde.serializer().serialize(null, sensor);
+		final byte[] serialized = compositeNonNativeSerde.serializer().serialize(null,
+				sensor);
 
-		final Object deserialized = compositeNonNativeSerde.deserializer().deserialize(null, serialized);
+		final Object deserialized = compositeNonNativeSerde.deserializer()
+				.deserialize(null, serialized);
 
 		assertThat(deserialized).isEqualTo(sensor);
 	}
+
 }

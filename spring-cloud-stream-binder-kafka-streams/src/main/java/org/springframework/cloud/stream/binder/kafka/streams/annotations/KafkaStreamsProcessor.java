@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2017-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,12 +24,14 @@ import org.springframework.cloud.stream.annotation.Output;
 /**
  * Bindable interface for {@link KStream} input and output.
  *
- * This interface can be used as a bindable interface with {@link org.springframework.cloud.stream.annotation.EnableBinding}
- * when both input and output types are single KStream. In other scenarios where multiple types are required, other
- * similar bindable interfaces can be created and used. For example, there are cases in which multiple KStreams
- * are required on the outbound in the case of KStream branching or multiple input types are required either in the
- * form of multiple KStreams and a combination of KStreams and KTables. In those cases, new bindable interfaces compatible
- * with the requirements must be created. Here are some examples.
+ * This interface can be used as a bindable interface with
+ * {@link org.springframework.cloud.stream.annotation.EnableBinding} when both input and
+ * output types are single KStream. In other scenarios where multiple types are required,
+ * other similar bindable interfaces can be created and used. For example, there are cases
+ * in which multiple KStreams are required on the outbound in the case of KStream
+ * branching or multiple input types are required either in the form of multiple KStreams
+ * and a combination of KStreams and KTables. In those cases, new bindable interfaces
+ * compatible with the requirements must be created. Here are some examples.
  *
  * <pre class="code">
  *     interface KStreamBranchProcessor {
@@ -73,7 +75,6 @@ public interface KafkaStreamsProcessor {
 
 	/**
 	 * Input binding.
-	 *
 	 * @return {@link Input} binding for {@link KStream} type.
 	 */
 	@Input("input")
@@ -81,9 +82,9 @@ public interface KafkaStreamsProcessor {
 
 	/**
 	 * Output binding.
-	 *
 	 * @return {@link Output} binding for {@link KStream} type.
 	 */
 	@Output("output")
 	KStream<?, ?> output();
+
 }

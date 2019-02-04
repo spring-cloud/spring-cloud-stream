@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 the original author or authors.
+ * Copyright 2018-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,7 +41,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = {KafkaBinderConfiguration.class,
+@SpringBootTest(classes = { KafkaBinderConfiguration.class,
 		BindingServiceConfiguration.class })
 @TestPropertySource(properties = {
 		"spring.cloud.stream.kafka.bindings.input.consumer.admin.replication-factor=2",
@@ -53,7 +53,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 		"spring.cloud.stream.kafka.bindings.output.producer.topic.replication-factor=2",
 		"spring.cloud.stream.kafka.bindings.output.producer.topic.replicas-assignments.0=0,1",
 		"spring.cloud.stream.kafka.bindings.output.producer.topic.properties.message.format.version=0.9.0.0",
-		"spring.main.allow-bean-definition-overriding=true"})
+		"spring.main.allow-bean-definition-overriding=true" })
 @EnableIntegration
 public class AdminConfigTests {
 
@@ -62,31 +62,41 @@ public class AdminConfigTests {
 
 	@Test
 	public void testDeprecatedAdminConfigurationToMapTopicProperties() {
-		final KafkaConsumerProperties consumerProps = this.binder.getExtendedConsumerProperties("input");
+		final KafkaConsumerProperties consumerProps = this.binder
+				.getExtendedConsumerProperties("input");
 		final KafkaTopicProperties kafkaTopicProperties = consumerProps.getTopic();
 
 		assertThat(kafkaTopicProperties.getReplicationFactor()).isEqualTo((short) 2);
-		assertThat(kafkaTopicProperties.getReplicasAssignments().get(0)).isEqualTo(Arrays.asList(0, 1));
-		assertThat(kafkaTopicProperties.getProperties().get("message.format.version")).isEqualTo("0.9.0.0");
+		assertThat(kafkaTopicProperties.getReplicasAssignments().get(0))
+				.isEqualTo(Arrays.asList(0, 1));
+		assertThat(kafkaTopicProperties.getProperties().get("message.format.version"))
+				.isEqualTo("0.9.0.0");
 	}
 
 	@Test
 	public void testConsumerTopicProperties() {
-		final KafkaConsumerProperties consumerProperties = this.binder.getExtendedConsumerProperties("secondInput");
+		final KafkaConsumerProperties consumerProperties = this.binder
+				.getExtendedConsumerProperties("secondInput");
 		final KafkaTopicProperties kafkaTopicProperties = consumerProperties.getTopic();
 
 		assertThat(kafkaTopicProperties.getReplicationFactor()).isEqualTo((short) 3);
-		assertThat(kafkaTopicProperties.getReplicasAssignments().get(0)).isEqualTo(Arrays.asList(0, 1));
-		assertThat(kafkaTopicProperties.getProperties().get("message.format.version")).isEqualTo("0.9.1.0");
+		assertThat(kafkaTopicProperties.getReplicasAssignments().get(0))
+				.isEqualTo(Arrays.asList(0, 1));
+		assertThat(kafkaTopicProperties.getProperties().get("message.format.version"))
+				.isEqualTo("0.9.1.0");
 	}
 
 	@Test
 	public void testProducerTopicProperties() {
-		final KafkaProducerProperties producerProperties = this.binder.getExtendedProducerProperties("output");
+		final KafkaProducerProperties producerProperties = this.binder
+				.getExtendedProducerProperties("output");
 		final KafkaTopicProperties kafkaTopicProperties = producerProperties.getTopic();
 
 		assertThat(kafkaTopicProperties.getReplicationFactor()).isEqualTo((short) 2);
-		assertThat(kafkaTopicProperties.getReplicasAssignments().get(0)).isEqualTo(Arrays.asList(0, 1));
-		assertThat(kafkaTopicProperties.getProperties().get("message.format.version")).isEqualTo("0.9.0.0");
+		assertThat(kafkaTopicProperties.getReplicasAssignments().get(0))
+				.isEqualTo(Arrays.asList(0, 1));
+		assertThat(kafkaTopicProperties.getProperties().get("message.format.version"))
+				.isEqualTo("0.9.0.0");
 	}
+
 }

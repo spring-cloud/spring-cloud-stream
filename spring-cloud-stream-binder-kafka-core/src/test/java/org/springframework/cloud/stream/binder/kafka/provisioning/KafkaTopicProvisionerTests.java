@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 the original author or authors.
+ * Copyright 2018-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,6 @@ import org.springframework.kafka.test.utils.KafkaTestUtils;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
 
-
 /**
  * @author Gary Russell
  * @since 2.0
@@ -47,18 +46,27 @@ public class KafkaTopicProvisionerTests {
 	@Test
 	public void bootPropertiesOverriddenExceptServers() throws Exception {
 		KafkaProperties bootConfig = new KafkaProperties();
-		bootConfig.getProperties().put(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, "PLAINTEXT");
+		bootConfig.getProperties().put(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG,
+				"PLAINTEXT");
 		bootConfig.setBootstrapServers(Collections.singletonList("localhost:1234"));
-		KafkaBinderConfigurationProperties binderConfig = new KafkaBinderConfigurationProperties(bootConfig);
-		binderConfig.getConfiguration().put(AdminClientConfig.SECURITY_PROTOCOL_CONFIG, "SSL");
+		KafkaBinderConfigurationProperties binderConfig = new KafkaBinderConfigurationProperties(
+				bootConfig);
+		binderConfig.getConfiguration().put(AdminClientConfig.SECURITY_PROTOCOL_CONFIG,
+				"SSL");
 		ClassPathResource ts = new ClassPathResource("test.truststore.ks");
-		binderConfig.getConfiguration().put(SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG, ts.getFile().getAbsolutePath());
+		binderConfig.getConfiguration().put(SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG,
+				ts.getFile().getAbsolutePath());
 		binderConfig.setBrokers("localhost:9092");
-		KafkaTopicProvisioner provisioner = new KafkaTopicProvisioner(binderConfig, bootConfig);
+		KafkaTopicProvisioner provisioner = new KafkaTopicProvisioner(binderConfig,
+				bootConfig);
 		AdminClient adminClient = provisioner.createAdminClient();
-		assertThat(KafkaTestUtils.getPropertyValue(adminClient, "client.selector.channelBuilder")).isInstanceOf(SslChannelBuilder.class);
-		Map configs = KafkaTestUtils.getPropertyValue(adminClient, "client.selector.channelBuilder.configs", Map.class);
-		assertThat(((List) configs.get(CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG)).get(0)).isEqualTo("localhost:1234");
+		assertThat(KafkaTestUtils.getPropertyValue(adminClient,
+				"client.selector.channelBuilder")).isInstanceOf(SslChannelBuilder.class);
+		Map configs = KafkaTestUtils.getPropertyValue(adminClient,
+				"client.selector.channelBuilder.configs", Map.class);
+		assertThat(
+				((List) configs.get(CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG)).get(0))
+						.isEqualTo("localhost:1234");
 		adminClient.close();
 	}
 
@@ -66,33 +74,44 @@ public class KafkaTopicProvisionerTests {
 	@Test
 	public void bootPropertiesOverriddenIncludingServers() throws Exception {
 		KafkaProperties bootConfig = new KafkaProperties();
-		bootConfig.getProperties().put(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, "PLAINTEXT");
+		bootConfig.getProperties().put(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG,
+				"PLAINTEXT");
 		bootConfig.setBootstrapServers(Collections.singletonList("localhost:9092"));
-		KafkaBinderConfigurationProperties binderConfig = new KafkaBinderConfigurationProperties(bootConfig);
-		binderConfig.getConfiguration().put(AdminClientConfig.SECURITY_PROTOCOL_CONFIG, "SSL");
+		KafkaBinderConfigurationProperties binderConfig = new KafkaBinderConfigurationProperties(
+				bootConfig);
+		binderConfig.getConfiguration().put(AdminClientConfig.SECURITY_PROTOCOL_CONFIG,
+				"SSL");
 		ClassPathResource ts = new ClassPathResource("test.truststore.ks");
-		binderConfig.getConfiguration().put(SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG, ts.getFile().getAbsolutePath());
+		binderConfig.getConfiguration().put(SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG,
+				ts.getFile().getAbsolutePath());
 		binderConfig.setBrokers("localhost:1234");
-		KafkaTopicProvisioner provisioner = new KafkaTopicProvisioner(binderConfig, bootConfig);
+		KafkaTopicProvisioner provisioner = new KafkaTopicProvisioner(binderConfig,
+				bootConfig);
 		AdminClient adminClient = provisioner.createAdminClient();
-		assertThat(KafkaTestUtils.getPropertyValue(adminClient, "client.selector.channelBuilder")).isInstanceOf(SslChannelBuilder.class);
-		Map configs = KafkaTestUtils.getPropertyValue(adminClient, "client.selector.channelBuilder.configs", Map.class);
-		assertThat(((List) configs.get(CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG)).get(0)).isEqualTo("localhost:1234");
+		assertThat(KafkaTestUtils.getPropertyValue(adminClient,
+				"client.selector.channelBuilder")).isInstanceOf(SslChannelBuilder.class);
+		Map configs = KafkaTestUtils.getPropertyValue(adminClient,
+				"client.selector.channelBuilder.configs", Map.class);
+		assertThat(
+				((List) configs.get(CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG)).get(0))
+						.isEqualTo("localhost:1234");
 		adminClient.close();
 	}
 
 	@Test
 	public void brokersInvalid() throws Exception {
 		KafkaProperties bootConfig = new KafkaProperties();
-		KafkaBinderConfigurationProperties binderConfig = new KafkaBinderConfigurationProperties(bootConfig);
-		binderConfig.getConfiguration().put(CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG, "localhost:1234");
+		KafkaBinderConfigurationProperties binderConfig = new KafkaBinderConfigurationProperties(
+				bootConfig);
+		binderConfig.getConfiguration().put(CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG,
+				"localhost:1234");
 		try {
 			new KafkaTopicProvisioner(binderConfig, bootConfig);
 			fail("Expected illegal state");
 		}
 		catch (IllegalStateException e) {
-			assertThat(e.getMessage())
-					.isEqualTo("Set binder bootstrap servers via the 'brokers' property, not 'configuration'");
+			assertThat(e.getMessage()).isEqualTo(
+					"Set binder bootstrap servers via the 'brokers' property, not 'configuration'");
 		}
 	}
 

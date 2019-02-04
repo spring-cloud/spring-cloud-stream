@@ -41,16 +41,13 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.util.ReflectionUtils;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Ilayaperumal Gopinathan
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringBootTest(classes = {KafkaBinderConfiguration.class })
+@SpringBootTest(classes = { KafkaBinderConfiguration.class })
 @TestPropertySource(locations = "classpath:binder-config-autoconfig.properties")
 public class KafkaBinderAutoConfigurationPropertiesTest {
 
@@ -63,66 +60,78 @@ public class KafkaBinderAutoConfigurationPropertiesTest {
 	@Test
 	@SuppressWarnings("unchecked")
 	public void testKafkaBinderConfigurationWithKafkaProperties() throws Exception {
-		assertNotNull(this.kafkaMessageChannelBinder);
+		assertThat(this.kafkaMessageChannelBinder).isNotNull();
 		ExtendedProducerProperties<KafkaProducerProperties> producerProperties = new ExtendedProducerProperties<>(
 				new KafkaProducerProperties());
-		Method getProducerFactoryMethod = KafkaMessageChannelBinder.class.getDeclaredMethod("getProducerFactory",
-				String.class, ExtendedProducerProperties.class);
+		Method getProducerFactoryMethod = KafkaMessageChannelBinder.class
+				.getDeclaredMethod("getProducerFactory", String.class,
+						ExtendedProducerProperties.class);
 		getProducerFactoryMethod.setAccessible(true);
 		DefaultKafkaProducerFactory producerFactory = (DefaultKafkaProducerFactory) getProducerFactoryMethod
 				.invoke(this.kafkaMessageChannelBinder, "foo", producerProperties);
-		Field producerFactoryConfigField = ReflectionUtils.findField(DefaultKafkaProducerFactory.class, "configs",
-				Map.class);
+		Field producerFactoryConfigField = ReflectionUtils
+				.findField(DefaultKafkaProducerFactory.class, "configs", Map.class);
 		ReflectionUtils.makeAccessible(producerFactoryConfigField);
-		Map<String, Object> producerConfigs = (Map<String, Object>) ReflectionUtils.getField(producerFactoryConfigField,
-				producerFactory);
-		assertTrue(producerConfigs.get("batch.size").equals(10));
-		assertEquals(producerConfigs.get("key.serializer"), LongSerializer.class);
-		assertNull(producerConfigs.get("key.deserializer"));
-		assertEquals(producerConfigs.get("value.serializer"), LongSerializer.class);
-		assertNull(producerConfigs.get("value.deserializer"));
-		assertEquals("snappy", producerConfigs.get("compression.type"));
+		Map<String, Object> producerConfigs = (Map<String, Object>) ReflectionUtils
+				.getField(producerFactoryConfigField, producerFactory);
+		assertThat(producerConfigs.get("batch.size").equals(10)).isTrue();
+		assertThat(producerConfigs.get("key.serializer")).isEqualTo(LongSerializer.class);
+		assertThat(producerConfigs.get("key.deserializer")).isNull();
+		assertThat(producerConfigs.get("value.serializer"))
+				.isEqualTo(LongSerializer.class);
+		assertThat(producerConfigs.get("value.deserializer")).isNull();
+		assertThat(producerConfigs.get("compression.type")).isEqualTo("snappy");
 		List<String> bootstrapServers = new ArrayList<>();
 		bootstrapServers.add("10.98.09.199:9092");
 		bootstrapServers.add("10.98.09.196:9092");
-		assertTrue((((List<String>) producerConfigs.get("bootstrap.servers")).containsAll(bootstrapServers)));
-		Method createKafkaConsumerFactoryMethod = KafkaMessageChannelBinder.class.getDeclaredMethod(
-				"createKafkaConsumerFactory", boolean.class, String.class, ExtendedConsumerProperties.class);
+		assertThat((((List<String>) producerConfigs.get("bootstrap.servers"))
+				.containsAll(bootstrapServers))).isTrue();
+		Method createKafkaConsumerFactoryMethod = KafkaMessageChannelBinder.class
+				.getDeclaredMethod("createKafkaConsumerFactory", boolean.class,
+						String.class, ExtendedConsumerProperties.class);
 		createKafkaConsumerFactoryMethod.setAccessible(true);
 		ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = new ExtendedConsumerProperties<>(
 				new KafkaConsumerProperties());
 		DefaultKafkaConsumerFactory consumerFactory = (DefaultKafkaConsumerFactory) createKafkaConsumerFactoryMethod
 				.invoke(this.kafkaMessageChannelBinder, true, "test", consumerProperties);
-		Field consumerFactoryConfigField = ReflectionUtils.findField(DefaultKafkaConsumerFactory.class, "configs",
-				Map.class);
+		Field consumerFactoryConfigField = ReflectionUtils
+				.findField(DefaultKafkaConsumerFactory.class, "configs", Map.class);
 		ReflectionUtils.makeAccessible(consumerFactoryConfigField);
-		Map<String, Object> consumerConfigs = (Map<String, Object>) ReflectionUtils.getField(consumerFactoryConfigField,
-				consumerFactory);
-		assertEquals(consumerConfigs.get("key.deserializer"), LongDeserializer.class);
-		assertNull(consumerConfigs.get("key.serializer"));
-		assertEquals(consumerConfigs.get("value.deserializer"), LongDeserializer.class);
-		assertNull(consumerConfigs.get("value.serialized"));
-		assertEquals("groupIdFromBootConfig", consumerConfigs.get("group.id"));
-		assertEquals("earliest", consumerConfigs.get("auto.offset.reset"));
-		assertTrue((((List<String>) consumerConfigs.get("bootstrap.servers")).containsAll(bootstrapServers)));
+		Map<String, Object> consumerConfigs = (Map<String, Object>) ReflectionUtils
+				.getField(consumerFactoryConfigField, consumerFactory);
+		assertThat(consumerConfigs.get("key.deserializer"))
+				.isEqualTo(LongDeserializer.class);
+		assertThat(consumerConfigs.get("key.serializer")).isNull();
+		assertThat(consumerConfigs.get("value.deserializer"))
+				.isEqualTo(LongDeserializer.class);
+		assertThat(consumerConfigs.get("value.serialized")).isNull();
+		assertThat(consumerConfigs.get("group.id")).isEqualTo("groupIdFromBootConfig");
+		assertThat(consumerConfigs.get("auto.offset.reset")).isEqualTo("earliest");
+		assertThat((((List<String>) consumerConfigs.get("bootstrap.servers"))
+				.containsAll(bootstrapServers))).isTrue();
 	}
 
 	@Test
 	@SuppressWarnings("unchecked")
 	public void testKafkaHealthIndicatorProperties() {
-		assertNotNull(this.kafkaBinderHealthIndicator);
-		Field consumerFactoryField = ReflectionUtils.findField(KafkaBinderHealthIndicator.class, "consumerFactory",
+		assertThat(this.kafkaBinderHealthIndicator).isNotNull();
+		Field consumerFactoryField = ReflectionUtils.findField(
+				KafkaBinderHealthIndicator.class, "consumerFactory",
 				ConsumerFactory.class);
 		ReflectionUtils.makeAccessible(consumerFactoryField);
-		DefaultKafkaConsumerFactory consumerFactory = (DefaultKafkaConsumerFactory) ReflectionUtils.getField(
-				consumerFactoryField, this.kafkaBinderHealthIndicator);
-		Field configField = ReflectionUtils.findField(DefaultKafkaConsumerFactory.class, "configs", Map.class);
+		DefaultKafkaConsumerFactory consumerFactory = (DefaultKafkaConsumerFactory) ReflectionUtils
+				.getField(consumerFactoryField, this.kafkaBinderHealthIndicator);
+		Field configField = ReflectionUtils.findField(DefaultKafkaConsumerFactory.class,
+				"configs", Map.class);
 		ReflectionUtils.makeAccessible(configField);
-		Map<String, Object> configs = (Map<String, Object>) ReflectionUtils.getField(configField, consumerFactory);
-		assertTrue(configs.containsKey("bootstrap.servers"));
+		Map<String, Object> configs = (Map<String, Object>) ReflectionUtils
+				.getField(configField, consumerFactory);
+		assertThat(configs.containsKey("bootstrap.servers")).isTrue();
 		List<String> bootstrapServers = new ArrayList<>();
 		bootstrapServers.add("10.98.09.199:9092");
 		bootstrapServers.add("10.98.09.196:9092");
-		assertTrue(((List<String>) configs.get("bootstrap.servers")).containsAll(bootstrapServers));
+		assertThat(((List<String>) configs.get("bootstrap.servers"))
+				.containsAll(bootstrapServers)).isTrue();
 	}
+
 }

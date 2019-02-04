@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 the original author or authors.
+ * Copyright 2018-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,8 +21,8 @@ import org.apache.kafka.streams.errors.InvalidStateStoreException;
 import org.apache.kafka.streams.state.QueryableStoreType;
 
 /**
- * Registry that contains {@link QueryableStoreType}s those created from
- * the user applications.
+ * Registry that contains {@link QueryableStoreType}s those created from the user
+ * applications.
  *
  * @author Soby Chacko
  * @author Renwei Han
@@ -39,14 +39,15 @@ public class QueryableStoreRegistry {
 
 	/**
 	 * Retrieve and return a queryable store by name created in the application.
-	 *
 	 * @param storeName name of the queryable store
 	 * @param storeType type of the queryable store
-	 * @param <T>       generic queryable store
+	 * @param <T> generic queryable store
 	 * @return queryable store.
-	 * @deprecated in favor of {@link InteractiveQueryService#getQueryableStore(String, QueryableStoreType)}
+	 * @deprecated in favor of
+	 * {@link InteractiveQueryService#getQueryableStore(String, QueryableStoreType)}
 	 */
-	public <T> T getQueryableStoreType(String storeName, QueryableStoreType<T> storeType) {
+	public <T> T getQueryableStoreType(String storeName,
+			QueryableStoreType<T> storeType) {
 
 		for (KafkaStreams kafkaStream : this.kafkaStreamsRegistry.getKafkaStreams()) {
 			try {
@@ -56,7 +57,7 @@ public class QueryableStoreRegistry {
 				}
 			}
 			catch (InvalidStateStoreException ignored) {
-				//pass through
+				// pass through
 			}
 		}
 		return null;

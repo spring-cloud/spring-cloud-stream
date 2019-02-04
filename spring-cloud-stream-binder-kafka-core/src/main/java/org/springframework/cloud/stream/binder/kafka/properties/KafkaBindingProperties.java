@@ -45,4 +45,5 @@ public class KafkaBindingProperties implements BinderSpecificPropertiesProvider 
 	public void setProducer(KafkaProducerProperties producer) {
 		this.producer = producer;
 	}
+
 }

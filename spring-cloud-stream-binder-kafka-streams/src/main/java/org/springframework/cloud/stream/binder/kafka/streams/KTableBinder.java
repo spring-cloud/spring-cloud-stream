@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 the original author or authors.
+ * Copyright 2018-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,16 +35,21 @@ import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStr
 import org.springframework.util.StringUtils;
 
 /**
- * {@link org.springframework.cloud.stream.binder.Binder} implementation for {@link KTable}.
- * This implemenation extends from the {@link AbstractBinder} directly.
+ * {@link org.springframework.cloud.stream.binder.Binder} implementation for
+ * {@link KTable}. This implemenation extends from the {@link AbstractBinder} directly.
  *
- * Provides only consumer binding for the bound KTable as output bindings are not allowed on it.
+ * Provides only consumer binding for the bound KTable as output bindings are not allowed
+ * on it.
  *
  * @author Soby Chacko
  */
 class KTableBinder extends
+		// @checkstyle:off
 		AbstractBinder<KTable<Object, Object>, ExtendedConsumerProperties<KafkaStreamsConsumerProperties>, ExtendedProducerProperties<KafkaStreamsProducerProperties>>
-		implements ExtendedPropertiesBinder<KTable<Object, Object>, KafkaStreamsConsumerProperties, KafkaStreamsProducerProperties> {
+		implements
+		ExtendedPropertiesBinder<KTable<Object, Object>, KafkaStreamsConsumerProperties, KafkaStreamsProducerProperties> {
+
+	// @checkstyle:on
 
 	private final KafkaStreamsBinderConfigurationProperties binderConfigurationProperties;
 
@@ -52,10 +57,14 @@ class KTableBinder extends
 
 	private Map<String, KafkaStreamsDlqDispatch> kafkaStreamsDlqDispatchers;
 
+	// @checkstyle:off
 	private KafkaStreamsExtendedBindingProperties kafkaStreamsExtendedBindingProperties = new KafkaStreamsExtendedBindingProperties();
 
-	KTableBinder(KafkaStreamsBinderConfigurationProperties binderConfigurationProperties, KafkaTopicProvisioner kafkaTopicProvisioner,
-				Map<String, KafkaStreamsDlqDispatch> kafkaStreamsDlqDispatchers) {
+	// @checkstyle:on
+
+	KTableBinder(KafkaStreamsBinderConfigurationProperties binderConfigurationProperties,
+			KafkaTopicProvisioner kafkaTopicProvisioner,
+			Map<String, KafkaStreamsDlqDispatch> kafkaStreamsDlqDispatchers) {
 		this.binderConfigurationProperties = binderConfigurationProperties;
 		this.kafkaTopicProvisioner = kafkaTopicProvisioner;
 		this.kafkaStreamsDlqDispatchers = kafkaStreamsDlqDispatchers;
@@ -63,31 +72,43 @@ class KTableBinder extends
 
 	@Override
 	@SuppressWarnings("unchecked")
-	protected Binding<KTable<Object, Object>> doBindConsumer(String name, String group, KTable<Object, Object> inputTarget,
-															ExtendedConsumerProperties<KafkaStreamsConsumerProperties> properties) {
+	protected Binding<KTable<Object, Object>> doBindConsumer(String name, String group,
+			KTable<Object, Object> inputTarget,
+			// @checkstyle:off
+			ExtendedConsumerProperties<KafkaStreamsConsumerProperties> properties) {
+		// @checkstyle:on
 		if (!StringUtils.hasText(group)) {
 			group = this.binderConfigurationProperties.getApplicationId();
 		}
-		KafkaStreamsBinderUtils.prepareConsumerBinding(name, group, getApplicationContext(),
-				this.kafkaTopicProvisioner,
-				this.binderConfigurationProperties, properties, this.kafkaStreamsDlqDispatchers);
+		KafkaStreamsBinderUtils.prepareConsumerBinding(name, group,
+				getApplicationContext(), this.kafkaTopicProvisioner,
+				this.binderConfigurationProperties, properties,
+				this.kafkaStreamsDlqDispatchers);
 		return new DefaultBinding<>(name, group, inputTarget, null);
 	}
 
 	@Override
-	protected Binding<KTable<Object, Object>> doBindProducer(String name, KTable<Object, Object> outboundBindTarget,
-															ExtendedProducerProperties<KafkaStreamsProducerProperties> properties) {
-		throw new UnsupportedOperationException("No producer level binding is allowed for KTable");
+	protected Binding<KTable<Object, Object>> doBindProducer(String name,
+			KTable<Object, Object> outboundBindTarget,
+			// @checkstyle:off
+			ExtendedProducerProperties<KafkaStreamsProducerProperties> properties) {
+		// @checkstyle:on
+		throw new UnsupportedOperationException(
+				"No producer level binding is allowed for KTable");
 	}
 
 	@Override
-	public KafkaStreamsConsumerProperties getExtendedConsumerProperties(String channelName) {
-		return this.kafkaStreamsExtendedBindingProperties.getExtendedConsumerProperties(channelName);
+	public KafkaStreamsConsumerProperties getExtendedConsumerProperties(
+			String channelName) {
+		return this.kafkaStreamsExtendedBindingProperties
+				.getExtendedConsumerProperties(channelName);
 	}
 
 	@Override
-	public KafkaStreamsProducerProperties getExtendedProducerProperties(String channelName) {
-		return this.kafkaStreamsExtendedBindingProperties.getExtendedProducerProperties(channelName);
+	public KafkaStreamsProducerProperties getExtendedProducerProperties(
+			String channelName) {
+		return this.kafkaStreamsExtendedBindingProperties
+				.getExtendedProducerProperties(channelName);
 	}
 
 	@Override
@@ -97,6 +118,8 @@ class KTableBinder extends
 
 	@Override
 	public Class<? extends BinderSpecificPropertiesProvider> getExtendedPropertiesEntryClass() {
-		return this.kafkaStreamsExtendedBindingProperties.getExtendedPropertiesEntryClass();
+		return this.kafkaStreamsExtendedBindingProperties
+				.getExtendedPropertiesEntryClass();
 	}
+
 }

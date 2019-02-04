@@ -51,4 +51,5 @@ public class KafkaStreamsProducerProperties extends KafkaProducerProperties {
 	public void setValueSerde(String valueSerde) {
 		this.valueSerde = valueSerde;
 	}
+
 }

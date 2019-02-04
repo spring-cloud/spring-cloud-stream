@@ -40,8 +40,8 @@ import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 
 /**
- * Configuration properties for the Kafka binder.
- * The properties in this class are prefixed with <b>spring.cloud.stream.kafka.binder</b>.
+ * Configuration properties for the Kafka binder. The properties in this class are
+ * prefixed with <b>spring.cloud.stream.kafka.binder</b>.
  *
  * @author David Turanski
  * @author Ilayaperumal Gopinathan
@@ -127,10 +127,10 @@ public class KafkaBinderConfigurationProperties {
 	private JaasLoginModuleConfiguration jaas;
 
 	/**
-	 * The bean name of a custom header mapper to use instead of a {@link org.springframework.kafka.support.DefaultKafkaHeaderMapper}.
+	 * The bean name of a custom header mapper to use instead of a
+	 * {@link org.springframework.kafka.support.DefaultKafkaHeaderMapper}.
 	 */
 	private String headerMapperBeanName;
-
 
 	public KafkaBinderConfigurationProperties(KafkaProperties kafkaProperties) {
 		Assert.notNull(kafkaProperties, "'kafkaProperties' cannot be null");
@@ -328,9 +328,8 @@ public class KafkaBinderConfigurationProperties {
 	}
 
 	/**
-	 * Converts an array of host values to a comma-separated String.
-	 * It will append the default port value, if not already specified.
-	 *
+	 * Converts an array of host values to a comma-separated String. It will append the
+	 * default port value, if not already specified.
 	 * @param hosts host string
 	 * @param defaultPort port
 	 * @return formatted connection string
@@ -526,15 +525,18 @@ public class KafkaBinderConfigurationProperties {
 		Map<String, Object> consumerConfiguration = new HashMap<>();
 		consumerConfiguration.putAll(this.kafkaProperties.buildConsumerProperties());
 		// Copy configured binder properties that apply to consumers
-		for (Map.Entry<String, String> configurationEntry : this.configuration.entrySet()) {
+		for (Map.Entry<String, String> configurationEntry : this.configuration
+				.entrySet()) {
 			if (ConsumerConfig.configNames().contains(configurationEntry.getKey())) {
-				consumerConfiguration.put(configurationEntry.getKey(), configurationEntry.getValue());
+				consumerConfiguration.put(configurationEntry.getKey(),
+						configurationEntry.getValue());
 			}
 		}
 		consumerConfiguration.putAll(this.consumerProperties);
 		// Override Spring Boot bootstrap server setting if left to default with the value
 		// configured in the binder
-		return getConfigurationWithBootstrapServer(consumerConfiguration, ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG);
+		return getConfigurationWithBootstrapServer(consumerConfiguration,
+				ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG);
 	}
 
 	/**
@@ -547,18 +549,22 @@ public class KafkaBinderConfigurationProperties {
 		Map<String, Object> producerConfiguration = new HashMap<>();
 		producerConfiguration.putAll(this.kafkaProperties.buildProducerProperties());
 		// Copy configured binder properties that apply to producers
-		for (Map.Entry<String, String> configurationEntry : this.configuration.entrySet()) {
+		for (Map.Entry<String, String> configurationEntry : this.configuration
+				.entrySet()) {
 			if (ProducerConfig.configNames().contains(configurationEntry.getKey())) {
-				producerConfiguration.put(configurationEntry.getKey(), configurationEntry.getValue());
+				producerConfiguration.put(configurationEntry.getKey(),
+						configurationEntry.getValue());
 			}
 		}
 		producerConfiguration.putAll(this.producerProperties);
 		// Override Spring Boot bootstrap server setting if left to default with the value
 		// configured in the binder
-		return getConfigurationWithBootstrapServer(producerConfiguration, ProducerConfig.BOOTSTRAP_SERVERS_CONFIG);
+		return getConfigurationWithBootstrapServer(producerConfiguration,
+				ProducerConfig.BOOTSTRAP_SERVERS_CONFIG);
 	}
 
-	private Map<String, Object> getConfigurationWithBootstrapServer(Map<String, Object> configuration, String bootstrapServersConfig) {
+	private Map<String, Object> getConfigurationWithBootstrapServer(
+			Map<String, Object> configuration, String bootstrapServersConfig) {
 		if (ObjectUtils.isEmpty(configuration.get(bootstrapServersConfig))) {
 			configuration.put(bootstrapServersConfig, getKafkaConnectionString());
 		}
@@ -568,7 +574,8 @@ public class KafkaBinderConfigurationProperties {
 				@SuppressWarnings("unchecked")
 				List<String> bootStrapServers = (List<String>) configuration
 						.get(bootstrapServersConfig);
-				if (bootStrapServers.size() == 1 && bootStrapServers.get(0).equals("localhost:9092")) {
+				if (bootStrapServers.size() == 1
+						&& bootStrapServers.get(0).equals("localhost:9092")) {
 					configuration.put(bootstrapServersConfig, getKafkaConnectionString());
 				}
 			}
@@ -616,9 +623,10 @@ public class KafkaBinderConfigurationProperties {
 	}
 
 	/**
-	 * An combination of {@link ProducerProperties} and {@link KafkaProducerProperties}
-	 * so that common and kafka-specific properties can be set for the transactional
+	 * An combination of {@link ProducerProperties} and {@link KafkaProducerProperties} so
+	 * that common and kafka-specific properties can be set for the transactional
 	 * producer.
+	 *
 	 * @since 2.1
 	 */
 	public static class CombinedProducerProperties {
@@ -643,8 +651,10 @@ public class KafkaBinderConfigurationProperties {
 			return this.producerProperties.getPartitionSelectorExpression();
 		}
 
-		public void setPartitionSelectorExpression(Expression partitionSelectorExpression) {
-			this.producerProperties.setPartitionSelectorExpression(partitionSelectorExpression);
+		public void setPartitionSelectorExpression(
+				Expression partitionSelectorExpression) {
+			this.producerProperties
+					.setPartitionSelectorExpression(partitionSelectorExpression);
 		}
 
 		public @Min(value = 1, message = "Partition count should be greater than zero.") int getPartitionCount() {
@@ -663,11 +673,13 @@ public class KafkaBinderConfigurationProperties {
 			this.producerProperties.setRequiredGroups(requiredGroups);
 		}
 
-		public @AssertTrue(message = "Partition key expression and partition key extractor class properties are mutually exclusive.") boolean isValidPartitionKeyProperty() {
+		public @AssertTrue(message = "Partition key expression and partition key extractor class properties "
+				+ "are mutually exclusive.") boolean isValidPartitionKeyProperty() {
 			return this.producerProperties.isValidPartitionKeyProperty();
 		}
 
-		public @AssertTrue(message = "Partition selector class and partition selector expression properties are mutually exclusive.") boolean isValidPartitionSelectorProperty() {
+		public @AssertTrue(message = "Partition selector class and partition selector expression "
+				+ "properties are mutually exclusive.") boolean isValidPartitionSelectorProperty() {
 			return this.producerProperties.isValidPartitionSelectorProperty();
 		}
 
@@ -700,7 +712,8 @@ public class KafkaBinderConfigurationProperties {
 		}
 
 		public void setPartitionKeyExtractorName(String partitionKeyExtractorName) {
-			this.producerProperties.setPartitionKeyExtractorName(partitionKeyExtractorName);
+			this.producerProperties
+					.setPartitionKeyExtractorName(partitionKeyExtractorName);
 		}
 
 		public String getPartitionSelectorName() {
@@ -788,6 +801,7 @@ public class KafkaBinderConfigurationProperties {
 		public KafkaProducerProperties getExtension() {
 			return this.kafkaProducerProperties;
 		}
+
 	}
 
 }

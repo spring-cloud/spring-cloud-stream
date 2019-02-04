@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 the original author or authors.
+ * Copyright 2018-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,13 +23,13 @@ import org.springframework.kafka.KafkaException;
 import org.springframework.kafka.config.StreamsBuilderFactoryBean;
 
 /**
- * Iterate through all {@link StreamsBuilderFactoryBean} in the application context
- * and start them. As each one completes starting, register the associated KafkaStreams
- * object into {@link QueryableStoreRegistry}.
+ * Iterate through all {@link StreamsBuilderFactoryBean} in the application context and
+ * start them. As each one completes starting, register the associated KafkaStreams object
+ * into {@link QueryableStoreRegistry}.
  *
- * This {@link SmartLifecycle} class ensures that the bean created from it is started very late
- * through the bootstrap process by setting the phase value closer to Integer.MAX_VALUE.
- * This is to guarantee that the {@link StreamsBuilderFactoryBean} on a
+ * This {@link SmartLifecycle} class ensures that the bean created from it is started very
+ * late through the bootstrap process by setting the phase value closer to
+ * Integer.MAX_VALUE. This is to guarantee that the {@link StreamsBuilderFactoryBean} on a
  * {@link org.springframework.cloud.stream.annotation.StreamListener} method with multiple
  * bindings is only started after all the binding phases have completed successfully.
  *
@@ -38,12 +38,14 @@ import org.springframework.kafka.config.StreamsBuilderFactoryBean;
 class StreamsBuilderFactoryManager implements SmartLifecycle {
 
 	private final KafkaStreamsBindingInformationCatalogue kafkaStreamsBindingInformationCatalogue;
+
 	private final KafkaStreamsRegistry kafkaStreamsRegistry;
 
 	private volatile boolean running;
 
-	StreamsBuilderFactoryManager(KafkaStreamsBindingInformationCatalogue kafkaStreamsBindingInformationCatalogue,
-								KafkaStreamsRegistry kafkaStreamsRegistry) {
+	StreamsBuilderFactoryManager(
+			KafkaStreamsBindingInformationCatalogue kafkaStreamsBindingInformationCatalogue,
+			KafkaStreamsRegistry kafkaStreamsRegistry) {
 		this.kafkaStreamsBindingInformationCatalogue = kafkaStreamsBindingInformationCatalogue;
 		this.kafkaStreamsRegistry = kafkaStreamsRegistry;
 	}
@@ -65,10 +67,12 @@ class StreamsBuilderFactoryManager implements SmartLifecycle {
 	public synchronized void start() {
 		if (!this.running) {
 			try {
-				Set<StreamsBuilderFactoryBean> streamsBuilderFactoryBeans = this.kafkaStreamsBindingInformationCatalogue.getStreamsBuilderFactoryBeans();
+				Set<StreamsBuilderFactoryBean> streamsBuilderFactoryBeans = this.kafkaStreamsBindingInformationCatalogue
+						.getStreamsBuilderFactoryBeans();
 				for (StreamsBuilderFactoryBean streamsBuilderFactoryBean : streamsBuilderFactoryBeans) {
 					streamsBuilderFactoryBean.start();
-					this.kafkaStreamsRegistry.registerKafkaStreams(streamsBuilderFactoryBean.getKafkaStreams());
+					this.kafkaStreamsRegistry.registerKafkaStreams(
+							streamsBuilderFactoryBean.getKafkaStreams());
 				}
 				this.running = true;
 			}
@@ -79,21 +83,22 @@ class StreamsBuilderFactoryManager implements SmartLifecycle {
 	}
 
 	@Override
-	public synchronized  void stop() {
-			if (this.running) {
-				try {
-					Set<StreamsBuilderFactoryBean> streamsBuilderFactoryBeans = this.kafkaStreamsBindingInformationCatalogue.getStreamsBuilderFactoryBeans();
-					for (StreamsBuilderFactoryBean streamsBuilderFactoryBean : streamsBuilderFactoryBeans) {
-						streamsBuilderFactoryBean.stop();
-					}
-				}
-				catch (Exception ex) {
-					throw new IllegalStateException(ex);
-				}
-				finally {
-					this.running = false;
+	public synchronized void stop() {
+		if (this.running) {
+			try {
+				Set<StreamsBuilderFactoryBean> streamsBuilderFactoryBeans = this.kafkaStreamsBindingInformationCatalogue
+						.getStreamsBuilderFactoryBeans();
+				for (StreamsBuilderFactoryBean streamsBuilderFactoryBean : streamsBuilderFactoryBeans) {
+					streamsBuilderFactoryBean.stop();
 				}
 			}
+			catch (Exception ex) {
+				throw new IllegalStateException(ex);
+			}
+			finally {
+				this.running = false;
+			}
+		}
 	}
 
 	@Override
