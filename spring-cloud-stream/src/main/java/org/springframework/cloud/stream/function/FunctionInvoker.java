@@ -197,7 +197,6 @@ class FunctionInvoker<I, O> implements Function<Flux<Message<I>>, Flux<Message<O
 		return returnMessage;
 	}
 
-
 	@SuppressWarnings("unchecked")
 	private <T> Message<O> wrapOutputToMessage(T value, Message<I> originalMessage) {
 		Message<O> returnMessage = (Message<O>) MessageBuilder.withPayload(value)

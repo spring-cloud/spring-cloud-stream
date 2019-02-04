@@ -217,8 +217,9 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 		}
 		else {
 			rt = StringUtils.hasText(properties.getRetryTemplateName())
-					? this.consumerBindingRetryTemplates.get(properties.getRetryTemplateName())
-							: this.consumerBindingRetryTemplates.values().iterator().next();
+					? this.consumerBindingRetryTemplates
+							.get(properties.getRetryTemplateName())
+					: this.consumerBindingRetryTemplates.values().iterator().next();
 		}
 		return rt;
 	}

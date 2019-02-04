@@ -110,66 +110,6 @@ public class FunctionInvokerTests {
 		}
 	}
 
-	@EnableAutoConfiguration
-	@EnableBinding(Processor.class)
-	public static class ConverterDoesNotProduceCTConfiguration {
-
-		@Bean
-		public Function<String, String> func() {
-			return x -> x;
-		}
-
-		@StreamMessageConverter
-		public MessageConverter customConverter() {
-			return new MessageConverter() {
-
-				@Override
-				public Message<?> toMessage(Object payload, MessageHeaders headers) {
-					return new GenericMessage<byte[]>(((String)payload).getBytes());
-				}
-
-				@Override
-				public Object fromMessage(Message<?> message, Class<?> targetClass) {
-					String contentType = (String) message.getHeaders().get(MessageHeaders.CONTENT_TYPE).toString();
-					if (contentType.equals("foo/bar")) {
-						return new String((byte[])message.getPayload());
-					}
-					return null;
-				}
-			};
-		}
-	}
-
-	@EnableAutoConfiguration
-	@EnableBinding(Processor.class)
-	public static class ConverterInjectingCTConfiguration {
-
-		@Bean
-		public Function<String, String> func() {
-			return x -> x;
-		}
-
-		@StreamMessageConverter
-		public MessageConverter customConverter() {
-			return new MessageConverter() {
-
-				@Override
-				public Message<?> toMessage(Object payload, MessageHeaders headers) {
-					return MessageBuilder.withPayload(((String)payload).getBytes()).setHeader(MessageHeaders.CONTENT_TYPE, "ping/pong").build();
-				}
-
-				@Override
-				public Object fromMessage(Message<?> message, Class<?> targetClass) {
-					String contentType = (String) message.getHeaders().get(MessageHeaders.CONTENT_TYPE).toString();
-					if (contentType.equals("foo/bar")) {
-						return new String((byte[])message.getPayload());
-					}
-					return null;
-				}
-			};
-		}
-	}
-
 	@Test
 	public void testSameMessageTypesAreNotConverted() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
@@ -432,6 +372,71 @@ public class FunctionInvokerTests {
 				else {
 					System.out.println("All is good ");
 					return x;
+				}
+			};
+		}
+
+	}
+
+	@EnableAutoConfiguration
+	@EnableBinding(Processor.class)
+	public static class ConverterInjectingCTConfiguration {
+
+		@Bean
+		public Function<String, String> func() {
+			return x -> x;
+		}
+
+		@StreamMessageConverter
+		public MessageConverter customConverter() {
+			return new MessageConverter() {
+
+				@Override
+				public Message<?> toMessage(Object payload, MessageHeaders headers) {
+					return MessageBuilder.withPayload(((String) payload).getBytes())
+							.setHeader(MessageHeaders.CONTENT_TYPE, "ping/pong").build();
+				}
+
+				@Override
+				public Object fromMessage(Message<?> message, Class<?> targetClass) {
+					String contentType = (String) message.getHeaders()
+							.get(MessageHeaders.CONTENT_TYPE).toString();
+					if (contentType.equals("foo/bar")) {
+						return new String((byte[]) message.getPayload());
+					}
+					return null;
+				}
+			};
+		}
+
+	}
+
+	@EnableAutoConfiguration
+	@EnableBinding(Processor.class)
+	public static class ConverterDoesNotProduceCTConfiguration {
+
+		@Bean
+		public Function<String, String> func() {
+			return x -> x;
+		}
+
+		@StreamMessageConverter
+		public MessageConverter customConverter() {
+			return new MessageConverter() {
+
+				@Override
+				public Message<?> toMessage(Object payload, MessageHeaders headers) {
+					return new GenericMessage<byte[]>(((String) payload).getBytes());
+				}
+
+				@Override
+				public Object fromMessage(Message<?> message, Class<?> targetClass) {
+					String contentType = (String) message.getHeaders()
+							.get(MessageHeaders.CONTENT_TYPE).toString();
+					if (contentType.equals("foo/bar")) {
+						return new String((byte[]) message.getPayload());
+					}
+					return null;
 				}
 			};
 		}

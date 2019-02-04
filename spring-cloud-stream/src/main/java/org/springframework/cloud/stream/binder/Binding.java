@@ -94,8 +94,7 @@ public interface Binding<T> extends Pausable {
 	}
 
 	/**
-	 * Returns the name of the destination for this binding
-	 *
+	 * Returns the name of the destination for this binding.
 	 * @return destination name
 	 */
 	default String getName() {
@@ -103,8 +102,7 @@ public interface Binding<T> extends Pausable {
 	}
 
 	/**
-	 * Returns the name of the target for this binding  (i.e., channel name)
-	 *
+	 * Returns the name of the target for this binding (i.e., channel name).
 	 * @return binding name
 	 *
 	 * @since 2.2
@@ -132,4 +130,5 @@ public interface Binding<T> extends Pausable {
 				"Binding implementation `" + this.getClass().getName()
 						+ "` must implement this operation before it is called");
 	}
+
 }
