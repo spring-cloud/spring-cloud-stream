@@ -1054,6 +1054,15 @@ public RetryTemplate myRetryTemplate() {
 ----
 As you can see from the above example you don't need to annotate it with `@Bean` since `@StreamRetryTemplate` is a qualified `@Bean`.
 
+If you need to be more precise with your `RetryTemplate`, you can specify the bean by name in your `ConsumerProperties` to associate
+the specific retry bean per binding.
+
+[source]
+----
+spring.cloud.stream.bindings.<foo>.consumer.retry-template-name=<your-retry-template-bean-name>
+----
+
+
 [[spring-cloud-stream-overview-binders]]
 == Binders
 
