@@ -58,7 +58,39 @@ import org.springframework.util.StringUtils;
 @ConditionalOnMissingBean(Binder.class)
 @Import({ RabbitMessageChannelBinderConfiguration.class,
 		RabbitServiceAutoConfiguration.RabbitHealthIndicatorConfiguration.class })
-public class RabbitServiceAutoConfiguration {
+public abstract class RabbitServiceAutoConfiguration {
+
+	static void configureCachingConnectionFactory(
+			CachingConnectionFactory connectionFactory,
+			ConfigurableApplicationContext applicationContext,
+			RabbitProperties rabbitProperties) throws Exception {
+
+		if (StringUtils.hasText(rabbitProperties.getAddresses())) {
+			connectionFactory.setAddresses(rabbitProperties.determineAddresses());
+		}
+
+		connectionFactory.setPublisherConfirms(rabbitProperties.isPublisherConfirms());
+		connectionFactory.setPublisherReturns(rabbitProperties.isPublisherReturns());
+		if (rabbitProperties.getCache().getChannel().getSize() != null) {
+			connectionFactory.setChannelCacheSize(
+					rabbitProperties.getCache().getChannel().getSize());
+		}
+		if (rabbitProperties.getCache().getConnection().getMode() != null) {
+			connectionFactory
+					.setCacheMode(rabbitProperties.getCache().getConnection().getMode());
+		}
+		if (rabbitProperties.getCache().getConnection().getSize() != null) {
+			connectionFactory.setConnectionCacheSize(
+					rabbitProperties.getCache().getConnection().getSize());
+		}
+		if (rabbitProperties.getCache().getChannel().getCheckoutTimeout() != null) {
+			connectionFactory.setChannelCheckoutTimeout(rabbitProperties.getCache()
+					.getChannel().getCheckoutTimeout().toMillis());
+		}
+		connectionFactory.setApplicationContext(applicationContext);
+		applicationContext.addApplicationListener(connectionFactory);
+		connectionFactory.afterPropertiesSet();
+	}
 
 	/**
 	 * Configuration to be used when the cloud profile is set.
@@ -85,8 +117,10 @@ public class RabbitServiceAutoConfiguration {
 			 * Active only if {@code spring.cloud.stream.override-cloud-connectors} is not
 			 * set to {@code true}.
 			 */
+			// @checkstyle:off
 			@Configuration
 			@ConditionalOnProperty(value = "spring.cloud.stream.override-cloud-connectors", havingValue = "false", matchIfMissing = true)
+			// @checkstyle:on
 			// Required to parse Rabbit properties which are passed to the binder for
 			// clustering. We need to enable it here explicitly as the default Rabbit
 			// configuration is not triggered.
@@ -99,7 +133,10 @@ public class RabbitServiceAutoConfiguration {
 				 * @param cloud {@link Cloud} instance to be used for accessing services.
 				 * @param connectorConfigObjectProvider the {@link ObjectProvider} for the
 				 * {@link RabbitConnectionFactoryConfig}.
+				 * @param applicationContext application context instance
+				 * @param rabbitProperties rabbit properties
 				 * @return the {@link ConnectionFactory} used by the binder.
+				 * @throws Exception if configuration of connection factory fails
 				 */
 				@Bean
 				@Primary
@@ -161,6 +198,10 @@ public class RabbitServiceAutoConfiguration {
 
 	}
 
+	/**
+	 * Configuration for Rabbit health indicator.
+	 *
+	 */
 	@Configuration
 	@ConditionalOnClass(name = "org.springframework.boot.actuate.health.HealthIndicator")
 	public static class RabbitHealthIndicatorConfiguration {
@@ -170,38 +211,6 @@ public class RabbitServiceAutoConfiguration {
 			return new RabbitHealthIndicator(rabbitTemplate);
 		}
 
-	}
-
-	static void configureCachingConnectionFactory(
-			CachingConnectionFactory connectionFactory,
-			ConfigurableApplicationContext applicationContext,
-			RabbitProperties rabbitProperties) throws Exception {
-
-		if (StringUtils.hasText(rabbitProperties.getAddresses())) {
-			connectionFactory.setAddresses(rabbitProperties.determineAddresses());
-		}
-
-		connectionFactory.setPublisherConfirms(rabbitProperties.isPublisherConfirms());
-		connectionFactory.setPublisherReturns(rabbitProperties.isPublisherReturns());
-		if (rabbitProperties.getCache().getChannel().getSize() != null) {
-			connectionFactory.setChannelCacheSize(
-					rabbitProperties.getCache().getChannel().getSize());
-		}
-		if (rabbitProperties.getCache().getConnection().getMode() != null) {
-			connectionFactory
-					.setCacheMode(rabbitProperties.getCache().getConnection().getMode());
-		}
-		if (rabbitProperties.getCache().getConnection().getSize() != null) {
-			connectionFactory.setConnectionCacheSize(
-					rabbitProperties.getCache().getConnection().getSize());
-		}
-		if (rabbitProperties.getCache().getChannel().getCheckoutTimeout() != null) {
-			connectionFactory.setChannelCheckoutTimeout(rabbitProperties.getCache()
-					.getChannel().getCheckoutTimeout().toMillis());
-		}
-		connectionFactory.setApplicationContext(applicationContext);
-		applicationContext.addApplicationListener(connectionFactory);
-		connectionFactory.afterPropertiesSet();
 	}
 
 }

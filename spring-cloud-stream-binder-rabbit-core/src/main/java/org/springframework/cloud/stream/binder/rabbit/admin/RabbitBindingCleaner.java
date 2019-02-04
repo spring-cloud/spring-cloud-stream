@@ -44,6 +44,9 @@ public class RabbitBindingCleaner implements BindingCleaner {
 
 	private static final String PREFIX_DELIMITER = ".";
 
+	/**
+	 * Binder prefix.
+	 */
 	public static final String BINDER_PREFIX = "binder" + PREFIX_DELIMITER;
 
 	@Override

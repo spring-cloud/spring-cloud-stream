@@ -29,6 +29,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.zip.Deflater;
 
+import com.rabbitmq.client.LongString;
+import com.rabbitmq.http.client.domain.QueueInfo;
 import org.apache.commons.logging.Log;
 import org.junit.Rule;
 import org.junit.Test;
@@ -109,9 +111,6 @@ import org.springframework.retry.support.RetryTemplate;
 import org.springframework.util.MimeTypeUtils;
 import org.springframework.util.ReflectionUtils;
 
-import com.rabbitmq.client.LongString;
-import com.rabbitmq.http.client.domain.QueueInfo;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.Mockito.mock;
@@ -125,6 +124,7 @@ import static org.mockito.Mockito.when;
  * @author David Turanski
  * @author Artem Bilan
  */
+// @checkstyle:off
 public class RabbitBinderTests extends
 		PartitionCapableBinderTests<RabbitTestBinder, ExtendedConsumerProperties<RabbitConsumerProperties>, ExtendedProducerProperties<RabbitProducerProperties>> {
 
@@ -279,11 +279,11 @@ public class RabbitBinderTests extends
 				"confirmCorrelationExpression.expression")).isEqualTo("#root");
 		class WrapperAccessor extends AmqpOutboundEndpoint {
 
-			public WrapperAccessor(AmqpTemplate amqpTemplate) {
+			WrapperAccessor(AmqpTemplate amqpTemplate) {
 				super(amqpTemplate);
 			}
 
-			public CorrelationDataWrapper getWrapper() throws Exception {
+			CorrelationDataWrapper getWrapper() throws Exception {
 				Constructor<CorrelationDataWrapper> constructor = CorrelationDataWrapper.class
 						.getDeclaredConstructor(String.class, Object.class,
 								Message.class);
@@ -1916,5 +1916,6 @@ public class RabbitBinderTests extends
 		}
 
 	}
+	// @checkstyle:on
 
 }

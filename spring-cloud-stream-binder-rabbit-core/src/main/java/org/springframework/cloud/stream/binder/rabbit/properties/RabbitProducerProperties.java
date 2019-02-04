@@ -28,61 +28,61 @@ import org.springframework.expression.Expression;
 public class RabbitProducerProperties extends RabbitCommonProperties {
 
 	/**
-	 * true to compress messages
+	 * true to compress messages.
 	 */
 	private boolean compress;
 
 	/**
-	 * true to batch multiple messages into one
+	 * true to batch multiple messages into one.
 	 */
 	private boolean batchingEnabled;
 
 	/**
-	 * the number of messages to batch, when enabled
+	 * the number of messages to batch, when enabled.
 	 */
 	private int batchSize = 100;
 
 	/**
-	 * the size limit for batched messages
+	 * the size limit for batched messages.
 	 */
 	private int batchBufferLimit = 10000;
 
 	/**
-	 * the time after which an incomplete batch will be sent
+	 * the time after which an incomplete batch will be sent.
 	 */
 	private int batchTimeout = 5000;
 
 	/**
-	 * true to use transacted channels
+	 * true to use transacted channels.
 	 */
 	private boolean transacted;
 
 	/**
-	 * the delivery mode for published messages
+	 * the delivery mode for published messages.
 	 */
 	private MessageDeliveryMode deliveryMode = MessageDeliveryMode.PERSISTENT;
 
 	/**
-	 * patterns to match which headers are mapped (inbound)
+	 * patterns to match which headers are mapped (inbound).
 	 */
 	private String[] headerPatterns = new String[] { "*" };
 
 	/**
 	 * when using a delayed message exchange, a SpEL expression to determine the delay to
-	 * apply to messages
+	 * apply to messages.
 	 */
 	private Expression delayExpression;
 
 	/**
 	 * a custom routing key when publishing messages; default is the destination name;
-	 * suffixed by "-partition" when partitioned
+	 * suffixed by "-partition" when partitioned.
 	 */
 	private Expression routingKeyExpression;
 
 	/**
 	 * the channel name to which to send publisher confirms (acks) if the connection
 	 * factory is so configured; default 'nullChannel'; requires
-	 * 'errorChannelEnabled=true'
+	 * 'errorChannelEnabled=true'.
 	 */
 	private String confirmAckChannel;
 

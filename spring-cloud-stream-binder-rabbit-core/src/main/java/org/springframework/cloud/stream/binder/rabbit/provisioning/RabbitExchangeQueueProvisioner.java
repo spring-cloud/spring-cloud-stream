@@ -54,16 +54,18 @@ import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
 /**
- * AMQP implementation for {@link ProvisioningProvider}
+ * AMQP implementation for {@link ProvisioningProvider}.
  *
  * @author Soby Chacko
  * @author Gary Russell
  * @author Oleg Zhurakousky
  */
+// @checkstyle:off
 public class RabbitExchangeQueueProvisioner
 		implements ApplicationListener<DeclarationExceptionEvent>,
 		ProvisioningProvider<ExtendedConsumerProperties<RabbitConsumerProperties>, ExtendedProducerProperties<RabbitProducerProperties>> {
 
+	// @checkstyle:on
 	private static final Base64UrlNamingStrategy ANONYMOUS_GROUP_NAME_GENERATOR = new Base64UrlNamingStrategy(
 			"anonymous.");
 
@@ -351,6 +353,7 @@ public class RabbitExchangeQueueProvisioner
 	 * For binder implementations that support dead lettering, construct the name of the
 	 * dead letter entity for the underlying pipe name.
 	 * @param name the name.
+	 * @return constructDLQName
 	 */
 	public static String constructDLQName(String name) {
 		return name + ".dlq";

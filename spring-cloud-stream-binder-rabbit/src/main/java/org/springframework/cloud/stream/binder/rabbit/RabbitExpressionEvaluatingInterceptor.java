@@ -36,10 +36,19 @@ import org.springframework.util.Assert;
  */
 public class RabbitExpressionEvaluatingInterceptor implements ChannelInterceptor {
 
+	/**
+	 * Instance of ExpressionParser.
+	 */
 	public static final ExpressionParser PARSER = new SpelExpressionParser();
 
+	/**
+	 * Default name for routing key header.
+	 */
 	public static final String ROUTING_KEY_HEADER = "scst_routingKey";
 
+	/**
+	 * Default name for delay header.
+	 */
 	public static final String DELAY_HEADER = "scst_delay";
 
 	private final Expression routingKeyExpression;

@@ -46,9 +46,11 @@ import org.springframework.util.StringUtils;
  * @author David Turanski
  * @author Mark Fisher
  */
+// @checkstyle:off
 public class RabbitTestBinder extends
 		AbstractPollableConsumerTestBinder<RabbitMessageChannelBinder, ExtendedConsumerProperties<RabbitConsumerProperties>, ExtendedProducerProperties<RabbitProducerProperties>> {
 
+	// @checkstyle:on
 	private final RabbitAdmin rabbitAdmin;
 
 	private final Set<String> prefixes = new HashSet<>();

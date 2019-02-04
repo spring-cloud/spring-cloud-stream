@@ -24,6 +24,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.Envelope;
+
 import org.springframework.amqp.AmqpRejectAndDontRequeueException;
 import org.springframework.amqp.ImmediateAcknowledgeAmqpException;
 import org.springframework.amqp.core.Message;
@@ -100,9 +103,6 @@ import org.springframework.scheduling.TaskScheduler;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
-import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.Envelope;
-
 /**
  * A {@link org.springframework.cloud.stream.binder.Binder} implementation backed by
  * RabbitMQ.
@@ -118,6 +118,7 @@ import com.rabbitmq.client.Envelope;
  * @author Soby Chacko
  * @author Oleg Zhurakousky
  */
+// @checkstyle:off
 public class RabbitMessageChannelBinder extends
 		AbstractMessageChannelBinder<ExtendedConsumerProperties<RabbitConsumerProperties>, ExtendedProducerProperties<RabbitProducerProperties>, RabbitExchangeQueueProvisioner>
 		implements
@@ -129,7 +130,6 @@ public class RabbitMessageChannelBinder extends
 	private static final AmqpMessageHeaderErrorMessageStrategy errorMessageStrategy = new AmqpMessageHeaderErrorMessageStrategy();
 
 	private static final MessagePropertiesConverter inboundMessagePropertiesConverter = new DefaultMessagePropertiesConverter() {
-
 		@Override
 		public MessageProperties toMessageProperties(AMQP.BasicProperties source,
 				Envelope envelope, String charset) {
@@ -138,8 +138,9 @@ public class RabbitMessageChannelBinder extends
 			properties.setDeliveryMode(null);
 			return properties;
 		}
-
 	};
+
+	// @checkstyle:on
 
 	private final RabbitProperties rabbitProperties;
 

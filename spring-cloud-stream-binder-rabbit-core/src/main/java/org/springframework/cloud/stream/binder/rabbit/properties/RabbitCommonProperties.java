@@ -28,86 +28,89 @@ import org.springframework.amqp.core.ExchangeTypes;
  */
 public abstract class RabbitCommonProperties {
 
+	/**
+	 * DLQ name prefix.
+	 */
 	public static final String DEAD_LETTER_EXCHANGE = "DLX";
 
 	/**
-	 * type of exchange to declare (if necessary, and declareExchange is true)
+	 * type of exchange to declare (if necessary, and declareExchange is true).
 	 */
 	private String exchangeType = ExchangeTypes.TOPIC;
 
 	/**
-	 * whether to declare the exchange
+	 * whether to declare the exchange.
 	 */
 	private boolean declareExchange = true;
 
 	/**
-	 * whether to declare the exchange as durable
+	 * whether to declare the exchange as durable.
 	 */
 	private boolean exchangeDurable = true;
 
 	/**
-	 * whether to declare the exchange as auto-delete
+	 * whether to declare the exchange as auto-delete.
 	 */
 	private boolean exchangeAutoDelete = false;
 
 	/**
-	 * whether a delayed message exchange should be used
+	 * whether a delayed message exchange should be used.
 	 */
 	private boolean delayedExchange = false;
 
 	/**
-	 * set to true to name the queue with only the group; default is destination.group
+	 * set to true to name the queue with only the group; default is destination.group.
 	 */
 	private boolean queueNameGroupOnly = false;
 
 	/**
-	 * whether to bind a queue (or queues when partitioned) to the exchange
+	 * whether to bind a queue (or queues when partitioned) to the exchange.
 	 */
 	private boolean bindQueue = true;
 
 	/**
 	 * routing key to bind (default # for non-partitioned, destination-instanceIndex for
-	 * partitioned)
+	 * partitioned).
 	 */
 	private String bindingRoutingKey;
 
 	/**
-	 * default time to live to apply to the queue when declared (ms)
+	 * default time to live to apply to the queue when declared (ms).
 	 */
 	private Integer ttl;
 
 	/**
-	 * how long before an unused queue is deleted (ms)
+	 * how long before an unused queue is deleted (ms).
 	 */
 	private Integer expires;
 
 	/**
-	 * maximum number of messages in the queue
+	 * maximum number of messages in the queue.
 	 */
 	private Integer maxLength;
 
 	/**
-	 * maximum number of total bytes in the queue from all messages
+	 * maximum number of total bytes in the queue from all messages.
 	 */
 	private Integer maxLengthBytes;
 
 	/**
-	 * maximum priority of messages in the queue (0-255)
+	 * maximum priority of messages in the queue (0-255).
 	 */
 	private Integer maxPriority;
 
 	/**
-	 * name of the DLQ - default is prefix+destination.dlq
+	 * name of the DLQ - default is prefix+destination.dlq.
 	 */
 	private String deadLetterQueueName;
 
 	/**
-	 * a DLX to assign to the queue; if autoBindDlq is true, defaults to 'prefix+DLX'
+	 * a DLX to assign to the queue; if autoBindDlq is true, defaults to 'prefix+DLX'.
 	 */
 	private String deadLetterExchange;
 
 	/**
-	 * the type of the DLX, if autoBindDlq is true
+	 * the type of the DLX, if autoBindDlq is true.
 	 */
 	private String deadLetterExchangeType = ExchangeTypes.DIRECT;
 
@@ -118,73 +121,73 @@ public abstract class RabbitCommonProperties {
 
 	/**
 	 * a dead letter routing key to assign to that queue; if autoBindDlq is true, defaults
-	 * to destination
+	 * to destination.
 	 */
 	private String deadLetterRoutingKey;
 
 	/**
-	 * default time to live to apply to the dead letter queue when declared (ms)
+	 * default time to live to apply to the dead letter queue when declared (ms).
 	 */
 	private Integer dlqTtl;
 
 	/**
-	 * how long before an unused dead letter queue is deleted (ms)
+	 * how long before an unused dead letter queue is deleted (ms).
 	 */
 	private Integer dlqExpires;
 
 	/**
-	 * maximum number of messages in the dead letter queue
+	 * maximum number of messages in the dead letter queue.
 	 */
 	private Integer dlqMaxLength;
 
 	/**
-	 * maximum number of total bytes in the dead letter queue from all messages
+	 * maximum number of total bytes in the dead letter queue from all messages.
 	 */
 	private Integer dlqMaxLengthBytes;
 
 	/**
-	 * maximum priority of messages in the dead letter queue (0-255)
+	 * maximum priority of messages in the dead letter queue (0-255).
 	 */
 	private Integer dlqMaxPriority;
 
 	/**
-	 * if a DLQ is declared, a DLX to assign to that queue; default none
+	 * if a DLQ is declared, a DLX to assign to that queue; default none.
 	 */
 	private String dlqDeadLetterExchange;
 
 	/**
 	 * if a DLQ is declared, a dead letter routing key to assign to that queue; default
-	 * none
+	 * none.
 	 */
 	private String dlqDeadLetterRoutingKey;
 
 	/**
-	 * true to automatically bind a dead letter queue to a DLX
+	 * true to automatically bind a dead letter queue to a DLX.
 	 */
 	private boolean autoBindDlq;
 
 	/**
-	 * prefix for elements declared in RabbitMQ (exchanges, queues)
+	 * prefix for elements declared in RabbitMQ (exchanges, queues).
 	 */
 	private String prefix = "";
 
 	/**
-	 * true if the queue is provisioned as a lazy queue
+	 * true if the queue is provisioned as a lazy queue.
 	 */
 	private boolean lazy;
 
 	/**
-	 * true if the DLQ is provisioned as a lazy queue
+	 * true if the DLQ is provisioned as a lazy queue.
 	 */
 	private boolean dlqLazy;
 
 	/**
-	 * action when maxLength or maxLengthBytes is exceeded
+	 * action when maxLength or maxLengthBytes is exceeded.
 	 */
 	private String overflowBehavior;
 
 	/**
-	 * action when maxLength or maxLengthBytes is exceeded
+	 * action when maxLength or maxLengthBytes is exceeded.
 	 */
 	private String dlqOverflowBehavior;
 

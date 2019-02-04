@@ -14,6 +14,11 @@
 		<spring-cloud-stream.version>2.2.0.BUILD-SNAPSHOT</spring-cloud-stream.version>
 		<spring-boot.version>2.1.2.RELEASE</spring-boot.version>
 		<java.version>1.8</java.version>
+		<maven-checkstyle-plugin.failsOnError>true</maven-checkstyle-plugin.failsOnError>
+        <maven-checkstyle-plugin.failsOnViolation>true
+        </maven-checkstyle-plugin.failsOnViolation>
+        <maven-checkstyle-plugin.includeTestSourceDirectory>true
+        </maven-checkstyle-plugin.includeTestSourceDirectory>
 	</properties>
 	<dependencyManagement>
 		<dependencies>
@@ -99,6 +104,14 @@
 			</plugin>
 		</plugins>
 	</build>
+	<reporting>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </reporting>
 	<profiles>
 		<profile>
 			<id>spring</id>

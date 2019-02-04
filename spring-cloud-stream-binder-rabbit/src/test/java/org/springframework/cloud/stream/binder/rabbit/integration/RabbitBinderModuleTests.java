@@ -16,6 +16,11 @@
 
 package org.springframework.cloud.stream.binder.rabbit.integration;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
 import org.junit.After;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -38,7 +43,12 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.Cloud;
 import org.springframework.cloud.stream.annotation.EnableBinding;
-import org.springframework.cloud.stream.binder.*;
+import org.springframework.cloud.stream.binder.Binder;
+import org.springframework.cloud.stream.binder.BinderFactory;
+import org.springframework.cloud.stream.binder.Binding;
+import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
+import org.springframework.cloud.stream.binder.ExtendedProducerProperties;
+import org.springframework.cloud.stream.binder.ExtendedPropertiesBinder;
 import org.springframework.cloud.stream.binder.rabbit.RabbitMessageChannelBinder;
 import org.springframework.cloud.stream.binder.rabbit.properties.RabbitConsumerProperties;
 import org.springframework.cloud.stream.binder.rabbit.properties.RabbitProducerProperties;
@@ -54,11 +64,6 @@ import org.springframework.messaging.support.GenericMessage;
 import org.springframework.retry.backoff.ExponentialBackOffPolicy;
 import org.springframework.retry.policy.SimpleRetryPolicy;
 import org.springframework.retry.support.RetryTemplate;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.willReturn;
@@ -154,8 +159,10 @@ public class RabbitBinderModuleTests {
 		BindingService bindingService = context.getBean(BindingService.class);
 		DirectFieldAccessor channelBindingServiceAccessor = new DirectFieldAccessor(
 				bindingService);
+		// @checkstyle:off
 		Map<String, List<Binding<MessageChannel>>> consumerBindings = (Map<String, List<Binding<MessageChannel>>>) channelBindingServiceAccessor
 				.getPropertyValue("consumerBindings");
+		// @checkstyle:on
 		Binding<MessageChannel> inputBinding = consumerBindings.get("input").get(0);
 		SimpleMessageListenerContainer container = TestUtils.getPropertyValue(
 				inputBinding, "lifecycle.messageListenerContainer",
@@ -238,9 +245,11 @@ public class RabbitBinderModuleTests {
 				.web(WebApplicationType.NONE)
 				.run(params.toArray(new String[params.size()]));
 		BinderFactory binderFactory = context.getBean(BinderFactory.class);
+		// @checkstyle:off
 		@SuppressWarnings("unchecked")
 		Binder<MessageChannel, ExtendedConsumerProperties<RabbitConsumerProperties>, ExtendedProducerProperties<RabbitProducerProperties>> binder = (Binder<MessageChannel, ExtendedConsumerProperties<RabbitConsumerProperties>, ExtendedProducerProperties<RabbitProducerProperties>>) binderFactory
 				.getBinder(null, MessageChannel.class);
+		// @checkstyle:on
 		assertThat(binder).isInstanceOf(RabbitMessageChannelBinder.class);
 		DirectFieldAccessor binderFieldAccessor = new DirectFieldAccessor(binder);
 		ConnectionFactory binderConnectionFactory = (ConnectionFactory) binderFieldAccessor
@@ -314,18 +323,18 @@ public class RabbitBinderModuleTests {
 		BinderFactory binderFactory = context.getBean(BinderFactory.class);
 		Binder<?, ?, ?> rabbitBinder = binderFactory.getBinder(null,
 				MessageChannel.class);
-
+		// @checkstyle:off
 		RabbitProducerProperties rabbitProducerProperties = (RabbitProducerProperties) ((ExtendedPropertiesBinder) rabbitBinder)
 				.getExtendedProducerProperties("output");
-
+		// @checkstyle:on
 		assertThat(
 				rabbitProducerProperties.getRoutingKeyExpression().getExpressionString())
 						.isEqualTo("fooRoutingKey");
 		assertThat(rabbitProducerProperties.getBatchSize()).isEqualTo(512);
-
+		// @checkstyle:off
 		RabbitConsumerProperties rabbitConsumerProperties = (RabbitConsumerProperties) ((ExtendedPropertiesBinder) rabbitBinder)
 				.getExtendedConsumerProperties("input");
-
+		// @checkstyle:on
 		assertThat(rabbitConsumerProperties.getExchangeType())
 				.isEqualTo(ExchangeTypes.FANOUT);
 		assertThat(rabbitConsumerProperties.getMaxConcurrency()).isEqualTo(4);
