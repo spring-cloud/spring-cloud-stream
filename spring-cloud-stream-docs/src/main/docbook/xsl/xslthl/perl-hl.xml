@@ -47,12 +47,12 @@ Michiel Hendriks <elmuerte at users.sourceforge.net>
 	</highlighter>
 	<highlighter type="hexnumber">
 		<prefix>0x</prefix>
-		<ignoreCase />
+		<ignoreCase/>
 	</highlighter>
 	<highlighter type="number">
 		<point>.</point>
-		<pointStarts />
-		<ignoreCase />
+		<pointStarts/>
+		<ignoreCase/>
 	</highlighter>
 	<highlighter type="keywords">
 		<keyword>if</keyword>

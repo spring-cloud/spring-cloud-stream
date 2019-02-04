@@ -62,7 +62,7 @@ Michiel Hendriks <elmuerte at users.sourceforge.net>
 		<string>@"</string>
 		<endString>"</endString>
 		<escape>\</escape>
-		<spanNewLines />
+		<spanNewLines/>
 	</highlighter>
 	<highlighter type="string">
 		<string>"</string>
@@ -78,11 +78,11 @@ Michiel Hendriks <elmuerte at users.sourceforge.net>
 		<suffix>lu</suffix>
 		<suffix>u</suffix>
 		<suffix>l</suffix>
-		<ignoreCase />
+		<ignoreCase/>
 	</highlighter>
 	<highlighter type="number">
 		<point>.</point>
-		<pointStarts />
+		<pointStarts/>
 		<exponent>e</exponent>
 		<suffix>ul</suffix>
 		<suffix>lu</suffix>
@@ -91,7 +91,7 @@ Michiel Hendriks <elmuerte at users.sourceforge.net>
 		<suffix>d</suffix>
 		<suffix>m</suffix>
 		<suffix>l</suffix>
-		<ignoreCase />
+		<ignoreCase/>
 	</highlighter>
 	<highlighter type="keywords">
 		<keyword>abstract</keyword>

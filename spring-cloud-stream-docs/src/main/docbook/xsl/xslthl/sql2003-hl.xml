@@ -32,36 +32,36 @@ freely, subject to the following restrictions:
 	</highlighter>
 	<highlighter type="string">
 		<string>'</string>
-		<doubleEscapes />
+		<doubleEscapes/>
 	</highlighter>
 	<highlighter type="string">
 		<string>U'</string>
 		<endString>'</endString>
-		<doubleEscapes />
+		<doubleEscapes/>
 	</highlighter>
 	<highlighter type="string">
 		<string>B'</string>
 		<endString>'</endString>
-		<doubleEscapes />
+		<doubleEscapes/>
 	</highlighter>
 	<highlighter type="string">
 		<string>N'</string>
 		<endString>'</endString>
-		<doubleEscapes />
+		<doubleEscapes/>
 	</highlighter>
 	<highlighter type="string">
 		<string>X'</string>
 		<endString>'</endString>
-		<doubleEscapes />
+		<doubleEscapes/>
 	</highlighter>
 	<highlighter type="number">
 		<point>.</point>
-		<pointStarts />
+		<pointStarts/>
 		<exponent>e</exponent>
-		<ignoreCase />
+		<ignoreCase/>
 	</highlighter>
 	<highlighter type="keywords">
-		<ignoreCase />
+		<ignoreCase/>
 		<!-- reserved -->
 		<keyword>A</keyword>
 		<keyword>ABS</keyword>

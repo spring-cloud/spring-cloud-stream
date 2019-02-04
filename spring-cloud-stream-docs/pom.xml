@@ -1,11 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		 xmlns="http://maven.apache.org/POM/4.0.0"
+		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
 		<groupId>org.springframework.cloud</groupId>
 		<artifactId>spring-cloud-build</artifactId>
-		<version>2.1.0.RC3</version>
-		<relativePath />
+		<version>2.1.3.BUILD-SNAPSHOT</version>
+		<relativePath/>
 	</parent>
 	<artifactId>spring-cloud-stream-docs</artifactId>
 	<name>spring-cloud-stream-docs</name>
@@ -14,8 +16,10 @@
 	<properties>
 		<main.basedir>${basedir}/..</main.basedir>
 		<spring-cloud-stream.version>2.1.0.BUILD-SNAPSHOT</spring-cloud-stream.version>
-		<spring-cloud-stream-binder-kafka.version>2.1.0.BUILD-SNAPSHOT</spring-cloud-stream-binder-kafka.version>
-		<spring-cloud-stream-binder-rabbit.version>2.1.0.BUILD-SNAPSHOT</spring-cloud-stream-binder-rabbit.version>
+		<spring-cloud-stream-binder-kafka.version>2.1.0.BUILD-SNAPSHOT
+		</spring-cloud-stream-binder-kafka.version>
+		<spring-cloud-stream-binder-rabbit.version>2.1.0.BUILD-SNAPSHOT
+		</spring-cloud-stream-binder-rabbit.version>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -62,14 +66,19 @@
 						<configuration>
 							<transformationSets>
 								<transformationSet>
-									<dir>${project.build.directory}/external-resources</dir>
-									<stylesheet>src/main/xslt/dependencyVersions.xsl</stylesheet>
+									<dir>${project.build.directory}/external-resources
+									</dir>
+									<stylesheet>src/main/xslt/dependencyVersions.xsl
+									</stylesheet>
 									<fileMappers>
-										<fileMapper implementation="org.codehaus.plexus.components.io.filemappers.FileExtensionMapper">
+										<fileMapper
+											implementation="org.codehaus.plexus.components.io.filemappers.FileExtensionMapper">
 											<targetExtension>.adoc</targetExtension>
 										</fileMapper>
 									</fileMappers>
-									<outputDir>${project.build.directory}/generated-resources</outputDir>
+									<outputDir>
+										${project.build.directory}/generated-resources
+									</outputDir>
 								</transformationSet>
 							</transformationSets>
 						</configuration>
@@ -85,17 +94,26 @@
 								</goals>
 								<phase>prepare-package</phase>
 								<configuration>
-									<includeDependencySources>true</includeDependencySources>
-									<includeTransitiveDependencySources>false</includeTransitiveDependencySources>
+									<includeDependencySources>true
+									</includeDependencySources>
+									<includeTransitiveDependencySources>false
+									</includeTransitiveDependencySources>
 									<dependencySourceIncludes>
-										<dependencySourceInclude>${project.groupId}:*</dependencySourceInclude>
+										<dependencySourceInclude>${project.groupId}:*
+										</dependencySourceInclude>
 									</dependencySourceIncludes>
 									<attach>false</attach>
 									<quiet>true</quiet>
-									<stylesheetfile>${basedir}/src/main/javadoc/spring-javadoc.css</stylesheetfile>
+									<stylesheetfile>
+										${basedir}/src/main/javadoc/spring-javadoc.css
+									</stylesheetfile>
 									<links>
-										<link>http://docs.spring.io/spring-framework/docs/${spring.version}/javadoc-api/</link>
-										<link>http://docs.spring.io/spring-shell/docs/current/api/</link>
+										<link>
+											http://docs.spring.io/spring-framework/docs/${spring.version}/javadoc-api/
+										</link>
+										<link>
+											http://docs.spring.io/spring-shell/docs/current/api/
+										</link>
 									</links>
 								</configuration>
 							</execution>
@@ -119,11 +137,15 @@
 								<allow-uri-read>true</allow-uri-read>
 								<attribute-missing>warn</attribute-missing>
 								<project-version>${project.version}</project-version>
-								<project-artifactId>${project.artifactId}</project-artifactId>
-								<version-type-lowercase>${version-type-lowercase}</version-type-lowercase>
+								<project-artifactId>${project.artifactId}
+								</project-artifactId>
+								<version-type-lowercase>${version-type-lowercase}
+								</version-type-lowercase>
 								<snippets>${basedir}/target/generated-snippets</snippets>
-								<spring-cloud-stream-version>${project.version}</spring-cloud-stream-version>
-								<spring-cloud-stream-docs-version>${project.version}</spring-cloud-stream-docs-version>
+								<spring-cloud-stream-version>${project.version}
+								</spring-cloud-stream-version>
+								<spring-cloud-stream-docs-version>${project.version}
+								</spring-cloud-stream-docs-version>
 								<github-tag>${github-tag}</github-tag>
 							</attributes>
 						</configuration>
@@ -152,7 +174,7 @@
 								<configuration>
 									<backend>html5</backend>
 									<attributes>
-										<toc2 />
+										<toc2/>
 									</attributes>
 								</configuration>
 							</execution>
@@ -163,24 +185,31 @@
 						<artifactId>docbkx-maven-plugin</artifactId>
 						<version>2.0.15</version>
 						<configuration>
-							<sourceDirectory>${basedir}/target/generated-docs</sourceDirectory>
-							<imgSrcPath />
+							<sourceDirectory>${basedir}/target/generated-docs
+							</sourceDirectory>
+							<imgSrcPath/>
 							<graphicsize.extension>0</graphicsize.extension>
 							<includes>index.xml</includes>
 							<xincludeSupported>true</xincludeSupported>
 							<chunkedOutput>false</chunkedOutput>
-							<foCustomization>${basedir}/src/main/docbook/xsl/pdf.xsl</foCustomization>
+							<foCustomization>${basedir}/src/main/docbook/xsl/pdf.xsl
+							</foCustomization>
 							<useExtensions>1</useExtensions>
 							<admonGraphics>1</admonGraphics>
 
 							<highlightSource>1</highlightSource>
-							<highlightXslthlConfig>${basedir}/src/main/docbook/xsl/xslthl-config.xml</highlightXslthlConfig>
+							<highlightXslthlConfig>
+								${basedir}/src/main/docbook/xsl/xslthl-config.xml
+							</highlightXslthlConfig>
 							<preProcess>
 								<copy todir="${basedir}/target/generated-docs/images">
-									<fileset dir="${basedir}/src/main/docbook/images" />
-									<fileset dir="${basedir}/core/spring-cloud-stream-core-docs/src/main/asciidoc/images" />
-									<fileset dir="${basedir}/kafka/spring-cloud-stream-binder-kafka-docs/src/main/asciidoc/images" />
-									<fileset dir="${basedir}/rabbit/spring-cloud-stream-binder-rabbit-docs/src/main/asciidoc/images" />
+									<fileset dir="${basedir}/src/main/docbook/images"/>
+									<fileset
+										dir="${basedir}/core/spring-cloud-stream-core-docs/src/main/asciidoc/images"/>
+									<fileset
+										dir="${basedir}/kafka/spring-cloud-stream-binder-kafka-docs/src/main/asciidoc/images"/>
+									<fileset
+										dir="${basedir}/rabbit/spring-cloud-stream-binder-rabbit-docs/src/main/asciidoc/images"/>
 								</copy>
 							</preProcess>
 						</configuration>
@@ -207,20 +236,28 @@
 								</goals>
 								<phase>prepare-package</phase>
 								<configuration>
-									<htmlCustomization>${basedir}/src/main/docbook/xsl/html-multipage.xsl</htmlCustomization>
-									<targetDirectory>${basedir}/target/docbook/html</targetDirectory>
+									<htmlCustomization>
+										${basedir}/src/main/docbook/xsl/html-multipage.xsl
+									</htmlCustomization>
+									<targetDirectory>${basedir}/target/docbook/html
+									</targetDirectory>
 									<chunkedOutput>true</chunkedOutput>
 									<postProcess>
-										<copy todir="${basedir}/target/contents/reference/html">
+										<copy
+											todir="${basedir}/target/contents/reference/html">
 											<fileset dir="${basedir}/target/docbook/html">
-												<include name="**/*.html" />
+												<include name="**/*.html"/>
 											</fileset>
 										</copy>
-										<copy todir="${basedir}/target/contents/reference/html/images">
-											<fileset dir="${basedir}/target/generated-docs/images" />
+										<copy
+											todir="${basedir}/target/contents/reference/html/images">
+											<fileset
+												dir="${basedir}/target/generated-docs/images"/>
 										</copy>
-										<copy todir="${basedir}/target/contents/reference/html/css">
-											<fileset dir="${basedir}/src/main/docbook/css" />
+										<copy
+											todir="${basedir}/target/contents/reference/html/css">
+											<fileset
+												dir="${basedir}/src/main/docbook/css"/>
 										</copy>
 									</postProcess>
 								</configuration>
@@ -232,15 +269,21 @@
 								</goals>
 								<phase>prepare-package</phase>
 								<configuration>
-									<foCustomization>${basedir}/src/main/docbook/xsl/pdf.xsl</foCustomization>
-									<targetDirectory>${basedir}/target/docbook/pdf</targetDirectory>
+									<foCustomization>
+										${basedir}/src/main/docbook/xsl/pdf.xsl
+									</foCustomization>
+									<targetDirectory>${basedir}/target/docbook/pdf
+									</targetDirectory>
 									<postProcess>
-										<copy todir="${basedir}/target/contents/reference">
+										<copy
+											todir="${basedir}/target/contents/reference">
 											<fileset dir="${basedir}/target/docbook">
-												<include name="**/*.pdf" />
+												<include name="**/*.pdf"/>
 											</fileset>
 										</copy>
-										<move file="${basedir}/target/contents/reference/pdf/index.pdf" tofile="${basedir}/target/contents/reference/pdf/spring-cloud-stream-reference.pdf" />
+										<move
+											file="${basedir}/target/contents/reference/pdf/index.pdf"
+											tofile="${basedir}/target/contents/reference/pdf/spring-cloud-stream-reference.pdf"/>
 									</postProcess>
 								</configuration>
 							</execution>
@@ -251,20 +294,28 @@
 								</goals>
 								<phase>prepare-package</phase>
 								<configuration>
-									<epubCustomization>${basedir}/src/main/docbook/xsl/epub.xsl</epubCustomization>
-									<targetDirectory>${basedir}/target/docbook/epub</targetDirectory>
+									<epubCustomization>
+										${basedir}/src/main/docbook/xsl/epub.xsl
+									</epubCustomization>
+									<targetDirectory>${basedir}/target/docbook/epub
+									</targetDirectory>
 									<preProcess>
-										<copy todir="${basedir}/target/docbook/epub/images">
-											<fileset dir="${basedir}/src/main/docbook/images" />
+										<copy
+											todir="${basedir}/target/docbook/epub/images">
+											<fileset
+												dir="${basedir}/src/main/docbook/images"/>
 										</copy>
 									</preProcess>
 									<postProcess>
-										<copy todir="${basedir}/target/contents/reference/epub">
+										<copy
+											todir="${basedir}/target/contents/reference/epub">
 											<fileset dir="${basedir}/target/docbook">
-												<include name="**/*.epub" />
+												<include name="**/*.epub"/>
 											</fileset>
 										</copy>
-										<move file="${basedir}/target/contents/reference/epub/index.epub" tofile="${basedir}/target/contents/reference/epub/spring-cloud-stream-reference.epub" />
+										<move
+											file="${basedir}/target/contents/reference/epub/index.epub"
+											tofile="${basedir}/target/contents/reference/epub/spring-cloud-stream-reference.epub"/>
 									</postProcess>
 								</configuration>
 							</execution>
@@ -306,15 +357,21 @@
 								</goals>
 								<configuration>
 									<target>
-										<zip destfile="${project.build.directory}/${project.artifactId}-${project.version}.zip">
-											<zipfileset src="${project.build.directory}/${project.artifactId}-${project.version}-javadoc.jar" prefix="api" />
-											<fileset dir="${project.build.directory}/contents" />
-											<zipfileset dir="${project.build.directory}/generated-docs" prefix="reference/htmlsingle">
-												<include name="index.html" />
-												<include name="docinfo.html" />
-												<include name="docinfo-footer.html" />
-												<include name="images/**" />
-												<include name="tocbot-3.0.2/**" />
+										<zip
+											destfile="${project.build.directory}/${project.artifactId}-${project.version}.zip">
+											<zipfileset
+												src="${project.build.directory}/${project.artifactId}-${project.version}-javadoc.jar"
+												prefix="api"/>
+											<fileset
+												dir="${project.build.directory}/contents"/>
+											<zipfileset
+												dir="${project.build.directory}/generated-docs"
+												prefix="reference/htmlsingle">
+												<include name="index.html"/>
+												<include name="docinfo.html"/>
+												<include name="docinfo-footer.html"/>
+												<include name="images/**"/>
+												<include name="tocbot-3.0.2/**"/>
 											</zipfileset>
 										</zip>
 									</target>
@@ -329,18 +386,42 @@
 								<configuration>
 									<exportAntProperties>true</exportAntProperties>
 									<target>
-										<taskdef resource="net/sf/antcontrib/antcontrib.properties" />
-										<taskdef name="stringutil" classname="ise.antelope.tasks.StringUtilTask" />
-										<var name="version-type" value="${project.version}" />
-										<propertyregex property="version-type" override="true" input="${version-type}" regexp=".*\.(.*)" replace="\1" />
-										<propertyregex property="version-type" override="true" input="${version-type}" regexp="(M)\d+" replace="MILESTONE" />
-										<propertyregex property="version-type" override="true" input="${version-type}" regexp="(RC)\d+" replace="MILESTONE" />
-										<propertyregex property="version-type" override="true" input="${version-type}" regexp="BUILD-(.*)" replace="SNAPSHOT" />
-										<stringutil string="${version-type}" property="spring-boot-repo">
-											<lowercase />
+										<taskdef
+											resource="net/sf/antcontrib/antcontrib.properties"/>
+										<taskdef name="stringutil"
+												 classname="ise.antelope.tasks.StringUtilTask"/>
+										<var name="version-type"
+											 value="${project.version}"/>
+										<propertyregex property="version-type"
+													   override="true"
+													   input="${version-type}"
+													   regexp=".*\.(.*)" replace="\1"/>
+										<propertyregex property="version-type"
+													   override="true"
+													   input="${version-type}"
+													   regexp="(M)\d+"
+													   replace="MILESTONE"/>
+										<propertyregex property="version-type"
+													   override="true"
+													   input="${version-type}"
+													   regexp="(RC)\d+"
+													   replace="MILESTONE"/>
+										<propertyregex property="version-type"
+													   override="true"
+													   input="${version-type}"
+													   regexp="BUILD-(.*)"
+													   replace="SNAPSHOT"/>
+										<stringutil string="${version-type}"
+													property="spring-boot-repo">
+											<lowercase/>
 										</stringutil>
-										<var name="github-tag" value="v${project.version}" />
-										<propertyregex property="github-tag" override="true" input="${github-tag}" regexp=".*SNAPSHOT" replace="master" />
+										<var name="github-tag"
+											 value="v${project.version}"/>
+										<propertyregex property="github-tag"
+													   override="true"
+													   input="${github-tag}"
+													   regexp=".*SNAPSHOT"
+													   replace="master"/>
 									</target>
 								</configuration>
 							</execution>
@@ -359,8 +440,11 @@
 								<configuration>
 									<artifacts>
 										<artifact>
-											<file>${project.build.directory}/${project.artifactId}-${project.version}.zip</file>
-											<type>zip;zip.type=docs;zip.deployed=false</type>
+											<file>
+												${project.build.directory}/${project.artifactId}-${project.version}.zip
+											</file>
+											<type>zip;zip.type=docs;zip.deployed=false
+											</type>
 										</artifact>
 									</artifacts>
 								</configuration>

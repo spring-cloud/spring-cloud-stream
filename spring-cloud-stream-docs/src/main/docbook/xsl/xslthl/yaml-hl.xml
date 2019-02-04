@@ -20,7 +20,7 @@
 		<suffix>f</suffix>
 		<suffix>d</suffix>
 		<suffix>l</suffix>
-		<ignoreCase />
+		<ignoreCase/>
 	</highlighter>
 	<highlighter type="keywords">
 		<keyword>true</keyword>

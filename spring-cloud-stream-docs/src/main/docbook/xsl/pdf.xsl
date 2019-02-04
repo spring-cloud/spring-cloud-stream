@@ -69,32 +69,39 @@ under the License.
 						<fo:table-cell text-align="center">
 							<fo:block>
 								<fo:external-graphic src="images/logo.png" width="240px"
-									height="auto" content-width="scale-to-fit"
-									content-height="scale-to-fit"
-									content-type="content-type:image/png" text-align="center"
+													 height="auto"
+													 content-width="scale-to-fit"
+													 content-height="scale-to-fit"
+													 content-type="content-type:image/png"
+													 text-align="center"
 								/>
 							</fo:block>
-							<fo:block font-family="Helvetica" font-size="20pt" font-weight="bold" padding="10mm">
+							<fo:block font-family="Helvetica" font-size="20pt"
+									  font-weight="bold" padding="10mm">
 								<xsl:value-of select="d:info/d:title"/>
 							</fo:block>
-							<fo:block font-family="Helvetica" font-size="14pt" padding-before="2mm">
+							<fo:block font-family="Helvetica" font-size="14pt"
+									  padding-before="2mm">
 								<xsl:value-of select="d:info/d:subtitle"/>
 							</fo:block>
-							<fo:block font-family="Helvetica" font-size="14pt" padding="2mm">
+							<fo:block font-family="Helvetica" font-size="14pt"
+									  padding="2mm">
 								<xsl:value-of select="d:info/d:releaseinfo"/>
 							</fo:block>
 						</fo:table-cell>
 					</fo:table-row>
 					<fo:table-row>
 						<fo:table-cell text-align="center">
-							<fo:block font-family="Helvetica" font-size="14pt" padding="5mm">
+							<fo:block font-family="Helvetica" font-size="14pt"
+									  padding="5mm">
 								<xsl:value-of select="d:info/d:pubdate"/>
 							</fo:block>
 						</fo:table-cell>
 					</fo:table-row>
 					<fo:table-row>
 						<fo:table-cell text-align="center">
-							<fo:block font-family="Helvetica" font-size="10pt" padding="10mm">
+							<fo:block font-family="Helvetica" font-size="10pt"
+									  padding="10mm">
 								<xsl:for-each select="d:info/d:authorgroup/d:author">
 									<xsl:if test="position() > 1">
 										<xsl:text>, </xsl:text>
@@ -105,18 +112,21 @@ under the License.
 								</xsl:for-each>
 							</fo:block>
 
-							<fo:block font-family="Helvetica" font-size="10pt" padding="5mm">
+							<fo:block font-family="Helvetica" font-size="10pt"
+									  padding="5mm">
 								<xsl:value-of select="d:info/d:pubdate"/>
 							</fo:block>
 
-							<fo:block font-family="Helvetica" font-size="10pt" padding="5mm" padding-before="25em">
+							<fo:block font-family="Helvetica" font-size="10pt"
+									  padding="5mm" padding-before="25em">
 								<xsl:text>Copyright &#xA9; </xsl:text>
 								<xsl:value-of select="d:info/d:copyright/d:year"/>
 								<xsl:text> </xsl:text>
 								<xsl:value-of select="d:info/d:copyright/d:holder"/>
 							</fo:block>
 
-							<fo:block font-family="Helvetica" font-size="8pt" padding="1mm">
+							<fo:block font-family="Helvetica" font-size="8pt"
+									  padding="1mm">
 								<xsl:value-of select="d:info/d:legalnotice"/>
 							</fo:block>
 						</fo:table-cell>
@@ -241,11 +251,13 @@ under the License.
 			<xsl:when test="$pageclass='titlepage'">
 			</xsl:when>
 
-			<xsl:when test="$double.sided != 0 and $sequence = 'even' and $position='left'">
+			<xsl:when
+				test="$double.sided != 0 and $sequence = 'even' and $position='left'">
 				<fo:page-number/>
 			</xsl:when>
 
-			<xsl:when test="$double.sided != 0 and $sequence = 'odd' and $position='right'">
+			<xsl:when
+				test="$double.sided != 0 and $sequence = 'odd' and $position='right'">
 				<fo:page-number/>
 			</xsl:when>
 
@@ -253,11 +265,13 @@ under the License.
 				<fo:page-number/>
 			</xsl:when>
 
-			<xsl:when test="$double.sided != 0 and $sequence = 'odd' and $position='left'">
+			<xsl:when
+				test="$double.sided != 0 and $sequence = 'odd' and $position='left'">
 				<xsl:value-of select="$Version"/>
 			</xsl:when>
 
-			<xsl:when test="$double.sided != 0 and $sequence = 'even' and $position='right'">
+			<xsl:when
+				test="$double.sided != 0 and $sequence = 'even' and $position='right'">
 				<xsl:value-of select="$Version"/>
 			</xsl:when>
 
@@ -313,9 +327,9 @@ under the License.
 	Let's remove it, so this sucker can use our attribute-set only... -->
 	<xsl:template match="d:title" mode="chapter.titlepage.recto.auto.mode">
 		<fo:block xmlns:fo="http://www.w3.org/1999/XSL/Format"
-				xsl:use-attribute-sets="chapter.titlepage.recto.style">
+				  xsl:use-attribute-sets="chapter.titlepage.recto.style">
 			<xsl:call-template name="component.title">
-			<xsl:with-param name="node" select="ancestor-or-self::d:chapter[1]"/>
+				<xsl:with-param name="node" select="ancestor-or-self::d:chapter[1]"/>
 			</xsl:call-template>
 		</fo:block>
 	</xsl:template>
@@ -460,7 +474,8 @@ under the License.
 
 	<!-- TITLE INFORMATION FOR FIGURES, EXAMPLES ETC. -->
 
-	<xsl:attribute-set name="formal.title.properties" use-attribute-sets="normal.para.spacing">
+	<xsl:attribute-set name="formal.title.properties"
+					   use-attribute-sets="normal.para.spacing">
 		<xsl:attribute name="font-weight">normal</xsl:attribute>
 		<xsl:attribute name="font-style">italic</xsl:attribute>
 		<xsl:attribute name="font-size">
@@ -533,7 +548,7 @@ under the License.
 		<xsl:attribute name="space-after.maximum">1.5em</xsl:attribute>
 	</xsl:attribute-set>
 
-    <xsl:attribute-set name="admonition.title.properties">
+	<xsl:attribute-set name="admonition.title.properties">
 		<xsl:attribute name="font-size">10pt</xsl:attribute>
 		<xsl:attribute name="font-weight">bold</xsl:attribute>
 		<xsl:attribute name="hyphenate">false</xsl:attribute>
@@ -554,38 +569,51 @@ under the License.
 
 	<xsl:template match="processing-instruction('asciidoc-hr')">
 		<fo:block space-after="1em">
-			<fo:leader leader-pattern="rule" rule-thickness="0.5pt" rule-style="solid" leader-length.minimum="100%"/>
+			<fo:leader leader-pattern="rule" rule-thickness="0.5pt" rule-style="solid"
+					   leader-length.minimum="100%"/>
 		</fo:block>
 	</xsl:template>
 
-  <xsl:template match="processing-instruction('asciidoc-pagebreak')">
-    <fo:block break-after='page'/>
-  </xsl:template>
+	<xsl:template match="processing-instruction('asciidoc-pagebreak')">
+		<fo:block break-after='page'/>
+	</xsl:template>
 
 	<!-- SYNTAX HIGHLIGHT -->
 
 	<xsl:template match='xslthl:keyword' mode="xslthl">
-	  <fo:inline font-weight="bold" color="#7F0055"><xsl:apply-templates mode="xslthl"/></fo:inline>
+		<fo:inline font-weight="bold" color="#7F0055">
+			<xsl:apply-templates mode="xslthl"/>
+		</fo:inline>
 	</xsl:template>
 
 	<xsl:template match='xslthl:string' mode="xslthl">
-	  <fo:inline font-weight="bold" font-style="italic" color="#2A00FF"><xsl:apply-templates mode="xslthl"/></fo:inline>
+		<fo:inline font-weight="bold" font-style="italic" color="#2A00FF">
+			<xsl:apply-templates mode="xslthl"/>
+		</fo:inline>
 	</xsl:template>
 
 	<xsl:template match='xslthl:comment' mode="xslthl">
-	  <fo:inline font-style="italic" color="#3F5FBF"><xsl:apply-templates mode="xslthl"/></fo:inline>
+		<fo:inline font-style="italic" color="#3F5FBF">
+			<xsl:apply-templates mode="xslthl"/>
+		</fo:inline>
 	</xsl:template>
 
 	<xsl:template match='xslthl:tag' mode="xslthl">
-	  <fo:inline font-weight="bold" color="#3F7F7F"><xsl:apply-templates mode="xslthl"/></fo:inline>
+		<fo:inline font-weight="bold" color="#3F7F7F">
+			<xsl:apply-templates mode="xslthl"/>
+		</fo:inline>
 	</xsl:template>
 
 	<xsl:template match='xslthl:attribute' mode="xslthl">
-	  <fo:inline font-weight="bold" color="#7F007F"><xsl:apply-templates mode="xslthl"/></fo:inline>
+		<fo:inline font-weight="bold" color="#7F007F">
+			<xsl:apply-templates mode="xslthl"/>
+		</fo:inline>
 	</xsl:template>
 
 	<xsl:template match='xslthl:value' mode="xslthl">
-	  <fo:inline font-weight="bold" color="#2A00FF"><xsl:apply-templates mode="xslthl"/></fo:inline>
+		<fo:inline font-weight="bold" color="#2A00FF">
+			<xsl:apply-templates mode="xslthl"/>
+		</fo:inline>
 	</xsl:template>
 
 </xsl:stylesheet>

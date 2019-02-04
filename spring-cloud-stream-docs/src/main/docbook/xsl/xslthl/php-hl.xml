@@ -47,24 +47,24 @@ Michiel Hendriks <elmuerte at users.sourceforge.net>
 	<highlighter type="string">
 		<string>"</string>
 		<escape>\</escape>
-		<spanNewLines />
+		<spanNewLines/>
 	</highlighter>
 	<highlighter type="string">
 		<string>'</string>
 		<escape>\</escape>
-		<spanNewLines />
+		<spanNewLines/>
 	</highlighter>
 	<highlighter type="heredoc">
 		<start>&lt;&lt;&lt;</start>
 	</highlighter>
 	<highlighter type="hexnumber">
 		<prefix>0x</prefix>
-		<ignoreCase />
+		<ignoreCase/>
 	</highlighter>
 	<highlighter type="number">
 		<point>.</point>
 		<exponent>e</exponent>
-		<ignoreCase />
+		<ignoreCase/>
 	</highlighter>
 	<highlighter type="keywords">
 		<keyword>and</keyword>
@@ -142,7 +142,7 @@ Michiel Hendriks <elmuerte at users.sourceforge.net>
 		<keyword>__NAMESPACE__</keyword>
 		<keyword>goto</keyword>
 		<keyword>__DIR__</keyword>
-		<ignoreCase />
+		<ignoreCase/>
 	</highlighter>
 	<highlighter type="word">
 		<!-- highlight the php open and close tags as directives -->

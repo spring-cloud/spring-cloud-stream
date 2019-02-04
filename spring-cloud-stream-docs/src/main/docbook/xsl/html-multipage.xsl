@@ -39,12 +39,12 @@ under the License.
 			<xsl:apply-imports/>
 		</xsl:param>
 
-  		<xsl:call-template name="user.preroot"/>
+		<xsl:call-template name="user.preroot"/>
 
 		<html>
 			<xsl:call-template name="html.head">
-			<xsl:with-param name="prev" select="$prev"/>
-			<xsl:with-param name="next" select="$next"/>
+				<xsl:with-param name="prev" select="$prev"/>
+				<xsl:with-param name="next" select="$next"/>
 			</xsl:call-template>
 			<body>
 				<xsl:if test="count($prev) = 0">

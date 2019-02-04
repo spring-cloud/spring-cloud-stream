@@ -46,7 +46,7 @@ Michiel Hendriks <elmuerte at users.sourceforge.net>
 		<start>#</start>
 		<lineBreakEscape>\</lineBreakEscape>
 		<style>directive</style>
-		<solitary />
+		<solitary/>
 	</highlighter>
 	<highlighter type="string">
 		<string>"</string>
@@ -62,18 +62,18 @@ Michiel Hendriks <elmuerte at users.sourceforge.net>
 		<suffix>lu</suffix>
 		<suffix>u</suffix>
 		<suffix>l</suffix>
-		<ignoreCase />
+		<ignoreCase/>
 	</highlighter>
 	<highlighter type="number">
 		<point>.</point>
-		<pointStarts />
+		<pointStarts/>
 		<exponent>e</exponent>
 		<suffix>ul</suffix>
 		<suffix>lu</suffix>
 		<suffix>u</suffix>
 		<suffix>f</suffix>
 		<suffix>l</suffix>
-		<ignoreCase />
+		<ignoreCase/>
 	</highlighter>
 	<highlighter type="keywords">
 		<keyword>auto</keyword>

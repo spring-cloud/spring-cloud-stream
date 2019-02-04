@@ -20,10 +20,10 @@ under the License.
 -->
 
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
-		xmlns:xslthl="http://xslthl.sf.net"
-		xmlns:d="http://docbook.org/ns/docbook"
-		exclude-result-prefixes="xslthl"
-		version='1.0'>
+				xmlns:xslthl="http://xslthl.sf.net"
+				xmlns:d="http://docbook.org/ns/docbook"
+				exclude-result-prefixes="xslthl"
+				version='1.0'>
 
 	<xsl:import href="urn:docbkx:stylesheet/highlight.xsl"/>
 	<xsl:import href="common.xsl"/>
@@ -35,7 +35,7 @@ under the License.
 	<xsl:param name="highlight.source">1</xsl:param>
 
 	<!-- Activate Graphics -->
-	<xsl:param name="callout.graphics" select="1" />
+	<xsl:param name="callout.graphics" select="1"/>
 	<xsl:param name="callout.defaultcolumn">120</xsl:param>
 	<xsl:param name="callout.graphics.path">images/callouts/</xsl:param>
 	<xsl:param name="callout.graphics.extension">.png</xsl:param>
@@ -68,35 +68,51 @@ under the License.
 
 	<!-- Syntax Highlighting -->
 	<xsl:template match='xslthl:keyword' mode="xslthl">
-		<span class="hl-keyword"><xsl:apply-templates mode="xslthl"/></span>
+		<span class="hl-keyword">
+			<xsl:apply-templates mode="xslthl"/>
+		</span>
 	</xsl:template>
 
 	<xsl:template match='xslthl:comment' mode="xslthl">
-		<span class="hl-comment"><xsl:apply-templates mode="xslthl"/></span>
+		<span class="hl-comment">
+			<xsl:apply-templates mode="xslthl"/>
+		</span>
 	</xsl:template>
 
 	<xsl:template match='xslthl:oneline-comment' mode="xslthl">
-		<span class="hl-comment"><xsl:apply-templates mode="xslthl"/></span>
+		<span class="hl-comment">
+			<xsl:apply-templates mode="xslthl"/>
+		</span>
 	</xsl:template>
 
 	<xsl:template match='xslthl:multiline-comment' mode="xslthl">
-		<span class="hl-multiline-comment"><xsl:apply-templates mode="xslthl"/></span>
+		<span class="hl-multiline-comment">
+			<xsl:apply-templates mode="xslthl"/>
+		</span>
 	</xsl:template>
 
 	<xsl:template match='xslthl:tag' mode="xslthl">
-		<span class="hl-tag"><xsl:apply-templates mode="xslthl"/></span>
+		<span class="hl-tag">
+			<xsl:apply-templates mode="xslthl"/>
+		</span>
 	</xsl:template>
 
 	<xsl:template match='xslthl:attribute' mode="xslthl">
-		<span class="hl-attribute"><xsl:apply-templates mode="xslthl"/></span>
+		<span class="hl-attribute">
+			<xsl:apply-templates mode="xslthl"/>
+		</span>
 	</xsl:template>
 
 	<xsl:template match='xslthl:value' mode="xslthl">
-		<span class="hl-value"><xsl:apply-templates mode="xslthl"/></span>
+		<span class="hl-value">
+			<xsl:apply-templates mode="xslthl"/>
+		</span>
 	</xsl:template>
 
 	<xsl:template match='xslthl:string' mode="xslthl">
-		<span class="hl-string"><xsl:apply-templates mode="xslthl"/></span>
+		<span class="hl-string">
+			<xsl:apply-templates mode="xslthl"/>
+		</span>
 	</xsl:template>
 
 	<!-- Custom Title Page -->

@@ -18,11 +18,11 @@ code {
 	font-family: Consolas, "Liberation Mono", Courier, monospace;
 }
 
-:not(a)>code {
+:not(a) > code {
 	color: #6D180B;
 }
 
-:not(pre)>code {
+:not(pre) > code {
 	background-color: #F2F2F2;
 	border: 1px solid #CCCCCC;
 	border-radius: 4px;
@@ -31,7 +31,7 @@ code {
 	white-space: nowrap;
 }
 
-body>*:first-child {
+body > *:first-child {
 	margin-top: 0 !important;
 }
 
@@ -44,7 +44,7 @@ hr {
 	background: #CCCCCC;
 }
 
-h1,h2,h3,h4,h5,h6 {
+h1, h2, h3, h4, h5, h6 {
 	color: #000000;
 	cursor: text;
 	font-weight: bold;
@@ -52,7 +52,7 @@ h1,h2,h3,h4,h5,h6 {
 	padding: 0;
 }
 
-h1,h2,h3 {
+h1, h2, h3 {
 	margin: 40px 0 10px;
 }
 
@@ -65,23 +65,23 @@ div.part h1 {
 	border-top: 1px dotted #CCCCCC;
 }
 
-h1,h1 code {
+h1, h1 code {
 	font-size: 32px;
 }
 
-h2,h2 code {
+h2, h2 code {
 	font-size: 24px;
 }
 
-h3,h3 code {
+h3, h3 code {
 	font-size: 20px;
 }
 
-h4,h1 code,h5,h5 code,h6,h6 code {
+h4, h1 code, h5, h5 code, h6, h6 code {
 	font-size: 18px;
 }
 
-div.book,div.chapter,div.appendix,div.part,div.preface {
+div.book, div.chapter, div.appendix, div.part, div.preface {
 	min-width: 300px;
 	max-width: 1200px;
 	margin: 0 auto;
@@ -108,7 +108,7 @@ p.copyright {
 	line-height: 1;
 }
 
-div.titlepage+p,div.titlepage+p {
+div.titlepage + p, div.titlepage + p {
 	margin-top: 0;
 }
 
@@ -127,7 +127,7 @@ p {
 	text-align: left;
 }
 
-ul,ol {
+ul, ol {
 	padding-left: 30px;
 }
 
@@ -141,7 +141,7 @@ div.table {
 	text-align: center;
 }
 
-div.table table,div.informaltable table {
+div.table table, div.informaltable table {
 	display: table;
 	width: 100%;
 }
@@ -163,7 +163,7 @@ div.table td {
 	color: #6D180B;
 }
 
-pre.programlisting,pre.screen {
+pre.programlisting, pre.screen {
 	font-size: 15px;
 	padding: 6px 10px;
 	background-color: #F8F8F8;
@@ -197,7 +197,7 @@ table th {
 	font-weight: bold;
 }
 
-table th,table td {
+table th, table td {
 	border: none !important;
 	padding: 6px 13px;
 }
@@ -214,19 +214,18 @@ div.table-contents td p {
 	margin: 0;
 }
 
-div.important *,div.note *,div.tip *,div.warning *,div.navheader *,div.navfooter *,div.calloutlist *
-	{
+div.important *, div.note *, div.tip *, div.warning *, div.navheader *, div.navfooter *, div.calloutlist * {
 	border: none !important;
 	background: none !important;
 	margin: 0;
 }
 
-div.important p,div.note p,div.tip p,div.warning p {
+div.important p, div.note p, div.tip p, div.warning p {
 	color: #6F6F6F;
 	line-height: 1.6;
 }
 
-div.important code,div.note code,div.tip code,div.warning code {
+div.important code, div.note code, div.tip code, div.warning code {
 	background-color: #F2F2F2 !important;
 	border: 1px solid #CCCCCC !important;
 	border-radius: 4px !important;
@@ -235,27 +234,26 @@ div.important code,div.note code,div.tip code,div.warning code {
 	white-space: nowrap !important;
 }
 
-.note th,.tip th,.warning th {
+.note th, .tip th, .warning th {
 	display: none;
 }
 
-.note tr:first-child td,.tip tr:first-child td,.warning tr:first-child td
-	{
+.note tr:first-child td, .tip tr:first-child td, .warning tr:first-child td {
 	border-right: 1px solid #CCCCCC !important;
 	padding-top: 10px;
 }
 
-div.calloutlist p,div.calloutlist td {
+div.calloutlist p, div.calloutlist td {
 	padding: 0;
 	margin: 0;
 }
 
-div.calloutlist>table>tbody>tr>td:first-child {
+div.calloutlist > table > tbody > tr > td:first-child {
 	padding-left: 10px;
 	width: 30px !important;
 }
 
-div.important,div.note,div.tip,div.warning {
+div.important, div.note, div.tip, div.warning {
 	margin-left: 0px !important;
 	margin-right: 20px !important;
 	margin-top: 20px;
@@ -268,26 +266,26 @@ div.toc {
 	line-height: 1.2;
 }
 
-dl,dt {
+dl, dt {
 	margin-top: 1px;
 	margin-bottom: 0;
 }
 
-div.toc>dl>dt {
+div.toc > dl > dt {
 	font-size: 32px;
 	font-weight: bold;
 	margin: 30px 0 10px 0;
 	display: block;
 }
 
-div.toc>dl>dd>dl>dt {
+div.toc > dl > dd > dl > dt {
 	font-size: 24px;
 	font-weight: bold;
 	margin: 20px 0 10px 0;
 	display: block;
 }
 
-div.toc>dl>dd>dl>dd>dl>dt {
+div.toc > dl > dd > dl > dd > dl > dt {
 	font-weight: bold;
 	font-size: 20px;
 	margin: 10px 0 0 0;
@@ -320,7 +318,7 @@ div.navfooter {
 	padding-left: 1em;
 }
 
-.title>a {
+.title > a {
 	position: absolute;
 	visibility: hidden;
 	display: block;
@@ -331,14 +329,14 @@ div.navfooter {
 	color: black;
 }
 
-.title>a:before {
+.title > a:before {
 	content: "\00A7";
 }
 
-.title:hover>a,.title>a:hover,.title:hover>a:hover {
+.title:hover > a, .title > a:hover, .title:hover > a:hover {
 	visibility: visible;
 }
 
-.title:focus>a,.title>a:focus,.title:focus>a:focus {
+.title:focus > a, .title > a:focus, .title:focus > a:focus {
 	outline: 0;
 }
