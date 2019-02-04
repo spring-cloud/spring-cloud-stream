@@ -581,10 +581,8 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		SubscribableChannel errorChannel;
 		if (getApplicationContext().containsBean(errorChannelName)) {
 			Object errorChannelObject = getApplicationContext().getBean(errorChannelName);
-			if (!(errorChannelObject instanceof SubscribableChannel)) {
-				throw new IllegalStateException(
-						"Error channel '" + errorChannelName + "' must be a SubscribableChannel");
-			}
+			Assert.isInstanceOf(SubscribableChannel.class, errorChannelObject,
+					"Error channel '" + errorChannelName + "' must be a SubscribableChannel");
 			errorChannel = (SubscribableChannel) errorChannelObject;
 		}
 		else {
@@ -677,9 +675,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 	private void destroyErrorInfrastructure(ConsumerDestination destination, String group, C properties) {
 		try {
 			String recoverer = getErrorRecovererName(destination, group, properties);
-			if (getApplicationContext().containsBean(recoverer)) {
-				((DefaultSingletonBeanRegistry) getApplicationContext().getBeanFactory()).destroySingleton(recoverer);
-			}
+			destroyBean(recoverer);
 			String errorChannelName = errorsBaseName(destination, group, properties);
 			String errorMessageHandlerName = getErrorMessageHandlerName(destination, group, properties);
 			String errorBridgeHandlerName = getErrorBridgeName(destination, group, properties);
@@ -695,20 +691,24 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 				SubscribableChannel channel = getApplicationContext().getBean(errorChannelName, SubscribableChannel.class);
 				if (bridgeHandler != null) {
 					channel.unsubscribe(bridgeHandler);
-					((DefaultSingletonBeanRegistry) getApplicationContext().getBeanFactory())
-							.destroySingleton(errorBridgeHandlerName);
+					destroyBean(errorBridgeHandlerName);
 				}
 				if (handler != null) {
 					channel.unsubscribe(handler);
-					((DefaultSingletonBeanRegistry) getApplicationContext().getBeanFactory())
-							.destroySingleton(errorMessageHandlerName);
+					destroyBean(errorMessageHandlerName);
 				}
-				((DefaultSingletonBeanRegistry) getApplicationContext().getBeanFactory())
-						.destroySingleton(errorChannelName);
+				destroyBean(errorChannelName);
 			}
 		}
 		catch (IllegalStateException e) {
 			// context is shutting down.
+		}
+	}
+
+	private void destroyBean(String beanName) {
+		if (getApplicationContext().containsBean(beanName)) {
+			((DefaultSingletonBeanRegistry) getApplicationContext().getBeanFactory()).destroySingleton(beanName);
+			((GenericApplicationContext)getApplicationContext()).removeBeanDefinition(beanName);
 		}
 	}
 
