@@ -16,6 +16,8 @@
 
 package org.springframework.cloud.stream.utils;
 
+import java.util.Map;
+
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.cloud.stream.binder.AbstractExtendedBindingProperties;
 import org.springframework.cloud.stream.binder.BinderSpecificPropertiesProvider;
@@ -32,6 +34,10 @@ public class FooExtendedBindingProperties extends
 	@Override
 	public String getDefaultsPrefix() {
 		return DEFAULTS_PREFIX;
+	}
+
+	public Map<String, FooBindingProperties> getBindings() {
+		return this.doGetBindings();
 	}
 
 	@Override
