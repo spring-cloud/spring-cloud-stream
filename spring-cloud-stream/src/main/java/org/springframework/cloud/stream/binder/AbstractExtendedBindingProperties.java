@@ -48,8 +48,6 @@ public abstract class AbstractExtendedBindingProperties<C, P, T extends BinderSp
 
 	private ConfigurableApplicationContext applicationContext = new GenericApplicationContext();
 
-	public abstract Map<String, T> getBindings();
-
 	public void setBindings(Map<String, T> bindings) {
 		this.bindings.putAll(bindings);
 	}
