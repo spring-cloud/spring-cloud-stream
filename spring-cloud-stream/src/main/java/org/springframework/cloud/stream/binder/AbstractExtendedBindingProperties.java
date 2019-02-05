@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.binder;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -47,9 +48,7 @@ public abstract class AbstractExtendedBindingProperties<C, P, T extends BinderSp
 
 	private ConfigurableApplicationContext applicationContext = new GenericApplicationContext();
 
-	public Map<String, T> getBindings() {
-		return this.bindings;
-	}
+	public abstract Map<String, T> getBindings();
 
 	public void setBindings(Map<String, T> bindings) {
 		this.bindings.putAll(bindings);
@@ -99,6 +98,10 @@ public abstract class AbstractExtendedBindingProperties<C, P, T extends BinderSp
 		binder.bind(this.getDefaultsPrefix(),
 				Bindable.ofInstance(extendedBindingPropertiesTarget));
 		this.bindings.put(binding, extendedBindingPropertiesTarget);
+	}
+
+	protected Map<String, T> doGetBindings() {
+		return Collections.unmodifiableMap(this.bindings);
 	}
 
 }
