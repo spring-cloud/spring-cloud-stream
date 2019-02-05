@@ -16,6 +16,8 @@
 
 package org.springframework.cloud.stream.binder.kafka.streams.properties;
 
+import java.util.Map;
+
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.cloud.stream.binder.AbstractExtendedBindingProperties;
 import org.springframework.cloud.stream.binder.BinderSpecificPropertiesProvider;
@@ -39,6 +41,11 @@ public class KafkaStreamsExtendedBindingProperties
 	@Override
 	public String getDefaultsPrefix() {
 		return DEFAULTS_PREFIX;
+	}
+
+	@Override
+	public Map<String, KafkaStreamsBindingProperties> getBindings() {
+		return this.doGetBindings();
 	}
 
 	@Override
