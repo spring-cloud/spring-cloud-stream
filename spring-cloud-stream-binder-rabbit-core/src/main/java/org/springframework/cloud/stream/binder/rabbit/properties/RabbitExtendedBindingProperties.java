@@ -16,6 +16,8 @@
 
 package org.springframework.cloud.stream.binder.rabbit.properties;
 
+import java.util.Map;
+
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.cloud.stream.binder.AbstractExtendedBindingProperties;
 import org.springframework.cloud.stream.binder.BinderSpecificPropertiesProvider;
@@ -35,6 +37,10 @@ public class RabbitExtendedBindingProperties extends
 	@Override
 	public String getDefaultsPrefix() {
 		return DEFAULTS_PREFIX;
+	}
+
+	public Map<String, RabbitBindingProperties> getBindings() {
+		return this.doGetBindings();
 	}
 
 	@Override
