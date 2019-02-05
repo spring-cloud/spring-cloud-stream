@@ -16,6 +16,9 @@
 
 package org.springframework.cloud.stream.binder;
 
+import java.util.Collections;
+import java.util.Map;
+
 /**
  * Properties that extend the common binding properties for a particular binder
  * implementation.
@@ -31,6 +34,10 @@ public interface ExtendedBindingProperties<C, P> {
 	C getExtendedConsumerProperties(String channelName);
 
 	P getExtendedProducerProperties(String channelName);
+
+	default Map<String, ? extends Object> getBindings() {
+		return Collections.emptyMap();
+	}
 
 	/**
 	 * Extended binding properties can define a default prefix to place all the extended
