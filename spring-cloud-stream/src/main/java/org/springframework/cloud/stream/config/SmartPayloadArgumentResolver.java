@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2018 the original author or authors.
+ * Copyright 2016-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,9 @@ import org.springframework.validation.Validator;
 
 /**
  * @author Oleg Zhurakousky
+ * @author Gary Russell
  * @deprecated will be removed once https://jira.spring.io/browse/SPR-17503 is addressed
+ * (but see note about KafkaNull below).
  */
 @Deprecated
 class SmartPayloadArgumentResolver extends PayloadArgumentResolver {
@@ -66,6 +68,16 @@ class SmartPayloadArgumentResolver extends PayloadArgumentResolver {
 				&& !MessageHeaders.class.isAssignableFrom(parameter.getParameterType())
 				&& !parameter.hasParameterAnnotation(Header.class)
 				&& !parameter.hasParameterAnnotation(Headers.class));
+	}
+
+	/**
+	 * Needed to support mapping KafkaNull to null in method invocation.
+	 */
+	@Override
+	protected boolean isEmptyPayload(Object payload) {
+		return super.isEmptyPayload(payload)
+				|| "org.springframework.kafka.support.KafkaNull"
+						.equals(payload.getClass().getName());
 	}
 
 	@Override
