@@ -29,8 +29,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.cloud.stream.annotation.EnableBinding;
+import org.springframework.cloud.stream.annotation.Input;
+import org.springframework.cloud.stream.annotation.Output;
 import org.springframework.cloud.stream.annotation.StreamListener;
-import org.springframework.cloud.stream.messaging.Processor;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.support.KafkaNull;
 import org.springframework.kafka.test.rule.EmbeddedKafkaRule;
@@ -47,19 +48,18 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Gary Russell
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE,
-	properties = "spring.cloud.stream.binding.input.destination=output")
-@EnableBinding(Processor.class)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE, properties = {
+		"spring.kafka.consumer.auto-offset-reset=earliest" })
 @DirtiesContext
 public class KafkaNullConverterTest {
 
 	private static final String KAFKA_BROKERS_PROPERTY = "spring.kafka.bootstrap-servers";
 
 	@Autowired
-	private MessageChannel output;
+	private MessageChannel kafkaNullOutput;
 
 	@Autowired
-	private MessageChannel input;
+	private MessageChannel kafkaNullInput;
 
 	@Autowired
 	private KafkaNullConverterTestConfig config;
@@ -80,7 +80,7 @@ public class KafkaNullConverterTest {
 
 	@Test
 	public void testKafkaNullConverterOutput() throws InterruptedException {
-		this.output.send(new GenericMessage<>(KafkaNull.INSTANCE));
+		this.kafkaNullOutput.send(new GenericMessage<>(KafkaNull.INSTANCE));
 
 		assertThat(this.config.countDownLatchOutput.await(10, TimeUnit.SECONDS)).isTrue();
 		assertThat(this.config.outputPayload).isNull();
@@ -88,13 +88,14 @@ public class KafkaNullConverterTest {
 
 	@Test
 	public void testKafkaNullConverterInput() throws InterruptedException {
-		this.input.send(new GenericMessage<>(KafkaNull.INSTANCE));
+		this.kafkaNullInput.send(new GenericMessage<>(KafkaNull.INSTANCE));
 
 		assertThat(this.config.countDownLatchInput.await(10, TimeUnit.SECONDS)).isTrue();
 		assertThat(this.config.inputPayload).isNull();
 	}
 
 	@TestConfiguration
+	@EnableBinding(KafkaNullTestChannels.class)
 	public static class KafkaNullConverterTestConfig {
 
 		final CountDownLatch countDownLatchOutput = new CountDownLatch(1);
@@ -105,17 +106,27 @@ public class KafkaNullConverterTest {
 
 		volatile byte[] inputPayload = new byte[0];
 
-		@KafkaListener(id = "foo", topics = "output")
+		@KafkaListener(id = "foo", topics = "kafkaNullOutput")
 		public void listen(@Payload(required = false) byte[] in) {
 			this.outputPayload = in;
 			countDownLatchOutput.countDown();
 		}
 
-		@StreamListener(Processor.INPUT)
+		@StreamListener("kafkaNullInput")
 		public void inputListen(@Payload(required = false) byte[] payload) {
 			this.inputPayload = payload;
 			countDownLatchInput.countDown();
 		}
+
+	}
+
+	public interface KafkaNullTestChannels {
+
+		@Input
+		MessageChannel kafkaNullInput();
+
+		@Output
+		MessageChannel kafkaNullOutput();
 
 	}
 
