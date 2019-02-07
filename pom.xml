@@ -32,10 +32,8 @@
 		</spring-cloud-function.version>
 
 		<maven-checkstyle-plugin.failsOnError>true</maven-checkstyle-plugin.failsOnError>
-		<maven-checkstyle-plugin.failsOnViolation>true
-		</maven-checkstyle-plugin.failsOnViolation>
-		<maven-checkstyle-plugin.includeTestSourceDirectory>true
-		</maven-checkstyle-plugin.includeTestSourceDirectory>
+		<maven-checkstyle-plugin.failsOnViolation>true</maven-checkstyle-plugin.failsOnViolation>
+		<maven-checkstyle-plugin.includeTestSourceDirectory>true</maven-checkstyle-plugin.includeTestSourceDirectory>
 	</properties>
 	<dependencyManagement>
 		<dependencies>
@@ -160,10 +158,6 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-checkstyle-plugin</artifactId>
-			</plugin>
-			<plugin>
-				<groupId>io.spring.javaformat</groupId>
-				<artifactId>spring-javaformat-maven-plugin</artifactId>
 			</plugin>
 		</plugins>
 	</build>
