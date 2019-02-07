@@ -288,8 +288,8 @@ public class DefaultBinderFactory
 				springApplicationBuilder.environment(binderEnvironment);
 			}
 
-			ConfigurableApplicationContext binderProducingContext =
-					springApplicationBuilder.run(args.toArray(new String[0]));
+			ConfigurableApplicationContext binderProducingContext = springApplicationBuilder
+					.run(args.toArray(new String[0]));
 
 			Binder<T, ?, ?> binder = binderProducingContext.getBean(Binder.class);
 			/*

@@ -41,7 +41,7 @@ import org.springframework.util.StringUtils;
  * @see org.springframework.cloud.stream.annotation.EnableBinding
  */
 
-@JsonPropertyOrder({"bindingName", "name", "group", "pausable", "state"})
+@JsonPropertyOrder({ "bindingName", "name", "group", "pausable", "state" })
 @JsonIgnoreProperties("running")
 public class DefaultBinding<T> implements Binding<T> {
 
@@ -88,7 +88,7 @@ public class DefaultBinding<T> implements Binding<T> {
 
 	public String getBindingName() {
 		String resolvedName = (this.target instanceof IntegrationObjectSupport)
-				? ((IntegrationObjectSupport)this.target).getComponentName() : getName();
+				? ((IntegrationObjectSupport) this.target).getComponentName() : getName();
 		return resolvedName == null ? getName() : resolvedName;
 	}
 
