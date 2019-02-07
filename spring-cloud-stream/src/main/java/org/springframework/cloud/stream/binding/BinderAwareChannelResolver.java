@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2018 the original author or authors.
+ * Copyright 2013-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -102,57 +102,49 @@ public class BinderAwareChannelResolver
 		this.beanFactory = (ConfigurableListableBeanFactory) beanFactory;
 	}
 
+	/*
+	 * See the following for more discussion on it as well as demo reproducing it, thanks
+	 * to Anshul Mehra (@Walliee)
+	 * https://github.com/spring-cloud/spring-cloud-stream/issues/1603
+	 */
 	@SuppressWarnings("unchecked")
 	@Override
-	public MessageChannel resolveDestination(String channelName) {
+	public synchronized MessageChannel resolveDestination(String channelName) {
+		BindingServiceProperties bindingServiceProperties = this.bindingService
+				.getBindingServiceProperties();
+		String[] dynamicDestinations = bindingServiceProperties.getDynamicDestinations();
+
+		MessageChannel channel;
+		boolean dynamicAllowed = ObjectUtils.isEmpty(dynamicDestinations)
+				|| ObjectUtils.containsElement(dynamicDestinations, channelName);
 		try {
-			return super.resolveDestination(channelName);
+			channel = super.resolveDestination(channelName);
 		}
 		catch (DestinationResolutionException e) {
-			// intentionally empty; will check again while holding the monitor
-		}
-		synchronized (this) {
-			BindingServiceProperties bindingServiceProperties = this.bindingService
-					.getBindingServiceProperties();
-			String[] dynamicDestinations = bindingServiceProperties
-					.getDynamicDestinations();
-			boolean dynamicAllowed = ObjectUtils.isEmpty(dynamicDestinations)
-					|| ObjectUtils.containsElement(dynamicDestinations, channelName);
-			try {
-				return super.resolveDestination(channelName);
+			if (!dynamicAllowed) {
+				throw e;
 			}
-			catch (DestinationResolutionException e) {
-				if (!dynamicAllowed) {
-					throw e;
+			else {
+				channel = this.bindingTargetFactory.createOutput(channelName);
+				this.beanFactory.registerSingleton(channelName, channel);
+				channel = (MessageChannel) this.beanFactory.initializeBean(channel,
+						channelName);
+				if (this.newBindingCallback != null) {
+					ProducerProperties producerProperties = bindingServiceProperties
+							.getProducerProperties(channelName);
+					Object extendedProducerProperties = this.bindingService
+							.getExtendedProducerProperties(channel, channelName);
+					this.newBindingCallback.configure(channelName, channel,
+							producerProperties, extendedProducerProperties);
+					bindingServiceProperties.updateProducerProperties(channelName,
+							producerProperties);
 				}
+				Binding<MessageChannel> binding = this.bindingService
+						.bindProducer(channel, channelName);
+				this.dynamicDestinationsBindable.addOutputBinding(channelName, binding);
 			}
-
-			MessageChannel channel = this.bindingTargetFactory.createOutput(channelName);
-			this.beanFactory.registerSingleton(channelName, channel);
-
-			// TODO: Investigate if the following call is necessary.
-			// initializeBean call on the next line also calling the
-			// addMatchingInterceptors method in GlobalChannelInterceptorProcessor
-			// this.instrumentChannelWithGlobalInterceptors(channel, channelName);
-
-			channel = (MessageChannel) this.beanFactory.initializeBean(channel,
-					channelName);
-			if (this.newBindingCallback != null) {
-				ProducerProperties producerProperties = bindingServiceProperties
-						.getProducerProperties(channelName);
-				Object extendedProducerProperties = this.bindingService
-						.getExtendedProducerProperties(channel, channelName);
-				this.newBindingCallback.configure(channelName, channel,
-						producerProperties, extendedProducerProperties);
-				bindingServiceProperties.updateProducerProperties(channelName,
-						producerProperties);
-			}
-			Binding<MessageChannel> binding = this.bindingService.bindProducer(channel,
-					channelName);
-			this.dynamicDestinationsBindable.addOutputBinding(channelName, binding);
-
-			return channel;
 		}
+		return channel;
 	}
 
 	/**
