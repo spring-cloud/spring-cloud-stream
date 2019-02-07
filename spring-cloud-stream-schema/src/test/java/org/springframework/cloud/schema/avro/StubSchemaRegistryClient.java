@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,12 +39,14 @@ public class StubSchemaRegistryClient implements SchemaRegistryClient {
 	private final Map<String, Map<Integer, SchemaWithId>> storedSchemas = new HashMap<>();
 
 	@Override
-	public SchemaRegistrationResponse register(String subject, String format, String schema) {
+	public SchemaRegistrationResponse register(String subject, String format,
+			String schema) {
 		if (!this.storedSchemas.containsKey(subject)) {
 			this.storedSchemas.put(subject, new TreeMap<Integer, SchemaWithId>());
 		}
 		Map<Integer, SchemaWithId> schemaVersions = this.storedSchemas.get(subject);
-		for (Map.Entry<Integer, SchemaWithId> integerSchemaEntry : schemaVersions.entrySet()) {
+		for (Map.Entry<Integer, SchemaWithId> integerSchemaEntry : schemaVersions
+				.entrySet()) {
 
 			if (integerSchemaEntry.getValue().getSchema().equals(schema)) {
 				SchemaRegistrationResponse schemaRegistrationResponse = new SchemaRegistrationResponse();
@@ -60,24 +62,27 @@ public class StubSchemaRegistryClient implements SchemaRegistryClient {
 		schemaVersions.put(nextVersion, new SchemaWithId(id, schema));
 		SchemaRegistrationResponse schemaRegistrationResponse = new SchemaRegistrationResponse();
 		schemaRegistrationResponse.setId(this.index.getAndIncrement());
-		schemaRegistrationResponse.setSchemaReference(
-				new SchemaReference(subject, nextVersion, AvroSchemaRegistryClientMessageConverter.AVRO_FORMAT));
+		schemaRegistrationResponse.setSchemaReference(new SchemaReference(subject,
+				nextVersion, AvroSchemaRegistryClientMessageConverter.AVRO_FORMAT));
 		this.schemasById.put(id, schema);
 		return schemaRegistrationResponse;
 	}
 
 	@Override
 	public String fetch(SchemaReference schemaReference) {
-		if (!AvroSchemaRegistryClientMessageConverter.AVRO_FORMAT.equals(schemaReference.getFormat())) {
+		if (!AvroSchemaRegistryClientMessageConverter.AVRO_FORMAT
+				.equals(schemaReference.getFormat())) {
 			throw new IllegalArgumentException("Only 'avro' is supported by this client");
 		}
 		if (!this.storedSchemas.containsKey(schemaReference.getSubject())) {
 			throw new SchemaNotFoundException("Not found: " + schemaReference);
 		}
-		if (!this.storedSchemas.get(schemaReference.getSubject()).containsKey(schemaReference.getVersion())) {
+		if (!this.storedSchemas.get(schemaReference.getSubject())
+				.containsKey(schemaReference.getVersion())) {
 			throw new SchemaNotFoundException("Not found: " + schemaReference);
 		}
-		return this.storedSchemas.get(schemaReference.getSubject()).get(schemaReference.getVersion()).getSchema();
+		return this.storedSchemas.get(schemaReference.getSubject())
+				.get(schemaReference.getVersion()).getSchema();
 	}
 
 	@Override
@@ -103,6 +108,7 @@ public class StubSchemaRegistryClient implements SchemaRegistryClient {
 		public String getSchema() {
 			return this.schema;
 		}
+
 	}
 
 }

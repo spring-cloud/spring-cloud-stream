@@ -47,4 +47,5 @@ public class ChannelBindingAutoConfiguration {
 	public PollerMetadata defaultPoller() {
 		return this.poller.getPollerMetadata();
 	}
+
 }

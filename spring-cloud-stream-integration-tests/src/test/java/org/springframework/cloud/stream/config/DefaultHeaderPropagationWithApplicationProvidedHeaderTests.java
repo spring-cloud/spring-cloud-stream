@@ -35,16 +35,18 @@ import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Marius Bogoevici
  * @author Oleg Zhurakousky
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringBootTest(classes = DefaultHeaderPropagationWithApplicationProvidedHeaderTests.HeaderPropagationProcessor.class,
-		webEnvironment = SpringBootTest.WebEnvironment.NONE)
+// @checkstyle:off
+@SpringBootTest(classes = DefaultHeaderPropagationWithApplicationProvidedHeaderTests.HeaderPropagationProcessor.class, webEnvironment = SpringBootTest.WebEnvironment.NONE)
 public class DefaultHeaderPropagationWithApplicationProvidedHeaderTests {
+
+	// @checkstyle:on
 
 	@Autowired
 	private Processor testProcessor;
@@ -54,16 +56,16 @@ public class DefaultHeaderPropagationWithApplicationProvidedHeaderTests {
 
 	@Test
 	public void testHeaderPropagationIfSetByApplication() throws Exception {
-		testProcessor.input().send(MessageBuilder.withPayload("{'name':'foo'}")
+		this.testProcessor.input().send(MessageBuilder.withPayload("{'name':'foo'}")
 				.setHeader(MessageHeaders.CONTENT_TYPE, "application/json")
-				.setHeader("foo", "fooValue")
-				.setHeader("bar", "barValue")
-				.build());
+				.setHeader("foo", "fooValue").setHeader("bar", "barValue").build());
 		@SuppressWarnings("unchecked")
-		Message<String> received = (Message<String>) ((TestSupportBinder) binderFactory.getBinder(null, MessageChannel.class))
-				.messageCollector().forChannel(testProcessor.output()).poll(1, TimeUnit.SECONDS);
-		assertEquals("fooValue", received.getHeaders().get("foo"));
-		assertEquals("barValue", received.getHeaders().get("bar"));
+		Message<String> received = (Message<String>) ((TestSupportBinder) this.binderFactory
+				.getBinder(null, MessageChannel.class)).messageCollector()
+						.forChannel(this.testProcessor.output())
+						.poll(1, TimeUnit.SECONDS);
+		assertThat(received.getHeaders().get("foo")).isEqualTo("fooValue");
+		assertThat(received.getHeaders().get("bar")).isEqualTo("barValue");
 	}
 
 	@EnableBinding(Processor.class)
@@ -72,8 +74,10 @@ public class DefaultHeaderPropagationWithApplicationProvidedHeaderTests {
 
 		@ServiceActivator(inputChannel = "input", outputChannel = "output")
 		public Message<?> consume(String data) {
-			return MessageBuilder.withPayload(data).setHeader(MessageHeaders.CONTENT_TYPE, "text/plain").build();
+			return MessageBuilder.withPayload(data)
+					.setHeader(MessageHeaders.CONTENT_TYPE, "text/plain").build();
 		}
 
 	}
+
 }

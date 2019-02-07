@@ -36,10 +36,12 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
  * @author Marius Bogoevici
  * @author Janne Valkealahti
  */
+// @checkstyle:off
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringBootTest(classes = ArbitraryInterfaceWithDefaultsTests.TestFooChannels.class,
-				properties = "spring.cloud.stream.default-binder=mock")
+@SpringBootTest(classes = ArbitraryInterfaceWithDefaultsTests.TestFooChannels.class, properties = "spring.cloud.stream.default-binder=mock")
 public class ArbitraryInterfaceWithDefaultsTests {
+
+	// @checkstyle:on
 
 	@Autowired
 	public FooChannels fooChannels;
@@ -47,7 +49,7 @@ public class ArbitraryInterfaceWithDefaultsTests {
 	@Autowired
 	private BinderFactory binderFactory;
 
-	@SuppressWarnings({"rawtypes", "unchecked"})
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Test
 	public void testArbitraryInterfaceChannelsBound() {
 		final Binder binder = this.binderFactory.getBinder(null, MessageChannel.class);
@@ -55,10 +57,8 @@ public class ArbitraryInterfaceWithDefaultsTests {
 				Mockito.any());
 		verify(binder).bindConsumer(eq("bar"), isNull(), eq(this.fooChannels.bar()),
 				Mockito.any());
-		verify(binder).bindProducer(eq("baz"), eq(this.fooChannels.baz()),
-				Mockito.any());
-		verify(binder).bindProducer(eq("qux"), eq(this.fooChannels.qux()),
-				Mockito.any());
+		verify(binder).bindProducer(eq("baz"), eq(this.fooChannels.baz()), Mockito.any());
+		verify(binder).bindProducer(eq("qux"), eq(this.fooChannels.qux()), Mockito.any());
 		verifyNoMoreInteractions(binder);
 	}
 

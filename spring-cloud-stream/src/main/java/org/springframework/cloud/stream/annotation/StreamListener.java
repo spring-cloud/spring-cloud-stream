@@ -55,16 +55,16 @@ import org.springframework.messaging.handler.annotation.MessageMapping;
  * {@link StreamListener} and using
  * {@link org.springframework.messaging.handler.annotation.SendTo}</li> on the method for
  * the return type (if applicable). In this case the method must have exactly one
- * parameter, corresponding to an input.</li>
+ * parameter, corresponding to an input.
  * </ul>
  *
  * An example of declarative method signature using the former idiom is as follows:
  *
  * <pre class="code">
  * &#064;StreamListener
- * public &#064;Output("joined") Flux<String> join(
- *       &#064;Input("input1") Flux<String> input1,
- *       &#064;Input("input2") Flux<String> input2) {
+ * public &#064;Output("joined") Flux&lt;String&gt; join(
+ *       &#064;Input("input1") Flux&lt;String&gt; input1,
+ *       &#064;Input("input2") Flux&lt;String&gt; input2) {
  *   // ... join the two input streams via functional operators
  * }
  * </pre>
@@ -74,7 +74,7 @@ import org.springframework.messaging.handler.annotation.MessageMapping;
  * <pre class="code">
  * &#064;StreamListener(Processor.INPUT)
  * &#064;SendTo(Processor.OUTPUT)
- * public Flux<String> convert(Flux<String> input) {
+ * public Flux&lt;String&gt; convert(Flux&lt;String&gt; input) {
  *     return input.map(String::toUppercase);
  * }
  * </pre>
@@ -159,12 +159,13 @@ public @interface StreamListener {
 	 * The expression is evaluated during application initialization, and not for each
 	 * individual message.
 	 *
-	 * Prior to version 1.3.0, the default value used to be "false" and headers were
-	 * not propagated by default.
+	 * Prior to version 1.3.0, the default value used to be "false" and headers were not
+	 * propagated by default.
 	 *
 	 * Starting with version 1.3.0, the default value is "true".
 	 *
 	 * @since 1.2.3
+	 * @return {@link Boolean} in a String format
 	 */
 	String copyHeaders() default "true";
 

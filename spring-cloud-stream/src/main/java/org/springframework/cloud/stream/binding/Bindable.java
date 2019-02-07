@@ -35,6 +35,7 @@ public interface Bindable {
 	/**
 	 * Binds all the inputs associated with this instance.
 	 * @deprecated as of 2.0 in favor of {@link #createAndBindInputs(BindingService)}
+	 * @param adapter binding service
 	 */
 	@Deprecated
 	default void bindInputs(BindingService adapter) {
@@ -55,9 +56,11 @@ public interface Bindable {
 	/**
 	 * Binds all the outputs associated with this instance.
 	 * @deprecated as of 2.0 in favor of {@link #createAndBindOutputs(BindingService)}
+	 * @param adapter binding service
 	 */
 	@Deprecated
-	default void bindOutputs(BindingService adapter) {}
+	default void bindOutputs(BindingService adapter) {
+	}
 
 	/**
 	 * Binds all the outputs associated with this instance.
@@ -72,16 +75,21 @@ public interface Bindable {
 
 	/**
 	 * Unbinds all the inputs associated with this instance.
+	 * @param adapter binding service
 	 */
-	default void unbindInputs(BindingService adapter) {}
+	default void unbindInputs(BindingService adapter) {
+	}
 
 	/**
 	 * Unbinds all the outputs associated with this instance.
+	 * @param adapter binding service
 	 */
-	default void unbindOutputs(BindingService adapter) {}
+	default void unbindOutputs(BindingService adapter) {
+	}
 
 	/**
 	 * Enumerates all the input binding names.
+	 * @return input binding names
 	 */
 	default Set<String> getInputs() {
 		return Collections.emptySet();
@@ -89,6 +97,7 @@ public interface Bindable {
 
 	/**
 	 * Enumerates all the output binding names.
+	 * @return output binding names
 	 */
 	default Set<String> getOutputs() {
 		return Collections.emptySet();

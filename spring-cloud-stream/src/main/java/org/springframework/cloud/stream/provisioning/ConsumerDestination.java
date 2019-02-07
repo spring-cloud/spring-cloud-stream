@@ -21,17 +21,15 @@ import org.springframework.cloud.stream.binder.ConsumerProperties;
 /**
  * Represents a ConsumerDestination that provides the information about the destination
  * that is physically provisioned through
- * {@link ProvisioningProvider#provisionConsumerDestination(String, String, ConsumerProperties)}
+ * {@link ProvisioningProvider#provisionConsumerDestination(String, String, ConsumerProperties)}.
  *
  * @author Soby Chacko
- *
  * @since 1.2
  */
 public interface ConsumerDestination {
 
 	/**
 	 * Provides the destination name.
-	 *
 	 * @return destination name
 	 */
 	String getName();

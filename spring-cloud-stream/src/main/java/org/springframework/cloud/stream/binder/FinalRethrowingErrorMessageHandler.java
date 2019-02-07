@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2017-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,20 +23,22 @@ import org.springframework.messaging.MessagingException;
 /**
  * A MessageHandler that always is the last subscriber (on a {@link BinderErrorChannel})
  * that throws an exception if it the only subscriber (aside from the bridge to the global
- * error channel). It is typically only used if a binder implementation does not return
- * a handled from {@code getErrorMessageHandler()}.
+ * error channel). It is typically only used if a binder implementation does not return a
+ * handled from {@code getErrorMessageHandler()}.
  *
  * @author Gary Russell
  * @since 1.3
  *
  */
-class FinalRethrowingErrorMessageHandler implements MessageHandler, LastSubscriberMessageHandler {
+class FinalRethrowingErrorMessageHandler
+		implements MessageHandler, LastSubscriberMessageHandler {
 
 	private final LastSubscriberAwareChannel errorChannel;
 
 	private final boolean defaultErrorChannelPresent;
 
-	FinalRethrowingErrorMessageHandler(LastSubscriberAwareChannel errorChannel, boolean defaultErrorChannelPresent) {
+	FinalRethrowingErrorMessageHandler(LastSubscriberAwareChannel errorChannel,
+			boolean defaultErrorChannelPresent) {
 		this.errorChannel = errorChannel;
 		this.defaultErrorChannelPresent = defaultErrorChannelPresent;
 	}
@@ -52,7 +54,8 @@ class FinalRethrowingErrorMessageHandler implements MessageHandler, LastSubscrib
 			throw (MessagingException) message.getPayload();
 		}
 		else {
-			throw new MessagingException((Message<?>) null, (Throwable) message.getPayload());
+			throw new MessagingException((Message<?>) null,
+					(Throwable) message.getPayload());
 		}
 	}
 

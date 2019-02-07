@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2017-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,9 +33,12 @@ import org.springframework.core.env.MapPropertySource;
 public class TestBinderEnvironmentPostProcessor implements EnvironmentPostProcessor {
 
 	@Override
-	public void postProcessEnvironment(ConfigurableEnvironment environment, SpringApplication application) {
+	public void postProcessEnvironment(ConfigurableEnvironment environment,
+			SpringApplication application) {
 		Map<String, Object> propertiesToAdd = new HashMap<>();
 		propertiesToAdd.put("spring.cloud.stream.binders.test.defaultCandidate", "false");
-		environment.getPropertySources().addLast(new MapPropertySource("testBinderConfig", propertiesToAdd));
+		environment.getPropertySources()
+				.addLast(new MapPropertySource("testBinderConfig", propertiesToAdd));
 	}
+
 }

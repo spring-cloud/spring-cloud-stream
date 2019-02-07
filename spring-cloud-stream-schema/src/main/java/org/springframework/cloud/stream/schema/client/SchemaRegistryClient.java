@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ public interface SchemaRegistryClient {
 	 * Registers a schema with the remote repository returning the unique identifier
 	 * associated with this schema.
 	 * @param subject the full name of the schema
+	 * @param format format of the schema
 	 * @param schema string representation of the schema
 	 * @return a {@link SchemaRegistrationResponse} representing the result of the
 	 * operation

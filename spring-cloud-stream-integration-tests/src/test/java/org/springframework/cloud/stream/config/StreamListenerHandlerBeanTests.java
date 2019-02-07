@@ -75,15 +75,15 @@ public class StreamListenerHandlerBeanTests {
 		MessageCollector collector = context.getBean(MessageCollector.class);
 		Processor processor = context.getBean(Processor.class);
 		String id = UUID.randomUUID().toString();
-		processor.input().send(
-				MessageBuilder.withPayload("{\"foo\":\"barbar" + id + "\"}")
+		processor.input()
+				.send(MessageBuilder.withPayload("{\"foo\":\"barbar" + id + "\"}")
 						.setHeader("contentType", "application/json").build());
 		HandlerBean handlerBean = context.getBean(HandlerBean.class);
 		Assertions.assertThat(handlerBean.receivedPojos).hasSize(1);
-		Assertions.assertThat(handlerBean.receivedPojos.get(0)).hasFieldOrPropertyWithValue("foo",
-				"barbar" + id);
-		Message<String> message = (Message<String>) collector.forChannel(
-				processor.output()).poll(1, TimeUnit.SECONDS);
+		Assertions.assertThat(handlerBean.receivedPojos.get(0))
+				.hasFieldOrPropertyWithValue("foo", "barbar" + id);
+		Message<String> message = (Message<String>) collector
+				.forChannel(processor.output()).poll(1, TimeUnit.SECONDS);
 		assertThat(message).isNotNull();
 		assertThat(message.getPayload()).isEqualTo("{\"bar\":\"barbar" + id + "\"}");
 		assertThat(message.getHeaders().get(MessageHeaders.CONTENT_TYPE, MimeType.class)
@@ -99,6 +99,7 @@ public class StreamListenerHandlerBeanTests {
 		public HandlerBeanWithSendTo handlerBean() {
 			return new HandlerBeanWithSendTo();
 		}
+
 	}
 
 	@EnableBinding(Processor.class)
@@ -109,30 +110,35 @@ public class StreamListenerHandlerBeanTests {
 		public HandlerBeanWithOutput handlerBean() {
 			return new HandlerBeanWithOutput();
 		}
+
 	}
 
 	public static class HandlerBeanWithSendTo extends HandlerBean {
 
 		@StreamListener(Processor.INPUT)
 		@SendTo(Processor.OUTPUT)
-		public StreamListenerTestUtils.BarPojo receive(StreamListenerTestUtils.FooPojo fooMessage) {
+		public StreamListenerTestUtils.BarPojo receive(
+				StreamListenerTestUtils.FooPojo fooMessage) {
 			this.receivedPojos.add(fooMessage);
 			StreamListenerTestUtils.BarPojo barPojo = new StreamListenerTestUtils.BarPojo();
 			barPojo.setBar(fooMessage.getFoo());
 			return barPojo;
 		}
+
 	}
 
 	public static class HandlerBeanWithOutput extends HandlerBean {
 
 		@StreamListener(Processor.INPUT)
 		@Output(Processor.OUTPUT)
-		public StreamListenerTestUtils.BarPojo receive(StreamListenerTestUtils.FooPojo fooMessage) {
+		public StreamListenerTestUtils.BarPojo receive(
+				StreamListenerTestUtils.FooPojo fooMessage) {
 			this.receivedPojos.add(fooMessage);
 			StreamListenerTestUtils.BarPojo barPojo = new StreamListenerTestUtils.BarPojo();
 			barPojo.setBar(fooMessage.getFoo());
 			return barPojo;
 		}
+
 	}
 
 	public static class HandlerBean {

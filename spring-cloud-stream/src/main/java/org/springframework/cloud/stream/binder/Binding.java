@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2018 the original author or authors.
+ * Copyright 2016-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,12 +28,12 @@ import org.springframework.integration.endpoint.Pausable;
  * represents a connection from an adapter to an input. A producer binding represents a
  * connection from an output to an adapter.
  *
+ * @param <T> type of a binding
  * @author Jennifer Hickey
  * @author Mark Fisher
  * @author Gary Russell
  * @author Marius Bogoevici
  * @author Oleg Zhurakousky
- *
  * @see org.springframework.cloud.stream.annotation.EnableBinding
  */
 public interface Binding<T> extends Pausable {
@@ -43,28 +43,30 @@ public interface Binding<T> extends Pausable {
 	}
 
 	/**
-	 * Stops the target component represented by this instance.
-	 * NOTE: At the time the instance is created the component is already started.
-	 * This operation is typically used by actuator to re-bind/re-start.
+	 * Stops the target component represented by this instance. NOTE: At the time the
+	 * instance is created the component is already started. This operation is typically
+	 * used by actuator to re-bind/re-start.
 	 *
 	 * @see BindingsEndpoint
 	 */
-	default void start() {}
+	default void start() {
+	}
 
 	/**
-	 * Starts the target component represented by this instance.
-	 * NOTE: At the time the instance is created the component is already started.
-	 * This operation is typically used by actuator to re-bind/re-start.
+	 * Starts the target component represented by this instance. NOTE: At the time the
+	 * instance is created the component is already started. This operation is typically
+	 * used by actuator to re-bind/re-start.
 	 *
 	 * @see BindingsEndpoint
 	 */
-	default void stop() {}
+	default void stop() {
+	}
 
 	/**
-	 * Pauses the target component represented by this instance if and only if the component
-	 * implements {@link Pausable} interface
-	 * NOTE: At the time the instance is created the component is already started and active.
-	 * This operation is typically used by actuator to pause/resume.
+	 * Pauses the target component represented by this instance if and only if the
+	 * component implements {@link Pausable} interface NOTE: At the time the instance is
+	 * created the component is already started and active. This operation is typically
+	 * used by actuator to pause/resume.
 	 *
 	 * @see BindingsEndpoint
 	 */
@@ -73,10 +75,10 @@ public interface Binding<T> extends Pausable {
 	}
 
 	/**
-	 * Resumes the target component represented by this instance if and only if the component
-	 * implements {@link Pausable} interface
-	 * NOTE: At the time the instance is created the component is already started and active.
-	 * This operation is typically used by actuator to pause/resume.
+	 * Resumes the target component represented by this instance if and only if the
+	 * component implements {@link Pausable} interface NOTE: At the time the instance is
+	 * created the component is already started and active. This operation is typically
+	 * used by actuator to pause/resume.
 	 *
 	 * @see BindingsEndpoint
 	 */
@@ -85,21 +87,29 @@ public interface Binding<T> extends Pausable {
 	}
 
 	/**
-	 * Returns 'true' if the target component represented by this instance is running.
+	 * @return 'true' if the target component represented by this instance is running.
 	 */
 	default boolean isRunning() {
 		return false;
 	}
 
 	/**
-	 * Returns the name of this binding  (i.e., channel name)
-	 *
-	 * @return binding name
+	 * Returns the name of the destination for this binding.
+	 * @return destination name
 	 */
 	default String getName() {
 		return null;
 	}
 
+	/**
+	 * Returns the name of the target for this binding (i.e., channel name).
+	 * @return binding name
+	 *
+	 * @since 2.2
+	 */
+	default String getBindingName() {
+		return null;
+	}
 
 	/**
 	 * Unbinds the target component represented by this instance and stops any active
@@ -108,4 +118,17 @@ public interface Binding<T> extends Pausable {
 	 * and a new Binding should be created instead.
 	 */
 	void unbind();
+
+	/**
+	 * Returns boolean flag representing this binding's type. If 'true' this binding is an
+	 * 'input' binding otherwise it is 'output' (as in binding annotated with
+	 * either @Input or @Output).
+	 * @return 'true' if this binding represents an input binding.
+	 */
+	default boolean isInput() {
+		throw new UnsupportedOperationException(
+				"Binding implementation `" + this.getClass().getName()
+						+ "` must implement this operation before it is called");
+	}
+
 }

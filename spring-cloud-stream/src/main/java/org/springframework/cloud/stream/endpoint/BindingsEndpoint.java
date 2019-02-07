@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 the original author or authors.
+ * Copyright 2018-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,12 +35,10 @@ import org.springframework.util.Assert;
 
 /**
  *
- * Actuator endpoint for binding control
+ * Actuator endpoint for binding control.
  *
  * @author Oleg Zhurakousky
- *
  * @since 2.0
- *
  */
 @Endpoint(id = "bindings")
 public class BindingsEndpoint {
@@ -51,8 +49,10 @@ public class BindingsEndpoint {
 
 	private final ObjectMapper objectMapper;
 
-	public BindingsEndpoint(List<InputBindingLifecycle> inputBindingLifecycles, List<OutputBindingLifecycle> outputBindingsLifecycles) {
-		Assert.notEmpty(inputBindingLifecycles, "'inputBindingLifecycles' must not be null or empty");
+	public BindingsEndpoint(List<InputBindingLifecycle> inputBindingLifecycles,
+			List<OutputBindingLifecycle> outputBindingsLifecycles) {
+		Assert.notEmpty(inputBindingLifecycles,
+				"'inputBindingLifecycles' must not be null or empty");
 		this.inputBindingLifecycles = inputBindingLifecycles;
 		this.outputBindingsLifecycles = outputBindingsLifecycles;
 		this.objectMapper = new ObjectMapper();
@@ -63,20 +63,20 @@ public class BindingsEndpoint {
 		Binding<?> binding = BindingsEndpoint.this.locateBinding(name);
 		if (binding != null) {
 			switch (state) {
-				case STARTED:
-					binding.start();
-					break;
-				case STOPPED:
-					binding.stop();
-					break;
-				case PAUSED:
-					binding.pause();
-					break;
-				case RESUMED:
-					binding.resume();
-					break;
-				default:
-					break;
+			case STARTED:
+				binding.start();
+				break;
+			case STOPPED:
+				binding.stop();
+				break;
+			case PAUSED:
+				binding.pause();
+				break;
+			case RESUMED:
+				binding.resume();
+				break;
+			default:
+				break;
 			}
 		}
 	}
@@ -85,7 +85,7 @@ public class BindingsEndpoint {
 	public List<?> queryStates() {
 		List<Binding<?>> bindings = new ArrayList<>(gatherInputBindings());
 		bindings.addAll(gatherOutputBindings());
-		return objectMapper.convertValue(bindings, List.class);
+		return this.objectMapper.convertValue(bindings, List.class);
 	}
 
 	@ReadOperation
@@ -98,8 +98,8 @@ public class BindingsEndpoint {
 	private List<Binding<?>> gatherInputBindings() {
 		List<Binding<?>> inputBindings = new ArrayList<>();
 		for (InputBindingLifecycle inputBindingLifecycle : this.inputBindingLifecycles) {
-			Collection<Binding<?>> lifecycleInputBindings =
-					(Collection<Binding<?>>) new DirectFieldAccessor(inputBindingLifecycle).getPropertyValue("inputBindings");
+			Collection<Binding<?>> lifecycleInputBindings = (Collection<Binding<?>>) new DirectFieldAccessor(
+					inputBindingLifecycle).getPropertyValue("inputBindings");
 			inputBindings.addAll(lifecycleInputBindings);
 		}
 		return inputBindings;
@@ -117,17 +117,37 @@ public class BindingsEndpoint {
 	}
 
 	private Binding<?> locateBinding(String name) {
-		Stream<Binding<?>> bindings = Stream.concat(this.gatherInputBindings().stream(), this.gatherOutputBindings().stream());
-		return bindings
-			.filter(binding -> name.equals(binding.getName()))
-			.findFirst()
-			.orElse(null);
+		Stream<Binding<?>> bindings = Stream.concat(this.gatherInputBindings().stream(),
+				this.gatherOutputBindings().stream());
+		return bindings.filter(binding -> name.equals(binding.getName())).findFirst()
+				.orElse(null);
 	}
 
+	/**
+	 * Binding states.
+	 */
 	public enum State {
+
+		/**
+		 * Started state of a binding.
+		 */
 		STARTED,
+
+		/**
+		 * Stopped state of a binding.
+		 */
 		STOPPED,
+
+		/**
+		 * Paused state of a binding.
+		 */
 		PAUSED,
+
+		/**
+		 * Resumed state of a binding.
+		 */
 		RESUMED;
+
 	}
+
 }

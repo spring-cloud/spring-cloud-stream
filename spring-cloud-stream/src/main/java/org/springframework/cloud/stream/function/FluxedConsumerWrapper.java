@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 the original author or authors.
+ * Copyright 2018-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,14 +25,13 @@ import reactor.core.publisher.Mono;
 import org.springframework.cloud.function.core.FluxWrapper;
 
 /**
- *
  * @author Oleg Zhurakousky
- *
  * @since 2.1
  *
  * Will most likely be moved to SCF
  */
-class FluxedConsumerWrapper<T> implements Function<Flux<T>, Mono<Void>>, FluxWrapper<Consumer<Flux<T>>> {
+class FluxedConsumerWrapper<T>
+		implements Function<Flux<T>, Mono<Void>>, FluxWrapper<Consumer<Flux<T>>> {
 
 	private final Consumer<Flux<T>> consumer;
 
@@ -42,12 +41,12 @@ class FluxedConsumerWrapper<T> implements Function<Flux<T>, Mono<Void>>, FluxWra
 
 	@Override
 	public Consumer<Flux<T>> getTarget() {
-		return consumer;
+		return this.consumer;
 	}
 
 	@Override
 	public Mono<Void> apply(Flux<T> t) {
-		return  Mono.fromRunnable(() -> this.consumer.accept(t));
+		return Mono.fromRunnable(() -> this.consumer.accept(t));
 	}
 
 }

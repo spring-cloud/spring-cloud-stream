@@ -30,4 +30,5 @@ public class StubBinder2ConfigurationA {
 	public Binder<?, ?, ?> binder(StubBinder2Dependency dependency) {
 		return new StubBinder2(dependency);
 	}
+
 }

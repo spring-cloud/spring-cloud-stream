@@ -31,6 +31,11 @@ import org.springframework.context.annotation.Configuration;
 public class ReactiveSupportAutoConfiguration {
 
 	@Bean
+	public static StreamEmitterAnnotationBeanPostProcessor streamEmitterAnnotationBeanPostProcessor() {
+		return new StreamEmitterAnnotationBeanPostProcessor();
+	}
+
+	@Bean
 	@ConditionalOnMissingBean(MessageChannelToInputFluxParameterAdapter.class)
 	public MessageChannelToInputFluxParameterAdapter messageChannelToInputFluxArgumentAdapter(
 			CompositeMessageConverterFactory compositeMessageConverterFactory) {
@@ -50,8 +55,4 @@ public class ReactiveSupportAutoConfiguration {
 		return new PublisherToMessageChannelResultAdapter();
 	}
 
-	@Bean
-	public static StreamEmitterAnnotationBeanPostProcessor streamEmitterAnnotationBeanPostProcessor() {
-		return new StreamEmitterAnnotationBeanPostProcessor();
-	}
 }

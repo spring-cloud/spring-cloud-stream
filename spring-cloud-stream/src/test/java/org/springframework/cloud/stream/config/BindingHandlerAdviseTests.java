@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 the original author or authors.
+ * Copyright 2018-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,30 +32,31 @@ import org.springframework.cloud.stream.messaging.Sink;
 import org.springframework.context.annotation.Import;
 import org.springframework.validation.annotation.Validated;
 
-import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
 // see https://github.com/spring-cloud/spring-cloud-stream/issues/1573 for more details
 /**
- * 
  * @author Oleg Zhurakousky
  *
  */
 public class BindingHandlerAdviseTests {
-	
-	@Test(expected=BeanCreationException.class)
+
+	@Test(expected = BeanCreationException.class)
 	public void testFailureWithWrongValue() {
 		new SpringApplicationBuilder(SampleConfiguration.class)
 				.web(WebApplicationType.NONE)
 				.run("--props.value=-1", "--spring.jmx.enabled=false");
 	}
-	
+
 	@Test
 	public void testValidatedValueValue() {
-		ValidatedProps validatedProps = new SpringApplicationBuilder(SampleConfiguration.class)
-				.web(WebApplicationType.NONE)
-				.run("--props.value=2", "--spring.jmx.enabled=false").getBean(ValidatedProps.class);
-		assertEquals(2, validatedProps.getValue());
+		ValidatedProps validatedProps = new SpringApplicationBuilder(
+				SampleConfiguration.class).web(WebApplicationType.NONE)
+						.run("--props.value=2", "--spring.jmx.enabled=false")
+						.getBean(ValidatedProps.class);
+		assertThat(validatedProps.getValue()).isEqualTo(2);
 	}
+
 }
 
 @EnableBinding(Sink.class)
@@ -63,7 +64,7 @@ public class BindingHandlerAdviseTests {
 @EnableAutoConfiguration
 @EnableConfigurationProperties(ValidatedProps.class)
 class SampleConfiguration {
-	
+
 }
 
 @ConfigurationProperties("props")
@@ -73,11 +74,12 @@ class ValidatedProps {
 	@Min(0)
 	private int value;
 
+	public int getValue() {
+		return this.value;
+	}
+
 	public void setValue(int value) {
 		this.value = value;
 	}
 
-	public int getValue() {
-		return value;
-	}
 }

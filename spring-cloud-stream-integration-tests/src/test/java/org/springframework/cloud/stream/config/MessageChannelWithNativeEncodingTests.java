@@ -39,7 +39,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Soby Chacko
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringBootTest(classes = { MessageChannelWithNativeEncodingTests.NativeEncodingSource.class})
+@SpringBootTest(classes = {
+		MessageChannelWithNativeEncodingTests.NativeEncodingSource.class })
 public class MessageChannelWithNativeEncodingTests {
 
 	@Autowired
@@ -49,11 +50,15 @@ public class MessageChannelWithNativeEncodingTests {
 	private MessageCollector messageCollector;
 
 	@Test
-	public void testOutboundContentTypeInterceptorIsSkippedWhenNativeEncodingIsEnabled() throws Exception {
-		this.nativeEncodingSource.output().send(MessageBuilder.withPayload("hello foobar!").build());
-		Message<?> message = this.messageCollector.forChannel(this.nativeEncodingSource.output()).poll(1, TimeUnit.SECONDS);
-		//should not convert the payload to byte[] even though we set a contentType on the channel.
-		//This is becasue, we are using native encoding.
+	public void testOutboundContentTypeInterceptorIsSkippedWhenNativeEncodingIsEnabled()
+			throws Exception {
+		this.nativeEncodingSource.output()
+				.send(MessageBuilder.withPayload("hello foobar!").build());
+		Message<?> message = this.messageCollector
+				.forChannel(this.nativeEncodingSource.output()).poll(1, TimeUnit.SECONDS);
+		// should not convert the payload to byte[] even though we set a contentType on
+		// the channel.
+		// This is becasue, we are using native encoding.
 		assertThat(message.getPayload()).isInstanceOf(String.class);
 		assertThat(message.getPayload()).isEqualTo("hello foobar!");
 		assertThat(message.getHeaders().get(MessageHeaders.CONTENT_TYPE)).isNull();
@@ -65,4 +70,5 @@ public class MessageChannelWithNativeEncodingTests {
 	public static class NativeEncodingSource {
 
 	}
+
 }

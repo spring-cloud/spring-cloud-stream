@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,10 +30,10 @@ import org.springframework.messaging.converter.MessageConversionException;
  * as input.
  *
  * @author Marius Bogoevici
- *
  * @deprecated as of 2.0.
  */
-// NOTE we need to revisit as to why do we need it in the first place, given that our first converter already handles JSON
+// NOTE we need to revisit as to why do we need it in the first place, given that our
+// first converter already handles JSON
 @Deprecated
 public class JsonUnmarshallingConverter extends AbstractMessageConverter {
 
@@ -47,15 +47,18 @@ public class JsonUnmarshallingConverter extends AbstractMessageConverter {
 
 	@Override
 	protected boolean supports(Class<?> aClass) {
-		return String.class.isAssignableFrom(aClass) || byte[].class.isAssignableFrom(aClass) ;
+		return String.class.isAssignableFrom(aClass)
+				|| byte[].class.isAssignableFrom(aClass);
 	}
 
 	@Override
-	protected Object convertFromInternal(Message<?> message, Class<?> targetClass, Object conversionHint) {
+	protected Object convertFromInternal(Message<?> message, Class<?> targetClass,
+			Object conversionHint) {
 		Object payload = message.getPayload();
 		try {
-			return payload instanceof byte[] ? objectMapper.readValue((byte[]) payload, targetClass)
-					: objectMapper.readValue((String) payload, targetClass);
+			return payload instanceof byte[]
+					? this.objectMapper.readValue((byte[]) payload, targetClass)
+					: this.objectMapper.readValue((String) payload, targetClass);
 		}
 		catch (IOException e) {
 			throw new MessageConversionException("Cannot parse payload ", e);
@@ -63,7 +66,9 @@ public class JsonUnmarshallingConverter extends AbstractMessageConverter {
 	}
 
 	@Override
-	protected Object convertToInternal(Object payload, MessageHeaders headers, Object conversionHint) {
+	protected Object convertToInternal(Object payload, MessageHeaders headers,
+			Object conversionHint) {
 		return super.convertToInternal(payload, headers, conversionHint);
 	}
+
 }

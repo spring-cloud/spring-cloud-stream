@@ -21,6 +21,7 @@ import org.springframework.messaging.MessageHeaders;
 
 /**
  * Spring Integration message headers for Spring Cloud Stream.
+ *
  * @author Gary Russell
  * @author David Turanski
  * @author Soby Chacko
@@ -40,10 +41,8 @@ public final class BinderHeaders {
 	public static final String[] STANDARD_HEADERS = new String[] {
 			IntegrationMessageHeaderAccessor.CORRELATION_ID,
 			IntegrationMessageHeaderAccessor.SEQUENCE_SIZE,
-			IntegrationMessageHeaderAccessor.SEQUENCE_NUMBER,
-			MessageHeaders.CONTENT_TYPE,
-			BINDER_ORIGINAL_CONTENT_TYPE
-	};
+			IntegrationMessageHeaderAccessor.SEQUENCE_NUMBER, MessageHeaders.CONTENT_TYPE,
+			BINDER_ORIGINAL_CONTENT_TYPE };
 
 	private static final String PREFIX = "scst_";
 
@@ -69,8 +68,8 @@ public final class BinderHeaders {
 	public static final String NATIVE_HEADERS_PRESENT = PREFIX + "nativeHeadersPresent";
 
 	/**
-	 * Indicates the Spring Cloud Stream version.
-	 * Used for determining if legacy content type check supported or not.
+	 * Indicates the Spring Cloud Stream version. Used for determining if legacy content
+	 * type check supported or not.
 	 * @since 2.0
 	 */
 	public static final String SCST_VERSION = PREFIX + "version";

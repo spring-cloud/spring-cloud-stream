@@ -47,16 +47,16 @@ import org.springframework.util.StringUtils;
 
 /**
  * {@link FactoryBean} for instantiating the interfaces specified via
- * {@link EnableBinding}
+ * {@link EnableBinding}.
  *
  * @author Marius Bogoevici
  * @author David Syer
  * @author Ilayaperumal Gopinathan
  * @author Oleg Zhurakousky
- *
  * @see EnableBinding
  */
-public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Object>, Bindable, InitializingBean {
+public class BindableProxyFactory
+		implements MethodInterceptor, FactoryBean<Object>, Bindable, InitializingBean {
 
 	private static Log log = LogFactory.getLog(BindableProxyFactory.class);
 
@@ -88,24 +88,26 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 		Method method = invocation.getMethod();
 
 		// try to use cached target
-		Object boundTarget = targetCache.get(method);
+		Object boundTarget = this.targetCache.get(method);
 		if (boundTarget != null) {
 			return boundTarget;
 		}
 
 		Input input = AnnotationUtils.findAnnotation(method, Input.class);
 		if (input != null) {
-			String name = BindingBeanDefinitionRegistryUtils.getBindingTargetName(input, method);
+			String name = BindingBeanDefinitionRegistryUtils.getBindingTargetName(input,
+					method);
 			boundTarget = this.inputHolders.get(name).getBoundTarget();
-			targetCache.put(method, boundTarget);
+			this.targetCache.put(method, boundTarget);
 			return boundTarget;
 		}
 		else {
 			Output output = AnnotationUtils.findAnnotation(method, Output.class);
 			if (output != null) {
-				String name = BindingBeanDefinitionRegistryUtils.getBindingTargetName(output, method);
+				String name = BindingBeanDefinitionRegistryUtils
+						.getBindingTargetName(output, method);
 				boundTarget = this.outputHolders.get(name).getBoundTarget();
-				targetCache.put(method, boundTarget);
+				this.targetCache.put(method, boundTarget);
 				return boundTarget;
 			}
 		}
@@ -114,22 +116,26 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 
 	@Override
 	public void afterPropertiesSet() throws Exception {
-		Assert.notEmpty(BindableProxyFactory.this.bindingTargetFactories, "'bindingTargetFactories' cannot be empty");
+		Assert.notEmpty(BindableProxyFactory.this.bindingTargetFactories,
+				"'bindingTargetFactories' cannot be empty");
 		ReflectionUtils.doWithMethods(this.type, new ReflectionUtils.MethodCallback() {
 			@Override
 			public void doWith(Method method) throws IllegalArgumentException {
 				Input input = AnnotationUtils.findAnnotation(method, Input.class);
 				if (input != null) {
-					String name = BindingBeanDefinitionRegistryUtils.getBindingTargetName(input, method);
+					String name = BindingBeanDefinitionRegistryUtils
+							.getBindingTargetName(input, method);
 					Class<?> returnType = method.getReturnType();
-					Object sharedBindingTarget = locateSharedBindingTarget(name, returnType);
+					Object sharedBindingTarget = locateSharedBindingTarget(name,
+							returnType);
 					if (sharedBindingTarget != null) {
 						BindableProxyFactory.this.inputHolders.put(name,
 								new BoundTargetHolder(sharedBindingTarget, false));
 					}
 					else {
 						BindableProxyFactory.this.inputHolders.put(name,
-								new BoundTargetHolder(getBindingTargetFactory(returnType).createInput(name), true));
+								new BoundTargetHolder(getBindingTargetFactory(returnType)
+										.createInput(name), true));
 					}
 				}
 			}
@@ -139,16 +145,19 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 			public void doWith(Method method) throws IllegalArgumentException {
 				Output output = AnnotationUtils.findAnnotation(method, Output.class);
 				if (output != null) {
-					String name = BindingBeanDefinitionRegistryUtils.getBindingTargetName(output, method);
+					String name = BindingBeanDefinitionRegistryUtils
+							.getBindingTargetName(output, method);
 					Class<?> returnType = method.getReturnType();
-					Object sharedBindingTarget = locateSharedBindingTarget(name, returnType);
+					Object sharedBindingTarget = locateSharedBindingTarget(name,
+							returnType);
 					if (sharedBindingTarget != null) {
 						BindableProxyFactory.this.outputHolders.put(name,
 								new BoundTargetHolder(sharedBindingTarget, false));
 					}
 					else {
 						BindableProxyFactory.this.outputHolders.put(name,
-								new BoundTargetHolder(getBindingTargetFactory(returnType).createOutput(name), true));
+								new BoundTargetHolder(getBindingTargetFactory(returnType)
+										.createOutput(name), true));
 					}
 				}
 			}
@@ -164,25 +173,32 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 			}
 		}
 		if (candidateBindingTargetFactories.size() == 1) {
-			return this.bindingTargetFactories.get(candidateBindingTargetFactories.get(0));
+			return this.bindingTargetFactories
+					.get(candidateBindingTargetFactories.get(0));
 		}
 		else {
 			if (candidateBindingTargetFactories.size() == 0) {
-				throw new IllegalStateException("No factory found for binding target type: "
-						+ bindingTargetType.getName() + " among registered factories: "
-						+ StringUtils.collectionToCommaDelimitedString(bindingTargetFactories.keySet()));
+				throw new IllegalStateException(
+						"No factory found for binding target type: "
+								+ bindingTargetType.getName()
+								+ " among registered factories: "
+								+ StringUtils.collectionToCommaDelimitedString(
+										this.bindingTargetFactories.keySet()));
 			}
 			else {
 				throw new IllegalStateException(
-						"Multiple factories found for binding target type: " + bindingTargetType.getName() + ": "
-								+ StringUtils.collectionToCommaDelimitedString(candidateBindingTargetFactories));
+						"Multiple factories found for binding target type: "
+								+ bindingTargetType.getName() + ": "
+								+ StringUtils.collectionToCommaDelimitedString(
+										candidateBindingTargetFactories));
 			}
 		}
 	}
 
 	private <T> T locateSharedBindingTarget(String name, Class<T> bindingTargetType) {
 		return this.sharedBindingTargetRegistry != null
-				? this.sharedBindingTargetRegistry.get(getNamespacePrefixedBindingTargetName(name), bindingTargetType)
+				? this.sharedBindingTargetRegistry.get(
+						getNamespacePrefixedBindingTargetName(name), bindingTargetType)
 				: null;
 	}
 
@@ -219,19 +235,24 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 	}
 
 	@Override
-	public Collection<Binding<Object>> createAndBindInputs(BindingService bindingService) {
+	public Collection<Binding<Object>> createAndBindInputs(
+			BindingService bindingService) {
 		List<Binding<Object>> bindings = new ArrayList<>();
 		if (log.isDebugEnabled()) {
-			log.debug(String.format("Binding inputs for %s:%s", this.namespace, this.type));
+			log.debug(
+					String.format("Binding inputs for %s:%s", this.namespace, this.type));
 		}
-		for (Map.Entry<String, BoundTargetHolder> boundTargetHolderEntry : this.inputHolders.entrySet()) {
+		for (Map.Entry<String, BoundTargetHolder> boundTargetHolderEntry : this.inputHolders
+				.entrySet()) {
 			String inputTargetName = boundTargetHolderEntry.getKey();
 			BoundTargetHolder boundTargetHolder = boundTargetHolderEntry.getValue();
 			if (boundTargetHolder.isBindable()) {
 				if (log.isDebugEnabled()) {
-					log.debug(String.format("Binding %s:%s:%s", this.namespace, this.type, inputTargetName));
+					log.debug(String.format("Binding %s:%s:%s", this.namespace, this.type,
+							inputTargetName));
 				}
-				bindings.addAll(bindingService.bindConsumer(boundTargetHolder.getBoundTarget(), inputTargetName));
+				bindings.addAll(bindingService.bindConsumer(
+						boundTargetHolder.getBoundTarget(), inputTargetName));
 			}
 		}
 		return bindings;
@@ -247,19 +268,24 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 	}
 
 	@Override
-	public Collection<Binding<Object>> createAndBindOutputs(BindingService bindingService) {
+	public Collection<Binding<Object>> createAndBindOutputs(
+			BindingService bindingService) {
 		List<Binding<Object>> bindings = new ArrayList<>();
 		if (log.isDebugEnabled()) {
-			log.debug(String.format("Binding outputs for %s:%s", this.namespace, this.type));
+			log.debug(String.format("Binding outputs for %s:%s", this.namespace,
+					this.type));
 		}
-		for (Map.Entry<String, BoundTargetHolder> boundTargetHolderEntry : this.outputHolders.entrySet()) {
+		for (Map.Entry<String, BoundTargetHolder> boundTargetHolderEntry : this.outputHolders
+				.entrySet()) {
 			BoundTargetHolder boundTargetHolder = boundTargetHolderEntry.getValue();
 			String outputTargetName = boundTargetHolderEntry.getKey();
 			if (boundTargetHolderEntry.getValue().isBindable()) {
 				if (log.isDebugEnabled()) {
-					log.debug(String.format("Binding %s:%s:%s", this.namespace, this.type, outputTargetName));
+					log.debug(String.format("Binding %s:%s:%s", this.namespace, this.type,
+							outputTargetName));
 				}
-				bindings.add(bindingService.bindProducer(boundTargetHolder.getBoundTarget(), outputTargetName));
+				bindings.add(bindingService.bindProducer(
+						boundTargetHolder.getBoundTarget(), outputTargetName));
 			}
 		}
 		return bindings;
@@ -268,13 +294,15 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 	@Override
 	public void unbindInputs(BindingService bindingService) {
 		if (log.isDebugEnabled()) {
-			log.debug(String.format("Unbinding inputs for %s:%s", this.namespace, this.type));
+			log.debug(String.format("Unbinding inputs for %s:%s", this.namespace,
+					this.type));
 		}
-		for (Map.Entry<String, BoundTargetHolder> boundTargetHolderEntry : this.inputHolders.entrySet()) {
+		for (Map.Entry<String, BoundTargetHolder> boundTargetHolderEntry : this.inputHolders
+				.entrySet()) {
 			if (boundTargetHolderEntry.getValue().isBindable()) {
 				if (log.isDebugEnabled()) {
-					log.debug(String.format("Unbinding %s:%s:%s", this.namespace, this.type,
-							boundTargetHolderEntry.getKey()));
+					log.debug(String.format("Unbinding %s:%s:%s", this.namespace,
+							this.type, boundTargetHolderEntry.getKey()));
 				}
 				bindingService.unbindConsumers(boundTargetHolderEntry.getKey());
 			}
@@ -284,9 +312,11 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 	@Override
 	public void unbindOutputs(BindingService bindingService) {
 		if (log.isDebugEnabled()) {
-			log.debug(String.format("Unbinding outputs for %s:%s", this.namespace, this.type));
+			log.debug(String.format("Unbinding outputs for %s:%s", this.namespace,
+					this.type));
 		}
-		for (Map.Entry<String, BoundTargetHolder> boundTargetHolderEntry : this.outputHolders.entrySet()) {
+		for (Map.Entry<String, BoundTargetHolder> boundTargetHolderEntry : this.outputHolders
+				.entrySet()) {
 			if (boundTargetHolderEntry.getValue().isBindable()) {
 				if (log.isDebugEnabled()) {
 					log.debug(String.format("Binding %s:%s:%s", this.namespace, this.type,
@@ -329,5 +359,7 @@ public class BindableProxyFactory implements MethodInterceptor, FactoryBean<Obje
 		public boolean isBindable() {
 			return this.bindable;
 		}
+
 	}
+
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 the original author or authors.
+ * Copyright 2014-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,21 +26,30 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
- *
  * @author Gary Russell
  */
 public abstract class BinderTestUtils {
 
-	public static final AbstractApplicationContext MOCK_AC = mock(AbstractApplicationContext.class);
+	/**
+	 * Mocked application context.
+	 */
+	public static final AbstractApplicationContext MOCK_AC = mock(
+			AbstractApplicationContext.class);
 
-	public static final ConfigurableListableBeanFactory MOCK_BF = mock(ConfigurableListableBeanFactory.class);
+	/**
+	 * Mocked application bean factory.
+	 */
+	public static final ConfigurableListableBeanFactory MOCK_BF = mock(
+			ConfigurableListableBeanFactory.class);
 
 	private static final MessageBuilderFactory mbf = new MutableMessageBuilderFactory();
 
 	static {
-		when(MOCK_BF.getBean(IntegrationUtils.INTEGRATION_MESSAGE_BUILDER_FACTORY_BEAN_NAME,
+		when(MOCK_BF.getBean(
+				IntegrationUtils.INTEGRATION_MESSAGE_BUILDER_FACTORY_BEAN_NAME,
 				MessageBuilderFactory.class)).thenReturn(mbf);
-		when(MOCK_AC.getBean(IntegrationUtils.INTEGRATION_MESSAGE_BUILDER_FACTORY_BEAN_NAME,
+		when(MOCK_AC.getBean(
+				IntegrationUtils.INTEGRATION_MESSAGE_BUILDER_FACTORY_BEAN_NAME,
 				MessageBuilderFactory.class)).thenReturn(mbf);
 		when(MOCK_AC.getBeanFactory()).thenReturn(MOCK_BF);
 	}

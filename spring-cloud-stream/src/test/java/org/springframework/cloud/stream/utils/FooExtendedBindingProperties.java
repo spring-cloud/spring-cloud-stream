@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 the original author or authors.
+ * Copyright 2018-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package org.springframework.cloud.stream.utils;
 
+import java.util.Map;
+
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.cloud.stream.binder.AbstractExtendedBindingProperties;
 import org.springframework.cloud.stream.binder.BinderSpecificPropertiesProvider;
@@ -24,7 +26,8 @@ import org.springframework.cloud.stream.binder.BinderSpecificPropertiesProvider;
  * @author Soby Chacko
  */
 @ConfigurationProperties("spring.cloud.stream.foo")
-public class FooExtendedBindingProperties extends AbstractExtendedBindingProperties<FooConsumerProperties, FooProducerProperties, FooBindingProperties> {
+public class FooExtendedBindingProperties extends
+		AbstractExtendedBindingProperties<FooConsumerProperties, FooProducerProperties, FooBindingProperties> {
 
 	private static final String DEFAULTS_PREFIX = "spring.cloud.stream.foo.default";
 
@@ -33,9 +36,13 @@ public class FooExtendedBindingProperties extends AbstractExtendedBindingPropert
 		return DEFAULTS_PREFIX;
 	}
 
+	public Map<String, FooBindingProperties> getBindings() {
+		return this.doGetBindings();
+	}
+
 	@Override
 	public Class<? extends BinderSpecificPropertiesProvider> getExtendedPropertiesEntryClass() {
 		return FooBindingProperties.class;
 	}
-}
 
+}

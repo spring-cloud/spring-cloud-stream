@@ -47,7 +47,7 @@ import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.util.Assert;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.fail;
+import static org.assertj.core.api.Assertions.fail;
 import static org.springframework.cloud.stream.binding.StreamListenerErrorMessages.AMBIGUOUS_MESSAGE_HANDLER_METHOD_ARGUMENTS;
 import static org.springframework.cloud.stream.binding.StreamListenerErrorMessages.INPUT_AT_STREAM_LISTENER;
 import static org.springframework.cloud.stream.binding.StreamListenerErrorMessages.INVALID_DECLARATIVE_METHOD_PARAMETERS;
@@ -82,8 +82,8 @@ public class StreamListenerHandlerMethodTests {
 	@SuppressWarnings("unchecked")
 	@Test
 	public void testMethodWithObjectAsMethodArgument() throws Exception {
-		ConfigurableApplicationContext context = SpringApplication.run(TestMethodWithObjectAsMethodArgument.class,
-				"--server.port=0",
+		ConfigurableApplicationContext context = SpringApplication.run(
+				TestMethodWithObjectAsMethodArgument.class, "--server.port=0",
 				"--spring.jmx.enabled=false",
 				"--spring.cloud.stream.bindings.input.contentType=text/plain",
 				"--spring.cloud.stream.bindings.output.contentType=text/plain");
@@ -91,7 +91,8 @@ public class StreamListenerHandlerMethodTests {
 		final String testMessage = "testing";
 		processor.input().send(MessageBuilder.withPayload(testMessage).build());
 		MessageCollector messageCollector = context.getBean(MessageCollector.class);
-		Message<String> result = (Message<String>) messageCollector.forChannel(processor.output()).poll(1000, TimeUnit.MILLISECONDS);
+		Message<String> result = (Message<String>) messageCollector
+				.forChannel(processor.output()).poll(1000, TimeUnit.MILLISECONDS);
 		assertThat(result).isNotNull();
 		assertThat(result.getPayload()).isEqualTo(testMessage.toUpperCase());
 		context.close();
@@ -100,23 +101,24 @@ public class StreamListenerHandlerMethodTests {
 	@SuppressWarnings("unchecked")
 	@Test
 	/**
-	 * @since 2.0 : This test is an example of the new behavior of 2.0 when it comes to contentType handling.
-	 * The default contentType being JSON in order to be able to check a message without quotes the user needs to set the input/output contentType accordingly
-	 * Also, received messages are always of Message<byte[]> now.
+	 * @since 2.0 : This test is an example of the new behavior of 2.0 when it comes to
+	 * contentType handling. The default contentType being JSON in order to be able to
+	 * check a message without quotes the user needs to set the input/output contentType
+	 * accordingly Also, received messages are always of Message<byte[]> now.
 	 */
 	public void testMethodHeadersPropagatged() throws Exception {
-		ConfigurableApplicationContext context = SpringApplication.run(TestMethodHeadersPropagated.class,
-				"--server.port=0",
+		ConfigurableApplicationContext context = SpringApplication.run(
+				TestMethodHeadersPropagated.class, "--server.port=0",
 				"--spring.jmx.enabled=false",
 				"--spring.cloud.stream.bindings.input.contentType=text/plain",
 				"--spring.cloud.stream.bindings.output.contentType=text/plain");
 		Processor processor = context.getBean(Processor.class);
 		final String testMessage = "testing";
-		processor.input().send(MessageBuilder.withPayload(testMessage)
-				.setHeader("foo", "bar")
-				.build());
+		processor.input().send(
+				MessageBuilder.withPayload(testMessage).setHeader("foo", "bar").build());
 		MessageCollector messageCollector = context.getBean(MessageCollector.class);
-		Message<String> result = (Message<String>) messageCollector.forChannel(processor.output()).poll(1000, TimeUnit.MILLISECONDS);
+		Message<String> result = (Message<String>) messageCollector
+				.forChannel(processor.output()).poll(1000, TimeUnit.MILLISECONDS);
 		assertThat(result).isNotNull();
 		assertThat(result.getPayload()).isEqualTo(testMessage.toUpperCase());
 		assertThat(result.getHeaders().get("foo")).isEqualTo("bar");
@@ -126,40 +128,40 @@ public class StreamListenerHandlerMethodTests {
 	@SuppressWarnings("unchecked")
 	@Test
 	public void testMethodHeadersNotPropagatged() throws Exception {
-		ConfigurableApplicationContext context = SpringApplication.run(TestMethodHeadersNotPropagated.class,
-				"--server.port=0",
+		ConfigurableApplicationContext context = SpringApplication.run(
+				TestMethodHeadersNotPropagated.class, "--server.port=0",
 				"--spring.jmx.enabled=false",
 				"--spring.cloud.stream.bindings.input.contentType=text/plain",
 				"--spring.cloud.stream.bindings.output.contentType=text/plain");
 		Processor processor = context.getBean(Processor.class);
 		final String testMessage = "testing";
-		processor.input().send(MessageBuilder.withPayload(testMessage)
-				.setHeader("foo", "bar")
-				.build());
+		processor.input().send(
+				MessageBuilder.withPayload(testMessage).setHeader("foo", "bar").build());
 		MessageCollector messageCollector = context.getBean(MessageCollector.class);
-		Message<String> result = (Message<String>) messageCollector.forChannel(processor.output()).poll(1000, TimeUnit.MILLISECONDS);
+		Message<String> result = (Message<String>) messageCollector
+				.forChannel(processor.output()).poll(1000, TimeUnit.MILLISECONDS);
 		assertThat(result).isNotNull();
 		assertThat(result.getPayload()).isEqualTo(testMessage.toUpperCase());
 		assertThat(result.getHeaders().get("foo")).isNull();
 		context.close();
 	}
 
-
-	//TODO: Handle dynamic destinations and contentType
+	// TODO: Handle dynamic destinations and contentType
 	@SuppressWarnings("unchecked")
 	public void testStreamListenerMethodWithTargetBeanFromOutside() throws Exception {
-		ConfigurableApplicationContext context = SpringApplication
-				.run(TestStreamListenerMethodWithTargetBeanFromOutside.class, "--server.port=0",
-						"--spring.jmx.enabled=false",
-						"--spring.cloud.stream.bindings.input.contentType=text/plain",
-						"--spring.cloud.stream.bindings.output.contentType=text/plain");
+		ConfigurableApplicationContext context = SpringApplication.run(
+				TestStreamListenerMethodWithTargetBeanFromOutside.class,
+				"--server.port=0", "--spring.jmx.enabled=false",
+				"--spring.cloud.stream.bindings.input.contentType=text/plain",
+				"--spring.cloud.stream.bindings.output.contentType=text/plain");
 		Sink sink = context.getBean(Sink.class);
 		final String testMessageToSend = "testing";
 		sink.input().send(MessageBuilder.withPayload(testMessageToSend).build());
-		DirectChannel directChannel = (DirectChannel) context.getBean(testMessageToSend.toUpperCase(),
-				MessageChannel.class);
+		DirectChannel directChannel = (DirectChannel) context
+				.getBean(testMessageToSend.toUpperCase(), MessageChannel.class);
 		MessageCollector messageCollector = context.getBean(MessageCollector.class);
-		Message<String> result = (Message<String>) messageCollector.forChannel(directChannel).poll(1000, TimeUnit.MILLISECONDS);
+		Message<String> result = (Message<String>) messageCollector
+				.forChannel(directChannel).poll(1000, TimeUnit.MILLISECONDS);
 		sink.input().send(MessageBuilder.withPayload(testMessageToSend).build());
 		assertThat(result).isNotNull();
 		assertThat(result.getPayload()).isEqualTo(testMessageToSend.toUpperCase());
@@ -169,8 +171,8 @@ public class StreamListenerHandlerMethodTests {
 	@Test
 	public void testInvalidReturnTypeWithSendToAndOutput() throws Exception {
 		try {
-			SpringApplication.run(TestReturnTypeWithMultipleOutput.class, "--server.port=0",
-					"--spring.jmx.enabled=false");
+			SpringApplication.run(TestReturnTypeWithMultipleOutput.class,
+					"--server.port=0", "--spring.jmx.enabled=false");
 			fail("Exception expected: " + RETURN_TYPE_MULTIPLE_OUTBOUND_SPECIFIED);
 		}
 		catch (IllegalArgumentException e) {
@@ -181,8 +183,8 @@ public class StreamListenerHandlerMethodTests {
 	@Test
 	public void testInvalidReturnTypeWithNoOutput() throws Exception {
 		try {
-			SpringApplication.run(TestInvalidReturnTypeWithNoOutput.class, "--server.port=0",
-					"--spring.jmx.enabled=false");
+			SpringApplication.run(TestInvalidReturnTypeWithNoOutput.class,
+					"--server.port=0", "--spring.jmx.enabled=false");
 			fail("Exception expected: " + RETURN_TYPE_NO_OUTBOUND_SPECIFIED);
 		}
 		catch (IllegalArgumentException e) {
@@ -193,8 +195,8 @@ public class StreamListenerHandlerMethodTests {
 	@Test
 	public void testInvalidInputAnnotationWithNoValue() throws Exception {
 		try {
-			SpringApplication.run(TestInvalidInputAnnotationWithNoValue.class, "--server.port=0",
-					"--spring.jmx.enabled=false");
+			SpringApplication.run(TestInvalidInputAnnotationWithNoValue.class,
+					"--server.port=0", "--spring.jmx.enabled=false");
 			fail("Exception expected: " + INVALID_INBOUND_NAME);
 		}
 		catch (IllegalArgumentException e) {
@@ -205,8 +207,8 @@ public class StreamListenerHandlerMethodTests {
 	@Test
 	public void testInvalidOutputAnnotationWithNoValue() throws Exception {
 		try {
-			SpringApplication.run(TestInvalidOutputAnnotationWithNoValue.class, "--server.port=0",
-					"--spring.jmx.enabled=false");
+			SpringApplication.run(TestInvalidOutputAnnotationWithNoValue.class,
+					"--server.port=0", "--spring.jmx.enabled=false");
 			fail("Exception expected: " + INVALID_OUTBOUND_NAME);
 		}
 		catch (IllegalArgumentException e) {
@@ -222,7 +224,8 @@ public class StreamListenerHandlerMethodTests {
 			fail("Exception expected on using invalid inbound name");
 		}
 		catch (IllegalArgumentException e) {
-			assertThat(e.getMessage()).contains(StreamListenerErrorMessages.INVALID_DECLARATIVE_METHOD_PARAMETERS);
+			assertThat(e.getMessage()).contains(
+					StreamListenerErrorMessages.INVALID_DECLARATIVE_METHOD_PARAMETERS);
 		}
 	}
 
@@ -246,7 +249,8 @@ public class StreamListenerHandlerMethodTests {
 			fail("Exception expected: " + AMBIGUOUS_MESSAGE_HANDLER_METHOD_ARGUMENTS);
 		}
 		catch (IllegalArgumentException e) {
-			assertThat(e.getMessage()).contains(AMBIGUOUS_MESSAGE_HANDLER_METHOD_ARGUMENTS);
+			assertThat(e.getMessage())
+					.contains(AMBIGUOUS_MESSAGE_HANDLER_METHOD_ARGUMENTS);
 		}
 	}
 
@@ -258,15 +262,16 @@ public class StreamListenerHandlerMethodTests {
 			fail("Exception expected:" + AMBIGUOUS_MESSAGE_HANDLER_METHOD_ARGUMENTS);
 		}
 		catch (IllegalArgumentException e) {
-			assertThat(e.getMessage()).contains(AMBIGUOUS_MESSAGE_HANDLER_METHOD_ARGUMENTS);
+			assertThat(e.getMessage())
+					.contains(AMBIGUOUS_MESSAGE_HANDLER_METHOD_ARGUMENTS);
 		}
 	}
 
 	@Test
 	public void testMethodWithInputAsMethodAndParameter() throws Exception {
 		try {
-			SpringApplication.run(TestMethodWithInputAsMethodAndParameter.class, "--server.port=0",
-					"--spring.jmx.enabled=false");
+			SpringApplication.run(TestMethodWithInputAsMethodAndParameter.class,
+					"--server.port=0", "--spring.jmx.enabled=false");
 			fail("Exception expected: " + INVALID_DECLARATIVE_METHOD_PARAMETERS);
 		}
 		catch (IllegalArgumentException e) {
@@ -277,8 +282,8 @@ public class StreamListenerHandlerMethodTests {
 	@Test
 	public void testMethodWithOutputAsMethodAndParameter() throws Exception {
 		try {
-			SpringApplication.run(TestMethodWithOutputAsMethodAndParameter.class, "--server.port=0",
-					"--spring.jmx.enabled=false");
+			SpringApplication.run(TestMethodWithOutputAsMethodAndParameter.class,
+					"--server.port=0", "--spring.jmx.enabled=false");
 			fail("Exception expected:" + INVALID_OUTPUT_VALUES);
 		}
 		catch (IllegalArgumentException e) {
@@ -300,8 +305,8 @@ public class StreamListenerHandlerMethodTests {
 
 	@Test
 	public void testMethodWithMultipleInputParameters() throws Exception {
-		ConfigurableApplicationContext context = SpringApplication.run(TestMethodWithMultipleInputParameters.class,
-				"--server.port=0",
+		ConfigurableApplicationContext context = SpringApplication.run(
+				TestMethodWithMultipleInputParameters.class, "--server.port=0",
 				"--spring.jmx.enabled=false");
 		Processor processor = context.getBean(Processor.class);
 		StreamListenerTestUtils.FooInboundChannel1 inboundChannel2 = context
@@ -310,22 +315,26 @@ public class StreamListenerHandlerMethodTests {
 		((SubscribableChannel) processor.output()).subscribe(new MessageHandler() {
 			@Override
 			public void handleMessage(Message<?> message) throws MessagingException {
-				Assert.isTrue(message.getPayload().equals("footesting") || message.getPayload().equals("BARTESTING"), "Assert failed");
+				Assert.isTrue(
+						message.getPayload().equals("footesting")
+								|| message.getPayload().equals("BARTESTING"),
+						"Assert failed");
 				latch.countDown();
 			}
 		});
 		processor.input().send(MessageBuilder.withPayload("{\"foo\":\"fooTESTing\"}")
 				.setHeader("contentType", "application/json").build());
-		inboundChannel2.input().send(MessageBuilder.withPayload("{\"bar\":\"bartestING\"}")
-				.setHeader("contentType", "application/json").build());
+		inboundChannel2.input()
+				.send(MessageBuilder.withPayload("{\"bar\":\"bartestING\"}")
+						.setHeader("contentType", "application/json").build());
 		assertThat(latch.await(1, TimeUnit.SECONDS));
 		context.close();
 	}
 
 	@Test
 	public void testMethodWithMultipleOutputParameters() throws Exception {
-		ConfigurableApplicationContext context = SpringApplication.run(TestMethodWithMultipleOutputParameters.class,
-				"--server.port=0",
+		ConfigurableApplicationContext context = SpringApplication.run(
+				TestMethodWithMultipleOutputParameters.class, "--server.port=0",
 				"--spring.jmx.enabled=false");
 		Processor processor = context.getBean(Processor.class);
 		StreamListenerTestUtils.FooOutboundChannel1 source2 = context
@@ -335,7 +344,8 @@ public class StreamListenerHandlerMethodTests {
 			@Override
 			public void handleMessage(Message<?> message) throws MessagingException {
 				Assert.isTrue(message.getPayload().equals("testing"), "Assert failed");
-				Assert.isTrue(message.getHeaders().get("output").equals("output2"), "Assert failed");
+				Assert.isTrue(message.getHeaders().get("output").equals("output2"),
+						"Assert failed");
 				latch.countDown();
 			}
 		});
@@ -343,12 +353,15 @@ public class StreamListenerHandlerMethodTests {
 			@Override
 			public void handleMessage(Message<?> message) throws MessagingException {
 				Assert.isTrue(message.getPayload().equals("TESTING"), "Assert failed");
-				Assert.isTrue(message.getHeaders().get("output").equals("output1"), "Assert failed");
+				Assert.isTrue(message.getHeaders().get("output").equals("output1"),
+						"Assert failed");
 				latch.countDown();
 			}
 		});
-		processor.input().send(MessageBuilder.withPayload("testING").setHeader("output", "output1").build());
-		processor.input().send(MessageBuilder.withPayload("TESTing").setHeader("output", "output2").build());
+		processor.input().send(MessageBuilder.withPayload("testING")
+				.setHeader("output", "output1").build());
+		processor.input().send(MessageBuilder.withPayload("TESTing")
+				.setHeader("output", "output2").build());
 		assertThat(latch.await(1, TimeUnit.SECONDS));
 		context.close();
 	}
@@ -366,15 +379,20 @@ public class StreamListenerHandlerMethodTests {
 				public void handleMessage(Message<?> message) throws MessagingException {
 					if (message.getHeaders().get("output").equals("output1")) {
 						output1.send(org.springframework.messaging.support.MessageBuilder
-								.withPayload(message.getPayload().toString().toUpperCase()).build());
+								.withPayload(
+										message.getPayload().toString().toUpperCase())
+								.build());
 					}
 					else if (message.getHeaders().get("output").equals("output2")) {
 						output2.send(org.springframework.messaging.support.MessageBuilder
-								.withPayload(message.getPayload().toString().toLowerCase()).build());
+								.withPayload(
+										message.getPayload().toString().toLowerCase())
+								.build());
 					}
 				}
 			});
 		}
+
 	}
 
 	@EnableBinding({ Sink.class })
@@ -384,6 +402,7 @@ public class StreamListenerHandlerMethodTests {
 		@StreamListener
 		public void receive(StreamListenerTestUtils.FooPojo fooPojo) {
 		}
+
 	}
 
 	@EnableBinding({ Processor.class })
@@ -395,6 +414,7 @@ public class StreamListenerHandlerMethodTests {
 		public String receive(Object received) {
 			return received.toString().toUpperCase();
 		}
+
 	}
 
 	@EnableBinding({ Processor.class })
@@ -430,13 +450,15 @@ public class StreamListenerHandlerMethodTests {
 		@StreamListener(Sink.INPUT)
 		@SendTo(ROUTER_QUEUE)
 		public Message<String> convertMessageBody(Message<String> message) {
-			return new DefaultMessageBuilderFactory().withPayload(message.getPayload().toUpperCase()).build();
+			return new DefaultMessageBuilderFactory()
+					.withPayload(message.getPayload().toUpperCase()).build();
 		}
 
 		@Router(inputChannel = ROUTER_QUEUE)
 		public String route(String message) {
 			return message.toUpperCase();
 		}
+
 	}
 
 	@EnableBinding({ Sink.class })
@@ -447,6 +469,7 @@ public class StreamListenerHandlerMethodTests {
 		@Input(Sink.INPUT)
 		public void receive(StreamListenerTestUtils.FooPojo fooPojo) {
 		}
+
 	}
 
 	@EnableBinding({ Sink.class })
@@ -454,8 +477,10 @@ public class StreamListenerHandlerMethodTests {
 	public static class TestAmbiguousMethodArguments1 {
 
 		@StreamListener(Processor.INPUT)
-		public void receive(@Payload StreamListenerTestUtils.FooPojo fooPojo, String value) {
+		public void receive(@Payload StreamListenerTestUtils.FooPojo fooPojo,
+				String value) {
 		}
+
 	}
 
 	@EnableBinding({ Sink.class })
@@ -466,6 +491,7 @@ public class StreamListenerHandlerMethodTests {
 		public void receive(@Payload StreamListenerTestUtils.FooPojo fooPojo,
 				@Payload StreamListenerTestUtils.BarPojo barPojo) {
 		}
+
 	}
 
 	@EnableBinding({ Processor.class, StreamListenerTestUtils.FooOutboundChannel1.class })
@@ -478,6 +504,7 @@ public class StreamListenerHandlerMethodTests {
 				@Output(StreamListenerTestUtils.FooOutboundChannel1.OUTPUT) MessageChannel output2) {
 			return "foo";
 		}
+
 	}
 
 	@EnableBinding({ Processor.class, StreamListenerTestUtils.FooOutboundChannel1.class })
@@ -488,6 +515,7 @@ public class StreamListenerHandlerMethodTests {
 		public String receive(@Input(Processor.INPUT) SubscribableChannel input1) {
 			return "foo";
 		}
+
 	}
 
 	@EnableBinding({ Processor.class })
@@ -497,6 +525,7 @@ public class StreamListenerHandlerMethodTests {
 		@StreamListener
 		public void receive(@Input SubscribableChannel input) {
 		}
+
 	}
 
 	@EnableBinding({ Processor.class })
@@ -504,8 +533,10 @@ public class StreamListenerHandlerMethodTests {
 	public static class TestInvalidOutputAnnotationWithNoValue {
 
 		@StreamListener
-		public void receive(@Input(Processor.OUTPUT) SubscribableChannel input, @Output MessageChannel output) {
+		public void receive(@Input(Processor.OUTPUT) SubscribableChannel input,
+				@Output MessageChannel output) {
 		}
+
 	}
 
 	@EnableBinding({ Sink.class })
@@ -515,6 +546,7 @@ public class StreamListenerHandlerMethodTests {
 		@StreamListener
 		public void receive(@Input("invalid") SubscribableChannel input) {
 		}
+
 	}
 
 	@EnableBinding({ Processor.class })
@@ -525,6 +557,7 @@ public class StreamListenerHandlerMethodTests {
 		public void receive(@Input(Processor.INPUT) SubscribableChannel input,
 				@Output("invalid") MessageChannel output) {
 		}
+
 	}
 
 	@EnableBinding({ Sink.class })
@@ -534,6 +567,7 @@ public class StreamListenerHandlerMethodTests {
 		@StreamListener
 		public void receive(@Input(Sink.INPUT) StreamListenerTestUtils.FooPojo fooPojo) {
 		}
+
 	}
 
 	@EnableBinding({ Processor.class, StreamListenerTestUtils.FooOutboundChannel1.class })
@@ -548,10 +582,12 @@ public class StreamListenerHandlerMethodTests {
 				@Override
 				public void handleMessage(Message<?> message) throws MessagingException {
 					output1.send(org.springframework.messaging.support.MessageBuilder
-							.withPayload(message.getPayload().toString().toUpperCase()).build());
+							.withPayload(message.getPayload().toString().toUpperCase())
+							.build());
 				}
 			});
 		}
+
 	}
 
 	@EnableBinding({ Processor.class, StreamListenerTestUtils.FooInboundChannel1.class })
@@ -566,17 +602,20 @@ public class StreamListenerHandlerMethodTests {
 				@Override
 				public void handleMessage(Message<?> message) throws MessagingException {
 					output.send(org.springframework.messaging.support.MessageBuilder
-							.withPayload(message.getPayload().toString().toUpperCase()).build());
+							.withPayload(message.getPayload().toString().toUpperCase())
+							.build());
 				}
 			});
 			input2.subscribe(new MessageHandler() {
 				@Override
 				public void handleMessage(Message<?> message) throws MessagingException {
 					output.send(org.springframework.messaging.support.MessageBuilder
-							.withPayload(message.getPayload().toString().toUpperCase()).build());
+							.withPayload(message.getPayload().toString().toUpperCase())
+							.build());
 				}
 			});
 		}
+
 	}
 
 }

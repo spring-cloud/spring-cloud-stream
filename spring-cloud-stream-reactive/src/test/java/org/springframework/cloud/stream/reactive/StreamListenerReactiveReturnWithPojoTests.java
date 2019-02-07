@@ -61,22 +61,24 @@ public class StreamListenerReactiveReturnWithPojoTests {
 
 	@Parameterized.Parameters
 	public static Collection<?> InputConfigs() {
-		return Arrays.asList(ReactorTestReturnWithPojo1.class, ReactorTestReturnWithPojo2.class,
-				ReactorTestReturnWithPojo3.class, ReactorTestReturnWithPojo4.class);
+		return Arrays.asList(ReactorTestReturnWithPojo1.class,
+				ReactorTestReturnWithPojo2.class, ReactorTestReturnWithPojo3.class,
+				ReactorTestReturnWithPojo4.class);
 	}
 
 	@Test
 	@SuppressWarnings("unchecked")
 	public void testReturnWithPojo() throws Exception {
-		ConfigurableApplicationContext context = SpringApplication.run(this.configClass, "--server.port=0",
-				"--spring.jmx.enabled=false");
+		ConfigurableApplicationContext context = SpringApplication.run(this.configClass,
+				"--server.port=0", "--spring.jmx.enabled=false");
 		Processor processor = context.getBean(Processor.class);
 		processor.input().send(MessageBuilder.withPayload("{\"message\":\"helloPojo\"}")
 				.setHeader("contentType", "application/json").build());
 		MessageCollector messageCollector = context.getBean(MessageCollector.class);
-		Message<String> result = (Message<String>) messageCollector.forChannel(processor.output()).poll(1000, TimeUnit.MILLISECONDS);
+		Message<String> result = (Message<String>) messageCollector
+				.forChannel(processor.output()).poll(1000, TimeUnit.MILLISECONDS);
 		assertThat(result).isNotNull();
-		BarPojo barPojo = mapper.readValue(result.getPayload(),BarPojo.class);
+		BarPojo barPojo = this.mapper.readValue(result.getPayload(), BarPojo.class);
 		assertThat(barPojo.getBarMessage()).isEqualTo("helloPojo");
 		context.close();
 	}
@@ -86,9 +88,11 @@ public class StreamListenerReactiveReturnWithPojoTests {
 	public static class ReactorTestReturnWithPojo1 {
 
 		@StreamListener
-		public @Output(Processor.OUTPUT) Flux<BarPojo> receive(@Input(Processor.INPUT) Flux<FooPojo> input) {
+		public @Output(Processor.OUTPUT) Flux<BarPojo> receive(
+				@Input(Processor.INPUT) Flux<FooPojo> input) {
 			return input.map(m -> new BarPojo(m.getMessage()));
 		}
+
 	}
 
 	@EnableBinding(Processor.class)
@@ -99,6 +103,7 @@ public class StreamListenerReactiveReturnWithPojoTests {
 		public @Output(Processor.OUTPUT) Flux<BarPojo> receive(Flux<FooPojo> input) {
 			return input.map(m -> new BarPojo(m.getMessage()));
 		}
+
 	}
 
 	@EnableBinding(Processor.class)
@@ -109,6 +114,7 @@ public class StreamListenerReactiveReturnWithPojoTests {
 		public @SendTo(Processor.OUTPUT) Flux<BarPojo> receive(Flux<FooPojo> input) {
 			return input.map(m -> new BarPojo(m.getMessage()));
 		}
+
 	}
 
 	@EnableBinding(Processor.class)
@@ -116,9 +122,11 @@ public class StreamListenerReactiveReturnWithPojoTests {
 	public static class ReactorTestReturnWithPojo4 {
 
 		@StreamListener
-		public @SendTo(Processor.OUTPUT) Flux<BarPojo> receive(@Input(Processor.INPUT) Flux<FooPojo> input) {
+		public @SendTo(Processor.OUTPUT) Flux<BarPojo> receive(
+				@Input(Processor.INPUT) Flux<FooPojo> input) {
 			return input.map(m -> new BarPojo(m.getMessage()));
 		}
+
 	}
 
 	public static class FooPojo {
@@ -126,12 +134,13 @@ public class StreamListenerReactiveReturnWithPojoTests {
 		private String message;
 
 		public String getMessage() {
-			return message;
+			return this.message;
 		}
 
 		public void setMessage(String message) {
 			this.message = message;
 		}
+
 	}
 
 	public static class BarPojo {
@@ -144,11 +153,13 @@ public class StreamListenerReactiveReturnWithPojoTests {
 		}
 
 		public String getBarMessage() {
-			return barMessage;
+			return this.barMessage;
 		}
 
 		public void setBarMessage(String barMessage) {
 			this.barMessage = barMessage;
 		}
+
 	}
+
 }

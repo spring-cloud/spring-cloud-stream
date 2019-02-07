@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,7 +46,8 @@ public class MessageChannelToInputFluxParameterAdapterTests {
 	public void testWrapperFluxSupportsMultipleSubscriptions() throws Exception {
 		List<String> results = Collections.synchronizedList(new ArrayList<>());
 		CountDownLatch latch = new CountDownLatch(4);
-		final MessageChannelToInputFluxParameterAdapter messageChannelToInputFluxParameterAdapter = new MessageChannelToInputFluxParameterAdapter(
+		final MessageChannelToInputFluxParameterAdapter messageChannelToInputFluxParameterAdapter;
+		messageChannelToInputFluxParameterAdapter = new MessageChannelToInputFluxParameterAdapter(
 				new CompositeMessageConverter(
 						Collections.singleton(new MappingJackson2MessageConverter())));
 		final Method processMethod = ReflectionUtils.findMethod(
@@ -79,4 +80,5 @@ public class MessageChannelToInputFluxParameterAdapterTests {
 	public void process(Flux<Message<?>> message) {
 		// do nothing - we just reference this method from the test
 	}
+
 }

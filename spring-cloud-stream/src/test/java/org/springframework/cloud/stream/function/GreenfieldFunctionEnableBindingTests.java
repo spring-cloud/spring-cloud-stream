@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 the original author or authors.
+ * Copyright 2018-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,25 +58,34 @@ import org.springframework.messaging.support.MessageBuilder;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * This test validates proper function binding for applications where EnableBinding is declared.
+ * This test validates proper function binding for applications where EnableBinding is
+ * declared.
  *
  * @author Oleg Zhurakousky
+ * @author Artem Bilan
  */
 public class GreenfieldFunctionEnableBindingTests {
 
 	@Test
 	public void testSourceFromSupplier() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
-			TestChannelBinderConfiguration.getCompleteConfiguration(SourceFromSupplier.class)).web(
-			WebApplicationType.NONE).run("--spring.cloud.stream.function.definition=date", "--spring.jmx.enabled=false")) {
+				TestChannelBinderConfiguration
+						.getCompleteConfiguration(SourceFromSupplier.class))
+								.web(WebApplicationType.NONE)
+								.run("--spring.cloud.stream.function.definition=date",
+										"--spring.jmx.enabled=false")) {
 
 			OutputDestination target = context.getBean(OutputDestination.class);
 			Message<byte[]> sourceMessage = target.receive(10000);
-			Date date = (Date) new CompositeMessageConverterFactory().getMessageConverterForAllRegistered().fromMessage(sourceMessage, Date.class);
+			Date date = (Date) new CompositeMessageConverterFactory()
+					.getMessageConverterForAllRegistered()
+					.fromMessage(sourceMessage, Date.class);
 			assertThat(date).isEqualTo(new Date(12345L));
 
 			sourceMessage = target.receive(10000);
-			date = (Date) new CompositeMessageConverterFactory().getMessageConverterForAllRegistered().fromMessage(sourceMessage, Date.class);
+			date = (Date) new CompositeMessageConverterFactory()
+					.getMessageConverterForAllRegistered()
+					.fromMessage(sourceMessage, Date.class);
 			assertThat(date).isEqualTo(new Date(12345L));
 		}
 	}
@@ -84,21 +93,27 @@ public class GreenfieldFunctionEnableBindingTests {
 	@Test
 	public void testProcessorFromFunction() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
-			TestChannelBinderConfiguration.getCompleteConfiguration(ProcessorFromFunction.class)).web(
-			WebApplicationType.NONE).run("--spring.cloud.stream.function.definition=toUpperCase", "--spring.jmx.enabled=false")) {
+				TestChannelBinderConfiguration.getCompleteConfiguration(
+						ProcessorFromFunction.class)).web(WebApplicationType.NONE).run(
+								"--spring.cloud.stream.function.definition=toUpperCase",
+								"--spring.jmx.enabled=false")) {
 
 			InputDestination source = context.getBean(InputDestination.class);
 			source.send(new GenericMessage<byte[]>("John Doe".getBytes()));
 			OutputDestination target = context.getBean(OutputDestination.class);
-			assertThat(target.receive(10000).getPayload()).isEqualTo("JOHN DOE".getBytes(StandardCharsets.UTF_8));
+			assertThat(target.receive(10000).getPayload())
+					.isEqualTo("JOHN DOE".getBytes(StandardCharsets.UTF_8));
 		}
 	}
 
 	@Test
 	public void testSinkFromConsumer() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
-			TestChannelBinderConfiguration.getCompleteConfiguration(SinkFromConsumer.class)).web(
-			WebApplicationType.NONE).run("--spring.cloud.stream.function.definition=sink", "--spring.jmx.enabled=false")) {
+				TestChannelBinderConfiguration
+						.getCompleteConfiguration(SinkFromConsumer.class))
+								.web(WebApplicationType.NONE)
+								.run("--spring.cloud.stream.function.definition=sink",
+										"--spring.jmx.enabled=false")) {
 
 			InputDestination source = context.getBean(InputDestination.class);
 			PollableChannel result = context.getBean("result", PollableChannel.class);
@@ -110,22 +125,30 @@ public class GreenfieldFunctionEnableBindingTests {
 	@Test
 	public void testHttpEndpoint() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
-			TestChannelBinderConfiguration.getCompleteConfiguration(HttpInboundEndpoint.class)).web(
-			WebApplicationType.SERVLET).run("--spring.cloud.stream.function.definition=upperCase",  "--spring.jmx.enabled=false")) {
+				TestChannelBinderConfiguration.getCompleteConfiguration(
+						HttpInboundEndpoint.class)).web(WebApplicationType.SERVLET).run(
+								"--spring.cloud.stream.function.definition=upperCase",
+								"--spring.jmx.enabled=false", "--server.port=0")) {
 			TestRestTemplate restTemplate = new TestRestTemplate();
-			restTemplate.postForLocation("http://localhost:8080", "hello");
-
+			restTemplate.postForLocation(
+					"http://localhost:"
+							+ context.getEnvironment().getProperty("local.server.port"),
+					"hello");
 			OutputDestination target = context.getBean(OutputDestination.class);
-			assertThat(target.receive(10000).getPayload()).isEqualTo("HELLO".getBytes(StandardCharsets.UTF_8));
+			String result = new String(target.receive(10000).getPayload());
+			System.out.println(result);
+			assertThat(result).isEqualTo("HELLO");
 		}
 	}
 
 	@Test
 	public void testPojoReturn() throws IOException {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
-			TestChannelBinderConfiguration.getCompleteConfiguration(FooTransform.class)).web(
-			WebApplicationType.NONE).run("--spring.cloud.stream.function.definition=fooFunction", "--spring.jmx"
-			+ ".enabled=false", "--logging.level.org.springframework.integration=TRACE")) {
+				TestChannelBinderConfiguration.getCompleteConfiguration(
+						FooTransform.class)).web(WebApplicationType.NONE).run(
+								"--spring.cloud.stream.function.definition=fooFunction",
+								"--spring.jmx" + ".enabled=false",
+								"--logging.level.org.springframework.integration=TRACE")) {
 			MessageChannel input = context.getBean("input", MessageChannel.class);
 			OutputDestination target = context.getBean(OutputDestination.class);
 
@@ -137,32 +160,35 @@ public class GreenfieldFunctionEnableBindingTests {
 			Foo result = mapper.readValue(payload, Foo.class);
 
 			assertThat(result.getBar()).isEqualTo("bar");
-
 		}
 	}
-
 
 	@EnableAutoConfiguration
 	@EnableBinding(Source.class)
 	public static class SourceFromSupplier {
+
 		@Bean
 		public Supplier<Date> date() {
 			return () -> new Date(12345L);
 		}
+
 	}
 
 	@EnableAutoConfiguration
 	@EnableBinding(Processor.class)
 	public static class ProcessorFromFunction {
+
 		@Bean
 		public Function<String, String> toUpperCase() {
-			return s -> s.toUpperCase();
+			return String::toUpperCase;
 		}
+
 	}
 
 	@EnableAutoConfiguration
 	@EnableBinding(Sink.class)
 	public static class SinkFromConsumer {
+
 		@Bean
 		public PollableChannel result() {
 			return new QueueChannel();
@@ -175,6 +201,7 @@ public class GreenfieldFunctionEnableBindingTests {
 				System.out.println(s);
 			};
 		}
+
 	}
 
 	@EnableAutoConfiguration
@@ -186,18 +213,19 @@ public class GreenfieldFunctionEnableBindingTests {
 
 		@Bean
 		public Function<String, String> upperCase() {
-			return s -> s.toUpperCase();
+			return String::toUpperCase;
 		}
 
 		@Bean
 		public HttpRequestHandlingEndpointSupport doFoo() {
 			HttpRequestHandlerEndpointSpec httpRequestHandler = Http
 					.inboundChannelAdapter("/*")
-					.requestMapping(requestMapping -> requestMapping.methods(HttpMethod.POST)
-					.consumes("*/*"))
+					.requestMapping(requestMapping -> requestMapping
+							.methods(HttpMethod.POST).consumes("*/*"))
 					.requestChannel(this.source.output());
 			return httpRequestHandler.get();
 		}
+
 	}
 
 	@EnableAutoConfiguration
@@ -220,20 +248,24 @@ public class GreenfieldFunctionEnableBindingTests {
 			return m -> {
 				Foo foo = new Foo();
 				foo.setBar(m.getPayload().toString());
-				return MessageBuilder.withPayload(foo).setHeader("foo","foo").build();
+				return MessageBuilder.withPayload(foo).setHeader("foo", "foo").build();
 			};
 		}
+
 	}
 
 	static class Foo {
+
 		String bar;
 
 		public String getBar() {
-			return bar;
+			return this.bar;
 		}
 
 		public void setBar(String bar) {
 			this.bar = bar;
 		}
+
 	}
+
 }

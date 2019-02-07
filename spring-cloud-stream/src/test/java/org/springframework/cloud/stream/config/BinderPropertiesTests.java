@@ -27,14 +27,12 @@ import org.springframework.boot.actuate.context.properties.ConfigurationProperti
 import org.springframework.boot.actuate.context.properties.ConfigurationPropertiesReportEndpoint.ContextConfigurationProperties;
 import org.springframework.context.support.StaticApplicationContext;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * This test primarily validates the correctness of BinderProperties
- * where it as well as what it contains maintains the String-key/Object-value
- * semantics. The use of {@link Properties} class does not exactly do that.
- *
+ * This test primarily validates the correctness of BinderProperties where it as well as
+ * what it contains maintains the String-key/Object-value semantics. The use of
+ * {@link Properties} class does not exactly do that.
  *
  * @author Oleg Zhurakousky
  *
@@ -45,7 +43,8 @@ public class BinderPropertiesTests {
 	@Test
 	public void testSerializationWithNonStringValues() {
 		StaticApplicationContext context = new StaticApplicationContext();
-		DefaultListableBeanFactory bf = (DefaultListableBeanFactory) context.getBeanFactory();
+		DefaultListableBeanFactory bf = (DefaultListableBeanFactory) context
+				.getBeanFactory();
 		BindingServiceProperties bindingServiceProperties = new BindingServiceProperties();
 		bindingServiceProperties.setApplicationContext(context);
 		bf.registerSingleton("bindingServiceProperties", bindingServiceProperties);
@@ -57,20 +56,26 @@ public class BinderPropertiesTests {
 		bp.getEnvironment().put("spring.rabbitmq.connection-timeout", 2345);
 		bp.getEnvironment().put("foo", Collections.singletonMap("bar", "hello"));
 
-		// using Spring Boot class to ensure that reliance on the same ObjectMapper configuration
+		// using Spring Boot class to ensure that reliance on the same ObjectMapper
+		// configuration
 		ConfigurationPropertiesReportEndpoint endpoint = new ConfigurationPropertiesReportEndpoint();
 		endpoint.setApplicationContext(context);
 
+		ContextConfigurationProperties configurationProperties = endpoint
+				.configurationProperties().getContexts().values().iterator().next();
 
-		ContextConfigurationProperties configurationProperties = endpoint.configurationProperties().getContexts().values().iterator().next();
-
-		Map<String, Object> properties = configurationProperties.getBeans().get("bindingServiceProperties").getProperties();
-		assertFalse(properties.containsKey("error"));
-		assertTrue(properties.containsKey("binders"));
-		Map<String, Object> testBinder = (Map<String, Object>) ((Map<String, Object>)properties.get("binders")).get("testBinder");
-		Map<String, Object> environment = (Map<String, Object>) testBinder.get("environment");
-		assertTrue(environment.get("spring.rabbitmq.connection-timeout") instanceof Integer);
-		assertTrue(environment.get("foo") instanceof Map);
+		Map<String, Object> properties = configurationProperties.getBeans()
+				.get("bindingServiceProperties").getProperties();
+		assertThat(properties.containsKey("error")).isFalse();
+		assertThat(properties.containsKey("binders")).isTrue();
+		Map<String, Object> testBinder = (Map<String, Object>) ((Map<String, Object>) properties
+				.get("binders")).get("testBinder");
+		Map<String, Object> environment = (Map<String, Object>) testBinder
+				.get("environment");
+		assertThat(
+				environment.get("spring.rabbitmq.connection-timeout") instanceof Integer)
+						.isTrue();
+		assertThat(environment.get("foo") instanceof Map).isTrue();
 	}
-}
 
+}

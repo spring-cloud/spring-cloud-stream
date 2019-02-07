@@ -32,16 +32,14 @@ import org.springframework.util.ClassUtils;
 import org.springframework.util.StringUtils;
 
 /**
- * 
  * @author Oleg Zhurakousky
- * 
  * @deprecated will be removed once https://jira.spring.io/browse/SPR-17503 is addressed
  */
 @Deprecated
 class SmartMessageMethodArgumentResolver extends MessageMethodArgumentResolver {
-	
+
 	private final MessageConverter messageConverter;
-	
+
 	SmartMessageMethodArgumentResolver() {
 		this(null);
 	}
@@ -56,14 +54,16 @@ class SmartMessageMethodArgumentResolver extends MessageMethodArgumentResolver {
 	}
 
 	@Override
-	public Object resolveArgument(MethodParameter parameter, Message<?> message) throws Exception {
+	public Object resolveArgument(MethodParameter parameter, Message<?> message)
+			throws Exception {
 		Class<?> targetMessageType = parameter.getParameterType();
 		Class<?> targetPayloadType = getPayloadType(parameter);
 
 		if (!targetMessageType.isAssignableFrom(message.getClass())) {
-			throw new MethodArgumentTypeMismatchException(message, parameter, "Actual message type '" +
-					ClassUtils.getDescriptiveType(message) + "' does not match expected type '" +
-					ClassUtils.getQualifiedName(targetMessageType) + "'");
+			throw new MethodArgumentTypeMismatchException(message, parameter,
+					"Actual message type '" + ClassUtils.getDescriptiveType(message)
+							+ "' does not match expected type '"
+							+ ClassUtils.getQualifiedName(targetMessageType) + "'");
 		}
 
 		Class<?> payloadClass = message.getPayload().getClass();
@@ -73,21 +73,25 @@ class SmartMessageMethodArgumentResolver extends MessageMethodArgumentResolver {
 		}
 		Object payload = message.getPayload();
 		if (isEmptyPayload(payload)) {
-			throw new MessageConversionException(message, "Cannot convert from actual payload type '" +
-					ClassUtils.getDescriptiveType(payload) + "' to expected payload type '" +
-					ClassUtils.getQualifiedName(targetPayloadType) + "' when payload is empty");
+			throw new MessageConversionException(message,
+					"Cannot convert from actual payload type '"
+							+ ClassUtils.getDescriptiveType(payload)
+							+ "' to expected payload type '"
+							+ ClassUtils.getQualifiedName(targetPayloadType)
+							+ "' when payload is empty");
 		}
 
 		payload = convertPayload(message, parameter, targetPayloadType);
 		return MessageBuilder.createMessage(payload, message.getHeaders());
 	}
-	
+
 	private Class<?> getPayloadType(MethodParameter parameter) {
 		Type genericParamType = parameter.getGenericParameterType();
-		ResolvableType resolvableType = ResolvableType.forType(genericParamType).as(Message.class);
+		ResolvableType resolvableType = ResolvableType.forType(genericParamType)
+				.as(Message.class);
 		return resolvableType.getGeneric().toClass();
 	}
-	
+
 	protected boolean isEmptyPayload(@Nullable Object payload) {
 		if (payload == null) {
 			return true;
@@ -102,8 +106,9 @@ class SmartMessageMethodArgumentResolver extends MessageMethodArgumentResolver {
 			return false;
 		}
 	}
-	
-	private Object convertPayload(Message<?> message, MethodParameter parameter, Class<?> targetPayloadType) {
+
+	private Object convertPayload(Message<?> message, MethodParameter parameter,
+			Class<?> targetPayloadType) {
 		Object result = null;
 		if (this.messageConverter instanceof SmartMessageConverter) {
 			SmartMessageConverter smartConverter = (SmartMessageConverter) this.messageConverter;
@@ -114,10 +119,13 @@ class SmartMessageMethodArgumentResolver extends MessageMethodArgumentResolver {
 		}
 
 		if (result == null) {
-			throw new MessageConversionException(message, "No converter found from actual payload type '" +
-					ClassUtils.getDescriptiveType(message.getPayload()) + "' to expected payload type '" +
-					ClassUtils.getQualifiedName(targetPayloadType) + "'");
+			throw new MessageConversionException(message,
+					"No converter found from actual payload type '"
+							+ ClassUtils.getDescriptiveType(message.getPayload())
+							+ "' to expected payload type '"
+							+ ClassUtils.getQualifiedName(targetPayloadType) + "'");
 		}
 		return result;
 	}
+
 }

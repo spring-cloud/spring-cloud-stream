@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2017-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.springframework.cloud.schema.avro.client;
 
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -31,6 +30,7 @@ import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.header;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
@@ -38,122 +38,139 @@ import static org.springframework.test.web.client.response.MockRestResponseCreat
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withStatus;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
-
 /**
  * @author Vinicius Carvalho
  */
 public class ConfluentSchemaRegistryClientTests {
 
 	private RestTemplate restTemplate;
+
 	private MockRestServiceServer mockRestServiceServer;
 
 	@Before
-	public void setup(){
+	public void setup() {
 		this.restTemplate = new RestTemplate();
-		this.mockRestServiceServer = MockRestServiceServer.createServer(restTemplate);
+		this.mockRestServiceServer = MockRestServiceServer
+				.createServer(this.restTemplate);
 	}
 
 	@Test
-	public void registerSchema() throws Exception{
-		this.mockRestServiceServer.expect(requestTo("http://localhost:8081/subjects/user/versions"))
+	public void registerSchema() throws Exception {
+		this.mockRestServiceServer
+				.expect(requestTo("http://localhost:8081/subjects/user/versions"))
 				.andExpect(method(HttpMethod.POST))
-				.andExpect(header("Content-Type","application/json"))
-				.andExpect(header("Accept","application/vnd.schemaregistry.v1+json"))
+				.andExpect(header("Content-Type", "application/json"))
+				.andExpect(header("Accept", "application/vnd.schemaregistry.v1+json"))
 				.andRespond(withSuccess("{\"id\":101}", MediaType.APPLICATION_JSON));
 
-		this.mockRestServiceServer.expect(requestTo("http://localhost:8081/subjects/user"))
+		this.mockRestServiceServer
+				.expect(requestTo("http://localhost:8081/subjects/user"))
 				.andExpect(method(HttpMethod.POST))
-				.andExpect(header("Content-Type","application/json"))
-				.andExpect(header("Accept","application/vnd.schemaregistry.v1+json"))
+				.andExpect(header("Content-Type", "application/json"))
+				.andExpect(header("Accept", "application/vnd.schemaregistry.v1+json"))
 				.andRespond(withSuccess("{\"version\":1}", MediaType.APPLICATION_JSON));
 
-		ConfluentSchemaRegistryClient client = new ConfluentSchemaRegistryClient(this.restTemplate);
-		SchemaRegistrationResponse response = client.register("user","avro","{}");
-		Assert.assertEquals(1,response.getSchemaReference().getVersion());
-		Assert.assertEquals(101,response.getId());
+		ConfluentSchemaRegistryClient client = new ConfluentSchemaRegistryClient(
+				this.restTemplate);
+		SchemaRegistrationResponse response = client.register("user", "avro", "{}");
+		assertThat(response.getSchemaReference().getVersion()).isEqualTo(1);
+		assertThat(response.getId()).isEqualTo(101);
 		this.mockRestServiceServer.verify();
 	}
 
 	@Test(expected = RuntimeException.class)
 	public void registerWithInvalidJson() {
-		this.mockRestServiceServer.expect(requestTo("http://localhost:8081/subjects/user/versions"))
+		this.mockRestServiceServer
+				.expect(requestTo("http://localhost:8081/subjects/user/versions"))
 				.andExpect(method(HttpMethod.POST))
-				.andExpect(header("Content-Type","application/json"))
-				.andExpect(header("Accept","application/vnd.schemaregistry.v1+json"))
+				.andExpect(header("Content-Type", "application/json"))
+				.andExpect(header("Accept", "application/vnd.schemaregistry.v1+json"))
 				.andRespond(withBadRequest());
-		ConfluentSchemaRegistryClient client = new ConfluentSchemaRegistryClient(this.restTemplate);
-		SchemaRegistrationResponse response = client.register("user","avro","<>");
+		ConfluentSchemaRegistryClient client = new ConfluentSchemaRegistryClient(
+				this.restTemplate);
+		SchemaRegistrationResponse response = client.register("user", "avro", "<>");
 	}
 
 	@Test
 	public void registerIncompatibleSchema() {
-		this.mockRestServiceServer.expect(requestTo("http://localhost:8081/subjects/user/versions"))
+		this.mockRestServiceServer
+				.expect(requestTo("http://localhost:8081/subjects/user/versions"))
 				.andExpect(method(HttpMethod.POST))
-				.andExpect(header("Content-Type","application/json"))
-				.andExpect(header("Accept","application/vnd.schemaregistry.v1+json"))
+				.andExpect(header("Content-Type", "application/json"))
+				.andExpect(header("Accept", "application/vnd.schemaregistry.v1+json"))
 				.andRespond(withStatus(HttpStatus.CONFLICT));
-		ConfluentSchemaRegistryClient client = new ConfluentSchemaRegistryClient(this.restTemplate);
+		ConfluentSchemaRegistryClient client = new ConfluentSchemaRegistryClient(
+				this.restTemplate);
 		Exception expected = null;
 		try {
-			SchemaRegistrationResponse response = client.register("user","avro","{}");
+			SchemaRegistrationResponse response = client.register("user", "avro", "{}");
 		}
 		catch (Exception e) {
 			expected = e;
 		}
-		Assert.assertTrue(expected instanceof RuntimeException);
-		Assert.assertTrue(expected.getCause() instanceof HttpStatusCodeException);
+		assertThat(expected instanceof RuntimeException).isTrue();
+		assertThat(expected.getCause() instanceof HttpStatusCodeException).isTrue();
 		this.mockRestServiceServer.verify();
 	}
 
 	@Test
 	public void responseErrorFetch() {
-		this.mockRestServiceServer.expect(requestTo("http://localhost:8081/subjects/user/versions"))
+		this.mockRestServiceServer
+				.expect(requestTo("http://localhost:8081/subjects/user/versions"))
 				.andExpect(method(HttpMethod.POST))
-				.andExpect(header("Content-Type","application/json"))
-				.andExpect(header("Accept","application/vnd.schemaregistry.v1+json"))
+				.andExpect(header("Content-Type", "application/json"))
+				.andExpect(header("Accept", "application/vnd.schemaregistry.v1+json"))
 				.andRespond(withSuccess("{\"id\":101}", MediaType.APPLICATION_JSON));
 
-		this.mockRestServiceServer.expect(requestTo("http://localhost:8081/subjects/user"))
+		this.mockRestServiceServer
+				.expect(requestTo("http://localhost:8081/subjects/user"))
 				.andExpect(method(HttpMethod.POST))
-				.andExpect(header("Content-Type","application/json"))
-				.andExpect(header("Accept","application/vnd.schemaregistry.v1+json"))
+				.andExpect(header("Content-Type", "application/json"))
+				.andExpect(header("Accept", "application/vnd.schemaregistry.v1+json"))
 				.andRespond(withBadRequest());
-		ConfluentSchemaRegistryClient client = new ConfluentSchemaRegistryClient(this.restTemplate);
+		ConfluentSchemaRegistryClient client = new ConfluentSchemaRegistryClient(
+				this.restTemplate);
 		Exception expected = null;
 		try {
-			SchemaRegistrationResponse response = client.register("user","avro","{}");
+			SchemaRegistrationResponse response = client.register("user", "avro", "{}");
 		}
 		catch (Exception e) {
 			expected = e;
 		}
-		Assert.assertTrue(expected instanceof RuntimeException);
-		Assert.assertTrue(expected.getCause() instanceof HttpStatusCodeException);
+		assertThat(expected instanceof RuntimeException).isTrue();
+		assertThat(expected.getCause() instanceof HttpStatusCodeException).isTrue();
 		this.mockRestServiceServer.verify();
 	}
 
 	@Test
-	public void findByReference(){
-		this.mockRestServiceServer.expect(requestTo("http://localhost:8081/subjects/user/versions/1"))
+	public void findByReference() {
+		this.mockRestServiceServer
+				.expect(requestTo("http://localhost:8081/subjects/user/versions/1"))
 				.andExpect(method(HttpMethod.GET))
-				.andExpect(header("Content-Type","application/vnd.schemaregistry.v1+json"))
-				.andExpect(header("Accept","application/vnd.schemaregistry.v1+json"))
+				.andExpect(
+						header("Content-Type", "application/vnd.schemaregistry.v1+json"))
+				.andExpect(header("Accept", "application/vnd.schemaregistry.v1+json"))
 				.andRespond(withSuccess("{\"schema\":\"\"}", MediaType.APPLICATION_JSON));
-		ConfluentSchemaRegistryClient client = new ConfluentSchemaRegistryClient(this.restTemplate);
-		SchemaReference reference = new SchemaReference("user",1,"avro");
+		ConfluentSchemaRegistryClient client = new ConfluentSchemaRegistryClient(
+				this.restTemplate);
+		SchemaReference reference = new SchemaReference("user", 1, "avro");
 		String schema = client.fetch(reference);
-		Assert.assertEquals("",schema);
+		assertThat(schema).isEqualTo("");
 		this.mockRestServiceServer.verify();
 	}
 
 	@Test(expected = SchemaNotFoundException.class)
-	public void schemaNotFound(){
-		this.mockRestServiceServer.expect(requestTo("http://localhost:8081/subjects/user/versions/1"))
+	public void schemaNotFound() {
+		this.mockRestServiceServer
+				.expect(requestTo("http://localhost:8081/subjects/user/versions/1"))
 				.andExpect(method(HttpMethod.GET))
-				.andExpect(header("Content-Type","application/vnd.schemaregistry.v1+json"))
-				.andExpect(header("Accept","application/vnd.schemaregistry.v1+json"))
+				.andExpect(
+						header("Content-Type", "application/vnd.schemaregistry.v1+json"))
+				.andExpect(header("Accept", "application/vnd.schemaregistry.v1+json"))
 				.andRespond(withStatus(HttpStatus.NOT_FOUND));
-		ConfluentSchemaRegistryClient client = new ConfluentSchemaRegistryClient(this.restTemplate);
-		SchemaReference reference = new SchemaReference("user",1,"avro");
+		ConfluentSchemaRegistryClient client = new ConfluentSchemaRegistryClient(
+				this.restTemplate);
+		SchemaReference reference = new SchemaReference("user", 1, "avro");
 		String schema = client.fetch(reference);
 	}
 

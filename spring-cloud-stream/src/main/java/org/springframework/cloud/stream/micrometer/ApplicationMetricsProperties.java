@@ -43,31 +43,40 @@ import org.springframework.util.PatternMatchUtils;
  * @author Oleg Zhurakousky
  */
 @ConfigurationProperties(prefix = ApplicationMetricsProperties.PREFIX)
-public class ApplicationMetricsProperties implements EnvironmentAware, ApplicationContextAware {
-
-	public static final String PREFIX = "spring.cloud.stream.metrics";
-
-	public static final String EXPORT_FILTER = PREFIX + ".filter";
-
-	private static final Bindable<Map<String, String>> STRING_STRING_MAP = Bindable.mapOf(String.class, String.class);
-
+public class ApplicationMetricsProperties
+		implements EnvironmentAware, ApplicationContextAware {
 
 	/**
-	 * Pattern to control the 'meters' one wants to capture. By default all 'meters' will be captured.
-	 * For example, 'spring.integration.*' will only capture metric information for meters whose name starts with 'spring.integration'.
+	 * Prefix for Stream application metrics.
+	 */
+	public static final String PREFIX = "spring.cloud.stream.metrics";
+
+	/**
+	 * Property for the metrics filter.
+	 */
+	public static final String EXPORT_FILTER = PREFIX + ".filter";
+
+	private static final Bindable<Map<String, String>> STRING_STRING_MAP = Bindable
+			.mapOf(String.class, String.class);
+
+	/**
+	 * Pattern to control the 'meters' one wants to capture. By default all 'meters' will
+	 * be captured. For example, 'spring.integration.*' will only capture metric
+	 * information for meters whose name starts with 'spring.integration'.
 	 */
 	private String meterFilter;
 
 	/**
 	 * The name of the metric being emitted. Should be an unique value per application.
-	 * Defaults to: ${spring.application.name:${vcap.application.name:${spring.config.name:application}}}
+	 * Defaults to:
+	 * ${spring.application.name:${vcap.application.name:${spring.config.name:application}}}.
 	 */
 	@Value("${spring.application.name:${vcap.application.name:${spring.config.name:application}}}")
 	private String key;
 
 	/**
-	 * Application properties that should be added to the metrics payload
-	 * For example: `spring.application**`
+	 * Application properties that should be added to the metrics payload For example:
+	 * `spring.application**`.
 	 */
 	private String[] properties;
 
@@ -94,12 +103,13 @@ public class ApplicationMetricsProperties implements EnvironmentAware, Applicati
 	}
 
 	@Override
-	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+	public void setApplicationContext(ApplicationContext applicationContext)
+			throws BeansException {
 		this.applicationContext = applicationContext;
 	}
 
 	public String getKey() {
-		return key;
+		return this.key;
 	}
 
 	public void setKey(String key) {
@@ -107,7 +117,7 @@ public class ApplicationMetricsProperties implements EnvironmentAware, Applicati
 	}
 
 	public String[] getProperties() {
-		return properties;
+		return this.properties;
 	}
 
 	public void setProperties(String[] properties) {
@@ -122,7 +132,7 @@ public class ApplicationMetricsProperties implements EnvironmentAware, Applicati
 	}
 
 	public Duration getScheduleInterval() {
-		return scheduleInterval;
+		return this.scheduleInterval;
 	}
 
 	public void setScheduleInterval(Duration scheduleInterval) {
@@ -150,10 +160,12 @@ public class ApplicationMetricsProperties implements EnvironmentAware, Applicati
 		if (!ObjectUtils.isEmpty(this.properties)) {
 			Map<String, String> target = bindProperties();
 
-			BeanExpressionResolver beanExpressionResolver = ((ConfigurableApplicationContext) applicationContext)
+			BeanExpressionResolver beanExpressionResolver = ((ConfigurableApplicationContext) this.applicationContext)
 					.getBeanFactory().getBeanExpressionResolver();
 			BeanExpressionContext expressionContext = new BeanExpressionContext(
-					((ConfigurableApplicationContext) applicationContext).getBeanFactory(), null);
+					((ConfigurableApplicationContext) this.applicationContext)
+							.getBeanFactory(),
+					null);
 			for (Entry<String, String> entry : target.entrySet()) {
 				if (isMatch(entry.getKey(), this.properties, null)) {
 					String stringValue = ObjectUtils.nullSafeToString(entry.getValue());
@@ -161,8 +173,9 @@ public class ApplicationMetricsProperties implements EnvironmentAware, Applicati
 					if (stringValue != null) {
 						exportedValue = stringValue.startsWith("#{")
 								? beanExpressionResolver.evaluate(
-										environment.resolvePlaceholders(stringValue), expressionContext)
-								: environment.resolvePlaceholders(stringValue);
+										this.environment.resolvePlaceholders(stringValue),
+										expressionContext)
+								: this.environment.resolvePlaceholders(stringValue);
 					}
 
 					props.put(entry.getKey(), exportedValue);
@@ -174,7 +187,8 @@ public class ApplicationMetricsProperties implements EnvironmentAware, Applicati
 
 	private Map<String, String> bindProperties() {
 		Map<String, String> target;
-		BindResult<Map<String, String>> bindResult = Binder.get(environment).bind("", STRING_STRING_MAP);
+		BindResult<Map<String, String>> bindResult = Binder.get(this.environment).bind("",
+				STRING_STRING_MAP);
 		if (bindResult.isBound()) {
 			target = bindResult.get();
 		}

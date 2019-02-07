@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2017-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,14 +56,17 @@ public class InboundJsonToTupleConversionTest {
 
 	@Test
 	public void testInboundJsonTupleConversion() throws Exception {
-		testProcessor.input().send(MessageBuilder.withPayload("{'name':'foo'}")
-				.build());
+		this.testProcessor.input()
+				.send(MessageBuilder.withPayload("{'name':'foo'}").build());
 		@SuppressWarnings("unchecked")
-		Message<byte[]> received = (Message<byte[]>) ((TestSupportBinder) binderFactory.getBinder(null, MessageChannel.class))
-				.messageCollector().forChannel(testProcessor.output()).poll(1, TimeUnit.SECONDS);
+		Message<byte[]> received = (Message<byte[]>) ((TestSupportBinder) this.binderFactory
+				.getBinder(null, MessageChannel.class)).messageCollector()
+						.forChannel(this.testProcessor.output())
+						.poll(1, TimeUnit.SECONDS);
 		assertThat(received).isNotNull();
 		String payload = new String(received.getPayload(), StandardCharsets.UTF_8);
-		assertThat(TupleBuilder.fromString(payload)).isEqualTo(TupleBuilder.tuple().of("name", "foo"));
+		assertThat(TupleBuilder.fromString(payload))
+				.isEqualTo(TupleBuilder.tuple().of("name", "foo"));
 	}
 
 	@EnableBinding(Processor.class)

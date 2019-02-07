@@ -42,9 +42,8 @@ public class MessageChannelToFluxSenderParameterAdapter
 
 	@Override
 	public FluxSender adapt(MessageChannel bindingTarget, MethodParameter parameter) {
-		return new DefaultFluxSender(result ->
-				bindingTarget.send(result instanceof Message<?>
-						? (Message<?>) result
+		return new DefaultFluxSender(result -> bindingTarget
+				.send(result instanceof Message<?> ? (Message<?>) result
 						: MessageBuilder.withPayload(result).build()));
 	}
 

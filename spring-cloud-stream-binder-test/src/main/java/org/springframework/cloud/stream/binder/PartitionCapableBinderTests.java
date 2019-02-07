@@ -46,8 +46,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Marius Bogoevici
  * @author Vinicius Carvalho
  */
+// @checkstyle:off
 public abstract class PartitionCapableBinderTests<B extends AbstractTestBinder<? extends AbstractBinder<MessageChannel, CP, PP>, CP, PP>, CP extends ConsumerProperties, PP extends ProducerProperties>
 		extends AbstractBinderTests<B, CP, PP> {
+
+	// @checkstyle:on
 
 	protected static final SpelExpressionParser spelExpressionParser = new SpelExpressionParser();
 
@@ -55,21 +58,27 @@ public abstract class PartitionCapableBinderTests<B extends AbstractTestBinder<?
 	@SuppressWarnings("unchecked")
 	public void testAnonymousGroup() throws Exception {
 		B binder = getBinder();
-		BindingProperties producerBindingProperties = createProducerBindingProperties(createProducerProperties());
+		BindingProperties producerBindingProperties = createProducerBindingProperties(
+				createProducerProperties());
 		DirectChannel output = createBindableChannel("output", producerBindingProperties);
-		Binding<MessageChannel> producerBinding = binder.bindProducer(String.format("defaultGroup%s0",
-				getDestinationNameDelimiter()), output, (PP) producerBindingProperties.getProducer());
+		Binding<MessageChannel> producerBinding = binder.bindProducer(
+				String.format("defaultGroup%s0", getDestinationNameDelimiter()), output,
+				(PP) producerBindingProperties.getProducer());
 
 		QueueChannel input1 = new QueueChannel();
-		Binding<MessageChannel> binding1 = binder.bindConsumer(String.format("defaultGroup%s0",
-				getDestinationNameDelimiter()), null, input1, createConsumerProperties());
+		Binding<MessageChannel> binding1 = binder.bindConsumer(
+				String.format("defaultGroup%s0", getDestinationNameDelimiter()), null,
+				input1, createConsumerProperties());
 
 		QueueChannel input2 = new QueueChannel();
-		Binding<MessageChannel> binding2 = binder.bindConsumer(String.format("defaultGroup%s0",
-				getDestinationNameDelimiter()), null, input2, createConsumerProperties());
+		Binding<MessageChannel> binding2 = binder.bindConsumer(
+				String.format("defaultGroup%s0", getDestinationNameDelimiter()), null,
+				input2, createConsumerProperties());
 
 		String testPayload1 = "foo-" + UUID.randomUUID().toString();
-		output.send(MessageBuilder.withPayload(testPayload1).setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN).build());
+		output.send(MessageBuilder.withPayload(testPayload1)
+				.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN)
+				.build());
 
 		Message<byte[]> receivedMessage1 = (Message<byte[]>) receive(input1);
 		assertThat(receivedMessage1).isNotNull();
@@ -82,12 +91,17 @@ public abstract class PartitionCapableBinderTests<B extends AbstractTestBinder<?
 		binding2.unbind();
 
 		String testPayload2 = "foo-" + UUID.randomUUID().toString();
-		output.send(MessageBuilder.withPayload(testPayload2).setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN).build());
+		output.send(MessageBuilder.withPayload(testPayload2)
+				.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN)
+				.build());
 
-		binding2 = binder.bindConsumer(String.format("defaultGroup%s0", getDestinationNameDelimiter()), null, input2,
-				createConsumerProperties());
+		binding2 = binder.bindConsumer(
+				String.format("defaultGroup%s0", getDestinationNameDelimiter()), null,
+				input2, createConsumerProperties());
 		String testPayload3 = "foo-" + UUID.randomUUID().toString();
-		output.send(MessageBuilder.withPayload(testPayload3).setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN).build());
+		output.send(MessageBuilder.withPayload(testPayload3)
+				.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN)
+				.build());
 
 		receivedMessage1 = (Message<byte[]>) receive(input1);
 		assertThat(receivedMessage1).isNotNull();
@@ -109,23 +123,29 @@ public abstract class PartitionCapableBinderTests<B extends AbstractTestBinder<?
 	public void testOneRequiredGroup() throws Exception {
 		B binder = getBinder();
 		PP producerProperties = createProducerProperties();
-		DirectChannel output = createBindableChannel("output", createProducerBindingProperties(producerProperties));
+		DirectChannel output = createBindableChannel("output",
+				createProducerBindingProperties(producerProperties));
 
-		String testDestination = "testDestination" + UUID.randomUUID().toString().replace("-", "");
+		String testDestination = "testDestination"
+				+ UUID.randomUUID().toString().replace("-", "");
 
 		producerProperties.setRequiredGroups("test1");
-		Binding<MessageChannel> producerBinding = binder.bindProducer(testDestination, output, producerProperties);
+		Binding<MessageChannel> producerBinding = binder.bindProducer(testDestination,
+				output, producerProperties);
 
 		String testPayload = "foo-" + UUID.randomUUID().toString();
-		output.send(MessageBuilder.withPayload(testPayload).setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN).build());
+		output.send(MessageBuilder.withPayload(testPayload)
+				.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN)
+				.build());
 
 		QueueChannel inbound1 = new QueueChannel();
-		Binding<MessageChannel> consumerBinding = binder.bindConsumer(testDestination, "test1", inbound1,
-				createConsumerProperties());
+		Binding<MessageChannel> consumerBinding = binder.bindConsumer(testDestination,
+				"test1", inbound1, createConsumerProperties());
 
 		Message<?> receivedMessage1 = receive(inbound1);
 		assertThat(receivedMessage1).isNotNull();
-		assertThat(new String((byte[]) receivedMessage1.getPayload())).isEqualTo(testPayload);
+		assertThat(new String((byte[]) receivedMessage1.getPayload()))
+				.isEqualTo(testPayload);
 
 		producerBinding.unbind();
 		consumerBinding.unbind();
@@ -136,29 +156,36 @@ public abstract class PartitionCapableBinderTests<B extends AbstractTestBinder<?
 		B binder = getBinder();
 		PP producerProperties = createProducerProperties();
 
-		DirectChannel output = createBindableChannel("output", createProducerBindingProperties(producerProperties));
+		DirectChannel output = createBindableChannel("output",
+				createProducerBindingProperties(producerProperties));
 
-		String testDestination = "testDestination" + UUID.randomUUID().toString().replace("-", "");
+		String testDestination = "testDestination"
+				+ UUID.randomUUID().toString().replace("-", "");
 
 		producerProperties.setRequiredGroups("test1", "test2");
-		Binding<MessageChannel> producerBinding = binder.bindProducer(testDestination, output, producerProperties);
+		Binding<MessageChannel> producerBinding = binder.bindProducer(testDestination,
+				output, producerProperties);
 
 		String testPayload = "foo-" + UUID.randomUUID().toString();
-		output.send(MessageBuilder.withPayload(testPayload).setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN).build());
+		output.send(MessageBuilder.withPayload(testPayload)
+				.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN)
+				.build());
 
 		QueueChannel inbound1 = new QueueChannel();
-		Binding<MessageChannel> consumerBinding1 = binder.bindConsumer(testDestination, "test1", inbound1,
-				createConsumerProperties());
+		Binding<MessageChannel> consumerBinding1 = binder.bindConsumer(testDestination,
+				"test1", inbound1, createConsumerProperties());
 		QueueChannel inbound2 = new QueueChannel();
-		Binding<MessageChannel> consumerBinding2 = binder.bindConsumer(testDestination, "test2", inbound2,
-				createConsumerProperties());
+		Binding<MessageChannel> consumerBinding2 = binder.bindConsumer(testDestination,
+				"test2", inbound2, createConsumerProperties());
 
 		Message<?> receivedMessage1 = receive(inbound1);
 		assertThat(receivedMessage1).isNotNull();
-		assertThat(new String((byte[]) receivedMessage1.getPayload())).isEqualTo(testPayload);
+		assertThat(new String((byte[]) receivedMessage1.getPayload()))
+				.isEqualTo(testPayload);
 		Message<?> receivedMessage2 = receive(inbound2);
 		assertThat(receivedMessage2).isNotNull();
-		assertThat(new String((byte[]) receivedMessage2.getPayload())).isEqualTo(testPayload);
+		assertThat(new String((byte[]) receivedMessage2.getPayload()))
+				.isEqualTo(testPayload);
 
 		consumerBinding1.unbind();
 		consumerBinding2.unbind();
@@ -176,28 +203,35 @@ public abstract class PartitionCapableBinderTests<B extends AbstractTestBinder<?
 		consumerProperties.setPartitioned(true);
 		QueueChannel input0 = new QueueChannel();
 		input0.setBeanName("test.input0S");
-		Binding<MessageChannel> input0Binding = binder.bindConsumer(String.format("part%s0",
-				getDestinationNameDelimiter()), "testPartitionedModuleSpEL", input0, consumerProperties);
+		Binding<MessageChannel> input0Binding = binder.bindConsumer(
+				String.format("part%s0", getDestinationNameDelimiter()),
+				"testPartitionedModuleSpEL", input0, consumerProperties);
 		consumerProperties.setInstanceIndex(1);
 		QueueChannel input1 = new QueueChannel();
 		input1.setBeanName("test.input1S");
-		Binding<MessageChannel> input1Binding = binder.bindConsumer(String.format("part%s0",
-				getDestinationNameDelimiter()), "testPartitionedModuleSpEL", input1, consumerProperties);
+		Binding<MessageChannel> input1Binding = binder.bindConsumer(
+				String.format("part%s0", getDestinationNameDelimiter()),
+				"testPartitionedModuleSpEL", input1, consumerProperties);
 		consumerProperties.setInstanceIndex(2);
 		QueueChannel input2 = new QueueChannel();
 		input2.setBeanName("test.input2S");
-		Binding<MessageChannel> input2Binding = binder.bindConsumer(String.format("part%s0",
-				getDestinationNameDelimiter()), "testPartitionedModuleSpEL", input2, consumerProperties);
+		Binding<MessageChannel> input2Binding = binder.bindConsumer(
+				String.format("part%s0", getDestinationNameDelimiter()),
+				"testPartitionedModuleSpEL", input2, consumerProperties);
 
 		PP producerProperties = createProducerProperties();
-		producerProperties.setPartitionKeyExpression(spelExpressionParser.parseExpression("payload"));
-		producerProperties.setPartitionSelectorExpression(spelExpressionParser.parseExpression("hashCode()"));
+		producerProperties.setPartitionKeyExpression(
+				spelExpressionParser.parseExpression("payload"));
+		producerProperties.setPartitionSelectorExpression(
+				spelExpressionParser.parseExpression("hashCode()"));
 		producerProperties.setPartitionCount(3);
 
-		DirectChannel output = createBindableChannel("output", createProducerBindingProperties(producerProperties));
+		DirectChannel output = createBindableChannel("output",
+				createProducerBindingProperties(producerProperties));
 		output.setBeanName("test.output");
-		Binding<MessageChannel> outputBinding = binder.bindProducer(String.format("part%s0",
-				getDestinationNameDelimiter()), output, producerProperties);
+		Binding<MessageChannel> outputBinding = binder.bindProducer(
+				String.format("part%s0", getDestinationNameDelimiter()), output,
+				producerProperties);
 		try {
 			Object endpoint = extractEndpoint(outputBinding);
 			checkRkExpressionForPartitionedModuleSpEL(endpoint);
@@ -207,12 +241,16 @@ public abstract class PartitionCapableBinderTests<B extends AbstractTestBinder<?
 
 		Message<String> message2 = MessageBuilder.withPayload("2")
 				.setHeader(IntegrationMessageHeaderAccessor.CORRELATION_ID, "foo")
-				.setHeader(MessageHeaders.CONTENT_TYPE,MimeTypeUtils.TEXT_PLAIN)
+				.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN)
 				.setHeader(IntegrationMessageHeaderAccessor.SEQUENCE_NUMBER, 42)
 				.setHeader(IntegrationMessageHeaderAccessor.SEQUENCE_SIZE, 43).build();
 		output.send(message2);
-		output.send(MessageBuilder.withPayload("1").setHeader(MessageHeaders.CONTENT_TYPE,MimeTypeUtils.TEXT_PLAIN).build());
-		output.send(MessageBuilder.withPayload("0").setHeader(MessageHeaders.CONTENT_TYPE,MimeTypeUtils.TEXT_PLAIN).build());
+		output.send(MessageBuilder.withPayload("1")
+				.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN)
+				.build());
+		output.send(MessageBuilder.withPayload("0")
+				.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN)
+				.build());
 
 		Message<?> receive0 = receive(input0);
 		assertThat(receive0).isNotNull();
@@ -224,8 +262,10 @@ public abstract class PartitionCapableBinderTests<B extends AbstractTestBinder<?
 		Condition<Message<?>> correlationHeadersForPayload2 = new Condition<Message<?>>() {
 			@Override
 			public boolean matches(Message<?> value) {
-				IntegrationMessageHeaderAccessor accessor = new IntegrationMessageHeaderAccessor(value);
-				return "foo".equals(accessor.getCorrelationId()) && 42 == accessor.getSequenceNumber()
+				IntegrationMessageHeaderAccessor accessor = new IntegrationMessageHeaderAccessor(
+						value);
+				return "foo".equals(accessor.getCorrelationId())
+						&& 42 == accessor.getSequenceNumber()
 						&& 43 == accessor.getSequenceSize();
 			}
 		};
@@ -237,8 +277,10 @@ public abstract class PartitionCapableBinderTests<B extends AbstractTestBinder<?
 			assertThat(receive2).has(correlationHeadersForPayload2);
 		}
 		else {
-			List<Message<?>> receivedMessages = Arrays.asList(receive0, receive1, receive2);
-			assertThat(receivedMessages).extracting("payload").containsExactlyInAnyOrder("0".getBytes(), "1".getBytes(), "2".getBytes());
+			List<Message<?>> receivedMessages = Arrays.asList(receive0, receive1,
+					receive2);
+			assertThat(receivedMessages).extracting("payload").containsExactlyInAnyOrder(
+					"0".getBytes(), "1".getBytes(), "2".getBytes());
 			Condition<Message<?>> payloadIs2 = new Condition<Message<?>>() {
 
 				@Override
@@ -246,7 +288,8 @@ public abstract class PartitionCapableBinderTests<B extends AbstractTestBinder<?
 					return value.getPayload().equals("2".getBytes());
 				}
 			};
-			assertThat(receivedMessages).filteredOn(payloadIs2).areExactly(1, correlationHeadersForPayload2);
+			assertThat(receivedMessages).filteredOn(payloadIs2).areExactly(1,
+					correlationHeadersForPayload2);
 
 		}
 		input0Binding.unbind();
@@ -257,8 +300,9 @@ public abstract class PartitionCapableBinderTests<B extends AbstractTestBinder<?
 
 	protected void checkRkExpressionForPartitionedModuleSpEL(Object endpoint) {
 		assertThat(getEndpointRouting(endpoint))
-				.contains(getExpectedRoutingBaseDestination(String.format("part%s0", getDestinationNameDelimiter()),
-						"test") + "-' + headers['partition']");
+				.contains(getExpectedRoutingBaseDestination(
+						String.format("part%s0", getDestinationNameDelimiter()), "test")
+						+ "-' + headers['partition']");
 	}
 
 	@Test
@@ -273,36 +317,49 @@ public abstract class PartitionCapableBinderTests<B extends AbstractTestBinder<?
 		consumerProperties.setPartitioned(true);
 		QueueChannel input0 = new QueueChannel();
 		input0.setBeanName("test.input0J");
-		Binding<MessageChannel> input0Binding = binder.bindConsumer(String.format("partJ%s0",
-				getDestinationNameDelimiter()), "testPartitionedModuleJava", input0, consumerProperties);
+		Binding<MessageChannel> input0Binding = binder.bindConsumer(
+				String.format("partJ%s0", getDestinationNameDelimiter()),
+				"testPartitionedModuleJava", input0, consumerProperties);
 		consumerProperties.setInstanceIndex(1);
 		QueueChannel input1 = new QueueChannel();
 		input1.setBeanName("test.input1J");
-		Binding<MessageChannel> input1Binding = binder.bindConsumer(String.format("partJ%s0",
-				getDestinationNameDelimiter()), "testPartitionedModuleJava", input1, consumerProperties);
+		Binding<MessageChannel> input1Binding = binder.bindConsumer(
+				String.format("partJ%s0", getDestinationNameDelimiter()),
+				"testPartitionedModuleJava", input1, consumerProperties);
 		consumerProperties.setInstanceIndex(2);
 		QueueChannel input2 = new QueueChannel();
 		input2.setBeanName("test.input2J");
-		Binding<MessageChannel> input2Binding = binder.bindConsumer(String.format("partJ%s0",
-				getDestinationNameDelimiter()), "testPartitionedModuleJava", input2, consumerProperties);
+		Binding<MessageChannel> input2Binding = binder.bindConsumer(
+				String.format("partJ%s0", getDestinationNameDelimiter()),
+				"testPartitionedModuleJava", input2, consumerProperties);
 
 		PP producerProperties = createProducerProperties();
 		producerProperties.setPartitionKeyExtractorClass(PartitionTestSupport.class);
 		producerProperties.setPartitionSelectorClass(PartitionTestSupport.class);
 		producerProperties.setPartitionCount(3);
-		DirectChannel output = createBindableChannel("output", createProducerBindingProperties(producerProperties));
+		DirectChannel output = createBindableChannel("output",
+				createProducerBindingProperties(producerProperties));
 		output.setBeanName("test.output");
-		Binding<MessageChannel> outputBinding = binder.bindProducer("partJ.0", output, producerProperties);
+		Binding<MessageChannel> outputBinding = binder.bindProducer("partJ.0", output,
+				producerProperties);
 		if (usesExplicitRouting()) {
 			Object endpoint = extractEndpoint(outputBinding);
-			assertThat(getEndpointRouting(endpoint)).contains(getExpectedRoutingBaseDestination(
-					String.format("partJ%s0", getDestinationNameDelimiter()), "testPartitionedModuleJava")
-					+ "-' + headers['" + BinderHeaders.PARTITION_HEADER + "']");
+			assertThat(getEndpointRouting(endpoint))
+					.contains(getExpectedRoutingBaseDestination(
+							String.format("partJ%s0", getDestinationNameDelimiter()),
+							"testPartitionedModuleJava") + "-' + headers['"
+							+ BinderHeaders.PARTITION_HEADER + "']");
 		}
 
-		output.send(MessageBuilder.withPayload("2").setHeader(MessageHeaders.CONTENT_TYPE,MimeTypeUtils.TEXT_PLAIN).build());
-		output.send(MessageBuilder.withPayload("1").setHeader(MessageHeaders.CONTENT_TYPE,MimeTypeUtils.TEXT_PLAIN).build());
-		output.send(MessageBuilder.withPayload("0").setHeader(MessageHeaders.CONTENT_TYPE,MimeTypeUtils.TEXT_PLAIN).build());
+		output.send(MessageBuilder.withPayload("2")
+				.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN)
+				.build());
+		output.send(MessageBuilder.withPayload("1")
+				.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN)
+				.build());
+		output.send(MessageBuilder.withPayload("0")
+				.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN)
+				.build());
 
 		Message<?> receive0 = receive(input0);
 		assertThat(receive0).isNotNull();
@@ -317,8 +374,10 @@ public abstract class PartitionCapableBinderTests<B extends AbstractTestBinder<?
 			assertThat(receive2.getPayload()).isEqualTo("2".getBytes());
 		}
 		else {
-			List<Message<?>> receivedMessages = Arrays.asList(receive0, receive1, receive2);
-			assertThat(receivedMessages).extracting("payload").containsExactlyInAnyOrder("0".getBytes(), "1".getBytes(), "2".getBytes());
+			List<Message<?>> receivedMessages = Arrays.asList(receive0, receive1,
+					receive2);
+			assertThat(receivedMessages).extracting("payload").containsExactlyInAnyOrder(
+					"0".getBytes(), "1".getBytes(), "2".getBytes());
 		}
 
 		input0Binding.unbind();
@@ -358,4 +417,5 @@ public abstract class PartitionCapableBinderTests<B extends AbstractTestBinder<?
 		DirectFieldAccessor accessor = new DirectFieldAccessor(binding);
 		return (Lifecycle) accessor.getPropertyValue("lifecycle");
 	}
+
 }

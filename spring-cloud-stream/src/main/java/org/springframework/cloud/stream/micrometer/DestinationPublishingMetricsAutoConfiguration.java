@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 the original author or authors.
+ * Copyright 2018-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,22 +40,22 @@ import org.springframework.util.PatternMatchUtils;
 import org.springframework.util.StringUtils;
 
 /**
- *
  * @author Oleg Zhurakousky
- *
  * @since 2.0
  */
 @Configuration
 @AutoConfigureBefore(SimpleMetricsExportAutoConfiguration.class)
 @AutoConfigureAfter(MetricsAutoConfiguration.class)
 @ConditionalOnClass({ Binder.class, MetricsAutoConfiguration.class })
-@ConditionalOnProperty("spring.cloud.stream.bindings." + MetersPublisherBinding.APPLICATION_METRICS + ".destination")
+@ConditionalOnProperty("spring.cloud.stream.bindings."
+		+ MetersPublisherBinding.APPLICATION_METRICS + ".destination")
 @EnableConfigurationProperties(ApplicationMetricsProperties.class)
 public class DestinationPublishingMetricsAutoConfiguration {
 
 	@Bean
 	@ConditionalOnMissingBean
-	public MetricsPublisherConfig metricsPublisherConfig(ApplicationMetricsProperties metersPublisherProperties) {
+	public MetricsPublisherConfig metricsPublisherConfig(
+			ApplicationMetricsProperties metersPublisherProperties) {
 		return new MetricsPublisherConfig(metersPublisherProperties);
 	}
 
@@ -65,10 +65,15 @@ public class DestinationPublishingMetricsAutoConfiguration {
 			ApplicationMetricsProperties applicationMetricsProperties,
 			MetersPublisherBinding publisherBinding,
 			MetricsPublisherConfig metricsPublisherConfig, Clock clock) {
-		DefaultDestinationPublishingMeterRegistry registry = new DefaultDestinationPublishingMeterRegistry(applicationMetricsProperties, publisherBinding, metricsPublisherConfig, clock);
+		DefaultDestinationPublishingMeterRegistry registry = new DefaultDestinationPublishingMeterRegistry(
+				applicationMetricsProperties, publisherBinding, metricsPublisherConfig,
+				clock);
 
 		if (StringUtils.hasText(applicationMetricsProperties.getMeterFilter())) {
-			registry.config().meterFilter(MeterFilter.denyUnless(id -> PatternMatchUtils.simpleMatch(applicationMetricsProperties.getMeterFilter(), id.getName())));
+			registry.config()
+					.meterFilter(MeterFilter.denyUnless(id -> PatternMatchUtils
+							.simpleMatch(applicationMetricsProperties.getMeterFilter(),
+									id.getName())));
 		}
 		return registry;
 	}
@@ -77,11 +82,16 @@ public class DestinationPublishingMetricsAutoConfiguration {
 	public BeanFactoryPostProcessor metersPublisherBindingRegistrant() {
 		return new BeanFactoryPostProcessor() {
 			@Override
-			public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
-				RootBeanDefinition emitterBindingDefinition = new RootBeanDefinition(BindableProxyFactory.class);
-				emitterBindingDefinition.getConstructorArgumentValues().addGenericArgumentValue(MetersPublisherBinding.class);
-				((DefaultListableBeanFactory) beanFactory).registerBeanDefinition(MetersPublisherBinding.class.getName(), emitterBindingDefinition);
+			public void postProcessBeanFactory(
+					ConfigurableListableBeanFactory beanFactory) throws BeansException {
+				RootBeanDefinition emitterBindingDefinition = new RootBeanDefinition(
+						BindableProxyFactory.class);
+				emitterBindingDefinition.getConstructorArgumentValues()
+						.addGenericArgumentValue(MetersPublisherBinding.class);
+				((DefaultListableBeanFactory) beanFactory).registerBeanDefinition(
+						MetersPublisherBinding.class.getName(), emitterBindingDefinition);
 			}
 		};
 	}
+
 }

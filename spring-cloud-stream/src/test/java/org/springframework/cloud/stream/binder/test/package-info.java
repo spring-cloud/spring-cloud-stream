@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2017-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,12 +17,15 @@
 /**
  * Provides test channel binder and supporting classes
  *
- * THe test binder is backed by Spring Integration framework and is not intended
- * for uses outside of local testing.
+ * THe test binder is backed by Spring Integration framework and is not intended for uses
+ * outside of local testing.
  *
- * The test binder implementation - {@link org.springframework.cloud.stream.binder.test.TestChannelBinder}
- * The test binder configuration - {@link org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration}
- * The example that shows how to use it - {@link org.springframework.cloud.stream.binder.test.SampleStreamApp}
+ * The test binder implementation -
+ * {@link org.springframework.cloud.stream.binder.test.TestChannelBinder} The test binder
+ * configuration -
+ * {@link org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration} The
+ * example that shows how to use it -
+ * {@link org.springframework.cloud.stream.binder.test.SampleStreamApp}
  *
  */
 package org.springframework.cloud.stream.binder.test;

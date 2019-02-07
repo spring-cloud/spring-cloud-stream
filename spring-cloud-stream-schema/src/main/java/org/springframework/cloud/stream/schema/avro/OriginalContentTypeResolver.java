@@ -46,13 +46,14 @@ class OriginalContentTypeResolver implements ContentTypeResolver {
 			mimeType = (MimeType) contentType;
 		}
 		else if (contentType instanceof String) {
-			mimeType = mimeTypeCache.get(contentType);
+			mimeType = this.mimeTypeCache.get(contentType);
 			if (mimeType == null) {
 				String valueAsString = (String) contentType;
 				mimeType = MimeType.valueOf(valueAsString);
-				mimeTypeCache.put(valueAsString, mimeType);
+				this.mimeTypeCache.put(valueAsString, mimeType);
 			}
 		}
 		return mimeType;
 	}
+
 }

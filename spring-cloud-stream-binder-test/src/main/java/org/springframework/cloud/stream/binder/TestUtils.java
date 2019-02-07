@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,10 @@ import org.springframework.beans.DirectFieldAccessor;
 import org.springframework.util.Assert;
 
 /**
- * Copy of class in org.springframework.amqp.utils.test to avoid dependency on spring-amqp
+ * Copy of class in org.springframework.amqp.utils.test to avoid dependency on
+ * spring-amqp.
+ *
+ * @author David Turanski
  */
 public abstract class TestUtils {
 
@@ -61,4 +64,5 @@ public abstract class TestUtils {
 		}
 		return (T) value;
 	}
+
 }

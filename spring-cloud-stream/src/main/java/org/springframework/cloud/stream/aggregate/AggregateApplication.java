@@ -30,10 +30,11 @@ public interface AggregateApplication {
 	 * {@link org.springframework.cloud.stream.messaging.Source},
 	 * {@link org.springframework.cloud.stream.messaging.Sink} or custom interface) from
 	 * the given namespace.
-	 *
 	 * @param bindableType the bindable type
 	 * @param namespace the namespace
 	 * @param <T> parameterized bindable type
+	 * @return binding
 	 */
 	<T> T getBinding(Class<T> bindableType, String namespace);
+
 }

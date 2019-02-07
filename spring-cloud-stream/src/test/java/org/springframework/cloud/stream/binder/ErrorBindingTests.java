@@ -17,7 +17,6 @@
 package org.springframework.cloud.stream.binder;
 
 import org.junit.Test;
-
 import org.mockito.Mockito;
 
 import org.springframework.boot.SpringApplication;
@@ -37,7 +36,6 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.support.GenericMessage;
 
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -49,49 +47,60 @@ import static org.mockito.ArgumentMatchers.isNull;
  */
 public class ErrorBindingTests {
 
-	@SuppressWarnings({"rawtypes", "unchecked"})
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Test
 	public void testErrorChannelNotBoundByDefault() {
-		ConfigurableApplicationContext applicationContext = SpringApplication.run(TestProcessor.class,
-				"--server.port=0", "--spring.cloud.stream.default-binder=mock", "--spring.jmx.enabled=false");
+		ConfigurableApplicationContext applicationContext = SpringApplication.run(
+				TestProcessor.class, "--server.port=0",
+				"--spring.cloud.stream.default-binder=mock",
+				"--spring.jmx.enabled=false");
 		BinderFactory binderFactory = applicationContext.getBean(BinderFactory.class);
 
 		Binder binder = binderFactory.getBinder(null, MessageChannel.class);
 
-		Mockito.verify(binder).bindConsumer(eq("input"), isNull(), any(MessageChannel.class),
-				any(ConsumerProperties.class));
-		Mockito.verify(binder).bindProducer(eq("output"), any(MessageChannel.class), any(ProducerProperties.class));
+		Mockito.verify(binder).bindConsumer(eq("input"), isNull(),
+				any(MessageChannel.class), any(ConsumerProperties.class));
+		Mockito.verify(binder).bindProducer(eq("output"), any(MessageChannel.class),
+				any(ProducerProperties.class));
 		Mockito.verifyNoMoreInteractions(binder);
 		applicationContext.close();
 	}
 
 	@Test
 	public void testConfigurationWithDefaultErrorHandler() {
-		ApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration
-				.getCompleteConfiguration(ErrorBindingTests.ErrorConfigurationDefault.class))
-				.web(WebApplicationType.NONE).run("--spring.cloud.stream.bindings.input.consumer.max-attempts=1", "--spring.jmx.enabled=false");
+		ApplicationContext context = new SpringApplicationBuilder(
+				TestChannelBinderConfiguration.getCompleteConfiguration(
+						ErrorBindingTests.ErrorConfigurationDefault.class))
+								.web(WebApplicationType.NONE)
+								.run("--spring.cloud.stream.bindings.input.consumer.max-attempts=1",
+										"--spring.jmx.enabled=false");
 
 		InputDestination source = context.getBean(InputDestination.class);
 		source.send(new GenericMessage<byte[]>("Hello".getBytes()));
 		source.send(new GenericMessage<byte[]>("Hello".getBytes()));
 		source.send(new GenericMessage<byte[]>("Hello".getBytes()));
 
-		ErrorConfigurationDefault errorConfiguration = context.getBean(ErrorConfigurationDefault.class);
+		ErrorConfigurationDefault errorConfiguration = context
+				.getBean(ErrorConfigurationDefault.class);
 		assertThat(errorConfiguration.counter == 3);
 	}
 
 	@Test
 	public void testConfigurationWithCustomErrorHandler() {
-		ApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration
-				.getCompleteConfiguration(ErrorBindingTests.ErrorConfigurationWithCustomErrorHandler.class))
-				.web(WebApplicationType.NONE).run("--spring.cloud.stream.bindings.input.consumer.max-attempts=1", "--spring.jmx.enabled=false");
+		ApplicationContext context = new SpringApplicationBuilder(
+				TestChannelBinderConfiguration.getCompleteConfiguration(
+						ErrorBindingTests.ErrorConfigurationWithCustomErrorHandler.class))
+								.web(WebApplicationType.NONE)
+								.run("--spring.cloud.stream.bindings.input.consumer.max-attempts=1",
+										"--spring.jmx.enabled=false");
 
 		InputDestination source = context.getBean(InputDestination.class);
 		source.send(new GenericMessage<byte[]>("Hello".getBytes()));
 		source.send(new GenericMessage<byte[]>("Hello".getBytes()));
 		source.send(new GenericMessage<byte[]>("Hello".getBytes()));
 
-		ErrorConfigurationWithCustomErrorHandler errorConfiguration = context.getBean(ErrorConfigurationWithCustomErrorHandler.class);
+		ErrorConfigurationWithCustomErrorHandler errorConfiguration = context
+				.getBean(ErrorConfigurationWithCustomErrorHandler.class);
 		assertThat(errorConfiguration.counter == 6);
 	}
 
@@ -109,9 +118,10 @@ public class ErrorBindingTests {
 
 		@StreamListener(Sink.INPUT)
 		public void handle(Object value) {
-			counter++;
+			this.counter++;
 			throw new RuntimeException("BOOM!");
 		}
+
 	}
 
 	@EnableBinding(Processor.class)
@@ -122,13 +132,15 @@ public class ErrorBindingTests {
 
 		@StreamListener(Sink.INPUT)
 		public void handle(Object value) {
-			counter++;
+			this.counter++;
 			throw new RuntimeException("BOOM!");
 		}
 
 		@ServiceActivator(inputChannel = "input.anonymous.errors")
 		public void error(Message<?> message) {
-			counter++;
+			this.counter++;
 		}
+
 	}
+
 }

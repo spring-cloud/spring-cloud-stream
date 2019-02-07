@@ -31,7 +31,7 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.handler.annotation.SendTo;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.fail;
+import static org.assertj.core.api.Assertions.fail;
 
 /**
  * @author Marius Bogoevici
@@ -44,11 +44,13 @@ public class StreamListenerDuplicateMappingTests {
 	public void testMultipleMappingsWithReturnValue() {
 		ConfigurableApplicationContext context = null;
 		try {
-			context = SpringApplication.run(TestMultipleMappingsWithReturnValue.class, "--server.port=0");
+			context = SpringApplication.run(TestMultipleMappingsWithReturnValue.class,
+					"--server.port=0");
 			fail("Exception expected on duplicate mapping");
 		}
 		catch (IllegalArgumentException e) {
-			assertThat(e.getMessage()).startsWith(StreamListenerErrorMessages.MULTIPLE_VALUE_RETURNING_METHODS);
+			assertThat(e.getMessage()).startsWith(
+					StreamListenerErrorMessages.MULTIPLE_VALUE_RETURNING_METHODS);
 		}
 		finally {
 			if (context != null) {
@@ -61,11 +63,14 @@ public class StreamListenerDuplicateMappingTests {
 	public void testDuplicateMappingFromAbstractMethod() {
 		ConfigurableApplicationContext context = null;
 		try {
-			context = SpringApplication.run(TestDuplicateMappingFromAbstractMethod.class, "--server.port=0");
+			context = SpringApplication.run(TestDuplicateMappingFromAbstractMethod.class,
+					"--server.port=0");
 		}
 		catch (BeanCreationException e) {
-			String errorMessage = e.getCause().getMessage().startsWith("Duplicate @StreamListener mapping")
-					? "Duplicate mapping exception is not expected" : "Test failed with exception";
+			String errorMessage = e.getCause().getMessage()
+					.startsWith("Duplicate @StreamListener mapping")
+							? "Duplicate mapping exception is not expected"
+							: "Test failed with exception";
 			fail(errorMessage + ": " + e.getMessage());
 		}
 		finally {
@@ -76,7 +81,9 @@ public class StreamListenerDuplicateMappingTests {
 	}
 
 	public interface GenericSink<T extends Base> {
+
 		void testMethod(T msg);
+
 	}
 
 	public interface Base {
@@ -98,16 +105,19 @@ public class StreamListenerDuplicateMappingTests {
 		public String receiveDuplicateMapping(Message<String> fooMessage) {
 			return null;
 		}
+
 	}
 
 	@EnableBinding(Sink.class)
 	@EnableAutoConfiguration
-	public static class TestDuplicateMappingFromAbstractMethod implements GenericSink<TestBase> {
+	public static class TestDuplicateMappingFromAbstractMethod
+			implements GenericSink<TestBase> {
 
 		@Override
 		@StreamListener(Sink.INPUT)
 		public void testMethod(TestBase msg) {
 		}
+
 	}
 
 	public class TestBase implements Base {

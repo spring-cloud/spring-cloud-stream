@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2017-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,10 +29,9 @@ import org.springframework.context.annotation.Import;
 import org.springframework.integration.annotation.ServiceActivator;
 import org.springframework.integration.handler.AbstractReplyProducingMessageHandler;
 
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- *
  * @author Oleg Zhurakousky
  *
  */
@@ -40,27 +39,35 @@ public class BindingServiceConfigurationTests {
 
 	@Test
 	public void valdateImportedConfiguartionHandlerPostProcessing() {
-		ApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration.getCompleteConfiguration(RootConfiguration.class)).web(WebApplicationType.NONE).run();
-		Map<String, AbstractReplyProducingMessageHandler> beansOfType = context.getBeansOfType(AbstractReplyProducingMessageHandler.class);
+		ApplicationContext context = new SpringApplicationBuilder(
+				TestChannelBinderConfiguration
+						.getCompleteConfiguration(RootConfiguration.class))
+								.web(WebApplicationType.NONE).run();
+		Map<String, AbstractReplyProducingMessageHandler> beansOfType = context
+				.getBeansOfType(AbstractReplyProducingMessageHandler.class);
 		for (AbstractReplyProducingMessageHandler handler : beansOfType.values()) {
-			assertTrue(handler.getNotPropagatedHeaders().contains("contentType"));
+			assertThat(handler.getNotPropagatedHeaders().contains("contentType"))
+					.isTrue();
 		}
 	}
 
 	@Configuration
 	@Import(ImportedConfiguration.class)
 	public static class RootConfiguration {
-		@ServiceActivator(inputChannel="input")
+
+		@ServiceActivator(inputChannel = "input")
 		public void rootService(String val) {
 		}
+
 	}
 
 	@Configuration
 	public static class ImportedConfiguration {
-		@ServiceActivator(inputChannel="input")
+
+		@ServiceActivator(inputChannel = "input")
 		public void importedService(String val) {
 		}
-	}
 
+	}
 
 }

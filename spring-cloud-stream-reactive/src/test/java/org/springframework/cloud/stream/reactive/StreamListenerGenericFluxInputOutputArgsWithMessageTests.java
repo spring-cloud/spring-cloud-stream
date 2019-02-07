@@ -53,8 +53,8 @@ public class StreamListenerGenericFluxInputOutputArgsWithMessageTests {
 		processor.input().send(MessageBuilder.withPayload(sentPayload)
 				.setHeader("contentType", "text/plain").build());
 		MessageCollector messageCollector = context.getBean(MessageCollector.class);
-		Message<String> result = (Message<String>) messageCollector.forChannel(processor.output()).poll(1000,
-				TimeUnit.MILLISECONDS);
+		Message<String> result = (Message<String>) messageCollector
+				.forChannel(processor.output()).poll(1000, TimeUnit.MILLISECONDS);
 		assertThat(result).isNotNull();
 		assertThat(result.getPayload()).isEqualTo(sentPayload.toUpperCase());
 	}
@@ -88,10 +88,12 @@ public class StreamListenerGenericFluxInputOutputArgsWithMessageTests {
 
 	public static class TestGenericStringFluxInputOutputArgsWithMessageImpl1
 			extends TestGenericFluxInputOutputArgsWithMessage1<String> {
+
 	}
 
 	public static class TestGenericStringFluxInputOutputArgsWithMessageImpl2
 			extends TestGenericFluxInputOutputArgsWithMessage2<String> {
+
 	}
 
 	@EnableBinding(Processor.class)
@@ -104,6 +106,7 @@ public class StreamListenerGenericFluxInputOutputArgsWithMessageTests {
 			output.send(input.map(m -> MessageBuilder
 					.withPayload((A) m.toString().toUpperCase()).build()));
 		}
+
 	}
 
 	@EnableBinding(Processor.class)
@@ -115,5 +118,7 @@ public class StreamListenerGenericFluxInputOutputArgsWithMessageTests {
 			output.send(input.map(m -> MessageBuilder
 					.withPayload((A) m.toString().toUpperCase()).build()));
 		}
+
 	}
+
 }

@@ -49,22 +49,22 @@ public class StreamListenerAnnotationBeanPostProcessorOverrideTest {
 	@Test
 	@SuppressWarnings("unchecked")
 	public void testOverrideStreamListenerAnnotationBeanPostProcessor() throws Exception {
-		ConfigurableApplicationContext context = SpringApplication.run(TestPojoWithAnnotatedArguments.class,
-				"--server.port=0");
+		ConfigurableApplicationContext context = SpringApplication
+				.run(TestPojoWithAnnotatedArguments.class, "--server.port=0");
 
 		TestPojoWithAnnotatedArguments testPojoWithAnnotatedArguments = context
 				.getBean(TestPojoWithAnnotatedArguments.class);
 		Sink sink = context.getBean(Sink.class);
 		String id = UUID.randomUUID().toString();
 		sink.input().send(MessageBuilder.withPayload("{\"foo\":\"barbar" + id + "\"}")
-				.setHeader("contentType", "application/json").setHeader("testHeader", "testValue")
-				.setHeader("type", "foo").build());
+				.setHeader("contentType", "application/json")
+				.setHeader("testHeader", "testValue").setHeader("type", "foo").build());
 		sink.input().send(MessageBuilder.withPayload("{\"bar\":\"foofoo" + id + "\"}")
-				.setHeader("contentType", "application/json").setHeader("testHeader", "testValue")
-				.setHeader("type", "bar").build());
+				.setHeader("contentType", "application/json")
+				.setHeader("testHeader", "testValue").setHeader("type", "bar").build());
 		assertThat(testPojoWithAnnotatedArguments.receivedFoo).hasSize(1);
-		assertThat(testPojoWithAnnotatedArguments.receivedFoo.get(0)).hasFieldOrPropertyWithValue("foo",
-				"barbar" + id);
+		assertThat(testPojoWithAnnotatedArguments.receivedFoo.get(0))
+				.hasFieldOrPropertyWithValue("foo", "barbar" + id);
 		context.close();
 	}
 
@@ -82,12 +82,14 @@ public class StreamListenerAnnotationBeanPostProcessorOverrideTest {
 		public static StreamListenerAnnotationBeanPostProcessor streamListenerAnnotationBeanPostProcessor() {
 			return new StreamListenerAnnotationBeanPostProcessor() {
 				@Override
-				protected StreamListener postProcessAnnotation(StreamListener originalAnnotation,
-						Method annotatedMethod) {
+				protected StreamListener postProcessAnnotation(
+						StreamListener originalAnnotation, Method annotatedMethod) {
 					Map<String, Object> attributes = new HashMap<>(
 							AnnotationUtils.getAnnotationAttributes(originalAnnotation));
-					attributes.put("condition", "headers['type']=='" + originalAnnotation.condition() + "'");
-					return AnnotationUtils.synthesizeAnnotation(attributes, StreamListener.class, annotatedMethod);
+					attributes.put("condition",
+							"headers['type']=='" + originalAnnotation.condition() + "'");
+					return AnnotationUtils.synthesizeAnnotation(attributes,
+							StreamListener.class, annotatedMethod);
 				}
 			};
 		}
@@ -96,5 +98,7 @@ public class StreamListenerAnnotationBeanPostProcessorOverrideTest {
 		public void receive(@Payload StreamListenerTestUtils.FooPojo fooPojo) {
 			this.receivedFoo.add(fooPojo);
 		}
+
 	}
+
 }

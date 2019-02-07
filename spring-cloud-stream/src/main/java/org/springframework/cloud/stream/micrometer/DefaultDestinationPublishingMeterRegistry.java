@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 the original author or authors.
+ * Copyright 2018-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,6 @@ import java.util.function.ToLongFunction;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.DistributionSummary;
@@ -52,7 +51,6 @@ import io.micrometer.core.instrument.step.StepDistributionSummary;
 import io.micrometer.core.instrument.step.StepFunctionCounter;
 import io.micrometer.core.instrument.step.StepFunctionTimer;
 import io.micrometer.core.instrument.step.StepTimer;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -61,14 +59,14 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 
 /**
- *
  * @author Oleg Zhurakousky
- *
  * @since 2.0
  */
-class DefaultDestinationPublishingMeterRegistry extends MeterRegistry implements SmartLifecycle {
+class DefaultDestinationPublishingMeterRegistry extends MeterRegistry
+		implements SmartLifecycle {
 
-	private static final Log logger = LogFactory.getLog(DefaultDestinationPublishingMeterRegistry.class);
+	private static final Log logger = LogFactory
+			.getLog(DefaultDestinationPublishingMeterRegistry.class);
 
 	private final MetricsPublisherConfig metricsPublisherConfig;
 
@@ -80,8 +78,10 @@ class DefaultDestinationPublishingMeterRegistry extends MeterRegistry implements
 
 	private ScheduledFuture<?> publisher;
 
-	DefaultDestinationPublishingMeterRegistry(ApplicationMetricsProperties applicationProperties,
-			MetersPublisherBinding publisherBinding, MetricsPublisherConfig metricsPublisherConfig, Clock clock) {
+	DefaultDestinationPublishingMeterRegistry(
+			ApplicationMetricsProperties applicationProperties,
+			MetersPublisherBinding publisherBinding,
+			MetricsPublisherConfig metricsPublisherConfig, Clock clock) {
 		super(clock);
 		this.metricsPublisherConfig = metricsPublisherConfig;
 		this.metricsConsumer = new MessageChannelPublisher(publisherBinding);
@@ -95,9 +95,9 @@ class DefaultDestinationPublishingMeterRegistry extends MeterRegistry implements
 
 	@Override
 	public void stop() {
-		if (publisher != null) {
-			publisher.cancel(false);
-			publisher = null;
+		if (this.publisher != null) {
+			this.publisher.cancel(false);
+			this.publisher = null;
 		}
 	}
 
@@ -129,12 +129,13 @@ class DefaultDestinationPublishingMeterRegistry extends MeterRegistry implements
 
 	@Override
 	protected Counter newCounter(Meter.Id id) {
-		return new StepCounter(id, clock, metricsPublisherConfig.step().toMillis());
+		return new StepCounter(id, this.clock,
+				this.metricsPublisherConfig.step().toMillis());
 	}
 
 	@Override
 	protected LongTaskTimer newLongTaskTimer(Meter.Id id) {
-		return new DefaultLongTaskTimer(id, clock);
+		return new DefaultLongTaskTimer(id, this.clock);
 	}
 
 	@Override
@@ -153,7 +154,8 @@ class DefaultDestinationPublishingMeterRegistry extends MeterRegistry implements
 			}
 		}
 		if (!aggregatedMeters.isEmpty()) {
-			ApplicationMetrics metrics = new ApplicationMetrics(this.applicationProperties.getKey(), aggregatedMeters);
+			ApplicationMetrics metrics = new ApplicationMetrics(
+					this.applicationProperties.getKey(), aggregatedMeters);
 			metrics.setInterval(this.metricsPublisherConfig.step().toMillis());
 			metrics.setProperties(this.applicationProperties.getExportProperties());
 			try {
@@ -167,21 +169,27 @@ class DefaultDestinationPublishingMeterRegistry extends MeterRegistry implements
 	}
 
 	@Override
-	protected Timer newTimer(Id id, DistributionStatisticConfig distributionStatisticConfig,
+	protected Timer newTimer(Id id,
+			DistributionStatisticConfig distributionStatisticConfig,
 			PauseDetector pauseDetector) {
-		return new StepTimer(id, clock, distributionStatisticConfig, pauseDetector, getBaseTimeUnit(), metricsPublisherConfig.step().toMillis(), false);
+		return new StepTimer(id, this.clock, distributionStatisticConfig, pauseDetector,
+				getBaseTimeUnit(), this.metricsPublisherConfig.step().toMillis(), false);
 	}
 
 	@Override
-	protected <T> FunctionTimer newFunctionTimer(Id id, T obj, ToLongFunction<T> countFunction,
-			ToDoubleFunction<T> totalTimeFunction, TimeUnit totalTimeFunctionUnits) {
-		return new StepFunctionTimer<T>(id, clock, metricsPublisherConfig.step().toMillis(), obj, countFunction, totalTimeFunction,
-				totalTimeFunctionUnits, getBaseTimeUnit());
+	protected <T> FunctionTimer newFunctionTimer(Id id, T obj,
+			ToLongFunction<T> countFunction, ToDoubleFunction<T> totalTimeFunction,
+			TimeUnit totalTimeFunctionUnits) {
+		return new StepFunctionTimer<T>(id, this.clock,
+				this.metricsPublisherConfig.step().toMillis(), obj, countFunction,
+				totalTimeFunction, totalTimeFunctionUnits, getBaseTimeUnit());
 	}
 
 	@Override
-	protected <T> FunctionCounter newFunctionCounter(Id id, T obj, ToDoubleFunction<T> valueFunction) {
-		return new StepFunctionCounter<T>(id, clock, metricsPublisherConfig.step().toMillis(), obj, valueFunction);
+	protected <T> FunctionCounter newFunctionCounter(Id id, T obj,
+			ToDoubleFunction<T> valueFunction) {
+		return new StepFunctionCounter<T>(id, this.clock,
+				this.metricsPublisherConfig.step().toMillis(), obj, valueFunction);
 	}
 
 	@Override
@@ -190,23 +198,28 @@ class DefaultDestinationPublishingMeterRegistry extends MeterRegistry implements
 	}
 
 	@Override
-	protected DistributionSummary newDistributionSummary(Id id, DistributionStatisticConfig distributionStatisticConfig, double scale) {
-		return new StepDistributionSummary(id, clock, distributionStatisticConfig, scale, metricsPublisherConfig.step().toMillis(), false);
+	protected DistributionSummary newDistributionSummary(Id id,
+			DistributionStatisticConfig distributionStatisticConfig, double scale) {
+		return new StepDistributionSummary(id, this.clock, distributionStatisticConfig,
+				scale, this.metricsPublisherConfig.step().toMillis(), false);
 	}
 
 	@Override
 	protected DistributionStatisticConfig defaultHistogramConfig() {
-		return DistributionStatisticConfig.builder().expiry(metricsPublisherConfig.step()).build()
+		return DistributionStatisticConfig.builder()
+				.expiry(this.metricsPublisherConfig.step()).build()
 				.merge(DistributionStatisticConfig.DEFAULT);
 	}
 
 	private void start(ThreadFactory threadFactory) {
-		if (publisher != null) {
+		if (this.publisher != null) {
 			stop();
 		}
-		publisher = Executors.newSingleThreadScheduledExecutor(threadFactory).scheduleAtFixedRate(this::publish,
-				metricsPublisherConfig.step().toMillis(), metricsPublisherConfig.step().toMillis(),
-				TimeUnit.MILLISECONDS);
+		this.publisher = Executors.newSingleThreadScheduledExecutor(threadFactory)
+				.scheduleAtFixedRate(this::publish,
+						this.metricsPublisherConfig.step().toMillis(),
+						this.metricsPublisherConfig.step().toMillis(),
+						TimeUnit.MILLISECONDS);
 	}
 
 	private Metric<Number> toSummaryMetric(DistributionSummary summary) {
@@ -221,6 +234,7 @@ class DefaultDestinationPublishingMeterRegistry extends MeterRegistry implements
 	 *
 	 */
 	private static final class MessageChannelPublisher implements Consumer<String> {
+
 		private final MetersPublisherBinding metersPublisherBinding;
 
 		MessageChannelPublisher(MetersPublisherBinding metersPublisherBinding) {
@@ -230,8 +244,11 @@ class DefaultDestinationPublishingMeterRegistry extends MeterRegistry implements
 		@Override
 		public void accept(String metricData) {
 			logger.trace(metricData);
-			Message<String> message = MessageBuilder.withPayload(metricData).setHeader("STREAM_CLOUD_STREAM_VERSION", "2.x").build();
+			Message<String> message = MessageBuilder.withPayload(metricData)
+					.setHeader("STREAM_CLOUD_STREAM_VERSION", "2.x").build();
 			this.metersPublisherBinding.applicationMetrics().send(message);
 		}
+
 	}
+
 }

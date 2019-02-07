@@ -46,8 +46,8 @@ public class BinderConfiguration {
 	 * @param defaultCandidate whether the binder should be considered as a candidate when
 	 * determining a default
 	 */
-	public BinderConfiguration(String binderType, Map<String, Object> properties, boolean inheritEnvironment,
-			boolean defaultCandidate) {
+	public BinderConfiguration(String binderType, Map<String, Object> properties,
+			boolean inheritEnvironment, boolean defaultCandidate) {
 		this.binderType = binderType;
 		this.properties = properties;
 		this.inheritEnvironment = inheritEnvironment;
@@ -55,18 +55,19 @@ public class BinderConfiguration {
 	}
 
 	public String getBinderType() {
-		return binderType;
+		return this.binderType;
 	}
 
 	public Map<String, Object> getProperties() {
-		return properties;
+		return this.properties;
 	}
 
 	public boolean isInheritEnvironment() {
-		return inheritEnvironment;
+		return this.inheritEnvironment;
 	}
 
 	public boolean isDefaultCandidate() {
-		return defaultCandidate;
+		return this.defaultCandidate;
 	}
+
 }

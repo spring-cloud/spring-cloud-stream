@@ -72,14 +72,12 @@ public class BindingService {
 
 	private final BinderFactory binderFactory;
 
-	public BindingService(
-			BindingServiceProperties bindingServiceProperties,
+	public BindingService(BindingServiceProperties bindingServiceProperties,
 			BinderFactory binderFactory) {
 		this(bindingServiceProperties, binderFactory, null);
 	}
 
-	public BindingService(
-			BindingServiceProperties bindingServiceProperties,
+	public BindingService(BindingServiceProperties bindingServiceProperties,
 			BinderFactory binderFactory, TaskScheduler taskScheduler) {
 		this.bindingServiceProperties = bindingServiceProperties;
 		this.binderFactory = binderFactory;
@@ -111,14 +109,18 @@ public class BindingService {
 				.getBindingDestination(inputName);
 
 		if (consumerProperties.isMultiplex()) {
-			bindings.add(doBindConsumer(input, inputName, binder, consumerProperties, bindingTarget));
+			bindings.add(doBindConsumer(input, inputName, binder, consumerProperties,
+					bindingTarget));
 		}
 		else {
-			String[] bindingTargets = StringUtils.commaDelimitedListToStringArray(bindingTarget);
+			String[] bindingTargets = StringUtils
+					.commaDelimitedListToStringArray(bindingTarget);
 			for (String target : bindingTargets) {
 				Binding<T> binding = input instanceof PollableSource
-						? doBindPollableConsumer(input, inputName, binder, consumerProperties, target)
-						: doBindConsumer(input, inputName, binder, consumerProperties, target);
+						? doBindPollableConsumer(input, inputName, binder,
+								consumerProperties, target)
+						: doBindConsumer(input, inputName, binder, consumerProperties,
+								target);
 
 				bindings.add(binding);
 			}
@@ -128,9 +130,11 @@ public class BindingService {
 		return bindings;
 	}
 
-	public <T> Binding<T> doBindConsumer(T input, String inputName, Binder<T, ConsumerProperties, ?> binder,
+	public <T> Binding<T> doBindConsumer(T input, String inputName,
+			Binder<T, ConsumerProperties, ?> binder,
 			ConsumerProperties consumerProperties, String target) {
-		if (this.taskScheduler == null || this.bindingServiceProperties.getBindingRetryInterval() <= 0) {
+		if (this.taskScheduler == null
+				|| this.bindingServiceProperties.getBindingRetryInterval() <= 0) {
 			return binder.bindConsumer(target,
 					this.bindingServiceProperties.getGroup(inputName), input,
 					consumerProperties);
@@ -143,66 +147,77 @@ public class BindingService {
 			}
 			catch (RuntimeException e) {
 				LateBinding<T> late = new LateBinding<T>();
-				rescheduleConsumerBinding(input, inputName, binder, consumerProperties, target, late, e);
+				rescheduleConsumerBinding(input, inputName, binder, consumerProperties,
+						target, late, e);
 				return late;
 			}
 		}
 	}
 
 	public <T> void rescheduleConsumerBinding(final T input, final String inputName,
-			final Binder<T, ConsumerProperties, ?> binder, final ConsumerProperties consumerProperties,
-			final String target, final LateBinding<T> late, RuntimeException exception) {
+			final Binder<T, ConsumerProperties, ?> binder,
+			final ConsumerProperties consumerProperties, final String target,
+			final LateBinding<T> late, RuntimeException exception) {
 		assertNotIllegalException(exception);
-		this.log.error("Failed to create consumer binding; retrying in " +
-			this.bindingServiceProperties.getBindingRetryInterval() + " seconds", exception);
+		this.log.error("Failed to create consumer binding; retrying in "
+				+ this.bindingServiceProperties.getBindingRetryInterval() + " seconds",
+				exception);
 		this.scheduleTask(() -> {
 			try {
 				late.setDelegate(binder.bindConsumer(target,
-						this.bindingServiceProperties.getGroup(inputName), input, consumerProperties));
+						this.bindingServiceProperties.getGroup(inputName), input,
+						consumerProperties));
 			}
 			catch (RuntimeException e) {
-				rescheduleConsumerBinding(input, inputName, binder, consumerProperties, target, late, e);
+				rescheduleConsumerBinding(input, inputName, binder, consumerProperties,
+						target, late, e);
 			}
 		});
 	}
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
-	public <T> Binding<T> doBindPollableConsumer(T input, String inputName, Binder<T, ConsumerProperties, ?> binder,
+	public <T> Binding<T> doBindPollableConsumer(T input, String inputName,
+			Binder<T, ConsumerProperties, ?> binder,
 			ConsumerProperties consumerProperties, String target) {
-		if (this.taskScheduler == null || this.bindingServiceProperties.getBindingRetryInterval() <= 0) {
+		if (this.taskScheduler == null
+				|| this.bindingServiceProperties.getBindingRetryInterval() <= 0) {
 			return ((PollableConsumerBinder) binder).bindPollableConsumer(target,
-					this.bindingServiceProperties.getGroup(inputName), (PollableSource) input,
-					consumerProperties);
+					this.bindingServiceProperties.getGroup(inputName),
+					(PollableSource) input, consumerProperties);
 		}
 		else {
 			try {
 				return ((PollableConsumerBinder) binder).bindPollableConsumer(target,
-						this.bindingServiceProperties.getGroup(inputName), (PollableSource) input,
-						consumerProperties);
+						this.bindingServiceProperties.getGroup(inputName),
+						(PollableSource) input, consumerProperties);
 			}
 			catch (RuntimeException e) {
 				LateBinding<T> late = new LateBinding<T>();
-				reschedulePollableConsumerBinding(input, inputName, binder, consumerProperties, target, late, e);
+				reschedulePollableConsumerBinding(input, inputName, binder,
+						consumerProperties, target, late, e);
 				return late;
 			}
 		}
 	}
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
-	public <T> void reschedulePollableConsumerBinding(final T input, final String inputName,
-			final Binder<T, ConsumerProperties, ?> binder, final ConsumerProperties consumerProperties,
-			final String target, final LateBinding<T> late, RuntimeException exception) {
+	public <T> void reschedulePollableConsumerBinding(final T input,
+			final String inputName, final Binder<T, ConsumerProperties, ?> binder,
+			final ConsumerProperties consumerProperties, final String target,
+			final LateBinding<T> late, RuntimeException exception) {
 		assertNotIllegalException(exception);
-		this.log.error("Failed to create consumer binding; retrying in " +
-			this.bindingServiceProperties.getBindingRetryInterval() + " seconds", exception);
+		this.log.error("Failed to create consumer binding; retrying in "
+				+ this.bindingServiceProperties.getBindingRetryInterval() + " seconds",
+				exception);
 		this.scheduleTask(() -> {
 			try {
-				late.setDelegate(((PollableConsumerBinder) binder).bindPollableConsumer(target,
-						this.bindingServiceProperties.getGroup(inputName), (PollableSource) input,
-						consumerProperties));
+				late.setDelegate(((PollableConsumerBinder) binder).bindPollableConsumer(
+						target, this.bindingServiceProperties.getGroup(inputName),
+						(PollableSource) input, consumerProperties));
 			}
 			catch (RuntimeException e) {
-				reschedulePollableConsumerBinding(input, inputName, binder, consumerProperties, target, late, e);
+				reschedulePollableConsumerBinding(input, inputName, binder,
+						consumerProperties, target, late, e);
 			}
 		});
 	}
@@ -225,23 +240,27 @@ public class BindingService {
 			producerProperties = extendedProducerProperties;
 		}
 		validate(producerProperties);
-		Binding<T> binding = doBindProducer(output, bindingTarget, binder, producerProperties);
+		Binding<T> binding = doBindProducer(output, bindingTarget, binder,
+				producerProperties);
 		this.producerBindings.put(outputName, binding);
 		return binding;
 	}
 
 	@SuppressWarnings("rawtypes")
 	public Object getExtendedProducerProperties(Object output, String outputName) {
-		Binder binder =  getBinder(outputName, output.getClass());
+		Binder binder = getBinder(outputName, output.getClass());
 		if (binder instanceof ExtendedPropertiesBinder) {
-			return ((ExtendedPropertiesBinder) binder).getExtendedProducerProperties(outputName);
+			return ((ExtendedPropertiesBinder) binder)
+					.getExtendedProducerProperties(outputName);
 		}
 		return null;
 	}
 
-	public <T> Binding<T> doBindProducer(T output, String bindingTarget, Binder<T, ?, ProducerProperties> binder,
+	public <T> Binding<T> doBindProducer(T output, String bindingTarget,
+			Binder<T, ?, ProducerProperties> binder,
 			ProducerProperties producerProperties) {
-		if (this.taskScheduler == null || this.bindingServiceProperties.getBindingRetryInterval() <= 0) {
+		if (this.taskScheduler == null
+				|| this.bindingServiceProperties.getBindingRetryInterval() <= 0) {
 			return binder.bindProducer(bindingTarget, output, producerProperties);
 		}
 		else {
@@ -250,24 +269,29 @@ public class BindingService {
 			}
 			catch (RuntimeException e) {
 				LateBinding<T> late = new LateBinding<T>();
-				rescheduleProducerBinding(output, bindingTarget, binder, producerProperties, late, e);
+				rescheduleProducerBinding(output, bindingTarget, binder,
+						producerProperties, late, e);
 				return late;
 			}
 		}
 	}
 
 	public <T> void rescheduleProducerBinding(final T output, final String bindingTarget,
-			final Binder<T, ?, ProducerProperties> binder, final ProducerProperties producerProperties,
-			final LateBinding<T> late, final RuntimeException exception) {
+			final Binder<T, ?, ProducerProperties> binder,
+			final ProducerProperties producerProperties, final LateBinding<T> late,
+			final RuntimeException exception) {
 		assertNotIllegalException(exception);
-		this.log.error("Failed to create producer binding; retrying in " +
-				this.bindingServiceProperties.getBindingRetryInterval() + " seconds", exception);
+		this.log.error("Failed to create producer binding; retrying in "
+				+ this.bindingServiceProperties.getBindingRetryInterval() + " seconds",
+				exception);
 		this.scheduleTask(() -> {
 			try {
-				late.setDelegate(binder.bindProducer(bindingTarget, output, producerProperties));
+				late.setDelegate(
+						binder.bindProducer(bindingTarget, output, producerProperties));
 			}
 			catch (RuntimeException e) {
-				rescheduleProducerBinding(output, bindingTarget, binder, producerProperties, late, e);
+				rescheduleProducerBinding(output, bindingTarget, binder,
+						producerProperties, late, e);
 			}
 		});
 	}
@@ -279,8 +303,8 @@ public class BindingService {
 				binding.unbind();
 			}
 		}
-		else if (log.isWarnEnabled()) {
-			log.warn("Trying to unbind '" + inputName + "', but no binding found.");
+		else if (this.log.isWarnEnabled()) {
+			this.log.warn("Trying to unbind '" + inputName + "', but no binding found.");
 		}
 	}
 
@@ -289,14 +313,13 @@ public class BindingService {
 		if (binding != null) {
 			binding.unbind();
 		}
-		else if (log.isWarnEnabled()) {
-			log.warn("Trying to unbind '" + outputName + "', but no binding found.");
+		else if (this.log.isWarnEnabled()) {
+			this.log.warn("Trying to unbind '" + outputName + "', but no binding found.");
 		}
 	}
 
 	/**
 	 * Provided for backwards compatibility. Will be removed in a future version.
-	 *
 	 * @return {@link BindingServiceProperties}
 	 */
 	@Deprecated
@@ -309,13 +332,14 @@ public class BindingService {
 	}
 
 	protected <T> Binder<T, ?, ?> getBinder(String channelName, Class<T> bindableType) {
-		String binderConfigurationName = this.bindingServiceProperties.getBinder(channelName);
-		return binderFactory.getBinder(binderConfigurationName, bindableType);
+		String binderConfigurationName = this.bindingServiceProperties
+				.getBinder(channelName);
+		return this.binderFactory.getBinder(binderConfigurationName, bindableType);
 	}
 
 	private void validate(Object properties) {
 		DataBinder dataBinder = new DataBinder(properties);
-		dataBinder.setValidator(validator);
+		dataBinder.setValidator(this.validator);
 		dataBinder.validate();
 		if (dataBinder.getBindingResult().hasErrors()) {
 			throw new IllegalStateException(dataBinder.getBindingResult().toString());
@@ -323,12 +347,14 @@ public class BindingService {
 	}
 
 	private void scheduleTask(Runnable task) {
-		this.taskScheduler.schedule(task, new Date(System.currentTimeMillis() +
-				this.bindingServiceProperties.getBindingRetryInterval() * 1_000));
+		this.taskScheduler.schedule(task, new Date(System.currentTimeMillis()
+				+ this.bindingServiceProperties.getBindingRetryInterval() * 1_000));
 	}
 
-	private void assertNotIllegalException(RuntimeException exception) throws RuntimeException {
-		if (exception instanceof IllegalStateException || exception instanceof IllegalArgumentException) {
+	private void assertNotIllegalException(RuntimeException exception)
+			throws RuntimeException {
+		if (exception instanceof IllegalStateException
+				|| exception instanceof IllegalArgumentException) {
 			throw exception;
 		}
 	}

@@ -35,11 +35,15 @@ import static org.junit.Assert.fail;
  * skipped, depending on the value of system property
  * {@value #SCS_EXTERNAL_SERVERS_REQUIRED}.
  *
+ * @param <R> resource type
  * @author Eric Bottard
  * @author Gary Russell
  */
 public abstract class AbstractExternalResourceTestSupport<R> implements TestRule {
 
+	/**
+	 * SCS external servers required environment variable.
+	 */
 	public static final String SCS_EXTERNAL_SERVERS_REQUIRED = "SCS_EXTERNAL_SERVERS_REQUIRED";
 
 	protected final Log logger = LogFactory.getLog(getClass());
@@ -76,7 +80,8 @@ public abstract class AbstractExternalResourceTestSupport<R> implements TestRule
 						cleanupResource();
 					}
 					catch (Exception ignored) {
-						logger.warn("Exception while trying to cleanup proper resource",
+						AbstractExternalResourceTestSupport.this.logger.warn(
+								"Exception while trying to cleanup proper resource",
 								ignored);
 					}
 				}
@@ -88,18 +93,21 @@ public abstract class AbstractExternalResourceTestSupport<R> implements TestRule
 	private Statement failOrSkip(final Exception e) {
 		String serversRequired = System.getenv(SCS_EXTERNAL_SERVERS_REQUIRED);
 		if ("true".equalsIgnoreCase(serversRequired)) {
-			logger.error(resourceDescription + " IS REQUIRED BUT NOT AVAILABLE", e);
-			fail(resourceDescription + " IS NOT AVAILABLE");
+			this.logger.error(this.resourceDescription + " IS REQUIRED BUT NOT AVAILABLE",
+					e);
+			fail(this.resourceDescription + " IS NOT AVAILABLE");
 			// Never reached, here to satisfy method signature
 			return null;
 		}
 		else {
-			logger.error(resourceDescription + " IS NOT AVAILABLE, SKIPPING TESTS", e);
+			this.logger.error(
+					this.resourceDescription + " IS NOT AVAILABLE, SKIPPING TESTS", e);
 			return new Statement() {
 
 				@Override
 				public void evaluate() throws Throwable {
-					Assume.assumeTrue("Skipping test due to " + resourceDescription
+					Assume.assumeTrue("Skipping test due to "
+							+ AbstractExternalResourceTestSupport.this.resourceDescription
 							+ " not being available " + e, false);
 				}
 			};
@@ -107,23 +115,23 @@ public abstract class AbstractExternalResourceTestSupport<R> implements TestRule
 	}
 
 	private void maybeCleanup() {
-		if (resource != null) {
+		if (this.resource != null) {
 			try {
 				cleanupResource();
 			}
 			catch (Exception ignored) {
-				logger.warn("Exception while trying to cleanup failed resource", ignored);
+				this.logger.warn("Exception while trying to cleanup failed resource",
+						ignored);
 			}
 		}
 	}
 
 	public R getResource() {
-		return resource;
+		return this.resource;
 	}
 
 	/**
 	 * Perform cleanup of the {@link #resource} field, which is guaranteed to be non null.
-	 *
 	 * @throws Exception any exception thrown by this method will be logged and swallowed
 	 */
 	protected abstract void cleanupResource() throws Exception;
@@ -132,6 +140,7 @@ public abstract class AbstractExternalResourceTestSupport<R> implements TestRule
 	 * Try to obtain and validate a resource. Implementors should either set the
 	 * {@link #resource} field with a valid resource and return normally, or throw an
 	 * exception.
+	 * @throws Exception when resource couldn't be obtained
 	 */
 	protected abstract void obtainResource() throws Exception;
 

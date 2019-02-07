@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,8 @@ public class StreamListenerReactiveMethodTests {
 			fail("IllegalArgumentException should have been thrown");
 		}
 		catch (Exception e) {
-			assertThat(e.getMessage()).contains(INVALID_INPUT_VALUE_WITH_OUTPUT_METHOD_PARAM);
+			assertThat(e.getMessage())
+					.contains(INVALID_INPUT_VALUE_WITH_OUTPUT_METHOD_PARAM);
 		}
 	}
 
@@ -67,9 +68,11 @@ public class StreamListenerReactiveMethodTests {
 	public static class ReactorTestInputOutputArgs {
 
 		@StreamListener(Processor.INPUT)
-		public void receive(Flux<String> input, @Output(Processor.OUTPUT) FluxSender output) {
+		public void receive(Flux<String> input,
+				@Output(Processor.OUTPUT) FluxSender output) {
 			output.send(input.map(m -> m.toUpperCase()));
 		}
+
 	}
 
 	@EnableBinding(Processor.class)
@@ -80,5 +83,7 @@ public class StreamListenerReactiveMethodTests {
 		public Flux<String> receive(@Input(Processor.INPUT) Flux<String> input) {
 			return input.map(m -> m.toUpperCase());
 		}
+
 	}
+
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 the original author or authors.
+ * Copyright 2018-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,28 +17,28 @@
 package org.springframework.cloud.stream.function;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.cloud.stream.binder.ConsumerProperties;
-import org.springframework.cloud.stream.binder.ProducerProperties;
+import org.springframework.cloud.stream.config.BindingServiceProperties;
+import org.springframework.cloud.stream.messaging.Processor;
 
 /**
- *
  * @author Oleg Zhurakousky
  * @author Tolga Kavukcu
- *
  * @since 2.1
  */
 @ConfigurationProperties("spring.cloud.stream.function")
 public class StreamFunctionProperties {
 
 	/**
-	 * Definition of functions to bind. If several functions need to be composed
-	 * into one, use pipes (e.g., 'fooFunc|barFunc')
+	 * Definition of functions to bind. If several functions need to be composed into one,
+	 * use pipes (e.g., 'fooFunc|barFunc')
 	 */
 	private String definition;
 
-	private ConsumerProperties consumerProperties;
+	private BindingServiceProperties bindingServiceProperties;
 
-	private ProducerProperties producerProperties;
+	private String inputDestinationName = Processor.INPUT;
+
+	private String outputDestinationName = Processor.OUTPUT;
 
 	public String getDefinition() {
 		return this.definition;
@@ -48,19 +48,28 @@ public class StreamFunctionProperties {
 		this.definition = definition;
 	}
 
-	protected ConsumerProperties getConsumerProperties() {
-		return consumerProperties;
+	BindingServiceProperties getBindingServiceProperties() {
+		return this.bindingServiceProperties;
 	}
 
-	void setConsumerProperties(ConsumerProperties consumerProperties) {
-		this.consumerProperties = consumerProperties;
+	void setBindingServiceProperties(BindingServiceProperties bindingServiceProperties) {
+		this.bindingServiceProperties = bindingServiceProperties;
 	}
 
-	protected ProducerProperties getProducerProperties() {
-		return producerProperties;
+	String getInputDestinationName() {
+		return this.inputDestinationName;
 	}
 
-	void setProducerProperties(ProducerProperties producerProperties) {
-		this.producerProperties = producerProperties;
+	void setInputDestinationName(String inputDestinationName) {
+		this.inputDestinationName = inputDestinationName;
 	}
+
+	String getOutputDestinationName() {
+		return this.outputDestinationName;
+	}
+
+	void setOutputDestinationName(String outputDestinationName) {
+		this.outputDestinationName = outputDestinationName;
+	}
+
 }

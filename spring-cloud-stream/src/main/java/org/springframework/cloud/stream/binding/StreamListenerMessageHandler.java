@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2017-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,8 +32,8 @@ public class StreamListenerMessageHandler extends AbstractReplyProducingMessageH
 
 	private final boolean copyHeaders;
 
-	StreamListenerMessageHandler(InvocableHandlerMethod invocableHandlerMethod, boolean copyHeaders,
-			String[] notPropagatedHeaders) {
+	StreamListenerMessageHandler(InvocableHandlerMethod invocableHandlerMethod,
+			boolean copyHeaders, String[] notPropagatedHeaders) {
 		super();
 		this.invocableHandlerMethod = invocableHandlerMethod;
 		this.copyHeaders = copyHeaders;
@@ -46,7 +46,7 @@ public class StreamListenerMessageHandler extends AbstractReplyProducingMessageH
 	}
 
 	public boolean isVoid() {
-		return invocableHandlerMethod.isVoid();
+		return this.invocableHandlerMethod.isVoid();
 	}
 
 	@Override
@@ -60,8 +60,11 @@ public class StreamListenerMessageHandler extends AbstractReplyProducingMessageH
 			}
 			else {
 				throw new MessagingException(requestMessage,
-						"Exception thrown while invoking " + this.invocableHandlerMethod.getShortLogMessage(), e);
+						"Exception thrown while invoking "
+								+ this.invocableHandlerMethod.getShortLogMessage(),
+						e);
 			}
 		}
 	}
+
 }

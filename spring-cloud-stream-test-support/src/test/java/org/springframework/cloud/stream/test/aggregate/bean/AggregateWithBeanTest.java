@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,8 +44,9 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Marius Bogoevici
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringBootTest(classes = AggregateWithBeanTest.ChainedProcessors.class, properties = { "server.port=-1","--spring.cloud.stream.bindings.input.contentType=text/plain",
-		"--spring.cloud.stream.bindings.output.contentType=text/plain"})
+@SpringBootTest(classes = AggregateWithBeanTest.ChainedProcessors.class, properties = {
+		"server.port=-1", "--spring.cloud.stream.bindings.input.contentType=text/plain",
+		"--spring.cloud.stream.bindings.output.contentType=text/plain" })
 @Ignore
 public class AggregateWithBeanTest {
 
@@ -58,10 +59,13 @@ public class AggregateWithBeanTest {
 	@Test
 	@SuppressWarnings("unchecked")
 	public void testAggregateApplication() throws InterruptedException {
-		Processor uppercaseProcessor = aggregateApplication.getBinding(Processor.class, "upper");
-		Processor suffixProcessor = aggregateApplication.getBinding(Processor.class, "suffix");
+		Processor uppercaseProcessor = this.aggregateApplication
+				.getBinding(Processor.class, "upper");
+		Processor suffixProcessor = this.aggregateApplication.getBinding(Processor.class,
+				"suffix");
 		uppercaseProcessor.input().send(MessageBuilder.withPayload("Hello").build());
-		Message<String> receivedMessage = (Message<String>) messageCollector.forChannel(suffixProcessor.output()).poll(1, TimeUnit.SECONDS);
+		Message<String> receivedMessage = (Message<String>) this.messageCollector
+				.forChannel(suffixProcessor.output()).poll(1, TimeUnit.SECONDS);
 		assertThat(receivedMessage).isNotNull();
 		assertThat(receivedMessage.getPayload()).isEqualTo("HELLO WORLD!");
 	}
@@ -73,8 +77,10 @@ public class AggregateWithBeanTest {
 		@Bean
 		public AggregateApplication aggregateApplication() {
 			return new AggregateApplicationBuilder().from(UppercaseProcessor.class)
-					.namespace("upper").to(SuffixProcessor.class).namespace("suffix").build();
+					.namespace("upper").to(SuffixProcessor.class).namespace("suffix")
+					.build();
 		}
+
 	}
 
 	@Configuration
@@ -86,6 +92,7 @@ public class AggregateWithBeanTest {
 		public String transform(String in) {
 			return in.toUpperCase();
 		}
+
 	}
 
 	@Configuration
@@ -97,5 +104,7 @@ public class AggregateWithBeanTest {
 		public String transform(String in) {
 			return in + " WORLD!";
 		}
+
 	}
+
 }

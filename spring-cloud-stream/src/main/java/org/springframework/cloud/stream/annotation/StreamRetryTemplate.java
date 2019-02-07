@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 the original author or authors.
+ * Copyright 2018-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,8 +27,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.retry.support.RetryTemplate;
 
 /**
- * Marker to tag an instance of {@link RetryTemplate} to be used by the binder.
- * This annotation is also a @Bean to simplify configuration (see below)
+ * Marker to tag an instance of {@link RetryTemplate} to be used by the binder. This
+ * annotation is also a @Bean to simplify configuration (see below)
  *
  * <pre class="code">
  * &#064;StreamRetryTemplate
@@ -41,7 +41,7 @@ import org.springframework.retry.support.RetryTemplate;
  * @since 2.1
  */
 
-@Target({ElementType.FIELD,ElementType.METHOD})
+@Target({ ElementType.FIELD, ElementType.METHOD })
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 @Bean

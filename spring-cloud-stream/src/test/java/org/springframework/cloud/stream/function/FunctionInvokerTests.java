@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 the original author or authors.
+ * Copyright 2018-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,8 +21,6 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 import org.junit.Test;
-
-
 import reactor.core.publisher.Flux;
 
 import org.springframework.boot.WebApplicationType;
@@ -30,65 +28,139 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
-import org.springframework.cloud.stream.binder.ConsumerProperties;
-import org.springframework.cloud.stream.binder.ProducerProperties;
+import org.springframework.cloud.stream.annotation.EnableBinding;
+import org.springframework.cloud.stream.annotation.StreamMessageConverter;
+import org.springframework.cloud.stream.binder.test.InputDestination;
+import org.springframework.cloud.stream.binder.test.OutputDestination;
 import org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration;
+import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
 import org.springframework.cloud.stream.function.pojo.Baz;
 import org.springframework.cloud.stream.function.pojo.ErrorBaz;
+import org.springframework.cloud.stream.messaging.Processor;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageHeaders;
+import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.messaging.support.GenericMessage;
 import org.springframework.util.ReflectionUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
 
 /**
- *
  * @author Oleg Zhurakousky
  * @author Tolga Kavukcu
  *
  */
 public class FunctionInvokerTests {
 
+	private static String testWithFluxedConsumerValue;
+
+	@Test
+	public void testFunctionHonorsOutboundBindingContentType() {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+				TestChannelBinderConfiguration.getCompleteConfiguration(
+						ConverterDoesNotProduceCTConfiguration.class))
+								.web(WebApplicationType.NONE)
+								.run("--spring.jmx.enabled=false",
+										"--spring.cloud.stream.function.definition=func",
+										"--spring.cloud.stream.bindings.output.contentType=text/plain")) {
+
+			InputDestination inputDestination = context.getBean(InputDestination.class);
+			OutputDestination outputDestination = context
+					.getBean(OutputDestination.class);
+
+			Message<byte[]> inputMessage = MessageBuilder
+					.withPayload("{\"name\":\"bob\"}".getBytes())
+					.setHeader(MessageHeaders.CONTENT_TYPE, "foo/bar").build();
+			inputDestination.send(inputMessage);
+
+			Message<byte[]> outputMessage = outputDestination.receive();
+			assertThat(outputMessage.getHeaders().get(MessageHeaders.CONTENT_TYPE)
+					.toString()).isEqualTo("text/plain");
+
+		}
+	}
+
+	@Test
+	public void testFunctionHonorsConverterSetContentType() {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+				TestChannelBinderConfiguration.getCompleteConfiguration(
+						ConverterInjectingCTConfiguration.class))
+								.web(WebApplicationType.NONE)
+								.run("--spring.jmx.enabled=false",
+										"--spring.cloud.stream.function.definition=func",
+										"--spring.cloud.stream.bindings.output.contentType=text/plain")) {
+
+			InputDestination inputDestination = context.getBean(InputDestination.class);
+			OutputDestination outputDestination = context
+					.getBean(OutputDestination.class);
+
+			Message<byte[]> inputMessage = MessageBuilder
+					.withPayload("{\"name\":\"bob\"}".getBytes())
+					.setHeader(MessageHeaders.CONTENT_TYPE, "foo/bar").build();
+			inputDestination.send(inputMessage);
+
+			Message<byte[]> outputMessage = outputDestination.receive();
+			assertThat(outputMessage.getHeaders().get(MessageHeaders.CONTENT_TYPE)
+					.toString()).isEqualTo("ping/pong");
+
+		}
+	}
+
 	@Test
 	public void testSameMessageTypesAreNotConverted() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
-				TestChannelBinderConfiguration.getCompleteConfiguration(MyFunctionsConfiguration.class)).web(
-				WebApplicationType.NONE)
-				.run("--spring.jmx.enabled=false")) {
+				TestChannelBinderConfiguration
+						.getCompleteConfiguration(MyFunctionsConfiguration.class))
+								.web(WebApplicationType.NONE)
+								.run("--spring.jmx.enabled=false")) {
 
 			Message<Foo> inputMessage = new GenericMessage<>(new Foo());
 
 			StreamFunctionProperties functionProperties = createStreamFunctionProperties();
 
 			functionProperties.setDefinition("messageToMessageSameType");
-			FunctionInvoker<Foo, Foo> messageToMessageSameType = new FunctionInvoker<>(functionProperties,
-					new FunctionCatalogWrapper(context.getBean(FunctionCatalog.class)), context.getBean(FunctionInspector.class), context.getBean(CompositeMessageConverterFactory.class));
-			Message<Foo> outputMessage = messageToMessageSameType.apply(Flux.just(inputMessage)).blockFirst();
+			FunctionInvoker<Foo, Foo> messageToMessageSameType = new FunctionInvoker<>(
+					functionProperties,
+					new FunctionCatalogWrapper(context.getBean(FunctionCatalog.class)),
+					context.getBean(FunctionInspector.class),
+					context.getBean(CompositeMessageConverterFactory.class));
+			Message<Foo> outputMessage = messageToMessageSameType
+					.apply(Flux.just(inputMessage)).blockFirst();
 			assertThat(inputMessage).isSameAs(outputMessage);
 
 			functionProperties.setDefinition("pojoToPojoSameType");
-			FunctionInvoker<Foo, Foo> pojoToPojoSameType = new FunctionInvoker<>(functionProperties,
-					new FunctionCatalogWrapper(context.getBean(FunctionCatalog.class)), context.getBean(FunctionInspector.class), context.getBean(CompositeMessageConverterFactory.class));
-			outputMessage = pojoToPojoSameType.apply(Flux.just(inputMessage)).blockFirst();
+			FunctionInvoker<Foo, Foo> pojoToPojoSameType = new FunctionInvoker<>(
+					functionProperties,
+					new FunctionCatalogWrapper(context.getBean(FunctionCatalog.class)),
+					context.getBean(FunctionInspector.class),
+					context.getBean(CompositeMessageConverterFactory.class));
+			outputMessage = pojoToPojoSameType.apply(Flux.just(inputMessage))
+					.blockFirst();
 			assertThat(inputMessage.getPayload()).isEqualTo(outputMessage.getPayload());
 
-
 			functionProperties.setDefinition("messageToMessageNoType");
-			FunctionInvoker<Foo, Foo> messageToMessageNoType = new FunctionInvoker<>(functionProperties,
-					new FunctionCatalogWrapper(context.getBean(FunctionCatalog.class)), context.getBean(FunctionInspector.class), context.getBean(CompositeMessageConverterFactory.class));
-			outputMessage = messageToMessageNoType.apply(Flux.just(inputMessage)).blockFirst();
+			FunctionInvoker<Foo, Foo> messageToMessageNoType = new FunctionInvoker<>(
+					functionProperties,
+					new FunctionCatalogWrapper(context.getBean(FunctionCatalog.class)),
+					context.getBean(FunctionInspector.class),
+					context.getBean(CompositeMessageConverterFactory.class));
+			outputMessage = messageToMessageNoType.apply(Flux.just(inputMessage))
+					.blockFirst();
 			assertThat(outputMessage).isInstanceOf(Message.class);
 
 			functionProperties.setDefinition("withException");
-			FunctionInvoker<Foo, Foo> withException = new FunctionInvoker<>(functionProperties,
-					new FunctionCatalogWrapper(context.getBean(FunctionCatalog.class)), context.getBean(FunctionInspector.class), context.getBean(CompositeMessageConverterFactory.class));
+			FunctionInvoker<Foo, Foo> withException = new FunctionInvoker<>(
+					functionProperties,
+					new FunctionCatalogWrapper(context.getBean(FunctionCatalog.class)),
+					context.getBean(FunctionInspector.class),
+					context.getBean(CompositeMessageConverterFactory.class));
 
-			Flux<Message<Foo>> fluxOfMessages = Flux.just(new GenericMessage<>(new ErrorFoo()), inputMessage);
+			Flux<Message<Foo>> fluxOfMessages = Flux
+					.just(new GenericMessage<>(new ErrorFoo()), inputMessage);
 			Message<Foo> resultMessage = withException.apply(fluxOfMessages).blockFirst();
 			assertThat(resultMessage.getPayload()).isNotInstanceOf(ErrorFoo.class);
 		}
@@ -97,34 +169,46 @@ public class FunctionInvokerTests {
 	@Test
 	public void testNativeEncodingEnabled() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
-				TestChannelBinderConfiguration.getCompleteConfiguration(MyFunctionsConfiguration.class))
-						.web(WebApplicationType.NONE).run("--spring.jmx.enabled=false")) {
+				TestChannelBinderConfiguration
+						.getCompleteConfiguration(MyFunctionsConfiguration.class))
+								.web(WebApplicationType.NONE)
+								.run("--spring.jmx.enabled=false")) {
 
 			Message<Baz> inputMessage = new GenericMessage<>(new Baz());
 
 			StreamFunctionProperties functionProperties = createStreamFunctionPropertiesWithNativeEncoding();
 
 			functionProperties.setDefinition("pojoToPojoNonEmptyPojo");
-			FunctionInvoker<Baz, Baz> pojoToPojoSameType = new FunctionInvoker<>(functionProperties,
+			FunctionInvoker<Baz, Baz> pojoToPojoSameType = new FunctionInvoker<>(
+					functionProperties,
 					new FunctionCatalogWrapper(context.getBean(FunctionCatalog.class)),
-					context.getBean(FunctionInspector.class), context.getBean(CompositeMessageConverterFactory.class));
-			Message<Baz> outputMessage = pojoToPojoSameType.apply(Flux.just(inputMessage)).blockFirst();
+					context.getBean(FunctionInspector.class),
+					context.getBean(CompositeMessageConverterFactory.class));
+			Message<Baz> outputMessage = pojoToPojoSameType.apply(Flux.just(inputMessage))
+					.blockFirst();
 			assertThat(inputMessage.getPayload()).isEqualTo(outputMessage.getPayload());
 
 			Message<Baz> inputMessageWithBaz = new GenericMessage<>(new Baz());
 
 			functionProperties.setDefinition("messageToMessageNoType");
-			FunctionInvoker<Baz, Baz> messageToMessageNoType = new FunctionInvoker<>(functionProperties,
-					new FunctionCatalogWrapper(context.getBean(FunctionCatalog.class)), context.getBean(FunctionInspector.class), context.getBean(CompositeMessageConverterFactory.class));
-			outputMessage = messageToMessageNoType.apply(Flux.just(inputMessageWithBaz)).blockFirst();
+			FunctionInvoker<Baz, Baz> messageToMessageNoType = new FunctionInvoker<>(
+					functionProperties,
+					new FunctionCatalogWrapper(context.getBean(FunctionCatalog.class)),
+					context.getBean(FunctionInspector.class),
+					context.getBean(CompositeMessageConverterFactory.class));
+			outputMessage = messageToMessageNoType.apply(Flux.just(inputMessageWithBaz))
+					.blockFirst();
 			assertThat(outputMessage).isInstanceOf(Message.class);
 
 			functionProperties.setDefinition("withExceptionNativeEncodingEnabled");
-			FunctionInvoker<Baz, Baz> withException = new FunctionInvoker<>(functionProperties,
+			FunctionInvoker<Baz, Baz> withException = new FunctionInvoker<>(
+					functionProperties,
 					new FunctionCatalogWrapper(context.getBean(FunctionCatalog.class)),
-					context.getBean(FunctionInspector.class), context.getBean(CompositeMessageConverterFactory.class));
+					context.getBean(FunctionInspector.class),
+					context.getBean(CompositeMessageConverterFactory.class));
 
-			Flux<Message<Baz>> fluxOfMessages = Flux.just(new GenericMessage<>(new ErrorBaz()), inputMessage);
+			Flux<Message<Baz>> fluxOfMessages = Flux
+					.just(new GenericMessage<>(new ErrorBaz()), inputMessage);
 			Message<Baz> resultMessage = withException.apply(fluxOfMessages).blockFirst();
 			assertThat(resultMessage.getPayload()).isNotInstanceOf(ErrorFoo.class);
 		}
@@ -133,30 +217,36 @@ public class FunctionInvokerTests {
 	@Test
 	public void testWithOutNativeEncodingEnabled() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
-				TestChannelBinderConfiguration.getCompleteConfiguration(MyFunctionsConfiguration.class))
-						.web(WebApplicationType.NONE).run("--spring.jmx.enabled=false")) {
+				TestChannelBinderConfiguration
+						.getCompleteConfiguration(MyFunctionsConfiguration.class))
+								.web(WebApplicationType.NONE)
+								.run("--spring.jmx.enabled=false")) {
 
 			Message<Baz> inputMessage = new GenericMessage<>(new Baz());
 
 			StreamFunctionProperties functionProperties = createStreamFunctionProperties();
 
 			functionProperties.setDefinition("pojoToPojoNonEmptyPojo");
-			FunctionInvoker<Baz, Baz> pojoToPojoSameType = new FunctionInvoker<>(functionProperties,
+			FunctionInvoker<Baz, Baz> pojoToPojoSameType = new FunctionInvoker<>(
+					functionProperties,
 					new FunctionCatalogWrapper(context.getBean(FunctionCatalog.class)),
-					context.getBean(FunctionInspector.class), context.getBean(CompositeMessageConverterFactory.class));
-			Message<Baz> outputMessage = pojoToPojoSameType.apply(Flux.just(inputMessage)).blockFirst();
-			assertThat(inputMessage.getPayload()).isNotEqualTo(outputMessage.getPayload());
+					context.getBean(FunctionInspector.class),
+					context.getBean(CompositeMessageConverterFactory.class));
+			Message<Baz> outputMessage = pojoToPojoSameType.apply(Flux.just(inputMessage))
+					.blockFirst();
+			assertThat(inputMessage.getPayload())
+					.isNotEqualTo(outputMessage.getPayload());
 
 		}
 	}
 
-	private static String testWithFluxedConsumerValue;
-
 	@Test
 	public void testWithFluxedConsumer() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
-				TestChannelBinderConfiguration.getCompleteConfiguration(MyFunctionsConfiguration.class))
-						.web(WebApplicationType.NONE).run("--spring.jmx.enabled=false")) {
+				TestChannelBinderConfiguration
+						.getCompleteConfiguration(MyFunctionsConfiguration.class))
+								.web(WebApplicationType.NONE)
+								.run("--spring.jmx.enabled=false")) {
 
 			String value = "Hello";
 			Message<String> inputMessage = new GenericMessage<>(value);
@@ -164,45 +254,52 @@ public class FunctionInvokerTests {
 			StreamFunctionProperties functionProperties = createStreamFunctionProperties();
 
 			functionProperties.setDefinition("fluxConsumer");
-			FunctionInvoker<String, Void> fluxedConsumer = new FunctionInvoker<>(functionProperties,
+			FunctionInvoker<String, Void> fluxedConsumer = new FunctionInvoker<>(
+					functionProperties,
 					new FunctionCatalogWrapper(context.getBean(FunctionCatalog.class)),
-					context.getBean(FunctionInspector.class), context.getBean(CompositeMessageConverterFactory.class));
+					context.getBean(FunctionInspector.class),
+					context.getBean(CompositeMessageConverterFactory.class));
 
 			fluxedConsumer.apply(Flux.just(inputMessage)).blockFirst();
 
-			assertEquals(value, testWithFluxedConsumerValue);
+			assertThat(testWithFluxedConsumerValue).isEqualTo(value);
 		}
 	}
 
 	private StreamFunctionProperties createStreamFunctionProperties() {
 		StreamFunctionProperties functionProperties = new StreamFunctionProperties();
-		ConsumerProperties consumerProperties = new ConsumerProperties();
-		consumerProperties.setMaxAttempts(3);
+		functionProperties.setInputDestinationName("input");
+		functionProperties.setOutputDestinationName("output");
+		BindingServiceProperties bindingServiceProperties = new BindingServiceProperties();
+		bindingServiceProperties.getConsumerProperties("input").setMaxAttempts(3);
 		try {
-			Field f = ReflectionUtils.findField(StreamFunctionProperties.class, "consumerProperties");
+			Field f = ReflectionUtils.findField(StreamFunctionProperties.class,
+					"bindingServiceProperties");
 			f.setAccessible(true);
-			f.set(functionProperties, consumerProperties);
+			f.set(functionProperties, bindingServiceProperties);
 			return functionProperties;
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			throw new IllegalStateException(e);
 		}
 	}
 
 	private StreamFunctionProperties createStreamFunctionPropertiesWithNativeEncoding() {
 		StreamFunctionProperties functionProperties = new StreamFunctionProperties();
-		ConsumerProperties consumerProperties = new ConsumerProperties();
-		consumerProperties.setMaxAttempts(3);
-		ProducerProperties producerProperties = new ProducerProperties();
-		producerProperties.setUseNativeEncoding(true);
+		functionProperties.setInputDestinationName("input");
+		functionProperties.setOutputDestinationName("output");
+		BindingServiceProperties bindingServiceProperties = new BindingServiceProperties();
+		bindingServiceProperties.getConsumerProperties("input").setMaxAttempts(3);
+		bindingServiceProperties.getProducerProperties("output")
+				.setUseNativeEncoding(true);
 		try {
-			Field c = ReflectionUtils.findField(StreamFunctionProperties.class, "consumerProperties");
-			Field p = ReflectionUtils.findField(StreamFunctionProperties.class, "producerProperties");
-			c.setAccessible(true);
-			c.set(functionProperties, consumerProperties);
-			p.setAccessible(true);
-			p.set(functionProperties, producerProperties);
+			Field bspField = ReflectionUtils.findField(StreamFunctionProperties.class,
+					"bindingServiceProperties");
+			bspField.setAccessible(true);
+			bspField.set(functionProperties, bindingServiceProperties);
 			return functionProperties;
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			throw new IllegalStateException(e);
 		}
 	}
@@ -220,17 +317,20 @@ public class FunctionInvokerTests {
 
 		@Bean
 		public Function<Message<Foo>, Message<Bar>> messageToMessageDifferentType() {
-			return x -> MessageBuilder.withPayload(new Bar()).copyHeaders(x.getHeaders()).build();
+			return x -> MessageBuilder.withPayload(new Bar()).copyHeaders(x.getHeaders())
+					.build();
 		}
 
 		@Bean
 		public Function<Message<?>, Message<?>> messageToMessageAnyType() {
-			return x -> MessageBuilder.withPayload(new Bar()).copyHeaders(x.getHeaders()).build();
+			return x -> MessageBuilder.withPayload(new Bar()).copyHeaders(x.getHeaders())
+					.build();
 		}
 
 		@Bean
 		public Function<Message<?>, Message<?>> messageToMessageNoType() {
-			return x -> MessageBuilder.withPayload(new Bar()).copyHeaders(x.getHeaders()).build();
+			return x -> MessageBuilder.withPayload(new Bar()).copyHeaders(x.getHeaders())
+					.build();
 		}
 
 		@Bean
@@ -268,9 +368,75 @@ public class FunctionInvokerTests {
 				if (x instanceof ErrorBaz) {
 					System.out.println("Throwing exception ");
 					throw new RuntimeException("Boom!");
-				} else {
+				}
+				else {
 					System.out.println("All is good ");
 					return x;
+				}
+			};
+		}
+
+	}
+
+	@EnableAutoConfiguration
+	@EnableBinding(Processor.class)
+	public static class ConverterInjectingCTConfiguration {
+
+		@Bean
+		public Function<String, String> func() {
+			return x -> x;
+		}
+
+		@StreamMessageConverter
+		public MessageConverter customConverter() {
+			return new MessageConverter() {
+
+				@Override
+				public Message<?> toMessage(Object payload, MessageHeaders headers) {
+					return MessageBuilder.withPayload(((String) payload).getBytes())
+							.setHeader(MessageHeaders.CONTENT_TYPE, "ping/pong").build();
+				}
+
+				@Override
+				public Object fromMessage(Message<?> message, Class<?> targetClass) {
+					String contentType = (String) message.getHeaders()
+							.get(MessageHeaders.CONTENT_TYPE).toString();
+					if (contentType.equals("foo/bar")) {
+						return new String((byte[]) message.getPayload());
+					}
+					return null;
+				}
+			};
+		}
+
+	}
+
+	@EnableAutoConfiguration
+	@EnableBinding(Processor.class)
+	public static class ConverterDoesNotProduceCTConfiguration {
+
+		@Bean
+		public Function<String, String> func() {
+			return x -> x;
+		}
+
+		@StreamMessageConverter
+		public MessageConverter customConverter() {
+			return new MessageConverter() {
+
+				@Override
+				public Message<?> toMessage(Object payload, MessageHeaders headers) {
+					return new GenericMessage<byte[]>(((String) payload).getBytes());
+				}
+
+				@Override
+				public Object fromMessage(Message<?> message, Class<?> targetClass) {
+					String contentType = (String) message.getHeaders()
+							.get(MessageHeaders.CONTENT_TYPE).toString();
+					if (contentType.equals("foo/bar")) {
+						return new String((byte[]) message.getPayload());
+					}
+					return null;
 				}
 			};
 		}
@@ -288,4 +454,5 @@ public class FunctionInvokerTests {
 	private static class Bar {
 
 	}
+
 }

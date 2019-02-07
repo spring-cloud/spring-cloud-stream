@@ -54,11 +54,13 @@ public class DeserializeJSONToJavaTypeTests {
 
 	@Test
 	public void testMessageDeserialized() throws Exception {
-		testProcessor.input().send(
-				MessageBuilder.withPayload("{\"name\":\"Bar\"}").setHeader("contentType", "application/json").build());
+		this.testProcessor.input().send(MessageBuilder.withPayload("{\"name\":\"Bar\"}")
+				.setHeader("contentType", "application/json").build());
 		@SuppressWarnings("unchecked")
-		Message<String> received = (Message<String>) ((TestSupportBinder) binderFactory.getBinder(null, MessageChannel.class))
-				.messageCollector().forChannel(testProcessor.output()).poll(1, TimeUnit.SECONDS);
+		Message<String> received = (Message<String>) ((TestSupportBinder) this.binderFactory
+				.getBinder(null, MessageChannel.class)).messageCollector()
+						.forChannel(this.testProcessor.output())
+						.poll(1, TimeUnit.SECONDS);
 		assertThat(received).isNotNull();
 		assertThat(received.getPayload()).isEqualTo("{\"name\":\"Bar\"}");
 	}
@@ -73,6 +75,7 @@ public class DeserializeJSONToJavaTypeTests {
 		public Foo consume(Foo foo) {
 			return foo;
 		}
+
 	}
 
 	public static class Foo {
@@ -80,11 +83,13 @@ public class DeserializeJSONToJavaTypeTests {
 		private String name;
 
 		public String getName() {
-			return name;
+			return this.name;
 		}
 
 		public void setName(String name) {
 			this.name = name;
 		}
+
 	}
+
 }

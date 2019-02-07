@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2017-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,10 +42,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Oleg Zhurakousky
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringBootTest(classes = DefaultHeaderPropagationTests.HeaderPropagationProcessor.class,
-		webEnvironment = SpringBootTest.WebEnvironment.NONE)
+// @checkstyle:off
+@SpringBootTest(classes = DefaultHeaderPropagationTests.HeaderPropagationProcessor.class, webEnvironment = SpringBootTest.WebEnvironment.NONE)
 public class DefaultHeaderPropagationTests {
 
+	// @checkstyle:on
 	@Autowired
 	private Processor testProcessor;
 
@@ -54,14 +55,14 @@ public class DefaultHeaderPropagationTests {
 
 	@Test
 	public void testDefaultHeaderPropagation() throws Exception {
-		testProcessor.input().send(MessageBuilder.withPayload("{'name':'foo'}")
+		this.testProcessor.input().send(MessageBuilder.withPayload("{'name':'foo'}")
 				.setHeader(MessageHeaders.CONTENT_TYPE, "application/json")
-				.setHeader("foo", "fooValue")
-				.setHeader("bar", "barValue")
-				.build());
+				.setHeader("foo", "fooValue").setHeader("bar", "barValue").build());
 		@SuppressWarnings("unchecked")
-		Message<String> received = (Message<String>) ((TestSupportBinder) binderFactory.getBinder(null, MessageChannel.class))
-				.messageCollector().forChannel(testProcessor.output()).poll(1, TimeUnit.SECONDS);
+		Message<String> received = (Message<String>) ((TestSupportBinder) this.binderFactory
+				.getBinder(null, MessageChannel.class)).messageCollector()
+						.forChannel(this.testProcessor.output())
+						.poll(1, TimeUnit.SECONDS);
 		assertThat(received).isNotNull();
 		assertThat(received.getHeaders()).containsEntry("foo", "fooValue");
 		assertThat(received.getHeaders()).containsEntry("bar", "barValue");
@@ -75,8 +76,10 @@ public class DefaultHeaderPropagationTests {
 
 		@ServiceActivator(inputChannel = "input", outputChannel = "output")
 		public Message<String> consume(String data) {
-			return MessageBuilder.withPayload(data).setHeader(MessageHeaders.CONTENT_TYPE,"text/plain").build();
+			return MessageBuilder.withPayload(data)
+					.setHeader(MessageHeaders.CONTENT_TYPE, "text/plain").build();
 		}
 
 	}
+
 }

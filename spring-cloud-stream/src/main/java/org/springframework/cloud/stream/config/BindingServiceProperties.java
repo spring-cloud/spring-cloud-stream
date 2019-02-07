@@ -52,53 +52,56 @@ import org.springframework.util.Assert;
  */
 @ConfigurationProperties("spring.cloud.stream")
 @JsonInclude(Include.NON_DEFAULT)
-public class BindingServiceProperties implements ApplicationContextAware, InitializingBean {
+public class BindingServiceProperties
+		implements ApplicationContextAware, InitializingBean {
 
 	private static final int DEFAULT_BINDING_RETRY_INTERVAL = 30;
 
 	/**
-	 * The instance id of the application: a number from 0 to instanceCount-1.
-	 * Used for partitioning and with Kafka.
-	 * NOTE: Could also be managed per individual binding
-	 * "spring.cloud.stream.bindings.foo.consumer.instance-index" where 'foo' is
-	 * the name of the binding.
+	 * The instance id of the application: a number from 0 to instanceCount-1. Used for
+	 * partitioning and with Kafka. NOTE: Could also be managed per individual binding
+	 * "spring.cloud.stream.bindings.foo.consumer.instance-index" where 'foo' is the name
+	 * of the binding.
 	 */
 	@Value("${INSTANCE_INDEX:${CF_INSTANCE_INDEX:0}}")
 	private int instanceIndex;
 
 	/**
-	 * The number of deployed instances of an application.
-	 * Default: 1.
-	 * NOTE: Could also be managed per individual binding
-	 * "spring.cloud.stream.bindings.foo.consumer.instance-count" where 'foo' is
-	 * the name of the binding.
+	 * The number of deployed instances of an application. Default: 1. NOTE: Could also be
+	 * managed per individual binding
+	 * "spring.cloud.stream.bindings.foo.consumer.instance-count" where 'foo' is the name
+	 * of the binding.
 	 */
 	private int instanceCount = 1;
 
 	/**
-	 * Additional binding properties (see {@link BinderProperties}) per binding name (e.g., 'input`).
+	 * Additional binding properties (see {@link BinderProperties}) per binding name
+	 * (e.g., 'input`).
 	 *
-	 * For example; This sets the content-type for the 'input' binding of a Sink application:
-	 * 'spring.cloud.stream.bindings.input.contentType=text/plain'
+	 * For example; This sets the content-type for the 'input' binding of a Sink
+	 * application: 'spring.cloud.stream.bindings.input.contentType=text/plain'
 	 */
 	private Map<String, BindingProperties> bindings = new TreeMap<>(
 			String.CASE_INSENSITIVE_ORDER);
 
 	/**
-	 * Additional per-binder properties (see {@link BinderProperties}) if more then one binder of the same type is used
-	 * (i.e., connect to multiple instances of RabbitMq). Here you can specify multiple
-	 * binder configurations, each with different environment settings. For example;
-	 * spring.cloud.stream.binders.rabbit1.environment. . . , spring.cloud.stream.binders.rabbit2.environment. . .
+	 * Additional per-binder properties (see {@link BinderProperties}) if more then one
+	 * binder of the same type is used (i.e., connect to multiple instances of RabbitMq).
+	 * Here you can specify multiple binder configurations, each with different
+	 * environment settings. For example; spring.cloud.stream.binders.rabbit1.environment.
+	 * . . , spring.cloud.stream.binders.rabbit2.environment. . .
 	 */
 	private Map<String, BinderProperties> binders = new HashMap<>();
 
 	/**
-	 * The name of the binder to use by all bindings in the event multiple binders available (e.g., 'rabbit');
+	 * The name of the binder to use by all bindings in the event multiple binders
+	 * available (e.g., 'rabbit').
 	 */
 	private String defaultBinder;
 
 	/**
-	 * A list of destinations that can be bound dynamically. If set, only listed destinations can be bound.
+	 * A list of destinations that can be bound dynamically. If set, only listed
+	 * destinations can be bound.
 	 */
 	private String[] dynamicDestinations = new String[0];
 
@@ -163,9 +166,11 @@ public class BindingServiceProperties implements ApplicationContextAware, Initia
 	public void setApplicationContext(ApplicationContext applicationContext)
 			throws BeansException {
 		this.applicationContext = (ConfigurableApplicationContext) applicationContext;
-		GenericConversionService cs = (GenericConversionService) IntegrationUtils.getConversionService(this.applicationContext.getBeanFactory());
+		GenericConversionService cs = (GenericConversionService) IntegrationUtils
+				.getConversionService(this.applicationContext.getBeanFactory());
 		if (this.applicationContext.containsBean("spelConverter")) {
-			Converter<?,?> converter = (Converter<?, ?>) this.applicationContext.getBean("spelConverter");
+			Converter<?, ?> converter = (Converter<?, ?>) this.applicationContext
+					.getBean("spelConverter");
 			cs.addConverter(converter);
 		}
 	}
@@ -260,7 +265,8 @@ public class BindingServiceProperties implements ApplicationContextAware, Initia
 		this.bindingRetryInterval = bindingRetryInterval;
 	}
 
-	public void updateProducerProperties(String bindingName, ProducerProperties producerProperties) {
+	public void updateProducerProperties(String bindingName,
+			ProducerProperties producerProperties) {
 		if (this.bindings.containsKey(bindingName)) {
 			this.bindings.get(bindingName).setProducer(producerProperties);
 		}
@@ -270,17 +276,24 @@ public class BindingServiceProperties implements ApplicationContextAware, Initia
 	 * The "necessary" implies the scenario where only defaults are defined.
 	 */
 	private void bindIfNecessary(String bindingName) {
-		if (!bindings.containsKey(bindingName)) {
+		if (!this.bindings.containsKey(bindingName)) {
 			this.bindToDefault(bindingName);
 		}
 	}
 
 	private void bindToDefault(String binding) {
 		BindingProperties bindingPropertiesTarget = new BindingProperties();
-		Binder binder = new Binder(ConfigurationPropertySources.get(applicationContext.getEnvironment()),
-				new PropertySourcesPlaceholdersResolver(applicationContext.getEnvironment()),
-				IntegrationUtils.getConversionService(applicationContext.getBeanFactory()), null);
-		binder.bind("spring.cloud.stream.default", Bindable.ofInstance(bindingPropertiesTarget));
+		Binder binder = new Binder(
+				ConfigurationPropertySources
+						.get(this.applicationContext.getEnvironment()),
+				new PropertySourcesPlaceholdersResolver(
+						this.applicationContext.getEnvironment()),
+				IntegrationUtils.getConversionService(
+						this.applicationContext.getBeanFactory()),
+				null);
+		binder.bind("spring.cloud.stream.default",
+				Bindable.ofInstance(bindingPropertiesTarget));
 		this.bindings.put(binding, bindingPropertiesTarget);
 	}
+
 }

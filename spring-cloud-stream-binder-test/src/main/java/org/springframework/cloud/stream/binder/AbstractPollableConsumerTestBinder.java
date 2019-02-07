@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 the original author or authors.
+ * Copyright 2018-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,26 +20,34 @@ import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
 
 /**
+ * @param <C> binder type
+ * @param <CP> consumer properties type
+ * @param <PP> producer properties type
  * @author Gary Russell
  * @since 2.0
- *
  */
-public abstract class AbstractPollableConsumerTestBinder<C extends AbstractBinder<MessageChannel, CP, PP>,
-	CP extends ConsumerProperties, PP extends ProducerProperties> extends AbstractTestBinder<C, CP, PP>
-	implements PollableConsumerBinder<MessageHandler, CP>{
+// @checkstyle:off
+public abstract class AbstractPollableConsumerTestBinder<C extends AbstractBinder<MessageChannel, CP, PP>, CP extends ConsumerProperties, PP extends ProducerProperties>
+		extends AbstractTestBinder<C, CP, PP>
+		implements PollableConsumerBinder<MessageHandler, CP> {
+
+	// @checkstyle:on
 
 	private PollableConsumerBinder<MessageHandler, CP> binder;
 
 	@SuppressWarnings("unchecked")
-	public void setPollableConsumerBinder(PollableConsumerBinder<MessageHandler, CP> binder) {
+	public void setPollableConsumerBinder(
+			PollableConsumerBinder<MessageHandler, CP> binder) {
 		super.setBinder((C) binder);
 		this.binder = binder;
 	}
 
 	@Override
-	public Binding<PollableSource<MessageHandler>> bindPollableConsumer(String name, String group,
-			PollableSource<MessageHandler> inboundBindTarget, CP consumerProperties) {
-		return this.binder.bindPollableConsumer(name, group, inboundBindTarget, consumerProperties);
+	public Binding<PollableSource<MessageHandler>> bindPollableConsumer(String name,
+			String group, PollableSource<MessageHandler> inboundBindTarget,
+			CP consumerProperties) {
+		return this.binder.bindPollableConsumer(name, group, inboundBindTarget,
+				consumerProperties);
 	}
 
 }

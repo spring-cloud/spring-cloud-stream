@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,9 @@ import java.io.Closeable;
  *
  * Used when the {@link org.springframework.cloud.stream.annotation.StreamListener}
  * annotated method is operating in declarative mode.
+ *
+ * @param <R> stream listener result type
+ * @param <B> binding target type
  * @author Marius Bogoevici
  */
 public interface StreamListenerResultAdapter<R, B> {
@@ -42,6 +45,7 @@ public interface StreamListenerResultAdapter<R, B> {
 	 * Adapts the result to the binding target.
 	 * @param streamListenerResult the result of invoking the method.
 	 * @param bindingTarget the binding target.
+	 * @return an adapted result
 	 */
 	Closeable adapt(R streamListenerResult, B bindingTarget);
 

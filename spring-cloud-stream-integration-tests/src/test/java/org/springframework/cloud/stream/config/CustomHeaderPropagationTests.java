@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2017-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,10 +42,12 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Oleg Zhurakousky
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringBootTest(classes = CustomHeaderPropagationTests.HeaderPropagationProcessor.class,
-		webEnvironment = SpringBootTest.WebEnvironment.NONE,
-		properties = {"spring.cloud.stream.integration.messageHandlerNotPropagatedHeaders=bar,contentType"})
+// @checkstyle:off
+@SpringBootTest(classes = CustomHeaderPropagationTests.HeaderPropagationProcessor.class, webEnvironment = SpringBootTest.WebEnvironment.NONE, properties = {
+		"spring.cloud.stream.integration.messageHandlerNotPropagatedHeaders=bar,contentType" })
 public class CustomHeaderPropagationTests {
+
+	// @checkstyle:on
 
 	@Autowired
 	private Processor testProcessor;
@@ -55,19 +57,19 @@ public class CustomHeaderPropagationTests {
 
 	@Test
 	/**
-	 * @since 2.0 The behavior of content type handling has changed.
-	 * All input/output channels have a default content type of application/json
-	 * When a processor or a source returns a String, and if the content type is json it will be quoted
+	 * @since 2.0 The behavior of content type handling has changed. All input/output
+	 * channels have a default content type of application/json When a processor or a
+	 * source returns a String, and if the content type is json it will be quoted
 	 */
 	public void testCustomHeaderPropagation() throws Exception {
-		testProcessor.input().send(MessageBuilder.withPayload("{'name':'foo'}")
+		this.testProcessor.input().send(MessageBuilder.withPayload("{'name':'foo'}")
 				.setHeader(MessageHeaders.CONTENT_TYPE, "application/json")
-				.setHeader("foo", "fooValue")
-				.setHeader("bar", "barValue")
-				.build());
+				.setHeader("foo", "fooValue").setHeader("bar", "barValue").build());
 		@SuppressWarnings("unchecked")
-		Message<String> received = (Message<String>) ((TestSupportBinder) binderFactory.getBinder(null, MessageChannel.class))
-				.messageCollector().forChannel(testProcessor.output()).poll(10, TimeUnit.SECONDS);
+		Message<String> received = (Message<String>) ((TestSupportBinder) this.binderFactory
+				.getBinder(null, MessageChannel.class)).messageCollector()
+						.forChannel(this.testProcessor.output())
+						.poll(10, TimeUnit.SECONDS);
 		assertThat(received).isNotNull();
 		assertThat(received.getHeaders()).containsEntry("foo", "fooValue");
 		assertThat(received.getHeaders()).doesNotContainKey("bar");
@@ -81,9 +83,12 @@ public class CustomHeaderPropagationTests {
 
 		@ServiceActivator(inputChannel = "input", outputChannel = "output")
 		public Message<String> consume(String data) {
-			//if we don't force content to be String, it will be quoted on the outbound channel
-			return MessageBuilder.withPayload(data).setHeader(MessageHeaders.CONTENT_TYPE,"text/plain").build();
+			// if we don't force content to be String, it will be quoted on the outbound
+			// channel
+			return MessageBuilder.withPayload(data)
+					.setHeader(MessageHeaders.CONTENT_TYPE, "text/plain").build();
 		}
 
 	}
+
 }

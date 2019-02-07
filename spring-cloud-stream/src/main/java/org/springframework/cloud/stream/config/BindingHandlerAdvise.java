@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 the original author or authors.
+ * Copyright 2018-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,33 +32,35 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.validation.Validator;
 
 /**
- *
  * @author Oleg Zhurakousky
- *
  * @since 2.1
  *
  */
-public class BindingHandlerAdvise implements ConfigurationPropertiesBindHandlerAdvisor{
+public class BindingHandlerAdvise implements ConfigurationPropertiesBindHandlerAdvisor {
 
 	private final Map<ConfigurationPropertyName, ConfigurationPropertyName> mappings;
-	
+
 	private final Validator[] validator;
 
-	BindingHandlerAdvise(Map<ConfigurationPropertyName, ConfigurationPropertyName> additionalMappings, @Nullable Validator validator) {
+	BindingHandlerAdvise(
+			Map<ConfigurationPropertyName, ConfigurationPropertyName> additionalMappings,
+			@Nullable Validator validator) {
 		this.mappings = new LinkedHashMap<>();
 		this.mappings.put(ConfigurationPropertyName.of("spring.cloud.stream.bindings"),
 				ConfigurationPropertyName.of("spring.cloud.stream.default"));
 		if (!CollectionUtils.isEmpty(additionalMappings)) {
 			this.mappings.putAll(additionalMappings);
 		}
-		this.validator = validator != null ? new Validator[] {validator} : new Validator[] {};
+		this.validator = validator != null ? new Validator[] { validator }
+				: new Validator[] {};
 	}
 
 	@Override
 	public BindHandler apply(BindHandler bindHandler) {
-		BindHandler handler = new ValidationBindHandler(validator) {
+		BindHandler handler = new ValidationBindHandler(this.validator) {
 			@Override
-			public <T> Bindable<T> onStart(ConfigurationPropertyName name, Bindable<T> target, BindContext context) {
+			public <T> Bindable<T> onStart(ConfigurationPropertyName name,
+					Bindable<T> target, BindContext context) {
 				ConfigurationPropertyName defaultName = getDefaultName(name);
 				if (defaultName != null) {
 					BindResult<T> result = context.getBinder().bind(defaultName, target);
@@ -73,12 +75,15 @@ public class BindingHandlerAdvise implements ConfigurationPropertiesBindHandlerA
 	}
 
 	private ConfigurationPropertyName getDefaultName(ConfigurationPropertyName name) {
-		for (Map.Entry<ConfigurationPropertyName, ConfigurationPropertyName> mapping : this.mappings.entrySet()) {
+		for (Map.Entry<ConfigurationPropertyName, ConfigurationPropertyName> mapping : this.mappings
+				.entrySet()) {
 			ConfigurationPropertyName from = mapping.getKey();
 			ConfigurationPropertyName to = mapping.getValue();
-			if ((from.isAncestorOf(name) && name.getNumberOfElements() > from.getNumberOfElements())) {
+			if ((from.isAncestorOf(name)
+					&& name.getNumberOfElements() > from.getNumberOfElements())) {
 				ConfigurationPropertyName defaultName = to;
-				for (int i = from.getNumberOfElements() + 1; i < name.getNumberOfElements(); i++) {
+				for (int i = from.getNumberOfElements() + 1; i < name
+						.getNumberOfElements(); i++) {
 					defaultName = defaultName.append(name.getElement(i, Form.UNIFORM));
 				}
 				return defaultName;
@@ -87,7 +92,13 @@ public class BindingHandlerAdvise implements ConfigurationPropertiesBindHandlerA
 		return null;
 	}
 
+	/**
+	 * Provides mappings including the default mappings.
+	 */
 	public interface MappingsProvider {
+
 		Map<ConfigurationPropertyName, ConfigurationPropertyName> getDefaultMappings();
+
 	}
+
 }

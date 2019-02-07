@@ -51,8 +51,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Artem Bilan
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringBootTest(classes = SpelExpressionConverterConfigurationTests.Config.class,
-		properties = {"expression: a.b"})
+@SpringBootTest(classes = SpelExpressionConverterConfigurationTests.Config.class, properties = {
+		"expression: a.b" })
 public class SpelExpressionConverterConfigurationTests {
 
 	@Autowired
@@ -64,22 +64,23 @@ public class SpelExpressionConverterConfigurationTests {
 	@Autowired
 	private Config config;
 
-
 	@Test
 	@SuppressWarnings("unchecked")
 	public void converterCorrectlyInstalled() {
-		Expression expression = pojo.getExpression();
+		Expression expression = this.pojo.getExpression();
 		assertThat(expression.getValue("{\"a\": {\"b\": 5}}").toString()).isEqualTo("5");
 
-		List<PropertyAccessor> propertyAccessors =
-				TestUtils.getPropertyValue(this.evaluationContext, "propertyAccessors", List.class);
+		List<PropertyAccessor> propertyAccessors = TestUtils.getPropertyValue(
+				this.evaluationContext, "propertyAccessors", List.class);
 
-		assertThat(propertyAccessors).hasAtLeastOneElementOfType(JsonPropertyAccessor.class);
+		assertThat(propertyAccessors)
+				.hasAtLeastOneElementOfType(JsonPropertyAccessor.class);
 
-		propertyAccessors =
-				TestUtils.getPropertyValue(this.config.evaluationContext, "propertyAccessors", List.class);
+		propertyAccessors = TestUtils.getPropertyValue(this.config.evaluationContext,
+				"propertyAccessors", List.class);
 
-		assertThat(propertyAccessors).hasAtLeastOneElementOfType(JsonPropertyAccessor.class);
+		assertThat(propertyAccessors)
+				.hasAtLeastOneElementOfType(JsonPropertyAccessor.class);
 	}
 
 	@ConfigurationProperties
@@ -88,12 +89,13 @@ public class SpelExpressionConverterConfigurationTests {
 		private Expression expression;
 
 		public Expression getExpression() {
-			return expression;
+			return this.expression;
 		}
 
 		public void setExpression(Expression expression) {
 			this.expression = expression;
 		}
+
 	}
 
 	@Configuration
@@ -118,7 +120,8 @@ public class SpelExpressionConverterConfigurationTests {
 
 		@PostConstruct
 		public void setup() {
-			this.evaluationContext = ExpressionUtils.createStandardEvaluationContext(this.beanFactory);
+			this.evaluationContext = ExpressionUtils
+					.createStandardEvaluationContext(this.beanFactory);
 		}
 
 	}

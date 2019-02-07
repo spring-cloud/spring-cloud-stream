@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2017-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,12 +30,13 @@ import org.springframework.cloud.stream.annotation.Output;
  * Method level annotation that marks a method to be an emitter to outputs declared via
  * {@link EnableBinding} (e.g. channels).
  *
- * This annotation is intended to be used in a Spring Cloud Stream application that requires
- * a source to write to one or more {@link Output}s using the reactive paradigm.
+ * This annotation is intended to be used in a Spring Cloud Stream application that
+ * requires a source to write to one or more {@link Output}s using the reactive paradigm.
  *
  * No {@link Input}s are allowed on a method that is annotated with StreamEmitter.
  *
- * Depending on how the method is structured, there are some flexibility in how the {@link Output} may be used.
+ * Depending on how the method is structured, there are some flexibility in how the
+ * {@link Output} may be used.
  *
  * Here are some supported usage patterns:
  *
@@ -44,14 +45,14 @@ import org.springframework.cloud.stream.annotation.Output;
  * <pre class="code">
  * &#064;StreamEmitter
  * &#064;Output(Source.OUTPUT)
- * public Flux<String> emit() {
+ * public Flux&lt;String&gt; emit() {
  * 	return Flux.intervalMillis(1000)
  * 		.map(l -> "Hello World!!");
  * }
  * </pre>
  *
- * The following examples show how a void return type can be used on a method with StreamEmitter and how the
- * method signatures could be used in a flexible manner.
+ * The following examples show how a void return type can be used on a method with
+ * StreamEmitter and how the method signatures could be used in a flexible manner.
  *
  * <pre class="code">
  * &#064;StreamEmitter
@@ -91,4 +92,6 @@ import org.springframework.cloud.stream.annotation.Output;
 @Target({ ElementType.METHOD, ElementType.ANNOTATION_TYPE })
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-public @interface StreamEmitter {}
+public @interface StreamEmitter {
+
+}

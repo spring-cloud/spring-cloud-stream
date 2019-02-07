@@ -47,4 +47,5 @@ public class ChannelsEndpointAutoConfiguration {
 	public ChannelsEndpoint channelsEndpoint(BindingServiceProperties properties) {
 		return new ChannelsEndpoint(this.adapters, properties);
 	}
+
 }

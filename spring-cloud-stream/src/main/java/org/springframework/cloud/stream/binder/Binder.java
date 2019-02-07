@@ -24,7 +24,6 @@ package org.springframework.cloud.stream.binder;
  * @param <T> the primary binding type (e.g. MessageChannel).
  * @param <C> the consumer properties type.
  * @param <P> the producer properties type.
- *
  * @author Mark Fisher
  * @author David Turanski
  * @author Gary Russell
@@ -45,8 +44,10 @@ public interface Binder<T, C extends ConsumerProperties, P extends ProducerPrope
 	 * consumer)
 	 * @param inboundBindTarget the app interface to be bound as a consumer
 	 * @param consumerProperties the consumer properties
+	 * @return the setup binding
 	 */
-	Binding<T> bindConsumer(String name, String group, T inboundBindTarget, C consumerProperties);
+	Binding<T> bindConsumer(String name, String group, T inboundBindTarget,
+			C consumerProperties);
 
 	/**
 	 * Bind the target component as a message producer to the logical entity identified by
@@ -54,6 +55,7 @@ public interface Binder<T, C extends ConsumerProperties, P extends ProducerPrope
 	 * @param name the logical identity of the message target
 	 * @param outboundBindTarget the app interface to be bound as a producer
 	 * @param producerProperties the producer properties
+	 * @return the setup binding
 	 */
 	Binding<T> bindProducer(String name, T outboundBindTarget, P producerProperties);
 

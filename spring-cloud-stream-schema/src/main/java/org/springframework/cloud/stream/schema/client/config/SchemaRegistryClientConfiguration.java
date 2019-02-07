@@ -43,12 +43,14 @@ public class SchemaRegistryClientConfiguration {
 	public SchemaRegistryClient schemaRegistryClient() {
 		DefaultSchemaRegistryClient defaultSchemaRegistryClient = new DefaultSchemaRegistryClient();
 
-		if (StringUtils.hasText(schemaRegistryClientProperties.getEndpoint())) {
-			defaultSchemaRegistryClient.setEndpoint(schemaRegistryClientProperties.getEndpoint());
+		if (StringUtils.hasText(this.schemaRegistryClientProperties.getEndpoint())) {
+			defaultSchemaRegistryClient
+					.setEndpoint(this.schemaRegistryClientProperties.getEndpoint());
 		}
 
-		SchemaRegistryClient client = (schemaRegistryClientProperties.isCached())
-				? new CachingRegistryClient(defaultSchemaRegistryClient) : defaultSchemaRegistryClient;
+		SchemaRegistryClient client = (this.schemaRegistryClientProperties.isCached())
+				? new CachingRegistryClient(defaultSchemaRegistryClient)
+				: defaultSchemaRegistryClient;
 
 		return client;
 	}

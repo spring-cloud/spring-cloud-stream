@@ -49,9 +49,9 @@ import org.springframework.tuple.spel.TuplePropertyAccessor;
 public class SpelExpressionConverterConfiguration {
 
 	/**
-	 * Provide a {@link SpelPropertyAccessorRegistrar} supplied
-	 * with the {@link JsonPropertyAccessor} and {@link TuplePropertyAccessor}.
-	 * This bean is used to customize an
+	 * Provide a {@link SpelPropertyAccessorRegistrar} supplied with the
+	 * {@link JsonPropertyAccessor} and {@link TuplePropertyAccessor}. This bean is used
+	 * to customize an
 	 * {@link org.springframework.integration.config.IntegrationEvaluationContextFactoryBean}.
 	 * for additional {@link org.springframework.expression.PropertyAccessor}s.
 	 * @return the SpelPropertyAccessorRegistrar bean
@@ -60,8 +60,12 @@ public class SpelExpressionConverterConfiguration {
 	@Bean
 	public static SpelPropertyAccessorRegistrar spelPropertyAccessorRegistrar() {
 		return new SpelPropertyAccessorRegistrar()
-				.add(Introspector.decapitalize(JsonPropertyAccessor.class.getSimpleName()), new JsonPropertyAccessor())
-				.add(Introspector.decapitalize(TuplePropertyAccessor.class.getSimpleName()), new TuplePropertyAccessor());
+				.add(Introspector
+						.decapitalize(JsonPropertyAccessor.class.getSimpleName()),
+						new JsonPropertyAccessor())
+				.add(Introspector
+						.decapitalize(TuplePropertyAccessor.class.getSimpleName()),
+						new TuplePropertyAccessor());
 	}
 
 	@Bean
@@ -88,16 +92,19 @@ public class SpelExpressionConverterConfiguration {
 		@Override
 		public Expression convert(String source) {
 			try {
-				Expression expression = parser.parseExpression(source);
+				Expression expression = this.parser.parseExpression(source);
 				if (expression instanceof SpelExpression) {
-					((SpelExpression) expression).setEvaluationContext(evaluationContext);
+					((SpelExpression) expression)
+							.setEvaluationContext(this.evaluationContext);
 				}
 				return expression;
 			}
 			catch (ParseException e) {
-				throw new IllegalArgumentException(
-						String.format("Could not convert '%s' into a SpEL expression", source), e);
+				throw new IllegalArgumentException(String.format(
+						"Could not convert '%s' into a SpEL expression", source), e);
 			}
 		}
+
 	}
+
 }

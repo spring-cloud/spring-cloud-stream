@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 the original author or authors.
+ * Copyright 2018-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,15 +62,16 @@ import org.springframework.util.Assert;
  * @since 2.0
  *
  */
-public class DefaultPollableMessageSource implements PollableMessageSource, Lifecycle, RetryListener {
+public class DefaultPollableMessageSource
+		implements PollableMessageSource, Lifecycle, RetryListener {
+
+	protected static final ThreadLocal<AttributeAccessor> attributesHolder = new ThreadLocal<AttributeAccessor>();
 
 	private static final DirectChannel dummyChannel = new DirectChannel();
 
 	static {
 		dummyChannel.setBeanName("dummy.required.by.nonnull.api");
 	}
-
-	protected static final ThreadLocal<AttributeAccessor> attributesHolder = new ThreadLocal<AttributeAccessor>();
 
 	private final List<ChannelInterceptor> interceptors = new ArrayList<>();
 
@@ -95,7 +96,8 @@ public class DefaultPollableMessageSource implements PollableMessageSource, Life
 	/**
 	 * @param messageConverter instance of {@link SmartMessageConverter}. Can be null.
 	 */
-	public DefaultPollableMessageSource(@Nullable SmartMessageConverter messageConverter) {
+	public DefaultPollableMessageSource(
+			@Nullable SmartMessageConverter messageConverter) {
 		this.messageConverter = messageConverter;
 	}
 
@@ -124,7 +126,8 @@ public class DefaultPollableMessageSource implements PollableMessageSource, Life
 		}
 		final ReceiveAdvice advice = new ReceiveAdvice();
 		advice.interceptors.addAll(this.interceptors);
-		NameMatchMethodPointcutAdvisor sourceAdvisor = new NameMatchMethodPointcutAdvisor(advice);
+		NameMatchMethodPointcutAdvisor sourceAdvisor = new NameMatchMethodPointcutAdvisor(
+				advice);
 		sourceAdvisor.addMethodName("receive");
 		pf.addAdvisor(sourceAdvisor);
 		this.source = (MessageSource<?>) pf.getProxy();
@@ -153,7 +156,8 @@ public class DefaultPollableMessageSource implements PollableMessageSource, Life
 		this.errorMessageStrategy = errorMessageStrategy;
 	}
 
-	public void setAttributesProvider(BiConsumer<AttributeAccessor, Message<?>> attributesProvider) {
+	public void setAttributesProvider(
+			BiConsumer<AttributeAccessor, Message<?>> attributesProvider) {
 		this.attributesProvider = attributesProvider;
 	}
 
@@ -202,18 +206,7 @@ public class DefaultPollableMessageSource implements PollableMessageSource, Life
 				.getAcknowledgmentCallback(message);
 		try {
 			if (this.retryTemplate == null) {
-				if (this.errorChannel == null) {
-					this.handle(message, handler);
-				}
-				else {
-					try {
-						this.handle(message, handler);
-					}
-					catch (Exception e) {
-						this.messagingTemplate
-							.send(this.errorChannel, this.errorMessageStrategy.buildErrorMessage(e, attributesHolder.get()));
-					}
-				}
+				this.handle(message, handler);
 			}
 			else {
 				this.retryTemplate.execute(context -> {
@@ -224,8 +217,14 @@ public class DefaultPollableMessageSource implements PollableMessageSource, Life
 			return true;
 		}
 		catch (MessagingException e) {
-			if (!ackCallback.isAcknowledged() && shouldRequeue(e)) {
+			if (this.retryTemplate == null && !shouldRequeue(e)) {
+				this.messagingTemplate.send(this.errorChannel, this.errorMessageStrategy
+						.buildErrorMessage(e, attributesHolder.get()));
+				return true;
+			}
+			else if (!ackCallback.isAcknowledged() && shouldRequeue(e)) {
 				AckUtils.requeue(ackCallback);
+				return true;
 			}
 			else {
 				AckUtils.autoNack(ackCallback);
@@ -237,8 +236,8 @@ public class DefaultPollableMessageSource implements PollableMessageSource, Life
 		}
 		catch (Exception e) {
 			AckUtils.autoNack(ackCallback);
-			if (e instanceof MessageHandlingException
-					&& ((MessageHandlingException) e).getFailedMessage().equals(message)) {
+			if (e instanceof MessageHandlingException && ((MessageHandlingException) e)
+					.getFailedMessage().equals(message)) {
 				throw (MessageHandlingException) e;
 			}
 			throw new MessageHandlingException(message, e);
@@ -259,7 +258,8 @@ public class DefaultPollableMessageSource implements PollableMessageSource, Life
 	}
 
 	@Override
-	public <T, E extends Throwable> boolean open(RetryContext context, RetryCallback<T, E> callback) {
+	public <T, E extends Throwable> boolean open(RetryContext context,
+			RetryCallback<T, E> callback) {
 		if (DefaultPollableMessageSource.this.recoveryCallback != null) {
 			attributesHolder.set(context);
 		}
@@ -267,33 +267,36 @@ public class DefaultPollableMessageSource implements PollableMessageSource, Life
 	}
 
 	@Override
-	public <T, E extends Throwable> void close(RetryContext context, RetryCallback<T, E> callback,
-			Throwable throwable) {
+	public <T, E extends Throwable> void close(RetryContext context,
+			RetryCallback<T, E> callback, Throwable throwable) {
 		attributesHolder.remove();
 	}
 
 	@Override
-	public <T, E extends Throwable> void onError(RetryContext context, RetryCallback<T, E> callback,
-			Throwable throwable) {
+	public <T, E extends Throwable> void onError(RetryContext context,
+			RetryCallback<T, E> callback, Throwable throwable) {
 		// Empty
 	}
 
 	/**
-	 * Receives Message from the source and converts its payload to a provided type.
-	 * Can return null
+	 * Receives Message from the source and converts its payload to a provided type. Can
+	 * return null
+	 * @param type type reference
+	 * @return received message
 	 */
 	private Message<?> receive(ParameterizedTypeReference<?> type) {
 		Message<?> message = this.source.receive();
 		if (message != null && type != null && this.messageConverter != null) {
-			Class<?> targetType = type == null ? Object.class :
-				type.getType() instanceof Class ? (Class<?>) type.getType() : Object.class;
+			Class<?> targetType = type == null ? Object.class
+					: type.getType() instanceof Class ? (Class<?>) type.getType()
+							: Object.class;
 			Object payload = this.messageConverter.fromMessage(message, targetType, type);
 			if (payload == null) {
-				throw new MessageConversionException(message, "No converter could convert Message");
+				throw new MessageConversionException(message,
+						"No converter could convert Message");
 			}
 			message = MessageBuilder.withPayload(payload)
-					.copyHeaders(message.getHeaders())
-					.build();
+					.copyHeaders(message.getHeaders()).build();
 		}
 		return message;
 	}
@@ -323,7 +326,8 @@ public class DefaultPollableMessageSource implements PollableMessageSource, Life
 		if (needAttributes) {
 			AttributeAccessor attributes = attributesHolder.get();
 			if (attributes != null) {
-				attributes.setAttribute(ErrorMessageUtils.INPUT_MESSAGE_CONTEXT_KEY, message);
+				attributes.setAttribute(ErrorMessageUtils.INPUT_MESSAGE_CONTEXT_KEY,
+						message);
 				if (this.attributesProvider != null) {
 					this.attributesProvider.accept(attributes, message);
 				}
@@ -335,4 +339,5 @@ public class DefaultPollableMessageSource implements PollableMessageSource, Life
 		setAttributesIfNecessary(message);
 		doHandleMessage(handler, message);
 	}
+
 }

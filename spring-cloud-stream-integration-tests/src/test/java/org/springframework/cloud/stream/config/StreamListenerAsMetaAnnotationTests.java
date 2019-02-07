@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2017-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,6 +46,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Documented
 @StreamListener
 @interface EventHandler {
+
 	/**
 	 * The name of the binding target (e.g. channel) that the method subscribes to.
 	 * @return the name of the binding target.
@@ -76,37 +77,37 @@ public class StreamListenerAsMetaAnnotationTests {
 
 	@Test
 	public void testCustomAnnotation() {
-		ConfigurableApplicationContext context = SpringApplication.run(TestPojoWithCustomAnnotatedArguments.class,
-				"--server.port=0");
+		ConfigurableApplicationContext context = SpringApplication
+				.run(TestPojoWithCustomAnnotatedArguments.class, "--server.port=0");
 
 		TestPojoWithCustomAnnotatedArguments testPojoWithAnnotatedArguments = context
 				.getBean(TestPojoWithCustomAnnotatedArguments.class);
 		Sink sink = context.getBean(Sink.class);
 		String id = UUID.randomUUID().toString();
 		sink.input().send(MessageBuilder.withPayload("{\"foo\":\"barbar" + id + "\"}")
-				.setHeader("contentType", "application/json").setHeader("testHeader", "testValue")
-				.setHeader("type", "foo").build());
+				.setHeader("contentType", "application/json")
+				.setHeader("testHeader", "testValue").setHeader("type", "foo").build());
 		assertThat(testPojoWithAnnotatedArguments.receivedFoo).hasSize(1);
-		assertThat(testPojoWithAnnotatedArguments.receivedFoo.get(0)).hasFieldOrPropertyWithValue("foo",
-				"barbar" + id);
+		assertThat(testPojoWithAnnotatedArguments.receivedFoo.get(0))
+				.hasFieldOrPropertyWithValue("foo", "barbar" + id);
 		context.close();
 	}
 
 	@Test
 	public void testAnnotation() {
-		ConfigurableApplicationContext context = SpringApplication.run(TestPojoWithAnnotatedArguments.class,
-				"--server.port=0");
+		ConfigurableApplicationContext context = SpringApplication
+				.run(TestPojoWithAnnotatedArguments.class, "--server.port=0");
 
 		TestPojoWithAnnotatedArguments testPojoWithAnnotatedArguments = context
 				.getBean(TestPojoWithAnnotatedArguments.class);
 		Sink sink = context.getBean(Sink.class);
 		String id = UUID.randomUUID().toString();
 		sink.input().send(MessageBuilder.withPayload("{\"foo\":\"barbar" + id + "\"}")
-				.setHeader("contentType", "application/json").setHeader("testHeader", "testValue")
-				.setHeader("type", "foo").build());
+				.setHeader("contentType", "application/json")
+				.setHeader("testHeader", "testValue").setHeader("type", "foo").build());
 		assertThat(testPojoWithAnnotatedArguments.receivedFoo).hasSize(1);
-		assertThat(testPojoWithAnnotatedArguments.receivedFoo.get(0)).hasFieldOrPropertyWithValue("foo",
-				"barbar" + id);
+		assertThat(testPojoWithAnnotatedArguments.receivedFoo.get(0))
+				.hasFieldOrPropertyWithValue("foo", "barbar" + id);
 		context.close();
 	}
 
@@ -122,6 +123,7 @@ public class StreamListenerAsMetaAnnotationTests {
 		public void receive(@Payload StreamListenerTestUtils.FooPojo fooPojo) {
 			this.receivedFoo.add(fooPojo);
 		}
+
 	}
 
 	@EnableBinding(Sink.class)
@@ -136,5 +138,7 @@ public class StreamListenerAsMetaAnnotationTests {
 		public void receive(@Payload StreamListenerTestUtils.FooPojo fooPojo) {
 			this.receivedFoo.add(fooPojo);
 		}
+
 	}
+
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,8 +44,8 @@ public class StreamListenerInterruptionTests {
 
 	@Test
 	public void testSubscribersNotInterrupted() throws Exception {
-		ConfigurableApplicationContext context = SpringApplication.run(TestTimeWindows.class,
-				"--server.port=0");
+		ConfigurableApplicationContext context = SpringApplication
+				.run(TestTimeWindows.class, "--server.port=0");
 		Sink sink = context.getBean(Sink.class);
 		TestTimeWindows testTimeWindows = context.getBean(TestTimeWindows.class);
 		sink.input().send(MessageBuilder.withPayload("hello1").build());
@@ -68,11 +68,12 @@ public class StreamListenerInterruptionTests {
 		@StreamListener
 		public void receive(@Input(Sink.INPUT) Flux<String> input) {
 			input.window(Duration.ofMillis(500), Duration.ofMillis(100))
-					.flatMap(w -> w.reduce("", (x, y) -> x + y))
-					.subscribe(x -> {
-						interruptionState = Thread.currentThread().isInterrupted();
-						latch.countDown();
+					.flatMap(w -> w.reduce("", (x, y) -> x + y)).subscribe(x -> {
+						this.interruptionState = Thread.currentThread().isInterrupted();
+						this.latch.countDown();
 					});
 		}
+
 	}
+
 }

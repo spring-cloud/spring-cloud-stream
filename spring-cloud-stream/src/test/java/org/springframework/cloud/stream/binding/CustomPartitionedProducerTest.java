@@ -18,7 +18,6 @@ package org.springframework.cloud.stream.binding;
 
 import java.lang.reflect.Field;
 
-import org.junit.Assert;
 import org.junit.Test;
 
 import org.springframework.boot.SpringApplication;
@@ -42,6 +41,8 @@ import org.springframework.messaging.MessagingException;
 import org.springframework.messaging.support.ChannelInterceptor;
 import org.springframework.util.ReflectionUtils;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 /**
  * @author Ilayaperumal Gopinathan
  * @author Oleg Zhurakousky
@@ -50,133 +51,150 @@ public class CustomPartitionedProducerTest {
 
 	@Test
 	public void testCustomPartitionedProducer() {
-		ApplicationContext context = SpringApplication.run(CustomPartitionedProducerTest.TestSource.class,
-				"--spring.jmx.enabled=false",
-				"--spring.main.web-application-type=none",
-				"--spring.cloud.stream.bindings.output.producer.partitionKeyExtractorClass=org.springframework.cloud.stream.partitioning.CustomPartitionKeyExtractorClass",
-				"--spring.cloud.stream.bindings.output.producer.partitionSelectorClass=org.springframework.cloud.stream.partitioning.CustomPartitionSelectorClass",
+		ApplicationContext context = SpringApplication.run(
+				CustomPartitionedProducerTest.TestSource.class,
+				"--spring.jmx.enabled=false", "--spring.main.web-application-type=none",
+				"--spring.cloud.stream.bindings.output.producer.partitionKeyExtractorClass="
+						+ "org.springframework.cloud.stream.partitioning.CustomPartitionKeyExtractorClass",
+				"--spring.cloud.stream.bindings.output.producer.partitionSelectorClass="
+						+ "org.springframework.cloud.stream.partitioning.CustomPartitionSelectorClass",
 				"--spring.cloud.stream.default-binder=mock");
 		Source testSource = context.getBean(Source.class);
 		DirectChannel messageChannel = (DirectChannel) testSource.output();
-		for (ChannelInterceptor channelInterceptor : messageChannel.getChannelInterceptors()) {
+		for (ChannelInterceptor channelInterceptor : messageChannel
+				.getChannelInterceptors()) {
 			if (channelInterceptor instanceof MessageConverterConfigurer.PartitioningInterceptor) {
-				Field partitionHandlerField = ReflectionUtils
-						.findField(MessageConverterConfigurer.PartitioningInterceptor.class, "partitionHandler");
+				Field partitionHandlerField = ReflectionUtils.findField(
+						MessageConverterConfigurer.PartitioningInterceptor.class,
+						"partitionHandler");
 				ReflectionUtils.makeAccessible(partitionHandlerField);
-				PartitionHandler partitionHandler = (PartitionHandler) ReflectionUtils.getField(partitionHandlerField,
-						channelInterceptor);
-				Field partitonKeyExtractorField = ReflectionUtils.findField(PartitionHandler.class,
-						"partitionKeyExtractorStrategy");
+				PartitionHandler partitionHandler = (PartitionHandler) ReflectionUtils
+						.getField(partitionHandlerField, channelInterceptor);
+				Field partitonKeyExtractorField = ReflectionUtils.findField(
+						PartitionHandler.class, "partitionKeyExtractorStrategy");
 				ReflectionUtils.makeAccessible(partitonKeyExtractorField);
-				Field partitonSelectorField = ReflectionUtils.findField(PartitionHandler.class,
-						"partitionSelectorStrategy");
+				Field partitonSelectorField = ReflectionUtils
+						.findField(PartitionHandler.class, "partitionSelectorStrategy");
 				ReflectionUtils.makeAccessible(partitonSelectorField);
-				Assert.assertTrue(((PartitionKeyExtractorStrategy) ReflectionUtils.getField(partitonKeyExtractorField,
-						partitionHandler)).getClass().equals(CustomPartitionKeyExtractorClass.class));
-				Assert.assertTrue(
-						((PartitionSelectorStrategy) ReflectionUtils.getField(partitonSelectorField, partitionHandler))
-								.getClass().equals(CustomPartitionSelectorClass.class));
+				assertThat(((PartitionKeyExtractorStrategy) ReflectionUtils
+						.getField(partitonKeyExtractorField, partitionHandler)).getClass()
+								.equals(CustomPartitionKeyExtractorClass.class)).isTrue();
+				assertThat(((PartitionSelectorStrategy) ReflectionUtils
+						.getField(partitonSelectorField, partitionHandler)).getClass()
+								.equals(CustomPartitionSelectorClass.class)).isTrue();
 			}
 		}
 	}
 
 	@Test
 	public void testCustomPartitionedProducerByName() {
-		ApplicationContext context = SpringApplication.run(CustomPartitionedProducerTest.TestSource.class,
-				"--spring.jmx.enabled=false",
-				"--spring.main.web-application-type=none",
+		ApplicationContext context = SpringApplication.run(
+				CustomPartitionedProducerTest.TestSource.class,
+				"--spring.jmx.enabled=false", "--spring.main.web-application-type=none",
 				"--spring.cloud.stream.bindings.output.producer.partitionKeyExtractorName=customPartitionKeyExtractor",
 				"--spring.cloud.stream.bindings.output.producer.partitionSelectorName=customPartitionSelector",
 				"--spring.cloud.stream.default-binder=mock");
 		Source testSource = context.getBean(Source.class);
 		DirectChannel messageChannel = (DirectChannel) testSource.output();
-		for (ChannelInterceptor channelInterceptor : messageChannel.getChannelInterceptors()) {
+		for (ChannelInterceptor channelInterceptor : messageChannel
+				.getChannelInterceptors()) {
 			if (channelInterceptor instanceof MessageConverterConfigurer.PartitioningInterceptor) {
-				Field partitionHandlerField = ReflectionUtils
-						.findField(MessageConverterConfigurer.PartitioningInterceptor.class, "partitionHandler");
+				Field partitionHandlerField = ReflectionUtils.findField(
+						MessageConverterConfigurer.PartitioningInterceptor.class,
+						"partitionHandler");
 				ReflectionUtils.makeAccessible(partitionHandlerField);
-				PartitionHandler partitionHandler = (PartitionHandler) ReflectionUtils.getField(partitionHandlerField,
-						channelInterceptor);
-				Field partitonKeyExtractorField = ReflectionUtils.findField(PartitionHandler.class,
-						"partitionKeyExtractorStrategy");
+				PartitionHandler partitionHandler = (PartitionHandler) ReflectionUtils
+						.getField(partitionHandlerField, channelInterceptor);
+				Field partitonKeyExtractorField = ReflectionUtils.findField(
+						PartitionHandler.class, "partitionKeyExtractorStrategy");
 				ReflectionUtils.makeAccessible(partitonKeyExtractorField);
-				Field partitonSelectorField = ReflectionUtils.findField(PartitionHandler.class,
-						"partitionSelectorStrategy");
+				Field partitonSelectorField = ReflectionUtils
+						.findField(PartitionHandler.class, "partitionSelectorStrategy");
 				ReflectionUtils.makeAccessible(partitonSelectorField);
-				Assert.assertTrue(((PartitionKeyExtractorStrategy) ReflectionUtils.getField(partitonKeyExtractorField,
-						partitionHandler)).getClass().equals(CustomPartitionKeyExtractorClass.class));
-				Assert.assertTrue(
-						((PartitionSelectorStrategy) ReflectionUtils.getField(partitonSelectorField, partitionHandler))
-								.getClass().equals(CustomPartitionSelectorClass.class));
+				assertThat(((PartitionKeyExtractorStrategy) ReflectionUtils
+						.getField(partitonKeyExtractorField, partitionHandler)).getClass()
+								.equals(CustomPartitionKeyExtractorClass.class)).isTrue();
+				assertThat(((PartitionSelectorStrategy) ReflectionUtils
+						.getField(partitonSelectorField, partitionHandler)).getClass()
+								.equals(CustomPartitionSelectorClass.class)).isTrue();
 			}
 		}
 	}
 
 	@Test
 	public void testCustomPartitionedProducerAsSingletons() {
-		ApplicationContext context = SpringApplication.run(CustomPartitionedProducerTest.TestSource.class,
+		ApplicationContext context = SpringApplication.run(
+				CustomPartitionedProducerTest.TestSource.class,
 				"--spring.jmx.enabled=false", "--spring.main.web-application-type=none",
 				"--spring.cloud.stream.default-binder=mock");
 		Source testSource = context.getBean(Source.class);
 		DirectChannel messageChannel = (DirectChannel) testSource.output();
-		for (ChannelInterceptor channelInterceptor : messageChannel.getChannelInterceptors()) {
+		for (ChannelInterceptor channelInterceptor : messageChannel
+				.getChannelInterceptors()) {
 			if (channelInterceptor instanceof MessageConverterConfigurer.PartitioningInterceptor) {
-				Field partitionHandlerField = ReflectionUtils
-						.findField(MessageConverterConfigurer.PartitioningInterceptor.class, "partitionHandler");
+				Field partitionHandlerField = ReflectionUtils.findField(
+						MessageConverterConfigurer.PartitioningInterceptor.class,
+						"partitionHandler");
 				ReflectionUtils.makeAccessible(partitionHandlerField);
-				PartitionHandler partitionHandler = (PartitionHandler) ReflectionUtils.getField(partitionHandlerField,
-						channelInterceptor);
-				Field partitonKeyExtractorField = ReflectionUtils.findField(PartitionHandler.class,
-						"partitionKeyExtractorStrategy");
+				PartitionHandler partitionHandler = (PartitionHandler) ReflectionUtils
+						.getField(partitionHandlerField, channelInterceptor);
+				Field partitonKeyExtractorField = ReflectionUtils.findField(
+						PartitionHandler.class, "partitionKeyExtractorStrategy");
 				ReflectionUtils.makeAccessible(partitonKeyExtractorField);
-				Field partitonSelectorField = ReflectionUtils.findField(PartitionHandler.class,
-						"partitionSelectorStrategy");
+				Field partitonSelectorField = ReflectionUtils
+						.findField(PartitionHandler.class, "partitionSelectorStrategy");
 				ReflectionUtils.makeAccessible(partitonSelectorField);
-				Assert.assertTrue(((PartitionKeyExtractorStrategy) ReflectionUtils.getField(partitonKeyExtractorField,
-						partitionHandler)).getClass().equals(CustomPartitionKeyExtractorClass.class));
-				Assert.assertTrue(
-						((PartitionSelectorStrategy) ReflectionUtils.getField(partitonSelectorField, partitionHandler))
-								.getClass().equals(CustomPartitionSelectorClass.class));
+				assertThat(((PartitionKeyExtractorStrategy) ReflectionUtils
+						.getField(partitonKeyExtractorField, partitionHandler)).getClass()
+								.equals(CustomPartitionKeyExtractorClass.class)).isTrue();
+				assertThat(((PartitionSelectorStrategy) ReflectionUtils
+						.getField(partitonSelectorField, partitionHandler)).getClass()
+								.equals(CustomPartitionSelectorClass.class)).isTrue();
 			}
 		}
 	}
 
 	public void testCustomPartitionedProducerMultipleInstances() {
-		ApplicationContext context = SpringApplication.run(CustomPartitionedProducerTest.TestSourceMultipleStrategies.class,
-				"--spring.jmx.enabled=false",
-				"--spring.main.web-application-type=none",
+		ApplicationContext context = SpringApplication.run(
+				CustomPartitionedProducerTest.TestSourceMultipleStrategies.class,
+				"--spring.jmx.enabled=false", "--spring.main.web-application-type=none",
 				"--spring.cloud.stream.bindings.output.producer.partitionKeyExtractorName=customPartitionKeyExtractorOne",
 				"--spring.cloud.stream.bindings.output.producer.partitionSelectorName=customPartitionSelectorTwo",
 				"--spring.cloud.stream.default-binder=mock");
 		Source testSource = context.getBean(Source.class);
 		DirectChannel messageChannel = (DirectChannel) testSource.output();
-		for (ChannelInterceptor channelInterceptor : messageChannel.getChannelInterceptors()) {
+		for (ChannelInterceptor channelInterceptor : messageChannel
+				.getChannelInterceptors()) {
 			if (channelInterceptor instanceof MessageConverterConfigurer.PartitioningInterceptor) {
-				Field partitionHandlerField = ReflectionUtils
-						.findField(MessageConverterConfigurer.PartitioningInterceptor.class, "partitionHandler");
+				Field partitionHandlerField = ReflectionUtils.findField(
+						MessageConverterConfigurer.PartitioningInterceptor.class,
+						"partitionHandler");
 				ReflectionUtils.makeAccessible(partitionHandlerField);
-				PartitionHandler partitionHandler = (PartitionHandler) ReflectionUtils.getField(partitionHandlerField,
-						channelInterceptor);
-				Field partitonKeyExtractorField = ReflectionUtils.findField(PartitionHandler.class,
-						"partitionKeyExtractorStrategy");
+				PartitionHandler partitionHandler = (PartitionHandler) ReflectionUtils
+						.getField(partitionHandlerField, channelInterceptor);
+				Field partitonKeyExtractorField = ReflectionUtils.findField(
+						PartitionHandler.class, "partitionKeyExtractorStrategy");
 				ReflectionUtils.makeAccessible(partitonKeyExtractorField);
-				Field partitonSelectorField = ReflectionUtils.findField(PartitionHandler.class,
-						"partitionSelectorStrategy");
+				Field partitonSelectorField = ReflectionUtils
+						.findField(PartitionHandler.class, "partitionSelectorStrategy");
 				ReflectionUtils.makeAccessible(partitonSelectorField);
-				Assert.assertTrue(((PartitionKeyExtractorStrategy) ReflectionUtils.getField(partitonKeyExtractorField,
-						partitionHandler)).getClass().equals(CustomPartitionKeyExtractorClass.class));
-				Assert.assertTrue(
-						((PartitionSelectorStrategy) ReflectionUtils.getField(partitonSelectorField, partitionHandler))
-								.getClass().equals(CustomPartitionSelectorClass.class));
+				assertThat(((PartitionKeyExtractorStrategy) ReflectionUtils
+						.getField(partitonKeyExtractorField, partitionHandler)).getClass()
+								.equals(CustomPartitionKeyExtractorClass.class)).isTrue();
+				assertThat(((PartitionSelectorStrategy) ReflectionUtils
+						.getField(partitonSelectorField, partitionHandler)).getClass()
+								.equals(CustomPartitionSelectorClass.class)).isTrue();
 			}
 		}
 	}
 
-	@Test(expected=Exception.class)
-	// It actually throws UnsatisfiedDependencyException, but it is confusing when it comes to test
+	@Test(expected = Exception.class)
+	// It actually throws UnsatisfiedDependencyException, but it is confusing when it
+	// comes to test
 	// But for the purposes of the test all we care about is that it fails
 	public void testCustomPartitionedProducerMultipleInstancesFailNoFilter() {
-		SpringApplication.run(CustomPartitionedProducerTest.TestSourceMultipleStrategies.class,
+		SpringApplication.run(
+				CustomPartitionedProducerTest.TestSourceMultipleStrategies.class,
 				"--spring.jmx.enabled=false", "--spring.main.web-application-type=none");
 	}
 
@@ -205,6 +223,7 @@ public class CustomPartitionedProducerTest {
 				}
 			};
 		}
+
 	}
 
 	@EnableBinding(Source.class)
@@ -242,5 +261,7 @@ public class CustomPartitionedProducerTest {
 				}
 			};
 		}
+
 	}
+
 }

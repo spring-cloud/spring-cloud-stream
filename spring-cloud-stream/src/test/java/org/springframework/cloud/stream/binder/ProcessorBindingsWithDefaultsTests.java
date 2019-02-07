@@ -37,9 +37,11 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
  * @author Janne Valkealahti
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringBootTest(classes = ProcessorBindingsWithDefaultsTests.TestProcessor.class,
-properties = "spring.cloud.stream.defaultBinder=mock")
+// @checkstyle:off
+@SpringBootTest(classes = ProcessorBindingsWithDefaultsTests.TestProcessor.class, properties = "spring.cloud.stream.defaultBinder=mock")
 public class ProcessorBindingsWithDefaultsTests {
+
+	// @checkstyle:on
 
 	@Autowired
 	private BinderFactory binderFactory;
@@ -47,12 +49,12 @@ public class ProcessorBindingsWithDefaultsTests {
 	@Autowired
 	private Processor processor;
 
-	@SuppressWarnings({"rawtypes", "unchecked"})
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Test
 	public void testSourceOutputChannelBound() {
 		Binder binder = this.binderFactory.getBinder(null, MessageChannel.class);
-		Mockito.verify(binder).bindConsumer(eq("input"), isNull(), eq(this.processor.input()),
-				Mockito.any());
+		Mockito.verify(binder).bindConsumer(eq("input"), isNull(),
+				eq(this.processor.input()), Mockito.any());
 		Mockito.verify(binder).bindProducer(eq("output"), eq(this.processor.output()),
 				Mockito.any());
 		verifyNoMoreInteractions(binder);
@@ -63,4 +65,5 @@ public class ProcessorBindingsWithDefaultsTests {
 	public static class TestProcessor {
 
 	}
+
 }

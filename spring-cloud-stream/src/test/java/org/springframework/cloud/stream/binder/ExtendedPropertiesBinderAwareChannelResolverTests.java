@@ -33,8 +33,7 @@ import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.MessagingException;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.assertj.core.api.Assertions.fail;
 
 /**
  * @author Mark Fisher
@@ -42,23 +41,24 @@ import static org.junit.Assert.fail;
  * @author Ilayaperumal Gopinathan
  * @author Oleg Zhurakousky
  */
-public class ExtendedPropertiesBinderAwareChannelResolverTests extends BinderAwareChannelResolverTests {
+public class ExtendedPropertiesBinderAwareChannelResolverTests
+		extends BinderAwareChannelResolverTests {
 
 	@Test
 	@Override
 	public void resolveChannel() {
-		Map<String, Bindable> bindables = context.getBeansOfType(Bindable.class);
+		Map<String, Bindable> bindables = this.context.getBeansOfType(Bindable.class);
 		assertThat(bindables).hasSize(1);
 		for (Bindable bindable : bindables.values()) {
-			assertEquals(0, bindable.getInputs().size()); // producer
-			assertEquals(0, bindable.getOutputs().size());// consumer
+			assertThat(bindable.getInputs().size()).isEqualTo(0); // producer
+			assertThat(bindable.getOutputs().size()).isEqualTo(0); // consumer
 		}
-		MessageChannel registered = resolver.resolveDestination("foo");
-		bindables = context.getBeansOfType(Bindable.class);
+		MessageChannel registered = this.resolver.resolveDestination("foo");
+		bindables = this.context.getBeansOfType(Bindable.class);
 		assertThat(bindables).hasSize(1);
 		for (Bindable bindable : bindables.values()) {
-			assertEquals(0, bindable.getInputs().size()); // producer
-			assertEquals(1, bindable.getOutputs().size());// consumer
+			assertThat(bindable.getInputs().size()).isEqualTo(0); // producer
+			assertThat(bindable.getOutputs().size()).isEqualTo(1); // consumer
 		}
 		DirectChannel testChannel = new DirectChannel();
 		final CountDownLatch latch = new CountDownLatch(1);
@@ -71,7 +71,9 @@ public class ExtendedPropertiesBinderAwareChannelResolverTests extends BinderAwa
 				latch.countDown();
 			}
 		});
-		binder.bindConsumer("foo", null, testChannel, new ExtendedConsumerProperties<ConsumerProperties>(new ConsumerProperties()));
+		this.binder.bindConsumer("foo", null, testChannel,
+				new ExtendedConsumerProperties<ConsumerProperties>(
+						new ConsumerProperties()));
 		assertThat(received).hasSize(0);
 		registered.send(MessageBuilder.withPayload("hello").build());
 		try {
@@ -82,11 +84,12 @@ public class ExtendedPropertiesBinderAwareChannelResolverTests extends BinderAwa
 			fail("interrupted while awaiting latch");
 		}
 		assertThat(received).hasSize(1);
-		assertThat(new String((byte[])received.get(0).getPayload())).isEqualTo("hello");
-		context.close();
+		assertThat(new String((byte[]) received.get(0).getPayload())).isEqualTo("hello");
+		this.context.close();
 		for (Bindable bindable : bindables.values()) {
-			assertEquals(0, bindable.getInputs().size());
-			assertEquals(0, bindable.getOutputs().size());//Must not be bound"
+			assertThat(bindable.getInputs().size()).isEqualTo(0);
+			assertThat(bindable.getOutputs().size()).isEqualTo(0); // Must not be bound"
 		}
 	}
+
 }

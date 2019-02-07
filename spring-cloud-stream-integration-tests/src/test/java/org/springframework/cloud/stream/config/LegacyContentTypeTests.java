@@ -43,30 +43,35 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Oleg Zhurakousky
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringBootTest(classes = { LegacyContentTypeTests.LegacyTestSink.class})
+@SpringBootTest(classes = { LegacyContentTypeTests.LegacyTestSink.class })
 public class LegacyContentTypeTests {
 
 	@Autowired
 	private Sink testSink;
 
 	@Test
-	public void testOriginalContentTypeIsRetrievedForLegacyContentHeaderType() throws Exception {
+	public void testOriginalContentTypeIsRetrievedForLegacyContentHeaderType()
+			throws Exception {
 		final CountDownLatch latch = new CountDownLatch(1);
 		MessageHandler messageHandler = new MessageHandler() {
 			@Override
 			public void handleMessage(Message<?> message) throws MessagingException {
 				assertThat(message.getPayload()).isInstanceOf(byte[].class);
-				assertThat(((byte[])message.getPayload())).isEqualTo("{\"message\":\"Hi\"}".getBytes(StandardCharsets.UTF_8));
-				assertThat(message.getHeaders().get(MessageHeaders.CONTENT_TYPE).toString()).isEqualTo("application/json");
+				assertThat(((byte[]) message.getPayload())).isEqualTo(
+						"{\"message\":\"Hi\"}".getBytes(StandardCharsets.UTF_8));
+				assertThat(
+						message.getHeaders().get(MessageHeaders.CONTENT_TYPE).toString())
+								.isEqualTo("application/json");
 				latch.countDown();
 			}
 		};
-		testSink.input().subscribe(messageHandler);
-		testSink.input().send(MessageBuilder.withPayload("{\"message\":\"Hi\"}".getBytes())
-							.setHeader(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE, "application/json")
-							.build());
+		this.testSink.input().subscribe(messageHandler);
+		this.testSink.input().send(MessageBuilder
+				.withPayload("{\"message\":\"Hi\"}".getBytes())
+				.setHeader(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE, "application/json")
+				.build());
 		assertThat(latch.await(10, TimeUnit.SECONDS)).isTrue();
-		testSink.input().unsubscribe(messageHandler);
+		this.testSink.input().unsubscribe(messageHandler);
 	}
 
 	@EnableBinding(Sink.class)
@@ -74,4 +79,5 @@ public class LegacyContentTypeTests {
 	public static class LegacyTestSink {
 
 	}
+
 }

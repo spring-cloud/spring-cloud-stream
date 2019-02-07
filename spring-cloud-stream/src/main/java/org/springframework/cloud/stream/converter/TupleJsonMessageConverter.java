@@ -32,12 +32,12 @@ import org.springframework.util.MimeTypeUtils;
 
 /**
  * A {@link org.springframework.messaging.converter.MessageConverter} to convert a
- * {@link Tuple} to JSON bytes
+ * {@link Tuple} to JSON bytes.
+ *
  * @author David Turanski
  * @author Ilayaperumal Gopinathan
  * @author Marius Bogoevici
  * @author Vinicius Carvalho
- *
  * @deprecated as of 2.0. please use 'application/json' content type
  */
 @Deprecated
@@ -49,7 +49,8 @@ public class TupleJsonMessageConverter extends AbstractMessageConverter {
 	private volatile boolean prettyPrint;
 
 	public TupleJsonMessageConverter(ObjectMapper objectMapper) {
-		super(Arrays.asList(MessageConverterUtils.X_SPRING_TUPLE, MimeTypeUtils.APPLICATION_JSON));
+		super(Arrays.asList(MessageConverterUtils.X_SPRING_TUPLE,
+				MimeTypeUtils.APPLICATION_JSON));
 		this.objectMapper = (objectMapper != null) ? objectMapper : new ObjectMapper();
 	}
 
@@ -63,13 +64,15 @@ public class TupleJsonMessageConverter extends AbstractMessageConverter {
 	}
 
 	@Override
-	protected Object convertToInternal(Object payload, MessageHeaders headers, Object conversionHint) {
+	protected Object convertToInternal(Object payload, MessageHeaders headers,
+			Object conversionHint) {
 		Tuple t = (Tuple) payload;
 		String json;
 		if (this.prettyPrint) {
 			try {
 				Object tmp = this.objectMapper.readValue(t.toString(), Object.class);
-				json = this.objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(tmp);
+				json = this.objectMapper.writerWithDefaultPrettyPrinter()
+						.writeValueAsString(tmp);
 			}
 			catch (IOException e) {
 				this.logger.error(e.getMessage(), e);
@@ -83,7 +86,8 @@ public class TupleJsonMessageConverter extends AbstractMessageConverter {
 	}
 
 	@Override
-	public Object convertFromInternal(Message<?> message, Class<?> targetClass, Object conversionHint) {
+	public Object convertFromInternal(Message<?> message, Class<?> targetClass,
+			Object conversionHint) {
 		String source;
 		if (message.getPayload() instanceof byte[]) {
 			source = new String((byte[]) message.getPayload(), Charset.forName("UTF-8"));

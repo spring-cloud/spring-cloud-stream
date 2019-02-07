@@ -34,17 +34,16 @@ import org.springframework.beans.factory.annotation.Qualifier;
  */
 
 @Qualifier
-@Target({ ElementType.FIELD, ElementType.METHOD,
-		ElementType.ANNOTATION_TYPE, ElementType.PARAMETER })
+@Target({ ElementType.FIELD, ElementType.METHOD, ElementType.ANNOTATION_TYPE,
+		ElementType.PARAMETER })
 @Retention(RetentionPolicy.RUNTIME)
 @Inherited
 @Documented
 public @interface Output {
 
 	/**
-	 * Specify the binding target name;
-	 * used as a bean name for binding target
-	 * and as a destination name by default.
+	 * Specify the binding target name; used as a bean name for binding target and as a
+	 * destination name by default.
 	 * @return the binding target name
 	 */
 	String value() default "";

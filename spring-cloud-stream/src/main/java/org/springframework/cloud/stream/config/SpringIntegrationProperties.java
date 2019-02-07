@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2017-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import org.springframework.messaging.MessageHeaders;
  * Contains properties for Spring Integration settings.
  *
  * @author Marius Bogoevici
- *
  * @since 1.2.3
  */
 @ConfigurationProperties("spring.cloud.stream.integration")
@@ -32,13 +31,16 @@ public class SpringIntegrationProperties {
 	/**
 	 * Message header names that will NOT be copied from the inbound message.
 	 */
-	private String[] messageHandlerNotPropagatedHeaders = new String[] { MessageHeaders.CONTENT_TYPE };
+	private String[] messageHandlerNotPropagatedHeaders = new String[] {
+			MessageHeaders.CONTENT_TYPE };
 
 	public String[] getMessageHandlerNotPropagatedHeaders() {
 		return this.messageHandlerNotPropagatedHeaders;
 	}
 
-	public void setMessageHandlerNotPropagatedHeaders(String[] messageHandlerNotPropagatedHeaders) {
+	public void setMessageHandlerNotPropagatedHeaders(
+			String[] messageHandlerNotPropagatedHeaders) {
 		this.messageHandlerNotPropagatedHeaders = messageHandlerNotPropagatedHeaders;
 	}
+
 }

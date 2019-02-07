@@ -48,17 +48,22 @@ public class AggregateWithMainTest {
 	@Test
 	public void testAggregateApplication() throws InterruptedException {
 		// emulate a main method
-		ConfigurableApplicationContext context = new AggregateApplicationBuilder(MainConfiguration.class).web(false)
-				.from(UppercaseProcessor.class).namespace("upper")
-				.to(SuffixProcessor.class).namespace("suffix")
-				.run("--spring.cloud.stream.bindings.input.contentType=text/plain","--spring.cloud.stream.bindings.output.contentType=text/plain");
+		ConfigurableApplicationContext context = new AggregateApplicationBuilder(
+				MainConfiguration.class).web(false).from(UppercaseProcessor.class)
+						.namespace("upper").to(SuffixProcessor.class).namespace("suffix")
+						.run("--spring.cloud.stream.bindings.input.contentType=text/plain",
+								"--spring.cloud.stream.bindings.output.contentType=text/plain");
 
-		AggregateApplication aggregateAccessor = context.getBean(AggregateApplication.class);
+		AggregateApplication aggregateAccessor = context
+				.getBean(AggregateApplication.class);
 		MessageCollector messageCollector = context.getBean(MessageCollector.class);
-		Processor uppercaseProcessor = aggregateAccessor.getBinding(Processor.class, "upper");
-		Processor suffixProcessor = aggregateAccessor.getBinding(Processor.class, "suffix");
+		Processor uppercaseProcessor = aggregateAccessor.getBinding(Processor.class,
+				"upper");
+		Processor suffixProcessor = aggregateAccessor.getBinding(Processor.class,
+				"suffix");
 		uppercaseProcessor.input().send(MessageBuilder.withPayload("Hello").build());
-		Message<String> receivedMessage = (Message<String>) messageCollector.forChannel(suffixProcessor.output()).poll(1, TimeUnit.SECONDS);
+		Message<String> receivedMessage = (Message<String>) messageCollector
+				.forChannel(suffixProcessor.output()).poll(1, TimeUnit.SECONDS);
 		assertThat(receivedMessage).isNotNull();
 		assertThat(receivedMessage.getPayload()).isEqualTo("HELLO WORLD!");
 		context.close();

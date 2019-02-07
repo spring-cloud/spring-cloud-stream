@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2017-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,11 +41,9 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest(classes = AutoconfigurationDisabledTest.MyProcessor.class, properties = {
-		"server.port=-1",
-		"spring.cloud.stream.defaultBinder=test",
+		"server.port=-1", "spring.cloud.stream.defaultBinder=test",
 		"--spring.cloud.stream.bindings.input.contentType=text/plain",
-		"--spring.cloud.stream.bindings.output.contentType=text/plain"
-})
+		"--spring.cloud.stream.bindings.output.contentType=text/plain" })
 @DirtiesContext
 public class AutoconfigurationDisabledTest {
 
@@ -58,9 +56,10 @@ public class AutoconfigurationDisabledTest {
 	@SuppressWarnings("unchecked")
 	@Test
 	public void testAutoconfigurationDisabled() throws Exception {
-		processor.input().send(MessageBuilder.withPayload("Hello").build());
+		this.processor.input().send(MessageBuilder.withPayload("Hello").build());
 		// Since the interaction is synchronous, the result should be immediate
-		Message<String> response = (Message<String>) messageCollector.forChannel(processor.output()).poll(1000, TimeUnit.MILLISECONDS);
+		Message<String> response = (Message<String>) this.messageCollector
+				.forChannel(this.processor.output()).poll(1000, TimeUnit.MILLISECONDS);
 		assertThat(response).isNotNull();
 		assertThat(response.getPayload()).isEqualTo("Hello world");
 	}
@@ -73,5 +72,7 @@ public class AutoconfigurationDisabledTest {
 		public String transform(String in) {
 			return in + " world";
 		}
+
 	}
+
 }

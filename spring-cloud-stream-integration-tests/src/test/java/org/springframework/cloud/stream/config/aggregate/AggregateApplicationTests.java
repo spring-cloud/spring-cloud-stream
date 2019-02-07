@@ -18,7 +18,6 @@ package org.springframework.cloud.stream.config.aggregate;
 
 import java.util.concurrent.TimeUnit;
 
-import org.junit.Assert;
 import org.junit.Test;
 
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -32,7 +31,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 
-import static org.hamcrest.Matchers.notNullValue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Ilayaperumal Gopinathan
@@ -44,14 +43,15 @@ public class AggregateApplicationTests {
 	@SuppressWarnings("unchecked")
 	public void testAggregateApplication() throws Exception {
 		ConfigurableApplicationContext context = new AggregateApplicationBuilder(
-				AggregateApplicationTestConfig.class).web(false).from(TestSource.class).to(TestProcessor.class).run();
-		TestSupportBinder testSupportBinder = (TestSupportBinder) context.getBean(BinderFactory.class).getBinder(null,
-				MessageChannel.class);
+				AggregateApplicationTestConfig.class).web(false).from(TestSource.class)
+						.to(TestProcessor.class).run();
+		TestSupportBinder testSupportBinder = (TestSupportBinder) context
+				.getBean(BinderFactory.class).getBinder(null, MessageChannel.class);
 		MessageChannel processorOutput = testSupportBinder.getChannelForName("output");
-		Message<String> received = (Message<String>) (testSupportBinder.messageCollector().forChannel(processorOutput)
-				.poll(5, TimeUnit.SECONDS));
-		Assert.assertThat(received, notNullValue());
-		Assert.assertTrue(received.getPayload().endsWith("processed"));
+		Message<String> received = (Message<String>) (testSupportBinder.messageCollector()
+				.forChannel(processorOutput).poll(5, TimeUnit.SECONDS));
+		assertThat(received).isNotNull();
+		assertThat(received.getPayload().endsWith("processed")).isTrue();
 
 		context.close();
 	}
@@ -61,4 +61,5 @@ public class AggregateApplicationTests {
 	static class AggregateApplicationTestConfig {
 
 	}
+
 }

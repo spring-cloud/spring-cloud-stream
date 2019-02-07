@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2017-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,13 +29,14 @@ import org.springframework.util.Assert;
 
 /**
  * An {@link AbstractReplyProducingMessageHandler} that delegates to a collection of
- * internal {@link ConditionalStreamListenerMessageHandlerWrapper} instances, executing the ones that
- * match the given expression.
+ * internal {@link ConditionalStreamListenerMessageHandlerWrapper} instances, executing
+ * the ones that match the given expression.
  *
  * @author Marius Bogoevici
  * @since 1.2
  */
-final class DispatchingStreamListenerMessageHandler extends AbstractReplyProducingMessageHandler {
+final class DispatchingStreamListenerMessageHandler
+		extends AbstractReplyProducingMessageHandler {
 
 	private final List<ConditionalStreamListenerMessageHandlerWrapper> handlerMethods;
 
@@ -43,10 +44,12 @@ final class DispatchingStreamListenerMessageHandler extends AbstractReplyProduci
 
 	private final EvaluationContext evaluationContext;
 
-	DispatchingStreamListenerMessageHandler(Collection<ConditionalStreamListenerMessageHandlerWrapper> handlerMethods,
+	DispatchingStreamListenerMessageHandler(
+			Collection<ConditionalStreamListenerMessageHandlerWrapper> handlerMethods,
 			EvaluationContext evaluationContext) {
 		Assert.notEmpty(handlerMethods, "'handlerMethods' cannot be empty");
-		this.handlerMethods = Collections.unmodifiableList(new ArrayList<>(handlerMethods));
+		this.handlerMethods = Collections
+				.unmodifiableList(new ArrayList<>(handlerMethods));
 		boolean evaluateExpressions = false;
 		for (ConditionalStreamListenerMessageHandlerWrapper handlerMethod : handlerMethods) {
 			if (handlerMethod.getCondition() != null) {
@@ -56,7 +59,8 @@ final class DispatchingStreamListenerMessageHandler extends AbstractReplyProduci
 		}
 		this.evaluateExpressions = evaluateExpressions;
 		if (evaluateExpressions) {
-			Assert.notNull(evaluationContext, "'evaluationContext' cannot be null if conditions are used");
+			Assert.notNull(evaluationContext,
+					"'evaluationContext' cannot be null if conditions are used");
 		}
 		this.evaluationContext = evaluationContext;
 	}
@@ -68,38 +72,44 @@ final class DispatchingStreamListenerMessageHandler extends AbstractReplyProduci
 
 	@Override
 	protected Object handleRequestMessage(Message<?> requestMessage) {
-		List<ConditionalStreamListenerMessageHandlerWrapper> matchingHandlers = this.evaluateExpressions ? findMatchingHandlers(requestMessage) : this.handlerMethods;
+		List<ConditionalStreamListenerMessageHandlerWrapper> matchingHandlers = this.evaluateExpressions
+				? findMatchingHandlers(requestMessage) : this.handlerMethods;
 		if (matchingHandlers.size() == 0) {
-			if (logger.isWarnEnabled()) {
-				logger.warn("Cannot find a @StreamListener matching for message with id: "
-						+ requestMessage.getHeaders().getId());
+			if (this.logger.isWarnEnabled()) {
+				this.logger.warn(
+						"Cannot find a @StreamListener matching for message with id: "
+								+ requestMessage.getHeaders().getId());
 			}
 			return null;
 		}
 		else if (matchingHandlers.size() > 1) {
 			for (ConditionalStreamListenerMessageHandlerWrapper matchingMethod : matchingHandlers) {
-				matchingMethod.getStreamListenerMessageHandler().handleMessage(requestMessage);
+				matchingMethod.getStreamListenerMessageHandler()
+						.handleMessage(requestMessage);
 			}
 			return null;
 		}
 		else {
-			final ConditionalStreamListenerMessageHandlerWrapper singleMatchingHandler = matchingHandlers.get(0);
-			singleMatchingHandler.getStreamListenerMessageHandler().handleMessage(requestMessage);
+			final ConditionalStreamListenerMessageHandlerWrapper singleMatchingHandler = matchingHandlers
+					.get(0);
+			singleMatchingHandler.getStreamListenerMessageHandler()
+					.handleMessage(requestMessage);
 			return null;
 		}
 	}
 
-	private List<ConditionalStreamListenerMessageHandlerWrapper> findMatchingHandlers(Message<?> message) {
+	private List<ConditionalStreamListenerMessageHandlerWrapper> findMatchingHandlers(
+			Message<?> message) {
 		ArrayList<ConditionalStreamListenerMessageHandlerWrapper> matchingMethods = new ArrayList<>();
-		for (ConditionalStreamListenerMessageHandlerWrapper conditionalStreamListenerMessageHandlerWrapperMethod : this.handlerMethods) {
-			if (conditionalStreamListenerMessageHandlerWrapperMethod.getCondition() == null) {
-				matchingMethods.add(conditionalStreamListenerMessageHandlerWrapperMethod);
+		for (ConditionalStreamListenerMessageHandlerWrapper wrapper : this.handlerMethods) {
+			if (wrapper.getCondition() == null) {
+				matchingMethods.add(wrapper);
 			}
 			else {
-				boolean conditionMetOnMessage = conditionalStreamListenerMessageHandlerWrapperMethod.getCondition().getValue(
-						this.evaluationContext, message, Boolean.class);
+				boolean conditionMetOnMessage = wrapper.getCondition()
+						.getValue(this.evaluationContext, message, Boolean.class);
 				if (conditionMetOnMessage) {
-					matchingMethods.add(conditionalStreamListenerMessageHandlerWrapperMethod);
+					matchingMethods.add(wrapper);
 				}
 			}
 		}
@@ -114,7 +124,8 @@ final class DispatchingStreamListenerMessageHandler extends AbstractReplyProduci
 
 		ConditionalStreamListenerMessageHandlerWrapper(Expression condition,
 				StreamListenerMessageHandler streamListenerMessageHandler) {
-			Assert.notNull(streamListenerMessageHandler, "the message handler cannot be null");
+			Assert.notNull(streamListenerMessageHandler,
+					"the message handler cannot be null");
 			Assert.isTrue(condition == null || streamListenerMessageHandler.isVoid(),
 					"cannot specify a condition and a return value at the same time");
 			this.condition = condition;
@@ -122,7 +133,7 @@ final class DispatchingStreamListenerMessageHandler extends AbstractReplyProduci
 		}
 
 		public Expression getCondition() {
-			return condition;
+			return this.condition;
 		}
 
 		public boolean isVoid() {
@@ -130,7 +141,9 @@ final class DispatchingStreamListenerMessageHandler extends AbstractReplyProduci
 		}
 
 		public StreamListenerMessageHandler getStreamListenerMessageHandler() {
-			return streamListenerMessageHandler;
+			return this.streamListenerMessageHandler;
 		}
+
 	}
+
 }

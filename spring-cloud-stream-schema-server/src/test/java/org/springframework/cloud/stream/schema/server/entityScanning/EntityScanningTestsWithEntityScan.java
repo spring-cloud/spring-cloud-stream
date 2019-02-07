@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,8 @@ import org.springframework.context.ConfigurableApplicationContext;
 public class EntityScanningTestsWithEntityScan {
 
 	@Test
-	public void testApplicationWithEmbeddedSchemaRegistryServerOutsideOfRootPackage() throws Exception {
+	public void testApplicationWithEmbeddedSchemaRegistryServerOutsideOfRootPackage()
+			throws Exception {
 		final ConfigurableApplicationContext context = SpringApplication
 				.run(CustomApplicationEmbeddingSchemaServer.class, "--server.port=0");
 		context.close();
@@ -40,5 +41,7 @@ public class EntityScanningTestsWithEntityScan {
 	@EnableSchemaRegistryServer
 	@EntityScan(basePackages = "org.springframework.cloud.stream.schema.server.entityScanning.domain")
 	public static class CustomApplicationEmbeddingSchemaServer {
+
 	}
+
 }

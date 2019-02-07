@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 the original author or authors.
+ * Copyright 2018-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,13 +42,17 @@ public class MockExtendedBinderConfiguration {
 	@SuppressWarnings("rawtypes")
 	@Bean
 	public Binder<?, ?, ?> extendedPropertiesBinder() {
-		Binder mock = Mockito.mock(Binder.class, Mockito.withSettings().defaultAnswer(Mockito.RETURNS_MOCKS)
-				.extraInterfaces(ExtendedPropertiesBinder.class));
+		Binder mock = Mockito.mock(Binder.class,
+				Mockito.withSettings().defaultAnswer(Mockito.RETURNS_MOCKS)
+						.extraInterfaces(ExtendedPropertiesBinder.class));
 		ConfigurableEnvironment environment = new StandardEnvironment();
 		Map<String, Object> propertiesToAdd = new HashMap<>();
-		propertiesToAdd.put("spring.cloud.stream.foo.default.consumer.extendedProperty", "someFancyExtension");
-		propertiesToAdd.put("spring.cloud.stream.foo.default.producer.extendedProperty", "someFancyExtension");
-		environment.getPropertySources().addLast(new MapPropertySource("extPropertiesConfig", propertiesToAdd));
+		propertiesToAdd.put("spring.cloud.stream.foo.default.consumer.extendedProperty",
+				"someFancyExtension");
+		propertiesToAdd.put("spring.cloud.stream.foo.default.producer.extendedProperty",
+				"someFancyExtension");
+		environment.getPropertySources()
+				.addLast(new MapPropertySource("extPropertiesConfig", propertiesToAdd));
 
 		ConfigurableApplicationContext applicationContext = new GenericApplicationContext();
 		applicationContext.setEnvironment(environment);
@@ -56,13 +60,15 @@ public class MockExtendedBinderConfiguration {
 		FooExtendedBindingProperties fooExtendedBindingProperties = new FooExtendedBindingProperties();
 		fooExtendedBindingProperties.setApplicationContext(applicationContext);
 
-		final FooConsumerProperties fooConsumerProperties = fooExtendedBindingProperties.getExtendedConsumerProperties("input");
-		final FooProducerProperties fooProducerProperties = fooExtendedBindingProperties.getExtendedProducerProperties("output");
+		final FooConsumerProperties fooConsumerProperties = fooExtendedBindingProperties
+				.getExtendedConsumerProperties("input");
+		final FooProducerProperties fooProducerProperties = fooExtendedBindingProperties
+				.getExtendedProducerProperties("output");
 
-		when (((ExtendedPropertiesBinder)mock).getExtendedConsumerProperties("input"))
+		when(((ExtendedPropertiesBinder) mock).getExtendedConsumerProperties("input"))
 				.thenReturn(fooConsumerProperties);
 
-		when (((ExtendedPropertiesBinder)mock).getExtendedProducerProperties("output"))
+		when(((ExtendedPropertiesBinder) mock).getExtendedProducerProperties("output"))
 				.thenReturn(fooProducerProperties);
 
 		return mock;

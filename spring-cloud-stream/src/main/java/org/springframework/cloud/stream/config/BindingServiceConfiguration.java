@@ -65,7 +65,6 @@ import org.springframework.util.Assert;
 import org.springframework.util.ObjectUtils;
 import org.springframework.validation.Validator;
 
-
 /**
  * Configuration class that provides necessary beans for {@link MessageChannel} binding.
  *
@@ -80,20 +79,91 @@ import org.springframework.validation.Validator;
  * @author Soby Chacko
  */
 @Configuration
-@EnableConfigurationProperties({ BindingServiceProperties.class, SpringIntegrationProperties.class, StreamFunctionProperties.class })
-@Import({ DestinationPublishingMetricsAutoConfiguration.class, SpelExpressionConverterConfiguration.class })
+@EnableConfigurationProperties({ BindingServiceProperties.class,
+		SpringIntegrationProperties.class, StreamFunctionProperties.class })
+@Import({ DestinationPublishingMetricsAutoConfiguration.class,
+		SpelExpressionConverterConfiguration.class })
 @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
 @ConditionalOnBean(value = BinderTypeRegistry.class, search = SearchStrategy.CURRENT)
 public class BindingServiceConfiguration {
 
-	public static final String STREAM_LISTENER_ANNOTATION_BEAN_POST_PROCESSOR_NAME =
-			"streamListenerAnnotationBeanPostProcessor";
+	// @checkstyle:off
+	/**
+	 * Name of the Spring Cloud Stream stream listener annotation bean post processor.
+	 */
+	public static final String STREAM_LISTENER_ANNOTATION_BEAN_POST_PROCESSOR_NAME = "streamListenerAnnotationBeanPostProcessor";
+
+	// @checkstyle:on
 
 	@Autowired(required = false)
 	private Collection<DefaultBinderFactory.Listener> binderFactoryListeners;
 
+	private static Map<String, BinderConfiguration> getBinderConfigurations(
+			BinderTypeRegistry binderTypeRegistry,
+			BindingServiceProperties bindingServiceProperties) {
+
+		Map<String, BinderConfiguration> binderConfigurations = new HashMap<>();
+		Map<String, BinderProperties> declaredBinders = bindingServiceProperties
+				.getBinders();
+		boolean defaultCandidatesExist = false;
+		Iterator<Map.Entry<String, BinderProperties>> binderPropertiesIterator = declaredBinders
+				.entrySet().iterator();
+		while (!defaultCandidatesExist && binderPropertiesIterator.hasNext()) {
+			defaultCandidatesExist = binderPropertiesIterator.next().getValue()
+					.isDefaultCandidate();
+		}
+		List<String> existingBinderConfigurations = new ArrayList<>();
+		for (Map.Entry<String, BinderProperties> binderEntry : declaredBinders
+				.entrySet()) {
+			BinderProperties binderProperties = binderEntry.getValue();
+			if (binderTypeRegistry.get(binderEntry.getKey()) != null) {
+				binderConfigurations.put(binderEntry.getKey(),
+						new BinderConfiguration(binderEntry.getKey(),
+								binderProperties.getEnvironment(),
+								binderProperties.isInheritEnvironment(),
+								binderProperties.isDefaultCandidate()));
+				existingBinderConfigurations.add(binderEntry.getKey());
+			}
+			else {
+				Assert.hasText(binderProperties.getType(),
+						"No 'type' property present for custom binder "
+								+ binderEntry.getKey());
+				binderConfigurations.put(binderEntry.getKey(),
+						new BinderConfiguration(binderProperties.getType(),
+								binderProperties.getEnvironment(),
+								binderProperties.isInheritEnvironment(),
+								binderProperties.isDefaultCandidate()));
+				existingBinderConfigurations.add(binderEntry.getKey());
+			}
+		}
+		for (Map.Entry<String, BinderConfiguration> configurationEntry : binderConfigurations
+				.entrySet()) {
+			if (configurationEntry.getValue().isDefaultCandidate()) {
+				defaultCandidatesExist = true;
+			}
+		}
+		if (!defaultCandidatesExist) {
+			for (Map.Entry<String, BinderType> binderEntry : binderTypeRegistry.getAll()
+					.entrySet()) {
+				if (!existingBinderConfigurations.contains(binderEntry.getKey())) {
+					binderConfigurations.put(binderEntry.getKey(),
+							new BinderConfiguration(binderEntry.getKey(), new HashMap<>(),
+									true, true));
+				}
+			}
+		}
+		return binderConfigurations;
+	}
+
+	@Bean(name = STREAM_LISTENER_ANNOTATION_BEAN_POST_PROCESSOR_NAME)
+	@ConditionalOnMissingBean(search = SearchStrategy.CURRENT)
+	public static StreamListenerAnnotationBeanPostProcessor streamListenerAnnotationBeanPostProcessor() {
+		return new StreamListenerAnnotationBeanPostProcessor();
+	}
+
 	@Bean
-	public BindingHandlerAdvise BindingHandlerAdvise(@Nullable MappingsProvider[] providers, @Nullable Validator validator) {
+	public BindingHandlerAdvise BindingHandlerAdvise(
+			@Nullable MappingsProvider[] providers, @Nullable Validator validator) {
 		Map<ConfigurationPropertyName, ConfigurationPropertyName> additionalMappings = new HashMap<>();
 		if (!ObjectUtils.isEmpty(providers)) {
 			for (int i = 0; i < providers.length; i++) {
@@ -110,55 +180,11 @@ public class BindingServiceConfiguration {
 			BindingServiceProperties bindingServiceProperties) {
 
 		DefaultBinderFactory binderFactory = new DefaultBinderFactory(
-				getBinderConfigurations(binderTypeRegistry, bindingServiceProperties), binderTypeRegistry);
+				getBinderConfigurations(binderTypeRegistry, bindingServiceProperties),
+				binderTypeRegistry);
 		binderFactory.setDefaultBinder(bindingServiceProperties.getDefaultBinder());
-		binderFactory.setListeners(binderFactoryListeners);
+		binderFactory.setListeners(this.binderFactoryListeners);
 		return binderFactory;
-	}
-
-	private static Map<String, BinderConfiguration> getBinderConfigurations(BinderTypeRegistry binderTypeRegistry,
-			BindingServiceProperties bindingServiceProperties) {
-
-		Map<String, BinderConfiguration> binderConfigurations = new HashMap<>();
-		Map<String, BinderProperties> declaredBinders = bindingServiceProperties.getBinders();
-		boolean defaultCandidatesExist = false;
-		Iterator<Map.Entry<String, BinderProperties>> binderPropertiesIterator = declaredBinders.entrySet().iterator();
-		while (!defaultCandidatesExist && binderPropertiesIterator.hasNext()) {
-			defaultCandidatesExist = binderPropertiesIterator.next().getValue().isDefaultCandidate();
-		}
-		List<String> existingBinderConfigurations = new ArrayList<>();
-		for (Map.Entry<String, BinderProperties> binderEntry : declaredBinders.entrySet()) {
-			BinderProperties binderProperties = binderEntry.getValue();
-			if (binderTypeRegistry.get(binderEntry.getKey()) != null) {
-				binderConfigurations.put(binderEntry.getKey(),
-						new BinderConfiguration(binderEntry.getKey(),
-								binderProperties.getEnvironment(), binderProperties.isInheritEnvironment(),
-								binderProperties.isDefaultCandidate()));
-				existingBinderConfigurations.add(binderEntry.getKey());
-			}
-			else {
-				Assert.hasText(binderProperties.getType(),
-						"No 'type' property present for custom binder " + binderEntry.getKey());
-				binderConfigurations.put(binderEntry.getKey(),
-						new BinderConfiguration(binderProperties.getType(), binderProperties.getEnvironment(),
-								binderProperties.isInheritEnvironment(), binderProperties.isDefaultCandidate()));
-				existingBinderConfigurations.add(binderEntry.getKey());
-			}
-		}
-		for (Map.Entry<String, BinderConfiguration> configurationEntry : binderConfigurations.entrySet()) {
-			if (configurationEntry.getValue().isDefaultCandidate()) {
-				defaultCandidatesExist = true;
-			}
-		}
-		if (!defaultCandidatesExist) {
-			for (Map.Entry<String, BinderType> binderEntry : binderTypeRegistry.getAll().entrySet()) {
-				if (!existingBinderConfigurations.contains(binderEntry.getKey())) {
-					binderConfigurations.put(binderEntry.getKey(), new BinderConfiguration(binderEntry.getKey(),
-							new HashMap<>(), true, true));
-				}
-			}
-		}
-		return binderConfigurations;
 	}
 
 	@Bean
@@ -166,19 +192,14 @@ public class BindingServiceConfiguration {
 		return new MessageChannelStreamListenerResultAdapter();
 	}
 
-	@Bean(name = STREAM_LISTENER_ANNOTATION_BEAN_POST_PROCESSOR_NAME)
-	@ConditionalOnMissingBean(search = SearchStrategy.CURRENT)
-	public static StreamListenerAnnotationBeanPostProcessor streamListenerAnnotationBeanPostProcessor() {
-		return new StreamListenerAnnotationBeanPostProcessor();
-	}
-
 	@Bean
 	// This conditional is intentionally not in an autoconfig (usually a bad idea) because
 	// it is used to detect a BindingService in the parent context (which we know
 	// already exists).
 	@ConditionalOnMissingBean(search = SearchStrategy.CURRENT)
-	public BindingService bindingService(BindingServiceProperties bindingServiceProperties,
-										BinderFactory binderFactory, TaskScheduler taskScheduler) {
+	public BindingService bindingService(
+			BindingServiceProperties bindingServiceProperties,
+			BinderFactory binderFactory, TaskScheduler taskScheduler) {
 
 		return new BindingService(bindingServiceProperties, binderFactory, taskScheduler);
 	}
@@ -193,7 +214,8 @@ public class BindingServiceConfiguration {
 
 	@Bean
 	@DependsOn("bindingService")
-	public InputBindingLifecycle inputBindingLifecycle(BindingService bindingService, Map<String, Bindable> bindables) {
+	public InputBindingLifecycle inputBindingLifecycle(BindingService bindingService,
+			Map<String, Bindable> bindables) {
 		return new InputBindingLifecycle(bindingService, bindables);
 	}
 
@@ -205,12 +227,14 @@ public class BindingServiceConfiguration {
 
 	@SuppressWarnings("rawtypes")
 	@Bean
-	public BinderAwareChannelResolver binderAwareChannelResolver(BindingService bindingService,
+	public BinderAwareChannelResolver binderAwareChannelResolver(
+			BindingService bindingService,
 			AbstractBindingTargetFactory<? extends MessageChannel> bindingTargetFactory,
 			DynamicDestinationsBindable dynamicDestinationsBindable,
 			@Nullable BinderAwareChannelResolver.NewDestinationBindingCallback callback) {
 
-		return new BinderAwareChannelResolver(bindingService, bindingTargetFactory, dynamicDestinationsBindable, callback);
+		return new BinderAwareChannelResolver(bindingService, bindingTargetFactory,
+				dynamicDestinationsBindable, callback);
 	}
 
 	@Bean
@@ -225,18 +249,23 @@ public class BindingServiceConfiguration {
 			@Autowired(required = false) AbstractMappingMessageRouter[] routers,
 			@Autowired(required = false) DestinationResolver<MessageChannel> channelResolver) {
 
-		return new org.springframework.cloud.stream.binding.BinderAwareRouterBeanPostProcessor(routers, channelResolver);
+		return new org.springframework.cloud.stream.binding.BinderAwareRouterBeanPostProcessor(
+				routers, channelResolver);
 	}
 
 	@Bean
-	public ApplicationListener<ContextRefreshedEvent> appListener(SpringIntegrationProperties springIntegrationProperties) {
+	public ApplicationListener<ContextRefreshedEvent> appListener(
+			SpringIntegrationProperties springIntegrationProperties) {
 		return new ApplicationListener<ContextRefreshedEvent>() {
 
 			@Override
 			public void onApplicationEvent(ContextRefreshedEvent event) {
-				event.getApplicationContext().getBeansOfType(AbstractReplyProducingMessageHandler.class).values()
-						.forEach(mh -> mh.addNotPropagatedHeaders(springIntegrationProperties
-								.getMessageHandlerNotPropagatedHeaders()));
+				event.getApplicationContext()
+						.getBeansOfType(AbstractReplyProducingMessageHandler.class)
+						.values()
+						.forEach(mh -> mh
+								.addNotPropagatedHeaders(springIntegrationProperties
+										.getMessageHandlerNotPropagatedHeaders()));
 			}
 
 		};

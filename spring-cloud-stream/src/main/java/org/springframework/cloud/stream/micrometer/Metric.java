@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 the original author or authors.
+ * Copyright 2018-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import java.util.concurrent.TimeUnit;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.distribution.HistogramSnapshot;
 
@@ -29,10 +28,9 @@ import io.micrometer.core.instrument.distribution.HistogramSnapshot;
  * Immutable class that wraps the micrometer's {@link HistogramSnapshot}.
  *
  * @param <T> the value of type {@link Number}
- *
  * @author Oleg Zhurakousky
  */
-@JsonPropertyOrder({ "id", "timestamp", "sum", "count", "mean", "upper", "total"})
+@JsonPropertyOrder({ "id", "timestamp", "sum", "count", "mean", "upper", "total" })
 class Metric<T extends Number> {
 
 	private final Date timestamp;
@@ -48,7 +46,6 @@ class Metric<T extends Number> {
 	private final Number upper;
 
 	private final Number total;
-
 
 	/**
 	 * Create a new {@link Metric} instance.
@@ -75,33 +72,30 @@ class Metric<T extends Number> {
 	}
 
 	public Number getSum() {
-		return sum;
+		return this.sum;
 	}
 
 	public Number getCount() {
-		return count;
+		return this.count;
 	}
 
 	public Number getMean() {
-		return mean;
+		return this.mean;
 	}
 
 	public Number getUpper() {
-		return upper;
+		return this.upper;
 	}
 
 	public Number getTotal() {
-		return total;
+		return this.total;
 	}
 
 	@Override
 	public String toString() {
-		return "Metric [id=" + this.id +
-				", sum=" + this.sum +
-				", count=" + this.count +
-				", mean=" + this.mean +
-				", upper=" + this.upper +
-				", total=" + this.total +
-				", timestamp=" + this.timestamp + "]";
+		return "Metric [id=" + this.id + ", sum=" + this.sum + ", count=" + this.count
+				+ ", mean=" + this.mean + ", upper=" + this.upper + ", total="
+				+ this.total + ", timestamp=" + this.timestamp + "]";
 	}
+
 }

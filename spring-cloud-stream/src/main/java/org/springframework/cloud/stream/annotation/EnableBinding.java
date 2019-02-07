@@ -43,13 +43,14 @@ import org.springframework.integration.config.EnableIntegration;
 @Documented
 @Inherited
 @Configuration
-@Import({ BindingBeansRegistrar.class, BinderFactoryConfiguration.class})
+@Import({ BindingBeansRegistrar.class, BinderFactoryConfiguration.class })
 @EnableIntegration
 public @interface EnableBinding {
 
 	/**
 	 * A list of interfaces having methods annotated with {@link Input} and/or
 	 * {@link Output} to indicate binding targets.
+	 * @return list of interfaces
 	 */
 	Class<?>[] value() default {};
 

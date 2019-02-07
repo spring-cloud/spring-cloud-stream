@@ -43,7 +43,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 		"spring.cloud.stream.default.producer.partitionCount=1",
 		"spring.cloud.stream.bindings.output.producer.headerMode=none",
 		"spring.cloud.stream.bindings.output.producer.partitionCount=4",
-		"spring.cloud.stream.defaultBinder=mock"})
+		"spring.cloud.stream.defaultBinder=mock" })
 public class SourceBindingWithGlobalPropertiesTest {
 
 	@Autowired
@@ -51,12 +51,17 @@ public class SourceBindingWithGlobalPropertiesTest {
 
 	@Test
 	public void testGlobalPropertiesSet() {
-		BindingProperties bindingProperties = serviceProperties.getBindingProperties(Source.OUTPUT);
-		Assertions.assertThat(bindingProperties.getContentType()).isEqualTo("application/json");
+		BindingProperties bindingProperties = this.serviceProperties
+				.getBindingProperties(Source.OUTPUT);
+		Assertions.assertThat(bindingProperties.getContentType())
+				.isEqualTo("application/json");
 		Assertions.assertThat(bindingProperties.getDestination()).isEqualTo("ticktock");
-		Assertions.assertThat(bindingProperties.getProducer().getRequiredGroups()).containsExactly("someGroup"); // default propagates to producer
-		Assertions.assertThat(bindingProperties.getProducer().getPartitionCount()).isEqualTo(4); // validates binding property takes precedence over default
-		Assertions.assertThat(bindingProperties.getProducer().getHeaderMode()).isEqualTo(HeaderMode.none);
+		Assertions.assertThat(bindingProperties.getProducer().getRequiredGroups())
+				.containsExactly("someGroup"); // default propagates to producer
+		Assertions.assertThat(bindingProperties.getProducer().getPartitionCount())
+				.isEqualTo(4); // validates binding property takes precedence over default
+		Assertions.assertThat(bindingProperties.getProducer().getHeaderMode())
+				.isEqualTo(HeaderMode.none);
 	}
 
 	@EnableBinding(Source.class)
@@ -64,4 +69,5 @@ public class SourceBindingWithGlobalPropertiesTest {
 	public static class TestSource {
 
 	}
+
 }

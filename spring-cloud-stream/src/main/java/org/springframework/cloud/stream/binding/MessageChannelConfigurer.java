@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import org.springframework.messaging.MessageChannel;
 /**
  * Interface to be implemented by the classes that configure the {@link Bindable} message
  * channels.
+ *
  * @author Ilayaperumal Gopinathan
  */
 public interface MessageChannelConfigurer {
@@ -38,4 +39,5 @@ public interface MessageChannelConfigurer {
 	 * @param channelName name of the message channel
 	 */
 	void configureOutputChannel(MessageChannel messageChannel, String channelName);
+
 }

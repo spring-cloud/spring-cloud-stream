@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2017-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,9 +23,8 @@ import java.util.concurrent.TimeUnit;
 import org.springframework.messaging.Message;
 
 /**
- * Implementation of binder endpoint that represents the target destination
- * (e.g., destination which receives messages sent to Processor.OUTPUT)
- * <br>
+ * Implementation of binder endpoint that represents the target destination (e.g.,
+ * destination which receives messages sent to Processor.OUTPUT) <br>
  * You can interact with it by calling {@link #receive()} operation.
  *
  * @author Oleg Zhurakousky
@@ -38,6 +37,7 @@ public class OutputDestination extends AbstractDestination {
 	/**
 	 * Allows to access {@link Message}s received by this {@link OutputDestination}.
 	 * @param timeout how long to wait before giving up
+	 * @return received message
 	 */
 	@SuppressWarnings("unchecked")
 	public Message<byte[]> receive(long timeout) {
@@ -52,6 +52,7 @@ public class OutputDestination extends AbstractDestination {
 
 	/**
 	 * Allows to access {@link Message}s received by this {@link OutputDestination}.
+	 * @return received message
 	 */
 	public Message<byte[]> receive() {
 		return this.receive(0);
@@ -60,6 +61,7 @@ public class OutputDestination extends AbstractDestination {
 	@Override
 	void afterChannelIsSet() {
 		this.messages = new LinkedTransferQueue<>();
-		this.getChannel().subscribe(message -> messages.offer(message));
+		this.getChannel().subscribe(message -> this.messages.offer(message));
 	}
+
 }

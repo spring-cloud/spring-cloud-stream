@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2017-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,15 +34,16 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.SubscribableChannel;
 
 /**
- * {@link ProvisioningProvider} to support {@link TestChannelBinder}. It
- * exists primarily to support {@link AbstractMessageChannel} semantics for creating
+ * {@link ProvisioningProvider} to support {@link TestChannelBinder}. It exists primarily
+ * to support {@link AbstractMessageChannel} semantics for creating
  * {@link ConsumerDestination} and {@link ProducerDestination}, to interact with this
  * {@link Binder}.
  *
  * @author Oleg Zhurakousky
  *
  */
-public class TestChannelBinderProvisioner implements ProvisioningProvider<ConsumerProperties, ProducerProperties> {
+public class TestChannelBinderProvisioner
+		implements ProvisioningProvider<ConsumerProperties, ProducerProperties> {
 
 	private final Map<String, SubscribableChannel> provisionedDestinations = new HashMap<>();
 
@@ -53,24 +54,25 @@ public class TestChannelBinderProvisioner implements ProvisioningProvider<Consum
 	private OutputDestination target;
 
 	/**
-	 * Will provision producer destination as an SI {@link PublishSubscribeChannel}.
-	 * <br>
-	 * This provides convenience of registering additional subscriber (handler in the test method)
-	 * along side of being able to call {@link OutputDestination#receive()} to get a
-	 * {@link Message} for additional assertions.
+	 * Will provision producer destination as an SI {@link PublishSubscribeChannel}. <br>
+	 * This provides convenience of registering additional subscriber (handler in the test
+	 * method) along side of being able to call {@link OutputDestination#receive()} to get
+	 * a {@link Message} for additional assertions.
 	 */
 	@Override
-	public ProducerDestination provisionProducerDestination(String name, ProducerProperties properties) throws ProvisioningException {
+	public ProducerDestination provisionProducerDestination(String name,
+			ProducerProperties properties) throws ProvisioningException {
 		SubscribableChannel destination = this.provisionDestination(name, true);
 		this.target.setChannel(destination);
 		return new SpringIntegrationProducerDestination(name, destination);
 	}
 
 	/**
-	 * Will provision consumer destination as SI {@link DirectChannel}
+	 * Will provision consumer destination as SI {@link DirectChannel}.
 	 */
 	@Override
-	public ConsumerDestination provisionConsumerDestination(String name, String group, ConsumerProperties properties) throws ProvisioningException {
+	public ConsumerDestination provisionConsumerDestination(String name, String group,
+			ConsumerProperties properties) throws ProvisioningException {
 		SubscribableChannel destination = this.provisionDestination(name, false);
 		if (this.source != null) {
 			this.source.setChannel(destination);
@@ -80,18 +82,21 @@ public class TestChannelBinderProvisioner implements ProvisioningProvider<Consum
 
 	private SubscribableChannel provisionDestination(String name, boolean pubSub) {
 		String destinationName = name + ".destination";
-		SubscribableChannel destination = this.provisionedDestinations.get(destinationName);
+		SubscribableChannel destination = this.provisionedDestinations
+				.get(destinationName);
 		if (destination == null) {
 			destination = pubSub ? new PublishSubscribeChannel() : new DirectChannel();
-			((AbstractMessageChannel)destination).setBeanName(destinationName);
-			((AbstractMessageChannel)destination).setComponentName(destinationName);
+			((AbstractMessageChannel) destination).setBeanName(destinationName);
+			((AbstractMessageChannel) destination).setComponentName(destinationName);
 			this.provisionedDestinations.put(destinationName, destination);
 		}
 		return destination;
 	}
 
 	class SpringIntegrationConsumerDestination implements ConsumerDestination {
+
 		private final String name;
+
 		private final SubscribableChannel channel;
 
 		SpringIntegrationConsumerDestination(String name, SubscribableChannel channel) {
@@ -107,10 +112,13 @@ public class TestChannelBinderProvisioner implements ProvisioningProvider<Consum
 		public String getName() {
 			return this.name;
 		}
+
 	}
 
 	class SpringIntegrationProducerDestination implements ProducerDestination {
+
 		private final String name;
+
 		private final SubscribableChannel channel;
 
 		SpringIntegrationProducerDestination(String name, SubscribableChannel channel) {
@@ -131,5 +139,7 @@ public class TestChannelBinderProvisioner implements ProvisioningProvider<Consum
 		public String getName() {
 			return this.name;
 		}
+
 	}
+
 }

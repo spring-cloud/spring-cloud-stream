@@ -37,10 +37,12 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
  * @author Marius Bogoevici
  * @author Janne Valkealahti
  */
+// @checkstyle:off
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringBootTest(classes = ArbitraryInterfaceWithBindingTargetsTests.TestFooChannels.class,
-				properties = "spring.cloud.stream.default-binder=mock")
+@SpringBootTest(classes = ArbitraryInterfaceWithBindingTargetsTests.TestFooChannels.class, properties = "spring.cloud.stream.default-binder=mock")
 public class ArbitraryInterfaceWithBindingTargetsTests {
+
+	// @checkstyle:on
 
 	@Autowired
 	public FooChannels fooChannels;
@@ -48,14 +50,14 @@ public class ArbitraryInterfaceWithBindingTargetsTests {
 	@Autowired
 	private BinderFactory binderFactory;
 
-	@SuppressWarnings({"rawtypes", "unchecked"})
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Test
 	public void testArbitraryInterfaceChannelsBound() {
-		Binder binder = binderFactory.getBinder(null, MessageChannel.class);
-		verify(binder).bindConsumer(eq("someQueue.0"), isNull(), eq(this.fooChannels.foo()),
-				Mockito.any());
-		verify(binder).bindConsumer(eq("someQueue.1"), isNull(), eq(this.fooChannels.bar()),
-				Mockito.any());
+		Binder binder = this.binderFactory.getBinder(null, MessageChannel.class);
+		verify(binder).bindConsumer(eq("someQueue.0"), isNull(),
+				eq(this.fooChannels.foo()), Mockito.any());
+		verify(binder).bindConsumer(eq("someQueue.1"), isNull(),
+				eq(this.fooChannels.bar()), Mockito.any());
 		verify(binder).bindProducer(eq("someQueue.2"), eq(this.fooChannels.baz()),
 				Mockito.any());
 		verify(binder).bindProducer(eq("someQueue.3"), eq(this.fooChannels.qux()),

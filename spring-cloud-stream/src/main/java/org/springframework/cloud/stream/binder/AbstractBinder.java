@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2018 the original author or authors.
+ * Copyright 2013-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
  */
 
 package org.springframework.cloud.stream.binder;
+
+import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -41,6 +43,9 @@ import org.springframework.util.StringUtils;
 /**
  * Base class for {@link Binder} implementations.
  *
+ * @param <T> outbound bind target class
+ * @param <C> consumer properties class
+ * @param <P> producer properties class
  * @author David Turanski
  * @author Gary Russell
  * @author Ilayaperumal Gopinathan
@@ -49,9 +54,10 @@ import org.springframework.util.StringUtils;
  * @author Soby Chacko
  * @author Vinicius Carvalho
  * @author Oleg Zhurakousky
+ * @author Nicolas Homble
  */
 public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends ProducerProperties>
-	implements ApplicationContextAware, InitializingBean, Binder<T, C, P> {
+		implements ApplicationContextAware, InitializingBean, Binder<T, C, P> {
 
 	/**
 	 * The delimiter between a group and index when constructing a binder
@@ -65,15 +71,15 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 
 	private volatile EvaluationContext evaluationContext;
 
-	@Autowired(required = false) // this would need to be refactored into constructor in the future
+	@Autowired(required = false)
 	@StreamRetryTemplate
-	private RetryTemplate consumerBindingRetryTemplate;
+	private Map<String, RetryTemplate> consumerBindingRetryTemplates;
 
 	/**
 	 * For binder implementations that support a prefix, apply the prefix to the name.
-	 *
 	 * @param prefix the prefix.
-	 * @param name   the name.
+	 * @param name the name.
+	 * @return name with the prefix
 	 */
 	public static String applyPrefix(String prefix, String name) {
 		return prefix + name;
@@ -82,8 +88,8 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 	/**
 	 * For binder implementations that support dead lettering, construct the name of the
 	 * dead letter entity for the underlying pipe name.
-	 *
 	 * @param name the name.
+	 * @return name with DLQ suffix
 	 */
 	public static String constructDLQName(String name) {
 		return name + ".dlq";
@@ -94,7 +100,8 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 	}
 
 	@Override
-	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+	public void setApplicationContext(ApplicationContext applicationContext)
+			throws BeansException {
 		Assert.isInstanceOf(GenericApplicationContext.class, applicationContext);
 		this.applicationContext = (GenericApplicationContext) applicationContext;
 	}
@@ -109,9 +116,11 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 
 	@Override
 	public final void afterPropertiesSet() throws Exception {
-		Assert.notNull(this.applicationContext, "The 'applicationContext' property must not be null");
+		Assert.notNull(this.applicationContext,
+				"The 'applicationContext' property must not be null");
 		if (this.evaluationContext == null) {
-			this.evaluationContext = ExpressionUtils.createStandardEvaluationContext(getBeanFactory());
+			this.evaluationContext = ExpressionUtils
+					.createStandardEvaluationContext(getBeanFactory());
 		}
 		onInit();
 	}
@@ -119,43 +128,51 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 	/**
 	 * Subclasses may implement this method to perform any necessary initialization. It
 	 * will be invoked from {@link #afterPropertiesSet()} which is itself {@code final}.
+	 * @throws Exception when init fails
 	 */
 	protected void onInit() throws Exception {
 		// no-op default
 	}
 
 	@Override
-	public final Binding<T> bindConsumer(String name, String group, T target, C properties) {
+	public final Binding<T> bindConsumer(String name, String group, T target,
+			C properties) {
 		if (StringUtils.isEmpty(group)) {
-			Assert.isTrue(!properties.isPartitioned(), "A consumer group is required for a partitioned subscription");
+			Assert.isTrue(!properties.isPartitioned(),
+					"A consumer group is required for a partitioned subscription");
 		}
 		return doBindConsumer(name, group, target, properties);
 	}
 
-	protected abstract Binding<T> doBindConsumer(String name, String group, T inputTarget, C properties);
+	protected abstract Binding<T> doBindConsumer(String name, String group, T inputTarget,
+			C properties);
 
 	@Override
-	public final Binding<T> bindProducer(String name, T outboundBindTarget, P properties) {
+	public final Binding<T> bindProducer(String name, T outboundBindTarget,
+			P properties) {
 		return doBindProducer(name, outboundBindTarget, properties);
 	}
 
-	protected abstract Binding<T> doBindProducer(String name, T outboundBindTarget, P properties);
+	protected abstract Binding<T> doBindProducer(String name, T outboundBindTarget,
+			P properties);
 
 	/**
 	 * Construct a name comprised of the name and group.
-	 *
-	 * @param name  the name.
+	 * @param name the name.
 	 * @param group the group.
 	 * @return the constructed name.
 	 */
 	protected final String groupedName(String name, String group) {
-		return name + GROUP_INDEX_DELIMITER + (StringUtils.hasText(group) ? group : "default");
+		return name + GROUP_INDEX_DELIMITER
+				+ (StringUtils.hasText(group) ? group : "default");
 	}
 
 	/**
-	 * Deprecated as of v2.0. Doesn't do anything other then returns an instance
-	 * of {@link MessageValues} built from {@link Message}. Remains primarily for
-	 * backward compatibility and will be removed in the next major release.
+	 * Deprecated as of v2.0. Doesn't do anything other then returns an instance of
+	 * {@link MessageValues} built from {@link Message}. Remains primarily for backward
+	 * compatibility and will be removed in the next major release.
+	 * @param message message to serialize
+	 * @return wrapped message
 	 */
 	@Deprecated
 	protected final MessageValues serializePayloadIfNecessary(Message<?> message) {
@@ -163,28 +180,33 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 	}
 
 	/**
-	 * Deprecated as of v2.0. Remains primarily for
-	 * backward compatibility and will be removed in the next major release.
+	 * Deprecated as of v2.0. Remains primarily for backward compatibility and will be
+	 * removed in the next major release.
+	 * @param expressionRoot root of the expression
+	 * @return full expression for a header
 	 */
 	@Deprecated
 	protected String buildPartitionRoutingExpression(String expressionRoot) {
-		return "'" + expressionRoot + "-' + headers['" + BinderHeaders.PARTITION_HEADER + "']";
+		return "'" + expressionRoot + "-' + headers['" + BinderHeaders.PARTITION_HEADER
+				+ "']";
 	}
 
 	/**
-	 * Create and configure a default retry template unless one
-	 * has already been provided via @Bean by an application.
-	 *
+	 * Create and configure a default retry template unless one has already been provided
+	 * via @Bean by an application.
 	 * @param properties The properties.
 	 * @return The retry template
 	 */
 	protected RetryTemplate buildRetryTemplate(ConsumerProperties properties) {
-		RetryTemplate rt = this.consumerBindingRetryTemplate;
-		if (rt == null) {
+		RetryTemplate rt;
+		if (CollectionUtils.isEmpty(this.consumerBindingRetryTemplates)) {
 			rt = new RetryTemplate();
-			SimpleRetryPolicy retryPolicy = CollectionUtils.isEmpty(properties.getRetryableExceptions())
-					? new SimpleRetryPolicy(properties.getMaxAttempts())
-							: new SimpleRetryPolicy(properties.getMaxAttempts(), properties.getRetryableExceptions(), true, properties.isDefaultRetryable());
+			SimpleRetryPolicy retryPolicy = CollectionUtils
+					.isEmpty(properties.getRetryableExceptions())
+							? new SimpleRetryPolicy(properties.getMaxAttempts())
+							: new SimpleRetryPolicy(properties.getMaxAttempts(),
+									properties.getRetryableExceptions(), true,
+									properties.isDefaultRetryable());
 
 			ExponentialBackOffPolicy backOffPolicy = new ExponentialBackOffPolicy();
 			backOffPolicy.setInitialInterval(properties.getBackOffInitialInterval());
@@ -193,6 +215,13 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 			rt.setRetryPolicy(retryPolicy);
 			rt.setBackOffPolicy(backOffPolicy);
 		}
+		else {
+			rt = StringUtils.hasText(properties.getRetryTemplateName())
+					? this.consumerBindingRetryTemplates
+							.get(properties.getRetryTemplateName())
+					: this.consumerBindingRetryTemplates.values().iterator().next();
+		}
 		return rt;
 	}
+
 }

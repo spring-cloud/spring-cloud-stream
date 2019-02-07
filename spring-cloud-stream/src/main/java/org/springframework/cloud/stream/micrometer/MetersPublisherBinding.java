@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 the original author or authors.
+ * Copyright 2018-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,15 +20,20 @@ import org.springframework.cloud.stream.annotation.Output;
 import org.springframework.messaging.MessageChannel;
 
 /**
- *
  * @author Oleg Zhurakousky
- *
  * @since 2.0
  */
 public interface MetersPublisherBinding {
 
+	/**
+	 * Application metrics channel name.
+	 */
 	String APPLICATION_METRICS = "applicationMetrics";
 
+	/**
+	 * @return Channel for application metrics.
+	 */
 	@Output(APPLICATION_METRICS)
 	MessageChannel applicationMetrics();
+
 }

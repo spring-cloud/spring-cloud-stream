@@ -1,14 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		 xmlns="http://maven.apache.org/POM/4.0.0"
+		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
 		<groupId>org.springframework.cloud</groupId>
 		<artifactId>spring-cloud-stream-parent</artifactId>
-		<version>2.1.0.BUILD-SNAPSHOT</version>
+		<version>2.2.0.BUILD-SNAPSHOT</version>
 	</parent>
 	<artifactId>spring-cloud-stream-test-support-internal</artifactId>
 	<description>Set of classes and utility code that may assist in testing both
-	spring-cloud-stream itself, and also modules.</description>
+		spring-cloud-stream itself, and also modules.
+	</description>
 	<dependencies>
 		<dependency>
 			<groupId>junit</groupId>

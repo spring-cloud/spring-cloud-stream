@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,13 +44,14 @@ public class MessageQueueMatcherTest {
 	@Test
 	public void testTimeout() {
 		Message<?> msg = new GenericMessage<>("hello");
-		MessageQueueMatcher<?> matcher = MessageQueueMatcher.receivesMessageThat(is(msg)).within(2,
-				TimeUnit.MILLISECONDS);
+		MessageQueueMatcher<?> matcher = MessageQueueMatcher.receivesMessageThat(is(msg))
+				.within(2, TimeUnit.MILLISECONDS);
 
 		boolean result = matcher.matches(this.queue);
 		assertThat(result).isFalse();
 		matcher.describeMismatch(this.queue, this.description);
-		assertThat(this.description.toString()).isEqualTo("timed out after 2 milliseconds");
+		assertThat(this.description.toString())
+				.isEqualTo("timed out after 2 milliseconds");
 	}
 
 	@Test
@@ -76,16 +77,19 @@ public class MessageQueueMatcherTest {
 
 	@Test
 	public void testExtractor() {
-		Message<?> msg = new GenericMessage<>("hello", Collections.singletonMap("foo", (Object) "bar"));
+		Message<?> msg = new GenericMessage<>("hello",
+				Collections.singletonMap("foo", (Object) "bar"));
 
-		MessageQueueMatcher.Extractor<Message<?>, String> headerExtractor = new MessageQueueMatcher.Extractor<Message<?>, String>(
+		MessageQueueMatcher.Extractor<Message<?>, String> headerExtractor;
+		headerExtractor = new MessageQueueMatcher.Extractor<Message<?>, String>(
 				"whose 'foo' header") {
 			@Override
 			public String apply(Message<?> message) {
 				return message.getHeaders().get("foo", String.class);
 			}
 		};
-		MessageQueueMatcher<?> matcher = new MessageQueueMatcher<>(is("bar"), -1, null, headerExtractor);
+		MessageQueueMatcher<?> matcher = new MessageQueueMatcher<>(is("bar"), -1, null,
+				headerExtractor);
 		this.queue.offer(msg);
 		boolean result = matcher.matches(this.queue);
 		assertThat(result);
@@ -102,6 +106,8 @@ public class MessageQueueMatcherTest {
 		Message<?> msg = new GenericMessage<>("hello");
 		MessageQueueMatcher<?> matcher = MessageQueueMatcher.receivesMessageThat(is(msg));
 		this.description.appendDescriptionOf(matcher);
-		assertThat(this.description.toString()).isEqualTo(("Channel to receive a message that is <" + msg + ">"));
+		assertThat(this.description.toString())
+				.isEqualTo(("Channel to receive a message that is <" + msg + ">"));
 	}
+
 }

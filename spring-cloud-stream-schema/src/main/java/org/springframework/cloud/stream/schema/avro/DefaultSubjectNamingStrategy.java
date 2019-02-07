@@ -27,4 +27,5 @@ public class DefaultSubjectNamingStrategy implements SubjectNamingStrategy {
 	public String toSubject(Schema schema) {
 		return schema.getName().toLowerCase();
 	}
+
 }

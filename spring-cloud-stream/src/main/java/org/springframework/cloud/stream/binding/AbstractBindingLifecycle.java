@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2017-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,45 +21,46 @@ import java.util.Map;
 import org.springframework.context.SmartLifecycle;
 
 /**
- * Base implementation of lifecycle operations for {@link BindingService}
- * aware {@link Bindable}s.
- *
- * @see InputBindingLifecycle
- * @see OutputBindingLifecycle
+ * Base implementation of lifecycle operations for {@link BindingService} aware
+ * {@link Bindable}s.
  *
  * @author Oleg Zhurakousky
+ * @see InputBindingLifecycle
+ * @see OutputBindingLifecycle
  */
 abstract class AbstractBindingLifecycle implements SmartLifecycle {
+
 	final BindingService bindingService;
 
 	private final Map<String, Bindable> bindables;
 
 	private volatile boolean running;
 
-	AbstractBindingLifecycle(BindingService bindingService, Map<String, Bindable> bindables) {
+	AbstractBindingLifecycle(BindingService bindingService,
+			Map<String, Bindable> bindables) {
 		this.bindingService = bindingService;
 		this.bindables = bindables;
 	}
 
 	@Override
 	public void start() {
-		if (!running) {
-			bindables.values().forEach(this::doStartWithBindable);
+		if (!this.running) {
+			this.bindables.values().forEach(this::doStartWithBindable);
 			this.running = true;
 		}
 	}
 
 	@Override
 	public void stop() {
-		if (running) {
-			bindables.values().forEach(this::doStopWithBindable);
+		if (this.running) {
+			this.bindables.values().forEach(this::doStopWithBindable);
 			this.running = false;
 		}
 	}
 
 	@Override
 	public boolean isRunning() {
-		return running;
+		return this.running;
 	}
 
 	@Override
@@ -78,4 +79,5 @@ abstract class AbstractBindingLifecycle implements SmartLifecycle {
 	abstract void doStartWithBindable(Bindable bindable);
 
 	abstract void doStopWithBindable(Bindable bindable);
+
 }

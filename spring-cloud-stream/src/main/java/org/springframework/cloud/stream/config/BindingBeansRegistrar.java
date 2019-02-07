@@ -27,7 +27,6 @@ import org.springframework.core.type.AnnotationMetadata;
 import org.springframework.util.ClassUtils;
 
 /**
- *
  * @author Marius Bogoevici
  * @author Dave Syer
  * @author Artem Bilan
@@ -42,11 +41,12 @@ public class BindingBeansRegistrar implements ImportBeanDefinitionRegistrar {
 				EnableBinding.class);
 		for (Class<?> type : collectClasses(attrs, metadata.getClassName())) {
 			if (!registry.containsBeanDefinition(type.getName())) {
-				BindingBeanDefinitionRegistryUtils.registerBindingTargetBeanDefinitions(type,
-						type.getName(), registry);
-				BindingBeanDefinitionRegistryUtils.registerBindingTargetsQualifiedBeanDefinitions(
-						ClassUtils.resolveClassName(metadata.getClassName(), null), type,
-						registry);
+				BindingBeanDefinitionRegistryUtils.registerBindingTargetBeanDefinitions(
+						type, type.getName(), registry);
+				BindingBeanDefinitionRegistryUtils
+						.registerBindingTargetsQualifiedBeanDefinitions(ClassUtils
+								.resolveClassName(metadata.getClassName(), null), type,
+								registry);
 			}
 		}
 	}

@@ -41,7 +41,8 @@ public class MessageChannelStreamListenerResultAdapter
 	}
 
 	@Override
-	public Closeable adapt(MessageChannel streamListenerResult, MessageChannel bindingTarget) {
+	public Closeable adapt(MessageChannel streamListenerResult,
+			MessageChannel bindingTarget) {
 		BridgeHandler handler = new BridgeHandler();
 		handler.setOutputChannel(bindingTarget);
 		handler.afterPropertiesSet();

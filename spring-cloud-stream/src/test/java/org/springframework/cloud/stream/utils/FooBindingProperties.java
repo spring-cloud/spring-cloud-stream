@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 the original author or authors.
+ * Copyright 2018-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ public class FooBindingProperties implements BinderSpecificPropertiesProvider {
 	private FooConsumerProperties consumer = new FooConsumerProperties();
 
 	public FooProducerProperties getProducer() {
-		return producer;
+		return this.producer;
 	}
 
 	public void setProducer(FooProducerProperties producer) {
@@ -36,10 +36,11 @@ public class FooBindingProperties implements BinderSpecificPropertiesProvider {
 	}
 
 	public FooConsumerProperties getConsumer() {
-		return consumer;
+		return this.consumer;
 	}
 
 	public void setConsumer(FooConsumerProperties consumer) {
 		this.consumer = consumer;
 	}
+
 }

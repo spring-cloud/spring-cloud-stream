@@ -38,7 +38,6 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 
-
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -51,35 +50,42 @@ public class StreamListenerReactiveInputOutputArgsWithSenderAndFailureTests {
 
 	private Class<?> configClass;
 
-	public StreamListenerReactiveInputOutputArgsWithSenderAndFailureTests(Class<?> configClass) {
+	public StreamListenerReactiveInputOutputArgsWithSenderAndFailureTests(
+			Class<?> configClass) {
 		this.configClass = configClass;
 	}
 
 	@Parameterized.Parameters
 	public static Collection<?> InputConfigs() {
-		return Collections.singletonList(TestInputOutputArgsWithFluxSenderAndFailure.class);
+		return Collections
+				.singletonList(TestInputOutputArgsWithFluxSenderAndFailure.class);
 	}
 
 	@SuppressWarnings("unchecked")
-	private static void sendMessageAndValidate(ConfigurableApplicationContext context) throws InterruptedException {
+	private static void sendMessageAndValidate(ConfigurableApplicationContext context)
+			throws InterruptedException {
 		Processor processor = context.getBean(Processor.class);
 		String sentPayload = "hello " + UUID.randomUUID().toString();
-		processor.input().send(MessageBuilder.withPayload(sentPayload).setHeader("contentType", "text/plain").build());
+		processor.input().send(MessageBuilder.withPayload(sentPayload)
+				.setHeader("contentType", "text/plain").build());
 		MessageCollector messageCollector = context.getBean(MessageCollector.class);
-		Message<String> result = (Message<String>) messageCollector.forChannel(processor.output()).poll(1000, TimeUnit.MILLISECONDS);
+		Message<String> result = (Message<String>) messageCollector
+				.forChannel(processor.output()).poll(1000, TimeUnit.MILLISECONDS);
 		assertThat(result).isNotNull();
 		assertThat(result.getPayload()).isEqualTo(sentPayload.toUpperCase());
 	}
 
-	private static void sendFailingMessage(ConfigurableApplicationContext context) throws InterruptedException {
+	private static void sendFailingMessage(ConfigurableApplicationContext context)
+			throws InterruptedException {
 		Processor processor = context.getBean(Processor.class);
-		processor.input().send(MessageBuilder.withPayload("fail").setHeader("contentType", "text/plain").build());
+		processor.input().send(MessageBuilder.withPayload("fail")
+				.setHeader("contentType", "text/plain").build());
 	}
 
 	@Test
 	public void testInputOutputArgsWithFluxSenderAndFailure() throws Exception {
-		ConfigurableApplicationContext context = SpringApplication.run(this.configClass, "--server.port=0",
-				"--spring.jmx.enabled=false",
+		ConfigurableApplicationContext context = SpringApplication.run(this.configClass,
+				"--server.port=0", "--spring.jmx.enabled=false",
 				"--spring.cloud.stream.bindings.input.contentType=text/plain",
 				"--spring.cloud.stream.bindings.output.contentType=text/plain");
 		sendMessageAndValidate(context);
@@ -91,20 +97,20 @@ public class StreamListenerReactiveInputOutputArgsWithSenderAndFailureTests {
 	@EnableBinding(Processor.class)
 	@EnableAutoConfiguration
 	public static class TestInputOutputArgsWithFluxSenderAndFailure {
+
 		@StreamListener
 		public void receive(@Input(Processor.INPUT) Flux<Message<String>> input,
 				@Output(Processor.OUTPUT) FluxSender output) {
-			output.send(input
-					.map(m -> m.getPayload().toString())
-					.map(m -> {
-						if (!m.equals("fail")) {
-							return m.toUpperCase();
-						}
-						else {
-							throw new RuntimeException();
-						}
-					})
-					.map(o -> MessageBuilder.withPayload(o).build()));
+			output.send(input.map(m -> m.getPayload().toString()).map(m -> {
+				if (!m.equals("fail")) {
+					return m.toUpperCase();
+				}
+				else {
+					throw new RuntimeException();
+				}
+			}).map(o -> MessageBuilder.withPayload(o).build()));
 		}
+
 	}
+
 }

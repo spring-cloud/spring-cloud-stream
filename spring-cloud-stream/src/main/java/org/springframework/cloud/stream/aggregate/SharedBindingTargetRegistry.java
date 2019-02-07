@@ -28,7 +28,8 @@ import java.util.concurrent.ConcurrentSkipListMap;
  */
 public class SharedBindingTargetRegistry {
 
-	private Map<String, Object> sharedBindingTargets = new ConcurrentSkipListMap<>(String.CASE_INSENSITIVE_ORDER);
+	private Map<String, Object> sharedBindingTargets = new ConcurrentSkipListMap<>(
+			String.CASE_INSENSITIVE_ORDER);
 
 	@SuppressWarnings("unchecked")
 	public <T> T get(String id, Class<T> bindingTargetType) {
@@ -37,8 +38,9 @@ public class SharedBindingTargetRegistry {
 			return null;
 		}
 		if (!bindingTargetType.isAssignableFrom(sharedBindingTarget.getClass())) {
-			throw new IllegalArgumentException("A shared " + bindingTargetType.getName() + " was requested, "
-					+ "but the existing shared target with id '" + id + "' is a " + sharedBindingTarget.getClass());
+			throw new IllegalArgumentException("A shared " + bindingTargetType.getName()
+					+ " was requested, " + "but the existing shared target with id '" + id
+					+ "' is a " + sharedBindingTarget.getClass());
 		}
 		else {
 			return (T) sharedBindingTarget;
