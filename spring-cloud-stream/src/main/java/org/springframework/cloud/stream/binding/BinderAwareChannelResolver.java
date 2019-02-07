@@ -128,7 +128,6 @@ public class BinderAwareChannelResolver
 			}
 
 			MessageChannel channel = this.bindingTargetFactory.createOutput(channelName);
-			this.beanFactory.registerSingleton(channelName, channel);
 
 			// TODO: Investigate if the following call is necessary.
 			// initializeBean call on the next line also calling the
@@ -150,6 +149,7 @@ public class BinderAwareChannelResolver
 			Binding<MessageChannel> binding = this.bindingService.bindProducer(channel,
 					channelName);
 			this.dynamicDestinationsBindable.addOutputBinding(channelName, binding);
+			this.beanFactory.registerSingleton(channelName, channel);
 
 			return channel;
 		}
