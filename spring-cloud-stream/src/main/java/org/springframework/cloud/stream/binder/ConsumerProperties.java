@@ -72,18 +72,22 @@ public class ConsumerProperties {
 	private int instanceIndex = -1;
 
 	/**
-	 * <<<<<<< HEAD The number of attempts to process the message (including the first) in
-	 * the event of processing failures. This is a RetryTemplate configuration which is
-	 * provided by the framework. Default: 3. Set to 1 to disable retry. You can also
-	 * provide custom RetryTemplate in the event you want to take complete control of the
-	 * RetryTemplate. Simply configure it as @Bean inside your application configuration.
-	 * ======= The number of attempts to process the message (including the first) in the
-	 * event of processing failures. This is a RetryTemplate configuration which is
-	 * provided by the framework. Default: 3. Set to 1 to disable retry. You can also
-	 * provide custom RetryTemplate in the event you want to take complete control of the
-	 * RetryTemplate. Simply configure it as @Bean inside your application configuration.
-	 * If you need to be binding specific, then you can reference a specific RetryTemplate
-	 * by name with the retry-template configuration. >>>>>>> 2.2.x
+<<<<<<< HEAD
+	 * The number of attempts to process the message (including the first) in the event of
+	 * processing failures. This is a RetryTemplate configuration which is provided by the
+	 * framework. Default: 3. Set to 1 to disable retry. You can also provide custom
+	 * RetryTemplate in the event you want to take complete control of the RetryTemplate.
+	 * Simply configure it as @Bean inside your application configuration.
+=======
+	 * The number of attempts to process the message (including the first)
+	 * in the event of processing failures. This is a  RetryTemplate configuration
+	 * which is provided by the framework.
+	 * Default: 3. Set to 1 to disable retry. You can also provide custom RetryTemplate
+	 * in the event you want to take complete control of the RetryTemplate. Simply configure
+	 * it as @Bean inside your application configuration.
+	 * If you need to be binding specific, then you can reference a specific RetryTemplate by name
+	 * with the retry-template configuration.
+>>>>>>> 2.2.x
 	 */
 	private int maxAttempts = 3;
 
@@ -118,15 +122,18 @@ public class ConsumerProperties {
 	private boolean defaultRetryable = true;
 
 	/**
-	 *
-	 * Allows you to further qualify which RetryTemplate to use for a specific consumer
-	 * binding.
+<<<<<<< HEAD
+	 * A map of Throwable class names in the key and a boolean in the value. Specify those
+	 * exceptions (and subclasses) that will or won't be retried.
+=======
+	 * Allows you to further qualify which RetryTemplate to use for a specific consumer binding..
 	 */
 	private String retryTemplateName;
 
 	/**
-	 * A map of Throwable class names in the key and a boolean in the value. Specify those
-	 * exceptions (and subclasses) that will or won't be retried.
+	 * A map of Throwable class names in the key and a boolean in the value.
+	 * Specify those exceptions (and subclasses) that will or won't be retried.
+>>>>>>> 2.2.x
 	 */
 	private Map<Class<? extends Throwable>, Boolean> retryableExceptions = new LinkedHashMap<>();
 
@@ -165,11 +172,11 @@ public class ConsumerProperties {
 	 */
 	private boolean multiplex;
 
-	public String getRetryTemplateName() {
+	public String getRetryTemplateName(){
 		return retryTemplateName;
 	}
 
-	public void setRetryTemplateName(String retryTemplateName) {
+	public void setRetryTemplateName(String retryTemplateName){
 		this.retryTemplateName = retryTemplateName;
 	}
 
@@ -292,5 +299,4 @@ public class ConsumerProperties {
 	public void setAutoStartup(boolean autoStartup) {
 		this.autoStartup = autoStartup;
 	}
-
 }

@@ -42,7 +42,8 @@ import org.springframework.expression.Expression;
 public class ProducerProperties {
 
 	/**
-	 * Signals if this producer needs to be started automatically. Default: true
+	 * Signals if this producer needs to be started automatically.
+	 * Default: true
 	 */
 	private boolean autoStartup = true;
 
