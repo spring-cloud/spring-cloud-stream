@@ -39,7 +39,8 @@ import org.springframework.context.annotation.Import;
  * @author Soby Chacko
  */
 @Configuration
-@Import({ KafkaAutoConfiguration.class })
+@Import({ KafkaAutoConfiguration.class,
+		KafkaStreamsBinderHealthIndicatorConfiguration.class })
 public class KStreamBinderConfiguration {
 
 	@Bean
