@@ -38,6 +38,8 @@ import org.springframework.cloud.stream.annotation.StreamMessageConverter;
 import org.springframework.cloud.stream.messaging.Sink;
 import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.cloud.stream.schema.avro.AvroSchemaRegistryClientMessageConverter;
+import org.springframework.cloud.stream.schema.avro.AvroSchemaServiceManager;
+import org.springframework.cloud.stream.schema.avro.AvroSchemaServiceManagerImpl;
 import org.springframework.cloud.stream.schema.client.DefaultSchemaRegistryClient;
 import org.springframework.cloud.stream.schema.client.EnableSchemaRegistryClient;
 import org.springframework.cloud.stream.schema.client.SchemaRegistryClient;
@@ -239,8 +241,9 @@ public class AvroSchemaRegistryClientMessageConverterTests {
 		@Bean
 		@StreamMessageConverter
 		AvroSchemaRegistryClientMessageConverter avroSchemaRegistryClientMessageConverter() {
+			AvroSchemaServiceManager manager = new AvroSchemaServiceManagerImpl();
 			return new AvroSchemaRegistryClientMessageConverter(
-					new DefaultSchemaRegistryClient(), new NoOpCacheManager());
+					new DefaultSchemaRegistryClient(), new NoOpCacheManager(), manager);
 		}
 
 		@Bean

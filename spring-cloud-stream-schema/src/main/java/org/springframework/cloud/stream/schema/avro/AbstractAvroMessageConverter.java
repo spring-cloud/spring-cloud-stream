@@ -22,20 +22,9 @@ import java.util.Collection;
 import java.util.Collections;
 
 import org.apache.avro.Schema;
-import org.apache.avro.generic.GenericDatumReader;
-import org.apache.avro.generic.GenericDatumWriter;
-import org.apache.avro.generic.GenericRecord;
-import org.apache.avro.io.DatumReader;
 import org.apache.avro.io.DatumWriter;
-import org.apache.avro.io.Decoder;
-import org.apache.avro.io.DecoderFactory;
 import org.apache.avro.io.Encoder;
 import org.apache.avro.io.EncoderFactory;
-import org.apache.avro.reflect.ReflectDatumReader;
-import org.apache.avro.reflect.ReflectDatumWriter;
-import org.apache.avro.specific.SpecificDatumReader;
-import org.apache.avro.specific.SpecificDatumWriter;
-import org.apache.avro.specific.SpecificRecord;
 
 import org.springframework.core.io.Resource;
 import org.springframework.messaging.Message;
@@ -58,14 +47,31 @@ public abstract class AbstractAvroMessageConverter extends AbstractMessageConver
 	 * common parser will let user to import external schemas.
 	 */
 	private Schema.Parser schemaParser = new Schema.Parser();
+	private AvroSchemaServiceManager avroSchemaServiceManager;
 
+	@Deprecated
 	protected AbstractAvroMessageConverter(MimeType supportedMimeType) {
-		this(Collections.singletonList(supportedMimeType));
+		this(Collections.singletonList(supportedMimeType), new AvroSchemaServiceManagerImpl());
 	}
 
+	protected AbstractAvroMessageConverter(MimeType supportedMimeType, AvroSchemaServiceManager avroSchemaServiceManager) {
+		this(Collections.singletonList(supportedMimeType), avroSchemaServiceManager);
+	}
+
+	@Deprecated
 	protected AbstractAvroMessageConverter(Collection<MimeType> supportedMimeTypes) {
+		this(supportedMimeTypes, new AvroSchemaServiceManagerImpl());
+		setContentTypeResolver(new OriginalContentTypeResolver());
+	}
+
+	protected AbstractAvroMessageConverter(Collection<MimeType> supportedMimeTypes, AvroSchemaServiceManager manager) {
 		super(supportedMimeTypes);
 		setContentTypeResolver(new OriginalContentTypeResolver());
+		this.avroSchemaServiceManager = manager;
+	}
+
+	protected AvroSchemaServiceManager avroSchemaServiceManager() {
+		return this.avroSchemaServiceManager;
 	}
 
 	protected Schema parseSchema(Resource r) throws IOException {
@@ -81,7 +87,7 @@ public abstract class AbstractAvroMessageConverter extends AbstractMessageConver
 	@Override
 	protected Object convertFromInternal(Message<?> message, Class<?> targetClass,
 			Object conversionHint) {
-		Object result = null;
+		Object result;
 		try {
 			byte[] payload = (byte[]) message.getPayload();
 
@@ -98,84 +104,12 @@ public abstract class AbstractAvroMessageConverter extends AbstractMessageConver
 			Schema writerSchema = resolveWriterSchemaForDeserialization(mimeType);
 			Schema readerSchema = resolveReaderSchemaForDeserialization(targetClass);
 
-			@SuppressWarnings("unchecked")
-			DatumReader<Object> reader = getDatumReader((Class<Object>) targetClass,
-					readerSchema, writerSchema);
-			Decoder decoder = DecoderFactory.get().binaryDecoder(payload, null);
-			result = reader.read(null, decoder);
+			result = avroSchemaServiceManager().readData(targetClass, payload, readerSchema, writerSchema);
 		}
 		catch (IOException e) {
 			throw new MessageConversionException(message, "Failed to read payload", e);
 		}
 		return result;
-	}
-
-	private DatumWriter<Object> getDatumWriter(Class<Object> type, Schema schema) {
-		DatumWriter<Object> writer;
-		this.logger.debug("Finding correct DatumWriter for type " + type.getName());
-		if (SpecificRecord.class.isAssignableFrom(type)) {
-			if (schema != null) {
-				writer = new SpecificDatumWriter<>(schema);
-			}
-			else {
-				writer = new SpecificDatumWriter<>(type);
-			}
-		}
-		else if (GenericRecord.class.isAssignableFrom(type)) {
-			writer = new GenericDatumWriter<>(schema);
-		}
-		else {
-			if (schema != null) {
-				writer = new ReflectDatumWriter<>(schema);
-			}
-			else {
-				writer = new ReflectDatumWriter<>(type);
-			}
-		}
-		return writer;
-	}
-
-	@SuppressWarnings({ "unchecked", "rawtypes" })
-	protected DatumReader<Object> getDatumReader(Class<Object> type, Schema schema,
-			Schema writerSchema) {
-		DatumReader<Object> reader = null;
-		if (SpecificRecord.class.isAssignableFrom(type)) {
-			if (schema != null) {
-				if (writerSchema != null) {
-					reader = new SpecificDatumReader<>(writerSchema, schema);
-				}
-				else {
-					reader = new SpecificDatumReader<>(schema);
-				}
-			}
-			else {
-				reader = new SpecificDatumReader<>(type);
-				if (writerSchema != null) {
-					reader.setSchema(writerSchema);
-				}
-			}
-		}
-		else if (GenericRecord.class.isAssignableFrom(type)) {
-			if (schema != null) {
-				if (writerSchema != null) {
-					reader = new GenericDatumReader<>(writerSchema, schema);
-				}
-				else {
-					reader = new GenericDatumReader<>(schema);
-				}
-			}
-		}
-		else {
-			reader = new ReflectDatumReader(type);
-			if (writerSchema != null) {
-				reader.setSchema(writerSchema);
-			}
-		}
-		if (reader == null) {
-			throw new MessageConversionException("No schema can be inferred from type "
-					+ type.getName() + " and no schema has been explicitly configured.");
-		}
-		return reader;
 	}
 
 	@Override
@@ -189,8 +123,8 @@ public abstract class AbstractAvroMessageConverter extends AbstractMessageConver
 			}
 			Schema schema = resolveSchemaForWriting(payload, headers, hintedContentType);
 			@SuppressWarnings("unchecked")
-			DatumWriter<Object> writer = getDatumWriter(
-					(Class<Object>) payload.getClass(), schema);
+			DatumWriter<Object> writer = avroSchemaServiceManager()
+							.getDatumWriter(payload.getClass(), schema);
 			Encoder encoder = EncoderFactory.get().binaryEncoder(baos, null);
 			writer.write(payload, encoder);
 			encoder.flush();

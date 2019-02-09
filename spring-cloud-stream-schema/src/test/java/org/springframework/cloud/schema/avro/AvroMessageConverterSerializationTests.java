@@ -44,6 +44,8 @@ import org.springframework.cache.support.NoOpCacheManager;
 import org.springframework.cloud.stream.binder.BinderHeaders;
 import org.springframework.cloud.stream.schema.SchemaReference;
 import org.springframework.cloud.stream.schema.avro.AvroSchemaRegistryClientMessageConverter;
+import org.springframework.cloud.stream.schema.avro.AvroSchemaServiceManager;
+import org.springframework.cloud.stream.schema.avro.AvroSchemaServiceManagerImpl;
 import org.springframework.cloud.stream.schema.avro.DefaultSubjectNamingStrategy;
 import org.springframework.cloud.stream.schema.client.DefaultSchemaRegistryClient;
 import org.springframework.cloud.stream.schema.client.SchemaRegistryClient;
@@ -123,8 +125,9 @@ public class AvroMessageConverterSerializationTests {
 	@Test
 	public void testSchemaImport() throws Exception {
 		SchemaRegistryClient client = new DefaultSchemaRegistryClient();
+		AvroSchemaServiceManager manager = new AvroSchemaServiceManagerImpl();
 		AvroSchemaRegistryClientMessageConverter converter = new AvroSchemaRegistryClientMessageConverter(
-				client, new NoOpCacheManager());
+				client, new NoOpCacheManager(), manager);
 		converter.setSubjectNamingStrategy(new DefaultSubjectNamingStrategy());
 		converter.setDynamicSchemaGenerationEnabled(false);
 		converter.setSchemaLocations(this.schemaRegistryServerContext
@@ -150,8 +153,9 @@ public class AvroMessageConverterSerializationTests {
 		GenericRecord genericRecord = new GenericData.Record(v1);
 		genericRecord.put("name", "joe");
 		SchemaRegistryClient client = new DefaultSchemaRegistryClient();
+		AvroSchemaServiceManager manager = new AvroSchemaServiceManagerImpl();
 		AvroSchemaRegistryClientMessageConverter converter = new AvroSchemaRegistryClientMessageConverter(
-				client, new NoOpCacheManager());
+				client, new NoOpCacheManager(), manager);
 
 		converter.setSubjectNamingStrategy(new DefaultSubjectNamingStrategy());
 		converter.setDynamicSchemaGenerationEnabled(false);
@@ -183,8 +187,9 @@ public class AvroMessageConverterSerializationTests {
 		genericRecord.put("name", "joe");
 		SchemaRegistryClient client = new DefaultSchemaRegistryClient();
 		client.register("user", "avro", v1.toString());
+		AvroSchemaServiceManager manager = new AvroSchemaServiceManagerImpl();
 		AvroSchemaRegistryClientMessageConverter converter = new AvroSchemaRegistryClientMessageConverter(
-				client, new NoOpCacheManager());
+				client, new NoOpCacheManager(), manager);
 		converter.setDynamicSchemaGenerationEnabled(false);
 		converter.afterPropertiesSet();
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
