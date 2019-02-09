@@ -33,6 +33,8 @@ import org.springframework.cloud.stream.annotation.StreamMessageConverter;
 import org.springframework.cloud.stream.messaging.Sink;
 import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.cloud.stream.schema.avro.AvroSchemaMessageConverter;
+import org.springframework.cloud.stream.schema.avro.AvroSchemaServiceManager;
+import org.springframework.cloud.stream.schema.avro.AvroSchemaServiceManagerImpl;
 import org.springframework.cloud.stream.schema.client.SchemaRegistryClient;
 import org.springframework.cloud.stream.test.binder.MessageCollector;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -222,8 +224,9 @@ public class AvroSchemaMessageConverterTests {
 		@Bean
 		@StreamMessageConverter
 		public MessageConverter userMessageConverter() throws IOException {
+			AvroSchemaServiceManager manager = new AvroSchemaServiceManagerImpl();
 			AvroSchemaMessageConverter avroSchemaMessageConverter = new AvroSchemaMessageConverter(
-					MimeType.valueOf("avro/bytes"));
+					MimeType.valueOf("avro/bytes"), manager);
 			if (this.schemaLocation != null) {
 				avroSchemaMessageConverter.setSchemaLocation(this.schemaLocation);
 			}
@@ -253,8 +256,9 @@ public class AvroSchemaMessageConverterTests {
 		@Bean
 		@StreamMessageConverter
 		public MessageConverter userMessageConverter() throws IOException {
+			AvroSchemaServiceManager manager = new AvroSchemaServiceManagerImpl();
 			AvroSchemaMessageConverter avroSchemaMessageConverter = new AvroSchemaMessageConverter(
-					MimeType.valueOf("avro/bytes"));
+					MimeType.valueOf("avro/bytes"), manager);
 			if (this.schemaLocation != null) {
 				avroSchemaMessageConverter.setSchemaLocation(this.schemaLocation);
 			}

@@ -26,7 +26,6 @@ import java.util.stream.Stream;
 
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericContainer;
-import org.apache.avro.reflect.ReflectData;
 
 import org.springframework.beans.DirectFieldAccessor;
 import org.springframework.beans.factory.BeanInitializationException;
@@ -132,6 +131,7 @@ public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessag
 
 	private SubjectNamingStrategy subjectNamingStrategy;
 
+
 	/**
 	 * Creates a new instance, configuring it with {@link SchemaRegistryClient} and
 	 * {@link CacheManager}.
@@ -139,12 +139,14 @@ public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessag
 	 * the schema registry server.
 	 * @param cacheManager instance of {@link CacheManager} to cache parsed schemas. If
 	 * caching is not required use {@link NoOpCacheManager}
+	 * @param manager instance of {@link AvroSchemaServiceManager} to manage schemas.
 	 */
 	public AvroSchemaRegistryClientMessageConverter(
-			SchemaRegistryClient schemaRegistryClient, CacheManager cacheManager) {
-		super(Collections.singletonList(DEFAULT_AVRO_MIME_TYPE));
+			SchemaRegistryClient schemaRegistryClient, CacheManager cacheManager, AvroSchemaServiceManager manager) {
+		super(Collections.singletonList(DEFAULT_AVRO_MIME_TYPE), manager);
 		Assert.notNull(schemaRegistryClient, "cannot be null");
 		Assert.notNull(cacheManager, "'cacheManager' cannot be null");
+		Assert.notNull(manager, "'avroSchemaServiceManager' cannot be null");
 		this.schemaRegistryClient = schemaRegistryClient;
 		this.cacheManager = cacheManager;
 	}
@@ -354,7 +356,7 @@ public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessag
 							payload.getClass()));
 				}
 				else {
-					schema = ReflectData.get().getSchema(payload.getClass());
+					schema = super.avroSchemaServiceManager().getSchema(payload.getClass());
 				}
 				this.cacheManager.getCache(REFLECTION_CACHE_NAME)
 						.put(payload.getClass().getName(), schema);
