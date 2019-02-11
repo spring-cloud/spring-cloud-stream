@@ -30,7 +30,7 @@ public class StreamFunctionProperties {
 
 	/**
 	 * Definition of functions to bind. If several functions need to be composed into one,
-	 * use pipes (e.g., 'fooFunc|barFunc')
+	 * use pipes (e.g., 'fooFunc\|barFunc')
 	 */
 	private String definition;
 
