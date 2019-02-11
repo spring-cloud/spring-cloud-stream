@@ -1,10 +1,14 @@
 package org.springframework.cloud.bus.jackson;
 
 import java.util.Collection;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import com.fasterxml.jackson.databind.SerializationFeature;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -30,7 +34,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 
 @RunWith(SpringRunner.class)
-@SpringBootTest(webEnvironment = RANDOM_PORT)
+@SpringBootTest(webEnvironment = RANDOM_PORT,
+        properties = "spring.jackson.serialization.WRITE_DATES_AS_TIMESTAMPS:true")
 public class BusJacksonIntegrationTests {
 
     @LocalServerPort
@@ -43,8 +48,17 @@ public class BusJacksonIntegrationTests {
     private BusJacksonMessageConverter converter;
 
     @Test
+	@SuppressWarnings("unchecked")
     public void testCustomEventSerializes() {
         assertThat(converter.isMapperCreated()).isFalse();
+
+        // set by configuration
+        assertThat(converter.getMapper().getSerializationConfig()
+                .isEnabled(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)).isTrue();
+
+        Map map = rest.getForObject("http://localhost:" + port + "/date", Map.class);
+        assertThat(map).containsOnlyKeys("date");
+        assertThat(map.get("date")).isInstanceOf(Long.class);
 
         rest.put("http://localhost:"+port+"/names"+"/foo", null);
         rest.put("http://localhost:"+port+"/names"+"/bar", null);
@@ -94,6 +108,13 @@ public class BusJacksonIntegrationTests {
         public void sayName(@PathVariable String name) {
             this.names.add(name);
             publisher.publishEvent(new NameEvent(this, busServiceMatcher.getServiceId(), name));
+        }
+
+        @GetMapping("/date")
+        public Map<String, Object> testTimeJsonSerialization(){
+            Map<String, Object> map = new HashMap<>();
+            map.put("date", new Date());
+            return map;
         }
 
         @EventListener

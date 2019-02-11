@@ -102,8 +102,12 @@ class BusJacksonMessageConverter extends AbstractMessageConverter
 		}
 	}
 
-	public boolean isMapperCreated() {
-		return mapperCreated;
+	/* for testing */ boolean isMapperCreated() {
+		return this.mapperCreated;
+	}
+
+	/* for testing */ ObjectMapper getMapper() {
+		return this.mapper;
 	}
 
 	public void setPackagesToScan(String[] packagesToScan) {
@@ -177,7 +181,6 @@ class BusJacksonMessageConverter extends AbstractMessageConverter
 
 	@Override
 	public void afterPropertiesSet() throws Exception {
-		this.mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
 		this.mapper.registerModule(new SubtypeModule(findSubTypes()));
 	}
 }
