@@ -20,7 +20,6 @@ import java.lang.reflect.Field;
 import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
 import java.util.function.Function;
 
 import org.apache.commons.logging.Log;
@@ -28,6 +27,7 @@ import org.apache.commons.logging.LogFactory;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionType;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
 import org.springframework.cloud.stream.binder.ConsumerProperties;
@@ -85,15 +85,15 @@ class FunctionInvoker<I, O> implements Function<Flux<Message<I>>, Flux<Message<O
 	private final StreamFunctionProperties functionProperties;
 
 	FunctionInvoker(StreamFunctionProperties functionProperties,
-			FunctionCatalogWrapper functionCatalog, FunctionInspector functionInspector,
+			FunctionCatalog functionCatalog, FunctionInspector functionInspector,
 			CompositeMessageConverterFactory compositeMessageConverterFactory) {
 		this(functionProperties, functionCatalog, functionInspector,
 				compositeMessageConverterFactory, null);
 	}
 
-	@SuppressWarnings({ "unchecked", "rawtypes" })
+	@SuppressWarnings("unchecked")
 	FunctionInvoker(StreamFunctionProperties functionProperties,
-			FunctionCatalogWrapper functionCatalog, FunctionInspector functionInspector,
+			FunctionCatalog functionCatalog, FunctionInspector functionInspector,
 			CompositeMessageConverterFactory compositeMessageConverterFactory,
 			MessageChannel errorChannel) {
 
@@ -101,9 +101,7 @@ class FunctionInvoker<I, O> implements Function<Flux<Message<I>>, Flux<Message<O
 		Object originalUserFunction = functionCatalog
 				.lookup(functionProperties.getDefinition());
 
-		this.userFunction = originalUserFunction instanceof Consumer
-				? new FluxedConsumerWrapper<>((Consumer) originalUserFunction)
-				: (Function<Flux<?>, Flux<?>>) originalUserFunction;
+		this.userFunction = (Function<Flux<?>, Flux<?>>) originalUserFunction;
 
 		Assert.isInstanceOf(Function.class, this.userFunction);
 		this.messageConverter = compositeMessageConverterFactory

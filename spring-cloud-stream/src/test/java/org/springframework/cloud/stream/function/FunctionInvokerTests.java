@@ -125,7 +125,7 @@ public class FunctionInvokerTests {
 			functionProperties.setDefinition("messageToMessageSameType");
 			FunctionInvoker<Foo, Foo> messageToMessageSameType = new FunctionInvoker<>(
 					functionProperties,
-					new FunctionCatalogWrapper(context.getBean(FunctionCatalog.class)),
+					context.getBean(FunctionCatalog.class),
 					context.getBean(FunctionInspector.class),
 					context.getBean(CompositeMessageConverterFactory.class));
 			Message<Foo> outputMessage = messageToMessageSameType
@@ -135,7 +135,7 @@ public class FunctionInvokerTests {
 			functionProperties.setDefinition("pojoToPojoSameType");
 			FunctionInvoker<Foo, Foo> pojoToPojoSameType = new FunctionInvoker<>(
 					functionProperties,
-					new FunctionCatalogWrapper(context.getBean(FunctionCatalog.class)),
+					context.getBean(FunctionCatalog.class),
 					context.getBean(FunctionInspector.class),
 					context.getBean(CompositeMessageConverterFactory.class));
 			outputMessage = pojoToPojoSameType.apply(Flux.just(inputMessage))
@@ -145,7 +145,7 @@ public class FunctionInvokerTests {
 			functionProperties.setDefinition("messageToMessageNoType");
 			FunctionInvoker<Foo, Foo> messageToMessageNoType = new FunctionInvoker<>(
 					functionProperties,
-					new FunctionCatalogWrapper(context.getBean(FunctionCatalog.class)),
+					context.getBean(FunctionCatalog.class),
 					context.getBean(FunctionInspector.class),
 					context.getBean(CompositeMessageConverterFactory.class));
 			outputMessage = messageToMessageNoType.apply(Flux.just(inputMessage))
@@ -155,7 +155,7 @@ public class FunctionInvokerTests {
 			functionProperties.setDefinition("withException");
 			FunctionInvoker<Foo, Foo> withException = new FunctionInvoker<>(
 					functionProperties,
-					new FunctionCatalogWrapper(context.getBean(FunctionCatalog.class)),
+					context.getBean(FunctionCatalog.class),
 					context.getBean(FunctionInspector.class),
 					context.getBean(CompositeMessageConverterFactory.class));
 
@@ -181,7 +181,7 @@ public class FunctionInvokerTests {
 			functionProperties.setDefinition("pojoToPojoNonEmptyPojo");
 			FunctionInvoker<Baz, Baz> pojoToPojoSameType = new FunctionInvoker<>(
 					functionProperties,
-					new FunctionCatalogWrapper(context.getBean(FunctionCatalog.class)),
+					context.getBean(FunctionCatalog.class),
 					context.getBean(FunctionInspector.class),
 					context.getBean(CompositeMessageConverterFactory.class));
 			Message<Baz> outputMessage = pojoToPojoSameType.apply(Flux.just(inputMessage))
@@ -193,7 +193,7 @@ public class FunctionInvokerTests {
 			functionProperties.setDefinition("messageToMessageNoType");
 			FunctionInvoker<Baz, Baz> messageToMessageNoType = new FunctionInvoker<>(
 					functionProperties,
-					new FunctionCatalogWrapper(context.getBean(FunctionCatalog.class)),
+					context.getBean(FunctionCatalog.class),
 					context.getBean(FunctionInspector.class),
 					context.getBean(CompositeMessageConverterFactory.class));
 			outputMessage = messageToMessageNoType.apply(Flux.just(inputMessageWithBaz))
@@ -203,7 +203,7 @@ public class FunctionInvokerTests {
 			functionProperties.setDefinition("withExceptionNativeEncodingEnabled");
 			FunctionInvoker<Baz, Baz> withException = new FunctionInvoker<>(
 					functionProperties,
-					new FunctionCatalogWrapper(context.getBean(FunctionCatalog.class)),
+					context.getBean(FunctionCatalog.class),
 					context.getBean(FunctionInspector.class),
 					context.getBean(CompositeMessageConverterFactory.class));
 
@@ -229,7 +229,7 @@ public class FunctionInvokerTests {
 			functionProperties.setDefinition("pojoToPojoNonEmptyPojo");
 			FunctionInvoker<Baz, Baz> pojoToPojoSameType = new FunctionInvoker<>(
 					functionProperties,
-					new FunctionCatalogWrapper(context.getBean(FunctionCatalog.class)),
+					context.getBean(FunctionCatalog.class),
 					context.getBean(FunctionInspector.class),
 					context.getBean(CompositeMessageConverterFactory.class));
 			Message<Baz> outputMessage = pojoToPojoSameType.apply(Flux.just(inputMessage))
@@ -256,7 +256,7 @@ public class FunctionInvokerTests {
 			functionProperties.setDefinition("fluxConsumer");
 			FunctionInvoker<String, Void> fluxedConsumer = new FunctionInvoker<>(
 					functionProperties,
-					new FunctionCatalogWrapper(context.getBean(FunctionCatalog.class)),
+					context.getBean(FunctionCatalog.class),
 					context.getBean(FunctionInspector.class),
 					context.getBean(CompositeMessageConverterFactory.class));
 

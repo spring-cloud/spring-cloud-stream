@@ -49,6 +49,7 @@ import org.springframework.messaging.SubscribableChannel;
 @EnableConfigurationProperties(StreamFunctionProperties.class)
 public class FunctionConfiguration {
 
+
 	@Autowired(required = false)
 	private Source source;
 
@@ -60,7 +61,7 @@ public class FunctionConfiguration {
 
 	@Bean
 	public IntegrationFlowFunctionSupport functionSupport(
-			FunctionCatalogWrapper functionCatalog, FunctionInspector functionInspector,
+			FunctionCatalog functionCatalog, FunctionInspector functionInspector,
 			CompositeMessageConverterFactory messageConverterFactory,
 			StreamFunctionProperties functionProperties,
 			BindingServiceProperties bindingServiceProperties) {
@@ -68,10 +69,10 @@ public class FunctionConfiguration {
 				messageConverterFactory, functionProperties, bindingServiceProperties);
 	}
 
-	@Bean
-	public FunctionCatalogWrapper functionCatalogWrapper(FunctionCatalog catalog) {
-		return new FunctionCatalogWrapper(catalog);
-	}
+//	@Bean
+//	public FunctionCatalogWrapper functionCatalogWrapper(FunctionCatalog catalog) {
+//		return new FunctionCatalogWrapper(catalog);
+//	}
 
 	/**
 	 * This configuration creates an instance of the {@link IntegrationFlow} from standard

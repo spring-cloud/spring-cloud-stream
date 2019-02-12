@@ -48,7 +48,7 @@ import org.springframework.util.StringUtils;
  */
 public class IntegrationFlowFunctionSupport {
 
-	private final FunctionCatalogWrapper functionCatalog;
+	private final FunctionCatalog functionCatalog;
 
 	private final FunctionInspector functionInspector;
 
@@ -59,7 +59,7 @@ public class IntegrationFlowFunctionSupport {
 	@Autowired
 	private MessageChannel errorChannel;
 
-	IntegrationFlowFunctionSupport(FunctionCatalogWrapper functionCatalog,
+	IntegrationFlowFunctionSupport(FunctionCatalog functionCatalog,
 			FunctionInspector functionInspector,
 			CompositeMessageConverterFactory messageConverterFactory,
 			StreamFunctionProperties functionProperties,
@@ -85,7 +85,7 @@ public class IntegrationFlowFunctionSupport {
 	 */
 	public <T> boolean containsFunction(Class<T> typeOfFunction) {
 		return StringUtils.hasText(this.functionProperties.getDefinition())
-				&& this.functionCatalog.contains(typeOfFunction,
+				&& this.catalogContains(typeOfFunction,
 						this.functionProperties.getDefinition());
 	}
 
@@ -99,7 +99,7 @@ public class IntegrationFlowFunctionSupport {
 	 */
 	public <T> boolean containsFunction(Class<T> typeOfFunction, String functionName) {
 		return StringUtils.hasText(functionName)
-				&& this.functionCatalog.contains(typeOfFunction, functionName);
+				&& this.catalogContains(typeOfFunction, functionName);
 	}
 
 	/**
@@ -229,6 +229,10 @@ public class IntegrationFlowFunctionSupport {
 			subscribeToInput(functionInvoker, publisher, null);
 		}
 		return true;
+	}
+
+	private <T> boolean catalogContains(Class<T> functionType, String name) {
+		return this.functionCatalog.lookup(functionType, name) != null;
 	}
 
 	private <O> Mono<Void> subscribeToOutput(Consumer<Message<O>> outputProcessor,
