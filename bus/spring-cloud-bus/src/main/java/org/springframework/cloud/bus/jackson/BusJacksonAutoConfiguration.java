@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Set;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.exc.InvalidTypeIdException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
