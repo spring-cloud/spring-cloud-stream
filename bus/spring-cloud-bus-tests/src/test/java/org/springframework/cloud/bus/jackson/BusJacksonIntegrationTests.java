@@ -50,8 +50,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 
 @RunWith(SpringRunner.class)
-@SpringBootTest(webEnvironment = RANDOM_PORT,
-        properties = "spring.jackson.serialization.WRITE_DATES_AS_TIMESTAMPS:true")
+@SpringBootTest(properties = "spring.jackson.serialization.WRITE_DATES_AS_TIMESTAMPS:true", webEnvironment = RANDOM_PORT)
 public class BusJacksonIntegrationTests {
 
 	@LocalServerPort
@@ -68,13 +67,14 @@ public class BusJacksonIntegrationTests {
 	public void testCustomEventSerializes() {
 		assertThat(this.converter.isMapperCreated()).isFalse();
 
-        // set by configuration
-        assertThat(this.converter.getMapper().getSerializationConfig()
-                .isEnabled(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)).isTrue();
+		// set by configuration
+		assertThat(this.converter.getMapper().getSerializationConfig()
+				.isEnabled(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)).isTrue();
 
-        Map map = this.rest.getForObject("http://localhost:" + this.port + "/date", Map.class);
-        assertThat(map).containsOnlyKeys("date");
-        assertThat(map.get("date")).isInstanceOf(Long.class);
+		Map map = this.rest.getForObject("http://localhost:" + this.port + "/date",
+				Map.class);
+		assertThat(map).containsOnlyKeys("date");
+		assertThat(map.get("date")).isInstanceOf(Long.class);
 
 		this.rest.put("http://localhost:" + this.port + "/names" + "/foo", null);
 		this.rest.put("http://localhost:" + this.port + "/names" + "/bar", null);
@@ -133,12 +133,12 @@ public class BusJacksonIntegrationTests {
 					new NameEvent(this, this.busServiceMatcher.getServiceId(), name));
 		}
 
-        @GetMapping("/date")
-        public Map<String, Object> testTimeJsonSerialization(){
-            Map<String, Object> map = new HashMap<>();
-            map.put("date", new Date());
-            return map;
-        }
+		@GetMapping("/date")
+		public Map<String, Object> testTimeJsonSerialization() {
+			Map<String, Object> map = new HashMap<>();
+			map.put("date", new Date());
+			return map;
+		}
 
 		@EventListener
 		public void handleNameSaid(NameEvent event) {
