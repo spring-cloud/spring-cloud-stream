@@ -40,6 +40,8 @@ import org.springframework.cloud.stream.binder.kafka.properties.KafkaBinderConfi
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaExtendedBindingProperties;
 import org.springframework.cloud.stream.binder.kafka.provisioning.KafkaTopicProvisioner;
 import org.springframework.cloud.stream.config.ListenerContainerCustomizer;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
@@ -144,17 +146,13 @@ public class KafkaBinderConfiguration {
 		return kafkaJaasLoginModuleInitializer;
 	}
 
-	/**
-	 * A conditional configuration for the {@link KafkaBinderMetrics} bean when the
-	 * {@link MeterRegistry} class is in classpath, as well as a {@link MeterRegistry}
-	 * bean is present in the application context.
-	 */
 	@Configuration
-	@ConditionalOnClass(MeterRegistry.class)
-	@ConditionalOnBean(MeterRegistry.class)
+	@ConditionalOnMissingBean(value = KafkaBinderMetrics.class, name = "outerContext")
+	@ConditionalOnClass(name = "io.micrometer.core.instrument.MeterRegistry")
 	protected class KafkaBinderMetricsConfiguration {
 
 		@Bean
+		@ConditionalOnBean(MeterRegistry.class)
 		@ConditionalOnMissingBean(KafkaBinderMetrics.class)
 		public MeterBinder kafkaBinderMetrics(
 				KafkaMessageChannelBinder kafkaMessageChannelBinder,
@@ -164,7 +162,25 @@ public class KafkaBinderConfiguration {
 			return new KafkaBinderMetrics(kafkaMessageChannelBinder,
 					configurationProperties, null, meterRegistry);
 		}
+	}
 
+	@Configuration
+	@ConditionalOnBean(name = "outerContext")
+	@ConditionalOnMissingBean(KafkaBinderMetrics.class)
+	@ConditionalOnClass(name = "io.micrometer.core.instrument.MeterRegistry")
+	protected class KafkaBinderMetricsConfigurationWithMultiBinder {
+
+		@Bean
+		public MeterBinder kafkaBinderMetrics(
+				KafkaMessageChannelBinder kafkaMessageChannelBinder,
+				KafkaBinderConfigurationProperties configurationProperties,
+				ConfigurableApplicationContext context) {
+
+			MeterRegistry meterRegistry = context.getBean("outerContext", ApplicationContext.class)
+					.getBean(MeterRegistry.class);
+			return new KafkaBinderMetrics(kafkaMessageChannelBinder,
+					configurationProperties, null, meterRegistry);
+		}
 	}
 
 	/**
@@ -178,5 +194,4 @@ public class KafkaBinderConfiguration {
 		private JaasLoginModuleConfiguration zookeeper;
 
 	}
-
 }
