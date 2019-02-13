@@ -108,7 +108,7 @@ class SmartPayloadArgumentResolver extends PayloadArgumentResolver {
 
 		Class<?> targetClass = parameter.getParameterType();
 		Class<?> payloadClass = payload.getClass();
-		if (ClassUtils.isAssignable(payloadClass, targetClass)) {
+		if (conversionNotRequired(payloadClass, targetClass)) {
 			validate(message, parameter, payload);
 			return payload;
 		}
@@ -128,6 +128,11 @@ class SmartPayloadArgumentResolver extends PayloadArgumentResolver {
 			validate(message, parameter, payload);
 			return payload;
 		}
+	}
+
+	private boolean conversionNotRequired(Class<?> a, Class<?> b) {
+		return b == Object.class
+				? ClassUtils.isAssignable(a, b) : ClassUtils.isAssignable(b, a);
 	}
 
 	private String getParameterName(MethodParameter param) {
