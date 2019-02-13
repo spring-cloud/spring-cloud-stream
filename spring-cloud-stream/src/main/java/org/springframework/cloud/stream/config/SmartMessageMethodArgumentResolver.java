@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2018 the original author or authors.
+ * Copyright 2016-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,7 +68,7 @@ class SmartMessageMethodArgumentResolver extends MessageMethodArgumentResolver {
 
 		Class<?> payloadClass = message.getPayload().getClass();
 
-		if (ClassUtils.isAssignable(payloadClass, targetPayloadType)) {
+		if (conversionNotRequired(payloadClass, targetPayloadType)) {
 			return message;
 		}
 		Object payload = message.getPayload();
@@ -83,6 +83,11 @@ class SmartMessageMethodArgumentResolver extends MessageMethodArgumentResolver {
 
 		payload = convertPayload(message, parameter, targetPayloadType);
 		return MessageBuilder.createMessage(payload, message.getHeaders());
+	}
+
+	private boolean conversionNotRequired(Class<?> a, Class<?> b) {
+		return b == Object.class
+				? ClassUtils.isAssignable(a, b) : ClassUtils.isAssignable(b, a);
 	}
 
 	private Class<?> getPayloadType(MethodParameter parameter) {
