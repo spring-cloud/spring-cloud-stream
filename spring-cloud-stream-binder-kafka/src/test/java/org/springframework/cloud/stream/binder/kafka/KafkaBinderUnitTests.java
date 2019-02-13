@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2018 the original author or authors.
+ * Copyright 2017-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.common.serialization.Deserializer;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
@@ -261,6 +262,16 @@ public class KafkaBinderUnitTests {
 								earliest ? "earliest" : "latest");
 						props.put(ConsumerConfig.GROUP_ID_CONFIG, group);
 						return props;
+					}
+
+					@Override
+					public Deserializer<byte[]> getKeyDeserializer() {
+						return null;
+					}
+
+					@Override
+					public Deserializer<byte[]> getValueDeserializer() {
+						return null;
 					}
 
 				};
