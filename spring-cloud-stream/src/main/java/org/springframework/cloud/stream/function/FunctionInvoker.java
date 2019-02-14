@@ -171,8 +171,7 @@ class FunctionInvoker<I, O> implements Function<Flux<Message<I>>, Flux<Message<O
 		}
 		else {
 			returnMessage = (Message<O>) (value instanceof Message ? value
-					: this.messageConverter.toMessage(value, originalMessage.getHeaders(),
-							this.outputClass));
+					: this.messageConverter.toMessage(value, originalMessage.getHeaders()));
 			if (returnMessage == null
 					&& value.getClass().isAssignableFrom(this.outputClass)) {
 				returnMessage = wrapOutputToMessage(value, originalMessage);
