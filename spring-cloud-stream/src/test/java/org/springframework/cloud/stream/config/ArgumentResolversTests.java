@@ -32,7 +32,6 @@ import org.springframework.util.ReflectionUtils;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- *
  * @author Oleg Zhurakousky
  *
  */
@@ -42,11 +41,13 @@ public class ArgumentResolversTests {
 	@Test
 	public void testSmartPayloadArgumentResolver() throws Exception {
 
-		SmartPayloadArgumentResolver resolver = new SmartPayloadArgumentResolver(new TestMessageConverter());
+		SmartPayloadArgumentResolver resolver = new SmartPayloadArgumentResolver(
+				new TestMessageConverter());
 
 		Object payload = "hello".getBytes();
 		GenericMessage message = new GenericMessage(payload);
-		MethodParameter parameter = new MethodParameter(getMethod("byteArray", byte[].class), 0);
+		MethodParameter parameter = new MethodParameter(
+				getMethod("byteArray", byte[].class), 0);
 		Object resolvedArgument = resolver.resolveArgument(parameter, message);
 		assertThat(resolvedArgument).isSameAs(payload);
 
@@ -80,15 +81,15 @@ public class ArgumentResolversTests {
 	public void object(Object p) {
 
 	}
+
 	@SuppressWarnings("rawtypes")
 	public void map(Map p) {
 
 	}
 
 	/*
-	 * The whole point of this converter is to return something other
-	 * then what is being resolved to simply validate when it is invoked
-	 * vs. when it is not.
+	 * The whole point of this converter is to return something other then what is being
+	 * resolved to simply validate when it is invoked vs. when it is not.
 	 */
 	private static class TestMessageConverter implements MessageConverter {
 
@@ -103,4 +104,5 @@ public class ArgumentResolversTests {
 		}
 
 	}
+
 }

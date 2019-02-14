@@ -131,8 +131,8 @@ class SmartPayloadArgumentResolver extends PayloadArgumentResolver {
 	}
 
 	private boolean conversionNotRequired(Class<?> a, Class<?> b) {
-		return b == Object.class
-				? ClassUtils.isAssignable(a, b) : ClassUtils.isAssignable(b, a);
+		return b == Object.class ? ClassUtils.isAssignable(a, b)
+				: ClassUtils.isAssignable(b, a);
 	}
 
 	private String getParameterName(MethodParameter param) {

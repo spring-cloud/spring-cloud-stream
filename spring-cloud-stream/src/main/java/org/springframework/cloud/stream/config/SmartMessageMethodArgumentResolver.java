@@ -86,8 +86,8 @@ class SmartMessageMethodArgumentResolver extends MessageMethodArgumentResolver {
 	}
 
 	private boolean conversionNotRequired(Class<?> a, Class<?> b) {
-		return b == Object.class
-				? ClassUtils.isAssignable(a, b) : ClassUtils.isAssignable(b, a);
+		return b == Object.class ? ClassUtils.isAssignable(a, b)
+				: ClassUtils.isAssignable(b, a);
 	}
 
 	private Class<?> getPayloadType(MethodParameter parameter) {
