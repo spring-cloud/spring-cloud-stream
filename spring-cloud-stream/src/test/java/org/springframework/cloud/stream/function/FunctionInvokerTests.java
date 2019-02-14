@@ -49,6 +49,7 @@ import org.springframework.util.ReflectionUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+
 /**
  * @author Oleg Zhurakousky
  * @author Tolga Kavukcu
@@ -57,6 +58,30 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class FunctionInvokerTests {
 
 	private static String testWithFluxedConsumerValue;
+
+	@Test
+	public void testSimpleEchoConfiguration() {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+				TestChannelBinderConfiguration.getCompleteConfiguration(
+						SimpleEchoConfiguration.class))
+								.web(WebApplicationType.NONE)
+								.run("--spring.jmx.enabled=false",
+										"--spring.cloud.stream.function.definition=func")) {
+
+			InputDestination inputDestination = context.getBean(InputDestination.class);
+			OutputDestination outputDestination = context
+					.getBean(OutputDestination.class);
+
+			Message<byte[]> inputMessage = MessageBuilder
+					.withPayload("{\"name\":\"bob\"}".getBytes()).build();
+			inputDestination.send(inputMessage);
+
+			Message<byte[]> outputMessage = outputDestination.receive();
+			System.out.println("Received: " + new String(outputMessage.getPayload()));
+			assertThat(outputMessage.getPayload()).isEqualTo("{\"name\":\"bob\"}".getBytes());
+
+		}
+	}
 
 	@Test
 	public void testFunctionHonorsOutboundBindingContentType() {
@@ -301,6 +326,28 @@ public class FunctionInvokerTests {
 		}
 		catch (Exception e) {
 			throw new IllegalStateException(e);
+		}
+	}
+
+	@EnableAutoConfiguration
+	@EnableBinding(Processor.class)
+	public static class SimpleEchoConfiguration {
+
+		@Bean
+		public Function<Person, Person> func() {
+			return x -> x;
+		}
+
+		public static class Person {
+			private String name;
+
+			public String getName() {
+				return name;
+			}
+
+			public void setName(String name) {
+				this.name = name;
+			}
 		}
 	}
 
