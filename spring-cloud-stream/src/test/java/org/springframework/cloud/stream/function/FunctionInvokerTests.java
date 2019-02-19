@@ -49,7 +49,6 @@ import org.springframework.util.ReflectionUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-
 /**
  * @author Oleg Zhurakousky
  * @author Tolga Kavukcu
@@ -63,7 +62,30 @@ public class FunctionInvokerTests {
 	public void testSimpleEchoConfiguration() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 				TestChannelBinderConfiguration.getCompleteConfiguration(
-						SimpleEchoConfiguration.class))
+						SimpleEchoConfiguration.class)).web(WebApplicationType.NONE).run(
+								"--spring.jmx.enabled=false",
+								"--spring.cloud.stream.function.definition=func")) {
+
+			InputDestination inputDestination = context.getBean(InputDestination.class);
+			OutputDestination outputDestination = context
+					.getBean(OutputDestination.class);
+
+			Message<byte[]> inputMessage = MessageBuilder
+					.withPayload("{\"name\":\"bob\"}".getBytes()).build();
+			inputDestination.send(inputMessage);
+
+			Message<byte[]> outputMessage = outputDestination.receive();
+			assertThat(outputMessage.getPayload())
+					.isEqualTo("{\"name\":\"bob\"}".getBytes());
+
+		}
+	}
+
+	@Test
+	public void testFluxPojoFunction() {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+				TestChannelBinderConfiguration
+						.getCompleteConfiguration(SimpleFluxFunctionConfiguration.class))
 								.web(WebApplicationType.NONE)
 								.run("--spring.jmx.enabled=false",
 										"--spring.cloud.stream.function.definition=func")) {
@@ -77,9 +99,30 @@ public class FunctionInvokerTests {
 			inputDestination.send(inputMessage);
 
 			Message<byte[]> outputMessage = outputDestination.receive();
-			System.out.println("Received: " + new String(outputMessage.getPayload()));
-			assertThat(outputMessage.getPayload()).isEqualTo("{\"name\":\"bob\"}".getBytes());
+			assertThat(outputMessage.getPayload()).isEqualTo("Person: bob".getBytes());
 
+		}
+	}
+
+	@Test
+	public void testFluxMessagePojoFunction() {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+				TestChannelBinderConfiguration.getCompleteConfiguration(
+						SimpleFluxMessageFunctionConfiguration.class))
+								.web(WebApplicationType.NONE)
+								.run("--spring.jmx.enabled=false",
+										"--spring.cloud.stream.function.definition=func")) {
+
+			InputDestination inputDestination = context.getBean(InputDestination.class);
+			OutputDestination outputDestination = context
+					.getBean(OutputDestination.class);
+
+			Message<byte[]> inputMessage = MessageBuilder
+					.withPayload("{\"name\":\"bob\"}".getBytes()).build();
+			inputDestination.send(inputMessage);
+
+			Message<byte[]> outputMessage = outputDestination.receive();
+			assertThat(outputMessage.getPayload()).isEqualTo("Person: bob".getBytes());
 		}
 	}
 
@@ -339,6 +382,7 @@ public class FunctionInvokerTests {
 		}
 
 		public static class Person {
+
 			private String name;
 
 			public String getName() {
@@ -348,7 +392,72 @@ public class FunctionInvokerTests {
 			public void setName(String name) {
 				this.name = name;
 			}
+
 		}
+
+	}
+
+	@EnableAutoConfiguration
+	@EnableBinding(Processor.class)
+	public static class SimpleFluxFunctionConfiguration {
+
+		@Bean
+		public Function<Flux<Person>, Flux<String>> func() {
+			return x -> x.map(person -> person.toString());
+		}
+
+		public static class Person {
+
+			private String name;
+
+			public String getName() {
+				return name;
+			}
+
+			public void setName(String name) {
+				this.name = name;
+			}
+
+			public String toString() {
+				return "Person: " + name;
+			}
+
+		}
+
+	}
+
+	@EnableAutoConfiguration
+	@EnableBinding(Processor.class)
+	public static class SimpleFluxMessageFunctionConfiguration {
+
+		@Bean
+		public Function<Flux<Message<Person>>, Flux<Message<String>>> func() {
+			return x -> x.map(personMessage -> {
+				Person person = personMessage.getPayload();
+				Message<String> message = MessageBuilder.withPayload(person.toString())
+						.copyHeaders(personMessage.getHeaders()).build();
+				return message;
+			});
+		}
+
+		public static class Person {
+
+			private String name;
+
+			public String getName() {
+				return name;
+			}
+
+			public void setName(String name) {
+				this.name = name;
+			}
+
+			public String toString() {
+				return "Person: " + name;
+			}
+
+		}
+
 	}
 
 	@EnableAutoConfiguration

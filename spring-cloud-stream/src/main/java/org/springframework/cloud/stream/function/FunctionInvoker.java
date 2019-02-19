@@ -169,7 +169,8 @@ class FunctionInvoker<I, O> implements Function<Flux<Message<I>>, Flux<Message<O
 		}
 		else {
 			returnMessage = (Message<O>) (value instanceof Message ? value
-					: this.messageConverter.toMessage(value, originalMessage.getHeaders()));
+					: this.messageConverter.toMessage(value,
+							originalMessage.getHeaders()));
 			if (returnMessage == null
 					&& value.getClass().isAssignableFrom(this.outputClass)) {
 				returnMessage = wrapOutputToMessage(value, originalMessage);
@@ -212,7 +213,11 @@ class FunctionInvoker<I, O> implements Function<Flux<Message<I>>, Flux<Message<O
 				? this.messageConverter.fromMessage(message, this.inputClass) : message);
 		Assert.notNull(argument, "Failed to resolve argument type '" + this.inputClass
 				+ "' from message: " + message);
-		if (!this.isInputArgumentMessage && argument instanceof Message) {
+		if (this.isInputArgumentMessage && !(argument instanceof Message)) {
+			argument = (T) MessageBuilder.withPayload(argument)
+					.copyHeaders(message.getHeaders()).build();
+		}
+		else if (!this.isInputArgumentMessage && argument instanceof Message) {
 			argument = ((Message<T>) argument).getPayload();
 		}
 		return argument;
