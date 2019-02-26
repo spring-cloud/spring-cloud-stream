@@ -31,6 +31,7 @@ import org.apache.avro.reflect.ReflectData;
 import org.springframework.beans.DirectFieldAccessor;
 import org.springframework.beans.factory.BeanInitializationException;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.support.NoOpCacheManager;
 import org.springframework.cloud.stream.schema.ParsedSchema;
@@ -271,12 +272,12 @@ public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessag
 
 		Schema schema;
 		schema = extractSchemaForWriting(payload);
-		ParsedSchema parsedSchema = this.cacheManager.getCache(REFERENCE_CACHE_NAME)
+		ParsedSchema parsedSchema = this.getCache(REFERENCE_CACHE_NAME)
 				.get(schema, ParsedSchema.class);
 
 		if (parsedSchema == null) {
 			parsedSchema = new ParsedSchema(schema);
-			this.cacheManager.getCache(REFERENCE_CACHE_NAME).putIfAbsent(schema,
+			this.getCache(REFERENCE_CACHE_NAME).putIfAbsent(schema,
 					parsedSchema);
 		}
 
@@ -306,8 +307,7 @@ public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessag
 		if (this.readerSchema == null) {
 			SchemaReference schemaReference = extractSchemaReference(mimeType);
 			if (schemaReference != null) {
-				ParsedSchema parsedSchema = this.cacheManager
-						.getCache(REFERENCE_CACHE_NAME)
+				ParsedSchema parsedSchema = this.getCache(REFERENCE_CACHE_NAME)
 						.get(schemaReference, ParsedSchema.class);
 				if (parsedSchema == null) {
 					String schemaContent = this.schemaRegistryClient
@@ -315,7 +315,7 @@ public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessag
 					if (schemaContent != null) {
 						Schema schema = new Schema.Parser().parse(schemaContent);
 						parsedSchema = new ParsedSchema(schema);
-						this.cacheManager.getCache(REFERENCE_CACHE_NAME)
+						this.getCache(REFERENCE_CACHE_NAME)
 								.putIfAbsent(schemaReference, parsedSchema);
 					}
 				}
@@ -344,7 +344,7 @@ public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessag
 			}
 		}
 		else {
-			schema = this.cacheManager.getCache(REFLECTION_CACHE_NAME)
+			schema = this.getCache(REFLECTION_CACHE_NAME)
 					.get(payload.getClass().getName(), Schema.class);
 			if (schema == null) {
 				if (!isDynamicSchemaGenerationEnabled()) {
@@ -356,7 +356,7 @@ public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessag
 				else {
 					schema = ReflectData.get().getSchema(payload.getClass());
 				}
-				this.cacheManager.getCache(REFLECTION_CACHE_NAME)
+				this.getCache(REFLECTION_CACHE_NAME)
 						.put(payload.getClass().getName(), schema);
 			}
 		}
@@ -375,7 +375,7 @@ public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessag
 			this.logger
 					.info("Schema " + schema.getName() + " registered with id " + schema);
 		}
-		this.cacheManager.getCache(REFLECTION_CACHE_NAME)
+		this.getCache(REFLECTION_CACHE_NAME)
 				.put(schema.getNamespace() + "." + schema.getName(), schema);
 	}
 
@@ -388,6 +388,14 @@ public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessag
 			schemaReference = new SchemaReference(subject, version, AVRO_FORMAT);
 		}
 		return schemaReference;
+	}
+
+	private Cache getCache(String name) {
+		Cache cache = this.cacheManager.getCache("");
+		Assert.notNull(cache, "Cache by the name '" + name + "' is not present in this CacheManager - '"
+				+ this.cacheManager + "'. Typically caches are auto-created by the CacheManagers. "
+						+ "Consider reporting it as an issue to the developer of this CacheManager.");
+		return cache;
 	}
 
 }
