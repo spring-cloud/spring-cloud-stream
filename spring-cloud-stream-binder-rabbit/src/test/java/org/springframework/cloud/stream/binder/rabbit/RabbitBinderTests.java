@@ -30,6 +30,9 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.zip.Deflater;
 
 import com.rabbitmq.client.LongString;
+import com.rabbitmq.http.client.Client;
+import com.rabbitmq.http.client.domain.BindingInfo;
+import com.rabbitmq.http.client.domain.ExchangeInfo;
 import com.rabbitmq.http.client.domain.QueueInfo;
 import org.apache.commons.logging.Log;
 import org.junit.Rule;
@@ -44,7 +47,6 @@ import org.springframework.amqp.core.AmqpTemplate;
 import org.springframework.amqp.core.AnonymousQueue;
 import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.DirectExchange;
-import org.springframework.amqp.core.Exchange;
 import org.springframework.amqp.core.ExchangeTypes;
 import org.springframework.amqp.core.MessageDeliveryMode;
 import org.springframework.amqp.core.Queue;
@@ -435,9 +437,8 @@ public class RabbitBinderTests extends
 		assertThat(container.isRunning()).isTrue();
 		consumerBinding.unbind();
 		assertThat(container.isRunning()).isFalse();
-		org.springframework.amqp.rabbit.core.RabbitManagementTemplate rmt = new org.springframework.amqp.rabbit.core.RabbitManagementTemplate();
-		List<org.springframework.amqp.core.Binding> bindings = rmt
-				.getBindingsForExchange("/", exchange.getName());
+		Client client = new Client("http://guest:guest@localhost:15672/api/");
+		List<?> bindings = client.getBindingsBySource("/", exchange.getName());
 		assertThat(bindings.size()).isEqualTo(1);
 	}
 
@@ -482,32 +483,24 @@ public class RabbitBinderTests extends
 		consumerBinding.unbind();
 		assertThat(container.isRunning()).isFalse();
 		assertThat(container.getQueueNames()[0]).isEqualTo(group);
-		org.springframework.amqp.rabbit.core.RabbitManagementTemplate rmt = new org.springframework.amqp.rabbit.core.RabbitManagementTemplate();
-		List<org.springframework.amqp.core.Binding> bindings = rmt
-				.getBindingsForExchange("/", "propsUser2");
+		Client client = new Client("http://guest:guest@localhost:15672/api/");
+		List<BindingInfo> bindings = client.getBindingsBySource("/", "propsUser2");
 		int n = 0;
 		while (n++ < 100 && bindings == null || bindings.size() < 1) {
 			Thread.sleep(100);
-			bindings = rmt.getBindingsForExchange("/", "propsUser2");
+			bindings = client.getBindingsBySource("/", "propsUser2");
 		}
 		assertThat(bindings.size()).isEqualTo(1);
-		assertThat(bindings.get(0).getExchange()).isEqualTo("propsUser2");
+		assertThat(bindings.get(0).getSource()).isEqualTo("propsUser2");
 		assertThat(bindings.get(0).getDestination()).isEqualTo(group);
 		assertThat(bindings.get(0).getRoutingKey()).isEqualTo("foo");
 
-		// // TODO: AMQP-696
-		// // Exchange exchange = rmt.getExchange("propsUser2");
-		// ExchangeInfo ei = rmt.getClient().getExchange("/", "propsUser2"); // requires
-		// delayed message exchange plugin
-		// assertThat(ei.getType()).isEqualTo("x-delayed-message");
-		// assertThat(ei.getArguments().get("x-delayed-type")).isEqualTo("direct");
-
-		Exchange exchange = rmt.getExchange("propsUser2");
+		ExchangeInfo exchange = client.getExchange("/", "propsUser2");
 		while (n++ < 100 && exchange == null) {
 			Thread.sleep(100);
-			exchange = rmt.getExchange("propsUser2");
+			exchange = client.getExchange("/", "propsUser2");
 		}
-		assertThat(exchange).isInstanceOf(DirectExchange.class);
+		assertThat(exchange.getType()).isEqualTo("direct");
 		assertThat(exchange.isDurable()).isEqualTo(true);
 		assertThat(exchange.isAutoDelete()).isEqualTo(false);
 	}
@@ -554,44 +547,43 @@ public class RabbitBinderTests extends
 		SimpleMessageListenerContainer container = TestUtils.getPropertyValue(endpoint,
 				"messageListenerContainer", SimpleMessageListenerContainer.class);
 		assertThat(container.isRunning()).isTrue();
-		org.springframework.amqp.rabbit.core.RabbitManagementTemplate rmt = new org.springframework.amqp.rabbit.core.RabbitManagementTemplate();
-		List<org.springframework.amqp.core.Binding> bindings = rmt
-				.getBindingsForExchange("/", "propsUser3");
+		Client client = new Client("http://guest:guest@localhost:15672/api");
+		List<BindingInfo> bindings = client.getBindingsBySource("/", "propsUser3");
 		int n = 0;
 		while (n++ < 100 && bindings == null || bindings.size() < 1) {
 			Thread.sleep(100);
-			bindings = rmt.getBindingsForExchange("/", "propsUser3");
+			bindings = client.getBindingsBySource("/", "propsUser3");
 		}
 		assertThat(bindings.size()).isEqualTo(1);
-		assertThat(bindings.get(0).getExchange()).isEqualTo("propsUser3");
+		assertThat(bindings.get(0).getSource()).isEqualTo("propsUser3");
 		assertThat(bindings.get(0).getDestination()).isEqualTo("propsUser3.infra");
 		assertThat(bindings.get(0).getRoutingKey()).isEqualTo("foo");
 
-		Exchange exchange = rmt.getExchange("propsUser3");
+		ExchangeInfo exchange = client.getExchange("/", "propsUser3");
 		n = 0;
 		while (n++ < 100 && exchange == null) {
 			Thread.sleep(100);
-			exchange = rmt.getExchange("propsUser3");
+			exchange = client.getExchange("/", "propsUser3");
 		}
-		assertThat(exchange).isInstanceOf(DirectExchange.class);
+		assertThat(exchange.getType()).isEqualTo("direct");
 		assertThat(exchange.isDurable()).isEqualTo(false);
 		assertThat(exchange.isAutoDelete()).isEqualTo(true);
 
-		exchange = rmt.getExchange("customDLX");
+		exchange = client.getExchange("/", "customDLX");
 		n = 0;
 		while (n++ < 100 && exchange == null) {
 			Thread.sleep(100);
-			exchange = rmt.getExchange("customDLX");
+			exchange = client.getExchange("/", "customDLX");
 		}
-		assertThat(exchange).isInstanceOf(TopicExchange.class);
+		assertThat(exchange.getType()).isEqualTo("topic");
 		assertThat(exchange.isDurable()).isEqualTo(true);
 		assertThat(exchange.isAutoDelete()).isEqualTo(false);
 
-		QueueInfo queue = rmt.getClient().getQueue("/", "propsUser3.infra");
+		QueueInfo queue = client.getQueue("/", "propsUser3.infra");
 		n = 0;
 		while (n++ < 100 && queue == null || queue.getConsumerCount() == 0) {
 			Thread.sleep(100);
-			queue = rmt.getClient().getQueue("/", "propsUser3.infra");
+			queue = client.getQueue("/", "propsUser3.infra");
 		}
 		assertThat(queue).isNotNull();
 		Map<String, Object> args = queue.getArguments();
@@ -606,12 +598,12 @@ public class RabbitBinderTests extends
 		assertThat(args.get("x-queue-mode")).isEqualTo("lazy");
 		assertThat(queue.getExclusiveConsumerTag()).isEqualTo("testConsumerTag#0");
 
-		queue = rmt.getClient().getQueue("/", "customDLQ");
+		queue = client.getQueue("/", "customDLQ");
 
 		n = 0;
 		while (n++ < 100 && queue == null) {
 			Thread.sleep(100);
-			queue = rmt.getClient().getQueue("/", "customDLQ");
+			queue = client.getQueue("/", "customDLQ");
 		}
 		assertThat(queue).isNotNull();
 		args = queue.getArguments();

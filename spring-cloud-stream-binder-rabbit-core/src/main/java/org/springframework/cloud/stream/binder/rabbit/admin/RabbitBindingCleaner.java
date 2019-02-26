@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 the original author or authors.
+ * Copyright 2015-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,19 +16,25 @@
 
 package org.springframework.cloud.stream.binder.rabbit.admin;
 
-import java.net.URI;
-import java.util.ArrayList;
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.stream.Collectors;
 
+import com.rabbitmq.http.client.Client;
+import com.rabbitmq.http.client.domain.BindingInfo;
+import com.rabbitmq.http.client.domain.ExchangeInfo;
+import com.rabbitmq.http.client.domain.QueueInfo;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.springframework.cloud.stream.binder.AbstractBinder;
 import org.springframework.cloud.stream.binder.BindingCleaner;
-import org.springframework.web.client.RestTemplate;
-import org.springframework.web.util.UriComponentsBuilder;
 
 /**
  * Implementation of {@link org.springframework.cloud.stream.binder.BindingCleaner} for
@@ -51,81 +57,65 @@ public class RabbitBindingCleaner implements BindingCleaner {
 
 	@Override
 	public Map<String, List<String>> clean(String entity, boolean isJob) {
-		return clean("http://localhost:15672", "guest", "guest", "/", BINDER_PREFIX,
+		return clean("http://localhost:15672/api", "guest", "guest", "/", BINDER_PREFIX,
 				entity, isJob);
 	}
 
 	public Map<String, List<String>> clean(String adminUri, String user, String pw,
 			String vhost, String binderPrefix, String entity, boolean isJob) {
-		return doClean(adminUri == null ? "http://localhost:15672" : adminUri,
-				user == null ? "guest" : user, pw == null ? "guest" : pw,
-				vhost == null ? "/" : vhost,
-				binderPrefix == null ? BINDER_PREFIX : binderPrefix, entity, isJob);
+
+		try {
+			Client client = new Client(adminUri, user, pw);
+			return doClean(client,
+					vhost == null ? "/" : vhost,
+					binderPrefix == null ? BINDER_PREFIX : binderPrefix, entity, isJob);
+		}
+		catch (MalformedURLException | URISyntaxException e) {
+			throw new RabbitAdminException("Couldn't create a Client", e);
+		}
 	}
 
-	private Map<String, List<String>> doClean(String adminUri, String user, String pw,
+	private Map<String, List<String>> doClean(Client client,
 			String vhost, String binderPrefix, String entity, boolean isJob) {
-		RestTemplate restTemplate = RabbitManagementUtils.buildRestTemplate(adminUri,
-				user, pw);
-		List<String> removedQueues = isJob ? null
-				: findStreamQueues(adminUri, vhost, binderPrefix, entity, restTemplate);
-		List<String> removedExchanges = findExchanges(adminUri, vhost, binderPrefix,
-				entity, restTemplate);
+
+		LinkedList<String> removedQueues = isJob ? null
+				: findStreamQueues(client, vhost, binderPrefix, entity);
+		List<String> removedExchanges = findExchanges(client, vhost, binderPrefix, entity);
 		// Delete the queues in reverse order to enable re-running after a partial
 		// success.
 		// The queue search above starts with 0 and terminates on a not found.
-		for (int i = removedQueues.size() - 1; i >= 0; i--) {
-			String queueName = removedQueues.get(i);
-			URI uri = UriComponentsBuilder.fromUriString(adminUri + "/api")
-					.pathSegment("queues", "{vhost}", "{stream}")
-					.buildAndExpand(vhost, queueName).encode().toUri();
-			restTemplate.delete(uri);
-			if (logger.isDebugEnabled()) {
-				logger.debug("deleted queue: " + queueName);
-			}
+		if (removedQueues != null) {
+			removedQueues.descendingIterator().forEachRemaining(q -> {
+				client.deleteQueue(vhost, q);
+				if (logger.isDebugEnabled()) {
+					logger.debug("deleted queue: " + q);
+				}
+			});
 		}
 		Map<String, List<String>> results = new HashMap<>();
 		if (removedQueues.size() > 0) {
 			results.put("queues", removedQueues);
 		}
 		// Fanout exchanges for taps
-		for (String exchange : removedExchanges) {
-			URI uri = UriComponentsBuilder.fromUriString(adminUri + "/api")
-					.pathSegment("exchanges", "{vhost}", "{name}")
-					.buildAndExpand(vhost, exchange).encode().toUri();
-			restTemplate.delete(uri);
+		removedExchanges.forEach(exchange -> {
+			client.deleteExchange(vhost, exchange);
 			if (logger.isDebugEnabled()) {
 				logger.debug("deleted exchange: " + exchange);
 			}
-		}
+		});
 		if (removedExchanges.size() > 0) {
 			results.put("exchanges", removedExchanges);
 		}
 		return results;
 	}
 
-	private List<String> findStreamQueues(String adminUri, String vhost,
-			String binderPrefix, String stream, RestTemplate restTemplate) {
-		String queueNamePrefix = adjustPrefix(
-				AbstractBinder.applyPrefix(binderPrefix, stream));
-		List<Map<String, Object>> queues = listAllQueues(adminUri, vhost, restTemplate);
-		List<String> removedQueues = new ArrayList<>();
-		for (Map<String, Object> queue : queues) {
-			String queueName = (String) queue.get("name");
-			if (queueName.startsWith(queueNamePrefix)) {
-				checkNoConsumers(queueName, queue);
-				removedQueues.add(queueName);
-			}
-		}
-		return removedQueues;
-	}
-
-	private List<Map<String, Object>> listAllQueues(String adminUri, String vhost,
-			RestTemplate restTemplate) {
-		URI uri = UriComponentsBuilder.fromUriString(adminUri + "/api")
-				.pathSegment("queues", "{vhost}").buildAndExpand(vhost).encode().toUri();
-		List<Map<String, Object>> queues = restTemplate.getForObject(uri, List.class);
-		return queues;
+	private LinkedList<String> findStreamQueues(Client client, String vhost, String binderPrefix, String stream) {
+		String queueNamePrefix = adjustPrefix(AbstractBinder.applyPrefix(binderPrefix, stream));
+		List<QueueInfo> queues = client.getQueues(vhost);
+		return queues.stream()
+			.filter(q -> q.getName().startsWith(queueNamePrefix))
+			.map(q -> checkNoConsumers(q))
+			.collect(Collectors.toCollection(LinkedList::new));
 	}
 
 	private String adjustPrefix(String prefix) {
@@ -137,68 +127,46 @@ public class RabbitBindingCleaner implements BindingCleaner {
 		}
 	}
 
-	private void checkNoConsumers(String queueName, Map<String, Object> queue) {
-		if (!queue.get("consumers").equals(Integer.valueOf(0))) {
-			throw new RabbitAdminException("Queue " + queueName + " is in use");
+	private String checkNoConsumers(QueueInfo queue) {
+		if (queue.getConsumerCount() != 0) {
+			throw new RabbitAdminException("Queue " + queue.getName() + " is in use");
 		}
+		return queue.getName();
 	}
 
-	private List<String> findExchanges(String adminUri, String vhost, String binderPrefix,
-			String entity, RestTemplate restTemplate) {
-		List<String> removedExchanges = new ArrayList<>();
-		URI uri = UriComponentsBuilder.fromUriString(adminUri + "/api")
-				.pathSegment("exchanges", "{vhost}").buildAndExpand(vhost).encode()
-				.toUri();
-		List<Map<String, Object>> exchanges = restTemplate.getForObject(uri, List.class);
-		String exchangeNamePrefix = adjustPrefix(
-				AbstractBinder.applyPrefix(binderPrefix, entity));
-		for (Map<String, Object> exchange : exchanges) {
-			String exchangeName = (String) exchange.get("name");
-			if (exchangeName.startsWith(exchangeNamePrefix)) {
-				uri = UriComponentsBuilder.fromUriString(adminUri + "/api")
-						.pathSegment("exchanges", "{vhost}", "{name}", "bindings",
-								"source")
-						.buildAndExpand(vhost, exchangeName).encode().toUri();
-				List<Map<String, Object>> bindings = restTemplate.getForObject(uri,
-						List.class);
-				if (hasNoForeignBindings(bindings, exchangeNamePrefix)) {
-					uri = UriComponentsBuilder.fromUriString(adminUri + "/api")
-							.pathSegment("exchanges", "{vhost}", "{name}", "bindings",
-									"destination")
-							.buildAndExpand(vhost, exchangeName).encode().toUri();
-					bindings = restTemplate.getForObject(uri, List.class);
-					if (bindings.size() == 0) {
-						removedExchanges.add((String) exchange.get("name"));
-					}
-					else {
+	private List<String> findExchanges(Client client, String vhost, String binderPrefix, String entity) {
+		List<ExchangeInfo> exchanges = client.getExchanges(vhost);
+		String exchangeNamePrefix = adjustPrefix(AbstractBinder.applyPrefix(binderPrefix, entity));
+		List<String> exchangesToRemove = exchanges.stream()
+				.filter(e -> e.getName().startsWith(exchangeNamePrefix))
+				.map(e -> {
+					System.out.println(e.getName());
+					List<BindingInfo> bindingsBySource = client.getBindingsBySource(vhost, e.getName());
+					return Collections.singletonMap(e.getName(), bindingsBySource);
+				})
+				.map(bindingsMap -> hasNoForeignBindings(bindingsMap, exchangeNamePrefix))
+				.collect(Collectors.toList());
+		exchangesToRemove.stream()
+				.map(exchange -> client.getExchangeBindingsByDestination(vhost, exchange))
+				.forEach(bindings -> {
+					if (bindings.size() > 0) {
 						throw new RabbitAdminException("Cannot delete exchange "
-								+ exchangeName + "; it is a destination: " + bindings);
+								+ bindings.get(0).getDestination() + "; it is a destination: " + bindings);
 					}
-				}
-				else {
-					throw new RabbitAdminException("Cannot delete exchange "
-							+ exchangeName + "; it has bindings: " + bindings);
-				}
-			}
-		}
-		return removedExchanges;
+				});
+		return exchangesToRemove;
 	}
 
-	private boolean hasNoForeignBindings(List<Map<String, Object>> bindings,
-			String exchangeNamePrefix) {
-		if (bindings.size() == 0) {
-			return true;
-		}
-		boolean noForeign = true;
-		for (Map<String, Object> binding : bindings) {
-			if (!("queue".equals(binding.get("destination_type")))
-					|| !((String) binding.get("destination"))
-							.startsWith(exchangeNamePrefix)) {
-				noForeign = false;
-				break;
+	private String hasNoForeignBindings(Map<String, List<BindingInfo>> bindings, String exchangeNamePrefix) {
+		Entry<String, List<BindingInfo>> next = bindings.entrySet().iterator().next();
+		for (BindingInfo binding : next.getValue()) {
+			if (!"queue".equals(binding.getDestinationType())
+					|| !binding.getDestination().startsWith(exchangeNamePrefix)) {
+				throw new RabbitAdminException("Cannot delete exchange "
+						+ next.getKey() + "; it has bindings: " + bindings);
 			}
 		}
-		return noForeign;
+		return next.getKey();
 	}
 
 }

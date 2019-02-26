@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 the original author or authors.
+ * Copyright 2015-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,8 @@
 
 package org.springframework.cloud.stream.binder.rabbit;
 
-import java.net.URI;
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -24,9 +25,12 @@ import java.util.UUID;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.DefaultConsumer;
+import com.rabbitmq.http.client.Client;
+import com.rabbitmq.http.client.domain.QueueInfo;
 import org.junit.Rule;
 import org.junit.Test;
 
+import org.springframework.amqp.core.Base64UrlNamingStrategy;
 import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.core.TopicExchange;
@@ -37,10 +41,7 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.cloud.stream.binder.AbstractBinder;
 import org.springframework.cloud.stream.binder.rabbit.admin.RabbitAdminException;
 import org.springframework.cloud.stream.binder.rabbit.admin.RabbitBindingCleaner;
-import org.springframework.cloud.stream.binder.rabbit.admin.RabbitManagementUtils;
 import org.springframework.cloud.stream.binder.test.junit.rabbit.RabbitTestSupport;
-import org.springframework.web.client.RestTemplate;
-import org.springframework.web.util.UriComponentsBuilder;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.fail;
@@ -49,9 +50,21 @@ import static org.junit.Assert.fail;
  * @author Gary Russell
  * @since 1.2
  */
+//@Ignore
 public class RabbitBinderCleanerTests {
 
 	private static final String BINDER_PREFIX = "binder.";
+
+	private static final Client client;
+
+	static {
+		try {
+			client = new Client("http://localhost:15672/api", "guest", "guest");
+		}
+		catch (MalformedURLException | URISyntaxException e) {
+			throw new RabbitAdminException("Couldn't create a Client", e);
+		}
+	}
 
 	@Rule
 	public RabbitTestSupport rabbitWithMgmtEnabled = new RabbitTestSupport(true);
@@ -59,9 +72,7 @@ public class RabbitBinderCleanerTests {
 	@Test
 	public void testCleanStream() {
 		final RabbitBindingCleaner cleaner = new RabbitBindingCleaner();
-		final RestTemplate template = RabbitManagementUtils
-				.buildRestTemplate("http://localhost:15672", "guest", "guest");
-		final String stream1 = UUID.randomUUID().toString();
+		final String stream1 = new Base64UrlNamingStrategy("foo").generateName();
 		String stream2 = stream1 + "-1";
 		String firstQueue = null;
 		CachingConnectionFactory connectionFactory = rabbitWithMgmtEnabled.getResource();
@@ -74,20 +85,9 @@ public class RabbitBinderCleanerTests {
 			if (firstQueue == null) {
 				firstQueue = queue1Name;
 			}
-			URI uri = UriComponentsBuilder
-					.fromUriString("http://localhost:15672/api/queues")
-					.pathSegment("{vhost}", "{queue}").buildAndExpand("/", queue1Name)
-					.encode().toUri();
-			template.put(uri, new AmqpQueue(false, true));
-			uri = UriComponentsBuilder.fromUriString("http://localhost:15672/api/queues")
-					.pathSegment("{vhost}", "{queue}").buildAndExpand("/", queue2Name)
-					.encode().toUri();
-			template.put(uri, new AmqpQueue(false, true));
-			uri = UriComponentsBuilder.fromUriString("http://localhost:15672/api/queues")
-					.pathSegment("{vhost}", "{queue}")
-					.buildAndExpand("/", AbstractBinder.constructDLQName(queue1Name))
-					.encode().toUri();
-			template.put(uri, new AmqpQueue(false, true));
+			rabbitAdmin.declareQueue(new Queue(queue1Name, true, false, false));
+			rabbitAdmin.declareQueue(new Queue(queue2Name, true, false, false));
+			rabbitAdmin.declareQueue(new Queue(AbstractBinder.constructDLQName(queue1Name), true, false, false));
 			TopicExchange exchange = new TopicExchange(queue1Name);
 			rabbitAdmin.declareExchange(exchange);
 			rabbitAdmin.declareBinding(BindingBuilder.bind(new Queue(queue1Name))
@@ -141,25 +141,13 @@ public class RabbitBinderCleanerTests {
 				return null;
 			}
 
-			private void waitForConsumerStateNot(String queueName, int state)
-					throws InterruptedException {
+			private void waitForConsumerStateNot(String queueName, long state) throws InterruptedException {
 				int n = 0;
-				URI uri = UriComponentsBuilder
-						.fromUriString("http://localhost:15672/api/queues")
-						.pathSegment("{vhost}", "{queue}").buildAndExpand("/", queueName)
-						.encode().toUri();
-
-				Object consumers = null;
-				while (n++ < 100 && (consumers == null
-						|| consumers.equals(Integer.valueOf(state)))) {
-					Map<String, Object> queueInfo = template.getForObject(uri, Map.class);
-					consumers = queueInfo.get("consumers");
-					if (consumers == null || consumers.equals(Integer.valueOf(state))) {
-						Thread.sleep(100);
-					}
+				QueueInfo queue = client.getQueue("/",  queueName);
+				while (n++ < 100 && (queue == null || queue.getConsumerCount() == state)) {
+					Thread.sleep(100);
+					queue = client.getQueue("/",  queueName);
 				}
-				assertThat(consumers).isNotNull();
-
 				assertThat(n).withFailMessage(
 						"Consumer state remained at " + state + " after 10 seconds")
 						.isLessThan(100);
