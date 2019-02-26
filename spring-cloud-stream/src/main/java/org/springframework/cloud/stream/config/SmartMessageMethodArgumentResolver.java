@@ -27,6 +27,7 @@ import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.messaging.converter.SmartMessageConverter;
 import org.springframework.messaging.handler.annotation.support.MessageMethodArgumentResolver;
 import org.springframework.messaging.handler.annotation.support.MethodArgumentTypeMismatchException;
+import org.springframework.messaging.support.ErrorMessage;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.StringUtils;
@@ -68,7 +69,8 @@ class SmartMessageMethodArgumentResolver extends MessageMethodArgumentResolver {
 
 		Class<?> payloadClass = message.getPayload().getClass();
 
-		if (conversionNotRequired(payloadClass, targetPayloadType)) {
+		if (message instanceof ErrorMessage
+				|| conversionNotRequired(payloadClass, targetPayloadType)) {
 			return message;
 		}
 		Object payload = message.getPayload();
