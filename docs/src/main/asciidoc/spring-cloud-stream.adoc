@@ -756,6 +756,22 @@ public ApplicationRunner poller(PollableMessageSource destIn, MessageChannel des
 }
 ----
 
+A less manual and more Spring-like alternative would be to configure a scheduled task bean. For example,
+
+[source,java]
+----
+
+@Scheduled(fixedDelay = 5_000)
+public void poll() {
+	System.out.println("Polling...");
+	this.source.poll(m -> {
+		System.out.println(m.getPayload());
+
+	}, new ParameterizedTypeReference<Foo>() { });
+}
+----
+
+
 The `PollableMessageSource.poll()` method takes a `MessageHandler` argument (often a lambda expression, as shown here).
 It returns `true` if the message was received and successfully processed.
 
