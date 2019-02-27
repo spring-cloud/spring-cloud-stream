@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 the original author or authors.
+ * Copyright 2015-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,21 +43,25 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.Cloud;
 import org.springframework.cloud.stream.annotation.EnableBinding;
+import org.springframework.cloud.stream.annotation.Input;
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.BinderFactory;
 import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
 import org.springframework.cloud.stream.binder.ExtendedProducerProperties;
 import org.springframework.cloud.stream.binder.ExtendedPropertiesBinder;
+import org.springframework.cloud.stream.binder.PollableMessageSource;
 import org.springframework.cloud.stream.binder.rabbit.RabbitMessageChannelBinder;
 import org.springframework.cloud.stream.binder.rabbit.properties.RabbitConsumerProperties;
 import org.springframework.cloud.stream.binder.rabbit.properties.RabbitProducerProperties;
 import org.springframework.cloud.stream.binder.test.junit.rabbit.RabbitTestSupport;
 import org.springframework.cloud.stream.binding.BindingService;
 import org.springframework.cloud.stream.config.ListenerContainerCustomizer;
+import org.springframework.cloud.stream.config.MessageSourceCustomizer;
 import org.springframework.cloud.stream.messaging.Processor;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
+import org.springframework.integration.amqp.inbound.AmqpMessageSource;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.support.GenericMessage;
@@ -150,6 +154,7 @@ public class RabbitBinderModuleTests {
 	public void testParentConnectionFactoryInheritedByDefaultAndRabbitSettingsPropagated() {
 		context = new SpringApplicationBuilder(SimpleProcessor.class)
 				.web(WebApplicationType.NONE).run("--server.port=0",
+						"--spring.cloud.stream.bindings.source.group=someGroup",
 						"--spring.cloud.stream.bindings.input.group=someGroup",
 						"--spring.cloud.stream.rabbit.bindings.input.consumer.transacted=true",
 						"--spring.cloud.stream.rabbit.bindings.output.producer.transacted=true");
@@ -198,6 +203,9 @@ public class RabbitBinderModuleTests {
 		ConnectionNameStrategy cns = TestUtils.getPropertyValue(cf,
 				"connectionNameStrategy", ConnectionNameStrategy.class);
 		assertThat(cns.obtainNewConnectionName(cf)).startsWith("rabbitConnectionFactory");
+		assertThat(TestUtils.getPropertyValue(consumerBindings.get("source").get(0),
+				"target.source.h.advised.targetSource.target.beanName"))
+			.isEqualTo("setByCustomizer:someGroup");
 	}
 
 	@Test
@@ -340,7 +348,7 @@ public class RabbitBinderModuleTests {
 		assertThat(rabbitConsumerProperties.getMaxConcurrency()).isEqualTo(4);
 	}
 
-	@EnableBinding(Processor.class)
+	@EnableBinding({ Processor.class, PMS.class })
 	@SpringBootApplication
 	public static class SimpleProcessor {
 
@@ -348,6 +356,11 @@ public class RabbitBinderModuleTests {
 		public ListenerContainerCustomizer<AbstractMessageListenerContainer> containerCustomizer() {
 			return (c, q, g) -> c.setBeanName(
 					"setByCustomizerForQueue:" + q + (g == null ? "" : ",andGroup:" + g));
+		}
+
+		@Bean
+		public MessageSourceCustomizer<AmqpMessageSource> sourceCustomizer() {
+			return (s, q, g) -> s.setBeanName("setByCustomizer:" + g);
 		}
 
 	}
@@ -372,6 +385,13 @@ public class RabbitBinderModuleTests {
 
 			return cloud;
 		}
+
+	}
+
+	public interface PMS {
+
+		@Input
+		PollableMessageSource source();
 
 	}
 

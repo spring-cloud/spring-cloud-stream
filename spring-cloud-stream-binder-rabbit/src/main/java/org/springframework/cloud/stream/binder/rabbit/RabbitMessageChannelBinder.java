@@ -71,6 +71,7 @@ import org.springframework.cloud.stream.binder.rabbit.properties.RabbitExtendedB
 import org.springframework.cloud.stream.binder.rabbit.properties.RabbitProducerProperties;
 import org.springframework.cloud.stream.binder.rabbit.provisioning.RabbitExchangeQueueProvisioner;
 import org.springframework.cloud.stream.config.ListenerContainerCustomizer;
+import org.springframework.cloud.stream.config.MessageSourceCustomizer;
 import org.springframework.cloud.stream.provisioning.ConsumerDestination;
 import org.springframework.cloud.stream.provisioning.ProducerDestination;
 import org.springframework.context.support.GenericApplicationContext;
@@ -163,14 +164,25 @@ public class RabbitMessageChannelBinder extends
 	public RabbitMessageChannelBinder(ConnectionFactory connectionFactory,
 			RabbitProperties rabbitProperties,
 			RabbitExchangeQueueProvisioner provisioningProvider) {
-		this(connectionFactory, rabbitProperties, provisioningProvider, null);
+
+		this(connectionFactory, rabbitProperties, provisioningProvider, null, null);
 	}
 
 	public RabbitMessageChannelBinder(ConnectionFactory connectionFactory,
 			RabbitProperties rabbitProperties,
 			RabbitExchangeQueueProvisioner provisioningProvider,
 			ListenerContainerCustomizer<AbstractMessageListenerContainer> containerCustomizer) {
-		super(new String[0], provisioningProvider, containerCustomizer);
+
+		this(connectionFactory, rabbitProperties, provisioningProvider, containerCustomizer, null);
+	}
+
+	public RabbitMessageChannelBinder(ConnectionFactory connectionFactory,
+			RabbitProperties rabbitProperties,
+			RabbitExchangeQueueProvisioner provisioningProvider,
+			ListenerContainerCustomizer<AbstractMessageListenerContainer> containerCustomizer,
+			MessageSourceCustomizer<AmqpMessageSource> sourceCustomizer) {
+
+		super(new String[0], provisioningProvider, containerCustomizer, sourceCustomizer);
 		Assert.notNull(connectionFactory, "connectionFactory must not be null");
 		Assert.notNull(rabbitProperties, "rabbitProperties must not be null");
 		this.connectionFactory = connectionFactory;
@@ -539,11 +551,13 @@ public class RabbitMessageChannelBinder extends
 	protected PolledConsumerResources createPolledConsumerResources(String name,
 			String group, ConsumerDestination destination,
 			ExtendedConsumerProperties<RabbitConsumerProperties> consumerProperties) {
+
 		Assert.isTrue(!consumerProperties.isMultiplex(),
 				"The Spring Integration polled MessageSource does not currently support muiltiple queues");
 		AmqpMessageSource source = new AmqpMessageSource(this.connectionFactory,
 				destination.getName());
 		source.setRawMessageHeader(true);
+		getMessageSourceCustomizer().configure(source, destination.getName(), group);
 		return new PolledConsumerResources(source, registerErrorInfrastructure(
 				destination, group, consumerProperties, true));
 	}

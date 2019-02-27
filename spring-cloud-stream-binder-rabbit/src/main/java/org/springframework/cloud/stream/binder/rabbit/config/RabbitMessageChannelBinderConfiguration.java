@@ -36,9 +36,11 @@ import org.springframework.cloud.stream.binder.rabbit.properties.RabbitBinderCon
 import org.springframework.cloud.stream.binder.rabbit.properties.RabbitExtendedBindingProperties;
 import org.springframework.cloud.stream.binder.rabbit.provisioning.RabbitExchangeQueueProvisioner;
 import org.springframework.cloud.stream.config.ListenerContainerCustomizer;
+import org.springframework.cloud.stream.config.MessageSourceCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+import org.springframework.integration.amqp.inbound.AmqpMessageSource;
 import org.springframework.lang.Nullable;
 
 /**
@@ -70,11 +72,12 @@ public class RabbitMessageChannelBinderConfiguration {
 
 	@Bean
 	RabbitMessageChannelBinder rabbitMessageChannelBinder(
-			@Nullable ListenerContainerCustomizer<AbstractMessageListenerContainer> listenerContainerCustomizer)
-			throws Exception {
+			@Nullable ListenerContainerCustomizer<AbstractMessageListenerContainer> listenerContainerCustomizer,
+			@Nullable MessageSourceCustomizer<AmqpMessageSource> sourceCustomizer) {
+
 		RabbitMessageChannelBinder binder = new RabbitMessageChannelBinder(
 				this.rabbitConnectionFactory, this.rabbitProperties,
-				provisioningProvider(), listenerContainerCustomizer);
+				provisioningProvider(), listenerContainerCustomizer, sourceCustomizer);
 		binder.setAdminAddresses(
 				this.rabbitBinderConfigurationProperties.getAdminAddresses());
 		binder.setCompressingPostProcessor(gZipPostProcessor());
