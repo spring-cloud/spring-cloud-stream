@@ -1498,6 +1498,28 @@ See the producer property `useNativeEncoding`.
 +
 Default: `false`.
 
+==== Advanced Consumer Configuration
+
+For advanced configuration of the underlying message listener container for message-driven consumers, add a single `ListenerContainerCustomizer` bean to the application context.
+It will be invoked after the above properties have been applied and can be used to set additional properties.
+Similarly, for polled consumers, add a `MessageSourceCustomizer` bean.
+
+The following is an example for the RabbitMQ binder:
+
+====
+[source, java]
+----
+@Bean
+public ListenerContainerCustomizer<AbstractMessageListenerContainer> containerCustomizer() {
+    return (container, dest, group) -> container.setAdviceChain(advice1, advice2);
+}
+
+@Bean
+public MessageSourceCustomizer<AmqpMessageSource> sourceCustomizer() {
+    return (source, dest, group) -> source.setPropertiesConverter(customPropertiesConverter);
+}
+----
+====
 
 ==== Producer Properties
 
@@ -2756,4 +2778,3 @@ The following is the list of available binder implementations
 * https://github.com/spring-cloud/spring-cloud-gcp/tree/master/spring-cloud-gcp-pubsub-stream-binder[Google PubSub _(partner maintained)_]
 * https://github.com/SolaceProducts/spring-cloud-stream-binder-solace[Solace PubSub+ _(partner maintained)_]
 * https://github.com/Microsoft/spring-cloud-azure/tree/master/spring-cloud-azure-eventhub-stream-binder[Azure Event Hubs _(partner maintained)_]
-
