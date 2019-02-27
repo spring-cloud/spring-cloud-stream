@@ -71,6 +71,7 @@ import org.springframework.cloud.stream.binder.kafka.properties.KafkaProducerPro
 import org.springframework.cloud.stream.binder.kafka.provisioning.KafkaTopicProvisioner;
 import org.springframework.cloud.stream.binding.MessageConverterConfigurer.PartitioningInterceptor;
 import org.springframework.cloud.stream.config.ListenerContainerCustomizer;
+import org.springframework.cloud.stream.config.MessageSourceCustomizer;
 import org.springframework.cloud.stream.provisioning.ConsumerDestination;
 import org.springframework.cloud.stream.provisioning.ProducerDestination;
 import org.springframework.context.Lifecycle;
@@ -195,7 +196,7 @@ public class KafkaMessageChannelBinder extends
 			KafkaBinderConfigurationProperties configurationProperties,
 			KafkaTopicProvisioner provisioningProvider) {
 
-		this(configurationProperties, provisioningProvider, null, null);
+		this(configurationProperties, provisioningProvider, null, null, null);
 	}
 
 	public KafkaMessageChannelBinder(
@@ -204,8 +205,18 @@ public class KafkaMessageChannelBinder extends
 			ListenerContainerCustomizer<AbstractMessageListenerContainer<?, ?>> containerCustomizer,
 			KafkaBindingRebalanceListener rebalanceListener) {
 
+		this(configurationProperties, provisioningProvider, containerCustomizer, null, rebalanceListener);
+	}
+
+	public KafkaMessageChannelBinder(
+			KafkaBinderConfigurationProperties configurationProperties,
+			KafkaTopicProvisioner provisioningProvider,
+			ListenerContainerCustomizer<AbstractMessageListenerContainer<?, ?>> containerCustomizer,
+			MessageSourceCustomizer<KafkaMessageSource<?, ?>> sourceCustomizer,
+			KafkaBindingRebalanceListener rebalanceListener) {
+
 		super(headersToMap(configurationProperties), provisioningProvider,
-				containerCustomizer);
+				containerCustomizer, sourceCustomizer);
 		this.configurationProperties = configurationProperties;
 		if (StringUtils.hasText(
 				configurationProperties.getTransaction().getTransactionIdPrefix())) {
@@ -752,6 +763,7 @@ public class KafkaMessageChannelBinder extends
 			}
 
 		});
+		getMessageSourceCustomizer().configure(source, destination.getName(), group);
 		return new PolledConsumerResources(source, registerErrorInfrastructure(
 				destination, group, consumerProperties, true));
 	}

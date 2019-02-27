@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 the original author or authors.
+ * Copyright 2015-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,11 +40,13 @@ import org.springframework.cloud.stream.binder.kafka.properties.KafkaBinderConfi
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaExtendedBindingProperties;
 import org.springframework.cloud.stream.binder.kafka.provisioning.KafkaTopicProvisioner;
 import org.springframework.cloud.stream.config.ListenerContainerCustomizer;
+import org.springframework.cloud.stream.config.MessageSourceCustomizer;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+import org.springframework.integration.kafka.inbound.KafkaMessageSource;
 import org.springframework.kafka.listener.AbstractMessageListenerContainer;
 import org.springframework.kafka.security.jaas.KafkaJaasLoginModuleInitializer;
 import org.springframework.kafka.support.LoggingProducerListener;
@@ -100,11 +102,12 @@ public class KafkaBinderConfiguration {
 			KafkaBinderConfigurationProperties configurationProperties,
 			KafkaTopicProvisioner provisioningProvider,
 			@Nullable ListenerContainerCustomizer<AbstractMessageListenerContainer<?, ?>> listenerContainerCustomizer,
+			@Nullable MessageSourceCustomizer<KafkaMessageSource<?, ?>> sourceCustomizer,
 			ObjectProvider<KafkaBindingRebalanceListener> rebalanceListener) {
 
 		KafkaMessageChannelBinder kafkaMessageChannelBinder = new KafkaMessageChannelBinder(
 				configurationProperties, provisioningProvider,
-				listenerContainerCustomizer, rebalanceListener.getIfUnique());
+				listenerContainerCustomizer, sourceCustomizer, rebalanceListener.getIfUnique());
 		kafkaMessageChannelBinder.setProducerListener(this.producerListener);
 		kafkaMessageChannelBinder
 				.setExtendedBindingProperties(this.kafkaExtendedBindingProperties);

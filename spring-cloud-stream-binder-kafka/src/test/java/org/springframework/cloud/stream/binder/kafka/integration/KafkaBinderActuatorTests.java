@@ -34,12 +34,16 @@ import org.springframework.boot.test.context.FilteredClassLoader;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.cloud.stream.annotation.EnableBinding;
+import org.springframework.cloud.stream.annotation.Input;
 import org.springframework.cloud.stream.annotation.StreamListener;
 import org.springframework.cloud.stream.binder.Binding;
+import org.springframework.cloud.stream.binder.PollableMessageSource;
 import org.springframework.cloud.stream.binding.BindingService;
 import org.springframework.cloud.stream.config.ListenerContainerCustomizer;
+import org.springframework.cloud.stream.config.MessageSourceCustomizer;
 import org.springframework.cloud.stream.messaging.Sink;
 import org.springframework.context.annotation.Bean;
+import org.springframework.integration.kafka.inbound.KafkaMessageSource;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.listener.AbstractMessageListenerContainer;
 import org.springframework.kafka.test.rule.EmbeddedKafkaRule;
@@ -52,6 +56,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Artem Bilan
  * @author Oleg Zhurakousky
  * @author Jon Schneider
+ * @author Gary Russell
  * @since 2.0
  */
 @RunWith(SpringRunner.class)
@@ -115,10 +120,14 @@ public class KafkaBinderActuatorTests {
 							consumerBindings.get("input").get(0)).getPropertyValue(
 									"lifecycle.messageListenerContainer.beanName"))
 											.isEqualTo("setByCustomizer:input");
+					assertThat(new DirectFieldAccessor(
+							consumerBindings.get("source").get(0)).getPropertyValue(
+									"lifecycle.beanName"))
+											.isEqualTo("setByCustomizer:source");
 				});
 	}
 
-	@EnableBinding(Sink.class)
+	@EnableBinding({ Sink.class, PMS.class })
 	@EnableAutoConfiguration
 	public static class KafkaMetricsTestConfig {
 
@@ -127,11 +136,23 @@ public class KafkaBinderActuatorTests {
 			return (c, q, g) -> c.setBeanName("setByCustomizer:" + q);
 		}
 
+		@Bean
+		public MessageSourceCustomizer<KafkaMessageSource<?, ?>> sourceCustomizer() {
+			return (s, q, g) -> s.setBeanName("setByCustomizer:" + q);
+		}
+
 		@StreamListener(Sink.INPUT)
-		public void process(String payload) throws InterruptedException {
+		public void process(@SuppressWarnings("unused") String payload) throws InterruptedException {
 			// Artificial slow listener to emulate consumer lag
 			Thread.sleep(1000);
 		}
+
+	}
+
+	public interface PMS {
+
+		@Input
+		PollableMessageSource source();
 
 	}
 
