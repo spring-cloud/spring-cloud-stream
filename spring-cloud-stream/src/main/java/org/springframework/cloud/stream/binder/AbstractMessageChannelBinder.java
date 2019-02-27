@@ -31,6 +31,7 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.support.DefaultSingletonBeanRegistry;
 import org.springframework.cloud.stream.config.ListenerContainerCustomizer;
+import org.springframework.cloud.stream.config.MessageSourceCustomizer;
 import org.springframework.cloud.stream.function.IntegrationFlowFunctionSupport;
 import org.springframework.cloud.stream.function.StreamFunctionProperties;
 import org.springframework.cloud.stream.provisioning.ConsumerDestination;
@@ -56,6 +57,7 @@ import org.springframework.integration.handler.AbstractMessageHandler;
 import org.springframework.integration.handler.BridgeHandler;
 import org.springframework.integration.handler.advice.ErrorMessageSendingRecoverer;
 import org.springframework.integration.support.ErrorMessageStrategy;
+import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
@@ -114,6 +116,8 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 
 	private final ListenerContainerCustomizer<?> containerCustomizer;
 
+	private MessageSourceCustomizer<?> sourceCustomizer;
+
 	private ApplicationEventPublisher applicationEventPublisher;
 
 	@Autowired(required = false)
@@ -129,12 +133,23 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		this(headersToEmbed, provisioningProvider, null);
 	}
 
+	@Deprecated
 	public AbstractMessageChannelBinder(String[] headersToEmbed, PP provisioningProvider,
 			ListenerContainerCustomizer<?> containerCustomizer) {
+
+		this(headersToEmbed, provisioningProvider, containerCustomizer, null);
+	}
+
+	public AbstractMessageChannelBinder(String[] headersToEmbed, PP provisioningProvider,
+			@Nullable ListenerContainerCustomizer<?> containerCustomizer,
+			@Nullable MessageSourceCustomizer<?> sourceCustomizer) {
+
 		this.headersToEmbed = headersToEmbed == null ? new String[0] : headersToEmbed;
 		this.provisioningProvider = provisioningProvider;
 		this.containerCustomizer = containerCustomizer == null ? (c, q, g) -> {
 		} : containerCustomizer;
+		this.sourceCustomizer = sourceCustomizer == null ? (s, q, g) -> {
+		} : sourceCustomizer;
 	}
 
 	protected ApplicationEventPublisher getApplicationEventPublisher() {
@@ -150,6 +165,11 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 	@SuppressWarnings("unchecked")
 	protected <L> ListenerContainerCustomizer<L> getContainerCustomizer() {
 		return (ListenerContainerCustomizer<L>) this.containerCustomizer;
+	}
+
+	@SuppressWarnings("unchecked")
+	protected <S> MessageSourceCustomizer<S> getMessageSourceCustomizer() {
+		return (MessageSourceCustomizer<S>) this.sourceCustomizer;
 	}
 
 	/**
@@ -363,7 +383,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 			// the function support for the inbound channel is only for Sink
 			if (shouldWireDunctionToChannel(false)) {
 				inputChannel = this.postProcessInboundChannelForFunction(inputChannel,
-						(ConsumerProperties) properties);
+						properties);
 			}
 			if (HeaderMode.embeddedHeaders.equals(properties.getHeaderMode())) {
 				enhanceMessageChannel(inputChannel);
