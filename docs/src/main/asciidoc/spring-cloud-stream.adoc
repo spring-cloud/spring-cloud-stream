@@ -9,7 +9,7 @@
 
 [[spring-cloud-stream-reference]]
 = Spring Cloud Stream Reference Guide
-Sabby Anandan; Marius Bogoevici; Eric Bottard; Mark Fisher; Ilayaperumal Gopinathan; Gunnar Hillert; Mark Pollack; Patrick Peralta; Glenn Renfro; Thomas Risberg; Dave Syer; David Turanski; Janne Valkealahti; Benjamin Klein; Vinicius Carvalho; Gary Russell; Oleg Zhurakousky; Jay Bryant
+Sabby Anandan; Marius Bogoevici; Eric Bottard; Mark Fisher; Ilayaperumal Gopinathan; Gunnar Hillert; Mark Pollack; Patrick Peralta; Glenn Renfro; Thomas Risberg; Dave Syer; David Turanski; Janne Valkealahti; Benjamin Klein; Vinicius Carvalho; Gary Russell; Oleg Zhurakousky; Jay Bryant; Soby Chacko
 
 :doctype: book
 
@@ -2749,6 +2749,15 @@ When you have multiple binders in the same application, health indicators are en
 In this case, if the user wants to disable health check for a subset of the binders, then that should be done by setting `management.health.binders.enabled` to `false` in the multi binder configurations's environment.
 See <<multiple-systems,Connecting to Multiple Systems>> for details on how environment specific properties can be provided.
 
+If there are multiple binders present in the classpath but not all of them are used in the application, this may cause some issues in the context of health indicators.
+There may be implementation specific details as to how the health checks are performed. For example, a Kafka binder may decide the status as `DOWN` if there are no destinations registered by the binder.
+For this reason, if you include a binder in the classpath, it is advised to use that binder by providing at least one binding (for E.g. through `EnableBinding`).
+If you don't have any bindings to provide for this binder, then that is an indication that you don't need to include that binder in the classpath.
+
+Lets take a concrete situation. Imagine you have both Kafka and Kafka Streams binders present in the classpath, but only use the Kafka Streams binder in the application code, i.e. only provide bindings using the Kafka Streams binder.
+Since Kafka binder is not used and it has specific checks to see if any destinations are registered, the binder health heck will fail.
+The top level application health check status will be reported as `DOWN`.
+In this situation, you can simply remove the dependency for kafka binder from your application since you are not using it.
 
 [[spring-cloud-stream-overview-metrics-emitter]]
 == Metrics Emitter
