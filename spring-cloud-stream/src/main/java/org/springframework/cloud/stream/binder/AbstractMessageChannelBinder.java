@@ -26,6 +26,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.logging.Log;
 import org.reactivestreams.Publisher;
 
+import org.springframework.beans.factory.BeanFactoryAware;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -460,7 +461,12 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		}
 		final PolledConsumerResources resources = createPolledConsumerResources(name,
 				group, destination, properties);
-		bindingTarget.setSource(resources.getSource());
+
+		MessageSource<?> messageSource = resources.getSource();
+		if (messageSource instanceof BeanFactoryAware) {
+//			((BeanFactoryAware)messageSource).setBeanFactory(getApplicationContext().getBeanFactory());
+		}
+		bindingTarget.setSource(messageSource);
 		if (resources.getErrorInfrastructure() != null) {
 			if (resources.getErrorInfrastructure().getErrorChannel() != null) {
 				bindingTarget.setErrorChannel(
