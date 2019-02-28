@@ -272,13 +272,12 @@ public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessag
 
 		Schema schema;
 		schema = extractSchemaForWriting(payload);
-		ParsedSchema parsedSchema = this.getCache(REFERENCE_CACHE_NAME)
-				.get(schema, ParsedSchema.class);
+		ParsedSchema parsedSchema = this.getCache(REFERENCE_CACHE_NAME).get(schema,
+				ParsedSchema.class);
 
 		if (parsedSchema == null) {
 			parsedSchema = new ParsedSchema(schema);
-			this.getCache(REFERENCE_CACHE_NAME).putIfAbsent(schema,
-					parsedSchema);
+			this.getCache(REFERENCE_CACHE_NAME).putIfAbsent(schema, parsedSchema);
 		}
 
 		if (parsedSchema.getRegistration() == null) {
@@ -315,8 +314,8 @@ public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessag
 					if (schemaContent != null) {
 						Schema schema = new Schema.Parser().parse(schemaContent);
 						parsedSchema = new ParsedSchema(schema);
-						this.getCache(REFERENCE_CACHE_NAME)
-								.putIfAbsent(schemaReference, parsedSchema);
+						this.getCache(REFERENCE_CACHE_NAME).putIfAbsent(schemaReference,
+								parsedSchema);
 					}
 				}
 				if (parsedSchema != null) {
@@ -356,8 +355,8 @@ public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessag
 				else {
 					schema = ReflectData.get().getSchema(payload.getClass());
 				}
-				this.getCache(REFLECTION_CACHE_NAME)
-						.put(payload.getClass().getName(), schema);
+				this.getCache(REFLECTION_CACHE_NAME).put(payload.getClass().getName(),
+						schema);
 			}
 		}
 		return schema;
@@ -392,9 +391,10 @@ public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessag
 
 	private Cache getCache(String name) {
 		Cache cache = this.cacheManager.getCache("");
-		Assert.notNull(cache, "Cache by the name '" + name + "' is not present in this CacheManager - '"
-				+ this.cacheManager + "'. Typically caches are auto-created by the CacheManagers. "
-						+ "Consider reporting it as an issue to the developer of this CacheManager.");
+		Assert.notNull(cache, "Cache by the name '" + name
+				+ "' is not present in this CacheManager - '" + this.cacheManager
+				+ "'. Typically caches are auto-created by the CacheManagers. "
+				+ "Consider reporting it as an issue to the developer of this CacheManager.");
 		return cache;
 	}
 

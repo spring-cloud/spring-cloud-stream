@@ -16,13 +16,18 @@
 
 package org.springframework.cloud.stream.binder;
 
+import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import org.apache.commons.logging.Log;
 import org.reactivestreams.Publisher;
 
@@ -43,6 +48,7 @@ import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.ApplicationEventPublisherAware;
 import org.springframework.context.Lifecycle;
+import org.springframework.expression.Expression;
 import org.springframework.integration.channel.AbstractMessageChannel;
 import org.springframework.integration.channel.AbstractSubscribableChannel;
 import org.springframework.integration.channel.DirectChannel;
@@ -136,6 +142,11 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		this.provisioningProvider = provisioningProvider;
 		this.containerCustomizer = containerCustomizer == null ? (c, q, g) -> {
 		} : containerCustomizer;
+
+		SimpleModule module = new SimpleModule();
+		module.addSerializer(Expression.class,
+				new ExpressionSerializer(Expression.class));
+		objectMapper.registerModule(module);
 	}
 
 	protected ApplicationEventPublisher getApplicationEventPublisher() {
@@ -443,7 +454,8 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 
 		MessageSource<?> messageSource = resources.getSource();
 		if (messageSource instanceof BeanFactoryAware) {
-			((BeanFactoryAware)messageSource).setBeanFactory(getApplicationContext().getBeanFactory());
+			((BeanFactoryAware) messageSource)
+					.setBeanFactory(getApplicationContext().getBeanFactory());
 		}
 		bindingTarget.setSource(messageSource);
 		if (resources.getErrorInfrastructure() != null) {
@@ -1129,6 +1141,21 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		public boolean isRunning() {
 			return this.delegate instanceof Lifecycle
 					&& ((Lifecycle) this.delegate).isRunning();
+		}
+
+	}
+
+	@SuppressWarnings("serial")
+	private static class ExpressionSerializer extends StdSerializer<Expression> {
+
+		protected ExpressionSerializer(Class<Expression> t) {
+			super(t);
+		}
+
+		@Override
+		public void serialize(Expression value, JsonGenerator gen,
+				SerializerProvider provider) throws IOException {
+			gen.writeString(value.getExpressionString());
 		}
 
 	}
