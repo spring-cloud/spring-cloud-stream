@@ -443,7 +443,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 
 		MessageSource<?> messageSource = resources.getSource();
 		if (messageSource instanceof BeanFactoryAware) {
-//			((BeanFactoryAware)messageSource).setBeanFactory(getApplicationContext().getBeanFactory());
+			((BeanFactoryAware)messageSource).setBeanFactory(getApplicationContext().getBeanFactory());
 		}
 		bindingTarget.setSource(messageSource);
 		if (resources.getErrorInfrastructure() != null) {
