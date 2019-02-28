@@ -85,6 +85,40 @@ public class KafkaStreamsStateStoreIntegrationTests {
 		}
 	}
 
+	@Test
+	public void testSameStateStoreIsCreatedOnlyOnceWhenMultipleInputBindingsArePresent() throws Exception {
+		SpringApplication app = new SpringApplication(ProductCountApplicationWithMultipleInputBindings.class);
+		app.setWebApplicationType(WebApplicationType.NONE);
+		ConfigurableApplicationContext context = app.run("--server.port=0",
+				"--spring.jmx.enabled=false",
+				"--spring.cloud.stream.bindings.input.destination=foobar",
+				"--spring.cloud.stream.kafka.streams.binder.configuration.commit.interval.ms=1000",
+				"--spring.cloud.stream.kafka.streams.binder.configuration.default.key.serde"
+						+ "=org.apache.kafka.common.serialization.Serdes$StringSerde",
+				"--spring.cloud.stream.kafka.streams.binder.configuration.default.value.serde"
+						+ "=org.apache.kafka.common.serialization.Serdes$StringSerde",
+				"--spring.cloud.stream.kafka.streams.bindings.input1.consumer.applicationId"
+						+ "=KafkaStreamsStateStoreIntegrationTests-abc",
+				"--spring.cloud.stream.kafka.streams.binder.brokers="
+						+ embeddedKafka.getBrokersAsString(),
+				"--spring.cloud.stream.kafka.streams.binder.zkNodes="
+						+ embeddedKafka.getZookeeperConnectionString());
+		try {
+			Thread.sleep(2000);
+			// We are not particularly interested in querying the state store here, as that is verified by the other test
+			// in this class. This test verifies that the same store is not attempted to be created by multiple input bindings.
+			// Normally, that will cause an exception to be thrown. However by not getting any exceptions, we are verifying
+			// that the binder is handling it appropriately.
+			//For more info, see this issue: https://github.com/spring-cloud/spring-cloud-stream-binder-kafka/issues/551
+		}
+		catch (Exception e) {
+			throw e;
+		}
+		finally {
+			context.close();
+		}
+	}
+
 	private void receiveAndValidateFoo(ConfigurableApplicationContext context)
 			throws Exception {
 		Map<String, Object> senderProps = KafkaTestUtils.producerProps(embeddedKafka);
@@ -138,7 +172,44 @@ public class KafkaStreamsStateStoreIntegrationTests {
 				}
 			}, "mystate");
 		}
+	}
 
+	@EnableBinding(KafkaStreamsProcessorY.class)
+	@EnableAutoConfiguration
+	public static class ProductCountApplicationWithMultipleInputBindings {
+
+		WindowStore<Object, String> state;
+
+		boolean processed;
+
+		@StreamListener
+		@KafkaStreamsStateStore(name = "mystate", type = KafkaStreamsStateStoreProperties.StoreType.WINDOW, lengthMs = 300000)
+		@SuppressWarnings({ "deprecation", "unchecked" })
+		public void process(@Input("input1")KStream<Object, Product> input, @Input("input2")KStream<Object, Product> input2) {
+
+			input.process(() -> new Processor<Object, Product>() {
+
+				@Override
+				public void init(ProcessorContext processorContext) {
+					state = (WindowStore) processorContext.getStateStore("mystate");
+				}
+
+				@Override
+				public void process(Object s, Product product) {
+					processed = true;
+				}
+
+				@Override
+				public void close() {
+					if (state != null) {
+						state.close();
+					}
+				}
+			}, "mystate");
+
+			//simple use of input2, we are not using input2 for anything other than triggering some test behavior.
+			input2.foreach((key, value) -> { });
+		}
 	}
 
 	public static class Product {
@@ -159,7 +230,14 @@ public class KafkaStreamsStateStoreIntegrationTests {
 
 		@Input("input")
 		KStream<?, ?> input();
-
 	}
 
+	interface KafkaStreamsProcessorY {
+
+		@Input("input1")
+		KStream<?, ?> input1();
+
+		@Input("input2")
+		KStream<?, ?> input2();
+	}
 }
