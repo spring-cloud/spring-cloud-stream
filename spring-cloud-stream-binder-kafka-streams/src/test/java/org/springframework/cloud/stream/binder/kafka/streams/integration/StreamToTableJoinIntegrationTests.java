@@ -343,6 +343,20 @@ public class StreamToTableJoinIntegrationTests {
 		}
 	}
 
+	@Test
+	public void testTrivialSingleKTableInputAsNonDeclarative() {
+		SpringApplication app = new SpringApplication(
+				TrivialKTableApp.class);
+		app.setWebApplicationType(WebApplicationType.NONE);
+		app.run("--server.port=0",
+				"--spring.cloud.stream.kafka.streams.binder.brokers="
+						+ embeddedKafka.getBrokersAsString(),
+				"--spring.cloud.stream.kafka.streams.bindings.input-y.consumer.application-id=" +
+						"testTrivialSingleKTableInputAsNonDeclarative");
+		//All we are verifying is that this application didn't throw any errors.
+		//See this issue: https://github.com/spring-cloud/spring-cloud-stream-binder-kafka/issues/536
+	}
+
 	@EnableBinding(KafkaStreamsProcessorX.class)
 	@EnableAutoConfiguration
 	@EnableConfigurationProperties(KafkaStreamsApplicationSupportProperties.class)
@@ -368,10 +382,27 @@ public class StreamToTableJoinIntegrationTests {
 
 	}
 
+	@EnableBinding(KafkaStreamsProcessorY.class)
+	@EnableAutoConfiguration
+	public static class TrivialKTableApp {
+
+		@StreamListener("input-y")
+		public void process(KTable<String, String> inputTable) {
+			inputTable.toStream().foreach((key, value) -> System.out.println("key : value " + key + " : " + value));
+		}
+	}
+
 	interface KafkaStreamsProcessorX extends KafkaStreamsProcessor {
 
 		@Input("input-x")
 		KTable<?, ?> inputX();
+
+	}
+
+	interface KafkaStreamsProcessorY {
+
+		@Input("input-y")
+		KTable<?, ?> inputY();
 
 	}
 

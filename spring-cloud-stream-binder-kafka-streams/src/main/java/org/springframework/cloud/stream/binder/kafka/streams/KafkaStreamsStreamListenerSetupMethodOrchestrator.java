@@ -629,8 +629,19 @@ class KafkaStreamsStreamListenerSetupMethodOrchestrator
 		if (!methodParameter.getParameterType().isAssignableFrom(Object.class)
 				&& this.applicationContext.containsBean(targetBeanName)) {
 			Class<?> targetBeanClass = this.applicationContext.getType(targetBeanName);
-			return this.streamListenerParameterAdapter.supports(targetBeanClass,
-					methodParameter);
+			if (targetBeanClass != null) {
+				boolean supports = KStream.class.isAssignableFrom(targetBeanClass)
+						&& KStream.class.isAssignableFrom(methodParameter.getParameterType());
+				if (!supports) {
+					supports = KTable.class.isAssignableFrom(targetBeanClass)
+							&& KTable.class.isAssignableFrom(methodParameter.getParameterType());
+					if (!supports) {
+						supports = GlobalKTable.class.isAssignableFrom(targetBeanClass)
+								&& GlobalKTable.class.isAssignableFrom(methodParameter.getParameterType());
+					}
+				}
+				return supports;
+			}
 		}
 		return false;
 	}
