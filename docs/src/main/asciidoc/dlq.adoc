@@ -25,10 +25,8 @@ spring.cloud.stream.bindings.input.group=so8400replay
 spring.cloud.stream.bindings.input.destination=error.so8400out.so8400
 
 spring.cloud.stream.bindings.output.destination=so8400out
-spring.cloud.stream.bindings.output.producer.partitioned=true
 
 spring.cloud.stream.bindings.parkingLot.destination=so8400in.parkingLot
-spring.cloud.stream.bindings.parkingLot.producer.partitioned=true
 
 spring.cloud.stream.kafka.binder.configuration.auto.offset.reset=earliest
 

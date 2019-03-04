@@ -49,7 +49,6 @@ spring:
         output:
           destination: partitioned.topic
           producer:
-            partitioned: true
             partition-key-expression: headers['partitionKey']
             partition-count: 12
 ----
