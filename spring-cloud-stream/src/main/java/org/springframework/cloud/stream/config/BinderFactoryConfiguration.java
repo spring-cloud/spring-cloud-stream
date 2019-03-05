@@ -113,7 +113,7 @@ public class BinderFactoryConfiguration {
 		return parsedBinderConfigurations;
 	}
 
-	@Bean
+	@Bean(IntegrationContextUtils.MESSAGE_HANDLER_FACTORY_BEAN_NAME)
 	public static MessageHandlerMethodFactory messageHandlerMethodFactory(
 			CompositeMessageConverterFactory compositeMessageConverterFactory,
 			@Qualifier(IntegrationContextUtils.ARGUMENT_RESOLVERS_BEAN_NAME) HandlerMethodArgumentResolversHolder ahmar,

@@ -728,7 +728,7 @@ public class ContentTypeTckTests {
 	@Test
 	public void testWithTypelessMessageInputParameterAndServiceActivator() {
 		ApplicationContext context = new SpringApplicationBuilder(
-				TypelessPayloadConfigurationSA.class).web(WebApplicationType.NONE)
+				TypelessMessageConfigurationSA.class).web(WebApplicationType.NONE)
 						.run("--spring.jmx.enabled=false");
 		InputDestination source = context.getBean(InputDestination.class);
 		OutputDestination target = context.getBean(OutputDestination.class);
