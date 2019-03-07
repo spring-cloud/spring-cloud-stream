@@ -20,12 +20,13 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
+import org.springframework.cloud.stream.config.BinderFactoryConfiguration;
+import org.springframework.cloud.stream.config.BindingServiceConfiguration;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
 import org.springframework.cloud.stream.messaging.Processor;
@@ -33,8 +34,10 @@ import org.springframework.cloud.stream.messaging.Sink;
 import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.integration.channel.NullChannel;
 import org.springframework.integration.dsl.IntegrationFlow;
+import org.springframework.lang.Nullable;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.SubscribableChannel;
 
@@ -45,19 +48,10 @@ import org.springframework.messaging.SubscribableChannel;
  * @since 2.1
  */
 @Configuration
-@ConditionalOnProperty("spring.cloud.stream.function.definition")
 @EnableConfigurationProperties(StreamFunctionProperties.class)
+@Import(BinderFactoryConfiguration.class)
+@AutoConfigureBefore(BindingServiceConfiguration.class)
 public class FunctionConfiguration {
-
-
-	@Autowired(required = false)
-	private Source source;
-
-	@Autowired(required = false)
-	private Processor processor;
-
-	@Autowired(required = false)
-	private Sink sink;
 
 	@Bean
 	public IntegrationFlowFunctionSupport functionSupport(
@@ -68,11 +62,6 @@ public class FunctionConfiguration {
 		return new IntegrationFlowFunctionSupport(functionCatalog, functionInspector,
 				messageConverterFactory, functionProperties, bindingServiceProperties);
 	}
-
-//	@Bean
-//	public FunctionCatalogWrapper functionCatalogWrapper(FunctionCatalog catalog) {
-//		return new FunctionCatalogWrapper(catalog);
-//	}
 
 	/**
 	 * This configuration creates an instance of the {@link IntegrationFlow} from standard
@@ -88,42 +77,46 @@ public class FunctionConfiguration {
 	 * the IntegrationFlow that may have been already defined by the existing (extended)
 	 * app.
 	 * @param functionSupport support for registering beans
+	 * @param source source binding
+	 * @param processor processor binding
+	 * @param sink sink binding
 	 * @return integration flow for Stream
 	 */
 	@ConditionalOnMissingBean
 	@Bean
 	public IntegrationFlow integrationFlowCreator(
-			IntegrationFlowFunctionSupport functionSupport) {
+			IntegrationFlowFunctionSupport functionSupport,
+			@Nullable Source source, @Nullable Processor processor, @Nullable Sink sink) {
 		if (functionSupport.containsFunction(Consumer.class)
-				&& consumerBindingPresent()) {
+				&& consumerBindingPresent(processor, sink)) {
 			return functionSupport
-					.integrationFlowForFunction(getInputChannel(), getOutputChannel())
+					.integrationFlowForFunction(getInputChannel(processor, sink), getOutputChannel(processor, source))
 					.get();
 		}
 		else if (functionSupport.containsFunction(Function.class)
-				&& consumerBindingPresent()) {
+				&& consumerBindingPresent(processor, sink)) {
 			return functionSupport
-					.integrationFlowForFunction(getInputChannel(), getOutputChannel())
+					.integrationFlowForFunction(getInputChannel(processor, sink), getOutputChannel(processor, source))
 					.get();
 		}
 		else if (functionSupport.containsFunction(Supplier.class)) {
 			return functionSupport.integrationFlowFromNamedSupplier()
-					.channel(getOutputChannel()).get();
+					.channel(getOutputChannel(processor, source)).get();
 		}
 		return null;
 	}
 
-	private boolean consumerBindingPresent() {
-		return this.processor != null || this.sink != null;
+	private boolean consumerBindingPresent(Processor processor, Sink sink) {
+		return processor != null || sink != null;
 	}
 
-	private SubscribableChannel getInputChannel() {
-		return this.processor != null ? this.processor.input() : this.sink.input();
+	private SubscribableChannel getInputChannel(Processor processor, Sink sink) {
+		return processor != null ? processor.input() : sink.input();
 	}
 
-	private MessageChannel getOutputChannel() {
-		return this.processor != null ? this.processor.output()
-				: (this.source != null ? this.source.output() : new NullChannel());
+	private MessageChannel getOutputChannel(Processor processor, Source source) {
+		return processor != null ? processor.output()
+				: (source != null ? source.output() : new NullChannel());
 	}
 
 }

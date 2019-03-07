@@ -144,13 +144,10 @@ public class ProcessorToFunctionsSupportTests {
 	@Import(BaseProcessorConfiguration.class)
 	public static class ConsumerConfiguration {
 
-		@Autowired
-		OutputDestination out;
-
 		@Bean
-		public Consumer<String> log() {
+		public Consumer<String> log(OutputDestination out) {
 			return x -> {
-				DirectFieldAccessor dfa = new DirectFieldAccessor(this.out);
+				DirectFieldAccessor dfa = new DirectFieldAccessor(out);
 				MessageChannel channel = (MessageChannel) dfa.getPropertyValue("channel");
 				channel.send(new GenericMessage<byte[]>(x.getBytes()));
 			};

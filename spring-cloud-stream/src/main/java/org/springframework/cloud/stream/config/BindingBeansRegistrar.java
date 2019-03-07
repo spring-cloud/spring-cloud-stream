@@ -30,6 +30,7 @@ import org.springframework.util.ClassUtils;
  * @author Marius Bogoevici
  * @author Dave Syer
  * @author Artem Bilan
+ * @author Oleg Zhurakousky
  */
 public class BindingBeansRegistrar implements ImportBeanDefinitionRegistrar {
 
@@ -56,5 +57,4 @@ public class BindingBeansRegistrar implements ImportBeanDefinitionRegistrar {
 				EnableBinding.class, ClassUtils.resolveClassName(className, null));
 		return enableBinding.value();
 	}
-
 }

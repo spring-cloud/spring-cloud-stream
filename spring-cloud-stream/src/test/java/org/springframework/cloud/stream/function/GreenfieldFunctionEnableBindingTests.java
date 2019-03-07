@@ -26,7 +26,6 @@ import java.util.function.Supplier;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Test;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
@@ -208,21 +207,18 @@ public class GreenfieldFunctionEnableBindingTests {
 	@EnableBinding(Source.class)
 	public static class HttpInboundEndpoint {
 
-		@Autowired
-		private Source source;
-
 		@Bean
 		public Function<String, String> upperCase() {
 			return String::toUpperCase;
 		}
 
 		@Bean
-		public HttpRequestHandlingEndpointSupport doFoo() {
+		public HttpRequestHandlingEndpointSupport doFoo(Source source) {
 			HttpRequestHandlerEndpointSpec httpRequestHandler = Http
 					.inboundChannelAdapter("/*")
 					.requestMapping(requestMapping -> requestMapping
 							.methods(HttpMethod.POST).consumes("*/*"))
-					.requestChannel(this.source.output());
+					.requestChannel(source.output());
 			return httpRequestHandler.get();
 		}
 
