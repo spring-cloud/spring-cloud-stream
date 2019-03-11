@@ -107,10 +107,10 @@
 									</stylesheetfile>
 									<links>
 										<link>
-											http://docs.spring.io/spring-framework/docs/${spring.version}/javadoc-api/
+											https://docs.spring.io/spring-framework/docs/${spring.version}/javadoc-api/
 										</link>
 										<link>
-											http://docs.spring.io/spring-shell/docs/current/api/
+											https://docs.spring.io/spring-shell/docs/current/api/
 										</link>
 									</links>
 								</configuration>
