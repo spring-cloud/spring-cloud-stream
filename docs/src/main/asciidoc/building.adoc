@@ -40,7 +40,11 @@ in Docker containers.
 
 === Documentation
 
-There is a "full" profile that will generate documentation.
+There is a "docs" profile that will generate documentation.
+
+`./mvnw clean package -Pdocs -DskipTests`
+
+The reference documentation can then be found in `docs/target/contents/reference`.
 
 === Working with the code
 If you don't have an IDE preference we would recommend that you use
