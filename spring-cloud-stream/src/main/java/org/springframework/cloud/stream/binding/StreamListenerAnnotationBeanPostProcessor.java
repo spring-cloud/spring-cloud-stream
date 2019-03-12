@@ -98,6 +98,8 @@ public class StreamListenerAnnotationBeanPostProcessor implements BeanPostProces
 
 	private Set<StreamListenerSetupMethodOrchestrator> streamListenerSetupMethodOrchestrators = new LinkedHashSet<>();
 
+	private boolean streamListenerPresent;
+
 	@Override
 	public final void setApplicationContext(ApplicationContext applicationContext)
 			throws BeansException {
@@ -110,6 +112,9 @@ public class StreamListenerAnnotationBeanPostProcessor implements BeanPostProces
 
 	@Override
 	public final void afterSingletonsInstantiated() {
+		if (!this.streamListenerPresent) {
+			return;
+		}
 		this.injectAndPostProcessDependencies();
 		EvaluationContext evaluationContext = IntegrationContextUtils
 				.getEvaluationContext(this.applicationContext.getBeanFactory());
@@ -190,6 +195,7 @@ public class StreamListenerAnnotationBeanPostProcessor implements BeanPostProces
 			StreamListener streamListener = AnnotatedElementUtils
 					.findMergedAnnotation(method, StreamListener.class);
 			if (streamListener != null && !method.isBridge()) {
+				this.streamListenerPresent = true;
 				this.streamListenerCallbacks.add(() -> {
 					Assert.isTrue(method.getAnnotation(Input.class) == null,
 							StreamListenerErrorMessages.INPUT_AT_STREAM_LISTENER);
