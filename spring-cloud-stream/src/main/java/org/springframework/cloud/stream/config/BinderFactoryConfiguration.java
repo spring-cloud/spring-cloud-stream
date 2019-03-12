@@ -39,6 +39,7 @@ import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
+import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionRegistry;
@@ -47,7 +48,7 @@ import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.binder.BinderType;
 import org.springframework.cloud.stream.binder.BinderTypeRegistry;
 import org.springframework.cloud.stream.binder.DefaultBinderTypeRegistry;
-import org.springframework.cloud.stream.binding.BindingBeanDefinitionRegistryUtils;
+import org.springframework.cloud.stream.binding.BindableProxyFactory;
 import org.springframework.cloud.stream.binding.CompositeMessageChannelConfigurer;
 import org.springframework.cloud.stream.binding.MessageChannelConfigurer;
 import org.springframework.cloud.stream.binding.MessageConverterConfigurer;
@@ -284,8 +285,11 @@ public class BinderFactoryConfiguration {
 
 	private void bind(Class<?> type, BeanDefinitionRegistry registry) {
 		if (!registry.containsBeanDefinition(type.getName())) {
-			BindingBeanDefinitionRegistryUtils.registerBindingTargetBeanDefinitions(type, type.getName(), registry);
-			BindingBeanDefinitionRegistryUtils.registerBindingTargetsQualifiedBeanDefinitions(type, type, registry);
+			RootBeanDefinition rootBeanDefinition = new RootBeanDefinition(
+					BindableProxyFactory.class);
+			rootBeanDefinition.getConstructorArgumentValues()
+					.addGenericArgumentValue(type);
+			registry.registerBeanDefinition(type.getName(), rootBeanDefinition);
 		}
 	}
 

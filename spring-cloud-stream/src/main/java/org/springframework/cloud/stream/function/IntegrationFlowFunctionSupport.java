@@ -150,7 +150,7 @@ public class IntegrationFlowFunctionSupport {
 	 */
 	public IntegrationFlowBuilder integrationFlowFromChannel(
 			SubscribableChannel inputChannel) {
-		IntegrationFlowBuilder flowBuilder = IntegrationFlows.from(inputChannel).bridge();
+		IntegrationFlowBuilder flowBuilder = IntegrationFlows.from(inputChannel);
 		return flowBuilder;
 	}
 
@@ -178,7 +178,7 @@ public class IntegrationFlowFunctionSupport {
 			}
 		}
 
-		IntegrationFlowBuilder flowBuilder = IntegrationFlows.from(inputChannel).bridge();
+		IntegrationFlowBuilder flowBuilder = IntegrationFlows.from(inputChannel);
 
 		if (!this.andThenFunction(flowBuilder, outputChannel, this.functionProperties)) {
 			flowBuilder = flowBuilder.channel(outputChannel);
