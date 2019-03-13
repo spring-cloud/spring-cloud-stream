@@ -1,0 +1,23 @@
+= Spring Cloud Stream Reference Documentation
+Sabby Anandan; Marius Bogoevici; Eric Bottard; Mark Fisher; Ilayaperumal Gopinathan; Gunnar Hillert; Mark Pollack; Patrick Peralta; Glenn Renfro; Thomas Risberg; Dave Syer; David Turanski; Janne Valkealahti; Benjamin Klein; Vinicius Carvalho; Gary Russell; Oleg Zhurakousky; Jay Bryant; Soby Chacko
+
+*{spring-cloud-stream-version}*
+
+:docinfo: shared
+
+The reference documentation consists of the following sections:
+
+[horizontal]
+<<spring-cloud-stream.adoc#spring-cloud-stream-reference,Reference Guide>> :: Spring Cloud Stream Reference
+http://cloud.spring.io/spring-cloud-static/spring-cloud-stream-binder-rabbit/{spring-cloud-stream-version}/[Rabbit MQ Binder] :: Rabbit MQ Binder Reference
+http://cloud.spring.io/spring-cloud-static/spring-cloud-stream-binder-kafka/{spring-cloud-stream-version}/[Apache Kafka Binder] :: Apache Kafka Binder Reference
+https://github.com/spring-cloud/spring-cloud-stream-samples/[Spring Cloud Stream Samples]  :: Spring Cloud Stream Samples repository
+<<binders.adoc#binders,Additional Binders>> :: More Binders implementations
+
+Relevant Links:
+
+[horizontal]
+https://cloud.spring.io/spring-cloud-dataflow/[Spring Cloud Data Flow] :: Spring Cloud Data Flow
+http://www.enterpriseintegrationpatterns.com/[Enterprise Integration Patterns]  :: Patterns and Best Practices for Enterprise Integration
+https://spring.io/projects/spring-integration[Spring Integration]  :: Spring Integration framework
+

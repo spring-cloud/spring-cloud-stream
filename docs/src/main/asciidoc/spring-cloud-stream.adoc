@@ -7,15 +7,15 @@
 :nofooter:
 :sectlinks: true
 
+*{spring-cloud-stream-version}*
+
 [[spring-cloud-stream-reference]]
-= Spring Cloud Stream Reference Guide
-Sabby Anandan; Marius Bogoevici; Eric Bottard; Mark Fisher; Ilayaperumal Gopinathan; Gunnar Hillert; Mark Pollack; Patrick Peralta; Glenn Renfro; Thomas Risberg; Dave Syer; David Turanski; Janne Valkealahti; Benjamin Klein; Vinicius Carvalho; Gary Russell; Oleg Zhurakousky; Jay Bryant; Soby Chacko
 
 :doctype: book
 
 // ======================================================================================
 
-= Preface
+== Preface
 include::preface.adoc[]
 
 [partintro]
@@ -278,7 +278,7 @@ and they contain methods representing _bindable components_.
 These components are typically message channels (see https://docs.spring.io/spring-boot/docs/current/reference/html/boot-features-messaging.html[Spring Messaging])
 for channel-based binders (such as Rabbit, Kafka, and others). However other types of bindings can
 provide support for the native features of the corresponding technology. For example Kafka Streams binder (formerly known as KStream) allows native bindings directly to Kafka Streams
-(see https://docs.spring.io/autorepo/docs/spring-cloud-stream-binder-kafka-docs/1.1.0.M1/reference/htmlsingle/[Kafka Streams] for more details).
+(see http://cloud.spring.io/spring-cloud-static/spring-cloud-stream-binder-kafka/{spring-cloud-stream-version}/[Kafka Binder] for more details).
 
 Spring Cloud Stream already provides _binding_ interfaces for typical message exchange contracts, which include:
 
@@ -581,7 +581,7 @@ NOTE: At the moment, dispatching through `@StreamListener` conditions is support
 support.
 
 
-[[_spring_cloud_function]]
+[[spring_cloud_function]]
 ==== Spring Cloud Function support
 
 Since Spring Cloud Stream v2.1, another alternative for defining _stream handlers_ and _sources_ is to use build-in
@@ -1242,7 +1242,7 @@ environment:
         profiles:
            active: myBinderProfile
 ----
-
+[[binding_visualization_control]]
 === Binding visualization and control
 Since version 2.0, Spring Cloud Stream supports visualization and control of the Bindings through Actuator endpoints.
 
@@ -1412,12 +1412,12 @@ See <<consumer-groups,Consumer Groups>>.
 Default: `null` (indicating an anonymous consumer).
 contentType::
 The content type of the channel.
-See "`<<content-type-management>>`".
+See `<<content-type-management>>`.
 +
 Default: `application/json`.
 binder::
 The binder used by this binding.
-See "`<<multiple-binders>>`" for details.
+See `<<multiple-binders>>` for details.
 +
 Default: `null` (the default binder is used, if it exists).
 
@@ -1473,13 +1473,13 @@ Default: `true`.
 instanceIndex::
 When set to a value greater than equal to zero, it allows customizing the instance index of this consumer (if different from `spring.cloud.stream.instanceIndex`).
 When set to a negative value, it defaults to `spring.cloud.stream.instanceIndex`.
-See "`<<spring-cloud-stream-overview-instance-index-instance-count>>`" for more information.
+See `<<spring-cloud-stream-overview-instance-index-instance-count>>` for more information.
 +
 Default: `-1`.
 instanceCount::
 When set to a value greater than equal to zero, it allows customizing the instance count of this consumer (if different from `spring.cloud.stream.instanceCount`).
 When set to a negative value, it defaults to `spring.cloud.stream.instanceCount`.
-See "`<<spring-cloud-stream-overview-instance-index-instance-count>>`" for more information.
+See `<<spring-cloud-stream-overview-instance-index-instance-count>>` for more information.
 +
 Default: `-1`.
 retryableExceptions::
@@ -1537,14 +1537,14 @@ partitionKeyExpression::
 A SpEL expression that determines how to partition outbound data.
 If set, or if `partitionKeyExtractorClass` is set, outbound data on this channel is partitioned. `partitionCount` must be set to a value greater than 1 to be effective.
 Mutually exclusive with `partitionKeyExtractorClass`.
-See "`<<partitioning>>`".
+See `<<partitioning>>`.
 +
 Default: null.
 partitionKeyExtractorClass::
 A `PartitionKeyExtractorStrategy` implementation.
 If set, or if `partitionKeyExpression` is set, outbound data on this channel is partitioned. `partitionCount` must be set to a value greater than 1 to be effective.
 Mutually exclusive with `partitionKeyExpression`.
-See "`<<partitioning>>`".
+See `<<partitioning>>`.
 +
 Default: `null`.
 partitionSelectorClass::
@@ -1777,7 +1777,7 @@ operation of the MessageConverter takes `targetClass` as one of its arguments.
 The framework also ensures that the provided `Message` always contains a `contentType` header.
 When no contentType header was already present, it injects either the per-binding `contentType` header or the default `contentType` header.
 The combination of `contentType` argument type is the mechanism by which framework determines if message can be converted to a target type.
-If no appropriate `MessageConverter` is found, an exception is thrown, which you can handle by adding a custom `MessageConverter` (see "`<<spring-cloud-stream-overview-user-defined-message-converters>>`").
+If no appropriate `MessageConverter` is found, an exception is thrown, which you can handle by adding a custom `MessageConverter` (see `<<spring-cloud-stream-overview-user-defined-message-converters>>`).
 
 But what if the payload type matches the target type declared by the handler method? In this case, there is nothing to convert, and the
 payload is passed unmodified. While this sounds pretty straightforward and logical, keep in mind handler methods that take a `Message<?>` or `Object` as an argument.
@@ -1883,7 +1883,7 @@ public class MyCustomMessageConverter extends AbstractMessageConverter {
 ----
 
 Spring Cloud Stream also provides support for Avro-based converters and schema evolution.
-See "`<<schema-evolution>>`" for details.
+See `<<schema-evolution>>` for details.
 
 [[schema-evolution]]
 == Schema Evolution Support
@@ -2078,13 +2078,13 @@ public class SchemaRegistryServerApplication {
 
 The Schema Registry Server API consists of the following operations:
 
-* `POST /` -- see "`<<spring-cloud-stream-overview-registering-new-schema>>`"
-* 'GET /{subject}/{format}/{version}' -- see "`<<spring-cloud-stream-overview-retrieve-schema-subject-format-version>>`"
-* `GET /{subject}/{format}` -- see "`<<spring-cloud-stream-overview-retrieve-schema-subject-format>>`"
-* `GET /schemas/{id}` -- see "`<<spring-cloud-stream-overview-retrieve-schema-id>>`"
-* `DELETE /{subject}/{format}/{version}` -- see "`<<spring-cloud-stream-overview-deleting-schema-subject-format-version>>`"
-* `DELETE /schemas/{id}` -- see "`<<spring-cloud-stream-overview-deleting-schema-id>>`"
-* `DELETE /{subject}` -- see "`<<spring-cloud-stream-overview-deleting-schema-subject>>`"
+* `POST /` -- see `<<spring-cloud-stream-overview-registering-new-schema>>`
+* 'GET /{subject}/{format}/{version}' -- see `<<spring-cloud-stream-overview-retrieve-schema-subject-format-version>>`
+* `GET /{subject}/{format}` -- see `<<spring-cloud-stream-overview-retrieve-schema-subject-format>>`
+* `GET /schemas/{id}` -- see `<<spring-cloud-stream-overview-retrieve-schema-id>>`
+* `DELETE /{subject}/{format}/{version}` -- see `<<spring-cloud-stream-overview-deleting-schema-subject-format-version>>`
+* `DELETE /schemas/{id}` -- see `<<spring-cloud-stream-overview-deleting-schema-id>>`
+* `DELETE /{subject}` -- see `<<spring-cloud-stream-overview-deleting-schema-subject>>`
 
 [[spring-cloud-stream-overview-registering-new-schema]]
 ===== Registering a New Schema
@@ -2185,8 +2185,8 @@ NOTE: The ConfluentSchemaRegistryClient is tested against Confluent platform ver
 
 To better understand how Spring Cloud Stream registers and resolves new schemas and its use of Avro schema comparison features, we provide two separate subsections:
 
-* "`<<spring-cloud-stream-overview-schema-registration-process>>`"
-* "`<<spring-cloud-stream-overview-schema-resolution-process>>`"
+* `<<spring-cloud-stream-overview-schema-registration-process>>`
+* `<<spring-cloud-stream-overview-schema-resolution-process>>`
 
 [[spring-cloud-stream-overview-schema-registration-process]]
 ==== Schema Registration Process (Serialization)
@@ -2210,7 +2210,7 @@ With the schema version information, the converter sets the `contentType` header
 [[spring-cloud-stream-overview-schema-resolution-process]]
 ==== Schema Resolution Process (Deserialization)
 
-When reading messages that contain version information (that is, a `contentType` header with a scheme like the one described under "`<<spring-cloud-stream-overview-schema-registration-process>>`"), the converter queries the Schema server to fetch the writer schema of the message.
+When reading messages that contain version information (that is, a `contentType` header with a scheme like the one described under `<<spring-cloud-stream-overview-schema-registration-process>>`, the converter queries the Schema server to fetch the writer schema of the message.
 Once it has found the correct schema of the incoming message, it retrieves the reader schema and, by using Avro's schema resolution support, reads it into the reader definition (setting defaults and any missing properties).
 
 .Schema Reading Resolution Process
@@ -2225,9 +2225,9 @@ If you want to get Avro's schema evolution support working, you need to make sur
 
 Spring Cloud Stream enables communication between applications. Inter-application communication is a complex issue spanning several concerns, as described in the following topics:
 
-* "`<<spring-cloud-stream-overview-connecting-multiple-application-instances>>`"
-* "`<<spring-cloud-stream-overview-instance-index-instance-count>>`"
-* "`<<spring-cloud-stream-overview-partitioning>>`"
+* `<<spring-cloud-stream-overview-connecting-multiple-application-instances>>`
+* `<<spring-cloud-stream-overview-instance-index-instance-count>>`
+* `<<spring-cloud-stream-overview-partitioning>>`
 
 [[spring-cloud-stream-overview-connecting-multiple-application-instances]]
 === Connecting Multiple Application Instances
@@ -2266,8 +2266,8 @@ In a scaled-up scenario, correct configuration of these two properties is import
 
 Partitioning in Spring Cloud Stream consists of two tasks:
 
-* "`<<spring-cloud-stream-overview-configuring-output-bindings-partitioning>>`"
-* "`<<spring-cloud-stream-overview-configuring-input-bindings-partitioning>>`"
+* `<<spring-cloud-stream-overview-configuring-output-bindings-partitioning>>`
+* `<<spring-cloud-stream-overview-configuring-input-bindings-partitioning>>`
 
 [[spring-cloud-stream-overview-configuring-output-bindings-partitioning]]
 ==== Configuring Output Bindings for Partitioning
@@ -2636,7 +2636,7 @@ provided by Spring Boot for unrelated reasons.
 Spring Cloud Stream provides a health indicator for binders.
 It is registered under the name `binders` and can be enabled or disabled by setting the `management.health.binders.enabled` property.
 
-To enable health check you first need to enable both "web" and "actuator" by including its dependencies (see <<spring-cloud-stream-preface-actuator-web-dependencies>>)
+To enable health check you first need to enable both "web" and "actuator" by including its dependencies (see <<binding_visualization_control>>)
 
 If `management.health.binders.enabled` is not set explicitly by the application, then `management.health.defaults.enabled` is matched as `true` and the binder health indicators are enabled.
 If you want to disable health indicator completely, then you have to set `management.health.binders.enabled` to `false`.

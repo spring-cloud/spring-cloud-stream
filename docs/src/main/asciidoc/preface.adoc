@@ -1,4 +1,4 @@
-== A Brief History of Spring's Data Integration Journey
+=== A Brief History of Spring's Data Integration Journey
 
 Spring's journey on Data Integration started with https://projects.spring.io/spring-integration/[Spring Integration]. With its programming model, it provided a consistent developer experience to build applications that can embrace http://www.enterpriseintegrationpatterns.com/[Enterprise Integration Patterns] to connect with external systems such as, databases, message brokers, and among others.
 
@@ -14,7 +14,7 @@ With Spring Cloud Stream, developers can:
 * Interoperate between channel-based and non-channel-based application binding scenarios to support stateless and stateful computations by using Project Reactor's Flux and Kafka Streams APIs.
 * Rely on the framework's automatic content-type support for common use-cases. Extending to different data conversion types is possible.
 
-== Quick Start
+=== Quick Start
 
 You can try Spring Cloud Stream in less then 5 min even before you jump into any details by following this three-step guide.
 
@@ -175,8 +175,8 @@ The following sections outline the most notable ones:
 As of version 2.2, the following items have been deprecated:
 
 - The spring-cloud-stream-reactive module is deprecated in favor of native support
-  via <<spring_cloud_function,Spring Cloud Function>> programming model.
+  via <<spring_cloud_function, Spring Cloud Function>> programming model.
 
-== Notes on migrating from 1.x to 2.x?
+=== Notes on migrating from 1.x to 2.x?
 - Due to the improvements in content-type negotiation, the `originalContentType` header is not used (ignored) since 2.x and only exists for maintaining compatibility with 1.x versions
 - Introduction of `@StreamRetryTemplate` qualifier. While configuring custom instance of the `RetryTemplate` and to avoid conflicts you must qualify the instance of such `RetryTemplate` with this qualifier. See <<Retry Template, Retry Template>> for more details.

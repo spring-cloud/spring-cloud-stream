@@ -1,0 +1,13 @@
+*{spring-cloud-stream-version}*
+
+[[binders]]
+== Binder Implementations
+
+The following is the list of available binder implementations
+
+* https://cloud.spring.io/spring-cloud-stream-binder-rabbit/[RabbitMQ]
+* https://cloud.spring.io/spring-cloud-stream-binder-kafka/[Apache Kafka]
+* https://github.com/spring-cloud/spring-cloud-stream-binder-aws-kinesis[Amazon Kinesis]
+* https://github.com/spring-cloud/spring-cloud-gcp/tree/master/spring-cloud-gcp-pubsub-stream-binder[Google PubSub _(partner maintained)_]
+* https://github.com/SolaceProducts/spring-cloud-stream-binder-solace[Solace PubSub+ _(partner maintained)_]
+* https://github.com/Microsoft/spring-cloud-azure/tree/master/spring-cloud-azure-eventhub-stream-binder[Azure Event Hubs _(partner maintained)_]
