@@ -31,6 +31,8 @@ Sabby Anandan, Marius Bogoevici, Eric Bottard, Mark Fisher, Ilayaperumal Gopinat
 :sc-ext: java
 // ======================================================================================
 
+*{spring-cloud-stream-version}*
+
 = Reference Guide
 include::overview.adoc[]
 
