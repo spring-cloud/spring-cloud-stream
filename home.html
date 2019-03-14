@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<!--[if IE]><meta http-equiv="X-UA-Compatible" content="IE=edge"><![endif]-->
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 1.5.7.1">
+<meta name="author" content="Sabby Anandan, Marius Bogoevici, Eric Bottard, Mark Fisher, Ilayaperumal Gopinathan, Gunnar Hillert, Mark Pollack, Patrick Peralta, Glenn Renfro, Thomas Risberg, Dave Syer, David Turanski, Janne Valkealahti, Benjamin Klein, Vinicius Carvalho, Gary Russell, Oleg Zhurakousky, Jay Bryant, Soby Chacko">
+<title>Spring Cloud Stream Reference Documentation</title>
+<link rel="stylesheet" href="css/spring.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<style>
+.hidden {
+	display: none;
+}
+
+.switch {
+	border-width: 1px 1px 0 1px;
+	border-style: solid;
+	border-color: #7a2518;
+	display: inline-block;
+}
+
+.switch--item {
+	padding: 10px;
+	background-color: #ffffff;
+	color: #7a2518;
+	display: inline-block;
+	cursor: pointer;
+}
+
+.switch--item.selected {
+	background-color: #7a2519;
+	color: #ffffff;
+}
+</style>
+<script src="http://cdnjs.cloudflare.com/ajax/libs/zepto/1.2.0/zepto.min.js"></script>
+<script type="text/javascript">
+function addBlockSwitches() {
+	$('.primary').each(function() {
+		primary = $(this);
+		createSwitchItem(primary, createBlockSwitch(primary)).item.addClass("selected");
+		primary.children('.title').remove();
+	});
+	$('.secondary').each(function(idx, node) {
+		secondary = $(node);
+		primary = findPrimary(secondary);
+		switchItem = createSwitchItem(secondary, primary.children('.switch'));
+		switchItem.content.addClass('hidden');
+		findPrimary(secondary).append(switchItem.content);
+		secondary.remove();
+	});
+}
+
+function createBlockSwitch(primary) {
+	blockSwitch = $('<div class="switch"></div>');
+	primary.prepend(blockSwitch);
+	return blockSwitch;
+}
+
+function findPrimary(secondary) {
+	candidate = secondary.prev();
+	while (!candidate.is('.primary')) {
+		candidate = candidate.prev();
+	}
+	return candidate;
+}
+
+function createSwitchItem(block, blockSwitch) {
+	blockName = block.children('.title').text();
+	content = block.children('.content').first().append(block.next('.colist'));
+	item = $('<div class="switch--item">' + blockName + '</div>');
+	item.on('click', '', content, function(e) {
+		$(this).addClass('selected');
+		$(this).siblings().removeClass('selected');
+		e.data.siblings('.content').addClass('hidden');
+		e.data.removeClass('hidden');
+	});
+	blockSwitch.append(item);
+	return {'item': item, 'content': content};
+}
+
+$(addBlockSwitches);
+</script>
+</head>
+
+<body class="book">
+<div id="header">
+<h1>Spring Cloud Stream Reference Documentation</h1>
+<div class="details">
+<span id="author" class="author">Sabby Anandan</span><br>
+<span id="author2" class="author">Marius Bogoevici</span><br>
+<span id="author3" class="author">Eric Bottard</span><br>
+<span id="author4" class="author">Mark Fisher</span><br>
+<span id="author5" class="author">Ilayaperumal Gopinathan</span><br>
+<span id="author6" class="author">Gunnar Hillert</span><br>
+<span id="author7" class="author">Mark Pollack</span><br>
+<span id="author8" class="author">Patrick Peralta</span><br>
+<span id="author9" class="author">Glenn Renfro</span><br>
+<span id="author10" class="author">Thomas Risberg</span><br>
+<span id="author11" class="author">Dave Syer</span><br>
+<span id="author12" class="author">David Turanski</span><br>
+<span id="author13" class="author">Janne Valkealahti</span><br>
+<span id="author14" class="author">Benjamin Klein</span><br>
+<span id="author15" class="author">Vinicius Carvalho</span><br>
+<span id="author16" class="author">Gary Russell</span><br>
+<span id="author17" class="author">Oleg Zhurakousky</span><br>
+<span id="author18" class="author">Jay Bryant</span><br>
+<span id="author19" class="author">Soby Chacko</span><br>
+</div>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>2.2.0.BUILD-SNAPSHOT</strong></p>
+</div>
+<div id="index-link" class="paragraph">
+<p><a href="http://cloud.spring.io/spring-cloud-stream/home.html" class="bare">http://cloud.spring.io/spring-cloud-stream/home.html</a></p>
+</div>
+<div class="paragraph">
+<p>The reference documentation consists of the following sections:</p>
+</div>
+<div class="hdlist">
+<table>
+<tr>
+<td class="hdlist1">
+<a href="spring-cloud-stream.html#spring-cloud-stream-reference">Overview</a> 
+</td>
+<td class="hdlist2">
+<p>History, Quick Start, Concepts, Architecture Overview, Binder Abstraction, and Core Features</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+<a href="http://cloud.spring.io/spring-cloud-stream-binder-rabbit/spring-cloud-stream-binder-rabbit.html">Rabbit MQ Binder</a> 
+</td>
+<td class="hdlist2">
+<p>Spring Cloud Stream binder reference for Rabbit MQ</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+<a href="http://cloud.spring.io/spring-cloud-stream-binder-kafka/spring-cloud-stream-binder-kafka.html#_apache_kafka_binder">Apache Kafka Binder</a> 
+</td>
+<td class="hdlist2">
+<p>Spring Cloud Stream binder reference for Apache Kafka</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+<a href="http://cloud.spring.io/spring-cloud-stream-binder-kafka/spring-cloud-stream-binder-kafka.html#_kafka_streams_binder">Apache Kafka Streams Binder</a> 
+</td>
+<td class="hdlist2">
+<p>Spring Cloud Stream binder reference for Apache Kafka Streams</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+<a href="binders.html#binders">Additional Binders</a> 
+</td>
+<td class="hdlist2">
+<p>A collection of Partner maintained binder implementations for Spring Cloud Stream (e.g., Azure Event Hubs, Google PubSub, Solace PubSub+)</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+<a href="https://github.com/spring-cloud/spring-cloud-stream-samples/">Spring Cloud Stream Samples</a>  
+</td>
+<td class="hdlist2">
+<p>A curated collection of repeatable Spring Cloud Stream samples to walk through the features</p>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Relevant Links:</p>
+</div>
+<div class="hdlist">
+<table>
+<tr>
+<td class="hdlist1">
+<a href="https://cloud.spring.io/spring-cloud-dataflow/">Spring Cloud Data Flow</a> 
+</td>
+<td class="hdlist2">
+<p>Spring Cloud Data Flow</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+<a href="http://www.enterpriseintegrationpatterns.com/">Enterprise Integration Patterns</a>  
+</td>
+<td class="hdlist2">
+<p>Patterns and Best Practices for Enterprise Integration</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+<a href="https://spring.io/projects/spring-integration">Spring Integration</a>  
+</td>
+<td class="hdlist2">
+<p>Spring Integration framework</p>
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="js/tocbot/tocbot.min.js"></script>
+<script type="text/javascript" src="js/toc.js"></script>
+<link rel="stylesheet" href="js/highlight/styles/atom-one-dark-reasonable.min.css">
+<script src="js/highlight/highlight.min.js"></script>
+<script>hljs.initHighlighting()</script>
+</body>
+</html>
