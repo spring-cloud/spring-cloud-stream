@@ -34,7 +34,7 @@ Sabby Anandan, Marius Bogoevici, Eric Bottard, Mark Fisher, Ilayaperumal Gopinat
 *{spring-cloud-stream-version}*
 
 [#index-link]
-{docs-url}spring-cloud-stream/{docs-version}
+{docs-url}spring-cloud-stream/{docs-version}home.html
 
 = Reference Guide
 
