@@ -16,7 +16,13 @@ if (toctitle != null) {
     });
     if (!path.endsWith("index.html") && !path.endsWith("/")) {
         var link = document.createElement("a");
-        link.setAttribute("href", "index.html");
+        if (document.getElementById('index-link')) {
+          indexLinkElement = document.querySelector('#index-link > p > a');
+          linkHref = indexLinkElement.getAttribute("href");
+          link.setAttribute("href", linkHref);
+        } else {
+          link.setAttribute("href", "index.html");
+        }
         link.innerHTML = "<span><i class=\"fa fa-chevron-left\" aria-hidden=\"true\"></i></span> Back to index";
         var block = document.createElement("div");
         block.setAttribute('class', 'back-action');
