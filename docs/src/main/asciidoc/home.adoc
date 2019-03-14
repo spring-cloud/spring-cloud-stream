@@ -6,7 +6,7 @@ Sabby Anandan; Marius Bogoevici; Eric Bottard; Mark Fisher; Ilayaperumal Gopinat
 :docinfo: shared
 
 [#index-link]
-{docs-url}spring-cloud-stream/{docs-version}
+{docs-url}spring-cloud-stream/{docs-version}home.html
 
 The reference documentation consists of the following sections:
 

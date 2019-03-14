@@ -13,7 +13,7 @@
 	<name>spring-cloud-stream-core-docs</name>
 	<description>Spring Cloud Stream Core Documentation</description>
 	<properties>
-		<docs.main>index</docs.main>
+		<docs.main>home</docs.main>
 		<main.basedir>${basedir}/..</main.basedir>
 		<spring-doc-resources.version>0.1.1.BUILD-SNAPSHOT</spring-doc-resources.version>
 		<spring-asciidoctor-extensions.version>0.1.0.RELEASE
