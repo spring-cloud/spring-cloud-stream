@@ -28,13 +28,16 @@ Sabby Anandan, Marius Bogoevici, Eric Bottard, Mark Fisher, Ilayaperumal Gopinat
 :github-wiki: http://github.com/{github-repo}/wiki
 :github-master-code: http://github.com/{github-repo}/tree/master
 :sc-ext: java
+
 // ======================================================================================
-[#index-link]
-{docs-url}spring-cloud-stream/{docs-version}
 
 *{spring-cloud-stream-version}*
 
+[#index-link]
+{docs-url}spring-cloud-stream/{docs-version}
+
 = Reference Guide
+
 
 include::overview.adoc[]
 
