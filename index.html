@@ -1,141 +1,205 @@
----
-# The name of your project
-title: Spring Cloud Stream
-
-badges:
-
-  # Specify your project's twitter handle, if any. Delete if none.
-  twitter: SpringCloudOSS
-
-  # Customize your project's badges. Delete any entries that do not apply.
-  custom:
-    - name: Source (GitHub)
-      url:  https://github.com/spring-cloud/spring-cloud-stream
-      icon: github
-
-    - name: Issues (Waffle)
-      url:  https://waffle.io/spring-cloud/spring-cloud-stream
-      icon: tracking
-
-    - name: CI (Jenkins)
-      url:  https://jenkins.spring.io/view/SpringCloudStream/view/CI/
-      icon: ci
-
-    - name: StackOverflow
-      url:  http://stackoverflow.com/questions/tagged/spring-cloud-stream
-      icon: stackoverflow
-
----
-<!DOCTYPE HTML>
-<html lang="en-US">
-
-<!-- Specify the parent of this project (or delete if none) to influence the rendering of the breadcrumb -->
-{% capture parent_link %}
-[Spring Cloud]({{ site.projects_site_url }}/spring-cloud)
-{% endcapture %}
-
-{% capture billboard_description %}
-
-Spring Cloud Stream is a framework for building highly scalable event-driven microservices connected with shared messaging systems.
-
-<br >
-The framework provides flexible programming model built on already established and familiar Spring idioms and best practices, including support 
-for persistent pub/sub semantics, consumer groups, and stateful partitions.
-
-{% endcapture %}
-{% capture main_content %}
-The core building blocks of Spring Cloud Stream are:
-
-* *Destination Binders*: Components responsible to provide integration with the external messaging systems.
-* *Destination Bindings*: Bridge between the external messaging systems and application provided Producers and Consumers of messages (created by the Destination Binders).
-* *Message*: The canonical data structure used by producers and consumers to communicate with Destination Binders (and thus other applications via external messaging systems).
-
-<img class="styled-image" src="img/SCSt-overview.png" alt="Spring Cloud Stream overview" title="Spring Cloud Stream overview" border="5"/>
-
-## Binder Implementations
-
-Spring Cloud Stream supports a variety of binder implementations and the following table includes the link to the GitHub projects.
-
-|[RabbitMQ](https://github.com/spring-cloud/spring-cloud-stream-binder-rabbit)|
-|[Apache Kafka](https://github.com/spring-cloud/spring-cloud-stream-binder-kafka)|
-|[Kafka Streams](https://github.com/spring-cloud/spring-cloud-stream-binder-kafka/tree/master/spring-cloud-stream-binder-kafka-streams)|
-|[Amazon Kinesis](https://github.com/spring-cloud/spring-cloud-stream-binder-aws-kinesis)|
-|[Google PubSub _(partner maintained)_](https://github.com/spring-cloud/spring-cloud-gcp/tree/master/spring-cloud-gcp-pubsub-stream-binder)|
-|[Solace PubSub+ _(partner maintained)_](https://github.com/SolaceProducts/spring-cloud-stream-binder-solace)|
-|[Azure Event Hubs _(partner maintained)_](https://github.com/Microsoft/spring-cloud-azure/tree/master/spring-cloud-azure-eventhub-stream-binder)|
-
-<span id="quick-start"></span>
-
-## Quick Start
-
-<script type="text/javascript">{% include custom.js %}</script>
-{% include download_widget.md %}
-
-As long as Spring Cloud Stream and a Spring Cloud Stream Binder dependencies are on the classpath any Spring Boot application with `@EnableBinding` binds to the external 
-messaging system (e.g. [Rabbit MQ](https://github.com/spring-cloud/spring-cloud-stream-binder-rabbit) or [Apache Kafka](https://github.com/spring-cloud/spring-cloud-stream-binder-kafka), 
-depending on the binder-implementation of choice).
-
-For more comprehansive step-by-step _getting started_ experience please refer to the
-[Quick Start](https://docs.spring.io/spring-cloud-stream/docs/Elmhurst.RELEASE/reference/htmlsingle/#_quick_start) section of the user guide.
-
-Below is the fully functional Spring Cloud Stream application, which receives and logs data to the console.
-
-```java
-@SpringBootApplication
-@EnableBinding(Sink.class)
-public class LoggingConsumerApplication {
-
-	public static void main(String[] args) {
-		SpringApplication.run(LoggingConsumerApplication.class, args);
-	}
-
-	@StreamListener(Sink.INPUT)
-	public void handle(Person person) {
-		System.out.println("Received: " + person);
-	}
-
-	public static class Person {
-		private String name;
-		public String getName() {
-			return name;
-		}
-		public void setName(String name) {
-			this.name = name;
-		}
-		public String toString() {
-			return this.name;
-		}
-	}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<!--[if IE]><meta http-equiv="X-UA-Compatible" content="IE=edge"><![endif]-->
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 1.5.7.1">
+<meta name="author" content="Sabby Anandan, Marius Bogoevici, Eric Bottard, Mark Fisher, Ilayaperumal Gopinathan, Gunnar Hillert, Mark Pollack, Patrick Peralta, Glenn Renfro, Thomas Risberg, Dave Syer, David Turanski, Janne Valkealahti, Benjamin Klein, Vinicius Carvalho, Gary Russell, Oleg Zhurakousky, Jay Bryant, Soby Chacko">
+<title>Spring Cloud Stream Reference Documentation</title>
+<link rel="stylesheet" href="css/spring.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<style>
+.hidden {
+	display: none;
 }
-```
-As you can see from the preceding example:
 
-* We've enabled `Sink` binding (input-no-output) by using `@EnableBinding(Sink.class)`. Doing so signals to the framework to initiate binding to the messaging system, 
-where it automatically creates the destination (that is, queue, topic, and others) that are bound to the `Sink.INPUT` channel.
+.switch {
+	border-width: 1px 1px 0 1px;
+	border-style: solid;
+	border-color: #7a2518;
+	display: inline-block;
+}
 
-* We've added a handler method to receive incoming messages of type `Person`. Doing so lets you see one of the core features of the framework: It tries to automatically convert incoming message 
-payloads to type `Person`.
+.switch--item {
+	padding: 10px;
+	background-color: #ffffff;
+	color: #7a2518;
+	display: inline-block;
+	cursor: pointer;
+}
 
-You can start the application by simply running its `main(..)` method.
+.switch--item.selected {
+	background-color: #7a2519;
+	color: #ffffff;
+}
+</style>
+<script src="http://cdnjs.cloudflare.com/ajax/libs/zepto/1.2.0/zepto.min.js"></script>
+<script type="text/javascript">
+function addBlockSwitches() {
+	$('.primary').each(function() {
+		primary = $(this);
+		createSwitchItem(primary, createBlockSwitch(primary)).item.addClass("selected");
+		primary.children('.title').remove();
+	});
+	$('.secondary').each(function(idx, node) {
+		secondary = $(node);
+		primary = findPrimary(secondary);
+		switchItem = createSwitchItem(secondary, primary.children('.switch'));
+		switchItem.content.addClass('hidden');
+		findPrimary(secondary).append(switchItem.content);
+		secondary.remove();
+	});
+}
 
-### Apache Kafka Client Compatibility
-Spring Cloud Stream supports a variety of Apache Kafka Client releases. To learn more about it, please refer to the [Apache Kafka Client Compatibility](https://github.com/spring-cloud/spring-cloud-stream/wiki/Kafka-Client-Compatibility) section in the Wiki page.
+function createBlockSwitch(primary) {
+	blockSwitch = $('<div class="switch"></div>');
+	primary.prepend(blockSwitch);
+	return blockSwitch;
+}
 
-{% endcapture %}
+function findPrimary(secondary) {
+	candidate = secondary.prev();
+	while (!candidate.is('.primary')) {
+		candidate = candidate.prev();
+	}
+	return candidate;
+}
 
-{% capture related_resources %}
+function createSwitchItem(block, blockSwitch) {
+	blockName = block.children('.title').text();
+	content = block.children('.content').first().append(block.next('.colist'));
+	item = $('<div class="switch--item">' + blockName + '</div>');
+	item.on('click', '', content, function(e) {
+		$(this).addClass('selected');
+		$(this).siblings().removeClass('selected');
+		e.data.siblings('.content').addClass('hidden');
+		e.data.removeClass('hidden');
+	});
+	blockSwitch.append(item);
+	return {'item': item, 'content': content};
+}
 
-### Sample Projects
+$(addBlockSwitches);
+</script>
+</head>
 
-* [Spring Cloud Stream Samples](https://github.com/spring-cloud/spring-cloud-stream-samples)
-
-### Related Projects
-
-* [Spring Cloud Stream Applications](http://cloud.spring.io/spring-cloud-stream-app-starters/)
-* [Spring Cloud Data Flow](http://cloud.spring.io/spring-cloud-dataflow/)
-
-{% endcapture %}
-
-
-{% include project_page.html %}
+<body class="book">
+<div id="header">
+<h1>Spring Cloud Stream Reference Documentation</h1>
+<div class="details">
+<span id="author" class="author">Sabby Anandan</span><br>
+<span id="author2" class="author">Marius Bogoevici</span><br>
+<span id="author3" class="author">Eric Bottard</span><br>
+<span id="author4" class="author">Mark Fisher</span><br>
+<span id="author5" class="author">Ilayaperumal Gopinathan</span><br>
+<span id="author6" class="author">Gunnar Hillert</span><br>
+<span id="author7" class="author">Mark Pollack</span><br>
+<span id="author8" class="author">Patrick Peralta</span><br>
+<span id="author9" class="author">Glenn Renfro</span><br>
+<span id="author10" class="author">Thomas Risberg</span><br>
+<span id="author11" class="author">Dave Syer</span><br>
+<span id="author12" class="author">David Turanski</span><br>
+<span id="author13" class="author">Janne Valkealahti</span><br>
+<span id="author14" class="author">Benjamin Klein</span><br>
+<span id="author15" class="author">Vinicius Carvalho</span><br>
+<span id="author16" class="author">Gary Russell</span><br>
+<span id="author17" class="author">Oleg Zhurakousky</span><br>
+<span id="author18" class="author">Jay Bryant</span><br>
+<span id="author19" class="author">Soby Chacko</span><br>
+</div>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>2.2.0.BUILD-SNAPSHOT</strong></p>
+</div>
+<div class="paragraph">
+<p>The reference documentation consists of the following sections:</p>
+</div>
+<div class="hdlist">
+<table>
+<tr>
+<td class="hdlist1">
+<a href="spring-cloud-stream.html#spring-cloud-stream-reference">Reference Guide</a> 
+</td>
+<td class="hdlist2">
+<p>Spring Cloud Stream Reference</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+<a href="http://cloud.spring.io/spring-cloud-static/spring-cloud-stream-binder-rabbit/2.2.0.BUILD-SNAPSHOT/">Rabbit MQ Binder</a> 
+</td>
+<td class="hdlist2">
+<p>Rabbit MQ Binder Reference</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+<a href="http://cloud.spring.io/spring-cloud-static/spring-cloud-stream-binder-kafka/2.2.0.BUILD-SNAPSHOT/">Apache Kafka Binder</a> 
+</td>
+<td class="hdlist2">
+<p>Apache Kafka Binder Reference</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+<a href="https://github.com/spring-cloud/spring-cloud-stream-samples/">Spring Cloud Stream Samples</a>  
+</td>
+<td class="hdlist2">
+<p>Spring Cloud Stream Samples repository</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+<a href="binders.html#binders">Additional Binders</a> 
+</td>
+<td class="hdlist2">
+<p>More Binders implementations</p>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Relevant Links:</p>
+</div>
+<div class="hdlist">
+<table>
+<tr>
+<td class="hdlist1">
+<a href="https://cloud.spring.io/spring-cloud-dataflow/">Spring Cloud Data Flow</a> 
+</td>
+<td class="hdlist2">
+<p>Spring Cloud Data Flow</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+<a href="http://www.enterpriseintegrationpatterns.com/">Enterprise Integration Patterns</a>  
+</td>
+<td class="hdlist2">
+<p>Patterns and Best Practices for Enterprise Integration</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+<a href="https://spring.io/projects/spring-integration">Spring Integration</a>  
+</td>
+<td class="hdlist2">
+<p>Spring Integration framework</p>
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="js/tocbot/tocbot.min.js"></script>
+<script type="text/javascript" src="js/toc.js"></script>
+<link rel="stylesheet" href="js/highlight/styles/atom-one-dark-reasonable.min.css">
+<script src="js/highlight/highlight.min.js"></script>
+<script>hljs.initHighlighting()</script>
+</body>
 </html>

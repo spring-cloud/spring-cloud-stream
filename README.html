@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<!--[if IE]><meta http-equiv="X-UA-Compatible" content="IE=edge"><![endif]-->
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 1.5.7.1">
+<title>Preface</title>
+<link rel="stylesheet" href="css/spring.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<style>
+.hidden {
+	display: none;
+}
+
+.switch {
+	border-width: 1px 1px 0 1px;
+	border-style: solid;
+	border-color: #7a2518;
+	display: inline-block;
+}
+
+.switch--item {
+	padding: 10px;
+	background-color: #ffffff;
+	color: #7a2518;
+	display: inline-block;
+	cursor: pointer;
+}
+
+.switch--item.selected {
+	background-color: #7a2519;
+	color: #ffffff;
+}
+</style>
+<script src="http://cdnjs.cloudflare.com/ajax/libs/zepto/1.2.0/zepto.min.js"></script>
+<script type="text/javascript">
+function addBlockSwitches() {
+	$('.primary').each(function() {
+		primary = $(this);
+		createSwitchItem(primary, createBlockSwitch(primary)).item.addClass("selected");
+		primary.children('.title').remove();
+	});
+	$('.secondary').each(function(idx, node) {
+		secondary = $(node);
+		primary = findPrimary(secondary);
+		switchItem = createSwitchItem(secondary, primary.children('.switch'));
+		switchItem.content.addClass('hidden');
+		findPrimary(secondary).append(switchItem.content);
+		secondary.remove();
+	});
+}
+
+function createBlockSwitch(primary) {
+	blockSwitch = $('<div class="switch"></div>');
+	primary.prepend(blockSwitch);
+	return blockSwitch;
+}
+
+function findPrimary(secondary) {
+	candidate = secondary.prev();
+	while (!candidate.is('.primary')) {
+		candidate = candidate.prev();
+	}
+	return candidate;
+}
+
+function createSwitchItem(block, blockSwitch) {
+	blockName = block.children('.title').text();
+	content = block.children('.content').first().append(block.next('.colist'));
+	item = $('<div class="switch--item">' + blockName + '</div>');
+	item.on('click', '', content, function(e) {
+		$(this).addClass('selected');
+		$(this).siblings().removeClass('selected');
+		e.data.siblings('.content').addClass('hidden');
+		e.data.removeClass('hidden');
+	});
+	blockSwitch.append(item);
+	return {'item': item, 'content': content};
+}
+
+$(addBlockSwitches);
+</script>
+</head>
+
+<body class="book toc2 toc-left">
+<div id="header">
+<div id="toc" class="toc2">
+<div id="toctitle">Table of Contents</div>
+<ul class="sectlevel0">
+<li><a href="#_preface">Preface</a>
+<ul class="sectlevel2">
+<li><a href="#_a_brief_history_of_springs_data_integration_journey">A Brief History of Spring&#8217;s Data Integration Journey</a></li>
+<li><a href="#_quick_start">Quick Start</a></li>
+<li><a href="#_whats_new_in_2_2">What&#8217;s New in 2.2?</a>
+<ul class="sectlevel2">
+<li><a href="#spring-cloud-stream-preface-new-features">New Features and Components</a></li>
+<li><a href="#spring-cloud-stream-preface-notable-enhancements">Notable Enhancements</a></li>
+<li><a href="#spring-cloud-stream-preface-notable-deprecations">Notable Deprecations</a></li>
+<li><a href="#_notes_on_migrating_from_1_x_to_2_x">Notes on migrating from 1.x to 2.x?</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#_appendices">Appendices</a>
+<ul class="sectlevel1">
+<li><a href="#building">Appendix A: Building</a>
+<ul class="sectlevel2">
+<li><a href="#_basic_compile_and_test">Basic Compile and Test</a></li>
+<li><a href="#_documentation">Documentation</a></li>
+<li><a href="#_working_with_the_code">Working with the code</a></li>
+</ul>
+</li>
+<li><a href="#contributing">Contributing</a>
+<ul class="sectlevel2">
+<li><a href="#_sign_the_contributor_license_agreement">Sign the Contributor License Agreement</a></li>
+<li><a href="#_code_conventions_and_housekeeping">Code Conventions and Housekeeping</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="imageblock">
+<div class="content">
+<a class="image" href="https://circleci.com/gh/spring-cloud/spring-cloud-stream"><img src="https://circleci.com/gh/spring-cloud/spring-cloud-stream.svg?style=svg" alt="CircleCI"></a>
+</div>
+</div>
+<div class="imageblock">
+<div class="content">
+<a class="image" href="https://codecov.io/gh/spring-cloud/spring-cloud-stream"><img src="https://codecov.io/gh/spring-cloud/spring-cloud-stream/branch/master/graph/badge.svg" alt="codecov"></a>
+</div>
+</div>
+<div class="imageblock">
+<div class="content">
+<a class="image" href="https://gitter.im/spring-cloud/spring-cloud-stream?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge"><img src="https://badges.gitter.im/spring-cloud/spring-cloud-stream.svg" alt="Gitter"></a>
+</div>
+</div>
+</div>
+</div>
+<h1 id="_preface" class="sect0"><a class="link" href="#_preface">Preface</a></h1>
+<div class="sect2">
+<h3 id="_a_brief_history_of_springs_data_integration_journey"><a class="link" href="#_a_brief_history_of_springs_data_integration_journey">A Brief History of Spring&#8217;s Data Integration Journey</a></h3>
+<div class="paragraph">
+<p>Spring&#8217;s journey on Data Integration started with <a href="https://projects.spring.io/spring-integration/">Spring Integration</a>. With its programming model, it provided a consistent developer experience to build applications that can embrace <a href="http://www.enterpriseintegrationpatterns.com/">Enterprise Integration Patterns</a> to connect with external systems such as, databases, message brokers, and among others.</p>
+</div>
+<div class="paragraph">
+<p>Fast forward to the cloud-era, where microservices have become prominent in the enterprise setting. <a href="https://projects.spring.io/spring-boot/">Spring Boot</a> transformed the way how developers built Applications. With Spring&#8217;s programming model and the runtime responsibilities handled by Spring Boot, it became seamless to develop stand-alone, production-grade Spring-based microservices.</p>
+</div>
+<div class="paragraph">
+<p>To extend this to Data Integration workloads, Spring Integration and Spring Boot were put together into a new project. Spring Cloud Stream was born.</p>
+</div>
+<div class="paragraph">
+<p>With Spring Cloud Stream, developers can:
+* Build, test, iterate, and deploy data-centric applications in isolation.
+* Apply modern microservices architecture patterns, including composition through messaging.
+* Decouple application responsibilities with event-centric thinking. An event can represent something that has happened in time, to which the downstream consumer applications can react without knowing where it originated or the producer&#8217;s identity.
+* Port the business logic onto message brokers (such as RabbitMQ, Apache Kafka, Amazon Kinesis).
+* Interoperate between channel-based and non-channel-based application binding scenarios to support stateless and stateful computations by using Project Reactor&#8217;s Flux and Kafka Streams APIs.
+* Rely on the framework&#8217;s automatic content-type support for common use-cases. Extending to different data conversion types is possible.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_quick_start"><a class="link" href="#_quick_start">Quick Start</a></h3>
+<div class="paragraph">
+<p>You can try Spring Cloud Stream in less then 5 min even before you jump into any details by following this three-step guide.</p>
+</div>
+<div class="paragraph">
+<p>We show you how to create a Spring Cloud Stream application that receives messages coming from the messaging middleware of your choice (more on this later) and logs received messages to the console.
+We call it <code>LoggingConsumer</code>.
+While not very practical, it provides a good introduction to some of the main concepts
+and abstractions, making it easier to digest the rest of this user guide.</p>
+</div>
+<div class="paragraph">
+<p>The three steps are as follows:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p><a href="#spring-cloud-stream-preface-creating-sample-application">Creating a Sample Application by Using Spring Initializr</a></p>
+</li>
+<li>
+<p><a href="#spring-cloud-stream-preface-importing-project">Importing the Project into Your IDE</a></p>
+</li>
+<li>
+<p><a href="#spring-cloud-stream-preface-adding-message-handler">Adding a Message Handler, Building, and Running</a></p>
+</li>
+</ol>
+</div>
+<div class="sect3">
+<h4 id="spring-cloud-stream-preface-creating-sample-application"><a class="link" href="#spring-cloud-stream-preface-creating-sample-application">Creating a Sample Application by Using Spring Initializr</a></h4>
+<div class="paragraph">
+<p>To get started, visit the <a href="https://start.spring.io">Spring Initializr</a>. From there, you can generate our <code>LoggingConsumer</code> application. To do so:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>In the <strong>Dependencies</strong> section, start typing <code>stream</code>.
+When the &#8220;Cloud Stream&#8221; option should appears, select it.</p>
+</li>
+<li>
+<p>Start typing either 'kafka' or 'rabbit'.</p>
+</li>
+<li>
+<p>Select &#8220;Kafka&#8221; or &#8220;RabbitMQ&#8221;.</p>
+<div class="paragraph">
+<p>Basically, you choose the messaging middleware to which your application binds.
+We recommend using the one you have already installed or feel more comfortable with installing and running.
+Also, as you can see from the Initilaizer screen, there are a few other options you can choose.
+For example, you can choose Gradle as your build tool instead of Maven (the default).</p>
+</div>
+</li>
+<li>
+<p>In the <strong>Artifact</strong> field, type 'logging-consumer'.</p>
+<div class="paragraph">
+<p>The value of the <strong>Artifact</strong> field becomes the application name.
+If you chose RabbitMQ for the middleware, your Spring Initializr should now be as follows:</p>
+</div>
+</li>
+</ol>
+</div>
+<div class="imageblock" style="text-align: center">
+<div class="content">
+<img src="https://raw.githubusercontent.com/spring-cloud/spring-cloud-stream/master/docs/src/main/asciidoc/images/spring-initializr.png" alt="spring initializr">
+</div>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Click the <strong>Generate Project</strong> button.</p>
+<div class="paragraph">
+<p>Doing so downloads the zipped version of the generated project to your hard drive.</p>
+</div>
+</li>
+<li>
+<p>Unzip the file into the folder you want to use as your project directory.</p>
+</li>
+</ol>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+We encourage you to explore the many possibilities available in the Spring Initializr.
+It lets you create many different kinds of Spring applications.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect3">
+<h4 id="spring-cloud-stream-preface-importing-project"><a class="link" href="#spring-cloud-stream-preface-importing-project">Importing the Project into Your IDE</a></h4>
+<div class="paragraph">
+<p>Now you can import the project into your IDE.
+Keep in mind that, depending on the IDE, you may need to follow a specific import procedure.
+For example, depending on how the project was generated (Maven or Gradle), you may need to follow specific import procedure (for example, in Eclipse or STS, you need to use File &#8594; Import &#8594; Maven &#8594; Existing Maven Project).</p>
+</div>
+<div class="paragraph">
+<p>Once imported, the project must have no errors of any kind. Also, <code>src/main/java</code> should contain <code>com.example.loggingconsumer.LoggingConsumerApplication</code>.</p>
+</div>
+<div class="paragraph">
+<p>Technically, at this point, you can run the application&#8217;s main class.
+It is already a valid Spring Boot application.
+However, it does not do anything, so we want to add some code.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="spring-cloud-stream-preface-adding-message-handler"><a class="link" href="#spring-cloud-stream-preface-adding-message-handler">Adding a Message Handler, Building, and Running</a></h4>
+<div class="paragraph">
+<p>Modify the <code>com.example.loggingconsumer.LoggingConsumerApplication</code> class to look as follows:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@SpringBootApplication
+@EnableBinding(Sink.class)
+public class LoggingConsumerApplication {
+
+	public static void main(String[] args) {
+		SpringApplication.run(LoggingConsumerApplication.class, args);
+	}
+
+	@StreamListener(Sink.INPUT)
+	public void handle(Person person) {
+		System.out.println("Received: " + person);
+	}
+
+	public static class Person {
+		private String name;
+		public String getName() {
+			return name;
+		}
+		public void setName(String name) {
+			this.name = name;
+		}
+		public String toString() {
+			return this.name;
+		}
+	}
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>As you can see from the preceding listing:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>We have enabled <code>Sink</code> binding (input-no-output) by using <code>@EnableBinding(Sink.class)</code>.
+Doing so signals to the framework to initiate binding to the messaging middleware, where it automatically creates the destination (that is, queue, topic, and others) that are bound to the <code>Sink.INPUT</code> channel.</p>
+</li>
+<li>
+<p>We have added a <code>handler</code> method to receive incoming messages of type <code>Person</code>.
+Doing so lets you see one of the core features of the framework: It tries to automatically convert incoming message payloads to type <code>Person</code>.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>You now have a fully functional Spring Cloud Stream application that does listens for messages.
+From here, for simplicity, we assume you selected RabbitMQ in <a href="#spring-cloud-stream-preface-creating-sample-application">step one</a>.
+Assuming you have RabbitMQ installed and running, you can start the application by running its <code>main</code> method in your IDE.</p>
+</div>
+<div class="paragraph">
+<p>You should see following output:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code>	--- [ main] c.s.b.r.p.RabbitExchangeQueueProvisioner : declaring queue for inbound: input.anonymous.CbMIwdkJSBO1ZoPDOtHtCg, bound to: input
+	--- [ main] o.s.a.r.c.CachingConnectionFactory       : Attempting to connect to: [localhost:5672]
+	--- [ main] o.s.a.r.c.CachingConnectionFactory       : Created new connection: rabbitConnectionFactory#2a3a299:0/SimpleConnection@66c83fc8. . .
+	. . .
+	--- [ main] o.s.i.a.i.AmqpInboundChannelAdapter      : started inbound.input.anonymous.CbMIwdkJSBO1ZoPDOtHtCg
+	. . .
+	--- [ main] c.e.l.LoggingConsumerApplication         : Started LoggingConsumerApplication in 2.531 seconds (JVM running for 2.897)</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Go to the RabbitMQ management console or any other RabbitMQ client and send a message to <code>input.anonymous.CbMIwdkJSBO1ZoPDOtHtCg</code>.
+The <code>anonymous.CbMIwdkJSBO1ZoPDOtHtCg</code> part represents the group name and is generated, so it is bound to be different in your environment.
+For something more predictable, you can use an explicit group name by setting <code>spring.cloud.stream.bindings.input.group=hello</code> (or whatever name you like).</p>
+</div>
+<div class="paragraph">
+<p>The contents of the message should be a JSON representation of the <code>Person</code> class, as follows:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>{"name":"Sam Spade"}</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Then, in your console, you should see:</p>
+</div>
+<div class="paragraph">
+<p><code>Received: Sam Spade</code></p>
+</div>
+<div class="paragraph">
+<p>You can also build and package your application into a boot jar (by using <code>./mvnw clean install</code>) and run the built JAR by using the <code>java -jar</code> command.</p>
+</div>
+<div class="paragraph">
+<p>Now you have a working (albeit very basic) Spring Cloud Stream application.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_whats_new_in_2_2"><a class="link" href="#_whats_new_in_2_2">What&#8217;s New in 2.2?</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Spring Cloud Stream introduces a number of new features, enhancements, and changes in addition to the once already introduced in
+<a href="https://docs.spring.io/spring-cloud-stream/docs/Elmhurst.SR2/reference/htmlsingle/#_what_s_new_in_2_0">version 2.0</a></p>
+</div>
+<div class="paragraph">
+<p>The following sections outline the most notable ones:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="#spring-cloud-stream-preface-new-features">New Features and Components</a></p>
+</li>
+<li>
+<p><a href="#spring-cloud-stream-preface-notable-enhancements">Notable Enhancements</a></p>
+</li>
+</ul>
+</div>
+<div class="sect2">
+<h3 id="spring-cloud-stream-preface-new-features"><a class="link" href="#spring-cloud-stream-preface-new-features">New Features and Components</a></h3>
+
+</div>
+<div class="sect2">
+<h3 id="spring-cloud-stream-preface-notable-enhancements"><a class="link" href="#spring-cloud-stream-preface-notable-enhancements">Notable Enhancements</a></h3>
+
+</div>
+<div class="sect2">
+<h3 id="spring-cloud-stream-preface-notable-deprecations"><a class="link" href="#spring-cloud-stream-preface-notable-deprecations">Notable Deprecations</a></h3>
+<div class="paragraph">
+<p>As of version 2.2, the following items have been deprecated:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>The spring-cloud-stream-reactive module is deprecated in favor of native support
+via <a href="#spring_cloud_function">Spring Cloud Function</a> programming model.</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_notes_on_migrating_from_1_x_to_2_x"><a class="link" href="#_notes_on_migrating_from_1_x_to_2_x">Notes on migrating from 1.x to 2.x?</a></h3>
+<div class="ulist">
+<ul>
+<li>
+<p>Due to the improvements in content-type negotiation, the <code>originalContentType</code> header is not used (ignored) since 2.x and only exists for maintaining compatibility with 1.x versions</p>
+</li>
+<li>
+<p>Introduction of <code>@StreamRetryTemplate</code> qualifier. While configuring custom instance of the <code>RetryTemplate</code> and to avoid conflicts you must qualify the instance of such <code>RetryTemplate</code> with this qualifier. See <a href="#Retry Template">Retry Template</a> for more details.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<h1 id="_appendices" class="sect0"><a class="link" href="#_appendices">Appendices</a></h1>
+<div class="sect1">
+<h2 id="building"><a class="link" href="#building">Appendix A: Building</a></h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_basic_compile_and_test"><a class="link" href="#_basic_compile_and_test">Basic Compile and Test</a></h3>
+<div class="paragraph">
+<p>To build the source you will need to install JDK 1.8.</p>
+</div>
+<div class="paragraph">
+<p>The build uses the Maven wrapper so you don&#8217;t have to install a specific
+version of Maven.  To enable the tests for Redis, Rabbit, and Kafka bindings you
+should have those servers running before building. See below for more
+information on running the servers.</p>
+</div>
+<div class="paragraph">
+<p>The main build command is</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>$ ./mvnw clean install</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>You can also add '-DskipTests' if you like, to avoid running the tests.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+You can also install Maven (&gt;=3.3.3) yourself and run the <code>mvn</code> command
+in place of <code>./mvnw</code> in the examples below. If you do that you also
+might need to add <code>-P spring</code> if your local Maven settings do not
+contain repository declarations for spring pre-release artifacts.
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+Be aware that you might need to increase the amount of memory
+available to Maven by setting a <code>MAVEN_OPTS</code> environment variable with
+a value like <code>-Xmx512m -XX:MaxPermSize=128m</code>. We try to cover this in
+the <code>.mvn</code> configuration, so if you find you have to do it to make a
+build succeed, please raise a ticket to get the settings added to
+source control.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>The projects that require middleware generally include a
+<code>docker-compose.yml</code>, so consider using
+<a href="http://compose.docker.io/">Docker Compose</a> to run the middeware servers
+in Docker containers. See the README in the
+<a href="https://github.com/spring-cloud-samples/scripts">scripts demo
+repository</a> for specific instructions about the common cases of mongo,
+rabbit and redis.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_documentation"><a class="link" href="#_documentation">Documentation</a></h3>
+<div class="paragraph">
+<p>There is a "full" profile that will generate documentation.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_working_with_the_code"><a class="link" href="#_working_with_the_code">Working with the code</a></h3>
+<div class="paragraph">
+<p>If you don&#8217;t have an IDE preference we would recommend that you use
+<a href="http://www.springsource.com/developer/sts">Spring Tools Suite</a> or
+<a href="http://eclipse.org">Eclipse</a> when working with the code. We use the
+<a href="http://eclipse.org/m2e/">m2eclipe</a> eclipse plugin for maven support. Other IDEs and tools
+should also work without issue.</p>
+</div>
+<div class="sect3">
+<h4 id="_importing_into_eclipse_with_m2eclipse"><a class="link" href="#_importing_into_eclipse_with_m2eclipse">Importing into eclipse with m2eclipse</a></h4>
+<div class="paragraph">
+<p>We recommend the <a href="http://eclipse.org/m2e/">m2eclipe</a> eclipse plugin when working with
+eclipse. If you don&#8217;t already have m2eclipse installed it is available from the "eclipse
+marketplace".</p>
+</div>
+<div class="paragraph">
+<p>Unfortunately m2e does not yet support Maven 3.3, so once the projects
+are imported into Eclipse you will also need to tell m2eclipse to use
+the <code>.settings.xml</code> file for the projects.  If you do not do this you
+may see many different errors related to the POMs in the
+projects.  Open your Eclipse preferences, expand the Maven
+preferences, and select User Settings.  In the User Settings field
+click Browse and navigate to the Spring Cloud project you imported
+selecting the <code>.settings.xml</code> file in that project.  Click Apply and
+then OK to save the preference changes.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+Alternatively you can copy the repository settings from <a href="https://github.com/spring-cloud/spring-cloud-build/blob/master/.settings.xml"><code>.settings.xml</code></a> into your own <code>~/.m2/settings.xml</code>.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_importing_into_eclipse_without_m2eclipse"><a class="link" href="#_importing_into_eclipse_without_m2eclipse">Importing into eclipse without m2eclipse</a></h4>
+<div class="paragraph">
+<p>If you prefer not to use m2eclipse you can generate eclipse project metadata using the
+following command:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>$ ./mvnw eclipse:eclipse</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The generated eclipse projects can be imported by selecting <code>import existing projects</code>
+from the <code>file</code> menu.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="contributing"><a class="link" href="#contributing">Contributing</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Spring Cloud is released under the non-restrictive Apache 2.0 license,
+and follows a very standard Github development process, using Github
+tracker for issues and merging pull requests into master. If you want
+to contribute even something trivial please do not hesitate, but
+follow the guidelines below.</p>
+</div>
+<div class="sect2">
+<h3 id="_sign_the_contributor_license_agreement"><a class="link" href="#_sign_the_contributor_license_agreement">Sign the Contributor License Agreement</a></h3>
+<div class="paragraph">
+<p>Before we accept a non-trivial patch or pull request we will need you to sign the
+<a href="https://support.springsource.com/spring_committer_signup">contributor&#8217;s agreement</a>.
+Signing the contributor&#8217;s agreement does not grant anyone commit rights to the main
+repository, but it does mean that we can accept your contributions, and you will get an
+author credit if we do.  Active contributors might be asked to join the core team, and
+given the ability to merge pull requests.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_code_conventions_and_housekeeping"><a class="link" href="#_code_conventions_and_housekeeping">Code Conventions and Housekeeping</a></h3>
+<div class="paragraph">
+<p>None of these is essential for a pull request, but they will all help.  They can also be
+added after the original pull request but before a merge.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Use the Spring Framework code format conventions. If you use Eclipse
+you can import formatter settings using the
+<code>eclipse-code-formatter.xml</code> file from the
+<a href="https://github.com/spring-cloud/build/tree/master/eclipse-coding-conventions.xml">Spring
+Cloud Build</a> project. If using IntelliJ, you can use the
+<a href="http://plugins.jetbrains.com/plugin/6546">Eclipse Code Formatter
+Plugin</a> to import the same file.</p>
+</li>
+<li>
+<p>Make sure all new <code>.java</code> files to have a simple Javadoc class comment with at least an
+<code>@author</code> tag identifying you, and preferably at least a paragraph on what the class is
+for.</p>
+</li>
+<li>
+<p>Add the ASF license header comment to all new <code>.java</code> files (copy from existing files
+in the project)</p>
+</li>
+<li>
+<p>Add yourself as an <code>@author</code> to the .java files that you modify substantially (more
+than cosmetic changes).</p>
+</li>
+<li>
+<p>Add some Javadocs and, if you change the namespace, some XSD doc elements.</p>
+</li>
+<li>
+<p>A few unit tests would help a lot as well&#8201;&#8212;&#8201;someone has to do it.</p>
+</li>
+<li>
+<p>If no-one else is using your branch, please rebase it against the current master (or
+other target branch in the main project).</p>
+</li>
+<li>
+<p>When writing a commit message please follow <a href="http://tbaggery.com/2008/04/19/a-note-about-git-commit-messages.html">these conventions</a>,
+if you are fixing an existing issue please add <code>Fixes gh-XXXX</code> at the end of the commit
+message (where XXXX is the issue number).</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="js/tocbot/tocbot.min.js"></script>
+<script type="text/javascript" src="js/toc.js"></script>
+<link rel="stylesheet" href="js/highlight/styles/atom-one-dark-reasonable.min.css">
+<script src="js/highlight/highlight.min.js"></script>
+<script>hljs.initHighlighting()</script>
+</body>
+</html>
