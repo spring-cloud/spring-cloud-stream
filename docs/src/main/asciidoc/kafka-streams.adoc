@@ -1,8 +1,5 @@
 == Kafka Streams Binder
 
-[#index-link]
-{docs-url}spring-cloud-stream/{docs-version}
-
 
 === Usage
 
