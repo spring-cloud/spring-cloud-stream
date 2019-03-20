@@ -19,6 +19,6 @@ Relevant Links:
 
 [horizontal]
 https://cloud.spring.io/spring-cloud-dataflow/[Spring Cloud Data Flow] :: Spring Cloud Data Flow
-http://www.enterpriseintegrationpatterns.com/[Enterprise Integration Patterns]  :: Patterns and Best Practices for Enterprise Integration
+https://www.enterpriseintegrationpatterns.com/[Enterprise Integration Patterns]  :: Patterns and Best Practices for Enterprise Integration
 https://spring.io/projects/spring-integration[Spring Integration]  :: Spring Integration framework
 
