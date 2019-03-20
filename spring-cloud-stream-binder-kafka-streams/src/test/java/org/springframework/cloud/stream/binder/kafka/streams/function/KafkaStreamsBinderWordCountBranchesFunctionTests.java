@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 the original author or authors.
+ * Copyright 2019-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,7 +56,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class KafkaStreamsBinderWordCountBranchesFunctionTests {
 
 	@ClassRule
-	public static EmbeddedKafkaRule embeddedKafkaRule = new EmbeddedKafkaRule(1, true, "counts", "foo", "bar");
+	public static EmbeddedKafkaRule embeddedKafkaRule = new EmbeddedKafkaRule(1, true,
+			"counts", "foo", "bar");
 
 	private static EmbeddedKafkaBroker embeddedKafka = embeddedKafkaRule.getEmbeddedKafka();
 
@@ -64,7 +65,8 @@ public class KafkaStreamsBinderWordCountBranchesFunctionTests {
 
 	@BeforeClass
 	public static void setUp() throws Exception {
-		Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("groupx", "false", embeddedKafka);
+		Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("groupx", "false",
+				embeddedKafka);
 		consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
 		DefaultKafkaConsumerFactory<String, String> cf = new DefaultKafkaConsumerFactory<>(consumerProps);
 		consumer = cf.createConsumer();
@@ -74,45 +76,6 @@ public class KafkaStreamsBinderWordCountBranchesFunctionTests {
 	@AfterClass
 	public static void tearDown() {
 		consumer.close();
-	}
-
-	@EnableBinding(KStreamProcessorX.class)
-	@EnableAutoConfiguration
-	@EnableConfigurationProperties(KafkaStreamsApplicationSupportProperties.class)
-	public static class WordCountProcessorApplication {
-
-		@Bean
-		@SuppressWarnings("unchecked")
-		public Function<KStream<Object, String>, KStream<?, WordCount>[]> process() {
-
-			Predicate<Object, WordCount> isEnglish = (k, v) -> v.word.equals("english");
-			Predicate<Object, WordCount> isFrench = (k, v) -> v.word.equals("french");
-			Predicate<Object, WordCount> isSpanish = (k, v) -> v.word.equals("spanish");
-
-			return input -> input
-					.flatMapValues(value -> Arrays.asList(value.toLowerCase().split("\\W+")))
-					.groupBy((key, value) -> value)
-					.windowedBy(TimeWindows.of(5000))
-					.count(Materialized.as("WordCounts-branch"))
-					.toStream()
-					.map((key, value) -> new KeyValue<>(null, new WordCount(key.key(), value, new Date(key.window().start()), new Date(key.window().end()))))
-					.branch(isEnglish, isFrench, isSpanish);
-		}
-	}
-
-	interface KStreamProcessorX {
-
-		@Input("input")
-		KStream<?, ?> input();
-
-		@Output("output1")
-		KStream<?, ?> output1();
-
-		@Output("output2")
-		KStream<?, ?> output2();
-
-		@Output("output3")
-		KStream<?, ?> output3();
 	}
 
 	@Test
@@ -131,16 +94,20 @@ public class KafkaStreamsBinderWordCountBranchesFunctionTests {
 				"--spring.cloud.stream.bindings.output3.destination=bar",
 				"--spring.cloud.stream.bindings.output3.contentType=application/json",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.commit.interval.ms=1000",
-				"--spring.cloud.stream.kafka.streams.binder.configuration.default.key.serde=org.apache.kafka.common.serialization.Serdes$StringSerde",
-				"--spring.cloud.stream.kafka.streams.binder.configuration.default.value.serde=org.apache.kafka.common.serialization.Serdes$StringSerde",
+				"--spring.cloud.stream.kafka.streams.binder.configuration.default.key.serde" +
+						"=org.apache.kafka.common.serialization.Serdes$StringSerde",
+				"--spring.cloud.stream.kafka.streams.binder.configuration.default.value.serde" +
+						"=org.apache.kafka.common.serialization.Serdes$StringSerde",
 				"--spring.cloud.stream.kafka.streams.timeWindow.length=5000",
 				"--spring.cloud.stream.kafka.streams.timeWindow.advanceBy=0",
-				"--spring.cloud.stream.kafka.streams.bindings.input.consumer.applicationId=KafkaStreamsBinderWordCountBranchesFunctionTests-abc",
+				"--spring.cloud.stream.kafka.streams.bindings.input.consumer.applicationId" +
+						"=KafkaStreamsBinderWordCountBranchesFunctionTests-abc",
 				"--spring.cloud.stream.kafka.streams.binder.brokers=" + embeddedKafka.getBrokersAsString(),
 				"--spring.cloud.stream.kafka.streams.binder.zkNodes=" + embeddedKafka.getZookeeperConnectionString());
 		try {
 			receiveAndValidate(context);
-		} finally {
+		}
+		finally {
 			context.close();
 		}
 	}
@@ -214,5 +181,45 @@ public class KafkaStreamsBinderWordCountBranchesFunctionTests {
 		public void setEnd(Date end) {
 			this.end = end;
 		}
+	}
+
+	@EnableBinding(KStreamProcessorX.class)
+	@EnableAutoConfiguration
+	@EnableConfigurationProperties(KafkaStreamsApplicationSupportProperties.class)
+	public static class WordCountProcessorApplication {
+
+		@Bean
+		@SuppressWarnings("unchecked")
+		public Function<KStream<Object, String>, KStream<?, WordCount>[]> process() {
+
+			Predicate<Object, WordCount> isEnglish = (k, v) -> v.word.equals("english");
+			Predicate<Object, WordCount> isFrench = (k, v) -> v.word.equals("french");
+			Predicate<Object, WordCount> isSpanish = (k, v) -> v.word.equals("spanish");
+
+			return input -> input
+					.flatMapValues(value -> Arrays.asList(value.toLowerCase().split("\\W+")))
+					.groupBy((key, value) -> value)
+					.windowedBy(TimeWindows.of(5000))
+					.count(Materialized.as("WordCounts-branch"))
+					.toStream()
+					.map((key, value) -> new KeyValue<>(null, new WordCount(key.key(), value,
+							new Date(key.window().start()), new Date(key.window().end()))))
+					.branch(isEnglish, isFrench, isSpanish);
+		}
+	}
+
+	interface KStreamProcessorX {
+
+		@Input("input")
+		KStream<?, ?> input();
+
+		@Output("output1")
+		KStream<?, ?> output1();
+
+		@Output("output2")
+		KStream<?, ?> output2();
+
+		@Output("output3")
+		KStream<?, ?> output3();
 	}
 }

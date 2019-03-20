@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 the original author or authors.
+ * Copyright 2019-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,6 +48,7 @@ import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.cloud.function.context.FunctionCatalog;
+import org.springframework.cloud.function.core.FluxedFunction;
 import org.springframework.cloud.stream.binder.ConsumerProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaConsumerProperties;
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsConsumerProperties;
@@ -88,8 +89,10 @@ public class KafkaStreamsFunctionProcessor implements ApplicationContextAware {
 	private ConfigurableApplicationContext applicationContext;
 
 
-	public KafkaStreamsFunctionProcessor(BindingServiceProperties bindingServiceProperties, KafkaStreamsExtendedBindingProperties kafkaStreamsExtendedBindingProperties,
-										KeyValueSerdeResolver keyValueSerdeResolver, KafkaStreamsBindingInformationCatalogue kafkaStreamsBindingInformationCatalogue,
+	public KafkaStreamsFunctionProcessor(BindingServiceProperties bindingServiceProperties,
+										KafkaStreamsExtendedBindingProperties kafkaStreamsExtendedBindingProperties,
+										KeyValueSerdeResolver keyValueSerdeResolver,
+										KafkaStreamsBindingInformationCatalogue kafkaStreamsBindingInformationCatalogue,
 										KafkaStreamsMessageConversionDelegate kafkaStreamsMessageConversionDelegate,
 										CleanupConfig cleanupConfig,
 										FunctionCatalog functionCatalog,
@@ -116,7 +119,8 @@ public class KafkaStreamsFunctionProcessor implements ApplicationContextAware {
 
 			while (iterator.hasNext() && generic != null) {
 				if (generic.getRawClass() != null &&
-						(generic.getRawClass().equals(Function.class) || generic.getRawClass().equals(Consumer.class))) {
+						(generic.getRawClass().equals(Function.class) ||
+								generic.getRawClass().equals(Consumer.class))) {
 					map.put(iterator.next(), generic.getGeneric(0));
 				}
 				generic = generic.getGeneric(1);
@@ -142,15 +146,22 @@ public class KafkaStreamsFunctionProcessor implements ApplicationContextAware {
 			if (resolvableType.getRawClass() != null && resolvableType.getRawClass().equals(Consumer.class)) {
 				Consumer<Object> consumer = functionCatalog.lookup(Consumer.class, functionName);
 				consumer.accept(adaptedInboundArguments[0]);
-			} else {
+			}
+			else {
 
 				Function<Object, Object> function = functionCatalog.lookup(Function.class, functionName);
+				Object target = null;
+				if (function instanceof FluxedFunction) {
+					target = ((FluxedFunction) function).getTarget();
+				}
+				function = (Function) target;
 				Object result = function.apply(adaptedInboundArguments[0]);
 				int i = 1;
 				while (result instanceof Function || result instanceof Consumer) {
 					if (result instanceof Function) {
 						result = ((Function) result).apply(adaptedInboundArguments[i]);
-					} else {
+					}
+					else {
 						((Consumer) result).accept(adaptedInboundArguments[i]);
 						result = null;
 					}
@@ -160,7 +171,8 @@ public class KafkaStreamsFunctionProcessor implements ApplicationContextAware {
 					if (result.getClass().isArray()) {
 						Assert.isTrue(methodAnnotatedOutboundNames.length == ((Object[]) result).length,
 								"Result does not match with the number of declared outbounds");
-					} else {
+					}
+					else {
 						Assert.isTrue(methodAnnotatedOutboundNames.length == 1,
 								"Result does not match with the number of declared outbounds");
 					}
@@ -174,7 +186,8 @@ public class KafkaStreamsFunctionProcessor implements ApplicationContextAware {
 									boundElement = (KStreamBoundElementFactory.KStreamWrapper) targetBean;
 							boundElement.wrap((KStream) outboundKStream);
 						}
-					} else {
+					}
+					else {
 						Object targetBean = this.applicationContext.getBean(methodAnnotatedOutboundNames[0]);
 
 						KStreamBoundElementFactory.KStreamWrapper
@@ -183,13 +196,15 @@ public class KafkaStreamsFunctionProcessor implements ApplicationContextAware {
 					}
 				}
 			}
-		} catch (Exception ex) {
+		}
+		catch (Exception ex) {
 			throw new BeanInitializationException("Cannot setup StreamListener for foobar", ex);
 		}
 	}
 
 	@SuppressWarnings({"unchecked"})
-	private Object[] adaptAndRetrieveInboundArguments(Map<String, ResolvableType> stringResolvableTypeMap, String functionName) {
+	private Object[] adaptAndRetrieveInboundArguments(Map<String, ResolvableType> stringResolvableTypeMap,
+													String functionName) {
 		Object[] arguments = new Object[stringResolvableTypeMap.size()];
 		int i = 0;
 		for (String input : stringResolvableTypeMap.keySet()) {
@@ -206,13 +221,16 @@ public class KafkaStreamsFunctionProcessor implements ApplicationContextAware {
 					buildStreamsBuilderAndRetrieveConfig(functionName, applicationContext, input);
 				}
 				try {
-					StreamsBuilderFactoryBean streamsBuilderFactoryBean = this.methodStreamsBuilderFactoryBeanMap.get(functionName);
+					StreamsBuilderFactoryBean streamsBuilderFactoryBean =
+							this.methodStreamsBuilderFactoryBeanMap.get(functionName);
 					StreamsBuilder streamsBuilder = streamsBuilderFactoryBean.getObject();
-					KafkaStreamsConsumerProperties extendedConsumerProperties = this.kafkaStreamsExtendedBindingProperties.getExtendedConsumerProperties(input);
+					KafkaStreamsConsumerProperties extendedConsumerProperties =
+							this.kafkaStreamsExtendedBindingProperties.getExtendedConsumerProperties(input);
 					//get state store spec
 					//KafkaStreamsStateStoreProperties spec = buildStateStoreSpec(method);
 					Serde<?> keySerde = this.keyValueSerdeResolver.getInboundKeySerde(extendedConsumerProperties);
-					Serde<?> valueSerde = this.keyValueSerdeResolver.getInboundValueSerde(bindingProperties.getConsumer(), extendedConsumerProperties);
+					Serde<?> valueSerde = this.keyValueSerdeResolver.getInboundValueSerde(
+							bindingProperties.getConsumer(), extendedConsumerProperties);
 
 					final KafkaConsumerProperties.StartOffset startOffset = extendedConsumerProperties.getStartOffset();
 					Topology.AutoOffsetReset autoOffsetReset = null;
@@ -236,18 +254,23 @@ public class KafkaStreamsFunctionProcessor implements ApplicationContextAware {
 					if (parameterType.isAssignableFrom(KStream.class)) {
 						KStream<?, ?> stream = getkStream(input, bindingProperties,
 								streamsBuilder, keySerde, valueSerde, autoOffsetReset);
-						KStreamBoundElementFactory.KStreamWrapper kStreamWrapper = (KStreamBoundElementFactory.KStreamWrapper) targetBean;
+						KStreamBoundElementFactory.KStreamWrapper kStreamWrapper =
+								(KStreamBoundElementFactory.KStreamWrapper) targetBean;
 						//wrap the proxy created during the initial target type binding with real object (KStream)
 						kStreamWrapper.wrap((KStream<Object, Object>) stream);
 						this.kafkaStreamsBindingInformationCatalogue.addStreamBuilderFactory(streamsBuilderFactoryBean);
 
 						if (KStream.class.isAssignableFrom(stringResolvableTypeMap.get(input).getRawClass())) {
-							final Class<?> valueClass = (stringResolvableTypeMap.get(input).getGeneric(1).getRawClass() != null)
+							final Class<?> valueClass =
+									(stringResolvableTypeMap.get(input).getGeneric(1).getRawClass() != null)
 									? (stringResolvableTypeMap.get(input).getGeneric(1).getRawClass()) : Object.class;
-							if (this.kafkaStreamsBindingInformationCatalogue.isUseNativeDecoding((KStream) kStreamWrapper)) {
+							if (this.kafkaStreamsBindingInformationCatalogue.isUseNativeDecoding(
+									(KStream) kStreamWrapper)) {
 								arguments[i] = stream;
-							} else {
-								arguments[i] = this.kafkaStreamsMessageConversionDelegate.deserializeOnInbound(valueClass, stream);
+							}
+							else {
+								arguments[i] = this.kafkaStreamsMessageConversionDelegate.deserializeOnInbound(
+										valueClass, stream);
 							}
 						}
 
@@ -255,69 +278,83 @@ public class KafkaStreamsFunctionProcessor implements ApplicationContextAware {
 							arguments[i] = stream;
 						}
 						Assert.notNull(arguments[i], "problems..");
-					} else if (parameterType.isAssignableFrom(KTable.class)) {
+					}
+					else if (parameterType.isAssignableFrom(KTable.class)) {
 						String materializedAs = extendedConsumerProperties.getMaterializedAs();
 						String bindingDestination = this.bindingServiceProperties.getBindingDestination(input);
 						KTable<?, ?> table = getKTable(streamsBuilder, keySerde, valueSerde, materializedAs,
 								bindingDestination, autoOffsetReset);
-						KTableBoundElementFactory.KTableWrapper kTableWrapper = (KTableBoundElementFactory.KTableWrapper) targetBean;
+						KTableBoundElementFactory.KTableWrapper kTableWrapper =
+								(KTableBoundElementFactory.KTableWrapper) targetBean;
 						//wrap the proxy created during the initial target type binding with real object (KTable)
 						kTableWrapper.wrap((KTable<Object, Object>) table);
 						this.kafkaStreamsBindingInformationCatalogue.addStreamBuilderFactory(streamsBuilderFactoryBean);
 						arguments[i] = table;
-					} else if (parameterType.isAssignableFrom(GlobalKTable.class)) {
+					}
+					else if (parameterType.isAssignableFrom(GlobalKTable.class)) {
 						String materializedAs = extendedConsumerProperties.getMaterializedAs();
 						String bindingDestination = this.bindingServiceProperties.getBindingDestination(input);
 						GlobalKTable<?, ?> table = getGlobalKTable(streamsBuilder, keySerde, valueSerde, materializedAs,
 								bindingDestination, autoOffsetReset);
-						GlobalKTableBoundElementFactory.GlobalKTableWrapper globalKTableWrapper = (GlobalKTableBoundElementFactory.GlobalKTableWrapper) targetBean;
+						GlobalKTableBoundElementFactory.GlobalKTableWrapper globalKTableWrapper =
+								(GlobalKTableBoundElementFactory.GlobalKTableWrapper) targetBean;
 						//wrap the proxy created during the initial target type binding with real object (KTable)
 						globalKTableWrapper.wrap((GlobalKTable<Object, Object>) table);
 						this.kafkaStreamsBindingInformationCatalogue.addStreamBuilderFactory(streamsBuilderFactoryBean);
 						arguments[i] = table;
 					}
 					i++;
-				} catch (Exception ex) {
+				}
+				catch (Exception ex) {
 					throw new IllegalStateException(ex);
 				}
-			} else {
+			}
+			else {
 				throw new IllegalStateException(StreamListenerErrorMessages.INVALID_DECLARATIVE_METHOD_PARAMETERS);
 			}
 		}
 		return arguments;
 	}
 
-	private GlobalKTable<?, ?> getGlobalKTable(StreamsBuilder streamsBuilder, Serde<?> keySerde, Serde<?> valueSerde, String materializedAs,
+	private GlobalKTable<?, ?> getGlobalKTable(StreamsBuilder streamsBuilder,
+											Serde<?> keySerde, Serde<?> valueSerde, String materializedAs,
 											String bindingDestination, Topology.AutoOffsetReset autoOffsetReset) {
 		return materializedAs != null ?
-				materializedAsGlobalKTable(streamsBuilder, bindingDestination, materializedAs, keySerde, valueSerde, autoOffsetReset) :
+				materializedAsGlobalKTable(streamsBuilder, bindingDestination, materializedAs,
+						keySerde, valueSerde, autoOffsetReset) :
 				streamsBuilder.globalTable(bindingDestination,
 						Consumed.with(keySerde, valueSerde).withOffsetResetPolicy(autoOffsetReset));
 	}
 
-	private KTable<?, ?> getKTable(StreamsBuilder streamsBuilder, Serde<?> keySerde, Serde<?> valueSerde, String materializedAs,
+	private KTable<?, ?> getKTable(StreamsBuilder streamsBuilder, Serde<?> keySerde, Serde<?> valueSerde,
+								String materializedAs,
 								String bindingDestination, Topology.AutoOffsetReset autoOffsetReset) {
 		return materializedAs != null ?
-				materializedAs(streamsBuilder, bindingDestination, materializedAs, keySerde, valueSerde, autoOffsetReset) :
+				materializedAs(streamsBuilder, bindingDestination, materializedAs, keySerde, valueSerde,
+						autoOffsetReset) :
 				streamsBuilder.table(bindingDestination,
 						Consumed.with(keySerde, valueSerde).withOffsetResetPolicy(autoOffsetReset));
 	}
 
-	private <K, V> KTable<K, V> materializedAs(StreamsBuilder streamsBuilder, String destination, String storeName, Serde<K> k, Serde<V> v,
+	private <K, V> KTable<K, V> materializedAs(StreamsBuilder streamsBuilder, String destination,
+											String storeName, Serde<K> k, Serde<V> v,
 											Topology.AutoOffsetReset autoOffsetReset) {
 		return streamsBuilder.table(this.bindingServiceProperties.getBindingDestination(destination),
 				Consumed.with(k, v).withOffsetResetPolicy(autoOffsetReset),
 				getMaterialized(storeName, k, v));
 	}
 
-	private <K, V> GlobalKTable<K, V> materializedAsGlobalKTable(StreamsBuilder streamsBuilder, String destination, String storeName, Serde<K> k, Serde<V> v,
+	private <K, V> GlobalKTable<K, V> materializedAsGlobalKTable(StreamsBuilder streamsBuilder,
+																String destination, String storeName,
+																Serde<K> k, Serde<V> v,
 																Topology.AutoOffsetReset autoOffsetReset) {
 		return streamsBuilder.globalTable(this.bindingServiceProperties.getBindingDestination(destination),
 				Consumed.with(k, v).withOffsetResetPolicy(autoOffsetReset),
 				getMaterialized(storeName, k, v));
 	}
 
-	private <K, V> Materialized<K, V, KeyValueStore<Bytes, byte[]>> getMaterialized(String storeName, Serde<K> k, Serde<V> v) {
+	private <K, V> Materialized<K, V, KeyValueStore<Bytes, byte[]>> getMaterialized(String storeName,
+																					Serde<K> k, Serde<V> v) {
 		return Materialized.<K, V, KeyValueStore<Bytes, byte[]>>as(storeName)
 				.withKeySerde(k)
 				.withValueSerde(v);
@@ -334,11 +371,15 @@ public class KafkaStreamsFunctionProcessor implements ApplicationContextAware {
 				streamsBuilder.stream(Arrays.asList(bindingTargets),
 						Consumed.with(keySerde, valueSerde)
 								.withOffsetResetPolicy(autoOffsetReset));
-		final boolean nativeDecoding = this.bindingServiceProperties.getConsumerProperties(inboundName).isUseNativeDecoding();
+		final boolean nativeDecoding = this.bindingServiceProperties.getConsumerProperties(inboundName)
+				.isUseNativeDecoding();
 		if (nativeDecoding) {
-			LOG.info("Native decoding is enabled for " + inboundName + ". Inbound deserialization done at the broker.");
-		} else {
-			LOG.info("Native decoding is disabled for " + inboundName + ". Inbound message conversion done by Spring Cloud Stream.");
+			LOG.info("Native decoding is enabled for " + inboundName + ". " +
+					"Inbound deserialization done at the broker.");
+		}
+		else {
+			LOG.info("Native decoding is disabled for " + inboundName + ". " +
+					"Inbound message conversion done by Spring Cloud Stream.");
 		}
 
 		stream = stream.mapValues((value) -> {
@@ -347,7 +388,8 @@ public class KafkaStreamsFunctionProcessor implements ApplicationContextAware {
 			if (value != null && !StringUtils.isEmpty(contentType) && !nativeDecoding) {
 				returnValue = MessageBuilder.withPayload(value)
 						.setHeader(MessageHeaders.CONTENT_TYPE, contentType).build();
-			} else {
+			}
+			else {
 				returnValue = value;
 			}
 			return returnValue;
@@ -370,9 +412,11 @@ public class KafkaStreamsFunctionProcessor implements ApplicationContextAware {
 													String inboundName) {
 		ConfigurableListableBeanFactory beanFactory = this.applicationContext.getBeanFactory();
 
-		Map<String, Object> streamConfigGlobalProperties = applicationContext.getBean("streamConfigGlobalProperties", Map.class);
+		Map<String, Object> streamConfigGlobalProperties = applicationContext.getBean("streamConfigGlobalProperties",
+				Map.class);
 
-		KafkaStreamsConsumerProperties extendedConsumerProperties = this.kafkaStreamsExtendedBindingProperties.getExtendedConsumerProperties(inboundName);
+		KafkaStreamsConsumerProperties extendedConsumerProperties = this.kafkaStreamsExtendedBindingProperties
+				.getExtendedConsumerProperties(inboundName);
 		streamConfigGlobalProperties.putAll(extendedConsumerProperties.getConfiguration());
 
 		String applicationId = extendedConsumerProperties.getApplicationId();
@@ -387,9 +431,11 @@ public class KafkaStreamsFunctionProcessor implements ApplicationContextAware {
 			streamConfigGlobalProperties.put(StreamsConfig.NUM_STREAM_THREADS_CONFIG, concurrency);
 		}
 
-		Map<String, KafkaStreamsDlqDispatch> kafkaStreamsDlqDispatchers = applicationContext.getBean("kafkaStreamsDlqDispatchers", Map.class);
+		Map<String, KafkaStreamsDlqDispatch> kafkaStreamsDlqDispatchers = applicationContext.getBean(
+				"kafkaStreamsDlqDispatchers", Map.class);
 
-		KafkaStreamsConfiguration kafkaStreamsConfiguration = new KafkaStreamsConfiguration(streamConfigGlobalProperties) {
+		KafkaStreamsConfiguration kafkaStreamsConfiguration =
+				new KafkaStreamsConfiguration(streamConfigGlobalProperties) {
 			@Override
 			public Properties asProperties() {
 				Properties properties = super.asProperties();
@@ -403,10 +449,13 @@ public class KafkaStreamsFunctionProcessor implements ApplicationContextAware {
 				: new StreamsBuilderFactoryBean(kafkaStreamsConfiguration, this.cleanupConfig);
 		streamsBuilder.setAutoStartup(false);
 		BeanDefinition streamsBuilderBeanDefinition =
-				BeanDefinitionBuilder.genericBeanDefinition((Class<StreamsBuilderFactoryBean>) streamsBuilder.getClass(), () -> streamsBuilder)
+				BeanDefinitionBuilder.genericBeanDefinition(
+						(Class<StreamsBuilderFactoryBean>) streamsBuilder.getClass(), () -> streamsBuilder)
 						.getRawBeanDefinition();
-		((BeanDefinitionRegistry) beanFactory).registerBeanDefinition("stream-builder-" + functionName, streamsBuilderBeanDefinition);
-		StreamsBuilderFactoryBean streamsBuilderX = applicationContext.getBean("&stream-builder-" + functionName, StreamsBuilderFactoryBean.class);
+		((BeanDefinitionRegistry) beanFactory).registerBeanDefinition("stream-builder-" +
+				functionName, streamsBuilderBeanDefinition);
+		StreamsBuilderFactoryBean streamsBuilderX = applicationContext.getBean("&stream-builder-" +
+				functionName, StreamsBuilderFactoryBean.class);
 		this.methodStreamsBuilderFactoryBeanMap.put(functionName, streamsBuilderX);
 	}
 

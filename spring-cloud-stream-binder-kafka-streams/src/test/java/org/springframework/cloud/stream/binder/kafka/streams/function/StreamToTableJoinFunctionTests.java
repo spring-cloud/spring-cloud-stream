@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 the original author or authors.
+ * Copyright 2019-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,54 +62,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class StreamToTableJoinFunctionTests {
 
 	@ClassRule
-	public static EmbeddedKafkaRule embeddedKafkaRule = new EmbeddedKafkaRule(1, true, "output-topic-1", "output-topic-2");
+	public static EmbeddedKafkaRule embeddedKafkaRule = new EmbeddedKafkaRule(1,
+			true, "output-topic-1", "output-topic-2");
 
 	private static EmbeddedKafkaBroker embeddedKafka = embeddedKafkaRule.getEmbeddedKafka();
-
-	@EnableBinding(KStreamKTableProcessor.class)
-	@EnableAutoConfiguration
-	@EnableConfigurationProperties(KafkaStreamsApplicationSupportProperties.class)
-	public static class CountClicksPerRegionApplication {
-
-		@Bean
-		public Function<KStream<String, Long>, Function<KTable<String, String>, KStream<String, Long>>> process1() {
-			return userClicksStream -> (userRegionsTable -> (userClicksStream
-					.leftJoin(userRegionsTable, (clicks, region) -> new RegionWithClicks(region == null ? "UNKNOWN" : region, clicks),
-							Joined.with(Serdes.String(), Serdes.Long(), null))
-					.map((user, regionWithClicks) -> new KeyValue<>(regionWithClicks.getRegion(), regionWithClicks.getClicks()))
-					.groupByKey(Serialized.with(Serdes.String(), Serdes.Long()))
-					.reduce((firstClicks, secondClicks) -> firstClicks + secondClicks)
-					.toStream()));
-		}
-	}
-
-	interface KStreamKTableProcessor {
-
-		/**
-		 * Input binding.
-		 *
-		 * @return {@link Input} binding for {@link KStream} type.
-		 */
-		@Input("input-1")
-		KStream<?, ?> input1();
-
-		/**
-		 * Input binding.
-		 *
-		 * @return {@link Input} binding for {@link KStream} type.
-		 */
-		@Input("input-2")
-		KTable<?, ?> input2();
-
-		/**
-		 * Output binding.
-		 *
-		 * @return {@link Output} binding for {@link KStream} type.
-		 */
-		@Output("output")
-		KStream<?, ?> output();
-
-	}
 
 	@Test
 	public void testStreamToTable() throws Exception {
@@ -117,7 +73,8 @@ public class StreamToTableJoinFunctionTests {
 		app.setWebApplicationType(WebApplicationType.NONE);
 
 		Consumer<String, Long> consumer;
-		Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("group-1", "false", embeddedKafka);
+		Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("group-1",
+				"false", embeddedKafka);
 		consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
 		consumerProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
 		consumerProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, LongDeserializer.class);
@@ -134,16 +91,25 @@ public class StreamToTableJoinFunctionTests {
 				"--spring.cloud.stream.bindings.input-1.consumer.useNativeDecoding=true",
 				"--spring.cloud.stream.bindings.input-2.consumer.useNativeDecoding=true",
 				"--spring.cloud.stream.bindings.output.producer.useNativeEncoding=true",
-				"--spring.cloud.stream.kafka.streams.bindings.input-1.consumer.keySerde=org.apache.kafka.common.serialization.Serdes$StringSerde",
-				"--spring.cloud.stream.kafka.streams.bindings.input-1.consumer.valueSerde=org.apache.kafka.common.serialization.Serdes$LongSerde",
-				"--spring.cloud.stream.kafka.streams.bindings.input-2.consumer.keySerde=org.apache.kafka.common.serialization.Serdes$StringSerde",
-				"--spring.cloud.stream.kafka.streams.bindings.input-2.consumer.valueSerde=org.apache.kafka.common.serialization.Serdes$StringSerde",
-				"--spring.cloud.stream.kafka.streams.bindings.output.producer.keySerde=org.apache.kafka.common.serialization.Serdes$StringSerde",
-				"--spring.cloud.stream.kafka.streams.bindings.output.producer.valueSerde=org.apache.kafka.common.serialization.Serdes$LongSerde",
-				"--spring.cloud.stream.kafka.streams.binder.configuration.default.key.serde=org.apache.kafka.common.serialization.Serdes$StringSerde",
-				"--spring.cloud.stream.kafka.streams.binder.configuration.default.value.serde=org.apache.kafka.common.serialization.Serdes$StringSerde",
+				"--spring.cloud.stream.kafka.streams.bindings.input-1.consumer.keySerde" +
+						"=org.apache.kafka.common.serialization.Serdes$StringSerde",
+				"--spring.cloud.stream.kafka.streams.bindings.input-1.consumer.valueSerde" +
+						"=org.apache.kafka.common.serialization.Serdes$LongSerde",
+				"--spring.cloud.stream.kafka.streams.bindings.input-2.consumer.keySerde" +
+						"=org.apache.kafka.common.serialization.Serdes$StringSerde",
+				"--spring.cloud.stream.kafka.streams.bindings.input-2.consumer.valueSerde" +
+						"=org.apache.kafka.common.serialization.Serdes$StringSerde",
+				"--spring.cloud.stream.kafka.streams.bindings.output.producer.keySerde" +
+						"=org.apache.kafka.common.serialization.Serdes$StringSerde",
+				"--spring.cloud.stream.kafka.streams.bindings.output.producer.valueSerde" +
+						"=org.apache.kafka.common.serialization.Serdes$LongSerde",
+				"--spring.cloud.stream.kafka.streams.binder.configuration.default.key.serde" +
+						"=org.apache.kafka.common.serialization.Serdes$StringSerde",
+				"--spring.cloud.stream.kafka.streams.binder.configuration.default.value.serde" +
+						"=org.apache.kafka.common.serialization.Serdes$StringSerde",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.commit.interval.ms=10000",
-				"--spring.cloud.stream.kafka.streams.bindings.input-1.consumer.applicationId=StreamToTableJoinFunctionTests-abc",
+				"--spring.cloud.stream.kafka.streams.bindings.input-1.consumer.applicationId" +
+						"=StreamToTableJoinFunctionTests-abc",
 				"--spring.cloud.stream.kafka.streams.binder.brokers=" + embeddedKafka.getBrokersAsString(),
 				"--spring.cloud.stream.kafka.streams.binder.zkNodes=" + embeddedKafka.getZookeeperConnectionString())) {
 
@@ -214,7 +180,8 @@ public class StreamToTableJoinFunctionTests {
 
 			assertThat(count == expectedClicksPerRegion.size()).isTrue();
 			assertThat(actualClicksPerRegion).hasSameElementsAs(expectedClicksPerRegion);
-		} finally {
+		}
+		finally {
 			consumer.close();
 		}
 	}
@@ -225,7 +192,8 @@ public class StreamToTableJoinFunctionTests {
 		app.setWebApplicationType(WebApplicationType.NONE);
 
 		Consumer<String, Long> consumer;
-		Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("group-2", "false", embeddedKafka);
+		Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("group-2",
+				"false", embeddedKafka);
 		consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
 		consumerProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
 		consumerProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, LongDeserializer.class);
@@ -272,16 +240,25 @@ public class StreamToTableJoinFunctionTests {
 				"--spring.cloud.stream.bindings.output.producer.useNativeEncoding=true",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.auto.offset.reset=latest",
 				"--spring.cloud.stream.kafka.streams.bindings.input-1.consumer.startOffset=earliest",
-				"--spring.cloud.stream.kafka.streams.bindings.input-1.consumer.keySerde=org.apache.kafka.common.serialization.Serdes$StringSerde",
-				"--spring.cloud.stream.kafka.streams.bindings.input-1.consumer.valueSerde=org.apache.kafka.common.serialization.Serdes$LongSerde",
-				"--spring.cloud.stream.kafka.streams.bindings.input-2.consumer.keySerde=org.apache.kafka.common.serialization.Serdes$StringSerde",
-				"--spring.cloud.stream.kafka.streams.bindings.input-2.consumer.valueSerde=org.apache.kafka.common.serialization.Serdes$StringSerde",
-				"--spring.cloud.stream.kafka.streams.bindings.output.producer.keySerde=org.apache.kafka.common.serialization.Serdes$StringSerde",
-				"--spring.cloud.stream.kafka.streams.bindings.output.producer.valueSerde=org.apache.kafka.common.serialization.Serdes$LongSerde",
-				"--spring.cloud.stream.kafka.streams.binder.configuration.default.key.serde=org.apache.kafka.common.serialization.Serdes$StringSerde",
-				"--spring.cloud.stream.kafka.streams.binder.configuration.default.value.serde=org.apache.kafka.common.serialization.Serdes$StringSerde",
+				"--spring.cloud.stream.kafka.streams.bindings.input-1.consumer.keySerde" +
+						"=org.apache.kafka.common.serialization.Serdes$StringSerde",
+				"--spring.cloud.stream.kafka.streams.bindings.input-1.consumer.valueSerde" +
+						"=org.apache.kafka.common.serialization.Serdes$LongSerde",
+				"--spring.cloud.stream.kafka.streams.bindings.input-2.consumer.keySerde" +
+						"=org.apache.kafka.common.serialization.Serdes$StringSerde",
+				"--spring.cloud.stream.kafka.streams.bindings.input-2.consumer.valueSerde" +
+						"=org.apache.kafka.common.serialization.Serdes$StringSerde",
+				"--spring.cloud.stream.kafka.streams.bindings.output.producer.keySerde" +
+						"=org.apache.kafka.common.serialization.Serdes$StringSerde",
+				"--spring.cloud.stream.kafka.streams.bindings.output.producer.valueSerde" +
+						"=org.apache.kafka.common.serialization.Serdes$LongSerde",
+				"--spring.cloud.stream.kafka.streams.binder.configuration.default.key.serde" +
+						"=org.apache.kafka.common.serialization.Serdes$StringSerde",
+				"--spring.cloud.stream.kafka.streams.binder.configuration.default.value.serde" +
+						"=org.apache.kafka.common.serialization.Serdes$StringSerde",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.commit.interval.ms=10000",
-				"--spring.cloud.stream.kafka.streams.bindings.input-1.consumer.application-id=StreamToTableJoinFunctionTests-foobar",
+				"--spring.cloud.stream.kafka.streams.bindings.input-1.consumer.application-id" +
+						"=StreamToTableJoinFunctionTests-foobar",
 				"--spring.cloud.stream.kafka.streams.binder.brokers=" + embeddedKafka.getBrokersAsString(),
 				"--spring.cloud.stream.kafka.streams.binder.zkNodes=" + embeddedKafka.getZookeeperConnectionString())) {
 			Thread.sleep(1000L);
@@ -349,7 +326,8 @@ public class StreamToTableJoinFunctionTests {
 
 			assertThat(count).isEqualTo(expectedClicksPerRegion.size());
 			assertThat(actualClicksPerRegion).hasSameElementsAs(expectedClicksPerRegion);
-		} finally {
+		}
+		finally {
 			consumer.close();
 		}
 	}
@@ -380,6 +358,53 @@ public class StreamToTableJoinFunctionTests {
 		public long getClicks() {
 			return clicks;
 		}
+
+	}
+
+	@EnableBinding(KStreamKTableProcessor.class)
+	@EnableAutoConfiguration
+	@EnableConfigurationProperties(KafkaStreamsApplicationSupportProperties.class)
+	public static class CountClicksPerRegionApplication {
+
+		@Bean
+		public Function<KStream<String, Long>, Function<KTable<String, String>, KStream<String, Long>>> process1() {
+			return userClicksStream -> (userRegionsTable -> (userClicksStream
+					.leftJoin(userRegionsTable, (clicks, region) -> new RegionWithClicks(region == null ?
+									"UNKNOWN" : region, clicks),
+							Joined.with(Serdes.String(), Serdes.Long(), null))
+					.map((user, regionWithClicks) -> new KeyValue<>(regionWithClicks.getRegion(),
+							regionWithClicks.getClicks()))
+					.groupByKey(Serialized.with(Serdes.String(), Serdes.Long()))
+					.reduce((firstClicks, secondClicks) -> firstClicks + secondClicks)
+					.toStream()));
+		}
+	}
+
+	interface KStreamKTableProcessor {
+
+		/**
+		 * Input binding.
+		 *
+		 * @return {@link Input} binding for {@link KStream} type.
+		 */
+		@Input("input-1")
+		KStream<?, ?> input1();
+
+		/**
+		 * Input binding.
+		 *
+		 * @return {@link Input} binding for {@link KStream} type.
+		 */
+		@Input("input-2")
+		KTable<?, ?> input2();
+
+		/**
+		 * Output binding.
+		 *
+		 * @return {@link Output} binding for {@link KStream} type.
+		 */
+		@Output("output")
+		KStream<?, ?> output();
 
 	}
 }

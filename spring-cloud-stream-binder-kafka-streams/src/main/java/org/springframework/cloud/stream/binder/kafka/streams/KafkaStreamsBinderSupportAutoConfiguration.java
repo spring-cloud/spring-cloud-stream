@@ -31,6 +31,7 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -238,18 +239,23 @@ public class KafkaStreamsBinderSupportAutoConfiguration {
 				cleanupConfig.getIfUnique());
 	}
 
-	public KafkaStreamsFunctionProcessor kafkaStreamsFunctionProcessor(BindingServiceProperties bindingServiceProperties, KafkaStreamsExtendedBindingProperties kafkaStreamsExtendedBindingProperties,
-																		KeyValueSerdeResolver keyValueSerdeResolver, KafkaStreamsBindingInformationCatalogue kafkaStreamsBindingInformationCatalogue,
-																		KafkaStreamsMessageConversionDelegate kafkaStreamsMessageConversionDelegate,
-																		ObjectProvider<CleanupConfig> cleanupConfig,
-																		FunctionCatalog functionCatalog, BindableProxyFactory bindableProxyFactory){
+	@Bean
+	@ConditionalOnProperty("spring.cloud.stream.kafka.streams.function.definition")
+	public KafkaStreamsFunctionProcessor kafkaStreamsFunctionProcessor(BindingServiceProperties bindingServiceProperties,
+																	KafkaStreamsExtendedBindingProperties kafkaStreamsExtendedBindingProperties,
+																	KeyValueSerdeResolver keyValueSerdeResolver,
+																	KafkaStreamsBindingInformationCatalogue kafkaStreamsBindingInformationCatalogue,
+																	KafkaStreamsMessageConversionDelegate kafkaStreamsMessageConversionDelegate,
+																	ObjectProvider<CleanupConfig> cleanupConfig,
+																	FunctionCatalog functionCatalog, BindableProxyFactory bindableProxyFactory) {
 		return new KafkaStreamsFunctionProcessor(bindingServiceProperties, kafkaStreamsExtendedBindingProperties,
 				keyValueSerdeResolver, kafkaStreamsBindingInformationCatalogue, kafkaStreamsMessageConversionDelegate,
 				cleanupConfig.getIfUnique(), functionCatalog, bindableProxyFactory);
 	}
 
 	@Bean
-	public KafkaStreamsMessageConversionDelegate messageConversionDelegate(CompositeMessageConverterFactory compositeMessageConverterFactory,
+	public KafkaStreamsMessageConversionDelegate messageConversionDelegate(
+																		CompositeMessageConverterFactory compositeMessageConverterFactory,
 																		SendToDlqAndContinue sendToDlqAndContinue,
 																		KafkaStreamsBindingInformationCatalogue KafkaStreamsBindingInformationCatalogue,
 																		KafkaStreamsBinderConfigurationProperties binderConfigurationProperties) {

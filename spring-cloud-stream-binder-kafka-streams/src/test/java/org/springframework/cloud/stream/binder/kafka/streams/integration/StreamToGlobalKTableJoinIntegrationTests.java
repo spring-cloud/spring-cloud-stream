@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
 
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -45,7 +44,6 @@ import org.springframework.cloud.stream.annotation.StreamListener;
 import org.springframework.cloud.stream.binder.kafka.streams.annotations.KafkaStreamsProcessor;
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsApplicationSupportProperties;
 import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.context.annotation.Bean;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -71,73 +69,6 @@ public class StreamToGlobalKTableJoinIntegrationTests {
 			.getEmbeddedKafka();
 
 	private static Consumer<Long, EnrichedOrder> consumer;
-
-	interface CustomGlobalKTableProcessor extends KafkaStreamsProcessor {
-
-		@Input("input-x")
-		GlobalKTable<?, ?> inputX();
-
-		@Input("input-y")
-		GlobalKTable<?, ?> inputY();
-	}
-
-	@EnableBinding(CustomGlobalKTableProcessor.class)
-	@EnableAutoConfiguration
-	@EnableConfigurationProperties(KafkaStreamsApplicationSupportProperties.class)
-	public static class OrderEnricherApplication {
-
-		@StreamListener
-		@SendTo("output")
-		public KStream<Long, EnrichedOrder> process(@Input("input") KStream<Long, Order> ordersStream,
-													@Input("input-x") GlobalKTable<Long, Customer> customers,
-													@Input("input-y") GlobalKTable<Long, Product> products) {
-
-			KStream<Long, CustomerOrder> customerOrdersStream = ordersStream.join(customers,
-					(orderId, order) -> order.getCustomerId(),
-					(order, customer) -> new CustomerOrder(customer, order));
-
-			return customerOrdersStream.join(products,
-					(orderId, customerOrder) -> customerOrder
-							.productId(),
-					(customerOrder, product) -> {
-						EnrichedOrder enrichedOrder = new EnrichedOrder();
-						enrichedOrder.setProduct(product);
-						enrichedOrder.setCustomer(customerOrder.customer);
-						enrichedOrder.setOrder(customerOrder.order);
-						return enrichedOrder;
-					});
-		}
-
-		@Bean
-		public Function<KStream<Long, Order>,
-				Function<GlobalKTable<Long, Customer>,
-						Function<GlobalKTable<Long, Product>, KStream<Long, EnrichedOrder>>>> hello() {
-
-			return orderStream -> (
-					customers -> (
-							products -> (
-									orderStream.join(customers,
-											(orderId, order) -> order.getCustomerId(),
-											(order, customer) -> new CustomerOrder(customer, order))
-											.join(products,
-													(orderId, customerOrder) -> customerOrder
-															.productId(),
-													(customerOrder, product) -> {
-														EnrichedOrder enrichedOrder = new EnrichedOrder();
-														enrichedOrder.setProduct(product);
-														enrichedOrder.setCustomer(customerOrder.customer);
-														enrichedOrder.setOrder(customerOrder.order);
-														return enrichedOrder;
-													})
-							)
-					)
-			);
-
-
-		}
-
-
-	}
 
 	@Test
 	public void testStreamToGlobalKTable() throws Exception {
@@ -299,6 +230,45 @@ public class StreamToGlobalKTableJoinIntegrationTests {
 
 	}
 
+	interface CustomGlobalKTableProcessor extends KafkaStreamsProcessor {
+
+		@Input("input-x")
+		GlobalKTable<?, ?> inputX();
+
+		@Input("input-y")
+		GlobalKTable<?, ?> inputY();
+
+	}
+
+	@EnableBinding(CustomGlobalKTableProcessor.class)
+	@EnableAutoConfiguration
+	@EnableConfigurationProperties(KafkaStreamsApplicationSupportProperties.class)
+	public static class OrderEnricherApplication {
+
+		@StreamListener
+		@SendTo("output")
+		public KStream<Long, EnrichedOrder> process(
+				@Input("input") KStream<Long, Order> ordersStream,
+				@Input("input-x") GlobalKTable<Long, Customer> customers,
+				@Input("input-y") GlobalKTable<Long, Product> products) {
+
+			KStream<Long, CustomerOrder> customerOrdersStream = ordersStream.join(
+					customers, (orderId, order) -> order.getCustomerId(),
+					(order, customer) -> new CustomerOrder(customer, order));
+
+			return customerOrdersStream.join(products,
+					(orderId, customerOrder) -> customerOrder.productId(),
+					(customerOrder, product) -> {
+						EnrichedOrder enrichedOrder = new EnrichedOrder();
+						enrichedOrder.setProduct(product);
+						enrichedOrder.setCustomer(customerOrder.customer);
+						enrichedOrder.setOrder(customerOrder.order);
+						return enrichedOrder;
+					});
+		}
+
+	}
+
 	static class Order {
 
 		long customerId;
@@ -417,4 +387,5 @@ public class StreamToGlobalKTableJoinIntegrationTests {
 	public static class EnrichedOrderSerde extends JsonSerde<EnrichedOrder> {
 
 	}
+
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 the original author or authors.
+ * Copyright 2019-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,11 +59,151 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class StreamToGlobalKTableFunctionTests {
 
 	@ClassRule
-	public static EmbeddedKafkaRule embeddedKafkaRule = new EmbeddedKafkaRule(1, true, "enriched-order");
+	public static EmbeddedKafkaRule embeddedKafkaRule = new EmbeddedKafkaRule(1, true,
+			"enriched-order");
 
 	private static EmbeddedKafkaBroker embeddedKafka = embeddedKafkaRule.getEmbeddedKafka();
 
 	private static Consumer<Long, EnrichedOrder> consumer;
+
+	@Test
+	public void testStreamToGlobalKTable() throws Exception {
+		SpringApplication app = new SpringApplication(OrderEnricherApplication.class);
+		app.setWebApplicationType(WebApplicationType.NONE);
+		try (ConfigurableApplicationContext ignored = app.run("--server.port=0",
+				"--spring.jmx.enabled=false",
+				"--spring.cloud.stream.kafka.streams.function.definition=process",
+				"--spring.cloud.stream.bindings.input.destination=orders",
+				"--spring.cloud.stream.bindings.input-x.destination=customers",
+				"--spring.cloud.stream.bindings.input-y.destination=products",
+				"--spring.cloud.stream.bindings.output.destination=enriched-order",
+				"--spring.cloud.stream.bindings.input.consumer.useNativeDecoding=true",
+				"--spring.cloud.stream.bindings.input-x.consumer.useNativeDecoding=true",
+				"--spring.cloud.stream.bindings.input-y.consumer.useNativeDecoding=true",
+				"--spring.cloud.stream.bindings.output.producer.useNativeEncoding=true",
+				"--spring.cloud.stream.kafka.streams.bindings.input.consumer.keySerde" +
+						"=org.apache.kafka.common.serialization.Serdes$LongSerde",
+				"--spring.cloud.stream.kafka.streams.bindings.input.consumer.valueSerde" +
+						"=org.springframework.cloud.stream.binder.kafka.streams.function" +
+						".StreamToGlobalKTableFunctionTests$OrderSerde",
+				"--spring.cloud.stream.kafka.streams.bindings.input-x.consumer.keySerde" +
+						"=org.apache.kafka.common.serialization.Serdes$LongSerde",
+				"--spring.cloud.stream.kafka.streams.bindings.input-x.consumer.valueSerde" +
+						"=org.springframework.cloud.stream.binder.kafka.streams.function" +
+						".StreamToGlobalKTableFunctionTests$CustomerSerde",
+				"--spring.cloud.stream.kafka.streams.bindings.input-y.consumer.keySerde" +
+						"=org.apache.kafka.common.serialization.Serdes$LongSerde",
+				"--spring.cloud.stream.kafka.streams.bindings.input-y.consumer.valueSerde" +
+						"=org.springframework.cloud.stream.binder.kafka.streams.function" +
+						".StreamToGlobalKTableFunctionTests$ProductSerde",
+				"--spring.cloud.stream.kafka.streams.bindings.output.producer.keySerde" +
+						"=org.apache.kafka.common.serialization.Serdes$LongSerde",
+				"--spring.cloud.stream.kafka.streams.bindings.output.producer.valueSerde" +
+						"=org.springframework.cloud.stream.binder.kafka.streams." +
+						"function.StreamToGlobalKTableFunctionTests$EnrichedOrderSerde",
+				"--spring.cloud.stream.kafka.streams.binder.configuration.default.key.serde" +
+						"=org.apache.kafka.common.serialization.Serdes$StringSerde",
+				"--spring.cloud.stream.kafka.streams.binder.configuration.default.value.serde" +
+						"=org.apache.kafka.common.serialization.Serdes$StringSerde",
+				"--spring.cloud.stream.kafka.streams.binder.configuration.commit.interval.ms=10000",
+				"--spring.cloud.stream.kafka.streams.bindings.input.consumer.applicationId=" +
+						"StreamToGlobalKTableJoinFunctionTests-abc",
+				"--spring.cloud.stream.kafka.streams.binder.brokers=" + embeddedKafka.getBrokersAsString(),
+				"--spring.cloud.stream.kafka.streams.binder.zkNodes=" + embeddedKafka.getZookeeperConnectionString())) {
+			Map<String, Object> senderPropsCustomer = KafkaTestUtils.producerProps(embeddedKafka);
+			senderPropsCustomer.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, LongSerializer.class);
+			CustomerSerde customerSerde = new CustomerSerde();
+			senderPropsCustomer.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG,
+					customerSerde.serializer().getClass());
+
+			DefaultKafkaProducerFactory<Long, Customer> pfCustomer =
+					new DefaultKafkaProducerFactory<>(senderPropsCustomer);
+			KafkaTemplate<Long, Customer> template = new KafkaTemplate<>(pfCustomer, true);
+			template.setDefaultTopic("customers");
+			for (long i = 0; i < 5; i++) {
+				final Customer customer = new Customer();
+				customer.setName("customer-" + i);
+				template.sendDefault(i, customer);
+			}
+
+			Map<String, Object> senderPropsProduct = KafkaTestUtils.producerProps(embeddedKafka);
+			senderPropsProduct.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, LongSerializer.class);
+			ProductSerde productSerde = new ProductSerde();
+			senderPropsProduct.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, productSerde.serializer().getClass());
+
+			DefaultKafkaProducerFactory<Long, Product> pfProduct =
+					new DefaultKafkaProducerFactory<>(senderPropsProduct);
+			KafkaTemplate<Long, Product> productTemplate = new KafkaTemplate<>(pfProduct, true);
+			productTemplate.setDefaultTopic("products");
+
+			for (long i = 0; i < 5; i++) {
+				final Product product = new Product();
+				product.setName("product-" + i);
+				productTemplate.sendDefault(i, product);
+			}
+
+			Map<String, Object> senderPropsOrder = KafkaTestUtils.producerProps(embeddedKafka);
+			senderPropsOrder.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, LongSerializer.class);
+			OrderSerde orderSerde = new OrderSerde();
+			senderPropsOrder.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, orderSerde.serializer().getClass());
+
+			DefaultKafkaProducerFactory<Long, Order> pfOrder = new DefaultKafkaProducerFactory<>(senderPropsOrder);
+			KafkaTemplate<Long, Order> orderTemplate = new KafkaTemplate<>(pfOrder, true);
+			orderTemplate.setDefaultTopic("orders");
+
+			for (long i = 0; i < 5; i++) {
+				final Order order = new Order();
+				order.setCustomerId(i);
+				order.setProductId(i);
+				orderTemplate.sendDefault(i, order);
+			}
+
+			Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("group", "false",
+					embeddedKafka);
+			consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+			consumerProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, LongDeserializer.class);
+			EnrichedOrderSerde enrichedOrderSerde = new EnrichedOrderSerde();
+			consumerProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,
+					enrichedOrderSerde.deserializer().getClass());
+			consumerProps.put(JsonDeserializer.VALUE_DEFAULT_TYPE,
+					"org.springframework.cloud.stream.binder.kafka.streams." +
+							"function.StreamToGlobalKTableFunctionTests.EnrichedOrder");
+			DefaultKafkaConsumerFactory<Long, EnrichedOrder> cf = new DefaultKafkaConsumerFactory<>(consumerProps);
+
+			consumer = cf.createConsumer();
+			embeddedKafka.consumeFromAnEmbeddedTopic(consumer, "enriched-order");
+
+			int count = 0;
+			long start = System.currentTimeMillis();
+			List<KeyValue<Long, EnrichedOrder>> enrichedOrders = new ArrayList<>();
+			do {
+				ConsumerRecords<Long, EnrichedOrder> records = KafkaTestUtils.getRecords(consumer);
+				count = count + records.count();
+				for (ConsumerRecord<Long, EnrichedOrder> record : records) {
+					enrichedOrders.add(new KeyValue<>(record.key(), record.value()));
+				}
+			} while (count < 5 && (System.currentTimeMillis() - start) < 30000);
+
+			assertThat(count == 5).isTrue();
+			assertThat(enrichedOrders.size() == 5).isTrue();
+
+			enrichedOrders.sort(Comparator.comparing(o -> o.key));
+
+			for (int i = 0; i < 5; i++) {
+				KeyValue<Long, EnrichedOrder> enrichedOrderKeyValue = enrichedOrders.get(i);
+				assertThat(enrichedOrderKeyValue.key == i).isTrue();
+				EnrichedOrder enrichedOrder = enrichedOrderKeyValue.value;
+				assertThat(enrichedOrder.getOrder().customerId == i).isTrue();
+				assertThat(enrichedOrder.getOrder().productId == i).isTrue();
+				assertThat(enrichedOrder.getCustomer().name.equals("customer-" + i)).isTrue();
+				assertThat(enrichedOrder.getProduct().name.equals("product-" + i)).isTrue();
+			}
+			pfCustomer.destroy();
+			pfProduct.destroy();
+			pfOrder.destroy();
+			consumer.close();
+		}
+	}
 
 	interface CustomGlobalKTableProcessor extends KafkaStreamsProcessor {
 
@@ -103,123 +243,6 @@ public class StreamToGlobalKTableFunctionTests {
 							)
 					)
 			);
-		}
-	}
-
-	@Test
-	public void testStreamToGlobalKTable() throws Exception {
-		SpringApplication app = new SpringApplication(OrderEnricherApplication.class);
-		app.setWebApplicationType(WebApplicationType.NONE);
-		try (ConfigurableApplicationContext ignored = app.run("--server.port=0",
-				"--spring.jmx.enabled=false",
-				"--spring.cloud.stream.kafka.streams.function.definition=process",
-				"--spring.cloud.stream.bindings.input.destination=orders",
-				"--spring.cloud.stream.bindings.input-x.destination=customers",
-				"--spring.cloud.stream.bindings.input-y.destination=products",
-				"--spring.cloud.stream.bindings.output.destination=enriched-order",
-				"--spring.cloud.stream.bindings.input.consumer.useNativeDecoding=true",
-				"--spring.cloud.stream.bindings.input-x.consumer.useNativeDecoding=true",
-				"--spring.cloud.stream.bindings.input-y.consumer.useNativeDecoding=true",
-				"--spring.cloud.stream.bindings.output.producer.useNativeEncoding=true",
-				"--spring.cloud.stream.kafka.streams.bindings.input.consumer.keySerde=org.apache.kafka.common.serialization.Serdes$LongSerde",
-				"--spring.cloud.stream.kafka.streams.bindings.input.consumer.valueSerde=org.springframework.cloud.stream.binder.kafka.streams.function.StreamToGlobalKTableFunctionTests$OrderSerde",
-				"--spring.cloud.stream.kafka.streams.bindings.input-x.consumer.keySerde=org.apache.kafka.common.serialization.Serdes$LongSerde",
-				"--spring.cloud.stream.kafka.streams.bindings.input-x.consumer.valueSerde=org.springframework.cloud.stream.binder.kafka.streams.function.StreamToGlobalKTableFunctionTests$CustomerSerde",
-				"--spring.cloud.stream.kafka.streams.bindings.input-y.consumer.keySerde=org.apache.kafka.common.serialization.Serdes$LongSerde",
-				"--spring.cloud.stream.kafka.streams.bindings.input-y.consumer.valueSerde=org.springframework.cloud.stream.binder.kafka.streams.function.StreamToGlobalKTableFunctionTests$ProductSerde",
-				"--spring.cloud.stream.kafka.streams.bindings.output.producer.keySerde=org.apache.kafka.common.serialization.Serdes$LongSerde",
-				"--spring.cloud.stream.kafka.streams.bindings.output.producer.valueSerde=org.springframework.cloud.stream.binder.kafka.streams.function.StreamToGlobalKTableFunctionTests$EnrichedOrderSerde",
-				"--spring.cloud.stream.kafka.streams.binder.configuration.default.key.serde=org.apache.kafka.common.serialization.Serdes$StringSerde",
-				"--spring.cloud.stream.kafka.streams.binder.configuration.default.value.serde=org.apache.kafka.common.serialization.Serdes$StringSerde",
-				"--spring.cloud.stream.kafka.streams.binder.configuration.commit.interval.ms=10000",
-				"--spring.cloud.stream.kafka.streams.bindings.input.consumer.applicationId=StreamToGlobalKTableJoinFunctionTests-abc",
-				"--spring.cloud.stream.kafka.streams.binder.brokers=" + embeddedKafka.getBrokersAsString(),
-				"--spring.cloud.stream.kafka.streams.binder.zkNodes=" + embeddedKafka.getZookeeperConnectionString())) {
-			Map<String, Object> senderPropsCustomer = KafkaTestUtils.producerProps(embeddedKafka);
-			senderPropsCustomer.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, LongSerializer.class);
-			CustomerSerde customerSerde = new CustomerSerde();
-			senderPropsCustomer.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, customerSerde.serializer().getClass());
-
-			DefaultKafkaProducerFactory<Long, Customer> pfCustomer = new DefaultKafkaProducerFactory<>(senderPropsCustomer);
-			KafkaTemplate<Long, Customer> template = new KafkaTemplate<>(pfCustomer, true);
-			template.setDefaultTopic("customers");
-			for (long i = 0; i < 5; i++) {
-				final Customer customer = new Customer();
-				customer.setName("customer-" + i);
-				template.sendDefault(i, customer);
-			}
-
-			Map<String, Object> senderPropsProduct = KafkaTestUtils.producerProps(embeddedKafka);
-			senderPropsProduct.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, LongSerializer.class);
-			ProductSerde productSerde = new ProductSerde();
-			senderPropsProduct.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, productSerde.serializer().getClass());
-
-			DefaultKafkaProducerFactory<Long, Product> pfProduct = new DefaultKafkaProducerFactory<>(senderPropsProduct);
-			KafkaTemplate<Long, Product> productTemplate = new KafkaTemplate<>(pfProduct, true);
-			productTemplate.setDefaultTopic("products");
-
-			for (long i = 0; i < 5; i++) {
-				final Product product = new Product();
-				product.setName("product-" + i);
-				productTemplate.sendDefault(i, product);
-			}
-
-			Map<String, Object> senderPropsOrder = KafkaTestUtils.producerProps(embeddedKafka);
-			senderPropsOrder.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, LongSerializer.class);
-			OrderSerde orderSerde = new OrderSerde();
-			senderPropsOrder.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, orderSerde.serializer().getClass());
-
-			DefaultKafkaProducerFactory<Long, Order> pfOrder = new DefaultKafkaProducerFactory<>(senderPropsOrder);
-			KafkaTemplate<Long, Order> orderTemplate = new KafkaTemplate<>(pfOrder, true);
-			orderTemplate.setDefaultTopic("orders");
-
-			for (long i = 0; i < 5; i++) {
-				final Order order = new Order();
-				order.setCustomerId(i);
-				order.setProductId(i);
-				orderTemplate.sendDefault(i, order);
-			}
-
-			Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("group", "false", embeddedKafka);
-			consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
-			consumerProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, LongDeserializer.class);
-			EnrichedOrderSerde enrichedOrderSerde = new EnrichedOrderSerde();
-			consumerProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, enrichedOrderSerde.deserializer().getClass());
-			consumerProps.put(JsonDeserializer.VALUE_DEFAULT_TYPE, "org.springframework.cloud.stream.binder.kafka.streams.function.StreamToGlobalKTableFunctionTests.EnrichedOrder");
-			DefaultKafkaConsumerFactory<Long, EnrichedOrder> cf = new DefaultKafkaConsumerFactory<>(consumerProps);
-
-			consumer = cf.createConsumer();
-			embeddedKafka.consumeFromAnEmbeddedTopic(consumer, "enriched-order");
-
-			int count = 0;
-			long start = System.currentTimeMillis();
-			List<KeyValue<Long, EnrichedOrder>> enrichedOrders = new ArrayList<>();
-			do {
-				ConsumerRecords<Long, EnrichedOrder> records = KafkaTestUtils.getRecords(consumer);
-				count = count + records.count();
-				for (ConsumerRecord<Long, EnrichedOrder> record : records) {
-					enrichedOrders.add(new KeyValue<>(record.key(), record.value()));
-				}
-			} while (count < 5 && (System.currentTimeMillis() - start) < 30000);
-
-			assertThat(count == 5).isTrue();
-			assertThat(enrichedOrders.size() == 5).isTrue();
-
-			enrichedOrders.sort(Comparator.comparing(o -> o.key));
-
-			for (int i = 0; i < 5; i++) {
-				KeyValue<Long, EnrichedOrder> enrichedOrderKeyValue = enrichedOrders.get(i);
-				assertThat(enrichedOrderKeyValue.key == i).isTrue();
-				EnrichedOrder enrichedOrder = enrichedOrderKeyValue.value;
-				assertThat(enrichedOrder.getOrder().customerId == i).isTrue();
-				assertThat(enrichedOrder.getOrder().productId == i).isTrue();
-				assertThat(enrichedOrder.getCustomer().name.equals("customer-" + i)).isTrue();
-				assertThat(enrichedOrder.getProduct().name.equals("product-" + i)).isTrue();
-			}
-			pfCustomer.destroy();
-			pfProduct.destroy();
-			pfOrder.destroy();
-			consumer.close();
 		}
 	}
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 the original author or authors.
+ * Copyright 2019-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,20 +33,21 @@ import org.springframework.context.annotation.Configuration;
 public class KafkaStreamsFunctionAutoConfiguration {
 
 	@Autowired
-	private KafkaStreamsFunctionProperties properties;
-
-	@Autowired
 	ConfigurableApplicationContext context;
 
 	@Bean
-	public KafkaStreamsFunctionProcessorInvoker kafkaStreamsFunctionProcessorInvoker(KafkaStreamsFunctionBeanPostProcessor kafkaStreamsFunctionBeanPostProcessor,
-																					KafkaStreamsFunctionProcessor kafkaStreamsFunctionProcessor) {
-		return new KafkaStreamsFunctionProcessorInvoker(kafkaStreamsFunctionBeanPostProcessor.getResolvableType(), properties.getDefinition(), kafkaStreamsFunctionProcessor);
+	public KafkaStreamsFunctionProcessorInvoker kafkaStreamsFunctionProcessorInvoker(
+																					KafkaStreamsFunctionBeanPostProcessor kafkaStreamsFunctionBeanPostProcessor,
+																					KafkaStreamsFunctionProcessor kafkaStreamsFunctionProcessor,
+																					KafkaStreamsFunctionProperties properties) {
+		return new KafkaStreamsFunctionProcessorInvoker(kafkaStreamsFunctionBeanPostProcessor.getResolvableType(),
+				properties.getDefinition(), kafkaStreamsFunctionProcessor);
 	}
 
 	@Bean
-	public KafkaStreamsFunctionBeanPostProcessor kafkaStreamsFunctionBeanPostProcessor(ConfigurableApplicationContext context) {
-		return new KafkaStreamsFunctionBeanPostProcessor(this.properties.getDefinition(), context);
+	public KafkaStreamsFunctionBeanPostProcessor kafkaStreamsFunctionBeanPostProcessor(
+			ConfigurableApplicationContext context, KafkaStreamsFunctionProperties properties) {
+		return new KafkaStreamsFunctionBeanPostProcessor(properties, context);
 	}
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 the original author or authors.
+ * Copyright 2019-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,7 +56,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class KafkaStreamsBinderWordCountFunctionTests {
 
 	@ClassRule
-	public static EmbeddedKafkaRule embeddedKafkaRule = new EmbeddedKafkaRule(1, true, "counts");
+	public static EmbeddedKafkaRule embeddedKafkaRule = new EmbeddedKafkaRule(1, true,
+			"counts");
 
 	private static EmbeddedKafkaBroker embeddedKafka = embeddedKafkaRule.getEmbeddedKafka();
 
@@ -64,7 +65,8 @@ public class KafkaStreamsBinderWordCountFunctionTests {
 
 	@BeforeClass
 	public static void setUp() throws Exception {
-		Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("group", "false", embeddedKafka);
+		Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("group", "false",
+				embeddedKafka);
 		consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
 		DefaultKafkaConsumerFactory<String, String> cf = new DefaultKafkaConsumerFactory<>(consumerProps);
 		consumer = cf.createConsumer();
@@ -74,25 +76,6 @@ public class KafkaStreamsBinderWordCountFunctionTests {
 	@AfterClass
 	public static void tearDown() {
 		consumer.close();
-	}
-
-	@EnableBinding(KafkaStreamsProcessor.class)
-	@EnableAutoConfiguration
-	@EnableConfigurationProperties(KafkaStreamsApplicationSupportProperties.class)
-	static class WordCountProcessorApplication {
-
-		@Bean
-		public Function<KStream<Object, String>, KStream<?, WordCount>> process() {
-
-			return input -> input
-					.flatMapValues(value -> Arrays.asList(value.toLowerCase().split("\\W+")))
-					.map((key, value) -> new KeyValue<>(value, value))
-					.groupByKey(Serialized.with(Serdes.String(), Serdes.String()))
-					.windowedBy(TimeWindows.of(5000))
-					.count(Materialized.as("foo-WordCounts"))
-					.toStream()
-					.map((key, value) -> new KeyValue<>(null, new WordCount(key.key(), value, new Date(key.window().start()), new Date(key.window().end()))));
-		}
 	}
 
 	@Test
@@ -108,8 +91,10 @@ public class KafkaStreamsBinderWordCountFunctionTests {
 				"--spring.cloud.stream.bindings.output.contentType=application/json",
 				"--spring.cloud.stream.kafka.streams.default.consumer.application-id=basic-word-count",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.commit.interval.ms=1000",
-				"--spring.cloud.stream.kafka.streams.binder.configuration.default.key.serde=org.apache.kafka.common.serialization.Serdes$StringSerde",
-				"--spring.cloud.stream.kafka.streams.binder.configuration.default.value.serde=org.apache.kafka.common.serialization.Serdes$StringSerde",
+				"--spring.cloud.stream.kafka.streams.binder.configuration.default.key.serde" +
+						"=org.apache.kafka.common.serialization.Serdes$StringSerde",
+				"--spring.cloud.stream.kafka.streams.binder.configuration.default.value.serde" +
+						"=org.apache.kafka.common.serialization.Serdes$StringSerde",
 				"--spring.cloud.stream.bindings.output.producer.headerMode=raw",
 				"--spring.cloud.stream.bindings.input.consumer.headerMode=raw",
 				"--spring.cloud.stream.kafka.streams.binder.brokers=" + embeddedKafka.getBrokersAsString())) {
@@ -126,7 +111,8 @@ public class KafkaStreamsBinderWordCountFunctionTests {
 			template.sendDefault("foobar");
 			ConsumerRecord<String, String> cr = KafkaTestUtils.getSingleRecord(consumer, "counts");
 			assertThat(cr.value().contains("\"word\":\"foobar\",\"count\":1")).isTrue();
-		} finally {
+		}
+		finally {
 			pf.destroy();
 		}
 	}
@@ -180,4 +166,25 @@ public class KafkaStreamsBinderWordCountFunctionTests {
 			this.end = end;
 		}
 	}
+
+	@EnableBinding(KafkaStreamsProcessor.class)
+	@EnableAutoConfiguration
+	@EnableConfigurationProperties(KafkaStreamsApplicationSupportProperties.class)
+	static class WordCountProcessorApplication {
+
+		@Bean
+		public Function<KStream<Object, String>, KStream<?, WordCount>> process() {
+
+			return input -> input
+					.flatMapValues(value -> Arrays.asList(value.toLowerCase().split("\\W+")))
+					.map((key, value) -> new KeyValue<>(value, value))
+					.groupByKey(Serialized.with(Serdes.String(), Serdes.String()))
+					.windowedBy(TimeWindows.of(5000))
+					.count(Materialized.as("foo-WordCounts"))
+					.toStream()
+					.map((key, value) -> new KeyValue<>(null, new WordCount(key.key(), value,
+							new Date(key.window().start()), new Date(key.window().end()))));
+		}
+	}
+
 }
