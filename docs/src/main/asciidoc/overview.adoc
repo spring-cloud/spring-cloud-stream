@@ -371,7 +371,7 @@ public class ManuallyAcknowdledgingConsumer {
 ===== Example: Security Configuration
 
 Apache Kafka 0.9 supports secure connections between client and brokers.
-To take advantage of this feature, follow the guidelines in the http://kafka.apache.org/090/documentation.html#security_configclients[Apache Kafka Documentation] as well as the Kafka 0.9 http://docs.confluent.io/2.0.0/kafka/security.html[security guidelines from the Confluent documentation].
+To take advantage of this feature, follow the guidelines in the https://kafka.apache.org/090/documentation.html#security_configclients[Apache Kafka Documentation] as well as the Kafka 0.9 https://docs.confluent.io/2.0.0/kafka/security.html[security guidelines from the Confluent documentation].
 Use the `spring.cloud.stream.kafka.binder.configuration` option to set security properties for all clients created by the binder.
 
 For example, to set `security.protocol` to `SASL_SSL`, set the following property:
@@ -383,7 +383,7 @@ spring.cloud.stream.kafka.binder.configuration.security.protocol=SASL_SSL
 
 All the other security properties can be set in a similar manner.
 
-When using Kerberos, follow the instructions in the http://kafka.apache.org/090/documentation.html#security_sasl_clientconfig[reference documentation] for creating and referencing the JAAS configuration.
+When using Kerberos, follow the instructions in the https://kafka.apache.org/090/documentation.html#security_sasl_clientconfig[reference documentation] for creating and referencing the JAAS configuration.
 
 Spring Cloud Stream supports passing JAAS configuration information to the application by using a JAAS configuration file and using Spring Boot properties.
 
