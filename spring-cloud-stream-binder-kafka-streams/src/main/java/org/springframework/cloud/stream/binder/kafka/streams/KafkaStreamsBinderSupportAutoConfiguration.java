@@ -240,7 +240,8 @@ public class KafkaStreamsBinderSupportAutoConfiguration {
 	}
 
 	@Bean
-	@ConditionalOnProperty("spring.cloud.stream.kafka.streams.function.definition")
+//	@ConditionalOnProperty("spring.cloud.stream.kafka.streams.function.definition")
+	@ConditionalOnProperty("spring.cloud.stream.function.definition")
 	public KafkaStreamsFunctionProcessor kafkaStreamsFunctionProcessor(BindingServiceProperties bindingServiceProperties,
 																	KafkaStreamsExtendedBindingProperties kafkaStreamsExtendedBindingProperties,
 																	KeyValueSerdeResolver keyValueSerdeResolver,

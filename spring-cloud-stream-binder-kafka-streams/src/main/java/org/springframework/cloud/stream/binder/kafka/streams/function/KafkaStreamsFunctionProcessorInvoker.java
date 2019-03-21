@@ -21,13 +21,18 @@ import javax.annotation.PostConstruct;
 import org.springframework.cloud.stream.binder.kafka.streams.KafkaStreamsFunctionProcessor;
 import org.springframework.core.ResolvableType;
 
-public class KafkaStreamsFunctionProcessorInvoker {
+/**
+ *
+ * @author Soby Chacko
+ * @since 2.1.0
+ */
+class KafkaStreamsFunctionProcessorInvoker {
 
 	private final KafkaStreamsFunctionProcessor kafkaStreamsFunctionProcessor;
 	private final ResolvableType resolvableType;
 	private final String functionName;
 
-	public KafkaStreamsFunctionProcessorInvoker(ResolvableType resolvableType, String functionName,
+	KafkaStreamsFunctionProcessorInvoker(ResolvableType resolvableType, String functionName,
 												KafkaStreamsFunctionProcessor kafkaStreamsFunctionProcessor) {
 		this.kafkaStreamsFunctionProcessor = kafkaStreamsFunctionProcessor;
 		this.resolvableType = resolvableType;
@@ -35,7 +40,7 @@ public class KafkaStreamsFunctionProcessorInvoker {
 	}
 
 	@PostConstruct
-	public void invoke() {
+	void invoke() {
 		this.kafkaStreamsFunctionProcessor.orchestrateStreamListenerSetupMethod(resolvableType, functionName);
 	}
 }

@@ -16,11 +16,10 @@
 
 package org.springframework.cloud.stream.binder.kafka.streams.function;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.binder.kafka.streams.KafkaStreamsFunctionProcessor;
-import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.cloud.stream.function.StreamFunctionProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -28,26 +27,23 @@ import org.springframework.context.annotation.Configuration;
  * @author Soby Chacko
  */
 @Configuration
-@ConditionalOnProperty("spring.cloud.stream.kafka.streams.function.definition")
-@EnableConfigurationProperties(KafkaStreamsFunctionProperties.class)
+@ConditionalOnProperty("spring.cloud.stream.function.definition")
+@EnableConfigurationProperties(StreamFunctionProperties.class)
 public class KafkaStreamsFunctionAutoConfiguration {
-
-	@Autowired
-	ConfigurableApplicationContext context;
 
 	@Bean
 	public KafkaStreamsFunctionProcessorInvoker kafkaStreamsFunctionProcessorInvoker(
 																					KafkaStreamsFunctionBeanPostProcessor kafkaStreamsFunctionBeanPostProcessor,
 																					KafkaStreamsFunctionProcessor kafkaStreamsFunctionProcessor,
-																					KafkaStreamsFunctionProperties properties) {
+																					StreamFunctionProperties properties) {
 		return new KafkaStreamsFunctionProcessorInvoker(kafkaStreamsFunctionBeanPostProcessor.getResolvableType(),
 				properties.getDefinition(), kafkaStreamsFunctionProcessor);
 	}
 
 	@Bean
 	public KafkaStreamsFunctionBeanPostProcessor kafkaStreamsFunctionBeanPostProcessor(
-			ConfigurableApplicationContext context, KafkaStreamsFunctionProperties properties) {
-		return new KafkaStreamsFunctionBeanPostProcessor(properties, context);
+			StreamFunctionProperties properties) {
+		return new KafkaStreamsFunctionBeanPostProcessor(properties);
 	}
 
 }

@@ -18,22 +18,30 @@ package org.springframework.cloud.stream.binder.kafka.streams.function;
 
 import java.lang.reflect.Method;
 
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.BeanFactory;
+import org.springframework.beans.factory.BeanFactoryAware;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.AnnotatedBeanDefinition;
-import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.cloud.stream.function.StreamFunctionProperties;
 import org.springframework.core.ResolvableType;
 import org.springframework.util.ClassUtils;
 
-public class KafkaStreamsFunctionBeanPostProcessor implements InitializingBean {
+/**
+ *
+ * @author Soby Chacko
+ * @since 2.1.0
+ *
+ */
+class KafkaStreamsFunctionBeanPostProcessor implements InitializingBean, BeanFactoryAware {
 
-	private final KafkaStreamsFunctionProperties kafkaStreamsFunctionProperties;
-	private final ConfigurableApplicationContext context;
+	private final StreamFunctionProperties kafkaStreamsFunctionProperties;
+	private ConfigurableListableBeanFactory beanFactory;
 	private ResolvableType resolvableType;
 
-	public KafkaStreamsFunctionBeanPostProcessor(KafkaStreamsFunctionProperties properties,
-												ConfigurableApplicationContext context) {
+	KafkaStreamsFunctionBeanPostProcessor(StreamFunctionProperties properties) {
 		this.kafkaStreamsFunctionProperties = properties;
-		this.context = context;
 	}
 
 	public ResolvableType getResolvableType() {
@@ -43,16 +51,21 @@ public class KafkaStreamsFunctionBeanPostProcessor implements InitializingBean {
 	@Override
 	public void afterPropertiesSet() throws Exception {
 		final Class<?> classObj = ClassUtils.resolveClassName(((AnnotatedBeanDefinition)
-						context.getBeanFactory().getBeanDefinition(kafkaStreamsFunctionProperties.getDefinition()))
+						this.beanFactory.getBeanDefinition(kafkaStreamsFunctionProperties.getDefinition()))
 						.getMetadata().getClassName(),
 				ClassUtils.getDefaultClassLoader());
 
 		try {
-			Method method = classObj.getMethod(this.kafkaStreamsFunctionProperties.getDefinition(), null);
+			Method method = classObj.getMethod(this.kafkaStreamsFunctionProperties.getDefinition());
 			this.resolvableType = ResolvableType.forMethodReturnType(method, classObj);
 		}
 		catch (NoSuchMethodException e) {
 			//ignore
 		}
+	}
+
+	@Override
+	public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
+		this.beanFactory = (ConfigurableListableBeanFactory) beanFactory;
 	}
 }

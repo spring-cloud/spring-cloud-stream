@@ -84,7 +84,7 @@ public class StreamToTableJoinFunctionTests {
 
 		try (ConfigurableApplicationContext ignored = app.run("--server.port=0",
 				"--spring.jmx.enabled=false",
-				"--spring.cloud.stream.kafka.streams.function.definition=process1",
+				"--spring.cloud.stream.function.definition=process1",
 				"--spring.cloud.stream.bindings.input-1.destination=user-clicks-1",
 				"--spring.cloud.stream.bindings.input-2.destination=user-regions-1",
 				"--spring.cloud.stream.bindings.output.destination=output-topic-1",
@@ -228,10 +228,10 @@ public class StreamToTableJoinFunctionTests {
 		for (KeyValue<String, Long> keyValue : userClicks) {
 			template.sendDefault(keyValue.key, keyValue.value);
 		}
-		//Thread.sleep(10000L);
+
 		try (ConfigurableApplicationContext ignored = app.run("--server.port=0",
 				"--spring.jmx.enabled=false",
-				"--spring.cloud.stream.kafka.streams.function.definition=process1",
+				"--spring.cloud.stream.function.definition=process1",
 				"--spring.cloud.stream.bindings.input-1.destination=user-clicks-2",
 				"--spring.cloud.stream.bindings.input-2.destination=user-regions-2",
 				"--spring.cloud.stream.bindings.output.destination=output-topic-2",

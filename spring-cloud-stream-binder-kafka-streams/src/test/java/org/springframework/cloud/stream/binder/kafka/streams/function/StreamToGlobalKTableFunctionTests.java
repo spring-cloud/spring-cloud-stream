@@ -72,7 +72,7 @@ public class StreamToGlobalKTableFunctionTests {
 		app.setWebApplicationType(WebApplicationType.NONE);
 		try (ConfigurableApplicationContext ignored = app.run("--server.port=0",
 				"--spring.jmx.enabled=false",
-				"--spring.cloud.stream.kafka.streams.function.definition=process",
+				"--spring.cloud.stream.function.definition=process",
 				"--spring.cloud.stream.bindings.input.destination=orders",
 				"--spring.cloud.stream.bindings.input-x.destination=customers",
 				"--spring.cloud.stream.bindings.input-y.destination=products",
