@@ -483,8 +483,10 @@ public class KafkaMessageChannelBinder extends
 		for (int i = 0; i < topics.length; i++) {
 			topics[i] = topics[i].trim();
 		}
-		Assert.isTrue(usingPatterns || !CollectionUtils.isEmpty(listenedPartitions),
-				"A list of partitions must be provided");
+		if (!usingPatterns && !groupManagement) {
+				Assert.isTrue(!CollectionUtils.isEmpty(listenedPartitions),
+						"A list of partitions must be provided");
+		}
 		final TopicPartitionInitialOffset[] topicPartitionInitialOffsets = getTopicPartitionInitialOffsets(
 				listenedPartitions);
 		final ContainerProperties containerProperties = anonymous
@@ -504,6 +506,11 @@ public class KafkaMessageChannelBinder extends
 		int concurrency = usingPatterns ? extendedConsumerProperties.getConcurrency()
 				: Math.min(extendedConsumerProperties.getConcurrency(),
 						listenedPartitions.size());
+		// in the event that auto rebalance is enabled, but no listened partitions are found
+		// we want to make sure that concurrency is a non-zero value.
+		if (groupManagement && listenedPartitions.isEmpty()) {
+			concurrency = extendedConsumerProperties.getConcurrency();
+		}
 		resetOffsets(extendedConsumerProperties, consumerFactory, groupManagement,
 				containerProperties);
 		@SuppressWarnings("rawtypes")
@@ -844,8 +851,7 @@ public class KafkaMessageChannelBinder extends
 				extendedConsumerProperties.getExtension().isAutoRebalanceEnabled(),
 				() -> {
 					try (Consumer<?, ?> consumer = consumerFactory.createConsumer()) {
-						List<PartitionInfo> partitionsFor = consumer.partitionsFor(topic);
-						return partitionsFor;
+						return consumer.partitionsFor(topic);
 					}
 				}, topic);
 	}

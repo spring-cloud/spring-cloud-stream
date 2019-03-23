@@ -463,6 +463,8 @@ public class KafkaTopicProvisioner implements
 					}
 					this.logger.error("Failed to obtain partition information", ex);
 				}
+				// In some cases, the above partition query may not throw an UnknownTopic..Exception for various reasons.
+				// For that, we are forcing another query to ensure that the topic is present on the server.
 				if (CollectionUtils.isEmpty(partitions)) {
 					final AdminClient adminClient = AdminClient
 							.create(this.adminClientProperties);
@@ -483,7 +485,7 @@ public class KafkaTopicProvisioner implements
 					}
 				}
 				// do a sanity check on the partition set
-				int partitionSize = partitions.size();
+				int partitionSize = CollectionUtils.isEmpty(partitions) ? 0 : partitions.size();
 				if (partitionSize < partitionCount) {
 					if (tolerateLowerPartitionsOnBroker) {
 						this.logger.warn("The number of expected partitions was: "
