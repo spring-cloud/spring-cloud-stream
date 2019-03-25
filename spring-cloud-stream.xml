@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?asciidoc-toc maxdepth="8"?>
 <?asciidoc-numbered?>
-<book xmlns="http://docbook.org/ns/docbook" xmlns:xl="http://www.w3.org/1999/xlink" version="5.0" xml:lang="en">
+<book xmlns="https://docbook.org/ns/docbook" xmlns:xl="https://www.w3.org/1999/xlink" version="5.0" xml:lang="en">
 <info>
 <title>Spring Cloud Stream Reference Guide</title>
 <date>2018-12-13</date>
@@ -120,7 +120,7 @@
 <title>Preface</title>
 <chapter xml:id="_a_brief_history_of_springs_data_integration_journey">
 <title>A Brief History of Spring&#8217;s Data Integration Journey</title>
-<simpara>Spring&#8217;s journey on Data Integration started with <link xl:href="https://projects.spring.io/spring-integration/">Spring Integration</link>. With its programming model, it provided a consistent developer experience to build applications that can embrace <link xl:href="http://www.enterpriseintegrationpatterns.com/">Enterprise Integration Patterns</link> to connect with external systems such as, databases, message brokers, and among others.</simpara>
+<simpara>Spring&#8217;s journey on Data Integration started with <link xl:href="https://projects.spring.io/spring-integration/">Spring Integration</link>. With its programming model, it provided a consistent developer experience to build applications that can embrace <link xl:href="https://www.enterpriseintegrationpatterns.com/">Enterprise Integration Patterns</link> to connect with external systems such as, databases, message brokers, and among others.</simpara>
 <simpara>Fast forward to the cloud-era, where microservices have become prominent in the enterprise setting. <link xl:href="https://projects.spring.io/spring-boot/">Spring Boot</link> transformed the way how developers built Applications. With Spring&#8217;s programming model and the runtime responsibilities handled by Spring Boot, it became seamless to develop stand-alone, production-grade Spring-based microservices.</simpara>
 <simpara>To extend this to Data Integration workloads, Spring Integration and Spring Boot were put together into a new project. Spring Cloud Stream was born.</simpara>
 <simpara>With Spring Cloud Stream, developers can:
@@ -769,7 +769,7 @@ private MessageChannel output;</programlisting>
 <simpara>You can write a Spring Cloud Stream application by using either Spring Integration annotations or Spring Cloud Stream native annotation.</simpara>
 <section xml:id="_spring_integration_support">
 <title>Spring Integration Support</title>
-<simpara>Spring Cloud Stream is built on the concepts and patterns defined by <link xl:href="http://www.enterpriseintegrationpatterns.com/">Enterprise Integration Patterns</link> and relies
+<simpara>Spring Cloud Stream is built on the concepts and patterns defined by <link xl:href="https://www.enterpriseintegrationpatterns.com/">Enterprise Integration Patterns</link> and relies
 in its internal implementation on an already established and popular implementation of Enterprise Integration Patterns within the Spring portfolio of projects:
 <link xl:href="https://projects.spring.io/spring-integration/">Spring Integration</link> framework.</simpara>
 <simpara>So its only natural for it to support the foundation, semantics, and configuration options that are already established by Spring Integration</simpara>
@@ -1530,14 +1530,14 @@ application will not start due to health check failures.</simpara>
 : Mapped "{[/actuator/bindings],methods=[GET]. . .
 : Mapped "{[/actuator/bindings/{name}],methods=[GET]. . .</literallayout>
 <simpara>To visualize the current bindings, access the following URL:
-<literal><link xl:href="http://&lt;host&gt;:&lt;port&gt;/actuator/bindings">http://&lt;host&gt;:&lt;port&gt;/actuator/bindings</link></literal></simpara>
+<literal><link xl:href="https://&lt;host&gt;:&lt;port&gt;/actuator/bindings">https://&lt;host&gt;:&lt;port&gt;/actuator/bindings</link></literal></simpara>
 <simpara>Alternative, to see a single binding, access one of the URLs similar to the following:
-<literal><link xl:href="http://&lt;host&gt;:&lt;port&gt;/actuator/bindings/myBindingName">http://&lt;host&gt;:&lt;port&gt;/actuator/bindings/myBindingName</link></literal></simpara>
+<literal><link xl:href="https://&lt;host&gt;:&lt;port&gt;/actuator/bindings/myBindingName">https://&lt;host&gt;:&lt;port&gt;/actuator/bindings/myBindingName</link></literal></simpara>
 <simpara>You can also stop, start, pause, and resume individual bindings by posting to the same URL while providing a <literal>state</literal> argument as JSON, as shown in the following examples:</simpara>
-<simpara>curl -d '{"state":"STOPPED"}' -H "Content-Type: application/json" -X POST <link xl:href="http://&lt;host&gt;:&lt;port&gt;/actuator/bindings/myBindingName">http://&lt;host&gt;:&lt;port&gt;/actuator/bindings/myBindingName</link>
-curl -d '{"state":"STARTED"}' -H "Content-Type: application/json" -X POST <link xl:href="http://&lt;host&gt;:&lt;port&gt;/actuator/bindings/myBindingName">http://&lt;host&gt;:&lt;port&gt;/actuator/bindings/myBindingName</link>
-curl -d '{"state":"PAUSED"}' -H "Content-Type: application/json" -X POST <link xl:href="http://&lt;host&gt;:&lt;port&gt;/actuator/bindings/myBindingName">http://&lt;host&gt;:&lt;port&gt;/actuator/bindings/myBindingName</link>
-curl -d '{"state":"RESUMED"}' -H "Content-Type: application/json" -X POST <link xl:href="http://&lt;host&gt;:&lt;port&gt;/actuator/bindings/myBindingName">http://&lt;host&gt;:&lt;port&gt;/actuator/bindings/myBindingName</link></simpara>
+<simpara>curl -d '{"state":"STOPPED"}' -H "Content-Type: application/json" -X POST <link xl:href="https://&lt;host&gt;:&lt;port&gt;/actuator/bindings/myBindingName">https://&lt;host&gt;:&lt;port&gt;/actuator/bindings/myBindingName</link>
+curl -d '{"state":"STARTED"}' -H "Content-Type: application/json" -X POST <link xl:href="https://&lt;host&gt;:&lt;port&gt;/actuator/bindings/myBindingName">https://&lt;host&gt;:&lt;port&gt;/actuator/bindings/myBindingName</link>
+curl -d '{"state":"PAUSED"}' -H "Content-Type: application/json" -X POST <link xl:href="https://&lt;host&gt;:&lt;port&gt;/actuator/bindings/myBindingName">https://&lt;host&gt;:&lt;port&gt;/actuator/bindings/myBindingName</link>
+curl -d '{"state":"RESUMED"}' -H "Content-Type: application/json" -X POST <link xl:href="https://&lt;host&gt;:&lt;port&gt;/actuator/bindings/myBindingName">https://&lt;host&gt;:&lt;port&gt;/actuator/bindings/myBindingName</link></simpara>
 <note>
 <simpara><literal>PAUSED</literal> and <literal>RESUMED</literal> work only when the corresponding binder and its underlying technology supports it. Otherwise, you see the warning message in the logs.
 Currently, only Kafka binder supports the <literal>PAUSED</literal> and <literal>RESUMED</literal> states.</simpara>
@@ -1922,9 +1922,9 @@ public class SourceWithDynamicDestination {
     }
 }</programlisting>
 <simpara>Now consider what happens when we start the application on the default port (8080) and make the following requests with CURL:</simpara>
-<screen>curl -H "Content-Type: application/json" -X POST -d "customer-1" http://localhost:8080/customers
+<screen>curl -H "Content-Type: application/json" -X POST -d "customer-1" https://localhost:8080/customers
 
-curl -H "Content-Type: application/json" -X POST -d "order-1" http://localhost:8080/orders</screen>
+curl -H "Content-Type: application/json" -X POST -d "order-1" https://localhost:8080/orders</screen>
 <simpara>The destinations, 'customers' and 'orders', are created in the broker (in the exchange for Rabbit or in the topic for Kafka) with names of 'customers' and 'orders', and the data is published to the appropriate destinations.</simpara>
 <simpara>The <literal>BinderAwareChannelResolver</literal> is a general-purpose Spring Integration <literal>DestinationResolver</literal> and can be injected in other components&#8201;&#8212;&#8201;for example, in a router using a SpEL expression based on the <literal>target</literal> field of an incoming JSON message. The following example includes a router that reads SpEL expressions:</simpara>
 <programlisting language="java" linenumbering="unnumbered">@EnableBinding
@@ -2345,7 +2345,7 @@ The <literal>spring.cloud.stream.schema.server.path</literal> property can be us
 The <literal>spring.cloud.stream.schema.server.allowSchemaDeletion</literal> boolean property enables the deletion of a schema. By default, this is disabled.</simpara>
 <simpara>The schema registry server uses a relational database to store the schemas.
 By default, it uses an embedded database.
-You can customize the schema storage by using the <link xl:href="http://docs.spring.io/spring-boot/docs/current-SNAPSHOT/reference/htmlsingle/#boot-features-sql">Spring Boot SQL database and JDBC configuration options</link>.</simpara>
+You can customize the schema storage by using the <link xl:href="https://docs.spring.io/spring-boot/docs/current-SNAPSHOT/reference/htmlsingle/#boot-features-sql">Spring Boot SQL database and JDBC configuration options</link>.</simpara>
 <simpara>The following example shows a Spring Boot application that enables the schema registry:</simpara>
 <programlisting language="java" linenumbering="unnumbered">@SpringBootApplication
 @EnableSchemaRegistryServer
@@ -2869,7 +2869,7 @@ a <literal>STREAM_CLOUD_STREAM_VERSION</literal> header set to <literal>2.x</lit
 <section xml:id="_deploying_stream_applications_on_cloudfoundry">
 <title>Deploying Stream Applications on CloudFoundry</title>
 <simpara>On CloudFoundry, services are usually exposed through a special environment variable called <link xl:href="https://docs.cloudfoundry.org/devguide/deploy-apps/environment-variable.html#VCAP-SERVICES">VCAP_SERVICES</link>.</simpara>
-<simpara>When configuring your binder connections, you can use the values from an environment variable as explained on the <link xl:href="http://docs.spring.io/spring-cloud-dataflow-server-cloudfoundry/docs/current-SNAPSHOT/reference/htmlsingle/#getting-started-ups">dataflow Cloud Foundry Server</link> docs.</simpara>
+<simpara>When configuring your binder connections, you can use the values from an environment variable as explained on the <link xl:href="https://docs.spring.io/spring-cloud-dataflow-server-cloudfoundry/docs/current-SNAPSHOT/reference/htmlsingle/#getting-started-ups">dataflow Cloud Foundry Server</link> docs.</simpara>
 </section>
 </chapter>
 <chapter xml:id="_binder_implementations">
