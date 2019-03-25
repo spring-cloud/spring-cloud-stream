@@ -15,7 +15,7 @@
 	<properties>
 		<docs.main>spring-cloud-stream-binder-rabbit</docs.main>
 		<main.basedir>${basedir}/..</main.basedir>
-		<spring-doc-resources.version>0.1.1.BUILD-SNAPSHOT</spring-doc-resources.version>
+		<spring-doc-resources.version>0.1.1.RELEASE</spring-doc-resources.version>
 		<spring-asciidoctor-extensions.version>0.1.0.RELEASE
 		</spring-asciidoctor-extensions.version>
 		<asciidoctorj-pdf.version>1.5.0-alpha.16</asciidoctorj-pdf.version>
