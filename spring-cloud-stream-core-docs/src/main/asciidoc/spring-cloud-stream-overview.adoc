@@ -1393,7 +1393,7 @@ The `spring.cloud.stream.schema.server.allowSchemaDeletion` boolean setting enab
 
 The schema registry server uses a relational database to store the schemas.
  By default, it uses an embedded database.
-You can customize the schema storage using the http://docs.spring.io/spring-boot/docs/current-SNAPSHOT/reference/htmlsingle/#boot-features-sql[Spring Boot SQL database and JDBC configuration options].
+You can customize the schema storage using the https://docs.spring.io/spring-boot/docs/current-SNAPSHOT/reference/htmlsingle/#boot-features-sql[Spring Boot SQL database and JDBC configuration options].
 
 A Spring Boot application enabling the schema registry looks as follows:
 
