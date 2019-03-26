@@ -132,7 +132,7 @@ If set to `true`, the binder creates new topics automatically.
 If set to `false`, the binder relies on the topics being already configured.
 In the latter case, if the topics do not exist, the binder fails to start.
 +
-NOTE: This setting is independent of the `auto.topic.create.enable` setting of the broker and does not influence it.
+NOTE: This setting is independent of the `auto.create.topics.enable` setting of the broker and does not influence it.
 If the server is set to auto-create topics, they may be created as part of the metadata retrieval request, with default broker settings.
 +
 Default: `true`.
