@@ -13,15 +13,15 @@ the <code class="literal">.mvn</code> configuration, so if you find you have to 
 build succeed, please raise a ticket to get the settings added to
 source control.</p></td></tr></table></div><p>The projects that require middleware generally include a
 <code class="literal">docker-compose.yml</code>, so consider using
-<a class="link" href="http://compose.docker.io/" target="_top">Docker Compose</a> to run the middeware servers
+<a class="link" href="https://compose.docker.io/" target="_top">Docker Compose</a> to run the middeware servers
 in Docker containers. See the README in the
 <a class="link" href="https://github.com/spring-cloud-samples/scripts" target="_top">scripts demo
 repository</a> for specific instructions about the common cases of mongo,
 rabbit and redis.</p></div><div class="section"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="_documentation" href="#_documentation"></a>A.2&nbsp;Documentation</h2></div></div></div><p>There is a "full" profile that will generate documentation.</p></div><div class="section"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="_working_with_the_code" href="#_working_with_the_code"></a>A.3&nbsp;Working with the code</h2></div></div></div><p>If you don&#8217;t have an IDE preference we would recommend that you use
-<a class="link" href="http://www.springsource.com/developer/sts" target="_top">Spring Tools Suite</a> or
-<a class="link" href="http://eclipse.org" target="_top">Eclipse</a> when working with the code. We use the
-<a class="link" href="http://eclipse.org/m2e/" target="_top">m2eclipe</a> eclipse plugin for maven support. Other IDEs and tools
-should also work without issue.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="_importing_into_eclipse_with_m2eclipse" href="#_importing_into_eclipse_with_m2eclipse"></a>A.3.1&nbsp;Importing into eclipse with m2eclipse</h3></div></div></div><p>We recommend the <a class="link" href="http://eclipse.org/m2e/" target="_top">m2eclipe</a> eclipse plugin when working with
+<a class="link" href="https://www.springsource.com/developer/sts" target="_top">Spring Tools Suite</a> or
+<a class="link" href="https://eclipse.org" target="_top">Eclipse</a> when working with the code. We use the
+<a class="link" href="https://eclipse.org/m2e/" target="_top">m2eclipe</a> eclipse plugin for maven support. Other IDEs and tools
+should also work without issue.</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="_importing_into_eclipse_with_m2eclipse" href="#_importing_into_eclipse_with_m2eclipse"></a>A.3.1&nbsp;Importing into eclipse with m2eclipse</h3></div></div></div><p>We recommend the <a class="link" href="https://eclipse.org/m2e/" target="_top">m2eclipe</a> eclipse plugin when working with
 eclipse. If you don&#8217;t already have m2eclipse installed it is available from the "eclipse
 marketplace".</p><p>Unfortunately m2e does not yet support Maven 3.3, so once the projects
 are imported into Eclipse you will also need to tell m2eclipse to use
@@ -50,12 +50,12 @@ you can import formatter settings using the
 <code class="literal">eclipse-code-formatter.xml</code> file from the
 <a class="link" href="https://github.com/spring-cloud/build/tree/master/eclipse-coding-conventions.xml" target="_top">Spring
 Cloud Build</a> project. If using IntelliJ, you can use the
-<a class="link" href="http://plugins.jetbrains.com/plugin/6546" target="_top">Eclipse Code Formatter
+<a class="link" href="https://plugins.jetbrains.com/plugin/6546" target="_top">Eclipse Code Formatter
 Plugin</a> to import the same file.</li><li class="listitem">Make sure all new <code class="literal">.java</code> files to have a simple Javadoc class comment with at least an
 <code class="literal">@author</code> tag identifying you, and preferably at least a paragraph on what the class is
 for.</li><li class="listitem">Add the ASF license header comment to all new <code class="literal">.java</code> files (copy from existing files
 in the project)</li><li class="listitem">Add yourself as an <code class="literal">@author</code> to the .java files that you modify substantially (more
 than cosmetic changes).</li><li class="listitem">Add some Javadocs and, if you change the namespace, some XSD doc elements.</li><li class="listitem">A few unit tests would help a lot as well&#8201;&#8212;&#8201;someone has to do it.</li><li class="listitem">If no-one else is using your branch, please rebase it against the current master (or
-other target branch in the main project).</li><li class="listitem">When writing a commit message please follow <a class="link" href="http://tbaggery.com/2008/04/19/a-note-about-git-commit-messages.html" target="_top">these conventions</a>,
+other target branch in the main project).</li><li class="listitem">When writing a commit message please follow <a class="link" href="https://tbaggery.com/2008/04/19/a-note-about-git-commit-messages.html" target="_top">these conventions</a>,
 if you are fixing an existing issue please add <code class="literal">Fixes gh-XXXX</code> at the end of the commit
 message (where XXXX is the issue number).</li></ul></div></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="multi__appendices.html">Prev</a>&nbsp;</td><td width="20%" align="center"><a accesskey="u" href="multi__appendices.html">Up</a></td><td width="40%" align="right">&nbsp;</td></tr><tr><td width="40%" align="left" valign="top">Part&nbsp;III.&nbsp;Appendices&nbsp;</td><td width="20%" align="center"><a accesskey="h" href="multi_spring-cloud-stream.html">Home</a></td><td width="40%" align="right" valign="top">&nbsp;</td></tr></table></div></body></html>
