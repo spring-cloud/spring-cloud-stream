@@ -1,4 +1,4 @@
-== Spring Cloud Stream image:https://build.spring.io/plugins/servlet/buildStatusImage/SCS-SMJLE[Build Status, link=https://build.spring.io/browse/SCS-SMJLE] image:https://badge.waffle.io/spring-cloud/spring-cloud-stream.svg?label=ready&title=Ready[Stories Ready, link=http://waffle.io/spring-cloud/spring-cloud-stream] image:https://badge.waffle.io/spring-cloud/spring-cloud-stream.svg?label=In%20Progress&title=In%20Progress[Stores In Progress, link=http://waffle.io/spring-cloud/spring-cloud-stream] image:https://badges.gitter.im/spring-cloud/spring-cloud-stream.svg[link="https://gitter.im/spring-cloud/spring-cloud-stream?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge"]
+== Spring Cloud Stream image:https://build.spring.io/plugins/servlet/buildStatusImage/SCS-SMJLE[Build Status, link=https://build.spring.io/browse/SCS-SMJLE] image:https://badge.waffle.io/spring-cloud/spring-cloud-stream.svg?label=ready&title=Ready[Stories Ready, link=https://waffle.io/spring-cloud/spring-cloud-stream] image:https://badge.waffle.io/spring-cloud/spring-cloud-stream.svg?label=In%20Progress&title=In%20Progress[Stores In Progress, link=https://waffle.io/spring-cloud/spring-cloud-stream] image:https://badges.gitter.im/spring-cloud/spring-cloud-stream.svg[link="https://gitter.im/spring-cloud/spring-cloud-stream?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge"]
 
 This project allows a user to develop and run messaging microservices using Spring Integration and run them locally or in the cloud. Just add `@EnableBinding` and run your app as a Spring Boot app (single application context).
 
@@ -18,7 +18,7 @@ The following binder implementations are currently available:
 
 === Documentation
 
-The latest documentation for the project can be found http://docs.spring.io/spring-cloud-stream/docs/current-SNAPSHOT/reference/htmlsingle/[here].
+The latest documentation for the project can be found https://docs.spring.io/spring-cloud-stream/docs/current-SNAPSHOT/reference/htmlsingle/[here].
 
 === Samples
 
@@ -31,7 +31,7 @@ The project team is happy to receive feedback from the community and answer ques
 We use Git Hub issues for tracking bugs and feature requests. 
 If you would like to report a bug or to suggest a feature, please open a Git Hub issue.
 
-Any question that is not a bug or an issue should be asked on Stack Overflow, using the tag http://stackoverflow.com/questions/tagged/spring-cloud-stream[`spring-cloud-stream`].
+Any question that is not a bug or an issue should be asked on Stack Overflow, using the tag https://stackoverflow.com/questions/tagged/spring-cloud-stream[`spring-cloud-stream`].
 
 === Contributing
 
