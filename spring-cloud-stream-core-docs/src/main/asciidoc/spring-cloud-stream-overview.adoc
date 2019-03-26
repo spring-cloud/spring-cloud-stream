@@ -1732,7 +1732,7 @@ The `spring.cloud.stream.schema.server.allowSchemaDeletion` boolean property ena
 
 The schema registry server uses a relational database to store the schemas.
 By default, it uses an embedded database.
-You can customize the schema storage by using the http://docs.spring.io/spring-boot/docs/current-SNAPSHOT/reference/htmlsingle/#boot-features-sql[Spring Boot SQL database and JDBC configuration options].
+You can customize the schema storage by using the https://docs.spring.io/spring-boot/docs/current-SNAPSHOT/reference/htmlsingle/#boot-features-sql[Spring Boot SQL database and JDBC configuration options].
 
 The following example shows a Spring Boot application that enables the schema registry:
 
@@ -2344,4 +2344,4 @@ hello world 1458595080735
 
 On CloudFoundry services are usually exposed via a special environment variable called https://docs.cloudfoundry.org/devguide/deploy-apps/environment-variable.html#VCAP-SERVICES[VCAP_SERVICES].
 
-When configuring your binder connections, you can use the values from an environment variable as explained on the http://docs.spring.io/spring-cloud-dataflow-server-cloudfoundry/docs/current-SNAPSHOT/reference/htmlsingle/#getting-started-ups[dataflow cloudfoundry server] docs.
+When configuring your binder connections, you can use the values from an environment variable as explained on the https://docs.spring.io/spring-cloud-dataflow-server-cloudfoundry/docs/current-SNAPSHOT/reference/htmlsingle/#getting-started-ups[dataflow cloudfoundry server] docs.
