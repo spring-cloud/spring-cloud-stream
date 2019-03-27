@@ -569,10 +569,11 @@ class KafkaStreamsStreamListenerSetupMethodOrchestrator
 						(Class<StreamsBuilderFactoryBean>) streamsBuilder.getClass(),
 						() -> streamsBuilder)
 				.getRawBeanDefinition();
+		final String beanNamePostFix = method.getDeclaringClass().getSimpleName() + "-" + method.getName();
 		((BeanDefinitionRegistry) beanFactory).registerBeanDefinition(
-				"stream-builder-" + method.getName(), streamsBuilderBeanDefinition);
+				"stream-builder-" + beanNamePostFix, streamsBuilderBeanDefinition);
 		StreamsBuilderFactoryBean streamsBuilderX = applicationContext.getBean(
-				"&stream-builder-" + method.getName(), StreamsBuilderFactoryBean.class);
+				"&stream-builder-" + beanNamePostFix, StreamsBuilderFactoryBean.class);
 		this.methodStreamsBuilderFactoryBeanMap.put(method, streamsBuilderX);
 	}
 

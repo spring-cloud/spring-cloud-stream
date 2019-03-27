@@ -155,7 +155,7 @@ public class KafkaStreamsBinderWordCountIntegrationTests {
 			receiveAndValidate(context);
 			// Assertions on StreamBuilderFactoryBean
 			StreamsBuilderFactoryBean streamsBuilderFactoryBean = context
-					.getBean("&stream-builder-process", StreamsBuilderFactoryBean.class);
+					.getBean("&stream-builder-WordCountProcessorApplication-process", StreamsBuilderFactoryBean.class);
 			KafkaStreams kafkaStreams = streamsBuilderFactoryBean.getKafkaStreams();
 			ReadOnlyWindowStore<Object, Object> store = kafkaStreams
 					.store("foo-WordCounts", QueryableStoreTypes.windowStore());
