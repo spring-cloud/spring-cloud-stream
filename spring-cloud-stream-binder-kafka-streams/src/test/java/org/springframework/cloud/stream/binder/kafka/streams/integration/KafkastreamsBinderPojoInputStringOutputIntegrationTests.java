@@ -108,7 +108,7 @@ public class KafkastreamsBinderPojoInputStringOutputIntegrationTests {
 			receiveAndValidateFoo(context);
 			// Assertions on StreamBuilderFactoryBean
 			StreamsBuilderFactoryBean streamsBuilderFactoryBean = context
-					.getBean("&stream-builder-process", StreamsBuilderFactoryBean.class);
+					.getBean("&stream-builder-ProductCountApplication-process", StreamsBuilderFactoryBean.class);
 			CleanupConfig cleanup = TestUtils.getPropertyValue(streamsBuilderFactoryBean,
 					"cleanupConfig", CleanupConfig.class);
 			assertThat(cleanup.cleanupOnStart()).isFalse();
