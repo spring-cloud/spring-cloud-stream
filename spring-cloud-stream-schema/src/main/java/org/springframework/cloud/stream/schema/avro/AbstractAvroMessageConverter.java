@@ -49,10 +49,19 @@ public abstract class AbstractAvroMessageConverter extends AbstractMessageConver
 	private Schema.Parser schemaParser = new Schema.Parser();
 	private AvroSchemaServiceManager avroSchemaServiceManager;
 
+	@Deprecated
+	protected AbstractAvroMessageConverter(MimeType supportedMimeType) {
+		this(Collections.singletonList(supportedMimeType), new AvroSchemaServiceManagerImpl());
+	}
+
 	protected AbstractAvroMessageConverter(MimeType supportedMimeType, AvroSchemaServiceManager avroSchemaServiceManager) {
 		this(Collections.singletonList(supportedMimeType), avroSchemaServiceManager);
-		this.avroSchemaServiceManager = avroSchemaServiceManager;
+	}
 
+	@Deprecated
+	protected AbstractAvroMessageConverter(Collection<MimeType> supportedMimeTypes) {
+		this(supportedMimeTypes, new AvroSchemaServiceManagerImpl());
+		setContentTypeResolver(new OriginalContentTypeResolver());
 	}
 
 	protected AbstractAvroMessageConverter(Collection<MimeType> supportedMimeTypes, AvroSchemaServiceManager manager) {
@@ -95,7 +104,7 @@ public abstract class AbstractAvroMessageConverter extends AbstractMessageConver
 			Schema writerSchema = resolveWriterSchemaForDeserialization(mimeType);
 			Schema readerSchema = resolveReaderSchemaForDeserialization(targetClass);
 
-			result = avroSchemaServiceManager().readData(targetClass, payload, readerSchema, writerSchema);
+			result = avroSchemaServiceManager().readData((Class<Object>) targetClass, payload, readerSchema, writerSchema);
 		}
 		catch (IOException e) {
 			throw new MessageConversionException(message, "Failed to read payload", e);

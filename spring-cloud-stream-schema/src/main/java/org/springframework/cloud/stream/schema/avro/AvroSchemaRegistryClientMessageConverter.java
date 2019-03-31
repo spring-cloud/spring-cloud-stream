@@ -113,6 +113,9 @@ public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessag
 	public static final MimeType DEFAULT_AVRO_MIME_TYPE = new MimeType("application",
 			"*+" + AVRO_FORMAT);
 
+	private static final AvroSchemaServiceManager defaultAvroSchemaServiceManager =
+											new AvroSchemaServiceManagerImpl();
+
 	private final CacheManager cacheManager;
 
 	protected Resource[] schemaImports = new Resource[] {};
@@ -131,6 +134,23 @@ public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessag
 
 	private SubjectNamingStrategy subjectNamingStrategy;
 
+	/**
+	 * Creates a new instance, configuring it with {@link SchemaRegistryClient} and
+	 * {@link CacheManager}.
+	 * @param schemaRegistryClient the {@link SchemaRegistryClient} used to interact with
+	 * the schema registry server.
+	 * @param cacheManager instance of {@link CacheManager} to cache parsed schemas. If
+	 * caching is not required use {@link NoOpCacheManager}
+	 */
+	@Deprecated
+	public AvroSchemaRegistryClientMessageConverter(
+		SchemaRegistryClient schemaRegistryClient, CacheManager cacheManager) {
+		super(Collections.singletonList(DEFAULT_AVRO_MIME_TYPE), defaultAvroSchemaServiceManager);
+		Assert.notNull(schemaRegistryClient, "cannot be null");
+		Assert.notNull(cacheManager, "'cacheManager' cannot be null");
+		this.schemaRegistryClient = schemaRegistryClient;
+		this.cacheManager = cacheManager;
+	}
 
 	/**
 	 * Creates a new instance, configuring it with {@link SchemaRegistryClient} and

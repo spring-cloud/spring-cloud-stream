@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2018 the original author or authors.
+ * Copyright 2016-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,17 +38,41 @@ import org.apache.commons.logging.LogFactory;
 import org.springframework.messaging.converter.MessageConversionException;
 import org.springframework.stereotype.Component;
 
+/**
+ * Default Concrete implementation of  {@link AvroSchemaServiceManager}.
+ *
+ * Helps to substitute the default implementation of {@link org.apache.avro.Schema}
+ * Generation using Custom Avro schema generator
+ *
+ * Provide a custom bean definition of {@link AvroSchemaServiceManager} and mark
+ * it as @Primary to override this default implementation
+ *
+ * @author 5aab
+ *
+ */
 
 @Component
 public class AvroSchemaServiceManagerImpl implements AvroSchemaServiceManager {
 
 	protected final Log logger = LogFactory.getLog(this.getClass());
 
+	/**
+	 * get {@link Schema}.
+	 * @param clazz {@link Class} for which schema generation
+	 * is required
+	 * @return returns avro schema for given class
+	 */
 	@Override
 	public Schema getSchema(Class<?> clazz) {
 		return ReflectData.get().getSchema(clazz);
 	}
 
+	/**
+	 * get {@link DatumWriter}.
+	 * @param type {@link Class} of java object which needs to be serialized
+	 * @param schema {@link Schema} of object which needs to be serialized
+	 * @return datum writer which can be used to write Avro payload
+	 */
 	@Override
 	public DatumWriter<Object> getDatumWriter(Class<Object> type, Schema schema) {
 		DatumWriter<Object> writer;
@@ -75,6 +99,13 @@ public class AvroSchemaServiceManagerImpl implements AvroSchemaServiceManager {
 		return writer;
 	}
 
+	/**
+	 * get {@link DatumReader}.
+	 * @param type {@link Class} of java object which needs to be serialized
+	 * @param schema {@link Schema} default schema of object which needs to be de-serialized
+	 * @param writerSchema {@link Schema} writerSchema provided at run time
+	 * @return datum reader which can be used to read Avro payload
+	 */
 	@SuppressWarnings({"unchecked", "rawtypes"})
 	@Override
 	public DatumReader<Object> getDatumReader(Class<Object> type, Schema schema, Schema writerSchema) {
@@ -118,9 +149,19 @@ public class AvroSchemaServiceManagerImpl implements AvroSchemaServiceManager {
 		return reader;
 	}
 
+	/**
+	 * read data from avro type payload {@link DatumReader}.
+	 * @param clazz {@link Class} of java object which needs to be serialized
+	 * @param payload {@link byte} serialized payload of object which needs to be de-serialized
+	 * @param readerSchema {@link Schema} readerSchema of object which needs to be de-serialized
+	 * @param writerSchema {@link Schema} writerSchema used to while serializing payload
+	 * @return java object after reading Avro Payload
+	 * @throws IOException is thrown in case of error
+	 */
 	@Override
-	public Object readData(Class<?> clazz, byte[] payload, Schema readerSchema, Schema writerSchema) throws IOException {
-		DatumReader<Object> reader = this.getDatumReader((Class<Object>) clazz,
+	public Object readData(Class<Object> clazz, byte[] payload, Schema readerSchema, Schema writerSchema)
+																throws IOException {
+		DatumReader<Object> reader = this.getDatumReader(clazz,
 			readerSchema, writerSchema);
 		Decoder decoder = DecoderFactory.get().binaryDecoder(payload, null);
 		return reader.read(null, decoder);
