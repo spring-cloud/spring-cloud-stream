@@ -87,7 +87,7 @@ public abstract class AbstractAvroMessageConverter extends AbstractMessageConver
 	@Override
 	protected Object convertFromInternal(Message<?> message, Class<?> targetClass,
 			Object conversionHint) {
-		Object result = null;
+		Object result;
 		try {
 			byte[] payload = (byte[]) message.getPayload();
 
@@ -104,7 +104,7 @@ public abstract class AbstractAvroMessageConverter extends AbstractMessageConver
 			Schema writerSchema = resolveWriterSchemaForDeserialization(mimeType);
 			Schema readerSchema = resolveReaderSchemaForDeserialization(targetClass);
 
-			result = avroSchemaServiceManager().readData((Class<Object>) targetClass, payload, readerSchema, writerSchema);
+			result = avroSchemaServiceManager().readData(targetClass, payload, readerSchema, writerSchema);
 		}
 		catch (IOException e) {
 			throw new MessageConversionException(message, "Failed to read payload", e);
@@ -123,8 +123,8 @@ public abstract class AbstractAvroMessageConverter extends AbstractMessageConver
 			}
 			Schema schema = resolveSchemaForWriting(payload, headers, hintedContentType);
 			@SuppressWarnings("unchecked")
-			DatumWriter<Object> writer = avroSchemaServiceManager().getDatumWriter(
-					(Class<Object>) payload.getClass(), schema);
+			DatumWriter<Object> writer = avroSchemaServiceManager()
+							.getDatumWriter(payload.getClass(), schema);
 			Encoder encoder = EncoderFactory.get().binaryEncoder(baos, null);
 			writer.write(payload, encoder);
 			encoder.flush();

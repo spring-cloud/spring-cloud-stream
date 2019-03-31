@@ -27,16 +27,21 @@ import com.fasterxml.jackson.dataformat.avro.AvroSchema;
 import com.fasterxml.jackson.dataformat.avro.schema.AvroSchemaGenerator;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.avro.Schema;
+import org.apache.avro.SchemaParseException;
 import org.apache.avro.file.DataFileReader;
 import org.apache.avro.file.DataFileWriter;
 import org.apache.avro.io.DatumReader;
 import org.apache.avro.io.DatumWriter;
+import org.assertj.core.util.Lists;
 import org.junit.Assert;
 import org.junit.Test;
 
 import org.springframework.cloud.schema.avro.domain.FoodOrder;
+import org.springframework.cloud.stream.schema.avro.AvroSchemaMessageConverter;
 import org.springframework.cloud.stream.schema.avro.AvroSchemaServiceManager;
 import org.springframework.cloud.stream.schema.avro.AvroSchemaServiceManagerImpl;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.util.MimeType;
 
 /**
  * @author 5aab
@@ -129,5 +134,40 @@ public class AvroSchemaServiceManagerTests {
 		foodOrder2 = (FoodOrder) manager.readData(foodOrder1.getClass(), payload2, schema, schema);
 		Assert.assertNull(foodOrder2.getOrderDescription());
 		Assert.assertNull(foodOrder2.getCustomerAddress());
+	}
+
+	@Test
+	public void testAvroSchemaMessageConverter() {
+		AvroSchemaMessageConverter  converter = new AvroSchemaMessageConverter();
+		MimeType mimeType = new MimeType("application", "avro");
+		Assert.assertEquals(converter.getSupportedMimeTypes().get(0), mimeType);
+
+		AvroSchemaMessageConverter  converter2 = new AvroSchemaMessageConverter(mimeType);
+		Assert.assertEquals(converter2.getSupportedMimeTypes().get(0), mimeType);
+
+		AvroSchemaMessageConverter  converter3 =
+			new AvroSchemaMessageConverter(Lists.newArrayList(mimeType));
+		Assert.assertEquals(converter3.getSupportedMimeTypes().get(0), mimeType);
+
+		AvroSchemaServiceManager manager = new AvroSchemaServiceManagerImpl();
+		AvroSchemaMessageConverter  converter4 = new AvroSchemaMessageConverter(manager);
+		Assert.assertEquals(converter4.getSupportedMimeTypes().get(0), mimeType);
+
+		AvroSchemaMessageConverter  converter5 =
+			new AvroSchemaMessageConverter(Lists.newArrayList(mimeType), manager);
+		Schema schema = manager.getSchema(FoodOrder.class);
+		converter5.setSchema(schema);
+		Assert.assertEquals(converter5.getSupportedMimeTypes().get(0), mimeType);
+		Assert.assertEquals(converter5.getSchema(), schema);
+	}
+
+	@Test(expected = SchemaParseException.class)
+	public void testAvroSchemaMessageConverterException() {
+		MimeType mimeType = new MimeType("application", "avro");
+		AvroSchemaServiceManager manager = new AvroSchemaServiceManagerImpl();
+		AvroSchemaMessageConverter  converter =
+			new AvroSchemaMessageConverter(Lists.newArrayList(mimeType), manager);
+		converter.setSchemaLocation(new ByteArrayResource(new byte[2]) {
+		});
 	}
 }
