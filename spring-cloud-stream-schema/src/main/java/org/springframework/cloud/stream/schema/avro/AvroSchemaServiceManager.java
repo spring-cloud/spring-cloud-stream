@@ -49,7 +49,7 @@ public interface AvroSchemaServiceManager {
 	 * @param schema {@link Schema} of object which needs to be serialized
 	 * @return datum writer which can be used to write Avro payload
 	 */
-	DatumWriter<Object> getDatumWriter(Class<Object> type, Schema schema);
+	DatumWriter<Object> getDatumWriter(Class<? extends Object> type, Schema schema);
 
 	/**
 	 * get {@link DatumReader}.
@@ -59,7 +59,7 @@ public interface AvroSchemaServiceManager {
 	 * @return datum reader which can be used to read Avro payload
 	 */
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	DatumReader<Object> getDatumReader(Class<Object> type, Schema schema, Schema writerSchema);
+	DatumReader<Object> getDatumReader(Class<? extends Object> type, Schema schema, Schema writerSchema);
 
 	/**
 	 * read data from avro type payload {@link DatumReader}.
@@ -70,6 +70,6 @@ public interface AvroSchemaServiceManager {
 	 * @return java object after reading Avro Payload
 	 * @throws IOException in case of error
 	 */
-	Object readData(Class<Object> targetClass, byte[] payload, Schema readerSchema, Schema writerSchema)
+	Object readData(Class<? extends Object> targetClass, byte[] payload, Schema readerSchema, Schema writerSchema)
 																	throws IOException;
 }

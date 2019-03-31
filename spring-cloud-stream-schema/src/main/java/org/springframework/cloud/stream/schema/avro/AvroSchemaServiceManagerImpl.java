@@ -74,7 +74,7 @@ public class AvroSchemaServiceManagerImpl implements AvroSchemaServiceManager {
 	 * @return datum writer which can be used to write Avro payload
 	 */
 	@Override
-	public DatumWriter<Object> getDatumWriter(Class<Object> type, Schema schema) {
+	public DatumWriter<Object> getDatumWriter(Class<?> type, Schema schema) {
 		DatumWriter<Object> writer;
 		this.logger.debug("Finding correct DatumWriter for type " + type.getName());
 		if (SpecificRecord.class.isAssignableFrom(type)) {
@@ -82,7 +82,7 @@ public class AvroSchemaServiceManagerImpl implements AvroSchemaServiceManager {
 				writer = new SpecificDatumWriter<>(schema);
 			}
 			else {
-				writer = new SpecificDatumWriter<>(type);
+				writer = new SpecificDatumWriter(type);
 			}
 		}
 		else if (GenericRecord.class.isAssignableFrom(type)) {
@@ -93,7 +93,7 @@ public class AvroSchemaServiceManagerImpl implements AvroSchemaServiceManager {
 				writer = new ReflectDatumWriter<>(schema);
 			}
 			else {
-				writer = new ReflectDatumWriter<>(type);
+				writer = new ReflectDatumWriter(type);
 			}
 		}
 		return writer;
@@ -108,7 +108,7 @@ public class AvroSchemaServiceManagerImpl implements AvroSchemaServiceManager {
 	 */
 	@SuppressWarnings({"unchecked", "rawtypes"})
 	@Override
-	public DatumReader<Object> getDatumReader(Class<Object> type, Schema schema, Schema writerSchema) {
+	public DatumReader<Object> getDatumReader(Class<?> type, Schema schema, Schema writerSchema) {
 		DatumReader<Object> reader = null;
 		if (SpecificRecord.class.isAssignableFrom(type)) {
 			if (schema != null) {
@@ -120,7 +120,7 @@ public class AvroSchemaServiceManagerImpl implements AvroSchemaServiceManager {
 				}
 			}
 			else {
-				reader = new SpecificDatumReader<>(type);
+				reader = new SpecificDatumReader(type);
 				if (writerSchema != null) {
 					reader.setSchema(writerSchema);
 				}
@@ -159,8 +159,8 @@ public class AvroSchemaServiceManagerImpl implements AvroSchemaServiceManager {
 	 * @throws IOException is thrown in case of error
 	 */
 	@Override
-	public Object readData(Class<Object> clazz, byte[] payload, Schema readerSchema, Schema writerSchema)
-																throws IOException {
+	public Object readData(Class<? extends Object> clazz, byte[] payload, Schema readerSchema,
+												Schema writerSchema) throws IOException {
 		DatumReader<Object> reader = this.getDatumReader(clazz,
 			readerSchema, writerSchema);
 		Decoder decoder = DecoderFactory.get().binaryDecoder(payload, null);
