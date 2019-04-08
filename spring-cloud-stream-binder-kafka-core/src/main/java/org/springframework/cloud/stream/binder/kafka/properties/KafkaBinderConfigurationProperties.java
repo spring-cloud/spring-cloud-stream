@@ -25,6 +25,8 @@ import javax.validation.constraints.AssertTrue;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 
@@ -55,6 +57,8 @@ import org.springframework.util.StringUtils;
 public class KafkaBinderConfigurationProperties {
 
 	private static final String DEFAULT_KAFKA_CONNECTION_STRING = "localhost:9092";
+
+	private final Log logger = LogFactory.getLog(getClass());
 
 	private final Transaction transaction = new Transaction();
 
@@ -529,6 +533,7 @@ public class KafkaBinderConfigurationProperties {
 			}
 		}
 		consumerConfiguration.putAll(this.consumerProperties);
+		filterStreamManagedConfiguration(consumerConfiguration);
 		// Override Spring Boot bootstrap server setting if left to default with the value
 		// configured in the binder
 		return getConfigurationWithBootstrapServer(consumerConfiguration,
@@ -557,6 +562,25 @@ public class KafkaBinderConfigurationProperties {
 		// configured in the binder
 		return getConfigurationWithBootstrapServer(producerConfiguration,
 				ProducerConfig.BOOTSTRAP_SERVERS_CONFIG);
+	}
+
+	private void filterStreamManagedConfiguration(Map<String, Object> configuration) {
+		if (configuration.containsKey(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG)
+				&& configuration.get(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG).equals(true)) {
+			logger.warn(constructIgnoredConfigMessage(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG) +
+					ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG + "=true is not supported by the Kafka binder");
+			configuration.remove(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG);
+		}
+		if (configuration.containsKey(ConsumerConfig.GROUP_ID_CONFIG)) {
+			logger.warn(constructIgnoredConfigMessage(ConsumerConfig.GROUP_ID_CONFIG) +
+					"Use spring.cloud.stream.default.group or spring.cloud.stream.binding.<name>.group to specify " +
+					"the group instead of " + ConsumerConfig.GROUP_ID_CONFIG);
+			configuration.remove(ConsumerConfig.GROUP_ID_CONFIG);
+		}
+	}
+
+	private String constructIgnoredConfigMessage(String config) {
+		return String.format("Ignoring provided value(s) for '%s'. ", config);
 	}
 
 	private Map<String, Object> getConfigurationWithBootstrapServer(

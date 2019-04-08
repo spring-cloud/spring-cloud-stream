@@ -105,7 +105,7 @@ public class KafkaBinderAutoConfigurationPropertiesTest {
 		assertThat(consumerConfigs.get("value.deserializer"))
 				.isEqualTo(LongDeserializer.class);
 		assertThat(consumerConfigs.get("value.serialized")).isNull();
-		assertThat(consumerConfigs.get("group.id")).isEqualTo("groupIdFromBootConfig");
+		assertThat(consumerConfigs.get("group.id")).isEqualTo("test");
 		assertThat(consumerConfigs.get("auto.offset.reset")).isEqualTo("earliest");
 		assertThat((((List<String>) consumerConfigs.get("bootstrap.servers"))
 				.containsAll(bootstrapServers))).isTrue();
