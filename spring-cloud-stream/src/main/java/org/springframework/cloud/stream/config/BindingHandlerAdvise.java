@@ -30,7 +30,6 @@ import org.springframework.boot.context.properties.source.ConfigurationPropertyN
 import org.springframework.lang.Nullable;
 import org.springframework.util.CollectionUtils;
 import org.springframework.validation.Validator;
-import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 
 /**
  * @author Oleg Zhurakousky
