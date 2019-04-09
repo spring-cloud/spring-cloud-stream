@@ -57,7 +57,7 @@ public class MultiProcessorsWithSameNameTests {
 				"--spring.cloud.stream.bindings.input-2.destination=words",
 				"--spring.cloud.stream.bindings.output.destination=counts",
 				"--spring.cloud.stream.bindings.output.contentType=application/json",
-				"--spring.cloud.stream.kafka.streams.bindings.input.consumer.application-id=basic-word-count",
+				"--spring.cloud.stream.kafka.streams.bindings.input-1.consumer.application-id=basic-word-count",
 				"--spring.cloud.stream.kafka.streams.bindings.input-2.consumer.application-id=basic-word-count-1",
 				"--spring.cloud.stream.kafka.streams.binder.brokers="
 						+ embeddedKafka.getBrokersAsString(),
