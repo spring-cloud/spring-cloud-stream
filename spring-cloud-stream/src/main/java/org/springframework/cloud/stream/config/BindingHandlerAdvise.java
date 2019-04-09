@@ -30,6 +30,7 @@ import org.springframework.boot.context.properties.source.ConfigurationPropertyN
 import org.springframework.lang.Nullable;
 import org.springframework.util.CollectionUtils;
 import org.springframework.validation.Validator;
+import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 
 /**
  * @author Oleg Zhurakousky
@@ -57,6 +58,7 @@ public class BindingHandlerAdvise implements ConfigurationPropertiesBindHandlerA
 
 	@Override
 	public BindHandler apply(BindHandler bindHandler) {
+		System.out.println("Hello " + bindHandler);
 		BindHandler handler = new ValidationBindHandler(this.validator) {
 			@Override
 			public <T> Bindable<T> onStart(ConfigurationPropertyName name,
