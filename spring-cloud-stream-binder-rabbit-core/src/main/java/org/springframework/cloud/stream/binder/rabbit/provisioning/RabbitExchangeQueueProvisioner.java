@@ -66,8 +66,6 @@ public class RabbitExchangeQueueProvisioner
 		ProvisioningProvider<ExtendedConsumerProperties<RabbitConsumerProperties>, ExtendedProducerProperties<RabbitProducerProperties>> {
 
 	// @checkstyle:on
-	private static final Base64UrlNamingStrategy ANONYMOUS_GROUP_NAME_GENERATOR = new Base64UrlNamingStrategy(
-			"anonymous.");
 
 	/**
 	 * The delimiter between a group and index when constructing a binder
@@ -163,15 +161,23 @@ public class RabbitExchangeQueueProvisioner
 
 	private ConsumerDestination doProvisionConsumerDestination(String name, String group,
 			ExtendedConsumerProperties<RabbitConsumerProperties> properties) {
+
 		boolean anonymous = !StringUtils.hasText(group);
+		Base64UrlNamingStrategy anonQueueNameGenerator =  null;
+		if (anonymous) {
+			anonQueueNameGenerator = new Base64UrlNamingStrategy(
+					properties.getExtension().getAnonymousGroupPrefix() == null
+						? ""
+						: properties.getExtension().getAnonymousGroupPrefix());
+		}
 		String baseQueueName;
 		if (properties.getExtension().isQueueNameGroupOnly()) {
-			baseQueueName = anonymous ? ANONYMOUS_GROUP_NAME_GENERATOR.generateName()
+			baseQueueName = anonymous ? anonQueueNameGenerator.generateName()
 					: group;
 		}
 		else {
 			baseQueueName = groupedName(name,
-					anonymous ? ANONYMOUS_GROUP_NAME_GENERATOR.generateName() : group);
+					anonymous ? anonQueueNameGenerator.generateName() : group);
 		}
 		if (this.logger.isInfoEnabled()) {
 			this.logger.info("declaring queue for inbound: " + baseQueueName

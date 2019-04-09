@@ -120,6 +120,11 @@ public class RabbitConsumerProperties extends RabbitCommonProperties {
 	 */
 	private ContainerType containerType = ContainerType.SIMPLE;
 
+	/**
+	 * Prefix for anonymous queue names (when no group is provided).
+	 */
+	private String anonymousGroupPrefix = "anonymous.";
+
 	public boolean isTransacted() {
 		return transacted;
 	}
@@ -284,6 +289,14 @@ public class RabbitConsumerProperties extends RabbitCommonProperties {
 
 	public void setContainerType(ContainerType containerType) {
 		this.containerType = containerType;
+	}
+
+	public String getAnonymousGroupPrefix() {
+		return this.anonymousGroupPrefix;
+	}
+
+	public void setAnonymousGroupPrefix(String anonymousGroupPrefix) {
+		this.anonymousGroupPrefix = anonymousGroupPrefix;
 	}
 
 }

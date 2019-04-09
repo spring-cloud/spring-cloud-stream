@@ -461,6 +461,26 @@ public class RabbitBinderTests extends
 		assertThat(container.isRunning()).isFalse();
 	}
 
+	@Test
+	public void testAnonWithBuiltInExchangeCustomPrefix() throws Exception {
+		RabbitTestBinder binder = getBinder();
+		ExtendedConsumerProperties<RabbitConsumerProperties> properties = createConsumerProperties();
+		properties.getExtension().setDeclareExchange(false);
+		properties.getExtension().setQueueNameGroupOnly(true);
+		properties.getExtension().setAnonymousGroupPrefix("customPrefix.");
+
+		Binding<MessageChannel> consumerBinding = binder.bindConsumer("amq.topic", null,
+				createBindableChannel("input", new BindingProperties()), properties);
+		Lifecycle endpoint = extractEndpoint(consumerBinding);
+		SimpleMessageListenerContainer container = TestUtils.getPropertyValue(endpoint,
+				"messageListenerContainer", SimpleMessageListenerContainer.class);
+		String queueName = container.getQueueNames()[0];
+		assertThat(queueName).startsWith("customPrefix.");
+		assertThat(container.isRunning()).isTrue();
+		consumerBinding.unbind();
+		assertThat(container.isRunning()).isFalse();
+	}
+
 	@SuppressWarnings("deprecation")
 	@Test
 	public void testConsumerPropertiesWithUserInfrastructureCustomExchangeAndRK()
