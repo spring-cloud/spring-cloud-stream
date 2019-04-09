@@ -73,6 +73,7 @@ import org.springframework.util.ObjectUtils;
  * @author Vinicius Carvalho
  * @author Oleg Zhurakousky
  * @author Sercan Karaoglu
+ * @author Ish Mahajan
  */
 public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessageConverter
 		implements InitializingBean {

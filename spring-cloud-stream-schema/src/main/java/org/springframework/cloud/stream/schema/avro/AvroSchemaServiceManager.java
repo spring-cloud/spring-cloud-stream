@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -31,7 +31,7 @@ import org.apache.avro.io.DatumWriter;
  * Provide a custom bean definition of {@link AvroSchemaServiceManager} and mark
  * it as @Primary to override the default implementation
  *
- * @author 5aab
+ * @author Ish Mahajan
  *
  */
 public interface AvroSchemaServiceManager {

@@ -40,6 +40,7 @@ import org.springframework.util.MimeType;
  * @author Marius Bogoevici
  * @author Vinicius Carvalho
  * @author Sercan Karaoglu
+ * @author Ish Mahajan
  */
 public abstract class AbstractAvroMessageConverter extends AbstractMessageConverter {
 

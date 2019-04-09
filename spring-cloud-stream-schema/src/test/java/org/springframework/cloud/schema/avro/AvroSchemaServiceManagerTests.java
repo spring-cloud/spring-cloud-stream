@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.schema.avro;
 
+
 import java.io.File;
 import java.io.IOException;
 
@@ -25,7 +26,6 @@ import com.fasterxml.jackson.dataformat.avro.AvroFactory;
 import com.fasterxml.jackson.dataformat.avro.AvroMapper;
 import com.fasterxml.jackson.dataformat.avro.AvroSchema;
 import com.fasterxml.jackson.dataformat.avro.schema.AvroSchemaGenerator;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.avro.Schema;
 import org.apache.avro.SchemaParseException;
 import org.apache.avro.file.DataFileReader;
@@ -33,7 +33,6 @@ import org.apache.avro.file.DataFileWriter;
 import org.apache.avro.io.DatumReader;
 import org.apache.avro.io.DatumWriter;
 import org.assertj.core.util.Lists;
-import org.junit.Assert;
 import org.junit.Test;
 
 import org.springframework.cloud.schema.avro.domain.FoodOrder;
@@ -43,26 +42,30 @@ import org.springframework.cloud.stream.schema.avro.AvroSchemaServiceManagerImpl
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.util.MimeType;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
 /**
- * @author 5aab
+ * @author Ish Mahajan
  */
-@Slf4j
 public class AvroSchemaServiceManagerTests {
 
+	@SuppressWarnings({ "rawtypes", "unchecked", "resource" })
 	@Test(expected = DataFileWriter.AppendWriteException.class)
 	public void testWithDefaultImplementation() throws IOException {
 		AvroSchemaServiceManager defaultServiceManager = new AvroSchemaServiceManagerImpl();
 		Schema schema = defaultServiceManager.getSchema(FoodOrder.class);
-		FoodOrder foodOrder = FoodOrder.builder().restaurant("Spring Kitchen")
-			.orderDescription("avro makhani").customerAddress("world wide web").build();
+		FoodOrder foodOrder = new FoodOrder();
+		foodOrder.setRestaurant("Spring Kitchen");
+		foodOrder.setOrderDescription("avro makhani");
+		foodOrder.setCustomerAddress("world wide web");
 		File file = new File("foodorder.avro");
+
 		DatumWriter datumWriter = defaultServiceManager.getDatumWriter(foodOrder.getClass(), schema);
 		DataFileWriter<FoodOrder> dataFileWriter = new DataFileWriter<FoodOrder>(datumWriter);
 		dataFileWriter.create(schema, file);
 		dataFileWriter.append(foodOrder);
 
-		FoodOrder foodOrder2 = FoodOrder.builder().restaurant(null)
-			.orderDescription(null).customerAddress(null).build();
+		FoodOrder foodOrder2 = new FoodOrder();
 		dataFileWriter.append(foodOrder2);
 		dataFileWriter.close();
 
@@ -89,7 +92,7 @@ public class AvroSchemaServiceManagerTests {
 					mapper.acceptJsonFormatVisitor(FoodOrder.class, gen);
 				}
 				catch (JsonMappingException e) {
-					log.error("Error while setting acceptJsonFormatVisitor {}", e);
+					fail("Error while setting acceptJsonFormatVisitor {}", e);
 				}
 				AvroSchema schemaWrapper = gen.getGeneratedSchema();
 				return schemaWrapper.getAvroSchema();
@@ -114,7 +117,7 @@ public class AvroSchemaServiceManagerTests {
 					mapper.acceptJsonFormatVisitor(targetClass, gen);
 				}
 				catch (JsonMappingException e) {
-					log.error("Error while setting acceptJsonFormatVisitor {}", e);
+					fail("Error while setting acceptJsonFormatVisitor {}", e);
 				}
 				return mapper.readerFor(targetClass)
 					.with(new AvroSchema(readerSchema))
@@ -122,43 +125,46 @@ public class AvroSchemaServiceManagerTests {
 			}
 		};
 
-		FoodOrder foodOrder1 = FoodOrder.builder().restaurant("Spring Kitchen")
-			.orderDescription("avro makhani").customerAddress("world wide web").build();
-		FoodOrder foodOrder2 = FoodOrder.builder().restaurant("Spring Kitchen")
-			.orderDescription(null).customerAddress(null).build();
+		FoodOrder foodOrder1 = new FoodOrder();
+		foodOrder1.setRestaurant("Spring Kitchen");
+		foodOrder1.setOrderDescription("avro makhani");
+		foodOrder1.setCustomerAddress("world wide web");
+		FoodOrder foodOrder2 = new FoodOrder();
+		foodOrder2.setRestaurant("Spring Kitchen");
+
 		Schema schema = manager.getSchema(FoodOrder.class);
 		AvroMapper mapper = new AvroMapper();
 		byte[] payload1 = mapper.writer(new AvroSchema(schema)).writeValueAsBytes(foodOrder1);
 		byte[] payload2 = mapper.writer(new AvroSchema(schema)).writeValueAsBytes(foodOrder2);
 		foodOrder1 = (FoodOrder) manager.readData(foodOrder1.getClass(), payload1, schema, schema);
 		foodOrder2 = (FoodOrder) manager.readData(foodOrder1.getClass(), payload2, schema, schema);
-		Assert.assertNull(foodOrder2.getOrderDescription());
-		Assert.assertNull(foodOrder2.getCustomerAddress());
+		assertThat(foodOrder2.getOrderDescription()).isNull();
+		assertThat(foodOrder2.getCustomerAddress()).isNull();
 	}
 
 	@Test
 	public void testAvroSchemaMessageConverter() {
 		AvroSchemaMessageConverter  converter = new AvroSchemaMessageConverter();
 		MimeType mimeType = new MimeType("application", "avro");
-		Assert.assertEquals(converter.getSupportedMimeTypes().get(0), mimeType);
+		assertThat(mimeType).isEqualTo(converter.getSupportedMimeTypes().get(0));
 
 		AvroSchemaMessageConverter  converter2 = new AvroSchemaMessageConverter(mimeType);
-		Assert.assertEquals(converter2.getSupportedMimeTypes().get(0), mimeType);
+		assertThat(mimeType).isEqualTo(converter2.getSupportedMimeTypes().get(0));
 
 		AvroSchemaMessageConverter  converter3 =
 			new AvroSchemaMessageConverter(Lists.newArrayList(mimeType));
-		Assert.assertEquals(converter3.getSupportedMimeTypes().get(0), mimeType);
+		assertThat(mimeType).isEqualTo(converter3.getSupportedMimeTypes().get(0));
 
 		AvroSchemaServiceManager manager = new AvroSchemaServiceManagerImpl();
 		AvroSchemaMessageConverter  converter4 = new AvroSchemaMessageConverter(manager);
-		Assert.assertEquals(converter4.getSupportedMimeTypes().get(0), mimeType);
+		assertThat(mimeType).isEqualTo(converter4.getSupportedMimeTypes().get(0));
 
 		AvroSchemaMessageConverter  converter5 =
 			new AvroSchemaMessageConverter(Lists.newArrayList(mimeType), manager);
 		Schema schema = manager.getSchema(FoodOrder.class);
 		converter5.setSchema(schema);
-		Assert.assertEquals(converter5.getSupportedMimeTypes().get(0), mimeType);
-		Assert.assertEquals(converter5.getSchema(), schema);
+		assertThat(mimeType).isEqualTo(converter5.getSupportedMimeTypes().get(0));
+		assertThat(schema).isEqualTo(converter5.getSchema());
 	}
 
 	@Test(expected = SchemaParseException.class)

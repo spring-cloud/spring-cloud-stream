@@ -34,6 +34,7 @@ import org.springframework.util.MimeType;
  * to {@link org.apache.avro.generic.GenericRecord} targets, a schema must be set.s
  *
  * @author Marius Bogoevici
+ * @author Ish Mahajan
  */
 
 public class AvroSchemaMessageConverter extends AbstractAvroMessageConverter {

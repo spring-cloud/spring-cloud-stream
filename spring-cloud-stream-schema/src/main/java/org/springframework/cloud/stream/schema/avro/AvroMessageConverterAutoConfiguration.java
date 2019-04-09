@@ -38,6 +38,7 @@ import org.springframework.util.ReflectionUtils;
  * @author Marius Bogoevici
  * @author Vinicius Carvalho
  * @author Sercan Karaoglu
+ * @author Ish Mahajan
  */
 @Configuration
 @ConditionalOnClass(name = "org.apache.avro.Schema")
