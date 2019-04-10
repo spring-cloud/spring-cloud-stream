@@ -38,7 +38,6 @@ public class BindingHandlerAdvise implements ConfigurationPropertiesBindHandlerA
 
 	private final Map<ConfigurationPropertyName, ConfigurationPropertyName> mappings;
 
-
 	BindingHandlerAdvise(
 			Map<ConfigurationPropertyName, ConfigurationPropertyName> additionalMappings) {
 		this.mappings = new LinkedHashMap<>();

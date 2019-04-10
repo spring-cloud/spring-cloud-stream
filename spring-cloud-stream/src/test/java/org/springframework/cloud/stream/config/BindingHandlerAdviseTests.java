@@ -48,29 +48,31 @@ public class BindingHandlerAdviseTests {
 
 	@Test(expected = BeanCreationException.class)
 	public void testFailureWithWrongValue() {
-		new SpringApplicationBuilder(SampleConfiguration.class).web(WebApplicationType.NONE).run("--props.value=-1",
-				"--spring.jmx.enabled=false");
+		new SpringApplicationBuilder(SampleConfiguration.class)
+				.web(WebApplicationType.NONE)
+				.run("--props.value=-1", "--spring.jmx.enabled=false");
 	}
 
 	@Test
 	public void testValidatedValueValue() {
-		ValidatedProps validatedProps = new SpringApplicationBuilder(SampleConfiguration.class)
-				.web(WebApplicationType.NONE).run("--props.value=2", "--spring.jmx.enabled=false")
-				.getBean(ValidatedProps.class);
+		ValidatedProps validatedProps = new SpringApplicationBuilder(
+				SampleConfiguration.class).web(WebApplicationType.NONE)
+						.run("--props.value=2", "--spring.jmx.enabled=false")
+						.getBean(ValidatedProps.class);
 		assertThat(validatedProps.getValue()).isEqualTo(2);
 	}
 
 	@Test
 	public void nonValidatedConfigProperties() {
-		new SpringApplicationBuilder(NonValidatedConfiguration.class).web(WebApplicationType.NONE)
-				.run("--spring.jmx.enabled=false");
+		new SpringApplicationBuilder(NonValidatedConfiguration.class)
+				.web(WebApplicationType.NONE).run("--spring.jmx.enabled=false");
 		// simply should not fail
 	}
 
 	@Test(expected = ConfigurationPropertiesBindException.class)
 	public void validatedConfigProperties() {
-		new SpringApplicationBuilder(ValidatedConfiguration.class).web(WebApplicationType.NONE)
-				.run("--spring.jmx.enabled=false");
+		new SpringApplicationBuilder(ValidatedConfiguration.class)
+				.web(WebApplicationType.NONE).run("--spring.jmx.enabled=false");
 
 		fail();
 	}
@@ -85,6 +87,7 @@ public class BindingHandlerAdviseTests {
 		public NonValidatedClass nonValidatedClass() {
 			return new NonValidatedClass();
 		}
+
 	}
 
 	public static class NonValidatedClass {
@@ -99,6 +102,7 @@ public class BindingHandlerAdviseTests {
 		public void setId(String id) {
 			this.id = id;
 		}
+
 	}
 
 	@EnableBinding(Processor.class)
@@ -111,6 +115,7 @@ public class BindingHandlerAdviseTests {
 		public ValidatedClass nonValidatedClass() {
 			return new ValidatedClass();
 		}
+
 	}
 
 	@Validated
@@ -126,6 +131,7 @@ public class BindingHandlerAdviseTests {
 		public void setId(String id) {
 			this.id = id;
 		}
+
 	}
 
 }
