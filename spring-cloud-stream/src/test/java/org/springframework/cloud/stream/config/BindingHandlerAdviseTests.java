@@ -17,6 +17,7 @@
 package org.springframework.cloud.stream.config;
 
 import javax.validation.constraints.Min;
+import javax.validation.constraints.NotNull;
 
 import org.junit.Test;
 
@@ -25,14 +26,18 @@ import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.ConfigurationPropertiesBindException;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration;
+import org.springframework.cloud.stream.messaging.Processor;
 import org.springframework.cloud.stream.messaging.Sink;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.validation.annotation.Validated;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.fail;
 
 // see https://github.com/spring-cloud/spring-cloud-stream/issues/1573 for more details
 /**
@@ -43,18 +48,84 @@ public class BindingHandlerAdviseTests {
 
 	@Test(expected = BeanCreationException.class)
 	public void testFailureWithWrongValue() {
-		new SpringApplicationBuilder(SampleConfiguration.class)
-				.web(WebApplicationType.NONE)
-				.run("--props.value=-1", "--spring.jmx.enabled=false");
+		new SpringApplicationBuilder(SampleConfiguration.class).web(WebApplicationType.NONE).run("--props.value=-1",
+				"--spring.jmx.enabled=false");
 	}
 
 	@Test
 	public void testValidatedValueValue() {
-		ValidatedProps validatedProps = new SpringApplicationBuilder(
-				SampleConfiguration.class).web(WebApplicationType.NONE)
-						.run("--props.value=2", "--spring.jmx.enabled=false")
-						.getBean(ValidatedProps.class);
+		ValidatedProps validatedProps = new SpringApplicationBuilder(SampleConfiguration.class)
+				.web(WebApplicationType.NONE).run("--props.value=2", "--spring.jmx.enabled=false")
+				.getBean(ValidatedProps.class);
 		assertThat(validatedProps.getValue()).isEqualTo(2);
+	}
+
+	@Test
+	public void nonValidatedConfigProperties() {
+		new SpringApplicationBuilder(NonValidatedConfiguration.class).web(WebApplicationType.NONE)
+				.run("--spring.jmx.enabled=false");
+		// simply should not fail
+	}
+
+	@Test(expected = ConfigurationPropertiesBindException.class)
+	public void validatedConfigProperties() {
+		new SpringApplicationBuilder(ValidatedConfiguration.class).web(WebApplicationType.NONE)
+				.run("--spring.jmx.enabled=false");
+
+		fail();
+	}
+
+	@EnableBinding(Processor.class)
+	@Import(TestChannelBinderConfiguration.class)
+	@EnableAutoConfiguration
+	public static class NonValidatedConfiguration {
+
+		@Bean
+		@ConfigurationProperties
+		public NonValidatedClass nonValidatedClass() {
+			return new NonValidatedClass();
+		}
+	}
+
+	public static class NonValidatedClass {
+
+		@NotNull
+		private String id;
+
+		public String getId() {
+			return id;
+		}
+
+		public void setId(String id) {
+			this.id = id;
+		}
+	}
+
+	@EnableBinding(Processor.class)
+	@Import(TestChannelBinderConfiguration.class)
+	@EnableAutoConfiguration
+	public static class ValidatedConfiguration {
+
+		@Bean
+		@ConfigurationProperties
+		public ValidatedClass nonValidatedClass() {
+			return new ValidatedClass();
+		}
+	}
+
+	@Validated
+	public static class ValidatedClass {
+
+		@NotNull
+		private String id;
+
+		public String getId() {
+			return id;
+		}
+
+		public void setId(String id) {
+			this.id = id;
+		}
 	}
 
 }
