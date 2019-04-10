@@ -63,7 +63,6 @@ import org.springframework.messaging.core.DestinationResolver;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.util.Assert;
 import org.springframework.util.ObjectUtils;
-import org.springframework.validation.Validator;
 
 /**
  * Configuration class that provides necessary beans for {@link MessageChannel} binding.
@@ -163,7 +162,7 @@ public class BindingServiceConfiguration {
 
 	@Bean
 	public BindingHandlerAdvise BindingHandlerAdvise(
-			@Nullable MappingsProvider[] providers, @Nullable Validator validator) {
+			@Nullable MappingsProvider[] providers) {
 		Map<ConfigurationPropertyName, ConfigurationPropertyName> additionalMappings = new HashMap<>();
 		if (!ObjectUtils.isEmpty(providers)) {
 			for (int i = 0; i < providers.length; i++) {
@@ -171,7 +170,7 @@ public class BindingServiceConfiguration {
 				additionalMappings.putAll(mappingsProvider.getDefaultMappings());
 			}
 		}
-		return new BindingHandlerAdvise(additionalMappings, validator);
+		return new BindingHandlerAdvise(additionalMappings);
 	}
 
 	@Bean
