@@ -25,9 +25,11 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * stream processing and one can provide window specific properties at runtime and use
  * those properties in the applications using this class.
  *
+ * @deprecated The properties exposed by this class can be used directly on Kafka Streams API in the application.
  * @author Soby Chacko
  */
 @ConfigurationProperties("spring.cloud.stream.kafka.streams")
+@Deprecated
 public class KafkaStreamsApplicationSupportProperties {
 
 	private TimeWindow timeWindow;

@@ -27,10 +27,12 @@ import org.springframework.context.annotation.Configuration;
 /**
  * Application support configuration for Kafka Streams binder.
  *
+ * @deprecated Features provided on this class can be directly configured in the application itself using Kafka Streams.
  * @author Soby Chacko
  */
 @Configuration
 @EnableConfigurationProperties(KafkaStreamsApplicationSupportProperties.class)
+@Deprecated
 public class KafkaStreamsApplicationSupportAutoConfiguration {
 
 	@Bean

@@ -231,7 +231,6 @@ public class StreamToTableJoinFunctionTests {
 
 		try (ConfigurableApplicationContext ignored = app.run("--server.port=0",
 				"--spring.jmx.enabled=false",
-				"--spring.cloud.stream.function.definition=process1",
 				"--spring.cloud.stream.bindings.input-1.destination=user-clicks-2",
 				"--spring.cloud.stream.bindings.input-2.destination=user-regions-2",
 				"--spring.cloud.stream.bindings.output.destination=output-topic-2",

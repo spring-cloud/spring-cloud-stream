@@ -17,6 +17,10 @@
 package org.springframework.cloud.stream.binder.kafka.streams.function;
 
 import java.lang.reflect.Method;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
@@ -24,40 +28,43 @@ import org.springframework.beans.factory.BeanFactoryAware;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.AnnotatedBeanDefinition;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
-import org.springframework.cloud.stream.function.StreamFunctionProperties;
 import org.springframework.core.ResolvableType;
 import org.springframework.util.ClassUtils;
 
 /**
  *
  * @author Soby Chacko
- * @since 2.1.0
+ * @since 2.2.0
  *
  */
 class KafkaStreamsFunctionBeanPostProcessor implements InitializingBean, BeanFactoryAware {
 
-	private final StreamFunctionProperties kafkaStreamsFunctionProperties;
 	private ConfigurableListableBeanFactory beanFactory;
-	private ResolvableType resolvableType;
+	private Map<String, ResolvableType> resolvableTypeMap = new TreeMap<>();
 
-	KafkaStreamsFunctionBeanPostProcessor(StreamFunctionProperties properties) {
-		this.kafkaStreamsFunctionProperties = properties;
-	}
-
-	public ResolvableType getResolvableType() {
-		return this.resolvableType;
+	public Map<String, ResolvableType> getResolvableTypes() {
+		return this.resolvableTypeMap;
 	}
 
 	@Override
-	public void afterPropertiesSet() throws Exception {
+	public void afterPropertiesSet() {
+
+		final Map<String, Function> functionTypes = this.beanFactory.getBeansOfType(Function.class);
+		final Map<String, Consumer> consumerTypes = this.beanFactory.getBeansOfType(Consumer.class);
+
+		functionTypes.keySet().forEach(this::extractResolvableTypes);
+		consumerTypes.keySet().forEach(this::extractResolvableTypes);
+	}
+
+	private void extractResolvableTypes(String key) {
 		final Class<?> classObj = ClassUtils.resolveClassName(((AnnotatedBeanDefinition)
-						this.beanFactory.getBeanDefinition(kafkaStreamsFunctionProperties.getDefinition()))
+						this.beanFactory.getBeanDefinition(key))
 						.getMetadata().getClassName(),
 				ClassUtils.getDefaultClassLoader());
-
 		try {
-			Method method = classObj.getMethod(this.kafkaStreamsFunctionProperties.getDefinition());
-			this.resolvableType = ResolvableType.forMethodReturnType(method, classObj);
+			Method method = classObj.getMethod(key);
+			ResolvableType resolvableType = ResolvableType.forMethodReturnType(method, classObj);
+			resolvableTypeMap.put(key, resolvableType);
 		}
 		catch (NoSuchMethodException e) {
 			//ignore

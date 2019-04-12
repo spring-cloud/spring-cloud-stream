@@ -71,6 +71,7 @@ import org.springframework.util.StringUtils;
 
 /**
  * @author Soby Chacko
+ * @since 2.2.0
  */
 public class KafkaStreamsFunctionProcessor implements ApplicationContextAware {
 
@@ -88,6 +89,8 @@ public class KafkaStreamsFunctionProcessor implements ApplicationContextAware {
 
 	private ConfigurableApplicationContext applicationContext;
 
+	private Set<String> origInputs = new TreeSet<>();
+	private Set<String> origOutputs = new TreeSet<>();
 
 	public KafkaStreamsFunctionProcessor(BindingServiceProperties bindingServiceProperties,
 										KafkaStreamsExtendedBindingProperties kafkaStreamsExtendedBindingProperties,
@@ -105,43 +108,47 @@ public class KafkaStreamsFunctionProcessor implements ApplicationContextAware {
 		this.cleanupConfig = cleanupConfig;
 		this.functionCatalog = functionCatalog;
 		this.bindableProxyFactory = bindableProxyFactory;
+		this.origInputs.addAll(this.bindableProxyFactory.getInputs());
+		this.origOutputs.addAll(this.bindableProxyFactory.getOutputs());
 	}
 
 	private Map<String, ResolvableType> buildTypeMap(ResolvableType resolvableType) {
-		final Set<String> inputs = new TreeSet<>(this.bindableProxyFactory.getInputs());
+		int inputCount = 1;
 
-		Map<String, ResolvableType> map = new LinkedHashMap<>();
+		ResolvableType resolvableTypeGeneric = resolvableType.getGeneric(1);
+		while (resolvableTypeGeneric != null && resolvableTypeGeneric.getRawClass() != null && (resolvableTypeGeneric.getRawClass().equals(Function.class) ||
+				resolvableTypeGeneric.getRawClass().equals(Consumer.class))) {
+			inputCount++;
+			resolvableTypeGeneric = resolvableTypeGeneric.getGeneric(1);
+		}
+
+		final Set<String> inputs = new TreeSet<>(origInputs);
+		Map<String, ResolvableType> resolvableTypeMap = new LinkedHashMap<>();
 		final Iterator<String> iterator = inputs.iterator();
 
-		if (iterator.hasNext()) {
-			map.put(iterator.next(), resolvableType.getGeneric(0));
-			ResolvableType generic = resolvableType.getGeneric(1);
+		final String next = iterator.next();
+		resolvableTypeMap.put(next, resolvableType.getGeneric(0));
+		origInputs.remove(next);
 
-			while (iterator.hasNext() && generic != null) {
+		for (int i = 1; i < inputCount; i++) {
+			if (iterator.hasNext()) {
+				ResolvableType generic = resolvableType.getGeneric(1);
 				if (generic.getRawClass() != null &&
 						(generic.getRawClass().equals(Function.class) ||
 								generic.getRawClass().equals(Consumer.class))) {
-					map.put(iterator.next(), generic.getGeneric(0));
+					final String next1 = iterator.next();
+					resolvableTypeMap.put(next1, generic.getGeneric(0));
+					origInputs.remove(next1);
 				}
-				generic = generic.getGeneric(1);
 			}
 		}
-
-		return map;
+		return resolvableTypeMap;
 	}
 
 	@SuppressWarnings("unchecked")
-	public void orchestrateStreamListenerSetupMethod(ResolvableType resolvableType, String functionName) {
-		final Set<String> outputs = new TreeSet<>(this.bindableProxyFactory.getOutputs());
-
-		String[] methodAnnotatedOutboundNames = new String[outputs.size()];
-		int j = 0;
-		for (String output : outputs) {
-			methodAnnotatedOutboundNames[j++] = output;
-		}
-
+	public void orchestrateFunctionInvoking(ResolvableType resolvableType, String functionName) {
 		final Map<String, ResolvableType> stringResolvableTypeMap = buildTypeMap(resolvableType);
-		Object[] adaptedInboundArguments = adaptAndRetrieveInboundArguments(stringResolvableTypeMap, "foobar");
+		Object[] adaptedInboundArguments = adaptAndRetrieveInboundArguments(stringResolvableTypeMap, functionName);
 		try {
 			if (resolvableType.getRawClass() != null && resolvableType.getRawClass().equals(Consumer.class)) {
 				Consumer<Object> consumer = functionCatalog.lookup(Consumer.class, functionName);
@@ -168,15 +175,22 @@ public class KafkaStreamsFunctionProcessor implements ApplicationContextAware {
 					i++;
 				}
 				if (result != null) {
+					final Set<String> outputs = new TreeSet<>(origOutputs);
+					final Iterator<String> iterator = outputs.iterator();
+
 					if (result.getClass().isArray()) {
-						Assert.isTrue(methodAnnotatedOutboundNames.length == ((Object[]) result).length,
-								"Result does not match with the number of declared outbounds");
-					}
-					else {
-						Assert.isTrue(methodAnnotatedOutboundNames.length == 1,
-								"Result does not match with the number of declared outbounds");
-					}
-					if (result.getClass().isArray()) {
+
+						final int length = ((Object[]) result).length;
+						String[] methodAnnotatedOutboundNames = new String[length];
+
+
+						for (int j = 0; j < length; j++) {
+							if (iterator.hasNext()) {
+								final String next = iterator.next();
+								methodAnnotatedOutboundNames[j] = next;
+								this.origOutputs.remove(next);
+							}
+						}
 						Object[] outboundKStreams = (Object[]) result;
 						int k = 0;
 						for (Object outboundKStream : outboundKStreams) {
@@ -188,11 +202,15 @@ public class KafkaStreamsFunctionProcessor implements ApplicationContextAware {
 						}
 					}
 					else {
-						Object targetBean = this.applicationContext.getBean(methodAnnotatedOutboundNames[0]);
+						if (iterator.hasNext()) {
+							final String next = iterator.next();
+							Object targetBean = this.applicationContext.getBean(next);
+							this.origOutputs.remove(next);
 
-						KStreamBoundElementFactory.KStreamWrapper
-								boundElement = (KStreamBoundElementFactory.KStreamWrapper) targetBean;
-						boundElement.wrap((KStream) result);
+							KStreamBoundElementFactory.KStreamWrapper
+									boundElement = (KStreamBoundElementFactory.KStreamWrapper) targetBean;
+							boundElement.wrap((KStream) result);
+						}
 					}
 				}
 			}

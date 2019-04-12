@@ -26,6 +26,7 @@ import org.springframework.cloud.function.context.WrapperDetector;
 
 /**
  * @author Soby Chacko
+ * @since 2.2.0
  */
 public class KafkaStreamsFunctionWrapperDetector implements WrapperDetector {
 	@Override

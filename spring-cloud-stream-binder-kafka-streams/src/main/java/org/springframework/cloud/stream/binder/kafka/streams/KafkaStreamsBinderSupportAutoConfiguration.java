@@ -31,12 +31,12 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.stream.binder.BinderConfiguration;
+import org.springframework.cloud.stream.binder.kafka.streams.function.FunctionDetectorCondition;
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsBinderConfigurationProperties;
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsExtendedBindingProperties;
 import org.springframework.cloud.stream.binder.kafka.streams.serde.CompositeNonNativeSerde;
@@ -48,6 +48,7 @@ import org.springframework.cloud.stream.config.BindingServiceConfiguration;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Conditional;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.MapPropertySource;
@@ -240,8 +241,7 @@ public class KafkaStreamsBinderSupportAutoConfiguration {
 	}
 
 	@Bean
-//	@ConditionalOnProperty("spring.cloud.stream.kafka.streams.function.definition")
-	@ConditionalOnProperty("spring.cloud.stream.function.definition")
+	@Conditional(FunctionDetectorCondition.class)
 	public KafkaStreamsFunctionProcessor kafkaStreamsFunctionProcessor(BindingServiceProperties bindingServiceProperties,
 																	KafkaStreamsExtendedBindingProperties kafkaStreamsExtendedBindingProperties,
 																	KeyValueSerdeResolver keyValueSerdeResolver,

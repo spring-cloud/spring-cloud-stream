@@ -16,34 +16,32 @@
 
 package org.springframework.cloud.stream.binder.kafka.streams.function;
 
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.binder.kafka.streams.KafkaStreamsFunctionProcessor;
 import org.springframework.cloud.stream.function.StreamFunctionProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 
 /**
  * @author Soby Chacko
+ * @since 2.2.0
  */
 @Configuration
-@ConditionalOnProperty("spring.cloud.stream.function.definition")
 @EnableConfigurationProperties(StreamFunctionProperties.class)
 public class KafkaStreamsFunctionAutoConfiguration {
 
 	@Bean
+	@Conditional(FunctionDetectorCondition.class)
 	public KafkaStreamsFunctionProcessorInvoker kafkaStreamsFunctionProcessorInvoker(
 																					KafkaStreamsFunctionBeanPostProcessor kafkaStreamsFunctionBeanPostProcessor,
-																					KafkaStreamsFunctionProcessor kafkaStreamsFunctionProcessor,
-																					StreamFunctionProperties properties) {
-		return new KafkaStreamsFunctionProcessorInvoker(kafkaStreamsFunctionBeanPostProcessor.getResolvableType(),
-				properties.getDefinition(), kafkaStreamsFunctionProcessor);
+																					KafkaStreamsFunctionProcessor kafkaStreamsFunctionProcessor) {
+		return new KafkaStreamsFunctionProcessorInvoker(kafkaStreamsFunctionBeanPostProcessor.getResolvableTypes(),
+				kafkaStreamsFunctionProcessor);
 	}
 
 	@Bean
-	public KafkaStreamsFunctionBeanPostProcessor kafkaStreamsFunctionBeanPostProcessor(
-			StreamFunctionProperties properties) {
-		return new KafkaStreamsFunctionBeanPostProcessor(properties);
+	public KafkaStreamsFunctionBeanPostProcessor kafkaStreamsFunctionBeanPostProcessor() {
+		return new KafkaStreamsFunctionBeanPostProcessor();
 	}
-
 }

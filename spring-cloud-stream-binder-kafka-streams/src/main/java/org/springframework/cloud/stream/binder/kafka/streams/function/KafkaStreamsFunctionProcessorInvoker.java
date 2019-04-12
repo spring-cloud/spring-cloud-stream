@@ -16,6 +16,8 @@
 
 package org.springframework.cloud.stream.binder.kafka.streams.function;
 
+import java.util.Map;
+
 import javax.annotation.PostConstruct;
 
 import org.springframework.cloud.stream.binder.kafka.streams.KafkaStreamsFunctionProcessor;
@@ -29,18 +31,17 @@ import org.springframework.core.ResolvableType;
 class KafkaStreamsFunctionProcessorInvoker {
 
 	private final KafkaStreamsFunctionProcessor kafkaStreamsFunctionProcessor;
-	private final ResolvableType resolvableType;
-	private final String functionName;
+	private final Map<String, ResolvableType> resolvableTypeMap;
 
-	KafkaStreamsFunctionProcessorInvoker(ResolvableType resolvableType, String functionName,
-												KafkaStreamsFunctionProcessor kafkaStreamsFunctionProcessor) {
+	KafkaStreamsFunctionProcessorInvoker(Map<String, ResolvableType> resolvableTypeMap,
+										KafkaStreamsFunctionProcessor kafkaStreamsFunctionProcessor) {
 		this.kafkaStreamsFunctionProcessor = kafkaStreamsFunctionProcessor;
-		this.resolvableType = resolvableType;
-		this.functionName = functionName;
+		this.resolvableTypeMap = resolvableTypeMap;
 	}
 
 	@PostConstruct
 	void invoke() {
-		this.kafkaStreamsFunctionProcessor.orchestrateStreamListenerSetupMethod(resolvableType, functionName);
+		resolvableTypeMap.forEach((key, value) ->
+				this.kafkaStreamsFunctionProcessor.orchestrateFunctionInvoking(value, key));
 	}
 }

@@ -85,7 +85,6 @@ public class KafkaStreamsBinderWordCountBranchesFunctionTests {
 
 		ConfigurableApplicationContext context = app.run("--server.port=0",
 				"--spring.jmx.enabled=false",
-				"--spring.cloud.stream.function.definition=process",
 				"--spring.cloud.stream.bindings.input.destination=words",
 				"--spring.cloud.stream.bindings.output1.destination=counts",
 				"--spring.cloud.stream.bindings.output1.contentType=application/json",
