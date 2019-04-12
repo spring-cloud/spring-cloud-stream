@@ -18,6 +18,7 @@ package org.springframework.cloud.stream.binder.kafka.streams.function;
 
 import java.lang.reflect.Method;
 import java.util.HashMap;
+
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
