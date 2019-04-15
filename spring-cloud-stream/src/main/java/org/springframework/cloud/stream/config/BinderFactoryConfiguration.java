@@ -17,7 +17,6 @@
 package org.springframework.cloud.stream.config;
 
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -33,7 +32,6 @@ import org.apache.commons.logging.LogFactory;
 
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanCreationException;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
@@ -69,8 +67,12 @@ import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.core.io.support.PropertiesLoaderUtils;
 import org.springframework.integration.context.IntegrationContextUtils;
-import org.springframework.integration.handler.support.HandlerMethodArgumentResolversHolder;
+import org.springframework.integration.handler.support.MapArgumentResolver;
+import org.springframework.integration.handler.support.PayloadExpressionArgumentResolver;
+import org.springframework.integration.handler.support.PayloadsArgumentResolver;
+import org.springframework.integration.support.NullAwarePayloadArgumentResolver;
 import org.springframework.lang.Nullable;
+import org.springframework.messaging.converter.CompositeMessageConverter;
 import org.springframework.messaging.handler.annotation.support.DefaultMessageHandlerMethodFactory;
 import org.springframework.messaging.handler.annotation.support.HeaderMethodArgumentResolver;
 import org.springframework.messaging.handler.annotation.support.HeadersMethodArgumentResolver;
@@ -78,7 +80,6 @@ import org.springframework.messaging.handler.annotation.support.MessageHandlerMe
 import org.springframework.messaging.handler.invocation.HandlerMethodArgumentResolver;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.ObjectUtils;
-import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.Validator;
 
@@ -133,12 +134,12 @@ public class BinderFactoryConfiguration {
 	@Bean(IntegrationContextUtils.MESSAGE_HANDLER_FACTORY_BEAN_NAME)
 	public static MessageHandlerMethodFactory messageHandlerMethodFactory(
 			CompositeMessageConverterFactory compositeMessageConverterFactory,
-			@Qualifier(IntegrationContextUtils.ARGUMENT_RESOLVERS_BEAN_NAME) HandlerMethodArgumentResolversHolder ahmar,
 			@Nullable Validator validator, ConfigurableListableBeanFactory clbf) {
 
 		DefaultMessageHandlerMethodFactory messageHandlerMethodFactory = new DefaultMessageHandlerMethodFactory();
-		messageHandlerMethodFactory.setMessageConverter(
-				compositeMessageConverterFactory.getMessageConverterForAllRegistered());
+		CompositeMessageConverter messageConverter =
+			compositeMessageConverterFactory.getMessageConverterForAllRegistered();
+		messageHandlerMethodFactory.setMessageConverter(messageConverter);
 
 		/*
 		 * We essentially do the same thing as the
@@ -155,21 +156,25 @@ public class BinderFactoryConfiguration {
 		 */
 		List<HandlerMethodArgumentResolver> resolvers = new LinkedList<>();
 		resolvers.add(new SmartPayloadArgumentResolver(
-				compositeMessageConverterFactory.getMessageConverterForAllRegistered(),
+			messageConverter,
 				validator));
 		resolvers.add(new SmartMessageMethodArgumentResolver(
-				compositeMessageConverterFactory.getMessageConverterForAllRegistered()));
+			messageConverter));
 		resolvers.add(new HeaderMethodArgumentResolver(null, clbf));
 		resolvers.add(new HeadersMethodArgumentResolver());
-		resolvers.addAll(ahmar.getResolvers());
 
-		// modify HandlerMethodArgumentResolversHolder
-		Field field = ReflectionUtils
-				.findField(HandlerMethodArgumentResolversHolder.class, "resolvers");
-		field.setAccessible(true);
-		((List<?>) ReflectionUtils.getField(field, ahmar)).clear();
-		resolvers.forEach(ahmar::addResolver);
-		// --
+		// Copy the order from Spring Integration for compatibility with SI 5.2
+		resolvers.add(new PayloadExpressionArgumentResolver());
+		resolvers.add(new NullAwarePayloadArgumentResolver(messageConverter));
+		PayloadExpressionArgumentResolver payloadExpressionArgumentResolver = new PayloadExpressionArgumentResolver();
+		payloadExpressionArgumentResolver.setBeanFactory(clbf);
+		resolvers.add(payloadExpressionArgumentResolver);
+		PayloadsArgumentResolver payloadsArgumentResolver = new PayloadsArgumentResolver();
+		payloadsArgumentResolver.setBeanFactory(clbf);
+		resolvers.add(payloadsArgumentResolver);
+		MapArgumentResolver mapArgumentResolver = new MapArgumentResolver();
+		mapArgumentResolver.setBeanFactory(clbf);
+		resolvers.add(mapArgumentResolver);
 
 		messageHandlerMethodFactory.setArgumentResolvers(resolvers);
 		messageHandlerMethodFactory.setValidator(validator);
