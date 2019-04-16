@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -246,7 +247,8 @@ public class BindingServiceConfiguration {
 	@ConditionalOnMissingBean
 	public org.springframework.cloud.stream.binding.BinderAwareRouterBeanPostProcessor binderAwareRouterBeanPostProcessor(
 			@Autowired(required = false) AbstractMappingMessageRouter[] routers,
-			@Autowired(required = false) DestinationResolver<MessageChannel> channelResolver) {
+			@Autowired(required = false) @Qualifier("binderAwareChannelResolver")
+				DestinationResolver<MessageChannel> channelResolver) {
 
 		return new org.springframework.cloud.stream.binding.BinderAwareRouterBeanPostProcessor(
 				routers, channelResolver);
