@@ -185,5 +185,4 @@ public class KafkaStreamsBinderWordCountFunctionTests {
 							new Date(key.window().start()), new Date(key.window().end()))));
 		}
 	}
-
 }

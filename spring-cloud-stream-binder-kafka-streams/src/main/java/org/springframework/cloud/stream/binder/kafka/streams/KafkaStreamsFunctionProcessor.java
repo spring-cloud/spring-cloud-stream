@@ -40,6 +40,7 @@ import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.KTable;
 import org.apache.kafka.streams.kstream.Materialized;
 import org.apache.kafka.streams.state.KeyValueStore;
+import org.apache.kafka.streams.state.StoreBuilder;
 
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanInitializationException;
@@ -48,6 +49,7 @@ import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.cloud.function.context.FunctionCatalog;
+import org.springframework.cloud.function.core.FluxedConsumer;
 import org.springframework.cloud.function.core.FluxedFunction;
 import org.springframework.cloud.stream.binder.ConsumerProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaConsumerProperties;
@@ -67,6 +69,7 @@ import org.springframework.kafka.core.CleanupConfig;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.Assert;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 /**
@@ -151,11 +154,22 @@ public class KafkaStreamsFunctionProcessor implements ApplicationContextAware {
 		Object[] adaptedInboundArguments = adaptAndRetrieveInboundArguments(stringResolvableTypeMap, functionName);
 		try {
 			if (resolvableType.getRawClass() != null && resolvableType.getRawClass().equals(Consumer.class)) {
+				//TOOD: Investigate why looking up by Consumer returns null
 				Consumer<Object> consumer = functionCatalog.lookup(Consumer.class, functionName);
-				consumer.accept(adaptedInboundArguments[0]);
+				if (consumer == null) {
+					FluxedConsumer fluxedConsumer = functionCatalog.lookup(FluxedConsumer.class, functionName);
+					Assert.isTrue(fluxedConsumer != null,
+							"No corresponding consumer beans found in the catalog");
+					Object target = fluxedConsumer.getTarget();
+					if (Consumer.class.isAssignableFrom(target.getClass())) {
+						consumer = (Consumer) target;
+					}
+				}
+				if (consumer != null) {
+					consumer.accept(adaptedInboundArguments[0]);
+				}
 			}
 			else {
-
 				Function<Object, Object> function = functionCatalog.lookup(Function.class, functionName);
 				Object target = null;
 				if (function instanceof FluxedFunction) {
@@ -179,10 +193,8 @@ public class KafkaStreamsFunctionProcessor implements ApplicationContextAware {
 					final Iterator<String> iterator = outputs.iterator();
 
 					if (result.getClass().isArray()) {
-
 						final int length = ((Object[]) result).length;
 						String[] methodAnnotatedOutboundNames = new String[length];
-
 
 						for (int j = 0; j < length; j++) {
 							if (iterator.hasNext()) {
@@ -382,6 +394,21 @@ public class KafkaStreamsFunctionProcessor implements ApplicationContextAware {
 									BindingProperties bindingProperties,
 									StreamsBuilder streamsBuilder,
 									Serde<?> keySerde, Serde<?> valueSerde, Topology.AutoOffsetReset autoOffsetReset) {
+		try {
+			final Map<String, StoreBuilder> storeBuilders = applicationContext.getBeansOfType(StoreBuilder.class);
+			if (!CollectionUtils.isEmpty(storeBuilders)) {
+				storeBuilders.values().forEach(storeBuilder -> {
+					streamsBuilder.addStateStore(storeBuilder);
+					if (LOG.isInfoEnabled()) {
+						LOG.info("state store " + storeBuilder.name() + " added to topology");
+					}
+				});
+			}
+		}
+		catch (Exception e) {
+			// Pass through.
+		}
+
 		String[] bindingTargets = StringUtils
 				.commaDelimitedListToStringArray(this.bindingServiceProperties.getBindingDestination(inboundName));
 
