@@ -53,7 +53,7 @@ import org.springframework.util.StringUtils;
  * @author Soby Chacko
  * @author Lei Chen
  */
-class KeyValueSerdeResolver {
+public class KeyValueSerdeResolver {
 
 	private final Map<String, Object> streamConfigGlobalProperties;
 

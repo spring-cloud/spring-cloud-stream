@@ -31,6 +31,7 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -302,6 +303,7 @@ public class KafkaStreamsBinderSupportAutoConfiguration {
 
 	@Bean
 	@SuppressWarnings("unchecked")
+	@ConditionalOnMissingBean
 	public KeyValueSerdeResolver keyValueSerdeResolver(
 			@Qualifier("streamConfigGlobalProperties") Object streamConfigGlobalProperties,
 			KafkaStreamsBinderConfigurationProperties properties) {
