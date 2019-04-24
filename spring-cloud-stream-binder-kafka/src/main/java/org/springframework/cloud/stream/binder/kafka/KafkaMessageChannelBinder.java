@@ -535,7 +535,7 @@ public class KafkaMessageChannelBinder extends
 			messageListenerContainer
 					.setApplicationEventPublisher(getApplicationContext());
 		}
-		messageListenerContainer.setBeanName(topics + ".container");
+		messageListenerContainer.setBeanName(destination + ".container");
 		// end of these won't be needed...
 		if (!extendedConsumerProperties.getExtension().isAutoCommitOffset()) {
 			messageListenerContainer.getContainerProperties()
