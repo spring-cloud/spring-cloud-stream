@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.binder.kafka.streams;
 
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -23,6 +24,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.kafka.common.header.Header;
 import org.apache.kafka.common.header.Headers;
+import org.apache.kafka.common.header.internals.RecordHeader;
 import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.processor.Processor;
@@ -77,14 +79,15 @@ public class KafkaStreamsMessageConversionDelegate {
 	 * @param outboundBindTarget outbound KStream target
 	 * @return serialized KStream
 	 */
-	@SuppressWarnings("rawtypes")
+	@SuppressWarnings({"rawtypes", "unchecked"})
 	public KStream serializeOnOutbound(KStream<?, ?> outboundBindTarget) {
 		String contentType = this.kstreamBindingInformationCatalogue
 				.getContentType(outboundBindTarget);
 		MessageConverter messageConverter = this.compositeMessageConverterFactory
 				.getMessageConverterForAllRegistered();
+		final PerRecordContentTypeHolder perRecordContentTypeHolder = new PerRecordContentTypeHolder();
 
-		return outboundBindTarget.mapValues((v) -> {
+		final KStream<?, ?> kStreamWithEnrichedHeaders = outboundBindTarget.mapValues((v) -> {
 			Message<?> message = v instanceof Message<?> ? (Message<?>) v
 					: MessageBuilder.withPayload(v).build();
 			Map<String, Object> headers = new HashMap<>(message.getHeaders());
@@ -92,9 +95,38 @@ public class KafkaStreamsMessageConversionDelegate {
 				headers.put(MessageHeaders.CONTENT_TYPE, contentType);
 			}
 			MessageHeaders messageHeaders = new MessageHeaders(headers);
-			return messageConverter.toMessage(message.getPayload(), messageHeaders)
-					.getPayload();
+			final Message<?> convertedMessage = messageConverter.toMessage(message.getPayload(), messageHeaders);
+			perRecordContentTypeHolder.setContentType((String) messageHeaders.get(MessageHeaders.CONTENT_TYPE));
+			return convertedMessage.getPayload();
 		});
+
+		kStreamWithEnrichedHeaders.process(() -> new Processor() {
+
+			ProcessorContext context;
+
+			@Override
+			public void init(ProcessorContext context) {
+				this.context = context;
+			}
+
+			@Override
+			public void process(Object key, Object value) {
+				if (perRecordContentTypeHolder.contentType != null) {
+					this.context.headers().remove(MessageHeaders.CONTENT_TYPE);
+					final Header header = new RecordHeader(MessageHeaders.CONTENT_TYPE, perRecordContentTypeHolder
+							.contentType.getBytes(StandardCharsets.UTF_8));
+					this.context.headers().add(header);
+					perRecordContentTypeHolder.unsetContentType();
+				}
+			}
+
+			@Override
+			public void close() {
+
+			}
+		});
+
+		return kStreamWithEnrichedHeaders;
 	}
 
 	/**
@@ -281,6 +313,10 @@ public class KafkaStreamsMessageConversionDelegate {
 
 		void setContentType(String contentType) {
 			this.contentType = contentType;
+		}
+
+		void unsetContentType() {
+			this.contentType = null;
 		}
 
 	}
