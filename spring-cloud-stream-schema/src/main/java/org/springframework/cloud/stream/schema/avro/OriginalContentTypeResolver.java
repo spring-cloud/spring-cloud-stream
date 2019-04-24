@@ -31,7 +31,7 @@ import org.springframework.util.MimeType;
  * returns the contentType
  *
  */
-class OriginalContentTypeResolver implements ContentTypeResolver {
+public class OriginalContentTypeResolver implements ContentTypeResolver {
 
 	private ConcurrentMap<String, MimeType> mimeTypeCache = new ConcurrentHashMap<>();
 
