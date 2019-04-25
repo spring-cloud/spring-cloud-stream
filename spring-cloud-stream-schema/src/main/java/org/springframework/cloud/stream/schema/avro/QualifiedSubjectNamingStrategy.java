@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2017 the original author or authors.
+ * Copyright 2016-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,19 +14,15 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.schema.avro;
+package org.springframework.cloud.stream.schema.avro;
 
 import org.apache.avro.Schema;
 
-import org.springframework.cloud.stream.schema.avro.SubjectNamingStrategy;
-
 /**
- * @author David Kalosi
+ * @author José A. Íñigo
+ * @since 2.2.0
  */
-class CustomSubjectNamingStrategy implements SubjectNamingStrategy {
-
-	CustomSubjectNamingStrategy() {
-	}
+public class QualifiedSubjectNamingStrategy implements SubjectNamingStrategy {
 
 	@Override
 	public String toSubject(Schema schema) {
