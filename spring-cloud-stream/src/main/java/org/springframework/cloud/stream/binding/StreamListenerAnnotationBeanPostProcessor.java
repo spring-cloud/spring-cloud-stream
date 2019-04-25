@@ -320,7 +320,7 @@ public class StreamListenerAnnotationBeanPostProcessor implements BeanPostProces
 		this.binderAwareChannelResolver = this.applicationContext
 				.getBean("binderAwareChannelResolver", DestinationResolver.class);
 		this.messageHandlerMethodFactory = this.applicationContext
-				.getBean(MessageHandlerMethodFactory.class);
+				.getBean("integrationMessageHandlerMethodFactory", MessageHandlerMethodFactory.class);
 		this.springIntegrationProperties = this.applicationContext
 				.getBean(SpringIntegrationProperties.class);
 
