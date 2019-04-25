@@ -16,10 +16,10 @@
 
 package org.springframework.cloud.stream.binder.kafka.streams;
 
-import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.kafka.common.header.Header;
@@ -113,9 +113,17 @@ public class KafkaStreamsMessageConversionDelegate {
 			public void process(Object key, Object value) {
 				if (perRecordContentTypeHolder.contentType != null) {
 					this.context.headers().remove(MessageHeaders.CONTENT_TYPE);
-					final Header header = new RecordHeader(MessageHeaders.CONTENT_TYPE, perRecordContentTypeHolder
-							.contentType.getBytes(StandardCharsets.UTF_8));
-					this.context.headers().add(header);
+					final Header header;
+					try {
+						header = new RecordHeader(MessageHeaders.CONTENT_TYPE,
+									new ObjectMapper().writeValueAsBytes(perRecordContentTypeHolder.contentType));
+						this.context.headers().add(header);
+					}
+					catch (Exception e) {
+						if (LOG.isDebugEnabled()) {
+							LOG.debug("Could not add content type header");
+						}
+					}
 					perRecordContentTypeHolder.unsetContentType();
 				}
 			}
