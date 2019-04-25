@@ -318,7 +318,7 @@ public class StreamListenerAnnotationBeanPostProcessor implements BeanPostProces
 		Collection<StreamListenerResultAdapter> streamListenerResultAdapters = this.applicationContext
 				.getBeansOfType(StreamListenerResultAdapter.class).values();
 		this.binderAwareChannelResolver = this.applicationContext
-				.getBean(DestinationResolver.class);
+				.getBean("binderAwareChannelResolver", DestinationResolver.class);
 		this.messageHandlerMethodFactory = this.applicationContext
 				.getBean(MessageHandlerMethodFactory.class);
 		this.springIntegrationProperties = this.applicationContext
