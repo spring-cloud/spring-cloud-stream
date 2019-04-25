@@ -67,6 +67,31 @@ public class SubjectNamingStrategyTest {
 				"application/vnd.org.springframework.cloud.schema.avro.User1.v1+avro"));
 	}
 
+	@Test
+	public void testRecordNamingStrategy() throws Exception {
+		ConfigurableApplicationContext sourceContext = SpringApplication.run(
+			AvroSourceApplication.class, "--server.port=0", "--debug",
+			"--spring.jmx.enabled=false",
+			"--spring.cloud.stream.bindings.output.contentType=application/*+avro",
+			"--spring.cloud.stream.schema.avro.subjectNamingStrategy="
+				+ "org.springframework.cloud.stream.schema.avro.RecordNamingStrategy",
+			"--spring.cloud.stream.schema.avro.dynamicSchemaGenerationEnabled=true");
+
+		Source source = sourceContext.getBean(Source.class);
+		User1 user1 = new User1();
+		user1.setFavoriteColor("foo" + UUID.randomUUID().toString());
+		user1.setName("foo" + UUID.randomUUID().toString());
+		source.output().send(MessageBuilder.withPayload(user1).build());
+
+		MessageCollector barSourceMessageCollector = sourceContext
+			.getBean(MessageCollector.class);
+		Message<?> message = barSourceMessageCollector.forChannel(source.output())
+			.poll(1000, TimeUnit.MILLISECONDS);
+
+		assertThat(message.getHeaders().get("contentType")).isEqualTo(MimeType.valueOf(
+			"application/vnd.org.springframework.cloud.schema.avro.User1.v1+avro"));
+	}
+
 	@EnableBinding(Source.class)
 	@EnableAutoConfiguration
 	public static class AvroSourceApplication {

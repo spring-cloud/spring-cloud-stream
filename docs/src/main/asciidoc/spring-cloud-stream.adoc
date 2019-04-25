@@ -1994,6 +1994,9 @@ Default: `empty`
 spring.cloud.stream.schema.avro.prefix:: The prefix to be used on the Content-Type header.
 +
 Default: `vnd`
+spring.cloud.stream.schema.avro.subjectNamingStrategy:: Determines the subject name used to register the Avro schema in the schema registry.
++
+Default: `org.springframework.cloud.stream.schema.avro.DefaultSubjectNamingStrategy`
 
 === Apache Avro Message Converters
 
