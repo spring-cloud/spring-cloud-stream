@@ -135,7 +135,7 @@ class FunctionInvoker<I, O> implements Function<Flux<Message<I>>, Flux<Message<O
 						onError(e, originalMessageRef.get());
 						return Mono.empty();
 					});
-		}).log().map(resultMessage -> toMessage(resultMessage, originalMessageRef.get())); // create
+		}).map(resultMessage -> toMessage(resultMessage, originalMessageRef.get())); // create
 																							// output
 																							// message
 	}
