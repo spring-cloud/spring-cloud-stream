@@ -725,7 +725,7 @@ NOTE: The status of the health indicator is `UP` if all the Kafka threads regist
 
 === Functional Kafka Streams Applications
 
-With 2.2.0.RELEASE, Kafka Streams binder supports the ability to write applications by creating java.util.function.Function or java.util.consumer.Consumer beans.
+Starting 2.2.0.RELEASE, Kafka Streams binder supports the ability to write Kafka Streams applications by simply just implementing the java.util.function.Function or java.util.consumer.Consumer interfaces in Java.
 In this section, we will see the details of how the functional support work in the binder.
 The above `StreamListener` based model can be converted as below.
 
@@ -753,8 +753,10 @@ public class WordCountProcessorApplication {
 ----
 
 The input will be received from the input binding defined in the `KafkaStreamsProcessor` interface and the output will be sent to the output binding.
+In this case, the input is a stream of `String` objects and the output is a stream of `WordCount` objects.
 
 If the processor does not send any data on the outbound, then this becomes a plain Consumer bean as below.
+In this example, we are simply receiving some data as a stream of `String` objects (`KStream<?, String>`) and possibly doing terminal operations with that data without sending any outputs.
 
 [source]
 ----
@@ -795,8 +797,14 @@ For instance, if a function has 2 inputs, the application define 2 partial funct
     }
 ----
 
-In the above function bean, there are 2 inputs and one input. The function that returns from the method takes a `KStream` as input, but if you look at the output that is another function
-which takes a `KTable` as its input. The output of this second function is a `KStream` which becomes the output of the procesor.
+In the above function bean, there are two inputs and one output.
+The function that returns from the method takes a `KStream` as input, but if you look at the output of this function,, that is another function
+which takes a `KTable` as its input. The output of this second function is a `KStream` which becomes the output of the processor.
+Another way to look at this is like the following:
+
+Function 1: Function<KStream<String, Long> - KStream input; returns the output of "Function 2"
+Function 2: Function<KTable<String, String>, KStream<String, Long>> - KTable input; returns KStream<String, Long> which becomes the output of the processor.
+
 Both inputs are available as references in the method body and the applications can perform various operations on them.
 In this example we use function currying on two partial functions.
 One thing to keep in mind is that the input bindings must follow a natural order of sorting when you have multiple input bindings, otherwise the binder won't know which binding to bind for the various function inputs.
@@ -853,6 +861,13 @@ Here is another example that shows multiple inputs with GlobalKTable.
 
 Here we have 3 inputs. The first function takes a `KStream` and its output is another `Function` that takes a `GlobalKTable` as its input and another function as its output.
 This last function takes another `GlobalKTable` as its input and a `KStream` is provided as this function's output which will be used as the processor's output.
+
+Here is a sequential way to conceptualize this:
+
+Function 1: Function<KStream<Long, Order> - KStream input; returns the output of "Function 2"
+Function 2: Function<GlobalKTable<Long, Customer>, KStream<String, Long>> - GlobalKTable input; returns the output of "Function 3"
+Function 3: Function<GlobalKTable<Long, Product>, KStream<Long, EnrichedOrder>>> - GlobalKTable input; returns KStream which becomes the output of the processor.
+
 In this example, we have three curried functions. Behind the scenes, the binder will call the `apply` method on those functions in the order that they appear. 
 
 Here is the corresponding binding interface for this application.
@@ -922,9 +937,9 @@ Similarly, for the method `process2`, it will use input binding `input-2` and ou
 
 ==== Using custom state stores in functional applications
 
-You can define custom state stores as beans in your application and those will be detected and added to the Streams builder by the binder.
+You can define custom state stores as beans in your application and those will be detected and added to the Kafka Streams builder by the binder.
 Note that, for regular StreamListener based processors, you still need to use the `KafkaStreamsStateStore` annotation for custom state stores.
-Here is an example of using custom state stores with functional style.
+Here is an example of using custom state stores with functional style described in this section.
 
 [source]
 ----
