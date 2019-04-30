@@ -1,0 +1,26 @@
+
+Spring Cloud Bus links nodes of a distributed system with a lightweight message broker. This can then be used to broadcast state changes (e.g. configuration changes) or other management instructions. The only implementation currently is with an AMQP broker as the transport, but the same basic feature set (and some more depending on the transport) is on the roadmap for other transports.
+
+## Getting Started
+As long as Spring Cloud Bus AMQP and RabbitMQ are on the
+classpath any Spring Boot application will try to contact a RabbitMQ
+server on `localhost:5672` (the default value of
+`spring.rabbitmq.addresses`):
+
+```java
+@Configuration
+@EnableAutoConfiguration
+@RestController
+public class Application {
+
+  @RequestMapping("/")
+  public String home() {
+    return "Hello World";
+  }
+
+  public static void main(String[] args) {
+    SpringApplication.run(Application.class, args);
+  }
+
+}
+```
