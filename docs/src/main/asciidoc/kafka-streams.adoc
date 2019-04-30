@@ -44,7 +44,7 @@ time window, and the computed results are sent to a downstream topic (e.g., `cou
 [source]
 ----
 @SpringBootApplication
-@EnableBinding(KStreamProcessor.class)
+@EnableBinding(KafkaStreamsProcessor.class)
 public class WordCountProcessorApplication {
 
 	@StreamListener("input")
