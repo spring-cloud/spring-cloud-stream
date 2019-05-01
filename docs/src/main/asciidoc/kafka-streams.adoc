@@ -722,3 +722,241 @@ For more details about the health information, see the
 https://docs.spring.io/spring-boot/docs/current/reference/html/production-ready-endpoints.html#production-ready-health[Spring Boot Actuator documentation].
 
 NOTE: The status of the health indicator is `UP` if all the Kafka threads registered are in the `RUNNING` state.
+
+=== Functional Kafka Streams Applications
+
+Starting 2.2.0.RELEASE, Kafka Streams binder supports the ability to write Kafka Streams applications by simply just implementing the java.util.function.Function or java.util.consumer.Consumer interfaces in Java.
+In this section, we will see the details of how the functional support work in the binder.
+The above `StreamListener` based model can be converted as below.
+
+[source]
+----
+@SpringBootApplication
+@EnableBinding(KafkaStreamsProcessor.class)
+public class WordCountProcessorApplication {
+
+	@Bean
+	public Function<KStream<?, String>, KStream<?, WordCount>> process() {
+		return input ->
+		        input
+                    .flatMapValues(value -> Arrays.asList(value.toLowerCase().split("\\W+")))
+                    .groupBy((key, value) -> value)
+                    .windowedBy(TimeWindows.of(5000))
+                    .count(Materialized.as("WordCounts-multi"))
+                    .toStream()
+                    .map((key, value) -> new KeyValue<>(null, new WordCount(key.key(), value, new Date(key.window().start()), new Date(key.window().end()))));
+    }
+
+	public static void main(String[] args) {
+		SpringApplication.run(WordCountProcessorApplication.class, args);
+	}
+----
+
+The input will be received from the input binding defined in the `KafkaStreamsProcessor` interface and the output will be sent to the output binding.
+In this case, the input is a stream of `String` objects and the output is a stream of `WordCount` objects.
+
+If the processor does not send any data on the outbound, then this becomes a plain Consumer bean as below.
+In this example, we are simply receiving some data as a stream of `String` objects (`KStream<?, String>`) and possibly doing terminal operations with that data without sending any outputs.
+
+[source]
+----
+
+	@Bean
+	public Consumer<KStream<?, String>> process() {
+		return input ->
+		        ....
+    }
+----
+
+
+Applications are free to define custom bindings and use that instead of the out of the box `KafkaStreamsProcessor` interface.
+
+==== Functions with multiple input bindings
+
+With `StreamListener`, we define multiple `Input` bindings and then later on use them as inputs in the method.
+With the functions approach, we still need to define those bindings in the binding interface. However, it cannot be used in the same way as in a `StreamListener` method.
+We use curried functions to represent multiple input destinations in the same processor.
+For instance, if a function has 2 inputs, the application define 2 partial functions in the function bean method. Lets see some examples.
+
+[source]
+----
+	@Bean
+    public Function<KStream<String, Long>,
+                    Function<KTable<String, String>, KStream<String, Long>>> process() {
+        return userClicksStream ->
+                (userRegionsTable ->
+                  (userClicksStream
+                        .leftJoin(userRegionsTable, (clicks, region) -> new RegionWithClicks(region == null ?
+                                        "UNKNOWN" : region, clicks),
+                                Joined.with(Serdes.String(), Serdes.Long(), null))
+                        .map((user, regionWithClicks) -> new KeyValue<>(regionWithClicks.getRegion(),
+                                regionWithClicks.getClicks()))
+                        .groupByKey(Serialized.with(Serdes.String(), Serdes.Long()))
+                        .reduce((firstClicks, secondClicks) -> firstClicks + secondClicks)
+                        .toStream()));
+    }
+----
+
+In the above function bean, there are two inputs and one output.
+The function that returns from the method takes a `KStream` as input, but if you look at the output of this function,, that is another function
+which takes a `KTable` as its input. The output of this second function is a `KStream` which becomes the output of the processor.
+Another way to look at this is like the following:
+
+Function 1: Function<KStream<String, Long> - KStream input; returns the output of "Function 2"
+Function 2: Function<KTable<String, String>, KStream<String, Long>> - KTable input; returns KStream<String, Long> which becomes the output of the processor.
+
+Both inputs are available as references in the method body and the applications can perform various operations on them.
+In this example we use function currying on two partial functions.
+One thing to keep in mind is that the input bindings must follow a natural order of sorting when you have multiple input bindings, otherwise the binder won't know which binding to bind for the various function inputs.
+Here is the corresponding binding interface for the above processor.
+
+[source]
+----
+interface KStreamKTableProcessor {
+
+    @Input("input-1")
+    KStream<?, ?> input1();
+
+    @Input("input-2")
+    KTable<?, ?> input2();
+
+    @Output("output")
+    KStream<?, ?> output();
+
+}
+----
+
+If you look at the 2 inputs, there is a natural sorting order - i.e. input-1 goes to the first partial function input and input-2 goes to the second partial function.
+
+Here is another example that shows multiple inputs with GlobalKTable.
+
+[source]
+----
+	@Bean
+    public Function<KStream<Long, Order>,
+            Function<GlobalKTable<Long, Customer>,
+                    Function<GlobalKTable<Long, Product>, KStream<Long, EnrichedOrder>>>> process() {
+
+        return orderStream -> (
+                customers -> (
+                        products -> (
+                                orderStream.join(customers,
+                                        (orderId, order) -> order.getCustomerId(),
+                                        (order, customer) -> new CustomerOrder(customer, order))
+                                        .join(products,
+                                                (orderId, customerOrder) -> customerOrder
+                                                        .productId(),
+                                                (customerOrder, product) -> {
+                                                    EnrichedOrder enrichedOrder = new EnrichedOrder();
+                                                    enrichedOrder.setProduct(product);
+                                                    enrichedOrder.setCustomer(customerOrder.customer);
+                                                    enrichedOrder.setOrder(customerOrder.order);
+                                                    return enrichedOrder;
+                                                })
+                        )
+                )
+        );
+    }
+----
+
+Here we have 3 inputs. The first function takes a `KStream` and its output is another `Function` that takes a `GlobalKTable` as its input and another function as its output.
+This last function takes another `GlobalKTable` as its input and a `KStream` is provided as this function's output which will be used as the processor's output.
+
+Here is a sequential way to conceptualize this:
+
+Function 1: Function<KStream<Long, Order> - KStream input; returns the output of "Function 2"
+Function 2: Function<GlobalKTable<Long, Customer>, KStream<String, Long>> - GlobalKTable input; returns the output of "Function 3"
+Function 3: Function<GlobalKTable<Long, Product>, KStream<Long, EnrichedOrder>>> - GlobalKTable input; returns KStream which becomes the output of the processor.
+
+In this example, we have three curried functions. Behind the scenes, the binder will call the `apply` method on those functions in the order that they appear. 
+
+Here is the corresponding binding interface for this application.
+
+[source]
+----
+interface CustomGlobalKTableProcessor {
+
+        @Input("input-1")
+        KStream<?, ?> input1();
+
+        @Input("input-2")
+        GlobalKTable<?, ?> input2();
+
+        @Input("input-3")
+        GlobalKTable<?, ?> input3();
+
+        @Output("output")
+        KStream<?, ?> output();
+}
+----
+
+Here also, the input bindings follow a natural order.
+
+==== Multiple functions in the same application
+
+Multiple functions aan be defined in the same application.
+When doing this, the binder will do a natural sorting on multiple function bean names first and then apply input and output bindings on them in the natural order.
+Consider the following two function beans in the same application.
+
+[source]
+----
+    @Bean
+    public Function<KStream<?, String>, KStream<?, WordCount>> process1() {
+
+    }
+
+    @Bean
+    public Function<KStream<?, String>, KStream<?, WordCount>> process2() {
+
+    }
+----
+
+Consider also the following binding interface.
+
+
+[source]
+----
+interface Bindings {
+
+    @Input("input-1")
+    KStream<?, ?> input1();
+
+    @Input("input-2")
+    KStream<?, ?> input2();
+
+    @Ouput("output-1")
+    KStream<?, ?> output1();
+
+    @Output("output-2")
+    KStream<?, ?> output1();
+}
+----
+
+Binder will first take the method `process1` and use input binding `input-1` and output binding `output-1`.
+Similarly, for the method `process2`, it will use input binding `input-2` and output binding `output-2`.
+
+==== Using custom state stores in functional applications
+
+You can define custom state stores as beans in your application and those will be detected and added to the Kafka Streams builder by the binder.
+Note that, for regular StreamListener based processors, you still need to use the `KafkaStreamsStateStore` annotation for custom state stores.
+Here is an example of using custom state stores with functional style described in this section.
+
+[source]
+----
+@Bean
+		public StoreBuilder myStore() {
+			return Stores.keyValueStoreBuilder(
+					Stores.persistentKeyValueStore("my-store"), Serdes.Long(),
+					Serdes.Long());
+		}
+
+		@Bean
+		public StoreBuilder otherStore() {
+			return Stores.windowStoreBuilder(
+					Stores.persistentWindowStore("other-store",
+							1L, 3, 3L, false), Serdes.Long(),
+					Serdes.Long());
+		}
+----
+
+These state stores can be then accessed by the applications directly.
