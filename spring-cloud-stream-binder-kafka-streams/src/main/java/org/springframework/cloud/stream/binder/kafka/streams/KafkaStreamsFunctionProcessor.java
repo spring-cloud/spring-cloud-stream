@@ -148,23 +148,19 @@ public class KafkaStreamsFunctionProcessor implements ApplicationContextAware {
 		return resolvableTypeMap;
 	}
 
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public void orchestrateFunctionInvoking(ResolvableType resolvableType, String functionName) {
 		final Map<String, ResolvableType> stringResolvableTypeMap = buildTypeMap(resolvableType);
 		Object[] adaptedInboundArguments = adaptAndRetrieveInboundArguments(stringResolvableTypeMap, functionName);
 		try {
 			if (resolvableType.getRawClass() != null && resolvableType.getRawClass().equals(Consumer.class)) {
-				//TOOD: Investigate why looking up by Consumer returns null
-				Consumer<Object> consumer = functionCatalog.lookup(Consumer.class, functionName);
-				if (consumer == null) {
-					FluxedConsumer fluxedConsumer = functionCatalog.lookup(FluxedConsumer.class, functionName);
-					Assert.isTrue(fluxedConsumer != null,
-							"No corresponding consumer beans found in the catalog");
-					Object target = fluxedConsumer.getTarget();
-					if (Consumer.class.isAssignableFrom(target.getClass())) {
-						consumer = (Consumer) target;
-					}
-				}
+				FluxedConsumer fluxedConsumer = functionCatalog.lookup(FluxedConsumer.class, functionName);
+				Assert.isTrue(fluxedConsumer != null,
+						"No corresponding consumer beans found in the catalog");
+				Object target = fluxedConsumer.getTarget();
+
+				Consumer<Object> consumer = Consumer.class.isAssignableFrom(target.getClass()) ? (Consumer) target : null;
+
 				if (consumer != null) {
 					consumer.accept(adaptedInboundArguments[0]);
 				}
@@ -257,7 +253,6 @@ public class KafkaStreamsFunctionProcessor implements ApplicationContextAware {
 					KafkaStreamsConsumerProperties extendedConsumerProperties =
 							this.kafkaStreamsExtendedBindingProperties.getExtendedConsumerProperties(input);
 					//get state store spec
-					//KafkaStreamsStateStoreProperties spec = buildStateStoreSpec(method);
 					Serde<?> keySerde = this.keyValueSerdeResolver.getInboundKeySerde(extendedConsumerProperties);
 					Serde<?> valueSerde = this.keyValueSerdeResolver.getInboundValueSerde(
 							bindingProperties.getConsumer(), extendedConsumerProperties);
