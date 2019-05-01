@@ -43,17 +43,15 @@ import org.springframework.util.ClassUtils;
  */
 public class FunctionDetectorCondition extends SpringBootCondition {
 
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@Override
 	public ConditionOutcome getMatchOutcome(ConditionContext context, AnnotatedTypeMetadata metadata) {
 		if (context != null &&  context.getBeanFactory() != null) {
+			Map functionTypes = context.getBeanFactory().getBeansOfType(Function.class);
+			functionTypes.putAll(context.getBeanFactory().getBeansOfType(Consumer.class));
+			final Map<String, Object> kstreamFunctions = pruneFunctionBeansForKafkaStreams(functionTypes, context);
 
-			final Map<String, Function> functionTypes = context.getBeanFactory().getBeansOfType(Function.class);
-			final Map<String, Consumer> consumerTypes = context.getBeanFactory().getBeansOfType(Consumer.class);
-
-			final Map<String, Function> prunedFunctionMap = pruneFunctionBeansForKafkaStreams(functionTypes, context);
-			final Map<String, Consumer> prunedConsumerMap = pruneFunctionBeansForKafkaStreams(consumerTypes, context);
-
-			if (!prunedFunctionMap.isEmpty() || !prunedConsumerMap.isEmpty()) {
+			if (!kstreamFunctions.isEmpty()) {
 				return ConditionOutcome.match("Matched. Function/Consumer beans found");
 			}
 			else {
