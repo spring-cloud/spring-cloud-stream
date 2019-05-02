@@ -96,6 +96,7 @@ import org.springframework.kafka.listener.AbstractMessageListenerContainer;
 import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;
 import org.springframework.kafka.listener.ConsumerAwareRebalanceListener;
 import org.springframework.kafka.listener.ContainerProperties;
+import org.springframework.kafka.support.DefaultKafkaHeaderMapper;
 import org.springframework.kafka.support.KafkaHeaderMapper;
 import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.kafka.support.ProducerListener;
@@ -376,11 +377,11 @@ public class KafkaMessageChannelBinder extends
 				if (!patterns.contains("!" + MessageHeaders.ID)) {
 					patterns.add(0, "!" + MessageHeaders.ID);
 				}
-				mapper = new BinderHeaderMapper(
+				mapper = new DefaultKafkaHeaderMapper(
 						patterns.toArray(new String[patterns.size()]));
 			}
 			else {
-				mapper = new BinderHeaderMapper();
+				mapper = new DefaultKafkaHeaderMapper();
 			}
 		}
 		handler.setHeaderMapper(mapper);
@@ -825,7 +826,7 @@ public class KafkaMessageChannelBinder extends
 					KafkaHeaderMapper.class);
 		}
 		if (mapper == null) {
-			BinderHeaderMapper headerMapper = new BinderHeaderMapper() {
+			DefaultKafkaHeaderMapper headerMapper = new DefaultKafkaHeaderMapper() {
 
 				@Override
 				public void toHeaders(Headers source, Map<String, Object> headers) {
