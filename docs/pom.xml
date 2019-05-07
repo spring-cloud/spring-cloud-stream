@@ -123,10 +123,10 @@
 							<sourceDirectory>${project.build.directory}/refdocs/</sourceDirectory>
 							<attributes>
             						<spring-cloud-stream-version>${project.version}</spring-cloud-stream-version>
-<!--             						<docs-url>http://cloud.spring.io/</docs-url> -->
-<!--             						<docs-version></docs-version> -->
-            						<docs-version>${project.version}/</docs-version>
-            						<docs-url>http://cloud.spring.io/spring-cloud-static/</docs-url>
+            						<docs-url>http://cloud.spring.io/</docs-url>
+            						<docs-version></docs-version>
+<!--             						<docs-version>${project.version}/</docs-version> -->
+<!--             						<docs-url>http://cloud.spring.io/spring-cloud-static/</docs-url> -->
         					</attributes>
 						</configuration>
 						<executions>
