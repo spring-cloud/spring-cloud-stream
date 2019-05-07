@@ -32,6 +32,7 @@ import org.apache.commons.logging.LogFactory;
 
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanCreationException;
+import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
@@ -277,7 +278,10 @@ public class BinderFactoryConfiguration {
 
 	private String determineFunctionName(FunctionCatalog catalog, Environment environment) {
 		String name = environment.getProperty("spring.cloud.stream.function.definition");
-		if (!StringUtils.hasText(name) && catalog.size() == 1) {
+		if (!StringUtils.hasText(name) && catalog.size() == 0)  {
+			((SmartInitializingSingleton) catalog).afterSingletonsInstantiated();
+		}
+		if (!StringUtils.hasText(name) && catalog.size() >= 1 && catalog.size() <= 2) {
 			name = ((FunctionInspector) catalog).getName(catalog.lookup(""));
 			if (StringUtils.hasText(name)) {
 				((StandardEnvironment) environment).getSystemProperties()

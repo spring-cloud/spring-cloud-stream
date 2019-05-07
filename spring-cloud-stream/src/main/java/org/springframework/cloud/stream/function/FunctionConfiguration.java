@@ -20,6 +20,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -59,6 +60,7 @@ public class FunctionConfiguration {
 			CompositeMessageConverterFactory messageConverterFactory,
 			StreamFunctionProperties functionProperties,
 			BindingServiceProperties bindingServiceProperties) {
+		((SmartInitializingSingleton) functionCatalog).afterSingletonsInstantiated();
 		return new IntegrationFlowFunctionSupport(functionCatalog, functionInspector,
 				messageConverterFactory, functionProperties, bindingServiceProperties);
 	}
