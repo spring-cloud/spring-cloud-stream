@@ -31,7 +31,7 @@ import org.springframework.cloud.stream.binder.stub1.StubBinder1Configuration;
 import org.springframework.cloud.stream.binder.stub2.StubBinder2;
 import org.springframework.cloud.stream.binder.stub2.StubBinder2ConfigurationA;
 import org.springframework.cloud.stream.binder.stub2.StubBinder2ConfigurationB;
-import org.springframework.cloud.stream.config.BinderFactoryConfiguration;
+import org.springframework.cloud.stream.config.BinderFactoryAutoConfiguration;
 import org.springframework.cloud.stream.config.BindingServiceConfiguration;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -52,7 +52,7 @@ import static org.junit.Assert.fail;
  * @author Soby Chacko
  * @author Artem Bilan
  */
-public class BinderFactoryConfigurationTests {
+public class BinderFactoryAutoConfigurationTests {
 
 	private static ClassLoader createClassLoader(String[] additionalClasspathDirectories,
 			String... properties) throws IOException {
@@ -65,7 +65,7 @@ public class BinderFactoryConfigurationTests {
 			}
 		}
 		return new URLClassLoader(urls,
-				BinderFactoryConfigurationTests.class.getClassLoader());
+				BinderFactoryAutoConfigurationTests.class.getClassLoader());
 	}
 
 	private static ConfigurableApplicationContext createBinderTestContext(
@@ -136,8 +136,7 @@ public class BinderFactoryConfigurationTests {
 		ConfigurableApplicationContext context = createBinderTestContext(
 				new String[] { "binder1" }, "binder1.name=foo",
 				"spring.cloud.stream.binders.custom.environment.foo=bar",
-				"spring.cloud.stream.binders.custom.environment.spring.main.sources="
-						+ "org.springframework.cloud.stream.binder.BinderFactoryConfigurationTests.AdditionalBinderConfiguration",
+				"spring.cloud.stream.binders.custom.environment.spring.main.sources=" + AdditionalBinderConfiguration.class.getName(),
 				"spring.cloud.stream.binders.custom.type=binder1");
 
 		BinderFactory binderFactory = context.getBean(BinderFactory.class);
@@ -275,7 +274,7 @@ public class BinderFactoryConfigurationTests {
 		assertThat(defaultBinder).isSameAs(binder2);
 	}
 
-	@Import({ BinderFactoryConfiguration.class,
+	@Import({ BinderFactoryAutoConfiguration.class,
 			PropertyPlaceholderAutoConfiguration.class,
 			BindingServiceConfiguration.class })
 	@EnableBinding

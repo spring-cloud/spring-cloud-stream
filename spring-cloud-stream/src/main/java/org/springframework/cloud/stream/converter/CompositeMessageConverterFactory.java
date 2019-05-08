@@ -78,13 +78,11 @@ public class CompositeMessageConverterFactory {
 						.setContentTypeResolver(resolver));
 	}
 
-	@SuppressWarnings("deprecation")
 	private void initDefaultConverters() {
 		ApplicationJsonMessageMarshallingConverter applicationJsonConverter = new ApplicationJsonMessageMarshallingConverter(
 				this.objectMapper);
 		applicationJsonConverter.setStrictContentTypeMatch(true);
 		this.converters.add(applicationJsonConverter);
-		this.converters.add(new TupleJsonMessageConverter(this.objectMapper));
 		this.converters.add(new ByteArrayMessageConverter() {
 			@Override
 			protected boolean supports(Class<?> clazz) {
@@ -95,11 +93,6 @@ public class CompositeMessageConverterFactory {
 			}
 		});
 		this.converters.add(new ObjectStringMessageConverter());
-
-		// Deprecated converters
-		this.converters.add(new JavaSerializationMessageConverter());
-		this.converters.add(new KryoMessageConverter(null, true));
-		this.converters.add(new JsonUnmarshallingConverter(this.objectMapper));
 	}
 
 	/**

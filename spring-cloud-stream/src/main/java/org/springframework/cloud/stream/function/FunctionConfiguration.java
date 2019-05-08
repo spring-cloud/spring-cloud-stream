@@ -16,7 +16,6 @@
 
 package org.springframework.cloud.stream.function;
 
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -26,7 +25,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
-import org.springframework.cloud.stream.config.BinderFactoryConfiguration;
+import org.springframework.cloud.stream.config.BinderFactoryAutoConfiguration;
 import org.springframework.cloud.stream.config.BindingServiceConfiguration;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
@@ -50,7 +49,7 @@ import org.springframework.messaging.SubscribableChannel;
  */
 @Configuration
 @EnableConfigurationProperties(StreamFunctionProperties.class)
-@Import(BinderFactoryConfiguration.class)
+@Import(BinderFactoryAutoConfiguration.class)
 @AutoConfigureBefore(BindingServiceConfiguration.class)
 public class FunctionConfiguration {
 
@@ -89,13 +88,7 @@ public class FunctionConfiguration {
 	public IntegrationFlow integrationFlowCreator(
 			IntegrationFlowFunctionSupport functionSupport,
 			@Nullable Source source, @Nullable Processor processor, @Nullable Sink sink) {
-		if (functionSupport.containsFunction(Consumer.class)
-				&& consumerBindingPresent(processor, sink)) {
-			return functionSupport
-					.integrationFlowForFunction(getInputChannel(processor, sink), getOutputChannel(processor, source))
-					.get();
-		}
-		else if (functionSupport.containsFunction(Function.class)
+		if (functionSupport.containsFunction(Function.class)
 				&& consumerBindingPresent(processor, sink)) {
 			return functionSupport
 					.integrationFlowForFunction(getInputChannel(processor, sink), getOutputChannel(processor, source))

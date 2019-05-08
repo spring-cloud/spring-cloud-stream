@@ -65,7 +65,7 @@ public class HealthIndicatorsConfigurationTests {
 			}
 		}
 		ClassLoader classLoader = new URLClassLoader(urls,
-				BinderFactoryConfigurationTests.class.getClassLoader());
+				BinderFactoryAutoConfigurationTests.class.getClassLoader());
 
 		return new SpringApplicationBuilder(SimpleSource.class)
 				.resourceLoader(new DefaultResourceLoader(classLoader))

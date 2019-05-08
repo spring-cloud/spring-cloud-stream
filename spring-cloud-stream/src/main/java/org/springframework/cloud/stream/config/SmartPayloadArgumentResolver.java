@@ -38,10 +38,7 @@ import org.springframework.validation.Validator;
 /**
  * @author Oleg Zhurakousky
  * @author Gary Russell
- * @deprecated will be removed once https://jira.spring.io/browse/SPR-17503 is addressed
- * (but see note about KafkaNull below).
  */
-@Deprecated
 class SmartPayloadArgumentResolver extends PayloadArgumentResolver {
 
 	private final MessageConverter messageConverter;

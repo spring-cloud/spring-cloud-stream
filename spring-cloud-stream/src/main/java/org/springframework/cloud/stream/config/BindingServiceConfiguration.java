@@ -39,6 +39,7 @@ import org.springframework.cloud.stream.binder.DefaultBinderFactory;
 import org.springframework.cloud.stream.binding.AbstractBindingTargetFactory;
 import org.springframework.cloud.stream.binding.Bindable;
 import org.springframework.cloud.stream.binding.BinderAwareChannelResolver;
+import org.springframework.cloud.stream.binding.BinderAwareRouter;
 import org.springframework.cloud.stream.binding.BindingService;
 import org.springframework.cloud.stream.binding.ContextStartAfterRefreshListener;
 import org.springframework.cloud.stream.binding.DynamicDestinationsBindable;
@@ -242,16 +243,14 @@ public class BindingServiceConfiguration {
 		return new DynamicDestinationsBindable();
 	}
 
-	@SuppressWarnings("deprecation")
 	@Bean
 	@ConditionalOnMissingBean
-	public org.springframework.cloud.stream.binding.BinderAwareRouterBeanPostProcessor binderAwareRouterBeanPostProcessor(
+	public BinderAwareRouter binderAwareRouterBeanPostProcessor(
 			@Autowired(required = false) AbstractMappingMessageRouter[] routers,
 			@Autowired(required = false) @Qualifier("binderAwareChannelResolver")
 				DestinationResolver<MessageChannel> channelResolver) {
 
-		return new org.springframework.cloud.stream.binding.BinderAwareRouterBeanPostProcessor(
-				routers, channelResolver);
+		return new BinderAwareRouter(routers, channelResolver);
 	}
 
 	@Bean

@@ -24,7 +24,6 @@ import org.springframework.beans.factory.BeanDefinitionStoreException;
 import org.springframework.beans.factory.support.AutowireCandidateQualifier;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.RootBeanDefinition;
-import org.springframework.cloud.stream.annotation.Bindings;
 import org.springframework.cloud.stream.annotation.Input;
 import org.springframework.cloud.stream.annotation.Output;
 import org.springframework.core.annotation.AnnotationUtils;
@@ -38,7 +37,6 @@ import org.springframework.util.StringUtils;
  * @author Dave Syer
  * @author Artem Bilan
  */
-@SuppressWarnings("deprecation")
 public abstract class BindingBeanDefinitionRegistryUtils {
 
 	public static void registerInputBindingTargetBeanDefinition(String qualifierValue,
@@ -101,16 +99,16 @@ public abstract class BindingBeanDefinitionRegistryUtils {
 		if (type.isInterface()) {
 			RootBeanDefinition rootBeanDefinition = new RootBeanDefinition(
 					BindableProxyFactory.class);
-			rootBeanDefinition
-					.addQualifier(new AutowireCandidateQualifier(Bindings.class, parent));
+//			rootBeanDefinition
+//					.addQualifier(new AutowireCandidateQualifier(Bindings.class, parent));
 			rootBeanDefinition.getConstructorArgumentValues()
 					.addGenericArgumentValue(type);
 			registry.registerBeanDefinition(type.getName(), rootBeanDefinition);
 		}
 		else {
 			RootBeanDefinition rootBeanDefinition = new RootBeanDefinition(type);
-			rootBeanDefinition
-					.addQualifier(new AutowireCandidateQualifier(Bindings.class, parent));
+//			rootBeanDefinition
+//					.addQualifier(new AutowireCandidateQualifier(Bindings.class, parent));
 			registry.registerBeanDefinition(type.getName(), rootBeanDefinition);
 		}
 	}

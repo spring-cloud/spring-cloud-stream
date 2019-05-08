@@ -51,7 +51,7 @@ public class BinderConfigurationParsingTests {
 		Resource resource = new InputStreamResource(
 				new ByteArrayInputStream(oneBinderConfiguration.getBytes()));
 
-		Collection<BinderType> binderConfigurations = BinderFactoryConfiguration
+		Collection<BinderType> binderConfigurations = BinderFactoryAutoConfiguration
 				.parseBinderConfigurations(classLoader, resource);
 
 		assertThat(binderConfigurations).isNotNull();
@@ -62,7 +62,6 @@ public class BinderConfigurationParsingTests {
 				.contains(StubBinder1Configuration.class);
 	}
 
-	@SuppressWarnings("unchecked")
 	@Test
 	public void testParseTwoBindersConfigurations() throws Exception {
 		// this is just checking that resources are passed and classes are loaded properly
@@ -72,7 +71,7 @@ public class BinderConfigurationParsingTests {
 		Resource twoBinderConfigurationResource = new InputStreamResource(
 				new ByteArrayInputStream(binderConfiguration.getBytes()));
 
-		Collection<BinderType> twoBinderConfig = BinderFactoryConfiguration
+		Collection<BinderType> twoBinderConfig = BinderFactoryAutoConfiguration
 				.parseBinderConfigurations(classLoader, twoBinderConfigurationResource);
 
 		assertThat(twoBinderConfig.size()).isEqualTo(2);
@@ -86,7 +85,7 @@ public class BinderConfigurationParsingTests {
 	}
 
 	private List<BinderType> stubBinders(Collection<BinderType> twoBinderConfigurations,
-			String binderName, Class... configurationNames) {
+			String binderName, Class<?>... configurationNames) {
 		return twoBinderConfigurations.stream()
 				.filter(binderType -> binderName.equals(binderType.getDefaultName())
 						&& !Collections.disjoint(
@@ -96,7 +95,6 @@ public class BinderConfigurationParsingTests {
 	}
 
 	@Test
-	@SuppressWarnings("unchecked")
 	public void testParseTwoBindersWithMultipleClasses() throws Exception {
 		// this is just checking that resources are passed and classes are loaded properly
 		// class values used here are not binder configurations
@@ -106,7 +104,7 @@ public class BinderConfigurationParsingTests {
 		Resource binderConfigurationResource = new InputStreamResource(
 				new ByteArrayInputStream(binderConfiguration.getBytes()));
 
-		Collection<BinderType> binderConfigurations = BinderFactoryConfiguration
+		Collection<BinderType> binderConfigurations = BinderFactoryAutoConfiguration
 				.parseBinderConfigurations(classLoader, binderConfigurationResource);
 
 		assertThat(binderConfigurations.size()).isEqualTo(2);

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 the original author or authors.
+ * Copyright 2015-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,14 +19,10 @@ package org.springframework.cloud.stream.binding;
 import java.lang.reflect.Field;
 import java.util.Map;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
-import org.springframework.cloud.stream.binder.BinderException;
 import org.springframework.cloud.stream.binder.BinderHeaders;
 import org.springframework.cloud.stream.binder.ConsumerProperties;
 import org.springframework.cloud.stream.binder.DefaultPollableMessageSource;
@@ -75,8 +71,6 @@ import org.springframework.util.StringUtils;
  */
 public class MessageConverterConfigurer
 		implements MessageChannelAndSourceConfigurer, BeanFactoryAware {
-
-	private final Log logger = LogFactory.getLog(getClass());
 
 	private final MessageBuilderFactory messageBuilderFactory = new MutableMessageBuilderFactory();
 
@@ -177,21 +171,10 @@ public class MessageConverterConfigurer
 		}
 	}
 
-	@SuppressWarnings("deprecation")
 	private PartitionKeyExtractorStrategy getPartitionKeyExtractorStrategy(
 			ProducerProperties producerProperties) {
 		PartitionKeyExtractorStrategy partitionKeyExtractor;
-		if (producerProperties.getPartitionKeyExtractorClass() != null) {
-			this.logger.warn(
-					"'partitionKeyExtractorClass' option is deprecated as of v2.0. Please configure partition "
-							+ "key extractor as a @Bean that implements 'PartitionKeyExtractorStrategy'. Additionally you can "
-							+ "specify 'spring.cloud.stream.bindings.output.producer.partitionKeyExtractorName' to specify which "
-							+ "bean to use in the event there are more then one.");
-			partitionKeyExtractor = instantiate(
-					producerProperties.getPartitionKeyExtractorClass(),
-					PartitionKeyExtractorStrategy.class);
-		}
-		else if (StringUtils.hasText(producerProperties.getPartitionKeyExtractorName())) {
+		if (StringUtils.hasText(producerProperties.getPartitionKeyExtractorName())) {
 			partitionKeyExtractor = this.beanFactory.getBean(
 					producerProperties.getPartitionKeyExtractorName(),
 					PartitionKeyExtractorStrategy.class);
@@ -214,21 +197,10 @@ public class MessageConverterConfigurer
 		return partitionKeyExtractor;
 	}
 
-	@SuppressWarnings("deprecation")
 	private PartitionSelectorStrategy getPartitionSelectorStrategy(
 			ProducerProperties producerProperties) {
 		PartitionSelectorStrategy partitionSelector;
-		if (producerProperties.getPartitionSelectorClass() != null) {
-			this.logger.warn(
-					"'partitionSelectorClass' option is deprecated as of v2.0. Please configure partition "
-							+ "selector as a @Bean that implements 'PartitionSelectorStrategy'. Additionally you can "
-							+ "specify 'spring.cloud.stream.bindings.output.producer.partitionSelectorName' to specify which "
-							+ "bean to use in the event there are more then one.");
-			partitionSelector = instantiate(
-					producerProperties.getPartitionSelectorClass(),
-					PartitionSelectorStrategy.class);
-		}
-		else if (StringUtils.hasText(producerProperties.getPartitionSelectorName())) {
+		if (StringUtils.hasText(producerProperties.getPartitionSelectorName())) {
 			partitionSelector = this.beanFactory.getBean(
 					producerProperties.getPartitionSelectorName(),
 					PartitionSelectorStrategy.class);
@@ -250,17 +222,6 @@ public class MessageConverterConfigurer
 					: selectors.values().iterator().next();
 		}
 		return partitionSelector;
-	}
-
-	@SuppressWarnings("unchecked")
-	private <T> T instantiate(Class<?> implClass, Class<T> type) {
-		try {
-			return (T) implClass.newInstance();
-		}
-		catch (Exception e) {
-			throw new BinderException(
-					"Failed to instantiate class: " + implClass.getName(), e);
-		}
 	}
 
 	/**

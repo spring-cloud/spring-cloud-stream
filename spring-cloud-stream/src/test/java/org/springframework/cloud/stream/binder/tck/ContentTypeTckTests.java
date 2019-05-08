@@ -34,8 +34,6 @@ import org.springframework.cloud.stream.binder.test.InputDestination;
 import org.springframework.cloud.stream.binder.test.OutputDestination;
 import org.springframework.cloud.stream.binder.test.TestChannelBinder;
 import org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration;
-import org.springframework.cloud.stream.converter.KryoMessageConverter;
-import org.springframework.cloud.stream.converter.MessageConverterUtils;
 import org.springframework.cloud.stream.messaging.Processor;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
@@ -491,84 +489,6 @@ public class ContentTypeTckTests {
 				.isEqualTo(MimeTypeUtils.TEXT_PLAIN);
 		assertThat(new String(outputMessage.getPayload(), StandardCharsets.UTF_8))
 				.isEqualTo("oleg");
-	}
-
-	@Test
-	@SuppressWarnings("deprecation")
-	public void kryo_pojoToPojo() {
-		ApplicationContext context = new SpringApplicationBuilder(
-				PojoToPojoStreamListener.class).web(WebApplicationType.NONE).run(
-						"--spring.cloud.stream.default.contentType=application/x-java-object",
-						"--spring.jmx.enabled=false");
-		InputDestination source = context.getBean(InputDestination.class);
-		OutputDestination target = context.getBean(OutputDestination.class);
-
-		KryoMessageConverter converter = new KryoMessageConverter(null, true);
-		@SuppressWarnings("unchecked")
-		Message<byte[]> message = (Message<byte[]>) converter.toMessage(
-				new Person("oleg"),
-				new MessageHeaders(Collections.singletonMap(MessageHeaders.CONTENT_TYPE,
-						MessageConverterUtils.X_JAVA_OBJECT)));
-
-		source.send(new GenericMessage<>(message.getPayload()));
-		Message<byte[]> outputMessage = target.receive();
-		assertThat(outputMessage).isNotNull();
-		MimeType contentType = (MimeType) outputMessage.getHeaders()
-				.get(MessageHeaders.CONTENT_TYPE);
-		assertThat(contentType.getSubtype()).isEqualTo("x-java-object");
-		assertThat(contentType.getParameters().get("type"))
-				.isEqualTo(Person.class.getName());
-	}
-
-	@Test
-	@SuppressWarnings("deprecation")
-	public void kryo_pojoToPojoContentTypeHeader() {
-		ApplicationContext context = new SpringApplicationBuilder(
-				PojoToPojoStreamListener.class).web(WebApplicationType.NONE).run(
-						"--spring.jmx.enabled=false",
-						"--spring.cloud.stream.bindings.output.contentType=application/x-java-object");
-		InputDestination source = context.getBean(InputDestination.class);
-		OutputDestination target = context.getBean(OutputDestination.class);
-
-		KryoMessageConverter converter = new KryoMessageConverter(null, true);
-		@SuppressWarnings("unchecked")
-		Message<byte[]> message = (Message<byte[]>) converter.toMessage(
-				new Person("oleg"),
-				new MessageHeaders(Collections.singletonMap(MessageHeaders.CONTENT_TYPE,
-						MessageConverterUtils.X_JAVA_OBJECT)));
-
-		source.send(message);
-		Message<byte[]> outputMessage = target.receive();
-		assertThat(outputMessage).isNotNull();
-		MimeType contentType = (MimeType) outputMessage.getHeaders()
-				.get(MessageHeaders.CONTENT_TYPE);
-		assertThat(contentType.getSubtype()).isEqualTo("x-java-object");
-	}
-
-	/**
-	 * This test simply demonstrates how one can override an existing MessageConverter for
-	 * a given contentType. In this case we are demonstrating how Kryo converter can be
-	 * overriden ('application/x-java-object' maps to Kryo).
-	 */
-	@Test
-	public void overrideMessageConverter_defaultContentTypeBinding() {
-		ApplicationContext context = new SpringApplicationBuilder(
-				StringToStringStreamListener.class, CustomConverters.class)
-						.web(WebApplicationType.NONE)
-						.run("--spring.cloud.stream.default.contentType=application/x-java-object",
-								"--spring.jmx.enabled=false");
-		InputDestination source = context.getBean(InputDestination.class);
-		OutputDestination target = context.getBean(OutputDestination.class);
-		String jsonPayload = "{\"name\":\"oleg\"}";
-		source.send(new GenericMessage<>(jsonPayload.getBytes()));
-		Message<byte[]> outputMessage = target.receive();
-		assertThat(outputMessage).isNotNull();
-		System.out
-				.println(new String(outputMessage.getPayload(), StandardCharsets.UTF_8));
-		assertThat(new String(outputMessage.getPayload(), StandardCharsets.UTF_8))
-				.isEqualTo("AlwaysStringKryoMessageConverter");
-		assertThat(outputMessage.getHeaders().get(MessageHeaders.CONTENT_TYPE))
-				.isEqualTo(MimeType.valueOf("application/x-java-object"));
 	}
 
 	@Test

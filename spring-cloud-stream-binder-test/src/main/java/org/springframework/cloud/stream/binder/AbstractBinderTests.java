@@ -39,8 +39,6 @@ import org.springframework.cloud.stream.binding.StreamListenerMessageHandler;
 import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
-import org.springframework.cloud.stream.converter.JavaSerializationMessageConverter;
-import org.springframework.cloud.stream.converter.KryoMessageConverter;
 import org.springframework.cloud.stream.converter.MessageConverterUtils;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.Lifecycle;
@@ -213,114 +211,6 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 				.get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE)).isNull();
 		assertThat(inboundMessageRef.get().getHeaders().get(MessageHeaders.CONTENT_TYPE)
 				.toString()).isEqualTo("text/plain");
-		producerBinding.unbind();
-		consumerBinding.unbind();
-	}
-
-	@Test
-	@SuppressWarnings({ "rawtypes", "deprecation" })
-	public void testSendAndReceiveKryo() throws Exception {
-		Binder binder = getBinder();
-		BindingProperties outputBindingProperties = createProducerBindingProperties(
-				createProducerProperties());
-		DirectChannel moduleOutputChannel = createBindableChannel("output",
-				outputBindingProperties);
-
-		BindingProperties inputBindingProperties = createConsumerBindingProperties(
-				createConsumerProperties());
-		DirectChannel moduleInputChannel = createBindableChannel("input",
-				inputBindingProperties);
-
-		Binding<MessageChannel> producerBinding = binder.bindProducer(
-				String.format("foo%s0x", getDestinationNameDelimiter()),
-				moduleOutputChannel, outputBindingProperties.getProducer());
-		Binding<MessageChannel> consumerBinding = binder.bindConsumer(
-				String.format("foo%s0x", getDestinationNameDelimiter()),
-				"testSendAndReceiveKryo", moduleInputChannel,
-				inputBindingProperties.getConsumer());
-		Foo foo = new Foo();
-		foo.setName("Bill");
-		Message<?> message = MessageBuilder.withPayload(foo).setHeader(
-				MessageHeaders.CONTENT_TYPE, MessageConverterUtils.X_JAVA_OBJECT).build();
-		// Let the consumer actually bind to the producer before sending a msg
-		binderBindUnbindLatency();
-
-		CountDownLatch latch = new CountDownLatch(1);
-		AtomicReference<Message<Foo>> inboundMessageRef = new AtomicReference<Message<Foo>>();
-		moduleInputChannel.subscribe(message1 -> {
-			try {
-				inboundMessageRef.set((Message<Foo>) message1);
-			}
-			finally {
-				latch.countDown();
-			}
-		});
-
-		moduleOutputChannel.send(message);
-		Assert.isTrue(latch.await(5, TimeUnit.SECONDS), "Failed to receive message");
-
-		KryoMessageConverter kryo = new KryoMessageConverter(null, true);
-		Foo fooPayload = (Foo) kryo.fromMessage(inboundMessageRef.get(), Foo.class);
-		assertThat(fooPayload).isNotNull();
-		assertThat(inboundMessageRef.get().getHeaders()
-				.get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE)).isNull();
-		producerBinding.unbind();
-		consumerBinding.unbind();
-	}
-
-	@Test
-	@SuppressWarnings({ "rawtypes", "deprecation" })
-	public void testSendAndReceiveJavaSerialization() throws Exception {
-		Binder binder = getBinder();
-		BindingProperties outputBindingProperties = createProducerBindingProperties(
-				createProducerProperties());
-
-		DirectChannel moduleOutputChannel = createBindableChannel("output",
-				outputBindingProperties);
-
-		BindingProperties inputBindingProperties = createConsumerBindingProperties(
-				createConsumerProperties());
-		DirectChannel moduleInputChannel = createBindableChannel("input",
-				inputBindingProperties);
-
-		Binding<MessageChannel> producerBinding = binder.bindProducer(
-				String.format("foo%s0y", getDestinationNameDelimiter()),
-				moduleOutputChannel, outputBindingProperties.getProducer());
-
-		Binding<MessageChannel> consumerBinding = binder.bindConsumer(
-				String.format("foo%s0y", getDestinationNameDelimiter()),
-				"testSendAndReceiveJavaSerialization", moduleInputChannel,
-				inputBindingProperties.getConsumer());
-		SerializableFoo foo = new SerializableFoo();
-		Message<?> message = MessageBuilder.withPayload(foo)
-				.setHeader(MessageHeaders.CONTENT_TYPE,
-						MessageConverterUtils.X_JAVA_SERIALIZED_OBJECT)
-				.build();
-		// Let the consumer actually bind to the producer before sending a msg
-		binderBindUnbindLatency();
-
-		CountDownLatch latch = new CountDownLatch(1);
-		AtomicReference<Message<byte[]>> inboundMessageRef = new AtomicReference<Message<byte[]>>();
-		moduleInputChannel.subscribe(message1 -> {
-			try {
-				inboundMessageRef.set((Message<byte[]>) message1);
-			}
-			finally {
-				latch.countDown();
-			}
-		});
-
-		moduleOutputChannel.send(message);
-		Assert.isTrue(latch.await(5, TimeUnit.SECONDS), "Failed to receive message");
-
-		JavaSerializationMessageConverter converter = new JavaSerializationMessageConverter();
-		SerializableFoo serializableFoo = (SerializableFoo) converter.convertFromInternal(
-				inboundMessageRef.get(), SerializableFoo.class, null);
-		assertThat(serializableFoo).isNotNull();
-		assertThat(inboundMessageRef.get().getHeaders()
-				.get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE)).isNull();
-		assertThat(inboundMessageRef.get().getHeaders().get(MessageHeaders.CONTENT_TYPE))
-				.isEqualTo(MessageConverterUtils.X_JAVA_SERIALIZED_OBJECT);
 		producerBinding.unbind();
 		consumerBinding.unbind();
 	}
@@ -884,21 +774,6 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 				this.timestamp = timestamp;
 			}
 
-		}
-
-	}
-
-	private class Foo {
-
-		private String name;
-
-		@SuppressWarnings("unused")
-		public String getName() {
-			return this.name;
-		}
-
-		public void setName(String name) {
-			this.name = name;
 		}
 
 	}

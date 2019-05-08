@@ -23,11 +23,6 @@ package org.springframework.cloud.stream.binder;
 public enum HeaderMode {
 
 	/**
-	 * @deprecated - use {@link #none}.
-	 */
-	raw,
-
-	/**
 	 * No headers.
 	 */
 	none,

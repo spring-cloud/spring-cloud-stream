@@ -90,15 +90,12 @@ import org.springframework.validation.Validator;
  * @author Oleg Zhurakousky
  * @author Soby Chacko
  * @author David Harrigan
- * @deprecated since it really represents 'auto-configuration' it will be
- * renamed/restructured in the next release.
  */
 @Configuration
 @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
 @EnableConfigurationProperties({ BindingServiceProperties.class })
 @Import(ContentTypeConfiguration.class)
-@Deprecated
-public class BinderFactoryConfiguration {
+public class BinderFactoryAutoConfiguration {
 
 	private static final String SPRING_CLOUD_STREAM_INTERNAL_PREFIX = "spring.cloud.stream.internal";
 

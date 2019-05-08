@@ -1,5 +1,5 @@
 /*
- * Copyright 2014-2017 the original author or authors.
+ * Copyright 2014-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -306,7 +306,6 @@ public abstract class PartitionCapableBinderTests<B extends AbstractTestBinder<?
 	}
 
 	@Test
-	@SuppressWarnings("deprecation")
 	public void testPartitionedModuleJava() throws Exception {
 		B binder = getBinder();
 
@@ -334,8 +333,6 @@ public abstract class PartitionCapableBinderTests<B extends AbstractTestBinder<?
 				"testPartitionedModuleJava", input2, consumerProperties);
 
 		PP producerProperties = createProducerProperties();
-		producerProperties.setPartitionKeyExtractorClass(PartitionTestSupport.class);
-		producerProperties.setPartitionSelectorClass(PartitionTestSupport.class);
 		producerProperties.setPartitionCount(3);
 		DirectChannel output = createBindableChannel("output",
 				createProducerBindingProperties(producerProperties));

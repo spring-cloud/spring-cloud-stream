@@ -32,7 +32,6 @@ import org.springframework.context.support.AbstractApplicationContext;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.expression.EvaluationContext;
 import org.springframework.integration.expression.ExpressionUtils;
-import org.springframework.messaging.Message;
 import org.springframework.retry.backoff.ExponentialBackOffPolicy;
 import org.springframework.retry.policy.SimpleRetryPolicy;
 import org.springframework.retry.support.RetryTemplate;
@@ -165,30 +164,6 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 	protected final String groupedName(String name, String group) {
 		return name + GROUP_INDEX_DELIMITER
 				+ (StringUtils.hasText(group) ? group : "default");
-	}
-
-	/**
-	 * Deprecated as of v2.0. Doesn't do anything other then returns an instance of
-	 * {@link MessageValues} built from {@link Message}. Remains primarily for backward
-	 * compatibility and will be removed in the next major release.
-	 * @param message message to serialize
-	 * @return wrapped message
-	 */
-	@Deprecated
-	protected final MessageValues serializePayloadIfNecessary(Message<?> message) {
-		return new MessageValues(message);
-	}
-
-	/**
-	 * Deprecated as of v2.0. Remains primarily for backward compatibility and will be
-	 * removed in the next major release.
-	 * @param expressionRoot root of the expression
-	 * @return full expression for a header
-	 */
-	@Deprecated
-	protected String buildPartitionRoutingExpression(String expressionRoot) {
-		return "'" + expressionRoot + "-' + headers['" + BinderHeaders.PARTITION_HEADER
-				+ "']";
 	}
 
 	/**

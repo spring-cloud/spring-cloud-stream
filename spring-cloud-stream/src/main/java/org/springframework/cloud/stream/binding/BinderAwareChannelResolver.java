@@ -21,7 +21,6 @@ import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
-import org.springframework.integration.config.GlobalChannelInterceptorProcessor;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.core.BeanFactoryMessageChannelDestinationResolver;
 import org.springframework.messaging.core.DestinationResolutionException;
@@ -55,8 +54,7 @@ public class BinderAwareChannelResolver
 	public BinderAwareChannelResolver(BindingService bindingService,
 			AbstractBindingTargetFactory<? extends MessageChannel> bindingTargetFactory,
 			DynamicDestinationsBindable dynamicDestinationsBindable) {
-		this(bindingService, bindingTargetFactory, dynamicDestinationsBindable, null,
-				null);
+		this(bindingService, bindingTargetFactory, dynamicDestinationsBindable, null);
 	}
 
 	@SuppressWarnings("rawtypes")
@@ -64,28 +62,6 @@ public class BinderAwareChannelResolver
 			AbstractBindingTargetFactory<? extends MessageChannel> bindingTargetFactory,
 			DynamicDestinationsBindable dynamicDestinationsBindable,
 			NewDestinationBindingCallback callback) {
-		this(bindingService, bindingTargetFactory, dynamicDestinationsBindable, callback,
-				null);
-	}
-
-	/**
-	 * @deprecated since GlobalChannelInterceptorProcessor is no longer used
-	 * @param bindingService service to bind inputs and outputs
-	 * @param bindingTargetFactory implementation that restricts the type of binding
-	 * target to a specified class and its supertypes
-	 * @param dynamicDestinationsBindable stores the dynamic destination names and handles
-	 * their unbinding.
-	 * @param callback used to configure a new destination before it is bound.
-	 * @param globalChannelInterceptorProcessor applies global interceptors to message
-	 * channel beans
-	 */
-	@SuppressWarnings("rawtypes")
-	@Deprecated
-	public BinderAwareChannelResolver(BindingService bindingService,
-			AbstractBindingTargetFactory<? extends MessageChannel> bindingTargetFactory,
-			DynamicDestinationsBindable dynamicDestinationsBindable,
-			NewDestinationBindingCallback callback,
-			GlobalChannelInterceptorProcessor globalChannelInterceptorProcessor) {
 		this.dynamicDestinationsBindable = dynamicDestinationsBindable;
 		Assert.notNull(bindingService, "'bindingService' cannot be null");
 		Assert.notNull(bindingTargetFactory, "'bindingTargetFactory' cannot be null");

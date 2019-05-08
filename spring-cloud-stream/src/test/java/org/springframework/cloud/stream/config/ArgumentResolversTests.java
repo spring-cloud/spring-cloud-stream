@@ -38,7 +38,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 public class ArgumentResolversTests {
 
-	@SuppressWarnings({ "deprecation", "rawtypes", "unchecked" })
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Test
 	public void testSmartPayloadArgumentResolver() throws Exception {
 

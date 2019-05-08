@@ -318,15 +318,6 @@ public class BindingService {
 		}
 	}
 
-	/**
-	 * Provided for backwards compatibility. Will be removed in a future version.
-	 * @return {@link BindingServiceProperties}
-	 */
-	@Deprecated
-	public BindingServiceProperties getChannelBindingServiceProperties() {
-		return this.bindingServiceProperties;
-	}
-
 	public BindingServiceProperties getBindingServiceProperties() {
 		return this.bindingServiceProperties;
 	}

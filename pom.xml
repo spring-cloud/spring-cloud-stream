@@ -26,7 +26,6 @@
 		<spring.tuple.version>1.0.0.RELEASE</spring.tuple.version>
 		<spring.integration.tuple.version>1.0.0.RELEASE</spring.integration.tuple.version>
 		<reactor.version>Californium-SR5</reactor.version>
-		<kryo-shaded.version>3.0.3</kryo-shaded.version>
 		<objenesis.version>2.1</objenesis.version>
 		<spring-cloud-function.version>2.1.0.RELEASE</spring-cloud-function.version>
 
@@ -80,11 +79,6 @@
 				<groupId>org.springframework.cloud</groupId>
 				<artifactId>spring-cloud-stream-test-support-internal</artifactId>
 				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>com.esotericsoftware</groupId>
-				<artifactId>kryo-shaded</artifactId>
-				<version>${kryo-shaded.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>io.projectreactor</groupId>

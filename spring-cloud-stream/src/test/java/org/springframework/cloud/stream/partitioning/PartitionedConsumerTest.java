@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2017 the original author or authors.
+ * Copyright 2015-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.BinderFactory;
 import org.springframework.cloud.stream.binder.ConsumerProperties;
-import org.springframework.cloud.stream.config.BinderFactoryConfiguration;
+import org.springframework.cloud.stream.config.BinderFactoryAutoConfiguration;
 import org.springframework.cloud.stream.messaging.Sink;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.PropertySource;
@@ -73,7 +73,7 @@ public class PartitionedConsumerTest {
 
 	@EnableBinding(Sink.class)
 	@EnableAutoConfiguration
-	@Import({ BinderFactoryConfiguration.class })
+	@Import({ BinderFactoryAutoConfiguration.class })
 	@PropertySource("classpath:/org/springframework/cloud/stream/binder/partitioned-consumer-test.properties")
 	public static class TestSink {
 

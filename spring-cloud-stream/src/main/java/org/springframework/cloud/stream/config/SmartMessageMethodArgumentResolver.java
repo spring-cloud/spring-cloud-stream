@@ -34,9 +34,7 @@ import org.springframework.util.StringUtils;
 
 /**
  * @author Oleg Zhurakousky
- * @deprecated will be removed once https://jira.spring.io/browse/SPR-17503 is addressed
  */
-@Deprecated
 class SmartMessageMethodArgumentResolver extends MessageMethodArgumentResolver {
 
 	private final MessageConverter messageConverter;

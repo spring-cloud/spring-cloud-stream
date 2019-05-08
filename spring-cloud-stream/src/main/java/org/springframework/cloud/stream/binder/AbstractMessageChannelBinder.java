@@ -137,14 +137,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 
 	public AbstractMessageChannelBinder(String[] headersToEmbed,
 			PP provisioningProvider) {
-		this(headersToEmbed, provisioningProvider, null);
-	}
-
-	@Deprecated
-	public AbstractMessageChannelBinder(String[] headersToEmbed, PP provisioningProvider,
-			ListenerContainerCustomizer<?> containerCustomizer) {
-
-		this(headersToEmbed, provisioningProvider, containerCustomizer, null);
+		this(headersToEmbed, provisioningProvider, null, null);
 	}
 
 	public AbstractMessageChannelBinder(String[] headersToEmbed, PP provisioningProvider,
@@ -1106,10 +1099,9 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 			this.delegate.handleMessage(messageToSend);
 		}
 
-		@SuppressWarnings("deprecation")
 		private Message<?> serializeAndEmbedHeadersIfApplicable(Message<?> message)
 				throws Exception {
-			MessageValues transformed = serializePayloadIfNecessary(message);
+			MessageValues transformed = new MessageValues(message);
 			Object payload;
 			if (this.embedHeaders) {
 				Object contentType = transformed.get(MessageHeaders.CONTENT_TYPE);

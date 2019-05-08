@@ -16,7 +16,6 @@
 
 package org.springframework.cloud.stream.converter;
 
-import org.springframework.tuple.Tuple;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.MimeType;

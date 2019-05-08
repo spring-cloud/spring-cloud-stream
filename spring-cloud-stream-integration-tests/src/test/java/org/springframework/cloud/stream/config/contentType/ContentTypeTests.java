@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2018 the original author or authors.
+ * Copyright 2017-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,11 @@
 
 package org.springframework.cloud.stream.config.contentType;
 
-import java.io.ByteArrayOutputStream;
-import java.io.ObjectOutputStream;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import com.esotericsoftware.kryo.Kryo;
-import com.esotericsoftware.kryo.io.Output;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import org.springframework.boot.SpringApplication;
@@ -33,8 +28,6 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.Input;
 import org.springframework.cloud.stream.annotation.StreamListener;
-import org.springframework.cloud.stream.converter.KryoMessageConverter;
-import org.springframework.cloud.stream.converter.MessageConverterUtils;
 import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.cloud.stream.test.binder.MessageCollector;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -43,8 +36,6 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.SubscribableChannel;
 import org.springframework.messaging.handler.annotation.Headers;
-import org.springframework.tuple.Tuple;
-import org.springframework.tuple.TupleBuilder;
 import org.springframework.util.MimeType;
 import org.springframework.util.MimeTypeUtils;
 
@@ -174,45 +165,6 @@ public class ContentTypeTests {
 	}
 
 	@Test
-	public void testSendJavaSerializable() throws Exception {
-		try (ConfigurableApplicationContext context = SpringApplication.run(
-				SourceApplication.class, "--server.port=0", "--spring.jmx.enabled=false",
-				"--spring.cloud.stream.bindings.output.contentType=application/x-java-serialized-object")) {
-			MessageCollector collector = context.getBean(MessageCollector.class);
-			Source source = context.getBean(Source.class);
-			User user = new User("Alice");
-			source.output().send(MessageBuilder.withPayload(user).build());
-			Message<User> message = (Message<User>) collector.forChannel(source.output())
-					.poll(1, TimeUnit.SECONDS);
-			assertThat(
-					message.getHeaders().get(MessageHeaders.CONTENT_TYPE, MimeType.class)
-							.includes(MessageConverterUtils.X_JAVA_SERIALIZED_OBJECT));
-			User received = message.getPayload();
-			assertThat(user.getName()).isEqualTo(received.getName());
-		}
-	}
-
-	@Test
-	public void testSendKryoSerialized() throws Exception {
-		try (ConfigurableApplicationContext context = SpringApplication.run(
-				SourceApplication.class, "--server.port=0", "--spring.jmx.enabled=false",
-				"--spring.cloud.stream.bindings.output.contentType=application/x-java-object")) {
-			MessageCollector collector = context.getBean(MessageCollector.class);
-			Source source = context.getBean(Source.class);
-			User user = new User("Alice");
-			source.output().send(MessageBuilder.withPayload(user).build());
-			Message<User> message = (Message<User>) collector.forChannel(source.output())
-					.poll(1, TimeUnit.SECONDS);
-			User received = message.getPayload();
-			assertThat(message.getHeaders()
-					.get(MessageHeaders.CONTENT_TYPE, MimeType.class)
-					.includes(MimeType.valueOf(KryoMessageConverter.KRYO_MIME_TYPE)));
-			assertThat(user.getName()).isEqualTo(received.getName());
-
-		}
-	}
-
-	@Test
 	public void testSendStringType() throws Exception {
 		try (ConfigurableApplicationContext context = SpringApplication.run(
 				SourceApplication.class, "--server.port=0", "--spring.jmx.enabled=false",
@@ -227,25 +179,6 @@ public class ContentTypeTests {
 					message.getHeaders().get(MessageHeaders.CONTENT_TYPE, MimeType.class)
 							.includes(MimeTypeUtils.TEXT_PLAIN));
 			assertThat(message.getPayload()).isEqualTo(user.toString());
-		}
-	}
-
-	@Test
-	public void testSendTuple() throws Exception {
-		try (ConfigurableApplicationContext context = SpringApplication.run(
-				SourceApplication.class, "--server.port=0", "--spring.jmx.enabled=false",
-				"--spring.cloud.stream.bindings.output.contentType=application/x-spring-tuple")) {
-			MessageCollector collector = context.getBean(MessageCollector.class);
-			Source source = context.getBean(Source.class);
-			Tuple tuple = TupleBuilder.tuple().of("foo", "bar");
-			source.output().send(MessageBuilder.withPayload(tuple).build());
-			Message<byte[]> message = (Message<byte[]>) collector
-					.forChannel(source.output()).poll(1, TimeUnit.SECONDS);
-			assertThat(
-					message.getHeaders().get(MessageHeaders.CONTENT_TYPE, MimeType.class)
-							.includes(MessageConverterUtils.X_SPRING_TUPLE));
-			assertThat(TupleBuilder.fromString(new String(message.getPayload())))
-					.isEqualTo(tuple);
 		}
 	}
 
@@ -289,78 +222,6 @@ public class ContentTypeTests {
 		}
 	}
 
-	@Test
-	@Ignore
-	public void testReceiveKryoPayload() {
-		try (ConfigurableApplicationContext context = SpringApplication.run(
-				SinkApplication.class, "--server.port=0", "--debug",
-				"--spring.jmx.enabled=false",
-				"--spring.cloud.stream.bindings.pojo_input.contentType="
-						+ "application/x-java-object;type=org.springframework.cloud.stream.config.contentType.User")) {
-			TestSink testSink = context.getBean(TestSink.class);
-			SinkApplication sourceApp = context.getBean(SinkApplication.class);
-			Kryo kryo = new Kryo();
-			User user = new User("Alice");
-			ByteArrayOutputStream baos = new ByteArrayOutputStream();
-			Output output = new Output(baos);
-			kryo.writeObject(output, user);
-			output.close();
-			testSink.pojo().send(MessageBuilder.withPayload(baos.toByteArray()).build());
-			Map<String, Object> headers = (Map<String, Object>) sourceApp.arguments.pop();
-			User received = (User) sourceApp.arguments.pop();
-			assertThat(((MimeType) headers.get(MessageHeaders.CONTENT_TYPE))
-					.includes(MimeType.valueOf(KryoMessageConverter.KRYO_MIME_TYPE)));
-			assertThat(user.getName()).isEqualTo(received.getName());
-		}
-	}
-
-	@Test
-	@SuppressWarnings("deprecation")
-	public void testReceiveKryoWithHeadersOverridingDefault() {
-		try (ConfigurableApplicationContext context = SpringApplication.run(
-				SinkApplication.class, "--server.port=0", "--spring.jmx.enabled=false")) {
-			TestSink testSink = context.getBean(TestSink.class);
-			SinkApplication sourceApp = context.getBean(SinkApplication.class);
-			Kryo kryo = new Kryo();
-			User user = new User("Alice");
-			ByteArrayOutputStream baos = new ByteArrayOutputStream();
-			Output output = new Output(baos);
-			kryo.writeObject(output, user);
-			output.close();
-			testSink.pojo()
-					.send(MessageBuilder.withPayload(baos.toByteArray())
-							.setHeader(MessageHeaders.CONTENT_TYPE,
-									MimeType.valueOf(KryoMessageConverter.KRYO_MIME_TYPE))
-							.build());
-			Map<String, Object> headers = (Map<String, Object>) sourceApp.arguments.pop();
-			User received = (User) sourceApp.arguments.pop();
-			assertThat(((MimeType) headers.get(MessageHeaders.CONTENT_TYPE))
-					.includes(MimeType.valueOf(KryoMessageConverter.KRYO_MIME_TYPE)));
-			assertThat(user.getName()).isEqualTo(received.getName());
-		}
-	}
-
-	@Test
-	@Ignore
-	public void testReceiveJavaSerializable() throws Exception {
-		try (ConfigurableApplicationContext context = SpringApplication.run(
-				SinkApplication.class, "--server.port=0", "--spring.jmx.enabled=false",
-				"--spring.cloud.stream.bindings.pojo_input.contentType=application/x-java-serialized-object")) {
-			TestSink testSink = context.getBean(TestSink.class);
-			SinkApplication sourceApp = context.getBean(SinkApplication.class);
-			User user = new User("Alice");
-			ByteArrayOutputStream baos = new ByteArrayOutputStream();
-			new ObjectOutputStream(baos).writeObject(user);
-			testSink.pojo().send(MessageBuilder.withPayload(baos.toByteArray()).build());
-			Map<String, Object> headers = (Map<String, Object>) sourceApp.arguments.pop();
-			User received = (User) sourceApp.arguments.pop();
-			assertThat(((MimeType) headers.get(MessageHeaders.CONTENT_TYPE))
-					.includes(MessageConverterUtils.X_JAVA_SERIALIZED_OBJECT));
-			assertThat(user.getName()).isEqualTo(received.getName());
-
-		}
-	}
-
 	public interface TestSink {
 
 		@Input("POJO_INPUT")
@@ -393,10 +254,6 @@ public class ContentTypeTests {
 		public void receive(User user, @Headers Map<String, Object> headers) {
 			this.arguments.push(user);
 			this.arguments.push(headers);
-		}
-
-		@StreamListener("TUPLE_INPUT")
-		public void receive(Tuple tuple) {
 		}
 
 		@StreamListener("STRING_INPUT")
