@@ -93,7 +93,7 @@ public class ConfluentSchemaRegistryClient implements SchemaRegistryClient {
 		}
 		try {
 			HttpEntity<String> request = new HttpEntity<>(payload, headers);
-			ResponseEntity<Map> response = this.template.exchange(this.endpoint + path,
+			ResponseEntity<Map> response = this.template.exchange(this.endpoint ,
 					HttpMethod.POST, request, Map.class);
 			id = (Integer) response.getBody().get("id");
 			version = (Integer)((Map)response.getBody()).get("version");
