@@ -40,6 +40,7 @@ import org.springframework.web.client.RestTemplate;
  * @author Vinicius Carvalho
  * @author Marius Bogoevici
  * @author Jon Archer
+ * @author Tengzhou Dong
  */
 public class ConfluentSchemaRegistryClient implements SchemaRegistryClient {
 
@@ -74,16 +75,23 @@ public class ConfluentSchemaRegistryClient implements SchemaRegistryClient {
 	public SchemaRegistrationResponse register(String subject, String format,
 			String schema) {
 		Assert.isTrue("avro".equals(format), "Only Avro is supported");
-		String path = String.format("/subjects/%s/versions", subject);
+		//String path = String.format("/subjects/%s/versions", subject);
 		HttpHeaders headers = new HttpHeaders();
 		headers.put("Accept", ACCEPT_HEADERS);
 		headers.add("Content-Type", "application/json");
 		Integer version = null;
 		Integer id = null;
 		String payload = null;
+		//add map
+		Map<String,String> maps=new HashMap<>();
+        maps.put("subject",subject);
+        maps.put("format",format);
+        maps.put("definition",schema);
 		try {
-			payload = this.mapper
-					.writeValueAsString(Collections.singletonMap("schema", schema));
+			//payload = this.mapper
+			//		.writeValueAsString(Collections.singletonMap("schema", schema));
+			//map exchange string (request data)
+			payload = this.mapper.writeValueAsString(maps);
 		}
 		catch (JsonProcessingException e) {
 			throw new RuntimeException("Could not parse schema, invalid JSON format", e);
@@ -93,7 +101,9 @@ public class ConfluentSchemaRegistryClient implements SchemaRegistryClient {
 			ResponseEntity<Map> response = this.template.exchange(this.endpoint + path,
 					HttpMethod.POST, request, Map.class);
 			id = (Integer) response.getBody().get("id");
-			version = getSubjectVersion(subject, payload);
+			//version = getSubjectVersion(subject, payload);
+			//get version
+			version = (Integer)((Map)response.getBody()).get("version");
 		}
 		catch (HttpStatusCodeException httpException) {
 			throw new RuntimeException(String.format(
@@ -138,8 +148,11 @@ public class ConfluentSchemaRegistryClient implements SchemaRegistryClient {
 
 	@Override
 	public String fetch(SchemaReference schemaReference) {
-		String path = String.format("/subjects/%s/versions/%d",
-				schemaReference.getSubject(), schemaReference.getVersion());
+		//String path = String.format("/subjects/%s/versions/%d",
+		//		schemaReference.getSubject(), schemaReference.getVersion());
+		//server accept format
+		String path = String.format("/%s/%s/v%d", 
+				schemaReference.getSubject(),schemaReference.getFormat(), schemaReference.getVersion());
 		HttpHeaders headers = new HttpHeaders();
 		headers.put("Accept", ACCEPT_HEADERS);
 		headers.add("Content-Type", "application/vnd.schemaregistry.v1+json");
@@ -162,7 +175,8 @@ public class ConfluentSchemaRegistryClient implements SchemaRegistryClient {
 
 	@Override
 	public String fetch(int id) {
-		String path = String.format("/schemas/ids/%d", id);
+		//String path = String.format("/schemas/ids/%d", id);
+		String path = String.format("/schemas/%d", id);
 		HttpHeaders headers = new HttpHeaders();
 		headers.put("Accept", ACCEPT_HEADERS);
 		headers.add("Content-Type", "application/vnd.schemaregistry.v1+json");
