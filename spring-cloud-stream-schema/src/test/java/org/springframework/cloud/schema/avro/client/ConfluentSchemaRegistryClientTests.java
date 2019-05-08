@@ -40,6 +40,7 @@ import static org.springframework.test.web.client.response.MockRestResponseCreat
 
 /**
  * @author Vinicius Carvalho
+ * @author TengZhou Dong
  */
 public class ConfluentSchemaRegistryClientTests {
 
@@ -57,18 +58,11 @@ public class ConfluentSchemaRegistryClientTests {
 	@Test
 	public void registerSchema() throws Exception {
 		this.mockRestServiceServer
-				.expect(requestTo("http://localhost:8081/subjects/user/versions"))
+				.expect(requestTo("http://localhost:8081"))
 				.andExpect(method(HttpMethod.POST))
 				.andExpect(header("Content-Type", "application/json"))
 				.andExpect(header("Accept", "application/vnd.schemaregistry.v1+json"))
-				.andRespond(withSuccess("{\"id\":101}", MediaType.APPLICATION_JSON));
-
-		this.mockRestServiceServer
-				.expect(requestTo("http://localhost:8081/subjects/user"))
-				.andExpect(method(HttpMethod.POST))
-				.andExpect(header("Content-Type", "application/json"))
-				.andExpect(header("Accept", "application/vnd.schemaregistry.v1+json"))
-				.andRespond(withSuccess("{\"version\":1}", MediaType.APPLICATION_JSON));
+				.andRespond(withSuccess("{\"id\":101,\"version\":1}", MediaType.APPLICATION_JSON));
 
 		ConfluentSchemaRegistryClient client = new ConfluentSchemaRegistryClient(
 				this.restTemplate);
@@ -81,7 +75,7 @@ public class ConfluentSchemaRegistryClientTests {
 	@Test(expected = RuntimeException.class)
 	public void registerWithInvalidJson() {
 		this.mockRestServiceServer
-				.expect(requestTo("http://localhost:8081/subjects/user/versions"))
+				.expect(requestTo("http://localhost:8081"))
 				.andExpect(method(HttpMethod.POST))
 				.andExpect(header("Content-Type", "application/json"))
 				.andExpect(header("Accept", "application/vnd.schemaregistry.v1+json"))
@@ -94,7 +88,7 @@ public class ConfluentSchemaRegistryClientTests {
 	@Test
 	public void registerIncompatibleSchema() {
 		this.mockRestServiceServer
-				.expect(requestTo("http://localhost:8081/subjects/user/versions"))
+				.expect(requestTo("http://localhost:8081"))
 				.andExpect(method(HttpMethod.POST))
 				.andExpect(header("Content-Type", "application/json"))
 				.andExpect(header("Accept", "application/vnd.schemaregistry.v1+json"))
@@ -114,38 +108,9 @@ public class ConfluentSchemaRegistryClientTests {
 	}
 
 	@Test
-	public void responseErrorFetch() {
-		this.mockRestServiceServer
-				.expect(requestTo("http://localhost:8081/subjects/user/versions"))
-				.andExpect(method(HttpMethod.POST))
-				.andExpect(header("Content-Type", "application/json"))
-				.andExpect(header("Accept", "application/vnd.schemaregistry.v1+json"))
-				.andRespond(withSuccess("{\"id\":101}", MediaType.APPLICATION_JSON));
-
-		this.mockRestServiceServer
-				.expect(requestTo("http://localhost:8081/subjects/user"))
-				.andExpect(method(HttpMethod.POST))
-				.andExpect(header("Content-Type", "application/json"))
-				.andExpect(header("Accept", "application/vnd.schemaregistry.v1+json"))
-				.andRespond(withBadRequest());
-		ConfluentSchemaRegistryClient client = new ConfluentSchemaRegistryClient(
-				this.restTemplate);
-		Exception expected = null;
-		try {
-			SchemaRegistrationResponse response = client.register("user", "avro", "{}");
-		}
-		catch (Exception e) {
-			expected = e;
-		}
-		assertThat(expected instanceof RuntimeException).isTrue();
-		assertThat(expected.getCause() instanceof HttpStatusCodeException).isTrue();
-		this.mockRestServiceServer.verify();
-	}
-
-	@Test
 	public void findByReference() {
 		this.mockRestServiceServer
-				.expect(requestTo("http://localhost:8081/subjects/user/versions/1"))
+				.expect(requestTo("http://localhost:8081/user/avro/v1"))
 				.andExpect(method(HttpMethod.GET))
 				.andExpect(
 						header("Content-Type", "application/vnd.schemaregistry.v1+json"))
@@ -162,7 +127,7 @@ public class ConfluentSchemaRegistryClientTests {
 	@Test(expected = SchemaNotFoundException.class)
 	public void schemaNotFound() {
 		this.mockRestServiceServer
-				.expect(requestTo("http://localhost:8081/subjects/user/versions/1"))
+				.expect(requestTo("http://localhost:8081/user/avro/v1"))
 				.andExpect(method(HttpMethod.GET))
 				.andExpect(
 						header("Content-Type", "application/vnd.schemaregistry.v1+json"))
