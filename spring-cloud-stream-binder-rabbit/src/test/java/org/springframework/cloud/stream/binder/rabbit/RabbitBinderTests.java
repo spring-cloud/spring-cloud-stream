@@ -411,7 +411,6 @@ public class RabbitBinderTests extends
 		assertThat(endpoint.isRunning()).isFalse();
 	}
 
-	@SuppressWarnings("deprecation")
 	@Test
 	public void testConsumerPropertiesWithUserInfrastructureNoBind() throws Exception {
 		RabbitAdmin admin = new RabbitAdmin(this.rabbitAvailableRule.getResource());
@@ -481,7 +480,6 @@ public class RabbitBinderTests extends
 		assertThat(container.isRunning()).isFalse();
 	}
 
-	@SuppressWarnings("deprecation")
 	@Test
 	public void testConsumerPropertiesWithUserInfrastructureCustomExchangeAndRK()
 			throws Exception {
@@ -525,7 +523,6 @@ public class RabbitBinderTests extends
 		assertThat(exchange.isAutoDelete()).isEqualTo(false);
 	}
 
-	@SuppressWarnings("deprecation")
 	@Test
 	public void testConsumerPropertiesWithUserInfrastructureCustomQueueArgs()
 			throws Exception {
