@@ -38,6 +38,7 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.core.env.MapPropertySource;
 import org.springframework.core.env.StandardEnvironment;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
@@ -52,6 +53,7 @@ import org.springframework.util.StringUtils;
  * @author Oleg Zhurakousky
  * @author Soby Chacko
  * @author Artem Bilan
+ * @author Anshul Mehra
  */
 public class DefaultBinderFactory
 		implements BinderFactory, DisposableBean, ApplicationContextAware {
@@ -285,6 +287,15 @@ public class DefaultBinderFactory
 				binderEnvironment.merge(environment);
 				// See ConfigurationPropertySources.ATTACHED_PROPERTY_SOURCE_NAME
 				binderEnvironment.getPropertySources().remove("configurationProperties");
+				/*
+				 * Ensure that the web mode is set to NONE despite what the
+				 * parent application context says.
+				 * https://github.com/spring-cloud/spring-cloud-stream/issues/1708
+				 */
+				binderEnvironment.getPropertySources()
+					.addFirst(new MapPropertySource("defaultBinderFactoryProperties",
+						Collections.singletonMap("spring.main.web-application-type", "NONE")));
+
 				springApplicationBuilder.environment(binderEnvironment);
 			}
 
