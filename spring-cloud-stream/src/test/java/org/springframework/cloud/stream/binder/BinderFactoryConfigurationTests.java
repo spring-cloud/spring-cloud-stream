@@ -24,6 +24,7 @@ import org.junit.Test;
 
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration;
+import org.springframework.boot.autoconfigure.web.servlet.ServletWebServerFactoryAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.binder.stub1.StubBinder1;
@@ -51,6 +52,7 @@ import static org.junit.Assert.fail;
  * @author Ilayaperumal Gopinathan
  * @author Soby Chacko
  * @author Artem Bilan
+ * @author Anshul Mehra
  */
 public class BinderFactoryConfigurationTests {
 
@@ -122,6 +124,26 @@ public class BinderFactoryConfigurationTests {
 			throws Exception {
 		ConfigurableApplicationContext context = createBinderTestContext(
 				new String[] { "binder1" }, "binder1.name=foo");
+
+		BinderFactory binderFactory = context.getBean(BinderFactory.class);
+
+		Binder binder1 = binderFactory.getBinder("binder1", MessageChannel.class);
+		assertThat(binder1).hasFieldOrPropertyWithValue("name", "foo");
+	}
+
+	/*
+	 * See https://github.com/spring-cloud/spring-cloud-stream/issues/1708
+	 */
+	@SuppressWarnings("rawtypes")
+	@Test
+	public void loadBinderTypeRegistryWithSharedEnvironmentAndServletWebApplicationType()
+		throws Exception {
+		String[] properties = new String[] {"binder1.name=foo", "spring.main.web-application-type=SERVLET"};
+		ClassLoader classLoader = createClassLoader(new String[] { "binder1" },
+			properties);
+		ConfigurableApplicationContext context = new SpringApplicationBuilder(SimpleApplication.class, ServletWebServerFactoryAutoConfiguration.class)
+			.resourceLoader(new DefaultResourceLoader(classLoader))
+			.properties(properties).web(WebApplicationType.SERVLET).run();
 
 		BinderFactory binderFactory = context.getBean(BinderFactory.class);
 
