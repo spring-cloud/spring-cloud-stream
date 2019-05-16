@@ -50,7 +50,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 
 @RunWith(SpringRunner.class)
-@SpringBootTest(properties = "spring.jackson.serialization.WRITE_DATES_AS_TIMESTAMPS:true", webEnvironment = RANDOM_PORT)
+@SpringBootTest(
+		properties = "spring.jackson.serialization.WRITE_DATES_AS_TIMESTAMPS:true",
+		webEnvironment = RANDOM_PORT)
 public class BusJacksonIntegrationTests {
 
 	@LocalServerPort

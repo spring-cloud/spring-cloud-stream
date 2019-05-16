@@ -31,16 +31,12 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.autoconfigure.LifecycleMvcEndpointAutoConfiguration;
 import org.springframework.cloud.bus.endpoint.EnvironmentBusEndpoint;
-import org.springframework.cloud.bus.endpoint.RefreshBusEndpoint;
 import org.springframework.cloud.bus.event.AckRemoteApplicationEvent;
 import org.springframework.cloud.bus.event.EnvironmentChangeListener;
-import org.springframework.cloud.bus.event.RefreshListener;
 import org.springframework.cloud.bus.event.RemoteApplicationEvent;
 import org.springframework.cloud.bus.event.SentApplicationEvent;
 import org.springframework.cloud.bus.event.TraceListener;
 import org.springframework.cloud.context.environment.EnvironmentManager;
-import org.springframework.cloud.context.refresh.ContextRefresher;
-import org.springframework.cloud.context.scope.refresh.RefreshScope;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.Output;
 import org.springframework.cloud.stream.annotation.StreamListener;
@@ -182,13 +178,6 @@ public class BusAutoConfiguration implements ApplicationEventPublisherAware {
 		}
 	}
 
-	@Bean
-	@ConditionalOnProperty(value = "spring.cloud.bus.refresh.enabled", matchIfMissing = true)
-	@ConditionalOnBean(ContextRefresher.class)
-	public RefreshListener refreshListener(ContextRefresher contextRefresher) {
-		return new RefreshListener(contextRefresher);
-	}
-
 	@Configuration
 	protected static class MatcherConfiguration {
 
@@ -213,28 +202,10 @@ public class BusAutoConfiguration implements ApplicationEventPublisherAware {
 	}
 
 	@Configuration
-	@ConditionalOnClass({ Endpoint.class, RefreshScope.class })
-	protected static class BusRefreshConfiguration {
-
-		@Configuration
-		@ConditionalOnBean(ContextRefresher.class)
-		protected static class BusRefreshEndpointConfiguration {
-
-			@Bean
-			@ConditionalOnEnabledEndpoint
-			public RefreshBusEndpoint refreshBusEndpoint(ApplicationContext context,
-					BusProperties bus) {
-				return new RefreshBusEndpoint(context, bus.getId());
-			}
-
-		}
-
-	}
-
-	@Configuration
 	@ConditionalOnClass({ Endpoint.class })
 	@ConditionalOnBean(HttpTraceRepository.class)
-	@ConditionalOnProperty(value = "spring.cloud.bus.trace.enabled", matchIfMissing = false)
+	@ConditionalOnProperty(value = "spring.cloud.bus.trace.enabled",
+			matchIfMissing = false)
 	protected static class BusAckTraceConfiguration {
 
 		@Bean
@@ -251,7 +222,8 @@ public class BusAutoConfiguration implements ApplicationEventPublisherAware {
 	protected static class BusEnvironmentConfiguration {
 
 		@Bean
-		@ConditionalOnProperty(value = "spring.cloud.bus.env.enabled", matchIfMissing = true)
+		@ConditionalOnProperty(value = "spring.cloud.bus.env.enabled",
+				matchIfMissing = true)
 		public EnvironmentChangeListener environmentChangeListener() {
 			return new EnvironmentChangeListener();
 		}

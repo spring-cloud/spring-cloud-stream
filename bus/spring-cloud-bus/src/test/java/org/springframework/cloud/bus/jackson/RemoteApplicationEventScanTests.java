@@ -149,8 +149,8 @@ public class RemoteApplicationEventScanTests {
 	}
 
 	@Configuration
-	@RemoteApplicationEventScan(basePackages = { "com.acme", "test.foo.bar",
-			"fizz.buzz" })
+	@RemoteApplicationEventScan(
+			basePackages = { "com.acme", "test.foo.bar", "fizz.buzz" })
 	static class BasePackagesConfig {
 
 	}

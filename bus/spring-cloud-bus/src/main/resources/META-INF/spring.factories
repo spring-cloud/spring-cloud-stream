@@ -1,6 +1,7 @@
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
 org.springframework.cloud.bus.BusPropertiesAutoConfiguration,\
 org.springframework.cloud.bus.BusAutoConfiguration,\
+org.springframework.cloud.bus.BusRefreshAutoConfiguration,\
 org.springframework.cloud.bus.jackson.BusJacksonAutoConfiguration
 # Environment Post Processor
 org.springframework.boot.env.EnvironmentPostProcessor=\
