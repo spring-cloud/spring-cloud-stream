@@ -61,6 +61,15 @@ public class FunctionConfiguration {
 			StreamFunctionProperties functionProperties,
 			BindingServiceProperties bindingServiceProperties) {
 		((SmartInitializingSingleton) functionCatalog).afterSingletonsInstantiated();
+
+//		if (functionCatalog.size() > 0) {
+//			String name = StringUtils.hasText(functionProperties.getDefinition()) ? functionProperties.getDefinition() : "";
+//				Assert.notNull(functionCatalog.lookup(name),
+//						"Failed to locate function `" + functionProperties.getDefinition()
+//						+ "' in function catalog. Available functions are "
+//								+ functionCatalog.getNames(Function.class));
+//		}
+
 		return new IntegrationFlowFunctionSupport(functionCatalog, functionInspector,
 				messageConverterFactory, functionProperties, bindingServiceProperties);
 	}

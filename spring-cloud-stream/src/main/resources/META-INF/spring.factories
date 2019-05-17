@@ -6,5 +6,8 @@ org.springframework.cloud.stream.config.BindingsEndpointAutoConfiguration,\
 org.springframework.cloud.stream.config.BindingServiceConfiguration,\
 org.springframework.cloud.stream.function.FunctionConfiguration
 
+org.springframework.boot.env.EnvironmentPostProcessor:\
+org.springframework.cloud.stream.function.RoutingFunctionEnvironmentPostProcessor
+
 
 

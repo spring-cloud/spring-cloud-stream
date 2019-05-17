@@ -43,6 +43,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionRegistry;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
+import org.springframework.cloud.function.context.config.RoutingFunction;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.binder.BinderType;
 import org.springframework.cloud.stream.binder.BinderTypeRegistry;
@@ -281,14 +282,17 @@ public class BinderFactoryConfiguration {
 		if (!StringUtils.hasText(name) && catalog.size() == 0)  {
 			((SmartInitializingSingleton) catalog).afterSingletonsInstantiated();
 		}
+		if (!StringUtils.hasText(name) && Boolean.parseBoolean(
+				environment.getProperty("spring.cloud.function.routing.enabled", "false"))) {
+			name = RoutingFunction.FUNCTION_NAME;
+		}
 		if (!StringUtils.hasText(name) && catalog.size() >= 1 && catalog.size() <= 2) {
 			name = ((FunctionInspector) catalog).getName(catalog.lookup(""));
-			if (StringUtils.hasText(name)) {
-				((StandardEnvironment) environment).getSystemProperties()
-						.putIfAbsent("spring.cloud.stream.function.definition", name);
-			}
 		}
-
+		if (StringUtils.hasText(name)) {
+			((StandardEnvironment) environment).getSystemProperties()
+					.putIfAbsent("spring.cloud.stream.function.definition", name);
+		}
 		return name;
 	}
 
