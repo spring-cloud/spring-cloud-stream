@@ -378,6 +378,7 @@ public class BindingServiceTests {
 	public void testDefaultPropertyBehavior() {
 		ConfigurableApplicationContext run = SpringApplication.run(
 				DefaultConsumerPropertiesTestSink.class,
+				"--server.port=0",
 				"--spring.cloud.stream.default.contentType=text/plain",
 				"--spring.cloud.stream.bindings.input1.contentType=application/json",
 				"--spring.cloud.stream.default.group=foo",
@@ -416,6 +417,8 @@ public class BindingServiceTests {
 				.isEqualTo("text/plain");
 		assertThat(bindings.get("input_snake_case").getContentType())
 				.isEqualTo("application/avro");
+
+		run.close();
 	}
 
 	@Test
