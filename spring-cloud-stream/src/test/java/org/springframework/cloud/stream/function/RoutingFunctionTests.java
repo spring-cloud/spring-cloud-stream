@@ -19,6 +19,7 @@ package org.springframework.cloud.stream.function;
 import java.util.function.Function;
 
 import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import reactor.core.publisher.Flux;
 
@@ -35,8 +36,6 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.util.MimeTypeUtils;
 
-
-
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -48,6 +47,12 @@ public class RoutingFunctionTests {
 
 	@After
 	public void after() {
+		System.getProperties().remove("spring.cloud.function.routing.enabled");
+		System.getProperties().remove("spring.cloud.stream.function.definition");
+	}
+
+	@Before
+	public void before() {
 		System.getProperties().remove("spring.cloud.function.routing.enabled");
 		System.getProperties().remove("spring.cloud.stream.function.definition");
 	}
