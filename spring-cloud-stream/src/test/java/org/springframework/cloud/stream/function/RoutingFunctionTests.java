@@ -137,6 +137,59 @@ public class RoutingFunctionTests {
 	}
 
 	@Test
+	public void testCompositionViaFunctionName() {
+
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+				TestChannelBinderConfiguration.getCompleteConfiguration(
+						RoutingFunctionConfiguration.class))
+								.web(WebApplicationType.NONE)
+								.run("--spring.jmx.enabled=false",
+										"--spring.cloud.stream.function.definition=router")) {
+
+			InputDestination inputDestination = context.getBean(InputDestination.class);
+			OutputDestination outputDestination = context
+					.getBean(OutputDestination.class);
+
+			Message<byte[]> inputMessage = MessageBuilder
+					.withPayload("Hello".getBytes())
+					.setHeader("function.name", "echo|uppercase")
+					.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN)
+					.build();
+			inputDestination.send(inputMessage);
+
+			Message<byte[]> outputMessage = outputDestination.receive();
+			assertThat(outputMessage.getPayload()).isEqualTo("HELLO".getBytes());
+
+		}
+	}
+
+
+	@Test
+	public void testPojoFunction() {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+				TestChannelBinderConfiguration.getCompleteConfiguration(
+						RoutingFunctionConfiguration.class))
+								.web(WebApplicationType.NONE)
+								.run("--spring.jmx.enabled=false",
+										"--spring.cloud.stream.function.definition=router")) {
+
+			InputDestination inputDestination = context.getBean(InputDestination.class);
+			OutputDestination outputDestination = context
+					.getBean(OutputDestination.class);
+
+			Message<byte[]> inputMessage = MessageBuilder
+					.withPayload("{\"name\":\"bob\"}".getBytes())
+					.setHeader("function.name", "pojoecho")
+					.build();
+			inputDestination.send(inputMessage);
+
+			Message<byte[]> outputMessage = outputDestination.receive();
+			assertThat(outputMessage.getPayload()).isEqualTo("{\"name\":\"bob\"}".getBytes());
+
+		}
+	}
+
+	@Test
 	public void testExplicitRoutingFunctionBindingWithCompositionAndRoutingEnabledExplicitly() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 				TestChannelBinderConfiguration.getCompleteConfiguration(
@@ -240,6 +293,14 @@ public class RoutingFunctionTests {
 		}
 
 		@Bean
+		public Function<Person, Person> pojoecho() {
+			return x -> {
+				System.out.println("===> pojoecho");
+				return x;
+			};
+		}
+
+		@Bean
 		public Function<Flux<String>, Flux<String>> echoFlux() {
 			return flux -> flux.map(x -> {
 				System.out.println("===> echoFlux");
@@ -269,6 +330,18 @@ public class RoutingFunctionTests {
 				System.out.println("===> reverse");
 				return new StringBuilder(x).reverse().toString();
 			};
+		}
+	}
+
+	private static class Person {
+		private String name;
+
+		public String getName() {
+			return name;
+		}
+
+		public void setName(String name) {
+			this.name = name;
 		}
 	}
 }
