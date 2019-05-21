@@ -24,6 +24,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.springframework.amqp.AmqpConnectException;
+import org.springframework.amqp.core.AnonymousQueue;
 import org.springframework.amqp.core.Base64UrlNamingStrategy;
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.Binding.DestinationType;
@@ -194,7 +195,8 @@ public class RabbitExchangeQueueProvisioner
 		boolean durable = !anonymous && properties.getExtension().isDurableSubscription();
 		Queue queue;
 		if (anonymous) {
-			queue = new Queue(queueName, false, true, true,
+			String anonQueueName = queueName;
+			queue = new AnonymousQueue((org.springframework.amqp.core.NamingStrategy) () -> anonQueueName,
 					queueArgs(queueName, properties.getExtension(), false));
 		}
 		else {
