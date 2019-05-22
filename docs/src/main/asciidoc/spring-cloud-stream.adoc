@@ -389,7 +389,7 @@ times, such as testing or other corner cases, when you do.
 Aside from generating channels for each binding and registering them as Spring beans, for each bound interface, Spring Cloud Stream generates a bean that implements the interface.
 That means you can have access to the interfaces representing the bindings or individual channels by auto-wiring either in your application, as shown in the following two examples:
 
-_Autowired Binding interface_
+_Autowire Binding interface_
 
 [source, java]
 ----
@@ -401,7 +401,7 @@ public void sayHello(String name) {
 }
 ----
 
-_Autowired individual channel_
+_Autowire individual channel_
 
 [source, java]
 ----
