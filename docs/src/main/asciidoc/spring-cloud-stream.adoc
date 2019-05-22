@@ -393,7 +393,7 @@ _Autowire Binding interface_
 
 [source, java]
 ----
-@Autowire
+@Autowired
 private Source source
 
 public void sayHello(String name) {
@@ -405,7 +405,7 @@ _Autowire individual channel_
 
 [source, java]
 ----
-@Autowire
+@Autowired
 private MessageChannel output;
 
 public void sayHello(String name) {
@@ -419,7 +419,7 @@ The following example shows how to use the @Qualifier annotation in this way:
 
 [source, java]
 ----
-@Autowire
+@Autowired
 @Qualifier("myChannel")
 private MessageChannel output;
 ----
