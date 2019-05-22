@@ -389,11 +389,11 @@ times, such as testing or other corner cases, when you do.
 Aside from generating channels for each binding and registering them as Spring beans, for each bound interface, Spring Cloud Stream generates a bean that implements the interface.
 That means you can have access to the interfaces representing the bindings or individual channels by auto-wiring either in your application, as shown in the following two examples:
 
-_Autowire Binding interface_
+_Autowired Binding interface_
 
 [source, java]
 ----
-@Autowire
+@Autowired
 private Source source
 
 public void sayHello(String name) {
@@ -401,11 +401,11 @@ public void sayHello(String name) {
 }
 ----
 
-_Autowire individual channel_
+_Autowired individual channel_
 
 [source, java]
 ----
-@Autowire
+@Autowired
 private MessageChannel output;
 
 public void sayHello(String name) {
@@ -419,7 +419,7 @@ The following example shows how to use the @Qualifier annotation in this way:
 
 [source, java]
 ----
-@Autowire
+@Autowired
 @Qualifier("myChannel")
 private MessageChannel output;
 ----
