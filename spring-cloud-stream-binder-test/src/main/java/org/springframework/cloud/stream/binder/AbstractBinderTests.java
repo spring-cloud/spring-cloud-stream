@@ -39,8 +39,6 @@ import org.springframework.cloud.stream.binding.StreamListenerMessageHandler;
 import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
-import org.springframework.cloud.stream.converter.MessageConverterUtils;
-import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.Lifecycle;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.core.convert.support.DefaultConversionService;
@@ -49,7 +47,6 @@ import org.springframework.integration.channel.QueueChannel;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
-import org.springframework.messaging.MessageDeliveryException;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.PollableChannel;
 import org.springframework.messaging.converter.SmartMessageConverter;
@@ -84,6 +81,8 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 
 	protected SmartMessageConverter messageConverter;
 
+	protected GenericApplicationContext applicationContext;
+
 	/**
 	 * Subclasses may override this default value to have tests wait longer for a message
 	 * receive, for example if running in an environment that is known to be slow (e.g.
@@ -93,6 +92,8 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 
 	@Before
 	public void before() {
+		applicationContext = new GenericApplicationContext();
+		applicationContext.refresh();
 		this.messageConverter = new CompositeMessageConverterFactory()
 				.getMessageConverterForAllRegistered();
 	}
@@ -383,8 +384,6 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 			BindingProperties bindingProperties) throws Exception {
 		BindingServiceProperties bindingServiceProperties = new BindingServiceProperties();
 		bindingServiceProperties.getBindings().put(channelName, bindingProperties);
-		ConfigurableApplicationContext applicationContext = new GenericApplicationContext();
-		applicationContext.refresh();
 		bindingServiceProperties.setApplicationContext(applicationContext);
 		bindingServiceProperties.setConversionService(new DefaultConversionService());
 		bindingServiceProperties.afterPropertiesSet();
@@ -466,86 +465,6 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 		assertThat(replyMessage.getPayload() instanceof Station).isTrue();
 		producerBinding.unbind();
 		consumerBinding.unbind();
-	}
-
-	@SuppressWarnings("rawtypes")
-	@Test
-	public void testSendPojoReceivePojoKryoWithStreamListener() throws Exception {
-		StreamListenerMessageHandler handler = this.buildStreamListener(
-				AbstractBinderTests.class, "echoStation", Station.class);
-
-		Binder binder = getBinder();
-
-		BindingProperties producerBindingProperties = createProducerBindingProperties(
-				createProducerProperties());
-
-		DirectChannel moduleOutputChannel = createBindableChannel("output",
-				producerBindingProperties);
-
-		BindingProperties consumerBindingProperties = createConsumerBindingProperties(
-				createConsumerProperties());
-
-		DirectChannel moduleInputChannel = createBindableChannel("input",
-				consumerBindingProperties);
-
-		Binding<MessageChannel> producerBinding = binder.bindProducer(
-				String.format("bad%s0b", getDestinationNameDelimiter()),
-				moduleOutputChannel, producerBindingProperties.getProducer());
-
-		Binding<MessageChannel> consumerBinding = binder.bindConsumer(
-				String.format("bad%s0b", getDestinationNameDelimiter()), "test-2",
-				moduleInputChannel, consumerBindingProperties.getConsumer());
-
-		Station station = new Station();
-		Message<?> message = MessageBuilder.withPayload(station).setHeader(
-				MessageHeaders.CONTENT_TYPE, MessageConverterUtils.X_JAVA_OBJECT).build();
-		moduleInputChannel.subscribe(handler);
-		moduleOutputChannel.send(message);
-
-		QueueChannel replyChannel = (QueueChannel) handler.getOutputChannel();
-
-		Message<?> replyMessage = replyChannel.receive(5000);
-		assertThat(replyMessage.getPayload() instanceof Station).isTrue();
-		producerBinding.unbind();
-		consumerBinding.unbind();
-	}
-
-	@SuppressWarnings("rawtypes")
-	@Test(expected = MessageDeliveryException.class)
-	public void testStreamListenerJavaSerializationNonSerializable() throws Exception {
-		Binder binder = getBinder();
-
-		BindingProperties producerBindingProperties = createProducerBindingProperties(
-				createProducerProperties());
-
-		DirectChannel moduleOutputChannel = createBindableChannel("output",
-				producerBindingProperties);
-
-		BindingProperties consumerBindingProperties = createConsumerBindingProperties(
-				createConsumerProperties());
-
-		DirectChannel moduleInputChannel = createBindableChannel("input",
-				consumerBindingProperties);
-
-		Binding<MessageChannel> producerBinding = binder.bindProducer(
-				String.format("bad%s0c", getDestinationNameDelimiter()),
-				moduleOutputChannel, producerBindingProperties.getProducer());
-
-		Binding<MessageChannel> consumerBinding = binder.bindConsumer(
-				String.format("bad%s0c", getDestinationNameDelimiter()), "test-3",
-				moduleInputChannel, consumerBindingProperties.getConsumer());
-		try {
-			Station station = new Station();
-			Message<?> message = MessageBuilder.withPayload(station)
-					.setHeader(MessageHeaders.CONTENT_TYPE,
-							MessageConverterUtils.X_JAVA_SERIALIZED_OBJECT)
-					.build();
-			moduleOutputChannel.send(message);
-		}
-		finally {
-			producerBinding.unbind();
-			consumerBinding.unbind();
-		}
 	}
 
 	@SuppressWarnings("rawtypes")
@@ -706,8 +625,8 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 	private StreamListenerMessageHandler buildStreamListener(Class<?> handlerClass,
 			String handlerMethodName, Class<?>... parameters) throws Exception {
 		String channelName = "reply_" + System.nanoTime();
-		GenericApplicationContext context = new GenericApplicationContext();
-		context.getBeanFactory().registerSingleton(channelName, new QueueChannel());
+
+		this.applicationContext.getBeanFactory().registerSingleton(channelName, new QueueChannel());
 
 		Method m = ReflectionUtils.findMethod(handlerClass, handlerMethodName,
 				parameters);
@@ -723,9 +642,9 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 		StreamListenerMessageHandler handler = (StreamListenerMessageHandler) c
 				.newInstance(method, false, new String[] {});
 		handler.setOutputChannelName(channelName);
-		handler.setBeanFactory(context);
+		handler.setBeanFactory(this.applicationContext);
 		handler.afterPropertiesSet();
-		context.refresh();
+//		context.refresh();
 		return handler;
 	}
 

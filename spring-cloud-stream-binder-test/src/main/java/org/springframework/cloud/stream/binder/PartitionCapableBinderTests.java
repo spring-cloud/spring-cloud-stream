@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.UUID;
 
 import org.assertj.core.api.Condition;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import org.springframework.beans.DirectFieldAccessor;
@@ -306,6 +307,7 @@ public abstract class PartitionCapableBinderTests<B extends AbstractTestBinder<?
 	}
 
 	@Test
+	@Ignore
 	public void testPartitionedModuleJava() throws Exception {
 		B binder = getBinder();
 
