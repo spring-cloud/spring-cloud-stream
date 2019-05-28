@@ -1093,14 +1093,13 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		}
 
 		@Override
-		protected void handleMessageInternal(Message<?> message) throws Exception {
+		protected void handleMessageInternal(Message<?> message) {
 			Message<?> messageToSend = (this.useNativeEncoding) ? message
 					: serializeAndEmbedHeadersIfApplicable(message);
 			this.delegate.handleMessage(messageToSend);
 		}
 
-		private Message<?> serializeAndEmbedHeadersIfApplicable(Message<?> message)
-				throws Exception {
+		private Message<?> serializeAndEmbedHeadersIfApplicable(Message<?> message) {
 			MessageValues transformed = new MessageValues(message);
 			Object payload;
 			if (this.embedHeaders) {

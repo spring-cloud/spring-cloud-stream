@@ -27,6 +27,7 @@ import org.springframework.beans.DirectFieldAccessor;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.actuate.health.CompositeHealthIndicator;
+import org.springframework.boot.actuate.health.DefaultHealthIndicatorRegistry;
 import org.springframework.boot.actuate.health.HealthIndicator;
 import org.springframework.boot.actuate.health.HealthIndicatorRegistry;
 import org.springframework.boot.actuate.health.OrderedHealthAggregator;
@@ -148,12 +149,12 @@ public class HealthIndicatorsConfigurationTests {
 
 			@Bean
 			public CompositeHealthIndicator test1HealthIndicator1() {
-				return new CompositeHealthIndicator(new OrderedHealthAggregator());
+				return new CompositeHealthIndicator(new OrderedHealthAggregator(), new DefaultHealthIndicatorRegistry());
 			}
 
 			@Bean
 			public CompositeHealthIndicator test2HealthIndicator2() {
-				return new CompositeHealthIndicator(new OrderedHealthAggregator());
+				return new CompositeHealthIndicator(new OrderedHealthAggregator(), new DefaultHealthIndicatorRegistry());
 			}
 
 		}

@@ -159,7 +159,8 @@ public class BinderFactoryAutoConfiguration {
 				validator));
 		resolvers.add(new SmartMessageMethodArgumentResolver(
 			messageConverter));
-		resolvers.add(new HeaderMethodArgumentResolver(null, clbf));
+
+		resolvers.add(new HeaderMethodArgumentResolver(clbf.getConversionService(), clbf));
 		resolvers.add(new HeadersMethodArgumentResolver());
 
 		// Copy the order from Spring Integration for compatibility with SI 5.2

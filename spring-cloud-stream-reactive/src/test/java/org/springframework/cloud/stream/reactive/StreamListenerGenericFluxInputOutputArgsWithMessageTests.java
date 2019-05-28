@@ -19,6 +19,7 @@ package org.springframework.cloud.stream.reactive;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import reactor.core.publisher.Flux;
 
@@ -44,6 +45,7 @@ import static org.springframework.cloud.stream.binding.StreamListenerErrorMessag
  * @author Oleg Zhurakousky
  */
 @SuppressWarnings("unchecked")
+@Ignore
 public class StreamListenerGenericFluxInputOutputArgsWithMessageTests {
 
 	private static void sendMessageAndValidate(ConfigurableApplicationContext context)
