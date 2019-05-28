@@ -26,11 +26,14 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import org.mockito.Mockito;
 import org.springframework.beans.DirectFieldAccessor;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.web.embedded.tomcat.TomcatServletWebServerFactory;
 import org.springframework.boot.web.servlet.server.ServletWebServerFactory;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.support.NoOpCache;
 import org.springframework.cache.support.NoOpCacheManager;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.StreamListener;
@@ -50,8 +53,12 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static org.springframework.cloud.schema.avro.AvroMessageConverterSerializationTests.notification;
 
 /**
@@ -198,6 +205,16 @@ public class AvroSchemaRegistryClientMessageConverterTests {
 		DirectFieldAccessor accessor = new DirectFieldAccessor(converter);
 		assertThat(accessor.getPropertyValue("cacheManager"))
 				.isInstanceOf(NoOpCacheManager.class);
+	}
+
+	@Test
+	public void testNamedCacheIsRequested() {
+		CacheManager mockCache = Mockito.mock(CacheManager.class);
+		when(mockCache.getCache(any())).thenReturn(new NoOpCache(""));
+		AvroSchemaServiceManager manager = new AvroSchemaServiceManagerImpl();
+		AvroSchemaRegistryClientMessageConverter converter = new AvroSchemaRegistryClientMessageConverter(new DefaultSchemaRegistryClient(), mockCache, manager);
+		ReflectionTestUtils.invokeMethod(converter, "getCache", "TEST_CACHE");
+		verify(mockCache).getCache("TEST_CACHE");
 	}
 
 	@EnableBinding(Source.class)
