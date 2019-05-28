@@ -22,6 +22,7 @@ import java.util.concurrent.TimeUnit;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -51,6 +52,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE, properties = {
 		"spring.kafka.consumer.auto-offset-reset=earliest" })
 @DirtiesContext
+@Ignore
 public class KafkaNullConverterTest {
 
 	private static final String KAFKA_BROKERS_PROPERTY = "spring.kafka.bootstrap-servers";

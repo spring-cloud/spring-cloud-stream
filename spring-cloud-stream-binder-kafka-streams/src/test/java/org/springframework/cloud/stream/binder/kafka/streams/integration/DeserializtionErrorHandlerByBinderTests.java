@@ -29,6 +29,7 @@ import org.apache.kafka.streams.kstream.TimeWindows;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -121,6 +122,7 @@ public abstract class DeserializtionErrorHandlerByBinderTests {
 
 		@Test
 		@SuppressWarnings("unchecked")
+		@Ignore
 		public void test() throws Exception {
 			Map<String, Object> senderProps = KafkaTestUtils.producerProps(embeddedKafka);
 			DefaultKafkaProducerFactory<Integer, String> pf = new DefaultKafkaProducerFactory<>(

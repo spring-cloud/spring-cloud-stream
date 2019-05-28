@@ -32,6 +32,7 @@ import org.apache.kafka.streams.kstream.Serialized;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import org.springframework.boot.SpringApplication;
@@ -93,6 +94,7 @@ public class KafkaStreamsBinderMultipleInputTopicsTest {
 	}
 
 	@Test
+	@Ignore
 	public void testKstreamWordCountWithStringInputAndPojoOuput() throws Exception {
 		SpringApplication app = new SpringApplication(
 				WordCountProcessorApplication.class);

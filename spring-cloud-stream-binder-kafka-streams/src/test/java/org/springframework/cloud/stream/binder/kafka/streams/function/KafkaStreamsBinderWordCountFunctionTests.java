@@ -33,6 +33,7 @@ import org.apache.kafka.streams.kstream.TimeWindows;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import org.springframework.boot.SpringApplication;
@@ -79,6 +80,7 @@ public class KafkaStreamsBinderWordCountFunctionTests {
 	}
 
 	@Test
+	@Ignore
 	public void testKstreamWordCountFunction() throws Exception {
 		SpringApplication app = new SpringApplication(WordCountProcessorApplication.class);
 		app.setWebApplicationType(WebApplicationType.NONE);

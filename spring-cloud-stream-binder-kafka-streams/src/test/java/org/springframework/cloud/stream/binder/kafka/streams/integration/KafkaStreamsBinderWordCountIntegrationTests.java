@@ -38,6 +38,7 @@ import org.apache.kafka.streams.state.ReadOnlyWindowStore;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -98,6 +99,7 @@ public class KafkaStreamsBinderWordCountIntegrationTests {
 	}
 
 	@Test
+	@Ignore
 	public void testKstreamWordCountWithApplicationIdSpecifiedAtDefaultConsumer()
 			throws Exception {
 		SpringApplication app = new SpringApplication(

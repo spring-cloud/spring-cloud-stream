@@ -1521,8 +1521,13 @@ public class KafkaBinderTests extends
 				input3, consumerProperties);
 
 		ExtendedProducerProperties<KafkaProducerProperties> producerProperties = createProducerProperties();
-		producerProperties.setPartitionKeyExtractorClass(PartitionTestSupport.class);
-		producerProperties.setPartitionSelectorClass(PartitionTestSupport.class);
+
+		((GenericApplicationContext) this.applicationContext).registerBean("pkExtractor",
+				PartitionTestSupport.class, () -> new PartitionTestSupport());
+		((GenericApplicationContext) this.applicationContext).registerBean("pkSelector",
+				PartitionTestSupport.class, () -> new PartitionTestSupport());
+		producerProperties.setPartitionKeyExtractorName("pkExtractor");
+		producerProperties.setPartitionSelectorName("pkSelector");
 		producerProperties.setPartitionCount(3); // overridden to 8 on the actual topic
 		DirectChannel output = createBindableChannel("output",
 				createProducerBindingProperties(producerProperties));
@@ -1645,8 +1650,12 @@ public class KafkaBinderTests extends
 		Binder binder = getBinder();
 		ExtendedProducerProperties<KafkaProducerProperties> properties = createProducerProperties();
 		properties.setHeaderMode(HeaderMode.none);
-		properties.setPartitionKeyExtractorClass(RawKafkaPartitionTestSupport.class);
-		properties.setPartitionSelectorClass(RawKafkaPartitionTestSupport.class);
+		((GenericApplicationContext) this.applicationContext).registerBean("pkExtractor",
+				RawKafkaPartitionTestSupport.class, () -> new RawKafkaPartitionTestSupport());
+		((GenericApplicationContext) this.applicationContext).registerBean("pkSelector",
+				RawKafkaPartitionTestSupport.class, () -> new RawKafkaPartitionTestSupport());
+		properties.setPartitionKeyExtractorName("pkExtractor");
+		properties.setPartitionSelectorName("pkSelector");
 		properties.setPartitionCount(6);
 
 		DirectChannel output = createBindableChannel("output",
