@@ -90,6 +90,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.Lifecycle;
+import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.expression.spel.standard.SpelExpression;
 import org.springframework.integration.amqp.outbound.AmqpOutboundEndpoint;
 import org.springframework.integration.amqp.support.NackedAmqpMessageException;
@@ -638,7 +639,6 @@ public class RabbitBinderTests extends
 		assertThat(container.isRunning()).isFalse();
 	}
 
-	@SuppressWarnings("deprecation")
 	@Test
 	public void testProducerProperties() throws Exception {
 		RabbitTestBinder binder = getBinder();
@@ -658,17 +658,20 @@ public class RabbitBinderTests extends
 				Boolean.class)).isFalse();
 
 		ExtendedProducerProperties<RabbitProducerProperties> producerProperties = createProducerProperties();
+		((GenericApplicationContext)this.applicationContext).registerBean("pkExtractor",
+				TestPartitionKeyExtractorClass.class, () -> new TestPartitionKeyExtractorClass());
+		((GenericApplicationContext)this.applicationContext).registerBean("pkSelector",
+				TestPartitionSelectorClass.class, () -> new TestPartitionSelectorClass());
+		producerProperties.setPartitionKeyExtractorName("pkExtractor");
+		producerProperties.setPartitionSelectorName("pkSelector");
 		producerProperties.getExtension().setPrefix("foo.");
 		producerProperties.getExtension()
 				.setDeliveryMode(MessageDeliveryMode.NON_PERSISTENT);
 		producerProperties.getExtension().setHeaderPatterns(new String[] { "foo" });
 		producerProperties
 				.setPartitionKeyExpression(spelExpressionParser.parseExpression("'foo'"));
-		producerProperties
-				.setPartitionKeyExtractorClass(TestPartitionKeyExtractorClass.class);
 		producerProperties.setPartitionSelectorExpression(
 				spelExpressionParser.parseExpression("0"));
-		producerProperties.setPartitionSelectorClass(TestPartitionSelectorClass.class);
 		producerProperties.setPartitionCount(1);
 		producerProperties.getExtension().setTransacted(true);
 		producerProperties.getExtension()
@@ -860,7 +863,6 @@ public class RabbitBinderTests extends
 		assertThat(context.containsBean(TEST_PREFIX + "dlqtest.default.dlq")).isFalse();
 	}
 
-	@SuppressWarnings("deprecation")
 	@Test
 	public void testAutoBindDLQPartionedConsumerFirst() throws Exception {
 		RabbitTestBinder binder = getBinder();
@@ -888,9 +890,11 @@ public class RabbitBinderTests extends
 
 		ExtendedProducerProperties<RabbitProducerProperties> producerProperties = createProducerProperties();
 		producerProperties.getExtension().setPrefix("bindertest.");
+		((GenericApplicationContext)this.applicationContext).registerBean("pkExtractor", PartitionTestSupport.class, () -> new PartitionTestSupport());
+		((GenericApplicationContext)this.applicationContext).registerBean("pkSelector", PartitionTestSupport.class, () -> new PartitionTestSupport());
 		producerProperties.getExtension().setAutoBindDlq(true);
-		producerProperties.setPartitionKeyExtractorClass(PartitionTestSupport.class);
-		producerProperties.setPartitionSelectorClass(PartitionTestSupport.class);
+		producerProperties.setPartitionKeyExtractorName("pkExtractor");
+		producerProperties.setPartitionSelectorName("pkSelector");
 		producerProperties.setPartitionCount(2);
 		BindingProperties bindingProperties = createProducerBindingProperties(
 				producerProperties);
@@ -973,7 +977,6 @@ public class RabbitBinderTests extends
 		testAutoBindDLQPartionedConsumerFirstWithRepublishGuts(true);
 	}
 
-	@SuppressWarnings("deprecation")
 	private void testAutoBindDLQPartionedConsumerFirstWithRepublishGuts(
 			final boolean withRetry) throws Exception {
 		RabbitTestBinder binder = getBinder();
@@ -1005,8 +1008,10 @@ public class RabbitBinderTests extends
 		ExtendedProducerProperties<RabbitProducerProperties> producerProperties = createProducerProperties();
 		producerProperties.getExtension().setPrefix("bindertest.");
 		producerProperties.getExtension().setAutoBindDlq(true);
-		producerProperties.setPartitionKeyExtractorClass(PartitionTestSupport.class);
-		producerProperties.setPartitionSelectorClass(PartitionTestSupport.class);
+		((GenericApplicationContext)this.applicationContext).registerBean("pkExtractor", PartitionTestSupport.class, () -> new PartitionTestSupport());
+		((GenericApplicationContext)this.applicationContext).registerBean("pkSelector", PartitionTestSupport.class, () -> new PartitionTestSupport());
+		producerProperties.setPartitionKeyExtractorName("pkExtractor");
+		producerProperties.setPartitionSelectorName("pkSelector");
 		producerProperties.setPartitionCount(2);
 		BindingProperties bindingProperties = createProducerBindingProperties(
 				producerProperties);
@@ -1117,7 +1122,6 @@ public class RabbitBinderTests extends
 		outputBinding.unbind();
 	}
 
-	@SuppressWarnings("deprecation")
 	@Test
 	public void testAutoBindDLQPartitionedProducerFirst() throws Exception {
 		RabbitTestBinder binder = getBinder();
@@ -1126,8 +1130,9 @@ public class RabbitBinderTests extends
 		properties.getExtension().setPrefix("bindertest.");
 		properties.getExtension().setAutoBindDlq(true);
 		properties.setRequiredGroups("dlqPartGrp");
-		properties.setPartitionKeyExtractorClass(PartitionTestSupport.class);
-		properties.setPartitionSelectorClass(PartitionTestSupport.class);
+		((GenericApplicationContext)this.applicationContext).registerBean("pkExtractor", PartitionTestSupport.class, () -> new PartitionTestSupport());
+		properties.setPartitionKeyExtractorName("pkExtractor");
+		properties.setPartitionSelectorName("pkExtractor");
 		properties.setPartitionCount(2);
 		DirectChannel output = createBindableChannel("output",
 				createProducerBindingProperties(properties));
