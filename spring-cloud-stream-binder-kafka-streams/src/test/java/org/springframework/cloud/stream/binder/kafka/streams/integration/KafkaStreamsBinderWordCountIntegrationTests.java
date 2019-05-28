@@ -38,7 +38,6 @@ import org.apache.kafka.streams.state.ReadOnlyWindowStore;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -99,7 +98,6 @@ public class KafkaStreamsBinderWordCountIntegrationTests {
 	}
 
 	@Test
-	@Ignore
 	public void testKstreamWordCountWithApplicationIdSpecifiedAtDefaultConsumer()
 			throws Exception {
 		SpringApplication app = new SpringApplication(
@@ -117,8 +115,6 @@ public class KafkaStreamsBinderWordCountIntegrationTests {
 						+ "=org.apache.kafka.common.serialization.Serdes$StringSerde",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.default.value.serde"
 						+ "=org.apache.kafka.common.serialization.Serdes$StringSerde",
-				"--spring.cloud.stream.bindings.output.producer.headerMode=raw",
-				"--spring.cloud.stream.bindings.input.consumer.headerMode=raw",
 				"--spring.cloud.stream.kafka.streams.timeWindow.length=5000",
 				"--spring.cloud.stream.kafka.streams.timeWindow.advanceBy=0",
 				"--spring.cloud.stream.kafka.streams.binder.brokers="

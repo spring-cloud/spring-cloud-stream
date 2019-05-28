@@ -33,7 +33,6 @@ import org.apache.kafka.streams.kstream.TimeWindows;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import org.springframework.boot.SpringApplication;
@@ -80,7 +79,6 @@ public class KafkaStreamsBinderWordCountFunctionTests {
 	}
 
 	@Test
-	@Ignore
 	public void testKstreamWordCountFunction() throws Exception {
 		SpringApplication app = new SpringApplication(WordCountProcessorApplication.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
@@ -96,8 +94,6 @@ public class KafkaStreamsBinderWordCountFunctionTests {
 						"=org.apache.kafka.common.serialization.Serdes$StringSerde",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.default.value.serde" +
 						"=org.apache.kafka.common.serialization.Serdes$StringSerde",
-				"--spring.cloud.stream.bindings.output.producer.headerMode=raw",
-				"--spring.cloud.stream.bindings.input.consumer.headerMode=raw",
 				"--spring.cloud.stream.kafka.streams.binder.brokers=" + embeddedKafka.getBrokersAsString())) {
 			receiveAndValidate(context);
 		}
