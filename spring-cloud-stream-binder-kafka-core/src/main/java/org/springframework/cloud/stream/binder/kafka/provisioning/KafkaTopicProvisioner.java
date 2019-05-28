@@ -466,11 +466,11 @@ public class KafkaTopicProvisioner implements
 				// In some cases, the above partition query may not throw an UnknownTopic..Exception for various reasons.
 				// For that, we are forcing another query to ensure that the topic is present on the server.
 				if (CollectionUtils.isEmpty(partitions)) {
-					final AdminClient adminClient = AdminClient
-							.create(this.adminClientProperties);
-					final DescribeTopicsResult describeTopicsResult = adminClient
+					try (AdminClient adminClient = AdminClient
+							.create(this.adminClientProperties)) {
+						final DescribeTopicsResult describeTopicsResult = adminClient
 							.describeTopics(Collections.singletonList(topicName));
-					try {
+
 						describeTopicsResult.all().get();
 					}
 					catch (ExecutionException ex) {
