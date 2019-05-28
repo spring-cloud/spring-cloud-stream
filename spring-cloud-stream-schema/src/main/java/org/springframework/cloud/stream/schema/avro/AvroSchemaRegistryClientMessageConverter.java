@@ -414,7 +414,7 @@ public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessag
 	}
 
 	private Cache getCache(String name) {
-		Cache cache = this.cacheManager.getCache("");
+		Cache cache = this.cacheManager.getCache(name);
 		Assert.notNull(cache, "Cache by the name '" + name + "' is not present in this CacheManager - '"
 				+ this.cacheManager + "'. Typically caches are auto-created by the CacheManagers. "
 						+ "Consider reporting it as an issue to the developer of this CacheManager.");
