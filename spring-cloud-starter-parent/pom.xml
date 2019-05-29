@@ -6,11 +6,11 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>2.1.4.RELEASE</version>
+		<version>2.2.0.BUILD-SNAPSHOT</version>
 	</parent>
 	<groupId>org.springframework.cloud</groupId>
 	<artifactId>spring-cloud-stream-starter-parent</artifactId>
-	<version>Germantown.BUILD-SNAPSHOT</version>
+	<version>Horsham.BUILD-SNAPSHOT</version>
 	<name>spring-cloud-stream-starter-parent</name>
 	<description>Specifies Boot version for the releaser</description>
 	<packaging>pom</packaging>
