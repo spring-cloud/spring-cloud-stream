@@ -20,6 +20,7 @@ import reactor.core.publisher.Flux;
 
 import org.springframework.cloud.stream.binding.StreamListenerParameterAdapter;
 import org.springframework.core.MethodParameter;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.core.ResolvableType;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
@@ -66,6 +67,9 @@ public class MessageChannelToInputFluxParameterAdapter
 
 		final Object monitor = new Object();
 
+		Object conversionHint = ParameterizedTypeReference
+				.forType(fluxTypeParameter.getType());
+
 		if (Message.class.isAssignableFrom(fluxTypeParameterClass)) {
 
 			final ResolvableType payloadTypeParameter = fluxTypeParameter.getGeneric(0);
@@ -85,7 +89,7 @@ public class MessageChannelToInputFluxParameterAdapter
 						else {
 							emitter.next(MessageBuilder.createMessage(
 									this.messageConverter.fromMessage(message,
-											payloadTypeParameterClass),
+											payloadTypeParameterClass, conversionHint),
 									message.getHeaders()));
 						}
 					}
@@ -104,7 +108,7 @@ public class MessageChannelToInputFluxParameterAdapter
 						}
 						else {
 							emitter.next(this.messageConverter.fromMessage(message,
-									fluxTypeParameterClass));
+									fluxTypeParameterClass, conversionHint));
 						}
 					}
 				};

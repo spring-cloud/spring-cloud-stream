@@ -16,17 +16,20 @@
 
 package org.springframework.cloud.stream.reactive;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
-import reactor.core.publisher.Flux;
-
+import org.springframework.cloud.stream.annotation.StreamListener;
+import org.springframework.cloud.stream.converter.TestApplicationJsonMessageMarshallingConverter;
 import org.springframework.core.MethodParameter;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.messaging.Message;
@@ -35,7 +38,8 @@ import org.springframework.messaging.converter.MappingJackson2MessageConverter;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.ReflectionUtils;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import reactor.core.publisher.Flux;
+import reactor.test.StepVerifier;
 
 /**
  * @author Marius Bogoevici
@@ -77,8 +81,152 @@ public class MessageChannelToInputFluxParameterAdapterTests {
 
 	}
 
+	@Test
+	public void testAdapterConvertsUsingConversionHint() {
+		CompositeMessageConverter messageConverter = new CompositeMessageConverter(
+				Collections
+						.singleton(new TestApplicationJsonMessageMarshallingConverter()));
+
+		MessageChannelToInputFluxParameterAdapter adapter = new MessageChannelToInputFluxParameterAdapter(
+				messageConverter);
+
+		Method processMethod = ReflectionUtils.findMethod(
+				MessageChannelToInputFluxParameterAdapterTests.class, "processNestedGenericFlux",
+				Flux.class);
+
+		DirectChannel adaptedChannel = new DirectChannel();
+
+		@SuppressWarnings("unchecked")
+		Flux<FirstLevelWrapper<SecondLevelWrapper<String>>> adapterFlux = (Flux<FirstLevelWrapper<SecondLevelWrapper<String>>>) adapter
+				.adapt(adaptedChannel, new MethodParameter(processMethod, 0));
+
+		SecondLevelWrapper<String> expected2 = new SecondLevelWrapper<>();
+		expected2.setName("name");
+		expected2.setData("data");
+
+		FirstLevelWrapper<SecondLevelWrapper<String>> expected1 = new FirstLevelWrapper<>();
+		expected1.setId(1);
+		expected1.setData(expected2);
+
+		StepVerifier.create(adapterFlux).then(() -> {
+			adaptedChannel.send(MessageBuilder.withPayload(
+					"{ \"id\": 1, \"data\": { \"name\": \"name\", \"data\": \"data\" } }")
+					.build());
+		}).expectNext(expected1).thenCancel().verify();
+	}
+
 	public void process(Flux<Message<?>> message) {
 		// do nothing - we just reference this method from the test
+	}
+
+	public void processNestedGenericFlux(Flux<FirstLevelWrapper<SecondLevelWrapper<String>>> items) {
+		// do nothing - we just reference this method from the test
+	}
+
+	static class FirstLevelWrapper<T> {
+
+		private long id;
+
+		private T data;
+
+		long getId() {
+			return id;
+		}
+
+		void setId(long id) {
+			this.id = id;
+		}
+
+		T getData() {
+			return data;
+		}
+
+		public void setData(T data) {
+			this.data = data;
+		}
+
+		@Override
+		public int hashCode() {
+			return Objects.hash(data, id);
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if (this == obj) {
+				return true;
+			}
+
+			if (obj == null) {
+				return false;
+			}
+
+			if (!(obj instanceof FirstLevelWrapper)) {
+				return false;
+			}
+
+			@SuppressWarnings("unchecked")
+			FirstLevelWrapper<T> other = (FirstLevelWrapper<T>) obj;
+			return Objects.equals(data, other.data) && id == other.id;
+		}
+
+		@Override
+		public String toString() {
+			return "FirstLevelWrapper [id=" + id + ", data=" + data + "]";
+		}
+
+	}
+
+	static class SecondLevelWrapper<T> {
+
+		private String name;
+
+		private T data;
+
+		public String getName() {
+			return name;
+		}
+
+		public void setName(String name) {
+			this.name = name;
+		}
+
+		public T getData() {
+			return data;
+		}
+
+		public void setData(T data) {
+			this.data = data;
+		}
+
+		@Override
+		public int hashCode() {
+			return Objects.hash(data, name);
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if (this == obj) {
+				return true;
+			}
+
+			if (obj == null) {
+				return false;
+			}
+
+			if (!(obj instanceof SecondLevelWrapper)) {
+				return false;
+			}
+
+			@SuppressWarnings("unchecked")
+			SecondLevelWrapper<T> other = (SecondLevelWrapper<T>) obj;
+			return Objects.equals(data, other.data) && Objects.equals(name, other.name);
+		}
+
+		@Override
+		public String toString() {
+			return "SecondLevelWrapper [name=" + name + ", data=" + data + "]";
+		}
+
 	}
 
 }
