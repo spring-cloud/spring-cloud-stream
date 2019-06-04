@@ -1388,7 +1388,7 @@ Default: `30`
 Binding properties are supplied by using the format of `spring.cloud.stream.bindings.<channelName>.<property>=<value>`.
 The `<channelName>` represents the name of the channel being configured (for example, `output` for a `Source`).
 
-To avoid repetition, Spring Cloud Stream supports setting values for all channels, in the format of `spring.cloud.stream.default.<property>=<value>`.
+To avoid repetition, Spring Cloud Stream supports setting values for all channels, in the format of `spring.cloud.stream.default.<property>=<value>` for common binding properties, and `spring.cloud.stream.default.<producer|consumer>.<property>=<value>`.
 
 When it comes to avoiding repetitions for extended binding properties, this format should be used - `spring.cloud.stream.<binder-type>.default.<producer|consumer>.<property>=<value>`.
 
