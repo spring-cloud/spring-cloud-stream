@@ -30,9 +30,11 @@ import java.util.concurrent.TimeoutException;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.common.PartitionInfo;
 
+import org.springframework.beans.factory.DisposableBean;
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.HealthIndicator;
 import org.springframework.kafka.core.ConsumerFactory;
+import org.springframework.scheduling.concurrent.CustomizableThreadFactory;
 
 /**
  * Health indicator for Kafka.
@@ -44,9 +46,12 @@ import org.springframework.kafka.core.ConsumerFactory;
  * @author Laur Aliste
  * @author Soby Chacko
  */
-public class KafkaBinderHealthIndicator implements HealthIndicator {
+public class KafkaBinderHealthIndicator implements HealthIndicator, DisposableBean {
 
 	private static final int DEFAULT_TIMEOUT = 60;
+
+	private final ExecutorService executor = Executors.newSingleThreadExecutor(
+		new CustomizableThreadFactory("kafka-binder-health-"));
 
 	private final KafkaMessageChannelBinder binder;
 
@@ -72,8 +77,7 @@ public class KafkaBinderHealthIndicator implements HealthIndicator {
 
 	@Override
 	public Health health() {
-		ExecutorService exec = Executors.newSingleThreadExecutor();
-		Future<Health> future = exec.submit(this::buildHealthStatus);
+		Future<Health> future = executor.submit(this::buildHealthStatus);
 		try {
 			return future.get(this.timeout, TimeUnit.SECONDS);
 		}
@@ -90,9 +94,6 @@ public class KafkaBinderHealthIndicator implements HealthIndicator {
 		catch (TimeoutException ex) {
 			return Health.down().withDetail("Failed to retrieve partition information in",
 					this.timeout + " seconds").build();
-		}
-		finally {
-			exec.shutdownNow();
 		}
 	}
 
@@ -144,6 +145,11 @@ public class KafkaBinderHealthIndicator implements HealthIndicator {
 		catch (Exception ex) {
 			return Health.down(ex).build();
 		}
+	}
+
+	@Override
+	public void destroy() throws Exception {
+		executor.shutdown();
 	}
 
 }
