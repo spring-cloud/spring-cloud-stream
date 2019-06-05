@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2017 the original author or authors.
+ * Copyright 2015-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -99,16 +99,12 @@ public abstract class BindingBeanDefinitionRegistryUtils {
 		if (type.isInterface()) {
 			RootBeanDefinition rootBeanDefinition = new RootBeanDefinition(
 					BindableProxyFactory.class);
-//			rootBeanDefinition
-//					.addQualifier(new AutowireCandidateQualifier(Bindings.class, parent));
 			rootBeanDefinition.getConstructorArgumentValues()
 					.addGenericArgumentValue(type);
 			registry.registerBeanDefinition(type.getName(), rootBeanDefinition);
 		}
 		else {
 			RootBeanDefinition rootBeanDefinition = new RootBeanDefinition(type);
-//			rootBeanDefinition
-//					.addQualifier(new AutowireCandidateQualifier(Bindings.class, parent));
 			registry.registerBeanDefinition(type.getName(), rootBeanDefinition);
 		}
 	}

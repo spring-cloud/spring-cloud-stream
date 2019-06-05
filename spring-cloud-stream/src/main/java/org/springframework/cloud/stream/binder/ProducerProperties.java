@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2018 the original author or authors.
+ * Copyright 2016-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,24 +48,12 @@ public class ProducerProperties {
 	@JsonSerialize(using = ExpressionSerializer.class)
 	private Expression partitionKeyExpression;
 
-//	/**
-//	 * @deprecated in favor of 'partitionKeyExtractorName'
-//	 */
-//	@Deprecated
-//	private Class<?> partitionKeyExtractorClass;
-
 	/**
 	 * The name of the bean that implements {@link PartitionKeyExtractorStrategy}\. Used
 	 * to extract a key used to compute the partition id (see 'partitionSelector*') <br>
 	 * Mutually exclusive with 'partitionKeyExpression'.
 	 */
 	private String partitionKeyExtractorName;
-
-//	/**
-//	 * @deprecated in favor of 'partitionSelectorName'
-//	 */
-//	@Deprecated
-//	private Class<?> partitionSelectorClass;
 
 	/**
 	 * The name of the bean that implements {@link PartitionSelectorStrategy}\. Used to
@@ -95,31 +83,10 @@ public class ProducerProperties {
 		this.partitionKeyExpression = partitionKeyExpression;
 	}
 
-//	@Deprecated
-//	public Class<?> getPartitionKeyExtractorClass() {
-//		return this.partitionKeyExtractorClass;
-//	}
-//
-//	@Deprecated
-//	public void setPartitionKeyExtractorClass(Class<?> partitionKeyExtractorClass) {
-//		this.partitionKeyExtractorClass = partitionKeyExtractorClass;
-//	}
-
 	public boolean isPartitioned() {
 		return this.partitionKeyExpression != null
 				|| this.partitionKeyExtractorName != null;
-//				|| this.partitionKeyExtractorClass != null;
 	}
-
-//	@Deprecated
-//	public Class<?> getPartitionSelectorClass() {
-//		return this.partitionSelectorClass;
-//	}
-//
-//	@Deprecated
-//	public void setPartitionSelectorClass(Class<?> partitionSelectorClass) {
-//		this.partitionSelectorClass = partitionSelectorClass;
-//	}
 
 	public Expression getPartitionSelectorExpression() {
 		return this.partitionSelectorExpression;
@@ -146,17 +113,11 @@ public class ProducerProperties {
 		this.requiredGroups = requiredGroups;
 	}
 
-	//@AssertTrue(message = "Partition key expression and partition key extractor class properties are mutually exclusive.")
 	public boolean isValidPartitionKeyProperty() {
-//		return (this.partitionKeyExpression == null)
-//				|| (this.partitionKeyExtractorClass == null);
 		return this.partitionKeyExpression == null;
 	}
 
-	//@AssertTrue(message = "Partition selector class and partition selector expression properties are mutually exclusive.")
 	public boolean isValidPartitionSelectorProperty() {
-//		return (this.partitionSelectorClass == null)
-//				|| (this.partitionSelectorExpression == null);
 		return this.partitionSelectorExpression == null;
 	}
 
