@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 
 import org.junit.Test;
 import org.reactivestreams.Publisher;
@@ -230,8 +231,9 @@ public class StreamEmitterBasicTests {
 		@Bean
 		public Publisher<Message<String>> emit() {
 			AtomicInteger atomicInteger = new AtomicInteger();
+
 			return IntegrationFlows
-					.from(() -> new GenericMessage<>(
+					.from((Supplier<?>) () -> new GenericMessage<>(
 							"Hello World!!" + atomicInteger.getAndIncrement()),
 							e -> e.poller(p -> p.fixedDelay(1)))
 					.<String, String>transform(String::toUpperCase).toReactivePublisher();
