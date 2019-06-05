@@ -16,8 +16,6 @@
 
 package org.springframework.cloud.stream.reactive;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -28,7 +26,9 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
-import org.springframework.cloud.stream.annotation.StreamListener;
+import reactor.core.publisher.Flux;
+import reactor.test.StepVerifier;
+
 import org.springframework.cloud.stream.converter.TestApplicationJsonMessageMarshallingConverter;
 import org.springframework.core.MethodParameter;
 import org.springframework.integration.channel.DirectChannel;
@@ -38,11 +38,12 @@ import org.springframework.messaging.converter.MappingJackson2MessageConverter;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.ReflectionUtils;
 
-import reactor.core.publisher.Flux;
-import reactor.test.StepVerifier;
+import static org.assertj.core.api.Assertions.assertThat;
+
 
 /**
  * @author Marius Bogoevici
+ * @author Ryan Dunckel
  */
 public class MessageChannelToInputFluxParameterAdapterTests {
 
