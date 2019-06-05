@@ -50,7 +50,6 @@ import static org.junit.Assert.fail;
  * @author Gary Russell
  * @since 1.2
  */
-//@Ignore
 public class RabbitBinderCleanerTests {
 
 	private static final String BINDER_PREFIX = "binder.";
