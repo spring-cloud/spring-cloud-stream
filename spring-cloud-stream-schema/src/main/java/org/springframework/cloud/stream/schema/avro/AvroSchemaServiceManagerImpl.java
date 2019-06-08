@@ -135,6 +135,11 @@ public class AvroSchemaServiceManagerImpl implements AvroSchemaServiceManager {
 					reader = new GenericDatumReader<>(schema);
 				}
 			}
+			else {
+				if (writerSchema != null) {
+					reader = new GenericDatumReader(writerSchema);
+				}
+			}
 		}
 		else {
 			reader = new ReflectDatumReader(type);
