@@ -73,6 +73,7 @@ public class FunctionConfiguration {
 
 		return new IntegrationFlowFunctionSupport(functionCatalog, functionInspector,
 				messageConverterFactory, functionProperties, bindingServiceProperties, context);
+
 	}
 
 	/**

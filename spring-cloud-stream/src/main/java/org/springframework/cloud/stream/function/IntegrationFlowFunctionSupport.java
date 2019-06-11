@@ -26,7 +26,6 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.MonoSink;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionType;
@@ -61,12 +60,12 @@ public class IntegrationFlowFunctionSupport  {
 
 	private final StreamFunctionProperties functionProperties;
 
+
 	private final AtomicReference<MonoSink<Object>> triggerRef = new AtomicReference<>();
 
 	private final Publisher<Object> trigger;
 
-	@Autowired
-	private MessageChannel errorChannel;
+	private final GenericApplicationContext context;
 
 	IntegrationFlowFunctionSupport(FunctionCatalog functionCatalog,
 			FunctionInspector functionInspector,
@@ -74,6 +73,7 @@ public class IntegrationFlowFunctionSupport  {
 			StreamFunctionProperties functionProperties,
 			BindingServiceProperties bindingServiceProperties,
 			GenericApplicationContext context) {
+
 		Assert.notNull(functionCatalog, "'functionCatalog' must not be null");
 		Assert.notNull(functionInspector, "'functionInspector' must not be null");
 		Assert.notNull(messageConverterFactory,
@@ -83,6 +83,7 @@ public class IntegrationFlowFunctionSupport  {
 		this.functionInspector = functionInspector;
 		this.messageConverterFactory = messageConverterFactory;
 		this.functionProperties = functionProperties;
+		this.context = context;
 		this.functionProperties.setBindingServiceProperties(bindingServiceProperties);
 		trigger = Mono.create(emmiter -> {
 			triggerRef.set(emmiter);
@@ -252,7 +253,7 @@ public class IntegrationFlowFunctionSupport  {
 		}
 		FunctionInvoker<I, O> functionInvoker = new FunctionInvoker<>(functionProperties,
 				this.functionCatalog, this.functionInspector,
-				this.messageConverterFactory, this.errorChannel);
+				this.messageConverterFactory, this.context.getBeanFactory());
 
 		if (outputChannel != null) {
 			subscribeToInput(functionInvoker, publisher, outputChannel::send);
