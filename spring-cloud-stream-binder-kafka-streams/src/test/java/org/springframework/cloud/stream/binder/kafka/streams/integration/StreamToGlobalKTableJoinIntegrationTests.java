@@ -81,10 +81,6 @@ public class StreamToGlobalKTableJoinIntegrationTests {
 				"--spring.cloud.stream.bindings.input-x.destination=customers",
 				"--spring.cloud.stream.bindings.input-y.destination=products",
 				"--spring.cloud.stream.bindings.output.destination=enriched-order",
-				"--spring.cloud.stream.bindings.input.consumer.useNativeDecoding=true",
-				"--spring.cloud.stream.bindings.input-x.consumer.useNativeDecoding=true",
-				"--spring.cloud.stream.bindings.input-y.consumer.useNativeDecoding=true",
-				"--spring.cloud.stream.bindings.output.producer.useNativeEncoding=true",
 				"--spring.cloud.stream.kafka.streams.bindings.input.consumer.keySerde"
 						+ "=org.apache.kafka.common.serialization.Serdes$LongSerde",
 				"--spring.cloud.stream.kafka.streams.bindings.input.consumer.valueSerde"

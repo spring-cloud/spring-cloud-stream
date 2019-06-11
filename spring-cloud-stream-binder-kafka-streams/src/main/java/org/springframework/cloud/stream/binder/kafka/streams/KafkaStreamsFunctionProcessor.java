@@ -51,7 +51,6 @@ import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.core.FluxedConsumer;
 import org.springframework.cloud.function.core.FluxedFunction;
-import org.springframework.cloud.stream.binder.ConsumerProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaConsumerProperties;
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsConsumerProperties;
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsExtendedBindingProperties;
@@ -240,7 +239,6 @@ public class KafkaStreamsFunctionProcessor implements ApplicationContextAware {
 				Assert.isInstanceOf(String.class, input, "Annotation value must be a String");
 				Object targetBean = applicationContext.getBean(input);
 				BindingProperties bindingProperties = this.bindingServiceProperties.getBindingProperties(input);
-				enableNativeDecodingForKTableAlways(parameterType, bindingProperties);
 				//Retrieve the StreamsConfig created for this method if available.
 				//Otherwise, create the StreamsBuilderFactory and get the underlying config.
 				if (!this.methodStreamsBuilderFactoryBeanMap.containsKey(functionName)) {
@@ -435,16 +433,6 @@ public class KafkaStreamsFunctionProcessor implements ApplicationContextAware {
 			return returnValue;
 		});
 		return stream;
-	}
-
-	private void enableNativeDecodingForKTableAlways(Class<?> parameterType, BindingProperties bindingProperties) {
-		if (parameterType.isAssignableFrom(KTable.class) || parameterType.isAssignableFrom(GlobalKTable.class)) {
-			if (bindingProperties.getConsumer() == null) {
-				bindingProperties.setConsumer(new ConsumerProperties());
-			}
-			//No framework level message conversion provided for KTable/GlobalKTable, its done by the broker.
-			bindingProperties.getConsumer().setUseNativeDecoding(true);
-		}
 	}
 
 	@SuppressWarnings({"unchecked"})

@@ -23,6 +23,7 @@ import org.apache.kafka.streams.kstream.GlobalKTable;
 import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.cloud.stream.binder.ConsumerProperties;
 import org.springframework.cloud.stream.binding.AbstractBindingTargetFactory;
+import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.util.Assert;
 
@@ -47,8 +48,12 @@ public class GlobalKTableBoundElementFactory
 
 	@Override
 	public GlobalKTable createInput(String name) {
-		ConsumerProperties consumerProperties = this.bindingServiceProperties
-				.getConsumerProperties(name);
+		BindingProperties bindingProperties = this.bindingServiceProperties.getBindingProperties(name);
+		ConsumerProperties consumerProperties = bindingProperties.getConsumer();
+		if (consumerProperties == null) {
+			consumerProperties = this.bindingServiceProperties.getConsumerProperties(name);
+			consumerProperties.setUseNativeDecoding(true);
+		}
 		// Always set multiplex to true in the kafka streams binder
 		consumerProperties.setMultiplex(true);
 

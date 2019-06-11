@@ -88,9 +88,6 @@ public class StreamToTableJoinFunctionTests {
 				"--spring.cloud.stream.bindings.input-1.destination=user-clicks-1",
 				"--spring.cloud.stream.bindings.input-2.destination=user-regions-1",
 				"--spring.cloud.stream.bindings.output.destination=output-topic-1",
-				"--spring.cloud.stream.bindings.input-1.consumer.useNativeDecoding=true",
-				"--spring.cloud.stream.bindings.input-2.consumer.useNativeDecoding=true",
-				"--spring.cloud.stream.bindings.output.producer.useNativeEncoding=true",
 				"--spring.cloud.stream.kafka.streams.bindings.input-1.consumer.keySerde" +
 						"=org.apache.kafka.common.serialization.Serdes$StringSerde",
 				"--spring.cloud.stream.kafka.streams.bindings.input-1.consumer.valueSerde" +

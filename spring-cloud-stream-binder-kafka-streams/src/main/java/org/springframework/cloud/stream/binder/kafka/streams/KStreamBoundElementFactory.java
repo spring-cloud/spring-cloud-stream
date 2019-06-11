@@ -22,6 +22,7 @@ import org.apache.kafka.streams.kstream.KStream;
 
 import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.cloud.stream.binder.ConsumerProperties;
+import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.cloud.stream.binding.AbstractBindingTargetFactory;
 import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
@@ -52,8 +53,12 @@ class KStreamBoundElementFactory extends AbstractBindingTargetFactory<KStream> {
 
 	@Override
 	public KStream createInput(String name) {
-		ConsumerProperties consumerProperties = this.bindingServiceProperties
-				.getConsumerProperties(name);
+		BindingProperties bindingProperties = this.bindingServiceProperties.getBindingProperties(name);
+		ConsumerProperties consumerProperties = bindingProperties.getConsumer();
+		if (consumerProperties == null) {
+			consumerProperties = this.bindingServiceProperties.getConsumerProperties(name);
+			consumerProperties.setUseNativeDecoding(true);
+		}
 		// Always set multiplex to true in the kafka streams binder
 		consumerProperties.setMultiplex(true);
 		return createProxyForKStream(name);
@@ -62,6 +67,13 @@ class KStreamBoundElementFactory extends AbstractBindingTargetFactory<KStream> {
 	@Override
 	@SuppressWarnings("unchecked")
 	public KStream createOutput(final String name) {
+
+		BindingProperties bindingProperties = this.bindingServiceProperties.getBindingProperties(name);
+		ProducerProperties producerProperties = bindingProperties.getProducer();
+		if (producerProperties == null) {
+			producerProperties = this.bindingServiceProperties.getProducerProperties(name);
+			producerProperties.setUseNativeEncoding(true);
+		}
 		return createProxyForKStream(name);
 	}
 

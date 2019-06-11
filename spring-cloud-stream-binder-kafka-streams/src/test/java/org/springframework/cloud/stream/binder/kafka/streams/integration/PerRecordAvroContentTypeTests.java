@@ -102,6 +102,8 @@ public class PerRecordAvroContentTypeTests {
 
 		try (ConfigurableApplicationContext ignored = app.run("--server.port=0",
 				"--spring.jmx.enabled=false",
+				"--spring.cloud.stream.bindings.input.consumer.useNativeDecoding=false",
+				"--spring.cloud.stream.bindings.output.producer.useNativeEncoding=false",
 				"--spring.cloud.stream.bindings.input.destination=sensors",
 				"--spring.cloud.stream.bindings.output.destination=received-sensors",
 				"--spring.cloud.stream.bindings.output.contentType=application/avro",

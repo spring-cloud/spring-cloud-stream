@@ -95,9 +95,7 @@ public class StreamToTableJoinIntegrationTests {
 				"--spring.cloud.stream.bindings.input.destination=user-clicks-1",
 				"--spring.cloud.stream.bindings.input-x.destination=user-regions-1",
 				"--spring.cloud.stream.bindings.output.destination=output-topic-1",
-				"--spring.cloud.stream.bindings.input.consumer.useNativeDecoding=true",
-				"--spring.cloud.stream.bindings.input-x.consumer.useNativeDecoding=true",
-				"--spring.cloud.stream.bindings.output.producer.useNativeEncoding=true",
+
 				"--spring.cloud.stream.kafka.streams.bindings.input.consumer.keySerde"
 						+ "=org.apache.kafka.common.serialization.Serdes$StringSerde",
 				"--spring.cloud.stream.kafka.streams.bindings.input.consumer.valueSerde"
@@ -246,9 +244,7 @@ public class StreamToTableJoinIntegrationTests {
 				"--spring.cloud.stream.bindings.input.destination=user-clicks-2",
 				"--spring.cloud.stream.bindings.input-x.destination=user-regions-2",
 				"--spring.cloud.stream.bindings.output.destination=output-topic-2",
-				"--spring.cloud.stream.bindings.input.consumer.useNativeDecoding=true",
-				"--spring.cloud.stream.bindings.input-x.consumer.useNativeDecoding=true",
-				"--spring.cloud.stream.bindings.output.producer.useNativeEncoding=true",
+
 				"--spring.cloud.stream.kafka.streams.binder.configuration.auto.offset.reset=latest",
 				"--spring.cloud.stream.kafka.streams.bindings.input.consumer.startOffset=earliest",
 				"--spring.cloud.stream.kafka.streams.bindings.input.consumer.keySerde"

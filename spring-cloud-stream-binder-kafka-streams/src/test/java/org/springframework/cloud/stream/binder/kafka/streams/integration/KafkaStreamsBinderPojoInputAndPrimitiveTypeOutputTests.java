@@ -18,10 +18,10 @@ package org.springframework.cloud.stream.binder.kafka.streams.integration;
 
 import java.util.Map;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.common.serialization.LongDeserializer;
 import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.Materialized;
@@ -63,7 +63,7 @@ public class KafkaStreamsBinderPojoInputAndPrimitiveTypeOutputTests {
 	private static EmbeddedKafkaBroker embeddedKafka = embeddedKafkaRule
 			.getEmbeddedKafka();
 
-	private static Consumer<Integer, String> consumer;
+	private static Consumer<Integer, Long> consumer;
 
 	@BeforeClass
 	public static void setUp() throws Exception {
@@ -72,7 +72,8 @@ public class KafkaStreamsBinderPojoInputAndPrimitiveTypeOutputTests {
 		// consumerProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,
 		// Deserializer.class.getName());
 		consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
-		DefaultKafkaConsumerFactory<Integer, String> cf = new DefaultKafkaConsumerFactory<>(
+		consumerProps.put("value.deserializer", LongDeserializer.class);
+		DefaultKafkaConsumerFactory<Integer, Long> cf = new DefaultKafkaConsumerFactory<>(
 				consumerProps);
 		consumer = cf.createConsumer();
 		embeddedKafka.consumeFromAnEmbeddedTopic(consumer, "counts-id");
@@ -98,6 +99,11 @@ public class KafkaStreamsBinderPojoInputAndPrimitiveTypeOutputTests {
 						+ "org.apache.kafka.common.serialization.Serdes$StringSerde",
 				"--spring.cloud.stream.kafka.streams.bindings.output.producer.keySerde="
 						+ "org.apache.kafka.common.serialization.Serdes$IntegerSerde",
+				"--spring.cloud.stream.kafka.streams.bindings.output.producer.valueSerde="
+						+ "org.apache.kafka.common.serialization.Serdes$LongSerde",
+				"--spring.cloud.stream.kafka.streams.bindings.input.consumer.valueSerde=org.springframework.kafka.support.serializer.JsonSerde",
+				"--spring.cloud.stream.kafka.streams.bindings.input.consumer.configuration.spring.json.value.default.type=" +
+						"org.springframework.cloud.stream.binder.kafka.streams.integration.KafkaStreamsBinderPojoInputAndPrimitiveTypeOutputTests.Product",
 				"--spring.cloud.stream.kafka.streams.bindings.input.consumer.applicationId="
 						+ "KafkaStreamsBinderPojoInputAndPrimitiveTypeOutputTests-xyz",
 				"--spring.cloud.stream.kafka.streams.binder.brokers="
@@ -120,13 +126,11 @@ public class KafkaStreamsBinderPojoInputAndPrimitiveTypeOutputTests {
 		KafkaTemplate<Integer, String> template = new KafkaTemplate<>(pf, true);
 		template.setDefaultTopic("foos");
 		template.sendDefault("{\"id\":\"123\"}");
-		ConsumerRecord<Integer, String> cr = KafkaTestUtils.getSingleRecord(consumer,
+		ConsumerRecord<Integer, Long> cr = KafkaTestUtils.getSingleRecord(consumer,
 				"counts-id");
 
 		assertThat(cr.key()).isEqualTo(123);
-		ObjectMapper om = new ObjectMapper();
-		Long aLong = om.readValue(cr.value(), Long.class);
-		assertThat(aLong).isEqualTo(1L);
+		assertThat(cr.value()).isEqualTo(1L);
 	}
 
 	@EnableBinding(KafkaStreamsProcessor.class)
@@ -142,12 +146,14 @@ public class KafkaStreamsBinderPojoInputAndPrimitiveTypeOutputTests {
 							new JsonSerde<>(Product.class)))
 					.windowedBy(TimeWindows.of(5000))
 					.count(Materialized.as("id-count-store-x")).toStream()
-					.map((key, value) -> new KeyValue<>(key.key().id, value));
+					.map((key, value) -> {
+						return new KeyValue<>(key.key().id, value);
+					});
 		}
 
 	}
 
-	static class Product {
+	public static class Product {
 
 		Integer id;
 
