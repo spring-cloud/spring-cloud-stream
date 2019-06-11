@@ -162,6 +162,9 @@ Default: none.
 [[kafka-consumer-properties]]
 ==== Kafka Consumer Properties
 
+NOTE: To avoid repetition, Spring Cloud Stream supports setting values for all channels, in the format of `spring.cloud.stream.default.<property>=<value>`.
+
+
 The following properties are available for Kafka consumers only and
 must be prefixed with `spring.cloud.stream.kafka.bindings.<channelName>.consumer.`.
 
@@ -283,6 +286,9 @@ Default: none (the binder-wide default of 1 is used).
 
 [[kafka-producer-properties]]
 ==== Kafka Producer Properties
+
+NOTE: To avoid repetition, Spring Cloud Stream supports setting values for all channels, in the format of `spring.cloud.stream.default.<property>=<value>`.
+
 
 The following properties are available for Kafka producers only and
 must be prefixed with `spring.cloud.stream.kafka.bindings.<channelName>.producer.`.
