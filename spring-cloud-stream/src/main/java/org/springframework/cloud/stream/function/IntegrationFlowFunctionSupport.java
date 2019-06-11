@@ -24,7 +24,7 @@ import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.BeanFactory;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionType;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
@@ -56,14 +56,14 @@ public class IntegrationFlowFunctionSupport {
 
 	private final StreamFunctionProperties functionProperties;
 
-	@Autowired
-	private MessageChannel errorChannel;
+	private final BeanFactory beanFactory;
 
 	IntegrationFlowFunctionSupport(FunctionCatalog functionCatalog,
 			FunctionInspector functionInspector,
 			CompositeMessageConverterFactory messageConverterFactory,
 			StreamFunctionProperties functionProperties,
-			BindingServiceProperties bindingServiceProperties) {
+			BindingServiceProperties bindingServiceProperties,
+			BeanFactory beanFactory) {
 		Assert.notNull(functionCatalog, "'functionCatalog' must not be null");
 		Assert.notNull(functionInspector, "'functionInspector' must not be null");
 		Assert.notNull(messageConverterFactory,
@@ -73,6 +73,7 @@ public class IntegrationFlowFunctionSupport {
 		this.functionInspector = functionInspector;
 		this.messageConverterFactory = messageConverterFactory;
 		this.functionProperties = functionProperties;
+		this.beanFactory = beanFactory;
 		this.functionProperties.setBindingServiceProperties(bindingServiceProperties);
 	}
 
@@ -220,7 +221,7 @@ public class IntegrationFlowFunctionSupport {
 		}
 		FunctionInvoker<I, O> functionInvoker = new FunctionInvoker<>(functionProperties,
 				this.functionCatalog, this.functionInspector,
-				this.messageConverterFactory, this.errorChannel);
+				this.messageConverterFactory, this.beanFactory);
 
 		if (outputChannel != null) {
 			subscribeToInput(functionInvoker, publisher, outputChannel::send);

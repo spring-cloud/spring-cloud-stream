@@ -27,11 +27,13 @@ import org.apache.commons.logging.LogFactory;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import org.springframework.beans.factory.BeanFactory;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionType;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
 import org.springframework.cloud.stream.binder.ConsumerProperties;
 import org.springframework.cloud.stream.binder.ProducerProperties;
+import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
 import org.springframework.integration.support.MessageBuilder;
@@ -72,7 +74,7 @@ class FunctionInvoker<I, O> implements Function<Flux<Message<I>>, Flux<Message<O
 
 	private final CompositeMessageConverter messageConverter;
 
-	private final MessageChannel errorChannel;
+	private final BeanFactory beanFactory;
 
 	private final boolean isInputArgumentMessage;
 
@@ -95,7 +97,7 @@ class FunctionInvoker<I, O> implements Function<Flux<Message<I>>, Flux<Message<O
 	FunctionInvoker(StreamFunctionProperties functionProperties,
 			FunctionCatalog functionCatalog, FunctionInspector functionInspector,
 			CompositeMessageConverterFactory compositeMessageConverterFactory,
-			MessageChannel errorChannel) {
+			BeanFactory beanFactory) {
 
 		this.functionProperties = functionProperties;
 		Object originalUserFunction = functionCatalog
@@ -111,7 +113,7 @@ class FunctionInvoker<I, O> implements Function<Flux<Message<I>>, Flux<Message<O
 		this.isInputArgumentMessage = functionType.isMessage();
 		this.inputClass = functionType.getInputType();
 		this.outputClass = functionType.getOutputType();
-		this.errorChannel = errorChannel;
+		this.beanFactory = beanFactory;
 		this.bindingServiceProperties = functionProperties.getBindingServiceProperties();
 		this.consumerProperties = this.bindingServiceProperties
 				.getConsumerProperties(functionProperties.getInputDestinationName());
@@ -141,10 +143,19 @@ class FunctionInvoker<I, O> implements Function<Flux<Message<I>>, Flux<Message<O
 	}
 
 	private void onError(Throwable t, Message<I> originalMessage) {
-		if (this.errorChannel != null) {
-			ErrorMessage em = new ErrorMessage(t, (Message<?>) originalMessage);
+		String inputDestinationName = functionProperties.getInputDestinationName();
+		BindingProperties bindingProperties = functionProperties.getBindingServiceProperties().getBindings().get(inputDestinationName);
+		String destinationName = bindingProperties.getDestination();
+		String groupName = bindingProperties.getGroup();
+		String bindingErrorChannelName = destinationName + "." + groupName + ".errors";
+
+		if (beanFactory != null) {
+			MessageChannel errorChannel = beanFactory.containsBean(bindingErrorChannelName)
+					? beanFactory.getBean(bindingErrorChannelName, MessageChannel.class)
+							:  beanFactory.getBean("errorChannel", MessageChannel.class);
+			ErrorMessage em = new ErrorMessage(t, originalMessage.getHeaders(), (Message<?>) originalMessage);
 			logger.error(em);
-			this.errorChannel.send(em);
+			errorChannel.send(em);
 		}
 		else {
 			logger.error(t);

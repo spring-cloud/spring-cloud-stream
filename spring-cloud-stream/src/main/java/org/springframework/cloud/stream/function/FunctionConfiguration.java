@@ -19,6 +19,7 @@ package org.springframework.cloud.stream.function;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -58,7 +59,8 @@ public class FunctionConfiguration {
 			FunctionCatalog functionCatalog, FunctionInspector functionInspector,
 			CompositeMessageConverterFactory messageConverterFactory,
 			StreamFunctionProperties functionProperties,
-			BindingServiceProperties bindingServiceProperties) {
+			BindingServiceProperties bindingServiceProperties,
+			BeanFactory beanFactory) {
 		((SmartInitializingSingleton) functionCatalog).afterSingletonsInstantiated();
 
 //		if (functionCatalog.size() > 0) {
@@ -70,7 +72,7 @@ public class FunctionConfiguration {
 //		}
 
 		return new IntegrationFlowFunctionSupport(functionCatalog, functionInspector,
-				messageConverterFactory, functionProperties, bindingServiceProperties);
+				messageConverterFactory, functionProperties, bindingServiceProperties, beanFactory);
 	}
 
 	/**
