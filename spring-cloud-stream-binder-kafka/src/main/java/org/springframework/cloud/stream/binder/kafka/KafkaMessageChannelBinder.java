@@ -906,8 +906,7 @@ public class KafkaMessageChannelBinder extends
 
 			return (message) -> {
 
-				final ConsumerRecord<Object, Object> record = message.getHeaders()
-						.get(KafkaHeaders.RAW_DATA, ConsumerRecord.class);
+				ConsumerRecord<Object, Object> record = StaticMessageHeaderAccessor.getSourceData(message);
 
 				if (properties.isUseNativeDecoding()) {
 					if (record != null) {
