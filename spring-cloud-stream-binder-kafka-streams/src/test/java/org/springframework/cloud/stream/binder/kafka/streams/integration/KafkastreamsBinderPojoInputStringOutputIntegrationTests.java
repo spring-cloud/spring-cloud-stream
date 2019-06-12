@@ -99,6 +99,9 @@ public class KafkastreamsBinderPojoInputStringOutputIntegrationTests {
 						+ "=org.apache.kafka.common.serialization.Serdes$StringSerde",
 				"--spring.cloud.stream.kafka.streams.bindings.output.producer.keySerde"
 						+ "=org.apache.kafka.common.serialization.Serdes$IntegerSerde",
+				"--spring.cloud.stream.kafka.streams.bindings.input.consumer.valueSerde=org.springframework.kafka.support.serializer.JsonSerde",
+				"--spring.cloud.stream.kafka.streams.bindings.input.consumer.configuration.spring.json.value.default.type=" +
+						"org.springframework.cloud.stream.binder.kafka.streams.integration.KafkastreamsBinderPojoInputStringOutputIntegrationTests.Product",
 				"--spring.cloud.stream.kafka.streams.bindings.input.consumer.applicationId=ProductCountApplication-xyz",
 				"--spring.cloud.stream.kafka.streams.binder.brokers="
 						+ embeddedKafka.getBrokersAsString(),

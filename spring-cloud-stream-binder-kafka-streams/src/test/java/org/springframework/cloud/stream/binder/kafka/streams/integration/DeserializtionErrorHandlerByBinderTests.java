@@ -101,7 +101,10 @@ public abstract class DeserializtionErrorHandlerByBinderTests {
 		consumer.close();
 	}
 
-	@SpringBootTest(properties = { "spring.cloud.stream.bindings.input.destination=foos",
+	@SpringBootTest(properties = {
+			"spring.cloud.stream.bindings.input.consumer.useNativeDecoding=false",
+			"spring.cloud.stream.bindings.output.producer.useNativeEncoding=false",
+			"spring.cloud.stream.bindings.input.destination=foos",
 			"spring.cloud.stream.bindings.output.destination=counts-id",
 			"spring.cloud.stream.kafka.streams.binder.configuration.commit.interval.ms=1000",
 			"spring.cloud.stream.kafka.streams.binder.configuration.default.key.serde"
@@ -148,6 +151,8 @@ public abstract class DeserializtionErrorHandlerByBinderTests {
 	}
 
 	@SpringBootTest(properties = {
+			"spring.cloud.stream.bindings.input.consumer.useNativeDecoding=false",
+			"spring.cloud.stream.bindings.output.producer.useNativeEncoding=false",
 			"spring.cloud.stream.bindings.input.destination=foos1,foos2",
 			"spring.cloud.stream.bindings.output.destination=counts-id",
 			"spring.cloud.stream.kafka.streams.binder.configuration.commit.interval.ms=1000",

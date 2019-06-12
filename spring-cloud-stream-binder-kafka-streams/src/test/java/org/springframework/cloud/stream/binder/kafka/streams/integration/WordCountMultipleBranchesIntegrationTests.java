@@ -96,16 +96,16 @@ public class WordCountMultipleBranchesIntegrationTests {
 				"--spring.jmx.enabled=false",
 				"--spring.cloud.stream.bindings.input.destination=words",
 				"--spring.cloud.stream.bindings.output1.destination=counts",
-				"--spring.cloud.stream.bindings.output1.contentType=application/json",
 				"--spring.cloud.stream.bindings.output2.destination=foo",
-				"--spring.cloud.stream.bindings.output2.contentType=application/json",
 				"--spring.cloud.stream.bindings.output3.destination=bar",
-				"--spring.cloud.stream.bindings.output3.contentType=application/json",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.commit.interval.ms=1000",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.default.key.serde"
 						+ "=org.apache.kafka.common.serialization.Serdes$StringSerde",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.default.value.serde"
 						+ "=org.apache.kafka.common.serialization.Serdes$StringSerde",
+				"--spring.cloud.stream.kafka.streams.bindings.output1.producer.valueSerde=org.springframework.kafka.support.serializer.JsonSerde",
+				"--spring.cloud.stream.kafka.streams.bindings.output2.producer.valueSerde=org.springframework.kafka.support.serializer.JsonSerde",
+				"--spring.cloud.stream.kafka.streams.bindings.output3.producer.valueSerde=org.springframework.kafka.support.serializer.JsonSerde",
 				"--spring.cloud.stream.kafka.streams.timeWindow.length=5000",
 				"--spring.cloud.stream.kafka.streams.timeWindow.advanceBy=0",
 				"--spring.cloud.stream.kafka.streams.bindings.input.consumer.applicationId"

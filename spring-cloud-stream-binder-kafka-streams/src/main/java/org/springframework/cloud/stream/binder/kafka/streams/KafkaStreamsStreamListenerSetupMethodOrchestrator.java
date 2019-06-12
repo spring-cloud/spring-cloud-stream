@@ -49,7 +49,6 @@ import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.cloud.stream.annotation.Input;
 import org.springframework.cloud.stream.annotation.StreamListener;
-import org.springframework.cloud.stream.binder.ConsumerProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaConsumerProperties;
 import org.springframework.cloud.stream.binder.kafka.streams.annotations.KafkaStreamsStateStore;
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsConsumerProperties;
@@ -254,7 +253,6 @@ class KafkaStreamsStreamListenerSetupMethodOrchestrator
 						.getBean((String) targetReferenceValue);
 				BindingProperties bindingProperties = this.bindingServiceProperties
 						.getBindingProperties(inboundName);
-				enableNativeDecodingForKTableAlways(parameterType, bindingProperties);
 				// Retrieve the StreamsConfig created for this method if available.
 				// Otherwise, create the StreamsBuilderFactory and get the underlying
 				// config.
@@ -501,19 +499,6 @@ class KafkaStreamsStreamListenerSetupMethodOrchestrator
 			return returnValue;
 		});
 		return stream;
-	}
-
-	private void enableNativeDecodingForKTableAlways(Class<?> parameterType,
-													BindingProperties bindingProperties) {
-		if (parameterType.isAssignableFrom(KTable.class)
-				|| parameterType.isAssignableFrom(GlobalKTable.class)) {
-			if (bindingProperties.getConsumer() == null) {
-				bindingProperties.setConsumer(new ConsumerProperties());
-			}
-			// No framework level message conversion provided for KTable/GlobalKTable, its
-			// done by the broker.
-			bindingProperties.getConsumer().setUseNativeDecoding(true);
-		}
 	}
 
 	@SuppressWarnings({"unchecked"})
