@@ -494,6 +494,7 @@ public class RabbitMessageChannelBinder extends
 
 		AmqpInboundChannelAdapter adapter = new AmqpInboundChannelAdapter(
 				listenerContainer);
+		adapter.setBindSourceMessage(true);
 		adapter.setBeanFactory(this.getBeanFactory());
 		adapter.setBeanName("inbound." + destination);
 		DefaultAmqpHeaderMapper mapper = DefaultAmqpHeaderMapper.inboundMapper();
@@ -609,8 +610,8 @@ public class RabbitMessageChannelBinder extends
 				public void handleMessage(
 						org.springframework.messaging.Message<?> message)
 						throws MessagingException {
-					Message amqpMessage = (Message) message.getHeaders()
-							.get(AmqpMessageHeaderErrorMessageStrategy.AMQP_RAW_MESSAGE);
+					Message amqpMessage = StaticMessageHeaderAccessor.getSourceData(message);
+
 					if (!(message instanceof ErrorMessage)) {
 						logger.error("Expected an ErrorMessage, not a "
 								+ message.getClass().toString() + " for: " + message);
@@ -695,8 +696,7 @@ public class RabbitMessageChannelBinder extends
 				public void handleMessage(
 						org.springframework.messaging.Message<?> message)
 						throws MessagingException {
-					Message amqpMessage = (Message) message.getHeaders()
-							.get(AmqpMessageHeaderErrorMessageStrategy.AMQP_RAW_MESSAGE);
+					Message amqpMessage = StaticMessageHeaderAccessor.getSourceData(message);
 					/*
 					 * NOTE: The following IF and subsequent ELSE IF should never happen
 					 * under normal interaction and it should always go to the last ELSE
