@@ -27,7 +27,7 @@ import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.messaging.handler.annotation.Headers;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.handler.annotation.support.MethodArgumentNotValidException;
-import org.springframework.messaging.handler.annotation.support.PayloadArgumentResolver;
+import org.springframework.messaging.handler.annotation.support.PayloadMethodArgumentResolver;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.BeanPropertyBindingResult;
@@ -39,7 +39,7 @@ import org.springframework.validation.Validator;
  * @author Oleg Zhurakousky
  * @author Gary Russell
  */
-class SmartPayloadArgumentResolver extends PayloadArgumentResolver {
+class SmartPayloadArgumentResolver extends PayloadMethodArgumentResolver {
 
 	private final MessageConverter messageConverter;
 

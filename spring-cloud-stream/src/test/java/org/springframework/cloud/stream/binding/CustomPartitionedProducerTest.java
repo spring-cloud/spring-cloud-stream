@@ -62,7 +62,7 @@ public class CustomPartitionedProducerTest {
 		Source testSource = context.getBean(Source.class);
 		DirectChannel messageChannel = (DirectChannel) testSource.output();
 		for (ChannelInterceptor channelInterceptor : messageChannel
-				.getChannelInterceptors()) {
+				.getInterceptors()) {
 			if (channelInterceptor instanceof MessageConverterConfigurer.PartitioningInterceptor) {
 				Field partitionHandlerField = ReflectionUtils.findField(
 						MessageConverterConfigurer.PartitioningInterceptor.class,
@@ -97,7 +97,7 @@ public class CustomPartitionedProducerTest {
 		Source testSource = context.getBean(Source.class);
 		DirectChannel messageChannel = (DirectChannel) testSource.output();
 		for (ChannelInterceptor channelInterceptor : messageChannel
-				.getChannelInterceptors()) {
+				.getInterceptors()) {
 			if (channelInterceptor instanceof MessageConverterConfigurer.PartitioningInterceptor) {
 				Field partitionHandlerField = ReflectionUtils.findField(
 						MessageConverterConfigurer.PartitioningInterceptor.class,
@@ -130,7 +130,7 @@ public class CustomPartitionedProducerTest {
 		Source testSource = context.getBean(Source.class);
 		DirectChannel messageChannel = (DirectChannel) testSource.output();
 		for (ChannelInterceptor channelInterceptor : messageChannel
-				.getChannelInterceptors()) {
+				.getInterceptors()) {
 			if (channelInterceptor instanceof MessageConverterConfigurer.PartitioningInterceptor) {
 				Field partitionHandlerField = ReflectionUtils.findField(
 						MessageConverterConfigurer.PartitioningInterceptor.class,
@@ -164,7 +164,7 @@ public class CustomPartitionedProducerTest {
 		Source testSource = context.getBean(Source.class);
 		DirectChannel messageChannel = (DirectChannel) testSource.output();
 		for (ChannelInterceptor channelInterceptor : messageChannel
-				.getChannelInterceptors()) {
+				.getInterceptors()) {
 			if (channelInterceptor instanceof MessageConverterConfigurer.PartitioningInterceptor) {
 				Field partitionHandlerField = ReflectionUtils.findField(
 						MessageConverterConfigurer.PartitioningInterceptor.class,

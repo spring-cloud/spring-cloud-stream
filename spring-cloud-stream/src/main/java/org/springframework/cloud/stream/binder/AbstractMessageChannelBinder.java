@@ -71,6 +71,7 @@ import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.SubscribableChannel;
 import org.springframework.messaging.support.ChannelInterceptor;
+import org.springframework.messaging.support.InterceptableChannel;
 import org.springframework.retry.RecoveryCallback;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
@@ -968,10 +969,10 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		return (SubscribableChannel) inputChannel;
 	}
 
-	private void moveChannelInterceptors(AbstractMessageChannel existingMessageChannel,
+	private void moveChannelInterceptors(InterceptableChannel existingMessageChannel,
 			AbstractMessageChannel actualMessageChannel) {
 		for (ChannelInterceptor channelInterceptor : existingMessageChannel
-				.getChannelInterceptors()) {
+				.getInterceptors()) {
 			actualMessageChannel.addInterceptor(channelInterceptor);
 			existingMessageChannel.removeInterceptor(channelInterceptor);
 		}

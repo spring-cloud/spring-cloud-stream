@@ -333,6 +333,7 @@ public class RoutingFunctionTests {
 		}
 	}
 
+	@SuppressWarnings("unused")
 	private static class Person {
 		private String name;
 

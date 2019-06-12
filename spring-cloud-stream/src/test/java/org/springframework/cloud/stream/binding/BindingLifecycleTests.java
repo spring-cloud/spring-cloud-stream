@@ -33,6 +33,7 @@ import static org.mockito.Mockito.mock;
  * @author Oleg Zhurakousky
  *
  */
+@SuppressWarnings("unchecked")
 public class BindingLifecycleTests {
 
 	@Test

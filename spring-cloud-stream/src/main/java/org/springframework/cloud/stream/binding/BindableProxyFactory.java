@@ -34,7 +34,6 @@ import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.cloud.stream.aggregate.SharedBindingTargetRegistry;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.Input;
 import org.springframework.cloud.stream.annotation.Output;
@@ -64,9 +63,6 @@ public class BindableProxyFactory
 
 	@Value("${" + InternalPropertyNames.NAMESPACE_PROPERTY_NAME + ":}")
 	private String namespace;
-
-	@Autowired(required = false)
-	private SharedBindingTargetRegistry sharedBindingTargetRegistry;
 
 	@Autowired
 	private Map<String, BindingTargetFactory> bindingTargetFactories;
@@ -126,17 +122,10 @@ public class BindableProxyFactory
 					String name = BindingBeanDefinitionRegistryUtils
 							.getBindingTargetName(input, method);
 					Class<?> returnType = method.getReturnType();
-					Object sharedBindingTarget = locateSharedBindingTarget(name,
-							returnType);
-					if (sharedBindingTarget != null) {
-						BindableProxyFactory.this.inputHolders.put(name,
-								new BoundTargetHolder(sharedBindingTarget, false));
-					}
-					else {
-						BindableProxyFactory.this.inputHolders.put(name,
-								new BoundTargetHolder(getBindingTargetFactory(returnType)
-										.createInput(name), true));
-					}
+
+					BindableProxyFactory.this.inputHolders.put(name,
+							new BoundTargetHolder(getBindingTargetFactory(returnType)
+									.createInput(name), true));
 				}
 			}
 		});
@@ -148,17 +137,10 @@ public class BindableProxyFactory
 					String name = BindingBeanDefinitionRegistryUtils
 							.getBindingTargetName(output, method);
 					Class<?> returnType = method.getReturnType();
-					Object sharedBindingTarget = locateSharedBindingTarget(name,
-							returnType);
-					if (sharedBindingTarget != null) {
-						BindableProxyFactory.this.outputHolders.put(name,
-								new BoundTargetHolder(sharedBindingTarget, false));
-					}
-					else {
-						BindableProxyFactory.this.outputHolders.put(name,
-								new BoundTargetHolder(getBindingTargetFactory(returnType)
-										.createOutput(name), true));
-					}
+
+					BindableProxyFactory.this.outputHolders.put(name,
+							new BoundTargetHolder(getBindingTargetFactory(returnType)
+									.createOutput(name), true));
 				}
 			}
 		});
@@ -193,17 +175,6 @@ public class BindableProxyFactory
 										candidateBindingTargetFactories));
 			}
 		}
-	}
-
-	private <T> T locateSharedBindingTarget(String name, Class<T> bindingTargetType) {
-		return this.sharedBindingTargetRegistry != null
-				? this.sharedBindingTargetRegistry.get(
-						getNamespacePrefixedBindingTargetName(name), bindingTargetType)
-				: null;
-	}
-
-	private String getNamespacePrefixedBindingTargetName(String name) {
-		return this.namespace + "." + name;
 	}
 
 	@Override
