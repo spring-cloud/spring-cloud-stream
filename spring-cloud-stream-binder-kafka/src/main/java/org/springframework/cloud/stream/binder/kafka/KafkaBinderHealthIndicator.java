@@ -45,6 +45,7 @@ import org.springframework.scheduling.concurrent.CustomizableThreadFactory;
  * @author Gary Russell
  * @author Laur Aliste
  * @author Soby Chacko
+ * @author Vladislav Fefelov
  */
 public class KafkaBinderHealthIndicator implements HealthIndicator, DisposableBean {
 
