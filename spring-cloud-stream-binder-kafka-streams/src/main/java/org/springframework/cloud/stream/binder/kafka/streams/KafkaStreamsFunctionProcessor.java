@@ -30,6 +30,7 @@ import java.util.function.Function;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.kafka.common.serialization.Serde;
+import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.common.utils.Bytes;
 import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.StreamsConfig;
@@ -94,6 +95,8 @@ public class KafkaStreamsFunctionProcessor implements ApplicationContextAware {
 	private Set<String> origInputs = new TreeSet<>();
 	private Set<String> origOutputs = new TreeSet<>();
 
+	private ResolvableType outboundResolvableType;
+
 	public KafkaStreamsFunctionProcessor(BindingServiceProperties bindingServiceProperties,
 										KafkaStreamsExtendedBindingProperties kafkaStreamsExtendedBindingProperties,
 										KeyValueSerdeResolver keyValueSerdeResolver,
@@ -132,18 +135,20 @@ public class KafkaStreamsFunctionProcessor implements ApplicationContextAware {
 		resolvableTypeMap.put(next, resolvableType.getGeneric(0));
 		origInputs.remove(next);
 
+		ResolvableType iterableResType = resolvableType;
 		for (int i = 1; i < inputCount; i++) {
 			if (iterator.hasNext()) {
-				ResolvableType generic = resolvableType.getGeneric(1);
-				if (generic.getRawClass() != null &&
-						(generic.getRawClass().equals(Function.class) ||
-								generic.getRawClass().equals(Consumer.class))) {
+				iterableResType = iterableResType.getGeneric(1);
+				if (iterableResType.getRawClass() != null &&
+						(iterableResType.getRawClass().equals(Function.class) ||
+								iterableResType.getRawClass().equals(Consumer.class))) {
 					final String next1 = iterator.next();
-					resolvableTypeMap.put(next1, generic.getGeneric(0));
+					resolvableTypeMap.put(next1, iterableResType.getGeneric(0));
 					origInputs.remove(next1);
 				}
 			}
 		}
+		outboundResolvableType = iterableResType.getGeneric(1);
 		return resolvableTypeMap;
 	}
 
@@ -184,6 +189,8 @@ public class KafkaStreamsFunctionProcessor implements ApplicationContextAware {
 					i++;
 				}
 				if (result != null) {
+					kafkaStreamsBindingInformationCatalogue.setOutboundKStreamResolvable(
+							outboundResolvableType != null ? outboundResolvableType : resolvableType.getGeneric(1));
 					final Set<String> outputs = new TreeSet<>(origOutputs);
 					final Iterator<String> iterator = outputs.iterator();
 
@@ -251,9 +258,17 @@ public class KafkaStreamsFunctionProcessor implements ApplicationContextAware {
 					KafkaStreamsConsumerProperties extendedConsumerProperties =
 							this.kafkaStreamsExtendedBindingProperties.getExtendedConsumerProperties(input);
 					//get state store spec
-					Serde<?> keySerde = this.keyValueSerdeResolver.getInboundKeySerde(extendedConsumerProperties);
-					Serde<?> valueSerde = this.keyValueSerdeResolver.getInboundValueSerde(
-							bindingProperties.getConsumer(), extendedConsumerProperties);
+
+					Serde<?> keySerde = this.keyValueSerdeResolver.getInboundKeySerde(extendedConsumerProperties, stringResolvableTypeMap.get(input));
+					Serde<?> valueSerde;
+
+					if (bindingServiceProperties.getConsumerProperties(input).isUseNativeDecoding()) {
+						valueSerde = this.keyValueSerdeResolver.getInboundValueSerde(
+								bindingProperties.getConsumer(), extendedConsumerProperties, stringResolvableTypeMap.get(input));
+					}
+					else {
+						valueSerde = Serdes.ByteArray();
+					}
 
 					final KafkaConsumerProperties.StartOffset startOffset = extendedConsumerProperties.getStartOffset();
 					Topology.AutoOffsetReset autoOffsetReset = null;

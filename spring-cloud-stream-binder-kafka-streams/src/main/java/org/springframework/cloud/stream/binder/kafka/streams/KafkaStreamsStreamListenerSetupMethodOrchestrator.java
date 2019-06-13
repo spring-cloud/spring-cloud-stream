@@ -28,6 +28,7 @@ import java.util.Properties;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.kafka.common.serialization.Serde;
+import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.common.utils.Bytes;
 import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.StreamsConfig;
@@ -64,6 +65,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.MethodParameter;
+import org.springframework.core.ResolvableType;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.kafka.config.KafkaStreamsConfiguration;
 import org.springframework.kafka.config.StreamsBuilderFactoryBean;
@@ -190,6 +192,7 @@ class KafkaStreamsStreamListenerSetupMethodOrchestrator
 					Assert.isTrue(methodAnnotatedOutboundNames.length == 1,
 							"Result does not match with the number of declared outbounds");
 				}
+				kafkaStreamsBindingInformationCatalogue.setOutboundKStreamResolvable(ResolvableType.forMethodReturnType(method));
 				if (result.getClass().isArray()) {
 					Object[] outboundKStreams = (Object[]) result;
 					int i = 0;
@@ -268,10 +271,19 @@ class KafkaStreamsStreamListenerSetupMethodOrchestrator
 							.getExtendedConsumerProperties(inboundName);
 					// get state store spec
 					KafkaStreamsStateStoreProperties spec = buildStateStoreSpec(method);
+
 					Serde<?> keySerde = this.keyValueSerdeResolver
-							.getInboundKeySerde(extendedConsumerProperties);
-					Serde<?> valueSerde = this.keyValueSerdeResolver.getInboundValueSerde(
-							bindingProperties.getConsumer(), extendedConsumerProperties);
+							.getInboundKeySerde(extendedConsumerProperties, ResolvableType.forMethodParameter(methodParameter));
+					Serde<?> valueSerde;
+
+					if (bindingServiceProperties.getConsumerProperties(inboundName).isUseNativeDecoding()) {
+						valueSerde = this.keyValueSerdeResolver.getInboundValueSerde(
+								bindingProperties.getConsumer(), extendedConsumerProperties, ResolvableType.forMethodParameter(methodParameter));
+					}
+					else {
+						//keySerde = Serdes.ByteArray();
+						valueSerde = Serdes.ByteArray();
+					}
 
 					final KafkaConsumerProperties.StartOffset startOffset = extendedConsumerProperties
 							.getStartOffset();

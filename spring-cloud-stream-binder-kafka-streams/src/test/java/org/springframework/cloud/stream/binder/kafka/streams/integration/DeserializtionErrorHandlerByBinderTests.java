@@ -111,8 +111,8 @@ public abstract class DeserializtionErrorHandlerByBinderTests {
 					+ "=org.apache.kafka.common.serialization.Serdes$StringSerde",
 			"spring.cloud.stream.kafka.streams.binder.configuration.default.value.serde"
 					+ "=org.apache.kafka.common.serialization.Serdes$StringSerde",
-			"spring.cloud.stream.kafka.streams.bindings.output.producer.keySerde"
-					+ "=org.apache.kafka.common.serialization.Serdes$IntegerSerde",
+//			"spring.cloud.stream.kafka.streams.bindings.output.producer.keySerde"
+//					+ "=org.apache.kafka.common.serialization.Serdes$IntegerSerde",
 			"spring.cloud.stream.kafka.streams.binder.serdeError=sendToDlq",
 			"spring.cloud.stream.kafka.streams.bindings.input.consumer.application-id"
 					+ "=deserializationByBinderAndDlqTests",
@@ -160,8 +160,8 @@ public abstract class DeserializtionErrorHandlerByBinderTests {
 					+ "=org.apache.kafka.common.serialization.Serdes$StringSerde",
 			"spring.cloud.stream.kafka.streams.binder.configuration.default.value.serde"
 					+ "=org.apache.kafka.common.serialization.Serdes$StringSerde",
-			"spring.cloud.stream.kafka.streams.bindings.output.producer.keySerde"
-					+ "=org.apache.kafka.common.serialization.Serdes$IntegerSerde",
+//			"spring.cloud.stream.kafka.streams.bindings.output.producer.keySerde"
+//					+ "=org.apache.kafka.common.serialization.Serdes$IntegerSerde",
 			"spring.cloud.stream.kafka.streams.binder.serdeError=sendToDlq",
 			"spring.cloud.stream.kafka.streams.bindings.input.consumer.application-id"
 					+ "=deserializationByBinderAndDlqTestsWithMultipleInputs",

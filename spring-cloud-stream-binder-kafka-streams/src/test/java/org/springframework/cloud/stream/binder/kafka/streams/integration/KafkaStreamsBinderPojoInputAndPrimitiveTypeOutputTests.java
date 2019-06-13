@@ -97,13 +97,13 @@ public class KafkaStreamsBinderPojoInputAndPrimitiveTypeOutputTests {
 						+ "org.apache.kafka.common.serialization.Serdes$StringSerde",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.default.value.serde="
 						+ "org.apache.kafka.common.serialization.Serdes$StringSerde",
-				"--spring.cloud.stream.kafka.streams.bindings.output.producer.keySerde="
-						+ "org.apache.kafka.common.serialization.Serdes$IntegerSerde",
-				"--spring.cloud.stream.kafka.streams.bindings.output.producer.valueSerde="
-						+ "org.apache.kafka.common.serialization.Serdes$LongSerde",
-				"--spring.cloud.stream.kafka.streams.bindings.input.consumer.valueSerde=org.springframework.kafka.support.serializer.JsonSerde",
-				"--spring.cloud.stream.kafka.streams.bindings.input.consumer.configuration.spring.json.value.default.type=" +
-						"org.springframework.cloud.stream.binder.kafka.streams.integration.KafkaStreamsBinderPojoInputAndPrimitiveTypeOutputTests.Product",
+//				"--spring.cloud.stream.kafka.streams.bindings.output.producer.keySerde="
+//						+ "org.apache.kafka.common.serialization.Serdes$IntegerSerde",
+//				"--spring.cloud.stream.kafka.streams.bindings.output.producer.valueSerde="
+//						+ "org.apache.kafka.common.serialization.Serdes$LongSerde",
+//				"--spring.cloud.stream.kafka.streams.bindings.input.consumer.valueSerde=org.springframework.kafka.support.serializer.JsonSerde",
+//				"--spring.cloud.stream.kafka.streams.bindings.input.consumer.configuration.spring.json.value.default.type=" +
+//						"org.springframework.cloud.stream.binder.kafka.streams.integration.KafkaStreamsBinderPojoInputAndPrimitiveTypeOutputTests.Product",
 				"--spring.cloud.stream.kafka.streams.bindings.input.consumer.applicationId="
 						+ "KafkaStreamsBinderPojoInputAndPrimitiveTypeOutputTests-xyz",
 				"--spring.cloud.stream.kafka.streams.binder.brokers="

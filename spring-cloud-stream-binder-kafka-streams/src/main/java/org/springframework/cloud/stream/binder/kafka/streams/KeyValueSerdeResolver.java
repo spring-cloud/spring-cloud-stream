@@ -21,12 +21,17 @@ import java.util.Map;
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.common.utils.Utils;
+import org.apache.kafka.streams.kstream.GlobalKTable;
+import org.apache.kafka.streams.kstream.KStream;
+import org.apache.kafka.streams.kstream.KTable;
 
 import org.springframework.cloud.stream.binder.ConsumerProperties;
 import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsBinderConfigurationProperties;
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsConsumerProperties;
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsProducerProperties;
+import org.springframework.core.ResolvableType;
+import org.springframework.kafka.support.serializer.JsonSerde;
 import org.springframework.util.StringUtils;
 
 /**
@@ -78,6 +83,13 @@ public class KeyValueSerdeResolver {
 		return getKeySerde(keySerdeString);
 	}
 
+	public Serde<?> getInboundKeySerde(
+			KafkaStreamsConsumerProperties extendedConsumerProperties, ResolvableType resolvableType) {
+		String keySerdeString = extendedConsumerProperties.getKeySerde();
+
+		return getKeySerde(keySerdeString, resolvableType);
+	}
+
 	/**
 	 * Provide the {@link Serde} for inbound value.
 	 * @param consumerProperties {@link ConsumerProperties} on binding
@@ -105,6 +117,27 @@ public class KeyValueSerdeResolver {
 		return valueSerde;
 	}
 
+	public Serde<?> getInboundValueSerde(ConsumerProperties consumerProperties,
+										KafkaStreamsConsumerProperties extendedConsumerProperties,
+										ResolvableType resolvableType) {
+		Serde<?> valueSerde;
+
+		String valueSerdeString = extendedConsumerProperties.getValueSerde();
+		try {
+			if (consumerProperties != null && consumerProperties.isUseNativeDecoding()) {
+				valueSerde = getValueSerde(valueSerdeString, resolvableType);
+			}
+			else {
+				valueSerde = Serdes.ByteArray();
+			}
+			valueSerde.configure(this.streamConfigGlobalProperties, false);
+		}
+		catch (ClassNotFoundException ex) {
+			throw new IllegalStateException("Serde class not found: ", ex);
+		}
+		return valueSerde;
+	}
+
 	/**
 	 * Provide the {@link Serde} for outbound key.
 	 * @param properties binding level extended {@link KafkaStreamsProducerProperties}
@@ -113,6 +146,11 @@ public class KeyValueSerdeResolver {
 	public Serde<?> getOuboundKeySerde(KafkaStreamsProducerProperties properties) {
 		return getKeySerde(properties.getKeySerde());
 	}
+
+	public Serde<?> getOuboundKeySerde(KafkaStreamsProducerProperties properties, ResolvableType resolvableType) {
+		return getKeySerde(properties.getKeySerde(), resolvableType);
+	}
+
 
 	/**
 	 * Provide the {@link Serde} for outbound value.
@@ -128,6 +166,25 @@ public class KeyValueSerdeResolver {
 			if (producerProperties.isUseNativeEncoding()) {
 				valueSerde = getValueSerde(
 						kafkaStreamsProducerProperties.getValueSerde());
+			}
+			else {
+				valueSerde = Serdes.ByteArray();
+			}
+			valueSerde.configure(this.streamConfigGlobalProperties, false);
+		}
+		catch (ClassNotFoundException ex) {
+			throw new IllegalStateException("Serde class not found: ", ex);
+		}
+		return valueSerde;
+	}
+
+	public Serde<?> getOutboundValueSerde(ProducerProperties producerProperties,
+										KafkaStreamsProducerProperties kafkaStreamsProducerProperties, ResolvableType resolvableType) {
+		Serde<?> valueSerde;
+		try {
+			if (producerProperties.isUseNativeEncoding()) {
+				valueSerde = getValueSerde(
+						kafkaStreamsProducerProperties.getValueSerde(), resolvableType);
 			}
 			else {
 				valueSerde = Serdes.ByteArray();
@@ -186,6 +243,76 @@ public class KeyValueSerdeResolver {
 		return keySerde;
 	}
 
+	private Serde<?> getKeySerde(String keySerdeString, ResolvableType resolvableType) {
+		Serde<?> keySerde = null;
+		try {
+			if (StringUtils.hasText(keySerdeString)) {
+				keySerde = Utils.newInstance(keySerdeString, Serde.class);
+			}
+			else {
+				if (resolvableType != null &&
+						(isResolvalbeKafkaStreamsType(resolvableType) || isResolvableKStreamArrayType(resolvableType))) {
+					ResolvableType generic = resolvableType.isArray() ? resolvableType.getComponentType().getGeneric(0) : resolvableType.getGeneric(0);
+					keySerde = getSerde(keySerde, generic);
+				}
+				if (keySerde == null) {
+					keySerde = this.binderConfigurationProperties.getConfiguration()
+							.containsKey("default.key.serde")
+							? Utils.newInstance(this.binderConfigurationProperties
+									.getConfiguration().get("default.key.serde"),
+							Serde.class)
+							: Serdes.ByteArray();
+				}
+			}
+			keySerde.configure(this.streamConfigGlobalProperties, true);
+		}
+		catch (ClassNotFoundException ex) {
+			throw new IllegalStateException("Serde class not found: ", ex);
+		}
+		return keySerde;
+	}
+
+	private boolean isResolvableKStreamArrayType(ResolvableType resolvableType) {
+		return resolvableType.isArray() &&
+				KStream.class.isAssignableFrom(resolvableType.getComponentType().getRawClass());
+	}
+
+	private boolean isResolvalbeKafkaStreamsType(ResolvableType resolvableType) {
+		return resolvableType.getRawClass() != null && (KStream.class.isAssignableFrom(resolvableType.getRawClass()) || KTable.class.isAssignableFrom(resolvableType.getRawClass()) ||
+				GlobalKTable.class.isAssignableFrom(resolvableType.getRawClass()));
+	}
+
+	private Serde<?> getSerde(Serde<?> keySerde, ResolvableType generic) {
+		if (generic.getRawClass() != null) {
+			if (Integer.class.isAssignableFrom(generic.getRawClass())) {
+				keySerde = Serdes.Integer();
+			}
+			else if (Long.class.isAssignableFrom(generic.getRawClass())) {
+				keySerde = Serdes.Long();
+			}
+			else if (Short.class.isAssignableFrom(generic.getRawClass())) {
+				keySerde = Serdes.Short();
+			}
+			else if (Double.class.isAssignableFrom(generic.getRawClass())) {
+				keySerde = Serdes.Double();
+			}
+			else if (Float.class.isAssignableFrom(generic.getRawClass())) {
+				keySerde = Serdes.Float();
+			}
+			else if (byte[].class.isAssignableFrom(generic.getRawClass())) {
+				keySerde = Serdes.ByteArray();
+			}
+			else if (String.class.isAssignableFrom(generic.getRawClass())) {
+				keySerde = Serdes.String();
+			}
+			else {
+				keySerde = new JsonSerde(generic.getRawClass());
+			}
+		}
+		return keySerde;
+	}
+
+
 	private Serde<?> getValueSerde(String valueSerdeString)
 			throws ClassNotFoundException {
 		Serde<?> valueSerde;
@@ -199,6 +326,34 @@ public class KeyValueSerdeResolver {
 									.getConfiguration().get("default.value.serde"),
 									Serde.class)
 							: Serdes.ByteArray();
+		}
+		return valueSerde;
+	}
+
+	@SuppressWarnings("unchecked")
+	private Serde<?> getValueSerde(String valueSerdeString, ResolvableType resolvableType)
+			throws ClassNotFoundException {
+		Serde<?> valueSerde = null;
+		if (StringUtils.hasText(valueSerdeString)) {
+			valueSerde = Utils.newInstance(valueSerdeString, Serde.class);
+		}
+		else {
+
+			if (resolvableType != null && ((isResolvalbeKafkaStreamsType(resolvableType)) ||
+					(isResolvableKStreamArrayType(resolvableType)))) {
+				ResolvableType generic = resolvableType.isArray() ? resolvableType.getComponentType().getGeneric(1) : resolvableType.getGeneric(1);
+				valueSerde = getSerde(valueSerde, generic);
+			}
+
+			if (valueSerde == null) {
+
+				valueSerde = this.binderConfigurationProperties.getConfiguration()
+						.containsKey("default.value.serde")
+						? Utils.newInstance(this.binderConfigurationProperties
+								.getConfiguration().get("default.value.serde"),
+						Serde.class)
+						: Serdes.ByteArray();
+			}
 		}
 		return valueSerde;
 	}

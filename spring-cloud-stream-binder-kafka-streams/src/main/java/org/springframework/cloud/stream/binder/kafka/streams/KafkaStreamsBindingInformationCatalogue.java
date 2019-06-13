@@ -27,6 +27,7 @@ import org.apache.kafka.streams.kstream.KStream;
 import org.springframework.cloud.stream.binder.ConsumerProperties;
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsConsumerProperties;
 import org.springframework.cloud.stream.config.BindingProperties;
+import org.springframework.core.ResolvableType;
 import org.springframework.kafka.config.StreamsBuilderFactoryBean;
 
 /**
@@ -45,6 +46,8 @@ class KafkaStreamsBindingInformationCatalogue {
 	private final Map<KStream<?, ?>, KafkaStreamsConsumerProperties> consumerProperties = new ConcurrentHashMap<>();
 
 	private final Set<StreamsBuilderFactoryBean> streamsBuilderFactoryBeans = new HashSet<>();
+
+	private ResolvableType outboundKStreamResolvable;
 
 	/**
 	 * For a given bounded {@link KStream}, retrieve it's corresponding destination on the
@@ -122,4 +125,11 @@ class KafkaStreamsBindingInformationCatalogue {
 		return this.streamsBuilderFactoryBeans;
 	}
 
+	public void setOutboundKStreamResolvable(ResolvableType outboundResolvable) {
+		this.outboundKStreamResolvable = outboundResolvable;
+	}
+
+	public ResolvableType getOutboundKStreamResolvable() {
+		return outboundKStreamResolvable;
+	}
 }

@@ -48,7 +48,7 @@ import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.serializer.JsonDeserializer;
-import org.springframework.kafka.support.serializer.JsonSerde;
+import org.springframework.kafka.support.serializer.JsonSerializer;
 import org.springframework.kafka.test.EmbeddedKafkaBroker;
 import org.springframework.kafka.test.rule.EmbeddedKafkaRule;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
@@ -81,26 +81,26 @@ public class StreamToGlobalKTableJoinIntegrationTests {
 				"--spring.cloud.stream.bindings.input-x.destination=customers",
 				"--spring.cloud.stream.bindings.input-y.destination=products",
 				"--spring.cloud.stream.bindings.output.destination=enriched-order",
-				"--spring.cloud.stream.kafka.streams.bindings.input.consumer.keySerde"
-						+ "=org.apache.kafka.common.serialization.Serdes$LongSerde",
-				"--spring.cloud.stream.kafka.streams.bindings.input.consumer.valueSerde"
-						+ "=org.springframework.cloud.stream.binder.kafka.streams.integration"
-						+ ".StreamToGlobalKTableJoinIntegrationTests$OrderSerde",
-				"--spring.cloud.stream.kafka.streams.bindings.input-x.consumer.keySerde"
-						+ "=org.apache.kafka.common.serialization.Serdes$LongSerde",
-				"--spring.cloud.stream.kafka.streams.bindings.input-x.consumer.valueSerde"
-						+ "=org.springframework.cloud.stream.binder.kafka.streams.integration."
-						+ "StreamToGlobalKTableJoinIntegrationTests$CustomerSerde",
-				"--spring.cloud.stream.kafka.streams.bindings.input-y.consumer.keySerde"
-						+ "=org.apache.kafka.common.serialization.Serdes$LongSerde",
-				"--spring.cloud.stream.kafka.streams.bindings.input-y.consumer.valueSerde"
-						+ "=org.springframework.cloud.stream.binder.kafka.streams."
-						+ "integration.StreamToGlobalKTableJoinIntegrationTests$ProductSerde",
-				"--spring.cloud.stream.kafka.streams.bindings.output.producer.keySerde"
-						+ "=org.apache.kafka.common.serialization.Serdes$LongSerde",
-				"--spring.cloud.stream.kafka.streams.bindings.output.producer.valueSerde"
-						+ "=org.springframework.cloud.stream.binder.kafka.streams.integration"
-						+ ".StreamToGlobalKTableJoinIntegrationTests$EnrichedOrderSerde",
+//				"--spring.cloud.stream.kafka.streams.bindings.input.consumer.keySerde"
+//						+ "=org.apache.kafka.common.serialization.Serdes$LongSerde",
+//				"--spring.cloud.stream.kafka.streams.bindings.input.consumer.valueSerde"
+//						+ "=org.springframework.cloud.stream.binder.kafka.streams.integration"
+//						+ ".StreamToGlobalKTableJoinIntegrationTests$OrderSerde",
+//				"--spring.cloud.stream.kafka.streams.bindings.input-x.consumer.keySerde"
+//						+ "=org.apache.kafka.common.serialization.Serdes$LongSerde",
+//				"--spring.cloud.stream.kafka.streams.bindings.input-x.consumer.valueSerde"
+//						+ "=org.springframework.cloud.stream.binder.kafka.streams.integration."
+//						+ "StreamToGlobalKTableJoinIntegrationTests$CustomerSerde",
+//				"--spring.cloud.stream.kafka.streams.bindings.input-y.consumer.keySerde"
+//						+ "=org.apache.kafka.common.serialization.Serdes$LongSerde",
+//				"--spring.cloud.stream.kafka.streams.bindings.input-y.consumer.valueSerde"
+//						+ "=org.springframework.cloud.stream.binder.kafka.streams."
+//						+ "integration.StreamToGlobalKTableJoinIntegrationTests$ProductSerde",
+//				"--spring.cloud.stream.kafka.streams.bindings.output.producer.keySerde"
+//						+ "=org.apache.kafka.common.serialization.Serdes$LongSerde",
+//				"--spring.cloud.stream.kafka.streams.bindings.output.producer.valueSerde"
+//						+ "=org.springframework.cloud.stream.binder.kafka.streams.integration"
+//						+ ".StreamToGlobalKTableJoinIntegrationTests$EnrichedOrderSerde",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.default.key.serde"
 						+ "=org.apache.kafka.common.serialization.Serdes$StringSerde",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.default.value.serde"
@@ -116,9 +116,8 @@ public class StreamToGlobalKTableJoinIntegrationTests {
 					.producerProps(embeddedKafka);
 			senderPropsCustomer.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG,
 					LongSerializer.class);
-			CustomerSerde customerSerde = new CustomerSerde();
 			senderPropsCustomer.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG,
-					customerSerde.serializer().getClass());
+					JsonSerializer.class);
 
 			DefaultKafkaProducerFactory<Long, Customer> pfCustomer = new DefaultKafkaProducerFactory<>(
 					senderPropsCustomer);
@@ -135,9 +134,8 @@ public class StreamToGlobalKTableJoinIntegrationTests {
 					.producerProps(embeddedKafka);
 			senderPropsProduct.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG,
 					LongSerializer.class);
-			ProductSerde productSerde = new ProductSerde();
 			senderPropsProduct.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG,
-					productSerde.serializer().getClass());
+					JsonSerializer.class);
 
 			DefaultKafkaProducerFactory<Long, Product> pfProduct = new DefaultKafkaProducerFactory<>(
 					senderPropsProduct);
@@ -155,9 +153,8 @@ public class StreamToGlobalKTableJoinIntegrationTests {
 					.producerProps(embeddedKafka);
 			senderPropsOrder.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG,
 					LongSerializer.class);
-			OrderSerde orderSerde = new OrderSerde();
 			senderPropsOrder.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG,
-					orderSerde.serializer().getClass());
+					JsonSerializer.class);
 
 			DefaultKafkaProducerFactory<Long, Order> pfOrder = new DefaultKafkaProducerFactory<>(
 					senderPropsOrder);
@@ -176,9 +173,8 @@ public class StreamToGlobalKTableJoinIntegrationTests {
 			consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
 			consumerProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG,
 					LongDeserializer.class);
-			EnrichedOrderSerde enrichedOrderSerde = new EnrichedOrderSerde();
 			consumerProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,
-					enrichedOrderSerde.deserializer().getClass());
+					JsonDeserializer.class);
 			consumerProps.put(JsonDeserializer.VALUE_DEFAULT_TYPE,
 					"org.springframework.cloud.stream.binder.kafka.streams.integration."
 							+ "StreamToGlobalKTableJoinIntegrationTests.EnrichedOrder");
@@ -368,20 +364,20 @@ public class StreamToGlobalKTableJoinIntegrationTests {
 
 	}
 
-	public static class OrderSerde extends JsonSerde<Order> {
-
-	}
-
-	public static class CustomerSerde extends JsonSerde<Customer> {
-
-	}
-
-	public static class ProductSerde extends JsonSerde<Product> {
-
-	}
-
-	public static class EnrichedOrderSerde extends JsonSerde<EnrichedOrder> {
-
-	}
+//	public static class OrderSerde extends JsonSerde<Order> {
+//
+//	}
+//
+//	public static class CustomerSerde extends JsonSerde<Customer> {
+//
+//	}
+//
+//	public static class ProductSerde extends JsonSerde<Product> {
+//
+//	}
+//
+//	public static class EnrichedOrderSerde extends JsonSerde<EnrichedOrder> {
+//
+//	}
 
 }

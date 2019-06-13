@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2018 the original author or authors.
+ * Copyright 2017-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import java.util.Map;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.kafka.common.serialization.Serde;
+import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.Produced;
 
@@ -120,9 +121,15 @@ class KStreamBinder extends
 		this.kafkaTopicProvisioner.provisionProducerDestination(name,
 				extendedProducerProperties);
 		Serde<?> keySerde = this.keyValueSerdeResolver
-				.getOuboundKeySerde(properties.getExtension());
-		Serde<?> valueSerde = this.keyValueSerdeResolver.getOutboundValueSerde(properties,
-				properties.getExtension());
+				.getOuboundKeySerde(properties.getExtension(), kafkaStreamsBindingInformationCatalogue.getOutboundKStreamResolvable());
+		Serde<?> valueSerde;
+		if (properties.isUseNativeEncoding()) {
+			valueSerde = this.keyValueSerdeResolver.getOutboundValueSerde(properties,
+					properties.getExtension(), kafkaStreamsBindingInformationCatalogue.getOutboundKStreamResolvable());
+		}
+		else {
+			valueSerde = Serdes.ByteArray();
+		}
 		to(properties.isUseNativeEncoding(), name, outboundBindTarget,
 				(Serde<Object>) keySerde, (Serde<Object>) valueSerde);
 		return new DefaultBinding<>(name, null, outboundBindTarget, null);

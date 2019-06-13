@@ -96,18 +96,18 @@ public class StreamToTableJoinIntegrationTests {
 				"--spring.cloud.stream.bindings.input-x.destination=user-regions-1",
 				"--spring.cloud.stream.bindings.output.destination=output-topic-1",
 
-				"--spring.cloud.stream.kafka.streams.bindings.input.consumer.keySerde"
-						+ "=org.apache.kafka.common.serialization.Serdes$StringSerde",
-				"--spring.cloud.stream.kafka.streams.bindings.input.consumer.valueSerde"
-						+ "=org.apache.kafka.common.serialization.Serdes$LongSerde",
-				"--spring.cloud.stream.kafka.streams.bindings.inputX.consumer.keySerde"
-						+ "=org.apache.kafka.common.serialization.Serdes$StringSerde",
-				"--spring.cloud.stream.kafka.streams.bindings.inputX.consumer.valueSerde"
-						+ "=org.apache.kafka.common.serialization.Serdes$StringSerde",
-				"--spring.cloud.stream.kafka.streams.bindings.output.producer.keySerde"
-						+ "=org.apache.kafka.common.serialization.Serdes$StringSerde",
-				"--spring.cloud.stream.kafka.streams.bindings.output.producer.valueSerde"
-						+ "=org.apache.kafka.common.serialization.Serdes$LongSerde",
+//				"--spring.cloud.stream.kafka.streams.bindings.input.consumer.keySerde"
+//						+ "=org.apache.kafka.common.serialization.Serdes$StringSerde",
+//				"--spring.cloud.stream.kafka.streams.bindings.input.consumer.valueSerde"
+//						+ "=org.apache.kafka.common.serialization.Serdes$LongSerde",
+//				"--spring.cloud.stream.kafka.streams.bindings.inputX.consumer.keySerde"
+//						+ "=org.apache.kafka.common.serialization.Serdes$StringSerde",
+//				"--spring.cloud.stream.kafka.streams.bindings.inputX.consumer.valueSerde"
+//						+ "=org.apache.kafka.common.serialization.Serdes$StringSerde",
+//				"--spring.cloud.stream.kafka.streams.bindings.output.producer.keySerde"
+//						+ "=org.apache.kafka.common.serialization.Serdes$StringSerde",
+//				"--spring.cloud.stream.kafka.streams.bindings.output.producer.valueSerde"
+//						+ "=org.apache.kafka.common.serialization.Serdes$LongSerde",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.default.key.serde"
 						+ "=org.apache.kafka.common.serialization.Serdes$StringSerde",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.default.value.serde"
@@ -247,18 +247,18 @@ public class StreamToTableJoinIntegrationTests {
 
 				"--spring.cloud.stream.kafka.streams.binder.configuration.auto.offset.reset=latest",
 				"--spring.cloud.stream.kafka.streams.bindings.input.consumer.startOffset=earliest",
-				"--spring.cloud.stream.kafka.streams.bindings.input.consumer.keySerde"
-						+ "=org.apache.kafka.common.serialization.Serdes$StringSerde",
-				"--spring.cloud.stream.kafka.streams.bindings.input.consumer.valueSerde"
-						+ "=org.apache.kafka.common.serialization.Serdes$LongSerde",
-				"--spring.cloud.stream.kafka.streams.bindings.inputX.consumer.keySerde"
-						+ "=org.apache.kafka.common.serialization.Serdes$StringSerde",
-				"--spring.cloud.stream.kafka.streams.bindings.inputX.consumer.valueSerde"
-						+ "=org.apache.kafka.common.serialization.Serdes$StringSerde",
-				"--spring.cloud.stream.kafka.streams.bindings.output.producer.keySerde"
-						+ "=org.apache.kafka.common.serialization.Serdes$StringSerde",
-				"--spring.cloud.stream.kafka.streams.bindings.output.producer.valueSerde"
-						+ "=org.apache.kafka.common.serialization.Serdes$LongSerde",
+//				"--spring.cloud.stream.kafka.streams.bindings.input.consumer.keySerde"
+//						+ "=org.apache.kafka.common.serialization.Serdes$StringSerde",
+//				"--spring.cloud.stream.kafka.streams.bindings.input.consumer.valueSerde"
+//						+ "=org.apache.kafka.common.serialization.Serdes$LongSerde",
+//				"--spring.cloud.stream.kafka.streams.bindings.inputX.consumer.keySerde"
+//						+ "=org.apache.kafka.common.serialization.Serdes$StringSerde",
+//				"--spring.cloud.stream.kafka.streams.bindings.inputX.consumer.valueSerde"
+//						+ "=org.apache.kafka.common.serialization.Serdes$StringSerde",
+//				"--spring.cloud.stream.kafka.streams.bindings.output.producer.keySerde"
+//						+ "=org.apache.kafka.common.serialization.Serdes$StringSerde",
+//				"--spring.cloud.stream.kafka.streams.bindings.output.producer.valueSerde"
+//						+ "=org.apache.kafka.common.serialization.Serdes$LongSerde",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.default.key.serde"
 						+ "=org.apache.kafka.common.serialization.Serdes$StringSerde",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.default.value.serde"

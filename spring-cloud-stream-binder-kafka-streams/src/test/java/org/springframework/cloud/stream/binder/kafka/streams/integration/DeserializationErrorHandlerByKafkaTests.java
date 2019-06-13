@@ -109,7 +109,7 @@ public abstract class DeserializationErrorHandlerByKafkaTests {
 			"spring.cloud.stream.kafka.streams.bindings.input.consumer.application-id=deser-kafka-dlq",
 			"spring.cloud.stream.bindings.input.group=group",
 			"spring.cloud.stream.kafka.streams.binder.serdeError=sendToDlq",
-			"spring.cloud.stream.kafka.streams.binder.configuration.default.value.serde="
+			"spring.cloud.stream.kafka.streams.bindings.input.consumer.valueSerde="
 					+ "org.apache.kafka.common.serialization.Serdes$IntegerSerde" }, webEnvironment = SpringBootTest.WebEnvironment.NONE)
 	// @checkstyle:on
 	public static class DeserializationByKafkaAndDlqTests
@@ -148,10 +148,11 @@ public abstract class DeserializationErrorHandlerByKafkaTests {
 	// @checkstyle:off
 	@SpringBootTest(properties = {
 			"spring.cloud.stream.bindings.input.destination=word1,word2",
-			"spring.cloud.stream.kafka.streams.default.consumer.applicationId=deser-kafka-dlq-multi-input",
+			"spring.cloud.stream.kafka.streams.bindings.input.consumer.application-id=deser-kafka-dlq-multi-input",
+			//"spring.cloud.stream.kafka.streams.default.consumer.applicationId=deser-kafka-dlq-multi-input",
 			"spring.cloud.stream.bindings.input.group=groupx",
 			"spring.cloud.stream.kafka.streams.binder.serdeError=sendToDlq",
-			"spring.cloud.stream.kafka.streams.binder.configuration.default.value.serde="
+			"spring.cloud.stream.kafka.streams.bindings.input.consumer.valueSerde="
 					+ "org.apache.kafka.common.serialization.Serdes$IntegerSerde" }, webEnvironment = SpringBootTest.WebEnvironment.NONE)
 	// @checkstyle:on
 	public static class DeserializationByKafkaAndDlqTestsWithMultipleInputs
