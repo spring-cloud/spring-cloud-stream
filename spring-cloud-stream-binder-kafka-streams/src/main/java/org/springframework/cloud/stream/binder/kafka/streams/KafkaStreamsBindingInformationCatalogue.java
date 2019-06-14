@@ -125,11 +125,11 @@ class KafkaStreamsBindingInformationCatalogue {
 		return this.streamsBuilderFactoryBeans;
 	}
 
-	public void setOutboundKStreamResolvable(ResolvableType outboundResolvable) {
+	void setOutboundKStreamResolvable(ResolvableType outboundResolvable) {
 		this.outboundKStreamResolvable = outboundResolvable;
 	}
 
-	public ResolvableType getOutboundKStreamResolvable() {
+	ResolvableType getOutboundKStreamResolvable() {
 		return outboundKStreamResolvable;
 	}
 }

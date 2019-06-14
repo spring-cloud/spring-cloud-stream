@@ -312,12 +312,6 @@ public class KafkaStreamsBinderSupportAutoConfiguration {
 	}
 
 	@Bean
-	public QueryableStoreRegistry queryableStoreTypeRegistry(
-			KafkaStreamsRegistry kafkaStreamsRegistry) {
-		return new QueryableStoreRegistry(kafkaStreamsRegistry);
-	}
-
-	@Bean
 	public InteractiveQueryService interactiveQueryServices(
 			KafkaStreamsRegistry kafkaStreamsRegistry,
 			KafkaStreamsBinderConfigurationProperties properties) {

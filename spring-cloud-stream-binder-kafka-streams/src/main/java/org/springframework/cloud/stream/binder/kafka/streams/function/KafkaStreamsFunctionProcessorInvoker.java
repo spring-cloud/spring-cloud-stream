@@ -42,6 +42,6 @@ class KafkaStreamsFunctionProcessorInvoker {
 	@PostConstruct
 	void invoke() {
 		resolvableTypeMap.forEach((key, value) ->
-				this.kafkaStreamsFunctionProcessor.orchestrateFunctionInvoking(value, key));
+				this.kafkaStreamsFunctionProcessor.setupFunctionInvokerForKafkaStreams(value, key));
 	}
 }

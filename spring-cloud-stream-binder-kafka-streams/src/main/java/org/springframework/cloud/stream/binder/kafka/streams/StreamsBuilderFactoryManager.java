@@ -25,7 +25,7 @@ import org.springframework.kafka.config.StreamsBuilderFactoryBean;
 /**
  * Iterate through all {@link StreamsBuilderFactoryBean} in the application context and
  * start them. As each one completes starting, register the associated KafkaStreams object
- * into {@link QueryableStoreRegistry}.
+ * into {@link InteractiveQueryService}.
  *
  * This {@link SmartLifecycle} class ensures that the bean created from it is started very
  * late through the bootstrap process by setting the phase value closer to

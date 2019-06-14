@@ -227,12 +227,7 @@ public class KeyValueSerdeResolver {
 				keySerde = Utils.newInstance(keySerdeString, Serde.class);
 			}
 			else {
-				keySerde = this.binderConfigurationProperties.getConfiguration()
-						.containsKey("default.key.serde")
-								? Utils.newInstance(this.binderConfigurationProperties
-										.getConfiguration().get("default.key.serde"),
-										Serde.class)
-								: Serdes.ByteArray();
+				keySerde = getFallbackSerde("default.key.serde");
 			}
 			keySerde.configure(this.streamConfigGlobalProperties, true);
 
@@ -253,15 +248,10 @@ public class KeyValueSerdeResolver {
 				if (resolvableType != null &&
 						(isResolvalbeKafkaStreamsType(resolvableType) || isResolvableKStreamArrayType(resolvableType))) {
 					ResolvableType generic = resolvableType.isArray() ? resolvableType.getComponentType().getGeneric(0) : resolvableType.getGeneric(0);
-					keySerde = getSerde(keySerde, generic);
+					keySerde = getSerde(generic);
 				}
 				if (keySerde == null) {
-					keySerde = this.binderConfigurationProperties.getConfiguration()
-							.containsKey("default.key.serde")
-							? Utils.newInstance(this.binderConfigurationProperties
-									.getConfiguration().get("default.key.serde"),
-							Serde.class)
-							: Serdes.ByteArray();
+					keySerde = getFallbackSerde("default.key.serde");
 				}
 			}
 			keySerde.configure(this.streamConfigGlobalProperties, true);
@@ -282,34 +272,38 @@ public class KeyValueSerdeResolver {
 				GlobalKTable.class.isAssignableFrom(resolvableType.getRawClass()));
 	}
 
-	private Serde<?> getSerde(Serde<?> keySerde, ResolvableType generic) {
+	private Serde<?> getSerde(ResolvableType generic) {
+		Serde<?> serde = null;
 		if (generic.getRawClass() != null) {
 			if (Integer.class.isAssignableFrom(generic.getRawClass())) {
-				keySerde = Serdes.Integer();
+				serde = Serdes.Integer();
 			}
 			else if (Long.class.isAssignableFrom(generic.getRawClass())) {
-				keySerde = Serdes.Long();
+				serde = Serdes.Long();
 			}
 			else if (Short.class.isAssignableFrom(generic.getRawClass())) {
-				keySerde = Serdes.Short();
+				serde = Serdes.Short();
 			}
 			else if (Double.class.isAssignableFrom(generic.getRawClass())) {
-				keySerde = Serdes.Double();
+				serde = Serdes.Double();
 			}
 			else if (Float.class.isAssignableFrom(generic.getRawClass())) {
-				keySerde = Serdes.Float();
+				serde = Serdes.Float();
 			}
 			else if (byte[].class.isAssignableFrom(generic.getRawClass())) {
-				keySerde = Serdes.ByteArray();
+				serde = Serdes.ByteArray();
 			}
 			else if (String.class.isAssignableFrom(generic.getRawClass())) {
-				keySerde = Serdes.String();
+				serde = Serdes.String();
 			}
 			else {
-				keySerde = new JsonSerde(generic.getRawClass());
+				// If the type is Object, then skip assigning the JsonSerde and let the fallback mechanism takes precedence.
+				if (!generic.getRawClass().isAssignableFrom((Object.class))) {
+					serde = new JsonSerde(generic.getRawClass());
+				}
 			}
 		}
-		return keySerde;
+		return serde;
 	}
 
 
@@ -320,14 +314,18 @@ public class KeyValueSerdeResolver {
 			valueSerde = Utils.newInstance(valueSerdeString, Serde.class);
 		}
 		else {
-			valueSerde = this.binderConfigurationProperties.getConfiguration()
-					.containsKey("default.value.serde")
-							? Utils.newInstance(this.binderConfigurationProperties
-									.getConfiguration().get("default.value.serde"),
-									Serde.class)
-							: Serdes.ByteArray();
+			valueSerde = getFallbackSerde("default.value.serde");
 		}
 		return valueSerde;
+	}
+
+	private Serde<?> getFallbackSerde(String s) throws ClassNotFoundException {
+		return this.binderConfigurationProperties.getConfiguration()
+				.containsKey(s)
+				? Utils.newInstance(this.binderConfigurationProperties
+						.getConfiguration().get(s),
+				Serde.class)
+				: Serdes.ByteArray();
 	}
 
 	@SuppressWarnings("unchecked")
@@ -342,17 +340,12 @@ public class KeyValueSerdeResolver {
 			if (resolvableType != null && ((isResolvalbeKafkaStreamsType(resolvableType)) ||
 					(isResolvableKStreamArrayType(resolvableType)))) {
 				ResolvableType generic = resolvableType.isArray() ? resolvableType.getComponentType().getGeneric(1) : resolvableType.getGeneric(1);
-				valueSerde = getSerde(valueSerde, generic);
+				valueSerde = getSerde(generic);
 			}
 
 			if (valueSerde == null) {
 
-				valueSerde = this.binderConfigurationProperties.getConfiguration()
-						.containsKey("default.value.serde")
-						? Utils.newInstance(this.binderConfigurationProperties
-								.getConfiguration().get("default.value.serde"),
-						Serde.class)
-						: Serdes.ByteArray();
+				valueSerde = getFallbackSerde("default.value.serde");
 			}
 		}
 		return valueSerde;

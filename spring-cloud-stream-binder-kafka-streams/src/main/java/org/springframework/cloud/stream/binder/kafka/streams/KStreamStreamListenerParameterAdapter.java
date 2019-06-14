@@ -44,8 +44,7 @@ class KStreamStreamListenerParameterAdapter
 
 	@Override
 	public boolean supports(Class bindingTargetType, MethodParameter methodParameter) {
-		return KStream.class.isAssignableFrom(bindingTargetType)
-				&& KStream.class.isAssignableFrom(methodParameter.getParameterType());
+		return KafkaStreamsBinderUtils.supportsKStream(methodParameter, bindingTargetType);
 	}
 
 	@Override
