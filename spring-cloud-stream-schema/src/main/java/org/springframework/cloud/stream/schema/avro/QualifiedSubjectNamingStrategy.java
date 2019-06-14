@@ -26,7 +26,7 @@ public class QualifiedSubjectNamingStrategy implements SubjectNamingStrategy {
 
 	@Override
 	public String toSubject(Schema schema) {
-		return schema.getFullName();
+		return schema.getFullName().toLowerCase();
 	}
 
 }
