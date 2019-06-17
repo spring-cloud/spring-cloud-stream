@@ -20,7 +20,7 @@ import java.util.Collections;
 import java.util.Map;
 
 import org.springframework.cloud.stream.endpoint.BindingsEndpoint;
-import org.springframework.integration.endpoint.Pausable;
+import org.springframework.integration.core.Pausable;
 
 /**
  * Represents a binding between an input or output and an adapter endpoint that connects

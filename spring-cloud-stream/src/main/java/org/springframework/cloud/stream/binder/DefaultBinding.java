@@ -23,7 +23,7 @@ import org.apache.commons.logging.LogFactory;
 
 import org.springframework.context.Lifecycle;
 import org.springframework.integration.context.IntegrationObjectSupport;
-import org.springframework.integration.endpoint.Pausable;
+import org.springframework.integration.core.Pausable;
 import org.springframework.integration.support.context.NamedComponent;
 import org.springframework.util.Assert;
 import org.springframework.util.ObjectUtils;
