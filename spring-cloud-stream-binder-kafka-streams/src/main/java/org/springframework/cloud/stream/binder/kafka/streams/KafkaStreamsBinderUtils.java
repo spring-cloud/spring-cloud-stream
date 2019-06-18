@@ -27,6 +27,7 @@ import org.springframework.cloud.stream.binder.kafka.provisioning.KafkaTopicProv
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsBinderConfigurationProperties;
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsConsumerProperties;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.core.MethodParameter;
 import org.springframework.util.StringUtils;
 
@@ -95,17 +96,15 @@ final class KafkaStreamsBinderUtils {
 	static BeanFactoryPostProcessor outerContextBeanFactoryPostProcessor() {
 		return (beanFactory) -> {
 			// It is safe to call getBean("outerContext") here, because this bean is
-			// registered as first
-			// and as independent from the parent context.
-			ApplicationContext outerContext = (ApplicationContext) beanFactory
+			// registered first and is independent from the parent context.
+			GenericApplicationContext outerContext = (GenericApplicationContext) beanFactory
 					.getBean("outerContext");
-			beanFactory.registerSingleton(
-					KafkaStreamsBinderConfigurationProperties.class.getSimpleName(),
-					outerContext
-							.getBean(KafkaStreamsBinderConfigurationProperties.class));
-			beanFactory.registerSingleton(
-					KafkaStreamsBindingInformationCatalogue.class.getSimpleName(),
-					outerContext.getBean(KafkaStreamsBindingInformationCatalogue.class));
+
+			outerContext.registerBean(KafkaStreamsBinderConfigurationProperties.class,
+					() -> outerContext.getBean(KafkaStreamsBinderConfigurationProperties.class));
+			outerContext.registerBean(KafkaStreamsBindingInformationCatalogue.class,
+					() -> outerContext.getBean(KafkaStreamsBindingInformationCatalogue.class));
+
 		};
 	}
 
