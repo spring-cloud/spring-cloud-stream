@@ -55,11 +55,16 @@ public interface KafkaBindingRebalanceListener {
 
 	/**
 	 * Invoked when partitions are initially assigned or after a rebalance. Applications
-	 * might only want to perform seek operations on an initial assignment.
+	 * might only want to perform seek operations on an initial assignment. While the
+	 * 'initial' argument is true for each thread (when concurrency is greater than 1),
+	 * implementations should keep track of exactly which partitions have been sought.
+	 * There is a race in that a rebalance could occur during startup and so a topic/
+	 * partition that has been sought on one thread may be re-assigned to another
+	 * thread and you may not wish to re-seek it at that time.
 	 * @param bindingName the name of the binding.
 	 * @param consumer the consumer.
 	 * @param partitions the partitions.
-	 * @param initial true if this is the initial assignment.
+	 * @param initial true if this is the initial assignment on the current thread.
 	 */
 	default void onPartitionsAssigned(String bindingName, Consumer<?, ?> consumer,
 			Collection<TopicPartition> partitions, boolean initial) {
