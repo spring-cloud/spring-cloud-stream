@@ -181,6 +181,8 @@ public class KafkaMessageChannelBinder extends
 
 	private static final ThreadLocal<String> bindingNameHolder = new ThreadLocal<>();
 
+	private static final SpelExpressionParser PARSER = new SpelExpressionParser();
+
 	private final KafkaBinderConfigurationProperties configurationProperties;
 
 	private final Map<String, TopicInformation> topicsInUse = new ConcurrentHashMap<>();
@@ -1127,7 +1129,7 @@ public class KafkaMessageChannelBinder extends
 	}
 
 	private final class ProducerConfigurationMessageHandler
-			extends KafkaProducerMessageHandler<byte[], byte[]> implements Lifecycle {
+			extends KafkaProducerMessageHandler<byte[], byte[]> {
 
 		private boolean running = true;
 
@@ -1137,14 +1139,18 @@ public class KafkaMessageChannelBinder extends
 				String topic,
 				ExtendedProducerProperties<KafkaProducerProperties> producerProperties,
 				ProducerFactory<byte[], byte[]> producerFactory) {
+
 			super(kafkaTemplate);
-			setTopicExpression(new LiteralExpression(topic));
-			setMessageKeyExpression(
-					producerProperties.getExtension().getMessageKeyExpression());
+			if (producerProperties.getExtension().isUseTopicHeader()) {
+				setTopicExpression(PARSER.parseExpression("headers['" + KafkaHeaders.TOPIC + "'] ?: '" + topic + "'"));
+			}
+			else {
+				setTopicExpression(new LiteralExpression(topic));
+			}
+			setMessageKeyExpression(producerProperties.getExtension().getMessageKeyExpression());
 			setBeanFactory(KafkaMessageChannelBinder.this.getBeanFactory());
 			if (producerProperties.isPartitioned()) {
-				SpelExpressionParser parser = new SpelExpressionParser();
-				setPartitionIdExpression(parser.parseExpression(
+				setPartitionIdExpression(PARSER.parseExpression(
 						"headers['" + BinderHeaders.PARTITION_HEADER + "']"));
 			}
 			if (producerProperties.getExtension().isSync()) {

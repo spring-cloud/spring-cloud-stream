@@ -1183,38 +1183,57 @@ public class KafkaBinderTests extends
 
 		QueueChannel moduleInputChannel = new QueueChannel();
 
+		ExtendedProducerProperties<KafkaProducerProperties> producer1Props = createProducerProperties();
+		producer1Props.getExtension().setUseTopicHeader(true);
+
 		Binding<MessageChannel> producerBinding1 = binder.bindProducer("foo.x",
-				moduleOutputChannel1, createProducerProperties());
+				moduleOutputChannel1, producer1Props);
 		Binding<MessageChannel> producerBinding2 = binder.bindProducer("foo.y",
 				moduleOutputChannel2, createProducerProperties());
 
 		ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = createConsumerProperties();
 		consumerProperties.getExtension().setAutoRebalanceEnabled(false);
-		Binding<MessageChannel> consumerBinding1 = binder.bindConsumer("foo.x", "test",
+		Binding<MessageChannel> consumerBinding1 = binder.bindConsumer("foo.x", "test1",
 				moduleInputChannel, consumerProperties);
-		Binding<MessageChannel> consumerBinding2 = binder.bindConsumer("foo.y", "test",
+		Binding<MessageChannel> consumerBinding2 = binder.bindConsumer("foo.y", "test2",
 				moduleInputChannel, consumerProperties);
 
-		String testPayload1 = "foo" + UUID.randomUUID().toString();
+		String testPayload1 = "foo1";
 		Message<?> message1 = org.springframework.integration.support.MessageBuilder
 				.withPayload(testPayload1.getBytes()).build();
-		String testPayload2 = "foo" + UUID.randomUUID().toString();
+		String testPayload2 = "foo2";
 		Message<?> message2 = org.springframework.integration.support.MessageBuilder
 				.withPayload(testPayload2.getBytes()).build();
+		String testPayload3 = "foo3";
+		Message<?> message3 = org.springframework.integration.support.MessageBuilder
+				.withPayload(testPayload3.getBytes())
+				.setHeader(KafkaHeaders.TOPIC, "foo.y")
+				.build();
 
 		// Let the consumer actually bind to the producer before sending a msg
 		binderBindUnbindLatency();
 		moduleOutputChannel1.send(message1);
 		moduleOutputChannel2.send(message2);
+		moduleOutputChannel1.send(message3);
 
-		Message<?>[] messages = new Message[2];
+		Message<?>[] messages = new Message[3];
 		messages[0] = receive(moduleInputChannel);
 		messages[1] = receive(moduleInputChannel);
+		messages[2] = receive(moduleInputChannel);
 
 		assertThat(messages[0]).isNotNull();
 		assertThat(messages[1]).isNotNull();
+		assertThat(messages[1]).isNotNull();
 		assertThat(messages).extracting("payload").containsExactlyInAnyOrder(
-				testPayload1.getBytes(), testPayload2.getBytes());
+				testPayload1.getBytes(), testPayload2.getBytes(), testPayload3.getBytes());
+		Arrays.asList(messages).forEach(message -> {
+			if (new String((byte[]) message.getPayload()).equals("foo1")) {
+				assertThat(message.getHeaders().get(KafkaHeaders.RECEIVED_TOPIC)).isEqualTo("foo.x");
+			}
+			else {
+				assertThat(message.getHeaders().get(KafkaHeaders.RECEIVED_TOPIC)).isEqualTo("foo.y");
+			}
+		});
 
 		producerBinding1.unbind();
 		producerBinding2.unbind();

@@ -50,6 +50,8 @@ public class KafkaProducerProperties {
 
 	private KafkaTopicProperties topic = new KafkaTopicProperties();
 
+	private boolean useTopicHeader;
+
 	public int getBufferSize() {
 		return this.bufferSize;
 	}
@@ -136,6 +138,14 @@ public class KafkaProducerProperties {
 
 	public void setTopic(KafkaTopicProperties topic) {
 		this.topic = topic;
+	}
+
+	public boolean isUseTopicHeader() {
+		return this.useTopicHeader;
+	}
+
+	public void setUseTopicHeader(boolean useTopicHeader) {
+		this.useTopicHeader = useTopicHeader;
 	}
 
 	/**
