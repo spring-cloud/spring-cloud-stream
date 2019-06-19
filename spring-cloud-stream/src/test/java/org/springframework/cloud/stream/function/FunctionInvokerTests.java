@@ -17,6 +17,8 @@
 package org.springframework.cloud.stream.function;
 
 import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -52,6 +54,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * @author Oleg Zhurakousky
  * @author Tolga Kavukcu
+ * @author Gary Russell
  *
  */
 public class FunctionInvokerTests {
@@ -334,6 +337,113 @@ public class FunctionInvokerTests {
 		}
 	}
 
+	@Test
+	public void testListPayloadConfiguration() {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+				TestChannelBinderConfiguration.getCompleteConfiguration(
+						ListPayloadNotBatchConfiguration.class)).web(WebApplicationType.NONE).run(
+								"--spring.jmx.enabled=false",
+								"--spring.cloud.stream.function.definition=func")) {
+
+			InputDestination inputDestination = context.getBean(InputDestination.class);
+			OutputDestination outputDestination = context
+					.getBean(OutputDestination.class);
+
+			Message<byte[]> inputMessage = MessageBuilder
+					.withPayload("[{\"name\":\"bob\"},{\"name\":\"jill\"}]".getBytes())
+					.build();
+			inputDestination.send(inputMessage);
+
+			Message<byte[]> outputMessage = outputDestination.receive();
+			assertThat(outputMessage.getPayload())
+					.isEqualTo("{\"name\":\"bob\"}".getBytes());
+
+		}
+	}
+
+	@Test
+	public void testSimpleBatchConfiguration() {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+				TestChannelBinderConfiguration.getCompleteConfiguration(
+						SimpleBatchConfiguration.class)).web(WebApplicationType.NONE).run(
+								"--spring.jmx.enabled=false",
+								"--spring.cloud.stream.function.definition=func",
+								"--spring.cloud.stream.function.batch-mode=true")) {
+
+			InputDestination inputDestination = context.getBean(InputDestination.class);
+			OutputDestination outputDestination = context
+					.getBean(OutputDestination.class);
+
+			List<byte[]> list = new ArrayList<>();
+			list.add("{\"name\":\"bob\"}".getBytes());
+			list.add("{\"name\":\"jill\"}".getBytes());
+			Message<List<byte[]>> inputMessage = MessageBuilder
+					.withPayload(list)
+					.build();
+			inputDestination.send(inputMessage);
+
+			Message<byte[]> outputMessage = outputDestination.receive();
+			assertThat(outputMessage.getPayload())
+					.isEqualTo("{\"name\":\"bob\"}".getBytes());
+
+		}
+	}
+
+	@Test
+	public void testMessageBatchConfiguration() {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+				TestChannelBinderConfiguration.getCompleteConfiguration(
+						MessageBatchConfiguration.class)).web(WebApplicationType.NONE).run(
+								"--spring.jmx.enabled=false",
+								"--spring.cloud.stream.function.definition=func",
+								"--spring.cloud.stream.function.batch-mode=true")) {
+
+			InputDestination inputDestination = context.getBean(InputDestination.class);
+			OutputDestination outputDestination = context
+					.getBean(OutputDestination.class);
+
+			List<byte[]> list = new ArrayList<>();
+			list.add("{\"name\":\"bob\"}".getBytes());
+			list.add("{\"name\":\"jill\"}".getBytes());
+			Message<List<byte[]>> inputMessage = MessageBuilder
+					.withPayload(list)
+					.build();
+			inputDestination.send(inputMessage);
+
+			Message<byte[]> outputMessage = outputDestination.receive();
+			assertThat(outputMessage.getPayload())
+					.isEqualTo("{\"name\":\"bob\"}".getBytes());
+
+		}
+	}
+
+	@Test
+	public void testNestedBatchConfiguration() {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+				TestChannelBinderConfiguration.getCompleteConfiguration(
+						NestedBatchConfiguration.class)).web(WebApplicationType.NONE).run(
+								"--spring.jmx.enabled=false",
+								"--spring.cloud.stream.function.definition=func",
+								"--spring.cloud.stream.function.batch-mode=true")) {
+
+			InputDestination inputDestination = context.getBean(InputDestination.class);
+			OutputDestination outputDestination = context
+					.getBean(OutputDestination.class);
+
+			List<byte[]> list = new ArrayList<>();
+			list.add("[{\"name\":\"bob\"},{\"name\":\"jill\"}]".getBytes());
+			Message<List<byte[]>> inputMessage = MessageBuilder
+					.withPayload(list)
+					.build();
+			inputDestination.send(inputMessage);
+
+			Message<byte[]> outputMessage = outputDestination.receive();
+			assertThat(outputMessage.getPayload())
+					.isEqualTo("{\"name\":\"bob\"}".getBytes());
+
+		}
+	}
+
 	private StreamFunctionProperties createStreamFunctionProperties() {
 		StreamFunctionProperties functionProperties = new StreamFunctionProperties();
 		functionProperties.setInputDestinationName("input");
@@ -418,6 +528,7 @@ public class FunctionInvokerTests {
 				this.name = name;
 			}
 
+			@Override
 			public String toString() {
 				return "Person: " + name;
 			}
@@ -452,6 +563,7 @@ public class FunctionInvokerTests {
 				this.name = name;
 			}
 
+			@Override
 			public String toString() {
 				return "Person: " + name;
 			}
@@ -480,7 +592,7 @@ public class FunctionInvokerTests {
 
 				@Override
 				public Object fromMessage(Message<?> message, Class<?> targetClass) {
-					String contentType = (String) message.getHeaders()
+					String contentType = message.getHeaders()
 							.get(MessageHeaders.CONTENT_TYPE).toString();
 					if (contentType.equals("foo/bar")) {
 						return new String((byte[]) message.getPayload());
@@ -513,7 +625,7 @@ public class FunctionInvokerTests {
 
 				@Override
 				public Object fromMessage(Message<?> message, Class<?> targetClass) {
-					String contentType = (String) message.getHeaders()
+					String contentType = message.getHeaders()
 							.get(MessageHeaders.CONTENT_TYPE).toString();
 					if (contentType.equals("foo/bar")) {
 						return new String((byte[]) message.getPayload());
@@ -521,6 +633,106 @@ public class FunctionInvokerTests {
 					return null;
 				}
 			};
+		}
+
+	}
+
+	@EnableAutoConfiguration
+	@EnableBinding(Processor.class)
+	public static class ListPayloadNotBatchConfiguration {
+
+		@Bean
+		public Function<List<Person>, Person> func() {
+			return x -> x.get(0);
+		}
+
+		public static class Person {
+
+			private String name;
+
+			public String getName() {
+				return name;
+			}
+
+			public void setName(String name) {
+				this.name = name;
+			}
+
+		}
+
+	}
+
+	@EnableAutoConfiguration
+	@EnableBinding(Processor.class)
+	public static class SimpleBatchConfiguration {
+
+		@Bean
+		public Function<List<Person>, Person> func() {
+			return x -> x.get(0);
+		}
+
+		public static class Person {
+
+			private String name;
+
+			public String getName() {
+				return name;
+			}
+
+			public void setName(String name) {
+				this.name = name;
+			}
+
+		}
+
+	}
+
+	@EnableAutoConfiguration
+	@EnableBinding(Processor.class)
+	public static class NestedBatchConfiguration {
+
+		@Bean
+		public Function<List<List<Person>>, Person> func() {
+			return x -> x.get(0).get(0);
+		}
+
+		public static class Person {
+
+			private String name;
+
+			public String getName() {
+				return name;
+			}
+
+			public void setName(String name) {
+				this.name = name;
+			}
+
+		}
+
+	}
+
+	@EnableAutoConfiguration
+	@EnableBinding(Processor.class)
+	public static class MessageBatchConfiguration {
+
+		@Bean
+		public Function<Message<List<Person>>, Person> func() {
+			return x -> x.getPayload().get(0);
+		}
+
+		public static class Person {
+
+			private String name;
+
+			public String getName() {
+				return name;
+			}
+
+			public void setName(String name) {
+				this.name = name;
+			}
+
 		}
 
 	}

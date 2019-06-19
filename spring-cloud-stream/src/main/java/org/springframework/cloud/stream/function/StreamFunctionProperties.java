@@ -40,6 +40,8 @@ public class StreamFunctionProperties {
 
 	private String outputDestinationName = Processor.OUTPUT;
 
+	private boolean batchMode;
+
 	public String getDefinition() {
 		return this.definition;
 	}
@@ -70,6 +72,14 @@ public class StreamFunctionProperties {
 
 	void setOutputDestinationName(String outputDestinationName) {
 		this.outputDestinationName = outputDestinationName;
+	}
+
+	public boolean isBatchMode() {
+		return this.batchMode;
+	}
+
+	public void setBatchMode(boolean batchMode) {
+		this.batchMode = batchMode;
 	}
 
 }

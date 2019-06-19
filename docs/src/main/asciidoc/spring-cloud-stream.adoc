@@ -587,6 +587,8 @@ support.
 [[spring_cloud_function]]
 ==== Spring Cloud Function support
 
+===== Overview
+
 Since Spring Cloud Stream v2.1, another alternative for defining _stream handlers_ and _sources_ is to use build-in
 support for https://cloud.spring.io/spring-cloud-function/[Spring Cloud Function] where they can be expressed as beans of
  type `java.util.function.[Supplier/Function/Consumer]`.
@@ -712,7 +714,19 @@ For example, the above composition could be defined as such (if both functions p
 --spring.cloud.stream.function.definition=reactiveUpperCase|wrapInQuotes
 ----
 
+===== Batch Consumers
 
+When using a `MessageChannelBinder` that supports batch listeners, and the feature is enabled for the consumer binding, you can set `spring.cloud.stream.function.definition` to `true` to enable the entire batch of messages to be passed to the function in a `List`.
+
+====
+[source, java]
+----
+@Bean
+public Function<List<Person>, Person> findFirstPerson() {
+    return persons -> persons.get(0);
+}
+----
+====
 
 [[spring-cloud-streams-overview-using-polled-consumers]]
 ==== Using Polled Consumers

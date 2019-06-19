@@ -33,7 +33,7 @@ public class InputDestination extends AbstractDestination {
 	 * destination (e.g., Processor.INPUT).
 	 * @param message message to send
 	 */
-	public void send(Message<byte[]> message) {
+	public void send(Message<?> message) {
 		this.getChannel().send(message);
 	}
 
