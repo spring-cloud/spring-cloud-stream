@@ -17,23 +17,26 @@
 package org.springframework.cloud.stream.function;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.time.Duration;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import org.springframework.beans.factory.BeanFactory;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionType;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
 import org.springframework.cloud.stream.binder.ConsumerProperties;
 import org.springframework.cloud.stream.binder.ProducerProperties;
-import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
 import org.springframework.integration.support.MessageBuilder;
@@ -52,6 +55,7 @@ import org.springframework.util.ReflectionUtils;
  * @author Oleg Zhurakousky
  * @author David Turanski
  * @author Tolga Kavukcu
+ * @author Gary Russell
  * @since 2.1
  */
 class FunctionInvoker<I, O> implements Function<Flux<Message<I>>, Flux<Message<O>>> {
@@ -68,15 +72,21 @@ class FunctionInvoker<I, O> implements Function<Flux<Message<I>>, Flux<Message<O
 
 	private final Class<?> inputClass;
 
+	private final ParameterizedType inputParameterizedType;
+
 	private final Class<?> outputClass;
 
 	private final Function<Flux<?>, Flux<?>> userFunction;
 
 	private final CompositeMessageConverter messageConverter;
 
-	private final BeanFactory beanFactory;
+	private final MessageChannel errorChannel;
 
 	private final boolean isInputArgumentMessage;
+
+	private final Class<?> messagePayloadClass;
+
+	private final Type messagePayloadType;
 
 	private final ConsumerProperties consumerProperties;
 
@@ -85,6 +95,12 @@ class FunctionInvoker<I, O> implements Function<Flux<Message<I>>, Flux<Message<O
 	private final BindingServiceProperties bindingServiceProperties;
 
 	private final StreamFunctionProperties functionProperties;
+
+	private final boolean batchMode;
+
+	private final Type listContentParameterizedType;
+
+	private final Class<?> listContentClass;
 
 	FunctionInvoker(StreamFunctionProperties functionProperties,
 			FunctionCatalog functionCatalog, FunctionInspector functionInspector,
@@ -97,7 +113,7 @@ class FunctionInvoker<I, O> implements Function<Flux<Message<I>>, Flux<Message<O
 	FunctionInvoker(StreamFunctionProperties functionProperties,
 			FunctionCatalog functionCatalog, FunctionInspector functionInspector,
 			CompositeMessageConverterFactory compositeMessageConverterFactory,
-			BeanFactory beanFactory) {
+			MessageChannel errorChannel) {
 
 		this.functionProperties = functionProperties;
 		Object originalUserFunction = functionCatalog
@@ -113,12 +129,63 @@ class FunctionInvoker<I, O> implements Function<Flux<Message<I>>, Flux<Message<O
 		this.isInputArgumentMessage = functionType.isMessage();
 		this.inputClass = functionType.getInputType();
 		this.outputClass = functionType.getOutputType();
-		this.beanFactory = beanFactory;
+		this.errorChannel = errorChannel;
 		this.bindingServiceProperties = functionProperties.getBindingServiceProperties();
 		this.consumerProperties = this.bindingServiceProperties
 				.getConsumerProperties(functionProperties.getInputDestinationName());
 		this.producerProperties = this.bindingServiceProperties
 				.getProducerProperties(functionProperties.getOutputDestinationName());
+		this.batchMode = this.consumerProperties.isBatchMode();
+		Type type = functionType.getType();
+		ParameterizedType functionInputParameterizedType = null;
+		Type listContainsType = null;
+		Type payloadType = null;
+		if (type instanceof ParameterizedType) {
+			Type functionInputType = ((ParameterizedType) type).getActualTypeArguments()[0];
+			if (functionInputType instanceof ParameterizedType) {
+				functionInputParameterizedType = (ParameterizedType) functionInputType;
+				Type rawType = ((ParameterizedType) functionInputType).getRawType();
+				if (rawType.equals(List.class)) {
+					listContainsType = ((ParameterizedType) functionInputType).getActualTypeArguments()[0];
+				}
+				else if (rawType.equals(Message.class)) {
+					payloadType = determinePayloadType(functionInputType);
+				}
+			}
+		}
+		if (listContainsType instanceof Class) {
+			this.listContentClass = (Class<?>) listContainsType;
+			this.listContentParameterizedType = null;
+		}
+		else {
+			this.listContentClass = Object.class;
+			this.listContentParameterizedType = listContainsType;
+		}
+		if ((functionInputParameterizedType != null && functionInputParameterizedType.getRawType().equals(Flux.class))
+				|| payloadType != null) {
+			functionInputParameterizedType = null;
+		}
+		this.inputParameterizedType = functionInputParameterizedType;
+		if (payloadType instanceof Class) {
+			this.messagePayloadClass = (Class<?>) payloadType;
+			this.messagePayloadType = null;
+		}
+		else {
+			this.messagePayloadClass = Object.class;
+			this.messagePayloadType = payloadType;
+		}
+	}
+
+	private Type determinePayloadType(Type functionInputType) {
+		Type payloadType;
+		payloadType = ((ParameterizedType) functionInputType).getActualTypeArguments()[0];
+		if (payloadType instanceof ParameterizedType) {
+			Type payloadRawType = ((ParameterizedType) payloadType).getRawType();
+			if (payloadRawType.equals(List.class)) {
+				payloadType = ((ParameterizedType) payloadType).getActualTypeArguments()[0];
+			}
+		}
+		return payloadType;
 	}
 
 	@Override
@@ -127,7 +194,8 @@ class FunctionInvoker<I, O> implements Function<Flux<Message<I>>, Flux<Message<O
 
 		return input.concatMap(message -> {
 			return Flux.just(message).doOnNext(originalMessageRef::set)
-					.map(this::resolveArgument).transform(this.userFunction::apply)
+					.map(this::resolveArgument)
+					.transform(this.userFunction::apply)
 					.retryBackoff(this.consumerProperties.getMaxAttempts(),
 							Duration.ofMillis(
 									this.consumerProperties.getBackOffInitialInterval()),
@@ -143,19 +211,10 @@ class FunctionInvoker<I, O> implements Function<Flux<Message<I>>, Flux<Message<O
 	}
 
 	private void onError(Throwable t, Message<I> originalMessage) {
-		String inputDestinationName = functionProperties.getInputDestinationName();
-		BindingProperties bindingProperties = functionProperties.getBindingServiceProperties().getBindings().get(inputDestinationName);
-		String destinationName = bindingProperties.getDestination();
-		String groupName = bindingProperties.getGroup();
-		String bindingErrorChannelName = destinationName + "." + groupName + ".errors";
-
-		if (beanFactory != null) {
-			MessageChannel errorChannel = beanFactory.containsBean(bindingErrorChannelName)
-					? beanFactory.getBean(bindingErrorChannelName, MessageChannel.class)
-							:  beanFactory.getBean("errorChannel", MessageChannel.class);
-			ErrorMessage em = new ErrorMessage(t, originalMessage.getHeaders(), (Message<?>) originalMessage);
+		if (this.errorChannel != null) {
+			ErrorMessage em = new ErrorMessage(t, originalMessage);
 			logger.error(em);
-			errorChannel.send(em);
+			this.errorChannel.send(em);
 		}
 		else {
 			logger.error(t);
@@ -221,17 +280,46 @@ class FunctionInvoker<I, O> implements Function<Flux<Message<I>>, Flux<Message<O
 		}
 
 		T argument = (T) (shouldConvertFromMessage(message)
-				? this.messageConverter.fromMessage(message, this.inputClass) : message);
+				? this.messageConverter.fromMessage(message, this.inputClass, this.inputParameterizedType) : message);
 		Assert.notNull(argument, "Failed to resolve argument type '" + this.inputClass
 				+ "' from message: " + message);
-		if (this.isInputArgumentMessage && !(argument instanceof Message)) {
+		if (this.batchMode
+				&& this.messagePayloadClass != null
+				&& this.isInputArgumentMessage
+				&& argument instanceof Message
+				&& ((Message<?>) argument).getPayload() instanceof List
+				&& !this.messagePayloadClass.isAssignableFrom(((Message<?>) argument).getPayload().getClass())) {
+			argument = (T) MessageBuilder
+					.withPayload(convertListContents(message.getPayload(), this.messagePayloadClass,
+							this.messagePayloadType))
+					.build();
+		}
+		else if (this.isInputArgumentMessage && !(argument instanceof Message)) {
+			if (shouldBatchConvert(argument)) {
+				argument = convertListContents(argument, this.messagePayloadClass, this.messagePayloadType);
+			}
 			argument = (T) MessageBuilder.withPayload(argument)
 					.copyHeaders(message.getHeaders()).build();
 		}
 		else if (!this.isInputArgumentMessage && argument instanceof Message) {
 			argument = ((Message<T>) argument).getPayload();
+			if (shouldBatchConvert(argument)) {
+				argument = convertListContents(argument, this.listContentClass, this.listContentParameterizedType);
+			}
 		}
 		return argument;
+	}
+
+	private <T> boolean shouldBatchConvert(T argument) {
+		return this.batchMode && argument instanceof List && this.listContentClass != null;
+	}
+
+	@SuppressWarnings("unchecked")
+	private <T> T convertListContents(T argument, Class<?> targetClass, Type hint) {
+		return (T) ((List<?>) argument).stream()
+				.map(payload -> this.messageConverter.fromMessage(MessageBuilder.withPayload(payload).build(),
+						targetClass, hint))
+				.collect(Collectors.toList());
 	}
 
 	private boolean shouldConvertFromMessage(Message<?> message) {

@@ -18,6 +18,7 @@ package org.springframework.cloud.stream.converter;
 
 import java.io.IOException;
 import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -44,7 +45,7 @@ import org.springframework.messaging.converter.MessageConversionException;
  */
 class ApplicationJsonMessageMarshallingConverter extends MappingJackson2MessageConverter {
 
-	private final Map<ParameterizedTypeReference<?>, JavaType> typeCache = new ConcurrentHashMap<>();
+	private final Map<Type, JavaType> typeCache = new ConcurrentHashMap<>();
 
 	ApplicationJsonMessageMarshallingConverter(@Nullable ObjectMapper objectMapper) {
 		if (objectMapper != null) {
@@ -67,8 +68,8 @@ class ApplicationJsonMessageMarshallingConverter extends MappingJackson2MessageC
 	}
 
 	@Override
-	protected Object convertFromInternal(Message<?> message, Class<?> targetClass,
-			@Nullable Object conversionHint) {
+	protected Object convertFromInternal(Message<?> message, Class<?> targetClass, @Nullable Object hint) {
+		Object conversionHint = hint;
 		Object result = null;
 		if (conversionHint instanceof MethodParameter) {
 			Class<?> conversionHintType = ((MethodParameter) conversionHint)
@@ -87,12 +88,14 @@ class ApplicationJsonMessageMarshallingConverter extends MappingJackson2MessageC
 				ParameterizedTypeReference<Object> forType = ParameterizedTypeReference
 						.forType(((MethodParameter) conversionHint)
 								.getGenericParameterType());
-				result = convertParameterizedType(message, targetClass, forType);
+				result = convertParameterizedType(message, forType.getType());
 			}
 		}
 		else if (conversionHint instanceof ParameterizedTypeReference) {
-			result = convertParameterizedType(message, targetClass,
-					(ParameterizedTypeReference<?>) conversionHint);
+			result = convertParameterizedType(message, ((ParameterizedTypeReference<?>) conversionHint).getType());
+		}
+		else if (conversionHint instanceof ParameterizedType) {
+			result = convertParameterizedType(message, (Type) conversionHint);
 		}
 
 		if (result == null) {
@@ -109,15 +112,14 @@ class ApplicationJsonMessageMarshallingConverter extends MappingJackson2MessageC
 		return result;
 	}
 
-	private Object convertParameterizedType(Message<?> message, Class<?> targetClass,
-			ParameterizedTypeReference<?> conversionHint) {
+	private Object convertParameterizedType(Message<?> message, Type conversionHint) {
 		ObjectMapper objectMapper = this.getObjectMapper();
 		Object payload = message.getPayload();
 		try {
 			JavaType type = this.typeCache.get(conversionHint);
 			if (type == null) {
 				type = objectMapper.getTypeFactory()
-						.constructType((conversionHint).getType());
+						.constructType(conversionHint);
 				this.typeCache.put(conversionHint, type);
 			}
 			if (payload instanceof byte[]) {

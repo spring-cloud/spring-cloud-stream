@@ -17,11 +17,14 @@
 package org.springframework.cloud.stream.binder;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.validation.constraints.Min;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+
+import org.springframework.messaging.Message;
 
 /**
  * Common consumer properties - spring.cloud.stream.bindings.[destinationName].consumer.
@@ -157,6 +160,15 @@ public class ConsumerProperties {
 	 */
 	private boolean multiplex;
 
+	/**
+	 * When set to true, if the binder supports it, the messages emitted will have a {@link List}
+	 * payload; When used in conjunction with functions, the function can receive a list of
+	 * objects (or {@link Message}s) with the payloads converted if necessary.
+	 *
+	 * @since 3.0
+	 */
+	private boolean batchMode;
+
 	public String getRetryTemplateName() {
 		return retryTemplateName;
 	}
@@ -283,6 +295,14 @@ public class ConsumerProperties {
 
 	public void setAutoStartup(boolean autoStartup) {
 		this.autoStartup = autoStartup;
+	}
+
+	public boolean isBatchMode() {
+		return this.batchMode;
+	}
+
+	public void setBatchMode(boolean batchMode) {
+		this.batchMode = batchMode;
 	}
 
 }

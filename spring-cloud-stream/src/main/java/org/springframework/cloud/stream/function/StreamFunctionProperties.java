@@ -49,6 +49,8 @@ public class StreamFunctionProperties {
 
 	private Map<String, List<String>> outputBindings = new HashMap<>();
 
+	private boolean batchMode;
+
 	private boolean composeTo;
 
 	private boolean composeFrom;
@@ -110,7 +112,13 @@ public class StreamFunctionProperties {
 
 	public void setInputBindings(Map<String, List<String>> inputBindings) {
 		this.inputBindings = inputBindings;
+	}
 
+	public boolean isBatchMode() {
+		return this.batchMode;
+	}
 
+	public void setBatchMode(boolean batchMode) {
+		this.batchMode = batchMode;
 	}
 }
