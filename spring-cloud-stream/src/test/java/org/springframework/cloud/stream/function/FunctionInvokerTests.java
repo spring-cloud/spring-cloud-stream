@@ -23,6 +23,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 import org.junit.Test;
+
 import reactor.core.publisher.Flux;
 
 import org.springframework.boot.WebApplicationType;
@@ -78,6 +79,7 @@ public class FunctionInvokerTests {
 			inputDestination.send(inputMessage);
 
 			Message<byte[]> outputMessage = outputDestination.receive();
+			assertThat(outputMessage).isNotNull();
 			assertThat(outputMessage.getPayload())
 					.isEqualTo("{\"name\":\"bob\"}".getBytes());
 
@@ -102,6 +104,7 @@ public class FunctionInvokerTests {
 			inputDestination.send(inputMessage);
 
 			Message<byte[]> outputMessage = outputDestination.receive();
+			assertThat(outputMessage).isNotNull();
 			assertThat(outputMessage.getPayload()).isEqualTo("Person: bob".getBytes());
 
 		}
@@ -125,6 +128,7 @@ public class FunctionInvokerTests {
 			inputDestination.send(inputMessage);
 
 			Message<byte[]> outputMessage = outputDestination.receive();
+			assertThat(outputMessage).isNotNull();
 			assertThat(outputMessage.getPayload()).isEqualTo("Person: bob".getBytes());
 		}
 	}
@@ -149,6 +153,7 @@ public class FunctionInvokerTests {
 			inputDestination.send(inputMessage);
 
 			Message<byte[]> outputMessage = outputDestination.receive();
+			assertThat(outputMessage).isNotNull();
 			assertThat(outputMessage.getHeaders().get(MessageHeaders.CONTENT_TYPE)
 					.toString()).isEqualTo("text/plain");
 
@@ -175,6 +180,7 @@ public class FunctionInvokerTests {
 			inputDestination.send(inputMessage);
 
 			Message<byte[]> outputMessage = outputDestination.receive();
+			assertThat(outputMessage).isNotNull();
 			assertThat(outputMessage.getHeaders().get(MessageHeaders.CONTENT_TYPE)
 					.toString()).isEqualTo("ping/pong");
 
@@ -305,6 +311,7 @@ public class FunctionInvokerTests {
 					context.getBean(CompositeMessageConverterFactory.class));
 			Message<Baz> outputMessage = pojoToPojoSameType.apply(Flux.just(inputMessage))
 					.blockFirst();
+			assertThat(outputMessage).isNotNull();
 			assertThat(inputMessage.getPayload())
 					.isNotEqualTo(outputMessage.getPayload());
 
@@ -355,6 +362,7 @@ public class FunctionInvokerTests {
 			inputDestination.send(inputMessage);
 
 			Message<byte[]> outputMessage = outputDestination.receive();
+			assertThat(outputMessage).isNotNull();
 			assertThat(outputMessage.getPayload())
 					.isEqualTo("{\"name\":\"bob\"}".getBytes());
 
@@ -368,7 +376,7 @@ public class FunctionInvokerTests {
 						SimpleBatchConfiguration.class)).web(WebApplicationType.NONE).run(
 								"--spring.jmx.enabled=false",
 								"--spring.cloud.stream.function.definition=func",
-								"--spring.cloud.stream.function.batch-mode=true")) {
+								"--spring.cloud.stream.bindings.input.consumer.batch-mode=true")) {
 
 			InputDestination inputDestination = context.getBean(InputDestination.class);
 			OutputDestination outputDestination = context
@@ -383,34 +391,7 @@ public class FunctionInvokerTests {
 			inputDestination.send(inputMessage);
 
 			Message<byte[]> outputMessage = outputDestination.receive();
-			assertThat(outputMessage.getPayload())
-					.isEqualTo("{\"name\":\"bob\"}".getBytes());
-
-		}
-	}
-
-	@Test
-	public void testMessageBatchConfiguration() {
-		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
-				TestChannelBinderConfiguration.getCompleteConfiguration(
-						MessageBatchConfiguration.class)).web(WebApplicationType.NONE).run(
-								"--spring.jmx.enabled=false",
-								"--spring.cloud.stream.function.definition=func",
-								"--spring.cloud.stream.function.batch-mode=true")) {
-
-			InputDestination inputDestination = context.getBean(InputDestination.class);
-			OutputDestination outputDestination = context
-					.getBean(OutputDestination.class);
-
-			List<byte[]> list = new ArrayList<>();
-			list.add("{\"name\":\"bob\"}".getBytes());
-			list.add("{\"name\":\"jill\"}".getBytes());
-			Message<List<byte[]>> inputMessage = MessageBuilder
-					.withPayload(list)
-					.build();
-			inputDestination.send(inputMessage);
-
-			Message<byte[]> outputMessage = outputDestination.receive();
+			assertThat(outputMessage).isNotNull();
 			assertThat(outputMessage.getPayload())
 					.isEqualTo("{\"name\":\"bob\"}".getBytes());
 
@@ -424,7 +405,7 @@ public class FunctionInvokerTests {
 						NestedBatchConfiguration.class)).web(WebApplicationType.NONE).run(
 								"--spring.jmx.enabled=false",
 								"--spring.cloud.stream.function.definition=func",
-								"--spring.cloud.stream.function.batch-mode=true")) {
+								"--spring.cloud.stream.bindings.input.consumer.batch-mode=true")) {
 
 			InputDestination inputDestination = context.getBean(InputDestination.class);
 			OutputDestination outputDestination = context
@@ -438,6 +419,36 @@ public class FunctionInvokerTests {
 			inputDestination.send(inputMessage);
 
 			Message<byte[]> outputMessage = outputDestination.receive();
+			assertThat(outputMessage).isNotNull();
+			assertThat(outputMessage.getPayload())
+					.isEqualTo("{\"name\":\"bob\"}".getBytes());
+
+		}
+	}
+
+	@Test
+	public void testMessageBatchConfiguration() {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+				TestChannelBinderConfiguration.getCompleteConfiguration(
+						MessageBatchConfiguration.class)).web(WebApplicationType.NONE).run(
+								"--spring.jmx.enabled=false",
+								"--spring.cloud.stream.function.definition=func",
+								"--spring.cloud.stream.bindings.input.consumer.batch-mode=true")) {
+
+			InputDestination inputDestination = context.getBean(InputDestination.class);
+			OutputDestination outputDestination = context
+					.getBean(OutputDestination.class);
+
+			List<byte[]> list = new ArrayList<>();
+			list.add("{\"name\":\"bob\"}".getBytes());
+			list.add("{\"name\":\"jill\"}".getBytes());
+			Message<List<byte[]>> inputMessage = MessageBuilder
+					.withPayload(list)
+					.build();
+			inputDestination.send(inputMessage);
+
+			Message<byte[]> outputMessage = outputDestination.receive();
+			assertThat(outputMessage).isNotNull();
 			assertThat(outputMessage.getPayload())
 					.isEqualTo("{\"name\":\"bob\"}".getBytes());
 

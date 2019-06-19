@@ -28,6 +28,7 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -134,7 +135,7 @@ class FunctionInvoker<I, O> implements Function<Flux<Message<I>>, Flux<Message<O
 				.getConsumerProperties(functionProperties.getInputDestinationName());
 		this.producerProperties = this.bindingServiceProperties
 				.getProducerProperties(functionProperties.getOutputDestinationName());
-		this.batchMode = functionProperties.isBatchMode();
+		this.batchMode = this.consumerProperties.isBatchMode();
 		Type type = functionType.getType();
 		ParameterizedType functionInputParameterizedType = null;
 		Type listContainsType = null;
