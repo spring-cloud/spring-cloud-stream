@@ -23,7 +23,6 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 import org.junit.Test;
-
 import reactor.core.publisher.Flux;
 
 import org.springframework.boot.WebApplicationType;
