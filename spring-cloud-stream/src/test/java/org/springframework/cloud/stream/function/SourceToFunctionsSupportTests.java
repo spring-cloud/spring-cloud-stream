@@ -17,13 +17,17 @@
 package org.springframework.cloud.stream.function;
 
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 
 import org.springframework.beans.factory.BeanCreationException;
@@ -177,6 +181,28 @@ public class SourceToFunctionsSupportTests {
 	}
 
 	@Test
+	public void testMessageSourceIsCreatedFromProvidedStreamSupplier() {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+				TestChannelBinderConfiguration.getCompleteConfiguration(
+						StreamSupplierConfiguration.class)).web(WebApplicationType.NONE).run(
+								"--spring.cloud.stream.function.definition=stream",
+								"--spring.jmx.enabled=false")) {
+
+			OutputDestination target = context.getBean(OutputDestination.class);
+			assertThat(target.receive(1000).getPayload())
+					.isEqualTo("0".getBytes(StandardCharsets.UTF_8));
+			assertThat(target.receive(1000).getPayload())
+					.isEqualTo("1".getBytes(StandardCharsets.UTF_8));
+			assertThat(target.receive(1000).getPayload())
+					.isEqualTo("2".getBytes(StandardCharsets.UTF_8));
+			assertThat(target.receive(1000).getPayload())
+					.isEqualTo("3".getBytes(StandardCharsets.UTF_8));
+
+			// etc
+		}
+	}
+
+	@Test
 	public void testFunctionDoesNotExist() {
 
 		this.expectedException.expect(BeanCreationException.class);
@@ -223,6 +249,23 @@ public class SourceToFunctionsSupportTests {
 		@Bean
 		public Function<String, String> concatWithSelf() {
 			return x -> x + ":" + x;
+		}
+
+	}
+
+	@EnableAutoConfiguration
+	public static class StreamSupplierConfiguration {
+
+		@Bean
+		public Supplier<Publisher<Object>> stream() {
+			ExecutorService executor = Executors.newFixedThreadPool(1);
+			return () -> Flux.create(emitter -> {
+				executor.execute(() -> {
+					for (int i = 0; i < 10; i++) {
+						emitter.next(MessageBuilder.withPayload(String.valueOf(i)).build());
+					}
+				});
+			});
 		}
 
 	}

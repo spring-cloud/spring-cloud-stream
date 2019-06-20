@@ -93,7 +93,7 @@ public class ImplicitFunctionBindingTests {
 
 	@Test
 	public void testBindingWithNoEnableBindingAndNoDefinitionPropertyConfiguration() {
-
+		System.clearProperty("spring.cloud.stream.function.definition");
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 				TestChannelBinderConfiguration.getCompleteConfiguration(
 						SingleFunctionConfiguration.class))

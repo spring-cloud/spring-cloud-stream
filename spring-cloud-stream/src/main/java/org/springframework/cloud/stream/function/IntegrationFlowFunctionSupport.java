@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.function;
 
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -23,14 +24,18 @@ import java.util.function.Supplier;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.publisher.MonoSink;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.function.context.FunctionCatalog;
+import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionType;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
 import org.springframework.cloud.function.core.FluxSupplier;
+import org.springframework.cloud.stream.binder.BindingCreatedEvent;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
+import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.integration.context.IntegrationObjectSupport;
 import org.springframework.integration.dsl.IntegrationFlowBuilder;
 import org.springframework.integration.dsl.IntegrationFlows;
@@ -46,7 +51,7 @@ import org.springframework.util.StringUtils;
  * @author Ilayaperumal Gopinathan
  * @since 2.1
  */
-public class IntegrationFlowFunctionSupport {
+public class IntegrationFlowFunctionSupport  {
 
 	private final FunctionCatalog functionCatalog;
 
@@ -56,6 +61,10 @@ public class IntegrationFlowFunctionSupport {
 
 	private final StreamFunctionProperties functionProperties;
 
+	private final AtomicReference<MonoSink<Object>> triggerRef = new AtomicReference<>();
+
+	private final Publisher<Object> trigger;
+
 	@Autowired
 	private MessageChannel errorChannel;
 
@@ -63,7 +72,8 @@ public class IntegrationFlowFunctionSupport {
 			FunctionInspector functionInspector,
 			CompositeMessageConverterFactory messageConverterFactory,
 			StreamFunctionProperties functionProperties,
-			BindingServiceProperties bindingServiceProperties) {
+			BindingServiceProperties bindingServiceProperties,
+			GenericApplicationContext context) {
 		Assert.notNull(functionCatalog, "'functionCatalog' must not be null");
 		Assert.notNull(functionInspector, "'functionInspector' must not be null");
 		Assert.notNull(messageConverterFactory,
@@ -74,7 +84,18 @@ public class IntegrationFlowFunctionSupport {
 		this.messageConverterFactory = messageConverterFactory;
 		this.functionProperties = functionProperties;
 		this.functionProperties.setBindingServiceProperties(bindingServiceProperties);
+		trigger = Mono.create(emmiter -> {
+			triggerRef.set(emmiter);
+		});
+		context.addApplicationListener(event -> {
+			if (event instanceof BindingCreatedEvent) {
+				if (triggerRef.get() != null) {
+					triggerRef.get().success();
+				}
+			}
+		});
 	}
+
 
 	/**
 	 * Determines if function specified via 'spring.cloud.stream.function.definition'
@@ -139,8 +160,19 @@ public class IntegrationFlowFunctionSupport {
 	 * @param supplier supplier from which the flow builder will be built
 	 * @return instance of {@link IntegrationFlowBuilder}
 	 */
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public IntegrationFlowBuilder integrationFlowFromProvidedSupplier(
 			Supplier<?> supplier) {
+		String supplierName = this.functionProperties.getDefinition().split("\\|")[0];
+		FunctionRegistration fr = this.functionInspector.getRegistration(this.functionCatalog.lookup(supplierName));
+		if (fr != null && fr.getType().isWrapper()) {
+			Publisher publisher = (Publisher) supplier.get();
+			publisher = publisher instanceof Flux
+					? ((Flux) publisher).delaySubscription(trigger)
+							: ((Mono) publisher).delaySubscription(trigger);
+
+			return IntegrationFlows.from(publisher);
+		}
 		return IntegrationFlows.from(supplier);
 	}
 

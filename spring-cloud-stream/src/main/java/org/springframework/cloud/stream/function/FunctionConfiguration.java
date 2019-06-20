@@ -35,6 +35,7 @@ import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.integration.channel.NullChannel;
 import org.springframework.integration.dsl.IntegrationFlow;
 import org.springframework.lang.Nullable;
@@ -58,7 +59,8 @@ public class FunctionConfiguration {
 			FunctionCatalog functionCatalog, FunctionInspector functionInspector,
 			CompositeMessageConverterFactory messageConverterFactory,
 			StreamFunctionProperties functionProperties,
-			BindingServiceProperties bindingServiceProperties) {
+			BindingServiceProperties bindingServiceProperties,
+			GenericApplicationContext context) {
 		((SmartInitializingSingleton) functionCatalog).afterSingletonsInstantiated();
 
 //		if (functionCatalog.size() > 0) {
@@ -70,7 +72,7 @@ public class FunctionConfiguration {
 //		}
 
 		return new IntegrationFlowFunctionSupport(functionCatalog, functionInspector,
-				messageConverterFactory, functionProperties, bindingServiceProperties);
+				messageConverterFactory, functionProperties, bindingServiceProperties, context);
 	}
 
 	/**
@@ -122,5 +124,4 @@ public class FunctionConfiguration {
 		return processor != null ? processor.output()
 				: (source != null ? source.output() : new NullChannel());
 	}
-
 }
