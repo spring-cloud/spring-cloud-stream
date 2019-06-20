@@ -28,6 +28,7 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -287,7 +288,6 @@ class FunctionInvoker<I, O> implements Function<Flux<Message<I>>, Flux<Message<O
 				&& this.isInputArgumentMessage
 				&& argument instanceof Message
 				&& ((Message<?>) argument).getPayload() instanceof List
-				&& this.messagePayloadClass != null
 				&& !this.messagePayloadClass.isAssignableFrom(((Message<?>) argument).getPayload().getClass())) {
 			argument = (T) MessageBuilder
 					.withPayload(convertListContents(message.getPayload(), this.messagePayloadClass,
