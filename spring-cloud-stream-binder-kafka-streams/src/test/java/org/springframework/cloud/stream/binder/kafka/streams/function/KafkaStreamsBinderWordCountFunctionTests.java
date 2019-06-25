@@ -39,8 +39,6 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.cloud.stream.annotation.EnableBinding;
-import org.springframework.cloud.stream.binder.kafka.streams.annotations.KafkaStreamsProcessor;
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsApplicationSupportProperties;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
@@ -64,7 +62,7 @@ public class KafkaStreamsBinderWordCountFunctionTests {
 	private static Consumer<String, String> consumer;
 
 	@BeforeClass
-	public static void setUp() throws Exception {
+	public static void setUp() {
 		Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("group", "false",
 				embeddedKafka);
 		consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
@@ -83,7 +81,10 @@ public class KafkaStreamsBinderWordCountFunctionTests {
 		SpringApplication app = new SpringApplication(WordCountProcessorApplication.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 
-		try (ConfigurableApplicationContext context = app.run("--server.port=0",
+		try (ConfigurableApplicationContext context = app.run(
+				"--spring.cloud.stream.function.inputBindings.process=input",
+				"--spring.cloud.stream.function.outputBindings.process=output",
+				"--server.port=0",
 				"--spring.jmx.enabled=false",
 				"--spring.cloud.stream.bindings.input.destination=words",
 				"--spring.cloud.stream.bindings.output.destination=counts",
@@ -93,7 +94,6 @@ public class KafkaStreamsBinderWordCountFunctionTests {
 						"=org.apache.kafka.common.serialization.Serdes$StringSerde",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.default.value.serde" +
 						"=org.apache.kafka.common.serialization.Serdes$StringSerde",
-				//"--spring.cloud.stream.kafka.streams.bindings.output.producer.valueSerde=org.springframework.kafka.support.serializer.JsonSerde",
 				"--spring.cloud.stream.kafka.streams.binder.brokers=" + embeddedKafka.getBrokersAsString())) {
 			receiveAndValidate(context);
 		}
@@ -164,10 +164,9 @@ public class KafkaStreamsBinderWordCountFunctionTests {
 		}
 	}
 
-	@EnableBinding(KafkaStreamsProcessor.class)
 	@EnableAutoConfiguration
 	@EnableConfigurationProperties(KafkaStreamsApplicationSupportProperties.class)
-	static class WordCountProcessorApplication {
+	public static class WordCountProcessorApplication {
 
 		@Bean
 		public Function<KStream<Object, String>, KStream<?, WordCount>> process() {

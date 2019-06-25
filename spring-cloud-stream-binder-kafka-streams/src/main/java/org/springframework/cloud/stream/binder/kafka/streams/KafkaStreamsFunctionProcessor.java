@@ -16,10 +16,13 @@
 
 package org.springframework.cloud.stream.binder.kafka.streams;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
@@ -36,16 +39,20 @@ import org.apache.kafka.streams.kstream.Consumed;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.state.StoreBuilder;
 
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.BeanFactory;
+import org.springframework.beans.factory.BeanFactoryAware;
 import org.springframework.beans.factory.BeanInitializationException;
+import org.springframework.beans.factory.support.BeanDefinitionRegistry;
+import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.cloud.function.context.FunctionCatalog;
-import org.springframework.cloud.function.core.FluxedConsumer;
-import org.springframework.cloud.function.core.FluxedFunction;
+import org.springframework.cloud.stream.binder.kafka.streams.function.KafkaStreamsBindableProxyFactory;
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsConsumerProperties;
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsExtendedBindingProperties;
-import org.springframework.cloud.stream.binding.BindableProxyFactory;
 import org.springframework.cloud.stream.binding.StreamListenerErrorMessages;
 import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
+import org.springframework.cloud.stream.function.StreamFunctionProperties;
 import org.springframework.core.ResolvableType;
 import org.springframework.kafka.config.StreamsBuilderFactoryBean;
 import org.springframework.kafka.core.CleanupConfig;
@@ -57,7 +64,7 @@ import org.springframework.util.StringUtils;
  * @author Soby Chacko
  * @since 2.2.0
  */
-public class KafkaStreamsFunctionProcessor extends AbstractKafkaStreamsBinderProcessor {
+public class KafkaStreamsFunctionProcessor extends AbstractKafkaStreamsBinderProcessor implements BeanFactoryAware {
 
 	private static final Log LOG = LogFactory.getLog(KafkaStreamsFunctionProcessor.class);
 
@@ -69,10 +76,13 @@ public class KafkaStreamsFunctionProcessor extends AbstractKafkaStreamsBinderPro
 	private final KafkaStreamsMessageConversionDelegate kafkaStreamsMessageConversionDelegate;
 	private final FunctionCatalog functionCatalog;
 
-	private Set<String> origInputs = new TreeSet<>();
-	private Set<String> origOutputs = new TreeSet<>();
+	private Set<String> origInputs = new LinkedHashSet<>();
+	private Set<String> origOutputs = new LinkedHashSet<>();
 
 	private ResolvableType outboundResolvableType;
+	private KafkaStreamsBindableProxyFactory kafkaStreamsBindableProxyFactory;
+	private BeanFactory beanFactory;
+	private StreamFunctionProperties streamFunctionProperties;
 
 	public KafkaStreamsFunctionProcessor(BindingServiceProperties bindingServiceProperties,
 										KafkaStreamsExtendedBindingProperties kafkaStreamsExtendedBindingProperties,
@@ -81,7 +91,8 @@ public class KafkaStreamsFunctionProcessor extends AbstractKafkaStreamsBinderPro
 										KafkaStreamsMessageConversionDelegate kafkaStreamsMessageConversionDelegate,
 										CleanupConfig cleanupConfig,
 										FunctionCatalog functionCatalog,
-										BindableProxyFactory bindableProxyFactory) {
+										KafkaStreamsBindableProxyFactory bindableProxyFactory,
+										StreamFunctionProperties streamFunctionProperties) {
 		super(bindingServiceProperties, kafkaStreamsBindingInformationCatalogue, kafkaStreamsExtendedBindingProperties,
 				keyValueSerdeResolver, cleanupConfig);
 		this.bindingServiceProperties = bindingServiceProperties;
@@ -90,8 +101,10 @@ public class KafkaStreamsFunctionProcessor extends AbstractKafkaStreamsBinderPro
 		this.kafkaStreamsBindingInformationCatalogue = kafkaStreamsBindingInformationCatalogue;
 		this.kafkaStreamsMessageConversionDelegate = kafkaStreamsMessageConversionDelegate;
 		this.functionCatalog = functionCatalog;
+		this.kafkaStreamsBindableProxyFactory = bindableProxyFactory;
 		this.origInputs.addAll(bindableProxyFactory.getInputs());
 		this.origOutputs.addAll(bindableProxyFactory.getOutputs());
+		this.streamFunctionProperties = streamFunctionProperties;
 	}
 
 	private Map<String, ResolvableType> buildTypeMap(ResolvableType resolvableType) {
@@ -103,7 +116,7 @@ public class KafkaStreamsFunctionProcessor extends AbstractKafkaStreamsBinderPro
 			resolvableTypeGeneric = resolvableTypeGeneric.getGeneric(1);
 		}
 
-		final Set<String> inputs = new TreeSet<>(origInputs);
+		final Set<String> inputs = new LinkedHashSet<>(origInputs);
 		Map<String, ResolvableType> resolvableTypeMap = new LinkedHashMap<>();
 		final Iterator<String> iterator = inputs.iterator();
 
@@ -140,24 +153,13 @@ public class KafkaStreamsFunctionProcessor extends AbstractKafkaStreamsBinderPro
 		Object[] adaptedInboundArguments = adaptAndRetrieveInboundArguments(stringResolvableTypeMap, functionName);
 		try {
 			if (resolvableType.getRawClass() != null && resolvableType.getRawClass().equals(Consumer.class)) {
-				FluxedConsumer fluxedConsumer = functionCatalog.lookup(FluxedConsumer.class, functionName);
-				Assert.isTrue(fluxedConsumer != null,
+				Consumer<Object> consumer = (Consumer) this.beanFactory.getBean(functionName);
+				Assert.isTrue(consumer != null,
 						"No corresponding consumer beans found in the catalog");
-				Object target = fluxedConsumer.getTarget();
-
-				Consumer<Object> consumer = Consumer.class.isAssignableFrom(target.getClass()) ? (Consumer) target : null;
-
-				if (consumer != null) {
-					consumer.accept(adaptedInboundArguments[0]);
-				}
+				consumer.accept(adaptedInboundArguments[0]);
 			}
 			else {
-				Function<Object, Object> function = functionCatalog.lookup(Function.class, functionName);
-				Object target = null;
-				if (function instanceof FluxedFunction) {
-					target = ((FluxedFunction) function).getTarget();
-				}
-				function = (Function) target;
+				Function<Object, Object> function = (Function) beanFactory.getBean(functionName);
 				Assert.isTrue(function != null, "Function bean cannot be null");
 				Object result = function.apply(adaptedInboundArguments[0]);
 				int i = 1;
@@ -178,24 +180,30 @@ public class KafkaStreamsFunctionProcessor extends AbstractKafkaStreamsBinderPro
 					final Iterator<String> outboundDefinitionIterator = outputs.iterator();
 
 					if (result.getClass().isArray()) {
+						// Binding target as the output bindings were deffered in the KafkaStreamsBindableProxyFacotyr
+						// due to the fact that it didn't know the returned array size. At this point in the execution,
+						// we know exactly the number of outbound components (from the array length), so do the binding.
 						final int length = ((Object[]) result).length;
-						String[] methodAnnotatedOutboundNames = new String[length];
 
-						for (int j = 0; j < length; j++) {
-							if (outboundDefinitionIterator.hasNext()) {
-								final String next = outboundDefinitionIterator.next();
-								methodAnnotatedOutboundNames[j] = next;
-								this.origOutputs.remove(next);
-							}
-						}
+						List<String> outputBindings = getOutputBindings(functionName, length);
+						Iterator<String> iterator = outputBindings.iterator();
+						BeanDefinitionRegistry registry = (BeanDefinitionRegistry) beanFactory;
 						Object[] outboundKStreams = (Object[]) result;
-						int k = 0;
-						for (Object outboundKStream : outboundKStreams) {
-							Object targetBean = this.applicationContext.getBean(methodAnnotatedOutboundNames[k++]);
+
+						for (int ij = 0; ij < length; ij++) {
+
+							String next = iterator.next();
+							this.kafkaStreamsBindableProxyFactory.addOutputBinding(next, KStream.class);
+							RootBeanDefinition rootBeanDefinition1 = new RootBeanDefinition();
+							rootBeanDefinition1.setInstanceSupplier(() -> kafkaStreamsBindableProxyFactory.getOutputHolders().get(next).getBoundTarget());
+							registry.registerBeanDefinition(next, rootBeanDefinition1);
+
+							Object targetBean = this.applicationContext.getBean(next);
 
 							KStreamBoundElementFactory.KStreamWrapper
 									boundElement = (KStreamBoundElementFactory.KStreamWrapper) targetBean;
-							boundElement.wrap((KStream) outboundKStream);
+							boundElement.wrap((KStream) outboundKStreams[ij]);
+
 						}
 					}
 					else {
@@ -215,6 +223,22 @@ public class KafkaStreamsFunctionProcessor extends AbstractKafkaStreamsBinderPro
 		catch (Exception ex) {
 			throw new BeanInitializationException("Cannot setup function invoker for this Kafka Streams function.", ex);
 		}
+	}
+
+	private List<String> getOutputBindings(String functionName, int outputs)  {
+		List<String> outputBindings = this.streamFunctionProperties.getOutputBindings().get(functionName);
+		List<String> outputBindingNames = new ArrayList<>();
+		if (!CollectionUtils.isEmpty(outputBindings)) {
+			outputBindingNames.addAll(outputBindings);
+			return outputBindingNames;
+		}
+		else {
+			for (int i = 0; i < outputs; i++) {
+				outputBindingNames.add(functionName + "-" + "output" + "-" + i);
+			}
+		}
+		return outputBindingNames;
+
 	}
 
 	@SuppressWarnings({"unchecked"})
@@ -333,4 +357,8 @@ public class KafkaStreamsFunctionProcessor extends AbstractKafkaStreamsBinderPro
 		return getkStream(bindingProperties, stream, nativeDecoding);
 	}
 
+	@Override
+	public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
+		this.beanFactory = beanFactory;
+	}
 }

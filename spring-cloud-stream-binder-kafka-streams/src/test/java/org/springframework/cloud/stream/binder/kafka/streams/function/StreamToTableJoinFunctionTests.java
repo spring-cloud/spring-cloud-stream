@@ -44,9 +44,6 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.cloud.stream.annotation.EnableBinding;
-import org.springframework.cloud.stream.annotation.Input;
-import org.springframework.cloud.stream.annotation.Output;
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsApplicationSupportProperties;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
@@ -84,19 +81,17 @@ public class StreamToTableJoinFunctionTests {
 
 		try (ConfigurableApplicationContext ignored = app.run("--server.port=0",
 				"--spring.jmx.enabled=false",
-				"--spring.cloud.stream.function.definition=process1",
-				"--spring.cloud.stream.bindings.input-1.destination=user-clicks-1",
-				"--spring.cloud.stream.bindings.input-2.destination=user-regions-1",
-				"--spring.cloud.stream.bindings.output.destination=output-topic-1",
+				"--spring.cloud.stream.bindings.process-input-0.destination=user-clicks-1",
+				"--spring.cloud.stream.bindings.process-input-1.destination=user-regions-1",
+				"--spring.cloud.stream.bindings.process-output.destination=output-topic-1",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.default.key.serde" +
 						"=org.apache.kafka.common.serialization.Serdes$StringSerde",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.default.value.serde" +
 						"=org.apache.kafka.common.serialization.Serdes$StringSerde",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.commit.interval.ms=10000",
-				"--spring.cloud.stream.kafka.streams.bindings.input-1.consumer.applicationId" +
+				"--spring.cloud.stream.kafka.streams.bindings.process-input-0.consumer.applicationId" +
 						"=StreamToTableJoinFunctionTests-abc",
-				"--spring.cloud.stream.kafka.streams.binder.brokers=" + embeddedKafka.getBrokersAsString(),
-				"--spring.cloud.stream.kafka.streams.binder.zkNodes=" + embeddedKafka.getZookeeperConnectionString())) {
+				"--spring.cloud.stream.kafka.streams.binder.brokers=" + embeddedKafka.getBrokersAsString())) {
 
 			// Input 1: Region per user (multiple records allowed per user).
 			List<KeyValue<String, String>> userRegions = Arrays.asList(
@@ -214,11 +209,12 @@ public class StreamToTableJoinFunctionTests {
 			template.sendDefault(keyValue.key, keyValue.value);
 		}
 
-		try (ConfigurableApplicationContext ignored = app.run("--server.port=0",
+		try (ConfigurableApplicationContext context = app.run("--server.port=0",
 				"--spring.jmx.enabled=false",
+				"--spring.cloud.stream.function.inputBindings.process=input-1,input-2",
 				"--spring.cloud.stream.bindings.input-1.destination=user-clicks-2",
 				"--spring.cloud.stream.bindings.input-2.destination=user-regions-2",
-				"--spring.cloud.stream.bindings.output.destination=output-topic-2",
+				"--spring.cloud.stream.bindings.process-output.destination=output-topic-2",
 				"--spring.cloud.stream.bindings.input-1.consumer.useNativeDecoding=true",
 				"--spring.cloud.stream.bindings.input-2.consumer.useNativeDecoding=true",
 				"--spring.cloud.stream.bindings.output.producer.useNativeEncoding=true",
@@ -298,8 +294,17 @@ public class StreamToTableJoinFunctionTests {
 
 			assertThat(count).isEqualTo(expectedClicksPerRegion.size());
 			assertThat(actualClicksPerRegion).hasSameElementsAs(expectedClicksPerRegion);
+			//the following removal is a code smell. Check with Oleg to see why this is happening.
+			//culprit is BinderFactoryAutoConfiguration line 309 with the following code:
+			//if (StringUtils.hasText(name)) {
+			//			((StandardEnvironment) environment).getSystemProperties()
+			//					.putIfAbsent("spring.cloud.stream.function.definition", name);
+			//		}
+			context.getEnvironment().getSystemProperties()
+					.remove("spring.cloud.stream.function.definition");
 		}
 		finally {
+
 			consumer.close();
 		}
 	}
@@ -333,13 +338,12 @@ public class StreamToTableJoinFunctionTests {
 
 	}
 
-	@EnableBinding(KStreamKTableProcessor.class)
 	@EnableAutoConfiguration
 	@EnableConfigurationProperties(KafkaStreamsApplicationSupportProperties.class)
 	public static class CountClicksPerRegionApplication {
 
 		@Bean
-		public Function<KStream<String, Long>, Function<KTable<String, String>, KStream<String, Long>>> process1() {
+		public Function<KStream<String, Long>, Function<KTable<String, String>, KStream<String, Long>>> process() {
 			return userClicksStream -> (userRegionsTable -> (userClicksStream
 					.leftJoin(userRegionsTable, (clicks, region) -> new RegionWithClicks(region == null ?
 									"UNKNOWN" : region, clicks),
@@ -347,36 +351,9 @@ public class StreamToTableJoinFunctionTests {
 					.map((user, regionWithClicks) -> new KeyValue<>(regionWithClicks.getRegion(),
 							regionWithClicks.getClicks()))
 					.groupByKey(Serialized.with(Serdes.String(), Serdes.Long()))
-					.reduce((firstClicks, secondClicks) -> firstClicks + secondClicks)
+					.reduce(Long::sum)
 					.toStream()));
 		}
 	}
 
-	interface KStreamKTableProcessor {
-
-		/**
-		 * Input binding.
-		 *
-		 * @return {@link Input} binding for {@link KStream} type.
-		 */
-		@Input("input-1")
-		KStream<?, ?> input1();
-
-		/**
-		 * Input binding.
-		 *
-		 * @return {@link Input} binding for {@link KStream} type.
-		 */
-		@Input("input-2")
-		KTable<?, ?> input2();
-
-		/**
-		 * Output binding.
-		 *
-		 * @return {@link Output} binding for {@link KStream} type.
-		 */
-		@Output("output")
-		KStream<?, ?> output();
-
-	}
 }

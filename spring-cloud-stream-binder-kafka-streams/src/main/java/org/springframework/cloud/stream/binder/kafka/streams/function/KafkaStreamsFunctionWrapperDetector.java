@@ -22,12 +22,17 @@ import org.apache.kafka.streams.kstream.GlobalKTable;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.KTable;
 
+import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.cloud.function.context.WrapperDetector;
+import org.springframework.cloud.stream.config.BinderFactoryAutoConfiguration;
+import org.springframework.context.annotation.Configuration;
 
 /**
  * @author Soby Chacko
  * @since 2.2.0
  */
+@Configuration
+@AutoConfigureBefore(BinderFactoryAutoConfiguration.class)
 public class KafkaStreamsFunctionWrapperDetector implements WrapperDetector {
 	@Override
 	public boolean isWrapper(Type type) {

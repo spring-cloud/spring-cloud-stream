@@ -33,8 +33,6 @@ import org.junit.Test;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.cloud.stream.annotation.EnableBinding;
-import org.springframework.cloud.stream.annotation.Input;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
@@ -60,7 +58,7 @@ public class KafkaStreamsFunctionStateStoreTests {
 
 		try (ConfigurableApplicationContext context = app.run("--server.port=0",
 				"--spring.jmx.enabled=false",
-				"--spring.cloud.stream.bindings.input.destination=words",
+				"--spring.cloud.stream.bindings.process-input.destination=words",
 				"--spring.cloud.stream.kafka.streams.default.consumer.application-id=basic-word-count-1",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.commit.interval.ms=1000",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.default.key.serde" +
@@ -97,9 +95,8 @@ public class KafkaStreamsFunctionStateStoreTests {
 		}
 	}
 
-	@EnableBinding(KStreamProcessorX.class)
 	@EnableAutoConfiguration
-	static class StateStoreTestApplication {
+	public static class StateStoreTestApplication {
 
 		KeyValueStore<Long, Long> state1;
 		WindowStore<Long, Long> state2;
@@ -148,11 +145,6 @@ public class KafkaStreamsFunctionStateStoreTests {
 							3L, 3, 3L, false), Serdes.Long(),
 					Serdes.Long());
 		}
-	}
-
-	interface KStreamProcessorX  {
-		@Input("input")
-		KStream<?, ?> input();
 	}
 
 }

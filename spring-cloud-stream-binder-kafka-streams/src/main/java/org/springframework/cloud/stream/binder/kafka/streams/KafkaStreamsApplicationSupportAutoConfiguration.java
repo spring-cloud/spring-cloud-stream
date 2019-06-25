@@ -36,7 +36,8 @@ import org.springframework.context.annotation.Configuration;
 public class KafkaStreamsApplicationSupportAutoConfiguration {
 
 	@Bean
-	@ConditionalOnProperty("spring.cloud.stream.kafka.streams.timeWindow.length")
+	@ConditionalOnProperty("spring.cloud.strea" +
+			"m.kafka.streams.timeWindow.length")
 	public TimeWindows configuredTimeWindow(
 			KafkaStreamsApplicationSupportProperties processorProperties) {
 		return processorProperties.getTimeWindow().getAdvanceBy() > 0

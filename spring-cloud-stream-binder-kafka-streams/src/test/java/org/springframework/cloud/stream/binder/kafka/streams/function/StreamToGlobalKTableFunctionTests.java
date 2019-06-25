@@ -39,9 +39,6 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.cloud.stream.annotation.EnableBinding;
-import org.springframework.cloud.stream.annotation.Input;
-import org.springframework.cloud.stream.binder.kafka.streams.annotations.KafkaStreamsProcessor;
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsApplicationSupportProperties;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
@@ -72,19 +69,20 @@ public class StreamToGlobalKTableFunctionTests {
 		app.setWebApplicationType(WebApplicationType.NONE);
 		try (ConfigurableApplicationContext ignored = app.run("--server.port=0",
 				"--spring.jmx.enabled=false",
-				"--spring.cloud.stream.bindings.input.destination=orders",
-				"--spring.cloud.stream.bindings.input-x.destination=customers",
-				"--spring.cloud.stream.bindings.input-y.destination=products",
-				"--spring.cloud.stream.bindings.output.destination=enriched-order",
+				"--spring.cloud.stream.function.inputBindings.process=order,customer,product",
+				"--spring.cloud.stream.function.outputBindings.process=enriched-order",
+				"--spring.cloud.stream.bindings.order.destination=orders",
+				"--spring.cloud.stream.bindings.customer.destination=customers",
+				"--spring.cloud.stream.bindings.product.destination=products",
+				"--spring.cloud.stream.bindings.enriched-order.destination=enriched-order",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.default.key.serde" +
 						"=org.apache.kafka.common.serialization.Serdes$StringSerde",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.default.value.serde" +
 						"=org.apache.kafka.common.serialization.Serdes$StringSerde",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.commit.interval.ms=10000",
-				"--spring.cloud.stream.kafka.streams.bindings.input.consumer.applicationId=" +
+				"--spring.cloud.stream.kafka.streams.bindings.order.consumer.applicationId=" +
 						"StreamToGlobalKTableJoinFunctionTests-abc",
-				"--spring.cloud.stream.kafka.streams.binder.brokers=" + embeddedKafka.getBrokersAsString(),
-				"--spring.cloud.stream.kafka.streams.binder.zkNodes=" + embeddedKafka.getZookeeperConnectionString())) {
+				"--spring.cloud.stream.kafka.streams.binder.brokers=" + embeddedKafka.getBrokersAsString())) {
 			Map<String, Object> senderPropsCustomer = KafkaTestUtils.producerProps(embeddedKafka);
 			senderPropsCustomer.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, LongSerializer.class);
 			senderPropsCustomer.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG,
@@ -176,16 +174,6 @@ public class StreamToGlobalKTableFunctionTests {
 		}
 	}
 
-	interface CustomGlobalKTableProcessor extends KafkaStreamsProcessor {
-
-		@Input("input-x")
-		GlobalKTable<?, ?> inputX();
-
-		@Input("input-y")
-		GlobalKTable<?, ?> inputY();
-	}
-
-	@EnableBinding(CustomGlobalKTableProcessor.class)
 	@EnableAutoConfiguration
 	@EnableConfigurationProperties(KafkaStreamsApplicationSupportProperties.class)
 	public static class OrderEnricherApplication {

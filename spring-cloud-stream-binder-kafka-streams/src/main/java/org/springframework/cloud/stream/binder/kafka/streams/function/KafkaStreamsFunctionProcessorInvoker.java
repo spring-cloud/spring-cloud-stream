@@ -28,12 +28,12 @@ import org.springframework.core.ResolvableType;
  * @author Soby Chacko
  * @since 2.1.0
  */
-class KafkaStreamsFunctionProcessorInvoker {
+public class KafkaStreamsFunctionProcessorInvoker {
 
 	private final KafkaStreamsFunctionProcessor kafkaStreamsFunctionProcessor;
 	private final Map<String, ResolvableType> resolvableTypeMap;
 
-	KafkaStreamsFunctionProcessorInvoker(Map<String, ResolvableType> resolvableTypeMap,
+	public KafkaStreamsFunctionProcessorInvoker(Map<String, ResolvableType> resolvableTypeMap,
 										KafkaStreamsFunctionProcessor kafkaStreamsFunctionProcessor) {
 		this.kafkaStreamsFunctionProcessor = kafkaStreamsFunctionProcessor;
 		this.resolvableTypeMap = resolvableTypeMap;
