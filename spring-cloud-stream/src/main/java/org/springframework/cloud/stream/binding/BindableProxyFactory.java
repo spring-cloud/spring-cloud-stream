@@ -17,12 +17,8 @@
 package org.springframework.cloud.stream.binding;
 
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
@@ -32,17 +28,12 @@ import org.apache.commons.logging.LogFactory;
 import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.InitializingBean;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.Input;
 import org.springframework.cloud.stream.annotation.Output;
-import org.springframework.cloud.stream.binder.Binding;
-import org.springframework.cloud.stream.internal.InternalPropertyNames;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.util.Assert;
 import org.springframework.util.ReflectionUtils;
-import org.springframework.util.StringUtils;
 
 /**
  * {@link FactoryBean} for instantiating the interfaces specified via
@@ -54,33 +45,22 @@ import org.springframework.util.StringUtils;
  * @author Oleg Zhurakousky
  * @see EnableBinding
  */
-public class BindableProxyFactory
-		implements MethodInterceptor, FactoryBean<Object>, Bindable, InitializingBean {
+public class BindableProxyFactory extends AbstractBindableProxyFactory
+		implements MethodInterceptor, FactoryBean<Object>, InitializingBean {
 
 	private static Log log = LogFactory.getLog(BindableProxyFactory.class);
 
 	private final Map<Method, Object> targetCache = new HashMap<>(2);
 
-	@Value("${" + InternalPropertyNames.NAMESPACE_PROPERTY_NAME + ":}")
-	private String namespace;
-
-	@Autowired
-	private Map<String, BindingTargetFactory> bindingTargetFactories;
-
-	private Class<?> type;
-
 	private Object proxy;
 
-	private Map<String, BoundTargetHolder> inputHolders = new HashMap<>();
-
-	private Map<String, BoundTargetHolder> outputHolders = new HashMap<>();
-
 	public BindableProxyFactory(Class<?> type) {
+		super(type);
 		this.type = type;
 	}
 
 	@Override
-	public synchronized Object invoke(MethodInvocation invocation) throws Throwable {
+	public synchronized Object invoke(MethodInvocation invocation) {
 		Method method = invocation.getMethod();
 
 		// try to use cached target
@@ -111,74 +91,37 @@ public class BindableProxyFactory
 	}
 
 	@Override
-	public void afterPropertiesSet() throws Exception {
+	public void afterPropertiesSet() {
 		Assert.notEmpty(BindableProxyFactory.this.bindingTargetFactories,
 				"'bindingTargetFactories' cannot be empty");
-		ReflectionUtils.doWithMethods(this.type, new ReflectionUtils.MethodCallback() {
-			@Override
-			public void doWith(Method method) throws IllegalArgumentException {
-				Input input = AnnotationUtils.findAnnotation(method, Input.class);
-				if (input != null) {
-					String name = BindingBeanDefinitionRegistryUtils
-							.getBindingTargetName(input, method);
-					Class<?> returnType = method.getReturnType();
+		ReflectionUtils.doWithMethods(this.type, method -> {
+			Input input = AnnotationUtils.findAnnotation(method, Input.class);
+			if (input != null) {
+				String name = BindingBeanDefinitionRegistryUtils
+						.getBindingTargetName(input, method);
+				Class<?> returnType = method.getReturnType();
 
-					BindableProxyFactory.this.inputHolders.put(name,
-							new BoundTargetHolder(getBindingTargetFactory(returnType)
-									.createInput(name), true));
-				}
+				BindableProxyFactory.this.inputHolders.put(name,
+						new BoundTargetHolder(getBindingTargetFactory(returnType)
+								.createInput(name), true));
 			}
 		});
-		ReflectionUtils.doWithMethods(this.type, new ReflectionUtils.MethodCallback() {
-			@Override
-			public void doWith(Method method) throws IllegalArgumentException {
-				Output output = AnnotationUtils.findAnnotation(method, Output.class);
-				if (output != null) {
-					String name = BindingBeanDefinitionRegistryUtils
-							.getBindingTargetName(output, method);
-					Class<?> returnType = method.getReturnType();
+		ReflectionUtils.doWithMethods(this.type, method -> {
+			Output output = AnnotationUtils.findAnnotation(method, Output.class);
+			if (output != null) {
+				String name = BindingBeanDefinitionRegistryUtils
+						.getBindingTargetName(output, method);
+				Class<?> returnType = method.getReturnType();
 
-					BindableProxyFactory.this.outputHolders.put(name,
-							new BoundTargetHolder(getBindingTargetFactory(returnType)
-									.createOutput(name), true));
-				}
+				BindableProxyFactory.this.outputHolders.put(name,
+						new BoundTargetHolder(getBindingTargetFactory(returnType)
+								.createOutput(name), true));
 			}
 		});
-	}
-
-	private BindingTargetFactory getBindingTargetFactory(Class<?> bindingTargetType) {
-		List<String> candidateBindingTargetFactories = new ArrayList<>();
-		for (Map.Entry<String, BindingTargetFactory> bindingTargetFactoryEntry : this.bindingTargetFactories
-				.entrySet()) {
-			if (bindingTargetFactoryEntry.getValue().canCreate(bindingTargetType)) {
-				candidateBindingTargetFactories.add(bindingTargetFactoryEntry.getKey());
-			}
-		}
-		if (candidateBindingTargetFactories.size() == 1) {
-			return this.bindingTargetFactories
-					.get(candidateBindingTargetFactories.get(0));
-		}
-		else {
-			if (candidateBindingTargetFactories.size() == 0) {
-				throw new IllegalStateException(
-						"No factory found for binding target type: "
-								+ bindingTargetType.getName()
-								+ " among registered factories: "
-								+ StringUtils.collectionToCommaDelimitedString(
-										this.bindingTargetFactories.keySet()));
-			}
-			else {
-				throw new IllegalStateException(
-						"Multiple factories found for binding target type: "
-								+ bindingTargetType.getName() + ": "
-								+ StringUtils.collectionToCommaDelimitedString(
-										candidateBindingTargetFactories));
-			}
-		}
 	}
 
 	@Override
-	public synchronized Object getObject() throws Exception {
+	public synchronized Object getObject() {
 		if (this.proxy == null) {
 			ProxyFactory factory = new ProxyFactory(this.type, this);
 			this.proxy = factory.getProxy();
@@ -194,125 +137,6 @@ public class BindableProxyFactory
 	@Override
 	public boolean isSingleton() {
 		return true;
-	}
-
-	@Override
-	public Collection<Binding<Object>> createAndBindInputs(
-			BindingService bindingService) {
-		List<Binding<Object>> bindings = new ArrayList<>();
-		if (log.isDebugEnabled()) {
-			log.debug(
-					String.format("Binding inputs for %s:%s", this.namespace, this.type));
-		}
-		for (Map.Entry<String, BoundTargetHolder> boundTargetHolderEntry : this.inputHolders
-				.entrySet()) {
-			String inputTargetName = boundTargetHolderEntry.getKey();
-			BoundTargetHolder boundTargetHolder = boundTargetHolderEntry.getValue();
-			if (boundTargetHolder.isBindable()) {
-				if (log.isDebugEnabled()) {
-					log.debug(String.format("Binding %s:%s:%s", this.namespace, this.type,
-							inputTargetName));
-				}
-				bindings.addAll(bindingService.bindConsumer(
-						boundTargetHolder.getBoundTarget(), inputTargetName));
-			}
-		}
-		return bindings;
-	}
-
-	@Override
-	public Collection<Binding<Object>> createAndBindOutputs(
-			BindingService bindingService) {
-		List<Binding<Object>> bindings = new ArrayList<>();
-		if (log.isDebugEnabled()) {
-			log.debug(String.format("Binding outputs for %s:%s", this.namespace,
-					this.type));
-		}
-		for (Map.Entry<String, BoundTargetHolder> boundTargetHolderEntry : this.outputHolders
-				.entrySet()) {
-			BoundTargetHolder boundTargetHolder = boundTargetHolderEntry.getValue();
-			String outputTargetName = boundTargetHolderEntry.getKey();
-			if (boundTargetHolderEntry.getValue().isBindable()) {
-				if (log.isDebugEnabled()) {
-					log.debug(String.format("Binding %s:%s:%s", this.namespace, this.type,
-							outputTargetName));
-				}
-				bindings.add(bindingService.bindProducer(
-						boundTargetHolder.getBoundTarget(), outputTargetName));
-			}
-		}
-		return bindings;
-	}
-
-	@Override
-	public void unbindInputs(BindingService bindingService) {
-		if (log.isDebugEnabled()) {
-			log.debug(String.format("Unbinding inputs for %s:%s", this.namespace,
-					this.type));
-		}
-		for (Map.Entry<String, BoundTargetHolder> boundTargetHolderEntry : this.inputHolders
-				.entrySet()) {
-			if (boundTargetHolderEntry.getValue().isBindable()) {
-				if (log.isDebugEnabled()) {
-					log.debug(String.format("Unbinding %s:%s:%s", this.namespace,
-							this.type, boundTargetHolderEntry.getKey()));
-				}
-				bindingService.unbindConsumers(boundTargetHolderEntry.getKey());
-			}
-		}
-	}
-
-	@Override
-	public void unbindOutputs(BindingService bindingService) {
-		if (log.isDebugEnabled()) {
-			log.debug(String.format("Unbinding outputs for %s:%s", this.namespace,
-					this.type));
-		}
-		for (Map.Entry<String, BoundTargetHolder> boundTargetHolderEntry : this.outputHolders
-				.entrySet()) {
-			if (boundTargetHolderEntry.getValue().isBindable()) {
-				if (log.isDebugEnabled()) {
-					log.debug(String.format("Binding %s:%s:%s", this.namespace, this.type,
-							boundTargetHolderEntry.getKey()));
-				}
-				bindingService.unbindProducers(boundTargetHolderEntry.getKey());
-			}
-		}
-	}
-
-	@Override
-	public Set<String> getInputs() {
-		return this.inputHolders.keySet();
-	}
-
-	@Override
-	public Set<String> getOutputs() {
-		return this.outputHolders.keySet();
-	}
-
-	/**
-	 * Holds information about the binding targets exposed by the interface proxy, as well
-	 * as their status.
-	 */
-	private final class BoundTargetHolder {
-
-		private Object boundTarget;
-
-		private boolean bindable;
-
-		private BoundTargetHolder(Object boundTarget, boolean bindable) {
-			this.boundTarget = boundTarget;
-			this.bindable = bindable;
-		}
-
-		public Object getBoundTarget() {
-			return this.boundTarget;
-		}
-
-		public boolean isBindable() {
-			return this.bindable;
-		}
-
 	}
 
 }

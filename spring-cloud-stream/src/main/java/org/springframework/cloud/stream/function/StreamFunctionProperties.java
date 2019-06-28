@@ -16,6 +16,10 @@
 
 package org.springframework.cloud.stream.function;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.cloud.stream.messaging.Processor;
@@ -23,6 +27,7 @@ import org.springframework.cloud.stream.messaging.Processor;
 /**
  * @author Oleg Zhurakousky
  * @author Tolga Kavukcu
+ * @author Soby Chacko
  * @since 2.1
  */
 @ConfigurationProperties("spring.cloud.stream.function")
@@ -39,6 +44,10 @@ public class StreamFunctionProperties {
 	private String inputDestinationName = Processor.INPUT;
 
 	private String outputDestinationName = Processor.OUTPUT;
+
+	private Map<String, List<String>> inputBindings = new HashMap<>();
+
+	private Map<String, List<String>> outputBindings = new HashMap<>();
 
 	public String getDefinition() {
 		return this.definition;
@@ -72,4 +81,21 @@ public class StreamFunctionProperties {
 		this.outputDestinationName = outputDestinationName;
 	}
 
+	public Map<String, List<String>> getInputBindings() {
+		return inputBindings;
+	}
+
+	public Map<String, List<String>> getOutputBindings() {
+		return outputBindings;
+	}
+
+	public void setOutputBindings(Map<String, List<String>> outputBindings) {
+		this.outputBindings = outputBindings;
+	}
+
+	public void setInputBindings(Map<String, List<String>> inputBindings) {
+		this.inputBindings = inputBindings;
+
+
+	}
 }
