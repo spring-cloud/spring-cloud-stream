@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
 import org.apache.kafka.clients.consumer.Consumer;
@@ -65,7 +66,7 @@ public class StreamToTableJoinFunctionTests {
 	private static EmbeddedKafkaBroker embeddedKafka = embeddedKafkaRule.getEmbeddedKafka();
 
 	@Test
-	public void testStreamToTable() throws Exception {
+	public void testStreamToTable() {
 		SpringApplication app = new SpringApplication(CountClicksPerRegionApplication.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 
@@ -79,6 +80,28 @@ public class StreamToTableJoinFunctionTests {
 		consumer = cf.createConsumer();
 		embeddedKafka.consumeFromAnEmbeddedTopic(consumer, "output-topic-1");
 
+		runTest(app, consumer);
+	}
+
+	@Test
+	public void testStreamToTableBiFunction() {
+		SpringApplication app = new SpringApplication(BiFunctionCountClicksPerRegionApplication.class);
+		app.setWebApplicationType(WebApplicationType.NONE);
+
+		Consumer<String, Long> consumer;
+		Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("group-2",
+				"false", embeddedKafka);
+		consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+		consumerProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+		consumerProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, LongDeserializer.class);
+		DefaultKafkaConsumerFactory<String, Long> cf = new DefaultKafkaConsumerFactory<>(consumerProps);
+		consumer = cf.createConsumer();
+		embeddedKafka.consumeFromAnEmbeddedTopic(consumer, "output-topic-1");
+
+		runTest(app, consumer);
+	}
+
+	private void runTest(SpringApplication app, Consumer<String, Long> consumer) {
 		try (ConfigurableApplicationContext ignored = app.run("--server.port=0",
 				"--spring.jmx.enabled=false",
 				"--spring.cloud.stream.bindings.process-input-0.destination=user-clicks-1",
@@ -168,11 +191,11 @@ public class StreamToTableJoinFunctionTests {
 
 	@Test
 	public void testGlobalStartOffsetWithLatestAndIndividualBindingWthEarliest() throws Exception {
-		SpringApplication app = new SpringApplication(CountClicksPerRegionApplication.class);
+		SpringApplication app = new SpringApplication(BiFunctionCountClicksPerRegionApplication.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 
 		Consumer<String, Long> consumer;
-		Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("group-2",
+		Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("group-3",
 				"false", embeddedKafka);
 		consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
 		consumerProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
@@ -353,6 +376,24 @@ public class StreamToTableJoinFunctionTests {
 					.groupByKey(Serialized.with(Serdes.String(), Serdes.Long()))
 					.reduce(Long::sum)
 					.toStream()));
+		}
+	}
+
+	@EnableAutoConfiguration
+	@EnableConfigurationProperties(KafkaStreamsApplicationSupportProperties.class)
+	public static class BiFunctionCountClicksPerRegionApplication {
+
+		@Bean
+		public BiFunction<KStream<String, Long>, KTable<String, String>, KStream<String, Long>> process() {
+			return (userClicksStream, userRegionsTable) -> (userClicksStream
+					.leftJoin(userRegionsTable, (clicks, region) -> new RegionWithClicks(region == null ?
+									"UNKNOWN" : region, clicks),
+							Joined.with(Serdes.String(), Serdes.Long(), null))
+					.map((user, regionWithClicks) -> new KeyValue<>(regionWithClicks.getRegion(),
+							regionWithClicks.getClicks()))
+					.groupByKey(Serialized.with(Serdes.String(), Serdes.Long()))
+					.reduce(Long::sum)
+					.toStream());
 		}
 	}
 

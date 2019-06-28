@@ -19,6 +19,7 @@ package org.springframework.cloud.stream.binder.kafka.streams.function;
 import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -58,9 +59,12 @@ public class KafkaStreamsFunctionBeanPostProcessor implements InitializingBean, 
 	public void afterPropertiesSet() {
 
 		String[] functionNames = this.beanFactory.getBeanNamesForType(Function.class);
+		String[] biFunctionNames = this.beanFactory.getBeanNamesForType(BiFunction.class);
 		String[] consumerNames = this.beanFactory.getBeanNamesForType(Consumer.class);
 
-		Stream.concat(Stream.of(functionNames), Stream.of(consumerNames)).forEach(this::extractResolvableTypes);
+		Stream.concat(
+				Stream.concat(Stream.of(functionNames), Stream.of(consumerNames)), Stream.of(biFunctionNames))
+				.forEach(this::extractResolvableTypes);
 
 		BindableProvider bindableProvider =
 		clazz -> clazz.isAssignableFrom(KStream.class) || clazz.isAssignableFrom(KTable.class)

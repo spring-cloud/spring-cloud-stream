@@ -22,6 +22,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -67,6 +68,8 @@ import org.springframework.util.CollectionUtils;
  */
 public class KafkaStreamsBindableProxyFactory extends AbstractBindableProxyFactory implements InitializingBean, BeanFactoryAware {
 
+	private static final String DEFAULT_INPUT_SUFFIX = "input";
+
 	private static Log log = LogFactory.getLog(BindableProxyFactory.class);
 
 	@Autowired
@@ -90,57 +93,58 @@ public class KafkaStreamsBindableProxyFactory extends AbstractBindableProxyFacto
 		Assert.notEmpty(KafkaStreamsBindableProxyFactory.this.bindingTargetFactories,
 				"'bindingTargetFactories' cannot be empty");
 
-		ResolvableType arg0 = this.type.getGeneric(0);
+		int resolvableTypeDepthCounter = 0;
+		ResolvableType argument = this.type.getGeneric(resolvableTypeDepthCounter++);
 		List<String> inputBindings = buildInputBindings();
 		Iterator<String> iterator = inputBindings.iterator();
 		String next = iterator.next();
-		bindInput(arg0, next);
-		BeanDefinitionRegistry registry = (BeanDefinitionRegistry) beanFactory;
+		bindInput(argument, next);
 
-		RootBeanDefinition rootBeanDefinition = new RootBeanDefinition();
-		rootBeanDefinition.setInstanceSupplier(() -> inputHolders.get(next).getBoundTarget());
-		registry.registerBeanDefinition(next, rootBeanDefinition);
+		if (this.type.getRawClass() != null &&
+				this.type.getRawClass().isAssignableFrom(BiFunction.class)) {
+			argument = this.type.getGeneric(resolvableTypeDepthCounter++);
+			next = iterator.next();
+			bindInput(argument, next);
+		}
+		ResolvableType outboundArgument = this.type.getGeneric(resolvableTypeDepthCounter);
 
-		ResolvableType arg1 = this.type.getGeneric(1);
-
-		while (isAnotherFunctionOrConsumerFound(arg1)) {
-			arg0 = arg1.getGeneric(0);
+		while (isAnotherFunctionOrConsumerFound(outboundArgument)) {
+			//The function is a curried function. We should introspect the partial function chain hierarchy.
+			argument = outboundArgument.getGeneric(0);
 			String next1 = iterator.next();
-			bindInput(arg0, next1);
-			RootBeanDefinition rootBeanDefinition1 = new RootBeanDefinition();
-			rootBeanDefinition1.setInstanceSupplier(() -> inputHolders.get(next1).getBoundTarget());
-			registry.registerBeanDefinition(next1, rootBeanDefinition1);
-
-			arg1 = arg1.getGeneric(1);
+			bindInput(argument, next1);
+			outboundArgument = outboundArgument.getGeneric(1);
 		}
 
 		//Introspect output for binding.
-		if (arg1 != null &&  arg1.getRawClass() != null && (arg1.isArray() || arg1.getRawClass().isAssignableFrom(KStream.class))) {
+		if (outboundArgument != null &&  outboundArgument.getRawClass() != null && (!outboundArgument.isArray() &&
+				outboundArgument.getRawClass().isAssignableFrom(KStream.class))) {
 			// if the type is array, we need to do a late binding as we don't know the number of
 			// output bindings at this point in the flow.
-			if (!arg1.isArray()) {
-				List<String> outputBindings = streamFunctionProperties.getOutputBindings().get(this.functionName);
-				String outputBinding = null;
 
-				if (!CollectionUtils.isEmpty(outputBindings)) {
-					Iterator<String> outputBindingsIter = outputBindings.iterator();
-					if (outputBindingsIter.hasNext()) {
-						outputBinding = outputBindingsIter.next();
-					}
+			List<String> outputBindings = streamFunctionProperties.getOutputBindings().get(this.functionName);
+			String outputBinding = null;
 
+			if (!CollectionUtils.isEmpty(outputBindings)) {
+				Iterator<String> outputBindingsIter = outputBindings.iterator();
+				if (outputBindingsIter.hasNext()) {
+					outputBinding = outputBindingsIter.next();
 				}
-				else {
-					outputBinding = this.functionName + "-" + "output";
-				}
-				Assert.isTrue(outputBinding != null, "output binding is not inferred.");
-				KafkaStreamsBindableProxyFactory.this.outputHolders.put(outputBinding,
-						new BoundTargetHolder(getBindingTargetFactory(KStream.class)
-								.createOutput(outputBinding), true));
-				String outputBinding1 = outputBinding;
-				RootBeanDefinition rootBeanDefinition1 = new RootBeanDefinition();
-				rootBeanDefinition1.setInstanceSupplier(() -> outputHolders.get(outputBinding1).getBoundTarget());
-				registry.registerBeanDefinition(outputBinding1, rootBeanDefinition1);
+
 			}
+			else {
+				outputBinding = this.functionName + "-" + "output";
+			}
+			Assert.isTrue(outputBinding != null, "output binding is not inferred.");
+			KafkaStreamsBindableProxyFactory.this.outputHolders.put(outputBinding,
+					new BoundTargetHolder(getBindingTargetFactory(KStream.class)
+							.createOutput(outputBinding), true));
+			String outputBinding1 = outputBinding;
+			RootBeanDefinition rootBeanDefinition1 = new RootBeanDefinition();
+			rootBeanDefinition1.setInstanceSupplier(() -> outputHolders.get(outputBinding1).getBoundTarget());
+			BeanDefinitionRegistry registry = (BeanDefinitionRegistry) beanFactory;
+			registry.registerBeanDefinition(outputBinding1, rootBeanDefinition1);
+
 		}
 	}
 
@@ -163,15 +167,16 @@ public class KafkaStreamsBindableProxyFactory extends AbstractBindableProxyFacto
 			inputs.addAll(inputBindings);
 			return inputs;
 		}
-		int numberOfInputs = getNumberOfInputs();
+		int numberOfInputs = this.type.getRawClass() != null &&
+				this.type.getRawClass().isAssignableFrom(BiFunction.class) ? 2 : getNumberOfInputs();
 		if (numberOfInputs == 1) {
-			inputs.add(this.functionName + "-" + "input");
+			inputs.add(this.functionName + "-" + DEFAULT_INPUT_SUFFIX);
 			return inputs;
 		}
 		else {
 			int i = 0;
 			while (i < numberOfInputs) {
-				inputs.add(this.functionName + "-" + "input" + "-" + i++);
+				inputs.add(this.functionName + "-" + DEFAULT_INPUT_SUFFIX + "-" + i++);
 			}
 			return inputs;
 		}
@@ -207,6 +212,13 @@ public class KafkaStreamsBindableProxyFactory extends AbstractBindableProxyFacto
 								.createInput(inputName), true));
 			}
 		}
+
+		BeanDefinitionRegistry registry = (BeanDefinitionRegistry) beanFactory;
+
+		RootBeanDefinition rootBeanDefinition = new RootBeanDefinition();
+		rootBeanDefinition.setInstanceSupplier(() -> inputHolders.get(inputName).getBoundTarget());
+		registry.registerBeanDefinition(inputName, rootBeanDefinition);
+
 	}
 
 	@Override

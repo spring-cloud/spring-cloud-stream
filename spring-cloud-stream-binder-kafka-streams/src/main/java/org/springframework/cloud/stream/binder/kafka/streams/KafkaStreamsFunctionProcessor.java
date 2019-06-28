@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -108,31 +109,49 @@ public class KafkaStreamsFunctionProcessor extends AbstractKafkaStreamsBinderPro
 	}
 
 	private Map<String, ResolvableType> buildTypeMap(ResolvableType resolvableType) {
-		int inputCount = 1;
-
-		ResolvableType resolvableTypeGeneric = resolvableType.getGeneric(1);
-		while (resolvableTypeGeneric != null && resolvableTypeGeneric.getRawClass() != null && (functionOrConsumerFound(resolvableTypeGeneric))) {
-			inputCount++;
-			resolvableTypeGeneric = resolvableTypeGeneric.getGeneric(1);
-		}
-
-		final Set<String> inputs = new LinkedHashSet<>(origInputs);
 		Map<String, ResolvableType> resolvableTypeMap = new LinkedHashMap<>();
-		final Iterator<String> iterator = inputs.iterator();
+		if (resolvableType != null && resolvableType.getRawClass() != null) {
+			int inputCount = 1;
 
-		popuateResolvableTypeMap(resolvableType, resolvableTypeMap, iterator);
+			ResolvableType currentOutputGeneric;
+			if (resolvableType.getRawClass().isAssignableFrom(BiFunction.class)) {
+				inputCount = 2;
+				currentOutputGeneric = resolvableType.getGeneric(2);
+			}
+			else {
+				currentOutputGeneric = resolvableType.getGeneric(1);
+			}
+			while (currentOutputGeneric != null && currentOutputGeneric.getRawClass() != null
+					&& (functionOrConsumerFound(currentOutputGeneric))) {
+				inputCount++;
+				currentOutputGeneric = currentOutputGeneric.getGeneric(1);
+			}
 
-		ResolvableType iterableResType = resolvableType;
-		for (int i = 1; i < inputCount; i++) {
-			if (iterator.hasNext()) {
-				iterableResType = iterableResType.getGeneric(1);
-				if (iterableResType.getRawClass() != null &&
-						functionOrConsumerFound(iterableResType)) {
-					popuateResolvableTypeMap(iterableResType, resolvableTypeMap, iterator);
+			final Set<String> inputs = new LinkedHashSet<>(origInputs);
+
+			final Iterator<String> iterator = inputs.iterator();
+
+			popuateResolvableTypeMap(resolvableType, resolvableTypeMap, iterator);
+
+			ResolvableType iterableResType = resolvableType;
+			int i = resolvableType.getRawClass().isAssignableFrom(BiFunction.class) ? 2 : 1;
+			if (i == inputCount) {
+				outboundResolvableType = iterableResType.getGeneric(i);
+			}
+			else {
+				while (i < inputCount) {
+					if (iterator.hasNext()) {
+						iterableResType = iterableResType.getGeneric(1);
+						if (iterableResType.getRawClass() != null &&
+								functionOrConsumerFound(iterableResType)) {
+							popuateResolvableTypeMap(iterableResType, resolvableTypeMap, iterator);
+						}
+						i++;
+					}
 				}
+				outboundResolvableType = iterableResType.getGeneric(1);
 			}
 		}
-		outboundResolvableType = iterableResType.getGeneric(1);
 		return resolvableTypeMap;
 	}
 
@@ -144,6 +163,10 @@ public class KafkaStreamsFunctionProcessor extends AbstractKafkaStreamsBinderPro
 	private void popuateResolvableTypeMap(ResolvableType resolvableType, Map<String, ResolvableType> resolvableTypeMap, Iterator<String> iterator) {
 		final String next = iterator.next();
 		resolvableTypeMap.put(next, resolvableType.getGeneric(0));
+		if (resolvableType.getRawClass() != null && resolvableType.getRawClass().isAssignableFrom(BiFunction.class)
+			&& iterator.hasNext()) {
+			resolvableTypeMap.put(iterator.next(), resolvableType.getGeneric(1));
+		}
 		origInputs.remove(next);
 	}
 
@@ -159,9 +182,17 @@ public class KafkaStreamsFunctionProcessor extends AbstractKafkaStreamsBinderPro
 				consumer.accept(adaptedInboundArguments[0]);
 			}
 			else {
-				Function<Object, Object> function = (Function) beanFactory.getBean(functionName);
-				Assert.isTrue(function != null, "Function bean cannot be null");
-				Object result = function.apply(adaptedInboundArguments[0]);
+				Object result;
+				if (resolvableType.getRawClass() != null && resolvableType.getRawClass().equals(BiFunction.class)) {
+					BiFunction<Object, Object, Object> biFunction = (BiFunction) beanFactory.getBean(functionName);
+					Assert.isTrue(biFunction != null, "Biunction bean cannot be null");
+					result = biFunction.apply(adaptedInboundArguments[0], adaptedInboundArguments[1]);
+				}
+				else {
+					Function<Object, Object> function = (Function) beanFactory.getBean(functionName);
+					Assert.isTrue(function != null, "Function bean cannot be null");
+					result = function.apply(adaptedInboundArguments[0]);
+				}
 				int i = 1;
 				while (result instanceof Function || result instanceof Consumer) {
 					if (result instanceof Function) {
