@@ -249,7 +249,7 @@ public class BinderFactoryAutoConfiguration {
 
 	@Bean
 	public BeanFactoryPostProcessor implicitFunctionBinder(Environment environment,
-			@Nullable FunctionRegistry functionCatalog, @Nullable FunctionInspector inspector) {
+														@Nullable FunctionRegistry functionCatalog, @Nullable FunctionInspector inspector) {
 		return new BeanFactoryPostProcessor() {
 			@Override
 			public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
@@ -260,14 +260,35 @@ public class BinderFactoryAutoConfiguration {
 						Object definedFunction = functionCatalog.lookup(name);
 						Class<?> inputType = inspector.getInputType(definedFunction);
 						Class<?> outputType = inspector.getOutputType(definedFunction);
-						if (Void.class.isAssignableFrom(outputType)) {
-							bind(Sink.class, registry);
+
+						boolean bindDownstream = false;
+						try {
+							Map<String, BindableProvider> bindableProviders = beanFactory.getBeansOfType(BindableProvider.class);
+							Class<?> inputTypeWrapper = inspector.getInputWrapper(definedFunction);
+							if (bindableProviders != null) {
+								Collection<BindableProvider> values = bindableProviders.values();
+								for (BindableProvider bindableProvider : values) {
+									if (bindableProvider.canBind(inputTypeWrapper)) {
+										bindDownstream = true;
+										break;
+									}
+								}
+							}
 						}
-						else if (Void.class.isAssignableFrom(inputType)) {
-							bind(Source.class, registry);
+						catch (BeansException be) {
+							// pass through
 						}
-						else {
-							bind(Processor.class, registry);
+
+						if (!bindDownstream) {
+							if (Void.class.isAssignableFrom(outputType)) {
+								bind(Sink.class, registry);
+							}
+							else if (Void.class.isAssignableFrom(inputType)) {
+								bind(Source.class, registry);
+							}
+							else {
+								bind(Processor.class, registry);
+							}
 						}
 					}
 				}
