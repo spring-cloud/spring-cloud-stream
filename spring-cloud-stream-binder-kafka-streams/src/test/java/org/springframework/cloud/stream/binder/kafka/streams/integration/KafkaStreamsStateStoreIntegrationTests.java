@@ -67,9 +67,6 @@ public class KafkaStreamsStateStoreIntegrationTests {
 						+ "=org.apache.kafka.common.serialization.Serdes$StringSerde",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.default.value.serde"
 						+ "=org.apache.kafka.common.serialization.Serdes$StringSerde",
-//				"--spring.cloud.stream.kafka.streams.bindings.input.consumer.valueSerde=org.springframework.kafka.support.serializer.JsonSerde",
-//				"--spring.cloud.stream.kafka.streams.bindings.input.consumer.configuration.spring.json.value.default.type=" +
-//						"org.springframework.cloud.stream.binder.kafka.streams.integration.KafkaStreamsStateStoreIntegrationTests.Product",
 				"--spring.cloud.stream.kafka.streams.bindings.input.consumer.applicationId"
 						+ "=KafkaStreamsStateStoreIntegrationTests-abc",
 				"--spring.cloud.stream.kafka.streams.binder.brokers="

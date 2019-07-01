@@ -41,8 +41,14 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.Input;
 import org.springframework.cloud.stream.annotation.StreamListener;
+import org.springframework.cloud.stream.binder.Binder;
+import org.springframework.cloud.stream.binder.BinderFactory;
+import org.springframework.cloud.stream.binder.ConsumerProperties;
+import org.springframework.cloud.stream.binder.ExtendedPropertiesBinder;
+import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.cloud.stream.binder.kafka.streams.annotations.KafkaStreamsProcessor;
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsApplicationSupportProperties;
+import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsConsumerProperties;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
@@ -75,32 +81,12 @@ public class StreamToGlobalKTableJoinIntegrationTests {
 		SpringApplication app = new SpringApplication(
 				StreamToGlobalKTableJoinIntegrationTests.OrderEnricherApplication.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
-		try (ConfigurableApplicationContext ignored = app.run("--server.port=0",
+		ConfigurableApplicationContext context = app.run("--server.port=0",
 				"--spring.jmx.enabled=false",
 				"--spring.cloud.stream.bindings.input.destination=orders",
 				"--spring.cloud.stream.bindings.input-x.destination=customers",
 				"--spring.cloud.stream.bindings.input-y.destination=products",
 				"--spring.cloud.stream.bindings.output.destination=enriched-order",
-//				"--spring.cloud.stream.kafka.streams.bindings.input.consumer.keySerde"
-//						+ "=org.apache.kafka.common.serialization.Serdes$LongSerde",
-//				"--spring.cloud.stream.kafka.streams.bindings.input.consumer.valueSerde"
-//						+ "=org.springframework.cloud.stream.binder.kafka.streams.integration"
-//						+ ".StreamToGlobalKTableJoinIntegrationTests$OrderSerde",
-//				"--spring.cloud.stream.kafka.streams.bindings.input-x.consumer.keySerde"
-//						+ "=org.apache.kafka.common.serialization.Serdes$LongSerde",
-//				"--spring.cloud.stream.kafka.streams.bindings.input-x.consumer.valueSerde"
-//						+ "=org.springframework.cloud.stream.binder.kafka.streams.integration."
-//						+ "StreamToGlobalKTableJoinIntegrationTests$CustomerSerde",
-//				"--spring.cloud.stream.kafka.streams.bindings.input-y.consumer.keySerde"
-//						+ "=org.apache.kafka.common.serialization.Serdes$LongSerde",
-//				"--spring.cloud.stream.kafka.streams.bindings.input-y.consumer.valueSerde"
-//						+ "=org.springframework.cloud.stream.binder.kafka.streams."
-//						+ "integration.StreamToGlobalKTableJoinIntegrationTests$ProductSerde",
-//				"--spring.cloud.stream.kafka.streams.bindings.output.producer.keySerde"
-//						+ "=org.apache.kafka.common.serialization.Serdes$LongSerde",
-//				"--spring.cloud.stream.kafka.streams.bindings.output.producer.valueSerde"
-//						+ "=org.springframework.cloud.stream.binder.kafka.streams.integration"
-//						+ ".StreamToGlobalKTableJoinIntegrationTests$EnrichedOrderSerde",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.default.key.serde"
 						+ "=org.apache.kafka.common.serialization.Serdes$StringSerde",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.default.value.serde"
@@ -108,10 +94,44 @@ public class StreamToGlobalKTableJoinIntegrationTests {
 				"--spring.cloud.stream.kafka.streams.binder.configuration.commit.interval.ms=10000",
 				"--spring.cloud.stream.kafka.streams.bindings.input.consumer.applicationId"
 						+ "=StreamToGlobalKTableJoinIntegrationTests-abc",
+				"--spring.cloud.stream.kafka.streams.bindings.input.consumer.topic.properties.cleanup.policy=compact",
+				"--spring.cloud.stream.kafka.streams.bindings.input-x.consumer.topic.properties.cleanup.policy=compact",
+				"--spring.cloud.stream.kafka.streams.bindings.input-y.consumer.topic.properties.cleanup.policy=compact",
 				"--spring.cloud.stream.kafka.streams.binder.brokers="
 						+ embeddedKafka.getBrokersAsString(),
 				"--spring.cloud.stream.kafka.streams.binder.zkNodes="
-						+ embeddedKafka.getZookeeperConnectionString())) {
+						+ embeddedKafka.getZookeeperConnectionString());
+		try {
+			// Testing certain ancillary configuration of GlobalKTable around topics creation.
+			// See this issue: https://github.com/spring-cloud/spring-cloud-stream-binder-kafka/issues/687
+
+			BinderFactory binderFactory = context.getBeanFactory()
+					.getBean(BinderFactory.class);
+
+			Binder<KStream, ? extends ConsumerProperties, ? extends ProducerProperties> kStreamBinder = binderFactory
+					.getBinder("kstream", KStream.class);
+
+			KafkaStreamsConsumerProperties input = (KafkaStreamsConsumerProperties) ((ExtendedPropertiesBinder) kStreamBinder)
+					.getExtendedConsumerProperties("input");
+			String cleanupPolicy = input.getTopic().getProperties().get("cleanup.policy");
+
+			assertThat(cleanupPolicy).isEqualTo("compact");
+
+			Binder<GlobalKTable, ? extends ConsumerProperties, ? extends ProducerProperties> globalKTableBinder = binderFactory
+					.getBinder("globalktable", GlobalKTable.class);
+
+			KafkaStreamsConsumerProperties inputX = (KafkaStreamsConsumerProperties) ((ExtendedPropertiesBinder) globalKTableBinder)
+					.getExtendedConsumerProperties("input-x");
+			String cleanupPolicyX = inputX.getTopic().getProperties().get("cleanup.policy");
+
+			assertThat(cleanupPolicyX).isEqualTo("compact");
+
+			KafkaStreamsConsumerProperties inputY = (KafkaStreamsConsumerProperties) ((ExtendedPropertiesBinder) globalKTableBinder)
+					.getExtendedConsumerProperties("input-y");
+			String cleanupPolicyY = inputY.getTopic().getProperties().get("cleanup.policy");
+
+			assertThat(cleanupPolicyY).isEqualTo("compact");
+
 			Map<String, Object> senderPropsCustomer = KafkaTestUtils
 					.producerProps(embeddedKafka);
 			senderPropsCustomer.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG,
@@ -219,7 +239,9 @@ public class StreamToGlobalKTableJoinIntegrationTests {
 			pfOrder.destroy();
 			consumer.close();
 		}
-
+		finally {
+			context.close();
+		}
 	}
 
 	interface CustomGlobalKTableProcessor extends KafkaStreamsProcessor {
@@ -363,21 +385,4 @@ public class StreamToGlobalKTableJoinIntegrationTests {
 		}
 
 	}
-
-//	public static class OrderSerde extends JsonSerde<Order> {
-//
-//	}
-//
-//	public static class CustomerSerde extends JsonSerde<Customer> {
-//
-//	}
-//
-//	public static class ProductSerde extends JsonSerde<Product> {
-//
-//	}
-//
-//	public static class EnrichedOrderSerde extends JsonSerde<EnrichedOrder> {
-//
-//	}
-
 }

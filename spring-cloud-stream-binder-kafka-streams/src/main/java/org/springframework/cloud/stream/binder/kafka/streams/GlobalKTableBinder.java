@@ -118,4 +118,9 @@ public class GlobalKTableBinder extends
 				.getExtendedPropertiesEntryClass();
 	}
 
+	public void setKafkaStreamsExtendedBindingProperties(
+			KafkaStreamsExtendedBindingProperties kafkaStreamsExtendedBindingProperties) {
+		this.kafkaStreamsExtendedBindingProperties = kafkaStreamsExtendedBindingProperties;
+	}
+
 }

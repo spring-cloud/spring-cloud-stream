@@ -103,9 +103,6 @@ public class WordCountMultipleBranchesIntegrationTests {
 						+ "=org.apache.kafka.common.serialization.Serdes$StringSerde",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.default.value.serde"
 						+ "=org.apache.kafka.common.serialization.Serdes$StringSerde",
-//				"--spring.cloud.stream.kafka.streams.bindings.output1.producer.valueSerde=org.springframework.kafka.support.serializer.JsonSerde",
-//				"--spring.cloud.stream.kafka.streams.bindings.output2.producer.valueSerde=org.springframework.kafka.support.serializer.JsonSerde",
-//				"--spring.cloud.stream.kafka.streams.bindings.output3.producer.valueSerde=org.springframework.kafka.support.serializer.JsonSerde",
 				"--spring.cloud.stream.kafka.streams.timeWindow.length=5000",
 				"--spring.cloud.stream.kafka.streams.timeWindow.advanceBy=0",
 				"--spring.cloud.stream.kafka.streams.bindings.input.consumer.applicationId"
