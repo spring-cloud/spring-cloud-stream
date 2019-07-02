@@ -21,6 +21,7 @@ import java.io.StringWriter;
 import java.lang.reflect.Constructor;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
@@ -90,7 +91,6 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.Lifecycle;
-import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.expression.spel.standard.SpelExpression;
 import org.springframework.integration.amqp.outbound.AmqpOutboundEndpoint;
 import org.springframework.integration.amqp.support.NackedAmqpMessageException;
@@ -640,6 +640,56 @@ public class RabbitBinderTests extends
 	}
 
 	@Test
+	public void testConsumerPropertiesWithHeaderExchanges() throws Exception {
+		RabbitTestBinder binder = getBinder();
+		ExtendedConsumerProperties<RabbitConsumerProperties> properties = createConsumerProperties();
+		properties.getExtension().setExchangeType(ExchangeTypes.HEADERS);
+		properties.getExtension().setAutoBindDlq(true);
+		properties.getExtension().setDeadLetterExchange(ExchangeTypes.HEADERS);
+		properties.getExtension().setDeadLetterExchange("propsHeader.dlx");
+		Map<String, String> queueBindingArguments = new HashMap<>();
+		queueBindingArguments.put("x-match", "any");
+		queueBindingArguments.put("foo", "bar");
+		properties.getExtension().setQueueBindingArguments(queueBindingArguments);
+		properties.getExtension().setDlqBindingArguments(queueBindingArguments);
+
+		String group = "bindingArgs";
+		Binding<MessageChannel> consumerBinding = binder.bindConsumer("propsHeader", group,
+				createBindableChannel("input", new BindingProperties()), properties);
+		Lifecycle endpoint = extractEndpoint(consumerBinding);
+		SimpleMessageListenerContainer container = TestUtils.getPropertyValue(endpoint,
+				"messageListenerContainer", SimpleMessageListenerContainer.class);
+		assertThat(container.isRunning()).isTrue();
+		consumerBinding.unbind();
+		assertThat(container.isRunning()).isFalse();
+		assertThat(container.getQueueNames()[0]).isEqualTo("propsHeader." + group);
+		Client client = new Client("http://guest:guest@localhost:15672/api/");
+		List<BindingInfo> bindings = client.getBindingsBySource("/", "propsHeader");
+		int n = 0;
+		while (n++ < 100 && bindings == null || bindings.size() < 1) {
+			Thread.sleep(100);
+			bindings = client.getBindingsBySource("/", "propsHeader");
+		}
+		assertThat(bindings.size()).isEqualTo(1);
+		assertThat(bindings.get(0).getSource()).isEqualTo("propsHeader");
+		assertThat(bindings.get(0).getDestination()).isEqualTo("propsHeader." + group);
+		assertThat(bindings.get(0).getArguments()).hasEntrySatisfying("x-match", v -> assertThat(v).isEqualTo("any"));
+		assertThat(bindings.get(0).getArguments()).hasEntrySatisfying("foo", v -> assertThat(v).isEqualTo("bar"));
+
+		bindings = client.getBindingsBySource("/", "propsHeader.dlx");
+		n = 0;
+		while (n++ < 100 && bindings == null || bindings.size() < 1) {
+			Thread.sleep(100);
+			bindings = client.getBindingsBySource("/", "propsHeader.dlx");
+		}
+		assertThat(bindings.size()).isEqualTo(1);
+		assertThat(bindings.get(0).getSource()).isEqualTo("propsHeader.dlx");
+		assertThat(bindings.get(0).getDestination()).isEqualTo("propsHeader." + group + ".dlq");
+		assertThat(bindings.get(0).getArguments()).hasEntrySatisfying("x-match", v -> assertThat(v).isEqualTo("any"));
+		assertThat(bindings.get(0).getArguments()).hasEntrySatisfying("foo", v -> assertThat(v).isEqualTo("bar"));
+	}
+
+	@Test
 	public void testProducerProperties() throws Exception {
 		RabbitTestBinder binder = getBinder();
 		Binding<MessageChannel> producerBinding = binder.bindProducer("props.0",
@@ -658,9 +708,9 @@ public class RabbitBinderTests extends
 				Boolean.class)).isFalse();
 
 		ExtendedProducerProperties<RabbitProducerProperties> producerProperties = createProducerProperties();
-		((GenericApplicationContext)this.applicationContext).registerBean("pkExtractor",
+		this.applicationContext.registerBean("pkExtractor",
 				TestPartitionKeyExtractorClass.class, () -> new TestPartitionKeyExtractorClass());
-		((GenericApplicationContext)this.applicationContext).registerBean("pkSelector",
+		this.applicationContext.registerBean("pkSelector",
 				TestPartitionSelectorClass.class, () -> new TestPartitionSelectorClass());
 		producerProperties.setPartitionKeyExtractorName("pkExtractor");
 		producerProperties.setPartitionSelectorName("pkSelector");
@@ -890,8 +940,8 @@ public class RabbitBinderTests extends
 
 		ExtendedProducerProperties<RabbitProducerProperties> producerProperties = createProducerProperties();
 		producerProperties.getExtension().setPrefix("bindertest.");
-		((GenericApplicationContext)this.applicationContext).registerBean("pkExtractor", PartitionTestSupport.class, () -> new PartitionTestSupport());
-		((GenericApplicationContext)this.applicationContext).registerBean("pkSelector", PartitionTestSupport.class, () -> new PartitionTestSupport());
+		this.applicationContext.registerBean("pkExtractor", PartitionTestSupport.class, () -> new PartitionTestSupport());
+		this.applicationContext.registerBean("pkSelector", PartitionTestSupport.class, () -> new PartitionTestSupport());
 		producerProperties.getExtension().setAutoBindDlq(true);
 		producerProperties.setPartitionKeyExtractorName("pkExtractor");
 		producerProperties.setPartitionSelectorName("pkSelector");
@@ -1008,8 +1058,8 @@ public class RabbitBinderTests extends
 		ExtendedProducerProperties<RabbitProducerProperties> producerProperties = createProducerProperties();
 		producerProperties.getExtension().setPrefix("bindertest.");
 		producerProperties.getExtension().setAutoBindDlq(true);
-		((GenericApplicationContext)this.applicationContext).registerBean("pkExtractor", PartitionTestSupport.class, () -> new PartitionTestSupport());
-		((GenericApplicationContext)this.applicationContext).registerBean("pkSelector", PartitionTestSupport.class, () -> new PartitionTestSupport());
+		this.applicationContext.registerBean("pkExtractor", PartitionTestSupport.class, () -> new PartitionTestSupport());
+		this.applicationContext.registerBean("pkSelector", PartitionTestSupport.class, () -> new PartitionTestSupport());
 		producerProperties.setPartitionKeyExtractorName("pkExtractor");
 		producerProperties.setPartitionSelectorName("pkSelector");
 		producerProperties.setPartitionCount(2);
@@ -1130,7 +1180,7 @@ public class RabbitBinderTests extends
 		properties.getExtension().setPrefix("bindertest.");
 		properties.getExtension().setAutoBindDlq(true);
 		properties.setRequiredGroups("dlqPartGrp");
-		((GenericApplicationContext)this.applicationContext).registerBean("pkExtractor", PartitionTestSupport.class, () -> new PartitionTestSupport());
+		this.applicationContext.registerBean("pkExtractor", PartitionTestSupport.class, () -> new PartitionTestSupport());
 		properties.setPartitionKeyExtractorName("pkExtractor");
 		properties.setPartitionSelectorName("pkExtractor");
 		properties.setPartitionCount(2);

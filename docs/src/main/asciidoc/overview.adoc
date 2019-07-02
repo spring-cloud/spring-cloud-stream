@@ -187,6 +187,11 @@ Requires the delayed message exchange plugin on the broker.
 The `x-delayed-type` argument is set to the `exchangeType`.
 +
 Default: `false`.
+dlqBindingArguments::
+Arguments applied when binding the dlq to the dead letter exchange; used with `headers` `deadLetterExchangeType` to specify headers to match on.
+For example `...dlqBindingArguments.x-match=any`, `...dlqBindingArguments.someHeader=someValue`.
++
+Default: empty
 dlqDeadLetterExchange::
 If a DLQ is declared, a DLX to assign to that queue.
 +
@@ -239,7 +244,7 @@ If `declareExchange` is true, whether the exchange should be durable (that is, i
 +
 Default: `true`.
 exchangeType::
-The exchange type: `direct`, `fanout` or `topic` for non-partitioned destinations and `direct` or `topic` for partitioned destinations.
+The exchange type: `direct`, `fanout`, `headers` or `topic` for non-partitioned destinations and `direct`, headers or `topic` for partitioned destinations.
 +
 Default: `topic`.
 exclusive::
@@ -309,6 +314,11 @@ prefix::
 A prefix to be added to the name of the `destination` and queues.
 +
 Default: "".
+queueBindingArguments::
+Arguments applied when binding the queue to the exchange; used with `headers` `exchangeType` to specify headers to match on.
+For example `...queueBindingArguments.x-match=any`, `...queueBindingArguments.someHeader=someValue`.
++
+Default: empty
 queueDeclarationRetries::
 The number of times to retry consuming from a queue if it is missing.
 Relevant only when `missingQueuesFatal` is `true`.
@@ -463,6 +473,12 @@ deliveryMode::
 The delivery mode.
 +
 Default: `PERSISTENT`.
+dlqBindingArguments::
+Arguments applied when binding the dlq to the dead letter exchange; used with `headers` `deadLetterExchangeType` to specify headers to match on.
+For example `...dlqBindingArguments.x-match=any`, `...dlqBindingArguments.someHeader=someValue`.
+Applies only when `requiredGroups` are provided and then only to those groups.
++
+Default: empty
 dlqDeadLetterExchange::
 When a DLQ is declared, a DLX to assign to that queue.
 Applies only if `requiredGroups` are provided and then only to those groups.
@@ -513,7 +529,7 @@ If `declareExchange` is `true`, whether the exchange should be durable (survives
 +
 Default: `true`.
 exchangeType::
-The exchange type: `direct`, `fanout` or `topic` for non-partitioned destinations and `direct` or `topic` for partitioned destinations.
+The exchange type: `direct`, `fanout`, `headers` or `topic` for non-partitioned destinations and `direct`, `headers` or `topic` for partitioned destinations.
 +
 Default: `topic`.
 expires::
@@ -551,6 +567,12 @@ prefix::
 A prefix to be added to the name of the `destination` exchange.
 +
 Default: "".
+queueBindingArguments::
+Arguments applied when binding the queue to the exchange; used with `headers` `exchangeType` to specify headers to match on.
+For example `...queueBindingArguments.x-match=any`, `...queueBindingArguments.someHeader=someValue`.
+Applies only when `requiredGroups` are provided and then only to those groups.
++
+Default: empty
 queueNameGroupOnly::
 When `true`, consume from a queue with a name equal to the `group`.
 Otherwise the queue name is `destination.group`.

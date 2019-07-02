@@ -33,6 +33,7 @@ import org.springframework.amqp.core.DirectExchange;
 import org.springframework.amqp.core.Exchange;
 import org.springframework.amqp.core.ExchangeBuilder;
 import org.springframework.amqp.core.FanoutExchange;
+import org.springframework.amqp.core.HeadersExchange;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.core.TopicExchange;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
@@ -237,6 +238,18 @@ public class RabbitExchangeQueueProvisioner
 				+ (StringUtils.hasText(group) ? group : "default");
 	}
 
+	private Binding declareConsumerBindings(String name,
+			ExtendedConsumerProperties<RabbitConsumerProperties> properties,
+			Exchange exchange, boolean partitioned, Queue queue) {
+		if (partitioned) {
+			return partitionedBinding(name, exchange, queue, properties.getExtension(),
+					properties.getInstanceIndex());
+		}
+		else {
+			return notPartitionedBinding(exchange, queue, properties.getExtension());
+		}
+	}
+
 	private Binding partitionedBinding(String destination, Exchange exchange, Queue queue,
 			RabbitCommonProperties extendedProperties, int index) {
 		String bindingKey = extendedProperties.getBindingRoutingKey();
@@ -244,6 +257,8 @@ public class RabbitExchangeQueueProvisioner
 			bindingKey = destination;
 		}
 		bindingKey += "-" + index;
+		Map<String, Object> arguments = new HashMap<>();
+		arguments.putAll(extendedProperties.getQueueBindingArguments());
 		if (exchange instanceof TopicExchange) {
 			Binding binding = BindingBuilder.bind(queue).to((TopicExchange) exchange)
 					.with(bindingKey);
@@ -260,21 +275,14 @@ public class RabbitExchangeQueueProvisioner
 			throw new ProvisioningException(
 					"A fanout exchange is not appropriate for partitioned apps");
 		}
+		else if (exchange instanceof HeadersExchange) {
+			Binding binding = new Binding(queue.getName(), DestinationType.QUEUE, exchange.getName(), "", arguments);
+			declareBinding(queue.getName(), binding);
+			return binding;
+		}
 		else {
 			throw new ProvisioningException(
 					"Cannot bind to a " + exchange.getType() + " exchange");
-		}
-	}
-
-	private Binding declareConsumerBindings(String name,
-			ExtendedConsumerProperties<RabbitConsumerProperties> properties,
-			Exchange exchange, boolean partitioned, Queue queue) {
-		if (partitioned) {
-			return partitionedBinding(name, exchange, queue, properties.getExtension(),
-					properties.getInstanceIndex());
-		}
-		else {
-			return notPartitionedBinding(exchange, queue, properties.getExtension());
 		}
 	}
 
@@ -284,6 +292,8 @@ public class RabbitExchangeQueueProvisioner
 		if (routingKey == null) {
 			routingKey = "#";
 		}
+		Map<String, Object> arguments = new HashMap<>();
+		arguments.putAll(extendedProperties.getQueueBindingArguments());
 		if (exchange instanceof TopicExchange) {
 			Binding binding = BindingBuilder.bind(queue).to((TopicExchange) exchange)
 					.with(routingKey);
@@ -298,6 +308,11 @@ public class RabbitExchangeQueueProvisioner
 		}
 		else if (exchange instanceof FanoutExchange) {
 			Binding binding = BindingBuilder.bind(queue).to((FanoutExchange) exchange);
+			declareBinding(queue.getName(), binding);
+			return binding;
+		}
+		else if (exchange instanceof HeadersExchange) {
+			Binding binding = new Binding(queue.getName(), DestinationType.QUEUE, exchange.getName(), "", arguments);
 			declareBinding(queue.getName(), binding);
 			return binding;
 		}
@@ -340,10 +355,12 @@ public class RabbitExchangeQueueProvisioner
 								properties.getDeadLetterExchangeType()).durable(true)
 										.build());
 			}
+			Map<String, Object> arguments = new HashMap<>();
+			arguments.putAll(properties.getDlqBindingArguments());
 			Binding dlqBinding = new Binding(dlq.getName(), DestinationType.QUEUE,
 					dlxName, properties.getDlqDeadLetterRoutingKey() == null ? routingKey
 							: properties.getDeadLetterRoutingKey(),
-					null);
+					arguments);
 			declareBinding(dlqName, dlqBinding);
 			if (properties instanceof RabbitConsumerProperties
 					&& ((RabbitConsumerProperties) properties).isRepublishToDlq()) {
@@ -352,7 +369,7 @@ public class RabbitExchangeQueueProvisioner
 				 * does not know about partitioning
 				 */
 				declareBinding(dlqName, new Binding(dlq.getName(), DestinationType.QUEUE,
-						dlxName, baseQueueName, null));
+						dlxName, baseQueueName, arguments));
 			}
 		}
 	}

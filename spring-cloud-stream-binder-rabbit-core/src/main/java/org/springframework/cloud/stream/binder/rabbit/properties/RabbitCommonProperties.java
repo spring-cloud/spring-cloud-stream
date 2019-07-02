@@ -16,6 +16,9 @@
 
 package org.springframework.cloud.stream.binder.rabbit.properties;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.hibernate.validator.constraints.Range;
 
 import org.springframework.amqp.core.ExchangeTypes;
@@ -190,6 +193,18 @@ public abstract class RabbitCommonProperties {
 	 * action when maxLength or maxLengthBytes is exceeded.
 	 */
 	private String dlqOverflowBehavior;
+
+	/**
+	 * A map of binding arguments to apply when binding the queue to the exchange.
+	 * Useful for a headers exchange, for example.
+	 */
+	private Map<String, String>  queueBindingArguments = new HashMap<>();
+
+	/**
+	 * A map of binding arguments to apply when binding the dlq to the exchange.
+	 * Useful for a headers exchange, for example.
+	 */
+	private Map<String, String>  dlqBindingArguments = new HashMap<>();
 
 	public String getExchangeType() {
 		return this.exchangeType;
@@ -438,6 +453,22 @@ public abstract class RabbitCommonProperties {
 
 	public void setDlqOverflowBehavior(String dlqOverflowBehavior) {
 		this.dlqOverflowBehavior = dlqOverflowBehavior;
+	}
+
+	public Map<String, String> getQueueBindingArguments() {
+		return this.queueBindingArguments;
+	}
+
+	public void setQueueBindingArguments(Map<String, String> queueBindingArguments) {
+		this.queueBindingArguments = queueBindingArguments;
+	}
+
+	public Map<String, String> getDlqBindingArguments() {
+		return this.dlqBindingArguments;
+	}
+
+	public void setDlqBindingArguments(Map<String, String> dlqBindingArguments) {
+		this.dlqBindingArguments = dlqBindingArguments;
 	}
 
 }
