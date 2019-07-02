@@ -506,6 +506,50 @@ public class Application {
 }
 ----
 
+[[kafka-transactional-binder]]
+=== Transactional Binder
+
+Enable transactions by setting `spring.cloud.stream.kafka.binder.transaction.transactionIdPrefix` to a non-empty value, e.g. `tx-`.
+When used in a processor application, the consumer starts the transaction; any records sent on the consumer thread participate in the same transaction.
+When the listener exits normally, the listener container will send the offset to the transaction and commit it.
+A common producer factory is used for all producer bindings configure using `spring.cloud.stream.kafka.binder.transaction.producer.*` properties; individual binding Kafka producer properties are ignored.
+
+If you wish to use transactions in a source application, or from some arbitrary thread for producer-only transaction (e.g. `@Scheduled` method), you must get a reference to the transactional producer factory and define a `KafkaTransactionManager` bean using it.
+
+====
+[source, java]
+----
+@Bean
+public PlatformTransactionManager transactionManager(BinderFactory binders) {
+    ProducerFactory<byte[], byte[]> pf = ((KafkaMessageChannelBinder) binders.getBinder(null,
+            MessageChannel.class)).getTransactionalProducerFactory();
+    return new KafkaTransactionManager<>(pf);
+}
+----
+====
+
+Notice that we get a reference to the binder using the `BinderFactory`; use `null` in the first argument when there is only one binder configured.
+If more than one binder is configured, use the binder name to get the reference.
+Once we have a reference to the binder, we can obtain a reference to the `ProducerFactory` and create a transaction manager.
+
+Then you would just normal Spring transaction support, e.g. `TransactionTemplate` or `@Transactional`, for example:
+
+====
+[source, java]
+----
+public static class Sender {
+
+    @Transactional
+    public void doInTransaction(MessageChannel output, List<String> stuffToSend) {
+        stuffToSend.forEach(stuff -> output.send(new GenericMessage<>(stuff)));
+    }
+
+}
+----
+====
+
+If you wish to synchronize producer-only transactions with those from some other transaction manager, use a `ChainedTransactionManager`.
+
 [[kafka-error-channels]]
 === Error Channels
 

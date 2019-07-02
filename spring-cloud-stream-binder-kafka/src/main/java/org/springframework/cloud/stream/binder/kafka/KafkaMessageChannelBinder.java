@@ -105,6 +105,7 @@ import org.springframework.kafka.support.TopicPartitionInitialOffset;
 import org.springframework.kafka.support.TopicPartitionInitialOffset.SeekPosition;
 import org.springframework.kafka.support.converter.MessagingMessageConverter;
 import org.springframework.kafka.transaction.KafkaTransactionManager;
+import org.springframework.lang.Nullable;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.MessageHeaders;
@@ -285,6 +286,17 @@ public class KafkaMessageChannelBinder extends
 	@Override
 	public Class<? extends BinderSpecificPropertiesProvider> getExtendedPropertiesEntryClass() {
 		return this.extendedBindingProperties.getExtendedPropertiesEntryClass();
+	}
+
+	/**
+	 * Return a reference to the binder's transaction manager's producer factory (if
+	 * configured). Use this to create a transaction manager in a bean definition when you
+	 * wish to use producer-only transactions.
+	 * @return the transaction manager, or null.
+	 */
+	@Nullable
+	public ProducerFactory<byte[], byte[]> getTransactionalProducerFactory() {
+		return this.transactionManager == null ? null : this.transactionManager.getProducerFactory();
 	}
 
 	@Override
