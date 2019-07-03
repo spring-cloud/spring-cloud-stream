@@ -49,6 +49,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.common.KafkaFuture;
 import org.apache.kafka.common.errors.TopicExistsException;
 import org.apache.kafka.common.record.TimestampType;
@@ -3111,6 +3112,42 @@ public class KafkaBinderTests extends
 		}
 	}
 
+	@Test
+	@SuppressWarnings("unchecked")
+	public void testRecordMetadata() throws Exception {
+		Binding<?> producerBinding = null;
+		try {
+			String testPayload = "test";
+
+			ExtendedProducerProperties<KafkaProducerProperties> producerProperties = createProducerProperties();
+			producerProperties.getExtension().setRecordMetadataChannel("metaChannel");
+			QueueChannel metaChannel = new QueueChannel();
+
+			DirectChannel moduleOutputChannel = createBindableChannel("output",
+					createProducerBindingProperties(producerProperties));
+
+			String testTopicName = "existing" + System.currentTimeMillis();
+			KafkaTestBinder binder = getBinder();
+			((GenericApplicationContext) binder.getApplicationContext()).registerBean("metaChannel",
+					MessageChannel.class, () -> metaChannel);
+			producerBinding = binder.bindProducer(testTopicName, moduleOutputChannel,
+					producerProperties);
+			moduleOutputChannel
+					.send(new GenericMessage<>("foo", Collections.singletonMap(KafkaHeaders.PARTITION_ID, 0)));
+			Message<?> sendResult = metaChannel.receive(10_000);
+			assertThat(sendResult).isNotNull();
+			RecordMetadata meta = sendResult.getHeaders().get(KafkaHeaders.RECORD_METADATA, RecordMetadata.class);
+			assertThat(meta).isNotNull()
+				.hasFieldOrPropertyWithValue("topic", testTopicName)
+				.hasFieldOrPropertyWithValue("partition", 0)
+				.hasFieldOrPropertyWithValue("offset", 0L);
+		}
+		finally {
+			if (producerBinding != null) {
+				producerBinding.unbind();
+			}
+		}
+	}
 
 	private final class FailingInvocationCountingMessageHandler
 			implements MessageHandler {

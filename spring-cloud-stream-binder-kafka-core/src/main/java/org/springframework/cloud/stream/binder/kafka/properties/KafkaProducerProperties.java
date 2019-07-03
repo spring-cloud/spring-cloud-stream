@@ -52,6 +52,8 @@ public class KafkaProducerProperties {
 
 	private boolean useTopicHeader;
 
+	private String recordMetadataChannel;
+
 	public int getBufferSize() {
 		return this.bufferSize;
 	}
@@ -146,6 +148,14 @@ public class KafkaProducerProperties {
 
 	public void setUseTopicHeader(boolean useTopicHeader) {
 		this.useTopicHeader = useTopicHeader;
+	}
+
+	public String getRecordMetadataChannel() {
+		return this.recordMetadataChannel;
+	}
+
+	public void setRecordMetadataChannel(String recordMetadataChannel) {
+		this.recordMetadataChannel = recordMetadataChannel;
 	}
 
 	/**
