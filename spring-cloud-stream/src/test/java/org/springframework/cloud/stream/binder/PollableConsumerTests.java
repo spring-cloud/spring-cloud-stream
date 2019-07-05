@@ -35,13 +35,16 @@ import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.Lifecycle;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.integration.IntegrationMessageHeaderAccessor;
 import org.springframework.integration.acks.AcknowledgmentCallback;
 import org.springframework.integration.acks.AcknowledgmentCallback.Status;
 import org.springframework.integration.context.IntegrationContextUtils;
+import org.springframework.integration.core.MessageSource;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
+import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.SubscribableChannel;
 import org.springframework.messaging.converter.SmartMessageConverter;
@@ -411,6 +414,50 @@ public class PollableConsumerTests {
 		verify(callback).acknowledge(Status.REQUEUE);
 	}
 
+	@SuppressWarnings("unchecked")
+	@Test
+	public void testAutoStartupOff() {
+		TestChannelBinder binder = createBinder();
+		binder.setMessageSourceDelegate(new LifecycleMessageSource(
+				() -> new GenericMessage<>("{\"foo\":\"bar\"}".getBytes())));
+		MessageConverterConfigurer configurer = this.context
+				.getBean(MessageConverterConfigurer.class);
+
+		DefaultPollableMessageSource pollableSource = new DefaultPollableMessageSource(
+				this.messageConverter);
+		configurer.configurePolledMessageSource(pollableSource, "foo");
+		ExtendedConsumerProperties<Object> properties = new ExtendedConsumerProperties<>(
+				null);
+		properties.setAutoStartup(false);
+
+		Binding<PollableSource<MessageHandler>> pollableSourceBinding = binder
+				.bindPollableConsumer("foo", "bar", pollableSource, properties);
+
+		assertThat(pollableSourceBinding.isRunning()).isFalse();
+	}
+
+	@SuppressWarnings("unchecked")
+	@Test
+	public void testAutoStartupOn() {
+		TestChannelBinder binder = createBinder();
+		binder.setMessageSourceDelegate(new LifecycleMessageSource(
+			() -> new GenericMessage<>("{\"foo\":\"bar\"}".getBytes())));
+		MessageConverterConfigurer configurer = this.context
+			.getBean(MessageConverterConfigurer.class);
+
+		DefaultPollableMessageSource pollableSource = new DefaultPollableMessageSource(
+			this.messageConverter);
+		configurer.configurePolledMessageSource(pollableSource, "foo");
+		ExtendedConsumerProperties<Object> properties = new ExtendedConsumerProperties<>(
+			null);
+		properties.setAutoStartup(true);
+
+		Binding<PollableSource<MessageHandler>> pollableSourceBinding = binder
+			.bindPollableConsumer("foo", "bar", pollableSource, properties);
+
+		assertThat(pollableSourceBinding.isRunning()).isTrue();
+	}
+
 	private TestChannelBinder createBinder(String... args) {
 		this.context = new SpringApplicationBuilder(
 				TestChannelBinderConfiguration.getCompleteConfiguration())
@@ -431,6 +478,35 @@ public class PollableConsumerTests {
 			this.foo = foo;
 		}
 
+	}
+
+	public static class LifecycleMessageSource<T> implements MessageSource<T>, Lifecycle {
+		private final MessageSource<T> delegate;
+		private boolean running = false;
+
+		public LifecycleMessageSource(MessageSource<T> delegate) {
+			this.delegate = delegate;
+		}
+
+		@Override
+		public Message<T> receive() {
+			return this.delegate.receive();
+		}
+
+		@Override
+		public void start() {
+			this.running = true;
+		}
+
+		@Override
+		public void stop() {
+			this.running = false;
+		}
+
+		@Override
+		public boolean isRunning() {
+			return this.running;
+		}
 	}
 
 }

@@ -487,7 +487,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 					resources.getErrorInfrastructure(), properties));
 		}
 		postProcessPollableSource(bindingTarget);
-		if (resources.getSource() instanceof Lifecycle) {
+		if (properties.isAutoStartup() && resources.getSource() instanceof Lifecycle) {
 			((Lifecycle) resources.getSource()).start();
 		}
 		Binding<PollableSource<MessageHandler>> binding = new DefaultBinding<PollableSource<MessageHandler>>(
