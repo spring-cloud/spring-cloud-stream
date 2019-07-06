@@ -348,6 +348,9 @@ public class KafkaMessageChannelBinder extends
 		if (this.producerListener != null) {
 			kafkaTemplate.setProducerListener(this.producerListener);
 		}
+		if (this.transactionManager != null) {
+			kafkaTemplate.setTransactionIdPrefix(configurationProperties.getTransaction().getTransactionIdPrefix());
+		}
 		ProducerConfigurationMessageHandler handler = new ProducerConfigurationMessageHandler(
 				kafkaTemplate, destination.getName(), producerProperties, producerFB);
 		if (errorChannel != null) {

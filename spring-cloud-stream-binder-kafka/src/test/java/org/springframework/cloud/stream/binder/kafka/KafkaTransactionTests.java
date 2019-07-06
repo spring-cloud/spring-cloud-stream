@@ -17,9 +17,12 @@
 package org.springframework.cloud.stream.binder.kafka;
 
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.kafka.clients.producer.Callback;
 import org.apache.kafka.clients.producer.Producer;
+import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.TopicPartition;
 import org.junit.ClassRule;
@@ -54,8 +57,15 @@ import static org.mockito.Mockito.spy;
  */
 public class KafkaTransactionTests {
 
+	private static Map<String, String> brokerProperties = new HashMap<>();
+
+	static {
+		brokerProperties.put("transaction.state.log.replication.factor", "1");
+		brokerProperties.put("transaction.state.log.min.isr", "1");
+	}
+
 	@ClassRule
-	public static final EmbeddedKafkaRule embeddedKafka = new EmbeddedKafkaRule(1);
+	public static final EmbeddedKafkaRule embeddedKafka = new EmbeddedKafkaRule(1).brokerProperties(brokerProperties);
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Test
@@ -71,6 +81,12 @@ public class KafkaTransactionTests {
 				configurationProperties, kafkaProperties);
 		provisioningProvider.setMetadataRetryOperations(new RetryTemplate());
 		final Producer mockProducer = mock(Producer.class);
+
+		KafkaProducerProperties extension1 = configurationProperties
+				.getTransaction().getProducer().getExtension();
+		extension1.getConfiguration().put(ProducerConfig.RETRIES_CONFIG, "1");
+		extension1.getConfiguration().put(ProducerConfig.ACKS_CONFIG, "all");
+
 		willReturn(Collections.singletonList(new TopicPartition("foo", 0)))
 				.given(mockProducer).partitionsFor(anyString());
 		KafkaMessageChannelBinder binder = new KafkaMessageChannelBinder(
@@ -83,7 +99,7 @@ public class KafkaTransactionTests {
 				DefaultKafkaProducerFactory<byte[], byte[]> producerFactory = spy(
 						super.getProducerFactory(transactionIdPrefix,
 								producerProperties));
-				willReturn(mockProducer).given(producerFactory).createProducer();
+				willReturn(mockProducer).given(producerFactory).createProducer("foo-");
 				return producerFactory;
 			}
 

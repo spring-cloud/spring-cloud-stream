@@ -154,7 +154,7 @@ public class KafkaStreamsStateStoreIntegrationTests {
 		boolean processed;
 
 		@StreamListener("input")
-		@KafkaStreamsStateStore(name = "mystate", type = KafkaStreamsStateStoreProperties.StoreType.WINDOW, lengthMs = 300000)
+		@KafkaStreamsStateStore(name = "mystate", type = KafkaStreamsStateStoreProperties.StoreType.WINDOW, lengthMs = 300000, retentionMs = 300000)
 		@SuppressWarnings({ "deprecation", "unchecked" })
 		public void process(KStream<Object, Product> input) {
 
@@ -189,7 +189,7 @@ public class KafkaStreamsStateStoreIntegrationTests {
 		boolean processed;
 
 		@StreamListener
-		@KafkaStreamsStateStore(name = "mystate", type = KafkaStreamsStateStoreProperties.StoreType.WINDOW, lengthMs = 300000)
+		@KafkaStreamsStateStore(name = "mystate", type = KafkaStreamsStateStoreProperties.StoreType.WINDOW, lengthMs = 300000, retentionMs = 300000)
 		@SuppressWarnings({ "deprecation", "unchecked" })
 		public void process(@Input("input1")KStream<Object, Product> input, @Input("input2")KStream<Object, Product> input2) {
 

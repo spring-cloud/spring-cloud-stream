@@ -27,7 +27,7 @@ import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.Input;
 import org.springframework.cloud.stream.annotation.StreamListener;
 import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.kafka.test.rule.KafkaEmbedded;
+import org.springframework.kafka.test.rule.EmbeddedKafkaRule;
 
 /**
  * @author Soby Chacko
@@ -35,7 +35,7 @@ import org.springframework.kafka.test.rule.KafkaEmbedded;
 public class KafkaStreamsBinderBootstrapTest {
 
 	@ClassRule
-	public static KafkaEmbedded embeddedKafka = new KafkaEmbedded(1, true, 10);
+	public static EmbeddedKafkaRule embeddedKafka = new EmbeddedKafkaRule(1, true, 10);
 
 	@Test
 	public void testKafkaStreamsBinderWithCustomEnvironmentCanStart() {
@@ -48,10 +48,7 @@ public class KafkaStreamsBinderBootstrapTest {
 						"--spring.cloud.stream.binders.kBind1.type=kstream",
 						"--spring.cloud.stream.binders.kBind1.environment"
 								+ ".spring.cloud.stream.kafka.streams.binder.brokers"
-								+ "=" + embeddedKafka.getBrokersAsString(),
-						"--spring.cloud.stream.binders.kBind1.environment.spring"
-								+ ".cloud.stream.kafka.streams.binder.zkNodes="
-								+ embeddedKafka.getZookeeperConnectionString());
+								+ "=" + embeddedKafka.getEmbeddedKafka().getBrokersAsString());
 
 		applicationContext.close();
 	}
@@ -64,9 +61,7 @@ public class KafkaStreamsBinderBootstrapTest {
 								+ "=testKafkaStreamsBinderWithStandardConfigurationCanStart",
 						"--spring.cloud.stream.bindings.input.destination=foo",
 						"--spring.cloud.stream.kafka.streams.binder.brokers="
-								+ embeddedKafka.getBrokersAsString(),
-						"--spring.cloud.stream.kafka.streams.binder.zkNodes="
-								+ embeddedKafka.getZookeeperConnectionString());
+								+ embeddedKafka.getEmbeddedKafka().getBrokersAsString());
 
 		applicationContext.close();
 	}

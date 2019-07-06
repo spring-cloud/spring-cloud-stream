@@ -26,7 +26,7 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.messaging.Sink;
 import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.kafka.test.rule.KafkaEmbedded;
+import org.springframework.kafka.test.rule.EmbeddedKafkaRule;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -36,7 +36,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class MultiBinderMeterRegistryTest {
 
 	@ClassRule
-	public static KafkaEmbedded embeddedKafka = new KafkaEmbedded(1, true, 10);
+	public static EmbeddedKafkaRule embeddedKafka = new EmbeddedKafkaRule(1, true, 10);
 
 	@Test
 	public void testMetricsWorkWithMultiBinders() {
@@ -48,7 +48,7 @@ public class MultiBinderMeterRegistryTest {
 						"--spring.cloud.stream.binders.inbound.type=kafka",
 						"--spring.cloud.stream.binders.inbound.environment"
 								+ ".spring.cloud.stream.kafka.binder.brokers" + "="
-								+ embeddedKafka.getBrokersAsString());
+								+ embeddedKafka.getEmbeddedKafka().getBrokersAsString());
 
 		final MeterRegistry meterRegistry = applicationContext.getBean(MeterRegistry.class);
 

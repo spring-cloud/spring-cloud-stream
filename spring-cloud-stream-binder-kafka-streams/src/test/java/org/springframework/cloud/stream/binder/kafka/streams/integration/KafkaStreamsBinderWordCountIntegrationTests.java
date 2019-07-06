@@ -117,9 +117,7 @@ public class KafkaStreamsBinderWordCountIntegrationTests {
 				"--spring.cloud.stream.kafka.streams.timeWindow.length=5000",
 				"--spring.cloud.stream.kafka.streams.timeWindow.advanceBy=0",
 				"--spring.cloud.stream.kafka.streams.binder.brokers="
-						+ embeddedKafka.getBrokersAsString(),
-				"--spring.cloud.stream.kafka.streams.binder.zkNodes="
-						+ embeddedKafka.getZookeeperConnectionString())) {
+						+ embeddedKafka.getBrokersAsString())) {
 			receiveAndValidate(context);
 		}
 	}

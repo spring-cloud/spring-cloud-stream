@@ -18,6 +18,7 @@ package org.springframework.cloud.stream.binder.kafka.streams;
 
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Collectors;
@@ -168,6 +169,13 @@ public class KafkaStreamsBinderSupportAutoConfiguration {
 				String bootStrapServers = (String) properties
 						.get(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG);
 				if (bootStrapServers.equals("localhost:9092")) {
+					properties.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG,
+							configProperties.getKafkaConnectionString());
+				}
+			}
+			else if (bootstrapServerConfig instanceof List) {
+				List bootStrapCollection = (List) bootstrapServerConfig;
+				if (bootStrapCollection.size() == 1 && bootStrapCollection.get(0).equals("localhost:9092")) {
 					properties.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG,
 							configProperties.getKafkaConnectionString());
 				}

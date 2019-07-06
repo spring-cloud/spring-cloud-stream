@@ -130,6 +130,7 @@ import org.springframework.messaging.support.ErrorMessage;
 import org.springframework.messaging.support.GenericMessage;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.Assert;
+import org.springframework.util.MimeType;
 import org.springframework.util.MimeTypeUtils;
 import org.springframework.util.concurrent.ListenableFuture;
 import org.springframework.util.concurrent.SettableListenableFuture;
@@ -363,9 +364,9 @@ public class KafkaBinderTests extends
 						.get(MessageHeaders.CONTENT_TYPE))
 				.isEqualTo(MimeTypeUtils.TEXT_PLAIN);
 		Assertions.assertThat(inboundMessageRef.get().getHeaders().get("foo"))
-				.isInstanceOf(String.class);
-		String actual = (String) inboundMessageRef.get().getHeaders().get("foo");
-		Assertions.assertThat(actual).isEqualTo(MimeTypeUtils.TEXT_PLAIN.toString());
+				.isInstanceOf(MimeType.class);
+		MimeType actual = (MimeType) inboundMessageRef.get().getHeaders().get("foo");
+		Assertions.assertThat(actual).isEqualTo(MimeTypeUtils.TEXT_PLAIN);
 		producerBinding.unbind();
 		consumerBinding.unbind();
 	}
