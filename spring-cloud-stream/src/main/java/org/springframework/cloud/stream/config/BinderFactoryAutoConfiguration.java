@@ -26,6 +26,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.stream.Stream;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -44,6 +45,7 @@ import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionRegistry;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
 import org.springframework.cloud.function.context.config.RoutingFunction;
+import org.springframework.cloud.stream.annotation.BindingProvider;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.binder.BinderType;
 import org.springframework.cloud.stream.binder.BinderTypeRegistry;
@@ -63,6 +65,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Role;
+import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.StandardEnvironment;
 import org.springframework.core.io.Resource;
@@ -248,8 +251,12 @@ public class BinderFactoryAutoConfiguration {
 	}
 
 	@Bean
-	public BeanFactoryPostProcessor implicitFunctionBinder(Environment environment,
+	public BeanFactoryPostProcessor implicitFunctionBinder(BinderTypeRegistry bfac, Environment environment,
 														@Nullable FunctionRegistry functionCatalog, @Nullable FunctionInspector inspector) {
+		Class<?>[] configurationClasses = bfac.getAll().values().iterator().next().getConfigurationClasses();
+		boolean bindingProvider = Stream.of(configurationClasses)
+				.filter(clazz -> AnnotationUtils.findAnnotation(clazz, BindingProvider.class) != null)
+				.findFirst().isPresent();
 		return new BeanFactoryPostProcessor() {
 			@Override
 			public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
@@ -261,25 +268,7 @@ public class BinderFactoryAutoConfiguration {
 						Class<?> inputType = inspector.getInputType(definedFunction);
 						Class<?> outputType = inspector.getOutputType(definedFunction);
 
-						boolean bindDownstream = false;
-						try {
-							Map<String, BindableProvider> bindableProviders = beanFactory.getBeansOfType(BindableProvider.class);
-							Class<?> inputTypeWrapper = inspector.getInputWrapper(definedFunction);
-							if (bindableProviders != null) {
-								Collection<BindableProvider> values = bindableProviders.values();
-								for (BindableProvider bindableProvider : values) {
-									if (bindableProvider.canBind(inputTypeWrapper)) {
-										bindDownstream = true;
-										break;
-									}
-								}
-							}
-						}
-						catch (BeansException be) {
-							// pass through
-						}
-
-						if (!bindDownstream) {
+						if (!bindingProvider) {
 							if (Void.class.isAssignableFrom(outputType)) {
 								bind(Sink.class, registry);
 							}
