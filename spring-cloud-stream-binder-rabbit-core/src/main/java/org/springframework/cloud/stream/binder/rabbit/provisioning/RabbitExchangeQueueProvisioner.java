@@ -292,8 +292,7 @@ public class RabbitExchangeQueueProvisioner
 		if (routingKey == null) {
 			routingKey = "#";
 		}
-		Map<String, Object> arguments = new HashMap<>();
-		arguments.putAll(extendedProperties.getQueueBindingArguments());
+		Map<String, Object> arguments = new HashMap<>(extendedProperties.getQueueBindingArguments());
 		if (exchange instanceof TopicExchange) {
 			Binding binding = BindingBuilder.bind(queue).to((TopicExchange) exchange)
 					.with(routingKey);
@@ -355,8 +354,7 @@ public class RabbitExchangeQueueProvisioner
 								properties.getDeadLetterExchangeType()).durable(true)
 										.build());
 			}
-			Map<String, Object> arguments = new HashMap<>();
-			arguments.putAll(properties.getDlqBindingArguments());
+			Map<String, Object> arguments = new HashMap<>(properties.getDlqBindingArguments());
 			Binding dlqBinding = new Binding(dlq.getName(), DestinationType.QUEUE,
 					dlxName, properties.getDlqDeadLetterRoutingKey() == null ? routingKey
 							: properties.getDeadLetterRoutingKey(),
