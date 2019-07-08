@@ -100,11 +100,6 @@ public class GlobalKTableBinder extends
 				.getExtendedConsumerProperties(channelName);
 	}
 
-	public void setKafkaStreamsExtendedBindingProperties(
-			KafkaStreamsExtendedBindingProperties kafkaStreamsExtendedBindingProperties) {
-		this.kafkaStreamsExtendedBindingProperties = kafkaStreamsExtendedBindingProperties;
-	}
-
 	@Override
 	public KafkaStreamsProducerProperties getExtendedProducerProperties(
 			String channelName) {

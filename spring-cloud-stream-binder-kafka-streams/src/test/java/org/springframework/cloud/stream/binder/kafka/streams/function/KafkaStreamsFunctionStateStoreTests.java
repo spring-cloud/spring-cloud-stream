@@ -58,7 +58,7 @@ public class KafkaStreamsFunctionStateStoreTests {
 
 		try (ConfigurableApplicationContext context = app.run("--server.port=0",
 				"--spring.jmx.enabled=false",
-				"--spring.cloud.stream.bindings.process-input.destination=words",
+				"--spring.cloud.stream.bindings.process_in.destination=words",
 				"--spring.cloud.stream.kafka.streams.default.consumer.application-id=basic-word-count-1",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.commit.interval.ms=1000",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.default.key.serde" +

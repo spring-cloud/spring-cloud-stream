@@ -22,6 +22,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
+import org.springframework.cloud.stream.annotation.BindingProvider;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaBinderConfigurationProperties;
 import org.springframework.cloud.stream.binder.kafka.provisioning.KafkaTopicProvisioner;
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsBinderConfigurationProperties;
@@ -36,6 +37,7 @@ import org.springframework.context.annotation.Configuration;
  */
 @SuppressWarnings("ALL")
 @Configuration
+@BindingProvider
 public class KTableBinderConfiguration {
 
 	@Bean

@@ -68,7 +68,12 @@ import org.springframework.util.CollectionUtils;
  */
 public class KafkaStreamsBindableProxyFactory extends AbstractBindableProxyFactory implements InitializingBean, BeanFactoryAware {
 
-	private static final String DEFAULT_INPUT_SUFFIX = "input";
+	/**
+	 * Default output binding name. Output binding may occur later on in the function invoker (outside of this class),
+	 * thus making this field part of the API.
+	 */
+	public static final String DEFAULT_OUTPUT_SUFFIX = "out";
+	private static final String DEFAULT_INPUT_SUFFIX = "in";
 
 	private static Log log = LogFactory.getLog(BindableProxyFactory.class);
 
@@ -133,7 +138,7 @@ public class KafkaStreamsBindableProxyFactory extends AbstractBindableProxyFacto
 
 			}
 			else {
-				outputBinding = this.functionName + "-" + "output";
+				outputBinding = String.format("%s_%s", this.functionName, DEFAULT_OUTPUT_SUFFIX);
 			}
 			Assert.isTrue(outputBinding != null, "output binding is not inferred.");
 			KafkaStreamsBindableProxyFactory.this.outputHolders.put(outputBinding,
@@ -144,7 +149,6 @@ public class KafkaStreamsBindableProxyFactory extends AbstractBindableProxyFacto
 			rootBeanDefinition1.setInstanceSupplier(() -> outputHolders.get(outputBinding1).getBoundTarget());
 			BeanDefinitionRegistry registry = (BeanDefinitionRegistry) beanFactory;
 			registry.registerBeanDefinition(outputBinding1, rootBeanDefinition1);
-
 		}
 	}
 
@@ -170,13 +174,13 @@ public class KafkaStreamsBindableProxyFactory extends AbstractBindableProxyFacto
 		int numberOfInputs = this.type.getRawClass() != null &&
 				this.type.getRawClass().isAssignableFrom(BiFunction.class) ? 2 : getNumberOfInputs();
 		if (numberOfInputs == 1) {
-			inputs.add(this.functionName + "-" + DEFAULT_INPUT_SUFFIX);
+			inputs.add(String.format("%s_%s", this.functionName, DEFAULT_INPUT_SUFFIX));
 			return inputs;
 		}
 		else {
 			int i = 0;
 			while (i < numberOfInputs) {
-				inputs.add(this.functionName + "-" + DEFAULT_INPUT_SUFFIX + "-" + i++);
+				inputs.add(String.format("%s_%s_%d", this.functionName, DEFAULT_INPUT_SUFFIX, i++));
 			}
 			return inputs;
 		}

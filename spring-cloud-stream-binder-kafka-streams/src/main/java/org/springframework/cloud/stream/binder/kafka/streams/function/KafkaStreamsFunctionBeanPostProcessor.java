@@ -24,19 +24,12 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-import org.apache.kafka.streams.kstream.GlobalKTable;
-import org.apache.kafka.streams.kstream.KStream;
-import org.apache.kafka.streams.kstream.KTable;
-
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.AnnotatedBeanDefinition;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
-import org.springframework.beans.factory.support.BeanDefinitionRegistry;
-import org.springframework.beans.factory.support.RootBeanDefinition;
-import org.springframework.cloud.stream.config.BindableProvider;
 import org.springframework.core.ResolvableType;
 import org.springframework.util.ClassUtils;
 
@@ -57,7 +50,6 @@ public class KafkaStreamsFunctionBeanPostProcessor implements InitializingBean, 
 
 	@Override
 	public void afterPropertiesSet() {
-
 		String[] functionNames = this.beanFactory.getBeanNamesForType(Function.class);
 		String[] biFunctionNames = this.beanFactory.getBeanNamesForType(BiFunction.class);
 		String[] consumerNames = this.beanFactory.getBeanNamesForType(Consumer.class);
@@ -65,18 +57,6 @@ public class KafkaStreamsFunctionBeanPostProcessor implements InitializingBean, 
 		Stream.concat(
 				Stream.concat(Stream.of(functionNames), Stream.of(consumerNames)), Stream.of(biFunctionNames))
 				.forEach(this::extractResolvableTypes);
-
-		BindableProvider bindableProvider =
-		clazz -> clazz.isAssignableFrom(KStream.class) || clazz.isAssignableFrom(KTable.class)
-				|| clazz.isAssignableFrom(GlobalKTable.class);
-
-		RootBeanDefinition rb = new RootBeanDefinition();
-		rb.setInstanceSupplier(() -> bindableProvider);
-		rb.setAutowireCandidate(true);
-		BeanDefinitionRegistry registry = (BeanDefinitionRegistry) beanFactory;
-		registry.registerBeanDefinition("kafkaStreamsBindableProvider", rb);
-		//Forcing the bean to be created.
-		beanFactory.getBean("kafkaStreamsBindableProvider");
 	}
 
 	private void extractResolvableTypes(String key) {

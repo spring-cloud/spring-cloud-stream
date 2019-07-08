@@ -104,15 +104,15 @@ public class StreamToTableJoinFunctionTests {
 	private void runTest(SpringApplication app, Consumer<String, Long> consumer) {
 		try (ConfigurableApplicationContext ignored = app.run("--server.port=0",
 				"--spring.jmx.enabled=false",
-				"--spring.cloud.stream.bindings.process-input-0.destination=user-clicks-1",
-				"--spring.cloud.stream.bindings.process-input-1.destination=user-regions-1",
-				"--spring.cloud.stream.bindings.process-output.destination=output-topic-1",
+				"--spring.cloud.stream.bindings.process_in_0.destination=user-clicks-1",
+				"--spring.cloud.stream.bindings.process_in_1.destination=user-regions-1",
+				"--spring.cloud.stream.bindings.process_out.destination=output-topic-1",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.default.key.serde" +
 						"=org.apache.kafka.common.serialization.Serdes$StringSerde",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.default.value.serde" +
 						"=org.apache.kafka.common.serialization.Serdes$StringSerde",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.commit.interval.ms=10000",
-				"--spring.cloud.stream.kafka.streams.bindings.process-input-0.consumer.applicationId" +
+				"--spring.cloud.stream.kafka.streams.bindings.process_in_0.consumer.applicationId" +
 						"=StreamToTableJoinFunctionTests-abc",
 				"--spring.cloud.stream.kafka.streams.binder.brokers=" + embeddedKafka.getBrokersAsString())) {
 
@@ -237,7 +237,7 @@ public class StreamToTableJoinFunctionTests {
 				"--spring.cloud.stream.function.inputBindings.process=input-1,input-2",
 				"--spring.cloud.stream.bindings.input-1.destination=user-clicks-2",
 				"--spring.cloud.stream.bindings.input-2.destination=user-regions-2",
-				"--spring.cloud.stream.bindings.process-output.destination=output-topic-2",
+				"--spring.cloud.stream.bindings.process_out.destination=output-topic-2",
 				"--spring.cloud.stream.bindings.input-1.consumer.useNativeDecoding=true",
 				"--spring.cloud.stream.bindings.input-2.consumer.useNativeDecoding=true",
 				"--spring.cloud.stream.bindings.output.producer.useNativeEncoding=true",
@@ -318,7 +318,7 @@ public class StreamToTableJoinFunctionTests {
 			assertThat(count).isEqualTo(expectedClicksPerRegion.size());
 			assertThat(actualClicksPerRegion).hasSameElementsAs(expectedClicksPerRegion);
 			//the following removal is a code smell. Check with Oleg to see why this is happening.
-			//culprit is BinderFactoryAutoConfiguration line 309 with the following code:
+			//culprit is BinderFactoryAutoConfiguration line 300 with the following code:
 			//if (StringUtils.hasText(name)) {
 			//			((StandardEnvironment) environment).getSystemProperties()
 			//					.putIfAbsent("spring.cloud.stream.function.definition", name);

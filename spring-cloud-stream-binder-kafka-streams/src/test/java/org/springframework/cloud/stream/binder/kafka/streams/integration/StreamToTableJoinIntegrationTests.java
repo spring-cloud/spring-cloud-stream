@@ -55,6 +55,8 @@ import org.springframework.cloud.stream.binder.kafka.streams.annotations.KafkaSt
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsApplicationSupportProperties;
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsConsumerProperties;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.annotation.Bean;
+import org.springframework.kafka.core.CleanupConfig;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -369,6 +371,12 @@ public class StreamToTableJoinIntegrationTests {
 					.groupByKey(Serialized.with(Serdes.String(), Serdes.Long()))
 					.reduce((firstClicks, secondClicks) -> firstClicks + secondClicks)
 					.toStream();
+		}
+
+		//This forces the state stores to be cleaned up before running the test.
+		@Bean
+		public CleanupConfig cleanupConfig() {
+			return new CleanupConfig(true, false);
 		}
 
 	}
