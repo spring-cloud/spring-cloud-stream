@@ -200,21 +200,9 @@ public class KafkaStreamsBindableProxyFactory extends AbstractBindableProxyFacto
 
 	private void bindInput(ResolvableType arg0, String inputName) {
 		if (arg0.getRawClass() != null) {
-			if (arg0.getRawClass().isAssignableFrom(KStream.class)) {
-				KafkaStreamsBindableProxyFactory.this.inputHolders.put(inputName,
-						new BoundTargetHolder(getBindingTargetFactory(KStream.class)
-								.createInput(inputName), true));
-			}
-			else if (arg0.getRawClass().isAssignableFrom(KTable.class)) {
-				KafkaStreamsBindableProxyFactory.this.inputHolders.put(inputName,
-						new BoundTargetHolder(getBindingTargetFactory(KTable.class)
-								.createInput(inputName), true));
-			}
-			else {
-				KafkaStreamsBindableProxyFactory.this.inputHolders.put(inputName,
-						new BoundTargetHolder(getBindingTargetFactory(GlobalKTable.class)
-								.createInput(inputName), true));
-			}
+			KafkaStreamsBindableProxyFactory.this.inputHolders.put(inputName,
+					new BoundTargetHolder(getBindingTargetFactory(arg0.getRawClass())
+							.createInput(inputName), true));
 		}
 
 		BeanDefinitionRegistry registry = (BeanDefinitionRegistry) beanFactory;

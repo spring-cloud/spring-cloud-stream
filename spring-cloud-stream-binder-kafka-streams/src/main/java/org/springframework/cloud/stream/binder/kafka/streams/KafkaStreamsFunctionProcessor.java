@@ -46,7 +46,6 @@ import org.springframework.beans.factory.BeanFactoryAware;
 import org.springframework.beans.factory.BeanInitializationException;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.RootBeanDefinition;
-import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.stream.binder.kafka.streams.function.KafkaStreamsBindableProxyFactory;
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsConsumerProperties;
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsExtendedBindingProperties;
@@ -75,7 +74,6 @@ public class KafkaStreamsFunctionProcessor extends AbstractKafkaStreamsBinderPro
 	private final KeyValueSerdeResolver keyValueSerdeResolver;
 	private final KafkaStreamsBindingInformationCatalogue kafkaStreamsBindingInformationCatalogue;
 	private final KafkaStreamsMessageConversionDelegate kafkaStreamsMessageConversionDelegate;
-	private final FunctionCatalog functionCatalog;
 
 	private Set<String> origInputs = new LinkedHashSet<>();
 	private Set<String> origOutputs = new LinkedHashSet<>();
@@ -91,7 +89,6 @@ public class KafkaStreamsFunctionProcessor extends AbstractKafkaStreamsBinderPro
 										KafkaStreamsBindingInformationCatalogue kafkaStreamsBindingInformationCatalogue,
 										KafkaStreamsMessageConversionDelegate kafkaStreamsMessageConversionDelegate,
 										CleanupConfig cleanupConfig,
-										FunctionCatalog functionCatalog,
 										KafkaStreamsBindableProxyFactory bindableProxyFactory,
 										StreamFunctionProperties streamFunctionProperties) {
 		super(bindingServiceProperties, kafkaStreamsBindingInformationCatalogue, kafkaStreamsExtendedBindingProperties,
@@ -101,7 +98,6 @@ public class KafkaStreamsFunctionProcessor extends AbstractKafkaStreamsBinderPro
 		this.keyValueSerdeResolver = keyValueSerdeResolver;
 		this.kafkaStreamsBindingInformationCatalogue = kafkaStreamsBindingInformationCatalogue;
 		this.kafkaStreamsMessageConversionDelegate = kafkaStreamsMessageConversionDelegate;
-		this.functionCatalog = functionCatalog;
 		this.kafkaStreamsBindableProxyFactory = bindableProxyFactory;
 		this.origInputs.addAll(bindableProxyFactory.getInputs());
 		this.origOutputs.addAll(bindableProxyFactory.getOutputs());
@@ -139,15 +135,13 @@ public class KafkaStreamsFunctionProcessor extends AbstractKafkaStreamsBinderPro
 				outboundResolvableType = iterableResType.getGeneric(i);
 			}
 			else {
-				while (i < inputCount) {
-					if (iterator.hasNext()) {
-						iterableResType = iterableResType.getGeneric(1);
-						if (iterableResType.getRawClass() != null &&
-								functionOrConsumerFound(iterableResType)) {
-							popuateResolvableTypeMap(iterableResType, resolvableTypeMap, iterator);
-						}
-						i++;
+				while (i < inputCount && iterator.hasNext()) {
+					iterableResType = iterableResType.getGeneric(1);
+					if (iterableResType.getRawClass() != null &&
+							functionOrConsumerFound(iterableResType)) {
+						popuateResolvableTypeMap(iterableResType, resolvableTypeMap, iterator);
 					}
+					i++;
 				}
 				outboundResolvableType = iterableResType.getGeneric(1);
 			}

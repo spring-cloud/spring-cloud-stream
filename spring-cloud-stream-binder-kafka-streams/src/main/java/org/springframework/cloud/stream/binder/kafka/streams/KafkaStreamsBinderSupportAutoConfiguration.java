@@ -36,7 +36,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.stream.binder.BinderConfiguration;
 import org.springframework.cloud.stream.binder.kafka.streams.function.FunctionDetectorCondition;
 import org.springframework.cloud.stream.binder.kafka.streams.function.KafkaStreamsBindableProxyFactory;
@@ -258,11 +257,11 @@ public class KafkaStreamsBinderSupportAutoConfiguration {
 																	KafkaStreamsBindingInformationCatalogue kafkaStreamsBindingInformationCatalogue,
 																	KafkaStreamsMessageConversionDelegate kafkaStreamsMessageConversionDelegate,
 																	ObjectProvider<CleanupConfig> cleanupConfig,
-																	FunctionCatalog functionCatalog, KafkaStreamsBindableProxyFactory bindableProxyFactory,
+																	KafkaStreamsBindableProxyFactory bindableProxyFactory,
 																	StreamFunctionProperties streamFunctionProperties) {
 		return new KafkaStreamsFunctionProcessor(bindingServiceProperties, kafkaStreamsExtendedBindingProperties,
 				keyValueSerdeResolver, kafkaStreamsBindingInformationCatalogue, kafkaStreamsMessageConversionDelegate,
-				cleanupConfig.getIfUnique(), functionCatalog, bindableProxyFactory, streamFunctionProperties);
+				cleanupConfig.getIfUnique(), bindableProxyFactory, streamFunctionProperties);
 	}
 
 	@Bean
