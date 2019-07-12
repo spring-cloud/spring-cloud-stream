@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -32,6 +33,7 @@ import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.apache.kafka.streams.KeyValue;
+import org.apache.kafka.streams.kstream.JoinWindows;
 import org.apache.kafka.streams.kstream.Joined;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.KTable;
@@ -350,6 +352,20 @@ public class StreamToTableJoinIntegrationTests {
 		//See this issue: https://github.com/spring-cloud/spring-cloud-stream-binder-kafka/issues/536
 	}
 
+	@Test
+	public void testTwoKStreamsCanBeJoined() {
+		SpringApplication app = new SpringApplication(
+				JoinProcessor.class);
+		app.setWebApplicationType(WebApplicationType.NONE);
+		app.run("--server.port=0",
+				"--spring.cloud.stream.kafka.streams.binder.brokers="
+						+ embeddedKafka.getBrokersAsString(),
+				"--spring.application.name=" +
+						"two-kstream-input-join-integ-test");
+		//All we are verifying is that this application didn't throw any errors.
+		//See this issue: https://github.com/spring-cloud/spring-cloud-stream-binder-kafka/issues/701
+	}
+
 	@EnableBinding(KafkaStreamsProcessorX.class)
 	@EnableAutoConfiguration
 	@EnableConfigurationProperties(KafkaStreamsApplicationSupportProperties.class)
@@ -433,6 +449,39 @@ public class StreamToTableJoinIntegrationTests {
 			return clicks;
 		}
 
+	}
+
+	interface BindingsForTwoKStreamJoinTest {
+
+		String INPUT_1 = "input_1";
+		String INPUT_2 = "input_2";
+
+		@Input(INPUT_1)
+		KStream<String, String> input_1();
+
+		@Input(INPUT_2)
+		KStream<String, String> input_2();
+	}
+
+	@EnableBinding(BindingsForTwoKStreamJoinTest.class)
+	@EnableAutoConfiguration
+	public static class JoinProcessor {
+
+		@StreamListener
+		public void testProcessor(
+				@Input(BindingsForTwoKStreamJoinTest.INPUT_1) KStream<String, String> input1Stream,
+				@Input(BindingsForTwoKStreamJoinTest.INPUT_2) KStream<String, String> input2Stream) {
+			input1Stream
+					.join(input2Stream,
+							(event1, event2) -> null,
+							JoinWindows.of(TimeUnit.MINUTES.toMillis(5)),
+							Joined.with(
+									Serdes.String(),
+									Serdes.String(),
+									Serdes.String()
+							)
+					);
+		}
 	}
 
 }

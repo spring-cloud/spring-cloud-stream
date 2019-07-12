@@ -102,7 +102,7 @@ class KStreamBoundElementFactory extends AbstractBindingTargetFactory<KStream> {
 
 	}
 
-	private static class KStreamWrapperHandler
+	static class KStreamWrapperHandler
 			implements KStreamWrapper, MethodInterceptor {
 
 		private KStream<Object, Object> delegate;
@@ -133,6 +133,9 @@ class KStreamBoundElementFactory extends AbstractBindingTargetFactory<KStream> {
 			}
 		}
 
+		public KStream<Object, Object> getDelegate() {
+			return delegate;
+		}
 	}
 
 }

@@ -152,4 +152,13 @@ class KafkaStreamsBindingInformationCatalogue {
 	Serde<?> getKeySerde(KStream<?, ?> kStreamTarget) {
 		return this.keySerdeInfo.get(kStreamTarget);
 	}
+
+
+	public Map<KStream<?, ?>, BindingProperties> getBindingProperties() {
+		return bindingProperties;
+	}
+
+	public Map<KStream<?, ?>, KafkaStreamsConsumerProperties> getConsumerProperties() {
+		return consumerProperties;
+	}
 }

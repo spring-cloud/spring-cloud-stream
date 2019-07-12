@@ -273,14 +273,17 @@ class KafkaStreamsStreamListenerSetupMethodOrchestrator extends AbstractKafkaStr
 						// wrap the proxy created during the initial target type binding
 						// with real object (KStream)
 						kStreamWrapper.wrap((KStream<Object, Object>) stream);
-						this.kafkaStreamsBindingInformationCatalogue.addKeySerde((KStream) kStreamWrapper, keySerde);
+						this.kafkaStreamsBindingInformationCatalogue.addKeySerde(stream, keySerde);
+						BindingProperties bindingProperties1 = this.kafkaStreamsBindingInformationCatalogue.getBindingProperties().get(kStreamWrapper);
+						this.kafkaStreamsBindingInformationCatalogue.registerBindingProperties(stream, bindingProperties1);
+
 						this.kafkaStreamsBindingInformationCatalogue
 								.addStreamBuilderFactory(streamsBuilderFactoryBean);
 						for (StreamListenerParameterAdapter streamListenerParameterAdapter : adapters) {
 							if (streamListenerParameterAdapter.supports(stream.getClass(),
 									methodParameter)) {
 								arguments[parameterIndex] = streamListenerParameterAdapter
-										.adapt(kStreamWrapper, methodParameter);
+										.adapt(stream, methodParameter);
 								break;
 							}
 						}

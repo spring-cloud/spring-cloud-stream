@@ -25,6 +25,7 @@ import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.Produced;
 
+import org.springframework.aop.framework.Advised;
 import org.springframework.cloud.stream.binder.AbstractBinder;
 import org.springframework.cloud.stream.binder.BinderSpecificPropertiesProvider;
 import org.springframework.cloud.stream.binder.Binding;
@@ -96,8 +97,14 @@ class KStreamBinder extends
 			// @checkstyle:off
 			ExtendedConsumerProperties<KafkaStreamsConsumerProperties> properties) {
 		// @checkstyle:on
-		this.kafkaStreamsBindingInformationCatalogue
-				.registerConsumerProperties(inputTarget, properties.getExtension());
+//		this.kafkaStreamsBindingInformationCatalogue
+//				.registerConsumerProperties(inputTarget, properties.getExtension());
+
+		KStream<Object, Object> delegate = ((KStreamBoundElementFactory.KStreamWrapperHandler)
+				((Advised) inputTarget).getAdvisors()[0].getAdvice()).getDelegate();
+
+		this.kafkaStreamsBindingInformationCatalogue.registerConsumerProperties(delegate, properties.getExtension());
+
 		if (!StringUtils.hasText(group)) {
 			group = this.binderConfigurationProperties.getApplicationId();
 		}
