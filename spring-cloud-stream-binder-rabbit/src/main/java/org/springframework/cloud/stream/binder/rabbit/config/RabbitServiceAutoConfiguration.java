@@ -20,8 +20,6 @@ import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.boot.actuate.amqp.RabbitHealthIndicator;
-import org.springframework.boot.actuate.health.HealthIndicator;
 import org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration;
 import org.springframework.boot.autoconfigure.amqp.RabbitProperties;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -53,11 +51,11 @@ import org.springframework.util.StringUtils;
  * @author Ilayaperumal Gopinathan
  * @author Artem Bilan
  * @author Gary Russell
+ * @author Arnaud Deprez
  */
 @Configuration
 @ConditionalOnMissingBean(Binder.class)
-@Import({ RabbitMessageChannelBinderConfiguration.class,
-		RabbitServiceAutoConfiguration.RabbitHealthIndicatorConfiguration.class })
+@Import({ RabbitMessageChannelBinderConfiguration.class })
 public abstract class RabbitServiceAutoConfiguration {
 
 	static void configureCachingConnectionFactory(
@@ -195,21 +193,6 @@ public abstract class RabbitServiceAutoConfiguration {
 	@Profile("!cloud")
 	@Import(RabbitAutoConfiguration.class)
 	protected static class NoCloudProfile {
-
-	}
-
-	/**
-	 * Configuration for Rabbit health indicator.
-	 *
-	 */
-	@Configuration
-	@ConditionalOnClass(name = "org.springframework.boot.actuate.health.HealthIndicator")
-	public static class RabbitHealthIndicatorConfiguration {
-
-		@Bean
-		public HealthIndicator binderHealthIndicator(RabbitTemplate rabbitTemplate) {
-			return new RabbitHealthIndicator(rabbitTemplate);
-		}
 
 	}
 
