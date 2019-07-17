@@ -114,7 +114,7 @@ import org.springframework.kafka.listener.MessageListenerContainer;
 import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.kafka.support.SendResult;
-import org.springframework.kafka.support.TopicPartitionInitialOffset;
+import org.springframework.kafka.support.TopicPartitionOffset;
 import org.springframework.kafka.support.converter.MessagingMessageConverter;
 import org.springframework.kafka.test.core.BrokerAddress;
 import org.springframework.kafka.test.rule.EmbeddedKafkaRule;
@@ -2455,14 +2455,15 @@ public class KafkaBinderTests extends
 			binding = binder.bindConsumer(testTopicName, "test-x", input,
 					consumerProperties);
 
-			TopicPartitionInitialOffset[] listenedPartitions = TestUtils.getPropertyValue(
+			ContainerProperties containerProps = TestUtils.getPropertyValue(
 					binding,
-					"lifecycle.messageListenerContainer.containerProperties.topicPartitions",
-					TopicPartitionInitialOffset[].class);
+					"lifecycle.messageListenerContainer.containerProperties",
+					ContainerProperties.class);
+			TopicPartitionOffset[] listenedPartitions = containerProps.getTopicPartitionsToAssign();
 			assertThat(listenedPartitions).hasSize(2);
 			assertThat(listenedPartitions).contains(
-					new TopicPartitionInitialOffset(testTopicName, 2),
-					new TopicPartitionInitialOffset(testTopicName, 5));
+					new TopicPartitionOffset(testTopicName, 2),
+					new TopicPartitionOffset(testTopicName, 5));
 			int partitions = invokePartitionSize(testTopicName);
 			assertThat(partitions).isEqualTo(6);
 		}

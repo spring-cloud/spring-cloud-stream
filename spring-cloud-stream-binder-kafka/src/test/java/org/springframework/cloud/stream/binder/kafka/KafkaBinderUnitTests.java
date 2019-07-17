@@ -45,11 +45,13 @@ import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaBinderConfigurationProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaConsumerProperties;
 import org.springframework.cloud.stream.binder.kafka.provisioning.KafkaTopicProvisioner;
+import org.springframework.cloud.stream.config.ListenerContainerCustomizer;
 import org.springframework.cloud.stream.provisioning.ConsumerDestination;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.test.util.TestUtils;
 import org.springframework.kafka.core.ConsumerFactory;
+import org.springframework.kafka.listener.AbstractMessageListenerContainer;
 import org.springframework.messaging.MessageChannel;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -175,6 +177,7 @@ public class KafkaBinderUnitTests {
 
 	private void testOffsetResetWithGroupManagement(final boolean earliest,
 			boolean groupManage, String topic, String group) throws Exception {
+
 		final List<TopicPartition> partitions = new ArrayList<>();
 		partitions.add(new TopicPartition(topic, 0));
 		partitions.add(new TopicPartition(topic, 1));
@@ -218,8 +221,18 @@ public class KafkaBinderUnitTests {
 			latch.countDown();
 			return null;
 		}).given(consumer).seekToEnd(any());
+		class Customizer implements ListenerContainerCustomizer<AbstractMessageListenerContainer<?, ?>> {
+
+			@Override
+			public void configure(AbstractMessageListenerContainer<?, ?> container, String destinationName,
+					String group) {
+
+				container.getContainerProperties().setMissingTopicsFatal(false);
+			}
+
+		}
 		KafkaMessageChannelBinder binder = new KafkaMessageChannelBinder(
-				configurationProperties, provisioningProvider) {
+				configurationProperties, provisioningProvider, new Customizer(), null) {
 
 			@Override
 			protected ConsumerFactory<?, ?> createKafkaConsumerFactory(boolean anonymous,
