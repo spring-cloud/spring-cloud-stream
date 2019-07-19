@@ -733,12 +733,17 @@ public class KafkaMessageChannelBinder extends
 	}
 
 	private Object checkReset(boolean resetOffsets, final Object resetTo) {
-		if (resetOffsets && !"earliest".equals(resetTo) && !"latest".equals(resetTo)) {
+		if (!resetOffsets) {
+			return null;
+		}
+		else if (!"earliest".equals(resetTo) && !"latest".equals(resetTo)) {
 			logger.warn("no (or unknown) " + ConsumerConfig.AUTO_OFFSET_RESET_CONFIG
 					+ " property cannot reset");
 			return null;
 		}
-		return resetTo;
+		else {
+			return resetTo;
+		}
 	}
 
 	@Override
