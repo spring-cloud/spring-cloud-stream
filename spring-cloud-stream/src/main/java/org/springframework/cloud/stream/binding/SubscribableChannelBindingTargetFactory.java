@@ -16,9 +16,12 @@
 
 package org.springframework.cloud.stream.binding;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.stream.messaging.DirectWithAttributesChannel;
 import org.springframework.cloud.stream.messaging.Sink;
 import org.springframework.cloud.stream.messaging.Source;
+import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.messaging.SubscribableChannel;
 
 /**
@@ -35,6 +38,9 @@ public class SubscribableChannelBindingTargetFactory
 
 	private final MessageChannelConfigurer messageChannelConfigurer;
 
+	@Autowired
+	private GenericApplicationContext context;
+
 	public SubscribableChannelBindingTargetFactory(
 			MessageChannelConfigurer messageChannelConfigurer) {
 		super(SubscribableChannel.class);
@@ -44,16 +50,24 @@ public class SubscribableChannelBindingTargetFactory
 	@Override
 	public SubscribableChannel createInput(String name) {
 		DirectWithAttributesChannel subscribableChannel = new DirectWithAttributesChannel();
+		subscribableChannel.setComponentName(name);
 		subscribableChannel.setAttribute("type", Sink.INPUT);
 		this.messageChannelConfigurer.configureInputChannel(subscribableChannel, name);
+		if (!context.containsBean(name)) {
+			context.registerBean(name, DirectWithAttributesChannel.class, () -> subscribableChannel);
+		}
 		return subscribableChannel;
 	}
 
 	@Override
 	public SubscribableChannel createOutput(String name) {
 		DirectWithAttributesChannel subscribableChannel = new DirectWithAttributesChannel();
+		subscribableChannel.setComponentName(name);
 		subscribableChannel.setAttribute("type", Source.OUTPUT);
 		this.messageChannelConfigurer.configureOutputChannel(subscribableChannel, name);
+		if (!context.containsBean(name)) {
+			context.registerBean(name, DirectWithAttributesChannel.class, () -> subscribableChannel);
+		}
 		return subscribableChannel;
 	}
 

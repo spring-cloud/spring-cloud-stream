@@ -34,6 +34,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
 
+import reactor.core.publisher.Flux;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -114,6 +116,34 @@ public class ImplicitFunctionBindingTests {
 		}
 	}
 
+	@Test
+	public void testBindingWithReactiveFunction() {
+		System.clearProperty("spring.cloud.stream.function.definition");
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+				TestChannelBinderConfiguration.getCompleteConfiguration(
+						ReactiveFunctionConfiguration.class))
+								.web(WebApplicationType.NONE)
+								.run("--spring.jmx.enabled=false")) {
+
+			InputDestination inputDestination = context.getBean(InputDestination.class);
+			OutputDestination outputDestination = context
+					.getBean(OutputDestination.class);
+
+			Message<byte[]> inputMessageOne = MessageBuilder
+					.withPayload("Hello".getBytes()).build();
+			Message<byte[]> inputMessageTwo = MessageBuilder
+					.withPayload("Hello Again".getBytes()).build();
+			inputDestination.send(inputMessageOne);
+			inputDestination.send(inputMessageTwo);
+
+			Message<byte[]> outputMessage = outputDestination.receive();
+			assertThat(outputMessage.getPayload()).isEqualTo("Hello".getBytes());
+			outputMessage = outputDestination.receive();
+			assertThat(outputMessage.getPayload()).isEqualTo("Hello Again".getBytes());
+
+		}
+	}
+
 	@EnableAutoConfiguration
 	public static class NoEnableBindingConfiguration  {
 
@@ -163,7 +193,18 @@ public class ImplicitFunctionBindingTests {
 				return x;
 			};
 		}
+	}
 
+	@EnableAutoConfiguration
+	public static class ReactiveFunctionConfiguration {
+
+		@Bean
+		public Function<Flux<String>, Flux<String>> echo() {
+			return flux -> flux.map(value -> {
+				System.out.println("echo value reqctive " + value);
+				return value;
+			});
+		}
 	}
 
 }

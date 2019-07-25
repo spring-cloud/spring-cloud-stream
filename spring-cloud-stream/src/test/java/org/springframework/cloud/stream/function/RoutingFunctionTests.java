@@ -20,6 +20,7 @@ import java.util.function.Function;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import reactor.core.publisher.Flux;
 
@@ -43,6 +44,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Oleg Zhurakousky
  * @since 2.2.1
  */
+@Ignore
 public class RoutingFunctionTests {
 
 	@After

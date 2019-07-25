@@ -32,6 +32,8 @@ import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.Input;
 import org.springframework.cloud.stream.annotation.Output;
 import org.springframework.core.annotation.AnnotationUtils;
+import org.springframework.messaging.MessageChannel;
+import org.springframework.messaging.SubscribableChannel;
 import org.springframework.util.Assert;
 import org.springframework.util.ReflectionUtils;
 
@@ -88,6 +90,24 @@ public class BindableProxyFactory extends AbstractBindableProxyFactory
 			}
 		}
 		return null;
+	}
+
+	public void replaceInputChannel(String originalChannelName, String newChannelName, SubscribableChannel messageChannel) {
+		if (log.isInfoEnabled()) {
+			log.info("Replacing '" + originalChannelName + "' binding channel with '" + newChannelName + "'");
+		}
+		BoundTargetHolder holder = new BoundTargetHolder(messageChannel, true);
+		this.inputHolders.remove(originalChannelName);
+		this.inputHolders.put(newChannelName, holder);
+	}
+
+	public void replaceOutputChannel(String originalChannelName, String newChannelName, MessageChannel messageChannel) {
+		if (log.isInfoEnabled()) {
+			log.info("Replacing '" + originalChannelName + "' binding channel with '" + newChannelName + "'");
+		}
+		BoundTargetHolder holder = new BoundTargetHolder(messageChannel, true);
+		this.outputHolders.remove(originalChannelName);
+		this.outputHolders.put(newChannelName, holder);
 	}
 
 	@Override

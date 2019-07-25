@@ -81,14 +81,18 @@ public abstract class BindingBeanDefinitionRegistryUtils {
 			Input input = AnnotationUtils.findAnnotation(method, Input.class);
 			if (input != null) {
 				String name = getBindingTargetName(input, method);
-				registerInputBindingTargetBeanDefinition(input.value(), name,
-						bindingTargetInterfaceBeanName, method.getName(), registry);
+				if (!registry.containsBeanDefinition(name)) {
+					registerInputBindingTargetBeanDefinition(input.value(), name,
+							bindingTargetInterfaceBeanName, method.getName(), registry);
+				}
 			}
 			Output output = AnnotationUtils.findAnnotation(method, Output.class);
 			if (output != null) {
 				String name = getBindingTargetName(output, method);
-				registerOutputBindingTargetBeanDefinition(output.value(), name,
-						bindingTargetInterfaceBeanName, method.getName(), registry);
+				if (!registry.containsBeanDefinition(name)) {
+					registerOutputBindingTargetBeanDefinition(output.value(), name,
+							bindingTargetInterfaceBeanName, method.getName(), registry);
+				}
 			}
 		});
 	}

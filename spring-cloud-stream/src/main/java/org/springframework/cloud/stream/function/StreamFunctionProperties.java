@@ -49,12 +49,27 @@ public class StreamFunctionProperties {
 
 	private Map<String, List<String>> outputBindings = new HashMap<>();
 
+	private boolean composeTo;
+
+	private boolean composeFrom;
+
+	public boolean isComposeTo() {
+		return composeTo;
+	}
+
+	public boolean isComposeFrom() {
+		return composeFrom;
+	}
+
 	public String getDefinition() {
 		return this.definition;
 	}
 
 	public void setDefinition(String definition) {
-		this.definition = definition;
+		this.composeFrom = definition.startsWith("|");
+		this.composeTo = definition.endsWith("|");
+		this.definition = this.composeFrom ? definition.substring(1)
+				: (this.composeTo ? definition.substring(0, definition.length() - 1) : definition);
 	}
 
 	BindingServiceProperties getBindingServiceProperties() {
