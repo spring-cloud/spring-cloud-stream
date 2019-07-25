@@ -222,6 +222,7 @@ public class ContentTypeTests {
 		}
 	}
 
+
 	public interface TestSink {
 
 		@Input("POJO_INPUT")

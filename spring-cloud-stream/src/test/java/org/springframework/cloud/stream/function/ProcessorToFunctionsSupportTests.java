@@ -21,6 +21,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 import org.junit.After;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import org.springframework.beans.DirectFieldAccessor;
@@ -58,6 +59,7 @@ public class ProcessorToFunctionsSupportTests {
 	}
 
 	@Test
+	@Ignore
 	public void testPathThrough() {
 		this.context = new SpringApplicationBuilder(TestChannelBinderConfiguration
 				.getCompleteConfiguration(FunctionsConfiguration.class))
@@ -70,6 +72,7 @@ public class ProcessorToFunctionsSupportTests {
 	}
 
 	@Test
+	@Ignore
 	public void testSingleFunction() {
 		this.context = new SpringApplicationBuilder(TestChannelBinderConfiguration
 				.getCompleteConfiguration(FunctionsConfiguration.class))
@@ -85,6 +88,7 @@ public class ProcessorToFunctionsSupportTests {
 	}
 
 	@Test
+	@Ignore
 	public void testComposedFunction() {
 		this.context = new SpringApplicationBuilder(TestChannelBinderConfiguration
 				.getCompleteConfiguration(FunctionsConfiguration.class))
@@ -102,6 +106,7 @@ public class ProcessorToFunctionsSupportTests {
 	}
 
 	@Test
+	@Ignore
 	public void testConsumer() {
 		this.context = new SpringApplicationBuilder(TestChannelBinderConfiguration
 				.getCompleteConfiguration(ConsumerConfiguration.class))

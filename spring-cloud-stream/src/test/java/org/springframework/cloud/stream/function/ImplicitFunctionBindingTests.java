@@ -20,6 +20,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 import org.junit.Test;
+import reactor.core.publisher.Flux;
 
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -34,7 +35,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
 
-import reactor.core.publisher.Flux;
+
 
 import static org.assertj.core.api.Assertions.assertThat;
 

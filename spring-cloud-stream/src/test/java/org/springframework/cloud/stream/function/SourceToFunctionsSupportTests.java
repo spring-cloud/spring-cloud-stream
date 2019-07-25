@@ -30,8 +30,6 @@ import org.junit.rules.ExpectedException;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 
-import org.springframework.beans.factory.BeanCreationException;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
@@ -51,7 +49,6 @@ import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.PollableChannel;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.util.Assert;
 import org.springframework.util.MimeTypeUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -115,7 +112,7 @@ public class SourceToFunctionsSupportTests {
 				TestChannelBinderConfiguration.getCompleteConfiguration(
 						FunctionsConfigurationNoConversionPossible.class))
 								.web(WebApplicationType.NONE)
-								.run("--spring.cloud.stream.function.definition=toUpperCase|concatWithSelf",
+								.run("--spring.cloud.stream.function.definition=|toUpperCase|concatWithSelf",
 										"--spring.jmx.enabled=false")) {
 			PollableChannel errorChannel = context.getBean("errorChannel",
 					PollableChannel.class);

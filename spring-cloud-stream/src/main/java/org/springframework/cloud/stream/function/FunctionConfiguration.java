@@ -23,19 +23,22 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import org.reactivestreams.Publisher;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+
+
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.function.context.FunctionCatalog;
+import org.springframework.cloud.function.context.catalog.BeanFactoryAwareFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
 import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
-import org.springframework.cloud.function.context.catalog.BeanFactoryAwareFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.cloud.stream.binding.BindableProxyFactory;
 import org.springframework.cloud.stream.config.BinderFactoryAutoConfiguration;
 import org.springframework.cloud.stream.config.BindingServiceConfiguration;
 import org.springframework.cloud.stream.messaging.DirectWithAttributesChannel;
-import org.springframework.cloud.stream.messaging.Sink;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.annotation.Bean;
@@ -43,14 +46,16 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.integration.channel.MessageChannelReactiveUtils;
-import org.springframework.integration.core.MessageSource;
 import org.springframework.integration.handler.ServiceActivatingHandler;
+import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.SubscribableChannel;
+import org.springframework.util.Assert;
+import org.springframework.util.ObjectUtils;
 
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
+
+
 
 /**
  * @author Oleg Zhurakousky
@@ -66,8 +71,9 @@ public class FunctionConfiguration {
 
 	@Bean
 	public BeanPostProcessor functionChannelBindingPostProcessor(FunctionCatalog functionCatalog, FunctionInspector functionInspector,
-			StreamFunctionProperties functionProperties, BindableProxyFactory bindableProxyFactory) {
-		return new FunctionChannelBindingPostProcessor(functionCatalog, functionInspector, functionProperties, bindableProxyFactory);
+			StreamFunctionProperties functionProperties, @Nullable BindableProxyFactory[] bindableProxyFactory) {
+		return new FunctionChannelBindingPostProcessor(functionCatalog, functionInspector, functionProperties,
+				ObjectUtils.isEmpty(bindableProxyFactory) ? null : bindableProxyFactory[0]);
 	}
 
 	private static class FunctionChannelBindingPostProcessor implements BeanPostProcessor, ApplicationContextAware {
@@ -111,6 +117,7 @@ public class FunctionConfiguration {
 				System.out.println("Composing at the tail");
 			}
 			else if (functionProperties.isComposeFrom() && "output".equals(channelName)) {
+				Assert.notNull(bindableProxyFactory, "Can not compose function into the existing app since `bindableProxyFactory` is null.");
 				System.out.println("Composing at the head");
 				FunctionInvocationWrapper function = functionCatalog.lookup(functionProperties.getDefinition(), "application/json");
 				ServiceActivatingHandler handler = new ServiceActivatingHandler(new FunctionWrapper(function));
@@ -135,7 +142,7 @@ public class FunctionConfiguration {
 					throw new UnsupportedOperationException("Standalone supplier are not currently supported");
 				}
 				else if (function.getTarget() instanceof Consumer) {
-
+					throw new UnsupportedOperationException("Consumers are not currently supported");
 				}
 				else {
 					if ("input".equals(channelName)) {
@@ -203,7 +210,7 @@ public class FunctionConfiguration {
 	}
 	/**
 	 *
-	 * Ensure that SI does not attempt any conversion and sends a raw Message
+	 * Ensure that SI does not attempt any conversion and sends a raw Message.
 	 *
 	 */
 	@SuppressWarnings("rawtypes")

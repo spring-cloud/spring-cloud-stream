@@ -24,6 +24,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import org.springframework.boot.WebApplicationType;
@@ -66,6 +67,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class GreenfieldFunctionEnableBindingTests {
 
 	@Test
+	@Ignore
 	public void testSourceFromSupplier() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 				TestChannelBinderConfiguration
@@ -106,6 +108,7 @@ public class GreenfieldFunctionEnableBindingTests {
 	}
 
 	@Test
+	@Ignore
 	public void testSinkFromConsumer() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 				TestChannelBinderConfiguration
@@ -122,6 +125,7 @@ public class GreenfieldFunctionEnableBindingTests {
 	}
 
 	@Test
+	@Ignore
 	public void testHttpEndpoint() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 				TestChannelBinderConfiguration.getCompleteConfiguration(
@@ -141,6 +145,7 @@ public class GreenfieldFunctionEnableBindingTests {
 	}
 
 	@Test
+	@Ignore
 	public void testPojoReturn() throws IOException {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 				TestChannelBinderConfiguration.getCompleteConfiguration(
