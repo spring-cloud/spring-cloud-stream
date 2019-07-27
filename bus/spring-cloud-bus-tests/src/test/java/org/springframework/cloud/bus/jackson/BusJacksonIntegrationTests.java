@@ -69,7 +69,7 @@ public class BusJacksonIntegrationTests {
 
 	@Test
 	@SuppressWarnings("unchecked")
-	@Ignore //FIXME: https://github.com/spring-cloud/spring-cloud-bus/issues/202
+	@Ignore // FIXME: https://github.com/spring-cloud/spring-cloud-bus/issues/202
 	public void testCustomEventSerializes() {
 		assertThat(this.converter.isMapperCreated()).isFalse();
 
