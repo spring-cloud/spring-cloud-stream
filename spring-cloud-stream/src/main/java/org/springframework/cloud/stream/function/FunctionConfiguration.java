@@ -18,14 +18,17 @@ package org.springframework.cloud.stream.function;
 
 import java.lang.reflect.Type;
 import java.time.Duration;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-
+import reactor.core.publisher.MonoSink;
 
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanPostProcessor;
@@ -35,6 +38,7 @@ import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.catalog.BeanFactoryAwareFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
 import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
+import org.springframework.cloud.stream.binder.BindingCreatedEvent;
 import org.springframework.cloud.stream.binding.BindableProxyFactory;
 import org.springframework.cloud.stream.config.BinderFactoryAutoConfiguration;
 import org.springframework.cloud.stream.config.BindingServiceConfiguration;
@@ -46,16 +50,19 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.integration.channel.MessageChannelReactiveUtils;
+import org.springframework.integration.dsl.IntegrationFlow;
+import org.springframework.integration.dsl.IntegrationFlowBuilder;
+import org.springframework.integration.dsl.IntegrationFlows;
 import org.springframework.integration.handler.ServiceActivatingHandler;
+import org.springframework.integration.support.MessageBuilder;
 import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
+import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.SubscribableChannel;
 import org.springframework.util.Assert;
+import org.springframework.util.MimeTypeUtils;
 import org.springframework.util.ObjectUtils;
-
-
-
 
 /**
  * @author Oleg Zhurakousky
@@ -76,7 +83,67 @@ public class FunctionConfiguration {
 				ObjectUtils.isEmpty(bindableProxyFactory) ? null : bindableProxyFactory[0]);
 	}
 
+	@Bean
+	public IntegrationFlow standAloneSupplierFlow(FunctionCatalog functionCatalog, FunctionInspector functionInspector,
+			StreamFunctionProperties functionProperties, GenericApplicationContext context) {
+		IntegrationFlow integrationFlow = null;
+		FunctionInvocationWrapper functionWrapper = functionCatalog.lookup(functionProperties.getDefinition());
+		if (functionWrapper != null) {
+			AtomicReference<MonoSink<Object>> triggerRef = new AtomicReference<>();
+			Publisher<Object> beginPublishingTrigger = Mono.create(emmiter -> {
+				triggerRef.set(emmiter);
+			});
+			context.addApplicationListener(event -> {
+				if (event instanceof BindingCreatedEvent) {
+					if (triggerRef.get() != null) {
+						triggerRef.get().success();
+					}
+				}
+			});
+
+			if (!functionProperties.isComposeFrom() && !functionProperties.isComposeTo() && functionWrapper.isSupplier()) {
+				integrationFlow = this.integrationFlowFromProvidedSupplier(functionWrapper, functionInspector, beginPublishingTrigger)
+						.channel("output").get();
+			}
+		}
+
+		return integrationFlow;
+	}
+
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	private IntegrationFlowBuilder integrationFlowFromProvidedSupplier(Supplier<?> supplier,
+			FunctionInspector inspector, Publisher<Object> beginPublishingTrigger) {
+
+		IntegrationFlowBuilder integrationFlowBuilder;
+		Type functionType = FunctionTypeUtils.getFunctionType(supplier, inspector);
+		if (FunctionTypeUtils.isReactive(FunctionTypeUtils.getInputType(functionType, 0))) {
+			Publisher publisher = (Publisher) supplier.get();
+			publisher = publisher instanceof Mono
+					? ((Mono) publisher).delaySubscription(beginPublishingTrigger).map(this::wrapToMessageIfNecessary)
+							: ((Flux) publisher).delaySubscription(beginPublishingTrigger).map(this::wrapToMessageIfNecessary);
+
+			integrationFlowBuilder  = IntegrationFlows.from(publisher);
+		}
+		else {
+			integrationFlowBuilder = IntegrationFlows.from(supplier);
+		}
+		return integrationFlowBuilder;
+	}
+
+	@SuppressWarnings("unchecked")
+	private <T> Message<T> wrapToMessageIfNecessary(T value) {
+		return value instanceof Message ? (Message<T>) value : MessageBuilder.withPayload(value).setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.APPLICATION_JSON).build();
+	}
+
+
+	/**
+	 *
+	 * @author Oleg Zhurakousky
+	 * @since 3.0
+	 */
 	private static class FunctionChannelBindingPostProcessor implements BeanPostProcessor, ApplicationContextAware {
+
+		private static Log logger = LogFactory.getLog(FunctionChannelBindingPostProcessor.class);
 
 		private final FunctionCatalog functionCatalog;
 
@@ -88,12 +155,14 @@ public class FunctionConfiguration {
 
 		private GenericApplicationContext context;
 
+
 		FunctionChannelBindingPostProcessor(FunctionCatalog functionCatalog, FunctionInspector functionInspector,
 				StreamFunctionProperties functionProperties, BindableProxyFactory bindableProxyFactory) {
 			this.functionCatalog = functionCatalog;
 			this.functionInspector = functionInspector;
 			this.functionProperties = functionProperties;
 			this.bindableProxyFactory = bindableProxyFactory;
+
 		}
 
 		public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
@@ -111,14 +180,13 @@ public class FunctionConfiguration {
 		}
 
 		private void doPostProcess(String channelName, SubscribableChannel messageChannel) {
-
 			//TODO there is something about moving channel interceptors in AMCB (not sure if it is still required)
 			if (functionProperties.isComposeTo() && messageChannel instanceof SubscribableChannel && "input".equals(channelName)) {
-				System.out.println("Composing at the tail");
+				throw new UnsupportedOperationException("Composing at tail is not currently supported");
 			}
 			else if (functionProperties.isComposeFrom() && "output".equals(channelName)) {
-				Assert.notNull(bindableProxyFactory, "Can not compose function into the existing app since `bindableProxyFactory` is null.");
-				System.out.println("Composing at the head");
+				Assert.notNull(this.bindableProxyFactory, "Can not compose function into the existing app since `bindableProxyFactory` is null.");
+				logger.info("Composing at the head of 'output' channel");
 				FunctionInvocationWrapper function = functionCatalog.lookup(functionProperties.getDefinition(), "application/json");
 				ServiceActivatingHandler handler = new ServiceActivatingHandler(new FunctionWrapper(function));
 				handler.setBeanFactory(context);
@@ -133,20 +201,17 @@ public class FunctionConfiguration {
 				handler.setOutputChannelName("output.extended");
 				SubscribableChannel subscribeChannel = (SubscribableChannel) messageChannel;
 				subscribeChannel.subscribe(handler);
-
 			}
 			else {
 				FunctionInvocationWrapper function = functionCatalog.lookup(functionProperties.getDefinition(), "application/json");
-				if (function.getTarget() instanceof Supplier) {
-					System.out.println("Configuring supplier");
-					throw new UnsupportedOperationException("Standalone supplier are not currently supported");
-				}
-				else if (function.getTarget() instanceof Consumer) {
-					throw new UnsupportedOperationException("Consumers are not currently supported");
-				}
-				else {
-					if ("input".equals(channelName)) {
-						this.postProcessForStandAloneFunction(function, messageChannel);
+				if (!function.isSupplier()) {
+					if (function.isConsumer()) {
+						throw new UnsupportedOperationException("Consumers are not currently supported");
+					}
+					else if (function.isFunction()) {
+						if ("input".equals(channelName)) {
+							this.postProcessForStandAloneFunction(function, messageChannel);
+						}
 					}
 				}
 			}
@@ -170,12 +235,17 @@ public class FunctionConfiguration {
 			}
 		}
 
+		/*
+		 * Enhance publisher to add error handling, retries etc.
+		 */
 		@SuppressWarnings({ "unchecked", "rawtypes" })
 		private Publisher enhancePublisher(Publisher publisher) {
 			Flux flux = Flux.from(publisher)
 					.concatMap(message -> {
 						return Flux.just(message)
-								.doOnError(e -> e.printStackTrace())
+								.doOnError(e -> {
+									e.printStackTrace();
+								})
 								.retryBackoff(3, //this.consumerProperties.getMaxAttempts(),
 										Duration.ofMillis(1000),
 												//this.consumerProperties.getBackOffInitialInterval()),
@@ -189,6 +259,7 @@ public class FunctionConfiguration {
 					});
 			return flux;
 		}
+
 
 		@SuppressWarnings({ "unchecked", "rawtypes" })
 		private <I, O> void subscribeToInput(Function function,

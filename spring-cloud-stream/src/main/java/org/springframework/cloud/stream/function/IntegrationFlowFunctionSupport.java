@@ -61,7 +61,7 @@ public class IntegrationFlowFunctionSupport  {
 	private final StreamFunctionProperties functionProperties;
 
 
-	private final AtomicReference<MonoSink<Object>> triggerRef = new AtomicReference<>();
+	//private final AtomicReference<MonoSink<Object>> triggerRef = new AtomicReference<>();
 
 	private final Publisher<Object> trigger;
 
@@ -85,6 +85,7 @@ public class IntegrationFlowFunctionSupport  {
 		this.functionProperties = functionProperties;
 		this.context = context;
 		this.functionProperties.setBindingServiceProperties(bindingServiceProperties);
+		AtomicReference<MonoSink<Object>> triggerRef = null;
 		trigger = Mono.create(emmiter -> {
 			triggerRef.set(emmiter);
 		});
