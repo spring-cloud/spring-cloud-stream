@@ -288,9 +288,6 @@ public class BinderFactoryAutoConfiguration {
 
 	private String determineFunctionName(FunctionCatalog catalog, Environment environment) {
 		String name = environment.getProperty("spring.cloud.stream.function.definition");
-//		if (!StringUtils.hasText(name) && catalog.size() == 0)  {
-//			((SmartInitializingSingleton) catalog).afterSingletonsInstantiated();
-//		}
 		if (!StringUtils.hasText(name) && Boolean.parseBoolean(
 				environment.getProperty("spring.cloud.function.routing.enabled", "false"))) {
 			name = RoutingFunction.FUNCTION_NAME;
