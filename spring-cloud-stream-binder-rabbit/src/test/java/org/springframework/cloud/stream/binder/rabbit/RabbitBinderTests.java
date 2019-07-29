@@ -366,7 +366,7 @@ public class RabbitBinderTests extends
 		assertThat(TestUtils.getPropertyValue(container, "defaultRequeueRejected",
 				Boolean.class)).isTrue();
 		assertThat(TestUtils.getPropertyValue(container, "prefetchCount")).isEqualTo(1);
-		assertThat(TestUtils.getPropertyValue(container, "txSize")).isEqualTo(1);
+		assertThat(TestUtils.getPropertyValue(container, "batchSize")).isEqualTo(1);
 		assertThat(TestUtils.getPropertyValue(container, "missingQueuesFatal",
 				Boolean.class)).isTrue();
 		assertThat(
@@ -1843,7 +1843,7 @@ public class RabbitBinderTests extends
 		assertThat(TestUtils.getPropertyValue(container, "defaultRequeueRejected",
 				Boolean.class)).isFalse();
 		assertThat(TestUtils.getPropertyValue(container, "prefetchCount")).isEqualTo(20);
-		assertThat(TestUtils.getPropertyValue(container, "txSize")).isEqualTo(10);
+		assertThat(TestUtils.getPropertyValue(container, "batchSize")).isEqualTo(10);
 		retry = TestUtils.getPropertyValue(endpoint, "retryTemplate",
 				RetryTemplate.class);
 		assertThat(TestUtils.getPropertyValue(retry, "retryPolicy.maxAttempts"))
