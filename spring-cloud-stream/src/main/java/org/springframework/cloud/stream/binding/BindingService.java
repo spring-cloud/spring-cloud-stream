@@ -306,6 +306,8 @@ public class BindingService {
 		List<Binding<?>> bindings = this.consumerBindings.remove(inputName);
 		if (bindings != null && !CollectionUtils.isEmpty(bindings)) {
 			for (Binding<?> binding : bindings) {
+				binding.stop();
+				//then
 				binding.unbind();
 			}
 		}
@@ -316,7 +318,10 @@ public class BindingService {
 
 	public void unbindProducers(String outputName) {
 		Binding<?> binding = this.producerBindings.remove(outputName);
+
 		if (binding != null) {
+			binding.stop();
+			//then
 			binding.unbind();
 		}
 		else if (this.log.isWarnEnabled()) {
