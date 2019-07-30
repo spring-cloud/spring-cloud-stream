@@ -1538,28 +1538,13 @@ Signals if this consumer needs to be started automatically
 Default: `true`.
 partitionKeyExpression::
 A SpEL expression that determines how to partition outbound data.
-If set, or if `partitionKeyExtractorClass` is set, outbound data on this channel is partitioned. `partitionCount` must be set to a value greater than 1 to be effective.
-Mutually exclusive with `partitionKeyExtractorClass`.
+If set, outbound data on this channel is partitioned. `partitionCount` must be set to a value greater than 1 to be effective.
 See `<<partitioning>>`.
 +
 Default: null.
-partitionKeyExtractorClass::
-A `PartitionKeyExtractorStrategy` implementation.
-If set, or if `partitionKeyExpression` is set, outbound data on this channel is partitioned. `partitionCount` must be set to a value greater than 1 to be effective.
-Mutually exclusive with `partitionKeyExpression`.
-See `<<partitioning>>`.
-+
-Default: `null`.
-partitionSelectorClass::
-  A `PartitionSelectorStrategy` implementation.
-Mutually exclusive with `partitionSelectorExpression`.
-If neither is set, the partition is selected as the `hashCode(key) % partitionCount`, where `key` is computed through either `partitionKeyExpression` or `partitionKeyExtractorClass`.
-+
-Default: `null`.
 partitionSelectorExpression::
 A SpEL expression for customizing partition selection.
-Mutually exclusive with `partitionSelectorClass`.
-If neither is set, the partition is selected as the `hashCode(key) % partitionCount`, where `key` is computed through either `partitionKeyExpression` or `partitionKeyExtractorClass`.
+If neither is set, the partition is selected as the `hashCode(key) % partitionCount`, where `key` is computed through either `partitionKeyExpression`.
 +
 Default: `null`.
 partitionCount::
@@ -2308,7 +2293,7 @@ public CustomPartitionKeyExtractorClass customPartitionKeyExtractor() {
 ----
 
 NOTE: In previous versions of Spring Cloud Stream, you could specify the implementation of `org.springframework.cloud.stream.binder.PartitionKeyExtractorStrategy` by setting the  `spring.cloud.stream.bindings.output.producer.partitionKeyExtractorClass` property.
-Since version 2.0, this property is deprecated, and support for it will be removed in a future version.
+Since version 3.0, this property is removed.
 
 Once the message key is calculated, the partition selection process determines the target partition as a value between `0` and `partitionCount - 1`.
 The default calculation, applicable in most scenarios, is based on the following formula: `key.hashCode() % partitionCount`.
@@ -2326,7 +2311,7 @@ public CustomPartitionSelectorClass customPartitionSelector() {
 ----
 
 NOTE: In previous versions of Spring Cloud Stream you could specify the implementation of `org.springframework.cloud.stream.binder.PartitionSelectorStrategy` by setting the `spring.cloud.stream.bindings.output.producer.partitionSelectorClass` property.
-Since version 2.0, this property is deprecated and support for it will be removed in a future version.
+Since version 3.0, this property is removed.
 
 [[spring-cloud-stream-overview-configuring-input-bindings-partitioning]]
 ==== Configuring Input Bindings for Partitioning
