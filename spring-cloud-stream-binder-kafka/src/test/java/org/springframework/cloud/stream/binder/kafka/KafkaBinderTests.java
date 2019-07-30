@@ -3150,6 +3150,44 @@ public class KafkaBinderTests extends
 		}
 	}
 
+	@Test
+	@SuppressWarnings("unchecked")
+	public void testMessageKeyInPayload() throws Exception {
+		Binding<?> producerBinding = null;
+		try {
+			String testPayload = "test";
+
+			ExtendedProducerProperties<KafkaProducerProperties> producerProperties = createProducerProperties();
+			producerProperties.getExtension()
+					.setMessageKeyExpression(spelExpressionParser.parseExpression("payload.field.bytes"));
+			DirectChannel moduleOutputChannel = createBindableChannel("output",
+					createProducerBindingProperties(producerProperties));
+
+			String testTopicName = "existing" + System.currentTimeMillis();
+			KafkaTestBinder binder = getBinder();
+			producerBinding = binder.bindProducer(testTopicName, moduleOutputChannel,
+					producerProperties);
+			moduleOutputChannel.addInterceptor(new ChannelInterceptor() {
+
+				@Override
+				public Message<?> preSend(Message<?> message, MessageChannel channel) {
+					assertThat(message.getHeaders()
+							.get(KafkaExpressionEvaluatingInterceptor.MESSAGE_KEY_HEADER))
+									.isEqualTo("foo".getBytes());
+					return message;
+				}
+
+			});
+			moduleOutputChannel.send(
+					new GenericMessage<>(new Pojo("foo"), Collections.singletonMap(KafkaHeaders.PARTITION_ID, 0)));
+		}
+		finally {
+			if (producerBinding != null) {
+				producerBinding.unbind();
+			}
+		}
+	}
+
 	private final class FailingInvocationCountingMessageHandler
 			implements MessageHandler {
 
@@ -3191,6 +3229,28 @@ public class KafkaBinderTests extends
 
 		public CountDownLatch getLatch() {
 			return latch;
+		}
+
+	}
+
+	public static class Pojo {
+
+		private String field;
+
+		public Pojo() {
+			super();
+		}
+
+		public Pojo(String field) {
+			this.field = field;
+		}
+
+		public String getField() {
+			return this.field;
+		}
+
+		public void setField(String field) {
+			this.field = field;
 		}
 
 	}

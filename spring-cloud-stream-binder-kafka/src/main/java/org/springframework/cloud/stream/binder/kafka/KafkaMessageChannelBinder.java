@@ -75,10 +75,12 @@ import org.springframework.cloud.stream.config.MessageSourceCustomizer;
 import org.springframework.cloud.stream.provisioning.ConsumerDestination;
 import org.springframework.cloud.stream.provisioning.ProducerDestination;
 import org.springframework.context.Lifecycle;
+import org.springframework.expression.Expression;
 import org.springframework.expression.common.LiteralExpression;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.integration.StaticMessageHeaderAccessor;
 import org.springframework.integration.acks.AcknowledgmentCallback;
+import org.springframework.integration.channel.AbstractMessageChannel;
 import org.springframework.integration.core.MessageProducer;
 import org.springframework.integration.kafka.inbound.KafkaMessageDrivenChannelAdapter;
 import org.springframework.integration.kafka.inbound.KafkaMessageSource;
@@ -181,6 +183,8 @@ public class KafkaMessageChannelBinder extends
 	public static final String X_ORIGINAL_TIMESTAMP_TYPE = "x-original-timestamp-type";
 
 	private static final ThreadLocal<String> bindingNameHolder = new ThreadLocal<>();
+
+	private static final Pattern interceptorNeededPattern = Pattern.compile("(payload|#root|#this)");
 
 	private static final SpelExpressionParser PARSER = new SpelExpressionParser();
 
@@ -406,6 +410,29 @@ public class KafkaMessageChannelBinder extends
 		}
 		handler.setHeaderMapper(mapper);
 		return handler;
+	}
+
+
+	@Override
+	protected void postProcessOutputChannel(MessageChannel outputChannel,
+			ExtendedProducerProperties<KafkaProducerProperties> producerProperties) {
+
+		if (expressionInterceptorNeeded(producerProperties)) {
+			((AbstractMessageChannel) outputChannel).addInterceptor(0, new KafkaExpressionEvaluatingInterceptor(
+					producerProperties.getExtension().getMessageKeyExpression(), getEvaluationContext()));
+		}
+	}
+
+	private boolean expressionInterceptorNeeded(
+			ExtendedProducerProperties<KafkaProducerProperties> producerProperties) {
+		if (producerProperties.isUseNativeEncoding()) {
+			return false; // payload will be intact when it reaches the adapter
+		}
+		else {
+			Expression messageKeyExpression = producerProperties.getExtension().getMessageKeyExpression();
+			return messageKeyExpression != null
+					&& interceptorNeededPattern.matcher(messageKeyExpression.getExpressionString()).find();
+		}
 	}
 
 	protected DefaultKafkaProducerFactory<byte[], byte[]> getProducerFactory(
@@ -1172,7 +1199,13 @@ public class KafkaMessageChannelBinder extends
 			else {
 				setTopicExpression(new LiteralExpression(topic));
 			}
-			setMessageKeyExpression(producerProperties.getExtension().getMessageKeyExpression());
+			Expression messageKeyExpression = producerProperties.getExtension().getMessageKeyExpression();
+			if (expressionInterceptorNeeded(producerProperties)) {
+				messageKeyExpression = PARSER.parseExpression("headers['"
+						+ KafkaExpressionEvaluatingInterceptor.MESSAGE_KEY_HEADER
+						+ "']");
+			}
+			setMessageKeyExpression(messageKeyExpression);
 			setBeanFactory(KafkaMessageChannelBinder.this.getBeanFactory());
 			if (producerProperties.isPartitioned()) {
 				setPartitionIdExpression(PARSER.parseExpression(
