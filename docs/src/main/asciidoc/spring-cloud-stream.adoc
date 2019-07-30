@@ -591,7 +591,7 @@ Since Spring Cloud Stream v2.1, another alternative for defining _stream handler
 support for https://cloud.spring.io/spring-cloud-function/[Spring Cloud Function] where they can be expressed as beans of
  type `java.util.function.[Supplier/Function/Consumer]`.
 
-To specify which functional bean to bind to the external destination(s) exposed by the bindings, you must provide `spring.cloud.stream.function.definition` property.
+To specify which functional bean to bind to the external destination(s) exposed by the bindings, you must provide `spring.cloud.stream.function.definition` or native to spring-cloud-function `spring.cloud.function.definition` property.
 
 Here is the example of the Processor application exposing message handler as `java.util.function.Function`
 [source,java]
@@ -601,7 +601,7 @@ Here is the example of the Processor application exposing message handler as `ja
 public class MyFunctionBootApp {
 
 	public static void main(String[] args) {
-		SpringApplication.run(MyFunctionBootApp.class, "--spring.cloud.stream.function.definition=toUpperCase");
+		SpringApplication.run(MyFunctionBootApp.class, "--spring.cloud.function.definition=toUpperCase");
 	}
 
 	@Bean

@@ -19,6 +19,7 @@ package org.springframework.cloud.stream.function;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import org.junit.After;
 import org.junit.Test;
 import reactor.core.publisher.Flux;
 
@@ -46,6 +47,12 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 public class ImplicitFunctionBindingTests {
 
+	@After
+	public void after() {
+		System.clearProperty("spring.cloud.stream.function.definition");
+		System.clearProperty("spring.cloud.function.definition");
+	}
+
 	@Test
 	public void testBindingWithNoEnableBindingConfiguration() {
 
@@ -55,6 +62,30 @@ public class ImplicitFunctionBindingTests {
 								.web(WebApplicationType.NONE)
 								.run("--spring.jmx.enabled=false",
 										"--spring.cloud.stream.function.definition=func")) {
+
+			InputDestination inputDestination = context.getBean(InputDestination.class);
+			OutputDestination outputDestination = context
+					.getBean(OutputDestination.class);
+
+			Message<byte[]> inputMessage = MessageBuilder
+					.withPayload("Hello".getBytes()).build();
+			inputDestination.send(inputMessage);
+
+			Message<byte[]> outputMessage = outputDestination.receive();
+			assertThat(outputMessage.getPayload()).isEqualTo("Hello".getBytes());
+
+		}
+	}
+
+	@Test
+	public void testBindingWithNoEnableBindingConfigurationWithFunctionNativeDefinitionProperty() {
+
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+				TestChannelBinderConfiguration.getCompleteConfiguration(
+						NoEnableBindingConfiguration.class))
+								.web(WebApplicationType.NONE)
+								.run("--spring.jmx.enabled=false",
+										"--spring.cloud.function.definition=func")) {
 
 			InputDestination inputDestination = context.getBean(InputDestination.class);
 			OutputDestination outputDestination = context
