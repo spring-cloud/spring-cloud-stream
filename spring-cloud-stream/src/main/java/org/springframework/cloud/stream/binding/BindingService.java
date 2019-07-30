@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 the original author or authors.
+ * Copyright 2015-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,9 +21,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -146,9 +148,11 @@ public class BindingService {
 						consumerProperties);
 			}
 			catch (RuntimeException e) {
-				LateBinding<T> late = new LateBinding<T>();
+				LateBinding<T> late = new LateBinding<T>(target,
+						e.getCause() == null ? e.toString() : e.getCause().getMessage(), consumerProperties, true);
 				rescheduleConsumerBinding(input, inputName, binder, consumerProperties,
 						target, late, e);
+				this.consumerBindings.put(inputName, Collections.singletonList(late));
 				return late;
 			}
 		}
@@ -192,7 +196,8 @@ public class BindingService {
 						(PollableSource) input, consumerProperties);
 			}
 			catch (RuntimeException e) {
-				LateBinding<T> late = new LateBinding<T>();
+				LateBinding<T> late = new LateBinding<T>(target,
+						e.getCause() == null ? e.toString() : e.getCause().getMessage(), consumerProperties, true);
 				reschedulePollableConsumerBinding(input, inputName, binder,
 						consumerProperties, target, late, e);
 				return late;
@@ -268,7 +273,8 @@ public class BindingService {
 				return binder.bindProducer(bindingTarget, output, producerProperties);
 			}
 			catch (RuntimeException e) {
-				LateBinding<T> late = new LateBinding<T>();
+				LateBinding<T> late = new LateBinding<T>(bindingTarget,
+						e.getCause() == null ? e.toString() : e.getCause().getMessage(), producerProperties, false);
 				rescheduleProducerBinding(output, bindingTarget, binder,
 						producerProperties, late, e);
 				return late;
@@ -350,14 +356,28 @@ public class BindingService {
 		}
 	}
 
-	private static class LateBinding<T> implements Binding<T> {
+	public static class LateBinding<T> implements Binding<T> {
 
 		private volatile Binding<T> delegate;
 
 		private volatile boolean unbound;
 
-		LateBinding() {
+		private final String error;
+
+		private final String bindingName;
+
+		private final Object consumerOrProducerproperties;
+
+		private final boolean isInput;
+
+		ObjectMapper mapper = new ObjectMapper();
+
+		LateBinding(String bindingName, String error, Object consumerOrProducerproperties, boolean isInput) {
 			super();
+			this.error = error;
+			this.bindingName = bindingName;
+			this.consumerOrProducerproperties = consumerOrProducerproperties;
+			this.isInput = isInput;
 		}
 
 		public synchronized void setDelegate(Binding<T> delegate) {
@@ -378,8 +398,37 @@ public class BindingService {
 		}
 
 		@Override
+		public String getName() {
+			return this.bindingName;
+		}
+
+		@Override
+		public String getBindingName() {
+			return this.bindingName;
+		}
+
+		@SuppressWarnings("unused")
+		public String getError() {
+			return this.error;
+		}
+
+		@Override
 		public String toString() {
 			return "LateBinding [delegate=" + this.delegate + "]";
+		}
+
+		@Override
+		public Map<String, Object> getExtendedInfo() {
+			Map<String, Object> extendedInfo = new LinkedHashMap<>();
+			extendedInfo.put("bindingDestination", this.getBindingName());
+			extendedInfo.put(consumerOrProducerproperties.getClass().getSimpleName(),
+					mapper.convertValue(consumerOrProducerproperties, Map.class));
+			return extendedInfo;
+		}
+
+		@Override
+		public boolean isInput() {
+			return this.isInput;
 		}
 
 	}
