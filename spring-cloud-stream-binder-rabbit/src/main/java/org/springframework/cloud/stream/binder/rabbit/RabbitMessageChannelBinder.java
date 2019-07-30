@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Pattern;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Envelope;
@@ -140,6 +141,8 @@ public class RabbitMessageChannelBinder extends
 			return properties;
 		}
 	};
+
+	private static final Pattern interceptorNeededPattern = Pattern.compile("(payload|#root|#this)");
 
 	// @checkstyle:on
 
@@ -386,13 +389,12 @@ public class RabbitMessageChannelBinder extends
 		}
 	}
 
-	private boolean expressionInterceptorNeeded(
-			RabbitProducerProperties extendedProperties) {
-		return extendedProperties.getRoutingKeyExpression() != null
-				&& extendedProperties.getRoutingKeyExpression().getExpressionString()
-						.contains("payload")
-				|| (extendedProperties.getDelayExpression() != null && extendedProperties
-						.getDelayExpression().getExpressionString().contains("payload"));
+	private boolean expressionInterceptorNeeded(RabbitProducerProperties extendedProperties) {
+		Expression rkExpression = extendedProperties.getRoutingKeyExpression();
+		Expression delayExpression = extendedProperties.getDelayExpression();
+		return (rkExpression != null && interceptorNeededPattern.matcher(rkExpression.getExpressionString()).find())
+				|| (delayExpression != null
+						&& interceptorNeededPattern.matcher(delayExpression.getExpressionString()).find());
 	}
 
 	private void checkConnectionFactoryIsErrorCapable() {

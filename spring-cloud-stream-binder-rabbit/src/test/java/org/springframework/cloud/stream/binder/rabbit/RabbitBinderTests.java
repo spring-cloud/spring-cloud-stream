@@ -1631,7 +1631,7 @@ public class RabbitBinderTests extends
 		RabbitTestBinder binder = getBinder();
 		ExtendedProducerProperties<RabbitProducerProperties> producerProperties = createProducerProperties();
 		producerProperties.getExtension().setRoutingKeyExpression(
-				spelExpressionParser.parseExpression("payload.field"));
+				spelExpressionParser.parseExpression("#root.getPayload().field"));
 		// requires delayed message exchange plugin; tested locally
 		// producerProperties.getExtension().setDelayedExchange(true);
 		producerProperties.getExtension()
