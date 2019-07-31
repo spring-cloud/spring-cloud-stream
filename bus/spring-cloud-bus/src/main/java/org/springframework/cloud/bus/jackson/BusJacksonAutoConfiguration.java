@@ -87,6 +87,11 @@ class BusJacksonMessageConverter extends AbstractMessageConverter
 
 	private String[] packagesToScan = new String[] { DEFAULT_PACKAGE };
 
+	private BusJacksonMessageConverter() {
+		this(null);
+	}
+
+	@Autowired(required = false)
 	BusJacksonMessageConverter(@Nullable ObjectMapper objectMapper) {
 		super(MimeTypeUtils.APPLICATION_JSON);
 
