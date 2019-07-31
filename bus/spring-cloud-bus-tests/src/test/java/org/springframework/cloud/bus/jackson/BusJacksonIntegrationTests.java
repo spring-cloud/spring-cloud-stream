@@ -25,7 +25,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.fasterxml.jackson.databind.SerializationFeature;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -69,7 +68,6 @@ public class BusJacksonIntegrationTests {
 
 	@Test
 	@SuppressWarnings("unchecked")
-	@Ignore // FIXME: https://github.com/spring-cloud/spring-cloud-bus/issues/202
 	public void testCustomEventSerializes() {
 		assertThat(this.converter.isMapperCreated()).isFalse();
 

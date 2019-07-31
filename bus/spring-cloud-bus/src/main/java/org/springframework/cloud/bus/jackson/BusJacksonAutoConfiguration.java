@@ -43,6 +43,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.type.filter.AssignableTypeFilter;
+import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.converter.AbstractMessageConverter;
 import org.springframework.util.ClassUtils;
@@ -86,12 +87,7 @@ class BusJacksonMessageConverter extends AbstractMessageConverter
 
 	private String[] packagesToScan = new String[] { DEFAULT_PACKAGE };
 
-	BusJacksonMessageConverter() {
-		this(null);
-	}
-
-	@Autowired(required = false)
-	BusJacksonMessageConverter(ObjectMapper objectMapper) {
+	BusJacksonMessageConverter(@Nullable ObjectMapper objectMapper) {
 		super(MimeTypeUtils.APPLICATION_JSON);
 
 		if (objectMapper != null) {

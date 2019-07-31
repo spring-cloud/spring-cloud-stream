@@ -80,7 +80,7 @@ public class SubtypeModuleTests {
 
 	@Test
 	public void testDeserializeWithMessageConverter() throws Exception {
-		BusJacksonMessageConverter converter = new BusJacksonMessageConverter();
+		BusJacksonMessageConverter converter = new BusJacksonMessageConverter(null);
 		converter.afterPropertiesSet();
 		Object event = converter.fromMessage(MessageBuilder
 				.withPayload("{\"type\":\"TestRemoteApplicationEvent\"}").build(),
@@ -91,7 +91,7 @@ public class SubtypeModuleTests {
 
 	@Test
 	public void testDeserializeUnknownTypeWithMessageConverter() throws Exception {
-		BusJacksonMessageConverter converter = new BusJacksonMessageConverter();
+		BusJacksonMessageConverter converter = new BusJacksonMessageConverter(null);
 		converter.afterPropertiesSet();
 		Object event = converter.fromMessage(MessageBuilder
 				.withPayload("{\"type\":\"NotDefinedTestRemoteApplicationEvent\"}")
@@ -108,7 +108,7 @@ public class SubtypeModuleTests {
 
 	@Test
 	public void testDeserializeJsonTypeWithMessageConverter() throws Exception {
-		BusJacksonMessageConverter converter = new BusJacksonMessageConverter();
+		BusJacksonMessageConverter converter = new BusJacksonMessageConverter(null);
 		converter.afterPropertiesSet();
 		Object event = converter.fromMessage(
 				MessageBuilder.withPayload("{\"type\":\"typed\"}").build(),
@@ -122,7 +122,7 @@ public class SubtypeModuleTests {
 	 */
 	@Test
 	public void testDeserializeAckRemoteApplicationEventWithKnownType() throws Exception {
-		BusJacksonMessageConverter converter = new BusJacksonMessageConverter();
+		BusJacksonMessageConverter converter = new BusJacksonMessageConverter(null);
 		converter.afterPropertiesSet();
 		Object event = converter.fromMessage(MessageBuilder
 				.withPayload("{\"type\":\"AckRemoteApplicationEvent\", "
@@ -141,7 +141,7 @@ public class SubtypeModuleTests {
 	@Test
 	public void testDeserializeAckRemoteApplicationEventWithUnknownType()
 			throws Exception {
-		BusJacksonMessageConverter converter = new BusJacksonMessageConverter();
+		BusJacksonMessageConverter converter = new BusJacksonMessageConverter(null);
 		converter.afterPropertiesSet();
 		Object event = converter.fromMessage(MessageBuilder.withPayload(
 				"{\"type\":\"AckRemoteApplicationEvent\", \"event\":\"foo.bar.TestRemoteApplicationEvent\"}")
