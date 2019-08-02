@@ -297,7 +297,8 @@ How long the producer waits to allow more messages to accumulate in the same bat
 Default: `0`.
 messageKeyExpression::
 A SpEL expression evaluated against the outgoing message used to populate the key of the produced Kafka message -- for example, `headers['myKey']`.
-The payload cannot be used because, by the time this expression is evaluated, the payload is already in the form of a `byte[]`.
+With versions before 3.0, the payload could not be used unless native encoding was being used because, by the time this expression was evaluated, the payload was already in the form of a `byte[]`.
+Now, the expression is evaluated before the payload is converted.
 +
 Default: `none`.
 headerPatterns::
