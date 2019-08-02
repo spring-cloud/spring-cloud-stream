@@ -37,4 +37,8 @@ public class DirectWithAttributesChannel extends DirectChannel {
 		return this.attributes.get(key);
 	}
 
+	@Override
+	public String getBeanName() {
+		return this.getComponentName();
+	}
 }

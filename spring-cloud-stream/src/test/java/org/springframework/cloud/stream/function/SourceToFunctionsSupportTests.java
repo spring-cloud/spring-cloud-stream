@@ -252,28 +252,13 @@ public class SourceToFunctionsSupportTests {
 	public static class ExistingMessageSourceConfiguration {
 
 		@Bean
-		public IntegrationFlow messageSourceFlow() {
+		public IntegrationFlow messageSourceFlow(Source source) {
 			Supplier<Message<String>> messageSource = () -> MessageBuilder
 					.withPayload("hello function")
 					.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN)
 					.build();
-			return IntegrationFlows.from(messageSource).channel("output").get();
+			return IntegrationFlows.from(messageSource).channel(source.output()).get();
 		}
 
 	}
-
-	@EnableBinding(Source.class)
-	public static class ExistingMessageSourceConfigurationNoContentTypeSet {
-
-		@Bean
-		public IntegrationFlow messageSourceFlow() {
-			Supplier<Message<String>> messageSource = () -> MessageBuilder
-					.withPayload("hello function")
-					.setHeader(MessageHeaders.CONTENT_TYPE, "application/octet-stream")
-					.build();
-			return IntegrationFlows.from(messageSource).channel("output").get();
-		}
-
-	}
-
 }
