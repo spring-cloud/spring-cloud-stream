@@ -31,7 +31,7 @@ import reactor.core.publisher.Mono;
 import reactor.core.publisher.MonoSink;
 
 import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.config.BeanPostProcessor;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.function.context.FunctionCatalog;
@@ -77,9 +77,9 @@ import org.springframework.util.ObjectUtils;
 public class FunctionConfiguration {
 
 	@Bean
-	public BeanPostProcessor functionChannelBindingPostProcessor(FunctionCatalog functionCatalog, FunctionInspector functionInspector,
+	public InitializingBean functionChannelBindingInitializer(FunctionCatalog functionCatalog, FunctionInspector functionInspector,
 			StreamFunctionProperties functionProperties, @Nullable BindableProxyFactory[] bindableProxyFactory) {
-		return new FunctionChannelBindingPostProcessor(functionCatalog, functionInspector, functionProperties,
+		return new FunctionChannelBindingInitializer(functionCatalog, functionInspector, functionProperties,
 				ObjectUtils.isEmpty(bindableProxyFactory) ? null : bindableProxyFactory[0]);
 	}
 
@@ -141,9 +141,9 @@ public class FunctionConfiguration {
 	 * @author Oleg Zhurakousky
 	 * @since 3.0
 	 */
-	private static class FunctionChannelBindingPostProcessor implements BeanPostProcessor, ApplicationContextAware {
+	private static class FunctionChannelBindingInitializer implements InitializingBean, ApplicationContextAware {
 
-		private static Log logger = LogFactory.getLog(FunctionChannelBindingPostProcessor.class);
+		private static Log logger = LogFactory.getLog(FunctionChannelBindingInitializer.class);
 
 		private final FunctionCatalog functionCatalog;
 
@@ -156,7 +156,7 @@ public class FunctionConfiguration {
 		private GenericApplicationContext context;
 
 
-		FunctionChannelBindingPostProcessor(FunctionCatalog functionCatalog, FunctionInspector functionInspector,
+		FunctionChannelBindingInitializer(FunctionCatalog functionCatalog, FunctionInspector functionInspector,
 				StreamFunctionProperties functionProperties, BindableProxyFactory bindableProxyFactory) {
 			this.functionCatalog = functionCatalog;
 			this.functionInspector = functionInspector;
@@ -165,13 +165,27 @@ public class FunctionConfiguration {
 
 		}
 
-		public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
-			if (bean instanceof SubscribableChannel && functionCatalog.lookup(functionProperties.getDefinition()) != null
-					&& ("input".equals(beanName) || "output".equals(beanName))) {
-				this.doPostProcess(beanName, (SubscribableChannel) bean);
+		@Override
+		public void afterPropertiesSet() throws Exception {
+			MessageChannel messageChannel = null;
+			String channelName = "input";
+			if (context.containsBean(channelName)) {
+				Object bean = context.getBean(channelName);
+				if (bean instanceof MessageChannel) {
+					messageChannel = context.getBean(channelName, MessageChannel.class);
+				}
+			}
+			if (messageChannel == null && context.containsBean("output")) {
+				channelName = "output";
+				Object bean = context.getBean(channelName);
+				if (bean instanceof MessageChannel) {
+					messageChannel = context.getBean(channelName, SubscribableChannel.class);
+				}
 			}
 
-			return bean;
+			if (messageChannel != null && functionCatalog.lookup(functionProperties.getDefinition()) != null) {
+				this.doPostProcess(channelName, (SubscribableChannel) messageChannel);
+			}
 		}
 
 		@Override
