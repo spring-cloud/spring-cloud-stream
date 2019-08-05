@@ -25,6 +25,8 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.kafka.common.header.Header;
 import org.apache.kafka.common.header.Headers;
 import org.apache.kafka.common.header.internals.RecordHeader;
+import org.apache.kafka.common.serialization.Serde;
+import org.apache.kafka.common.serialization.Serializer;
 import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.processor.Processor;
@@ -282,8 +284,14 @@ public class KafkaStreamsMessageConversionDelegate {
 						String destination = this.context.topic();
 						if (o2 instanceof Message) {
 							Message message = (Message) o2;
+
+							// We need to convert the key to a byte[] before sending to DLQ.
+							Serde keySerde = kstreamBindingInformationCatalogue.getKeySerde(bindingTarget);
+							Serializer keySerializer = keySerde.serializer();
+							byte[] keyBytes = keySerializer.serialize(null, o);
+
 							KafkaStreamsMessageConversionDelegate.this.sendToDlqAndContinue
-									.sendToDlq(destination, (byte[]) o,
+									.sendToDlq(destination, keyBytes,
 											(byte[]) message.getPayload(),
 											this.context.partition());
 						}

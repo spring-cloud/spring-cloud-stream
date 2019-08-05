@@ -304,6 +304,8 @@ public class KafkaStreamsFunctionProcessor extends AbstractKafkaStreamsBinderPro
 								(KStreamBoundElementFactory.KStreamWrapper) targetBean;
 						//wrap the proxy created during the initial target type binding with real object (KStream)
 						kStreamWrapper.wrap((KStream<Object, Object>) stream);
+
+						this.kafkaStreamsBindingInformationCatalogue.addKeySerde((KStream) kStreamWrapper, keySerde);
 						this.kafkaStreamsBindingInformationCatalogue.addStreamBuilderFactory(streamsBuilderFactoryBean);
 
 						if (KStream.class.isAssignableFrom(stringResolvableTypeMap.get(input).getRawClass())) {

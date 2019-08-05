@@ -85,7 +85,7 @@ public abstract class DeserializtionErrorHandlerByBinderTests {
 		System.setProperty("server.port", "0");
 		System.setProperty("spring.jmx.enabled", "false");
 
-		Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("foob", "false",
+		Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("kafka-streams-dlq-tests", "false",
 				embeddedKafka);
 		// consumerProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,
 		// Deserializer.class.getName());
@@ -108,11 +108,9 @@ public abstract class DeserializtionErrorHandlerByBinderTests {
 			"spring.cloud.stream.bindings.output.destination=counts-id",
 			"spring.cloud.stream.kafka.streams.binder.configuration.commit.interval.ms=1000",
 			"spring.cloud.stream.kafka.streams.binder.configuration.default.key.serde"
-					+ "=org.apache.kafka.common.serialization.Serdes$StringSerde",
+					+ "=org.apache.kafka.common.serialization.Serdes$IntegerSerde",
 			"spring.cloud.stream.kafka.streams.binder.configuration.default.value.serde"
 					+ "=org.apache.kafka.common.serialization.Serdes$StringSerde",
-//			"spring.cloud.stream.kafka.streams.bindings.output.producer.keySerde"
-//					+ "=org.apache.kafka.common.serialization.Serdes$IntegerSerde",
 			"spring.cloud.stream.kafka.streams.binder.serdeError=sendToDlq",
 			"spring.cloud.stream.kafka.streams.bindings.input.consumer.application-id"
 					+ "=deserializationByBinderAndDlqTests",
@@ -122,13 +120,13 @@ public abstract class DeserializtionErrorHandlerByBinderTests {
 
 		@Test
 		@SuppressWarnings("unchecked")
-		public void test() throws Exception {
+		public void test() {
 			Map<String, Object> senderProps = KafkaTestUtils.producerProps(embeddedKafka);
 			DefaultKafkaProducerFactory<Integer, String> pf = new DefaultKafkaProducerFactory<>(
 					senderProps);
 			KafkaTemplate<Integer, String> template = new KafkaTemplate<>(pf, true);
 			template.setDefaultTopic("foos");
-			template.sendDefault("hello");
+			template.sendDefault(7, "hello");
 
 			Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("foobar",
 					"false", embeddedKafka);
@@ -160,8 +158,6 @@ public abstract class DeserializtionErrorHandlerByBinderTests {
 					+ "=org.apache.kafka.common.serialization.Serdes$StringSerde",
 			"spring.cloud.stream.kafka.streams.binder.configuration.default.value.serde"
 					+ "=org.apache.kafka.common.serialization.Serdes$StringSerde",
-//			"spring.cloud.stream.kafka.streams.bindings.output.producer.keySerde"
-//					+ "=org.apache.kafka.common.serialization.Serdes$IntegerSerde",
 			"spring.cloud.stream.kafka.streams.binder.serdeError=sendToDlq",
 			"spring.cloud.stream.kafka.streams.bindings.input.consumer.application-id"
 					+ "=deserializationByBinderAndDlqTestsWithMultipleInputs",
@@ -171,7 +167,7 @@ public abstract class DeserializtionErrorHandlerByBinderTests {
 
 		@Test
 		@SuppressWarnings("unchecked")
-		public void test() throws Exception {
+		public void test() {
 			Map<String, Object> senderProps = KafkaTestUtils.producerProps(embeddedKafka);
 			DefaultKafkaProducerFactory<Integer, String> pf = new DefaultKafkaProducerFactory<>(
 					senderProps);

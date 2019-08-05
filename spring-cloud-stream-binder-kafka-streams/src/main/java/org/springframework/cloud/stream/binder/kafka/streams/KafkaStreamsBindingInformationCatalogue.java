@@ -16,11 +16,13 @@
 
 package org.springframework.cloud.stream.binder.kafka.streams;
 
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.kstream.KStream;
 
@@ -48,6 +50,8 @@ class KafkaStreamsBindingInformationCatalogue {
 	private final Set<StreamsBuilderFactoryBean> streamsBuilderFactoryBeans = new HashSet<>();
 
 	private ResolvableType outboundKStreamResolvable;
+
+	private final Map<KStream<?, ?>, Serde<?>> keySerdeInfo = new HashMap<>();
 
 	/**
 	 * For a given bounded {@link KStream}, retrieve it's corresponding destination on the
@@ -131,5 +135,21 @@ class KafkaStreamsBindingInformationCatalogue {
 
 	ResolvableType getOutboundKStreamResolvable() {
 		return outboundKStreamResolvable;
+	}
+
+	/**
+	 * Adding a mapping for KStream target to its corresponding KeySerde.
+	 * This is used for sending to DLQ when deserialization fails. See {@link KafkaStreamsMessageConversionDelegate}
+	 * for details.
+	 *
+	 * @param kStreamTarget target KStream
+	 * @param keySerde Serde used for the key
+	 */
+	void addKeySerde(KStream<?, ?> kStreamTarget, Serde<?> keySerde) {
+		this.keySerdeInfo.put(kStreamTarget, keySerde);
+	}
+
+	Serde<?> getKeySerde(KStream<?, ?> kStreamTarget) {
+		return this.keySerdeInfo.get(kStreamTarget);
 	}
 }
