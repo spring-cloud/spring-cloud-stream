@@ -55,7 +55,7 @@ public class CompositeNonNativeSerdeTest {
 		CompositeMessageConverterFactory compositeMessageConverterFactory = new CompositeMessageConverterFactory(
 				messageConverters, new ObjectMapper());
 		CompositeNonNativeSerde compositeNonNativeSerde = new CompositeNonNativeSerde(
-				compositeMessageConverterFactory);
+				compositeMessageConverterFactory.getMessageConverterForAllRegistered());
 
 		Map<String, Object> configs = new HashMap<>();
 		configs.put("valueClass", Sensor.class);

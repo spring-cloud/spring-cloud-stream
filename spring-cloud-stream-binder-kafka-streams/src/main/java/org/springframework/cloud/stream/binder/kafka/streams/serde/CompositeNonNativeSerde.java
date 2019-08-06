@@ -24,9 +24,9 @@ import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serializer;
 
-import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
+import org.springframework.messaging.converter.CompositeMessageConverter;
 import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.Assert;
@@ -35,7 +35,7 @@ import org.springframework.util.MimeTypeUtils;
 
 /**
  * A {@link Serde} implementation that wraps the list of {@link MessageConverter}s from
- * {@link CompositeMessageConverterFactory}.
+ * {@link CompositeMessageConverter}.
  *
  * The primary motivation for this class is to provide an avro based {@link Serde} that is
  * compatible with the schema registry that Spring Cloud Stream provides. When using the
@@ -90,11 +90,11 @@ public class CompositeNonNativeSerde<T> implements Serde<T> {
 	private final CompositeNonNativeSerializer<T> compositeNonNativeSerializer;
 
 	public CompositeNonNativeSerde(
-			CompositeMessageConverterFactory compositeMessageConverterFactory) {
+			CompositeMessageConverter compositeMessageConverter) {
 		this.compositeNonNativeDeserializer = new CompositeNonNativeDeserializer<>(
-				compositeMessageConverterFactory);
+				compositeMessageConverter);
 		this.compositeNonNativeSerializer = new CompositeNonNativeSerializer<>(
-				compositeMessageConverterFactory);
+				compositeMessageConverter);
 	}
 
 	@Override
@@ -150,9 +150,8 @@ public class CompositeNonNativeSerde<T> implements Serde<T> {
 		private Class<?> valueClass;
 
 		CompositeNonNativeDeserializer(
-				CompositeMessageConverterFactory compositeMessageConverterFactory) {
-			this.messageConverter = compositeMessageConverterFactory
-					.getMessageConverterForAllRegistered();
+				CompositeMessageConverter compositeMessageConverter) {
+			this.messageConverter = compositeMessageConverter;
 		}
 
 		@Override
@@ -197,9 +196,8 @@ public class CompositeNonNativeSerde<T> implements Serde<T> {
 		private MimeType mimeType;
 
 		CompositeNonNativeSerializer(
-				CompositeMessageConverterFactory compositeMessageConverterFactory) {
-			this.messageConverter = compositeMessageConverterFactory
-					.getMessageConverterForAllRegistered();
+				CompositeMessageConverter compositeMessageConverter) {
+			this.messageConverter = compositeMessageConverter;
 		}
 
 		@Override

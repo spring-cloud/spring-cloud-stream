@@ -47,7 +47,6 @@ import org.springframework.cloud.stream.binding.StreamListenerResultAdapter;
 import org.springframework.cloud.stream.config.BinderProperties;
 import org.springframework.cloud.stream.config.BindingServiceConfiguration;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
-import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
 import org.springframework.cloud.stream.function.StreamFunctionProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Conditional;
@@ -56,6 +55,7 @@ import org.springframework.core.env.Environment;
 import org.springframework.core.env.MapPropertySource;
 import org.springframework.kafka.config.KafkaStreamsConfiguration;
 import org.springframework.kafka.core.CleanupConfig;
+import org.springframework.messaging.converter.CompositeMessageConverter;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 
@@ -266,17 +266,17 @@ public class KafkaStreamsBinderSupportAutoConfiguration {
 
 	@Bean
 	public KafkaStreamsMessageConversionDelegate messageConversionDelegate(
-																		CompositeMessageConverterFactory compositeMessageConverterFactory,
+																		CompositeMessageConverter compositeMessageConverter,
 																		SendToDlqAndContinue sendToDlqAndContinue,
 																		KafkaStreamsBindingInformationCatalogue KafkaStreamsBindingInformationCatalogue,
 																		KafkaStreamsBinderConfigurationProperties binderConfigurationProperties) {
-		return new KafkaStreamsMessageConversionDelegate(compositeMessageConverterFactory, sendToDlqAndContinue,
+		return new KafkaStreamsMessageConversionDelegate(compositeMessageConverter, sendToDlqAndContinue,
 				KafkaStreamsBindingInformationCatalogue, binderConfigurationProperties);
 	}
 
 	@Bean
 	public CompositeNonNativeSerde compositeNonNativeSerde(
-			CompositeMessageConverterFactory compositeMessageConverterFactory) {
+			CompositeMessageConverter compositeMessageConverterFactory) {
 		return new CompositeNonNativeSerde(compositeMessageConverterFactory);
 	}
 

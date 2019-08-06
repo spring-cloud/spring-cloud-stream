@@ -33,9 +33,9 @@ import org.apache.kafka.streams.processor.Processor;
 import org.apache.kafka.streams.processor.ProcessorContext;
 
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsBinderConfigurationProperties;
-import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
+import org.springframework.messaging.converter.CompositeMessageConverter;
 import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.Assert;
@@ -57,7 +57,7 @@ public class KafkaStreamsMessageConversionDelegate {
 
 	private static final ThreadLocal<KeyValue<Object, Object>> keyValueThreadLocal = new ThreadLocal<>();
 
-	private final CompositeMessageConverterFactory compositeMessageConverterFactory;
+	private final CompositeMessageConverter compositeMessageConverter;
 
 	private final SendToDlqAndContinue sendToDlqAndContinue;
 
@@ -66,11 +66,11 @@ public class KafkaStreamsMessageConversionDelegate {
 	private final KafkaStreamsBinderConfigurationProperties kstreamBinderConfigurationProperties;
 
 	KafkaStreamsMessageConversionDelegate(
-			CompositeMessageConverterFactory compositeMessageConverterFactory,
+			CompositeMessageConverter compositeMessageConverter,
 			SendToDlqAndContinue sendToDlqAndContinue,
 			KafkaStreamsBindingInformationCatalogue kstreamBindingInformationCatalogue,
 			KafkaStreamsBinderConfigurationProperties kstreamBinderConfigurationProperties) {
-		this.compositeMessageConverterFactory = compositeMessageConverterFactory;
+		this.compositeMessageConverter = compositeMessageConverter;
 		this.sendToDlqAndContinue = sendToDlqAndContinue;
 		this.kstreamBindingInformationCatalogue = kstreamBindingInformationCatalogue;
 		this.kstreamBinderConfigurationProperties = kstreamBinderConfigurationProperties;
@@ -85,8 +85,7 @@ public class KafkaStreamsMessageConversionDelegate {
 	public KStream serializeOnOutbound(KStream<?, ?> outboundBindTarget) {
 		String contentType = this.kstreamBindingInformationCatalogue
 				.getContentType(outboundBindTarget);
-		MessageConverter messageConverter = this.compositeMessageConverterFactory
-				.getMessageConverterForAllRegistered();
+		MessageConverter messageConverter = this.compositeMessageConverter;
 		final PerRecordContentTypeHolder perRecordContentTypeHolder = new PerRecordContentTypeHolder();
 
 		final KStream<?, ?> kStreamWithEnrichedHeaders = outboundBindTarget.mapValues((v) -> {
@@ -148,8 +147,7 @@ public class KafkaStreamsMessageConversionDelegate {
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public KStream deserializeOnInbound(Class<?> valueClass,
 			KStream<?, ?> bindingTarget) {
-		MessageConverter messageConverter = this.compositeMessageConverterFactory
-				.getMessageConverterForAllRegistered();
+		MessageConverter messageConverter = this.compositeMessageConverter;
 		final PerRecordContentTypeHolder perRecordContentTypeHolder = new PerRecordContentTypeHolder();
 
 		resolvePerRecordContentType(bindingTarget, perRecordContentTypeHolder);
