@@ -288,7 +288,7 @@ public class BindingServiceTests {
 		SubscribableChannelBindingTargetFactory bindableSubscribableChannelFactory;
 		bindableSubscribableChannelFactory = new SubscribableChannelBindingTargetFactory(
 				new MessageConverterConfigurer(properties,
-						new CompositeMessageConverterFactory()));
+						new CompositeMessageConverterFactory().getMessageConverterForAllRegistered()));
 		final AtomicBoolean callbackInvoked = new AtomicBoolean();
 		BinderAwareChannelResolver resolver = new BinderAwareChannelResolver(
 				bindingService, bindableSubscribableChannelFactory,

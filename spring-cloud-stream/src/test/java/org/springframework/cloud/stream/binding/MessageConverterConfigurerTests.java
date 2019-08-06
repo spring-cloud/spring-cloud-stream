@@ -55,7 +55,7 @@ public class MessageConverterConfigurerTests {
 		CompositeMessageConverterFactory converterFactory = new CompositeMessageConverterFactory(
 				Collections.<MessageConverter>emptyList(), null);
 		MessageConverterConfigurer configurer = new MessageConverterConfigurer(props,
-				converterFactory);
+				converterFactory.getMessageConverterForAllRegistered());
 		QueueChannel out = new QueueChannel();
 		configurer.configureOutputChannel(out, "foo");
 		out.send(new GenericMessage<Foo>(new Foo(), Collections
@@ -90,7 +90,7 @@ public class MessageConverterConfigurerTests {
 		CompositeMessageConverterFactory converterFactory = new CompositeMessageConverterFactory(
 				Collections.<MessageConverter>singletonList(converter), null);
 		MessageConverterConfigurer configurer = new MessageConverterConfigurer(props,
-				converterFactory);
+				converterFactory.getMessageConverterForAllRegistered());
 		QueueChannel out = new QueueChannel();
 		configurer.configureOutputChannel(out, "foo");
 		try {
@@ -114,7 +114,7 @@ public class MessageConverterConfigurerTests {
 		CompositeMessageConverterFactory converterFactory = new CompositeMessageConverterFactory(
 				Collections.<MessageConverter>emptyList(), null);
 		MessageConverterConfigurer configurer = new MessageConverterConfigurer(props,
-				converterFactory);
+				converterFactory.getMessageConverterForAllRegistered());
 		QueueChannel in = new QueueChannel();
 		configurer.configureInputChannel(in, "foo");
 		Foo foo = new Foo();

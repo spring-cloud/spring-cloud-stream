@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2018 the original author or authors.
+ * Copyright 2017-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,13 @@
 
 package org.springframework.cloud.stream.config;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.config.BeanDefinition;
-import org.springframework.cloud.stream.annotation.StreamMessageConverter;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -39,21 +39,28 @@ import org.springframework.messaging.converter.MessageConverter;
 @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
 class ContentTypeConfiguration {
 
-	@Bean
-	public CompositeMessageConverterFactory compositeMessageConverterFactory(
-			ObjectProvider<ObjectMapper> objectMapperObjectProvider,
-			@StreamMessageConverter List<MessageConverter> customMessageConverters) {
-
-		return new CompositeMessageConverterFactory(customMessageConverters,
-				objectMapperObjectProvider.getIfAvailable(ObjectMapper::new));
-	}
+//	@Bean
+//	public CompositeMessageConverterFactory compositeMessageConverterFactory(
+//			ObjectProvider<ObjectMapper> objectMapperObjectProvider, List<MessageConverter> customMessageConverters) {
+//
+//		return new CompositeMessageConverterFactory(customMessageConverters,
+//				objectMapperObjectProvider.getIfAvailable(ObjectMapper::new));
+//	}
 
 	@Bean(name = IntegrationContextUtils.ARGUMENT_RESOLVER_MESSAGE_CONVERTER_BEAN_NAME)
 	public ConfigurableCompositeMessageConverter configurableCompositeMessageConverter(
-			CompositeMessageConverterFactory factory) {
+			ObjectProvider<ObjectMapper> objectMapperObjectProvider,
+			List<MessageConverter> customMessageConverters) {
 
-		return new ConfigurableCompositeMessageConverter(
-				factory.getMessageConverterForAllRegistered().getConverters());
+		CompositeMessageConverterFactory factory =
+				new CompositeMessageConverterFactory(new ArrayList<>(), objectMapperObjectProvider.getIfAvailable(ObjectMapper::new));
+
+		ArrayList<MessageConverter> messageConverters = new ArrayList<>(factory.getMessageConverterForAllRegistered().getConverters());
+		messageConverters.addAll(customMessageConverters);
+
+		return new ConfigurableCompositeMessageConverter(messageConverters);
+
+
 	}
 
 }

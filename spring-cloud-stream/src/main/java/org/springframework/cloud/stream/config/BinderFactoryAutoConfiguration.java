@@ -36,6 +36,7 @@ import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
@@ -56,7 +57,6 @@ import org.springframework.cloud.stream.binding.MessageChannelConfigurer;
 import org.springframework.cloud.stream.binding.MessageConverterConfigurer;
 import org.springframework.cloud.stream.binding.MessageSourceBindingTargetFactory;
 import org.springframework.cloud.stream.binding.SubscribableChannelBindingTargetFactory;
-import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
 import org.springframework.cloud.stream.messaging.Processor;
 import org.springframework.cloud.stream.messaging.Sink;
 import org.springframework.cloud.stream.messaging.Source;
@@ -138,13 +138,13 @@ public class BinderFactoryAutoConfiguration {
 	@Bean(IntegrationContextUtils.MESSAGE_HANDLER_FACTORY_BEAN_NAME)
 	@Scope("prototype")
 	public static MessageHandlerMethodFactory messageHandlerMethodFactory(
-			CompositeMessageConverterFactory compositeMessageConverterFactory,
+			@Qualifier(IntegrationContextUtils.ARGUMENT_RESOLVER_MESSAGE_CONVERTER_BEAN_NAME) CompositeMessageConverter compositeMessageConverter,
 			@Nullable Validator validator, ConfigurableListableBeanFactory clbf) {
 
 		DefaultMessageHandlerMethodFactory messageHandlerMethodFactory = new DefaultMessageHandlerMethodFactory();
-		CompositeMessageConverter messageConverter =
-			compositeMessageConverterFactory.getMessageConverterForAllRegistered();
-		messageHandlerMethodFactory.setMessageConverter(messageConverter);
+//		CompositeMessageConverter messageConverter =
+//			compositeMessageConverterFactory.getMessageConverterForAllRegistered();
+		messageHandlerMethodFactory.setMessageConverter(compositeMessageConverter);
 
 		/*
 		 * We essentially do the same thing as the
@@ -161,17 +161,17 @@ public class BinderFactoryAutoConfiguration {
 		 */
 		List<HandlerMethodArgumentResolver> resolvers = new LinkedList<>();
 		resolvers.add(new SmartPayloadArgumentResolver(
-			messageConverter,
+				compositeMessageConverter,
 				validator));
 		resolvers.add(new SmartMessageMethodArgumentResolver(
-			messageConverter));
+				compositeMessageConverter));
 
 		resolvers.add(new HeaderMethodArgumentResolver(clbf.getConversionService(), clbf));
 		resolvers.add(new HeadersMethodArgumentResolver());
 
 		// Copy the order from Spring Integration for compatibility with SI 5.2
 		resolvers.add(new PayloadExpressionArgumentResolver());
-		resolvers.add(new NullAwarePayloadArgumentResolver(messageConverter));
+		resolvers.add(new NullAwarePayloadArgumentResolver(compositeMessageConverter));
 		PayloadExpressionArgumentResolver payloadExpressionArgumentResolver = new PayloadExpressionArgumentResolver();
 		payloadExpressionArgumentResolver.setBeanFactory(clbf);
 		resolvers.add(payloadExpressionArgumentResolver);
@@ -224,9 +224,9 @@ public class BinderFactoryAutoConfiguration {
 	@Bean
 	public MessageConverterConfigurer messageConverterConfigurer(
 			BindingServiceProperties bindingServiceProperties,
-			CompositeMessageConverterFactory compositeMessageConverterFactory) {
+			@Qualifier(IntegrationContextUtils.ARGUMENT_RESOLVER_MESSAGE_CONVERTER_BEAN_NAME) CompositeMessageConverter compositeMessageConverter) {
 		return new MessageConverterConfigurer(bindingServiceProperties,
-				compositeMessageConverterFactory);
+				compositeMessageConverter);
 	}
 
 	@Bean
@@ -238,10 +238,9 @@ public class BinderFactoryAutoConfiguration {
 
 	@Bean
 	public MessageSourceBindingTargetFactory messageSourceFactory(
-			CompositeMessageConverterFactory compositeMessageConverterFactory,
+			@Qualifier(IntegrationContextUtils.ARGUMENT_RESOLVER_MESSAGE_CONVERTER_BEAN_NAME) CompositeMessageConverter compositeMessageConverter,
 			CompositeMessageChannelConfigurer compositeMessageChannelConfigurer) {
-		return new MessageSourceBindingTargetFactory(
-				compositeMessageConverterFactory.getMessageConverterForAllRegistered(),
+		return new MessageSourceBindingTargetFactory(compositeMessageConverter,
 				compositeMessageChannelConfigurer);
 	}
 

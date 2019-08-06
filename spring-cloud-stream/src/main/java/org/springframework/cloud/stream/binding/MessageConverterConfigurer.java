@@ -34,7 +34,6 @@ import org.springframework.cloud.stream.binder.PollableMessageSource;
 import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
-import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
 import org.springframework.cloud.stream.converter.MessageConverterUtils;
 import org.springframework.integration.channel.AbstractMessageChannel;
 import org.springframework.integration.expression.ExpressionUtils;
@@ -74,7 +73,7 @@ public class MessageConverterConfigurer
 
 	private final MessageBuilderFactory messageBuilderFactory = new MutableMessageBuilderFactory();
 
-	private final CompositeMessageConverterFactory compositeMessageConverterFactory;
+	private final CompositeMessageConverter compositeMessageConverter;
 
 	private final BindingServiceProperties bindingServiceProperties;
 
@@ -83,11 +82,11 @@ public class MessageConverterConfigurer
 	private ConfigurableListableBeanFactory beanFactory;
 
 	public MessageConverterConfigurer(BindingServiceProperties bindingServiceProperties,
-			CompositeMessageConverterFactory compositeMessageConverterFactory) {
-		Assert.notNull(compositeMessageConverterFactory,
+			CompositeMessageConverter compositeMessageConverter) {
+		Assert.notNull(compositeMessageConverter,
 				"The message converter factory cannot be null");
 		this.bindingServiceProperties = bindingServiceProperties;
-		this.compositeMessageConverterFactory = compositeMessageConverterFactory;
+		this.compositeMessageConverter = compositeMessageConverter;
 
 		this.headersField = ReflectionUtils.findField(MessageHeaders.class, "headers");
 		this.headersField.setAccessible(true);
@@ -153,8 +152,7 @@ public class MessageConverterConfigurer
 			else {
 				messageChannel.addInterceptor(
 						new OutboundContentTypeConvertingInterceptor(contentType,
-								this.compositeMessageConverterFactory
-										.getMessageConverterForAllRegistered()));
+								this.compositeMessageConverter));
 			}
 		}
 	}

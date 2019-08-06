@@ -389,7 +389,7 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 		bindingServiceProperties.afterPropertiesSet();
 		MessageConverterConfigurer messageConverterConfigurer = new MessageConverterConfigurer(
 				bindingServiceProperties,
-				new CompositeMessageConverterFactory(null, null));
+				new CompositeMessageConverterFactory(null, null).getMessageConverterForAllRegistered());
 		messageConverterConfigurer.setBeanFactory(applicationContext.getBeanFactory());
 		return messageConverterConfigurer;
 	}
