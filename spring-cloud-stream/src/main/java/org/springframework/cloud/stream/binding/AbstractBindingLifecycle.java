@@ -18,6 +18,8 @@ package org.springframework.cloud.stream.binding;
 
 import java.util.Map;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.SmartLifecycle;
 
 /**
@@ -34,6 +36,9 @@ abstract class AbstractBindingLifecycle implements SmartLifecycle {
 
 	private final Map<String, Bindable> bindables;
 
+	@Autowired
+	private ApplicationContext context;
+
 	private volatile boolean running;
 
 	AbstractBindingLifecycle(BindingService bindingService,
@@ -45,6 +50,10 @@ abstract class AbstractBindingLifecycle implements SmartLifecycle {
 	@Override
 	public void start() {
 		if (!this.running) {
+			if (this.context != null) {
+				this.bindables.putAll(context.getBeansOfType(Bindable.class));
+			}
+
 			this.bindables.values().forEach(this::doStartWithBindable);
 			this.running = true;
 		}
@@ -53,6 +62,9 @@ abstract class AbstractBindingLifecycle implements SmartLifecycle {
 	@Override
 	public void stop() {
 		if (this.running) {
+			if (this.context != null) {
+				this.bindables.putAll(context.getBeansOfType(Bindable.class));
+			}
 			this.bindables.values().forEach(this::doStopWithBindable);
 			this.running = false;
 		}
