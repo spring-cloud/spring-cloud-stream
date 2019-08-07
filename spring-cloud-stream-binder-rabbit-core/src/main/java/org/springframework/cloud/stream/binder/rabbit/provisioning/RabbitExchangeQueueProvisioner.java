@@ -356,7 +356,7 @@ public class RabbitExchangeQueueProvisioner
 			}
 			Map<String, Object> arguments = new HashMap<>(properties.getDlqBindingArguments());
 			Binding dlqBinding = new Binding(dlq.getName(), DestinationType.QUEUE,
-					dlxName, properties.getDlqDeadLetterRoutingKey() == null ? routingKey
+					dlxName, properties.getDeadLetterRoutingKey() == null ? routingKey
 							: properties.getDeadLetterRoutingKey(),
 					arguments);
 			declareBinding(dlqName, dlqBinding);

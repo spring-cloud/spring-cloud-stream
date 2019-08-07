@@ -547,6 +547,7 @@ public class RabbitBinderTests extends
 		extProps.setDeadLetterExchangeType(ExchangeTypes.TOPIC);
 		extProps.setDeadLetterRoutingKey("customDLRK");
 		extProps.setDlqDeadLetterExchange("propsUser3");
+		// GH-259 - if the next line was commented, the test failed.
 		extProps.setDlqDeadLetterRoutingKey("propsUser3");
 		extProps.setDlqExpires(60_000);
 		extProps.setDlqLazy(true);
@@ -576,6 +577,17 @@ public class RabbitBinderTests extends
 		assertThat(bindings.get(0).getSource()).isEqualTo("propsUser3");
 		assertThat(bindings.get(0).getDestination()).isEqualTo("propsUser3.infra");
 		assertThat(bindings.get(0).getRoutingKey()).isEqualTo("foo");
+
+		bindings = client.getBindingsBySource("/", "customDLX");
+		n = 0;
+		while (n++ < 100 && bindings == null || bindings.size() < 1) {
+			Thread.sleep(100);
+			bindings = client.getBindingsBySource("/", "customDLX");
+		}
+		assertThat(bindings.size()).isEqualTo(1);
+		assertThat(bindings.get(0).getSource()).isEqualTo("customDLX");
+		assertThat(bindings.get(0).getDestination()).isEqualTo("customDLQ");
+		assertThat(bindings.get(0).getRoutingKey()).isEqualTo("customDLRK");
 
 		ExchangeInfo exchange = client.getExchange("/", "propsUser3");
 		n = 0;
