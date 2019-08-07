@@ -66,7 +66,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Role;
-import org.springframework.context.annotation.Scope;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.StandardEnvironment;
@@ -136,14 +135,11 @@ public class BinderFactoryAutoConfiguration {
 
 
 	@Bean(IntegrationContextUtils.MESSAGE_HANDLER_FACTORY_BEAN_NAME)
-	@Scope("prototype")
 	public static MessageHandlerMethodFactory messageHandlerMethodFactory(
 			@Qualifier(IntegrationContextUtils.ARGUMENT_RESOLVER_MESSAGE_CONVERTER_BEAN_NAME) CompositeMessageConverter compositeMessageConverter,
 			@Nullable Validator validator, ConfigurableListableBeanFactory clbf) {
 
 		DefaultMessageHandlerMethodFactory messageHandlerMethodFactory = new DefaultMessageHandlerMethodFactory();
-//		CompositeMessageConverter messageConverter =
-//			compositeMessageConverterFactory.getMessageConverterForAllRegistered();
 		messageHandlerMethodFactory.setMessageConverter(compositeMessageConverter);
 
 		/*
