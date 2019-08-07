@@ -48,6 +48,7 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.listener.AbstractMessageListenerContainer;
 import org.springframework.kafka.test.rule.EmbeddedKafkaRule;
 import org.springframework.messaging.MessageChannel;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -64,6 +65,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE, properties = "spring.cloud.stream.bindings.input.group="
 		+ KafkaBinderActuatorTests.TEST_CONSUMER_GROUP)
 // @checkstyle:on
+@DirtiesContext
 public class KafkaBinderActuatorTests {
 
 	static final String TEST_CONSUMER_GROUP = "testGroup-actuatorTests";

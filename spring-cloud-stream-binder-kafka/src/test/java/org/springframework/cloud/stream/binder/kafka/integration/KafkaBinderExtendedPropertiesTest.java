@@ -51,6 +51,7 @@ import org.springframework.kafka.test.rule.EmbeddedKafkaRule;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.SubscribableChannel;
 import org.springframework.messaging.handler.annotation.SendTo;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -72,6 +73,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 				+ "bindingSpecificPropertyShouldWinOverDefault",
 		"spring.cloud.stream.kafka.default.consumer.ackEachRecord=true",
 		"spring.cloud.stream.kafka.bindings.custom-in.consumer.ackEachRecord=false" })
+@DirtiesContext
 public class KafkaBinderExtendedPropertiesTest {
 
 	private static final String KAFKA_BROKERS_PROPERTY = "spring.cloud.stream.kafka.binder.brokers";

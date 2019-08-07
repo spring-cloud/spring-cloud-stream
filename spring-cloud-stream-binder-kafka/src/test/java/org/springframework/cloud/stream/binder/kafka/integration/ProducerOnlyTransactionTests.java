@@ -46,6 +46,7 @@ import org.springframework.kafka.test.utils.KafkaTestUtils;
 import org.springframework.kafka.transaction.KafkaTransactionManager;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.support.GenericMessage;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
@@ -65,6 +66,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 		"spring.cloud.stream.kafka.binder.transaction.transaction-id-prefix=tx.",
 		"spring.cloud.stream.kafka.binder.transaction.producer.configuration.retries=99",
 		"spring.cloud.stream.kafka.binder.transaction.producer.configuration.acks=all"})
+@DirtiesContext
 public class ProducerOnlyTransactionTests {
 
 	private static final String KAFKA_BROKERS_PROPERTY = "spring.cloud.stream.kafka.binder.brokers";
