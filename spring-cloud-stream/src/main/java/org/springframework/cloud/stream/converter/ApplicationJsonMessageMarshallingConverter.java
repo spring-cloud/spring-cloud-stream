@@ -20,12 +20,15 @@ import java.io.IOException;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
+import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
 import org.springframework.core.MethodParameter;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.lang.Nullable;
@@ -118,6 +121,9 @@ class ApplicationJsonMessageMarshallingConverter extends MappingJackson2MessageC
 		try {
 			JavaType type = this.typeCache.get(conversionHint);
 			if (type == null) {
+				conversionHint = FunctionTypeUtils.isMessage(conversionHint)
+						? FunctionTypeUtils.getImmediateGenericType(conversionHint, 0)
+								: conversionHint;
 				type = objectMapper.getTypeFactory()
 						.constructType(conversionHint);
 				this.typeCache.put(conversionHint, type);
@@ -129,6 +135,26 @@ class ApplicationJsonMessageMarshallingConverter extends MappingJackson2MessageC
 				return objectMapper.readValue((String) payload, type);
 			}
 			else {
+				final JavaType typeToUse = type;
+				if (payload instanceof Collection) {
+					Collection<?> collection = (Collection<?>) ((Collection<?>) payload).stream()
+							.map(value -> {
+								try {
+									if (value instanceof byte[]) {
+										return objectMapper.readValue((byte[]) value, typeToUse.getContentType());
+									}
+									else if (value instanceof String) {
+										return objectMapper.readValue((String) value, typeToUse.getContentType());
+									}
+								}
+								catch (Exception e) {
+									logger.error("Failed to convert payload " + value, e);
+								}
+								return null;
+							}).collect(Collectors.toList());
+
+					return collection;
+				}
 				return null;
 			}
 		}
