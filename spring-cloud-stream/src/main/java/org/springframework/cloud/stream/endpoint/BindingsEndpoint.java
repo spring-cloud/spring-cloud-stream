@@ -119,7 +119,7 @@ public class BindingsEndpoint {
 	private Binding<?> locateBinding(String name) {
 		Stream<Binding<?>> bindings = Stream.concat(this.gatherInputBindings().stream(),
 				this.gatherOutputBindings().stream());
-		return bindings.filter(binding -> name.equals(binding.getName())).findFirst()
+		return bindings.filter(binding -> name.equals(binding.getBindingName())).findFirst()
 				.orElse(null);
 	}
 
