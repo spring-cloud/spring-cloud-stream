@@ -133,7 +133,7 @@ class KStreamBoundElementFactory extends AbstractBindingTargetFactory<KStream> {
 			}
 		}
 
-		public KStream<Object, Object> getDelegate() {
+		KStream<Object, Object> getDelegate() {
 			return delegate;
 		}
 	}

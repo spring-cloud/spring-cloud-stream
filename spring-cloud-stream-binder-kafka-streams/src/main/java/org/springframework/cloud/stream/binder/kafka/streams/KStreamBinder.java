@@ -94,11 +94,7 @@ class KStreamBinder extends
 	@Override
 	protected Binding<KStream<Object, Object>> doBindConsumer(String name, String group,
 			KStream<Object, Object> inputTarget,
-			// @checkstyle:off
 			ExtendedConsumerProperties<KafkaStreamsConsumerProperties> properties) {
-		// @checkstyle:on
-//		this.kafkaStreamsBindingInformationCatalogue
-//				.registerConsumerProperties(inputTarget, properties.getExtension());
 
 		KStream<Object, Object> delegate = ((KStreamBoundElementFactory.KStreamWrapperHandler)
 				((Advised) inputTarget).getAdvisors()[0].getAdvice()).getDelegate();
@@ -120,9 +116,7 @@ class KStreamBinder extends
 	@SuppressWarnings("unchecked")
 	protected Binding<KStream<Object, Object>> doBindProducer(String name,
 			KStream<Object, Object> outboundBindTarget,
-			// @checkstyle:off
 			ExtendedProducerProperties<KafkaStreamsProducerProperties> properties) {
-		// @checkstyle:on
 		ExtendedProducerProperties<KafkaProducerProperties> extendedProducerProperties = new ExtendedProducerProperties<>(
 				new KafkaProducerProperties());
 		this.kafkaTopicProvisioner.provisionProducerDestination(name,

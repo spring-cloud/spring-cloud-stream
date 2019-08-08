@@ -154,11 +154,11 @@ class KafkaStreamsBindingInformationCatalogue {
 	}
 
 
-	public Map<KStream<?, ?>, BindingProperties> getBindingProperties() {
+	Map<KStream<?, ?>, BindingProperties> getBindingProperties() {
 		return bindingProperties;
 	}
 
-	public Map<KStream<?, ?>, KafkaStreamsConsumerProperties> getConsumerProperties() {
+	Map<KStream<?, ?>, KafkaStreamsConsumerProperties> getConsumerProperties() {
 		return consumerProperties;
 	}
 }
