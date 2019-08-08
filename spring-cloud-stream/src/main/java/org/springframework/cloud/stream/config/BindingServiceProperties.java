@@ -17,8 +17,12 @@
 package org.springframework.cloud.stream.config;
 
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
@@ -186,6 +190,39 @@ public class BindingServiceProperties
 					IntegrationUtils.INTEGRATION_CONVERSION_SERVICE_BEAN_NAME,
 					ConversionService.class);
 		}
+		checkSameDestinationOfInputAndOutput();
+	}
+
+	private void checkSameDestinationOfInputAndOutput() {
+		Set<String> inputBindings = new HashSet<>();
+		Set<String> outputBindings = new HashSet<>();
+		for (org.springframework.cloud.stream.binding.Bindable bindable : this.applicationContext
+				.getBeansOfType(org.springframework.cloud.stream.binding.Bindable.class)
+				.values()) {
+			inputBindings.addAll(bindable.getInputs());
+			outputBindings.addAll(bindable.getOutputs());
+		}
+		Set<String> inputDestinations = new HashSet<>();
+		Set<String> outputDestinations = new HashSet<>();
+		for (String bindingName : this.getBindings().keySet()) {
+			if (inputBindings.contains(bindingName)) {
+				inputDestinations
+						.add(this.getBindings().get(bindingName).getDestination());
+			}
+			else if (outputBindings.contains(bindingName)) {
+				outputDestinations
+						.add(this.getBindings().get(bindingName).getDestination());
+			}
+		}
+		if (inputDestinations.isEmpty() || outputDestinations.isEmpty()) {
+			return;
+		}
+		List<String> sameDestinations = inputDestinations.stream()
+				.filter(dest -> outputDestinations.contains(dest))
+				.collect(Collectors.toList());
+		Assert.isTrue(sameDestinations.size() == 0,
+				"Disallow binding of Input and Output to the same destination"
+						+ sameDestinations);
 	}
 
 	public String getBinder(String bindingName) {

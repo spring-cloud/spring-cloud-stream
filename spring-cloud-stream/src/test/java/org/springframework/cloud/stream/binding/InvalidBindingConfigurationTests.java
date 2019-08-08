@@ -25,6 +25,7 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.Input;
 import org.springframework.cloud.stream.annotation.Output;
+import org.springframework.cloud.stream.messaging.Processor;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.SubscribableChannel;
 
@@ -45,6 +46,16 @@ public class InvalidBindingConfigurationTests {
 				.hasMessageContaining(TestInvalidBinding.NAME).hasNoCause();
 	}
 
+	@Test
+	public void testSameDestinationByBindingConfig() {
+		assertThatThrownBy(() -> SpringApplication.run(
+				InvalidBindingConfigurationTests.TestProcessorSameDestination.class,
+				"--spring.cloud.stream.bindings.output.destination=topic",
+				"--spring.cloud.stream.bindings.input.destination=topic",
+				"--spring.cloud.stream.bindings.input.group=testGroup"))
+						.hasRootCauseInstanceOf(IllegalArgumentException.class);
+	}
+
 	public interface TestInvalidBinding {
 
 		String NAME = "testName";
@@ -60,6 +71,12 @@ public class InvalidBindingConfigurationTests {
 	@EnableBinding(TestInvalidBinding.class)
 	@EnableAutoConfiguration
 	public static class TestBindingConfig {
+
+	}
+
+	@EnableBinding(Processor.class)
+	@EnableAutoConfiguration
+	public static class TestProcessorSameDestination {
 
 	}
 
