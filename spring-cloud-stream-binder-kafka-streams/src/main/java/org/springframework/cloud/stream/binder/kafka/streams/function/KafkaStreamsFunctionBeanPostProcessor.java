@@ -19,6 +19,7 @@ package org.springframework.cloud.stream.binder.kafka.streams.function;
 import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -53,9 +54,11 @@ public class KafkaStreamsFunctionBeanPostProcessor implements InitializingBean, 
 		String[] functionNames = this.beanFactory.getBeanNamesForType(Function.class);
 		String[] biFunctionNames = this.beanFactory.getBeanNamesForType(BiFunction.class);
 		String[] consumerNames = this.beanFactory.getBeanNamesForType(Consumer.class);
+		String[] biConsumerNames = this.beanFactory.getBeanNamesForType(BiConsumer.class);
 
 		Stream.concat(
-				Stream.concat(Stream.of(functionNames), Stream.of(consumerNames)), Stream.of(biFunctionNames))
+				Stream.concat(Stream.of(functionNames), Stream.of(consumerNames)),
+				Stream.concat(Stream.of(biFunctionNames), Stream.of(biConsumerNames)))
 				.forEach(this::extractResolvableTypes);
 	}
 

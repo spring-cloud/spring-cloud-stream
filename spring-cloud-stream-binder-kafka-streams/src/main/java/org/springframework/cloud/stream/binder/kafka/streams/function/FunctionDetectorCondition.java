@@ -19,6 +19,7 @@ package org.springframework.cloud.stream.binder.kafka.streams.function;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -51,6 +52,7 @@ public class FunctionDetectorCondition extends SpringBootCondition {
 			Map functionTypes = context.getBeanFactory().getBeansOfType(Function.class);
 			functionTypes.putAll(context.getBeanFactory().getBeansOfType(Consumer.class));
 			functionTypes.putAll(context.getBeanFactory().getBeansOfType(BiFunction.class));
+			functionTypes.putAll(context.getBeanFactory().getBeansOfType(BiConsumer.class));
 			final Map<String, Object> kstreamFunctions = pruneFunctionBeansForKafkaStreams(functionTypes, context);
 
 			if (!kstreamFunctions.isEmpty()) {

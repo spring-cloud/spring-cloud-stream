@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -110,7 +111,8 @@ public class KafkaStreamsFunctionProcessor extends AbstractKafkaStreamsBinderPro
 			int inputCount = 1;
 
 			ResolvableType currentOutputGeneric;
-			if (resolvableType.getRawClass().isAssignableFrom(BiFunction.class)) {
+			if (resolvableType.getRawClass().isAssignableFrom(BiFunction.class) ||
+					resolvableType.getRawClass().isAssignableFrom(BiConsumer.class)) {
 				inputCount = 2;
 				currentOutputGeneric = resolvableType.getGeneric(2);
 			}
@@ -130,7 +132,8 @@ public class KafkaStreamsFunctionProcessor extends AbstractKafkaStreamsBinderPro
 			popuateResolvableTypeMap(resolvableType, resolvableTypeMap, iterator);
 
 			ResolvableType iterableResType = resolvableType;
-			int i = resolvableType.getRawClass().isAssignableFrom(BiFunction.class) ? 2 : 1;
+			int i = resolvableType.getRawClass().isAssignableFrom(BiFunction.class) ||
+					resolvableType.getRawClass().isAssignableFrom(BiConsumer.class) ? 2 : 1;
 			if (i == inputCount) {
 				outboundResolvableType = iterableResType.getGeneric(i);
 			}
@@ -157,7 +160,9 @@ public class KafkaStreamsFunctionProcessor extends AbstractKafkaStreamsBinderPro
 	private void popuateResolvableTypeMap(ResolvableType resolvableType, Map<String, ResolvableType> resolvableTypeMap, Iterator<String> iterator) {
 		final String next = iterator.next();
 		resolvableTypeMap.put(next, resolvableType.getGeneric(0));
-		if (resolvableType.getRawClass() != null && resolvableType.getRawClass().isAssignableFrom(BiFunction.class)
+		if (resolvableType.getRawClass() != null &&
+				(resolvableType.getRawClass().isAssignableFrom(BiFunction.class) ||
+				resolvableType.getRawClass().isAssignableFrom(BiConsumer.class))
 			&& iterator.hasNext()) {
 			resolvableTypeMap.put(iterator.next(), resolvableType.getGeneric(1));
 		}
@@ -174,6 +179,12 @@ public class KafkaStreamsFunctionProcessor extends AbstractKafkaStreamsBinderPro
 				Assert.isTrue(consumer != null,
 						"No corresponding consumer beans found in the catalog");
 				consumer.accept(adaptedInboundArguments[0]);
+			}
+			else if (resolvableType.getRawClass() != null && resolvableType.getRawClass().equals(BiConsumer.class)) {
+				BiConsumer<Object, Object> biConsumer = (BiConsumer) this.beanFactory.getBean(functionName);
+				Assert.isTrue(biConsumer != null,
+						"No corresponding biConsumer beans found");
+				biConsumer.accept(adaptedInboundArguments[0], adaptedInboundArguments[1]);
 			}
 			else {
 				Object result;

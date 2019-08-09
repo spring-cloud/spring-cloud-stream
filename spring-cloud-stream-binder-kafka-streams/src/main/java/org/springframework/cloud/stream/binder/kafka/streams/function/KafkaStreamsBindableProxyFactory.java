@@ -22,6 +22,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -106,7 +107,8 @@ public class KafkaStreamsBindableProxyFactory extends AbstractBindableProxyFacto
 		bindInput(argument, next);
 
 		if (this.type.getRawClass() != null &&
-				this.type.getRawClass().isAssignableFrom(BiFunction.class)) {
+				(this.type.getRawClass().isAssignableFrom(BiFunction.class) ||
+				this.type.getRawClass().isAssignableFrom(BiConsumer.class))) {
 			argument = this.type.getGeneric(resolvableTypeDepthCounter++);
 			next = iterator.next();
 			bindInput(argument, next);
@@ -172,7 +174,8 @@ public class KafkaStreamsBindableProxyFactory extends AbstractBindableProxyFacto
 			return inputs;
 		}
 		int numberOfInputs = this.type.getRawClass() != null &&
-				this.type.getRawClass().isAssignableFrom(BiFunction.class) ? 2 : getNumberOfInputs();
+				(this.type.getRawClass().isAssignableFrom(BiFunction.class) ||
+						this.type.getRawClass().isAssignableFrom(BiConsumer.class)) ? 2 : getNumberOfInputs();
 		if (numberOfInputs == 1) {
 			inputs.add(String.format("%s_%s", this.functionName, DEFAULT_INPUT_SUFFIX));
 			return inputs;

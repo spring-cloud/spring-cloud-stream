@@ -20,6 +20,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
@@ -54,6 +57,7 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.test.EmbeddedKafkaBroker;
 import org.springframework.kafka.test.rule.EmbeddedKafkaRule;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
+import org.springframework.util.Assert;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -100,6 +104,77 @@ public class StreamToTableJoinFunctionTests {
 
 		runTest(app, consumer);
 	}
+
+	@Test
+	public void testStreamToTableBiConsumer() throws Exception {
+		SpringApplication app = new SpringApplication(BiConsumerApplication.class);
+		app.setWebApplicationType(WebApplicationType.NONE);
+
+		Consumer<String, Long> consumer;
+		Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("group-2",
+				"false", embeddedKafka);
+		consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+		consumerProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+		consumerProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, LongDeserializer.class);
+		DefaultKafkaConsumerFactory<String, Long> cf = new DefaultKafkaConsumerFactory<>(consumerProps);
+		consumer = cf.createConsumer();
+		embeddedKafka.consumeFromAnEmbeddedTopic(consumer, "output-topic-1");
+
+		try (ConfigurableApplicationContext ignored = app.run("--server.port=0",
+				"--spring.jmx.enabled=false",
+				"--spring.cloud.stream.bindings.process_in_0.destination=user-clicks-1",
+				"--spring.cloud.stream.bindings.process_in_1.destination=user-regions-1",
+				"--spring.cloud.stream.kafka.streams.binder.configuration.default.key.serde" +
+						"=org.apache.kafka.common.serialization.Serdes$StringSerde",
+				"--spring.cloud.stream.kafka.streams.binder.configuration.default.value.serde" +
+						"=org.apache.kafka.common.serialization.Serdes$StringSerde",
+				"--spring.cloud.stream.kafka.streams.binder.configuration.commit.interval.ms=10000",
+				"--spring.cloud.stream.kafka.streams.bindings.process_in_0.consumer.applicationId" +
+						"=testStreamToTableBiConsumer",
+				"--spring.cloud.stream.kafka.streams.binder.brokers=" + embeddedKafka.getBrokersAsString())) {
+
+			// Input 1: Region per user (multiple records allowed per user).
+			List<KeyValue<String, String>> userRegions = Arrays.asList(
+					new KeyValue<>("alice", "asia")
+			);
+
+			Map<String, Object> senderProps1 = KafkaTestUtils.producerProps(embeddedKafka);
+			senderProps1.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+			senderProps1.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+
+			DefaultKafkaProducerFactory<String, String> pf1 = new DefaultKafkaProducerFactory<>(senderProps1);
+			KafkaTemplate<String, String> template1 = new KafkaTemplate<>(pf1, true);
+			template1.setDefaultTopic("user-regions-1");
+
+			for (KeyValue<String, String> keyValue : userRegions) {
+				template1.sendDefault(keyValue.key, keyValue.value);
+			}
+
+			// Input 2: Clicks per user (multiple records allowed per user).
+			List<KeyValue<String, Long>> userClicks = Arrays.asList(
+					new KeyValue<>("alice", 13L)
+			);
+
+			Map<String, Object> senderProps = KafkaTestUtils.producerProps(embeddedKafka);
+			senderProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+			senderProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, LongSerializer.class);
+
+			DefaultKafkaProducerFactory<String, Long> pf = new DefaultKafkaProducerFactory<>(senderProps);
+			KafkaTemplate<String, Long> template = new KafkaTemplate<>(pf, true);
+			template.setDefaultTopic("user-clicks-1");
+
+			for (KeyValue<String, Long> keyValue : userClicks) {
+				template.sendDefault(keyValue.key, keyValue.value);
+			}
+
+			Assert.isTrue(BiConsumerApplication.latch.await(10, TimeUnit.SECONDS), "Failed to receive message");
+
+		}
+		finally {
+			consumer.close();
+		}
+	}
+
 
 	private void runTest(SpringApplication app, Consumer<String, Long> consumer) {
 		try (ConfigurableApplicationContext ignored = app.run("--server.port=0",
@@ -394,6 +469,20 @@ public class StreamToTableJoinFunctionTests {
 					.groupByKey(Serialized.with(Serdes.String(), Serdes.Long()))
 					.reduce(Long::sum)
 					.toStream());
+		}
+	}
+
+	@EnableAutoConfiguration
+	public static class BiConsumerApplication {
+
+		static CountDownLatch latch = new CountDownLatch(2);
+
+		@Bean
+		public BiConsumer<KStream<String, Long>, KTable<String, String>> process() {
+			return (userClicksStream, userRegionsTable) -> {
+				userClicksStream.foreach((key, value) -> latch.countDown());
+				userRegionsTable.toStream().foreach((key, value) -> latch.countDown());
+			};
 		}
 	}
 
