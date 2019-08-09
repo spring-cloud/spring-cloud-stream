@@ -18,6 +18,8 @@ package org.springframework.cloud.stream.binder.kafka.streams;
 
 import java.util.Map;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.common.utils.Utils;
@@ -59,6 +61,8 @@ import org.springframework.util.StringUtils;
  * @author Lei Chen
  */
 public class KeyValueSerdeResolver {
+
+	private static final Log LOG = LogFactory.getLog(KeyValueSerdeResolver.class);
 
 	private final Map<String, Object> streamConfigGlobalProperties;
 

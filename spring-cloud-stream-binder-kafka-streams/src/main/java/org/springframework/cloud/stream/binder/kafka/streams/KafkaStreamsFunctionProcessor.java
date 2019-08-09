@@ -291,7 +291,7 @@ public class KafkaStreamsFunctionProcessor extends AbstractKafkaStreamsBinderPro
 				//Retrieve the StreamsConfig created for this method if available.
 				//Otherwise, create the StreamsBuilderFactory and get the underlying config.
 				if (!this.methodStreamsBuilderFactoryBeanMap.containsKey(functionName)) {
-					StreamsBuilderFactoryBean streamsBuilderFactoryBean = buildStreamsBuilderAndRetrieveConfig("stream-builder-" + functionName, applicationContext, input);
+					StreamsBuilderFactoryBean streamsBuilderFactoryBean = buildStreamsBuilderAndRetrieveConfig(functionName, applicationContext, input);
 					this.methodStreamsBuilderFactoryBeanMap.put(functionName, streamsBuilderFactoryBean);
 				}
 				try {
@@ -303,9 +303,10 @@ public class KafkaStreamsFunctionProcessor extends AbstractKafkaStreamsBinderPro
 					//get state store spec
 
 					Serde<?> keySerde = this.keyValueSerdeResolver.getInboundKeySerde(extendedConsumerProperties, stringResolvableTypeMap.get(input));
+					LOG.info("Key Serde used for " + input + ": " + keySerde.getClass().getName());
 					Serde<?> valueSerde = bindingServiceProperties.getConsumerProperties(input).isUseNativeDecoding() ?
 						getValueSerde(input, extendedConsumerProperties, stringResolvableTypeMap.get(input)) : Serdes.ByteArray();
-
+					LOG.info("Value Serde used for " + input + ": " + valueSerde.getClass().getName());
 					final Topology.AutoOffsetReset autoOffsetReset = getAutoOffsetReset(input, extendedConsumerProperties);
 
 					if (parameterType.isAssignableFrom(KStream.class)) {

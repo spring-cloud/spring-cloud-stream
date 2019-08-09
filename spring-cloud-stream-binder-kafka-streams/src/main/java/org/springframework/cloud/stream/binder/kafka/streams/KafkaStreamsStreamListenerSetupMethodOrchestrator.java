@@ -260,8 +260,11 @@ class KafkaStreamsStreamListenerSetupMethodOrchestrator extends AbstractKafkaStr
 
 					Serde<?> keySerde = this.keyValueSerdeResolver
 							.getInboundKeySerde(extendedConsumerProperties, ResolvableType.forMethodParameter(methodParameter));
+					LOG.info("Key Serde used for " + targetReferenceValue + ": " + keySerde.getClass().getName());
+
 					Serde<?> valueSerde = bindingServiceProperties.getConsumerProperties(inboundName).isUseNativeDecoding() ?
 						getValueSerde(inboundName, extendedConsumerProperties, ResolvableType.forMethodParameter(methodParameter)) : Serdes.ByteArray();
+					LOG.info("Value Serde used for " + targetReferenceValue + ": " + valueSerde.getClass().getName());
 
 					Topology.AutoOffsetReset autoOffsetReset = getAutoOffsetReset(inboundName, extendedConsumerProperties);
 

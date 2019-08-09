@@ -18,6 +18,7 @@ package org.springframework.cloud.stream.binder.kafka.streams;
 
 import java.util.Map;
 import java.util.Properties;
+import java.util.UUID;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -197,12 +198,20 @@ public abstract class AbstractKafkaStreamsBinderProcessor implements Application
 		streamConfigGlobalProperties
 				.putAll(extendedConsumerProperties.getConfiguration());
 
-		String applicationId = extendedConsumerProperties.getApplicationId();
+		String bindingLevelApplicationId = extendedConsumerProperties.getApplicationId();
 		// override application.id if set at the individual binding level.
-		if (StringUtils.hasText(applicationId)) {
+		if (StringUtils.hasText(bindingLevelApplicationId)) {
 			streamConfigGlobalProperties.put(StreamsConfig.APPLICATION_ID_CONFIG,
-					applicationId);
+					bindingLevelApplicationId);
 		}
+
+		//If the application id is not set by any mechanism, then generate it.
+		streamConfigGlobalProperties.computeIfAbsent(StreamsConfig.APPLICATION_ID_CONFIG,
+				k -> {
+					String generatedApplicationID = beanNamePostPrefix + "-" + UUID.randomUUID().toString() + "-applicationId";
+					LOG.info("Generated Kafka Streams Application ID: " + generatedApplicationID);
+					return generatedApplicationID;
+				});
 
 		int concurrency = this.bindingServiceProperties.getConsumerProperties(inboundName)
 				.getConcurrency();
