@@ -23,7 +23,6 @@ import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.cloud.stream.annotation.BindingProvider;
-import org.springframework.cloud.stream.binder.kafka.properties.KafkaBinderConfigurationProperties;
 import org.springframework.cloud.stream.binder.kafka.provisioning.KafkaTopicProvisioner;
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsBinderConfigurationProperties;
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsExtendedBindingProperties;
@@ -48,7 +47,7 @@ public class KTableBinderConfiguration {
 
 	@Bean
 	public KafkaTopicProvisioner provisioningProvider(
-			KafkaBinderConfigurationProperties binderConfigurationProperties,
+			KafkaStreamsBinderConfigurationProperties binderConfigurationProperties,
 			KafkaProperties kafkaProperties) {
 		return new KafkaTopicProvisioner(binderConfigurationProperties, kafkaProperties);
 	}

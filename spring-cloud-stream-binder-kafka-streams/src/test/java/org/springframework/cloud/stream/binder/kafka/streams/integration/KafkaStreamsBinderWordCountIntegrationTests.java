@@ -116,7 +116,7 @@ public class KafkaStreamsBinderWordCountIntegrationTests {
 						+ "=org.apache.kafka.common.serialization.Serdes$StringSerde",
 				"--spring.cloud.stream.kafka.streams.timeWindow.length=5000",
 				"--spring.cloud.stream.kafka.streams.timeWindow.advanceBy=0",
-				"--spring.cloud.stream.kafka.streams.binder.brokers="
+				"--spring.cloud.stream.kafka.binder.brokers="
 						+ embeddedKafka.getBrokersAsString())) {
 			receiveAndValidate(context);
 		}

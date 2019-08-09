@@ -152,14 +152,30 @@ public class KafkaStreamsBinderSupportAutoConfiguration {
 	@Bean("streamConfigGlobalProperties")
 	public Map<String, Object> streamConfigGlobalProperties(
 			KafkaStreamsBinderConfigurationProperties configProperties,
-			KafkaStreamsConfiguration kafkaStreamsConfiguration) {
+			KafkaStreamsConfiguration kafkaStreamsConfiguration, ConfigurableEnvironment environment) {
 
 		Properties properties = kafkaStreamsConfiguration.asProperties();
-		// Override Spring Boot bootstrap server setting if left to default with the value
-		// configured in the binder
+
+		String kafkaConnectionString = configProperties.getKafkaConnectionString();
+
+		if (kafkaConnectionString != null && kafkaConnectionString.equals("localhost:9092")) {
+			//Making sure that the application indeed set a property.
+			String kafkaStreamsBinderBroker = environment.getProperty("spring.cloud.stream.kafka.streams.binder.brokers");
+
+			if (StringUtils.isEmpty(kafkaStreamsBinderBroker)) {
+				//Kafka Streams binder specific property for brokers is not set by the application.
+				//See if there is one configured at the kafka binder level.
+				String kafkaBinderBroker = environment.getProperty("spring.cloud.stream.kafka.binder.brokers");
+				if (!StringUtils.isEmpty(kafkaBinderBroker)) {
+					kafkaConnectionString = kafkaBinderBroker;
+					configProperties.setBrokers(kafkaConnectionString);
+				}
+			}
+		}
+
 		if (ObjectUtils.isEmpty(properties.get(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG))) {
 			properties.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG,
-					configProperties.getKafkaConnectionString());
+					kafkaConnectionString);
 		}
 		else {
 			Object bootstrapServerConfig = properties
@@ -170,14 +186,14 @@ public class KafkaStreamsBinderSupportAutoConfiguration {
 						.get(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG);
 				if (bootStrapServers.equals("localhost:9092")) {
 					properties.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG,
-							configProperties.getKafkaConnectionString());
+							kafkaConnectionString);
 				}
 			}
 			else if (bootstrapServerConfig instanceof List) {
 				List bootStrapCollection = (List) bootstrapServerConfig;
 				if (bootStrapCollection.size() == 1 && bootStrapCollection.get(0).equals("localhost:9092")) {
 					properties.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG,
-							configProperties.getKafkaConnectionString());
+							kafkaConnectionString);
 				}
 			}
 		}
