@@ -9,8 +9,6 @@
 
 *{spring-cloud-stream-version}*
 
-[#index-link]
-{docs-url}spring-cloud-stream/{docs-version}home.html
 
 [[spring-cloud-stream-reference]]
 
