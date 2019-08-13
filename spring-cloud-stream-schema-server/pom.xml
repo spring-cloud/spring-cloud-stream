@@ -8,7 +8,7 @@
 	<parent>
 		<artifactId>spring-cloud-stream-parent</artifactId>
 		<groupId>org.springframework.cloud</groupId>
-		<version>3.0.0.M3</version>
+		<version>3.0.0.BUILD-SNAPSHOT</version>
 	</parent>
 
 	<dependencies>
