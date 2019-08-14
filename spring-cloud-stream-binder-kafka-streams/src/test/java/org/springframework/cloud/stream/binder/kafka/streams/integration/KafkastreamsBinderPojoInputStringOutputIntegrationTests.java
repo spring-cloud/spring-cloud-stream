@@ -99,11 +99,9 @@ public class KafkastreamsBinderPojoInputStringOutputIntegrationTests {
 						+ "=org.apache.kafka.common.serialization.Serdes$StringSerde",
 				"--spring.cloud.stream.kafka.streams.bindings.input.consumer.applicationId=ProductCountApplication-xyz",
 				"--spring.cloud.stream.kafka.streams.binder.brokers="
-						+ embeddedKafka.getBrokersAsString(),
-				"--spring.cloud.stream.kafka.streams.binder.zkNodes="
-						+ embeddedKafka.getZookeeperConnectionString());
+						+ embeddedKafka.getBrokersAsString());
 		try {
-			receiveAndValidateFoo(context);
+			receiveAndValidateFoo();
 			// Assertions on StreamBuilderFactoryBean
 			StreamsBuilderFactoryBean streamsBuilderFactoryBean = context
 					.getBean("&stream-builder-ProductCountApplication-process", StreamsBuilderFactoryBean.class);
@@ -117,8 +115,7 @@ public class KafkastreamsBinderPojoInputStringOutputIntegrationTests {
 		}
 	}
 
-	private void receiveAndValidateFoo(ConfigurableApplicationContext context)
-			throws Exception {
+	private void receiveAndValidateFoo() {
 		Map<String, Object> senderProps = KafkaTestUtils.producerProps(embeddedKafka);
 		DefaultKafkaProducerFactory<Integer, String> pf = new DefaultKafkaProducerFactory<>(
 				senderProps);

@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.binder.kafka.streams.integration;
 
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.Map;
@@ -33,16 +34,13 @@ import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.Input;
 import org.springframework.cloud.stream.annotation.Output;
 import org.springframework.cloud.stream.annotation.StreamListener;
-import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsApplicationSupportProperties;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
@@ -108,9 +106,7 @@ public class WordCountMultipleBranchesIntegrationTests {
 				"--spring.cloud.stream.kafka.streams.bindings.input.consumer.applicationId"
 						+ "=WordCountMultipleBranchesIntegrationTests-abc",
 				"--spring.cloud.stream.kafka.streams.binder.brokers="
-						+ embeddedKafka.getBrokersAsString(),
-				"--spring.cloud.stream.kafka.streams.binder.zkNodes="
-						+ embeddedKafka.getZookeeperConnectionString());
+						+ embeddedKafka.getBrokersAsString());
 		try {
 			receiveAndValidate(context);
 		}
@@ -145,11 +141,7 @@ public class WordCountMultipleBranchesIntegrationTests {
 
 	@EnableBinding(KStreamProcessorX.class)
 	@EnableAutoConfiguration
-	@EnableConfigurationProperties(KafkaStreamsApplicationSupportProperties.class)
 	public static class WordCountProcessorApplication {
-
-		@Autowired
-		private TimeWindows timeWindows;
 
 		@StreamListener("input")
 		@SendTo({ "output1", "output2", "output3" })
@@ -163,7 +155,7 @@ public class WordCountMultipleBranchesIntegrationTests {
 			return input
 					.flatMapValues(
 							value -> Arrays.asList(value.toLowerCase().split("\\W+")))
-					.groupBy((key, value) -> value).windowedBy(timeWindows)
+					.groupBy((key, value) -> value).windowedBy(TimeWindows.of(Duration.ofSeconds(5)))
 					.count(Materialized.as("WordCounts-multi")).toStream()
 					.map((key, value) -> new KeyValue<>(null,
 							new WordCount(key.key(), value,

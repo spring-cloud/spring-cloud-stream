@@ -79,16 +79,11 @@ public abstract class DeserializtionErrorHandlerByBinderTests {
 	public static void setUp() throws Exception {
 		System.setProperty("spring.cloud.stream.kafka.streams.binder.brokers",
 				embeddedKafka.getBrokersAsString());
-		System.setProperty("spring.cloud.stream.kafka.streams.binder.zkNodes",
-				embeddedKafka.getZookeeperConnectionString());
-
 		System.setProperty("server.port", "0");
 		System.setProperty("spring.jmx.enabled", "false");
 
 		Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("kafka-streams-dlq-tests", "false",
 				embeddedKafka);
-		// consumerProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,
-		// Deserializer.class.getName());
 		consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
 		DefaultKafkaConsumerFactory<Integer, String> cf = new DefaultKafkaConsumerFactory<>(
 				consumerProps);
@@ -99,6 +94,9 @@ public abstract class DeserializtionErrorHandlerByBinderTests {
 	@AfterClass
 	public static void tearDown() {
 		consumer.close();
+		System.clearProperty("spring.cloud.stream.kafka.streams.binder.brokers");
+		System.clearProperty("server.port");
+		System.clearProperty("spring.jmx.enabled");
 	}
 
 	@SpringBootTest(properties = {

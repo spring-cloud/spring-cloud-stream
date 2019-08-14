@@ -38,13 +38,11 @@ import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.HealthIndicator;
 import org.springframework.boot.actuate.health.Status;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.Input;
 import org.springframework.cloud.stream.annotation.Output;
 import org.springframework.cloud.stream.annotation.StreamListener;
 import org.springframework.cloud.stream.binder.kafka.streams.annotations.KafkaStreamsProcessor;
-import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsApplicationSupportProperties;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
@@ -207,20 +205,10 @@ public class KafkaStreamsBinderHealthIndicatorTests {
 						+ "org.apache.kafka.common.serialization.Serdes$StringSerde",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.default.value.serde="
 						+ "org.apache.kafka.common.serialization.Serdes$StringSerde",
-//				"--spring.cloud.stream.kafka.streams.bindings.output.producer.keySerde="
-//						+ "org.apache.kafka.common.serialization.Serdes$IntegerSerde",
-//				"--spring.cloud.stream.kafka.streams.bindings.input.consumer.valueSerde=org.springframework.kafka.support.serializer.JsonSerde",
-//				"--spring.cloud.stream.kafka.streams.bindings.output.producer.valueSerde=org.springframework.kafka.support.serializer.JsonSerde",
-//				"--spring.cloud.stream.kafka.streams.bindings.output.producer.configuration.spring.json.value.default.type=" +
-//						"org.springframework.cloud.stream.binder.kafka.streams.integration.KafkaStreamsBinderHealthIndicatorTests.Product",
-//				"--spring.cloud.stream.kafka.streams.bindings.input.consumer.configuration.spring.json.value.default.type=" +
-//						"org.springframework.cloud.stream.binder.kafka.streams.integration.KafkaStreamsBinderHealthIndicatorTests.Product",
 				"--spring.cloud.stream.kafka.streams.bindings.input.consumer.applicationId="
 						+ "ApplicationHealthTest-xyz",
 				"--spring.cloud.stream.kafka.streams.binder.brokers="
-						+ embeddedKafka.getBrokersAsString(),
-				"--spring.cloud.stream.kafka.streams.binder.zkNodes="
-						+ embeddedKafka.getZookeeperConnectionString());
+						+ embeddedKafka.getBrokersAsString());
 	}
 
 	private ConfigurableApplicationContext multipleStream() {
@@ -237,37 +225,16 @@ public class KafkaStreamsBinderHealthIndicatorTests {
 						+ "org.apache.kafka.common.serialization.Serdes$StringSerde",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.default.value.serde="
 						+ "org.apache.kafka.common.serialization.Serdes$StringSerde",
-//				"--spring.cloud.stream.kafka.streams.bindings.output.producer.keySerde="
-//						+ "org.apache.kafka.common.serialization.Serdes$IntegerSerde",
-//				"--spring.cloud.stream.kafka.streams.bindings.output2.producer.keySerde="
-//						+ "org.apache.kafka.common.serialization.Serdes$IntegerSerde",
-//				"--spring.cloud.stream.kafka.streams.bindings.input.consumer.valueSerde=org.springframework.kafka.support.serializer.JsonSerde",
-//				"--spring.cloud.stream.kafka.streams.bindings.output.producer.valueSerde=org.springframework.kafka.support.serializer.JsonSerde",
-//				"--spring.cloud.stream.kafka.streams.bindings.output.producer.configuration.spring.json.value.default.type=" +
-//						"org.springframework.cloud.stream.binder.kafka.streams.integration.KafkaStreamsBinderHealthIndicatorTests.Product",
-//				"--spring.cloud.stream.kafka.streams.bindings.input.consumer.configuration.spring.json.value.default.type=" +
-//						"org.springframework.cloud.stream.binder.kafka.streams.integration.KafkaStreamsBinderHealthIndicatorTests.Product",
-//
-//				"--spring.cloud.stream.kafka.streams.bindings.input2.consumer.valueSerde=org.springframework.kafka.support.serializer.JsonSerde",
-//				"--spring.cloud.stream.kafka.streams.bindings.output2.producer.valueSerde=org.springframework.kafka.support.serializer.JsonSerde",
-//				"--spring.cloud.stream.kafka.streams.bindings.output2.producer.configuration.spring.json.value.default.type=" +
-//						"org.springframework.cloud.stream.binder.kafka.streams.integration.KafkaStreamsBinderHealthIndicatorTests.Product",
-//				"--spring.cloud.stream.kafka.streams.bindings.input2.consumer.configuration.spring.json.value.default.type=" +
-//						"org.springframework.cloud.stream.binder.kafka.streams.integration.KafkaStreamsBinderHealthIndicatorTests.Product",
-
 				"--spring.cloud.stream.kafka.streams.bindings.input.consumer.applicationId="
 						+ "ApplicationHealthTest-xyz",
 				"--spring.cloud.stream.kafka.streams.bindings.input2.consumer.applicationId="
 						+ "ApplicationHealthTest2-xyz",
 				"--spring.cloud.stream.kafka.streams.binder.brokers="
-						+ embeddedKafka.getBrokersAsString(),
-				"--spring.cloud.stream.kafka.streams.binder.zkNodes="
-						+ embeddedKafka.getZookeeperConnectionString());
+						+ embeddedKafka.getBrokersAsString());
 	}
 
 	@EnableBinding(KafkaStreamsProcessor.class)
 	@EnableAutoConfiguration
-	@EnableConfigurationProperties(KafkaStreamsApplicationSupportProperties.class)
 	public static class KStreamApplication {
 
 		@StreamListener("input")
@@ -285,7 +252,6 @@ public class KafkaStreamsBinderHealthIndicatorTests {
 
 	@EnableBinding({ KafkaStreamsProcessor.class, KafkaStreamsProcessorX.class })
 	@EnableAutoConfiguration
-	@EnableConfigurationProperties(KafkaStreamsApplicationSupportProperties.class)
 	public static class AnotherKStreamApplication {
 
 		@StreamListener("input")

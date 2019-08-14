@@ -37,12 +37,10 @@ import org.junit.Test;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.Input;
 import org.springframework.cloud.stream.annotation.StreamListener;
 import org.springframework.cloud.stream.binder.kafka.streams.annotations.KafkaStreamsProcessor;
-import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsApplicationSupportProperties;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
@@ -113,18 +111,16 @@ public class KafkaStreamsBinderMultipleInputTopicsTest {
 				"--spring.cloud.stream.kafka.streams.bindings.input.consumer.applicationId"
 						+ "=WordCountProcessorApplication-xyz",
 				"--spring.cloud.stream.kafka.streams.binder.brokers="
-						+ embeddedKafka.getBrokersAsString(),
-				"--spring.cloud.stream.kafka.streams.binder.zkNodes="
-						+ embeddedKafka.getZookeeperConnectionString());
+						+ embeddedKafka.getBrokersAsString());
 		try {
-			receiveAndValidate(context);
+			receiveAndValidate();
 		}
 		finally {
 			context.close();
 		}
 	}
 
-	private void receiveAndValidate(ConfigurableApplicationContext context)
+	private void receiveAndValidate()
 			throws Exception {
 		Map<String, Object> senderProps = KafkaTestUtils.producerProps(embeddedKafka);
 		DefaultKafkaProducerFactory<Integer, String> pf = new DefaultKafkaProducerFactory<>(
@@ -150,7 +146,6 @@ public class KafkaStreamsBinderMultipleInputTopicsTest {
 
 	@EnableBinding(KafkaStreamsProcessor.class)
 	@EnableAutoConfiguration
-	@EnableConfigurationProperties(KafkaStreamsApplicationSupportProperties.class)
 	static class WordCountProcessorApplication {
 
 		@StreamListener

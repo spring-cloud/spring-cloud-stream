@@ -70,7 +70,7 @@ public abstract class DeserializationErrorHandlerByKafkaTests {
 
 	@ClassRule
 	public static EmbeddedKafkaRule embeddedKafkaRule = new EmbeddedKafkaRule(1, true,
-			"counts", "error.words.group", "error.word1.groupx", "error.word2.groupx");
+			"DeserializationErrorHandlerByKafkaTests-out", "error.DeserializationErrorHandlerByKafkaTests-In.group", "error.word1.groupx", "error.word2.groupx");
 
 	private static EmbeddedKafkaBroker embeddedKafka = embeddedKafkaRule
 			.getEmbeddedKafka();
@@ -84,8 +84,6 @@ public abstract class DeserializationErrorHandlerByKafkaTests {
 	public static void setUp() throws Exception {
 		System.setProperty("spring.cloud.stream.kafka.streams.binder.brokers",
 				embeddedKafka.getBrokersAsString());
-		System.setProperty("spring.cloud.stream.kafka.streams.binder.zkNodes",
-				embeddedKafka.getZookeeperConnectionString());
 
 		System.setProperty("server.port", "0");
 		System.setProperty("spring.jmx.enabled", "false");
@@ -96,22 +94,23 @@ public abstract class DeserializationErrorHandlerByKafkaTests {
 		DefaultKafkaConsumerFactory<String, String> cf = new DefaultKafkaConsumerFactory<>(
 				consumerProps);
 		consumer = cf.createConsumer();
-		embeddedKafka.consumeFromAnEmbeddedTopic(consumer, "counts");
+		embeddedKafka.consumeFromAnEmbeddedTopic(consumer, "DeserializationErrorHandlerByKafkaTests-out");
 	}
 
 	@AfterClass
 	public static void tearDown() {
 		consumer.close();
+		System.clearProperty("spring.cloud.stream.kafka.streams.binder.brokers");
+		System.clearProperty("server.port");
+		System.clearProperty("spring.jmx.enabled");
 	}
 
-	// @checkstyle:off
 	@SpringBootTest(properties = {
 			"spring.cloud.stream.kafka.streams.bindings.input.consumer.application-id=deser-kafka-dlq",
 			"spring.cloud.stream.bindings.input.group=group",
 			"spring.cloud.stream.kafka.streams.binder.serdeError=sendToDlq",
 			"spring.cloud.stream.kafka.streams.bindings.input.consumer.valueSerde="
 					+ "org.apache.kafka.common.serialization.Serdes$IntegerSerde" }, webEnvironment = SpringBootTest.WebEnvironment.NONE)
-	// @checkstyle:on
 	public static class DeserializationByKafkaAndDlqTests
 			extends DeserializationErrorHandlerByKafkaTests {
 
@@ -122,7 +121,7 @@ public abstract class DeserializationErrorHandlerByKafkaTests {
 			DefaultKafkaProducerFactory<Integer, String> pf = new DefaultKafkaProducerFactory<>(
 					senderProps);
 			KafkaTemplate<Integer, String> template = new KafkaTemplate<>(pf, true);
-			template.setDefaultTopic("words");
+			template.setDefaultTopic("DeserializationErrorHandlerByKafkaTests-In");
 			template.sendDefault("foobar");
 
 			Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("foobar",
@@ -131,10 +130,10 @@ public abstract class DeserializationErrorHandlerByKafkaTests {
 			DefaultKafkaConsumerFactory<String, String> cf = new DefaultKafkaConsumerFactory<>(
 					consumerProps);
 			Consumer<String, String> consumer1 = cf.createConsumer();
-			embeddedKafka.consumeFromAnEmbeddedTopic(consumer1, "error.words.group");
+			embeddedKafka.consumeFromAnEmbeddedTopic(consumer1, "error.DeserializationErrorHandlerByKafkaTests-In.group");
 
 			ConsumerRecord<String, String> cr = KafkaTestUtils.getSingleRecord(consumer1,
-					"error.words.group");
+					"error.DeserializationErrorHandlerByKafkaTests-In.group");
 			assertThat(cr.value().equals("foobar")).isTrue();
 
 			// Ensuring that the deserialization was indeed done by Kafka natively
@@ -145,11 +144,9 @@ public abstract class DeserializationErrorHandlerByKafkaTests {
 
 	}
 
-	// @checkstyle:off
 	@SpringBootTest(properties = {
 			"spring.cloud.stream.bindings.input.destination=word1,word2",
 			"spring.cloud.stream.kafka.streams.bindings.input.consumer.application-id=deser-kafka-dlq-multi-input",
-			//"spring.cloud.stream.kafka.streams.default.consumer.applicationId=deser-kafka-dlq-multi-input",
 			"spring.cloud.stream.bindings.input.group=groupx",
 			"spring.cloud.stream.kafka.streams.binder.serdeError=sendToDlq",
 			"spring.cloud.stream.kafka.streams.bindings.input.consumer.valueSerde="

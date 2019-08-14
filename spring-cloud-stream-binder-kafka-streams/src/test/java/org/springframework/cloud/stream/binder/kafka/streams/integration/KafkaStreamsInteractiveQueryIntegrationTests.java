@@ -103,9 +103,7 @@ public class KafkaStreamsInteractiveQueryIntegrationTests {
 				"--spring.cloud.stream.kafka.streams.binder.configuration.application.server"
 						+ "=" + embeddedKafka.getBrokersAsString(),
 				"--spring.cloud.stream.kafka.streams.binder.brokers="
-						+ embeddedKafka.getBrokersAsString(),
-				"--spring.cloud.stream.kafka.streams.binder.zkNodes="
-						+ embeddedKafka.getZookeeperConnectionString());
+						+ embeddedKafka.getBrokersAsString());
 		try {
 			receiveAndValidateFoo(context);
 		}
@@ -153,7 +151,6 @@ public class KafkaStreamsInteractiveQueryIntegrationTests {
 
 		@StreamListener("input")
 		@SendTo("output")
-		@SuppressWarnings("deprecation")
 		public KStream<?, String> process(KStream<Object, Product> input) {
 
 			return input.filter((key, product) -> product.getId() == 123)

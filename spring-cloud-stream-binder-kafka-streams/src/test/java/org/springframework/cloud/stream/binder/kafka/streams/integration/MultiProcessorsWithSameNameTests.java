@@ -23,11 +23,9 @@ import org.junit.Test;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.Input;
 import org.springframework.cloud.stream.annotation.StreamListener;
-import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsApplicationSupportProperties;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.kafka.config.StreamsBuilderFactoryBean;
 import org.springframework.kafka.test.EmbeddedKafkaBroker;
@@ -60,9 +58,7 @@ public class MultiProcessorsWithSameNameTests {
 				"--spring.cloud.stream.kafka.streams.bindings.input-1.consumer.application-id=basic-word-count",
 				"--spring.cloud.stream.kafka.streams.bindings.input-2.consumer.application-id=basic-word-count-1",
 				"--spring.cloud.stream.kafka.streams.binder.brokers="
-						+ embeddedKafka.getBrokersAsString(),
-				"--spring.cloud.stream.kafka.streams.binder.zkNodes="
-						+ embeddedKafka.getZookeeperConnectionString())) {
+						+ embeddedKafka.getBrokersAsString())) {
 			StreamsBuilderFactoryBean streamsBuilderFactoryBean1 = context
 					.getBean("&stream-builder-Foo-process", StreamsBuilderFactoryBean.class);
 			assertThat(streamsBuilderFactoryBean1).isNotNull();
@@ -74,7 +70,6 @@ public class MultiProcessorsWithSameNameTests {
 
 	@EnableBinding(KafkaStreamsProcessorX.class)
 	@EnableAutoConfiguration
-	@EnableConfigurationProperties(KafkaStreamsApplicationSupportProperties.class)
 	static class WordCountProcessorApplication {
 
 		@Component

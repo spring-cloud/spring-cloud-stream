@@ -70,9 +70,7 @@ public class KafkaStreamsStateStoreIntegrationTests {
 				"--spring.cloud.stream.kafka.streams.bindings.input.consumer.applicationId"
 						+ "=KafkaStreamsStateStoreIntegrationTests-abc",
 				"--spring.cloud.stream.kafka.streams.binder.brokers="
-						+ embeddedKafka.getBrokersAsString(),
-				"--spring.cloud.stream.kafka.streams.binder.zkNodes="
-						+ embeddedKafka.getZookeeperConnectionString());
+						+ embeddedKafka.getBrokersAsString());
 		try {
 			Thread.sleep(2000);
 			receiveAndValidateFoo(context);
@@ -97,18 +95,10 @@ public class KafkaStreamsStateStoreIntegrationTests {
 						+ "=org.apache.kafka.common.serialization.Serdes$StringSerde",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.default.value.serde"
 						+ "=org.apache.kafka.common.serialization.Serdes$StringSerde",
-//				"--spring.cloud.stream.kafka.streams.bindings.input1.consumer.valueSerde=org.springframework.kafka.support.serializer.JsonSerde",
-//				"--spring.cloud.stream.kafka.streams.bindings.input1.consumer.configuration.spring.json.value.default.type=" +
-//						"org.springframework.cloud.stream.binder.kafka.streams.integration.KafkaStreamsStateStoreIntegrationTests.Product",
-//				"--spring.cloud.stream.kafka.streams.bindings.input2.consumer.valueSerde=org.springframework.kafka.support.serializer.JsonSerde",
-//				"--spring.cloud.stream.kafka.streams.bindings.input2.consumer.configuration.spring.json.value.default.type=" +
-//						"org.springframework.cloud.stream.binder.kafka.streams.integration.KafkaStreamsStateStoreIntegrationTests.Product",
 				"--spring.cloud.stream.kafka.streams.bindings.input1.consumer.applicationId"
 						+ "=KafkaStreamsStateStoreIntegrationTests-abc",
 				"--spring.cloud.stream.kafka.streams.binder.brokers="
-						+ embeddedKafka.getBrokersAsString(),
-				"--spring.cloud.stream.kafka.streams.binder.zkNodes="
-						+ embeddedKafka.getZookeeperConnectionString());
+						+ embeddedKafka.getBrokersAsString());
 		try {
 			Thread.sleep(2000);
 			// We are not particularly interested in querying the state store here, as that is verified by the other test

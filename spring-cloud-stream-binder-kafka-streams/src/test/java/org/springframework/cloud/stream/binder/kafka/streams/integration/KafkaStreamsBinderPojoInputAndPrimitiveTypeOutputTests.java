@@ -69,8 +69,6 @@ public class KafkaStreamsBinderPojoInputAndPrimitiveTypeOutputTests {
 	public static void setUp() throws Exception {
 		Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("group-id",
 				"false", embeddedKafka);
-		// consumerProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,
-		// Deserializer.class.getName());
 		consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
 		consumerProps.put("value.deserializer", LongDeserializer.class);
 		DefaultKafkaConsumerFactory<Integer, Long> cf = new DefaultKafkaConsumerFactory<>(
@@ -100,19 +98,16 @@ public class KafkaStreamsBinderPojoInputAndPrimitiveTypeOutputTests {
 				"--spring.cloud.stream.kafka.streams.bindings.input.consumer.applicationId="
 						+ "KafkaStreamsBinderPojoInputAndPrimitiveTypeOutputTests-xyz",
 				"--spring.cloud.stream.kafka.streams.binder.brokers="
-						+ embeddedKafka.getBrokersAsString(),
-				"--spring.cloud.stream.kafka.streams.binder.zkNodes="
-						+ embeddedKafka.getZookeeperConnectionString());
+						+ embeddedKafka.getBrokersAsString());
 		try {
-			receiveAndValidateFoo(context);
+			receiveAndValidateFoo();
 		}
 		finally {
 			context.close();
 		}
 	}
 
-	private void receiveAndValidateFoo(ConfigurableApplicationContext context)
-			throws Exception {
+	private void receiveAndValidateFoo() {
 		Map<String, Object> senderProps = KafkaTestUtils.producerProps(embeddedKafka);
 		DefaultKafkaProducerFactory<Integer, String> pf = new DefaultKafkaProducerFactory<>(
 				senderProps);
