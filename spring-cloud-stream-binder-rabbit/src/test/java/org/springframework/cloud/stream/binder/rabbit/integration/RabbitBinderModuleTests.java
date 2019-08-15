@@ -325,6 +325,7 @@ public class RabbitBinderModuleTests {
 		context = new SpringApplicationBuilder(SimpleProcessor.class)
 				.web(WebApplicationType.NONE).run("--server.port=0",
 						"--spring.cloud.stream.rabbit.default.producer.routing-key-expression=fooRoutingKey",
+						"--spring.cloud.stream.rabbit.default.consumer.exchange-type=direct",
 						"--spring.cloud.stream.rabbit.bindings.output.producer.batch-size=512",
 						"--spring.cloud.stream.rabbit.default.consumer.max-concurrency=4",
 						"--spring.cloud.stream.rabbit.bindings.input.consumer.exchange-type=fanout");

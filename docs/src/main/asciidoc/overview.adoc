@@ -114,9 +114,14 @@ Default: none (Spring AMQP default).
 
 === RabbitMQ Consumer Properties
 
-NOTE: To avoid repetition, Spring Cloud Stream supports setting values for all channels, in the format of `spring.cloud.stream.default.<property>=<value>`.
-
 The following properties are available for Rabbit consumers only and must be prefixed with `spring.cloud.stream.rabbit.bindings.<channelName>.consumer.`.
+
+However if the same set of properties needs to be applied to most bindings, to
+avoid repetition, Spring Cloud Stream supports setting values for all channels,
+in the format of `spring.cloud.stream.rabbit.default.<property>=<value>`.
+
+Also, keep in mind that binding specific property will override its equivalent in the default.
+
 
 acknowledgeMode::
 The acknowledge mode.
@@ -374,11 +379,14 @@ The customizer (`configure()` method) is provided with the queue name as well as
 
 === Rabbit Producer Properties
 
-NOTE: To avoid repetition, Spring Cloud Stream supports setting values for all channels, in the format of `spring.cloud.stream.default.<property>=<value>`.
+The following properties are available for Rabbit producers only and must be prefixed with `spring.cloud.stream.rabbit.bindings.<channelName>.producer.`.
 
+However if the same set of properties needs to be applied to most bindings, to
+avoid repetition, Spring Cloud Stream supports setting values for all channels,
+in the format of `spring.cloud.stream.rabbit.default.<property>=<value>`.
 
-The following properties are available for Rabbit producers only and
-must be prefixed with `spring.cloud.stream.rabbit.bindings.<channelName>.producer.`.
+Also, keep in mind that binding specific property will override its equivalent in the default.
+
 
 autoBindDlq::
 Whether to automatically declare the DLQ and bind it to the binder DLX.
