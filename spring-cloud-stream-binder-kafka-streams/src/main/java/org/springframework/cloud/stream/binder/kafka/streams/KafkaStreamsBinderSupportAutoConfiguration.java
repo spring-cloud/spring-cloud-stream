@@ -266,21 +266,6 @@ public class KafkaStreamsBinderSupportAutoConfiguration {
 	}
 
 	@Bean
-	@Conditional(FunctionDetectorCondition.class)
-	public KafkaStreamsFunctionProcessor kafkaStreamsFunctionProcessor(BindingServiceProperties bindingServiceProperties,
-																	KafkaStreamsExtendedBindingProperties kafkaStreamsExtendedBindingProperties,
-																	KeyValueSerdeResolver keyValueSerdeResolver,
-																	KafkaStreamsBindingInformationCatalogue kafkaStreamsBindingInformationCatalogue,
-																	KafkaStreamsMessageConversionDelegate kafkaStreamsMessageConversionDelegate,
-																	ObjectProvider<CleanupConfig> cleanupConfig,
-																	KafkaStreamsBindableProxyFactory bindableProxyFactory,
-																	StreamFunctionProperties streamFunctionProperties) {
-		return new KafkaStreamsFunctionProcessor(bindingServiceProperties, kafkaStreamsExtendedBindingProperties,
-				keyValueSerdeResolver, kafkaStreamsBindingInformationCatalogue, kafkaStreamsMessageConversionDelegate,
-				cleanupConfig.getIfUnique(), bindableProxyFactory, streamFunctionProperties);
-	}
-
-	@Bean
 	public KafkaStreamsMessageConversionDelegate messageConversionDelegate(
 																		CompositeMessageConverter compositeMessageConverter,
 																		SendToDlqAndContinue sendToDlqAndContinue,
@@ -358,6 +343,21 @@ public class KafkaStreamsBinderSupportAutoConfiguration {
 	@Bean("kafkaStreamsDlqDispatchers")
 	public Map<String, KafkaStreamsDlqDispatch> dlqDispatchers() {
 		return new HashMap<>();
+	}
+
+	@Bean
+	@Conditional(FunctionDetectorCondition.class)
+	public KafkaStreamsFunctionProcessor kafkaStreamsFunctionProcessor(BindingServiceProperties bindingServiceProperties,
+																	   KafkaStreamsExtendedBindingProperties kafkaStreamsExtendedBindingProperties,
+																	   KeyValueSerdeResolver keyValueSerdeResolver,
+																	   KafkaStreamsBindingInformationCatalogue kafkaStreamsBindingInformationCatalogue,
+																	   KafkaStreamsMessageConversionDelegate kafkaStreamsMessageConversionDelegate,
+																	   ObjectProvider<CleanupConfig> cleanupConfig,
+																	   KafkaStreamsBindableProxyFactory bindableProxyFactory,
+																	   StreamFunctionProperties streamFunctionProperties) {
+		return new KafkaStreamsFunctionProcessor(bindingServiceProperties, kafkaStreamsExtendedBindingProperties,
+				keyValueSerdeResolver, kafkaStreamsBindingInformationCatalogue, kafkaStreamsMessageConversionDelegate,
+				cleanupConfig.getIfUnique(), bindableProxyFactory, streamFunctionProperties);
 	}
 
 }
