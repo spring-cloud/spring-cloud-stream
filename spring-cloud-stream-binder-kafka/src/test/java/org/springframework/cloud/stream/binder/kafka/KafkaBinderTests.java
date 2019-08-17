@@ -93,7 +93,9 @@ import org.springframework.cloud.stream.provisioning.ProvisioningException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.support.GenericApplicationContext;
+import org.springframework.expression.Expression;
 import org.springframework.expression.common.LiteralExpression;
+import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.integration.IntegrationMessageHeaderAccessor;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.channel.QueueChannel;
@@ -2284,6 +2286,28 @@ public class KafkaBinderTests extends
 		assertThat(new DirectFieldAccessor(wrappedInstance).getPropertyValue("sync")
 				.equals(Boolean.TRUE))
 						.withFailMessage("Kafka Sync Producer should have been enabled.");
+		producerBinding.unbind();
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	public void testSendTimeoutExpressionProducerMetadata() throws Exception {
+		Binder binder = getBinder(createConfigurationProperties());
+		DirectChannel output = new DirectChannel();
+		String testTopicName = UUID.randomUUID().toString();
+		ExtendedProducerProperties<KafkaProducerProperties> properties = createProducerProperties();
+		properties.getExtension().setSync(true);
+		SpelExpressionParser parser = new SpelExpressionParser();
+		Expression sendTimeoutExpression = parser.parseExpression("5000");
+		properties.getExtension().setSendTimeoutExpression(sendTimeoutExpression);
+		Binding<MessageChannel> producerBinding = binder.bindProducer(testTopicName,
+				output, properties);
+		DirectFieldAccessor accessor = new DirectFieldAccessor(
+				extractEndpoint(producerBinding));
+		KafkaProducerMessageHandler wrappedInstance = (KafkaProducerMessageHandler) accessor
+				.getWrappedInstance();
+		assertThat(new DirectFieldAccessor(wrappedInstance).getPropertyValue("sendTimeoutExpression")
+				.equals(sendTimeoutExpression));
 		producerBinding.unbind();
 	}
 

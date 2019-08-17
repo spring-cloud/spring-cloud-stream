@@ -290,6 +290,13 @@ sync::
 Whether the producer is synchronous.
 +
 Default: `false`.
+sendTimeoutExpression::
+A SpEL expression evaluated against the outgoing message used to evaluate the time to wait for ack when synchronous publish is enabled -- for example, `headers['mySendTimeout']`.
+The value of the timeout is in milliseconds.
+With versions before 3.0, the payload could not be used unless native encoding was being used because, by the time this expression was evaluated, the payload was already in the form of a `byte[]`.
+Now, the expression is evaluated before the payload is converted.
++
+Default: `none`.
 batchTimeout::
 How long the producer waits to allow more messages to accumulate in the same batch before sending the messages.
 (Normally, the producer does not wait at all and simply sends all the messages that accumulated while the previous send was in progress.) A non-zero value may increase throughput at the expense of latency.

@@ -40,6 +40,8 @@ public class KafkaProducerProperties {
 
 	private boolean sync;
 
+	private Expression sendTimeoutExpression;
+
 	private int batchTimeout;
 
 	private Expression messageKeyExpression;
@@ -77,6 +79,14 @@ public class KafkaProducerProperties {
 
 	public void setSync(boolean sync) {
 		this.sync = sync;
+	}
+
+	public Expression getSendTimeoutExpression() {
+		return this.sendTimeoutExpression;
+	}
+
+	public void setSendTimeoutExpression(Expression sendTimeoutExpression) {
+		this.sendTimeoutExpression = sendTimeoutExpression;
 	}
 
 	public int getBatchTimeout() {
