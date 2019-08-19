@@ -50,11 +50,6 @@
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
-				<artifactId>spring-cloud-stream-schema-server</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.springframework.cloud</groupId>
 				<artifactId>spring-cloud-stream-binder-test</artifactId>
 				<version>${project.version}</version>
 			</dependency>
@@ -109,9 +104,6 @@
 		<!--
 		<module>spring-cloud-stream-reactive</module>
 			-->
-		<module>spring-cloud-stream-schema</module>
-		<module>spring-cloud-stream-schema-server</module>
-
 		<module>docs</module>
 	</modules>
 	<build>
