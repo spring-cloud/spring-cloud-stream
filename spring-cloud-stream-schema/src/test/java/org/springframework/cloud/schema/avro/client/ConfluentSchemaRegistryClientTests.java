@@ -139,4 +139,26 @@ public class ConfluentSchemaRegistryClientTests {
 		String schema = client.fetch(reference);
 	}
 
+	@Test
+	public void responseErrorFetch() {
+		this.mockRestServiceServer
+			.expect(requestTo("http://localhost:8081"))
+			.andExpect(method(HttpMethod.POST))
+			.andExpect(header("Content-Type", "application/json"))
+			.andExpect(header("Accept", "application/vnd.schemaregistry.v1+json"))
+			.andRespond(withBadRequest());
+
+		ConfluentSchemaRegistryClient client = new ConfluentSchemaRegistryClient(
+			this.restTemplate);
+		Exception expected = null;
+		try {
+			SchemaRegistrationResponse response = client.register("user", "avro", "{}");
+		}
+		catch (Exception e) {
+			expected = e;
+		}
+		assertThat(expected != null).isTrue();
+		assertThat(expected.getCause() instanceof HttpStatusCodeException).isTrue();
+		this.mockRestServiceServer.verify();
+	}
 }
