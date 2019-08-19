@@ -218,15 +218,8 @@ public class FunctionConfiguration {
 			}
 			else {
 				FunctionInvocationWrapper function = functionCatalog.lookup(functionProperties.getDefinition(), "application/json");
-				if (!function.isSupplier()) {
-					if (function.isConsumer()) {
-						throw new UnsupportedOperationException("Consumers are not currently supported");
-					}
-					else if (function.isFunction()) {
-						if ("input".equals(channelName)) {
-							this.postProcessForStandAloneFunction(function, messageChannel);
-						}
-					}
+				if (!function.isSupplier() && "input".equals(channelName)) {
+					this.postProcessForStandAloneFunction(function, messageChannel);
 				}
 			}
 		}
@@ -243,7 +236,9 @@ public class FunctionConfiguration {
 				ServiceActivatingHandler handler = new ServiceActivatingHandler(new FunctionWrapper(function));
 				handler.setBeanFactory(context);
 				handler.afterPropertiesSet();
-				handler.setOutputChannelName("output");
+				if (!FunctionTypeUtils.isConsumer(functionType)) {
+					handler.setOutputChannelName("output");
+				}
 				SubscribableChannel subscribeChannel = (SubscribableChannel) inputChannel;
 				subscribeChannel.subscribe(handler);
 			}

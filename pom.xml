@@ -111,7 +111,7 @@
 			-->
 		<module>spring-cloud-stream-schema</module>
 		<module>spring-cloud-stream-schema-server</module>
-		
+
 		<module>docs</module>
 	</modules>
 	<build>

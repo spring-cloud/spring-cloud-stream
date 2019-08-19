@@ -26,17 +26,14 @@ import reactor.core.publisher.Flux;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
-import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.binder.test.InputDestination;
 import org.springframework.cloud.stream.binder.test.OutputDestination;
 import org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration;
-import org.springframework.cloud.stream.messaging.Processor;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
-
-
+import org.springframework.messaging.support.GenericMessage;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -54,7 +51,7 @@ public class ImplicitFunctionBindingTests {
 	}
 
 	@Test
-	public void testBindingWithNoEnableBindingConfiguration() {
+	public void testSimpleFunctionWithStreamProperty() {
 
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 				TestChannelBinderConfiguration.getCompleteConfiguration(
@@ -78,7 +75,7 @@ public class ImplicitFunctionBindingTests {
 	}
 
 	@Test
-	public void testBindingWithNoEnableBindingConfigurationWithFunctionNativeDefinitionProperty() {
+	public void testSimpleFunctionWithNativeProperty() {
 
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 				TestChannelBinderConfiguration.getCompleteConfiguration(
@@ -102,31 +99,7 @@ public class ImplicitFunctionBindingTests {
 	}
 
 	@Test
-	public void testBindingWithEnableBindingConfiguration() {
-
-		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
-				TestChannelBinderConfiguration.getCompleteConfiguration(
-						EnableBindingConfiguration.class))
-								.web(WebApplicationType.NONE)
-								.run("--spring.jmx.enabled=false",
-										"--spring.cloud.stream.function.definition=func")) {
-
-			InputDestination inputDestination = context.getBean(InputDestination.class);
-			OutputDestination outputDestination = context
-					.getBean(OutputDestination.class);
-
-			Message<byte[]> inputMessage = MessageBuilder
-					.withPayload("Hello".getBytes()).build();
-			inputDestination.send(inputMessage);
-
-			Message<byte[]> outputMessage = outputDestination.receive();
-			assertThat(outputMessage.getPayload()).isEqualTo("Hello".getBytes());
-
-		}
-	}
-
-	@Test
-	public void testBindingWithNoEnableBindingAndNoDefinitionPropertyConfiguration() {
+	public void testSimpleFunctionWithoutDefinitionProperty() {
 		System.clearProperty("spring.cloud.stream.function.definition");
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 				TestChannelBinderConfiguration.getCompleteConfiguration(
@@ -145,6 +118,20 @@ public class ImplicitFunctionBindingTests {
 			Message<byte[]> outputMessage = outputDestination.receive();
 			assertThat(outputMessage.getPayload()).isEqualTo("Hello".getBytes());
 
+		}
+	}
+
+	@Test
+	public void testConsumer() {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+				TestChannelBinderConfiguration
+						.getCompleteConfiguration(SingleFunctionConfiguration.class))
+								.web(WebApplicationType.NONE)
+								.run("--spring.cloud.stream.function.definition=consumer",
+										"--spring.jmx.enabled=false")) {
+
+			InputDestination source = context.getBean(InputDestination.class);
+			source.send(new GenericMessage<byte[]>("John Doe".getBytes()));
 		}
 	}
 
@@ -196,26 +183,6 @@ public class ImplicitFunctionBindingTests {
 	}
 
 	@EnableAutoConfiguration
-	@EnableBinding(Processor.class)
-	public static class EnableBindingConfiguration  {
-
-		@Bean
-		public Function<String, String> func() {
-			return x -> {
-				System.out.println("Function");
-				return x;
-			};
-		}
-
-		@Bean
-		public Consumer<String> cons() {
-			return x -> {
-				System.out.println("Consumer");
-			};
-		}
-	}
-
-	@EnableAutoConfiguration
 	public static class SingleFunctionConfiguration {
 
 		@Bean
@@ -223,6 +190,14 @@ public class ImplicitFunctionBindingTests {
 			return x -> {
 				System.out.println("Function");
 				return x;
+			};
+		}
+
+
+		@Bean
+		public Consumer<String> consumer() {
+			return value -> {
+				System.out.println(value);
 			};
 		}
 	}
