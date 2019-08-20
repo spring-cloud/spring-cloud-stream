@@ -20,11 +20,14 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.kafka.streams.kstream.GlobalKTable;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.KTable;
@@ -47,6 +50,8 @@ import org.springframework.util.CollectionUtils;
  * @since 2.2.0
  */
 public class FunctionDetectorCondition extends SpringBootCondition {
+
+	private static final Log LOG = LogFactory.getLog(FunctionDetectorCondition.class);
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@Override
@@ -86,15 +91,17 @@ public class FunctionDetectorCondition extends SpringBootCondition {
 							.getMetadata().getClassName(),
 					ClassUtils.getDefaultClassLoader());
 			try {
-				Method method = classObj.getMethod(key);
+				Method[] methods = classObj.getMethods();
+				Optional<Method> kafkaStreamMethod = Arrays.stream(methods).filter(m -> m.getName().equals(key)).findFirst();
+				Method method = kafkaStreamMethod.get();
 				ResolvableType resolvableType = ResolvableType.forMethodReturnType(method, classObj);
 				final Class<?> rawClass = resolvableType.getGeneric(0).getRawClass();
 				if (rawClass == KStream.class || rawClass == KTable.class || rawClass == GlobalKTable.class) {
 					prunedList.add(key);
 				}
 			}
-			catch (NoSuchMethodException e) {
-				//ignore
+			catch (Exception e) {
+				LOG.error("Function not found: " + key, e);
 			}
 		}
 		return prunedList;

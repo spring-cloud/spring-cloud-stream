@@ -17,13 +17,18 @@
 package org.springframework.cloud.stream.binder.kafka.streams.function;
 
 import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.Map;
+import java.util.Optional;
 import java.util.TreeMap;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
@@ -41,6 +46,8 @@ import org.springframework.util.ClassUtils;
  *
  */
 public class KafkaStreamsFunctionBeanPostProcessor implements InitializingBean, BeanFactoryAware {
+
+	private static final Log LOG = LogFactory.getLog(KafkaStreamsFunctionBeanPostProcessor.class);
 
 	private ConfigurableListableBeanFactory beanFactory;
 	private Map<String, ResolvableType> resolvableTypeMap = new TreeMap<>();
@@ -68,12 +75,14 @@ public class KafkaStreamsFunctionBeanPostProcessor implements InitializingBean, 
 						.getMetadata().getClassName(),
 				ClassUtils.getDefaultClassLoader());
 		try {
-			Method method = classObj.getMethod(key);
+			Method[] methods = classObj.getMethods();
+			Optional<Method> kafkaStreamMethod = Arrays.stream(methods).filter(m -> m.getName().equals(key)).findFirst();
+			Method method = kafkaStreamMethod.get();
 			ResolvableType resolvableType = ResolvableType.forMethodReturnType(method, classObj);
 			resolvableTypeMap.put(key, resolvableType);
 		}
-		catch (NoSuchMethodException e) {
-			//ignore
+		catch (Exception e) {
+			LOG.error("Function not found: " + key, e);
 		}
 	}
 

@@ -54,7 +54,7 @@ public class KafkaStreamsFunctionAutoConfiguration {
 
 	@Bean
 	@Conditional(FunctionDetectorCondition.class)
-	public BeanFactoryPostProcessor implicitFunctionKafkaStreamsBinder(KafkaStreamsFunctionBeanPostProcessor kafkaStreamsFunctionBeanPostProcessor) {
+	public static BeanFactoryPostProcessor implicitFunctionKafkaStreamsBinder(KafkaStreamsFunctionBeanPostProcessor kafkaStreamsFunctionBeanPostProcessor) {
 		return beanFactory -> {
 			BeanDefinitionRegistry registry = (BeanDefinitionRegistry) beanFactory;
 
