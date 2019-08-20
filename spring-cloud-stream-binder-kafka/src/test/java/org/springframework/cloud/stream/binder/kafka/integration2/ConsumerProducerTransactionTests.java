@@ -25,6 +25,7 @@ import kafka.server.KafkaConfig;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -94,6 +95,7 @@ public class ConsumerProducerTransactionTests {
 	}
 
 	@Test
+	@Ignore
 	public void testProducerRunsInConsumerTransaction() throws InterruptedException {
 		assertThat(this.config.latch.await(10, TimeUnit.SECONDS)).isTrue();
 		assertThat(this.config.outs).containsExactlyInAnyOrder("ONE", "THREE");
