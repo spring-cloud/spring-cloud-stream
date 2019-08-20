@@ -348,13 +348,13 @@ public class KafkaStreamsBinderSupportAutoConfiguration {
 	@Bean
 	@Conditional(FunctionDetectorCondition.class)
 	public KafkaStreamsFunctionProcessor kafkaStreamsFunctionProcessor(BindingServiceProperties bindingServiceProperties,
-																	   KafkaStreamsExtendedBindingProperties kafkaStreamsExtendedBindingProperties,
-																	   KeyValueSerdeResolver keyValueSerdeResolver,
-																	   KafkaStreamsBindingInformationCatalogue kafkaStreamsBindingInformationCatalogue,
-																	   KafkaStreamsMessageConversionDelegate kafkaStreamsMessageConversionDelegate,
-																	   ObjectProvider<CleanupConfig> cleanupConfig,
-																	   KafkaStreamsBindableProxyFactory bindableProxyFactory,
-																	   StreamFunctionProperties streamFunctionProperties) {
+																	KafkaStreamsExtendedBindingProperties kafkaStreamsExtendedBindingProperties,
+																	KeyValueSerdeResolver keyValueSerdeResolver,
+																	KafkaStreamsBindingInformationCatalogue kafkaStreamsBindingInformationCatalogue,
+																	KafkaStreamsMessageConversionDelegate kafkaStreamsMessageConversionDelegate,
+																	ObjectProvider<CleanupConfig> cleanupConfig,
+																	KafkaStreamsBindableProxyFactory bindableProxyFactory,
+																	StreamFunctionProperties streamFunctionProperties) {
 		return new KafkaStreamsFunctionProcessor(bindingServiceProperties, kafkaStreamsExtendedBindingProperties,
 				keyValueSerdeResolver, kafkaStreamsBindingInformationCatalogue, kafkaStreamsMessageConversionDelegate,
 				cleanupConfig.getIfUnique(), bindableProxyFactory, streamFunctionProperties);
