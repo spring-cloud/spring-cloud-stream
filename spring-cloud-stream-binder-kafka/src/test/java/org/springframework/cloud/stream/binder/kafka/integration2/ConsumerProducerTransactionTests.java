@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import kafka.server.KafkaConfig;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
@@ -48,8 +49,6 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.util.backoff.FixedBackOff;
 
 import static org.assertj.core.api.Assertions.assertThat;
-
-import kafka.server.KafkaConfig;
 
 /**
  * @author Gary Russell
