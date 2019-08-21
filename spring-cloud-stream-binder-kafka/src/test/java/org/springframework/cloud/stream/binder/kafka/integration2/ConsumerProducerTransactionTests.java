@@ -21,11 +21,9 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import kafka.server.KafkaConfig;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -47,8 +45,11 @@ import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.support.GenericMessage;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.util.backoff.FixedBackOff;
 
 import static org.assertj.core.api.Assertions.assertThat;
+
+import kafka.server.KafkaConfig;
 
 /**
  * @author Gary Russell
@@ -95,7 +96,6 @@ public class ConsumerProducerTransactionTests {
 	}
 
 	@Test
-	@Ignore
 	public void testProducerRunsInConsumerTransaction() throws InterruptedException {
 		assertThat(this.config.latch.await(10, TimeUnit.SECONDS)).isTrue();
 		assertThat(this.config.outs).containsExactlyInAnyOrder("ONE", "THREE");
@@ -138,7 +138,7 @@ public class ConsumerProducerTransactionTests {
 		@Bean
 		public ListenerContainerCustomizer<AbstractMessageListenerContainer<?, ?>> customizer() {
 			return (container, dest, group) -> container
-					.setAfterRollbackProcessor(new DefaultAfterRollbackProcessor<>(0));
+					.setAfterRollbackProcessor(new DefaultAfterRollbackProcessor<>(new FixedBackOff(0L, 1L)));
 		}
 
 	}
