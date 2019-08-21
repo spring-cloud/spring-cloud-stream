@@ -26,7 +26,6 @@ import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.TopicPartition;
 import org.junit.ClassRule;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.InOrder;
 
@@ -70,7 +69,6 @@ public class KafkaTransactionTests {
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Test
-	@Ignore
 	public void testProducerRunsInTx() {
 		KafkaProperties kafkaProperties = new TestKafkaProperties();
 		kafkaProperties.setBootstrapServers(Collections
@@ -119,7 +117,7 @@ public class KafkaTransactionTests {
 		inOrder.verify(mockProducer).beginTransaction();
 		inOrder.verify(mockProducer).send(any(ProducerRecord.class), any(Callback.class));
 		inOrder.verify(mockProducer).commitTransaction();
-		inOrder.verify(mockProducer).close();
+		inOrder.verify(mockProducer).close(any());
 		inOrder.verifyNoMoreInteractions();
 		assertThat(TestUtils.getPropertyValue(channel,
 				"dispatcher.theOneHandler.useNativeEncoding", Boolean.class)).isTrue();
