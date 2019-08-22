@@ -16,17 +16,17 @@
 
 package org.springframework.cloud.stream.config;
 
+import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.actuate.autoconfigure.endpoint.EndpointAutoConfiguration;
 import org.springframework.boot.actuate.autoconfigure.health.ConditionalOnEnabledHealthIndicator;
-import org.springframework.boot.actuate.health.AbstractHealthIndicator;
-import org.springframework.boot.actuate.health.CompositeHealthIndicator;
-import org.springframework.boot.actuate.health.DefaultHealthIndicatorRegistry;
+import org.springframework.boot.actuate.health.CompositeHealthContributor;
 import org.springframework.boot.actuate.health.Health;
+import org.springframework.boot.actuate.health.HealthContributor;
 import org.springframework.boot.actuate.health.HealthIndicator;
-import org.springframework.boot.actuate.health.OrderedHealthAggregator;
+import org.springframework.boot.actuate.health.NamedContributor;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
@@ -50,58 +50,76 @@ import org.springframework.context.annotation.Configuration;
 public class BindersHealthIndicatorAutoConfiguration {
 
 	@Bean
-	@ConditionalOnMissingBean(name = "bindersHealthIndicator")
-	public CompositeHealthIndicator bindersHealthIndicator() {
-		return new CompositeHealthIndicator(new OrderedHealthAggregator(),
-				new DefaultHealthIndicatorRegistry());
+	@ConditionalOnMissingBean
+	public BindersHealthContributor bindersHealthContributor() {
+		return new BindersHealthContributor();
 	}
 
 	@Bean
 	public DefaultBinderFactory.Listener bindersHealthIndicatorListener(
-			@Qualifier("bindersHealthIndicator") CompositeHealthIndicator compositeHealthIndicator) {
-		return new BindersHealthIndicatorListener(compositeHealthIndicator);
+			BindersHealthContributor bindersHealthContributor) {
+		return new BindersHealthIndicatorListener(bindersHealthContributor);
 	}
 
 	/**
 	 * A {@link DefaultBinderFactory.Listener} that provides {@link HealthIndicator}
 	 * support.
-	 *
-	 * @author Ilayaperumal Gopinathan
 	 */
 	private static class BindersHealthIndicatorListener
 			implements DefaultBinderFactory.Listener {
 
-		private final CompositeHealthIndicator bindersHealthIndicator;
+		private final BindersHealthContributor bindersHealthContributor;
 
-		BindersHealthIndicatorListener(CompositeHealthIndicator bindersHealthIndicator) {
-			this.bindersHealthIndicator = bindersHealthIndicator;
+		BindersHealthIndicatorListener(BindersHealthContributor bindersHealthContributor) {
+			this.bindersHealthContributor = bindersHealthContributor;
 		}
 
 		@Override
 		public void afterBinderContextInitialized(String binderConfigurationName,
 				ConfigurableApplicationContext binderContext) {
-			if (this.bindersHealthIndicator != null) {
-				OrderedHealthAggregator healthAggregator = new OrderedHealthAggregator();
-				Map<String, HealthIndicator> indicators = binderContext
-						.getBeansOfType(HealthIndicator.class);
-				// if there are no health indicators in the child context, we just mark
-				// the binder's health as unknown
-				// this can happen due to the fact that configuration is inherited
-				HealthIndicator binderHealthIndicator = indicators.isEmpty()
-						? new DefaultHealthIndicator()
-						: new CompositeHealthIndicator(healthAggregator, indicators);
-				this.bindersHealthIndicator.getRegistry()
-						.register(binderConfigurationName, binderHealthIndicator);
+			if (this.bindersHealthContributor != null) {
+				this.bindersHealthContributor.add(binderConfigurationName,
+						binderContext.getBeansOfType(HealthContributor.class));
 			}
 		}
 
-		private static class DefaultHealthIndicator extends AbstractHealthIndicator {
+	}
 
-			@Override
-			protected void doHealthCheck(Health.Builder builder) throws Exception {
-				builder.unknown();
+	/**
+	 * {@link CompositeHealthContributor} that provides binder health contributions.
+	 */
+	private static class BindersHealthContributor implements CompositeHealthContributor {
+
+		private static final HealthIndicator UNKNOWN = () -> Health.unknown().build();
+
+		private Map<String, HealthContributor> contributors = new LinkedHashMap<>();
+
+		void add(String binderConfigurationName, Map<String, HealthContributor> binderHealthContributors) {
+			// if there are no health contributors in the child context, we just mark
+			// the binder's health as unknown
+			// this can happen due to the fact that configuration is inherited
+			this.contributors.put(binderConfigurationName, getContributor(binderHealthContributors));
+		}
+
+		private HealthContributor getContributor(Map<String, HealthContributor> binderHealthContributors) {
+			if (binderHealthContributors.isEmpty()) {
+				return UNKNOWN;
 			}
+			if (binderHealthContributors.size() == 1) {
+				return binderHealthContributors.values().iterator().next();
+			}
+			return CompositeHealthContributor.fromMap(binderHealthContributors);
+		}
 
+		@Override
+		public HealthContributor getContributor(String name) {
+			return contributors.get(name);
+		}
+
+		@Override
+		public Iterator<NamedContributor<HealthContributor>> iterator() {
+			return contributors.entrySet().stream()
+					.map((entry) -> NamedContributor.of(entry.getKey(), entry.getValue())).iterator();
 		}
 
 	}

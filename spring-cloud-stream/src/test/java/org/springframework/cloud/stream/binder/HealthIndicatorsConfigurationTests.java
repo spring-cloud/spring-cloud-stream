@@ -19,18 +19,16 @@ package org.springframework.cloud.stream.binder;
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.util.Map;
 
 import org.junit.Test;
 
-import org.springframework.beans.DirectFieldAccessor;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.boot.WebApplicationType;
-import org.springframework.boot.actuate.health.CompositeHealthIndicator;
-import org.springframework.boot.actuate.health.DefaultHealthIndicatorRegistry;
+import org.springframework.boot.actuate.health.CompositeHealthContributor;
+import org.springframework.boot.actuate.health.Health;
+import org.springframework.boot.actuate.health.HealthContributor;
 import org.springframework.boot.actuate.health.HealthIndicator;
-import org.springframework.boot.actuate.health.HealthIndicatorRegistry;
-import org.springframework.boot.actuate.health.OrderedHealthAggregator;
+import org.springframework.boot.actuate.health.NamedContributor;
 import org.springframework.boot.actuate.health.Status;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
@@ -86,28 +84,22 @@ public class HealthIndicatorsConfigurationTests {
 		Binder binder2 = context.getBean(BinderFactory.class).getBinder("binder2",
 				MessageChannel.class);
 		assertThat(binder2).isInstanceOf(StubBinder2.class);
-		CompositeHealthIndicator bindersHealthIndicator = context
-				.getBean("bindersHealthIndicator", CompositeHealthIndicator.class);
-		DirectFieldAccessor directFieldAccessor = new DirectFieldAccessor(
-				bindersHealthIndicator);
-		assertThat(bindersHealthIndicator).isNotNull();
+		CompositeHealthContributor bindersHealthContributor = context
+				.getBean("bindersHealthContributor", CompositeHealthContributor.class);
+		assertThat(bindersHealthContributor).isNotNull();
 		assertThat(
-				context.getBean("test1HealthIndicator1", CompositeHealthIndicator.class))
+				context.getBean("test1HealthIndicator1", HealthContributor.class))
 						.isNotNull();
 		assertThat(
-				context.getBean("test2HealthIndicator2", CompositeHealthIndicator.class))
+				context.getBean("test2HealthIndicator2", HealthContributor.class))
 						.isNotNull();
 
-		HealthIndicatorRegistry registry = (HealthIndicatorRegistry) directFieldAccessor
-				.getPropertyValue("registry");
-
-		Map<String, HealthIndicator> healthIndicators = registry.getAll();
-		assertThat(healthIndicators).containsKey("binder1");
-		assertThat(healthIndicators.get("binder1").health().getStatus())
+		assertThat(bindersHealthContributor.stream().map(NamedContributor::getName)).contains("binder1", "binder2");
+		assertThat(bindersHealthContributor.getContributor("binder1")).extracting("health").extracting("status")
 				.isEqualTo(Status.UP);
-		assertThat(healthIndicators).containsKey("binder2");
-		assertThat(healthIndicators.get("binder2").health().getStatus())
+		assertThat(bindersHealthContributor.getContributor("binder2")).extracting("health").extracting("status")
 				.isEqualTo(Status.UNKNOWN);
+
 		context.close();
 	}
 
@@ -126,16 +118,16 @@ public class HealthIndicatorsConfigurationTests {
 				MessageChannel.class);
 		assertThat(binder2).isInstanceOf(StubBinder2.class);
 		try {
-			context.getBean("bindersHealthIndicator", CompositeHealthIndicator.class);
-			fail("The 'bindersHealthIndicator' bean should have not been defined");
+			context.getBean("bindersHealthContributor", CompositeHealthContributor.class);
+			fail("The 'bindersHealthContributor' bean should have not been defined");
 		}
 		catch (NoSuchBeanDefinitionException e) {
 		}
 		assertThat(
-				context.getBean("test1HealthIndicator1", CompositeHealthIndicator.class))
+				context.getBean("test1HealthIndicator1", HealthContributor.class))
 						.isNotNull();
 		assertThat(
-				context.getBean("test2HealthIndicator2", CompositeHealthIndicator.class))
+				context.getBean("test2HealthIndicator2", HealthContributor.class))
 						.isNotNull();
 		context.close();
 	}
@@ -148,13 +140,13 @@ public class HealthIndicatorsConfigurationTests {
 		static class TestConfig {
 
 			@Bean
-			public CompositeHealthIndicator test1HealthIndicator1() {
-				return new CompositeHealthIndicator(new OrderedHealthAggregator(), new DefaultHealthIndicatorRegistry());
+			public HealthIndicator test1HealthIndicator1() {
+				return () -> Health.unknown().build();
 			}
 
 			@Bean
-			public CompositeHealthIndicator test2HealthIndicator2() {
-				return new CompositeHealthIndicator(new OrderedHealthAggregator(), new DefaultHealthIndicatorRegistry());
+			public HealthIndicator test2HealthIndicator2() {
+				return () -> Health.unknown().build();
 			}
 
 		}
