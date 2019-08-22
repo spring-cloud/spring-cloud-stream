@@ -122,6 +122,25 @@ public class ImplicitFunctionBindingTests {
 	}
 
 	@Test
+	public void testSimpleConsumerWithoutDefinitionProperty() {
+		System.clearProperty("spring.cloud.stream.function.definition");
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+				TestChannelBinderConfiguration.getCompleteConfiguration(
+						SingleConsumerConfiguration.class))
+								.web(WebApplicationType.NONE)
+								.run("--spring.jmx.enabled=false")) {
+
+			InputDestination inputDestination = context.getBean(InputDestination.class);
+			Message<byte[]> inputMessage = MessageBuilder
+					.withPayload("Hello".getBytes()).build();
+			inputDestination.send(inputMessage);
+
+			assertThat(System.getProperty("consumer")).isEqualTo("Hello");
+			System.clearProperty("consumer");
+		}
+	}
+
+	@Test
 	public void testConsumer() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 				TestChannelBinderConfiguration
@@ -192,12 +211,16 @@ public class ImplicitFunctionBindingTests {
 				return x;
 			};
 		}
+	}
 
+	@EnableAutoConfiguration
+	public static class SingleConsumerConfiguration {
 
 		@Bean
 		public Consumer<String> consumer() {
 			return value -> {
 				System.out.println(value);
+				System.setProperty("consumer", value);
 			};
 		}
 	}
