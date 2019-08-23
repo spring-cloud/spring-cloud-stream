@@ -19,6 +19,8 @@ package org.springframework.cloud.stream.binder.kafka.streams;
 import java.util.Map;
 import java.util.Optional;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.kafka.common.serialization.Serializer;
 import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.errors.InvalidStateStoreException;
@@ -27,6 +29,10 @@ import org.apache.kafka.streams.state.QueryableStoreType;
 import org.apache.kafka.streams.state.StreamsMetadata;
 
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsBinderConfigurationProperties;
+import org.springframework.retry.RetryPolicy;
+import org.springframework.retry.backoff.FixedBackOffPolicy;
+import org.springframework.retry.policy.SimpleRetryPolicy;
+import org.springframework.retry.support.RetryTemplate;
 import org.springframework.util.StringUtils;
 
 /**
@@ -40,6 +46,8 @@ import org.springframework.util.StringUtils;
  * @since 2.1.0
  */
 public class InteractiveQueryService {
+
+	private static final Log LOG = LogFactory.getLog(InteractiveQueryService.class);
 
 	private final KafkaStreamsRegistry kafkaStreamsRegistry;
 
@@ -64,18 +72,32 @@ public class InteractiveQueryService {
 	 * @return queryable store.
 	 */
 	public <T> T getQueryableStore(String storeName, QueryableStoreType<T> storeType) {
-		for (KafkaStreams kafkaStream : this.kafkaStreamsRegistry.getKafkaStreams()) {
-			try {
-				T store = kafkaStream.store(storeName, storeType);
-				if (store != null) {
-					return store;
+
+		RetryTemplate retryTemplate = new RetryTemplate();
+
+		KafkaStreamsBinderConfigurationProperties.StateStoreRetry stateStoreRetry = this.binderConfigurationProperties.getStateStoreRetry();
+		RetryPolicy retryPolicy = new SimpleRetryPolicy(stateStoreRetry.getMaxAttempts());
+		FixedBackOffPolicy backOffPolicy = new FixedBackOffPolicy();
+		backOffPolicy.setBackOffPeriod(stateStoreRetry.getBackoffPeriod());
+
+		retryTemplate.setBackOffPolicy(backOffPolicy);
+		retryTemplate.setRetryPolicy(retryPolicy);
+
+		return retryTemplate.execute(context -> {
+			T store;
+			for (KafkaStreams kafkaStream : InteractiveQueryService.this.kafkaStreamsRegistry.getKafkaStreams()) {
+				try {
+					store = kafkaStream.store(storeName, storeType);
+					if (store != null) {
+						return store;
+					}
+				}
+				catch (InvalidStateStoreException e) {
+					LOG.warn("Error when retrieving state store: " + storeName, e);
 				}
 			}
-			catch (InvalidStateStoreException ignored) {
-				// pass through
-			}
-		}
-		return null;
+			throw new IllegalStateException("Error when retrieving state store: " + storeName);
+		});
 	}
 
 	/**

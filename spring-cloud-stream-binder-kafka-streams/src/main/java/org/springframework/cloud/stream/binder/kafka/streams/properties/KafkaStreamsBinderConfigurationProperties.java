@@ -54,6 +54,16 @@ public class KafkaStreamsBinderConfigurationProperties
 
 	private String applicationId;
 
+	private StateStoreRetry stateStoreRetry = new StateStoreRetry();
+
+	public StateStoreRetry getStateStoreRetry() {
+		return stateStoreRetry;
+	}
+
+	public void setStateStoreRetry(StateStoreRetry stateStoreRetry) {
+		this.stateStoreRetry = stateStoreRetry;
+	}
+
 	public String getApplicationId() {
 		return this.applicationId;
 	}
@@ -77,6 +87,29 @@ public class KafkaStreamsBinderConfigurationProperties
 	public void setSerdeError(
 			KafkaStreamsBinderConfigurationProperties.SerdeError serdeError) {
 		this.serdeError = serdeError;
+	}
+
+	public static class StateStoreRetry {
+
+		private int maxAttempts = 1;
+
+		private long backoffPeriod = 1000;
+
+		public int getMaxAttempts() {
+			return maxAttempts;
+		}
+
+		public void setMaxAttempts(int maxAttempts) {
+			this.maxAttempts = maxAttempts;
+		}
+
+		public long getBackoffPeriod() {
+			return backoffPeriod;
+		}
+
+		public void setBackoffPeriod(long backoffPeriod) {
+			this.backoffPeriod = backoffPeriod;
+		}
 	}
 
 }

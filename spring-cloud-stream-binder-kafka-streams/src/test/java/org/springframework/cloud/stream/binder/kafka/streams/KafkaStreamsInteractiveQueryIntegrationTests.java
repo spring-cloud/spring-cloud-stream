@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.stream.binder.kafka.streams.integration;
+package org.springframework.cloud.stream.binder.kafka.streams;
 
 import java.util.Map;
 
@@ -23,25 +23,29 @@ import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.serialization.IntegerSerializer;
 import org.apache.kafka.common.serialization.Serdes;
+import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.Materialized;
 import org.apache.kafka.streams.kstream.Serialized;
 import org.apache.kafka.streams.state.HostInfo;
+import org.apache.kafka.streams.state.QueryableStoreType;
 import org.apache.kafka.streams.state.QueryableStoreTypes;
 import org.apache.kafka.streams.state.ReadOnlyKeyValueStore;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
+import org.mockito.Mockito;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.StreamListener;
-import org.springframework.cloud.stream.binder.kafka.streams.InteractiveQueryService;
 import org.springframework.cloud.stream.binder.kafka.streams.annotations.KafkaStreamsProcessor;
+import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsBinderConfigurationProperties;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
@@ -54,6 +58,7 @@ import org.springframework.kafka.test.utils.KafkaTestUtils;
 import org.springframework.messaging.handler.annotation.SendTo;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.internal.verification.VerificationModeFactory.times;
 
 /**
  * @author Soby Chacko
@@ -84,6 +89,29 @@ public class KafkaStreamsInteractiveQueryIntegrationTests {
 	@AfterClass
 	public static void tearDown() {
 		consumer.close();
+	}
+
+	@Test
+	public void testStateStoreRetrievalRetry() {
+
+		KafkaStreams mock = Mockito.mock(KafkaStreams.class);
+		KafkaStreamsRegistry kafkaStreamsRegistry = new KafkaStreamsRegistry();
+		kafkaStreamsRegistry.registerKafkaStreams(mock);
+		KafkaStreamsBinderConfigurationProperties binderConfigurationProperties =
+				new KafkaStreamsBinderConfigurationProperties(new KafkaProperties());
+		binderConfigurationProperties.getStateStoreRetry().setMaxAttempts(3);
+		InteractiveQueryService interactiveQueryService = new InteractiveQueryService(kafkaStreamsRegistry,
+				binderConfigurationProperties);
+
+		QueryableStoreType<ReadOnlyKeyValueStore<Object, Object>> storeType = QueryableStoreTypes.keyValueStore();
+		try {
+			interactiveQueryService.getQueryableStore("foo", storeType);
+		}
+		catch (Exception ignored) {
+
+		}
+
+		Mockito.verify(mock, times(3)).store("foo", storeType);
 	}
 
 	@Test
