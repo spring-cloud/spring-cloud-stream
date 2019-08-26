@@ -544,8 +544,6 @@ public class KafkaBinderTests extends
 		Message<?> receivedMessage = receive(dlqChannel, 5);
 		assertThat(receivedMessage).isNotNull();
 		assertThat(receivedMessage.getPayload()).isEqualTo("foo".getBytes());
-		//Adding a 1 second sleep to give the retrying enough time to complete.
-		Thread.sleep(1000);
 		assertThat(handler.getInvocationCount())
 				.isEqualTo(consumerProperties.getMaxAttempts());
 		assertThat(receivedMessage.getHeaders()
