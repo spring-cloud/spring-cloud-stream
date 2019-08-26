@@ -223,6 +223,8 @@ Default: null (If not specified, messages that result in errors are forwarded to
 dlqProducerProperties::
 Using this, DLQ-specific producer properties can be set.
 All the properties available through kafka producer properties can be set through this property.
+When native decoding is enabled on the consumer, the application must provide corresponding key/value serializers for DLQ.
+This must be provided in the form  of `dlqProducerProperties.configuration.key.serializer` and `dlqProducerProperties.configuration.value.serializer`.
 +
 Default: Default Kafka producer properties.
 standardHeaders::
