@@ -45,7 +45,7 @@ class BinderErrorChannel extends PublishSubscribeChannel
 					"Only one LastSubscriberMessageHandler is allowed");
 		}
 		if (this.finalHandler != null) {
-			unsubscribe(this.finalHandler);
+			super.unsubscribe(this.finalHandler);
 		}
 		boolean result = super.subscribe(handler);
 		if (this.finalHandler != null) {
