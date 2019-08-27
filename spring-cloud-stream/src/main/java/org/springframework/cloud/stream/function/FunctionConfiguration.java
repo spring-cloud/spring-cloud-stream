@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.function;
 
+import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.time.Duration;
 import java.util.concurrent.atomic.AtomicReference;
@@ -32,9 +33,11 @@ import reactor.core.publisher.MonoSink;
 
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.function.context.FunctionCatalog;
+import org.springframework.cloud.function.context.PollableSupplier;
 import org.springframework.cloud.function.context.catalog.BeanFactoryAwareFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
 import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
@@ -49,6 +52,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.support.GenericApplicationContext;
+import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.integration.channel.MessageChannelReactiveUtils;
 import org.springframework.integration.dsl.IntegrationFlow;
 import org.springframework.integration.dsl.IntegrationFlowBuilder;
@@ -101,8 +105,15 @@ public class FunctionConfiguration {
 				}
 			});
 
+
+			RootBeanDefinition bd = (RootBeanDefinition) context.getBeanDefinition(functionProperties.getParsedDefinition()[0]);
+			Method factoryMethod = bd.getResolvedFactoryMethod();
+			PollableSupplier pollable = factoryMethod.getReturnType().isAssignableFrom(Supplier.class)
+					? AnnotationUtils.findAnnotation(factoryMethod, PollableSupplier.class)
+							: null;
+
 			if (!functionProperties.isComposeFrom() && !functionProperties.isComposeTo() && functionWrapper.isSupplier()) {
-				integrationFlow = this.integrationFlowFromProvidedSupplier(functionWrapper, functionInspector, beginPublishingTrigger)
+				integrationFlow = this.integrationFlowFromProvidedSupplier(functionWrapper, functionInspector, beginPublishingTrigger, pollable)
 						.channel("output").get();
 			}
 		}
@@ -112,11 +123,15 @@ public class FunctionConfiguration {
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	private IntegrationFlowBuilder integrationFlowFromProvidedSupplier(Supplier<?> supplier,
-			FunctionInspector inspector, Publisher<Object> beginPublishingTrigger) {
+			FunctionInspector inspector, Publisher<Object> beginPublishingTrigger, PollableSupplier pollable) {
 
 		IntegrationFlowBuilder integrationFlowBuilder;
 		Type functionType = FunctionTypeUtils.getFunctionType(supplier, inspector);
-		if (FunctionTypeUtils.isReactive(FunctionTypeUtils.getInputType(functionType, 0))) {
+
+
+		boolean splittable = pollable != null && (boolean) AnnotationUtils.getAnnotationAttributes(pollable).get("splittable");
+
+		if (pollable == null && FunctionTypeUtils.isReactive(FunctionTypeUtils.getInputType(functionType, 0))) {
 			Publisher publisher = (Publisher) supplier.get();
 			publisher = publisher instanceof Mono
 					? ((Mono) publisher).delaySubscription(beginPublishingTrigger).map(this::wrapToMessageIfNecessary)
@@ -124,9 +139,13 @@ public class FunctionConfiguration {
 
 			integrationFlowBuilder  = IntegrationFlows.from(publisher);
 		}
-		else {
+		else { // implies pollable
 			integrationFlowBuilder = IntegrationFlows.from(supplier);
+			if (splittable) {
+				integrationFlowBuilder = integrationFlowBuilder.split();
+			}
 		}
+
 		return integrationFlowBuilder;
 	}
 

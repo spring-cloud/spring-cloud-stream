@@ -29,6 +29,7 @@ import reactor.core.publisher.Flux;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.cloud.function.context.PollableSupplier;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.binder.test.OutputDestination;
 import org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration;
@@ -40,6 +41,7 @@ import org.springframework.integration.dsl.IntegrationFlows;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
+import org.springframework.messaging.support.GenericMessage;
 import org.springframework.util.MimeTypeUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -195,6 +197,72 @@ public class SourceToFunctionsSupportTests {
 		}
 	}
 
+	@Test
+	public void testFiniteFluxSupplierMessage() {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+				TestChannelBinderConfiguration.getCompleteConfiguration(FunctionsConfiguration.class,
+						MessageFluxSupplierConfiguration.class)).web(WebApplicationType.NONE).run(
+								"--spring.cloud.stream.function.definition=messageStreamSupplier",
+								"--spring.jmx.enabled=false")) {
+
+			OutputDestination target = context.getBean(OutputDestination.class);
+
+			assertThat(new String(target.receive(2000).getPayload())).isEqualTo("1");
+			assertThat(new String(target.receive(2000).getPayload())).isEqualTo("2");
+			assertThat(new String(target.receive(2000).getPayload())).isEqualTo("3");
+			assertThat(new String(target.receive(2000).getPayload())).isEqualTo("4");
+			assertThat(new String(target.receive(2000).getPayload())).isEqualTo("5");
+			assertThat(new String(target.receive(2000).getPayload())).isEqualTo("6");
+		}
+	}
+
+	@Test
+	public void testFiniteFluxSupplierSimple() {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+				TestChannelBinderConfiguration.getCompleteConfiguration(FunctionsConfiguration.class,
+						SimpleFluxSupplierConfiguration.class)).web(WebApplicationType.NONE).run(
+								"--spring.cloud.stream.function.definition=simpleStreamSupplier",
+								"--spring.jmx.enabled=false")) {
+
+			OutputDestination target = context.getBean(OutputDestination.class);
+
+			assertThat(new String(target.receive(2000).getPayload())).isEqualTo("1");
+			assertThat(new String(target.receive(2000).getPayload())).isEqualTo("2");
+			assertThat(new String(target.receive(2000).getPayload())).isEqualTo("3");
+			assertThat(new String(target.receive(2000).getPayload())).isEqualTo("4");
+			assertThat(new String(target.receive(2000).getPayload())).isEqualTo("5");
+			assertThat(new String(target.receive(2000).getPayload())).isEqualTo("6");
+		}
+	}
+
+	@EnableAutoConfiguration
+	public static class MessageFluxSupplierConfiguration {
+		AtomicInteger counter = new AtomicInteger();
+
+		@PollableSupplier(splittable = true)
+		public Supplier<Flux<Message<?>>> messageStreamSupplier() {
+			return () -> {
+				Message<String> m1 = new GenericMessage<>(String.valueOf(counter.incrementAndGet()));
+				Message<String> m2 = new GenericMessage<>(String.valueOf(counter.incrementAndGet()));
+				Message<String> m3 = new GenericMessage<>(String.valueOf(counter.incrementAndGet()));
+				return Flux.just(m1, m2, m3);
+			};
+		}
+	}
+
+	@EnableAutoConfiguration
+	public static class SimpleFluxSupplierConfiguration {
+		AtomicInteger counter = new AtomicInteger();
+
+		@PollableSupplier(splittable = true)
+		public Supplier<Flux<String>> simpleStreamSupplier() {
+			return () -> {
+				return Flux.just(String.valueOf(counter.incrementAndGet()),
+						String.valueOf(counter.incrementAndGet()),
+						String.valueOf(counter.incrementAndGet()));
+			};
+		}
+	}
 
 	@EnableAutoConfiguration
 	public static class SupplierConfiguration {

@@ -23,6 +23,7 @@ import java.util.Map;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.cloud.stream.messaging.Processor;
+import org.springframework.util.StringUtils;
 
 /**
  * @author Oleg Zhurakousky
@@ -65,6 +66,10 @@ public class StreamFunctionProperties {
 
 	public String getDefinition() {
 		return this.definition;
+	}
+
+	public String[] getParsedDefinition() {
+		return StringUtils.delimitedListToStringArray(this.getDefinition().replaceAll(",", "|").trim(), "|");
 	}
 
 	public void setDefinition(String definition) {
