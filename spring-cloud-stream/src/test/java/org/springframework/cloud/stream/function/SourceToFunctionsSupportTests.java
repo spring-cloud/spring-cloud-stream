@@ -232,6 +232,9 @@ public class SourceToFunctionsSupportTests {
 			assertThat(new String(target.receive(2000).getPayload())).isEqualTo("4");
 			assertThat(new String(target.receive(2000).getPayload())).isEqualTo("5");
 			assertThat(new String(target.receive(2000).getPayload())).isEqualTo("6");
+
+			assertThat(context.getBean("standAloneSupplierFlow")).isNotEqualTo(null);
+			assertThat(context.getBean("functionChannelBindingInitializer")).isNotEqualTo(null);
 		}
 	}
 

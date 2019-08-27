@@ -41,6 +41,7 @@ import org.springframework.cloud.function.context.PollableSupplier;
 import org.springframework.cloud.function.context.catalog.BeanFactoryAwareFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
 import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
+import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.binder.BindingCreatedEvent;
 import org.springframework.cloud.stream.binding.BindableProxyFactory;
 import org.springframework.cloud.stream.config.BinderFactoryAutoConfiguration;
@@ -82,39 +83,42 @@ public class FunctionConfiguration {
 
 	@Bean
 	public InitializingBean functionChannelBindingInitializer(FunctionCatalog functionCatalog, FunctionInspector functionInspector,
-			StreamFunctionProperties functionProperties, @Nullable BindableProxyFactory[] bindableProxyFactory) {
+			StreamFunctionProperties functionProperties, @Nullable BindableProxyFactory[] bindableProxyFactory, GenericApplicationContext context) {
 		return new FunctionChannelBindingInitializer(functionCatalog, functionInspector, functionProperties,
-				ObjectUtils.isEmpty(bindableProxyFactory) ? null : bindableProxyFactory[0]);
+					ObjectUtils.isEmpty(bindableProxyFactory) ? null : bindableProxyFactory[0]);
 	}
 
 	@Bean
 	public IntegrationFlow standAloneSupplierFlow(FunctionCatalog functionCatalog, FunctionInspector functionInspector,
 			StreamFunctionProperties functionProperties, GenericApplicationContext context) {
+
 		IntegrationFlow integrationFlow = null;
-		FunctionInvocationWrapper functionWrapper = functionCatalog.lookup(functionProperties.getDefinition());
-		if (functionWrapper != null) {
-			AtomicReference<MonoSink<Object>> triggerRef = new AtomicReference<>();
-			Publisher<Object> beginPublishingTrigger = Mono.create(emmiter -> {
-				triggerRef.set(emmiter);
-			});
-			context.addApplicationListener(event -> {
-				if (event instanceof BindingCreatedEvent) {
-					if (triggerRef.get() != null) {
-						triggerRef.get().success();
+		if (functionCatalog != null && ObjectUtils.isEmpty(context.getBeanNamesForAnnotation(EnableBinding.class))) {
+			FunctionInvocationWrapper functionWrapper = functionCatalog.lookup(functionProperties.getDefinition());
+			if (functionWrapper != null) {
+				AtomicReference<MonoSink<Object>> triggerRef = new AtomicReference<>();
+				Publisher<Object> beginPublishingTrigger = Mono.create(emmiter -> {
+					triggerRef.set(emmiter);
+				});
+				context.addApplicationListener(event -> {
+					if (event instanceof BindingCreatedEvent) {
+						if (triggerRef.get() != null) {
+							triggerRef.get().success();
+						}
 					}
+				});
+
+
+				RootBeanDefinition bd = (RootBeanDefinition) context.getBeanDefinition(functionProperties.getParsedDefinition()[0]);
+				Method factoryMethod = bd.getResolvedFactoryMethod();
+				PollableSupplier pollable = factoryMethod.getReturnType().isAssignableFrom(Supplier.class)
+						? AnnotationUtils.findAnnotation(factoryMethod, PollableSupplier.class)
+								: null;
+
+				if (!functionProperties.isComposeFrom() && !functionProperties.isComposeTo() && functionWrapper.isSupplier()) {
+					integrationFlow = this.integrationFlowFromProvidedSupplier(functionWrapper, functionInspector, beginPublishingTrigger, pollable)
+							.channel("output").get();
 				}
-			});
-
-
-			RootBeanDefinition bd = (RootBeanDefinition) context.getBeanDefinition(functionProperties.getParsedDefinition()[0]);
-			Method factoryMethod = bd.getResolvedFactoryMethod();
-			PollableSupplier pollable = factoryMethod.getReturnType().isAssignableFrom(Supplier.class)
-					? AnnotationUtils.findAnnotation(factoryMethod, PollableSupplier.class)
-							: null;
-
-			if (!functionProperties.isComposeFrom() && !functionProperties.isComposeTo() && functionWrapper.isSupplier()) {
-				integrationFlow = this.integrationFlowFromProvidedSupplier(functionWrapper, functionInspector, beginPublishingTrigger, pollable)
-						.channel("output").get();
 			}
 		}
 

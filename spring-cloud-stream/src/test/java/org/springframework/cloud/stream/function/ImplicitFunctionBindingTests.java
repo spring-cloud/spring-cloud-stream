@@ -26,9 +26,12 @@ import reactor.core.publisher.Flux;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.cloud.stream.annotation.EnableBinding;
+import org.springframework.cloud.stream.annotation.StreamListener;
 import org.springframework.cloud.stream.binder.test.InputDestination;
 import org.springframework.cloud.stream.binder.test.OutputDestination;
 import org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration;
+import org.springframework.cloud.stream.messaging.Sink;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.integration.support.MessageBuilder;
@@ -178,7 +181,19 @@ public class ImplicitFunctionBindingTests {
 			assertThat(outputMessage.getPayload()).isEqualTo("Hello".getBytes());
 			outputMessage = outputDestination.receive();
 			assertThat(outputMessage.getPayload()).isEqualTo("Hello Again".getBytes());
+		}
+	}
 
+	@Test
+	public void testFunctionConfigDisabledIfStreamListenerIsUsed() {
+		System.clearProperty("spring.cloud.stream.function.definition");
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+				TestChannelBinderConfiguration.getCompleteConfiguration(
+						LegacyConfiguration.class))
+								.web(WebApplicationType.NONE)
+								.run("--spring.jmx.enabled=false")) {
+
+			assertThat(context.getBean("standAloneSupplierFlow")).isEqualTo(null);
 		}
 	}
 
@@ -234,6 +249,16 @@ public class ImplicitFunctionBindingTests {
 				System.out.println("echo value reqctive " + value);
 				return value;
 			});
+		}
+	}
+
+	@EnableAutoConfiguration
+	@EnableBinding(Sink.class)
+	public static class LegacyConfiguration {
+
+		@StreamListener(Sink.INPUT)
+		public void handle(String value) {
+
 		}
 	}
 

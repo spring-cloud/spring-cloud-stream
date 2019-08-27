@@ -166,7 +166,6 @@ public class GreenfieldFunctionEnableBindingTests {
 	}
 
 	@EnableAutoConfiguration
-	@EnableBinding(Source.class)
 	public static class SourceFromSupplier {
 
 		@Bean
