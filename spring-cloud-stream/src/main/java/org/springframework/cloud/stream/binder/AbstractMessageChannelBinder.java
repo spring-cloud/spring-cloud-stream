@@ -654,7 +654,9 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 			errorChannel = (SubscribableChannel) errorChannelObject;
 		}
 		else {
-			errorChannel = new BinderErrorChannel();
+			BinderErrorChannel binderErrorChannel = new BinderErrorChannel();
+			binderErrorChannel.setComponentName(errorChannelName);
+			errorChannel = binderErrorChannel;
 
 			((GenericApplicationContext) getApplicationContext()).registerBean(
 					errorChannelName, SubscribableChannel.class, () -> errorChannel);
