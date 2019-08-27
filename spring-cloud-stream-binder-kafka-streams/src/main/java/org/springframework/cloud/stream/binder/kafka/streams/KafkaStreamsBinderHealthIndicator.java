@@ -34,7 +34,7 @@ import org.springframework.boot.actuate.health.Status;
  *
  * @author Arnaud Jardiné
  */
-class KafkaStreamsBinderHealthIndicator extends AbstractHealthIndicator {
+public class KafkaStreamsBinderHealthIndicator extends AbstractHealthIndicator {
 
 	private final KafkaStreamsRegistry kafkaStreamsRegistry;
 

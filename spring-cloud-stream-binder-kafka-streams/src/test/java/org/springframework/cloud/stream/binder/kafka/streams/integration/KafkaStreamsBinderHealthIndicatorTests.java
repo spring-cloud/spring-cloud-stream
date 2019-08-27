@@ -34,14 +34,15 @@ import org.junit.Test;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.WebApplicationType;
+import org.springframework.boot.actuate.health.CompositeHealthContributor;
 import org.springframework.boot.actuate.health.Health;
-import org.springframework.boot.actuate.health.HealthIndicator;
 import org.springframework.boot.actuate.health.Status;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.Input;
 import org.springframework.cloud.stream.annotation.Output;
 import org.springframework.cloud.stream.annotation.StreamListener;
+import org.springframework.cloud.stream.binder.kafka.streams.KafkaStreamsBinderHealthIndicator;
 import org.springframework.cloud.stream.binder.kafka.streams.annotations.KafkaStreamsProcessor;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
@@ -114,23 +115,14 @@ public class KafkaStreamsBinderHealthIndicatorTests {
 		}
 	}
 
-	private static Status getStatusKStream(Map<String, Object> details) {
-		Health health = (Health) details.get("kstream");
-		return health != null ? health.getStatus() : Status.DOWN;
-	}
-
-	private static boolean waitFor(Map<String, Object> details) {
-		Health health = (Health) details.get("kstream");
-		if (health.getStatus() == Status.UP) {
-			Map<String, Object> moreDetails = health.getDetails();
-			Health kStreamHealth = (Health) moreDetails
-					.get("kafkaStreamsBinderHealthIndicator");
-			String status = (String) kStreamHealth.getDetails().get("threadState");
-			return status != null
-					&& (status.equalsIgnoreCase(KafkaStreams.State.REBALANCING.name())
-							|| status.equalsIgnoreCase("PARTITIONS_REVOKED")
-							|| status.equalsIgnoreCase("PARTITIONS_ASSIGNED")
-							|| status.equalsIgnoreCase(
+	private static boolean waitFor(Status status, Map<String, Object> details) {
+		if (status == Status.UP) {
+			String threadState = (String) details.get("threadState");
+			return threadState != null
+					&& (threadState.equalsIgnoreCase(KafkaStreams.State.REBALANCING.name())
+							|| threadState.equalsIgnoreCase("PARTITIONS_REVOKED")
+							|| threadState.equalsIgnoreCase("PARTITIONS_ASSIGNED")
+							|| threadState.equalsIgnoreCase(
 									KafkaStreams.State.PENDING_SHUTDOWN.name()));
 		}
 		return false;
@@ -183,15 +175,15 @@ public class KafkaStreamsBinderHealthIndicatorTests {
 
 	private static void checkHealth(ConfigurableApplicationContext context,
 			Status expected) throws InterruptedException {
-		HealthIndicator healthIndicator = context.getBean("bindersHealthIndicator",
-				HealthIndicator.class);
-		Health health = healthIndicator.health();
-		while (waitFor(health.getDetails())) {
+		CompositeHealthContributor healthIndicator = context
+				.getBean("bindersHealthContributor", CompositeHealthContributor.class);
+		KafkaStreamsBinderHealthIndicator kafkaStreamsBinderHealthIndicator = (KafkaStreamsBinderHealthIndicator) healthIndicator.getContributor("kstream");
+		Health health = kafkaStreamsBinderHealthIndicator.health();
+		while (waitFor(health.getStatus(), health.getDetails())) {
 			TimeUnit.SECONDS.sleep(2);
-			health = healthIndicator.health();
+			health = kafkaStreamsBinderHealthIndicator.health();
 		}
 		assertThat(health.getStatus()).isEqualTo(expected);
-		assertThat(getStatusKStream(health.getDetails())).isEqualTo(expected);
 	}
 
 	private ConfigurableApplicationContext singleStream() {
