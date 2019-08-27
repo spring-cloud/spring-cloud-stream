@@ -1,7 +1,20 @@
-package org.springframework.cloud.stream.binder;
+/*
+ * Copyright 2017-2019 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+package org.springframework.cloud.stream.binder;
 
 import org.junit.Test;
 
@@ -9,6 +22,11 @@ import org.springframework.beans.DirectFieldAccessor;
 import org.springframework.integration.dispatcher.AbstractDispatcher;
 import org.springframework.messaging.MessageHandler;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
+/**
+ * @author Anshul Mehra
+ */
 public class BinderErrorChannelTests {
 
 	private static final LastSubscriberMessageHandler FINAL_HANDLER = message -> {
@@ -30,39 +48,39 @@ public class BinderErrorChannelTests {
 		AbstractDispatcher dispatcher = (AbstractDispatcher) fieldAccessor
 				.getPropertyValue("dispatcher");
 
-		assertNotNull(dispatcher);
-		assertEquals(0, channel.subscribers());
-		assertEquals(0, dispatcher.getHandlerCount());
+		assertThat(dispatcher).isNotNull();
+		assertThat(channel.subscribers()).isEqualTo(0);
+		assertThat(dispatcher.getHandlerCount()).isEqualTo(0);
 
 		channel.subscribe(FINAL_HANDLER);
 
-		assertEquals(1, channel.subscribers());
-		assertEquals(1, dispatcher.getHandlerCount());
+		assertThat(channel.subscribers()).isEqualTo(1);
+		assertThat(dispatcher.getHandlerCount()).isEqualTo(1);
 
 		channel.subscribe(FIRST_HANDLER);
 
-		assertEquals(2, channel.subscribers());
-		assertEquals(2, dispatcher.getHandlerCount());
+		assertThat(channel.subscribers()).isEqualTo(2);
+		assertThat(dispatcher.getHandlerCount()).isEqualTo(2);
 
 		channel.subscribe(SECOND_HANDLER);
 
-		assertEquals(3, channel.subscribers());
-		assertEquals(3, dispatcher.getHandlerCount());
+		assertThat(channel.subscribers()).isEqualTo(3);
+		assertThat(dispatcher.getHandlerCount()).isEqualTo(3);
 
 		channel.unsubscribe(FIRST_HANDLER);
 
-		assertEquals(2, channel.subscribers());
-		assertEquals(2, dispatcher.getHandlerCount());
+		assertThat(channel.subscribers()).isEqualTo(2);
+		assertThat(dispatcher.getHandlerCount()).isEqualTo(2);
 
 		channel.unsubscribe(FINAL_HANDLER);
 
-		assertEquals(1, channel.subscribers());
-		assertEquals(1, dispatcher.getHandlerCount());
+		assertThat(channel.subscribers()).isEqualTo(1);
+		assertThat(dispatcher.getHandlerCount()).isEqualTo(1);
 
 		channel.unsubscribe(SECOND_HANDLER);
 
-		assertEquals(0, channel.subscribers());
-		assertEquals(0, dispatcher.getHandlerCount());
+		assertThat(channel.subscribers()).isEqualTo(0);
+		assertThat(dispatcher.getHandlerCount()).isEqualTo(0);
 	}
 
 }
