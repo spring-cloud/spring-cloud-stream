@@ -377,6 +377,13 @@ To set listener container properties that are not exposed as binder or binding p
 The binder and binding properties will be set and then the customizer will be called.
 The customizer (`configure()` method) is provided with the queue name as well as the consumer group as arguments.
 
+[[rabbit-receiving-batch]]
+=== Receiving Batched Messages
+
+Normally, if a producer binding has `batch-enabled=true` (see <<rabbit-prod-props>>), or a message is created by a `BatchingRabbitTemplate`, elements of the batch are returned as individual calls to the listener method.
+Starting with version 3.0, any such batch can be presented as a `List<?>` to the listener method if `spring.cloud.stream.binding.<name>.consumer.batch-mode` is set to `true`.
+
+[[rabbit-prod-props]]
 === Rabbit Producer Properties
 
 The following properties are available for Rabbit producers only and must be prefixed with `spring.cloud.stream.rabbit.bindings.<channelName>.producer.`.
@@ -396,6 +403,7 @@ batchingEnabled::
 Whether to enable message batching by producers.
 Messages are batched into one message according to the following properties (described in the next three entries in this list): 'batchSize', `batchBufferLimit`, and `batchTimeout`.
 See https://docs.spring.io/spring-amqp//reference/html/_reference.html#template-batching[Batching] for more information.
+Also see <<rabbit-receiving-batch>>.
 +
 Default: `false`.
 batchSize::

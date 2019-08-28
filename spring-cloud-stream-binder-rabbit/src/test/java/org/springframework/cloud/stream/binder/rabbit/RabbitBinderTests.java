@@ -1418,6 +1418,48 @@ public class RabbitBinderTests extends
 		consumerBinding.unbind();
 	}
 
+	@SuppressWarnings("unchecked")
+	@Test
+	public void testConsumerBatching() throws Exception {
+		RabbitTestBinder binder = getBinder();
+		ExtendedProducerProperties<RabbitProducerProperties> producerProperties = createProducerProperties();
+		producerProperties.getExtension()
+				.setDeliveryMode(MessageDeliveryMode.NON_PERSISTENT);
+		producerProperties.getExtension().setBatchingEnabled(true);
+		producerProperties.getExtension().setBatchSize(2);
+		producerProperties.getExtension().setBatchBufferLimit(100000);
+		producerProperties.getExtension().setBatchTimeout(30000);
+		producerProperties.getExtension().setCompress(true);
+
+		DirectChannel output = createBindableChannel("output",
+				createProducerBindingProperties(producerProperties));
+		output.setBeanName("consumerBatchingProducer");
+		Binding<MessageChannel> producerBinding = binder.bindProducer("c.batching.0",
+				output, producerProperties);
+
+		QueueChannel input = new QueueChannel();
+		input.setBeanName("batchingConsumer");
+		ExtendedConsumerProperties<RabbitConsumerProperties> consumerProperties = createConsumerProperties();
+		consumerProperties.setBatchMode(true);
+		consumerProperties.getExtension().setBatchSize(2);
+		Binding<MessageChannel> consumerBinding = binder.bindConsumer("c.batching.0",
+				"consumerBatching", input, consumerProperties);
+		output.send(new GenericMessage<>("foo".getBytes()));
+		output.send(new GenericMessage<>("bar".getBytes()));
+
+
+		Message<?> in = input.receive(10000);
+		assertThat(in).isNotNull();
+		assertThat(in.getPayload()).isInstanceOf(List.class);
+		List<byte[]> payload = (List<byte[]>) in.getPayload();
+		assertThat(payload).hasSize(2);
+		assertThat(payload.get(0)).isEqualTo("foo".getBytes());
+		assertThat(payload.get(1)).isEqualTo("bar".getBytes());
+
+		producerBinding.unbind();
+		consumerBinding.unbind();
+	}
+
 	/*
 	 * Test late binding due to broker down; queues with and without DLQs, and partitioned
 	 * queues.

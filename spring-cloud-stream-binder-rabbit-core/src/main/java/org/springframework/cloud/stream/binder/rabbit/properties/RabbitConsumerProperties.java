@@ -52,7 +52,7 @@ public class RabbitConsumerProperties extends RabbitCommonProperties {
 	/**
 	 * messages per acknowledgment (and commit when transacted).
 	 */
-	private int txSize = 1;
+	private int batchSize = 1;
 
 	/**
 	 * true for a durable subscription.
@@ -178,13 +178,31 @@ public class RabbitConsumerProperties extends RabbitCommonProperties {
 		this.headerPatterns = requestHeaderPatterns;
 	}
 
+	/**
+	 * @deprecated in favor of {@link #getBatchSize()}
+	 * @return the tx size.
+	 */
+	@Deprecated
 	@Min(value = 1, message = "Tx Size should be greater than zero.")
 	public int getTxSize() {
-		return txSize;
+		return getBatchSize();
 	}
 
+	/**
+	 * deprecated in favor of {@link #setBatchSize(int)}.
+	 * @param txSize the tx size
+	 */
 	public void setTxSize(int txSize) {
-		this.txSize = txSize;
+		setBatchSize(txSize);
+	}
+
+	@Min(value = 1, message = "Batch Size should be greater than zero.")
+	public int getBatchSize() {
+		return batchSize;
+	}
+
+	public void setBatchSize(int batchSize) {
+		this.batchSize = batchSize;
 	}
 
 	public boolean isDurableSubscription() {

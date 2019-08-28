@@ -525,7 +525,8 @@ public class RabbitMessageChannelBinder extends
 		if (maxConcurrency > concurrency) {
 			listenerContainer.setMaxConcurrentConsumers(maxConcurrency);
 		}
-		listenerContainer.setTxSize(properties.getExtension().getTxSize());
+		listenerContainer.setDeBatchingEnabled(!properties.isBatchMode());
+		listenerContainer.setBatchSize(properties.getExtension().getBatchSize());
 		if (properties.getExtension().getQueueDeclarationRetries() != null) {
 			listenerContainer.setDeclarationRetries(
 					properties.getExtension().getQueueDeclarationRetries());
@@ -539,14 +540,14 @@ public class RabbitMessageChannelBinder extends
 		listenerContainer.setConsumersPerQueue(concurrency);
 		if (properties.getExtension().getMaxConcurrency() > concurrency) {
 			this.logger
-					.warn("maxConcurrency is not supported with a direct container type");
+					.warn("maxConcurrency is not supported by the direct container type");
 		}
-		if (properties.getExtension().getTxSize() > 1) {
-			this.logger.warn("txSize is not supported with a direct container type");
+		if (properties.getExtension().getBatchSize() > 1) {
+			this.logger.warn("batchSize is not supported by the direct container type");
 		}
 		if (properties.getExtension().getQueueDeclarationRetries() != null) {
 			this.logger.warn(
-					"queueDeclarationRetries is not supported with a direct container type");
+					"queueDeclarationRetries is not supported by the direct container type");
 		}
 	}
 
