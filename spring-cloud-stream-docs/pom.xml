@@ -12,12 +12,12 @@
 	<artifactId>spring-cloud-stream-docs</artifactId>
 	<name>spring-cloud-stream-docs</name>
 	<description>Spring Cloud Stream Docs</description>
-	<version>Fishtown.BUILD-SNAPSHOT</version>
+	<version>Germantown.SR1</version>
 	<properties>
 		<main.basedir>${basedir}/..</main.basedir>
-		<spring-cloud-stream.version>2.1.5.BUILD-SNAPSHOT</spring-cloud-stream.version>
-		<spring-cloud-stream-binder-kafka.version>2.1.5.BUILD-SNAPSHOT</spring-cloud-stream-binder-kafka.version>
-		<spring-cloud-stream-binder-rabbit.version>2.1.5.BUILD-SNAPSHOT</spring-cloud-stream-binder-rabbit.version>
+		<spring-cloud-stream.version>2.2.1.RELEASE</spring-cloud-stream.version>
+		<spring-cloud-stream-binder-kafka.version>2.2.1.RELEASE</spring-cloud-stream-binder-kafka.version>
+		<spring-cloud-stream-binder-rabbit.version>2.2.1.RELEASE</spring-cloud-stream-binder-rabbit.version>
 	</properties>
 	<dependencies>
 		<dependency>
