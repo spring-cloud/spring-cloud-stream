@@ -952,6 +952,16 @@ ReadOnlyKeyValueStore<Object, Object> keyValueStore =
 						interactiveQueryService.getQueryableStoreType("my-store", QueryableStoreTypes.keyValueStore());
 ----
 
+During the startup, the above method call to retrieve the startup might fail.
+For e.g it might still be in the middle of initializing the state store.
+In such cases, it will be useful to retry this operation.
+Kafka Streams binder provides a simple retry mechanism to accommodate this.
+
+Following are the two properties that you can use to control this retrying.
+
+* spring.cloud.stream.binder.kafka.streams.stateStoreRetry.maxAttempts - Default is `1` .
+* spring.cloud.stream.binder.kafka.streams.stateStoreRetry.backOffInterval - Default is `1000` milliseconds.
+
 If there are multiple instances of the kafka streams application running, then before you can query them interactively, you need to identify which application instance hosts the key.
 `InteractiveQueryService` API provides methods for identifying the host information.
 
