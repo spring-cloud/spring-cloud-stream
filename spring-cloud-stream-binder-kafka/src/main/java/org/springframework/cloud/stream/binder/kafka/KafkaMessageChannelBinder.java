@@ -83,6 +83,7 @@ import org.springframework.integration.acks.AcknowledgmentCallback;
 import org.springframework.integration.channel.AbstractMessageChannel;
 import org.springframework.integration.core.MessageProducer;
 import org.springframework.integration.kafka.inbound.KafkaMessageDrivenChannelAdapter;
+import org.springframework.integration.kafka.inbound.KafkaMessageDrivenChannelAdapter.ListenerMode;
 import org.springframework.integration.kafka.inbound.KafkaMessageSource;
 import org.springframework.integration.kafka.outbound.KafkaProducerMessageHandler;
 import org.springframework.integration.kafka.support.RawRecordHeaderErrorMessageStrategy;
@@ -605,15 +606,16 @@ public class KafkaMessageChannelBinder extends
 		this.getContainerCustomizer().configure(messageListenerContainer,
 				destination.getName(), group);
 		// @checkstyle:off
-		final KafkaMessageDrivenChannelAdapter<?, ?> kafkaMessageDrivenChannelAdapter = new KafkaMessageDrivenChannelAdapter<>(
-				messageListenerContainer);
+		final KafkaMessageDrivenChannelAdapter<?, ?> kafkaMessageDrivenChannelAdapter =
+				new KafkaMessageDrivenChannelAdapter<>(messageListenerContainer,
+						extendedConsumerProperties.isBatchMode() ? ListenerMode.batch : ListenerMode.record);
 		// @checkstyle:on
 		kafkaMessageDrivenChannelAdapter
 				.setMessageConverter(getMessageConverter(extendedConsumerProperties));
 		kafkaMessageDrivenChannelAdapter.setBeanFactory(this.getBeanFactory());
 		ErrorInfrastructure errorInfrastructure = registerErrorInfrastructure(destination,
 				consumerGroup, extendedConsumerProperties);
-		if (extendedConsumerProperties.getMaxAttempts() > 1) {
+		if (!extendedConsumerProperties.isBatchMode() && extendedConsumerProperties.getMaxAttempts() > 1) {
 			kafkaMessageDrivenChannelAdapter
 					.setRetryTemplate(buildRetryTemplate(extendedConsumerProperties));
 			kafkaMessageDrivenChannelAdapter

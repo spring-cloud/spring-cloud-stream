@@ -481,6 +481,62 @@ public class KafkaBinderTests extends
 	}
 
 	@Test
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	public void testSendAndReceiveBatch() throws Exception {
+		Binder binder = getBinder();
+		BindingProperties outputBindingProperties = createProducerBindingProperties(
+				createProducerProperties());
+		DirectChannel moduleOutputChannel = createBindableChannel("output",
+				outputBindingProperties);
+		ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = createConsumerProperties();
+		consumerProperties.setBatchMode(true);
+		consumerProperties.getExtension().getConfiguration().put("fetch.min.bytes", "1000");
+		consumerProperties.getExtension().getConfiguration().put("fetch.max.wait.ms", "5000");
+		consumerProperties.getExtension().getConfiguration().put("max.poll.records", "2");
+		DirectChannel moduleInputChannel = createBindableChannel("input",
+				createConsumerBindingProperties(consumerProperties));
+
+		Binding<MessageChannel> producerBinding = binder.bindProducer("c.batching",
+				moduleOutputChannel, outputBindingProperties.getProducer());
+		Binding<MessageChannel> consumerBinding = binder.bindConsumer("c.batching",
+				"testSendAndReceiveBatch", moduleInputChannel, consumerProperties);
+		Message<?> message = org.springframework.integration.support.MessageBuilder
+				.withPayload("foo".getBytes(StandardCharsets.UTF_8))
+				.setHeader(KafkaHeaders.PARTITION_ID, 0)
+				.build();
+
+		// Let the consumer actually bind to the producer before sending a msg
+		binderBindUnbindLatency();
+		moduleOutputChannel.send(message);
+		message = MessageBuilder
+				.withPayload("bar".getBytes(StandardCharsets.UTF_8))
+				.setHeader(KafkaHeaders.PARTITION_ID, 0)
+				.build();
+		moduleOutputChannel.send(message);
+		CountDownLatch latch = new CountDownLatch(1);
+		AtomicReference<Message<List<byte[]>>> inboundMessageRef = new AtomicReference<>();
+		moduleInputChannel.subscribe(message1 -> {
+			try {
+				inboundMessageRef.compareAndSet(null, (Message<List<byte[]>>) message1);
+			}
+			finally {
+				latch.countDown();
+			}
+		});
+		Assert.isTrue(latch.await(5, TimeUnit.SECONDS), "Failed to receive message");
+
+		assertThat(inboundMessageRef.get()).isNotNull();
+		List<byte[]> payload = inboundMessageRef.get().getPayload();
+		assertThat(payload.get(0)).isEqualTo("foo".getBytes());
+		if (payload.size() > 1) { // it's a race as to whether we'll get them both or just one.
+			assertThat(payload.get(1)).isEqualTo("bar".getBytes());
+		}
+
+		producerBinding.unbind();
+		consumerBinding.unbind();
+	}
+
+	@Test
 	@SuppressWarnings("unchecked")
 	public void testDlqWithNativeSerializationEnabledOnDlqProducer() throws Exception {
 		Binder binder = getBinder();
