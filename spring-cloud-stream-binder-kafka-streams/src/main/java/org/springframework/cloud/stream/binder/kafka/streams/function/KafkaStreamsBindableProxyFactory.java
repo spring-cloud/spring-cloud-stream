@@ -241,6 +241,10 @@ public class KafkaStreamsBindableProxyFactory extends AbstractBindableProxyFacto
 						.createOutput(output), true));
 	}
 
+	public String getFunctionName() {
+		return functionName;
+	}
+
 	public Map<String, BoundTargetHolder> getOutputHolders() {
 		return outputHolders;
 	}

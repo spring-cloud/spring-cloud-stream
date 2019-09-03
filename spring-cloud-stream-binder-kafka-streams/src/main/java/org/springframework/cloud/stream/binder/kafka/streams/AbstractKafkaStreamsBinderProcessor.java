@@ -18,7 +18,6 @@ package org.springframework.cloud.stream.binder.kafka.streams;
 
 import java.util.Map;
 import java.util.Properties;
-import java.util.UUID;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -41,6 +40,7 @@ import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaConsumerProperties;
+import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsBinderConfigurationProperties;
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsConsumerProperties;
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsExtendedBindingProperties;
 import org.springframework.cloud.stream.config.BindingProperties;
@@ -54,6 +54,7 @@ import org.springframework.kafka.config.StreamsBuilderFactoryBean;
 import org.springframework.kafka.core.CleanupConfig;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.MessageBuilder;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 /**
@@ -186,7 +187,8 @@ public abstract class AbstractKafkaStreamsBinderProcessor implements Application
 
 	@SuppressWarnings({"unchecked"})
 	protected StreamsBuilderFactoryBean buildStreamsBuilderAndRetrieveConfig(String beanNamePostPrefix,
-																			ApplicationContext applicationContext, String inboundName) {
+																			ApplicationContext applicationContext, String inboundName,
+																			KafkaStreamsBinderConfigurationProperties kafkaStreamsBinderConfigurationProperties) {
 		ConfigurableListableBeanFactory beanFactory = this.applicationContext
 				.getBeanFactory();
 
@@ -200,16 +202,27 @@ public abstract class AbstractKafkaStreamsBinderProcessor implements Application
 
 		String bindingLevelApplicationId = extendedConsumerProperties.getApplicationId();
 		// override application.id if set at the individual binding level.
+		// We provide this for backward compatibility with StreamListener based processors.
+		// For function based processors see the next else if conditional block
 		if (StringUtils.hasText(bindingLevelApplicationId)) {
 			streamConfigGlobalProperties.put(StreamsConfig.APPLICATION_ID_CONFIG,
 					bindingLevelApplicationId);
+		}
+		else if (kafkaStreamsBinderConfigurationProperties != null && !CollectionUtils.isEmpty(kafkaStreamsBinderConfigurationProperties.getFunctions())) {
+			String applicationId = kafkaStreamsBinderConfigurationProperties.getFunctions().get(beanNamePostPrefix + ".applicationId");
+			if (!StringUtils.isEmpty(applicationId)) {
+				streamConfigGlobalProperties.put(StreamsConfig.APPLICATION_ID_CONFIG, applicationId);
+			}
 		}
 
 		//If the application id is not set by any mechanism, then generate it.
 		streamConfigGlobalProperties.computeIfAbsent(StreamsConfig.APPLICATION_ID_CONFIG,
 				k -> {
-					String generatedApplicationID = beanNamePostPrefix + "-" + UUID.randomUUID().toString() + "-applicationId";
-					LOG.info("Generated Kafka Streams Application ID: " + generatedApplicationID);
+					String generatedApplicationID = beanNamePostPrefix + "-applicationId";
+					LOG.info("Binder Generated Kafka Streams Application ID: " + generatedApplicationID);
+					LOG.info("Use the binder generated application ID only for development and testing. ");
+					LOG.info("For production deployments, please consider explicitly setting an application ID using a configuration property.");
+					LOG.info("The generated applicationID is static and will be preserved over application restarts.");
 					return generatedApplicationID;
 				});
 
@@ -224,8 +237,7 @@ public abstract class AbstractKafkaStreamsBinderProcessor implements Application
 		Map<String, KafkaStreamsDlqDispatch> kafkaStreamsDlqDispatchers = applicationContext
 				.getBean("kafkaStreamsDlqDispatchers", Map.class);
 
-		KafkaStreamsConfiguration kafkaStreamsConfiguration = new KafkaStreamsConfiguration(
-				streamConfigGlobalProperties) {
+		KafkaStreamsConfiguration kafkaStreamsConfiguration = new KafkaStreamsConfiguration(streamConfigGlobalProperties) {
 			@Override
 			public Properties asProperties() {
 				Properties properties = super.asProperties();
@@ -247,6 +259,9 @@ public abstract class AbstractKafkaStreamsBinderProcessor implements Application
 				.getRawBeanDefinition();
 		((BeanDefinitionRegistry) beanFactory).registerBeanDefinition(
 				"stream-builder-" + beanNamePostPrefix, streamsBuilderBeanDefinition);
+
+		//Removing the application ID from global properties so that the next function won't re-use it and cause race conditions.
+		streamConfigGlobalProperties.remove(StreamsConfig.APPLICATION_ID_CONFIG);
 
 		return applicationContext.getBean(
 				"&stream-builder-" + beanNamePostPrefix, StreamsBuilderFactoryBean.class);

@@ -38,7 +38,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.binder.BinderConfiguration;
 import org.springframework.cloud.stream.binder.kafka.streams.function.FunctionDetectorCondition;
-import org.springframework.cloud.stream.binder.kafka.streams.function.KafkaStreamsBindableProxyFactory;
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsBinderConfigurationProperties;
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsExtendedBindingProperties;
 import org.springframework.cloud.stream.binder.kafka.streams.serde.CompositeNonNativeSerde;
@@ -353,11 +352,11 @@ public class KafkaStreamsBinderSupportAutoConfiguration {
 																	KafkaStreamsBindingInformationCatalogue kafkaStreamsBindingInformationCatalogue,
 																	KafkaStreamsMessageConversionDelegate kafkaStreamsMessageConversionDelegate,
 																	ObjectProvider<CleanupConfig> cleanupConfig,
-																	KafkaStreamsBindableProxyFactory bindableProxyFactory,
-																	StreamFunctionProperties streamFunctionProperties) {
+																	StreamFunctionProperties streamFunctionProperties,
+																	KafkaStreamsBinderConfigurationProperties kafkaStreamsBinderConfigurationProperties) {
 		return new KafkaStreamsFunctionProcessor(bindingServiceProperties, kafkaStreamsExtendedBindingProperties,
 				keyValueSerdeResolver, kafkaStreamsBindingInformationCatalogue, kafkaStreamsMessageConversionDelegate,
-				cleanupConfig.getIfUnique(), bindableProxyFactory, streamFunctionProperties);
+				cleanupConfig.getIfUnique(), streamFunctionProperties, kafkaStreamsBinderConfigurationProperties);
 	}
 
 }

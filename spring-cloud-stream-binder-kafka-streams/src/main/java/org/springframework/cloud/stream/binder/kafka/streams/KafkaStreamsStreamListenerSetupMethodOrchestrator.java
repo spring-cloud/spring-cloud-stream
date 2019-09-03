@@ -246,7 +246,7 @@ class KafkaStreamsStreamListenerSetupMethodOrchestrator extends AbstractKafkaStr
 				if (!this.methodStreamsBuilderFactoryBeanMap.containsKey(method)) {
 					StreamsBuilderFactoryBean streamsBuilderFactoryBean = buildStreamsBuilderAndRetrieveConfig(method.getDeclaringClass().getSimpleName() + "-" + method.getName(),
 							applicationContext,
-							inboundName);
+							inboundName, null);
 					this.methodStreamsBuilderFactoryBeanMap.put(method, streamsBuilderFactoryBean);
 				}
 				try {

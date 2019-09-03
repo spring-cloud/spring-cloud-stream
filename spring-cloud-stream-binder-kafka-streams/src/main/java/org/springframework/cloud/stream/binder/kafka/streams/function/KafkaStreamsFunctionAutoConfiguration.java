@@ -41,9 +41,10 @@ public class KafkaStreamsFunctionAutoConfiguration {
 	@Conditional(FunctionDetectorCondition.class)
 	public KafkaStreamsFunctionProcessorInvoker kafkaStreamsFunctionProcessorInvoker(
 																					KafkaStreamsFunctionBeanPostProcessor kafkaStreamsFunctionBeanPostProcessor,
-																					KafkaStreamsFunctionProcessor kafkaStreamsFunctionProcessor) {
+																					KafkaStreamsFunctionProcessor kafkaStreamsFunctionProcessor,
+																					KafkaStreamsBindableProxyFactory[] kafkaStreamsBindableProxyFactories) {
 		return new KafkaStreamsFunctionProcessorInvoker(kafkaStreamsFunctionBeanPostProcessor.getResolvableTypes(),
-				kafkaStreamsFunctionProcessor);
+				kafkaStreamsFunctionProcessor, kafkaStreamsBindableProxyFactories);
 	}
 
 	@Bean
@@ -65,7 +66,7 @@ public class KafkaStreamsFunctionAutoConfiguration {
 						.addGenericArgumentValue(kafkaStreamsFunctionBeanPostProcessor.getResolvableTypes().get(s));
 				rootBeanDefinition.getConstructorArgumentValues()
 						.addGenericArgumentValue(s);
-				registry.registerBeanDefinition("kafkaStreamsBindableProxyFactory", rootBeanDefinition);
+				registry.registerBeanDefinition("kafkaStreamsBindableProxyFactory-" + s, rootBeanDefinition);
 			}
 		};
 	}

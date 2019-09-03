@@ -16,7 +16,9 @@
 
 package org.springframework.cloud.stream.binder.kafka.streams.function;
 
+import java.util.Arrays;
 import java.util.Map;
+import java.util.Optional;
 
 import javax.annotation.PostConstruct;
 
@@ -32,16 +34,22 @@ public class KafkaStreamsFunctionProcessorInvoker {
 
 	private final KafkaStreamsFunctionProcessor kafkaStreamsFunctionProcessor;
 	private final Map<String, ResolvableType> resolvableTypeMap;
+	private final KafkaStreamsBindableProxyFactory[] kafkaStreamsBindableProxyFactories;
 
 	public KafkaStreamsFunctionProcessorInvoker(Map<String, ResolvableType> resolvableTypeMap,
-										KafkaStreamsFunctionProcessor kafkaStreamsFunctionProcessor) {
+										KafkaStreamsFunctionProcessor kafkaStreamsFunctionProcessor,
+										KafkaStreamsBindableProxyFactory[] kafkaStreamsBindableProxyFactories) {
 		this.kafkaStreamsFunctionProcessor = kafkaStreamsFunctionProcessor;
 		this.resolvableTypeMap = resolvableTypeMap;
+		this.kafkaStreamsBindableProxyFactories = kafkaStreamsBindableProxyFactories;
 	}
 
 	@PostConstruct
 	void invoke() {
-		resolvableTypeMap.forEach((key, value) ->
-				this.kafkaStreamsFunctionProcessor.setupFunctionInvokerForKafkaStreams(value, key));
+		resolvableTypeMap.forEach((key, value) -> {
+			Optional<KafkaStreamsBindableProxyFactory> proxyFactory =
+					Arrays.stream(kafkaStreamsBindableProxyFactories).filter(p -> p.getFunctionName().equals(key)).findFirst();
+			this.kafkaStreamsFunctionProcessor.setupFunctionInvokerForKafkaStreams(value, key, proxyFactory.get());
+		});
 	}
 }

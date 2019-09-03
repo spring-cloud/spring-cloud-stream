@@ -16,6 +16,9 @@
 
 package org.springframework.cloud.stream.binder.kafka.streams.properties;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaBinderConfigurationProperties;
 
@@ -54,6 +57,8 @@ public class KafkaStreamsBinderConfigurationProperties
 
 	private String applicationId;
 
+	private Map<String, String> functions = new HashMap<>();
+
 	private StateStoreRetry stateStoreRetry = new StateStoreRetry();
 
 	public StateStoreRetry getStateStoreRetry() {
@@ -62,6 +67,14 @@ public class KafkaStreamsBinderConfigurationProperties
 
 	public void setStateStoreRetry(StateStoreRetry stateStoreRetry) {
 		this.stateStoreRetry = stateStoreRetry;
+	}
+
+	public Map<String, String> getFunctions() {
+		return functions;
+	}
+
+	public void setFunctions(Map<String, String> functions) {
+		this.functions = functions;
 	}
 
 	public String getApplicationId() {
