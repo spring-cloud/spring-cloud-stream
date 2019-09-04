@@ -367,19 +367,7 @@ public class KeyValueSerdeResolver implements ApplicationContextAware {
 
 	private boolean isSerdeFromStandardDefaults(Serde<?> serde) {
 		if (serde != null) {
-			if (Serdes.Integer().getClass().isAssignableFrom(serde.getClass())) {
-				return true;
-			}
-			else if (Serdes.Long().getClass().isAssignableFrom(serde.getClass())) {
-				return true;
-			}
-			else if (Serdes.Short().getClass().isAssignableFrom(serde.getClass())) {
-				return true;
-			}
-			else if (Serdes.Double().getClass().isAssignableFrom(serde.getClass())) {
-				return true;
-			}
-			else if (Serdes.Float().getClass().isAssignableFrom(serde.getClass())) {
+			if (Number.class.isAssignableFrom(serde.getClass())) {
 				return true;
 			}
 			else if (Serdes.ByteArray().getClass().isAssignableFrom(serde.getClass())) {
