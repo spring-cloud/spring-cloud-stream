@@ -41,6 +41,7 @@ import org.springframework.cloud.function.context.PollableSupplier;
 import org.springframework.cloud.function.context.catalog.BeanFactoryAwareFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
 import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
+import org.springframework.cloud.function.context.config.FunctionContextUtils;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.binder.BindingCreatedEvent;
 import org.springframework.cloud.stream.binding.BindableProxyFactory;
@@ -54,6 +55,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.core.annotation.AnnotationUtils;
+import org.springframework.core.type.MethodMetadata;
 import org.springframework.integration.channel.MessageChannelReactiveUtils;
 import org.springframework.integration.dsl.IntegrationFlow;
 import org.springframework.integration.dsl.IntegrationFlowBuilder;
@@ -66,8 +68,10 @@ import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.SubscribableChannel;
 import org.springframework.util.Assert;
+import org.springframework.util.ClassUtils;
 import org.springframework.util.MimeTypeUtils;
 import org.springframework.util.ObjectUtils;
+import org.springframework.util.ReflectionUtils;
 
 /**
  * @author Oleg Zhurakousky
@@ -95,7 +99,7 @@ public class FunctionConfiguration {
 		IntegrationFlow integrationFlow = null;
 		if (functionCatalog != null && ObjectUtils.isEmpty(context.getBeanNamesForAnnotation(EnableBinding.class))) {
 			FunctionInvocationWrapper functionWrapper = functionCatalog.lookup(functionProperties.getDefinition());
-			if (functionWrapper != null) {
+			if (functionWrapper != null /*&& functionWrapper.getTarget() instanceof Supplier*/) {
 				AtomicReference<MonoSink<Object>> triggerRef = new AtomicReference<>();
 				Publisher<Object> beginPublishingTrigger = Mono.create(emmiter -> {
 					triggerRef.set(emmiter);
@@ -108,9 +112,18 @@ public class FunctionConfiguration {
 					}
 				});
 
-
 				RootBeanDefinition bd = (RootBeanDefinition) context.getBeanDefinition(functionProperties.getParsedDefinition()[0]);
 				Method factoryMethod = bd.getResolvedFactoryMethod();
+				if (factoryMethod == null) {
+					Object source = bd.getSource();
+					if (source instanceof MethodMetadata) {
+						Class<?> factory = ClassUtils.resolveClassName(((MethodMetadata) source).getDeclaringClassName(), null);
+						Class<?>[] params = FunctionContextUtils.getParamTypesFromBeanDefinitionFactory(factory, bd);
+						factoryMethod = ReflectionUtils.findMethod(factory, ((MethodMetadata) source).getMethodName(), params);
+					}
+				}
+				Assert.notNull(factoryMethod, "Failed to introspect factory method since it was not discovered for function '"
+								+ functionProperties.getDefinition() + "'");
 				PollableSupplier pollable = factoryMethod.getReturnType().isAssignableFrom(Supplier.class)
 						? AnnotationUtils.findAnnotation(factoryMethod, PollableSupplier.class)
 								: null;
@@ -157,7 +170,6 @@ public class FunctionConfiguration {
 	private <T> Message<T> wrapToMessageIfNecessary(T value) {
 		return value instanceof Message ? (Message<T>) value : MessageBuilder.withPayload(value).setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.APPLICATION_JSON).build();
 	}
-
 
 	/**
 	 *
