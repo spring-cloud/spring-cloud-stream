@@ -118,7 +118,7 @@ class KStreamBinder extends
 			KStream<Object, Object> outboundBindTarget,
 			ExtendedProducerProperties<KafkaStreamsProducerProperties> properties) {
 		ExtendedProducerProperties<KafkaProducerProperties> extendedProducerProperties = new ExtendedProducerProperties<>(
-				new KafkaProducerProperties());
+				properties.getExtension());
 		this.kafkaTopicProvisioner.provisionProducerDestination(name,
 				extendedProducerProperties);
 		Serde<?> keySerde = this.keyValueSerdeResolver
