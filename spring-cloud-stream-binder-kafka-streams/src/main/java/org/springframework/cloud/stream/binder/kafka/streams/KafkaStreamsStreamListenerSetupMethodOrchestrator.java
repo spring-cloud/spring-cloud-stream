@@ -18,7 +18,6 @@ package org.springframework.cloud.stream.binder.kafka.streams;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -31,7 +30,6 @@ import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.Topology;
-import org.apache.kafka.streams.kstream.Consumed;
 import org.apache.kafka.streams.kstream.GlobalKTable;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.KTable;
@@ -371,24 +369,7 @@ class KafkaStreamsStreamListenerSetupMethodOrchestrator extends AbstractKafkaStr
 				LOG.info("state store " + storeBuilder.name() + " added to topology");
 			}
 		}
-		String[] bindingTargets = StringUtils.commaDelimitedListToStringArray(
-				this.bindingServiceProperties.getBindingDestination(inboundName));
-
-		KStream<?, ?> stream = streamsBuilder.stream(Arrays.asList(bindingTargets),
-				Consumed.with(keySerde, valueSerde)
-						.withOffsetResetPolicy(autoOffsetReset));
-		final boolean nativeDecoding = this.bindingServiceProperties
-				.getConsumerProperties(inboundName).isUseNativeDecoding();
-		if (nativeDecoding) {
-			LOG.info("Native decoding is enabled for " + inboundName
-					+ ". Inbound deserialization done at the broker.");
-		}
-		else {
-			LOG.info("Native decoding is disabled for " + inboundName
-					+ ". Inbound message conversion done by Spring Cloud Stream.");
-		}
-
-		return getkStream(bindingProperties, stream, nativeDecoding);
+		return getKStream(inboundName, bindingProperties, streamsBuilder, keySerde, valueSerde, autoOffsetReset);
 	}
 
 	private void validateStreamListenerMethod(StreamListener streamListener,

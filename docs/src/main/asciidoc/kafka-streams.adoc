@@ -942,7 +942,22 @@ public KStream<?, WordCount> process(KStream<Object, String> input) {
 === State Store
 
 State store is created automatically by Kafka Streams when the DSL is used.
-When processor API is used, you need to register a state store manually. In order to do so, you can use `KafkaStreamsStateStore` annotation.
+When processor API is used, you need to register a state store manually. In order to do so, you can create the StateStore as a bean in the application.
+Here is an example of defining such a bean.
+
+```
+@Bean
+public StoreBuilder mystore() {
+    return Stores.windowStoreBuilder(
+            Stores.persistentWindowStore("mystate",
+                    3L, 3, 3L, false), Serdes.String(),
+            Serdes.String());
+}
+```
+
+During the bootstrap, the above bean will be processed by the binder and pass on to the Streams builder object.
+Defining custom state stores by providing them as beans is the preferred approach.
+However, you can also use `KafkaStreamsStateStore` annotation for this.
 You can specify the name and type of the store, flags to control log and disabling cache, etc.
 Once the store is created by the binder during the bootstrapping phase, you can access this state store through the processor API.
 Below are some primitives for doing this.

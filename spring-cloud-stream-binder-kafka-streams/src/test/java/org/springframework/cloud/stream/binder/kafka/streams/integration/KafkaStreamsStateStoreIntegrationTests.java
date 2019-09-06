@@ -18,9 +18,12 @@ package org.springframework.cloud.stream.binder.kafka.streams.integration;
 
 import java.util.Map;
 
+import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.processor.Processor;
 import org.apache.kafka.streams.processor.ProcessorContext;
+import org.apache.kafka.streams.state.StoreBuilder;
+import org.apache.kafka.streams.state.Stores;
 import org.apache.kafka.streams.state.WindowStore;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -34,12 +37,14 @@ import org.springframework.cloud.stream.annotation.StreamListener;
 import org.springframework.cloud.stream.binder.kafka.streams.annotations.KafkaStreamsStateStore;
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsStateStoreProperties;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.annotation.Bean;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.test.EmbeddedKafkaBroker;
 import org.springframework.kafka.test.rule.EmbeddedKafkaRule;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
 
+import static junit.framework.TestCase.fail;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -73,7 +78,7 @@ public class KafkaStreamsStateStoreIntegrationTests {
 						+ embeddedKafka.getBrokersAsString());
 		try {
 			Thread.sleep(2000);
-			receiveAndValidateFoo(context);
+			receiveAndValidateFoo(context, ProductCountApplication.class);
 		}
 		catch (Exception e) {
 			throw e;
@@ -84,12 +89,42 @@ public class KafkaStreamsStateStoreIntegrationTests {
 	}
 
 	@Test
+	public void testKstreamStateStoreBuilderBeansDefinedInApplication() throws Exception {
+		SpringApplication app = new SpringApplication(StateStoreBeanApplication.class);
+		app.setWebApplicationType(WebApplicationType.NONE);
+		ConfigurableApplicationContext context = app.run("--server.port=0",
+				"--spring.jmx.enabled=false",
+				"--spring.cloud.stream.bindings.input3.destination=foobar",
+				"--spring.cloud.stream.kafka.streams.binder.configuration.commit.interval.ms=1000",
+				"--spring.cloud.stream.kafka.streams.binder.configuration.default.key.serde"
+						+ "=org.apache.kafka.common.serialization.Serdes$StringSerde",
+				"--spring.cloud.stream.kafka.streams.binder.configuration.default.value.serde"
+						+ "=org.apache.kafka.common.serialization.Serdes$StringSerde",
+				"--spring.cloud.stream.kafka.streams.bindings.input3.consumer.applicationId"
+						+ "=KafkaStreamsStateStoreIntegrationTests-xyzabc-123",
+				"--spring.cloud.stream.kafka.streams.binder.brokers="
+						+ embeddedKafka.getBrokersAsString());
+		try {
+			Thread.sleep(2000);
+			receiveAndValidateFoo(context, StateStoreBeanApplication.class);
+		}
+		catch (Exception e) {
+			throw e;
+		}
+		finally {
+			context.close();
+		}
+	}
+
+
+	@Test
 	public void testSameStateStoreIsCreatedOnlyOnceWhenMultipleInputBindingsArePresent() throws Exception {
 		SpringApplication app = new SpringApplication(ProductCountApplicationWithMultipleInputBindings.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 		ConfigurableApplicationContext context = app.run("--server.port=0",
 				"--spring.jmx.enabled=false",
-				"--spring.cloud.stream.bindings.input.destination=foobar",
+				"--spring.cloud.stream.bindings.input1.destination=foobar",
+				"--spring.cloud.stream.bindings.input2.destination=hello-foobar",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.commit.interval.ms=1000",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.default.key.serde"
 						+ "=org.apache.kafka.common.serialization.Serdes$StringSerde",
@@ -115,7 +150,7 @@ public class KafkaStreamsStateStoreIntegrationTests {
 		}
 	}
 
-	private void receiveAndValidateFoo(ConfigurableApplicationContext context)
+	private void receiveAndValidateFoo(ConfigurableApplicationContext context, Class<?> clazz)
 			throws Exception {
 		Map<String, Object> senderProps = KafkaTestUtils.producerProps(embeddedKafka);
 		DefaultKafkaProducerFactory<Integer, String> pf = new DefaultKafkaProducerFactory<>(
@@ -126,13 +161,28 @@ public class KafkaStreamsStateStoreIntegrationTests {
 		Thread.sleep(1000);
 
 		// assertions
-		ProductCountApplication productCount = context
-				.getBean(ProductCountApplication.class);
-		WindowStore<Object, String> state = productCount.state;
-		assertThat(state != null).isTrue();
-		assertThat(state.name()).isEqualTo("mystate");
-		assertThat(state.persistent()).isTrue();
-		assertThat(productCount.processed).isTrue();
+		if (clazz.isAssignableFrom(ProductCountApplication.class)) {
+			ProductCountApplication productCount = context
+					.getBean(ProductCountApplication.class);
+			WindowStore<Object, String> state = productCount.state;
+			assertThat(state != null).isTrue();
+			assertThat(state.name()).isEqualTo("mystate");
+			assertThat(state.persistent()).isTrue();
+			assertThat(productCount.processed).isTrue();
+		}
+		else if (clazz.isAssignableFrom(StateStoreBeanApplication.class)) {
+			StateStoreBeanApplication productCount = context
+					.getBean(StateStoreBeanApplication.class);
+			WindowStore<Object, String> state = productCount.state;
+			assertThat(state != null).isTrue();
+			assertThat(state.name()).isEqualTo("mystate");
+			assertThat(state.persistent()).isTrue();
+			assertThat(productCount.processed).isTrue();
+		}
+		else {
+			fail("Expected assertiond did not happen");
+		}
+
 	}
 
 	@EnableBinding(KafkaStreamsProcessorX.class)
@@ -169,6 +219,49 @@ public class KafkaStreamsStateStoreIntegrationTests {
 			}, "mystate");
 		}
 	}
+
+	@EnableBinding(KafkaStreamsProcessorZ.class)
+	@EnableAutoConfiguration
+	public static class StateStoreBeanApplication {
+
+		WindowStore<Object, String> state;
+
+		boolean processed;
+
+		@StreamListener("input3")
+		@SuppressWarnings({"unchecked" })
+		public void process(KStream<Object, Product> input) {
+
+			input.process(() -> new Processor<Object, Product>() {
+
+				@Override
+				public void init(ProcessorContext processorContext) {
+					state = (WindowStore) processorContext.getStateStore("mystate");
+				}
+
+				@Override
+				public void process(Object s, Product product) {
+					processed = true;
+				}
+
+				@Override
+				public void close() {
+					if (state != null) {
+						state.close();
+					}
+				}
+			}, "mystate");
+		}
+
+		@Bean
+		public StoreBuilder mystore() {
+			return Stores.windowStoreBuilder(
+					Stores.persistentWindowStore("mystate",
+							3L, 3, 3L, false), Serdes.String(),
+					Serdes.String());
+		}
+	}
+
 
 	@EnableBinding(KafkaStreamsProcessorY.class)
 	@EnableAutoConfiguration
@@ -235,5 +328,11 @@ public class KafkaStreamsStateStoreIntegrationTests {
 
 		@Input("input2")
 		KStream<?, ?> input2();
+	}
+
+	interface KafkaStreamsProcessorZ {
+
+		@Input("input3")
+		KStream<?, ?> input3();
 	}
 }

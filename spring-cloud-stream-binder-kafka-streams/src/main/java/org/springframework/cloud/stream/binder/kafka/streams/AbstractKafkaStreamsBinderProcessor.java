@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.binder.kafka.streams;
 
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Properties;
 
@@ -33,6 +34,7 @@ import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.KTable;
 import org.apache.kafka.streams.kstream.Materialized;
 import org.apache.kafka.streams.state.KeyValueStore;
+import org.apache.kafka.streams.state.StoreBuilder;
 
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -299,5 +301,46 @@ public abstract class AbstractKafkaStreamsBinderProcessor implements Application
 		else {
 			return Serdes.ByteArray();
 		}
+	}
+
+	protected void addStateStoreBeans(StreamsBuilder streamsBuilder) {
+		try {
+			final Map<String, StoreBuilder> storeBuilders = applicationContext.getBeansOfType(StoreBuilder.class);
+			if (!CollectionUtils.isEmpty(storeBuilders)) {
+				storeBuilders.values().forEach(storeBuilder -> {
+					streamsBuilder.addStateStore(storeBuilder);
+					if (LOG.isInfoEnabled()) {
+						LOG.info("state store " + storeBuilder.name() + " added to topology");
+					}
+				});
+			}
+		}
+		catch (Exception e) {
+			// Pass through.
+		}
+	}
+
+	protected KStream<?, ?> getKStream(String inboundName, BindingProperties bindingProperties, StreamsBuilder streamsBuilder,
+									Serde<?> keySerde, Serde<?> valueSerde, Topology.AutoOffsetReset autoOffsetReset) {
+		addStateStoreBeans(streamsBuilder);
+
+		String[] bindingTargets = StringUtils.commaDelimitedListToStringArray(
+				this.bindingServiceProperties.getBindingDestination(inboundName));
+
+		KStream<?, ?> stream = streamsBuilder.stream(Arrays.asList(bindingTargets),
+				Consumed.with(keySerde, valueSerde)
+						.withOffsetResetPolicy(autoOffsetReset));
+		final boolean nativeDecoding = this.bindingServiceProperties
+				.getConsumerProperties(inboundName).isUseNativeDecoding();
+		if (nativeDecoding) {
+			LOG.info("Native decoding is enabled for " + inboundName
+					+ ". Inbound deserialization done at the broker.");
+		}
+		else {
+			LOG.info("Native decoding is disabled for " + inboundName
+					+ ". Inbound message conversion done by Spring Cloud Stream.");
+		}
+
+		return getkStream(bindingProperties, stream, nativeDecoding);
 	}
 }

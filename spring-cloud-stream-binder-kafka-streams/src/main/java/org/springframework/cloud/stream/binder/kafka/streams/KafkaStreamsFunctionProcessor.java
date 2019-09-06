@@ -17,7 +17,6 @@
 package org.springframework.cloud.stream.binder.kafka.streams;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -37,9 +36,7 @@ import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.Topology;
-import org.apache.kafka.streams.kstream.Consumed;
 import org.apache.kafka.streams.kstream.KStream;
-import org.apache.kafka.streams.state.StoreBuilder;
 
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
@@ -60,7 +57,6 @@ import org.springframework.kafka.config.StreamsBuilderFactoryBean;
 import org.springframework.kafka.core.CleanupConfig;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
-import org.springframework.util.StringUtils;
 
 /**
  * @author Soby Chacko
@@ -311,8 +307,7 @@ public class KafkaStreamsFunctionProcessor extends AbstractKafkaStreamsBinderPro
 					final Topology.AutoOffsetReset autoOffsetReset = getAutoOffsetReset(input, extendedConsumerProperties);
 
 					if (parameterType.isAssignableFrom(KStream.class)) {
-						KStream<?, ?> stream = getkStream(input, bindingProperties,
-								streamsBuilder, keySerde, valueSerde, autoOffsetReset);
+						KStream<?, ?> stream = getKStream(input, bindingProperties, streamsBuilder, keySerde, valueSerde, autoOffsetReset);
 						KStreamBoundElementFactory.KStreamWrapper kStreamWrapper =
 								(KStreamBoundElementFactory.KStreamWrapper) targetBean;
 						//wrap the proxy created during the initial target type binding with real object (KStream)
@@ -361,40 +356,7 @@ public class KafkaStreamsFunctionProcessor extends AbstractKafkaStreamsBinderPro
 									BindingProperties bindingProperties,
 									StreamsBuilder streamsBuilder,
 									Serde<?> keySerde, Serde<?> valueSerde, Topology.AutoOffsetReset autoOffsetReset) {
-		try {
-			final Map<String, StoreBuilder> storeBuilders = applicationContext.getBeansOfType(StoreBuilder.class);
-			if (!CollectionUtils.isEmpty(storeBuilders)) {
-				storeBuilders.values().forEach(storeBuilder -> {
-					streamsBuilder.addStateStore(storeBuilder);
-					if (LOG.isInfoEnabled()) {
-						LOG.info("state store " + storeBuilder.name() + " added to topology");
-					}
-				});
-			}
-		}
-		catch (Exception e) {
-			// Pass through.
-		}
-
-		String[] bindingTargets = StringUtils
-				.commaDelimitedListToStringArray(this.bindingServiceProperties.getBindingDestination(inboundName));
-
-		KStream<?, ?> stream =
-				streamsBuilder.stream(Arrays.asList(bindingTargets),
-						Consumed.with(keySerde, valueSerde)
-								.withOffsetResetPolicy(autoOffsetReset));
-		final boolean nativeDecoding = this.bindingServiceProperties.getConsumerProperties(inboundName)
-				.isUseNativeDecoding();
-		if (nativeDecoding) {
-			LOG.info("Native decoding is enabled for " + inboundName + ". " +
-					"Inbound deserialization done at the broker.");
-		}
-		else {
-			LOG.info("Native decoding is disabled for " + inboundName + ". " +
-					"Inbound message conversion done by Spring Cloud Stream.");
-		}
-
-		return getkStream(bindingProperties, stream, nativeDecoding);
+		return getKStream(inboundName, bindingProperties, streamsBuilder, keySerde, valueSerde, autoOffsetReset);
 	}
 
 	@Override
