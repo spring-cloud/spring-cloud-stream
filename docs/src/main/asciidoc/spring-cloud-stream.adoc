@@ -635,7 +635,6 @@ Here is the example of a Processor application defined as `java.util.function.Fu
 [source,java]
 ----
 @SpringBootApplication
-@EnableBinding(Processor.class)
 public static class ProcessorFromFunction {
 	public static void main(String[] args) {
 		SpringApplication.run(ProcessorFromFunction.class, "--spring.cloud.stream.function.definition=toUpperCase");
@@ -651,7 +650,6 @@ Here is the example of a Sink application defined as `java.util.function.Consume
 [source,java]
 ----
 @EnableAutoConfiguration
-@EnableBinding(Sink.class)
 public static class SinkFromConsumer {
 	public static void main(String[] args) {
 		SpringApplication.run(SinkFromConsumer.class, "--spring.cloud.stream.function.definition=sink");
@@ -662,6 +660,57 @@ public static class SinkFromConsumer {
 	}
 }
 ----
+===== Content-based routing with functions
+Routing with functions can achieved by relying on `RoutingFunction` available in Spring Cloud Function 3.0. All you need to do is enable it via
+`--spring.cloud.stream.function.routing.enabled=true` application property. Once enabled `RoutingFunction` will be bound to input destination
+receiving all the messages and route them to other functions based on the provided instruction.
+
+Instruction could be provided with individual messages as well as application properties.
+
+Here are couple of samples:
+
+***Using message headers***
+[source,java]
+----
+@SpringBootApplication
+public class SampleApplication {
+
+	public static void main(String[] args) {
+		SpringApplication.run(SampleApplication.class,
+                       "--spring.cloud.stream.function.routing.enabled=true");
+	}
+
+	@Bean
+	public Consumer<String> even() {
+		return value -> {
+			System.out.println("EVEN: " + value);
+		};
+	}
+
+	@Bean
+	public Consumer<String> odd() {
+		return value -> {
+			System.out.println("ODD: " + value);
+		};
+    }
+}
+----
+By default `RoutingFunction` will look for `spring.cloud.function.definition` header and if it is found its value will be treated as routing instruction.
+So in the above case the value of such header should be either `odd` or `even` (the name of the function beans) to route request to available functions.
+
+You can also use SpEL for more dynamic scenarios via `spring.cloud.function.routing-expression` header.
+For example,
+setting `spring.cloud.function.routing-expression` header to value `T(java.lang.System).currentTimeMillis() % 2 == 0 ? 'even' : 'odd'` will end up semi-randomly routing request to either `odd` or `even` functions.
+Also, for SpEL, the _root object_ of the evaluation context is `Message` so you can do evaluation on individual headers (or message) as well `....routing-expression=headers['type']`
+
+***Using application properties***
+
+The `spring.cloud.function.routing-expression` and/or `spring.cloud.function.definition`
+can be passed as application properties (e.g., `spring.cloud.function.routing-expression=headers['type']`.
+
+Passing instructions via application properties is especially important for reactive functions since given that fact that reactive
+function is only invoked once to pass the Publisher, so access to the individual items is limited.
+
 ===== Reactive Functions support
 
 Since _Spring Cloud Function_ is build on top of https://projectreactor.io/[Project Reactor] there isn't much you need to do
@@ -672,7 +721,6 @@ For example:
 [source,java]
 ----
 @EnableAutoConfiguration
-@EnableBinding(Processor.class)
 public static class SinkFromConsumer {
 	public static void main(String[] args) {
 		SpringApplication.run(SinkFromConsumer.class, "--spring.cloud.stream.function.definition=reactiveUpperCase");

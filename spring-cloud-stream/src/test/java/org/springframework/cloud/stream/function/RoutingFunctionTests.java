@@ -20,15 +20,17 @@ import java.util.function.Function;
 
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import reactor.core.publisher.Flux;
 
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.cloud.function.context.FunctionProperties;
+import org.springframework.cloud.function.context.config.RoutingFunction;
 import org.springframework.cloud.stream.binder.test.InputDestination;
 import org.springframework.cloud.stream.binder.test.OutputDestination;
+import org.springframework.cloud.stream.binder.test.TestChannelBinder;
 import org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
@@ -44,7 +46,6 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Oleg Zhurakousky
  * @since 2.2.1
  */
-@Ignore
 public class RoutingFunctionTests {
 
 	@After
@@ -60,13 +61,13 @@ public class RoutingFunctionTests {
 	}
 
 	@Test
-	public void testDefaultRoutingFunctionBinding() {
+	public void testRoutingViaExplicitEnablingAndDefinitionHeader() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 				TestChannelBinderConfiguration.getCompleteConfiguration(
 						RoutingFunctionConfiguration.class))
 								.web(WebApplicationType.NONE)
 								.run("--spring.jmx.enabled=false",
-										"--spring.cloud.function.routing.enabled=true")) {
+									"--spring.cloud.stream.function.routing.enabled=true")) {
 
 			InputDestination inputDestination = context.getBean(InputDestination.class);
 			OutputDestination outputDestination = context
@@ -74,14 +75,88 @@ public class RoutingFunctionTests {
 
 			Message<byte[]> inputMessage = MessageBuilder
 					.withPayload("Hello".getBytes())
-					.setHeader("function.name", "echo")
+					.setHeader(FunctionProperties.PREFIX + ".definition", "echo")
 					.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN)
 					.build();
 			inputDestination.send(inputMessage);
 
 			Message<byte[]> outputMessage = outputDestination.receive();
 			assertThat(outputMessage.getPayload()).isEqualTo("Hello".getBytes());
+		}
+	}
 
+	@Test
+	public void testRoutingViaExplicitEnablingAndRoutingExpressionProperty() {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+				TestChannelBinderConfiguration.getCompleteConfiguration(
+						RoutingFunctionConfiguration.class))
+								.web(WebApplicationType.NONE)
+								.run("--spring.jmx.enabled=false",
+									"--spring.cloud.function.routing-expression=headers.contentType.toString().equals('text/plain') ? 'echo' : null",
+									"--spring.cloud.stream.function.routing.enabled=true")) {
+
+			InputDestination inputDestination = context.getBean(InputDestination.class);
+			OutputDestination outputDestination = context
+					.getBean(OutputDestination.class);
+
+			Message<byte[]> inputMessage = MessageBuilder
+					.withPayload("Hello".getBytes())
+					.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN)
+					.build();
+			inputDestination.send(inputMessage);
+
+			Message<byte[]> outputMessage = outputDestination.receive();
+			assertThat(outputMessage.getPayload()).isEqualTo("Hello".getBytes());
+		}
+	}
+
+	@Test
+	public void testRoutingViaExplicitEnablingAndRoutingExpressionHeader() {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+				TestChannelBinderConfiguration.getCompleteConfiguration(
+						RoutingFunctionConfiguration.class))
+								.web(WebApplicationType.NONE)
+								.run("--spring.jmx.enabled=false",
+									"--spring.cloud.stream.function.routing.enabled=true")) {
+
+			InputDestination inputDestination = context.getBean(InputDestination.class);
+			OutputDestination outputDestination = context
+					.getBean(OutputDestination.class);
+
+			Message<byte[]> inputMessage = MessageBuilder
+					.withPayload("Hello".getBytes())
+					.setHeader("spring.cloud.function.routing-expression", "'echo'")
+					.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN)
+					.build();
+			inputDestination.send(inputMessage);
+
+			Message<byte[]> outputMessage = outputDestination.receive();
+			assertThat(outputMessage.getPayload()).isEqualTo("Hello".getBytes());
+		}
+	}
+
+	@Test
+	public void testRoutingViaExplicitDefinitionAndDefinitionHeader() {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+				TestChannelBinderConfiguration.getCompleteConfiguration(
+						RoutingFunctionConfiguration.class))
+								.web(WebApplicationType.NONE)
+								.run("--spring.jmx.enabled=false",
+										"--spring.cloud.function.definition=" + RoutingFunction.FUNCTION_NAME)) {
+
+			InputDestination inputDestination = context.getBean(InputDestination.class);
+			OutputDestination outputDestination = context
+					.getBean(OutputDestination.class);
+
+			Message<byte[]> inputMessage = MessageBuilder
+					.withPayload("Hello".getBytes())
+					.setHeader("spring.cloud.function.definition", "echo|uppercase")
+					.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN)
+					.build();
+			inputDestination.send(inputMessage);
+
+			Message<byte[]> outputMessage = outputDestination.receive();
+			assertThat(outputMessage.getPayload()).isEqualTo("HELLO".getBytes());
 		}
 	}
 
@@ -92,76 +167,21 @@ public class RoutingFunctionTests {
 						RoutingFunctionConfiguration.class))
 								.web(WebApplicationType.NONE)
 								.run("--spring.jmx.enabled=false",
-										"--spring.cloud.function.routing.enabled=true")) {
+										"--spring.cloud.stream.function.routing.enabled=true")) {
 
 			InputDestination inputDestination = context.getBean(InputDestination.class);
-			OutputDestination outputDestination = context
-					.getBean(OutputDestination.class);
 
 			Message<byte[]> inputMessage = MessageBuilder
 					.withPayload("Hello".getBytes())
-					.setHeader("function.name", "echoFlux")
+					.setHeader("spring.cloud.function.definition", "echoFlux")
 					.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN)
 					.build();
 			inputDestination.send(inputMessage);
 
-			Message<byte[]> outputMessage = outputDestination.receive();
-			assertThat(outputMessage.getPayload()).isEqualTo("Hello".getBytes());
-
-		}
-	}
-
-	@Test // see RoutingFunctionEnvironmentPostProcessor
-	public void testExplicitRoutingFunctionBinding() {
-
-		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
-				TestChannelBinderConfiguration.getCompleteConfiguration(
-						RoutingFunctionConfiguration.class))
-								.web(WebApplicationType.NONE)
-								.run("--spring.jmx.enabled=false",
-										"--spring.cloud.stream.function.definition=router")) {
-
-			InputDestination inputDestination = context.getBean(InputDestination.class);
-			OutputDestination outputDestination = context
-					.getBean(OutputDestination.class);
-
-			Message<byte[]> inputMessage = MessageBuilder
-					.withPayload("Hello".getBytes())
-					.setHeader("function.name", "echo")
-					.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN)
-					.build();
-			inputDestination.send(inputMessage);
-
-			Message<byte[]> outputMessage = outputDestination.receive();
-			assertThat(outputMessage.getPayload()).isEqualTo("Hello".getBytes());
-
-		}
-	}
-
-	@Test
-	public void testCompositionViaFunctionName() {
-
-		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
-				TestChannelBinderConfiguration.getCompleteConfiguration(
-						RoutingFunctionConfiguration.class))
-								.web(WebApplicationType.NONE)
-								.run("--spring.jmx.enabled=false",
-										"--spring.cloud.stream.function.definition=router")) {
-
-			InputDestination inputDestination = context.getBean(InputDestination.class);
-			OutputDestination outputDestination = context
-					.getBean(OutputDestination.class);
-
-			Message<byte[]> inputMessage = MessageBuilder
-					.withPayload("Hello".getBytes())
-					.setHeader("function.name", "echo|uppercase")
-					.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN)
-					.build();
-			inputDestination.send(inputMessage);
-
-			Message<byte[]> outputMessage = outputDestination.receive();
-			assertThat(outputMessage.getPayload()).isEqualTo("HELLO".getBytes());
-
+			TestChannelBinder binder = context.getBean(TestChannelBinder.class);
+			Throwable ex = ((Exception) binder.getLastError().getPayload()).getCause();
+			assertThat(ex).isInstanceOf(IllegalStateException.class);
+			assertThat(ex.getMessage()).isEqualTo("Routing to functions that return Publisher is not supported in the context of Spring Cloud Stream.");
 		}
 	}
 
@@ -173,7 +193,7 @@ public class RoutingFunctionTests {
 						RoutingFunctionConfiguration.class))
 								.web(WebApplicationType.NONE)
 								.run("--spring.jmx.enabled=false",
-										"--spring.cloud.stream.function.definition=router")) {
+										"--spring.cloud.stream.function.definition=" + RoutingFunction.FUNCTION_NAME)) {
 
 			InputDestination inputDestination = context.getBean(InputDestination.class);
 			OutputDestination outputDestination = context
@@ -181,7 +201,7 @@ public class RoutingFunctionTests {
 
 			Message<byte[]> inputMessage = MessageBuilder
 					.withPayload("{\"name\":\"bob\"}".getBytes())
-					.setHeader("function.name", "pojoecho")
+					.setHeader("spring.cloud.function.definition", "pojoecho")
 					.build();
 			inputDestination.send(inputMessage);
 
@@ -198,8 +218,8 @@ public class RoutingFunctionTests {
 						RoutingFunctionConfiguration.class))
 								.web(WebApplicationType.NONE)
 								.run("--spring.jmx.enabled=false",
-										"--spring.cloud.stream.function.definition=enrich|router",
-										"--spring.cloud.function.routing.enabled=true")) {
+										"--spring.cloud.stream.function.definition=enrich|" + RoutingFunction.FUNCTION_NAME,
+										"--spring.cloud.stream.function.routing.enabled=true")) {
 
 			InputDestination inputDestination = context.getBean(InputDestination.class);
 			OutputDestination outputDestination = context
@@ -221,7 +241,7 @@ public class RoutingFunctionTests {
 						RoutingFunctionConfiguration.class))
 								.web(WebApplicationType.NONE)
 								.run("--spring.jmx.enabled=false",
-										"--spring.cloud.stream.function.definition=enrich|router")) {
+										"--spring.cloud.stream.function.definition=enrich|" + RoutingFunction.FUNCTION_NAME)) {
 
 			InputDestination inputDestination = context.getBean(InputDestination.class);
 			OutputDestination outputDestination = context
@@ -243,8 +263,8 @@ public class RoutingFunctionTests {
 						RoutingFunctionConfiguration.class))
 								.web(WebApplicationType.NONE)
 								.run("--spring.jmx.enabled=false",
-										"--spring.cloud.stream.function.definition=enrich|router|reverse",
-										"--spring.cloud.function.routing.enabled=true")) {
+										"--spring.cloud.stream.function.definition=enrich|" + RoutingFunction.FUNCTION_NAME + "|reverse",
+										"--spring.cloud.stream.function.routing.enabled=true")) {
 
 			InputDestination inputDestination = context.getBean(InputDestination.class);
 			OutputDestination outputDestination = context
@@ -266,7 +286,7 @@ public class RoutingFunctionTests {
 						RoutingFunctionConfiguration.class))
 								.web(WebApplicationType.NONE)
 								.run("--spring.jmx.enabled=false",
-										"--spring.cloud.stream.function.definition=enrich|router|reverse")) {
+										"--spring.cloud.stream.function.definition=enrich|" + RoutingFunction.FUNCTION_NAME + "|reverse")) {
 
 			InputDestination inputDestination = context.getBean(InputDestination.class);
 			OutputDestination outputDestination = context
@@ -314,7 +334,7 @@ public class RoutingFunctionTests {
 		public Function<Message<String>, Message<String>> enrich() {
 			return x -> {
 				System.out.println("===> enrich");
-				return MessageBuilder.withPayload(x.getPayload()).setHeader("function.name", "uppercase").build();
+				return MessageBuilder.withPayload(x.getPayload()).setHeader("spring.cloud.function.definition", "uppercase").build();
 			};
 		}
 

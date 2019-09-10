@@ -318,7 +318,7 @@ public class BinderFactoryAutoConfiguration {
 				name = environment.getProperty("spring.cloud.function.definition");
 			}
 			if (!StringUtils.hasText(name) && Boolean.parseBoolean(
-					environment.getProperty("spring.cloud.function.routing.enabled", "false"))) {
+					environment.getProperty("spring.cloud.stream.function.routing.enabled", "false"))) {
 				name = RoutingFunction.FUNCTION_NAME;
 			}
 			if (!StringUtils.hasText(name) && catalog.size() >= 1 && catalog.size() <= 2) {

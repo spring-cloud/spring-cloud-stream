@@ -83,7 +83,7 @@ import org.springframework.util.ReflectionUtils;
 @EnableConfigurationProperties(StreamFunctionProperties.class)
 @Import(BinderFactoryAutoConfiguration.class)
 @AutoConfigureBefore(BindingServiceConfiguration.class)
-public class FunctionConfiguration {
+class FunctionConfiguration {
 
 	@Bean
 	public InitializingBean functionChannelBindingInitializer(FunctionCatalog functionCatalog, FunctionInspector functionInspector,
@@ -95,43 +95,40 @@ public class FunctionConfiguration {
 	@Bean
 	public IntegrationFlow standAloneSupplierFlow(FunctionCatalog functionCatalog, FunctionInspector functionInspector,
 			StreamFunctionProperties functionProperties, GenericApplicationContext context) {
-
+		FunctionInvocationWrapper functionWrapper = functionCatalog.lookup(functionProperties.getDefinition());
 		IntegrationFlow integrationFlow = null;
-		if (functionCatalog != null && ObjectUtils.isEmpty(context.getBeanNamesForAnnotation(EnableBinding.class))) {
-			FunctionInvocationWrapper functionWrapper = functionCatalog.lookup(functionProperties.getDefinition());
-			if (functionWrapper != null /*&& functionWrapper.getTarget() instanceof Supplier*/) {
-				AtomicReference<MonoSink<Object>> triggerRef = new AtomicReference<>();
-				Publisher<Object> beginPublishingTrigger = Mono.create(emmiter -> {
-					triggerRef.set(emmiter);
-				});
-				context.addApplicationListener(event -> {
-					if (event instanceof BindingCreatedEvent) {
-						if (triggerRef.get() != null) {
-							triggerRef.get().success();
-						}
-					}
-				});
-
-				RootBeanDefinition bd = (RootBeanDefinition) context.getBeanDefinition(functionProperties.getParsedDefinition()[0]);
-				Method factoryMethod = bd.getResolvedFactoryMethod();
-				if (factoryMethod == null) {
-					Object source = bd.getSource();
-					if (source instanceof MethodMetadata) {
-						Class<?> factory = ClassUtils.resolveClassName(((MethodMetadata) source).getDeclaringClassName(), null);
-						Class<?>[] params = FunctionContextUtils.getParamTypesFromBeanDefinitionFactory(factory, bd);
-						factoryMethod = ReflectionUtils.findMethod(factory, ((MethodMetadata) source).getMethodName(), params);
+		if (ObjectUtils.isEmpty(context.getBeanNamesForAnnotation(EnableBinding.class)) && functionWrapper != null && functionWrapper.isSupplier()) {
+			AtomicReference<MonoSink<Object>> triggerRef = new AtomicReference<>();
+			Publisher<Object> beginPublishingTrigger = Mono.create(emmiter -> {
+				triggerRef.set(emmiter);
+			});
+			context.addApplicationListener(event -> {
+				if (event instanceof BindingCreatedEvent) {
+					if (triggerRef.get() != null) {
+						triggerRef.get().success();
 					}
 				}
-				Assert.notNull(factoryMethod, "Failed to introspect factory method since it was not discovered for function '"
-								+ functionProperties.getDefinition() + "'");
-				PollableSupplier pollable = factoryMethod.getReturnType().isAssignableFrom(Supplier.class)
-						? AnnotationUtils.findAnnotation(factoryMethod, PollableSupplier.class)
-								: null;
+			});
 
-				if (!functionProperties.isComposeFrom() && !functionProperties.isComposeTo() && functionWrapper.isSupplier()) {
-					integrationFlow = this.integrationFlowFromProvidedSupplier(functionWrapper, functionInspector, beginPublishingTrigger, pollable)
-							.channel("output").get();
+			RootBeanDefinition bd = (RootBeanDefinition) context.getBeanDefinition(functionProperties.getParsedDefinition()[0]);
+			Method factoryMethod = bd.getResolvedFactoryMethod();
+			if (factoryMethod == null) {
+				Object source = bd.getSource();
+				if (source instanceof MethodMetadata) {
+					Class<?> factory = ClassUtils.resolveClassName(((MethodMetadata) source).getDeclaringClassName(), null);
+					Class<?>[] params = FunctionContextUtils.getParamTypesFromBeanDefinitionFactory(factory, bd);
+					factoryMethod = ReflectionUtils.findMethod(factory, ((MethodMetadata) source).getMethodName(), params);
 				}
+			}
+			Assert.notNull(factoryMethod, "Failed to introspect factory method since it was not discovered for function '"
+							+ functionProperties.getDefinition() + "'");
+			PollableSupplier pollable = factoryMethod.getReturnType().isAssignableFrom(Supplier.class)
+					? AnnotationUtils.findAnnotation(factoryMethod, PollableSupplier.class)
+							: null;
+
+			if (!functionProperties.isComposeFrom() && !functionProperties.isComposeTo()) {
+				integrationFlow = this.integrationFlowFromProvidedSupplier(functionWrapper, functionInspector, beginPublishingTrigger, pollable)
+						.channel("output").get();
 			}
 		}
 
@@ -253,7 +250,7 @@ public class FunctionConfiguration {
 			}
 			else {
 				FunctionInvocationWrapper function = functionCatalog.lookup(functionProperties.getDefinition(), "application/json");
-				if (!function.isSupplier() && "input".equals(channelName)) {
+				if (/*!function.isSupplier() && */"input".equals(channelName)) {
 					this.postProcessForStandAloneFunction(function, messageChannel);
 				}
 			}
@@ -329,7 +326,7 @@ public class FunctionConfiguration {
 	 *
 	 */
 	@SuppressWarnings("rawtypes")
-	private static class FunctionWrapper implements Function<Message<byte[]>, Message<byte[]>> {
+	private static class FunctionWrapper implements Function<Message<byte[]>, Object> {
 		private final Function function;
 
 		FunctionWrapper(Function function) {
@@ -338,8 +335,11 @@ public class FunctionConfiguration {
 		@SuppressWarnings("unchecked")
 		@Override
 		public Message<byte[]> apply(Message<byte[]> t) {
-			Message<byte[]> resultMessage =  (Message<byte[]>) function.apply(t);
-			return resultMessage;
+			Object result = function.apply(t);
+			if (result instanceof Publisher) {
+				throw new IllegalStateException("Routing to functions that return Publisher is not supported in the context of Spring Cloud Stream.");
+			}
+			return (Message<byte[]>) result;
 		}
 	}
 }
