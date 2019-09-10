@@ -86,50 +86,10 @@ public abstract class AbstractKafkaStreamsBinderProcessor implements Application
 		this.cleanupConfig = cleanupConfig;
 	}
 
-	private <K, V> KTable<K, V> materializedAs(StreamsBuilder streamsBuilder,
-											String destination, String storeName, Serde<K> k, Serde<V> v,
-											Topology.AutoOffsetReset autoOffsetReset) {
-		return streamsBuilder.table(
-				this.bindingServiceProperties.getBindingDestination(destination),
-				Consumed.with(k, v).withOffsetResetPolicy(autoOffsetReset),
-				getMaterialized(storeName, k, v));
-	}
-
-	protected <K, V> GlobalKTable<K, V> materializedAsGlobalKTable(
-			StreamsBuilder streamsBuilder, String destination, String storeName,
-			Serde<K> k, Serde<V> v, Topology.AutoOffsetReset autoOffsetReset) {
-		return streamsBuilder.globalTable(
-				this.bindingServiceProperties.getBindingDestination(destination),
-				Consumed.with(k, v).withOffsetResetPolicy(autoOffsetReset),
-				getMaterialized(storeName, k, v));
-	}
-
-	protected GlobalKTable<?, ?> getGlobalKTable(StreamsBuilder streamsBuilder,
-												Serde<?> keySerde, Serde<?> valueSerde, String materializedAs,
-												String bindingDestination, Topology.AutoOffsetReset autoOffsetReset) {
-		return materializedAs != null
-				? materializedAsGlobalKTable(streamsBuilder, bindingDestination,
-				materializedAs, keySerde, valueSerde, autoOffsetReset)
-				: streamsBuilder.globalTable(bindingDestination,
-				Consumed.with(keySerde, valueSerde)
-						.withOffsetResetPolicy(autoOffsetReset));
-	}
-
-	protected KTable<?, ?> getKTable(StreamsBuilder streamsBuilder, Serde<?> keySerde,
-									Serde<?> valueSerde, String materializedAs, String bindingDestination,
-									Topology.AutoOffsetReset autoOffsetReset) {
-		return materializedAs != null
-				? materializedAs(streamsBuilder, bindingDestination, materializedAs,
-				keySerde, valueSerde, autoOffsetReset)
-				: streamsBuilder.table(bindingDestination,
-				Consumed.with(keySerde, valueSerde)
-						.withOffsetResetPolicy(autoOffsetReset));
-	}
-
-	private <K, V> Materialized<K, V, KeyValueStore<Bytes, byte[]>> getMaterialized(
-			String storeName, Serde<K> k, Serde<V> v) {
-		return Materialized.<K, V, KeyValueStore<Bytes, byte[]>>as(storeName)
-				.withKeySerde(k).withValueSerde(v);
+	@Override
+	public final void setApplicationContext(ApplicationContext applicationContext)
+			throws BeansException {
+		this.applicationContext = (ConfigurableApplicationContext) applicationContext;
 	}
 
 	protected Topology.AutoOffsetReset getAutoOffsetReset(String inboundName, KafkaStreamsConsumerProperties extendedConsumerProperties) {
@@ -269,28 +229,6 @@ public abstract class AbstractKafkaStreamsBinderProcessor implements Application
 				"&stream-builder-" + beanNamePostPrefix, StreamsBuilderFactoryBean.class);
 	}
 
-	@Override
-	public final void setApplicationContext(ApplicationContext applicationContext)
-			throws BeansException {
-		this.applicationContext = (ConfigurableApplicationContext) applicationContext;
-	}
-
-	protected KStream<?, ?> getkStream(BindingProperties bindingProperties, KStream<?, ?> stream, boolean nativeDecoding) {
-		stream = stream.mapValues((value) -> {
-			Object returnValue;
-			String contentType = bindingProperties.getContentType();
-			if (value != null && !StringUtils.isEmpty(contentType) && !nativeDecoding) {
-				returnValue = MessageBuilder.withPayload(value)
-						.setHeader(MessageHeaders.CONTENT_TYPE, contentType).build();
-			}
-			else {
-				returnValue = value;
-			}
-			return returnValue;
-		});
-		return stream;
-	}
-
 	protected Serde<?> getValueSerde(String inboundName, KafkaStreamsConsumerProperties kafkaStreamsConsumerProperties, ResolvableType resolvableType) {
 		if (bindingServiceProperties.getConsumerProperties(inboundName).isUseNativeDecoding()) {
 			BindingProperties bindingProperties = this.bindingServiceProperties
@@ -300,23 +238,6 @@ public abstract class AbstractKafkaStreamsBinderProcessor implements Application
 		}
 		else {
 			return Serdes.ByteArray();
-		}
-	}
-
-	protected void addStateStoreBeans(StreamsBuilder streamsBuilder) {
-		try {
-			final Map<String, StoreBuilder> storeBuilders = applicationContext.getBeansOfType(StoreBuilder.class);
-			if (!CollectionUtils.isEmpty(storeBuilders)) {
-				storeBuilders.values().forEach(storeBuilder -> {
-					streamsBuilder.addStateStore(storeBuilder);
-					if (LOG.isInfoEnabled()) {
-						LOG.info("state store " + storeBuilder.name() + " added to topology");
-					}
-				});
-			}
-		}
-		catch (Exception e) {
-			// Pass through.
 		}
 	}
 
@@ -342,5 +263,82 @@ public abstract class AbstractKafkaStreamsBinderProcessor implements Application
 		}
 
 		return getkStream(bindingProperties, stream, nativeDecoding);
+	}
+
+	private KStream<?, ?> getkStream(BindingProperties bindingProperties, KStream<?, ?> stream, boolean nativeDecoding) {
+		stream = stream.mapValues((value) -> {
+			Object returnValue;
+			String contentType = bindingProperties.getContentType();
+			if (value != null && !StringUtils.isEmpty(contentType) && !nativeDecoding) {
+				returnValue = MessageBuilder.withPayload(value)
+						.setHeader(MessageHeaders.CONTENT_TYPE, contentType).build();
+			}
+			else {
+				returnValue = value;
+			}
+			return returnValue;
+		});
+		return stream;
+	}
+
+	@SuppressWarnings("rawtypes")
+	private void addStateStoreBeans(StreamsBuilder streamsBuilder) {
+		try {
+			final Map<String, StoreBuilder> storeBuilders = applicationContext.getBeansOfType(StoreBuilder.class);
+			if (!CollectionUtils.isEmpty(storeBuilders)) {
+				storeBuilders.values().forEach(storeBuilder -> {
+					streamsBuilder.addStateStore(storeBuilder);
+					if (LOG.isInfoEnabled()) {
+						LOG.info("state store " + storeBuilder.name() + " added to topology");
+					}
+				});
+			}
+		}
+		catch (Exception e) {
+			// Pass through.
+		}
+	}
+
+	private <K, V> KTable<K, V> materializedAs(StreamsBuilder streamsBuilder, String destination, String storeName,
+			Serde<K> k, Serde<V> v, Topology.AutoOffsetReset autoOffsetReset) {
+		return streamsBuilder.table(this.bindingServiceProperties.getBindingDestination(destination),
+				Consumed.with(k, v).withOffsetResetPolicy(autoOffsetReset), getMaterialized(storeName, k, v));
+	}
+
+	private <K, V> Materialized<K, V, KeyValueStore<Bytes, byte[]>> getMaterialized(
+			String storeName, Serde<K> k, Serde<V> v) {
+		return Materialized.<K, V, KeyValueStore<Bytes, byte[]>>as(storeName)
+				.withKeySerde(k).withValueSerde(v);
+	}
+
+	private <K, V> GlobalKTable<K, V> materializedAsGlobalKTable(
+			StreamsBuilder streamsBuilder, String destination, String storeName,
+			Serde<K> k, Serde<V> v, Topology.AutoOffsetReset autoOffsetReset) {
+		return streamsBuilder.globalTable(
+				this.bindingServiceProperties.getBindingDestination(destination),
+				Consumed.with(k, v).withOffsetResetPolicy(autoOffsetReset),
+				getMaterialized(storeName, k, v));
+	}
+
+	private GlobalKTable<?, ?> getGlobalKTable(StreamsBuilder streamsBuilder,
+												Serde<?> keySerde, Serde<?> valueSerde, String materializedAs,
+												String bindingDestination, Topology.AutoOffsetReset autoOffsetReset) {
+		return materializedAs != null
+				? materializedAsGlobalKTable(streamsBuilder, bindingDestination,
+				materializedAs, keySerde, valueSerde, autoOffsetReset)
+				: streamsBuilder.globalTable(bindingDestination,
+				Consumed.with(keySerde, valueSerde)
+						.withOffsetResetPolicy(autoOffsetReset));
+	}
+
+	private KTable<?, ?> getKTable(StreamsBuilder streamsBuilder, Serde<?> keySerde,
+									Serde<?> valueSerde, String materializedAs, String bindingDestination,
+									Topology.AutoOffsetReset autoOffsetReset) {
+		return materializedAs != null
+				? materializedAs(streamsBuilder, bindingDestination, materializedAs,
+				keySerde, valueSerde, autoOffsetReset)
+				: streamsBuilder.table(bindingDestination,
+				Consumed.with(keySerde, valueSerde)
+						.withOffsetResetPolicy(autoOffsetReset));
 	}
 }

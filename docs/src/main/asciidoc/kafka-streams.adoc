@@ -955,7 +955,7 @@ public StoreBuilder mystore() {
 }
 ```
 
-During the bootstrap, the above bean will be processed by the binder and pass on to the Streams builder object.
+During the bootstrap, the above bean will be processed by the binder and passed on to the Streams builder object.
 Defining custom state stores by providing them as beans is the preferred approach.
 However, you can also use `KafkaStreamsStateStore` annotation for this.
 You can specify the name and type of the store, flags to control log and disabling cache, etc.
