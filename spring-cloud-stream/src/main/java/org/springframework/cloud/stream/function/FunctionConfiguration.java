@@ -46,8 +46,12 @@ import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.binder.BindingCreatedEvent;
 import org.springframework.cloud.stream.binding.BindableProxyFactory;
 import org.springframework.cloud.stream.config.BinderFactoryAutoConfiguration;
+import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.cloud.stream.config.BindingServiceConfiguration;
+import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.cloud.stream.messaging.DirectWithAttributesChannel;
+import org.springframework.cloud.stream.messaging.Sink;
+import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.annotation.Bean;
@@ -87,9 +91,9 @@ class FunctionConfiguration {
 
 	@Bean
 	public InitializingBean functionChannelBindingInitializer(FunctionCatalog functionCatalog, FunctionInspector functionInspector,
-			StreamFunctionProperties functionProperties, @Nullable BindableProxyFactory[] bindableProxyFactory, GenericApplicationContext context) {
+			StreamFunctionProperties functionProperties, @Nullable BindableProxyFactory[] bindableProxyFactory, BindingServiceProperties serviceProperties) {
 		return new FunctionChannelBindingInitializer(functionCatalog, functionInspector, functionProperties,
-					ObjectUtils.isEmpty(bindableProxyFactory) ? null : bindableProxyFactory[0]);
+					ObjectUtils.isEmpty(bindableProxyFactory) ? null : bindableProxyFactory[0], serviceProperties);
 	}
 
 	@Bean
@@ -185,16 +189,18 @@ class FunctionConfiguration {
 
 		private final BindableProxyFactory bindableProxyFactory;
 
+		private final BindingServiceProperties serviceProperties;
+
 		private GenericApplicationContext context;
 
 
 		FunctionChannelBindingInitializer(FunctionCatalog functionCatalog, FunctionInspector functionInspector,
-				StreamFunctionProperties functionProperties, BindableProxyFactory bindableProxyFactory) {
+				StreamFunctionProperties functionProperties, BindableProxyFactory bindableProxyFactory, BindingServiceProperties serviceProperties) {
 			this.functionCatalog = functionCatalog;
 			this.functionInspector = functionInspector;
 			this.functionProperties = functionProperties;
 			this.bindableProxyFactory = bindableProxyFactory;
-
+			this.serviceProperties = serviceProperties;
 		}
 
 		@Override
@@ -230,10 +236,11 @@ class FunctionConfiguration {
 			if (functionProperties.isComposeTo() && messageChannel instanceof SubscribableChannel && "input".equals(channelName)) {
 				throw new UnsupportedOperationException("Composing at tail is not currently supported");
 			}
-			else if (functionProperties.isComposeFrom() && "output".equals(channelName)) {
+			else if (functionProperties.isComposeFrom() && Source.OUTPUT.equals(channelName)) {
 				Assert.notNull(this.bindableProxyFactory, "Can not compose function into the existing app since `bindableProxyFactory` is null.");
 				logger.info("Composing at the head of 'output' channel");
-				FunctionInvocationWrapper function = functionCatalog.lookup(functionProperties.getDefinition(), "application/json");
+				BindingProperties properties = this.serviceProperties.getBindings().get(Source.OUTPUT);
+				FunctionInvocationWrapper function = functionCatalog.lookup(functionProperties.getDefinition(), properties.getContentType());
 				ServiceActivatingHandler handler = new ServiceActivatingHandler(new FunctionWrapper(function));
 				handler.setBeanFactory(context);
 				handler.afterPropertiesSet();
@@ -249,8 +256,9 @@ class FunctionConfiguration {
 				subscribeChannel.subscribe(handler);
 			}
 			else {
-				FunctionInvocationWrapper function = functionCatalog.lookup(functionProperties.getDefinition(), "application/json");
-				if (/*!function.isSupplier() && */"input".equals(channelName)) {
+				if (Sink.INPUT.equals(channelName)) {
+					BindingProperties properties = this.serviceProperties.getBindings().get(Sink.INPUT);
+					FunctionInvocationWrapper function = functionCatalog.lookup(functionProperties.getDefinition(), properties.getContentType());
 					this.postProcessForStandAloneFunction(function, messageChannel);
 				}
 			}

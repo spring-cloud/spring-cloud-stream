@@ -197,6 +197,35 @@ public class ImplicitFunctionBindingTests {
 		}
 	}
 
+
+	@Test
+	public void testWithContextTypeApplicationProperty() {
+		System.clearProperty("spring.cloud.stream.function.definition");
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+				TestChannelBinderConfiguration.getCompleteConfiguration(
+						SingleFunctionConfiguration.class))
+								.web(WebApplicationType.NONE)
+								.run("--spring.jmx.enabled=false",
+										"--spring.cloud.stream.bindings.input.content-type=text/plain")) {
+
+			InputDestination inputDestination = context.getBean(InputDestination.class);
+			OutputDestination outputDestination = context
+					.getBean(OutputDestination.class);
+
+			Message<byte[]> inputMessageOne = MessageBuilder
+					.withPayload("Hello".getBytes()).build();
+			Message<byte[]> inputMessageTwo = MessageBuilder
+					.withPayload("Hello Again".getBytes()).build();
+			inputDestination.send(inputMessageOne);
+			inputDestination.send(inputMessageTwo);
+
+			Message<byte[]> outputMessage = outputDestination.receive();
+			assertThat(outputMessage.getPayload()).isEqualTo("Hello".getBytes());
+			outputMessage = outputDestination.receive();
+			assertThat(outputMessage.getPayload()).isEqualTo("Hello Again".getBytes());
+		}
+	}
+
 	@EnableAutoConfiguration
 	public static class NoEnableBindingConfiguration  {
 
