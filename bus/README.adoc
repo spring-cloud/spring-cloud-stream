@@ -5,6 +5,21 @@ Edit the files in the src/main/asciidoc/ directory instead.
 ////
 
 = Spring Cloud Bus
+:doctype: book
+:idprefix:
+:idseparator: -
+:toc: left
+:toclevels: 4
+:tabsize: 4
+:numbered:
+:sectanchors:
+:sectnums:
+:icons: font
+:hide-uri-scheme:
+:docinfo: shared,private
+
+:sc-ext: java
+:project-full-name: Spring Cloud Bus
 
 Spring Cloud Bus links the nodes of a distributed system with a lightweight message
 broker. This broker can then be used to broadcast state changes (such as configuration

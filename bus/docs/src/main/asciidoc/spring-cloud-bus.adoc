@@ -1,9 +1,5 @@
 = Spring Cloud Bus
-:github: https://github.com/spring-cloud/spring-cloud-config
-:githubmaster: {github}/tree/master
-:docslink: {githubmaster}/docs/src/main/asciidoc
-:toc:
-:nofooter:
+include::_attributes.adoc[]
 
 include::intro.adoc[]
 
@@ -229,3 +225,7 @@ All of the preceding examples of `@RemoteApplicationEventScan` are equivalent, i
 `@RemoteApplicationEventScan`. 
 
 NOTE: You can specify multiple base packages to scan.
+
+== Configuration properties
+
+To see the list of all Bus related configuration properties please check link:appendix.html[the Appendix page].

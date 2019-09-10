@@ -1,4 +1,5 @@
 = Spring Cloud Bus
+include::_attributes.adoc[]
 
 include::intro.adoc[]
 
