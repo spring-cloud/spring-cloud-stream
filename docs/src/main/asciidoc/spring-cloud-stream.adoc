@@ -510,6 +510,22 @@ public class TransformProcessor {
 ----
 
 
+Similar to Spring MVC you can also benefit from JSR-303/309 compliant validation by annotating your arguments with `@Valid`.
+
+[source,java]
+----
+@StreamListener(Processor.INPUT)
+  @SendTo(Processor.OUTPUT)
+  public VoteResult handle(@Valid Vote vote) {
+    return votingService.record(vote);
+  }
+----
+In the above example the `Vote` object and its individual fields will be validated according to the rules set by you (e.g., `@NotBlank`, `@Min`/`@Max` etc.).
+
+NOTE: Spring Cloud Stream does NOT provide a default `org.springframework.validation.Validator` to avoid potential
+conflicts with validators provided by other frameworks that may be part of your application (e.g., MVC),
+therefore you may need to provide your own validator by configuring a bean of type `org.springframework.validation.Validator`.
+
 ==== Using @StreamListener for Content-based routing
 
 Spring Cloud Stream supports dispatching messages to multiple handler methods annotated with `@StreamListener` based on conditions.
