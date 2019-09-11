@@ -102,9 +102,6 @@ public class BinderAwareChannelResolver
 			}
 			else {
 				channel = this.bindingTargetFactory.createOutput(channelName);
-				this.beanFactory.registerSingleton(channelName, channel);
-				channel = (MessageChannel) this.beanFactory.initializeBean(channel,
-						channelName);
 				if (this.newBindingCallback != null) {
 					ProducerProperties producerProperties = bindingServiceProperties
 							.getProducerProperties(channelName);
@@ -115,6 +112,9 @@ public class BinderAwareChannelResolver
 					bindingServiceProperties.updateProducerProperties(channelName,
 							producerProperties);
 				}
+				this.beanFactory.registerSingleton(channelName, channel);
+				channel = (MessageChannel) this.beanFactory.initializeBean(channel,
+						channelName);
 				Binding<MessageChannel> binding = this.bindingService
 						.bindProducer(channel, channelName);
 				this.dynamicDestinationsBindable.addOutputBinding(channelName, binding);
