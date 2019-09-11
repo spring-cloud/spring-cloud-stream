@@ -34,6 +34,7 @@ import reactor.core.publisher.MonoSink;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.support.RootBeanDefinition;
+import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.PollableSupplier;
@@ -47,6 +48,7 @@ import org.springframework.cloud.stream.binder.ConsumerProperties;
 import org.springframework.cloud.stream.binding.BindableProxyFactory;
 import org.springframework.cloud.stream.config.BinderFactoryAutoConfiguration;
 import org.springframework.cloud.stream.config.BindingProperties;
+import org.springframework.cloud.stream.config.BindingServiceConfiguration;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.cloud.stream.messaging.DirectWithAttributesChannel;
 import org.springframework.cloud.stream.messaging.Sink;
@@ -85,6 +87,7 @@ import org.springframework.util.ReflectionUtils;
 @Configuration
 @EnableConfigurationProperties(StreamFunctionProperties.class)
 @Import(BinderFactoryAutoConfiguration.class)
+@AutoConfigureBefore(BindingServiceConfiguration.class)
 class FunctionConfiguration {
 
 	@Bean
