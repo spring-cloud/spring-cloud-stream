@@ -34,7 +34,6 @@ import reactor.core.publisher.MonoSink;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.support.RootBeanDefinition;
-import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.PollableSupplier;
@@ -44,10 +43,10 @@ import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
 import org.springframework.cloud.function.context.config.FunctionContextUtils;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.binder.BindingCreatedEvent;
+import org.springframework.cloud.stream.binder.ConsumerProperties;
 import org.springframework.cloud.stream.binding.BindableProxyFactory;
 import org.springframework.cloud.stream.config.BinderFactoryAutoConfiguration;
 import org.springframework.cloud.stream.config.BindingProperties;
-import org.springframework.cloud.stream.config.BindingServiceConfiguration;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.cloud.stream.messaging.DirectWithAttributesChannel;
 import org.springframework.cloud.stream.messaging.Sink;
@@ -86,7 +85,6 @@ import org.springframework.util.ReflectionUtils;
 @Configuration
 @EnableConfigurationProperties(StreamFunctionProperties.class)
 @Import(BinderFactoryAutoConfiguration.class)
-@AutoConfigureBefore(BindingServiceConfiguration.class)
 class FunctionConfiguration {
 
 	@Bean
@@ -206,14 +204,14 @@ class FunctionConfiguration {
 		@Override
 		public void afterPropertiesSet() throws Exception {
 			MessageChannel messageChannel = null;
-			String channelName = "input";
+			String channelName = Sink.INPUT;
 			if (context.containsBean(channelName)) {
 				Object bean = context.getBean(channelName);
 				if (bean instanceof MessageChannel) {
 					messageChannel = context.getBean(channelName, MessageChannel.class);
 				}
 			}
-			if (messageChannel == null && context.containsBean("output")) {
+			if (messageChannel == null && context.containsBean(Source.OUTPUT)) {
 				channelName = "output";
 				Object bean = context.getBean(channelName);
 				if (bean instanceof MessageChannel) {
@@ -233,7 +231,7 @@ class FunctionConfiguration {
 
 		private void doPostProcess(String channelName, SubscribableChannel messageChannel) {
 			//TODO there is something about moving channel interceptors in AMCB (not sure if it is still required)
-			if (functionProperties.isComposeTo() && messageChannel instanceof SubscribableChannel && "input".equals(channelName)) {
+			if (functionProperties.isComposeTo() && messageChannel instanceof SubscribableChannel && Sink.INPUT.equals(channelName)) {
 				throw new UnsupportedOperationException("Composing at tail is not currently supported");
 			}
 			else if (functionProperties.isComposeFrom() && Source.OUTPUT.equals(channelName)) {
@@ -267,7 +265,7 @@ class FunctionConfiguration {
 		private void postProcessForStandAloneFunction(FunctionInvocationWrapper function, MessageChannel inputChannel) {
 			Type functionType = FunctionTypeUtils.getFunctionType(function, this.functionInspector);
 			if (FunctionTypeUtils.isReactive(FunctionTypeUtils.getInputType(functionType, 0))) {
-				MessageChannel outputChannel = context.getBean("output", MessageChannel.class);
+				MessageChannel outputChannel = context.getBean(Source.OUTPUT, MessageChannel.class);
 				SubscribableChannel subscribeChannel = (SubscribableChannel) inputChannel;
 				Publisher<?> publisher = this.enhancePublisher(MessageChannelReactiveUtils.toPublisher(subscribeChannel));
 				this.subscribeToInput(function, publisher, outputChannel::send);
@@ -277,7 +275,7 @@ class FunctionConfiguration {
 				handler.setBeanFactory(context);
 				handler.afterPropertiesSet();
 				if (!FunctionTypeUtils.isConsumer(functionType)) {
-					handler.setOutputChannelName("output");
+					handler.setOutputChannelName(Source.OUTPUT);
 				}
 				SubscribableChannel subscribeChannel = (SubscribableChannel) inputChannel;
 				subscribeChannel.subscribe(handler);
@@ -291,17 +289,18 @@ class FunctionConfiguration {
 		private Publisher enhancePublisher(Publisher publisher) {
 			Flux flux = Flux.from(publisher)
 					.concatMap(message -> {
+						ConsumerProperties consumerProperties = this.serviceProperties.getBindings().get(Sink.INPUT).getConsumer();
 						return Flux.just(message)
 								.doOnError(e -> {
 									e.printStackTrace();
 								})
-								.retryBackoff(3, //this.consumerProperties.getMaxAttempts(),
-										Duration.ofMillis(1000),
-												//this.consumerProperties.getBackOffInitialInterval()),
-										Duration.ofMillis(1000))//this.consumerProperties.getBackOffMaxInterval()));
+								.retryBackoff(
+										consumerProperties.getMaxAttempts(),
+										Duration.ofMillis(consumerProperties.getBackOffInitialInterval()),
+										Duration.ofMillis(consumerProperties.getBackOffMaxInterval())
+								)
 								.onErrorResume(e -> {
 									e.printStackTrace();
-									//onError(e, originalMessageRef.get());
 									return Mono.empty();
 								});
 
