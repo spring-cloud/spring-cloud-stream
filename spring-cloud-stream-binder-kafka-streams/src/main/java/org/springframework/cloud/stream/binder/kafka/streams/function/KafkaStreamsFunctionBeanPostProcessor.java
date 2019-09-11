@@ -77,9 +77,11 @@ public class KafkaStreamsFunctionBeanPostProcessor implements InitializingBean, 
 		try {
 			Method[] methods = classObj.getMethods();
 			Optional<Method> kafkaStreamMethod = Arrays.stream(methods).filter(m -> m.getName().equals(key)).findFirst();
-			Method method = kafkaStreamMethod.get();
-			ResolvableType resolvableType = ResolvableType.forMethodReturnType(method, classObj);
-			resolvableTypeMap.put(key, resolvableType);
+			if (kafkaStreamMethod.isPresent()) {
+				Method method = kafkaStreamMethod.get();
+				ResolvableType resolvableType = ResolvableType.forMethodReturnType(method, classObj);
+				resolvableTypeMap.put(key, resolvableType);
+			}
 		}
 		catch (Exception e) {
 			LOG.error("Function not found: " + key, e);

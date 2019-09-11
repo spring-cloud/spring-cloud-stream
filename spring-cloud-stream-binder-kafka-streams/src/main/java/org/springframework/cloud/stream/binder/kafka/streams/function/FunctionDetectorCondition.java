@@ -93,11 +93,13 @@ public class FunctionDetectorCondition extends SpringBootCondition {
 			try {
 				Method[] methods = classObj.getMethods();
 				Optional<Method> kafkaStreamMethod = Arrays.stream(methods).filter(m -> m.getName().equals(key)).findFirst();
-				Method method = kafkaStreamMethod.get();
-				ResolvableType resolvableType = ResolvableType.forMethodReturnType(method, classObj);
-				final Class<?> rawClass = resolvableType.getGeneric(0).getRawClass();
-				if (rawClass == KStream.class || rawClass == KTable.class || rawClass == GlobalKTable.class) {
-					prunedList.add(key);
+				if (kafkaStreamMethod.isPresent()) {
+					Method method = kafkaStreamMethod.get();
+					ResolvableType resolvableType = ResolvableType.forMethodReturnType(method, classObj);
+					final Class<?> rawClass = resolvableType.getGeneric(0).getRawClass();
+					if (rawClass == KStream.class || rawClass == KTable.class || rawClass == GlobalKTable.class) {
+						prunedList.add(key);
+					}
 				}
 			}
 			catch (Exception e) {
