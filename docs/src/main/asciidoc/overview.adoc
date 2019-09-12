@@ -265,6 +265,10 @@ The replication factor to use when provisioning topics. Overrides the binder-wid
 Ignored if `replicas-assignments` is present.
 +
 Default: none (the binder-wide default of 1 is used).
+pollTimeout::
+Timeout used for polling in pollable consumers.
++
+Default: 5 seconds.
 
 ==== Consuming Batches
 

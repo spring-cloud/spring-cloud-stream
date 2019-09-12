@@ -88,7 +88,7 @@
 		<!-- Following dependencies are only provided for testing and won't be packaged with the binder apps-->
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
-			<artifactId>spring-cloud-stream-schema</artifactId>
+			<artifactId>spring-cloud-schema-registry-client</artifactId>
 			<scope>test</scope>
 		</dependency>
 		<dependency>

@@ -27,8 +27,9 @@ import com.example.Sensor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Test;
 
+import org.springframework.cloud.schema.registry.avro.AvroSchemaMessageConverter;
+import org.springframework.cloud.schema.registry.avro.AvroSchemaServiceManagerImpl;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
-import org.springframework.cloud.stream.schema.avro.AvroSchemaMessageConverter;
 import org.springframework.messaging.converter.MessageConverter;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -51,7 +52,7 @@ public class CompositeNonNativeSerdeTest {
 		sensor.setTemperature(random.nextFloat() * 50);
 
 		List<MessageConverter> messageConverters = new ArrayList<>();
-		messageConverters.add(new AvroSchemaMessageConverter());
+		messageConverters.add(new AvroSchemaMessageConverter(new AvroSchemaServiceManagerImpl()));
 		CompositeMessageConverterFactory compositeMessageConverterFactory = new CompositeMessageConverterFactory(
 				messageConverters, new ObjectMapper());
 		CompositeNonNativeSerde compositeNonNativeSerde = new CompositeNonNativeSerde(

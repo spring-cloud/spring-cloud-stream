@@ -2942,6 +2942,7 @@ public class KafkaBinderTests extends
 				this.messageConverter);
 		ExtendedConsumerProperties<KafkaConsumerProperties> consumerProps = createConsumerProperties();
 		consumerProps.setMultiplex(true);
+		consumerProps.getExtension().setPollTimeout(1);
 		Binding<PollableSource<MessageHandler>> binding = binder.bindPollableConsumer(
 				"pollable,anotherOne", "group-polledConsumer", inboundBindTarget,
 				consumerProps);
@@ -3028,6 +3029,7 @@ public class KafkaBinderTests extends
 		PollableSource<MessageHandler> inboundBindTarget = new DefaultPollableMessageSource(
 				this.messageConverter);
 		ExtendedConsumerProperties<KafkaConsumerProperties> properties = createConsumerProperties();
+		properties.getExtension().setPollTimeout(1);
 		properties.setMaxAttempts(2);
 		properties.setBackOffInitialInterval(0);
 		properties.getExtension().setEnableDlq(true);

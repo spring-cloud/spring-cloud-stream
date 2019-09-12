@@ -21,7 +21,8 @@ import java.util.Map;
 
 import org.apache.kafka.common.serialization.Serializer;
 
-import org.springframework.cloud.stream.schema.avro.AvroSchemaMessageConverter;
+import org.springframework.cloud.schema.registry.avro.AvroSchemaMessageConverter;
+import org.springframework.cloud.schema.registry.avro.AvroSchemaServiceManagerImpl;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.MessageBuilder;
@@ -44,7 +45,7 @@ public class TestAvroSerializer<S> implements Serializer<S> {
 
 	@Override
 	public byte[] serialize(String topic, S data) {
-		AvroSchemaMessageConverter avroSchemaMessageConverter = new AvroSchemaMessageConverter();
+		AvroSchemaMessageConverter avroSchemaMessageConverter = new AvroSchemaMessageConverter(new AvroSchemaServiceManagerImpl());
 		Message<?> message = MessageBuilder.withPayload(data).build();
 		Map<String, Object> headers = new HashMap<>(message.getHeaders());
 		headers.put(MessageHeaders.CONTENT_TYPE, "application/avro");

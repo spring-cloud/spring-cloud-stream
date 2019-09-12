@@ -97,6 +97,7 @@ import org.springframework.kafka.core.ProducerFactory;
 import org.springframework.kafka.listener.AbstractMessageListenerContainer;
 import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;
 import org.springframework.kafka.listener.ConsumerAwareRebalanceListener;
+import org.springframework.kafka.listener.ConsumerProperties;
 import org.springframework.kafka.listener.ContainerProperties;
 import org.springframework.kafka.support.DefaultKafkaHeaderMapper;
 import org.springframework.kafka.support.KafkaHeaderMapper;
@@ -778,53 +779,34 @@ public class KafkaMessageChannelBinder extends
 	@Override
 	protected PolledConsumerResources createPolledConsumerResources(String name,
 			String group, ConsumerDestination destination,
-			ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties) {
+			ExtendedConsumerProperties<KafkaConsumerProperties> extendedConsumerProperties) {
 
 		boolean anonymous = !StringUtils.hasText(group);
-		Assert.isTrue(!anonymous || !consumerProperties.getExtension().isEnableDlq(),
+		final KafkaConsumerProperties extension = extendedConsumerProperties.getExtension();
+		Assert.isTrue(!anonymous || !extension.isEnableDlq(),
 				"DLQ support is not available for anonymous subscriptions");
 		String consumerGroup = anonymous ? "anonymous." + UUID.randomUUID().toString()
 				: group;
 		final ConsumerFactory<?, ?> consumerFactory = createKafkaConsumerFactory(
-				anonymous, consumerGroup, consumerProperties);
-		String[] topics = consumerProperties.isMultiplex()
+				anonymous, consumerGroup, extendedConsumerProperties);
+		String[] topics = extendedConsumerProperties.isMultiplex()
 				? StringUtils.commaDelimitedListToStringArray(destination.getName())
 				: new String[] { destination.getName() };
 		for (int i = 0; i < topics.length; i++) {
 			topics[i] = topics[i].trim();
 		}
-		KafkaMessageSource<?, ?> source = new KafkaMessageSource<>(consumerFactory,
-				topics);
-		source.setMessageConverter(getMessageConverter(consumerProperties));
-		source.setRawMessageHeader(consumerProperties.getExtension().isEnableDlq());
+		final ConsumerProperties consumerProperties = new ConsumerProperties(topics);
+
 		String clientId = name;
-		if (consumerProperties.getExtension().getConfiguration()
+		if (extension.getConfiguration()
 				.containsKey(ConsumerConfig.CLIENT_ID_CONFIG)) {
-			clientId = consumerProperties.getExtension().getConfiguration()
+			clientId = extension.getConfiguration()
 					.get(ConsumerConfig.CLIENT_ID_CONFIG);
 		}
-		source.setClientId(clientId);
 
-		if (!consumerProperties.isMultiplex()) {
-			// I copied this from the regular consumer - it looks bogus to me - includes
-			// all partitions
-			// not just the ones this binding is listening to; doesn't seem right for a
-			// health check.
-			Collection<PartitionInfo> partitionInfos = getPartitionInfo(
-					destination.getName(), consumerProperties, consumerFactory, -1);
-			this.topicsInUse.put(destination.getName(),
-					new TopicInformation(consumerGroup, partitionInfos, false));
-		}
-		else {
-			for (int i = 0; i < topics.length; i++) {
-				Collection<PartitionInfo> partitionInfos = getPartitionInfo(topics[i],
-						consumerProperties, consumerFactory, -1);
-				this.topicsInUse.put(topics[i],
-						new TopicInformation(consumerGroup, partitionInfos, false));
-			}
-		}
+		consumerProperties.setClientId(clientId);
 
-		source.setRebalanceListener(new ConsumerRebalanceListener() {
+		consumerProperties.setConsumerRebalanceListener(new ConsumerRebalanceListener() {
 
 			@Override
 			public void onPartitionsRevoked(Collection<TopicPartition> partitions) {
@@ -837,9 +819,36 @@ public class KafkaMessageChannelBinder extends
 			}
 
 		});
+
+		consumerProperties.setPollTimeout(extension.getPollTimeout());
+
+		KafkaMessageSource<?, ?> source = new KafkaMessageSource<>(consumerFactory,
+				consumerProperties);
+		source.setMessageConverter(getMessageConverter(extendedConsumerProperties));
+		source.setRawMessageHeader(extension.isEnableDlq());
+
+		if (!extendedConsumerProperties.isMultiplex()) {
+			// I copied this from the regular consumer - it looks bogus to me - includes
+			// all partitions
+			// not just the ones this binding is listening to; doesn't seem right for a
+			// health check.
+			Collection<PartitionInfo> partitionInfos = getPartitionInfo(
+					destination.getName(), extendedConsumerProperties, consumerFactory, -1);
+			this.topicsInUse.put(destination.getName(),
+					new TopicInformation(consumerGroup, partitionInfos, false));
+		}
+		else {
+			for (int i = 0; i < topics.length; i++) {
+				Collection<PartitionInfo> partitionInfos = getPartitionInfo(topics[i],
+						extendedConsumerProperties, consumerFactory, -1);
+				this.topicsInUse.put(topics[i],
+						new TopicInformation(consumerGroup, partitionInfos, false));
+			}
+		}
+
 		getMessageSourceCustomizer().configure(source, destination.getName(), group);
 		return new PolledConsumerResources(source, registerErrorInfrastructure(
-				destination, group, consumerProperties, true));
+				destination, group, extendedConsumerProperties, true));
 	}
 
 	@Override

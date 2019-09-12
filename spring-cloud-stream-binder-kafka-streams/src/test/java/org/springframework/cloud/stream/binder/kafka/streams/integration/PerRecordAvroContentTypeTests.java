@@ -37,13 +37,13 @@ import org.junit.Test;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.cloud.schema.registry.avro.AvroSchemaMessageConverter;
+import org.springframework.cloud.schema.registry.avro.AvroSchemaServiceManagerImpl;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.Input;
 import org.springframework.cloud.stream.annotation.StreamListener;
-import org.springframework.cloud.stream.annotation.StreamMessageConverter;
 import org.springframework.cloud.stream.binder.kafka.streams.annotations.KafkaStreamsProcessor;
 import org.springframework.cloud.stream.binder.kafka.streams.integration.utils.TestAvroSerializer;
-import org.springframework.cloud.stream.schema.avro.AvroSchemaMessageConverter;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
@@ -59,6 +59,7 @@ import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.MimeTypeUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
+
 
 /**
  * @author Soby Chacko
@@ -174,9 +175,8 @@ public class PerRecordAvroContentTypeTests {
 		}
 
 		@Bean
-		@StreamMessageConverter
 		public MessageConverter sensorMessageConverter() throws IOException {
-			return new AvroSchemaMessageConverter();
+			return new AvroSchemaMessageConverter(new AvroSchemaServiceManagerImpl());
 		}
 
 	}

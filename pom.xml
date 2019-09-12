@@ -13,8 +13,9 @@
 	<properties>
 		<java.version>1.8</java.version>
 		<spring-kafka.version>2.3.0.BUILD-SNAPSHOT</spring-kafka.version>
-		<spring-integration-kafka.version>3.2.0.M4</spring-integration-kafka.version>
+		<spring-integration-kafka.version>3.2.0.BUILD-SNAPSHOT</spring-integration-kafka.version>
 		<kafka.version>2.3.0</kafka.version>
+		<spring-cloud-schema-registry.version>1.0.0.BUILD-SNAPSHOT</spring-cloud-schema-registry.version>
 		<spring-cloud-stream.version>3.0.0.BUILD-SNAPSHOT</spring-cloud-stream.version>
 		<maven-checkstyle-plugin.failsOnError>true</maven-checkstyle-plugin.failsOnError>
 		<maven-checkstyle-plugin.failsOnViolation>true</maven-checkstyle-plugin.failsOnViolation>
@@ -113,8 +114,8 @@
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
-				<artifactId>spring-cloud-stream-schema</artifactId>
-				<version>${spring-cloud-stream.version}</version>
+				<artifactId>spring-cloud-schema-registry-client</artifactId>
+				<version>${spring-cloud-schema-registry.version}</version>
 				<scope>test</scope>
 			</dependency>
 		</dependencies>
