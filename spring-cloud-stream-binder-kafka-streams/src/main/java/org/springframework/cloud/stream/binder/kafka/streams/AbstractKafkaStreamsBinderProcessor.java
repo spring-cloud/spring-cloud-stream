@@ -266,18 +266,20 @@ public abstract class AbstractKafkaStreamsBinderProcessor implements Application
 	}
 
 	private KStream<?, ?> getkStream(BindingProperties bindingProperties, KStream<?, ?> stream, boolean nativeDecoding) {
-		stream = stream.mapValues((value) -> {
-			Object returnValue;
-			String contentType = bindingProperties.getContentType();
-			if (value != null && !StringUtils.isEmpty(contentType) && !nativeDecoding) {
-				returnValue = MessageBuilder.withPayload(value)
-						.setHeader(MessageHeaders.CONTENT_TYPE, contentType).build();
-			}
-			else {
-				returnValue = value;
-			}
-			return returnValue;
-		});
+		if (!nativeDecoding) {
+			stream = stream.mapValues((value) -> {
+				Object returnValue;
+				String contentType = bindingProperties.getContentType();
+				if (value != null && !StringUtils.isEmpty(contentType)) {
+					returnValue = MessageBuilder.withPayload(value)
+							.setHeader(MessageHeaders.CONTENT_TYPE, contentType).build();
+				}
+				else {
+					returnValue = value;
+				}
+				return returnValue;
+			});
+		}
 		return stream;
 	}
 
