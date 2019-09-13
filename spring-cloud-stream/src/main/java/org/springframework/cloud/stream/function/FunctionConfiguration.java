@@ -23,6 +23,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -33,6 +34,7 @@ import reactor.core.publisher.MonoSink;
 
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -42,7 +44,10 @@ import org.springframework.cloud.function.context.catalog.BeanFactoryAwareFuncti
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
 import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
 import org.springframework.cloud.function.context.config.FunctionContextUtils;
+import org.springframework.cloud.function.context.config.RoutingFunction;
+import org.springframework.cloud.stream.annotation.BindingProvider;
 import org.springframework.cloud.stream.annotation.EnableBinding;
+import org.springframework.cloud.stream.binder.BinderTypeRegistry;
 import org.springframework.cloud.stream.binder.BindingCreatedEvent;
 import org.springframework.cloud.stream.binder.ConsumerProperties;
 import org.springframework.cloud.stream.binding.BindableProxyFactory;
@@ -55,11 +60,14 @@ import org.springframework.cloud.stream.messaging.Sink;
 import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
+import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.EnvironmentAware;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.core.annotation.AnnotationUtils;
+import org.springframework.core.env.Environment;
 import org.springframework.core.type.MethodMetadata;
 import org.springframework.integration.channel.MessageChannelReactiveUtils;
 import org.springframework.integration.dsl.IntegrationFlow;
@@ -77,6 +85,7 @@ import org.springframework.util.ClassUtils;
 import org.springframework.util.MimeTypeUtils;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.ReflectionUtils;
+import org.springframework.util.StringUtils;
 
 /**
  * @author Oleg Zhurakousky
@@ -88,18 +97,45 @@ import org.springframework.util.ReflectionUtils;
 @EnableConfigurationProperties(StreamFunctionProperties.class)
 @Import(BinderFactoryAutoConfiguration.class)
 @AutoConfigureBefore(BindingServiceConfiguration.class)
-class FunctionConfiguration {
+public class FunctionConfiguration {
 
+	/*
+	 * Creates an effective representation of Bindable interfaces by maintaining the count of inputs and
+	 * outputs based on the provided function, thus preserving the contract and the infrastructure code used
+	 * by current EnableBinding/StreamListener combination.
+	 * It is then used buy `functionInitializer` or 'supplierInitializer` where functions are actually bound to channels.
+	 *
+	 * Also, see the BindableFunctionProxyFactory
+	 */
 	@Bean
-	public InitializingBean functionChannelBindingInitializer(FunctionCatalog functionCatalog, FunctionInspector functionInspector,
-			StreamFunctionProperties functionProperties, @Nullable BindableProxyFactory[] bindableProxyFactory, BindingServiceProperties serviceProperties) {
-		return new FunctionChannelBindingInitializer(functionCatalog, functionInspector, functionProperties,
-					ObjectUtils.isEmpty(bindableProxyFactory) ? null : bindableProxyFactory[0], serviceProperties);
+	public InitializingBean functionBindingHolder(Environment environment, FunctionCatalog functionCatalog,
+			StreamFunctionProperties streamFunctionProperties, BinderTypeRegistry binderTypeRegistry) {
+		return new FunctionBindingHolder(binderTypeRegistry, functionCatalog, streamFunctionProperties);
 	}
 
 	@Bean
-	public IntegrationFlow standAloneSupplierFlow(FunctionCatalog functionCatalog, FunctionInspector functionInspector,
-			StreamFunctionProperties functionProperties, GenericApplicationContext context) {
+	public InitializingBean functionInitializer(FunctionCatalog functionCatalog, FunctionInspector functionInspector,
+			StreamFunctionProperties functionProperties, @Nullable BindableProxyFactory[] bpfs, BindingServiceProperties serviceProperties,
+			ConfigurableApplicationContext applicationContext, FunctionBindingHolder bindingHolder) {
+
+		if (bpfs == null || bpfs.length > 1) {
+			return null; // basically we're not dealing with multiple EnableBinding which is how multiple BindableProxyFactory are created
+		}
+		BindableProxyFactory bindableProxyFactory = bpfs[0];
+
+		return bindingHolder.getInputCount() > 0 // basically not a Supplier
+				|| !ObjectUtils.isEmpty(applicationContext.getBeanNamesForAnnotation(EnableBinding.class)) // implies existing binding to which we are going to 'compose to'
+				? new FunctionChannelBindingInitializer(functionCatalog, functionInspector, functionProperties, bindableProxyFactory, serviceProperties)
+					: null;
+	}
+
+	@Bean
+	public IntegrationFlow supplierInitializer(FunctionCatalog functionCatalog, FunctionInspector functionInspector,
+			StreamFunctionProperties functionProperties, GenericApplicationContext context, FunctionBindingHolder bindingHolder) {
+		if (bindingHolder.getInputCount() > 0) {
+			return null;
+		}
+
 		FunctionInvocationWrapper functionWrapper = functionCatalog.lookup(functionProperties.getDefinition());
 		IntegrationFlow integrationFlow = null;
 		if (ObjectUtils.isEmpty(context.getBeanNamesForAnnotation(EnableBinding.class)) && functionWrapper != null && functionWrapper.isSupplier()) {
@@ -351,5 +387,104 @@ class FunctionConfiguration {
 			}
 			return (Message<byte[]>) result;
 		}
+	}
+
+	/*
+	 * This class will effectively create a different representation of Bindable interfaces (e.g., Source, Processor...).
+	 * It's main goal is to determine the count of inputs and outputs based on the provided function.
+	 */
+	private static class FunctionBindingHolder implements InitializingBean, ApplicationContextAware, EnvironmentAware {
+
+		private final BinderTypeRegistry binderTypeRegistry;
+
+		private final FunctionCatalog functionCatalog;
+
+		private final StreamFunctionProperties streamFunctionProperties;
+
+		private ConfigurableApplicationContext applicationContext;
+
+		private Environment environment;
+
+		private int inputCount;
+
+		private int outputCount;
+
+		FunctionBindingHolder(BinderTypeRegistry binderTypeRegistry, FunctionCatalog functionCatalog, StreamFunctionProperties streamFunctionProperties) {
+			this.binderTypeRegistry = binderTypeRegistry;
+			this.functionCatalog = functionCatalog;
+			this.streamFunctionProperties = streamFunctionProperties;
+		}
+
+		@Override
+		public void afterPropertiesSet() throws Exception {
+			Class<?>[] configurationClasses = binderTypeRegistry.getAll().values().iterator().next()
+					.getConfigurationClasses();
+			boolean bindingProvider = Stream.of(configurationClasses)
+					.filter(clazz -> AnnotationUtils.findAnnotation(clazz, BindingProvider.class) != null)
+					.findFirst().isPresent();
+			if (!bindingProvider
+					&& ObjectUtils.isEmpty(applicationContext.getBeanNamesForAnnotation(EnableBinding.class))) {
+				this.determineFunctionName(functionCatalog, environment);
+				BeanDefinitionRegistry registry = (BeanDefinitionRegistry) applicationContext.getBeanFactory();
+				RootBeanDefinition rootBeanDefinition = new RootBeanDefinition(BindableFunctionProxyFactory.class);
+				FunctionInvocationWrapper function = functionCatalog
+						.lookup(streamFunctionProperties.getDefinition());
+				if (function != null) {
+					if (function.isSupplier()) {
+						this.inputCount = 0;
+						this.outputCount = 1;
+					}
+					else if (function.isConsumer()) {
+						this.inputCount = 1;
+						this.outputCount = 0;
+					}
+					else {
+						this.inputCount = 1;
+						this.outputCount = 1;
+					}
+					rootBeanDefinition.getConstructorArgumentValues().addGenericArgumentValue(this.inputCount);
+					rootBeanDefinition.getConstructorArgumentValues().addGenericArgumentValue(this.outputCount);
+					registry.registerBeanDefinition(streamFunctionProperties.getDefinition() + "_binding",
+							rootBeanDefinition);
+				}
+
+			}
+		}
+
+		int getInputCount() {
+			return this.inputCount;
+		}
+
+		int getOutputCount() {
+			return this.outputCount;
+		}
+
+		private void determineFunctionName(FunctionCatalog catalog, Environment environment) {
+			String definition = streamFunctionProperties.getDefinition();
+			if (!StringUtils.hasText(definition)) {
+				definition = environment.getProperty("spring.cloud.function.definition");
+			}
+
+			if (StringUtils.hasText(definition)) {
+				streamFunctionProperties.setDefinition(definition);
+			}
+			else if (Boolean.parseBoolean(environment.getProperty("spring.cloud.stream.function.routing.enabled", "false"))) {
+				streamFunctionProperties.setDefinition(RoutingFunction.FUNCTION_NAME);
+			}
+			else {
+				streamFunctionProperties.setDefinition(((FunctionInspector) functionCatalog).getName(functionCatalog.lookup("")));
+			}
+		}
+
+		@Override
+		public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+			this.applicationContext = (ConfigurableApplicationContext) applicationContext;
+		}
+
+		@Override
+		public void setEnvironment(Environment environment) {
+			this.environment = environment;
+		}
+
 	}
 }

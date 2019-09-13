@@ -147,7 +147,7 @@ public class ImplicitFunctionBindingTests {
 	public void testConsumer() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 				TestChannelBinderConfiguration
-						.getCompleteConfiguration(SingleFunctionConfiguration.class))
+						.getCompleteConfiguration(SingleConsumerConfiguration.class))
 								.web(WebApplicationType.NONE)
 								.run("--spring.cloud.stream.function.definition=consumer",
 										"--spring.jmx.enabled=false")) {
@@ -193,7 +193,7 @@ public class ImplicitFunctionBindingTests {
 								.web(WebApplicationType.NONE)
 								.run("--spring.jmx.enabled=false")) {
 
-			assertThat(context.getBean("standAloneSupplierFlow")).isEqualTo(null);
+			assertThat(context.getBean("supplierInitializer")).isEqualTo(null);
 		}
 	}
 

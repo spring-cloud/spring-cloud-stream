@@ -26,49 +26,29 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.stream.Stream;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanCreationException;
-import org.springframework.beans.factory.BeanFactory;
-import org.springframework.beans.factory.BeanFactoryAware;
-import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
-import org.springframework.beans.factory.support.BeanDefinitionRegistry;
-import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.cloud.function.context.FunctionCatalog;
-import org.springframework.cloud.function.context.catalog.FunctionInspector;
-import org.springframework.cloud.function.context.config.RoutingFunction;
-import org.springframework.cloud.stream.annotation.BindingProvider;
-import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.binder.BinderType;
 import org.springframework.cloud.stream.binder.BinderTypeRegistry;
 import org.springframework.cloud.stream.binder.DefaultBinderTypeRegistry;
-import org.springframework.cloud.stream.binding.BindableProxyFactory;
 import org.springframework.cloud.stream.binding.CompositeMessageChannelConfigurer;
 import org.springframework.cloud.stream.binding.MessageChannelConfigurer;
 import org.springframework.cloud.stream.binding.MessageConverterConfigurer;
 import org.springframework.cloud.stream.binding.MessageSourceBindingTargetFactory;
 import org.springframework.cloud.stream.binding.SubscribableChannelBindingTargetFactory;
-import org.springframework.cloud.stream.messaging.Processor;
-import org.springframework.cloud.stream.messaging.Sink;
-import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.context.EnvironmentAware;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Role;
-import org.springframework.core.annotation.AnnotationUtils;
-import org.springframework.core.env.Environment;
-import org.springframework.core.env.StandardEnvironment;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.core.io.support.PropertiesLoaderUtils;
@@ -85,7 +65,6 @@ import org.springframework.messaging.handler.annotation.support.HeadersMethodArg
 import org.springframework.messaging.handler.annotation.support.MessageHandlerMethodFactory;
 import org.springframework.messaging.handler.invocation.HandlerMethodArgumentResolver;
 import org.springframework.util.ClassUtils;
-import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.Validator;
 
@@ -247,100 +226,5 @@ public class BinderFactoryAutoConfiguration {
 		configurerList.add(messageConverterConfigurer);
 		return new CompositeMessageChannelConfigurer(configurerList);
 	}
-
-	@Bean
-	public InitializingBean functionToChannelBindingInitializer(@Nullable FunctionCatalog functionCatalog,
-			@Nullable FunctionInspector functionInspector, BinderTypeRegistry bfac) {
-		return new ImplicitFunctionToChannelBindingInitializer(functionCatalog, functionInspector, bfac);
-	}
-
-
-	private static class ImplicitFunctionToChannelBindingInitializer implements InitializingBean, BeanFactoryAware, EnvironmentAware {
-
-		private ConfigurableListableBeanFactory beanFactory;
-
-		private Environment environment;
-
-		private final FunctionCatalog functionCatalog;
-
-		private final FunctionInspector functionInspector;
-
-		private final BinderTypeRegistry bfac;
-
-		ImplicitFunctionToChannelBindingInitializer(FunctionCatalog functionCatalog,
-				FunctionInspector functionInspector, BinderTypeRegistry bfac) {
-			this.functionCatalog = functionCatalog;
-			this.functionInspector = functionInspector;
-			this.bfac = bfac;
-		}
-		@Override
-		public void afterPropertiesSet() {
-			Class<?>[] configurationClasses = bfac.getAll().values().iterator().next().getConfigurationClasses();
-			boolean bindingProvider = Stream.of(configurationClasses)
-					.filter(clazz -> AnnotationUtils.findAnnotation(clazz, BindingProvider.class) != null)
-					.findFirst().isPresent();
-			if (functionCatalog != null && ObjectUtils.isEmpty(beanFactory.getBeanNamesForAnnotation(EnableBinding.class))) {
-				BeanDefinitionRegistry registry = (BeanDefinitionRegistry) beanFactory;
-				String name = determineFunctionName(functionCatalog, environment);
-				if (StringUtils.hasText(name)) {
-					Object definedFunction = functionCatalog.lookup(name);
-					Class<?> inputType = functionInspector.getInputType(definedFunction);
-					Class<?> outputType = functionInspector.getOutputType(definedFunction);
-
-					if (!bindingProvider) {
-						if (Void.class.isAssignableFrom(outputType)) {
-							bind(Sink.class, registry);
-						}
-						else if (Void.class.isAssignableFrom(inputType)) {
-							bind(Source.class, registry);
-						}
-						else {
-							bind(Processor.class, registry);
-						}
-					}
-				}
-			}
-		}
-
-		@Override
-		public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
-			this.beanFactory = (ConfigurableListableBeanFactory) beanFactory;
-		}
-
-		@Override
-		public void setEnvironment(Environment environment) {
-			this.environment = environment;
-		}
-
-		private String determineFunctionName(FunctionCatalog catalog, Environment environment) {
-			String name = environment.getProperty("spring.cloud.stream.function.definition");
-			if (!StringUtils.hasText(name)) {
-				name = environment.getProperty("spring.cloud.function.definition");
-			}
-			if (!StringUtils.hasText(name) && Boolean.parseBoolean(
-					environment.getProperty("spring.cloud.stream.function.routing.enabled", "false"))) {
-				name = RoutingFunction.FUNCTION_NAME;
-			}
-			if (!StringUtils.hasText(name) && catalog.size() >= 1 && catalog.size() <= 2) {
-				name = ((FunctionInspector) catalog).getName(catalog.lookup(""));
-			}
-			if (StringUtils.hasText(name)) {
-				((StandardEnvironment) environment).getSystemProperties()
-						.putIfAbsent("spring.cloud.stream.function.definition", name);
-			}
-			return name;
-		}
-
-		private void bind(Class<?> type, BeanDefinitionRegistry registry) {
-			if (!registry.containsBeanDefinition(type.getName())) {
-				RootBeanDefinition rootBeanDefinition = new RootBeanDefinition(
-						BindableProxyFactory.class);
-				rootBeanDefinition.getConstructorArgumentValues()
-						.addGenericArgumentValue(type);
-				registry.registerBeanDefinition(type.getName(), rootBeanDefinition);
-			}
-		}
-	}
-
 
 }
