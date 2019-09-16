@@ -73,6 +73,9 @@ public class StreamFunctionProperties {
 	}
 
 	public void setDefinition(String definition) {
+		if (definition == null) {
+			return;
+		}
 		this.composeFrom = definition.startsWith("|");
 		this.composeTo = definition.endsWith("|");
 		this.definition = this.composeFrom ? definition.substring(1)
