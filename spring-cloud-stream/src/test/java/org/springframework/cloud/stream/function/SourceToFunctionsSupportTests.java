@@ -234,7 +234,6 @@ public class SourceToFunctionsSupportTests {
 			assertThat(new String(target.receive(2000).getPayload())).isEqualTo("6");
 
 			assertThat(context.getBean("supplierInitializer")).isNotEqualTo(null);
-			assertThat(context.getBean("functionInitializer")).isEqualTo(null);
 		}
 	}
 
