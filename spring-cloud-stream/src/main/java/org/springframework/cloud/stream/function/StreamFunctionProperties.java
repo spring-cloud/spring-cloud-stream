@@ -73,13 +73,12 @@ public class StreamFunctionProperties {
 	}
 
 	public void setDefinition(String definition) {
-		if (definition == null) {
-			return;
+		if (StringUtils.hasText(definition)) {
+			this.composeFrom = definition.startsWith("|");
+			this.composeTo = definition.endsWith("|");
+			this.definition = this.composeFrom ? definition.substring(1)
+					: (this.composeTo ? definition.substring(0, definition.length() - 1) : definition);
 		}
-		this.composeFrom = definition.startsWith("|");
-		this.composeTo = definition.endsWith("|");
-		this.definition = this.composeFrom ? definition.substring(1)
-				: (this.composeTo ? definition.substring(0, definition.length() - 1) : definition);
 	}
 
 	BindingServiceProperties getBindingServiceProperties() {

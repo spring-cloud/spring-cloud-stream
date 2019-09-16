@@ -423,12 +423,11 @@ public class FunctionConfiguration {
 					.filter(clazz -> AnnotationUtils.findAnnotation(clazz, BindingProvider.class) != null)
 					.findFirst().isPresent();
 			if (!bindingProvider
-					&& ObjectUtils.isEmpty(applicationContext.getBeanNamesForAnnotation(EnableBinding.class))) {
-				this.determineFunctionName(functionCatalog, environment);
+					&& ObjectUtils.isEmpty(applicationContext.getBeanNamesForAnnotation(EnableBinding.class))
+					&& this.determineFunctionName(functionCatalog, environment)) {
 				BeanDefinitionRegistry registry = (BeanDefinitionRegistry) applicationContext.getBeanFactory();
 				RootBeanDefinition rootBeanDefinition = new RootBeanDefinition(BindableFunctionProxyFactory.class);
-				FunctionInvocationWrapper function = functionCatalog
-						.lookup(streamFunctionProperties.getDefinition());
+				FunctionInvocationWrapper function = functionCatalog.lookup(streamFunctionProperties.getDefinition());
 				if (function != null) {
 					if (function.isSupplier()) {
 						this.inputCount = 0;
@@ -447,7 +446,6 @@ public class FunctionConfiguration {
 					registry.registerBeanDefinition(streamFunctionProperties.getDefinition() + "_binding",
 							rootBeanDefinition);
 				}
-
 			}
 		}
 
@@ -459,7 +457,7 @@ public class FunctionConfiguration {
 			return this.outputCount;
 		}
 
-		private void determineFunctionName(FunctionCatalog catalog, Environment environment) {
+		private boolean determineFunctionName(FunctionCatalog catalog, Environment environment) {
 			String definition = streamFunctionProperties.getDefinition();
 			if (!StringUtils.hasText(definition)) {
 				definition = environment.getProperty("spring.cloud.function.definition");
@@ -474,6 +472,7 @@ public class FunctionConfiguration {
 			else {
 				streamFunctionProperties.setDefinition(((FunctionInspector) functionCatalog).getName(functionCatalog.lookup("")));
 			}
+			return StringUtils.hasText(streamFunctionProperties.getDefinition());
 		}
 
 		@Override

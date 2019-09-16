@@ -39,6 +39,7 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.support.GenericMessage;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.fail;
 
 /**
  *
@@ -51,6 +52,21 @@ public class ImplicitFunctionBindingTests {
 	public void after() {
 		System.clearProperty("spring.cloud.stream.function.definition");
 		System.clearProperty("spring.cloud.function.definition");
+	}
+
+	@Test
+	public void testEmptyConfiguration() {
+
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+				TestChannelBinderConfiguration.getCompleteConfiguration(
+						EmptyConfiguration.class))
+								.web(WebApplicationType.NONE)
+								.run("--spring.jmx.enabled=false")) {
+			context.getBean(InputDestination.class);
+		}
+		catch (Exception e) { // should not fail
+			fail();
+		}
 	}
 
 	@Test
@@ -289,6 +305,11 @@ public class ImplicitFunctionBindingTests {
 		public void handle(String value) {
 
 		}
+	}
+
+	@EnableAutoConfiguration
+	public static class EmptyConfiguration {
+
 	}
 
 }
