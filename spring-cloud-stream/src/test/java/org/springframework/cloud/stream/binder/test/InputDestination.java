@@ -34,7 +34,11 @@ public class InputDestination extends AbstractDestination {
 	 * @param message message to send
 	 */
 	public void send(Message<?> message) {
-		this.getChannel().send(message);
+		this.getChannel(0).send(message);
+	}
+
+	public void send(Message<?> message, int inputIndex) {
+		this.getChannel(inputIndex).send(message);
 	}
 
 }

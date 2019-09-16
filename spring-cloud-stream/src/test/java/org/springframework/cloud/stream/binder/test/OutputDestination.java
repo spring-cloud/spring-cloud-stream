@@ -16,6 +16,8 @@
 
 package org.springframework.cloud.stream.binder.test;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedTransferQueue;
 import java.util.concurrent.TimeUnit;
@@ -32,7 +34,7 @@ import org.springframework.messaging.Message;
  */
 public class OutputDestination extends AbstractDestination {
 
-	private BlockingQueue<Message<?>> messages;
+	private final List<BlockingQueue<Message<?>>> messageQueues = new ArrayList<>();
 
 	/**
 	 * Allows to access {@link Message}s received by this {@link OutputDestination}.
@@ -40,9 +42,9 @@ public class OutputDestination extends AbstractDestination {
 	 * @return received message
 	 */
 	@SuppressWarnings("unchecked")
-	public Message<byte[]> receive(long timeout) {
+	public Message<byte[]> receive(long timeout, int channelIndex) {
 		try {
-			return (Message<byte[]>) this.messages.poll(timeout, TimeUnit.MILLISECONDS);
+			return (Message<byte[]>) this.messageQueues.get(channelIndex).poll(timeout, TimeUnit.MILLISECONDS);
 		}
 		catch (InterruptedException e) {
 			Thread.currentThread().interrupt();
@@ -55,13 +57,18 @@ public class OutputDestination extends AbstractDestination {
 	 * @return received message
 	 */
 	public Message<byte[]> receive() {
-		return this.receive(0);
+		return this.receive(0, 0);
+	}
+
+	public Message<byte[]> receive(long timeout) {
+		return this.receive(timeout, 0);
 	}
 
 	@Override
-	void afterChannelIsSet() {
-		this.messages = new LinkedTransferQueue<>();
-		this.getChannel().subscribe(message -> this.messages.offer(message));
+	void afterChannelIsSet(int channelIndex) {
+		BlockingQueue<Message<?>> messageQueue = new LinkedTransferQueue<>();
+		this.messageQueues.add(messageQueue);
+		this.getChannel(channelIndex).subscribe(message -> this.messageQueues.get(channelIndex).offer(message));
 	}
 
 }

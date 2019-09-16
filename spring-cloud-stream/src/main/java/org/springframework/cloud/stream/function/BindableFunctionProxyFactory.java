@@ -22,31 +22,41 @@ import org.springframework.cloud.stream.binding.BoundTargetHolder;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.SubscribableChannel;
 import org.springframework.util.Assert;
+import org.springframework.util.CollectionUtils;
 
 /**
  * {@link FactoryBean} for creating inputs/outputs destinations to be bound to
  * function arguments. It is an extension to {@link BindableProxyFactory} which
  * operates on Bindable interfaces (e.g., Source, Processor, Sink) which internally
- * define inputs and output channels. Unlike BindableProxyFactory, this class simply
- * operates based on the count of provided inputs and outputs and the names of inputs and outputs
- * are based on convention.
+ * define inputs and output channels. Unlike BindableProxyFactory, this class
+ * operates based on the count of provided inputs and outputs deriving the binding
+ * (channel) names based on convention - {@code `<function-definition>_ + <in/out> + _<index>`}
+ * <br>
+ * For example, `myFunction_in_0` - is the binding for the first input argument of the
+ * function with the name `myFunction`.
  *
  * @author Oleg Zhurakousky
  *
- *
- *
  * @since 3.0
  */
-public class BindableFunctionProxyFactory extends BindableProxyFactory {
+class BindableFunctionProxyFactory extends BindableProxyFactory {
 
 	private final int inputCount;
 
 	private final int outputCount;
 
-	public BindableFunctionProxyFactory(int inputCount, int outputCount) {
+	private final String functionDefinition;
+
+	private final boolean nameBasedOnFunctionName;
+
+	private boolean multiple;
+
+	BindableFunctionProxyFactory(String functionDefinition, int inputCount, int outputCount, boolean nameBasedOnFunctionName) {
 		super(null);
 		this.inputCount = inputCount;
 		this.outputCount = outputCount;
+		this.functionDefinition = functionDefinition;
+		this.nameBasedOnFunctionName = nameBasedOnFunctionName;
 	}
 
 
@@ -55,23 +65,71 @@ public class BindableFunctionProxyFactory extends BindableProxyFactory {
 		Assert.notEmpty(BindableFunctionProxyFactory.this.bindingTargetFactories,
 				"'bindingTargetFactories' cannot be empty");
 
+		this.multiple = this.inputCount > 1 || this.outputCount > 1;
+
 		if (this.inputCount > 0) {
-			if (this.inputCount == 1) {
-				this.createInput("input");
+			if (multiple || nameBasedOnFunctionName) {
+				for (int i = 0; i < inputCount; i++) {
+					this.createInput(this.buildInputNameForIndex(i));
+				}
 			}
 			else {
-				throw new UnsupportedOperationException("Multiple inputs are not currently supported");
+				this.createInput("input");
 			}
 		}
 
 		if (this.outputCount > 0) {
-			if (this.outputCount == 1) {
-				this.createOutput("output");
+			if (multiple || nameBasedOnFunctionName) {
+				for (int i = 0; i < outputCount; i++) {
+					this.createOutput(this.buildOutputNameForIndex(i));
+				}
 			}
 			else {
-				throw new UnsupportedOperationException("Multiple outputs are not currently supported");
+				this.createOutput("output");
 			}
 		}
+	}
+
+	@Override
+	public Class<?> getObjectType() {
+		return this.type;
+	}
+
+	@Override
+	public boolean isSingleton() {
+		return true;
+	}
+
+	protected boolean isNameBasedOnFunctionName() {
+		return this.nameBasedOnFunctionName;
+	}
+
+	protected String getFunctionDefinition() {
+		return this.functionDefinition;
+	}
+
+	protected String getInputName(int index) {
+		return CollectionUtils.isEmpty(this.getInputs())
+				? null
+						: this.getInputs().toArray(new String[] {})[index];
+	}
+
+	protected String getOutputName(int index) {
+		return CollectionUtils.isEmpty(this.getOutputs())
+				? null
+						: this.getOutputs().toArray(new String[] {})[index];
+	}
+
+	protected boolean isMultiple() {
+		return this.multiple;
+	}
+
+	private String buildInputNameForIndex(int index) {
+		return this.functionDefinition + "_in_" + index;
+	}
+
+	private String buildOutputNameForIndex(int index) {
+		return this.functionDefinition + "_out_" + index;
 	}
 
 	private void createInput(String name) {
@@ -84,17 +142,6 @@ public class BindableFunctionProxyFactory extends BindableProxyFactory {
 		BindableFunctionProxyFactory.this.outputHolders.put(name,
 				new BoundTargetHolder(getBindingTargetFactory(MessageChannel.class)
 						.createOutput(name), true));
-	}
-
-
-	@Override
-	public Class<?> getObjectType() {
-		return this.type;
-	}
-
-	@Override
-	public boolean isSingleton() {
-		return true;
 	}
 
 }

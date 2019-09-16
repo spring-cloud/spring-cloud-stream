@@ -16,6 +16,9 @@
 
 package org.springframework.cloud.stream.binder.test;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.springframework.messaging.SubscribableChannel;
 
 /**
@@ -24,18 +27,18 @@ import org.springframework.messaging.SubscribableChannel;
  */
 abstract class AbstractDestination {
 
-	private SubscribableChannel channel;
+	private final List<SubscribableChannel> channels = new ArrayList<>();
 
-	SubscribableChannel getChannel() {
-		return this.channel;
+	SubscribableChannel getChannel(int index) {
+		return this.channels.get(index);
 	}
 
 	void setChannel(SubscribableChannel channel) {
-		this.channel = channel;
-		this.afterChannelIsSet();
+		this.channels.add(channel);
+		this.afterChannelIsSet(this.channels.size() - 1);
 	}
 
-	void afterChannelIsSet() {
+	void afterChannelIsSet(int channelIndex) {
 		// noop
 	}
 
