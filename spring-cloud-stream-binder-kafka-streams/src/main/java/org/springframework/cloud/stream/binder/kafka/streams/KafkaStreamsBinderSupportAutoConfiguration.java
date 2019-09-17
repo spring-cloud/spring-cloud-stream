@@ -41,6 +41,7 @@ import org.springframework.cloud.stream.binder.kafka.streams.function.FunctionDe
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsBinderConfigurationProperties;
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsExtendedBindingProperties;
 import org.springframework.cloud.stream.binder.kafka.streams.serde.CompositeNonNativeSerde;
+import org.springframework.cloud.stream.binder.kafka.streams.serde.MessageConverterDelegateSerde;
 import org.springframework.cloud.stream.binding.BindingService;
 import org.springframework.cloud.stream.binding.StreamListenerResultAdapter;
 import org.springframework.cloud.stream.config.BinderProperties;
@@ -272,6 +273,12 @@ public class KafkaStreamsBinderSupportAutoConfiguration {
 																		KafkaStreamsBinderConfigurationProperties binderConfigurationProperties) {
 		return new KafkaStreamsMessageConversionDelegate(compositeMessageConverter, sendToDlqAndContinue,
 				KafkaStreamsBindingInformationCatalogue, binderConfigurationProperties);
+	}
+
+	@Bean
+	public MessageConverterDelegateSerde messageConverterDelegateSerde(
+			CompositeMessageConverter compositeMessageConverterFactory) {
+		return new MessageConverterDelegateSerde(compositeMessageConverterFactory);
 	}
 
 	@Bean

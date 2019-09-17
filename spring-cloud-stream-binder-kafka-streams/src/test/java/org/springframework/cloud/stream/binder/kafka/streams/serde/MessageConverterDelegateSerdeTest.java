@@ -35,11 +35,11 @@ import org.springframework.messaging.converter.MessageConverter;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Refer {@link CompositeNonNativeSerde} for motivations.
+ * Refer {@link MessageConverterDelegateSerde} for motivations.
  *
  * @author Soby Chacko
  */
-public class CompositeNonNativeSerdeTest {
+public class MessageConverterDelegateSerdeTest {
 
 	@Test
 	@SuppressWarnings("unchecked")
@@ -55,17 +55,17 @@ public class CompositeNonNativeSerdeTest {
 		messageConverters.add(new AvroSchemaMessageConverter(new AvroSchemaServiceManagerImpl()));
 		CompositeMessageConverterFactory compositeMessageConverterFactory = new CompositeMessageConverterFactory(
 				messageConverters, new ObjectMapper());
-		CompositeNonNativeSerde compositeNonNativeSerde = new CompositeNonNativeSerde(
+		MessageConverterDelegateSerde messageConverterDelegateSerde = new MessageConverterDelegateSerde(
 				compositeMessageConverterFactory.getMessageConverterForAllRegistered());
 
 		Map<String, Object> configs = new HashMap<>();
 		configs.put("valueClass", Sensor.class);
 		configs.put("contentType", "application/avro");
-		compositeNonNativeSerde.configure(configs, false);
-		final byte[] serialized = compositeNonNativeSerde.serializer().serialize(null,
+		messageConverterDelegateSerde.configure(configs, false);
+		final byte[] serialized = messageConverterDelegateSerde.serializer().serialize(null,
 				sensor);
 
-		final Object deserialized = compositeNonNativeSerde.deserializer()
+		final Object deserialized = messageConverterDelegateSerde.deserializer()
 				.deserialize(null, serialized);
 
 		assertThat(deserialized).isEqualTo(sensor);
