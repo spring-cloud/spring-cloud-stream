@@ -243,6 +243,8 @@ Default: null (If not specified, messages that result in errors are forwarded to
 dlqProducerProperties::
 Using this, DLQ-specific producer properties can be set.
 All the properties available through kafka producer properties can be set through this property.
+When native decoding is enabled on the consumer (i.e., useNativeDecoding: true) , the application must provide corresponding key/value serializers for DLQ.
+This must be provided in the form  of `dlqProducerProperties.configuration.key.serializer` and `dlqProducerProperties.configuration.value.serializer`.
 +
 Default: Default Kafka producer properties.
 standardHeaders::
@@ -283,6 +285,21 @@ The replication factor to use when provisioning topics. Overrides the binder-wid
 Ignored if `replicas-assignments` is present.
 +
 Default: none (the binder-wide default of 1 is used).
+pollTimeout::
+Timeout used for polling in pollable consumers.
++
+Default: 5 seconds.
+
+==== Consuming Batches
+
+Starting with version 3.0, when `spring.cloud.stream.binding.<name>.consumer.batch-mode` is set to `true`, all of the records received by polling the Kafka `Consumer` will be presented as a `List<?>` to the listener method.
+Otherwise, the method will be called with one record at a time.
+The size of the batch is controlled by Kafka consumer properties `max.poll.records`, `min.fetch.bytes`, `fetch.max.wait.ms`; refer to the Kafka documentation for more information.
+
+IMPORTANT: Retry within the binder is not supported when using batch mode, so `maxAttempts` will be overridden to 1.
+You can configure a `SeekToCurrentBatchErrorHandler` (using a `ListenerContainerCustomizer`) to achieve similar functionality to retry in the binder.
+You can also use a manual `AckMode` and call `Ackowledgment.nack(index, sleep)` to commit the offsets for a partial batch and have the remaining records redelivered.
+Refer to the https://docs.spring.io/spring-kafka/docs/2.3.0.BUILD-SNAPSHOT/reference/html/#committing-offsets[Spring for Apache Kafka documentation] for more information about these techniques.
 
 [[kafka-producer-properties]]
 ==== Kafka Producer Properties
@@ -310,6 +327,13 @@ sync::
 Whether the producer is synchronous.
 +
 Default: `false`.
+sendTimeoutExpression::
+A SpEL expression evaluated against the outgoing message used to evaluate the time to wait for ack when synchronous publish is enabled -- for example, `headers['mySendTimeout']`.
+The value of the timeout is in milliseconds.
+With versions before 3.0, the payload could not be used unless native encoding was being used because, by the time this expression was evaluated, the payload was already in the form of a `byte[]`.
+Now, the expression is evaluated before the payload is converted.
++
+Default: `none`.
 batchTimeout::
 How long the producer waits to allow more messages to accumulate in the same batch before sending the messages.
 (Normally, the producer does not wait at all and simply sends all the messages that accumulated while the previous send was in progress.) A non-zero value may increase throughput at the expense of latency.
