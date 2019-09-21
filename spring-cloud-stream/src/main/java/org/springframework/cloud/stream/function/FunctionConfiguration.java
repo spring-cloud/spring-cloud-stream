@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.function;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.time.Duration;
@@ -53,8 +54,10 @@ import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.binder.BinderTypeRegistry;
 import org.springframework.cloud.stream.binder.BindingCreatedEvent;
 import org.springframework.cloud.stream.binder.ConsumerProperties;
+import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.cloud.stream.binding.BindableProxyFactory;
 import org.springframework.cloud.stream.config.BinderFactoryAutoConfiguration;
+import org.springframework.cloud.stream.config.BindingBeansRegistrar;
 import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.cloud.stream.config.BindingServiceConfiguration;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
@@ -72,6 +75,7 @@ import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.core.env.Environment;
 import org.springframework.core.type.MethodMetadata;
+import org.springframework.integration.channel.AbstractMessageChannel;
 import org.springframework.integration.channel.MessageChannelReactiveUtils;
 import org.springframework.integration.context.IntegrationObjectSupport;
 import org.springframework.integration.dsl.IntegrationFlow;
@@ -82,6 +86,7 @@ import org.springframework.integration.support.MessageBuilder;
 import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
+import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.SubscribableChannel;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
@@ -97,8 +102,8 @@ import org.springframework.util.StringUtils;
  */
 @Configuration
 @EnableConfigurationProperties(StreamFunctionProperties.class)
-@Import(BinderFactoryAutoConfiguration.class)
 @AutoConfigureBefore(BindingServiceConfiguration.class)
+@Import({ BindingBeansRegistrar.class, BinderFactoryAutoConfiguration.class })
 public class FunctionConfiguration {
 
 	@Bean
@@ -124,7 +129,7 @@ public class FunctionConfiguration {
 	 */
 	@Bean
 	IntegrationFlow supplierInitializer(FunctionCatalog functionCatalog, FunctionInspector functionInspector,
-			StreamFunctionProperties functionProperties, GenericApplicationContext context) {
+			StreamFunctionProperties functionProperties, GenericApplicationContext context, BindingServiceProperties serviceProperties) {
 		if (!ObjectUtils.isEmpty(context.getBeanNamesForAnnotation(EnableBinding.class))) {
 			return null;
 		}
@@ -135,7 +140,8 @@ public class FunctionConfiguration {
 						: new String[] {};
 
 		for (String functionDefinition : functionDefinitions) {
-			FunctionInvocationWrapper functionWrapper = functionCatalog.lookup(functionDefinition);
+			String contentType = serviceProperties.getBindingProperties("output").getContentType();
+			FunctionInvocationWrapper functionWrapper = functionCatalog.lookup(functionDefinition, contentType);
 			if (functionWrapper != null && functionWrapper.isSupplier()) {
 				Publisher<Object> beginPublishingTrigger = this.setupBindingTrigger(context);
 
@@ -187,8 +193,7 @@ public class FunctionConfiguration {
 			FunctionInspector inspector, Publisher<Object> beginPublishingTrigger, PollableSupplier pollable) {
 
 		IntegrationFlowBuilder integrationFlowBuilder;
-		Type functionType = FunctionTypeUtils.getFunctionType(supplier, inspector);
-
+		Type functionType = ((FunctionInvocationWrapper) supplier).getFunctionType();
 
 		boolean splittable = pollable != null && (boolean) AnnotationUtils.getAnnotationAttributes(pollable).get("splittable");
 
@@ -343,36 +348,37 @@ public class FunctionConfiguration {
 			String channelType = (String) ((DirectWithAttributesChannel) messageChannel).getAttribute("type");
 			if (Source.OUTPUT.equals(channelType) && functionProperties.isComposeFrom()) {
 				logger.info("Composing at the head of 'output' channel");
-				BindingProperties properties = this.serviceProperties.getBindings().get(channelName);
+				BindingProperties properties = this.serviceProperties.getBindingProperties(channelName);
 				FunctionInvocationWrapper function = functionCatalog.lookup(functionDefinition, properties.getContentType());
-				this.composeSimpleFunctionToExistingFlow(function, messageChannel, channelName, bindableProxyFactory);
+				this.composeSimpleFunctionToExistingFlow(function, messageChannel, bindableProxyFactory);
 			}
 			else {
-				BindingProperties properties = this.serviceProperties.getBindings().get(channelName);
+				BindingProperties properties = this.serviceProperties.getBindingProperties(channelName);
 				FunctionInvocationWrapper function = functionCatalog.lookup(functionDefinition, properties.getContentType());
 				this.bindSimpleFunctions(function, messageChannel, bindableProxyFactory);
 			}
 		}
 
-		private void composeSimpleFunctionToExistingFlow(FunctionInvocationWrapper function, SubscribableChannel messageChannel,
-				String channelName, BindableProxyFactory bindableProxyFactory) {
-			ServiceActivatingHandler handler = createFunctionHandler(function);
+		private void composeSimpleFunctionToExistingFlow(FunctionInvocationWrapper function, SubscribableChannel outputChannel,
+				BindableProxyFactory bindableProxyFactory) {
+			String outputChannelName = ((AbstractMessageChannel) outputChannel).getBeanName();
+			ServiceActivatingHandler handler = createFunctionHandler(function, null, outputChannelName);
 
 			DirectWithAttributesChannel newOutputChannel = new DirectWithAttributesChannel();
 			newOutputChannel.setAttribute("type", "output");
 			newOutputChannel.setComponentName("output.extended");
 			this.context.registerBean("output.extended", MessageChannel.class, () -> newOutputChannel);
-			bindableProxyFactory.replaceOutputChannel(channelName, "output.extended", newOutputChannel);
+			bindableProxyFactory.replaceOutputChannel(outputChannelName, "output.extended", newOutputChannel);
 
 			handler.setOutputChannelName("output.extended");
-			messageChannel.subscribe(handler);
+			outputChannel.subscribe(handler);
 		}
 
 		private void bindSimpleFunctions(FunctionInvocationWrapper function, SubscribableChannel inputChannel, BindableProxyFactory bindableProxyFactory) {
-			Type functionType = FunctionTypeUtils.getFunctionType(function, this.functionInspector);
+			Type functionType = function.getFunctionType();
 			String outputChannelName = bindableProxyFactory instanceof BindableFunctionProxyFactory
 					? ((BindableFunctionProxyFactory) bindableProxyFactory).getOutputName(0)
-							: Source.OUTPUT;
+							: (FunctionTypeUtils.isConsumer(functionType) ? null : "output");
 
 			if (FunctionTypeUtils.isReactive(FunctionTypeUtils.getInputType(functionType, 0))) {
 				MessageChannel outputChannel = context.getBean(outputChannelName, MessageChannel.class);
@@ -382,7 +388,8 @@ public class FunctionConfiguration {
 				this.subscribeToInput(function, publisher, message -> outputChannel.send((Message<?>) message));
 			}
 			else {
-				ServiceActivatingHandler handler = createFunctionHandler(function);
+				String inputChannelName = ((AbstractMessageChannel) inputChannel).getBeanName();
+				ServiceActivatingHandler handler = createFunctionHandler(function, inputChannelName, outputChannelName);
 				if (!FunctionTypeUtils.isConsumer(functionType)) {
 					handler.setOutputChannelName(outputChannelName);
 				}
@@ -390,8 +397,15 @@ public class FunctionConfiguration {
 			}
 		}
 
-		private ServiceActivatingHandler createFunctionHandler(FunctionInvocationWrapper function) {
-			ServiceActivatingHandler handler = new ServiceActivatingHandler(new FunctionWrapper(function));
+		private ServiceActivatingHandler createFunctionHandler(FunctionInvocationWrapper function,
+				String inputChannelName, String outputChannelName) {
+			ConsumerProperties consumerProperties = StringUtils.hasText(inputChannelName)
+					? this.serviceProperties.getBindingProperties(inputChannelName).getConsumer()
+							: null;
+			ProducerProperties producerProperties = StringUtils.hasText(outputChannelName)
+					? this.serviceProperties.getBindingProperties(outputChannelName).getProducer()
+							: null;
+			ServiceActivatingHandler handler = new ServiceActivatingHandler(new FunctionWrapper(function, consumerProperties, producerProperties));
 			handler.setBeanFactory(context);
 			handler.afterPropertiesSet();
 			return handler;
@@ -484,15 +498,31 @@ public class FunctionConfiguration {
 	private static class FunctionWrapper implements Function<Message<byte[]>, Object> {
 		private final Function function;
 
-		FunctionWrapper(Function function) {
+		private final ConsumerProperties consumerProperties;
+
+		private final ProducerProperties producerProperties;
+
+		private final Field headersField;
+
+		FunctionWrapper(Function function, ConsumerProperties consumerProperties, ProducerProperties producerProperties) {
 			this.function = function;
+			this.consumerProperties = consumerProperties;
+			this.producerProperties = producerProperties;
+			this.headersField = ReflectionUtils.findField(MessageHeaders.class, "headers");
+			this.headersField.setAccessible(true);
 		}
 		@SuppressWarnings("unchecked")
 		@Override
-		public Message<byte[]> apply(Message<byte[]> t) {
-			Object result = function.apply(t);
+		public Message<byte[]> apply(Message<byte[]> message) {
+
+//			Map<String, Object> headersMap = (Map<String, Object>) ReflectionUtils
+//					.getField(this.headersField, message.getHeaders());
+
+
+			Object result = function.apply(message);
 			if (result instanceof Publisher) {
-				throw new IllegalStateException("Routing to functions that return Publisher is not supported in the context of Spring Cloud Stream.");
+				throw new IllegalStateException("Routing to functions that return Publisher is not supported "
+						+ "in the context of Spring Cloud Stream.");
 			}
 			return (Message<byte[]>) result;
 		}

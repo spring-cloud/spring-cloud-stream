@@ -542,8 +542,8 @@ So, this is where understanding of the  naming convention for binding destinatio
 
 *Binding naming convention:*
 
-* input - `<functionName> + _in_ + <index>`
-* output - `<functionName> + _out_ + <index>`
+* input - `<functionName> + .in. + <index>`
+* output - `<functionName> + .out. + <index>`
 
 Let's look at the few samples:
 
@@ -566,15 +566,15 @@ public class SampleApplication {
 The above example demonstrates function which takes two inputs (first of type `String` and second of type `Integer`)
 and produces a single output of type `String`.
 
-So, for the above example the two input bindings will be `gather_in_0` and `gather_in_1` and for consistency the
-output binding also follows the same convention and is named `gather_out_0`.
+So, for the above example the two input bindings will be `gather.in.0` and `gather.in.1` and for consistency the
+output binding also follows the same convention and is named `gather.out.0`.
 
 
 Knowing that will allow you to set binding specific properties the same way you did with `@StreamListener`.
-For example, the following will override content-type for `gather_in_0` binding:
+For example, the following will override content-type for `gather.in.0` binding:
 
 ----
---spring.cloud.stream.bindings.gather_in_0.content-type=text/plain
+--spring.cloud.stream.bindings.gather.in.0.content-type=text/plain
 ----
 
 
@@ -601,8 +601,8 @@ public class SampleApplication {
 The above example is somewhat of a the opposite from the previous sample and  demonstrates function which
 takes single input of type `Integer` and produces two outputs (both of type `String`).
 
-So, for the above example the input binding is `gather_in_0` and the
-output bindings are `gather_out_0` and `gather_out_1`.
+So, for the above example the input binding is `gather.in.0` and the
+output bindings are `gather.out.0` and `gather.out.1`.
 
 And you test it with the following code:
 [source,java]
@@ -664,11 +664,11 @@ As with functions with multiple inputs/outputs we can no longer rely on the nami
 destination bindings used by functions with single inputs/outputs. So we follow the same convention as
 for functions with multiple inputs/outputs:
 
-* input - `<functionName> + _in_ + <index>`
-* output - `<functionName> + _out_ + <index>`
+* input - `<functionName> + .in. + <index>`
+* output - `<functionName> + .out. + <index>`
 
 This means that the above configuration will result in the following destination bindings:
-`uppercase_in_0`, `uppercase_out_0`, `reverse_in_0` and `reverse_out_0`.
+`uppercase.in.0`, `uppercase.out.0`, `reverse.in.0` and `reverse.out.0`.
 
 And you test it with the following code:
 [source,java]

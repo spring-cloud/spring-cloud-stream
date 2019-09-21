@@ -49,6 +49,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Role;
+import org.springframework.core.env.Environment;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.core.io.support.PropertiesLoaderUtils;
@@ -199,7 +200,11 @@ public class BinderFactoryAutoConfiguration {
 	@Bean
 	public MessageConverterConfigurer messageConverterConfigurer(
 			BindingServiceProperties bindingServiceProperties,
-			@Qualifier(IntegrationContextUtils.ARGUMENT_RESOLVER_MESSAGE_CONVERTER_BEAN_NAME) CompositeMessageConverter compositeMessageConverter) {
+			@Qualifier(IntegrationContextUtils.ARGUMENT_RESOLVER_MESSAGE_CONVERTER_BEAN_NAME) CompositeMessageConverter compositeMessageConverter,
+			Environment environment) {
+		if (StringUtils.hasText(environment.getProperty("spring.cloud.stream.function.definition"))) {
+			return null;
+		}
 		return new MessageConverterConfigurer(bindingServiceProperties,
 				compositeMessageConverter);
 	}

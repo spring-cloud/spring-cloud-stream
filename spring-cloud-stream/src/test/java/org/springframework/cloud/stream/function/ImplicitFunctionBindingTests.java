@@ -16,8 +16,10 @@
 
 package org.springframework.cloud.stream.function;
 
+import java.io.Serializable;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import org.junit.After;
 import org.junit.Test;
@@ -61,7 +63,7 @@ public class ImplicitFunctionBindingTests {
 				TestChannelBinderConfiguration.getCompleteConfiguration(
 						EmptyConfiguration.class))
 								.web(WebApplicationType.NONE)
-								.run("--spring.jmx.enabled=false")) {
+								.run("--spring.jmx.enabled=false", "--debug")) {
 			context.getBean(InputDestination.class);
 		}
 		catch (Exception e) { // should not fail
@@ -166,7 +168,9 @@ public class ImplicitFunctionBindingTests {
 						.getCompleteConfiguration(SingleConsumerConfiguration.class))
 								.web(WebApplicationType.NONE)
 								.run("--spring.cloud.stream.function.definition=consumer",
-										"--spring.jmx.enabled=false")) {
+										"--spring.jmx.enabled=false",
+										"--spring.cloud.stream.bindings.input.content-type=text/plain",
+										"--spring.cloud.stream.bindings.input.consumer.use-native-decoding=true")) {
 
 			InputDestination source = context.getBean(InputDestination.class);
 			source.send(new GenericMessage<byte[]>("John Doe".getBytes()));
@@ -213,6 +217,24 @@ public class ImplicitFunctionBindingTests {
 		}
 	}
 
+
+	@Test(expected = Exception.class)
+	public void testDeclaredTypeVsActualInstance() {
+		System.clearProperty("spring.cloud.stream.function.definition");
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+				TestChannelBinderConfiguration.getCompleteConfiguration(
+						SCF_GH_409Configuration.class))
+								.web(WebApplicationType.NONE)
+								.run("--spring.jmx.enabled=false")) {
+
+			InputDestination inputDestination = context.getBean(InputDestination.class);
+
+			Message<byte[]> inputMessageOne = MessageBuilder
+					.withPayload("Hello".getBytes()).build();
+
+			inputDestination.send(inputMessageOne);
+		}
+	}
 
 	@Test
 	public void testWithContextTypeApplicationProperty() {
@@ -310,6 +332,25 @@ public class ImplicitFunctionBindingTests {
 	@EnableAutoConfiguration
 	public static class EmptyConfiguration {
 
+	}
+
+	@EnableAutoConfiguration
+	public static class SCF_GH_409Configuration {
+
+		@Bean
+		public Serializable blah() {
+			return new Foo();
+		}
+
+		private static class Foo implements Supplier<Object>, Serializable {
+
+			@Override
+			public Object get() {
+				// TODO Auto-generated method stub
+				return null;
+			}
+
+		}
 	}
 
 }

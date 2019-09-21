@@ -39,15 +39,19 @@ public class CompositeMessageChannelConfigurer
 	@Override
 	public void configureInputChannel(MessageChannel messageChannel, String channelName) {
 		for (MessageChannelConfigurer messageChannelConfigurer : this.messageChannelConfigurers) {
-			messageChannelConfigurer.configureInputChannel(messageChannel, channelName);
+			if (messageChannelConfigurer != null) {
+				messageChannelConfigurer.configureInputChannel(messageChannel, channelName);
+			}
+
 		}
 	}
 
 	@Override
-	public void configureOutputChannel(MessageChannel messageChannel,
-			String channelName) {
+	public void configureOutputChannel(MessageChannel messageChannel, String channelName) {
 		for (MessageChannelConfigurer messageChannelConfigurer : this.messageChannelConfigurers) {
-			messageChannelConfigurer.configureOutputChannel(messageChannel, channelName);
+			if (messageChannelConfigurer != null) {
+				messageChannelConfigurer.configureOutputChannel(messageChannel, channelName);
+			}
 		}
 	}
 

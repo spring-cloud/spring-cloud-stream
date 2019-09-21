@@ -30,9 +30,9 @@ import org.springframework.util.CollectionUtils;
  * operates on Bindable interfaces (e.g., Source, Processor, Sink) which internally
  * define inputs and output channels. Unlike BindableProxyFactory, this class
  * operates based on the count of provided inputs and outputs deriving the binding
- * (channel) names based on convention - {@code `<function-definition>_ + <in/out> + _<index>`}
+ * (channel) names based on convention - {@code `<function-definition>. + <in/out> + .<index>`}
  * <br>
- * For example, `myFunction_in_0` - is the binding for the first input argument of the
+ * For example, `myFunction.in.0` - is the binding for the first input argument of the
  * function with the name `myFunction`.
  *
  * @author Oleg Zhurakousky
@@ -40,6 +40,8 @@ import org.springframework.util.CollectionUtils;
  * @since 3.0
  */
 class BindableFunctionProxyFactory extends BindableProxyFactory {
+
+	static final String delimiter = ".";
 
 	private final int inputCount;
 
@@ -125,11 +127,21 @@ class BindableFunctionProxyFactory extends BindableProxyFactory {
 	}
 
 	private String buildInputNameForIndex(int index) {
-		return this.functionDefinition + "_in_" + index;
+		return new StringBuilder(this.functionDefinition)
+			.append(delimiter)
+			.append("in")
+			.append(delimiter)
+			.append(index)
+			.toString();
 	}
 
 	private String buildOutputNameForIndex(int index) {
-		return this.functionDefinition + "_out_" + index;
+		return new StringBuilder(this.functionDefinition)
+				.append(delimiter)
+				.append("out")
+				.append(delimiter)
+				.append(index)
+				.toString();
 	}
 
 	private void createInput(String name) {
