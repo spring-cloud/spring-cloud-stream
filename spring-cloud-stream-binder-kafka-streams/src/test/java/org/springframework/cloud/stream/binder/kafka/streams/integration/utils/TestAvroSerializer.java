@@ -14,50 +14,50 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.stream.binder.kafka.streams.integration.utils;
-
-import java.util.HashMap;
-import java.util.Map;
-
-import org.apache.kafka.common.serialization.Serializer;
-
-import org.springframework.cloud.schema.registry.avro.AvroSchemaMessageConverter;
-import org.springframework.cloud.schema.registry.avro.AvroSchemaServiceManagerImpl;
-import org.springframework.messaging.Message;
-import org.springframework.messaging.MessageHeaders;
-import org.springframework.messaging.support.MessageBuilder;
-
-/**
- * Custom avro serializer intended to be used for testing only.
- *
- * @param <S> Target type to serialize
- * @author Soby Chacko
- */
-public class TestAvroSerializer<S> implements Serializer<S> {
-
-	public TestAvroSerializer() {
-	}
-
-	@Override
-	public void configure(Map<String, ?> configs, boolean isKey) {
-
-	}
-
-	@Override
-	public byte[] serialize(String topic, S data) {
-		AvroSchemaMessageConverter avroSchemaMessageConverter = new AvroSchemaMessageConverter(new AvroSchemaServiceManagerImpl());
-		Message<?> message = MessageBuilder.withPayload(data).build();
-		Map<String, Object> headers = new HashMap<>(message.getHeaders());
-		headers.put(MessageHeaders.CONTENT_TYPE, "application/avro");
-		MessageHeaders messageHeaders = new MessageHeaders(headers);
-		final Object payload = avroSchemaMessageConverter
-				.toMessage(message.getPayload(), messageHeaders).getPayload();
-		return (byte[]) payload;
-	}
-
-	@Override
-	public void close() {
-
-	}
-
-}
+//package org.springframework.cloud.stream.binder.kafka.streams.integration.utils;
+//
+//import java.util.HashMap;
+//import java.util.Map;
+//
+//import org.apache.kafka.common.serialization.Serializer;
+//
+//import org.springframework.cloud.schema.registry.avro.AvroSchemaMessageConverter;
+//import org.springframework.cloud.schema.registry.avro.AvroSchemaServiceManagerImpl;
+//import org.springframework.messaging.Message;
+//import org.springframework.messaging.MessageHeaders;
+//import org.springframework.messaging.support.MessageBuilder;
+//
+///**
+// * Custom avro serializer intended to be used for testing only.
+// *
+// * @param <S> Target type to serialize
+// * @author Soby Chacko
+// */
+//public class TestAvroSerializer<S> implements Serializer<S> {
+//
+//	public TestAvroSerializer() {
+//	}
+//
+//	@Override
+//	public void configure(Map<String, ?> configs, boolean isKey) {
+//
+//	}
+//
+//	@Override
+//	public byte[] serialize(String topic, S data) {
+//		AvroSchemaMessageConverter avroSchemaMessageConverter = new AvroSchemaMessageConverter(new AvroSchemaServiceManagerImpl());
+//		Message<?> message = MessageBuilder.withPayload(data).build();
+//		Map<String, Object> headers = new HashMap<>(message.getHeaders());
+//		headers.put(MessageHeaders.CONTENT_TYPE, "application/avro");
+//		MessageHeaders messageHeaders = new MessageHeaders(headers);
+//		final Object payload = avroSchemaMessageConverter
+//				.toMessage(message.getPayload(), messageHeaders).getPayload();
+//		return (byte[]) payload;
+//	}
+//
+//	@Override
+//	public void close() {
+//
+//	}
+//
+//}
