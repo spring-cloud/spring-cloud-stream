@@ -21,6 +21,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.time.Duration;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -43,6 +44,7 @@ import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.function.context.FunctionCatalog;
+import org.springframework.cloud.function.context.FunctionProperties;
 import org.springframework.cloud.function.context.PollableSupplier;
 import org.springframework.cloud.function.context.catalog.BeanFactoryAwareFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
@@ -62,8 +64,6 @@ import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.cloud.stream.config.BindingServiceConfiguration;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.cloud.stream.messaging.DirectWithAttributesChannel;
-import org.springframework.cloud.stream.messaging.Sink;
-import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -77,7 +77,6 @@ import org.springframework.core.env.Environment;
 import org.springframework.core.type.MethodMetadata;
 import org.springframework.integration.channel.AbstractMessageChannel;
 import org.springframework.integration.channel.MessageChannelReactiveUtils;
-import org.springframework.integration.context.IntegrationObjectSupport;
 import org.springframework.integration.dsl.IntegrationFlow;
 import org.springframework.integration.dsl.IntegrationFlowBuilder;
 import org.springframework.integration.dsl.IntegrationFlows;
@@ -121,7 +120,7 @@ public class FunctionConfiguration {
 			return null;
 		}
 
-		return new FunctionChannelBindingInitializer(functionCatalog, functionInspector, functionProperties, bindableProxyFactories, serviceProperties);
+		return new FunctionChannelBindingInitializer(functionCatalog, functionProperties, bindableProxyFactories, serviceProperties);
 	}
 
 	/*
@@ -140,8 +139,11 @@ public class FunctionConfiguration {
 						: new String[] {};
 
 		for (String functionDefinition : functionDefinitions) {
-			String contentType = serviceProperties.getBindingProperties("output").getContentType();
-			FunctionInvocationWrapper functionWrapper = functionCatalog.lookup(functionDefinition, contentType);
+			BindingProperties bindingProperties = serviceProperties.getBindingProperties("output");
+
+			FunctionInvocationWrapper functionWrapper = bindingProperties.getProducer() != null && bindingProperties.getProducer().isUseNativeEncoding()
+					? functionCatalog.lookup(functionDefinition)
+							: functionCatalog.lookup(functionDefinition, bindingProperties.getContentType());
 			if (functionWrapper != null && functionWrapper.isSupplier()) {
 				Publisher<Object> beginPublishingTrigger = this.setupBindingTrigger(context);
 
@@ -231,8 +233,6 @@ public class FunctionConfiguration {
 
 		private final FunctionCatalog functionCatalog;
 
-		private final FunctionInspector functionInspector;
-
 		private final StreamFunctionProperties functionProperties;
 
 		private final BindableProxyFactory[] bindableProxyFactories;
@@ -242,10 +242,9 @@ public class FunctionConfiguration {
 		private GenericApplicationContext context;
 
 
-		FunctionChannelBindingInitializer(FunctionCatalog functionCatalog, FunctionInspector functionInspector,
-				StreamFunctionProperties functionProperties, BindableProxyFactory[] bindableProxyFactories, BindingServiceProperties serviceProperties) {
+		FunctionChannelBindingInitializer(FunctionCatalog functionCatalog, StreamFunctionProperties functionProperties,
+				BindableProxyFactory[] bindableProxyFactories, BindingServiceProperties serviceProperties) {
 			this.functionCatalog = functionCatalog;
-			this.functionInspector = functionInspector;
 			this.functionProperties = functionProperties;
 			this.bindableProxyFactories = bindableProxyFactories;
 			this.serviceProperties = serviceProperties;
@@ -262,19 +261,12 @@ public class FunctionConfiguration {
 					}
 					else {
 						SubscribableChannel messageChannel = this.determineChannelToSubscribeTo(bindableProxyFactory);
-						if (messageChannel != null && function != null) {
-							this.bindOrComposeSimpleFunctions(((IntegrationObjectSupport) messageChannel).getComponentName(),
-									(SubscribableChannel) messageChannel, bindableProxyFactory, functionDefinition);
+						if (messageChannel != null) {
+							this.bindOrComposeSimpleFunctions(messageChannel, bindableProxyFactory, functionDefinition);
 						}
 					}
 				}
 			});
-		}
-
-		private String getFunctionDefinition(BindableProxyFactory bindableProxyFactory) {
-			return bindableProxyFactory instanceof BindableFunctionProxyFactory
-					? ((BindableFunctionProxyFactory) bindableProxyFactory).getFunctionDefinition()
-							: functionProperties.getDefinition();
 		}
 
 		@Override
@@ -282,20 +274,23 @@ public class FunctionConfiguration {
 			this.context = (GenericApplicationContext) applicationContext;
 		}
 
+		private String getFunctionDefinition(BindableProxyFactory bindableProxyFactory) {
+			return bindableProxyFactory instanceof BindableFunctionProxyFactory
+					? ((BindableFunctionProxyFactory) bindableProxyFactory).getFunctionDefinition()
+							: this.functionProperties.getDefinition();
+		}
+
 		private SubscribableChannel determineChannelToSubscribeTo(BindableProxyFactory bindableProxyFactory) {
 			SubscribableChannel messageChannel = null;
 			if (bindableProxyFactory instanceof BindableFunctionProxyFactory) {
 				String channelName = ((BindableFunctionProxyFactory) bindableProxyFactory).getInputName(0);
-				messageChannel = context.getBean(channelName, SubscribableChannel.class);
+				messageChannel = this.context.getBean(channelName, SubscribableChannel.class);
 			}
 			else {
 				// could be "input" or "output" if subscribing to existing Source
-				if (context.containsBean(Sink.INPUT)) {
-					messageChannel = context.getBean(Sink.INPUT, SubscribableChannel.class);
-				}
-				else if (context.containsBean(Source.OUTPUT)) {
-					messageChannel = context.getBean(Source.OUTPUT, SubscribableChannel.class);
-				}
+				messageChannel = this.context.containsBean("input")
+						? this.context.getBean("input", SubscribableChannel.class)
+								: this.context.getBean("output", SubscribableChannel.class);
 			}
 			return messageChannel;
 		}
@@ -313,14 +308,14 @@ public class FunctionConfiguration {
 					.map(bindingName -> this.serviceProperties.getBindings().get(bindingName).getContentType())
 					.toArray(String[]::new);
 
-			FunctionInvocationWrapper function = functionCatalog.lookup(functionDefinition, outputContentTypes);
+			FunctionInvocationWrapper function = this.functionCatalog.lookup(functionDefinition, outputContentTypes);
 
 			if (isMultipleInputOutput(bindableProxyFactory)) {
 				this.assertSupportedSignatures(function.getFunctionType());
 			}
 
 			Publisher[] inputPublishers = inputBindingNames.stream().map(inputBindingName -> {
-				SubscribableChannel inputChannel = context.getBean(inputBindingName, SubscribableChannel.class);
+				SubscribableChannel inputChannel = this.context.getBean(inputBindingName, SubscribableChannel.class);
 				return this.enhancePublisher(MessageChannelReactiveUtils.toPublisher(inputChannel), inputBindingName);
 			}).toArray(Publisher[]::new);
 
@@ -329,32 +324,31 @@ public class FunctionConfiguration {
 			if (resultPublishers instanceof Iterable) {
 				Iterator<String> outputBindingIter = outputBindingNames.iterator();
 				((Iterable) resultPublishers).forEach(publisher -> {
-					MessageChannel outputChannel = context.getBean(outputBindingIter.next(), MessageChannel.class);
+					MessageChannel outputChannel = this.context.getBean(outputBindingIter.next(), MessageChannel.class);
 					Flux.from((Publisher) publisher).doOnNext(message -> outputChannel.send((Message) message)).subscribe();
 				});
 			}
 			else {
 				outputBindingNames.stream().forEach(outputBindingName -> {
-					MessageChannel outputChannel = context.getBean(outputBindingName, MessageChannel.class);
+					MessageChannel outputChannel = this.context.getBean(outputBindingName, MessageChannel.class);
 					Flux.from((Publisher) resultPublishers).doOnNext(message -> outputChannel.send((Message) message)).subscribe();
 				});
 			}
 		}
 
-		//
-		private void bindOrComposeSimpleFunctions(String channelName, SubscribableChannel messageChannel,
+		/*
+		 * Will either bind function to destination or compose it to the existing flow
+		 */
+		private void bindOrComposeSimpleFunctions(SubscribableChannel messageChannel,
 				BindableProxyFactory bindableProxyFactory, String functionDefinition) {
-			//TODO there is something about moving channel interceptors in AMCB (not sure if it is still required)
-			String channelType = (String) ((DirectWithAttributesChannel) messageChannel).getAttribute("type");
-			if (Source.OUTPUT.equals(channelType) && functionProperties.isComposeFrom()) {
+			BindingProperties properties = this.serviceProperties.getBindingProperties(((AbstractMessageChannel) messageChannel).getBeanName());
+			FunctionInvocationWrapper function = this.functionCatalog.lookup(functionDefinition, properties.getContentType());
+
+			if (this.functionProperties.isComposeFrom()) {
 				logger.info("Composing at the head of 'output' channel");
-				BindingProperties properties = this.serviceProperties.getBindingProperties(channelName);
-				FunctionInvocationWrapper function = functionCatalog.lookup(functionDefinition, properties.getContentType());
 				this.composeSimpleFunctionToExistingFlow(function, messageChannel, bindableProxyFactory);
 			}
 			else {
-				BindingProperties properties = this.serviceProperties.getBindingProperties(channelName);
-				FunctionInvocationWrapper function = functionCatalog.lookup(functionDefinition, properties.getContentType());
 				this.bindSimpleFunctions(function, messageChannel, bindableProxyFactory);
 			}
 		}
@@ -406,7 +400,7 @@ public class FunctionConfiguration {
 					? this.serviceProperties.getBindingProperties(outputChannelName).getProducer()
 							: null;
 			ServiceActivatingHandler handler = new ServiceActivatingHandler(new FunctionWrapper(function, consumerProperties, producerProperties));
-			handler.setBeanFactory(context);
+			handler.setBeanFactory(this.context);
 			handler.afterPropertiesSet();
 			return handler;
 		}
@@ -515,9 +509,11 @@ public class FunctionConfiguration {
 		@Override
 		public Message<byte[]> apply(Message<byte[]> message) {
 
-//			Map<String, Object> headersMap = (Map<String, Object>) ReflectionUtils
-//					.getField(this.headersField, message.getHeaders());
-
+			if (message != null && consumerProperties != null) {
+				Map<String, Object> headersMap = (Map<String, Object>) ReflectionUtils
+						.getField(this.headersField, message.getHeaders());
+				headersMap.put(FunctionProperties.SKIP_CONVERSION_HEADER, consumerProperties.isUseNativeDecoding());
+			}
 
 			Object result = function.apply(message);
 			if (result instanceof Publisher) {
