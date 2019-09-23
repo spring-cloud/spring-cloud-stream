@@ -34,20 +34,15 @@
 				<version>${spring-cloud-stream.version}</version>
 			</dependency>
 			<dependency>
-				<groupId>org.springframework.cloud</groupId>
-				<artifactId>spring-cloud-schema-registry-core</artifactId>
-				<version>${spring-cloud-schema-registry.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.springframework.cloud</groupId>
-				<artifactId>spring-cloud-schema-registry-server</artifactId>
-				<version>${spring-cloud-schema-registry.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.springframework.cloud</groupId>
-				<artifactId>spring-cloud-schema-registry-client</artifactId>
-				<version>${spring-cloud-schema-registry.version}</version>
-			</dependency>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-stream-schema</artifactId>
+                <version>3.0.0.M3</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-stream-schema-server</artifactId>
+                <version>3.0.0.M3</version>
+            </dependency>
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
 				<artifactId>spring-cloud-stream-binder-test</artifactId>
