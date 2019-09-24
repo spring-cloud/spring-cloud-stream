@@ -1242,10 +1242,10 @@ So, this is where understanding of the  naming convention for binding destinatio
 <div class="ulist">
 <ul>
 <li>
-<p>input - <code>&lt;functionName&gt; + <em>in</em> + &lt;index&gt;</code></p>
+<p>input - <code>&lt;functionName&gt; + .in. + &lt;index&gt;</code></p>
 </li>
 <li>
-<p>output - <code>&lt;functionName&gt; + <em>out</em> + &lt;index&gt;</code></p>
+<p>output - <code>&lt;functionName&gt; + .out. + &lt;index&gt;</code></p>
 </li>
 </ul>
 </div>
@@ -1273,16 +1273,16 @@ public class SampleApplication {
 and produces a single output of type <code>String</code>.</p>
 </div>
 <div class="paragraph">
-<p>So, for the above example the two input bindings will be <code>gather_in_0</code> and <code>gather_in_1</code> and for consistency the
-output binding also follows the same convention and is named <code>gather_out_0</code>.</p>
+<p>So, for the above example the two input bindings will be <code>gather.in.0</code> and <code>gather.in.1</code> and for consistency the
+output binding also follows the same convention and is named <code>gather.out.0</code>.</p>
 </div>
 <div class="paragraph">
 <p>Knowing that will allow you to set binding specific properties the same way you did with <code>@StreamListener</code>.
-For example, the following will override content-type for <code>gather_in_0</code> binding:</p>
+For example, the following will override content-type for <code>gather.in.0</code> binding:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre>--spring.cloud.stream.bindings.gather_in_0.content-type=text/plain</pre>
+<pre>--spring.cloud.stream.bindings.gather.in.0.content-type=text/plain</pre>
 </div>
 </div>
 <div class="listingblock">
@@ -1310,8 +1310,8 @@ public class SampleApplication {
 takes single input of type <code>Integer</code> and produces two outputs (both of type <code>String</code>).</p>
 </div>
 <div class="paragraph">
-<p>So, for the above example the input binding is <code>gather_in_0</code> and the
-output bindings are <code>gather_out_0</code> and <code>gather_out_1</code>.</p>
+<p>So, for the above example the input binding is <code>gather.in.0</code> and the
+output bindings are <code>gather.out.0</code> and <code>gather.out.1</code>.</p>
 </div>
 <div class="paragraph">
 <p>And you test it with the following code:</p>
@@ -1382,16 +1382,16 @@ for functions with multiple inputs/outputs:</p>
 <div class="ulist">
 <ul>
 <li>
-<p>input - <code>&lt;functionName&gt; + <em>in</em> + &lt;index&gt;</code></p>
+<p>input - <code>&lt;functionName&gt; + .in. + &lt;index&gt;</code></p>
 </li>
 <li>
-<p>output - <code>&lt;functionName&gt; + <em>out</em> + &lt;index&gt;</code></p>
+<p>output - <code>&lt;functionName&gt; + .out. + &lt;index&gt;</code></p>
 </li>
 </ul>
 </div>
 <div class="paragraph">
 <p>This means that the above configuration will result in the following destination bindings:
-<code>uppercase_in_0</code>, <code>uppercase_out_0</code>, <code>reverse_in_0</code> and <code>reverse_out_0</code>.</p>
+<code>uppercase.in.0</code>, <code>uppercase.out.0</code>, <code>reverse.in.0</code> and <code>reverse.out.0</code>.</p>
 </div>
 <div class="paragraph">
 <p>And you test it with the following code:</p>
