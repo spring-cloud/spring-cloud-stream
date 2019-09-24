@@ -49,12 +49,6 @@
 						<groupId>org.asciidoctor</groupId>
 						<artifactId>asciidoctor-maven-plugin</artifactId>
 						<version>${asciidoctor-maven-plugin.version}</version>
-						<configuration>
-							<sourceDirectory>${project.build.directory}/refdocs/</sourceDirectory>
-							<attributes>
-								<spring-cloud-stream-version>${project.version}</spring-cloud-stream-version>
-							</attributes>
-						</configuration>
 					</plugin>
 					<plugin>
 						<groupId>org.apache.maven.plugins</groupId>
