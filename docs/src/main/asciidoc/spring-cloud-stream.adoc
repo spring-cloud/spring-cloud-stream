@@ -106,8 +106,7 @@ To run a Spring Cloud Stream application in production, you can create an execut
 === The Binder Abstraction
 
 Spring Cloud Stream provides Binder implementations for https://github.com/spring-cloud/spring-cloud-stream-binder-kafka[Kafka] and https://github.com/spring-cloud/spring-cloud-stream-binder-rabbit[Rabbit MQ].
-Spring Cloud Stream also includes a https://github.com/spring-cloud/spring-cloud-stream/blob/master/spring-cloud-stream-test-support/src/main/java/org/springframework/cloud/stream/test/binder/TestSupportBinder.java[TestSupportBinder], which leaves a channel unmodified so that tests can interact with channels directly and reliably assert on what is received.
-You can also use the extensible API to write your own Binder.
+Spring Cloud Stream also includes a test binder for integration testing of your applications as spring-cloud-stream application. See <<Testing>> section for more details.
 
 Spring Cloud Stream uses Spring Boot for configuration, and the Binder abstraction makes it possible for a Spring Cloud Stream application to be flexible in how it connects to middleware.
 For example, deployers can dynamically choose, at runtime, the destinations (such as the Kafka topics or RabbitMQ exchanges) to which channels connect.
@@ -208,7 +207,7 @@ NOTE: To set up a partitioned processing scenario, you must configure both the d
 To understand the programming model, you should be familiar with the following core concepts:
 
 * *Destination Binders:* Components responsible to provide integration with the external messaging systems.
-* *Destination Bindings:* Bridge between the external messaging systems and application provided _Producers_ and _Consumers_ of messages (created by the Destination Binders).
+* *Bindings:* Bridge between the external messaging systems and application provided _Producers_ and _Consumers_ of messages (created by the Destination Binders).
 * *Message:* The canonical data structure used by producers and consumers to communicate with Destination Binders (and thus other applications via external messaging systems).
 
 image::{github-raw}/docs/src/main/asciidoc/images/SCSt-overview.png[width=800,scaledwidth="75%",align="center"]
@@ -221,14 +220,14 @@ This integration is responsible for connectivity, delegation, and routing of mes
 invocation of the user code, and more.
 
 Binders handle a lot of the boiler plate responsibilities that would otherwise fall on your shoulders. However, to accomplish that, the binder still needs
-some help in the form of minimalistic yet required set of instructions from the user, which typically come in the form of some type of configuration.
+some help in the form of minimalistic yet required set of instructions from the user, which typically come in the form of some type of _binding_ configuration.
 
 While it is out of scope of this section to discuss all of the available binder and binding configuration options (the rest of the manual covers them extensively),
-_Destination Binding_ does require special attention. The next section discusses it in detail.
+_Binding_ as a concept, does require special attention. The next section discusses it in detail.
 
-=== Destination Bindings
+=== Bindings
 
-As stated earlier, _Destination Bindings_ provide a bridge between the external messaging system and application-provided _Producers_ and _Consumers_.
+As stated earlier, _Bindings_ provide a bridge between the external messaging system (e.g., queue, topic etc.) and application-provided _Producers_ and _Consumers_.
 
 The following example shows a fully configured and functioning Spring Cloud Stream application that receives the payload of the message
 as a `String` type (see <<Content Type Negotiation>> section), logs it to the console and sends it down stream after converting it to upper case.
@@ -254,19 +253,95 @@ public class SampleApplication {
 Unlike previous versions of spring-cloud-stream which relied on `@EnableBinding` and `@StreamListener` annotations,
 the above example looks no different then any vanilla spring-boot application. It defines a single bean of type `Function`
 and that it is. So, how does it became spring-cloud-stream application?
-It became spring-cloud-stream application simply based on the presence of spring-cloud-stream and binder dependencies
-and auto-configuration classes on the classpath, which by default look for beans of type `Supplier`, `Function` or `Consumer`
-to bind to destinations exposed by the provided binder following certain naming conventions and
+It becomes spring-cloud-stream application simply based on the presence of spring-cloud-stream and binder dependencies
+and auto-configuration classes on the classpath effectively setting the context for your boot application as spring-cloud-stream application.
+And in this context beans of type `Supplier`, `Function` or `Consumer` are treated as defacto message handlers triggering
+binding of to destinations exposed by the provided binder following certain naming conventions and
 rules to avoid extra configuration.
-More details are in the <<Spring Cloud Function support>> section, but to finish making sense of the above sample;
-Assuming that spring-cloud-stream and binder dependencies are on the classpath, a single bean of type `Function` defined
-in the above configuration' is treated as message handler and is bound to `"input"` and `"output"` _binding
-destinations_ the identical way as you would explicitly do with `@StreamListener` in the previous versions of spring-cloud-stream.
+
+==== Binding and Binding names
+
+Binding is an abstraction that represents a bridge between remote destinations exposed by the binder and user code,
+This abstraction has a name and while we try to do our best to limit configuration required to run spring-cloud-stream applications,
+being aware of such name(s) is necessary for most cases, since binding names are part of the configuration property name for a specific binding.
+
+Throughout this manual you will see examples of configuration properties such as `spring.cloud.stream.bindings.input.destination=myQueue`.
+The `input` segment in this property name example is what we refer to as _binding name_ and it could derive via several mechanisms.
+The following sub-sections will describe the naming conventions and configuration elements used by spring-cloud-stream to control binding names.
+
+===== Functional binding names
+
+Unlike the explicit annotation-based support (legacy) used in the previous versions of spring-cloud-stream, the functional
+programming model follows a simple convention when it comes to binding names thus greatly simplifying application configuration.
+Let's look at the first example:
+
+[source, java]
+----
+@SpringBootApplication
+public class SampleApplication {
+
+	@Bean
+	public Function<String, String> uppercase() {
+	    return value -> value.toUpperCase();
+	}
+}
+----
+
+In the above example we have an application with a single function which acts as message listener. As a `Function` it has an
+input and output which happened to also be the default names used for binding names - `input` and `output`. So if for example you would want to map
+the input of this function to a remote destination (e.g., topic, queue etc) called "my-topic" you would do so with the following property:
+----
+spring.cloud.stream.bindings.input.destination=my-topic
+----
+Note how `input` is used as a segment in property name. The same goes for `output`.
+
+But what if you have multiple functions as in <<Multiple functions in a single application>> section?
+
+[source, java]
+----
+@SpringBootApplication
+public class SampleApplication {
+
+	@Bean
+	public Function<String, String> uppercase() {
+	    return value -> value.toUpperCase();
+	}
+
+	@Bean
+	public Function<String, String> lowercase() {
+	    return value -> value.toLowerCase();
+	}
+}
+----
+
+We certainly can't use `input` and `output` as names given that we actually have multiple inputs and outputs.
+For those cases the following naming convention applies:
+
+* input - `<functionName> + .in. + <index>`
+* output - `<functionName> + .out. + <index>`
+
+So if for example you would want to map the input of 'uppercase()' function to a remote destination (e.g., topic, queue etc) called "my-topic"
+you would do so with the following property:
+----
+spring.cloud.stream.bindings.uppercase.in.0.destination=my-topic
+----
+
+And if you want to change the content-type of the output of the 'lowercase()' function you would do so with the following property.
+----
+spring.cloud.stream.bindings.lowercase.out.0.content-type=text/plain
+----
+
+For more on properties and other configuration options please see <<Configuration Options>> section.
 
 
-In previous versions of spring-cloud-stream _binding destinations_, mentioned in previous paragraph, derived from the `@EnableBinding`
+===== Annotation-based binding names (legacy)
+
+In previous versions of spring-cloud-stream _binding_ names and in fact implementations, derived from the `@EnableBinding`
 annotation which typically would take one or more interface classes as parameters. The parameters are referred to
 as _bindings_, and they contain methods representing _bindable components_.
+
+For compliance with legacy style applications we still support this annotation-based programming model and you can get more information about it in
+<<Annotation-based support (legacy)>> section (sub-section of the <<Programming Model>> section).
 
 Spring Cloud Stream already provides _binding_ interfaces for typical message exchange contracts, which include:
 
@@ -536,14 +611,8 @@ spring-cloud-stream and so on.
 So to accommodate all these requirements the initial support is relying on he signature which utilizes another abstraction
 provided by _Project Reactor_ - Tuples. However, we are working on allowing a more flexible signatures.
 
-IMPORTANT: While simple function binding destinations are usually named `"input"` and `"output"` (see the next section for exception to that rule),
-and for the most parts are hidden from the typical user's concerns, we can not rely on the same naming convention here.
-So, this is where understanding of the  naming convention for binding destinations is important.
-
-*Binding naming convention:*
-
-* input - `<functionName> + .in. + <index>`
-* output - `<functionName> + .out. + <index>`
+IMPORTANT: Please refer to <<Binding and Binding names>> section to understand the naming convention used to establish _binding names_
+used by such application.
 
 Let's look at the few samples:
 
@@ -660,15 +729,9 @@ So first, as mentioned before, we need to notice that there is a a conflict (mor
 we need to resolve it by providing `spring.cloud.function.definition` property pointing to the actual function
 we want to bind. Except here we will use `;` delimiter to point to both functions (see test case below).
 
-As with functions with multiple inputs/outputs we can no longer rely on the naming convention for
-destination bindings used by functions with single inputs/outputs. So we follow the same convention as
-for functions with multiple inputs/outputs:
 
-* input - `<functionName> + .in. + <index>`
-* output - `<functionName> + .out. + <index>`
-
-This means that the above configuration will result in the following destination bindings:
-`uppercase.in.0`, `uppercase.out.0`, `reverse.in.0` and `reverse.out.0`.
+IMPORTANT: As with functions with multiple inputs/outputs, please refer to <<Binding and Binding names>> section to understand the naming
+convention used to establish _binding names_ used by such application.
 
 And you test it with the following code:
 [source,java]
@@ -709,7 +772,51 @@ public Function<List<Person>, Person> findFirstPerson() {
 }
 ----
 
-==== Annotation-based support
+===== Spring Integration flow as functions
+When you implement a function, you may have complex requirements that fit the category
+of https://www.enterpriseintegrationpatterns.com[Enterprise Integration Patterns] (EIP). These are best handled by using a
+framework such as https://spring.io/projects/spring-integration[Spring Integration] (SI), which is a reference implementation of EIP.
+
+Thankfully SI already provides support for exposing integration flows as functions via
+https://docs.spring.io/spring-integration/docs/current/reference/html/#java-dsl-gateway[Integration flow as gateway]
+Consider the following sample:
+
+[source, java]
+----
+@SpringBootApplication
+public class FunctionSampleSpringIntegrationApplication {
+
+	public static void main(String[] args) {
+		SpringApplication.run(FunctionSampleSpringIntegrationApplication.class, args);
+	}
+
+	@Bean
+	public IntegrationFlow uppercaseFlow() {
+		return IntegrationFlows.from(MessageFunction.class, "uppercase")
+				.<String, String>transform(String::toUpperCase)
+				.logAndReply(LoggingHandler.Level.WARN);
+	}
+
+	public interface MessageFunction extends Function<Message<String>, Message<String>> {
+
+	}
+}
+----
+
+For those who are familiar with SI you can see we define a bean of type `IntegrationFlow` where we
+declare an integration flow that we want to expose as a `Function<String, String>` (using SI DSL) called `uppercase`.
+The `MessageFunction` interface lets us explicitly declare the type of the inputs and outputs for proper type conversion.
+See <<Content Type Negotiation>> section for more on type conversion.
+
+To receive raw input you can use `from(Function.class, ...)`.
+
+The resulting function is bound to the input and output destinations exposed by the target binder.
+
+IMPORTANT: Please refer to <<Binding and Binding names>> section to understand the naming
+convention used to establish _binding names_ used by such application.
+
+
+==== Annotation-based support (legacy)
 As mentioned earlier you can also use Spring Integration annotations based configuration or
 Spring Cloud Stream annotation based configuration.
 
@@ -2191,6 +2298,7 @@ While such light-weight approach is sufficient for a lot of cases, it usually re
 To begin bridging the gap between _unit_ and _integration_ testing we've developed a new test binder which uses https://spring.io/projects/spring-integration[Spring Integration] framework
 as an in-JVM Message Broker essentially giving you the best of both worlds - a real binder without the networking.
 
+==== Test Binder configuration
 To enable Spring Integration Test Binder all you need is:
 
 - Add required dependencies
@@ -2245,6 +2353,8 @@ To avoid conflicts with the existing test binder you must eremove the following 
 </dependency>
 ----
 
+==== Test Binder usage
+
 Now you can test your microservice as a simple unit test
 
 [source,java]
@@ -2271,7 +2381,62 @@ public void sampleTest() {
 }
 ----
 
-or with legacy annotation-based configuration
+For cases where you have multiple bindings and/or multiple inputs and outputs, the `send()` and `receive()`
+methods of `InputDestination` and `OutputDestination` are overriden to allow you to provide index of the input and output destination.
+
+Consider the following sample:
+[source,java]
+----
+@EnableAutoConfiguration
+public static class SampleFunctionConfiguration {
+
+	@Bean
+	public Function<String, String> uppercase() {
+		return value -> value.toUpperCase();
+	}
+
+	@Bean
+	public Function<String, String> reverse() {
+		return value -> new StringBuilder(value).reverse().toString();
+	}
+}
+----
+
+and the actual test
+
+[source,java]
+----
+@Test
+public void testMultipleFunctions() {
+	try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+			TestChannelBinderConfiguration.getCompleteConfiguration(
+					SampleFunctionConfiguration.class))
+							.web(WebApplicationType.NONE)
+							.run("--spring.jmx.enabled=false",
+								"--spring.cloud.function.definition=uppercase;reverse")) {
+		context.getBean(InputDestination.class);
+
+		InputDestination inputDestination = context.getBean(InputDestination.class);
+		OutputDestination outputDestination = context.getBean(OutputDestination.class);
+
+		Message<byte[]> inputMessage = MessageBuilder.withPayload("Hello".getBytes()).build();
+		inputDestination.send(inputMessage, 0);
+		inputDestination.send(inputMessage, 1);
+
+		Message<byte[]> outputMessage = outputDestination.receive(0, 0);
+		assertThat(outputMessage.getPayload()).isEqualTo("HELLO".getBytes());
+
+		outputMessage = outputDestination.receive(0, 1);
+		assertThat(outputMessage.getPayload()).isEqualTo("olleH".getBytes());
+	}
+}
+----
+
+Note, that first we need to provide `spring.cloud.function.definition` property as described in <<Multiple functions in a single application>> section
+to declare which functions we intend to use for binding and then use their index (the order of definition in the `spring.cloud.function.definition` property)
+to send/receive messages.
+
+You can also use this binder with legacy annotation-based configuration:
 
 [source,java]
 ----
@@ -2315,7 +2480,7 @@ In the future we plan to simplify the API.
 NOTE: In its current state Spring Integration Test Binder only supports the three bindings provided by the framework (Source, Processor, Sink) specifically to promote
 light-weight microservices architectures rather then general purpose messaging applications.
 
-==== Spring Integration Test Binder and PollableMessageSource
+==== Test Binder and PollableMessageSource
 Spring Integration Test Binder also allows you to write tests when working with `PollableMessageSource` (see <<Using Polled Consumers>> for more details).
 
 The important thing that needs to be understood though is that polling is not event-driven, and that `PollableMessageSource` is a strategy which exposes operation to produce (poll for) a Message (singular).
@@ -2438,107 +2603,6 @@ Lets take a concrete situation. Imagine you have both Kafka and Kafka Streams bi
 Since Kafka binder is not used and it has specific checks to see if any destinations are registered, the binder health heck will fail.
 The top level application health check status will be reported as `DOWN`.
 In this situation, you can simply remove the dependency for kafka binder from your application since you are not using it.
-
-[[spring-cloud-stream-overview-metrics-emitter]]
-== Metrics Emitter
-
-Spring Boot Actuator provides dependency management and auto-configuration for https://micrometer.io/[Micrometer], an application metrics
-facade that supports numerous https://docs.spring.io/spring-boot/docs/2.0.0.RELEASE/reference/htmlsingle/#production-ready-metrics[monitoring systems].
-
-Spring Cloud Stream provides support for emitting any available micrometer-based metrics to a binding destination, allowing for periodic
-collection of metric data from stream applications without relying on polling individual endpoints.
-
-Metrics Emitter is activated by defining the `spring.cloud.stream.bindings.applicationMetrics.destination` property,
-which specifies the name of the binding destination used by the current binder to publish metric messages.
-
-For example:
-[source,java]
-----
-spring.cloud.stream.bindings.applicationMetrics.destination=myMetricDestination
-----
-The preceding example instructs the binder to bind to `myMetricDestination` (that is, Rabbit exchange, Kafka topic, and others).
-
-The following properties can be used for customizing the emission of metrics:
-
-spring.cloud.stream.metrics.key::
-The name of the metric being emitted. Should be a unique value per application.
-+
-Default: `${spring.application.name:${vcap.application.name:${spring.config.name:application}}}`
-+
-spring.cloud.stream.metrics.properties::
-Allows white listing application properties that are added to the metrics payload
-+
-Default: null.
-+
-spring.cloud.stream.metrics.meter-filter::
-Pattern to control the 'meters' one wants to capture.
-For example, specifying `spring.integration.*` captures metric information for meters whose name starts with `spring.integration.`
-+
-Default: all 'meters' are captured.
-+
-spring.cloud.stream.metrics.schedule-interval::
-Interval to control the rate of publishing metric data.
-+
-Default: 1 min
-
-Consider the following:
-
-[source,bash]
-----
-java -jar time-source.jar \
-    --spring.cloud.stream.bindings.applicationMetrics.destination=someMetrics \
-    --spring.cloud.stream.metrics.properties=spring.application** \
-    --spring.cloud.stream.metrics.meter-filter=spring.integration.*
-----
-
-The following example shows the payload of the data published to the binding destination as a result of the preceding command:
-
-[source,javascript]
-----
-{
-	"name": "application",
-	"createdTime": "2018-03-23T14:48:12.700Z",
-	"properties": {
-	},
-	"metrics": [
-		{
-			"id": {
-				"name": "spring.integration.send",
-				"tags": [
-					{
-						"key": "exception",
-						"value": "none"
-					},
-					{
-						"key": "name",
-						"value": "input"
-					},
-					{
-						"key": "result",
-						"value": "success"
-					},
-					{
-						"key": "type",
-						"value": "channel"
-					}
-				],
-				"type": "TIMER",
-				"description": "Send processing time",
-				"baseUnit": "milliseconds"
-			},
-			"timestamp": "2018-03-23T14:48:12.697Z",
-			"sum": 130.340546,
-			"count": 6,
-			"mean": 21.72342433333333,
-			"upper": 116.176299,
-			"total": 130.340546
-		}
-	]
-}
-----
-
-NOTE: Given that the format of the Metric message has slightly changed after migrating to Micrometer, the published message will also have
-a `STREAM_CLOUD_STREAM_VERSION` header set to `2.x` to help distinguish between Metric messages from the older versions of the Spring Cloud Stream.
 
 == Samples
 

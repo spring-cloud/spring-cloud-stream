@@ -580,6 +580,7 @@ public class FunctionConfiguration {
 							this.inputCount = FunctionTypeUtils.getInputCount(functionType);
 							this.outputCount = FunctionTypeUtils.getOutputCount(functionType);
 						}
+
 						functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(functionDefinition);
 						functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(this.inputCount);
 						functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(this.outputCount);
