@@ -1562,6 +1562,19 @@ Mutually exclusive with `partitionSelectorClass`.
 If neither is set, the partition is selected as the `hashCode(key) % partitionCount`, where `key` is computed through either `partitionKeyExpression` or `partitionKeyExtractorClass`.
 +
 Default: `null`.
+
+partitionKeyExtractorName::
+The name of the bean that implements `PartitionKeyExtractorStrategy`. Used to extract a key used to compute
+the partition id (see 'partitionSelector*'). Mutually exclusive with 'partitionKeyExpression'.
++
+Default: null.
+
+partitionSelectorName::
+The name of the bean that implements `PartitionSelectorStrategy`. Used to determine partition id based
+on partition key (see 'partitionKeyExtractor*'). Mutually exclusive with 'partitionSelectorExpression'.
++
+Default: null.
+
 partitionCount::
 The number of target partitions for the data, if partitioning is enabled.
 Must be set to a value greater than 1 if the producer is partitioned.
