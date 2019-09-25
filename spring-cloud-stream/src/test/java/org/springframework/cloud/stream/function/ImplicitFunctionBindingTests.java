@@ -36,6 +36,10 @@ import org.springframework.cloud.stream.binder.test.TestChannelBinderConfigurati
 import org.springframework.cloud.stream.messaging.Sink;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.integration.dsl.IntegrationFlow;
+import org.springframework.integration.dsl.IntegrationFlows;
+import org.springframework.integration.handler.LoggingHandler;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.GenericMessage;
@@ -264,6 +268,27 @@ public class ImplicitFunctionBindingTests {
 		}
 	}
 
+	@Test
+	public void testWithIntegrationFlowAsFunction() {
+		System.clearProperty("spring.cloud.stream.function.definition");
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+				TestChannelBinderConfiguration.getCompleteConfiguration(
+						FunctionSampleSpringIntegrationConfiguration.class))
+								.web(WebApplicationType.NONE)
+								.run("--spring.jmx.enabled=false")) {
+
+			InputDestination inputDestination = context.getBean(InputDestination.class);
+			OutputDestination outputDestination = context.getBean(OutputDestination.class);
+
+			Message<byte[]> inputMessage = MessageBuilder.withPayload("hello".getBytes()).build();
+
+			inputDestination.send(inputMessage);
+
+			Message<byte[]> outputMessage = outputDestination.receive();
+			assertThat(outputMessage.getPayload()).isEqualTo("HELLO".getBytes());
+		}
+	}
+
 	@EnableAutoConfiguration
 	public static class NoEnableBindingConfiguration  {
 
@@ -351,6 +376,22 @@ public class ImplicitFunctionBindingTests {
 			}
 
 		}
+	}
+
+	@EnableAutoConfiguration
+	public static class FunctionSampleSpringIntegrationConfiguration {
+
+		@Bean
+		public IntegrationFlow uppercaseFlow() {
+			return IntegrationFlows.from(MessageFunction.class, "uppercase")
+					.<String, String>transform(String::toUpperCase)
+					.logAndReply(LoggingHandler.Level.WARN);
+		}
+
+	}
+
+	public interface MessageFunction extends Function<Message<String>, Message<String>> {
+
 	}
 
 }
