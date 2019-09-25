@@ -1713,6 +1713,20 @@ If set, outbound data on this channel is partitioned. `partitionCount` must be s
 See `<<partitioning>>`.
 +
 Default: null.
+
+partitionKeyExtractorName::
+The name of the bean that implements `PartitionKeyExtractorStrategy`. Used to extract a key used to compute
+the partition id (see 'partitionSelector*'). Mutually exclusive with 'partitionKeyExpression'.
++
+Default: null.
+
+partitionSelectorName::
+The name of the bean that implements `PartitionSelectorStrategy`. Used to determine partition id based
+on partition key (see 'partitionKeyExtractor*'). Mutually exclusive with 'partitionSelectorExpression'.
++
+Default: null.
+
+
 partitionSelectorExpression::
 A SpEL expression for customizing partition selection.
 If neither is set, the partition is selected as the `hashCode(key) % partitionCount`, where `key` is computed through either `partitionKeyExpression`.
