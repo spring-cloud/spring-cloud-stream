@@ -14,3 +14,4 @@ script:
   - '[ "${TRAVIS_PULL_REQUEST}" = "false" ] || ./mvnw package -Pspring -U -Dmaven.test.redirectTestOutputToFile=false'
 after_success:
   - bash <(curl -s https://codecov.io/bash)
+dist: trusty
