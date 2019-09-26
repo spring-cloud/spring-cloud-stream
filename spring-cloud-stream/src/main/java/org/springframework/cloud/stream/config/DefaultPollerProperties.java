@@ -22,9 +22,9 @@ import org.springframework.scheduling.support.PeriodicTrigger;
 
 /**
  * @author Dave Syer
- *
+ * @author Oleg Zhurakousky
  */
-@ConfigurationProperties("spring.integration.poller")
+@ConfigurationProperties("spring.cloud.stream.poller")
 public class DefaultPollerProperties {
 
 	/**
