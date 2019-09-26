@@ -485,6 +485,102 @@ NOTE: We are using `--spring.cloud.function.definition` property to explicitly d
 we want to be bound to binding destinations. For cases when you only have single such bean it is not required
 but for all other cases it is.
 
+===== Suppliers (Sources)
+
+`Function` and `Consumer` are pretty straightforward when it comes to how their invocation is triggered. They are triggered based
+on data (events) sent to the destination they are bound to. In other words, they are classic event-driven components.
+
+However, `Supplier` is in its own category when it comes to triggering. Since it is, by definition, the source (the origin) of the data, it does not
+subscribe to any in-bound destination and, therefore, has to be triggered by some other mechanism(s).
+There is also a question of `Supplier` implementation, which could be _imperative_ or _reactive_ and which directly relates to the triggering of such suppliers.
+
+Consider the following sample:
+
+[source,java]
+----
+@SpringBootApplication
+public static class SupplierConfiguration {
+
+	@Bean
+	public Supplier<String> stringSupplier() {
+		return () -> "Hello from Supplier";
+	}
+}
+----
+
+The preceding `Supplier` bean produces a string whenever its `get()` method is invoked. However, who invokes this method and how often?
+The framework provides a default polling mechanism (answering the question of "Who?") that will trigger the invocation of the supplier and by default it will do so
+every second (answering the question of "How often?").
+In other words, the above configuration produces a single message every second and each message is sent to an `output` destination that is exposed by the binder.
+To learn how to customize the polling mechanism, see <<Polling Configuration Properties>> section.
+
+Consider a different sample:
+
+[source,java]
+----
+@SpringBootApplication
+public static class SupplierConfiguration {
+
+	@Bean
+	public Supplier<Flux<String>> stringSupplier() {
+		return () -> Flux.from(emitter -> {
+			while (true) {
+				try {
+					emitter.onNext("Hello from Supplier");
+					Thread.sleep(1000);
+				} catch (Exception e) {
+					// ignore
+				}
+			}
+		});
+	}
+}
+----
+
+The preceding `Supplier` bean adopts the reactive programming style. Typically, and unlike the imperative supplier,
+it should be triggered only once, given that the invocation of its `get()` method produces (supplies) the continuous stream of messages and not an
+individual message.
+
+The framework recognizes the difference in the programming style and guarantees that such a supplier is triggered only once.
+
+However, imagine the use case where you want to poll some data source and return a finite stream of data representing the result set.
+The reactive programming style is a perfect mechanism for such a Supplier. However, given the finite nature of the produced stream,
+such Supplier still needs to be invoked periodically.
+
+Consider the following sample, which emulates such use case by producing a finite stream of data:
+
+[source,java]
+----
+@SpringBootApplication
+public static class SupplierConfiguration {
+
+	@PollableSupplier
+	public Supplier<Flux<String>> stringSupplier() {
+		return () -> Flux.just("hello", "bye");
+	}
+}
+----
+
+The bean itself is annotated with `PollableSupplier` annotation (sub-set of `@Bean`), thus signaling to the framework that although the implementation
+of such a supplier is reactive, it still needs to be polled.
+
+====== Polling Configuration Properties
+
+The following properties are exposed by `org.springframework.cloud.stream.config.DefaultPollerProperties` and are prefixed with
+`spring.cloud.stream.poller`:
+
+fixedDelay::
+Fixed delay for default poller.
++
+Default: 1000L.
+
+maxMessagesPerPoll::
+Maximum messages for each polling event of the default poller.
++
+Default: 1L.
+
+For example `--spring.cloud.stream.poller.fixed-delay=2000` sets the poller interval to poll every two seconds.
+
 ===== Content-based routing with functions
 Routing with functions can be achieved by relying on `RoutingFunction` available in Spring Cloud Function 3.0. All you need to do is enable it via
 `--spring.cloud.stream.function.routing.enabled=true` application property. Once enabled `RoutingFunction` will be bound to input destination

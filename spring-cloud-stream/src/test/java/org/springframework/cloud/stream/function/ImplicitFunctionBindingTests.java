@@ -39,9 +39,11 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.integration.dsl.IntegrationFlow;
 import org.springframework.integration.dsl.IntegrationFlows;
 import org.springframework.integration.handler.LoggingHandler;
+import org.springframework.integration.scheduling.PollerMetadata;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.GenericMessage;
+import org.springframework.scheduling.support.PeriodicTrigger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.fail;
@@ -247,7 +249,8 @@ public class ImplicitFunctionBindingTests {
 						SingleFunctionConfiguration.class))
 								.web(WebApplicationType.NONE)
 								.run("--spring.jmx.enabled=false",
-										"--spring.cloud.stream.bindings.input.content-type=text/plain")) {
+										"--spring.cloud.stream.bindings.input.content-type=text/plain",
+										"--debug")) {
 
 			InputDestination inputDestination = context.getBean(InputDestination.class);
 			OutputDestination outputDestination = context
@@ -285,6 +288,26 @@ public class ImplicitFunctionBindingTests {
 
 			Message<byte[]> outputMessage = outputDestination.receive();
 			assertThat(outputMessage.getPayload()).isEqualTo("HELLO".getBytes());
+		}
+	}
+
+	@Test
+	public void testSupplierWithCustomPoller() {
+		System.clearProperty("spring.cloud.stream.function.definition");
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+				TestChannelBinderConfiguration.getCompleteConfiguration(
+						SupplierWithExplicitPollerConfiguration.class))
+								.web(WebApplicationType.NONE)
+								.run("--spring.jmx.enabled=false",
+										"--spring.cloud.stream.poller.fixed-delay=2000")) {
+
+			OutputDestination outputDestination = context.getBean(OutputDestination.class);
+
+			PollerMetadata pollerMetadata = context.getBean(PollerMetadata.class);
+			assertThat(((PeriodicTrigger) pollerMetadata.getTrigger()).getPeriod()).isEqualTo(2000);
+
+			Message<byte[]> outputMessage = outputDestination.receive(6000);
+			assertThat(outputMessage.getPayload()).isEqualTo("hello".getBytes());
 		}
 	}
 
@@ -391,6 +414,16 @@ public class ImplicitFunctionBindingTests {
 
 	public interface MessageFunction extends Function<Message<String>, Message<String>> {
 
+	}
+
+
+	@EnableAutoConfiguration
+	public static class SupplierWithExplicitPollerConfiguration {
+
+		@Bean
+		public Supplier<String> supplier() {
+			return () -> "hello";
+		}
 	}
 
 }
