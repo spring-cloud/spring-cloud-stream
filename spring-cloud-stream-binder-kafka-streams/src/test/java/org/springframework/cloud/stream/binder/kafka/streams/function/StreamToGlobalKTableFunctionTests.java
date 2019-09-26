@@ -38,8 +38,6 @@ import org.junit.Test;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsApplicationSupportProperties;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
@@ -175,7 +173,6 @@ public class StreamToGlobalKTableFunctionTests {
 	}
 
 	@EnableAutoConfiguration
-	@EnableConfigurationProperties(KafkaStreamsApplicationSupportProperties.class)
 	public static class OrderEnricherApplication {
 
 		@Bean

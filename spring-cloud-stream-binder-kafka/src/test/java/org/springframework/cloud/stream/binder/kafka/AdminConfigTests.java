@@ -44,9 +44,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest(classes = { KafkaBinderConfiguration.class,
 		BindingServiceConfiguration.class })
 @TestPropertySource(properties = {
-		"spring.cloud.stream.kafka.bindings.input.consumer.admin.replication-factor=2",
-		"spring.cloud.stream.kafka.bindings.input.consumer.admin.replicas-assignments.0=0,1",
-		"spring.cloud.stream.kafka.bindings.input.consumer.admin.configuration.message.format.version=0.9.0.0",
+		"spring.cloud.stream.kafka.bindings.input.consumer.topic.replication-factor=2",
+		"spring.cloud.stream.kafka.bindings.input.consumer.topic.replicas-assignments.0=0,1",
+		"spring.cloud.stream.kafka.bindings.input.consumer.topic.properties.message.format.version=0.9.0.0",
 		"spring.cloud.stream.kafka.bindings.secondInput.consumer.topic.replication-factor=3",
 		"spring.cloud.stream.kafka.bindings.secondInput.consumer.topic.replicas-assignments.0=0,1",
 		"spring.cloud.stream.kafka.bindings.secondInput.consumer.topic.properties.message.format.version=0.9.1.0",
@@ -59,19 +59,6 @@ public class AdminConfigTests {
 
 	@Autowired
 	private KafkaMessageChannelBinder binder;
-
-	@Test
-	public void testDeprecatedAdminConfigurationToMapTopicProperties() {
-		final KafkaConsumerProperties consumerProps = this.binder
-				.getExtendedConsumerProperties("input");
-		final KafkaTopicProperties kafkaTopicProperties = consumerProps.getTopic();
-
-		assertThat(kafkaTopicProperties.getReplicationFactor()).isEqualTo((short) 2);
-		assertThat(kafkaTopicProperties.getReplicasAssignments().get(0))
-				.isEqualTo(Arrays.asList(0, 1));
-		assertThat(kafkaTopicProperties.getProperties().get("message.format.version"))
-				.isEqualTo("0.9.0.0");
-	}
 
 	@Test
 	public void testConsumerTopicProperties() {

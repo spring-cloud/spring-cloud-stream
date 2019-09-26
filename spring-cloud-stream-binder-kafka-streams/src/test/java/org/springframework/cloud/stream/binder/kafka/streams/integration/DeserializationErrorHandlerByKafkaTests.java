@@ -34,15 +34,12 @@ import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.StreamListener;
 import org.springframework.cloud.stream.binder.kafka.streams.annotations.KafkaStreamsProcessor;
-import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsApplicationSupportProperties;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
@@ -197,11 +194,7 @@ public abstract class DeserializationErrorHandlerByKafkaTests {
 	@EnableBinding(KafkaStreamsProcessor.class)
 	@EnableAutoConfiguration
 	@PropertySource("classpath:/org/springframework/cloud/stream/binder/kstream/integTest-1.properties")
-	@EnableConfigurationProperties(KafkaStreamsApplicationSupportProperties.class)
 	public static class WordCountProcessorApplication {
-
-		@Autowired
-		private TimeWindows timeWindows;
 
 		@StreamListener("input")
 		@SendTo("output")
@@ -212,7 +205,7 @@ public abstract class DeserializationErrorHandlerByKafkaTests {
 							value -> Arrays.asList(value.toLowerCase().split("\\W+")))
 					.map((key, value) -> new KeyValue<>(value, value))
 					.groupByKey(Serialized.with(Serdes.String(), Serdes.String()))
-					.windowedBy(timeWindows).count(Materialized.as("foo-WordCounts-x"))
+					.windowedBy(TimeWindows.of(5000)).count(Materialized.as("foo-WordCounts-x"))
 					.toStream().map((key, value) -> new KeyValue<>(null,
 							"Count for " + key.key() + " : " + value));
 		}

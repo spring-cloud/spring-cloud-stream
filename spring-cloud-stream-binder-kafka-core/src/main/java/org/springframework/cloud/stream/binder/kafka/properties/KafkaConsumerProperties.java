@@ -265,29 +265,6 @@ public class KafkaConsumerProperties {
 		this.destinationIsPattern = destinationIsPattern;
 	}
 
-	/**
-	 * No longer used; get properties such as this via {@link #getTopic()}.
-	 * @return Kafka admin properties
-	 * @deprecated No longer used
-	 */
-	@Deprecated
-	@DeprecatedConfigurationProperty(reason = "Not used since 2.1.1, set properties such as this via 'topic'")
-	@SuppressWarnings("deprecation")
-	public KafkaAdminProperties getAdmin() {
-		// Temporary workaround to copy the topic properties to the admin one.
-		final KafkaAdminProperties kafkaAdminProperties = new KafkaAdminProperties();
-		kafkaAdminProperties.setReplicationFactor(this.topic.getReplicationFactor());
-		kafkaAdminProperties.setReplicasAssignments(this.topic.getReplicasAssignments());
-		kafkaAdminProperties.setConfiguration(this.topic.getProperties());
-		return kafkaAdminProperties;
-	}
-
-	@Deprecated
-	@SuppressWarnings("deprecation")
-	public void setAdmin(KafkaAdminProperties admin) {
-		this.topic = admin;
-	}
-
 	public KafkaTopicProperties getTopic() {
 		return this.topic;
 	}
