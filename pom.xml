@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-		 xmlns="http://maven.apache.org/POM/4.0.0"
-		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	xmlns="http://maven.apache.org/POM/4.0.0"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<artifactId>spring-cloud-stream-parent</artifactId>
 	<version>3.0.0.BUILD-SNAPSHOT</version>
@@ -10,7 +10,7 @@
 		<groupId>org.springframework.cloud</groupId>
 		<artifactId>spring-cloud-build</artifactId>
 		<version>2.2.0.BUILD-SNAPSHOT</version>
-		<relativePath/>
+		<relativePath />
 	</parent>
 	<scm>
 		<url>https://github.com/spring-cloud/spring-cloud-stream</url>
@@ -32,11 +32,20 @@
 	</properties>
 	<dependencyManagement>
 		<dependencies>
-		<dependency>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-actuator</artifactId>
-        <version>2.2.0.M6</version>
-      </dependency>
+			<dependency>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-actuator</artifactId>
+			</dependency>
+			<dependency>
+				<groupId>com.fasterxml.jackson.core</groupId>
+				<artifactId>jackson-databind</artifactId>
+				<version>2.10.0</version>
+			</dependency>
+			<dependency>
+				<groupId>com.fasterxml.jackson.core</groupId>
+				<artifactId>jackson-core</artifactId>
+				<version>2.10.0</version>
+			</dependency>
 
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
@@ -106,9 +115,7 @@
 		<module>spring-cloud-stream-test-support</module>
 		<module>spring-cloud-stream-test-support-internal</module>
 		<module>spring-cloud-stream-integration-tests</module>
-		<!--
-		<module>spring-cloud-stream-reactive</module>
-			-->
+		<!-- <module>spring-cloud-stream-reactive</module> -->
 		<module>docs</module>
 	</modules>
 	<build>
