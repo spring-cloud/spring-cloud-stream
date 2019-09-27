@@ -267,7 +267,7 @@ public class KafkaStreamsFunctionProcessor extends AbstractKafkaStreamsBinderPro
 		}
 		else {
 			for (int i = 0; i < outputs; i++) {
-				outputBindingNames.add(String.format("%s_%s_%d", functionName, KafkaStreamsBindableProxyFactory.DEFAULT_OUTPUT_SUFFIX, i));
+				outputBindingNames.add(String.format("%s-%s-%d", functionName, KafkaStreamsBindableProxyFactory.DEFAULT_OUTPUT_SUFFIX, i));
 			}
 		}
 		return outputBindingNames;

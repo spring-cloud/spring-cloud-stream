@@ -80,8 +80,6 @@ public class KafkaStreamsBinderWordCountFunctionTests {
 		app.setWebApplicationType(WebApplicationType.NONE);
 
 		try (ConfigurableApplicationContext context = app.run(
-				"--spring.cloud.stream.function.inputBindings.process=input",
-				"--spring.cloud.stream.function.outputBindings.process=output",
 				"--server.port=0",
 				"--spring.jmx.enabled=false",
 				"--spring.cloud.stream.bindings.input.destination=words",
@@ -103,8 +101,6 @@ public class KafkaStreamsBinderWordCountFunctionTests {
 		app.setWebApplicationType(WebApplicationType.NONE);
 
 		try (ConfigurableApplicationContext context = app.run(
-				"--spring.cloud.stream.function.inputBindings.process=input",
-				"--spring.cloud.stream.function.outputBindings.process=output",
 				"--server.port=0",
 				"--spring.jmx.enabled=false",
 				"--spring.cloud.stream.bindings.input.destination=words-1",

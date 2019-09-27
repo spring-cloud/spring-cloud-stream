@@ -120,14 +120,14 @@ public class StreamToTableJoinFunctionTests {
 
 		try (ConfigurableApplicationContext ignored = app.run("--server.port=0",
 				"--spring.jmx.enabled=false",
-				"--spring.cloud.stream.bindings.process_in_0.destination=user-clicks-1",
-				"--spring.cloud.stream.bindings.process_in_1.destination=user-regions-1",
+				"--spring.cloud.stream.bindings.process-in-0.destination=user-clicks-1",
+				"--spring.cloud.stream.bindings.process-in-1.destination=user-regions-1",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.default.key.serde" +
 						"=org.apache.kafka.common.serialization.Serdes$StringSerde",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.default.value.serde" +
 						"=org.apache.kafka.common.serialization.Serdes$StringSerde",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.commit.interval.ms=10000",
-				"--spring.cloud.stream.kafka.streams.bindings.process_in_0.consumer.applicationId" +
+				"--spring.cloud.stream.kafka.streams.bindings.process-in-0.consumer.applicationId" +
 						"=testStreamToTableBiConsumer",
 				"--spring.cloud.stream.kafka.streams.binder.brokers=" + embeddedKafka.getBrokersAsString())) {
 
@@ -177,15 +177,15 @@ public class StreamToTableJoinFunctionTests {
 	private void runTest(SpringApplication app, Consumer<String, Long> consumer) {
 		try (ConfigurableApplicationContext ignored = app.run("--server.port=0",
 				"--spring.jmx.enabled=false",
-				"--spring.cloud.stream.bindings.process_in_0.destination=user-clicks-1",
-				"--spring.cloud.stream.bindings.process_in_1.destination=user-regions-1",
-				"--spring.cloud.stream.bindings.process_out.destination=output-topic-1",
+				"--spring.cloud.stream.bindings.process-in-0.destination=user-clicks-1",
+				"--spring.cloud.stream.bindings.process-in-1.destination=user-regions-1",
+				"--spring.cloud.stream.bindings.process-out-0.destination=output-topic-1",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.default.key.serde" +
 						"=org.apache.kafka.common.serialization.Serdes$StringSerde",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.default.value.serde" +
 						"=org.apache.kafka.common.serialization.Serdes$StringSerde",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.commit.interval.ms=10000",
-				"--spring.cloud.stream.kafka.streams.bindings.process_in_0.consumer.applicationId" +
+				"--spring.cloud.stream.kafka.streams.bindings.process-in-0.consumer.applicationId" +
 						"=StreamToTableJoinFunctionTests-abc",
 				"--spring.cloud.stream.kafka.streams.binder.brokers=" + embeddedKafka.getBrokersAsString())) {
 
@@ -307,21 +307,20 @@ public class StreamToTableJoinFunctionTests {
 
 		try (ConfigurableApplicationContext context = app.run("--server.port=0",
 				"--spring.jmx.enabled=false",
-				"--spring.cloud.stream.function.inputBindings.process=input-1,input-2",
-				"--spring.cloud.stream.bindings.input-1.destination=user-clicks-2",
-				"--spring.cloud.stream.bindings.input-2.destination=user-regions-2",
-				"--spring.cloud.stream.bindings.process_out.destination=output-topic-2",
-				"--spring.cloud.stream.bindings.input-1.consumer.useNativeDecoding=true",
-				"--spring.cloud.stream.bindings.input-2.consumer.useNativeDecoding=true",
-				"--spring.cloud.stream.bindings.output.producer.useNativeEncoding=true",
+				"--spring.cloud.stream.bindings.process-in-0.destination=user-clicks-2",
+				"--spring.cloud.stream.bindings.process-in-1.destination=user-regions-2",
+				"--spring.cloud.stream.bindings.process-out-0.destination=output-topic-2",
+				"--spring.cloud.stream.bindings.process-in-0.consumer.useNativeDecoding=true",
+				"--spring.cloud.stream.bindings.process-in-1.consumer.useNativeDecoding=true",
+				"--spring.cloud.stream.bindings.process-out-0.producer.useNativeEncoding=true",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.auto.offset.reset=latest",
-				"--spring.cloud.stream.kafka.streams.bindings.input-1.consumer.startOffset=earliest",
+				"--spring.cloud.stream.kafka.streams.bindings.process-in-0.consumer.startOffset=earliest",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.default.key.serde" +
 						"=org.apache.kafka.common.serialization.Serdes$StringSerde",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.default.value.serde" +
 						"=org.apache.kafka.common.serialization.Serdes$StringSerde",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.commit.interval.ms=10000",
-				"--spring.cloud.stream.kafka.streams.bindings.input-1.consumer.application-id" +
+				"--spring.cloud.stream.kafka.streams.bindings.process-in-0.consumer.application-id" +
 						"=StreamToTableJoinFunctionTests-foobar",
 				"--spring.cloud.stream.kafka.streams.binder.brokers=" + embeddedKafka.getBrokersAsString(),
 				"--spring.cloud.stream.kafka.streams.binder.zkNodes=" + embeddedKafka.getZookeeperConnectionString())) {

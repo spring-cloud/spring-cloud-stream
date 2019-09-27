@@ -66,6 +66,8 @@ public class KafkaStreamsFunctionAutoConfiguration {
 						.addGenericArgumentValue(kafkaStreamsFunctionBeanPostProcessor.getResolvableTypes().get(s));
 				rootBeanDefinition.getConstructorArgumentValues()
 						.addGenericArgumentValue(s);
+				rootBeanDefinition.getConstructorArgumentValues()
+						.addGenericArgumentValue(kafkaStreamsFunctionBeanPostProcessor.getResolvableTypes().size() == 1);
 				registry.registerBeanDefinition("kafkaStreamsBindableProxyFactory-" + s, rootBeanDefinition);
 			}
 		};
