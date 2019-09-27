@@ -51,6 +51,7 @@ import org.apache.kafka.common.header.internals.RecordHeaders;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
 
+import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.cloud.stream.binder.AbstractMessageChannelBinder;
@@ -377,12 +378,23 @@ public class KafkaMessageChannelBinder extends
 		if (StringUtils.hasText(producerProperties.getExtension().getRecordMetadataChannel())) {
 			handler.setSendSuccessChannelName(producerProperties.getExtension().getRecordMetadataChannel());
 		}
+
 		KafkaHeaderMapper mapper = null;
 		if (this.configurationProperties.getHeaderMapperBeanName() != null) {
 			mapper = getApplicationContext().getBean(
 					this.configurationProperties.getHeaderMapperBeanName(),
 					KafkaHeaderMapper.class);
 		}
+		if (mapper == null) {
+			//First, try to see if there is a bean named headerMapper registered by other frameworks using the binder (for e.g. spring cloud sleuth)
+			try {
+				mapper = getApplicationContext().getBean("kafkaBinderHeaderMapper", KafkaHeaderMapper.class);
+			}
+			catch (BeansException be) {
+				// Pass through
+			}
+		}
+
 		/*
 		 * Even if the user configures a bean, we must not use it if the header mode is
 		 * not the default (headers); setting the mapper to null disables populating
@@ -899,23 +911,29 @@ public class KafkaMessageChannelBinder extends
 					KafkaHeaderMapper.class);
 		}
 		if (mapper == null) {
-			DefaultKafkaHeaderMapper headerMapper = new DefaultKafkaHeaderMapper() {
-
-				@Override
-				public void toHeaders(Headers source, Map<String, Object> headers) {
-					super.toHeaders(source, headers);
-					if (headers.size() > 0) {
-						headers.put(BinderHeaders.NATIVE_HEADERS_PRESENT, Boolean.TRUE);
-					}
-				}
-
-			};
-			String[] trustedPackages = extendedConsumerProperties.getExtension()
-					.getTrustedPackages();
-			if (!StringUtils.isEmpty(trustedPackages)) {
-				headerMapper.addTrustedPackages(trustedPackages);
+			//First, try to see if there is a bean named headerMapper registered by other frameworks using the binder (for e.g. spring cloud sleuth)
+			try {
+				mapper = getApplicationContext().getBean("kafkaBinderHeaderMapper", KafkaHeaderMapper.class);
 			}
-			mapper = headerMapper;
+			catch (BeansException be) {
+				DefaultKafkaHeaderMapper headerMapper = new DefaultKafkaHeaderMapper() {
+
+					@Override
+					public void toHeaders(Headers source, Map<String, Object> headers) {
+						super.toHeaders(source, headers);
+						if (headers.size() > 0) {
+							headers.put(BinderHeaders.NATIVE_HEADERS_PRESENT, Boolean.TRUE);
+						}
+					}
+
+				};
+				String[] trustedPackages = extendedConsumerProperties.getExtension()
+						.getTrustedPackages();
+				if (!StringUtils.isEmpty(trustedPackages)) {
+					headerMapper.addTrustedPackages(trustedPackages);
+				}
+				mapper = headerMapper;
+			}
 		}
 		return mapper;
 	}

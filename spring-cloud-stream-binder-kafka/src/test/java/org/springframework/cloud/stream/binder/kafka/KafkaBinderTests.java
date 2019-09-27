@@ -52,6 +52,8 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.common.KafkaFuture;
 import org.apache.kafka.common.errors.TopicExistsException;
+import org.apache.kafka.common.header.Headers;
+import org.apache.kafka.common.header.internals.RecordHeader;
 import org.apache.kafka.common.record.TimestampType;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
@@ -114,6 +116,7 @@ import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;
 import org.springframework.kafka.listener.ContainerProperties;
 import org.springframework.kafka.listener.MessageListenerContainer;
 import org.springframework.kafka.support.Acknowledgment;
+import org.springframework.kafka.support.KafkaHeaderMapper;
 import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.kafka.support.SendResult;
 import org.springframework.kafka.support.TopicPartitionOffset;
@@ -133,7 +136,6 @@ import org.springframework.messaging.support.ErrorMessage;
 import org.springframework.messaging.support.GenericMessage;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.Assert;
-import org.springframework.util.MimeType;
 import org.springframework.util.MimeTypeUtils;
 import org.springframework.util.concurrent.ListenableFuture;
 import org.springframework.util.concurrent.SettableListenableFuture;
@@ -316,7 +318,7 @@ public class KafkaBinderTests extends
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Test
-	public void testTrustedPackages() throws Exception {
+	public void testDefaultHeaderMapper() throws Exception {
 		Binder binder = getBinder();
 
 		BindingProperties producerBindingProperties = createProducerBindingProperties(
@@ -326,7 +328,7 @@ public class KafkaBinderTests extends
 
 		ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = createConsumerProperties();
 		consumerProperties.getExtension()
-				.setTrustedPackages(new String[] { "org.springframework.util" });
+				.setTrustedPackages(new String[] { "org.springframework.cloud.stream.binder.kafka" });
 
 		DirectChannel moduleInputChannel = createBindableChannel("input",
 				createConsumerBindingProperties(consumerProperties));
@@ -339,9 +341,92 @@ public class KafkaBinderTests extends
 				consumerProperties);
 		binderBindUnbindLatency();
 
+		final Pojo pojoHeader = new Pojo("testing");
 		Message<?> message = org.springframework.integration.support.MessageBuilder
 				.withPayload("foo")
 				.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN)
+				.setHeader("foo", pojoHeader).build();
+
+		moduleOutputChannel.send(message);
+		CountDownLatch latch = new CountDownLatch(1);
+		AtomicReference<Message<byte[]>> inboundMessageRef = new AtomicReference<>();
+		moduleInputChannel.subscribe(message1 -> {
+			try {
+				inboundMessageRef.set((Message<byte[]>) message1);
+			}
+			finally {
+				latch.countDown();
+			}
+		});
+		Assert.isTrue(latch.await(5, TimeUnit.SECONDS), "Failed to receive message");
+
+		Assertions.assertThat(inboundMessageRef.get()).isNotNull();
+		Assertions.assertThat(inboundMessageRef.get().getPayload())
+				.isEqualTo("foo".getBytes());
+		Assertions
+				.assertThat(inboundMessageRef.get().getHeaders()
+						.get(MessageHeaders.CONTENT_TYPE))
+				.isEqualTo(MimeTypeUtils.TEXT_PLAIN);
+		Assertions.assertThat(inboundMessageRef.get().getHeaders().get("foo"))
+				.isInstanceOf(Pojo.class);
+		Pojo actual = (Pojo) inboundMessageRef.get().getHeaders().get("foo");
+		Assertions.assertThat(actual.field).isEqualTo(pojoHeader.field);
+		producerBinding.unbind();
+		consumerBinding.unbind();
+	}
+
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	@Test
+	public void testCustomHeaderMapper() throws Exception {
+
+		KafkaBinderConfigurationProperties binderConfiguration = createConfigurationProperties();
+		binderConfiguration.setHeaderMapperBeanName("headerMapper");
+
+		KafkaTopicProvisioner kafkaTopicProvisioner = new KafkaTopicProvisioner(
+				binderConfiguration, new TestKafkaProperties());
+		try {
+			kafkaTopicProvisioner.afterPropertiesSet();
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+		KafkaTestBinder binder = new KafkaTestBinder(binderConfiguration, kafkaTopicProvisioner);
+		((GenericApplicationContext) binder.getApplicationContext()).registerBean("headerMapper",
+				KafkaHeaderMapper.class, () -> new KafkaHeaderMapper() {
+					@Override
+					public void fromHeaders(MessageHeaders headers, Headers target) {
+						target.add(new RecordHeader("custom-header", "foobar".getBytes()));
+					}
+
+					@Override
+					public void toHeaders(Headers source, Map<String, Object> target) {
+						if (source.headers("custom-header").iterator().hasNext()) {
+							target.put("custom-header", source.headers("custom-header").iterator().next().value());
+						}
+
+					}
+				});
+
+		ExtendedProducerProperties<KafkaProducerProperties> producerProperties = createProducerProperties();
+
+		DirectChannel moduleOutputChannel = createBindableChannel("output",
+				createProducerBindingProperties(producerProperties));
+
+		ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = createConsumerProperties();
+
+		DirectChannel moduleInputChannel = createBindableChannel("input",
+				createConsumerBindingProperties(consumerProperties));
+
+		Binding<MessageChannel> producerBinding = binder.bindProducer("bar.0",
+				moduleOutputChannel, producerProperties);
+
+		Binding<MessageChannel> consumerBinding = binder.bindConsumer("bar.0",
+				"testSendAndReceiveNoOriginalContentType", moduleInputChannel,
+				consumerProperties);
+		binderBindUnbindLatency();
+
+		Message<?> message = org.springframework.integration.support.MessageBuilder
+				.withPayload("foo")
 				.setHeader("foo", MimeTypeUtils.TEXT_PLAIN).build();
 
 		moduleOutputChannel.send(message);
@@ -360,16 +445,87 @@ public class KafkaBinderTests extends
 		Assertions.assertThat(inboundMessageRef.get()).isNotNull();
 		Assertions.assertThat(inboundMessageRef.get().getPayload())
 				.isEqualTo("foo".getBytes());
-		Assertions.assertThat(inboundMessageRef.get().getHeaders()
-				.get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE)).isNull();
-		Assertions
-				.assertThat(inboundMessageRef.get().getHeaders()
-						.get(MessageHeaders.CONTENT_TYPE))
-				.isEqualTo(MimeTypeUtils.TEXT_PLAIN);
 		Assertions.assertThat(inboundMessageRef.get().getHeaders().get("foo"))
-				.isInstanceOf(MimeType.class);
-		MimeType actual = (MimeType) inboundMessageRef.get().getHeaders().get("foo");
-		Assertions.assertThat(actual).isEqualTo(MimeTypeUtils.TEXT_PLAIN);
+				.isNull();
+		Assertions.assertThat(inboundMessageRef.get().getHeaders().get("custom-header"))
+				.isEqualTo("foobar".getBytes());
+		producerBinding.unbind();
+		consumerBinding.unbind();
+	}
+
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	@Test
+	public void testWellKnownHeaderMapperWithBeanNameKafkaHeaderMapper() throws Exception {
+
+		KafkaBinderConfigurationProperties binderConfiguration = createConfigurationProperties();
+
+		KafkaTopicProvisioner kafkaTopicProvisioner = new KafkaTopicProvisioner(
+				binderConfiguration, new TestKafkaProperties());
+		try {
+			kafkaTopicProvisioner.afterPropertiesSet();
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+		KafkaTestBinder binder = new KafkaTestBinder(binderConfiguration, kafkaTopicProvisioner);
+		((GenericApplicationContext) binder.getApplicationContext()).registerBean("kafkaBinderHeaderMapper",
+				KafkaHeaderMapper.class, () -> new KafkaHeaderMapper() {
+					@Override
+					public void fromHeaders(MessageHeaders headers, Headers target) {
+						target.add(new RecordHeader("custom-header", "foobar".getBytes()));
+					}
+
+					@Override
+					public void toHeaders(Headers source, Map<String, Object> target) {
+						if (source.headers("custom-header").iterator().hasNext()) {
+							target.put("custom-header", source.headers("custom-header").iterator().next().value());
+						}
+
+					}
+				});
+
+		ExtendedProducerProperties<KafkaProducerProperties> producerProperties = createProducerProperties();
+
+		DirectChannel moduleOutputChannel = createBindableChannel("output",
+				createProducerBindingProperties(producerProperties));
+
+		ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = createConsumerProperties();
+
+		DirectChannel moduleInputChannel = createBindableChannel("input",
+				createConsumerBindingProperties(consumerProperties));
+
+		Binding<MessageChannel> producerBinding = binder.bindProducer("bar.0",
+				moduleOutputChannel, producerProperties);
+
+		Binding<MessageChannel> consumerBinding = binder.bindConsumer("bar.0",
+				"testSendAndReceiveNoOriginalContentType", moduleInputChannel,
+				consumerProperties);
+		binderBindUnbindLatency();
+
+		Message<?> message = org.springframework.integration.support.MessageBuilder
+				.withPayload("foo")
+				.setHeader("foo", MimeTypeUtils.TEXT_PLAIN).build();
+
+		moduleOutputChannel.send(message);
+		CountDownLatch latch = new CountDownLatch(1);
+		AtomicReference<Message<byte[]>> inboundMessageRef = new AtomicReference<>();
+		moduleInputChannel.subscribe(message1 -> {
+			try {
+				inboundMessageRef.set((Message<byte[]>) message1);
+			}
+			finally {
+				latch.countDown();
+			}
+		});
+		Assert.isTrue(latch.await(5, TimeUnit.SECONDS), "Failed to receive message");
+
+		Assertions.assertThat(inboundMessageRef.get()).isNotNull();
+		Assertions.assertThat(inboundMessageRef.get().getPayload())
+				.isEqualTo("foo".getBytes());
+		Assertions.assertThat(inboundMessageRef.get().getHeaders().get("foo"))
+				.isNull();
+		Assertions.assertThat(inboundMessageRef.get().getHeaders().get("custom-header"))
+				.isEqualTo("foobar".getBytes());
 		producerBinding.unbind();
 		consumerBinding.unbind();
 	}
