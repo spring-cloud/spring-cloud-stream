@@ -21,7 +21,6 @@ import java.util.Collections;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import org.springframework.cloud.stream.binder.BinderHeaders;
 import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
@@ -32,7 +31,6 @@ import org.springframework.messaging.converter.AbstractMessageConverter;
 import org.springframework.messaging.converter.MessageConversionException;
 import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.messaging.support.GenericMessage;
-import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.MimeType;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -103,29 +101,6 @@ public class MessageConverterConfigurerTests {
 			assertThat(e.getMessage())
 					.endsWith("to the configured output type: 'foo/bar'");
 		}
-	}
-
-	@Test
-	public void testConfigureInputChannelWithLegacyContentType() {
-		BindingServiceProperties props = new BindingServiceProperties();
-		BindingProperties bindingProps = new BindingProperties();
-		bindingProps.setContentType("foo/bar");
-		props.setBindings(Collections.singletonMap("foo", bindingProps));
-		CompositeMessageConverterFactory converterFactory = new CompositeMessageConverterFactory(
-				Collections.<MessageConverter>emptyList(), null);
-		MessageConverterConfigurer configurer = new MessageConverterConfigurer(props,
-				converterFactory.getMessageConverterForAllRegistered());
-		QueueChannel in = new QueueChannel();
-		configurer.configureInputChannel(in, "foo");
-		Foo foo = new Foo();
-		in.send(MessageBuilder.withPayload(foo)
-				.setHeader(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE, "application/json")
-				.setHeader(BinderHeaders.SCST_VERSION, "1.x").build());
-		Message<?> received = in.receive(0);
-		assertThat(received).isNotNull();
-		assertThat(received.getPayload()).isEqualTo(foo);
-		assertThat(received.getHeaders().get(MessageHeaders.CONTENT_TYPE).toString())
-				.isEqualTo("application/json");
 	}
 
 	public static class Foo {

@@ -261,21 +261,21 @@ public class MessageConverterConfigurer
 					.getField(MessageConverterConfigurer.this.headersField,
 							message.getHeaders());
 			MimeType contentType = this.mimeType;
-			/*
-			 * NOTE: The below code for BINDER_ORIGINAL_CONTENT_TYPE is to support legacy
-			 * message format established in 1.x version of the framework and should/will
-			 * no longer be supported in 3.x
-			 */
-			if (message.getHeaders()
-					.containsKey(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE)) {
-				Object ct = message.getHeaders()
-						.get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE);
-				contentType = ct instanceof String ? MimeType.valueOf((String) ct)
-						: (ct == null ? this.mimeType : (MimeType) ct);
-				headersMap.put(MessageHeaders.CONTENT_TYPE, contentType);
-				headersMap.remove(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE);
-			}
-			// == end legacy note
+//			/*
+//			 * NOTE: The below code for BINDER_ORIGINAL_CONTENT_TYPE is to support legacy
+//			 * message format established in 1.x version of the framework and should/will
+//			 * no longer be supported in 3.x
+//			 */
+//			if (message.getHeaders()
+//					.containsKey(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE)) {
+//				Object ct = message.getHeaders()
+//						.get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE);
+//				contentType = ct instanceof String ? MimeType.valueOf((String) ct)
+//						: (ct == null ? this.mimeType : (MimeType) ct);
+//				headersMap.put(MessageHeaders.CONTENT_TYPE, contentType);
+//				headersMap.remove(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE);
+//			}
+//			// == end legacy note
 
 			if (!message.getHeaders().containsKey(MessageHeaders.CONTENT_TYPE)) {
 				headersMap.put(MessageHeaders.CONTENT_TYPE, contentType);
@@ -311,17 +311,11 @@ public class MessageConverterConfigurer
 
 		@Override
 		public Message<?> doPreSend(Message<?> message, MessageChannel channel) {
-			// If handler is a function, FunctionInvoker will already perform message
-			// conversion.
-			// In fact in the future we should consider propagating knowledge of the
-			// default content type
-			// to MessageConverters instead of interceptors
 			if (message.getPayload() instanceof byte[]
 					&& message.getHeaders().containsKey(MessageHeaders.CONTENT_TYPE)) {
 				return message;
 			}
 
-			// ===== 1.3 backward compatibility code part-1 ===
 			String oct = message.getHeaders().containsKey(MessageHeaders.CONTENT_TYPE)
 					? message.getHeaders().get(MessageHeaders.CONTENT_TYPE).toString()
 					: null;
@@ -329,7 +323,6 @@ public class MessageConverterConfigurer
 					? JavaClassMimeTypeUtils.mimeTypeFromObject(message.getPayload(),
 							ObjectUtils.nullSafeToString(oct)).toString()
 					: oct;
-			// ===== END 1.3 backward compatibility code part-1 ===
 
 			if (!message.getHeaders().containsKey(MessageHeaders.CONTENT_TYPE)) {
 				@SuppressWarnings("unchecked")
@@ -348,17 +341,13 @@ public class MessageConverterConfigurer
 						+ "' to outbound message.");
 			}
 
-			/// ===== 1.3 backward compatibility code part-2 ===
 			if (ct != null && !ct.equals(oct) && oct != null) {
 				@SuppressWarnings("unchecked")
 				Map<String, Object> headersMap = (Map<String, Object>) ReflectionUtils
 						.getField(MessageConverterConfigurer.this.headersField,
 								outboundMessage.getHeaders());
 				headersMap.put(MessageHeaders.CONTENT_TYPE, MimeType.valueOf(ct));
-				headersMap.put(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE,
-						MimeType.valueOf(oct));
 			}
-			// ===== END 1.3 backward compatibility code part-2 ===
 			return outboundMessage;
 		}
 

@@ -174,3 +174,4 @@ TBD
 - Reactive module in favor of native support via spring-cloud-function. [Details to follow]
 - Test support module with MessageCollector [Details to follow]
 - @StreamMessageConverter [Details to follow]
+- Original content type - removed

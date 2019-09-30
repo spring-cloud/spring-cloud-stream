@@ -25,7 +25,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.LinkedBlockingDeque;
 
 import org.springframework.cloud.stream.binder.Binder;
-import org.springframework.cloud.stream.binder.BinderHeaders;
 import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binder.ConsumerProperties;
 import org.springframework.cloud.stream.binder.ProducerProperties;
@@ -193,12 +192,7 @@ public class TestSupportBinder
 		public Message<?> preSend(Message<?> message, MessageChannel channel) {
 			Class<?> targetClass = null;
 			MessageConverter converter = null;
-			MimeType contentType = message.getHeaders()
-					.containsKey(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE)
-							? MimeType.valueOf(message.getHeaders()
-									.get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE)
-									.toString())
-							: MimeType.valueOf(this.contentTypeResolver
+			MimeType contentType = MimeType.valueOf(this.contentTypeResolver
 									.resolve(message.getHeaders()).toString());
 
 			if (contentType != null) {
@@ -225,8 +219,7 @@ public class TestSupportBinder
 						catch (Exception e) {
 							throw new IllegalStateException(
 									"Failed to determine class name for contentType: "
-											+ message.getHeaders().get(
-													BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE),
+											+ message.getHeaders(),
 									e);
 						}
 					}
@@ -256,7 +249,7 @@ public class TestSupportBinder
 			message = MessageBuilder.withPayload(payload)
 					.copyHeaders(message.getHeaders())
 					.setHeader(MessageHeaders.CONTENT_TYPE, contentType)
-					.removeHeader(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE).build();
+					.build();
 			return message;
 		}
 

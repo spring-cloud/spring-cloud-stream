@@ -208,8 +208,6 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 		Assert.isTrue(latch.await(5, TimeUnit.SECONDS), "Failed to receive message");
 
 		assertThat(inboundMessageRef.get().getPayload()).isEqualTo("foo".getBytes());
-		assertThat(inboundMessageRef.get().getHeaders()
-				.get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE)).isNull();
 		assertThat(inboundMessageRef.get().getHeaders().get(MessageHeaders.CONTENT_TYPE)
 				.toString()).isEqualTo("text/plain");
 		producerBinding.unbind();

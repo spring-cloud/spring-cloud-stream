@@ -1099,12 +1099,6 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 				if (contentType != null) {
 					transformed.put(MessageHeaders.CONTENT_TYPE, contentType.toString());
 				}
-				Object originalContentType = transformed
-						.get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE);
-				if (originalContentType != null) {
-					transformed.put(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE,
-							originalContentType.toString());
-				}
 				payload = EmbeddedHeaderUtils.embedHeaders(transformed,
 						this.embeddedHeaders);
 			}

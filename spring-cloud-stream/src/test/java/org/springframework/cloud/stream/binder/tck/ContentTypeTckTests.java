@@ -95,26 +95,6 @@ public class ContentTypeTckTests {
 	}
 
 	@Test
-	// emulates 1.3 behavior
-	public void stringToMapMessageStreamListenerOriginalContentType() {
-		ApplicationContext context = new SpringApplicationBuilder(
-				StringToMapMessageStreamListener.class).web(WebApplicationType.NONE)
-						.run("--spring.jmx.enabled=false");
-		InputDestination source = context.getBean(InputDestination.class);
-		OutputDestination target = context.getBean(OutputDestination.class);
-		String jsonPayload = "{\"name\":\"oleg\"}";
-
-		Message<byte[]> message = MessageBuilder.withPayload(jsonPayload.getBytes())
-				.setHeader(MessageHeaders.CONTENT_TYPE, "text/plain")
-				.setHeader("originalContentType", "application/json;charset=UTF-8")
-				.build();
-
-		source.send(message);
-		Message<byte[]> outputMessage = target.receive();
-		assertThat(new String(outputMessage.getPayload())).isEqualTo("oleg");
-	}
-
-	@Test
 	public void withInternalPipeline() {
 		ApplicationContext context = new SpringApplicationBuilder(InternalPipeLine.class)
 				.web(WebApplicationType.NONE).run("--spring.jmx.enabled=false");
