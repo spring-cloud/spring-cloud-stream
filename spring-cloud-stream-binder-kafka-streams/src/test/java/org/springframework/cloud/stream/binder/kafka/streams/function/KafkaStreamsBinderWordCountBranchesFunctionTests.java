@@ -91,9 +91,7 @@ public class KafkaStreamsBinderWordCountBranchesFunctionTests {
 						"=org.apache.kafka.common.serialization.Serdes$StringSerde",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.default.value.serde" +
 						"=org.apache.kafka.common.serialization.Serdes$StringSerde",
-				"--spring.cloud.stream.kafka.streams.timeWindow.length=5000",
-				"--spring.cloud.stream.kafka.streams.timeWindow.advanceBy=0",
-				"--spring.cloud.stream.kafka.streams.bindings.input.consumer.applicationId" +
+				"--spring.cloud.stream.kafka.streams.binder.applicationId" +
 						"=KafkaStreamsBinderWordCountBranchesFunctionTests-abc",
 				"--spring.cloud.stream.kafka.streams.binder.brokers=" + embeddedKafka.getBrokersAsString());
 		try {

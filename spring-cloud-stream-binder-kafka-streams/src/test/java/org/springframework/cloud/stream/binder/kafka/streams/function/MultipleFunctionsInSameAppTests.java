@@ -17,6 +17,7 @@
 package org.springframework.cloud.stream.binder.kafka.streams.function;
 
 import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
@@ -36,6 +37,7 @@ import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
+import org.springframework.kafka.config.StreamsBuilderFactoryBean;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -78,7 +80,7 @@ public class MultipleFunctionsInSameAppTests {
 		SpringApplication app = new SpringApplication(MultipleFunctionsInSameApp.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 
-		try (ConfigurableApplicationContext ignored = app.run(
+		try (ConfigurableApplicationContext context = app.run(
 				"--server.port=0",
 				"--spring.jmx.enabled=false",
 				"--spring.cloud.stream.bindings.process-in-0.destination=purchases",
@@ -89,12 +91,22 @@ public class MultipleFunctionsInSameAppTests {
 				"--spring.cloud.stream.kafka.streams.binder.functions.analyze.applicationId=analyze-id-0",
 				"--spring.cloud.stream.kafka.streams.binder.functions.process.applicationId=process-id-0",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.commit.interval.ms=1000",
-				"--spring.cloud.stream.kafka.streams.binder.configuration.default.key.serde" +
-						"=org.apache.kafka.common.serialization.Serdes$StringSerde",
-				"--spring.cloud.stream.kafka.streams.binder.configuration.default.value.serde" +
-						"=org.apache.kafka.common.serialization.Serdes$StringSerde",
+				"--spring.cloud.stream.kafka.streams.binder.functions.process.configuration.client.id=process-client",
+				"--spring.cloud.stream.kafka.streams.binder.functions.analyze.configuration.client.id=analyze-client",
 				"--spring.cloud.stream.kafka.streams.binder.brokers=" + embeddedKafka.getBrokersAsString())) {
 			receiveAndValidate("purchases", "coffee", "electronics");
+
+			StreamsBuilderFactoryBean processStreamsBuilderFactoryBean = context
+					.getBean("&stream-builder-process", StreamsBuilderFactoryBean.class);
+
+			StreamsBuilderFactoryBean analyzeStreamsBuilderFactoryBean = context
+					.getBean("&stream-builder-analyze", StreamsBuilderFactoryBean.class);
+
+			final Properties processStreamsConfiguration = processStreamsBuilderFactoryBean.getStreamsConfiguration();
+			final Properties analyzeStreamsConfiguration = analyzeStreamsBuilderFactoryBean.getStreamsConfiguration();
+
+			assertThat(processStreamsConfiguration.getProperty("client.id")).isEqualTo("process-client");
+			assertThat(analyzeStreamsConfiguration.getProperty("client.id")).isEqualTo("analyze-client");
 		}
 	}
 

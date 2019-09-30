@@ -157,6 +157,25 @@ public abstract class AbstractKafkaStreamsBinderProcessor implements Application
 		Map<String, Object> streamConfigGlobalProperties = applicationContext
 				.getBean("streamConfigGlobalProperties", Map.class);
 
+		if (kafkaStreamsBinderConfigurationProperties != null) {
+			final Map<String, KafkaStreamsBinderConfigurationProperties.Functions> functionConfigMap = kafkaStreamsBinderConfigurationProperties.getFunctions();
+			if (!CollectionUtils.isEmpty(functionConfigMap)) {
+				final KafkaStreamsBinderConfigurationProperties.Functions functionConfig = functionConfigMap.get(beanNamePostPrefix);
+				final Map<String, String> functionSpecificConfig = functionConfig.getConfiguration();
+				if (!CollectionUtils.isEmpty(functionSpecificConfig)) {
+					streamConfigGlobalProperties.putAll(functionSpecificConfig);
+				}
+
+				String applicationId = functionConfig.getApplicationId();
+				if (!StringUtils.isEmpty(applicationId)) {
+					streamConfigGlobalProperties.put(StreamsConfig.APPLICATION_ID_CONFIG, applicationId);
+				}
+			}
+		}
+
+		//this is only used primarily for StreamListener based processors. Although in theory, functions can use it,
+		//it is ideal for functions to use the approach used in the above if statement by using a property like
+		//spring.cloud.stream.kafka.streams.binder.functions.process.configuration.num.threads (assuming that process is the function name).
 		KafkaStreamsConsumerProperties extendedConsumerProperties = this.kafkaStreamsExtendedBindingProperties
 				.getExtendedConsumerProperties(inboundName);
 		streamConfigGlobalProperties
@@ -165,16 +184,11 @@ public abstract class AbstractKafkaStreamsBinderProcessor implements Application
 		String bindingLevelApplicationId = extendedConsumerProperties.getApplicationId();
 		// override application.id if set at the individual binding level.
 		// We provide this for backward compatibility with StreamListener based processors.
-		// For function based processors see the next else if conditional block
+		// For function based processors see the approach used above
+		// (i.e. use a property like spring.cloud.stream.kafka.streams.binder.functions.process.applicationId).
 		if (StringUtils.hasText(bindingLevelApplicationId)) {
 			streamConfigGlobalProperties.put(StreamsConfig.APPLICATION_ID_CONFIG,
 					bindingLevelApplicationId);
-		}
-		else if (kafkaStreamsBinderConfigurationProperties != null && !CollectionUtils.isEmpty(kafkaStreamsBinderConfigurationProperties.getFunctions())) {
-			String applicationId = kafkaStreamsBinderConfigurationProperties.getFunctions().get(beanNamePostPrefix + ".applicationId");
-			if (!StringUtils.isEmpty(applicationId)) {
-				streamConfigGlobalProperties.put(StreamsConfig.APPLICATION_ID_CONFIG, applicationId);
-			}
 		}
 
 		//If the application id is not set by any mechanism, then generate it.

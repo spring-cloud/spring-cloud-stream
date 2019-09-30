@@ -57,9 +57,17 @@ public class KafkaStreamsBinderConfigurationProperties
 
 	private String applicationId;
 
-	private Map<String, String> functions = new HashMap<>();
-
 	private StateStoreRetry stateStoreRetry = new StateStoreRetry();
+
+	private Map<String, Functions> functions = new HashMap<>();
+
+	public Map<String, Functions> getFunctions() {
+		return functions;
+	}
+
+	public void setFunctions(Map<String, Functions> functions) {
+		this.functions = functions;
+	}
 
 	public StateStoreRetry getStateStoreRetry() {
 		return stateStoreRetry;
@@ -67,14 +75,6 @@ public class KafkaStreamsBinderConfigurationProperties
 
 	public void setStateStoreRetry(StateStoreRetry stateStoreRetry) {
 		this.stateStoreRetry = stateStoreRetry;
-	}
-
-	public Map<String, String> getFunctions() {
-		return functions;
-	}
-
-	public void setFunctions(Map<String, String> functions) {
-		this.functions = functions;
 	}
 
 	public String getApplicationId() {
@@ -122,6 +122,35 @@ public class KafkaStreamsBinderConfigurationProperties
 
 		public void setBackoffPeriod(long backoffPeriod) {
 			this.backoffPeriod = backoffPeriod;
+		}
+	}
+
+	public static class Functions {
+
+		/**
+		 * Function specific application id.
+		 */
+		private String applicationId;
+
+		/**
+		 * Funcion specific configuraiton to use.
+		 */
+		private Map<String, String> configuration;
+
+		public String getApplicationId() {
+			return applicationId;
+		}
+
+		public void setApplicationId(String applicationId) {
+			this.applicationId = applicationId;
+		}
+
+		public Map<String, String> getConfiguration() {
+			return configuration;
+		}
+
+		public void setConfiguration(Map<String, String> configuration) {
+			this.configuration = configuration;
 		}
 	}
 

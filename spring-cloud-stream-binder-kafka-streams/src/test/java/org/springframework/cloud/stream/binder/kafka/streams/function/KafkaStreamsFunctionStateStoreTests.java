@@ -59,7 +59,7 @@ public class KafkaStreamsFunctionStateStoreTests {
 		try (ConfigurableApplicationContext context = app.run("--server.port=0",
 				"--spring.jmx.enabled=false",
 				"--spring.cloud.stream.bindings.input.destination=words",
-				"--spring.cloud.stream.kafka.streams.default.consumer.application-id=testKafkaStreamsFuncionWithMultipleStateStores",
+				"--spring.cloud.stream.kafka.streams.binder.application-id=testKafkaStreamsFuncionWithMultipleStateStores",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.commit.interval.ms=1000",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.default.key.serde" +
 						"=org.apache.kafka.common.serialization.Serdes$StringSerde",
