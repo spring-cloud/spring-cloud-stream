@@ -51,6 +51,7 @@ import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStr
 import org.springframework.cloud.stream.binding.StreamListenerErrorMessages;
 import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
+import org.springframework.cloud.stream.function.FunctionConstants;
 import org.springframework.cloud.stream.function.StreamFunctionProperties;
 import org.springframework.core.ResolvableType;
 import org.springframework.kafka.config.StreamsBuilderFactoryBean;
@@ -267,7 +268,7 @@ public class KafkaStreamsFunctionProcessor extends AbstractKafkaStreamsBinderPro
 		}
 		else {
 			for (int i = 0; i < outputs; i++) {
-				outputBindingNames.add(String.format("%s-%s-%d", functionName, KafkaStreamsBindableProxyFactory.DEFAULT_OUTPUT_SUFFIX, i));
+				outputBindingNames.add(String.format("%s-%s-%d", functionName, FunctionConstants.DEFAULT_OUTPUT_SUFFIX, i));
 			}
 		}
 		return outputBindingNames;
@@ -313,7 +314,7 @@ public class KafkaStreamsFunctionProcessor extends AbstractKafkaStreamsBinderPro
 						//wrap the proxy created during the initial target type binding with real object (KStream)
 						kStreamWrapper.wrap((KStream<Object, Object>) stream);
 
-						this.kafkaStreamsBindingInformationCatalogue.addKeySerde((KStream) kStreamWrapper, keySerde);
+						this.kafkaStreamsBindingInformationCatalogue.addKeySerde((KStream<?, ?>) kStreamWrapper, keySerde);
 						this.kafkaStreamsBindingInformationCatalogue.addStreamBuilderFactory(streamsBuilderFactoryBean);
 
 						if (KStream.class.isAssignableFrom(stringResolvableTypeMap.get(input).getRawClass())) {
@@ -321,7 +322,7 @@ public class KafkaStreamsFunctionProcessor extends AbstractKafkaStreamsBinderPro
 									(stringResolvableTypeMap.get(input).getGeneric(1).getRawClass() != null)
 									? (stringResolvableTypeMap.get(input).getGeneric(1).getRawClass()) : Object.class;
 							if (this.kafkaStreamsBindingInformationCatalogue.isUseNativeDecoding(
-									(KStream) kStreamWrapper)) {
+									(KStream<?, ?>) kStreamWrapper)) {
 								arguments[i] = stream;
 							}
 							else {
@@ -350,13 +351,6 @@ public class KafkaStreamsFunctionProcessor extends AbstractKafkaStreamsBinderPro
 			}
 		}
 		return arguments;
-	}
-
-	private KStream<?, ?> getkStream(String inboundName,
-									BindingProperties bindingProperties,
-									StreamsBuilder streamsBuilder,
-									Serde<?> keySerde, Serde<?> valueSerde, Topology.AutoOffsetReset autoOffsetReset) {
-		return getKStream(inboundName, bindingProperties, streamsBuilder, keySerde, valueSerde, autoOffsetReset);
 	}
 
 	@Override

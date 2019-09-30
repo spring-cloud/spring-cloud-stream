@@ -27,8 +27,6 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.kafka.streams.kstream.GlobalKTable;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.KTable;
@@ -41,8 +39,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.cloud.stream.binding.AbstractBindableProxyFactory;
-import org.springframework.cloud.stream.binding.BindableProxyFactory;
 import org.springframework.cloud.stream.binding.BoundTargetHolder;
+import org.springframework.cloud.stream.function.FunctionConstants;
 import org.springframework.cloud.stream.function.StreamFunctionProperties;
 import org.springframework.core.ResolvableType;
 import org.springframework.util.Assert;
@@ -68,15 +66,6 @@ import org.springframework.util.CollectionUtils;
  * @since 3.0.0
  */
 public class KafkaStreamsBindableProxyFactory extends AbstractBindableProxyFactory implements InitializingBean, BeanFactoryAware {
-
-	/**
-	 * Default output binding name. Output binding may occur later on in the function invoker (outside of this class),
-	 * thus making this field part of the API.
-	 */
-	public static final String DEFAULT_OUTPUT_SUFFIX = "out";
-	private static final String DEFAULT_INPUT_SUFFIX = "in";
-
-	private static Log log = LogFactory.getLog(BindableProxyFactory.class);
 
 	@Autowired
 	private StreamFunctionProperties streamFunctionProperties;
@@ -150,7 +139,7 @@ public class KafkaStreamsBindableProxyFactory extends AbstractBindableProxyFacto
 					outputBinding = "output";
 				}
 				else {
-					outputBinding = String.format("%s-%s-0", this.functionName, DEFAULT_OUTPUT_SUFFIX);
+					outputBinding = String.format("%s-%s-0", this.functionName, FunctionConstants.DEFAULT_OUTPUT_SUFFIX);
 				}
 			}
 			Assert.isTrue(outputBinding != null, "output binding is not inferred.");
@@ -205,14 +194,14 @@ public class KafkaStreamsBindableProxyFactory extends AbstractBindableProxyFacto
 				inputs.add("input");
 			}
 			else {
-				inputs.add(String.format("%s-%s-0", this.functionName, DEFAULT_INPUT_SUFFIX));
+				inputs.add(String.format("%s-%s-0", this.functionName, FunctionConstants.DEFAULT_INPUT_SUFFIX));
 			}
 			return inputs;
 		}
 		else {
 			int i = 0;
 			while (i < numberOfInputs) {
-				inputs.add(String.format("%s-%s-%d", this.functionName, DEFAULT_INPUT_SUFFIX, i++));
+				inputs.add(String.format("%s-%s-%d", this.functionName, FunctionConstants.DEFAULT_INPUT_SUFFIX, i++));
 			}
 			return inputs;
 		}
