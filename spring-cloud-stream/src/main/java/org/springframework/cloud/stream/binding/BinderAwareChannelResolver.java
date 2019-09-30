@@ -102,16 +102,16 @@ public class BinderAwareChannelResolver
 			}
 			else {
 				channel = this.bindingTargetFactory.createOutput(channelName);
+				ProducerProperties producerProperties = bindingServiceProperties
+						.getProducerProperties(channelName);
 				if (this.newBindingCallback != null) {
-					ProducerProperties producerProperties = bindingServiceProperties
-							.getProducerProperties(channelName);
 					Object extendedProducerProperties = this.bindingService
 							.getExtendedProducerProperties(channel, channelName);
 					this.newBindingCallback.configure(channelName, channel,
 							producerProperties, extendedProducerProperties);
-					bindingServiceProperties.updateProducerProperties(channelName,
-							producerProperties);
 				}
+				bindingServiceProperties.updateProducerProperties(channelName,
+						producerProperties);
 				this.beanFactory.registerSingleton(channelName, channel);
 				channel = (MessageChannel) this.beanFactory.initializeBean(channel,
 						channelName);
