@@ -16,6 +16,8 @@
 
 package org.springframework.cloud.stream.function;
 
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -35,7 +37,12 @@ import org.springframework.cloud.stream.binder.test.TestChannelBinderConfigurati
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.integration.support.MessageBuilder;
+import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageHeaders;
+import org.springframework.messaging.converter.AbstractMessageConverter;
+import org.springframework.messaging.converter.MessageConverter;
+import org.springframework.util.MimeType;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -221,6 +228,61 @@ public class MultipleInputOutputFunctionTests {
 		}
 	}
 
+	@Test
+	public void testMultiInputSingleOutputWithCustomContentType() {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+				TestChannelBinderConfiguration.getCompleteConfiguration(
+						ContentTypeConfiguration.class))
+								.web(WebApplicationType.NONE)
+								.run("--spring.jmx.enabled=false",
+									"--spring.cloud.function.definition=multiInputSingleOutput",
+									"--spring.cloud.stream.bindings.multiInputSingleOutput-in-0.content-type=string/person",
+									"--spring.cloud.stream.bindings.multiInputSingleOutput-in-1.content-type=string/employee")) {
+			context.getBean(InputDestination.class);
+
+			InputDestination inputDestination = context.getBean(InputDestination.class);
+			OutputDestination outputDestination = context.getBean(OutputDestination.class);
+
+			Message<byte[]> stringInputMessage = MessageBuilder.withPayload("ricky".getBytes()).build();
+			Message<byte[]> integerInputMessage = MessageBuilder.withPayload("bobby".getBytes()).build();
+			inputDestination.send(stringInputMessage, 0);
+			inputDestination.send(integerInputMessage, 1);
+
+			Message<byte[]> outputMessage = outputDestination.receive();
+			assertThat(outputMessage.getPayload()).isEqualTo("RICKY".getBytes());
+			outputMessage = outputDestination.receive();
+			assertThat(outputMessage.getPayload()).isEqualTo("BOBBY".getBytes());
+		}
+	}
+
+	@Test
+	public void testMultiInputSingleOutputWithCustomContentType2() {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+				TestChannelBinderConfiguration.getCompleteConfiguration(
+						ContentTypeConfiguration.class))
+								.web(WebApplicationType.NONE)
+								.run("--spring.jmx.enabled=false",
+									"--spring.cloud.function.definition=multiInputSingleOutput2",
+									"--spring.cloud.stream.bindings.multiInputSingleOutput2-in-0.content-type=string/person",
+									"--spring.cloud.stream.bindings.multiInputSingleOutput2-in-1.content-type=string/employee",
+									"--spring.cloud.stream.bindings.multiInputSingleOutput2-out-0.content-type=string/person")) {
+			context.getBean(InputDestination.class);
+
+			InputDestination inputDestination = context.getBean(InputDestination.class);
+			OutputDestination outputDestination = context.getBean(OutputDestination.class);
+
+			Message<byte[]> stringInputMessage = MessageBuilder.withPayload("ricky".getBytes()).build();
+			Message<byte[]> integerInputMessage = MessageBuilder.withPayload("bobby".getBytes()).build();
+			inputDestination.send(stringInputMessage, 0);
+			inputDestination.send(integerInputMessage, 1);
+
+			Message<byte[]> outputMessage = outputDestination.receive(2500);
+			assertThat(outputMessage.getPayload()).isEqualTo("rickybobby".getBytes());
+//			outputMessage = outputDestination.receive();
+//			assertThat(outputMessage.getPayload()).isEqualTo("BOBBY".getBytes());
+		}
+	}
+
 	@EnableAutoConfiguration
 	public static class ReactiveFunctionConfiguration {
 
@@ -287,6 +349,106 @@ public class MultipleInputOutputFunctionTests {
 
 				return Tuples.of(Flux.from(even).doOnSubscribe(x -> evenFlux.subscribe()), Flux.from(odd).doOnSubscribe(x -> oddFlux.subscribe()));
 			};
+		}
+	}
+
+	@EnableAutoConfiguration
+	public static class ContentTypeConfiguration {
+
+		@Bean
+		public Function<Tuple2<Flux<Person>, Flux<Employee>>, Flux<String>> multiInputSingleOutput() {
+			return tuple -> {
+				Flux<String> stringStream = tuple.getT1().map(p -> p.getName().toUpperCase());
+				Flux<String> intStream = tuple.getT2().map(p -> p.getName().toUpperCase());
+				return Flux.merge(stringStream, intStream);
+			};
+		}
+
+		@Bean
+		public Function<Tuple2<Flux<Person>, Flux<Employee>>, Flux<Person>> multiInputSingleOutput2() {
+			return tuple -> {
+				return Flux.merge(tuple.getT1(), tuple.getT2()).buffer(Duration.ofMillis(1000)).map(list -> {
+					String personName = ((Person) list.get(0)).getName();
+					String employeeName = ((Employee) list.get(1)).getName();
+					return new Person(personName + employeeName);
+				});
+			};
+		}
+
+		@Bean
+		public MessageConverter stringToPersonConverter() {
+			return new AbstractMessageConverter(MimeType.valueOf("string/person")) {
+
+				@Override
+				protected boolean supports(Class<?> clazz) {
+					return Person.class.isAssignableFrom(clazz);
+				}
+
+				@Nullable
+				protected Object convertFromInternal(
+						Message<?> message, Class<?> targetClass, @Nullable Object conversionHint) {
+					String name = new String(((byte[]) message.getPayload()), StandardCharsets.UTF_8);
+					Person person = new Person(name);
+					return person;
+				}
+
+				@Nullable
+				protected Object convertToInternal(
+						Object payload, @Nullable MessageHeaders headers, @Nullable Object conversionHint) {
+
+					return ((Person) payload).getName().getBytes(StandardCharsets.UTF_8);
+				}
+			};
+		}
+
+		@Bean
+		public MessageConverter stringToEmployeeConverter() {
+			return new AbstractMessageConverter(MimeType.valueOf("string/employee")) {
+
+				@Override
+				protected boolean supports(Class<?> clazz) {
+					return Employee.class.isAssignableFrom(clazz);
+				}
+
+				@Nullable
+				protected Object convertFromInternal(
+						Message<?> message, Class<?> targetClass, @Nullable Object conversionHint) {
+					String name = new String(((byte[]) message.getPayload()), StandardCharsets.UTF_8);
+					Employee person = new Employee(name);
+					return person;
+				}
+
+				@Nullable
+				protected Object convertToInternal(
+						Object payload, @Nullable MessageHeaders headers, @Nullable Object conversionHint) {
+
+					return ((Employee) payload).getName().getBytes(StandardCharsets.UTF_8);
+				}
+			};
+		}
+	}
+
+	private static class Person {
+		private final String name;
+
+		Person(String name) {
+			this.name = name;
+		}
+
+		public String getName() {
+			return name;
+		}
+	}
+
+	private static class Employee {
+		private final String name;
+
+		Employee(String name) {
+			this.name = name;
+		}
+
+		public String getName() {
+			return name;
 		}
 	}
 }

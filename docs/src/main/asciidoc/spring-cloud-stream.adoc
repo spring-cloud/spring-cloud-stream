@@ -317,18 +317,18 @@ public class SampleApplication {
 We certainly can't use `input` and `output` as names given that we actually have multiple inputs and outputs.
 For those cases the following naming convention applies:
 
-* input - `<functionName> + .in. + <index>`
-* output - `<functionName> + .out. + <index>`
+* input - `<functionName> + -in- + <index>`
+* output - `<functionName> + -out- + <index>`
 
 So if for example you would want to map the input of 'uppercase()' function to a remote destination (e.g., topic, queue etc) called "my-topic"
 you would do so with the following property:
 ----
-spring.cloud.stream.bindings.uppercase.in.0.destination=my-topic
+spring.cloud.stream.bindings.uppercase-in-0.destination=my-topic
 ----
 
 And if you want to change the content-type of the output of the 'lowercase()' function you would do so with the following property.
 ----
-spring.cloud.stream.bindings.lowercase.out.0.content-type=text/plain
+spring.cloud.stream.bindings.lowercase-out-0.content-type=text/plain
 ----
 
 For more on properties and other configuration options please see <<Configuration Options>> section.
@@ -635,15 +635,15 @@ public class SampleApplication {
 The above example demonstrates function which takes two inputs (first of type `String` and second of type `Integer`)
 and produces a single output of type `String`.
 
-So, for the above example the two input bindings will be `gather.in.0` and `gather.in.1` and for consistency the
-output binding also follows the same convention and is named `gather.out.0`.
+So, for the above example the two input bindings will be `gather_in_0` and `gather-in-1` and for consistency the
+output binding also follows the same convention and is named `gather_out_0`.
 
 
 Knowing that will allow you to set binding specific properties the same way you did with `@StreamListener`.
-For example, the following will override content-type for `gather.in.0` binding:
+For example, the following will override content-type for `gather-in-0` binding:
 
 ----
---spring.cloud.stream.bindings.gather.in.0.content-type=text/plain
+--spring.cloud.stream.bindings.gather-in-0.content-type=text/plain
 ----
 
 
@@ -670,8 +670,8 @@ public class SampleApplication {
 The above example is somewhat of a the opposite from the previous sample and  demonstrates function which
 takes single input of type `Integer` and produces two outputs (both of type `String`).
 
-So, for the above example the input binding is `gather.in.0` and the
-output bindings are `gather.out.0` and `gather.out.1`.
+So, for the above example the input binding is `gather-in-0` and the
+output bindings are `gather-out-0` and `gather-out-1`.
 
 And you test it with the following code:
 [source,java]

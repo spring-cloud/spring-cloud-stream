@@ -41,7 +41,7 @@ import org.springframework.util.CollectionUtils;
  */
 class BindableFunctionProxyFactory extends BindableProxyFactory {
 
-	static final String delimiter = ".";
+	static final String delimiter = "-";
 
 	private final int inputCount;
 
