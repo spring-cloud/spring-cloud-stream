@@ -41,8 +41,6 @@ import org.springframework.util.CollectionUtils;
  */
 class BindableFunctionProxyFactory extends BindableProxyFactory {
 
-	static final String delimiter = "-";
-
 	private final int inputCount;
 
 	private final int outputCount;
@@ -128,18 +126,18 @@ class BindableFunctionProxyFactory extends BindableProxyFactory {
 
 	private String buildInputNameForIndex(int index) {
 		return new StringBuilder(this.functionDefinition)
-			.append(delimiter)
-			.append("in")
-			.append(delimiter)
+			.append(FunctionConstants.DELIMITER)
+			.append(FunctionConstants.DEFAULT_INPUT_SUFFIX)
+			.append(FunctionConstants.DELIMITER)
 			.append(index)
 			.toString();
 	}
 
 	private String buildOutputNameForIndex(int index) {
 		return new StringBuilder(this.functionDefinition)
-				.append(delimiter)
-				.append("out")
-				.append(delimiter)
+				.append(FunctionConstants.DELIMITER)
+				.append(FunctionConstants.DEFAULT_OUTPUT_SUFFIX)
+				.append(FunctionConstants.DELIMITER)
 				.append(index)
 				.toString();
 	}
