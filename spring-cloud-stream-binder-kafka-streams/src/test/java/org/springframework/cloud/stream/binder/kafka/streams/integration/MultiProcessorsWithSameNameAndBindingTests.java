@@ -34,7 +34,7 @@ import org.springframework.stereotype.Component;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class MultiProcessorsWithSameNameTests {
+public class MultiProcessorsWithSameNameAndBindingTests {
 
 	@ClassRule
 	public static EmbeddedKafkaRule embeddedKafkaRule = new EmbeddedKafkaRule(1, true,
@@ -44,19 +44,17 @@ public class MultiProcessorsWithSameNameTests {
 			.getEmbeddedKafka();
 
 	@Test
-	public void testBinderStartsSuccessfullyWhenTwoProcessorsWithSameNamesArePresent() {
+	public void testBinderStartsSuccessfullyWhenTwoProcessorsWithSameNamesAndBindingsPresent() {
 		SpringApplication app = new SpringApplication(
-				MultiProcessorsWithSameNameTests.WordCountProcessorApplication.class);
+				MultiProcessorsWithSameNameAndBindingTests.WordCountProcessorApplication.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 
 		try (ConfigurableApplicationContext context = app.run("--server.port=0",
 				"--spring.jmx.enabled=false",
 				"--spring.cloud.stream.bindings.input.destination=words",
-				"--spring.cloud.stream.bindings.input-2.destination=words",
+				"--spring.cloud.stream.bindings.input-1.destination=words",
 				"--spring.cloud.stream.bindings.output.destination=counts",
 				"--spring.cloud.stream.bindings.output.contentType=application/json",
-				"--spring.cloud.stream.kafka.streams.bindings.input-1.consumer.application-id=basic-word-count",
-				"--spring.cloud.stream.kafka.streams.bindings.input-2.consumer.application-id=basic-word-count-1",
 				"--spring.cloud.stream.kafka.streams.binder.brokers="
 						+ embeddedKafka.getBrokersAsString())) {
 			StreamsBuilderFactoryBean streamsBuilderFactoryBean1 = context
@@ -83,7 +81,7 @@ public class MultiProcessorsWithSameNameTests {
 		@Component
 		static class Bar {
 			@StreamListener
-			public void process(@Input("input-2") KStream<Object, String> input) {
+			public void process(@Input("input-1") KStream<Object, String> input) {
 			}
 		}
 	}
@@ -92,9 +90,6 @@ public class MultiProcessorsWithSameNameTests {
 
 		@Input("input-1")
 		KStream<?, ?> input1();
-
-		@Input("input-2")
-		KStream<?, ?> input2();
 
 	}
 }

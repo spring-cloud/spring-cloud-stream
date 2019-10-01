@@ -90,8 +90,9 @@ public class GlobalKTableBoundElementFactory
 
 		public void wrap(GlobalKTable<Object, Object> delegate) {
 			Assert.notNull(delegate, "delegate cannot be null");
-			Assert.isNull(this.delegate, "delegate already set to " + this.delegate);
-			this.delegate = delegate;
+			if (this.delegate == null) {
+				this.delegate = delegate;
+			}
 		}
 
 		@Override
