@@ -18,7 +18,6 @@ package org.springframework.cloud.stream.binder.kafka.streams;
 
 import java.util.Arrays;
 import java.util.Map;
-import java.util.Properties;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -210,18 +209,7 @@ public abstract class AbstractKafkaStreamsBinderProcessor implements Application
 					concurrency);
 		}
 
-		Map<String, KafkaStreamsDlqDispatch> kafkaStreamsDlqDispatchers = applicationContext
-				.getBean("kafkaStreamsDlqDispatchers", Map.class);
-
-		KafkaStreamsConfiguration kafkaStreamsConfiguration = new KafkaStreamsConfiguration(streamConfigGlobalProperties) {
-			@Override
-			public Properties asProperties() {
-				Properties properties = super.asProperties();
-				properties.put(SendToDlqAndContinue.KAFKA_STREAMS_DLQ_DISPATCHERS,
-						kafkaStreamsDlqDispatchers);
-				return properties;
-			}
-		};
+		KafkaStreamsConfiguration kafkaStreamsConfiguration = new KafkaStreamsConfiguration(streamConfigGlobalProperties);
 
 		StreamsBuilderFactoryBean streamsBuilder = this.cleanupConfig == null
 				? new StreamsBuilderFactoryBean(kafkaStreamsConfiguration)
@@ -236,6 +224,7 @@ public abstract class AbstractKafkaStreamsBinderProcessor implements Application
 		((BeanDefinitionRegistry) beanFactory).registerBeanDefinition(
 				"stream-builder-" + beanNamePostPrefix, streamsBuilderBeanDefinition);
 
+		extendedConsumerProperties.setApplicationId((String) streamConfigGlobalProperties.get(StreamsConfig.APPLICATION_ID_CONFIG));
 		//Removing the application ID from global properties so that the next function won't re-use it and cause race conditions.
 		streamConfigGlobalProperties.remove(StreamsConfig.APPLICATION_ID_CONFIG);
 

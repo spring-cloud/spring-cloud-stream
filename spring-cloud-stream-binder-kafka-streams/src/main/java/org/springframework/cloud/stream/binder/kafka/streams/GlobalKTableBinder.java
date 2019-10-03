@@ -16,8 +16,6 @@
 
 package org.springframework.cloud.stream.binder.kafka.streams;
 
-import java.util.Map;
-
 import org.apache.kafka.streams.kstream.GlobalKTable;
 
 import org.springframework.cloud.stream.binder.AbstractBinder;
@@ -54,8 +52,6 @@ public class GlobalKTableBinder extends
 
 	private final KafkaTopicProvisioner kafkaTopicProvisioner;
 
-	private final Map<String, KafkaStreamsDlqDispatch> kafkaStreamsDlqDispatchers;
-
 	// @checkstyle:off
 	private KafkaStreamsExtendedBindingProperties kafkaStreamsExtendedBindingProperties = new KafkaStreamsExtendedBindingProperties();
 
@@ -63,11 +59,9 @@ public class GlobalKTableBinder extends
 
 	public GlobalKTableBinder(
 			KafkaStreamsBinderConfigurationProperties binderConfigurationProperties,
-			KafkaTopicProvisioner kafkaTopicProvisioner,
-			Map<String, KafkaStreamsDlqDispatch> kafkaStreamsDlqDispatchers) {
+			KafkaTopicProvisioner kafkaTopicProvisioner) {
 		this.binderConfigurationProperties = binderConfigurationProperties;
 		this.kafkaTopicProvisioner = kafkaTopicProvisioner;
-		this.kafkaStreamsDlqDispatchers = kafkaStreamsDlqDispatchers;
 	}
 
 	@Override
@@ -76,12 +70,11 @@ public class GlobalKTableBinder extends
 			String group, GlobalKTable<Object, Object> inputTarget,
 			ExtendedConsumerProperties<KafkaStreamsConsumerProperties> properties) {
 		if (!StringUtils.hasText(group)) {
-			group = this.binderConfigurationProperties.getApplicationId();
+			group = properties.getExtension().getApplicationId();
 		}
 		KafkaStreamsBinderUtils.prepareConsumerBinding(name, group,
 				getApplicationContext(), this.kafkaTopicProvisioner,
-				this.binderConfigurationProperties, properties,
-				this.kafkaStreamsDlqDispatchers);
+				this.binderConfigurationProperties, properties);
 		return new DefaultBinding<>(name, group, inputTarget, null);
 	}
 

@@ -22,6 +22,7 @@ import java.util.Map;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.header.Header;
 import org.apache.kafka.common.header.Headers;
 import org.apache.kafka.common.header.internals.RecordHeader;
@@ -64,6 +65,8 @@ public class KafkaStreamsMessageConversionDelegate {
 	private final KafkaStreamsBindingInformationCatalogue kstreamBindingInformationCatalogue;
 
 	private final KafkaStreamsBinderConfigurationProperties kstreamBinderConfigurationProperties;
+
+	Exception[] failedWithDeserException = new Exception[1];
 
 	KafkaStreamsMessageConversionDelegate(
 			CompositeMessageConverter compositeMessageConverter,
@@ -200,6 +203,7 @@ public class KafkaStreamsMessageConversionDelegate {
 								"Deserialization has failed. This will be skipped from further processing.",
 								e);
 						// pass through
+						failedWithDeserException[0] = e;
 					}
 					return isValidRecord;
 				},
@@ -207,7 +211,7 @@ public class KafkaStreamsMessageConversionDelegate {
 				// in the first filter above.
 				(k, v) -> true);
 		// process errors from the second filter in the branch above.
-		processErrorFromDeserialization(bindingTarget, branch[1]);
+		processErrorFromDeserialization(bindingTarget, branch[1], failedWithDeserException);
 
 		// first branch above is the branch where the messages are converted, let it go
 		// through further processing.
@@ -264,7 +268,7 @@ public class KafkaStreamsMessageConversionDelegate {
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	private void processErrorFromDeserialization(KStream<?, ?> bindingTarget,
-			KStream<?, ?> branch) {
+			KStream<?, ?> branch, Exception[] exception) {
 		branch.process(() -> new Processor() {
 			ProcessorContext context;
 
@@ -279,7 +283,6 @@ public class KafkaStreamsMessageConversionDelegate {
 				if (o2 != null) {
 					if (KafkaStreamsMessageConversionDelegate.this.kstreamBindingInformationCatalogue
 							.isDlqEnabled(bindingTarget)) {
-						String destination = this.context.topic();
 						if (o2 instanceof Message) {
 							Message message = (Message) o2;
 
@@ -288,15 +291,17 @@ public class KafkaStreamsMessageConversionDelegate {
 							Serializer keySerializer = keySerde.serializer();
 							byte[] keyBytes = keySerializer.serialize(null, o);
 
+							ConsumerRecord consumerRecord = new ConsumerRecord(this.context.topic(), this.context.partition(), this.context.offset(),
+									keyBytes, message.getPayload());
+
 							KafkaStreamsMessageConversionDelegate.this.sendToDlqAndContinue
-									.sendToDlq(destination, keyBytes,
-											(byte[]) message.getPayload(),
-											this.context.partition());
+									.sendToDlq(consumerRecord, exception[0]);
 						}
 						else {
+							ConsumerRecord consumerRecord = new ConsumerRecord(this.context.topic(), this.context.partition(), this.context.offset(),
+									o, o2);
 							KafkaStreamsMessageConversionDelegate.this.sendToDlqAndContinue
-									.sendToDlq(destination, (byte[]) o, (byte[]) o2,
-											this.context.partition());
+									.sendToDlq(consumerRecord, exception[0]);
 						}
 					}
 					else if (KafkaStreamsMessageConversionDelegate.this.kstreamBinderConfigurationProperties

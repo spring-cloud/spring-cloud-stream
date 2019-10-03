@@ -29,6 +29,9 @@ import java.util.stream.Stream;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.kafka.streams.kstream.GlobalKTable;
+import org.apache.kafka.streams.kstream.KStream;
+import org.apache.kafka.streams.kstream.KTable;
 
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
@@ -80,7 +83,10 @@ public class KafkaStreamsFunctionBeanPostProcessor implements InitializingBean, 
 			if (kafkaStreamMethod.isPresent()) {
 				Method method = kafkaStreamMethod.get();
 				ResolvableType resolvableType = ResolvableType.forMethodReturnType(method, classObj);
-				resolvableTypeMap.put(key, resolvableType);
+				final Class<?> rawClass = resolvableType.getGeneric(0).getRawClass();
+				if (rawClass == KStream.class || rawClass == KTable.class || rawClass == GlobalKTable.class) {
+					resolvableTypeMap.put(key, resolvableType);
+				}
 			}
 		}
 		catch (Exception e) {

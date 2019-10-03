@@ -55,6 +55,7 @@ import org.springframework.core.env.Environment;
 import org.springframework.core.env.MapPropertySource;
 import org.springframework.kafka.config.KafkaStreamsConfiguration;
 import org.springframework.kafka.core.CleanupConfig;
+import org.springframework.kafka.streams.RecoveringDeserializationExceptionHandler;
 import org.springframework.messaging.converter.CompositeMessageConverter;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
@@ -152,7 +153,8 @@ public class KafkaStreamsBinderSupportAutoConfiguration {
 	@Bean("streamConfigGlobalProperties")
 	public Map<String, Object> streamConfigGlobalProperties(
 			KafkaStreamsBinderConfigurationProperties configProperties,
-			KafkaStreamsConfiguration kafkaStreamsConfiguration, ConfigurableEnvironment environment) {
+			KafkaStreamsConfiguration kafkaStreamsConfiguration, ConfigurableEnvironment environment,
+			SendToDlqAndContinue sendToDlqAndContinue) {
 
 		Properties properties = kafkaStreamsConfiguration.asProperties();
 
@@ -213,19 +215,20 @@ public class KafkaStreamsBinderSupportAutoConfiguration {
 				.getSerdeError() == KafkaStreamsBinderConfigurationProperties.SerdeError.logAndContinue) {
 			properties.put(
 					StreamsConfig.DEFAULT_DESERIALIZATION_EXCEPTION_HANDLER_CLASS_CONFIG,
-					LogAndContinueExceptionHandler.class.getName());
+					LogAndContinueExceptionHandler.class);
 		}
 		else if (configProperties
 				.getSerdeError() == KafkaStreamsBinderConfigurationProperties.SerdeError.logAndFail) {
 			properties.put(
 					StreamsConfig.DEFAULT_DESERIALIZATION_EXCEPTION_HANDLER_CLASS_CONFIG,
-					LogAndFailExceptionHandler.class.getName());
+					LogAndFailExceptionHandler.class);
 		}
 		else if (configProperties
 				.getSerdeError() == KafkaStreamsBinderConfigurationProperties.SerdeError.sendToDlq) {
 			properties.put(
 					StreamsConfig.DEFAULT_DESERIALIZATION_EXCEPTION_HANDLER_CLASS_CONFIG,
-					SendToDlqAndContinue.class.getName());
+					RecoveringDeserializationExceptionHandler.class);
+			properties.put(RecoveringDeserializationExceptionHandler.KSTREAM_DESERIALIZATION_RECOVERER, sendToDlqAndContinue);
 		}
 
 		if (!ObjectUtils.isEmpty(configProperties.getConfiguration())) {
@@ -344,11 +347,6 @@ public class KafkaStreamsBinderSupportAutoConfiguration {
 			KafkaStreamsBindingInformationCatalogue catalogue,
 			KafkaStreamsRegistry kafkaStreamsRegistry) {
 		return new StreamsBuilderFactoryManager(catalogue, kafkaStreamsRegistry);
-	}
-
-	@Bean("kafkaStreamsDlqDispatchers")
-	public Map<String, KafkaStreamsDlqDispatch> dlqDispatchers() {
-		return new HashMap<>();
 	}
 
 	@Bean

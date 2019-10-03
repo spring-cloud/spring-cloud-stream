@@ -154,7 +154,7 @@ public abstract class DeserializationErrorHandlerByKafkaTests {
 
 		@Test
 		@SuppressWarnings("unchecked")
-		public void test() {
+		public void test() throws Exception {
 			Map<String, Object> senderProps = KafkaTestUtils.producerProps(embeddedKafka);
 			DefaultKafkaProducerFactory<Integer, String> pf = new DefaultKafkaProducerFactory<>(
 					senderProps);
@@ -174,13 +174,11 @@ public abstract class DeserializationErrorHandlerByKafkaTests {
 			embeddedKafka.consumeFromEmbeddedTopics(consumer1, "error.word1.groupx",
 					"error.word2.groupx");
 
-			// TODO: Investigate why the ordering matters below: i.e.
-			// if we consume from error.word1.groupx first, an exception is thrown.
 			ConsumerRecord<String, String> cr1 = KafkaTestUtils.getSingleRecord(consumer1,
-					"error.word2.groupx");
+					"error.word1.groupx");
 			assertThat(cr1.value().equals("foobar")).isTrue();
 			ConsumerRecord<String, String> cr2 = KafkaTestUtils.getSingleRecord(consumer1,
-					"error.word1.groupx");
+					"error.word2.groupx");
 			assertThat(cr2.value().equals("foobar")).isTrue();
 
 			// Ensuring that the deserialization was indeed done by Kafka natively

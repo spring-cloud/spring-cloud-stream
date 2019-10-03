@@ -16,17 +16,29 @@
 
 package org.springframework.cloud.stream.binder.kafka.streams;
 
+import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.apache.kafka.streams.kstream.KStream;
 
 import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
+import org.springframework.cloud.stream.binder.ExtendedProducerProperties;
+import org.springframework.cloud.stream.binder.kafka.properties.KafkaBinderConfigurationProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaConsumerProperties;
+import org.springframework.cloud.stream.binder.kafka.properties.KafkaProducerProperties;
 import org.springframework.cloud.stream.binder.kafka.provisioning.KafkaTopicProvisioner;
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsBinderConfigurationProperties;
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsConsumerProperties;
 import org.springframework.context.ApplicationContext;
 import org.springframework.core.MethodParameter;
+import org.springframework.kafka.core.DefaultKafkaProducerFactory;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.core.ProducerFactory;
+import org.springframework.kafka.listener.DeadLetterPublishingRecoverer;
+import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 
 /**
@@ -43,8 +55,7 @@ final class KafkaStreamsBinderUtils {
 	static void prepareConsumerBinding(String name, String group,
 			ApplicationContext context, KafkaTopicProvisioner kafkaTopicProvisioner,
 			KafkaStreamsBinderConfigurationProperties binderConfigurationProperties,
-			ExtendedConsumerProperties<KafkaStreamsConsumerProperties> properties,
-			Map<String, KafkaStreamsDlqDispatch> kafkaStreamsDlqDispatchers) {
+			ExtendedConsumerProperties<KafkaStreamsConsumerProperties> properties) {
 		ExtendedConsumerProperties<KafkaConsumerProperties> extendedConsumerProperties = new ExtendedConsumerProperties<>(
 				properties.getExtension());
 		if (binderConfigurationProperties
@@ -59,32 +70,72 @@ final class KafkaStreamsBinderUtils {
 		}
 
 		if (extendedConsumerProperties.getExtension().isEnableDlq()) {
-			KafkaStreamsDlqDispatch kafkaStreamsDlqDispatch = !StringUtils
+
+			ProducerFactory<byte[], byte[]> producerFactory = getProducerFactory(
+					new ExtendedProducerProperties<>(
+							extendedConsumerProperties.getExtension().getDlqProducerProperties()),
+					binderConfigurationProperties);
+			KafkaTemplate<byte[], byte[]> kafkaTemplate = new KafkaTemplate<>(producerFactory);
+
+
+			DeadLetterPublishingRecoverer kafkaStreamsBinderDlqRecoverer = !StringUtils
 					.isEmpty(extendedConsumerProperties.getExtension().getDlqName())
-							? new KafkaStreamsDlqDispatch(
-									extendedConsumerProperties.getExtension()
-											.getDlqName(),
-									binderConfigurationProperties,
-									extendedConsumerProperties.getExtension())
-							: null;
+					? new DeadLetterPublishingRecoverer(kafkaTemplate, (cr, e) -> new TopicPartition(extendedConsumerProperties.getExtension()
+					.getDlqName(), cr.partition()))
+					: null;
 			for (String inputTopic : inputTopics) {
 				if (StringUtils.isEmpty(
 						extendedConsumerProperties.getExtension().getDlqName())) {
-					String dlqName = "error." + inputTopic + "." + group;
-					kafkaStreamsDlqDispatch = new KafkaStreamsDlqDispatch(dlqName,
-							binderConfigurationProperties,
-							extendedConsumerProperties.getExtension());
+					kafkaStreamsBinderDlqRecoverer = new DeadLetterPublishingRecoverer(kafkaTemplate, (cr, e) -> new TopicPartition("error." + inputTopic + "." + group, cr.partition()));
 				}
 
 				SendToDlqAndContinue sendToDlqAndContinue = context
 						.getBean(SendToDlqAndContinue.class);
 				sendToDlqAndContinue.addKStreamDlqDispatch(inputTopic,
-						kafkaStreamsDlqDispatch);
-
-				kafkaStreamsDlqDispatchers.put(inputTopic, kafkaStreamsDlqDispatch);
+						kafkaStreamsBinderDlqRecoverer);
 			}
 		}
 	}
+
+	private static DefaultKafkaProducerFactory<byte[], byte[]> getProducerFactory(
+			ExtendedProducerProperties<KafkaProducerProperties> producerProperties,
+			KafkaBinderConfigurationProperties configurationProperties) {
+		Map<String, Object> props = new HashMap<>();
+		props.put(ProducerConfig.RETRIES_CONFIG, 0);
+		props.put(ProducerConfig.BUFFER_MEMORY_CONFIG, 33554432);
+		props.put(ProducerConfig.ACKS_CONFIG, configurationProperties.getRequiredAcks());
+		Map<String, Object> mergedConfig = configurationProperties
+				.mergedProducerConfiguration();
+		if (!ObjectUtils.isEmpty(mergedConfig)) {
+			props.putAll(mergedConfig);
+		}
+		if (ObjectUtils.isEmpty(props.get(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG))) {
+			props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG,
+					configurationProperties.getKafkaConnectionString());
+		}
+		if (ObjectUtils.isEmpty(props.get(ProducerConfig.BATCH_SIZE_CONFIG))) {
+			props.put(ProducerConfig.BATCH_SIZE_CONFIG,
+					String.valueOf(producerProperties.getExtension().getBufferSize()));
+		}
+		if (ObjectUtils.isEmpty(props.get(ProducerConfig.LINGER_MS_CONFIG))) {
+			props.put(ProducerConfig.LINGER_MS_CONFIG,
+					String.valueOf(producerProperties.getExtension().getBatchTimeout()));
+		}
+		if (ObjectUtils.isEmpty(props.get(ProducerConfig.COMPRESSION_TYPE_CONFIG))) {
+			props.put(ProducerConfig.COMPRESSION_TYPE_CONFIG,
+					producerProperties.getExtension().getCompressionType().toString());
+		}
+		if (!ObjectUtils.isEmpty(producerProperties.getExtension().getConfiguration())) {
+			props.putAll(producerProperties.getExtension().getConfiguration());
+		}
+		// Always send as byte[] on dlq (the same byte[] that the consumer received)
+		props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class);
+		props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG,
+				ByteArraySerializer.class);
+
+		return new DefaultKafkaProducerFactory<>(props);
+	}
+
 
 	static boolean supportsKStream(MethodParameter methodParameter, Class<?> targetBeanClass) {
 		return KStream.class.isAssignableFrom(targetBeanClass)

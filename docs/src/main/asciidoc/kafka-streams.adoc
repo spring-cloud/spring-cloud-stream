@@ -876,68 +876,18 @@ When the above property is set, all the deserialization error records are automa
 
 [source]
 ----
-spring.cloud.stream.kafka.streams.bindings.input.consumer.dlqName: foo-dlq
+spring.cloud.stream.kafka.streams.bindings.input.consumer.dlqName: custom-dlq
 ----
 
-If this is set, then the error records are sent to the topic `foo-dlq`. If this is not set, then it will create a DLQ
+If this is set, then the error records are sent to the topic `custom-dlq`. If this is not set, then it will create a DLQ
 topic with the name `error.<input-topic-name>.<group-name>`.
 
 A couple of things to keep in mind when using the exception handling feature in Kafka Streams binder.
 
 * The property `spring.cloud.stream.kafka.streams.binder.serdeError` is applicable for the entire application. This implies
-that if there are multiple `StreamListener` methods in the same application, this property is applied to all of them.
+that if there are multiple functions or `StreamListener` methods in the same application, this property is applied to all of them.
 * The exception handling for deserialization works consistently with native deserialization and framework provided message
 conversion.
-
-==== Handling Non-Deserialization Exceptions
-
-For general error handling in Kafka Streams binder, it is up to the end user applications to handle application level errors.
-As a side effect of providing a DLQ for deserialization exception handlers, Kafka Streams binder provides a way to get
-access to the DLQ sending bean directly from your application.
-Once you get access to that bean, you can programmatically send any exception records from your application to the DLQ.
-
-It continues to remain hard to robust error handling using the high-level DSL; Kafka Streams doesn't natively support error
-handling yet.
-
-However, when you use the low-level Processor API in your application, there are options to control this behavior. See
-below.
-
-[source]
-----
-@Autowired
-private SendToDlqAndContinue dlqHandler;
-
-@StreamListener("input")
-@SendTo("output")
-public KStream<?, WordCount> process(KStream<Object, String> input) {
-
-    input.process(() -> new Processor() {
-    			ProcessorContext context;
-
-    			@Override
-    			public void init(ProcessorContext context) {
-    				this.context = context;
-    			}
-
-    			@Override
-    			public void process(Object o, Object o2) {
-
-    			    try {
-    			        .....
-    			        .....
-    			    }
-    			    catch(Exception e) {
-    			        //explicitly provide the kafka topic corresponding to the input binding as the first argument.
-                        //DLQ handler will correctly map to the dlq topic from the actual incoming destination.
-                        dlqHandler.sendToDlq("topic-name", (byte[]) o1, (byte[]) o2, context.partition());
-    			    }
-    			}
-
-    			.....
-    			.....
-    });
-}
-----
 
 === State Store
 
