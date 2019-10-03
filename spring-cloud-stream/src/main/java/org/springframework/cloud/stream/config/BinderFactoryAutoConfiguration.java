@@ -171,9 +171,19 @@ public class BinderFactoryAutoConfiguration {
 		// the above can never be null since it will default to
 		// ClassUtils.getDefaultClassLoader(..)
 		try {
-			Enumeration<URL> resources = classLoader
-					.getResources("META-INF/spring.binders");
-			if (!Boolean.valueOf(this.selfContained)
+			Enumeration<URL> resources = classLoader.getResources("META-INF/spring.binders");
+
+			// see if test binder is available on the classpath and if so add it t o the binderTypes
+			try {
+				BinderType bt = new BinderType("integration", new Class[] {
+						classLoader.loadClass("org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration")});
+				binderTypes.put("integration", bt);
+			}
+			catch (Exception e) {
+				// ignore. means test binder is not available
+			}
+
+			if (binderTypes.isEmpty() && !Boolean.valueOf(this.selfContained)
 					&& (resources == null || !resources.hasMoreElements())) {
 				this.logger.debug(
 						"Failed to locate 'META-INF/spring.binders' resources on the classpath."

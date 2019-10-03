@@ -1,4 +1,2 @@
-integration:\
-org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration
 mock:\
 org.springframework.cloud.stream.utils.MockBinderConfiguration
