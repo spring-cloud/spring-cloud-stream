@@ -2456,7 +2456,8 @@ Now you can test your microservice as a simple unit test
 [source,java]
 ----
 @SpringBootApplication
-public class DemoTestBinderApplication {
+public class SampleTests {
+    @Bean
 	public Function<String, String> echo() {
 		return value -> value;
 	}
@@ -2466,14 +2467,15 @@ public class DemoTestBinderApplication {
 
 @Test
 public void sampleTest() {
-	ApplicationContext context = new SpringApplicationBuilder(
-					TestChannelBinderConfiguration.class,
-					DemoTestBinderApplication.class)
-				.web(WebApplicationType.NONE).run("--spring.cloud.function.definition=echo");
-	InputDestination source = context.getBean(InputDestination.class);
-	OutputDestination target = context.getBean(OutputDestination.class);
-	source.send(new GenericMessage<byte[]>("hello".getBytes()));
-	System.out.println("Result: " + new String(target.receive().getPayload()));
+	try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+				TestChannelBinderConfiguration.getCompleteConfiguration(
+						SampleTests.class))
+				.run("--spring.cloud.function.definition=echo")) {
+		InputDestination source = context.getBean(InputDestination.class);
+		OutputDestination target = context.getBean(OutputDestination.class);
+		source.send(new GenericMessage<byte[]>("hello".getBytes()));
+		assertThat(target.receive().getPayload()).isEqualTo("hello".getBytes());
+	}
 }
 ----
 
@@ -2507,9 +2509,7 @@ public void testMultipleFunctions() {
 	try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(
 					SampleFunctionConfiguration.class))
-							.web(WebApplicationType.NONE)
-							.run("--spring.jmx.enabled=false",
-								"--spring.cloud.function.definition=uppercase;reverse")) {
+							.run("--spring.cloud.function.definition=uppercase;reverse")) {
 		context.getBean(InputDestination.class);
 
 		InputDestination inputDestination = context.getBean(InputDestination.class);
@@ -2538,11 +2538,7 @@ You can also use this binder with legacy annotation-based configuration:
 ----
 @SpringBootApplication
 @EnableBinding(Processor.class)
-public class DemoTestBinderApplication {
-
-	public static void main(String[] args) {
-		SpringApplication.run(DemoTestBinderApplication.class, args);
-	}
+public class LegacyStreamApplication {
 
 	@StreamListener(Processor.INPUT)
 	@SendTo(Processor.OUTPUT)
@@ -2555,14 +2551,14 @@ public class DemoTestBinderApplication {
 
 @Test
 public void sampleTest() {
-	ApplicationContext context = new SpringApplicationBuilder(
-					TestChannelBinderConfiguration.class,
-					DemoTestBinderApplication.class)
-				.web(WebApplicationType.NONE).run();
-	InputDestination source = context.getBean(InputDestination.class);
-	OutputDestination target = context.getBean(OutputDestination.class);
-	source.send(new GenericMessage<byte[]>("hello".getBytes()));
-	System.out.println("Result: " + new String(target.receive().getPayload()));
+	try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+				TestChannelBinderConfiguration.getCompleteConfiguration(
+						LegacyStreamApplication.class)).run()) {
+		InputDestination source = context.getBean(InputDestination.class);
+		OutputDestination target = context.getBean(OutputDestination.class);
+		source.send(new GenericMessage<byte[]>("hello".getBytes()));
+		assertThat(target.receive().getPayload()).isEqualTo("hello".getBytes());
+	}
 }
 ----
 
