@@ -36,6 +36,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.IntStream;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.admin.CreateTopicsResult;
@@ -3429,7 +3430,7 @@ public class KafkaBinderTests extends
 	private final class FailingInvocationCountingMessageHandler
 			implements MessageHandler {
 
-		private int invocationCount;
+		private volatile int invocationCount;
 
 		private final LinkedHashMap<Long, Message<?>> receivedMessages = new LinkedHashMap<>();
 
