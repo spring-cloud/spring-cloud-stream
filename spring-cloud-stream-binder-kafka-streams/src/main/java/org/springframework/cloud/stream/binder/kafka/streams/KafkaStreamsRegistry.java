@@ -29,6 +29,12 @@ import org.apache.kafka.streams.KafkaStreams;
  */
 class KafkaStreamsRegistry {
 
+	private final KafkaStreamsBinderMetrics kafkaStreamsBinderMetrics;
+
+	KafkaStreamsRegistry(KafkaStreamsBinderMetrics kafkaStreamsBinderMetrics) {
+		this.kafkaStreamsBinderMetrics = kafkaStreamsBinderMetrics;
+	}
+
 	private final Set<KafkaStreams> kafkaStreams = new HashSet<>();
 
 	Set<KafkaStreams> getKafkaStreams() {
@@ -40,6 +46,7 @@ class KafkaStreamsRegistry {
 	 * @param kafkaStreams {@link KafkaStreams} object created in the application
 	 */
 	void registerKafkaStreams(KafkaStreams kafkaStreams) {
+		this.kafkaStreamsBinderMetrics.addMetrics(kafkaStreams);
 		this.kafkaStreams.add(kafkaStreams);
 	}
 

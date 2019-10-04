@@ -95,7 +95,8 @@ public class KafkaStreamsInteractiveQueryIntegrationTests {
 	public void testStateStoreRetrievalRetry() {
 
 		KafkaStreams mock = Mockito.mock(KafkaStreams.class);
-		KafkaStreamsRegistry kafkaStreamsRegistry = new KafkaStreamsRegistry();
+		KafkaStreamsBinderMetrics mockMetrics = Mockito.mock(KafkaStreamsBinderMetrics.class);
+		KafkaStreamsRegistry kafkaStreamsRegistry = new KafkaStreamsRegistry(mockMetrics);
 		kafkaStreamsRegistry.registerKafkaStreams(mock);
 		KafkaStreamsBinderConfigurationProperties binderConfigurationProperties =
 				new KafkaStreamsBinderConfigurationProperties(new KafkaProperties());
@@ -140,8 +141,7 @@ public class KafkaStreamsInteractiveQueryIntegrationTests {
 		}
 	}
 
-	private void receiveAndValidateFoo(ConfigurableApplicationContext context)
-			throws Exception {
+	private void receiveAndValidateFoo(ConfigurableApplicationContext context) {
 		Map<String, Object> senderProps = KafkaTestUtils.producerProps(embeddedKafka);
 		DefaultKafkaProducerFactory<Integer, String> pf = new DefaultKafkaProducerFactory<>(
 				senderProps);

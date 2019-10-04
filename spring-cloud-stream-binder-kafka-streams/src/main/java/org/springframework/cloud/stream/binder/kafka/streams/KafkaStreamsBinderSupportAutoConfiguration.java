@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
+import io.micrometer.core.instrument.MeterRegistry;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.errors.LogAndContinueExceptionHandler;
@@ -32,6 +33,7 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -48,8 +50,11 @@ import org.springframework.cloud.stream.config.BinderProperties;
 import org.springframework.cloud.stream.config.BindingServiceConfiguration;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.cloud.stream.function.StreamFunctionProperties;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Conditional;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.MapPropertySource;
@@ -67,6 +72,7 @@ import org.springframework.util.StringUtils;
  * @author Soby Chacko
  * @author Gary Russell
  */
+@Configuration
 @EnableConfigurationProperties(KafkaStreamsExtendedBindingProperties.class)
 @ConditionalOnBean(BindingService.class)
 @AutoConfigureAfter(BindingServiceConfiguration.class)
@@ -338,8 +344,8 @@ public class KafkaStreamsBinderSupportAutoConfiguration {
 	}
 
 	@Bean
-	public KafkaStreamsRegistry kafkaStreamsRegistry() {
-		return new KafkaStreamsRegistry();
+	public KafkaStreamsRegistry kafkaStreamsRegistry(KafkaStreamsBinderMetrics kafkaStreamsBinderMetrics) {
+		return new KafkaStreamsRegistry(kafkaStreamsBinderMetrics);
 	}
 
 	@Bean
@@ -364,4 +370,35 @@ public class KafkaStreamsBinderSupportAutoConfiguration {
 				cleanupConfig.getIfUnique(), streamFunctionProperties, kafkaStreamsBinderConfigurationProperties);
 	}
 
+
+
+	@Configuration
+	@ConditionalOnMissingBean(value = KafkaStreamsBinderMetrics.class, name = "outerContext")
+	@ConditionalOnClass(name = "io.micrometer.core.instrument.MeterRegistry")
+	protected class KafkaStreamsBinderMetricsConfiguration {
+
+		@Bean
+		@ConditionalOnBean(MeterRegistry.class)
+		@ConditionalOnMissingBean(KafkaStreamsBinderMetrics.class)
+		public KafkaStreamsBinderMetrics kafkaStreamsBinderMetrics(
+				MeterRegistry meterRegistry) {
+
+			return new KafkaStreamsBinderMetrics(meterRegistry);
+		}
+	}
+
+	@Configuration
+	@ConditionalOnBean(name = "outerContext")
+	@ConditionalOnMissingBean(KafkaStreamsBinderMetrics.class)
+	@ConditionalOnClass(name = "io.micrometer.core.instrument.MeterRegistry")
+	protected class KafkaStreamsBinderMetricsConfigurationWithMultiBinder {
+
+		@Bean
+		public KafkaStreamsBinderMetrics kafkaStreamsBinderMetrics(ConfigurableApplicationContext context) {
+
+			MeterRegistry meterRegistry = context.getBean("outerContext", ApplicationContext.class)
+					.getBean(MeterRegistry.class);
+			return new KafkaStreamsBinderMetrics(meterRegistry);
+		}
+	}
 }
