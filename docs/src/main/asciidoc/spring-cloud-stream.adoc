@@ -570,7 +570,7 @@ The following properties are exposed by `org.springframework.cloud.stream.config
 `spring.cloud.stream.poller`:
 
 fixedDelay::
-Fixed delay for default poller.
+Fixed delay for default poller in milliseconds.
 +
 Default: 1000L.
 
