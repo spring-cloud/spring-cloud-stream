@@ -121,7 +121,7 @@ public class KafkaStreamsBindableProxyFactory extends AbstractBindableProxyFacto
 			// if the type is array, we need to do a late binding as we don't know the number of
 			// output bindings at this point in the flow.
 
-			List<String> outputBindings = streamFunctionProperties.getOutputBindings().get(this.functionName);
+			List<String> outputBindings = streamFunctionProperties.getOutputBindings(this.functionName);
 			String outputBinding = null;
 
 			if (!CollectionUtils.isEmpty(outputBindings)) {
@@ -168,7 +168,7 @@ public class KafkaStreamsBindableProxyFactory extends AbstractBindableProxyFacto
 	 */
 	private List<String> buildInputBindings() {
 		List<String> inputs = new ArrayList<>();
-		List<String> inputBindings = streamFunctionProperties.getInputBindings().get(this.functionName);
+		List<String> inputBindings = streamFunctionProperties.getInputBindings(this.functionName);
 		if (!CollectionUtils.isEmpty(inputBindings)) {
 			inputs.addAll(inputBindings);
 			return inputs;

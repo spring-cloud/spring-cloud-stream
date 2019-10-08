@@ -67,12 +67,16 @@ public class StreamToGlobalKTableFunctionTests {
 		app.setWebApplicationType(WebApplicationType.NONE);
 		try (ConfigurableApplicationContext ignored = app.run("--server.port=0",
 				"--spring.jmx.enabled=false",
-				"--spring.cloud.stream.function.inputBindings.process=order,customer,product",
-				"--spring.cloud.stream.function.outputBindings.process=enriched-order",
+				"--spring.cloud.stream.function.definition=process",
+				"--spring.cloud.stream.function.bindings.process-in-0=order",
+				"--spring.cloud.stream.function.bindings.process-in-1=customer",
+				"--spring.cloud.stream.function.bindings.process-in-2=product",
+				"--spring.cloud.stream.function.bindings.process-out-0=enriched-order",
 				"--spring.cloud.stream.bindings.order.destination=orders",
 				"--spring.cloud.stream.bindings.customer.destination=customers",
 				"--spring.cloud.stream.bindings.product.destination=products",
 				"--spring.cloud.stream.bindings.enriched-order.destination=enriched-order",
+
 				"--spring.cloud.stream.kafka.streams.binder.configuration.default.key.serde" +
 						"=org.apache.kafka.common.serialization.Serdes$StringSerde",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.default.value.serde" +

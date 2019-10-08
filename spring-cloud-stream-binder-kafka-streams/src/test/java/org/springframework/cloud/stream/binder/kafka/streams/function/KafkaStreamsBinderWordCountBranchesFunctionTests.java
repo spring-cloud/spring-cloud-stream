@@ -79,13 +79,15 @@ public class KafkaStreamsBinderWordCountBranchesFunctionTests {
 		app.setWebApplicationType(WebApplicationType.NONE);
 
 		ConfigurableApplicationContext context = app.run("--server.port=0",
-				"--spring.jmx.enabled=false",
-				"--spring.cloud.stream.function.inputBindings.process=input",
-				"--spring.cloud.stream.function.outputBindings.process=output1,output2,output3",
+				"--spring.cloud.stream.function.bindings.process-in-0=input",
 				"--spring.cloud.stream.bindings.input.destination=words",
+				"--spring.cloud.stream.function.bindings.process-out-0=output1",
 				"--spring.cloud.stream.bindings.output1.destination=counts",
+				"--spring.cloud.stream.function.bindings.process-out-1=output2",
 				"--spring.cloud.stream.bindings.output2.destination=foo",
+				"--spring.cloud.stream.function.bindings.process-out-2=output3",
 				"--spring.cloud.stream.bindings.output3.destination=bar",
+
 				"--spring.cloud.stream.kafka.streams.binder.configuration.commit.interval.ms=1000",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.default.key.serde" +
 						"=org.apache.kafka.common.serialization.Serdes$StringSerde",
