@@ -19,10 +19,10 @@ package org.springframework.cloud.stream.function;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
-import org.springframework.cloud.stream.messaging.Processor;
 import org.springframework.util.StringUtils;
 
 /**
@@ -36,19 +36,13 @@ public class StreamFunctionProperties {
 
 	/**
 	 * Definition of functions to bind. If several functions need to be composed into one,
-	 * use pipes (e.g., 'fooFunc\|barFunc')
+	 * use pipes (e.g., 'fooFunc|barFunc')
 	 */
 	private String definition;
 
 	private BindingServiceProperties bindingServiceProperties;
 
-	private String inputDestinationName = Processor.INPUT;
-
-	private String outputDestinationName = Processor.OUTPUT;
-
-	private Map<String, List<String>> inputBindings = new HashMap<>();
-
-	private Map<String, List<String>> outputBindings = new HashMap<>();
+	private Map<String, String> bindings = new HashMap<>();
 
 	private boolean batchMode;
 
@@ -68,8 +62,12 @@ public class StreamFunctionProperties {
 		return this.definition;
 	}
 
-	public String[] getParsedDefinition() {
-		return StringUtils.delimitedListToStringArray(this.getDefinition().replaceAll(",", "|").trim(), "|");
+	public List<String> getOutputBindings(String functionName) {
+		return this.filterBindings(functionName, "-out-");
+	}
+
+	public List<String> getInputBindings(String functionName) {
+		return this.filterBindings(functionName, "-in-");
 	}
 
 	public void setDefinition(String definition) {
@@ -89,36 +87,12 @@ public class StreamFunctionProperties {
 		this.bindingServiceProperties = bindingServiceProperties;
 	}
 
-	String getInputDestinationName() {
-		return this.inputDestinationName;
+	public Map<String, String> getBindings() {
+		return this.bindings;
 	}
 
-	void setInputDestinationName(String inputDestinationName) {
-		this.inputDestinationName = inputDestinationName;
-	}
-
-	String getOutputDestinationName() {
-		return this.outputDestinationName;
-	}
-
-	void setOutputDestinationName(String outputDestinationName) {
-		this.outputDestinationName = outputDestinationName;
-	}
-
-	public Map<String, List<String>> getInputBindings() {
-		return inputBindings;
-	}
-
-	public Map<String, List<String>> getOutputBindings() {
-		return outputBindings;
-	}
-
-	public void setOutputBindings(Map<String, List<String>> outputBindings) {
-		this.outputBindings = outputBindings;
-	}
-
-	public void setInputBindings(Map<String, List<String>> inputBindings) {
-		this.inputBindings = inputBindings;
+	public void setBindings(Map<String, String> bindings) {
+		this.bindings = bindings;
 	}
 
 	public boolean isBatchMode() {
@@ -127,5 +101,14 @@ public class StreamFunctionProperties {
 
 	public void setBatchMode(boolean batchMode) {
 		this.batchMode = batchMode;
+	}
+
+	private List<String> filterBindings(String functionName, String suffix) {
+		List<String> list = bindings.keySet().stream()
+				.filter(bKey -> bKey.contains(functionName + suffix))
+				.sorted()
+				.map(bKey -> bindings.get(bKey))
+				.collect(Collectors.toList());
+		return list;
 	}
 }

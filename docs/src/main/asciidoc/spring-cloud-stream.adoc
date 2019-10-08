@@ -554,14 +554,14 @@ Consider the following sample, which emulates such use case by producing a finit
 @SpringBootApplication
 public static class SupplierConfiguration {
 
-	@PollableSupplier
+	@Pollable
 	public Supplier<Flux<String>> stringSupplier() {
 		return () -> Flux.just("hello", "bye");
 	}
 }
 ----
 
-The bean itself is annotated with `PollableSupplier` annotation (sub-set of `@Bean`), thus signaling to the framework that although the implementation
+The bean itself is annotated with `Pollable` annotation (sub-set of `@Bean`), thus signaling to the framework that although the implementation
 of such a supplier is reactive, it still needs to be polled.
 
 ====== Polling Configuration Properties

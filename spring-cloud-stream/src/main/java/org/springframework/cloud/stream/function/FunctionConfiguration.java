@@ -20,7 +20,9 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
@@ -45,7 +47,7 @@ import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionProperties;
-import org.springframework.cloud.function.context.PollableSupplier;
+import org.springframework.cloud.function.context.Pollable;
 import org.springframework.cloud.function.context.catalog.BeanFactoryAwareFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
 import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
@@ -123,53 +125,56 @@ public class FunctionConfiguration {
 		return new FunctionChannelBindingInitializer(functionCatalog, functionProperties, bindableProxyFactories, serviceProperties);
 	}
 
+
+
 	/*
-	 * Binding initializer responsible only for Suppliers only
+	 * Binding initializer responsible only for Suppliers
 	 */
 	@Bean
-	IntegrationFlow supplierInitializer(FunctionCatalog functionCatalog, FunctionInspector functionInspector,
-			StreamFunctionProperties functionProperties, GenericApplicationContext context, BindingServiceProperties serviceProperties) {
-		if (!ObjectUtils.isEmpty(context.getBeanNamesForAnnotation(EnableBinding.class))) {
+	InitializingBean supplierInitializer(FunctionCatalog functionCatalog, StreamFunctionProperties functionProperties,
+			GenericApplicationContext context, BindingServiceProperties serviceProperties,
+			@Nullable BindableFunctionProxyFactory[] proxyFactories) {
+
+		if (!ObjectUtils.isEmpty(context.getBeanNamesForAnnotation(EnableBinding.class)) || proxyFactories == null) {
 			return null;
 		}
 
-		IntegrationFlow integrationFlow = null;
-		String[] functionDefinitions = StringUtils.hasText(functionProperties.getDefinition())
-				? functionProperties.getDefinition().split(";")
-						: new String[] {};
+		return new InitializingBean() {
 
-		for (String functionDefinition : functionDefinitions) {
-			BindingProperties bindingProperties = serviceProperties.getBindingProperties("output");
+			@Override
+			public void afterPropertiesSet() throws Exception {
+				for (BindableFunctionProxyFactory proxyFactory : proxyFactories) {
+					FunctionInvocationWrapper functionWrapper = functionCatalog.lookup(proxyFactory.getFunctionDefinition());
+					if (functionWrapper != null && functionWrapper.isSupplier()) {
+						// gather output content types
+						List<String> contentTypes = new ArrayList<String>();
+						Assert.isTrue(proxyFactory.getOutputs().size() == 1, "Supplier with multiple outputs is not supported at the moment.");
+						for (String outputName : proxyFactory.getOutputs()) {
+							BindingProperties bindingProperties = serviceProperties.getBindingProperties(outputName);
+							String contentType = bindingProperties.getProducer() != null && bindingProperties.getProducer().isUseNativeEncoding()
+									? null : bindingProperties.getContentType();
+							contentTypes.add(contentType);
+						}
+						// obtain function wrapper with proper output content types
+						functionWrapper = functionCatalog.lookup(proxyFactory.getFunctionDefinition(), contentTypes.toArray(new String[0]));
+						Publisher<Object> beginPublishingTrigger = setupBindingTrigger(context);
 
-			FunctionInvocationWrapper functionWrapper = bindingProperties.getProducer() != null && bindingProperties.getProducer().isUseNativeEncoding()
-					? functionCatalog.lookup(functionDefinition)
-							: functionCatalog.lookup(functionDefinition, bindingProperties.getContentType());
-			if (functionWrapper != null && functionWrapper.isSupplier()) {
-				Publisher<Object> beginPublishingTrigger = this.setupBindingTrigger(context);
-
-				RootBeanDefinition bd = (RootBeanDefinition) context.getBeanDefinition(functionProperties.getParsedDefinition()[0]);
-				Method factoryMethod = bd.getResolvedFactoryMethod();
-				if (factoryMethod == null) {
-					Object source = bd.getSource();
-					if (source instanceof MethodMetadata) {
-						Class<?> factory = ClassUtils.resolveClassName(((MethodMetadata) source).getDeclaringClassName(), null);
-						Class<?>[] params = FunctionContextUtils.getParamTypesFromBeanDefinitionFactory(factory, bd);
-						factoryMethod = ReflectionUtils.findMethod(factory, ((MethodMetadata) source).getMethodName(), params);
+						//!!!!!! TEMPORARY (see assertion about multiple outputs above)
+						String outputName = proxyFactory.getOutputs().iterator().next();
+						// end temporary
+						if (!functionProperties.isComposeFrom() && !functionProperties.isComposeTo()) {
+							String integrationFlowName = proxyFactory.getFunctionDefinition() + "_integrationflow";
+							Pollable pollable = extractPollableAnnotation(functionProperties, context, proxyFactory);
+							IntegrationFlow integrationFlow = integrationFlowFromProvidedSupplier(functionWrapper, beginPublishingTrigger, pollable)
+									.channel(outputName).get();
+							IntegrationFlow postProcessedFlow = (IntegrationFlow) context.getAutowireCapableBeanFactory()
+									.applyBeanPostProcessorsBeforeInitialization(integrationFlow, integrationFlowName);
+							context.registerBean(integrationFlowName, IntegrationFlow.class, () -> postProcessedFlow);
+						}
 					}
 				}
-				Assert.notNull(factoryMethod, "Failed to introspect factory method since it was not discovered for function '"
-								+ functionProperties.getDefinition() + "'");
-				PollableSupplier pollable = factoryMethod.getReturnType().isAssignableFrom(Supplier.class)
-						? AnnotationUtils.findAnnotation(factoryMethod, PollableSupplier.class)
-								: null;
-
-				if (!functionProperties.isComposeFrom() && !functionProperties.isComposeTo()) {
-					integrationFlow = this.integrationFlowFromProvidedSupplier(functionWrapper, functionInspector, beginPublishingTrigger, pollable)
-							.channel("output").get();
-				}
 			}
-		}
-		return integrationFlow;
+		};
 	}
 
 	/*
@@ -192,20 +197,21 @@ public class FunctionConfiguration {
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	private IntegrationFlowBuilder integrationFlowFromProvidedSupplier(Supplier<?> supplier,
-			FunctionInspector inspector, Publisher<Object> beginPublishingTrigger, PollableSupplier pollable) {
+			Publisher<Object> beginPublishingTrigger, Pollable pollable) {
 
 		IntegrationFlowBuilder integrationFlowBuilder;
 		Type functionType = ((FunctionInvocationWrapper) supplier).getFunctionType();
 
-		boolean splittable = pollable != null && (boolean) AnnotationUtils.getAnnotationAttributes(pollable).get("splittable");
+		boolean splittable = pollable != null
+				&& (boolean) AnnotationUtils.getAnnotationAttributes(pollable).get("splittable");
 
 		if (pollable == null && FunctionTypeUtils.isReactive(FunctionTypeUtils.getInputType(functionType, 0))) {
 			Publisher publisher = (Publisher) supplier.get();
 			publisher = publisher instanceof Mono
 					? ((Mono) publisher).delaySubscription(beginPublishingTrigger).map(this::wrapToMessageIfNecessary)
-							: ((Flux) publisher).delaySubscription(beginPublishingTrigger).map(this::wrapToMessageIfNecessary);
+					: ((Flux) publisher).delaySubscription(beginPublishingTrigger).map(this::wrapToMessageIfNecessary);
 
-			integrationFlowBuilder  = IntegrationFlows.from(publisher);
+			integrationFlowBuilder = IntegrationFlows.from(publisher);
 		}
 		else { // implies pollable
 			integrationFlowBuilder = IntegrationFlows.from(supplier);
@@ -216,6 +222,29 @@ public class FunctionConfiguration {
 
 		return integrationFlowBuilder;
 	}
+
+	private Pollable extractPollableAnnotation(StreamFunctionProperties functionProperties, GenericApplicationContext context,
+			BindableFunctionProxyFactory proxyFactory) {
+		// here we need to ensure that for cases where composition is defined we only look for supplier method to find Pollable annotation.
+		String supplierFunctionName = StringUtils
+				.delimitedListToStringArray(proxyFactory.getFunctionDefinition().replaceAll(",", "|").trim(), "|")[0];
+		RootBeanDefinition bd = (RootBeanDefinition) context.getBeanDefinition(supplierFunctionName);
+		Method factoryMethod = bd.getResolvedFactoryMethod();
+		if (factoryMethod == null) {
+			Object source = bd.getSource();
+			if (source instanceof MethodMetadata) {
+				Class<?> factory = ClassUtils.resolveClassName(((MethodMetadata) source).getDeclaringClassName(), null);
+				Class<?>[] params = FunctionContextUtils.getParamTypesFromBeanDefinitionFactory(factory, bd);
+				factoryMethod = ReflectionUtils.findMethod(factory, ((MethodMetadata) source).getMethodName(), params);
+			}
+		}
+		Assert.notNull(factoryMethod, "Failed to introspect factory method since it was not discovered for function '"
+				+ functionProperties.getDefinition() + "'");
+		return factoryMethod.getReturnType().isAssignableFrom(Supplier.class)
+				? AnnotationUtils.findAnnotation(factoryMethod, Pollable.class)
+						: null;
+	}
+
 
 	@SuppressWarnings("unchecked")
 	private <T> Message<T> wrapToMessageIfNecessary(T value) {
@@ -562,7 +591,6 @@ public class FunctionConfiguration {
 					&& this.determineFunctionName(functionCatalog, environment)) {
 				BeanDefinitionRegistry registry = (BeanDefinitionRegistry) applicationContext.getBeanFactory();
 				String[] functionDefinitions = streamFunctionProperties.getDefinition().split(";");
-				boolean nameBasedOnFunctionName = functionDefinitions.length > 1;
 				for (String functionDefinition : functionDefinitions) {
 					RootBeanDefinition functionBindableProxyDefinition = new RootBeanDefinition(BindableFunctionProxyFactory.class);
 					FunctionInvocationWrapper function = functionCatalog.lookup(functionDefinition);
@@ -584,7 +612,7 @@ public class FunctionConfiguration {
 						functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(functionDefinition);
 						functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(this.inputCount);
 						functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(this.outputCount);
-						functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(nameBasedOnFunctionName);
+						functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(streamFunctionProperties);
 						registry.registerBeanDefinition(functionDefinition + "_binding", functionBindableProxyDefinition);
 					}
 				}

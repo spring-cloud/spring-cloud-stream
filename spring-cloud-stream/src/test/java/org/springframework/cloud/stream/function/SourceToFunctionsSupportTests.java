@@ -29,7 +29,7 @@ import reactor.core.publisher.Flux;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
-import org.springframework.cloud.function.context.PollableSupplier;
+import org.springframework.cloud.function.context.Pollable;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.binder.test.OutputDestination;
 import org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration;
@@ -233,7 +233,31 @@ public class SourceToFunctionsSupportTests {
 			assertThat(new String(target.receive(2000).getPayload())).isEqualTo("5");
 			assertThat(new String(target.receive(2000).getPayload())).isEqualTo("6");
 
-			assertThat(context.getBean("supplierInitializer")).isNotEqualTo(null);
+			//assertThat(context.getBean("supplierInitializer")).isNotEqualTo(null);
+		}
+	}
+
+	@Test
+	public void testMultipleSuppliers() {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+				TestChannelBinderConfiguration.getCompleteConfiguration(FunctionsConfiguration.class,
+						MultipleSupplierConfiguration.class)).web(WebApplicationType.NONE).run(
+								"--spring.cloud.function.definition=supplier1;supplier2",
+								"--spring.jmx.enabled=false"
+//								"--spring.cloud.stream.function.bindings.supplier1-out-0=output1",
+//								"--spring.cloud.stream.function.bindings.supplier2-out-0=output2"
+								)) {
+
+			OutputDestination target = context.getBean(OutputDestination.class);
+
+//			assertThat(new String(target.receive(2000).getPayload())).isEqualTo("1");
+//			assertThat(new String(target.receive(2000).getPayload())).isEqualTo("2");
+//			assertThat(new String(target.receive(2000).getPayload())).isEqualTo("3");
+//			assertThat(new String(target.receive(2000).getPayload())).isEqualTo("4");
+//			assertThat(new String(target.receive(2000).getPayload())).isEqualTo("5");
+//			assertThat(new String(target.receive(2000).getPayload())).isEqualTo("6");
+//
+//			assertThat(context.getBean("supplierInitializer")).isNotEqualTo(null);
 		}
 	}
 
@@ -241,7 +265,7 @@ public class SourceToFunctionsSupportTests {
 	public static class MessageFluxSupplierConfiguration {
 		AtomicInteger counter = new AtomicInteger();
 
-		@PollableSupplier(splittable = true)
+		@Pollable(splittable = true)
 		public Supplier<Flux<Message<?>>> messageStreamSupplier() {
 			return () -> {
 				Message<String> m1 = new GenericMessage<>(String.valueOf(counter.incrementAndGet()));
@@ -253,10 +277,24 @@ public class SourceToFunctionsSupportTests {
 	}
 
 	@EnableAutoConfiguration
+	public static class MultipleSupplierConfiguration {
+
+		@Bean
+		public Supplier<String> supplier1() {
+			return () -> "supplier1";
+		}
+
+		@Bean
+		public Supplier<String> supplier2() {
+			return () -> "supplier2";
+		}
+	}
+
+	@EnableAutoConfiguration
 	public static class SimpleFluxSupplierConfiguration {
 		AtomicInteger counter = new AtomicInteger();
 
-		@PollableSupplier(splittable = true)
+		@Pollable(splittable = true)
 		public Supplier<Flux<String>> simpleStreamSupplier() {
 			return () -> {
 				return Flux.just(String.valueOf(counter.incrementAndGet()),

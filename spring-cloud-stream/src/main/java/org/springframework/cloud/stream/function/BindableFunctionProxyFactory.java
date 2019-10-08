@@ -47,16 +47,15 @@ class BindableFunctionProxyFactory extends BindableProxyFactory {
 
 	private final String functionDefinition;
 
-	private final boolean nameBasedOnFunctionName;
+	private final StreamFunctionProperties functionProperties;
 
-	private boolean multiple;
 
-	BindableFunctionProxyFactory(String functionDefinition, int inputCount, int outputCount, boolean nameBasedOnFunctionName) {
+	BindableFunctionProxyFactory(String functionDefinition, int inputCount, int outputCount, StreamFunctionProperties functionProperties) {
 		super(null);
 		this.inputCount = inputCount;
 		this.outputCount = outputCount;
 		this.functionDefinition = functionDefinition;
-		this.nameBasedOnFunctionName = nameBasedOnFunctionName;
+		this.functionProperties = functionProperties;
 	}
 
 
@@ -65,27 +64,15 @@ class BindableFunctionProxyFactory extends BindableProxyFactory {
 		Assert.notEmpty(BindableFunctionProxyFactory.this.bindingTargetFactories,
 				"'bindingTargetFactories' cannot be empty");
 
-		this.multiple = this.inputCount > 1 || this.outputCount > 1;
-
 		if (this.inputCount > 0) {
-			if (multiple || nameBasedOnFunctionName) {
-				for (int i = 0; i < inputCount; i++) {
-					this.createInput(this.buildInputNameForIndex(i));
-				}
-			}
-			else {
-				this.createInput("input");
+			for (int i = 0; i < inputCount; i++) {
+				this.createInput(this.buildInputNameForIndex(i));
 			}
 		}
 
 		if (this.outputCount > 0) {
-			if (multiple || nameBasedOnFunctionName) {
-				for (int i = 0; i < outputCount; i++) {
-					this.createOutput(this.buildOutputNameForIndex(i));
-				}
-			}
-			else {
-				this.createOutput("output");
+			for (int i = 0; i < outputCount; i++) {
+				this.createOutput(this.buildOutputNameForIndex(i));
 			}
 		}
 	}
@@ -98,10 +85,6 @@ class BindableFunctionProxyFactory extends BindableProxyFactory {
 	@Override
 	public boolean isSingleton() {
 		return true;
-	}
-
-	protected boolean isNameBasedOnFunctionName() {
-		return this.nameBasedOnFunctionName;
 	}
 
 	protected String getFunctionDefinition() {
@@ -121,7 +104,7 @@ class BindableFunctionProxyFactory extends BindableProxyFactory {
 	}
 
 	protected boolean isMultiple() {
-		return this.multiple;
+		return  this.inputCount > 1 || this.outputCount > 1;
 	}
 
 	private String buildInputNameForIndex(int index) {
@@ -143,13 +126,19 @@ class BindableFunctionProxyFactory extends BindableProxyFactory {
 	}
 
 	private void createInput(String name) {
-		BindableFunctionProxyFactory.this.inputHolders.put(name,
+		if (this.functionProperties.getBindings().containsKey(name)) {
+			name = this.functionProperties.getBindings().get(name);
+		}
+		this.inputHolders.put(name,
 				new BoundTargetHolder(getBindingTargetFactory(SubscribableChannel.class)
 						.createInput(name), true));
 	}
 
 	private void createOutput(String name) {
-		BindableFunctionProxyFactory.this.outputHolders.put(name,
+		if (this.functionProperties.getBindings().containsKey(name)) {
+			name = this.functionProperties.getBindings().get(name);
+		}
+		this.outputHolders.put(name,
 				new BoundTargetHolder(getBindingTargetFactory(MessageChannel.class)
 						.createOutput(name), true));
 	}

@@ -311,6 +311,27 @@ public class ImplicitFunctionBindingTests {
 		}
 	}
 
+	@Test
+	public void testSupplierWithCustomPollerAndMappedOutput() {
+		System.clearProperty("spring.cloud.stream.function.definition");
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+				TestChannelBinderConfiguration.getCompleteConfiguration(
+						SupplierWithExplicitPollerConfiguration.class))
+								.web(WebApplicationType.NONE)
+								.run("--spring.jmx.enabled=false",
+										"--spring.cloud.stream.poller.fixed-delay=2000",
+										"--spring.cloud.stream.function.bindings.supplier-out-0=output")) {
+
+			OutputDestination outputDestination = context.getBean(OutputDestination.class);
+
+			PollerMetadata pollerMetadata = context.getBean(PollerMetadata.class);
+			assertThat(((PeriodicTrigger) pollerMetadata.getTrigger()).getPeriod()).isEqualTo(2000);
+
+			Message<byte[]> outputMessage = outputDestination.receive(6000);
+			assertThat(outputMessage.getPayload()).isEqualTo("hello".getBytes());
+		}
+	}
+
 	@EnableAutoConfiguration
 	public static class NoEnableBindingConfiguration  {
 
