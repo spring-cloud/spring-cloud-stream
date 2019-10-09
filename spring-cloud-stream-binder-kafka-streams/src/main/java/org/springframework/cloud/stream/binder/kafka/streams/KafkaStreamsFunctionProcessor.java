@@ -35,6 +35,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.StreamsBuilder;
+import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.Topology;
 import org.apache.kafka.streams.kstream.KStream;
 
@@ -296,8 +297,10 @@ public class KafkaStreamsFunctionProcessor extends AbstractKafkaStreamsBinderPro
 					StreamsBuilderFactoryBean streamsBuilderFactoryBean =
 							this.methodStreamsBuilderFactoryBeanMap.get(functionName);
 					StreamsBuilder streamsBuilder = streamsBuilderFactoryBean.getObject();
+					final String applicationId = streamsBuilderFactoryBean.getStreamsConfiguration().getProperty(StreamsConfig.APPLICATION_ID_CONFIG);
 					KafkaStreamsConsumerProperties extendedConsumerProperties =
 							this.kafkaStreamsExtendedBindingProperties.getExtendedConsumerProperties(input);
+					extendedConsumerProperties.setApplicationId(applicationId);
 					//get state store spec
 
 					Serde<?> keySerde = this.keyValueSerdeResolver.getInboundKeySerde(extendedConsumerProperties, stringResolvableTypeMap.get(input));

@@ -16,8 +16,10 @@
 
 package org.springframework.cloud.stream.binder.kafka.streams;
 
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -84,19 +86,24 @@ public class InteractiveQueryService {
 		retryTemplate.setRetryPolicy(retryPolicy);
 
 		return retryTemplate.execute(context -> {
-			T store;
-			for (KafkaStreams kafkaStream : InteractiveQueryService.this.kafkaStreamsRegistry.getKafkaStreams()) {
+			T store = null;
+
+			final Set<KafkaStreams> kafkaStreams = InteractiveQueryService.this.kafkaStreamsRegistry.getKafkaStreams();
+			final Iterator<KafkaStreams> iterator = kafkaStreams.iterator();
+			Throwable throwable = null;
+			while (iterator.hasNext()) {
 				try {
-					store = kafkaStream.store(storeName, storeType);
-					if (store != null) {
-						return store;
-					}
+					store = iterator.next().store(storeName, storeType);
 				}
 				catch (InvalidStateStoreException e) {
-					LOG.warn("Error when retrieving state store: " + storeName, e);
+					// pass through..
+					throwable = e;
 				}
 			}
-			throw new IllegalStateException("Error when retrieving state store: " + storeName);
+			if (store != null) {
+				return store;
+			}
+			throw new IllegalStateException("Error when retrieving state store: j " + storeName, throwable);
 		});
 	}
 

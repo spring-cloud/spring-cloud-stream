@@ -251,8 +251,10 @@ class KafkaStreamsStreamListenerSetupMethodOrchestrator extends AbstractKafkaStr
 					StreamsBuilderFactoryBean streamsBuilderFactoryBean = this.methodStreamsBuilderFactoryBeanMap
 							.get(method);
 					StreamsBuilder streamsBuilder = streamsBuilderFactoryBean.getObject();
+					final String applicationId = streamsBuilderFactoryBean.getStreamsConfiguration().getProperty(StreamsConfig.APPLICATION_ID_CONFIG);
 					KafkaStreamsConsumerProperties extendedConsumerProperties = this.kafkaStreamsExtendedBindingProperties
 							.getExtendedConsumerProperties(inboundName);
+					extendedConsumerProperties.setApplicationId(applicationId);
 					// get state store spec
 					KafkaStreamsStateStoreProperties spec = buildStateStoreSpec(method);
 
