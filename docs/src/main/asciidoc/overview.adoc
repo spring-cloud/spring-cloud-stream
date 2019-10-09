@@ -19,7 +19,7 @@ To use Apache Kafka binder, you need to add `spring-cloud-stream-binder-kafka` a
 </dependency>
 ----
 
-Alternatively, you can also use the Spring Cloud Stream Kafka Starter, as shown inn the following example for Maven:
+Alternatively, you can also use the Spring Cloud Stream Kafka Starter, as shown in the following example for Maven:
 
 [source,xml]
 ----
