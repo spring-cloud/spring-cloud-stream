@@ -96,6 +96,7 @@ public class KafkaStreamsBinderWordCountFunctionTests {
 				"--spring.cloud.stream.kafka.streams.binder.brokers=" + embeddedKafka.getBrokersAsString())) {
 			receiveAndValidate("words", "counts");
 			final MeterRegistry meterRegistry = context.getBean(MeterRegistry.class);
+			//TODO: This assertion fails randomly - Investigate why.
 			assertThat(meterRegistry.get("stream.metrics.commit.total").gauge().value()).isEqualTo(1.0);
 		}
 	}
