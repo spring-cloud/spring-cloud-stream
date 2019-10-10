@@ -132,15 +132,7 @@ public class KafkaStreamsBindableProxyFactory extends AbstractBindableProxyFacto
 
 			}
 			else {
-				int numberOfInputs = this.type.getRawClass() != null &&
-						(this.type.getRawClass().isAssignableFrom(BiFunction.class) ||
-								this.type.getRawClass().isAssignableFrom(BiConsumer.class)) ? 2 : getNumberOfInputs();
-				if (this.onlySingleFunction && numberOfInputs == 1) {
-					outputBinding = "output";
-				}
-				else {
-					outputBinding = String.format("%s-%s-0", this.functionName, FunctionConstants.DEFAULT_OUTPUT_SUFFIX);
-				}
+				outputBinding = String.format("%s-%s-0", this.functionName, FunctionConstants.DEFAULT_OUTPUT_SUFFIX);
 			}
 			Assert.isTrue(outputBinding != null, "output binding is not inferred.");
 			KafkaStreamsBindableProxyFactory.this.outputHolders.put(outputBinding,
@@ -176,35 +168,12 @@ public class KafkaStreamsBindableProxyFactory extends AbstractBindableProxyFacto
 		int numberOfInputs = this.type.getRawClass() != null &&
 				(this.type.getRawClass().isAssignableFrom(BiFunction.class) ||
 						this.type.getRawClass().isAssignableFrom(BiConsumer.class)) ? 2 : getNumberOfInputs();
-		if (numberOfInputs == 1) {
-
-			ResolvableType outboundArgument = this.type.getGeneric(1);
-
-			while (isAnotherFunctionOrConsumerFound(outboundArgument)) {
-				//The function is a curried function. We should introspect the partial function chain hierarchy.
-				outboundArgument = outboundArgument.getGeneric(1);
-			}
-
-			if (this.onlySingleFunction && (outboundArgument == null || outboundArgument.getRawClass() == null)) {
-				inputs.add("input");
-			}
-			else if (this.onlySingleFunction &&  outboundArgument.getRawClass() != null
-					&& (!outboundArgument.isArray() &&
-					outboundArgument.getRawClass().isAssignableFrom(KStream.class))) {
-				inputs.add("input");
-			}
-			else {
-				inputs.add(String.format("%s-%s-0", this.functionName, FunctionConstants.DEFAULT_INPUT_SUFFIX));
-			}
-			return inputs;
+		int i = 0;
+		while (i < numberOfInputs) {
+			inputs.add(String.format("%s-%s-%d", this.functionName, FunctionConstants.DEFAULT_INPUT_SUFFIX, i++));
 		}
-		else {
-			int i = 0;
-			while (i < numberOfInputs) {
-				inputs.add(String.format("%s-%s-%d", this.functionName, FunctionConstants.DEFAULT_INPUT_SUFFIX, i++));
-			}
-			return inputs;
-		}
+		return inputs;
+
 	}
 
 	private int getNumberOfInputs() {

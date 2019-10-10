@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.binder.kafka.streams.function;
 
+import java.time.Duration;
 import java.util.Map;
 
 import org.apache.kafka.common.serialization.Serdes;
@@ -58,7 +59,7 @@ public class KafkaStreamsFunctionStateStoreTests {
 
 		try (ConfigurableApplicationContext context = app.run("--server.port=0",
 				"--spring.jmx.enabled=false",
-				"--spring.cloud.stream.bindings.input.destination=words",
+				"--spring.cloud.stream.bindings.process-in-0.destination=words",
 				"--spring.cloud.stream.kafka.streams.binder.application-id=testKafkaStreamsFuncionWithMultipleStateStores",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.commit.interval.ms=1000",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.default.key.serde" +
@@ -142,7 +143,7 @@ public class KafkaStreamsFunctionStateStoreTests {
 		public StoreBuilder otherStore() {
 			return Stores.windowStoreBuilder(
 					Stores.persistentWindowStore("other-store",
-							3L, 3, 3L, false), Serdes.Long(),
+							Duration.ofSeconds(3), Duration.ofSeconds(3),  false), Serdes.Long(),
 					Serdes.Long());
 		}
 	}

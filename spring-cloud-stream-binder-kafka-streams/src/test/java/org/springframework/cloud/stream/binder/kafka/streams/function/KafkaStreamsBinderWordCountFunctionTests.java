@@ -85,8 +85,8 @@ public class KafkaStreamsBinderWordCountFunctionTests {
 		try (ConfigurableApplicationContext context = app.run(
 				"--server.port=0",
 				"--spring.jmx.enabled=false",
-				"--spring.cloud.stream.bindings.input.destination=words",
-				"--spring.cloud.stream.bindings.output.destination=counts",
+				"--spring.cloud.stream.bindings.process-in-0.destination=words",
+				"--spring.cloud.stream.bindings.process-out-0.destination=counts",
 				"--spring.cloud.stream.kafka.streams.default.consumer.application-id=testKstreamWordCountFunction",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.commit.interval.ms=1000",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.default.key.serde" +
@@ -108,8 +108,8 @@ public class KafkaStreamsBinderWordCountFunctionTests {
 		try (ConfigurableApplicationContext context = app.run(
 				"--server.port=0",
 				"--spring.jmx.enabled=false",
-				"--spring.cloud.stream.bindings.input.destination=words-1",
-				"--spring.cloud.stream.bindings.output.destination=counts-1",
+				"--spring.cloud.stream.bindings.process-in-0.destination=words-1",
+				"--spring.cloud.stream.bindings.process-out-0.destination=counts-1",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.commit.interval.ms=1000",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.default.key.serde" +
 						"=org.apache.kafka.common.serialization.Serdes$StringSerde",

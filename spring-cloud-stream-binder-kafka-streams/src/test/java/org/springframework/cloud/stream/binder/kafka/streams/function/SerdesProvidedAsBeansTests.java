@@ -59,8 +59,8 @@ public class SerdesProvidedAsBeansTests {
 		try (ConfigurableApplicationContext context = app.run(
 				"--server.port=0",
 				"--spring.jmx.enabled=false",
-				"--spring.cloud.stream.bindings.input.destination=purchases",
-				"--spring.cloud.stream.bindings.output.destination=coffee",
+				"--spring.cloud.stream.bindings.process-in-0.destination=purchases",
+				"--spring.cloud.stream.bindings.process-out-0.destination=coffee",
 				"--spring.cloud.stream.kafka.streams.binder.functions.process.applicationId=process-id-0",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.commit.interval.ms=1000",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.default.key.serde" +
@@ -77,14 +77,14 @@ public class SerdesProvidedAsBeansTests {
 			final BindingServiceProperties bindingServiceProperties = context.getBean(BindingServiceProperties.class);
 			final KafkaStreamsExtendedBindingProperties kafkaStreamsExtendedBindingProperties = context.getBean(KafkaStreamsExtendedBindingProperties.class);
 
-			final ConsumerProperties consumerProperties = bindingServiceProperties.getBindingProperties("input").getConsumer();
+			final ConsumerProperties consumerProperties = bindingServiceProperties.getBindingProperties("process-in-0").getConsumer();
 			final KafkaStreamsConsumerProperties kafkaStreamsConsumerProperties = kafkaStreamsExtendedBindingProperties.getExtendedConsumerProperties("input");
 			kafkaStreamsExtendedBindingProperties.getExtendedConsumerProperties("input");
 			final Serde<?> inboundValueSerde = keyValueSerdeResolver.getInboundValueSerde(consumerProperties, kafkaStreamsConsumerProperties, resolvableType.getGeneric(0));
 
 			Assert.isTrue(inboundValueSerde instanceof FooSerde, "Inbound Value Serde is not matched");
 
-			final ProducerProperties producerProperties = bindingServiceProperties.getBindingProperties("output").getProducer();
+			final ProducerProperties producerProperties = bindingServiceProperties.getBindingProperties("process-out-0").getProducer();
 			final KafkaStreamsProducerProperties kafkaStreamsProducerProperties = kafkaStreamsExtendedBindingProperties.getExtendedProducerProperties("output");
 			kafkaStreamsExtendedBindingProperties.getExtendedProducerProperties("output");
 			final Serde<?> outboundValueSerde = keyValueSerdeResolver.getOutboundValueSerde(producerProperties, kafkaStreamsProducerProperties, resolvableType.getGeneric(1));
