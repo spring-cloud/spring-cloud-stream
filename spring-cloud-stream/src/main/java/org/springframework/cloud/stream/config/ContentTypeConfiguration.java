@@ -45,10 +45,8 @@ class ContentTypeConfiguration {
 			List<MessageConverter> customMessageConverters) {
 
 		CompositeMessageConverterFactory factory =
-				new CompositeMessageConverterFactory(new ArrayList<>(), objectMapperObjectProvider.getIfAvailable(ObjectMapper::new));
-
-		ArrayList<MessageConverter> messageConverters = new ArrayList<>(factory.getMessageConverterForAllRegistered().getConverters());
-		messageConverters.addAll(customMessageConverters);
+				new CompositeMessageConverterFactory(customMessageConverters, objectMapperObjectProvider.getIfAvailable(ObjectMapper::new));
+		List<MessageConverter> messageConverters = new ArrayList<>(factory.getMessageConverterForAllRegistered().getConverters());
 
 		return new ConfigurableCompositeMessageConverter(messageConverters);
 	}
