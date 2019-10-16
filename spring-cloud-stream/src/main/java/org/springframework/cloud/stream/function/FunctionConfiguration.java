@@ -44,7 +44,7 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionProperties;
@@ -52,6 +52,7 @@ import org.springframework.cloud.function.context.PollableBean;
 import org.springframework.cloud.function.context.catalog.BeanFactoryAwareFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
 import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
+import org.springframework.cloud.function.context.config.ContextFunctionCatalogAutoConfiguration;
 import org.springframework.cloud.function.context.config.FunctionContextUtils;
 import org.springframework.cloud.function.context.config.RoutingFunction;
 import org.springframework.cloud.stream.annotation.BindingProvider;
@@ -106,7 +107,7 @@ import org.springframework.util.StringUtils;
 @EnableConfigurationProperties(StreamFunctionProperties.class)
 @AutoConfigureBefore(BindingServiceConfiguration.class)
 @Import({ BindingBeansRegistrar.class, BinderFactoryAutoConfiguration.class })
-@ConditionalOnBean(FunctionCatalog.class)
+@ConditionalOnClass(ContextFunctionCatalogAutoConfiguration.class)
 public class FunctionConfiguration {
 
 	@Bean

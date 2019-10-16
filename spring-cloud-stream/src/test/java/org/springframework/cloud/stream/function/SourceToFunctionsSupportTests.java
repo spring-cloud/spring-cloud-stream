@@ -29,7 +29,7 @@ import reactor.core.publisher.Flux;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
-import org.springframework.cloud.function.context.Pollable;
+import org.springframework.cloud.function.context.PollableBean;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.binder.test.OutputDestination;
 import org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration;
@@ -265,7 +265,7 @@ public class SourceToFunctionsSupportTests {
 	public static class MessageFluxSupplierConfiguration {
 		AtomicInteger counter = new AtomicInteger();
 
-		@Pollable(splittable = true)
+		@PollableBean(splittable = true)
 		public Supplier<Flux<Message<?>>> messageStreamSupplier() {
 			return () -> {
 				Message<String> m1 = new GenericMessage<>(String.valueOf(counter.incrementAndGet()));
@@ -294,7 +294,7 @@ public class SourceToFunctionsSupportTests {
 	public static class SimpleFluxSupplierConfiguration {
 		AtomicInteger counter = new AtomicInteger();
 
-		@Pollable(splittable = true)
+		@PollableBean(splittable = true)
 		public Supplier<Flux<String>> simpleStreamSupplier() {
 			return () -> {
 				return Flux.just(String.valueOf(counter.incrementAndGet()),
