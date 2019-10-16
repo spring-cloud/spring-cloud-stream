@@ -585,12 +585,7 @@ public class FunctionConfiguration {
 
 		@Override
 		public void afterPropertiesSet() throws Exception {
-			Class<?>[] configurationClasses = binderTypeRegistry.getAll().values().iterator().next()
-					.getConfigurationClasses();
-			boolean bindingProvider = Stream.of(configurationClasses)
-					.filter(clazz -> AnnotationUtils.findAnnotation(clazz, BindingProvider.class) != null)
-					.findFirst().isPresent();
-			if (!bindingProvider
+			if (nonBindingProviderBindersFound()
 					&& ObjectUtils.isEmpty(applicationContext.getBeanNamesForAnnotation(EnableBinding.class))
 					&& this.determineFunctionName(functionCatalog, environment)) {
 				BeanDefinitionRegistry registry = (BeanDefinitionRegistry) applicationContext.getBeanFactory();
@@ -621,6 +616,11 @@ public class FunctionConfiguration {
 					}
 				}
 			}
+		}
+
+		private boolean nonBindingProviderBindersFound() {
+			return binderTypeRegistry.getAll().values().stream().anyMatch(binderType -> Stream.of(binderType.getConfigurationClasses())
+					.anyMatch(clazz -> AnnotationUtils.findAnnotation(clazz, BindingProvider.class) == null));
 		}
 
 		private boolean determineFunctionName(FunctionCatalog catalog, Environment environment) {
