@@ -44,10 +44,11 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionProperties;
-import org.springframework.cloud.function.context.Pollable;
+import org.springframework.cloud.function.context.PollableBean;
 import org.springframework.cloud.function.context.catalog.BeanFactoryAwareFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
 import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
@@ -105,6 +106,7 @@ import org.springframework.util.StringUtils;
 @EnableConfigurationProperties(StreamFunctionProperties.class)
 @AutoConfigureBefore(BindingServiceConfiguration.class)
 @Import({ BindingBeansRegistrar.class, BinderFactoryAutoConfiguration.class })
+@ConditionalOnBean(FunctionCatalog.class)
 public class FunctionConfiguration {
 
 	@Bean
@@ -164,7 +166,7 @@ public class FunctionConfiguration {
 						// end temporary
 						if (!functionProperties.isComposeFrom() && !functionProperties.isComposeTo()) {
 							String integrationFlowName = proxyFactory.getFunctionDefinition() + "_integrationflow";
-							Pollable pollable = extractPollableAnnotation(functionProperties, context, proxyFactory);
+							PollableBean pollable = extractPollableAnnotation(functionProperties, context, proxyFactory);
 							IntegrationFlow integrationFlow = integrationFlowFromProvidedSupplier(functionWrapper, beginPublishingTrigger, pollable)
 									.channel(outputName).get();
 							IntegrationFlow postProcessedFlow = (IntegrationFlow) context.getAutowireCapableBeanFactory()
@@ -197,7 +199,7 @@ public class FunctionConfiguration {
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	private IntegrationFlowBuilder integrationFlowFromProvidedSupplier(Supplier<?> supplier,
-			Publisher<Object> beginPublishingTrigger, Pollable pollable) {
+			Publisher<Object> beginPublishingTrigger, PollableBean pollable) {
 
 		IntegrationFlowBuilder integrationFlowBuilder;
 		Type functionType = ((FunctionInvocationWrapper) supplier).getFunctionType();
@@ -223,7 +225,7 @@ public class FunctionConfiguration {
 		return integrationFlowBuilder;
 	}
 
-	private Pollable extractPollableAnnotation(StreamFunctionProperties functionProperties, GenericApplicationContext context,
+	private PollableBean extractPollableAnnotation(StreamFunctionProperties functionProperties, GenericApplicationContext context,
 			BindableFunctionProxyFactory proxyFactory) {
 		// here we need to ensure that for cases where composition is defined we only look for supplier method to find Pollable annotation.
 		String supplierFunctionName = StringUtils
@@ -241,7 +243,7 @@ public class FunctionConfiguration {
 		Assert.notNull(factoryMethod, "Failed to introspect factory method since it was not discovered for function '"
 				+ functionProperties.getDefinition() + "'");
 		return factoryMethod.getReturnType().isAssignableFrom(Supplier.class)
-				? AnnotationUtils.findAnnotation(factoryMethod, Pollable.class)
+				? AnnotationUtils.findAnnotation(factoryMethod, PollableBean.class)
 						: null;
 	}
 
@@ -523,6 +525,7 @@ public class FunctionConfiguration {
 
 		private final ConsumerProperties consumerProperties;
 
+		@SuppressWarnings("unused")
 		private final ProducerProperties producerProperties;
 
 		private final Field headersField;
