@@ -1952,6 +1952,23 @@ See `<<spring-cloud-stream-overview-error-handling>>` for more information.
 +
 Default: `false`.
 
+==== Advanced Producer Configuration
+
+For advanced configuration of the underlying publishing template, add a single `PublishingTemplateCustomizer` bean to the application context.
+It will be invoked after the above properties have been applied and can be used to set additional properties.
+
+The following is an example for the RabbitMQ binder:
+
+====
+[source, java]
+----
+@Bean
+public PublishingTemplateCustomizer<RabbitTemplate> templateCustomizer() {
+    return (template, dest) -> template.addBeforePublishPostProcessors(postProcessor);
+}
+----
+====
+
 [[dynamicdestination]]
 === Using Dynamically Bound Destinations
 

@@ -112,7 +112,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 
 	private final ListenerContainerCustomizer<?> containerCustomizer;
 
-	private MessageSourceCustomizer<?> sourceCustomizer;
+	private final MessageSourceCustomizer<?> sourceCustomizer;
 
 	private final PublishingTemplateCustomizer<?> templateCustomizer;
 
