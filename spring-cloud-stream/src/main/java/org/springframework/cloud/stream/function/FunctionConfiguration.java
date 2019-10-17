@@ -43,11 +43,13 @@ import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.RootBeanDefinition;
+import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionProperties;
+import org.springframework.cloud.function.context.FunctionRegistry;
 import org.springframework.cloud.function.context.PollableBean;
 import org.springframework.cloud.function.context.catalog.BeanFactoryAwareFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
@@ -105,9 +107,10 @@ import org.springframework.util.StringUtils;
  */
 @Configuration
 @EnableConfigurationProperties(StreamFunctionProperties.class)
-@AutoConfigureBefore(BindingServiceConfiguration.class)
 @Import({ BindingBeansRegistrar.class, BinderFactoryAutoConfiguration.class })
-@ConditionalOnClass(ContextFunctionCatalogAutoConfiguration.class)
+@AutoConfigureBefore(BindingServiceConfiguration.class)
+@AutoConfigureAfter(ContextFunctionCatalogAutoConfiguration.class)
+@ConditionalOnBean(FunctionRegistry.class)
 public class FunctionConfiguration {
 
 	@Bean

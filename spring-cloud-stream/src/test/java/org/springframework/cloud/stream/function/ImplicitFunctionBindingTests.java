@@ -28,6 +28,7 @@ import reactor.core.publisher.Flux;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.cloud.function.context.config.ContextFunctionCatalogAutoConfiguration;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.StreamListener;
 import org.springframework.cloud.stream.binder.test.InputDestination;
@@ -332,6 +333,26 @@ public class ImplicitFunctionBindingTests {
 		}
 	}
 
+
+	@Test
+	public void testNoFunctionEnabledConfiguration() {
+		System.clearProperty("spring.cloud.stream.function.definition");
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+				TestChannelBinderConfiguration.getCompleteConfiguration(NoFunctionEnabledConfiguration.class))
+						.web(WebApplicationType.NONE).run("--spring.jmx.enabled=false")) {
+
+			try {
+				context.getBean(FunctionConfiguration.class);
+				fail();
+			}
+			catch (Exception e) {
+				// ignore
+			}
+
+		}
+	}
+
+
 	@EnableAutoConfiguration
 	public static class NoEnableBindingConfiguration  {
 
@@ -440,6 +461,15 @@ public class ImplicitFunctionBindingTests {
 
 	@EnableAutoConfiguration
 	public static class SupplierWithExplicitPollerConfiguration {
+
+		@Bean
+		public Supplier<String> supplier() {
+			return () -> "hello";
+		}
+	}
+
+	@EnableAutoConfiguration(exclude = ContextFunctionCatalogAutoConfiguration.class)
+	public static class NoFunctionEnabledConfiguration {
 
 		@Bean
 		public Supplier<String> supplier() {
