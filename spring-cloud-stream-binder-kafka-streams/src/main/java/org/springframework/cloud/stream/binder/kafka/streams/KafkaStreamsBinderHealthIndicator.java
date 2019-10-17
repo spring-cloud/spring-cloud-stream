@@ -22,17 +22,20 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.kafka.streams.KafkaStreams;
+import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.processor.TaskMetadata;
 import org.apache.kafka.streams.processor.ThreadMetadata;
 
 import org.springframework.boot.actuate.health.AbstractHealthIndicator;
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.Status;
+import org.springframework.kafka.config.StreamsBuilderFactoryBean;
 
 /**
  * Health indicator for Kafka Streams.
  *
  * @author Arnaud Jardiné
+ * @author Soby Chacko
  */
 public class KafkaStreamsBinderHealthIndicator extends AbstractHealthIndicator {
 
@@ -53,15 +56,28 @@ public class KafkaStreamsBinderHealthIndicator extends AbstractHealthIndicator {
 		builder.status(up ? Status.UP : Status.DOWN);
 	}
 
-	private static Map<String, Object> buildDetails(KafkaStreams kStreams) {
+	private Map<String, Object> buildDetails(KafkaStreams kafkaStreams) {
 		final Map<String, Object> details = new HashMap<>();
-		if (kStreams.state().isRunning()) {
-			for (ThreadMetadata metadata : kStreams.localThreadsMetadata()) {
-				details.put("threadName", metadata.threadName());
-				details.put("threadState", metadata.threadState());
-				details.put("activeTasks", taskDetails(metadata.activeTasks()));
-				details.put("standbyTasks", taskDetails(metadata.standbyTasks()));
+		final Map<String, Object> perAppdIdDetails = new HashMap<>();
+		if (kafkaStreams.state().isRunning()) {
+			for (ThreadMetadata metadata : kafkaStreams.localThreadsMetadata()) {
+				perAppdIdDetails.put("threadName", metadata.threadName());
+				perAppdIdDetails.put("threadState", metadata.threadState());
+				perAppdIdDetails.put("adminClientId", metadata.adminClientId());
+				perAppdIdDetails.put("consumerClientId", metadata.consumerClientId());
+				perAppdIdDetails.put("restoreConsumerClientId", metadata.restoreConsumerClientId());
+				perAppdIdDetails.put("producerClientIds", metadata.producerClientIds());
+				perAppdIdDetails.put("activeTasks", taskDetails(metadata.activeTasks()));
+				perAppdIdDetails.put("standbyTasks", taskDetails(metadata.standbyTasks()));
 			}
+			final StreamsBuilderFactoryBean streamsBuilderFactoryBean = this.kafkaStreamsRegistry.streamBuilderFactoryBean(kafkaStreams);
+			final String applicationId = (String) streamsBuilderFactoryBean.getStreamsConfiguration().get(StreamsConfig.APPLICATION_ID_CONFIG);
+			details.put(applicationId, perAppdIdDetails);
+		}
+		else {
+			final StreamsBuilderFactoryBean streamsBuilderFactoryBean = this.kafkaStreamsRegistry.streamBuilderFactoryBean(kafkaStreams);
+			final String applicationId = (String) streamsBuilderFactoryBean.getStreamsConfiguration().get(StreamsConfig.APPLICATION_ID_CONFIG);
+			details.put(applicationId, String.format("The processor with application.id %s is down", applicationId));
 		}
 		return details;
 	}

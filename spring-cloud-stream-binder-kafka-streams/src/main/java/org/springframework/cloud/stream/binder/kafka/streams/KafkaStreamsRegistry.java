@@ -16,10 +16,14 @@
 
 package org.springframework.cloud.stream.binder.kafka.streams;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.kafka.streams.KafkaStreams;
+
+import org.springframework.kafka.config.StreamsBuilderFactoryBean;
 
 /**
  * An internal registry for holding {@KafkaStreams} objects maintained through
@@ -30,6 +34,8 @@ import org.apache.kafka.streams.KafkaStreams;
 class KafkaStreamsRegistry {
 
 	private final KafkaStreamsBinderMetrics kafkaStreamsBinderMetrics;
+
+	private Map<KafkaStreams, StreamsBuilderFactoryBean> streamsStreamsBuilderFactoryBeanMap = new HashMap<>();
 
 	KafkaStreamsRegistry(KafkaStreamsBinderMetrics kafkaStreamsBinderMetrics) {
 		this.kafkaStreamsBinderMetrics = kafkaStreamsBinderMetrics;
@@ -48,6 +54,25 @@ class KafkaStreamsRegistry {
 	void registerKafkaStreams(KafkaStreams kafkaStreams) {
 		this.kafkaStreamsBinderMetrics.addMetrics(kafkaStreams);
 		this.kafkaStreams.add(kafkaStreams);
+	}
+
+	/**
+	 * Make an association between {@link KafkaStreams} and its corresponding {@link StreamsBuilderFactoryBean}.
+	 *
+	 * @param kafkaStreams {@link KafkaStreams} object
+	 * @param streamsBuilderFactoryBean Associtated {@link StreamsBuilderFactoryBean} for the {@link KafkaStreams}
+	 */
+	void addToStreamBuilderFactoryBeanMap(KafkaStreams kafkaStreams, StreamsBuilderFactoryBean streamsBuilderFactoryBean) {
+		streamsStreamsBuilderFactoryBeanMap.put(kafkaStreams, streamsBuilderFactoryBean);
+	}
+
+	/**
+	 *
+	 * @param kafkaStreams {@link KafkaStreams} object
+	 * @return Corresponding {@link StreamsBuilderFactoryBean}.
+	 */
+	StreamsBuilderFactoryBean streamBuilderFactoryBean(KafkaStreams kafkaStreams) {
+		return streamsStreamsBuilderFactoryBeanMap.get(kafkaStreams);
 	}
 
 }

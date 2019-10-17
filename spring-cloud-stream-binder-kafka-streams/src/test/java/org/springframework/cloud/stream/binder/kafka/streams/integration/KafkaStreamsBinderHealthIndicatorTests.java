@@ -77,7 +77,7 @@ public class KafkaStreamsBinderHealthIndicatorTests {
 
 	@Test
 	public void healthIndicatorUpTest() throws Exception {
-		try (ConfigurableApplicationContext context = singleStream()) {
+		try (ConfigurableApplicationContext context = singleStream("ApplicationHealthTest-xyz")) {
 			receive(context,
 					Lists.newArrayList(new ProducerRecord<>("in", "{\"id\":\"123\"}"),
 							new ProducerRecord<>("in", "{\"id\":\"123\"}")),
@@ -87,7 +87,7 @@ public class KafkaStreamsBinderHealthIndicatorTests {
 
 	@Test
 	public void healthIndicatorDownTest() throws Exception {
-		try (ConfigurableApplicationContext context = singleStream()) {
+		try (ConfigurableApplicationContext context = singleStream("ApplicationHealthTest-xyzabc")) {
 			receive(context,
 					Lists.newArrayList(new ProducerRecord<>("in", "{\"id\":\"123\"}"),
 							new ProducerRecord<>("in", "{\"id\":\"124\"}")),
@@ -186,7 +186,7 @@ public class KafkaStreamsBinderHealthIndicatorTests {
 		assertThat(health.getStatus()).isEqualTo(expected);
 	}
 
-	private ConfigurableApplicationContext singleStream() {
+	private ConfigurableApplicationContext singleStream(String applicationId) {
 		SpringApplication app = new SpringApplication(KStreamApplication.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 		return app.run("--server.port=0", "--spring.jmx.enabled=false",
@@ -198,7 +198,7 @@ public class KafkaStreamsBinderHealthIndicatorTests {
 				"--spring.cloud.stream.kafka.streams.binder.configuration.default.value.serde="
 						+ "org.apache.kafka.common.serialization.Serdes$StringSerde",
 				"--spring.cloud.stream.kafka.streams.bindings.input.consumer.applicationId="
-						+ "ApplicationHealthTest-xyz",
+						+ applicationId,
 				"--spring.cloud.stream.kafka.streams.binder.brokers="
 						+ embeddedKafka.getBrokersAsString());
 	}
