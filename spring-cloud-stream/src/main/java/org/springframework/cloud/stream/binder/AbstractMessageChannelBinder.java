@@ -33,6 +33,7 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.support.DefaultSingletonBeanRegistry;
 import org.springframework.cloud.stream.config.ListenerContainerCustomizer;
 import org.springframework.cloud.stream.config.MessageSourceCustomizer;
+import org.springframework.cloud.stream.config.PublishingTemplateCustomizer;
 import org.springframework.cloud.stream.provisioning.ConsumerDestination;
 import org.springframework.cloud.stream.provisioning.ProducerDestination;
 import org.springframework.cloud.stream.provisioning.ProvisioningException;
@@ -113,6 +114,8 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 
 	private MessageSourceCustomizer<?> sourceCustomizer;
 
+	private final PublishingTemplateCustomizer<?> templateCustomizer;
+
 	private ApplicationEventPublisher applicationEventPublisher;
 
 //	@Autowired(required = false)
@@ -131,6 +134,13 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 	public AbstractMessageChannelBinder(String[] headersToEmbed, PP provisioningProvider,
 			@Nullable ListenerContainerCustomizer<?> containerCustomizer,
 			@Nullable MessageSourceCustomizer<?> sourceCustomizer) {
+		this(headersToEmbed, provisioningProvider, containerCustomizer, sourceCustomizer, null);
+	}
+
+	public AbstractMessageChannelBinder(String[] headersToEmbed, PP provisioningProvider,
+			@Nullable ListenerContainerCustomizer<?> containerCustomizer,
+			@Nullable MessageSourceCustomizer<?> sourceCustomizer,
+			@Nullable PublishingTemplateCustomizer<?> templateCustomizer) {
 
 		SimpleModule module = new SimpleModule();
 		module.addSerializer(Expression.class, new ExpressionSerializer(Expression.class));
@@ -138,6 +148,8 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 
 		this.headersToEmbed = headersToEmbed == null ? new String[0] : headersToEmbed;
 		this.provisioningProvider = provisioningProvider;
+		this.templateCustomizer = templateCustomizer == null ? (t, q) -> {
+		} : templateCustomizer;
 		this.containerCustomizer = containerCustomizer == null ? (c, q, g) -> {
 		} : containerCustomizer;
 		this.sourceCustomizer = sourceCustomizer == null ? (s, q, g) -> {
@@ -152,6 +164,11 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 	public void setApplicationEventPublisher(
 			ApplicationEventPublisher applicationEventPublisher) {
 		this.applicationEventPublisher = applicationEventPublisher;
+	}
+
+	@SuppressWarnings("unchecked")
+	protected <T> PublishingTemplateCustomizer<T> getTemplateCustomizer() {
+		return (PublishingTemplateCustomizer<T>) this.templateCustomizer;
 	}
 
 	@SuppressWarnings("unchecked")
