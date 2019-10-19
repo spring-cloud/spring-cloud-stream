@@ -52,7 +52,9 @@ class KafkaStreamsRegistry {
 	 * @param kafkaStreams {@link KafkaStreams} object created in the application
 	 */
 	void registerKafkaStreams(KafkaStreams kafkaStreams) {
-		this.kafkaStreamsBinderMetrics.addMetrics(kafkaStreams);
+		if (this.kafkaStreamsBinderMetrics != null) {
+			this.kafkaStreamsBinderMetrics.addMetrics(kafkaStreams);
+		}
 		this.kafkaStreams.add(kafkaStreams);
 	}
 

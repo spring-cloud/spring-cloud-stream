@@ -61,6 +61,7 @@ import org.springframework.core.env.MapPropertySource;
 import org.springframework.kafka.config.KafkaStreamsConfiguration;
 import org.springframework.kafka.core.CleanupConfig;
 import org.springframework.kafka.streams.RecoveringDeserializationExceptionHandler;
+import org.springframework.lang.Nullable;
 import org.springframework.messaging.converter.CompositeMessageConverter;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
@@ -344,7 +345,7 @@ public class KafkaStreamsBinderSupportAutoConfiguration {
 	}
 
 	@Bean
-	public KafkaStreamsRegistry kafkaStreamsRegistry(KafkaStreamsBinderMetrics kafkaStreamsBinderMetrics) {
+	public KafkaStreamsRegistry kafkaStreamsRegistry(@Nullable KafkaStreamsBinderMetrics kafkaStreamsBinderMetrics) {
 		return new KafkaStreamsRegistry(kafkaStreamsBinderMetrics);
 	}
 
