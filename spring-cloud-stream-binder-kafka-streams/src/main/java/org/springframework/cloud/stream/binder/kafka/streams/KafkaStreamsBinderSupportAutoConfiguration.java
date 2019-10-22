@@ -58,6 +58,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.MapPropertySource;
+import org.springframework.integration.context.IntegrationContextUtils;
 import org.springframework.kafka.config.KafkaStreamsConfiguration;
 import org.springframework.kafka.core.CleanupConfig;
 import org.springframework.kafka.streams.RecoveringDeserializationExceptionHandler;
@@ -277,23 +278,26 @@ public class KafkaStreamsBinderSupportAutoConfiguration {
 
 	@Bean
 	public KafkaStreamsMessageConversionDelegate messageConversionDelegate(
-																		CompositeMessageConverter compositeMessageConverter,
-																		SendToDlqAndContinue sendToDlqAndContinue,
-																		KafkaStreamsBindingInformationCatalogue KafkaStreamsBindingInformationCatalogue,
-																		KafkaStreamsBinderConfigurationProperties binderConfigurationProperties) {
+			@Qualifier(IntegrationContextUtils.ARGUMENT_RESOLVER_MESSAGE_CONVERTER_BEAN_NAME)
+					CompositeMessageConverter compositeMessageConverter,
+			SendToDlqAndContinue sendToDlqAndContinue,
+			KafkaStreamsBindingInformationCatalogue KafkaStreamsBindingInformationCatalogue,
+			KafkaStreamsBinderConfigurationProperties binderConfigurationProperties) {
 		return new KafkaStreamsMessageConversionDelegate(compositeMessageConverter, sendToDlqAndContinue,
 				KafkaStreamsBindingInformationCatalogue, binderConfigurationProperties);
 	}
 
 	@Bean
 	public MessageConverterDelegateSerde messageConverterDelegateSerde(
-			CompositeMessageConverter compositeMessageConverterFactory) {
+			@Qualifier(IntegrationContextUtils.ARGUMENT_RESOLVER_MESSAGE_CONVERTER_BEAN_NAME)
+					CompositeMessageConverter compositeMessageConverterFactory) {
 		return new MessageConverterDelegateSerde(compositeMessageConverterFactory);
 	}
 
 	@Bean
 	public CompositeNonNativeSerde compositeNonNativeSerde(
-			CompositeMessageConverter compositeMessageConverterFactory) {
+			@Qualifier(IntegrationContextUtils.ARGUMENT_RESOLVER_MESSAGE_CONVERTER_BEAN_NAME)
+					CompositeMessageConverter compositeMessageConverterFactory) {
 		return new CompositeNonNativeSerde(compositeMessageConverterFactory);
 	}
 
