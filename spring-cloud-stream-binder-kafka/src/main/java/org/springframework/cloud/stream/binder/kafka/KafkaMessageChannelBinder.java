@@ -70,6 +70,7 @@ import org.springframework.cloud.stream.binder.kafka.properties.KafkaConsumerPro
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaExtendedBindingProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaProducerProperties;
 import org.springframework.cloud.stream.binder.kafka.provisioning.KafkaTopicProvisioner;
+import org.springframework.cloud.stream.binder.kafka.utils.DlqPartitionFunction;
 import org.springframework.cloud.stream.binding.MessageConverterConfigurer.PartitioningInterceptor;
 import org.springframework.cloud.stream.config.ListenerContainerCustomizer;
 import org.springframework.cloud.stream.config.MessageSourceCustomizer;
@@ -199,6 +200,8 @@ public class KafkaMessageChannelBinder extends
 
 	private final KafkaBindingRebalanceListener rebalanceListener;
 
+	private final DlqPartitionFunction dlqPartitionFunction;
+
 	private ProducerListener<byte[], byte[]> producerListener;
 
 	private KafkaExtendedBindingProperties extendedBindingProperties = new KafkaExtendedBindingProperties();
@@ -207,7 +210,7 @@ public class KafkaMessageChannelBinder extends
 			KafkaBinderConfigurationProperties configurationProperties,
 			KafkaTopicProvisioner provisioningProvider) {
 
-		this(configurationProperties, provisioningProvider, null, null, null);
+		this(configurationProperties, provisioningProvider, null, null, null, null);
 	}
 
 	public KafkaMessageChannelBinder(
@@ -216,7 +219,7 @@ public class KafkaMessageChannelBinder extends
 			ListenerContainerCustomizer<AbstractMessageListenerContainer<?, ?>> containerCustomizer,
 			KafkaBindingRebalanceListener rebalanceListener) {
 
-		this(configurationProperties, provisioningProvider, containerCustomizer, null, rebalanceListener);
+		this(configurationProperties, provisioningProvider, containerCustomizer, null, rebalanceListener, null);
 	}
 
 	public KafkaMessageChannelBinder(
@@ -224,7 +227,8 @@ public class KafkaMessageChannelBinder extends
 			KafkaTopicProvisioner provisioningProvider,
 			ListenerContainerCustomizer<AbstractMessageListenerContainer<?, ?>> containerCustomizer,
 			MessageSourceCustomizer<KafkaMessageSource<?, ?>> sourceCustomizer,
-			KafkaBindingRebalanceListener rebalanceListener) {
+			KafkaBindingRebalanceListener rebalanceListener,
+			DlqPartitionFunction dlqPartitionFunction) {
 
 		super(headersToMap(configurationProperties), provisioningProvider,
 				containerCustomizer, sourceCustomizer);
@@ -240,6 +244,9 @@ public class KafkaMessageChannelBinder extends
 			this.transactionManager = null;
 		}
 		this.rebalanceListener = rebalanceListener;
+		this.dlqPartitionFunction = dlqPartitionFunction != null
+				? dlqPartitionFunction
+				: (group, rec, ex) -> rec.partition();
 	}
 
 	private static String[] headersToMap(
@@ -1008,9 +1015,10 @@ public class KafkaMessageChannelBinder extends
 				Headers kafkaHeaders = new RecordHeaders(record.headers().toArray());
 				AtomicReference<ConsumerRecord<?, ?>> recordToSend = new AtomicReference<>(
 						record);
+				Throwable throwable = null;
 				if (message.getPayload() instanceof Throwable) {
 
-					Throwable throwable = (Throwable) message.getPayload();
+					throwable = (Throwable) message.getPayload();
 
 					HeaderMode headerMode = properties.getHeaderMode();
 
@@ -1074,7 +1082,8 @@ public class KafkaMessageChannelBinder extends
 				String dlqName = StringUtils.hasText(kafkaConsumerProperties.getDlqName())
 						? kafkaConsumerProperties.getDlqName()
 						: "error." + record.topic() + "." + group;
-				dlqSender.sendToDlq(recordToSend.get(), kafkaHeaders, dlqName);
+				dlqSender.sendToDlq(recordToSend.get(), kafkaHeaders, dlqName, group, throwable,
+						this.dlqPartitionFunction);
 			};
 		}
 		return null;
@@ -1327,11 +1336,12 @@ public class KafkaMessageChannelBinder extends
 
 		@SuppressWarnings("unchecked")
 		void sendToDlq(ConsumerRecord<?, ?> consumerRecord, Headers headers,
-				String dlqName) {
+				String dlqName, String group, Throwable throwable, DlqPartitionFunction partitionFunction) {
 			K key = (K) consumerRecord.key();
 			V value = (V) consumerRecord.value();
 			ProducerRecord<K, V> producerRecord = new ProducerRecord<>(dlqName,
-					consumerRecord.partition(), key, value, headers);
+					partitionFunction.apply(group, consumerRecord, throwable),
+					key, value, headers);
 
 			StringBuilder sb = new StringBuilder().append(" a message with key='")
 					.append(toDisplayString(ObjectUtils.nullSafeToString(key), 50))

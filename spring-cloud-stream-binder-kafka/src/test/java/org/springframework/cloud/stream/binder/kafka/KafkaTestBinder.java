@@ -20,6 +20,7 @@ import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaBinderConfigurationProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaConsumerProperties;
 import org.springframework.cloud.stream.binder.kafka.provisioning.KafkaTopicProvisioner;
+import org.springframework.cloud.stream.binder.kafka.utils.DlqPartitionFunction;
 import org.springframework.cloud.stream.provisioning.ConsumerDestination;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Configuration;
@@ -38,12 +39,19 @@ import org.springframework.kafka.support.ProducerListener;
  */
 public class KafkaTestBinder extends AbstractKafkaTestBinder {
 
-	@SuppressWarnings({ "rawtypes", "unchecked" })
 	KafkaTestBinder(KafkaBinderConfigurationProperties binderConfiguration,
 			KafkaTopicProvisioner kafkaTopicProvisioner) {
+
+		this(binderConfiguration, kafkaTopicProvisioner, null);
+	}
+
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	KafkaTestBinder(KafkaBinderConfigurationProperties binderConfiguration,
+			KafkaTopicProvisioner kafkaTopicProvisioner, DlqPartitionFunction dlqPartitionFunction) {
+
 		try {
 			KafkaMessageChannelBinder binder = new KafkaMessageChannelBinder(
-					binderConfiguration, kafkaTopicProvisioner) {
+					binderConfiguration, kafkaTopicProvisioner, null, null, null, dlqPartitionFunction) {
 
 				/*
 				 * Some tests use multiple instance indexes for the same topic; we need to

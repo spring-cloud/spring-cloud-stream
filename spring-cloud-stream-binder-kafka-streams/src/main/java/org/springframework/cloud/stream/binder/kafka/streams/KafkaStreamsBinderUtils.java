@@ -18,7 +18,9 @@ package org.springframework.cloud.stream.binder.kafka.streams;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.BiFunction;
 
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
@@ -32,6 +34,7 @@ import org.springframework.cloud.stream.binder.kafka.properties.KafkaProducerPro
 import org.springframework.cloud.stream.binder.kafka.provisioning.KafkaTopicProvisioner;
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsBinderConfigurationProperties;
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsConsumerProperties;
+import org.springframework.cloud.stream.binder.kafka.utils.DlqPartitionFunction;
 import org.springframework.context.ApplicationContext;
 import org.springframework.core.MethodParameter;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
@@ -45,6 +48,7 @@ import org.springframework.util.StringUtils;
  * Common methods used by various Kafka Streams types across the binders.
  *
  * @author Soby Chacko
+ * @author Gary Russell
  */
 final class KafkaStreamsBinderUtils {
 
@@ -56,6 +60,7 @@ final class KafkaStreamsBinderUtils {
 			ApplicationContext context, KafkaTopicProvisioner kafkaTopicProvisioner,
 			KafkaStreamsBinderConfigurationProperties binderConfigurationProperties,
 			ExtendedConsumerProperties<KafkaStreamsConsumerProperties> properties) {
+
 		ExtendedConsumerProperties<KafkaConsumerProperties> extendedConsumerProperties = new ExtendedConsumerProperties<>(
 				properties.getExtension());
 		if (binderConfigurationProperties
@@ -71,6 +76,12 @@ final class KafkaStreamsBinderUtils {
 
 		if (extendedConsumerProperties.getExtension().isEnableDlq()) {
 
+			Map<String, DlqPartitionFunction> partitionFunctions =
+					context.getBeansOfType(DlqPartitionFunction.class, false, false);
+			DlqPartitionFunction partitionFunction = partitionFunctions.size() == 1
+					? partitionFunctions.values().iterator().next()
+					: (grp, rec, ex) -> rec.partition();
+
 			ProducerFactory<byte[], byte[]> producerFactory = getProducerFactory(
 					new ExtendedProducerProperties<>(
 							extendedConsumerProperties.getExtension().getDlqProducerProperties()),
@@ -78,15 +89,20 @@ final class KafkaStreamsBinderUtils {
 			KafkaTemplate<byte[], byte[]> kafkaTemplate = new KafkaTemplate<>(producerFactory);
 
 
+			BiFunction<ConsumerRecord<?, ?>, Exception, TopicPartition> destinationResolver =
+					(cr, e) -> new TopicPartition(extendedConsumerProperties.getExtension().getDlqName(),
+							partitionFunction.apply(group, cr, e));
 			DeadLetterPublishingRecoverer kafkaStreamsBinderDlqRecoverer = !StringUtils
 					.isEmpty(extendedConsumerProperties.getExtension().getDlqName())
-					? new DeadLetterPublishingRecoverer(kafkaTemplate, (cr, e) -> new TopicPartition(extendedConsumerProperties.getExtension()
-					.getDlqName(), cr.partition()))
+					? new DeadLetterPublishingRecoverer(kafkaTemplate, destinationResolver)
 					: null;
 			for (String inputTopic : inputTopics) {
 				if (StringUtils.isEmpty(
 						extendedConsumerProperties.getExtension().getDlqName())) {
-					kafkaStreamsBinderDlqRecoverer = new DeadLetterPublishingRecoverer(kafkaTemplate, (cr, e) -> new TopicPartition("error." + inputTopic + "." + group, cr.partition()));
+					destinationResolver = (cr, e) -> new TopicPartition("error." + inputTopic + "." + group,
+									partitionFunction.apply(group, cr, e));
+					kafkaStreamsBinderDlqRecoverer = new DeadLetterPublishingRecoverer(kafkaTemplate,
+							destinationResolver);
 				}
 
 				SendToDlqAndContinue sendToDlqAndContinue = context

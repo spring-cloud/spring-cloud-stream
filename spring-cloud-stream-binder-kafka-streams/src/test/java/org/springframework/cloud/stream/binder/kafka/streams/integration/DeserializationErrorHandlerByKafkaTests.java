@@ -40,6 +40,8 @@ import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.StreamListener;
 import org.springframework.cloud.stream.binder.kafka.streams.annotations.KafkaStreamsProcessor;
+import org.springframework.cloud.stream.binder.kafka.utils.DlqPartitionFunction;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
@@ -67,7 +69,11 @@ public abstract class DeserializationErrorHandlerByKafkaTests {
 
 	@ClassRule
 	public static EmbeddedKafkaRule embeddedKafkaRule = new EmbeddedKafkaRule(1, true,
-			"DeserializationErrorHandlerByKafkaTests-out", "error.DeserializationErrorHandlerByKafkaTests-In.group", "error.word1.groupx", "error.word2.groupx");
+			"DeserializationErrorHandlerByKafkaTests-In",
+			"DeserializationErrorHandlerByKafkaTests-out",
+			"error.DeserializationErrorHandlerByKafkaTests-In.group",
+			"error.word1.groupx",
+			"error.word2.groupx");
 
 	private static EmbeddedKafkaBroker embeddedKafka = embeddedKafkaRule
 			.getEmbeddedKafka();
@@ -78,7 +84,7 @@ public abstract class DeserializationErrorHandlerByKafkaTests {
 	private static Consumer<String, String> consumer;
 
 	@BeforeClass
-	public static void setUp() throws Exception {
+	public static void setUp() {
 		System.setProperty("spring.cloud.stream.kafka.streams.binder.brokers",
 				embeddedKafka.getBrokersAsString());
 
@@ -112,14 +118,13 @@ public abstract class DeserializationErrorHandlerByKafkaTests {
 			extends DeserializationErrorHandlerByKafkaTests {
 
 		@Test
-		@SuppressWarnings("unchecked")
-		public void test() throws Exception {
+		public void test() {
 			Map<String, Object> senderProps = KafkaTestUtils.producerProps(embeddedKafka);
 			DefaultKafkaProducerFactory<Integer, String> pf = new DefaultKafkaProducerFactory<>(
 					senderProps);
 			KafkaTemplate<Integer, String> template = new KafkaTemplate<>(pf, true);
 			template.setDefaultTopic("DeserializationErrorHandlerByKafkaTests-In");
-			template.sendDefault("foobar");
+			template.sendDefault(1, null, "foobar");
 
 			Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("foobar",
 					"false", embeddedKafka);
@@ -131,7 +136,8 @@ public abstract class DeserializationErrorHandlerByKafkaTests {
 
 			ConsumerRecord<String, String> cr = KafkaTestUtils.getSingleRecord(consumer1,
 					"error.DeserializationErrorHandlerByKafkaTests-In.group");
-			assertThat(cr.value().equals("foobar")).isTrue();
+			assertThat(cr.value()).isEqualTo("foobar");
+			assertThat(cr.partition()).isEqualTo(0); // custom partition function
 
 			// Ensuring that the deserialization was indeed done by Kafka natively
 			verify(conversionDelegate, never()).deserializeOnInbound(any(Class.class),
@@ -153,8 +159,7 @@ public abstract class DeserializationErrorHandlerByKafkaTests {
 			extends DeserializationErrorHandlerByKafkaTests {
 
 		@Test
-		@SuppressWarnings("unchecked")
-		public void test() throws Exception {
+		public void test() {
 			Map<String, Object> senderProps = KafkaTestUtils.producerProps(embeddedKafka);
 			DefaultKafkaProducerFactory<Integer, String> pf = new DefaultKafkaProducerFactory<>(
 					senderProps);
@@ -176,10 +181,10 @@ public abstract class DeserializationErrorHandlerByKafkaTests {
 
 			ConsumerRecord<String, String> cr1 = KafkaTestUtils.getSingleRecord(consumer1,
 					"error.word1.groupx");
-			assertThat(cr1.value().equals("foobar")).isTrue();
+			assertThat(cr1.value()).isEqualTo("foobar");
 			ConsumerRecord<String, String> cr2 = KafkaTestUtils.getSingleRecord(consumer1,
 					"error.word2.groupx");
-			assertThat(cr2.value().equals("foobar")).isTrue();
+			assertThat(cr2.value()).isEqualTo("foobar");
 
 			// Ensuring that the deserialization was indeed done by Kafka natively
 			verify(conversionDelegate, never()).deserializeOnInbound(any(Class.class),
@@ -206,6 +211,11 @@ public abstract class DeserializationErrorHandlerByKafkaTests {
 					.windowedBy(TimeWindows.of(5000)).count(Materialized.as("foo-WordCounts-x"))
 					.toStream().map((key, value) -> new KeyValue<>(null,
 							"Count for " + key.key() + " : " + value));
+		}
+
+		@Bean
+		public DlqPartitionFunction partitionFunction() {
+			return (group, rec, ex) -> 0;
 		}
 
 	}

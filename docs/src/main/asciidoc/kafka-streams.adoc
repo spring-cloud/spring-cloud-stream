@@ -882,6 +882,23 @@ spring.cloud.stream.kafka.streams.bindings.input.consumer.dlqName: custom-dlq
 If this is set, then the error records are sent to the topic `custom-dlq`. If this is not set, then it will create a DLQ
 topic with the name `error.<input-topic-name>.<group-name>`.
 
+By default, records are published to the Dead-Letter topic using the same partition as the original record.
+This means the Dead-Letter topic must have at least as many partitions as the original record.
+
+To change this behavior, add a `DlqPartitionFunction` implementation as a `@Bean` to the application context.
+Only one such bean can be present.
+The function is provided with the consumer group, the failed `ConsumerRecord` and the exception.
+For example, if you always with to route to partition 0, you might use:
+
+
+[source, java]
+----
+@Bean
+public DlqPartitionFunction partitionFunction() {
+    return (group, record, ex) -> 0;
+}
+----
+
 A couple of things to keep in mind when using the exception handling feature in Kafka Streams binder.
 
 * The property `spring.cloud.stream.kafka.streams.binder.serdeError` is applicable for the entire application. This implies

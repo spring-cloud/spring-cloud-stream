@@ -1,7 +1,32 @@
 [[kafka-dlq-processing]]
 === Dead-Letter Topic Processing
 
-Because you cannot anticipate how users would want to dispose of dead-lettered messages, the framework does not provide any standard mechanism to handle them.
+[[dlq-partition-selection]]
+==== Dead-Letter Topic Partition Selection
+
+By default, records are published to the Dead-Letter topic using the same partition as the original record.
+This means the Dead-Letter topic must have at least as many partitions as the original record.
+
+To change this behavior, add a `DlqPartitionFunction` implementation as a `@Bean` to the application context.
+Only one such bean can be present.
+The function is provided with the consumer group, the failed `ConsumerRecord` and the exception.
+For example, if you always with to route to partition 0, you might use:
+
+====
+[source, java]
+----
+@Bean
+public DlqPartitionFunction partitionFunction() {
+    return (group, record, ex) -> 0;
+}
+----
+====
+
+
+[[dlq-handling]]
+==== Handling Records in a Dead-Letter Topic
+
+Because the framework cannot anticipate how users would want to dispose of dead-lettered messages, it does not provide any standard mechanism to handle them.
 If the reason for the dead-lettering is transient, you may wish to route the messages back to the original topic.
 However, if the problem is a permanent issue, that could cause an infinite loop.
 The sample Spring Boot application within this topic is an example of how to route those messages back to the original topic, but it moves them to a "`parking lot`" topic after three attempts.

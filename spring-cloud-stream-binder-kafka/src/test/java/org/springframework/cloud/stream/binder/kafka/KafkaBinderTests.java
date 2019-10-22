@@ -88,6 +88,7 @@ import org.springframework.cloud.stream.binder.kafka.properties.KafkaBinderConfi
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaConsumerProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaProducerProperties;
 import org.springframework.cloud.stream.binder.kafka.provisioning.KafkaTopicProvisioner;
+import org.springframework.cloud.stream.binder.kafka.utils.DlqPartitionFunction;
 import org.springframework.cloud.stream.binder.kafka.utils.KafkaTopicUtils;
 import org.springframework.cloud.stream.binding.MessageConverterConfigurer.PartitioningInterceptor;
 import org.springframework.cloud.stream.config.BindingProperties;
@@ -211,8 +212,16 @@ public class KafkaBinderTests extends
 		return binder;
 	}
 
-	private Binder getBinder(
+	private KafkaTestBinder getBinder(
 			KafkaBinderConfigurationProperties kafkaBinderConfigurationProperties) {
+
+		return getBinder(kafkaBinderConfigurationProperties, null);
+	}
+
+	private KafkaTestBinder getBinder(
+			KafkaBinderConfigurationProperties kafkaBinderConfigurationProperties,
+			DlqPartitionFunction dlqPartitionFunction) {
+
 		KafkaTopicProvisioner provisioningProvider = new KafkaTopicProvisioner(
 				kafkaBinderConfigurationProperties, new TestKafkaProperties());
 		try {
@@ -222,7 +231,7 @@ public class KafkaBinderTests extends
 			throw new RuntimeException(e);
 		}
 		return new KafkaTestBinder(kafkaBinderConfigurationProperties,
-				provisioningProvider);
+				provisioningProvider, dlqPartitionFunction);
 	}
 
 	private KafkaBinderConfigurationProperties createConfigurationProperties() {
@@ -869,7 +878,9 @@ public class KafkaBinderTests extends
 	}
 
 	private void testDlqGuts(boolean withRetry, HeaderMode headerMode) throws Exception {
-		AbstractKafkaTestBinder binder = getBinder();
+		KafkaBinderConfigurationProperties binderConfig = createConfigurationProperties();
+		binderConfig.setMinPartitionCount(2);
+		AbstractKafkaTestBinder binder = getBinder(binderConfig, (group, rec, ex) -> 0);
 
 		ExtendedProducerProperties<KafkaProducerProperties> producerProperties = createProducerProperties();
 		producerProperties.getExtension()
@@ -907,7 +918,7 @@ public class KafkaBinderTests extends
 		MessageListenerContainer container = TestUtils.getPropertyValue(consumerBinding,
 				"lifecycle.messageListenerContainer", MessageListenerContainer.class);
 		assertThat(container.getContainerProperties().getTopicPartitions().length)
-				.isEqualTo(2);
+				.isEqualTo(4); // 2 topics 2 partitions each
 
 		ExtendedConsumerProperties<KafkaConsumerProperties> dlqConsumerProperties = createConsumerProperties();
 		dlqConsumerProperties.setMaxAttempts(1);
@@ -936,7 +947,9 @@ public class KafkaBinderTests extends
 		binderBindUnbindLatency();
 		String testMessagePayload = "test." + UUID.randomUUID().toString();
 		Message<byte[]> testMessage = MessageBuilder
-				.withPayload(testMessagePayload.getBytes()).build();
+				.withPayload(testMessagePayload.getBytes())
+				.setHeader(KafkaHeaders.PARTITION_ID, 1)
+				.build();
 		moduleOutputChannel.send(testMessage);
 
 		Message<?> receivedMessage = receive(dlqChannel, 3);
@@ -951,7 +964,7 @@ public class KafkaBinderTests extends
 							.isEqualTo(producerName);
 
 			assertThat(receivedMessage.getHeaders()
-					.get(KafkaMessageChannelBinder.X_ORIGINAL_PARTITION)).isEqualTo(0);
+					.get(KafkaMessageChannelBinder.X_ORIGINAL_PARTITION)).isEqualTo(1);
 
 			assertThat(receivedMessage.getHeaders()
 					.get(KafkaMessageChannelBinder.X_ORIGINAL_OFFSET)).isEqualTo(0);
@@ -971,6 +984,8 @@ public class KafkaBinderTests extends
 					.get(KafkaMessageChannelBinder.X_EXCEPTION_STACKTRACE)).isNotNull();
 			assertThat(receivedMessage.getHeaders()
 					.get(KafkaMessageChannelBinder.X_EXCEPTION_FQCN)).isNotNull();
+			assertThat(receivedMessage.getHeaders()
+					.get(KafkaHeaders.RECEIVED_PARTITION_ID)).isEqualTo(0);
 		}
 		else if (!HeaderMode.none.equals(headerMode)) {
 			assertThat(handler.getInvocationCount())
@@ -982,7 +997,7 @@ public class KafkaBinderTests extends
 
 			assertThat(receivedMessage.getHeaders()
 					.get(KafkaMessageChannelBinder.X_ORIGINAL_PARTITION)).isEqualTo(
-							ByteBuffer.allocate(Integer.BYTES).putInt(0).array());
+							ByteBuffer.allocate(Integer.BYTES).putInt(1).array());
 
 			assertThat(receivedMessage.getHeaders()
 					.get(KafkaMessageChannelBinder.X_ORIGINAL_OFFSET)).isEqualTo(
@@ -1005,6 +1020,9 @@ public class KafkaBinderTests extends
 
 			assertThat(receivedMessage.getHeaders()
 					.get(KafkaMessageChannelBinder.X_EXCEPTION_FQCN)).isNotNull();
+
+			assertThat(receivedMessage.getHeaders()
+					.get(KafkaHeaders.RECEIVED_PARTITION_ID)).isEqualTo(0);
 		}
 		else {
 			assertThat(receivedMessage.getHeaders()
