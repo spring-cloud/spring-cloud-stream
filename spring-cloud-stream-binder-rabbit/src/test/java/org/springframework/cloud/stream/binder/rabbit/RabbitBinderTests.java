@@ -487,7 +487,8 @@ public class RabbitBinderTests extends
 		RabbitTestBinder binder = getBinder();
 		ExtendedConsumerProperties<RabbitConsumerProperties> properties = createConsumerProperties();
 		properties.getExtension().setExchangeType(ExchangeTypes.DIRECT);
-		properties.getExtension().setBindingRoutingKey("foo");
+		properties.getExtension().setBindingRoutingKey("foo,bar");
+		properties.getExtension().setBindingRoutingKeyDelimiter(",");
 		properties.getExtension().setQueueNameGroupOnly(true);
 		// properties.getExtension().setDelayedExchange(true); // requires delayed message
 		// exchange plugin; tested locally
@@ -509,10 +510,14 @@ public class RabbitBinderTests extends
 			Thread.sleep(100);
 			bindings = client.getBindingsBySource("/", "propsUser2");
 		}
-		assertThat(bindings.size()).isEqualTo(1);
+		assertThat(bindings.size()).isEqualTo(2);
 		assertThat(bindings.get(0).getSource()).isEqualTo("propsUser2");
 		assertThat(bindings.get(0).getDestination()).isEqualTo(group);
-		assertThat(bindings.get(0).getRoutingKey()).isEqualTo("foo");
+		assertThat(bindings.get(0).getRoutingKey()).isIn("foo", "bar");
+		assertThat(bindings.get(1).getSource()).isEqualTo("propsUser2");
+		assertThat(bindings.get(1).getDestination()).isEqualTo(group);
+		assertThat(bindings.get(1).getRoutingKey()).isIn("foo", "bar");
+		assertThat(bindings.get(1).getRoutingKey()).isNotEqualTo(bindings.get(0).getRoutingKey());
 
 		ExchangeInfo exchange = client.getExchange("/", "propsUser2");
 		while (n++ < 100 && exchange == null) {

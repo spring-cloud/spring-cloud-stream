@@ -53,6 +53,7 @@ import org.springframework.cloud.stream.provisioning.ProvisioningProvider;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.util.Assert;
+import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 
 /**
@@ -112,8 +113,16 @@ public class RabbitExchangeQueueProvisioner
 					Queue queue = new Queue(baseQueueName, true, false, false, queueArgs(
 							baseQueueName, producerProperties.getExtension(), false));
 					declareQueue(baseQueueName, queue);
-					binding = notPartitionedBinding(exchange, queue,
-							producerProperties.getExtension());
+					String[] routingKeys = bindingRoutingKeys(producerProperties.getExtension());
+					if (ObjectUtils.isEmpty(routingKeys)) {
+						binding = notPartitionedBinding(exchange, queue, null, producerProperties.getExtension());
+					}
+					else {
+						for (String routingKey : routingKeys) {
+							binding = notPartitionedBinding(exchange, queue, routingKey,
+									producerProperties.getExtension());
+						}
+					}
 				}
 			}
 			else {
@@ -132,8 +141,17 @@ public class RabbitExchangeQueueProvisioner
 						String prefix = producerProperties.getExtension().getPrefix();
 						String destination = StringUtils.isEmpty(prefix) ? exchangeName
 								: exchangeName.substring(prefix.length());
-						binding = partitionedBinding(destination, exchange, queue,
+						String[] routingKeys = bindingRoutingKeys(producerProperties.getExtension());
+						if (ObjectUtils.isEmpty(routingKeys)) {
+							binding = partitionedBinding(destination, exchange, queue, null,
 								producerProperties.getExtension(), i);
+						}
+						else {
+							for (String routingKey : routingKeys) {
+								binding = partitionedBinding(destination, exchange, queue, routingKey,
+										producerProperties.getExtension(), i);
+							}
+						}
 					}
 				}
 			}
@@ -217,8 +235,15 @@ public class RabbitExchangeQueueProvisioner
 		Binding binding = null;
 		if (properties.getExtension().isBindQueue()) {
 			declareQueue(queueName, queue);
-			binding = declareConsumerBindings(name, properties, exchange, partitioned,
-					queue);
+			String[] routingKeys = bindingRoutingKeys(properties.getExtension());
+			if (ObjectUtils.isEmpty(routingKeys)) {
+				binding = declareConsumerBindings(name, null, properties, exchange, partitioned, queue);
+			}
+			else {
+				for (String routingKey : routingKeys) {
+					binding = declareConsumerBindings(name, routingKey, properties, exchange, partitioned, queue);
+				}
+			}
 		}
 		if (durable) {
 			autoBindDLQ(applyPrefix(properties.getExtension().getPrefix(), baseQueueName),
@@ -238,21 +263,23 @@ public class RabbitExchangeQueueProvisioner
 				+ (StringUtils.hasText(group) ? group : "default");
 	}
 
-	private Binding declareConsumerBindings(String name,
+	private Binding declareConsumerBindings(String name, String routingKey,
 			ExtendedConsumerProperties<RabbitConsumerProperties> properties,
 			Exchange exchange, boolean partitioned, Queue queue) {
+
 		if (partitioned) {
-			return partitionedBinding(name, exchange, queue, properties.getExtension(),
+			return partitionedBinding(name, exchange, queue, routingKey, properties.getExtension(),
 					properties.getInstanceIndex());
 		}
 		else {
-			return notPartitionedBinding(exchange, queue, properties.getExtension());
+			return notPartitionedBinding(exchange, queue, routingKey, properties.getExtension());
 		}
 	}
 
-	private Binding partitionedBinding(String destination, Exchange exchange, Queue queue,
+	private Binding partitionedBinding(String destination, Exchange exchange, Queue queue, String rk,
 			RabbitCommonProperties extendedProperties, int index) {
-		String bindingKey = extendedProperties.getBindingRoutingKey();
+
+		String bindingKey = rk;
 		if (bindingKey == null) {
 			bindingKey = destination;
 		}
@@ -286,9 +313,10 @@ public class RabbitExchangeQueueProvisioner
 		}
 	}
 
-	private Binding notPartitionedBinding(Exchange exchange, Queue queue,
+	private Binding notPartitionedBinding(Exchange exchange, Queue queue, String rk,
 			RabbitCommonProperties extendedProperties) {
-		String routingKey = extendedProperties.getBindingRoutingKey();
+
+		String routingKey = rk;
 		if (routingKey == null) {
 			routingKey = "#";
 		}
@@ -319,6 +347,14 @@ public class RabbitExchangeQueueProvisioner
 			throw new ProvisioningException(
 					"Cannot bind to a " + exchange.getType() + " exchange");
 		}
+	}
+
+	private String[] bindingRoutingKeys(RabbitCommonProperties extendedProperties) {
+		/*
+		 * When the delimiter is null, we get a String[1] containing the original.
+		 */
+		return StringUtils.delimitedListToStringArray(extendedProperties.getBindingRoutingKey(),
+				extendedProperties.getBindingRoutingKeyDelimiter());
 	}
 
 	/**

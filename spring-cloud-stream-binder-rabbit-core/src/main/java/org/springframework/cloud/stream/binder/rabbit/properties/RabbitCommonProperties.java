@@ -78,6 +78,11 @@ public abstract class RabbitCommonProperties {
 	private String bindingRoutingKey;
 
 	/**
+	 * when not null, treat 'bindingRoutingKey' as a delimited list of keys to bind.
+	 */
+	private String bindingRoutingKeyDelimiter;
+
+	/**
 	 * default time to live to apply to the queue when declared (ms).
 	 */
 	private Integer ttl;
@@ -268,6 +273,14 @@ public abstract class RabbitCommonProperties {
 
 	public void setBindingRoutingKey(String routingKey) {
 		this.bindingRoutingKey = routingKey;
+	}
+
+	public String getBindingRoutingKeyDelimiter() {
+		return this.bindingRoutingKeyDelimiter;
+	}
+
+	public void setBindingRoutingKeyDelimiter(String bindingRoutingKeyDelimiter) {
+		this.bindingRoutingKeyDelimiter = bindingRoutingKeyDelimiter;
 	}
 
 	public Integer getTtl() {
