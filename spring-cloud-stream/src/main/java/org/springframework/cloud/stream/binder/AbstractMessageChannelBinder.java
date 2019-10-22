@@ -33,6 +33,7 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.support.DefaultSingletonBeanRegistry;
 import org.springframework.cloud.stream.config.ListenerContainerCustomizer;
 import org.springframework.cloud.stream.config.MessageSourceCustomizer;
+import org.springframework.cloud.stream.config.ProducerMessageHandlerCustomizer;
 import org.springframework.cloud.stream.provisioning.ConsumerDestination;
 import org.springframework.cloud.stream.provisioning.ProducerDestination;
 import org.springframework.cloud.stream.provisioning.ProvisioningException;
@@ -75,12 +76,14 @@ import org.springframework.util.Assert;
  * @param <C> the consumer properties type
  * @param <P> the producer properties type
  * @param <PP> the provisioning producer properties type
+ *
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
  * @author Soby Chacko
  * @author Oleg Zhurakousky
  * @author Artem Bilan
  * @author Gary Russell
+ *
  * @since 1.1
  */
 // @checkstyle:off
@@ -111,7 +114,10 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 
 	private final ListenerContainerCustomizer<?> containerCustomizer;
 
-	private MessageSourceCustomizer<?> sourceCustomizer;
+	private final MessageSourceCustomizer<?> sourceCustomizer;
+
+	private ProducerMessageHandlerCustomizer<MessageHandler> handlerCustomizer =
+		(handler, destination) -> { };
 
 	private ApplicationEventPublisher applicationEventPublisher;
 
@@ -152,6 +158,22 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 	public void setApplicationEventPublisher(
 			ApplicationEventPublisher applicationEventPublisher) {
 		this.applicationEventPublisher = applicationEventPublisher;
+	}
+
+	/**
+	 * Configure an optional {@link ProducerMessageHandlerCustomizer} for further
+	 * producer {@link MessageHandler} instances created by the binder.
+	 * @param handlerCustomizer the {@link ProducerMessageHandlerCustomizer} to use.
+	 * @since 3.0
+	 */
+	@SuppressWarnings("unchecked")
+	public void setProducerMessageHandlerCustomizer(
+		@Nullable ProducerMessageHandlerCustomizer<? extends MessageHandler> handlerCustomizer) {
+
+		this.handlerCustomizer =
+			handlerCustomizer == null
+				? (handler, destination) -> { }
+				: (ProducerMessageHandlerCustomizer<MessageHandler>) handlerCustomizer;
 	}
 
 	@SuppressWarnings("unchecked")
@@ -195,6 +217,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 					? registerErrorInfrastructure(producerDestination) : null;
 			producerMessageHandler = createProducerMessageHandler(producerDestination,
 					producerProperties, outputChannel, errorChannel);
+			customizeProducerMessageHandler(producerMessageHandler, producerDestination.getName());
 			if (producerMessageHandler instanceof InitializingBean) {
 				((InitializingBean) producerMessageHandler).afterPropertiesSet();
 			}
@@ -262,6 +285,10 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		doPublishEvent(new BindingCreatedEvent(binding));
 //		this.producerBindingExist = true;
 		return binding;
+	}
+
+	private void customizeProducerMessageHandler(MessageHandler producerMessageHandler, String destinationName) {
+		this.handlerCustomizer.configure(producerMessageHandler, destinationName);
 	}
 
 	/**
