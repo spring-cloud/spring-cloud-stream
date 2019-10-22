@@ -78,17 +78,17 @@ public class KafkaStreamsBinderHealthIndicator extends AbstractHealthIndicator {
 		AdminClient adminClient = null;
 
 		try {
-			adminClient = AdminClient.create(this.adminClientProperties);
 			final Status status = healthStatusThreadLocal.get();
 			//If one of the kafka streams binders (kstream, ktable, globalktable) was down before on the same request,
 			//retrieve that from the theadlocal storage where it was saved before. This is done in order to avoid
 			//the duration of the total health check since in the case of Kafka Streams each binder tries to do
 			//its own health check and since we already know that this is DOWN, simply pass that information along.
-			if (status != null && status.equals(Status.DOWN)) {
+			if (status == Status.DOWN) {
 				builder.withDetail("No topic information available", "Kafka broker is not reachable");
 				builder.status(Status.DOWN);
 			}
 			else {
+				adminClient = AdminClient.create(this.adminClientProperties);
 				final ListTopicsResult listTopicsResult = adminClient.listTopics();
 				listTopicsResult.listings().get(this.configurationProperties.getHealthTimeout(), TimeUnit.SECONDS);
 
@@ -109,11 +109,12 @@ public class KafkaStreamsBinderHealthIndicator extends AbstractHealthIndicator {
 		catch (Exception e) {
 			builder.withDetail("No topic information available", "Kafka broker is not reachable");
 			builder.status(Status.DOWN);
+			builder.withException(e);
 			//Store binder down status into a thread local storage.
 			healthStatusThreadLocal.set(Status.DOWN);
 		}
 		finally {
-			// Close admin client immmediately.
+			// Close admin client immediately.
 			adminClient.close(Duration.ofSeconds(0));
 		}
 	}
