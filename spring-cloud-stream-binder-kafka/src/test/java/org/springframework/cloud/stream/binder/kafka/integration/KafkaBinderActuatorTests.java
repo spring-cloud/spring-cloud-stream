@@ -41,9 +41,12 @@ import org.springframework.cloud.stream.binder.PollableMessageSource;
 import org.springframework.cloud.stream.binding.BindingService;
 import org.springframework.cloud.stream.config.ListenerContainerCustomizer;
 import org.springframework.cloud.stream.config.MessageSourceCustomizer;
+import org.springframework.cloud.stream.config.ProducerMessageHandlerCustomizer;
+import org.springframework.cloud.stream.messaging.Processor;
 import org.springframework.cloud.stream.messaging.Sink;
 import org.springframework.context.annotation.Bean;
 import org.springframework.integration.kafka.inbound.KafkaMessageSource;
+import org.springframework.integration.kafka.outbound.KafkaProducerMessageHandler;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.listener.AbstractMessageListenerContainer;
 import org.springframework.kafka.test.rule.EmbeddedKafkaRule;
@@ -58,6 +61,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Oleg Zhurakousky
  * @author Jon Schneider
  * @author Gary Russell
+ *
  * @since 2.0
  */
 @RunWith(SpringRunner.class)
@@ -126,10 +130,18 @@ public class KafkaBinderActuatorTests {
 							consumerBindings.get("source").get(0)).getPropertyValue(
 									"lifecycle.beanName"))
 											.isEqualTo("setByCustomizer:source");
+
+					Map<String, Binding<MessageChannel>> producerBindings = (Map<String, Binding<MessageChannel>>) channelBindingServiceAccessor
+							.getPropertyValue("producerBindings");
+
+					assertThat(new DirectFieldAccessor(
+							producerBindings.get("output")).getPropertyValue(
+							"lifecycle.beanName"))
+							.isEqualTo("setByCustomizer:output");
 				});
 	}
 
-	@EnableBinding({ Sink.class, PMS.class })
+	@EnableBinding({ Processor.class, PMS.class })
 	@EnableAutoConfiguration
 	public static class KafkaMetricsTestConfig {
 
@@ -141,6 +153,11 @@ public class KafkaBinderActuatorTests {
 		@Bean
 		public MessageSourceCustomizer<KafkaMessageSource<?, ?>> sourceCustomizer() {
 			return (s, q, g) -> s.setBeanName("setByCustomizer:" + q);
+		}
+
+		@Bean
+		public ProducerMessageHandlerCustomizer<KafkaProducerMessageHandler<?, ?>> handlerCustomizer() {
+			return (handler, destinationName) -> handler.setBeanName("setByCustomizer:" + destinationName);
 		}
 
 		@StreamListener(Sink.INPUT)

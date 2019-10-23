@@ -42,12 +42,14 @@ import org.springframework.cloud.stream.binder.kafka.provisioning.KafkaTopicProv
 import org.springframework.cloud.stream.binder.kafka.utils.DlqPartitionFunction;
 import org.springframework.cloud.stream.config.ListenerContainerCustomizer;
 import org.springframework.cloud.stream.config.MessageSourceCustomizer;
+import org.springframework.cloud.stream.config.ProducerMessageHandlerCustomizer;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.integration.kafka.inbound.KafkaMessageSource;
+import org.springframework.integration.kafka.outbound.KafkaProducerMessageHandler;
 import org.springframework.kafka.listener.AbstractMessageListenerContainer;
 import org.springframework.kafka.security.jaas.KafkaJaasLoginModuleInitializer;
 import org.springframework.kafka.support.LoggingProducerListener;
@@ -104,6 +106,7 @@ public class KafkaBinderConfiguration {
 			KafkaTopicProvisioner provisioningProvider,
 			@Nullable ListenerContainerCustomizer<AbstractMessageListenerContainer<?, ?>> listenerContainerCustomizer,
 			@Nullable MessageSourceCustomizer<KafkaMessageSource<?, ?>> sourceCustomizer,
+			@Nullable ProducerMessageHandlerCustomizer<KafkaProducerMessageHandler<?, ?>> messageHandlerCustomizer,
 			ObjectProvider<KafkaBindingRebalanceListener> rebalanceListener,
 			ObjectProvider<DlqPartitionFunction> dlqPartitionFunction) {
 
@@ -114,6 +117,7 @@ public class KafkaBinderConfiguration {
 		kafkaMessageChannelBinder.setProducerListener(this.producerListener);
 		kafkaMessageChannelBinder
 				.setExtendedBindingProperties(this.kafkaExtendedBindingProperties);
+		kafkaMessageChannelBinder.setProducerMessageHandlerCustomizer(messageHandlerCustomizer);
 		return kafkaMessageChannelBinder;
 	}
 
