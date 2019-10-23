@@ -859,33 +859,44 @@ public class KafkaBinderTests extends
 
 	@Test
 	public void testDlqAndRetry() throws Exception {
-		testDlqGuts(true, null);
+		testDlqGuts(true, null, null);
 	}
 
 	@Test
 	public void testDlq() throws Exception {
-		testDlqGuts(false, null);
+		testDlqGuts(false, null, 3);
 	}
 
 	@Test
 	public void testDlqNone() throws Exception {
-		testDlqGuts(false, HeaderMode.none);
+		testDlqGuts(false, HeaderMode.none, 1);
 	}
 
 	@Test
 	public void testDlqEmbedded() throws Exception {
-		testDlqGuts(false, HeaderMode.embeddedHeaders);
+		testDlqGuts(false, HeaderMode.embeddedHeaders, 3);
 	}
 
-	private void testDlqGuts(boolean withRetry, HeaderMode headerMode) throws Exception {
+	private void testDlqGuts(boolean withRetry, HeaderMode headerMode, Integer dlqPartitions) throws Exception {
+		int expectedDlqPartition = dlqPartitions == null ? 0 : dlqPartitions - 1;
 		KafkaBinderConfigurationProperties binderConfig = createConfigurationProperties();
-		binderConfig.setMinPartitionCount(2);
-		AbstractKafkaTestBinder binder = getBinder(binderConfig, (group, rec, ex) -> 0);
+		DlqPartitionFunction dlqPartitionFunction;
+		if (Integer.valueOf(1).equals(dlqPartitions)) {
+			dlqPartitionFunction = null; // test that ZERO_PARTITION is used
+		}
+		else if (dlqPartitions == null) {
+			dlqPartitionFunction = (group, rec, ex) -> 0;
+		}
+		else {
+			dlqPartitionFunction = (group, rec, ex) -> dlqPartitions - 1;
+		}
+		AbstractKafkaTestBinder binder = getBinder(binderConfig, dlqPartitionFunction);
 
 		ExtendedProducerProperties<KafkaProducerProperties> producerProperties = createProducerProperties();
 		producerProperties.getExtension()
 				.setHeaderPatterns(new String[] { MessageHeaders.CONTENT_TYPE });
 		producerProperties.setHeaderMode(headerMode);
+		producerProperties.setPartitionCount(2);
 
 		DirectChannel moduleOutputChannel = createBindableChannel("output",
 				createProducerBindingProperties(producerProperties));
@@ -898,6 +909,8 @@ public class KafkaBinderTests extends
 		consumerProperties.getExtension().setAutoRebalanceEnabled(false);
 		consumerProperties.setHeaderMode(headerMode);
 		consumerProperties.setMultiplex(true);
+		consumerProperties.getExtension().setDlqPartitions(dlqPartitions);
+		consumerProperties.setConcurrency(2);
 
 		DirectChannel moduleInputChannel = createBindableChannel("input",
 				createConsumerBindingProperties(consumerProperties));
@@ -917,8 +930,19 @@ public class KafkaBinderTests extends
 
 		MessageListenerContainer container = TestUtils.getPropertyValue(consumerBinding,
 				"lifecycle.messageListenerContainer", MessageListenerContainer.class);
-		assertThat(container.getContainerProperties().getTopicPartitions().length)
+		assertThat(container.getContainerProperties().getTopicPartitionsToAssign().length)
 				.isEqualTo(4); // 2 topics 2 partitions each
+
+		try (AdminClient admin = AdminClient.create(Collections.singletonMap(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG,
+				embeddedKafka.getEmbeddedKafka().getBrokersAsString()))) {
+
+			Map<String, TopicDescription> topicDescriptions = admin.describeTopics(Collections.singletonList("error.dlqTest." + uniqueBindingId + ".0.testGroup"))
+				.all()
+				.get(10, TimeUnit.SECONDS);
+			assertThat(topicDescriptions).hasSize(1);
+			assertThat(topicDescriptions.values().iterator().next().partitions())
+				.hasSize(dlqPartitions == null ? 2 : dlqPartitions);
+		}
 
 		ExtendedConsumerProperties<KafkaConsumerProperties> dlqConsumerProperties = createConsumerProperties();
 		dlqConsumerProperties.setMaxAttempts(1);
@@ -985,7 +1009,7 @@ public class KafkaBinderTests extends
 			assertThat(receivedMessage.getHeaders()
 					.get(KafkaMessageChannelBinder.X_EXCEPTION_FQCN)).isNotNull();
 			assertThat(receivedMessage.getHeaders()
-					.get(KafkaHeaders.RECEIVED_PARTITION_ID)).isEqualTo(0);
+					.get(KafkaHeaders.RECEIVED_PARTITION_ID)).isEqualTo(expectedDlqPartition);
 		}
 		else if (!HeaderMode.none.equals(headerMode)) {
 			assertThat(handler.getInvocationCount())
@@ -1022,7 +1046,7 @@ public class KafkaBinderTests extends
 					.get(KafkaMessageChannelBinder.X_EXCEPTION_FQCN)).isNotNull();
 
 			assertThat(receivedMessage.getHeaders()
-					.get(KafkaHeaders.RECEIVED_PARTITION_ID)).isEqualTo(0);
+					.get(KafkaHeaders.RECEIVED_PARTITION_ID)).isEqualTo(expectedDlqPartition);
 		}
 		else {
 			assertThat(receivedMessage.getHeaders()

@@ -213,6 +213,15 @@ See <<dlq-partition-selection>> for how to change that behavior.
 **Not allowed when `destinationIsPattern` is `true`.**
 +
 Default: `false`.
+dlqPartitions::
+When `enableDlq` is true, and this property is not set, a dead letter topic with the same number of partitions as the primary topic(s) is created.
+Usually, dead-letter records are sent to the same partition in the dead-letter topic as the original record.
+This behavior can be changed; see <<dlq-partition-selection>>.
+If this property is set to `1` and there is no `DqlPartitionFunction` bean, all dead-letter records will be written to partition `0`.
+If this property is greater than `1`, you **MUST** provide a `DlqPartitionFunction` bean.
+Note that the actual partition count is affected by the binder's `minPartitionCount` property.
++
+Default: `none`
 configuration::
 Map with a key/value pair containing generic Kafka consumer properties.
 In addition to having Kafka consumer properties, other configuration properties can be passed here.

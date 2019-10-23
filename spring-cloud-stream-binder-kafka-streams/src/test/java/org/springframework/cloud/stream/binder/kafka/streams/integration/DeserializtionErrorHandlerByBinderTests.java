@@ -64,6 +64,7 @@ public abstract class DeserializtionErrorHandlerByBinderTests {
 
 	@ClassRule
 	public static EmbeddedKafkaRule embeddedKafkaRule = new EmbeddedKafkaRule(1, true,
+			"foos",
 			"counts-id", "error.foos.foobar-group", "error.foos1.fooz-group",
 			"error.foos2.fooz-group");
 
@@ -112,19 +113,19 @@ public abstract class DeserializtionErrorHandlerByBinderTests {
 			"spring.cloud.stream.kafka.streams.binder.serdeError=sendToDlq",
 			"spring.cloud.stream.kafka.streams.bindings.input.consumer.application-id"
 					+ "=deserializationByBinderAndDlqTests",
+			"spring.cloud.stream.kafka.streams.bindings.input.consumer.dlqPartitions=1",
 			"spring.cloud.stream.bindings.input.group=foobar-group" }, webEnvironment = SpringBootTest.WebEnvironment.NONE)
 	public static class DeserializationByBinderAndDlqTests
 			extends DeserializtionErrorHandlerByBinderTests {
 
 		@Test
-		@SuppressWarnings("unchecked")
 		public void test() {
 			Map<String, Object> senderProps = KafkaTestUtils.producerProps(embeddedKafka);
 			DefaultKafkaProducerFactory<Integer, String> pf = new DefaultKafkaProducerFactory<>(
 					senderProps);
 			KafkaTemplate<Integer, String> template = new KafkaTemplate<>(pf, true);
 			template.setDefaultTopic("foos");
-			template.sendDefault(7, "hello");
+			template.sendDefault(1, 7, "hello");
 
 			Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("foobar",
 					"false", embeddedKafka);
@@ -137,7 +138,8 @@ public abstract class DeserializtionErrorHandlerByBinderTests {
 
 			ConsumerRecord<String, String> cr = KafkaTestUtils.getSingleRecord(consumer1,
 					"error.foos.foobar-group");
-			assertThat(cr.value().equals("hello")).isTrue();
+			assertThat(cr.value()).isEqualTo("hello");
+			assertThat(cr.partition()).isEqualTo(0);
 
 			// Ensuring that the deserialization was indeed done by the binder
 			verify(conversionDelegate).deserializeOnInbound(any(Class.class),

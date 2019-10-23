@@ -20,6 +20,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BiFunction;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.TopicPartition;
@@ -52,6 +54,8 @@ import org.springframework.util.StringUtils;
  */
 final class KafkaStreamsBinderUtils {
 
+	private static final Log LOGGER = LogFactory.getLog(KafkaStreamsBinderUtils.class);
+
 	private KafkaStreamsBinderUtils() {
 
 	}
@@ -78,9 +82,11 @@ final class KafkaStreamsBinderUtils {
 
 			Map<String, DlqPartitionFunction> partitionFunctions =
 					context.getBeansOfType(DlqPartitionFunction.class, false, false);
-			DlqPartitionFunction partitionFunction = partitionFunctions.size() == 1
+			boolean oneFunctionPresent = partitionFunctions.size() == 1;
+			Integer dlqPartitions = extendedConsumerProperties.getExtension().getDlqPartitions();
+			DlqPartitionFunction partitionFunction = oneFunctionPresent
 					? partitionFunctions.values().iterator().next()
-					: (grp, rec, ex) -> rec.partition();
+					: DlqPartitionFunction.determineFallbackFunction(dlqPartitions, LOGGER);
 
 			ProducerFactory<byte[], byte[]> producerFactory = getProducerFactory(
 					new ExtendedProducerProperties<>(

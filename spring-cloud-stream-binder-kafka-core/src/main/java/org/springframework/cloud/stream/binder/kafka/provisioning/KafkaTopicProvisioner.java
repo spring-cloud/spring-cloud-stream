@@ -274,12 +274,16 @@ public class KafkaTopicProvisioner implements
 	private ConsumerDestination createDlqIfNeedBe(AdminClient adminClient, String name,
 			String group, ExtendedConsumerProperties<KafkaConsumerProperties> properties,
 			boolean anonymous, int partitions) {
+
 		if (properties.getExtension().isEnableDlq() && !anonymous) {
 			String dlqTopic = StringUtils.hasText(properties.getExtension().getDlqName())
 					? properties.getExtension().getDlqName()
 					: "error." + name + "." + group;
+			int dlqPartitions = properties.getExtension().getDlqPartitions() == null
+					? partitions
+					: properties.getExtension().getDlqPartitions();
 			try {
-				createTopicAndPartitions(adminClient, dlqTopic, partitions,
+				createTopicAndPartitions(adminClient, dlqTopic, dlqPartitions,
 						properties.getExtension().isAutoRebalanceEnabled(),
 						properties.getExtension().getTopic());
 			}

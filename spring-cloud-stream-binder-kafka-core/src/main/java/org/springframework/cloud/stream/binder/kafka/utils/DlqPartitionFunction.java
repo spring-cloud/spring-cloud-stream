@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.binder.kafka.utils;
 
+import org.apache.commons.logging.Log;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 
 import org.springframework.lang.Nullable;
@@ -33,6 +34,16 @@ import org.springframework.lang.Nullable;
 public interface DlqPartitionFunction {
 
 	/**
+	 * Returns the same partition as the original recor.
+	 */
+	DlqPartitionFunction ORIGINAL_PARTITION = (group, rec, ex) -> rec.partition();
+
+	/**
+	 * Returns 0.
+	 */
+	DlqPartitionFunction PARTITION_ZERO = (group, rec, ex) -> 0;
+
+	/**
 	 * Apply the function.
 	 * @param group the consumer group.
 	 * @param record the consumer record.
@@ -41,5 +52,25 @@ public interface DlqPartitionFunction {
 	 */
 	@Nullable
 	Integer apply(String group, ConsumerRecord<?, ?> record, Throwable throwable);
+
+	/**
+	 * Determine the fallback function to use based on the dlq partition count if no
+	 * {@link DlqPartitionFunction} bean is provided.
+	 * @param dlqPartitions the partition count.
+	 * @param logger the logger.
+	 * @return the fallback.
+	 */
+	static DlqPartitionFunction determineFallbackFunction(@Nullable Integer dlqPartitions, Log logger) {
+		if (dlqPartitions == null) {
+			return ORIGINAL_PARTITION;
+		}
+		else if (dlqPartitions > 1) {
+			logger.error("'dlqPartitions' is > 1 but a custom DlqPartitionFunction bean is not provided");
+			return ORIGINAL_PARTITION;
+		}
+		else {
+			return PARTITION_ZERO;
+		}
+	}
 
 }

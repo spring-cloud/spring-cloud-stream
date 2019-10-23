@@ -246,7 +246,7 @@ public class KafkaMessageChannelBinder extends
 		this.rebalanceListener = rebalanceListener;
 		this.dlqPartitionFunction = dlqPartitionFunction != null
 				? dlqPartitionFunction
-				: (group, rec, ex) -> rec.partition();
+				: null;
 	}
 
 	private static String[] headersToMap(
@@ -967,6 +967,7 @@ public class KafkaMessageChannelBinder extends
 	protected MessageHandler getErrorMessageHandler(final ConsumerDestination destination,
 			final String group,
 			final ExtendedConsumerProperties<KafkaConsumerProperties> properties) {
+
 		KafkaConsumerProperties kafkaConsumerProperties = properties.getExtension();
 		if (kafkaConsumerProperties.isEnableDlq()) {
 			KafkaProducerProperties dlqProducerProperties = kafkaConsumerProperties
@@ -1083,10 +1084,19 @@ public class KafkaMessageChannelBinder extends
 						? kafkaConsumerProperties.getDlqName()
 						: "error." + record.topic() + "." + group;
 				dlqSender.sendToDlq(recordToSend.get(), kafkaHeaders, dlqName, group, throwable,
-						this.dlqPartitionFunction);
+						determinDlqPartitionFunction(properties.getExtension().getDlqPartitions()));
 			};
 		}
 		return null;
+	}
+
+	private DlqPartitionFunction determinDlqPartitionFunction(Integer dlqPartitions) {
+		if (this.dlqPartitionFunction != null) {
+			return this.dlqPartitionFunction;
+		}
+		else {
+			return DlqPartitionFunction.determineFallbackFunction(dlqPartitions, this.logger);
+		}
 	}
 
 	@Override

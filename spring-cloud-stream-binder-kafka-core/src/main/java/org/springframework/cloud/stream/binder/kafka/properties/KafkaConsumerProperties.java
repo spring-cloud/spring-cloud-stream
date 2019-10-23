@@ -100,6 +100,8 @@ public class KafkaConsumerProperties {
 
 	private String dlqName;
 
+	private Integer dlqPartitions;
+
 	private KafkaProducerProperties dlqProducerProperties = new KafkaProducerProperties();
 
 	private int recoveryInterval = 5000;
@@ -213,6 +215,14 @@ public class KafkaConsumerProperties {
 
 	public void setDlqName(String dlqName) {
 		this.dlqName = dlqName;
+	}
+
+	public Integer getDlqPartitions() {
+		return this.dlqPartitions;
+	}
+
+	public void setDlqPartitions(Integer dlqPartitions) {
+		this.dlqPartitions = dlqPartitions;
 	}
 
 	public String[] getTrustedPackages() {
