@@ -43,6 +43,11 @@ public class KafkaStreamsConsumerProperties extends KafkaConsumerProperties {
 	 */
 	private String materializedAs;
 
+	/**
+	 * {@link org.apache.kafka.streams.processor.TimestampExtractor} bean name to use for this consumer.
+	 */
+	private String timestampExtractorBeanName;
+
 	public String getApplicationId() {
 		return this.applicationId;
 	}
@@ -75,4 +80,11 @@ public class KafkaStreamsConsumerProperties extends KafkaConsumerProperties {
 		this.materializedAs = materializedAs;
 	}
 
+	public String getTimestampExtractorBeanName() {
+		return timestampExtractorBeanName;
+	}
+
+	public void setTimestampExtractorBeanName(String timestampExtractorBeanName) {
+		this.timestampExtractorBeanName = timestampExtractorBeanName;
+	}
 }

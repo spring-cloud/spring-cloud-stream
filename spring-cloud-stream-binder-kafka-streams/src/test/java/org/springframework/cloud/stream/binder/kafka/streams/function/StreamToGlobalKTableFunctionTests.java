@@ -32,12 +32,17 @@ import org.apache.kafka.common.serialization.LongSerializer;
 import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.kstream.GlobalKTable;
 import org.apache.kafka.streams.kstream.KStream;
+import org.apache.kafka.streams.kstream.KTable;
+import org.apache.kafka.streams.processor.TimestampExtractor;
+import org.apache.kafka.streams.processor.WallclockTimestampExtractor;
 import org.junit.ClassRule;
 import org.junit.Test;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsBindingProperties;
+import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsExtendedBindingProperties;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
@@ -176,6 +181,56 @@ public class StreamToGlobalKTableFunctionTests {
 		}
 	}
 
+	@Test
+	public void testTimeExtractor() throws Exception {
+		SpringApplication app = new SpringApplication(OrderEnricherApplication.class);
+		app.setWebApplicationType(WebApplicationType.NONE);
+
+		try (ConfigurableApplicationContext context = app.run(
+				"--server.port=0",
+				"--spring.jmx.enabled=false",
+				"--spring.cloud.stream.function.definition=forTimeExtractorTest",
+				"--spring.cloud.stream.bindings.forTimeExtractorTest-in-0.destination=orders",
+				"--spring.cloud.stream.bindings.forTimeExtractorTest-in-1.destination=customers",
+				"--spring.cloud.stream.bindings.forTimeExtractorTest-in-2.destination=products",
+				"--spring.cloud.stream.bindings.forTimeExtractorTest-out-0.destination=enriched-order",
+				"--spring.cloud.stream.kafka.streams.bindings.forTimeExtractorTest-in-0.consumer.timestampExtractorBeanName" +
+						"=timestampExtractor",
+				"--spring.cloud.stream.kafka.streams.bindings.forTimeExtractorTest-in-1.consumer.timestampExtractorBeanName" +
+						"=timestampExtractor",
+				"--spring.cloud.stream.kafka.streams.bindings.forTimeExtractorTest-in-2.consumer.timestampExtractorBeanName" +
+						"=timestampExtractor",
+				"--spring.cloud.stream.kafka.streams.binder.configuration.default.key.serde" +
+						"=org.apache.kafka.common.serialization.Serdes$StringSerde",
+				"--spring.cloud.stream.kafka.streams.binder.configuration.default.value.serde" +
+						"=org.apache.kafka.common.serialization.Serdes$StringSerde",
+				"--spring.cloud.stream.kafka.streams.binder.configuration.commit.interval.ms=10000",
+				"--spring.cloud.stream.kafka.streams.bindings.order.consumer.applicationId=" +
+						"testTimeExtractor-abc",
+				"--spring.cloud.stream.kafka.streams.binder.brokers=" + embeddedKafka.getBrokersAsString())) {
+
+			final KafkaStreamsExtendedBindingProperties kafkaStreamsExtendedBindingProperties =
+					context.getBean(KafkaStreamsExtendedBindingProperties.class);
+
+			final Map<String, KafkaStreamsBindingProperties> bindings = kafkaStreamsExtendedBindingProperties.getBindings();
+
+			final KafkaStreamsBindingProperties kafkaStreamsBindingProperties0 = bindings.get("forTimeExtractorTest-in-0");
+			final String timestampExtractorBeanName0 = kafkaStreamsBindingProperties0.getConsumer().getTimestampExtractorBeanName();
+			final TimestampExtractor timestampExtractor0 = context.getBean(timestampExtractorBeanName0, TimestampExtractor.class);
+			assertThat(timestampExtractor0).isNotNull();
+
+			final KafkaStreamsBindingProperties kafkaStreamsBindingProperties1 = bindings.get("forTimeExtractorTest-in-1");
+			final String timestampExtractorBeanName1 = kafkaStreamsBindingProperties1.getConsumer().getTimestampExtractorBeanName();
+			final TimestampExtractor timestampExtractor1 = context.getBean(timestampExtractorBeanName1, TimestampExtractor.class);
+			assertThat(timestampExtractor1).isNotNull();
+
+			final KafkaStreamsBindingProperties kafkaStreamsBindingProperties2 = bindings.get("forTimeExtractorTest-in-2");
+			final String timestampExtractorBeanName2 = kafkaStreamsBindingProperties2.getConsumer().getTimestampExtractorBeanName();
+			final TimestampExtractor timestampExtractor2 = context.getBean(timestampExtractorBeanName2, TimestampExtractor.class);
+			assertThat(timestampExtractor2).isNotNull();
+		}
+	}
+
 	@EnableAutoConfiguration
 	public static class OrderEnricherApplication {
 
@@ -203,6 +258,20 @@ public class StreamToGlobalKTableFunctionTests {
 							)
 					)
 			);
+		}
+
+		@Bean
+		public Function<KStream<Long, Order>,
+				Function<KTable<Long, Customer>,
+						Function<GlobalKTable<Long, Product>, KStream<Long, Order>>>> forTimeExtractorTest() {
+			return orderStream ->
+					customers ->
+						products -> orderStream;
+		}
+
+		@Bean
+		public TimestampExtractor timestampExtractor() {
+			return new WallclockTimestampExtractor();
 		}
 	}
 
