@@ -57,7 +57,6 @@ import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
 import org.springframework.cloud.function.context.config.ContextFunctionCatalogAutoConfiguration;
 import org.springframework.cloud.function.context.config.FunctionContextUtils;
 import org.springframework.cloud.function.context.config.RoutingFunction;
-import org.springframework.cloud.stream.annotation.BindingProvider;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.binder.BinderTypeRegistry;
 import org.springframework.cloud.stream.binder.BindingCreatedEvent;
@@ -588,8 +587,7 @@ public class FunctionConfiguration {
 
 		@Override
 		public void afterPropertiesSet() throws Exception {
-			if (nonBindingProviderBindersFound()
-					&& ObjectUtils.isEmpty(applicationContext.getBeanNamesForAnnotation(EnableBinding.class))
+			if (ObjectUtils.isEmpty(applicationContext.getBeanNamesForAnnotation(EnableBinding.class))
 					&& this.determineFunctionName(functionCatalog, environment)) {
 				BeanDefinitionRegistry registry = (BeanDefinitionRegistry) applicationContext.getBeanFactory();
 				String[] functionDefinitions = streamFunctionProperties.getDefinition().split(";");
@@ -619,11 +617,6 @@ public class FunctionConfiguration {
 					}
 				}
 			}
-		}
-
-		private boolean nonBindingProviderBindersFound() {
-			return binderTypeRegistry.getAll().values().stream().anyMatch(binderType -> Stream.of(binderType.getConfigurationClasses())
-					.anyMatch(clazz -> AnnotationUtils.findAnnotation(clazz, BindingProvider.class) == null));
 		}
 
 		private boolean determineFunctionName(FunctionCatalog catalog, Environment environment) {

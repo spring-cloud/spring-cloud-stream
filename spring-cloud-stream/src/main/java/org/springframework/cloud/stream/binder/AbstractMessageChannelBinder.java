@@ -86,23 +86,18 @@ import org.springframework.util.Assert;
  *
  * @since 1.1
  */
-// @checkstyle:off
 public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties, P extends ProducerProperties, PP extends ProvisioningProvider<C, P>>
 		extends AbstractBinder<MessageChannel, C, P> implements
 		PollableConsumerBinder<MessageHandler, C>, ApplicationEventPublisherAware {
 
-	// @checkstyle:on
 
 	/**
 	 * {@link ProvisioningProvider} delegated by the downstream binder implementations.
 	 */
 	protected final PP provisioningProvider;
 
-	// @checkstyle:off
 	private final EmbeddedHeadersChannelInterceptor embeddedHeadersChannelInterceptor = new EmbeddedHeadersChannelInterceptor(
 			this.logger);
-
-	// @checkstyle:on
 
 	private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -120,14 +115,6 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		(handler, destination) -> { };
 
 	private ApplicationEventPublisher applicationEventPublisher;
-
-//	@Autowired(required = false)
-//	private IntegrationFlowFunctionSupport integrationFlowFunctionSupport;
-//
-//	@Autowired(required = false)
-//	private StreamFunctionProperties streamFunctionProperties;
-
-//	private boolean producerBindingExist;
 
 	public AbstractMessageChannelBinder(String[] headersToEmbed,
 			PP provisioningProvider) {
