@@ -37,10 +37,12 @@ import org.springframework.cloud.stream.binder.rabbit.properties.RabbitExtendedB
 import org.springframework.cloud.stream.binder.rabbit.provisioning.RabbitExchangeQueueProvisioner;
 import org.springframework.cloud.stream.config.ListenerContainerCustomizer;
 import org.springframework.cloud.stream.config.MessageSourceCustomizer;
+import org.springframework.cloud.stream.config.ProducerMessageHandlerCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.integration.amqp.inbound.AmqpMessageSource;
+import org.springframework.integration.amqp.outbound.AmqpOutboundEndpoint;
 import org.springframework.lang.Nullable;
 
 /**
@@ -73,7 +75,8 @@ public class RabbitMessageChannelBinderConfiguration {
 	@Bean
 	RabbitMessageChannelBinder rabbitMessageChannelBinder(
 			@Nullable ListenerContainerCustomizer<AbstractMessageListenerContainer> listenerContainerCustomizer,
-			@Nullable MessageSourceCustomizer<AmqpMessageSource> sourceCustomizer) {
+			@Nullable MessageSourceCustomizer<AmqpMessageSource> sourceCustomizer,
+			@Nullable ProducerMessageHandlerCustomizer<AmqpOutboundEndpoint> producerMessageHandlerCustomizer) {
 
 		RabbitMessageChannelBinder binder = new RabbitMessageChannelBinder(
 				this.rabbitConnectionFactory, this.rabbitProperties,
@@ -84,6 +87,7 @@ public class RabbitMessageChannelBinderConfiguration {
 		binder.setDecompressingPostProcessor(deCompressingPostProcessor());
 		binder.setNodes(this.rabbitBinderConfigurationProperties.getNodes());
 		binder.setExtendedBindingProperties(this.rabbitExtendedBindingProperties);
+		binder.setProducerMessageHandlerCustomizer(producerMessageHandlerCustomizer);
 		return binder;
 	}
 

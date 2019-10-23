@@ -58,10 +58,12 @@ import org.springframework.cloud.stream.binder.test.junit.rabbit.RabbitTestSuppo
 import org.springframework.cloud.stream.binding.BindingService;
 import org.springframework.cloud.stream.config.ListenerContainerCustomizer;
 import org.springframework.cloud.stream.config.MessageSourceCustomizer;
+import org.springframework.cloud.stream.config.ProducerMessageHandlerCustomizer;
 import org.springframework.cloud.stream.messaging.Processor;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.integration.amqp.inbound.AmqpMessageSource;
+import org.springframework.integration.amqp.outbound.AmqpOutboundEndpoint;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.support.GenericMessage;
@@ -179,6 +181,8 @@ public class RabbitBinderModuleTests {
 		Binding<MessageChannel> outputBinding = producerBindings.get("output");
 		assertThat(TestUtils.getPropertyValue(outputBinding,
 				"lifecycle.amqpTemplate.transactional", Boolean.class)).isTrue();
+		assertThat(TestUtils.getPropertyValue(outputBinding, "lifecycle.beanName"))
+				.isEqualTo("setByCustomizer:output");
 		DirectFieldAccessor binderFieldAccessor = new DirectFieldAccessor(binder);
 		ConnectionFactory binderConnectionFactory = (ConnectionFactory) binderFieldAccessor
 				.getPropertyValue("connectionFactory");
@@ -351,6 +355,11 @@ public class RabbitBinderModuleTests {
 		@Bean
 		public MessageSourceCustomizer<AmqpMessageSource> sourceCustomizer() {
 			return (s, q, g) -> s.setBeanName("setByCustomizer:" + g);
+		}
+
+		@Bean
+		public ProducerMessageHandlerCustomizer<AmqpOutboundEndpoint> messageHandlerCustomizer() {
+			return (handler, destinationName) -> handler.setBeanName("setByCustomizer:" + destinationName);
 		}
 
 	}
