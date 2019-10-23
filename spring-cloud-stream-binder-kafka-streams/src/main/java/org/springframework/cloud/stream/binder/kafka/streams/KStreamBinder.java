@@ -140,6 +140,8 @@ class KStreamBinder extends
 		if (!isNativeEncoding) {
 			LOG.info("Native encoding is disabled for " + name
 					+ ". Outbound message conversion done by Spring Cloud Stream.");
+			outboundBindTarget.filter((k, v) -> v == null)
+					.to(name, Produced.with(keySerde, valueSerde));
 			this.kafkaStreamsMessageConversionDelegate
 					.serializeOnOutbound(outboundBindTarget)
 					.to(name, Produced.with(keySerde, valueSerde));

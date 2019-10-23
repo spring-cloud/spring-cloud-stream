@@ -91,18 +91,20 @@ public class KafkaStreamsMessageConversionDelegate {
 		MessageConverter messageConverter = this.compositeMessageConverter;
 		final PerRecordContentTypeHolder perRecordContentTypeHolder = new PerRecordContentTypeHolder();
 
-		final KStream<?, ?> kStreamWithEnrichedHeaders = outboundBindTarget.mapValues((v) -> {
-			Message<?> message = v instanceof Message<?> ? (Message<?>) v
-					: MessageBuilder.withPayload(v).build();
-			Map<String, Object> headers = new HashMap<>(message.getHeaders());
-			if (!StringUtils.isEmpty(contentType)) {
-				headers.put(MessageHeaders.CONTENT_TYPE, contentType);
-			}
-			MessageHeaders messageHeaders = new MessageHeaders(headers);
-			final Message<?> convertedMessage = messageConverter.toMessage(message.getPayload(), messageHeaders);
-			perRecordContentTypeHolder.setContentType((String) messageHeaders.get(MessageHeaders.CONTENT_TYPE));
-			return convertedMessage.getPayload();
-		});
+		final KStream<?, ?> kStreamWithEnrichedHeaders = outboundBindTarget
+			.filter((k, v) -> v != null)
+			.mapValues((v) -> {
+				Message<?> message = v instanceof Message<?> ? (Message<?>) v
+						: MessageBuilder.withPayload(v).build();
+				Map<String, Object> headers = new HashMap<>(message.getHeaders());
+				if (!StringUtils.isEmpty(contentType)) {
+					headers.put(MessageHeaders.CONTENT_TYPE, contentType);
+				}
+				MessageHeaders messageHeaders = new MessageHeaders(headers);
+				final Message<?> convertedMessage = messageConverter.toMessage(message.getPayload(), messageHeaders);
+				perRecordContentTypeHolder.setContentType((String) messageHeaders.get(MessageHeaders.CONTENT_TYPE));
+				return convertedMessage.getPayload();
+			});
 
 		kStreamWithEnrichedHeaders.process(() -> new Processor() {
 
