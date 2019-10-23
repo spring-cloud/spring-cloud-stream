@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.binder.kafka;
 
+import java.time.Duration;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -112,8 +113,15 @@ public class KafkaBinderHealthIndicator implements HealthIndicator, DisposableBe
 				final Map<String, KafkaMessageChannelBinder.TopicInformation> topicsInUse = KafkaBinderHealthIndicator.this.binder
 						.getTopicsInUse();
 				if (topicsInUse.isEmpty()) {
-					return Health.down().withDetail("No topic information available",
-							"Kafka broker is not reachable").build();
+					try {
+						this.metadataConsumer.listTopics(Duration.ofSeconds(this.timeout));
+					}
+					catch (Exception e) {
+						return Health.down().withDetail("No topic information available",
+								"Kafka broker is not reachable").build();
+					}
+					return Health.unknown().withDetail("No bindings found",
+							"Kafka binder may not be bound to destinations on the broker").build();
 				}
 				else {
 					for (String topic : topicsInUse.keySet()) {

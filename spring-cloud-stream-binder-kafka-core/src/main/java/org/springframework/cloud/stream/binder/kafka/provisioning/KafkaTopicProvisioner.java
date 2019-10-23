@@ -81,9 +81,9 @@ public class KafkaTopicProvisioner implements
 		// @checkstyle:on
 		InitializingBean {
 
-	private static final int DEFAULT_OPERATION_TIMEOUT = 30;
+	private static final Log logger = LogFactory.getLog(KafkaTopicProvisioner.class);
 
-	private final Log logger = LogFactory.getLog(getClass());
+	private static final int DEFAULT_OPERATION_TIMEOUT = 30;
 
 	private final KafkaBinderConfigurationProperties configurationProperties;
 
@@ -242,7 +242,7 @@ public class KafkaTopicProvisioner implements
 	 * @param bootProps the boot kafka properties.
 	 * @param binderProps the binder kafka properties.
 	 */
-	private void normalalizeBootPropsWithBinder(Map<String, Object> adminProps,
+	public static void normalalizeBootPropsWithBinder(Map<String, Object> adminProps,
 			KafkaProperties bootProps, KafkaBinderConfigurationProperties binderProps) {
 		// First deal with the outlier
 		String kafkaConnectionString = binderProps.getKafkaConnectionString();
@@ -263,8 +263,8 @@ public class KafkaTopicProvisioner implements
 			}
 			if (adminConfigNames.contains(key)) {
 				Object replaced = adminProps.put(key, value);
-				if (replaced != null && this.logger.isDebugEnabled()) {
-					this.logger.debug("Overrode boot property: [" + key + "], from: ["
+				if (replaced != null && KafkaTopicProvisioner.logger.isDebugEnabled()) {
+					KafkaTopicProvisioner.logger.debug("Overrode boot property: [" + key + "], from: ["
 							+ replaced + "] to: [" + value + "]");
 				}
 			}

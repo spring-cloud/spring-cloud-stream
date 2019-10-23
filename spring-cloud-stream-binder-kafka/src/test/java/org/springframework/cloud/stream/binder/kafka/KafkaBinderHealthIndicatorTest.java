@@ -159,7 +159,7 @@ public class KafkaBinderHealthIndicatorTest {
 	@Test
 	public void testIfNoTopicsRegisteredByTheBinderProvidesDownStatus() {
 		Health health = indicator.health();
-		assertThat(health.getStatus()).isEqualTo(Status.DOWN);
+		assertThat(health.getStatus()).isEqualTo(Status.UNKNOWN);
 	}
 
 	private List<PartitionInfo> partitions(Node leader) {
