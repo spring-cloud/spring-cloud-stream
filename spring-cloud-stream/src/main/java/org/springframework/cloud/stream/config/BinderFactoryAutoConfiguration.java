@@ -211,23 +211,15 @@ public class BinderFactoryAutoConfiguration {
 	public MessageConverterConfigurer messageConverterConfigurer(
 			BindingServiceProperties bindingServiceProperties,
 			@Qualifier(IntegrationContextUtils.ARGUMENT_RESOLVER_MESSAGE_CONVERTER_BEAN_NAME) CompositeMessageConverter compositeMessageConverter,
-			Environment environment) {
+			Environment environment, BinderTypeRegistry binderTypeRegistry) {
 
-		MessageConverterConfigurer messageConverterConfigurer = null;
-		if (StringUtils.hasText(environment.getProperty("spring.cloud.stream.function.definition"))) {
-			try {
-				ClassUtils.forName("org.apache.kafka.streams.kstream.KStream", ClassUtils.getDefaultClassLoader());
-				messageConverterConfigurer = new MessageConverterConfigurer(bindingServiceProperties, compositeMessageConverter);
-			}
-			catch (Exception e) {
-				// ignore
-			}
+		if (binderTypeRegistry.getAll().keySet().contains("kstream") || !environment.containsProperty("spring.cloud.stream.function.definition")) {
+			return new MessageConverterConfigurer(bindingServiceProperties, compositeMessageConverter);
 		}
-		else {
-			messageConverterConfigurer = new MessageConverterConfigurer(bindingServiceProperties, compositeMessageConverter);
-		}
-		return messageConverterConfigurer;
+
+		return null;
 	}
+
 
 	@Bean
 	public SubscribableChannelBindingTargetFactory channelFactory(
