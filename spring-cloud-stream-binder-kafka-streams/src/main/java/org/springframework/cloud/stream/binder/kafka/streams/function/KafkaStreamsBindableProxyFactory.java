@@ -74,16 +74,13 @@ public class KafkaStreamsBindableProxyFactory extends AbstractBindableProxyFacto
 
 	private final String functionName;
 
-	private final boolean onlySingleFunction;
-
 	private BeanFactory beanFactory;
 
 
-	public KafkaStreamsBindableProxyFactory(ResolvableType type, String functionName, boolean onlySingleFunction) {
+	public KafkaStreamsBindableProxyFactory(ResolvableType type, String functionName) {
 		super(type.getType().getClass());
 		this.type = type;
 		this.functionName = functionName;
-		this.onlySingleFunction = onlySingleFunction;
 	}
 
 	@Override

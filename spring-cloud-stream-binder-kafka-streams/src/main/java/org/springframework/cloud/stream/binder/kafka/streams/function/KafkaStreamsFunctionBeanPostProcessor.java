@@ -18,6 +18,7 @@ package org.springframework.cloud.stream.binder.kafka.streams.function;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
@@ -25,6 +26,7 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.apache.commons.logging.Log;
@@ -39,6 +41,9 @@ import org.springframework.beans.factory.BeanFactoryAware;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.AnnotatedBeanDefinition;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.beans.factory.support.BeanDefinitionRegistry;
+import org.springframework.beans.factory.support.RootBeanDefinition;
+import org.springframework.cloud.stream.function.StreamFunctionProperties;
 import org.springframework.core.ResolvableType;
 import org.springframework.util.ClassUtils;
 
@@ -52,8 +57,17 @@ public class KafkaStreamsFunctionBeanPostProcessor implements InitializingBean, 
 
 	private static final Log LOG = LogFactory.getLog(KafkaStreamsFunctionBeanPostProcessor.class);
 
+	private static final String[] EXCLUDE_FUNCTIONS = new String[]{"functionRouter", "sendToDlqAndContinue"};
+
 	private ConfigurableListableBeanFactory beanFactory;
+	private boolean onlySingleFunction;
 	private Map<String, ResolvableType> resolvableTypeMap = new TreeMap<>();
+
+	private final StreamFunctionProperties streamFunctionProperties;
+
+	public KafkaStreamsFunctionBeanPostProcessor(StreamFunctionProperties streamFunctionProperties) {
+		this.streamFunctionProperties = streamFunctionProperties;
+	}
 
 	public Map<String, ResolvableType> getResolvableTypes() {
 		return this.resolvableTypeMap;
@@ -66,10 +80,26 @@ public class KafkaStreamsFunctionBeanPostProcessor implements InitializingBean, 
 		String[] consumerNames = this.beanFactory.getBeanNamesForType(Consumer.class);
 		String[] biConsumerNames = this.beanFactory.getBeanNamesForType(BiConsumer.class);
 
-		Stream.concat(
+		final Stream<String> concat = Stream.concat(
 				Stream.concat(Stream.of(functionNames), Stream.of(consumerNames)),
-				Stream.concat(Stream.of(biFunctionNames), Stream.of(biConsumerNames)))
+				Stream.concat(Stream.of(biFunctionNames), Stream.of(biConsumerNames)));
+		final List<String> collect = concat.collect(Collectors.toList());
+		collect.removeIf(s -> Arrays.stream(EXCLUDE_FUNCTIONS).anyMatch(t -> t.equals(s)));
+		onlySingleFunction = collect.size() == 1;
+		collect.stream()
 				.forEach(this::extractResolvableTypes);
+
+		BeanDefinitionRegistry registry = (BeanDefinitionRegistry) beanFactory;
+
+		for (String s : getResolvableTypes().keySet()) {
+			RootBeanDefinition rootBeanDefinition = new RootBeanDefinition(
+					KafkaStreamsBindableProxyFactory.class);
+			rootBeanDefinition.getConstructorArgumentValues()
+					.addGenericArgumentValue(getResolvableTypes().get(s));
+			rootBeanDefinition.getConstructorArgumentValues()
+					.addGenericArgumentValue(s);
+			registry.registerBeanDefinition("kafkaStreamsBindableProxyFactory-" + s, rootBeanDefinition);
+		}
 	}
 
 	private void extractResolvableTypes(String key) {
@@ -85,12 +115,23 @@ public class KafkaStreamsFunctionBeanPostProcessor implements InitializingBean, 
 				ResolvableType resolvableType = ResolvableType.forMethodReturnType(method, classObj);
 				final Class<?> rawClass = resolvableType.getGeneric(0).getRawClass();
 				if (rawClass == KStream.class || rawClass == KTable.class || rawClass == GlobalKTable.class) {
-					resolvableTypeMap.put(key, resolvableType);
+					if (onlySingleFunction) {
+						resolvableTypeMap.put(key, resolvableType);
+					}
+					else {
+						final String definition = streamFunctionProperties.getDefinition();
+						if (definition == null) {
+							throw new IllegalStateException("Multiple functions found, but function definition property is not set.");
+						}
+						else if (definition.contains(key)) {
+							resolvableTypeMap.put(key, resolvableType);
+						}
+					}
 				}
 			}
 		}
 		catch (Exception e) {
-			LOG.error("Function not found: " + key, e);
+			LOG.error("Function activation issues while mapping the function: " + key, e);
 		}
 	}
 

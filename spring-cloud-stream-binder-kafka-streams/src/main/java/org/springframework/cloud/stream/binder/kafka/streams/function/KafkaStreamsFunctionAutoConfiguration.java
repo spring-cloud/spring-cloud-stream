@@ -16,13 +16,8 @@
 
 package org.springframework.cloud.stream.binder.kafka.streams.function;
 
-import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
-import org.springframework.beans.factory.support.BeanDefinitionRegistry;
-import org.springframework.beans.factory.support.RootBeanDefinition;
-import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.binder.kafka.streams.KafkaStreamsFunctionProcessor;
-import org.springframework.cloud.stream.config.BinderFactoryAutoConfiguration;
 import org.springframework.cloud.stream.function.StreamFunctionProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Conditional;
@@ -34,7 +29,6 @@ import org.springframework.context.annotation.Configuration;
  */
 @Configuration
 @EnableConfigurationProperties(StreamFunctionProperties.class)
-@AutoConfigureBefore(BinderFactoryAutoConfiguration.class)
 public class KafkaStreamsFunctionAutoConfiguration {
 
 	@Bean
@@ -49,27 +43,7 @@ public class KafkaStreamsFunctionAutoConfiguration {
 
 	@Bean
 	@Conditional(FunctionDetectorCondition.class)
-	public KafkaStreamsFunctionBeanPostProcessor kafkaStreamsFunctionBeanPostProcessor() {
-		return new KafkaStreamsFunctionBeanPostProcessor();
-	}
-
-	@Bean
-	@Conditional(FunctionDetectorCondition.class)
-	public static BeanFactoryPostProcessor implicitFunctionKafkaStreamsBinder(KafkaStreamsFunctionBeanPostProcessor kafkaStreamsFunctionBeanPostProcessor) {
-		return beanFactory -> {
-			BeanDefinitionRegistry registry = (BeanDefinitionRegistry) beanFactory;
-
-			for (String s : kafkaStreamsFunctionBeanPostProcessor.getResolvableTypes().keySet()) {
-				RootBeanDefinition rootBeanDefinition = new RootBeanDefinition(
-						KafkaStreamsBindableProxyFactory.class);
-				rootBeanDefinition.getConstructorArgumentValues()
-						.addGenericArgumentValue(kafkaStreamsFunctionBeanPostProcessor.getResolvableTypes().get(s));
-				rootBeanDefinition.getConstructorArgumentValues()
-						.addGenericArgumentValue(s);
-				rootBeanDefinition.getConstructorArgumentValues()
-						.addGenericArgumentValue(kafkaStreamsFunctionBeanPostProcessor.getResolvableTypes().size() == 1);
-				registry.registerBeanDefinition("kafkaStreamsBindableProxyFactory-" + s, rootBeanDefinition);
-			}
-		};
+	public KafkaStreamsFunctionBeanPostProcessor kafkaStreamsFunctionBeanPostProcessor(StreamFunctionProperties streamFunctionProperties) {
+		return new KafkaStreamsFunctionBeanPostProcessor(streamFunctionProperties);
 	}
 }

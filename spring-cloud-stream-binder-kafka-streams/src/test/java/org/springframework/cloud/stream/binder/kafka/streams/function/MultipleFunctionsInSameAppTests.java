@@ -83,6 +83,7 @@ public class MultipleFunctionsInSameAppTests {
 		try (ConfigurableApplicationContext context = app.run(
 				"--server.port=0",
 				"--spring.jmx.enabled=false",
+				"--spring.cloud.stream.function.definition=process;analyze",
 				"--spring.cloud.stream.bindings.process-in-0.destination=purchases",
 				"--spring.cloud.stream.bindings.process-out-0.destination=coffee",
 				"--spring.cloud.stream.bindings.process-out-1.destination=electronics",
