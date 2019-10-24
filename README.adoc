@@ -179,6 +179,9 @@ TBD
 [[spring-cloud-stream-preface-new-features]]
 === New Features and Components
 TBD
+- Routing Function [Details to follow]
+- Multiple bindings with functions [Details to follow]
+- Functions with multiple inputs/outputs
 
 
 [[spring-cloud-stream-preface-notable-enhancements]]
@@ -187,7 +190,11 @@ TBD
 
 [[spring-cloud-stream-preface-notable-deprecations]]
 === Notable Deprecations
-TBD
+
+- Reactive module in favor of native support via spring-cloud-function. [Details to follow]
+- Test support module with MessageCollector [Details to follow]
+- @StreamMessageConverter [Details to follow]
+- Original content type - removed
 
 = Appendices
 [appendix]
