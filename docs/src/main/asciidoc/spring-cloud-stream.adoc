@@ -1955,35 +1955,34 @@ Default: `false`.
 [[dynamicdestination]]
 === Using Dynamically Bound Destinations
 
-Besides the channels defined by using `@EnableBinding`, Spring Cloud Stream lets applications send messages to dynamically bound destinations.
+Aside from static destinations, Spring Cloud Stream lets applications send messages to dynamically bound destinations.
 This is useful, for example, when the target destination needs to be determined at runtime.
-Applications can do so by using the `BinderAwareChannelResolver` bean, registered automatically by the `@EnableBinding` annotation.
+Applications can do so in one of two ways
+
+***BinderAwareChannelResolver***
+
+The `BinderAwareChannelResolver` is a special bean registered automatically by the framework.
+You can autowire this bean into your application and use it to resolve output destination at runtime
 
 The 'spring.cloud.stream.dynamicDestinations' property can be used for restricting the dynamic destination names to a known set (whitelisting).
 If this property is not set, any destination can be bound dynamically.
 
-The `BinderAwareChannelResolver` can be used directly, as shown in the following example of a REST controller using a path variable to decide the target channel:
+The following example demonstrates one of the common scenarios where REST controller uses a path variable to determine target destination:
 
 [source,java]
 ----
-@EnableBinding
+@SpringBootApplication
 @Controller
 public class SourceWithDynamicDestination {
 
     @Autowired
     private BinderAwareChannelResolver resolver;
 
-    @RequestMapping(path = "/{target}", method = POST, consumes = "*/*")
-    @ResponseStatus(HttpStatus.ACCEPTED)
-    public void handleRequest(@RequestBody String body, @PathVariable("target") target,
-           @RequestHeader(HttpHeaders.CONTENT_TYPE) Object contentType) {
-        sendMessage(body, target, contentType);
-    }
-
-    private void sendMessage(String body, String target, Object contentType) {
-        resolver.resolveDestination(target).send(MessageBuilder.createMessage(body,
-                new MessageHeaders(Collections.singletonMap(MessageHeaders.CONTENT_TYPE, contentType))));
-    }
+    @RequestMapping(value="/{target}")
+	@ResponseStatus(HttpStatus.ACCEPTED)
+	public void send(@RequestBody String body, @PathVariable("target") String target){
+		resolver.resolveDestination(target).send(new GenericMessage<String>(body));
+	}
 }
 ----
 
@@ -1995,51 +1994,37 @@ curl -H "Content-Type: application/json" -X POST -d "customer-1" http://localhos
 curl -H "Content-Type: application/json" -X POST -d "order-1" http://localhost:8080/orders
 ----
 
-The destinations, 'customers' and 'orders', are created in the broker (in the exchange for Rabbit or in the topic for Kafka) with names of 'customers' and 'orders', and the data is published to the appropriate destinations.
+The destinations, 'customers' and 'orders', are created in the broker (in the exchange for Rabbit or in the topic for Kafka)
+with names of 'customers' and 'orders', and the data is published to the appropriate destinations.
 
-The `BinderAwareChannelResolver` is a general-purpose Spring Integration `DestinationResolver` and can be injected in other components -- for example, in a router using a SpEL expression based on the `target` field of an incoming JSON message. The following example includes a router that reads SpEL expressions:
+***spring.cloud.stream.sendto.destination***
+
+You can also delegate to the framework to dynamically resolve the output destination by specifying `spring.cloud.stream.sendto.destination` header
+set to the name of the destination to be resolved.
+
+Consider the following example:
 
 [source,java]
 ----
-@EnableBinding
+@SpringBootApplication
 @Controller
 public class SourceWithDynamicDestination {
 
-    @Autowired
-    private BinderAwareChannelResolver resolver;
-
-
-    @RequestMapping(path = "/", method = POST, consumes = "application/json")
-    @ResponseStatus(HttpStatus.ACCEPTED)
-    public void handleRequest(@RequestBody String body, @RequestHeader(HttpHeaders.CONTENT_TYPE) Object contentType) {
-        sendMessage(body, contentType);
-    }
-
-    private void sendMessage(Object body, Object contentType) {
-        routerChannel().send(MessageBuilder.createMessage(body,
-                new MessageHeaders(Collections.singletonMap(MessageHeaders.CONTENT_TYPE, contentType))));
-    }
-
-    @Bean(name = "routerChannel")
-    public MessageChannel routerChannel() {
-        return new DirectChannel();
-    }
-
     @Bean
-    @ServiceActivator(inputChannel = "routerChannel")
-    public ExpressionEvaluatingRouter router() {
-        ExpressionEvaluatingRouter router =
-            new ExpressionEvaluatingRouter(new SpelExpressionParser().parseExpression("payload.target"));
-        router.setDefaultOutputChannelName("default-output");
-        router.setChannelResolver(resolver);
-        return router;
-    }
+	public Function<String, Message<String>> destinationAsPayload() {
+		return value -> {
+			return MessageBuilder.withPayload(value)
+				.setHeader("spring.cloud.stream.sendto.destination", value).build();};
+	}
 }
 ----
 
-The https://github.com/spring-cloud-stream-app-starters/router[Router Sink Application] uses this technique to create the destinations on-demand.
+Albeit trivial you can clearly see in this example, our output is a Message with `spring.cloud.stream.sendto.destination` header
+set to the value of he input argument. The framework will consult this header and will attempt to create or discover
+destination with that name and send output to it.
 
-If the channel names are known in advance, you can configure the producer properties as with any other destination.
+
+If destination names are known in advance, you can configure the producer properties as with any other destination.
 Alternatively, if you register a `NewDestinationBindingCallback<>` bean, it is invoked just before the binding is created.
 The callback takes the generic type of the extended producer properties used by the binder.
 It has one method:

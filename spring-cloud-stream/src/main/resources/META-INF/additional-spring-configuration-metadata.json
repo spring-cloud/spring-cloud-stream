@@ -11,6 +11,12 @@
 			"name": "management.health.binders.enabled",
 			"description": "Allows to enable/disable binder's' health indicators. If you want to disable health indicator completely, then set it to `false`.",
 			"type": "java.lang.Boolean"
+		},
+		{
+			"defaultValue": "none",
+			"name": "spring.cloud.stream.sendto.destination",
+			"description": "The name of the header used to determine the name of the output destination",
+			"type": "java.lang.String"
 		}
 	]
 }

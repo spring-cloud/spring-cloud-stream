@@ -63,6 +63,7 @@ import org.springframework.cloud.stream.binder.BindingCreatedEvent;
 import org.springframework.cloud.stream.binder.ConsumerProperties;
 import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.cloud.stream.binding.BindableProxyFactory;
+import org.springframework.cloud.stream.binding.BinderAwareChannelResolver;
 import org.springframework.cloud.stream.config.BinderFactoryAutoConfiguration;
 import org.springframework.cloud.stream.config.BindingBeansRegistrar;
 import org.springframework.cloud.stream.config.BindingProperties;
@@ -121,13 +122,15 @@ public class FunctionConfiguration {
 	@Bean
 	public InitializingBean functionInitializer(FunctionCatalog functionCatalog, FunctionInspector functionInspector,
 			StreamFunctionProperties functionProperties, @Nullable BindableProxyFactory[] bindableProxyFactories,
-			BindingServiceProperties serviceProperties, ConfigurableApplicationContext applicationContext, FunctionBindingRegistrar bindingHolder) {
+			BindingServiceProperties serviceProperties, ConfigurableApplicationContext applicationContext,
+			FunctionBindingRegistrar bindingHolder, BinderAwareChannelResolver dynamicDestinationResolver) {
 
 		if (bindableProxyFactories == null) {
 			return null;
 		}
 
-		return new FunctionChannelBindingInitializer(functionCatalog, functionProperties, bindableProxyFactories, serviceProperties);
+		return new FunctionChannelBindingInitializer(functionCatalog, functionProperties, bindableProxyFactories,
+				serviceProperties, dynamicDestinationResolver);
 	}
 
 
@@ -273,15 +276,19 @@ public class FunctionConfiguration {
 
 		private final BindingServiceProperties serviceProperties;
 
+		private final BinderAwareChannelResolver dynamicDestinationResolver;
+
 		private GenericApplicationContext context;
 
 
 		FunctionChannelBindingInitializer(FunctionCatalog functionCatalog, StreamFunctionProperties functionProperties,
-				BindableProxyFactory[] bindableProxyFactories, BindingServiceProperties serviceProperties) {
+				BindableProxyFactory[] bindableProxyFactories, BindingServiceProperties serviceProperties,
+				BinderAwareChannelResolver dynamicDestinationResolver) {
 			this.functionCatalog = functionCatalog;
 			this.functionProperties = functionProperties;
 			this.bindableProxyFactories = bindableProxyFactories;
 			this.serviceProperties = serviceProperties;
+			this.dynamicDestinationResolver = dynamicDestinationResolver;
 		}
 
 		@Override
@@ -433,7 +440,21 @@ public class FunctionConfiguration {
 			ProducerProperties producerProperties = StringUtils.hasText(outputChannelName)
 					? this.serviceProperties.getBindingProperties(outputChannelName).getProducer()
 							: null;
-			ServiceActivatingHandler handler = new ServiceActivatingHandler(new FunctionWrapper(function, consumerProperties, producerProperties));
+			ServiceActivatingHandler handler = new ServiceActivatingHandler(new FunctionWrapper(function, consumerProperties, producerProperties)) {
+				protected void sendOutputs(Object result, Message<?> requestMessage) {
+					if (result instanceof Message && ((Message<?>) result).getHeaders().get("spring.cloud.stream.sendto.destination") != null) {
+						String destinationName = (String) ((Message<?>) result).getHeaders().get("spring.cloud.stream.sendto.destination");
+						MessageChannel outputChannel = dynamicDestinationResolver.resolveDestination(destinationName);
+						if (logger.isInfoEnabled()) {
+							logger.info("Output message is sent to '" + destinationName + "' destination");
+						}
+						outputChannel.send(((Message<?>) result));
+					}
+					else {
+						super.sendOutputs(result, requestMessage);
+					}
+				}
+			};
 			handler.setBeanFactory(this.context);
 			handler.afterPropertiesSet();
 			return handler;
