@@ -36,6 +36,11 @@ public class KafkaStreamsProducerProperties extends KafkaProducerProperties {
 	 */
 	private String valueSerde;
 
+	/**
+	 * {@link org.apache.kafka.streams.processor.StreamPartitioner} to be used on Kafka Streams producer.
+	 */
+	private String streamPartitionerBeanName;
+
 	public String getKeySerde() {
 		return this.keySerde;
 	}
@@ -52,4 +57,11 @@ public class KafkaStreamsProducerProperties extends KafkaProducerProperties {
 		this.valueSerde = valueSerde;
 	}
 
+	public String getStreamPartitionerBeanName() {
+		return this.streamPartitionerBeanName;
+	}
+
+	public void setStreamPartitionerBeanName(String streamPartitionerBeanName) {
+		this.streamPartitionerBeanName = streamPartitionerBeanName;
+	}
 }

@@ -38,10 +38,13 @@ import org.springframework.util.Assert;
 class KTableBoundElementFactory extends AbstractBindingTargetFactory<KTable> {
 
 	private final BindingServiceProperties bindingServiceProperties;
+	private final EncodingDecodingBindAdviceHandler encodingDecodingBindAdviceHandler;
 
-	KTableBoundElementFactory(BindingServiceProperties bindingServiceProperties) {
+	KTableBoundElementFactory(BindingServiceProperties bindingServiceProperties,
+							EncodingDecodingBindAdviceHandler encodingDecodingBindAdviceHandler) {
 		super(KTable.class);
 		this.bindingServiceProperties = bindingServiceProperties;
+		this.encodingDecodingBindAdviceHandler = encodingDecodingBindAdviceHandler;
 	}
 
 	@Override
@@ -51,6 +54,11 @@ class KTableBoundElementFactory extends AbstractBindingTargetFactory<KTable> {
 		if (consumerProperties == null) {
 			consumerProperties = this.bindingServiceProperties.getConsumerProperties(name);
 			consumerProperties.setUseNativeDecoding(true);
+		}
+		else {
+			if (!encodingDecodingBindAdviceHandler.isDecodingSettingProvided()) {
+				consumerProperties.setUseNativeDecoding(true);
+			}
 		}
 		// Always set multiplex to true in the kafka streams binder
 		consumerProperties.setMultiplex(true);

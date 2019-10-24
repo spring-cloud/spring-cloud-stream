@@ -22,6 +22,7 @@ import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.Produced;
+import org.apache.kafka.streams.processor.StreamPartitioner;
 
 import org.springframework.aop.framework.Advised;
 import org.springframework.cloud.stream.binder.AbstractBinder;
@@ -110,10 +111,11 @@ class KStreamBinder extends
 	protected Binding<KStream<Object, Object>> doBindProducer(String name,
 			KStream<Object, Object> outboundBindTarget,
 			ExtendedProducerProperties<KafkaStreamsProducerProperties> properties) {
-		ExtendedProducerProperties<KafkaProducerProperties> extendedProducerProperties = new ExtendedProducerProperties<>(
-				properties.getExtension());
-		this.kafkaTopicProvisioner.provisionProducerDestination(name,
-				extendedProducerProperties);
+
+		ExtendedProducerProperties<KafkaProducerProperties> extendedProducerProperties =
+				(ExtendedProducerProperties) properties;
+
+		this.kafkaTopicProvisioner.provisionProducerDestination(name, extendedProducerProperties);
 		Serde<?> keySerde = this.keyValueSerdeResolver
 				.getOuboundKeySerde(properties.getExtension(), kafkaStreamsBindingInformationCatalogue.getOutboundKStreamResolvable());
 		LOG.info("Key Serde used for (outbound) " + name + ": " + keySerde.getClass().getName());
@@ -129,27 +131,36 @@ class KStreamBinder extends
 		LOG.info("Key Serde used for (outbound) " + name + ": " + valueSerde.getClass().getName());
 
 		to(properties.isUseNativeEncoding(), name, outboundBindTarget,
-				(Serde<Object>) keySerde, (Serde<Object>) valueSerde);
+				(Serde<Object>) keySerde, (Serde<Object>) valueSerde, properties.getExtension());
 		return new DefaultBinding<>(name, null, outboundBindTarget, null);
 	}
 
 	@SuppressWarnings("unchecked")
 	private void to(boolean isNativeEncoding, String name,
-			KStream<Object, Object> outboundBindTarget, Serde<Object> keySerde,
-			Serde<Object> valueSerde) {
+					KStream<Object, Object> outboundBindTarget, Serde<Object> keySerde,
+					Serde<Object> valueSerde, KafkaStreamsProducerProperties properties) {
+		final Produced<Object, Object> produced = Produced.with(keySerde, valueSerde);
+		StreamPartitioner streamPartitioner = null;
+		if (!StringUtils.isEmpty(properties.getStreamPartitionerBeanName())) {
+			streamPartitioner = getApplicationContext().getBean(properties.getStreamPartitionerBeanName(),
+					StreamPartitioner.class);
+		}
+		if (streamPartitioner != null) {
+			produced.withStreamPartitioner(streamPartitioner);
+		}
 		if (!isNativeEncoding) {
 			LOG.info("Native encoding is disabled for " + name
 					+ ". Outbound message conversion done by Spring Cloud Stream.");
 			outboundBindTarget.filter((k, v) -> v == null)
-					.to(name, Produced.with(keySerde, valueSerde));
+					.to(name, produced);
 			this.kafkaStreamsMessageConversionDelegate
 					.serializeOnOutbound(outboundBindTarget)
-					.to(name, Produced.with(keySerde, valueSerde));
+					.to(name, produced);
 		}
 		else {
 			LOG.info("Native encoding is enabled for " + name
 					+ ". Outbound serialization done at the broker.");
-			outboundBindTarget.to(name, Produced.with(keySerde, valueSerde));
+			outboundBindTarget.to(name, produced);
 		}
 	}
 

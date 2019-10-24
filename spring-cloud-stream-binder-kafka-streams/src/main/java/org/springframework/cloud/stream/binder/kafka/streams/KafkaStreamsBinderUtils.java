@@ -65,8 +65,8 @@ final class KafkaStreamsBinderUtils {
 			KafkaStreamsBinderConfigurationProperties binderConfigurationProperties,
 			ExtendedConsumerProperties<KafkaStreamsConsumerProperties> properties) {
 
-		ExtendedConsumerProperties<KafkaConsumerProperties> extendedConsumerProperties = new ExtendedConsumerProperties<>(
-				properties.getExtension());
+		ExtendedConsumerProperties<KafkaConsumerProperties> extendedConsumerProperties =
+				(ExtendedConsumerProperties) properties;
 		if (binderConfigurationProperties
 				.getSerdeError() == KafkaStreamsBinderConfigurationProperties.SerdeError.sendToDlq) {
 			extendedConsumerProperties.getExtension().setEnableDlq(true);

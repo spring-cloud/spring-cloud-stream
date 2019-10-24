@@ -43,12 +43,15 @@ class KStreamBoundElementFactory extends AbstractBindingTargetFactory<KStream> {
 	private final BindingServiceProperties bindingServiceProperties;
 
 	private final KafkaStreamsBindingInformationCatalogue kafkaStreamsBindingInformationCatalogue;
+	private final EncodingDecodingBindAdviceHandler encodingDecodingBindAdviceHandler;
 
 	KStreamBoundElementFactory(BindingServiceProperties bindingServiceProperties,
-			KafkaStreamsBindingInformationCatalogue KafkaStreamsBindingInformationCatalogue) {
+							KafkaStreamsBindingInformationCatalogue KafkaStreamsBindingInformationCatalogue,
+							EncodingDecodingBindAdviceHandler encodingDecodingBindAdviceHandler) {
 		super(KStream.class);
 		this.bindingServiceProperties = bindingServiceProperties;
 		this.kafkaStreamsBindingInformationCatalogue = KafkaStreamsBindingInformationCatalogue;
+		this.encodingDecodingBindAdviceHandler = encodingDecodingBindAdviceHandler;
 	}
 
 	@Override
@@ -58,6 +61,11 @@ class KStreamBoundElementFactory extends AbstractBindingTargetFactory<KStream> {
 		if (consumerProperties == null) {
 			consumerProperties = this.bindingServiceProperties.getConsumerProperties(name);
 			consumerProperties.setUseNativeDecoding(true);
+		}
+		else {
+			if (!encodingDecodingBindAdviceHandler.isDecodingSettingProvided()) {
+				consumerProperties.setUseNativeDecoding(true);
+			}
 		}
 		// Always set multiplex to true in the kafka streams binder
 		consumerProperties.setMultiplex(true);
@@ -73,6 +81,11 @@ class KStreamBoundElementFactory extends AbstractBindingTargetFactory<KStream> {
 		if (producerProperties == null) {
 			producerProperties = this.bindingServiceProperties.getProducerProperties(name);
 			producerProperties.setUseNativeEncoding(true);
+		}
+		else {
+			if (!encodingDecodingBindAdviceHandler.isEncodingSettingProvided()) {
+				producerProperties.setUseNativeEncoding(true);
+			}
 		}
 		return createProxyForKStream(name);
 	}

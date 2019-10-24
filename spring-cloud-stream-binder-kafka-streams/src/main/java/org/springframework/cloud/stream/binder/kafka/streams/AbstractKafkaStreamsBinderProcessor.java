@@ -355,7 +355,7 @@ public abstract class AbstractKafkaStreamsBinderProcessor implements Application
 	private <K, V> Consumed<K, V> getConsumed(KafkaStreamsConsumerProperties kafkaStreamsConsumerProperties,
 											Serde<K> keySerde, Serde<V> valueSerde, Topology.AutoOffsetReset autoOffsetReset) {
 		TimestampExtractor timestampExtractor = null;
-		if (kafkaStreamsConsumerProperties.getTimestampExtractorBeanName() != null) {
+		if (!StringUtils.isEmpty(kafkaStreamsConsumerProperties.getTimestampExtractorBeanName())) {
 			timestampExtractor = applicationContext.getBean(kafkaStreamsConsumerProperties.getTimestampExtractorBeanName(),
 					TimestampExtractor.class);
 		}

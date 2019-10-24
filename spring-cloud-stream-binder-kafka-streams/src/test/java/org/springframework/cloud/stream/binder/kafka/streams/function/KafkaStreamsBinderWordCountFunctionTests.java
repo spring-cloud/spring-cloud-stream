@@ -31,6 +31,7 @@ import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.Materialized;
 import org.apache.kafka.streams.kstream.Serialized;
 import org.apache.kafka.streams.kstream.TimeWindows;
+import org.apache.kafka.streams.processor.StreamPartitioner;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
@@ -56,7 +57,7 @@ public class KafkaStreamsBinderWordCountFunctionTests {
 
 	@ClassRule
 	public static EmbeddedKafkaRule embeddedKafkaRule = new EmbeddedKafkaRule(1, true,
-			"counts", "counts-1");
+			"counts", "counts-1", "counts-2");
 
 	private static EmbeddedKafkaBroker embeddedKafka = embeddedKafkaRule.getEmbeddedKafka();
 
@@ -67,9 +68,10 @@ public class KafkaStreamsBinderWordCountFunctionTests {
 		Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("group", "false",
 				embeddedKafka);
 		consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+		consumerProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer");
 		DefaultKafkaConsumerFactory<String, String> cf = new DefaultKafkaConsumerFactory<>(consumerProps);
 		consumer = cf.createConsumer();
-		embeddedKafka.consumeFromEmbeddedTopics(consumer, "counts", "counts-1");
+		embeddedKafka.consumeFromEmbeddedTopics(consumer, "counts", "counts-1", "counts-2");
 	}
 
 	@AfterClass
@@ -118,6 +120,45 @@ public class KafkaStreamsBinderWordCountFunctionTests {
 						"=org.apache.kafka.common.serialization.Serdes$StringSerde",
 				"--spring.cloud.stream.kafka.streams.binder.brokers=" + embeddedKafka.getBrokersAsString())) {
 			receiveAndValidate("words-1", "counts-1");
+		}
+	}
+
+	@Test
+	public void testKstreamWordCountFunctionWithCustomProducerStreamPartitioner() throws Exception {
+		SpringApplication app = new SpringApplication(WordCountProcessorApplication.class);
+		app.setWebApplicationType(WebApplicationType.NONE);
+
+		try (ConfigurableApplicationContext context = app.run(
+				"--server.port=0",
+				"--spring.jmx.enabled=false",
+				"--spring.cloud.stream.bindings.process-in-0.destination=words-2",
+				"--spring.cloud.stream.bindings.process-out-0.destination=counts-2",
+				"--spring.cloud.stream.bindings.process-out-0.producer.partitionCount=2",
+				"--spring.cloud.stream.kafka.streams.bindings.process-out-0.producer.streamPartitionerBeanName" +
+						"=streamPartitioner",
+				"--spring.cloud.stream.kafka.streams.binder.configuration.commit.interval.ms=1000",
+				"--spring.cloud.stream.kafka.streams.binder.configuration.default.key.serde" +
+						"=org.apache.kafka.common.serialization.Serdes$StringSerde",
+				"--spring.cloud.stream.kafka.streams.binder.configuration.default.value.serde" +
+						"=org.apache.kafka.common.serialization.Serdes$StringSerde",
+				"--spring.cloud.stream.kafka.streams.binder.brokers=" + embeddedKafka.getBrokersAsString())) {
+			Map<String, Object> senderProps = KafkaTestUtils.producerProps(embeddedKafka);
+			DefaultKafkaProducerFactory<Integer, String> pf = new DefaultKafkaProducerFactory<>(senderProps);
+			try {
+				KafkaTemplate<Integer, String> template = new KafkaTemplate<>(pf, true);
+				template.setDefaultTopic("words-2");
+				template.sendDefault("foo");
+				ConsumerRecord<String, String> cr = KafkaTestUtils.getSingleRecord(consumer, "counts-2");
+				assertThat(cr.value().contains("\"word\":\"foo\",\"count\":1")).isTrue();
+				assertThat(cr.partition() == 0) .isTrue();
+				template.sendDefault("bar");
+				cr = KafkaTestUtils.getSingleRecord(consumer, "counts-2");
+				assertThat(cr.value().contains("\"word\":\"bar\",\"count\":1")).isTrue();
+				assertThat(cr.partition() == 1) .isTrue();
+			}
+			finally {
+				pf.destroy();
+			}
 		}
 	}
 
@@ -193,7 +234,7 @@ public class KafkaStreamsBinderWordCountFunctionTests {
 		InteractiveQueryService interactiveQueryService;
 
 		@Bean
-		public Function<KStream<Object, String>, KStream<?, WordCount>> process() {
+		public Function<KStream<Object, String>, KStream<String, WordCount>> process() {
 
 			return input -> input
 					.flatMapValues(value -> Arrays.asList(value.toLowerCase().split("\\W+")))
@@ -202,8 +243,13 @@ public class KafkaStreamsBinderWordCountFunctionTests {
 					.windowedBy(TimeWindows.of(5000))
 					.count(Materialized.as("foo-WordCounts"))
 					.toStream()
-					.map((key, value) -> new KeyValue<>(null, new WordCount(key.key(), value,
+					.map((key, value) -> new KeyValue<>(key.key(), new WordCount(key.key(), value,
 							new Date(key.window().start()), new Date(key.window().end()))));
+		}
+
+		@Bean
+		public StreamPartitioner<String, WordCount> streamPartitioner() {
+			return (t, k, v, n) -> k.equals("foo") ? 0 : 1;
 		}
 	}
 }

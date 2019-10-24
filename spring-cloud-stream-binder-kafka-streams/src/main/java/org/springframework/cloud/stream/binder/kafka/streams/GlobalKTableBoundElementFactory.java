@@ -40,10 +40,13 @@ public class GlobalKTableBoundElementFactory
 		extends AbstractBindingTargetFactory<GlobalKTable> {
 
 	private final BindingServiceProperties bindingServiceProperties;
+	private final EncodingDecodingBindAdviceHandler encodingDecodingBindAdviceHandler;
 
-	GlobalKTableBoundElementFactory(BindingServiceProperties bindingServiceProperties) {
+	GlobalKTableBoundElementFactory(BindingServiceProperties bindingServiceProperties,
+									EncodingDecodingBindAdviceHandler encodingDecodingBindAdviceHandler) {
 		super(GlobalKTable.class);
 		this.bindingServiceProperties = bindingServiceProperties;
+		this.encodingDecodingBindAdviceHandler = encodingDecodingBindAdviceHandler;
 	}
 
 	@Override
@@ -53,6 +56,11 @@ public class GlobalKTableBoundElementFactory
 		if (consumerProperties == null) {
 			consumerProperties = this.bindingServiceProperties.getConsumerProperties(name);
 			consumerProperties.setUseNativeDecoding(true);
+		}
+		else {
+			if (!encodingDecodingBindAdviceHandler.isDecodingSettingProvided()) {
+				consumerProperties.setUseNativeDecoding(true);
+			}
 		}
 		// Always set multiplex to true in the kafka streams binder
 		consumerProperties.setMultiplex(true);

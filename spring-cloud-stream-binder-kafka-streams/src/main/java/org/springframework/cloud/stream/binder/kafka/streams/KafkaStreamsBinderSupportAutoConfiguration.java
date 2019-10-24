@@ -304,21 +304,22 @@ public class KafkaStreamsBinderSupportAutoConfiguration {
 	@Bean
 	public KStreamBoundElementFactory kStreamBoundElementFactory(
 			BindingServiceProperties bindingServiceProperties,
-			KafkaStreamsBindingInformationCatalogue KafkaStreamsBindingInformationCatalogue) {
+			KafkaStreamsBindingInformationCatalogue KafkaStreamsBindingInformationCatalogue,
+			EncodingDecodingBindAdviceHandler encodingDecodingBindAdviceHandler) {
 		return new KStreamBoundElementFactory(bindingServiceProperties,
-				KafkaStreamsBindingInformationCatalogue);
+				KafkaStreamsBindingInformationCatalogue, encodingDecodingBindAdviceHandler);
 	}
 
 	@Bean
 	public KTableBoundElementFactory kTableBoundElementFactory(
-			BindingServiceProperties bindingServiceProperties) {
-		return new KTableBoundElementFactory(bindingServiceProperties);
+			BindingServiceProperties bindingServiceProperties, EncodingDecodingBindAdviceHandler encodingDecodingBindAdviceHandler) {
+		return new KTableBoundElementFactory(bindingServiceProperties, encodingDecodingBindAdviceHandler);
 	}
 
 	@Bean
 	public GlobalKTableBoundElementFactory globalKTableBoundElementFactory(
-			BindingServiceProperties properties) {
-		return new GlobalKTableBoundElementFactory(properties);
+			BindingServiceProperties properties, EncodingDecodingBindAdviceHandler encodingDecodingBindAdviceHandler) {
+		return new GlobalKTableBoundElementFactory(properties, encodingDecodingBindAdviceHandler);
 	}
 
 	@Bean
@@ -375,7 +376,10 @@ public class KafkaStreamsBinderSupportAutoConfiguration {
 				cleanupConfig.getIfUnique(), streamFunctionProperties, kafkaStreamsBinderConfigurationProperties);
 	}
 
-
+	@Bean
+	public EncodingDecodingBindAdviceHandler encodingDecodingBindAdviceHandler() {
+		return new EncodingDecodingBindAdviceHandler();
+	}
 
 	@Configuration
 	@ConditionalOnMissingBean(value = KafkaStreamsBinderMetrics.class, name = "outerContext")
