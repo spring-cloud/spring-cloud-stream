@@ -159,14 +159,9 @@ Whether to automatically declare the DLQ and bind it to the binder DLX.
 Default: `false`.
 bindingRoutingKey::
 The routing key with which to bind the queue to the exchange (if `bindQueue` is `true`).
-Can be multiple keys - see `bindingRoutingKeyDelimiter`.
-For partitioned destinations, `-<instanceIndex>` is appended to each key.
+For partitioned destinations, `-<instanceIndex>` is appended.
 +
 Default: `#`.
-bindingRoutingKeyDelimiter::
-When this is not null, 'bindingRoutingKey' is considered to be a list of keys delimited by this value; often a comma is used.
-+
-Default: `null`.
 bindQueue::
 Whether to declare the queue and bind it to the destination exchange.
 Set it to `false` if you have set up your own infrastructure and have previously created and bound the queue.
@@ -445,16 +440,10 @@ The batch timeout when batching is enabled.
 Default: `5000`.
 bindingRoutingKey::
 The routing key with which to bind the queue to the exchange (if `bindQueue` is `true`).
-Can be multiple keys - see `bindingRoutingKeyDelimiter`.
-For partitioned destinations, `-n` is appended to each key.
+Only applies to non-partitioned destinations.
 Only applies if `requiredGroups` are provided and then only to those groups.
 +
 Default: `#`.
-bindingRoutingKeyDelimiter::
-When this is not null, 'bindingRoutingKey' is considered to be a list of keys delimited by this value; often a comma is used.
-Only applies if `requiredGroups` are provided and then only to those groups.
-+
-Default: `null`.
 bindQueue::
 Whether to declare the queue and bind it to the destination exchange.
 Set it to `false` if you have set up your own infrastructure and have previously created and bound the queue.
