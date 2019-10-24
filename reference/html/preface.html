@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <!--[if IE]><meta http-equiv="X-UA-Compatible" content="IE=edge"><![endif]-->
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="generator" content="Asciidoctor 1.5.7.1">
+<meta name="generator" content="Asciidoctor 1.5.8">
 <title>A Brief History of Spring&#8217;s Data Integration Journey</title>
 <link rel="stylesheet" href="css/spring.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
@@ -188,7 +188,7 @@ If you chose RabbitMQ for the middleware, your Spring Initializr should now be a
 </li>
 </ol>
 </div>
-<div class="imageblock" style="text-align: center">
+<div class="imageblock text-center">
 <div class="content">
 <img src="https://raw.githubusercontent.com/spring-cloud/spring-cloud-stream/master/docs/src/main/asciidoc/images/spring-initializr.png" alt="spring initializr">
 </div>
@@ -343,7 +343,10 @@ For something more predictable, you can use an explicit group name by setting <c
 <div class="sect2">
 <h3 id="spring-cloud-stream-preface-new-features"><a class="link" href="#spring-cloud-stream-preface-new-features">New Features and Components</a></h3>
 <div class="paragraph">
-<p>TBD</p>
+<p>TBD
+- Routing Function [Details to follow]
+- Multiple bindings with functions [Details to follow]
+- Functions with multiple inputs/outputs</p>
 </div>
 </div>
 <div class="sect2">
@@ -354,8 +357,21 @@ For something more predictable, you can use an explicit group name by setting <c
 </div>
 <div class="sect2">
 <h3 id="spring-cloud-stream-preface-notable-deprecations"><a class="link" href="#spring-cloud-stream-preface-notable-deprecations">Notable Deprecations</a></h3>
-<div class="paragraph">
-<p>TBD</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Reactive module in favor of native support via spring-cloud-function. [Details to follow]</p>
+</li>
+<li>
+<p>Test support module with MessageCollector [Details to follow]</p>
+</li>
+<li>
+<p>@StreamMessageConverter [Details to follow]</p>
+</li>
+<li>
+<p>Original content type - removed</p>
+</li>
+</ul>
 </div>
 </div>
 </div>
