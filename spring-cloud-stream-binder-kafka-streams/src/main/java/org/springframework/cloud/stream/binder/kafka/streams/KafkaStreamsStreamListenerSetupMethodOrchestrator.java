@@ -54,6 +54,7 @@ import org.springframework.core.MethodParameter;
 import org.springframework.core.ResolvableType;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.kafka.config.StreamsBuilderFactoryBean;
+import org.springframework.kafka.config.StreamsBuilderFactoryBeanCustomizer;
 import org.springframework.kafka.core.CleanupConfig;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.util.Assert;
@@ -98,6 +99,8 @@ class KafkaStreamsStreamListenerSetupMethodOrchestrator extends AbstractKafkaStr
 
 	private final Map<Method, StreamsBuilderFactoryBean> methodStreamsBuilderFactoryBeanMap = new HashMap<>();
 
+	StreamsBuilderFactoryBeanCustomizer customizer;
+
 	KafkaStreamsStreamListenerSetupMethodOrchestrator(
 			BindingServiceProperties bindingServiceProperties,
 			KafkaStreamsExtendedBindingProperties extendedBindingProperties,
@@ -105,7 +108,8 @@ class KafkaStreamsStreamListenerSetupMethodOrchestrator extends AbstractKafkaStr
 			KafkaStreamsBindingInformationCatalogue bindingInformationCatalogue,
 			StreamListenerParameterAdapter streamListenerParameterAdapter,
 			Collection<StreamListenerResultAdapter> listenerResultAdapters,
-			CleanupConfig cleanupConfig) {
+			CleanupConfig cleanupConfig,
+			StreamsBuilderFactoryBeanCustomizer customizer) {
 		super(bindingServiceProperties, bindingInformationCatalogue, extendedBindingProperties, keyValueSerdeResolver, cleanupConfig);
 		this.bindingServiceProperties = bindingServiceProperties;
 		this.kafkaStreamsExtendedBindingProperties = extendedBindingProperties;
@@ -113,6 +117,7 @@ class KafkaStreamsStreamListenerSetupMethodOrchestrator extends AbstractKafkaStr
 		this.kafkaStreamsBindingInformationCatalogue = bindingInformationCatalogue;
 		this.streamListenerParameterAdapter = streamListenerParameterAdapter;
 		this.streamListenerResultAdapters = listenerResultAdapters;
+		this.customizer = customizer;
 	}
 
 	@Override
@@ -244,7 +249,7 @@ class KafkaStreamsStreamListenerSetupMethodOrchestrator extends AbstractKafkaStr
 				if (!this.methodStreamsBuilderFactoryBeanMap.containsKey(method)) {
 					StreamsBuilderFactoryBean streamsBuilderFactoryBean = buildStreamsBuilderAndRetrieveConfig(method.getDeclaringClass().getSimpleName() + "-" + method.getName(),
 							applicationContext,
-							inboundName, null);
+							inboundName, null, customizer);
 					this.methodStreamsBuilderFactoryBeanMap.put(method, streamsBuilderFactoryBean);
 				}
 				try {

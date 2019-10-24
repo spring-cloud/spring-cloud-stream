@@ -53,6 +53,7 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.ResolvableType;
 import org.springframework.kafka.config.KafkaStreamsConfiguration;
 import org.springframework.kafka.config.StreamsBuilderFactoryBean;
+import org.springframework.kafka.config.StreamsBuilderFactoryBeanCustomizer;
 import org.springframework.kafka.core.CleanupConfig;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.MessageBuilder;
@@ -150,7 +151,8 @@ public abstract class AbstractKafkaStreamsBinderProcessor implements Application
 	@SuppressWarnings({"unchecked"})
 	protected StreamsBuilderFactoryBean buildStreamsBuilderAndRetrieveConfig(String beanNamePostPrefix,
 																			ApplicationContext applicationContext, String inboundName,
-																			KafkaStreamsBinderConfigurationProperties kafkaStreamsBinderConfigurationProperties) {
+																			KafkaStreamsBinderConfigurationProperties kafkaStreamsBinderConfigurationProperties,
+																			StreamsBuilderFactoryBeanCustomizer customizer) {
 		ConfigurableListableBeanFactory beanFactory = this.applicationContext
 				.getBeanFactory();
 
@@ -216,6 +218,9 @@ public abstract class AbstractKafkaStreamsBinderProcessor implements Application
 				? new StreamsBuilderFactoryBean(kafkaStreamsConfiguration)
 				: new StreamsBuilderFactoryBean(kafkaStreamsConfiguration,
 				this.cleanupConfig);
+		if (customizer != null) {
+			customizer.configure(streamsBuilder);
+		}
 		streamsBuilder.setAutoStartup(false);
 		BeanDefinition streamsBuilderBeanDefinition = BeanDefinitionBuilder
 				.genericBeanDefinition(

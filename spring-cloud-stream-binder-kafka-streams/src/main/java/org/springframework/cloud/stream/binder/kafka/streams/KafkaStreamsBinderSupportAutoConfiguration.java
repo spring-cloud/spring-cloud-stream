@@ -60,6 +60,7 @@ import org.springframework.core.env.Environment;
 import org.springframework.core.env.MapPropertySource;
 import org.springframework.integration.context.IntegrationContextUtils;
 import org.springframework.kafka.config.KafkaStreamsConfiguration;
+import org.springframework.kafka.config.StreamsBuilderFactoryBeanCustomizer;
 import org.springframework.kafka.core.CleanupConfig;
 import org.springframework.kafka.streams.RecoveringDeserializationExceptionHandler;
 import org.springframework.lang.Nullable;
@@ -268,12 +269,13 @@ public class KafkaStreamsBinderSupportAutoConfiguration {
 			KafkaStreamsBindingInformationCatalogue kafkaStreamsBindingInformationCatalogue,
 			KStreamStreamListenerParameterAdapter kafkaStreamListenerParameterAdapter,
 			Collection<StreamListenerResultAdapter> streamListenerResultAdapters,
-			ObjectProvider<CleanupConfig> cleanupConfig) {
+			ObjectProvider<CleanupConfig> cleanupConfig,
+			ObjectProvider<StreamsBuilderFactoryBeanCustomizer> customizerProvider) {
 		return new KafkaStreamsStreamListenerSetupMethodOrchestrator(
 				bindingServiceProperties, kafkaStreamsExtendedBindingProperties,
 				keyValueSerdeResolver, kafkaStreamsBindingInformationCatalogue,
 				kafkaStreamListenerParameterAdapter, streamListenerResultAdapters,
-				cleanupConfig.getIfUnique());
+				cleanupConfig.getIfUnique(), customizerProvider.getIfUnique());
 	}
 
 	@Bean
@@ -370,10 +372,12 @@ public class KafkaStreamsBinderSupportAutoConfiguration {
 																	KafkaStreamsMessageConversionDelegate kafkaStreamsMessageConversionDelegate,
 																	ObjectProvider<CleanupConfig> cleanupConfig,
 																	StreamFunctionProperties streamFunctionProperties,
-																	KafkaStreamsBinderConfigurationProperties kafkaStreamsBinderConfigurationProperties) {
+																	KafkaStreamsBinderConfigurationProperties kafkaStreamsBinderConfigurationProperties,
+																	ObjectProvider<StreamsBuilderFactoryBeanCustomizer> customizerProvider) {
 		return new KafkaStreamsFunctionProcessor(bindingServiceProperties, kafkaStreamsExtendedBindingProperties,
 				keyValueSerdeResolver, kafkaStreamsBindingInformationCatalogue, kafkaStreamsMessageConversionDelegate,
-				cleanupConfig.getIfUnique(), streamFunctionProperties, kafkaStreamsBinderConfigurationProperties);
+				cleanupConfig.getIfUnique(), streamFunctionProperties, kafkaStreamsBinderConfigurationProperties,
+				customizerProvider.getIfUnique());
 	}
 
 	@Bean

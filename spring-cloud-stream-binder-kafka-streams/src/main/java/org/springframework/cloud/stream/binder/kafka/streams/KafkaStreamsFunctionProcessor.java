@@ -56,6 +56,7 @@ import org.springframework.cloud.stream.function.FunctionConstants;
 import org.springframework.cloud.stream.function.StreamFunctionProperties;
 import org.springframework.core.ResolvableType;
 import org.springframework.kafka.config.StreamsBuilderFactoryBean;
+import org.springframework.kafka.config.StreamsBuilderFactoryBeanCustomizer;
 import org.springframework.kafka.core.CleanupConfig;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
@@ -79,6 +80,7 @@ public class KafkaStreamsFunctionProcessor extends AbstractKafkaStreamsBinderPro
 	private BeanFactory beanFactory;
 	private StreamFunctionProperties streamFunctionProperties;
 	private KafkaStreamsBinderConfigurationProperties kafkaStreamsBinderConfigurationProperties;
+	StreamsBuilderFactoryBeanCustomizer customizer;
 
 	public KafkaStreamsFunctionProcessor(BindingServiceProperties bindingServiceProperties,
 										KafkaStreamsExtendedBindingProperties kafkaStreamsExtendedBindingProperties,
@@ -87,7 +89,8 @@ public class KafkaStreamsFunctionProcessor extends AbstractKafkaStreamsBinderPro
 										KafkaStreamsMessageConversionDelegate kafkaStreamsMessageConversionDelegate,
 										CleanupConfig cleanupConfig,
 										StreamFunctionProperties streamFunctionProperties,
-										KafkaStreamsBinderConfigurationProperties kafkaStreamsBinderConfigurationProperties) {
+										KafkaStreamsBinderConfigurationProperties kafkaStreamsBinderConfigurationProperties,
+										StreamsBuilderFactoryBeanCustomizer customizer) {
 		super(bindingServiceProperties, kafkaStreamsBindingInformationCatalogue, kafkaStreamsExtendedBindingProperties,
 				keyValueSerdeResolver, cleanupConfig);
 		this.bindingServiceProperties = bindingServiceProperties;
@@ -97,6 +100,7 @@ public class KafkaStreamsFunctionProcessor extends AbstractKafkaStreamsBinderPro
 		this.kafkaStreamsMessageConversionDelegate = kafkaStreamsMessageConversionDelegate;
 		this.streamFunctionProperties = streamFunctionProperties;
 		this.kafkaStreamsBinderConfigurationProperties = kafkaStreamsBinderConfigurationProperties;
+		this.customizer = customizer;
 	}
 
 	private Map<String, ResolvableType> buildTypeMap(ResolvableType resolvableType,
@@ -290,7 +294,8 @@ public class KafkaStreamsFunctionProcessor extends AbstractKafkaStreamsBinderPro
 				//Retrieve the StreamsConfig created for this method if available.
 				//Otherwise, create the StreamsBuilderFactory and get the underlying config.
 				if (!this.methodStreamsBuilderFactoryBeanMap.containsKey(functionName)) {
-					StreamsBuilderFactoryBean streamsBuilderFactoryBean = buildStreamsBuilderAndRetrieveConfig(functionName, applicationContext, input, kafkaStreamsBinderConfigurationProperties);
+					StreamsBuilderFactoryBean streamsBuilderFactoryBean = buildStreamsBuilderAndRetrieveConfig(functionName, applicationContext,
+							input, kafkaStreamsBinderConfigurationProperties, customizer);
 					this.methodStreamsBuilderFactoryBeanMap.put(functionName, streamsBuilderFactoryBean);
 				}
 				try {
