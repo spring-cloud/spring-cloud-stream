@@ -30,11 +30,6 @@
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
-				<artifactId>spring-cloud-stream-reactive</artifactId>
-				<version>${spring-cloud-stream.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.springframework.cloud</groupId>
 				<artifactId>spring-cloud-schema-registry-core</artifactId>
 				<version>${spring-cloud-schema-registry.version}</version>
 			</dependency>
@@ -47,11 +42,6 @@
 				<groupId>org.springframework.cloud</groupId>
 				<artifactId>spring-cloud-schema-registry-client</artifactId>
 				<version>${spring-cloud-schema-registry.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.springframework.cloud</groupId>
-				<artifactId>spring-cloud-stream-binder-test</artifactId>
-				<version>${spring-cloud-stream.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
