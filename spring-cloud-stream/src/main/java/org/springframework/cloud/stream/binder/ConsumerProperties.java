@@ -155,8 +155,7 @@ public class ConsumerProperties {
 	 * By default this property is set to `false` and the binder will individually bind
 	 * each destinations in case of a comma separated multi destination list. The
 	 * individual binder implementations that need to support multiple input bindings
-	 * natively (multiplex) can enable this property. Under normal circumstances, the end
-	 * users are not expected to enable or disable this property directly.
+	 * natively (multiplex) can enable this property.
 	 */
 	private boolean multiplex;
 

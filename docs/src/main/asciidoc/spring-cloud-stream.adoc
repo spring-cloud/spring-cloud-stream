@@ -1861,6 +1861,10 @@ Also, when native encoding and decoding is used, the `headerMode=embeddedHeaders
 See the producer property `useNativeEncoding`.
 +
 Default: `false`.
+multiplex::
+When set to true, the underlying binder will natively multiplex destinations on the same input binding.
++
+Default: `false`.
 
 ==== Advanced Consumer Configuration
 
