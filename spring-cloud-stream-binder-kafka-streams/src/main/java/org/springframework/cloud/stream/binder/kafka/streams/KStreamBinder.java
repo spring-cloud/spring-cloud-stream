@@ -128,7 +128,7 @@ class KStreamBinder extends
 		else {
 			valueSerde = Serdes.ByteArray();
 		}
-		LOG.info("Key Serde used for (outbound) " + name + ": " + valueSerde.getClass().getName());
+		LOG.info("Value Serde used for (outbound) " + name + ": " + valueSerde.getClass().getName());
 
 		to(properties.isUseNativeEncoding(), name, outboundBindTarget,
 				(Serde<Object>) keySerde, (Serde<Object>) valueSerde, properties.getExtension());
