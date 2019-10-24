@@ -276,7 +276,7 @@ class KafkaStreamsStreamListenerSetupMethodOrchestrator extends AbstractKafkaStr
 					if (parameterType.isAssignableFrom(KStream.class)) {
 						KStream<?, ?> stream = getkStream(inboundName, spec,
 								bindingProperties, extendedConsumerProperties, streamsBuilder, keySerde, valueSerde,
-								autoOffsetReset);
+								autoOffsetReset, parameterIndex == 0);
 						KStreamBoundElementFactory.KStreamWrapper kStreamWrapper = (KStreamBoundElementFactory.KStreamWrapper) targetBean;
 						// wrap the proxy created during the initial target type binding
 						// with real object (KStream)
@@ -369,7 +369,7 @@ class KafkaStreamsStreamListenerSetupMethodOrchestrator extends AbstractKafkaStr
 									BindingProperties bindingProperties,
 									KafkaStreamsConsumerProperties kafkaStreamsConsumerProperties, StreamsBuilder streamsBuilder,
 									Serde<?> keySerde, Serde<?> valueSerde,
-									Topology.AutoOffsetReset autoOffsetReset) {
+									Topology.AutoOffsetReset autoOffsetReset, boolean firstBuild) {
 		if (storeSpec != null) {
 			StoreBuilder storeBuilder = buildStateStore(storeSpec);
 			streamsBuilder.addStateStore(storeBuilder);
@@ -377,7 +377,8 @@ class KafkaStreamsStreamListenerSetupMethodOrchestrator extends AbstractKafkaStr
 				LOG.info("state store " + storeBuilder.name() + " added to topology");
 			}
 		}
-		return getKStream(inboundName, bindingProperties, kafkaStreamsConsumerProperties, streamsBuilder, keySerde, valueSerde, autoOffsetReset);
+		return getKStream(inboundName, bindingProperties, kafkaStreamsConsumerProperties, streamsBuilder,
+				keySerde, valueSerde, autoOffsetReset, firstBuild);
 	}
 
 	private void validateStreamListenerMethod(StreamListener streamListener,

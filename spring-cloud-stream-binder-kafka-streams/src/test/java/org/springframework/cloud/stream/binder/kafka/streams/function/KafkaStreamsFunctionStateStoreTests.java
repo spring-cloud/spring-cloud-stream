@@ -105,9 +105,9 @@ public class KafkaStreamsFunctionStateStoreTests {
 		boolean processed;
 
 		@Bean
-		public java.util.function.Consumer<KStream<Object, String>> process() {
-			return input ->
-					input.process((ProcessorSupplier<Object, String>) () -> new Processor<Object, String>() {
+		public java.util.function.BiConsumer<KStream<Object, String>, KStream<Object, String>> process() {
+			return (input0, input1) ->
+					input0.process((ProcessorSupplier<Object, String>) () -> new Processor<Object, String>() {
 						@Override
 						@SuppressWarnings("unchecked")
 						public void init(ProcessorContext context) {

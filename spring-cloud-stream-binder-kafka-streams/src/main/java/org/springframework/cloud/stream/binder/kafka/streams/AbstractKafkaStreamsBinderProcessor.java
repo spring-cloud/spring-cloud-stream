@@ -251,8 +251,10 @@ public abstract class AbstractKafkaStreamsBinderProcessor implements Application
 	}
 
 	protected KStream<?, ?> getKStream(String inboundName, BindingProperties bindingProperties, KafkaStreamsConsumerProperties kafkaStreamsConsumerProperties,
-									StreamsBuilder streamsBuilder, Serde<?> keySerde, Serde<?> valueSerde, Topology.AutoOffsetReset autoOffsetReset) {
-		addStateStoreBeans(streamsBuilder);
+									StreamsBuilder streamsBuilder, Serde<?> keySerde, Serde<?> valueSerde, Topology.AutoOffsetReset autoOffsetReset, boolean firstBuild) {
+		if (firstBuild) {
+			addStateStoreBeans(streamsBuilder);
+		}
 
 		String[] bindingTargets = StringUtils.commaDelimitedListToStringArray(
 				this.bindingServiceProperties.getBindingDestination(inboundName));

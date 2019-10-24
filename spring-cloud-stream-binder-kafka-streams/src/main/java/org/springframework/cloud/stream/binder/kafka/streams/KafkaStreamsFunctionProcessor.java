@@ -316,7 +316,8 @@ public class KafkaStreamsFunctionProcessor extends AbstractKafkaStreamsBinderPro
 					final Topology.AutoOffsetReset autoOffsetReset = getAutoOffsetReset(input, extendedConsumerProperties);
 
 					if (parameterType.isAssignableFrom(KStream.class)) {
-						KStream<?, ?> stream = getKStream(input, bindingProperties, extendedConsumerProperties, streamsBuilder, keySerde, valueSerde, autoOffsetReset);
+						KStream<?, ?> stream = getKStream(input, bindingProperties, extendedConsumerProperties,
+								streamsBuilder, keySerde, valueSerde, autoOffsetReset, i == 0);
 						KStreamBoundElementFactory.KStreamWrapper kStreamWrapper =
 								(KStreamBoundElementFactory.KStreamWrapper) targetBean;
 						//wrap the proxy created during the initial target type binding with real object (KStream)
