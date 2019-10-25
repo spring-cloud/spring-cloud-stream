@@ -99,15 +99,16 @@ public class KafkaBinderHealthIndicator implements HealthIndicator, DisposableBe
 		}
 	}
 
+	private synchronized  Consumer<?, ?> initMetadataConsumer() {
+		if (this.metadataConsumer == null) {
+			this.metadataConsumer = this.consumerFactory.createConsumer();
+		}
+		return this.metadataConsumer;
+	}
+
 	private Health buildHealthStatus() {
 		try {
-			if (this.metadataConsumer == null) {
-				synchronized (KafkaBinderHealthIndicator.this) {
-					if (this.metadataConsumer == null) {
-						this.metadataConsumer = this.consumerFactory.createConsumer();
-					}
-				}
-			}
+			initMetadataConsumer();
 			synchronized (this.metadataConsumer) {
 				Set<String> downMessages = new HashSet<>();
 				final Map<String, KafkaMessageChannelBinder.TopicInformation> topicsInUse = KafkaBinderHealthIndicator.this.binder

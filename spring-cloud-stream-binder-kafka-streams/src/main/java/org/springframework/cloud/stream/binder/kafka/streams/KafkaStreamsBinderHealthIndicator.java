@@ -115,7 +115,9 @@ public class KafkaStreamsBinderHealthIndicator extends AbstractHealthIndicator {
 		}
 		finally {
 			// Close admin client immediately.
-			adminClient.close(Duration.ofSeconds(0));
+			if (adminClient != null) {
+				adminClient.close(Duration.ofSeconds(0));
+			}
 		}
 	}
 

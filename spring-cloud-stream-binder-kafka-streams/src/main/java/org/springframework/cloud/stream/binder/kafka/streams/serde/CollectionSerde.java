@@ -107,11 +107,12 @@ public class CollectionSerde<E> implements Serde<Collection<E>> {
 	 */
 	public CollectionSerde(Class<?> targetTypeForJsonSerde, Class<?> collectionsClass) {
 		this.collectionClass = collectionsClass;
-		JsonSerde<E> jsonSerde = new JsonSerde(targetTypeForJsonSerde);
+		try (JsonSerde<E> jsonSerde = new JsonSerde(targetTypeForJsonSerde)) {
 
-		this.inner = Serdes.serdeFrom(
-				new CollectionSerializer<>(jsonSerde.serializer()),
-				new CollectionDeserializer<>(jsonSerde.deserializer(), collectionsClass));
+			this.inner = Serdes.serdeFrom(
+					new CollectionSerializer<>(jsonSerde.serializer()),
+					new CollectionDeserializer<>(jsonSerde.deserializer(), collectionsClass));
+		}
 	}
 
 	@Override
@@ -204,8 +205,10 @@ public class CollectionSerde<E> implements Serde<Collection<E>> {
 				final int records = dataInputStream.readInt();
 				for (int i = 0; i < records; i++) {
 					final byte[] valueBytes = new byte[dataInputStream.readInt()];
-					dataInputStream.read(valueBytes);
-					collection.add(valueDeserializer.deserialize(topic, valueBytes));
+					final int read = dataInputStream.read(valueBytes);
+					if (read != -1) {
+						collection.add(valueDeserializer.deserialize(topic, valueBytes));
+					}
 				}
 			}
 			catch (IOException e) {
