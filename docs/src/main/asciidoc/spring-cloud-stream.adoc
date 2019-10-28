@@ -570,7 +570,8 @@ For example `--spring.cloud.stream.poller.fixed-delay=2000` sets the poller inte
 
 ===== Routing with functions
 Routing with functions can be achieved by relying on `RoutingFunction` available in Spring Cloud Function 3.0. All you need to do is enable it via
-`--spring.cloud.stream.function.routing.enabled=true` application property. Once enabled `RoutingFunction` will be bound to input destination
+`--spring.cloud.stream.function.routing.enabled=true` application property or provide `spring.cloud.function.routing-expression` property.
+Once enabled `RoutingFunction` will be bound to input destination
 receiving all the messages and route them to other functions based on the provided instruction.
 
 Instruction could be provided with individual messages as well as application properties.
@@ -2310,26 +2311,6 @@ Below is the example of the required Maven POM entries which could be easily ret
     <scope>test</scope>
     <classifier>test-binder</classifier>
 </dependency>
-. . .
-<plugins>
-    <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-jar-plugin</artifactId>
-        <executions>
-	    <execution>
-		<configuration>
-		    <includes>
-			 <include>**/integration/*</include>
-		    </includes>
-		    <classifier>test-binder</classifier>
-		</configuration>
-                <goals>
-                    <goal>test-jar</goal>
-                </goals>
-            </execution>
-        </executions>
-    </plugin>
-</plugins>
 ----
 
 ***Remove the dependency for `spring-cloud-stream-test-support`***

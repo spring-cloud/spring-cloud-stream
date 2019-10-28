@@ -649,7 +649,8 @@ public class FunctionConfiguration {
 			if (StringUtils.hasText(definition)) {
 				streamFunctionProperties.setDefinition(definition);
 			}
-			else if (Boolean.parseBoolean(environment.getProperty("spring.cloud.stream.function.routing.enabled", "false"))) {
+			else if (Boolean.parseBoolean(environment.getProperty("spring.cloud.stream.function.routing.enabled", "false"))
+					|| environment.containsProperty("spring.cloud.function.routing-expression")) {
 				streamFunctionProperties.setDefinition(RoutingFunction.FUNCTION_NAME);
 			}
 			else {
