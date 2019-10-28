@@ -415,7 +415,7 @@ public class FunctionConfiguration {
 					? ((BindableFunctionProxyFactory) bindableProxyFactory).getOutputName(0)
 							: (FunctionTypeUtils.isConsumer(functionType) ? null : "output");
 
-			if (FunctionTypeUtils.isReactive(FunctionTypeUtils.getInputType(functionType, 0))) {
+			if (FunctionTypeUtils.isReactive(FunctionTypeUtils.getInputType(functionType, 0)) && StringUtils.hasText(outputChannelName)) {
 				MessageChannel outputChannel = context.getBean(outputChannelName, MessageChannel.class);
 				SubscribableChannel subscribeChannel = (SubscribableChannel) inputChannel;
 				Publisher<?> publisher = this.enhancePublisher(MessageChannelReactiveUtils.toPublisher(subscribeChannel),
