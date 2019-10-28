@@ -154,7 +154,7 @@ You can also build and package your application into a boot jar (by using `./mvn
 Now you have a working (albeit very basic) Spring Cloud Stream application.
 
 == What's New in 3.0?
-TBD
+
 
 [[spring-cloud-stream-preface-new-features]]
 === New Features and Components
