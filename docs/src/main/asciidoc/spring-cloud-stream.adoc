@@ -568,7 +568,7 @@ Default: 1L.
 
 For example `--spring.cloud.stream.poller.fixed-delay=2000` sets the poller interval to poll every two seconds.
 
-===== Content-based routing with functions
+===== Routing with functions
 Routing with functions can be achieved by relying on `RoutingFunction` available in Spring Cloud Function 3.0. All you need to do is enable it via
 `--spring.cloud.stream.function.routing.enabled=true` application property. Once enabled `RoutingFunction` will be bound to input destination
 receiving all the messages and route them to other functions based on the provided instruction.

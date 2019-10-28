@@ -178,10 +178,13 @@ Now you have a working (albeit very basic) Spring Cloud Stream application.
 
 [[spring-cloud-stream-preface-new-features]]
 === New Features and Components
-TBD
-- Routing Function [Details to follow]
-- Multiple bindings with functions [Details to follow]
-- Functions with multiple inputs/outputs
+
+- *Routing Function* - see <<Routing with functions>> for more details.
+- *Multiple bindings with functions* (multiple message handlers) - see <<Multiple functions in a single application>> for more details.
+- *Functions with multiple inputs/outputs* (single function that can subscribe or target multiple destinations) - see <<Functions with multiple input and output arguments>> for more details.
+- *Native support for reactive programming* - since v3.0.0 we no longer distribute spring-cloud-stream-reactive modules and instead
+relying on native reactive support provided by spring cloud function. For backward
+compatibility you can still bring `spring-cloud-stream-reactive` from previous versions.
 
 
 [[spring-cloud-stream-preface-notable-enhancements]]
@@ -191,10 +194,12 @@ TBD
 [[spring-cloud-stream-preface-notable-deprecations]]
 === Notable Deprecations
 
-- Reactive module in favor of native support via spring-cloud-function. [Details to follow]
-- Test support module with MessageCollector [Details to follow]
-- @StreamMessageConverter [Details to follow]
-- Original content type - removed
+- Reactive module (`spring-cloud-stream-reactive`) is discontinued and no longer distributed in favor of native support via spring-cloud-function.
+For backward
+compatibility you can still bring `spring-cloud-stream-reactive` from previous versions.
+- We've deprecated `spring-cloud-stream-test-support` with MessageCollector in favor of a new test binder. See <<Testing>> for more details.
+- @StreamMessageConverter - deprecated as it is no longer required.
+- The reliance on the `original-content-type` has been removed after it's been deprecated in v2.0.
 
 = Appendices
 [appendix]
