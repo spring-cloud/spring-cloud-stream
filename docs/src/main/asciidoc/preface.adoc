@@ -157,7 +157,7 @@ Now you have a working (albeit very basic) Spring Cloud Stream application.
 
 
 [[spring-cloud-stream-preface-new-features]]
-=== New Features and Components
+=== New Features and Enhancements
 
 - *Routing Function* - see <<Routing with functions>> for more details.
 - *Multiple bindings with functions* (multiple message handlers) - see <<Multiple functions in a single application>> for more details.
@@ -167,16 +167,12 @@ relying on native reactive support provided by spring cloud function. For backwa
 compatibility you can still bring `spring-cloud-stream-reactive` from previous versions.
 
 
-[[spring-cloud-stream-preface-notable-enhancements]]
-=== Notable Enhancements
-TBD
-
 [[spring-cloud-stream-preface-notable-deprecations]]
 === Notable Deprecations
 
-- Reactive module (`spring-cloud-stream-reactive`) is discontinued and no longer distributed in favor of native support via spring-cloud-function.
+- _Reactive module_ (`spring-cloud-stream-reactive`) is discontinued and no longer distributed in favor of native support via spring-cloud-function.
 For backward
 compatibility you can still bring `spring-cloud-stream-reactive` from previous versions.
-- We've deprecated `spring-cloud-stream-test-support` with MessageCollector in favor of a new test binder. See <<Testing>> for more details.
-- @StreamMessageConverter - deprecated as it is no longer required.
-- The reliance on the `original-content-type` has been removed after it's been deprecated in v2.0.
+- _Test support binder_ `spring-cloud-stream-test-support` with MessageCollector in favor of a new test binder. See <<Testing>> for more details.
+- _@StreamMessageConverter_ - deprecated as it is no longer required.
+- The `original-content-type` header references have been removed after it's been deprecated in v2.0.
