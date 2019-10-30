@@ -35,6 +35,7 @@ import org.springframework.messaging.Message;
  * @author Soby Chacko
  * @author Oleg Zhurakousky
  * @author Nicolas Homble
+ * @author Michael Michailidis
  */
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 public class ConsumerProperties {
@@ -73,6 +74,13 @@ public class ConsumerProperties {
 	 * the one set in 'spring.cloud.stream.instance-index'
 	 */
 	private int instanceIndex = -1;
+
+	/**
+	 * When set it will allow the customization of the consumer to spawn a consumer for
+	 * each item in the list. All negative indexes will be discarded. Default: null
+	 * NOTE: This setting will disable the instance-index
+	 */
+	private List<Integer> instanceIndexList;
 
 	/**
 	 * The number of attempts to process the message (including the first) in the event of
@@ -209,6 +217,14 @@ public class ConsumerProperties {
 
 	public void setInstanceIndex(int instanceIndex) {
 		this.instanceIndex = instanceIndex;
+	}
+
+	public List<Integer> getInstanceIndexList() {
+		return this.instanceIndexList;
+	}
+
+	public void setInstanceIndexList(List<Integer> instanceIndexList) {
+		this.instanceIndexList = instanceIndexList;
 	}
 
 	@Min(value = 1, message = "Max attempts should be greater than zero.")

@@ -53,10 +53,11 @@ import org.springframework.validation.beanvalidation.CustomValidatorBean;
  * @author Mark Fisher
  * @author Dave Syer
  * @author Marius Bogoevici
- * @author Ilayaperumal Gopinathan
+ * @author Ilayaperumal Gopinathan`
  * @author Gary Russell
  * @author Janne Valkealahti
  * @author Soby Chacko
+ * @author Michael Michailidis
  */
 public class BindingService {
 
@@ -118,13 +119,35 @@ public class BindingService {
 			String[] bindingTargets = StringUtils
 					.commaDelimitedListToStringArray(bindingTarget);
 			for (String target : bindingTargets) {
-				Binding<T> binding = input instanceof PollableSource
+				if (!consumerProperties.isPartitioned() || consumerProperties.getInstanceIndexList().isEmpty()) {
+					Binding<T> binding = input instanceof PollableSource
 						? doBindPollableConsumer(input, inputName, binder,
-								consumerProperties, target)
+						consumerProperties, target)
 						: doBindConsumer(input, inputName, binder, consumerProperties,
-								target);
+						target);
 
-				bindings.add(binding);
+					bindings.add(binding);
+				}
+				else {
+					for (Integer index : consumerProperties.getInstanceIndexList()) {
+						if (index < 0) {
+							continue;
+						}
+
+						ConsumerProperties consumerPropertiesTemp = new ExtendedConsumerProperties<>("");
+						BeanUtils.copyProperties(consumerProperties, consumerPropertiesTemp);
+
+						consumerPropertiesTemp.setInstanceIndex(index);
+
+						Binding<T> binding = input instanceof PollableSource
+							? doBindPollableConsumer(input, inputName, binder,
+							consumerPropertiesTemp, target)
+							: doBindConsumer(input, inputName, binder, consumerPropertiesTemp,
+							target);
+
+						bindings.add(binding);
+					}
+				}
 			}
 		}
 		bindings = Collections.unmodifiableCollection(bindings);

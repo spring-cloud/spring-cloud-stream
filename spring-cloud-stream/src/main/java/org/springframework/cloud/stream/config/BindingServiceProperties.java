@@ -16,7 +16,9 @@
 
 package org.springframework.cloud.stream.config;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -49,11 +51,12 @@ import org.springframework.util.Assert;
  * @author Gary Russell
  * @author Ilayaperumal Gopinathan
  * @author Oleg Zhurakousky
+ * @author Michael Michailidis
  */
 @ConfigurationProperties("spring.cloud.stream")
 @JsonInclude(Include.NON_DEFAULT)
 public class BindingServiceProperties
-		implements ApplicationContextAware, InitializingBean {
+	implements ApplicationContextAware, InitializingBean {
 
 	private static final int DEFAULT_BINDING_RETRY_INTERVAL = 30;
 
@@ -65,6 +68,15 @@ public class BindingServiceProperties
 	 */
 	@Value("${INSTANCE_INDEX:${CF_INSTANCE_INDEX:0}}")
 	private int instanceIndex;
+
+	/**
+	 * A list of instance id's from 0 to instanceCount-1. Used for partitioning and with
+	 * Kafka. NOTE: Could also be managed per individual binding
+	 * "spring.cloud.stream.bindings.foo.consumer.instance-index-list" where 'foo' is
+	 * the name of the binding. This setting will override the one set in
+	 * 'spring.cloud.stream.instance-index'
+	 */
+	private List<Integer> instanceIndexList = new ArrayList<>();
 
 	/**
 	 * The number of deployed instances of an application. Default: 1. NOTE: Could also be
@@ -82,7 +94,7 @@ public class BindingServiceProperties
 	 * application: 'spring.cloud.stream.bindings.input.contentType=text/plain'
 	 */
 	private Map<String, BindingProperties> bindings = new TreeMap<>(
-			String.CASE_INSENSITIVE_ORDER);
+		String.CASE_INSENSITIVE_ORDER);
 
 	/**
 	 * Additional per-binder properties (see {@link BinderProperties}) if more then one
@@ -144,6 +156,14 @@ public class BindingServiceProperties
 
 	public void setInstanceIndex(int instanceIndex) {
 		this.instanceIndex = instanceIndex;
+	}
+
+	public List<Integer> getInstanceIndexList() {
+		return this.instanceIndexList;
+	}
+
+	public void setInstanceIndexList(List<Integer> instanceIndexList) {
+		this.instanceIndexList = instanceIndexList;
 	}
 
 	public int getInstanceCount() {
@@ -225,6 +245,9 @@ public class BindingServiceProperties
 		}
 		if (consumerProperties.getInstanceIndex() < 0) {
 			consumerProperties.setInstanceIndex(this.instanceIndex);
+		}
+		if (consumerProperties.getInstanceIndexList() == null) {
+			consumerProperties.setInstanceIndexList(this.instanceIndexList);
 		}
 		return consumerProperties;
 	}

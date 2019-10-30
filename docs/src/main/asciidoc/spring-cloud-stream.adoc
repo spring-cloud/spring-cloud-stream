@@ -1887,16 +1887,21 @@ defaultRetryable::
 Whether exceptions thrown by the listener that are not listed in the `retryableExceptions` are retryable.
 +
 Default: `true`.
-instanceIndex::
-When set to a value greater than equal to zero, it allows customizing the instance index of this consumer (if different from `spring.cloud.stream.instanceIndex`).
-When set to a negative value, it defaults to `spring.cloud.stream.instanceIndex`.
-See `<<spring-cloud-stream-overview-instance-index-instance-count>>` for more information.
-+
-Default: `-1`.
 instanceCount::
 When set to a value greater than equal to zero, it allows customizing the instance count of this consumer (if different from `spring.cloud.stream.instanceCount`).
 When set to a negative value, it defaults to `spring.cloud.stream.instanceCount`.
 See `<<spring-cloud-stream-overview-instance-index-instance-count>>` for more information.
++
+Default: `-1`.
+instanceIndex::
+When set to a value greater than equal to zero, it allows customizing the instance index of this consumer (if different from `spring.cloud.stream.instanceIndex`).
+When set to a negative value, it defaults to `spring.cloud.stream.instanceIndex`.
+Ignored if `instanceIndexList` is provided.
+See `<<spring-cloud-stream-overview-instance-index-instance-count>>` for more information.
++
+Default: `-1`.
+instanceIndexList::
+Used with binders that do not support native partitioning (such as RabbitMQ); allows an application instance to consume from more than one partition.
 +
 Default: `-1`.
 retryableExceptions::
