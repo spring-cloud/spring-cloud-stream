@@ -17,7 +17,9 @@
 package org.springframework.cloud.stream.config;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.TreeMap;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -64,7 +66,7 @@ public class BindingServiceProperties
 	 * of the binding.
 	 */
 	@Value("${INSTANCE_INDEX:${CF_INSTANCE_INDEX:0}}")
-	private int instanceIndex;
+	private List<Integer> instanceIndex;
 
 	/**
 	 * The number of deployed instances of an application. Default: 1. NOTE: Could also be
@@ -138,11 +140,11 @@ public class BindingServiceProperties
 		this.defaultBinder = defaultBinder;
 	}
 
-	public int getInstanceIndex() {
+	public List<Integer> getInstanceIndex() {
 		return this.instanceIndex;
 	}
 
-	public void setInstanceIndex(int instanceIndex) {
+	public void setInstanceIndex(List<Integer> instanceIndex) {
 		this.instanceIndex = instanceIndex;
 	}
 
@@ -223,7 +225,9 @@ public class BindingServiceProperties
 		if (consumerProperties.getInstanceCount() < 0) {
 			consumerProperties.setInstanceCount(this.instanceCount);
 		}
-		if (consumerProperties.getInstanceIndex() < 0) {
+		if (Objects.isNull(consumerProperties.getInstanceIndex())
+			|| consumerProperties.getInstanceIndex().size() == 0
+			|| consumerProperties.getInstanceIndex().get(0) < 0) {
 			consumerProperties.setInstanceIndex(this.instanceIndex);
 		}
 		return consumerProperties;

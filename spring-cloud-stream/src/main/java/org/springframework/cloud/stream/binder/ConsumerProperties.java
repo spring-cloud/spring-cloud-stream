@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.binder;
 
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -72,7 +73,7 @@ public class ConsumerProperties {
 	 * that property for more information. Default: -1 NOTE: This setting will override
 	 * the one set in 'spring.cloud.stream.instance-index'
 	 */
-	private int instanceIndex = -1;
+	private List<Integer> instanceIndex = Collections.singletonList(-1);
 
 	/**
 	 * The number of attempts to process the message (including the first) in the event of
@@ -202,12 +203,11 @@ public class ConsumerProperties {
 		this.instanceCount = instanceCount;
 	}
 
-	@Min(value = -1, message = "Instance index should be greater than or equal to -1")
-	public int getInstanceIndex() {
+	public List<Integer> getInstanceIndex() {
 		return this.instanceIndex;
 	}
 
-	public void setInstanceIndex(int instanceIndex) {
+	public void setInstanceIndex(List<Integer> instanceIndex) {
 		this.instanceIndex = instanceIndex;
 	}
 
