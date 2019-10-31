@@ -36,7 +36,13 @@ import org.springframework.util.ObjectUtils;
  * @author Gary Russell
  * @author Ilayaperumal Gopinathan
  * @author Oleg Zhurakousky
+ *
+ * @deprecated As of 3.0.0 in favor if providing `spring.cloud.stream.sendto.destination` property.
+ * This is primarily for function-based programming model. For StreamListener it would still be
+ * required and thus will stay until we deprecate and eventually discontinue StreamListener
+ * and annotation-based programming model.
  */
+@Deprecated
 public class BinderAwareChannelResolver
 		extends BeanFactoryMessageChannelDestinationResolver {
 
