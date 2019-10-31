@@ -104,6 +104,7 @@ import static org.mockito.Mockito.when;
  * @author Ilayaperumal Gopinathan
  * @author Janne Valkealahti
  * @author Soby Chacko
+ * @author Michael Michailidis
  */
 public class BindingServiceTests {
 

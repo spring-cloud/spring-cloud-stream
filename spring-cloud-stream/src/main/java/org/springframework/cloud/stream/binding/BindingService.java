@@ -57,6 +57,7 @@ import org.springframework.validation.beanvalidation.CustomValidatorBean;
  * @author Gary Russell
  * @author Janne Valkealahti
  * @author Soby Chacko
+ * @author Michael Michailidis
  */
 public class BindingService {
 

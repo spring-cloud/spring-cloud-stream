@@ -51,6 +51,7 @@ import org.springframework.util.Assert;
  * @author Gary Russell
  * @author Ilayaperumal Gopinathan
  * @author Oleg Zhurakousky
+ * @author Michael Michailidis
  */
 @ConfigurationProperties("spring.cloud.stream")
 @JsonInclude(Include.NON_DEFAULT)

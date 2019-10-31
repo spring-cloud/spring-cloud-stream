@@ -35,6 +35,7 @@ import org.springframework.messaging.Message;
  * @author Soby Chacko
  * @author Oleg Zhurakousky
  * @author Nicolas Homble
+ * @author Michael Michailidis
  */
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 public class ConsumerProperties {
