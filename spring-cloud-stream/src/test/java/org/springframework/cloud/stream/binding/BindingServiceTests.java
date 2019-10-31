@@ -17,6 +17,7 @@
 package org.springframework.cloud.stream.binding;
 
 import java.lang.reflect.Field;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -180,6 +181,66 @@ public class BindingServiceTests {
 				any(ConsumerProperties.class));
 		verify(binding1).unbind();
 		verify(binding2).unbind();
+
+		binderFactory.destroy();
+	}
+
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	@Test
+	public void testMultipleConsumerBindingsFromIndexList() throws Exception {
+		BindingServiceProperties properties = new BindingServiceProperties();
+		Map<String, BindingProperties> bindingProperties = new HashMap<>();
+		BindingProperties props = new BindingProperties();
+		props.setDestination("foo");
+
+		ConsumerProperties consumer = properties.getConsumerProperties("input");
+		consumer.setInstanceIndexList(Arrays.asList(0, 1));
+		consumer.setInstanceCount(2);
+		props.setConsumer(consumer);
+
+		final String inputChannelName = "input";
+		bindingProperties.put(inputChannelName, props);
+
+		properties.setBindings(bindingProperties);
+
+		DefaultBinderFactory binderFactory = createMockBinderFactory();
+
+		Binder binder = binderFactory.getBinder("mock", MessageChannel.class);
+		BindingService service = new BindingService(properties, binderFactory);
+		MessageChannel inputChannel = new DirectChannel();
+
+		Binding<MessageChannel> mockBinding1 = Mockito.mock(Binding.class, "FirstBinding");
+		Binding<MessageChannel> mockBinding2 = Mockito.mock(Binding.class, "SecondBinding");
+
+		ArgumentCaptor<ConsumerProperties> captor = ArgumentCaptor.forClass(ConsumerProperties.class);
+
+		when(binder.bindConsumer(eq("foo"), isNull(), same(inputChannel),
+			any(ConsumerProperties.class))).thenReturn(mockBinding1).thenReturn(mockBinding2);
+
+		Collection<Binding<MessageChannel>> bindings = service.bindConsumer(inputChannel,
+			"input");
+		assertThat(bindings).hasSize(2);
+
+		Iterator<Binding<MessageChannel>> iterator = bindings.iterator();
+		Binding<MessageChannel> binding1 = iterator.next();
+		Binding<MessageChannel> binding2 = iterator.next();
+
+		assertThat(binding1).isSameAs(mockBinding1);
+		assertThat(binding2).isSameAs(mockBinding2);
+
+		service.unbindConsumers("input");
+
+		verify(binder, times(2)).bindConsumer(eq("foo"), isNull(), same(inputChannel),
+			captor.capture());
+		verify(binding1).unbind();
+		verify(binding2).unbind();
+
+		List<ConsumerProperties> allValues = captor.getAllValues();
+
+		assertThat(allValues.size()).isEqualTo(2);
+
+		assertThat(allValues.get(0).getInstanceIndex()).isEqualTo(0);
+		assertThat(allValues.get(1).getInstanceIndex()).isEqualTo(1);
 
 		binderFactory.destroy();
 	}
