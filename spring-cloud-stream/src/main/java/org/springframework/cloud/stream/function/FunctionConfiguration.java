@@ -141,7 +141,7 @@ public class FunctionConfiguration {
 	@Bean
 	InitializingBean supplierInitializer(FunctionCatalog functionCatalog, StreamFunctionProperties functionProperties,
 			GenericApplicationContext context, BindingServiceProperties serviceProperties,
-			@Nullable BindableFunctionProxyFactory[] proxyFactories) {
+			@Nullable BindableFunctionProxyFactory[] proxyFactories, BinderAwareChannelResolver dynamicDestinationResolver) {
 
 		if (!ObjectUtils.isEmpty(context.getBeanNamesForAnnotation(EnableBinding.class)) || proxyFactories == null) {
 			return null;
@@ -173,8 +173,15 @@ public class FunctionConfiguration {
 						if (!functionProperties.isComposeFrom() && !functionProperties.isComposeTo()) {
 							String integrationFlowName = proxyFactory.getFunctionDefinition() + "_integrationflow";
 							PollableBean pollable = extractPollableAnnotation(functionProperties, context, proxyFactory);
+
 							IntegrationFlow integrationFlow = integrationFlowFromProvidedSupplier(functionWrapper, beginPublishingTrigger, pollable)
-									.channel(outputName).get();
+									.route(Message.class, message -> {
+										if (message.getHeaders().get("spring.cloud.stream.sendto.destination") != null) {
+											String destinationName = (String) message.getHeaders().get("spring.cloud.stream.sendto.destination");
+											return dynamicDestinationResolver.resolveDestination(destinationName);
+										}
+										return outputName;
+									}).get();
 							IntegrationFlow postProcessedFlow = (IntegrationFlow) context.getAutowireCapableBeanFactory()
 									.applyBeanPostProcessorsBeforeInitialization(integrationFlow, integrationFlowName);
 							context.registerBean(integrationFlowName, IntegrationFlow.class, () -> postProcessedFlow);
