@@ -59,6 +59,8 @@ public class KafkaStreamsBinderHealthIndicator extends AbstractHealthIndicator {
 
 	private static final ThreadLocal<Status> healthStatusThreadLocal = new ThreadLocal<>();
 
+	private AdminClient adminClient;
+
 	KafkaStreamsBinderHealthIndicator(KafkaStreamsRegistry kafkaStreamsRegistry,
 									KafkaStreamsBinderConfigurationProperties kafkaStreamsBinderConfigurationProperties,
 									KafkaProperties kafkaProperties,
@@ -75,34 +77,34 @@ public class KafkaStreamsBinderHealthIndicator extends AbstractHealthIndicator {
 
 	@Override
 	protected void doHealthCheck(Health.Builder builder) throws Exception {
-		AdminClient adminClient = null;
-
 		try {
-			final Status status = healthStatusThreadLocal.get();
-			//If one of the kafka streams binders (kstream, ktable, globalktable) was down before on the same request,
-			//retrieve that from the theadlocal storage where it was saved before. This is done in order to avoid
-			//the duration of the total health check since in the case of Kafka Streams each binder tries to do
-			//its own health check and since we already know that this is DOWN, simply pass that information along.
-			if (status == Status.DOWN) {
-				builder.withDetail("No topic information available", "Kafka broker is not reachable");
-				builder.status(Status.DOWN);
-			}
-			else {
-				adminClient = AdminClient.create(this.adminClientProperties);
-				final ListTopicsResult listTopicsResult = adminClient.listTopics();
-				listTopicsResult.listings().get(this.configurationProperties.getHealthTimeout(), TimeUnit.SECONDS);
-
-				if (this.kafkaStreamsBindingInformationCatalogue.getStreamsBuilderFactoryBeans().isEmpty()) {
-					builder.withDetail("No Kafka Streams bindings have been established", "Kafka Streams binder did not detect any processors");
-					builder.status(Status.UNKNOWN);
+			initAdminClient();
+			synchronized (this.adminClient) {
+				final Status status = healthStatusThreadLocal.get();
+				//If one of the kafka streams binders (kstream, ktable, globalktable) was down before on the same request,
+				//retrieve that from the thead local storage where it was saved before. This is done in order to avoid
+				//the duration of the total health check since in the case of Kafka Streams each binder tries to do
+				//its own health check and since we already know that this is DOWN, simply pass that information along.
+				if (status == Status.DOWN) {
+					builder.withDetail("No topic information available", "Kafka broker is not reachable");
+					builder.status(Status.DOWN);
 				}
 				else {
-					boolean up = true;
-					for (KafkaStreams kStream : kafkaStreamsRegistry.getKafkaStreams()) {
-						up &= kStream.state().isRunning();
-						builder.withDetails(buildDetails(kStream));
+					final ListTopicsResult listTopicsResult = this.adminClient.listTopics();
+					listTopicsResult.listings().get(this.configurationProperties.getHealthTimeout(), TimeUnit.SECONDS);
+
+					if (this.kafkaStreamsBindingInformationCatalogue.getStreamsBuilderFactoryBeans().isEmpty()) {
+						builder.withDetail("No Kafka Streams bindings have been established", "Kafka Streams binder did not detect any processors");
+						builder.status(Status.UNKNOWN);
 					}
-					builder.status(up ? Status.UP : Status.DOWN);
+					else {
+						boolean up = true;
+						for (KafkaStreams kStream : kafkaStreamsRegistry.getKafkaStreams()) {
+							up &= kStream.state().isRunning();
+							builder.withDetails(buildDetails(kStream));
+						}
+						builder.status(up ? Status.UP : Status.DOWN);
+					}
 				}
 			}
 		}
@@ -119,6 +121,13 @@ public class KafkaStreamsBinderHealthIndicator extends AbstractHealthIndicator {
 				adminClient.close(Duration.ofSeconds(0));
 			}
 		}
+	}
+
+	private synchronized AdminClient initAdminClient() {
+		if (this.adminClient == null) {
+			this.adminClient = AdminClient.create(this.adminClientProperties);
+		}
+		return this.adminClient;
 	}
 
 	private Map<String, Object> buildDetails(KafkaStreams kafkaStreams) {
