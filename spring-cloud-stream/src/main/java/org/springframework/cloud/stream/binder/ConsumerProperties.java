@@ -16,7 +16,6 @@
 
 package org.springframework.cloud.stream.binder;
 
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -73,7 +72,14 @@ public class ConsumerProperties {
 	 * that property for more information. Default: -1 NOTE: This setting will override
 	 * the one set in 'spring.cloud.stream.instance-index'
 	 */
-	private List<Integer> instanceIndex = Collections.singletonList(-1);
+	private int instanceIndex = -1;
+
+	/**
+	 * When set it will allow the customization of the consumer to spawn a consumer for
+	 * each item in the list. All negative indexes will be discarded. Default: null
+	 * NOTE: This setting will disable the instance-index
+	 */
+	private List<Integer> instanceIndexList;
 
 	/**
 	 * The number of attempts to process the message (including the first) in the event of
@@ -203,12 +209,21 @@ public class ConsumerProperties {
 		this.instanceCount = instanceCount;
 	}
 
-	public List<Integer> getInstanceIndex() {
+	@Min(value = -1, message = "Instance index should be greater than or equal to -1")
+	public int getInstanceIndex() {
 		return this.instanceIndex;
 	}
 
-	public void setInstanceIndex(List<Integer> instanceIndex) {
+	public void setInstanceIndex(int instanceIndex) {
 		this.instanceIndex = instanceIndex;
+	}
+
+	public List<Integer> getInstanceIndexList() {
+		return this.instanceIndexList;
+	}
+
+	public void setInstanceIndexList(List<Integer> instanceIndexList) {
+		this.instanceIndexList = instanceIndexList;
 	}
 
 	@Min(value = 1, message = "Max attempts should be greater than zero.")

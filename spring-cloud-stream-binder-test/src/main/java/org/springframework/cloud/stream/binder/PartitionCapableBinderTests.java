@@ -17,7 +17,6 @@
 package org.springframework.cloud.stream.binder;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -200,7 +199,7 @@ public abstract class PartitionCapableBinderTests<B extends AbstractTestBinder<?
 
 		CP consumerProperties = createConsumerProperties();
 		consumerProperties.setConcurrency(2);
-		consumerProperties.setInstanceIndex(Collections.singletonList(0));
+		consumerProperties.setInstanceIndex(0);
 		consumerProperties.setInstanceCount(3);
 		consumerProperties.setPartitioned(true);
 		QueueChannel input0 = new QueueChannel();
@@ -208,13 +207,13 @@ public abstract class PartitionCapableBinderTests<B extends AbstractTestBinder<?
 		Binding<MessageChannel> input0Binding = binder.bindConsumer(
 				String.format("part%s0", getDestinationNameDelimiter()),
 				"testPartitionedModuleSpEL", input0, consumerProperties);
-		consumerProperties.setInstanceIndex(Collections.singletonList(1));
+		consumerProperties.setInstanceIndex(1);
 		QueueChannel input1 = new QueueChannel();
 		input1.setBeanName("test.input1S");
 		Binding<MessageChannel> input1Binding = binder.bindConsumer(
 				String.format("part%s0", getDestinationNameDelimiter()),
 				"testPartitionedModuleSpEL", input1, consumerProperties);
-		consumerProperties.setInstanceIndex(Collections.singletonList(2));
+		consumerProperties.setInstanceIndex(2);
 		QueueChannel input2 = new QueueChannel();
 		input2.setBeanName("test.input2S");
 		Binding<MessageChannel> input2Binding = binder.bindConsumer(
@@ -315,20 +314,20 @@ public abstract class PartitionCapableBinderTests<B extends AbstractTestBinder<?
 		CP consumerProperties = createConsumerProperties();
 		consumerProperties.setConcurrency(2);
 		consumerProperties.setInstanceCount(3);
-		consumerProperties.setInstanceIndex(Collections.singletonList(0));
+		consumerProperties.setInstanceIndex(0);
 		consumerProperties.setPartitioned(true);
 		QueueChannel input0 = new QueueChannel();
 		input0.setBeanName("test.input0J");
 		Binding<MessageChannel> input0Binding = binder.bindConsumer(
 				String.format("partJ%s0", getDestinationNameDelimiter()),
 				"testPartitionedModuleJava", input0, consumerProperties);
-		consumerProperties.setInstanceIndex(Collections.singletonList(1));
+		consumerProperties.setInstanceIndex(1);
 		QueueChannel input1 = new QueueChannel();
 		input1.setBeanName("test.input1J");
 		Binding<MessageChannel> input1Binding = binder.bindConsumer(
 				String.format("partJ%s0", getDestinationNameDelimiter()),
 				"testPartitionedModuleJava", input1, consumerProperties);
-		consumerProperties.setInstanceIndex(Collections.singletonList(2));
+		consumerProperties.setInstanceIndex(2);
 		QueueChannel input2 = new QueueChannel();
 		input2.setBeanName("test.input2J");
 		Binding<MessageChannel> input2Binding = binder.bindConsumer(

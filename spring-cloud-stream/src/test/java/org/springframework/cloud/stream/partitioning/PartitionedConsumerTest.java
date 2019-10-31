@@ -16,8 +16,6 @@
 
 package org.springframework.cloud.stream.partitioning;
 
-import java.util.Collections;
-
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
@@ -68,7 +66,7 @@ public class PartitionedConsumerTest {
 				.forClass(ConsumerProperties.class);
 		verify(binder).bindConsumer(eq("partIn"), isNull(), eq(this.testSink.input()),
 				argumentCaptor.capture());
-		assertThat(argumentCaptor.getValue().getInstanceIndex()).isEqualTo(Collections.singletonList(0));
+		assertThat(argumentCaptor.getValue().getInstanceIndex()).isEqualTo(0);
 		assertThat(argumentCaptor.getValue().getInstanceCount()).isEqualTo(2);
 		verifyNoMoreInteractions(binder);
 	}

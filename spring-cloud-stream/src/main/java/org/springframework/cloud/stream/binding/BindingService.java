@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.logging.Log;
@@ -118,13 +119,31 @@ public class BindingService {
 			String[] bindingTargets = StringUtils
 					.commaDelimitedListToStringArray(bindingTarget);
 			for (String target : bindingTargets) {
-				Binding<T> binding = input instanceof PollableSource
+				if (consumerProperties.getInstanceIndexList().isEmpty()) {
+					Binding<T> binding = input instanceof PollableSource
 						? doBindPollableConsumer(input, inputName, binder,
-								consumerProperties, target)
+						consumerProperties, target)
 						: doBindConsumer(input, inputName, binder, consumerProperties,
-								target);
+						target);
 
-				bindings.add(binding);
+					bindings.add(binding);
+				}
+				else {
+					final ConsumerProperties consumerPropertiesTemp = consumerProperties instanceof ExtendedConsumerProperties
+						? (ExtendedConsumerProperties) consumerProperties : consumerProperties;
+					final List<Binding<T>> newBindings = consumerProperties.getInstanceIndexList()
+						.stream()
+						.filter(index -> index >= 0)
+						.map(index -> {
+							consumerPropertiesTemp.setInstanceIndex(index);
+							return input instanceof PollableSource
+								? doBindPollableConsumer(input, inputName, binder,
+								consumerPropertiesTemp, target)
+								: doBindConsumer(input, inputName, binder, consumerPropertiesTemp,
+								target);
+						}).collect(Collectors.toList());
+					bindings.addAll(newBindings);
+				}
 			}
 		}
 		bindings = Collections.unmodifiableCollection(bindings);
