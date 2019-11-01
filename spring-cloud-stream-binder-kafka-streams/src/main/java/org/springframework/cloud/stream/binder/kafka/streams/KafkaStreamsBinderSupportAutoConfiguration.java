@@ -352,15 +352,16 @@ public class KafkaStreamsBinderSupportAutoConfiguration {
 	}
 
 	@Bean
-	public KafkaStreamsRegistry kafkaStreamsRegistry(@Nullable KafkaStreamsBinderMetrics kafkaStreamsBinderMetrics) {
-		return new KafkaStreamsRegistry(kafkaStreamsBinderMetrics);
+	public KafkaStreamsRegistry kafkaStreamsRegistry() {
+		return new KafkaStreamsRegistry();
 	}
 
 	@Bean
 	public StreamsBuilderFactoryManager streamsBuilderFactoryManager(
 			KafkaStreamsBindingInformationCatalogue catalogue,
-			KafkaStreamsRegistry kafkaStreamsRegistry) {
-		return new StreamsBuilderFactoryManager(catalogue, kafkaStreamsRegistry);
+			KafkaStreamsRegistry kafkaStreamsRegistry,
+			@Nullable KafkaStreamsBinderMetrics kafkaStreamsBinderMetrics) {
+		return new StreamsBuilderFactoryManager(catalogue, kafkaStreamsRegistry, kafkaStreamsBinderMetrics);
 	}
 
 	@Bean
@@ -393,8 +394,7 @@ public class KafkaStreamsBinderSupportAutoConfiguration {
 		@Bean
 		@ConditionalOnBean(MeterRegistry.class)
 		@ConditionalOnMissingBean(KafkaStreamsBinderMetrics.class)
-		public KafkaStreamsBinderMetrics kafkaStreamsBinderMetrics(
-				MeterRegistry meterRegistry) {
+		public KafkaStreamsBinderMetrics kafkaStreamsBinderMetrics(MeterRegistry meterRegistry) {
 
 			return new KafkaStreamsBinderMetrics(meterRegistry);
 		}

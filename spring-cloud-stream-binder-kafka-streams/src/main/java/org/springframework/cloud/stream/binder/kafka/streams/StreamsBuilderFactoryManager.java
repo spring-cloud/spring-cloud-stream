@@ -18,8 +18,6 @@ package org.springframework.cloud.stream.binder.kafka.streams;
 
 import java.util.Set;
 
-import org.apache.kafka.streams.KafkaStreams;
-
 import org.springframework.context.SmartLifecycle;
 import org.springframework.kafka.KafkaException;
 import org.springframework.kafka.config.StreamsBuilderFactoryBean;
@@ -42,14 +40,15 @@ class StreamsBuilderFactoryManager implements SmartLifecycle {
 	private final KafkaStreamsBindingInformationCatalogue kafkaStreamsBindingInformationCatalogue;
 
 	private final KafkaStreamsRegistry kafkaStreamsRegistry;
+	private final KafkaStreamsBinderMetrics kafkaStreamsBinderMetrics;
 
 	private volatile boolean running;
 
-	StreamsBuilderFactoryManager(
-			KafkaStreamsBindingInformationCatalogue kafkaStreamsBindingInformationCatalogue,
-			KafkaStreamsRegistry kafkaStreamsRegistry) {
+	StreamsBuilderFactoryManager(KafkaStreamsBindingInformationCatalogue kafkaStreamsBindingInformationCatalogue,
+										KafkaStreamsRegistry kafkaStreamsRegistry, KafkaStreamsBinderMetrics kafkaStreamsBinderMetrics) {
 		this.kafkaStreamsBindingInformationCatalogue = kafkaStreamsBindingInformationCatalogue;
 		this.kafkaStreamsRegistry = kafkaStreamsRegistry;
+		this.kafkaStreamsBinderMetrics = kafkaStreamsBinderMetrics;
 	}
 
 	@Override
@@ -73,11 +72,9 @@ class StreamsBuilderFactoryManager implements SmartLifecycle {
 						.getStreamsBuilderFactoryBeans();
 				for (StreamsBuilderFactoryBean streamsBuilderFactoryBean : streamsBuilderFactoryBeans) {
 					streamsBuilderFactoryBean.start();
-					final KafkaStreams kafkaStreams = streamsBuilderFactoryBean.getKafkaStreams();
-					this.kafkaStreamsRegistry.registerKafkaStreams(
-							kafkaStreams);
-					this.kafkaStreamsRegistry.addToStreamBuilderFactoryBeanMap(kafkaStreams, streamsBuilderFactoryBean);
+					this.kafkaStreamsRegistry.registerKafkaStreams(streamsBuilderFactoryBean);
 				}
+				this.kafkaStreamsBinderMetrics.addMetrics(streamsBuilderFactoryBeans);
 				this.running = true;
 			}
 			catch (Exception ex) {

@@ -16,7 +16,9 @@
 
 package org.springframework.cloud.stream.binder.kafka.streams;
 
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.ToDoubleFunction;
 
 import io.micrometer.core.instrument.Gauge;
@@ -25,6 +27,9 @@ import io.micrometer.core.instrument.binder.MeterBinder;
 import org.apache.kafka.common.Metric;
 import org.apache.kafka.common.MetricName;
 import org.apache.kafka.streams.KafkaStreams;
+import org.apache.kafka.streams.StreamsConfig;
+
+import org.springframework.kafka.config.StreamsBuilderFactoryBean;
 
 /**
  * Kafka Streams binder metrics implementation that exports the metrics available
@@ -35,8 +40,6 @@ import org.apache.kafka.streams.KafkaStreams;
  */
 public class KafkaStreamsBinderMetrics {
 
-	private KafkaStreams kafkaStreams;
-
 	private final MeterRegistry meterRegistry;
 
 	private MeterBinder meterBinder;
@@ -45,26 +48,41 @@ public class KafkaStreamsBinderMetrics {
 		this.meterRegistry = meterRegistry;
 	}
 
-	public void bindTo(MeterRegistry meterRegistry) {
+	public void bindTo(Set<StreamsBuilderFactoryBean> streamsBuilderFactoryBeans, MeterRegistry meterRegistry) {
+
 		if (this.meterBinder == null) {
 			this.meterBinder = new MeterBinder() {
 				@Override
 				@SuppressWarnings("unchecked")
 				public void bindTo(MeterRegistry registry) {
-					if (KafkaStreamsBinderMetrics.this.kafkaStreams != null) {
-						final Map<MetricName, ? extends Metric> metrics = KafkaStreamsBinderMetrics.this.kafkaStreams.metrics();
+					if (streamsBuilderFactoryBeans != null) {
+						for (StreamsBuilderFactoryBean streamsBuilderFactoryBean : streamsBuilderFactoryBeans) {
+							KafkaStreams kafkaStreams = streamsBuilderFactoryBean.getKafkaStreams();
+							final Map<MetricName, ? extends Metric> metrics = kafkaStreams.metrics();
 
-						for (Map.Entry<MetricName, ? extends Metric> metric : metrics.entrySet()) {
-							final Gauge.Builder<KafkaStreamsBinderMetrics> builder =
-									Gauge.builder(sanitize(metric.getKey().group() + "." + metric.getKey().name()), this,
-											toDoubleFunction(metric.getValue()));
-							final Map<String, String> tags = metric.getKey().tags();
-							for (Map.Entry<String, String> tag : tags.entrySet()) {
-								builder.tag(tag.getKey(), tag.getValue());
+							Set<String> meterNames = new HashSet<>();
+
+							for (Map.Entry<MetricName, ? extends Metric> metric : metrics.entrySet()) {
+								final String sanitized = sanitize(metric.getKey().group() + "." + metric.getKey().name());
+								final String applicationId = streamsBuilderFactoryBean.getStreamsConfiguration().getProperty(StreamsConfig.APPLICATION_ID_CONFIG);
+
+								final String name = streamsBuilderFactoryBeans.size() > 1 ? applicationId + "." + sanitized : sanitized;
+
+								final Gauge.Builder<KafkaStreamsBinderMetrics> builder =
+										Gauge.builder(name, this,
+												toDoubleFunction(metric.getValue()));
+								final Map<String, String> tags = metric.getKey().tags();
+								for (Map.Entry<String, String> tag : tags.entrySet()) {
+									builder.tag(tag.getKey(), tag.getValue());
+								}
+								if (!meterNames.contains(name)) {
+									builder.description(metric.getKey().description())
+											.register(meterRegistry);
+									meterNames.add(name);
+								}
 							}
-							builder.description(metric.getKey().description())
-									.register(meterRegistry);
 						}
+
 					}
 				}
 
@@ -83,14 +101,13 @@ public class KafkaStreamsBinderMetrics {
 		this.meterBinder.bindTo(this.meterRegistry);
 	}
 
-	public void addMetrics(KafkaStreams kafkaStreams) {
-		synchronized (KafkaStreamsBinderMetrics.this) {
-			this.kafkaStreams = kafkaStreams;
-			this.bindTo(this.meterRegistry);
-		}
-	}
-
 	private static String sanitize(String value) {
 		return value.replaceAll("-", ".");
+	}
+
+	public void addMetrics(Set<StreamsBuilderFactoryBean> streamsBuilderFactoryBeans) {
+		synchronized (KafkaStreamsBinderMetrics.this) {
+			this.bindTo(streamsBuilderFactoryBeans, this.meterRegistry);
+		}
 	}
 }

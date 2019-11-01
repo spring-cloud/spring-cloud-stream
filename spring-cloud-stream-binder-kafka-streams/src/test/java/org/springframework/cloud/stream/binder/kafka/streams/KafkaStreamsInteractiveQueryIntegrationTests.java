@@ -48,6 +48,7 @@ import org.springframework.cloud.stream.binder.kafka.streams.annotations.KafkaSt
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsBinderConfigurationProperties;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
+import org.springframework.kafka.config.StreamsBuilderFactoryBean;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -94,9 +95,10 @@ public class KafkaStreamsInteractiveQueryIntegrationTests {
 	@Test
 	public void testStateStoreRetrievalRetry() {
 
-		KafkaStreams mock = Mockito.mock(KafkaStreams.class);
-		KafkaStreamsBinderMetrics mockMetrics = Mockito.mock(KafkaStreamsBinderMetrics.class);
-		KafkaStreamsRegistry kafkaStreamsRegistry = new KafkaStreamsRegistry(mockMetrics);
+		StreamsBuilderFactoryBean mock = Mockito.mock(StreamsBuilderFactoryBean.class);
+		KafkaStreams mockKafkaStreams = Mockito.mock(KafkaStreams.class);
+		Mockito.when(mock.getKafkaStreams()).thenReturn(mockKafkaStreams);
+		KafkaStreamsRegistry kafkaStreamsRegistry = new KafkaStreamsRegistry();
 		kafkaStreamsRegistry.registerKafkaStreams(mock);
 		KafkaStreamsBinderConfigurationProperties binderConfigurationProperties =
 				new KafkaStreamsBinderConfigurationProperties(new KafkaProperties());
@@ -112,7 +114,7 @@ public class KafkaStreamsInteractiveQueryIntegrationTests {
 
 		}
 
-		Mockito.verify(mock, times(3)).store("foo", storeType);
+		Mockito.verify(mockKafkaStreams, times(3)).store("foo", storeType);
 	}
 
 	@Test

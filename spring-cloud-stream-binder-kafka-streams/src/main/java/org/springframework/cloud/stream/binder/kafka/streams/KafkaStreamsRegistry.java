@@ -33,13 +33,7 @@ import org.springframework.kafka.config.StreamsBuilderFactoryBean;
  */
 class KafkaStreamsRegistry {
 
-	private final KafkaStreamsBinderMetrics kafkaStreamsBinderMetrics;
-
-	private Map<KafkaStreams, StreamsBuilderFactoryBean> streamsStreamsBuilderFactoryBeanMap = new HashMap<>();
-
-	KafkaStreamsRegistry(KafkaStreamsBinderMetrics kafkaStreamsBinderMetrics) {
-		this.kafkaStreamsBinderMetrics = kafkaStreamsBinderMetrics;
-	}
+	private Map<KafkaStreams, StreamsBuilderFactoryBean> streamsBuilderFactoryBeanMap = new HashMap<>();
 
 	private final Set<KafkaStreams> kafkaStreams = new HashSet<>();
 
@@ -49,23 +43,12 @@ class KafkaStreamsRegistry {
 
 	/**
 	 * Register the {@link KafkaStreams} object created in the application.
-	 * @param kafkaStreams {@link KafkaStreams} object created in the application
+	 * @param streamsBuilderFactoryBean {@link StreamsBuilderFactoryBean}
 	 */
-	void registerKafkaStreams(KafkaStreams kafkaStreams) {
-		if (this.kafkaStreamsBinderMetrics != null) {
-			this.kafkaStreamsBinderMetrics.addMetrics(kafkaStreams);
-		}
+	void registerKafkaStreams(StreamsBuilderFactoryBean streamsBuilderFactoryBean) {
+		final KafkaStreams kafkaStreams = streamsBuilderFactoryBean.getKafkaStreams();
 		this.kafkaStreams.add(kafkaStreams);
-	}
-
-	/**
-	 * Make an association between {@link KafkaStreams} and its corresponding {@link StreamsBuilderFactoryBean}.
-	 *
-	 * @param kafkaStreams {@link KafkaStreams} object
-	 * @param streamsBuilderFactoryBean Associtated {@link StreamsBuilderFactoryBean} for the {@link KafkaStreams}
-	 */
-	void addToStreamBuilderFactoryBeanMap(KafkaStreams kafkaStreams, StreamsBuilderFactoryBean streamsBuilderFactoryBean) {
-		streamsStreamsBuilderFactoryBeanMap.put(kafkaStreams, streamsBuilderFactoryBean);
+		this.streamsBuilderFactoryBeanMap.put(kafkaStreams, streamsBuilderFactoryBean);
 	}
 
 	/**
@@ -74,7 +57,7 @@ class KafkaStreamsRegistry {
 	 * @return Corresponding {@link StreamsBuilderFactoryBean}.
 	 */
 	StreamsBuilderFactoryBean streamBuilderFactoryBean(KafkaStreams kafkaStreams) {
-		return streamsStreamsBuilderFactoryBeanMap.get(kafkaStreams);
+		return this.streamsBuilderFactoryBeanMap.get(kafkaStreams);
 	}
 
 }
