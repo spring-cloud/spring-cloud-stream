@@ -34,9 +34,8 @@ import java.util.stream.Stream;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.reactivestreams.Publisher;
-import org.reactivestreams.Subscriber;
+import reactor.core.publisher.EmitterProcessor;
 import reactor.core.publisher.Flux;
-import reactor.core.publisher.FluxSink;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.MonoSink;
 import reactor.util.function.Tuples;
@@ -92,7 +91,6 @@ import org.springframework.integration.support.MessageBuilder;
 import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
-import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.SubscribableChannel;
 import org.springframework.util.Assert;
@@ -366,7 +364,7 @@ public class FunctionConfiguration {
 
 			Publisher[] inputPublishers = inputBindingNames.stream().map(inputBindingName -> {
 				SubscribableChannel inputChannel = this.context.getBean(inputBindingName, SubscribableChannel.class);
-				return this.enhancePublisher(new SubscribableChannelPublisherAdapter(inputChannel), inputBindingName);
+				return this.enhancePublisher(this.convertToPublisher(inputChannel), inputBindingName);
 			}).toArray(Publisher[]::new);
 
 
@@ -427,7 +425,7 @@ public class FunctionConfiguration {
 			if (FunctionTypeUtils.isReactive(FunctionTypeUtils.getInputType(functionType, 0)) && StringUtils.hasText(outputChannelName)) {
 				MessageChannel outputChannel = context.getBean(outputChannelName, MessageChannel.class);
 				SubscribableChannel subscribeChannel = (SubscribableChannel) inputChannel;
-				Publisher<?> publisher = this.enhancePublisher(new SubscribableChannelPublisherAdapter<>(subscribeChannel),
+				Publisher<?> publisher = this.enhancePublisher(this.convertToPublisher(inputChannel),
 																((DirectWithAttributesChannel) inputChannel).getBeanName());
 				this.subscribeToInput(function, publisher, message -> outputChannel.send((Message<?>) message));
 			}
@@ -544,6 +542,14 @@ public class FunctionConfiguration {
 		private boolean isMultipleInputOutput(BindableProxyFactory bindableProxyFactory) {
 			return bindableProxyFactory instanceof BindableFunctionProxyFactory
 					&& ((BindableFunctionProxyFactory) bindableProxyFactory).isMultiple();
+		}
+
+		private Publisher<Message<?>> convertToPublisher(SubscribableChannel inputChannel) {
+			EmitterProcessor<Message<?>> publisher = EmitterProcessor.create(1);
+			inputChannel.subscribe(message -> {
+				publisher.onNext(message);
+			});
+			return publisher;
 		}
 	}
 
@@ -676,29 +682,6 @@ public class FunctionConfiguration {
 		@Override
 		public void setEnvironment(Environment environment) {
 			this.environment = environment;
-		}
-
-	}
-
-	private static final class SubscribableChannelPublisherAdapter<T> implements Publisher<Message<T>> {
-
-		private final SubscribableChannel channel;
-
-		SubscribableChannelPublisherAdapter(SubscribableChannel channel) {
-			this.channel = channel;
-		}
-
-		@Override
-		@SuppressWarnings("unchecked")
-		public void subscribe(Subscriber<? super Message<T>> subscriber) {
-			Flux.
-					<Message<?>>push(emitter -> {
-								MessageHandler messageHandler = emitter::next;
-								this.channel.subscribe(messageHandler);
-								emitter.onCancel(() -> this.channel.unsubscribe(messageHandler));
-							},
-							FluxSink.OverflowStrategy.BUFFER)
-					.subscribe((Subscriber<? super Message<?>>) subscriber);
 		}
 
 	}
