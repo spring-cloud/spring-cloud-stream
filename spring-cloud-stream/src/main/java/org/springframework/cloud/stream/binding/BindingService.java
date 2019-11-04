@@ -43,6 +43,7 @@ import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.DataBinder;
 import org.springframework.validation.beanvalidation.CustomValidatorBean;
@@ -119,7 +120,7 @@ public class BindingService {
 			String[] bindingTargets = StringUtils
 					.commaDelimitedListToStringArray(bindingTarget);
 			for (String target : bindingTargets) {
-				if (consumerProperties.getInstanceIndexList().isEmpty()) {
+				if (ObjectUtils.isEmpty(consumerProperties.getInstanceIndexList())) {
 					Binding<T> binding = input instanceof PollableSource
 						? doBindPollableConsumer(input, inputName, binder,
 						consumerProperties, target)
