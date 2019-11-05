@@ -236,6 +236,18 @@ dlqOverflowBehavior::
 Action to take when `dlqMaxLength` or `dlqMaxLengthBytes` is exceeded; currently `drop-head` or `reject-publish` but refer to the RabbitMQ documentation.
 +
 Default: `none`
+dlqQuorum.deliveryLimit::
+When `quorum.enabled=true`, set a delivery limit after which the message is dropped or dead-lettered.
++
+Default: none - broker default will apply.
+dlqQuorum.enabled::
+When true, create a quorum dead letter queue instead of a classic queue.
++
+Default: false
+dlqQuorum.initialQuorumSize::
+When `quorum.enabled=true`, set the initial quorum size.
++
+Default: none - broker default will apply.
 dlqTtl::
 Default time to live to apply to the dead letter queue when declared (in milliseconds).
 +
@@ -342,6 +354,18 @@ Otherwise the queue name is `destination.group`.
 This is useful, for example, when using Spring Cloud Stream to consume from an existing RabbitMQ queue.
 +
 Default: false.
+quorum.deliveryLimit::
+When `quorum.enabled=true`, set a delivery limit after which the message is dropped or dead-lettered.
++
+Default: none - broker default will apply.
+quorum.enabled::
+When true, create a quorum queue instead of a classic queue.
++
+Default: false
+quorum.initialQuorumSize::
+When `quorum.enabled=true`, set the initial quorum size.
++
+Default: none - broker default will apply.
 recoveryInterval::
 The interval between connection recovery attempts, in milliseconds.
 +
@@ -542,6 +566,21 @@ Maximum priority of messages in the dead letter queue (0-255)
 Applies only when `requiredGroups` are provided and then only to those groups.
 +
 Default: `none`
+dlqQuorum.deliveryLimit::
+When `quorum.enabled=true`, set a delivery limit after which the message is dropped or dead-lettered.
+Applies only when `requiredGroups` are provided and then only to those groups.
++
+Default: none - broker default will apply.
+dlqQuorum.enabled::
+When true, create a quorum dead letter queue instead of a classic queue.
+Applies only when `requiredGroups` are provided and then only to those groups.
++
+Default: false
+dlqQuorum.initialQuorumSize::
+When `quorum.enabled=true`, set the initial quorum size.
+Applies only when `requiredGroups` are provided and then only to those groups.
++
+Default: none - broker default will apply.
 dlqTtl::
 Default time (in milliseconds) to live to apply to the dead letter queue when declared.
 Applies only when `requiredGroups` are provided and then only to those groups.
@@ -607,6 +646,21 @@ This is useful, for example, when using Spring Cloud Stream to consume from an e
 Applies only when `requiredGroups` are provided and then only to those groups.
 +
 Default: false.
+quorum.deliveryLimit::
+When `quorum.enabled=true`, set a delivery limit after which the message is dropped or dead-lettered.
+Applies only when `requiredGroups` are provided and then only to those groups.
++
+Default: none - broker default will apply.
+quorum.enabled::
+When true, create a quorum queue instead of a classic queue.
+Applies only when `requiredGroups` are provided and then only to those groups.
++
+Default: false
+quorum.initialQuorumSize::
+When `quorum.enabled=true`, set the initial quorum size.
+Applies only when `requiredGroups` are provided and then only to those groups.
++
+Default: none - broker default will apply.
 routingKeyExpression::
 A SpEL expression to determine the routing key to use when publishing messages.
 For a fixed routing key, use a literal expression, such as `routingKeyExpression='my.routingKey'` in a properties file or `routingKeyExpression: '''my.routingKey'''` in a YAML file.

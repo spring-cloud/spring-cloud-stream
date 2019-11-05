@@ -211,6 +211,16 @@ public abstract class RabbitCommonProperties {
 	 */
 	private Map<String, String>  dlqBindingArguments = new HashMap<>();
 
+	/**
+	 * Configure the queue to be type quorum instead of classic.
+	 */
+	private QuorumConfig quorum = new QuorumConfig();
+
+	/**
+	 * Configure the DLQ to be type quorum instead of classic.
+	 */
+	private QuorumConfig dlqQuorum = new QuorumConfig();
+
 	public String getExchangeType() {
 		return this.exchangeType;
 	}
@@ -482,6 +492,56 @@ public abstract class RabbitCommonProperties {
 
 	public void setDlqBindingArguments(Map<String, String> dlqBindingArguments) {
 		this.dlqBindingArguments = dlqBindingArguments;
+	}
+
+	public QuorumConfig getQuorum() {
+		return this.quorum;
+	}
+
+	public void setQuorum(QuorumConfig quorum) {
+		this.quorum = quorum;
+	}
+
+	public QuorumConfig getDlqQuorum() {
+		return this.dlqQuorum;
+	}
+
+	public void setDlqQuorum(QuorumConfig dlqQuorum) {
+		this.dlqQuorum = dlqQuorum;
+	}
+
+	public static class QuorumConfig {
+
+		private boolean enabled;
+
+		private Integer initialGroupSize;
+
+		private Integer deliveryLimit;
+
+		public boolean isEnabled() {
+			return this.enabled;
+		}
+
+		public void setEnabled(boolean enabled) {
+			this.enabled = enabled;
+		}
+
+		public Integer getInitialGroupSize() {
+			return this.initialGroupSize;
+		}
+
+		public void setInitialGroupSize(Integer initialGroupSize) {
+			this.initialGroupSize = initialGroupSize;
+		}
+
+		public Integer getDeliveryLimit() {
+			return this.deliveryLimit;
+		}
+
+		public void setDeliveryLimit(Integer deliveryLimit) {
+			this.deliveryLimit = deliveryLimit;
+		}
+
 	}
 
 }

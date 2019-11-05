@@ -82,6 +82,7 @@ import org.springframework.cloud.stream.binder.PartitionTestSupport;
 import org.springframework.cloud.stream.binder.PollableSource;
 import org.springframework.cloud.stream.binder.RequeueCurrentMessageException;
 import org.springframework.cloud.stream.binder.Spy;
+import org.springframework.cloud.stream.binder.rabbit.properties.RabbitCommonProperties.QuorumConfig;
 import org.springframework.cloud.stream.binder.rabbit.properties.RabbitConsumerProperties;
 import org.springframework.cloud.stream.binder.rabbit.properties.RabbitProducerProperties;
 import org.springframework.cloud.stream.binder.rabbit.provisioning.RabbitExchangeQueueProvisioner;
@@ -399,6 +400,10 @@ public class RabbitBinderTests extends
 		properties.getExtension().setPrefetch(20);
 		properties.getExtension().setHeaderPatterns(new String[] { "foo" });
 		properties.getExtension().setTxSize(10);
+		QuorumConfig quorum = properties.getExtension().getQuorum();
+		quorum.setEnabled(true);
+		quorum.setDeliveryLimit(10);
+		quorum.setInitialGroupSize(1);
 		properties.setInstanceIndex(0);
 		consumerBinding = binder.bindConsumer("props.0", "test",
 				createBindableChannel("input", new BindingProperties()), properties);

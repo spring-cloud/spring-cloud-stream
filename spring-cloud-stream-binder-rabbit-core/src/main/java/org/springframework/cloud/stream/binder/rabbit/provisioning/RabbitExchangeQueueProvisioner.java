@@ -44,6 +44,7 @@ import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
 import org.springframework.cloud.stream.binder.ExtendedProducerProperties;
 import org.springframework.cloud.stream.binder.rabbit.properties.RabbitCommonProperties;
+import org.springframework.cloud.stream.binder.rabbit.properties.RabbitCommonProperties.QuorumConfig;
 import org.springframework.cloud.stream.binder.rabbit.properties.RabbitConsumerProperties;
 import org.springframework.cloud.stream.binder.rabbit.properties.RabbitProducerProperties;
 import org.springframework.cloud.stream.provisioning.ConsumerDestination;
@@ -499,6 +500,7 @@ public class RabbitExchangeQueueProvisioner
 		boolean lazy = isDlq ? properties.isDlqLazy() : properties.isLazy();
 		String overflow = isDlq ? properties.getDlqOverflowBehavior()
 				: properties.getOverflowBehavior();
+		QuorumConfig quorum = isDlq ? properties.getDlqQuorum() : properties.getQuorum();
 		if (expires != null) {
 			args.put("x-expires", expires);
 		}
@@ -519,6 +521,15 @@ public class RabbitExchangeQueueProvisioner
 		}
 		if (StringUtils.hasText(overflow)) {
 			args.put("x-overflow", overflow);
+		}
+		if (quorum != null && quorum.isEnabled()) {
+			args.put("x-queue-type", "quorum");
+			if (quorum.getDeliveryLimit() != null) {
+				args.put("x-delivery-limit", quorum.getDeliveryLimit());
+			}
+			if (quorum.getInitialGroupSize() != null) {
+				args.put("x-quorum-initial-group-size", quorum.getInitialGroupSize());
+			}
 		}
 	}
 
