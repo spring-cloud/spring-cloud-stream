@@ -37,10 +37,10 @@ import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.apache.kafka.streams.KeyValue;
+import org.apache.kafka.streams.kstream.Grouped;
 import org.apache.kafka.streams.kstream.Joined;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.KTable;
-import org.apache.kafka.streams.kstream.Serialized;
 import org.junit.ClassRule;
 import org.junit.Test;
 
@@ -444,7 +444,7 @@ public class StreamToTableJoinFunctionTests {
 							Joined.with(Serdes.String(), Serdes.Long(), null))
 					.map((user, regionWithClicks) -> new KeyValue<>(regionWithClicks.getRegion(),
 							regionWithClicks.getClicks()))
-					.groupByKey(Serialized.with(Serdes.String(), Serdes.Long()))
+					.groupByKey(Grouped.with(Serdes.String(), Serdes.Long()))
 					.reduce(Long::sum)
 					.toStream()));
 		}
@@ -461,7 +461,7 @@ public class StreamToTableJoinFunctionTests {
 							Joined.with(Serdes.String(), Serdes.Long(), null))
 					.map((user, regionWithClicks) -> new KeyValue<>(regionWithClicks.getRegion(),
 							regionWithClicks.getClicks()))
-					.groupByKey(Serialized.with(Serdes.String(), Serdes.Long()))
+					.groupByKey(Grouped.with(Serdes.String(), Serdes.Long()))
 					.reduce(Long::sum)
 					.toStream());
 		}
