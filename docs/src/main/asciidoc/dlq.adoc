@@ -10,7 +10,7 @@ This means the Dead-Letter topic must have at least as many partitions as the or
 To change this behavior, add a `DlqPartitionFunction` implementation as a `@Bean` to the application context.
 Only one such bean can be present.
 The function is provided with the consumer group, the failed `ConsumerRecord` and the exception.
-For example, if you always with to route to partition 0, you might use:
+For example, if you always want to route to partition 0, you might use:
 
 ====
 [source, java]
