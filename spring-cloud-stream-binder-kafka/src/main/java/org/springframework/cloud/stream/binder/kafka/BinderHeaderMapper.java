@@ -48,10 +48,10 @@ import org.springframework.util.MimeType;
 /**
  * Custom header mapper for Apache Kafka. This is identical to the {@link org.springframework.kafka.support.DefaultKafkaHeaderMapper}
  * from spring Kafka. This is provided for addressing some interoperability issues between Spring Cloud Stream 3.0.x
- * and 2.x apps, where mime types passed as rgeular {@MimeType} in the header are not de-serialized properly.
+ * and 2.x apps, where mime types passed as regular {@link MimeType} in the header are not de-serialized properly.
  * Once those concerns are addressed in Spring Kafka, we will deprecate this class and remove it in a future binder release.
  *
- * Most headers in {@link org.springframework.kafka.support.KafkaHeaders} are not mapped on outbound messages.
+ * Most headers in {@link org.springframework.kafka.support.KafkaHeaders} are not mapped onto outbound messages.
  * The exceptions are correlation and reply headers for request/reply
  * messaging.
  * Header types are added to a special header {@link #JSON_TYPES}.

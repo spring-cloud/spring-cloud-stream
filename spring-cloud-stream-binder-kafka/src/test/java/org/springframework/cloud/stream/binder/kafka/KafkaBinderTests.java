@@ -515,7 +515,7 @@ public class KafkaBinderTests extends
 
 		Message<?> message = org.springframework.integration.support.MessageBuilder
 				.withPayload("foo")
-				.setHeader("foo", MimeTypeUtils.TEXT_PLAIN.toString()).build();
+				.setHeader("foo", MimeTypeUtils.TEXT_PLAIN).build();
 
 		moduleOutputChannel.send(message);
 		CountDownLatch latch = new CountDownLatch(1);
