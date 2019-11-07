@@ -1903,7 +1903,7 @@ Default: `-1`.
 instanceIndexList::
 Used with binders that do not support native partitioning (such as RabbitMQ); allows an application instance to consume from more than one partition.
 +
-Default: `-1`.
+Default: empty.
 retryableExceptions::
 A map of Throwable class names in the key and a boolean in the value.
 Specify those exceptions (and subclasses) that will or won't be retried.
