@@ -88,6 +88,7 @@ import org.springframework.cloud.stream.binder.rabbit.properties.RabbitProducerP
 import org.springframework.cloud.stream.binder.rabbit.provisioning.RabbitExchangeQueueProvisioner;
 import org.springframework.cloud.stream.binder.test.junit.rabbit.RabbitTestSupport;
 import org.springframework.cloud.stream.config.BindingProperties;
+import org.springframework.cloud.stream.provisioning.ConsumerDestination;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -415,6 +416,46 @@ public class RabbitBinderTests extends
 
 		consumerBinding.unbind();
 		assertThat(endpoint.isRunning()).isFalse();
+	}
+
+	@Test
+	public void testMultiplexOnPartitionedConsumer() throws Exception {
+		final ExtendedConsumerProperties<RabbitConsumerProperties> consumerProperties = createConsumerProperties();
+		RabbitTestSupport.RabbitProxy proxy = new RabbitTestSupport.RabbitProxy();
+		CachingConnectionFactory cf = new CachingConnectionFactory("localhost",
+				proxy.getPort());
+
+		final RabbitExchangeQueueProvisioner rabbitExchangeQueueProvisioner = new RabbitExchangeQueueProvisioner(cf);
+
+		consumerProperties.setMultiplex(true);
+		consumerProperties.setPartitioned(true);
+		consumerProperties.setInstanceIndexList(Arrays.asList(1, 2, 3));
+
+		final ConsumerDestination consumerDestination = rabbitExchangeQueueProvisioner.provisionConsumerDestination("foo", "boo", consumerProperties);
+
+		final String name = consumerDestination.getName();
+
+		assertThat(name).isEqualTo("foo.boo-1,foo.boo-2,foo.boo-3");
+	}
+
+	@Test
+	public void testMultiplexOnPartitionedConsumerWithMultipleDestinations() throws Exception {
+		final ExtendedConsumerProperties<RabbitConsumerProperties> consumerProperties = createConsumerProperties();
+		RabbitTestSupport.RabbitProxy proxy = new RabbitTestSupport.RabbitProxy();
+		CachingConnectionFactory cf = new CachingConnectionFactory("localhost",
+				proxy.getPort());
+
+		final RabbitExchangeQueueProvisioner rabbitExchangeQueueProvisioner = new RabbitExchangeQueueProvisioner(cf);
+
+		consumerProperties.setMultiplex(true);
+		consumerProperties.setPartitioned(true);
+		consumerProperties.setInstanceIndexList(Arrays.asList(1, 2, 3));
+
+		final ConsumerDestination consumerDestination = rabbitExchangeQueueProvisioner.provisionConsumerDestination("foo,qaa", "boo", consumerProperties);
+
+		final String name = consumerDestination.getName();
+
+		assertThat(name).isEqualTo("foo.boo-1,foo.boo-2,foo.boo-3,qaa.boo-1,qaa.boo-2,qaa.boo-3");
 	}
 
 	@Test

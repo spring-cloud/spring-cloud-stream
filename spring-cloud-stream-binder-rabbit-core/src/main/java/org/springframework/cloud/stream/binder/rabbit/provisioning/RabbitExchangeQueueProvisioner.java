@@ -16,7 +16,9 @@
 
 package org.springframework.cloud.stream.binder.rabbit.provisioning;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
@@ -39,6 +41,7 @@ import org.springframework.amqp.core.TopicExchange;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.DeclarationExceptionEvent;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
@@ -63,6 +66,7 @@ import org.springframework.util.StringUtils;
  * @author Soby Chacko
  * @author Gary Russell
  * @author Oleg Zhurakousky
+ * @author Michael Michailidis
  */
 // @checkstyle:off
 public class RabbitExchangeQueueProvisioner
@@ -170,8 +174,26 @@ public class RabbitExchangeQueueProvisioner
 		else {
 			String[] provisionedDestinations = Stream
 					.of(StringUtils.tokenizeToStringArray(name, ",", true, true))
-					.map(destination -> doProvisionConsumerDestination(destination, group,
-							properties).getName())
+					.flatMap(destination -> {
+						if (properties.isPartitioned() && !ObjectUtils.isEmpty(properties.getInstanceIndexList())) {
+							List<String> consumerDestinationNames = new ArrayList<>();
+
+							for (Integer index : properties.getInstanceIndexList()) {
+								ExtendedConsumerProperties<RabbitConsumerProperties> temporaryProperties =
+										new ExtendedConsumerProperties<>(properties.getExtension());
+								BeanUtils.copyProperties(properties, temporaryProperties);
+								temporaryProperties.setInstanceIndex(index);
+								consumerDestinationNames.add(doProvisionConsumerDestination(destination, group,
+										temporaryProperties).getName());
+							}
+
+							return consumerDestinationNames.stream();
+						}
+						else {
+							return Stream.of(doProvisionConsumerDestination(destination, group,
+									properties).getName());
+						}
+					})
 					.toArray(String[]::new);
 			consumerDestination = new RabbitConsumerDestination(
 					StringUtils.arrayToCommaDelimitedString(provisionedDestinations),
