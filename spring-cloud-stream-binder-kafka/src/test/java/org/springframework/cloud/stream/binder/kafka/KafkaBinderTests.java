@@ -479,10 +479,11 @@ public class KafkaBinderTests extends
 		}
 		KafkaTestBinder binder = new KafkaTestBinder(binderConfiguration, kafkaTopicProvisioner);
 		((GenericApplicationContext) binder.getApplicationContext()).registerBean("kafkaBinderHeaderMapper",
-				KafkaHeaderMapper.class, () -> new KafkaHeaderMapper() {
+				KafkaHeaderMapper.class, () -> new BinderHeaderMapper() {
 					@Override
 					public void fromHeaders(MessageHeaders headers, Headers target) {
 						target.add(new RecordHeader("custom-header", "foobar".getBytes()));
+						super.fromHeaders(headers, target);
 					}
 
 					@Override
@@ -514,7 +515,7 @@ public class KafkaBinderTests extends
 
 		Message<?> message = org.springframework.integration.support.MessageBuilder
 				.withPayload("foo")
-				.setHeader("foo", MimeTypeUtils.TEXT_PLAIN).build();
+				.setHeader("foo", MimeTypeUtils.TEXT_PLAIN.toString()).build();
 
 		moduleOutputChannel.send(message);
 		CountDownLatch latch = new CountDownLatch(1);
