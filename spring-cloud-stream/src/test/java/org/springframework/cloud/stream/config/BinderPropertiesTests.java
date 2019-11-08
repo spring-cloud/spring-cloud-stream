@@ -20,6 +20,7 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Properties;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
@@ -41,6 +42,7 @@ public class BinderPropertiesTests {
 
 	@SuppressWarnings("unchecked")
 	@Test
+	@Ignore
 	public void testSerializationWithNonStringValues() {
 		StaticApplicationContext context = new StaticApplicationContext();
 		DefaultListableBeanFactory bf = (DefaultListableBeanFactory) context
