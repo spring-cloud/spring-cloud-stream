@@ -40,6 +40,7 @@ import org.springframework.cloud.stream.binder.kafka.properties.KafkaBinderConfi
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaExtendedBindingProperties;
 import org.springframework.cloud.stream.binder.kafka.provisioning.KafkaTopicProvisioner;
 import org.springframework.cloud.stream.binder.kafka.utils.DlqPartitionFunction;
+import org.springframework.cloud.stream.config.ConsumerEndpointCustomizer;
 import org.springframework.cloud.stream.config.ListenerContainerCustomizer;
 import org.springframework.cloud.stream.config.MessageSourceCustomizer;
 import org.springframework.cloud.stream.config.ProducerMessageHandlerCustomizer;
@@ -48,6 +49,7 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+import org.springframework.integration.kafka.inbound.KafkaMessageDrivenChannelAdapter;
 import org.springframework.integration.kafka.inbound.KafkaMessageSource;
 import org.springframework.integration.kafka.outbound.KafkaProducerMessageHandler;
 import org.springframework.kafka.listener.AbstractMessageListenerContainer;
@@ -107,6 +109,7 @@ public class KafkaBinderConfiguration {
 			@Nullable ListenerContainerCustomizer<AbstractMessageListenerContainer<?, ?>> listenerContainerCustomizer,
 			@Nullable MessageSourceCustomizer<KafkaMessageSource<?, ?>> sourceCustomizer,
 			@Nullable ProducerMessageHandlerCustomizer<KafkaProducerMessageHandler<?, ?>> messageHandlerCustomizer,
+			@Nullable ConsumerEndpointCustomizer<KafkaMessageDrivenChannelAdapter<?, ?>> consumerCustomizer,
 			ObjectProvider<KafkaBindingRebalanceListener> rebalanceListener,
 			ObjectProvider<DlqPartitionFunction> dlqPartitionFunction) {
 
@@ -118,6 +121,7 @@ public class KafkaBinderConfiguration {
 		kafkaMessageChannelBinder
 				.setExtendedBindingProperties(this.kafkaExtendedBindingProperties);
 		kafkaMessageChannelBinder.setProducerMessageHandlerCustomizer(messageHandlerCustomizer);
+		kafkaMessageChannelBinder.setConsumerEndpointCustomizer(consumerCustomizer);
 		return kafkaMessageChannelBinder;
 	}
 

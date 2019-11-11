@@ -39,12 +39,14 @@ import org.springframework.cloud.stream.annotation.StreamListener;
 import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binder.PollableMessageSource;
 import org.springframework.cloud.stream.binding.BindingService;
+import org.springframework.cloud.stream.config.ConsumerEndpointCustomizer;
 import org.springframework.cloud.stream.config.ListenerContainerCustomizer;
 import org.springframework.cloud.stream.config.MessageSourceCustomizer;
 import org.springframework.cloud.stream.config.ProducerMessageHandlerCustomizer;
 import org.springframework.cloud.stream.messaging.Processor;
 import org.springframework.cloud.stream.messaging.Sink;
 import org.springframework.context.annotation.Bean;
+import org.springframework.integration.kafka.inbound.KafkaMessageDrivenChannelAdapter;
 import org.springframework.integration.kafka.inbound.KafkaMessageSource;
 import org.springframework.integration.kafka.outbound.KafkaProducerMessageHandler;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -117,21 +119,26 @@ public class KafkaBinderActuatorTests {
 
 					DirectFieldAccessor channelBindingServiceAccessor = new DirectFieldAccessor(
 							context.getBean(BindingService.class));
-					// @checkstyle:off
 					@SuppressWarnings("unchecked")
-					Map<String, List<Binding<MessageChannel>>> consumerBindings = (Map<String, List<Binding<MessageChannel>>>) channelBindingServiceAccessor
+					Map<String, List<Binding<MessageChannel>>> consumerBindings =
+						(Map<String, List<Binding<MessageChannel>>>) channelBindingServiceAccessor
 							.getPropertyValue("consumerBindings");
-					// @checkstyle:on
 					assertThat(new DirectFieldAccessor(
 							consumerBindings.get("input").get(0)).getPropertyValue(
 									"lifecycle.messageListenerContainer.beanName"))
+											.isEqualTo("setByCustomizer:input");
+					assertThat(new DirectFieldAccessor(
+							consumerBindings.get("input").get(0)).getPropertyValue(
+									"lifecycle.beanName"))
 											.isEqualTo("setByCustomizer:input");
 					assertThat(new DirectFieldAccessor(
 							consumerBindings.get("source").get(0)).getPropertyValue(
 									"lifecycle.beanName"))
 											.isEqualTo("setByCustomizer:source");
 
-					Map<String, Binding<MessageChannel>> producerBindings = (Map<String, Binding<MessageChannel>>) channelBindingServiceAccessor
+					@SuppressWarnings("unchecked")
+					Map<String, Binding<MessageChannel>> producerBindings =
+						(Map<String, Binding<MessageChannel>>) channelBindingServiceAccessor
 							.getPropertyValue("producerBindings");
 
 					assertThat(new DirectFieldAccessor(
@@ -153,6 +160,11 @@ public class KafkaBinderActuatorTests {
 		@Bean
 		public MessageSourceCustomizer<KafkaMessageSource<?, ?>> sourceCustomizer() {
 			return (s, q, g) -> s.setBeanName("setByCustomizer:" + q);
+		}
+
+		@Bean
+		public ConsumerEndpointCustomizer<KafkaMessageDrivenChannelAdapter<?, ?>> consumerCustomizer() {
+			return (p, q, g) -> p.setBeanName("setByCustomizer:" + q);
 		}
 
 		@Bean
