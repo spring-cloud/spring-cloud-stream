@@ -56,12 +56,14 @@ import org.springframework.cloud.stream.binder.rabbit.properties.RabbitConsumerP
 import org.springframework.cloud.stream.binder.rabbit.properties.RabbitProducerProperties;
 import org.springframework.cloud.stream.binder.test.junit.rabbit.RabbitTestSupport;
 import org.springframework.cloud.stream.binding.BindingService;
+import org.springframework.cloud.stream.config.ConsumerEndpointCustomizer;
 import org.springframework.cloud.stream.config.ListenerContainerCustomizer;
 import org.springframework.cloud.stream.config.MessageSourceCustomizer;
 import org.springframework.cloud.stream.config.ProducerMessageHandlerCustomizer;
 import org.springframework.cloud.stream.messaging.Processor;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
+import org.springframework.integration.amqp.inbound.AmqpInboundChannelAdapter;
 import org.springframework.integration.amqp.inbound.AmqpMessageSource;
 import org.springframework.integration.amqp.outbound.AmqpOutboundEndpoint;
 import org.springframework.integration.channel.DirectChannel;
@@ -169,6 +171,8 @@ public class RabbitBinderModuleTests {
 				.getPropertyValue("consumerBindings");
 		// @checkstyle:on
 		Binding<MessageChannel> inputBinding = consumerBindings.get("input").get(0);
+		assertThat(TestUtils.getPropertyValue(inputBinding, "lifecycle.beanName"))
+				.isEqualTo("setByCustomizer:someGroup");
 		SimpleMessageListenerContainer container = TestUtils.getPropertyValue(
 				inputBinding, "lifecycle.messageListenerContainer",
 				SimpleMessageListenerContainer.class);
@@ -360,6 +364,11 @@ public class RabbitBinderModuleTests {
 		@Bean
 		public ProducerMessageHandlerCustomizer<AmqpOutboundEndpoint> messageHandlerCustomizer() {
 			return (handler, destinationName) -> handler.setBeanName("setByCustomizer:" + destinationName);
+		}
+
+		@Bean
+		public ConsumerEndpointCustomizer<AmqpInboundChannelAdapter> adapterCustomizer() {
+			return (producer, dest, grp) -> producer.setBeanName("setByCustomizer:" + grp);
 		}
 
 	}
