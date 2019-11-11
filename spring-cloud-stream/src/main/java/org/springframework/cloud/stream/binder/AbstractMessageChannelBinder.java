@@ -416,13 +416,13 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 			}
 			consumerEndpoint = createConsumerEndpoint(destination, group, properties);
 			consumerEndpoint.setOutputChannel(inputChannel);
+			this.consumerCustomizer.configure(consumerEndpoint, name, group);
 			if (consumerEndpoint instanceof InitializingBean) {
 				((InitializingBean) consumerEndpoint).afterPropertiesSet();
 			}
 			if (properties.isAutoStartup() && consumerEndpoint instanceof Lifecycle) {
 				((Lifecycle) consumerEndpoint).start();
 			}
-			this.consumerCustomizer.configure(consumerEndpoint, name, group);
 
 			Binding<MessageChannel> binding = new DefaultBinding<MessageChannel>(name,
 					group, inputChannel, consumerEndpoint instanceof Lifecycle
