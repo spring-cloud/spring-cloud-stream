@@ -16,28 +16,29 @@
 
 package org.springframework.cloud.stream.config;
 
-import org.springframework.messaging.MessageHandler;
+import org.springframework.integration.core.MessageProducer;
 
 /**
- * If a single bean of this type is in the application context, a producing message
- * handler created by the binder can be further customized after all the properties are
- * set. For example, to configure less-common properties.
+ * If a single bean of this type is in the application context, an inbound channel adapter
+ * created by the binder can be further customized after all the properties are set. For
+ * example, to configure less-common properties.
  *
- * @param <H> {@link MessageHandler} type
+ * @param <E> {@link MessageProducer} type
  *
- * @author Artem Bilan
+ * @author Gary Russell
  *
  * @since 3.0
  */
 @FunctionalInterface
-public interface ProducerMessageHandlerCustomizer<H extends MessageHandler> {
+public interface ConsumerEndpointCustomizer<E extends MessageProducer> {
 
 	/**
-	 * Configure a {@link MessageHandler} that is being created by the binder for the
-	 * provided destination name.
-	 * @param handler the {@link MessageHandler} from the binder.
+	 * Configure a {@link MessageProducer} that is being created by the binder for the
+	 * provided destination name and group.
+	 * @param endpoint the {@link MessageProducer} from the binder.
 	 * @param destinationName the bound destination name.
+	 * @param group the group.
 	 */
-	void configure(H handler, String destinationName);
+	void configure(E endpoint, String destinationName, String group);
 
 }

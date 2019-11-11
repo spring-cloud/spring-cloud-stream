@@ -31,6 +31,7 @@ import org.springframework.beans.factory.BeanFactoryAware;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.support.DefaultSingletonBeanRegistry;
+import org.springframework.cloud.stream.config.ConsumerEndpointCustomizer;
 import org.springframework.cloud.stream.config.ListenerContainerCustomizer;
 import org.springframework.cloud.stream.config.MessageSourceCustomizer;
 import org.springframework.cloud.stream.config.ProducerMessageHandlerCustomizer;
@@ -114,6 +115,9 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 	private ProducerMessageHandlerCustomizer<MessageHandler> handlerCustomizer =
 		(handler, destination) -> { };
 
+	private ConsumerEndpointCustomizer<MessageProducer> consumerCustomizer =
+		(adapter, destination, group) -> { };
+
 	private ApplicationEventPublisher applicationEventPublisher;
 
 	public AbstractMessageChannelBinder(String[] headersToEmbed,
@@ -149,7 +153,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 
 	/**
 	 * Configure an optional {@link ProducerMessageHandlerCustomizer} for further
-	 * producer {@link MessageHandler} instances created by the binder.
+	 * configuration of producer {@link MessageHandler} instances created by the binder.
 	 * @param handlerCustomizer the {@link ProducerMessageHandlerCustomizer} to use.
 	 * @since 3.0
 	 */
@@ -161,6 +165,22 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 			handlerCustomizer == null
 				? (handler, destination) -> { }
 				: (ProducerMessageHandlerCustomizer<MessageHandler>) handlerCustomizer;
+	}
+
+	/**
+	 * Configure an optional {@link ConsumerEndpointCustomizer} for further
+	 * configuration of consumer {@link MessageProducer} instances created by the binder.
+	 * @param endpointCustomizer the {@link ConsumerEndpointCustomizer} to use.
+	 * @since 3.0
+	 */
+	@SuppressWarnings("unchecked")
+	public void setConsumerEndpointCustomizer(
+		@Nullable ConsumerEndpointCustomizer<? extends MessageProducer> endpointCustomizer) {
+
+		this.consumerCustomizer =
+				endpointCustomizer == null
+				? (handler, destination, group) -> { }
+				: (ConsumerEndpointCustomizer<MessageProducer>) endpointCustomizer;
 	}
 
 	@SuppressWarnings("unchecked")
@@ -402,6 +422,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 			if (properties.isAutoStartup() && consumerEndpoint instanceof Lifecycle) {
 				((Lifecycle) consumerEndpoint).start();
 			}
+			this.consumerCustomizer.configure(consumerEndpoint, name, group);
 
 			Binding<MessageChannel> binding = new DefaultBinding<MessageChannel>(name,
 					group, inputChannel, consumerEndpoint instanceof Lifecycle
