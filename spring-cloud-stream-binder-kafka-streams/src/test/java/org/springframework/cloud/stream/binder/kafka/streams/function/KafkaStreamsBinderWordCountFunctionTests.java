@@ -19,6 +19,8 @@ package org.springframework.cloud.stream.binder.kafka.streams.function;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 import io.micrometer.core.instrument.MeterRegistry;
@@ -27,9 +29,9 @@ import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.KeyValue;
+import org.apache.kafka.streams.kstream.Grouped;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.Materialized;
-import org.apache.kafka.streams.kstream.Serialized;
 import org.apache.kafka.streams.kstream.TimeWindows;
 import org.apache.kafka.streams.processor.StreamPartitioner;
 import org.junit.AfterClass;
@@ -44,12 +46,14 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.cloud.stream.binder.kafka.streams.InteractiveQueryService;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
+import org.springframework.kafka.config.StreamsBuilderFactoryBeanCustomizer;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.test.EmbeddedKafkaBroker;
 import org.springframework.kafka.test.rule.EmbeddedKafkaRule;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
+import org.springframework.util.Assert;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -62,6 +66,8 @@ public class KafkaStreamsBinderWordCountFunctionTests {
 	private static EmbeddedKafkaBroker embeddedKafka = embeddedKafkaRule.getEmbeddedKafka();
 
 	private static Consumer<String, String> consumer;
+
+	private final static CountDownLatch LATCH = new CountDownLatch(1);
 
 	@BeforeClass
 	public static void setUp() {
@@ -100,6 +106,7 @@ public class KafkaStreamsBinderWordCountFunctionTests {
 			final MeterRegistry meterRegistry = context.getBean(MeterRegistry.class);
 			Thread.sleep(100);
 			assertThat(meterRegistry.get("stream.metrics.commit.total").gauge().value()).isEqualTo(1.0);
+			Assert.isTrue(LATCH.await(5, TimeUnit.SECONDS), "Failed to call customizers");
 		}
 	}
 
@@ -239,12 +246,29 @@ public class KafkaStreamsBinderWordCountFunctionTests {
 			return input -> input
 					.flatMapValues(value -> Arrays.asList(value.toLowerCase().split("\\W+")))
 					.map((key, value) -> new KeyValue<>(value, value))
-					.groupByKey(Serialized.with(Serdes.String(), Serdes.String()))
+					.groupByKey(Grouped.with(Serdes.String(), Serdes.String()))
 					.windowedBy(TimeWindows.of(5000))
 					.count(Materialized.as("foo-WordCounts"))
 					.toStream()
 					.map((key, value) -> new KeyValue<>(key.key(), new WordCount(key.key(), value,
 							new Date(key.window().start()), new Date(key.window().end()))));
+		}
+
+		@Bean
+		public StreamsBuilderFactoryBeanCustomizer customizer() {
+			return fb -> {
+				try {
+					fb.setStateListener((newState, oldState) -> {
+
+					});
+					fb.getObject(); //make sure no exception is thrown at this call.
+					KafkaStreamsBinderWordCountFunctionTests.LATCH.countDown();
+
+				}
+				catch (Exception e) {
+					//Nothing to do - When the exception is thrown above, the latch won't be count down.
+				}
+			};
 		}
 
 		@Bean

@@ -214,18 +214,16 @@ public abstract class AbstractKafkaStreamsBinderProcessor implements Application
 
 		KafkaStreamsConfiguration kafkaStreamsConfiguration = new KafkaStreamsConfiguration(streamConfigGlobalProperties);
 
-		StreamsBuilderFactoryBean streamsBuilder = this.cleanupConfig == null
+		StreamsBuilderFactoryBean streamsBuilderFactoryBean = this.cleanupConfig == null
 				? new StreamsBuilderFactoryBean(kafkaStreamsConfiguration)
 				: new StreamsBuilderFactoryBean(kafkaStreamsConfiguration,
 				this.cleanupConfig);
-		if (customizer != null) {
-			customizer.configure(streamsBuilder);
-		}
-		streamsBuilder.setAutoStartup(false);
+
+		streamsBuilderFactoryBean.setAutoStartup(false);
 		BeanDefinition streamsBuilderBeanDefinition = BeanDefinitionBuilder
 				.genericBeanDefinition(
-						(Class<StreamsBuilderFactoryBean>) streamsBuilder.getClass(),
-						() -> streamsBuilder)
+						(Class<StreamsBuilderFactoryBean>) streamsBuilderFactoryBean.getClass(),
+						() -> streamsBuilderFactoryBean)
 				.getRawBeanDefinition();
 		((BeanDefinitionRegistry) beanFactory).registerBeanDefinition(
 				"stream-builder-" + beanNamePostPrefix, streamsBuilderBeanDefinition);
@@ -234,8 +232,14 @@ public abstract class AbstractKafkaStreamsBinderProcessor implements Application
 		//Removing the application ID from global properties so that the next function won't re-use it and cause race conditions.
 		streamConfigGlobalProperties.remove(StreamsConfig.APPLICATION_ID_CONFIG);
 
-		return applicationContext.getBean(
+		final StreamsBuilderFactoryBean streamsBuilderFactoryBeanFromContext = applicationContext.getBean(
 				"&stream-builder-" + beanNamePostPrefix, StreamsBuilderFactoryBean.class);
+		//At this point, the StreamsBuilderFactoryBean is created. If the users call, getObject()
+		//in the customizer, that should grant access to the StreamsBuilder.
+		if (customizer != null) {
+			customizer.configure(streamsBuilderFactoryBean);
+		}
+		return streamsBuilderFactoryBeanFromContext;
 	}
 
 	protected Serde<?> getValueSerde(String inboundName, KafkaStreamsConsumerProperties kafkaStreamsConsumerProperties, ResolvableType resolvableType) {
