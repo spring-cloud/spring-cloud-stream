@@ -167,7 +167,9 @@ public class KafkaBinderTests extends
 
 	@ClassRule
 	public static EmbeddedKafkaRule embeddedKafka = new EmbeddedKafkaRule(1, true, 10,
-			"error.pollableDlq.group-pcWithDlq");
+			"error.pollableDlq.group-pcWithDlq")
+					.brokerProperty("transaction.state.log.replication.factor", "1")
+					.brokerProperty("transaction.state.log.min.isr", "1");
 
 	private KafkaTestBinder binder;
 
@@ -866,8 +868,18 @@ public class KafkaBinderTests extends
 	}
 
 	@Test
+	public void testDlqAndRetryTransactional() throws Exception {
+		testDlqGuts(true, null, null, true);
+	}
+
+	@Test
 	public void testDlq() throws Exception {
 		testDlqGuts(false, null, 3);
+	}
+
+	@Test
+	public void testDlqTransactional() throws Exception {
+		testDlqGuts(false, null, 3, true);
 	}
 
 	@Test
@@ -881,8 +893,19 @@ public class KafkaBinderTests extends
 	}
 
 	private void testDlqGuts(boolean withRetry, HeaderMode headerMode, Integer dlqPartitions) throws Exception {
+		testDlqGuts(withRetry, headerMode, dlqPartitions, false);
+	}
+
+	private void testDlqGuts(boolean withRetry, HeaderMode headerMode, Integer dlqPartitions,
+			boolean transactional) throws Exception {
+
 		int expectedDlqPartition = dlqPartitions == null ? 0 : dlqPartitions - 1;
 		KafkaBinderConfigurationProperties binderConfig = createConfigurationProperties();
+		if (transactional) {
+			binderConfig.getTransaction().setTransactionIdPrefix("tx-");
+			binderConfig.getTransaction().getProducer().getConfiguration().put(ProducerConfig.RETRIES_CONFIG, "1");
+			binderConfig.setRequiredAcks("all");
+		}
 		DlqPartitionFunction dlqPartitionFunction;
 		if (Integer.valueOf(1).equals(dlqPartitions)) {
 			dlqPartitionFunction = null; // test that ZERO_PARTITION is used
@@ -960,11 +983,13 @@ public class KafkaBinderTests extends
 		final AtomicReference<Message<?>> boundErrorChannelMessage = new AtomicReference<>();
 		final AtomicReference<Message<?>> globalErrorChannelMessage = new AtomicReference<>();
 		final AtomicBoolean hasRecovererInCallStack = new AtomicBoolean(!withRetry);
+		final AtomicBoolean hasAfterRollbackProcessorInStack = new AtomicBoolean(!withRetry);
 		boundErrorChannel.subscribe(message -> {
 			boundErrorChannelMessage.set(message);
 			String stackTrace = Arrays.toString(new RuntimeException().getStackTrace());
 			hasRecovererInCallStack
 					.set(stackTrace.contains("ErrorMessageSendingRecoverer"));
+			hasAfterRollbackProcessorInStack.set(stackTrace.contains("DefaultAfterRollbackProcessor"));
 		});
 		globalErrorChannel.subscribe(globalErrorChannelMessage::set);
 
@@ -1037,10 +1062,21 @@ public class KafkaBinderTests extends
 					.get(KafkaMessageChannelBinder.X_ORIGINAL_TIMESTAMP_TYPE))
 							.isEqualTo(TimestampType.CREATE_TIME.toString().getBytes());
 
-			assertThat(new String((byte[]) receivedMessage.getHeaders()
-					.get(KafkaMessageChannelBinder.X_EXCEPTION_MESSAGE))).startsWith(
-							"Dispatcher failed to deliver Message; nested exception "
-									+ "is java.lang.RuntimeException: fail");
+			if (transactional) {
+				assertThat(new String((byte[]) receivedMessage.getHeaders()
+						.get(KafkaMessageChannelBinder.X_EXCEPTION_MESSAGE))).startsWith(
+								"Transaction rollback limit exceeded");
+				assertThat(new String((byte[]) receivedMessage.getHeaders()
+						.get(KafkaMessageChannelBinder.X_EXCEPTION_MESSAGE))).contains(
+								"Dispatcher failed to deliver Message; nested exception "
+										+ "is java.lang.RuntimeException: fail");
+			}
+			else {
+				assertThat(new String((byte[]) receivedMessage.getHeaders()
+						.get(KafkaMessageChannelBinder.X_EXCEPTION_MESSAGE))).startsWith(
+								"Dispatcher failed to deliver Message; nested exception "
+										+ "is java.lang.RuntimeException: fail");
+			}
 
 			assertThat(receivedMessage.getHeaders()
 					.get(KafkaMessageChannelBinder.X_EXCEPTION_STACKTRACE)).isNotNull();
@@ -1061,7 +1097,8 @@ public class KafkaBinderTests extends
 		// bridge)
 		assertThat(boundErrorChannelMessage.get()).isNotNull();
 		assertThat(globalErrorChannelMessage.get()).isNotNull();
-		assertThat(hasRecovererInCallStack.get()).isEqualTo(withRetry);
+		assertThat(hasRecovererInCallStack.get()).isEqualTo(withRetry && !transactional);
+		assertThat(hasAfterRollbackProcessorInStack.get()).isEqualTo(transactional);
 
 		dlqConsumerBinding.unbind();
 		consumerBinding.unbind();

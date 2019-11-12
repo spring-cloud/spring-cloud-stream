@@ -80,6 +80,7 @@ import org.springframework.context.Lifecycle;
 import org.springframework.expression.Expression;
 import org.springframework.expression.common.LiteralExpression;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
+import org.springframework.integration.IntegrationMessageHeaderAccessor;
 import org.springframework.integration.StaticMessageHeaderAccessor;
 import org.springframework.integration.acks.AcknowledgmentCallback;
 import org.springframework.integration.channel.AbstractMessageChannel;
@@ -101,6 +102,7 @@ import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;
 import org.springframework.kafka.listener.ConsumerAwareRebalanceListener;
 import org.springframework.kafka.listener.ConsumerProperties;
 import org.springframework.kafka.listener.ContainerProperties;
+import org.springframework.kafka.listener.DefaultAfterRollbackProcessor;
 import org.springframework.kafka.support.KafkaHeaderMapper;
 import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.kafka.support.ProducerListener;
@@ -117,10 +119,14 @@ import org.springframework.messaging.MessagingException;
 import org.springframework.messaging.support.ChannelInterceptor;
 import org.springframework.messaging.support.ErrorMessage;
 import org.springframework.messaging.support.InterceptableChannel;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
+import org.springframework.util.backoff.BackOff;
+import org.springframework.util.backoff.ExponentialBackOff;
+import org.springframework.util.backoff.FixedBackOff;
 import org.springframework.util.concurrent.ListenableFuture;
 import org.springframework.util.concurrent.ListenableFutureCallback;
 
@@ -197,6 +203,8 @@ public class KafkaMessageChannelBinder extends
 
 	private final KafkaTransactionManager<byte[], byte[]> transactionManager;
 
+	private final TransactionTemplate transactionTemplate;
+
 	private final KafkaBindingRebalanceListener rebalanceListener;
 
 	private final DlqPartitionFunction dlqPartitionFunction;
@@ -238,9 +246,11 @@ public class KafkaMessageChannelBinder extends
 					configurationProperties.getTransaction().getTransactionIdPrefix(),
 					new ExtendedProducerProperties<>(configurationProperties
 							.getTransaction().getProducer().getExtension())));
+			this.transactionTemplate = new TransactionTemplate(this.transactionManager);
 		}
 		else {
 			this.transactionManager = null;
+			this.transactionTemplate = null;
 		}
 		this.rebalanceListener = rebalanceListener;
 		this.dlqPartitionFunction = dlqPartitionFunction != null
@@ -513,6 +523,7 @@ public class KafkaMessageChannelBinder extends
 	protected MessageProducer createConsumerEndpoint(
 			final ConsumerDestination destination, final String group,
 			final ExtendedConsumerProperties<KafkaConsumerProperties> extendedConsumerProperties) {
+
 		boolean anonymous = !StringUtils.hasText(group);
 		Assert.isTrue(
 				!anonymous || !extendedConsumerProperties.getExtension().isEnableDlq(),
@@ -622,29 +633,87 @@ public class KafkaMessageChannelBinder extends
 			this.logger.debug("Listened partitions: "
 					+ StringUtils.collectionToCommaDelimitedString(listenedPartitions));
 		}
-		this.getContainerCustomizer().configure(messageListenerContainer,
-				destination.getName(), group);
-		// @checkstyle:off
 		final KafkaMessageDrivenChannelAdapter<?, ?> kafkaMessageDrivenChannelAdapter =
 				new KafkaMessageDrivenChannelAdapter<>(messageListenerContainer,
 						extendedConsumerProperties.isBatchMode() ? ListenerMode.batch : ListenerMode.record);
-		// @checkstyle:on
-		kafkaMessageDrivenChannelAdapter
-				.setMessageConverter(getMessageConverter(extendedConsumerProperties));
+		MessagingMessageConverter messageConverter = getMessageConverter(extendedConsumerProperties);
+		kafkaMessageDrivenChannelAdapter.setMessageConverter(messageConverter);
 		kafkaMessageDrivenChannelAdapter.setBeanFactory(this.getBeanFactory());
 		ErrorInfrastructure errorInfrastructure = registerErrorInfrastructure(destination,
 				consumerGroup, extendedConsumerProperties);
-		if (!extendedConsumerProperties.isBatchMode() && extendedConsumerProperties.getMaxAttempts() > 1) {
+		if (!extendedConsumerProperties.isBatchMode()
+				&& extendedConsumerProperties.getMaxAttempts() > 1
+				&& this.transactionManager == null) {
+
 			kafkaMessageDrivenChannelAdapter
 					.setRetryTemplate(buildRetryTemplate(extendedConsumerProperties));
 			kafkaMessageDrivenChannelAdapter
 					.setRecoveryCallback(errorInfrastructure.getRecoverer());
 		}
-		else {
-			kafkaMessageDrivenChannelAdapter
-					.setErrorChannel(errorInfrastructure.getErrorChannel());
+		else if (!extendedConsumerProperties.isBatchMode() && this.transactionManager != null) {
+			messageListenerContainer.setAfterRollbackProcessor(new DefaultAfterRollbackProcessor<>(
+					(record, exception) -> {
+						MessagingException payload =
+								new MessagingException(messageConverter.toMessage(record, null, null, null),
+										"Transaction rollback limit exceeded", exception);
+						try {
+							errorInfrastructure.getErrorChannel()
+									.send(new ErrorMessage(
+											payload,
+												Collections.singletonMap(IntegrationMessageHeaderAccessor.SOURCE_DATA,
+													record)));
+						}
+						catch (Exception e) {
+							/*
+							 * When there is no DLQ, the FinalRethrowingErrorMessageHandler will re-throw
+							 * the payload; that will subvert the recovery and cause a re-seek of the failed
+							 * record, so we ignore that here.
+							 */
+							if (!e.equals(payload)) {
+								throw e;
+							}
+						}
+					}, createBackOff(extendedConsumerProperties)));
 		}
+		else {
+			kafkaMessageDrivenChannelAdapter.setErrorChannel(errorInfrastructure.getErrorChannel());
+		}
+		this.getContainerCustomizer().configure(messageListenerContainer, destination.getName(), group);
 		return kafkaMessageDrivenChannelAdapter;
+	}
+
+	/**
+	 * Configure a {@link BackOff} for the after rollback processor, based on the consumer
+	 * retry properties. If retry is disabled, return a {@link BackOff} that disables
+	 * retry. Otherwise calculate the {@link ExponentialBackOff#setMaxElapsedTime(long)}
+	 * so that the {@link BackOff} stops after the configured
+	 * {@link ExtendedConsumerProperties#getMaxAttempts()}.
+	 * @param extendedConsumerProperties the properties.
+	 * @return the backoff.
+	 */
+	private BackOff createBackOff(
+			final ExtendedConsumerProperties<KafkaConsumerProperties> extendedConsumerProperties) {
+
+		int maxAttempts = extendedConsumerProperties.getMaxAttempts();
+		if (maxAttempts < 2) {
+			return new FixedBackOff(0L, 0L);
+		}
+		int initialInterval = extendedConsumerProperties.getBackOffInitialInterval();
+		double multiplier = extendedConsumerProperties.getBackOffMultiplier();
+		int maxInterval = extendedConsumerProperties.getBackOffMaxInterval();
+		ExponentialBackOff backOff = new ExponentialBackOff(initialInterval, multiplier);
+		backOff.setMaxInterval(maxInterval);
+		long maxElapsed = extendedConsumerProperties.getBackOffInitialInterval();
+		double accum = maxElapsed;
+		for (int i = 1; i < maxAttempts - 1; i++) {
+			accum = accum * multiplier;
+			if (accum > maxInterval) {
+				accum = maxInterval;
+			}
+			maxElapsed += accum;
+		}
+		backOff.setMaxElapsedTime(maxElapsed);
+		return backOff;
 	}
 
 	public void setupRebalanceListener(
@@ -1039,8 +1108,11 @@ public class KafkaMessageChannelBinder extends
 										.getBytes(StandardCharsets.UTF_8)));
 						kafkaHeaders.add(new RecordHeader(X_EXCEPTION_FQCN, throwable
 								.getClass().getName().getBytes(StandardCharsets.UTF_8)));
-						kafkaHeaders.add(new RecordHeader(X_EXCEPTION_MESSAGE,
-								throwable.getMessage().getBytes(StandardCharsets.UTF_8)));
+						String exceptionMessage = throwable.getMessage();
+						if (exceptionMessage != null) {
+							kafkaHeaders.add(new RecordHeader(X_EXCEPTION_MESSAGE,
+									exceptionMessage.getBytes(StandardCharsets.UTF_8)));
+						}
 						kafkaHeaders.add(new RecordHeader(X_EXCEPTION_STACKTRACE,
 								getStackTraceAsString(throwable)
 										.getBytes(StandardCharsets.UTF_8)));
@@ -1082,8 +1154,17 @@ public class KafkaMessageChannelBinder extends
 				String dlqName = StringUtils.hasText(kafkaConsumerProperties.getDlqName())
 						? kafkaConsumerProperties.getDlqName()
 						: "error." + record.topic() + "." + group;
-				dlqSender.sendToDlq(recordToSend.get(), kafkaHeaders, dlqName, group, throwable,
-						determinDlqPartitionFunction(properties.getExtension().getDlqPartitions()));
+				if (this.transactionTemplate != null) {
+					Throwable throwable2 = throwable;
+					this.transactionTemplate.executeWithoutResult(status -> {
+						dlqSender.sendToDlq(recordToSend.get(), kafkaHeaders, dlqName, group, throwable2,
+								determinDlqPartitionFunction(properties.getExtension().getDlqPartitions()));
+					});
+				}
+				else {
+					dlqSender.sendToDlq(recordToSend.get(), kafkaHeaders, dlqName, group, throwable,
+							determinDlqPartitionFunction(properties.getExtension().getDlqPartitions()));
+				}
 			};
 		}
 		return null;

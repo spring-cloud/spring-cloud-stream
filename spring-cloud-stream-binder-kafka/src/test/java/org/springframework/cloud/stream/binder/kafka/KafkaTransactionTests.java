@@ -17,8 +17,6 @@
 package org.springframework.cloud.stream.binder.kafka;
 
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
 
 import org.apache.kafka.clients.producer.Callback;
 import org.apache.kafka.clients.producer.Producer;
@@ -57,15 +55,10 @@ import static org.mockito.Mockito.spy;
  */
 public class KafkaTransactionTests {
 
-	private static Map<String, String> brokerProperties = new HashMap<>();
-
-	static {
-		brokerProperties.put("transaction.state.log.replication.factor", "1");
-		brokerProperties.put("transaction.state.log.min.isr", "1");
-	}
-
 	@ClassRule
-	public static final EmbeddedKafkaRule embeddedKafka = new EmbeddedKafkaRule(1).brokerProperties(brokerProperties);
+	public static final EmbeddedKafkaRule embeddedKafka = new EmbeddedKafkaRule(1)
+			.brokerProperty("transaction.state.log.replication.factor", "1")
+			.brokerProperty("transaction.state.log.min.isr", "1");
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Test
