@@ -21,6 +21,7 @@ import java.util.Map;
 
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaBinderConfigurationProperties;
+import org.springframework.cloud.stream.binder.kafka.streams.DeserializationExceptionHandler;
 
 /**
  * Kafka Streams binder configuration properties.
@@ -37,7 +38,10 @@ public class KafkaStreamsBinderConfigurationProperties
 
 	/**
 	 * Enumeration for various Serde errors.
+	 *
+	 * @deprecated in favor of {@link DeserializationExceptionHandler}.
 	 */
+	@Deprecated
 	public enum SerdeError {
 
 		/**
@@ -60,6 +64,16 @@ public class KafkaStreamsBinderConfigurationProperties
 	private StateStoreRetry stateStoreRetry = new StateStoreRetry();
 
 	private Map<String, Functions> functions = new HashMap<>();
+
+	private KafkaStreamsBinderConfigurationProperties.SerdeError serdeError;
+
+	/**
+	 * {@link org.apache.kafka.streams.errors.DeserializationExceptionHandler} to use when
+	 * there is a deserialization exception. This handler will be applied against all input bindings
+	 * unless overridden at the consumer binding.
+	 */
+	private DeserializationExceptionHandler deserializationExceptionHandler;
+
 
 	public Map<String, Functions> getFunctions() {
 		return functions;
@@ -85,21 +99,32 @@ public class KafkaStreamsBinderConfigurationProperties
 		this.applicationId = applicationId;
 	}
 
-	/**
-	 * {@link org.apache.kafka.streams.errors.DeserializationExceptionHandler} to use when
-	 * there is a Serde error.
-	 * {@link KafkaStreamsBinderConfigurationProperties.SerdeError} values are used to
-	 * provide the exception handler on consumer binding.
-	 */
-	private KafkaStreamsBinderConfigurationProperties.SerdeError serdeError;
-
+	@Deprecated
 	public KafkaStreamsBinderConfigurationProperties.SerdeError getSerdeError() {
 		return this.serdeError;
 	}
 
+	@Deprecated
 	public void setSerdeError(
 			KafkaStreamsBinderConfigurationProperties.SerdeError serdeError) {
-		this.serdeError = serdeError;
+			this.serdeError = serdeError;
+			if (serdeError == SerdeError.logAndContinue) {
+				this.deserializationExceptionHandler = DeserializationExceptionHandler.logAndContinue;
+			}
+			else if (serdeError == SerdeError.logAndFail) {
+				this.deserializationExceptionHandler = DeserializationExceptionHandler.logAndFail;
+			}
+			else if (serdeError == SerdeError.sendToDlq) {
+				this.deserializationExceptionHandler = DeserializationExceptionHandler.sendToDlq;
+			}
+	}
+
+	public DeserializationExceptionHandler getDeserializationExceptionHandler() {
+		return deserializationExceptionHandler;
+	}
+
+	public void setDeserializationExceptionHandler(DeserializationExceptionHandler deserializationExceptionHandler) {
+		this.deserializationExceptionHandler = deserializationExceptionHandler;
 	}
 
 	public static class StateStoreRetry {

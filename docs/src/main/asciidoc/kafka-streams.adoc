@@ -801,20 +801,20 @@ For details on this support, please see https://cwiki.apache.org/confluence/disp
 Out of the box, Apache Kafka Streams provides two kinds of deserialization exception handlers - `LogAndContinueExceptionHandler` and `LogAndFailExceptionHandler`.
 As the name indicates, the former will log the error and continue processing the next records and the latter will log the error and fail. `LogAndFailExceptionHandler` is the default deserialization exception handler.
 
-=== Handling Deserialization Exceptions in the Binder
+==== Handling Deserialization Exceptions in the Binder
 
 Kafka Streams binder allows to specify the deserialization exception handlers above using the following property.
 
 [source]
 ----
-spring.cloud.stream.kafka.streams.binder.serdeError: logAndContinue
+spring.cloud.stream.kafka.streams.binder.deserializationExceptionHandler: logAndContinue
 ----
 
 or
 
 [source]
 ----
-spring.cloud.stream.kafka.streams.binder.serdeError: logAndFail
+spring.cloud.stream.kafka.streams.binder.deserializationExceptionHandler: logAndFail
 ----
 
 In addition to the above two deserialization exception handlers, the binder also provides a third one for sending the erroneous records (poison pills) to a DLQ (dead letter queue) topic.
@@ -822,10 +822,10 @@ Here is how you enable this DLQ exception handler.
 
 [source]
 ----
-spring.cloud.stream.kafka.streams.binder.serdeError: sendToDlq
+spring.cloud.stream.kafka.streams.binder.deserializationExceptionHandler: sendToDlq
 ----
 
-When the above property is set, all the deserialization error records are automatically sent to the DLQ topic.
+When the above property is set, all the records in deserialization error are automatically sent to the DLQ topic.
 
 You can set the topic name where the DLQ messages are published as below.
 
@@ -834,10 +834,34 @@ You can set the topic name where the DLQ messages are published as below.
 spring.cloud.stream.kafka.streams.bindings.process-in-0.consumer.dlqName: custom-dlq (Change the binding name accordingly)
 ----
 
-If this is set, then the error records are sent to the topic `custom-dlq`. If this is not set, then it will create a DLQ
-topic with the name `error.<input-topic-name>.<application-id>`.
-For instance, if your binding's destination topic is `inputTopic` and the applicatioin ID is `process-applicationId`, then the default DLQ topic is `error.inputTopic.process-applicationId`.
+If this is set, then the error records are sent to the topic `custom-dlq`.
+If this is not set, then it will create a DLQ topic with the name `error.<input-topic-name>.<application-id>`.
+For instance, if your binding's destination topic is `inputTopic` and the application ID is `process-applicationId`, then the default DLQ topic is `error.inputTopic.process-applicationId`.
 It is always recommended to explicitly create a DLQ topic for each input binding if it is your intention to enable DLQ.
+
+==== DLQ per input consumer binding
+
+The property `spring.cloud.stream.kafka.streams.binder.deserializationExceptionHandler` is applicable for the entire application.
+This implies that if there are multiple functions or `StreamListener` methods in the same application, this property is applied to all of them.
+However, if you have multiple processors or multiple input bindings within a single processor, then you can use the finer-grained DLQ control that the binder provides per input consumer binding.
+
+If you have the following processor,
+
+```
+@Bean
+public BiFunction<KStream<String, Long>, KTable<String, String>, KStream<String, Long>> process() {
+...
+}
+```
+
+and you only want to enable DLQ on the first input binding and logAndSkip on the second binding, then you can do so on the consumer as below.
+
+`spring.cloud.stream.kafka.streams.bindings.process-in-0.consumer.deserializationExceptionHandler: sendToDlq`
+`spring.cloud.stream.kafka.streams.bindings.process-in-1.consumer.deserializationExceptionHandler: logAndSkip`
+
+Setting deserialization exception handlers this way has a higher precedence than setting at the binder level.
+
+==== DLQ partitioning
 
 By default, records are published to the Dead-Letter topic using the same partition as the original record.
 This means the Dead-Letter topic must have at least as many partitions as the original record.
@@ -859,9 +883,10 @@ public DlqPartitionFunction partitionFunction() {
 NOTE: If you set a consumer binding's `dlqPartitions` property to 1 (and the binder's `minPartitionCount` is equal to `1`), there is no need to supply a `DlqPartitionFunction`; the framework will always use partition 0.
 If you set a consumer binding's `dlqPartitions` property to a value greater than `1` (or the binder's `minPartitionCount` is greater than `1`), you **must** provide a `DlqPartitionFunction` bean, even if the partition count is the same as the original topic's.
 
+
 A couple of things to keep in mind when using the exception handling feature in Kafka Streams binder.
 
-* The property `spring.cloud.stream.kafka.streams.binder.serdeError` is applicable for the entire application. This implies
+* The property `spring.cloud.stream.kafka.streams.binder.deserializationExceptionHandler` is applicable for the entire application. This implies
 that if there are multiple functions or `StreamListener` methods in the same application, this property is applied to all of them.
 * The exception handling for deserialization works consistently with native deserialization and framework provided message
 conversion.

@@ -22,9 +22,9 @@ import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.streams.KeyValue;
+import org.apache.kafka.streams.kstream.Grouped;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.Materialized;
-import org.apache.kafka.streams.kstream.Serialized;
 import org.apache.kafka.streams.kstream.TimeWindows;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -110,7 +110,7 @@ public abstract class DeserializtionErrorHandlerByBinderTests {
 					+ "=org.apache.kafka.common.serialization.Serdes$IntegerSerde",
 			"spring.cloud.stream.kafka.streams.binder.configuration.default.value.serde"
 					+ "=org.apache.kafka.common.serialization.Serdes$StringSerde",
-			"spring.cloud.stream.kafka.streams.binder.serdeError=sendToDlq",
+			"spring.cloud.stream.kafka.streams.binder.deserializationExceptionHandler=sendToDlq",
 			"spring.cloud.stream.kafka.streams.bindings.input.consumer.application-id"
 					+ "=deserializationByBinderAndDlqTests",
 			"spring.cloud.stream.kafka.streams.bindings.input.consumer.dlqPartitions=1",
@@ -145,7 +145,53 @@ public abstract class DeserializtionErrorHandlerByBinderTests {
 			verify(conversionDelegate).deserializeOnInbound(any(Class.class),
 					any(KStream.class));
 		}
+	}
 
+	@SpringBootTest(properties = {
+			"spring.cloud.stream.bindings.input.consumer.useNativeDecoding=false",
+			"spring.cloud.stream.bindings.output.producer.useNativeEncoding=false",
+			"spring.cloud.stream.bindings.input.destination=foos",
+			"spring.cloud.stream.bindings.output.destination=counts-id",
+			"spring.cloud.stream.kafka.streams.binder.configuration.commit.interval.ms=1000",
+			"spring.cloud.stream.kafka.streams.binder.configuration.default.key.serde"
+					+ "=org.apache.kafka.common.serialization.Serdes$IntegerSerde",
+			"spring.cloud.stream.kafka.streams.binder.configuration.default.value.serde"
+					+ "=org.apache.kafka.common.serialization.Serdes$StringSerde",
+			"spring.cloud.stream.kafka.streams.bindings.input.consumer.deserializationExceptionHandler=sendToDlq",
+			"spring.cloud.stream.kafka.streams.bindings.input.consumer.application-id"
+					+ "=deserializationByBinderAndDlqTests",
+			"spring.cloud.stream.kafka.streams.bindings.input.consumer.dlqPartitions=1",
+			"spring.cloud.stream.bindings.input.group=foobar-group" }, webEnvironment = SpringBootTest.WebEnvironment.NONE)
+	public static class DeserializationByBinderAndDlqSetOnConsumerBindingTests
+			extends DeserializtionErrorHandlerByBinderTests {
+
+		@Test
+		public void test() {
+			Map<String, Object> senderProps = KafkaTestUtils.producerProps(embeddedKafka);
+			DefaultKafkaProducerFactory<Integer, String> pf = new DefaultKafkaProducerFactory<>(
+					senderProps);
+			KafkaTemplate<Integer, String> template = new KafkaTemplate<>(pf, true);
+			template.setDefaultTopic("foos");
+			template.sendDefault(1, 7, "hello");
+
+			Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("foobar",
+					"false", embeddedKafka);
+			consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+			DefaultKafkaConsumerFactory<String, String> cf = new DefaultKafkaConsumerFactory<>(
+					consumerProps);
+			Consumer<String, String> consumer1 = cf.createConsumer();
+			embeddedKafka.consumeFromAnEmbeddedTopic(consumer1,
+					"error.foos.foobar-group");
+
+			ConsumerRecord<String, String> cr = KafkaTestUtils.getSingleRecord(consumer1,
+					"error.foos.foobar-group");
+			assertThat(cr.value()).isEqualTo("hello");
+			assertThat(cr.partition()).isEqualTo(0);
+
+			// Ensuring that the deserialization was indeed done by the binder
+			verify(conversionDelegate).deserializeOnInbound(any(Class.class),
+					any(KStream.class));
+		}
 	}
 
 	@SpringBootTest(properties = {
@@ -211,7 +257,7 @@ public abstract class DeserializtionErrorHandlerByBinderTests {
 		public KStream<Integer, Long> process(KStream<Object, Product> input) {
 			return input.filter((key, product) -> product.getId() == 123)
 					.map((key, value) -> new KeyValue<>(value, value))
-					.groupByKey(Serialized.with(new JsonSerde<>(Product.class),
+					.groupByKey(Grouped.with(new JsonSerde<>(Product.class),
 							new JsonSerde<>(Product.class)))
 					.windowedBy(TimeWindows.of(5000))
 					.count(Materialized.as("id-count-store-x")).toStream()

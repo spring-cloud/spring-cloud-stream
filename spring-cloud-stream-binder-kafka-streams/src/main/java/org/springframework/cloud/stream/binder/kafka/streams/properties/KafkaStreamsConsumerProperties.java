@@ -17,6 +17,7 @@
 package org.springframework.cloud.stream.binder.kafka.streams.properties;
 
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaConsumerProperties;
+import org.springframework.cloud.stream.binder.kafka.streams.DeserializationExceptionHandler;
 
 /**
  * Extended properties for Kafka Streams consumer.
@@ -42,6 +43,11 @@ public class KafkaStreamsConsumerProperties extends KafkaConsumerProperties {
 	 * Materialized as a KeyValueStore.
 	 */
 	private String materializedAs;
+
+	/**
+	 * Per input binding deserialization handler.
+	 */
+	private DeserializationExceptionHandler deserializationExceptionHandler;
 
 	/**
 	 * {@link org.apache.kafka.streams.processor.TimestampExtractor} bean name to use for this consumer.
@@ -86,5 +92,13 @@ public class KafkaStreamsConsumerProperties extends KafkaConsumerProperties {
 
 	public void setTimestampExtractorBeanName(String timestampExtractorBeanName) {
 		this.timestampExtractorBeanName = timestampExtractorBeanName;
+	}
+
+	public DeserializationExceptionHandler getDeserializationExceptionHandler() {
+		return deserializationExceptionHandler;
+	}
+
+	public void setDeserializationExceptionHandler(DeserializationExceptionHandler deserializationExceptionHandler) {
+		this.deserializationExceptionHandler = deserializationExceptionHandler;
 	}
 }

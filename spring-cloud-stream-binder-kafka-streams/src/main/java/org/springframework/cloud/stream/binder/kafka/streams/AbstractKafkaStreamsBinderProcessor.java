@@ -27,6 +27,8 @@ import org.apache.kafka.common.utils.Bytes;
 import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.Topology;
+import org.apache.kafka.streams.errors.LogAndContinueExceptionHandler;
+import org.apache.kafka.streams.errors.LogAndFailExceptionHandler;
 import org.apache.kafka.streams.kstream.Consumed;
 import org.apache.kafka.streams.kstream.GlobalKTable;
 import org.apache.kafka.streams.kstream.KStream;
@@ -55,6 +57,7 @@ import org.springframework.kafka.config.KafkaStreamsConfiguration;
 import org.springframework.kafka.config.StreamsBuilderFactoryBean;
 import org.springframework.kafka.config.StreamsBuilderFactoryBeanCustomizer;
 import org.springframework.kafka.core.CleanupConfig;
+import org.springframework.kafka.streams.RecoveringDeserializationExceptionHandler;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.CollectionUtils;
@@ -210,6 +213,27 @@ public abstract class AbstractKafkaStreamsBinderProcessor implements Application
 		if (concurrency > 1) {
 			streamConfigGlobalProperties.put(StreamsConfig.NUM_STREAM_THREADS_CONFIG,
 					concurrency);
+		}
+
+		// Override deserialization exception handlers per binding
+		final DeserializationExceptionHandler deserializationExceptionHandler =
+				extendedConsumerProperties.getDeserializationExceptionHandler();
+		if (deserializationExceptionHandler == DeserializationExceptionHandler.logAndFail) {
+			streamConfigGlobalProperties.put(
+					StreamsConfig.DEFAULT_DESERIALIZATION_EXCEPTION_HANDLER_CLASS_CONFIG,
+					LogAndFailExceptionHandler.class);
+		}
+		else if (deserializationExceptionHandler == DeserializationExceptionHandler.logAndContinue) {
+			streamConfigGlobalProperties.put(
+					StreamsConfig.DEFAULT_DESERIALIZATION_EXCEPTION_HANDLER_CLASS_CONFIG,
+					LogAndContinueExceptionHandler.class);
+		}
+		else if (deserializationExceptionHandler == DeserializationExceptionHandler.sendToDlq) {
+			streamConfigGlobalProperties.put(
+					StreamsConfig.DEFAULT_DESERIALIZATION_EXCEPTION_HANDLER_CLASS_CONFIG,
+					RecoveringDeserializationExceptionHandler.class);
+			streamConfigGlobalProperties.put(RecoveringDeserializationExceptionHandler.KSTREAM_DESERIALIZATION_RECOVERER,
+					applicationContext.getBean(SendToDlqAndContinue.class));
 		}
 
 		KafkaStreamsConfiguration kafkaStreamsConfiguration = new KafkaStreamsConfiguration(streamConfigGlobalProperties);

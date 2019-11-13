@@ -111,10 +111,49 @@ public abstract class DeserializationErrorHandlerByKafkaTests {
 	@SpringBootTest(properties = {
 			"spring.cloud.stream.kafka.streams.bindings.input.consumer.application-id=deser-kafka-dlq",
 			"spring.cloud.stream.bindings.input.group=group",
-			"spring.cloud.stream.kafka.streams.binder.serdeError=sendToDlq",
+			"spring.cloud.stream.kafka.streams.binder.deserializationExceptionHandler=sendToDlq",
 			"spring.cloud.stream.kafka.streams.bindings.input.consumer.valueSerde="
 					+ "org.apache.kafka.common.serialization.Serdes$IntegerSerde" }, webEnvironment = SpringBootTest.WebEnvironment.NONE)
 	public static class DeserializationByKafkaAndDlqTests
+			extends DeserializationErrorHandlerByKafkaTests {
+
+		@Test
+		public void test() {
+			Map<String, Object> senderProps = KafkaTestUtils.producerProps(embeddedKafka);
+			DefaultKafkaProducerFactory<Integer, String> pf = new DefaultKafkaProducerFactory<>(
+					senderProps);
+			KafkaTemplate<Integer, String> template = new KafkaTemplate<>(pf, true);
+			template.setDefaultTopic("DeserializationErrorHandlerByKafkaTests-In");
+			template.sendDefault(1, null, "foobar");
+
+			Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("foobar",
+					"false", embeddedKafka);
+			consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+			DefaultKafkaConsumerFactory<String, String> cf = new DefaultKafkaConsumerFactory<>(
+					consumerProps);
+			Consumer<String, String> consumer1 = cf.createConsumer();
+			embeddedKafka.consumeFromAnEmbeddedTopic(consumer1, "error.DeserializationErrorHandlerByKafkaTests-In.group");
+
+			ConsumerRecord<String, String> cr = KafkaTestUtils.getSingleRecord(consumer1,
+					"error.DeserializationErrorHandlerByKafkaTests-In.group");
+			assertThat(cr.value()).isEqualTo("foobar");
+			assertThat(cr.partition()).isEqualTo(0); // custom partition function
+
+			// Ensuring that the deserialization was indeed done by Kafka natively
+			verify(conversionDelegate, never()).deserializeOnInbound(any(Class.class),
+					any(KStream.class));
+			verify(conversionDelegate, never()).serializeOnOutbound(any(KStream.class));
+		}
+
+	}
+
+	@SpringBootTest(properties = {
+			"spring.cloud.stream.kafka.streams.bindings.input.consumer.application-id=deser-kafka-dlq",
+			"spring.cloud.stream.bindings.input.group=group",
+			"spring.cloud.stream.kafka.streams.bindings.input.consumer.deserializationExceptionHandler=sendToDlq",
+			"spring.cloud.stream.kafka.streams.bindings.input.consumer.valueSerde="
+					+ "org.apache.kafka.common.serialization.Serdes$IntegerSerde" }, webEnvironment = SpringBootTest.WebEnvironment.NONE)
+	public static class DeserializationByKafkaAndDlqPerBindingTests
 			extends DeserializationErrorHandlerByKafkaTests {
 
 		@Test

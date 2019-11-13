@@ -221,19 +221,19 @@ public class KafkaStreamsBinderSupportAutoConfiguration {
 				Serdes.ByteArraySerde.class.getName());
 
 		if (configProperties
-				.getSerdeError() == KafkaStreamsBinderConfigurationProperties.SerdeError.logAndContinue) {
+				.getDeserializationExceptionHandler() == DeserializationExceptionHandler.logAndContinue) {
 			properties.put(
 					StreamsConfig.DEFAULT_DESERIALIZATION_EXCEPTION_HANDLER_CLASS_CONFIG,
 					LogAndContinueExceptionHandler.class);
 		}
 		else if (configProperties
-				.getSerdeError() == KafkaStreamsBinderConfigurationProperties.SerdeError.logAndFail) {
+				.getDeserializationExceptionHandler() == DeserializationExceptionHandler.logAndFail) {
 			properties.put(
 					StreamsConfig.DEFAULT_DESERIALIZATION_EXCEPTION_HANDLER_CLASS_CONFIG,
 					LogAndFailExceptionHandler.class);
 		}
 		else if (configProperties
-				.getSerdeError() == KafkaStreamsBinderConfigurationProperties.SerdeError.sendToDlq) {
+				.getDeserializationExceptionHandler() == DeserializationExceptionHandler.sendToDlq) {
 			properties.put(
 					StreamsConfig.DEFAULT_DESERIALIZATION_EXCEPTION_HANDLER_CLASS_CONFIG,
 					RecoveringDeserializationExceptionHandler.class);
