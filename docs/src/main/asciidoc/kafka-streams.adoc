@@ -956,6 +956,9 @@ Processor<Object, Product>() {
 }
 ----
 
+This will not work when it comes to registering global state stores.
+In order to register a global state store, please see the section below on customizing `StreamsBuilderFactoryBean`.
+
 === Interactive Queries
 
 Kafka Streams binder API exposes a class called `InteractiveQueryService` to interacively query the state stores.
@@ -1257,6 +1260,29 @@ public StreamsBuilderFactoryBeanCustomizer streamsBuilderFactoryBeanCustomizer()
         }
     };
 ```
+
+==== Using Customizer to register a global state store
+
+As mentioned above, the binder does not provide a first class way to register global state stores as a feature.
+For that, you need to use the customzier.
+Here is how that can be done.
+
+```
+@Bean
+public StreamsBuilderFactoryBeanCustomizer customizer() {
+    return fb -> {
+        try {
+            final StreamsBuilder streamsBuilder = fb.getObject();
+            streamsBuilder.addGlobalStore(...);
+        }
+        catch (Exception e) {
+
+        }
+    };
+}
+```
+
+Again, if you have multiple processors, you want to attach the global state store to the right `StreamsBuilder` by filtering out the other `StreamsBuilderFactoryBean` objects using the application id as outlined above.
 
 === Timestamp extractor
 
