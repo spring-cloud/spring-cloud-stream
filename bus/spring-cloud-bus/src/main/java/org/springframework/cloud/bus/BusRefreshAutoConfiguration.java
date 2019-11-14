@@ -31,7 +31,7 @@ import org.springframework.context.annotation.Configuration;
 /**
  * @author Ryan Baxter
  */
-@Configuration
+@Configuration(proxyBeanMethods = false)
 @ConditionalOnBusEnabled
 @AutoConfigureAfter(
 		name = { "org.springframework.cloud.autoconfigure.RefreshAutoConfiguration" })
@@ -45,7 +45,7 @@ public class BusRefreshAutoConfiguration {
 		return new RefreshListener(contextRefresher);
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	@ConditionalOnBean(ContextRefresher.class)
 	@ConditionalOnClass(
 			name = { "org.springframework.boot.actuate.endpoint.annotation.Endpoint",

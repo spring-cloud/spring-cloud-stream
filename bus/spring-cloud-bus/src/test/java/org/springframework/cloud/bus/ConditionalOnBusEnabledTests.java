@@ -76,7 +76,7 @@ public class ConditionalOnBusEnabledTests {
 		this.context.refresh();
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	@ConditionalOnBusEnabled
 	protected static class MyBusEnabledConfig {
 

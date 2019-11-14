@@ -23,7 +23,7 @@ import org.springframework.context.annotation.Configuration;
  * @author Spencer Gibb
  * @author Dave Syer
  */
-@Configuration
+@Configuration(proxyBeanMethods = false)
 @EnableConfigurationProperties(BusProperties.class)
 public class BusPropertiesAutoConfiguration {
 

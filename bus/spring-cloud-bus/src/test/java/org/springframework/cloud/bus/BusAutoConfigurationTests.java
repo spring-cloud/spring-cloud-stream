@@ -310,13 +310,13 @@ public class BusAutoConfigurationTests {
 		assertThat(newServiceId).isEqualTo(originalServiceId);
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	@EnableAutoConfiguration
 	protected static class RefreshConfig {
 
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	@EnableAutoConfiguration
 	@Import({ MessageConsumer.class, BusAutoConfiguration.class,
 			TestSupportBinderAutoConfiguration.class,
@@ -349,7 +349,7 @@ public class BusAutoConfigurationTests {
 
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	@MessageEndpoint
 	protected static class MessageConsumer {
 
@@ -359,7 +359,7 @@ public class BusAutoConfigurationTests {
 
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	@EnableAutoConfiguration
 	@Import({ MessageConsumer.class, BusAutoConfiguration.class,
 			TestSupportBinderAutoConfiguration.class,
@@ -376,7 +376,7 @@ public class BusAutoConfigurationTests {
 
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	protected static class SentMessageConfiguration
 			implements ApplicationListener<SentApplicationEvent> {
 
@@ -392,7 +392,7 @@ public class BusAutoConfigurationTests {
 
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	protected static class AckMessageConfiguration
 			implements ApplicationListener<AckRemoteApplicationEvent> {
 

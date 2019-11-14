@@ -59,7 +59,7 @@ import org.springframework.util.PathMatcher;
  * @author Spencer Gibb
  * @author Dave Syer
  */
-@Configuration
+@Configuration(proxyBeanMethods = false)
 @ConditionalOnBusEnabled
 @EnableBinding(SpringCloudBusClient.class)
 @EnableConfigurationProperties(BusProperties.class)
@@ -178,7 +178,7 @@ public class BusAutoConfiguration implements ApplicationEventPublisherAware {
 		}
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	protected static class MatcherConfiguration {
 
 		@BusPathMatcher
@@ -201,7 +201,7 @@ public class BusAutoConfiguration implements ApplicationEventPublisherAware {
 
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	@ConditionalOnClass({ Endpoint.class })
 	@ConditionalOnBean(HttpTraceRepository.class)
 	@ConditionalOnProperty(value = "spring.cloud.bus.trace.enabled",
@@ -216,7 +216,7 @@ public class BusAutoConfiguration implements ApplicationEventPublisherAware {
 
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	@ConditionalOnClass(EnvironmentManager.class)
 	@ConditionalOnBean(EnvironmentManager.class)
 	protected static class BusEnvironmentConfiguration {
@@ -228,7 +228,7 @@ public class BusAutoConfiguration implements ApplicationEventPublisherAware {
 			return new EnvironmentChangeListener();
 		}
 
-		@Configuration
+		@Configuration(proxyBeanMethods = false)
 		@ConditionalOnClass(Endpoint.class)
 		protected static class EnvironmentBusEndpointConfiguration {
 

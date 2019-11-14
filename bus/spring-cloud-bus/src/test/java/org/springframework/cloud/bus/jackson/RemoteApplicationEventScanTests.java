@@ -136,26 +136,26 @@ public class RemoteApplicationEventScanTests {
 		expectedRegisterdClassesAsList.add(UnknownRemoteApplicationEvent.class);
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	@RemoteApplicationEventScan
 	static class DefaultConfig {
 
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	@RemoteApplicationEventScan({ "com.acme", "test.foo.bar" })
 	static class ValueConfig {
 
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	@RemoteApplicationEventScan(
 			basePackages = { "com.acme", "test.foo.bar", "fizz.buzz" })
 	static class BasePackagesConfig {
 
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	@RemoteApplicationEventScan(basePackageClasses = TestRemoteApplicationEvent.class)
 	static class BasePackageClassesConfig {
 

@@ -55,7 +55,7 @@ import org.springframework.util.MimeTypeUtils;
  * @author Donovan Muller
  * @author Stefan Pfeiffer
  */
-@Configuration
+@Configuration(proxyBeanMethods = false)
 @ConditionalOnBusEnabled
 @ConditionalOnClass({ RefreshBusEndpoint.class, ObjectMapper.class })
 @AutoConfigureBefore({ BusAutoConfiguration.class, JacksonAutoConfiguration.class })
