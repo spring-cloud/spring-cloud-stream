@@ -26,10 +26,20 @@ import org.springframework.cloud.stream.binder.BinderSpecificPropertiesProvider;
  */
 public class KafkaBindingProperties implements BinderSpecificPropertiesProvider {
 
+	/**
+	 * Consumer specific binding properties. @see {@link KafkaConsumerProperties}.
+	 */
 	private KafkaConsumerProperties consumer = new KafkaConsumerProperties();
 
+	/**
+	 * Producer specific binding properties. @see {@link KafkaProducerProperties}.
+	 */
 	private KafkaProducerProperties producer = new KafkaProducerProperties();
 
+	/**
+	 * @return {@link KafkaConsumerProperties}
+	 * Consumer specific binding properties. @see {@link KafkaConsumerProperties}.
+	 */
 	public KafkaConsumerProperties getConsumer() {
 		return this.consumer;
 	}
@@ -38,6 +48,10 @@ public class KafkaBindingProperties implements BinderSpecificPropertiesProvider 
 		this.consumer = consumer;
 	}
 
+	/**
+	 * @return {@link KafkaProducerProperties}
+	 * Producer specific binding properties. @see {@link KafkaProducerProperties}.
+	 */
 	public KafkaProducerProperties getProducer() {
 		return this.producer;
 	}
