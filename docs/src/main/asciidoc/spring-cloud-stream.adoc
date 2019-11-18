@@ -1347,26 +1347,23 @@ NOTE: If you need to support dynamic destinations with multiple binder types, us
 [[spring-cloud-stream-overview-error-handling]]
 === Error Handling
 
-Errors happen, and Spring Cloud Stream provides several flexible mechanism to handle them by delegating to the
-binder (re-queue, DL, and others). Note that the techniques are dependent on binder implementation and the
+In this section we'll explain the general idea behind error handling mechanisms provided by the framework.
+We'll be using Rabbit binder as an example, since individual binders define different set
+of properties for certain supported mechanisms specific to underlying broker capabilities (such as Kafka bindre).
+
+Errors happen, and Spring Cloud Stream provides several flexible mechanisms to deal with them
+(re-queue, DL, and others). Note that the techniques are dependent on binder implementation and the
 capability of the underlying messaging middleware.
 
-Also, for non-reactive functions, Spring Cloud Stream uses the https://github.com/spring-projects/spring-retry[Spring Retry] library to
-facilitate successful message processing. See <<Retry Template>> for more details.
-However, when all fails, the exceptions thrown by the message handlers are propagated back to the binder.
+Whenever there is an exception during message processing, the framework will make several attempts at re-trying
+the same message (3 by default). For that, the framework uses https://github.com/spring-projects/spring-retry[Spring Retry] library
+(for imperative functions and standard message handlers) and `retryBackoff` capabilities of the reactive API (for reactive
+functions).
 
-Binder-level error handling implies that the errors are communicated back to the messaging system, but given
-that not every messaging system is the same, the capabilities may differ from binder to binder, so refer to
-individual binder's documentation for more details.
-
-That said, in this section we explain the general idea behind binder level error handling and use Rabbit binder as an example.
-NOTE: Kafka binder provides similar
-support, although some configuration properties do differ.
-
-Whenever handler (function) throws and exception, it is propagated to the binder, and the binder subsequently propagates
+Whenever handler (function) throws and exception, it is propagated back to the binder, and the binder subsequently propagates
 the error back to the messaging system.
 Depending on the capabilities of the messaging system such system may _drop_ the message, _re-queue_ the message for re-processing or _send the failed message to DLQ_.
-Both Rabbit and Kafka support these concepts. However, other binders may not, so refer to your individual binder’s documentation for details on supported binder-level
+Both Rabbit and Kafka support these concepts. However, other binders may not, so refer to your individual binder’s documentation for details on supported
 error-handling options.
 
 ==== Drop Failed Messages
@@ -1376,7 +1373,7 @@ While acceptable in some cases, for most cases, it is not, and we need some reco
 
 ==== DLQ - Dead Letter Queue
 
-DLQ allows failed messages to be sent to a special destination: - _Dead Letter Queue_.
+Perhaps the most common mechanism, DLQ allows failed messages to be sent to a special destination: - _Dead Letter Queue_.
 
 When configured, failed messages are sent to this destination for subsequent re-processing or auditing and reconciliation.
 
@@ -1385,38 +1382,40 @@ Consider the following example:
 [source,java]
 ----
 @SpringBootApplication
-public class ErrorStreamApplication {
+public class SimpleStreamApplication {
 
-	public static void main(String[] args) {
-		SpringApplication.run(ErrorStreamApplication.class,
-				"--spring.cloud.stream.bindings.uppercase-in-0.group=myGroup",
-				"--spring.cloud.stream.rabbit.bindings.uppercase-in-0.consumer.auto-bind-dlq=true");
+	public static void main(String[] args) throws Exception {
+		SpringApplication.run(SimpleStreamApplication.class,
+		  "--spring.cloud.function.definition=uppercase",
+		  "--spring.cloud.stream.bindings.uppercase-in-0.destination=uppercase",
+		  "--spring.cloud.stream.bindings.uppercase-in-0.group=myGroup",
+		  "--spring.cloud.stream.rabbit.bindings.uppercase-in-0.consumer.auto-bind-dlq=true"
+		);
 	}
 
 	@Bean
-	public Function<String, String> uppercase() {
-		return value -> {throw new RuntimeException("Intentional")};
+	public Function<Person, Person> uppercase() {
+		return personIn -> {
+		   throw new RuntimeException("intentional");
+	      });
+		};
 	}
 }
 ----
 
-Keep in mind that, in the preceding example `uppercase-in-0` corresponds to the name of the input destination binding.
-The `consumer` indicates that it is a consumer property and `auto-bind-dlq` instructs the binder to configure DLQ for
-`uppercase-in-0` destination, which results in an additional Rabbit queue named `uppercase-in-0.myGroup.dlq`.
+As a reminder, in this example `uppercase-in-0` segment of the property corresponds to the name of the input destination binding.
+The `consumer` segment indicates that it is a consumer property.
+
+NOTE: When using DLQ, at least `group` property must be provided for proper naming of the DLQ destination. However `group` often used together
+with `destination` property, as in our example.
+
+
+Aside from some standard properties we also set the `auto-bind-dlq` to instruct the binder to create and configure DLQ destination for
+`uppercase-in-0` binding which corresponds to `uppercase` destination (see corresponding property), which results in an additional Rabbit queue named `uppercase.myGroup.dlq` (see Kafka documentation for Kafka specific DLQ properties).
 
 Once configured, all failed messages are routed to this destination preserving the original message for further actions.
 
-However, one thing you may have noticed is that there is limited information on the original issue or the cause of the error.
-For example, you do not see a stack trace corresponding to the original error.
-To get more relevant information about the original error, additionally you must set `republish-to-dlq` property:
-
-[source,text]
-----
---spring.cloud.stream.rabbit.bindings.uppercase-in-0.consumer.republish-to-dlq=true
-----
-
-Doing so forces the internal error handler to intercept the error message and add additional information to it before publishing it to DLQ.
-Once configured, you can see that the error message contains more information relevant to the original error, as follows:
+And you can see that the error message contains more information relevant to the original error, as follows:
 
 [source,text]
 ----
@@ -1452,7 +1451,10 @@ In the preceding example, the `max-attempts` set to 1 essentially disabling inte
 Once set, the failed message is resubmitted to the same handler and loops continuously or until the handler throws `AmqpRejectAndDontRequeueException`
 essentially allowing you to build your own re-try logic within the handler itself.
 
-==== Retry Template
+==== Retry Template and retryBackoff
+
+In this section we cover configuration properties relevant to configuration of retry capabilities.
+Given that we use two different mechanisms for imperative and reactive handlers (RetryTemplate and retryBackoff), properties that corresponds to both will be identified as such.
 
 The `RetryTemplate` is part of the https://github.com/spring-projects/spring-retry[Spring Retry] library.
 While it is out of scope of this document to cover all of the capabilities of the `RetryTemplate`, we will mention the following consumer properties that are specifically related to
@@ -1461,15 +1463,15 @@ the `RetryTemplate`:
 maxAttempts::
 The number of attempts to process the message.
 +
-Default: 3.
+Default: 3. - Applies to 'retryBackoff'
 backOffInitialInterval::
 The backoff initial interval on retry.
 +
-Default 1000 milliseconds.
+Default 1000 milliseconds. -  Applies to 'retryBackoff'
 backOffMaxInterval::
 The maximum backoff interval.
 +
-Default 10000 milliseconds.
+Default 10000 milliseconds. - Applies to 'retryBackoff'
 backOffMultiplier::
 The backoff multiplier.
 +

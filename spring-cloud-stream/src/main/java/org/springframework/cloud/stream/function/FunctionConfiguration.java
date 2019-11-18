@@ -34,7 +34,6 @@ import java.util.stream.Stream;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.reactivestreams.Publisher;
-import reactor.core.publisher.EmitterProcessor;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.MonoSink;
@@ -83,6 +82,7 @@ import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.core.env.Environment;
 import org.springframework.core.type.MethodMetadata;
 import org.springframework.integration.channel.AbstractMessageChannel;
+import org.springframework.integration.channel.MessageChannelReactiveUtils;
 import org.springframework.integration.dsl.IntegrationFlow;
 import org.springframework.integration.dsl.IntegrationFlowBuilder;
 import org.springframework.integration.dsl.IntegrationFlows;
@@ -93,6 +93,7 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.SubscribableChannel;
+import org.springframework.messaging.support.ErrorMessage;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.ObjectUtils;
@@ -132,8 +133,6 @@ public class FunctionConfiguration {
 		return new FunctionChannelBindingInitializer(functionCatalog, functionProperties, bindableProxyFactories,
 				serviceProperties, dynamicDestinationResolver);
 	}
-
-
 
 	/*
 	 * Binding initializer responsible only for Suppliers
@@ -364,7 +363,7 @@ public class FunctionConfiguration {
 
 			Publisher[] inputPublishers = inputBindingNames.stream().map(inputBindingName -> {
 				SubscribableChannel inputChannel = this.context.getBean(inputBindingName, SubscribableChannel.class);
-				return this.enhancePublisher(this.convertToPublisher(inputChannel), inputBindingName);
+				return MessageChannelReactiveUtils.toPublisher(inputChannel);
 			}).toArray(Publisher[]::new);
 
 
@@ -424,10 +423,11 @@ public class FunctionConfiguration {
 
 			if (FunctionTypeUtils.isReactive(FunctionTypeUtils.getInputType(functionType, 0)) && StringUtils.hasText(outputChannelName)) {
 				MessageChannel outputChannel = context.getBean(outputChannelName, MessageChannel.class);
-				SubscribableChannel subscribeChannel = (SubscribableChannel) inputChannel;
-				Publisher<?> publisher = this.enhancePublisher(this.convertToPublisher(inputChannel),
-																((DirectWithAttributesChannel) inputChannel).getBeanName());
-				this.subscribeToInput(function, publisher, message -> outputChannel.send((Message<?>) message));
+
+
+				Publisher<Message<Object>> publisher = MessageChannelReactiveUtils.toPublisher(inputChannel);
+				String bindingName = ((DirectWithAttributesChannel) inputChannel).getBeanName();
+				this.subscribeToInput(function, bindingName, publisher, message -> outputChannel.send((Message<?>) message));
 			}
 			else {
 				String inputChannelName = ((AbstractMessageChannel) inputChannel).getBeanName();
@@ -467,38 +467,40 @@ public class FunctionConfiguration {
 			return handler;
 		}
 
-		/*
-		 * Enhance publisher to add error handling, retries etc.
-		 */
 		@SuppressWarnings({ "unchecked", "rawtypes" })
-		private Publisher enhancePublisher(Publisher publisher, String bindingName) {
-			Flux flux = Flux.from(publisher)
+		private void subscribeToInput(Function function, String bindingName,  Publisher publisher, Consumer<Message> outputProcessor) {
+
+			Flux<Message> inputPublisher = Flux.from(publisher);
+
+			AtomicReference<Message<Object>> originalMessageRef = new AtomicReference<>();
+			AtomicReference<ConsumerProperties> consumerPropertiesRef = new AtomicReference<>();
+			AtomicReference<MessageChannel> bindingErrorChannelRef = new AtomicReference<>(context.getBean("nullChannel", MessageChannel.class));
+
+			Flux<Message> result = inputPublisher
+					.switchOnFirst((x, message) -> {
+						consumerPropertiesRef.set(this.serviceProperties.getBindings().get(bindingName).getConsumer());
+						String destination = serviceProperties.getBindings().get(bindingName).getDestination();
+						String group = serviceProperties.getBindings().get(bindingName).getGroup();
+						String bindingErrorChannelName = destination + "." + group + ".errors";
+						if (context.containsBean(bindingErrorChannelName)) {
+							bindingErrorChannelRef.set(context.getBean(bindingErrorChannelName, MessageChannel.class));
+						}
+						return message;
+					})
 					.concatMap(message -> {
-						ConsumerProperties consumerProperties = this.serviceProperties.getBindings().get(bindingName).getConsumer();
-						return Flux.just(message)
-								.doOnError(e -> {
-									e.printStackTrace();
-								})
-								.retryBackoff(
-										consumerProperties.getMaxAttempts(),
-										Duration.ofMillis(consumerProperties.getBackOffInitialInterval()),
-										Duration.ofMillis(consumerProperties.getBackOffMaxInterval())
-								)
+						return Flux.just(message).doOnNext(originalMessageRef::set)
+								.transform((Function<Flux<Message>, Flux<Message>>) function)
+								.retryBackoff(consumerPropertiesRef.get().getMaxAttempts(),
+										Duration.ofMillis(consumerPropertiesRef.get().getBackOffInitialInterval()),
+										Duration.ofMillis(consumerPropertiesRef.get().getBackOffMaxInterval()))
 								.onErrorResume(e -> {
-									e.printStackTrace();
+									bindingErrorChannelRef.get()
+										.send(new ErrorMessage((Throwable) e, originalMessageRef.get().getHeaders(), originalMessageRef.get()));
 									return Mono.empty();
 								});
-
 					});
-			return flux;
-		}
 
-
-		@SuppressWarnings({ "unchecked", "rawtypes" })
-		private void subscribeToInput(Function function, Publisher publisher, Consumer<Message> outputProcessor) {
-			Function<Flux<Message>, Flux<Message>> functionInvoker = function;
-			Flux<?> inputPublisher = Flux.from(publisher);
-			subscribeToOutput(outputProcessor, functionInvoker.apply((Flux<Message>) inputPublisher)).subscribe();
+			subscribeToOutput(outputProcessor, result).subscribe();
 		}
 
 		@SuppressWarnings("rawtypes")
@@ -544,13 +546,6 @@ public class FunctionConfiguration {
 					&& ((BindableFunctionProxyFactory) bindableProxyFactory).isMultiple();
 		}
 
-		private Publisher<Message<?>> convertToPublisher(SubscribableChannel inputChannel) {
-			EmitterProcessor<Message<?>> publisher = EmitterProcessor.create(1);
-			inputChannel.subscribe(message -> {
-				publisher.onNext(message);
-			});
-			return publisher;
-		}
 	}
 
 	/**
