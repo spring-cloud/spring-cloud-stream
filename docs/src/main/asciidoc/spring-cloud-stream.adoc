@@ -271,8 +271,8 @@ The following sub-sections will describe the naming conventions and configuratio
 
 ===== Functional binding names
 
-Unlike the explicit annotation-based support (legacy) used in the previous versions of spring-cloud-stream via annotations, the functional
-programming model follows a simple convention when it comes to binding names thus greatly simplifying application configuration.
+Unlike the explicit naming required by annotation-based support (legacy) used in the previous versions of spring-cloud-stream, the functional
+programming model defaults to a simple convention when it comes to binding names, thus greatly simplifying application configuration.
 Let's look at the first example:
 
 [source, java]
@@ -307,8 +307,11 @@ Note how `uppercase-in-0` is used as a segment in property name. The same goes f
 
 ***Descriptive Binding Names***
 
-Some times to improve readability you may want to give your binding a more descriptive names (such as 'account', 'orders` etc).
-You can do it with `spring.cloud.stream.function.bindings.<binding-name>` property.
+Some times to improve readability you may want to give your binding a more descriptive name (such as 'account', 'orders` etc).
+Another way of looking at it is you can map an _implicit binding name_ to an _explicit binding name_. And you can do it with
+`spring.cloud.stream.function.bindings.<binding-name>` property.
+This property also provides a migration path for existing applications that rely on custom interface-based
+bindings that require explicit names.
 
 For example,
 ----
@@ -317,6 +320,14 @@ For example,
 
 In the preceding example you mapped and effectively renamed `uppercase-in-0` binding name to `input`. Now all configuration
 properties can refer to `input` binding name instead (e.g.,  `--spring.cloud.stream.bindings.input.destination=my-topic`).
+
+NOTE: While descriptive binding names may enhance the readability aspect of the configuration, they also create
+another level of misdirection by mapping an implicit binding name to an explicit binding name. And since all subsequent
+configuration properties will use the explicit binding name you must always refer to this 'bindings' property to
+correlate which function it actually corresponds to. We believe that for most cases (with the exception of <<Functional Composition>>)
+it may be an overkill, so, it is our recommendation to avoid using it all together, especially
+since not using it provides a clear path between binder destination and binding name, such as `spring.cloud.stream.bindings.uppercase-in-0.destination=sample-topic`,
+where you are clearly correlating the input of `uppercase` function to `sample-topic` destination.
 
 For more on properties and other configuration options please see <<Configuration Options>> section.
 
@@ -418,7 +429,7 @@ Since Spring Cloud Stream v2.1, another alternative for defining _stream handler
 support for https://cloud.spring.io/spring-cloud-function/[Spring Cloud Function] where they can be expressed as beans of
  type `java.util.function.[Supplier/Function/Consumer]`.
 
-To specify which functional bean to bind to the external destination(s) exposed by the bindings, you must provide `spring.cloud.stream.function.definition` or native to spring-cloud-function `spring.cloud.function.definition` property.
+To specify which functional bean to bind to the external destination(s) exposed by the bindings, you must provide `spring.cloud.function.definition` property.
 
 Here is the example of the application exposing message handler as `java.util.function.Function` effectively supporting
 _pass-thru_ semantics by acting as consumer and producer of data.
@@ -589,7 +600,7 @@ public static class SinkFromConsumer {
 ----
 ===== Functional Composition
 
-Using this programming model you can also benefit from functional composition where you can dynamically compose complex handlers from a set of simple functions.
+Using functional programming model you can also benefit from functional composition where you can dynamically compose complex handlers from a set of simple functions.
 As an example let's add the following function bean to the application defined above
 [source,java]
 ----
@@ -599,7 +610,7 @@ public Function<String, String> wrapInQuotes() {
 }
 ----
 and modify the `spring.cloud.function.definition` property to reflect your intention to compose a new function from both ‘toUpperCase’ and ‘wrapInQuotes’.
-To do that Spring Cloud Function allows you to use `|` (pipe) symbol. So to finish our example our property will now look like this:
+To do so Spring Cloud Function relies on `|` (pipe) symbol. So, to finish our example our property will now look like this:
 
 [source,java]
 ----
@@ -609,12 +620,13 @@ To do that Spring Cloud Function allows you to use `|` (pipe) symbol. So to fini
 NOTE: One of the great benefits of functional composition support provided by _Spring Cloud Function_ is
 the fact that you can compose _reactive_ and _imperative_ functions.
 
-For example, the above composition could be defined as such (if both functions present):
+The result of a composition is a single function which, as you may guess, could have a very long and rather cryptic name (e.g., `foo|bar|baz|xyz. . .`)
+presenting a great deal of inconvenience when it comes to other configuration properties. This is where _descriptive binding names_
+feature described in <<Functional binding names>> section can help.
 
-[source,java]
-----
---spring.cloud.function.definition=reactiveUpperCase|wrapInQuotes
-----
+For example, if we want to give our `toUpperCase|wrapInQuotes` a more descriptive name we can do so
+with the following property `spring.cloud.stream.function.bindings.toUpperCase|wrapInQuotes=quotedUpperCase` allowing
+other configuration properties to refer to that binding name (e.g., `spring.cloud.stream.bindings.quotedUpperCase.destination=myDestination`).
 
 ===== Functions with multiple input and output arguments
 
@@ -795,7 +807,8 @@ public void testMultipleFunctions() {
 
 ===== Batch Consumers
 
-When using a `MessageChannelBinder` that supports batch listeners, and the feature is enabled for the consumer binding, you can set `spring.cloud.stream.function.definition` to `true` to enable the entire batch of messages to be passed to the function in a `List`.
+When using a `MessageChannelBinder` that supports batch listeners, and the feature is enabled for the consumer binding, you can set `spring.cloud.stream.bindings.<binding-name>.consumer.batch-mode` to `true` to enable the
+entire batch of messages to be passed to the function in a `List`.
 
 [source, java]
 ----
