@@ -562,6 +562,7 @@ public static class SupplierConfiguration {
 The bean itself is annotated with `PollableBean` annotation (sub-set of `@Bean`), thus signaling to the framework that although the implementation
 of such a supplier is reactive, it still needs to be polled.
 
+
 ====== Polling Configuration Properties
 
 The following properties are exposed by `org.springframework.cloud.stream.config.DefaultPollerProperties` and are prefixed with
@@ -1351,8 +1352,7 @@ In this section we'll explain the general idea behind error handling mechanisms 
 We'll be using Rabbit binder as an example, since individual binders define different set
 of properties for certain supported mechanisms specific to underlying broker capabilities (such as Kafka bindre).
 
-Errors happen, and Spring Cloud Stream provides several flexible mechanisms to deal with them
-(re-queue, DL, and others). Note that the techniques are dependent on binder implementation and the
+Errors happen, and Spring Cloud Stream provides several flexible mechanisms to deal with them. Note that the techniques are dependent on binder implementation and the
 capability of the underlying messaging middleware.
 
 Whenever there is an exception during message processing, the framework will make several attempts at re-trying
@@ -1430,26 +1430,11 @@ x-exception-stacktrace:	org.springframework.messaging.MessageHandlingException: 
 Payload: blah
 ----
 
-==== Re-queue Failed Messages
-
-As mentioned earlier, the currently supported binders (Rabbit and Kafka) provide internal capability to retry message processing
-based on `max-attempts` property (defaults to 3) with exponential back-off strategy.
-However, for cases when `max-attempts` property is set to 1, internal reprocessing of the message is disabled. At this point, you can facilitate message re-processing (re-tries)
-by instructing the messaging system to re-queue the failed message. Once re-queued, the failed message is sent back to the original handler, essentially creating a retry loop.
-
-This option may be feasible for cases where the nature of the error is related to some sporadic yet short-term unavailability of some resource.
-
-To accomplish that, you must set the following properties:
-
+You can also facilitate immediate dispatch to DLQ (without re-tries) by setting `max-attempts` to '1'. For example,
 [source,text]
 ----
---spring.cloud.stream.bindings.input.consumer.max-attempts=1
---spring.cloud.stream.rabbit.bindings.input.consumer.requeue-rejected=true
+--spring.cloud.stream.bindings.uppercase-in-0.consumer.max-attempts=1
 ----
-
-In the preceding example, the `max-attempts` set to 1 essentially disabling internal re-tries and `requeue-rejected` (short for _requeue rejected messages_) is set to `true`.
-Once set, the failed message is resubmitted to the same handler and loops continuously or until the handler throws `AmqpRejectAndDontRequeueException`
-essentially allowing you to build your own re-try logic within the handler itself.
 
 ==== Retry Template and retryBackoff
 
