@@ -16,11 +16,6 @@
 
 package org.springframework.cloud.stream.binder.kafka.streams.integration;
 
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
@@ -31,7 +26,6 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
-
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.actuate.health.CompositeHealthContributor;
@@ -55,6 +49,11 @@ import org.springframework.kafka.test.utils.KafkaTestUtils;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.util.concurrent.ListenableFuture;
 import org.springframework.util.concurrent.ListenableFutureCallback;
+
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -82,6 +81,19 @@ public class KafkaStreamsBinderHealthIndicatorTests {
 					Lists.newArrayList(new ProducerRecord<>("in", "{\"id\":\"123\"}"),
 							new ProducerRecord<>("in", "{\"id\":\"123\"}")),
 					Status.UP, "out");
+		}
+	}
+
+	@Test
+	public void healthIndicatorUpMultipleCallsTest() throws Exception {
+		try (ConfigurableApplicationContext context = singleStream("ApplicationHealthTest-xyz")) {
+			int callsToPerform = 5;
+			for (int i = 0; i < callsToPerform; i++) {
+				receive(context,
+						Lists.newArrayList(new ProducerRecord<>("in", "{\"id\":\"123\"}"),
+								new ProducerRecord<>("in", "{\"id\":\"123\"}")),
+						Status.UP, "out");
+			}
 		}
 	}
 
