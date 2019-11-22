@@ -562,6 +562,12 @@ public static class SupplierConfiguration {
 The bean itself is annotated with `PollableBean` annotation (sub-set of `@Bean`), thus signaling to the framework that although the implementation
 of such a supplier is reactive, it still needs to be polled.
 
+NOTE: There is a `splittable` attribute defined in `PollableBean` which signals to the post processors of this annotation
+that the result produced by the annotated component has to be split and is set to `true` by default. It means that
+the framework will split the returning sending out each item as an individual message. If this is not
+he desired behavior you can set it to `false` at which point such supplier will simply return
+the produced Flux without splitting it.
+
 
 ====== Polling Configuration Properties
 
