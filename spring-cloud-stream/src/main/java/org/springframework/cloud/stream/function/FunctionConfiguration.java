@@ -41,6 +41,7 @@ import reactor.util.function.Tuples;
 
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
@@ -242,13 +243,17 @@ public class FunctionConfiguration {
 		// here we need to ensure that for cases where composition is defined we only look for supplier method to find Pollable annotation.
 		String supplierFunctionName = StringUtils
 				.delimitedListToStringArray(proxyFactory.getFunctionDefinition().replaceAll(",", "|").trim(), "|")[0];
-		RootBeanDefinition bd = (RootBeanDefinition) context.getBeanDefinition(supplierFunctionName);
-		Method factoryMethod = bd.getResolvedFactoryMethod();
+		BeanDefinition bd = context.getBeanDefinition(supplierFunctionName);
+		if (!(bd instanceof RootBeanDefinition)) {
+			return null;
+		}
+
+		Method factoryMethod = ((RootBeanDefinition) bd).getResolvedFactoryMethod();
 		if (factoryMethod == null) {
 			Object source = bd.getSource();
 			if (source instanceof MethodMetadata) {
 				Class<?> factory = ClassUtils.resolveClassName(((MethodMetadata) source).getDeclaringClassName(), null);
-				Class<?>[] params = FunctionContextUtils.getParamTypesFromBeanDefinitionFactory(factory, bd);
+				Class<?>[] params = FunctionContextUtils.getParamTypesFromBeanDefinitionFactory(factory, (RootBeanDefinition) bd);
 				factoryMethod = ReflectionUtils.findMethod(factory, ((MethodMetadata) source).getMethodName(), params);
 			}
 		}
