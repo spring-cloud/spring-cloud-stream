@@ -87,7 +87,7 @@ You can exclude the class by using the `@SpringBootApplication` annotation.
 
 Starting with version 2.0, the `RabbitMessageChannelBinder` sets the `RabbitTemplate.userPublisherConnection` property to `true` so that the non-transactional producers avoid deadlocks on consumers, which can happen if cached connections are blocked because of a https://www.rabbitmq.com/memory.html[memory alarm] on the broker.
 
-NOTE: Currently, a `multiplex` consumer (a single consumer listening to multiple queues) is only supported for message-driven consumers; polled consumers can only retrieve messages from a single queue.
+NOTE: Currently, a `multiplex` consumer (a single consumer listening to multiple queues) is only supported for message-driven conssumers; polled consumers can only retrieve messages from a single queue.
 
 == Configuration Options
 
@@ -159,9 +159,14 @@ Whether to automatically declare the DLQ and bind it to the binder DLX.
 Default: `false`.
 bindingRoutingKey::
 The routing key with which to bind the queue to the exchange (if `bindQueue` is `true`).
-For partitioned destinations, `-<instanceIndex>` is appended.
+Can be multiple keys - see `bindingRoutingKeyDelimiter`.
+For partitioned destinations, `-<instanceIndex>` is appended to each key.
 +
 Default: `#`.
+bindingRoutingKeyDelimiter::
+When this is not null, 'bindingRoutingKey' is considered to be a list of keys delimited by this value; often a comma is used.
++
+Default: `null`.
 bindQueue::
 Whether to declare the queue and bind it to the destination exchange.
 Set it to `false` if you have set up your own infrastructure and have previously created and bound the queue.
@@ -251,6 +256,18 @@ dlqOverflowBehavior::
 Action to take when `dlqMaxLength` or `dlqMaxLengthBytes` is exceeded; currently `drop-head` or `reject-publish` but refer to the RabbitMQ documentation.
 +
 Default: `none`
+dlqQuorum.deliveryLimit::
+When `quorum.enabled=true`, set a delivery limit after which the message is dropped or dead-lettered.
++
+Default: none - broker default will apply.
+dlqQuorum.enabled::
+When true, create a quorum dead letter queue instead of a classic queue.
++
+Default: false
+dlqQuorum.initialQuorumSize::
+When `quorum.enabled=true`, set the initial quorum size.
++
+Default: none - broker default will apply.
 dlqTtl::
 Default time to live to apply to the dead letter queue when declared (in milliseconds).
 +
@@ -357,6 +374,18 @@ Otherwise the queue name is `destination.group`.
 This is useful, for example, when using Spring Cloud Stream to consume from an existing RabbitMQ queue.
 +
 Default: false.
+quorum.deliveryLimit::
+When `quorum.enabled=true`, set a delivery limit after which the message is dropped or dead-lettered.
++
+Default: none - broker default will apply.
+quorum.enabled::
+When true, create a quorum queue instead of a classic queue.
++
+Default: false
+quorum.initialQuorumSize::
+When `quorum.enabled=true`, set the initial quorum size.
++
+Default: none - broker default will apply.
 recoveryInterval::
 The interval between connection recovery attempts, in milliseconds.
 +
@@ -440,10 +469,16 @@ The batch timeout when batching is enabled.
 Default: `5000`.
 bindingRoutingKey::
 The routing key with which to bind the queue to the exchange (if `bindQueue` is `true`).
-Only applies to non-partitioned destinations.
+Can be multiple keys - see `bindingRoutingKeyDelimiter`.
+For partitioned destinations, `-n` is appended to each key.
 Only applies if `requiredGroups` are provided and then only to those groups.
 +
 Default: `#`.
+bindingRoutingKeyDelimiter::
+When this is not null, 'bindingRoutingKey' is considered to be a list of keys delimited by this value; often a comma is used.
+Only applies if `requiredGroups` are provided and then only to those groups.
++
+Default: `null`.
 bindQueue::
 Whether to declare the queue and bind it to the destination exchange.
 Set it to `false` if you have set up your own infrastructure and have previously created and bound the queue.
@@ -551,6 +586,21 @@ Maximum priority of messages in the dead letter queue (0-255)
 Applies only when `requiredGroups` are provided and then only to those groups.
 +
 Default: `none`
+dlqQuorum.deliveryLimit::
+When `quorum.enabled=true`, set a delivery limit after which the message is dropped or dead-lettered.
+Applies only when `requiredGroups` are provided and then only to those groups.
++
+Default: none - broker default will apply.
+dlqQuorum.enabled::
+When true, create a quorum dead letter queue instead of a classic queue.
+Applies only when `requiredGroups` are provided and then only to those groups.
++
+Default: false
+dlqQuorum.initialQuorumSize::
+When `quorum.enabled=true`, set the initial quorum size.
+Applies only when `requiredGroups` are provided and then only to those groups.
++
+Default: none - broker default will apply.
 dlqTtl::
 Default time (in milliseconds) to live to apply to the dead letter queue when declared.
 Applies only when `requiredGroups` are provided and then only to those groups.
@@ -616,6 +666,21 @@ This is useful, for example, when using Spring Cloud Stream to consume from an e
 Applies only when `requiredGroups` are provided and then only to those groups.
 +
 Default: false.
+quorum.deliveryLimit::
+When `quorum.enabled=true`, set a delivery limit after which the message is dropped or dead-lettered.
+Applies only when `requiredGroups` are provided and then only to those groups.
++
+Default: none - broker default will apply.
+quorum.enabled::
+When true, create a quorum queue instead of a classic queue.
+Applies only when `requiredGroups` are provided and then only to those groups.
++
+Default: false
+quorum.initialQuorumSize::
+When `quorum.enabled=true`, set the initial quorum size.
+Applies only when `requiredGroups` are provided and then only to those groups.
++
+Default: none - broker default will apply.
 routingKeyExpression::
 A SpEL expression to determine the routing key to use when publishing messages.
 For a fixed routing key, use a literal expression, such as `routingKeyExpression='my.routingKey'` in a properties file or `routingKeyExpression: '''my.routingKey'''` in a YAML file.
