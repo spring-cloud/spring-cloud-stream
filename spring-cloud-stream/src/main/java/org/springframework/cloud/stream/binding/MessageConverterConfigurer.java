@@ -261,21 +261,7 @@ public class MessageConverterConfigurer
 					.getField(MessageConverterConfigurer.this.headersField,
 							message.getHeaders());
 			MimeType contentType = this.mimeType;
-//			/*
-//			 * NOTE: The below code for BINDER_ORIGINAL_CONTENT_TYPE is to support legacy
-//			 * message format established in 1.x version of the framework and should/will
-//			 * no longer be supported in 3.x
-//			 */
-//			if (message.getHeaders()
-//					.containsKey(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE)) {
-//				Object ct = message.getHeaders()
-//						.get(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE);
-//				contentType = ct instanceof String ? MimeType.valueOf((String) ct)
-//						: (ct == null ? this.mimeType : (MimeType) ct);
-//				headersMap.put(MessageHeaders.CONTENT_TYPE, contentType);
-//				headersMap.remove(BinderHeaders.BINDER_ORIGINAL_CONTENT_TYPE);
-//			}
-//			// == end legacy note
+
 
 			if (!message.getHeaders().containsKey(MessageHeaders.CONTENT_TYPE)) {
 				headersMap.put(MessageHeaders.CONTENT_TYPE, contentType);

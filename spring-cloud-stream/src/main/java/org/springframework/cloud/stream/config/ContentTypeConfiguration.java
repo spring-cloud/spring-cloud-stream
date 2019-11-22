@@ -18,6 +18,7 @@ package org.springframework.cloud.stream.config;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -29,6 +30,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Role;
 import org.springframework.integration.context.IntegrationContextUtils;
 import org.springframework.integration.support.converter.ConfigurableCompositeMessageConverter;
+import org.springframework.integration.support.converter.DefaultDatatypeChannelMessageConverter;
 import org.springframework.messaging.converter.MessageConverter;
 
 /**
@@ -44,11 +46,14 @@ class ContentTypeConfiguration {
 			ObjectProvider<ObjectMapper> objectMapperObjectProvider,
 			List<MessageConverter> customMessageConverters) {
 
+		customMessageConverters = customMessageConverters.stream()
+				.filter(c -> !(c instanceof DefaultDatatypeChannelMessageConverter)).collect(Collectors.toList());
+
 		CompositeMessageConverterFactory factory =
 				new CompositeMessageConverterFactory(new ArrayList<>(), objectMapperObjectProvider.getIfAvailable(ObjectMapper::new));
 
-		ArrayList<MessageConverter> messageConverters = new ArrayList<>(factory.getMessageConverterForAllRegistered().getConverters());
-		messageConverters.addAll(customMessageConverters);
+		ArrayList<MessageConverter> messageConverters = new ArrayList<>(customMessageConverters);
+		messageConverters.addAll(factory.getMessageConverterForAllRegistered().getConverters());
 
 		return new ConfigurableCompositeMessageConverter(messageConverters);
 	}
