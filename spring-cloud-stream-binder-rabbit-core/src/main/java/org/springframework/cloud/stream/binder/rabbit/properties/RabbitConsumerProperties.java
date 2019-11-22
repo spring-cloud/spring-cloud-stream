@@ -62,7 +62,7 @@ public class RabbitConsumerProperties extends RabbitCommonProperties {
 	/**
 	 * republish failures to the DLQ with diagnostic headers.
 	 */
-	private boolean republishToDlq;
+	private boolean republishToDlq = true;
 
 	/**
 	 * when republishing to the DLQ, the delivery mode to use.
