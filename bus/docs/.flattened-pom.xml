@@ -5,11 +5,11 @@
   <parent>
     <groupId>org.springframework.cloud</groupId>
     <artifactId>spring-cloud-bus-parent</artifactId>
-    <version>2.2.0.BUILD-SNAPSHOT</version>
+    <version>2.2.0.RELEASE</version>
   </parent>
   <groupId>org.springframework.cloud</groupId>
   <artifactId>spring-cloud-bus-docs</artifactId>
-  <version>2.2.0.BUILD-SNAPSHOT</version>
+  <version>2.2.0.RELEASE</version>
   <packaging>pom</packaging>
   <name>Spring Cloud Bus Docs</name>
   <description>Spring Cloud Docs</description>
@@ -100,13 +100,13 @@
     <dependency>
       <groupId>org.springframework.cloud</groupId>
       <artifactId>spring-cloud-starter-bus-amqp</artifactId>
-      <version>2.2.0.BUILD-SNAPSHOT</version>
+      <version>2.2.0.RELEASE</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>org.springframework.cloud</groupId>
       <artifactId>spring-cloud-starter-bus-kafka</artifactId>
-      <version>2.2.0.BUILD-SNAPSHOT</version>
+      <version>2.2.0.RELEASE</version>
       <scope>compile</scope>
     </dependency>
   </dependencies>

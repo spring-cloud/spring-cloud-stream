@@ -5,12 +5,12 @@
   <parent>
     <groupId>org.springframework.cloud</groupId>
     <artifactId>spring-cloud-bus-parent</artifactId>
-    <version>2.2.0.BUILD-SNAPSHOT</version>
+    <version>2.2.0.RELEASE</version>
     <relativePath>..</relativePath>
   </parent>
   <groupId>org.springframework.cloud</groupId>
   <artifactId>spring-cloud-starter-bus-amqp</artifactId>
-  <version>2.2.0.BUILD-SNAPSHOT</version>
+  <version>2.2.0.RELEASE</version>
   <name>spring-cloud-starter-bus-amqp</name>
   <description>Spring Cloud Starter</description>
   <url>https://projects.spring.io/spring-cloud</url>
@@ -100,13 +100,13 @@
     <dependency>
       <groupId>org.springframework.cloud</groupId>
       <artifactId>spring-cloud-starter-stream-rabbit</artifactId>
-      <version>3.0.1.BUILD-SNAPSHOT</version>
+      <version>3.0.0.RELEASE</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>org.springframework.cloud</groupId>
       <artifactId>spring-cloud-bus</artifactId>
-      <version>2.2.0.BUILD-SNAPSHOT</version>
+      <version>2.2.0.RELEASE</version>
       <scope>compile</scope>
     </dependency>
   </dependencies>
