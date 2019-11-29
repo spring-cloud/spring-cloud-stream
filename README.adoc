@@ -159,7 +159,7 @@ You should see following output:
 
 Go to the RabbitMQ management console or any other RabbitMQ client and send a message to `input.anonymous.CbMIwdkJSBO1ZoPDOtHtCg`.
 The `anonymous.CbMIwdkJSBO1ZoPDOtHtCg` part represents the group name and is generated, so it is bound to be different in your environment.
-For something more predictable, you can use an explicit group name by setting `spring.cloud.stream.bindings.input.group=hello` (or whatever name you like).
+For something more predictable, you can use an explicit group name by setting `spring.cloud.stream.bindings.log-in-0.group=hello` (or whatever name you like).
 
 The contents of the message should be a JSON representation of the `Person` class, as follows:
 
