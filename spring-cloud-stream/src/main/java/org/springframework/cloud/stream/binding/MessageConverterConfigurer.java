@@ -35,6 +35,7 @@ import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.cloud.stream.converter.MessageConverterUtils;
+import org.springframework.cloud.stream.function.StreamFunctionProperties;
 import org.springframework.integration.channel.AbstractMessageChannel;
 import org.springframework.integration.expression.ExpressionUtils;
 import org.springframework.integration.support.MessageBuilderFactory;
@@ -79,10 +80,12 @@ public class MessageConverterConfigurer
 
 	private final Field headersField;
 
+	private final StreamFunctionProperties streamFunctionProperties;
+
 	private ConfigurableListableBeanFactory beanFactory;
 
 	public MessageConverterConfigurer(BindingServiceProperties bindingServiceProperties,
-			CompositeMessageConverter compositeMessageConverter) {
+			CompositeMessageConverter compositeMessageConverter, StreamFunctionProperties streamFunctionProperties) {
 		Assert.notNull(compositeMessageConverter,
 				"The message converter factory cannot be null");
 		this.bindingServiceProperties = bindingServiceProperties;
@@ -90,6 +93,12 @@ public class MessageConverterConfigurer
 
 		this.headersField = ReflectionUtils.findField(MessageHeaders.class, "headers");
 		this.headersField.setAccessible(true);
+		this.streamFunctionProperties = streamFunctionProperties;
+	}
+
+	public MessageConverterConfigurer(BindingServiceProperties bindingServiceProperties,
+			CompositeMessageConverter compositeMessageConverter) {
+		this(bindingServiceProperties, compositeMessageConverter, null);
 	}
 
 	@Override
@@ -135,24 +144,26 @@ public class MessageConverterConfigurer
 				.getBindingProperties(channelName);
 		String contentType = bindingProperties.getContentType();
 		ProducerProperties producerProperties = bindingProperties.getProducer();
-		if (!inbound && producerProperties != null
-				&& producerProperties.isPartitioned()) {
+		boolean partitioned = !inbound && producerProperties != null && producerProperties.isPartitioned();
+		boolean functional = streamFunctionProperties != null && StringUtils.hasText(streamFunctionProperties.getDefinition());
+		if (partitioned) {
 			messageChannel.addInterceptor(new PartitioningInterceptor(bindingProperties,
 					getPartitionKeyExtractorStrategy(producerProperties),
 					getPartitionSelectorStrategy(producerProperties)));
 		}
 
 		ConsumerProperties consumerProperties = bindingProperties.getConsumer();
-		if (this.isNativeEncodingNotSet(producerProperties, consumerProperties,
-				inbound)) {
-			if (inbound) {
-				messageChannel.addInterceptor(
-						new InboundContentTypeEnhancingInterceptor(contentType));
-			}
-			else {
-				messageChannel.addInterceptor(
-						new OutboundContentTypeConvertingInterceptor(contentType,
-								this.compositeMessageConverter));
+		if (this.isNativeEncodingNotSet(producerProperties, consumerProperties, inbound)) {
+			if (partitioned || !functional) {
+				if (inbound) {
+					messageChannel.addInterceptor(
+							new InboundContentTypeEnhancingInterceptor(contentType));
+				}
+				else {
+					messageChannel.addInterceptor(
+							new OutboundContentTypeConvertingInterceptor(contentType,
+									this.compositeMessageConverter));
+				}
 			}
 		}
 	}

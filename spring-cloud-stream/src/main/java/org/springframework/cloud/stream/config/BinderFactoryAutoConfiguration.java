@@ -44,12 +44,12 @@ import org.springframework.cloud.stream.binding.MessageChannelConfigurer;
 import org.springframework.cloud.stream.binding.MessageConverterConfigurer;
 import org.springframework.cloud.stream.binding.MessageSourceBindingTargetFactory;
 import org.springframework.cloud.stream.binding.SubscribableChannelBindingTargetFactory;
+import org.springframework.cloud.stream.function.StreamFunctionProperties;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Role;
-import org.springframework.core.env.Environment;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.core.io.support.PropertiesLoaderUtils;
@@ -211,13 +211,9 @@ public class BinderFactoryAutoConfiguration {
 	public MessageConverterConfigurer messageConverterConfigurer(
 			BindingServiceProperties bindingServiceProperties,
 			@Qualifier(IntegrationContextUtils.ARGUMENT_RESOLVER_MESSAGE_CONVERTER_BEAN_NAME) CompositeMessageConverter compositeMessageConverter,
-			Environment environment, BinderTypeRegistry binderTypeRegistry) {
+			@Nullable StreamFunctionProperties streamFunctionProperties) {
 
-		if (binderTypeRegistry.getAll().keySet().contains("kstream") || !environment.containsProperty("spring.cloud.stream.function.definition")) {
-			return new MessageConverterConfigurer(bindingServiceProperties, compositeMessageConverter);
-		}
-
-		return null;
+		return new MessageConverterConfigurer(bindingServiceProperties, compositeMessageConverter, streamFunctionProperties);
 	}
 
 

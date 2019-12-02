@@ -70,7 +70,7 @@ public class GreenfieldFunctionEnableBindingTests {
 				TestChannelBinderConfiguration
 						.getCompleteConfiguration(SourceFromSupplier.class))
 								.web(WebApplicationType.NONE)
-								.run("--spring.cloud.stream.function.definition=date",
+								.run("--spring.cloud.function.definition=date",
 										"--spring.jmx.enabled=false")) {
 
 			OutputDestination target = context.getBean(OutputDestination.class);
@@ -93,7 +93,7 @@ public class GreenfieldFunctionEnableBindingTests {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 				TestChannelBinderConfiguration.getCompleteConfiguration(
 						ProcessorFromFunction.class)).web(WebApplicationType.NONE).run(
-								"--spring.cloud.stream.function.definition=toUpperCase",
+								"--spring.cloud.function.definition=toUpperCase",
 								"--spring.jmx.enabled=false")) {
 
 			InputDestination source = context.getBean(InputDestination.class);
@@ -110,7 +110,7 @@ public class GreenfieldFunctionEnableBindingTests {
 				TestChannelBinderConfiguration
 						.getCompleteConfiguration(SinkFromConsumer.class))
 								.web(WebApplicationType.NONE)
-								.run("--spring.cloud.stream.function.definition=sink",
+								.run("--spring.cloud.function.definition=sink",
 										"--spring.jmx.enabled=false")) {
 
 			InputDestination source = context.getBean(InputDestination.class);
@@ -126,7 +126,7 @@ public class GreenfieldFunctionEnableBindingTests {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 				TestChannelBinderConfiguration.getCompleteConfiguration(
 						HttpInboundEndpoint.class)).web(WebApplicationType.SERVLET).run(
-								"--spring.cloud.stream.function.definition=upperCase",
+								"--spring.cloud.function.definition=upperCase",
 								"--spring.jmx.enabled=false", "--server.port=0")) {
 			TestRestTemplate restTemplate = new TestRestTemplate();
 			restTemplate.postForLocation(
@@ -146,7 +146,7 @@ public class GreenfieldFunctionEnableBindingTests {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 				TestChannelBinderConfiguration.getCompleteConfiguration(
 						FooTransform.class)).web(WebApplicationType.NONE).run(
-								"--spring.cloud.stream.function.definition=fooFunction",
+								"--spring.cloud.function.definition=fooFunction",
 								"--spring.jmx" + ".enabled=false",
 								"--logging.level.org.springframework.integration=TRACE")) {
 			MessageChannel input = context.getBean("input", MessageChannel.class);
