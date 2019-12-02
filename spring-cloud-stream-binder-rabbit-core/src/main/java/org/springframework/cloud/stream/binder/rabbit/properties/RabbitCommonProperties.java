@@ -221,6 +221,16 @@ public abstract class RabbitCommonProperties {
 	 */
 	private QuorumConfig dlqQuorum = new QuorumConfig();
 
+	/**
+	 * When true, set the 'x-single-active-consumer' queue argument to true.
+	 */
+	private boolean singleActiveConsumer;
+
+	/**
+	 * When true, set the 'x-single-active-consumer' queue argument to true.
+	 */
+	private boolean dlqSingleActiveConsumer;
+
 	public String getExchangeType() {
 		return this.exchangeType;
 	}
@@ -508,6 +518,22 @@ public abstract class RabbitCommonProperties {
 
 	public void setDlqQuorum(QuorumConfig dlqQuorum) {
 		this.dlqQuorum = dlqQuorum;
+	}
+
+	public boolean isSingleActiveConsumer() {
+		return this.singleActiveConsumer;
+	}
+
+	public void setSingleActiveConsumer(boolean singleActiveConsumer) {
+		this.singleActiveConsumer = singleActiveConsumer;
+	}
+
+	public boolean isDlqSingleActiveConsumer() {
+		return this.dlqSingleActiveConsumer;
+	}
+
+	public void setDlqSingleActiveConsumer(boolean dlqSingleActiveConsumer) {
+		this.dlqSingleActiveConsumer = dlqSingleActiveConsumer;
 	}
 
 	public static class QuorumConfig {

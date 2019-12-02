@@ -16,8 +16,10 @@
 
 package org.springframework.cloud.stream.binder.rabbit.config;
 
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.springframework.amqp.core.DeclarableCustomizer;
 import org.springframework.amqp.core.MessagePostProcessor;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
@@ -79,11 +81,12 @@ public class RabbitMessageChannelBinderConfiguration {
 			@Nullable ListenerContainerCustomizer<AbstractMessageListenerContainer> listenerContainerCustomizer,
 			@Nullable MessageSourceCustomizer<AmqpMessageSource> sourceCustomizer,
 			@Nullable ProducerMessageHandlerCustomizer<AmqpOutboundEndpoint> producerMessageHandlerCustomizer,
-			@Nullable ConsumerEndpointCustomizer<AmqpInboundChannelAdapter> consumerCustomizer) {
+			@Nullable ConsumerEndpointCustomizer<AmqpInboundChannelAdapter> consumerCustomizer,
+			List<DeclarableCustomizer> declarableCustomizers) {
 
 		RabbitMessageChannelBinder binder = new RabbitMessageChannelBinder(
 				this.rabbitConnectionFactory, this.rabbitProperties,
-				provisioningProvider(), listenerContainerCustomizer, sourceCustomizer);
+				provisioningProvider(declarableCustomizers), listenerContainerCustomizer, sourceCustomizer);
 		binder.setAdminAddresses(
 				this.rabbitBinderConfigurationProperties.getAdminAddresses());
 		binder.setCompressingPostProcessor(gZipPostProcessor());
@@ -109,8 +112,8 @@ public class RabbitMessageChannelBinderConfiguration {
 	}
 
 	@Bean
-	RabbitExchangeQueueProvisioner provisioningProvider() {
-		return new RabbitExchangeQueueProvisioner(this.rabbitConnectionFactory);
+	RabbitExchangeQueueProvisioner provisioningProvider(List<DeclarableCustomizer> customizers) {
+		return new RabbitExchangeQueueProvisioner(this.rabbitConnectionFactory, customizers);
 	}
 
 	@Bean

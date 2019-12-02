@@ -16,16 +16,23 @@
 
 package org.springframework.cloud.stream.binder.rabbit.integration;
 
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import com.rabbitmq.http.client.Client;
+import com.rabbitmq.http.client.domain.BindingInfo;
+import com.rabbitmq.http.client.domain.ExchangeInfo;
+import com.rabbitmq.http.client.domain.QueueInfo;
 import org.junit.After;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.mockito.Mockito;
 
+import org.springframework.amqp.core.DeclarableCustomizer;
 import org.springframework.amqp.core.ExchangeTypes;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
@@ -74,6 +81,7 @@ import org.springframework.retry.policy.SimpleRetryPolicy;
 import org.springframework.retry.support.RetryTemplate;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.entry;
 import static org.mockito.BDDMockito.willReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -106,15 +114,16 @@ public class RabbitBinderModuleTests {
 	}
 
 	@Test
-	public void testParentConnectionFactoryInheritedByDefault() {
+	public void testParentConnectionFactoryInheritedByDefault() throws Exception {
 		context = new SpringApplicationBuilder(SimpleProcessor.class)
 				.web(WebApplicationType.NONE).run("--server.port=0",
-						"--spring.cloud.stream.rabbit.binder.connection-name-prefix=foo");
+						"--spring.cloud.stream.rabbit.binder.connection-name-prefix=foo",
+						"--spring.cloud.stream.rabbit.bindings.input.consumer.single-active-consumer=true");
 		BinderFactory binderFactory = context.getBean(BinderFactory.class);
 		Binder<?, ?, ?> binder = binderFactory.getBinder(null, MessageChannel.class);
 		assertThat(binder).isInstanceOf(RabbitMessageChannelBinder.class);
 		DirectFieldAccessor binderFieldAccessor = new DirectFieldAccessor(binder);
-		ConnectionFactory binderConnectionFactory = (ConnectionFactory) binderFieldAccessor
+		CachingConnectionFactory binderConnectionFactory = (CachingConnectionFactory) binderFieldAccessor
 				.getPropertyValue("connectionFactory");
 		assertThat(binderConnectionFactory).isInstanceOf(CachingConnectionFactory.class);
 		ConnectionFactory connectionFactory = context.getBean(ConnectionFactory.class);
@@ -149,6 +158,27 @@ public class RabbitBinderModuleTests {
 				"connectionNameStrategy", ConnectionNameStrategy.class);
 		assertThat(cns.obtainNewConnectionName(cf)).isEqualTo("foo#2");
 		new RabbitAdmin(rabbitTestSupport.getResource()).deleteExchange("checkPF");
+		checkCustomizedArgs();
+		binderConnectionFactory.resetConnection();
+		binderConnectionFactory.createConnection();
+		checkCustomizedArgs();
+	}
+
+	private void checkCustomizedArgs() throws MalformedURLException, URISyntaxException, InterruptedException {
+		Client client = new Client("http://guest:guest@localhost:15672/api");
+		List<BindingInfo> bindings = client.getBindingsBySource("/", "input");
+		int n = 0;
+		while (n++ < 100 && bindings == null || bindings.size() < 1) {
+			Thread.sleep(100);
+			bindings = client.getBindingsBySource("/", "input");
+		}
+		assertThat(bindings).isNotNull();
+		assertThat(bindings.get(0).getArguments()).contains(entry("added.by", "customizer"));
+		ExchangeInfo exchange = client.getExchange("/", "input");
+		assertThat(exchange.getArguments()).contains(entry("added.by", "customizer"));
+		QueueInfo queue = client.getQueue("/", bindings.get(0).getDestination());
+		assertThat(queue.getArguments()).contains(entry("added.by", "customizer"));
+		assertThat(queue.getArguments()).contains(entry("x-single-active-consumer", Boolean.TRUE));
 	}
 
 	@Test
@@ -371,6 +401,13 @@ public class RabbitBinderModuleTests {
 			return (producer, dest, grp) -> producer.setBeanName("setByCustomizer:" + grp);
 		}
 
+		@Bean
+		public DeclarableCustomizer customizer() {
+			return dec -> {
+				dec.addArgument("added.by", "customizer");
+				return dec;
+			};
+		}
 	}
 
 	public static class ConnectionFactoryConfiguration {

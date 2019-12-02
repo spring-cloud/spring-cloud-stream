@@ -17,6 +17,7 @@
 package org.springframework.cloud.stream.binder.rabbit.provisioning;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,6 +32,7 @@ import org.springframework.amqp.core.Base64UrlNamingStrategy;
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.Binding.DestinationType;
 import org.springframework.amqp.core.BindingBuilder;
+import org.springframework.amqp.core.DeclarableCustomizer;
 import org.springframework.amqp.core.DirectExchange;
 import org.springframework.amqp.core.Exchange;
 import org.springframework.amqp.core.ExchangeBuilder;
@@ -89,11 +91,20 @@ public class RabbitExchangeQueueProvisioner
 
 	private final GenericApplicationContext autoDeclareContext = new GenericApplicationContext();
 
+	private final List<DeclarableCustomizer> customizers;
+
 	public RabbitExchangeQueueProvisioner(ConnectionFactory connectionFactory) {
+		this(connectionFactory, Collections.emptyList());
+	}
+
+	public RabbitExchangeQueueProvisioner(ConnectionFactory connectionFactory,
+			List<DeclarableCustomizer> customizers) {
+
 		this.rabbitAdmin = new RabbitAdmin(connectionFactory);
 		this.autoDeclareContext.refresh();
 		this.rabbitAdmin.setApplicationContext(this.autoDeclareContext);
 		this.rabbitAdmin.afterPropertiesSet();
+		this.customizers = customizers;
 	}
 
 	@Override
@@ -450,7 +461,11 @@ public class RabbitExchangeQueueProvisioner
 		}
 	}
 
-	private void declareQueue(String beanName, Queue queue) {
+	private void declareQueue(String beanName, Queue queueArg) {
+		Queue queue = queueArg;
+		for (DeclarableCustomizer customizer : this.customizers) {
+			queue = (Queue) customizer.apply(queue);
+		}
 		try {
 			this.rabbitAdmin.declareQueue(queue);
 		}
@@ -509,8 +524,7 @@ public class RabbitExchangeQueueProvisioner
 		return args;
 	}
 
-	private void additionalArgs(Map<String, Object> args,
-			RabbitCommonProperties properties, boolean isDlq) {
+	private void additionalArgs(Map<String, Object> args, RabbitCommonProperties properties, boolean isDlq) {
 		Integer expires = isDlq ? properties.getDlqExpires() : properties.getExpires();
 		Integer maxLength = isDlq ? properties.getDlqMaxLength()
 				: properties.getMaxLength();
@@ -523,6 +537,7 @@ public class RabbitExchangeQueueProvisioner
 		String overflow = isDlq ? properties.getDlqOverflowBehavior()
 				: properties.getOverflowBehavior();
 		QuorumConfig quorum = isDlq ? properties.getDlqQuorum() : properties.getQuorum();
+		boolean singleActive = isDlq ? properties.isDlqSingleActiveConsumer() : properties.isSingleActiveConsumer();
 		if (expires != null) {
 			args.put("x-expires", expires);
 		}
@@ -553,6 +568,9 @@ public class RabbitExchangeQueueProvisioner
 				args.put("x-quorum-initial-group-size", quorum.getInitialGroupSize());
 			}
 		}
+		if (singleActive) {
+			args.put("x-single-active-consumer", true);
+		}
 	}
 
 	public static String applyPrefix(String prefix, String name) {
@@ -578,7 +596,11 @@ public class RabbitExchangeQueueProvisioner
 		}
 	}
 
-	private void declareExchange(final String rootName, final Exchange exchange) {
+	private void declareExchange(final String rootName, final Exchange exchangeArg) {
+		Exchange exchange = exchangeArg;
+		for (DeclarableCustomizer customizer : this.customizers) {
+			exchange = (Exchange) customizer.apply(exchange);
+		}
 		try {
 			this.rabbitAdmin.declareExchange(exchange);
 		}
@@ -610,8 +632,11 @@ public class RabbitExchangeQueueProvisioner
 		}
 	}
 
-	private void declareBinding(String rootName,
-			org.springframework.amqp.core.Binding binding) {
+	private void declareBinding(String rootName, org.springframework.amqp.core.Binding bindingArg) {
+		Binding binding = bindingArg;
+		for (DeclarableCustomizer customizer : this.customizers) {
+			binding = (Binding) customizer.apply(binding);
+		}
 		try {
 			this.rabbitAdmin.declareBinding(binding);
 		}
