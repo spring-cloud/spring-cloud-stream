@@ -687,8 +687,8 @@ public class SampleApplication {
 The above example demonstrates function which takes two inputs (first of type `String` and second of type `Integer`)
 and produces a single output of type `String`.
 
-So, for the above example the two input bindings will be `gather_in_0` and `gather-in-1` and for consistency the
-output binding also follows the same convention and is named `gather_out_0`.
+So, for the above example the two input bindings will be `gather-in-0` and `gather-in-1` and for consistency the
+output binding also follows the same convention and is named `gather-out-0`.
 
 
 Knowing that will allow you to set binding specific properties the same way you did with `@StreamListener`.
