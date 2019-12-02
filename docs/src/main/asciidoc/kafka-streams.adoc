@@ -448,7 +448,7 @@ public static class WordCountProcessorApplication {
     private TimeWindows timeWindows;
 
     @StreamListener("input")
-    @SendTo({"output1","output2","output3})
+    @SendTo({"output1","output2","output3"})
     public KStream<?, WordCount>[] process(KStream<Object, String> input) {
 
 			Predicate<Object, WordCount> isEnglish = (k, v) -> v.word.equals("english");
