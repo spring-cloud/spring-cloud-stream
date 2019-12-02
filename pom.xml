@@ -23,7 +23,7 @@
 	</scm>
 	<properties>
 		<java.version>1.8</java.version>
-		<reactor.version>Californium-SR11</reactor.version>
+		<reactor.version>Dysprosium-SR1</reactor.version>
 		<objenesis.version>2.1</objenesis.version>
 		<spring-cloud-function.version>3.0.0.RELEASE</spring-cloud-function.version>
 		<maven-checkstyle-plugin.failsOnError>true</maven-checkstyle-plugin.failsOnError>

@@ -36,8 +36,6 @@ import org.springframework.cloud.stream.binder.test.InputDestination;
 import org.springframework.cloud.stream.binder.test.OutputDestination;
 import org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
-import org.springframework.cloud.stream.messaging.Processor;
-import org.springframework.cloud.stream.messaging.Sink;
 import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
@@ -176,7 +174,6 @@ public class GreenfieldFunctionEnableBindingTests {
 	}
 
 	@EnableAutoConfiguration
-	@EnableBinding(Processor.class)
 	public static class ProcessorFromFunction {
 
 		@Bean
@@ -187,7 +184,6 @@ public class GreenfieldFunctionEnableBindingTests {
 	}
 
 	@EnableAutoConfiguration
-	@EnableBinding(Sink.class)
 	public static class SinkFromConsumer {
 
 		@Bean

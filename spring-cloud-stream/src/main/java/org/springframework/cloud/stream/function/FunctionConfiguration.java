@@ -339,10 +339,14 @@ public class FunctionConfiguration {
 				messageChannel = this.context.getBean(channelName, SubscribableChannel.class);
 			}
 			else {
-				// could be "input" or "output" if subscribing to existing Source
-				messageChannel = this.context.containsBean("input")
-						? this.context.getBean("input", SubscribableChannel.class)
-								: this.context.getBean("output", SubscribableChannel.class);
+				if (this.context.containsBean("input")) {
+					logger.info("@EnableBinding way of defining channels is not supported by functions, so 'input' "
+							+ "channel will not be bound to any existing function beans. You may safely ignore this "
+							+ "message if that was not your intention otherwise, please remove @EnableBinding annotation.");
+				}
+				if (this.context.containsBean("output")) { // need this to compose to existing sources
+					messageChannel = this.context.getBean("output", SubscribableChannel.class);
+				}
 			}
 			return messageChannel;
 		}
