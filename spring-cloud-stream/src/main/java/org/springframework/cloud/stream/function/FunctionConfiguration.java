@@ -20,6 +20,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -95,6 +96,7 @@ import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.SubscribableChannel;
 import org.springframework.messaging.support.ErrorMessage;
+import org.springframework.scheduling.TaskScheduler;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.ObjectUtils;
@@ -141,7 +143,8 @@ public class FunctionConfiguration {
 	@Bean
 	InitializingBean supplierInitializer(FunctionCatalog functionCatalog, StreamFunctionProperties functionProperties,
 			GenericApplicationContext context, BindingServiceProperties serviceProperties,
-			@Nullable BindableFunctionProxyFactory[] proxyFactories, BinderAwareChannelResolver dynamicDestinationResolver) {
+			@Nullable BindableFunctionProxyFactory[] proxyFactories, BinderAwareChannelResolver dynamicDestinationResolver,
+			TaskScheduler taskScheduler) {
 
 		if (!ObjectUtils.isEmpty(context.getBeanNamesForAnnotation(EnableBinding.class)) || proxyFactories == null) {
 			return null;
@@ -174,7 +177,8 @@ public class FunctionConfiguration {
 							String integrationFlowName = proxyFactory.getFunctionDefinition() + "_integrationflow";
 							PollableBean pollable = extractPollableAnnotation(functionProperties, context, proxyFactory);
 
-							IntegrationFlow integrationFlow = integrationFlowFromProvidedSupplier(functionWrapper, beginPublishingTrigger, pollable)
+							IntegrationFlow integrationFlow = integrationFlowFromProvidedSupplier(functionWrapper, beginPublishingTrigger,
+									pollable, context, taskScheduler)
 									.route(Message.class, message -> {
 										if (message.getHeaders().get("spring.cloud.stream.sendto.destination") != null) {
 											String destinationName = (String) message.getHeaders().get("spring.cloud.stream.sendto.destination");
@@ -212,7 +216,8 @@ public class FunctionConfiguration {
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	private IntegrationFlowBuilder integrationFlowFromProvidedSupplier(Supplier<?> supplier,
-			Publisher<Object> beginPublishingTrigger, PollableBean pollable) {
+			Publisher<Object> beginPublishingTrigger, PollableBean pollable, GenericApplicationContext context,
+			TaskScheduler taskScheduler) {
 
 		IntegrationFlowBuilder integrationFlowBuilder;
 		Type functionType = ((FunctionInvocationWrapper) supplier).getFunctionType();
@@ -227,6 +232,9 @@ public class FunctionConfiguration {
 					: ((Flux) publisher).delaySubscription(beginPublishingTrigger).map(this::wrapToMessageIfNecessary);
 
 			integrationFlowBuilder = IntegrationFlows.from(publisher);
+
+			// see https://github.com/spring-cloud/spring-cloud-stream/issues/1863 for details about the following code
+			taskScheduler.schedule(() -> { }, Instant.now()); // will keep AC alive
 		}
 		else { // implies pollable
 			integrationFlowBuilder = IntegrationFlows.from(supplier);
@@ -687,6 +695,5 @@ public class FunctionConfiguration {
 		public void setEnvironment(Environment environment) {
 			this.environment = environment;
 		}
-
 	}
 }
