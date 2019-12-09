@@ -129,12 +129,15 @@ public class FunctionConfiguration {
 			BindingServiceProperties serviceProperties, ConfigurableApplicationContext applicationContext,
 			FunctionBindingRegistrar bindingHolder, BinderAwareChannelResolver dynamicDestinationResolver) {
 
-		if (bindableProxyFactories == null) {
-			return null;
-		}
+		boolean shouldCreateInitializer = bindableProxyFactories != null
+				&& (applicationContext.containsBean("output")
+				|| ObjectUtils.isEmpty(applicationContext.getBeanNamesForAnnotation(EnableBinding.class)));
 
-		return new FunctionChannelBindingInitializer(functionCatalog, functionProperties, bindableProxyFactories,
-				serviceProperties, dynamicDestinationResolver);
+		return shouldCreateInitializer
+				? new FunctionChannelBindingInitializer(functionCatalog, functionProperties, bindableProxyFactories,
+						serviceProperties, dynamicDestinationResolver)
+						: null;
+
 	}
 
 	/*
