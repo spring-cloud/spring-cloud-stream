@@ -425,7 +425,12 @@ Since Spring Cloud Stream v2.1, another alternative for defining _stream handler
 support for https://cloud.spring.io/spring-cloud-function/[Spring Cloud Function] where they can be expressed as beans of
  type `java.util.function.[Supplier/Function/Consumer]`.
 
-To specify which functional bean to bind to the external destination(s) exposed by the bindings, you must provide `spring.cloud.function.definition` property.
+To specify which functional bean to bind to the external destination(s) exposed by the bindings,
+you must provide `spring.cloud.function.definition` property.
+
+NOTE: In the event you only have single bean of type `java.util.function.[Supplier/Function/Consumer]`, you can
+skip the `spring.cloud.function.definition` property, since such functional bean will be auto-discovered. However,
+it is considered best practice to use such property to avoid any confusion.
 
 Here is the example of the application exposing message handler as `java.util.function.Function` effectively supporting
 _pass-thru_ semantics by acting as consumer and producer of data.
@@ -444,8 +449,10 @@ public class MyFunctionBootApp {
 	}
 }
 ----
-In the above you we simply define a bean of type `java.util.function.Function` called _toUpperCase_ and identify it as a bean to be used as message handler
+In the preceding example, we define a bean of type `java.util.function.Function` called _toUpperCase_ to be acting as message handler
 whose 'input' and 'output' must be bound to the external destinations exposed by the provided destination binder.
+By default the 'input' and 'output' binding names will be `toUpperCase-in-0` and `toUpperCase-out-0`.
+Please see <<Functional binding names>> section for details on naming convention used to establish binding names.
 
 Below are the examples of simple functional applications to support other semantics:
 
@@ -474,10 +481,6 @@ public static class SinkFromConsumer {
 	}
 }
 ----
-
-NOTE: We are using `--spring.cloud.function.definition` property to explicitly declare which function bean
-we want to be bound to binding destinations. For cases when you only have single such bean it is not required
-but for all other cases it is.
 
 ===== Suppliers (Sources)
 
