@@ -87,8 +87,9 @@ This section gives an overview of the following:
 === Application Model
 
 A Spring Cloud Stream application consists of a middleware-neutral core.
-The application communicates with the outside world through input and output channels injected into it by Spring Cloud Stream.
-Channels are connected to external brokers through middleware-specific Binder implementations.
+The application communicates with the outside world by establishing _bindings_ between destinations
+exposed by the external brokers and input/output arguments in your code. Broker specific details
+necessary to establish bindings are handled by middleware-specific _Binder_ implementations.
 
 .Spring Cloud Stream Application
 image::{github-raw}/docs/src/main/asciidoc/images/SCSt-with-binder.png[width=800,scaledwidth="75%",align="center"]
@@ -105,14 +106,15 @@ Spring Cloud Stream provides Binder implementations for https://github.com/sprin
 Spring Cloud Stream also includes a test binder for integration testing of your applications as spring-cloud-stream application. See <<Testing>> section for more details.
 
 Spring Cloud Stream uses Spring Boot for configuration, and the Binder abstraction makes it possible for a Spring Cloud Stream application to be flexible in how it connects to middleware.
-For example, deployers can dynamically choose, at runtime, the destinations (such as the Kafka topics or RabbitMQ exchanges) to which channels connect.
+For example, deployers can dynamically choose, at runtime, the mapping between the external destinations (such as the Kafka topics or RabbitMQ exchanges) and inputs
+and outputs of the message handler (such as input parameter of the function and its return argument).
 Such configuration can be provided through external configuration properties and in any form supported by Spring Boot (including application arguments, environment variables, and `application.yml` or `application.properties` files).
 In the sink example from the <<spring-cloud-stream-overview-introducing>> section, setting the `spring.cloud.stream.bindings.input.destination` application property to `raw-sensor-data` causes it to read from the `raw-sensor-data` Kafka topic or from a queue bound to the `raw-sensor-data` RabbitMQ exchange.
 
 Spring Cloud Stream automatically detects and uses a binder found on the classpath.
 You can use different types of middleware with the same code.
 To do so, include a different binder at build time.
-For more complex use cases, you can also package multiple binders with your application and have it choose the binder( and even whether to use different binders for different channels) at runtime.
+For more complex use cases, you can also package multiple binders with your application and have it choose the binder( and even whether to use different binders for different bindings) at runtime.
 
 [[spring-cloud-stream-overview-persistent-publish-subscribe-support]]
 === Persistent Publish-Subscribe Support
@@ -142,8 +144,8 @@ When doing so, different instances of an application are placed in a competing c
 
 Spring Cloud Stream models this behavior through the concept of a consumer group.
 (Spring Cloud Stream consumer groups are similar to and inspired by Kafka consumer groups.)
-Each consumer binding can use the `spring.cloud.stream.bindings.<channelName>.group` property to specify a group name.
-For the consumers shown in the following figure, this property would be set as `spring.cloud.stream.bindings.<channelName>.group=hdfsWrite` or `spring.cloud.stream.bindings.<channelName>.group=average`.
+Each consumer binding can use the `spring.cloud.stream.bindings.<bindingName>.group` property to specify a group name.
+For the consumers shown in the following figure, this property would be set as `spring.cloud.stream.bindings.<bindingName>.group=hdfsWrite` or `spring.cloud.stream.bindings.<bindingName>.group=average`.
 
 .Spring Cloud Stream Consumer Groups
 image::{github-raw}/docs/src/main/asciidoc/images/SCSt-groups.png[width=800,scaledwidth="75%",align="center"]
@@ -1514,11 +1516,11 @@ The following image shows the general relationship of producers and consumers:
 .Producers and Consumers
 image::{github-raw}/docs/src/main/asciidoc/images/producers-consumers.png[width=800,scaledwidth="75%",align="center"]
 
-A producer is any component that sends messages to a channel.
-The channel can be bound to an external message broker with a `Binder` implementation for that broker.
-When invoking the `bindProducer()` method, the first parameter is the name of the destination within the broker, the second parameter is the local channel instance to which the producer sends messages, and the third parameter contains properties (such as a partition key expression) to be used within the adapter that is created for that channel.
+A producer is any component that sends messages to a binding destination.
+The binding destination can be bound to an external message broker with a `Binder` implementation for that broker.
+When invoking the `bindProducer()` method, the first parameter is the name of the destination within the broker, the second parameter is the instance if local destination to which the producer sends messages, and the third parameter contains properties (such as a partition key expression) to be used within the adapter that is created for that binding destination.
 
-A consumer is any component that receives messages from a channel.
+A consumer is any component that receives messages from the binding destination.
 As with a producer, the consumer's channel can be bound to an external message broker.
 When invoking the `bindConsumer()` method, the first parameter is the destination name, and a second parameter provides the name of a logical group of consumers.
 Each group that is represented by consumer bindings for a given destination receives a copy of each message that a producer sends to that destination (that is, it follows normal publish-subscribe semantics).
@@ -1534,9 +1536,9 @@ The key point of the SPI is the `Binder` interface, which is a strategy for conn
 [source,java]
 ----
 public interface Binder<T, C extends ConsumerProperties, P extends ProducerProperties> {
-    Binding<T> bindConsumer(String name, String group, T inboundBindTarget, C consumerProperties);
+    Binding<T> bindConsumer(String bindingName, String group, T inboundBindTarget, C consumerProperties);
 
-    Binding<T> bindProducer(String name, T outboundBindTarget, P producerProperties);
+    Binding<T> bindProducer(String bindingName, T outboundBindTarget, P producerProperties);
 }
 ----
 
