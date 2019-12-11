@@ -824,7 +824,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 	}
 
 	private void destroyBean(String beanName) {
-		if (getApplicationContext().containsBean(beanName)) {
+		if (getApplicationContext().containsBeanDefinition(beanName)) {
 			((DefaultSingletonBeanRegistry) getApplicationContext().getBeanFactory())
 					.destroySingleton(beanName);
 			((GenericApplicationContext) getApplicationContext())
