@@ -53,6 +53,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.core.MethodParameter;
 import org.springframework.core.ResolvableType;
 import org.springframework.core.annotation.AnnotationUtils;
+import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.kafka.config.StreamsBuilderFactoryBean;
 import org.springframework.kafka.config.StreamsBuilderFactoryBeanCustomizer;
 import org.springframework.kafka.core.CleanupConfig;
@@ -101,6 +102,8 @@ class KafkaStreamsStreamListenerSetupMethodOrchestrator extends AbstractKafkaStr
 
 	StreamsBuilderFactoryBeanCustomizer customizer;
 
+	private final ConfigurableEnvironment environment;
+
 	KafkaStreamsStreamListenerSetupMethodOrchestrator(
 			BindingServiceProperties bindingServiceProperties,
 			KafkaStreamsExtendedBindingProperties extendedBindingProperties,
@@ -109,7 +112,8 @@ class KafkaStreamsStreamListenerSetupMethodOrchestrator extends AbstractKafkaStr
 			StreamListenerParameterAdapter streamListenerParameterAdapter,
 			Collection<StreamListenerResultAdapter> listenerResultAdapters,
 			CleanupConfig cleanupConfig,
-			StreamsBuilderFactoryBeanCustomizer customizer) {
+			StreamsBuilderFactoryBeanCustomizer customizer,
+			ConfigurableEnvironment environment) {
 		super(bindingServiceProperties, bindingInformationCatalogue, extendedBindingProperties, keyValueSerdeResolver, cleanupConfig);
 		this.bindingServiceProperties = bindingServiceProperties;
 		this.kafkaStreamsExtendedBindingProperties = extendedBindingProperties;
@@ -118,6 +122,7 @@ class KafkaStreamsStreamListenerSetupMethodOrchestrator extends AbstractKafkaStr
 		this.streamListenerParameterAdapter = streamListenerParameterAdapter;
 		this.streamListenerResultAdapters = listenerResultAdapters;
 		this.customizer = customizer;
+		this.environment = environment;
 	}
 
 	@Override
@@ -249,7 +254,7 @@ class KafkaStreamsStreamListenerSetupMethodOrchestrator extends AbstractKafkaStr
 				if (!this.methodStreamsBuilderFactoryBeanMap.containsKey(method)) {
 					StreamsBuilderFactoryBean streamsBuilderFactoryBean = buildStreamsBuilderAndRetrieveConfig(method.getDeclaringClass().getSimpleName() + "-" + method.getName(),
 							applicationContext,
-							inboundName, null, customizer);
+							inboundName, null, customizer, this.environment, bindingProperties);
 					this.methodStreamsBuilderFactoryBeanMap.put(method, streamsBuilderFactoryBean);
 				}
 				try {

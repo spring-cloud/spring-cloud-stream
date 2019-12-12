@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.binder.kafka.streams;
 
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.actuate.autoconfigure.health.ConditionalOnEnabledHealthIndicator;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -37,7 +38,7 @@ class KafkaStreamsBinderHealthIndicatorConfiguration {
 	@Bean
 	@ConditionalOnBean(KafkaStreamsRegistry.class)
 	KafkaStreamsBinderHealthIndicator kafkaStreamsBinderHealthIndicator(
-			KafkaStreamsRegistry kafkaStreamsRegistry, KafkaStreamsBinderConfigurationProperties kafkaStreamsBinderConfigurationProperties,
+			KafkaStreamsRegistry kafkaStreamsRegistry, @Qualifier("binderConfigurationProperties")KafkaStreamsBinderConfigurationProperties kafkaStreamsBinderConfigurationProperties,
 			KafkaProperties kafkaProperties, KafkaStreamsBindingInformationCatalogue kafkaStreamsBindingInformationCatalogue) {
 
 		return new KafkaStreamsBinderHealthIndicator(kafkaStreamsRegistry, kafkaStreamsBinderConfigurationProperties,

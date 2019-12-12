@@ -53,6 +53,8 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.ResolvableType;
+import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.core.env.MutablePropertySources;
 import org.springframework.kafka.config.KafkaStreamsConfiguration;
 import org.springframework.kafka.config.StreamsBuilderFactoryBean;
 import org.springframework.kafka.config.StreamsBuilderFactoryBeanCustomizer;
@@ -61,6 +63,7 @@ import org.springframework.kafka.streams.RecoveringDeserializationExceptionHandl
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 
 /**
@@ -155,7 +158,8 @@ public abstract class AbstractKafkaStreamsBinderProcessor implements Application
 	protected StreamsBuilderFactoryBean buildStreamsBuilderAndRetrieveConfig(String beanNamePostPrefix,
 																			ApplicationContext applicationContext, String inboundName,
 																			KafkaStreamsBinderConfigurationProperties kafkaStreamsBinderConfigurationProperties,
-																			StreamsBuilderFactoryBeanCustomizer customizer) {
+																			StreamsBuilderFactoryBeanCustomizer customizer,
+																			ConfigurableEnvironment environment, BindingProperties bindingProperties) {
 		ConfigurableListableBeanFactory beanFactory = this.applicationContext
 				.getBeanFactory();
 
@@ -177,6 +181,52 @@ public abstract class AbstractKafkaStreamsBinderProcessor implements Application
 				}
 			}
 		}
+
+		final MutablePropertySources propertySources = environment.getPropertySources();
+
+		if (!StringUtils.isEmpty(bindingProperties.getBinder())) {
+			final KafkaStreamsBinderConfigurationProperties multiBinderKafkaStreamsBinderConfigurationProperties =
+					applicationContext.getBean(bindingProperties.getBinder() + "-KafkaStreamsBinderConfigurationProperties", KafkaStreamsBinderConfigurationProperties.class);
+			String connectionString = multiBinderKafkaStreamsBinderConfigurationProperties.getKafkaConnectionString();
+			if (StringUtils.isEmpty(connectionString)) {
+				connectionString = (String) propertySources.get(bindingProperties.getBinder() + "-kafkaStreamsBinderEnv").getProperty("spring.cloud.stream.kafka.binder.brokers");
+			}
+			if (!StringUtils.isEmpty(connectionString)) {
+				streamConfigGlobalProperties.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, connectionString);
+			}
+
+			String binderProvidedApplicationId = multiBinderKafkaStreamsBinderConfigurationProperties.getApplicationId();
+			if (StringUtils.hasText(binderProvidedApplicationId)) {
+				streamConfigGlobalProperties.put(StreamsConfig.APPLICATION_ID_CONFIG,
+						binderProvidedApplicationId);
+			}
+
+			if (multiBinderKafkaStreamsBinderConfigurationProperties
+					.getDeserializationExceptionHandler() == DeserializationExceptionHandler.logAndContinue) {
+				streamConfigGlobalProperties.put(
+						StreamsConfig.DEFAULT_DESERIALIZATION_EXCEPTION_HANDLER_CLASS_CONFIG,
+						LogAndContinueExceptionHandler.class);
+			}
+			else if (multiBinderKafkaStreamsBinderConfigurationProperties
+					.getDeserializationExceptionHandler() == DeserializationExceptionHandler.logAndFail) {
+				streamConfigGlobalProperties.put(
+						StreamsConfig.DEFAULT_DESERIALIZATION_EXCEPTION_HANDLER_CLASS_CONFIG,
+						LogAndFailExceptionHandler.class);
+			}
+			else if (multiBinderKafkaStreamsBinderConfigurationProperties
+					.getDeserializationExceptionHandler() == DeserializationExceptionHandler.sendToDlq) {
+				streamConfigGlobalProperties.put(
+						StreamsConfig.DEFAULT_DESERIALIZATION_EXCEPTION_HANDLER_CLASS_CONFIG,
+						RecoveringDeserializationExceptionHandler.class);
+				SendToDlqAndContinue sendToDlqAndContinue = applicationContext.getBean(SendToDlqAndContinue.class);
+				streamConfigGlobalProperties.put(RecoveringDeserializationExceptionHandler.KSTREAM_DESERIALIZATION_RECOVERER, sendToDlqAndContinue);
+			}
+
+			if (!ObjectUtils.isEmpty(multiBinderKafkaStreamsBinderConfigurationProperties.getConfiguration())) {
+				streamConfigGlobalProperties.putAll(multiBinderKafkaStreamsBinderConfigurationProperties.getConfiguration());
+			}
+		}
+
 
 		//this is only used primarily for StreamListener based processors. Although in theory, functions can use it,
 		//it is ideal for functions to use the approach used in the above if statement by using a property like

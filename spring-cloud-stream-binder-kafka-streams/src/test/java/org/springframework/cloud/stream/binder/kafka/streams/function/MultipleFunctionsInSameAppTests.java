@@ -76,7 +76,7 @@ public class MultipleFunctionsInSameAppTests {
 	}
 
 	@Test
-	public void testKstreamWordCountFunction() throws InterruptedException {
+	public void testMultiFunctionsInSameApp() throws InterruptedException {
 		SpringApplication app = new SpringApplication(MultipleFunctionsInSameApp.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 
@@ -106,6 +106,51 @@ public class MultipleFunctionsInSameAppTests {
 			final Properties processStreamsConfiguration = processStreamsBuilderFactoryBean.getStreamsConfiguration();
 			final Properties analyzeStreamsConfiguration = analyzeStreamsBuilderFactoryBean.getStreamsConfiguration();
 
+			assertThat(processStreamsConfiguration.getProperty("client.id")).isEqualTo("process-client");
+			assertThat(analyzeStreamsConfiguration.getProperty("client.id")).isEqualTo("analyze-client");
+		}
+	}
+
+	@Test
+	public void testMultiFunctionsInSameAppWithMultiBinders() throws InterruptedException {
+		SpringApplication app = new SpringApplication(MultipleFunctionsInSameApp.class);
+		app.setWebApplicationType(WebApplicationType.NONE);
+
+		try (ConfigurableApplicationContext context = app.run(
+				"--server.port=0",
+				"--spring.jmx.enabled=false",
+				"--spring.cloud.stream.function.definition=process;analyze",
+				"--spring.cloud.stream.bindings.process-in-0.destination=purchases",
+				"--spring.cloud.stream.bindings.process-in-0.binder=kafka1",
+				"--spring.cloud.stream.bindings.process-out-0.destination=coffee",
+				"--spring.cloud.stream.bindings.process-out-0.binder=kafka1",
+				"--spring.cloud.stream.bindings.process-out-1.destination=electronics",
+				"--spring.cloud.stream.bindings.process-out-1.binder=kafka1",
+				"--spring.cloud.stream.bindings.analyze-in-0.destination=coffee",
+				"--spring.cloud.stream.bindings.analyze-in-0.binder=kafka2",
+				"--spring.cloud.stream.bindings.analyze-in-1.destination=electronics",
+				"--spring.cloud.stream.bindings.analyze-in-1.binder=kafka2",
+				"--spring.cloud.stream.binders.kafka1.type=kstream",
+				"--spring.cloud.stream.binders.kafka1.environment.spring.cloud.stream.kafka.streams.binder.brokers=" + embeddedKafka.getBrokersAsString(),
+				"--spring.cloud.stream.binders.kafka1.environment.spring.cloud.stream.kafka.streams.binder.applicationId=my-app-1",
+				"--spring.cloud.stream.binders.kafka1.environment.spring.cloud.stream.kafka.streams.binder.configuration.client.id=process-client",
+				"--spring.cloud.stream.binders.kafka2.type=kstream",
+				"--spring.cloud.stream.binders.kafka2.environment.spring.cloud.stream.kafka.streams.binder.brokers=" + embeddedKafka.getBrokersAsString(),
+				"--spring.cloud.stream.binders.kafka2.environment.spring.cloud.stream.kafka.streams.binder.applicationId=my-app-2",
+				"--spring.cloud.stream.binders.kafka2.environment.spring.cloud.stream.kafka.streams.binder.configuration.client.id=analyze-client")) {
+			receiveAndValidate("purchases", "coffee", "electronics");
+
+			StreamsBuilderFactoryBean processStreamsBuilderFactoryBean = context
+					.getBean("&stream-builder-process", StreamsBuilderFactoryBean.class);
+
+			StreamsBuilderFactoryBean analyzeStreamsBuilderFactoryBean = context
+					.getBean("&stream-builder-analyze", StreamsBuilderFactoryBean.class);
+
+			final Properties processStreamsConfiguration = processStreamsBuilderFactoryBean.getStreamsConfiguration();
+			final Properties analyzeStreamsConfiguration = analyzeStreamsBuilderFactoryBean.getStreamsConfiguration();
+
+			assertThat(processStreamsConfiguration.getProperty("application.id")).isEqualTo("my-app-1");
+			assertThat(analyzeStreamsConfiguration.getProperty("application.id")).isEqualTo("my-app-2");
 			assertThat(processStreamsConfiguration.getProperty("client.id")).isEqualTo("process-client");
 			assertThat(analyzeStreamsConfiguration.getProperty("client.id")).isEqualTo("analyze-client");
 		}

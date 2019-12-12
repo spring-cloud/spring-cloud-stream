@@ -37,7 +37,8 @@ import org.springframework.context.annotation.Import;
  */
 @Configuration
 @Import({ KafkaAutoConfiguration.class,
-		KafkaStreamsBinderHealthIndicatorConfiguration.class })
+		KafkaStreamsBinderHealthIndicatorConfiguration.class,
+		MutliBinderPropertiesConfiguration.class})
 public class KStreamBinderConfiguration {
 
 	@Bean
@@ -74,10 +75,6 @@ public class KStreamBinderConfiguration {
 			// and as independent from the parent context.
 			ApplicationContext outerContext = (ApplicationContext) beanFactory
 					.getBean("outerContext");
-			beanFactory.registerSingleton(
-					KafkaStreamsBinderConfigurationProperties.class.getSimpleName(),
-					outerContext
-							.getBean(KafkaStreamsBinderConfigurationProperties.class));
 			beanFactory.registerSingleton(
 					KafkaStreamsMessageConversionDelegate.class.getSimpleName(),
 					outerContext.getBean(KafkaStreamsMessageConversionDelegate.class));
