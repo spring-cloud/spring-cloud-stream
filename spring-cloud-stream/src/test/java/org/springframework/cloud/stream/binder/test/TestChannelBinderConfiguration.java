@@ -26,6 +26,7 @@ import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.ConsumerProperties;
 import org.springframework.cloud.stream.binder.ProducerProperties;
+import org.springframework.cloud.stream.config.BinderFactoryAutoConfiguration;
 import org.springframework.cloud.stream.config.BindingServiceConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -44,6 +45,7 @@ import org.springframework.integration.config.EnableIntegration;
  */
 @Configuration
 @ConditionalOnMissingBean(Binder.class)
+@Import(BinderFactoryAutoConfiguration.class)
 @EnableIntegration
 public class TestChannelBinderConfiguration<T> {
 
