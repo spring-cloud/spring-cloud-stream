@@ -2377,11 +2377,43 @@ Now you can test your microservice as a simple unit test
 
 [source,java]
 ----
-@SpringBootApplication
-public class SampleTests {
-    @Bean
-	public Function<String, String> echo() {
-		return value -> value;
+@SpringBootTest
+@RunWith(SpringRunner.class)
+public class SampleStreamTests {
+
+	@Autowired
+	private InputDestination input;
+
+	@Autowired
+	private OutputDestination output;
+
+	@Test
+	public void testEmptyConfiguration() {
+		this.input.send(new GenericMessage<byte[]>("hello".getBytes()));
+		assertThat(output.receive().getPayload()).isEqualTo("HELLO".getBytes());
+	}
+
+	@SpringBootApplication
+	@Import(TestChannelBinderConfiguration.class)
+	public static class SampleConfiguration {
+		@Bean
+		public Function<String, String> uppercase() {
+			return v -> v.toUpperCase();
+		}
+	}
+}
+----
+
+And if you need more control or want to test several configurations in the same test suite
+you can also do the following:
+
+[source,java]
+----
+@EnableAutoConfiguration
+public static class MyTestConfiguration {
+	@Bean
+	public Function<String, String> uppercase() {
+			return v -> v.toUpperCase();
 	}
 }
 
@@ -2391,12 +2423,12 @@ public class SampleTests {
 public void sampleTest() {
 	try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 				TestChannelBinderConfiguration.getCompleteConfiguration(
-						SampleTests.class))
-				.run("--spring.cloud.function.definition=echo")) {
+						MyTestConfiguration.class))
+				.run("--spring.cloud.function.definition=uppercase")) {
 		InputDestination source = context.getBean(InputDestination.class);
 		OutputDestination target = context.getBean(OutputDestination.class);
 		source.send(new GenericMessage<byte[]>("hello".getBytes()));
-		assertThat(target.receive().getPayload()).isEqualTo("hello".getBytes());
+		assertThat(target.receive().getPayload()).isEqualTo("HELLO".getBytes());
 	}
 }
 ----
