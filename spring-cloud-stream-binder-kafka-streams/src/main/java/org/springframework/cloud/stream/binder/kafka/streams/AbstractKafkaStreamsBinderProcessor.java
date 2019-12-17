@@ -191,7 +191,7 @@ public abstract class AbstractKafkaStreamsBinderProcessor implements Application
 			if (StringUtils.isEmpty(connectionString)) {
 				connectionString = (String) propertySources.get(bindingProperties.getBinder() + "-kafkaStreamsBinderEnv").getProperty("spring.cloud.stream.kafka.binder.brokers");
 			}
-			if (!StringUtils.isEmpty(connectionString)) {
+			else {
 				streamConfigGlobalProperties.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, connectionString);
 			}
 
