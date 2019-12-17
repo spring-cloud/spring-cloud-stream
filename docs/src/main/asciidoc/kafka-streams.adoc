@@ -135,6 +135,10 @@ If you want to multiplex multiple topics into a single `KStream` binding, you ca
 
 `spring.cloud.stream.bindings.process-in-0.destination=topic-1,topic-2,topic-3`
 
+In addition, you can also provide topic patterns as destinations if you want to match topics against a regular exression.
+
+`spring.cloud.stream.bindings.process-in-0.destination=input.*`
+
 ===== Multiple Input Bindings
 
 Many non-trivial Kafka Streams applications often consume data from more than one topic through multiple bindings.
