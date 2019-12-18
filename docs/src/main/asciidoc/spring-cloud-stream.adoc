@@ -32,6 +32,8 @@ By simply adding spring-cloud-stream dependencies to the classpath of your appli
 to a message broker exposed via provided spring-cloud-stream binder (more on hat later), and you can implement your functional
 requirement that will be executed based on the incoming message using simple `java.util.function.Function`
 
+Here is the quick example:
+
 [source,java]
 ----
 @SpringBootApplication
@@ -43,30 +45,29 @@ public class SampleApplication {
 
     @Bean
 	public Function<String, String> uppercase() {
-	    return value -> {
-	        System.out.println("Received: " + value);
-	        return value.toUpperCase()
-	    };
+	    return value -> value.toUpperCase();
 	}
 }
 ----
 
+and corresponding test
+
 [source,java]
 ----
-@Test
-public void testRoutingViaExplicitEnablingAndDefinitionHeader() {
-	try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
-			TestChannelBinderConfiguration.getCompleteConfiguration(
-					SampleApplication.class)).run()) {
+@SpringBootTest(classes =  SampleApplication.class)
+@Import({TestChannelBinderConfiguration.class})
+class BootTestStreamApplicationTests {
 
-		InputDestination inputDestination = context.getBean(InputDestination.class);
-		OutputDestination outputDestination = context.getBean(OutputDestination.class);
+	@Autowired
+	private InputDestination input;
 
-		Message<byte[]> inputMessage = new GenericMessage<>("Hello".getBytes());
-		inputDestination.send(inputMessage);
+	@Autowired
+	private OutputDestination output;
 
-		Message<byte[]> outputMessage = outputDestination.receive();
-		assertThat(outputMessage.getPayload()).isEqualTo("HELLO".getBytes());
+	@Test
+	void contextLoads() {
+		input.send(new GenericMessage<byte[]>("hello".getBytes()));
+		assertThat(output.receive().getPayload()).isEqualTo("HELLO".getBytes());
 	}
 }
 ----
@@ -1336,7 +1337,7 @@ It has one method:
 
 [source, java]
 ----
-void configure(String channelName, MessageChannel channel, ProducerProperties producerProperties,
+void configure(String destinationName, MessageChannel channel, ProducerProperties producerProperties,
         T extendedProducerProperties);
 ----
 
@@ -1526,7 +1527,7 @@ The binding destination can be bound to an external message broker with a `Binde
 When invoking the `bindProducer()` method, the first parameter is the name of the destination within the broker, the second parameter is the instance if local destination to which the producer sends messages, and the third parameter contains properties (such as a partition key expression) to be used within the adapter that is created for that binding destination.
 
 A consumer is any component that receives messages from the binding destination.
-As with a producer, the consumer's channel can be bound to an external message broker.
+As with a producer, the consumer can be bound to an external message broker.
 When invoking the `bindConsumer()` method, the first parameter is the destination name, and a second parameter provides the name of a logical group of consumers.
 Each group that is represented by consumer bindings for a given destination receives a copy of each message that a producer sends to that destination (that is, it follows normal publish-subscribe semantics).
 If there are multiple consumer instances bound with the same group name, then messages are load-balanced across those consumer instances so that each message sent by a producer is consumed by only a single consumer instance within each group (that is, it follows normal queueing semantics).
@@ -1549,7 +1550,7 @@ public interface Binder<T, C extends ConsumerProperties, P extends ProducerPrope
 
 The interface is parameterized, offering a number of extension points:
 
-* Input and output bind targets. As of version 1.0, only `MessageChannel` is supported, but this is intended to be used as an extension point in the future.
+* Input and output bind targets.
 * Extended consumer and producer properties, allowing specific Binder implementations to add supplemental properties that can be supported in a type-safe manner.
 
 A typical binder implementation consists of the following:
@@ -1564,9 +1565,14 @@ kafka:\
 org.springframework.cloud.stream.binder.kafka.config.KafkaBinderConfiguration
 ----
 
+NOTE: As it was mentioned earlier Binder abstraction is also one of the extension points of the framework. So if you can't find a suitable binder in the preceding list you can implement your own binder on top of Spring Cloud Stream.
+The https://medium.com/@domenicosibilio/how-to-create-a-spring-cloud-stream-binder-from-scratch-ab8b29ee931b[How to create a Spring Cloud Stream Binder from scratch] post a community member documents
+in details with example a set of steps necessary to implement custom binder.
+
+
 === Binder Detection
 
-Spring Cloud Stream relies on implementations of the Binder SPI to perform the task of connecting channels to message brokers.
+Spring Cloud Stream relies on implementations of the Binder SPI to perform the task of connecting (binding) user code to message brokers.
 Each Binder implementation typically connects to one type of messaging system.
 
 ==== Classpath Detection
@@ -1588,7 +1594,7 @@ For the specific Maven coordinates of other binder dependencies, see the documen
 [[multiple-binders]]
 === Multiple Binders on the Classpath
 
-When multiple binders are present on the classpath, the application must indicate which binder is to be used for each channel binding.
+When multiple binders are present on the classpath, the application must indicate which binder is to be used for each destination binding.
 Each binder configuration contains a `META-INF/spring.binders` file, which is a simple properties file, as shown in the following example:
 
 [source]
@@ -1600,8 +1606,8 @@ org.springframework.cloud.stream.binder.rabbit.config.RabbitServiceAutoConfigura
 Similar files exist for the other provided binder implementations (such as Kafka), and custom binder implementations are expected to provide them as well.
 The key represents an identifying name for the binder implementation, whereas the value is a comma-separated list of configuration classes that each contain one and only one bean definition of type `org.springframework.cloud.stream.binder.Binder`.
 
-Binder selection can either be performed globally, using the `spring.cloud.stream.defaultBinder` property (for example, `spring.cloud.stream.defaultBinder=rabbit`) or individually, by configuring the binder on each channel binding.
-For instance, a processor application (that has channels named `input` and `output` for read and write respectively) that reads from Kafka and writes to RabbitMQ can specify the following configuration:
+Binder selection can either be performed globally, using the `spring.cloud.stream.defaultBinder` property (for example, `spring.cloud.stream.defaultBinder=rabbit`) or individually, by configuring the binder on each binding.
+For instance, a processor application (that has bindings named `input` and `output` for read and write respectively) that reads from Kafka and writes to RabbitMQ can specify the following configuration:
 
 [source]
 ----
@@ -1811,36 +1817,46 @@ Default: `30`
 [[binding-properties]]
 === Binding Properties
 
-Binding properties are supplied by using the format of `spring.cloud.stream.bindings.<channelName>.<property>=<value>`.
-The `<channelName>` represents the name of the channel being configured (for example, `output` for a `Source`).
+Binding properties are supplied by using the format of `spring.cloud.stream.bindings.<bindingName>.<property>=<value>`.
+The `<bindingName>` represents the name of the binding being configured.
 
-To avoid repetition, Spring Cloud Stream supports setting values for all channels, in the format of `spring.cloud.stream.default.<property>=<value>` for common binding properties, and `spring.cloud.stream.default.<producer|consumer>.<property>=<value>`.
+For example, for the following function
+[source,java]
+----
+@Bean
+public Function<String, String> uppercase() {
+	return v -> v.toUpperCase();
+}
+----
+there are two bindings named `uppercase-in-0` for input and `uppercase-out-0` for output. See <<Binding and Binding names>> for more details.
+
+To avoid repetition, Spring Cloud Stream supports setting values for all bindings, in the format of `spring.cloud.stream.default.<property>=<value>`
+and `spring.cloud.stream.default.<producer|consumer>.<property>=<value>` for common binding properties.
 
 When it comes to avoiding repetitions for extended binding properties, this format should be used - `spring.cloud.stream.<binder-type>.default.<producer|consumer>.<property>=<value>`.
-
-In what follows, we indicate where we have omitted the `spring.cloud.stream.bindings.<channelName>.` prefix and focus just on the property name, with the understanding that the prefix is included at runtime.
 
 ==== Common Binding Properties
 
 These properties are exposed via `org.springframework.cloud.stream.config.BindingProperties`
 
-The following binding properties are available for both input and output bindings and must be prefixed with `spring.cloud.stream.bindings.<channelName>.` (for example, `spring.cloud.stream.bindings.input.destination=ticktock`).
+The following binding properties are available for both input and output bindings and must be prefixed with `spring.cloud.stream.bindings.<bindingName>.`
+(for example, `spring.cloud.stream.bindings.uppercase-in-0.destination=ticktock`).
 
 Default values can be set by using the `spring.cloud.stream.default` prefix (for example`spring.cloud.stream.default.contentType=application/json`).
 
 destination::
-The target destination of a channel on the bound middleware (for example, the RabbitMQ exchange or Kafka topic).
-If the channel is bound as a consumer, it could be bound to multiple destinations, and the destination names can be specified as comma-separated `String` values.
-If not set, the channel name is used instead.
+The target destination of a binding on the bound middleware (for example, the RabbitMQ exchange or Kafka topic).
+If binding represents a consumer binding (input), it could be bound to multiple destinations, and the destination names can be specified as comma-separated `String` values.
+If not, he actual binding name is used instead.
 The default value of this property cannot be overridden.
 group::
-The consumer group of the channel.
+The consumer group of the binding.
 Applies only to inbound bindings.
 See <<consumer-groups,Consumer Groups>>.
 +
 Default: `null` (indicating an anonymous consumer).
 contentType::
-The content type of the channel.
+The content type of this binding.
 See `<<content-type-management>>`.
 +
 Default: `application/json`.
@@ -1854,7 +1870,7 @@ Default: `null` (the default binder is used, if it exists).
 
 These properties are exposed via `org.springframework.cloud.stream.binder.ConsumerProperties`
 
-The following binding properties are available for input bindings only and must be prefixed with `spring.cloud.stream.bindings.<channelName>.consumer.` (for example, `spring.cloud.stream.bindings.input.consumer.concurrency=3`).
+The following binding properties are available for input bindings only and must be prefixed with `spring.cloud.stream.bindings.<bindingName>.consumer.` (for example, `spring.cloud.stream.bindings.input.consumer.concurrency=3`).
 
 Default values can be set by using the `spring.cloud.stream.default.consumer` prefix (for example, `spring.cloud.stream.default.consumer.headerMode=none`).
 
@@ -1963,7 +1979,7 @@ public MessageSourceCustomizer<AmqpMessageSource> sourceCustomizer() {
 
 These properties are exposed via `org.springframework.cloud.stream.binder.ProducerProperties`
 
-The following binding properties are available for output bindings only and must be prefixed with `spring.cloud.stream.bindings.<channelName>.producer.` (for example, `spring.cloud.stream.bindings.input.producer.partitionKeyExpression=payload.id`).
+The following binding properties are available for output bindings only and must be prefixed with `spring.cloud.stream.bindings.<bindingName>.producer.` (for example, `spring.cloud.stream.bindings.input.producer.partitionKeyExpression=payload.id`).
 
 Default values can be set by using the prefix `spring.cloud.stream.default.producer` (for example, `spring.cloud.stream.default.producer.partitionKeyExpression=payload.id`).
 
@@ -1973,7 +1989,7 @@ Signals if this consumer needs to be started automatically
 Default: `true`.
 partitionKeyExpression::
 A SpEL expression that determines how to partition outbound data.
-If set, outbound data on this channel is partitioned. `partitionCount` must be set to a value greater than 1 to be effective.
+If set, outbound data on this binding is partitioned. `partitionCount` must be set to a value greater than 1 to be effective.
 See `<<partitioning>>`.
 +
 Default: null.
@@ -2018,11 +2034,6 @@ When this configuration is being used, the outbound message marshalling is not b
 When native encoding is used, it is the responsibility of the consumer to use an appropriate decoder (for example, the Kafka consumer value de-serializer) to deserialize the inbound message.
 Also, when native encoding and decoding is used, the `headerMode=embeddedHeaders` property is ignored and headers are not embedded in the message.
 See the consumer property `useNativeDecoding`.
-+
-Default: `false`.
-errorChannelEnabled::
-When set to `true`, if the binder supports asynchroous send results, send failures are sent to an error channel for the destination.
-See `<<spring-cloud-stream-overview-error-handling>>` for more information.
 +
 Default: `false`.
 
@@ -2219,13 +2230,13 @@ You can achieve this scenario by correlating the input and output destinations o
 
 Suppose a design calls for the Time Source application to send data to the Log Sink application. You could use a common destination named `ticktock` for bindings within both applications.
 
-Time Source (that has the channel name `output`) would set the following property:
+Time Source (that has the binding named `output`) would set the following property:
 
 ----
 spring.cloud.stream.bindings.output.destination=ticktock
 ----
 
-Log Sink (that has the channel name `input`) would set the following property:
+Log Sink (that has the binding named `input`) would set the following property:
 
 ----
 spring.cloud.stream.bindings.input.destination=ticktock
@@ -2265,7 +2276,7 @@ spring.cloud.stream.bindings.output.producer.partitionCount=5
 
 Based on that example configuration, data is sent to the target partition by using the following logic.
 
-A partition key's value is calculated for each message sent to a partitioned output channel based on the `partitionKeyExpression`.
+A partition key's value is calculated for each message sent to a partitioned output binding based on the `partitionKeyExpression`.
 The `partitionKeyExpression` is a SpEL expression that is evaluated against the outbound message for extracting the partitioning key.
 
 If a SpEL expression is not sufficient for your needs, you can instead calculate the partition key value by providing an implementation of `org.springframework.cloud.stream.binder.PartitionKeyExtractorStrategy` and configuring it as a bean (by using the `@Bean` annotation).
@@ -2306,10 +2317,11 @@ Since version 3.0, this property is removed.
 [[spring-cloud-stream-overview-configuring-input-bindings-partitioning]]
 ==== Configuring Input Bindings for Partitioning
 
-An input binding (with the channel name `input`) is configured to receive partitioned data by setting its `partitioned` property, as well as the `instanceIndex` and `instanceCount` properties on the application itself, as shown in the following example:
+An input binding (with the binding name `uppercase-in-0`) is configured to receive partitioned data by setting its `partitioned`
+property, as well as the `instanceIndex` and `instanceCount` properties on the application itself, as shown in the following example:
 
 ----
-spring.cloud.stream.bindings.input.consumer.partitioned=true
+spring.cloud.stream.bindings.uppercase-in-0.consumer.partitioned=true
 spring.cloud.stream.instanceIndex=3
 spring.cloud.stream.instanceCount=5
 ----
