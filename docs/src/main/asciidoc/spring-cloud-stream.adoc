@@ -922,6 +922,9 @@ The resulting function is bound to the input and output destinations exposed by 
 IMPORTANT: Please refer to <<Binding and Binding names>> section to understand the naming
 convention used to establish _binding names_ used by such application.
 
+For more details on interoperability of Spring Integration and Spring Cloud Stream specifically around functional programming model
+you may find https://spring.io/blog/2019/10/25/spring-cloud-stream-and-spring-integration[this post] very interesting, as it dives a bit deeper
+into various patterns you can apply by merging the best of Spring Integration and Spring Cloud Stream/Functions.
 
 ==== Annotation-based support (legacy)
 As mentioned earlier you can also use Spring Integration annotations based configuration or
