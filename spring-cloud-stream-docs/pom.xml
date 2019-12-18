@@ -6,7 +6,7 @@
 	<parent>
 		<groupId>org.springframework.cloud</groupId>
 		<artifactId>spring-cloud-build</artifactId>
-		<version>2.2.0.RELEASE</version>
+		<version>2.2.1.RELEASE</version>
 		<relativePath/>
 	</parent>
 	<artifactId>spring-cloud-stream-docs</artifactId>
@@ -15,9 +15,9 @@
 	<version>Horsham.BUILD-SNAPSHOT</version>
 	<properties>
 		<main.basedir>${basedir}/..</main.basedir>
-		<spring-cloud-stream.version>3.0.1.BUILD-SNAPSHOT</spring-cloud-stream.version>
-		<spring-cloud-stream-binder-kafka.version>3.0.1.BUILD-SNAPSHOT</spring-cloud-stream-binder-kafka.version>
-		<spring-cloud-stream-binder-rabbit.version>3.0.1.BUILD-SNAPSHOT</spring-cloud-stream-binder-rabbit.version>
+		<spring-cloud-stream.version>3.0.2.BUILD-SNAPSHOT</spring-cloud-stream.version>
+		<spring-cloud-stream-binder-kafka.version>3.0.2.BUILD-SNAPSHOT</spring-cloud-stream-binder-kafka.version>
+		<spring-cloud-stream-binder-rabbit.version>3.0.2.BUILD-SNAPSHOT</spring-cloud-stream-binder-rabbit.version>
 	</properties>
 	<dependencies>
 		<dependency>
