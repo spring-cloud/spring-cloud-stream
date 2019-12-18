@@ -593,8 +593,55 @@ Default: 1L.
 
 For example `--spring.cloud.stream.poller.fixed-delay=2000` sets the poller interval to poll every two seconds.
 
+===== Foreign event-driven sources
+
+There are cases where the actual source of data may be coming from outside system that is not a binder. For example, the
+source of the data may be a classic web endpoint. How do we bridge such source with the functional Supplier?
+
+Let's look at a simple example:
+
+[source, java]
+----
+@SpringBootApplication
+@Controller
+public class WebSourceApplication {
+
+	public static void main(String[] args) {
+		SpringApplication.run(WebSourceApplication.class);
+	}
+
+	EmitterProcessor<String> processor = EmitterProcessor.create();
+
+	@RequestMapping
+	@ResponseStatus(HttpStatus.ACCEPTED)
+	public void delegateToSupplier(@RequestBody String body) {
+		processor.onNext(body);
+	}
+
+	@Bean
+	public Supplier<Flux<String>> supplier() {
+		return () -> processor;
+	}
+}
+----
+
+Here you see a standard MVC endpoint method called `delegateToSupplier` bound to the root web context and a `Supplier` bean. Note how `Supplier` bean returns `Flux` of `Strings`.
+Yes we are benefiting from the reactive support (see <<Reactive Functions support>> for more details). Specifically
+https://projectreactor.io/docs/core/release/api/reactor/core/publisher/EmitterProcessor.html[EmitterProcessor] which effectively serves as bridge
+between the web and spring-cloud-stream.  As you can see in the endpoint method, all we do is call `onNext(..)` operation of the `EmitterProcessor`
+with the value of the HTTP request's body. From that point on the Supplier rules described earlier apply.
+
+You can now send message to spring-cloud-stream source as
+
+----
+curl -H "Content-Type: text/plain" -X POST -d "hello from the other side" http://localhost:8080/
+----
+
+And while this example demonstrates bridging web endpoint with the Supplier of data that will be fed into spring-cloud-stream framework,
+the approach can be used with other type of foreign sources.
 
 ===== Reactive Functions support
+
 
 Since _Spring Cloud Function_ is build on top of https://projectreactor.io/[Project Reactor] there isn't much you need to do
 to benefit from reactive programming model while implementing `Supplier`, `Function` or `Consumer`.
