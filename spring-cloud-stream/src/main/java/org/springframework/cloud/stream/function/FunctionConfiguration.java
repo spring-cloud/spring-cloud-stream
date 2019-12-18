@@ -109,6 +109,7 @@ import org.springframework.util.StringUtils;
  * @author Ilayaperumal Gopinathan
  * @since 2.1
  */
+@SuppressWarnings("deprecation")
 @Configuration
 @EnableConfigurationProperties(StreamFunctionProperties.class)
 @Import({ BindingBeansRegistrar.class, BinderFactoryAutoConfiguration.class })
@@ -130,7 +131,7 @@ public class FunctionConfiguration {
 			FunctionBindingRegistrar bindingHolder, BinderAwareChannelResolver dynamicDestinationResolver) {
 
 		boolean shouldCreateInitializer = bindableProxyFactories != null
-				&& (applicationContext.containsBean("output")
+				&& (applicationContext.containsBean("output") // need this to compose to existing legacy message source
 				|| ObjectUtils.isEmpty(applicationContext.getBeanNamesForAnnotation(EnableBinding.class)));
 
 		return shouldCreateInitializer
@@ -163,19 +164,16 @@ public class FunctionConfiguration {
 						// gather output content types
 						List<String> contentTypes = new ArrayList<String>();
 						Assert.isTrue(proxyFactory.getOutputs().size() == 1, "Supplier with multiple outputs is not supported at the moment.");
-						for (String outputName : proxyFactory.getOutputs()) {
-							BindingProperties bindingProperties = serviceProperties.getBindingProperties(outputName);
-							String contentType = bindingProperties.getProducer() != null && bindingProperties.getProducer().isUseNativeEncoding()
-									? null : bindingProperties.getContentType();
-							contentTypes.add(contentType);
+						String outputName  = proxyFactory.getOutputs().iterator().next();
+
+						BindingProperties bindingProperties = serviceProperties.getBindingProperties(outputName);
+						if (!(bindingProperties.getProducer() != null && bindingProperties.getProducer().isUseNativeEncoding())) {
+							contentTypes.add(bindingProperties.getContentType());
 						}
 						// obtain function wrapper with proper output content types
 						functionWrapper = functionCatalog.lookup(proxyFactory.getFunctionDefinition(), contentTypes.toArray(new String[0]));
 						Publisher<Object> beginPublishingTrigger = setupBindingTrigger(context);
 
-						//!!!!!! TEMPORARY (see assertion about multiple outputs above)
-						String outputName = proxyFactory.getOutputs().iterator().next();
-						// end temporary
 						if (!functionProperties.isComposeFrom() && !functionProperties.isComposeTo()) {
 							String integrationFlowName = proxyFactory.getFunctionDefinition() + "_integrationflow";
 							PollableBean pollable = extractPollableAnnotation(functionProperties, context, proxyFactory);
