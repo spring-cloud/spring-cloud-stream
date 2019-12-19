@@ -107,8 +107,9 @@ Spring Cloud Stream provides Binder implementations for https://github.com/sprin
 The framework also includes a test binder for integration testing of your applications as spring-cloud-stream application. See <<Testing>> section for more details.
 
 Binder abstraction is also one of the extension points of the framework, which means you can implement your own binder on top of Spring Cloud Stream.
-The https://medium.com/@domenicosibilio/how-to-create-a-spring-cloud-stream-binder-from-scratch-ab8b29ee931b[How to create a Spring Cloud Stream Binder from scratch] post a community member documents
-in details with example a set of steps necessary to implement custom binder.
+In the https://medium.com/@domenicosibilio/how-to-create-a-spring-cloud-stream-binder-from-scratch-ab8b29ee931b[How to create a Spring Cloud Stream Binder from scratch] post a community member documents
+in details, with an example, a set of steps necessary to implement a custom binder.
+The steps are also highlighted in the `<<spring-cloud-stream-overview-custom-binder-impl>>` section.
 
 Spring Cloud Stream uses Spring Boot for configuration, and the Binder abstraction makes it possible for a Spring Cloud Stream application to be flexible in how it connects to middleware.
 For example, deployers can dynamically choose, at runtime, the mapping between the external destinations (such as the Kafka topics or RabbitMQ exchanges) and inputs
@@ -1587,7 +1588,7 @@ If there are multiple consumer instances bound with the same group name, then me
 
 The Binder SPI consists of a number of interfaces, out-of-the box utility classes, and discovery strategies that provide a pluggable mechanism for connecting to external middleware.
 
-The key point of the SPI is the `Binder` interface, which is a strategy for connecting inputs and outputs to external middleware. The following listing shows the definnition of the `Binder` interface:
+The key point of the SPI is the `Binder` interface, which is a strategy for connecting inputs and outputs to external middleware. The following listing shows the definition of the `Binder` interface:
 
 [source,java]
 ----
@@ -1616,9 +1617,9 @@ org.springframework.cloud.stream.binder.kafka.config.KafkaBinderConfiguration
 ----
 
 NOTE: As it was mentioned earlier Binder abstraction is also one of the extension points of the framework. So if you can't find a suitable binder in the preceding list you can implement your own binder on top of Spring Cloud Stream.
-The https://medium.com/@domenicosibilio/how-to-create-a-spring-cloud-stream-binder-from-scratch-ab8b29ee931b[How to create a Spring Cloud Stream Binder from scratch] post a community member documents
-in details with example a set of steps necessary to implement custom binder.
-
+In the https://medium.com/@domenicosibilio/how-to-create-a-spring-cloud-stream-binder-from-scratch-ab8b29ee931b[How to create a Spring Cloud Stream Binder from scratch] post a community member documents
+in details, with an example, a set of steps necessary to implement a custom binder.
+The steps are also highlighted in the `<<spring-cloud-stream-overview-custom-binder-impl>>` section.
 
 === Binder Detection
 
@@ -1814,6 +1815,253 @@ Whether the binder configuration is a candidate for being considered a default b
 This setting allows adding binder configurations without interfering with the default processing.
 +
 Default: `true`.
+
+[[spring-cloud-stream-overview-custom-binder-impl]]
+=== Implementing Custom Binders
+
+In order to implement a custom `Binder`, all you need is to:
+
+- Add the required dependencies
+- Provide a ProvisioningProvider implementation
+- Provide a MessageProducer implementation
+- Provide a MessageHandler implementation
+- Provide a Binder implementation
+- Create a Binder Configuration
+- Define your binder in META-INF/spring.binders
+
+***Add the required dependencies***
+
+Add the `spring-cloud-stream` dependency to your project _(eg. for Maven)_:
+
+[source,xml]
+----
+<dependency>
+    <groupId>org.springframework.cloud</groupId>
+    <artifactId>spring-cloud-stream</artifactId>
+    <version>${spring.cloud.stream.version}</version>
+</dependency>
+----
+
+***Provide a ProvisioningProvider implementation***
+
+The `ProvisioningProvider` is responsible for the provisioning of consumer and producer destinations, and is required to convert the logical destinations included in the application.yml or application.properties file in physical destination references.
+
+Below an example of ProvisioningProvider implementation that simply trims the destinations provided via input/output bindings configuration:
+
+[source,java]
+----
+public class FileMessageBinderProvisioner implements ProvisioningProvider<ConsumerProperties, ProducerProperties> {
+
+    @Override
+    public ProducerDestination provisionProducerDestination(
+            final String name,
+            final ProducerProperties properties) {
+        
+        return new FileMessageDestination(name);
+    }
+
+    @Override
+    public ConsumerDestination provisionConsumerDestination(
+            final String name,
+            final String group,
+            final ConsumerProperties properties) {
+        
+        return new FileMessageDestination(name);
+    }
+
+    private class FileMessageDestination implements ProducerDestination, ConsumerDestination {
+
+        private final String destination;
+
+        private FileMessageDestination(final String destination) {
+            this.destination = destination;
+        }
+
+        @Override
+        public String getName() {
+            return destination.trim();
+        }
+
+        @Override
+        public String getNameForPartition(int partition) {
+            throw new UnsupportedOperationException("Partitioning is not implemented for file messaging.");
+        }
+        
+    }
+
+}
+----
+
+***Provide a MessageProducer implementation***
+
+The `MessageProducer` is responsible for consuming events and handling them as messages to the client application that is configured to consume such events.
+
+Here is an example of MessageProducer implementation that extends the `MessageProducerSupport` abstraction in order to poll on a file that matches the trimmed destination name and is located in the project path, while also archiving read messages and discarding consequent identical messages:
+
+[source,java]
+----
+public class FileMessageProducer extends MessageProducerSupport {
+
+    public static final String ARCHIVE = "archive.txt";
+    private final ConsumerDestination destination;
+    private String previousPayload;
+
+    public FileMessageProducer(ConsumerDestination destination) {
+        this.destination = destination;
+    }
+
+    @Override
+    public void doStart() {
+        receive();
+    }
+
+    private void receive() {
+        ScheduledExecutorService executorService = Executors.newScheduledThreadPool(1);
+
+        executorService.scheduleWithFixedDelay(() -> {
+            String payload = getPayload();
+
+            if(payload != null) {
+                Message<String> receivedMessage = MessageBuilder.withPayload(payload).build();
+                archiveMessage(payload);
+                sendMessage(receivedMessage);
+            }
+
+        }, 0, 50, MILLISECONDS);            
+    }
+
+    private String getPayload() {
+        try {
+            List<String> allLines = Files.readAllLines(Paths.get(destination.getName()));
+            String currentPayload = allLines.get(allLines.size() - 1);
+
+            if(!currentPayload.equals(previousPayload)) {
+                previousPayload = currentPayload;
+                return currentPayload;
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        return null;
+    }
+
+    private void archiveMessage(String payload) {
+        try {
+            Files.write(Paths.get(ARCHIVE), (payload + "\n").getBytes(), CREATE, APPEND);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+}
+----
+
+NOTE: When implementing a custom binder, this step is not strictly mandatory as you could always resort to using an already existing MessageProducer implementation!
+
+***Provide a MessageHandler implementation***
+
+The `MessageHandler` provides the logic required to produce an event.
+
+Here is an example of MessageHandler implementation:
+
+[source,java]
+----
+public class FileMessageHandler implements MessageHandler{
+
+    @Override
+    public void handleMessage(Message<?> message) throws MessagingException {
+        //write message to file
+    }
+
+}
+----
+
+NOTE: When implementing a custom binder, this step is not strictly mandatory as you could always resort to using an already existing MessageHandler implementation!
+
+***Provide a Binder implementation***
+
+You are now able to provide your own implementation of the `Binder` abstraction. This can be easily done by:
+
+- extending the `AbstractMessageChannelBinder` class
+- specifying your ProvisioningProvider as a generic argument of the AbstractMessageChannelBinder
+- overriding the `createProducerMessageHandler` and `createConsumerEndpoint` methods
+
+_eg.:_
+[source,java]
+----
+public class FileMessageBinder extends AbstractMessageChannelBinder<ConsumerProperties, ProducerProperties, FileMessageBinderProvisioner> {
+
+    public FileMessageBinder(
+            String[] headersToEmbed,
+            FileMessageBinderProvisioner provisioningProvider) {
+
+        super(headersToEmbed, provisioningProvider);
+    }
+
+    @Override
+    protected MessageHandler createProducerMessageHandler(
+            final ProducerDestination destination,
+            final ProducerProperties producerProperties,
+            final MessageChannel errorChannel) throws Exception {
+
+        return message -> {
+            String fileName = destination.getName();
+            String payload = new String((byte[])message.getPayload()) + "\n";
+
+            try {
+                Files.write(Paths.get(fileName), payload.getBytes(), CREATE, APPEND);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        };
+    }
+
+    @Override
+    protected MessageProducer createConsumerEndpoint(
+            final ConsumerDestination destination,
+            final String group,
+            final ConsumerProperties properties) throws Exception {
+
+        return new FileMessageProducer(destination);
+    }
+
+}
+----
+
+***Create a Binder Configuration***
+
+It is strictly required that you create a Spring Configuration to initialize the bean for your binder implementation _(and all other beans that you might need)_:
+
+[source,java]
+----
+@Configuration
+public class FileMessageBinderConfiguration {
+
+    @Bean
+    @ConditionalOnMissingBean
+    public FileMessageBinderProvisioner fileMessageBinderProvisioner() {
+        return new FileMessageBinderProvisioner();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public FileMessageBinder fileMessageBinder(FileMessageBinderProvisioner fileMessageBinderProvisioner) {
+        return new FileMessageBinder(null, fileMessageBinderProvisioner);
+    }
+
+}
+----
+
+***Define your binder in META-INF/spring.binders***
+
+Finally, you must define your binder in a `META-INF/spring.binders` file on the classpath, specifying both the name of the binder and the full qualified name of your Binder Configuration class:
+
+[source]
+----
+myFileBinder:\ 
+com.example.springcloudstreamcustombinder.config.FileMessageBinderConfiguration
+----
 
 == Configuration Options
 
@@ -2418,7 +2666,7 @@ Below is the example of the required Maven POM entries which could be easily ret
 <dependency>
     <groupId>org.springframework.cloud</groupId>
     <artifactId>spring-cloud-stream</artifactId>
-    <version>${spring.cloud.strea.version}</version>
+    <version>${spring.cloud.stream.version}</version>
     <type>test-jar</type>
     <scope>test</scope>
     <classifier>test-binder</classifier>
@@ -2740,6 +2988,7 @@ The following is the list of available binder implementations
 * https://github.com/alibaba/spring-cloud-alibaba/wiki/RocketMQ-en[Apache RocketMQ _(partner maintained)_]
 
 As it was mentioned earlier Binder abstraction is also one of the extension points of the framework. So if you can't find a suitable binder in the preceding list you can implement your own binder on top of Spring Cloud Stream.
-The https://medium.com/@domenicosibilio/how-to-create-a-spring-cloud-stream-binder-from-scratch-ab8b29ee931b[How to create a Spring Cloud Stream Binder from scratch] post a community member documents
-in details with example a set of steps necessary to implement custom binder.
+In the https://medium.com/@domenicosibilio/how-to-create-a-spring-cloud-stream-binder-from-scratch-ab8b29ee931b[How to create a Spring Cloud Stream Binder from scratch] post a community member documents
+in details, with an example, a set of steps necessary to implement a custom binder.
+The steps are also highlighted in the `<<spring-cloud-stream-overview-custom-binder-impl>>` section.
 
