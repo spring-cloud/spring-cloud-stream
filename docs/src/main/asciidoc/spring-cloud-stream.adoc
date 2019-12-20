@@ -391,7 +391,7 @@ public interface MyBinding {
 ----
 
 NOTE: The reason why `@EnableBinding` and binding interfaces are not required with functional programming model is because
-they could be derived from the type of functional interface itself. For example, _Processor = Function_, _Source = Supplierc_
+they could be derived from the type of functional interface itself. For example, _Processor = Function_, _Source = Supplier_
 and so on.
 
 
@@ -702,7 +702,7 @@ what type of use cases it is targeting?
 The above describes just a few use cases where you may need to use a single function to accept and/or produce
 multiple _streams_ of data. And that is the type of use cases we are targeting here.
 
-Also, note a slightly different emphasis on the concept of _sreams_ here. The assumption is that such functions are only valuable
+Also, note a slightly different emphasis on the concept of _streams_ here. The assumption is that such functions are only valuable
 if they are given access to the actual streams of data (not the individual elements). So for that we are relying on
 abstractions provided by https://projectreactor.io/[Project Reactor] (i.e., `Flux` and `Mono`) which is already available on the
 classpath as part of the dependencies brought in by spring-cloud-functions.
@@ -1413,7 +1413,7 @@ NOTE: If you need to support dynamic destinations with multiple binder types, us
 
 In this section we'll explain the general idea behind error handling mechanisms provided by the framework.
 We'll be using Rabbit binder as an example, since individual binders define different set
-of properties for certain supported mechanisms specific to underlying broker capabilities (such as Kafka bindre).
+of properties for certain supported mechanisms specific to underlying broker capabilities (such as Kafka binder).
 
 Errors happen, and Spring Cloud Stream provides several flexible mechanisms to deal with them. Note that the techniques are dependent on binder implementation and the
 capability of the underlying messaging middleware.
@@ -1587,7 +1587,7 @@ If there are multiple consumer instances bound with the same group name, then me
 
 The Binder SPI consists of a number of interfaces, out-of-the box utility classes, and discovery strategies that provide a pluggable mechanism for connecting to external middleware.
 
-The key point of the SPI is the `Binder` interface, which is a strategy for connecting inputs and outputs to external middleware. The following listing shows the definnition of the `Binder` interface:
+The key point of the SPI is the `Binder` interface, which is a strategy for connecting inputs and outputs to external middleware. The following listing shows the definition of the `Binder` interface:
 
 [source,java]
 ----
@@ -2418,7 +2418,7 @@ Below is the example of the required Maven POM entries which could be easily ret
 <dependency>
     <groupId>org.springframework.cloud</groupId>
     <artifactId>spring-cloud-stream</artifactId>
-    <version>${spring.cloud.strea.version}</version>
+    <version>${spring.cloud.stream.version}</version>
     <type>test-jar</type>
     <scope>test</scope>
     <classifier>test-binder</classifier>
@@ -2427,7 +2427,7 @@ Below is the example of the required Maven POM entries which could be easily ret
 
 ***Remove the dependency for `spring-cloud-stream-test-support`***
 
-To avoid conflicts with the existing test binder you must eremove the following entry
+To avoid conflicts with the existing test binder you must remove the following entry
 
 [source,xml]
 ----
@@ -2501,7 +2501,7 @@ public void sampleTest() {
 ----
 
 For cases where you have multiple bindings and/or multiple inputs and outputs, the `send()` and `receive()`
-methods of `InputDestination` and `OutputDestination` are overriden to allow you to provide index of the input and output destination.
+methods of `InputDestination` and `OutputDestination` are overridden to allow you to provide index of the input and output destination.
 
 Consider the following sample:
 [source,java]
