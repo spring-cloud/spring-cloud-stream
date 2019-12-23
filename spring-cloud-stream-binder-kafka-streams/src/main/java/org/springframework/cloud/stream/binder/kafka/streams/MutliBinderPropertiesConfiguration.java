@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.binder.kafka.streams;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaBinderConfigurationProperties;
@@ -28,6 +29,7 @@ public class MutliBinderPropertiesConfiguration {
 
 	@Bean
 	@ConfigurationProperties(prefix = "spring.cloud.stream.kafka.streams.binder")
+	@ConditionalOnBean(name = "outerContext")
 	public KafkaBinderConfigurationProperties kafkaBinderConfigurationProperties(KafkaProperties kafkaProperties) {
 		return new KafkaStreamsBinderConfigurationProperties(kafkaProperties);
 	}
