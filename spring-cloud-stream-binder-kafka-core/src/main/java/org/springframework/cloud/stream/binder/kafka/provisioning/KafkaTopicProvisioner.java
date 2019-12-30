@@ -93,6 +93,12 @@ public class KafkaTopicProvisioner implements
 
 	private RetryOperations metadataRetryOperations;
 
+	/**
+	 * Create an instance.
+	 * @param kafkaBinderConfigurationProperties the binder configuration properties.
+	 * @param kafkaProperties the boot Kafka properties used to build the
+	 * {@link AdminClient}.
+	 */
 	public KafkaTopicProvisioner(
 			KafkaBinderConfigurationProperties kafkaBinderConfigurationProperties,
 			KafkaProperties kafkaProperties) {
@@ -112,7 +118,7 @@ public class KafkaTopicProvisioner implements
 	}
 
 	@Override
-	public void afterPropertiesSet() throws Exception {
+	public void afterPropertiesSet() {
 		if (this.metadataRetryOperations == null) {
 			RetryTemplate retryTemplate = new RetryTemplate();
 
@@ -133,8 +139,8 @@ public class KafkaTopicProvisioner implements
 	public ProducerDestination provisionProducerDestination(final String name,
 			ExtendedProducerProperties<KafkaProducerProperties> properties) {
 
-		if (this.logger.isInfoEnabled()) {
-			this.logger.info("Using kafka topic for outbound: " + name);
+		if (logger.isInfoEnabled()) {
+			logger.info("Using kafka topic for outbound: " + name);
 		}
 		KafkaTopicUtils.validateTopicName(name);
 		try (AdminClient adminClient = AdminClient.create(this.adminClientProperties)) {
@@ -185,8 +191,8 @@ public class KafkaTopicProvisioner implements
 		if (properties.getExtension().isDestinationIsPattern()) {
 			Assert.isTrue(!properties.getExtension().isEnableDlq(),
 					"enableDLQ is not allowed when listening to topic patterns");
-			if (this.logger.isDebugEnabled()) {
-				this.logger.debug("Listening to a topic pattern - " + name
+			if (logger.isDebugEnabled()) {
+				logger.debug("Listening to a topic pattern - " + name
 						+ " - no provisioning performed");
 			}
 			return new KafkaConsumerDestination(name);
@@ -330,7 +336,7 @@ public class KafkaTopicProvisioner implements
 					tolerateLowerPartitionsOnBroker, properties);
 		}
 		else {
-			this.logger.info("Auto creation of topics is disabled.");
+			logger.info("Auto creation of topics is disabled.");
 		}
 	}
 
@@ -377,7 +383,7 @@ public class KafkaTopicProvisioner implements
 					partitions.all().get(this.operationTimeout, TimeUnit.SECONDS);
 				}
 				else if (tolerateLowerPartitionsOnBroker) {
-					this.logger.warn("The number of expected partitions was: "
+					logger.warn("The number of expected partitions was: "
 							+ partitionCount + ", but " + partitionSize
 							+ (partitionSize > 1 ? " have " : " has ")
 							+ "been found instead." + "There will be "
@@ -426,18 +432,18 @@ public class KafkaTopicProvisioner implements
 				catch (Exception ex) {
 					if (ex instanceof ExecutionException) {
 						if (ex.getCause() instanceof TopicExistsException) {
-							if (this.logger.isWarnEnabled()) {
-								this.logger.warn("Attempt to create topic: " + topicName
+							if (logger.isWarnEnabled()) {
+								logger.warn("Attempt to create topic: " + topicName
 										+ ". Topic already exists.");
 							}
 						}
 						else {
-							this.logger.error("Failed to create topics", ex.getCause());
+							logger.error("Failed to create topics", ex.getCause());
 							throw ex.getCause();
 						}
 					}
 					else {
-						this.logger.error("Failed to create topics", ex.getCause());
+						logger.error("Failed to create topics", ex.getCause());
 						throw ex.getCause();
 					}
 				}
@@ -446,6 +452,14 @@ public class KafkaTopicProvisioner implements
 		}
 	}
 
+	/**
+	 * Check that the topic has the expected number of partitions and return the partition information.
+	 * @param partitionCount the expected count.
+	 * @param tolerateLowerPartitionsOnBroker if false, throw an exception if there are not enough partitions.
+	 * @param callable a Callable that will provide the partition information.
+	 * @param topicName the topic./
+	 * @return the partition information.
+	 */
 	public Collection<PartitionInfo> getPartitionsForTopic(final int partitionCount,
 			final boolean tolerateLowerPartitionsOnBroker,
 			final Callable<Collection<PartitionInfo>> callable, final String topicName) {
@@ -465,7 +479,7 @@ public class KafkaTopicProvisioner implements
 					if (ex instanceof UnknownTopicOrPartitionException) {
 						throw ex;
 					}
-					this.logger.error("Failed to obtain partition information", ex);
+					logger.error("Failed to obtain partition information", ex);
 				}
 				// In some cases, the above partition query may not throw an UnknownTopic..Exception for various reasons.
 				// For that, we are forcing another query to ensure that the topic is present on the server.
@@ -492,7 +506,7 @@ public class KafkaTopicProvisioner implements
 				int partitionSize = CollectionUtils.isEmpty(partitions) ? 0 : partitions.size();
 				if (partitionSize < partitionCount) {
 					if (tolerateLowerPartitionsOnBroker) {
-						this.logger.warn("The number of expected partitions was: "
+						logger.warn("The number of expected partitions was: "
 								+ partitionCount + ", but " + partitionSize
 								+ (partitionSize > 1 ? " have " : " has ")
 								+ "been found instead." + "There will be "
@@ -510,7 +524,7 @@ public class KafkaTopicProvisioner implements
 			});
 		}
 		catch (Exception ex) {
-			this.logger.error("Cannot initialize Binder", ex);
+			logger.error("Cannot initialize Binder", ex);
 			throw new BinderException("Cannot initialize binder:", ex);
 		}
 	}
