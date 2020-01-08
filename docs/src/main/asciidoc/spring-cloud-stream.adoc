@@ -1856,7 +1856,7 @@ public class FileMessageBinderProvisioner implements ProvisioningProvider<Consum
     public ProducerDestination provisionProducerDestination(
             final String name,
             final ProducerProperties properties) {
-        
+
         return new FileMessageDestination(name);
     }
 
@@ -1865,7 +1865,7 @@ public class FileMessageBinderProvisioner implements ProvisioningProvider<Consum
             final String name,
             final String group,
             final ConsumerProperties properties) {
-        
+
         return new FileMessageDestination(name);
     }
 
@@ -1886,7 +1886,7 @@ public class FileMessageBinderProvisioner implements ProvisioningProvider<Consum
         public String getNameForPartition(int partition) {
             throw new UnsupportedOperationException("Partitioning is not implemented for file messaging.");
         }
-        
+
     }
 
 }
@@ -1927,7 +1927,7 @@ public class FileMessageProducer extends MessageProducerSupport {
                 sendMessage(receivedMessage);
             }
 
-        }, 0, 50, MILLISECONDS);            
+        }, 0, 50, MILLISECONDS);
     }
 
     private String getPayload() {
@@ -2059,7 +2059,7 @@ Finally, you must define your binder in a `META-INF/spring.binders` file on the 
 
 [source]
 ----
-myFileBinder:\ 
+myFileBinder:\
 com.example.springcloudstreamcustombinder.config.FileMessageBinderConfiguration
 ----
 
