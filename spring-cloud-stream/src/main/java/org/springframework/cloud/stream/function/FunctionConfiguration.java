@@ -406,8 +406,18 @@ public class FunctionConfiguration {
 		 */
 		private void bindOrComposeSimpleFunctions(SubscribableChannel messageChannel,
 				BindableProxyFactory bindableProxyFactory, String functionDefinition) {
-			BindingProperties properties = this.serviceProperties.getBindingProperties(((AbstractMessageChannel) messageChannel).getBeanName());
-			FunctionInvocationWrapper function = this.functionCatalog.lookup(functionDefinition, properties.getContentType());
+			String channelName = ((AbstractMessageChannel) messageChannel).getBeanName();
+			// see https://github.com/spring-cloud/spring-cloud-stream/issues/1883 for details
+			if (bindableProxyFactory instanceof BindableFunctionProxyFactory) {
+				String outputName = ((BindableFunctionProxyFactory) bindableProxyFactory).getOutputName(0);
+				if (StringUtils.hasText(outputName)) {
+					channelName = outputName;
+				}
+			}
+			BindingProperties properties = this.serviceProperties.getBindingProperties(channelName);
+			FunctionInvocationWrapper function = (properties.getProducer() != null && properties.getProducer().isUseNativeEncoding())
+					? this.functionCatalog.lookup(functionDefinition)
+							: this.functionCatalog.lookup(functionDefinition, properties.getContentType());
 
 			if (this.functionProperties.isComposeFrom()) {
 				logger.info("Composing at the head of 'output' channel");
@@ -591,7 +601,7 @@ public class FunctionConfiguration {
 		}
 		@SuppressWarnings("unchecked")
 		@Override
-		public Message<byte[]> apply(Message<byte[]> message) {
+		public Object apply(Message<byte[]> message) {
 
 			if (message != null && consumerProperties != null) {
 				Map<String, Object> headersMap = (Map<String, Object>) ReflectionUtils
@@ -604,7 +614,7 @@ public class FunctionConfiguration {
 				throw new IllegalStateException("Routing to functions that return Publisher is not supported "
 						+ "in the context of Spring Cloud Stream.");
 			}
-			return (Message<byte[]>) result;
+			return result;
 		}
 	}
 

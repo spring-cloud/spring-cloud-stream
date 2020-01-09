@@ -98,9 +98,13 @@ class BindableFunctionProxyFactory extends BindableProxyFactory {
 	}
 
 	protected String getOutputName(int index) {
-		return CollectionUtils.isEmpty(this.getOutputs())
-				? null
-						: this.getOutputs().toArray(new String[0])[index];
+		String outputName = null;
+		if (this.outputCount > 0) {
+			outputName = CollectionUtils.isEmpty(this.getOutputs())
+					? null
+							: this.getOutputs().toArray(new String[0])[index];
+		}
+		return outputName;
 	}
 
 	protected boolean isMultiple() {
