@@ -142,7 +142,7 @@ public class BindableProxyFactory extends AbstractBindableProxyFactory
 
 	@Override
 	public synchronized Object getObject() {
-		if (this.proxy == null) {
+		if (this.proxy == null && this.type != null) {
 			ProxyFactory factory = new ProxyFactory(this.type, this);
 			this.proxy = factory.getProxy();
 		}
