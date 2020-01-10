@@ -36,6 +36,8 @@ import org.springframework.cloud.stream.reflection.GenericsUtils;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ApplicationContextInitializer;
+import org.springframework.context.ApplicationEvent;
+import org.springframework.context.ApplicationListener;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.MapPropertySource;
@@ -272,6 +274,16 @@ public class DefaultBinderFactory
 					&& this.context != null;
 			if (useApplicationContextAsParent) {
 				springApplicationBuilder.parent(this.context);
+			}
+			else {
+				springApplicationBuilder.listeners(new ApplicationListener<ApplicationEvent>() {
+					@Override
+					public void onApplicationEvent(ApplicationEvent event) {
+						if (context != null) {
+							context.publishEvent(event);
+						}
+					}
+				});
 			}
 			// If the current application context is not set as parent and the environment
 			// is set,
