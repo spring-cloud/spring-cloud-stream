@@ -143,6 +143,7 @@ import org.springframework.util.concurrent.ListenableFutureCallback;
  * @author Soby Chacko
  * @author Henryk Konsek
  * @author Doug Saus
+ * @author Lukasz Kaminski
  */
 public class KafkaMessageChannelBinder extends
 		// @checkstyle:off
@@ -594,6 +595,7 @@ public class KafkaMessageChannelBinder extends
 			concurrency = extendedConsumerProperties.getConcurrency();
 		}
 		resetOffsetsForAutoRebalance(extendedConsumerProperties, consumerFactory, containerProperties);
+		containerProperties.setAuthorizationExceptionRetryInterval(this.configurationProperties.getAuthorizationExceptionRetryInterval());
 		@SuppressWarnings("rawtypes")
 		final ConcurrentMessageListenerContainer<?, ?> messageListenerContainer = new ConcurrentMessageListenerContainer(
 				consumerFactory, containerProperties) {

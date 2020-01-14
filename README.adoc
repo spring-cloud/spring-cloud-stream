@@ -159,6 +159,13 @@ Use this, for example, if you wish to customize the trusted packages in a `Defau
 +
 Default: none.
 
+spring.cloud.stream.kafka.binder.authorizationExceptionRetryInterval::
+Enables retrying in case of authorization exceptions.
+Defines interval between each retry.
+Accepts `Duration`, e.g. `30s`, `2m`, etc.
++
+Default: `null` (retries disabled, fail fast)
+
 [[kafka-consumer-properties]]
 ==== Kafka Consumer Properties
 

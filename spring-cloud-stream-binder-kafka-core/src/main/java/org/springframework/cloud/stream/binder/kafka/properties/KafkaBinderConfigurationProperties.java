@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.binder.kafka.properties;
 
+import java.time.Duration;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -51,6 +52,7 @@ import org.springframework.util.StringUtils;
  * @author Gary Russell
  * @author Rafal Zukowski
  * @author Aldo Sinanaj
+ * @author Lukasz Kaminski
  */
 @ConfigurationProperties(prefix = "spring.cloud.stream.kafka.binder")
 public class KafkaBinderConfigurationProperties {
@@ -106,6 +108,13 @@ public class KafkaBinderConfigurationProperties {
 	 * {@link org.springframework.kafka.support.DefaultKafkaHeaderMapper}.
 	 */
 	private String headerMapperBeanName;
+
+	/**
+	 * Time between retries after AuthorizationException is caught in
+	 * the ListenerContainer; defalt is null which disables retries.
+	 * For more info see: {@link org.springframework.kafka.listener.ConsumerProperties#setAuthorizationExceptionRetryInterval(java.time.Duration)}
+	 */
+	private Duration authorizationExceptionRetryInterval;
 
 	public KafkaBinderConfigurationProperties(KafkaProperties kafkaProperties) {
 		Assert.notNull(kafkaProperties, "'kafkaProperties' cannot be null");
@@ -344,6 +353,14 @@ public class KafkaBinderConfigurationProperties {
 
 	public void setHeaderMapperBeanName(String headerMapperBeanName) {
 		this.headerMapperBeanName = headerMapperBeanName;
+	}
+
+	public Duration getAuthorizationExceptionRetryInterval() {
+		return authorizationExceptionRetryInterval;
+	}
+
+	public void setAuthorizationExceptionRetryInterval(Duration authorizationExceptionRetryInterval) {
+		this.authorizationExceptionRetryInterval = authorizationExceptionRetryInterval;
 	}
 
 	/**
