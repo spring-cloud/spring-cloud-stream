@@ -20,6 +20,7 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.actuate.autoconfigure.endpoint.EndpointAutoConfiguration;
+import org.springframework.boot.actuate.autoconfigure.endpoint.condition.ConditionalOnAvailableEndpoint;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -44,6 +45,7 @@ public class ChannelsEndpointAutoConfiguration {
 	private List<Bindable> adapters;
 
 	@Bean
+	@ConditionalOnAvailableEndpoint
 	public ChannelsEndpoint channelsEndpoint(BindingServiceProperties properties) {
 		return new ChannelsEndpoint(this.adapters, properties);
 	}

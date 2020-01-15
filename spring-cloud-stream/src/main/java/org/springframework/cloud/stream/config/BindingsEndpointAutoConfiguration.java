@@ -19,6 +19,7 @@ package org.springframework.cloud.stream.config;
 import java.util.List;
 
 import org.springframework.boot.actuate.autoconfigure.endpoint.EndpointAutoConfiguration;
+import org.springframework.boot.actuate.autoconfigure.endpoint.condition.ConditionalOnAvailableEndpoint;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -41,6 +42,7 @@ import org.springframework.context.annotation.Configuration;
 public class BindingsEndpointAutoConfiguration {
 
 	@Bean
+	@ConditionalOnAvailableEndpoint
 	public BindingsEndpoint bindingsEndpoint(List<InputBindingLifecycle> inputBindings,
 			List<OutputBindingLifecycle> outputBindings) {
 		return new BindingsEndpoint(inputBindings, outputBindings);
