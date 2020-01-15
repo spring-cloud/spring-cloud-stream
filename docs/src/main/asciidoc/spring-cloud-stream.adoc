@@ -527,19 +527,20 @@ Consider a different sample:
 @SpringBootApplication
 public static class SupplierConfiguration {
 
-	@Bean
-	public Supplier<Flux<String>> stringSupplier() {
-		return () -> Flux.from(emitter -> {
-			while (true) {
-				try {
-					emitter.onNext("Hello from Supplier");
-					Thread.sleep(1000);
-				} catch (Exception e) {
-					// ignore
-				}
-			}
-		});
-	}
+    @Bean
+    public Supplier<Flux<String>> stringSupplier() {
+        return () -> Flux.fromStream(Stream.generate(new Supplier<String>() {
+            @Override
+            public String get() {
+                try {
+                    Thread.sleep(1000);
+                    return "Hello from Supplier";
+                } catch (Exception e) {
+                    // ignore
+                }
+            }
+        })).subscribeOn(Schedulers.elastic()).share();
+    }
 }
 ----
 

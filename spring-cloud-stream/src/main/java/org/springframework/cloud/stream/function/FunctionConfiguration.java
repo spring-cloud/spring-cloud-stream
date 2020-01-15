@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2019 the original author or authors.
+ * Copyright 2018-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package org.springframework.cloud.stream.function;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -27,18 +26,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.stream.Stream;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.MonoSink;
 import reactor.util.function.Tuples;
+
 
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
@@ -95,7 +92,6 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.SubscribableChannel;
-import org.springframework.messaging.support.ErrorMessage;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
@@ -135,7 +131,7 @@ public class FunctionConfiguration {
 				|| ObjectUtils.isEmpty(applicationContext.getBeanNamesForAnnotation(EnableBinding.class)));
 
 		return shouldCreateInitializer
-				? new FunctionChannelBindingInitializer(functionCatalog, functionProperties, bindableProxyFactories,
+				? new FunctionToDestinationBinder(functionCatalog, functionProperties, bindableProxyFactories,
 						serviceProperties, dynamicDestinationResolver)
 						: null;
 
@@ -281,189 +277,130 @@ public class FunctionConfiguration {
 						: MessageBuilder.withPayload(value).build();
 	}
 
-	/*
-	 * Binding initializer responsible only for Functions and Consumers.
-	 */
-	private static class FunctionChannelBindingInitializer implements InitializingBean, ApplicationContextAware {
+	private static class FunctionToDestinationBinder implements InitializingBean, ApplicationContextAware {
 
-		private static Log logger = LogFactory.getLog(FunctionChannelBindingInitializer.class);
+		private GenericApplicationContext applicationContext;
+
+		private final BindableProxyFactory[] bindableProxyFactories;
 
 		private final FunctionCatalog functionCatalog;
 
 		private final StreamFunctionProperties functionProperties;
 
-		private final BindableProxyFactory[] bindableProxyFactories;
-
 		private final BindingServiceProperties serviceProperties;
 
 		private final BinderAwareChannelResolver dynamicDestinationResolver;
 
-		private GenericApplicationContext context;
-
-
-		FunctionChannelBindingInitializer(FunctionCatalog functionCatalog, StreamFunctionProperties functionProperties,
+		FunctionToDestinationBinder(FunctionCatalog functionCatalog, StreamFunctionProperties functionProperties,
 				BindableProxyFactory[] bindableProxyFactories, BindingServiceProperties serviceProperties,
 				BinderAwareChannelResolver dynamicDestinationResolver) {
+			this.bindableProxyFactories = bindableProxyFactories;
 			this.functionCatalog = functionCatalog;
 			this.functionProperties = functionProperties;
-			this.bindableProxyFactories = bindableProxyFactories;
 			this.serviceProperties = serviceProperties;
 			this.dynamicDestinationResolver = dynamicDestinationResolver;
 		}
 
 		@Override
-		public void afterPropertiesSet() throws Exception {
-			Stream.of(this.bindableProxyFactories).forEach(bindableProxyFactory -> {
-				String functionDefinition = getFunctionDefinition(bindableProxyFactory);
-				FunctionInvocationWrapper function = functionCatalog.lookup(functionDefinition);
-				if (function != null && !function.isSupplier()) {
-					if (isMultipleInputOutput(bindableProxyFactory)) {
-						this.bindMultipleArgumentsFunction(bindableProxyFactory, functionDefinition);
-					}
-					else {
-						SubscribableChannel messageChannel = this.determineChannelToSubscribeTo(bindableProxyFactory);
-						if (messageChannel != null) {
-							this.bindOrComposeSimpleFunctions(messageChannel, bindableProxyFactory, functionDefinition);
-						}
-					}
-				}
-			});
+		public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+			this.applicationContext = (GenericApplicationContext) applicationContext;
 		}
 
 		@Override
-		public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-			this.context = (GenericApplicationContext) applicationContext;
-		}
-
-		private String getFunctionDefinition(BindableProxyFactory bindableProxyFactory) {
-			return bindableProxyFactory instanceof BindableFunctionProxyFactory
-					? ((BindableFunctionProxyFactory) bindableProxyFactory).getFunctionDefinition()
-							: this.functionProperties.getDefinition();
-		}
-
-		private SubscribableChannel determineChannelToSubscribeTo(BindableProxyFactory bindableProxyFactory) {
-			SubscribableChannel messageChannel = null;
-			if (bindableProxyFactory instanceof BindableFunctionProxyFactory) {
-				String channelName = ((BindableFunctionProxyFactory) bindableProxyFactory).getInputName(0);
-				messageChannel = this.context.getBean(channelName, SubscribableChannel.class);
-			}
-			else {
-				if (this.context.containsBean("input")) {
-					logger.info("@EnableBinding way of defining channels is not supported by functions, so 'input' "
-							+ "channel will not be bound to any existing function beans. You may safely ignore this "
-							+ "message if that was not your intention otherwise, please remove @EnableBinding annotation.");
-				}
-				if (this.context.containsBean("output")) { // need this to compose to existing sources
-					messageChannel = this.context.getBean("output", SubscribableChannel.class);
+		public void afterPropertiesSet() throws Exception {
+			for (BindableProxyFactory bindableProxyFactory : this.bindableProxyFactories) {
+				String functionDefinition = bindableProxyFactory instanceof BindableFunctionProxyFactory
+						? ((BindableFunctionProxyFactory) bindableProxyFactory).getFunctionDefinition()
+								: this.functionProperties.getDefinition();
+				FunctionInvocationWrapper function = functionCatalog.lookup(functionDefinition);
+				if (function != null && !function.isSupplier()) {
+					this.bindFunctionToDestinations(bindableProxyFactory, functionDefinition);
 				}
 			}
-			return messageChannel;
 		}
 
-		@SuppressWarnings({ "unchecked", "rawtypes" })
-		private void bindMultipleArgumentsFunction(BindableProxyFactory bindableProxyFactory, String functionDefinition) {
-			Assert.isTrue(!functionProperties.isComposeTo() && !functionProperties.isComposeFrom(),
-					"Composing to/from existing Sinks and Sources are not supported for functions with multiple arguments.");
+		@SuppressWarnings({ "rawtypes", "unchecked" })
+		private void bindFunctionToDestinations(BindableProxyFactory bindableProxyFactory, String functionDefinition) {
+			this.assertBindingIsPossible(bindableProxyFactory);
 
-			BindableFunctionProxyFactory functionProxyFactory = (BindableFunctionProxyFactory) bindableProxyFactory;
-			Set<String> inputBindingNames = functionProxyFactory.getInputs();
-			Set<String> outputBindingNames = functionProxyFactory.getOutputs();
+			Set<String> inputBindingNames = bindableProxyFactory.getInputs();
+			Set<String> outputBindingNames = bindableProxyFactory.getOutputs();
 
 			String[] outputContentTypes = outputBindingNames.stream()
 					.map(bindingName -> this.serviceProperties.getBindings().get(bindingName).getContentType())
 					.toArray(String[]::new);
 
 			FunctionInvocationWrapper function = this.functionCatalog.lookup(functionDefinition, outputContentTypes);
-
-			if (isMultipleInputOutput(bindableProxyFactory)) {
-				this.assertSupportedSignatures(function.getFunctionType());
-			}
-
-			Publisher[] inputPublishers = inputBindingNames.stream().map(inputBindingName -> {
-				SubscribableChannel inputChannel = this.context.getBean(inputBindingName, SubscribableChannel.class);
-				return MessageChannelReactiveUtils.toPublisher(inputChannel);
-			}).toArray(Publisher[]::new);
-
-
-			Object resultPublishers = function.apply(inputPublishers.length == 1 ? inputPublishers[0] : Tuples.fromArray(inputPublishers));
-			if (resultPublishers instanceof Iterable) {
-				Iterator<String> outputBindingIter = outputBindingNames.iterator();
-				((Iterable) resultPublishers).forEach(publisher -> {
-					MessageChannel outputChannel = this.context.getBean(outputBindingIter.next(), MessageChannel.class);
-					Flux.from((Publisher) publisher).doOnNext(message -> outputChannel.send((Message) message)).subscribe();
-				});
-			}
-			else {
-				outputBindingNames.stream().forEach(outputBindingName -> {
-					MessageChannel outputChannel = this.context.getBean(outputBindingName, MessageChannel.class);
-					Flux.from((Publisher) resultPublishers).doOnNext(message -> outputChannel.send((Message) message)).subscribe();
-				});
-			}
-		}
-
-		/*
-		 * Will either bind function to destination or compose it to the existing flow
-		 */
-		private void bindOrComposeSimpleFunctions(SubscribableChannel messageChannel,
-				BindableProxyFactory bindableProxyFactory, String functionDefinition) {
-			String channelName = ((AbstractMessageChannel) messageChannel).getBeanName();
-			// see https://github.com/spring-cloud/spring-cloud-stream/issues/1883 for details
-			if (bindableProxyFactory instanceof BindableFunctionProxyFactory) {
-				String outputName = ((BindableFunctionProxyFactory) bindableProxyFactory).getOutputName(0);
-				if (StringUtils.hasText(outputName)) {
-					channelName = outputName;
-				}
-			}
-			BindingProperties properties = this.serviceProperties.getBindingProperties(channelName);
-			FunctionInvocationWrapper function = (properties.getProducer() != null && properties.getProducer().isUseNativeEncoding())
-					? this.functionCatalog.lookup(functionDefinition)
-							: this.functionCatalog.lookup(functionDefinition, properties.getContentType());
-
-			if (this.functionProperties.isComposeFrom()) {
-				logger.info("Composing at the head of 'output' channel");
-				this.composeSimpleFunctionToExistingFlow(function, messageChannel, bindableProxyFactory);
-			}
-			else {
-				this.bindSimpleFunctions(function, messageChannel, bindableProxyFactory);
-			}
-		}
-
-		private void composeSimpleFunctionToExistingFlow(FunctionInvocationWrapper function, SubscribableChannel outputChannel,
-				BindableProxyFactory bindableProxyFactory) {
-			String outputChannelName = ((AbstractMessageChannel) outputChannel).getBeanName();
-			ServiceActivatingHandler handler = createFunctionHandler(function, null, outputChannelName);
-
-			DirectWithAttributesChannel newOutputChannel = new DirectWithAttributesChannel();
-			newOutputChannel.setAttribute("type", "output");
-			newOutputChannel.setComponentName("output.extended");
-			this.context.registerBean("output.extended", MessageChannel.class, () -> newOutputChannel);
-			bindableProxyFactory.replaceOutputChannel(outputChannelName, "output.extended", newOutputChannel);
-
-			handler.setOutputChannelName("output.extended");
-			outputChannel.subscribe(handler);
-		}
-
-		private void bindSimpleFunctions(FunctionInvocationWrapper function, SubscribableChannel inputChannel, BindableProxyFactory bindableProxyFactory) {
 			Type functionType = function.getFunctionType();
-			String outputChannelName = bindableProxyFactory instanceof BindableFunctionProxyFactory
-					? ((BindableFunctionProxyFactory) bindableProxyFactory).getOutputName(0)
-							: (FunctionTypeUtils.isConsumer(functionType) ? null : "output");
+			this.assertSupportedSignatures(bindableProxyFactory, functionType);
 
-			if (FunctionTypeUtils.isReactive(FunctionTypeUtils.getInputType(functionType, 0)) && StringUtils.hasText(outputChannelName)) {
-				MessageChannel outputChannel = context.getBean(outputChannelName, MessageChannel.class);
-
-
-				Publisher<Message<Object>> publisher = MessageChannelReactiveUtils.toPublisher(inputChannel);
-				String bindingName = ((DirectWithAttributesChannel) inputChannel).getBeanName();
-				this.subscribeToInput(function, bindingName, publisher, message -> outputChannel.send((Message<?>) message));
+			if (isReactiveOrMultipleInputOutput(bindableProxyFactory, functionType)) {
+				Publisher[] inputPublishers = inputBindingNames.stream().map(inputBindingName -> {
+					SubscribableChannel inputChannel = this.applicationContext.getBean(inputBindingName, SubscribableChannel.class);
+					return MessageChannelReactiveUtils.toPublisher(inputChannel);
+				}).toArray(Publisher[]::new);
+				Object resultPublishers = function.apply(inputPublishers.length == 1 ? inputPublishers[0] : Tuples.fromArray(inputPublishers));
+				if (resultPublishers instanceof Iterable) {
+					Iterator<String> outputBindingIter = outputBindingNames.iterator();
+					((Iterable) resultPublishers).forEach(publisher -> {
+						MessageChannel outputChannel = this.applicationContext.getBean(outputBindingIter.next(), MessageChannel.class);
+						Flux.from((Publisher) publisher).doOnNext(message -> outputChannel.send((Message) message)).subscribe();
+					});
+				}
+				else {
+					outputBindingNames.stream().forEach(outputBindingName -> {
+						MessageChannel outputChannel = this.applicationContext.getBean(outputBindingName, MessageChannel.class);
+						Flux.from((Publisher) resultPublishers).doOnNext(message -> outputChannel.send((Message) message)).subscribe();
+					});
+				}
 			}
 			else {
-				String inputChannelName = ((AbstractMessageChannel) inputChannel).getBeanName();
-				ServiceActivatingHandler handler = createFunctionHandler(function, inputChannelName, outputChannelName);
-				if (!FunctionTypeUtils.isConsumer(functionType)) {
-					handler.setOutputChannelName(outputChannelName);
+				String outputDestinationName = this.determineOutputDestinationName(0, bindableProxyFactory, functionType);
+				this.adjustFunctionForNativeEncodingIfNecessary(outputDestinationName, function, 0);
+				if (this.functionProperties.isComposeFrom()) {
+					SubscribableChannel outputChannel = this.applicationContext.getBean(outputDestinationName, SubscribableChannel.class);
+					//logger.info("Composing at the head of 'output' channel");
+					String outputChannelName = ((AbstractMessageChannel) outputChannel).getBeanName();
+					ServiceActivatingHandler handler = createFunctionHandler(function, null, outputChannelName);
+
+					DirectWithAttributesChannel newOutputChannel = new DirectWithAttributesChannel();
+					newOutputChannel.setAttribute("type", "output");
+					newOutputChannel.setComponentName("output.extended");
+					this.applicationContext.registerBean("output.extended", MessageChannel.class, () -> newOutputChannel);
+					bindableProxyFactory.replaceOutputChannel(outputChannelName, "output.extended", newOutputChannel);
+
+					handler.setOutputChannelName("output.extended");
+					outputChannel.subscribe(handler);
 				}
-				inputChannel.subscribe(handler);
+				else {
+					String inputDestinationName = inputBindingNames.iterator().next();
+					//this.adjustFunctionForNativeEncodingIfNecessary();
+					ServiceActivatingHandler handler = createFunctionHandler(function, inputDestinationName, outputDestinationName);
+					if (!FunctionTypeUtils.isConsumer(function.getFunctionType())) {
+						handler.setOutputChannelName(outputDestinationName);
+					}
+					SubscribableChannel inputChannel = this.applicationContext.getBean(inputDestinationName, SubscribableChannel.class);
+					inputChannel.subscribe(handler);
+				}
+			}
+		}
+
+		private void adjustFunctionForNativeEncodingIfNecessary(String outputDestinationName, FunctionInvocationWrapper function, int index) {
+			if (function.isConsumer()) {
+				return;
+			}
+			BindingProperties properties = this.serviceProperties.getBindingProperties(outputDestinationName);
+			if (properties.getProducer() != null && properties.getProducer().isUseNativeEncoding()) {
+				Field acceptedOutputMimeTypesField = ReflectionUtils
+						.findField(FunctionInvocationWrapper.class, "acceptedOutputMimeTypes", String[].class);
+				acceptedOutputMimeTypesField.setAccessible(true);
+				try {
+					String[] acceptedOutputMimeTypes = (String[]) acceptedOutputMimeTypesField.get(function);
+					acceptedOutputMimeTypes[index] = "";
+				}
+				catch (Exception e) {
+					// ignore
+				}
 			}
 		}
 
@@ -476,6 +413,7 @@ public class FunctionConfiguration {
 					? this.serviceProperties.getBindingProperties(outputChannelName).getProducer()
 							: null;
 			ServiceActivatingHandler handler = new ServiceActivatingHandler(new FunctionWrapper(function, consumerProperties, producerProperties)) {
+				@Override
 				protected void sendOutputs(Object result, Message<?> requestMessage) {
 					if (result instanceof Message && ((Message<?>) result).getHeaders().get("spring.cloud.stream.sendto.destination") != null) {
 						String destinationName = (String) ((Message<?>) result).getHeaders().get("spring.cloud.stream.sendto.destination");
@@ -490,88 +428,65 @@ public class FunctionConfiguration {
 					}
 				}
 			};
-			handler.setBeanFactory(this.context);
+			handler.setBeanFactory(this.applicationContext);
 			handler.afterPropertiesSet();
 			return handler;
 		}
 
-		@SuppressWarnings({ "unchecked", "rawtypes" })
-		private void subscribeToInput(Function function, String bindingName,  Publisher publisher, Consumer<Message> outputProcessor) {
-
-			Flux<Message> inputPublisher = Flux.from(publisher);
-
-			AtomicReference<Message<Object>> originalMessageRef = new AtomicReference<>();
-			AtomicReference<ConsumerProperties> consumerPropertiesRef = new AtomicReference<>();
-			AtomicReference<MessageChannel> bindingErrorChannelRef = new AtomicReference<>(context.getBean("nullChannel", MessageChannel.class));
-
-			Flux<Message> result = inputPublisher
-					.switchOnFirst((x, message) -> {
-						consumerPropertiesRef.set(this.serviceProperties.getBindings().get(bindingName).getConsumer());
-						String destination = serviceProperties.getBindings().get(bindingName).getDestination();
-						String group = serviceProperties.getBindings().get(bindingName).getGroup();
-						String bindingErrorChannelName = destination + "." + group + ".errors";
-						if (context.containsBean(bindingErrorChannelName)) {
-							bindingErrorChannelRef.set(context.getBean(bindingErrorChannelName, MessageChannel.class));
-						}
-						return message;
-					})
-					.concatMap(message -> {
-						return Flux.just(message).doOnNext(originalMessageRef::set)
-								.transform((Function<Flux<Message>, Flux<Message>>) function)
-								.retryBackoff(consumerPropertiesRef.get().getMaxAttempts(),
-										Duration.ofMillis(consumerPropertiesRef.get().getBackOffInitialInterval()),
-										Duration.ofMillis(consumerPropertiesRef.get().getBackOffMaxInterval()))
-								.onErrorResume(e -> {
-									bindingErrorChannelRef.get()
-										.send(new ErrorMessage((Throwable) e, originalMessageRef.get().getHeaders(), originalMessageRef.get()));
-									return Mono.empty();
-								});
-					});
-
-			subscribeToOutput(outputProcessor, result).subscribe();
+		private boolean isReactiveOrMultipleInputOutput(BindableProxyFactory bindableProxyFactory, Type functionType) {
+			return isMultipleInputOutput(bindableProxyFactory)
+					|| (FunctionTypeUtils.isReactive(FunctionTypeUtils.getInputType(functionType, 0))
+							&& StringUtils.hasText(this.determineOutputDestinationName(0, bindableProxyFactory, functionType)));
 		}
 
-		@SuppressWarnings("rawtypes")
-		private Mono<Void> subscribeToOutput(Consumer<Message> outputProcessor, Flux<Message> resultPublisher) {
-			Flux<Message> output = outputProcessor == null
-					? resultPublisher
-							: resultPublisher.doOnNext(outputProcessor);
-			return output.then();
+		private String determineOutputDestinationName(int index, BindableProxyFactory bindableProxyFactory, Type functionType) {
+			String outputDestinationName = bindableProxyFactory instanceof BindableFunctionProxyFactory
+					? ((BindableFunctionProxyFactory) bindableProxyFactory).getOutputName(index)
+							: (FunctionTypeUtils.isConsumer(functionType) ? null : "output");
+			return outputDestinationName;
 		}
 
-		private void assertSupportedSignatures(Type functionType) {
-			Assert.isTrue(!FunctionTypeUtils.isConsumer(functionType),
-					"Function '" + functionProperties.getDefinition() + "' is a Consumer which is not supported "
-							+ "for multi-in/out reactive streams. Only Functions are supported");
-			Assert.isTrue(!FunctionTypeUtils.isSupplier(functionType),
-					"Function '" + functionProperties.getDefinition() + "' is a Supplier which is not supported "
-							+ "for multi-in/out reactive streams. Only Functions are supported");
-			Assert.isTrue(!FunctionTypeUtils.isInputArray(functionType) && !FunctionTypeUtils.isOutputArray(functionType),
-					"Function '" + functionProperties.getDefinition() + "' has the following signature: ["
-					+ functionType + "]. Your input and/or outout lacks arity and therefore we "
-							+ "can not determine how many input/output destinations are required in the context of "
-							+ "function input/output binding.");
-
-			int inputCount = FunctionTypeUtils.getInputCount(functionType);
-			for (int i = 0; i < inputCount; i++) {
-				Assert.isTrue(FunctionTypeUtils.isReactive(FunctionTypeUtils.getInputType(functionType, i)),
-						"Function '" + functionProperties.getDefinition() + "' has the following signature: ["
-								+ functionType + "]. Non-reactive functions with multiple "
-								+ "inputs/outputs are not supported in the context of Spring Cloud Stream.");
+		private void assertBindingIsPossible(BindableProxyFactory bindableProxyFactory) {
+			if (this.isMultipleInputOutput(bindableProxyFactory)) {
+				Assert.isTrue(!functionProperties.isComposeTo() && !functionProperties.isComposeFrom(),
+						"Composing to/from existing Sinks and Sources are not supported for functions with multiple arguments.");
 			}
-			int outputCount = FunctionTypeUtils.getOutputCount(functionType);
-			for (int i = 0; i < outputCount; i++) {
-				Assert.isTrue(FunctionTypeUtils.isReactive(FunctionTypeUtils.getInputType(functionType, i)),
-						"Function '" + functionProperties.getDefinition() + "' has the following signature: ["
-								+ functionType + "]. Non-reactive functions with multiple "
-								+ "inputs/outputs are not supported in the context of Spring Cloud Stream.");
-			}
-
 		}
 
 		private boolean isMultipleInputOutput(BindableProxyFactory bindableProxyFactory) {
 			return bindableProxyFactory instanceof BindableFunctionProxyFactory
 					&& ((BindableFunctionProxyFactory) bindableProxyFactory).isMultiple();
+		}
+
+		private void assertSupportedSignatures(BindableProxyFactory bindableProxyFactory, Type functionType) {
+			if (this.isMultipleInputOutput(bindableProxyFactory)) {
+				Assert.isTrue(!FunctionTypeUtils.isConsumer(functionType),
+						"Function '" + functionProperties.getDefinition() + "' is a Consumer which is not supported "
+								+ "for multi-in/out reactive streams. Only Functions are supported");
+				Assert.isTrue(!FunctionTypeUtils.isSupplier(functionType),
+						"Function '" + functionProperties.getDefinition() + "' is a Supplier which is not supported "
+								+ "for multi-in/out reactive streams. Only Functions are supported");
+				Assert.isTrue(!FunctionTypeUtils.isInputArray(functionType) && !FunctionTypeUtils.isOutputArray(functionType),
+						"Function '" + functionProperties.getDefinition() + "' has the following signature: ["
+						+ functionType + "]. Your input and/or outout lacks arity and therefore we "
+								+ "can not determine how many input/output destinations are required in the context of "
+								+ "function input/output binding.");
+
+				int inputCount = FunctionTypeUtils.getInputCount(functionType);
+				for (int i = 0; i < inputCount; i++) {
+					Assert.isTrue(FunctionTypeUtils.isReactive(FunctionTypeUtils.getInputType(functionType, i)),
+							"Function '" + functionProperties.getDefinition() + "' has the following signature: ["
+									+ functionType + "]. Non-reactive functions with multiple "
+									+ "inputs/outputs are not supported in the context of Spring Cloud Stream.");
+				}
+				int outputCount = FunctionTypeUtils.getOutputCount(functionType);
+				for (int i = 0; i < outputCount; i++) {
+					Assert.isTrue(FunctionTypeUtils.isReactive(FunctionTypeUtils.getInputType(functionType, i)),
+							"Function '" + functionProperties.getDefinition() + "' has the following signature: ["
+									+ functionType + "]. Non-reactive functions with multiple "
+									+ "inputs/outputs are not supported in the context of Spring Cloud Stream.");
+				}
+			}
 		}
 
 	}

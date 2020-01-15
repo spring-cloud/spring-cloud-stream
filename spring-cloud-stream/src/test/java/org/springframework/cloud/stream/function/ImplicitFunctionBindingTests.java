@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2019 the original author or authors.
+ * Copyright 2019-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.io.Serializable;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+
 
 import org.junit.After;
 import org.junit.Test;
@@ -98,6 +99,30 @@ public class ImplicitFunctionBindingTests {
 			Message<byte[]> outputMessage = outputDestination.receive();
 			assertThat(outputMessage.getPayload()).isEqualTo("Hello".getBytes());
 
+		}
+	}
+
+	@SuppressWarnings("rawtypes")
+	@Test
+	public void testFunctionWithUseNativeEncoding() {
+
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+				TestChannelBinderConfiguration.getCompleteConfiguration(
+						NoEnableBindingConfiguration.class))
+								.web(WebApplicationType.NONE)
+								.run("--spring.jmx.enabled=false",
+										"--spring.cloud.function.definition=func",
+										"--spring.cloud.stream.bindings.func-out-0.producer.useNativeEncoding=true")) {
+
+			InputDestination inputDestination = context.getBean(InputDestination.class);
+			OutputDestination outputDestination = context
+					.getBean(OutputDestination.class);
+
+			Message<byte[]> inputMessage = MessageBuilder
+					.withPayload("Hello".getBytes()).build();
+			inputDestination.send(inputMessage);
+			Message outputMessage = outputDestination.receive();
+			assertThat(outputMessage.getPayload()).isEqualTo("Hello");
 		}
 	}
 
