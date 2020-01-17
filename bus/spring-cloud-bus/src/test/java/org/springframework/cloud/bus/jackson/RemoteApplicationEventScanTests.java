@@ -39,6 +39,7 @@ import org.springframework.cloud.bus.jackson.SubtypeModuleTests.AnotherRemoteApp
 import org.springframework.cloud.bus.jackson.SubtypeModuleTests.MyRemoteApplicationEvent;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -149,9 +150,15 @@ public class RemoteApplicationEventScanTests {
 	}
 
 	@Configuration(proxyBeanMethods = false)
-	@RemoteApplicationEventScan(
-			basePackages = { "com.acme", "test.foo.bar", "fizz.buzz" })
+	@Import(ExtraBasePackagesConfig.class)
+	@RemoteApplicationEventScan(basePackages = { "com.acme", "test.foo.bar" })
 	static class BasePackagesConfig {
+
+	}
+
+	@Configuration(proxyBeanMethods = false)
+	@RemoteApplicationEventScan(basePackages = { "fizz.buzz" })
+	static class ExtraBasePackagesConfig {
 
 	}
 
