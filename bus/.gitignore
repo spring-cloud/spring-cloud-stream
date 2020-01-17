@@ -16,3 +16,5 @@ _site/
 *.iml
 .factorypath
 .vscode/
+.flattened-pom.xml
+
