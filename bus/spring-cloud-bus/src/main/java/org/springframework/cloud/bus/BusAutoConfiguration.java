@@ -19,7 +19,7 @@ package org.springframework.cloud.bus;
 import javax.annotation.PostConstruct;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.actuate.autoconfigure.endpoint.condition.ConditionalOnEnabledEndpoint;
+import org.springframework.boot.actuate.autoconfigure.endpoint.condition.ConditionalOnAvailableEndpoint;
 import org.springframework.boot.actuate.endpoint.annotation.Endpoint;
 import org.springframework.boot.actuate.trace.http.HttpTraceRepository;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
@@ -233,7 +233,7 @@ public class BusAutoConfiguration implements ApplicationEventPublisherAware {
 		protected static class EnvironmentBusEndpointConfiguration {
 
 			@Bean
-			@ConditionalOnEnabledEndpoint
+			@ConditionalOnAvailableEndpoint
 			public EnvironmentBusEndpoint environmentBusEndpoint(
 					ApplicationContext context, BusProperties bus) {
 				return new EnvironmentBusEndpoint(context, bus.getId());
