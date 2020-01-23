@@ -374,13 +374,14 @@ public class FunctionConfiguration {
 				}
 				else {
 					String inputDestinationName = inputBindingNames.iterator().next();
-					//this.adjustFunctionForNativeEncodingIfNecessary();
-					ServiceActivatingHandler handler = createFunctionHandler(function, inputDestinationName, outputDestinationName);
-					if (!FunctionTypeUtils.isConsumer(function.getFunctionType())) {
-						handler.setOutputChannelName(outputDestinationName);
+					Object inputDestination = this.applicationContext.getBean(inputDestinationName);
+					if (inputDestination != null && inputDestination instanceof SubscribableChannel) {
+						ServiceActivatingHandler handler = createFunctionHandler(function, inputDestinationName, outputDestinationName);
+						if (!FunctionTypeUtils.isConsumer(function.getFunctionType())) {
+							handler.setOutputChannelName(outputDestinationName);
+						}
+						((SubscribableChannel) inputDestination).subscribe(handler);
 					}
-					SubscribableChannel inputChannel = this.applicationContext.getBean(inputDestinationName, SubscribableChannel.class);
-					inputChannel.subscribe(handler);
 				}
 			}
 		}
