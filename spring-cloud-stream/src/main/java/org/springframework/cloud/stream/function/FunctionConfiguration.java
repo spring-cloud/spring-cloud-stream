@@ -19,7 +19,6 @@ package org.springframework.cloud.stream.function;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -27,7 +26,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -94,7 +92,6 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.SubscribableChannel;
-import org.springframework.messaging.support.ErrorMessage;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
@@ -338,35 +335,23 @@ public class FunctionConfiguration {
 			this.assertSupportedSignatures(bindableProxyFactory, functionType);
 
 			if (isReactiveOrMultipleInputOutput(bindableProxyFactory, functionType)) {
-
-				if (!this.isMultipleInputOutput(bindableProxyFactory)) {
-					String inputBindingName = inputBindingNames.iterator().next();
-					String outputBindingName = outputBindingNames.iterator().next();
+				Publisher[] inputPublishers = inputBindingNames.stream().map(inputBindingName -> {
 					SubscribableChannel inputChannel = this.applicationContext.getBean(inputBindingName, SubscribableChannel.class);
-					MessageChannel outputChannel = this.applicationContext.getBean(outputBindingName, MessageChannel.class);
-					this.subscribeToInput(function, inputBindingName, MessageChannelReactiveUtils.toPublisher(inputChannel),
-							message -> outputChannel.send(message));
+					return MessageChannelReactiveUtils.toPublisher(inputChannel);
+				}).toArray(Publisher[]::new);
+				Object resultPublishers = function.apply(inputPublishers.length == 1 ? inputPublishers[0] : Tuples.fromArray(inputPublishers));
+				if (resultPublishers instanceof Iterable) {
+					Iterator<String> outputBindingIter = outputBindingNames.iterator();
+					((Iterable) resultPublishers).forEach(publisher -> {
+						MessageChannel outputChannel = this.applicationContext.getBean(outputBindingIter.next(), MessageChannel.class);
+						Flux.from((Publisher) publisher).doOnNext(message -> outputChannel.send((Message) message)).subscribe();
+					});
 				}
 				else {
-					Publisher[] inputPublishers = inputBindingNames.stream().map(inputBindingName -> {
-						SubscribableChannel inputChannel = this.applicationContext.getBean(inputBindingName, SubscribableChannel.class);
-						return MessageChannelReactiveUtils.toPublisher(inputChannel);
-					}).toArray(Publisher[]::new);
-
-					Object resultPublishers = function.apply(inputPublishers.length == 1 ? inputPublishers[0] : Tuples.fromArray(inputPublishers));
-					if (resultPublishers instanceof Iterable) {
-						Iterator<String> outputBindingIter = outputBindingNames.iterator();
-						((Iterable) resultPublishers).forEach(publisher -> {
-							MessageChannel outputChannel = this.applicationContext.getBean(outputBindingIter.next(), MessageChannel.class);
-							Flux.from((Publisher) publisher).doOnNext(message -> outputChannel.send((Message) message)).subscribe();
-						});
-					}
-					else {
-						outputBindingNames.stream().forEach(outputBindingName -> {
-							MessageChannel outputChannel = this.applicationContext.getBean(outputBindingName, MessageChannel.class);
-							Flux.from((Publisher) resultPublishers).doOnNext(message -> outputChannel.send((Message) message)).subscribe();
-						});
-					}
+					outputBindingNames.stream().forEach(outputBindingName -> {
+						MessageChannel outputChannel = this.applicationContext.getBean(outputBindingName, MessageChannel.class);
+						Flux.from((Publisher) resultPublishers).doOnNext(message -> outputChannel.send((Message) message)).subscribe();
+					});
 				}
 			}
 			else {
@@ -389,61 +374,15 @@ public class FunctionConfiguration {
 				}
 				else {
 					String inputDestinationName = inputBindingNames.iterator().next();
-					Object inputDestination = this.applicationContext.getBean(inputDestinationName);
-					if (inputDestination != null && inputDestination instanceof SubscribableChannel) {
-						ServiceActivatingHandler handler = createFunctionHandler(function, inputDestinationName, outputDestinationName);
-						if (!FunctionTypeUtils.isConsumer(function.getFunctionType())) {
-							handler.setOutputChannelName(outputDestinationName);
-						}
-						((SubscribableChannel) inputDestination).subscribe(handler);
+					//this.adjustFunctionForNativeEncodingIfNecessary();
+					ServiceActivatingHandler handler = createFunctionHandler(function, inputDestinationName, outputDestinationName);
+					if (!FunctionTypeUtils.isConsumer(function.getFunctionType())) {
+						handler.setOutputChannelName(outputDestinationName);
 					}
+					SubscribableChannel inputChannel = this.applicationContext.getBean(inputDestinationName, SubscribableChannel.class);
+					inputChannel.subscribe(handler);
 				}
 			}
-		}
-
-		@SuppressWarnings({ "unchecked", "rawtypes" })
-		private void subscribeToInput(Function function, String bindingName,  Publisher publisher, Consumer<Message> outputProcessor) {
-
-			Flux<Message> inputPublisher = Flux.from(publisher);
-
-			AtomicReference<Message<Object>> originalMessageRef = new AtomicReference<>();
-			AtomicReference<ConsumerProperties> consumerPropertiesRef = new AtomicReference<>();
-			AtomicReference<MessageChannel> bindingErrorChannelRef =
-					new AtomicReference<>(this.applicationContext.getBean("errorChannel", MessageChannel.class));
-
-			Flux<Message> result = inputPublisher
-					.switchOnFirst((x, message) -> {
-						consumerPropertiesRef.set(this.serviceProperties.getBindings().get(bindingName).getConsumer());
-						String destination = serviceProperties.getBindings().get(bindingName).getDestination();
-						String group = serviceProperties.getBindings().get(bindingName).getGroup();
-						String bindingErrorChannelName = destination + "." + group + ".errors";
-						if (this.applicationContext.containsBean(bindingErrorChannelName)) {
-							bindingErrorChannelRef.set(this.applicationContext.getBean(bindingErrorChannelName, MessageChannel.class));
-						}
-						return message;
-					})
-					.concatMap(message -> {
-						return Flux.just(message).doOnNext(originalMessageRef::set)
-								.transform((Function<Flux<Message>, Flux<Message>>) function)
-								.retryBackoff(consumerPropertiesRef.get().getMaxAttempts(),
-										Duration.ofMillis(consumerPropertiesRef.get().getBackOffInitialInterval()),
-										Duration.ofMillis(consumerPropertiesRef.get().getBackOffMaxInterval()))
-								.onErrorResume(e -> {
-									bindingErrorChannelRef.get()
-										.send(new ErrorMessage((Throwable) e, originalMessageRef.get().getHeaders(), originalMessageRef.get()));
-									return Mono.empty();
-								});
-					});
-
-			subscribeToOutput(outputProcessor, result).subscribe();
-		}
-
-		@SuppressWarnings("rawtypes")
-		private Mono<Void> subscribeToOutput(Consumer<Message> outputProcessor, Flux<Message> resultPublisher) {
-			Flux<Message> output = outputProcessor == null
-					? resultPublisher
-							: resultPublisher.doOnNext(outputProcessor);
-			return output.then();
 		}
 
 		private void adjustFunctionForNativeEncodingIfNecessary(String outputDestinationName, FunctionInvocationWrapper function, int index) {
