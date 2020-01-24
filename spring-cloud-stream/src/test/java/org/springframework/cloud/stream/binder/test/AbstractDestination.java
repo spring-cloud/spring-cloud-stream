@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2019 the original author or authors.
+ * Copyright 2017-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package org.springframework.cloud.stream.binder.test;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.springframework.integration.channel.AbstractSubscribableChannel;
 import org.springframework.messaging.SubscribableChannel;
 
 /**
@@ -27,19 +28,28 @@ import org.springframework.messaging.SubscribableChannel;
  */
 abstract class AbstractDestination {
 
-	private final List<SubscribableChannel> channels = new ArrayList<>();
+	private final List<AbstractSubscribableChannel> channels = new ArrayList<>();
 
 	SubscribableChannel getChannel(int index) {
 		return this.channels.get(index);
 	}
 
 	void setChannel(SubscribableChannel channel) {
-		this.channels.add(channel);
-		this.afterChannelIsSet(this.channels.size() - 1);
+		this.channels.add((AbstractSubscribableChannel) channel);
+		this.afterChannelIsSet(this.channels.size() - 1, ((AbstractSubscribableChannel) channel).getBeanName());
 	}
 
-	void afterChannelIsSet(int channelIndex) {
+	void afterChannelIsSet(int channelIndex, String name) {
 		// noop
 	}
 
+	SubscribableChannel getChannelByName(String name) {
+		//name = name + ".destination";
+		for (AbstractSubscribableChannel subscribableChannel : channels) {
+			if (subscribableChannel.getBeanName().equals(name)) {
+				return subscribableChannel;
+			}
+		}
+		return null;
+	}
 }

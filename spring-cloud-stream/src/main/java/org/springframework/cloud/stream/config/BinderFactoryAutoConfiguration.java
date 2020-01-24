@@ -168,11 +168,8 @@ public class BinderFactoryAutoConfiguration {
 			ConfigurableApplicationContext configurableApplicationContext) {
 		Map<String, BinderType> binderTypes = new HashMap<>();
 		ClassLoader classLoader = configurableApplicationContext.getClassLoader();
-		// the above can never be null since it will default to
-		// ClassUtils.getDefaultClassLoader(..)
 		try {
 			Enumeration<URL> resources = classLoader.getResources("META-INF/spring.binders");
-
 			// see if test binder is available on the classpath and if so add it to the binderTypes
 			try {
 				BinderType bt = new BinderType("integration", new Class[] {
@@ -180,7 +177,6 @@ public class BinderFactoryAutoConfiguration {
 				binderTypes.put("integration", bt);
 			}
 			catch (Exception e) {
-//				e.printStackTrace();
 				// ignore. means test binder is not available
 			}
 
@@ -194,8 +190,7 @@ public class BinderFactoryAutoConfiguration {
 				while (resources.hasMoreElements()) {
 					URL url = resources.nextElement();
 					UrlResource resource = new UrlResource(url);
-					for (BinderType binderType : parseBinderConfigurations(classLoader,
-							resource)) {
+					for (BinderType binderType : parseBinderConfigurations(classLoader, resource)) {
 						binderTypes.put(binderType.getDefaultName(), binderType);
 					}
 				}

@@ -17,7 +17,9 @@
 package org.springframework.cloud.stream.binder.test;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedTransferQueue;
 import java.util.concurrent.TimeUnit;
@@ -34,17 +36,26 @@ import org.springframework.messaging.Message;
  */
 public class OutputDestination extends AbstractDestination {
 
-	private final List<BlockingQueue<Message<?>>> messageQueues = new ArrayList<>();
+	private final Map<String, BlockingQueue<Message<byte[]>>> messageQueues = new LinkedHashMap<>();
 
+	public Message<byte[]> receive(long timeout, String bindingName) {
+		try {
+			return this.messageQueues.get(bindingName).poll(timeout, TimeUnit.MILLISECONDS);
+		}
+		catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+		}
+		return null;
+	}
 	/**
 	 * Allows to access {@link Message}s received by this {@link OutputDestination}.
 	 * @param timeout how long to wait before giving up
 	 * @return received message
 	 */
-	@SuppressWarnings("unchecked")
-	public Message<byte[]> receive(long timeout, int channelIndex) {
+	public Message<byte[]> receive(long timeout, int bindingIndex) {
 		try {
-			return (Message<byte[]>) this.messageQueues.get(channelIndex).poll(timeout, TimeUnit.MILLISECONDS);
+			BlockingQueue<Message<byte[]>> destinationQueue = (new ArrayList<>(this.messageQueues.values())).get(bindingIndex);
+			return destinationQueue.poll(timeout, TimeUnit.MILLISECONDS);
 		}
 		catch (InterruptedException e) {
 			Thread.currentThread().interrupt();
@@ -64,11 +75,12 @@ public class OutputDestination extends AbstractDestination {
 		return this.receive(timeout, 0);
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
-	void afterChannelIsSet(int channelIndex) {
-		BlockingQueue<Message<?>> messageQueue = new LinkedTransferQueue<>();
-		this.messageQueues.add(messageQueue);
-		this.getChannel(channelIndex).subscribe(message -> this.messageQueues.get(channelIndex).offer(message));
+	void afterChannelIsSet(int channelIndex, String bidningName) {
+		BlockingQueue<Message<byte[]>> messageQueue = new LinkedTransferQueue<>();
+		this.messageQueues.put(bidningName, messageQueue);
+		this.getChannelByName(bidningName).subscribe(message -> this.messageQueues.get(bidningName).offer((Message<byte[]>) message));
 	}
 
 }
