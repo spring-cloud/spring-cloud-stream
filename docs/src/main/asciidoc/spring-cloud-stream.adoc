@@ -577,6 +577,23 @@ the framework will split the returning sending out each item as an individual me
 he desired behavior you can set it to `false` at which point such supplier will simply return
 the produced Flux without splitting it.
 
+===== Consumer (Reactive)
+
+Reactive `Consumer` is a little bit special because it has a void return type, leaving framework with no reference to subscribe to.
+Most likely you will not need to write `Consumer<Flux<?>>`, and instead write it as a `Function<Flux<?>, Mono<Void>>` invoking `then` 
+operator as the last operator on your stream.
+
+For example:
+
+[source,java]
+----
+public Function<Flux<?>, Mono<Void>>`consumer() {
+	return flux -> flux.map(..).filter(..).then();
+}
+----
+
+But if you do need to write an explicit `Consumer<Flux<?>>`, remember to subscribe to the incoming Flux.
+
 
 ====== Polling Configuration Properties
 
