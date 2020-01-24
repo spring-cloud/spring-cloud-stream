@@ -873,13 +873,13 @@ public void testMultipleFunctions() {
 		OutputDestination outputDestination = context.getBean(OutputDestination.class);
 
 		Message<byte[]> inputMessage = MessageBuilder.withPayload("Hello".getBytes()).build();
-		inputDestination.send(inputMessage, 0);
-		inputDestination.send(inputMessage, 1);
+		inputDestination.send(inputMessage, "uppercase-in-0");
+		inputDestination.send(inputMessage, "reverse-in-0");
 
-		Message<byte[]> outputMessage = outputDestination.receive(0, 0);
+		Message<byte[]> outputMessage = outputDestination.receive(0, "uppercase-out-0");
 		assertThat(outputMessage.getPayload()).isEqualTo("HELLO".getBytes());
 
-		outputMessage = outputDestination.receive(0, 1);
+		outputMessage = outputDestination.receive(0, "uppercase-out-1");
 		assertThat(outputMessage.getPayload()).isEqualTo("olleH".getBytes());
 	}
 }

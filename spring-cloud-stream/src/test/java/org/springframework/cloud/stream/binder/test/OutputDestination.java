@@ -18,7 +18,6 @@ package org.springframework.cloud.stream.binder.test;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedTransferQueue;
@@ -40,6 +39,7 @@ public class OutputDestination extends AbstractDestination {
 
 	public Message<byte[]> receive(long timeout, String bindingName) {
 		try {
+			bindingName = bindingName.endsWith(".destination") ? bindingName : bindingName + ".destination";
 			return this.messageQueues.get(bindingName).poll(timeout, TimeUnit.MILLISECONDS);
 		}
 		catch (InterruptedException e) {
@@ -51,7 +51,9 @@ public class OutputDestination extends AbstractDestination {
 	 * Allows to access {@link Message}s received by this {@link OutputDestination}.
 	 * @param timeout how long to wait before giving up
 	 * @return received message
+	 * @deprecated since 3.0.2 in favor of {@link #receive(long, String)} where you should use the actual binding name (e.g., "foo-in-0")
 	 */
+	@Deprecated
 	public Message<byte[]> receive(long timeout, int bindingIndex) {
 		try {
 			BlockingQueue<Message<byte[]>> destinationQueue = (new ArrayList<>(this.messageQueues.values())).get(bindingIndex);

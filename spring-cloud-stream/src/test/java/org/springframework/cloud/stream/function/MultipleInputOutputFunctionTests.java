@@ -141,12 +141,12 @@ public class MultipleInputOutputFunctionTests {
 
 			Message<byte[]> stringInputMessage = MessageBuilder.withPayload("one".getBytes()).build();
 			Message<byte[]> integerInputMessage = MessageBuilder.withPayload("1".getBytes()).build();
-			inputDestination.send(stringInputMessage, 0);
-			inputDestination.send(integerInputMessage, 1);
+			inputDestination.send(stringInputMessage, "multiInputSingleOutput-in-0");
+			inputDestination.send(integerInputMessage, "multiInputSingleOutput-in-1");
 
 			Message<byte[]> outputMessage = outputDestination.receive();
 			assertThat(outputMessage.getPayload()).isEqualTo("one".getBytes());
-			outputMessage = outputDestination.receive();
+			outputMessage = outputDestination.receive(0, "multiInputSingleOutput-out-0");
 			assertThat(outputMessage.getPayload()).isEqualTo("1".getBytes());
 		}
 	}
@@ -165,14 +165,14 @@ public class MultipleInputOutputFunctionTests {
 			OutputDestination outputDestination = context.getBean(OutputDestination.class);
 
 			for (int i = 0; i < 10; i++) {
-				inputDestination.send(MessageBuilder.withPayload(String.valueOf(i).getBytes()).build());
+				inputDestination.send(MessageBuilder.withPayload(String.valueOf(i).getBytes()).build(), "singleInputMultipleOutputs-in-0");
 			}
 
 			int counter = 0;
 			for (int i = 0; i < 5; i++) {
-				Message<byte[]> even = outputDestination.receive(0, 0);
+				Message<byte[]> even = outputDestination.receive(0, "singleInputMultipleOutputs-out-0");
 				assertThat(even.getPayload()).isEqualTo(("EVEN: " + String.valueOf(counter++)).getBytes());
-				Message<byte[]> odd = outputDestination.receive(0, 1);
+				Message<byte[]> odd = outputDestination.receive(0, "singleInputMultipleOutputs-out-1");
 				assertThat(odd.getPayload()).isEqualTo(("ODD: " + String.valueOf(counter++)).getBytes());
 			}
 		}
@@ -192,13 +192,13 @@ public class MultipleInputOutputFunctionTests {
 			OutputDestination outputDestination = context.getBean(OutputDestination.class);
 
 			Message<byte[]> inputMessage = MessageBuilder.withPayload("Hello".getBytes()).build();
-			inputDestination.send(inputMessage, 0);
-			inputDestination.send(inputMessage, 1);
+			inputDestination.send(inputMessage, "uppercase-in-0");
+			inputDestination.send(inputMessage, "reverse-in-0");
 
-			Message<byte[]> outputMessage = outputDestination.receive(0, 0);
+			Message<byte[]> outputMessage = outputDestination.receive(0, "uppercase-out-0");
 			assertThat(outputMessage.getPayload()).isEqualTo("HELLO".getBytes());
 
-			outputMessage = outputDestination.receive(0, 1);
+			outputMessage = outputDestination.receive(0, "reverse-out-0");
 			assertThat(outputMessage.getPayload()).isEqualTo("olleH".getBytes());
 		}
 	}
@@ -217,13 +217,13 @@ public class MultipleInputOutputFunctionTests {
 			OutputDestination outputDestination = context.getBean(OutputDestination.class);
 
 			Message<byte[]> inputMessage = MessageBuilder.withPayload("Hello".getBytes()).build();
-			inputDestination.send(inputMessage, 0);
-			inputDestination.send(inputMessage, 1);
+			inputDestination.send(inputMessage, "uppercasereverse-in-0");
+			inputDestination.send(inputMessage, "reverseuppercase-in-0");
 
-			Message<byte[]> outputMessage = outputDestination.receive(0, 0);
+			Message<byte[]> outputMessage = outputDestination.receive(0, "uppercasereverse-out-0");
 			assertThat(outputMessage.getPayload()).isEqualTo("OLLEH".getBytes());
 
-			outputMessage = outputDestination.receive(0, 1);
+			outputMessage = outputDestination.receive(0, "reverseuppercase-out-0");
 			assertThat(outputMessage.getPayload()).isEqualTo("OLLEH".getBytes());
 		}
 	}
@@ -245,12 +245,12 @@ public class MultipleInputOutputFunctionTests {
 
 			Message<byte[]> stringInputMessage = MessageBuilder.withPayload("ricky".getBytes()).build();
 			Message<byte[]> integerInputMessage = MessageBuilder.withPayload("bobby".getBytes()).build();
-			inputDestination.send(stringInputMessage, 0);
-			inputDestination.send(integerInputMessage, 1);
+			inputDestination.send(stringInputMessage, "multiInputSingleOutput-in-0");
+			inputDestination.send(integerInputMessage, "multiInputSingleOutput-in-1");
 
-			Message<byte[]> outputMessage = outputDestination.receive();
+			Message<byte[]> outputMessage = outputDestination.receive(1000, "multiInputSingleOutput-out-0");
 			assertThat(outputMessage.getPayload()).isEqualTo("RICKY".getBytes());
-			outputMessage = outputDestination.receive();
+			outputMessage = outputDestination.receive(1000, "multiInputSingleOutput-out-0");
 			assertThat(outputMessage.getPayload()).isEqualTo("BOBBY".getBytes());
 		}
 	}
@@ -273,13 +273,11 @@ public class MultipleInputOutputFunctionTests {
 
 			Message<byte[]> stringInputMessage = MessageBuilder.withPayload("ricky".getBytes()).build();
 			Message<byte[]> integerInputMessage = MessageBuilder.withPayload("bobby".getBytes()).build();
-			inputDestination.send(stringInputMessage, 0);
-			inputDestination.send(integerInputMessage, 1);
+			inputDestination.send(stringInputMessage, "multiInputSingleOutput2-in-0");
+			inputDestination.send(integerInputMessage, "multiInputSingleOutput2-in-1");
 
-			Message<byte[]> outputMessage = outputDestination.receive(2500);
+			Message<byte[]> outputMessage = outputDestination.receive(1000, "multiInputSingleOutput2-out-0");
 			assertThat(outputMessage.getPayload()).isEqualTo("rickybobby".getBytes());
-//			outputMessage = outputDestination.receive();
-//			assertThat(outputMessage.getPayload()).isEqualTo("BOBBY".getBytes());
 		}
 	}
 
@@ -384,6 +382,7 @@ public class MultipleInputOutputFunctionTests {
 					return Person.class.isAssignableFrom(clazz);
 				}
 
+				@Override
 				@Nullable
 				protected Object convertFromInternal(
 						Message<?> message, Class<?> targetClass, @Nullable Object conversionHint) {
@@ -392,6 +391,7 @@ public class MultipleInputOutputFunctionTests {
 					return person;
 				}
 
+				@Override
 				@Nullable
 				protected Object convertToInternal(
 						Object payload, @Nullable MessageHeaders headers, @Nullable Object conversionHint) {
@@ -410,6 +410,7 @@ public class MultipleInputOutputFunctionTests {
 					return Employee.class.isAssignableFrom(clazz);
 				}
 
+				@Override
 				@Nullable
 				protected Object convertFromInternal(
 						Message<?> message, Class<?> targetClass, @Nullable Object conversionHint) {
@@ -418,6 +419,7 @@ public class MultipleInputOutputFunctionTests {
 					return person;
 				}
 
+				@Override
 				@Nullable
 				protected Object convertToInternal(
 						Object payload, @Nullable MessageHeaders headers, @Nullable Object conversionHint) {

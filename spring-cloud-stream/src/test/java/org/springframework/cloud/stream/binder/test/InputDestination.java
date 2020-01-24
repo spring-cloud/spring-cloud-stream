@@ -29,18 +29,30 @@ import org.springframework.messaging.Message;
 public class InputDestination extends AbstractDestination {
 
 	/**
-	 * Allows the {@link Message} to be sent to a Binder to be delegated to binder's input
-	 * destination (e.g., Processor.INPUT).
+	 * Allows the {@link Message} to be sent to a Binder to be delegated to a default binding
+	 * destination (e.g., "function-in-0" for cases where you only have a single function with the name 'function').
 	 * @param message message to send
 	 */
 	public void send(Message<?> message) {
 		this.getChannel(0).send(message);
 	}
 
+	/**
+	 * @param message message to send
+	 * @param inputIndex input index
+	 * @deprecated since 3.0.2 in favor of {@link #receive(long, String)} where you should use the actual binding name (e.g., "foo-in-0")
+	 */
+	@Deprecated
 	public void send(Message<?> message, int inputIndex) {
 		this.getChannel(inputIndex).send(message);
 	}
 
+	/**
+	 * Allows the {@link Message} to be sent to a Binder to be delegated to a named binding
+	 * destination (e.g., "function-in-0" for cases where you want to send input to function with the name 'function').
+	 * @param message message to send
+	 * @param bindingName binding name
+	 */
 	public void send(Message<?> message, String bindingName) {
 		this.getChannelByName(bindingName).send(message);
 	}
