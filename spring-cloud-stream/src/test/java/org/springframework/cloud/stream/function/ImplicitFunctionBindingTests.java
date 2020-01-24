@@ -22,7 +22,6 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-
 import org.junit.After;
 import org.junit.Test;
 import reactor.core.publisher.Flux;
@@ -68,10 +67,8 @@ public class ImplicitFunctionBindingTests {
 	public void testEmptyConfiguration() {
 
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
-				TestChannelBinderConfiguration.getCompleteConfiguration(
-						EmptyConfiguration.class))
-								.web(WebApplicationType.NONE)
-								.run("--spring.jmx.enabled=false", "--debug")) {
+				TestChannelBinderConfiguration.getCompleteConfiguration(EmptyConfiguration.class))
+						.web(WebApplicationType.NONE).run("--spring.jmx.enabled=false", "--debug")) {
 			context.getBean(InputDestination.class);
 		}
 		catch (Exception e) { // should not fail
@@ -83,18 +80,14 @@ public class ImplicitFunctionBindingTests {
 	public void testSimpleFunctionWithStreamProperty() {
 
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
-				TestChannelBinderConfiguration.getCompleteConfiguration(
-						NoEnableBindingConfiguration.class))
-								.web(WebApplicationType.NONE)
-								.run("--spring.jmx.enabled=false",
-									 "--spring.cloud.function.definition=func")) {
+				TestChannelBinderConfiguration.getCompleteConfiguration(NoEnableBindingConfiguration.class))
+						.web(WebApplicationType.NONE)
+						.run("--spring.jmx.enabled=false", "--spring.cloud.function.definition=func")) {
 
 			InputDestination inputDestination = context.getBean(InputDestination.class);
-			OutputDestination outputDestination = context
-					.getBean(OutputDestination.class);
+			OutputDestination outputDestination = context.getBean(OutputDestination.class);
 
-			Message<byte[]> inputMessage = MessageBuilder
-					.withPayload("Hello".getBytes()).build();
+			Message<byte[]> inputMessage = MessageBuilder.withPayload("Hello".getBytes()).build();
 			inputDestination.send(inputMessage);
 
 			Message<byte[]> outputMessage = outputDestination.receive();
@@ -107,18 +100,14 @@ public class ImplicitFunctionBindingTests {
 	public void testReactiveFunctionWithState() {
 
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
-				TestChannelBinderConfiguration.getCompleteConfiguration(
-						NoEnableBindingConfiguration.class))
-								.web(WebApplicationType.NONE)
-								.run("--spring.jmx.enabled=false",
-									 "--spring.cloud.function.definition=aggregate")) {
+				TestChannelBinderConfiguration.getCompleteConfiguration(NoEnableBindingConfiguration.class))
+						.web(WebApplicationType.NONE)
+						.run("--spring.jmx.enabled=false", "--spring.cloud.function.definition=aggregate")) {
 
 			InputDestination inputDestination = context.getBean(InputDestination.class);
-			OutputDestination outputDestination = context
-					.getBean(OutputDestination.class);
+			OutputDestination outputDestination = context.getBean(OutputDestination.class);
 
-			Message<byte[]> inputMessage = MessageBuilder
-					.withPayload("Hello".getBytes()).build();
+			Message<byte[]> inputMessage = MessageBuilder.withPayload("Hello".getBytes()).build();
 			inputDestination.send(inputMessage);
 			inputDestination.send(inputMessage);
 			inputDestination.send(inputMessage);
@@ -138,19 +127,15 @@ public class ImplicitFunctionBindingTests {
 	public void testFunctionWithUseNativeEncoding() {
 
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
-				TestChannelBinderConfiguration.getCompleteConfiguration(
-						NoEnableBindingConfiguration.class))
-								.web(WebApplicationType.NONE)
-								.run("--spring.jmx.enabled=false",
-										"--spring.cloud.function.definition=func",
-										"--spring.cloud.stream.bindings.func-out-0.producer.useNativeEncoding=true")) {
+				TestChannelBinderConfiguration.getCompleteConfiguration(NoEnableBindingConfiguration.class))
+						.web(WebApplicationType.NONE).run("--spring.jmx.enabled=false",
+								"--spring.cloud.function.definition=func",
+								"--spring.cloud.stream.bindings.func-out-0.producer.useNativeEncoding=true")) {
 
 			InputDestination inputDestination = context.getBean(InputDestination.class);
-			OutputDestination outputDestination = context
-					.getBean(OutputDestination.class);
+			OutputDestination outputDestination = context.getBean(OutputDestination.class);
 
-			Message<byte[]> inputMessage = MessageBuilder
-					.withPayload("Hello".getBytes()).build();
+			Message<byte[]> inputMessage = MessageBuilder.withPayload("Hello".getBytes()).build();
 			inputDestination.send(inputMessage);
 			Message outputMessage = outputDestination.receive();
 			assertThat(outputMessage.getPayload()).isEqualTo("Hello");
@@ -161,18 +146,14 @@ public class ImplicitFunctionBindingTests {
 	public void testSimpleFunctionWithNativeProperty() {
 
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
-				TestChannelBinderConfiguration.getCompleteConfiguration(
-						NoEnableBindingConfiguration.class))
-								.web(WebApplicationType.NONE)
-								.run("--spring.jmx.enabled=false",
-										"--spring.cloud.function.definition=func")) {
+				TestChannelBinderConfiguration.getCompleteConfiguration(NoEnableBindingConfiguration.class))
+						.web(WebApplicationType.NONE)
+						.run("--spring.jmx.enabled=false", "--spring.cloud.function.definition=func")) {
 
 			InputDestination inputDestination = context.getBean(InputDestination.class);
-			OutputDestination outputDestination = context
-					.getBean(OutputDestination.class);
+			OutputDestination outputDestination = context.getBean(OutputDestination.class);
 
-			Message<byte[]> inputMessage = MessageBuilder
-					.withPayload("Hello".getBytes()).build();
+			Message<byte[]> inputMessage = MessageBuilder.withPayload("Hello".getBytes()).build();
 			inputDestination.send(inputMessage);
 
 			Message<byte[]> outputMessage = outputDestination.receive();
@@ -185,17 +166,13 @@ public class ImplicitFunctionBindingTests {
 	public void testSimpleFunctionWithoutDefinitionProperty() {
 		System.clearProperty("spring.cloud.function.definition");
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
-				TestChannelBinderConfiguration.getCompleteConfiguration(
-						SingleFunctionConfiguration.class))
-								.web(WebApplicationType.NONE)
-								.run("--spring.jmx.enabled=false")) {
+				TestChannelBinderConfiguration.getCompleteConfiguration(SingleFunctionConfiguration.class))
+						.web(WebApplicationType.NONE).run("--spring.jmx.enabled=false")) {
 
 			InputDestination inputDestination = context.getBean(InputDestination.class);
-			OutputDestination outputDestination = context
-					.getBean(OutputDestination.class);
+			OutputDestination outputDestination = context.getBean(OutputDestination.class);
 
-			Message<byte[]> inputMessage = MessageBuilder
-					.withPayload("Hello".getBytes()).build();
+			Message<byte[]> inputMessage = MessageBuilder.withPayload("Hello".getBytes()).build();
 			inputDestination.send(inputMessage);
 
 			Message<byte[]> outputMessage = outputDestination.receive();
@@ -208,14 +185,11 @@ public class ImplicitFunctionBindingTests {
 	public void testSimpleConsumerWithoutDefinitionProperty() {
 		System.clearProperty("spring.cloud.function.definition");
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
-				TestChannelBinderConfiguration.getCompleteConfiguration(
-						SingleConsumerConfiguration.class))
-								.web(WebApplicationType.NONE)
-								.run("--spring.jmx.enabled=false")) {
+				TestChannelBinderConfiguration.getCompleteConfiguration(SingleConsumerConfiguration.class))
+						.web(WebApplicationType.NONE).run("--spring.jmx.enabled=false")) {
 
 			InputDestination inputDestination = context.getBean(InputDestination.class);
-			Message<byte[]> inputMessage = MessageBuilder
-					.withPayload("Hello".getBytes()).build();
+			Message<byte[]> inputMessage = MessageBuilder.withPayload("Hello".getBytes()).build();
 			inputDestination.send(inputMessage);
 
 			assertThat(System.getProperty("consumer")).isEqualTo("Hello");
@@ -227,14 +201,11 @@ public class ImplicitFunctionBindingTests {
 	public void testReactiveConsumerWithoutDefinitionProperty() {
 		System.clearProperty("spring.cloud.function.definition");
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
-				TestChannelBinderConfiguration.getCompleteConfiguration(
-						SingleReactiveConsumerConfiguration.class))
-								.web(WebApplicationType.NONE)
-								.run("--spring.jmx.enabled=false")) {
+				TestChannelBinderConfiguration.getCompleteConfiguration(SingleReactiveConsumerConfiguration.class))
+						.web(WebApplicationType.NONE).run("--spring.jmx.enabled=false")) {
 
 			InputDestination inputDestination = context.getBean(InputDestination.class);
-			Message<byte[]> inputMessage = MessageBuilder
-					.withPayload("Hello".getBytes()).build();
+			Message<byte[]> inputMessage = MessageBuilder.withPayload("Hello".getBytes()).build();
 			inputDestination.send(inputMessage);
 
 			assertThat(System.getProperty("consumer")).isEqualTo("Hello");
@@ -245,13 +216,11 @@ public class ImplicitFunctionBindingTests {
 	@Test
 	public void testConsumer() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
-				TestChannelBinderConfiguration
-						.getCompleteConfiguration(SingleConsumerConfiguration.class))
-								.web(WebApplicationType.NONE)
-								.run("--spring.cloud.function.definition=consumer",
-										"--spring.jmx.enabled=false",
-										"--spring.cloud.stream.bindings.input.content-type=text/plain",
-										"--spring.cloud.stream.bindings.input.consumer.use-native-decoding=true")) {
+				TestChannelBinderConfiguration.getCompleteConfiguration(SingleConsumerConfiguration.class))
+						.web(WebApplicationType.NONE).run("--spring.cloud.function.definition=consumer",
+								"--spring.jmx.enabled=false",
+								"--spring.cloud.stream.bindings.input.content-type=text/plain",
+								"--spring.cloud.stream.bindings.input.consumer.use-native-decoding=true")) {
 
 			InputDestination source = context.getBean(InputDestination.class);
 			source.send(new GenericMessage<byte[]>("John Doe".getBytes()));
@@ -262,19 +231,14 @@ public class ImplicitFunctionBindingTests {
 	public void testBindingWithReactiveFunction() {
 		System.clearProperty("spring.cloud.function.definition");
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
-				TestChannelBinderConfiguration.getCompleteConfiguration(
-						ReactiveFunctionConfiguration.class))
-								.web(WebApplicationType.NONE)
-								.run("--spring.jmx.enabled=false")) {
+				TestChannelBinderConfiguration.getCompleteConfiguration(ReactiveFunctionConfiguration.class))
+						.web(WebApplicationType.NONE).run("--spring.jmx.enabled=false")) {
 
 			InputDestination inputDestination = context.getBean(InputDestination.class);
-			OutputDestination outputDestination = context
-					.getBean(OutputDestination.class);
+			OutputDestination outputDestination = context.getBean(OutputDestination.class);
 
-			Message<byte[]> inputMessageOne = MessageBuilder
-					.withPayload("Hello".getBytes()).build();
-			Message<byte[]> inputMessageTwo = MessageBuilder
-					.withPayload("Hello Again".getBytes()).build();
+			Message<byte[]> inputMessageOne = MessageBuilder.withPayload("Hello".getBytes()).build();
+			Message<byte[]> inputMessageTwo = MessageBuilder.withPayload("Hello Again".getBytes()).build();
 			inputDestination.send(inputMessageOne);
 			inputDestination.send(inputMessageTwo);
 
@@ -289,29 +253,23 @@ public class ImplicitFunctionBindingTests {
 	public void testFunctionConfigDisabledIfStreamListenerIsUsed() {
 		System.clearProperty("spring.cloud.function.definition");
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
-				TestChannelBinderConfiguration.getCompleteConfiguration(
-						LegacyConfiguration.class))
-								.web(WebApplicationType.NONE)
-								.run("--spring.jmx.enabled=false")) {
+				TestChannelBinderConfiguration.getCompleteConfiguration(LegacyConfiguration.class))
+						.web(WebApplicationType.NONE).run("--spring.jmx.enabled=false")) {
 
 			assertThat(context.getBean("supplierInitializer")).isEqualTo(null);
 		}
 	}
 
-
 	@Test(expected = Exception.class)
 	public void testDeclaredTypeVsActualInstance() {
 		System.clearProperty("spring.cloud.function.definition");
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
-				TestChannelBinderConfiguration.getCompleteConfiguration(
-						SCF_GH_409Configuration.class))
-								.web(WebApplicationType.NONE)
-								.run("--spring.jmx.enabled=false")) {
+				TestChannelBinderConfiguration.getCompleteConfiguration(SCF_GH_409Configuration.class))
+						.web(WebApplicationType.NONE).run("--spring.jmx.enabled=false")) {
 
 			InputDestination inputDestination = context.getBean(InputDestination.class);
 
-			Message<byte[]> inputMessageOne = MessageBuilder
-					.withPayload("Hello".getBytes()).build();
+			Message<byte[]> inputMessageOne = MessageBuilder.withPayload("Hello".getBytes()).build();
 
 			inputDestination.send(inputMessageOne);
 		}
@@ -321,21 +279,15 @@ public class ImplicitFunctionBindingTests {
 	public void testWithContextTypeApplicationProperty() {
 		System.clearProperty("spring.cloud.function.definition");
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
-				TestChannelBinderConfiguration.getCompleteConfiguration(
-						SingleFunctionConfiguration.class))
-								.web(WebApplicationType.NONE)
-								.run("--spring.jmx.enabled=false",
-										"--spring.cloud.stream.bindings.input.content-type=text/plain",
-										"--debug")) {
+				TestChannelBinderConfiguration.getCompleteConfiguration(SingleFunctionConfiguration.class))
+						.web(WebApplicationType.NONE).run("--spring.jmx.enabled=false",
+								"--spring.cloud.stream.bindings.input.content-type=text/plain", "--debug")) {
 
 			InputDestination inputDestination = context.getBean(InputDestination.class);
-			OutputDestination outputDestination = context
-					.getBean(OutputDestination.class);
+			OutputDestination outputDestination = context.getBean(OutputDestination.class);
 
-			Message<byte[]> inputMessageOne = MessageBuilder
-					.withPayload("Hello".getBytes()).build();
-			Message<byte[]> inputMessageTwo = MessageBuilder
-					.withPayload("Hello Again".getBytes()).build();
+			Message<byte[]> inputMessageOne = MessageBuilder.withPayload("Hello".getBytes()).build();
+			Message<byte[]> inputMessageTwo = MessageBuilder.withPayload("Hello Again".getBytes()).build();
 			inputDestination.send(inputMessageOne);
 			inputDestination.send(inputMessageTwo);
 
@@ -349,11 +301,9 @@ public class ImplicitFunctionBindingTests {
 	@Test
 	public void testWithIntegrationFlowAsFunction() {
 		System.clearProperty("spring.cloud.function.definition");
-		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
-				TestChannelBinderConfiguration.getCompleteConfiguration(
-						FunctionSampleSpringIntegrationConfiguration.class))
-								.web(WebApplicationType.NONE)
-								.run("--spring.jmx.enabled=false")) {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration
+				.getCompleteConfiguration(FunctionSampleSpringIntegrationConfiguration.class))
+						.web(WebApplicationType.NONE).run("--spring.jmx.enabled=false")) {
 
 			InputDestination inputDestination = context.getBean(InputDestination.class);
 			OutputDestination outputDestination = context.getBean(OutputDestination.class);
@@ -371,11 +321,9 @@ public class ImplicitFunctionBindingTests {
 	public void testSupplierWithCustomPoller() {
 		System.clearProperty("spring.cloud.function.definition");
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
-				TestChannelBinderConfiguration.getCompleteConfiguration(
-						SupplierWithExplicitPollerConfiguration.class))
-								.web(WebApplicationType.NONE)
-								.run("--spring.jmx.enabled=false",
-										"--spring.cloud.stream.poller.fixed-delay=2000")) {
+				TestChannelBinderConfiguration.getCompleteConfiguration(SupplierWithExplicitPollerConfiguration.class))
+						.web(WebApplicationType.NONE)
+						.run("--spring.jmx.enabled=false", "--spring.cloud.stream.poller.fixed-delay=2000")) {
 
 			OutputDestination outputDestination = context.getBean(OutputDestination.class);
 
@@ -391,12 +339,10 @@ public class ImplicitFunctionBindingTests {
 	public void testSupplierWithCustomPollerAndMappedOutput() {
 		System.clearProperty("spring.cloud.function.definition");
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
-				TestChannelBinderConfiguration.getCompleteConfiguration(
-						SupplierWithExplicitPollerConfiguration.class))
-								.web(WebApplicationType.NONE)
-								.run("--spring.jmx.enabled=false",
-										"--spring.cloud.stream.poller.fixed-delay=2000",
-										"--spring.cloud.function.bindings.supplier-out-0=output")) {
+				TestChannelBinderConfiguration.getCompleteConfiguration(SupplierWithExplicitPollerConfiguration.class))
+						.web(WebApplicationType.NONE).run("--spring.jmx.enabled=false",
+								"--spring.cloud.stream.poller.fixed-delay=2000",
+								"--spring.cloud.function.bindings.supplier-out-0=output")) {
 
 			OutputDestination outputDestination = context.getBean(OutputDestination.class);
 
@@ -407,7 +353,6 @@ public class ImplicitFunctionBindingTests {
 			assertThat(outputMessage.getPayload()).isEqualTo("hello".getBytes());
 		}
 	}
-
 
 	@Test
 	public void testNoFunctionEnabledConfiguration() {
@@ -427,9 +372,8 @@ public class ImplicitFunctionBindingTests {
 		}
 	}
 
-
 	@EnableAutoConfiguration
-	public static class NoEnableBindingConfiguration  {
+	public static class NoEnableBindingConfiguration {
 
 		@Bean
 		public Function<String, String> func() {
@@ -441,11 +385,8 @@ public class ImplicitFunctionBindingTests {
 
 		@Bean
 		public Function<Flux<String>, Flux<String>> aggregate() {
-			return inbound -> inbound.
-					log()
-					.window(Duration.ofSeconds(1))
-					.flatMap(w -> w.reduce("", (s1,s2)->s1+s2))
-					.log();
+			return inbound -> inbound.log().window(Duration.ofSeconds(1))
+					.flatMap(w -> w.reduce("", (s1, s2) -> s1 + s2)).log();
 		}
 
 		@Bean
@@ -546,8 +487,7 @@ public class ImplicitFunctionBindingTests {
 		@Bean
 		public IntegrationFlow uppercaseFlow() {
 			return IntegrationFlows.from(MessageFunction.class, "uppercase")
-					.<String, String>transform(String::toUpperCase)
-					.logAndReply(LoggingHandler.Level.WARN);
+					.<String, String>transform(String::toUpperCase).logAndReply(LoggingHandler.Level.WARN);
 		}
 
 	}
@@ -555,7 +495,6 @@ public class ImplicitFunctionBindingTests {
 	public interface MessageFunction extends Function<Message<String>, Message<String>> {
 
 	}
-
 
 	@EnableAutoConfiguration
 	public static class SupplierWithExplicitPollerConfiguration {
