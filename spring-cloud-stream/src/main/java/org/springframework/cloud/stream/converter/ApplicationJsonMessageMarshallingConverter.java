@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2019 the original author or authors.
+ * Copyright 2018-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -100,7 +100,6 @@ class ApplicationJsonMessageMarshallingConverter extends MappingJackson2MessageC
 		else if (conversionHint instanceof ParameterizedType) {
 			result = convertParameterizedType(message, (Type) conversionHint);
 		}
-
 		if (result == null) {
 			if (message.getPayload() instanceof byte[]
 					&& targetClass.isAssignableFrom(String.class)) {
@@ -145,6 +144,11 @@ class ApplicationJsonMessageMarshallingConverter extends MappingJackson2MessageC
 									}
 									else if (value instanceof String) {
 										return objectMapper.readValue((String) value, typeToUse.getContentType());
+									}
+									else {
+										// fall back to simple type-conversion
+										// see https://github.com/spring-cloud/spring-cloud-stream/issues/1898
+										return objectMapper.convertValue(value, typeToUse.getContentType());
 									}
 								}
 								catch (Exception e) {

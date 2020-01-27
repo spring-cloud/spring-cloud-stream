@@ -18,6 +18,8 @@ package org.springframework.cloud.stream.function;
 
 import java.io.Serializable;
 import java.time.Duration;
+import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -372,6 +374,26 @@ public class ImplicitFunctionBindingTests {
 		}
 	}
 
+	@Test
+	public void testCollectionAndMapConversionDuringComposition() {
+		System.clearProperty("spring.cloud.function.definition");
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration
+				.getCompleteConfiguration(CompositionWithCollectionConfiguration.class))
+						.web(WebApplicationType.NONE).run("--spring.cloud.function.definition=funcA|funcB",
+								"--spring.jmx.enabled=false")) {
+
+			InputDestination inputDestination = context.getBean(InputDestination.class);
+			OutputDestination outputDestination = context.getBean(OutputDestination.class);
+
+			Message<byte[]> inputMessage = MessageBuilder.withPayload("[{\"key1\":1, \"key2\":2},{\"key3\":3}]".getBytes()).build();
+
+			inputDestination.send(inputMessage);
+			String result = new String(outputDestination.receive().getPayload());
+
+			assertThat(result).isEqualTo("[{\"key1\":\"1\",\"key2\":\"2\"},{\"key3\":\"3\"}]");
+		}
+	}
+
 	@EnableAutoConfiguration
 	public static class NoEnableBindingConfiguration {
 
@@ -511,6 +533,24 @@ public class ImplicitFunctionBindingTests {
 		@Bean
 		public Supplier<String> supplier() {
 			return () -> "hello";
+		}
+	}
+
+	@EnableAutoConfiguration
+	public static class CompositionWithCollectionConfiguration {
+
+		@Bean
+		public Function<Message<List<Map<String, Integer>>>, Message<List<Map<String, Integer>>>> funcA() {
+			return v -> {
+				return v;
+			};
+		}
+
+		@Bean
+		public Function<Message<List<Map<String, String>>>, Message<List<Map<String, String>>>> funcB() {
+			return v -> {
+				return v;
+			};
 		}
 	}
 
