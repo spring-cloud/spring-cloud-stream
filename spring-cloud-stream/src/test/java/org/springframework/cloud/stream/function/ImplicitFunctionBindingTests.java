@@ -443,6 +443,33 @@ public class ImplicitFunctionBindingTests {
 		}
 	}
 
+	@Test
+	public void testWithExplicitBindingInstructions() {
+		System.clearProperty("spring.cloud.function.definition");
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration
+				.getCompleteConfiguration(SplittableTypesConfiguration.class))
+						.web(WebApplicationType.NONE).run("--spring.cloud.function.definition=funcArrayOfMessages",
+								"--spring.cloud.stream.function.bindings.funcArrayOfMessages-in-0=input",
+								"--spring.cloud.stream.function.bindings.funcArrayOfMessages-out-0=output",
+								"--spring.cloud.stream.bindings.input.destination=myInput",
+								"--spring.cloud.stream.bindings.output.destination=myOutput",
+								"--spring.jmx.enabled=false")) {
+
+			InputDestination inputDestination = context.getBean(InputDestination.class);
+			OutputDestination outputDestination = context.getBean(OutputDestination.class);
+
+			Message<byte[]> inputMessage = MessageBuilder.withPayload("aa,bb,cc,dd".getBytes()).build();
+
+			inputDestination.send(inputMessage, "myInput");
+
+			assertThat(new String(outputDestination.receive(100, "myOutput").getPayload())).isEqualTo("aa");
+			assertThat(new String(outputDestination.receive(100, "myOutput").getPayload())).isEqualTo("bb");
+			assertThat(new String(outputDestination.receive(100, "myOutput").getPayload())).isEqualTo("cc");
+			assertThat(new String(outputDestination.receive(100, "myOutput").getPayload())).isEqualTo("dd");
+			assertThat(outputDestination.receive(100)).isNull();
+		}
+	}
+
 	@EnableAutoConfiguration
 	public static class NoEnableBindingConfiguration {
 
