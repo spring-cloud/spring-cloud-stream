@@ -359,7 +359,7 @@ public class FunctionConfiguration {
 				this.adjustFunctionForNativeEncodingIfNecessary(outputDestinationName, function, 0);
 				if (this.functionProperties.isComposeFrom()) {
 					SubscribableChannel outputChannel = this.applicationContext.getBean(outputDestinationName, SubscribableChannel.class);
-					//logger.info("Composing at the head of 'output' channel");
+//					logger.info("Composing at the head of 'output' channel");
 					String outputChannelName = ((AbstractMessageChannel) outputChannel).getBeanName();
 					ServiceActivatingHandler handler = createFunctionHandler(function, null, outputChannelName);
 
@@ -510,6 +510,10 @@ public class FunctionConfiguration {
 
 		FunctionWrapper(Function function, ConsumerProperties consumerProperties, ProducerProperties producerProperties) {
 			this.function = function;
+			Type type =  ((FunctionInvocationWrapper) function).getFunctionType();
+			if (FunctionTypeUtils.isReactive(FunctionTypeUtils.getOutputType(type, 0))) {
+				throw new IllegalStateException("Functions with mixed semantics (imperative input vs. reactive output) ar not supported at the moment");
+			}
 			this.consumerProperties = consumerProperties;
 			this.producerProperties = producerProperties;
 			this.headersField = ReflectionUtils.findField(MessageHeaders.class, "headers");
@@ -518,17 +522,15 @@ public class FunctionConfiguration {
 		@SuppressWarnings("unchecked")
 		@Override
 		public Object apply(Message<byte[]> message) {
-
 			if (message != null && consumerProperties != null) {
 				Map<String, Object> headersMap = (Map<String, Object>) ReflectionUtils
 						.getField(this.headersField, message.getHeaders());
 				headersMap.put(FunctionProperties.SKIP_CONVERSION_HEADER, consumerProperties.isUseNativeDecoding());
 			}
-
 			Object result = function.apply(message);
-			if (result instanceof Publisher) {
-				throw new IllegalStateException("Routing to functions that return Publisher is not supported "
-						+ "in the context of Spring Cloud Stream.");
+			if (result instanceof Publisher && ((FunctionInvocationWrapper) this.function).getTarget() instanceof RoutingFunction) {
+				throw new IllegalStateException("Routing to functions that return Publisher "
+						+ "is not supported in the context of Spring Cloud Stream.");
 			}
 			return result;
 		}

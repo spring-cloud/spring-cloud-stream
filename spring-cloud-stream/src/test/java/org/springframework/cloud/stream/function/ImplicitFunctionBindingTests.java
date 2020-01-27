@@ -18,6 +18,8 @@ package org.springframework.cloud.stream.function;
 
 import java.io.Serializable;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -394,6 +396,53 @@ public class ImplicitFunctionBindingTests {
 		}
 	}
 
+	// see https://github.com/spring-cloud/spring-cloud-stream/issues/1896
+	@Test
+	public void testOutputAsCollectionOfMessages() {
+		System.clearProperty("spring.cloud.function.definition");
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration
+				.getCompleteConfiguration(SplittableTypesConfiguration.class))
+						.web(WebApplicationType.NONE).run("--spring.cloud.function.definition=funcCollectionOfMessages",
+								"--spring.jmx.enabled=false")) {
+
+			InputDestination inputDestination = context.getBean(InputDestination.class);
+			OutputDestination outputDestination = context.getBean(OutputDestination.class);
+
+			Message<byte[]> inputMessage = MessageBuilder.withPayload("aa,bb,cc,dd".getBytes()).build();
+
+			inputDestination.send(inputMessage);
+
+			assertThat(new String(outputDestination.receive(100).getPayload())).isEqualTo("aa");
+			assertThat(new String(outputDestination.receive(100).getPayload())).isEqualTo("bb");
+			assertThat(new String(outputDestination.receive(100).getPayload())).isEqualTo("cc");
+			assertThat(new String(outputDestination.receive(100).getPayload())).isEqualTo("dd");
+			assertThat(outputDestination.receive(100)).isNull();
+		}
+	}
+
+	@Test
+	public void testOutputAsArrayOfMessages() {
+		System.clearProperty("spring.cloud.function.definition");
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration
+				.getCompleteConfiguration(SplittableTypesConfiguration.class))
+						.web(WebApplicationType.NONE).run("--spring.cloud.function.definition=funcArrayOfMessages",
+								"--spring.jmx.enabled=false")) {
+
+			InputDestination inputDestination = context.getBean(InputDestination.class);
+			OutputDestination outputDestination = context.getBean(OutputDestination.class);
+
+			Message<byte[]> inputMessage = MessageBuilder.withPayload("aa,bb,cc,dd".getBytes()).build();
+
+			inputDestination.send(inputMessage);
+
+			assertThat(new String(outputDestination.receive(100).getPayload())).isEqualTo("aa");
+			assertThat(new String(outputDestination.receive(100).getPayload())).isEqualTo("bb");
+			assertThat(new String(outputDestination.receive(100).getPayload())).isEqualTo("cc");
+			assertThat(new String(outputDestination.receive(100).getPayload())).isEqualTo("dd");
+			assertThat(outputDestination.receive(100)).isNull();
+		}
+	}
+
 	@EnableAutoConfiguration
 	public static class NoEnableBindingConfiguration {
 
@@ -541,15 +590,40 @@ public class ImplicitFunctionBindingTests {
 
 		@Bean
 		public Function<Message<List<Map<String, Integer>>>, Message<List<Map<String, Integer>>>> funcA() {
-			return v -> {
-				return v;
-			};
+			return v -> v;
 		}
 
 		@Bean
 		public Function<Message<List<Map<String, String>>>, Message<List<Map<String, String>>>> funcB() {
+			return v -> v;
+		}
+	}
+
+	@EnableAutoConfiguration
+	public static class SplittableTypesConfiguration {
+
+		@Bean
+		public Function<String, Collection<Message<String>>> funcCollectionOfMessages() {
 			return v -> {
-				return v;
+				String[] values = v.split(",");
+				List<Message<String>> messages = new ArrayList<>();
+				for (String value : values) {
+					messages.add(MessageBuilder.withPayload(value).build());
+				}
+				return messages;
+			};
+		}
+
+		@SuppressWarnings("unchecked")
+		@Bean
+		public Function<String, Message<String>[]> funcArrayOfMessages() {
+			return v -> {
+				String[] values = v.split(",");
+				List<Message<String>> messages = new ArrayList<>();
+				for (String value : values) {
+					messages.add(MessageBuilder.withPayload(value).build());
+				}
+				return messages.toArray(new Message[0]);
 			};
 		}
 	}
