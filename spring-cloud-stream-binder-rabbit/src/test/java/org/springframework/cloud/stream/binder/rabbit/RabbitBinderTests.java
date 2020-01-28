@@ -977,6 +977,81 @@ public class RabbitBinderTests extends
 	}
 
 	@Test
+	public void testAutoBindDLQManualAcks() throws Exception {
+		RabbitTestBinder binder = getBinder();
+		ExtendedConsumerProperties<RabbitConsumerProperties> consumerProperties = createConsumerProperties();
+		consumerProperties.getExtension().setPrefix(TEST_PREFIX);
+		consumerProperties.getExtension().setAutoBindDlq(true);
+		consumerProperties.setMaxAttempts(2);
+		consumerProperties.getExtension().setDurableSubscription(true);
+		consumerProperties.getExtension().setAcknowledgeMode(AcknowledgeMode.MANUAL);
+		BindingProperties bindingProperties = createConsumerBindingProperties(
+				consumerProperties);
+		DirectChannel moduleInputChannel = createBindableChannel("input",
+				bindingProperties);
+		moduleInputChannel.setBeanName("dlqTestManual");
+		Client client = new Client("http://guest:guest@localhost:15672/api");
+		moduleInputChannel.subscribe(new MessageHandler() {
+
+			@Override
+			public void handleMessage(Message<?> message) throws MessagingException {
+				// Wait until the unacked state is reflected in the admin
+				QueueInfo info = client.getQueue("/", TEST_PREFIX + "dlqTestManual.default");
+				int n = 0;
+				while (n++ < 100 && info.getMessagesUnacknowledged() < 1L) {
+					try {
+						Thread.sleep(100);
+					}
+					catch (InterruptedException e) {
+						Thread.currentThread().interrupt();
+					}
+					info = client.getQueue("/", TEST_PREFIX + "dlqTestManual.default");
+				}
+				throw new RuntimeException("foo");
+			}
+
+		});
+		Binding<MessageChannel> consumerBinding = binder.bindConsumer("dlqTestManual",
+				"default", moduleInputChannel, consumerProperties);
+
+		RabbitTemplate template = new RabbitTemplate(
+				this.rabbitAvailableRule.getResource());
+		template.convertAndSend("", TEST_PREFIX + "dlqTestManual.default", "foo");
+
+		int n = 0;
+		while (n++ < 100) {
+			Object deadLetter = template
+					.receiveAndConvert(TEST_PREFIX + "dlqTestManual.default.dlq");
+			if (deadLetter != null) {
+				assertThat(deadLetter).isEqualTo("foo");
+				break;
+			}
+			Thread.sleep(100);
+		}
+		assertThat(n).isLessThan(100);
+
+		n = 0;
+		QueueInfo info = client.getQueue("/", TEST_PREFIX + "dlqTestManual.default");
+		while (n++ < 100 && info.getMessagesUnacknowledged() > 0L) {
+			Thread.sleep(100);
+			info = client.getQueue("/", TEST_PREFIX + "dlqTestManual.default");
+		}
+		assertThat(info.getMessagesUnacknowledged()).isEqualTo(0L);
+
+		consumerBinding.unbind();
+
+		ApplicationContext context = TestUtils.getPropertyValue(binder,
+				"binder.provisioningProvider.autoDeclareContext",
+				ApplicationContext.class);
+		assertThat(context.containsBean(TEST_PREFIX + "dlqTestManual.default.binding"))
+				.isFalse();
+		assertThat(context.containsBean(TEST_PREFIX + "dlqTestManual.default")).isFalse();
+		assertThat(context.containsBean(TEST_PREFIX + "dlqTestManual.default.dlq.binding"))
+				.isFalse();
+		assertThat(context.containsBean(TEST_PREFIX + "dlqTestManual.default.dlq")).isFalse();
+	}
+
+	@Test
 	public void testAutoBindDLQPartionedConsumerFirst() throws Exception {
 		RabbitTestBinder binder = getBinder();
 		ExtendedConsumerProperties<RabbitConsumerProperties> properties = createConsumerProperties();

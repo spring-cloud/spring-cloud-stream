@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.binder.rabbit;
 
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
@@ -26,10 +27,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
 import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Envelope;
 
 import org.springframework.amqp.AmqpRejectAndDontRequeueException;
 import org.springframework.amqp.ImmediateAcknowledgeAmqpException;
+import org.springframework.amqp.core.AcknowledgeMode;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessagePostProcessor;
 import org.springframework.amqp.core.MessageProperties;
@@ -49,6 +52,7 @@ import org.springframework.amqp.rabbit.retry.RepublishMessageRecoverer;
 import org.springframework.amqp.rabbit.support.DefaultMessagePropertiesConverter;
 import org.springframework.amqp.rabbit.support.ListenerExecutionFailedException;
 import org.springframework.amqp.rabbit.support.MessagePropertiesConverter;
+import org.springframework.amqp.support.AmqpHeaders;
 import org.springframework.amqp.support.converter.AbstractMessageConverter;
 import org.springframework.amqp.support.converter.MessageConversionException;
 import org.springframework.amqp.support.converter.SimpleMessageConverter;
@@ -588,6 +592,7 @@ public class RabbitMessageChannelBinder extends
 	protected MessageHandler getErrorMessageHandler(ConsumerDestination destination,
 			String group,
 			final ExtendedConsumerProperties<RabbitConsumerProperties> properties) {
+
 		if (properties.getExtension().isRepublishToDlq()) {
 			return new MessageHandler() {
 
@@ -610,9 +615,7 @@ public class RabbitMessageChannelBinder extends
 				private int maxStackTraceLength = -1;
 
 				@Override
-				public void handleMessage(
-						org.springframework.messaging.Message<?> message)
-						throws MessagingException {
+				public void handleMessage(org.springframework.messaging.Message<?> message) throws MessagingException {
 					Message amqpMessage = StaticMessageHeaderAccessor.getSourceData(message);
 
 					if (!(message instanceof ErrorMessage)) {
@@ -669,6 +672,21 @@ public class RabbitMessageChannelBinder extends
 								this.routingKey != null ? this.routingKey
 										: messageProperties.getConsumerQueue(),
 								amqpMessage);
+						if (properties.getExtension().getAcknowledgeMode().equals(AcknowledgeMode.MANUAL)) {
+							org.springframework.messaging.Message<?> original =
+									((ErrorMessage) message).getOriginalMessage();
+							if (original != null) {
+								// If we are using manual acks, ack the original message.
+								try {
+									original.getHeaders().get(AmqpHeaders.CHANNEL, Channel.class)
+										.basicAck(original.getHeaders()
+												.get(AmqpHeaders.DELIVERY_TAG, Long.class), false);
+								}
+								catch (IOException e) {
+									logger.debug("Failed to ack original message", e);
+								}
+							}
+						}
 					}
 				}
 
@@ -713,7 +731,7 @@ public class RabbitMessageChannelBinder extends
 								+ message.getClass().toString() + " for: " + message);
 						throw new ListenerExecutionFailedException(
 								"Unexpected error message " + message,
-								new AmqpRejectAndDontRequeueException(""), null);
+								new AmqpRejectAndDontRequeueException(""), (Message[]) null);
 					}
 					else if (amqpMessage == null) {
 						logger.error("No raw message header in " + message);
