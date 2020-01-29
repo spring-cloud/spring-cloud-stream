@@ -29,7 +29,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -542,6 +543,8 @@ public class FunctionConfiguration {
 	 */
 	private static class FunctionBindingRegistrar implements InitializingBean, ApplicationContextAware, EnvironmentAware {
 
+		protected final Log logger = LogFactory.getLog(getClass());
+
 		private final BinderTypeRegistry binderTypeRegistry;
 
 		private final FunctionCatalog functionCatalog;
@@ -593,6 +596,9 @@ public class FunctionConfiguration {
 						registry.registerBeanDefinition(functionDefinition + "_binding", functionBindableProxyDefinition);
 					}
 				}
+			}
+			else {
+				logger.info("Functional binding is disabled due to the presense of @EnableBinding annotation in your configuration");
 			}
 		}
 

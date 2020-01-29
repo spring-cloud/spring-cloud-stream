@@ -2766,8 +2766,9 @@ public void sampleTest() {
 }
 ----
 
-For cases where you have multiple bindings and/or multiple inputs and outputs, the `send()` and `receive()`
-methods of `InputDestination` and `OutputDestination` are overridden to allow you to provide index of the input and output destination.
+For cases where you have multiple bindings and/or multiple inputs and outputs, or simply want to be explicit about names of 
+the destination you are sending to or receiving from, the `send()` and `receive()`
+methods of `InputDestination` and `OutputDestination` are overridden to allow you to provide the name of the input and output destination.
 
 Consider the following sample:
 [source,java]
@@ -2803,21 +2804,49 @@ public void testMultipleFunctions() {
 		OutputDestination outputDestination = context.getBean(OutputDestination.class);
 
 		Message<byte[]> inputMessage = MessageBuilder.withPayload("Hello".getBytes()).build();
-		inputDestination.send(inputMessage, 0);
-		inputDestination.send(inputMessage, 1);
+		inputDestination.send(inputMessage, "uppercase-in-0");
+		inputDestination.send(inputMessage, "uppercase-in-0");
 
-		Message<byte[]> outputMessage = outputDestination.receive(0, 0);
+		Message<byte[]> outputMessage = outputDestination.receive(0, "uppercase-out-0");
 		assertThat(outputMessage.getPayload()).isEqualTo("HELLO".getBytes());
 
-		outputMessage = outputDestination.receive(0, 1);
+		outputMessage = outputDestination.receive(0, "uppercase-out-0");
 		assertThat(outputMessage.getPayload()).isEqualTo("olleH".getBytes());
 	}
 }
 ----
 
-Note, that first we need to provide `spring.cloud.function.definition` property as described in <<Multiple functions in a single application>> section
-to declare which functions we intend to use for binding and then use their index (the order of definition in the `spring.cloud.function.definition` property)
-to send/receive messages.
+For cases where you have additional mapping properties such as `destination` you should use those names. For example, consider a different version of the
+preceding test where we explicitly map inputs and outputs of the `uppercase` function to `myInput` and `myOutput` binding names:
+[source,java]
+----
+@Test
+public void testMultipleFunctions() {
+	try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+			TestChannelBinderConfiguration.getCompleteConfiguration(
+					SampleFunctionConfiguration.class))
+							.run(
+							"--spring.cloud.function.definition=uppercase;reverse",
+							"--spring.cloud.stream.bindings.uppercase-in-0.destination=myInput",
+							"--spring.cloud.stream.bindings.uppercase-out-0.destination=myOutput",
+							)) {
+		context.getBean(InputDestination.class);
+
+		InputDestination inputDestination = context.getBean(InputDestination.class);
+		OutputDestination outputDestination = context.getBean(OutputDestination.class);
+
+		Message<byte[]> inputMessage = MessageBuilder.withPayload("Hello".getBytes()).build();
+		inputDestination.send(inputMessage, "myInput");
+		inputDestination.send(inputMessage, "myInput");
+
+		Message<byte[]> outputMessage = outputDestination.receive(0, "myOutput");
+		assertThat(outputMessage.getPayload()).isEqualTo("HELLO".getBytes());
+
+		outputMessage = outputDestination.receive(0, "myOutput");
+		assertThat(outputMessage.getPayload()).isEqualTo("olleH".getBytes());
+	}
+}
+----
 
 You can also use this binder with legacy annotation-based configuration:
 
