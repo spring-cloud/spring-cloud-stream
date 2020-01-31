@@ -127,12 +127,15 @@ public class FunctionConfiguration {
 			BindingServiceProperties serviceProperties, ConfigurableApplicationContext applicationContext,
 			FunctionBindingRegistrar bindingHolder, BinderAwareChannelResolver dynamicDestinationResolver) {
 
-		boolean shouldCreateInitializer = bindableProxyFactories != null
-				&& (applicationContext.containsBean("output") // need this to compose to existing legacy message source
-				|| ObjectUtils.isEmpty(applicationContext.getBeanNamesForAnnotation(EnableBinding.class)));
+//		boolean shouldCreateInitializer = bindableProxyFactories != null
+//				&& (applicationContext.containsBean("output") // need this to compose to existing legacy message source
+//				|| ObjectUtils.isEmpty(applicationContext.getBeanNamesForAnnotation(EnableBinding.class)));
+
+		boolean shouldCreateInitializer = applicationContext.containsBean("output")
+				|| ObjectUtils.isEmpty(applicationContext.getBeanNamesForAnnotation(EnableBinding.class));
 
 		return shouldCreateInitializer
-				? new FunctionToDestinationBinder(functionCatalog, functionProperties, bindableProxyFactories,
+				? new FunctionToDestinationBinder(functionCatalog, functionProperties,
 						serviceProperties, dynamicDestinationResolver)
 						: null;
 
@@ -282,7 +285,7 @@ public class FunctionConfiguration {
 
 		private GenericApplicationContext applicationContext;
 
-		private final BindableProxyFactory[] bindableProxyFactories;
+		private BindableProxyFactory[] bindableProxyFactories;
 
 		private final FunctionCatalog functionCatalog;
 
@@ -293,9 +296,7 @@ public class FunctionConfiguration {
 		private final BinderAwareChannelResolver dynamicDestinationResolver;
 
 		FunctionToDestinationBinder(FunctionCatalog functionCatalog, StreamFunctionProperties functionProperties,
-				BindableProxyFactory[] bindableProxyFactories, BindingServiceProperties serviceProperties,
-				BinderAwareChannelResolver dynamicDestinationResolver) {
-			this.bindableProxyFactories = bindableProxyFactories;
+				BindingServiceProperties serviceProperties, BinderAwareChannelResolver dynamicDestinationResolver) {
 			this.functionCatalog = functionCatalog;
 			this.functionProperties = functionProperties;
 			this.serviceProperties = serviceProperties;
@@ -309,6 +310,8 @@ public class FunctionConfiguration {
 
 		@Override
 		public void afterPropertiesSet() throws Exception {
+			Map<String, BindableProxyFactory> beansOfType = applicationContext.getBeansOfType(BindableProxyFactory.class);
+			this.bindableProxyFactories = beansOfType.values().toArray(new BindableProxyFactory[0]);
 			for (BindableProxyFactory bindableProxyFactory : this.bindableProxyFactories) {
 				String functionDefinition = bindableProxyFactory instanceof BindableFunctionProxyFactory
 						? ((BindableFunctionProxyFactory) bindableProxyFactory).getFunctionDefinition()

@@ -30,15 +30,22 @@ import org.junit.After;
 import org.junit.Test;
 import reactor.core.publisher.Flux;
 
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.function.context.config.ContextFunctionCatalogAutoConfiguration;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.StreamListener;
+import org.springframework.cloud.stream.binder.Binding;
+import org.springframework.cloud.stream.binder.ConsumerProperties;
+import org.springframework.cloud.stream.binder.ProducerProperties;
+import org.springframework.cloud.stream.binder.test.FunctionBindingTestUtils;
 import org.springframework.cloud.stream.binder.test.InputDestination;
 import org.springframework.cloud.stream.binder.test.OutputDestination;
+import org.springframework.cloud.stream.binder.test.TestChannelBinder;
 import org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration;
+import org.springframework.cloud.stream.binding.BindableProxyFactory;
 import org.springframework.cloud.stream.messaging.Sink;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
@@ -48,6 +55,7 @@ import org.springframework.integration.handler.LoggingHandler;
 import org.springframework.integration.scheduling.PollerMetadata;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.support.GenericMessage;
 import org.springframework.scheduling.support.PeriodicTrigger;
 
@@ -65,6 +73,30 @@ public class ImplicitFunctionBindingTests {
 	public void after() {
 		System.clearProperty("spring.cloud.function.definition");
 		System.clearProperty("spring.cloud.function.definition");
+	}
+
+	@Test
+	public void marcinsTest() {
+		ConfigurableApplicationContext context = new SpringApplicationBuilder(
+				TestChannelBinderConfiguration.getCompleteConfiguration(EmptyConfiguration.class))
+						.web(WebApplicationType.NONE).run("--spring.jmx.enabled=false");
+
+		InputDestination input = context.getBean(InputDestination.class);
+		try {
+			input.send(new GenericMessage<byte[]>("hello".getBytes()));
+			fail(); // it should since there are no functions and no bindings
+		}
+		catch (Exception e) {
+			// good, we expected it
+		}
+
+		Function<String, String> function = v -> v.toUpperCase();
+		FunctionBindingTestUtils.bind(context, function);
+
+		input.send(new GenericMessage<byte[]>("hello".getBytes()));
+
+		OutputDestination output = context.getBean(OutputDestination.class);
+		assertThat(new String(output.receive().getPayload())).isEqualTo("HELLO");
 	}
 
 	@Test
