@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 the original author or authors.
+ * Copyright 2015-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,8 +28,6 @@ import org.springframework.cloud.stream.binder.ConsumerProperties;
 import org.springframework.cloud.stream.binder.DefaultPollableMessageSource;
 import org.springframework.cloud.stream.binder.JavaClassMimeTypeUtils;
 import org.springframework.cloud.stream.binder.PartitionHandler;
-import org.springframework.cloud.stream.binder.PartitionKeyExtractorStrategy;
-import org.springframework.cloud.stream.binder.PartitionSelectorStrategy;
 import org.springframework.cloud.stream.binder.PollableMessageSource;
 import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.cloud.stream.config.BindingProperties;
@@ -49,11 +47,11 @@ import org.springframework.messaging.handler.invocation.InvocableHandlerMethod;
 import org.springframework.messaging.support.ChannelInterceptor;
 import org.springframework.messaging.support.ErrorMessage;
 import org.springframework.util.Assert;
-import org.springframework.util.CollectionUtils;
 import org.springframework.util.MimeType;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
+//import org.springframework.util.StringUtils;
 
 /**
  * A {@link MessageChannelConfigurer} that sets data types and message converters based on
@@ -147,23 +145,21 @@ public class MessageConverterConfigurer
 		boolean partitioned = !inbound && producerProperties != null && producerProperties.isPartitioned();
 		boolean functional = streamFunctionProperties != null && StringUtils.hasText(streamFunctionProperties.getDefinition());
 		if (partitioned) {
-			messageChannel.addInterceptor(new PartitioningInterceptor(bindingProperties,
-					getPartitionKeyExtractorStrategy(producerProperties),
-					getPartitionSelectorStrategy(producerProperties)));
+			if (inbound || !functional) {
+				messageChannel.addInterceptor(new PartitioningInterceptor(bindingProperties));
+			}
 		}
 
 		ConsumerProperties consumerProperties = bindingProperties.getConsumer();
 		if (this.isNativeEncodingNotSet(producerProperties, consumerProperties, inbound)) {
-			if (partitioned || !functional) {
-				if (inbound) {
-					messageChannel.addInterceptor(
-							new InboundContentTypeEnhancingInterceptor(contentType));
-				}
-				else {
-					messageChannel.addInterceptor(
-							new OutboundContentTypeConvertingInterceptor(contentType,
-									this.compositeMessageConverter));
-				}
+			if (inbound) {
+				messageChannel.addInterceptor(
+						new InboundContentTypeEnhancingInterceptor(contentType));
+			}
+			else {
+				messageChannel.addInterceptor(
+						new OutboundContentTypeConvertingInterceptor(contentType,
+								this.compositeMessageConverter));
 			}
 		}
 	}
@@ -178,76 +174,6 @@ public class MessageConverterConfigurer
 			return producerProperties == null
 					|| !producerProperties.isUseNativeEncoding();
 		}
-	}
-
-	private PartitionKeyExtractorStrategy getPartitionKeyExtractorStrategy(
-			ProducerProperties producerProperties) {
-		PartitionKeyExtractorStrategy partitionKeyExtractor;
-		if (StringUtils.hasText(producerProperties.getPartitionKeyExtractorName())) {
-			partitionKeyExtractor = this.beanFactory.getBean(
-					producerProperties.getPartitionKeyExtractorName(),
-					PartitionKeyExtractorStrategy.class);
-			Assert.notNull(partitionKeyExtractor,
-					"PartitionKeyExtractorStrategy bean with the name '"
-							+ producerProperties.getPartitionKeyExtractorName()
-							+ "' can not be found. Has it been configured (e.g., @Bean)?");
-		}
-		else {
-			Map<String, PartitionKeyExtractorStrategy> extractors = this.beanFactory
-					.getBeansOfType(PartitionKeyExtractorStrategy.class);
-			Assert.isTrue(extractors.size() <= 1,
-					"Multiple  beans of type 'PartitionKeyExtractorStrategy' found. "
-							+ extractors + ". Please "
-							+ "use 'spring.cloud.stream.bindings.output.producer.partitionKeyExtractorName' property to specify "
-							+ "the name of the bean to be used.");
-			partitionKeyExtractor = CollectionUtils.isEmpty(extractors) ? null
-					: extractors.values().iterator().next();
-		}
-		return partitionKeyExtractor;
-	}
-
-	private PartitionSelectorStrategy getPartitionSelectorStrategy(
-			ProducerProperties producerProperties) {
-		PartitionSelectorStrategy partitionSelector;
-		if (StringUtils.hasText(producerProperties.getPartitionSelectorName())) {
-			partitionSelector = this.beanFactory.getBean(
-					producerProperties.getPartitionSelectorName(),
-					PartitionSelectorStrategy.class);
-			Assert.notNull(partitionSelector,
-					"PartitionSelectorStrategy bean with the name '"
-							+ producerProperties.getPartitionSelectorName()
-							+ "' can not be found. Has it been configured (e.g., @Bean)?");
-		}
-		else {
-			Map<String, PartitionSelectorStrategy> selectors = this.beanFactory
-					.getBeansOfType(PartitionSelectorStrategy.class);
-			Assert.isTrue(selectors.size() <= 1,
-					"Multiple  beans of type 'PartitionSelectorStrategy' found. "
-							+ selectors + ". Please "
-							+ "use 'spring.cloud.stream.bindings.output.producer.partitionSelectorName' property to specify "
-							+ "the name of the bean to be used.");
-			partitionSelector = CollectionUtils.isEmpty(selectors)
-					? new DefaultPartitionSelector()
-					: selectors.values().iterator().next();
-		}
-		return partitionSelector;
-	}
-
-	/**
-	 * Default partition strategy; only works on keys with "real" hash codes, such as
-	 * String. Caller now always applies modulo so no need to do so here.
-	 */
-	private static class DefaultPartitionSelector implements PartitionSelectorStrategy {
-
-		@Override
-		public int selectPartition(Object key, int partitionCount) {
-			int hashCode = key.hashCode();
-			if (hashCode == Integer.MIN_VALUE) {
-				hashCode = 0;
-			}
-			return Math.abs(hashCode);
-		}
-
 	}
 
 	/**
@@ -381,15 +307,12 @@ public class MessageConverterConfigurer
 
 		private final PartitionHandler partitionHandler;
 
-		PartitioningInterceptor(BindingProperties bindingProperties,
-				PartitionKeyExtractorStrategy partitionKeyExtractorStrategy,
-				PartitionSelectorStrategy partitionSelectorStrategy) {
+		PartitioningInterceptor(BindingProperties bindingProperties) {
 			this.bindingProperties = bindingProperties;
 			this.partitionHandler = new PartitionHandler(
 					ExpressionUtils.createStandardEvaluationContext(
 							MessageConverterConfigurer.this.beanFactory),
-					this.bindingProperties.getProducer(), partitionKeyExtractorStrategy,
-					partitionSelectorStrategy);
+					this.bindingProperties.getProducer(), MessageConverterConfigurer.this.beanFactory);
 		}
 
 		public void setPartitionCount(int partitionCount) {

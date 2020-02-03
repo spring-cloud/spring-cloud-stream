@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2019 the original author or authors.
+ * Copyright 2017-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.springframework.cloud.stream.config;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -29,20 +28,21 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Role;
 import org.springframework.integration.context.IntegrationContextUtils;
-import org.springframework.integration.support.converter.ConfigurableCompositeMessageConverter;
 import org.springframework.integration.support.converter.DefaultDatatypeChannelMessageConverter;
+import org.springframework.messaging.converter.CompositeMessageConverter;
 import org.springframework.messaging.converter.MessageConverter;
 
 /**
  * @author Vinicius Carvalho
  * @author Artem Bilan
+ * @author Oleg Zhurakousky
  */
 @Configuration
 @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
 class ContentTypeConfiguration {
 
 	@Bean(name = IntegrationContextUtils.ARGUMENT_RESOLVER_MESSAGE_CONVERTER_BEAN_NAME)
-	public ConfigurableCompositeMessageConverter configurableCompositeMessageConverter(
+	public CompositeMessageConverter configurableCompositeMessageConverter(
 			ObjectProvider<ObjectMapper> objectMapperObjectProvider,
 			List<MessageConverter> customMessageConverters) {
 
@@ -50,12 +50,9 @@ class ContentTypeConfiguration {
 				.filter(c -> !(c instanceof DefaultDatatypeChannelMessageConverter)).collect(Collectors.toList());
 
 		CompositeMessageConverterFactory factory =
-				new CompositeMessageConverterFactory(new ArrayList<>(), objectMapperObjectProvider.getIfAvailable(ObjectMapper::new));
+				new CompositeMessageConverterFactory(customMessageConverters, objectMapperObjectProvider.getIfAvailable(ObjectMapper::new));
 
-		ArrayList<MessageConverter> messageConverters = new ArrayList<>(customMessageConverters);
-		messageConverters.addAll(factory.getMessageConverterForAllRegistered().getConverters());
-
-		return new ConfigurableCompositeMessageConverter(messageConverters);
+		return factory.getMessageConverterForAllRegistered();
 	}
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2018 the original author or authors.
+ * Copyright 2016-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,18 @@
 
 package org.springframework.cloud.stream.binder;
 
+import java.lang.reflect.Field;
+import java.util.Map;
+
+import org.springframework.beans.factory.BeanFactory;
+import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.context.expression.BeanFactoryResolver;
 import org.springframework.expression.EvaluationContext;
 import org.springframework.messaging.Message;
 import org.springframework.util.Assert;
+import org.springframework.util.CollectionUtils;
+import org.springframework.util.ReflectionUtils;
+import org.springframework.util.StringUtils;
 
 /**
  * Utility class to determine if a binding is configured for partitioning (based on the
@@ -31,6 +40,7 @@ import org.springframework.util.Assert;
  * @author Ilayaperumal Gopinathan
  * @author Mark Fisher
  * @author Marius Bogoevici
+ * @author Oleg Zhurakousky
  */
 public class PartitionHandler {
 
@@ -42,6 +52,8 @@ public class PartitionHandler {
 
 	private final PartitionSelectorStrategy partitionSelectorStrategy;
 
+	private final ConfigurableListableBeanFactory beanFactory;
+
 	private volatile int partitionCount;
 
 	/**
@@ -50,16 +62,35 @@ public class PartitionHandler {
 	 * @param properties binder properties
 	 * @param partitionKeyExtractorStrategy PartitionKeyExtractor strategy
 	 * @param partitionSelectorStrategy PartitionSelector strategy
+	 *
+	 * @deprecated since 3.0.2. Please use another constructor which allows you to pass an instance of beanFactory
 	 */
+	@Deprecated
 	public PartitionHandler(EvaluationContext evaluationContext,
 			ProducerProperties properties,
 			PartitionKeyExtractorStrategy partitionKeyExtractorStrategy,
 			PartitionSelectorStrategy partitionSelectorStrategy) {
+
+		this(evaluationContext, properties, (ConfigurableListableBeanFactory) extractBeanFactoryFromEvaluationContext(evaluationContext));
+	}
+
+	/**
+	 * Construct a {@code PartitionHandler}.
+	 * @param evaluationContext evaluation context for binder
+	 * @param properties binder properties
+	 * @param beanFactory instance of ConfigurableListableBeanFactory
+	 *
+	 * @since 3.0.2
+	 */
+	public PartitionHandler(EvaluationContext evaluationContext,
+			ProducerProperties properties, ConfigurableListableBeanFactory beanFactory) {
+		this.beanFactory = beanFactory;
 		this.evaluationContext = evaluationContext;
 		this.producerProperties = properties;
-		this.partitionKeyExtractorStrategy = partitionKeyExtractorStrategy;
-		this.partitionSelectorStrategy = partitionSelectorStrategy;
+		this.partitionKeyExtractorStrategy = this.getPartitionKeyExtractorStrategy(properties);
+		this.partitionSelectorStrategy = this.getPartitionSelectorStrategy(properties);
 		this.partitionCount = this.producerProperties.getPartitionCount();
+
 	}
 
 	/**
@@ -119,5 +150,88 @@ public class PartitionHandler {
 		}
 		return null;
 	}
+
+	private PartitionKeyExtractorStrategy getPartitionKeyExtractorStrategy(
+			ProducerProperties producerProperties) {
+		PartitionKeyExtractorStrategy partitionKeyExtractor;
+		if (StringUtils.hasText(producerProperties.getPartitionKeyExtractorName())) {
+			partitionKeyExtractor = (PartitionKeyExtractorStrategy) this.beanFactory.getBean(
+					producerProperties.getPartitionKeyExtractorName(),
+					PartitionKeyExtractorStrategy.class);
+			Assert.notNull(partitionKeyExtractor,
+					"PartitionKeyExtractorStrategy bean with the name '"
+							+ producerProperties.getPartitionKeyExtractorName()
+							+ "' can not be found. Has it been configured (e.g., @Bean)?");
+		}
+		else {
+			Map<String, PartitionKeyExtractorStrategy> extractors = this.beanFactory
+					.getBeansOfType(PartitionKeyExtractorStrategy.class);
+			Assert.isTrue(extractors.size() <= 1,
+					"Multiple  beans of type 'PartitionKeyExtractorStrategy' found. "
+							+ extractors + ". Please "
+							+ "use 'spring.cloud.stream.bindings.output.producer.partitionKeyExtractorName' property to specify "
+							+ "the name of the bean to be used.");
+			partitionKeyExtractor = CollectionUtils.isEmpty(extractors) ? null
+					: extractors.values().iterator().next();
+		}
+		return partitionKeyExtractor;
+	}
+
+	private PartitionSelectorStrategy getPartitionSelectorStrategy(
+			ProducerProperties producerProperties) {
+		PartitionSelectorStrategy partitionSelector;
+		if (StringUtils.hasText(producerProperties.getPartitionSelectorName())) {
+			partitionSelector = this.beanFactory.getBean(
+					producerProperties.getPartitionSelectorName(),
+					PartitionSelectorStrategy.class);
+			Assert.notNull(partitionSelector,
+					"PartitionSelectorStrategy bean with the name '"
+							+ producerProperties.getPartitionSelectorName()
+							+ "' can not be found. Has it been configured (e.g., @Bean)?");
+		}
+		else {
+			Map<String, PartitionSelectorStrategy> selectors = this.beanFactory
+					.getBeansOfType(PartitionSelectorStrategy.class);
+			Assert.isTrue(selectors.size() <= 1,
+					"Multiple  beans of type 'PartitionSelectorStrategy' found. "
+							+ selectors + ". Please "
+							+ "use 'spring.cloud.stream.bindings.output.producer.partitionSelectorName' property to specify "
+							+ "the name of the bean to be used.");
+			partitionSelector = CollectionUtils.isEmpty(selectors)
+					? new DefaultPartitionSelector()
+					: selectors.values().iterator().next();
+		}
+		return partitionSelector;
+	}
+
+	private static BeanFactory extractBeanFactoryFromEvaluationContext(EvaluationContext evaluationContext) {
+		try {
+			Field field = ReflectionUtils.findField(BeanFactoryResolver.class, "beanFactory");
+			field.setAccessible(true);
+			return (BeanFactory) field.get(evaluationContext);
+		}
+		catch (Exception e) {
+			throw new RuntimeException("Failed to extract beanFactory from EvaluationContext. Please use different constructor"
+					+ " which allows you to pass the instance of the beanFactory.");
+		}
+	}
+
+	/**
+	 * Default partition strategy; only works on keys with "real" hash codes, such as
+	 * String. Caller now always applies modulo so no need to do so here.
+	 */
+	private static class DefaultPartitionSelector implements PartitionSelectorStrategy {
+
+		@Override
+		public int selectPartition(Object key, int partitionCount) {
+			int hashCode = key.hashCode();
+			if (hashCode == Integer.MIN_VALUE) {
+				hashCode = 0;
+			}
+			return Math.abs(hashCode);
+		}
+	}
+
+
 
 }

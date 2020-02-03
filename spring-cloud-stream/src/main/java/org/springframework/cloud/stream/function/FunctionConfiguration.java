@@ -58,9 +58,11 @@ import org.springframework.cloud.function.context.config.ContextFunctionCatalogA
 import org.springframework.cloud.function.context.config.FunctionContextUtils;
 import org.springframework.cloud.function.context.config.RoutingFunction;
 import org.springframework.cloud.stream.annotation.EnableBinding;
+import org.springframework.cloud.stream.binder.BinderHeaders;
 import org.springframework.cloud.stream.binder.BinderTypeRegistry;
 import org.springframework.cloud.stream.binder.BindingCreatedEvent;
 import org.springframework.cloud.stream.binder.ConsumerProperties;
+import org.springframework.cloud.stream.binder.PartitionHandler;
 import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.cloud.stream.binding.BindableProxyFactory;
 import org.springframework.cloud.stream.binding.BinderAwareChannelResolver;
@@ -81,11 +83,13 @@ import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.core.env.Environment;
 import org.springframework.core.type.MethodMetadata;
+import org.springframework.expression.spel.support.StandardEvaluationContext;
 import org.springframework.integration.channel.AbstractMessageChannel;
 import org.springframework.integration.channel.MessageChannelReactiveUtils;
 import org.springframework.integration.dsl.IntegrationFlow;
 import org.springframework.integration.dsl.IntegrationFlowBuilder;
 import org.springframework.integration.dsl.IntegrationFlows;
+import org.springframework.integration.expression.ExpressionUtils;
 import org.springframework.integration.handler.ServiceActivatingHandler;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.lang.Nullable;
@@ -126,10 +130,6 @@ public class FunctionConfiguration {
 			StreamFunctionProperties functionProperties, @Nullable BindableProxyFactory[] bindableProxyFactories,
 			BindingServiceProperties serviceProperties, ConfigurableApplicationContext applicationContext,
 			FunctionBindingRegistrar bindingHolder, BinderAwareChannelResolver dynamicDestinationResolver) {
-
-//		boolean shouldCreateInitializer = bindableProxyFactories != null
-//				&& (applicationContext.containsBean("output") // need this to compose to existing legacy message source
-//				|| ObjectUtils.isEmpty(applicationContext.getBeanNamesForAnnotation(EnableBinding.class)));
 
 		boolean shouldCreateInitializer = applicationContext.containsBean("output")
 				|| ObjectUtils.isEmpty(applicationContext.getBeanNamesForAnnotation(EnableBinding.class));
@@ -417,7 +417,8 @@ public class FunctionConfiguration {
 			ProducerProperties producerProperties = StringUtils.hasText(outputChannelName)
 					? this.serviceProperties.getBindingProperties(outputChannelName).getProducer()
 							: null;
-			ServiceActivatingHandler handler = new ServiceActivatingHandler(new FunctionWrapper(function, consumerProperties, producerProperties)) {
+			ServiceActivatingHandler handler = new ServiceActivatingHandler(new FunctionWrapper(function, consumerProperties,
+					producerProperties, applicationContext)) {
 				@Override
 				protected void sendOutputs(Object result, Message<?> requestMessage) {
 					if (result instanceof Message && ((Message<?>) result).getHeaders().get("spring.cloud.stream.sendto.destination") != null) {
@@ -512,7 +513,10 @@ public class FunctionConfiguration {
 
 		private final Field headersField;
 
-		FunctionWrapper(Function function, ConsumerProperties consumerProperties, ProducerProperties producerProperties) {
+		private final ConfigurableApplicationContext applicationContext;
+
+		FunctionWrapper(Function function, ConsumerProperties consumerProperties,
+				ProducerProperties producerProperties, ConfigurableApplicationContext applicationContext) {
 			this.function = function;
 			Type type =  ((FunctionInvocationWrapper) function).getFunctionType();
 			if (FunctionTypeUtils.isReactive(FunctionTypeUtils.getOutputType(type, 0))) {
@@ -522,7 +526,9 @@ public class FunctionConfiguration {
 			this.producerProperties = producerProperties;
 			this.headersField = ReflectionUtils.findField(MessageHeaders.class, "headers");
 			this.headersField.setAccessible(true);
+			this.applicationContext = applicationContext;
 		}
+
 		@SuppressWarnings("unchecked")
 		@Override
 		public Object apply(Message<byte[]> message) {
@@ -531,7 +537,21 @@ public class FunctionConfiguration {
 						.getField(this.headersField, message.getHeaders());
 				headersMap.put(FunctionProperties.SKIP_CONVERSION_HEADER, consumerProperties.isUseNativeDecoding());
 			}
-			Object result = function.apply(message);
+
+			Function<Message, Message> outputMessageEnricher = null;
+			if (producerProperties != null && producerProperties.isPartitioned()) {
+				StandardEvaluationContext evaluationContext = ExpressionUtils.createStandardEvaluationContext(this.applicationContext.getBeanFactory());
+				PartitionHandler partitionHandler = new PartitionHandler(evaluationContext, producerProperties, this.applicationContext.getBeanFactory());
+
+				outputMessageEnricher = outputMessage -> {
+					int partitionId = partitionHandler.determinePartition(outputMessage);
+					return MessageBuilder
+						.fromMessage(outputMessage)
+						.setHeader(BinderHeaders.PARTITION_HEADER, partitionId).build();
+				};
+			}
+
+			Object result = ((FunctionInvocationWrapper) function).apply(message, outputMessageEnricher);
 			if (result instanceof Publisher && ((FunctionInvocationWrapper) this.function).getTarget() instanceof RoutingFunction) {
 				throw new IllegalStateException("Routing to functions that return Publisher "
 						+ "is not supported in the context of Spring Cloud Stream.");

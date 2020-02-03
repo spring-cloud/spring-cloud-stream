@@ -552,6 +552,29 @@ public class ImplicitFunctionBindingTests {
 		}
 	}
 
+	@Test
+	public void partitionOnOutputPayloadTest() {
+		System.clearProperty("spring.cloud.function.definition");
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration
+				.getCompleteConfiguration(PojoFunctionConfiguration.class))
+						.web(WebApplicationType.NONE).run("--spring.cloud.function.definition=func",
+								"--spring.cloud.stream.bindings.func-out-0.producer.partitionKeyExpression=payload.id",
+								"--spring.cloud.stream.bindings.func-out-0.producer.partitionCount=5",
+								"--spring.jmx.enabled=false")) {
+
+			InputDestination inputDestination = context.getBean(InputDestination.class);
+			OutputDestination outputDestination = context.getBean(OutputDestination.class);
+
+			Message<byte[]> inputMessage = MessageBuilder.withPayload("Jim Lahey".getBytes()).build();
+
+			inputDestination.send(inputMessage, "func-in-0");
+
+			assertThat(outputDestination.receive(100, "func-out-0").getHeaders().get("scst_partition")).isEqualTo(3);
+
+			assertThat(outputDestination.receive(100)).isNull();
+		}
+	}
+
 	@EnableAutoConfiguration
 	public static class NoEnableBindingConfiguration {
 
@@ -734,6 +757,41 @@ public class ImplicitFunctionBindingTests {
 				}
 				return messages.toArray(new Message[0]);
 			};
+		}
+	}
+
+	@EnableAutoConfiguration
+	public static class PojoFunctionConfiguration {
+
+		@Bean
+		public Function<String, Person> func() {
+			return x -> {
+				Person person = new Person();
+				person.setName(x);
+				person.setId(3);
+				return person;
+			};
+		}
+	}
+
+	public static class Person {
+		private String name;
+		private int id;
+
+		public String getName() {
+			return name;
+		}
+
+		public void setName(String name) {
+			this.name = name;
+		}
+
+		public int getId() {
+			return id;
+		}
+
+		public void setId(int id) {
+			this.id = id;
 		}
 	}
 
