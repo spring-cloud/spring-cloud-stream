@@ -22,6 +22,9 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.cloud.function.context.FunctionCatalog;
+import org.springframework.cloud.function.context.FunctionRegistration;
+import org.springframework.cloud.function.context.catalog.BeanFactoryAwareFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binder.ConsumerProperties;
 import org.springframework.cloud.stream.binder.ProducerProperties;
@@ -31,14 +34,30 @@ import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.messaging.MessageChannel;
 
+/**
+ * A utility class to assist with just-in-time bindings.
+ * It is intended for internal framework testing and is NOTfor public use. Breaking changes are likely!!!
+ *
+ * @author Oleg Zhurakousky
+ * @since 3.0.2
+ *
+ */
 public class FunctionBindingTestUtils {
 
+	@SuppressWarnings("rawtypes")
 	public static void bind(ConfigurableApplicationContext applicationContext, Object function) {
 		try {
-			String functionName = function instanceof Function ? "function" : (function instanceof Consumer ? "consumer" : "supplier");
+			Object targetFunction = function;
+			if (function instanceof FunctionRegistration) {
+				targetFunction = ((FunctionRegistration) function).getTarget();
+			}
+			String functionName = targetFunction instanceof Function ? "function" : (targetFunction instanceof Consumer ? "consumer" : "supplier");
+
 			System.setProperty("spring.cloud.function.definition", functionName);
 			applicationContext.getBeanFactory().registerSingleton(functionName, function);
 
+			Object actualFunction =  ((FunctionInvocationWrapper) applicationContext
+					.getBean(FunctionCatalog.class).lookup(functionName)).getTarget();
 
 			InitializingBean functionBindingRegistrar = applicationContext.getBean("functionBindingRegistrar", InitializingBean.class);
 			functionBindingRegistrar.afterPropertiesSet();
@@ -58,15 +77,14 @@ public class FunctionBindingTestUtils {
 			ConsumerProperties consumerProperties = inputProperties.getConsumer();
 			ProducerProperties producerProperties = outputProperties.getProducer();
 
-
 			TestChannelBinder binder = applicationContext.getBean(TestChannelBinder.class);
-			if (function instanceof Supplier || function instanceof Function) {
+			if (actualFunction instanceof Supplier || actualFunction instanceof Function) {
 				Binding<MessageChannel> bindProducer = binder.bindProducer(outputProperties.getDestination(),
 						applicationContext.getBean(outputBindingName, MessageChannel.class),
 						producerProperties == null ? new ProducerProperties() : producerProperties);
 				bindProducer.start();
 			}
-			if (function instanceof Consumer || function instanceof Function) {
+			if (actualFunction instanceof Consumer || actualFunction instanceof Function) {
 				Binding<MessageChannel> bindConsumer = binder.bindConsumer(inputProperties.getDestination(), null,
 						applicationContext.getBean(inputBindingName, MessageChannel.class),
 						consumerProperties == null ? new ConsumerProperties() : consumerProperties);

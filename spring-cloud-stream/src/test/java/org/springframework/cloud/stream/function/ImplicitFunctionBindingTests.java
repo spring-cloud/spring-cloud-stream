@@ -33,6 +33,8 @@ import reactor.core.publisher.Flux;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.cloud.function.context.FunctionRegistration;
+import org.springframework.cloud.function.context.FunctionType;
 import org.springframework.cloud.function.context.config.ContextFunctionCatalogAutoConfiguration;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.StreamListener;
@@ -65,31 +67,60 @@ public class ImplicitFunctionBindingTests {
 	@After
 	public void after() {
 		System.clearProperty("spring.cloud.function.definition");
-		System.clearProperty("spring.cloud.function.definition");
+	}
+
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	@Test
+	public void dynamicBindingTestWithFunctionRegistrationAndExplicitDestination() {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+				TestChannelBinderConfiguration.getCompleteConfiguration(EmptyConfiguration.class))
+						.web(WebApplicationType.NONE)
+						.run("--spring.jmx.enabled=false", "--spring.cloud.stream.bindings.function-in-0.destination=input")) {
+
+			InputDestination input = context.getBean(InputDestination.class);
+			try {
+				input.send(new GenericMessage<byte[]>("hello".getBytes()));
+				fail(); // it should since there are no functions and no bindings
+			}
+			catch (Exception e) {
+				// good, we expected it
+			}
+
+			Function<byte[], byte[]> function = v -> v;
+			FunctionRegistration functionRegistration = new FunctionRegistration(function, "function");
+			functionRegistration = functionRegistration.type(FunctionType.from(byte[].class).to(byte[].class));
+			FunctionBindingTestUtils.bind(context, functionRegistration);
+
+			input.send(new GenericMessage<byte[]>("hello".getBytes()), "input");
+
+			OutputDestination output = context.getBean(OutputDestination.class);
+			assertThat(output.receive(1000, "function-out-0").getPayload()).isEqualTo("hello".getBytes());
+		}
 	}
 
 	@Test
-	public void marcinsTest() {
-		ConfigurableApplicationContext context = new SpringApplicationBuilder(
+	public void dynamicBindingTestWithFunction() {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 				TestChannelBinderConfiguration.getCompleteConfiguration(EmptyConfiguration.class))
-						.web(WebApplicationType.NONE).run("--spring.jmx.enabled=false");
+						.web(WebApplicationType.NONE)
+						.run("--spring.jmx.enabled=false")) {
+			InputDestination input = context.getBean(InputDestination.class);
+			try {
+				input.send(new GenericMessage<byte[]>("hello".getBytes()));
+				fail(); // it should since there are no functions and no bindings
+			}
+			catch (Exception e) {
+				// good, we expected it
+			}
 
-		InputDestination input = context.getBean(InputDestination.class);
-		try {
+			Function<String, String> function = v -> v.toUpperCase();
+			FunctionBindingTestUtils.bind(context, function);
+
 			input.send(new GenericMessage<byte[]>("hello".getBytes()));
-			fail(); // it should since there are no functions and no bindings
+
+			OutputDestination output = context.getBean(OutputDestination.class);
+			assertThat(new String(output.receive().getPayload())).isEqualTo("HELLO");
 		}
-		catch (Exception e) {
-			// good, we expected it
-		}
-
-		Function<String, String> function = v -> v.toUpperCase();
-		FunctionBindingTestUtils.bind(context, function);
-
-		input.send(new GenericMessage<byte[]>("hello".getBytes()));
-
-		OutputDestination output = context.getBean(OutputDestination.class);
-		assertThat(new String(output.receive().getPayload())).isEqualTo("HELLO");
 	}
 
 	@Test

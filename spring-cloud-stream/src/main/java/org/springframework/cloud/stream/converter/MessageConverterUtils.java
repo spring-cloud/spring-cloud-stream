@@ -31,12 +31,6 @@ import org.springframework.util.StringUtils;
 public abstract class MessageConverterUtils {
 
 	/**
-	 * An MimeType specifying a {@link Tuple}.
-	 */
-	public static final MimeType X_SPRING_TUPLE = MimeType
-			.valueOf("application/x-spring-tuple");
-
-	/**
 	 * A general MimeType for Java Types.
 	 */
 	public static final MimeType X_JAVA_OBJECT = MimeType
