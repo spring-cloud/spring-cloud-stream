@@ -125,7 +125,6 @@ public class KeyValueSerdeResolver implements ApplicationContextAware {
 			else {
 				valueSerde = Serdes.ByteArray();
 			}
-			valueSerde.configure(this.streamConfigGlobalProperties, false);
 		}
 		catch (ClassNotFoundException ex) {
 			throw new IllegalStateException("Serde class not found: ", ex);
@@ -146,7 +145,6 @@ public class KeyValueSerdeResolver implements ApplicationContextAware {
 			else {
 				valueSerde = Serdes.ByteArray();
 			}
-			valueSerde.configure(this.streamConfigGlobalProperties, false);
 		}
 		catch (ClassNotFoundException ex) {
 			throw new IllegalStateException("Serde class not found: ", ex);
@@ -186,7 +184,6 @@ public class KeyValueSerdeResolver implements ApplicationContextAware {
 			else {
 				valueSerde = Serdes.ByteArray();
 			}
-			valueSerde.configure(this.streamConfigGlobalProperties, false);
 		}
 		catch (ClassNotFoundException ex) {
 			throw new IllegalStateException("Serde class not found: ", ex);
@@ -205,7 +202,6 @@ public class KeyValueSerdeResolver implements ApplicationContextAware {
 			else {
 				valueSerde = Serdes.ByteArray();
 			}
-			valueSerde.configure(this.streamConfigGlobalProperties, false);
 		}
 		catch (ClassNotFoundException ex) {
 			throw new IllegalStateException("Serde class not found: ", ex);
@@ -393,6 +389,7 @@ public class KeyValueSerdeResolver implements ApplicationContextAware {
 		else {
 			valueSerde = getFallbackSerde("default.value.serde");
 		}
+		valueSerde.configure(this.streamConfigGlobalProperties, false);
 		return valueSerde;
 	}
 
@@ -425,6 +422,7 @@ public class KeyValueSerdeResolver implements ApplicationContextAware {
 				valueSerde = Serdes.ByteArray();
 			}
 		}
+		valueSerde.configure(streamConfigGlobalProperties, false);
 		return valueSerde;
 	}
 
