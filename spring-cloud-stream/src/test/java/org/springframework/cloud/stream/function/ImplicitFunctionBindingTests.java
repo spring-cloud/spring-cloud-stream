@@ -17,6 +17,7 @@
 package org.springframework.cloud.stream.function;
 
 import java.io.Serializable;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -51,6 +52,7 @@ import org.springframework.integration.handler.LoggingHandler;
 import org.springframework.integration.scheduling.PollerMetadata;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.GenericMessage;
 import org.springframework.scheduling.support.PeriodicTrigger;
 
@@ -575,6 +577,27 @@ public class ImplicitFunctionBindingTests {
 		}
 	}
 
+	@Test
+	public void contentTypeAsByteArrayTest() {
+		System.clearProperty("spring.cloud.function.definition");
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration
+				.getCompleteConfiguration(PojoFunctionConfiguration.class))
+						.web(WebApplicationType.NONE).run("--spring.cloud.function.definition=echoPerson",
+								"--spring.jmx.enabled=false")) {
+
+			InputDestination inputDestination = context.getBean(InputDestination.class);
+			OutputDestination outputDestination = context.getBean(OutputDestination.class);
+
+			Message<byte[]> inputMessage = MessageBuilder.withPayload("{\"name\":\"Jim Lahey\",\"id\":420}".getBytes())
+					.setHeader(MessageHeaders.CONTENT_TYPE, "application/json".getBytes(StandardCharsets.UTF_8))
+					.build();
+
+			inputDestination.send(inputMessage, "echoPerson-in-0");
+
+			assertThat(outputDestination.receive(100, "echoPerson-out-0").getPayload()).isEqualTo("{\"name\":\"Jim Lahey\",\"id\":420}".getBytes());
+		}
+	}
+
 	@EnableAutoConfiguration
 	public static class NoEnableBindingConfiguration {
 
@@ -762,6 +785,11 @@ public class ImplicitFunctionBindingTests {
 
 	@EnableAutoConfiguration
 	public static class PojoFunctionConfiguration {
+
+		@Bean
+		public Function<Person, Person> echoPerson() {
+			return x -> x;
+		}
 
 		@Bean
 		public Function<String, Person> func() {
