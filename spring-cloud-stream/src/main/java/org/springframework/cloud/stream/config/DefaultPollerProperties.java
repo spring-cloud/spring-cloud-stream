@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 the original author or authors.
+ * Copyright 2015-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,11 +18,13 @@ package org.springframework.cloud.stream.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.integration.scheduling.PollerMetadata;
+import org.springframework.scheduling.support.CronTrigger;
 import org.springframework.scheduling.support.PeriodicTrigger;
 
 /**
  * @author Dave Syer
  * @author Oleg Zhurakousky
+ * @author Soby Chacko
  */
 @ConfigurationProperties("spring.cloud.stream.poller")
 public class DefaultPollerProperties {
@@ -37,9 +39,27 @@ public class DefaultPollerProperties {
 	 */
 	private long maxMessagesPerPoll = 1L;
 
+	/**
+	 * Cron expression value for the Cron Trigger.
+	 */
+	private String cron;
+
+	/**
+	 * Initial delay for periodic triggers.
+	 */
+	private int initialDelay = 0;
+
 	public PollerMetadata getPollerMetadata() {
 		PollerMetadata pollerMetadata = new PollerMetadata();
-		pollerMetadata.setTrigger(new PeriodicTrigger(this.fixedDelay));
+		if (cron != null) {
+			pollerMetadata.setTrigger(new CronTrigger(cron));
+		}
+		else {
+			final PeriodicTrigger periodicTrigger = new PeriodicTrigger(this.fixedDelay);
+			periodicTrigger.setInitialDelay(initialDelay);
+			pollerMetadata.setTrigger(periodicTrigger);
+		}
+
 		pollerMetadata.setMaxMessagesPerPoll(this.maxMessagesPerPoll);
 		return pollerMetadata;
 	}
@@ -60,4 +80,19 @@ public class DefaultPollerProperties {
 		this.maxMessagesPerPoll = maxMessagesPerPoll;
 	}
 
+	public String getCron() {
+		return cron;
+	}
+
+	public void setCron(String cron) {
+		this.cron = cron;
+	}
+
+	public int getInitialDelay() {
+		return initialDelay;
+	}
+
+	public void setInitialDelay(int initialDelay) {
+		this.initialDelay = initialDelay;
+	}
 }
