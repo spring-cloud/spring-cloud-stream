@@ -167,9 +167,11 @@ public class FunctionConfiguration {
 						String outputName  = proxyFactory.getOutputs().iterator().next();
 
 						BindingProperties bindingProperties = serviceProperties.getBindingProperties(outputName);
-						if (!(bindingProperties.getProducer() != null && bindingProperties.getProducer().isUseNativeEncoding())) {
+						ProducerProperties producerProperties = bindingProperties.getProducer();
+						if (!(bindingProperties.getProducer() != null && producerProperties.isUseNativeEncoding())) {
 							contentTypes.add(bindingProperties.getContentType());
 						}
+
 						// obtain function wrapper with proper output content types
 						functionWrapper = functionCatalog.lookup(proxyFactory.getFunctionDefinition(), contentTypes.toArray(new String[0]));
 						Publisher<Object> beginPublishingTrigger = setupBindingTrigger(context);
@@ -178,8 +180,9 @@ public class FunctionConfiguration {
 							String integrationFlowName = proxyFactory.getFunctionDefinition() + "_integrationflow";
 							PollableBean pollable = extractPollableAnnotation(functionProperties, context, proxyFactory);
 
-							IntegrationFlow integrationFlow = integrationFlowFromProvidedSupplier(functionWrapper, beginPublishingTrigger,
-									pollable, context, taskScheduler)
+							Type functionType = ((FunctionInvocationWrapper) functionWrapper).getFunctionType();
+							IntegrationFlow integrationFlow = integrationFlowFromProvidedSupplier(new PartitionAwareFunction(functionWrapper, context, producerProperties),
+									beginPublishingTrigger, pollable, context, taskScheduler, functionType)
 									.route(Message.class, message -> {
 										if (message.getHeaders().get("spring.cloud.stream.sendto.destination") != null) {
 											String destinationName = (String) message.getHeaders().get("spring.cloud.stream.sendto.destination");
@@ -196,6 +199,7 @@ public class FunctionConfiguration {
 			}
 		};
 	}
+
 
 	/*
 	 * Creates a publishing trigger to ensure Supplier does not begin publishing until binding is created
@@ -218,10 +222,9 @@ public class FunctionConfiguration {
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	private IntegrationFlowBuilder integrationFlowFromProvidedSupplier(Supplier<?> supplier,
 			Publisher<Object> beginPublishingTrigger, PollableBean pollable, GenericApplicationContext context,
-			TaskScheduler taskScheduler) {
+			TaskScheduler taskScheduler, Type functionType) {
 
 		IntegrationFlowBuilder integrationFlowBuilder;
-		Type functionType = ((FunctionInvocationWrapper) supplier).getFunctionType();
 
 		boolean splittable = pollable != null
 				&& (boolean) AnnotationUtils.getAnnotationAttributes(pollable).get("splittable");
@@ -280,6 +283,48 @@ public class FunctionConfiguration {
 				? (Message<T>) value
 						: MessageBuilder.withPayload(value).build();
 	}
+
+	/**
+	 * hHis class is effectively a wrapper which is aware of the stream related partition information
+	 * for outgoing messages. It has only one responsibility and that is to modify the result message
+	 * with 'scst_partition' header if necessary.
+	 */
+	private static class PartitionAwareFunction implements Supplier<Object>, Function<Object, Object> {
+		private final FunctionInvocationWrapper function;
+
+		@SuppressWarnings("rawtypes")
+		private final Function<Message, Message> outputMessageEnricher;
+
+		@SuppressWarnings("unchecked")
+		PartitionAwareFunction(FunctionInvocationWrapper function, ConfigurableApplicationContext context, ProducerProperties producerProperties) {
+			this.function = function;
+			if (producerProperties != null && producerProperties.isPartitioned()) {
+				StandardEvaluationContext evaluationContext = ExpressionUtils.createStandardEvaluationContext(context.getBeanFactory());
+				PartitionHandler partitionHandler = new PartitionHandler(evaluationContext, producerProperties, context.getBeanFactory());
+
+				this.outputMessageEnricher = outputMessage -> {
+					int partitionId = partitionHandler.determinePartition(outputMessage);
+					return MessageBuilder
+						.fromMessage(outputMessage)
+						.setHeader(BinderHeaders.PARTITION_HEADER, partitionId).build();
+				};
+			}
+			else {
+				this.outputMessageEnricher = null;
+			}
+		}
+
+		@Override
+		public Object apply(Object input) {
+			return this.function.apply(input, this.outputMessageEnricher);
+		}
+
+		@Override
+		public Object get() {
+			return this.function.get(this.outputMessageEnricher);
+		}
+	}
+
 
 	private static class FunctionToDestinationBinder implements InitializingBean, ApplicationContextAware {
 
@@ -515,9 +560,14 @@ public class FunctionConfiguration {
 
 		private final ConfigurableApplicationContext applicationContext;
 
+		private final boolean isRoutingFunction;
+
 		FunctionWrapper(Function function, ConsumerProperties consumerProperties,
 				ProducerProperties producerProperties, ConfigurableApplicationContext applicationContext) {
-			this.function = function;
+
+			isRoutingFunction = ((FunctionInvocationWrapper) function).getTarget() instanceof RoutingFunction;
+			this.applicationContext = applicationContext;
+			this.function = new PartitionAwareFunction((FunctionInvocationWrapper) function, this.applicationContext, producerProperties);
 			Type type =  ((FunctionInvocationWrapper) function).getFunctionType();
 			if (FunctionTypeUtils.isReactive(FunctionTypeUtils.getOutputType(type, 0))) {
 				throw new IllegalStateException("Functions with mixed semantics (imperative input vs. reactive output) ar not supported at the moment");
@@ -526,7 +576,6 @@ public class FunctionConfiguration {
 			this.producerProperties = producerProperties;
 			this.headersField = ReflectionUtils.findField(MessageHeaders.class, "headers");
 			this.headersField.setAccessible(true);
-			this.applicationContext = applicationContext;
 		}
 
 		@SuppressWarnings("unchecked")
@@ -538,21 +587,8 @@ public class FunctionConfiguration {
 				headersMap.put(FunctionProperties.SKIP_CONVERSION_HEADER, consumerProperties.isUseNativeDecoding());
 			}
 
-			Function<Message, Message> outputMessageEnricher = null;
-			if (producerProperties != null && producerProperties.isPartitioned()) {
-				StandardEvaluationContext evaluationContext = ExpressionUtils.createStandardEvaluationContext(this.applicationContext.getBeanFactory());
-				PartitionHandler partitionHandler = new PartitionHandler(evaluationContext, producerProperties, this.applicationContext.getBeanFactory());
-
-				outputMessageEnricher = outputMessage -> {
-					int partitionId = partitionHandler.determinePartition(outputMessage);
-					return MessageBuilder
-						.fromMessage(outputMessage)
-						.setHeader(BinderHeaders.PARTITION_HEADER, partitionId).build();
-				};
-			}
-
-			Object result = ((FunctionInvocationWrapper) function).apply(message, outputMessageEnricher);
-			if (result instanceof Publisher && ((FunctionInvocationWrapper) this.function).getTarget() instanceof RoutingFunction) {
+			Object result = function.apply(message);
+			if (result instanceof Publisher && this.isRoutingFunction) {
 				throw new IllegalStateException("Routing to functions that return Publisher "
 						+ "is not supported in the context of Spring Cloud Stream.");
 			}

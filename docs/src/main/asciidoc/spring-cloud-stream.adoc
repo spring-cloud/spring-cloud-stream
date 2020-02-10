@@ -2295,7 +2295,8 @@ public MessageSourceCustomizer<AmqpMessageSource> sourceCustomizer() {
 
 These properties are exposed via `org.springframework.cloud.stream.binder.ProducerProperties`
 
-The following binding properties are available for output bindings only and must be prefixed with `spring.cloud.stream.bindings.<bindingName>.producer.` (for example, `spring.cloud.stream.bindings.input.producer.partitionKeyExpression=payload.id`).
+The following binding properties are available for output bindings only and must be prefixed with `spring.cloud.stream.bindings.<bindingName>.producer.` 
+(for example, `spring.cloud.stream.bindings.func-out-0.producer.partitionKeyExpression=payload.id`).
 
 Default values can be set by using the prefix `spring.cloud.stream.default.producer` (for example, `spring.cloud.stream.default.producer.partitionKeyExpression=payload.id`).
 
@@ -2586,8 +2587,8 @@ You can configure an output binding to send partitioned data by setting one and 
 For example, the following is a valid and typical configuration:
 
 ----
-spring.cloud.stream.bindings.output.producer.partitionKeyExpression=payload.id
-spring.cloud.stream.bindings.output.producer.partitionCount=5
+spring.cloud.stream.bindings.func-out-0.producer.partitionKeyExpression=payload.id
+spring.cloud.stream.bindings.func-out-0.producer.partitionCount=5
 ----
 
 Based on that example configuration, data is sent to the target partition by using the following logic.
@@ -2600,8 +2601,8 @@ If you have more then one bean of type `org.springframework.cloud.stream.binder.
 
 [source]
 ----
---spring.cloud.stream.bindings.output.producer.partitionKeyExtractorName=customPartitionKeyExtractor
---spring.cloud.stream.bindings.output.producer.partitionCount=5
+--spring.cloud.stream.bindings.func-out-0.producer.partitionKeyExtractorName=customPartitionKeyExtractor
+--spring.cloud.stream.bindings.func-out-0.producer.partitionCount=5
 . . .
 @Bean
 public CustomPartitionKeyExtractorClass customPartitionKeyExtractor() {
@@ -2619,7 +2620,7 @@ Similar to the `PartitionKeyExtractorStrategy`, you can further filter it by usi
 
 [source]
 ----
---spring.cloud.stream.bindings.output.producer.partitionSelectorName=customPartitionSelector
+--spring.cloud.stream.bindings.func-out-0.producer.partitionSelectorName=customPartitionSelector
 . . .
 @Bean
 public CustomPartitionSelectorClass customPartitionSelector() {

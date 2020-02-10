@@ -578,6 +578,42 @@ public class ImplicitFunctionBindingTests {
 	}
 
 	@Test
+	public void partitionOnOutputPayloadWithSupplierTest() {
+		System.clearProperty("spring.cloud.function.definition");
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration
+				.getCompleteConfiguration(PojoFunctionConfiguration.class))
+						.web(WebApplicationType.NONE).run("--spring.cloud.function.definition=personSupplier",
+								"--spring.cloud.stream.bindings.personSupplier-out-0.producer.partitionKeyExpression=payload.id",
+								"--spring.cloud.stream.bindings.personSupplier-out-0.producer.partitionCount=5",
+								"--spring.jmx.enabled=false")) {
+
+			OutputDestination outputDestination = context.getBean(OutputDestination.class);
+
+			assertThat(outputDestination.receive(1000, "personSupplier-out-0").getHeaders().get("scst_partition")).isEqualTo(1);
+
+			assertThat(outputDestination.receive(100)).isNull();
+		}
+	}
+
+	@Test
+	public void partitionOnOutputPayloadWithReactiveSupplierTest() {
+		System.clearProperty("spring.cloud.function.definition");
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration
+				.getCompleteConfiguration(PojoFunctionConfiguration.class))
+						.web(WebApplicationType.NONE).run("--spring.cloud.function.definition=reactivePersonSupplier",
+								"--spring.cloud.stream.bindings.reactivePersonSupplier-out-0.producer.partitionKeyExpression=payload.id",
+								"--spring.cloud.stream.bindings.reactivePersonSupplier-out-0.producer.partitionCount=5",
+								"--spring.jmx.enabled=false")) {
+
+			OutputDestination outputDestination = context.getBean(OutputDestination.class);
+
+			assertThat(outputDestination.receive(1000, "reactivePersonSupplier-out-0").getHeaders().get("scst_partition")).isEqualTo(1);
+
+			assertThat(outputDestination.receive(100)).isNull();
+		}
+	}
+
+	@Test
 	public void contentTypeAsByteArrayTest() {
 		System.clearProperty("spring.cloud.function.definition");
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration
@@ -789,6 +825,24 @@ public class ImplicitFunctionBindingTests {
 		@Bean
 		public Function<Person, Person> echoPerson() {
 			return x -> x;
+		}
+
+		@Bean
+		public Supplier<Person> personSupplier() {
+			Person p = new Person();
+			p.setId(21);
+			p.setName("Jim Lehey");
+			return () -> p;
+		}
+
+		@Bean
+		public Supplier<Flux<Person>> reactivePersonSupplier() {
+			return () ->  {
+				Person p = new Person();
+				p.setId(21);
+				p.setName("Jim Lehey");
+				return Flux.just(p);
+			};
 		}
 
 		@Bean
