@@ -265,7 +265,12 @@ public abstract class AbstractKafkaStreamsBinderProcessor implements Application
 		int concurrency = this.bindingServiceProperties.getConsumerProperties(inboundName)
 				.getConcurrency();
 		// override concurrency if set at the individual binding level.
-		if (concurrency > 1) {
+		// Concurrency will be mapped to num.stream.threads. Since this is going into a global config,
+		// we are explicitly assigning concurrency left at default of 1 to num.stream.threads. Otherwise,
+		// a potential previous value might still be used in the case of multiple processors or a processor
+		// with multiple input bindings with various concurrency values.
+		// See this GH issue: https://github.com/spring-cloud/spring-cloud-stream-binder-kafka/issues/844
+		if (concurrency >= 1) {
 			streamConfigGlobalProperties.put(StreamsConfig.NUM_STREAM_THREADS_CONFIG,
 					concurrency);
 		}
