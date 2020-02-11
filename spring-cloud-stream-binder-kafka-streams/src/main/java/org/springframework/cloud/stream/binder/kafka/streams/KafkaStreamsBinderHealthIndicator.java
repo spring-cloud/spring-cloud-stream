@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2019 the original author or authors.
+ * Copyright 2019-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package org.springframework.cloud.stream.binder.kafka.streams;
 
 import java.time.Duration;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -157,12 +158,23 @@ public class KafkaStreamsBinderHealthIndicator extends AbstractHealthIndicator i
 		final Map<String, Object> details = new HashMap<>();
 		for (TaskMetadata metadata : taskMetadata) {
 			details.put("taskId", metadata.taskId());
-			details.put("partitions",
-					metadata.topicPartitions().stream().map(
-							p -> "partition=" + p.partition() + ", topic=" + p.topic())
-							.collect(Collectors.toList()));
+			if (details.containsKey("partitions")) {
+				@SuppressWarnings("unchecked")
+				List<String> partitionsInfo = (List<String>) details.get("partitions");
+				partitionsInfo.addAll(addPartitionsInfo(metadata));
+			}
+			else {
+				details.put("partitions",
+						addPartitionsInfo(metadata));
+			}
 		}
 		return details;
+	}
+
+	private static List<String> addPartitionsInfo(TaskMetadata metadata) {
+		return metadata.topicPartitions().stream().map(
+				p -> "partition=" + p.partition() + ", topic=" + p.topic())
+				.collect(Collectors.toList());
 	}
 
 	@Override
