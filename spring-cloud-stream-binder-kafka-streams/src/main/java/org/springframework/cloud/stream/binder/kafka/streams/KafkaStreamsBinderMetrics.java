@@ -89,7 +89,7 @@ public class KafkaStreamsBinderMetrics {
 				ToDoubleFunction toDoubleFunction(Metric metric) {
 					return (o) -> {
 						if (metric.metricValue() instanceof Number) {
-							return (Double) metric.metricValue();
+							return ((Number) metric.metricValue()).doubleValue();
 						}
 						else {
 							return 0.0;
