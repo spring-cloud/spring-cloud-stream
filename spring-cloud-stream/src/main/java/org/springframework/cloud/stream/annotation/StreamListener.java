@@ -27,6 +27,10 @@ import org.springframework.core.annotation.AliasFor;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 
 /**
+ * <b>NOTE: It is no longer recommended to use StreamListener in favor of functional programming model.
+ * It will be deprecated and subsequently removed in the future</b>
+ * <br>
+ * <br>
  * Annotation that marks a method to be a listener to inputs declared via
  * {@link EnableBinding} (e.g. channels).
  *
@@ -53,9 +57,10 @@ import org.springframework.messaging.handler.annotation.MessageMapping;
  * {@link StreamListener} annotation must not specify a value.</li>
  * <li>By setting an {@link Input} bound target as the annotation value of
  * {@link StreamListener} and using
- * {@link org.springframework.messaging.handler.annotation.SendTo}</li> on the method for
+ * {@link org.springframework.messaging.handler.annotation.SendTo} on the method for
  * the return type (if applicable). In this case the method must have exactly one
  * parameter, corresponding to an input.
+ * </li>
  * </ul>
  *
  * An example of declarative method signature using the former idiom is as follows:

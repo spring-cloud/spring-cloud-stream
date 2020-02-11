@@ -49,7 +49,7 @@ public class SpelExpressionConverterConfiguration {
 
 	/**
 	 * Provide a {@link SpelPropertyAccessorRegistrar} supplied with the
-	 * {@link JsonPropertyAccessor} and {@link TuplePropertyAccessor}. This bean is used
+	 * {@link JsonPropertyAccessor}. This bean is used
 	 * to customize an
 	 * {@link org.springframework.integration.config.IntegrationEvaluationContextFactoryBean}.
 	 * for additional {@link org.springframework.expression.PropertyAccessor}s.
