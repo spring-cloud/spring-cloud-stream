@@ -38,7 +38,7 @@ import org.springframework.context.annotation.Import;
 @Configuration
 @Import({ KafkaAutoConfiguration.class,
 		KafkaStreamsBinderHealthIndicatorConfiguration.class,
-		MutliBinderPropertiesConfiguration.class})
+		MultiBinderPropertiesConfiguration.class})
 public class KStreamBinderConfiguration {
 
 	@Bean
