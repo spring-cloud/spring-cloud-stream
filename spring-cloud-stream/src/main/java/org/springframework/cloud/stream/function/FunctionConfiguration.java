@@ -59,7 +59,6 @@ import org.springframework.cloud.function.context.config.FunctionContextUtils;
 import org.springframework.cloud.function.context.config.RoutingFunction;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.binder.BinderHeaders;
-import org.springframework.cloud.stream.binder.BinderTypeRegistry;
 import org.springframework.cloud.stream.binder.BindingCreatedEvent;
 import org.springframework.cloud.stream.binder.ConsumerProperties;
 import org.springframework.cloud.stream.binder.PartitionHandler;
@@ -121,8 +120,8 @@ public class FunctionConfiguration {
 
 	@Bean
 	public InitializingBean functionBindingRegistrar(Environment environment, FunctionCatalog functionCatalog,
-			StreamFunctionProperties streamFunctionProperties, BinderTypeRegistry binderTypeRegistry) {
-		return new FunctionBindingRegistrar(binderTypeRegistry, functionCatalog, streamFunctionProperties);
+			StreamFunctionProperties streamFunctionProperties) {
+		return new FunctionBindingRegistrar(functionCatalog, streamFunctionProperties);
 	}
 
 	@Bean
@@ -599,12 +598,13 @@ public class FunctionConfiguration {
 	/**
 	 * Creates and registers instances of BindableFunctionProxyFactory for each user defined function
 	 * thus triggering destination bindings between function arguments and destinations.
+	 *
+	 * In other words this class is responsible to do the same work as EnableBinding except that it derives the input/output names
+	 * from the names of the function (e.g., function-in-0).
 	 */
 	private static class FunctionBindingRegistrar implements InitializingBean, ApplicationContextAware, EnvironmentAware {
 
 		protected final Log logger = LogFactory.getLog(getClass());
-
-		private final BinderTypeRegistry binderTypeRegistry;
 
 		private final FunctionCatalog functionCatalog;
 
@@ -618,8 +618,7 @@ public class FunctionConfiguration {
 
 		private int outputCount;
 
-		FunctionBindingRegistrar(BinderTypeRegistry binderTypeRegistry, FunctionCatalog functionCatalog, StreamFunctionProperties streamFunctionProperties) {
-			this.binderTypeRegistry = binderTypeRegistry;
+		FunctionBindingRegistrar(FunctionCatalog functionCatalog, StreamFunctionProperties streamFunctionProperties) {
 			this.functionCatalog = functionCatalog;
 			this.streamFunctionProperties = streamFunctionProperties;
 		}

@@ -79,6 +79,7 @@ import org.springframework.util.ObjectUtils;
  * @author Oleg Zhurakousky
  * @author Soby Chacko
  */
+@SuppressWarnings("deprecation")
 @Configuration
 @EnableConfigurationProperties({ BindingServiceProperties.class,
 		SpringIntegrationProperties.class, StreamFunctionProperties.class })
@@ -88,13 +89,11 @@ import org.springframework.util.ObjectUtils;
 @ConditionalOnBean(value = BinderTypeRegistry.class, search = SearchStrategy.CURRENT)
 public class BindingServiceConfiguration {
 
-	// @checkstyle:off
 	/**
 	 * Name of the Spring Cloud Stream stream listener annotation bean post processor.
 	 */
 	public static final String STREAM_LISTENER_ANNOTATION_BEAN_POST_PROCESSOR_NAME = "streamListenerAnnotationBeanPostProcessor";
 
-	// @checkstyle:on
 
 	@Autowired(required = false)
 	private Collection<DefaultBinderFactory.Listener> binderFactoryListeners;
