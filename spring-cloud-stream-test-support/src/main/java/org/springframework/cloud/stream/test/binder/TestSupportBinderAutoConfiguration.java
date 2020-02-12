@@ -30,14 +30,12 @@ import org.springframework.core.Ordered;
 import org.springframework.messaging.MessageChannel;
 
 /**
- * Installs the {@link TestSupportBinder} and exposes
- * {@link TestSupportBinder.MessageCollectorImpl} to be injected in tests.
+ * Installs the TestSupportBinder} and exposes
+ * MessageCollectorImplto be injected in tests.
  *
  * Note that this auto-configuration has higher priority than regular binder
  * configuration, so adding this on the classpath in test scope is sufficient to have
  * support kick in and replace all binders with the test binder.
- *
- * The test binder instance is supplied by the {@link TestSupportBinderConfiguration}.
  *
  * @author Eric Bottard
  * @author Marius Bogoevici
