@@ -315,11 +315,17 @@ public class FunctionConfiguration {
 
 		@Override
 		public Object apply(Object input) {
+			if (this.outputMessageEnricher == null) {// to avoid breaking change
+				return this.function.apply(input);
+			}
 			return this.function.apply(input, this.outputMessageEnricher);
 		}
 
 		@Override
 		public Object get() {
+			if (this.outputMessageEnricher == null) {// to avoid breaking change
+				return this.function.get();
+			}
 			return this.function.get(this.outputMessageEnricher);
 		}
 	}
