@@ -26,6 +26,7 @@ import java.util.function.Function;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.kstream.KStream;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -92,6 +93,8 @@ public class MultipleFunctionsInSameAppTests {
 				"--spring.cloud.stream.kafka.streams.binder.functions.analyze.applicationId=analyze-id-0",
 				"--spring.cloud.stream.kafka.streams.binder.functions.process.applicationId=process-id-0",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.commit.interval.ms=1000",
+				"--spring.cloud.stream.bindings.process-in-0.consumer.concurrency=2",
+				"--spring.cloud.stream.bindings.analyze-in-0.consumer.concurrency=1",
 				"--spring.cloud.stream.kafka.streams.binder.functions.process.configuration.client.id=process-client",
 				"--spring.cloud.stream.kafka.streams.binder.functions.analyze.configuration.client.id=analyze-client",
 				"--spring.cloud.stream.kafka.streams.binder.brokers=" + embeddedKafka.getBrokersAsString())) {
@@ -108,6 +111,13 @@ public class MultipleFunctionsInSameAppTests {
 
 			assertThat(processStreamsConfiguration.getProperty("client.id")).isEqualTo("process-client");
 			assertThat(analyzeStreamsConfiguration.getProperty("client.id")).isEqualTo("analyze-client");
+
+			Integer concurrency = (Integer) processStreamsBuilderFactoryBean.getStreamsConfiguration()
+					.get(StreamsConfig.NUM_STREAM_THREADS_CONFIG);
+			assertThat(concurrency).isEqualTo(2);
+			concurrency = (Integer) analyzeStreamsBuilderFactoryBean.getStreamsConfiguration()
+					.get(StreamsConfig.NUM_STREAM_THREADS_CONFIG);
+			assertThat(concurrency).isEqualTo(1);
 		}
 	}
 
