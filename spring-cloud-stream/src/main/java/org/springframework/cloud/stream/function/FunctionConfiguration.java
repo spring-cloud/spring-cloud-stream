@@ -84,6 +84,7 @@ import org.springframework.core.env.Environment;
 import org.springframework.core.type.MethodMetadata;
 import org.springframework.expression.spel.support.StandardEvaluationContext;
 import org.springframework.integration.channel.AbstractMessageChannel;
+import org.springframework.integration.channel.AbstractSubscribableChannel;
 import org.springframework.integration.channel.MessageChannelReactiveUtils;
 import org.springframework.integration.dsl.IntegrationFlow;
 import org.springframework.integration.dsl.IntegrationFlowBuilder;
@@ -333,6 +334,8 @@ public class FunctionConfiguration {
 
 	private static class FunctionToDestinationBinder implements InitializingBean, ApplicationContextAware {
 
+		protected final Log logger = LogFactory.getLog(getClass());
+
 		private GenericApplicationContext applicationContext;
 
 		private BindableProxyFactory[] bindableProxyFactories;
@@ -393,18 +396,33 @@ public class FunctionConfiguration {
 					SubscribableChannel inputChannel = this.applicationContext.getBean(inputBindingName, SubscribableChannel.class);
 					return MessageChannelReactiveUtils.toPublisher(inputChannel);
 				}).toArray(Publisher[]::new);
-				Object resultPublishers = function.apply(inputPublishers.length == 1 ? inputPublishers[0] : Tuples.fromArray(inputPublishers));
+
+
+				ProducerProperties producerProperties = this.serviceProperties.getBindings().get(outputBindingNames.iterator().next()).getProducer();
+				PartitionAwareFunction functionToInvoke = new PartitionAwareFunction(function, this.applicationContext, producerProperties);
+
+				Object resultPublishers = functionToInvoke.apply(inputPublishers.length == 1 ? inputPublishers[0] : Tuples.fromArray(inputPublishers));
 				if (resultPublishers instanceof Iterable) {
 					Iterator<String> outputBindingIter = outputBindingNames.iterator();
 					((Iterable) resultPublishers).forEach(publisher -> {
 						MessageChannel outputChannel = this.applicationContext.getBean(outputBindingIter.next(), MessageChannel.class);
-						Flux.from((Publisher) publisher).doOnNext(message -> outputChannel.send((Message) message)).subscribe();
+						Flux.from((Publisher) publisher)
+						.onErrorContinue((ex, pay) -> {
+							logger.error("Failed to process the following content which will be dropped: " + pay, (Throwable) ex);
+						})
+						.doOnNext(message -> outputChannel.send((Message) message)).subscribe();
 					});
 				}
 				else {
 					outputBindingNames.stream().forEach(outputBindingName -> {
 						MessageChannel outputChannel = this.applicationContext.getBean(outputBindingName, MessageChannel.class);
-						Flux.from((Publisher) resultPublishers).doOnNext(message -> outputChannel.send((Message) message)).subscribe();
+						Flux.from((Publisher) resultPublishers)
+						.onErrorContinue((ex, pay) -> {
+							logger.error("Failed to process the following content which will be dropped: " + pay, (Throwable) ex);
+						})
+						.doOnNext(message -> {
+							outputChannel.send((Message) message);
+						}).subscribe();
 					});
 				}
 			}
@@ -412,8 +430,8 @@ public class FunctionConfiguration {
 				String outputDestinationName = this.determineOutputDestinationName(0, bindableProxyFactory, functionType);
 				this.adjustFunctionForNativeEncodingIfNecessary(outputDestinationName, function, 0);
 				if (this.functionProperties.isComposeFrom()) {
-					SubscribableChannel outputChannel = this.applicationContext.getBean(outputDestinationName, SubscribableChannel.class);
-//					logger.info("Composing at the head of 'output' channel");
+					AbstractSubscribableChannel outputChannel = this.applicationContext.getBean(outputDestinationName, AbstractSubscribableChannel.class);
+					logger.info("Composing at the head of output destination: " + outputChannel.getBeanName());
 					String outputChannelName = ((AbstractMessageChannel) outputChannel).getBeanName();
 					ServiceActivatingHandler handler = createFunctionHandler(function, null, outputChannelName);
 
@@ -490,8 +508,10 @@ public class FunctionConfiguration {
 		}
 
 		private boolean isReactiveOrMultipleInputOutput(BindableProxyFactory bindableProxyFactory, Type functionType) {
+			boolean reactiveInputsOutputs = FunctionTypeUtils.isReactive(FunctionTypeUtils.getInputType(functionType, 0)) ||
+					FunctionTypeUtils.isReactive(FunctionTypeUtils.getOutputType(functionType, 0));
 			return isMultipleInputOutput(bindableProxyFactory)
-					|| (FunctionTypeUtils.isReactive(FunctionTypeUtils.getInputType(functionType, 0))
+					|| (reactiveInputsOutputs
 							&& StringUtils.hasText(this.determineOutputDestinationName(0, bindableProxyFactory, functionType)));
 		}
 
@@ -575,7 +595,7 @@ public class FunctionConfiguration {
 			this.function = new PartitionAwareFunction((FunctionInvocationWrapper) function, this.applicationContext, producerProperties);
 			Type type =  ((FunctionInvocationWrapper) function).getFunctionType();
 			if (FunctionTypeUtils.isReactive(FunctionTypeUtils.getOutputType(type, 0))) {
-				throw new IllegalStateException("Functions with mixed semantics (imperative input vs. reactive output) ar not supported at the moment");
+				//throw new IllegalStateException("Functions with mixed semantics (imperative input vs. reactive output) ar not supported at the moment");
 			}
 			this.consumerProperties = consumerProperties;
 			this.producerProperties = producerProperties;

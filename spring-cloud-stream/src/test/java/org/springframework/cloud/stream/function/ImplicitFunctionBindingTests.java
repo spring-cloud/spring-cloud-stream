@@ -159,6 +159,26 @@ public class ImplicitFunctionBindingTests {
 	}
 
 	@Test
+	public void testHeaderRetentionWithComposition() {
+
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+				TestChannelBinderConfiguration.getCompleteConfiguration(NoEnableBindingConfiguration.class))
+						.web(WebApplicationType.NONE)
+						.run("--spring.jmx.enabled=false", "--spring.cloud.function.definition=func|addHeaders")) {
+
+			InputDestination inputDestination = context.getBean(InputDestination.class);
+			OutputDestination outputDestination = context.getBean(OutputDestination.class);
+
+			Message<byte[]> inputMessage = MessageBuilder.withPayload("Hello".getBytes()).build();
+			inputDestination.send(inputMessage);
+
+			Message<byte[]> outputMessage = outputDestination.receive();
+			assertThat(outputMessage.getPayload()).isEqualTo("Hello".getBytes());
+
+		}
+	}
+
+	@Test
 	public void testReactiveFunctionWithState() {
 
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
@@ -578,6 +598,29 @@ public class ImplicitFunctionBindingTests {
 	}
 
 	@Test
+	public void partitionOnOutputPayloadTestReactive() {
+		System.clearProperty("spring.cloud.function.definition");
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration
+				.getCompleteConfiguration(PojoFunctionConfiguration.class))
+						.web(WebApplicationType.NONE).run("--spring.cloud.function.definition=funcReactive",
+								"--spring.cloud.stream.bindings.funcReactive-out-0.producer.partitionKeyExpression=payload.id",
+								"--spring.cloud.stream.bindings.funcReactive-out-0.producer.partitionCount=5",
+								"--spring.jmx.enabled=false")) {
+
+			InputDestination inputDestination = context.getBean(InputDestination.class);
+			OutputDestination outputDestination = context.getBean(OutputDestination.class);
+
+			Message<byte[]> inputMessage = MessageBuilder.withPayload("Jim Lahey".getBytes()).build();
+
+			inputDestination.send(inputMessage, "funcReactive-in-0");
+
+			assertThat(outputDestination.receive(100, "funcReactive-out-0").getHeaders().get("scst_partition")).isEqualTo(3);
+
+			assertThat(outputDestination.receive(100)).isNull();
+		}
+	}
+
+	@Test
 	public void partitionOnOutputPayloadWithSupplierTest() {
 		System.clearProperty("spring.cloud.function.definition");
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration
@@ -643,6 +686,13 @@ public class ImplicitFunctionBindingTests {
 				System.out.println("Function");
 				return x;
 			};
+		}
+
+		@Bean
+		public Function<Flux<String>, Flux<Message<String>>> addHeaders() {
+			return flux -> flux.map(value -> {
+				return MessageBuilder.withPayload(value).setHeader("foo", "bar").build();
+			});
 		}
 
 		@Bean
@@ -853,6 +903,16 @@ public class ImplicitFunctionBindingTests {
 				person.setId(3);
 				return person;
 			};
+		}
+
+		@Bean
+		public Function<Flux<String>, Flux<Person>> funcReactive() {
+			return flux -> flux.map(value -> {
+				Person person = new Person();
+				person.setName(value);
+				person.setId(3);
+				return person;
+			});
 		}
 	}
 
