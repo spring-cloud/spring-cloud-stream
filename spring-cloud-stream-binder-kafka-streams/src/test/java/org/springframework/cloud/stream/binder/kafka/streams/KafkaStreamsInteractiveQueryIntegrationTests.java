@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.binder.kafka.streams;
 
+import java.util.List;
 import java.util.Map;
 
 import org.apache.kafka.clients.consumer.Consumer;
@@ -162,6 +163,7 @@ public class KafkaStreamsInteractiveQueryIntegrationTests {
 		InteractiveQueryService interactiveQueryService = context
 				.getBean(InteractiveQueryService.class);
 		HostInfo currentHostInfo = interactiveQueryService.getCurrentHostInfo();
+
 		assertThat(currentHostInfo.host() + ":" + currentHostInfo.port())
 				.isEqualTo(embeddedKafka.getBrokersAsString());
 
@@ -173,6 +175,13 @@ public class KafkaStreamsInteractiveQueryIntegrationTests {
 		HostInfo hostInfoFoo = interactiveQueryService
 				.getHostInfo("prod-id-count-store-foo", 123, new IntegerSerializer());
 		assertThat(hostInfoFoo).isNull();
+
+		final List<HostInfo> hostInfos = interactiveQueryService.getAllHostsInfo("prod-id-count-store");
+		assertThat(hostInfos.size()).isEqualTo(1);
+		final HostInfo hostInfo1 = hostInfos.get(0);
+		assertThat(hostInfo1.host() + ":" + hostInfo1.port())
+				.isEqualTo(embeddedKafka.getBrokersAsString());
+
 	}
 
 	@EnableBinding(KafkaStreamsProcessor.class)
@@ -214,7 +223,6 @@ public class KafkaStreamsInteractiveQueryIntegrationTests {
 			}
 
 		}
-
 	}
 
 	static class Product {
