@@ -101,6 +101,7 @@ import org.springframework.messaging.SubscribableChannel;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
@@ -503,6 +504,9 @@ public class FunctionConfiguration {
 
 		private String determineOutputDestinationName(int index, BindableProxyFactory bindableProxyFactory, Type functionType) {
 			List<String> outputNames = new ArrayList<>(bindableProxyFactory.getOutputs());
+			if (CollectionUtils.isEmpty(outputNames)) {
+				outputNames = Collections.singletonList("output");
+			}
 			String outputDestinationName = bindableProxyFactory instanceof BindableFunctionProxyFactory
 					? ((BindableFunctionProxyFactory) bindableProxyFactory).getOutputName(index)
 							: (FunctionTypeUtils.isConsumer(functionType) ? null : outputNames.get(index));
