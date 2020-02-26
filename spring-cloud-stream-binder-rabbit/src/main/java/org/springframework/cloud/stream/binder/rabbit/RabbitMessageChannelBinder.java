@@ -83,6 +83,7 @@ import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.core.task.SimpleAsyncTaskExecutor;
 import org.springframework.expression.Expression;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
+import org.springframework.integration.IntegrationMessageHeaderAccessor;
 import org.springframework.integration.StaticMessageHeaderAccessor;
 import org.springframework.integration.acks.AcknowledgmentCallback;
 import org.springframework.integration.acks.AcknowledgmentCallback.Status;
@@ -349,9 +350,10 @@ public class RabbitMessageChannelBinder extends
 			}
 		}
 		DefaultAmqpHeaderMapper mapper = DefaultAmqpHeaderMapper.outboundMapper();
-		List<String> headerPatterns = new ArrayList<>(
-				extendedProperties.getHeaderPatterns().length + 1);
+		List<String> headerPatterns = new ArrayList<>(extendedProperties.getHeaderPatterns().length + 3);
 		headerPatterns.add("!" + BinderHeaders.PARTITION_HEADER);
+		headerPatterns.add("!" + IntegrationMessageHeaderAccessor.SOURCE_DATA);
+		headerPatterns.add("!" + IntegrationMessageHeaderAccessor.DELIVERY_ATTEMPT);
 		headerPatterns.addAll(Arrays.asList(extendedProperties.getHeaderPatterns()));
 		mapper.setRequestHeaderNames(
 				headerPatterns.toArray(new String[headerPatterns.size()]));

@@ -46,6 +46,7 @@ import org.springframework.amqp.ImmediateAcknowledgeAmqpException;
 import org.springframework.amqp.core.AcknowledgeMode;
 import org.springframework.amqp.core.AmqpTemplate;
 import org.springframework.amqp.core.AnonymousQueue;
+import org.springframework.amqp.core.Binding.DestinationType;
 import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.DirectExchange;
 import org.springframework.amqp.core.ExchangeTypes;
@@ -94,6 +95,7 @@ import org.springframework.context.ApplicationListener;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.Lifecycle;
 import org.springframework.expression.spel.standard.SpelExpression;
+import org.springframework.integration.IntegrationMessageHeaderAccessor;
 import org.springframework.integration.amqp.outbound.AmqpOutboundEndpoint;
 import org.springframework.integration.amqp.support.NackedAmqpMessageException;
 import org.springframework.integration.amqp.support.ReturnedAmqpMessageException;
@@ -764,7 +766,7 @@ public class RabbitBinderTests extends
 		assertThat(mode).isEqualTo(MessageDeliveryMode.PERSISTENT);
 		List<?> requestHeaders = TestUtils.getPropertyValue(endpoint,
 				"headerMapper.requestHeaderMatcher.matchers", List.class);
-		assertThat(requestHeaders).hasSize(2);
+		assertThat(requestHeaders).hasSize(4);
 		producerBinding.unbind();
 		assertThat(endpoint.isRunning()).isFalse();
 		assertThat(TestUtils.getPropertyValue(endpoint, "amqpTemplate.transactional",
@@ -1586,6 +1588,45 @@ public class RabbitBinderTests extends
 		consumerBinding.unbind();
 	}
 
+	@SuppressWarnings("unchecked")
+	@Test
+	public void testInternalHeadersNotPropagated() throws Exception {
+		RabbitTestBinder binder = getBinder();
+		ExtendedProducerProperties<RabbitProducerProperties> producerProperties = createProducerProperties();
+		producerProperties.getExtension()
+				.setDeliveryMode(MessageDeliveryMode.NON_PERSISTENT);
+
+		DirectChannel output = createBindableChannel("output",
+				createProducerBindingProperties(producerProperties));
+		output.setBeanName("propagate.out");
+		Binding<MessageChannel> producerBinding = binder.bindProducer("propagate.1",
+				output, producerProperties);
+
+		QueueChannel input = new QueueChannel();
+		input.setBeanName("propagate.in");
+		ExtendedConsumerProperties<RabbitConsumerProperties> consumerProperties = createConsumerProperties();
+		Binding<MessageChannel> consumerBinding = binder.bindConsumer("propagate.0",
+				"propagate", input, consumerProperties);
+		RabbitAdmin admin = new RabbitAdmin(rabbitAvailableRule.getResource());
+		admin.declareQueue(new Queue("propagate"));
+		admin.declareBinding(new org.springframework.amqp.core.Binding("propagate", DestinationType.QUEUE,
+				"propagate.1", "#", null));
+		RabbitTemplate template = new RabbitTemplate(this.rabbitAvailableRule.getResource());
+		template.convertAndSend("propagate.0.propagate", "foo");
+		output.send(input.receive(10_000));
+		org.springframework.amqp.core.Message received = template.receive("propagate", 10_000);
+		assertThat(received).isNotNull();
+		assertThat(received.getBody()).isEqualTo("foo".getBytes());
+		Object header = received.getMessageProperties().getHeader(IntegrationMessageHeaderAccessor.SOURCE_DATA);
+		assertThat(header).isNull();
+		header = received.getMessageProperties().getHeader(IntegrationMessageHeaderAccessor.DELIVERY_ATTEMPT);
+		assertThat(header).isNull();
+
+		producerBinding.unbind();
+		consumerBinding.unbind();
+		admin.deleteQueue("propagate");
+	}
+
 	/*
 	 * Test late binding due to broker down; queues with and without DLQs, and partitioned
 	 * queues.
@@ -2047,8 +2088,8 @@ public class RabbitBinderTests extends
 	private void verifyFooRequestProducer(Lifecycle endpoint) {
 		List<?> requestMatchers = TestUtils.getPropertyValue(endpoint,
 				"headerMapper.requestHeaderMatcher.matchers", List.class);
-		assertThat(requestMatchers).hasSize(2);
-		assertThat(TestUtils.getPropertyValue(requestMatchers.get(1), "pattern"))
+		assertThat(requestMatchers).hasSize(4);
+		assertThat(TestUtils.getPropertyValue(requestMatchers.get(3), "pattern"))
 				.isEqualTo("foo");
 	}
 
