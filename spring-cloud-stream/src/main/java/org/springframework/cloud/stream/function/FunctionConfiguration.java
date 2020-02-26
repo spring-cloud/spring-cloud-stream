@@ -21,6 +21,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -391,69 +392,54 @@ public class FunctionConfiguration {
 			Type functionType = function.getFunctionType();
 			this.assertSupportedSignatures(bindableProxyFactory, functionType);
 
+
+			if (this.functionProperties.isComposeFrom()) {
+				AbstractSubscribableChannel outputChannel = this.applicationContext.getBean(outputBindingNames.iterator().next(), AbstractSubscribableChannel.class);
+				logger.info("Composing at the head of output destination: " + outputChannel.getBeanName());
+				String outputChannelName = ((AbstractMessageChannel) outputChannel).getBeanName();
+				DirectWithAttributesChannel newOutputChannel = new DirectWithAttributesChannel();
+				newOutputChannel.setAttribute("type", "output");
+				newOutputChannel.setComponentName("output.extended");
+				this.applicationContext.registerBean("output.extended", MessageChannel.class, () -> newOutputChannel);
+				bindableProxyFactory.replaceOutputChannel(outputChannelName, "output.extended", newOutputChannel);
+				inputBindingNames = Collections.singleton("output");
+			}
+
 			if (isReactiveOrMultipleInputOutput(bindableProxyFactory, functionType)) {
 				Publisher[] inputPublishers = inputBindingNames.stream().map(inputBindingName -> {
 					SubscribableChannel inputChannel = this.applicationContext.getBean(inputBindingName, SubscribableChannel.class);
 					return MessageChannelReactiveUtils.toPublisher(inputChannel);
 				}).toArray(Publisher[]::new);
 
-
-				ProducerProperties producerProperties = this.serviceProperties.getBindings().get(outputBindingNames.iterator().next()).getProducer();
+				BindingProperties bindingProperties = this.serviceProperties.getBindings().get(outputBindingNames.iterator().next());
+				ProducerProperties producerProperties = bindingProperties == null ? null : bindingProperties.getProducer();
 				PartitionAwareFunction functionToInvoke = new PartitionAwareFunction(function, this.applicationContext, producerProperties);
 
 				Object resultPublishers = functionToInvoke.apply(inputPublishers.length == 1 ? inputPublishers[0] : Tuples.fromArray(inputPublishers));
-				if (resultPublishers instanceof Iterable) {
-					Iterator<String> outputBindingIter = outputBindingNames.iterator();
-					((Iterable) resultPublishers).forEach(publisher -> {
-						MessageChannel outputChannel = this.applicationContext.getBean(outputBindingIter.next(), MessageChannel.class);
-						Flux.from((Publisher) publisher)
-						.onErrorContinue((ex, pay) -> {
-							logger.error("Failed to process the following content which will be dropped: " + pay, (Throwable) ex);
-						})
-						.doOnNext(message -> outputChannel.send((Message) message)).subscribe();
-					});
+				if (!(resultPublishers instanceof Iterable)) {
+					resultPublishers = Collections.singletonList(resultPublishers);
 				}
-				else {
-					outputBindingNames.stream().forEach(outputBindingName -> {
-						MessageChannel outputChannel = this.applicationContext.getBean(outputBindingName, MessageChannel.class);
-						Flux.from((Publisher) resultPublishers)
-						.onErrorContinue((ex, pay) -> {
-							logger.error("Failed to process the following content which will be dropped: " + pay, (Throwable) ex);
-						})
-						.doOnNext(message -> {
-							outputChannel.send((Message) message);
-						}).subscribe();
-					});
-				}
+				Iterator<String> outputBindingIter = outputBindingNames.iterator();
+				((Iterable) resultPublishers).forEach(publisher -> {
+					MessageChannel outputChannel = this.applicationContext.getBean(outputBindingIter.next(), MessageChannel.class);
+					Flux.from((Publisher) publisher)
+					.onErrorContinue((ex, pay) -> {
+						logger.error("Failed to process the following content which will be dropped: " + pay, (Throwable) ex);
+					})
+					.doOnNext(message -> outputChannel.send((Message) message)).subscribe();
+				});
 			}
 			else {
 				String outputDestinationName = this.determineOutputDestinationName(0, bindableProxyFactory, functionType);
 				this.adjustFunctionForNativeEncodingIfNecessary(outputDestinationName, function, 0);
-				if (this.functionProperties.isComposeFrom()) {
-					AbstractSubscribableChannel outputChannel = this.applicationContext.getBean(outputDestinationName, AbstractSubscribableChannel.class);
-					logger.info("Composing at the head of output destination: " + outputChannel.getBeanName());
-					String outputChannelName = ((AbstractMessageChannel) outputChannel).getBeanName();
-					ServiceActivatingHandler handler = createFunctionHandler(function, null, outputChannelName);
-
-					DirectWithAttributesChannel newOutputChannel = new DirectWithAttributesChannel();
-					newOutputChannel.setAttribute("type", "output");
-					newOutputChannel.setComponentName("output.extended");
-					this.applicationContext.registerBean("output.extended", MessageChannel.class, () -> newOutputChannel);
-					bindableProxyFactory.replaceOutputChannel(outputChannelName, "output.extended", newOutputChannel);
-
-					handler.setOutputChannelName("output.extended");
-					outputChannel.subscribe(handler);
-				}
-				else {
-					String inputDestinationName = inputBindingNames.iterator().next();
-					Object inputDestination = this.applicationContext.getBean(inputDestinationName);
-					if (inputDestination != null && inputDestination instanceof SubscribableChannel) {
-						ServiceActivatingHandler handler = createFunctionHandler(function, inputDestinationName, outputDestinationName);
-						if (!FunctionTypeUtils.isConsumer(function.getFunctionType())) {
-							handler.setOutputChannelName(outputDestinationName);
-						}
-						((SubscribableChannel) inputDestination).subscribe(handler);
+				String inputDestinationName = inputBindingNames.iterator().next();
+				Object inputDestination = this.applicationContext.getBean(inputDestinationName);
+				if (inputDestination != null && inputDestination instanceof SubscribableChannel) {
+					ServiceActivatingHandler handler = createFunctionHandler(function, inputDestinationName, outputDestinationName);
+					if (!FunctionTypeUtils.isConsumer(function.getFunctionType())) {
+						handler.setOutputChannelName(outputDestinationName);
 					}
+					((SubscribableChannel) inputDestination).subscribe(handler);
 				}
 			}
 		}
@@ -516,9 +502,10 @@ public class FunctionConfiguration {
 		}
 
 		private String determineOutputDestinationName(int index, BindableProxyFactory bindableProxyFactory, Type functionType) {
+			List<String> outputNames = new ArrayList<>(bindableProxyFactory.getOutputs());
 			String outputDestinationName = bindableProxyFactory instanceof BindableFunctionProxyFactory
 					? ((BindableFunctionProxyFactory) bindableProxyFactory).getOutputName(index)
-							: (FunctionTypeUtils.isConsumer(functionType) ? null : "output");
+							: (FunctionTypeUtils.isConsumer(functionType) ? null : outputNames.get(index));
 			return outputDestinationName;
 		}
 
@@ -593,10 +580,6 @@ public class FunctionConfiguration {
 			isRoutingFunction = ((FunctionInvocationWrapper) function).getTarget() instanceof RoutingFunction;
 			this.applicationContext = applicationContext;
 			this.function = new PartitionAwareFunction((FunctionInvocationWrapper) function, this.applicationContext, producerProperties);
-			Type type =  ((FunctionInvocationWrapper) function).getFunctionType();
-			if (FunctionTypeUtils.isReactive(FunctionTypeUtils.getOutputType(type, 0))) {
-				//throw new IllegalStateException("Functions with mixed semantics (imperative input vs. reactive output) ar not supported at the moment");
-			}
 			this.consumerProperties = consumerProperties;
 			this.producerProperties = producerProperties;
 			this.headersField = ReflectionUtils.findField(MessageHeaders.class, "headers");

@@ -85,6 +85,20 @@ public class SourceToFunctionsSupportTests {
 	}
 
 	@Test
+	public void testFunctionsAreAppliedToExistingMessageSourceReactive() {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+				TestChannelBinderConfiguration.getCompleteConfiguration(
+						FunctionsConfiguration.class, ExistingMessageSourceConfiguration.class)).web(WebApplicationType.NONE).run(
+								"--spring.cloud.stream.function.definition=|toUpperCaseReactive|concatWithSelf",
+								"--spring.jmx.enabled=false")) {
+
+			OutputDestination target = context.getBean(OutputDestination.class);
+			assertThat(target.receive(1000).getPayload())
+					.isEqualTo("HELLO FUNCTION:HELLO FUNCTION".getBytes(StandardCharsets.UTF_8));
+		}
+	}
+
+	@Test
 	public void testImperativeSupplier() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 				TestChannelBinderConfiguration.getCompleteConfiguration(
