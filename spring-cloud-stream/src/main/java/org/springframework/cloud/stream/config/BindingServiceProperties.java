@@ -61,6 +61,13 @@ public class BindingServiceProperties
 	private static final int DEFAULT_BINDING_RETRY_INTERVAL = 30;
 
 	/**
+	 *  A colon delimited string representing the names of the sources based on which source bindings will be created.
+	 *  This is primarily to support cases where source binding may be required without providing a corresponding Supplier.
+	 *  (e.g., for cases where the actual source of data is outside of scope of spring-cloud-stream - HTTP -> Stream)
+	 */
+	private String source;
+
+	/**
 	 * The instance id of the application: a number from 0 to instanceCount-1. Used for
 	 * partitioning and with Kafka. NOTE: Could also be managed per individual binding
 	 * "spring.cloud.stream.bindings.foo.consumer.instance-index" where 'foo' is the name
@@ -288,6 +295,14 @@ public class BindingServiceProperties
 		this.bindingRetryInterval = bindingRetryInterval;
 	}
 
+	public String getSource() {
+		return source;
+	}
+
+	public void setSource(String source) {
+		this.source = source;
+	}
+
 	public void updateProducerProperties(String bindingName,
 			ProducerProperties producerProperties) {
 		if (this.bindings.containsKey(bindingName)) {
@@ -318,5 +333,4 @@ public class BindingServiceProperties
 				Bindable.ofInstance(bindingPropertiesTarget));
 		this.bindings.put(binding, bindingPropertiesTarget);
 	}
-
 }
