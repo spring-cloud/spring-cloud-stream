@@ -143,7 +143,9 @@ public class MessageConverterConfigurer
 		String contentType = bindingProperties.getContentType();
 		ProducerProperties producerProperties = bindingProperties.getProducer();
 		boolean partitioned = !inbound && producerProperties != null && producerProperties.isPartitioned();
-		boolean functional = streamFunctionProperties != null && StringUtils.hasText(streamFunctionProperties.getDefinition());
+		boolean functional = streamFunctionProperties != null
+				&& (StringUtils.hasText(streamFunctionProperties.getDefinition()) || StringUtils.hasText(bindingServiceProperties.getSource()));
+
 		if (partitioned) {
 			if (inbound || !functional) {
 				messageChannel.addInterceptor(new PartitioningInterceptor(bindingProperties));
