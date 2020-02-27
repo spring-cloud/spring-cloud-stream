@@ -33,7 +33,7 @@ import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
 
 /**
- * hHis class is effectively a wrapper which is aware of the stream related partition information
+ * This class is effectively a wrapper which is aware of the stream related partition information
  * for outgoing messages. It has only one responsibility and that is to modify the result message
  * with 'scst_partition' header if necessary.
  */

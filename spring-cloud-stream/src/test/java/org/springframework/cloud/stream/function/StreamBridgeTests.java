@@ -39,7 +39,7 @@ import static org.junit.Assert.fail;
  * @author Oleg Zhurakousky
  *
  */
-public class StreamBridgeUtilsTests {
+public class StreamBridgeTests {
 
 	@Before
 	public void before() {
@@ -53,7 +53,7 @@ public class StreamBridgeUtilsTests {
 				.getCompleteConfiguration())
 						.web(WebApplicationType.NONE).run("--spring.jmx.enabled=false")) {
 
-			context.getBean(StreamBridgeUtils.class);
+			context.getBean(StreamBridge.class);
 			fail();
 		}
 	}
@@ -65,7 +65,7 @@ public class StreamBridgeUtilsTests {
 						.web(WebApplicationType.NONE).run("--spring.cloud.stream.source=foo;bar",
 								"--spring.jmx.enabled=false")) {
 
-			StreamBridgeUtils bridge = context.getBean(StreamBridgeUtils.class);
+			StreamBridge bridge = context.getBean(StreamBridge.class);
 			bridge.send("foo-out-0", "hello foo");
 			bridge.send("bar-out-0", "hello bar");
 
@@ -85,7 +85,7 @@ public class StreamBridgeUtilsTests {
 								"--spring.cloud.stream.bindings.foo-out-0.producer.partitionCount=2",
 								"--spring.jmx.enabled=false")) {
 
-			StreamBridgeUtils bridge = context.getBean(StreamBridgeUtils.class);
+			StreamBridge bridge = context.getBean(StreamBridge.class);
 			bridge.send("foo-out-0", "a");
 			bridge.send("bar-out-0", "b");
 
@@ -105,7 +105,7 @@ public class StreamBridgeUtilsTests {
 						.web(WebApplicationType.NONE).run("--spring.cloud.stream.source=supplier;foo",
 								"--spring.jmx.enabled=false")) {
 
-			StreamBridgeUtils bridge = context.getBean(StreamBridgeUtils.class);
+			StreamBridge bridge = context.getBean(StreamBridge.class);
 			bridge.send("supplier-out-0", "blah");
 			bridge.send("foo-out-0", "b");
 

@@ -615,7 +615,7 @@ For example `--spring.cloud.stream.poller.fixed-delay=2000` sets the poller inte
 ===== Foreign event-driven sources
 
 There are cases where the actual source of data may be coming from the external (foreign) system that is not a binder. For example, the
-source of the data may be a classic REST endpoint. How do we bridge such source with the functional mechanism used by sopring-cloud-stream?
+source of the data may be a classic REST endpoint. How do we bridge such source with the functional mechanism used by spring-cloud-stream?
 
 Spring Cloud Stream provides two mechanisms, so let's look at them in more details
 

@@ -123,9 +123,9 @@ public class FunctionConfiguration {
 
 	@Bean
 	@ConditionalOnProperty(SOURCE_PROPERY)
-	public StreamBridgeUtils streamBridgeUtils(FunctionCatalog functionCatalog, FunctionRegistry functionRegistry,
+	public StreamBridge streamBridgeUtils(FunctionCatalog functionCatalog, FunctionRegistry functionRegistry,
 			BindingServiceProperties bindingServiceProperties, ConfigurableApplicationContext applicationContext) {
-		return new StreamBridgeUtils(functionCatalog, functionRegistry, bindingServiceProperties, applicationContext);
+		return new StreamBridge(functionCatalog, functionRegistry, bindingServiceProperties, applicationContext);
 	}
 
 	@Bean
@@ -374,7 +374,7 @@ public class FunctionConfiguration {
 				if (!CollectionUtils.isEmpty(outputBindingNames)) {
 					BindingProperties bindingProperties = this.serviceProperties.getBindings().get(outputBindingNames.iterator().next());
 					ProducerProperties producerProperties = bindingProperties == null ? null : bindingProperties.getProducer();
-					functionToInvoke = new PartitionAwareFunction(function, this.applicationContext, producerProperties);
+					functionToInvoke = new PartitionAwareFunctionWrapper(function, this.applicationContext, producerProperties);
 				}
 
 				Object resultPublishers = functionToInvoke.apply(inputPublishers.length == 1 ? inputPublishers[0] : Tuples.fromArray(inputPublishers));

@@ -53,7 +53,7 @@ import org.springframework.util.MimeTypeUtils;
  * @since 3.0.3
  *
  */
-public final class StreamBridgeUtils implements SmartInitializingSingleton {
+public final class StreamBridge implements SmartInitializingSingleton {
 
 	private final Map<String, DirectWithAttributesChannel> outputChannelsOnly = new HashMap<>();
 
@@ -74,7 +74,7 @@ public final class StreamBridgeUtils implements SmartInitializingSingleton {
 	 * @param bindingServiceProperties instance of {@link BindingServiceProperties}
 	 * @param applicationContext instance of {@link ConfigurableApplicationContext}
 	 */
-	StreamBridgeUtils(FunctionCatalog functionCatalog, FunctionRegistry functionRegistry,
+	StreamBridge(FunctionCatalog functionCatalog, FunctionRegistry functionRegistry,
 			BindingServiceProperties bindingServiceProperties, ConfigurableApplicationContext applicationContext) {
 		this.functionCatalog = functionCatalog;
 		this.functionRegistry = functionRegistry;
