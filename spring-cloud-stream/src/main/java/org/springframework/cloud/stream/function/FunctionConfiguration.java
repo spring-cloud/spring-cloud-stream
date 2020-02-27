@@ -18,6 +18,7 @@ package org.springframework.cloud.stream.function;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -412,9 +413,12 @@ public class FunctionConfiguration {
 					return MessageChannelReactiveUtils.toPublisher(inputChannel);
 				}).toArray(Publisher[]::new);
 
-				BindingProperties bindingProperties = this.serviceProperties.getBindings().get(outputBindingNames.iterator().next());
-				ProducerProperties producerProperties = bindingProperties == null ? null : bindingProperties.getProducer();
-				PartitionAwareFunction functionToInvoke = new PartitionAwareFunction(function, this.applicationContext, producerProperties);
+				Function functionToInvoke = function;
+				if (!CollectionUtils.isEmpty(outputBindingNames)) {
+					BindingProperties bindingProperties = this.serviceProperties.getBindings().get(outputBindingNames.iterator().next());
+					ProducerProperties producerProperties = bindingProperties == null ? null : bindingProperties.getProducer();
+					functionToInvoke = new PartitionAwareFunction(function, this.applicationContext, producerProperties);
+				}
 
 				Object resultPublishers = functionToInvoke.apply(inputPublishers.length == 1 ? inputPublishers[0] : Tuples.fromArray(inputPublishers));
 				if (!(resultPublishers instanceof Iterable)) {
@@ -422,12 +426,15 @@ public class FunctionConfiguration {
 				}
 				Iterator<String> outputBindingIter = outputBindingNames.iterator();
 				((Iterable) resultPublishers).forEach(publisher -> {
-					MessageChannel outputChannel = this.applicationContext.getBean(outputBindingIter.next(), MessageChannel.class);
-					Flux.from((Publisher) publisher)
-					.onErrorContinue((ex, pay) -> {
-						logger.error("Failed to process the following content which will be dropped: " + pay, (Throwable) ex);
-					})
-					.doOnNext(message -> outputChannel.send((Message) message)).subscribe();
+					Flux flux = Flux.from((Publisher) publisher)
+							.onErrorContinue((ex, pay) -> {
+								logger.error("Failed to process the following content which will be dropped: " + pay, (Throwable) ex);
+							});
+					if (!CollectionUtils.isEmpty(outputBindingNames)) {
+						MessageChannel outputChannel = this.applicationContext.getBean(outputBindingIter.next(), MessageChannel.class);
+						flux = flux.doOnNext(message -> outputChannel.send((Message) message));
+					}
+					flux.subscribe();
 				});
 			}
 			else {
@@ -437,7 +444,7 @@ public class FunctionConfiguration {
 				Object inputDestination = this.applicationContext.getBean(inputDestinationName);
 				if (inputDestination != null && inputDestination instanceof SubscribableChannel) {
 					ServiceActivatingHandler handler = createFunctionHandler(function, inputDestinationName, outputDestinationName);
-					if (!FunctionTypeUtils.isConsumer(function.getFunctionType())) {
+					if (StringUtils.hasText(outputDestinationName)) { // consumer implicit or function<.., mono<void>>
 						handler.setOutputChannelName(outputDestinationName);
 					}
 					((SubscribableChannel) inputDestination).subscribe(handler);
@@ -497,9 +504,7 @@ public class FunctionConfiguration {
 		private boolean isReactiveOrMultipleInputOutput(BindableProxyFactory bindableProxyFactory, Type functionType) {
 			boolean reactiveInputsOutputs = FunctionTypeUtils.isReactive(FunctionTypeUtils.getInputType(functionType, 0)) ||
 					FunctionTypeUtils.isReactive(FunctionTypeUtils.getOutputType(functionType, 0));
-			return isMultipleInputOutput(bindableProxyFactory)
-					|| (reactiveInputsOutputs
-							&& StringUtils.hasText(this.determineOutputDestinationName(0, bindableProxyFactory, functionType)));
+			return isMultipleInputOutput(bindableProxyFactory) || reactiveInputsOutputs;
 		}
 
 		private String determineOutputDestinationName(int index, BindableProxyFactory bindableProxyFactory, Type functionType) {
@@ -649,7 +654,7 @@ public class FunctionConfiguration {
 						Type functionType = function.getFunctionType();
 						if (function.isSupplier()) {
 							this.inputCount = 0;
-							this.outputCount = FunctionTypeUtils.getOutputCount(functionType);
+							this.outputCount = this.getOutputCount(functionType, true);
 						}
 						else if (function.isConsumer()) {
 							this.inputCount = FunctionTypeUtils.getInputCount(functionType);
@@ -657,7 +662,7 @@ public class FunctionConfiguration {
 						}
 						else {
 							this.inputCount = FunctionTypeUtils.getInputCount(functionType);
-							this.outputCount = FunctionTypeUtils.getOutputCount(functionType);
+							this.outputCount = this.getOutputCount(functionType, false);
 						}
 
 						functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(functionDefinition);
@@ -671,6 +676,18 @@ public class FunctionConfiguration {
 			else {
 				logger.info("Functional binding is disabled due to the presense of @EnableBinding annotation in your configuration");
 			}
+		}
+
+		private int getOutputCount(Type functionType, boolean isSupplier) {
+			int outputCount = FunctionTypeUtils.getOutputCount(functionType);
+			if (!isSupplier && functionType instanceof ParameterizedType) {
+				Type outputType = ((ParameterizedType) functionType).getActualTypeArguments()[1];
+				if (FunctionTypeUtils.isMono(outputType) && outputType instanceof ParameterizedType
+						&& ((ParameterizedType) outputType).getActualTypeArguments()[0].getTypeName().endsWith("Void")) {
+					this.outputCount = 0;
+				}
+			}
+			return outputCount;
 		}
 
 		private boolean determineFunctionName(FunctionCatalog catalog, Environment environment) {

@@ -30,6 +30,7 @@ import java.util.function.Supplier;
 import org.junit.After;
 import org.junit.Test;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -677,6 +678,22 @@ public class ImplicitFunctionBindingTests {
 		}
 	}
 
+	@Test
+	public void testReactiveFunctionWithOutputAsMonoVoid() {
+		System.clearProperty("spring.cloud.function.definition");
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+				TestChannelBinderConfiguration.getCompleteConfiguration(FunctionalConsumerConfiguration.class))
+						.web(WebApplicationType.NONE).run("--spring.jmx.enabled=false")) {
+
+			InputDestination inputDestination = context.getBean(InputDestination.class);
+			Message<byte[]> inputMessage = MessageBuilder.withPayload("Hello".getBytes()).build();
+			inputDestination.send(inputMessage);
+
+			assertThat(System.getProperty("consumer")).isEqualTo("Hello");
+			System.clearProperty("consumer");
+		}
+	}
+
 	@EnableAutoConfiguration
 	public static class NoEnableBindingConfiguration {
 
@@ -754,6 +771,17 @@ public class ImplicitFunctionBindingTests {
 				System.out.println("echo value reqctive " + value);
 				return value;
 			});
+		}
+	}
+
+	@EnableAutoConfiguration
+	public static class FunctionalConsumerConfiguration {
+		@Bean
+		public Function<Flux<String>, Mono<Void>> funcConsumer() {
+			return flux -> flux.doOnNext(value -> {
+				System.out.println(value);
+				System.setProperty("consumer", value);
+			}).then();
 		}
 	}
 
