@@ -19,6 +19,7 @@ package org.springframework.cloud.stream.binder.kafka;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -51,7 +52,9 @@ import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.common.KafkaFuture;
+import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.errors.TopicExistsException;
+import org.apache.kafka.common.header.Header;
 import org.apache.kafka.common.header.Headers;
 import org.apache.kafka.common.header.internals.RecordHeader;
 import org.apache.kafka.common.record.TimestampType;
@@ -3506,6 +3509,98 @@ public class KafkaBinderTests extends
 				producerBinding.unbind();
 			}
 		}
+	}
+
+	@Test
+	public void testInternalHeadersNotPropagated() throws Exception {
+		testInternalHeadersNotPropagatedGuts("propagate.1", null, null);
+	}
+
+	@Test
+	public void testInternalHeadersNotPropagatedCustomHeader() throws Exception {
+		testInternalHeadersNotPropagatedGuts("propagate.2", new String[] { "foo", "*" }, null);
+	}
+
+	@Test
+	public void testInternalHeadersNotPropagatedCustomMapper() throws Exception {
+		testInternalHeadersNotPropagatedGuts("propagate.3", null, new BinderHeaderMapper("*"));
+	}
+
+	public void testInternalHeadersNotPropagatedGuts(String name, String[] headerPatterns,
+			KafkaHeaderMapper mapper) throws Exception {
+
+		KafkaTestBinder binder;
+		if (mapper == null) {
+			binder = getBinder();
+		}
+		else {
+			KafkaBinderConfigurationProperties binderConfiguration = createConfigurationProperties();
+			binderConfiguration.setHeaderMapperBeanName("headerMapper");
+
+			KafkaTopicProvisioner kafkaTopicProvisioner = new KafkaTopicProvisioner(
+					binderConfiguration, new TestKafkaProperties());
+			try {
+				kafkaTopicProvisioner.afterPropertiesSet();
+			}
+			catch (Exception e) {
+				throw new RuntimeException(e);
+			}
+			binder = new KafkaTestBinder(binderConfiguration, kafkaTopicProvisioner);
+			((GenericApplicationContext) binder.getApplicationContext()).registerBean("headerMapper",
+					KafkaHeaderMapper.class, () -> mapper);
+		}
+		ExtendedProducerProperties<KafkaProducerProperties> producerProperties = createProducerProperties();
+		producerProperties.getExtension().setHeaderPatterns(headerPatterns);
+
+		DirectChannel output = createBindableChannel("output", createProducerBindingProperties(producerProperties));
+		output.setBeanName(name + ".out");
+		Binding<MessageChannel> producerBinding = binder.bindProducer(name + ".1", output, producerProperties);
+
+		QueueChannel input = new QueueChannel();
+		input.setBeanName(name + ".in");
+		ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = createConsumerProperties();
+		Binding<MessageChannel> consumerBinding = binder.bindConsumer(name + ".0", name, input, consumerProperties);
+		Map<String, Object> producerProps = KafkaTestUtils.producerProps(embeddedKafka.getEmbeddedKafka());
+		KafkaTemplate template = new KafkaTemplate(new DefaultKafkaProducerFactory<>(producerProps));
+		template.send(MessageBuilder.withPayload("internalHeaderPropagation")
+				.setHeader(KafkaHeaders.TOPIC, name + ".0")
+				.setHeader("someHeader", "someValue")
+				.build());
+
+		Message<?> consumed = input.receive(10_000);
+		if (headerPatterns != null) {
+			consumed = MessageBuilder.fromMessage(consumed).setHeader(headerPatterns[0], "bar").build();
+		}
+		output.send(consumed);
+
+		Map<String, Object> consumerProps = KafkaTestUtils.consumerProps(name, "false",
+				embeddedKafka.getEmbeddedKafka());
+		consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+		consumerProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class);
+		consumerProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class);
+		DefaultKafkaConsumerFactory cf = new DefaultKafkaConsumerFactory<>(consumerProps);
+		Consumer consumer = cf.createConsumer();
+		consumer.assign(Collections.singletonList(new TopicPartition(name + ".1", 0)));
+		ConsumerRecords<?, ?> records = consumer.poll(Duration.ofSeconds(10));
+		assertThat(records.count()).isEqualTo(1);
+		ConsumerRecord<?, ?> received = records.iterator().next();
+		assertThat(received.value()).isEqualTo("internalHeaderPropagation".getBytes());
+		Header header = received.headers().lastHeader(BinderHeaders.NATIVE_HEADERS_PRESENT);
+		assertThat(header).isNull();
+		header = received.headers().lastHeader(IntegrationMessageHeaderAccessor.DELIVERY_ATTEMPT);
+		assertThat(header).isNull();
+		header = received.headers().lastHeader(MessageHeaders.ID);
+		assertThat(header).isNull();
+		header = received.headers().lastHeader(MessageHeaders.TIMESTAMP);
+		assertThat(header).isNull();
+		assertThat(received.headers().lastHeader("someHeader")).isNotNull();
+		if (headerPatterns != null) {
+			assertThat(received.headers().lastHeader(headerPatterns[0])).isNotNull();
+		}
+
+		producerBinding.unbind();
+		consumerBinding.unbind();
+		consumer.close();
 	}
 
 	private final class FailingInvocationCountingMessageHandler

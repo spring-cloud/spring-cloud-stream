@@ -25,7 +25,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -422,22 +421,31 @@ public class KafkaMessageChannelBinder extends
 			mapper = null;
 		}
 		else if (mapper == null) {
-			String[] headerPatterns = producerProperties.getExtension()
-					.getHeaderPatterns();
+			String[] headerPatterns = producerProperties.getExtension().getHeaderPatterns();
 			if (headerPatterns != null && headerPatterns.length > 0) {
-				List<String> patterns = new LinkedList<>(Arrays.asList(headerPatterns));
-				if (!patterns.contains("!" + MessageHeaders.TIMESTAMP)) {
-					patterns.add(0, "!" + MessageHeaders.TIMESTAMP);
-				}
-				if (!patterns.contains("!" + MessageHeaders.ID)) {
-					patterns.add(0, "!" + MessageHeaders.ID);
-				}
 				mapper = new BinderHeaderMapper(
-						patterns.toArray(new String[patterns.size()]));
+						BinderHeaderMapper.addNeverHeaderPatterns(Arrays.asList(headerPatterns)));
 			}
 			else {
 				mapper = new BinderHeaderMapper();
 			}
+		}
+		else {
+			KafkaHeaderMapper userHeaderMapper = mapper;
+			mapper = new KafkaHeaderMapper() {
+
+				@Override
+				public void toHeaders(Headers source, Map<String, Object> target) {
+					userHeaderMapper.toHeaders(source, target);
+				}
+
+				@Override
+				public void fromHeaders(MessageHeaders headers, Headers target) {
+					userHeaderMapper.fromHeaders(headers, target);
+					BinderHeaderMapper.removeNeverHeaders(target);
+				}
+			};
+
 		}
 		handler.setHeaderMapper(mapper);
 		return handler;

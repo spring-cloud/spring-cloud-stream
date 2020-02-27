@@ -21,6 +21,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -37,6 +38,8 @@ import org.apache.kafka.common.header.Header;
 import org.apache.kafka.common.header.Headers;
 import org.apache.kafka.common.header.internals.RecordHeader;
 
+import org.springframework.cloud.stream.binder.BinderHeaders;
+import org.springframework.integration.IntegrationMessageHeaderAccessor;
 import org.springframework.kafka.support.AbstractKafkaHeaderMapper;
 import org.springframework.kafka.support.JacksonUtils;
 import org.springframework.lang.Nullable;
@@ -49,7 +52,7 @@ import org.springframework.util.MimeType;
  * Custom header mapper for Apache Kafka. This is identical to the {@link org.springframework.kafka.support.DefaultKafkaHeaderMapper}
  * from spring Kafka. This is provided for addressing some interoperability issues between Spring Cloud Stream 3.0.x
  * and 2.x apps, where mime types passed as regular {@link MimeType} in the header are not de-serialized properly.
- * Once those concerns are addressed in Spring Kafka, we will deprecate this class and remove it in a future binder release.
+ * It also suppresses certain internal headers that should never be propagated on output.
  *
  * Most headers in {@link org.springframework.kafka.support.KafkaHeaders} are not mapped onto outbound messages.
  * The exceptions are correlation and reply headers for request/reply
@@ -64,6 +67,16 @@ import org.springframework.util.MimeType;
  *
  */
 public class BinderHeaderMapper extends AbstractKafkaHeaderMapper {
+
+	private static final String NEGATE = "!";
+
+	private static final String NEVER_ID = NEGATE + MessageHeaders.ID;
+
+	private static final String NEVER_TIMESTAMP = NEGATE + MessageHeaders.TIMESTAMP;
+
+	private static final String NEVER_DELIVERY_ATTEMPT = NEGATE + IntegrationMessageHeaderAccessor.DELIVERY_ATTEMPT;
+
+	private static final String NEVER_NATIVE_HEADERS_PRESENT = NEGATE + BinderHeaders.NATIVE_HEADERS_PRESENT;
 
 	private static final String JAVA_LANG_STRING = "java.lang.String";
 
@@ -119,8 +132,10 @@ public class BinderHeaderMapper extends AbstractKafkaHeaderMapper {
 	 */
 	public BinderHeaderMapper(ObjectMapper objectMapper) {
 		this(objectMapper,
-				"!" + MessageHeaders.ID,
-				"!" + MessageHeaders.TIMESTAMP,
+				NEVER_ID,
+				NEVER_TIMESTAMP,
+				NEVER_DELIVERY_ATTEMPT,
+				NEVER_NATIVE_HEADERS_PRESENT,
 				"*");
 	}
 
@@ -384,6 +399,32 @@ public class BinderHeaderMapper extends AbstractKafkaHeaderMapper {
 		return true;
 	}
 
+	/**
+	 * Add patterns for headers that should never be mapped.
+	 * @param patterns the patterns.
+	 * @return the modified patterns.
+	 * @since 3.0.2
+	 */
+	public static String[] addNeverHeaderPatterns(List<String> patterns) {
+		List<String> patternsToUse = new LinkedList<>(patterns);
+		patternsToUse.add(0, NEVER_NATIVE_HEADERS_PRESENT);
+		patternsToUse.add(0, NEVER_DELIVERY_ATTEMPT);
+		patternsToUse.add(0, NEVER_TIMESTAMP);
+		patternsToUse.add(0, NEVER_ID);
+		return patternsToUse.toArray(new String[0]);
+	}
+
+	/**
+	 * Remove never headers.
+	 * @param headers the headers from which to remove the never headers.
+	 * @since 3.0.2
+	 */
+	public static void removeNeverHeaders(Headers headers) {
+		headers.remove(MessageHeaders.ID);
+		headers.remove(MessageHeaders.TIMESTAMP);
+		headers.remove(IntegrationMessageHeaderAccessor.DELIVERY_ATTEMPT);
+		headers.remove(BinderHeaders.NATIVE_HEADERS_PRESENT);
+	}
 
 	/**
 	 * The {@link StdNodeBasedDeserializer} extension for {@link MimeType} deserialization.
