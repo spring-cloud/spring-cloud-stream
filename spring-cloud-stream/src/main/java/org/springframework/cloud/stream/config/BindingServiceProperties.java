@@ -295,6 +295,14 @@ public class BindingServiceProperties
 		this.bindingRetryInterval = bindingRetryInterval;
 	}
 
+	public String getSource() {
+		return source;
+	}
+
+	public void setSource(String source) {
+		this.source = source;
+	}
+
 	public void updateProducerProperties(String bindingName,
 			ProducerProperties producerProperties) {
 		if (this.bindings.containsKey(bindingName)) {
@@ -325,13 +333,4 @@ public class BindingServiceProperties
 				Bindable.ofInstance(bindingPropertiesTarget));
 		this.bindings.put(binding, bindingPropertiesTarget);
 	}
-
-	public String getSource() {
-		return source;
-	}
-
-	public void setSource(String source) {
-		this.source = source;
-	}
-
 }
