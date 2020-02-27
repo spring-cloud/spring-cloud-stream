@@ -614,10 +614,55 @@ For example `--spring.cloud.stream.poller.fixed-delay=2000` sets the poller inte
 
 ===== Foreign event-driven sources
 
-There are cases where the actual source of data may be coming from outside system that is not a binder. For example, the
-source of the data may be a classic web endpoint. How do we bridge such source with the functional Supplier?
+There are cases where the actual source of data may be coming from the external (foreign) system that is not a binder. For example, the
+source of the data may be a classic REST endpoint. How do we bridge such source with the functional mechanism used by sopring-cloud-stream?
 
-Let's look at a simple example:
+Spring Cloud Stream provides two mechanisms, so let's look at them in more details
+
+Here, for both samples we'll use a standard MVC endpoint method called `delegateToSupplier` bound to the root web context, 
+delegating incoming requests to stream via two different mechanisms - 
+imperative (via StreamBridgeUtils) and reactive (via EmitterProcessor).
+
+====== Using StreamBridgeUtils
+
+[source, java]
+----
+@SpringBootApplication
+@Controller
+public class WebSourceApplication {
+
+	public static void main(String[] args) {
+		SpringApplication.run(WebSourceApplication.class, "--spring.cloud.stream.source=toStream");
+	}
+
+	@Autowired
+	private StreamBridgeUtils streamBridge;
+
+	@RequestMapping
+	@ResponseStatus(HttpStatus.ACCEPTED)
+	public void delegateToSupplier(@RequestBody String body) {
+		System.out.println("Sending " + body);
+		streamBridge.send("toStream-out-0", body);
+	}
+}
+----
+
+Here we autowire a `StreamBridgeUtils` bean which allows us to send data to an output binding effectively 
+bridging non-stream application with spring-cloud-stream. Note that preceding example does not have any 
+source functions defined (e.g., Supplier bean) leaving the framework with no trigger to create source bindings, which would be typical for cases where 
+configuration contains function beans.
+So to trigger the creation of source binding we use `spring.cloud.stream.source` property where you can declare the name of your sources.
+The provided name will be used as a trigger to create a source binding. 
+So in the preceding example the name of the output binding will be `toStream-out-0` which is consistent with the binding naming 
+convention used by functions (see <<Binding and Binding names>>). You can use `;` to signify multiple sources 
+(e.g., `--spring.cloud.stream.source=foo;bar`)
+
+Also, note that `streamBridge.send(..)` method takes an `Object` for data. This means you can send POJO or `Message` to it and it 
+will go through the same routine when sending output as if it was from any Function or Supplier providing the same level 
+of consistency as with functions. This means the output type conversion, partitioning etc are honored as if it was from the output produced by functions.
+
+
+====== Using reactor API
 
 [source, java]
 ----
@@ -644,11 +689,11 @@ public class WebSourceApplication {
 }
 ----
 
-Here you see a standard MVC endpoint method called `delegateToSupplier` bound to the root web context and a `Supplier` bean. Note how `Supplier` bean returns `Flux` of `Strings`.
-Yes we are benefiting from the reactive support (see <<Reactive Functions support>> for more details). Specifically
-https://projectreactor.io/docs/core/release/api/reactor/core/publisher/EmitterProcessor.html[EmitterProcessor] which effectively serves as bridge
-between the web and spring-cloud-stream.  As you can see in the endpoint method, all we do is call `onNext(..)` operation of the `EmitterProcessor`
-with the value of the HTTP request's body. From that point on the Supplier rules described earlier apply.
+Here we declare a `Supplier` bean which returns `Flux` of `Strings`.
+This example uses https://projectreactor.io/docs/core/release/api/reactor/core/publisher/EmitterProcessor.html[EmitterProcessor] 
+from the reactor API (see <<Reactive Functions support>> for more details) to effectively provide a 
+bridge between the actual event source (rest endpoint in this case) and spring-cloud-stream. All you need to do 
+is define a `Supplier<Flux<your-type>>` and return the `EmitterProcessor` while feeding the incoming data via `EmitterProcessor#onNext(data)` operation. 
 
 You can now send message to spring-cloud-stream source as
 

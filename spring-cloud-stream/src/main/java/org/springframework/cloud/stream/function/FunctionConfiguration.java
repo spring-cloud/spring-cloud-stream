@@ -48,6 +48,7 @@ import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionProperties;
@@ -60,10 +61,8 @@ import org.springframework.cloud.function.context.config.ContextFunctionCatalogA
 import org.springframework.cloud.function.context.config.FunctionContextUtils;
 import org.springframework.cloud.function.context.config.RoutingFunction;
 import org.springframework.cloud.stream.annotation.EnableBinding;
-import org.springframework.cloud.stream.binder.BinderHeaders;
 import org.springframework.cloud.stream.binder.BindingCreatedEvent;
 import org.springframework.cloud.stream.binder.ConsumerProperties;
-import org.springframework.cloud.stream.binder.PartitionHandler;
 import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.cloud.stream.binding.BindableProxyFactory;
 import org.springframework.cloud.stream.binding.BinderAwareChannelResolver;
@@ -84,14 +83,12 @@ import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.core.env.Environment;
 import org.springframework.core.type.MethodMetadata;
-import org.springframework.expression.spel.support.StandardEvaluationContext;
 import org.springframework.integration.channel.AbstractMessageChannel;
 import org.springframework.integration.channel.AbstractSubscribableChannel;
 import org.springframework.integration.channel.MessageChannelReactiveUtils;
 import org.springframework.integration.dsl.IntegrationFlow;
 import org.springframework.integration.dsl.IntegrationFlowBuilder;
 import org.springframework.integration.dsl.IntegrationFlows;
-import org.springframework.integration.expression.ExpressionUtils;
 import org.springframework.integration.handler.ServiceActivatingHandler;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.lang.Nullable;
@@ -122,6 +119,15 @@ import org.springframework.util.StringUtils;
 @ConditionalOnBean(FunctionRegistry.class)
 public class FunctionConfiguration {
 
+	private final static String SOURCE_PROPERY = "spring.cloud.stream.source";
+
+	@Bean
+	@ConditionalOnProperty(SOURCE_PROPERY)
+	public StreamBridgeUtils streamBridgeUtils(FunctionCatalog functionCatalog, FunctionRegistry functionRegistry,
+			BindingServiceProperties bindingServiceProperties, ConfigurableApplicationContext applicationContext) {
+		return new StreamBridgeUtils(functionCatalog, functionRegistry, bindingServiceProperties, applicationContext);
+	}
+
 	@Bean
 	public InitializingBean functionBindingRegistrar(Environment environment, FunctionCatalog functionCatalog,
 			StreamFunctionProperties streamFunctionProperties) {
@@ -141,7 +147,6 @@ public class FunctionConfiguration {
 				? new FunctionToDestinationBinder(functionCatalog, functionProperties,
 						serviceProperties, dynamicDestinationResolver)
 						: null;
-
 	}
 
 	/*
@@ -184,7 +189,7 @@ public class FunctionConfiguration {
 							PollableBean pollable = extractPollableAnnotation(functionProperties, context, proxyFactory);
 
 							Type functionType = ((FunctionInvocationWrapper) functionWrapper).getFunctionType();
-							IntegrationFlow integrationFlow = integrationFlowFromProvidedSupplier(new PartitionAwareFunction(functionWrapper, context, producerProperties),
+							IntegrationFlow integrationFlow = integrationFlowFromProvidedSupplier(new PartitionAwareFunctionWrapper(functionWrapper, context, producerProperties),
 									beginPublishingTrigger, pollable, context, taskScheduler, functionType)
 									.route(Message.class, message -> {
 										if (message.getHeaders().get("spring.cloud.stream.sendto.destination") != null) {
@@ -286,54 +291,6 @@ public class FunctionConfiguration {
 				? (Message<T>) value
 						: MessageBuilder.withPayload(value).build();
 	}
-
-	/**
-	 * hHis class is effectively a wrapper which is aware of the stream related partition information
-	 * for outgoing messages. It has only one responsibility and that is to modify the result message
-	 * with 'scst_partition' header if necessary.
-	 */
-	private static class PartitionAwareFunction implements Supplier<Object>, Function<Object, Object> {
-		private final FunctionInvocationWrapper function;
-
-		@SuppressWarnings("rawtypes")
-		private final Function<Message, Message> outputMessageEnricher;
-
-		@SuppressWarnings("unchecked")
-		PartitionAwareFunction(FunctionInvocationWrapper function, ConfigurableApplicationContext context, ProducerProperties producerProperties) {
-			this.function = function;
-			if (producerProperties != null && producerProperties.isPartitioned()) {
-				StandardEvaluationContext evaluationContext = ExpressionUtils.createStandardEvaluationContext(context.getBeanFactory());
-				PartitionHandler partitionHandler = new PartitionHandler(evaluationContext, producerProperties, context.getBeanFactory());
-
-				this.outputMessageEnricher = outputMessage -> {
-					int partitionId = partitionHandler.determinePartition(outputMessage);
-					return MessageBuilder
-						.fromMessage(outputMessage)
-						.setHeader(BinderHeaders.PARTITION_HEADER, partitionId).build();
-				};
-			}
-			else {
-				this.outputMessageEnricher = null;
-			}
-		}
-
-		@Override
-		public Object apply(Object input) {
-			if (this.outputMessageEnricher == null) { // to avoid breaking change
-				return this.function.apply(input);
-			}
-			return this.function.apply(input, this.outputMessageEnricher);
-		}
-
-		@Override
-		public Object get() {
-			if (this.outputMessageEnricher == null) { // to avoid breaking change
-				return this.function.get();
-			}
-			return this.function.get(this.outputMessageEnricher);
-		}
-	}
-
 
 	private static class FunctionToDestinationBinder implements InitializingBean, ApplicationContextAware {
 
@@ -588,7 +545,7 @@ public class FunctionConfiguration {
 
 			isRoutingFunction = ((FunctionInvocationWrapper) function).getTarget() instanceof RoutingFunction;
 			this.applicationContext = applicationContext;
-			this.function = new PartitionAwareFunction((FunctionInvocationWrapper) function, this.applicationContext, producerProperties);
+			this.function = new PartitionAwareFunctionWrapper((FunctionInvocationWrapper) function, this.applicationContext, producerProperties);
 			this.consumerProperties = consumerProperties;
 			this.producerProperties = producerProperties;
 			this.headersField = ReflectionUtils.findField(MessageHeaders.class, "headers");
@@ -643,35 +600,53 @@ public class FunctionConfiguration {
 
 		@Override
 		public void afterPropertiesSet() throws Exception {
-			if (ObjectUtils.isEmpty(applicationContext.getBeanNamesForAnnotation(EnableBinding.class))
-					&& this.determineFunctionName(functionCatalog, environment)) {
+			if (ObjectUtils.isEmpty(applicationContext.getBeanNamesForAnnotation(EnableBinding.class))) {
+				this.determineFunctionName(functionCatalog, environment);
 				BeanDefinitionRegistry registry = (BeanDefinitionRegistry) applicationContext.getBeanFactory();
-				String[] functionDefinitions = streamFunctionProperties.getDefinition().split(";");
-				for (String functionDefinition : functionDefinitions) {
-					RootBeanDefinition functionBindableProxyDefinition = new RootBeanDefinition(BindableFunctionProxyFactory.class);
-					FunctionInvocationWrapper function = functionCatalog.lookup(functionDefinition);
-					if (function != null) {
-						Type functionType = function.getFunctionType();
-						if (function.isSupplier()) {
-							this.inputCount = 0;
-							this.outputCount = this.getOutputCount(functionType, true);
-						}
-						else if (function.isConsumer()) {
-							this.inputCount = FunctionTypeUtils.getInputCount(functionType);
-							this.outputCount = 0;
-						}
-						else {
-							this.inputCount = FunctionTypeUtils.getInputCount(functionType);
-							this.outputCount = this.getOutputCount(functionType, false);
-						}
 
-						functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(functionDefinition);
-						functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(this.inputCount);
-						functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(this.outputCount);
-						functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(streamFunctionProperties);
-						registry.registerBeanDefinition(functionDefinition + "_binding", functionBindableProxyDefinition);
+				if (StringUtils.hasText(streamFunctionProperties.getDefinition())) {
+					String[] functionDefinitions = streamFunctionProperties.getDefinition().split(";");
+					for (String functionDefinition : functionDefinitions) {
+						RootBeanDefinition functionBindableProxyDefinition = new RootBeanDefinition(BindableFunctionProxyFactory.class);
+						FunctionInvocationWrapper function = functionCatalog.lookup(functionDefinition);
+						if (function != null) {
+							Type functionType = function.getFunctionType();
+							if (function.isSupplier()) {
+								this.inputCount = 0;
+								this.outputCount = this.getOutputCount(functionType, true);
+							}
+							else if (function.isConsumer()) {
+								this.inputCount = FunctionTypeUtils.getInputCount(functionType);
+								this.outputCount = 0;
+							}
+							else {
+								this.inputCount = FunctionTypeUtils.getInputCount(functionType);
+								this.outputCount = this.getOutputCount(functionType, false);
+							}
+
+							functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(functionDefinition);
+							functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(this.inputCount);
+							functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(this.outputCount);
+							functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(this.streamFunctionProperties);
+							registry.registerBeanDefinition(functionDefinition + "_binding", functionBindableProxyDefinition);
+						}
 					}
 				}
+				if (StringUtils.hasText(this.environment.getProperty(SOURCE_PROPERY))) {
+					String[] sourceNames = this.environment.getProperty(SOURCE_PROPERY).split(";");
+
+					for (String sourceName : sourceNames) {
+						if (functionCatalog.lookup(sourceName) == null) {
+							RootBeanDefinition functionBindableProxyDefinition = new RootBeanDefinition(BindableFunctionProxyFactory.class);
+							functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(sourceName);
+							functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(0);
+							functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(1);
+							functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(this.streamFunctionProperties);
+							registry.registerBeanDefinition(sourceName + "_binding", functionBindableProxyDefinition);
+						}
+					}
+				}
+
 			}
 			else {
 				logger.info("Functional binding is disabled due to the presense of @EnableBinding annotation in your configuration");
