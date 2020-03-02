@@ -2399,6 +2399,19 @@ See the consumer property `useNativeDecoding`.
 +
 Default: `false`.
 
+useNativeEncoding::
+When set to `true`, the outbound message is serialized directly by the client library, which must be configured correspondingly (for example, setting an appropriate Kafka producer value serializer).
+When this configuration is being used, the outbound message marshalling is not based on the `contentType` of the binding.
+When native encoding is used, it is the responsibility of the consumer to use an appropriate decoder (for example, the Kafka consumer value de-serializer) to deserialize the inbound message.
+Also, when native encoding and decoding is used, the `headerMode=embeddedHeaders` property is ignored and headers are not embedded in the message.
+See the consumer property `useNativeDecoding`.
++
+Default: `false`.
+
+errorChannelEnabled::
+When set to true, if the binder supports asynchroous send results, send failures are sent to an error channel for the destination. See Error Handling for more information.
++
+Default: false.
 
 [[content-type-management]]
 == Content Type Negotiation
