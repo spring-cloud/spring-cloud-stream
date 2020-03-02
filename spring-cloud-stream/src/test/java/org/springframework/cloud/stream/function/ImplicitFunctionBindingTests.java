@@ -281,6 +281,24 @@ public class ImplicitFunctionBindingTests {
 	}
 
 	@Test
+	public void fooFunctionComposedWithConsumerNoOutputChannel() {
+		System.clearProperty("spring.cloud.function.definition");
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+				TestChannelBinderConfiguration.getCompleteConfiguration(ReactiveFunctionConfiguration.class, SingleReactiveConsumerConfiguration.class))
+						.web(WebApplicationType.NONE).run("--spring.jmx.enabled=false", "--spring.cloud.function.definition=echo|consumer")) {
+
+			assertThat(context.containsBean("echoconsumer-out-0")).isFalse();
+
+			InputDestination inputDestination = context.getBean(InputDestination.class);
+			Message<byte[]> inputMessage = MessageBuilder.withPayload("Hello".getBytes()).build();
+			inputDestination.send(inputMessage);
+
+			assertThat(System.getProperty("consumer")).isEqualTo("Hello");
+			System.clearProperty("consumer");
+		}
+	}
+
+	@Test
 	public void testReactiveConsumerWithoutDefinitionProperty() {
 		System.clearProperty("spring.cloud.function.definition");
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
@@ -685,6 +703,7 @@ public class ImplicitFunctionBindingTests {
 				TestChannelBinderConfiguration.getCompleteConfiguration(FunctionalConsumerConfiguration.class))
 						.web(WebApplicationType.NONE).run("--spring.jmx.enabled=false")) {
 
+			assertThat(context.containsBean("funcConsumer-out-0")).isFalse();
 			InputDestination inputDestination = context.getBean(InputDestination.class);
 			Message<byte[]> inputMessage = MessageBuilder.withPayload("Hello".getBytes()).build();
 			inputDestination.send(inputMessage);
