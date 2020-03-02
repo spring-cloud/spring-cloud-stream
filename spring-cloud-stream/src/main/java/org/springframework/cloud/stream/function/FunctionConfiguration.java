@@ -657,9 +657,12 @@ public class FunctionConfiguration {
 			int outputCount = FunctionTypeUtils.getOutputCount(functionType);
 			if (!isSupplier && functionType instanceof ParameterizedType) {
 				Type outputType = ((ParameterizedType) functionType).getActualTypeArguments()[1];
-				if (FunctionTypeUtils.isMono(outputType) && outputType instanceof ParameterizedType
-						&& ((ParameterizedType) outputType).getActualTypeArguments()[0].getTypeName().endsWith("Void")) {
-					this.outputCount = 0;
+				if (FunctionTypeUtils.isOfType(outputType, Mono.class) && outputType instanceof ParameterizedType
+						&& FunctionTypeUtils.isOfType(((ParameterizedType) outputType).getActualTypeArguments()[0], Void.class)) {
+					outputCount = 0;
+				}
+				else if (FunctionTypeUtils.isOfType(outputType, Void.class)) {
+					outputCount = 0;
 				}
 			}
 			return outputCount;
