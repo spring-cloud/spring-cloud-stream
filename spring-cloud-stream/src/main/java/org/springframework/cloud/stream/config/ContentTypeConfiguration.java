@@ -28,7 +28,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Role;
 import org.springframework.integration.context.IntegrationContextUtils;
-import org.springframework.integration.support.converter.DefaultDatatypeChannelMessageConverter;
 import org.springframework.messaging.converter.CompositeMessageConverter;
 import org.springframework.messaging.converter.MessageConverter;
 
@@ -47,7 +46,7 @@ class ContentTypeConfiguration {
 			List<MessageConverter> customMessageConverters) {
 
 		customMessageConverters = customMessageConverters.stream()
-				.filter(c -> !(c instanceof DefaultDatatypeChannelMessageConverter)).collect(Collectors.toList());
+				.filter(c -> isConverterEligible(c)).collect(Collectors.toList());
 
 		CompositeMessageConverterFactory factory =
 				new CompositeMessageConverterFactory(customMessageConverters, objectMapperObjectProvider.getIfAvailable(ObjectMapper::new));
@@ -55,4 +54,18 @@ class ContentTypeConfiguration {
 		return factory.getMessageConverterForAllRegistered();
 	}
 
+	/*
+	 * We want to filter out all non-stream MessageConverters, given that other
+	 * auto-configurations may interfere with their MessageConverters.
+	 */
+	private boolean isConverterEligible(Object messageConverter) {
+		String messageConverterName = messageConverter.getClass().getName();
+		if (messageConverterName.startsWith("org.springframework.cloud.")) {
+			return true;
+		}
+		else if (!messageConverterName.startsWith("org.springframework.")) {
+			return true;
+		}
+		return false;
+	}
 }
