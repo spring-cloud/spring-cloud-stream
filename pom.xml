@@ -9,7 +9,7 @@
 	<parent>
 		<groupId>org.springframework.cloud</groupId>
 		<artifactId>spring-cloud-build</artifactId>
-		<version>2.2.2.RELEASE</version>
+		<version>2.2.3.RELEASE</version>
 		<relativePath />
 	</parent>
 	<scm>
@@ -23,9 +23,9 @@
 	</scm>
 	<properties>
 		<java.version>1.8</java.version>
-		<reactor.version>Dysprosium-SR4</reactor.version>
+		<reactor.version>Dysprosium-SR5</reactor.version>
 		<objenesis.version>2.1</objenesis.version>
-		<spring-cloud-function.version>3.0.3.BUILD-SNAPSHOT</spring-cloud-function.version>
+		<spring-cloud-function.version>3.0.3.RELEASE</spring-cloud-function.version>
 		<maven-checkstyle-plugin.failsOnError>true</maven-checkstyle-plugin.failsOnError>
 		<maven-checkstyle-plugin.failsOnViolation>true</maven-checkstyle-plugin.failsOnViolation>
 		<maven-checkstyle-plugin.includeTestSourceDirectory>true</maven-checkstyle-plugin.includeTestSourceDirectory>
