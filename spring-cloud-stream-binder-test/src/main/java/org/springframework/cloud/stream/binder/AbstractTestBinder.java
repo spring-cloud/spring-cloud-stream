@@ -91,7 +91,7 @@ public abstract class AbstractTestBinder<C extends AbstractBinder<MessageChannel
 			Assert.isTrue(
 					!CollectionUtils
 							.isEmpty(((AbstractSubscribableChannel) messageChannel)
-									.getChannelInterceptors()),
+								.getInterceptors()),
 					"'messageChannel' appears to be misconfigured. "
 							+ "Consider creating channel via AbstractBinderTest.createBindableChannel(..)");
 		}
