@@ -6,11 +6,11 @@
 	<parent>
 		<artifactId>spring-cloud-dependencies-parent</artifactId>
 		<groupId>org.springframework.cloud</groupId>
-		<version>2.2.4.BUILD-SNAPSHOT</version>
+		<version>3.0.0.BUILD-SNAPSHOT</version>
 		<relativePath/>
 	</parent>
 	<artifactId>spring-cloud-stream-dependencies</artifactId>
-	<version>3.0.4.BUILD-SNAPSHOT</version>
+	<version>Ivyland.BUILD-SNAPSHOT</version>
 	<packaging>pom</packaging>
 	<name>spring-cloud-stream-dependencies</name>
 	<description>Spring Cloud Stream Dependencies</description>
@@ -19,7 +19,7 @@
 		<spring-cloud-stream-binder-kafka.version>3.0.4.BUILD-SNAPSHOT</spring-cloud-stream-binder-kafka.version>
 		<spring-cloud-stream-binder-rabbit.version>3.0.4.BUILD-SNAPSHOT</spring-cloud-stream-binder-rabbit.version>
 		<spring-cloud-schema-registry.version>1.0.4.BUILD-SNAPSHOT</spring-cloud-schema-registry.version>
-		<spring-cloud-stream-dependencies.version>3.0.4.BUILD-SNAPSHOT</spring-cloud-stream-dependencies.version>
+		<spring-cloud-stream-dependencies.version>Ivyland.BUILD-SNAPSHOT</spring-cloud-stream-dependencies.version>
 	</properties>
 	<dependencyManagement>
 		<dependencies>
