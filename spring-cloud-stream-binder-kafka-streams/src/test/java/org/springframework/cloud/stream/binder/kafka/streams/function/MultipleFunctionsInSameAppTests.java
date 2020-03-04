@@ -131,6 +131,7 @@ public class MultipleFunctionsInSameAppTests {
 				"--spring.jmx.enabled=false",
 				"--spring.cloud.stream.function.definition=process;analyze",
 				"--spring.cloud.stream.bindings.process-in-0.destination=purchases",
+				"--spring.cloud.stream.kafka.streams.bindings.process-in-0.consumer.startOffset=latest",
 				"--spring.cloud.stream.bindings.process-in-0.binder=kafka1",
 				"--spring.cloud.stream.bindings.process-out-0.destination=coffee",
 				"--spring.cloud.stream.bindings.process-out-0.binder=kafka1",
@@ -148,6 +149,8 @@ public class MultipleFunctionsInSameAppTests {
 				"--spring.cloud.stream.binders.kafka2.environment.spring.cloud.stream.kafka.streams.binder.brokers=" + embeddedKafka.getBrokersAsString(),
 				"--spring.cloud.stream.binders.kafka2.environment.spring.cloud.stream.kafka.streams.binder.applicationId=my-app-2",
 				"--spring.cloud.stream.binders.kafka2.environment.spring.cloud.stream.kafka.streams.binder.configuration.client.id=analyze-client")) {
+
+			Thread.sleep(1000);
 			receiveAndValidate("purchases", "coffee", "electronics");
 
 			StreamsBuilderFactoryBean processStreamsBuilderFactoryBean = context

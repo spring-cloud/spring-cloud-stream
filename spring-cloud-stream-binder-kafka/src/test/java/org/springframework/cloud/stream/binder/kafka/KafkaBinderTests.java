@@ -1110,75 +1110,6 @@ public class KafkaBinderTests extends
 
 	@Test
 	@SuppressWarnings("unchecked")
-	public void testDefaultAutoCommitOnErrorWithoutDlq() throws Exception {
-		Binder binder = getBinder();
-
-		ExtendedProducerProperties<KafkaProducerProperties> producerProperties = createProducerProperties();
-		BindingProperties producerBindingProperties = createProducerBindingProperties(
-				producerProperties);
-
-		DirectChannel moduleOutputChannel = createBindableChannel("output",
-				producerBindingProperties);
-
-		ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = createConsumerProperties();
-		consumerProperties.setMaxAttempts(1);
-		consumerProperties.setBackOffInitialInterval(100);
-		consumerProperties.setBackOffMaxInterval(150);
-		consumerProperties.getExtension().setAutoRebalanceEnabled(false);
-
-		DirectChannel moduleInputChannel = createBindableChannel("input",
-				createConsumerBindingProperties(consumerProperties));
-
-		FailingInvocationCountingMessageHandler handler = new FailingInvocationCountingMessageHandler();
-		moduleInputChannel.subscribe(handler);
-
-		long uniqueBindingId = System.currentTimeMillis();
-		Binding<MessageChannel> producerBinding = binder.bindProducer(
-				"retryTest." + uniqueBindingId + ".0", moduleOutputChannel,
-				producerProperties);
-		Binding<MessageChannel> consumerBinding = binder.bindConsumer(
-				"retryTest." + uniqueBindingId + ".0", "testGroup", moduleInputChannel,
-				consumerProperties);
-
-		String testMessagePayload = "test." + UUID.randomUUID().toString();
-		Message<byte[]> testMessage = MessageBuilder
-				.withPayload(testMessagePayload.getBytes()).build();
-		moduleOutputChannel.send(testMessage);
-
-		assertThat(handler.getLatch().await((int) (timeoutMultiplier * 1000),
-				TimeUnit.MILLISECONDS));
-		// first attempt fails
-		assertThat(handler.getReceivedMessages().entrySet()).hasSize(1);
-		Message<?> receivedMessage = handler.getReceivedMessages().entrySet().iterator()
-				.next().getValue();
-		assertThat(receivedMessage).isNotNull();
-		assertThat(
-				new String((byte[]) receivedMessage.getPayload(), StandardCharsets.UTF_8))
-						.isEqualTo(testMessagePayload);
-		assertThat(handler.getInvocationCount())
-				.isEqualTo(consumerProperties.getMaxAttempts());
-		consumerBinding.unbind();
-
-		// on the second attempt the message is redelivered
-		QueueChannel successfulInputChannel = new QueueChannel();
-		consumerBinding = binder.bindConsumer("retryTest." + uniqueBindingId + ".0",
-				"testGroup", successfulInputChannel, consumerProperties);
-		binderBindUnbindLatency();
-		String testMessage2Payload = "test." + UUID.randomUUID().toString();
-		Message<byte[]> testMessage2 = MessageBuilder
-				.withPayload(testMessage2Payload.getBytes()).build();
-		moduleOutputChannel.send(testMessage2);
-
-		Message<?> firstReceived = receive(successfulInputChannel);
-		assertThat(firstReceived.getPayload()).isEqualTo(testMessagePayload.getBytes());
-		Message<?> secondReceived = receive(successfulInputChannel);
-		assertThat(secondReceived.getPayload()).isEqualTo(testMessage2Payload.getBytes());
-		consumerBinding.unbind();
-		producerBinding.unbind();
-	}
-
-	@Test
-	@SuppressWarnings("unchecked")
 	public void testDefaultAutoCommitOnErrorWithDlq() throws Exception {
 		Binder binder = getBinder();
 		ExtendedProducerProperties<KafkaProducerProperties> producerProperties = createProducerProperties();
@@ -1730,7 +1661,7 @@ public class KafkaBinderTests extends
 		}
 		catch (UnsupportedOperationException ignored) {
 		}
-		List<ChannelInterceptor> interceptors = output.getChannelInterceptors();
+		List<ChannelInterceptor> interceptors = output.getInterceptors();
 		AtomicInteger count = new AtomicInteger();
 		interceptors.forEach(interceptor -> {
 			if (interceptor instanceof PartitioningInterceptor) {
