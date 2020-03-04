@@ -18,8 +18,8 @@ package org.springframework.cloud.stream.binder.stub1;
 
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
-import org.springframework.boot.actuate.health.ApplicationHealthIndicator;
 import org.springframework.boot.actuate.health.HealthIndicator;
+import org.springframework.boot.actuate.health.PingHealthIndicator;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.binder.Binder;
@@ -55,7 +55,7 @@ public class StubBinder1Configuration {
 
 	@Bean
 	public HealthIndicator binderHealthIndicator() {
-		return new ApplicationHealthIndicator();
+		return new PingHealthIndicator();
 	}
 
 }
