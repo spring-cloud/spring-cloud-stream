@@ -589,11 +589,11 @@ public KStream<String, String> anotherProcess(@Input("anotherInput") <KStream<Ob
 
 Then you must set the application id for this using the following binding property.
 
-`spring.cloud.stream.kafka.streams.bindings.input.applicationId`
+`spring.cloud.stream.kafka.streams.bindings.input.consumer.applicationId`
 
 and
 
-`spring.cloud.stream.kafka.streams.bindings.anotherInput.applicationId`
+`spring.cloud.stream.kafka.streams.bindings.anotherInput.consumer.applicationId`
 
 
 For function based model also, this approach of setting application id at the binding level will work.
