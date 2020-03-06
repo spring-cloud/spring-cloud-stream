@@ -44,6 +44,8 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.cloud.stream.binder.kafka.streams.InteractiveQueryService;
+import org.springframework.cloud.stream.binder.kafka.streams.KafkaStreamsRegistry;
+import org.springframework.cloud.stream.binder.kafka.streams.endpoint.TopologyEndpoint;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.kafka.config.StreamsBuilderFactoryBeanCustomizer;
@@ -108,6 +110,13 @@ public class KafkaStreamsBinderWordCountFunctionTests {
 			assertThat(meterRegistry.get("stream.metrics.commit.total").gauge().value()).isEqualTo(1.0);
 			assertThat(meterRegistry.get("app.info.start.time.ms").gauge().value()).isNotNaN();
 			Assert.isTrue(LATCH.await(5, TimeUnit.SECONDS), "Failed to call customizers");
+			//Testing topology endpoint
+			final KafkaStreamsRegistry kafkaStreamsRegistry = context.getBean(KafkaStreamsRegistry.class);
+			final TopologyEndpoint topologyEndpoint = new TopologyEndpoint(kafkaStreamsRegistry);
+			final String topology1 = topologyEndpoint.topology();
+			final String topology2 = topologyEndpoint.topology("testKstreamWordCountFunction");
+			assertThat(topology1).isNotEmpty();
+			assertThat(topology1).isEqualTo(topology2);
 		}
 	}
 

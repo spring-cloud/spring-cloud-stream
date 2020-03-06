@@ -16,12 +16,16 @@
 
 package org.springframework.cloud.stream.binder.kafka.streams;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import org.apache.kafka.streams.KafkaStreams;
+import org.apache.kafka.streams.StreamsConfig;
 
 import org.springframework.kafka.config.StreamsBuilderFactoryBean;
 
@@ -31,7 +35,7 @@ import org.springframework.kafka.config.StreamsBuilderFactoryBean;
  *
  * @author Soby Chacko
  */
-class KafkaStreamsRegistry {
+public class KafkaStreamsRegistry {
 
 	private Map<KafkaStreams, StreamsBuilderFactoryBean> streamsBuilderFactoryBeanMap = new HashMap<>();
 
@@ -58,6 +62,20 @@ class KafkaStreamsRegistry {
 	 */
 	StreamsBuilderFactoryBean streamBuilderFactoryBean(KafkaStreams kafkaStreams) {
 		return this.streamsBuilderFactoryBeanMap.get(kafkaStreams);
+	}
+
+	public StreamsBuilderFactoryBean streamsBuilderFactoryBean(String applicationId) {
+		final Optional<StreamsBuilderFactoryBean> first = this.streamsBuilderFactoryBeanMap.values()
+				.stream()
+				.filter(streamsBuilderFactoryBean -> streamsBuilderFactoryBean
+						.getStreamsConfiguration().getProperty(StreamsConfig.APPLICATION_ID_CONFIG)
+						.equals(applicationId))
+				.findFirst();
+		return first.orElse(null);
+	}
+
+	public List<StreamsBuilderFactoryBean> streamsBuilderFactoryBeans() {
+		return new ArrayList<>(this.streamsBuilderFactoryBeanMap.values());
 	}
 
 }
