@@ -621,9 +621,9 @@ Spring Cloud Stream provides two mechanisms, so let's look at them in more detai
 
 Here, for both samples we'll use a standard MVC endpoint method called `delegateToSupplier` bound to the root web context, 
 delegating incoming requests to stream via two different mechanisms - 
-imperative (via StreamBridgeUtils) and reactive (via EmitterProcessor).
+imperative (via StreamBridge) and reactive (via EmitterProcessor).
 
-====== Using StreamBridgeUtils
+====== Using StreamBridge
 
 [source, java]
 ----
@@ -636,7 +636,7 @@ public class WebSourceApplication {
 	}
 
 	@Autowired
-	private StreamBridgeUtils streamBridge;
+	private StreamBridge streamBridge;
 
 	@RequestMapping
 	@ResponseStatus(HttpStatus.ACCEPTED)
@@ -647,7 +647,7 @@ public class WebSourceApplication {
 }
 ----
 
-Here we autowire a `StreamBridgeUtils` bean which allows us to send data to an output binding effectively 
+Here we autowire a `StreamBridge` bean which allows us to send data to an output binding effectively 
 bridging non-stream application with spring-cloud-stream. Note that preceding example does not have any 
 source functions defined (e.g., Supplier bean) leaving the framework with no trigger to create source bindings, which would be typical for cases where 
 configuration contains function beans.
