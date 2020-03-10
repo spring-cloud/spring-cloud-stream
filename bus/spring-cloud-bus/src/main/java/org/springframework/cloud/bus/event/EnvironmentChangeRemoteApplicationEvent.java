@@ -18,6 +18,8 @@ package org.springframework.cloud.bus.event;
 
 import java.util.Map;
 
+import org.springframework.core.style.ToStringCreator;
+
 /**
  * @author Spencer Gibb
  */
@@ -71,6 +73,15 @@ public class EnvironmentChangeRemoteApplicationEvent extends RemoteApplicationEv
 			return false;
 		}
 		return true;
+	}
+
+	@Override
+	public String toString() {
+		return new ToStringCreator(this).append("id", getId())
+				.append("originService", getOriginService())
+				.append("destinationService", getDestinationService())
+				.append("values", values).toString();
+
 	}
 
 }
