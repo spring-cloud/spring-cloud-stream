@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.bus.jackson;
 
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -34,6 +35,10 @@ import org.springframework.util.StringUtils;
  * @author Donovan Muller
  */
 public class RemoteApplicationEventRegistrar implements ImportBeanDefinitionRegistrar {
+
+	private static final String PACKAGES_TO_SCAN = "packagesToScan";
+
+	private static final String BUS_JSON_CONVERTER = "busJsonConverter";
 
 	// patterned after Spring Integration IntegrationComponentScanRegistrar
 
@@ -65,15 +70,37 @@ public class RemoteApplicationEventRegistrar implements ImportBeanDefinitionRegi
 					ClassUtils.getPackageName(importingClassMetadata.getClassName()));
 		}
 
-		BeanDefinitionBuilder beanDefinitionBuilder = BeanDefinitionBuilder
-				.genericBeanDefinition(BusJacksonMessageConverter.class);
-		beanDefinitionBuilder.addPropertyValue("packagesToScan",
-				basePackages.toArray(new String[basePackages.size()]));
-		AbstractBeanDefinition beanDefinition = beanDefinitionBuilder.getBeanDefinition();
+		if (!registry.containsBeanDefinition(BUS_JSON_CONVERTER)) {
+			BeanDefinitionBuilder beanDefinitionBuilder = BeanDefinitionBuilder
+					.genericBeanDefinition(BusJacksonMessageConverter.class);
+			beanDefinitionBuilder.addPropertyValue(PACKAGES_TO_SCAN,
+					basePackages.toArray(new String[basePackages.size()]));
+			AbstractBeanDefinition beanDefinition = beanDefinitionBuilder
+					.getBeanDefinition();
 
-		BeanDefinitionHolder holder = new BeanDefinitionHolder(beanDefinition,
-				"busJsonConverter");
-		BeanDefinitionReaderUtils.registerBeanDefinition(holder, registry);
+			BeanDefinitionHolder holder = new BeanDefinitionHolder(beanDefinition,
+					BUS_JSON_CONVERTER);
+			BeanDefinitionReaderUtils.registerBeanDefinition(holder, registry);
+		}
+		else {
+			basePackages.addAll(getEarlierPackagesToScan(registry));
+			registry.getBeanDefinition(BUS_JSON_CONVERTER).getPropertyValues()
+					.addPropertyValue(PACKAGES_TO_SCAN,
+							basePackages.toArray(new String[basePackages.size()]));
+		}
+	}
+
+	private Set<String> getEarlierPackagesToScan(final BeanDefinitionRegistry registry) {
+		if (registry.containsBeanDefinition(BUS_JSON_CONVERTER)
+				&& registry.getBeanDefinition(BUS_JSON_CONVERTER).getPropertyValues()
+						.get(PACKAGES_TO_SCAN) != null) {
+			String[] earlierValues = (String[]) registry
+					.getBeanDefinition(BUS_JSON_CONVERTER).getPropertyValues()
+					.get(PACKAGES_TO_SCAN);
+			return new HashSet<>(Arrays.asList(earlierValues));
+		}
+
+		return new HashSet<>();
 	}
 
 }
