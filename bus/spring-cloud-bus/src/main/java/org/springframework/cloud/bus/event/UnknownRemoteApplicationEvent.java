@@ -16,6 +16,8 @@
 
 package org.springframework.cloud.bus.event;
 
+import org.springframework.core.style.ToStringCreator;
+
 /**
  * @author Stefan Pfeiffer
  */
@@ -49,7 +51,20 @@ public class UnknownRemoteApplicationEvent extends RemoteApplicationEvent {
 	}
 
 	public String getPayloadAsString() {
-		return new String(this.payload);
+		if (this.payload != null) {
+			return new String(this.payload);
+		}
+		return null;
+	}
+
+	@Override
+	public String toString() {
+		return new ToStringCreator(this).append("id", getId())
+				.append("originService", getOriginService())
+				.append("destinationService", getDestinationService())
+				.append("typeInfo", typeInfo).append("payload", getPayloadAsString())
+				.toString();
+
 	}
 
 }

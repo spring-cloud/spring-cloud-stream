@@ -18,6 +18,9 @@ package org.springframework.cloud.bus;
 
 import javax.annotation.PostConstruct;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.actuate.autoconfigure.endpoint.condition.ConditionalOnAvailableEndpoint;
 import org.springframework.boot.actuate.endpoint.annotation.Endpoint;
@@ -68,6 +71,8 @@ import org.springframework.util.PathMatcher;
 @AutoConfigureAfter(LifecycleMvcEndpointAutoConfiguration.class)
 // so actuator endpoints have needed dependencies
 public class BusAutoConfiguration implements ApplicationEventPublisherAware {
+
+	private static final Log log = LogFactory.getLog(BusAutoConfiguration.class);
 
 	/**
 	 * Name of the Bus path matcher.
@@ -140,6 +145,9 @@ public class BusAutoConfiguration implements ApplicationEventPublisherAware {
 	public void acceptLocal(RemoteApplicationEvent event) {
 		if (this.serviceMatcher.isFromSelf(event)
 				&& !(event instanceof AckRemoteApplicationEvent)) {
+			if (log.isDebugEnabled()) {
+				log.debug("Sending remote event on bus: " + event);
+			}
 			this.cloudBusOutboundChannel.send(MessageBuilder.withPayload(event).build());
 		}
 	}
@@ -154,6 +162,11 @@ public class BusAutoConfiguration implements ApplicationEventPublisherAware {
 			// If it's an ACK we are finished processing at this point
 			return;
 		}
+
+		if (log.isDebugEnabled()) {
+			log.debug("Received remote event from bus: " + event);
+		}
+
 		if (this.serviceMatcher.isForSelf(event)
 				&& this.applicationEventPublisher != null) {
 			if (!this.serviceMatcher.isFromSelf(event)) {

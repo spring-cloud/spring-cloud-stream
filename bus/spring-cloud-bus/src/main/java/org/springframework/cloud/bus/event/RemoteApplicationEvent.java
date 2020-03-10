@@ -22,6 +22,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 import org.springframework.context.ApplicationEvent;
+import org.springframework.core.style.ToStringCreator;
 import org.springframework.util.StringUtils;
 
 /**
@@ -132,6 +133,14 @@ public abstract class RemoteApplicationEvent extends ApplicationEvent {
 			return false;
 		}
 		return true;
+	}
+
+	@Override
+	public String toString() {
+		return new ToStringCreator(this).append("id", id)
+				.append("originService", originService)
+				.append("destinationService", destinationService).toString();
+
 	}
 
 }
