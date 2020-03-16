@@ -109,6 +109,7 @@ import org.springframework.kafka.support.SendResult;
 import org.springframework.kafka.support.TopicPartitionOffset;
 import org.springframework.kafka.support.TopicPartitionOffset.SeekPosition;
 import org.springframework.kafka.support.converter.MessagingMessageConverter;
+import org.springframework.kafka.transaction.KafkaAwareTransactionManager;
 import org.springframework.kafka.transaction.KafkaTransactionManager;
 import org.springframework.lang.Nullable;
 import org.springframework.messaging.MessageChannel;
@@ -342,9 +343,12 @@ public class KafkaMessageChannelBinder extends
 		 * (spring.cloud.stream.kafka.binder.transaction.producer.*) properties are used
 		 * instead, for all producers. A binder is transactional when
 		 * 'spring.cloud.stream.kafka.binder.transaction.transaction-id-prefix' has text.
+		 * Individual bindings can override the binder's transaction manager.
 		 */
-		final ProducerFactory<byte[], byte[]> producerFB = this.transactionManager != null
-				? this.transactionManager.getProducerFactory()
+		KafkaAwareTransactionManager<byte[], byte[]> transMan = transactionManager(
+				producerProperties.getExtension().getTransactionManager());
+		final ProducerFactory<byte[], byte[]> producerFB = transMan != null
+				? transMan.getProducerFactory()
 				: getProducerFactory(null, producerProperties);
 		Collection<PartitionInfo> partitions = provisioningProvider.getPartitionsForTopic(
 				producerProperties.getPartitionCount(), false, () -> {
@@ -352,7 +356,7 @@ public class KafkaMessageChannelBinder extends
 					List<PartitionInfo> partitionsFor = producer
 							.partitionsFor(destination.getName());
 					producer.close();
-					if (this.transactionManager == null) {
+					if (transMan == null) {
 						((DisposableBean) producerFB).destroy();
 					}
 					return partitionsFor;
@@ -383,7 +387,7 @@ public class KafkaMessageChannelBinder extends
 		if (this.producerListener != null) {
 			kafkaTemplate.setProducerListener(this.producerListener);
 		}
-		if (this.transactionManager != null) {
+		if (transMan != null) {
 			kafkaTemplate.setTransactionIdPrefix(configurationProperties.getTransaction().getTransactionIdPrefix());
 		}
 		ProducerConfigurationMessageHandler handler = new ProducerConfigurationMessageHandler(
@@ -520,7 +524,7 @@ public class KafkaMessageChannelBinder extends
 	@Override
 	protected boolean useNativeEncoding(
 			ExtendedProducerProperties<KafkaProducerProperties> producerProperties) {
-		if (this.transactionManager != null) {
+		if (transactionManager(producerProperties.getExtension().getTransactionManager()) != null) {
 			return this.configurationProperties.getTransaction().getProducer()
 					.isUseNativeEncoding();
 		}
@@ -586,8 +590,10 @@ public class KafkaMessageChannelBinder extends
 								? new ContainerProperties(Pattern.compile(topics[0]))
 								: new ContainerProperties(topics)
 						: new ContainerProperties(topicPartitionOffsets);
-		if (this.transactionManager != null) {
-			containerProperties.setTransactionManager(this.transactionManager);
+		KafkaAwareTransactionManager<byte[], byte[]> transMan = transactionManager(
+				extendedConsumerProperties.getExtension().getTransactionManager());
+		if (transMan != null) {
+			containerProperties.setTransactionManager(transMan);
 		}
 		if (this.rebalanceListener != null) {
 			setupRebalanceListener(extendedConsumerProperties, containerProperties);
@@ -653,14 +659,14 @@ public class KafkaMessageChannelBinder extends
 				consumerGroup, extendedConsumerProperties);
 		if (!extendedConsumerProperties.isBatchMode()
 				&& extendedConsumerProperties.getMaxAttempts() > 1
-				&& this.transactionManager == null) {
+				&& transMan == null) {
 
 			kafkaMessageDrivenChannelAdapter
 					.setRetryTemplate(buildRetryTemplate(extendedConsumerProperties));
 			kafkaMessageDrivenChannelAdapter
 					.setRecoveryCallback(errorInfrastructure.getRecoverer());
 		}
-		else if (!extendedConsumerProperties.isBatchMode() && this.transactionManager != null) {
+		else if (!extendedConsumerProperties.isBatchMode() && transMan != null) {
 			messageListenerContainer.setAfterRollbackProcessor(new DefaultAfterRollbackProcessor<>(
 					(record, exception) -> {
 						MessagingException payload =
@@ -1050,8 +1056,10 @@ public class KafkaMessageChannelBinder extends
 		if (kafkaConsumerProperties.isEnableDlq()) {
 			KafkaProducerProperties dlqProducerProperties = kafkaConsumerProperties
 					.getDlqProducerProperties();
-			ProducerFactory<?, ?> producerFactory = this.transactionManager != null
-					? this.transactionManager.getProducerFactory()
+			KafkaAwareTransactionManager<byte[], byte[]> transMan = transactionManager(
+					properties.getExtension().getTransactionManager());
+			ProducerFactory<?, ?> producerFactory = transMan != null
+					? transMan.getProducerFactory()
 					: getProducerFactory(null,
 							new ExtendedProducerProperties<>(dlqProducerProperties));
 			final KafkaTemplate<?, ?> kafkaTemplate = new KafkaTemplate<>(
@@ -1066,7 +1074,7 @@ public class KafkaMessageChannelBinder extends
 
 				if (properties.isUseNativeDecoding()) {
 					if (record != null) {
-						Map<String, String> configuration = this.transactionManager == null
+						Map<String, String> configuration = transMan == null
 								? dlqProducerProperties.getConfiguration()
 								: this.configurationProperties.getTransaction()
 										.getProducer().getConfiguration();
@@ -1178,6 +1186,15 @@ public class KafkaMessageChannelBinder extends
 			};
 		}
 		return null;
+	}
+
+	@SuppressWarnings("unchecked")
+	@Nullable
+	private KafkaAwareTransactionManager<byte[], byte[]> transactionManager(@Nullable String beanName) {
+		if (StringUtils.hasText(beanName)) {
+			return getApplicationContext().getBean(beanName, KafkaAwareTransactionManager.class);
+		}
+		return this.transactionManager;
 	}
 
 	private DlqPartitionFunction determinDlqPartitionFunction(Integer dlqPartitions) {

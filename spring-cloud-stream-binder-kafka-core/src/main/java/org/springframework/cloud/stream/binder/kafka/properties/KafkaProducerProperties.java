@@ -95,6 +95,11 @@ public class KafkaProducerProperties {
 	private String recordMetadataChannel;
 
 	/**
+	 * Transaction manager bean name - overrides the binder's transaction configuration.
+	 */
+	private String transactionManager;
+
+	/**
 	 * @return buffer size
 	 *
 	 * Upper limit, in bytes, of how much data the Kafka producer attempts to batch before sending.
@@ -242,6 +247,19 @@ public class KafkaProducerProperties {
 
 	public void setRecordMetadataChannel(String recordMetadataChannel) {
 		this.recordMetadataChannel = recordMetadataChannel;
+	}
+
+	/**
+	 * @return the transaction manager bean name.
+	 *
+	 * Transaction manager bean name (must be {@code KafkaAwareTransactionManager}.
+	 */
+	public String getTransactionManager() {
+		return this.transactionManager;
+	}
+
+	public void setTransactionManager(String transactionManager) {
+		this.transactionManager = transactionManager;
 	}
 
 	/**

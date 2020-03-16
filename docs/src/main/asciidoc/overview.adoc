@@ -281,6 +281,12 @@ pollTimeout::
 Timeout used for polling in pollable consumers.
 +
 Default: 5 seconds.
+transactionManager::
+Bean name of a `KafkaAwareTransactionManager` used to override the binder's transaction manager for this binding.
+Usually needed if you want to synchronize another transaction with the Kafka transaction, using the `ChainedKafkaTransactionManaager`.
+To achieve exactly once consumption and production of records, the consumer and producer bindings must all be configured with the same transaction manager.
++
+Default: none.
 
 ==== Consuming Batches
 
@@ -392,6 +398,12 @@ Supported values are `none`, `gzip`, `snappy` and `lz4`.
 If you override the `kafka-clients` jar to 2.1.0 (or later), as discussed in the https://docs.spring.io/spring-kafka/docs/2.2.x/reference/html/deps-for-21x.html[Spring for Apache Kafka documentation], and wish to use `zstd` compression, use `spring.cloud.stream.kafka.bindings.<binding-name>.producer.configuration.compression.type=zstd`.
 +
 Default: `none`.
+transactionManager::
+Bean name of a `KafkaAwareTransactionManager` used to override the binder's transaction manager for this binding.
+Usually needed if you want to synchronize another transaction with the Kafka transaction, using the `ChainedKafkaTransactionManaager`.
+To achieve exactly once consumption and production of records, the consumer and producer bindings must all be configured with the same transaction manager.
++
+Default: none.
 
 ==== Usage examples
 

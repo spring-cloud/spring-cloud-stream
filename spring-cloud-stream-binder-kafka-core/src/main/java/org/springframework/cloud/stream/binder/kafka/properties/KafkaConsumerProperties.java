@@ -150,6 +150,7 @@ public class KafkaConsumerProperties {
 	/**
 	 * @deprecated No longer used by the binder.
 	 */
+	@Deprecated
 	private int recoveryInterval = 5000;
 
 	/**
@@ -193,6 +194,11 @@ public class KafkaConsumerProperties {
 	 * Timeout used for polling in pollable consumers.
 	 */
 	private long pollTimeout = org.springframework.kafka.listener.ConsumerProperties.DEFAULT_POLL_TIMEOUT;
+
+	/**
+	 * Transaction manager bean name - overrides the binder's transaction configuration.
+	 */
+	private String transactionManager;
 
 	/**
 	 * @return if each record needs to be acknowledged.
@@ -462,4 +468,18 @@ public class KafkaConsumerProperties {
 	public void setPollTimeout(long pollTimeout) {
 		this.pollTimeout = pollTimeout;
 	}
+
+	/**
+	 * @return the transaction manager bean name.
+	 *
+	 * Transaction manager bean name (must be {@code KafkaAwareTransactionManager}.
+	 */
+	public String getTransactionManager() {
+		return this.transactionManager;
+	}
+
+	public void setTransactionManager(String transactionManager) {
+		this.transactionManager = transactionManager;
+	}
+
 }
