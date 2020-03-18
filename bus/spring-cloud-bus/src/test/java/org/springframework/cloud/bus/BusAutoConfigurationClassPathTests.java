@@ -38,6 +38,7 @@ public class BusAutoConfigurationClassPathTests {
 	public void refreshListenerCreatedWithoutActuator() {
 		new ApplicationContextRunner()
 				.withConfiguration(AutoConfigurations.of(RefreshAutoConfiguration.class,
+						ServiceMatcherAutoConfiguration.class,
 						BusRefreshAutoConfiguration.class))
 				.run(context -> assertThat(context).hasSingleBean(RefreshListener.class)
 						.doesNotHaveBean(RefreshBusEndpoint.class));

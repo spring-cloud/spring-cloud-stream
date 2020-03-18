@@ -52,11 +52,8 @@ import org.springframework.context.ApplicationEventPublisherAware;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.event.EventListener;
-import org.springframework.core.env.Environment;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.support.MessageBuilder;
-import org.springframework.util.AntPathMatcher;
-import org.springframework.util.PathMatcher;
 
 /**
  * @author Spencer Gibb
@@ -68,7 +65,8 @@ import org.springframework.util.PathMatcher;
 @EnableConfigurationProperties(BusProperties.class)
 @AutoConfigureBefore(BindingServiceConfiguration.class)
 // so stream bindings work properly
-@AutoConfigureAfter(LifecycleMvcEndpointAutoConfiguration.class)
+@AutoConfigureAfter({ LifecycleMvcEndpointAutoConfiguration.class,
+		ServiceMatcherAutoConfiguration.class })
 // so actuator endpoints have needed dependencies
 public class BusAutoConfiguration implements ApplicationEventPublisherAware {
 
@@ -189,29 +187,6 @@ public class BusAutoConfiguration implements ApplicationEventPublisherAware {
 					event.getOriginService(), event.getDestinationService(),
 					event.getId(), event.getClass()));
 		}
-	}
-
-	@Configuration(proxyBeanMethods = false)
-	protected static class MatcherConfiguration {
-
-		@BusPathMatcher
-		// There is a @Bean of type PathMatcher coming from Spring MVC
-		@ConditionalOnMissingBean(name = BusAutoConfiguration.BUS_PATH_MATCHER_NAME)
-		@Bean(name = BusAutoConfiguration.BUS_PATH_MATCHER_NAME)
-		public PathMatcher busPathMatcher() {
-			return new DefaultBusPathMatcher(new AntPathMatcher(":"));
-		}
-
-		@Bean
-		public ServiceMatcher serviceMatcher(@BusPathMatcher PathMatcher pathMatcher,
-				BusProperties properties, Environment environment) {
-			String[] configNames = environment.getProperty(CLOUD_CONFIG_NAME_PROPERTY,
-					String[].class, new String[] {});
-			ServiceMatcher serviceMatcher = new ServiceMatcher(pathMatcher,
-					properties.getId(), configNames);
-			return serviceMatcher;
-		}
-
 	}
 
 	@Configuration(proxyBeanMethods = false)
