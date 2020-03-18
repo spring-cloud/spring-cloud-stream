@@ -56,18 +56,23 @@ public class RefreshListener
 		// TODO Remove this in 3.0.x
 		if (serviceMatcher == null) {
 			log.warn(
-					"RefreshListener does not have a ServiceMatcher, refresh will not be performed.  Consider"
-							+ "passing a ServiceMatcher in the constructor");
-			return;
+					"RefreshListener does not have a ServiceMatcher, refresh may be performed even if "
+							+ "the event does not target this app.  Consider passing a ServiceMatcher in "
+							+ "the constructor");
+			refresh();
 		}
-		if (serviceMatcher.isForSelf(event)) {
-			Set<String> keys = this.contextRefresher.refresh();
-			log.info("Keys refreshed " + keys);
+		else if (serviceMatcher.isForSelf(event)) {
+			refresh();
 		}
 		else {
 			log.info("Refresh not performed, the event was targetting "
 					+ event.getDestinationService());
 		}
+	}
+
+	private void refresh() {
+		Set<String> keys = this.contextRefresher.refresh();
+		log.info("Keys refreshed " + keys);
 	}
 
 }
