@@ -38,12 +38,6 @@ public class RefreshListener
 
 	private ServiceMatcher serviceMatcher;
 
-	@Deprecated
-	// TODO Remove in 3.0.x
-	public RefreshListener(ContextRefresher contextRefresher) {
-		this(contextRefresher, null);
-	}
-
 	public RefreshListener(ContextRefresher contextRefresher,
 			ServiceMatcher serviceMatcher) {
 		this.contextRefresher = contextRefresher;
@@ -53,26 +47,14 @@ public class RefreshListener
 	@Override
 	public void onApplicationEvent(RefreshRemoteApplicationEvent event) {
 		log.info("Received remote refresh request.");
-		// TODO Remove this in 3.0.x
-		if (serviceMatcher == null) {
-			log.warn(
-					"RefreshListener does not have a ServiceMatcher, refresh may be performed even if "
-							+ "the event does not target this app.  Consider passing a ServiceMatcher in "
-							+ "the constructor");
-			refresh();
-		}
-		else if (serviceMatcher.isForSelf(event)) {
-			refresh();
+		if (serviceMatcher.isForSelf(event)) {
+			Set<String> keys = this.contextRefresher.refresh();
+			log.info("Keys refreshed " + keys);
 		}
 		else {
 			log.info("Refresh not performed, the event was targetting "
 					+ event.getDestinationService());
 		}
-	}
-
-	private void refresh() {
-		Set<String> keys = this.contextRefresher.refresh();
-		log.info("Keys refreshed " + keys);
 	}
 
 }
