@@ -21,11 +21,13 @@ import java.util.Set;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import org.springframework.cloud.bus.ServiceMatcher;
 import org.springframework.cloud.context.refresh.ContextRefresher;
 import org.springframework.context.ApplicationListener;
 
 /**
  * @author Spencer Gibb
+ * @author Ryan Baxter
  */
 public class RefreshListener
 		implements ApplicationListener<RefreshRemoteApplicationEvent> {
@@ -34,14 +36,38 @@ public class RefreshListener
 
 	private ContextRefresher contextRefresher;
 
+	private ServiceMatcher serviceMatcher;
+
+	@Deprecated
+	// TODO Remove in 3.0.x
 	public RefreshListener(ContextRefresher contextRefresher) {
+		this(contextRefresher, null);
+	}
+
+	public RefreshListener(ContextRefresher contextRefresher,
+			ServiceMatcher serviceMatcher) {
 		this.contextRefresher = contextRefresher;
+		this.serviceMatcher = serviceMatcher;
 	}
 
 	@Override
 	public void onApplicationEvent(RefreshRemoteApplicationEvent event) {
-		Set<String> keys = this.contextRefresher.refresh();
-		log.info("Received remote refresh request. Keys refreshed " + keys);
+		log.info("Received remote refresh request.");
+		// TODO Remove this in 3.0.x
+		if (serviceMatcher == null) {
+			log.warn(
+					"RefreshListener does not have a ServiceMatcher, refresh will not be performed.  Consider"
+							+ "passing a ServiceMatcher in the constructor");
+			return;
+		}
+		if (serviceMatcher.isForSelf(event)) {
+			Set<String> keys = this.contextRefresher.refresh();
+			log.info("Keys refreshed " + keys);
+		}
+		else {
+			log.info("Refresh not performed, the event was targetting "
+					+ event.getDestinationService());
+		}
 	}
 
 }

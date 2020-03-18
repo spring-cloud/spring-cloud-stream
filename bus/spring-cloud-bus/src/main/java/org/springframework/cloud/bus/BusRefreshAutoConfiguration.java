@@ -41,12 +41,12 @@ public class BusRefreshAutoConfiguration {
 	@ConditionalOnProperty(value = "spring.cloud.bus.refresh.enabled",
 			matchIfMissing = true)
 	@ConditionalOnBean(ContextRefresher.class)
-	public RefreshListener refreshListener(ContextRefresher contextRefresher) {
-		return new RefreshListener(contextRefresher);
+	public RefreshListener refreshListener(ContextRefresher contextRefresher,
+			ServiceMatcher serviceMatcher) {
+		return new RefreshListener(contextRefresher, serviceMatcher);
 	}
 
 	@Configuration(proxyBeanMethods = false)
-	@ConditionalOnBean(ContextRefresher.class)
 	@ConditionalOnClass(
 			name = { "org.springframework.boot.actuate.endpoint.annotation.Endpoint",
 					"org.springframework.cloud.context.scope.refresh.RefreshScope" })
