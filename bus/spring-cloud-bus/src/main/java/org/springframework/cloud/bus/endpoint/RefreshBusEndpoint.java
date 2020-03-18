@@ -33,9 +33,7 @@ public class RefreshBusEndpoint extends AbstractBusEndpoint {
 	}
 
 	@WriteOperation
-	public void busRefreshWithDestination(@Selector String destination) { // TODO:
-																			// document
-																			// destination
+	public void busRefreshWithDestination(@Selector String destination) {
 		publish(new RefreshRemoteApplicationEvent(this, getInstanceId(), destination));
 	}
 
