@@ -30,6 +30,7 @@ import org.springframework.cloud.stream.binder.test.TestChannelBinderConfigurati
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.messaging.Message;
+import org.springframework.messaging.support.MessageBuilder;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.fail;
@@ -73,6 +74,31 @@ public class StreamBridgeTests {
 			OutputDestination outputDestination = context.getBean(OutputDestination.class);
 			assertThat(new String(outputDestination.receive(100, "foo-out-0").getPayload())).isEqualTo("hello foo");
 			assertThat(new String(outputDestination.receive(100, "bar-out-0").getPayload())).isEqualTo("hello bar");
+		}
+	}
+
+	@Test
+	public void testBridgeFunctionsSendingMessagePreservingHeaders() {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration
+				.getCompleteConfiguration(EmptyConfiguration.class))
+						.web(WebApplicationType.NONE).run("--spring.cloud.stream.source=foo;bar",
+								"--spring.jmx.enabled=false")) {
+
+			StreamBridge bridge = context.getBean(StreamBridge.class);
+			bridge.send("foo-out-0", MessageBuilder.withPayload("hello foo").setHeader("foo", "foo").build());
+			bridge.send("bar-out-0", MessageBuilder.withPayload("hello bar").setHeader("bar", "bar").build());
+
+
+			OutputDestination outputDestination = context.getBean(OutputDestination.class);
+
+
+			Message message = outputDestination.receive(100, "foo-out-0");
+			assertThat(message.getPayload()).isEqualTo("hello foo".getBytes());
+			assertThat(message.getHeaders().get("foo")).isEqualTo("foo");
+
+			message = outputDestination.receive(100, "bar-out-0");
+			assertThat(message.getPayload()).isEqualTo("hello bar".getBytes());
+			assertThat(message.getHeaders().get("bar")).isEqualTo("bar");
 		}
 	}
 
