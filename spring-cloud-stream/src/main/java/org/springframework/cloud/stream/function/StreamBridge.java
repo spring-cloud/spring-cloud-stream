@@ -131,8 +131,7 @@ public final class StreamBridge implements SmartInitializingSingleton {
 				// we're registering a dummy pass-through function to ensure that it goes through the
 				// same process (type conversion, etc) as other function invocation.
 				FunctionRegistration<Function<Object, Object>> fr = new FunctionRegistration<>(v -> v, channelEntry.getKey());
-				fr.type(FunctionType.from(Object.class).to(Object.class));
-				this.functionRegistry.register(fr);
+				this.functionRegistry.register(fr.type(FunctionType.from(Object.class).to(Object.class).message()));
 				this.initialized = true;
 			}
 		}
