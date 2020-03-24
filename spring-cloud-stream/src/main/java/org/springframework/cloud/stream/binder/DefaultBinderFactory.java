@@ -35,7 +35,7 @@ import org.springframework.boot.Banner.Mode;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.stream.config.ListenerContainerCustomizer;
-import org.springframework.cloud.stream.config.SpelExpressionConverterConfiguration;
+import org.springframework.cloud.stream.config.SpelExpressionConverterConfiguration.SpelConverter;
 import org.springframework.cloud.stream.reflection.GenericsUtils;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -44,6 +44,7 @@ import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.support.GenericApplicationContext;
+import org.springframework.core.convert.support.GenericConversionService;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.MapPropertySource;
 import org.springframework.core.env.StandardEnvironment;
@@ -254,17 +255,9 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 					? environment.getProperty("spring.jmx.default-domain") : "";
 			args.add("--spring.jmx.default-domain=" + defaultDomain + "binder."
 					+ configurationName);
-			// Initializing SpringApplicationBuilder with
-			// SpelExpressionConverterConfiguration due to the fact that
-			// infrastructure related configuration is not propagated in a multi binder
-			// scenario.
-			// See this GH issue for more details:
-			// https://github.com/spring-cloud/spring-cloud-stream/issues/1412
-			// and the associated PR:
-			// https://github.com/spring-cloud/spring-cloud-stream/pull/1413
+
 			SpringApplicationBuilder springApplicationBuilder = new SpringApplicationBuilder(
-					SpelExpressionConverterConfiguration.class)
-							.sources(binderType.getConfigurationClasses())
+					binderType.getConfigurationClasses())
 							.bannerMode(Mode.OFF).logStartupInfo(false)
 							.web(WebApplicationType.NONE);
 			// If the environment is not customized and a main context is available, we
@@ -280,7 +273,7 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 				springApplicationBuilder.parent(this.context);
 			}
 			else {
-				this.registerListenerContainerCustomizerInitializerIfNecessary(springApplicationBuilder, context);
+				this.customizeParentChildContextRelationship(springApplicationBuilder, this.context);
 				springApplicationBuilder.listeners(new ApplicationListener<ApplicationEvent>() {
 					@Override
 					public void onApplicationEvent(ApplicationEvent event) {
@@ -343,9 +336,10 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 
 	/*
 	 * This will propagate/copy ListenerContainerCustomizer(s) from parent context to child context for cases when multiple binders are used.
+	 * It will also register SpelConverter with child context
 	 */
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	private void registerListenerContainerCustomizerInitializerIfNecessary(SpringApplicationBuilder applicationBuilder, ApplicationContext context) {
+	private void customizeParentChildContextRelationship(SpringApplicationBuilder applicationBuilder, ApplicationContext context) {
 		if (context != null) {
 			Map<String, ListenerContainerCustomizer> customizers = context.getBeansOfType(ListenerContainerCustomizer.class);
 			if (!CollectionUtils.isEmpty(customizers)) {
@@ -369,6 +363,9 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 						((GenericApplicationContext) childContext).registerBean(customizerEntry.getKey(),
 								ListenerContainerCustomizer.class, () -> customizerWrapper);
 					}
+					GenericConversionService cs = (GenericConversionService) ((GenericApplicationContext) childContext).getBeanFactory().getConversionService();
+					SpelConverter spelConverter = new SpelConverter();
+					cs.addConverter(spelConverter);
 				});
 			}
 		}
