@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 the original author or authors.
+ * Copyright 2015-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,10 +27,14 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.boot.Banner.Mode;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.cloud.stream.config.ListenerContainerCustomizer;
 import org.springframework.cloud.stream.config.SpelExpressionConverterConfiguration;
 import org.springframework.cloud.stream.reflection.GenericsUtils;
 import org.springframework.context.ApplicationContext;
@@ -39,6 +43,7 @@ import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.MapPropertySource;
 import org.springframework.core.env.StandardEnvironment;
@@ -57,15 +62,14 @@ import org.springframework.util.StringUtils;
  * @author Artem Bilan
  * @author Anshul Mehra
  */
-public class DefaultBinderFactory
-		implements BinderFactory, DisposableBean, ApplicationContextAware {
+public class DefaultBinderFactory implements BinderFactory, DisposableBean, ApplicationContextAware {
+
+	protected final Log logger = LogFactory.getLog(getClass());
 
 	private final Map<String, BinderConfiguration> binderConfigurations;
 
-	// @checkstyle:off
 	private final Map<String, Entry<Binder<?, ?, ?>, ConfigurableApplicationContext>> binderInstanceCache = new HashMap<>();
 
-	// @checkstyle:on
 
 	private final Map<String, String> defaultBinderForBindingTargetType = new HashMap<>();
 
@@ -276,6 +280,7 @@ public class DefaultBinderFactory
 				springApplicationBuilder.parent(this.context);
 			}
 			else {
+				this.registerListenerContainerCustomizerInitializerIfNecessary(springApplicationBuilder, context);
 				springApplicationBuilder.listeners(new ApplicationListener<ApplicationEvent>() {
 					@Override
 					public void onApplicationEvent(ApplicationEvent event) {
@@ -334,6 +339,39 @@ public class DefaultBinderFactory
 		}
 		return (Binder<T, ConsumerProperties, ProducerProperties>) this.binderInstanceCache
 				.get(configurationName).getKey();
+	}
+
+	/*
+	 * This will propagate/copy ListenerContainerCustomizer(s) from parent context to child context for cases when multiple binders are used.
+	 */
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	private void registerListenerContainerCustomizerInitializerIfNecessary(SpringApplicationBuilder applicationBuilder, ApplicationContext context) {
+		if (context != null) {
+			Map<String, ListenerContainerCustomizer> customizers = context.getBeansOfType(ListenerContainerCustomizer.class);
+			if (!CollectionUtils.isEmpty(customizers)) {
+				applicationBuilder.initializers(childContext -> {
+					for (Entry<String, ListenerContainerCustomizer> customizerEntry : customizers.entrySet()) {
+						ListenerContainerCustomizer customizerWrapper = new ListenerContainerCustomizer() {
+							@Override
+							public void configure(Object container, String destinationName, String group) {
+								try {
+									customizerEntry.getValue().configure(container, destinationName, group);
+								}
+								catch (Exception e) {
+									logger.warn("Failed while applying ListenerContainerCustomizer. In situations when multiple "
+											+ "binders are used this is expected, since a particular customizer may not be applicable"
+											+ "to a particular binder. Customizer: " + customizerEntry.getValue()
+											+ " Binder: " + childContext.getBean(AbstractMessageChannelBinder.class), e);
+								}
+							}
+						};
+
+						((GenericApplicationContext) childContext).registerBean(customizerEntry.getKey(),
+								ListenerContainerCustomizer.class, () -> customizerWrapper);
+					}
+				});
+			}
+		}
 	}
 
 	/**
