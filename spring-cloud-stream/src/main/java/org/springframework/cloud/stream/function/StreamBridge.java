@@ -21,19 +21,24 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.Function;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import org.springframework.beans.factory.SmartInitializingSingleton;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionRegistry;
 import org.springframework.cloud.function.context.FunctionType;
 import org.springframework.cloud.function.context.catalog.BeanFactoryAwareFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.cloud.stream.binder.ProducerProperties;
+import org.springframework.cloud.stream.binding.BinderAwareChannelResolver;
 import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.cloud.stream.messaging.DirectWithAttributesChannel;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.messaging.Message;
-import org.springframework.util.Assert;
+import org.springframework.messaging.MessageChannel;
 import org.springframework.util.MimeType;
 import org.springframework.util.MimeTypeUtils;
 
@@ -55,7 +60,9 @@ import org.springframework.util.MimeTypeUtils;
  */
 public final class StreamBridge implements SmartInitializingSingleton {
 
-	private final Map<String, DirectWithAttributesChannel> outputChannelsOnly = new HashMap<>();
+	protected final Log logger = LogFactory.getLog(getClass());
+
+	private final Map<String, MessageChannel> outputChannelsOnly = new HashMap<>();
 
 	private final FunctionCatalog functionCatalog;
 
@@ -66,6 +73,9 @@ public final class StreamBridge implements SmartInitializingSingleton {
 	private ConfigurableApplicationContext applicationContext;
 
 	private boolean initialized;
+
+	@Autowired
+	private BinderAwareChannelResolver dynamicDestinationResolver;
 
 	/**
 	 *
@@ -97,6 +107,11 @@ public final class StreamBridge implements SmartInitializingSingleton {
 	 * Sends 'data' to an output binding specified by 'bindingName' argument while
 	 * using the content type specified by the 'outputContentType' argument to deal
 	 * with output type conversion (if necessary).
+	 * For typical cases `bindingName` is configured using 'spring.cloud.stream.source' property.
+	 * However, this operation also supports sending to dynamic destinations. This means if the name
+	 * provided via 'bindingName' does not have a corresponding binding such name will be
+	 * treated as dynamic destination.
+	 *
 	 * @param bindingName the name of the output binding
 	 * @param data the data to send
 	 * @param outputContentType content type to be used to deal with output type conversion
@@ -104,7 +119,15 @@ public final class StreamBridge implements SmartInitializingSingleton {
 	 */
 	@SuppressWarnings("unchecked")
 	public boolean send(String bindingName, Object data, MimeType outputContentType) {
-		Assert.isTrue(this.outputChannelsOnly.containsKey(bindingName), "Binding name '" + bindingName + "' does not exist.");
+		if (!this.outputChannelsOnly.containsKey(bindingName)) {
+			logger.info("Binding name '" + bindingName + "' does not exist. This means that value '"
+					+ bindingName + "' will be treated as dynamic destination. If this is not your intention please "
+							+ "provide 'spring.cloud.stream.source' property");
+			this.outputChannelsOnly.put(bindingName, dynamicDestinationResolver.resolveDestination(bindingName));
+			FunctionRegistration<Function<Object, Object>> fr = new FunctionRegistration<>(v -> v, bindingName);
+			this.functionRegistry.register(fr.type(FunctionType.from(Object.class).to(Object.class).message()));
+		}
+
 		FunctionInvocationWrapper functionWrapper = this.functionCatalog.lookup(bindingName, outputContentType.toString());
 
 		BindingProperties bindingProperties = this.bindingServiceProperties.getBindings().get(bindingName);

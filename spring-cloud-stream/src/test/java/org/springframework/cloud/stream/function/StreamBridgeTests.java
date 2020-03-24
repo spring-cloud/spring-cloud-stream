@@ -92,7 +92,7 @@ public class StreamBridgeTests {
 			OutputDestination outputDestination = context.getBean(OutputDestination.class);
 
 
-			Message message = outputDestination.receive(100, "foo-out-0");
+			Message<?> message = outputDestination.receive(100, "foo-out-0");
 			assertThat(message.getPayload()).isEqualTo("hello foo".getBytes());
 			assertThat(message.getHeaders().get("foo")).isEqualTo("foo");
 
@@ -143,6 +143,30 @@ public class StreamBridgeTests {
 			assertThat(new String(message.getPayload())).isEqualTo("hello");
 			message = outputDestination.receive(100, "supplier-out-0");
 			assertThat(new String(message.getPayload())).isEqualTo("blah");
+		}
+	}
+
+	@Test
+	public void testDynamicDestination() {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration
+				.getCompleteConfiguration(TestConfiguration.class))
+						.web(WebApplicationType.NONE).run("--spring.jmx.enabled=false")) {
+
+			OutputDestination outputDestination = context.getBean(OutputDestination.class);
+
+			StreamBridge bridge = context.getBean(StreamBridge.class);
+			bridge.send("foo-out-0", "b");
+			bridge.send("bar", "hello");
+			bridge.send("blah", MessageBuilder.withPayload("message").setHeader("foo", "foo").build());
+
+			Message<byte[]> message = outputDestination.receive(100, "foo-out-0");
+			assertThat(new String(message.getPayload())).isEqualTo("b");
+
+			message = outputDestination.receive(100, "bar");
+			assertThat(new String(message.getPayload())).isEqualTo("hello");
+
+			message = outputDestination.receive(100, "blah");
+			assertThat(new String(message.getPayload())).isEqualTo("message");
 		}
 	}
 
