@@ -48,7 +48,6 @@ import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionProperties;
@@ -122,7 +121,7 @@ public class FunctionConfiguration {
 	private final static String SOURCE_PROPERY = "spring.cloud.stream.source";
 
 	@Bean
-	@ConditionalOnProperty(SOURCE_PROPERY)
+//	@ConditionalOnProperty(SOURCE_PROPERY)
 	public StreamBridge streamBridgeUtils(FunctionCatalog functionCatalog, FunctionRegistry functionRegistry,
 			BindingServiceProperties bindingServiceProperties, ConfigurableApplicationContext applicationContext) {
 		return new StreamBridge(functionCatalog, functionRegistry, bindingServiceProperties, applicationContext);
@@ -188,7 +187,7 @@ public class FunctionConfiguration {
 							String integrationFlowName = proxyFactory.getFunctionDefinition() + "_integrationflow";
 							PollableBean pollable = extractPollableAnnotation(functionProperties, context, proxyFactory);
 
-							Type functionType = ((FunctionInvocationWrapper) functionWrapper).getFunctionType();
+							Type functionType = functionWrapper.getFunctionType();
 							IntegrationFlow integrationFlow = integrationFlowFromProvidedSupplier(new PartitionAwareFunctionWrapper(functionWrapper, context, producerProperties),
 									beginPublishingTrigger, pollable, context, taskScheduler, functionType)
 									.route(Message.class, message -> {

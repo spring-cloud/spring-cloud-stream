@@ -661,6 +661,39 @@ Also, note that `streamBridge.send(..)` method takes an `Object` for data. This 
 will go through the same routine when sending output as if it was from any Function or Supplier providing the same level 
 of consistency as with functions. This means the output type conversion, partitioning etc are honored as if it was from the output produced by functions.
 
+====== StreamBridge and Dynamic Destinations
+
+`StreamBridge` can also be used for cases when output destination(s) are not known ahead of time similar to the use cases 
+described in <<Routing FROM Consumer>> section. 
+
+Let's look at the example
+
+[source, java]
+----
+@SpringBootApplication
+@Controller
+public class WebSourceApplication {
+
+	public static void main(String[] args) {
+		SpringApplication.run(WebSourceApplication.class, args);
+	}
+
+	@Autowired
+	private StreamBridge streamBridge;
+
+	@RequestMapping
+	@ResponseStatus(HttpStatus.ACCEPTED)
+	public void delegateToSupplier(@RequestBody String body) {
+		System.out.println("Sending " + body);
+		streamBridge.send("myDestiniation", body);
+	}
+}
+----
+
+As you can see the preceding example is very similar to the previous one with the exception of explicit binding instruction provided via  
+`spring.cloud.stream.source` property (which is not provided). 
+Here we're sending data to `myDestiniation` name which does not exist as a binding. Therefore such name will be treated as dynamic destination
+as described in <<Routing FROM Consumer>> section.
 
 ====== Using reactor API
 
@@ -1471,6 +1504,9 @@ public NewDestinationBindingCallback<RabbitProducerProperties> dynamicConfigurer
 ----
 
 NOTE: If you need to support dynamic destinations with multiple binder types, use `Object` for the generic type and cast the `extended` argument as needed.
+
+Also, please see <<Using StreamBridge>> section to see how yet another option (StreamBridge) can be utilized for similar cases.
+
 
 [[spring-cloud-stream-overview-error-handling]]
 === Error Handling
