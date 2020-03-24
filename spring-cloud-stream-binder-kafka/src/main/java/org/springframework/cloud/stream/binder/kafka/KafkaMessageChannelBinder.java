@@ -102,6 +102,7 @@ import org.springframework.kafka.listener.ConsumerAwareRebalanceListener;
 import org.springframework.kafka.listener.ConsumerProperties;
 import org.springframework.kafka.listener.ContainerProperties;
 import org.springframework.kafka.listener.DefaultAfterRollbackProcessor;
+import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.kafka.support.KafkaHeaderMapper;
 import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.kafka.support.ProducerListener;
@@ -112,6 +113,7 @@ import org.springframework.kafka.support.converter.MessagingMessageConverter;
 import org.springframework.kafka.transaction.KafkaAwareTransactionManager;
 import org.springframework.kafka.transaction.KafkaTransactionManager;
 import org.springframework.lang.Nullable;
+import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.MessageHeaders;
@@ -213,6 +215,8 @@ public class KafkaMessageChannelBinder extends
 	private ProducerListener<byte[], byte[]> producerListener;
 
 	private KafkaExtendedBindingProperties extendedBindingProperties = new KafkaExtendedBindingProperties();
+
+	private Map<ConsumerDestination, ContainerProperties.AckMode> ackModeInfo = new ConcurrentHashMap<>();
 
 	public KafkaMessageChannelBinder(
 			KafkaBinderConfigurationProperties configurationProperties,
@@ -695,6 +699,7 @@ public class KafkaMessageChannelBinder extends
 			kafkaMessageDrivenChannelAdapter.setErrorChannel(errorInfrastructure.getErrorChannel());
 		}
 		this.getContainerCustomizer().configure(messageListenerContainer, destination.getName(), group);
+		this.ackModeInfo.put(destination, messageListenerContainer.getContainerProperties().getAckMode());
 		return kafkaMessageDrivenChannelAdapter;
 	}
 
@@ -1172,16 +1177,31 @@ public class KafkaMessageChannelBinder extends
 				String dlqName = StringUtils.hasText(kafkaConsumerProperties.getDlqName())
 						? kafkaConsumerProperties.getDlqName()
 						: "error." + record.topic() + "." + group;
+				MessageHeaders headers;
+				if (message instanceof ErrorMessage) {
+					final ErrorMessage errorMessage = (ErrorMessage) message;
+					final Message<?> originalMessage = errorMessage.getOriginalMessage();
+					if (originalMessage != null) {
+						headers = originalMessage.getHeaders();
+					}
+					else {
+						headers = message.getHeaders();
+					}
+				}
+				else {
+					headers = message.getHeaders();
+				}
 				if (this.transactionTemplate != null) {
 					Throwable throwable2 = throwable;
 					this.transactionTemplate.executeWithoutResult(status -> {
 						dlqSender.sendToDlq(recordToSend.get(), kafkaHeaders, dlqName, group, throwable2,
-								determinDlqPartitionFunction(properties.getExtension().getDlqPartitions()));
+								determinDlqPartitionFunction(properties.getExtension().getDlqPartitions()),
+								headers, this.ackModeInfo.get(destination));
 					});
 				}
 				else {
 					dlqSender.sendToDlq(recordToSend.get(), kafkaHeaders, dlqName, group, throwable,
-							determinDlqPartitionFunction(properties.getExtension().getDlqPartitions()));
+							determinDlqPartitionFunction(properties.getExtension().getDlqPartitions()), headers, this.ackModeInfo.get(destination));
 				}
 			};
 		}
@@ -1453,7 +1473,8 @@ public class KafkaMessageChannelBinder extends
 
 		@SuppressWarnings("unchecked")
 		void sendToDlq(ConsumerRecord<?, ?> consumerRecord, Headers headers,
-				String dlqName, String group, Throwable throwable, DlqPartitionFunction partitionFunction) {
+					String dlqName, String group, Throwable throwable, DlqPartitionFunction partitionFunction,
+					MessageHeaders messageHeaders, ContainerProperties.AckMode ackMode) {
 			K key = (K) consumerRecord.key();
 			V value = (V) consumerRecord.value();
 			ProducerRecord<K, V> producerRecord = new ProducerRecord<>(dlqName,
@@ -1482,6 +1503,9 @@ public class KafkaMessageChannelBinder extends
 						if (KafkaMessageChannelBinder.this.logger.isDebugEnabled()) {
 							KafkaMessageChannelBinder.this.logger
 									.debug("Sent to DLQ " + sb.toString());
+						}
+						if (ackMode == ContainerProperties.AckMode.MANUAL || ackMode == ContainerProperties.AckMode.MANUAL_IMMEDIATE) {
+							messageHeaders.get(KafkaHeaders.ACKNOWLEDGMENT, Acknowledgment.class).acknowledge();
 						}
 					}
 				});

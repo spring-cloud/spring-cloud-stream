@@ -1124,7 +1124,6 @@ public class KafkaBinderTests extends
 		consumerProperties.setBackOffInitialInterval(100);
 		consumerProperties.setBackOffMaxInterval(150);
 		consumerProperties.getExtension().setEnableDlq(true);
-		consumerProperties.getExtension().setAutoRebalanceEnabled(false);
 
 		DirectChannel moduleInputChannel = createBindableChannel("input",
 				createConsumerBindingProperties(consumerProperties));
@@ -1173,6 +1172,87 @@ public class KafkaBinderTests extends
 		consumerBinding = binder.bindConsumer("retryTest." + uniqueBindingId + ".0",
 				"testGroup", successfulInputChannel, consumerProperties);
 		String testMessage2Payload = "test." + UUID.randomUUID().toString();
+		Message<byte[]> testMessage2 = MessageBuilder
+				.withPayload(testMessage2Payload.getBytes()).build();
+		moduleOutputChannel.send(testMessage2);
+
+		Message<?> receivedMessage = receive(successfulInputChannel);
+		assertThat(receivedMessage.getPayload())
+				.isEqualTo(testMessage2Payload.getBytes());
+
+		binderBindUnbindLatency();
+		consumerBinding.unbind();
+		producerBinding.unbind();
+	}
+
+	//See https://github.com/spring-cloud/spring-cloud-stream-binder-kafka/issues/870 for motivation for this test.
+	@Test
+	@SuppressWarnings("unchecked")
+	public void testAutoCommitOnErrorWhenManualAcknowledgement() throws Exception {
+		Binder binder = getBinder();
+		ExtendedProducerProperties<KafkaProducerProperties> producerProperties = createProducerProperties();
+		BindingProperties producerBindingProperties = createProducerBindingProperties(
+				producerProperties);
+
+		DirectChannel moduleOutputChannel = createBindableChannel("output",
+				producerBindingProperties);
+
+		ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = createConsumerProperties();
+		consumerProperties.setMaxAttempts(3);
+		consumerProperties.setBackOffInitialInterval(100);
+		consumerProperties.setBackOffMaxInterval(150);
+		//When auto commit is disabled, then the record is committed after publishing to DLQ using the manual acknowledgement.
+		// (if DLQ is enabled, which is, in this case).
+		consumerProperties.getExtension().setAutoCommitOffset(false);
+		consumerProperties.getExtension().setEnableDlq(true);
+
+		DirectChannel moduleInputChannel = createBindableChannel("input",
+				createConsumerBindingProperties(consumerProperties));
+
+		FailingInvocationCountingMessageHandler handler = new FailingInvocationCountingMessageHandler();
+		moduleInputChannel.subscribe(handler);
+		long uniqueBindingId = System.currentTimeMillis();
+		Binding<MessageChannel> producerBinding = binder.bindProducer(
+				"retryTest." + uniqueBindingId + ".0", moduleOutputChannel,
+				producerProperties);
+		Binding<MessageChannel> consumerBinding = binder.bindConsumer(
+				"retryTest." + uniqueBindingId + ".0", "testGroup", moduleInputChannel,
+				consumerProperties);
+		ExtendedConsumerProperties<KafkaConsumerProperties> dlqConsumerProperties = createConsumerProperties();
+		dlqConsumerProperties.setMaxAttempts(1);
+		QueueChannel dlqChannel = new QueueChannel();
+		Binding<MessageChannel> dlqConsumerBinding = binder.bindConsumer(
+				"error.retryTest." + uniqueBindingId + ".0.testGroup", null, dlqChannel,
+				dlqConsumerProperties);
+
+		String testMessagePayload = "test." + UUID.randomUUID().toString();
+		Message<byte[]> testMessage = MessageBuilder
+				.withPayload(testMessagePayload.getBytes()).build();
+		moduleOutputChannel.send(testMessage);
+
+		Message<?> dlqMessage = receive(dlqChannel, 3);
+		assertThat(dlqMessage).isNotNull();
+		assertThat(dlqMessage.getPayload()).isEqualTo(testMessagePayload.getBytes());
+
+		// first attempt fails
+		assertThat(handler.getReceivedMessages().entrySet()).hasSize(1);
+		Message<?> handledMessage = handler.getReceivedMessages().entrySet().iterator()
+				.next().getValue();
+		assertThat(handledMessage).isNotNull();
+		assertThat(
+				new String((byte[]) handledMessage.getPayload(), StandardCharsets.UTF_8))
+				.isEqualTo(testMessagePayload);
+		assertThat(handler.getInvocationCount())
+				.isEqualTo(consumerProperties.getMaxAttempts());
+		binderBindUnbindLatency();
+		dlqConsumerBinding.unbind();
+		consumerBinding.unbind();
+
+		// on the second attempt the message is not redelivered because the DLQ is set and the record in error is already committed.
+		QueueChannel successfulInputChannel = new QueueChannel();
+		consumerBinding = binder.bindConsumer("retryTest." + uniqueBindingId + ".0",
+				"testGroup", successfulInputChannel, consumerProperties);
+		String testMessage2Payload = "test1." + UUID.randomUUID().toString();
 		Message<byte[]> testMessage2 = MessageBuilder
 				.withPayload(testMessage2Payload.getBytes()).build();
 		moduleOutputChannel.send(testMessage2);
