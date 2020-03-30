@@ -583,10 +583,14 @@ If you wish to use transactions in a source application, or from some arbitrary 
 [source, java]
 ----
 @Bean
-public PlatformTransactionManager transactionManager(BinderFactory binders) {
+public PlatformTransactionManager transactionManager(BinderFactory binders,
+        @Value("${unique.tx.id.per.instance}") String txId) {
+
     ProducerFactory<byte[], byte[]> pf = ((KafkaMessageChannelBinder) binders.getBinder(null,
             MessageChannel.class)).getTransactionalProducerFactory();
-    return new KafkaTransactionManager<>(pf);
+    KafkaTransactionManager tm = new KafkaTransactionManager<>(pf);
+    tm.setTransactionId(txId)
+    return tm;
 }
 ----
 ====
@@ -612,6 +616,8 @@ public static class Sender {
 ====
 
 If you wish to synchronize producer-only transactions with those from some other transaction manager, use a `ChainedTransactionManager`.
+
+IMPORTANT: If you deploy multiple instances of your application, each instance needs a unique `transactionIdPrefix`.
 
 [[kafka-error-channels]]
 === Error Channels
