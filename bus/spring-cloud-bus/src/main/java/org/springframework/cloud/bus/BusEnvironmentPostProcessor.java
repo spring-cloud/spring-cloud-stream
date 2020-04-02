@@ -21,6 +21,7 @@ import java.util.Map;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.env.EnvironmentPostProcessor;
+import org.springframework.cloud.commons.util.IdUtils;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.MapPropertySource;
 import org.springframework.core.env.MutablePropertySources;
@@ -44,16 +45,9 @@ public class BusEnvironmentPostProcessor implements EnvironmentPostProcessor {
 				+ ".content-type",
 				environment.getProperty("spring.cloud.bus.content-type",
 						"application/json"));
-		map.put("spring.cloud.bus.id", getDefaultServiceId(environment));
+		map.put("spring.cloud.bus.id", IdUtils.getUnresolvedServiceId());
 		addOrReplace(environment.getPropertySources(), map);
 	}
-
-	// TODO: move this to commons
-	// @checkstyle:off
-	private String getDefaultServiceId(ConfigurableEnvironment environment) {
-		return "${vcap.application.name:${spring.application.name:application}}:${vcap.application.instance_index:${spring.application.index:${local.server.port:${server.port:0}}}}:${vcap.application.instance_id:${random.value}}";
-	}
-	// @checkstyle:on
 
 	private void addOrReplace(MutablePropertySources propertySources,
 			Map<String, Object> map) {
