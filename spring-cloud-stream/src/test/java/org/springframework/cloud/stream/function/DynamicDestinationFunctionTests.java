@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2019 the original author or authors.
+ * Copyright 2019-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,21 +17,16 @@
 package org.springframework.cloud.stream.function;
 
 import java.util.function.Consumer;
-
 import org.junit.After;
 import org.junit.Test;
-
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.stream.binder.PartitionKeyExtractorStrategy;
 import org.springframework.cloud.stream.binder.test.InputDestination;
 import org.springframework.cloud.stream.binder.test.OutputDestination;
 import org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration;
 import org.springframework.cloud.stream.binding.BinderAwareChannelResolver;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
-import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.GenericMessage;
@@ -41,6 +36,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  *
  * @author Oleg Zhurakousky
+ * @author David Turanski
  *
  */
 public class DynamicDestinationFunctionTests {
@@ -53,22 +49,21 @@ public class DynamicDestinationFunctionTests {
 
 	@Test
 	public void testEmptyConfiguration() {
+		TestChannelBinderConfiguration.applicationContextRunner(SampleConfiguration.class)
+				.withPropertyValues(
+						"spring.jmx.enabled=false",
+						"spring.cloud.stream.bindings.fooDestination.producer.partitionKeyExtractorName=keyExtractor")
+				.run(context -> {
+					InputDestination input = context.getBean(InputDestination.class);
+					input.send(new GenericMessage<String>("fooDestination"));
 
-		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration
-				.getCompleteConfiguration(SampleConfiguration.class)).web(WebApplicationType.NONE).run(
-						"--spring.jmx.enabled=false",
-						"--spring.cloud.stream.bindings.fooDestination.producer.partitionKeyExtractorName=keyExtractor")) {
-			InputDestination input = context.getBean(InputDestination.class);
-			input.send(new GenericMessage<String>("fooDestination"));
+					BindingServiceProperties serviceProperties = context.getBean(BindingServiceProperties.class);
+					assertThat("keyExtractor").isEqualTo(
+							serviceProperties.getProducerProperties("fooDestination").getPartitionKeyExtractorName());
 
-			BindingServiceProperties serviceProperties = context.getBean(BindingServiceProperties.class);
-			assertThat("keyExtractor").isEqualTo(
-					serviceProperties.getProducerProperties("fooDestination").getPartitionKeyExtractorName());
-
-			OutputDestination output = context.getBean(OutputDestination.class);
-			assertThat(output.receive(1000).getPayload()).isEqualTo("fooDestination".getBytes());
-		}
-
+					OutputDestination output = context.getBean(OutputDestination.class);
+					assertThat(output.receive(1000).getPayload()).isEqualTo("fooDestination".getBytes());
+				});
 	}
 
 	@EnableAutoConfiguration
