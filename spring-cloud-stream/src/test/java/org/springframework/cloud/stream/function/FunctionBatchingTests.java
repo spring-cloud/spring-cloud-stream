@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2019 the original author or authors.
+ * Copyright 2019-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,13 +22,10 @@ import java.util.function.Function;
 
 import org.junit.Test;
 
-import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.stream.binder.test.InputDestination;
 import org.springframework.cloud.stream.binder.test.OutputDestination;
 import org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration;
-import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
@@ -39,6 +36,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * @author Gary Russel
  * @author Oleg Zhurakousky
+ * @author David Turanski
  *
  * @since 3.0
  */
@@ -46,115 +44,108 @@ public class FunctionBatchingTests {
 
 	@Test
 	public void testMessageBatchConfiguration() {
-		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
-				TestChannelBinderConfiguration.getCompleteConfiguration(
-						MessageBatchConfiguration.class)).web(WebApplicationType.NONE).run(
-								"--spring.jmx.enabled=false",
-								"--spring.cloud.stream.function.definition=func",
-								"--spring.cloud.stream.bindings.input.consumer.batch-mode=true")) {
+		TestChannelBinderConfiguration.applicationContextRunner(MessageBatchConfiguration.class)
+				.withPropertyValues("spring.jmx.enabled=false",
+						"spring.cloud.stream.function.definition=func",
+						"spring.cloud.stream.bindings.input.consumer.batch-mode=true")
+				.run(context -> {
+					InputDestination inputDestination = context.getBean(InputDestination.class);
+					OutputDestination outputDestination = context
+							.getBean(OutputDestination.class);
 
-			InputDestination inputDestination = context.getBean(InputDestination.class);
-			OutputDestination outputDestination = context
-					.getBean(OutputDestination.class);
+					List<byte[]> list = new ArrayList<>();
+					list.add("{\"name\":\"bob\"}".getBytes());
+					list.add("{\"name\":\"jill\"}".getBytes());
+					Message<List<byte[]>> inputMessage = MessageBuilder
+							.withPayload(list)
+							.build();
+					inputDestination.send(inputMessage);
 
-			List<byte[]> list = new ArrayList<>();
-			list.add("{\"name\":\"bob\"}".getBytes());
-			list.add("{\"name\":\"jill\"}".getBytes());
-			Message<List<byte[]>> inputMessage = MessageBuilder
-					.withPayload(list)
-					.build();
-			inputDestination.send(inputMessage);
+					Message<byte[]> outputMessage = outputDestination.receive();
+					assertThat(outputMessage).isNotNull();
+					assertThat(outputMessage.getPayload())
+							.isEqualTo("{\"name\":\"bob\"}".getBytes());
 
-			Message<byte[]> outputMessage = outputDestination.receive();
-			assertThat(outputMessage).isNotNull();
-			assertThat(outputMessage.getPayload())
-					.isEqualTo("{\"name\":\"bob\"}".getBytes());
-
-			context.stop();
-		}
+					context.stop();
+				});
 	}
 
 	@Test
 	public void testListPayloadConfiguration() {
-		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
-				TestChannelBinderConfiguration.getCompleteConfiguration(
-						ListPayloadNotBatchConfiguration.class)).web(WebApplicationType.NONE).run(
-								"--spring.jmx.enabled=false",
-								"--spring.cloud.stream.function.definition=func")) {
+		TestChannelBinderConfiguration.applicationContextRunner(ListPayloadNotBatchConfiguration.class)
+				.withPropertyValues("spring.jmx.enabled=false",
+						"spring.cloud.stream.function.definition=func")
+				.run(context -> {
+					InputDestination inputDestination = context.getBean(InputDestination.class);
+					OutputDestination outputDestination = context
+							.getBean(OutputDestination.class);
 
-			InputDestination inputDestination = context.getBean(InputDestination.class);
-			OutputDestination outputDestination = context
-					.getBean(OutputDestination.class);
+					Message<byte[]> inputMessage = MessageBuilder
+							.withPayload("[{\"name\":\"bob\"},{\"name\":\"jill\"}]".getBytes())
+							.build();
+					inputDestination.send(inputMessage);
 
-			Message<byte[]> inputMessage = MessageBuilder
-					.withPayload("[{\"name\":\"bob\"},{\"name\":\"jill\"}]".getBytes())
-					.build();
-			inputDestination.send(inputMessage);
+					Message<byte[]> outputMessage = outputDestination.receive();
+					assertThat(outputMessage).isNotNull();
+					assertThat(outputMessage.getPayload())
+							.isEqualTo("{\"name\":\"bob\"}".getBytes());
 
-			Message<byte[]> outputMessage = outputDestination.receive();
-			assertThat(outputMessage).isNotNull();
-			assertThat(outputMessage.getPayload())
-					.isEqualTo("{\"name\":\"bob\"}".getBytes());
-
-			context.stop();
-		}
+					context.stop();
+				});
 	}
 
 	@Test
 	public void testSimpleBatchConfiguration() {
-		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
-				TestChannelBinderConfiguration.getCompleteConfiguration(
-						SimpleBatchConfiguration.class)).web(WebApplicationType.NONE).run(
-								"--spring.jmx.enabled=false",
-								"--spring.cloud.stream.function.definition=func",
-								"--spring.cloud.stream.bindings.input.consumer.batch-mode=true")) {
+		TestChannelBinderConfiguration.applicationContextRunner(SimpleBatchConfiguration.class)
+				.withPropertyValues(
+						"spring.jmx.enabled=false",
+						"spring.cloud.stream.function.definition=func",
+						"spring.cloud.stream.bindings.input.consumer.batch-mode=true")
+				.run(context -> {
+					InputDestination inputDestination = context.getBean(InputDestination.class);
+					OutputDestination outputDestination = context
+							.getBean(OutputDestination.class);
 
-			InputDestination inputDestination = context.getBean(InputDestination.class);
-			OutputDestination outputDestination = context
-					.getBean(OutputDestination.class);
+					List<byte[]> list = new ArrayList<>();
+					list.add("{\"name\":\"bob\"}".getBytes());
+					list.add("{\"name\":\"jill\"}".getBytes());
+					Message<List<byte[]>> inputMessage = MessageBuilder
+							.withPayload(list)
+							.build();
+					inputDestination.send(inputMessage);
 
-			List<byte[]> list = new ArrayList<>();
-			list.add("{\"name\":\"bob\"}".getBytes());
-			list.add("{\"name\":\"jill\"}".getBytes());
-			Message<List<byte[]>> inputMessage = MessageBuilder
-					.withPayload(list)
-					.build();
-			inputDestination.send(inputMessage);
-
-			Message<byte[]> outputMessage = outputDestination.receive();
-			assertThat(outputMessage).isNotNull();
-			assertThat(outputMessage.getPayload())
-					.isEqualTo("{\"name\":\"bob\"}".getBytes());
-			context.stop();
-		}
+					Message<byte[]> outputMessage = outputDestination.receive();
+					assertThat(outputMessage).isNotNull();
+					assertThat(outputMessage.getPayload())
+							.isEqualTo("{\"name\":\"bob\"}".getBytes());
+					context.stop();
+				});
 	}
 
 	@Test
 	public void testNestedBatchConfiguration() {
-		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
-				TestChannelBinderConfiguration.getCompleteConfiguration(
-						NestedBatchConfiguration.class)).web(WebApplicationType.NONE).run(
-								"--spring.jmx.enabled=false",
-								"--spring.cloud.stream.function.definition=func",
-								"--spring.cloud.stream.bindings.input.consumer.batch-mode=true")) {
+		TestChannelBinderConfiguration.applicationContextRunner(NestedBatchConfiguration.class)
+				.withPropertyValues("spring.jmx.enabled=false",
+						"spring.cloud.stream.function.definition=func",
+						"spring.cloud.stream.bindings.input.consumer.batch-mode=true")
+				.run(context -> {
+					InputDestination inputDestination = context.getBean(InputDestination.class);
+					OutputDestination outputDestination = context
+							.getBean(OutputDestination.class);
 
-			InputDestination inputDestination = context.getBean(InputDestination.class);
-			OutputDestination outputDestination = context
-					.getBean(OutputDestination.class);
+					List<byte[]> list = new ArrayList<>();
+					list.add("[{\"name\":\"bob\"},{\"name\":\"jill\"}]".getBytes());
+					Message<List<byte[]>> inputMessage = MessageBuilder
+							.withPayload(list)
+							.build();
+					inputDestination.send(inputMessage);
 
-			List<byte[]> list = new ArrayList<>();
-			list.add("[{\"name\":\"bob\"},{\"name\":\"jill\"}]".getBytes());
-			Message<List<byte[]>> inputMessage = MessageBuilder
-					.withPayload(list)
-					.build();
-			inputDestination.send(inputMessage);
-
-			Message<byte[]> outputMessage = outputDestination.receive();
-			assertThat(outputMessage).isNotNull();
-			assertThat(outputMessage.getPayload())
-					.isEqualTo("{\"name\":\"bob\"}".getBytes());
-			context.stop();
-		}
+					Message<byte[]> outputMessage = outputDestination.receive();
+					assertThat(outputMessage).isNotNull();
+					assertThat(outputMessage.getPayload())
+							.isEqualTo("{\"name\":\"bob\"}".getBytes());
+					context.stop();
+				});
 	}
 
 	@EnableAutoConfiguration
