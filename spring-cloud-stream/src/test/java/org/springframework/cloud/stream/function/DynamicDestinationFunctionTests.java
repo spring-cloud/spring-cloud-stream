@@ -17,8 +17,10 @@
 package org.springframework.cloud.stream.function;
 
 import java.util.function.Consumer;
+
 import org.junit.After;
 import org.junit.Test;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.cloud.stream.binder.PartitionKeyExtractorStrategy;

@@ -19,7 +19,9 @@ package org.springframework.cloud.stream.function;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
+
 import org.junit.Test;
+
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.cloud.stream.binder.test.InputDestination;
 import org.springframework.cloud.stream.binder.test.OutputDestination;
@@ -95,7 +97,8 @@ public class FunctionBatchingTests {
 	@Test
 	public void testSimpleBatchConfiguration() {
 		TestChannelBinderConfiguration.applicationContextRunner(SimpleBatchConfiguration.class)
-				.withPropertyValues(	"spring.jmx.enabled=false",
+				.withPropertyValues(
+						"spring.jmx.enabled=false",
 						"spring.cloud.stream.function.definition=func",
 						"spring.cloud.stream.bindings.input.consumer.batch-mode=true")
 				.run(context -> {
