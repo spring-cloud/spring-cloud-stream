@@ -54,6 +54,7 @@ import org.springframework.amqp.core.MessageDeliveryMode;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.core.TopicExchange;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
+import org.springframework.amqp.rabbit.connection.CachingConnectionFactory.ConfirmType;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.connection.RabbitUtils;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
@@ -155,7 +156,7 @@ public class RabbitBinderTests extends
 	protected RabbitTestBinder getBinder() {
 		if (this.testBinder == null) {
 			RabbitProperties rabbitProperties = new RabbitProperties();
-			rabbitProperties.setPublisherConfirms(true);
+			rabbitProperties.setPublisherConfirmType(ConfirmType.SIMPLE);
 			rabbitProperties.setPublisherReturns(true);
 			this.testBinder = new RabbitTestBinder(rabbitAvailableRule.getResource(),
 					rabbitProperties);

@@ -42,12 +42,14 @@
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-connectors-core</artifactId>
 			<optional>true</optional>
+			<version>2.0.7.RELEASE</version>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-spring-service-connector</artifactId>
 			<optional>true</optional>
 			<scope>provided</scope>
+			<version>2.0.7.RELEASE</version>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>

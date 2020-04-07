@@ -17,6 +17,7 @@
 package org.springframework.cloud.stream.binder.rabbit.config;
 
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
+import org.springframework.amqp.rabbit.connection.CachingConnectionFactory.ConfirmType;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.ObjectProvider;
@@ -69,7 +70,7 @@ public abstract class RabbitServiceAutoConfiguration {
 			connectionFactory.setAddresses(rabbitProperties.determineAddresses());
 		}
 
-		connectionFactory.setPublisherConfirms(rabbitProperties.isPublisherConfirms());
+		connectionFactory.setPublisherConfirmType(rabbitProperties.getPublisherConfirmType() == null ? ConfirmType.NONE : rabbitProperties.getPublisherConfirmType());
 		connectionFactory.setPublisherReturns(rabbitProperties.isPublisherReturns());
 		if (rabbitProperties.getCache().getChannel().getSize() != null) {
 			connectionFactory.setChannelCacheSize(

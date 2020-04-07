@@ -249,7 +249,7 @@ public class RabbitMessageChannelBinder extends
 					this.rabbitProperties.getVirtualHost(),
 					this.rabbitProperties.getUsername(),
 					this.rabbitProperties.getPassword(),
-					this.rabbitProperties.getSsl().isEnabled(),
+					this.rabbitProperties.getSsl().getEnabled(),
 					this.rabbitProperties.getSsl().getKeyStore(),
 					this.rabbitProperties.getSsl().getTrustStore(),
 					this.rabbitProperties.getSsl().getKeyStorePassword(),
