@@ -87,13 +87,13 @@ You can exclude the class by using the `@SpringBootApplication` annotation.
 
 Starting with version 2.0, the `RabbitMessageChannelBinder` sets the `RabbitTemplate.userPublisherConnection` property to `true` so that the non-transactional producers avoid deadlocks on consumers, which can happen if cached connections are blocked because of a https://www.rabbitmq.com/memory.html[memory alarm] on the broker.
 
-NOTE: Currently, a `multiplex` consumer (a single consumer listening to multiple queues) is only supported for message-driven conssumers; polled consumers can only retrieve messages from a single queue.
+NOTE: Currently, a `multiplex` consumer (a single consumer listening to multiple queues) is only supported for message-driven consumers; polled consumers can only retrieve messages from a single queue.
 
 == Configuration Options
 
 This section contains settings specific to the RabbitMQ Binder and bound channels.
 
-For general binding configuration options and properties, see the https://cloud.spring.io/spring-cloud-static/spring-cloud-stream/current/reference/html/spring-cloud-stream.html#_configuration_options[Spring Cloud Stream core documentation].
+For general binding configuration options and properties, see the https://github.com/spring-cloud/spring-cloud-stream/blob/master/spring-cloud-stream-core-docs/src/main/asciidoc/spring-cloud-stream-overview.adoc#configuration-options[Spring Cloud Stream core documentation].
 
 [[rabbit-binder-properties]]
 === RabbitMQ Binder Properties
@@ -142,6 +142,7 @@ in the format of `spring.cloud.stream.rabbit.default.<property>=<value>`.
 
 Also, keep in mind that binding specific property will override its equivalent in the default.
 
+
 acknowledgeMode::
 The acknowledge mode.
 +
@@ -158,14 +159,9 @@ Whether to automatically declare the DLQ and bind it to the binder DLX.
 Default: `false`.
 bindingRoutingKey::
 The routing key with which to bind the queue to the exchange (if `bindQueue` is `true`).
-Can be multiple keys - see `bindingRoutingKeyDelimiter`.
-For partitioned destinations, `-<instanceIndex>` is appended to each key.
+For partitioned destinations, `-<instanceIndex>` is appended.
 +
 Default: `#`.
-bindingRoutingKeyDelimiter::
-When this is not null, 'bindingRoutingKey' is considered to be a list of keys delimited by this value; often a comma is used.
-+
-Default: `null`.
 bindQueue::
 Whether to declare the queue and bind it to the destination exchange.
 Set it to `false` if you have set up your own infrastructure and have previously created and bound the queue.
@@ -255,22 +251,6 @@ dlqOverflowBehavior::
 Action to take when `dlqMaxLength` or `dlqMaxLengthBytes` is exceeded; currently `drop-head` or `reject-publish` but refer to the RabbitMQ documentation.
 +
 Default: `none`
-dlqQuorum.deliveryLimit::
-When `quorum.enabled=true`, set a delivery limit after which the message is dropped or dead-lettered.
-+
-Default: none - broker default will apply.
-dlqQuorum.enabled::
-When true, create a quorum dead letter queue instead of a classic queue.
-+
-Default: false
-dlqQuorum.initialQuorumSize::
-When `quorum.enabled=true`, set the initial quorum size.
-+
-Default: none - broker default will apply.
-dlqSingleActiveConsumer::
-Set to true to set the `x-single-active-consumer` queue property to true.
-+
-Default: `false`
 dlqTtl::
 Default time to live to apply to the dead letter queue when declared (in milliseconds).
 +
@@ -297,7 +277,6 @@ Whether to create an exclusive consumer.
 Concurrency should be 1 when this is `true`.
 Often used when strict ordering is required but enabling a hot standby instance to take over after a failure.
 See `recoveryInterval`, which controls how often a standby instance attempts to consume.
-Consider using `singleActiveConsumer` instead when using RabbitMQ 3.8 or later.
 +
 Default: `false`.
 expires::
@@ -378,18 +357,6 @@ Otherwise the queue name is `destination.group`.
 This is useful, for example, when using Spring Cloud Stream to consume from an existing RabbitMQ queue.
 +
 Default: false.
-quorum.deliveryLimit::
-When `quorum.enabled=true`, set a delivery limit after which the message is dropped or dead-lettered.
-+
-Default: none - broker default will apply.
-quorum.enabled::
-When true, create a quorum queue instead of a classic queue.
-+
-Default: false
-quorum.initialQuorumSize::
-When `quorum.enabled=true`, set the initial quorum size.
-+
-Default: none - broker default will apply.
 recoveryInterval::
 The interval between connection recovery attempts, in milliseconds.
 +
@@ -409,11 +376,7 @@ If a dead-letter queue (DLQ) is configured, RabbitMQ routes the failed message (
 If set to `true`, the binder republishs failed messages to the DLQ with additional headers, including the exception message and stack trace from the cause of the final failure.
 Also see the <<spring-cloud-stream-rabbit-frame-max-headroom, frameMaxHeadroom property>>.
 +
-Default: false
-singleActiveConsumer::
-Set to true to set the `x-single-active-consumer` queue property to true.
-+
-Default: `false`
+Default: true
 transacted::
 Whether to use transacted channels.
 +
@@ -434,18 +397,11 @@ To set listener container properties that are not exposed as binder or binding p
 The binder and binding properties will be set and then the customizer will be called.
 The customizer (`configure()` method) is provided with the queue name as well as the consumer group as arguments.
 
-=== Advanced Queue/Exchange/Binding Configuration
-
-From time to time, the RabbitMQ team add new features that are enabled by setting some argument when declaring, for example, a queue.
-Generally, such features are enabled in the binder by adding appropriate properties, but this may not be immediately available in a current version.
-Starting with version 3.0.1, you can now add `DeclarableCustomizer` bean(s) to the application context to modify a `Declarable` (`Queue`, `Exchange` or `Binding`) just before the declaration is performed.
-This allows you to add arguments that are not currently directly supported by the binder.
-
 [[rabbit-receiving-batch]]
 === Receiving Batched Messages
 
 Normally, if a producer binding has `batch-enabled=true` (see <<rabbit-prod-props>>), or a message is created by a `BatchingRabbitTemplate`, elements of the batch are returned as individual calls to the listener method.
-Starting with version 3.0, any such batch can be presented as a `List<?>` to the listener method if `spring.cloud.stream.bindings.<name>.consumer.batch-mode` is set to `true`.
+Starting with version 3.0, any such batch can be presented as a `List<?>` to the listener method if `spring.cloud.stream.binding.<name>.consumer.batch-mode` is set to `true`.
 
 [[rabbit-prod-props]]
 === Rabbit Producer Properties
@@ -484,16 +440,10 @@ The batch timeout when batching is enabled.
 Default: `5000`.
 bindingRoutingKey::
 The routing key with which to bind the queue to the exchange (if `bindQueue` is `true`).
-Can be multiple keys - see `bindingRoutingKeyDelimiter`.
-For partitioned destinations, `-n` is appended to each key.
+Only applies to non-partitioned destinations.
 Only applies if `requiredGroups` are provided and then only to those groups.
 +
 Default: `#`.
-bindingRoutingKeyDelimiter::
-When this is not null, 'bindingRoutingKey' is considered to be a list of keys delimited by this value; often a comma is used.
-Only applies if `requiredGroups` are provided and then only to those groups.
-+
-Default: `null`.
 bindQueue::
 Whether to declare the queue and bind it to the destination exchange.
 Set it to `false` if you have set up your own infrastructure and have previously created and bound the queue.
@@ -601,26 +551,6 @@ Maximum priority of messages in the dead letter queue (0-255)
 Applies only when `requiredGroups` are provided and then only to those groups.
 +
 Default: `none`
-dlqQuorum.deliveryLimit::
-When `quorum.enabled=true`, set a delivery limit after which the message is dropped or dead-lettered.
-Applies only when `requiredGroups` are provided and then only to those groups.
-+
-Default: none - broker default will apply.
-dlqQuorum.enabled::
-When true, create a quorum dead letter queue instead of a classic queue.
-Applies only when `requiredGroups` are provided and then only to those groups.
-+
-Default: false
-dlqQuorum.initialQuorumSize::
-When `quorum.enabled=true`, set the initial quorum size.
-Applies only when `requiredGroups` are provided and then only to those groups.
-+
-Default: none - broker default will apply.
-dlqSingleActiveConsumer::
-Set to true to set the `x-single-active-consumer` queue property to true.
-Applies only when `requiredGroups` are provided and then only to those groups.
-+
-Default: `false`
 dlqTtl::
 Default time (in milliseconds) to live to apply to the dead letter queue when declared.
 Applies only when `requiredGroups` are provided and then only to those groups.
@@ -686,31 +616,11 @@ This is useful, for example, when using Spring Cloud Stream to consume from an e
 Applies only when `requiredGroups` are provided and then only to those groups.
 +
 Default: false.
-quorum.deliveryLimit::
-When `quorum.enabled=true`, set a delivery limit after which the message is dropped or dead-lettered.
-Applies only when `requiredGroups` are provided and then only to those groups.
-+
-Default: none - broker default will apply.
-quorum.enabled::
-When true, create a quorum queue instead of a classic queue.
-Applies only when `requiredGroups` are provided and then only to those groups.
-+
-Default: false
-quorum.initialQuorumSize::
-When `quorum.enabled=true`, set the initial quorum size.
-Applies only when `requiredGroups` are provided and then only to those groups.
-+
-Default: none - broker default will apply.
 routingKeyExpression::
 A SpEL expression to determine the routing key to use when publishing messages.
 For a fixed routing key, use a literal expression, such as `routingKeyExpression='my.routingKey'` in a properties file or `routingKeyExpression: '''my.routingKey'''` in a YAML file.
 +
 Default: `destination` or `destination-<partition>` for partitioned destinations.
-singleActiveConsumer::
-Set to true to set the `x-single-active-consumer` queue property to true.
-Applies only when `requiredGroups` are provided and then only to those groups.
-+
-Default: `false`
 transacted::
 Whether to use transacted channels.
 +
@@ -737,8 +647,8 @@ There are a number of rabbit-specific binding properties that allow you to modif
 
 If you have an existing exchange/queue that you wish to use, you can completely disable automatic provisioning as follows, assuming the exchange is named `myExchange` and the queue is named `myQueue`:
 
-* `spring.cloud.stream.bindings.<binding name>.destination=myExhange`
-* `spring.cloud.stream.bindings.<binding name>.group=myQueue`
+* `spring.cloud.stream.binding.<binding name>.destination=myExhange`
+* `spring.cloud.stream.binding.<binding name>.group=myQueue`
 * `spring.cloud.stream.rabbit.bindings.<binding name>.consumer.bindQueue=false`
 * `spring.cloud.stream.rabbit.bindings.<binding name>.consumer.declareExchange=false`
 * `spring.cloud.stream.rabbit.bindings.<binding name>.consumer.queueNameGroupOnly=true`
