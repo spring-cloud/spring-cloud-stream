@@ -7,7 +7,7 @@
 	<packaging>pom</packaging>
 	<name>spring-cloud-stream-release-build</name>
 	<description>Spring Cloud Stream Release Build</description>
-	<version>Ivyland.BUILD-SNAPSHOT</version>
+	<version>3.1.0.BUILD-SNAPSHOT</version>
 	<parent>
 		<groupId>org.springframework.cloud</groupId>
 		<artifactId>spring-cloud-build</artifactId>
@@ -37,7 +37,6 @@
 	<modules>
 		<module>spring-cloud-stream-dependencies</module>
 		<module>spring-cloud-starter-parent</module>
-		<!--<module>spring-cloud-stream-docs</module>-->
 	</modules>
 
 	<build>
