@@ -43,6 +43,7 @@ public class ObjectStringMessageConverter extends AbstractMessageConverter {
 		setStrictContentTypeMatch(true);
 	}
 
+	@Override
 	protected boolean supports(Class<?> clazz) {
 		return true;
 	}
@@ -67,6 +68,7 @@ public class ObjectStringMessageConverter extends AbstractMessageConverter {
 		return super.supportsMimeType(headers);
 	}
 
+	@Override
 	protected Object convertFromInternal(Message<?> message, Class<?> targetClass,
 			Object conversionHint) {
 		if (message.getPayload() != null) {
@@ -92,6 +94,7 @@ public class ObjectStringMessageConverter extends AbstractMessageConverter {
 		return null;
 	}
 
+	@Override
 	protected Object convertToInternal(Object payload, MessageHeaders headers,
 			Object conversionHint) {
 		if (payload != null) {
