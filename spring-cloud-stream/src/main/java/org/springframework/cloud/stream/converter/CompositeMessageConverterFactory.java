@@ -16,15 +16,20 @@
 
 package org.springframework.cloud.stream.converter;
 
+import java.lang.reflect.Field;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.springframework.cloud.stream.config.BindingProperties;
+import org.springframework.lang.Nullable;
+import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.converter.AbstractMessageConverter;
 import org.springframework.messaging.converter.ByteArrayMessageConverter;
 import org.springframework.messaging.converter.CompositeMessageConverter;
@@ -32,6 +37,7 @@ import org.springframework.messaging.converter.DefaultContentTypeResolver;
 import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.MimeType;
+import org.springframework.util.ReflectionUtils;
 
 /**
  * A factory for creating an instance of {@link CompositeMessageConverter} for a given
@@ -71,7 +77,22 @@ public class CompositeMessageConverterFactory {
 		}
 		initDefaultConverters();
 
-		DefaultContentTypeResolver resolver = new DefaultContentTypeResolver();
+		Field headersField = ReflectionUtils.findField(MessageHeaders.class, "headers");
+		headersField.setAccessible(true);
+		DefaultContentTypeResolver resolver = new DefaultContentTypeResolver() {
+			@Override
+			@SuppressWarnings("unchecked")
+			public MimeType resolve(@Nullable MessageHeaders headers) {
+				Object contentType = headers.get(MessageHeaders.CONTENT_TYPE);
+				if (contentType instanceof byte[]) {
+					contentType = new String((byte[]) contentType, StandardCharsets.UTF_8);
+					contentType = ((String) contentType).replace("\"", "");
+					Map<String, Object> headersMap = (Map<String, Object>) ReflectionUtils.getField(headersField, headers);
+					headersMap.put(MessageHeaders.CONTENT_TYPE, contentType);
+				}
+				return super.resolve(headers);
+			}
+		};
 		resolver.setDefaultMimeType(BindingProperties.DEFAULT_CONTENT_TYPE);
 		this.converters.stream().filter(mc -> mc instanceof AbstractMessageConverter)
 				.forEach(mc -> ((AbstractMessageConverter) mc)
@@ -135,5 +156,4 @@ public class CompositeMessageConverterFactory {
 	public CompositeMessageConverter getMessageConverterForAllRegistered() {
 		return new CompositeMessageConverter(new ArrayList<>(this.converters));
 	}
-
 }

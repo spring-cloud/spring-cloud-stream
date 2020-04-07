@@ -31,13 +31,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
 import org.springframework.core.MethodParameter;
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.integration.support.MutableMessageHeaders;
 import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.converter.MappingJackson2MessageConverter;
 import org.springframework.messaging.converter.MessageConversionException;
-import org.springframework.util.MimeType;
 
 /**
  * Variation of {@link MappingJackson2MessageConverter} to support marshalling and
@@ -138,7 +136,7 @@ class ApplicationJsonMessageMarshallingConverter extends MappingJackson2MessageC
 			else {
 				final JavaType typeToUse = type;
 				if (payload instanceof Collection) {
-					Collection<?> collection = (Collection<?>) ((Collection<?>) payload).stream()
+					Collection<?> collection = ((Collection<?>) payload).stream()
 							.map(value -> {
 								try {
 									if (value instanceof byte[]) {
@@ -167,18 +165,5 @@ class ApplicationJsonMessageMarshallingConverter extends MappingJackson2MessageC
 		catch (IOException e) {
 			throw new MessageConversionException("Cannot parse payload ", e);
 		}
-	}
-
-	@Override
-	@Nullable
-	protected MimeType getMimeType(@Nullable MessageHeaders headers) {
-		Object contentType = headers.get(MessageHeaders.CONTENT_TYPE);
-		if (contentType instanceof byte[]) {
-			contentType = new String((byte[]) contentType, StandardCharsets.UTF_8);
-			contentType = ((String) contentType).replace("\"", "");
-			headers = new MutableMessageHeaders(headers);
-			headers.put(MessageHeaders.CONTENT_TYPE, contentType);
-		}
-		return super.getMimeType(headers);
 	}
 }
