@@ -612,7 +612,7 @@ Default: 1L.
 
 For example `--spring.cloud.stream.poller.fixed-delay=2000` sets the poller interval to poll every two seconds.
 
-===== Foreign event-driven sources
+===== Sending arbitrary data to an output (e.g. Foreign event-driven sources)
 
 There are cases where the actual source of data may be coming from the external (foreign) system that is not a binder. For example, the
 source of the data may be a classic REST endpoint. How do we bridge such source with the functional mechanism used by spring-cloud-stream?
@@ -697,6 +697,51 @@ as described in <<Routing FROM Consumer>> section.
 
 ====== Using reactor API
 
+Another approach that can be used to send arbitrary data to the output is using Reactor API.
+
+All we need to do is declare a `Supplier<Flux<whatever>>` which returns https://projectreactor.io/docs/core/release/api/reactor/core/publisher/EmitterProcessor.html[EmitterProcessor]
+from the reactor API (see <<Reactive Functions support>> for more details) to effectively provide a
+bridge between the actual event source (_foreign source_) and spring-cloud-stream. 
+Now, all you need to do now is feed the `EmitterProcessor` with data via `EmitterProcessor#onNext(data)` operation. 
+
+For example,
+
+[source, java]
+----
+public class SampleApplication {
+
+    public static void main(String[] args) {
+               SpringApplication.run(SampleApplication.class);
+    }
+
+    EmitterProcessor<String> processor = EmitterProcessor.create();
+
+    @Bean
+    public ApplicationRunner runner() {
+        Message<String> msg1 = MessageBuilder.withPayload("foo")
+                .setHeader("*.events", "test1.events.billing")
+                .build();
+        Message<String> msg2 = MessageBuilder.withPayload("bar")
+                .setHeader("*.events", "test2.events.messages")
+                .build();
+        return args -> {
+            this.processor.onNext(msg1);
+            this.processor.onNext(msg2);
+        };
+    }
+
+    @Bean
+    public Supplier<Flux<String>> supplier() {
+               return () -> this.processor;
+    }
+}
+----
+
+In the preceding example, we are using `ApplicationRunner` as a _foreign source_ to feed the stream.
+
+
+A more practical example, where the foreign source is REST endpoint.
+
 [source, java]
 ----
 @SpringBootApplication
@@ -717,25 +762,19 @@ public class WebSourceApplication {
 
 	@Bean
 	public Supplier<Flux<String>> supplier() {
-		return () -> processor;
+		return () -> this.processor;
 	}
 }
 ----
 
-Here we declare a `Supplier` bean which returns `Flux` of `Strings`.
-This example uses https://projectreactor.io/docs/core/release/api/reactor/core/publisher/EmitterProcessor.html[EmitterProcessor] 
-from the reactor API (see <<Reactive Functions support>> for more details) to effectively provide a 
-bridge between the actual event source (rest endpoint in this case) and spring-cloud-stream. All you need to do 
-is define a `Supplier<Flux<your-type>>` and return the `EmitterProcessor` while feeding the incoming data via `EmitterProcessor#onNext(data)` operation. 
-
-You can now send message to spring-cloud-stream source as
+Same as before we declare a `Supplier` bean which returns `Flux<String>`. But given that this is a REST endpoint
+we send messages by simply posting to this REST endpoint.
 
 ----
 curl -H "Content-Type: text/plain" -X POST -d "hello from the other side" http://localhost:8080/
 ----
 
-And while this example demonstrates bridging web endpoint with the Supplier of data that will be fed into spring-cloud-stream framework,
-the approach can be used with other type of foreign sources.
+By showing two example we want to emphasize the approach will work with any type of foreign sources.
 
 ===== Reactive Functions support
 
