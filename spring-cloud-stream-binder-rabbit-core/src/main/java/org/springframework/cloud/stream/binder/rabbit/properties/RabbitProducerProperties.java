@@ -53,6 +53,12 @@ public class RabbitProducerProperties extends RabbitCommonProperties {
 	private int batchTimeout = 5000;
 
 	/**
+	 * the bean name of a custom batching strategy to use instead of the
+	 * {@link org.springframework.amqp.rabbit.batch.SimpleBatchingStrategy}.
+	 */
+	private String batchingStrategyBeanName;
+
+	/**
 	 * true to use transacted channels.
 	 */
 	private boolean transacted;
@@ -193,6 +199,14 @@ public class RabbitProducerProperties extends RabbitCommonProperties {
 
 	public void setConfirmAckChannel(String confirmAckChannel) {
 		this.confirmAckChannel = confirmAckChannel;
+	}
+
+	public String getBatchingStrategyBeanName() {
+		return batchingStrategyBeanName;
+	}
+
+	public void setBatchingStrategyBeanName(String batchingStrategyBeanName) {
+		this.batchingStrategyBeanName = batchingStrategyBeanName;
 	}
 
 }

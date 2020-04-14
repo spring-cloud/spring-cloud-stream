@@ -19,8 +19,13 @@ package org.springframework.cloud.stream.binder.rabbit;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.Constructor;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -51,8 +56,11 @@ import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.DirectExchange;
 import org.springframework.amqp.core.ExchangeTypes;
 import org.springframework.amqp.core.MessageDeliveryMode;
+import org.springframework.amqp.core.MessageProperties;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.core.TopicExchange;
+import org.springframework.amqp.rabbit.batch.BatchingStrategy;
+import org.springframework.amqp.rabbit.batch.MessageBatch;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory.ConfirmType;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
@@ -2049,6 +2057,43 @@ public class RabbitBinderTests extends
 		binding.unbind();
 	}
 
+	@Test
+	public void testCustomBatchingStrategy() throws Exception {
+		RabbitTestBinder binder = getBinder();
+		ExtendedProducerProperties<RabbitProducerProperties> producerProperties = createProducerProperties();
+		producerProperties.getExtension().setDeliveryMode(MessageDeliveryMode.NON_PERSISTENT);
+		producerProperties.getExtension().setBatchingEnabled(true);
+		producerProperties.getExtension().setBatchingStrategyBeanName("testCustomBatchingStrategy");
+		producerProperties.setRequiredGroups("default");
+
+		ConfigurableListableBeanFactory beanFactory = binder.getApplicationContext().getBeanFactory();
+		beanFactory.registerSingleton("testCustomBatchingStrategy", new TestBatchingStrategy());
+
+		DirectChannel output = createBindableChannel("output", createProducerBindingProperties(producerProperties));
+		output.setBeanName("batchingProducer");
+		Binding<MessageChannel> producerBinding = binder.bindProducer("batching.0", output, producerProperties);
+
+		Log logger = spy(TestUtils.getPropertyValue(binder, "binder.compressingPostProcessor.logger", Log.class));
+		new DirectFieldAccessor(TestUtils.getPropertyValue(binder, "binder.compressingPostProcessor"))
+				.setPropertyValue("logger", logger);
+		when(logger.isTraceEnabled()).thenReturn(true);
+
+		assertThat(TestUtils.getPropertyValue(binder, "binder.compressingPostProcessor.level"))
+				.isEqualTo(Deflater.BEST_SPEED);
+
+		output.send(new GenericMessage<>("0".getBytes()));
+		output.send(new GenericMessage<>("1".getBytes()));
+		output.send(new GenericMessage<>("2".getBytes()));
+		output.send(new GenericMessage<>("3".getBytes()));
+		output.send(new GenericMessage<>("4".getBytes()));
+
+		Object out = spyOn("batching.0.default").receive(false);
+		assertThat(out).isInstanceOf(byte[].class);
+		assertThat(new String((byte[]) out)).isEqualTo("0\u0000\n1\u0000\n2\u0000\n3\u0000\n4\u0000\n");
+
+		producerBinding.unbind();
+	}
+
 	private SimpleMessageListenerContainer verifyContainer(Lifecycle endpoint) {
 		SimpleMessageListenerContainer container;
 		RetryTemplate retry;
@@ -2203,5 +2248,55 @@ public class RabbitBinderTests extends
 
 	}
 	// @checkstyle:on
+
+	public static class TestBatchingStrategy implements BatchingStrategy {
+
+		private final List<org.springframework.amqp.core.Message> messages = new ArrayList<>();
+		private String exchange;
+		private String routingKey;
+		private int currentSize;
+
+		@Override
+		public MessageBatch addToBatch(String exchange, String routingKey, org.springframework.amqp.core.Message message) {
+			this.exchange = exchange;
+			this.routingKey = routingKey;
+			this.messages.add(message);
+			currentSize += message.getBody().length + 2;
+
+			MessageBatch batch = null;
+			if (this.messages.size() == 5) {
+				batch = this.doReleaseBatch();
+			}
+
+			return batch;
+		}
+
+		@Override
+		public Date nextRelease() {
+			return null;
+		}
+
+		@Override
+		public Collection<MessageBatch> releaseBatches() {
+			MessageBatch batch = this.doReleaseBatch();
+			return batch == null ? Collections.emptyList() : Collections.singletonList(batch);
+		}
+
+		private MessageBatch doReleaseBatch() {
+			if (this.messages.size() < 1) {
+				return null;
+			}
+			else {
+				ByteBuffer byteBuffer = ByteBuffer.wrap(new byte[this.currentSize]);
+				for (org.springframework.amqp.core.Message message: messages) {
+					byteBuffer.put(message.getBody()).putChar('\n');
+				}
+				MessageBatch messageBatch = new MessageBatch(this.exchange, this.routingKey,
+						new org.springframework.amqp.core.Message(byteBuffer.array(), new MessageProperties()));
+				this.messages.clear();
+				return messageBatch;
+			}
+		}
+	}
 
 }

@@ -823,13 +823,10 @@ public class RabbitMessageChannelBinder extends
 			boolean mandatory) {
 		RabbitTemplate rabbitTemplate;
 		if (properties.isBatchingEnabled()) {
-			BatchingStrategy batchingStrategy = new SimpleBatchingStrategy(
-					properties.getBatchSize(), properties.getBatchBufferLimit(),
-					properties.getBatchTimeout());
-			rabbitTemplate = new BatchingRabbitTemplate(batchingStrategy,
-					getApplicationContext().getBean(
-							IntegrationContextUtils.TASK_SCHEDULER_BEAN_NAME,
-							TaskScheduler.class));
+			BatchingStrategy batchingStrategy = getBatchingStrategy(properties);
+			TaskScheduler taskScheduler = getApplicationContext()
+					.getBean(IntegrationContextUtils.TASK_SCHEDULER_BEAN_NAME, TaskScheduler.class);
+			rabbitTemplate = new BatchingRabbitTemplate(batchingStrategy, taskScheduler);
 		}
 		else {
 			rabbitTemplate = new RabbitTemplate();
@@ -857,6 +854,22 @@ public class RabbitMessageChannelBinder extends
 		}
 		rabbitTemplate.afterPropertiesSet();
 		return rabbitTemplate;
+	}
+
+	private BatchingStrategy getBatchingStrategy(RabbitProducerProperties properties) {
+		BatchingStrategy batchingStrategy;
+		if (properties.getBatchingStrategyBeanName() != null) {
+			batchingStrategy = getApplicationContext()
+					.getBean(properties.getBatchingStrategyBeanName(), BatchingStrategy.class);
+		}
+		else {
+			batchingStrategy = new SimpleBatchingStrategy(
+					properties.getBatchSize(),
+					properties.getBatchBufferLimit(),
+					properties.getBatchTimeout()
+			);
+		}
+		return batchingStrategy;
 	}
 
 	private String getStackTraceAsString(Throwable cause) {
