@@ -1079,10 +1079,16 @@ public class KafkaMessageChannelBinder extends
 
 				if (properties.isUseNativeDecoding()) {
 					if (record != null) {
-						Map<String, String> configuration = transMan == null
+						// Give the binder configuration the least preference.
+						Map<String, String> configuration = this.configurationProperties.getConfiguration();
+						// Then give any producer specific properties specified on the binder.
+						configuration.putAll(this.configurationProperties.getProducerProperties());
+						Map<String, String> configs = transMan == null
 								? dlqProducerProperties.getConfiguration()
 								: this.configurationProperties.getTransaction()
-										.getProducer().getConfiguration();
+								.getProducer().getConfiguration();
+						// Finally merge with dlq producer properties or the transaction producer properties.
+						configuration.putAll(configs);
 						if (record.key() != null
 								&& !record.key().getClass().isInstance(byte[].class)) {
 							ensureDlqMessageCanBeProperlySerialized(configuration,
