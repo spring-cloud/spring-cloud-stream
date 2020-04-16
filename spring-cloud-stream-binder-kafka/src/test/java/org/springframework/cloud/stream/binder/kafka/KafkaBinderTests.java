@@ -870,8 +870,7 @@ public class KafkaBinderTests extends
 	public void testDlqWithProducerPropertiesSetAtBinderLevel()
 			throws Exception {
 
-		KafkaBinderConfigurationProperties binderConfiguration = new KafkaBinderConfigurationProperties(
-				new TestKafkaProperties());
+		KafkaBinderConfigurationProperties binderConfiguration = createConfigurationProperties();
 
 		Map<String, String> consumerProps = new HashMap<>();
 		consumerProps.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
@@ -896,9 +895,9 @@ public class KafkaBinderTests extends
 		DirectChannel moduleInputChannel = createBindableChannel("input",
 				createConsumerBindingProperties(consumerProperties));
 
-		Binding<MessageChannel> producerBinding = binder.bindProducer("foo.bar-x",
+		Binding<MessageChannel> producerBinding = binder.bindProducer("foo.bar",
 				moduleOutputChannel, outputBindingProperties.getProducer());
-		Binding<MessageChannel> consumerBinding = binder.bindConsumer("foo.bar-x",
+		Binding<MessageChannel> consumerBinding = binder.bindConsumer("foo.bar",
 				"tdwcapsabl", moduleInputChannel, consumerProperties);
 
 		// Let the consumer actually bind to the producer before sending a msg
@@ -913,7 +912,7 @@ public class KafkaBinderTests extends
 		dlqConsumerProperties.setMaxAttempts(1);
 
 		Binding<MessageChannel> dlqConsumerBinding = binder.bindConsumer(
-				"error.foo.bar-x." + "tdwcapsabl", null, dlqChannel,
+				"error.foo.bar." + "tdwcapsabl", null, dlqChannel,
 				dlqConsumerProperties);
 		binderBindUnbindLatency();
 
