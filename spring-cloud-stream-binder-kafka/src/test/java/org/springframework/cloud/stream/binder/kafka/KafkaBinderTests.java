@@ -867,7 +867,6 @@ public class KafkaBinderTests extends
 	// For more details on the context of this test: https://github.com/spring-cloud/spring-cloud-stream-binder-kafka/issues/657
 	@Test
 	@SuppressWarnings("unchecked")
-	@Ignore
 	public void testDlqWithProducerPropertiesSetAtBinderLevel()
 			throws Exception {
 
@@ -897,9 +896,9 @@ public class KafkaBinderTests extends
 		DirectChannel moduleInputChannel = createBindableChannel("input",
 				createConsumerBindingProperties(consumerProperties));
 
-		Binding<MessageChannel> producerBinding = binder.bindProducer("foo.bar",
+		Binding<MessageChannel> producerBinding = binder.bindProducer("foo.bar-x",
 				moduleOutputChannel, outputBindingProperties.getProducer());
-		Binding<MessageChannel> consumerBinding = binder.bindConsumer("foo.bar",
+		Binding<MessageChannel> consumerBinding = binder.bindConsumer("foo.bar-x",
 				"tdwcapsabl", moduleInputChannel, consumerProperties);
 
 		// Let the consumer actually bind to the producer before sending a msg
@@ -914,7 +913,7 @@ public class KafkaBinderTests extends
 		dlqConsumerProperties.setMaxAttempts(1);
 
 		Binding<MessageChannel> dlqConsumerBinding = binder.bindConsumer(
-				"error.foo.bar." + "tdwcapsabl", null, dlqChannel,
+				"error.foo.bar-x." + "tdwcapsabl", null, dlqChannel,
 				dlqConsumerProperties);
 		binderBindUnbindLatency();
 
