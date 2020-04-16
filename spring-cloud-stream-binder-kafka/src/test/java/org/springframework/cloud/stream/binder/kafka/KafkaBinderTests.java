@@ -867,6 +867,7 @@ public class KafkaBinderTests extends
 	// For more details on the context of this test: https://github.com/spring-cloud/spring-cloud-stream-binder-kafka/issues/657
 	@Test
 	@SuppressWarnings("unchecked")
+	@Ignore
 	public void testDlqWithProducerPropertiesSetAtBinderLevel()
 			throws Exception {
 
