@@ -22,7 +22,7 @@ import java.util.function.Supplier;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import org.springframework.cloud.function.context.catalog.BeanFactoryAwareFunctionRegistry.FunctionInvocationWrapper;
+import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.cloud.stream.binder.BinderHeaders;
 import org.springframework.cloud.stream.binder.PartitionHandler;
 import org.springframework.cloud.stream.binder.ProducerProperties;
@@ -41,7 +41,7 @@ class PartitionAwareFunctionWrapper implements Function<Object, Object>, Supplie
 
 	protected final Log logger = LogFactory.getLog(PartitionAwareFunctionWrapper.class);
 
-	private final FunctionInvocationWrapper function;
+	private final org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper function;
 
 	@SuppressWarnings("rawtypes")
 	private final Function<Message, Message> outputMessageEnricher;
