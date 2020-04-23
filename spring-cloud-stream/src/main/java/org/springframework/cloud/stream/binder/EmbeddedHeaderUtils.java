@@ -21,8 +21,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.xml.bind.DatatypeConverter;
-
 import org.springframework.integration.support.json.Jackson2JsonObjectMapper;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
@@ -49,8 +47,7 @@ public abstract class EmbeddedHeaderUtils {
 	private static final Jackson2JsonObjectMapper objectMapper = new Jackson2JsonObjectMapper();
 
 	public static String decodeExceptionMessage(Message<?> requestMessage) {
-		return "Could not convert message: "
-				+ DatatypeConverter.printHexBinary((byte[]) requestMessage.getPayload());
+		return "Could not convert message: " + requestMessage;
 	}
 
 	/**
