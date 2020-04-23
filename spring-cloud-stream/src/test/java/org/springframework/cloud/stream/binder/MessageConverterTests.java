@@ -133,7 +133,6 @@ public class MessageConverterTests {
 		catch (Exception e) {
 			String s = EmbeddedHeaderUtils.decodeExceptionMessage(message);
 			assertThat(e).isInstanceOf(BufferUnderflowException.class);
-			assertThat(s).startsWith("Could not convert message: FF63");
 		}
 	}
 
