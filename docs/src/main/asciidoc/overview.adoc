@@ -226,6 +226,7 @@ configuration::
 Map with a key/value pair containing generic Kafka consumer properties.
 In addition to having Kafka consumer properties, other configuration properties can be passed here.
 For example some properties needed by the application such as `spring.cloud.stream.kafka.bindings.input.consumer.configuration.foo=bar`.
+The `bootstrap.servers` property cannot be set here; use multi-binder support if you need to connect to multiple clusters.
 +
 Default: Empty map.
 dlqName::
@@ -354,6 +355,7 @@ For example `!ask,as*` will pass `ash` but not `ask`.
 Default: `*` (all headers - except the `id` and `timestamp`)
 configuration::
 Map with a key/value pair containing generic Kafka producer properties.
+The `bootstrap.servers` property cannot be set here; use multi-binder support if you need to connect to multiple clusters.
 +
 Default: Empty map.
 topic.properties::

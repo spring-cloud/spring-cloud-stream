@@ -216,7 +216,7 @@ public class KafkaMessageChannelBinder extends
 
 	private KafkaExtendedBindingProperties extendedBindingProperties = new KafkaExtendedBindingProperties();
 
-	private Map<ConsumerDestination, ContainerProperties.AckMode> ackModeInfo = new ConcurrentHashMap<>();
+	private final Map<ConsumerDestination, ContainerProperties.AckMode> ackModeInfo = new ConcurrentHashMap<>();
 
 	public KafkaMessageChannelBinder(
 			KafkaBinderConfigurationProperties configurationProperties,
@@ -514,8 +514,12 @@ public class KafkaMessageChannelBinder extends
 			props.put(ProducerConfig.COMPRESSION_TYPE_CONFIG,
 					producerProperties.getExtension().getCompressionType().toString());
 		}
-		if (!ObjectUtils.isEmpty(producerProperties.getExtension().getConfiguration())) {
-			props.putAll(producerProperties.getExtension().getConfiguration());
+		Map<String, String> configs = producerProperties.getExtension().getConfiguration();
+		Assert.state(!configs.containsKey(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG),
+				ProducerConfig.BOOTSTRAP_SERVERS_CONFIG + " cannot be overridden at the binding level; "
+						+ "use multiple binders instead");
+		if (!ObjectUtils.isEmpty(configs)) {
+			props.putAll(configs);
 		}
 		DefaultKafkaProducerFactory<byte[], byte[]> producerFactory = new DefaultKafkaProducerFactory<>(
 				props);
@@ -1087,6 +1091,9 @@ public class KafkaMessageChannelBinder extends
 								? dlqProducerProperties.getConfiguration()
 								: this.configurationProperties.getTransaction()
 								.getProducer().getConfiguration();
+						Assert.state(!configs.containsKey(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG),
+								ProducerConfig.BOOTSTRAP_SERVERS_CONFIG + " cannot be overridden at the binding level; "
+										+ "use multiple binders instead");
 						// Finally merge with dlq producer properties or the transaction producer properties.
 						configuration.putAll(configs);
 						if (record.key() != null
@@ -1306,8 +1313,12 @@ public class KafkaMessageChannelBinder extends
 			props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG,
 					this.configurationProperties.getKafkaConnectionString());
 		}
-		if (!ObjectUtils.isEmpty(consumerProperties.getExtension().getConfiguration())) {
-			props.putAll(consumerProperties.getExtension().getConfiguration());
+		Map<String, String> config = consumerProperties.getExtension().getConfiguration();
+		if (!ObjectUtils.isEmpty(config)) {
+			Assert.state(!config.containsKey(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG),
+					ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG + " cannot be overridden at the binding level; "
+							+ "use multiple binders instead");
+			props.putAll(config);
 		}
 		if (!ObjectUtils.isEmpty(consumerProperties.getExtension().getStartOffset())) {
 			props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG,

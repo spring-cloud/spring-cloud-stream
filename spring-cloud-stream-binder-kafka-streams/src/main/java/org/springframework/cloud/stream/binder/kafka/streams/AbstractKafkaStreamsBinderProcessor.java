@@ -22,6 +22,7 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.common.utils.Bytes;
@@ -63,6 +64,7 @@ import org.springframework.kafka.core.CleanupConfig;
 import org.springframework.kafka.streams.RecoveringDeserializationExceptionHandler;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.MessageBuilder;
+import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
@@ -238,8 +240,11 @@ public abstract class AbstractKafkaStreamsBinderProcessor implements Application
 		//spring.cloud.stream.kafka.streams.binder.functions.process.configuration.num.threads (assuming that process is the function name).
 		KafkaStreamsConsumerProperties extendedConsumerProperties = this.kafkaStreamsExtendedBindingProperties
 				.getExtendedConsumerProperties(inboundName);
-		streamConfigGlobalProperties
-				.putAll(extendedConsumerProperties.getConfiguration());
+		Map<String, String> bindingConfig = extendedConsumerProperties.getConfiguration();
+		Assert.state(!bindingConfig.containsKey(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG),
+				ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG + " cannot be overridden at the binding level; "
+						+ "use multiple binders instead");
+		streamConfigGlobalProperties.putAll(bindingConfig);
 
 		String bindingLevelApplicationId = extendedConsumerProperties.getApplicationId();
 		// override application.id if set at the individual binding level.

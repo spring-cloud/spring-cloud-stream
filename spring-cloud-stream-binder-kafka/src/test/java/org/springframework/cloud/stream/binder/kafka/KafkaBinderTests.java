@@ -75,6 +75,7 @@ import org.junit.rules.ExpectedException;
 
 import org.springframework.beans.DirectFieldAccessor;
 import org.springframework.cloud.stream.binder.Binder;
+import org.springframework.cloud.stream.binder.BinderException;
 import org.springframework.cloud.stream.binder.BinderHeaders;
 import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binder.DefaultPollableMessageSource;
@@ -146,6 +147,7 @@ import org.springframework.util.concurrent.ListenableFuture;
 import org.springframework.util.concurrent.SettableListenableFuture;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.Mockito.mock;
 
@@ -3680,6 +3682,26 @@ public class KafkaBinderTests extends
 		producerBinding.unbind();
 		consumerBinding.unbind();
 		consumer.close();
+	}
+
+	@Test
+	public void testNoBrokerOverride() throws Exception {
+		Binder binder = getBinder();
+		ExtendedProducerProperties<KafkaProducerProperties> producerProperties = createProducerProperties();
+		producerProperties.getExtension().getConfiguration().put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "foo");
+		BindingProperties outputBindingProperties = createProducerBindingProperties(producerProperties);
+		DirectChannel moduleOutputChannel = createBindableChannel("output", outputBindingProperties);
+		ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = createConsumerProperties();
+		consumerProperties.getExtension().getConfiguration().put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "foo");
+		BindingProperties consumerBindingProperties = createConsumerBindingProperties(consumerProperties);
+		DirectChannel moduleInputChannel = createBindableChannel("input", consumerBindingProperties);
+
+		assertThatExceptionOfType(BinderException.class).isThrownBy(() -> binder.bindProducer("foo.bar",
+					moduleOutputChannel, outputBindingProperties.getProducer()))
+				.withCauseExactlyInstanceOf(IllegalStateException.class);
+		assertThatExceptionOfType(BinderException.class).isThrownBy(() -> binder.bindConsumer("foo.bar",
+					"testSendAndReceive", moduleInputChannel, consumerProperties))
+				.withCauseExactlyInstanceOf(IllegalStateException.class);
 	}
 
 	private final class FailingInvocationCountingMessageHandler

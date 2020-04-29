@@ -43,6 +43,7 @@ import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
 import org.springframework.kafka.listener.DeadLetterPublishingRecoverer;
+import org.springframework.util.Assert;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 
@@ -154,8 +155,12 @@ final class KafkaStreamsBinderUtils {
 			props.put(ProducerConfig.COMPRESSION_TYPE_CONFIG,
 					producerProperties.getExtension().getCompressionType().toString());
 		}
-		if (!ObjectUtils.isEmpty(producerProperties.getExtension().getConfiguration())) {
-			props.putAll(producerProperties.getExtension().getConfiguration());
+		Map<String, String> configs = producerProperties.getExtension().getConfiguration();
+		Assert.state(!configs.containsKey(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG),
+				ProducerConfig.BOOTSTRAP_SERVERS_CONFIG + " cannot be overridden at the binding level; "
+						+ "use multiple binders instead");
+		if (!ObjectUtils.isEmpty(configs)) {
+			props.putAll(configs);
 		}
 		// Always send as byte[] on dlq (the same byte[] that the consumer received)
 		props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class);
