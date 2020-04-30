@@ -39,10 +39,12 @@ import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.test.rule.EmbeddedKafkaRule;
 import org.springframework.messaging.support.GenericMessage;
 import org.springframework.retry.support.RetryTemplate;
+import org.springframework.util.concurrent.SettableListenableFuture;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.willReturn;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
@@ -74,6 +76,7 @@ public class KafkaTransactionTests {
 				configurationProperties, kafkaProperties);
 		provisioningProvider.setMetadataRetryOperations(new RetryTemplate());
 		final Producer mockProducer = mock(Producer.class);
+		given(mockProducer.send(any(), any())).willReturn(new SettableListenableFuture<>());
 
 		KafkaProducerProperties extension1 = configurationProperties
 				.getTransaction().getProducer().getExtension();
