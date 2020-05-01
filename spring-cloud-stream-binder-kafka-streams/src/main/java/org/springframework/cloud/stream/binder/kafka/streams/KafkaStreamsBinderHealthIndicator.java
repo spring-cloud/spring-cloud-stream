@@ -108,7 +108,7 @@ public class KafkaStreamsBinderHealthIndicator extends AbstractHealthIndicator i
 				else {
 					boolean up = true;
 					for (KafkaStreams kStream : kafkaStreamsRegistry.getKafkaStreams()) {
-						up &= kStream.state().isRunning();
+						up &= kStream.state().isRunningOrRebalancing();
 						builder.withDetails(buildDetails(kStream));
 					}
 					builder.status(up ? Status.UP : Status.DOWN);
@@ -131,7 +131,7 @@ public class KafkaStreamsBinderHealthIndicator extends AbstractHealthIndicator i
 		final Map<String, Object> details = new HashMap<>();
 		final Map<String, Object> perAppdIdDetails = new HashMap<>();
 
-		if (kafkaStreams.state().isRunning()) {
+		if (kafkaStreams.state().isRunningOrRebalancing()) {
 			for (ThreadMetadata metadata : kafkaStreams.localThreadsMetadata()) {
 				perAppdIdDetails.put("threadName", metadata.threadName());
 				perAppdIdDetails.put("threadState", metadata.threadState());
