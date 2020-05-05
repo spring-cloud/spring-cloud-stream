@@ -218,21 +218,19 @@ public class DefaultPollableMessageSource
 		}
 		catch (MessagingException e) {
 			if (this.retryTemplate == null && !shouldRequeue(e)) {
-				this.messagingTemplate.send(this.errorChannel, this.errorMessageStrategy
-						.buildErrorMessage(e, attributesHolder.get()));
-				return true;
-			}
-			else if (!ackCallback.isAcknowledged() && shouldRequeue(e)) {
-				AckUtils.requeue(ackCallback);
+				try {
+					this.messagingTemplate.send(this.errorChannel, this.errorMessageStrategy
+							.buildErrorMessage(e, attributesHolder.get()));
+				}
+				catch (MessagingException e1) {
+					requeueOrNack(message, ackCallback, e1);
+				}
 				return true;
 			}
 			else {
-				AckUtils.autoNack(ackCallback);
+				requeueOrNack(message, ackCallback, e);
+				return true;
 			}
-			if (e.getFailedMessage().equals(message)) {
-				throw e;
-			}
-			throw new MessageHandlingException(message, e);
 		}
 		catch (Exception e) {
 			AckUtils.autoNack(ackCallback);
@@ -244,6 +242,19 @@ public class DefaultPollableMessageSource
 		}
 		finally {
 			AckUtils.autoAck(ackCallback);
+		}
+	}
+
+	private void requeueOrNack(Message<?> message, AcknowledgmentCallback ackCallback, MessagingException e) {
+		if (!ackCallback.isAcknowledged() && shouldRequeue(e)) {
+			AckUtils.requeue(ackCallback);
+		}
+		else {
+			AckUtils.autoNack(ackCallback);
+			if (e.getFailedMessage().equals(message)) {
+				throw e;
+			}
+			throw new MessageHandlingException(message, e);
 		}
 	}
 
