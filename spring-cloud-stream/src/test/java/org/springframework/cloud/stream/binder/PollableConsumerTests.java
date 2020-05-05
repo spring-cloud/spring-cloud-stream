@@ -40,6 +40,7 @@ import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.integration.IntegrationMessageHeaderAccessor;
 import org.springframework.integration.acks.AcknowledgmentCallback;
 import org.springframework.integration.acks.AcknowledgmentCallback.Status;
+import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.context.IntegrationContextUtils;
 import org.springframework.integration.core.MessageSource;
 import org.springframework.messaging.Message;
@@ -395,8 +396,7 @@ public class PollableConsumerTests {
 			}
 
 		});
-		ExtendedConsumerProperties<Object> properties = new ExtendedConsumerProperties<>(
-				null);
+		ExtendedConsumerProperties<Object> properties = new ExtendedConsumerProperties<>(null);
 		properties.setMaxAttempts(2);
 		properties.setBackOffInitialInterval(0);
 		binder.bindPollableConsumer("foo", "bar", pollableSource, properties);
@@ -411,6 +411,47 @@ public class PollableConsumerTests {
 			// no op
 		}
 		assertThat(count.get()).isEqualTo(2);
+		verify(callback).acknowledge(Status.REQUEUE);
+	}
+
+	@Test
+	public void testRequeueFromErrorFlow() {
+		TestChannelBinder binder = createBinder();
+		MessageConverterConfigurer configurer = this.context
+				.getBean(MessageConverterConfigurer.class);
+
+		DefaultPollableMessageSource pollableSource = new DefaultPollableMessageSource(
+				this.messageConverter);
+		configurer.configurePolledMessageSource(pollableSource, "foo");
+		AcknowledgmentCallback callback = mock(AcknowledgmentCallback.class);
+		pollableSource.addInterceptor(new ChannelInterceptor() {
+
+			@Override
+			public Message<?> preSend(Message<?> message, MessageChannel channel) {
+				return MessageBuilder.fromMessage(message)
+						.setHeader(
+								IntegrationMessageHeaderAccessor.ACKNOWLEDGMENT_CALLBACK,
+								callback)
+						.build();
+			}
+
+		});
+		ExtendedConsumerProperties<Object> properties = new ExtendedConsumerProperties<>(null);
+		properties.setMaxAttempts(1);
+		binder.bindPollableConsumer("foo", "bar", pollableSource, properties);
+		SubscribableChannel errorChannel = new DirectChannel();
+		errorChannel.subscribe(msg -> {
+			throw new RequeueCurrentMessageException((Throwable) msg.getPayload());
+		});
+		pollableSource.setErrorChannel(errorChannel);
+		try {
+			pollableSource.poll(received -> {
+				throw new RuntimeException("test requeue from error flow");
+			});
+		}
+		catch (Exception e) {
+			// no op
+		}
 		verify(callback).acknowledge(Status.REQUEUE);
 	}
 
