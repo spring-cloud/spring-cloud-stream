@@ -24,11 +24,13 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import org.springframework.aop.framework.Advised;
 import org.springframework.beans.BeanUtils;
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.BinderFactory;
@@ -92,8 +94,13 @@ public class BindingService {
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public <T> Collection<Binding<T>> bindConsumer(T input, String inputName) {
 		Collection<Binding<T>> bindings = new ArrayList<>();
+		Class<?> inputClass = input.getClass();
+		if (input instanceof Advised) {
+			inputClass = Stream.of(((Advised) input).getProxiedInterfaces()).filter(c -> !c.getName().contains("org.springframework")).findFirst()
+					.orElse(inputClass);
+		}
 		Binder<T, ConsumerProperties, ?> binder = (Binder<T, ConsumerProperties, ?>) getBinder(
-				inputName, input.getClass());
+				inputName, inputClass);
 		ConsumerProperties consumerProperties = this.bindingServiceProperties
 				.getConsumerProperties(inputName);
 		if (binder instanceof ExtendedPropertiesBinder) {
@@ -253,8 +260,13 @@ public class BindingService {
 	public <T> Binding<T> bindProducer(T output, String outputName, boolean cache) {
 		String bindingTarget = this.bindingServiceProperties
 				.getBindingDestination(outputName);
+		Class<?> outputClass = output.getClass();
+		if (output instanceof Advised) {
+			outputClass = Stream.of(((Advised) output).getProxiedInterfaces()).filter(c -> !c.getName().contains("org.springframework")).findFirst()
+					.orElse(outputClass);
+		}
 		Binder<T, ?, ProducerProperties> binder = (Binder<T, ?, ProducerProperties>) getBinder(
-				outputName, output.getClass());
+				outputName, outputClass);
 		ProducerProperties producerProperties = this.bindingServiceProperties
 				.getProducerProperties(outputName);
 		if (binder instanceof ExtendedPropertiesBinder) {
