@@ -48,6 +48,7 @@ import org.springframework.core.convert.support.GenericConversionService;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.MapPropertySource;
 import org.springframework.core.env.StandardEnvironment;
+import org.springframework.messaging.MessageChannel;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
@@ -143,6 +144,14 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 
 	private <T> Binder<T, ConsumerProperties, ProducerProperties> doGetBinder(String name,
 			Class<? extends T> bindingTargetType) {
+
+		if (!MessageChannel.class.isAssignableFrom(bindingTargetType)
+				&& !PollableMessageSource.class.isAssignableFrom(bindingTargetType)) {
+			String bindingTargetTypeName = StringUtils.hasText(name) ? name : bindingTargetType.getSimpleName().toLowerCase();
+			logger.info("Creating binder: " + bindingTargetTypeName);
+			Binder<T, ConsumerProperties, ProducerProperties> binderInstance = getBinderInstance(bindingTargetTypeName);
+			return binderInstance;
+		}
 		String configurationName;
 		// Fall back to a default if no argument is provided
 		if (StringUtils.isEmpty(name)) {
@@ -165,8 +174,8 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 				else {
 					List<String> candidatesForBindableType = new ArrayList<>();
 					for (String defaultCandidateConfiguration : defaultCandidateConfigurations) {
-						Binder<Object, ?, ?> binderInstance = getBinderInstance(
-								defaultCandidateConfiguration);
+						Binder<Object, ?, ?> binderInstance = getBinderInstance(defaultCandidateConfiguration);
+
 						Class<?> binderType = GenericsUtils.getParameterType(
 								binderInstance.getClass(), Binder.class, 0);
 						if (binderType.isAssignableFrom(bindingTargetType)) {
@@ -198,8 +207,7 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 		else {
 			configurationName = name;
 		}
-		Binder<T, ConsumerProperties, ProducerProperties> binderInstance = getBinderInstance(
-				configurationName);
+		Binder<T, ConsumerProperties, ProducerProperties> binderInstance = getBinderInstance(configurationName);
 		Assert.state(verifyBinderTypeMatchesTarget(binderInstance, bindingTargetType),
 				"The binder '" + configurationName + "' cannot bind a "
 						+ bindingTargetType.getName());
@@ -225,8 +233,7 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 	}
 
 	@SuppressWarnings("unchecked")
-	private <T> Binder<T, ConsumerProperties, ProducerProperties> getBinderInstance(
-			String configurationName) {
+	private <T> Binder<T, ConsumerProperties, ProducerProperties> getBinderInstance(String configurationName) {
 		if (!this.binderInstanceCache.containsKey(configurationName)) {
 			BinderConfiguration binderConfiguration = this.binderConfigurations
 					.get(configurationName);
