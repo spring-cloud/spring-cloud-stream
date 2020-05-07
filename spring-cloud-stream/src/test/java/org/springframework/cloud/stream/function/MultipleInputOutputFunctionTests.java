@@ -221,6 +221,7 @@ public class MultipleInputOutputFunctionTests {
 			inputDestination.send(inputMessage, "reverseuppercase-in-0");
 
 			Message<byte[]> outputMessage = outputDestination.receive(0, "uppercasereverse-out-0");
+			System.out.println(new String(outputMessage.getPayload()));
 			assertThat(outputMessage.getPayload()).isEqualTo("OLLEH".getBytes());
 
 			outputMessage = outputDestination.receive(0, "reverseuppercase-out-0");
