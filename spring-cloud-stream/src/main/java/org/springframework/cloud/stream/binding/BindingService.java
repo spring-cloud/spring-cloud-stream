@@ -249,9 +249,8 @@ public class BindingService {
 			}
 		});
 	}
-
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	public <T> Binding<T> bindProducer(T output, String outputName) {
+	public <T> Binding<T> bindProducer(T output, String outputName, boolean cache) {
 		String bindingTarget = this.bindingServiceProperties
 				.getBindingDestination(outputName);
 		Binder<T, ?, ProducerProperties> binder = (Binder<T, ?, ProducerProperties>) getBinder(
@@ -270,8 +269,14 @@ public class BindingService {
 		validate(producerProperties);
 		Binding<T> binding = doBindProducer(output, bindingTarget, binder,
 				producerProperties);
-		this.producerBindings.put(outputName, binding);
+		if (cache) {
+			this.producerBindings.put(outputName, binding);
+		}
 		return binding;
+	}
+
+	public <T> Binding<T> bindProducer(T output, String outputName) {
+		return this.bindProducer(output, outputName, true);
 	}
 
 	@SuppressWarnings("rawtypes")
