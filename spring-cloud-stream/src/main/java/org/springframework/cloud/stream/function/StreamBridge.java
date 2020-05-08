@@ -17,28 +17,22 @@
 package org.springframework.cloud.stream.function;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.Function;
-import java.util.stream.Stream;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.springframework.aop.framework.Advised;
-import org.springframework.beans.BeanUtils;
+
 import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cache.annotation.Cacheable;
-import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionRegistry;
 import org.springframework.cloud.function.context.FunctionType;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
-import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.Binding;
-import org.springframework.cloud.stream.binder.ExtendedProducerProperties;
-import org.springframework.cloud.stream.binder.ExtendedPropertiesBinder;
 import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.cloud.stream.binding.BinderAwareChannelResolver;
 import org.springframework.cloud.stream.binding.BindingService;
@@ -46,12 +40,10 @@ import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.cloud.stream.messaging.DirectWithAttributesChannel;
 import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.context.annotation.Bean;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.SubscribableChannel;
 import org.springframework.messaging.support.GenericMessage;
-import org.springframework.stereotype.Component;
 import org.springframework.util.MimeType;
 import org.springframework.util.MimeTypeUtils;
 
@@ -162,20 +154,30 @@ public final class StreamBridge implements SmartInitializingSingleton {
 		return true;
 	}
 
-	private Map<String, SubscribableChannel> channelCache = new HashMap<>();
+	private Map<String, SubscribableChannel> channelCache = new LinkedHashMap<String, SubscribableChannel>() {
+		private static final int MAX_ENTRIES = 2;
 
-	@SuppressWarnings("unchecked")
+		@Override
+		protected boolean removeEldestEntry(Map.Entry<String, SubscribableChannel> eldest) {
+			boolean remove = size() > MAX_ENTRIES;
+			if (remove) {
+				System.err.println("==> REMOVING ENTRY: " + eldest);
+			}
+			return remove;
+		}
+	};
+
 	public boolean sendLight(String bindingName, Object data, MimeType outputContentType) {
 		SubscribableChannel messageChannel = null;
 		if (channelCache.containsKey(bindingName)) {
 			messageChannel = channelCache.get(bindingName);
 		}
 		else {
-			messageChannel = new DirectWithAttributesChannel();
-			Binding<SubscribableChannel> binding = this.bindingService.bindProducer(messageChannel, bindingName, false);
-
 			ProducerProperties producerProperties = this.bindingServiceProperties.getProducerProperties(bindingName);
 			producerProperties.setRequiredGroups(bindingName);
+			messageChannel = new DirectWithAttributesChannel();
+			Binding<SubscribableChannel> binding = this.bindingService.bindProducer(messageChannel, bindingName, false);
+//			binding.start(); // looks like this method is never called anyway.
 			channelCache.put(bindingName, messageChannel);
 		}
 
