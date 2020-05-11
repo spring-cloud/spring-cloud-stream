@@ -16,7 +16,6 @@
 
 package org.springframework.cloud.stream.function;
 
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -34,16 +33,12 @@ import org.springframework.cloud.function.context.FunctionType;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binder.ProducerProperties;
-import org.springframework.cloud.stream.binding.BinderAwareChannelResolver;
 import org.springframework.cloud.stream.binding.BindingService;
-import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.cloud.stream.messaging.DirectWithAttributesChannel;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.messaging.Message;
-import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.SubscribableChannel;
-import org.springframework.messaging.support.GenericMessage;
 import org.springframework.util.MimeType;
 import org.springframework.util.MimeTypeUtils;
 
@@ -67,7 +62,7 @@ public final class StreamBridge implements SmartInitializingSingleton {
 
 	protected final Log logger = LogFactory.getLog(getClass());
 
-	private final Map<String, MessageChannel> outputChannelsOnly = new HashMap<>();
+	private final Map<String, SubscribableChannel> channelCache;
 
 	private final FunctionCatalog functionCatalog;
 
@@ -80,9 +75,6 @@ public final class StreamBridge implements SmartInitializingSingleton {
 	private boolean initialized;
 
 	@Autowired
-	private BinderAwareChannelResolver dynamicDestinationResolver;
-
-	@Autowired
 	private BindingService bindingService;
 
 	/**
@@ -92,12 +84,23 @@ public final class StreamBridge implements SmartInitializingSingleton {
 	 * @param bindingServiceProperties instance of {@link BindingServiceProperties}
 	 * @param applicationContext instance of {@link ConfigurableApplicationContext}
 	 */
+	@SuppressWarnings("serial")
 	StreamBridge(FunctionCatalog functionCatalog, FunctionRegistry functionRegistry,
 			BindingServiceProperties bindingServiceProperties, ConfigurableApplicationContext applicationContext) {
 		this.functionCatalog = functionCatalog;
 		this.functionRegistry = functionRegistry;
 		this.applicationContext = applicationContext;
 		this.bindingServiceProperties = bindingServiceProperties;
+		this.channelCache = new LinkedHashMap<String, SubscribableChannel>() {
+			@Override
+			protected boolean removeEldestEntry(Map.Entry<String, SubscribableChannel> eldest) {
+				boolean remove = size() > bindingServiceProperties.getDynamicDestinationCacheSize();
+				if (remove && logger.isDebugEnabled()) {
+					logger.debug("Removing message channel from cache " + eldest.getKey());
+				}
+				return remove;
+			}
+		};
 	}
 
 	/**
@@ -111,16 +114,12 @@ public final class StreamBridge implements SmartInitializingSingleton {
 		return this.send(bindingName, data, MimeTypeUtils.APPLICATION_JSON);
 	}
 
-	public boolean sendLight(String bindingName, Object data) {
-		return this.sendLight(bindingName, data, MimeTypeUtils.APPLICATION_JSON);
-	}
-
 	/**
 	 * Sends 'data' to an output binding specified by 'bindingName' argument while
 	 * using the content type specified by the 'outputContentType' argument to deal
 	 * with output type conversion (if necessary).
 	 * For typical cases `bindingName` is configured using 'spring.cloud.stream.source' property.
-	 * However, this operation also supports sending to dynamic destinations. This means if the name
+	 * However, this operation also supports sending to truly dynamic destinations. This means if the name
 	 * provided via 'bindingName' does not have a corresponding binding such name will be
 	 * treated as dynamic destination.
 	 *
@@ -129,59 +128,26 @@ public final class StreamBridge implements SmartInitializingSingleton {
 	 * @param outputContentType content type to be used to deal with output type conversion
 	 * @return true if data was sent successfully, otherwise false or throws an exception.
 	 */
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({ "unchecked", "unused" })
 	public boolean send(String bindingName, Object data, MimeType outputContentType) {
-		if (!this.outputChannelsOnly.containsKey(bindingName)) {
-			logger.info("Binding name '" + bindingName + "' does not exist. This means that value '"
-					+ bindingName + "' will be treated as dynamic destination. If this is not your intention please "
-							+ "provide 'spring.cloud.stream.source' property");
-			this.outputChannelsOnly.put(bindingName, dynamicDestinationResolver.resolveDestination(bindingName));
+		SubscribableChannel messageChannel = this.channelCache.get(bindingName);
+		if (messageChannel == null) {
 			FunctionRegistration<Function<Object, Object>> fr = new FunctionRegistration<>(v -> v, bindingName);
 			this.functionRegistry.register(fr.type(FunctionType.from(Object.class).to(Object.class).message()));
-		}
-
-		FunctionInvocationWrapper functionWrapper = this.functionCatalog.lookup(bindingName, outputContentType.toString());
-
-		BindingProperties bindingProperties = this.bindingServiceProperties.getBindings().get(bindingName);
-		ProducerProperties producerProperties = bindingProperties.getProducer();
-		Function<Object, Object> functionToInvoke = functionWrapper;
-		if (producerProperties != null && producerProperties.isPartitioned()) {
-			functionToInvoke = new PartitionAwareFunctionWrapper(functionWrapper, this.applicationContext, producerProperties);
-		}
-
-		Message<byte[]> resultMessage = (Message<byte[]>) functionToInvoke.apply(data);
-		this.outputChannelsOnly.get(bindingName).send(resultMessage);
-		return true;
-	}
-
-	private Map<String, SubscribableChannel> channelCache = new LinkedHashMap<String, SubscribableChannel>() {
-		private static final int MAX_ENTRIES = 2;
-
-		@Override
-		protected boolean removeEldestEntry(Map.Entry<String, SubscribableChannel> eldest) {
-			boolean remove = size() > MAX_ENTRIES;
-			if (remove) {
-				System.err.println("==> REMOVING ENTRY: " + eldest);
-			}
-			return remove;
-		}
-	};
-
-	public boolean sendLight(String bindingName, Object data, MimeType outputContentType) {
-		SubscribableChannel messageChannel = null;
-		if (channelCache.containsKey(bindingName)) {
-			messageChannel = channelCache.get(bindingName);
-		}
-		else {
-			ProducerProperties producerProperties = this.bindingServiceProperties.getProducerProperties(bindingName);
-			producerProperties.setRequiredGroups(bindingName);
 			messageChannel = new DirectWithAttributesChannel();
 			Binding<SubscribableChannel> binding = this.bindingService.bindProducer(messageChannel, bindingName, false);
-//			binding.start(); // looks like this method is never called anyway.
-			channelCache.put(bindingName, messageChannel);
+			this.channelCache.put(bindingName, messageChannel);
 		}
 
-		return messageChannel.send(new GenericMessage<>(data));
+		ProducerProperties producerProperties = this.bindingServiceProperties.getProducerProperties(bindingName);
+		//producerProperties.setRequiredGroups(bindingName);
+		Function<Object, Object> functionToInvoke = this.functionCatalog.lookup(bindingName, outputContentType.toString());
+		if (producerProperties != null && producerProperties.isPartitioned()) {
+			functionToInvoke = new PartitionAwareFunctionWrapper((FunctionInvocationWrapper) functionToInvoke, this.applicationContext, producerProperties);
+		}
+		// this function is a pass through and is only required to force output conversion if necessary on SCF side.
+		Message<byte[]> resultMessage = (Message<byte[]>) functionToInvoke.apply(data);
+		return messageChannel.send(resultMessage);
 	}
 
 	@Override
@@ -192,7 +158,7 @@ public final class StreamBridge implements SmartInitializingSingleton {
 		Map<String, DirectWithAttributesChannel> channels = applicationContext.getBeansOfType(DirectWithAttributesChannel.class);
 		for (Entry<String, DirectWithAttributesChannel> channelEntry : channels.entrySet()) {
 			if (channelEntry.getValue().getAttribute("type").equals("output")) {
-				outputChannelsOnly.put(channelEntry.getKey(), channelEntry.getValue());
+				this.channelCache.put(channelEntry.getKey(), channelEntry.getValue());
 				// we're registering a dummy pass-through function to ensure that it goes through the
 				// same process (type conversion, etc) as other function invocation.
 				FunctionRegistration<Function<Object, Object>> fr = new FunctionRegistration<>(v -> v, channelEntry.getKey());
