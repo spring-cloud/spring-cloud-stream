@@ -125,6 +125,13 @@ public class BindingServiceProperties
 	private String[] dynamicDestinations = new String[0];
 
 	/**
+	 * The maximum size of Least Recently Used (LRU) cache of dynamic destinations. Once
+	 * this size is reached, new destinations will trigger the removal of old destinations.
+	 * Default: 10
+	 */
+	private int dynamicDestinationCacheSize = 10;
+
+	/**
 	 * Retry interval (in seconds) used to schedule binding attempts. Default: 30 sec.
 	 */
 	private int bindingRetryInterval = DEFAULT_BINDING_RETRY_INTERVAL;
@@ -308,6 +315,14 @@ public class BindingServiceProperties
 		if (this.bindings.containsKey(bindingName)) {
 			this.bindings.get(bindingName).setProducer(producerProperties);
 		}
+	}
+
+	public int getDynamicDestinationCacheSize() {
+		return dynamicDestinationCacheSize;
+	}
+
+	public void setDynamicDestinationCacheSize(int dynamicDestinationCacheSize) {
+		this.dynamicDestinationCacheSize = dynamicDestinationCacheSize;
 	}
 
 	/*
