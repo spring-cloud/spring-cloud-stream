@@ -131,7 +131,9 @@ public final class StreamBridge implements SmartInitializingSingleton {
 	@SuppressWarnings({ "unchecked", "unused" })
 	public boolean send(String bindingName, Object data, MimeType outputContentType) {
 		SubscribableChannel messageChannel = this.channelCache.get(bindingName);
+		ProducerProperties producerProperties = this.bindingServiceProperties.getProducerProperties(bindingName);
 		if (messageChannel == null) {
+			producerProperties.setRequiredGroups(bindingName);
 			FunctionRegistration<Function<Object, Object>> fr = new FunctionRegistration<>(v -> v, bindingName);
 			this.functionRegistry.register(fr.type(FunctionType.from(Object.class).to(Object.class).message()));
 			messageChannel = new DirectWithAttributesChannel();
@@ -139,8 +141,6 @@ public final class StreamBridge implements SmartInitializingSingleton {
 			this.channelCache.put(bindingName, messageChannel);
 		}
 
-		ProducerProperties producerProperties = this.bindingServiceProperties.getProducerProperties(bindingName);
-		//producerProperties.setRequiredGroups(bindingName);
 		Function<Object, Object> functionToInvoke = this.functionCatalog.lookup(bindingName, outputContentType.toString());
 		if (producerProperties != null && producerProperties.isPartitioned()) {
 			functionToInvoke = new PartitionAwareFunctionWrapper((FunctionInvocationWrapper) functionToInvoke, this.applicationContext, producerProperties);
