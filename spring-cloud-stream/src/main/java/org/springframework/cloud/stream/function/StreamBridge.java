@@ -31,7 +31,6 @@ import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionRegistry;
 import org.springframework.cloud.function.context.FunctionType;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
-import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.cloud.stream.binding.BindingService;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
@@ -39,6 +38,7 @@ import org.springframework.cloud.stream.messaging.DirectWithAttributesChannel;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.SubscribableChannel;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.MimeType;
 import org.springframework.util.MimeTypeUtils;
 
@@ -60,7 +60,9 @@ import org.springframework.util.MimeTypeUtils;
  */
 public final class StreamBridge implements SmartInitializingSingleton {
 
-	protected final Log logger = LogFactory.getLog(getClass());
+	private static String STREAM_BRIDGE_FUNC_NAME = "streamBridge";
+
+	private final Log logger = LogFactory.getLog(getClass());
 
 	private final Map<String, SubscribableChannel> channelCache;
 
@@ -73,6 +75,7 @@ public final class StreamBridge implements SmartInitializingSingleton {
 	private ConfigurableApplicationContext applicationContext;
 
 	private boolean initialized;
+
 
 	@Autowired
 	private BindingService bindingService;
@@ -128,20 +131,12 @@ public final class StreamBridge implements SmartInitializingSingleton {
 	 * @param outputContentType content type to be used to deal with output type conversion
 	 * @return true if data was sent successfully, otherwise false or throws an exception.
 	 */
-	@SuppressWarnings({ "unchecked", "unused" })
+	@SuppressWarnings("unchecked")
 	public boolean send(String bindingName, Object data, MimeType outputContentType) {
-		SubscribableChannel messageChannel = this.channelCache.get(bindingName);
 		ProducerProperties producerProperties = this.bindingServiceProperties.getProducerProperties(bindingName);
-		if (messageChannel == null) {
-			producerProperties.setRequiredGroups(bindingName);
-			FunctionRegistration<Function<Object, Object>> fr = new FunctionRegistration<>(v -> v, bindingName);
-			this.functionRegistry.register(fr.type(FunctionType.from(Object.class).to(Object.class).message()));
-			messageChannel = new DirectWithAttributesChannel();
-			Binding<SubscribableChannel> binding = this.bindingService.bindProducer(messageChannel, bindingName, false);
-			this.channelCache.put(bindingName, messageChannel);
-		}
+		SubscribableChannel messageChannel = this.resolveDestination(bindingName, producerProperties);
 
-		Function<Object, Object> functionToInvoke = this.functionCatalog.lookup(bindingName, outputContentType.toString());
+		Function<Object, Object> functionToInvoke = this.functionCatalog.lookup(STREAM_BRIDGE_FUNC_NAME, outputContentType.toString());
 		if (producerProperties != null && producerProperties.isPartitioned()) {
 			functionToInvoke = new PartitionAwareFunctionWrapper((FunctionInvocationWrapper) functionToInvoke, this.applicationContext, producerProperties);
 		}
@@ -156,15 +151,26 @@ public final class StreamBridge implements SmartInitializingSingleton {
 			return;
 		}
 		Map<String, DirectWithAttributesChannel> channels = applicationContext.getBeansOfType(DirectWithAttributesChannel.class);
+		if (!CollectionUtils.isEmpty(channels)) { // single for all channel pass-through function to facilitate output conversion to byte[]
+			FunctionRegistration<Function<Object, Object>> fr = new FunctionRegistration<>(v -> v, STREAM_BRIDGE_FUNC_NAME);
+			this.functionRegistry.register(fr.type(FunctionType.from(Object.class).to(Object.class).message()));
+		}
 		for (Entry<String, DirectWithAttributesChannel> channelEntry : channels.entrySet()) {
 			if (channelEntry.getValue().getAttribute("type").equals("output")) {
 				this.channelCache.put(channelEntry.getKey(), channelEntry.getValue());
-				// we're registering a dummy pass-through function to ensure that it goes through the
-				// same process (type conversion, etc) as other function invocation.
-				FunctionRegistration<Function<Object, Object>> fr = new FunctionRegistration<>(v -> v, channelEntry.getKey());
-				this.functionRegistry.register(fr.type(FunctionType.from(Object.class).to(Object.class).message()));
-				this.initialized = true;
 			}
 		}
+		this.initialized = true;
+	}
+
+	SubscribableChannel resolveDestination(String destinationName, ProducerProperties producerProperties) {
+		SubscribableChannel messageChannel = this.channelCache.get(destinationName);
+		if (messageChannel == null) {
+			producerProperties.setRequiredGroups(destinationName);
+			messageChannel = new DirectWithAttributesChannel();
+			this.bindingService.bindProducer(messageChannel, destinationName, false);
+			this.channelCache.put(destinationName, messageChannel);
+		}
+		return messageChannel;
 	}
 }

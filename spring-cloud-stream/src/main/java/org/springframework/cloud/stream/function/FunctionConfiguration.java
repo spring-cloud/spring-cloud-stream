@@ -64,7 +64,6 @@ import org.springframework.cloud.stream.binder.BindingCreatedEvent;
 import org.springframework.cloud.stream.binder.ConsumerProperties;
 import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.cloud.stream.binding.BindableProxyFactory;
-import org.springframework.cloud.stream.binding.BinderAwareChannelResolver;
 import org.springframework.cloud.stream.config.BinderFactoryAutoConfiguration;
 import org.springframework.cloud.stream.config.BindingBeansRegistrar;
 import org.springframework.cloud.stream.config.BindingProperties;
@@ -109,7 +108,6 @@ import org.springframework.util.StringUtils;
  * @author Ilayaperumal Gopinathan
  * @since 2.1
  */
-@SuppressWarnings("deprecation")
 @Configuration
 @EnableConfigurationProperties(StreamFunctionProperties.class)
 @Import({ BindingBeansRegistrar.class, BinderFactoryAutoConfiguration.class })
@@ -121,7 +119,6 @@ public class FunctionConfiguration {
 	private final static String SOURCE_PROPERY = "spring.cloud.stream.source";
 
 	@Bean
-//	@ConditionalOnProperty(SOURCE_PROPERY)
 	public StreamBridge streamBridgeUtils(FunctionCatalog functionCatalog, FunctionRegistry functionRegistry,
 			BindingServiceProperties bindingServiceProperties, ConfigurableApplicationContext applicationContext) {
 		return new StreamBridge(functionCatalog, functionRegistry, bindingServiceProperties, applicationContext);
@@ -137,14 +134,14 @@ public class FunctionConfiguration {
 	public InitializingBean functionInitializer(FunctionCatalog functionCatalog, FunctionInspector functionInspector,
 			StreamFunctionProperties functionProperties, @Nullable BindableProxyFactory[] bindableProxyFactories,
 			BindingServiceProperties serviceProperties, ConfigurableApplicationContext applicationContext,
-			FunctionBindingRegistrar bindingHolder, BinderAwareChannelResolver dynamicDestinationResolver) {
+			FunctionBindingRegistrar bindingHolder, StreamBridge streamBridge) {
 
 		boolean shouldCreateInitializer = applicationContext.containsBean("output")
 				|| ObjectUtils.isEmpty(applicationContext.getBeanNamesForAnnotation(EnableBinding.class));
 
 		return shouldCreateInitializer
 				? new FunctionToDestinationBinder(functionCatalog, functionProperties,
-						serviceProperties, dynamicDestinationResolver)
+						serviceProperties, streamBridge)
 						: null;
 	}
 
@@ -154,7 +151,7 @@ public class FunctionConfiguration {
 	@Bean
 	InitializingBean supplierInitializer(FunctionCatalog functionCatalog, StreamFunctionProperties functionProperties,
 			GenericApplicationContext context, BindingServiceProperties serviceProperties,
-			@Nullable BindableFunctionProxyFactory[] proxyFactories, BinderAwareChannelResolver dynamicDestinationResolver,
+			@Nullable BindableFunctionProxyFactory[] proxyFactories, StreamBridge streamBridge,
 			TaskScheduler taskScheduler) {
 
 		if (!ObjectUtils.isEmpty(context.getBeanNamesForAnnotation(EnableBinding.class)) || proxyFactories == null) {
@@ -193,7 +190,8 @@ public class FunctionConfiguration {
 									.route(Message.class, message -> {
 										if (message.getHeaders().get("spring.cloud.stream.sendto.destination") != null) {
 											String destinationName = (String) message.getHeaders().get("spring.cloud.stream.sendto.destination");
-											return dynamicDestinationResolver.resolveDestination(destinationName);
+											return streamBridge.resolveDestination(destinationName, producerProperties);
+											//return dynamicDestinationResolver.resolveDestination(destinationName);
 										}
 										return outputName;
 									}).get();
@@ -305,14 +303,14 @@ public class FunctionConfiguration {
 
 		private final BindingServiceProperties serviceProperties;
 
-		private final BinderAwareChannelResolver dynamicDestinationResolver;
+		private final StreamBridge streamBridge;
 
 		FunctionToDestinationBinder(FunctionCatalog functionCatalog, StreamFunctionProperties functionProperties,
-				BindingServiceProperties serviceProperties, BinderAwareChannelResolver dynamicDestinationResolver) {
+				BindingServiceProperties serviceProperties, StreamBridge streamBridge) {
 			this.functionCatalog = functionCatalog;
 			this.functionProperties = functionProperties;
 			this.serviceProperties = serviceProperties;
-			this.dynamicDestinationResolver = dynamicDestinationResolver;
+			this.streamBridge = streamBridge;
 		}
 
 		@Override
@@ -441,7 +439,7 @@ public class FunctionConfiguration {
 				protected void sendOutputs(Object result, Message<?> requestMessage) {
 					if (result instanceof Message && ((Message<?>) result).getHeaders().get("spring.cloud.stream.sendto.destination") != null) {
 						String destinationName = (String) ((Message<?>) result).getHeaders().get("spring.cloud.stream.sendto.destination");
-						MessageChannel outputChannel = dynamicDestinationResolver.resolveDestination(destinationName);
+						SubscribableChannel outputChannel = streamBridge.resolveDestination(destinationName, producerProperties);
 						if (logger.isInfoEnabled()) {
 							logger.info("Output message is sent to '" + destinationName + "' destination");
 						}
