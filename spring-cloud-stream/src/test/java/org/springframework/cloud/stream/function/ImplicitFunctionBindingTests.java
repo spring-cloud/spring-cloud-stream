@@ -357,7 +357,7 @@ public class ImplicitFunctionBindingTests {
 				TestChannelBinderConfiguration.getCompleteConfiguration(LegacyConfiguration.class))
 						.web(WebApplicationType.NONE).run("--spring.jmx.enabled=false")) {
 
-			assertThat(context.getBean("supplierInitializer")).isEqualTo(null);
+			assertThat(context.getBean("supplierInitializer").getClass().getSimpleName()).isEqualTo("NullBean");
 		}
 	}
 
