@@ -38,7 +38,6 @@ import org.springframework.cloud.stream.messaging.DirectWithAttributesChannel;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.SubscribableChannel;
-import org.springframework.util.CollectionUtils;
 import org.springframework.util.MimeType;
 import org.springframework.util.MimeTypeUtils;
 
@@ -150,11 +149,9 @@ public final class StreamBridge implements SmartInitializingSingleton {
 		if (this.initialized) {
 			return;
 		}
+		FunctionRegistration<Function<Object, Object>> fr = new FunctionRegistration<>(v -> v, STREAM_BRIDGE_FUNC_NAME);
+		this.functionRegistry.register(fr.type(FunctionType.from(Object.class).to(Object.class).message()));
 		Map<String, DirectWithAttributesChannel> channels = applicationContext.getBeansOfType(DirectWithAttributesChannel.class);
-		if (!CollectionUtils.isEmpty(channels)) { // single for all channel pass-through function to facilitate output conversion to byte[]
-			FunctionRegistration<Function<Object, Object>> fr = new FunctionRegistration<>(v -> v, STREAM_BRIDGE_FUNC_NAME);
-			this.functionRegistry.register(fr.type(FunctionType.from(Object.class).to(Object.class).message()));
-		}
 		for (Entry<String, DirectWithAttributesChannel> channelEntry : channels.entrySet()) {
 			if (channelEntry.getValue().getAttribute("type").equals("output")) {
 				this.channelCache.put(channelEntry.getKey(), channelEntry.getValue());
