@@ -924,7 +924,6 @@ public void testSingleInputMultiOutput() {
 			TestChannelBinderConfiguration.getCompleteConfiguration(
 					SampleApplication.class))
 							.run("--spring.cloud.function.definition=scatter")) {
-		context.getBean(InputDestination.class);
 
 		InputDestination inputDestination = context.getBean(InputDestination.class);
 		OutputDestination outputDestination = context.getBean(OutputDestination.class);
@@ -984,7 +983,6 @@ public void testMultipleFunctions() {
 			TestChannelBinderConfiguration.getCompleteConfiguration(
 					ReactiveFunctionConfiguration.class))
 							.run("--spring.cloud.function.definition=uppercase;reverse")) {
-		context.getBean(InputDestination.class);
 
 		InputDestination inputDestination = context.getBean(InputDestination.class);
 		OutputDestination outputDestination = context.getBean(OutputDestination.class);
@@ -2932,7 +2930,6 @@ public void testMultipleFunctions() {
 			TestChannelBinderConfiguration.getCompleteConfiguration(
 					SampleFunctionConfiguration.class))
 							.run("--spring.cloud.function.definition=uppercase;reverse")) {
-		context.getBean(InputDestination.class);
 
 		InputDestination inputDestination = context.getBean(InputDestination.class);
 		OutputDestination outputDestination = context.getBean(OutputDestination.class);
@@ -2964,7 +2961,6 @@ public void testMultipleFunctions() {
 							"--spring.cloud.stream.bindings.uppercase-in-0.destination=myInput",
 							"--spring.cloud.stream.bindings.uppercase-out-0.destination=myOutput",
 							)) {
-		context.getBean(InputDestination.class);
 
 		InputDestination inputDestination = context.getBean(InputDestination.class);
 		OutputDestination outputDestination = context.getBean(OutputDestination.class);
