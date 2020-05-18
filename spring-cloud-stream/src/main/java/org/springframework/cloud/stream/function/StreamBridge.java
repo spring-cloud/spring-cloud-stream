@@ -163,7 +163,6 @@ public final class StreamBridge implements SmartInitializingSingleton {
 	SubscribableChannel resolveDestination(String destinationName, ProducerProperties producerProperties) {
 		SubscribableChannel messageChannel = this.channelCache.get(destinationName);
 		if (messageChannel == null) {
-			producerProperties.setRequiredGroups(destinationName);
 			messageChannel = new DirectWithAttributesChannel();
 			this.bindingService.bindProducer(messageChannel, destinationName, false);
 			this.channelCache.put(destinationName, messageChannel);
