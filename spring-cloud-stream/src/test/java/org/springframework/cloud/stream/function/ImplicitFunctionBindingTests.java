@@ -357,7 +357,7 @@ public class ImplicitFunctionBindingTests {
 				TestChannelBinderConfiguration.getCompleteConfiguration(LegacyConfiguration.class))
 						.web(WebApplicationType.NONE).run("--spring.jmx.enabled=false")) {
 
-			assertThat(context.getBean("supplierInitializer")).isEqualTo(null);
+			assertThat(context.getBean("supplierInitializer").getClass().getSimpleName()).isEqualTo("NullBean");
 		}
 	}
 
@@ -842,10 +842,9 @@ public class ImplicitFunctionBindingTests {
 	@EnableAutoConfiguration
 	public static class FunctionSampleSpringIntegrationConfiguration {
 
-		@SuppressWarnings("deprecation")
 		@Bean
 		public IntegrationFlow uppercaseFlow() {
-			return IntegrationFlows.from(MessageFunction.class, "uppercase")
+			return IntegrationFlows.from(MessageFunction.class, gateway -> gateway.beanName("uppercase"))
 					.<String, String>transform(String::toUpperCase).logAndReply(LoggingHandler.Level.WARN);
 		}
 

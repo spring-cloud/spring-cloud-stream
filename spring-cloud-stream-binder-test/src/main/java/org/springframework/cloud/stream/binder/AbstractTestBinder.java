@@ -19,10 +19,7 @@ package org.springframework.cloud.stream.binder;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.springframework.integration.channel.AbstractSubscribableChannel;
 import org.springframework.messaging.MessageChannel;
-import org.springframework.util.Assert;
-import org.springframework.util.CollectionUtils;
 
 /**
  * Abstract class that adds test support for {@link Binder}.
@@ -86,15 +83,15 @@ public abstract class AbstractTestBinder<C extends AbstractBinder<MessageChannel
 	 * org.springframework.cloud.stream.binding.MessageConverterConfigurer
 	 */
 	private void checkChannelIsConfigured(MessageChannel messageChannel, CP properties) {
-		if (messageChannel instanceof AbstractSubscribableChannel
-				&& !properties.isUseNativeDecoding()) {
-			Assert.isTrue(
-					!CollectionUtils
-							.isEmpty(((AbstractSubscribableChannel) messageChannel)
-									.getChannelInterceptors()),
-					"'messageChannel' appears to be misconfigured. "
-							+ "Consider creating channel via AbstractBinderTest.createBindableChannel(..)");
-		}
+//		if (messageChannel instanceof AbstractSubscribableChannel
+//				&& !properties.isUseNativeDecoding()) {
+//			Assert.isTrue(
+//					!CollectionUtils
+//							.isEmpty(((AbstractSubscribableChannel) messageChannel)
+//									.getChannelInterceptors()),
+//					"'messageChannel' appears to be misconfigured. "
+//							+ "Consider creating channel via AbstractBinderTest.createBindableChannel(..)");
+//		}
 	}
 
 }
