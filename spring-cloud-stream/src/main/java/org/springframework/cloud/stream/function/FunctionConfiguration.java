@@ -523,7 +523,7 @@ public class FunctionConfiguration {
 	 * not attempt any conversion and sends a raw Message.
 	 */
 	@SuppressWarnings("rawtypes")
-	private static class FunctionWrapper implements Function<Message<byte[]>, Object> {
+	private static class FunctionWrapper implements Function<Message, Object> {
 		private final Function function;
 
 		private final ConsumerProperties consumerProperties;
@@ -551,7 +551,7 @@ public class FunctionConfiguration {
 
 		@SuppressWarnings("unchecked")
 		@Override
-		public Object apply(Message<byte[]> message) {
+		public Object apply(Message message) {
 			if (message != null && consumerProperties != null) {
 				Map<String, Object> headersMap = (Map<String, Object>) ReflectionUtils
 						.getField(this.headersField, message.getHeaders());

@@ -23,6 +23,7 @@ import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.converter.AbstractMessageConverter;
+import org.springframework.util.Assert;
 import org.springframework.util.MimeType;
 
 /**
@@ -69,8 +70,8 @@ public class ObjectStringMessageConverter extends AbstractMessageConverter {
 	}
 
 	@Override
-	protected Object convertFromInternal(Message<?> message, Class<?> targetClass,
-			Object conversionHint) {
+	protected Object convertFromInternal(Message<?> message, Class<?> targetClass, Object conversionHint) {
+		Assert.isTrue(String.class.isAssignableFrom(targetClass) || targetClass == Object.class, "This converter can only convert byte[] to String");
 		if (message.getPayload() != null) {
 			if (message.getPayload() instanceof byte[]) {
 				if (byte[].class.isAssignableFrom(targetClass)) {
