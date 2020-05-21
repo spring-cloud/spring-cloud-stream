@@ -84,7 +84,7 @@ public class MultipleFunctionsInSameAppTests {
 		try (ConfigurableApplicationContext context = app.run(
 				"--server.port=0",
 				"--spring.jmx.enabled=false",
-				"--spring.cloud.stream.function.definition=process;analyze",
+				"--spring.cloud.stream.function.definition=process;analyze;anotherProcess",
 				"--spring.cloud.stream.bindings.process-in-0.destination=purchases",
 				"--spring.cloud.stream.bindings.process-out-0.destination=coffee",
 				"--spring.cloud.stream.bindings.process-out-1.destination=electronics",
@@ -95,8 +95,10 @@ public class MultipleFunctionsInSameAppTests {
 				"--spring.cloud.stream.kafka.streams.binder.configuration.commit.interval.ms=1000",
 				"--spring.cloud.stream.bindings.process-in-0.consumer.concurrency=2",
 				"--spring.cloud.stream.bindings.analyze-in-0.consumer.concurrency=1",
+				"--spring.cloud.stream.kafka.streams.binder.configuration.num.stream.threads=3",
 				"--spring.cloud.stream.kafka.streams.binder.functions.process.configuration.client.id=process-client",
 				"--spring.cloud.stream.kafka.streams.binder.functions.analyze.configuration.client.id=analyze-client",
+				"--spring.cloud.stream.kafka.streams.binder.functions.anotherProcess.configuration.client.id=anotherProcess-client",
 				"--spring.cloud.stream.kafka.streams.binder.brokers=" + embeddedKafka.getBrokersAsString())) {
 			receiveAndValidate("purchases", "coffee", "electronics");
 
@@ -106,23 +108,27 @@ public class MultipleFunctionsInSameAppTests {
 			StreamsBuilderFactoryBean analyzeStreamsBuilderFactoryBean = context
 					.getBean("&stream-builder-analyze", StreamsBuilderFactoryBean.class);
 
+			StreamsBuilderFactoryBean anotherProcessStreamsBuilderFactoryBean = context
+					.getBean("&stream-builder-anotherProcess", StreamsBuilderFactoryBean.class);
+
 			final Properties processStreamsConfiguration = processStreamsBuilderFactoryBean.getStreamsConfiguration();
 			final Properties analyzeStreamsConfiguration = analyzeStreamsBuilderFactoryBean.getStreamsConfiguration();
+			final Properties anotherProcessStreamsConfiguration = anotherProcessStreamsBuilderFactoryBean.getStreamsConfiguration();
 
 			assertThat(processStreamsConfiguration.getProperty("client.id")).isEqualTo("process-client");
 			assertThat(analyzeStreamsConfiguration.getProperty("client.id")).isEqualTo("analyze-client");
 
-			Integer concurrency = (Integer) processStreamsBuilderFactoryBean.getStreamsConfiguration()
-					.get(StreamsConfig.NUM_STREAM_THREADS_CONFIG);
+			Integer concurrency = (Integer) processStreamsConfiguration.get(StreamsConfig.NUM_STREAM_THREADS_CONFIG);
 			assertThat(concurrency).isEqualTo(2);
-			concurrency = (Integer) analyzeStreamsBuilderFactoryBean.getStreamsConfiguration()
-					.get(StreamsConfig.NUM_STREAM_THREADS_CONFIG);
+			concurrency = (Integer) analyzeStreamsConfiguration.get(StreamsConfig.NUM_STREAM_THREADS_CONFIG);
 			assertThat(concurrency).isEqualTo(1);
+			concurrency = (Integer) anotherProcessStreamsConfiguration.get(StreamsConfig.NUM_STREAM_THREADS_CONFIG);
+			assertThat(concurrency).isEqualTo(3);
 		}
 	}
 
 	@Test
-	public void testMultiFunctionsInSameAppWithMultiBinders() throws InterruptedException {
+	public void testMultiFunctionsInSameAppWithMultiBinders() throws Exception {
 		SpringApplication app = new SpringApplication(MultipleFunctionsInSameApp.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 
@@ -141,6 +147,7 @@ public class MultipleFunctionsInSameAppTests {
 				"--spring.cloud.stream.bindings.analyze-in-0.binder=kafka2",
 				"--spring.cloud.stream.bindings.analyze-in-1.destination=electronics",
 				"--spring.cloud.stream.bindings.analyze-in-1.binder=kafka2",
+				"--spring.cloud.stream.bindings.analyze-in-0.consumer.concurrency=2",
 				"--spring.cloud.stream.binders.kafka1.type=kstream",
 				"--spring.cloud.stream.binders.kafka1.environment.spring.cloud.stream.kafka.streams.binder.brokers=" + embeddedKafka.getBrokersAsString(),
 				"--spring.cloud.stream.binders.kafka1.environment.spring.cloud.stream.kafka.streams.binder.applicationId=my-app-1",
@@ -166,6 +173,12 @@ public class MultipleFunctionsInSameAppTests {
 			assertThat(analyzeStreamsConfiguration.getProperty("application.id")).isEqualTo("my-app-2");
 			assertThat(processStreamsConfiguration.getProperty("client.id")).isEqualTo("process-client");
 			assertThat(analyzeStreamsConfiguration.getProperty("client.id")).isEqualTo("analyze-client");
+
+			Integer concurrency = (Integer) analyzeStreamsConfiguration.get(StreamsConfig.NUM_STREAM_THREADS_CONFIG);
+			assertThat(concurrency).isEqualTo(2);
+
+			concurrency = (Integer) processStreamsConfiguration.get(StreamsConfig.NUM_STREAM_THREADS_CONFIG);
+			assertThat(concurrency).isNull(); //thus default to 1 by Kafka Streams.
 		}
 	}
 
@@ -205,6 +218,13 @@ public class MultipleFunctionsInSameAppTests {
 			return (coffee, electronics) -> {
 				coffee.foreach((s, p) -> countDownLatch.countDown());
 				electronics.foreach((s, p) -> countDownLatch.countDown());
+			};
+		}
+
+		@Bean
+		public java.util.function.Consumer<KStream<String, String>> anotherProcess() {
+			return c -> {
+
 			};
 		}
 	}

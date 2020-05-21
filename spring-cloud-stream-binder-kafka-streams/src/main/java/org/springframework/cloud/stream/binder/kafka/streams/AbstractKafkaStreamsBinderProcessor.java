@@ -45,6 +45,12 @@ import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
+import org.springframework.boot.context.properties.bind.BindContext;
+import org.springframework.boot.context.properties.bind.BindHandler;
+import org.springframework.boot.context.properties.bind.Bindable;
+import org.springframework.boot.context.properties.bind.PropertySourcesPlaceholdersResolver;
+import org.springframework.boot.context.properties.source.ConfigurationPropertyName;
+import org.springframework.boot.context.properties.source.ConfigurationPropertySources;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaConsumerProperties;
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsBinderConfigurationProperties;
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsConsumerProperties;
@@ -57,6 +63,7 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.ResolvableType;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.MutablePropertySources;
+import org.springframework.integration.support.utils.IntegrationUtils;
 import org.springframework.kafka.config.KafkaStreamsConfiguration;
 import org.springframework.kafka.config.StreamsBuilderFactoryBean;
 import org.springframework.kafka.config.StreamsBuilderFactoryBeanCustomizer;
@@ -88,6 +95,8 @@ public abstract class AbstractKafkaStreamsBinderProcessor implements Application
 	private final KeyValueSerdeResolver keyValueSerdeResolver;
 
 	protected ConfigurableApplicationContext applicationContext;
+
+	private Object concurrencyAtTheGlobal;
 
 	public AbstractKafkaStreamsBinderProcessor(BindingServiceProperties bindingServiceProperties,
 			KafkaStreamsBindingInformationCatalogue kafkaStreamsBindingInformationCatalogue,
@@ -172,19 +181,24 @@ public abstract class AbstractKafkaStreamsBinderProcessor implements Application
 
 		Map<String, Object> streamConfigGlobalProperties = applicationContext
 				.getBean("streamConfigGlobalProperties", Map.class);
+		if (this.concurrencyAtTheGlobal == null) {
+			this.concurrencyAtTheGlobal = streamConfigGlobalProperties.get(StreamsConfig.NUM_STREAM_THREADS_CONFIG);
+		}
 
 		if (kafkaStreamsBinderConfigurationProperties != null) {
 			final Map<String, KafkaStreamsBinderConfigurationProperties.Functions> functionConfigMap = kafkaStreamsBinderConfigurationProperties.getFunctions();
 			if (!CollectionUtils.isEmpty(functionConfigMap)) {
 				final KafkaStreamsBinderConfigurationProperties.Functions functionConfig = functionConfigMap.get(beanNamePostPrefix);
-				final Map<String, String> functionSpecificConfig = functionConfig.getConfiguration();
-				if (!CollectionUtils.isEmpty(functionSpecificConfig)) {
-					streamConfigGlobalProperties.putAll(functionSpecificConfig);
-				}
+				if (functionConfig != null) {
+					final Map<String, String> functionSpecificConfig = functionConfig.getConfiguration();
+					if (!CollectionUtils.isEmpty(functionSpecificConfig)) {
+						streamConfigGlobalProperties.putAll(functionSpecificConfig);
+					}
 
-				String applicationId = functionConfig.getApplicationId();
-				if (!StringUtils.isEmpty(applicationId)) {
-					streamConfigGlobalProperties.put(StreamsConfig.APPLICATION_ID_CONFIG, applicationId);
+					String applicationId = functionConfig.getApplicationId();
+					if (!StringUtils.isEmpty(applicationId)) {
+						streamConfigGlobalProperties.put(StreamsConfig.APPLICATION_ID_CONFIG, applicationId);
+					}
 				}
 			}
 		}
@@ -198,9 +212,8 @@ public abstract class AbstractKafkaStreamsBinderProcessor implements Application
 			if (StringUtils.isEmpty(connectionString)) {
 				connectionString = (String) propertySources.get(bindingProperties.getBinder() + "-kafkaStreamsBinderEnv").getProperty("spring.cloud.stream.kafka.binder.brokers");
 			}
-			else {
-				streamConfigGlobalProperties.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, connectionString);
-			}
+
+			streamConfigGlobalProperties.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, connectionString);
 
 			String binderProvidedApplicationId = multiBinderKafkaStreamsBinderConfigurationProperties.getApplicationId();
 			if (StringUtils.hasText(binderProvidedApplicationId)) {
@@ -234,7 +247,6 @@ public abstract class AbstractKafkaStreamsBinderProcessor implements Application
 			}
 		}
 
-
 		//this is only used primarily for StreamListener based processors. Although in theory, functions can use it,
 		//it is ideal for functions to use the approach used in the above if statement by using a property like
 		//spring.cloud.stream.kafka.streams.binder.functions.process.configuration.num.threads (assuming that process is the function name).
@@ -267,18 +279,7 @@ public abstract class AbstractKafkaStreamsBinderProcessor implements Application
 					return generatedApplicationID;
 				});
 
-		int concurrency = this.bindingServiceProperties.getConsumerProperties(inboundName)
-				.getConcurrency();
-		// override concurrency if set at the individual binding level.
-		// Concurrency will be mapped to num.stream.threads. Since this is going into a global config,
-		// we are explicitly assigning concurrency left at default of 1 to num.stream.threads. Otherwise,
-		// a potential previous value might still be used in the case of multiple processors or a processor
-		// with multiple input bindings with various concurrency values.
-		// See this GH issue: https://github.com/spring-cloud/spring-cloud-stream-binder-kafka/issues/844
-		if (concurrency >= 1) {
-			streamConfigGlobalProperties.put(StreamsConfig.NUM_STREAM_THREADS_CONFIG,
-					concurrency);
-		}
+		handleConcurrency(applicationContext, inboundName, streamConfigGlobalProperties);
 
 		// Override deserialization exception handlers per binding
 		final DeserializationExceptionHandler deserializationExceptionHandler =
@@ -320,6 +321,15 @@ public abstract class AbstractKafkaStreamsBinderProcessor implements Application
 		extendedConsumerProperties.setApplicationId((String) streamConfigGlobalProperties.get(StreamsConfig.APPLICATION_ID_CONFIG));
 		//Removing the application ID from global properties so that the next function won't re-use it and cause race conditions.
 		streamConfigGlobalProperties.remove(StreamsConfig.APPLICATION_ID_CONFIG);
+		// If there was a global concurrency set at the binder, restore it for the next processor.
+		if (concurrencyAtTheGlobal != null) {
+			streamConfigGlobalProperties.put(StreamsConfig.NUM_STREAM_THREADS_CONFIG, this.concurrencyAtTheGlobal);
+		}
+		else {
+			//on the other hand, if the global concurrency was set only by the current processor (thus not really binder-wide), remove it.
+			//otherwise, in the case of multiple processors, binder assumes that there is a global setting present.
+			streamConfigGlobalProperties.remove(StreamsConfig.NUM_STREAM_THREADS_CONFIG);
+		}
 
 		final StreamsBuilderFactoryBean streamsBuilderFactoryBeanFromContext = applicationContext.getBean(
 				"&stream-builder-" + beanNamePostPrefix, StreamsBuilderFactoryBean.class);
@@ -329,6 +339,65 @@ public abstract class AbstractKafkaStreamsBinderProcessor implements Application
 			customizer.configure(streamsBuilderFactoryBean);
 		}
 		return streamsBuilderFactoryBeanFromContext;
+	}
+
+	private void handleConcurrency(ApplicationContext applicationContext, String inboundName,
+								Map<String, Object> streamConfigGlobalProperties) {
+		Object concurrencyAtTheGlobal = streamConfigGlobalProperties.get(StreamsConfig.NUM_STREAM_THREADS_CONFIG);
+		Integer concAtTheGlobal = null;
+		if (concurrencyAtTheGlobal instanceof String) {
+			concAtTheGlobal = Integer.valueOf((String) concurrencyAtTheGlobal);
+		}
+		else if (concurrencyAtTheGlobal instanceof Integer) {
+			concAtTheGlobal = (Integer) concurrencyAtTheGlobal;
+		}
+		// This rebinding is necessary to capture the concurrency explicitly set by the application.
+		// This is added to fix this issue: https://github.com/spring-cloud/spring-cloud-stream-binder-kafka/issues/899
+		org.springframework.boot.context.properties.bind.Binder explicitConcurrencyResolver =
+				new org.springframework.boot.context.properties.bind.Binder(ConfigurationPropertySources.get(applicationContext.getEnvironment()),
+						new PropertySourcesPlaceholdersResolver(applicationContext.getEnvironment()),
+						IntegrationUtils.getConversionService(this.applicationContext.getBeanFactory()), null);
+
+		boolean[] concurrencyExplicitlyProvided = new boolean[] {false};
+		BindHandler handler = new BindHandler() {
+
+			@Override
+			public Object onSuccess(ConfigurationPropertyName name, Bindable<?> target,
+									BindContext context, Object result) {
+				if (!concurrencyExplicitlyProvided[0]) {
+
+					concurrencyExplicitlyProvided[0] = name.getLastElement(ConfigurationPropertyName.Form.UNIFORM)
+							.equals("concurrency") &&
+					ConfigurationPropertyName.of("spring.cloud.stream.bindings." + inboundName + ".consumer").isAncestorOf(name);
+				}
+				return result;
+			}
+		};
+		//Re-bind spring.cloud.stream properties to check if the application explicitly provided concurrency.
+		try {
+			explicitConcurrencyResolver.bind("spring.cloud.stream",
+					Bindable.ofInstance(new BindingServiceProperties()), handler);
+		}
+		catch (Exception e) {
+			// Ignore this exception
+		}
+
+		int concurrency = this.bindingServiceProperties.getConsumerProperties(inboundName)
+				.getConcurrency();
+		// override concurrency if set at the individual binding level.
+		// Concurrency will be mapped to num.stream.threads. Since this is going into a global config,
+		// we are explicitly assigning concurrency left at default of 1 to num.stream.threads. Otherwise,
+		// a potential previous value might still be used in the case of multiple processors or a processor
+		// with multiple input bindings with various concurrency values.
+		// See this GH issue: https://github.com/spring-cloud/spring-cloud-stream-binder-kafka/issues/844
+		// if neither of the below conditions are met, num.stream.threads will default to 1 by Kafka Streams.
+		if (concurrency >= 1 && concurrencyExplicitlyProvided[0]) {
+			streamConfigGlobalProperties.put(StreamsConfig.NUM_STREAM_THREADS_CONFIG,
+					concurrency);
+		}
+		else if (concurrencyAtTheGlobal != null) {
+			streamConfigGlobalProperties.put(StreamsConfig.NUM_STREAM_THREADS_CONFIG, concAtTheGlobal);
+		}
 	}
 
 	protected Serde<?> getValueSerde(String inboundName, KafkaStreamsConsumerProperties kafkaStreamsConsumerProperties, ResolvableType resolvableType) {

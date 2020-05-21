@@ -20,6 +20,7 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.Map;
+import java.util.Properties;
 
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -30,9 +31,9 @@ import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.StoreQueryParameters;
 import org.apache.kafka.streams.StreamsConfig;
+import org.apache.kafka.streams.kstream.Grouped;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.Materialized;
-import org.apache.kafka.streams.kstream.Serialized;
 import org.apache.kafka.streams.kstream.TimeWindows;
 import org.apache.kafka.streams.state.QueryableStoreTypes;
 import org.apache.kafka.streams.state.ReadOnlyWindowStore;
@@ -152,12 +153,10 @@ public class KafkaStreamsBinderWordCountIntegrationTests {
 					.store(StoreQueryParameters.fromNameAndType("foo-WordCounts", QueryableStoreTypes.windowStore()));
 			assertThat(store).isNotNull();
 
-			Map streamConfigGlobalProperties = context
-					.getBean("streamConfigGlobalProperties", Map.class);
-
 			// Ensure that concurrency settings are mapped to number of stream task
 			// threads in Kafka Streams.
-			final Integer concurrency = (Integer) streamConfigGlobalProperties
+			final Properties streamsConfiguration = streamsBuilderFactoryBean.getStreamsConfiguration();
+			final Integer concurrency = (Integer) streamsConfiguration
 					.get(StreamsConfig.NUM_STREAM_THREADS_CONFIG);
 			assertThat(concurrency).isEqualTo(2);
 
@@ -220,7 +219,7 @@ public class KafkaStreamsBinderWordCountIntegrationTests {
 					.flatMapValues(
 							value -> Arrays.asList(value.toLowerCase().split("\\W+")))
 					.map((key, value) -> new KeyValue<>(value, value))
-					.groupByKey(Serialized.with(Serdes.String(), Serdes.String()))
+					.groupByKey(Grouped.with(Serdes.String(), Serdes.String()))
 					.windowedBy(TimeWindows.of(Duration.ofSeconds(5))).count(Materialized.as("foo-WordCounts"))
 					.toStream()
 					.map((key, value) -> new KeyValue<>(null,
