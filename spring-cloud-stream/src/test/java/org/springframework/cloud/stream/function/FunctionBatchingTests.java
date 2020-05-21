@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 
+import org.assertj.core.util.Arrays;
 import org.junit.Test;
 
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -90,6 +91,48 @@ public class FunctionBatchingTests {
 					assertThat(outputMessage.getPayload())
 							.isEqualTo("{\"name\":\"bob\"}".getBytes());
 
+					context.stop();
+				});
+	}
+
+	@Test
+	public void testListStringPayloadConfigurationTextPlain() {
+		TestChannelBinderConfiguration.applicationContextRunner(ListStringPayloadConfiguration.class)
+				.withPropertyValues("spring.jmx.enabled=false",
+						"spring.cloud.stream.function.definition=func",
+						"spring.cloud.stream.bindings.func-in-0.content-type=text/plain")
+				.run(context -> {
+					InputDestination inputDestination = context.getBean(InputDestination.class);
+					OutputDestination outputDestination = context
+							.getBean(OutputDestination.class);
+
+					List bytes = Arrays.asList(new Object[] {"abc".getBytes(), "xyz".getBytes()});
+					Message inputMessage = MessageBuilder.withPayload(bytes).build();
+					inputDestination.send(inputMessage);
+
+					Message<byte[]> outputMessage = outputDestination.receive();
+					assertThat(new String(outputMessage.getPayload())).isEqualTo("[abc, xyz]");
+					context.stop();
+				});
+	}
+
+	@Test
+	public void testListObjectPayloadObjectConfigurationTextPlain() {
+		TestChannelBinderConfiguration.applicationContextRunner(ListObjectPayloadConfiguration.class)
+				.withPropertyValues("spring.jmx.enabled=false",
+						"spring.cloud.stream.function.definition=func",
+						"spring.cloud.stream.bindings.func-in-0.content-type=text/plain")
+				.run(context -> {
+					InputDestination inputDestination = context.getBean(InputDestination.class);
+					OutputDestination outputDestination = context
+							.getBean(OutputDestination.class);
+
+					List bytes = Arrays.asList(new Object[] {"abc".getBytes(), "xyz".getBytes()});
+					Message inputMessage = MessageBuilder.withPayload(bytes).build();
+					inputDestination.send(inputMessage);
+
+					Message<byte[]> outputMessage = outputDestination.receive();
+					assertThat(new String(outputMessage.getPayload())).isEqualTo("[abc, xyz]");
 					context.stop();
 				});
 	}
@@ -172,6 +215,21 @@ public class FunctionBatchingTests {
 
 	}
 
+	@EnableAutoConfiguration
+	public static class ListStringPayloadConfiguration {
+		@Bean
+		public Function<List<String>, String> func() {
+			return x -> x.toString();
+		}
+	}
+
+	@EnableAutoConfiguration
+	public static class ListObjectPayloadConfiguration {
+		@Bean
+		public Function<List<Object>, String> func() {
+			return x -> x.toString();
+		}
+	}
 
 	@EnableAutoConfiguration
 	public static class ListPayloadNotBatchConfiguration {
@@ -192,9 +250,7 @@ public class FunctionBatchingTests {
 			public void setName(String name) {
 				this.name = name;
 			}
-
 		}
-
 	}
 
 	@EnableAutoConfiguration
