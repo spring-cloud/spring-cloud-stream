@@ -29,14 +29,11 @@ import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.KeyValue;
-import org.apache.kafka.streams.StoreQueryParameters;
 import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.kstream.Grouped;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.Materialized;
 import org.apache.kafka.streams.kstream.TimeWindows;
-import org.apache.kafka.streams.state.QueryableStoreTypes;
-import org.apache.kafka.streams.state.ReadOnlyWindowStore;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
@@ -122,7 +119,7 @@ public class KafkaStreamsBinderWordCountIntegrationTests {
 	}
 
 	@Test
-	public void testKstreamWordCountWithInputBindingLevelApplicationId()
+	public void testSendToTombstone()
 			throws Exception {
 		SpringApplication app = new SpringApplication(
 				WordCountProcessorApplication.class);
@@ -149,10 +146,7 @@ public class KafkaStreamsBinderWordCountIntegrationTests {
 			StreamsBuilderFactoryBean streamsBuilderFactoryBean = context
 					.getBean("&stream-builder-WordCountProcessorApplication-process", StreamsBuilderFactoryBean.class);
 			KafkaStreams kafkaStreams = streamsBuilderFactoryBean.getKafkaStreams();
-			ReadOnlyWindowStore<Object, Object> store = kafkaStreams
-					.store(StoreQueryParameters.fromNameAndType("foo-WordCounts", QueryableStoreTypes.windowStore()));
-			assertThat(store).isNotNull();
-
+			assertThat(kafkaStreams).isNotNull();
 			// Ensure that concurrency settings are mapped to number of stream task
 			// threads in Kafka Streams.
 			final Properties streamsConfiguration = streamsBuilderFactoryBean.getStreamsConfiguration();
