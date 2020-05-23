@@ -64,8 +64,8 @@ public abstract class DeserializtionErrorHandlerByBinderTests {
 
 	@ClassRule
 	public static EmbeddedKafkaRule embeddedKafkaRule = new EmbeddedKafkaRule(1, true,
-			"foos",
-			"counts-id", "error.foos.foobar-group", "error.foos1.fooz-group",
+			"foos", "goos",
+			"counts-id", "error.foos.foobar-group", "error.goos.foobar-group", "error.foos1.fooz-group",
 			"error.foos2.fooz-group");
 
 	private static EmbeddedKafkaBroker embeddedKafka = embeddedKafkaRule
@@ -150,7 +150,7 @@ public abstract class DeserializtionErrorHandlerByBinderTests {
 	@SpringBootTest(properties = {
 			"spring.cloud.stream.bindings.input.consumer.useNativeDecoding=false",
 			"spring.cloud.stream.bindings.output.producer.useNativeEncoding=false",
-			"spring.cloud.stream.bindings.input.destination=foos",
+			"spring.cloud.stream.bindings.input.destination=goos",
 			"spring.cloud.stream.bindings.output.destination=counts-id",
 			"spring.cloud.stream.kafka.streams.binder.configuration.commit.interval.ms=1000",
 			"spring.cloud.stream.kafka.streams.binder.configuration.default.key.serde"
@@ -171,7 +171,7 @@ public abstract class DeserializtionErrorHandlerByBinderTests {
 			DefaultKafkaProducerFactory<Integer, String> pf = new DefaultKafkaProducerFactory<>(
 					senderProps);
 			KafkaTemplate<Integer, String> template = new KafkaTemplate<>(pf, true);
-			template.setDefaultTopic("foos");
+			template.setDefaultTopic("goos");
 			template.sendDefault(1, 7, "hello");
 
 			Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("foobar",
@@ -181,10 +181,10 @@ public abstract class DeserializtionErrorHandlerByBinderTests {
 					consumerProps);
 			Consumer<String, String> consumer1 = cf.createConsumer();
 			embeddedKafka.consumeFromAnEmbeddedTopic(consumer1,
-					"error.foos.foobar-group");
+					"error.goos.foobar-group");
 
 			ConsumerRecord<String, String> cr = KafkaTestUtils.getSingleRecord(consumer1,
-					"error.foos.foobar-group");
+					"error.goos.foobar-group");
 			assertThat(cr.value()).isEqualTo("hello");
 			assertThat(cr.partition()).isEqualTo(0);
 
