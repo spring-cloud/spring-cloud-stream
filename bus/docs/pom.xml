@@ -18,6 +18,7 @@
 		<main.basedir>${basedir}/..</main.basedir>
 		<docs.whitelisted.branches>2.1.x,2.2.x</docs.whitelisted.branches>
 		<configprops.inclusionPattern>spring.cloud.bus.*</configprops.inclusionPattern>
+		<upload-docs-zip.phase>deploy</upload-docs-zip.phase>
 	</properties>
 	<build>
 		<plugins>
@@ -43,9 +44,6 @@
 	<profiles>
 		<profile>
 			<id>docs</id>
-			<properties>
-				<upload-docs-zip.phase>deploy</upload-docs-zip.phase>
-			</properties>
 			<build>
 				<plugins>
 					<plugin>
