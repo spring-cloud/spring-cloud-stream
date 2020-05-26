@@ -143,7 +143,10 @@ public abstract class AbstractKafkaStreamsBinderProcessor implements Application
 	protected void handleKTableGlobalKTableInputs(Object[] arguments, int index, String input, Class<?> parameterType, Object targetBean,
 			StreamsBuilderFactoryBean streamsBuilderFactoryBean, StreamsBuilder streamsBuilder,
 			KafkaStreamsConsumerProperties extendedConsumerProperties,
-			Serde<?> keySerde, Serde<?> valueSerde, Topology.AutoOffsetReset autoOffsetReset) {
+			Serde<?> keySerde, Serde<?> valueSerde, Topology.AutoOffsetReset autoOffsetReset, boolean firstBuild) {
+		if (firstBuild) {
+			addStateStoreBeans(streamsBuilder);
+		}
 		if (parameterType.isAssignableFrom(KTable.class)) {
 			String materializedAs = extendedConsumerProperties.getMaterializedAs();
 			String bindingDestination = this.bindingServiceProperties.getBindingDestination(input);

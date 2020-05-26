@@ -311,7 +311,7 @@ class KafkaStreamsStreamListenerSetupMethodOrchestrator extends AbstractKafkaStr
 					}
 					else {
 						handleKTableGlobalKTableInputs(arguments, parameterIndex, inboundName, parameterType, targetBean, streamsBuilderFactoryBean,
-								streamsBuilder, extendedConsumerProperties, keySerde, valueSerde, autoOffsetReset);
+								streamsBuilder, extendedConsumerProperties, keySerde, valueSerde, autoOffsetReset, parameterIndex == 0);
 					}
 				}
 				catch (Exception ex) {

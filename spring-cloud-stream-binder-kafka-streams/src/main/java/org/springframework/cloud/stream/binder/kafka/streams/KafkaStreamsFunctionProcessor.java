@@ -350,7 +350,7 @@ public class KafkaStreamsFunctionProcessor extends AbstractKafkaStreamsBinderPro
 					}
 					else {
 						handleKTableGlobalKTableInputs(arguments, i, input, parameterType, targetBean, streamsBuilderFactoryBean,
-								streamsBuilder, extendedConsumerProperties, keySerde, valueSerde, autoOffsetReset);
+								streamsBuilder, extendedConsumerProperties, keySerde, valueSerde, autoOffsetReset, i == 0);
 					}
 					i++;
 				}
