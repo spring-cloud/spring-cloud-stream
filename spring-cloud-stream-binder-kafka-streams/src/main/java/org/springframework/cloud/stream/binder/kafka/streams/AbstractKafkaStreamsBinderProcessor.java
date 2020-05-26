@@ -17,6 +17,7 @@
 package org.springframework.cloud.stream.binder.kafka.streams;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
 
@@ -95,8 +96,6 @@ public abstract class AbstractKafkaStreamsBinderProcessor implements Application
 	private final KeyValueSerdeResolver keyValueSerdeResolver;
 
 	protected ConfigurableApplicationContext applicationContext;
-
-	private Object concurrencyAtTheGlobal;
 
 	public AbstractKafkaStreamsBinderProcessor(BindingServiceProperties bindingServiceProperties,
 			KafkaStreamsBindingInformationCatalogue kafkaStreamsBindingInformationCatalogue,
@@ -184,9 +183,9 @@ public abstract class AbstractKafkaStreamsBinderProcessor implements Application
 
 		Map<String, Object> streamConfigGlobalProperties = applicationContext
 				.getBean("streamConfigGlobalProperties", Map.class);
-		if (this.concurrencyAtTheGlobal == null) {
-			this.concurrencyAtTheGlobal = streamConfigGlobalProperties.get(StreamsConfig.NUM_STREAM_THREADS_CONFIG);
-		}
+
+		// Use a copy because the global configuration will be shared by multiple processors.
+		Map<String, Object> streamConfiguration = new HashMap<>(streamConfigGlobalProperties);
 
 		if (kafkaStreamsBinderConfigurationProperties != null) {
 			final Map<String, KafkaStreamsBinderConfigurationProperties.Functions> functionConfigMap = kafkaStreamsBinderConfigurationProperties.getFunctions();
@@ -195,12 +194,12 @@ public abstract class AbstractKafkaStreamsBinderProcessor implements Application
 				if (functionConfig != null) {
 					final Map<String, String> functionSpecificConfig = functionConfig.getConfiguration();
 					if (!CollectionUtils.isEmpty(functionSpecificConfig)) {
-						streamConfigGlobalProperties.putAll(functionSpecificConfig);
+						streamConfiguration.putAll(functionSpecificConfig);
 					}
 
 					String applicationId = functionConfig.getApplicationId();
 					if (!StringUtils.isEmpty(applicationId)) {
-						streamConfigGlobalProperties.put(StreamsConfig.APPLICATION_ID_CONFIG, applicationId);
+						streamConfiguration.put(StreamsConfig.APPLICATION_ID_CONFIG, applicationId);
 					}
 				}
 			}
@@ -216,37 +215,37 @@ public abstract class AbstractKafkaStreamsBinderProcessor implements Application
 				connectionString = (String) propertySources.get(bindingProperties.getBinder() + "-kafkaStreamsBinderEnv").getProperty("spring.cloud.stream.kafka.binder.brokers");
 			}
 
-			streamConfigGlobalProperties.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, connectionString);
+			streamConfiguration.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, connectionString);
 
 			String binderProvidedApplicationId = multiBinderKafkaStreamsBinderConfigurationProperties.getApplicationId();
 			if (StringUtils.hasText(binderProvidedApplicationId)) {
-				streamConfigGlobalProperties.put(StreamsConfig.APPLICATION_ID_CONFIG,
+				streamConfiguration.put(StreamsConfig.APPLICATION_ID_CONFIG,
 						binderProvidedApplicationId);
 			}
 
 			if (multiBinderKafkaStreamsBinderConfigurationProperties
 					.getDeserializationExceptionHandler() == DeserializationExceptionHandler.logAndContinue) {
-				streamConfigGlobalProperties.put(
+				streamConfiguration.put(
 						StreamsConfig.DEFAULT_DESERIALIZATION_EXCEPTION_HANDLER_CLASS_CONFIG,
 						LogAndContinueExceptionHandler.class);
 			}
 			else if (multiBinderKafkaStreamsBinderConfigurationProperties
 					.getDeserializationExceptionHandler() == DeserializationExceptionHandler.logAndFail) {
-				streamConfigGlobalProperties.put(
+				streamConfiguration.put(
 						StreamsConfig.DEFAULT_DESERIALIZATION_EXCEPTION_HANDLER_CLASS_CONFIG,
 						LogAndFailExceptionHandler.class);
 			}
 			else if (multiBinderKafkaStreamsBinderConfigurationProperties
 					.getDeserializationExceptionHandler() == DeserializationExceptionHandler.sendToDlq) {
-				streamConfigGlobalProperties.put(
+				streamConfiguration.put(
 						StreamsConfig.DEFAULT_DESERIALIZATION_EXCEPTION_HANDLER_CLASS_CONFIG,
 						RecoveringDeserializationExceptionHandler.class);
 				SendToDlqAndContinue sendToDlqAndContinue = applicationContext.getBean(SendToDlqAndContinue.class);
-				streamConfigGlobalProperties.put(RecoveringDeserializationExceptionHandler.KSTREAM_DESERIALIZATION_RECOVERER, sendToDlqAndContinue);
+				streamConfiguration.put(RecoveringDeserializationExceptionHandler.KSTREAM_DESERIALIZATION_RECOVERER, sendToDlqAndContinue);
 			}
 
 			if (!ObjectUtils.isEmpty(multiBinderKafkaStreamsBinderConfigurationProperties.getConfiguration())) {
-				streamConfigGlobalProperties.putAll(multiBinderKafkaStreamsBinderConfigurationProperties.getConfiguration());
+				streamConfiguration.putAll(multiBinderKafkaStreamsBinderConfigurationProperties.getConfiguration());
 			}
 		}
 
@@ -260,6 +259,8 @@ public abstract class AbstractKafkaStreamsBinderProcessor implements Application
 				ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG + " cannot be overridden at the binding level; "
 						+ "use multiple binders instead");
 		streamConfigGlobalProperties.putAll(bindingConfig);
+		streamConfiguration
+				.putAll(extendedConsumerProperties.getConfiguration());
 
 		String bindingLevelApplicationId = extendedConsumerProperties.getApplicationId();
 		// override application.id if set at the individual binding level.
@@ -267,12 +268,12 @@ public abstract class AbstractKafkaStreamsBinderProcessor implements Application
 		// For function based processors see the approach used above
 		// (i.e. use a property like spring.cloud.stream.kafka.streams.binder.functions.process.applicationId).
 		if (StringUtils.hasText(bindingLevelApplicationId)) {
-			streamConfigGlobalProperties.put(StreamsConfig.APPLICATION_ID_CONFIG,
+			streamConfiguration.put(StreamsConfig.APPLICATION_ID_CONFIG,
 					bindingLevelApplicationId);
 		}
 
 		//If the application id is not set by any mechanism, then generate it.
-		streamConfigGlobalProperties.computeIfAbsent(StreamsConfig.APPLICATION_ID_CONFIG,
+		streamConfiguration.computeIfAbsent(StreamsConfig.APPLICATION_ID_CONFIG,
 				k -> {
 					String generatedApplicationID = beanNamePostPrefix + "-applicationId";
 					LOG.info("Binder Generated Kafka Streams Application ID: " + generatedApplicationID);
@@ -282,30 +283,30 @@ public abstract class AbstractKafkaStreamsBinderProcessor implements Application
 					return generatedApplicationID;
 				});
 
-		handleConcurrency(applicationContext, inboundName, streamConfigGlobalProperties);
+		handleConcurrency(applicationContext, inboundName, streamConfiguration);
 
 		// Override deserialization exception handlers per binding
 		final DeserializationExceptionHandler deserializationExceptionHandler =
 				extendedConsumerProperties.getDeserializationExceptionHandler();
 		if (deserializationExceptionHandler == DeserializationExceptionHandler.logAndFail) {
-			streamConfigGlobalProperties.put(
+			streamConfiguration.put(
 					StreamsConfig.DEFAULT_DESERIALIZATION_EXCEPTION_HANDLER_CLASS_CONFIG,
 					LogAndFailExceptionHandler.class);
 		}
 		else if (deserializationExceptionHandler == DeserializationExceptionHandler.logAndContinue) {
-			streamConfigGlobalProperties.put(
+			streamConfiguration.put(
 					StreamsConfig.DEFAULT_DESERIALIZATION_EXCEPTION_HANDLER_CLASS_CONFIG,
 					LogAndContinueExceptionHandler.class);
 		}
 		else if (deserializationExceptionHandler == DeserializationExceptionHandler.sendToDlq) {
-			streamConfigGlobalProperties.put(
+			streamConfiguration.put(
 					StreamsConfig.DEFAULT_DESERIALIZATION_EXCEPTION_HANDLER_CLASS_CONFIG,
 					RecoveringDeserializationExceptionHandler.class);
-			streamConfigGlobalProperties.put(RecoveringDeserializationExceptionHandler.KSTREAM_DESERIALIZATION_RECOVERER,
+			streamConfiguration.put(RecoveringDeserializationExceptionHandler.KSTREAM_DESERIALIZATION_RECOVERER,
 					applicationContext.getBean(SendToDlqAndContinue.class));
 		}
 
-		KafkaStreamsConfiguration kafkaStreamsConfiguration = new KafkaStreamsConfiguration(streamConfigGlobalProperties);
+		KafkaStreamsConfiguration kafkaStreamsConfiguration = new KafkaStreamsConfiguration(streamConfiguration);
 
 		StreamsBuilderFactoryBean streamsBuilderFactoryBean = this.cleanupConfig == null
 				? new StreamsBuilderFactoryBean(kafkaStreamsConfiguration)
@@ -321,18 +322,7 @@ public abstract class AbstractKafkaStreamsBinderProcessor implements Application
 		((BeanDefinitionRegistry) beanFactory).registerBeanDefinition(
 				"stream-builder-" + beanNamePostPrefix, streamsBuilderBeanDefinition);
 
-		extendedConsumerProperties.setApplicationId((String) streamConfigGlobalProperties.get(StreamsConfig.APPLICATION_ID_CONFIG));
-		//Removing the application ID from global properties so that the next function won't re-use it and cause race conditions.
-		streamConfigGlobalProperties.remove(StreamsConfig.APPLICATION_ID_CONFIG);
-		// If there was a global concurrency set at the binder, restore it for the next processor.
-		if (concurrencyAtTheGlobal != null) {
-			streamConfigGlobalProperties.put(StreamsConfig.NUM_STREAM_THREADS_CONFIG, this.concurrencyAtTheGlobal);
-		}
-		else {
-			//on the other hand, if the global concurrency was set only by the current processor (thus not really binder-wide), remove it.
-			//otherwise, in the case of multiple processors, binder assumes that there is a global setting present.
-			streamConfigGlobalProperties.remove(StreamsConfig.NUM_STREAM_THREADS_CONFIG);
-		}
+		extendedConsumerProperties.setApplicationId((String) streamConfiguration.get(StreamsConfig.APPLICATION_ID_CONFIG));
 
 		final StreamsBuilderFactoryBean streamsBuilderFactoryBeanFromContext = applicationContext.getBean(
 				"&stream-builder-" + beanNamePostPrefix, StreamsBuilderFactoryBean.class);
@@ -345,15 +335,7 @@ public abstract class AbstractKafkaStreamsBinderProcessor implements Application
 	}
 
 	private void handleConcurrency(ApplicationContext applicationContext, String inboundName,
-								Map<String, Object> streamConfigGlobalProperties) {
-		Object concurrencyAtTheGlobal = streamConfigGlobalProperties.get(StreamsConfig.NUM_STREAM_THREADS_CONFIG);
-		Integer concAtTheGlobal = null;
-		if (concurrencyAtTheGlobal instanceof String) {
-			concAtTheGlobal = Integer.valueOf((String) concurrencyAtTheGlobal);
-		}
-		else if (concurrencyAtTheGlobal instanceof Integer) {
-			concAtTheGlobal = (Integer) concurrencyAtTheGlobal;
-		}
+								Map<String, Object> streamConfiguration) {
 		// This rebinding is necessary to capture the concurrency explicitly set by the application.
 		// This is added to fix this issue: https://github.com/spring-cloud/spring-cloud-stream-binder-kafka/issues/899
 		org.springframework.boot.context.properties.bind.Binder explicitConcurrencyResolver =
@@ -388,18 +370,13 @@ public abstract class AbstractKafkaStreamsBinderProcessor implements Application
 		int concurrency = this.bindingServiceProperties.getConsumerProperties(inboundName)
 				.getConcurrency();
 		// override concurrency if set at the individual binding level.
-		// Concurrency will be mapped to num.stream.threads. Since this is going into a global config,
-		// we are explicitly assigning concurrency left at default of 1 to num.stream.threads. Otherwise,
-		// a potential previous value might still be used in the case of multiple processors or a processor
-		// with multiple input bindings with various concurrency values.
+		// Concurrency will be mapped to num.stream.threads.
+		// This conditional also takes into account explicit concurrency settings left at the default value of 1
+		// by the application to address concurrency behavior in applications with multiple processors.
 		// See this GH issue: https://github.com/spring-cloud/spring-cloud-stream-binder-kafka/issues/844
-		// if neither of the below conditions are met, num.stream.threads will default to 1 by Kafka Streams.
 		if (concurrency >= 1 && concurrencyExplicitlyProvided[0]) {
-			streamConfigGlobalProperties.put(StreamsConfig.NUM_STREAM_THREADS_CONFIG,
+			streamConfiguration.put(StreamsConfig.NUM_STREAM_THREADS_CONFIG,
 					concurrency);
-		}
-		else if (concurrencyAtTheGlobal != null) {
-			streamConfigGlobalProperties.put(StreamsConfig.NUM_STREAM_THREADS_CONFIG, concAtTheGlobal);
 		}
 	}
 
