@@ -18,6 +18,7 @@ package org.springframework.cloud.stream.binder.kafka.provisioning;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -147,21 +148,27 @@ public class KafkaTopicProvisioner implements
 			createTopic(adminClient, name, properties.getPartitionCount(), false,
 					properties.getExtension().getTopic());
 			int partitions = 0;
+			Map<String, TopicDescription> topicDescriptions = new HashMap<>();
 			if (this.configurationProperties.isAutoCreateTopics()) {
-				DescribeTopicsResult describeTopicsResult = adminClient
-						.describeTopics(Collections.singletonList(name));
-				KafkaFuture<Map<String, TopicDescription>> all = describeTopicsResult
-						.all();
-
-				Map<String, TopicDescription> topicDescriptions = null;
-				try {
-					topicDescriptions = all.get(this.operationTimeout, TimeUnit.SECONDS);
-				}
-				catch (Exception ex) {
-					throw new ProvisioningException(
-							"Problems encountered with partitions finding", ex);
-				}
-				TopicDescription topicDescription = topicDescriptions.get(name);
+				this.metadataRetryOperations.execute(context -> {
+					try {
+						if (logger.isDebugEnabled()) {
+							logger.debug("Attempting to retrieve the description for the topic: " + name);
+						}
+						DescribeTopicsResult describeTopicsResult = adminClient
+								.describeTopics(Collections.singletonList(name));
+						KafkaFuture<Map<String, TopicDescription>> all = describeTopicsResult
+								.all();
+						topicDescriptions.putAll(all.get(this.operationTimeout, TimeUnit.SECONDS));
+					}
+					catch (Exception ex) {
+						throw new ProvisioningException("Problems encountered with partitions finding", ex);
+					}
+					return null;
+				});
+			}
+			TopicDescription topicDescription = topicDescriptions.get(name);
+			if (topicDescription != null) {
 				partitions = topicDescription.partitions().size();
 			}
 			return new KafkaProducerDestination(name, partitions);
