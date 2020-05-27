@@ -18,6 +18,7 @@ package org.springframework.cloud.stream.binder.kafka;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -62,6 +63,7 @@ public class KafkaBinderConfigurationPropertiesTest {
 		KafkaProducerProperties kafkaProducerProperties = new KafkaProducerProperties();
 		kafkaProducerProperties.setBufferSize(12345);
 		kafkaProducerProperties.setBatchTimeout(100);
+		kafkaProducerProperties.setCloseTimeout(10);
 		kafkaProducerProperties
 				.setCompressionType(KafkaProducerProperties.CompressionType.gzip);
 		ExtendedProducerProperties<KafkaProducerProperties> producerProperties = new ExtendedProducerProperties<>(
@@ -84,6 +86,14 @@ public class KafkaBinderConfigurationPropertiesTest {
 		assertThat(producerConfigs.get("value.serializer"))
 				.isEqualTo(ByteArraySerializer.class);
 		assertThat(producerConfigs.get("compression.type")).isEqualTo("gzip");
+
+		Field physicalCloseTimeoutField = ReflectionUtils
+				.findField(DefaultKafkaProducerFactory.class, "physicalCloseTimeout", Duration.class);
+		ReflectionUtils.makeAccessible(physicalCloseTimeoutField);
+		Duration physicalCloseTimeoutConfig = (Duration) ReflectionUtils
+				.getField(physicalCloseTimeoutField, producerFactory);
+		assertThat(physicalCloseTimeoutConfig).isEqualTo(Duration.ofSeconds(10));
+
 		List<String> bootstrapServers = new ArrayList<>();
 		bootstrapServers.add("10.98.09.199:9082");
 		assertThat((((String) producerConfigs.get("bootstrap.servers"))

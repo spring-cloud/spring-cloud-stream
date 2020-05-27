@@ -409,6 +409,11 @@ To achieve exactly once consumption and production of records, the consumer and 
 +
 Default: none.
 
+closeTimeout::
+Timeout in number of seconds to wait for when closing the producer.
++
+Default: `30`
+
 ==== Usage examples
 
 In this section, we show the use of the preceding properties for specific scenarios.

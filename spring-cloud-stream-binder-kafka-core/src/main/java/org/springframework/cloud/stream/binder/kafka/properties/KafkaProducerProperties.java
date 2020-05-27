@@ -99,6 +99,12 @@ public class KafkaProducerProperties {
 	 */
 	private String transactionManager;
 
+	/*
+	 * Timeout value in seconds for the duration to wait when closing the producer.
+	 * If not set this defaults to 30 seconds.
+	 */
+	private int closeTimeout;
+
 	/**
 	 * @return buffer size
 	 *
@@ -260,6 +266,17 @@ public class KafkaProducerProperties {
 
 	public void setTransactionManager(String transactionManager) {
 		this.transactionManager = transactionManager;
+	}
+
+	/*
+	 * @return timeout in seconds for closing the producer
+	 */
+	public int getCloseTimeout() {
+		return this.closeTimeout;
+	}
+
+	public void setCloseTimeout(int closeTimeout) {
+		this.closeTimeout = closeTimeout;
 	}
 
 	/**

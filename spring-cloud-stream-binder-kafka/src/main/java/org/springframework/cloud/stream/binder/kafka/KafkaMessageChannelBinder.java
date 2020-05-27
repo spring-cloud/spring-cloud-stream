@@ -502,17 +502,18 @@ public class KafkaMessageChannelBinder extends
 			props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG,
 					this.configurationProperties.getKafkaConnectionString());
 		}
+		final KafkaProducerProperties kafkaProducerProperties = producerProperties.getExtension();
 		if (ObjectUtils.isEmpty(props.get(ProducerConfig.BATCH_SIZE_CONFIG))) {
 			props.put(ProducerConfig.BATCH_SIZE_CONFIG,
-					String.valueOf(producerProperties.getExtension().getBufferSize()));
+					String.valueOf(kafkaProducerProperties.getBufferSize()));
 		}
 		if (ObjectUtils.isEmpty(props.get(ProducerConfig.LINGER_MS_CONFIG))) {
 			props.put(ProducerConfig.LINGER_MS_CONFIG,
-					String.valueOf(producerProperties.getExtension().getBatchTimeout()));
+					String.valueOf(kafkaProducerProperties.getBatchTimeout()));
 		}
 		if (ObjectUtils.isEmpty(props.get(ProducerConfig.COMPRESSION_TYPE_CONFIG))) {
 			props.put(ProducerConfig.COMPRESSION_TYPE_CONFIG,
-					producerProperties.getExtension().getCompressionType().toString());
+					kafkaProducerProperties.getCompressionType().toString());
 		}
 		Map<String, String> configs = producerProperties.getExtension().getConfiguration();
 		Assert.state(!configs.containsKey(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG),
@@ -521,10 +522,16 @@ public class KafkaMessageChannelBinder extends
 		if (!ObjectUtils.isEmpty(configs)) {
 			props.putAll(configs);
 		}
+		if (!ObjectUtils.isEmpty(kafkaProducerProperties.getConfiguration())) {
+			props.putAll(kafkaProducerProperties.getConfiguration());
+		}
 		DefaultKafkaProducerFactory<byte[], byte[]> producerFactory = new DefaultKafkaProducerFactory<>(
 				props);
 		if (transactionIdPrefix != null) {
 			producerFactory.setTransactionIdPrefix(transactionIdPrefix);
+		}
+		if (kafkaProducerProperties.getCloseTimeout() > 0) {
+			producerFactory.setPhysicalCloseTimeout(kafkaProducerProperties.getCloseTimeout());
 		}
 		return producerFactory;
 	}
