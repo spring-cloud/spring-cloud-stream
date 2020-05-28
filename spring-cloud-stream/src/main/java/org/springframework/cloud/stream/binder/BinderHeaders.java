@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.binder;
 
+import org.springframework.cloud.stream.function.StreamBridge;
 import org.springframework.integration.IntegrationMessageHeaderAccessor;
 import org.springframework.messaging.MessageHeaders;
 
@@ -38,6 +39,18 @@ public final class BinderHeaders {
 			IntegrationMessageHeaderAccessor.SEQUENCE_NUMBER, MessageHeaders.CONTENT_TYPE};
 
 	private static final String PREFIX = "scst_";
+
+	/**
+	 * Indicates the name of the target destination the binder should use if they
+	 * choose (or have capabilities) to optimize sending output messages to
+	 * dynamic destinations.
+	 * <br>
+	 * <br>
+	 * NOTE: The core framework only defines this header, but does nothing else.
+	 * So it is up to binders to choose to support it or not. One can always rely on {@link StreamBridge}
+	 * for general cases of sending output messages to dynamic destinations.
+	 */
+	public static final String TARGET_DESTINATION = PREFIX + "targetDestination";
 
 	/**
 	 * Indicates the target partition of an outbound message. Binders must observe this
