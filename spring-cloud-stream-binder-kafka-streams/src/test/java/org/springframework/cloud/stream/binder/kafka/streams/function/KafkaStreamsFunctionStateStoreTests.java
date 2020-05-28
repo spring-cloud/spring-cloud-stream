@@ -63,7 +63,8 @@ public class KafkaStreamsFunctionStateStoreTests {
 				"--spring.cloud.stream.function.definition=process;hello",
 				"--spring.cloud.stream.bindings.process-in-0.destination=words",
 				"--spring.cloud.stream.bindings.hello-in-0.destination=words",
-				"--spring.cloud.stream.kafka.streams.binder.application-id=testKafkaStreamsFuncionWithMultipleStateStores",
+				"--spring.cloud.stream.kafka.streams.binder.functions.process.applicationId=testKafkaStreamsFuncionWithMultipleStateStores-123",
+				"--spring.cloud.stream.kafka.streams.binder.functions.hello.applicationId=testKafkaStreamsFuncionWithMultipleStateStores-456",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.commit.interval.ms=1000",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.default.key.serde" +
 						"=org.apache.kafka.common.serialization.Serdes$StringSerde",
