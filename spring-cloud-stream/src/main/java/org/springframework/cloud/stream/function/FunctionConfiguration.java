@@ -665,7 +665,7 @@ public class FunctionConfiguration {
 			return outputCount;
 		}
 
-		private boolean determineFunctionName(FunctionCatalog catalog, Environment environment) {
+		private void determineFunctionName(FunctionCatalog catalog, Environment environment) {
 			String definition = streamFunctionProperties.getDefinition();
 			if (!StringUtils.hasText(definition)) {
 				definition = environment.getProperty("spring.cloud.function.definition");
@@ -681,7 +681,6 @@ public class FunctionConfiguration {
 			else {
 				streamFunctionProperties.setDefinition(((FunctionInspector) functionCatalog).getName(functionCatalog.lookup("")));
 			}
-			return StringUtils.hasText(streamFunctionProperties.getDefinition());
 		}
 
 		@Override
