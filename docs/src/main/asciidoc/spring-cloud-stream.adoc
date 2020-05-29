@@ -912,8 +912,8 @@ public class SampleApplication {
 The above example is somewhat of a the opposite from the previous sample and  demonstrates function which
 takes single input of type `Integer` and produces two outputs (both of type `String`).
 
-So, for the above example the input binding is `gather-in-0` and the
-output bindings are `gather-out-0` and `gather-out-1`.
+So, for the above example the input binding is `scatter-in-0` and the
+output bindings are `scatter-out-0` and `scatter-out-1`.
 
 And you test it with the following code:
 [source,java]
