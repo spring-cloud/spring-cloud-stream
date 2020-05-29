@@ -1,7 +1,7 @@
 |===
 |Name | Default | Description
 
-|spring.cloud.bus.ack.destination-service | null | Service that wants to listen to acks. By default null (meaning all services).
+|spring.cloud.bus.ack.destination-service |  | Service that wants to listen to acks. By default null (meaning all services).
 |spring.cloud.bus.ack.enabled | true | Flag to switch off acks (default on).
 |spring.cloud.bus.destination | springCloudBus | Name of Spring Cloud Stream destination for messages.
 |spring.cloud.bus.enabled | true | Flag to indicate that the bus is enabled.
