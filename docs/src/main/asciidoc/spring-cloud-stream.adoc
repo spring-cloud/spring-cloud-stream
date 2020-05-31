@@ -3130,7 +3130,7 @@ For this reason, if you include a binder in the classpath, it is advised to use 
 If you don't have any bindings to provide for this binder, then that is an indication that you don't need to include that binder in the classpath.
 
 Lets take a concrete situation. Imagine you have both Kafka and Kafka Streams binders present in the classpath, but only use the Kafka Streams binder in the application code, i.e. only provide bindings using the Kafka Streams binder.
-Since Kafka binder is not used and it has specific checks to see if any destinations are registered, the binder health heck will fail.
+Since Kafka binder is not used and it has specific checks to see if any destinations are registered, the binder health check will fail.
 The top level application health check status will be reported as `DOWN`.
 In this situation, you can simply remove the dependency for kafka binder from your application since you are not using it.
 
