@@ -605,8 +605,7 @@ public class RabbitMessageChannelBinder extends
 					this.template.setUsePublisherConnection(true);
 				}
 
-				private final String exchange = deadLetterExchangeName(
-						properties.getExtension());
+				private final String exchange = deadLetterExchangeName(properties.getExtension());
 
 				private final String routingKey = properties.getExtension()
 						.getDeadLetterRoutingKey();
@@ -615,6 +614,8 @@ public class RabbitMessageChannelBinder extends
 						.getFrameMaxHeadroom();
 
 				private int maxStackTraceLength = -1;
+
+				private Boolean dlxPresent;
 
 				@Override
 				public void handleMessage(org.springframework.messaging.Message<?> message) throws MessagingException {
@@ -628,6 +629,9 @@ public class RabbitMessageChannelBinder extends
 						logger.error("No raw message header in " + message);
 					}
 					else {
+						if (!checkDlx()) {
+							return;
+						}
 						Throwable cause = (Throwable) message.getPayload();
 						if (!shouldRepublish(cause)) {
 							if (logger.isDebugEnabled()) {
@@ -690,6 +694,30 @@ public class RabbitMessageChannelBinder extends
 							}
 						}
 					}
+				}
+
+				private boolean checkDlx() {
+					if (this.dlxPresent == null) {
+						if (properties.getExtension().isAutoBindDlq()) {
+							this.dlxPresent = Boolean.TRUE;
+						}
+						else {
+							this.dlxPresent = this.template.execute(channel -> {
+								String dlx = deadLetterExchangeName(properties.getExtension());
+								try {
+									channel.exchangeDeclarePassive(dlx);
+									return Boolean.TRUE;
+								}
+								catch (IOException e) {
+									logger.warn("'republishToDlq' is true, but the '"
+											+ dlx
+											+ "' dead letter exchange is not present; disabling 'republishToDlq'");
+									return Boolean.FALSE;
+								}
+							});
+						}
+					}
+					return this.dlxPresent;
 				}
 
 				/**
