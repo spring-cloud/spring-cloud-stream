@@ -83,12 +83,12 @@ import org.springframework.core.env.Environment;
 import org.springframework.core.type.MethodMetadata;
 import org.springframework.integration.channel.AbstractMessageChannel;
 import org.springframework.integration.channel.AbstractSubscribableChannel;
-import org.springframework.integration.channel.MessageChannelReactiveUtils;
 import org.springframework.integration.dsl.IntegrationFlow;
 import org.springframework.integration.dsl.IntegrationFlowBuilder;
 import org.springframework.integration.dsl.IntegrationFlows;
 import org.springframework.integration.handler.ServiceActivatingHandler;
 import org.springframework.integration.support.MessageBuilder;
+import org.springframework.integration.util.IntegrationReactiveUtils;
 import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
@@ -364,7 +364,7 @@ public class FunctionConfiguration {
 			if (isReactiveOrMultipleInputOutput(bindableProxyFactory, functionType)) {
 				Publisher[] inputPublishers = inputBindingNames.stream().map(inputBindingName -> {
 					SubscribableChannel inputChannel = this.applicationContext.getBean(inputBindingName, SubscribableChannel.class);
-					return MessageChannelReactiveUtils.toPublisher(inputChannel);
+					return IntegrationReactiveUtils.messageChannelToFlux(inputChannel);
 				}).toArray(Publisher[]::new);
 
 				Function functionToInvoke = function;
@@ -393,7 +393,9 @@ public class FunctionConfiguration {
 			}
 			else {
 				String outputDestinationName = this.determineOutputDestinationName(0, bindableProxyFactory, functionType);
-				this.adjustFunctionForNativeEncodingIfNecessary(outputDestinationName, function, 0);
+				if (StringUtils.hasText(outputDestinationName)) {
+					this.adjustFunctionForNativeEncodingIfNecessary(outputDestinationName, function, 0);
+				}
 				String inputDestinationName = inputBindingNames.iterator().next();
 				Object inputDestination = this.applicationContext.getBean(inputDestinationName);
 				if (inputDestination != null && inputDestination instanceof SubscribableChannel) {
