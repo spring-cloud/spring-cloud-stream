@@ -299,6 +299,26 @@ public class ImplicitFunctionBindingTests {
 	}
 
 	@Test
+	public void fooFunctionComposedWithConsumerNonReactive() {
+		System.clearProperty("spring.cloud.function.definition");
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+				TestChannelBinderConfiguration.getCompleteConfiguration(FunctionConsumerCopositionConfiguration.class))
+						.web(WebApplicationType.NONE).run("--spring.jmx.enabled=false", "--spring.cloud.function.definition=echo|consumer")) {
+
+			assertThat(context.containsBean("echoconsumer-out-0")).isFalse();
+
+			InputDestination inputDestination = context.getBean(InputDestination.class);
+			Message<byte[]> inputMessage = MessageBuilder.withPayload("Hello".getBytes()).build();
+			inputDestination.send(inputMessage);
+
+			assertThat(System.getProperty("FunctionConsumerCopositionConfiguration")).isEqualTo("Hello");
+			System.clearProperty("FunctionConsumerCopositionConfiguration");
+		}
+	}
+
+
+
+	@Test
 	public void testReactiveConsumerWithoutDefinitionProperty() {
 		System.clearProperty("spring.cloud.function.definition");
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
@@ -778,6 +798,26 @@ public class ImplicitFunctionBindingTests {
 				System.out.println(value);
 				System.setProperty("consumer", value);
 			});
+		}
+	}
+
+	@EnableAutoConfiguration
+	public static class FunctionConsumerCopositionConfiguration {
+
+		@Bean
+		public Consumer<String> consumer() {
+			return v -> {
+				System.out.println("==== Consuming " + v);
+				System.setProperty("FunctionConsumerCopositionConfiguration", v);
+			};
+		}
+
+		@Bean
+		public Function<String, String> echo() {
+			return v -> {
+				System.out.println("==> Echo " + v);
+				return v;
+			};
 		}
 	}
 
