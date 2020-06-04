@@ -363,6 +363,13 @@ public class FunctionConfiguration {
 
 			if (isReactiveOrMultipleInputOutput(bindableProxyFactory, functionType)) {
 				Publisher[] inputPublishers = inputBindingNames.stream().map(inputBindingName -> {
+					BindingProperties bindingProperties = this.serviceProperties.getBindings().get(inputBindingName);
+					ConsumerProperties consumerProperties = bindingProperties == null ? null : bindingProperties.getConsumer();
+					if (consumerProperties != null) {
+						Assert.isTrue(consumerProperties.getConcurrency() <= 1, "Concurrency > 1 is not supported by reactive "
+								+ "consumer, given that project reactor maintains its own concurrency mechanism. Was '..."
+								+ inputBindingName + ".consumer.concurrency=" + consumerProperties.getConcurrency() + "'");
+					}
 					SubscribableChannel inputChannel = this.applicationContext.getBean(inputBindingName, SubscribableChannel.class);
 					return IntegrationReactiveUtils.messageChannelToFlux(inputChannel);
 				}).toArray(Publisher[]::new);
