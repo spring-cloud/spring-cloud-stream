@@ -375,10 +375,12 @@ public class FunctionConfiguration {
 				}
 
 				Object resultPublishers = functionToInvoke.apply(inputPublishers.length == 1 ? inputPublishers[0] : Tuples.fromArray(inputPublishers));
+
 				if (!(resultPublishers instanceof Iterable)) {
 					resultPublishers = Collections.singletonList(resultPublishers);
 				}
 				Iterator<String> outputBindingIter = outputBindingNames.iterator();
+
 				((Iterable) resultPublishers).forEach(publisher -> {
 					Flux flux = Flux.from((Publisher) publisher)
 							.onErrorContinue((ex, pay) -> {
@@ -386,7 +388,20 @@ public class FunctionConfiguration {
 							});
 					if (!CollectionUtils.isEmpty(outputBindingNames)) {
 						MessageChannel outputChannel = this.applicationContext.getBean(outputBindingIter.next(), MessageChannel.class);
-						flux = flux.doOnNext(message -> outputChannel.send((Message) message));
+						flux = flux.doOnNext(message -> {
+							if (message instanceof Message && ((Message<?>) message).getHeaders().get("spring.cloud.stream.sendto.destination") != null) {
+								String destinationName = (String) ((Message<?>) message).getHeaders().get("spring.cloud.stream.sendto.destination");
+								ProducerProperties producerProperties = this.serviceProperties.getBindings().get(outputBindingNames.iterator().next()).getProducer();
+								MessageChannel dynamicChannel = streamBridge.resolveDestination(destinationName, producerProperties);
+								if (logger.isInfoEnabled()) {
+									logger.info("Output message is sent to '" + destinationName + "' destination");
+								}
+								dynamicChannel.send((Message) message);
+							}
+							else {
+								outputChannel.send((Message) message);
+							}
+						});
 					}
 					flux.subscribe();
 				});
