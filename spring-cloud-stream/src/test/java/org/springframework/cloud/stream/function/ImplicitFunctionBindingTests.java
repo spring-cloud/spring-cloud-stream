@@ -32,6 +32,7 @@ import org.junit.Test;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
@@ -758,6 +759,22 @@ public class ImplicitFunctionBindingTests {
 		}
 	}
 
+	@Test(expected = BeanCreationException.class)
+	public void testReactiveConsumerWithConcurrencyFailureConfiguration() {
+		System.clearProperty("spring.cloud.function.definition");
+		new SpringApplicationBuilder(
+				TestChannelBinderConfiguration.getCompleteConfiguration(ReactiveConsumerWithConcurrencyFailureConfiguration.class))
+						.web(WebApplicationType.NONE).run("--spring.jmx.enabled=false",
+								"--spring.cloud.stream.bindings.input-in-0.consumer.concurrency=2");
+	}
+
+	@EnableAutoConfiguration
+	public static class ReactiveConsumerWithConcurrencyFailureConfiguration {
+		@Bean
+		public Consumer<Flux<Message<String>>> input() {
+			return flux -> flux.subscribe(System.out::println);
+		}
+	}
 
 	@EnableAutoConfiguration
 	public static class NoEnableBindingConfiguration {
