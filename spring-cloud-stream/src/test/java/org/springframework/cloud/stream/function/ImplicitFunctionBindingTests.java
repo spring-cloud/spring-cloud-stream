@@ -733,6 +733,32 @@ public class ImplicitFunctionBindingTests {
 		}
 	}
 
+	@Test
+	public void testReactiveSendToDestinationConfiguration() {
+		System.clearProperty("spring.cloud.function.definition");
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+				TestChannelBinderConfiguration.getCompleteConfiguration(SendToDestinationConfiguration.class))
+						.web(WebApplicationType.NONE).run("--spring.jmx.enabled=false")) {
+
+			InputDestination inputDestination = context.getBean(InputDestination.class);
+			OutputDestination outputDestination = context.getBean(OutputDestination.class);
+			Message<byte[]> inputMessage = MessageBuilder.withPayload("aa".getBytes()).build();
+			inputDestination.send(inputMessage, "echo-in-0");
+			Message<byte[]> receivedMessage = outputDestination.receive(1000, "aa");
+
+			assertThat(receivedMessage.getPayload()).isEqualTo("aa".getBytes());
+			assertThat(receivedMessage.getHeaders().get("spring.cloud.stream.sendto.destination")).isNotNull();
+
+			inputMessage = MessageBuilder.withPayload("bb".getBytes()).build();
+			inputDestination.send(inputMessage, "echo-in-0");
+			receivedMessage = outputDestination.receive(1000, "bb");
+
+			assertThat(receivedMessage.getPayload()).isEqualTo("bb".getBytes());
+			assertThat(receivedMessage.getHeaders().get("spring.cloud.stream.sendto.destination")).isNotNull();
+		}
+	}
+
+
 	@EnableAutoConfiguration
 	public static class NoEnableBindingConfiguration {
 
@@ -857,6 +883,16 @@ public class ImplicitFunctionBindingTests {
 	@EnableAutoConfiguration
 	public static class EmptyConfiguration {
 
+	}
+
+	@EnableAutoConfiguration
+	public static class SendToDestinationConfiguration {
+		@Bean
+		public Function<Flux<String>, Flux<Message<String>>> echo() {
+			return flux -> flux.map(v -> {
+				return MessageBuilder.withPayload(v).setHeader("spring.cloud.stream.sendto.destination", v).build();
+			});
+		}
 	}
 
 	@EnableAutoConfiguration
