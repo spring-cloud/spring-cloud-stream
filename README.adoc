@@ -4,6 +4,7 @@ Manual changes to this file will be lost when it is generated again.
 Edit the files in the src/main/asciidoc/ directory instead.
 ////
 
+
 :jdkversion: 1.8
 :github-tag: master
 :github-repo: spring-cloud/spring-cloud-stream
@@ -108,29 +109,29 @@ Modify the `com.example.loggingconsumer.LoggingConsumerApplication` class to loo
 @SpringBootApplication
 public class LoggingConsumerApplication {
 
-	public static void main(String[] args) {
-		SpringApplication.run(LoggingConsumerApplication.class, args);
-	}
+    public static void main(String[] args) {
+        SpringApplication.run(LoggingConsumerApplication.class, args);
+    }
 
-	@Bean
-	public Consumer<Person> log() {
-	    return person -> {
-	        System.out.println("Received: " + person);
-	    };
-	}
+    @Bean
+    public Consumer<Person> log() {
+        return person -> {
+            System.out.println("Received: " + person);
+        };
+    }
 
-	public static class Person {
-		private String name;
-		public String getName() {
-			return name;
-		}
-		public void setName(String name) {
-			this.name = name;
-		}
-		public String toString() {
-			return this.name;
-		}
-	}
+    public static class Person {
+        private String name;
+        public String getName() {
+            return name;
+        }
+        public void setName(String name) {
+            this.name = name;
+        }
+        public String toString() {
+            return this.name;
+        }
+    }
 }
 ----
 
@@ -149,13 +150,13 @@ You should see following output:
 
 [source]
 ----
-	--- [ main] c.s.b.r.p.RabbitExchangeQueueProvisioner : declaring queue for inbound: input.anonymous.CbMIwdkJSBO1ZoPDOtHtCg, bound to: input
-	--- [ main] o.s.a.r.c.CachingConnectionFactory       : Attempting to connect to: [localhost:5672]
-	--- [ main] o.s.a.r.c.CachingConnectionFactory       : Created new connection: rabbitConnectionFactory#2a3a299:0/SimpleConnection@66c83fc8. . .
-	. . .
-	--- [ main] o.s.i.a.i.AmqpInboundChannelAdapter      : started inbound.input.anonymous.CbMIwdkJSBO1ZoPDOtHtCg
-	. . .
-	--- [ main] c.e.l.LoggingConsumerApplication         : Started LoggingConsumerApplication in 2.531 seconds (JVM running for 2.897)
+    --- [ main] c.s.b.r.p.RabbitExchangeQueueProvisioner : declaring queue for inbound: input.anonymous.CbMIwdkJSBO1ZoPDOtHtCg, bound to: input
+    --- [ main] o.s.a.r.c.CachingConnectionFactory       : Attempting to connect to: [localhost:5672]
+    --- [ main] o.s.a.r.c.CachingConnectionFactory       : Created new connection: rabbitConnectionFactory#2a3a299:0/SimpleConnection@66c83fc8. . .
+    . . .
+    --- [ main] o.s.i.a.i.AmqpInboundChannelAdapter      : started inbound.input.anonymous.CbMIwdkJSBO1ZoPDOtHtCg
+    . . .
+    --- [ main] c.e.l.LoggingConsumerApplication         : Started LoggingConsumerApplication in 2.531 seconds (JVM running for 2.897)
 ----
 
 Go to the RabbitMQ management console or any other RabbitMQ client and send a message to `input.anonymous.CbMIwdkJSBO1ZoPDOtHtCg`.
