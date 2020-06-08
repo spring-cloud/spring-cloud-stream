@@ -17,4 +17,5 @@ _site/
 .factorypath
 .vscode/
 .flattened-pom.xml
+.sdkmanrc
 
