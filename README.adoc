@@ -4,6 +4,7 @@ Manual changes to this file will be lost when it is generated again.
 Edit the files in the src/main/asciidoc/ directory instead.
 ////
 
+
 :jdkversion: 1.8
 :github-tag: master
 :github-repo: spring-cloud/spring-cloud-stream-binder-kafka
@@ -39,7 +40,7 @@ To use Apache Kafka binder, you need to add `spring-cloud-stream-binder-kafka` a
 </dependency>
 ----
 
-Alternatively, you can also use the Spring Cloud Stream Kafka Starter, as shown inn the following example for Maven:
+Alternatively, you can also use the Spring Cloud Stream Kafka Starter, as shown in the following example for Maven:
 
 [source,xml]
 ----
@@ -60,7 +61,7 @@ The Apache Kafka Binder implementation maps each destination to an Apache Kafka 
 The consumer group maps directly to the same Apache Kafka concept.
 Partitioning also maps directly to Apache Kafka partitions as well.
 
-The binder currently uses the Apache Kafka `kafka-clients` 1.0.0 jar and is designed to be used with a broker of at least that version.
+The binder currently uses the Apache Kafka `kafka-clients` version `2.3.1`.
 This client can communicate with older brokers (see the Kafka documentation), but certain features may not be available.
 For example, with versions earlier than 0.11.x.x, native headers are not supported.
 Also, 0.11.x.x does not support the `autoAddPartitions` property.
@@ -155,21 +156,15 @@ Default: See individual producer properties.
 
 spring.cloud.stream.kafka.binder.headerMapperBeanName::
 The bean name of a `KafkaHeaderMapper` used for mapping `spring-messaging` headers to and from Kafka headers.
-Use this, for example, if you wish to customize the trusted packages in a `DefaultKafkaHeaderMapper` that uses JSON deserialization for the headers.
+Use this, for example, if you wish to customize the trusted packages in a `BinderHeaderMapper` bean that uses JSON deserialization for the headers.
+If this custom `BinderHeaderMapper` bean is not made available to the binder using this property, then the binder will look for a header mapper bean with the name `kafkaBinderHeaderMapper` that is of type `BinderHeaderMapper` before falling back to a default `BinderHeaderMapper` created by the binder.
 +
 Default: none.
-
-spring.cloud.stream.kafka.binder.authorizationExceptionRetryInterval::
-Enables retrying in case of authorization exceptions.
-Defines interval between each retry.
-Accepts `Duration`, e.g. `30s`, `2m`, etc.
-+
-Default: `null` (retries disabled, fail fast)
 
 [[kafka-consumer-properties]]
 ==== Kafka Consumer Properties
 
-NOTE: To avoid repetition, Spring Cloud Stream supports setting values for all channels, in the format of `spring.cloud.stream.default.<property>=<value>`.
+NOTE: To avoid repetition, Spring Cloud Stream supports setting values for all channels, in the format of `spring.cloud.stream.kafka.default.consumer.<property>=<value>`.
 
 
 The following properties are available for Kafka consumers only and
@@ -234,13 +229,25 @@ The DLQ topic name can be configurable by setting the `dlqName` property.
 This provides an alternative option to the more common Kafka replay scenario for the case when the number of errors is relatively small and replaying the entire original topic may be too cumbersome.
 See <<kafka-dlq-processing>> processing for more information.
 Starting with version 2.0, messages sent to the DLQ topic are enhanced with the following headers: `x-original-topic`, `x-exception-message`, and `x-exception-stacktrace` as `byte[]`.
+By default, a failed record is sent to the same partition number in the DLQ topic as the original record.
+See <<dlq-partition-selection>> for how to change that behavior.
 **Not allowed when `destinationIsPattern` is `true`.**
 +
 Default: `false`.
+dlqPartitions::
+When `enableDlq` is true, and this property is not set, a dead letter topic with the same number of partitions as the primary topic(s) is created.
+Usually, dead-letter records are sent to the same partition in the dead-letter topic as the original record.
+This behavior can be changed; see <<dlq-partition-selection>>.
+If this property is set to `1` and there is no `DqlPartitionFunction` bean, all dead-letter records will be written to partition `0`.
+If this property is greater than `1`, you **MUST** provide a `DlqPartitionFunction` bean.
+Note that the actual partition count is affected by the binder's `minPartitionCount` property.
++
+Default: `none`
 configuration::
 Map with a key/value pair containing generic Kafka consumer properties.
 In addition to having Kafka consumer properties, other configuration properties can be passed here.
 For example some properties needed by the application such as `spring.cloud.stream.kafka.bindings.input.consumer.configuration.foo=bar`.
+The `bootstrap.servers` property cannot be set here; use multi-binder support if you need to connect to multiple clusters.
 +
 Default: Empty map.
 dlqName::
@@ -296,12 +303,20 @@ pollTimeout::
 Timeout used for polling in pollable consumers.
 +
 Default: 5 seconds.
+transactionManager::
+Bean name of a `KafkaAwareTransactionManager` used to override the binder's transaction manager for this binding.
+Usually needed if you want to synchronize another transaction with the Kafka transaction, using the `ChainedKafkaTransactionManaager`.
+To achieve exactly once consumption and production of records, the consumer and producer bindings must all be configured with the same transaction manager.
++
+Default: none.
 
 ==== Consuming Batches
 
 Starting with version 3.0, when `spring.cloud.stream.binding.<name>.consumer.batch-mode` is set to `true`, all of the records received by polling the Kafka `Consumer` will be presented as a `List<?>` to the listener method.
 Otherwise, the method will be called with one record at a time.
-The size of the batch is controlled by Kafka consumer properties `max.poll.records`, `fetch.min.bytes`, `fetch.max.wait.ms`; refer to the Kafka documentation for more information.
+The size of the batch is controlled by Kafka consumer properties `max.poll.records`, `min.fetch.bytes`, `fetch.max.wait.ms`; refer to the Kafka documentation for more information.
+
+Bear in mind that batch mode is not supported with `@StreamListener` - it only works with the newer functional programming model.
 
 IMPORTANT: Retry within the binder is not supported when using batch mode, so `maxAttempts` will be overridden to 1.
 You can configure a `SeekToCurrentBatchErrorHandler` (using a `ListenerContainerCustomizer`) to achieve similar functionality to retry in the binder.
@@ -311,7 +326,7 @@ Refer to the https://docs.spring.io/spring-kafka/docs/2.3.0.BUILD-SNAPSHOT/refer
 [[kafka-producer-properties]]
 ==== Kafka Producer Properties
 
-NOTE: To avoid repetition, Spring Cloud Stream supports setting values for all channels, in the format of `spring.cloud.stream.default.<property>=<value>`.
+NOTE: To avoid repetition, Spring Cloud Stream supports setting values for all channels, in the format of `spring.cloud.stream.kafka.default.producer.<property>=<value>`.
 
 
 The following properties are available for Kafka producers only and
@@ -363,6 +378,7 @@ For example `!ask,as*` will pass `ash` but not `ask`.
 Default: `*` (all headers - except the `id` and `timestamp`)
 configuration::
 Map with a key/value pair containing generic Kafka producer properties.
+The `bootstrap.servers` property cannot be set here; use multi-binder support if you need to connect to multiple clusters.
 +
 Default: Empty map.
 topic.properties::
@@ -407,6 +423,17 @@ Supported values are `none`, `gzip`, `snappy` and `lz4`.
 If you override the `kafka-clients` jar to 2.1.0 (or later), as discussed in the https://docs.spring.io/spring-kafka/docs/2.2.x/reference/html/deps-for-21x.html[Spring for Apache Kafka documentation], and wish to use `zstd` compression, use `spring.cloud.stream.kafka.bindings.<binding-name>.producer.configuration.compression.type=zstd`.
 +
 Default: `none`.
+transactionManager::
+Bean name of a `KafkaAwareTransactionManager` used to override the binder's transaction manager for this binding.
+Usually needed if you want to synchronize another transaction with the Kafka transaction, using the `ChainedKafkaTransactionManaager`.
+To achieve exactly once consumption and production of records, the consumer and producer bindings must all be configured with the same transaction manager.
++
+Default: none.
+
+closeTimeout::
+Timeout in number of seconds to wait for when closing the producer.
++
+Default: `30`
 
 ==== Usage examples
 
@@ -545,25 +572,25 @@ The following simple application shows how to pause and resume:
 @EnableBinding(Sink.class)
 public class Application {
 
-	public static void main(String[] args) {
-		SpringApplication.run(Application.class, args);
-	}
+    public static void main(String[] args) {
+        SpringApplication.run(Application.class, args);
+    }
 
-	@StreamListener(Sink.INPUT)
-	public void in(String in, @Header(KafkaHeaders.CONSUMER) Consumer<?, ?> consumer) {
-		System.out.println(in);
-		consumer.pause(Collections.singleton(new TopicPartition("myTopic", 0)));
-	}
+    @StreamListener(Sink.INPUT)
+    public void in(String in, @Header(KafkaHeaders.CONSUMER) Consumer<?, ?> consumer) {
+        System.out.println(in);
+        consumer.pause(Collections.singleton(new TopicPartition("myTopic", 0)));
+    }
 
-	@Bean
-	public ApplicationListener<ListenerContainerIdleEvent> idleListener() {
-		return event -> {
-			System.out.println(event);
-			if (event.getConsumer().paused().size() > 0) {
-				event.getConsumer().resume(event.getConsumer().paused());
-			}
-		};
-	}
+    @Bean
+    public ApplicationListener<ListenerContainerIdleEvent> idleListener() {
+        return event -> {
+            System.out.println(event);
+            if (event.getConsumer().paused().size() > 0) {
+                event.getConsumer().resume(event.getConsumer().paused());
+            }
+        };
+    }
 
 }
 ----
@@ -576,16 +603,24 @@ When used in a processor application, the consumer starts the transaction; any r
 When the listener exits normally, the listener container will send the offset to the transaction and commit it.
 A common producer factory is used for all producer bindings configured using `spring.cloud.stream.kafka.binder.transaction.producer.*` properties; individual binding Kafka producer properties are ignored.
 
+IMPORTANT: Normal binder retries (and dead lettering) are not supported with transactions because the retries will run in the original transaction, which may be rolled back and any published records will be rolled back too.
+When retries are enabled (the common property `maxAttempts` is greater than zero) the retry properties are used to configure a `DefaultAfterRollbackProcessor` to enable retries at the container level.
+Similarly, instead of publishing dead-letter records within the transaction, this functionality is moved to the listener container, again via the `DefaultAfterRollbackProcessor` which runs after the main transaction has rolled back.
+
 If you wish to use transactions in a source application, or from some arbitrary thread for producer-only transaction (e.g. `@Scheduled` method), you must get a reference to the transactional producer factory and define a `KafkaTransactionManager` bean using it.
 
 ====
 [source, java]
 ----
 @Bean
-public PlatformTransactionManager transactionManager(BinderFactory binders) {
+public PlatformTransactionManager transactionManager(BinderFactory binders,
+        @Value("${unique.tx.id.per.instance}") String txId) {
+
     ProducerFactory<byte[], byte[]> pf = ((KafkaMessageChannelBinder) binders.getBinder(null,
             MessageChannel.class)).getTransactionalProducerFactory();
-    return new KafkaTransactionManager<>(pf);
+    KafkaTransactionManager tm = new KafkaTransactionManager<>(pf);
+    tm.setTransactionId(txId)
+    return tm;
 }
 ----
 ====
@@ -611,6 +646,8 @@ public static class Sender {
 ====
 
 If you wish to synchronize producer-only transactions with those from some other transaction manager, use a `ChainedTransactionManager`.
+
+IMPORTANT: If you deploy multiple instances of your application, each instance needs a unique `transactionIdPrefix`.
 
 [[kafka-error-channels]]
 === Error Channels
@@ -664,39 +701,39 @@ Starting with version 2.1, if you provide a single `KafkaRebalanceListener` bean
 ----
 public interface KafkaBindingRebalanceListener {
 
-	/**
-	 * Invoked by the container before any pending offsets are committed.
-	 * @param bindingName the name of the binding.
-	 * @param consumer the consumer.
-	 * @param partitions the partitions.
-	 */
-	default void onPartitionsRevokedBeforeCommit(String bindingName, Consumer<?, ?> consumer,
-			Collection<TopicPartition> partitions) {
+    /**
+     * Invoked by the container before any pending offsets are committed.
+     * @param bindingName the name of the binding.
+     * @param consumer the consumer.
+     * @param partitions the partitions.
+     */
+    default void onPartitionsRevokedBeforeCommit(String bindingName, Consumer<?, ?> consumer,
+            Collection<TopicPartition> partitions) {
 
-	}
+    }
 
-	/**
-	 * Invoked by the container after any pending offsets are committed.
-	 * @param bindingName the name of the binding.
-	 * @param consumer the consumer.
-	 * @param partitions the partitions.
-	 */
-	default void onPartitionsRevokedAfterCommit(String bindingName, Consumer<?, ?> consumer, Collection<TopicPartition> partitions) {
+    /**
+     * Invoked by the container after any pending offsets are committed.
+     * @param bindingName the name of the binding.
+     * @param consumer the consumer.
+     * @param partitions the partitions.
+     */
+    default void onPartitionsRevokedAfterCommit(String bindingName, Consumer<?, ?> consumer, Collection<TopicPartition> partitions) {
 
-	}
+    }
 
-	/**
-	 * Invoked when partitions are initially assigned or after a rebalance.
-	 * Applications might only want to perform seek operations on an initial assignment.
-	 * @param bindingName the name of the binding.
-	 * @param consumer the consumer.
-	 * @param partitions the partitions.
-	 * @param initial true if this is the initial assignment.
-	 */
-	default void onPartitionsAssigned(String bindingName, Consumer<?, ?> consumer, Collection<TopicPartition> partitions,
-			boolean initial) {
+    /**
+     * Invoked when partitions are initially assigned or after a rebalance.
+     * Applications might only want to perform seek operations on an initial assignment.
+     * @param bindingName the name of the binding.
+     * @param consumer the consumer.
+     * @param partitions the partitions.
+     * @param initial true if this is the initial assignment.
+     */
+    default void onPartitionsAssigned(String bindingName, Consumer<?, ?> consumer, Collection<TopicPartition> partitions,
+            boolean initial) {
 
-	}
+    }
 
 }
 ----
