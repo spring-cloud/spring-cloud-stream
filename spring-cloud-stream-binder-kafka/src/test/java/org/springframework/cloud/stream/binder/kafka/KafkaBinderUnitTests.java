@@ -237,7 +237,7 @@ public class KafkaBinderUnitTests {
 			@Override
 			protected ConsumerFactory<?, ?> createKafkaConsumerFactory(boolean anonymous,
 					String consumerGroup,
-					ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties) {
+					ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties, String beanName) {
 
 				return new ConsumerFactory<byte[], byte[]>() {
 

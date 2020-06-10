@@ -91,10 +91,10 @@ public class KafkaTransactionTests {
 			@Override
 			protected DefaultKafkaProducerFactory<byte[], byte[]> getProducerFactory(
 					String transactionIdPrefix,
-					ExtendedProducerProperties<KafkaProducerProperties> producerProperties) {
+					ExtendedProducerProperties<KafkaProducerProperties> producerProperties, String beanName) {
 				DefaultKafkaProducerFactory<byte[], byte[]> producerFactory = spy(
 						super.getProducerFactory(transactionIdPrefix,
-								producerProperties));
+								producerProperties, beanName));
 				willReturn(mockProducer).given(producerFactory).createProducer("foo-");
 				return producerFactory;
 			}

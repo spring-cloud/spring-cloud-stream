@@ -40,15 +40,21 @@ class StreamsBuilderFactoryManager implements SmartLifecycle {
 	private final KafkaStreamsBindingInformationCatalogue kafkaStreamsBindingInformationCatalogue;
 
 	private final KafkaStreamsRegistry kafkaStreamsRegistry;
+
 	private final KafkaStreamsBinderMetrics kafkaStreamsBinderMetrics;
+
+	private final StreamsListener listener;
 
 	private volatile boolean running;
 
 	StreamsBuilderFactoryManager(KafkaStreamsBindingInformationCatalogue kafkaStreamsBindingInformationCatalogue,
-										KafkaStreamsRegistry kafkaStreamsRegistry, KafkaStreamsBinderMetrics kafkaStreamsBinderMetrics) {
+										KafkaStreamsRegistry kafkaStreamsRegistry,
+										KafkaStreamsBinderMetrics kafkaStreamsBinderMetrics,
+										StreamsListener listener) {
 		this.kafkaStreamsBindingInformationCatalogue = kafkaStreamsBindingInformationCatalogue;
 		this.kafkaStreamsRegistry = kafkaStreamsRegistry;
 		this.kafkaStreamsBinderMetrics = kafkaStreamsBinderMetrics;
+		this.listener = listener;
 	}
 
 	@Override
@@ -70,9 +76,13 @@ class StreamsBuilderFactoryManager implements SmartLifecycle {
 			try {
 				Set<StreamsBuilderFactoryBean> streamsBuilderFactoryBeans = this.kafkaStreamsBindingInformationCatalogue
 						.getStreamsBuilderFactoryBeans();
+				int n = 0;
 				for (StreamsBuilderFactoryBean streamsBuilderFactoryBean : streamsBuilderFactoryBeans) {
 					streamsBuilderFactoryBean.start();
 					this.kafkaStreamsRegistry.registerKafkaStreams(streamsBuilderFactoryBean);
+					if (this.listener != null) {
+						this.listener.streamsAdded("streams." + n++, streamsBuilderFactoryBean.getKafkaStreams());
+					}
 				}
 				if (this.kafkaStreamsBinderMetrics != null) {
 					this.kafkaStreamsBinderMetrics.addMetrics(streamsBuilderFactoryBeans);
@@ -91,8 +101,12 @@ class StreamsBuilderFactoryManager implements SmartLifecycle {
 			try {
 				Set<StreamsBuilderFactoryBean> streamsBuilderFactoryBeans = this.kafkaStreamsBindingInformationCatalogue
 						.getStreamsBuilderFactoryBeans();
+				int n = 0;
 				for (StreamsBuilderFactoryBean streamsBuilderFactoryBean : streamsBuilderFactoryBeans) {
 					streamsBuilderFactoryBean.stop();
+					if (this.listener != null) {
+						this.listener.streamsRemoved("streams." + n++, streamsBuilderFactoryBean.getKafkaStreams());
+					}
 				}
 			}
 			catch (Exception ex) {
