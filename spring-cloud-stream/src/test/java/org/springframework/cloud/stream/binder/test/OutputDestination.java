@@ -80,9 +80,11 @@ public class OutputDestination extends AbstractDestination {
 	@SuppressWarnings("unchecked")
 	@Override
 	void afterChannelIsSet(int channelIndex, String bindingName) {
-		BlockingQueue<Message<byte[]>> messageQueue = new LinkedTransferQueue<>();
-		this.messageQueues.put(bindingName, messageQueue);
-		this.getChannelByName(bindingName).subscribe(message -> this.messageQueues.get(bindingName).offer((Message<byte[]>) message));
+		if (!this.messageQueues.containsKey(bindingName)) {
+			BlockingQueue<Message<byte[]>> messageQueue = new LinkedTransferQueue<>();
+			this.messageQueues.put(bindingName, messageQueue);
+			this.getChannelByName(bindingName).subscribe(message -> this.messageQueues.get(bindingName).offer((Message<byte[]>) message));
+		}
 	}
 
 }

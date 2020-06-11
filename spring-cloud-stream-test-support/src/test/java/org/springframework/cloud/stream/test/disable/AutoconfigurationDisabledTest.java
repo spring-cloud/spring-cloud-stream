@@ -18,8 +18,7 @@ package org.springframework.cloud.stream.test.disable;
 
 import java.util.concurrent.TimeUnit;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -32,14 +31,12 @@ import org.springframework.integration.annotation.Transformer;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
 import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Marius Bogoevici
  */
-@RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest(classes = AutoconfigurationDisabledTest.MyProcessor.class, properties = {
 		"server.port=-1", "spring.cloud.stream.defaultBinder=test",
 		"--spring.cloud.stream.bindings.input.contentType=text/plain",

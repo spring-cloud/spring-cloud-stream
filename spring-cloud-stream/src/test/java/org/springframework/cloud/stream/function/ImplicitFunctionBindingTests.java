@@ -27,8 +27,9 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import org.junit.After;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
+import reactor.core.publisher.EmitterProcessor;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -68,7 +69,7 @@ import static org.junit.Assert.fail;
  */
 public class ImplicitFunctionBindingTests {
 
-	@After
+	@AfterEach
 	public void after() {
 		System.clearProperty("spring.cloud.function.definition");
 	}
@@ -382,7 +383,7 @@ public class ImplicitFunctionBindingTests {
 		}
 	}
 
-	@Test(expected = Exception.class)
+	@Test
 	public void testDeclaredTypeVsActualInstance() {
 		System.clearProperty("spring.cloud.function.definition");
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
@@ -394,6 +395,10 @@ public class ImplicitFunctionBindingTests {
 			Message<byte[]> inputMessageOne = MessageBuilder.withPayload("Hello".getBytes()).build();
 
 			inputDestination.send(inputMessageOne);
+			fail();
+		}
+		catch (Exception ex) {
+			// good
 		}
 	}
 
@@ -759,13 +764,57 @@ public class ImplicitFunctionBindingTests {
 		}
 	}
 
-	@Test(expected = BeanCreationException.class)
+	@Test
 	public void testReactiveConsumerWithConcurrencyFailureConfiguration() {
 		System.clearProperty("spring.cloud.function.definition");
-		new SpringApplicationBuilder(
-				TestChannelBinderConfiguration.getCompleteConfiguration(ReactiveConsumerWithConcurrencyFailureConfiguration.class))
+		try {
+			new SpringApplicationBuilder(
+					TestChannelBinderConfiguration.getCompleteConfiguration(ReactiveConsumerWithConcurrencyFailureConfiguration.class))
+							.web(WebApplicationType.NONE).run("--spring.jmx.enabled=false",
+									"--spring.cloud.stream.bindings.input-in-0.consumer.concurrency=2");
+			fail();
+		}
+		catch (BeanCreationException e) {
+			// good
+		}
+	}
+
+	@Test
+	public void testGh1973() {
+		System.clearProperty("spring.cloud.function.definition");
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+				TestChannelBinderConfiguration.getCompleteConfiguration(SupplierAndProcessorConfiguration.class))
 						.web(WebApplicationType.NONE).run("--spring.jmx.enabled=false",
-								"--spring.cloud.stream.bindings.input-in-0.consumer.concurrency=2");
+								"--spring.cloud.function.definition=echo;supplier",
+								"--spring.cloud.stream.bindings.supplier-out-0.destination=output",
+								"--spring.cloud.stream.bindings.echo-out-0.destination=output")) {
+
+			InputDestination inputDestination = context.getBean(InputDestination.class);
+			OutputDestination outputDestination = context.getBean(OutputDestination.class);
+
+			inputDestination.send(MessageBuilder.withPayload("hello").build());
+			assertThat(outputDestination.receive(1000, "output")).isNotNull();
+			assertThat(outputDestination.receive(1000, "output")).isNull();
+			assertThat(outputDestination.receive(1000, "output")).isNull();
+
+		}
+	}
+
+	@EnableAutoConfiguration
+	public static class SupplierAndProcessorConfiguration {
+		EmitterProcessor<Message<String>> processor = EmitterProcessor.create();
+
+		@Bean
+		public Supplier<Flux<Message<String>>> supplier() {
+			return () -> processor.doOnNext(v -> {
+				System.out.println("Hello " + v);
+			});
+		}
+
+		@Bean
+		public Function<Message<String>, Message<String>> echo() {
+			return v -> v;
+		}
 	}
 
 	@EnableAutoConfiguration
