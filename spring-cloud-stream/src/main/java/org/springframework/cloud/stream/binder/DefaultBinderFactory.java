@@ -351,8 +351,8 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 	private void customizeParentChildContextRelationship(SpringApplicationBuilder applicationBuilder, ApplicationContext context) {
 		if (context != null) {
 			Map<String, ListenerContainerCustomizer> customizers = context.getBeansOfType(ListenerContainerCustomizer.class);
-			if (!CollectionUtils.isEmpty(customizers)) {
-				applicationBuilder.initializers(childContext -> {
+			applicationBuilder.initializers(childContext -> {
+				if (!CollectionUtils.isEmpty(customizers)) {
 					for (Entry<String, ListenerContainerCustomizer> customizerEntry : customizers.entrySet()) {
 						ListenerContainerCustomizer customizerWrapper = new ListenerContainerCustomizer() {
 							@Override
@@ -372,11 +372,11 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 						((GenericApplicationContext) childContext).registerBean(customizerEntry.getKey(),
 								ListenerContainerCustomizer.class, () -> customizerWrapper);
 					}
-					GenericConversionService cs = (GenericConversionService) ((GenericApplicationContext) childContext).getBeanFactory().getConversionService();
-					SpelConverter spelConverter = new SpelConverter();
-					cs.addConverter(spelConverter);
-				});
-			}
+				}
+				GenericConversionService cs = (GenericConversionService) ((GenericApplicationContext) childContext).getBeanFactory().getConversionService();
+				SpelConverter spelConverter = new SpelConverter();
+				cs.addConverter(spelConverter);
+			});
 		}
 	}
 
