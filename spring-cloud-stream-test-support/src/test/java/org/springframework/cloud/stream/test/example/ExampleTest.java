@@ -16,8 +16,7 @@
 
 package org.springframework.cloud.stream.test.example;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -29,7 +28,6 @@ import org.springframework.integration.annotation.Transformer;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.GenericMessage;
 import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -38,12 +36,9 @@ import static org.assertj.core.api.Assertions.assertThat;
  * {@link org.springframework.cloud.stream.test.binder.TestSupportBinder} applies
  * correctly.
  */
-@RunWith(SpringJUnit4ClassRunner.class)
-// @checkstyle:off
 @SpringBootTest(classes = ExampleTest.MyProcessor.class, webEnvironment = SpringBootTest.WebEnvironment.NONE, properties = {
 		"--spring.cloud.stream.bindings.input.contentType=text/plain",
 		"--spring.cloud.stream.bindings.output.contentType=text/plain" })
-// @checkstyle:on
 @DirtiesContext
 public class ExampleTest {
 
