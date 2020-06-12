@@ -16,7 +16,6 @@
 
 package org.springframework.cloud.stream.binder.test;
 
-import java.util.Collections;
 import java.util.function.Consumer;
 
 import org.springframework.beans.factory.BeanFactory;
@@ -30,12 +29,15 @@ import org.springframework.cloud.stream.binder.test.TestChannelBinderProvisioner
 import org.springframework.cloud.stream.provisioning.ConsumerDestination;
 import org.springframework.cloud.stream.provisioning.ProducerDestination;
 import org.springframework.core.AttributeAccessor;
+import org.springframework.integration.IntegrationMessageHeaderAccessor;
+import org.springframework.integration.acks.AcknowledgmentCallback;
 import org.springframework.integration.core.MessageProducer;
 import org.springframework.integration.core.MessageSource;
 import org.springframework.integration.endpoint.MessageProducerSupport;
 import org.springframework.integration.handler.BridgeHandler;
 import org.springframework.integration.support.DefaultErrorMessageStrategy;
 import org.springframework.integration.support.ErrorMessageStrategy;
+import org.springframework.integration.support.MapBuilder;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
@@ -110,8 +112,10 @@ public class TestChannelBinder extends
 	private Message<?> lastError;
 
 	private MessageSource<?> messageSourceDelegate = () -> new GenericMessage<>(
-			"polled data",
-			Collections.singletonMap(MessageHeaders.CONTENT_TYPE, "text/plain"));
+			"polled data", new MapBuilder()
+					.put(MessageHeaders.CONTENT_TYPE, "text/plain")
+					.put(IntegrationMessageHeaderAccessor.ACKNOWLEDGMENT_CALLBACK, (AcknowledgmentCallback) status -> {
+					}).get());
 
 	public TestChannelBinder(TestChannelBinderProvisioner provisioningProvider) {
 		super(new String[] {}, provisioningProvider);

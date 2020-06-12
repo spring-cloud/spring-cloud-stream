@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2019 the original author or authors.
+ * Copyright 2018-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,6 +62,7 @@ import static org.mockito.Mockito.verify;
 /**
  * @author Gary Russell
  * @author Oleg Zhurakousky
+ * @author David Turanski
  * @since 2.0
  *
  */
@@ -75,6 +76,28 @@ public class PollableConsumerTests {
 	public void before() {
 		this.messageConverter = new CompositeMessageConverterFactory()
 				.getMessageConverterForAllRegistered();
+	}
+
+	@Test
+	public void testDefaultMessageSource() {
+		TestChannelBinder binder = createBinder();
+		MessageConverterConfigurer configurer = this.context
+				.getBean(MessageConverterConfigurer.class);
+
+		DefaultPollableMessageSource pollableSource = new DefaultPollableMessageSource(
+				this.messageConverter);
+		configurer.configurePolledMessageSource(pollableSource, "foo");
+		ExtendedConsumerProperties<Object> properties = new ExtendedConsumerProperties<>(
+				null);
+		properties.setMaxAttempts(2);
+		properties.setBackOffInitialInterval(0);
+		binder.bindPollableConsumer("foo", "bar", pollableSource, properties);
+		AtomicInteger count = new AtomicInteger();
+		assertThat(pollableSource.poll(message -> {
+			assertThat(message).isNotNull();
+			count.incrementAndGet();
+		})).isTrue();
+		assertThat(count.get()).isOne();
 	}
 
 	@Test
@@ -415,6 +438,39 @@ public class PollableConsumerTests {
 	}
 
 	@Test
+	public void testRequeueWithNoAcknowledgementCallback() {
+		TestChannelBinder binder = createBinder();
+		MessageConverterConfigurer configurer = this.context
+				.getBean(MessageConverterConfigurer.class);
+
+		DefaultPollableMessageSource pollableSource = new DefaultPollableMessageSource(
+				this.messageConverter);
+		configurer.configurePolledMessageSource(pollableSource, "foo");
+		pollableSource.addInterceptor(new ChannelInterceptor() {
+
+			@Override
+			public Message<?> preSend(Message<?> message, MessageChannel channel) {
+				return MessageBuilder.fromMessage(message)
+						.build();
+			}
+
+		});
+		ExtendedConsumerProperties<Object> properties = new ExtendedConsumerProperties<>(null);
+		properties.setMaxAttempts(2);
+		properties.setBackOffInitialInterval(0);
+		binder.bindPollableConsumer("foo", "bar", pollableSource, properties);
+		final AtomicInteger count = new AtomicInteger();
+
+		assertThat(pollableSource.poll(received -> {
+			count.incrementAndGet();
+			throw new RequeueCurrentMessageException("test retry");
+		})).isTrue();
+
+		assertThat(count.get()).isEqualTo(2);
+
+	}
+
+	@Test
 	public void testRequeueFromErrorFlow() {
 		TestChannelBinder binder = createBinder();
 		MessageConverterConfigurer configurer = this.context
@@ -482,19 +538,19 @@ public class PollableConsumerTests {
 	public void testAutoStartupOn() {
 		TestChannelBinder binder = createBinder();
 		binder.setMessageSourceDelegate(new LifecycleMessageSource(
-			() -> new GenericMessage<>("{\"foo\":\"bar\"}".getBytes())));
+				() -> new GenericMessage<>("{\"foo\":\"bar\"}".getBytes())));
 		MessageConverterConfigurer configurer = this.context
-			.getBean(MessageConverterConfigurer.class);
+				.getBean(MessageConverterConfigurer.class);
 
 		DefaultPollableMessageSource pollableSource = new DefaultPollableMessageSource(
-			this.messageConverter);
+				this.messageConverter);
 		configurer.configurePolledMessageSource(pollableSource, "foo");
 		ExtendedConsumerProperties<Object> properties = new ExtendedConsumerProperties<>(
-			null);
+				null);
 		properties.setAutoStartup(true);
 
 		Binding<PollableSource<MessageHandler>> pollableSourceBinding = binder
-			.bindPollableConsumer("foo", "bar", pollableSource, properties);
+				.bindPollableConsumer("foo", "bar", pollableSource, properties);
 
 		assertThat(pollableSourceBinding.isRunning()).isTrue();
 	}
@@ -523,6 +579,7 @@ public class PollableConsumerTests {
 
 	public static class LifecycleMessageSource<T> implements MessageSource<T>, Lifecycle {
 		private final MessageSource<T> delegate;
+
 		private boolean running = false;
 
 		public LifecycleMessageSource(MessageSource<T> delegate) {
