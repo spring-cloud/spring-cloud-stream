@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2019 the original author or authors.
+ * Copyright 2018-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,8 @@ import java.util.function.BiConsumer;
 
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.aop.support.NameMatchMethodPointcutAdvisor;
@@ -59,11 +61,14 @@ import org.springframework.util.Assert;
  *
  * @author Gary Russell
  * @author Oleg Zhurakousky
+ * @author David Turanski
  * @since 2.0
  *
  */
 public class DefaultPollableMessageSource
 		implements PollableMessageSource, Lifecycle, RetryListener {
+
+	private static final Log log = LogFactory.getLog(DefaultPollableMessageSource.class);
 
 	protected static final ThreadLocal<AttributeAccessor> attributesHolder = new ThreadLocal<AttributeAccessor>();
 
@@ -204,6 +209,11 @@ public class DefaultPollableMessageSource
 
 		AcknowledgmentCallback ackCallback = StaticMessageHeaderAccessor
 				.getAcknowledgmentCallback(message);
+
+		if (ackCallback == null) {
+			ackCallback = status -> log.warn("No AcknowledgementCallback defined. Status: " + status.name() + " " + message);
+		}
+
 		try {
 			if (this.retryTemplate == null) {
 				this.handle(message, handler);
