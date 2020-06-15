@@ -19,6 +19,13 @@
         <maven-checkstyle-plugin.includeTestSourceDirectory>true
         </maven-checkstyle-plugin.includeTestSourceDirectory>
 	</properties>
+	<modules>
+		<module>spring-cloud-stream-binder-rabbit-core</module>
+		<module>spring-cloud-stream-binder-rabbit</module>
+		<module>spring-cloud-starter-stream-rabbit</module>
+		<module>spring-cloud-stream-binder-rabbit-test-support</module>
+		<module>docs</module>
+	</modules>
 	<dependencyManagement>
 		<dependencies>
 			<dependency>
@@ -51,13 +58,13 @@
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
-	<modules>
-		<module>spring-cloud-stream-binder-rabbit-core</module>
-		<module>spring-cloud-stream-binder-rabbit</module>
-		<module>spring-cloud-starter-stream-rabbit</module>
-		<module>spring-cloud-stream-binder-rabbit-test-support</module>
-		<module>docs</module>
-	</modules>
+	<dependencies>
+		<dependency>
+			<groupId>org.junit.vintage</groupId>
+			<artifactId>junit-vintage-engine</artifactId>
+			<scope>test</scope>
+		</dependency>
+	</dependencies>
 	<build>
 		<pluginManagement>
 			<plugins>
