@@ -30,6 +30,14 @@
 		<maven-checkstyle-plugin.failsOnViolation>true</maven-checkstyle-plugin.failsOnViolation>
 		<maven-checkstyle-plugin.includeTestSourceDirectory>true</maven-checkstyle-plugin.includeTestSourceDirectory>
 	</properties>
+	<modules>
+		<module>spring-cloud-stream</module>
+		<module>spring-cloud-stream-binder-test</module>
+		<module>spring-cloud-stream-test-support</module>
+		<module>spring-cloud-stream-test-support-internal</module>
+		<module>spring-cloud-stream-integration-tests</module>
+		<module>docs</module>
+	</modules>
 	<dependencyManagement>
 		<dependencies>
 			<dependency>
@@ -109,14 +117,13 @@
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
-	<modules>
-		<module>spring-cloud-stream</module>
-		<module>spring-cloud-stream-binder-test</module>
-		<module>spring-cloud-stream-test-support</module>
-		<module>spring-cloud-stream-test-support-internal</module>
-		<module>spring-cloud-stream-integration-tests</module>
-		<module>docs</module>
-	</modules>
+	<dependencies>
+		<dependency>
+			<groupId>org.junit.vintage</groupId>
+			<artifactId>junit-vintage-engine</artifactId>
+			<scope>test</scope>
+		</dependency>
+	</dependencies>
 	<build>
 		<pluginManagement>
 			<plugins>
