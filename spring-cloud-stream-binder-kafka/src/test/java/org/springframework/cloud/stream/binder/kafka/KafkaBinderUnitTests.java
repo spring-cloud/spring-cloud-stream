@@ -86,17 +86,17 @@ public class KafkaBinderUnitTests {
 				consumerProps);
 		Method method = KafkaMessageChannelBinder.class.getDeclaredMethod(
 				"createKafkaConsumerFactory", boolean.class, String.class,
-				ExtendedConsumerProperties.class);
+				ExtendedConsumerProperties.class, String.class);
 		method.setAccessible(true);
 
 		// test default for anon
-		Object factory = method.invoke(binder, true, "foo-1", ecp);
+		Object factory = method.invoke(binder, true, "foo-1", ecp, "foo.consumer");
 		Map<?, ?> configs = TestUtils.getPropertyValue(factory, "configs", Map.class);
 		assertThat(configs.get(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG))
 				.isEqualTo("latest");
 
 		// test default for named
-		factory = method.invoke(binder, false, "foo-2", ecp);
+		factory = method.invoke(binder, false, "foo-2", ecp, "foo.consumer");
 		configs = TestUtils.getPropertyValue(factory, "configs", Map.class);
 		assertThat(configs.get(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG))
 				.isEqualTo("earliest");
@@ -104,7 +104,7 @@ public class KafkaBinderUnitTests {
 		// binder level setting
 		binderConfigurationProperties.setConfiguration(Collections
 				.singletonMap(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "latest"));
-		factory = method.invoke(binder, false, "foo-3", ecp);
+		factory = method.invoke(binder, false, "foo-3", ecp, "foo.consumer");
 		configs = TestUtils.getPropertyValue(factory, "configs", Map.class);
 		assertThat(configs.get(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG))
 				.isEqualTo("latest");
@@ -112,7 +112,7 @@ public class KafkaBinderUnitTests {
 		// consumer level setting
 		consumerProps.setConfiguration(Collections
 				.singletonMap(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest"));
-		factory = method.invoke(binder, false, "foo-4", ecp);
+		factory = method.invoke(binder, false, "foo-4", ecp, "foo.consumer");
 		configs = TestUtils.getPropertyValue(factory, "configs", Map.class);
 		assertThat(configs.get(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG))
 				.isEqualTo("earliest");
