@@ -33,11 +33,11 @@ import org.springframework.context.annotation.Configuration;
 @ConditionalOnClass(name = {
 		"org.springframework.boot.actuate.endpoint.annotation.Endpoint" })
 @AutoConfigureAfter({EndpointAutoConfiguration.class, KafkaStreamsBinderSupportAutoConfiguration.class})
-public class TopologyEndpointAutoConfiguration {
+public class KafkaStreamsTopologyEndpointAutoConfiguration {
 
 	@Bean
 	@ConditionalOnAvailableEndpoint
-	public TopologyEndpoint topologyEndpoint(KafkaStreamsRegistry kafkaStreamsRegistry) {
-		return new TopologyEndpoint(kafkaStreamsRegistry);
+	public KafkaStreamsTopologyEndpoint topologyEndpoint(KafkaStreamsRegistry kafkaStreamsRegistry) {
+		return new KafkaStreamsTopologyEndpoint(kafkaStreamsRegistry);
 	}
 }

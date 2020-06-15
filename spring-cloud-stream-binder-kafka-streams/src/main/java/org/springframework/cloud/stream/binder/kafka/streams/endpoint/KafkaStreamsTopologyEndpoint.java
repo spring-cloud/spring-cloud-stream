@@ -31,8 +31,8 @@ import org.springframework.util.StringUtils;
  * @author Soby Chacko
  * @since 3.0.4
  */
-@Endpoint(id = "topology")
-public class TopologyEndpoint {
+@Endpoint(id = "kafkastreamstopology")
+public class KafkaStreamsTopologyEndpoint {
 
 	/**
 	 * Topology not found message.
@@ -41,12 +41,12 @@ public class TopologyEndpoint {
 
 	private final KafkaStreamsRegistry kafkaStreamsRegistry;
 
-	public TopologyEndpoint(KafkaStreamsRegistry kafkaStreamsRegistry) {
+	public KafkaStreamsTopologyEndpoint(KafkaStreamsRegistry kafkaStreamsRegistry) {
 		this.kafkaStreamsRegistry = kafkaStreamsRegistry;
 	}
 
 	@ReadOperation
-	public String topology() {
+	public String kafkaStreamsTopology() {
 		final List<StreamsBuilderFactoryBean> streamsBuilderFactoryBeans = this.kafkaStreamsRegistry.streamsBuilderFactoryBeans();
 		final StringBuilder topologyDescription = new StringBuilder();
 		streamsBuilderFactoryBeans.stream()
@@ -56,7 +56,7 @@ public class TopologyEndpoint {
 	}
 
 	@ReadOperation
-	public String topology(@Selector String applicationId) {
+	public String kafkaStreamsTopology(@Selector String applicationId) {
 		if (!StringUtils.isEmpty(applicationId)) {
 			final StreamsBuilderFactoryBean streamsBuilderFactoryBean = this.kafkaStreamsRegistry.streamsBuilderFactoryBean(applicationId);
 			if (streamsBuilderFactoryBean != null) {

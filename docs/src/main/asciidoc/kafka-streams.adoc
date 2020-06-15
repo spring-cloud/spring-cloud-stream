@@ -1453,13 +1453,13 @@ To modify this behavior simply add a single `CleanupConfig` `@Bean` (configured 
 
 Kafka Streams binder provides the following actuator endpoints for retrieving the topology description using which you can visualize the topology using external tools.
 
-`/actuator/topology`
+`/actuator/kafkastreamstopology`
 
-`/actuator/topology/<applicaiton-id of the processor>`
+`/actuator/kafkastreamstopology/<applicaiton-id of the processor>`
 
 You need to include the actuator and web dependencies from Spring Boot to access these endpoints.
-Further, you also need to add `topology` to `management.endpoints.web.exposure.include` property.
-By default, the `topology` endpoint is disabled.
+Further, you also need to add `kafkastreamstopology` to `management.endpoints.web.exposure.include` property.
+By default, the `kafkastreamstopology` endpoint is disabled.
 
 === Configuration Options
 
