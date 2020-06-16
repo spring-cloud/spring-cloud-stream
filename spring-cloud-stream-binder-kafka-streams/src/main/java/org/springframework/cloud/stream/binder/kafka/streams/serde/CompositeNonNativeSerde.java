@@ -23,9 +23,9 @@ import org.springframework.messaging.converter.CompositeMessageConverter;
  * It is kept for backward compatibility reasons and will be removed in version 3.1
  *
  * @author Soby Chacko
- * @sine 2.1
+ * @since 2.1
  *
- * @deprecated in favour of {@link MessageConverterDelegateSerde}
+ * @deprecated in favor of {@link MessageConverterDelegateSerde}
  */
 @Deprecated
 public class CompositeNonNativeSerde extends MessageConverterDelegateSerde {

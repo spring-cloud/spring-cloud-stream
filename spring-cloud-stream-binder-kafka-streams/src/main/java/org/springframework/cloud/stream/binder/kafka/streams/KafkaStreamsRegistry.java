@@ -30,7 +30,7 @@ import org.apache.kafka.streams.StreamsConfig;
 import org.springframework.kafka.config.StreamsBuilderFactoryBean;
 
 /**
- * An internal registry for holding {@KafkaStreams} objects maintained through
+ * An internal registry for holding {@link KafkaStreams} objects maintained through
  * {@link StreamsBuilderFactoryManager}.
  *
  * @author Soby Chacko

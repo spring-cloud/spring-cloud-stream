@@ -52,14 +52,14 @@ import org.springframework.kafka.support.serializer.JsonSerde;
  *
  * <pre class="code">
  *		.aggregate(ArrayList::new,
- * 					(k, v, aggregates) -> {
+ * 					(k, v, aggregates) -&gt; {
  * 							aggregates.add(v);
  * 							return aggregates;
  *                                                },
  * 					Materialized.&lt;String, Collection&lt;Foo&gt;, WindowStore&lt;Bytes, byte[]&gt;&gt;as(
  * 						"foo-store")
  * 						.withKeySerde(Serdes.String())
- *						.withValueSerde(new CollectionSerde<>(Foo.class, ArrayList.class)))
+ *						.withValueSerde(new CollectionSerde&lt;&gt;(Foo.class, ArrayList.class)))
  *  * </pre>
  *
  * Supported Collection types by this Serde are - {@link java.util.ArrayList}, {@link java.util.LinkedList},
