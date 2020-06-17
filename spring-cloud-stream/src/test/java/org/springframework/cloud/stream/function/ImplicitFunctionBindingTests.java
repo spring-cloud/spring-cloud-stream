@@ -20,6 +20,7 @@ import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -797,6 +798,34 @@ public class ImplicitFunctionBindingTests {
 			assertThat(outputDestination.receive(1000, "output")).isNull();
 			assertThat(outputDestination.receive(1000, "output")).isNull();
 
+		}
+	}
+
+	@Test
+	public void testGh1944() {
+		System.clearProperty("spring.cloud.function.definition");
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+				TestChannelBinderConfiguration.getCompleteConfiguration(SupplierAndPojoConfiguration.class))
+						.web(WebApplicationType.NONE).run("--spring.jmx.enabled=false",
+								"--spring.cloud.function.definition=supplier")) {
+			OutputDestination outputDestination = context.getBean(OutputDestination.class);
+
+			Message<byte[]> result = outputDestination.receive(2000);
+			assertThat(new String(result.getPayload())).isEqualTo("[{\"name\":\"Ricky\",\"id\":1},{\"name\":\"Julien\",\"id\":2}]");
+		}
+	}
+
+	@EnableAutoConfiguration
+	public static class SupplierAndPojoConfiguration {
+		@Bean
+		public Supplier<List<Person>> supplier() {
+			Person p1 = new Person();
+			p1.setId(1);
+			p1.setName("Ricky");
+			Person p2 = new Person();
+			p2.setId(2);
+			p2.setName("Julien");
+			return () -> Arrays.asList(p1, p2);
 		}
 	}
 
