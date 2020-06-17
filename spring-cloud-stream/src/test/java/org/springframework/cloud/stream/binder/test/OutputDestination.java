@@ -24,6 +24,7 @@ import java.util.concurrent.LinkedTransferQueue;
 import java.util.concurrent.TimeUnit;
 
 import org.springframework.messaging.Message;
+import org.springframework.util.StringUtils;
 
 /**
  * Implementation of binder endpoint that represents the target destination (e.g.,
@@ -46,6 +47,30 @@ public class OutputDestination extends AbstractDestination {
 			Thread.currentThread().interrupt();
 		}
 		return null;
+	}
+
+	/**
+	 * Will clear all output destinations.
+	 *
+	 * @since 3.0.6
+	 */
+	public void clear() {
+		this.messageQueues.clear();
+	}
+
+	/**
+	 * Will clear output destination with specified name.
+	 *
+	 * @param destinationName the name of the output destination to be cleared.
+	 * @return true if attempt to clear specific destination is successful otherwise false.
+	 * @since 3.0.6
+	 */
+	public boolean clear(String destinationName) {
+		if (StringUtils.hasText(destinationName) && this.messageQueues.containsKey(destinationName)) {
+			this.messageQueues.clear();
+			return true;
+		}
+		return false;
 	}
 	/**
 	 * Allows to access {@link Message}s received by this {@link OutputDestination}.
