@@ -389,10 +389,7 @@ public class FunctionConfiguration {
 				Iterator<String> outputBindingIter = outputBindingNames.iterator();
 
 				((Iterable) resultPublishers).forEach(publisher -> {
-					Flux flux = Flux.from((Publisher) publisher)
-							.onErrorContinue((ex, pay) -> {
-								logger.error("Failed to process the following content which will be dropped: " + pay, (Throwable) ex);
-							});
+					Flux flux = Flux.from((Publisher) publisher);
 					if (!CollectionUtils.isEmpty(outputBindingNames)) {
 						MessageChannel outputChannel = this.applicationContext.getBean(outputBindingIter.next(), MessageChannel.class);
 						flux = flux.doOnNext(message -> {
