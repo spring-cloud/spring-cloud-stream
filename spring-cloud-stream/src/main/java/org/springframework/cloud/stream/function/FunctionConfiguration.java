@@ -461,6 +461,22 @@ public class FunctionConfiguration {
 					producerProperties, applicationContext)) {
 				@Override
 				protected void sendOutputs(Object result, Message<?> requestMessage) {
+					if (result instanceof Iterable) {
+						for (Object resultElement : (Iterable<?>) result) {
+							this.doSendMessage(resultElement, requestMessage);
+						}
+					}
+					else if (ObjectUtils.isArray(result)) {
+						for (int i = 0; i < ((Object[]) result).length; i++) {
+							this.doSendMessage(((Object[]) result)[i], requestMessage);
+						}
+					}
+					else {
+						this.doSendMessage(result, requestMessage);
+					}
+				}
+
+				private void doSendMessage(Object result, Message<?> requestMessage) {
 					if (result instanceof Message && ((Message<?>) result).getHeaders().get("spring.cloud.stream.sendto.destination") != null) {
 						String destinationName = (String) ((Message<?>) result).getHeaders().get("spring.cloud.stream.sendto.destination");
 						SubscribableChannel outputChannel = streamBridge.resolveDestination(destinationName, producerProperties);
@@ -478,6 +494,8 @@ public class FunctionConfiguration {
 			handler.afterPropertiesSet();
 			return handler;
 		}
+
+
 
 		private boolean isReactiveOrMultipleInputOutput(BindableProxyFactory bindableProxyFactory, Type functionType) {
 			boolean reactiveInputsOutputs = FunctionTypeUtils.isReactive(FunctionTypeUtils.getInputType(functionType, 0)) ||
