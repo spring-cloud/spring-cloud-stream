@@ -326,9 +326,18 @@ public class FunctionConfiguration {
 				String functionDefinition = bindableProxyFactory instanceof BindableFunctionProxyFactory
 						? ((BindableFunctionProxyFactory) bindableProxyFactory).getFunctionDefinition()
 								: this.functionProperties.getDefinition();
-				FunctionInvocationWrapper function = functionCatalog.lookup(functionDefinition);
-				if (function != null && !function.isSupplier()) {
-					this.bindFunctionToDestinations(bindableProxyFactory, functionDefinition);
+
+				boolean shouldNotProcess = false;
+				if (!(bindableProxyFactory instanceof BindableFunctionProxyFactory)) {
+					Set<String> outputBindingNames = bindableProxyFactory.getOutputs();
+					shouldNotProcess = !CollectionUtils.isEmpty(outputBindingNames)
+							&& outputBindingNames.iterator().next().equals("applicationMetrics");
+				}
+				if (StringUtils.hasText(functionDefinition) && !shouldNotProcess) {
+					FunctionInvocationWrapper function = functionCatalog.lookup(functionDefinition);
+					if (function != null && !function.isSupplier()) {
+						this.bindFunctionToDestinations(bindableProxyFactory, functionDefinition);
+					}
 				}
 			}
 		}
