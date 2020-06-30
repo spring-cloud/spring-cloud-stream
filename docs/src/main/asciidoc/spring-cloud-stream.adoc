@@ -29,10 +29,10 @@ Spring Cloud Stream builds upon Spring Boot to create standalone, production-gra
 It provides opinionated configuration of middleware from several vendors, introducing the concepts of persistent publish-subscribe semantics, consumer groups, and partitions.
 
 By simply adding spring-cloud-stream dependencies to the classpath of your application you'll get immediate connectivity
-to a message broker exposed via provided spring-cloud-stream binder (more on hat later), and you can implement your functional
+to a message broker exposed via provided spring-cloud-stream binder (more on that later), and you can implement your functional
 requirement that will be executed based on the incoming message using simple `java.util.function.Function`
 
-Here is the quick example:
+Here is a quick example:
 
 [source,java]
 ----
@@ -330,7 +330,7 @@ NOTE: While descriptive binding names may enhance the readability aspect of the 
 another level of misdirection by mapping an implicit binding name to an explicit binding name. And since all subsequent
 configuration properties will use the explicit binding name you must always refer to this 'bindings' property to
 correlate which function it actually corresponds to. We believe that for most cases (with the exception of <<Functional Composition>>)
-it may be an overkill, so, it is our recommendation to avoid using it all together, especially
+it may be an overkill, so, it is our recommendation to avoid using it altogether, especially
 since not using it provides a clear path between binder destination and binding name, such as `spring.cloud.stream.bindings.uppercase-in-0.destination=sample-topic`,
 where you are clearly correlating the input of `uppercase` function to `sample-topic` destination.
 
@@ -520,7 +520,7 @@ every second (answering the question of "How often?").
 In other words, the above configuration produces a single message every second and each message is sent to an `output` destination that is exposed by the binder.
 To learn how to customize the polling mechanism, see <<Polling Configuration Properties>> section.
 
-Consider a different sample:
+Consider a different example:
 
 [source,java]
 ----
@@ -685,14 +685,14 @@ public class WebSourceApplication {
 	@ResponseStatus(HttpStatus.ACCEPTED)
 	public void delegateToSupplier(@RequestBody String body) {
 		System.out.println("Sending " + body);
-		streamBridge.send("myDestiniation", body);
+		streamBridge.send("myDestination", body);
 	}
 }
 ----
 
 As you can see the preceding example is very similar to the previous one with the exception of explicit binding instruction provided via  
 `spring.cloud.stream.source` property (which is not provided). 
-Here we're sending data to `myDestiniation` name which does not exist as a binding. Therefore such name will be treated as dynamic destination
+Here we're sending data to `myDestination` name which does not exist as a binding. Therefore such name will be treated as dynamic destination
 as described in <<Routing FROM Consumer>> section.
 
 ====== Using reactor API
@@ -702,7 +702,7 @@ Another approach that can be used to send arbitrary data to the output is using 
 All we need to do is declare a `Supplier<Flux<whatever>>` which returns https://projectreactor.io/docs/core/release/api/reactor/core/publisher/EmitterProcessor.html[EmitterProcessor]
 from the reactor API (see <<Reactive Functions support>> for more details) to effectively provide a
 bridge between the actual event source (_foreign source_) and spring-cloud-stream. 
-Now, all you need to do now is feed the `EmitterProcessor` with data via `EmitterProcessor#onNext(data)` operation. 
+All you need to do now is feed the `EmitterProcessor` with data via `EmitterProcessor#onNext(data)` operation. 
 
 For example,
 
@@ -847,10 +847,10 @@ Another important aspect is representation of multiple input and outputs. While 
 variety of different abstractions to represent _multiple of something_ those abstractions
 are _a) unbounded_,  _b) lack arity_ and _c) lack type information_ which are all important in this context.
 As an example, let's look at `Collection` or an array which only allows us to
-describe _multiple_ of a single type or up-cast everything to an `Object`, affecting transparent type conversion feature of
+describe _multiple_ of a single type or up-cast everything to an `Object`, affecting the transparent type conversion feature of
 spring-cloud-stream and so on.
 
-So to accommodate all these requirements the initial support is relying on he signature which utilizes another abstraction
+So to accommodate all these requirements the initial support is relying on the signature which utilizes another abstraction
 provided by _Project Reactor_ - Tuples. However, we are working on allowing a more flexible signatures.
 
 IMPORTANT: Please refer to <<Binding and Binding names>> section to understand the naming convention used to establish _binding names_
@@ -1108,7 +1108,7 @@ No individual consumer group is created for each subscription.
 ===== Using @StreamListener Annotation
 
 Complementary to its Spring Integration support, Spring Cloud Stream provides its own `@StreamListener` annotation, modeled after other Spring Messaging annotations
-(`@MessageMapping`, `@JmsListener`, `@RabbitListener`, and others) and provides conviniences, such as content-based routing and others.
+(`@MessageMapping`, `@JmsListener`, `@RabbitListener`, and others) and provides conveniences such as content-based routing and others.
 
 [source,java]
 ----
@@ -1362,8 +1362,8 @@ If the listener throws a `RequeueCurrentMessageException` directly, the message 
 === Event Routing
 
 Event Routing, in the context of Spring Cloud Stream, is the ability to either
-_a) route evens to a particular even subscriber_ or
-_b) route event produced by an event subscriber to a particular destination_.
+_a) route events to a particular even subscriber_ or
+_b) route events produced by an event subscriber to a particular destination_.
 Here we'll refer to it as route ‘TO’ and route ‘FROM’.
 
 ==== Routing TO Consumer
@@ -1405,11 +1405,11 @@ public class SampleApplication {
     }
 }
 ----
-By sending message to the `functionRouter-in-0` destination exposed by the binder (i.e., rabbit, kafka),
+By sending a message to the `functionRouter-in-0` destination exposed by the binder (i.e., rabbit, kafka),
 such message will be routed to the appropriate (‘even’ or ‘odd’) Consumer.
 
-By default `RoutingFunction` will look for `spring.cloud.function.definition` or `spring.cloud.function.routing-expression` (for more dynamic scenarios with SpEL)
-header and if it is found its value will be treated as routing instruction.
+By default `RoutingFunction` will look for a `spring.cloud.function.definition` or `spring.cloud.function.routing-expression` (for more dynamic scenarios with SpEL)
+header and if it is found, its value will be treated as the routing instruction.
 
 For example,
 setting `spring.cloud.function.routing-expression` header to value `T(java.lang.System).currentTimeMillis() % 2 == 0 ? 'even' : 'odd'` will end up semi-randomly routing request to either `odd` or `even` functions.
@@ -1440,14 +1440,14 @@ public class RoutingStreamApplication {
   }
 }
 ----
-IMPORTANT: Passing instructions via application properties is especially important for reactive functions since given that reactive
+IMPORTANT: Passing instructions via application properties is especially important for reactive functions given that a reactive
 function is only invoked once to pass the Publisher, so access to the individual items is limited.
 
 ==== Routing FROM Consumer
 
 Aside from static destinations, Spring Cloud Stream lets applications send messages to dynamically bound destinations.
 This is useful, for example, when the target destination needs to be determined at runtime.
-Applications can do so in one of two ways
+Applications can do so in one of two ways.
 
 ===== BinderAwareChannelResolver
 
@@ -1511,7 +1511,7 @@ public class SourceWithDynamicDestination {
 
 Albeit trivial you can clearly see in this example, our output is a Message with `spring.cloud.stream.sendto.destination` header
 set to the value of he input argument. The framework will consult this header and will attempt to create or discover
-destination with that name and send output to it.
+a destination with that name and send output to it.
 
 
 If destination names are known in advance, you can configure the producer properties as with any other destination.
@@ -1560,7 +1560,7 @@ the same message (3 by default). For that, the framework uses https://github.com
 (for imperative functions and standard message handlers) and `retryBackoff` capabilities of the reactive API (for reactive
 functions).
 
-Whenever handler (function) throws and exception, it is propagated back to the binder, and the binder subsequently propagates
+Whenever a handler (function) throws an exception, it is propagated back to the binder, and the binder subsequently propagates
 the error back to the messaging system.
 Depending on the capabilities of the messaging system such system may _drop_ the message, _re-queue_ the message for re-processing or _send the failed message to DLQ_.
 Both Rabbit and Kafka support these concepts. However, other binders may not, so refer to your individual binder’s documentation for details on supported
@@ -1573,7 +1573,7 @@ While acceptable in some cases, for most cases, it is not, and we need some reco
 
 ==== DLQ - Dead Letter Queue
 
-Perhaps the most common mechanism, DLQ allows failed messages to be sent to a special destination: - _Dead Letter Queue_.
+Perhaps the most common mechanism, DLQ allows failed messages to be sent to a special destination: the _Dead Letter Queue_.
 
 When configured, failed messages are sent to this destination for subsequent re-processing or auditing and reconciliation.
 
@@ -1606,7 +1606,7 @@ public class SimpleStreamApplication {
 As a reminder, in this example `uppercase-in-0` segment of the property corresponds to the name of the input destination binding.
 The `consumer` segment indicates that it is a consumer property.
 
-NOTE: When using DLQ, at least `group` property must be provided for proper naming of the DLQ destination. However `group` often used together
+NOTE: When using DLQ, at least the `group` property must be provided for proper naming of the DLQ destination. However `group` is often used together
 with `destination` property, as in our example.
 
 
@@ -1639,7 +1639,7 @@ You can also facilitate immediate dispatch to DLQ (without re-tries) by setting 
 ==== Retry Template and retryBackoff
 
 In this section we cover configuration properties relevant to configuration of retry capabilities.
-Given that we use two different mechanisms for imperative and reactive handlers (RetryTemplate and retryBackoff), properties that corresponds to both will be identified as such.
+Given that we use two different mechanisms for imperative and reactive handlers (RetryTemplate and retryBackoff), properties that correspond to both will be identified as such.
 
 The `RetryTemplate` is part of the https://github.com/spring-projects/spring-retry[Spring Retry] library.
 While it is out of scope of this document to cover all of the capabilities of the `RetryTemplate`, we will mention the following consumer properties that are specifically related to
@@ -1673,7 +1673,7 @@ Example: `spring.cloud.stream.bindings.input.consumer.retryable-exceptions.java.
 +
 Default: empty.
 
-While the preceding settings are sufficient for majority of the customization requirements, they may not satisfy certain complex requirements at, which
+While the preceding settings are sufficient for the majority of the customization requirements, they may not satisfy certain complex requirements, at which
 point you may want to provide your own instance of the `RetryTemplate`. To do so configure it as a bean in your application configuration. The application provided
 instance will override the one provided by the framework. Also, to avoid conflicts you must qualify the instance of the `RetryTemplate` you want to be used by the binder
 as `@StreamRetryTemplate`. For example,
