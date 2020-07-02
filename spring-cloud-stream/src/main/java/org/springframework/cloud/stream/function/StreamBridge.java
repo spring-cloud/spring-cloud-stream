@@ -36,6 +36,7 @@ import org.springframework.cloud.stream.binding.BindingService;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.cloud.stream.messaging.DirectWithAttributesChannel;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.SubscribableChannel;
 import org.springframework.util.MimeType;
@@ -135,7 +136,11 @@ public final class StreamBridge implements SmartInitializingSingleton {
 		ProducerProperties producerProperties = this.bindingServiceProperties.getProducerProperties(bindingName);
 		SubscribableChannel messageChannel = this.resolveDestination(bindingName, producerProperties);
 
-		Function<Object, Object> functionToInvoke = this.functionCatalog.lookup(STREAM_BRIDGE_FUNC_NAME, outputContentType.toString());
+		boolean skipConversion = producerProperties.isUseNativeEncoding();
+
+		Function<Object, Object> functionToInvoke = skipConversion ? v -> MessageBuilder.withPayload(v).build() :
+			this.functionCatalog.lookup(STREAM_BRIDGE_FUNC_NAME, outputContentType.toString());
+
 		if (producerProperties != null && producerProperties.isPartitioned()) {
 			functionToInvoke = new PartitionAwareFunctionWrapper((FunctionInvocationWrapper) functionToInvoke, this.applicationContext, producerProperties);
 		}
