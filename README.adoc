@@ -410,7 +410,7 @@ If a dead-letter queue (DLQ) is configured, RabbitMQ routes the failed message (
 If set to `true`, the binder republishs failed messages to the DLQ with additional headers, including the exception message and stack trace from the cause of the final failure.
 Also see the <<spring-cloud-stream-rabbit-frame-max-headroom, frameMaxHeadroom property>>.
 +
-Default: false
+Default: `true`
 singleActiveConsumer::
 Set to true to set the `x-single-active-consumer` queue property to true.
 +
