@@ -31,7 +31,7 @@ public class ReRouteDlqApplication {
 
     public static void main(String[] args) throws Exception {
         ConfigurableApplicationContext context = SpringApplication.run(ReRouteDlqApplication.class, args);
-        System.out.println("Hit enter to terminate");
+        System.out.println("Press enter to exit");
         System.in.read();
         context.close();
     }
@@ -79,7 +79,7 @@ public class ReRouteDlqApplication {
 
     public static void main(String[] args) throws Exception {
         ConfigurableApplicationContext context = SpringApplication.run(ReRouteDlqApplication.class, args);
-        System.out.println("Hit enter to terminate");
+        System.out.println("Press enter to exit");
         System.in.read();
         context.close();
     }
@@ -149,7 +149,7 @@ public class ReRouteDlqApplication {
 
 	public static void main(String[] args) throws Exception {
 		ConfigurableApplicationContext context = SpringApplication.run(ReRouteDlqApplication.class, args);
-		System.out.println("Hit enter to terminate");
+		System.out.println("Press enter to exit");
 		System.in.read();
 		context.close();
 	}
@@ -208,7 +208,7 @@ public class ReRouteDlqApplication {
 
 	public static void main(String[] args) throws Exception {
 		ConfigurableApplicationContext context = SpringApplication.run(ReRouteDlqApplication.class, args);
-		System.out.println("Hit enter to terminate");
+		System.out.println("Press enter to exit");
 		System.in.read();
 		context.close();
 	}
