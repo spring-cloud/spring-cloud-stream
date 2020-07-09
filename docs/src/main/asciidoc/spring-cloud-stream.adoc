@@ -28,11 +28,11 @@ Spring Cloud Stream is a framework for building message-driven microservice appl
 Spring Cloud Stream builds upon Spring Boot to create standalone, production-grade Spring applications and uses Spring Integration to provide connectivity to message brokers.
 It provides opinionated configuration of middleware from several vendors, introducing the concepts of persistent publish-subscribe semantics, consumer groups, and partitions.
 
-By simply adding spring-cloud-stream dependencies to the classpath of your application you'll get immediate connectivity
-to a message broker exposed via provided spring-cloud-stream binder (more on that later), and you can implement your functional
-requirement that will be executed based on the incoming message using simple `java.util.function.Function`
+By adding `spring-cloud-stream` dependencies to the classpath of your application, you get immediate connectivity
+to a message broker exposed by the provided `spring-cloud-stream` binder (more on that later), and you can implement your functional
+requirement, which is run (based on the incoming message) by a `java.util.function.Function`.
 
-Here is a quick example:
+The following listing shows a quick example:
 
 [source,java]
 ----
@@ -50,7 +50,7 @@ public class SampleApplication {
 }
 ----
 
-and corresponding test
+The following listing shows the corresponding test:
 
 [source,java]
 ----
@@ -580,7 +580,7 @@ the produced Flux without splitting it.
 ===== Consumer (Reactive)
 
 Reactive `Consumer` is a little bit special because it has a void return type, leaving framework with no reference to subscribe to.
-Most likely you will not need to write `Consumer<Flux<?>>`, and instead write it as a `Function<Flux<?>, Mono<Void>>` invoking `then` 
+Most likely you will not need to write `Consumer<Flux<?>>`, and instead write it as a `Function<Flux<?>, Mono<Void>>` invoking `then`
 operator as the last operator on your stream.
 
 For example:
@@ -619,8 +619,8 @@ source of the data may be a classic REST endpoint. How do we bridge such source 
 
 Spring Cloud Stream provides two mechanisms, so let's look at them in more details
 
-Here, for both samples we'll use a standard MVC endpoint method called `delegateToSupplier` bound to the root web context, 
-delegating incoming requests to stream via two different mechanisms - 
+Here, for both samples we'll use a standard MVC endpoint method called `delegateToSupplier` bound to the root web context,
+delegating incoming requests to stream via two different mechanisms -
 imperative (via StreamBridge) and reactive (via EmitterProcessor).
 
 ====== Using StreamBridge
@@ -647,24 +647,24 @@ public class WebSourceApplication {
 }
 ----
 
-Here we autowire a `StreamBridge` bean which allows us to send data to an output binding effectively 
-bridging non-stream application with spring-cloud-stream. Note that preceding example does not have any 
-source functions defined (e.g., Supplier bean) leaving the framework with no trigger to create source bindings, which would be typical for cases where 
+Here we autowire a `StreamBridge` bean which allows us to send data to an output binding effectively
+bridging non-stream application with spring-cloud-stream. Note that preceding example does not have any
+source functions defined (e.g., Supplier bean) leaving the framework with no trigger to create source bindings, which would be typical for cases where
 configuration contains function beans.
 So to trigger the creation of source binding we use `spring.cloud.stream.source` property where you can declare the name of your sources.
-The provided name will be used as a trigger to create a source binding. 
-So in the preceding example the name of the output binding will be `toStream-out-0` which is consistent with the binding naming 
-convention used by functions (see <<Binding and Binding names>>). You can use `;` to signify multiple sources 
+The provided name will be used as a trigger to create a source binding.
+So in the preceding example the name of the output binding will be `toStream-out-0` which is consistent with the binding naming
+convention used by functions (see <<Binding and Binding names>>). You can use `;` to signify multiple sources
 (e.g., `--spring.cloud.stream.source=foo;bar`)
 
-Also, note that `streamBridge.send(..)` method takes an `Object` for data. This means you can send POJO or `Message` to it and it 
-will go through the same routine when sending output as if it was from any Function or Supplier providing the same level 
+Also, note that `streamBridge.send(..)` method takes an `Object` for data. This means you can send POJO or `Message` to it and it
+will go through the same routine when sending output as if it was from any Function or Supplier providing the same level
 of consistency as with functions. This means the output type conversion, partitioning etc are honored as if it was from the output produced by functions.
 
 ====== StreamBridge and Dynamic Destinations
 
-`StreamBridge` can also be used for cases when output destination(s) are not known ahead of time similar to the use cases 
-described in <<Routing FROM Consumer>> section. 
+`StreamBridge` can also be used for cases when output destination(s) are not known ahead of time similar to the use cases
+described in <<Routing FROM Consumer>> section.
 
 Let's look at the example
 
@@ -690,8 +690,8 @@ public class WebSourceApplication {
 }
 ----
 
-As you can see the preceding example is very similar to the previous one with the exception of explicit binding instruction provided via  
-`spring.cloud.stream.source` property (which is not provided). 
+As you can see the preceding example is very similar to the previous one with the exception of explicit binding instruction provided via
+`spring.cloud.stream.source` property (which is not provided).
 Here we're sending data to `myDestination` name which does not exist as a binding. Therefore such name will be treated as dynamic destination
 as described in <<Routing FROM Consumer>> section.
 
@@ -701,8 +701,8 @@ Another approach that can be used to send arbitrary data to the output is using 
 
 All we need to do is declare a `Supplier<Flux<whatever>>` which returns https://projectreactor.io/docs/core/release/api/reactor/core/publisher/EmitterProcessor.html[EmitterProcessor]
 from the reactor API (see <<Reactive Functions support>> for more details) to effectively provide a
-bridge between the actual event source (_foreign source_) and spring-cloud-stream. 
-All you need to do now is feed the `EmitterProcessor` with data via `EmitterProcessor#onNext(data)` operation. 
+bridge between the actual event source (_foreign source_) and spring-cloud-stream.
+All you need to do now is feed the `EmitterProcessor` with data via `EmitterProcessor#onNext(data)` operation.
 
 For example,
 
@@ -1454,7 +1454,7 @@ Applications can do so in one of two ways.
 The `BinderAwareChannelResolver` is a special bean registered automatically by the framework.
 You can autowire this bean into your application and use it to resolve output destination at runtime
 
-The 'spring.cloud.stream.dynamicDestinations' property can be used for restricting the dynamic destination names to a known set (whitelisting).
+The 'spring.cloud.stream.dynamicDestinations' property can be used for restricting the dynamic destination names to a known set (that is, intentionally allowed values).
 If this property is not set, any destination can be bound dynamically.
 
 The following example demonstrates one of the common scenarios where REST controller uses a path variable to determine target destination:
@@ -2413,7 +2413,7 @@ public MessageSourceCustomizer<AmqpMessageSource> sourceCustomizer() {
 
 These properties are exposed via `org.springframework.cloud.stream.binder.ProducerProperties`
 
-The following binding properties are available for output bindings only and must be prefixed with `spring.cloud.stream.bindings.<bindingName>.producer.` 
+The following binding properties are available for output bindings only and must be prefixed with `spring.cloud.stream.bindings.<bindingName>.producer.`
 (for example, `spring.cloud.stream.bindings.func-out-0.producer.partitionKeyExpression=payload.id`).
 
 Default values can be set by using the prefix `spring.cloud.stream.default.producer` (for example, `spring.cloud.stream.default.producer.partitionKeyExpression=payload.id`).
@@ -2890,7 +2890,7 @@ public void sampleTest() {
 }
 ----
 
-For cases where you have multiple bindings and/or multiple inputs and outputs, or simply want to be explicit about names of 
+For cases where you have multiple bindings and/or multiple inputs and outputs, or simply want to be explicit about names of
 the destination you are sending to or receiving from, the `send()` and `receive()`
 methods of `InputDestination` and `OutputDestination` are overridden to allow you to provide the name of the input and output destination.
 
@@ -3160,4 +3160,3 @@ As it was mentioned earlier Binder abstraction is also one of the extension poin
 In the https://medium.com/@domenicosibilio/how-to-create-a-spring-cloud-stream-binder-from-scratch-ab8b29ee931b[How to create a Spring Cloud Stream Binder from scratch] post a community member documents
 in details, with an example, a set of steps necessary to implement a custom binder.
 The steps are also highlighted in the `<<spring-cloud-stream-overview-custom-binder-impl>>` section.
-

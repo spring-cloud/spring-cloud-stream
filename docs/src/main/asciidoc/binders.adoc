@@ -3,7 +3,7 @@
 [[binders]]
 == Binder Implementations
 
-The following is the list of available binder implementations
+The following binder implementations are available:
 
 * https://cloud.spring.io/spring-cloud-stream-binder-rabbit/[RabbitMQ]
 * https://cloud.spring.io/spring-cloud-stream-binder-kafka/[Apache Kafka]
