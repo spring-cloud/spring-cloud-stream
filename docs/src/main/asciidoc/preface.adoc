@@ -52,7 +52,7 @@ If you chose RabbitMQ for the middleware, your Spring Initializr should now be a
 [%hardbreaks]
 [%hardbreaks]
 [%hardbreaks]
-image::{github-raw}/docs/src/main/asciidoc/images/spring-initializr.png[align="center"]
+image::/docs/src/main/asciidoc/images/spring-initializr.png[align="center"]
 
 [%hardbreaks]
 [%hardbreaks]
