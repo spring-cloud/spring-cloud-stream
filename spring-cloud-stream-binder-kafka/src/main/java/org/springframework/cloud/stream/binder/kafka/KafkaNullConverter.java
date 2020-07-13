@@ -23,6 +23,7 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.converter.AbstractMessageConverter;
 import org.springframework.messaging.converter.MessageConverter;
+import org.springframework.util.MimeTypeUtils;
 
 /**
  * A {@link MessageConverter} that supports {@link KafkaNull} payloads.
@@ -34,7 +35,7 @@ import org.springframework.messaging.converter.MessageConverter;
 public class KafkaNullConverter extends AbstractMessageConverter {
 
 	public KafkaNullConverter() {
-		super(Collections.emptyList());
+		super(Collections.singletonList(MimeTypeUtils.ALL));
 	}
 
 	@Override
