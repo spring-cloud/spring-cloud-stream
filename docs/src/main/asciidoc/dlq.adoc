@@ -33,7 +33,7 @@ If the reason for the dead-lettering is transient, you may wish to route the mes
 However, if the problem is a permanent issue, that could cause an infinite loop.
 The sample Spring Boot application within this topic is an example of how to route those messages back to the original topic, but it moves them to a "`parking lot`" topic after three attempts.
 The application is another spring-cloud-stream application that reads from the dead-letter topic.
-It terminates when no messages are received for 5 seconds.
+It exits when no messages are received for 5 seconds.
 
 The examples assume the original destination is `so8400out` and the consumer group is `so8400`.
 
@@ -115,7 +115,7 @@ public class ReRouteDlqKApplication implements CommandLineRunner {
             int count = this.processed.get();
             Thread.sleep(5000);
             if (count == this.processed.get()) {
-                System.out.println("Idle, terminating");
+                System.out.println("Idle, exiting");
                 return;
             }
         }
