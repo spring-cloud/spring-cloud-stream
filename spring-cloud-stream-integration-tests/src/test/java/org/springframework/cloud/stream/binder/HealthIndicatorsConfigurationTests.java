@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;
 
+import org.assertj.core.api.Assertions;
 import org.junit.Test;
 
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
@@ -86,7 +87,7 @@ public class HealthIndicatorsConfigurationTests {
 		assertThat(binder2).isInstanceOf(StubBinder2.class);
 		CompositeHealthContributor bindersHealthContributor = context
 				.getBean("bindersHealthContributor", CompositeHealthContributor.class);
-		assertThat(bindersHealthContributor).isNotNull();
+		Assertions.assertThat(bindersHealthContributor).isNotNull();
 		assertThat(
 				context.getBean("test1HealthIndicator1", HealthContributor.class))
 						.isNotNull();
@@ -94,10 +95,10 @@ public class HealthIndicatorsConfigurationTests {
 				context.getBean("test2HealthIndicator2", HealthContributor.class))
 						.isNotNull();
 
-		assertThat(bindersHealthContributor.stream().map(NamedContributor::getName)).contains("binder1", "binder2");
-		assertThat(bindersHealthContributor.getContributor("binder1")).extracting("health").extracting("status")
+		Assertions.assertThat(bindersHealthContributor.stream().map(NamedContributor::getName)).contains("binder1", "binder2");
+		Assertions.assertThat(bindersHealthContributor.getContributor("binder1")).extracting("health").extracting("status")
 				.isEqualTo(Status.UP);
-		assertThat(bindersHealthContributor.getContributor("binder2")).extracting("health").extracting("status")
+		Assertions.assertThat(bindersHealthContributor.getContributor("binder2")).extracting("health").extracting("status")
 				.isEqualTo(Status.UNKNOWN);
 
 		context.close();

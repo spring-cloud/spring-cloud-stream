@@ -51,7 +51,7 @@ import org.springframework.integration.config.EnableIntegration;
 @EnableIntegration
 public class TestChannelBinderConfiguration<T> {
 
-	public static final String NAME = "integration";
+	// public static final String NAME = "integration";
 
 	/**
 	 * Utility operation to return an array of configuration classes defined in

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.stream.function.edgecases;
+package org.springframework.cloud.stream.funciton.edgcases;
 
 import java.util.function.Consumer;
 

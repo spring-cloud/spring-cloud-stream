@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;
 
+import org.assertj.core.api.Assertions;
 import org.junit.Test;
 
 import org.springframework.boot.WebApplicationType;
@@ -203,7 +204,7 @@ public class BinderFactoryAutoConfigurationTests {
 		Binder binder1 = binderFactory.getBinder("binder1", MessageChannel.class);
 		assertThat(binder1).hasFieldOrPropertyWithValue("name", "foo");
 
-		assertThat(((StubBinder1) binder1).getOuterContext()).isNull();
+		Assertions.assertThat(((StubBinder1) binder1).getOuterContext()).isNull();
 	}
 
 	@SuppressWarnings("rawtypes")
@@ -260,7 +261,7 @@ public class BinderFactoryAutoConfigurationTests {
 
 		Binder defaultBinder = binderFactory.getBinder(null, MessageChannel.class);
 		assertThat(defaultBinder).isInstanceOf(StubBinder1.class);
-		assertThat(((StubBinder1) defaultBinder).getName()).isNullOrEmpty();
+		Assertions.assertThat(((StubBinder1) defaultBinder).getName()).isNullOrEmpty();
 
 		Binder binder1 = binderFactory.getBinder("binder1", MessageChannel.class);
 		assertThat(binder1).isInstanceOf(StubBinder1.class);

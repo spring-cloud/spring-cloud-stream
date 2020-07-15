@@ -1,0 +1,2 @@
+mock:\
+org.springframework.cloud.stream.utils.MockBinderConfiguration

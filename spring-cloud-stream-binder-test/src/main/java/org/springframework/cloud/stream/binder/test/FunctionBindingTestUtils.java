@@ -42,7 +42,11 @@ import org.springframework.messaging.MessageChannel;
  * @since 3.0.2
  *
  */
-public class FunctionBindingTestUtils {
+public final class FunctionBindingTestUtils {
+
+	private FunctionBindingTestUtils() {
+		throw new IllegalStateException("You should not instantiate utility classes");
+	}
 
 	@SuppressWarnings("rawtypes")
 	public static void bind(ConfigurableApplicationContext applicationContext, Object function) {

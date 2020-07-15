@@ -48,7 +48,7 @@ public class TestSupportBinderAutoConfiguration {
 
 	@Bean
 	@SuppressWarnings("unchecked")
-	public BinderFactory binderFactory(final Binder<MessageChannel, ?, ?> binder) {
+	public BinderFactory testSupportBinderFactory(final Binder<MessageChannel, ?, ?> binder) {
 		return new BinderFactory() {
 			@Override
 			public <T> Binder<T, ? extends ConsumerProperties, ? extends ProducerProperties> getBinder(

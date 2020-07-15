@@ -1,0 +1,3 @@
+binder2:\
+org.springframework.cloud.stream.binder.stub2.StubBinder2ConfigurationA,\
+org.springframework.cloud.stream.binder.stub2.StubBinder2ConfigurationB
