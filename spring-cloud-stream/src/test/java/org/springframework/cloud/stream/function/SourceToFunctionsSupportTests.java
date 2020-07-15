@@ -379,7 +379,7 @@ public class SourceToFunctionsSupportTests {
 					.withPayload("hello function")
 					.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN)
 					.build();
-			return IntegrationFlows.from(messageSource).channel(source.output()).get();
+			return IntegrationFlows.fromSupplier(messageSource).channel(source.output()).get();
 		}
 
 	}

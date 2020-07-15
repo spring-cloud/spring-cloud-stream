@@ -246,7 +246,7 @@ public class FunctionConfiguration {
 			taskScheduler.schedule(() -> { }, Instant.now()); // will keep AC alive
 		}
 		else { // implies pollable
-			integrationFlowBuilder = IntegrationFlows.from(supplier);
+			integrationFlowBuilder = IntegrationFlows.fromSupplier(supplier);
 			if (splittable) {
 				integrationFlowBuilder = integrationFlowBuilder.split();
 			}
