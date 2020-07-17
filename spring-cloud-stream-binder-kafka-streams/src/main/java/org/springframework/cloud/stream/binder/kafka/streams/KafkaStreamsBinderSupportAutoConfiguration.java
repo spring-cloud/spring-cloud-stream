@@ -42,6 +42,7 @@ import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingClass;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -421,6 +422,7 @@ public class KafkaStreamsBinderSupportAutoConfiguration {
 		@Bean
 		@ConditionalOnBean(MeterRegistry.class)
 		@ConditionalOnMissingBean(KafkaStreamsBinderMetrics.class)
+		@ConditionalOnMissingClass("org.springframework.kafka.core.MicrometerConsumerListener")
 		public KafkaStreamsBinderMetrics kafkaStreamsBinderMetrics(MeterRegistry meterRegistry) {
 
 			return new KafkaStreamsBinderMetrics(meterRegistry);
@@ -468,6 +470,7 @@ public class KafkaStreamsBinderSupportAutoConfiguration {
 	protected class KafkaStreamsBinderMetricsConfigurationWithMultiBinder {
 
 		@Bean
+		@ConditionalOnMissingClass("org.springframework.kafka.core.MicrometerConsumerListener")
 		public KafkaStreamsBinderMetrics kafkaStreamsBinderMetrics(ConfigurableApplicationContext context) {
 
 			MeterRegistry meterRegistry = context.getBean("outerContext", ApplicationContext.class)

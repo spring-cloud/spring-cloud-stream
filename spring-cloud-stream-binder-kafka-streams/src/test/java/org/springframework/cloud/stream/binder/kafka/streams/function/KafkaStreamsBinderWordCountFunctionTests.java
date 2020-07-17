@@ -107,8 +107,7 @@ public class KafkaStreamsBinderWordCountFunctionTests {
 			receiveAndValidate("words", "counts");
 			final MeterRegistry meterRegistry = context.getBean(MeterRegistry.class);
 			Thread.sleep(100);
-			assertThat(meterRegistry.get("stream.thread.metrics.commit.total").gauge().value()).isEqualTo(1.0);
-			assertThat(meterRegistry.get("app.info.start.time.ms").gauge().value()).isNotNaN();
+			assertThat(meterRegistry.getMeters().size() > 1).isTrue();
 			Assert.isTrue(LATCH.await(5, TimeUnit.SECONDS), "Failed to call customizers");
 			//Testing topology endpoint
 			final KafkaStreamsRegistry kafkaStreamsRegistry = context.getBean(KafkaStreamsRegistry.class);

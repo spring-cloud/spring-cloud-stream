@@ -1056,28 +1056,13 @@ When there are multiple Kafka Streams processors present in the same application
 
 === Accessing Kafka Streams Metrics
 
-Spring Cloud Stream Kafka Streams binder provides a basic mechanism for accessing Kafka Streams metrics exported through a Micrometer `MeterRegistry`.
-Kafka Streams metrics that are available through `KafkaStreams#metrics()` are exported to this meter registry by the binder.
-The metrics exported are from the consumers, producers, admin-client and the stream itself.
+Spring Cloud Stream Kafka Streams binder provides Kafka Streams metrics which can be exported through a Micrometer `MeterRegistry`.
 
-The metrics exported by the binder are exported with the format of metrics group name followed by a dot and then the actual metric name.
-All dashes in the original metric information is replaced with dots.
+For Spring Boot version 2.2.x, the metrics support is provided through a custom Micrometer metrics implementation by the binder.
+For Spring Boot version 2.3.x, the Kafka Streams metrics support is provided natively through Micrometer.
 
-For e.g. the metric name `network-io-total` from the metric group `consumer-metrics` is available in the micrometer registry as `consumer.metrics.network.io.total`.
-Similarly, the metric `commit-total` from `stream-metrics` is available as `stream.metrics.commit.total`.
-
-If you have multiple Kafka Streams processors in the same application, then the metric name will be prepended with the corresponding application ID of the Kafka Streams.
-The application ID in this case will be preserved as is, i.e. no dashes will be converted to dots etc.
-For example, if the application ID of the first processor is `processor-1`, then the metric name `network-io-total` from the metric group `consumer-metrics` is available in the micrometer registry as `processor-1.consumer.metrics.network.io.total`.
-
-You can either programmatically access the Micrometer `MeterRegistry` in the application and then iterate through the available gauges or use Spring Boot actuator to access the metrics through a REST endpoint.
-When accessing through the Boot actuator endpoint, make sure to add `metrics` to the property `management.endpoints.web.exposure.include`.
-Then you can access `/acutator/metrics` to get a list of all the available metrics which then can be individually accessed through the same URI (`/actuator/metrics/<metric-name>`).
-
-Anything beyond the info level metrics available through `KafkaStreams#metrics()`, (for e.g. the debugging level metrics) are still only available through JMX after you set the `metrics.recording.level` to `DEBUG`.
-Kafka Streams, by default, set this level to `INFO`.
-https://kafka.apache.org/documentation/#kafka_streams_monitoring[Please see this section] from Kafka Streams documentation for more details.
-In a future release, binder may support exporting these DEBUG level metrics through Micrometer.
+When accessing metrics through the Boot actuator endpoint, make sure to add `metrics` to the property `management.endpoints.web.exposure.include`.
+Then you can access `/acutator/metrics` to get a list of all the available metrics, which then can be individually accessed through the same URI (`/actuator/metrics/<metric-name>`).
 
 === Mixing high level DSL and low level Processor API
 
