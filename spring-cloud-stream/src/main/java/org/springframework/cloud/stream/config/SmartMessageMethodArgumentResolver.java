@@ -73,6 +73,9 @@ class SmartMessageMethodArgumentResolver extends MessageMethodArgumentResolver {
 		}
 		Object payload = message.getPayload();
 		if (isEmptyPayload(payload)) {
+			if (isExplicitNullPayload(payload)) {
+				return null;
+			}
 			throw new MessageConversionException(message,
 					"Cannot convert from actual payload type '"
 							+ ClassUtils.getDescriptiveType(payload)
@@ -97,6 +100,7 @@ class SmartMessageMethodArgumentResolver extends MessageMethodArgumentResolver {
 		return resolvableType.getGeneric().toClass();
 	}
 
+	@Override
 	protected boolean isEmptyPayload(@Nullable Object payload) {
 		if (payload == null) {
 			return true;
@@ -110,6 +114,11 @@ class SmartMessageMethodArgumentResolver extends MessageMethodArgumentResolver {
 		else {
 			return false;
 		}
+	}
+
+	protected boolean isExplicitNullPayload(@Nullable Object payload) {
+		return "org.springframework.kafka.support.KafkaNull"
+						.equals(payload.getClass().getName());
 	}
 
 	private Object convertPayload(Message<?> message, MethodParameter parameter,
