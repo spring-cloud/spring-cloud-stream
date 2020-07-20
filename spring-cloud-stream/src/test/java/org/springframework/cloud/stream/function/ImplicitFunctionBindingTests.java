@@ -55,6 +55,7 @@ import org.springframework.integration.dsl.IntegrationFlows;
 import org.springframework.integration.handler.LoggingHandler;
 import org.springframework.integration.scheduling.PollerMetadata;
 import org.springframework.integration.support.MessageBuilder;
+import org.springframework.kafka.support.KafkaNull;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.GenericMessage;
@@ -139,6 +140,26 @@ public class ImplicitFunctionBindingTests {
 		}
 		catch (Exception e) { // should not fail
 			fail();
+		}
+	}
+
+	@Test
+	public void testNullMessage() {
+
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+				TestChannelBinderConfiguration.getCompleteConfiguration(NullMessagerConfiguration.class))
+						.web(WebApplicationType.NONE)
+						.run("--spring.jmx.enabled=false", "--spring.cloud.function.definition=func")) {
+
+			InputDestination inputDestination = context.getBean(InputDestination.class);
+			OutputDestination outputDestination = context.getBean(OutputDestination.class);
+
+
+			Message inputMessage = MessageBuilder.withPayload(KafkaNull.INSTANCE).build();
+			inputDestination.send(inputMessage);
+
+			Message<byte[]> outputMessage = outputDestination.receive();
+			assertThat(outputMessage.getPayload()).isEqualTo("NULL".getBytes());
 		}
 	}
 
@@ -906,6 +927,18 @@ public class ImplicitFunctionBindingTests {
 			return value -> {
 				System.out.println(value);
 				System.setProperty("consumer", value);
+			};
+		}
+	}
+
+	@EnableAutoConfiguration
+	public static class NullMessagerConfiguration {
+
+		@Bean
+		public Function<Person, String> func() {
+			return value -> {
+				assertThat(value).isNull();
+				return "NULL";
 			};
 		}
 	}
