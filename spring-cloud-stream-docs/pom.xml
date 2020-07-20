@@ -6,18 +6,18 @@
 	<parent>
 		<groupId>org.springframework.cloud</groupId>
 		<artifactId>spring-cloud-build</artifactId>
-		<version>3.0.0-M3</version>
+		<version>3.0.0-SNAPSHOT</version>
 		<relativePath/>
 	</parent>
 	<artifactId>spring-cloud-stream-docs</artifactId>
 	<name>spring-cloud-stream-docs</name>
 	<description>Spring Cloud Stream Docs</description>
-	<version>3.1.0-M2</version>
+	<version>3.1.0-SNAPSHOT</version>
 	<properties>
 		<main.basedir>${basedir}/..</main.basedir>
-		<spring-cloud-stream.version>3.1.0-M2</spring-cloud-stream.version>
-		<spring-cloud-stream-binder-kafka.version>3.1.0-M2</spring-cloud-stream-binder-kafka.version>
-		<spring-cloud-stream-binder-rabbit.version>3.1.0-M2</spring-cloud-stream-binder-rabbit.version>
+		<spring-cloud-stream.version>3.1.0-SNAPSHOT</spring-cloud-stream.version>
+		<spring-cloud-stream-binder-kafka.version>3.1.0-SNAPSHOT</spring-cloud-stream-binder-kafka.version>
+		<spring-cloud-stream-binder-rabbit.version>3.1.0-SNAPSHOT</spring-cloud-stream-binder-rabbit.version>
 	</properties>
 	<dependencies>
 		<dependency>
