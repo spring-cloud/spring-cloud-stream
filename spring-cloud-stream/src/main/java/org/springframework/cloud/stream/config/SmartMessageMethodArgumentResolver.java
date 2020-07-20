@@ -112,7 +112,7 @@ class SmartMessageMethodArgumentResolver extends MessageMethodArgumentResolver {
 			return !StringUtils.hasText((String) payload);
 		}
 		else {
-			return false;
+			return "org.springframework.kafka.support.KafkaNull".equals(payload.getClass().getName());
 		}
 	}
 
