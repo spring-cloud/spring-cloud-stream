@@ -149,16 +149,21 @@ public class ImplicitFunctionBindingTests {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 				TestChannelBinderConfiguration.getCompleteConfiguration(NullMessagerConfiguration.class))
 						.web(WebApplicationType.NONE)
-						.run("--spring.jmx.enabled=false", "--spring.cloud.function.definition=func")) {
+						.run("--spring.jmx.enabled=false", "--spring.cloud.function.definition=func;funcMessage")) {
 
 			InputDestination inputDestination = context.getBean(InputDestination.class);
 			OutputDestination outputDestination = context.getBean(OutputDestination.class);
 
 
 			Message inputMessage = MessageBuilder.withPayload(KafkaNull.INSTANCE).build();
-			inputDestination.send(inputMessage);
+			inputDestination.send(inputMessage, "func-in-0");
 
-			Message<byte[]> outputMessage = outputDestination.receive();
+			Message<byte[]> outputMessage = outputDestination.receive(1000, "func-out-0");
+			assertThat(outputMessage.getPayload()).isEqualTo("NULL".getBytes());
+
+			inputDestination.send(inputMessage, "funcMessage-in-0");
+
+			outputMessage = outputDestination.receive(1000, "funcMessage-out-0");
 			assertThat(outputMessage.getPayload()).isEqualTo("NULL".getBytes());
 		}
 	}
@@ -938,6 +943,22 @@ public class ImplicitFunctionBindingTests {
 		public Function<Person, String> func() {
 			return value -> {
 				assertThat(value).isNull();
+				return "NULL";
+			};
+		}
+
+		@Bean
+		public Function<Message<Person>, String> funcMessage() {
+			return value -> {
+				Object v = value.getPayload();
+				System.out.println(v.getClass());
+				if (value.getPayload() instanceof Object) {
+					System.out.println("");
+				}
+				if (((Object) value.getPayload()).getClass() != null) {
+					System.out.println();
+				}
+				//assertThat(value.getPayload().getClass().getName()).isEqualTo("org.springframework.kafka.support.KafkaNull");
 				return "NULL";
 			};
 		}

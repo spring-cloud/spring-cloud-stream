@@ -74,7 +74,7 @@ class SmartMessageMethodArgumentResolver extends MessageMethodArgumentResolver {
 		Object payload = message.getPayload();
 		if (isEmptyPayload(payload)) {
 			if (isExplicitNullPayload(payload)) {
-				return null;
+				return message;
 			}
 			throw new MessageConversionException(message,
 					"Cannot convert from actual payload type '"
