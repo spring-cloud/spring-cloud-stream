@@ -29,6 +29,8 @@ import org.springframework.cloud.stream.binder.test.OutputDestination;
 import org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
+import org.springframework.integration.dsl.IntegrationFlow;
+import org.springframework.integration.dsl.IntegrationFlows;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 
@@ -170,6 +172,21 @@ public class StreamBridgeTests {
 		}
 	}
 
+	@Test
+	public void testWithIntegrationFlowBecauseMarcinSaidSo() {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration
+				.getCompleteConfiguration(IntegrationFlowConfiguration.class))
+						.web(WebApplicationType.NONE).run("--spring.jmx.enabled=false")) {
+
+			StreamBridge bridge = context.getBean(StreamBridge.class);
+			bridge.send("foo", "blah");
+
+			OutputDestination outputDestination = context.getBean(OutputDestination.class);
+			Message<byte[]> message = outputDestination.receive(100, "output");
+			assertThat(new String(message.getPayload())).isEqualTo("BLAH");
+		}
+	}
+
 	@EnableAutoConfiguration
 	public static class EmptyConfiguration {
 
@@ -181,6 +198,20 @@ public class StreamBridgeTests {
 		@Bean
 		public Supplier<String> supplier() {
 			return () -> "hello";
+		}
+	}
+
+	@EnableAutoConfiguration
+	public static class IntegrationFlowConfiguration {
+
+		@Bean
+		public IntegrationFlow transform(StreamBridge bridge) {
+			return IntegrationFlows.from("foo").transform(v -> {
+				String s = new String((byte[]) v);
+				return s.toUpperCase();
+			})
+			.handle(v -> bridge.send("output", v))
+			.get();
 		}
 	}
 }
