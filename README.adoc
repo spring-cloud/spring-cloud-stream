@@ -770,7 +770,7 @@ Optionally, you can specify a name in `deadLetterQueueName`.
 Expired messages from the DLQ are routed to the original queue, because the default `deadLetterRoutingKey` is the queue name (`destination.group`).
 Setting to the default exchange is achieved by setting the property with no value, as shown in the next example.
 
-To force a message to be dead-lettered, either throw an `AmqpRejectAndDontRequeueException` or set `requeueRejected` to `true` (the default) and throw any exception.
+To force a message to be dead-lettered, either throw an `AmqpRejectAndDontRequeueException` or set `requeueRejected` to `false` (the default) and throw any exception.
 
 The loop continue without end, which is fine for transient problems, but you may want to give up after some number of attempts.
 Fortunately, RabbitMQ provides the `x-death` header, which lets you determine how many cycles have occurred.
