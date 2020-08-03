@@ -300,11 +300,11 @@ public class RabbitMessageChannelBinder extends
 		String exchangeName = producerDestination.getName();
 		String destination = StringUtils.isEmpty(prefix) ? exchangeName
 				: exchangeName.substring(prefix.length());
-		final AmqpOutboundEndpoint endpoint = new AmqpOutboundEndpoint(
-				buildRabbitTemplate(producerProperties.getExtension(),
-						errorChannel != null));
-		endpoint.setExchangeName(producerDestination.getName());
 		RabbitProducerProperties extendedProperties = producerProperties.getExtension();
+		final AmqpOutboundEndpoint endpoint = new AmqpOutboundEndpoint(
+				buildRabbitTemplate(extendedProperties,
+						errorChannel != null || extendedProperties.isUseConfirmHeader()));
+		endpoint.setExchangeName(producerDestination.getName());
 		boolean expressionInterceptorNeeded = expressionInterceptorNeeded(
 				extendedProperties);
 		Expression routingKeyExpression = extendedProperties.getRoutingKeyExpression();
@@ -364,19 +364,25 @@ public class RabbitMessageChannelBinder extends
 		if (errorChannel != null) {
 			checkConnectionFactoryIsErrorCapable();
 			endpoint.setReturnChannel(errorChannel);
-			endpoint.setConfirmNackChannel(errorChannel);
-			String ackChannelBeanName = StringUtils
-					.hasText(extendedProperties.getConfirmAckChannel())
-							? extendedProperties.getConfirmAckChannel()
-							: IntegrationContextUtils.NULL_CHANNEL_BEAN_NAME;
-			if (!ackChannelBeanName.equals(IntegrationContextUtils.NULL_CHANNEL_BEAN_NAME)
-					&& !getApplicationContext().containsBean(ackChannelBeanName)) {
-				GenericApplicationContext context = (GenericApplicationContext) getApplicationContext();
-				context.registerBean(ackChannelBeanName, DirectChannel.class,
-						() -> new DirectChannel());
+			if (!extendedProperties.isUseConfirmHeader()) {
+				endpoint.setConfirmNackChannel(errorChannel);
+				String ackChannelBeanName = StringUtils
+						.hasText(extendedProperties.getConfirmAckChannel())
+								? extendedProperties.getConfirmAckChannel()
+								: IntegrationContextUtils.NULL_CHANNEL_BEAN_NAME;
+				if (!ackChannelBeanName.equals(IntegrationContextUtils.NULL_CHANNEL_BEAN_NAME)
+						&& !getApplicationContext().containsBean(ackChannelBeanName)) {
+					GenericApplicationContext context = (GenericApplicationContext) getApplicationContext();
+					context.registerBean(ackChannelBeanName, DirectChannel.class,
+							() -> new DirectChannel());
+				}
+				endpoint.setConfirmAckChannelName(ackChannelBeanName);
+				endpoint.setConfirmCorrelationExpressionString("#root");
 			}
-			endpoint.setConfirmAckChannelName(ackChannelBeanName);
-			endpoint.setConfirmCorrelationExpressionString("#root");
+			else {
+				Assert.state(!StringUtils.hasText(extendedProperties.getConfirmAckChannel()),
+						"You cannot specify a 'confirmAckChannel' when 'useConfirmHeader' is true");
+			}
 			endpoint.setErrorMessageStrategy(new DefaultErrorMessageStrategy());
 		}
 		endpoint.setHeadersMappedLast(true);
@@ -861,8 +867,7 @@ public class RabbitMessageChannelBinder extends
 				consumerProperties);
 	}
 
-	private RabbitTemplate buildRabbitTemplate(RabbitProducerProperties properties,
-			boolean mandatory) {
+	private RabbitTemplate buildRabbitTemplate(RabbitProducerProperties properties, boolean mandatory) {
 		RabbitTemplate rabbitTemplate;
 		if (properties.isBatchingEnabled()) {
 			BatchingStrategy batchingStrategy = getBatchingStrategy(properties);

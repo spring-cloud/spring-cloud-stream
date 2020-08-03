@@ -64,6 +64,8 @@ import org.springframework.amqp.rabbit.batch.MessageBatch;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory.ConfirmType;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
+import org.springframework.amqp.rabbit.connection.CorrelationData;
+import org.springframework.amqp.rabbit.connection.CorrelationData.Confirm;
 import org.springframework.amqp.rabbit.connection.RabbitUtils;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -245,7 +247,7 @@ public class RabbitBinderTests extends
 		RabbitTestBinder binder = getBinder();
 		CachingConnectionFactory ccf = this.rabbitAvailableRule.getResource();
 		ccf.setPublisherReturns(true);
-		ccf.setPublisherConfirms(true);
+		ccf.setPublisherConfirmType(ConfirmType.CORRELATED);
 		ccf.resetConnection();
 		DirectChannel moduleOutputChannel = createBindableChannel("output",
 				new BindingProperties());
@@ -326,7 +328,7 @@ public class RabbitBinderTests extends
 		RabbitTestBinder binder = getBinder();
 		CachingConnectionFactory ccf = this.rabbitAvailableRule.getResource();
 		ccf.setPublisherReturns(true);
-		ccf.setPublisherConfirms(true);
+		ccf.setPublisherConfirmType(ConfirmType.CORRELATED);
 		ccf.resetConnection();
 		DirectChannel moduleOutputChannel = createBindableChannel("output",
 				new BindingProperties());
@@ -347,6 +349,30 @@ public class RabbitBinderTests extends
 		moduleOutputChannel.send(message);
 		assertThat(confirmLatch.await(10, TimeUnit.SECONDS)).isTrue();
 		assertThat(confirm.get().getPayload()).isEqualTo("acksMessage".getBytes());
+		producerBinding.unbind();
+	}
+
+	@Test
+	public void testProducerConfirmHeader() throws Exception {
+		RabbitTestBinder binder = getBinder();
+		CachingConnectionFactory ccf = this.rabbitAvailableRule.getResource();
+		ccf.setPublisherReturns(true);
+		ccf.setPublisherConfirmType(ConfirmType.CORRELATED);
+		ccf.resetConnection();
+		DirectChannel moduleOutputChannel = createBindableChannel("output",
+				new BindingProperties());
+		ExtendedProducerProperties<RabbitProducerProperties> producerProps = createProducerProperties();
+		producerProps.getExtension().setUseConfirmHeader(true);
+		Binding<MessageChannel> producerBinding = binder.bindProducer("confirms.0",
+				moduleOutputChannel, producerProps);
+		CorrelationData correlation = new CorrelationData("testConfirm");
+		final Message<?> message = MessageBuilder.withPayload("confirmsMessage".getBytes())
+				.setHeader(AmqpHeaders.PUBLISH_CONFIRM_CORRELATION, correlation)
+				.build();
+		moduleOutputChannel.send(message);
+		Confirm confirm = correlation.getFuture().get(10, TimeUnit.SECONDS);
+		assertThat(confirm.isAck()).isTrue();
+		assertThat(correlation.getReturnedMessage()).isNotNull();
 		producerBinding.unbind();
 	}
 

@@ -667,6 +667,7 @@ confirmAckChannel::
 When `errorChannelEnabled` is true, a channel to which to send positive delivery acknowledgments (aka publisher confirms).
 If the channel does not exist, a `DirectChannel` is registered with this name.
 The connection factory must be configured to enable publisher confirms.
+Mutually exclusive with `useConfirmHeader`.
 +
 Default: `nullChannel` (acks are discarded).
 deadLetterQueueName::
@@ -879,9 +880,130 @@ Default time (in milliseconds) to live to apply to the queue when declared.
 Applies only when `requiredGroups` are provided and then only to those groups.
 +
 Default: `no limit`
+useConfirmHeader::
+See <<publisher-confirms>>.
+Mutually exclusive with `confirmAckChannel`.
++
 
 NOTE: In the case of RabbitMQ, content type headers can be set by external applications.
 Spring Cloud Stream supports them as part of an extended internal protocol used for any type of transport -- including transports, such as Kafka (prior to 0.11), that do not natively support headers.
+
+[[publisher-confirms]]
+=== Publisher Confirms
+
+There are two mechanisms to get the result of publishing a message; in each case, the connection factory must have `publisherConfirmType` set `ConfirmType.CORRELATED`.
+The "legacy" mechanism is to set the `confirmAckChannel` to the bean name of a message channel from which you can retrieve the confirmations asynchronously; negative acks are sent to the error channel (if enabled) - see <<rabbit-error-channels>>.
+
+The preferred mechanism, added in version 3.1 is to use a correlation data header and wait for the result via its `Future<Confirm>` property.
+This is particularly useful with a batch listener because you can send multiple messages before waiting for the result.
+To use this technique, set the `useConfirmHeader` property to true
+The following simple application is an example of using this technique:
+
+====
+[source, properties]
+----
+spring.cloud.stream.bindings.input-in-0.group=someGroup
+spring.cloud.stream.bindings.input-in-0.consumer.batch-mode=true
+
+spring.cloud.stream.source=output
+spring.cloud.stream.bindings.output-out-0.producer.error-channel-enabled=true
+
+spring.cloud.stream.rabbit.bindings.output-out-0.producer.useConfirmHeader=true
+spring.cloud.stream.rabbit.bindings.input-in-0.consumer.auto-bind-dlq=true
+spring.cloud.stream.rabbit.bindings.input-in-0.consumer.batch-size=10
+
+spring.rabbitmq.publisher-confirm-type=correlated
+spring.rabbitmq.publisher-returns=true
+----
+====
+
+====
+[source, java]
+----
+@SpringBootApplication
+public class Application {
+
+	private static final Logger log = LoggerFactory.getLogger(Application.class);
+
+	public static void main(String[] args) {
+		SpringApplication.run(Application.class, args);
+	}
+
+	@Autowired
+	private StreamBridge bridge;
+
+	@Bean
+	Consumer<List<String>> input() {
+		return list -> {
+			List<MyCorrelationData> results = new ArrayList<>();
+			list.forEach(str -> {
+				log.info("Received: " + str);
+				MyCorrelationData corr = new MyCorrelationData(UUID.randomUUID().toString(), str);
+				results.add(corr);
+				this.bridge.send("output-out-0", MessageBuilder.withPayload(str.toUpperCase())
+						.setHeader(AmqpHeaders.PUBLISH_CONFIRM_CORRELATION, corr)
+						.build());
+			});
+			results.forEach(correlation -> {
+				try {
+					Confirm confirm = correlation.getFuture().get(10, TimeUnit.SECONDS);
+					log.info(confirm + " for " + correlation.getPayload());
+					if (correlation.getReturnedMessage() != null) {
+						log.error("Message for " + correlation.getPayload() + " was returned ");
+
+						// try to re-publish, send a DLQ, etc
+
+					}
+				}
+				catch (InterruptedException e) {
+					Thread.currentThread().interrupt();
+					e.printStackTrace();
+				}
+				catch (ExecutionException | TimeoutException e) {
+					e.printStackTrace();
+				}
+			});
+		};
+	}
+
+
+	@Bean
+	public ApplicationRunner runner(BatchingRabbitTemplate template) {
+		return args -> IntStream.range(0, 10).forEach(i ->
+				template.convertAndSend("input-in-0", "input-in-0.rbgh303", "foo" + i));
+	}
+
+	@Bean
+	public BatchingRabbitTemplate template(CachingConnectionFactory cf, TaskScheduler taskScheduler) {
+		BatchingStrategy batchingStrategy = new SimpleBatchingStrategy(10, 1000000, 1000);
+		return new BatchingRabbitTemplate(cf, batchingStrategy, taskScheduler);
+	}
+
+}
+
+class MyCorrelationData extends CorrelationData {
+
+	private final String payload;
+
+	MyCorrelationData(String id, String payload) {
+		super(id);
+		this.payload = payload;
+	}
+
+	public String getPayload() {
+		return this.payload;
+	}
+
+}
+----
+====
+
+As you can see, we send each message and then await for the publication results.
+If the messages can't be routed, then correlation data is populated with the returned message before the future is completed.
+
+IMPORTANT: The correlation data must be provided with a unique `id` so that the framework can perform the correlation.
+
+You cannot set both `useConfirmHeader` and `confirmAckChannel` but you can still receive returned messages in the error channel when `useConfirmHeader` is true, but using the correlation header is more convenient.
 
 == Using Existing Queues/Exchanges
 
@@ -993,6 +1115,7 @@ RabbitMQ has two types of send failures:
 
 The latter is rare.
 According to the RabbitMQ documentation "[A nack] will only be delivered if an internal error occurs in the Erlang process responsible for a queue.".
+You can also get a negative acknowledgment if you publish to a bounded queue with `reject-publish` queue overflow behavior.
 
 As well as enabling producer error channels (as described in "`<<spring-cloud-stream-overview-error-handling>>`"), the RabbitMQ binder only sends messages to the channels if the connection factory is appropriately configured, as follows:
 
@@ -1012,6 +1135,8 @@ The payload of the `ErrorMessage` for a returned message is a `ReturnedAmqpMessa
 * `replyText`: A text value indicating the reason for the failure (for example, `NO_ROUTE`).
 * `exchange`: The exchange to which the message was published.
 * `routingKey`: The routing key used when the message was published.
+
+Also see <<publisher-confirms>> for an alternative mechanism to receive returned messages.
 
 For negatively acknowledged confirmations, the payload is a `NackedAmqpMessageException` with the following properties:
 

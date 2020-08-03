@@ -93,6 +93,15 @@ public class RabbitProducerProperties extends RabbitCommonProperties {
 	private String confirmAckChannel;
 
 	/**
+	 * When true, the binding will complete the {@link java.util.concurrent.Future} field
+	 * in a {@link org.springframework.amqp.rabbit.connection.CorrelationData} contained
+	 * in the
+	 * {@link org.springframework.amqp.support.AmqpHeaders#PUBLISH_CONFIRM_CORRELATION}
+	 * header when the confirmation is received.
+	 */
+	private boolean useConfirmHeader;
+
+	/**
 	 * @deprecated - use {@link #setHeaderPatterns(String[])}.
 	 * @param requestHeaderPatterns the patterns.
 	 */
@@ -207,6 +216,14 @@ public class RabbitProducerProperties extends RabbitCommonProperties {
 
 	public void setBatchingStrategyBeanName(String batchingStrategyBeanName) {
 		this.batchingStrategyBeanName = batchingStrategyBeanName;
+	}
+
+	public boolean isUseConfirmHeader() {
+		return this.useConfirmHeader;
+	}
+
+	public void setUseConfirmHeader(boolean useConfirmHeader) {
+		this.useConfirmHeader = useConfirmHeader;
 	}
 
 }
