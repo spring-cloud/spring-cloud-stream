@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.function;
 
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import org.junit.Before;
@@ -47,6 +48,24 @@ public class StreamBridgeTests {
 	@Before
 	public void before() {
 		System.clearProperty("spring.cloud.function.definition");
+	}
+
+
+	//see https://github.com/spring-cloud/spring-cloud-function/issues/573 for more details
+	@Test
+	public void testBridgeActivationWhenFunctionDefinitionIsPresent() {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration
+				.getCompleteConfiguration(SimpleConfiguration.class))
+						.web(WebApplicationType.NONE).run(
+								"--spring.cloud.function.definition=echo;uppercase",
+								"--spring.jmx.enabled=false")) {
+
+			StreamBridge bridge = context.getBean(StreamBridge.class);
+			bridge.send("echo-in-0", "hello foo");
+
+			OutputDestination outputDestination = context.getBean(OutputDestination.class);
+			assertThat(new String(outputDestination.receive(100, "echo-out-0").getPayload())).isEqualTo("hello foo");
+		}
 	}
 
 	@Test(expected = NoSuchBeanDefinitionException.class)
@@ -127,7 +146,7 @@ public class StreamBridgeTests {
 	}
 
 	@Test
-	public void testSendingMessageToOutputOfExistingSupplier() {
+	public void testSendingMessageToOutputOfExistingSupplier() throws Exception {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration
 				.getCompleteConfiguration(TestConfiguration.class))
 						.web(WebApplicationType.NONE).run("--spring.cloud.stream.source=supplier;foo",
@@ -198,6 +217,20 @@ public class StreamBridgeTests {
 		@Bean
 		public Supplier<String> supplier() {
 			return () -> "hello";
+		}
+	}
+
+	@EnableAutoConfiguration
+	public static class SimpleConfiguration {
+
+		@Bean
+		public Function<String, String> echo() {
+			return v -> v;
+		}
+
+		@Bean
+		public Function<String, String> uppercase() {
+			return v -> v.toUpperCase();
 		}
 	}
 
