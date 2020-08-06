@@ -39,6 +39,11 @@ public class KafkaNullConverter extends AbstractMessageConverter {
 	}
 
 	@Override
+	protected boolean supportsMimeType(MessageHeaders headers) {
+		return true;
+	}
+
+	@Override
 	protected boolean supports(Class<?> aClass) {
 		return KafkaNull.class.equals(aClass);
 	}
