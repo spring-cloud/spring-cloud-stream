@@ -196,6 +196,14 @@
 						<enabled>false</enabled>
 					</snapshots>
 				</repository>
+				<repository>
+				    <id>rsocket-snapshots</id>
+				    <name>RSocket Snapshots</name>
+				    <url>https://oss.jfrog.org/oss-snapshot-local</url>
+				    <snapshots>
+				        <enabled>true</enabled>
+				    </snapshots>
+				</repository>
 			</repositories>
 			<pluginRepositories>
 				<pluginRepository>
