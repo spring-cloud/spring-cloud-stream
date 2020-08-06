@@ -125,6 +125,21 @@ public class RabbitConsumerProperties extends RabbitCommonProperties {
 	 */
 	private String anonymousGroupPrefix = "anonymous.";
 
+	/**
+	 * When true, the listener container will assemble a list from multiple messages,
+	 * according to the batchSize and receiveTimeout properties. Only applies with
+	 * {@link ContainerType#SIMPLE}.
+	 */
+	private boolean enableBatching;
+
+	/**
+	 * How long to block waiting to receive messages; increasing from the default 1 second
+	 * will make the binding less responsive to stop requests. When enableConsumerBatching
+	 * is true, a short batch may be emitted if this time elapses before the batchSize is
+	 * satisfied. Only applies with {@link ContainerType#SIMPLE}.
+	 */
+	private Long receiveTimeout;
+
 	public boolean isTransacted() {
 		return transacted;
 	}
@@ -315,6 +330,22 @@ public class RabbitConsumerProperties extends RabbitCommonProperties {
 
 	public void setAnonymousGroupPrefix(String anonymousGroupPrefix) {
 		this.anonymousGroupPrefix = anonymousGroupPrefix;
+	}
+
+	public boolean isEnableBatching() {
+		return this.enableBatching;
+	}
+
+	public void setEnableBatching(boolean enableBatching) {
+		this.enableBatching = enableBatching;
+	}
+
+	public Long getReceiveTimeout() {
+		return this.receiveTimeout;
+	}
+
+	public void setReceiveTimeout(Long receiveTimeout) {
+		this.receiveTimeout = receiveTimeout;
 	}
 
 }

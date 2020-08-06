@@ -88,6 +88,7 @@ import org.springframework.integration.StaticMessageHeaderAccessor;
 import org.springframework.integration.acks.AcknowledgmentCallback;
 import org.springframework.integration.acks.AcknowledgmentCallback.Status;
 import org.springframework.integration.amqp.inbound.AmqpInboundChannelAdapter;
+import org.springframework.integration.amqp.inbound.AmqpInboundChannelAdapter.BatchMode;
 import org.springframework.integration.amqp.inbound.AmqpMessageSource;
 import org.springframework.integration.amqp.outbound.AmqpOutboundEndpoint;
 import org.springframework.integration.amqp.support.AmqpMessageHeaderErrorMessageStrategy;
@@ -446,16 +447,17 @@ public class RabbitMessageChannelBinder extends
 		Assert.state(!HeaderMode.embeddedHeaders.equals(properties.getHeaderMode()),
 				"the RabbitMQ binder does not support embedded headers since RabbitMQ supports headers natively");
 		String destination = consumerDestination.getName();
-		boolean directContainer = properties.getExtension().getContainerType()
+		RabbitConsumerProperties extension = properties.getExtension();
+		boolean directContainer = extension.getContainerType()
 				.equals(ContainerType.DIRECT);
 		AbstractMessageListenerContainer listenerContainer = directContainer
 				? new DirectMessageListenerContainer(this.connectionFactory)
 				: new SimpleMessageListenerContainer(this.connectionFactory);
 		listenerContainer
-				.setAcknowledgeMode(properties.getExtension().getAcknowledgeMode());
-		listenerContainer.setChannelTransacted(properties.getExtension().isTransacted());
+				.setAcknowledgeMode(extension.getAcknowledgeMode());
+		listenerContainer.setChannelTransacted(extension.isTransacted());
 		listenerContainer
-				.setDefaultRequeueRejected(properties.getExtension().isRequeueRejected());
+				.setDefaultRequeueRejected(extension.isRequeueRejected());
 		int concurrency = properties.getConcurrency();
 		concurrency = concurrency > 0 ? concurrency : 1;
 		if (directContainer) {
@@ -466,9 +468,9 @@ public class RabbitMessageChannelBinder extends
 			setSMLCProperties(properties,
 					(SimpleMessageListenerContainer) listenerContainer, concurrency);
 		}
-		listenerContainer.setPrefetchCount(properties.getExtension().getPrefetch());
+		listenerContainer.setPrefetchCount(extension.getPrefetch());
 		listenerContainer
-				.setRecoveryInterval(properties.getExtension().getRecoveryInterval());
+				.setRecoveryInterval(extension.getRecoveryInterval());
 		listenerContainer.setTaskExecutor(
 				new SimpleAsyncTaskExecutor(consumerDestination.getName() + "-"));
 		String[] queues = StringUtils.tokenizeToStringArray(destination, ",", true, true);
@@ -476,12 +478,12 @@ public class RabbitMessageChannelBinder extends
 		listenerContainer.setAfterReceivePostProcessors(this.decompressingPostProcessor);
 		listenerContainer.setMessagePropertiesConverter(
 				RabbitMessageChannelBinder.inboundMessagePropertiesConverter);
-		listenerContainer.setExclusive(properties.getExtension().isExclusive());
+		listenerContainer.setExclusive(extension.isExclusive());
 		listenerContainer
-				.setMissingQueuesFatal(properties.getExtension().getMissingQueuesFatal());
-		if (properties.getExtension().getFailedDeclarationRetryInterval() != null) {
+				.setMissingQueuesFatal(extension.getMissingQueuesFatal());
+		if (extension.getFailedDeclarationRetryInterval() != null) {
 			listenerContainer.setFailedDeclarationRetryInterval(
-					properties.getExtension().getFailedDeclarationRetryInterval());
+					extension.getFailedDeclarationRetryInterval());
 		}
 		if (getApplicationEventPublisher() != null) {
 			listenerContainer
@@ -492,10 +494,10 @@ public class RabbitMessageChannelBinder extends
 		}
 		getContainerCustomizer().configure(listenerContainer,
 				consumerDestination.getName(), group);
-		if (StringUtils.hasText(properties.getExtension().getConsumerTagPrefix())) {
+		if (StringUtils.hasText(extension.getConsumerTagPrefix())) {
 			final AtomicInteger index = new AtomicInteger();
 			listenerContainer.setConsumerTagStrategy(
-					q -> properties.getExtension().getConsumerTagPrefix() + "#"
+					q -> extension.getConsumerTagPrefix() + "#"
 							+ index.getAndIncrement());
 		}
 		listenerContainer.afterPropertiesSet();
@@ -506,7 +508,7 @@ public class RabbitMessageChannelBinder extends
 		adapter.setBeanFactory(this.getBeanFactory());
 		adapter.setBeanName("inbound." + destination);
 		DefaultAmqpHeaderMapper mapper = DefaultAmqpHeaderMapper.inboundMapper();
-		mapper.setRequestHeaderNames(properties.getExtension().getHeaderPatterns());
+		mapper.setRequestHeaderNames(extension.getHeaderPatterns());
 		adapter.setHeaderMapper(mapper);
 		ErrorInfrastructure errorInfrastructure = registerErrorInfrastructure(
 				consumerDestination, group, properties);
@@ -519,6 +521,10 @@ public class RabbitMessageChannelBinder extends
 			adapter.setErrorChannel(errorInfrastructure.getErrorChannel());
 		}
 		adapter.setMessageConverter(passThoughConverter);
+		if (properties.isBatchMode() && extension.isEnableBatching()
+				&& ContainerType.SIMPLE.equals(extension.getContainerType())) {
+			adapter.setBatchMode(BatchMode.EXTRACT_PAYLOADS_WITH_HEADERS);
+		}
 		return adapter;
 	}
 
@@ -526,16 +532,24 @@ public class RabbitMessageChannelBinder extends
 			ExtendedConsumerProperties<RabbitConsumerProperties> properties,
 			SimpleMessageListenerContainer listenerContainer, int concurrency) {
 
+		RabbitConsumerProperties extension = properties.getExtension();
 		listenerContainer.setConcurrentConsumers(concurrency);
-		int maxConcurrency = properties.getExtension().getMaxConcurrency();
+		int maxConcurrency = extension.getMaxConcurrency();
 		if (maxConcurrency > concurrency) {
 			listenerContainer.setMaxConcurrentConsumers(maxConcurrency);
 		}
 		listenerContainer.setDeBatchingEnabled(!properties.isBatchMode());
-		listenerContainer.setBatchSize(properties.getExtension().getBatchSize());
-		if (properties.getExtension().getQueueDeclarationRetries() != null) {
+		listenerContainer.setBatchSize(extension.getBatchSize());
+		if (extension.getQueueDeclarationRetries() != null) {
 			listenerContainer.setDeclarationRetries(
-					properties.getExtension().getQueueDeclarationRetries());
+					extension.getQueueDeclarationRetries());
+		}
+		if (properties.isBatchMode() && extension.isEnableBatching()) {
+			listenerContainer.setConsumerBatchEnabled(true);
+			listenerContainer.setDeBatchingEnabled(true);
+		}
+		if (extension.getReceiveTimeout() != null) {
+			listenerContainer.setReceiveTimeout(extension.getReceiveTimeout());
 		}
 	}
 
