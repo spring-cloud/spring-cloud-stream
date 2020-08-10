@@ -238,7 +238,6 @@ public class KafkaBinderConfiguration {
 		}
 
 		@ConditionalOnClass(name = "org.springframework.kafka.core.MicrometerConsumerListener")
-		@ConditionalOnBean(MeterRegistry.class)
 		protected class KafkaMicrometer {
 
 			@Bean
