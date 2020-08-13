@@ -121,7 +121,7 @@ public class KafkaProducerProperties {
 	/**
 	 * @return compression type {@link CompressionType}
 	 *
-	 * Set the compression.type producer property. Supported values are none, gzip, snappy and lz4.
+	 * Set the compression.type producer property. Supported values are none, gzip, snappy, lz4 and zstd.
 	 * See {@link CompressionType} for more details.
 	 */
 	@NotNull
@@ -304,11 +304,10 @@ public class KafkaProducerProperties {
 		 */
 		lz4,
 
-		// /** // TODO: uncomment and fix docs when kafka-clients 2.1.0 or newer is the
-		// default
-		// * zstd compression
-		// */
-		// zstd
+		/**
+		 * zstd compression.
+		 */
+		zstd,
 
 	}
 

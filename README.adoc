@@ -419,7 +419,7 @@ If a topic already exists with a larger number of partitions than the maximum of
 
 compressionType::
 Set the `compression.type` producer property.
-Supported values are `none`, `gzip`, `snappy` and `lz4`.
+Supported values are `none`, `gzip`, `snappy`, `lz4`, `zstd`.
 If you override the `kafka-clients` jar to 2.1.0 (or later), as discussed in the https://docs.spring.io/spring-kafka/docs/2.2.x/reference/html/deps-for-21x.html[Spring for Apache Kafka documentation], and wish to use `zstd` compression, use `spring.cloud.stream.kafka.bindings.<binding-name>.producer.configuration.compression.type=zstd`.
 +
 Default: `none`.
