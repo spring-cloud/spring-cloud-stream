@@ -25,14 +25,20 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.kafka.clients.CommonClientConfigs;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
+import org.apache.kafka.clients.admin.AlterConfigOp;
+import org.apache.kafka.clients.admin.AlterConfigsResult;
+import org.apache.kafka.clients.admin.Config;
+import org.apache.kafka.clients.admin.ConfigEntry;
 import org.apache.kafka.clients.admin.CreatePartitionsResult;
 import org.apache.kafka.clients.admin.CreateTopicsResult;
+import org.apache.kafka.clients.admin.DescribeConfigsResult;
 import org.apache.kafka.clients.admin.DescribeTopicsResult;
 import org.apache.kafka.clients.admin.ListTopicsResult;
 import org.apache.kafka.clients.admin.NewPartitions;
@@ -40,6 +46,7 @@ import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.admin.TopicDescription;
 import org.apache.kafka.common.KafkaFuture;
 import org.apache.kafka.common.PartitionInfo;
+import org.apache.kafka.common.config.ConfigResource;
 import org.apache.kafka.common.errors.TopicExistsException;
 import org.apache.kafka.common.errors.UnknownTopicOrPartitionException;
 
@@ -262,7 +269,7 @@ public class KafkaTopicProvisioner implements
 		if (ObjectUtils
 				.isEmpty(adminProps.get(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG))
 				|| !kafkaConnectionString
-						.equals(binderProps.getDefaultKafkaConnectionString())) {
+				.equals(binderProps.getDefaultKafkaConnectionString())) {
 			adminProps.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG,
 					kafkaConnectionString);
 		}
@@ -367,13 +374,42 @@ public class KafkaTopicProvisioner implements
 
 		Set<String> names = namesFutures.get(this.operationTimeout, TimeUnit.SECONDS);
 		if (names.contains(topicName)) {
+			//check if topic.properties are different from Topic Configuration in Kafka
+			if (this.configurationProperties.isAutoCreateTopics()) {
+				ConfigResource topicConfigResource = new ConfigResource(ConfigResource.Type.TOPIC, topicName);
+				DescribeConfigsResult describeConfigsResult = adminClient
+						.describeConfigs(Collections.singletonList(topicConfigResource));
+				KafkaFuture<Map<ConfigResource, Config>> topicConfigurationFuture = describeConfigsResult.all();
+				Map<ConfigResource, Config> topicConfigMap = topicConfigurationFuture
+						.get(this.operationTimeout, TimeUnit.SECONDS);
+				Config config = topicConfigMap.get(topicConfigResource);
+				final List<AlterConfigOp> updatedConfigEntries = topicProperties.getProperties().entrySet().stream()
+						.filter(propertiesEntry -> {
+							// Property is new and should be added
+							if (config.get(propertiesEntry.getKey()) == null) {
+								return true;
+							}
+							else {
+								// Property changed and should be updated
+								return !config.get(propertiesEntry.getKey()).value().equals(propertiesEntry.getValue());
+							}
+
+						}).map(propertyEntry -> new ConfigEntry(propertyEntry.getKey(), propertyEntry.getValue()))
+						.map(configEntry -> new AlterConfigOp(configEntry, AlterConfigOp.OpType.SET))
+						.collect(Collectors
+								.toList());
+				Map<ConfigResource, Collection<AlterConfigOp>> alterConfigForTopics = new HashMap<>();
+				alterConfigForTopics.put(topicConfigResource, updatedConfigEntries);
+				AlterConfigsResult alterConfigsResult = adminClient.incrementalAlterConfigs(alterConfigForTopics);
+				alterConfigsResult.all().get(this.operationTimeout, TimeUnit.SECONDS);
+			}
 			// only consider minPartitionCount for resizing if autoAddPartitions is true
 			int effectivePartitionCount = this.configurationProperties
 					.isAutoAddPartitions()
-							? Math.max(
-									this.configurationProperties.getMinPartitionCount(),
-									partitionCount)
-							: partitionCount;
+					? Math.max(
+					this.configurationProperties.getMinPartitionCount(),
+					partitionCount)
+					: partitionCount;
 			DescribeTopicsResult describeTopicsResult = adminClient
 					.describeTopics(Collections.singletonList(topicName));
 			KafkaFuture<Map<String, TopicDescription>> topicDescriptionsFuture = describeTopicsResult
@@ -426,7 +462,7 @@ public class KafkaTopicProvisioner implements
 							topicProperties.getReplicationFactor() != null
 									? topicProperties.getReplicationFactor()
 									: this.configurationProperties
-											.getReplicationFactor());
+									.getReplicationFactor());
 				}
 				if (topicProperties.getProperties().size() > 0) {
 					newTopic.configs(topicProperties.getProperties());
@@ -494,7 +530,7 @@ public class KafkaTopicProvisioner implements
 					try (AdminClient adminClient = AdminClient
 							.create(this.adminClientProperties)) {
 						final DescribeTopicsResult describeTopicsResult = adminClient
-							.describeTopics(Collections.singletonList(topicName));
+								.describeTopics(Collections.singletonList(topicName));
 
 						describeTopicsResult.all().get();
 					}
