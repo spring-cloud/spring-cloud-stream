@@ -42,6 +42,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Gary Russell
  * @author Laur Aliste
  * @author Soby Chacko
+ * @author Chukwubuikem Ume-Ugwa
  */
 public class KafkaBinderHealthIndicatorTest {
 
@@ -97,13 +98,40 @@ public class KafkaBinderHealthIndicatorTest {
 
 	@Test
 	public void kafkaBinderIsDown() {
-		final List<PartitionInfo> partitions = partitions(new Node(-1, null, 0));
+		final List<PartitionInfo> partitions = partitions(null);
 		topicsInUse.put(TEST_TOPIC, new KafkaMessageChannelBinder.TopicInformation(
 				"group2-healthIndicator", partitions, false));
 		org.mockito.BDDMockito.given(consumer.partitionsFor(TEST_TOPIC))
 				.willReturn(partitions);
 		Health health = indicator.health();
 		assertThat(health.getStatus()).isEqualTo(Status.DOWN);
+	}
+
+	@Test
+	public void kafkaBinderIsDownWhenConsiderDownWhenAnyPartitionHasNoLeaderIsTrue() {
+		final List<PartitionInfo> partitions = partitions(new Node(0, null, 0));
+		partitions.add(new PartitionInfo(TEST_TOPIC, 0, null, null, null));
+		indicator.setConsiderDownWhenAnyPartitionHasNoLeader(true);
+		topicsInUse.put(TEST_TOPIC, new KafkaMessageChannelBinder.TopicInformation(
+				"group2-healthIndicator", partitions, false));
+		org.mockito.BDDMockito.given(consumer.partitionsFor(TEST_TOPIC))
+				.willReturn(partitions);
+		Health health = indicator.health();
+		assertThat(health.getStatus()).isEqualTo(Status.DOWN);
+	}
+
+	@Test
+	public void kafkaBinderIsUpWhenConsiderDownWhenAnyPartitionHasNoLeaderIsFalse() {
+		Node node = new Node(0, null, 0);
+		final List<PartitionInfo> partitions = partitions(node);
+		partitions.add(new PartitionInfo(TEST_TOPIC, 0, null, null, null));
+		indicator.setConsiderDownWhenAnyPartitionHasNoLeader(false);
+		topicsInUse.put(TEST_TOPIC, new KafkaMessageChannelBinder.TopicInformation(
+				"group2-healthIndicator", partitions(node), false));
+		org.mockito.BDDMockito.given(consumer.partitionsFor(TEST_TOPIC))
+				.willReturn(partitions);
+		Health health = indicator.health();
+		assertThat(health.getStatus()).isEqualTo(Status.UP);
 	}
 
 	@Test(timeout = 5000)

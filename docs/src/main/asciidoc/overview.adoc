@@ -144,6 +144,11 @@ If this custom `BinderHeaderMapper` bean is not made available to the binder usi
 +
 Default: none.
 
+spring.cloud.stream.kafka.binder.considerDownWhenAnyPartitionHasNoLeader::
+Flag to set the binder health as `down`, when any partitions on the topic, regardless of the consumer that is receiving data from it, is found without a leader.
++
+Default: `false`.
+
 [[kafka-consumer-properties]]
 ==== Kafka Consumer Properties
 

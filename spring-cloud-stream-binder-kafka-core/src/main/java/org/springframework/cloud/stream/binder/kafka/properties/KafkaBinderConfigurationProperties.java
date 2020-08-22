@@ -53,6 +53,7 @@ import org.springframework.util.StringUtils;
  * @author Rafal Zukowski
  * @author Aldo Sinanaj
  * @author Lukasz Kaminski
+ * @author Chukwubuikem Ume-Ugwa
  */
 @ConfigurationProperties(prefix = "spring.cloud.stream.kafka.binder")
 public class KafkaBinderConfigurationProperties {
@@ -89,6 +90,8 @@ public class KafkaBinderConfigurationProperties {
 	private boolean autoCreateTopics = true;
 
 	private boolean autoAddPartitions;
+
+	private boolean considerDownWhenAnyPartitionHasNoLeader;
 
 	private String requiredAcks = "1";
 
@@ -361,6 +364,14 @@ public class KafkaBinderConfigurationProperties {
 
 	public void setAuthorizationExceptionRetryInterval(Duration authorizationExceptionRetryInterval) {
 		this.authorizationExceptionRetryInterval = authorizationExceptionRetryInterval;
+	}
+
+	public boolean isConsiderDownWhenAnyPartitionHasNoLeader() {
+		return this.considerDownWhenAnyPartitionHasNoLeader;
+	}
+
+	public void setConsiderDownWhenAnyPartitionHasNoLeader(boolean considerDownWhenAnyPartitionHasNoLeader) {
+		this.considerDownWhenAnyPartitionHasNoLeader = considerDownWhenAnyPartitionHasNoLeader;
 	}
 
 	/**

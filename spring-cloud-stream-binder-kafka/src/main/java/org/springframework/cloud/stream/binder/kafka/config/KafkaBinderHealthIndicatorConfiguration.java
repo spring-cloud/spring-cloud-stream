@@ -37,6 +37,7 @@ import org.springframework.util.ObjectUtils;
  * Configuration class for Kafka binder health indicator beans.
  *
  * @author Oleg Zhurakousky
+ * @author Chukwubuikem Ume-Ugwa
  */
 
 @Configuration
@@ -66,6 +67,7 @@ class KafkaBinderHealthIndicatorConfiguration {
 		KafkaBinderHealthIndicator indicator = new KafkaBinderHealthIndicator(
 				kafkaMessageChannelBinder, consumerFactory);
 		indicator.setTimeout(configurationProperties.getHealthTimeout());
+		indicator.setConsiderDownWhenAnyPartitionHasNoLeader(configurationProperties.isConsiderDownWhenAnyPartitionHasNoLeader());
 		return indicator;
 	}
 
