@@ -41,40 +41,40 @@ public class KafkaBinderMeterRegistryTest {
 	public static EmbeddedKafkaRule embeddedKafka = new EmbeddedKafkaRule(1, true, 10);
 
 	@Test
-	public void testMetricsWorkWithSingleBinder() {
+	public void testMetricsWithSingleBinder() {
 		ConfigurableApplicationContext applicationContext = new SpringApplicationBuilder(SimpleApplication.class)
 				.web(WebApplicationType.NONE)
 				.run("--spring.cloud.stream.bindings.uppercase-in-0.destination=inputTopic",
 						"--spring.cloud.stream.bindings.uppercase-in-0.group=inputGroup",
-						"--spring.cloud.stream.bindings.uppercase-in-0.binder=kafka1",
-						"--spring.cloud.stream.bindings.uppercase-output-0.destination=outputTopic",
-						"--spring.cloud.stream.bindings.uppercase-output-0.binder=kafka1",
-						"--spring.cloud.stream.binders.kafka1.type=kafka");
+						"--spring.cloud.stream.bindings.uppercase-out-0.destination=outputTopic",
+						"--spring.cloud.stream.kafka.binder.brokers" + "="
+								+ embeddedKafka.getEmbeddedKafka().getBrokersAsString());
 
 		final MeterRegistry meterRegistry = applicationContext.getBean(MeterRegistry.class);
-
 		assertMeterRegistry(meterRegistry);
-
 		applicationContext.close();
 	}
 
 	@Test
-	public void testMetricsWorkWithMultiBinders() {
+	public void testMetricsWithMultiBinders() {
 		ConfigurableApplicationContext applicationContext = new SpringApplicationBuilder(SimpleApplication.class)
 				.web(WebApplicationType.NONE)
 				.run("--spring.cloud.stream.bindings.uppercase-in-0.destination=inputTopic",
 						"--spring.cloud.stream.bindings.uppercase-in-0.group=inputGroup",
 						"--spring.cloud.stream.bindings.uppercase-in-0.binder=kafka1",
-						"--spring.cloud.stream.bindings.uppercase-output-0.destination=outputTopic",
-						"--spring.cloud.stream.bindings.uppercase-output-0.binder=kafka2",
+						"--spring.cloud.stream.bindings.uppercase-out-0.destination=outputTopic",
+						"--spring.cloud.stream.bindings.uppercase-out-0.binder=kafka2",
 						"--spring.cloud.stream.binders.kafka1.type=kafka",
 						"--spring.cloud.stream.binders.kafka2.type=kafka",
-						"--spring.cloud.stream.default.binder=kafka1");
+						"--spring.cloud.stream.binders.kafka1.environment"
+								+ ".spring.cloud.stream.kafka.binder.brokers" + "="
+								+ embeddedKafka.getEmbeddedKafka().getBrokersAsString(),
+						"--spring.cloud.stream.binders.kafka2.environment"
+								+ ".spring.cloud.stream.kafka.binder.brokers" + "="
+								+ embeddedKafka.getEmbeddedKafka().getBrokersAsString());
 
 		final MeterRegistry meterRegistry = applicationContext.getBean(MeterRegistry.class);
-
 		assertMeterRegistry(meterRegistry);
-
 		applicationContext.close();
 	}
 
@@ -100,7 +100,5 @@ public class KafkaBinderMeterRegistryTest {
 		public Function<String, String> uppercase() {
 			return String::toUpperCase;
 		}
-
 	}
-
 }
