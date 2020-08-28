@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -59,13 +60,18 @@ import org.springframework.integration.handler.support.PayloadExpressionArgument
 import org.springframework.integration.handler.support.PayloadsArgumentResolver;
 import org.springframework.integration.support.NullAwarePayloadArgumentResolver;
 import org.springframework.lang.Nullable;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageHeaders;
+import org.springframework.messaging.converter.AbstractMessageConverter;
 import org.springframework.messaging.converter.CompositeMessageConverter;
+import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.messaging.handler.annotation.support.DefaultMessageHandlerMethodFactory;
 import org.springframework.messaging.handler.annotation.support.HeaderMethodArgumentResolver;
 import org.springframework.messaging.handler.annotation.support.HeadersMethodArgumentResolver;
 import org.springframework.messaging.handler.annotation.support.MessageHandlerMethodFactory;
 import org.springframework.messaging.handler.invocation.HandlerMethodArgumentResolver;
 import org.springframework.util.ClassUtils;
+import org.springframework.util.MimeTypeUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.Validator;
 
@@ -112,7 +118,10 @@ public class BinderFactoryAutoConfiguration {
 		return parsedBinderConfigurations;
 	}
 
-
+	@Bean
+	public MessageConverter kafkaNullConverter() {
+		return new KafkaNullConverter();
+	}
 
 	@Bean(IntegrationContextUtils.MESSAGE_HANDLER_FACTORY_BEAN_NAME)
 	public static MessageHandlerMethodFactory messageHandlerMethodFactory(
@@ -236,4 +245,33 @@ public class BinderFactoryAutoConfiguration {
 		return new CompositeMessageChannelConfigurer(configurerList);
 	}
 
+	static class KafkaNullConverter extends AbstractMessageConverter {
+
+		KafkaNullConverter() {
+			super(Collections.singletonList(MimeTypeUtils.ALL));
+		}
+
+		@Override
+		protected boolean supports(Class<?> aClass) {
+			return "org.springframework.kafka.support.KafkaNull".equals(aClass.getName());
+		}
+
+		@Override
+		protected boolean canConvertFrom(Message<?> message, Class<?> targetClass) {
+			return message.getPayload().getClass().getName().equals("org.springframework.kafka.support.KafkaNull");
+		}
+
+		@Override
+		protected Object convertFromInternal(Message<?> message, Class<?> targetClass,
+				Object conversionHint) {
+			return message.getPayload();
+		}
+
+		@Override
+		protected Object convertToInternal(Object payload, MessageHeaders headers,
+				Object conversionHint) {
+			return payload;
+		}
+
+	}
 }
