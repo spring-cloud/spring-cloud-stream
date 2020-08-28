@@ -106,7 +106,11 @@ spring.cloud.stream.kafka.binder.replicationFactor::
 The replication factor of auto-created topics if `autoCreateTopics` is active.
 Can be overridden on each binding.
 +
-Default: `1`.
+NOTE: If you are using Kafka broker versions prior to 2.4, then this value should be set to at least `1`.
+Starting with version 3.0.8, the binder uses `-1` as the default value, which indicates that the broker 'default.replication.factor' property will be used to determine the number of replicas.
+Check with your Kafka broker admins to see if there is a policy in place that requires a minimum replication factor, if that's the case then, typically, the `default.replication.factor` will match that value and `-1` should be used, unless you need a replication factor greater than the minimum.
++
+Default: `-1`.
 spring.cloud.stream.kafka.binder.autoCreateTopics::
 If set to `true`, the binder creates new topics automatically.
 If set to `false`, the binder relies on the topics being already configured.
@@ -277,7 +281,7 @@ topic.replication-factor::
 The replication factor to use when provisioning topics. Overrides the binder-wide setting.
 Ignored if `replicas-assignments` is present.
 +
-Default: none (the binder-wide default of 1 is used).
+Default: none (the binder-wide default of -1 is used).
 pollTimeout::
 Timeout used for polling in pollable consumers.
 +
@@ -373,7 +377,7 @@ topic.replication-factor::
 The replication factor to use when provisioning topics. Overrides the binder-wide setting.
 Ignored if `replicas-assignments` is present.
 +
-Default: none (the binder-wide default of 1 is used).
+Default: none (the binder-wide default of -1 is used).
 useTopicHeader::
 Set to `true` to override the default binding destination (topic name) with the value of the `KafkaHeaders.TOPIC` message header in the outbound message.
 If the header is not present, the default binding destination is used.

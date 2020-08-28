@@ -92,7 +92,7 @@ public class KafkaBinderConfigurationProperties {
 
 	private String requiredAcks = "1";
 
-	private short replicationFactor = 1;
+	private short replicationFactor = -1;
 
 	private int minPartitionCount = 1;
 
