@@ -257,6 +257,11 @@ public class BinderFactoryAutoConfiguration {
 		}
 
 		@Override
+		protected boolean supportsMimeType(@Nullable MessageHeaders headers) {
+			return true;
+		}
+
+		@Override
 		protected boolean canConvertFrom(Message<?> message, Class<?> targetClass) {
 			return message.getPayload().getClass().getName().equals("org.springframework.kafka.support.KafkaNull");
 		}
