@@ -1362,7 +1362,7 @@ If the listener throws a `RequeueCurrentMessageException` directly, the message 
 === Event Routing
 
 Event Routing, in the context of Spring Cloud Stream, is the ability to either
-_a) route events to a particular even subscriber_ or
+_a) route events to a particular event subscriber_ or
 _b) route events produced by an event subscriber to a particular destination_.
 Here we'll refer to it as route ‘TO’ and route ‘FROM’.
 
