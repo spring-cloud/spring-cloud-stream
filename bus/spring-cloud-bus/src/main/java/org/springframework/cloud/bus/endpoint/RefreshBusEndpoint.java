@@ -25,7 +25,7 @@ import org.springframework.context.ApplicationEventPublisher;
 /**
  * @author Spencer Gibb
  */
-@Endpoint(id = "bus-refresh") // TODO: document new id
+@Endpoint(id = "busrefresh") // TODO: document new id
 public class RefreshBusEndpoint extends AbstractBusEndpoint {
 
 	public RefreshBusEndpoint(ApplicationEventPublisher context, String id) {

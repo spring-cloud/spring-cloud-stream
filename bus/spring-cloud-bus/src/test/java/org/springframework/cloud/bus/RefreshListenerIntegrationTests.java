@@ -56,9 +56,9 @@ public class RefreshListenerIntegrationTests {
 	@Test
 	public void testEndpoint() {
 		System.out.println(rest.getForObject("/actuator", String.class));
-		assertThat(rest.postForEntity("/actuator/bus-refresh/demoapp", new HashMap<>(), String.class).getStatusCode())
+		assertThat(rest.postForEntity("/actuator/busrefresh/demoapp", new HashMap<>(), String.class).getStatusCode())
 				.isEqualTo(HttpStatus.NO_CONTENT);
-		assertThat(rest.postForEntity("/actuator/bus-refresh/foobar", new HashMap<>(), String.class).getStatusCode())
+		assertThat(rest.postForEntity("/actuator/busrefresh/foobar", new HashMap<>(), String.class).getStatusCode())
 				.isEqualTo(HttpStatus.NO_CONTENT);
 		verify(contextRefresher, times(1)).refresh();
 	}

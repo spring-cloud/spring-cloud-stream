@@ -28,7 +28,7 @@ import org.springframework.context.ApplicationEventPublisher;
 /**
  * @author Spencer Gibb
  */
-@Endpoint(id = "bus-env") // TODO: document
+@Endpoint(id = "busenv") // TODO: document
 public class EnvironmentBusEndpoint extends AbstractBusEndpoint {
 
 	public EnvironmentBusEndpoint(ApplicationEventPublisher context, String id) {
