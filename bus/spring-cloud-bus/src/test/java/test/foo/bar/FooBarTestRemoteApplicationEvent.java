@@ -25,13 +25,12 @@ public class FooBarTestRemoteApplicationEvent extends RemoteApplicationEvent {
 	private FooBarTestRemoteApplicationEvent() {
 	}
 
-	protected FooBarTestRemoteApplicationEvent(final Object source,
-			final String originService, final String destinationService) {
+	protected FooBarTestRemoteApplicationEvent(final Object source, final String originService,
+			final String destinationService) {
 		super(source, originService, destinationService);
 	}
 
-	protected FooBarTestRemoteApplicationEvent(final Object source,
-			final String originService) {
+	protected FooBarTestRemoteApplicationEvent(final Object source, final String originService) {
 		super(source, originService);
 	}
 

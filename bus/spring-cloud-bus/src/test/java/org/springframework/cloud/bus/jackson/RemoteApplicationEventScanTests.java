@@ -50,87 +50,72 @@ public class RemoteApplicationEventScanTests {
 
 	@Test
 	public void importingClassMetadataPackageRegistered() {
-		this.converter = createTestContext(DefaultConfig.class)
-				.getBean(BusJacksonMessageConverter.class);
+		this.converter = createTestContext(DefaultConfig.class).getBean(BusJacksonMessageConverter.class);
 
 		assertConverterBeanAfterPropertiesSet(
-				new String[] { "org.springframework.cloud.bus.jackson",
-						"org.springframework.cloud.bus.event" },
-				AnotherRemoteApplicationEvent.class, MyRemoteApplicationEvent.class,
-				TestRemoteApplicationEvent.class, TypedRemoteApplicationEvent.class);
+				new String[] { "org.springframework.cloud.bus.jackson", "org.springframework.cloud.bus.event" },
+				AnotherRemoteApplicationEvent.class, MyRemoteApplicationEvent.class, TestRemoteApplicationEvent.class,
+				TypedRemoteApplicationEvent.class);
 	}
 
 	@Test
 	public void annotationValuePackagesRegistered() {
-		this.converter = createTestContext(ValueConfig.class)
-				.getBean(BusJacksonMessageConverter.class);
+		this.converter = createTestContext(ValueConfig.class).getBean(BusJacksonMessageConverter.class);
 
 		assertConverterBeanAfterPropertiesSet(
-				new String[] { "test.foo.bar", "com.acme",
-						"org.springframework.cloud.bus.event" },
+				new String[] { "test.foo.bar", "com.acme", "org.springframework.cloud.bus.event" },
 				FooBarTestRemoteApplicationEvent.class, TestRemoteApplicationEvent.class,
 				TypedRemoteApplicationEvent.class);
 	}
 
 	@Test
 	public void annotationValueBasePackagesRegistered() {
-		this.converter = createTestContext(BasePackagesConfig.class)
-				.getBean(BusJacksonMessageConverter.class);
+		this.converter = createTestContext(BasePackagesConfig.class).getBean(BusJacksonMessageConverter.class);
 
 		assertConverterBeanAfterPropertiesSet(
-				new String[] { "test.foo.bar", "fizz.buzz", "com.acme",
-						"org.springframework.cloud.bus.event" },
+				new String[] { "test.foo.bar", "fizz.buzz", "com.acme", "org.springframework.cloud.bus.event" },
 				FooBarTestRemoteApplicationEvent.class, TestRemoteApplicationEvent.class,
 				TypedRemoteApplicationEvent.class);
 	}
 
 	@Test
 	public void annotationBasePackagesRegistered() {
-		this.converter = createTestContext(BasePackageClassesConfig.class)
-				.getBean(BusJacksonMessageConverter.class);
+		this.converter = createTestContext(BasePackageClassesConfig.class).getBean(BusJacksonMessageConverter.class);
 
 		assertConverterBeanAfterPropertiesSet(
-				new String[] { "org.springframework.cloud.bus.event.test",
-						"org.springframework.cloud.bus.event" },
+				new String[] { "org.springframework.cloud.bus.event.test", "org.springframework.cloud.bus.event" },
 				TestRemoteApplicationEvent.class, TypedRemoteApplicationEvent.class);
 	}
 
 	private ConfigurableApplicationContext createTestContext(Class<?> configuration) {
-		return new SpringApplicationBuilder(configuration).web(WebApplicationType.NONE)
-				.bannerMode(Banner.Mode.OFF).run();
+		return new SpringApplicationBuilder(configuration).web(WebApplicationType.NONE).bannerMode(Banner.Mode.OFF)
+				.run();
 	}
 
-	private void assertConverterBeanAfterPropertiesSet(
-			final String[] expectedPackageToScan,
+	private void assertConverterBeanAfterPropertiesSet(final String[] expectedPackageToScan,
 			final Class<?>... expectedRegisterdClasses) {
-		final ObjectMapper mapper = (ObjectMapper) ReflectionTestUtils
-				.getField(this.converter, "mapper");
+		final ObjectMapper mapper = (ObjectMapper) ReflectionTestUtils.getField(this.converter, "mapper");
 
 		@SuppressWarnings("unchecked")
 		final LinkedHashSet<NamedType> registeredSubtypes = (LinkedHashSet<NamedType>) ReflectionTestUtils
 				.getField(mapper.getSubtypeResolver(), "_registeredSubtypes");
 
-		final List<Class<?>> expectedRegisterdClassesAsList = new ArrayList<>(
-				Arrays.asList(expectedRegisterdClasses));
+		final List<Class<?>> expectedRegisterdClassesAsList = new ArrayList<>(Arrays.asList(expectedRegisterdClasses));
 		addStandardSpringCloudEventBusEvents(expectedRegisterdClassesAsList);
 
 		assertThat(expectedRegisterdClassesAsList.size() == registeredSubtypes.size())
-				.as("Wrong RemoteApplicationEvent classes are registerd in object mapper")
-				.isTrue();
+				.as("Wrong RemoteApplicationEvent classes are registerd in object mapper").isTrue();
 
 		for (final NamedType namedType : registeredSubtypes) {
-			assertThat(expectedRegisterdClassesAsList.contains(namedType.getType()))
-					.isTrue();
+			assertThat(expectedRegisterdClassesAsList.contains(namedType.getType())).isTrue();
 		}
 
-		assertThat(Arrays.asList((String[]) ReflectionTestUtils.getField(this.converter,
-				"packagesToScan"))).as("RemoteApplicationEvent packages not registered")
-						.contains(expectedPackageToScan);
+		assertThat(Arrays.asList((String[]) ReflectionTestUtils.getField(this.converter, "packagesToScan")))
+				.as("RemoteApplicationEvent packages not registered").contains(expectedPackageToScan);
 
 	}
 
-	private void addStandardSpringCloudEventBusEvents(
-			final List<Class<?>> expectedRegisterdClassesAsList) {
+	private void addStandardSpringCloudEventBusEvents(final List<Class<?>> expectedRegisterdClassesAsList) {
 		expectedRegisterdClassesAsList.add(AckRemoteApplicationEvent.class);
 		expectedRegisterdClassesAsList.add(EnvironmentChangeRemoteApplicationEvent.class);
 		expectedRegisterdClassesAsList.add(RefreshRemoteApplicationEvent.class);

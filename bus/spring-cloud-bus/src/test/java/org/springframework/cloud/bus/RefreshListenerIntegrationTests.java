@@ -41,8 +41,7 @@ import static org.mockito.Mockito.verify;
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
 		classes = RefreshListenerIntegrationTests.MyApp.class,
-		properties = { "management.endpoints.web.exposure.include=*",
-				"spring.application.name=foobar" })
+		properties = { "management.endpoints.web.exposure.include=*", "spring.application.name=foobar" })
 public class RefreshListenerIntegrationTests {
 
 	@Autowired
@@ -57,10 +56,10 @@ public class RefreshListenerIntegrationTests {
 	@Test
 	public void testEndpoint() {
 		System.out.println(rest.getForObject("/actuator", String.class));
-		assertThat(rest.postForEntity("/actuator/bus-refresh/demoapp", new HashMap<>(),
-				String.class).getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
-		assertThat(rest.postForEntity("/actuator/bus-refresh/foobar", new HashMap<>(),
-				String.class).getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
+		assertThat(rest.postForEntity("/actuator/bus-refresh/demoapp", new HashMap<>(), String.class).getStatusCode())
+				.isEqualTo(HttpStatus.NO_CONTENT);
+		assertThat(rest.postForEntity("/actuator/bus-refresh/foobar", new HashMap<>(), String.class).getStatusCode())
+				.isEqualTo(HttpStatus.NO_CONTENT);
 		verify(contextRefresher, times(1)).refresh();
 	}
 

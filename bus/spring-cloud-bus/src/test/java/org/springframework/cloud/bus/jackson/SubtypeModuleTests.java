@@ -44,23 +44,18 @@ public class SubtypeModuleTests {
 		RemoteApplicationEvent event = mapper.readValue(
 				"{\"type\":\"my\", \"destinationService\":\"myservice\", \"originService\":\"myorigin\"}",
 				RemoteApplicationEvent.class);
-		assertThat(event instanceof MyRemoteApplicationEvent).as("event is wrong type")
-				.isTrue();
+		assertThat(event instanceof MyRemoteApplicationEvent).as("event is wrong type").isTrue();
 		MyRemoteApplicationEvent myEvent = MyRemoteApplicationEvent.class.cast(event);
-		assertThat(myEvent.getOriginService()).as("originService was wrong")
-				.isEqualTo("myorigin");
-		assertThat(myEvent.getDestinationService()).as("destinationService was wrong")
-				.isEqualTo("myservice");
+		assertThat(myEvent.getOriginService()).as("originService was wrong").isEqualTo("myorigin");
+		assertThat(myEvent.getDestinationService()).as("destinationService was wrong").isEqualTo("myservice");
 	}
 
 	@Test
 	public void testDeserializeWhenTypeIsKnown() throws Exception {
 		ObjectMapper mapper = new ObjectMapper();
 
-		RemoteApplicationEvent event = mapper.readValue("{\"type\":\"another\"}",
-				AnotherRemoteApplicationEvent.class);
-		assertThat(event instanceof AnotherRemoteApplicationEvent)
-				.as("event is wrong type").isTrue();
+		RemoteApplicationEvent event = mapper.readValue("{\"type\":\"another\"}", AnotherRemoteApplicationEvent.class);
+		assertThat(event instanceof AnotherRemoteApplicationEvent).as("event is wrong type").isTrue();
 	}
 
 	@Test
@@ -70,39 +65,34 @@ public class SubtypeModuleTests {
 
 		BusJacksonMessageConverter converter = new BusJacksonMessageConverter(mapper);
 		converter.afterPropertiesSet();
-		Object event = converter.fromMessage(MessageBuilder.withPayload(
-				"{\"type\":\"TestRemoteApplicationEvent\", \"origin_service\":\"myorigin\"}")
-				.build(), RemoteApplicationEvent.class);
+		Object event = converter.fromMessage(MessageBuilder
+				.withPayload("{\"type\":\"TestRemoteApplicationEvent\", \"origin_service\":\"myorigin\"}").build(),
+				RemoteApplicationEvent.class);
 		assertThat(event).isNotNull().isInstanceOf(TestRemoteApplicationEvent.class);
-		assertThat(TestRemoteApplicationEvent.class.cast(event).getOriginService())
-				.isEqualTo("myorigin");
+		assertThat(TestRemoteApplicationEvent.class.cast(event).getOriginService()).isEqualTo("myorigin");
 	}
 
 	@Test
 	public void testDeserializeWithMessageConverter() throws Exception {
 		BusJacksonMessageConverter converter = new BusJacksonMessageConverter(null);
 		converter.afterPropertiesSet();
-		Object event = converter.fromMessage(MessageBuilder
-				.withPayload("{\"type\":\"TestRemoteApplicationEvent\"}").build(),
+		Object event = converter.fromMessage(
+				MessageBuilder.withPayload("{\"type\":\"TestRemoteApplicationEvent\"}").build(),
 				RemoteApplicationEvent.class);
-		assertThat(event instanceof TestRemoteApplicationEvent).as("event is wrong type")
-				.isTrue();
+		assertThat(event instanceof TestRemoteApplicationEvent).as("event is wrong type").isTrue();
 	}
 
 	@Test
 	public void testDeserializeUnknownTypeWithMessageConverter() throws Exception {
 		BusJacksonMessageConverter converter = new BusJacksonMessageConverter(null);
 		converter.afterPropertiesSet();
-		Object event = converter.fromMessage(MessageBuilder
-				.withPayload("{\"type\":\"NotDefinedTestRemoteApplicationEvent\"}")
-				.build(), RemoteApplicationEvent.class);
-		assertThat(event instanceof UnknownRemoteApplicationEvent)
-				.as("event is wrong type").isTrue();
-		assertThat(((UnknownRemoteApplicationEvent) event).getTypeInfo())
-				.as("type information is wrong")
+		Object event = converter.fromMessage(
+				MessageBuilder.withPayload("{\"type\":\"NotDefinedTestRemoteApplicationEvent\"}").build(),
+				RemoteApplicationEvent.class);
+		assertThat(event instanceof UnknownRemoteApplicationEvent).as("event is wrong type").isTrue();
+		assertThat(((UnknownRemoteApplicationEvent) event).getTypeInfo()).as("type information is wrong")
 				.isEqualTo("NotDefinedTestRemoteApplicationEvent");
-		assertThat(((UnknownRemoteApplicationEvent) event).getPayloadAsString())
-				.as("payload is wrong")
+		assertThat(((UnknownRemoteApplicationEvent) event).getPayloadAsString()).as("payload is wrong")
 				.isEqualTo("{\"type\":\"NotDefinedTestRemoteApplicationEvent\"}");
 	}
 
@@ -110,11 +100,9 @@ public class SubtypeModuleTests {
 	public void testDeserializeJsonTypeWithMessageConverter() throws Exception {
 		BusJacksonMessageConverter converter = new BusJacksonMessageConverter(null);
 		converter.afterPropertiesSet();
-		Object event = converter.fromMessage(
-				MessageBuilder.withPayload("{\"type\":\"typed\"}").build(),
+		Object event = converter.fromMessage(MessageBuilder.withPayload("{\"type\":\"typed\"}").build(),
 				RemoteApplicationEvent.class);
-		assertThat(event instanceof TypedRemoteApplicationEvent).as("event is wrong type")
-				.isTrue();
+		assertThat(event instanceof TypedRemoteApplicationEvent).as("event is wrong type").isTrue();
 	}
 
 	/**
@@ -124,12 +112,12 @@ public class SubtypeModuleTests {
 	public void testDeserializeAckRemoteApplicationEventWithKnownType() throws Exception {
 		BusJacksonMessageConverter converter = new BusJacksonMessageConverter(null);
 		converter.afterPropertiesSet();
-		Object event = converter.fromMessage(MessageBuilder
-				.withPayload("{\"type\":\"AckRemoteApplicationEvent\", "
-						+ "\"event\":\"org.springframework.cloud.bus.event.test.TestRemoteApplicationEvent\"}")
-				.build(), RemoteApplicationEvent.class);
-		assertThat(event instanceof AckRemoteApplicationEvent).as("event is no ack")
-				.isTrue();
+		Object event = converter
+				.fromMessage(MessageBuilder
+						.withPayload("{\"type\":\"AckRemoteApplicationEvent\", "
+								+ "\"event\":\"org.springframework.cloud.bus.event.test.TestRemoteApplicationEvent\"}")
+						.build(), RemoteApplicationEvent.class);
+		assertThat(event instanceof AckRemoteApplicationEvent).as("event is no ack").isTrue();
 		AckRemoteApplicationEvent ackEvent = AckRemoteApplicationEvent.class.cast(event);
 		assertThat(ackEvent.getEvent()).as("inner ack event has wrong type")
 				.isEqualTo(TestRemoteApplicationEvent.class);
@@ -139,15 +127,14 @@ public class SubtypeModuleTests {
 	 * see https://github.com/spring-cloud/spring-cloud-bus/issues/74
 	 */
 	@Test
-	public void testDeserializeAckRemoteApplicationEventWithUnknownType()
-			throws Exception {
+	public void testDeserializeAckRemoteApplicationEventWithUnknownType() throws Exception {
 		BusJacksonMessageConverter converter = new BusJacksonMessageConverter(null);
 		converter.afterPropertiesSet();
-		Object event = converter.fromMessage(MessageBuilder.withPayload(
-				"{\"type\":\"AckRemoteApplicationEvent\", \"event\":\"foo.bar.TestRemoteApplicationEvent\"}")
+		Object event = converter.fromMessage(MessageBuilder
+				.withPayload(
+						"{\"type\":\"AckRemoteApplicationEvent\", \"event\":\"foo.bar.TestRemoteApplicationEvent\"}")
 				.build(), RemoteApplicationEvent.class);
-		assertThat(event instanceof AckRemoteApplicationEvent).as("event is no ack")
-				.isTrue();
+		assertThat(event instanceof AckRemoteApplicationEvent).as("event is no ack").isTrue();
 		AckRemoteApplicationEvent ackEvent = AckRemoteApplicationEvent.class.cast(event);
 		assertThat(ackEvent.getEvent()).as("inner ack event has wrong type")
 				.isEqualTo(UnknownRemoteApplicationEvent.class);
@@ -161,8 +148,7 @@ public class SubtypeModuleTests {
 		private MyRemoteApplicationEvent() {
 		}
 
-		protected MyRemoteApplicationEvent(Object source, String originService,
-				String destinationService) {
+		protected MyRemoteApplicationEvent(Object source, String originService, String destinationService) {
 			super(source, originService, destinationService);
 		}
 
@@ -180,8 +166,7 @@ public class SubtypeModuleTests {
 		private AnotherRemoteApplicationEvent() {
 		}
 
-		protected AnotherRemoteApplicationEvent(Object source, String originService,
-				String destinationService) {
+		protected AnotherRemoteApplicationEvent(Object source, String originService, String destinationService) {
 			super(source, originService, destinationService);
 		}
 

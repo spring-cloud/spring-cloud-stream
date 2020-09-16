@@ -43,12 +43,10 @@ public class ServiceMatcherAutoConfiguration {
 	}
 
 	@Bean
-	public ServiceMatcher serviceMatcher(@BusPathMatcher PathMatcher pathMatcher,
-			BusProperties properties, Environment environment) {
-		String[] configNames = environment.getProperty(CLOUD_CONFIG_NAME_PROPERTY,
-				String[].class, new String[] {});
-		ServiceMatcher serviceMatcher = new ServiceMatcher(pathMatcher,
-				properties.getId(), configNames);
+	public ServiceMatcher serviceMatcher(@BusPathMatcher PathMatcher pathMatcher, BusProperties properties,
+			Environment environment) {
+		String[] configNames = environment.getProperty(CLOUD_CONFIG_NAME_PROPERTY, String[].class, new String[] {});
+		ServiceMatcher serviceMatcher = new ServiceMatcher(pathMatcher, properties.getId(), configNames);
 		return serviceMatcher;
 	}
 

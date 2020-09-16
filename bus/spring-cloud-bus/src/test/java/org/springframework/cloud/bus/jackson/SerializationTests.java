@@ -37,13 +37,12 @@ public class SerializationTests {
 
 	@Test
 	public void vanillaDeserialize() throws Exception {
-		this.mapper.registerModule(new SubtypeModule(RefreshRemoteApplicationEvent.class,
-				EnvironmentChangeRemoteApplicationEvent.class));
-		EnvironmentChangeRemoteApplicationEvent source = new EnvironmentChangeRemoteApplicationEvent(
-				this, "foo", "bar", Collections.<String, String>emptyMap());
+		this.mapper.registerModule(
+				new SubtypeModule(RefreshRemoteApplicationEvent.class, EnvironmentChangeRemoteApplicationEvent.class));
+		EnvironmentChangeRemoteApplicationEvent source = new EnvironmentChangeRemoteApplicationEvent(this, "foo", "bar",
+				Collections.<String, String>emptyMap());
 		String value = this.mapper.writeValueAsString(source);
-		RemoteApplicationEvent event = this.mapper.readValue(value,
-				RemoteApplicationEvent.class);
+		RemoteApplicationEvent event = this.mapper.readValue(value, RemoteApplicationEvent.class);
 		assertThat(event instanceof EnvironmentChangeRemoteApplicationEvent).isTrue();
 		assertThat(event.getId()).isNotNull();
 		assertThat(event.getId().equals(source.getId())).isTrue();
@@ -51,14 +50,13 @@ public class SerializationTests {
 
 	@Test
 	public void deserializeOldValueWithNoId() throws Exception {
-		this.mapper.registerModule(new SubtypeModule(RefreshRemoteApplicationEvent.class,
-				EnvironmentChangeRemoteApplicationEvent.class));
-		EnvironmentChangeRemoteApplicationEvent source = new EnvironmentChangeRemoteApplicationEvent(
-				this, "foo", "bar", Collections.<String, String>emptyMap());
+		this.mapper.registerModule(
+				new SubtypeModule(RefreshRemoteApplicationEvent.class, EnvironmentChangeRemoteApplicationEvent.class));
+		EnvironmentChangeRemoteApplicationEvent source = new EnvironmentChangeRemoteApplicationEvent(this, "foo", "bar",
+				Collections.<String, String>emptyMap());
 		String value = this.mapper.writeValueAsString(source);
 		value = value.replaceAll(",\"id\":\"[a-f0-9-]*\"", "");
-		RemoteApplicationEvent event = this.mapper.readValue(value,
-				RemoteApplicationEvent.class);
+		RemoteApplicationEvent event = this.mapper.readValue(value, RemoteApplicationEvent.class);
 		assertThat(event instanceof EnvironmentChangeRemoteApplicationEvent).isTrue();
 		assertThat(event.getId()).isNotNull();
 		assertThat(event.getId().equals(source.getId())).isFalse();

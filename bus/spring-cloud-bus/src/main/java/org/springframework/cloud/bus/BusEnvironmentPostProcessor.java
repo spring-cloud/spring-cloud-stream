@@ -38,19 +38,15 @@ public class BusEnvironmentPostProcessor implements EnvironmentPostProcessor {
 	private static final String PROPERTY_SOURCE_NAME = "defaultProperties";
 
 	@Override
-	public void postProcessEnvironment(ConfigurableEnvironment environment,
-			SpringApplication application) {
+	public void postProcessEnvironment(ConfigurableEnvironment environment, SpringApplication application) {
 		Map<String, Object> map = new HashMap<String, Object>();
-		map.put("spring.cloud.stream.bindings." + SpringCloudBusClient.OUTPUT
-				+ ".content-type",
-				environment.getProperty("spring.cloud.bus.content-type",
-						"application/json"));
+		map.put("spring.cloud.stream.bindings." + SpringCloudBusClient.OUTPUT + ".content-type",
+				environment.getProperty("spring.cloud.bus.content-type", "application/json"));
 		map.put("spring.cloud.bus.id", IdUtils.getUnresolvedServiceId());
 		addOrReplace(environment.getPropertySources(), map);
 	}
 
-	private void addOrReplace(MutablePropertySources propertySources,
-			Map<String, Object> map) {
+	private void addOrReplace(MutablePropertySources propertySources, Map<String, Object> map) {
 		MapPropertySource target = null;
 		if (propertySources.contains(PROPERTY_SOURCE_NAME)) {
 			PropertySource<?> source = propertySources.get(PROPERTY_SOURCE_NAME);

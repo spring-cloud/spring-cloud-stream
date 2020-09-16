@@ -47,25 +47,20 @@ public class ConditionalOnBusEnabledTests {
 
 	@Test
 	public void busEnabledTrue() {
-		load(MyBusEnabledConfig.class,
-				ConditionalOnBusEnabled.SPRING_CLOUD_BUS_ENABLED + ":true");
-		assertThat(this.context.containsBean("foo"))
-				.as("missing bean from @ConditionalOnBusEnabled config").isTrue();
+		load(MyBusEnabledConfig.class, ConditionalOnBusEnabled.SPRING_CLOUD_BUS_ENABLED + ":true");
+		assertThat(this.context.containsBean("foo")).as("missing bean from @ConditionalOnBusEnabled config").isTrue();
 	}
 
 	@Test
 	public void busEnabledMissing() {
 		load(MyBusEnabledConfig.class);
-		assertThat(this.context.containsBean("foo"))
-				.as("missing bean from @ConditionalOnBusEnabled config").isTrue();
+		assertThat(this.context.containsBean("foo")).as("missing bean from @ConditionalOnBusEnabled config").isTrue();
 	}
 
 	@Test
 	public void busDisabled() {
-		load(MyBusEnabledConfig.class,
-				ConditionalOnBusEnabled.SPRING_CLOUD_BUS_ENABLED + ":false");
-		assertThat(this.context.containsBean("foo"))
-				.as("bean exists from disabled @ConditionalOnBusEnabled config")
+		load(MyBusEnabledConfig.class, ConditionalOnBusEnabled.SPRING_CLOUD_BUS_ENABLED + ":false");
+		assertThat(this.context.containsBean("foo")).as("bean exists from disabled @ConditionalOnBusEnabled config")
 				.isFalse();
 	}
 

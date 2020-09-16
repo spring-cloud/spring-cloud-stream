@@ -29,8 +29,7 @@ import org.springframework.context.ApplicationListener;
  * @author Spencer Gibb
  * @author Ryan Baxter
  */
-public class RefreshListener
-		implements ApplicationListener<RefreshRemoteApplicationEvent> {
+public class RefreshListener implements ApplicationListener<RefreshRemoteApplicationEvent> {
 
 	private static Log log = LogFactory.getLog(RefreshListener.class);
 
@@ -38,8 +37,7 @@ public class RefreshListener
 
 	private ServiceMatcher serviceMatcher;
 
-	public RefreshListener(ContextRefresher contextRefresher,
-			ServiceMatcher serviceMatcher) {
+	public RefreshListener(ContextRefresher contextRefresher, ServiceMatcher serviceMatcher) {
 		this.contextRefresher = contextRefresher;
 		this.serviceMatcher = serviceMatcher;
 	}
@@ -52,8 +50,7 @@ public class RefreshListener
 			log.info("Keys refreshed " + keys);
 		}
 		else {
-			log.info("Refresh not performed, the event was targetting "
-					+ event.getDestinationService());
+			log.info("Refresh not performed, the event was targetting " + event.getDestinationService());
 		}
 	}
 

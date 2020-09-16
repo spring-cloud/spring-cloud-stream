@@ -30,16 +30,14 @@ import org.springframework.cloud.test.ModifiedClassPathRunner;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(ModifiedClassPathRunner.class)
-@ClassPathExclusions({ "spring-boot-actuator-*.jar",
-		"spring-boot-starter-actuator-*.jar" })
+@ClassPathExclusions({ "spring-boot-actuator-*.jar", "spring-boot-starter-actuator-*.jar" })
 public class BusAutoConfigurationClassPathTests {
 
 	@Test
 	public void refreshListenerCreatedWithoutActuator() {
 		new ApplicationContextRunner()
 				.withConfiguration(AutoConfigurations.of(RefreshAutoConfiguration.class,
-						ServiceMatcherAutoConfiguration.class,
-						BusRefreshAutoConfiguration.class))
+						ServiceMatcherAutoConfiguration.class, BusRefreshAutoConfiguration.class))
 				.run(context -> assertThat(context).hasSingleBean(RefreshListener.class)
 						.doesNotHaveBean(RefreshBusEndpoint.class));
 	}

@@ -46,8 +46,7 @@ public abstract class RemoteApplicationEvent extends ApplicationEvent {
 		this(TRANSIENT_SOURCE, null, null);
 	}
 
-	protected RemoteApplicationEvent(Object source, String originService,
-			String destinationService) {
+	protected RemoteApplicationEvent(Object source, String originService, String destinationService) {
 		super(source);
 		this.originService = originService;
 		if (destinationService == null) {
@@ -88,11 +87,9 @@ public abstract class RemoteApplicationEvent extends ApplicationEvent {
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + ((this.destinationService == null) ? 0
-				: this.destinationService.hashCode());
+		result = prime * result + ((this.destinationService == null) ? 0 : this.destinationService.hashCode());
 		result = prime * result + ((this.id == null) ? 0 : this.id.hashCode());
-		result = prime * result
-				+ ((this.originService == null) ? 0 : this.originService.hashCode());
+		result = prime * result + ((this.originService == null) ? 0 : this.originService.hashCode());
 		return result;
 	}
 
@@ -137,8 +134,7 @@ public abstract class RemoteApplicationEvent extends ApplicationEvent {
 
 	@Override
 	public String toString() {
-		return new ToStringCreator(this).append("id", id)
-				.append("originService", originService)
+		return new ToStringCreator(this).append("id", id).append("originService", originService)
 				.append("destinationService", destinationService).toString();
 
 	}

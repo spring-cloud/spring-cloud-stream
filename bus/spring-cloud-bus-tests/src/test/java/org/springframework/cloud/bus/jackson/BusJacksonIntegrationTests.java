@@ -51,8 +51,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 
 @RunWith(SpringRunner.class)
-@SpringBootTest(
-		properties = "spring.jackson.serialization.WRITE_DATES_AS_TIMESTAMPS:true",
+@SpringBootTest(properties = "spring.jackson.serialization.WRITE_DATES_AS_TIMESTAMPS:true",
 		webEnvironment = RANDOM_PORT)
 @DirtiesContext
 public class BusJacksonIntegrationTests {
@@ -75,16 +74,14 @@ public class BusJacksonIntegrationTests {
 		assertThat(this.converter.getMapper().getSerializationConfig()
 				.isEnabled(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)).isTrue();
 
-		Map map = this.rest.getForObject("http://localhost:" + this.port + "/date",
-				Map.class);
+		Map map = this.rest.getForObject("http://localhost:" + this.port + "/date", Map.class);
 		assertThat(map).containsOnlyKeys("date");
 		assertThat(map.get("date")).isInstanceOf(Long.class);
 
 		this.rest.put("http://localhost:" + this.port + "/names" + "/foo", null);
 		this.rest.put("http://localhost:" + this.port + "/names" + "/bar", null);
 
-		ResponseEntity<List> response = this.rest
-				.getForEntity("http://localhost:" + this.port + "/names", List.class);
+		ResponseEntity<List> response = this.rest.getForEntity("http://localhost:" + this.port + "/names", List.class);
 		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
 		assertThat(response.getBody()).contains("foo", "bar");
 	}
@@ -133,8 +130,7 @@ public class BusJacksonIntegrationTests {
 		@PutMapping("/names/{name}")
 		public void sayName(@PathVariable String name) {
 			this.names.add(name);
-			this.publisher.publishEvent(
-					new NameEvent(this, this.busServiceMatcher.getServiceId(), name));
+			this.publisher.publishEvent(new NameEvent(this, this.busServiceMatcher.getServiceId(), name));
 		}
 
 		@GetMapping("/date")

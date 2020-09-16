@@ -47,8 +47,7 @@ public class RemoteApplicationEventRegistrar implements ImportBeanDefinitionRegi
 			final BeanDefinitionRegistry registry) {
 
 		Map<String, Object> componentScan = importingClassMetadata
-				.getAnnotationAttributes(RemoteApplicationEventScan.class.getName(),
-						false);
+				.getAnnotationAttributes(RemoteApplicationEventScan.class.getName(), false);
 
 		Set<String> basePackages = new HashSet<>();
 		for (String pkg : (String[]) componentScan.get("value")) {
@@ -66,8 +65,7 @@ public class RemoteApplicationEventRegistrar implements ImportBeanDefinitionRegi
 		}
 
 		if (basePackages.isEmpty()) {
-			basePackages.add(
-					ClassUtils.getPackageName(importingClassMetadata.getClassName()));
+			basePackages.add(ClassUtils.getPackageName(importingClassMetadata.getClassName()));
 		}
 
 		if (!registry.containsBeanDefinition(BUS_JSON_CONVERTER)) {
@@ -75,27 +73,22 @@ public class RemoteApplicationEventRegistrar implements ImportBeanDefinitionRegi
 					.genericBeanDefinition(BusJacksonMessageConverter.class);
 			beanDefinitionBuilder.addPropertyValue(PACKAGES_TO_SCAN,
 					basePackages.toArray(new String[basePackages.size()]));
-			AbstractBeanDefinition beanDefinition = beanDefinitionBuilder
-					.getBeanDefinition();
+			AbstractBeanDefinition beanDefinition = beanDefinitionBuilder.getBeanDefinition();
 
-			BeanDefinitionHolder holder = new BeanDefinitionHolder(beanDefinition,
-					BUS_JSON_CONVERTER);
+			BeanDefinitionHolder holder = new BeanDefinitionHolder(beanDefinition, BUS_JSON_CONVERTER);
 			BeanDefinitionReaderUtils.registerBeanDefinition(holder, registry);
 		}
 		else {
 			basePackages.addAll(getEarlierPackagesToScan(registry));
-			registry.getBeanDefinition(BUS_JSON_CONVERTER).getPropertyValues()
-					.addPropertyValue(PACKAGES_TO_SCAN,
-							basePackages.toArray(new String[basePackages.size()]));
+			registry.getBeanDefinition(BUS_JSON_CONVERTER).getPropertyValues().addPropertyValue(PACKAGES_TO_SCAN,
+					basePackages.toArray(new String[basePackages.size()]));
 		}
 	}
 
 	private Set<String> getEarlierPackagesToScan(final BeanDefinitionRegistry registry) {
 		if (registry.containsBeanDefinition(BUS_JSON_CONVERTER)
-				&& registry.getBeanDefinition(BUS_JSON_CONVERTER).getPropertyValues()
-						.get(PACKAGES_TO_SCAN) != null) {
-			String[] earlierValues = (String[]) registry
-					.getBeanDefinition(BUS_JSON_CONVERTER).getPropertyValues()
+				&& registry.getBeanDefinition(BUS_JSON_CONVERTER).getPropertyValues().get(PACKAGES_TO_SCAN) != null) {
+			String[] earlierValues = (String[]) registry.getBeanDefinition(BUS_JSON_CONVERTER).getPropertyValues()
 					.get(PACKAGES_TO_SCAN);
 			return new HashSet<>(Arrays.asList(earlierValues));
 		}

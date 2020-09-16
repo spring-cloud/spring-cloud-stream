@@ -25,8 +25,7 @@ public class TestRemoteApplicationEvent extends RemoteApplicationEvent {
 	private TestRemoteApplicationEvent() {
 	}
 
-	protected TestRemoteApplicationEvent(Object source, String originService,
-			String destinationService) {
+	protected TestRemoteApplicationEvent(Object source, String originService, String destinationService) {
 		super(source, originService, destinationService);
 	}
 

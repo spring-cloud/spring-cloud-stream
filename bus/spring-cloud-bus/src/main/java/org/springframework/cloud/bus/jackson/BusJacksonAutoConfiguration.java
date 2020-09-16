@@ -66,20 +66,17 @@ public class BusJacksonAutoConfiguration {
 	@Bean
 	@ConditionalOnMissingBean(name = "busJsonConverter")
 	@StreamMessageConverter
-	public AbstractMessageConverter busJsonConverter(
-			@Autowired(required = false) ObjectMapper objectMapper) {
+	public AbstractMessageConverter busJsonConverter(@Autowired(required = false) ObjectMapper objectMapper) {
 		return new BusJacksonMessageConverter(objectMapper);
 	}
 
 }
 
-class BusJacksonMessageConverter extends AbstractMessageConverter
-		implements InitializingBean {
+class BusJacksonMessageConverter extends AbstractMessageConverter implements InitializingBean {
 
 	private static final Log log = LogFactory.getLog(BusJacksonMessageConverter.class);
 
-	private static final String DEFAULT_PACKAGE = ClassUtils
-			.getPackageName(RemoteApplicationEvent.class);
+	private static final String DEFAULT_PACKAGE = ClassUtils.getPackageName(RemoteApplicationEvent.class);
 
 	private final ObjectMapper mapper;
 
@@ -127,8 +124,7 @@ class BusJacksonMessageConverter extends AbstractMessageConverter
 			for (String pkg : this.packagesToScan) {
 				ClassPathScanningCandidateComponentProvider provider = new ClassPathScanningCandidateComponentProvider(
 						false);
-				provider.addIncludeFilter(
-						new AssignableTypeFilter(RemoteApplicationEvent.class));
+				provider.addIncludeFilter(new AssignableTypeFilter(RemoteApplicationEvent.class));
 
 				Set<BeanDefinition> components = provider.findCandidateComponents(pkg);
 				for (BeanDefinition component : components) {
@@ -136,8 +132,7 @@ class BusJacksonMessageConverter extends AbstractMessageConverter
 						types.add(Class.forName(component.getBeanClassName()));
 					}
 					catch (ClassNotFoundException e) {
-						throw new IllegalStateException(
-								"Failed to scan classpath for remote event classes", e);
+						throw new IllegalStateException("Failed to scan classpath for remote event classes", e);
 					}
 				}
 			}
@@ -155,8 +150,7 @@ class BusJacksonMessageConverter extends AbstractMessageConverter
 	}
 
 	@Override
-	public Object convertFromInternal(Message<?> message, Class<?> targetClass,
-			Object conversionHint) {
+	public Object convertFromInternal(Message<?> message, Class<?> targetClass, Object conversionHint) {
 		Object result = null;
 		try {
 			Object payload = message.getPayload();
@@ -166,8 +160,7 @@ class BusJacksonMessageConverter extends AbstractMessageConverter
 					result = this.mapper.readValue((byte[]) payload, targetClass);
 				}
 				catch (InvalidTypeIdException e) {
-					return new UnknownRemoteApplicationEvent(new Object(), e.getTypeId(),
-							(byte[]) payload);
+					return new UnknownRemoteApplicationEvent(new Object(), e.getTypeId(), (byte[]) payload);
 				}
 			}
 			else if (payload instanceof String) {

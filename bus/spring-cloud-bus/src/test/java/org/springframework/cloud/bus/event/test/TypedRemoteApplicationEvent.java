@@ -28,8 +28,7 @@ public class TypedRemoteApplicationEvent extends RemoteApplicationEvent {
 	private TypedRemoteApplicationEvent() {
 	}
 
-	protected TypedRemoteApplicationEvent(Object source, String originService,
-			String destinationService) {
+	protected TypedRemoteApplicationEvent(Object source, String originService, String destinationService) {
 		super(source, originService, destinationService);
 	}
 

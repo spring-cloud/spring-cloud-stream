@@ -28,8 +28,7 @@ import org.springframework.context.ApplicationListener;
 /**
  * @author Spencer Gibb
  */
-public class EnvironmentChangeListener
-		implements ApplicationListener<EnvironmentChangeRemoteApplicationEvent> {
+public class EnvironmentChangeListener implements ApplicationListener<EnvironmentChangeRemoteApplicationEvent> {
 
 	private static Log log = LogFactory.getLog(EnvironmentChangeListener.class);
 
@@ -39,8 +38,7 @@ public class EnvironmentChangeListener
 	@Override
 	public void onApplicationEvent(EnvironmentChangeRemoteApplicationEvent event) {
 		Map<String, String> values = event.getValues();
-		log.info("Received remote environment change request. Keys/values to update "
-				+ values);
+		log.info("Received remote environment change request. Keys/values to update " + values);
 		for (Map.Entry<String, String> entry : values.entrySet()) {
 			this.env.setProperty(entry.getKey(), entry.getValue());
 		}

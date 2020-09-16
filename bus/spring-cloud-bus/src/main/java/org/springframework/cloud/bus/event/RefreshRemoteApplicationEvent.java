@@ -27,8 +27,7 @@ public class RefreshRemoteApplicationEvent extends RemoteApplicationEvent {
 		// for serializers
 	}
 
-	public RefreshRemoteApplicationEvent(Object source, String originService,
-			String destinationService) {
+	public RefreshRemoteApplicationEvent(Object source, String originService, String destinationService) {
 		super(source, originService, destinationService);
 	}
 

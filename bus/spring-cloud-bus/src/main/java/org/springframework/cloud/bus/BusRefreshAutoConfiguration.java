@@ -33,29 +33,24 @@ import org.springframework.context.annotation.Configuration;
  */
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnBusEnabled
-@AutoConfigureAfter(
-		name = { "org.springframework.cloud.autoconfigure.RefreshAutoConfiguration" })
+@AutoConfigureAfter(name = { "org.springframework.cloud.autoconfigure.RefreshAutoConfiguration" })
 public class BusRefreshAutoConfiguration {
 
 	@Bean
-	@ConditionalOnProperty(value = "spring.cloud.bus.refresh.enabled",
-			matchIfMissing = true)
+	@ConditionalOnProperty(value = "spring.cloud.bus.refresh.enabled", matchIfMissing = true)
 	@ConditionalOnBean(ContextRefresher.class)
-	public RefreshListener refreshListener(ContextRefresher contextRefresher,
-			ServiceMatcher serviceMatcher) {
+	public RefreshListener refreshListener(ContextRefresher contextRefresher, ServiceMatcher serviceMatcher) {
 		return new RefreshListener(contextRefresher, serviceMatcher);
 	}
 
 	@Configuration(proxyBeanMethods = false)
-	@ConditionalOnClass(
-			name = { "org.springframework.boot.actuate.endpoint.annotation.Endpoint",
-					"org.springframework.cloud.context.scope.refresh.RefreshScope" })
+	@ConditionalOnClass(name = { "org.springframework.boot.actuate.endpoint.annotation.Endpoint",
+			"org.springframework.cloud.context.scope.refresh.RefreshScope" })
 	protected static class BusRefreshEndpointConfiguration {
 
 		@Bean
 		@ConditionalOnAvailableEndpoint
-		public RefreshBusEndpoint refreshBusEndpoint(ApplicationContext context,
-				BusProperties bus) {
+		public RefreshBusEndpoint refreshBusEndpoint(ApplicationContext context, BusProperties bus) {
 			return new RefreshBusEndpoint(context, bus.getId());
 		}
 

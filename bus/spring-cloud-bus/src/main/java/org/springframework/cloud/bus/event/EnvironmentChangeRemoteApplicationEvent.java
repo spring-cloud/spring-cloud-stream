@@ -34,8 +34,8 @@ public class EnvironmentChangeRemoteApplicationEvent extends RemoteApplicationEv
 		this.values = null;
 	}
 
-	public EnvironmentChangeRemoteApplicationEvent(Object source, String originService,
-			String destinationService, Map<String, String> values) {
+	public EnvironmentChangeRemoteApplicationEvent(Object source, String originService, String destinationService,
+			Map<String, String> values) {
 		super(source, originService, destinationService);
 		this.values = values;
 	}
@@ -77,10 +77,8 @@ public class EnvironmentChangeRemoteApplicationEvent extends RemoteApplicationEv
 
 	@Override
 	public String toString() {
-		return new ToStringCreator(this).append("id", getId())
-				.append("originService", getOriginService())
-				.append("destinationService", getDestinationService())
-				.append("values", values).toString();
+		return new ToStringCreator(this).append("id", getId()).append("originService", getOriginService())
+				.append("destinationService", getDestinationService()).append("values", values).toString();
 
 	}
 

@@ -26,8 +26,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 /**
  * @author Spencer Gibb
  */
-@ConditionalOnProperty(value = ConditionalOnBusEnabled.SPRING_CLOUD_BUS_ENABLED,
-		matchIfMissing = true)
+@ConditionalOnProperty(value = ConditionalOnBusEnabled.SPRING_CLOUD_BUS_ENABLED, matchIfMissing = true)
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ ElementType.TYPE, ElementType.METHOD })
 public @interface ConditionalOnBusEnabled {
