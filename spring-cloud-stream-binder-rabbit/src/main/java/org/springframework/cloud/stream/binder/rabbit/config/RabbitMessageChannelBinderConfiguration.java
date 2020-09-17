@@ -123,7 +123,6 @@ public class RabbitMessageChannelBinderConfiguration {
 		final AtomicInteger nameIncrementer = new AtomicInteger();
 		ConnectionNameStrategy namer = f -> this.rabbitBinderConfigurationProperties
 				.getConnectionNamePrefix() + "#" + nameIncrementer.getAndIncrement();
-		// TODO: this can be removed when Boot 2.0.1 wires it in
 		cf.setConnectionNameStrategy(namer);
 		return namer;
 	}
