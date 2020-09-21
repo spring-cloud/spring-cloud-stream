@@ -47,6 +47,7 @@ import org.springframework.cloud.stream.binder.test.FunctionBindingTestUtils;
 import org.springframework.cloud.stream.binder.test.InputDestination;
 import org.springframework.cloud.stream.binder.test.OutputDestination;
 import org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration;
+import org.springframework.cloud.stream.function.StreamBridgeTests.IntegrationFlowConfiguration;
 import org.springframework.cloud.stream.messaging.Sink;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
@@ -841,6 +842,20 @@ public class ImplicitFunctionBindingTests {
 		}
 	}
 
+	@Test
+	public void foo() {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration
+				.getCompleteConfiguration(PojoFunctionConfiguration.class))
+						.web(WebApplicationType.NONE).run("--spring.jmx.enabled=false",
+								"--spring.cloud.function.definition=f1|f2")) {
+
+			InputDestination inputDestination = context.getBean(InputDestination.class);
+			OutputDestination outputDestination = context.getBean(OutputDestination.class);
+			inputDestination.send(MessageBuilder.withPayload("hello".getBytes()).build());
+			assertThat(outputDestination.receive(1000)).isNotNull();
+		}
+	}
+
 	@EnableAutoConfiguration
 	public static class SupplierAndPojoConfiguration {
 		@Bean
@@ -1142,6 +1157,16 @@ public class ImplicitFunctionBindingTests {
 
 	@EnableAutoConfiguration
 	public static class PojoFunctionConfiguration {
+
+		@Bean
+		public Function<Flux<byte[]>, Flux<byte[]>> f1() {
+			return flux -> flux;
+		}
+
+		@Bean
+		public Function<Flux<byte[]>, Flux<Message<byte[]>>> f2() {
+			return flux -> flux.map(GenericMessage::new);
+		}
 
 		@Bean
 		public Function<Person, Person> echoPerson() {
