@@ -19,6 +19,8 @@ package org.springframework.cloud.stream.binder.kafka.properties;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.springframework.kafka.listener.ContainerProperties;
+
 /**
  * Extended consumer properties for Kafka binder.
  *
@@ -88,6 +90,7 @@ public class KafkaConsumerProperties {
 	 * When true the offset is committed after each record, otherwise the offsets for the complete set of records
 	 * received from the poll() are committed after all records have been processed.
 	 */
+	@Deprecated
 	private boolean ackEachRecord;
 
 	/**
@@ -101,7 +104,14 @@ public class KafkaConsumerProperties {
 	 * If set to false, a header with the key kafka_acknowledgment of the type org.springframework.kafka.support.Acknowledgment header
 	 * is present in the inbound message. Applications may use this header for acknowledging messages.
 	 */
+	@Deprecated
 	private boolean autoCommitOffset = true;
+
+	/**
+	 * Controlling the container acknowledgement mode. This is the preferred way to control the ack mode on the
+	 * container instead of the deprecated autoCommitOffset property.
+	 */
+	private ContainerProperties.AckMode ackMode;
 
 	/**
 	 * Effective only if autoCommitOffset is set to true.
@@ -111,6 +121,7 @@ public class KafkaConsumerProperties {
 	 * If not set (the default), it effectively has the same value as enableDlq,
 	 * auto-committing erroneous messages if they are sent to a DLQ and not committing them otherwise.
 	 */
+	@Deprecated
 	private Boolean autoCommitOnError;
 
 	/**
@@ -205,11 +216,20 @@ public class KafkaConsumerProperties {
 	 *
 	 * When true the offset is committed after each record, otherwise the offsets for the complete set of records
 	 * received from the poll() are committed after all records have been processed.
+	 *
+	 * @deprecated since 3.1 in favor of using {@link #ackMode}
 	 */
+	@Deprecated
 	public boolean isAckEachRecord() {
 		return this.ackEachRecord;
 	}
 
+	/**
+	 * @param ackEachRecord
+	 *
+	 * @deprecated in favor of using {@link #ackMode}
+	 */
+	@Deprecated
 	public void setAckEachRecord(boolean ackEachRecord) {
 		this.ackEachRecord = ackEachRecord;
 	}
@@ -220,13 +240,33 @@ public class KafkaConsumerProperties {
 	 * Whether to autocommit offsets when a message has been processed.
 	 * If set to false, a header with the key kafka_acknowledgment of the type org.springframework.kafka.support.Acknowledgment header
 	 * is present in the inbound message. Applications may use this header for acknowledging messages.
+	 *
+	 * @deprecated since 3.1 in favor of using {@link #ackMode}
 	 */
+	@Deprecated
 	public boolean isAutoCommitOffset() {
 		return this.autoCommitOffset;
 	}
 
+	/**
+	 * @param autoCommitOffset
+	 *
+	 * @deprecated in favor of using {@link #ackMode}
+	 */
+	@Deprecated
 	public void setAutoCommitOffset(boolean autoCommitOffset) {
 		this.autoCommitOffset = autoCommitOffset;
+	}
+
+	/**
+	 * @return Container's ack mode.
+	 */
+	public ContainerProperties.AckMode getAckMode() {
+		return this.ackMode;
+	}
+
+	public void setAckMode(ContainerProperties.AckMode ackMode) {
+		this.ackMode = ackMode;
 	}
 
 	/**
@@ -280,11 +320,21 @@ public class KafkaConsumerProperties {
 	 * If set to true, it always auto-commits (if auto-commit is enabled).
 	 * If not set (the default), it effectively has the same value as enableDlq,
 	 * auto-committing erroneous messages if they are sent to a DLQ and not committing them otherwise.
+	 *
+	 * @deprecated in favor of using an error handler and customize the container with that error handler.
 	 */
+	@Deprecated
 	public Boolean getAutoCommitOnError() {
 		return this.autoCommitOnError;
 	}
 
+	/**
+	 *
+	 * @param autoCommitOnError commit on error
+	 *
+	 * @deprecated in favor of using an error handler and customize the container with that error handler.
+	 */
+	@Deprecated
 	public void setAutoCommitOnError(Boolean autoCommitOnError) {
 		this.autoCommitOnError = autoCommitOnError;
 	}

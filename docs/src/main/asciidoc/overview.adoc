@@ -180,6 +180,8 @@ By default, offsets are committed after all records in the batch of records retu
 The number of records returned by a poll can be controlled with the `max.poll.records` Kafka property, which is set through the consumer `configuration` property.
 Setting this to `true` may cause a degradation in performance, but doing so reduces the likelihood of redelivered records when a failure occurs.
 Also, see the binder `requiredAcks` property, which also affects the performance of committing offsets.
+This property is deprecated as of 3.1 in favor of using `ackMode`.
+If the `ackMode` is not set and batch mode is not enabled, `RECORD` ackMode will be used.
 +
 Default: `false`.
 autoCommitOffset::
@@ -188,9 +190,14 @@ If set to `false`, a header with the key `kafka_acknowledgment` of the type `org
 Applications may use this header for acknowledging messages.
 See the examples section for details.
 When this property is set to `false`, Kafka binder sets the ack mode to `org.springframework.kafka.listener.AbstractMessageListenerContainer.AckMode.MANUAL` and the application is responsible for acknowledging records.
-Also see `ackEachRecord`.
+Also see `ackEachRecord`. This property is deprecated as of 3.1. See `ackMode` for more details.
 +
 Default: `true`.
+ackMode::
+Specify the container ack mode.
+This is based on the AckMode enumeration defined in Spring Kafka.
+If `ackEachRecord` property is set to `true` and consumer is not in batch mode, then this will use the ack mode of `RECORD`, otherwise, use the provided ack mode using this property.
+
 autoCommitOnError::
 Effective only if `autoCommitOffset` is set to `true`.
 If set to `false`, it suppresses auto-commits for messages that result in errors and commits only for successful messages. It allows a stream to automatically replay from the last successfully processed message, in case of persistent failures.

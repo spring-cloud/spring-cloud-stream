@@ -655,19 +655,18 @@ public class KafkaMessageChannelBinder extends
 		}
 		messageListenerContainer.setBeanName(destination + ".container");
 		// end of these won't be needed...
-		if (!extendedConsumerProperties.getExtension().isAutoCommitOffset()) {
-			messageListenerContainer.getContainerProperties()
-					.setAckMode(ContainerProperties.AckMode.MANUAL);
-			messageListenerContainer.getContainerProperties().setAckOnError(false);
+		ContainerProperties.AckMode ackMode = extendedConsumerProperties.getExtension().getAckMode();
+		if (ackMode == null && extendedConsumerProperties.getExtension().isAckEachRecord()) {
+			ackMode = ContainerProperties.AckMode.RECORD;
 		}
-		else {
-			messageListenerContainer.getContainerProperties()
-					.setAckOnError(isAutoCommitOnError(extendedConsumerProperties));
-			if (extendedConsumerProperties.getExtension().isAckEachRecord()) {
+		if (ackMode != null) {
+			if ((extendedConsumerProperties.isBatchMode() && ackMode != ContainerProperties.AckMode.RECORD) ||
+					!extendedConsumerProperties.isBatchMode()) {
 				messageListenerContainer.getContainerProperties()
-						.setAckMode(ContainerProperties.AckMode.RECORD);
+						.setAckMode(ackMode);
 			}
 		}
+
 		if (this.logger.isDebugEnabled()) {
 			this.logger.debug("Listened partitions: "
 					+ StringUtils.collectionToCommaDelimitedString(listenedPartitions));
