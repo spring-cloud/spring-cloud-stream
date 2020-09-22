@@ -32,11 +32,13 @@ import org.springframework.cloud.function.context.FunctionRegistry;
 import org.springframework.cloud.function.context.FunctionType;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.cloud.stream.binder.ProducerProperties;
+import org.springframework.cloud.stream.binding.BinderAwareChannelResolver.NewDestinationBindingCallback;
 import org.springframework.cloud.stream.binding.BindingService;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.cloud.stream.messaging.DirectWithAttributesChannel;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.integration.support.MessageBuilder;
+import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.SubscribableChannel;
 import org.springframework.util.MimeType;
@@ -58,6 +60,7 @@ import org.springframework.util.MimeTypeUtils;
  * @since 3.0.3
  *
  */
+@SuppressWarnings("deprecation")
 public final class StreamBridge implements SmartInitializingSingleton {
 
 	private static String STREAM_BRIDGE_FUNC_NAME = "streamBridge";
@@ -69,6 +72,8 @@ public final class StreamBridge implements SmartInitializingSingleton {
 	private final FunctionCatalog functionCatalog;
 
 	private final FunctionRegistry functionRegistry;
+
+	private final NewDestinationBindingCallback destinationBindingCallback;
 
 	private BindingServiceProperties bindingServiceProperties;
 
@@ -89,11 +94,13 @@ public final class StreamBridge implements SmartInitializingSingleton {
 	 */
 	@SuppressWarnings("serial")
 	StreamBridge(FunctionCatalog functionCatalog, FunctionRegistry functionRegistry,
-			BindingServiceProperties bindingServiceProperties, ConfigurableApplicationContext applicationContext) {
+			BindingServiceProperties bindingServiceProperties, ConfigurableApplicationContext applicationContext,
+			@Nullable NewDestinationBindingCallback destinationBindingCallback) {
 		this.functionCatalog = functionCatalog;
 		this.functionRegistry = functionRegistry;
 		this.applicationContext = applicationContext;
 		this.bindingServiceProperties = bindingServiceProperties;
+		this.destinationBindingCallback = destinationBindingCallback;
 		this.channelCache = new LinkedHashMap<String, SubscribableChannel>() {
 			@Override
 			protected boolean removeEldestEntry(Map.Entry<String, SubscribableChannel> eldest) {
@@ -165,6 +172,7 @@ public final class StreamBridge implements SmartInitializingSingleton {
 		this.initialized = true;
 	}
 
+	@SuppressWarnings({ "unchecked", "deprecation" })
 	SubscribableChannel resolveDestination(String destinationName, ProducerProperties producerProperties) {
 		SubscribableChannel messageChannel = this.channelCache.get(destinationName);
 		if (messageChannel == null && this.applicationContext.containsBean(destinationName)) {
@@ -172,6 +180,13 @@ public final class StreamBridge implements SmartInitializingSingleton {
 		}
 		if (messageChannel == null) {
 			messageChannel = new DirectWithAttributesChannel();
+			if (this.destinationBindingCallback != null) {
+				Object extendedProducerProperties = this.bindingService
+						.getExtendedProducerProperties(messageChannel, destinationName);
+				this.destinationBindingCallback.configure(destinationName, messageChannel,
+						producerProperties, extendedProducerProperties);
+			}
+
 			this.bindingService.bindProducer(messageChannel, destinationName, false);
 			this.channelCache.put(destinationName, messageChannel);
 		}

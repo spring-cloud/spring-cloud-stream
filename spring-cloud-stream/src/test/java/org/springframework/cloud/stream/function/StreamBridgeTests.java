@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.function;
 
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -28,6 +29,7 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.stream.binder.test.OutputDestination;
 import org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration;
+import org.springframework.cloud.stream.binding.BinderAwareChannelResolver.NewDestinationBindingCallback;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.integration.dsl.IntegrationFlow;
@@ -43,6 +45,7 @@ import static org.junit.Assert.fail;
  * @author Oleg Zhurakousky
  *
  */
+@SuppressWarnings("deprecation")
 public class StreamBridgeTests {
 
 	@Before
@@ -206,6 +209,19 @@ public class StreamBridgeTests {
 		}
 	}
 
+	@Test
+	public void testNewBindingCallback() {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration
+				.getCompleteConfiguration(BindingCallbackConfiguration.class))
+						.web(WebApplicationType.NONE).run("--spring.cloud.stream.source=uppercase",
+								"--spring.jmx.enabled=false")) {
+
+			StreamBridge bridge = context.getBean(StreamBridge.class);
+			bridge.send("uppercase-in-0", "hello");
+			assertThat(context.getBean("callbackVerifier", AtomicBoolean.class)).isTrue();
+		}
+	}
+
 	@EnableAutoConfiguration
 	public static class EmptyConfiguration {
 
@@ -231,6 +247,34 @@ public class StreamBridgeTests {
 		@Bean
 		public Function<String, String> uppercase() {
 			return v -> v.toUpperCase();
+		}
+	}
+
+
+	@EnableAutoConfiguration
+	public static class BindingCallbackConfiguration {
+
+		@Bean
+		public Function<String, String> echo() {
+			return v -> v;
+		}
+
+		@Bean
+		public Function<String, String> uppercase() {
+			return v -> v.toUpperCase();
+		}
+
+		@Bean
+		public AtomicBoolean callbackVerifier() {
+			return new AtomicBoolean();
+		}
+
+		@Bean
+		public NewDestinationBindingCallback callback(AtomicBoolean callbackVerifier) {
+
+			return (name, channel, props, extended) -> {
+				callbackVerifier.set(true);
+			};
 		}
 	}
 
