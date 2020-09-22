@@ -43,6 +43,8 @@ import reactor.util.function.Tuples;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
+import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
@@ -130,6 +132,11 @@ public class FunctionConfiguration {
 	public InitializingBean functionBindingRegistrar(Environment environment, FunctionCatalog functionCatalog,
 			StreamFunctionProperties streamFunctionProperties) {
 		return new FunctionBindingRegistrar(functionCatalog, streamFunctionProperties);
+	}
+
+	@Bean
+	public BeanFactoryPostProcessor po(Environment environment) {
+		return new PollableSourceRegistrar(environment);
 	}
 
 	@Bean
@@ -617,6 +624,31 @@ public class FunctionConfiguration {
 		}
 	}
 
+	private static class PollableSourceRegistrar implements BeanFactoryPostProcessor {
+		private final Environment environment;
+
+		PollableSourceRegistrar(Environment environment) {
+			this.environment = environment;
+		}
+
+		@Override
+		public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
+			if (StringUtils.hasText(this.environment.getProperty("spring.cloud.stream.pollable-source"))) {
+				String[] sourceNames = this.environment.getProperty("spring.cloud.stream.pollable-source").split(";");
+
+				for (String sourceName : sourceNames) {
+					RootBeanDefinition functionBindableProxyDefinition = new RootBeanDefinition(BindableFunctionProxyFactory.class);
+					functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(sourceName);
+					functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(1);
+					functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(0);
+					functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(new StreamFunctionProperties());
+					functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(true);
+					((BeanDefinitionRegistry) beanFactory).registerBeanDefinition(sourceName + "_binding", functionBindableProxyDefinition);
+				}
+			}
+		}
+	}
+
 	/**
 	 * Creates and registers instances of BindableFunctionProxyFactory for each user defined function
 	 * thus triggering destination bindings between function arguments and destinations.
@@ -679,6 +711,7 @@ public class FunctionConfiguration {
 						}
 					}
 				}
+
 				if (StringUtils.hasText(this.environment.getProperty(SOURCE_PROPERY))) {
 					String[] sourceNames = this.environment.getProperty(SOURCE_PROPERY).split(";");
 
@@ -693,7 +726,6 @@ public class FunctionConfiguration {
 						}
 					}
 				}
-
 			}
 			else {
 				logger.info("Functional binding is disabled due to the presense of @EnableBinding annotation in your configuration");

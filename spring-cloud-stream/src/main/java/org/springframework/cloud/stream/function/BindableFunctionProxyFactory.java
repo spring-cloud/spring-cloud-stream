@@ -17,8 +17,11 @@
 package org.springframework.cloud.stream.function;
 
 import org.springframework.beans.factory.FactoryBean;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cloud.stream.binder.PollableMessageSource;
 import org.springframework.cloud.stream.binding.BindableProxyFactory;
 import org.springframework.cloud.stream.binding.BoundTargetHolder;
+import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.SubscribableChannel;
 import org.springframework.util.Assert;
@@ -49,15 +52,25 @@ class BindableFunctionProxyFactory extends BindableProxyFactory {
 
 	private final StreamFunctionProperties functionProperties;
 
+	private final boolean pollable;
+
+	@Autowired
+	private GenericApplicationContext context;
+
 
 	BindableFunctionProxyFactory(String functionDefinition, int inputCount, int outputCount, StreamFunctionProperties functionProperties) {
+		this(functionDefinition, inputCount, outputCount, functionProperties, false);
+	}
+
+	BindableFunctionProxyFactory(String functionDefinition, int inputCount, int outputCount, StreamFunctionProperties functionProperties,
+			boolean pollable) {
 		super(null);
 		this.inputCount = inputCount;
 		this.outputCount = outputCount;
 		this.functionDefinition = functionDefinition;
 		this.functionProperties = functionProperties;
+		this.pollable = pollable;
 	}
-
 
 	@Override
 	public void afterPropertiesSet() {
@@ -133,9 +146,18 @@ class BindableFunctionProxyFactory extends BindableProxyFactory {
 		if (this.functionProperties.getBindings().containsKey(name)) {
 			name = this.functionProperties.getBindings().get(name);
 		}
-		this.inputHolders.put(name,
-				new BoundTargetHolder(getBindingTargetFactory(SubscribableChannel.class)
-						.createInput(name), true));
+		if (this.pollable) {
+			PollableMessageSource pollableSource = (PollableMessageSource) getBindingTargetFactory(PollableMessageSource.class).createInput(name);
+			if (context != null && !context.containsBean(name)) {
+				context.registerBean(name, PollableMessageSource.class, () -> pollableSource);
+			}
+			this.inputHolders.put(name, new BoundTargetHolder(pollableSource, true));
+		}
+		else {
+			this.inputHolders.put(name,
+					new BoundTargetHolder(getBindingTargetFactory(SubscribableChannel.class)
+							.createInput(name), true));
+		}
 	}
 
 	private void createOutput(String name) {

@@ -1242,20 +1242,17 @@ support.
 ===== Overview
 
 When using polled consumers, you poll the `PollableMessageSource` on demand.
-Consider the following example of a polled consumer:
+To define binding for polled consumer you need to provide `spring.cloud.stream.pollable-source` property.
 
-[source,java]
+Consider the following example of a polled consumer binding:
+
+[source,text]
 ----
-public interface PolledConsumer {
-
-    @Input
-    PollableMessageSource destIn();
-
-    @Output
-    MessageChannel destOut();
-
-}
+--spring.cloud.stream.pollable-source=myDestination
 ----
+
+The pollable-source name `myDestination` in the preceding example will result in `myDestination-in-0` binding name to stay 
+consistent with functional programming model.
 
 Given the polled consumer in the preceding example, you might use it as follows:
 
@@ -1347,6 +1344,7 @@ boolean result = pollableSource.poll(received -> {
 
 		}, new ParameterizedTypeReference<Map<String, Foo>>() {});
 ----
+
 
 [[polled-errors]]
 ===== Handling Errors

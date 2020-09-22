@@ -458,8 +458,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 				throw (ProvisioningException) e;
 			}
 			else {
-				throw new BinderException("Exception thrown while starting consumer: ",
-						e);
+				throw new BinderException("Exception thrown while starting consumer: ", e);
 			}
 		}
 	}
