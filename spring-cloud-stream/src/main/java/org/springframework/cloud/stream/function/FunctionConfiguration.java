@@ -418,7 +418,9 @@ public class FunctionConfiguration {
 							}
 						});
 					}
-					flux.subscribe();
+					if (!function.isConsumer()) {
+						flux.subscribe();
+					}
 				});
 			}
 			else {
