@@ -64,6 +64,8 @@ import org.springframework.cloud.stream.binder.ExtendedPropertiesBinder;
 import org.springframework.cloud.stream.binder.HeaderMode;
 import org.springframework.cloud.stream.binder.MessageValues;
 import org.springframework.cloud.stream.binder.kafka.config.ClientFactoryCustomizer;
+import org.springframework.cloud.stream.binder.kafka.config.ConsumerConfigCustomizer;
+import org.springframework.cloud.stream.binder.kafka.config.ProducerConfigCustomizer;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaBinderConfigurationProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaConsumerProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaConsumerProperties.StandardHeaders;
@@ -220,6 +222,10 @@ public class KafkaMessageChannelBinder extends
 	private KafkaExtendedBindingProperties extendedBindingProperties = new KafkaExtendedBindingProperties();
 
 	private ClientFactoryCustomizer clientFactoryCustomizer;
+
+	private ProducerConfigCustomizer producerConfigCustomizer;
+
+	private ConsumerConfigCustomizer consumerConfigCustomizer;
 
 	public KafkaMessageChannelBinder(
 			KafkaBinderConfigurationProperties configurationProperties,
@@ -528,6 +534,9 @@ public class KafkaMessageChannelBinder extends
 		}
 		if (!ObjectUtils.isEmpty(kafkaProducerProperties.getConfiguration())) {
 			props.putAll(kafkaProducerProperties.getConfiguration());
+		}
+		if (this.producerConfigCustomizer != null) {
+			this.producerConfigCustomizer.configure(props);
 		}
 		DefaultKafkaProducerFactory<byte[], byte[]> producerFactory = new DefaultKafkaProducerFactory<>(
 				props);
@@ -1340,6 +1349,9 @@ public class KafkaMessageChannelBinder extends
 					consumerProperties.getExtension().getStartOffset().name());
 		}
 
+		if (this.consumerConfigCustomizer != null) {
+			this.consumerConfigCustomizer.configure(props);
+		}
 		DefaultKafkaConsumerFactory<Object, Object> factory = new DefaultKafkaConsumerFactory<>(props);
 		factory.setBeanName(beanName);
 		if (this.clientFactoryCustomizer != null) {
@@ -1390,6 +1402,14 @@ public class KafkaMessageChannelBinder extends
 		PrintWriter printWriter = new PrintWriter(stringWriter, true);
 		cause.printStackTrace(printWriter);
 		return stringWriter.getBuffer().toString();
+	}
+
+	public void setConsumerConfigCustomizer(ConsumerConfigCustomizer consumerConfigCustomizer) {
+		this.consumerConfigCustomizer = consumerConfigCustomizer;
+	}
+
+	public void setProducerConfigCustomizer(ProducerConfigCustomizer producerConfigCustomizer) {
+		this.producerConfigCustomizer = producerConfigCustomizer;
 	}
 
 	private final class ProducerConfigurationMessageHandler
