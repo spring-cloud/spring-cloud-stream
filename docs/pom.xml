@@ -3,14 +3,14 @@
 	xmlns="http://maven.apache.org/POM/4.0.0"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	<artifactId>spring-cloud-stream-core-docs</artifactId>
+	<artifactId>spring-cloud-stream-docs</artifactId>
 	<parent>
 		<groupId>org.springframework.cloud</groupId>
 		<artifactId>spring-cloud-stream-parent</artifactId>
 		<version>3.1.0-SNAPSHOT</version>
 	</parent>
 	<packaging>jar</packaging>
-	<name>spring-cloud-stream-core-docs</name>
+	<name>spring-cloud-stream-docs</name>
 	<description>Spring Cloud Stream Core Documentation</description>
 	<properties>
 		<docs.main>spring-cloud-stream</docs.main>
