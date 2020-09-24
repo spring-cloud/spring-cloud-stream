@@ -32,7 +32,7 @@ Sabby Anandan, Marius Bogoevici, Eric Bottard, Mark Fisher, Ilayaperumal Gopinat
 // ======================================================================================
 
 
-*{spring-cloud-stream-version}*
+*{project-version}*
 
 
 = Reference Guide
