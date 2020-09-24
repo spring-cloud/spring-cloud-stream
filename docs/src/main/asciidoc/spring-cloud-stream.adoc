@@ -3,7 +3,7 @@
 :nofooter:
 :sectlinks: true
 
-*{spring-cloud-stream-version}*
+*{project-version}*
 
 
 [[spring-cloud-stream-reference]]
