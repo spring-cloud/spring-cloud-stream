@@ -29,6 +29,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -306,7 +307,7 @@ public class RabbitBinderTests extends
 						.getDeclaredConstructor(String.class, Object.class,
 								Message.class);
 				ReflectionUtils.makeAccessible(constructor);
-				return constructor.newInstance(null, message, message);
+				return constructor.newInstance(UUID.randomUUID().toString(), message, message);
 			}
 
 		}
