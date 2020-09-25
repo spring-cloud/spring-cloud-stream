@@ -16,31 +16,30 @@
 
 package org.springframework.cloud.bus;
 
-import org.springframework.cloud.stream.annotation.Input;
-import org.springframework.cloud.stream.annotation.Output;
-import org.springframework.messaging.MessageChannel;
-import org.springframework.messaging.SubscribableChannel;
-
 /**
  * @author Dave Syer
  *
  */
-public interface SpringCloudBusClient {
+abstract class BusConstants {
 
 	/**
 	 * Name of the input channel for Spring Cloud Bus.
 	 */
-	String INPUT = "springCloudBusInput";
+	public static final String INPUT = "springCloudBusInput";
 
 	/**
 	 * Name of the output channel for Spring Cloud Bus.
 	 */
-	String OUTPUT = "springCloudBusOutput";
+	public static final String OUTPUT = "springCloudBusOutput";
 
-	@Output(SpringCloudBusClient.OUTPUT)
-	MessageChannel springCloudBusOutput();
+	/**
+	 * Name of the output channel for Spring Cloud Bus.
+	 */
+	public static final String DESTINATION = "springCloudBus";
 
-	@Input(SpringCloudBusClient.INPUT)
-	SubscribableChannel springCloudBusInput();
+	/**
+	 * Name of the Spring Cloud Bus function.
+	 */
+	public static final String BUS_CONSUMER = "busConsumer";
 
 }

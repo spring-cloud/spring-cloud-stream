@@ -17,38 +17,36 @@
 package org.springframework.cloud.bus;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.core.style.ToStringCreator;
+import org.springframework.util.MimeType;
+import org.springframework.util.MimeTypeUtils;
 
 /**
  * @author Dave Syer
  *
  */
-@ConfigurationProperties("spring.cloud.bus")
+@ConfigurationProperties(BusProperties.PREFIX)
 public class BusProperties {
 
 	/**
-	 * Environment change event related properties.
+	 * Configuration prefix for spring cloud bus.
 	 */
-	private Env env = new Env();
-
-	/**
-	 * Refresh event related properties.
-	 */
-	private Refresh refresh = new Refresh();
+	public static final String PREFIX = "spring.cloud.bus";
 
 	/**
 	 * Properties related to acks.
 	 */
-	private Ack ack = new Ack();
+	private final Ack ack = new Ack();
 
 	/**
 	 * Properties related to tracing of acks.
 	 */
-	private Trace trace = new Trace();
+	private final Trace trace = new Trace();
 
 	/**
 	 * Name of Spring Cloud Stream destination for messages.
 	 */
-	private String destination = "springCloudBus";
+	private String destination = BusConstants.DESTINATION;
 
 	/**
 	 * The identifier for this application instance.
@@ -56,17 +54,14 @@ public class BusProperties {
 	private String id = "application";
 
 	/**
+	 * The bus mime-type.
+	 */
+	private MimeType contentType = MimeTypeUtils.APPLICATION_JSON;
+
+	/**
 	 * Flag to indicate that the bus is enabled.
 	 */
 	private boolean enabled = true;
-
-	public Env getEnv() {
-		return this.env;
-	}
-
-	public Refresh getRefresh() {
-		return this.refresh;
-	}
 
 	public Ack getAck() {
 		return this.ack;
@@ -100,43 +95,18 @@ public class BusProperties {
 		this.id = id;
 	}
 
-	/**
-	 * Spring Cloud Bus environment related properties.
-	 */
-	public static class Env {
-
-		/**
-		 * Flag to switch off environment change events (default on).
-		 */
-		private boolean enabled = true;
-
-		public boolean isEnabled() {
-			return this.enabled;
-		}
-
-		public void setEnabled(boolean enabled) {
-			this.enabled = enabled;
-		}
-
+	public MimeType getContentType() {
+		return this.contentType;
 	}
 
-	/**
-	 * Spring Cloud Bus properties related to refreshing.
-	 */
-	public static class Refresh {
+	public void setContentType(MimeType contentType) {
+		this.contentType = contentType;
+	}
 
-		/**
-		 * Flag to switch off refresh events (default on).
-		 */
-		private boolean enabled = true;
-
-		public boolean isEnabled() {
-			return this.enabled;
-		}
-
-		public void setEnabled(boolean enabled) {
-			this.enabled = enabled;
-		}
+	@Override
+	public String toString() {
+		return new ToStringCreator(this).append("ack", ack).append("trace", trace).append("destination", destination)
+				.append("id", id).append("contentType", contentType).append("enabled", enabled).toString();
 
 	}
 
@@ -171,6 +141,12 @@ public class BusProperties {
 			this.destinationService = destinationService;
 		}
 
+		@Override
+		public String toString() {
+			return new ToStringCreator(this).append("enabled", enabled).append("destinationService", destinationService)
+					.toString();
+		}
+
 	}
 
 	/**
@@ -189,6 +165,11 @@ public class BusProperties {
 
 		public void setEnabled(boolean enabled) {
 			this.enabled = enabled;
+		}
+
+		@Override
+		public String toString() {
+			return new ToStringCreator(this).append("enabled", enabled).toString();
 		}
 
 	}

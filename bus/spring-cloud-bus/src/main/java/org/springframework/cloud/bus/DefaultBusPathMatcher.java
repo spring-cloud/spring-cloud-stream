@@ -49,7 +49,9 @@ public class DefaultBusPathMatcher implements PathMatcher {
 
 	protected boolean matchMultiProfile(String pattern, String idToMatch) {
 
-		log.debug("matchMultiProfile : " + pattern + ", " + idToMatch);
+		if (log.isDebugEnabled()) {
+			log.debug("matchMultiProfile : " + pattern + ", " + idToMatch);
+		}
 
 		// parse the id
 		String[] tokens = tokenizeToStringArray(idToMatch, ":");
@@ -82,12 +84,16 @@ public class DefaultBusPathMatcher implements PathMatcher {
 
 		for (String id : idsWithSingleProfile) {
 			if (this.delagateMatcher.match(pattern, id)) {
-				log.debug("matched true");
+				if (log.isDebugEnabled()) {
+					log.debug("matched true");
+				}
 				return true;
 			}
 		}
 
-		log.debug("matched false");
+		if (log.isDebugEnabled()) {
+			log.debug("matched false");
+		}
 		return false;
 	}
 
@@ -98,7 +104,9 @@ public class DefaultBusPathMatcher implements PathMatcher {
 
 	@Override
 	public boolean match(String pattern, String path) {
-		log.debug("In match: " + pattern + ", " + path);
+		if (log.isDebugEnabled()) {
+			log.debug("In match: " + pattern + ", " + path);
+		}
 		if (!this.delagateMatcher.match(pattern, path)) {
 			return matchMultiProfile(pattern, path);
 		}

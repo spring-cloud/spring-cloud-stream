@@ -24,8 +24,6 @@ import org.springframework.core.env.Environment;
 import org.springframework.util.AntPathMatcher;
 import org.springframework.util.PathMatcher;
 
-import static org.springframework.cloud.bus.BusAutoConfiguration.CLOUD_CONFIG_NAME_PROPERTY;
-
 /**
  * @author Ryan Baxter
  */
@@ -34,10 +32,20 @@ import static org.springframework.cloud.bus.BusAutoConfiguration.CLOUD_CONFIG_NA
 @EnableConfigurationProperties(BusProperties.class)
 public class ServiceMatcherAutoConfiguration {
 
+	/**
+	 * Name of the Bus path matcher.
+	 */
+	public static final String BUS_PATH_MATCHER_NAME = "busPathMatcher";
+
+	/**
+	 * Name of the Spring Cloud Config property.
+	 */
+	public static final String CLOUD_CONFIG_NAME_PROPERTY = "spring.cloud.config.name";
+
 	@BusPathMatcher
 	// There is a @Bean of type PathMatcher coming from Spring MVC
-	@ConditionalOnMissingBean(name = BusAutoConfiguration.BUS_PATH_MATCHER_NAME)
-	@Bean(name = BusAutoConfiguration.BUS_PATH_MATCHER_NAME)
+	@ConditionalOnMissingBean(name = BUS_PATH_MATCHER_NAME)
+	@Bean(name = BUS_PATH_MATCHER_NAME)
 	public PathMatcher busPathMatcher() {
 		return new DefaultBusPathMatcher(new AntPathMatcher(":"));
 	}
@@ -46,8 +54,7 @@ public class ServiceMatcherAutoConfiguration {
 	public ServiceMatcher serviceMatcher(@BusPathMatcher PathMatcher pathMatcher, BusProperties properties,
 			Environment environment) {
 		String[] configNames = environment.getProperty(CLOUD_CONFIG_NAME_PROPERTY, String[].class, new String[] {});
-		ServiceMatcher serviceMatcher = new ServiceMatcher(pathMatcher, properties.getId(), configNames);
-		return serviceMatcher;
+		return new ServiceMatcher(pathMatcher, properties.getId(), configNames);
 	}
 
 }

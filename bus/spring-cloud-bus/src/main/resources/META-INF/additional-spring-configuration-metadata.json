@@ -1,0 +1,23 @@
+{
+	"properties": [
+		{
+			"name": "spring.cloud.bus.env.enabled",
+			"type": "java.lang.Boolean",
+			"description": "Flag to switch off environment change events (default on).",
+			"defaultValue": true
+		},
+		{
+			"name": "spring.cloud.bus.refresh.enabled",
+			"type": "java.lang.Boolean",
+			"description": "Flag to switch off refresh events (default on).",
+			"defaultValue": true
+		},
+		{
+			"name": "spring.cloud.bus.trace.enabled",
+			"type": "java.lang.Boolean",
+			"description": "Flag to switch on tracing of acks (default off).",
+			"defaultValue": false
+		}
+	]
+}
+
