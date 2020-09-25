@@ -127,7 +127,11 @@ spring.cloud.stream.kafka.binder.replicationFactor::
 The replication factor of auto-created topics if `autoCreateTopics` is active.
 Can be overridden on each binding.
 +
-Default: `1`.
+NOTE: If you are using Kafka broker versions prior to 2.4, then this value should be set to at least `1`.
+Starting with version 3.0.8, the binder uses `-1` as the default value, which indicates that the broker 'default.replication.factor' property will be used to determine the number of replicas.
+Check with your Kafka broker admins to see if there is a policy in place that requires a minimum replication factor, if that's the case then, typically, the `default.replication.factor` will match that value and `-1` should be used, unless you need a replication factor greater than the minimum.
++
+Default: `-1`.
 spring.cloud.stream.kafka.binder.autoCreateTopics::
 If set to `true`, the binder creates new topics automatically.
 If set to `false`, the binder relies on the topics being already configured.
@@ -161,6 +165,11 @@ If this custom `BinderHeaderMapper` bean is not made available to the binder usi
 +
 Default: none.
 
+spring.cloud.stream.kafka.binder.considerDownWhenAnyPartitionHasNoLeader::
+Flag to set the binder health as `down`, when any partitions on the topic, regardless of the consumer that is receiving data from it, is found without a leader.
++
+Default: `false`.
+
 [[kafka-consumer-properties]]
 ==== Kafka Consumer Properties
 
@@ -192,6 +201,8 @@ By default, offsets are committed after all records in the batch of records retu
 The number of records returned by a poll can be controlled with the `max.poll.records` Kafka property, which is set through the consumer `configuration` property.
 Setting this to `true` may cause a degradation in performance, but doing so reduces the likelihood of redelivered records when a failure occurs.
 Also, see the binder `requiredAcks` property, which also affects the performance of committing offsets.
+This property is deprecated as of 3.1 in favor of using `ackMode`.
+If the `ackMode` is not set and batch mode is not enabled, `RECORD` ackMode will be used.
 +
 Default: `false`.
 autoCommitOffset::
@@ -200,9 +211,14 @@ If set to `false`, a header with the key `kafka_acknowledgment` of the type `org
 Applications may use this header for acknowledging messages.
 See the examples section for details.
 When this property is set to `false`, Kafka binder sets the ack mode to `org.springframework.kafka.listener.AbstractMessageListenerContainer.AckMode.MANUAL` and the application is responsible for acknowledging records.
-Also see `ackEachRecord`.
+Also see `ackEachRecord`. This property is deprecated as of 3.1. See `ackMode` for more details.
 +
 Default: `true`.
+ackMode::
+Specify the container ack mode.
+This is based on the AckMode enumeration defined in Spring Kafka.
+If `ackEachRecord` property is set to `true` and consumer is not in batch mode, then this will use the ack mode of `RECORD`, otherwise, use the provided ack mode using this property.
+
 autoCommitOnError::
 Effective only if `autoCommitOffset` is set to `true`.
 If set to `false`, it suppresses auto-commits for messages that result in errors and commits only for successful messages. It allows a stream to automatically replay from the last successfully processed message, in case of persistent failures.
@@ -298,7 +314,7 @@ topic.replication-factor::
 The replication factor to use when provisioning topics. Overrides the binder-wide setting.
 Ignored if `replicas-assignments` is present.
 +
-Default: none (the binder-wide default of 1 is used).
+Default: none (the binder-wide default of -1 is used).
 pollTimeout::
 Timeout used for polling in pollable consumers.
 +
@@ -394,7 +410,7 @@ topic.replication-factor::
 The replication factor to use when provisioning topics. Overrides the binder-wide setting.
 Ignored if `replicas-assignments` is present.
 +
-Default: none (the binder-wide default of 1 is used).
+Default: none (the binder-wide default of -1 is used).
 useTopicHeader::
 Set to `true` to override the default binding destination (topic name) with the value of the `KafkaHeaders.TOPIC` message header in the outbound message.
 If the header is not present, the default binding destination is used.
@@ -417,9 +433,9 @@ If a topic already exists with a smaller partition count and `autoAddPartitions`
 If a topic already exists with a smaller partition count and `autoAddPartitions` is enabled, new partitions are added.
 If a topic already exists with a larger number of partitions than the maximum of (`minPartitionCount` or `partitionCount`), the existing partition count is used.
 
-compressionType::
+compression::
 Set the `compression.type` producer property.
-Supported values are `none`, `gzip`, `snappy`, `lz4`, `zstd`.
+Supported values are `none`, `gzip`, `snappy`, `lz4` and `zstd`.
 If you override the `kafka-clients` jar to 2.1.0 (or later), as discussed in the https://docs.spring.io/spring-kafka/docs/2.2.x/reference/html/deps-for-21x.html[Spring for Apache Kafka documentation], and wish to use `zstd` compression, use `spring.cloud.stream.kafka.bindings.<binding-name>.producer.configuration.compression.type=zstd`.
 +
 Default: `none`.
@@ -740,6 +756,20 @@ public interface KafkaBindingRebalanceListener {
 ====
 
 You cannot set the `resetOffsets` consumer property to `true` when you provide a rebalance listener.
+
+[[consumer-producer-config-customizer]]
+=== Customizing Consumer and Producer configuration
+
+If you want advanced customization of consumer and producer configuration that is used for creating `ConsumerFactory` and `ProducerFactory` in Kafka,
+you can implement the following customizers.
+
+* ConsusumerConfigCustomizer
+* ProducerConfigCustomizer
+
+Both of these interfaces provide a way to configure the config map used for consumer and producer properties.
+For example, if you want to gain access to a bean that is defined at the application level, you can inject that in the implementation of the `configure` method.
+When the binder discovers that these customizers are available as beans, it will invoke the `configure` method right before creating the consumer and producer factories.
+
 
 = Appendices
 [appendix]
