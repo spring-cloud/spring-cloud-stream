@@ -3,7 +3,8 @@
 
 |spring.cloud.bus.ack.destination-service |  | Service that wants to listen to acks. By default null (meaning all services).
 |spring.cloud.bus.ack.enabled | true | Flag to switch off acks (default on).
-|spring.cloud.bus.destination | springCloudBus | Name of Spring Cloud Stream destination for messages.
+|spring.cloud.bus.content-type |  | The bus mime-type.
+|spring.cloud.bus.destination |  | Name of Spring Cloud Stream destination for messages.
 |spring.cloud.bus.enabled | true | Flag to indicate that the bus is enabled.
 |spring.cloud.bus.env.enabled | true | Flag to switch off environment change events (default on).
 |spring.cloud.bus.id | application | The identifier for this application instance.
