@@ -711,6 +711,10 @@ public class FunctionConfiguration {
 							functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(this.streamFunctionProperties);
 							registry.registerBeanDefinition(functionDefinition + "_binding", functionBindableProxyDefinition);
 						}
+						else {
+							throw new IllegalArgumentException("The function definition '" + streamFunctionProperties.getDefinition() +
+									"' is not valid. The referenced function bean or one of its components does not exist");
+						}
 					}
 				}
 
