@@ -2279,7 +2279,7 @@ Default values can be set by using the `spring.cloud.stream.default` prefix (for
 destination::
 The target destination of a binding on the bound middleware (for example, the RabbitMQ exchange or Kafka topic).
 If binding represents a consumer binding (input), it could be bound to multiple destinations, and the destination names can be specified as comma-separated `String` values.
-If not, he actual binding name is used instead.
+If not, the actual binding name is used instead.
 The default value of this property cannot be overridden.
 group::
 The consumer group of the binding.
