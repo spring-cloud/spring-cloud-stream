@@ -12,7 +12,7 @@
 	<artifactId>spring-cloud-stream-docs</artifactId>
 	<name>spring-cloud-stream-docs</name>
 	<description>Spring Cloud Stream Docs</description>
-	<version>3.1.0-M3</version>
+	<version>3.1.0-SNAPSHOT</version>
 	<properties>
 		<main.basedir>${basedir}/..</main.basedir>
 		<spring-cloud-stream.version>3.1.0-M3</spring-cloud-stream.version>
