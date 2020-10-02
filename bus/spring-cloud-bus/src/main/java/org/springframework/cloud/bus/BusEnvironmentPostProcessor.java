@@ -46,6 +46,12 @@ public class BusEnvironmentPostProcessor implements EnvironmentPostProcessor {
 
 	@Override
 	public void postProcessEnvironment(ConfigurableEnvironment environment, SpringApplication application) {
+		if (environment.containsProperty(ConditionalOnBusEnabled.SPRING_CLOUD_BUS_ENABLED)) {
+			if (Boolean.FALSE.toString()
+					.equalsIgnoreCase(environment.getProperty(ConditionalOnBusEnabled.SPRING_CLOUD_BUS_ENABLED))) {
+				return;
+			}
+		}
 		Map<String, Object> overrides = new HashMap<>();
 		String definition = BusConstants.BUS_CONSUMER;
 		if (environment.containsProperty(FN_DEF_PROP)) {
