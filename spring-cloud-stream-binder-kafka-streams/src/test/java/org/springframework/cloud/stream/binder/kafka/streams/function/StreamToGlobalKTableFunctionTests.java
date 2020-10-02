@@ -36,8 +36,9 @@ import org.apache.kafka.streams.kstream.KTable;
 import org.apache.kafka.streams.processor.TimestampExtractor;
 import org.apache.kafka.streams.processor.WallclockTimestampExtractor;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Test;
-import org.junit.jupiter.api.Disabled;
+
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -56,7 +57,7 @@ import org.springframework.kafka.test.utils.KafkaTestUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@Disabled
+@Ignore
 public class StreamToGlobalKTableFunctionTests {
 
 	@ClassRule
