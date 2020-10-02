@@ -31,7 +31,7 @@ import org.apache.kafka.streams.state.Stores;
 import org.apache.kafka.streams.state.WindowStore;
 import org.junit.ClassRule;
 import org.junit.Test;
-
+import org.junit.jupiter.api.Disabled;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -54,6 +54,7 @@ public class KafkaStreamsFunctionStateStoreTests {
 	private static EmbeddedKafkaBroker embeddedKafka = embeddedKafkaRule.getEmbeddedKafka();
 
 	@Test
+	@Disabled
 	public void testKafkaStreamsFuncionWithMultipleStateStores() throws Exception {
 		SpringApplication app = new SpringApplication(StateStoreTestApplication.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
