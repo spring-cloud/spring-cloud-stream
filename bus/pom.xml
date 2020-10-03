@@ -5,7 +5,7 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<artifactId>spring-cloud-bus-parent</artifactId>
-	<version>3.0.0-SNAPSHOT</version>
+	<version>3.0.0-M4</version>
 	<packaging>pom</packaging>
 
 	<name>spring-cloud-bus-parent</name>
@@ -14,7 +14,7 @@
 	<parent>
 		<groupId>org.springframework.cloud</groupId>
 		<artifactId>spring-cloud-build</artifactId>
-		<version>3.0.0-SNAPSHOT</version>
+		<version>3.0.0-M4</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 
@@ -28,8 +28,8 @@
 	</modules>
 
 	<properties>
-		<spring-cloud-commons.version>3.0.0-SNAPSHOT</spring-cloud-commons.version>
-		<spring-cloud-stream.version>3.1.0-SNAPSHOT</spring-cloud-stream.version>
+		<spring-cloud-commons.version>3.0.0-M4</spring-cloud-commons.version>
+		<spring-cloud-stream.version>3.1.0-M3</spring-cloud-stream.version>
 		<bintray.package>bus</bintray.package>
 	</properties>
 
