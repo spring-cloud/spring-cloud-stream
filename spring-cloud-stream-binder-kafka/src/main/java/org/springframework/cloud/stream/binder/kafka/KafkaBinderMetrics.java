@@ -25,6 +25,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -62,7 +63,9 @@ import org.springframework.util.ObjectUtils;
 public class KafkaBinderMetrics
 		implements MeterBinder, ApplicationListener<BindingCreatedEvent> {
 
-	private static final int DEFAULT_TIMEOUT = 60;
+	private static final int DEFAULT_TIMEOUT = 5;
+
+	private static final int DELAY_BETWEEN_TASK_EXECUTION = 60;
 
 	private static final Log LOG = LogFactory.getLog(KafkaBinderMetrics.class);
 
@@ -79,6 +82,10 @@ public class KafkaBinderMetrics
 	private Map<String, Consumer<?, ?>> metadataConsumers;
 
 	private int timeout = DEFAULT_TIMEOUT;
+
+	ScheduledExecutorService scheduler;
+
+	Map<String, Long> unconsumedMessages = new ConcurrentHashMap<>();
 
 	public KafkaBinderMetrics(KafkaMessageChannelBinder binder,
 			KafkaBinderConfigurationProperties binderConfigurationProperties,
@@ -104,6 +111,9 @@ public class KafkaBinderMetrics
 
 	@Override
 	public void bindTo(MeterRegistry registry) {
+
+		this.scheduler = Executors.newScheduledThreadPool(this.binder.getTopicsInUse().size());
+
 		for (Map.Entry<String, KafkaMessageChannelBinder.TopicInformation> topicInfo : this.binder
 				.getTopicsInUse().entrySet()) {
 
@@ -114,45 +124,37 @@ public class KafkaBinderMetrics
 			String topic = topicInfo.getKey();
 			String group = topicInfo.getValue().getConsumerGroup();
 
+			//Schedule a task to compute the unconsumed messages for this group/topic every minute.
+			this.scheduler.scheduleWithFixedDelay(computeUnconsumedMessagesRunnable(topic, group, this.metadataConsumers),
+					10, DELAY_BETWEEN_TASK_EXECUTION, TimeUnit.SECONDS);
+
 			Gauge.builder(METRIC_NAME, this,
-					(o) -> computeUnconsumedMessages(topic, group)).tag("group", group)
+					(o) -> computeAndGetUnconsumedMessages(topic, group)).tag("group", group)
 					.tag("topic", topic)
 					.description("Unconsumed messages for a particular group and topic")
 					.register(registry);
 		}
 	}
 
-	private long computeUnconsumedMessages(String topic, String group) {
-		ExecutorService exec = Executors.newSingleThreadExecutor();
+	private Runnable computeUnconsumedMessagesRunnable(String topic, String group, Map<String, Consumer<?, ?>> metadataConsumers) {
+		return () -> {
+			try {
+				long lag = findTotalTopicGroupLag(topic, group, this.metadataConsumers);
+				this.unconsumedMessages.put(topic + "-" + group, lag);
+			}
+			catch (Exception ex) {
+				LOG.debug("Cannot generate metric for topic: " + topic, ex);
+			}
+		};
+	}
+
+	private long computeAndGetUnconsumedMessages(String topic, String group) {
+		ExecutorService exec = Executors.newCachedThreadPool();
 		Future<Long> future = exec.submit(() -> {
 
 			long lag = 0;
 			try {
-				Consumer<?, ?> metadataConsumer = this.metadataConsumers.computeIfAbsent(
-						group,
-						(g) -> createConsumerFactory().createConsumer(g, "monitoring"));
-				synchronized (metadataConsumer) {
-					List<PartitionInfo> partitionInfos = metadataConsumer
-							.partitionsFor(topic);
-					List<TopicPartition> topicPartitions = new LinkedList<>();
-					for (PartitionInfo partitionInfo : partitionInfos) {
-						topicPartitions.add(new TopicPartition(partitionInfo.topic(),
-								partitionInfo.partition()));
-					}
-
-					Map<TopicPartition, Long> endOffsets = metadataConsumer
-							.endOffsets(topicPartitions);
-
-					for (Map.Entry<TopicPartition, Long> endOffset : endOffsets
-							.entrySet()) {
-						OffsetAndMetadata current = metadataConsumer
-								.committed(endOffset.getKey());
-						lag += endOffset.getValue();
-						if (current != null) {
-							lag -= current.offset();
-						}
-					}
-				}
+				lag = findTotalTopicGroupLag(topic, group, this.metadataConsumers);
 			}
 			catch (Exception ex) {
 				LOG.debug("Cannot generate metric for topic: " + topic, ex);
@@ -164,14 +166,42 @@ public class KafkaBinderMetrics
 		}
 		catch (InterruptedException ex) {
 			Thread.currentThread().interrupt();
-			return 0L;
+			return this.unconsumedMessages.getOrDefault(topic + "-" + group, 0L);
 		}
 		catch (ExecutionException | TimeoutException ex) {
-			return 0L;
+			return this.unconsumedMessages.getOrDefault(topic + "-" + group, 0L);
 		}
 		finally {
 			exec.shutdownNow();
 		}
+	}
+
+	private long findTotalTopicGroupLag(String topic, String group, Map<String, Consumer<?, ?>> metadataConsumers) {
+		long lag = 0;
+		Consumer<?, ?> metadataConsumer = metadataConsumers.computeIfAbsent(
+				group,
+				(g) -> createConsumerFactory().createConsumer(g, "monitoring"));
+		List<PartitionInfo> partitionInfos = metadataConsumer
+				.partitionsFor(topic);
+		List<TopicPartition> topicPartitions = new LinkedList<>();
+		for (PartitionInfo partitionInfo : partitionInfos) {
+			topicPartitions.add(new TopicPartition(partitionInfo.topic(),
+					partitionInfo.partition()));
+		}
+
+		Map<TopicPartition, Long> endOffsets = metadataConsumer
+				.endOffsets(topicPartitions);
+
+		for (Map.Entry<TopicPartition, Long> endOffset : endOffsets
+				.entrySet()) {
+			OffsetAndMetadata current = metadataConsumer
+					.committed(endOffset.getKey());
+			lag += endOffset.getValue();
+			if (current != null) {
+				lag -= current.offset();
+			}
+		}
+		return lag;
 	}
 
 	private synchronized  ConsumerFactory<?, ?> createConsumerFactory() {
@@ -200,8 +230,7 @@ public class KafkaBinderMetrics
 	@Override
 	public void onApplicationEvent(BindingCreatedEvent event) {
 		if (this.meterRegistry != null) {
-			// meters are idempotent when called with the same arguments so safe to call
-			// it multiple times
+			// It is safe to call bindTo multiple times, since meters are idempotent when called with the same arguments
 			this.bindTo(this.meterRegistry);
 		}
 	}
