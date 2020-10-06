@@ -255,8 +255,7 @@ public class SampleApplication {
 	}
 }
 ----
-Unlike previous versions of spring-cloud-stream which relied on `@EnableBinding` and `@StreamListener` annotations,
-the above example looks no different then any vanilla spring-boot application. It defines a single bean of type `Function`
+The above example looks no different then any vanilla spring-boot application. It defines a single bean of type `Function`
 and that it is. So, how does it became spring-cloud-stream application?
 It becomes spring-cloud-stream application simply based on the presence of spring-cloud-stream and binder dependencies
 and auto-configuration classes on the classpath effectively setting the context for your boot application as spring-cloud-stream application.
@@ -335,65 +334,6 @@ since not using it provides a clear path between binder destination and binding 
 where you are clearly correlating the input of `uppercase` function to `sample-topic` destination.
 
 For more on properties and other configuration options please see <<Configuration Options>> section.
-
-
-===== Annotation-based binding names (legacy)
-
-In previous versions of spring-cloud-stream _binding_ names and in fact implementations, derived from the `@EnableBinding`
-annotation which typically would take one or more interface classes as parameters. The parameters are referred to
-as _bindings_, and they contain methods representing _bindable components_.
-
-For compliance with legacy style applications we still support this annotation-based programming model and you can get more information about it in
-<<Annotation-based support (legacy)>> section (sub-section of the <<Programming Model>> section).
-
-Spring Cloud Stream already provides _binding_ interfaces for typical message exchange contracts, which include:
-
-* *Sink:* Identifies the contract for the message consumer by providing the destination from which the message is consumed.
-* *Source:* Identifies the contract for the message producer by providing the destination to which the produced message is sent.
-* *Processor:* Encapsulates both the sink and the source contracts by exposing two destinations that allow consumption and production of messages.
-
-[source, java]
-----
-public interface Sink {
-
-  String INPUT = "input";
-
-  @Input(Sink.INPUT)
-  SubscribableChannel input();
-}
-----
-
-[source, java]
-----
-public interface Source {
-
-  String OUTPUT = "output";
-
-  @Output(Source.OUTPUT)
-  MessageChannel output();
-}
-----
-
-[source, java]
-----
-public interface Processor extends Source, Sink {}
-----
-
-And you can define your own interfaces as well
-[source, java]
-----
-public interface MyBinding {
-
-  String FOO = "foo";
-
-  @Output(MyBinding.FOO)
-  MessageChannel foo();
-}
-----
-
-NOTE: The reason why `@EnableBinding` and binding interfaces are not required with functional programming model is because
-they could be derived from the type of functional interface itself. For example, _Processor = Function_, _Source = Supplier_
-and so on.
 
 
 *Pollable Destination Binding*
@@ -881,7 +821,7 @@ So, for the above example the two input bindings will be `gather-in-0` and `gath
 output binding also follows the same convention and is named `gather-out-0`.
 
 
-Knowing that will allow you to set binding specific properties the same way you did with `@StreamListener`.
+Knowing that will allow you to set binding specific properties.
 For example, the following will override content-type for `gather-in-0` binding:
 
 ----
@@ -1059,181 +999,6 @@ convention used to establish _binding names_ used by such application.
 For more details on interoperability of Spring Integration and Spring Cloud Stream specifically around functional programming model
 you may find https://spring.io/blog/2019/10/25/spring-cloud-stream-and-spring-integration[this post] very interesting, as it dives a bit deeper
 into various patterns you can apply by merging the best of Spring Integration and Spring Cloud Stream/Functions.
-
-==== Annotation-based support (legacy)
-As mentioned earlier you can also use Spring Integration annotations based configuration or
-Spring Cloud Stream annotation based configuration.
-
-===== Spring Integration Support
-
-Spring Cloud Stream is built on the concepts and patterns defined by http://www.enterpriseintegrationpatterns.com/[Enterprise Integration Patterns] and relies
-in its internal implementation on an already established and popular implementation of Enterprise Integration Patterns within the Spring portfolio of projects:
-https://projects.spring.io/spring-integration/[Spring Integration] framework.
-
-So its only natural for it to support the foundation, semantics, and configuration options that are already established by Spring Integration
-
-For example, you can attach the output channel of a `Source` to a `MessageSource` and use the familiar `@InboundChannelAdapter` annotation, as follows:
-
-[source, java]
-----
-@EnableBinding(Source.class)
-public class TimerSource {
-
-  @Bean
-  @InboundChannelAdapter(value = Source.OUTPUT, poller = @Poller(fixedDelay = "10", maxMessagesPerPoll = "1"))
-  public MessageSource<String> timerMessageSource() {
-    return () -> new GenericMessage<>("Hello Spring Cloud Stream");
-  }
-}
-----
-
-Similarly, you can use @Transformer or @ServiceActivator while providing an implementation of a message handler method for a _Processor_ binding contract, as shown in the following example:
-
-[source,java]
-----
-@EnableBinding(Processor.class)
-public class TransformProcessor {
-  @Transformer(inputChannel = Processor.INPUT, outputChannel = Processor.OUTPUT)
-  public Object transform(String message) {
-    return message.toUpperCase();
-  }
-}
-----
-
-NOTE: While this may be skipping ahead a bit, it is important to understand that, when you consume from the same binding using `@StreamListener` annotation, a pub-sub model is used.
-Each method annotated with `@StreamListener` receives its own copy of a message, and each one has its own consumer group.
-However, if you consume from the same binding by using one of the Spring Integration annotation (such as `@Aggregator`, `@Transformer`, or `@ServiceActivator`), those consume in a competing model.
-No individual consumer group is created for each subscription.
-
-===== Using @StreamListener Annotation
-
-Complementary to its Spring Integration support, Spring Cloud Stream provides its own `@StreamListener` annotation, modeled after other Spring Messaging annotations
-(`@MessageMapping`, `@JmsListener`, `@RabbitListener`, and others) and provides conveniences such as content-based routing and others.
-
-[source,java]
-----
-@EnableBinding(Sink.class)
-public class VoteHandler {
-
-  @Autowired
-  VotingService votingService;
-
-  @StreamListener(Sink.INPUT)
-  public void handle(Vote vote) {
-    votingService.record(vote);
-  }
-}
-----
-
-As with other Spring Messaging methods, method arguments can be annotated with `@Payload`, `@Headers`, and `@Header`.
-
-
-For methods that return data, you must use the `@SendTo` annotation to specify the output binding destination for data returned by the method, as shown in the following example:
-
-[source,java]
-----
-@EnableBinding(Processor.class)
-public class TransformProcessor {
-
-  @Autowired
-  VotingService votingService;
-
-  @StreamListener(Processor.INPUT)
-  @SendTo(Processor.OUTPUT)
-  public VoteResult handle(Vote vote) {
-    return votingService.record(vote);
-  }
-}
-----
-
-
-Similar to Spring MVC you can also benefit from JSR-303/309 compliant validation by annotating your arguments with `@Valid`.
-
-[source,java]
-----
-@StreamListener(Processor.INPUT)
-  @SendTo(Processor.OUTPUT)
-  public VoteResult handle(@Valid Vote vote) {
-    return votingService.record(vote);
-  }
-----
-In the above example the `Vote` object and its individual fields will be validated according to the rules set by you (e.g., `@NotBlank`, `@Min`/`@Max` etc.).
-
-NOTE: Spring Cloud Stream does NOT provide a default `org.springframework.validation.Validator` to avoid potential
-conflicts with validators provided by other frameworks that may be part of your application (e.g., MVC),
-therefore you may need to provide your own validator by configuring a bean of type `org.springframework.validation.Validator`.
-
-===== Using @StreamListener for Content-based routing
-
-Spring Cloud Stream supports dispatching messages to multiple handler methods annotated with `@StreamListener` based on conditions.
-
-In order to be eligible to support conditional dispatching, a method must satisfy the follow conditions:
-
-* It must not return a value.
-* It must be an individual message handling method (reactive API methods are not supported).
-
-The condition is specified by a SpEL expression in the `condition` argument of the annotation and is evaluated for each message.
-All the handlers that match the condition are invoked in the same thread, and no assumption must be made about the order in which the invocations take place.
-
-In the following example of a `@StreamListener` with dispatching conditions, all the messages bearing a header `type` with the value `bogey` are dispatched to the
-`receiveBogey` method, and all the messages bearing a header `type` with the value `bacall` are dispatched to the `receiveBacall` method.
-
-[source,java]
-----
-@EnableBinding(Sink.class)
-@EnableAutoConfiguration
-public static class TestPojoWithAnnotatedArguments {
-
-    @StreamListener(target = Sink.INPUT, condition = "headers['type']=='bogey'")
-    public void receiveBogey(@Payload BogeyPojo bogeyPojo) {
-       // handle the message
-    }
-
-    @StreamListener(target = Sink.INPUT, condition = "headers['type']=='bacall'")
-    public void receiveBacall(@Payload BacallPojo bacallPojo) {
-       // handle the message
-    }
-}
-----
-
-*Content Type Negotiation in the Context of `condition`*
-
-It is important to understand some of the mechanics behind content-based routing using the `condition` argument of `@StreamListener`, especially in the context of the type of the message as a whole.
-It may also help if you familiarize yourself with the <<Content Type Negotiation>>  before you proceed.
-
-Consider the following scenario:
-
-[source,java]
-----
-@EnableBinding(Sink.class)
-@EnableAutoConfiguration
-public static class CatsAndDogs {
-
-    @StreamListener(target = Sink.INPUT, condition = "payload.class.simpleName=='Dog'")
-    public void bark(Dog dog) {
-       // handle the message
-    }
-
-    @StreamListener(target = Sink.INPUT, condition = "payload.class.simpleName=='Cat'")
-    public void purr(Cat cat) {
-       // handle the message
-    }
-}
-----
-
-The preceding code is perfectly valid. It compiles and deploys without any issues, yet it never produces the result you expect.
-
-That is because you are testing something that does not yet exist in a state you expect. That is because the payload of the message is not yet converted from the
-wire format (`byte[]`) to the desired type.
-In other words, it has not yet gone through the type conversion process described in the <<Content Type Negotiation>>.
-
-So, unless you use a SPeL expression that evaluates raw data (for example, the value of the first byte in the byte array), use message header-based expressions
-(such as `condition = "headers['type']=='dog'"`).
-
-
-NOTE: At the moment, dispatching through `@StreamListener` conditions is supported only for channel-based binders (not for reactive programming)
-support.
-
 
 
 [[spring-cloud-streams-overview-using-polled-consumers]]
@@ -2968,45 +2733,6 @@ public void testMultipleFunctions() {
 }
 ----
 
-You can also use this binder with legacy annotation-based configuration:
-
-[source,java]
-----
-@SpringBootApplication
-@EnableBinding(Processor.class)
-public class LegacyStreamApplication {
-
-	@StreamListener(Processor.INPUT)
-	@SendTo(Processor.OUTPUT)
-	public String echo(String value) {
-		return value;
-	}
-}
-
-. . .
-
-@Test
-public void sampleTest() {
-	try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
-				TestChannelBinderConfiguration.getCompleteConfiguration(
-						LegacyStreamApplication.class)).run()) {
-		InputDestination source = context.getBean(InputDestination.class);
-		OutputDestination target = context.getBean(OutputDestination.class);
-		source.send(new GenericMessage<byte[]>("hello".getBytes()));
-		assertThat(target.receive().getPayload()).isEqualTo("hello".getBytes());
-	}
-}
-----
-
-
-In the above you simply create an ApplicationContext with your configuration (your application) while additionally supplying `TestChannelBinderConfiguration`
-provided by the framework. Then you access `InputDestination` and `OutputDestination` beans to send/receive messages. In the context of this binder
-`InputDestination` and `OutputDestination` emulate remote destinations such as Rabbit _exchange/queue_ or Kafka _topic_.
-
-In the future we plan to simplify the API.
-
-NOTE: In its current state Spring Integration Test Binder only supports the three bindings provided by the framework (Source, Processor, Sink) specifically to promote
-light-weight microservices architectures rather then general purpose messaging applications.
 
 ==== Test Binder and PollableMessageSource
 Spring Integration Test Binder also allows you to write tests when working with `PollableMessageSource` (see <<Using Polled Consumers>> for more details).
@@ -3023,26 +2749,25 @@ Let's look at the example:
 public void samplePollingTest() {
 	ApplicationContext context = new SpringApplicationBuilder(SamplePolledConfiguration.class)
 				.web(WebApplicationType.NONE)
-				.run("--spring.jmx.enabled=false");
+				.run("--spring.jmx.enabled=false", "--spring.cloud.stream.pollable-source=myDestination");
 	OutputDestination destination = context.getBean(OutputDestination.class);
 	System.out.println("Message 1: " + new String(destination.receive().getPayload()));
 	System.out.println("Message 2: " + new String(destination.receive().getPayload()));
 	System.out.println("Message 3: " + new String(destination.receive().getPayload()));
 }
 
-@EnableBinding(SamplePolledConfiguration.PolledConsumer.class)
 @Import(TestChannelBinderConfiguration.class)
 @EnableAutoConfiguration
 public static class SamplePolledConfiguration {
 	@Bean
-	public ApplicationRunner poller(PollableMessageSource polledMessageSource, MessageChannel output, TaskExecutor taskScheduler) {
+	public ApplicationRunner poller(PollableMessageSource polledMessageSource, StreamBridge output, TaskExecutor taskScheduler) {
 		return args -> {
 			taskScheduler.execute(() -> {
 				for (int i = 0; i < 3; i++) {
 					try {
 						if (!polledMessageSource.poll(m -> {
 							String newPayload = ((String) m.getPayload()).toUpperCase();
-							output.send(new GenericMessage<>(newPayload));
+							output.send("myOutput", newPayload);
 						})) {
 							Thread.sleep(2000);
 						}
@@ -3053,11 +2778,6 @@ public static class SamplePolledConfiguration {
 				}
 			});
 		};
-	}
-
-	public static interface PolledConsumer extends Source {
-		@Input
-		PollableMessageSource pollableSource();
 	}
 }
 ----
@@ -3124,8 +2844,6 @@ See <<multiple-systems,Connecting to Multiple Systems>> for details on how envir
 
 If there are multiple binders present in the classpath but not all of them are used in the application, this may cause some issues in the context of health indicators.
 There may be implementation specific details as to how the health checks are performed. For example, a Kafka binder may decide the status as `DOWN` if there are no destinations registered by the binder.
-For this reason, if you include a binder in the classpath, it is advised to use that binder by providing at least one binding (for E.g. through `EnableBinding`).
-If you don't have any bindings to provide for this binder, then that is an indication that you don't need to include that binder in the classpath.
 
 Lets take a concrete situation. Imagine you have both Kafka and Kafka Streams binders present in the classpath, but only use the Kafka Streams binder in the application code, i.e. only provide bindings using the Kafka Streams binder.
 Since Kafka binder is not used and it has specific checks to see if any destinations are registered, the binder health check will fail.

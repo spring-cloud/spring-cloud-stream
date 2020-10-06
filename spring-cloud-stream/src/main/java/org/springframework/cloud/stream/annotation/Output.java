@@ -31,6 +31,8 @@ import org.springframework.beans.factory.annotation.Qualifier;
  * @author Dave Syer
  * @author Marius Bogoevici
  * @author Artem Bilan
+ *
+ * @deprecated as of 3.1 in favor of functional programming model
  */
 
 @Qualifier
@@ -39,6 +41,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 @Retention(RetentionPolicy.RUNTIME)
 @Inherited
 @Documented
+@Deprecated
 public @interface Output {
 
 	/**

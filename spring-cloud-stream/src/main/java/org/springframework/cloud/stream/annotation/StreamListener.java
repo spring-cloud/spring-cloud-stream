@@ -127,11 +127,14 @@ import org.springframework.messaging.handler.annotation.MessageMapping;
  * @see MessageMapping
  * @see EnableBinding
  * @see org.springframework.messaging.handler.annotation.SendTo
+ *
+ * @deprecated as of 3.1 in favor of functional programming model
  */
 @Target({ ElementType.METHOD, ElementType.ANNOTATION_TYPE })
 @Retention(RetentionPolicy.RUNTIME)
 @MessageMapping
 @Documented
+@Deprecated
 public @interface StreamListener {
 
 	/**

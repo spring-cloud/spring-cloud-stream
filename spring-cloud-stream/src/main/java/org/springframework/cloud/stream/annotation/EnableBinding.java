@@ -37,6 +37,8 @@ import org.springframework.integration.config.EnableIntegration;
  * @author Marius Bogoevici
  * @author David Turanski
  * @author Soby Chacko
+ *
+ * @deprecated as of 3.1 in favor of functional programming model
  */
 @Target({ ElementType.TYPE, ElementType.ANNOTATION_TYPE })
 @Retention(RetentionPolicy.RUNTIME)
@@ -45,6 +47,7 @@ import org.springframework.integration.config.EnableIntegration;
 @Configuration
 @Import({ BindingBeansRegistrar.class, BinderFactoryAutoConfiguration.class })
 @EnableIntegration
+@Deprecated
 public @interface EnableBinding {
 
 	/**
