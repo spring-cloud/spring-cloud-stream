@@ -1,7 +1,7 @@
 = Spring Cloud Stream Reference Documentation
 Sabby Anandan; Marius Bogoevici; Eric Bottard; Mark Fisher; Ilayaperumal Gopinathan; Gunnar Hillert; Mark Pollack; Patrick Peralta; Glenn Renfro; Thomas Risberg; Dave Syer; David Turanski; Janne Valkealahti; Benjamin Klein; Vinicius Carvalho; Gary Russell; Oleg Zhurakousky; Jay Bryant; Soby Chacko; Domenico Sibilio
 
-*{spring-cloud-stream-version}*
+*{project-version}*
 
 :docinfo: shared
 
@@ -9,9 +9,9 @@ The reference documentation consists of the following sections:
 
 [horizontal]
 <<spring-cloud-stream.adoc#spring-cloud-stream-reference,Overview>> :: History, Quick Start, Concepts, Architecture Overview, Binder Abstraction, and Core Features
-{docs-url}/../spring-cloud-stream-binder-rabbit/spring-cloud-stream-binder-rabbit.html[Rabbit MQ Binder] :: Spring Cloud Stream binder reference for Rabbit MQ
-{docs-url}/../spring-cloud-stream-binder-kafka/spring-cloud-stream-binder-kafka.html#_apache_kafka_binder[Apache Kafka Binder] :: Spring Cloud Stream binder reference for Apache Kafka
-{docs-url}/../spring-cloud-stream-binder-kafka/spring-cloud-stream-binder-kafka.html#_kafka_streams_binder[Apache Kafka Streams Binder] :: Spring Cloud Stream binder reference for Apache Kafka Streams
+https://docs.spring.io/spring-cloud-stream-binder-rabbit/docs/{project-version}/reference/html/spring-cloud-stream-binder-rabbit.html[Rabbit MQ Binder] :: Spring Cloud Stream binder reference for Rabbit MQ
+https://docs.spring.io/spring-cloud-stream-binder-kafka/docs/{project-version}/reference/html/spring-cloud-stream-binder-kafka.html#_apache_kafka_binder[Apache Kafka Binder] :: Spring Cloud Stream binder reference for Apache Kafka
+https://docs.spring.io/spring-cloud-stream-binder-kafka/docs/{project-version}/reference/html/spring-cloud-stream-binder-kafka.html#_kafka_streams_binder[Apache Kafka Streams Binder] :: Spring Cloud Stream binder reference for Apache Kafka Streams
 <<binders.adoc#binders,Additional Binders>> :: A collection of Partner maintained binder implementations for Spring Cloud Stream (e.g., Azure Event Hubs, Google PubSub, Solace PubSub+)
 https://github.com/spring-cloud/spring-cloud-stream-samples/[Spring Cloud Stream Samples]  :: A curated collection of repeatable Spring Cloud Stream samples to walk through the features
 
