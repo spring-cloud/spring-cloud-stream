@@ -242,8 +242,9 @@ public class FunctionConfiguration {
 
 		boolean splittable = pollable != null
 				&& (boolean) AnnotationUtils.getAnnotationAttributes(pollable).get("splittable");
+		boolean reactive = FunctionTypeUtils.isReactive(FunctionTypeUtils.getInputType(functionType, 0));
 
-		if (pollable == null && FunctionTypeUtils.isReactive(FunctionTypeUtils.getInputType(functionType, 0))) {
+		if (pollable == null && reactive) {
 			Publisher publisher = (Publisher) supplier.get();
 			publisher = publisher instanceof Mono
 					? ((Mono) publisher).delaySubscription(beginPublishingTrigger).map(this::wrapToMessageIfNecessary)
@@ -256,7 +257,8 @@ public class FunctionConfiguration {
 		}
 		else { // implies pollable
 			integrationFlowBuilder = IntegrationFlows.fromSupplier(supplier);
-			if (splittable) {
+			//only apply the PollableBean attributes if this is a reactive function.
+			if (splittable && reactive) {
 				integrationFlowBuilder = integrationFlowBuilder.split();
 			}
 		}
@@ -712,7 +714,7 @@ public class FunctionConfiguration {
 							registry.registerBeanDefinition(functionDefinition + "_binding", functionBindableProxyDefinition);
 						}
 						else {
-							throw new IllegalArgumentException("The function definition '" + streamFunctionProperties.getDefinition() +
+							logger.warn("The function definition '" + streamFunctionProperties.getDefinition() +
 									"' is not valid. The referenced function bean or one of its components does not exist");
 						}
 					}
