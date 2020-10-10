@@ -19,7 +19,6 @@ package org.springframework.cloud.stream.binder.kafka.properties;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import javax.validation.constraints.AssertTrue;
@@ -324,20 +323,10 @@ public class KafkaBinderConfigurationProperties {
 
 	private Map<String, Object> getConfigurationWithBootstrapServer(
 			Map<String, Object> configuration, String bootstrapServersConfig) {
-		if (ObjectUtils.isEmpty(configuration.get(bootstrapServersConfig))) {
-			configuration.put(bootstrapServersConfig, getKafkaConnectionString());
-		}
-		else {
-			Object boostrapServersConfig = configuration.get(bootstrapServersConfig);
-			if (boostrapServersConfig instanceof List) {
-				@SuppressWarnings("unchecked")
-				List<String> bootStrapServers = (List<String>) configuration
-						.get(bootstrapServersConfig);
-				if (bootStrapServers.size() == 1
-						&& bootStrapServers.get(0).equals("localhost:9092")) {
-					configuration.put(bootstrapServersConfig, getKafkaConnectionString());
-				}
-			}
+		final String kafkaConnectionString = getKafkaConnectionString();
+		if (ObjectUtils.isEmpty(configuration.get(bootstrapServersConfig)) ||
+				!kafkaConnectionString.equals("localhost:9092")) {
+			configuration.put(bootstrapServersConfig, kafkaConnectionString);
 		}
 		return Collections.unmodifiableMap(configuration);
 	}
