@@ -615,6 +615,8 @@ public class KafkaBinderTests extends
 				moduleOutputChannel, outputBindingProperties.getProducer());
 		Binding<MessageChannel> consumerBinding = binder.bindConsumer("foo.bar",
 				"testSendAndReceive", moduleInputChannel, consumerProperties);
+		assertThat(KafkaTestUtils.getPropertyValue(consumerBinding,
+				"lifecycle.messageListenerContainer.applicationContext")).isNotNull();
 		Message<?> message = org.springframework.integration.support.MessageBuilder
 				.withPayload("foo".getBytes(StandardCharsets.UTF_8))
 				.setHeader(MessageHeaders.CONTENT_TYPE,
