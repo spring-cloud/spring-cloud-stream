@@ -21,16 +21,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.springframework.amqp.core.DeclarableCustomizer;
 import org.springframework.amqp.core.MessagePostProcessor;
-import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
-import org.springframework.amqp.rabbit.connection.ConnectionFactory;
+import org.springframework.amqp.rabbit.connection.AbstractConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionNameStrategy;
 import org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer;
 import org.springframework.amqp.support.postprocessor.DelegatingDecompressingPostProcessor;
 import org.springframework.amqp.support.postprocessor.GZipPostProcessor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.amqp.RabbitProperties;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.binder.rabbit.RabbitMessageChannelBinder;
@@ -65,7 +62,7 @@ import org.springframework.lang.Nullable;
 public class RabbitMessageChannelBinderConfiguration {
 
 	@Autowired
-	private ConnectionFactory rabbitConnectionFactory;
+	private AbstractConnectionFactory rabbitConnectionFactory;
 
 	@Autowired
 	private RabbitProperties rabbitProperties;
@@ -82,8 +79,15 @@ public class RabbitMessageChannelBinderConfiguration {
 			@Nullable MessageSourceCustomizer<AmqpMessageSource> sourceCustomizer,
 			@Nullable ProducerMessageHandlerCustomizer<AmqpOutboundEndpoint> producerMessageHandlerCustomizer,
 			@Nullable ConsumerEndpointCustomizer<AmqpInboundChannelAdapter> consumerCustomizer,
-			List<DeclarableCustomizer> declarableCustomizers) {
+			List<DeclarableCustomizer> declarableCustomizers,
+			@Nullable ConnectionNameStrategy connectionNameStrategy) {
 
+		String connectionNamePrefix = this.rabbitBinderConfigurationProperties.getConnectionNamePrefix();
+		if (connectionNamePrefix != null &&  connectionNameStrategy == null) {
+			final AtomicInteger nameIncrementer = new AtomicInteger();
+			this.rabbitConnectionFactory.setConnectionNameStrategy(f -> connectionNamePrefix
+					+ "#" + nameIncrementer.getAndIncrement());
+		}
 		RabbitMessageChannelBinder binder = new RabbitMessageChannelBinder(
 				this.rabbitConnectionFactory, this.rabbitProperties,
 				provisioningProvider(declarableCustomizers), listenerContainerCustomizer, sourceCustomizer);
@@ -115,16 +119,4 @@ public class RabbitMessageChannelBinderConfiguration {
 	RabbitExchangeQueueProvisioner provisioningProvider(List<DeclarableCustomizer> customizers) {
 		return new RabbitExchangeQueueProvisioner(this.rabbitConnectionFactory, customizers);
 	}
-
-	@Bean
-	@ConditionalOnMissingBean(ConnectionNameStrategy.class)
-	@ConditionalOnProperty("spring.cloud.stream.rabbit.binder.connection-name-prefix")
-	public ConnectionNameStrategy connectionNamer(CachingConnectionFactory cf) {
-		final AtomicInteger nameIncrementer = new AtomicInteger();
-		ConnectionNameStrategy namer = f -> this.rabbitBinderConfigurationProperties
-				.getConnectionNamePrefix() + "#" + nameIncrementer.getAndIncrement();
-		cf.setConnectionNameStrategy(namer);
-		return namer;
-	}
-
 }
