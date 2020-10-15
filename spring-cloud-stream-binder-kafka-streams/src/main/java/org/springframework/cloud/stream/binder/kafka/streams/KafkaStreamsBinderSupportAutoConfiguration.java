@@ -270,6 +270,10 @@ public class KafkaStreamsBinderSupportAutoConfiguration {
 		if (!ObjectUtils.isEmpty(configProperties.getConfiguration())) {
 			properties.putAll(configProperties.getConfiguration());
 		}
+		if (!properties.containsKey(StreamsConfig.REPLICATION_FACTOR_CONFIG)) {
+			properties.put(StreamsConfig.REPLICATION_FACTOR_CONFIG,
+					(int) configProperties.getReplicationFactor());
+		}
 		return properties.entrySet().stream().collect(
 				Collectors.toMap((e) -> String.valueOf(e.getKey()), Map.Entry::getValue));
 	}

@@ -247,6 +247,10 @@ public abstract class AbstractKafkaStreamsBinderProcessor implements Application
 			if (!ObjectUtils.isEmpty(multiBinderKafkaStreamsBinderConfigurationProperties.getConfiguration())) {
 				streamConfiguration.putAll(multiBinderKafkaStreamsBinderConfigurationProperties.getConfiguration());
 			}
+			if (!streamConfiguration.containsKey(StreamsConfig.REPLICATION_FACTOR_CONFIG)) {
+				streamConfiguration.put(StreamsConfig.REPLICATION_FACTOR_CONFIG,
+						(int) multiBinderKafkaStreamsBinderConfigurationProperties.getReplicationFactor());
+			}
 		}
 
 		//this is only used primarily for StreamListener based processors. Although in theory, functions can use it,
