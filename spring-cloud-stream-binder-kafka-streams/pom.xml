@@ -64,19 +64,14 @@
 			<artifactId>spring-boot-autoconfigure-processor</artifactId>
 			<optional>true</optional>
 		</dependency>
-		<!-- Following dependencies are needed to support Kafka 1.1.0 client-->
 		<dependency>
 			<groupId>org.apache.kafka</groupId>
-			<artifactId>kafka_2.12</artifactId>
-			<version>${kafka.version}</version>
-			<scope>test</scope>
+			<artifactId>kafka_2.13</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.kafka</groupId>
-			<artifactId>kafka_2.12</artifactId>
-			<version>${kafka.version}</version>
+			<artifactId>kafka_2.13</artifactId>
 			<classifier>test</classifier>
-			<scope>test</scope>
 		</dependency>
 		<!-- Following dependencies are only provided for testing and won't be packaged with the binder apps-->
 		<dependency>

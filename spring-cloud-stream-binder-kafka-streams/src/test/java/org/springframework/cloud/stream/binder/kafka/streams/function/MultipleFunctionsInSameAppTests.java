@@ -31,7 +31,6 @@ import org.apache.kafka.streams.kstream.KStream;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import org.springframework.boot.SpringApplication;
@@ -50,7 +49,6 @@ import org.springframework.util.Assert;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@Ignore
 public class MultipleFunctionsInSameAppTests {
 
 	@ClassRule

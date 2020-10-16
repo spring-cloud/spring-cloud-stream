@@ -25,7 +25,6 @@ import java.util.UUID;
 
 import com.example.Sensor;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import org.springframework.cloud.schema.registry.avro.AvroSchemaMessageConverter;
@@ -44,7 +43,6 @@ public class MessageConverterDelegateSerdeTest {
 
 	@Test
 	@SuppressWarnings("unchecked")
-	@Ignore
 	public void testCompositeNonNativeSerdeUsingAvroContentType() {
 		Random random = new Random();
 		Sensor sensor = new Sensor();

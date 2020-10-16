@@ -30,7 +30,6 @@ import org.apache.kafka.streams.state.StoreBuilder;
 import org.apache.kafka.streams.state.Stores;
 import org.apache.kafka.streams.state.WindowStore;
 import org.junit.ClassRule;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import org.springframework.boot.SpringApplication;
@@ -55,14 +54,13 @@ public class KafkaStreamsFunctionStateStoreTests {
 	private static EmbeddedKafkaBroker embeddedKafka = embeddedKafkaRule.getEmbeddedKafka();
 
 	@Test
-	@Ignore
 	public void testKafkaStreamsFuncionWithMultipleStateStores() throws Exception {
 		SpringApplication app = new SpringApplication(StateStoreTestApplication.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 
 		try (ConfigurableApplicationContext context = app.run("--server.port=0",
 				"--spring.jmx.enabled=false",
-				"--spring.cloud.stream.function.definition=process",
+				"--spring.cloud.stream.function.definition=process;hello",
 				"--spring.cloud.stream.bindings.process-in-0.destination=words",
 				"--spring.cloud.stream.bindings.hello-in-0.destination=words",
 				"--spring.cloud.stream.kafka.streams.binder.functions.process.applicationId=testKafkaStreamsFuncionWithMultipleStateStores-123",

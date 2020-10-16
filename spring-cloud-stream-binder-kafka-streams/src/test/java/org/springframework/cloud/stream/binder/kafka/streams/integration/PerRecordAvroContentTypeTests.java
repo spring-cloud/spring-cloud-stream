@@ -32,7 +32,6 @@ import org.apache.kafka.streams.kstream.KStream;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import org.springframework.boot.SpringApplication;
@@ -98,7 +97,6 @@ public class PerRecordAvroContentTypeTests {
 	}
 
 	@Test
-	@Ignore
 	public void testPerRecordAvroConentTypeAndVerifySerialization() throws Exception {
 		SpringApplication app = new SpringApplication(SensorCountAvroApplication.class);
 		app.setWebApplicationType(WebApplicationType.NONE);

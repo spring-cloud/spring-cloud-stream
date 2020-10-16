@@ -1464,7 +1464,7 @@ public class KafkaMessageChannelBinder extends
 				super.onInit();
 			}
 			catch (Exception ex) {
-				this.logger.error("Initialization errors: ", ex);
+				this.logger.error(ex, "Initialization errors: ");
 				throw new RuntimeException(ex);
 			}
 		}
