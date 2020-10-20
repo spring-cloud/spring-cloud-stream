@@ -17,6 +17,7 @@
 package org.springframework.cloud.stream.function;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -200,7 +201,6 @@ public class FunctionConfiguration {
 										if (message.getHeaders().get("spring.cloud.stream.sendto.destination") != null) {
 											String destinationName = (String) message.getHeaders().get("spring.cloud.stream.sendto.destination");
 											return streamBridge.resolveDestination(destinationName, producerProperties);
-											//return dynamicDestinationResolver.resolveDestination(destinationName);
 										}
 										return outputName;
 									}).get();
@@ -242,7 +242,7 @@ public class FunctionConfiguration {
 
 		boolean splittable = pollable != null
 				&& (boolean) AnnotationUtils.getAnnotationAttributes(pollable).get("splittable");
-		boolean reactive = FunctionTypeUtils.isReactive(FunctionTypeUtils.getInputType(functionType, 0));
+		boolean reactive = FunctionTypeUtils.isPublisher(FunctionTypeUtils.getOutputType(functionType));
 
 		if (pollable == null && reactive) {
 			Publisher publisher = (Publisher) supplier.get();
@@ -366,7 +366,7 @@ public class FunctionConfiguration {
 
 			FunctionInvocationWrapper function = this.functionCatalog.lookup(functionDefinition, outputContentTypes);
 			Type functionType = function.getFunctionType();
-			this.assertSupportedSignatures(bindableProxyFactory, functionType);
+			this.assertSupportedSignatures(bindableProxyFactory, function);
 
 
 			if (this.functionProperties.isComposeFrom()) {
@@ -456,7 +456,7 @@ public class FunctionConfiguration {
 			BindingProperties properties = this.serviceProperties.getBindingProperties(outputDestinationName);
 			if (properties.getProducer() != null && properties.getProducer().isUseNativeEncoding()) {
 				Field acceptedOutputMimeTypesField = ReflectionUtils
-						.findField(FunctionInvocationWrapper.class, "acceptedOutputMimeTypes", String[].class);
+						.findField(FunctionInvocationWrapper.class, "expectedOutputContentType", String[].class);
 				acceptedOutputMimeTypesField.setAccessible(true);
 				try {
 					String[] acceptedOutputMimeTypes = (String[]) acceptedOutputMimeTypesField.get(function);
@@ -517,8 +517,8 @@ public class FunctionConfiguration {
 
 
 		private boolean isReactiveOrMultipleInputOutput(BindableProxyFactory bindableProxyFactory, Type functionType) {
-			boolean reactiveInputsOutputs = FunctionTypeUtils.isReactive(FunctionTypeUtils.getInputType(functionType, 0)) ||
-					FunctionTypeUtils.isReactive(FunctionTypeUtils.getOutputType(functionType, 0));
+			boolean reactiveInputsOutputs = FunctionTypeUtils.isPublisher(FunctionTypeUtils.getInputType(functionType)) ||
+					FunctionTypeUtils.isPublisher(FunctionTypeUtils.getOutputType(functionType));
 			return isMultipleInputOutput(bindableProxyFactory) || reactiveInputsOutputs;
 		}
 
@@ -545,34 +545,38 @@ public class FunctionConfiguration {
 					&& ((BindableFunctionProxyFactory) bindableProxyFactory).isMultiple();
 		}
 
-		private void assertSupportedSignatures(BindableProxyFactory bindableProxyFactory, Type functionType) {
+		private boolean isArray(Type type) {
+			return type instanceof GenericArrayType || type instanceof Class && ((Class<?>) type).isArray();
+		}
+
+		private void assertSupportedSignatures(BindableProxyFactory bindableProxyFactory, FunctionInvocationWrapper function) {
 			if (this.isMultipleInputOutput(bindableProxyFactory)) {
-				Assert.isTrue(!FunctionTypeUtils.isConsumer(functionType),
+				Assert.isTrue(!function.isConsumer(),
 						"Function '" + functionProperties.getDefinition() + "' is a Consumer which is not supported "
 								+ "for multi-in/out reactive streams. Only Functions are supported");
-				Assert.isTrue(!FunctionTypeUtils.isSupplier(functionType),
+				Assert.isTrue(!function.isSupplier(),
 						"Function '" + functionProperties.getDefinition() + "' is a Supplier which is not supported "
 								+ "for multi-in/out reactive streams. Only Functions are supported");
-				Assert.isTrue(!FunctionTypeUtils.isInputArray(functionType) && !FunctionTypeUtils.isOutputArray(functionType),
+				Assert.isTrue(!this.isArray(function.getInputType()) && !this.isArray(function.getOutputType()),
 						"Function '" + functionProperties.getDefinition() + "' has the following signature: ["
-						+ functionType + "]. Your input and/or outout lacks arity and therefore we "
+						+ function.getFunctionType() + "]. Your input and/or outout lacks arity and therefore we "
 								+ "can not determine how many input/output destinations are required in the context of "
 								+ "function input/output binding.");
 
-				int inputCount = FunctionTypeUtils.getInputCount(functionType);
-				for (int i = 0; i < inputCount; i++) {
-					Assert.isTrue(FunctionTypeUtils.isReactive(FunctionTypeUtils.getInputType(functionType, i)),
-							"Function '" + functionProperties.getDefinition() + "' has the following signature: ["
-									+ functionType + "]. Non-reactive functions with multiple "
-									+ "inputs/outputs are not supported in the context of Spring Cloud Stream.");
-				}
-				int outputCount = FunctionTypeUtils.getOutputCount(functionType);
-				for (int i = 0; i < outputCount; i++) {
-					Assert.isTrue(FunctionTypeUtils.isReactive(FunctionTypeUtils.getInputType(functionType, i)),
-							"Function '" + functionProperties.getDefinition() + "' has the following signature: ["
-									+ functionType + "]. Non-reactive functions with multiple "
-									+ "inputs/outputs are not supported in the context of Spring Cloud Stream.");
-				}
+//				int inputCount = FunctionTypeUtils.getInputCount(function.getFunctionType());
+//				for (int i = 0; i < inputCount; i++) {
+//					Assert.isTrue(function.isInputTypePublisher(),
+//							"Function '" + functionProperties.getDefinition() + "' has the following signature: ["
+//									+ function.getFunctionType() + "]. Non-reactive functions with multiple "
+//									+ "inputs/outputs are not supported in the context of Spring Cloud Stream.");
+//				}
+//				int outputCount = FunctionTypeUtils.getOutputCount(function.getFunctionType());
+//				for (int i = 0; i < outputCount; i++) {
+//					Assert.isTrue(function.isOutputTypePublisher(),
+//							"Function '" + functionProperties.getDefinition() + "' has the following signature: ["
+//									+ function.getFunctionType() + "]. Non-reactive functions with multiple "
+//									+ "inputs/outputs are not supported in the context of Spring Cloud Stream.");
+//				}
 			}
 		}
 
@@ -744,11 +748,11 @@ public class FunctionConfiguration {
 			int outputCount = FunctionTypeUtils.getOutputCount(functionType);
 			if (!isSupplier && functionType instanceof ParameterizedType) {
 				Type outputType = ((ParameterizedType) functionType).getActualTypeArguments()[1];
-				if (FunctionTypeUtils.isOfType(outputType, Mono.class) && outputType instanceof ParameterizedType
-						&& FunctionTypeUtils.isOfType(((ParameterizedType) outputType).getActualTypeArguments()[0], Void.class)) {
+				if (FunctionTypeUtils.isMono(outputType) && outputType instanceof ParameterizedType
+						&& FunctionTypeUtils.getRawType(((ParameterizedType) outputType).getActualTypeArguments()[0]).equals(Void.class)) {
 					outputCount = 0;
 				}
-				else if (FunctionTypeUtils.isOfType(outputType, Void.class)) {
+				else if (FunctionTypeUtils.getRawType(outputType).equals(Void.class)) {
 					outputCount = 0;
 				}
 			}

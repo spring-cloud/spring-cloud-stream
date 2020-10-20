@@ -820,6 +820,7 @@ public class ImplicitFunctionBindingTests {
 			OutputDestination outputDestination = context.getBean(OutputDestination.class);
 
 			inputDestination.send(MessageBuilder.withPayload("hello").build());
+
 			assertThat(outputDestination.receive(1000, "output")).isNotNull();
 			assertThat(outputDestination.receive(1000, "output")).isNull();
 			assertThat(outputDestination.receive(1000, "output")).isNull();

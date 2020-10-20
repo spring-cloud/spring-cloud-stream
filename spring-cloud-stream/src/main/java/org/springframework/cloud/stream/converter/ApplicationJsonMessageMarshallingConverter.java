@@ -72,6 +72,9 @@ class ApplicationJsonMessageMarshallingConverter extends MappingJackson2MessageC
 
 	@Override
 	protected Object convertFromInternal(Message<?> message, Class<?> targetClass, @Nullable Object hint) {
+		if (message.getPayload().getClass().getName().startsWith("org.springframework.kafka.support.KafkaNull")) {
+			return null;
+		}
 		Object conversionHint = hint;
 		Object result = null;
 		if (conversionHint instanceof MethodParameter) {

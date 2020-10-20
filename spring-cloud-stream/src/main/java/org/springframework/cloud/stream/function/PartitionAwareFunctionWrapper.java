@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.function;
 
+import java.lang.reflect.Field;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -31,6 +32,7 @@ import org.springframework.expression.spel.support.StandardEvaluationContext;
 import org.springframework.integration.expression.ExpressionUtils;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
+import org.springframework.util.ReflectionUtils;
 
 /**
  * This class is effectively a wrapper which is aware of the stream related partition information
@@ -43,20 +45,27 @@ class PartitionAwareFunctionWrapper implements Function<Object, Object>, Supplie
 
 	private final FunctionInvocationWrapper function;
 
+	private final Field enhancerFiled;
+
 	@SuppressWarnings("rawtypes")
-	private final Function<Message, Message> outputMessageEnricher;
+	private final Function<Object, Message> outputMessageEnricher;
 
 	@SuppressWarnings("unchecked")
 	PartitionAwareFunctionWrapper(FunctionInvocationWrapper function, ConfigurableApplicationContext context, ProducerProperties producerProperties) {
 		this.function = function;
+		this.enhancerFiled = ReflectionUtils.findField(FunctionInvocationWrapper.class, "enhancer");
+		this.enhancerFiled.setAccessible(true);
 		if (producerProperties != null && producerProperties.isPartitioned()) {
 			StandardEvaluationContext evaluationContext = ExpressionUtils.createStandardEvaluationContext(context.getBeanFactory());
 			PartitionHandler partitionHandler = new PartitionHandler(evaluationContext, producerProperties, context.getBeanFactory());
 
-			this.outputMessageEnricher = outputMessage -> {
-				int partitionId = partitionHandler.determinePartition(outputMessage);
+			this.outputMessageEnricher = output -> {
+				if (!(output instanceof Message)) {
+					output = MessageBuilder.withPayload(output).build();
+				}
+				int partitionId = partitionHandler.determinePartition((Message<?>) output);
 				return MessageBuilder
-					.fromMessage(outputMessage)
+					.fromMessage((Message<?>) output)
 					.setHeader(BinderHeaders.PARTITION_HEADER, partitionId).build();
 			};
 		}
@@ -67,24 +76,24 @@ class PartitionAwareFunctionWrapper implements Function<Object, Object>, Supplie
 
 	@Override
 	public Object apply(Object input) {
-		if (this.outputMessageEnricher == null) { // to avoid breaking change
-			return this.function.apply(input);
-		}
-		try {
-			return this.function.apply(input, this.outputMessageEnricher);
-		}
-		catch (NoSuchMethodError e) {
-			logger.warn("Versions of spring-cloud-function older then 3.0.2.RELEASE do not support generation of partition information. "
-					+ "Output message will not contain any partition header unless spring-cloud-function dependency is 3.0.2.RELEASE or higher.");
-			return this.function.apply(input);
-		}
+		this.setEnhancerIfNecessary();
+		return this.function.apply(input);
 	}
 
 	@Override
 	public Object get() {
-		if (this.outputMessageEnricher == null) { // to avoid breaking change
-			return this.function.get();
+		this.setEnhancerIfNecessary();
+		return this.function.get();
+	}
+
+	private void setEnhancerIfNecessary() {
+		try {
+//			if (this.outputMessageEnricher == null) {
+				this.enhancerFiled.set(this.function, this.outputMessageEnricher);
+//			}
 		}
-		return this.function.get(this.outputMessageEnricher);
+		catch (Exception e) {
+			logger.warn("Failed to set the enhancer", e);
+		}
 	}
 }
