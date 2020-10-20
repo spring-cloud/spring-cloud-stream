@@ -27,6 +27,7 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import org.apache.commons.logging.Log;
 
+import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
@@ -39,6 +40,8 @@ import org.springframework.cloud.stream.provisioning.ConsumerDestination;
 import org.springframework.cloud.stream.provisioning.ProducerDestination;
 import org.springframework.cloud.stream.provisioning.ProvisioningException;
 import org.springframework.cloud.stream.provisioning.ProvisioningProvider;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.ApplicationEventPublisherAware;
@@ -406,6 +409,25 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 			}
 			consumerEndpoint = createConsumerEndpoint(destination, group, properties);
 			consumerEndpoint.setOutputChannel(inputChannel);
+			if (consumerEndpoint instanceof ApplicationContextAware) {
+				ApplicationContext applicationContext = getApplicationContext();
+				if (applicationContext != null) {
+					((ApplicationContextAware) consumerEndpoint).setApplicationContext(applicationContext);
+				}
+			}
+			if (consumerEndpoint instanceof BeanFactoryAware) {
+				BeanFactory beanFactory = getBeanFactory();
+				if (beanFactory != null) {
+					((BeanFactoryAware) consumerEndpoint).setBeanFactory(beanFactory);
+				}
+			}
+			if (consumerEndpoint instanceof ApplicationEventPublisherAware) {
+				ApplicationEventPublisher applicationEventPublisher = getApplicationEventPublisher();
+				if (applicationEventPublisher != null) {
+					((ApplicationEventPublisherAware) consumerEndpoint).setApplicationEventPublisher(applicationEventPublisher);
+				}
+
+			}
 			this.consumerCustomizer.configure(consumerEndpoint, name, group);
 			if (consumerEndpoint instanceof InitializingBean) {
 				((InitializingBean) consumerEndpoint).afterPropertiesSet();
