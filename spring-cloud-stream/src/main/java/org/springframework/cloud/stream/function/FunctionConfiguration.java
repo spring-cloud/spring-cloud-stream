@@ -22,6 +22,7 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -178,28 +179,90 @@ public class FunctionConfiguration {
 							contentTypes.add(bindingProperties.getContentType());
 						}
 
-						// obtain function wrapper with proper output content types
-						functionWrapper = functionCatalog.lookup(proxyFactory.getFunctionDefinition(), contentTypes.toArray(new String[0]));
+						// see https://github.com/spring-cloud/spring-cloud-stream/issues/2027
+						String functionDefinition = proxyFactory.getFunctionDefinition();
+						String[] functionNames = StringUtils.delimitedListToStringArray(functionDefinition.replaceAll(",", "|").trim(), "|");
+
+						Function supplier = null;
+						Function function = null;
+						if (!ObjectUtils.isEmpty(functionNames) && functionNames.length > 1) {
+							String supplierName = functionNames[0];
+							String remainingFunctionDefinition = StringUtils
+									.arrayToCommaDelimitedString(Arrays.copyOfRange(functionNames, 1, functionNames.length));
+
+							supplier = functionCatalog.lookup(supplierName);
+							function = functionCatalog.lookup(remainingFunctionDefinition, contentTypes.toArray(new String[0]));
+
+//							functionWrapper = ((FunctionInvocationWrapper) function).isInputTypePublisher()
+//													&& ((FunctionInvocationWrapper) supplier).isOutputTypePublisher()
+//									? functionCatalog.lookup(proxyFactory.getFunctionDefinition(), contentTypes.toArray(new String[0]))
+//									: null;
+							Type inputType = FunctionTypeUtils.getInputType(((FunctionInvocationWrapper) function).getFunctionType(), 0);
+							Type outputType = FunctionTypeUtils.getOutputType(((FunctionInvocationWrapper) supplier).getFunctionType(), 0);
+							if (FunctionTypeUtils.isPublisher(inputType) && !FunctionTypeUtils.isPublisher(outputType)) {
+								functionWrapper = null;
+							}
+							else {
+								functionWrapper = functionCatalog.lookup(proxyFactory.getFunctionDefinition(), contentTypes.toArray(new String[0]));
+							}
+						}
+
 						Publisher<Object> beginPublishingTrigger = setupBindingTrigger(context);
 
 						if (!functionProperties.isComposeFrom() && !functionProperties.isComposeTo()) {
 							String integrationFlowName = proxyFactory.getFunctionDefinition() + "_integrationflow";
 							PollableBean pollable = extractPollableAnnotation(functionProperties, context, proxyFactory);
 
-							Type functionType = functionWrapper.getFunctionType();
-							IntegrationFlow integrationFlow = integrationFlowFromProvidedSupplier(new PartitionAwareFunctionWrapper(functionWrapper, context, producerProperties),
-									beginPublishingTrigger, pollable, context, taskScheduler, functionType)
-									.route(Message.class, message -> {
-										if (message.getHeaders().get("spring.cloud.stream.sendto.destination") != null) {
-											String destinationName = (String) message.getHeaders().get("spring.cloud.stream.sendto.destination");
-											return streamBridge.resolveDestination(destinationName, producerProperties);
-											//return dynamicDestinationResolver.resolveDestination(destinationName);
-										}
-										return outputName;
-									}).get();
-							IntegrationFlow postProcessedFlow = (IntegrationFlow) context.getAutowireCapableBeanFactory()
-									.applyBeanPostProcessorsBeforeInitialization(integrationFlow, integrationFlowName);
-							context.registerBean(integrationFlowName, IntegrationFlow.class, () -> postProcessedFlow);
+//<<<<<<< HEAD
+//							Type functionType = functionWrapper.getFunctionType();
+//							IntegrationFlow integrationFlow = integrationFlowFromProvidedSupplier(new PartitionAwareFunctionWrapper(functionWrapper, context, producerProperties),
+//									beginPublishingTrigger, pollable, context, taskScheduler, functionType)
+//									.route(Message.class, message -> {
+//										if (message.getHeaders().get("spring.cloud.stream.sendto.destination") != null) {
+//											String destinationName = (String) message.getHeaders().get("spring.cloud.stream.sendto.destination");
+//											return streamBridge.resolveDestination(destinationName, producerProperties);
+//											//return dynamicDestinationResolver.resolveDestination(destinationName);
+//										}
+//										return outputName;
+//									}).get();
+//							IntegrationFlow postProcessedFlow = (IntegrationFlow) context.getAutowireCapableBeanFactory()
+//									.applyBeanPostProcessorsBeforeInitialization(integrationFlow, integrationFlowName);
+//							context.registerBean(integrationFlowName, IntegrationFlow.class, () -> postProcessedFlow);
+//=======
+							if (functionWrapper != null) {
+								Type functionType = functionWrapper.getFunctionType();
+								IntegrationFlow integrationFlow = integrationFlowFromProvidedSupplier(new PartitionAwareFunctionWrapper(functionWrapper, context, producerProperties),
+										beginPublishingTrigger, pollable, context, taskScheduler, functionType)
+										.route(Message.class, message -> {
+											if (message.getHeaders().get("spring.cloud.stream.sendto.destination") != null) {
+												String destinationName = (String) message.getHeaders().get("spring.cloud.stream.sendto.destination");
+												return streamBridge.resolveDestination(destinationName, producerProperties);
+											}
+											return outputName;
+										}).get();
+								IntegrationFlow postProcessedFlow = (IntegrationFlow) context.getAutowireCapableBeanFactory()
+										.applyBeanPostProcessorsBeforeInitialization(integrationFlow, integrationFlowName);
+								context.registerBean(integrationFlowName, IntegrationFlow.class, () -> postProcessedFlow);
+							}
+							else {
+								Type functionType = ((FunctionInvocationWrapper) supplier).getFunctionType();
+								IntegrationFlow integrationFlow = integrationFlowFromProvidedSupplier(new PartitionAwareFunctionWrapper((FunctionInvocationWrapper) supplier, context, producerProperties),
+										beginPublishingTrigger, pollable, context, taskScheduler, functionType)
+										.channel(c -> c.direct())
+										.fluxTransform((Function<? super Flux<Message<Object>>, ? extends Publisher<Object>>) function)
+										.route(Message.class, message -> {
+											if (message.getHeaders().get("spring.cloud.stream.sendto.destination") != null) {
+												String destinationName = (String) message.getHeaders().get("spring.cloud.stream.sendto.destination");
+												return streamBridge.resolveDestination(destinationName, producerProperties);
+											}
+											return outputName;
+										})
+										.get();
+								IntegrationFlow postProcessedFlow = (IntegrationFlow) context.getAutowireCapableBeanFactory()
+										.applyBeanPostProcessorsBeforeInitialization(integrationFlow, integrationFlowName);
+								context.registerBean(integrationFlowName, IntegrationFlow.class, () -> postProcessedFlow);
+							}
+//>>>>>>> a7d2e14e... GH-2027 Ensure imperative Supplier behavior during composition
 						}
 					}
 				}
