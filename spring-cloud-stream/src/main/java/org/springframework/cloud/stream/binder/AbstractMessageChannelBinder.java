@@ -47,6 +47,7 @@ import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.expression.Expression;
 import org.springframework.integration.channel.AbstractMessageChannel;
 import org.springframework.integration.channel.AbstractSubscribableChannel;
+import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.channel.PublishSubscribeChannel;
 import org.springframework.integration.context.IntegrationContextUtils;
 import org.springframework.integration.core.MessageProducer;
@@ -586,20 +587,24 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 			ProducerDestination destination) {
 
 		String errorChannelName = errorsBaseName(destination);
-		SubscribableChannel errorChannel;
+		SubscribableChannel errorChannel = new PublishSubscribeChannel();
+
 		if (getApplicationContext().containsBean(errorChannelName)) {
 			Object errorChannelObject = getApplicationContext().getBean(errorChannelName);
 			if (!(errorChannelObject instanceof SubscribableChannel)) {
 				throw new IllegalStateException("Error channel '" + errorChannelName
 						+ "' must be a SubscribableChannel");
 			}
-			errorChannel = (SubscribableChannel) errorChannelObject;
+			if (errorChannelObject instanceof DirectChannel) {
+				errorChannelName = "bridged." + errorChannelName;
+				BridgeHandler bridge = new BridgeHandler();
+				bridge.setOutputChannel((MessageChannel) errorChannelObject);
+				errorChannel.subscribe(bridge);
+			}
 		}
-		else {
-			errorChannel = new PublishSubscribeChannel();
-			((GenericApplicationContext) getApplicationContext()).registerBean(
-					errorChannelName, SubscribableChannel.class, () -> errorChannel);
-		}
+
+		((GenericApplicationContext) getApplicationContext()).registerBean(
+				errorChannelName, SubscribableChannel.class, () -> errorChannel);
 		MessageChannel defaultErrorChannel = null;
 		if (getApplicationContext()
 				.containsBean(IntegrationContextUtils.ERROR_CHANNEL_BEAN_NAME)) {
