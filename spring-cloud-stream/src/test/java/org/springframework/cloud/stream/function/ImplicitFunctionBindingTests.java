@@ -490,6 +490,34 @@ public class ImplicitFunctionBindingTests {
 	}
 
 	@Test
+	public void testImperativeSupplierReactiveFunctionComposition() {
+		System.clearProperty("spring.cloud.function.definition");
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+				TestChannelBinderConfiguration.getCompleteConfiguration(ImperativeSupplierComposedWithReactiveFunctionConfiguration.class))
+						.web(WebApplicationType.NONE)
+						.run("--spring.jmx.enabled=false",
+							"--spring.cloud.stream.poller.fixed-delay=1000",
+							"--spring.cloud.function.definition=supplier|functionA")) {
+
+			OutputDestination outputDestination = context.getBean(OutputDestination.class);
+
+			Message<byte[]> outputMessage = outputDestination.receive(2000);
+			Long value = Long.parseLong(new String(outputMessage.getPayload()));
+
+			outputMessage = outputDestination.receive(5000);
+			assertThat(Long.parseLong(new String(outputMessage.getPayload())) - value).isGreaterThanOrEqualTo(1000);
+
+			outputMessage = outputDestination.receive(5000);
+			assertThat(Long.parseLong(new String(outputMessage.getPayload())) - value).isGreaterThanOrEqualTo(1000);
+
+			outputMessage = outputDestination.receive(5000);
+			assertThat(Long.parseLong(new String(outputMessage.getPayload())) - value).isGreaterThanOrEqualTo(1000);
+		}
+	}
+
+
+
+	@Test
 	public void testSupplierWithCustomPollerAndMappedOutput() {
 		System.clearProperty("spring.cloud.function.definition");
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
@@ -1087,6 +1115,21 @@ public class ImplicitFunctionBindingTests {
 		public Supplier<String> supplier() {
 			return () -> "hello";
 		}
+	}
+
+	@EnableAutoConfiguration
+	public static class ImperativeSupplierComposedWithReactiveFunctionConfiguration {
+
+		@Bean
+		public Supplier<Long> supplier() {
+			return () -> System.currentTimeMillis();
+		}
+
+		@Bean
+		public Function<Flux<String>, Flux<String>> functionA() {
+			return flux -> flux;
+		}
+
 	}
 
 	@EnableAutoConfiguration(exclude = ContextFunctionCatalogAutoConfiguration.class)
