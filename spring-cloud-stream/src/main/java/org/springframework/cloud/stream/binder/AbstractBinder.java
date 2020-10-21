@@ -199,4 +199,11 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 		return rt;
 	}
 
+	protected void applyBeanPostProcessors(Object target, String name) {
+		ApplicationContext applicationContext = getApplicationContext();
+		if (applicationContext != null) {
+			applicationContext.getAutowireCapableBeanFactory()
+				.applyBeanPostProcessorsBeforeInitialization(target, name);
+		}
+	}
 }
