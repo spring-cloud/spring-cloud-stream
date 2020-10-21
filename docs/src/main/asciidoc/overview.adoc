@@ -220,7 +220,7 @@ Default: null (equivalent to `earliest`).
 enableDlq::
 When set to true, it enables DLQ behavior for the consumer.
 By default, messages that result in errors are forwarded to a topic named `error.<destination>.<group>`.
-The DLQ topic name can be configurable by setting the `dlqName` property.
+The DLQ topic name can be configurable by setting the `dlqName` property or by defining a `@Bean` of type `DlqDestinationResolver`.
 This provides an alternative option to the more common Kafka replay scenario for the case when the number of errors is relatively small and replaying the entire original topic may be too cumbersome.
 See <<kafka-dlq-processing>> processing for more information.
 Starting with version 2.0, messages sent to the DLQ topic are enhanced with the following headers: `x-original-topic`, `x-exception-message`, and `x-exception-stacktrace` as `byte[]`.

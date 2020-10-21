@@ -93,6 +93,7 @@ import org.springframework.cloud.stream.binder.kafka.properties.KafkaBinderConfi
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaConsumerProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaProducerProperties;
 import org.springframework.cloud.stream.binder.kafka.provisioning.KafkaTopicProvisioner;
+import org.springframework.cloud.stream.binder.kafka.utils.DlqDestinationResolver;
 import org.springframework.cloud.stream.binder.kafka.utils.DlqPartitionFunction;
 import org.springframework.cloud.stream.binder.kafka.utils.KafkaTopicUtils;
 import org.springframework.cloud.stream.binding.MessageConverterConfigurer.PartitioningInterceptor;
@@ -223,12 +224,12 @@ public class KafkaBinderTests extends
 	private KafkaTestBinder getBinder(
 			KafkaBinderConfigurationProperties kafkaBinderConfigurationProperties) {
 
-		return getBinder(kafkaBinderConfigurationProperties, null);
+		return getBinder(kafkaBinderConfigurationProperties, null, null);
 	}
 
 	private KafkaTestBinder getBinder(
 			KafkaBinderConfigurationProperties kafkaBinderConfigurationProperties,
-			DlqPartitionFunction dlqPartitionFunction) {
+			DlqPartitionFunction dlqPartitionFunction, DlqDestinationResolver dlqDestinationResolver) {
 
 		KafkaTopicProvisioner provisioningProvider = new KafkaTopicProvisioner(
 				kafkaBinderConfigurationProperties, new TestKafkaProperties());
@@ -239,7 +240,7 @@ public class KafkaBinderTests extends
 			throw new RuntimeException(e);
 		}
 		return new KafkaTestBinder(kafkaBinderConfigurationProperties,
-				provisioningProvider, dlqPartitionFunction);
+				provisioningProvider, dlqPartitionFunction, dlqDestinationResolver);
 	}
 
 	private KafkaBinderConfigurationProperties createConfigurationProperties() {
@@ -939,40 +940,41 @@ public class KafkaBinderTests extends
 
 	@Test
 	public void testDlqAndRetry() throws Exception {
-		testDlqGuts(true, null, null);
+		testDlqGuts(true, null, null, false, false);
 	}
 
 	@Test
 	public void testDlqAndRetryTransactional() throws Exception {
-		testDlqGuts(true, null, null, true);
+		testDlqGuts(true, null, null, true, false);
 	}
 
 	@Test
 	public void testDlq() throws Exception {
-		testDlqGuts(false, null, 3);
+		testDlqGuts(false, null, 3, false, false);
+	}
+
+	@Test
+	public void testDlqWithDlqDestinationResolver() throws Exception {
+		testDlqGuts(false, null, 3, false, true);
 	}
 
 	@Test
 	public void testDlqTransactional() throws Exception {
-		testDlqGuts(false, null, 3, true);
+		testDlqGuts(false, null, 3, true, false);
 	}
 
 	@Test
 	public void testDlqNone() throws Exception {
-		testDlqGuts(false, HeaderMode.none, 1);
+		testDlqGuts(false, HeaderMode.none, 1, false, false);
 	}
 
 	@Test
 	public void testDlqEmbedded() throws Exception {
-		testDlqGuts(false, HeaderMode.embeddedHeaders, 3);
-	}
-
-	private void testDlqGuts(boolean withRetry, HeaderMode headerMode, Integer dlqPartitions) throws Exception {
-		testDlqGuts(withRetry, headerMode, dlqPartitions, false);
+		testDlqGuts(false, HeaderMode.embeddedHeaders, 3, false, false);
 	}
 
 	private void testDlqGuts(boolean withRetry, HeaderMode headerMode, Integer dlqPartitions,
-			boolean transactional) throws Exception {
+			boolean transactional, boolean useDlqDestResolver) throws Exception {
 
 		int expectedDlqPartition = dlqPartitions == null ? 0 : dlqPartitions - 1;
 		KafkaBinderConfigurationProperties binderConfig = createConfigurationProperties();
@@ -991,7 +993,11 @@ public class KafkaBinderTests extends
 		else {
 			dlqPartitionFunction = (group, rec, ex) -> dlqPartitions - 1;
 		}
-		AbstractKafkaTestBinder binder = getBinder(binderConfig, dlqPartitionFunction);
+		DlqDestinationResolver dlqDestinationResolver = null;
+		if (useDlqDestResolver) {
+			dlqDestinationResolver = (cr, e) -> "foo.dlq";
+		}
+		AbstractKafkaTestBinder binder = getBinder(binderConfig, dlqPartitionFunction, dlqDestinationResolver);
 
 		ExtendedProducerProperties<KafkaProducerProperties> producerProperties = createProducerProperties();
 		producerProperties.getExtension()
@@ -1034,10 +1040,16 @@ public class KafkaBinderTests extends
 		assertThat(container.getContainerProperties().getTopicPartitionsToAssign().length)
 				.isEqualTo(4); // 2 topics 2 partitions each
 
+		String dlqTopic = useDlqDestResolver ? "foo.dlq" : "error.dlqTest." + uniqueBindingId + ".0.testGroup";
 		try (AdminClient admin = AdminClient.create(Collections.singletonMap(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG,
 				embeddedKafka.getEmbeddedKafka().getBrokersAsString()))) {
-
-			Map<String, TopicDescription> topicDescriptions = admin.describeTopics(Collections.singletonList("error.dlqTest." + uniqueBindingId + ".0.testGroup"))
+			if (useDlqDestResolver) {
+				List<NewTopic> nonProvisionedDlqTopics = new ArrayList<>();
+				NewTopic nTopic = new NewTopic(dlqTopic, 3, (short) 1);
+				nonProvisionedDlqTopics.add(nTopic);
+				admin.createTopics(nonProvisionedDlqTopics);
+			}
+			Map<String, TopicDescription> topicDescriptions = admin.describeTopics(Collections.singletonList(dlqTopic))
 				.all()
 				.get(10, TimeUnit.SECONDS);
 			assertThat(topicDescriptions).hasSize(1);
@@ -1069,7 +1081,7 @@ public class KafkaBinderTests extends
 		globalErrorChannel.subscribe(globalErrorChannelMessage::set);
 
 		Binding<MessageChannel> dlqConsumerBinding = binder.bindConsumer(
-				"error.dlqTest." + uniqueBindingId + ".0.testGroup", null, dlqChannel,
+				dlqTopic, null, dlqChannel,
 				dlqConsumerProperties);
 		binderBindUnbindLatency();
 		String testMessagePayload = "test." + UUID.randomUUID().toString();

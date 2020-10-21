@@ -832,13 +832,41 @@ When the above property is set, all the records in deserialization error are aut
 
 You can set the topic name where the DLQ messages are published as below.
 
+You can provide an implementation for `DlqDestinationResolver` which is a functional interface.
+`DlqDestinationResolver` takes `ConsumerRecord` and the exception as inputs and then allows to specify a topic name as the output.
+By gaining access to the Kafka `ConsumerRecord`, the header records can be introspected in the implementation of the `BiFunction`.
+
+Here is an example of providing an implementation for `DlqDestinationResolver`.
+
+[source]
+----
+@Bean
+public DlqDestinationResolver dlqDestinationResolver() {
+    return (rec, ex) -> {
+        if (rec.topic().equals("word1")) {
+            return "topic1-dlq";
+        }
+        else {
+            return "topic2-dlq";
+        }
+    };
+}
+----
+
+One important thing to keep in mind when providing an implementation for `DlqDestinationResolver` is that the provisioner in the binder will not auto create topics for the application.
+This is because there is no way for the binder to infer the names of all the DLQ topics the implementation might send to.
+Therefore, if you provide DLQ names using this strategy, it is the application's responsibility to ensure that those topics are created beforehand.
+
+If `DlqDestinationResolver` is present in the application as a bean, that takes higher prcedence.
+If you do not want to follow this approach and rather provide a static DLQ name using configuration, you can set the following property.
+
 [source]
 ----
 spring.cloud.stream.kafka.streams.bindings.process-in-0.consumer.dlqName: custom-dlq (Change the binding name accordingly)
 ----
 
 If this is set, then the error records are sent to the topic `custom-dlq`.
-If this is not set, then it will create a DLQ topic with the name `error.<input-topic-name>.<application-id>`.
+If the application is not using either of the above strategies, then it will create a DLQ topic with the name `error.<input-topic-name>.<application-id>`.
 For instance, if your binding's destination topic is `inputTopic` and the application ID is `process-applicationId`, then the default DLQ topic is `error.inputTopic.process-applicationId`.
 It is always recommended to explicitly create a DLQ topic for each input binding if it is your intention to enable DLQ.
 

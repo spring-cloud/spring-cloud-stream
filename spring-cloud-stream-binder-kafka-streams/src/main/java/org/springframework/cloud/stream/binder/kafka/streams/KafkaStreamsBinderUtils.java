@@ -36,10 +36,12 @@ import org.springframework.cloud.stream.binder.kafka.properties.KafkaProducerPro
 import org.springframework.cloud.stream.binder.kafka.provisioning.KafkaTopicProvisioner;
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsBinderConfigurationProperties;
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsConsumerProperties;
+import org.springframework.cloud.stream.binder.kafka.utils.DlqDestinationResolver;
 import org.springframework.cloud.stream.binder.kafka.utils.DlqPartitionFunction;
 import org.springframework.context.ApplicationContext;
 import org.springframework.core.MethodParameter;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
+import org.springframework.kafka.core.KafkaOperations;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
 import org.springframework.kafka.listener.DeadLetterPublishingRecoverer;
@@ -100,25 +102,29 @@ final class KafkaStreamsBinderUtils {
 					new ExtendedProducerProperties<>(
 							extendedConsumerProperties.getExtension().getDlqProducerProperties()),
 					binderConfigurationProperties);
-			KafkaTemplate<byte[], byte[]> kafkaTemplate = new KafkaTemplate<>(producerFactory);
+			KafkaOperations<byte[], byte[]> kafkaTemplate = new KafkaTemplate<>(producerFactory);
 
+			Map<String, DlqDestinationResolver> dlqDestinationResolvers =
+					context.getBeansOfType(DlqDestinationResolver.class, false, false);
 
 			BiFunction<ConsumerRecord<?, ?>, Exception, TopicPartition> destinationResolver =
-					(cr, e) -> new TopicPartition(extendedConsumerProperties.getExtension().getDlqName(),
-							partitionFunction.apply(group, cr, e));
-			DeadLetterPublishingRecoverer kafkaStreamsBinderDlqRecoverer = !StringUtils
+					dlqDestinationResolvers.isEmpty() ? (cr, e) -> new TopicPartition(extendedConsumerProperties.getExtension().getDlqName(),
+							partitionFunction.apply(group, cr, e)) :
+							(cr, e) -> new TopicPartition(dlqDestinationResolvers.values().iterator().next().apply(cr, e),
+									partitionFunction.apply(group, cr, e));
+
+			DeadLetterPublishingRecoverer kafkaStreamsBinderDlqRecoverer = !dlqDestinationResolvers.isEmpty() || !StringUtils
 					.isEmpty(extendedConsumerProperties.getExtension().getDlqName())
 					? new DeadLetterPublishingRecoverer(kafkaTemplate, destinationResolver)
 					: null;
 			for (String inputTopic : inputTopics) {
 				if (StringUtils.isEmpty(
-						extendedConsumerProperties.getExtension().getDlqName())) {
+						extendedConsumerProperties.getExtension().getDlqName()) && dlqDestinationResolvers.isEmpty()) {
 					destinationResolver = (cr, e) -> new TopicPartition("error." + inputTopic + "." + group,
 									partitionFunction.apply(group, cr, e));
 					kafkaStreamsBinderDlqRecoverer = new DeadLetterPublishingRecoverer(kafkaTemplate,
 							destinationResolver);
 				}
-
 				SendToDlqAndContinue sendToDlqAndContinue = context
 						.getBean(SendToDlqAndContinue.class);
 				sendToDlqAndContinue.addKStreamDlqDispatch(inputTopic,

@@ -20,6 +20,7 @@ import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaBinderConfigurationProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaConsumerProperties;
 import org.springframework.cloud.stream.binder.kafka.provisioning.KafkaTopicProvisioner;
+import org.springframework.cloud.stream.binder.kafka.utils.DlqDestinationResolver;
 import org.springframework.cloud.stream.binder.kafka.utils.DlqPartitionFunction;
 import org.springframework.cloud.stream.provisioning.ConsumerDestination;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
@@ -42,16 +43,17 @@ public class KafkaTestBinder extends AbstractKafkaTestBinder {
 	KafkaTestBinder(KafkaBinderConfigurationProperties binderConfiguration,
 			KafkaTopicProvisioner kafkaTopicProvisioner) {
 
-		this(binderConfiguration, kafkaTopicProvisioner, null);
+		this(binderConfiguration, kafkaTopicProvisioner, null, null);
 	}
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	KafkaTestBinder(KafkaBinderConfigurationProperties binderConfiguration,
-			KafkaTopicProvisioner kafkaTopicProvisioner, DlqPartitionFunction dlqPartitionFunction) {
+					KafkaTopicProvisioner kafkaTopicProvisioner, DlqPartitionFunction dlqPartitionFunction,
+					DlqDestinationResolver dlqDestinationResolver) {
 
 		try {
 			KafkaMessageChannelBinder binder = new KafkaMessageChannelBinder(
-					binderConfiguration, kafkaTopicProvisioner, null, null, null, dlqPartitionFunction) {
+					binderConfiguration, kafkaTopicProvisioner, null, null, null, dlqPartitionFunction, dlqDestinationResolver) {
 
 				/*
 				 * Some tests use multiple instance indexes for the same topic; we need to

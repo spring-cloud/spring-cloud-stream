@@ -39,6 +39,7 @@ import org.springframework.cloud.stream.binder.kafka.properties.JaasLoginModuleC
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaBinderConfigurationProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaExtendedBindingProperties;
 import org.springframework.cloud.stream.binder.kafka.provisioning.KafkaTopicProvisioner;
+import org.springframework.cloud.stream.binder.kafka.utils.DlqDestinationResolver;
 import org.springframework.cloud.stream.binder.kafka.utils.DlqPartitionFunction;
 import org.springframework.cloud.stream.config.ConsumerEndpointCustomizer;
 import org.springframework.cloud.stream.config.ListenerContainerCustomizer;
@@ -118,6 +119,7 @@ public class KafkaBinderConfiguration {
 			@Nullable ConsumerEndpointCustomizer<KafkaMessageDrivenChannelAdapter<?, ?>> consumerCustomizer,
 			ObjectProvider<KafkaBindingRebalanceListener> rebalanceListener,
 			ObjectProvider<DlqPartitionFunction> dlqPartitionFunction,
+			ObjectProvider<DlqDestinationResolver> dlqDestinationResolver,
 			ObjectProvider<ClientFactoryCustomizer> clientFactoryCustomizer,
 			ObjectProvider<ConsumerConfigCustomizer> consumerConfigCustomizer,
 			ObjectProvider<ProducerConfigCustomizer> producerConfigCustomizer
@@ -126,7 +128,7 @@ public class KafkaBinderConfiguration {
 		KafkaMessageChannelBinder kafkaMessageChannelBinder = new KafkaMessageChannelBinder(
 				configurationProperties, provisioningProvider,
 				listenerContainerCustomizer, sourceCustomizer, rebalanceListener.getIfUnique(),
-				dlqPartitionFunction.getIfUnique());
+				dlqPartitionFunction.getIfUnique(), dlqDestinationResolver.getIfUnique());
 		kafkaMessageChannelBinder.setProducerListener(this.producerListener);
 		kafkaMessageChannelBinder
 				.setExtendedBindingProperties(this.kafkaExtendedBindingProperties);
