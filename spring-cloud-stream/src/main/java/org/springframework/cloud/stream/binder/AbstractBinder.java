@@ -24,6 +24,7 @@ import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.cloud.stream.annotation.StreamRetryTemplate;
 import org.springframework.context.ApplicationContext;
@@ -199,11 +200,17 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 		return rt;
 	}
 
-	protected void applyBeanPostProcessors(Object target, String name) {
+	/**
+	 * Apply {@link AutowireCapableBeanFactory#initializeBean(Object, String) initializeBean} to the
+	 * {@code target} with the empty string {@code ""} as the {@code beanName} parameter.
+	 * @param target the {@code Object} to initialize
+	 * @see AutowireCapableBeanFactory#initializeBean(Object, String)
+	 */
+	protected void applyInitializeBean(Object target) {
 		ApplicationContext applicationContext = getApplicationContext();
 		if (applicationContext != null) {
 			applicationContext.getAutowireCapableBeanFactory()
-				.applyBeanPostProcessorsBeforeInitialization(target, name);
+				.initializeBean(target, "");
 		}
 	}
 }
