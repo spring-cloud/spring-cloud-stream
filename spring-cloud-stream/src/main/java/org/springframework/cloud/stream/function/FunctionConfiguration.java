@@ -171,6 +171,7 @@ public class FunctionConfiguration {
 
 		return new InitializingBean() {
 
+			@SuppressWarnings("rawtypes")
 			@Override
 			public void afterPropertiesSet() throws Exception {
 				for (BindableFunctionProxyFactory proxyFactory : proxyFactories) {
@@ -199,12 +200,18 @@ public class FunctionConfiguration {
 									.arrayToCommaDelimitedString(Arrays.copyOfRange(functionNames, 1, functionNames.length));
 
 							supplier = functionCatalog.lookup(supplierName);
-							function = functionCatalog.lookup(remainingFunctionDefinition);
+							function = functionCatalog.lookup(remainingFunctionDefinition, contentTypes.toArray(new String[0]));
 
-							functionWrapper = ((FunctionInvocationWrapper) function).isInputTypePublisher()
-													&& ((FunctionInvocationWrapper) supplier).isOutputTypePublisher()
-									? functionCatalog.lookup(proxyFactory.getFunctionDefinition(), contentTypes.toArray(new String[0]))
-									: null;
+							if (!((FunctionInvocationWrapper) supplier).isOutputTypePublisher() &&
+									((FunctionInvocationWrapper) function).isInputTypePublisher()) {
+								functionWrapper = null;
+							}
+							else {
+								functionWrapper = functionCatalog.lookup(proxyFactory.getFunctionDefinition(), contentTypes.toArray(new String[0]));
+							}
+						}
+						else {
+							functionWrapper = functionCatalog.lookup(proxyFactory.getFunctionDefinition(), contentTypes.toArray(new String[0]));
 						}
 
 						Publisher<Object> beginPublishingTrigger = setupBindingTrigger(context);
