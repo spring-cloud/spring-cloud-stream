@@ -163,6 +163,7 @@ public class FunctionConfiguration {
 
 		return new InitializingBean() {
 
+			@SuppressWarnings({ "rawtypes", "unchecked" })
 			@Override
 			public void afterPropertiesSet() throws Exception {
 				for (BindableFunctionProxyFactory proxyFactory : proxyFactories) {
@@ -193,10 +194,6 @@ public class FunctionConfiguration {
 							supplier = functionCatalog.lookup(supplierName);
 							function = functionCatalog.lookup(remainingFunctionDefinition, contentTypes.toArray(new String[0]));
 
-//							functionWrapper = ((FunctionInvocationWrapper) function).isInputTypePublisher()
-//													&& ((FunctionInvocationWrapper) supplier).isOutputTypePublisher()
-//									? functionCatalog.lookup(proxyFactory.getFunctionDefinition(), contentTypes.toArray(new String[0]))
-//									: null;
 							Type inputType = FunctionTypeUtils.getInputType(((FunctionInvocationWrapper) function).getFunctionType(), 0);
 							Type outputType = FunctionTypeUtils.getOutputType(((FunctionInvocationWrapper) supplier).getFunctionType(), 0);
 							if (FunctionTypeUtils.isPublisher(inputType) && !FunctionTypeUtils.isPublisher(outputType)) {
@@ -206,6 +203,9 @@ public class FunctionConfiguration {
 								functionWrapper = functionCatalog.lookup(proxyFactory.getFunctionDefinition(), contentTypes.toArray(new String[0]));
 							}
 						}
+						else {
+							functionWrapper = functionCatalog.lookup(proxyFactory.getFunctionDefinition(), contentTypes.toArray(new String[0]));
+						}
 
 						Publisher<Object> beginPublishingTrigger = setupBindingTrigger(context);
 
@@ -213,22 +213,6 @@ public class FunctionConfiguration {
 							String integrationFlowName = proxyFactory.getFunctionDefinition() + "_integrationflow";
 							PollableBean pollable = extractPollableAnnotation(functionProperties, context, proxyFactory);
 
-//<<<<<<< HEAD
-//							Type functionType = functionWrapper.getFunctionType();
-//							IntegrationFlow integrationFlow = integrationFlowFromProvidedSupplier(new PartitionAwareFunctionWrapper(functionWrapper, context, producerProperties),
-//									beginPublishingTrigger, pollable, context, taskScheduler, functionType)
-//									.route(Message.class, message -> {
-//										if (message.getHeaders().get("spring.cloud.stream.sendto.destination") != null) {
-//											String destinationName = (String) message.getHeaders().get("spring.cloud.stream.sendto.destination");
-//											return streamBridge.resolveDestination(destinationName, producerProperties);
-//											//return dynamicDestinationResolver.resolveDestination(destinationName);
-//										}
-//										return outputName;
-//									}).get();
-//							IntegrationFlow postProcessedFlow = (IntegrationFlow) context.getAutowireCapableBeanFactory()
-//									.applyBeanPostProcessorsBeforeInitialization(integrationFlow, integrationFlowName);
-//							context.registerBean(integrationFlowName, IntegrationFlow.class, () -> postProcessedFlow);
-//=======
 							if (functionWrapper != null) {
 								Type functionType = functionWrapper.getFunctionType();
 								IntegrationFlow integrationFlow = integrationFlowFromProvidedSupplier(new PartitionAwareFunctionWrapper(functionWrapper, context, producerProperties),
@@ -262,7 +246,6 @@ public class FunctionConfiguration {
 										.applyBeanPostProcessorsBeforeInitialization(integrationFlow, integrationFlowName);
 								context.registerBean(integrationFlowName, IntegrationFlow.class, () -> postProcessedFlow);
 							}
-//>>>>>>> a7d2e14e... GH-2027 Ensure imperative Supplier behavior during composition
 						}
 					}
 				}
