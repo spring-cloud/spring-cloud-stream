@@ -225,7 +225,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 			producerMessageHandler = createProducerMessageHandler(producerDestination,
 					producerProperties, outputChannel, errorChannel);
 			customizeProducerMessageHandler(producerMessageHandler, producerDestination.getName());
-			applyInitializeBean(producerMessageHandler);
+			applyInitializeBean(producerMessageHandler, "producer." + destination);
 		}
 		catch (Exception e) {
 			if (e instanceof BinderException) {
@@ -405,7 +405,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 			consumerEndpoint = createConsumerEndpoint(destination, group, properties);
 			consumerEndpoint.setOutputChannel(inputChannel);
 			this.consumerCustomizer.configure(consumerEndpoint, name, group);
-			applyInitializeBean(consumerEndpoint);
+			applyInitializeBean(consumerEndpoint, "consumer." + groupedName(name, group));
 			if (properties.isAutoStartup() && consumerEndpoint instanceof Lifecycle) {
 				((Lifecycle) consumerEndpoint).start();
 			}

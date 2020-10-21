@@ -202,15 +202,16 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 
 	/**
 	 * Apply {@link AutowireCapableBeanFactory#initializeBean(Object, String) initializeBean} to the
-	 * {@code target} with the empty string {@code ""} as the {@code beanName} parameter.
+	 * {@code target}.
 	 * @param target the {@code Object} to initialize
+	 * @param name the name to provide
 	 * @see AutowireCapableBeanFactory#initializeBean(Object, String)
 	 */
-	protected void applyInitializeBean(Object target) {
+	protected void applyInitializeBean(Object target, String name) {
 		ApplicationContext applicationContext = getApplicationContext();
 		if (applicationContext != null) {
 			applicationContext.getAutowireCapableBeanFactory()
-				.initializeBean(target, "");
+				.initializeBean(target, name);
 		}
 	}
 }
