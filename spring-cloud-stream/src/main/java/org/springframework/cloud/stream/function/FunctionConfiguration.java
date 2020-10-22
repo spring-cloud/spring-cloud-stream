@@ -738,7 +738,7 @@ public class FunctionConfiguration {
 				BeanDefinitionRegistry registry = (BeanDefinitionRegistry) applicationContext.getBeanFactory();
 
 				if (StringUtils.hasText(streamFunctionProperties.getDefinition())) {
-					String[] functionDefinitions = streamFunctionProperties.getDefinition().split(";");
+					String[] functionDefinitions = this.filterEligibleFunctionDefinitions();
 					for (String functionDefinition : functionDefinitions) {
 						RootBeanDefinition functionBindableProxyDefinition = new RootBeanDefinition(BindableFunctionProxyFactory.class);
 						FunctionInvocationWrapper function = functionCatalog.lookup(functionDefinition);
@@ -790,6 +790,16 @@ public class FunctionConfiguration {
 			}
 		}
 
+		@Override
+		public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+			this.applicationContext = (ConfigurableApplicationContext) applicationContext;
+		}
+
+		@Override
+		public void setEnvironment(Environment environment) {
+			this.environment = environment;
+		}
+
 		private int getOutputCount(Type functionType, boolean isSupplier) {
 			int outputCount = FunctionTypeUtils.getOutputCount(functionType);
 			if (!isSupplier && functionType instanceof ParameterizedType) {
@@ -824,14 +834,31 @@ public class FunctionConfiguration {
 			return StringUtils.hasText(streamFunctionProperties.getDefinition());
 		}
 
-		@Override
-		public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-			this.applicationContext = (ConfigurableApplicationContext) applicationContext;
+		/*
+		 * This is to accommodate Kafka streams binder, since it does not rely on binding mechanism provided by s-c-stream core.
+		 * So we basically filter out any function name who's type contains KTable or KStream.
+		 */
+		private String[] filterEligibleFunctionDefinitions() {
+			List<String> eligibleFunctionDefinitions = new ArrayList<>();
+			String[] functionDefinitions = streamFunctionProperties.getDefinition().split(";");
+			for (String functionDefinition : functionDefinitions) {
+				String[] functionNames = StringUtils.delimitedListToStringArray(functionDefinition.replaceAll(",", "|").trim(), "|");
+				boolean eligibleDefinition = true;
+				for (int i = 0; i < functionNames.length && eligibleDefinition; i++) {
+					String functionName = functionNames[i];
+					Object functionBean = this.applicationContext.getBean(functionName);
+					Type functionType = FunctionTypeUtils.discoverFunctionType(functionBean, functionName, (GenericApplicationContext) this.applicationContext);
+					String functionTypeStringValue = functionType.toString();
+					if (functionTypeStringValue.contains("KTable") || functionTypeStringValue.contains("KStream")) {
+						eligibleDefinition = false;
+					}
+				}
+				if (eligibleDefinition) {
+					eligibleFunctionDefinitions.add(functionDefinition);
+				}
+			}
+			return eligibleFunctionDefinitions.toArray(new String[0]);
 		}
 
-		@Override
-		public void setEnvironment(Environment environment) {
-			this.environment = environment;
-		}
 	}
 }
