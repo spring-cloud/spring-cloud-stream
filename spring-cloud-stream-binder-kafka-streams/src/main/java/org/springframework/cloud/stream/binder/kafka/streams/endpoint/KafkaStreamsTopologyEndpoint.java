@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.binder.kafka.streams.endpoint;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.boot.actuate.endpoint.annotation.Endpoint;
@@ -46,13 +47,14 @@ public class KafkaStreamsTopologyEndpoint {
 	}
 
 	@ReadOperation
-	public String kafkaStreamsTopology() {
+	public List<String> kafkaStreamsTopologies() {
 		final List<StreamsBuilderFactoryBean> streamsBuilderFactoryBeans = this.kafkaStreamsRegistry.streamsBuilderFactoryBeans();
 		final StringBuilder topologyDescription = new StringBuilder();
+		final List<String> descs = new ArrayList<>();
 		streamsBuilderFactoryBeans.stream()
 				.forEach(streamsBuilderFactoryBean ->
-						topologyDescription.append(streamsBuilderFactoryBean.getTopology().describe().toString()));
-		return topologyDescription.toString();
+						descs.add(streamsBuilderFactoryBean.getTopology().describe().toString()));
+		return descs;
 	}
 
 	@ReadOperation

@@ -1468,7 +1468,7 @@ Kafka Streams binder provides the following actuator endpoints for retrieving th
 
 `/actuator/kafkastreamstopology`
 
-`/actuator/kafkastreamstopology/<applicaiton-id of the processor>`
+`/actuator/kafkastreamstopology/<application-id of the processor>`
 
 You need to include the actuator and web dependencies from Spring Boot to access these endpoints.
 Further, you also need to add `kafkastreamstopology` to `management.endpoints.web.exposure.include` property.

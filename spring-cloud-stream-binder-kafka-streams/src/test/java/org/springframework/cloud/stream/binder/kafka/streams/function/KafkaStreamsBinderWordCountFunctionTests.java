@@ -18,6 +18,7 @@ package org.springframework.cloud.stream.binder.kafka.streams.function;
 
 import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -112,7 +113,8 @@ public class KafkaStreamsBinderWordCountFunctionTests {
 			//Testing topology endpoint
 			final KafkaStreamsRegistry kafkaStreamsRegistry = context.getBean(KafkaStreamsRegistry.class);
 			final KafkaStreamsTopologyEndpoint kafkaStreamsTopologyEndpoint = new KafkaStreamsTopologyEndpoint(kafkaStreamsRegistry);
-			final String topology1 = kafkaStreamsTopologyEndpoint.kafkaStreamsTopology();
+			final List<String> topologies = kafkaStreamsTopologyEndpoint.kafkaStreamsTopologies();
+			final String topology1 = topologies.get(0);
 			final String topology2 = kafkaStreamsTopologyEndpoint.kafkaStreamsTopology("testKstreamWordCountFunction");
 			assertThat(topology1).isNotEmpty();
 			assertThat(topology1).isEqualTo(topology2);
