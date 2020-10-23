@@ -870,6 +870,81 @@ public class ImplicitFunctionBindingTests {
 		}
 	}
 
+	@SuppressWarnings("rawtypes")
+	@Test
+	public void testWithNativeEncodingImperative() {
+		System.clearProperty("spring.cloud.function.definition");
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+				TestChannelBinderConfiguration.getCompleteConfiguration(SingleFunctionConfiguration2.class))
+						.web(WebApplicationType.NONE).run("--spring.jmx.enabled=false",
+								"--spring.cloud.function.definition=imperative")) {
+
+			InputDestination inputDestination = context.getBean(InputDestination.class);
+			inputDestination.send(new GenericMessage<byte[]>("hello".getBytes()));
+
+			OutputDestination outputDestination = context.getBean(OutputDestination.class);
+
+			Message result = outputDestination.receive(2000);
+			assertThat(result.getPayload()).isInstanceOf(byte[].class); // check output type
+			assertThat(new String((byte[]) result.getPayload())).isEqualTo("String"); // check input type
+		}
+
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+				TestChannelBinderConfiguration.getCompleteConfiguration(SingleFunctionConfiguration2.class))
+						.web(WebApplicationType.NONE).run("--spring.jmx.enabled=false",
+								"--spring.cloud.function.definition=imperative",
+								"--spring.cloud.stream.bindings.imperative-in-0.consumer.useNativeDecoding=true",
+								"--spring.cloud.stream.bindings.imperative-out-0.producer.useNativeEncoding=true"
+								)) {
+
+			InputDestination inputDestination = context.getBean(InputDestination.class);
+			inputDestination.send(new GenericMessage<byte[]>("hello".getBytes()));
+
+			OutputDestination outputDestination = context.getBean(OutputDestination.class);
+
+			Message result = outputDestination.receive(2000);
+			assertThat(result.getPayload()).isInstanceOf(String.class); // check output type
+			assertThat(result.getPayload()).isEqualTo("byte[]"); // check input type
+		}
+	}
+
+	@SuppressWarnings("rawtypes")
+	@Test
+	public void testWithNativeEncodingReactive() {
+		System.clearProperty("spring.cloud.function.definition");
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+				TestChannelBinderConfiguration.getCompleteConfiguration(SingleFunctionConfiguration2.class))
+						.web(WebApplicationType.NONE).run("--spring.jmx.enabled=false",
+								"--spring.cloud.function.definition=reactive")) {
+
+			InputDestination inputDestination = context.getBean(InputDestination.class);
+			inputDestination.send(new GenericMessage<byte[]>("hello".getBytes()));
+
+			OutputDestination outputDestination = context.getBean(OutputDestination.class);
+
+			Message result = outputDestination.receive(2000);
+			assertThat(result.getPayload()).isInstanceOf(byte[].class); // check output type
+			assertThat(new String((byte[]) result.getPayload())).isEqualTo("String"); // check input type
+		}
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+				TestChannelBinderConfiguration.getCompleteConfiguration(SingleFunctionConfiguration2.class))
+						.web(WebApplicationType.NONE).run("--spring.jmx.enabled=false",
+								"--spring.cloud.function.definition=reactive",
+								"--spring.cloud.stream.bindings.reactive-in-0.consumer.useNativeDecoding=true",
+								"--spring.cloud.stream.bindings.reactive-out-0.producer.useNativeEncoding=true")) {
+
+			InputDestination inputDestination = context.getBean(InputDestination.class);
+			inputDestination.send(new GenericMessage<byte[]>("hello".getBytes()));
+
+			OutputDestination outputDestination = context.getBean(OutputDestination.class);
+
+			Message result = outputDestination.receive(2000);
+			assertThat(result.getPayload()).isInstanceOf(String.class); // no output conversion to byte[] has happened.
+			assertThat(result.getPayload()).isEqualTo("byte[]");
+		}
+	}
+
+
 	@EnableAutoConfiguration
 	public static class SupplierAndPojoConfiguration {
 		@Bean
@@ -938,6 +1013,24 @@ public class ImplicitFunctionBindingTests {
 			return x -> {
 				System.out.println("Consumer");
 			};
+		}
+	}
+
+	@EnableAutoConfiguration
+	public static class SingleFunctionConfiguration2 {
+
+		@Bean
+		public Function<Object, String> imperative() {
+			return x -> {
+				return x.getClass().getSimpleName();
+			};
+		}
+
+		@Bean
+		public Function<Flux<Object>, Flux<String>> reactive() {
+			return flux -> flux.map(x -> {
+				return x.getClass().getSimpleName();
+			});
 		}
 	}
 
