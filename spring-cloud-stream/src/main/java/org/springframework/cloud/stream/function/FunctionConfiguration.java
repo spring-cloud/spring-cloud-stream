@@ -28,7 +28,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -97,7 +96,6 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.SubscribableChannel;
-import org.springframework.messaging.support.GenericMessage;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
@@ -446,16 +444,12 @@ public class FunctionConfiguration {
 					resultPublishers = Collections.singletonList(resultPublishers);
 				}
 				Iterator<String> outputBindingIter = outputBindingNames.iterator();
-				AtomicInteger index = new AtomicInteger();
+
 				((Iterable) resultPublishers).forEach(publisher -> {
 					Flux flux = Flux.from((Publisher) publisher);
 					if (!CollectionUtils.isEmpty(outputBindingNames)) {
-						final String outputDestinationName = outputBindingIter.next();
-						this.adjustFunctionForNativeEncodingIfNecessary(outputDestinationName, function, index.getAndIncrement());
-						MessageChannel outputChannel = this.applicationContext.getBean(outputDestinationName, MessageChannel.class);
-						flux = flux
-							.map(value -> value instanceof Message ? value : new GenericMessage(value))
-							.doOnNext(message -> {
+						MessageChannel outputChannel = this.applicationContext.getBean(outputBindingIter.next(), MessageChannel.class);
+						flux = flux.doOnNext(message -> {
 							if (message instanceof Message && ((Message<?>) message).getHeaders().get("spring.cloud.stream.sendto.destination") != null) {
 								String destinationName = (String) ((Message<?>) message).getHeaders().get("spring.cloud.stream.sendto.destination");
 								ProducerProperties producerProperties = this.serviceProperties.getBindings().get(outputBindingNames.iterator().next()).getProducer();
