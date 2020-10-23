@@ -18,12 +18,13 @@ package org.springframework.cloud.stream.converter;
 
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.Collection;
+import java.util.stream.Collectors;
 
 import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.converter.AbstractMessageConverter;
-import org.springframework.util.Assert;
 import org.springframework.util.MimeType;
 
 /**
@@ -71,7 +72,6 @@ public class ObjectStringMessageConverter extends AbstractMessageConverter {
 
 	@Override
 	protected Object convertFromInternal(Message<?> message, Class<?> targetClass, Object conversionHint) {
-		Assert.isTrue(String.class.isAssignableFrom(targetClass) || targetClass == Object.class, "This converter can only convert byte[] to String");
 		if (message.getPayload() != null) {
 			if (message.getPayload() instanceof byte[]) {
 				if (byte[].class.isAssignableFrom(targetClass)) {
@@ -81,6 +81,22 @@ public class ObjectStringMessageConverter extends AbstractMessageConverter {
 					return new String((byte[]) message.getPayload(),
 							StandardCharsets.UTF_8);
 				}
+			}
+			else if (message.getPayload() instanceof Collection) {
+				Collection<?> collection = ((Collection<?>) message.getPayload()).stream()
+						.map(value -> {
+							if (byte[].class.isAssignableFrom(targetClass)) {
+								return value;
+							}
+							else if (value instanceof byte[]) {
+								return new String((byte[]) value, StandardCharsets.UTF_8);
+							}
+							else {
+								return value; // String
+							}
+						}).collect(Collectors.toList());
+
+				return collection;
 			}
 			else {
 				if (byte[].class.isAssignableFrom(targetClass)) {

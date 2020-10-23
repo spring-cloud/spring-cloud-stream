@@ -423,6 +423,7 @@ public class FunctionConfiguration {
 					BindingProperties bindingProperties = this.serviceProperties.getBindings().get(inputBindingName);
 					ConsumerProperties consumerProperties = bindingProperties == null ? null : bindingProperties.getConsumer();
 					if (consumerProperties != null) {
+						function.setSkipInputConversion(consumerProperties.isUseNativeDecoding());
 						Assert.isTrue(consumerProperties.getConcurrency() <= 1, "Concurrency > 1 is not supported by reactive "
 								+ "consumer, given that project reactor maintains its own concurrency mechanism. Was '..."
 								+ inputBindingName + ".consumer.concurrency=" + consumerProperties.getConcurrency() + "'");
@@ -435,6 +436,9 @@ public class FunctionConfiguration {
 				if (!CollectionUtils.isEmpty(outputBindingNames)) {
 					BindingProperties bindingProperties = this.serviceProperties.getBindings().get(outputBindingNames.iterator().next());
 					ProducerProperties producerProperties = bindingProperties == null ? null : bindingProperties.getProducer();
+					if (producerProperties != null) {
+						function.setSkipOutputConversion(producerProperties.isUseNativeEncoding());
+					}
 					functionToInvoke = new PartitionAwareFunctionWrapper(function, this.applicationContext, producerProperties);
 				}
 
@@ -457,9 +461,15 @@ public class FunctionConfiguration {
 								if (logger.isInfoEnabled()) {
 									logger.info("Output message is sent to '" + destinationName + "' destination");
 								}
+								if (!(message instanceof Message)) {
+									message = MessageBuilder.withPayload(message).build();
+								}
 								dynamicChannel.send((Message) message);
 							}
 							else {
+								if (!(message instanceof Message)) {
+									message = MessageBuilder.withPayload(message).build();
+								}
 								outputChannel.send((Message) message);
 							}
 						});
@@ -471,9 +481,6 @@ public class FunctionConfiguration {
 			}
 			else {
 				String outputDestinationName = this.determineOutputDestinationName(0, bindableProxyFactory, functionType);
-				if (StringUtils.hasText(outputDestinationName)) {
-					this.adjustFunctionForNativeEncodingIfNecessary(outputDestinationName, function, 0);
-				}
 				String inputDestinationName = inputBindingNames.iterator().next();
 				Object inputDestination = this.applicationContext.getBean(inputDestinationName);
 				if (inputDestination != null && inputDestination instanceof SubscribableChannel) {
@@ -482,25 +489,6 @@ public class FunctionConfiguration {
 						handler.setOutputChannelName(outputDestinationName);
 					}
 					((SubscribableChannel) inputDestination).subscribe(handler);
-				}
-			}
-		}
-
-		private void adjustFunctionForNativeEncodingIfNecessary(String outputDestinationName, FunctionInvocationWrapper function, int index) {
-			if (function.isConsumer()) {
-				return;
-			}
-			BindingProperties properties = this.serviceProperties.getBindingProperties(outputDestinationName);
-			if (properties.getProducer() != null && properties.getProducer().isUseNativeEncoding()) {
-				Field acceptedOutputMimeTypesField = ReflectionUtils
-						.findField(FunctionInvocationWrapper.class, "acceptedOutputMimeTypes", String[].class);
-				acceptedOutputMimeTypesField.setAccessible(true);
-				try {
-					String[] acceptedOutputMimeTypes = (String[]) acceptedOutputMimeTypesField.get(function);
-					acceptedOutputMimeTypes[index] = "";
-				}
-				catch (Exception e) {
-					// ignore
 				}
 			}
 		}
@@ -621,7 +609,7 @@ public class FunctionConfiguration {
 	 * not attempt any conversion and sends a raw Message.
 	 */
 	@SuppressWarnings("rawtypes")
-	private static class FunctionWrapper implements Function<Message, Object> {
+	private static class FunctionWrapper implements Function<Message<byte[]>, Object> {
 		private final Function function;
 
 		private final ConsumerProperties consumerProperties;
@@ -642,14 +630,20 @@ public class FunctionConfiguration {
 			this.applicationContext = applicationContext;
 			this.function = new PartitionAwareFunctionWrapper((FunctionInvocationWrapper) function, this.applicationContext, producerProperties);
 			this.consumerProperties = consumerProperties;
+			if (this.consumerProperties != null) {
+				((FunctionInvocationWrapper) function).setSkipInputConversion(this.consumerProperties.isUseNativeDecoding());
+			}
 			this.producerProperties = producerProperties;
+			if (this.producerProperties != null) {
+				((FunctionInvocationWrapper) function).setSkipOutputConversion(this.producerProperties.isUseNativeEncoding());
+			}
 			this.headersField = ReflectionUtils.findField(MessageHeaders.class, "headers");
 			this.headersField.setAccessible(true);
 		}
 
 		@SuppressWarnings("unchecked")
 		@Override
-		public Object apply(Message message) {
+		public Object apply(Message<byte[]> message) {
 			if (message != null && consumerProperties != null) {
 				Map<String, Object> headersMap = (Map<String, Object>) ReflectionUtils
 						.getField(this.headersField, message.getHeaders());
