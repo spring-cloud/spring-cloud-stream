@@ -944,6 +944,23 @@ public class ImplicitFunctionBindingTests {
 		}
 	}
 
+	@Test
+	public void testHeaderPropagation() {
+		System.clearProperty("spring.cloud.function.definition");
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+				TestChannelBinderConfiguration.getCompleteConfiguration(SingleFunctionConfiguration.class))
+						.web(WebApplicationType.NONE).run("--spring.jmx.enabled=false",
+								"--spring.cloud.function.definition=func")) {
+
+			InputDestination inputDestination = context.getBean(InputDestination.class);
+			OutputDestination outputDestination = context.getBean(OutputDestination.class);
+
+			inputDestination.send(MessageBuilder.withPayload("hello").setHeader("foo", "bar").build());
+
+			assertThat(outputDestination.receive(1000).getHeaders().get("foo")).isEqualTo("bar");
+		}
+	}
+
 
 	@EnableAutoConfiguration
 	public static class SupplierAndPojoConfiguration {
