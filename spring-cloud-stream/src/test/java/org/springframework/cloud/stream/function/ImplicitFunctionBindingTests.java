@@ -50,6 +50,7 @@ import org.springframework.cloud.stream.binder.test.TestChannelBinderConfigurati
 import org.springframework.cloud.stream.messaging.Sink;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
+import org.springframework.integration.channel.QueueChannel;
 import org.springframework.integration.dsl.IntegrationFlow;
 import org.springframework.integration.dsl.IntegrationFlows;
 import org.springframework.integration.handler.LoggingHandler;
@@ -57,6 +58,7 @@ import org.springframework.integration.scheduling.PollerMetadata;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.kafka.support.KafkaNull;
 import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.GenericMessage;
 import org.springframework.scheduling.support.PeriodicTrigger;
@@ -942,6 +944,37 @@ public class ImplicitFunctionBindingTests {
 			assertThat(result.getPayload()).isInstanceOf(String.class); // no output conversion to byte[] has happened.
 			assertThat(result.getPayload()).isEqualTo("byte[]");
 		}
+
+		//Consumer reactiveConsumer
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+				TestChannelBinderConfiguration.getCompleteConfiguration(SingleFunctionConfiguration2.class))
+						.web(WebApplicationType.NONE).run("--spring.jmx.enabled=false",
+								"--spring.cloud.function.definition=reactiveConsumer",
+								"--spring.cloud.stream.bindings.reactiveConsumer-in-0.consumer.useNativeDecoding=true")) {
+
+			InputDestination inputDestination = context.getBean(InputDestination.class);
+			inputDestination.send(new GenericMessage<byte[]>("hello".getBytes()));
+
+			QueueChannel testChannel = context.getBean("testChannel", QueueChannel.class);
+
+			Message result = testChannel.receive(2000);
+			assertThat(result.getPayload()).isEqualTo(byte[].class.getName());
+		}
+
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+				TestChannelBinderConfiguration.getCompleteConfiguration(SingleFunctionConfiguration2.class))
+						.web(WebApplicationType.NONE).run("--spring.jmx.enabled=false",
+								"--spring.cloud.function.definition=reactiveFunctionConsumer",
+								"--spring.cloud.stream.bindings.reactiveFunctionConsumer-in-0.consumer.useNativeDecoding=true")) {
+
+			InputDestination inputDestination = context.getBean(InputDestination.class);
+			inputDestination.send(new GenericMessage<byte[]>("hello".getBytes()));
+
+			QueueChannel testChannel = context.getBean("testChannel", QueueChannel.class);
+
+			Message result = testChannel.receive(2000);
+			assertThat(result.getPayload()).isEqualTo(byte[].class.getName());
+		}
 	}
 
 	@Test
@@ -1037,6 +1070,11 @@ public class ImplicitFunctionBindingTests {
 	public static class SingleFunctionConfiguration2 {
 
 		@Bean
+		public QueueChannel testChannel() {
+			return new QueueChannel();
+		}
+
+		@Bean
 		public Function<Object, String> imperative() {
 			return x -> {
 				return x.getClass().getSimpleName();
@@ -1048,6 +1086,20 @@ public class ImplicitFunctionBindingTests {
 			return flux -> flux.map(x -> {
 				return x.getClass().getSimpleName();
 			});
+		}
+
+		@Bean
+		public Consumer<Flux<Message<?>>> reactiveConsumer(MessageChannel testChannel) {
+			return flux -> flux.subscribe(v -> {
+				testChannel.send(new GenericMessage<String>(((Message<?>) v).getPayload().getClass().getName()));
+			});
+		}
+
+		@Bean
+		public Function<Flux<Message<?>>, Mono<Void>> reactiveFunctionConsumer(MessageChannel testChannel) {
+			return flux -> flux.doOnNext(x -> {
+				testChannel.send(new GenericMessage<String>(((Message<?>) x).getPayload().getClass().getName()));
+			}).then();
 		}
 	}
 
