@@ -28,6 +28,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.kafka.common.serialization.Serializer;
 import org.apache.kafka.streams.KafkaStreams;
+import org.apache.kafka.streams.KeyQueryMetadata;
 import org.apache.kafka.streams.errors.InvalidStateStoreException;
 import org.apache.kafka.streams.state.HostInfo;
 import org.apache.kafka.streams.state.QueryableStoreType;
@@ -146,16 +147,32 @@ public class InteractiveQueryService {
 	 * @param store store name
 	 * @param key key to look for
 	 * @param serializer {@link Serializer} for the key
-	 * @return the {@link HostInfo} where the key for the provided store is hosted
-	 * currently
+	 * @return the {@link HostInfo} where the key for the provided store is hosted currently
 	 */
 	public <K> HostInfo getHostInfo(String store, K key, Serializer<K> serializer) {
-		StreamsMetadata streamsMetadata = this.kafkaStreamsRegistry.getKafkaStreams()
+		final KeyQueryMetadata keyQueryMetadata = this.kafkaStreamsRegistry.getKafkaStreams()
 				.stream()
-				.map((k) -> Optional.ofNullable(k.metadataForKey(store, key, serializer)))
+				.map((k) -> Optional.ofNullable(k.queryMetadataForKey(store, key, serializer)))
 				.filter(Optional::isPresent).map(Optional::get).findFirst().orElse(null);
-		return streamsMetadata != null ? streamsMetadata.hostInfo() : null;
+		return keyQueryMetadata != null ? keyQueryMetadata.getActiveHost() : null;
 	}
+
+	/**
+	 * Retrieves the {@link KeyQueryMetadata} associated with the given combination of key and state store.
+	 *
+	 * @param <K> generic type for key
+	 * @param store store name
+	 * @param key key to look for
+	 * @param serializer {@link Serializer} for the key
+	 * @return the {@link KeyQueryMetadata} if available, null otherwise.
+	 */
+	public <K> KeyQueryMetadata getKeyQueryMetadata(String store, K key, Serializer<K> serializer) {
+		return this.kafkaStreamsRegistry.getKafkaStreams()
+				.stream()
+				.map((k) -> Optional.ofNullable(k.queryMetadataForKey(store, key, serializer)))
+				.filter(Optional::isPresent).map(Optional::get).findFirst().orElse(null);
+	}
+
 
 	/**
 	 * Gets the list of {@link HostInfo} where the provided store is hosted on.

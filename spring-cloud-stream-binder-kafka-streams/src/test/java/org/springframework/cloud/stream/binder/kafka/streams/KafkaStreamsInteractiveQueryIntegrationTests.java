@@ -25,6 +25,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.serialization.IntegerSerializer;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.KafkaStreams;
+import org.apache.kafka.streams.KeyQueryMetadata;
 import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.Materialized;
@@ -165,6 +166,12 @@ public class KafkaStreamsInteractiveQueryIntegrationTests {
 		HostInfo currentHostInfo = interactiveQueryService.getCurrentHostInfo();
 
 		assertThat(currentHostInfo.host() + ":" + currentHostInfo.port())
+				.isEqualTo(embeddedKafka.getBrokersAsString());
+
+		final KeyQueryMetadata keyQueryMetadata = interactiveQueryService.getKeyQueryMetadata("prod-id-count-store",
+				123, new IntegerSerializer());
+		final HostInfo activeHost = keyQueryMetadata.getActiveHost();
+		assertThat(activeHost.host() + ":" + activeHost.port())
 				.isEqualTo(embeddedKafka.getBrokersAsString());
 
 		HostInfo hostInfo = interactiveQueryService.getHostInfo("prod-id-count-store",
