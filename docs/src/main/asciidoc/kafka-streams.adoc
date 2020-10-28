@@ -1049,6 +1049,20 @@ else {
 }
 ----
 
+==== Other API methods available through the InteractiveQueryService
+
+Use the following API method to retrieve the `KeyQueryMetadata` object associated with the combination of given store and key.
+
+```
+public <K> KeyQueryMetadata getKeyQueryMetadata(String store, K key, Serializer<K> serializer)
+```
+
+Use the following API method to retrieve the `KakfaStreams` object associated with the combination of given store and key.
+
+```
+public <K> KafkaStreams getKafkaStreams(String store, K key, Serializer<K> serializer)
+```
+
 === Health Indicator
 
 The health indicator requires the dependency `spring-boot-starter-actuator`. For maven use:
