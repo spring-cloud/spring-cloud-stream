@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2018 the original author or authors.
+ * Copyright 2017-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -345,14 +345,16 @@ public class KafkaStreamsBinderSupportAutoConfiguration {
 
 	@Bean
 	public KTableBoundElementFactory kTableBoundElementFactory(
-			BindingServiceProperties bindingServiceProperties, EncodingDecodingBindAdviceHandler encodingDecodingBindAdviceHandler) {
-		return new KTableBoundElementFactory(bindingServiceProperties, encodingDecodingBindAdviceHandler);
+			BindingServiceProperties bindingServiceProperties, EncodingDecodingBindAdviceHandler encodingDecodingBindAdviceHandler,
+			KafkaStreamsBindingInformationCatalogue KafkaStreamsBindingInformationCatalogue) {
+		return new KTableBoundElementFactory(bindingServiceProperties, encodingDecodingBindAdviceHandler, KafkaStreamsBindingInformationCatalogue);
 	}
 
 	@Bean
 	public GlobalKTableBoundElementFactory globalKTableBoundElementFactory(
-			BindingServiceProperties properties, EncodingDecodingBindAdviceHandler encodingDecodingBindAdviceHandler) {
-		return new GlobalKTableBoundElementFactory(properties, encodingDecodingBindAdviceHandler);
+			BindingServiceProperties properties, EncodingDecodingBindAdviceHandler encodingDecodingBindAdviceHandler,
+			KafkaStreamsBindingInformationCatalogue KafkaStreamsBindingInformationCatalogue) {
+		return new GlobalKTableBoundElementFactory(properties, encodingDecodingBindAdviceHandler, KafkaStreamsBindingInformationCatalogue);
 	}
 
 	@Bean

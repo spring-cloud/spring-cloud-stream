@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2019 the original author or authors.
+ * Copyright 2018-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,12 +41,15 @@ public class GlobalKTableBoundElementFactory
 
 	private final BindingServiceProperties bindingServiceProperties;
 	private final EncodingDecodingBindAdviceHandler encodingDecodingBindAdviceHandler;
+	private final KafkaStreamsBindingInformationCatalogue kafkaStreamsBindingInformationCatalogue;
 
 	GlobalKTableBoundElementFactory(BindingServiceProperties bindingServiceProperties,
-									EncodingDecodingBindAdviceHandler encodingDecodingBindAdviceHandler) {
+									EncodingDecodingBindAdviceHandler encodingDecodingBindAdviceHandler,
+									KafkaStreamsBindingInformationCatalogue kafkaStreamsBindingInformationCatalogue) {
 		super(GlobalKTable.class);
 		this.bindingServiceProperties = bindingServiceProperties;
 		this.encodingDecodingBindAdviceHandler = encodingDecodingBindAdviceHandler;
+		this.kafkaStreamsBindingInformationCatalogue = kafkaStreamsBindingInformationCatalogue;
 	}
 
 	@Override
@@ -73,7 +76,9 @@ public class GlobalKTableBoundElementFactory
 				GlobalKTable.class);
 		proxyFactory.addAdvice(wrapper);
 
-		return (GlobalKTable) proxyFactory.getProxy();
+		final GlobalKTable proxy = (GlobalKTable) proxyFactory.getProxy();
+		this.kafkaStreamsBindingInformationCatalogue.addBindingNamePerTarget(proxy, name);
+		return proxy;
 	}
 
 	@Override

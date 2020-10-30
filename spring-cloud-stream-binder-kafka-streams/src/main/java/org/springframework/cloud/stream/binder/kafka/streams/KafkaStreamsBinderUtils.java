@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2019 the original author or authors.
+ * Copyright 2018-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,10 @@ import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.apache.kafka.streams.kstream.KStream;
 
+import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.beans.factory.support.BeanDefinitionBuilder;
+import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
 import org.springframework.cloud.stream.binder.ExtendedProducerProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaBinderConfigurationProperties;
@@ -45,6 +49,7 @@ import org.springframework.kafka.core.KafkaOperations;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
 import org.springframework.kafka.listener.DeadLetterPublishingRecoverer;
+import org.springframework.retry.support.RetryTemplate;
 import org.springframework.util.Assert;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
@@ -64,9 +69,11 @@ final class KafkaStreamsBinderUtils {
 	}
 
 	static void prepareConsumerBinding(String name, String group,
-			ApplicationContext context, KafkaTopicProvisioner kafkaTopicProvisioner,
-			KafkaStreamsBinderConfigurationProperties binderConfigurationProperties,
-			ExtendedConsumerProperties<KafkaStreamsConsumerProperties> properties) {
+									ApplicationContext context, KafkaTopicProvisioner kafkaTopicProvisioner,
+									KafkaStreamsBinderConfigurationProperties binderConfigurationProperties,
+									ExtendedConsumerProperties<KafkaStreamsConsumerProperties> properties,
+									RetryTemplate retryTemplate,
+									ConfigurableListableBeanFactory beanFactory, String bindingName) {
 
 		ExtendedConsumerProperties<KafkaConsumerProperties> extendedConsumerProperties =
 				(ExtendedConsumerProperties) properties;
@@ -130,6 +137,16 @@ final class KafkaStreamsBinderUtils {
 				sendToDlqAndContinue.addKStreamDlqDispatch(inputTopic,
 						kafkaStreamsBinderDlqRecoverer);
 			}
+		}
+
+		if (StringUtils.hasText(properties.getRetryTemplateName())) {
+			@SuppressWarnings("unchecked")
+			BeanDefinition retryTemplateBeanDefinition = BeanDefinitionBuilder
+					.genericBeanDefinition(
+							(Class<RetryTemplate>) retryTemplate.getClass(),
+							() -> retryTemplate)
+					.getRawBeanDefinition();
+			((BeanDefinitionRegistry) beanFactory).registerBeanDefinition(bindingName + "-RetryTemplate", retryTemplateBeanDefinition);
 		}
 	}
 

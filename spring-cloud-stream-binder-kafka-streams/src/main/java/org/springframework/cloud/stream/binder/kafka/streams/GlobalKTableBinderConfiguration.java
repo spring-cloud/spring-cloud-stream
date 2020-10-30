@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2019 the original author or authors.
+ * Copyright 2018-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,9 +55,11 @@ public class GlobalKTableBinderConfiguration {
 			KafkaStreamsBinderConfigurationProperties binderConfigurationProperties,
 			KafkaTopicProvisioner kafkaTopicProvisioner,
 			KafkaStreamsExtendedBindingProperties kafkaStreamsExtendedBindingProperties,
+			KafkaStreamsBindingInformationCatalogue kafkaStreamsBindingInformationCatalogue,
 			@Qualifier("streamConfigGlobalProperties") Map<String, Object> streamConfigGlobalProperties) {
+
 		GlobalKTableBinder globalKTableBinder = new GlobalKTableBinder(binderConfigurationProperties,
-				kafkaTopicProvisioner);
+				kafkaTopicProvisioner, kafkaStreamsBindingInformationCatalogue);
 		globalKTableBinder.setKafkaStreamsExtendedBindingProperties(
 				kafkaStreamsExtendedBindingProperties);
 		return globalKTableBinder;
@@ -76,6 +78,9 @@ public class GlobalKTableBinderConfiguration {
 			beanFactory.registerSingleton(
 					KafkaStreamsExtendedBindingProperties.class.getSimpleName(),
 					outerContext.getBean(KafkaStreamsExtendedBindingProperties.class));
+			beanFactory.registerSingleton(
+					KafkaStreamsBindingInformationCatalogue.class.getSimpleName(),
+					outerContext.getBean(KafkaStreamsBindingInformationCatalogue.class));
 		};
 	}
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2019 the original author or authors.
+ * Copyright 2018-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,6 +52,8 @@ class KafkaStreamsBindingInformationCatalogue {
 	private ResolvableType outboundKStreamResolvable;
 
 	private final Map<KStream<?, ?>, Serde<?>> keySerdeInfo = new HashMap<>();
+
+	private final Map<Object, String> bindingNamesPerTarget = new HashMap<>();
 
 	/**
 	 * For a given bounded {@link KStream}, retrieve it's corresponding destination on the
@@ -160,5 +162,13 @@ class KafkaStreamsBindingInformationCatalogue {
 
 	Map<KStream<?, ?>, KafkaStreamsConsumerProperties> getConsumerProperties() {
 		return consumerProperties;
+	}
+
+	void addBindingNamePerTarget(Object target, String bindingName) {
+		this.bindingNamesPerTarget.put(target, bindingName);
+	}
+
+	String bindingNamePerTarget(Object target) {
+		return this.bindingNamesPerTarget.get(target);
 	}
 }

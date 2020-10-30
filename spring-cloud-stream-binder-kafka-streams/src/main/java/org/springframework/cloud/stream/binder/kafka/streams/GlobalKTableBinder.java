@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2019 the original author or authors.
+ * Copyright 2018-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStr
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsConsumerProperties;
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsExtendedBindingProperties;
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsProducerProperties;
+import org.springframework.retry.support.RetryTemplate;
 import org.springframework.util.StringUtils;
 
 /**
@@ -52,6 +53,8 @@ public class GlobalKTableBinder extends
 
 	private final KafkaTopicProvisioner kafkaTopicProvisioner;
 
+	private final KafkaStreamsBindingInformationCatalogue kafkaStreamsBindingInformationCatalogue;
+
 	// @checkstyle:off
 	private KafkaStreamsExtendedBindingProperties kafkaStreamsExtendedBindingProperties = new KafkaStreamsExtendedBindingProperties();
 
@@ -59,9 +62,11 @@ public class GlobalKTableBinder extends
 
 	public GlobalKTableBinder(
 			KafkaStreamsBinderConfigurationProperties binderConfigurationProperties,
-			KafkaTopicProvisioner kafkaTopicProvisioner) {
+			KafkaTopicProvisioner kafkaTopicProvisioner,
+			KafkaStreamsBindingInformationCatalogue kafkaStreamsBindingInformationCatalogue) {
 		this.binderConfigurationProperties = binderConfigurationProperties;
 		this.kafkaTopicProvisioner = kafkaTopicProvisioner;
+		this.kafkaStreamsBindingInformationCatalogue = kafkaStreamsBindingInformationCatalogue;
 	}
 
 	@Override
@@ -72,9 +77,12 @@ public class GlobalKTableBinder extends
 		if (!StringUtils.hasText(group)) {
 			group = properties.getExtension().getApplicationId();
 		}
+		final RetryTemplate retryTemplate = buildRetryTemplate(properties);
 		KafkaStreamsBinderUtils.prepareConsumerBinding(name, group,
 				getApplicationContext(), this.kafkaTopicProvisioner,
-				this.binderConfigurationProperties, properties);
+				this.binderConfigurationProperties, properties, retryTemplate, getBeanFactory(),
+				this.kafkaStreamsBindingInformationCatalogue.bindingNamePerTarget(inputTarget));
+
 		return new DefaultBinding<>(name, group, inputTarget, null);
 	}
 
