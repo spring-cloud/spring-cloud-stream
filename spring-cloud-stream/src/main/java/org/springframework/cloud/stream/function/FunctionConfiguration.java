@@ -541,7 +541,7 @@ public class FunctionConfiguration {
 							this.doSendMessage(resultElement, requestMessage);
 						}
 					}
-					else if (ObjectUtils.isArray(result)) {
+					else if (ObjectUtils.isArray(result) && !(result instanceof byte[])) {
 						for (int i = 0; i < ((Object[]) result).length; i++) {
 							this.doSendMessage(((Object[]) result)[i], requestMessage);
 						}
