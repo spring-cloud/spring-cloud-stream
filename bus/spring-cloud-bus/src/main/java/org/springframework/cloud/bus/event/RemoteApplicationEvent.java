@@ -23,7 +23,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 import org.springframework.context.ApplicationEvent;
 import org.springframework.core.style.ToStringCreator;
-import org.springframework.util.StringUtils;
+import org.springframework.util.Assert;
 
 /**
  * @author Spencer Gibb
@@ -35,6 +35,12 @@ public abstract class RemoteApplicationEvent extends ApplicationEvent {
 
 	private static final Object TRANSIENT_SOURCE = new Object();
 
+	private static final String TRANSIENT_ORIGIN = "____transient_origin_service___";
+
+	private static final String TRANSIENT_DESTINATION = "____transient_destination___";
+
+	protected static final PathDestinationFactory DEFAULT_DESTINATION_FACTORY = new PathDestinationFactory();
+
 	private final String originService;
 
 	private final String destinationService;
@@ -43,32 +49,32 @@ public abstract class RemoteApplicationEvent extends ApplicationEvent {
 
 	protected RemoteApplicationEvent() {
 		// for serialization libs like jackson
-		this(TRANSIENT_SOURCE, null, null);
+		this(TRANSIENT_SOURCE, TRANSIENT_ORIGIN, DEFAULT_DESTINATION_FACTORY.getDestination(TRANSIENT_DESTINATION));
 	}
 
+	@Deprecated
 	protected RemoteApplicationEvent(Object source, String originService, String destinationService) {
+		this(source, originService, DEFAULT_DESTINATION_FACTORY.getDestination(destinationService));
+	}
+
+	protected RemoteApplicationEvent(Object source, String originService, Destination destination) {
 		super(source);
-		this.originService = originService;
-		if (destinationService == null) {
-			destinationService = "**";
+		if (!originService.equals(TRANSIENT_ORIGIN)) {
+			Assert.notNull(originService, "originService may not be null");
+			this.originService = originService;
 		}
-		// If the destinationService is not already a wildcard, match everything that
-		// follows
-		// if there at most two path elements, and last element is not a global wildcard
-		// already
-		if (!"**".equals(destinationService)) {
-			if (StringUtils.countOccurrencesOf(destinationService, ":") <= 1
-					&& !StringUtils.endsWithIgnoreCase(destinationService, ":**")) {
-				// All instances of the destination unless specifically requested
-				destinationService = destinationService + ":**";
-			}
+		else {
+			this.originService = null;
 		}
-		this.destinationService = destinationService;
+		Assert.notNull(destination, "destination may not be null");
+		this.destinationService = destination.getDestinationAsString();
+		Assert.hasText(destinationService, "destinationService may not be empty");
 		this.id = UUID.randomUUID().toString();
 	}
 
+	@Deprecated
 	protected RemoteApplicationEvent(Object source, String originService) {
-		this(source, originService, null);
+		this(source, originService, DEFAULT_DESTINATION_FACTORY.getDestination(null));
 	}
 
 	public String getOriginService() {

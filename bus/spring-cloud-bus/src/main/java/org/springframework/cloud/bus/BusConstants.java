@@ -20,7 +20,7 @@ package org.springframework.cloud.bus;
  * @author Dave Syer
  *
  */
-abstract class BusConstants {
+public abstract class BusConstants {
 
 	/**
 	 * Name of the input channel for Spring Cloud Bus.

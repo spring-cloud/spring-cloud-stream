@@ -76,7 +76,7 @@ public class BusEnvironmentPostProcessor implements EnvironmentPostProcessor {
 		addOrReplace(environment.getPropertySources(), defaults, DEFAULTS_PROPERTY_SOURCE_NAME, false);
 	}
 
-	private void addOrReplace(MutablePropertySources propertySources, Map<String, Object> map,
+	public static void addOrReplace(MutablePropertySources propertySources, Map<String, Object> map,
 			String propertySourceName, boolean first) {
 		MapPropertySource target = null;
 		if (propertySources.contains(propertySourceName)) {

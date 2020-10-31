@@ -44,9 +44,9 @@ public class AckRemoteApplicationEvent extends RemoteApplicationEvent {
 		this.event = null;
 	}
 
-	public AckRemoteApplicationEvent(Object source, String originService, String destinationService,
+	public AckRemoteApplicationEvent(Object source, String originService, Destination destination,
 			String ackDestinationService, String ackId, Class<? extends RemoteApplicationEvent> type) {
-		super(source, originService, destinationService);
+		super(source, originService, destination);
 		this.ackDestinationService = ackDestinationService;
 		this.ackId = ackId;
 		this.event = type;
@@ -71,6 +71,7 @@ public class AckRemoteApplicationEvent extends RemoteApplicationEvent {
 	 * @param eventName the fq class name of the event implementation, not null
 	 */
 	@JsonProperty("event")
+	@SuppressWarnings("unchecked")
 	public void setEventName(String eventName) {
 		try {
 			this.event = (Class<? extends RemoteApplicationEvent>) Class.forName(eventName);

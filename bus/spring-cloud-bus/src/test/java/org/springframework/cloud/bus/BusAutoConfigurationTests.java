@@ -28,6 +28,7 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration;
 import org.springframework.cloud.bus.event.AckRemoteApplicationEvent;
+import org.springframework.cloud.bus.event.PathDestinationFactory;
 import org.springframework.cloud.bus.event.RefreshRemoteApplicationEvent;
 import org.springframework.cloud.bus.event.RemoteApplicationEvent;
 import org.springframework.cloud.bus.event.SentApplicationEvent;
@@ -81,7 +82,7 @@ public class BusAutoConfigurationTests {
 		this.context = SpringApplication.run(InboundMessageHandlerConfiguration.class, "--spring.cloud.bus.id=foo",
 				"--server.port=0");
 		this.context.getBean(BusConstants.INPUT, MessageChannel.class)
-				.send(new GenericMessage<>(new RefreshRemoteApplicationEvent(this, "foo", null)));
+				.send(new GenericMessage<>(new RefreshRemoteApplicationEvent(this, "foo", (String) null)));
 		assertThat(this.context.getBean(InboundMessageHandlerConfiguration.class).refresh).isNull();
 	}
 
@@ -90,7 +91,7 @@ public class BusAutoConfigurationTests {
 		this.context = SpringApplication.run(InboundMessageHandlerConfiguration.class, "--spring.cloud.bus.id=bar",
 				"--server.port=0");
 		this.context.getBean(BusConstants.INPUT, MessageChannel.class)
-				.send(new GenericMessage<>(new RefreshRemoteApplicationEvent(this, "foo", null)));
+				.send(new GenericMessage<>(new RefreshRemoteApplicationEvent(this, "foo", (String) null)));
 		assertThat(this.context.getBean(InboundMessageHandlerConfiguration.class).refresh).isNotNull();
 	}
 
@@ -102,7 +103,7 @@ public class BusAutoConfigurationTests {
 				new String[] { "--spring.cloud.bus.id=bar", "--server.port=0",
 						"--spring.main.allow-bean-definition-overriding=true" });
 		this.context.getBean(BusConstants.INPUT, MessageChannel.class)
-				.send(new GenericMessage<>(new RefreshRemoteApplicationEvent(this, "foo", null)));
+				.send(new GenericMessage<>(new RefreshRemoteApplicationEvent(this, "foo", (String) null)));
 		RefreshRemoteApplicationEvent refresh = this.context.getBean(InboundMessageHandlerConfiguration.class).refresh;
 		assertThat(refresh).isNotNull();
 		TestStreamBusBridge busBridge = this.context.getBean(TestStreamBusBridge.class);
@@ -119,7 +120,7 @@ public class BusAutoConfigurationTests {
 						SentMessageConfiguration.class },
 				new String[] { "--spring.cloud.bus.trace.enabled=true", "--spring.cloud.bus.id=bar",
 						"--server.port=0" });
-		this.context.getBean(BusConsumer.class).accept(new RefreshRemoteApplicationEvent(this, "foo", null));
+		this.context.getBean(BusConsumer.class).accept(new RefreshRemoteApplicationEvent(this, "foo", (String) null));
 		RefreshRemoteApplicationEvent refresh = this.context.getBean(InboundMessageHandlerConfiguration.class).refresh;
 		assertThat(refresh).isNotNull();
 		SentMessageConfiguration sent = this.context.getBean(SentMessageConfiguration.class);
@@ -134,8 +135,8 @@ public class BusAutoConfigurationTests {
 						AckMessageConfiguration.class },
 				new String[] { "--spring.cloud.bus.trace.enabled=true", "--spring.cloud.bus.id=bar",
 						"--server.port=0" });
-		this.context.getBean(BusConsumer.class).accept(
-				new AckRemoteApplicationEvent(this, "foo", null, "ID", "bar", RefreshRemoteApplicationEvent.class));
+		this.context.getBean(BusConsumer.class).accept(new AckRemoteApplicationEvent(this, "foo",
+				new PathDestinationFactory().getDestination(null), "ID", "bar", RefreshRemoteApplicationEvent.class));
 		AckMessageConfiguration ack = this.context.getBean(AckMessageConfiguration.class);
 		assertThat(ack.latch.await(5, TimeUnit.SECONDS)).isTrue();
 		assertThat(ack.event).isNotNull();
@@ -146,7 +147,7 @@ public class BusAutoConfigurationTests {
 	public void outboundFromSelf() throws Exception {
 		this.context = SpringApplication.run(OutboundMessageHandlerConfiguration.class, "--debug=true",
 				"--spring.cloud.bus.id=foo", "--server.port=0");
-		this.context.publishEvent(new RefreshRemoteApplicationEvent(this, "foo", null));
+		this.context.publishEvent(new RefreshRemoteApplicationEvent(this, "foo", (String) null));
 		TestStreamBusBridge busBridge = this.context.getBean(TestStreamBusBridge.class);
 		busBridge.latch.await(2, TimeUnit.SECONDS);
 		assertThat(busBridge.message).as("message was null").isNotNull();
@@ -156,7 +157,7 @@ public class BusAutoConfigurationTests {
 	public void outboundNotFromSelf() {
 		this.context = SpringApplication.run(OutboundMessageHandlerConfiguration.class, "--spring.cloud.bus.id=bar",
 				"--server.port=0");
-		this.context.publishEvent(new RefreshRemoteApplicationEvent(this, "foo", null));
+		this.context.publishEvent(new RefreshRemoteApplicationEvent(this, "foo", (String) null));
 		assertThat(this.context.getBean(TestStreamBusBridge.class).message).isNull();
 	}
 
@@ -230,9 +231,9 @@ public class BusAutoConfigurationTests {
 	public void serviceMatcherIdIsConstantAfterRefresh() {
 		this.context = SpringApplication.run(new Class[] { RefreshConfig.class, },
 				new String[] { "--server.port=0", "--spring.main.allow-bean-definition-overriding=true" });
-		String originalServiceId = this.context.getBean(ServiceMatcher.class).getServiceId();
+		String originalServiceId = this.context.getBean(ServiceMatcher.class).getBusId();
 		this.context.getBean(ContextRefresher.class).refresh();
-		String newServiceId = this.context.getBean(ServiceMatcher.class).getServiceId();
+		String newServiceId = this.context.getBean(ServiceMatcher.class).getBusId();
 		assertThat(newServiceId).isEqualTo(originalServiceId);
 	}
 

@@ -19,6 +19,7 @@ package org.springframework.cloud.bus.event;
 import java.util.Map;
 
 import org.springframework.core.style.ToStringCreator;
+import org.springframework.util.Assert;
 
 /**
  * @author Spencer Gibb
@@ -34,9 +35,16 @@ public class EnvironmentChangeRemoteApplicationEvent extends RemoteApplicationEv
 		this.values = null;
 	}
 
+	@Deprecated
 	public EnvironmentChangeRemoteApplicationEvent(Object source, String originService, String destinationService,
 			Map<String, String> values) {
-		super(source, originService, destinationService);
+		this(source, originService, new PathDestinationFactory().getDestination(destinationService), values);
+	}
+
+	public EnvironmentChangeRemoteApplicationEvent(Object source, String originService, Destination destination,
+			Map<String, String> values) {
+		super(source, originService, destination);
+		Assert.notNull(values, "values may not be null");
 		this.values = values;
 	}
 

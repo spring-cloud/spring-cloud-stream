@@ -26,12 +26,11 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.cloud.context.refresh.ContextRefresher;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -47,11 +46,8 @@ public class RefreshListenerIntegrationTests {
 	@Autowired
 	private TestRestTemplate rest;
 
-	@Autowired
-	private ApplicationEventPublisher context;
-
 	@MockBean
-	ContextRefresher contextRefresher;
+	private BusBridge busBridge;
 
 	@Test
 	public void testEndpoint() {
@@ -60,7 +56,7 @@ public class RefreshListenerIntegrationTests {
 				.isEqualTo(HttpStatus.NO_CONTENT);
 		assertThat(rest.postForEntity("/actuator/busrefresh/foobar", new HashMap<>(), String.class).getStatusCode())
 				.isEqualTo(HttpStatus.NO_CONTENT);
-		verify(contextRefresher, times(1)).refresh();
+		verify(busBridge, times(2)).send(any());
 	}
 
 	@SpringBootApplication

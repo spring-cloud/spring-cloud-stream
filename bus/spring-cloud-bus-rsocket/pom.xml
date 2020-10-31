@@ -4,10 +4,10 @@
 		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<artifactId>spring-cloud-bus</artifactId>
+	<artifactId>spring-cloud-bus-rsocket</artifactId>
 	<packaging>jar</packaging>
 
-	<name>spring-cloud-bus</name>
+	<name>spring-cloud-bus-rsocket</name>
 	<description>Spring Cloud Bus</description>
 
 	<parent>
@@ -16,6 +16,10 @@
 		<version>3.0.0-SNAPSHOT</version>
 		<relativePath>..</relativePath> <!-- lookup parent from repository -->
 	</parent>
+
+	<properties>
+		<rsocket-routing.version>0.2.0-SNAPSHOT</rsocket-routing.version>
+	</properties>
 
 	<dependencies>
 		<dependency>
@@ -29,26 +33,21 @@
 			<optional>true</optional>
 		</dependency>
 		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-web</artifactId>
-			<optional>true</optional>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-bus</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
-			<artifactId>spring-cloud-starter</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.cloud</groupId>
-			<artifactId>spring-cloud-stream</artifactId>
-			<optional>true</optional>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.integration</groupId>
-			<artifactId>spring-integration-core</artifactId>
+			<artifactId>spring-cloud-function-rsocket</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>com.fasterxml.jackson.dataformat</groupId>
 			<artifactId>jackson-dataformat-cbor</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>io.rsocket.routing</groupId>
+			<artifactId>rsocket-routing-client-spring</artifactId>
+			<version>${rsocket-routing.version}</version>
 			<optional>true</optional>
 		</dependency>
 		<dependency>
@@ -69,11 +68,6 @@
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-test-support</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.cloud</groupId>
-			<artifactId>spring-cloud-stream-test-support</artifactId>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>

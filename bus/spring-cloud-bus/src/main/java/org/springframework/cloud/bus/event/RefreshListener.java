@@ -50,7 +50,7 @@ public class RefreshListener implements ApplicationListener<RefreshRemoteApplica
 			log.info("Keys refreshed " + keys);
 		}
 		else {
-			log.info("Refresh not performed, the event was targetting " + event.getDestinationService());
+			log.info("Refresh not performed, the event was targeting " + event.getDestinationService());
 		}
 	}
 

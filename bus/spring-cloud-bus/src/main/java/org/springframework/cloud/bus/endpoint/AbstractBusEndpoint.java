@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.bus.endpoint;
 
+import org.springframework.cloud.bus.event.Destination;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationEventPublisher;
 
@@ -24,21 +25,33 @@ import org.springframework.context.ApplicationEventPublisher;
  */
 public class AbstractBusEndpoint {
 
-	private ApplicationEventPublisher context;
+	private ApplicationEventPublisher publisher;
 
 	private String appId;
 
-	public AbstractBusEndpoint(ApplicationEventPublisher context, String appId) {
-		this.context = context;
+	private final Destination.Factory destinationFactory;
+
+	public AbstractBusEndpoint(ApplicationEventPublisher publisher, String appId,
+			Destination.Factory destinationFactory) {
+		this.publisher = publisher;
 		this.appId = appId;
+		this.destinationFactory = destinationFactory;
 	}
 
 	protected String getInstanceId() {
 		return this.appId;
 	}
 
+	protected Destination.Factory getDestinationFactory() {
+		return this.destinationFactory;
+	}
+
+	protected Destination getDestination(String original) {
+		return destinationFactory.getDestination(original);
+	}
+
 	protected void publish(ApplicationEvent event) {
-		this.context.publishEvent(event);
+		this.publisher.publishEvent(event);
 	}
 
 }

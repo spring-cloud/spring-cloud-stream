@@ -27,7 +27,8 @@ public class RefreshBusEndpointTests {
 
 	@Test
 	public void instanceId() throws Exception {
-		RefreshBusEndpoint endpoint = new RefreshBusEndpoint(null, "foo");
+		RefreshBusEndpoint endpoint = new RefreshBusEndpoint(null, "foo",
+				originalDestination -> () -> originalDestination);
 		assertThat(endpoint.getInstanceId()).isEqualTo("foo");
 	}
 

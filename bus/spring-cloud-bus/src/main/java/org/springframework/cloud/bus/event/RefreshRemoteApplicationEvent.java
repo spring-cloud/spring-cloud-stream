@@ -27,8 +27,13 @@ public class RefreshRemoteApplicationEvent extends RemoteApplicationEvent {
 		// for serializers
 	}
 
-	public RefreshRemoteApplicationEvent(Object source, String originService, String destinationService) {
-		super(source, originService, destinationService);
+	@Deprecated
+	public RefreshRemoteApplicationEvent(Object source, String originService, String destination) {
+		this(source, originService, new PathDestinationFactory().getDestination(destination));
+	}
+
+	public RefreshRemoteApplicationEvent(Object source, String originService, Destination destination) {
+		super(source, originService, destination);
 	}
 
 }

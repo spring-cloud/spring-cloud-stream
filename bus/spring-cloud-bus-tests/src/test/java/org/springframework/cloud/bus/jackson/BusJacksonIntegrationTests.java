@@ -130,7 +130,7 @@ public class BusJacksonIntegrationTests {
 		@PutMapping("/names/{name}")
 		public void sayName(@PathVariable String name) {
 			this.names.add(name);
-			this.publisher.publishEvent(new NameEvent(this, this.busServiceMatcher.getServiceId(), name));
+			this.publisher.publishEvent(new NameEvent(this, this.busServiceMatcher.getBusId(), name));
 		}
 
 		@GetMapping("/date")

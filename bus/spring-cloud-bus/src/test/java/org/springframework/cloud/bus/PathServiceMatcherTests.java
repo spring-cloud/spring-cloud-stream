@@ -28,10 +28,10 @@ import org.springframework.util.AntPathMatcher;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * @author Stefan Pfeiffer
+ * @author Dave Syer
  *
  */
-public class ServiceMatcherWithConfigNamesTests {
+public class PathServiceMatcherTests {
 
 	private static final Map<String, String> EMPTY_MAP = Collections.emptyMap();
 
@@ -39,27 +39,32 @@ public class ServiceMatcherWithConfigNamesTests {
 
 	@Before
 	public void init() {
-		initMatcher("otherid:two:8888", new String[] { "one", "three" });
+		initMatcher("one:two:8888");
 	}
 
-	private void initMatcher(String id, String[] configNames) {
+	private void initMatcher(String id) {
 		BusProperties properties = new BusProperties();
 		properties.setId(id);
 		DefaultBusPathMatcher pathMatcher = new DefaultBusPathMatcher(new AntPathMatcher(":"));
-		this.matcher = new ServiceMatcher(pathMatcher, properties.getId(), configNames);
+		this.matcher = new PathServiceMatcher(pathMatcher, properties.getId());
+	}
+
+	@Test
+	public void fromSelf() {
+		assertThat(this.matcher.isFromSelf(
+				new EnvironmentChangeRemoteApplicationEvent(this, "one:two:8888", "foo:bar:spam", EMPTY_MAP))).isTrue();
+	}
+
+	@Test
+	public void forSelf() {
+		assertThat(this.matcher.isForSelf(
+				new EnvironmentChangeRemoteApplicationEvent(this, "foo:bar:spam", "one:two:8888", EMPTY_MAP))).isTrue();
 	}
 
 	@Test
 	public void forSelfWithWildcard() {
 		assertThat(this.matcher
 				.isForSelf(new EnvironmentChangeRemoteApplicationEvent(this, "foo:bar:spam", "one:two:*", EMPTY_MAP)))
-						.isTrue();
-	}
-
-	@Test
-	public void forSelfWithWildcardAndOtherConfigName() {
-		assertThat(this.matcher
-				.isForSelf(new EnvironmentChangeRemoteApplicationEvent(this, "foo:bar:spam", "three:two:*", EMPTY_MAP)))
 						.isTrue();
 	}
 
@@ -127,24 +132,40 @@ public class ServiceMatcherWithConfigNamesTests {
 	}
 
 	@Test
+	public void notFromSelf() {
+		assertThat(this.matcher.isFromSelf(
+				new EnvironmentChangeRemoteApplicationEvent(this, "one:two:9999", "foo:bar:spam", EMPTY_MAP)))
+						.isFalse();
+	}
+
+	/**
+	 * see gh-678
+	 */
+	@Test
 	public void forSelfWithMultipleProfiles() {
-		initMatcher("customerportal:dev,cloud:80", new String[] { "one", "three" });
-		assertThat(this.matcher
-				.isForSelf(new EnvironmentChangeRemoteApplicationEvent(this, "foo:bar:spam", "one:cloud:*", EMPTY_MAP)))
+		initMatcher("customerportal:dev,cloud:80");
+		assertThat(this.matcher.isForSelf(
+				new EnvironmentChangeRemoteApplicationEvent(this, "foo:bar:spam", "customerportal:cloud:*", EMPTY_MAP)))
 						.isTrue();
 	}
 
+	/**
+	 * see gh-678
+	 */
 	@Test
 	public void notForSelfWithMultipleProfiles() {
-		initMatcher("customerportal:dev,cloud:80", new String[] { "one", "three" });
+		initMatcher("customerportal:dev,cloud:80");
 		assertThat(this.matcher
 				.isForSelf(new EnvironmentChangeRemoteApplicationEvent(this, "foo:bar:spam", "bar:cloud:*", EMPTY_MAP)))
 						.isFalse();
 	}
 
+	/**
+	 * see gh-678
+	 */
 	@Test
 	public void notForSelfWithMultipleProfilesDifferentPort() {
-		initMatcher("customerportal:dev,cloud:80", new String[] { "one", "three" });
+		initMatcher("customerportal:dev,cloud:80");
 		assertThat(this.matcher.isForSelf(new EnvironmentChangeRemoteApplicationEvent(this, "foo:bar:spam",
 				"customerportal:cloud:8008", EMPTY_MAP))).isFalse();
 	}

@@ -30,7 +30,7 @@ import org.springframework.util.PathMatcher;
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnBusEnabled
 @EnableConfigurationProperties(BusProperties.class)
-public class ServiceMatcherAutoConfiguration {
+public class PathServiceMatcherAutoConfiguration {
 
 	/**
 	 * Name of the Bus path matcher.
@@ -51,10 +51,11 @@ public class ServiceMatcherAutoConfiguration {
 	}
 
 	@Bean
-	public ServiceMatcher serviceMatcher(@BusPathMatcher PathMatcher pathMatcher, BusProperties properties,
+	@ConditionalOnMissingBean(ServiceMatcher.class)
+	public PathServiceMatcher pathServiceMatcher(@BusPathMatcher PathMatcher pathMatcher, BusProperties properties,
 			Environment environment) {
 		String[] configNames = environment.getProperty(CLOUD_CONFIG_NAME_PROPERTY, String[].class, new String[] {});
-		return new ServiceMatcher(pathMatcher, properties.getId(), configNames);
+		return new PathServiceMatcher(pathMatcher, properties.getId(), configNames);
 	}
 
 }

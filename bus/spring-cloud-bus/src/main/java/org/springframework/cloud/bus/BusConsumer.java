@@ -21,7 +21,9 @@ import java.util.function.Consumer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.cloud.bus.event.AckRemoteApplicationEvent;
+import org.springframework.cloud.bus.event.Destination;
 import org.springframework.cloud.bus.event.RemoteApplicationEvent;
 import org.springframework.cloud.bus.event.SentApplicationEvent;
 import org.springframework.context.ApplicationEventPublisher;
@@ -34,16 +36,19 @@ public class BusConsumer implements Consumer<RemoteApplicationEvent> {
 
 	private final ServiceMatcher serviceMatcher;
 
-	private final BusBridge busBridge;
+	private final ObjectProvider<BusBridge> busBridge;
 
 	private final BusProperties properties;
 
-	public BusConsumer(ApplicationEventPublisher publisher, ServiceMatcher serviceMatcher, BusBridge busBridge,
-			BusProperties properties) {
+	private final Destination.Factory destinationFactory;
+
+	public BusConsumer(ApplicationEventPublisher publisher, ServiceMatcher serviceMatcher,
+			ObjectProvider<BusBridge> busBridge, BusProperties properties, Destination.Factory destinationFactory) {
 		this.publisher = publisher;
 		this.serviceMatcher = serviceMatcher;
 		this.busBridge = busBridge;
 		this.properties = properties;
+		this.destinationFactory = destinationFactory;
 	}
 
 	@Override
@@ -66,10 +71,10 @@ public class BusConsumer implements Consumer<RemoteApplicationEvent> {
 				this.publisher.publishEvent(event);
 			}
 			if (this.properties.getAck().isEnabled()) {
-				AckRemoteApplicationEvent ack = new AckRemoteApplicationEvent(this, this.serviceMatcher.getServiceId(),
-						this.properties.getAck().getDestinationService(), event.getDestinationService(), event.getId(),
-						event.getClass());
-				this.busBridge.send(ack);
+				AckRemoteApplicationEvent ack = new AckRemoteApplicationEvent(this, this.serviceMatcher.getBusId(),
+						destinationFactory.getDestination(this.properties.getAck().getDestinationService()),
+						event.getDestinationService(), event.getId(), event.getClass());
+				this.busBridge.ifAvailable(bridge -> bridge.send(ack));
 				this.publisher.publishEvent(ack);
 			}
 		}
