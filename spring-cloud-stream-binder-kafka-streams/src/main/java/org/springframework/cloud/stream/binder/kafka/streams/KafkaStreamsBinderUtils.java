@@ -139,7 +139,7 @@ final class KafkaStreamsBinderUtils {
 			}
 		}
 
-		if (StringUtils.hasText(properties.getRetryTemplateName())) {
+		if (!StringUtils.hasText(properties.getRetryTemplateName())) {
 			@SuppressWarnings("unchecked")
 			BeanDefinition retryTemplateBeanDefinition = BeanDefinitionBuilder
 					.genericBeanDefinition(
