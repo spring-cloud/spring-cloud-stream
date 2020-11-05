@@ -105,7 +105,9 @@ class KafkaStreamsBindingInformationCatalogue {
 	 */
 	void registerBindingProperties(KStream<?, ?> bindingTarget,
 			BindingProperties bindingProperties) {
-		this.bindingProperties.put(bindingTarget, bindingProperties);
+		if (bindingProperties != null) {
+			this.bindingProperties.put(bindingTarget, bindingProperties);
+		}
 	}
 
 	/**
@@ -115,7 +117,9 @@ class KafkaStreamsBindingInformationCatalogue {
 	 */
 	void registerConsumerProperties(KStream<?, ?> bindingTarget,
 			KafkaStreamsConsumerProperties kafkaStreamsConsumerProperties) {
-		this.consumerProperties.put(bindingTarget, kafkaStreamsConsumerProperties);
+		if (kafkaStreamsConsumerProperties != null) {
+			this.consumerProperties.put(bindingTarget, kafkaStreamsConsumerProperties);
+		}
 	}
 
 	/**
