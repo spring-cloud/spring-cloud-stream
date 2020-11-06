@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2017 the original author or authors.
+ * Copyright 2016-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -190,11 +190,11 @@ public class StreamListenerAnnotationBeanPostProcessor implements BeanPostProces
 		Class<?> targetClass = AopUtils.isAopProxy(bean) ? AopUtils.getTargetClass(bean)
 				: bean.getClass();
 		Method[] uniqueDeclaredMethods = ReflectionUtils
-				.getUniqueDeclaredMethods(targetClass);
+				.getUniqueDeclaredMethods(targetClass, ReflectionUtils.USER_DECLARED_METHODS);
 		for (Method method : uniqueDeclaredMethods) {
 			StreamListener streamListener = AnnotatedElementUtils
 					.findMergedAnnotation(method, StreamListener.class);
-			if (streamListener != null && !method.isBridge()) {
+			if (streamListener != null) {
 				this.streamListenerPresent = true;
 				this.streamListenerCallbacks.add(() -> {
 					Assert.isTrue(method.getAnnotation(Input.class) == null,
@@ -336,7 +336,7 @@ public class StreamListenerAnnotationBeanPostProcessor implements BeanPostProces
 		this.streamListenerCallbacks.forEach(Runnable::run);
 	}
 
-	private class StreamListenerHandlerMethodMapping {
+	private static class StreamListenerHandlerMethodMapping {
 
 		private final Object targetBean;
 
@@ -447,7 +447,7 @@ public class StreamListenerAnnotationBeanPostProcessor implements BeanPostProces
 					Object result = method.invoke(bean, arguments);
 					if (!StringUtils.hasText(outboundName)) {
 						for (int parameterIndex = 0; parameterIndex < method
-								.getParameterTypes().length; parameterIndex++) {
+								.getParameterCount(); parameterIndex++) {
 							MethodParameter methodParameter = MethodParameter
 									.forExecutable(method, parameterIndex);
 							if (methodParameter.hasParameterAnnotation(Output.class)) {
@@ -499,7 +499,7 @@ public class StreamListenerAnnotationBeanPostProcessor implements BeanPostProces
 
 		private boolean checkDeclarativeMethod(Method method,
 				String methodAnnotatedInboundName, String methodAnnotatedOutboundName) {
-			int methodArgumentsLength = method.getParameterTypes().length;
+			int methodArgumentsLength = method.getParameterCount();
 			for (int parameterIndex = 0; parameterIndex < methodArgumentsLength; parameterIndex++) {
 				MethodParameter methodParameter = MethodParameter.forExecutable(method,
 						parameterIndex);
