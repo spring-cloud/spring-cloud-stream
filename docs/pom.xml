@@ -7,7 +7,7 @@
 	<parent>
 		<groupId>org.springframework.cloud</groupId>
 		<artifactId>spring-cloud-stream-parent</artifactId>
-		<version>3.0.9.BUILD-SNAPSHOT</version>
+		<version>3.0.10.SNAPSHOT</version>
 	</parent>
 	<packaging>pom</packaging>
 	<name>spring-cloud-stream-core-docs</name>
