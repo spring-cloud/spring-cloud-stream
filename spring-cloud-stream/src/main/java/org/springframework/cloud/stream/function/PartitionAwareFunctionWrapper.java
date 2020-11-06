@@ -50,7 +50,6 @@ class PartitionAwareFunctionWrapper implements Function<Object, Object>, Supplie
 	@SuppressWarnings("rawtypes")
 	private final Function<Object, Message> outputMessageEnricher;
 
-	@SuppressWarnings("unchecked")
 	PartitionAwareFunctionWrapper(FunctionInvocationWrapper function, ConfigurableApplicationContext context, ProducerProperties producerProperties) {
 		this.function = function;
 		this.enhancerFiled = ReflectionUtils.findField(FunctionInvocationWrapper.class, "enhancer");
@@ -88,9 +87,7 @@ class PartitionAwareFunctionWrapper implements Function<Object, Object>, Supplie
 
 	private void setEnhancerIfNecessary() {
 		try {
-//			if (this.outputMessageEnricher == null) {
-				this.enhancerFiled.set(this.function, this.outputMessageEnricher);
-//			}
+			this.enhancerFiled.set(this.function, this.outputMessageEnricher);
 		}
 		catch (Exception e) {
 			logger.warn("Failed to set the enhancer", e);

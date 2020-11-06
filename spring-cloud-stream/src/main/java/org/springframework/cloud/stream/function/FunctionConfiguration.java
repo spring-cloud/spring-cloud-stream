@@ -490,9 +490,6 @@ public class FunctionConfiguration {
 			}
 			else {
 				String outputDestinationName = this.determineOutputDestinationName(0, bindableProxyFactory, functionType);
-//				if (StringUtils.hasText(outputDestinationName)) {
-//					this.adjustFunctionForNativeEncodingIfNecessary(outputDestinationName, function, 0);
-//				}
 				String inputDestinationName = inputBindingNames.iterator().next();
 				Object inputDestination = this.applicationContext.getBean(inputDestinationName);
 				if (inputDestination != null && inputDestination instanceof SubscribableChannel) {
@@ -504,25 +501,6 @@ public class FunctionConfiguration {
 				}
 			}
 		}
-
-//		private void adjustFunctionForNativeEncodingIfNecessary(String outputDestinationName, FunctionInvocationWrapper function, int index) {
-//			if (function.isConsumer()) {
-//				return;
-//			}
-//			BindingProperties properties = this.serviceProperties.getBindingProperties(outputDestinationName);
-//			if (properties.getProducer() != null && properties.getProducer().isUseNativeEncoding()) {
-//				Field acceptedOutputMimeTypesField = ReflectionUtils
-//						.findField(FunctionInvocationWrapper.class, "expectedOutputContentType", String[].class);
-//				acceptedOutputMimeTypesField.setAccessible(true);
-//				try {
-//					String[] acceptedOutputMimeTypes = (String[]) acceptedOutputMimeTypesField.get(function);
-//					acceptedOutputMimeTypes[index] = "";
-//				}
-//				catch (Exception e) {
-//					// ignore
-//				}
-//			}
-//		}
 
 		private ServiceActivatingHandler createFunctionHandler(FunctionInvocationWrapper function,
 				String inputChannelName, String outputChannelName) {
@@ -618,21 +596,6 @@ public class FunctionConfiguration {
 						+ function.getFunctionType() + "]. Your input and/or outout lacks arity and therefore we "
 								+ "can not determine how many input/output destinations are required in the context of "
 								+ "function input/output binding.");
-
-//				int inputCount = FunctionTypeUtils.getInputCount(function.getFunctionType());
-//				for (int i = 0; i < inputCount; i++) {
-//					Assert.isTrue(function.isInputTypePublisher(),
-//							"Function '" + functionProperties.getDefinition() + "' has the following signature: ["
-//									+ function.getFunctionType() + "]. Non-reactive functions with multiple "
-//									+ "inputs/outputs are not supported in the context of Spring Cloud Stream.");
-//				}
-//				int outputCount = FunctionTypeUtils.getOutputCount(function.getFunctionType());
-//				for (int i = 0; i < outputCount; i++) {
-//					Assert.isTrue(function.isOutputTypePublisher(),
-//							"Function '" + functionProperties.getDefinition() + "' has the following signature: ["
-//									+ function.getFunctionType() + "]. Non-reactive functions with multiple "
-//									+ "inputs/outputs are not supported in the context of Spring Cloud Stream.");
-//				}
 			}
 		}
 
@@ -777,7 +740,15 @@ public class FunctionConfiguration {
 							functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(this.inputCount);
 							functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(this.outputCount);
 							functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(this.streamFunctionProperties);
-							registry.registerBeanDefinition(functionDefinition + "_binding", functionBindableProxyDefinition);
+							try {
+								String name = functionDefinition + "_binding";
+								System.out.println(registry.containsBeanDefinition(name));
+								registry.registerBeanDefinition(name, functionBindableProxyDefinition);
+							}
+							catch (Exception e) {
+								e.printStackTrace();
+							}
+
 						}
 						else {
 							logger.warn("The function definition '" + streamFunctionProperties.getDefinition() +
@@ -862,11 +833,17 @@ public class FunctionConfiguration {
 				boolean eligibleDefinition = true;
 				for (int i = 0; i < functionNames.length && eligibleDefinition; i++) {
 					String functionName = functionNames[i];
-					Object functionBean = this.applicationContext.getBean(functionName);
-					Type functionType = FunctionTypeUtils.discoverFunctionType(functionBean, functionName, (GenericApplicationContext) this.applicationContext);
-					String functionTypeStringValue = functionType.toString();
-					if (functionTypeStringValue.contains("KTable") || functionTypeStringValue.contains("KStream")) {
-						eligibleDefinition = false;
+					if (this.applicationContext.containsBean(functionName)) {
+						Object functionBean = this.applicationContext.getBean(functionName);
+						Type functionType = FunctionTypeUtils.discoverFunctionType(functionBean, functionName, (GenericApplicationContext) this.applicationContext);
+						String functionTypeStringValue = functionType.toString();
+						if (functionTypeStringValue.contains("KTable") || functionTypeStringValue.contains("KStream")) {
+							eligibleDefinition = false;
+						}
+
+					}
+					else {
+						logger.warn("You have defined function definition that does not exist: " + functionName);
 					}
 				}
 				if (eligibleDefinition) {
