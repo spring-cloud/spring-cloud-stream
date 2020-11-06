@@ -22,6 +22,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.springframework.amqp.core.DeclarableCustomizer;
 import org.springframework.amqp.core.MessagePostProcessor;
 import org.springframework.amqp.rabbit.connection.AbstractConnectionFactory;
+import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionNameStrategy;
 import org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer;
 import org.springframework.amqp.support.postprocessor.DelegatingDecompressingPostProcessor;
@@ -46,6 +47,7 @@ import org.springframework.integration.amqp.inbound.AmqpMessageSource;
 import org.springframework.integration.amqp.outbound.AmqpOutboundEndpoint;
 import org.springframework.lang.Nullable;
 
+
 /**
  * Configuration class for RabbitMQ message channel binder.
  *
@@ -62,7 +64,7 @@ import org.springframework.lang.Nullable;
 public class RabbitMessageChannelBinderConfiguration {
 
 	@Autowired
-	private AbstractConnectionFactory rabbitConnectionFactory;
+	private ConnectionFactory rabbitConnectionFactory;
 
 	@Autowired
 	private RabbitProperties rabbitProperties;
@@ -83,9 +85,9 @@ public class RabbitMessageChannelBinderConfiguration {
 			@Nullable ConnectionNameStrategy connectionNameStrategy) {
 
 		String connectionNamePrefix = this.rabbitBinderConfigurationProperties.getConnectionNamePrefix();
-		if (connectionNamePrefix != null &&  connectionNameStrategy == null) {
+		if (this.rabbitConnectionFactory instanceof AbstractConnectionFactory && connectionNamePrefix != null &&  connectionNameStrategy == null) {
 			final AtomicInteger nameIncrementer = new AtomicInteger();
-			this.rabbitConnectionFactory.setConnectionNameStrategy(f -> connectionNamePrefix
+			((AbstractConnectionFactory) this.rabbitConnectionFactory).setConnectionNameStrategy(f -> connectionNamePrefix
 					+ "#" + nameIncrementer.getAndIncrement());
 		}
 		RabbitMessageChannelBinder binder = new RabbitMessageChannelBinder(
