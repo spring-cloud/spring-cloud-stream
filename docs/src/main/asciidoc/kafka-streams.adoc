@@ -1760,5 +1760,5 @@ When using this, you need to use it on the consumer.
 When you have more than one input bindings either in a function or `StreamListener`, set this on the first input binding.
 For e.g. when setting `spring.cloud.stream.bindings.process-in-0.consumer.concurrency`, it will be translated as `num.stream.threads` by the binder.
 If you have multiple processors and one processor defines binding level concurrency, but not the others, those ones with no binding level concurrency will default back to the binder wide property specified through
-`spring.cloud.stream.binder.configuration.num.stream.threads`.
+`spring.cloud.stream.kafka.streams.binder.configuration.num.stream.threads`.
 If this binder configuration is not available, then the application will use the default set by Kafka Streams.
