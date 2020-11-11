@@ -3558,9 +3558,9 @@ public class KafkaBinderTests extends
 			assertThat(sendResult).isNotNull();
 			RecordMetadata meta = sendResult.getHeaders().get(KafkaHeaders.RECORD_METADATA, RecordMetadata.class);
 			assertThat(meta).isNotNull()
-				.hasFieldOrPropertyWithValue("topic", testTopicName)
-				.hasFieldOrPropertyWithValue("partition", 0)
 				.hasFieldOrPropertyWithValue("offset", 0L);
+			assertThat(meta.topic()).isEqualTo(testTopicName);
+			assertThat(meta.partition()).isEqualTo(0);
 		}
 		finally {
 			if (producerBinding != null) {
