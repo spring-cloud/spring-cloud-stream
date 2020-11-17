@@ -169,7 +169,7 @@ public class KafkaTopicProvisioner implements
 						topicDescriptions.putAll(all.get(this.operationTimeout, TimeUnit.SECONDS));
 					}
 					catch (Exception ex) {
-						throw new ProvisioningException("Problems encountered with partitions finding", ex);
+						throw new ProvisioningException("Problems encountered with partitions finding for: " + name, ex);
 					}
 					return null;
 				});
@@ -242,7 +242,7 @@ public class KafkaTopicProvisioner implements
 					}
 				}
 				catch (Exception ex) {
-					throw new ProvisioningException("provisioning exception", ex);
+					throw new ProvisioningException("Provisioning exception encountered for " + name, ex);
 				}
 			}
 		}
@@ -312,7 +312,7 @@ public class KafkaTopicProvisioner implements
 					throw (Error) throwable;
 				}
 				else {
-					throw new ProvisioningException("provisioning exception", throwable);
+					throw new ProvisioningException("Provisioning exception encountered for " + name, throwable);
 				}
 			}
 			return new KafkaConsumerDestination(name, partitions, dlqTopic);
@@ -336,7 +336,7 @@ public class KafkaTopicProvisioner implements
 			else {
 				// TODO:
 				// https://github.com/spring-cloud/spring-cloud-stream-binder-kafka/pull/514#discussion_r241075940
-				throw new ProvisioningException("Provisioning exception", throwable);
+				throw new ProvisioningException("Provisioning exception encountered for " + name, throwable);
 			}
 		}
 	}
@@ -375,33 +375,8 @@ public class KafkaTopicProvisioner implements
 		Set<String> names = namesFutures.get(this.operationTimeout, TimeUnit.SECONDS);
 		if (names.contains(topicName)) {
 			//check if topic.properties are different from Topic Configuration in Kafka
-			if (this.configurationProperties.isAutoCreateTopics()) {
-				ConfigResource topicConfigResource = new ConfigResource(ConfigResource.Type.TOPIC, topicName);
-				DescribeConfigsResult describeConfigsResult = adminClient
-						.describeConfigs(Collections.singletonList(topicConfigResource));
-				KafkaFuture<Map<ConfigResource, Config>> topicConfigurationFuture = describeConfigsResult.all();
-				Map<ConfigResource, Config> topicConfigMap = topicConfigurationFuture
-						.get(this.operationTimeout, TimeUnit.SECONDS);
-				Config config = topicConfigMap.get(topicConfigResource);
-				final List<AlterConfigOp> updatedConfigEntries = topicProperties.getProperties().entrySet().stream()
-						.filter(propertiesEntry -> {
-							// Property is new and should be added
-							if (config.get(propertiesEntry.getKey()) == null) {
-								return true;
-							}
-							else {
-								// Property changed and should be updated
-								return !config.get(propertiesEntry.getKey()).value().equals(propertiesEntry.getValue());
-							}
-
-						}).map(propertyEntry -> new ConfigEntry(propertyEntry.getKey(), propertyEntry.getValue()))
-						.map(configEntry -> new AlterConfigOp(configEntry, AlterConfigOp.OpType.SET))
-						.collect(Collectors
-								.toList());
-				Map<ConfigResource, Collection<AlterConfigOp>> alterConfigForTopics = new HashMap<>();
-				alterConfigForTopics.put(topicConfigResource, updatedConfigEntries);
-				AlterConfigsResult alterConfigsResult = adminClient.incrementalAlterConfigs(alterConfigForTopics);
-				alterConfigsResult.all().get(this.operationTimeout, TimeUnit.SECONDS);
+			if (this.configurationProperties.isAutoAlterTopics()) {
+				alterTopicConfigsIfNecessary(adminClient, topicName, topicProperties);
 			}
 			// only consider minPartitionCount for resizing if autoAddPartitions is true
 			int effectivePartitionCount = this.configurationProperties
@@ -492,6 +467,43 @@ public class KafkaTopicProvisioner implements
 				}
 				return null;
 			});
+		}
+	}
+
+	private void alterTopicConfigsIfNecessary(AdminClient adminClient,
+											String topicName,
+											KafkaTopicProperties topicProperties)
+			throws InterruptedException, ExecutionException, java.util.concurrent.TimeoutException {
+		ConfigResource topicConfigResource = new ConfigResource(ConfigResource.Type.TOPIC, topicName);
+		DescribeConfigsResult describeConfigsResult = adminClient
+				.describeConfigs(Collections.singletonList(topicConfigResource));
+		KafkaFuture<Map<ConfigResource, Config>> topicConfigurationFuture = describeConfigsResult.all();
+		Map<ConfigResource, Config> topicConfigMap = topicConfigurationFuture
+				.get(this.operationTimeout, TimeUnit.SECONDS);
+		Config config = topicConfigMap.get(topicConfigResource);
+		final List<AlterConfigOp> updatedConfigEntries = topicProperties.getProperties().entrySet().stream()
+				.filter(propertiesEntry -> {
+					// Property is new and should be added
+					if (config.get(propertiesEntry.getKey()) == null) {
+						return true;
+					}
+					else {
+						// Property changed and should be updated
+						return !config.get(propertiesEntry.getKey()).value().equals(propertiesEntry.getValue());
+					}
+
+				})
+				.map(propertyEntry -> new ConfigEntry(propertyEntry.getKey(), propertyEntry.getValue()))
+				.map(configEntry -> new AlterConfigOp(configEntry, AlterConfigOp.OpType.SET))
+				.collect(Collectors.toList());
+		if (!updatedConfigEntries.isEmpty()) {
+			if (logger.isDebugEnabled()) {
+				logger.debug("Attempting to alter configs " + updatedConfigEntries + " for the topic:" + topicName);
+			}
+			Map<ConfigResource, Collection<AlterConfigOp>> alterConfigForTopics = new HashMap<>();
+			alterConfigForTopics.put(topicConfigResource, updatedConfigEntries);
+			AlterConfigsResult alterConfigsResult = adminClient.incrementalAlterConfigs(alterConfigForTopics);
+			alterConfigsResult.all().get(this.operationTimeout, TimeUnit.SECONDS);
 		}
 	}
 

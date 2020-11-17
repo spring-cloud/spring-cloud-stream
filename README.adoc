@@ -147,6 +147,11 @@ If set to `false`, the binder relies on the partition size of the topic being al
 If the partition count of the target topic is smaller than the expected value, the binder fails to start.
 +
 Default: `false`.
+spring.cloud.stream.kafka.binder.autoAlterTopics::
+If set to `true`, the binder alters destination topic configs if required.
+If set to `false`, the binder relies on existing configs of the topic.
++
+Default: `false`.
 spring.cloud.stream.kafka.binder.transaction.transactionIdPrefix::
 Enables transactions in the binder. See `transaction.id` in the Kafka documentation and https://docs.spring.io/spring-kafka/reference/html/_reference.html#transactions[Transactions] in the `spring-kafka` documentation.
 When transactions are enabled, individual `producer` properties are ignored and all producers use the `spring.cloud.stream.kafka.binder.transaction.producer.*` properties.

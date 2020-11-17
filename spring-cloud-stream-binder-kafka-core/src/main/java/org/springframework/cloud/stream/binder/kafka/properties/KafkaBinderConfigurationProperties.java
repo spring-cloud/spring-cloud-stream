@@ -97,6 +97,8 @@ public class KafkaBinderConfigurationProperties {
 
 	private boolean autoCreateTopics = true;
 
+	private boolean autoAlterTopics;
+
 	private boolean autoAddPartitions;
 
 	private boolean considerDownWhenAnyPartitionHasNoLeader;
@@ -287,6 +289,14 @@ public class KafkaBinderConfigurationProperties {
 
 	public void setAutoCreateTopics(boolean autoCreateTopics) {
 		this.autoCreateTopics = autoCreateTopics;
+	}
+
+	public boolean isAutoAlterTopics() {
+		return autoAlterTopics;
+	}
+
+	public void setAutoAlterTopics(boolean autoAlterTopics) {
+		this.autoAlterTopics = autoAlterTopics;
 	}
 
 	public boolean isAutoAddPartitions() {
