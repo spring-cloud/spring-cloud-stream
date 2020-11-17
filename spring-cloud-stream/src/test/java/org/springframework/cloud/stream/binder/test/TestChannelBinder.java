@@ -228,7 +228,6 @@ public class TestChannelBinder extends
 			this.listenerContainer = listenerContainer;
 		}
 
-		@SuppressWarnings("unused")
 		// Temporarily unused until DLQ strategy for this binder becomes a requirement
 		public void setRecoveryCallback(
 				RecoveryCallback<? extends Object> recoveryCallback) {
