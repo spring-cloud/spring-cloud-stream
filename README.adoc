@@ -241,7 +241,7 @@ Default: null (equivalent to `earliest`).
 enableDlq::
 When set to true, it enables DLQ behavior for the consumer.
 By default, messages that result in errors are forwarded to a topic named `error.<destination>.<group>`.
-The DLQ topic name can be configurable by setting the `dlqName` property or by defining a `@Bean` of type `DlqDestinationResolver`.
+The DLQ topic name can be configurable by setting the `dlqName` property.
 This provides an alternative option to the more common Kafka replay scenario for the case when the number of errors is relatively small and replaying the entire original topic may be too cumbersome.
 See <<kafka-dlq-processing>> processing for more information.
 Starting with version 2.0, messages sent to the DLQ topic are enhanced with the following headers: `x-original-topic`, `x-exception-message`, and `x-exception-stacktrace` as `byte[]`.
@@ -381,11 +381,6 @@ messageKeyExpression::
 A SpEL expression evaluated against the outgoing message used to populate the key of the produced Kafka message -- for example, `headers['myKey']`.
 With versions before 3.0, the payload could not be used unless native encoding was being used because, by the time this expression was evaluated, the payload was already in the form of a `byte[]`.
 Now, the expression is evaluated before the payload is converted.
-In the case of a regular processor (`Function<String, String>` or `Function<Message<?>, Message<?>`), if the produced key needs to be same as the incoming key from the topic, this property can be set as below.
-`spring.cloud.stream.kafka.bindings.<output-binding-name>.producer.messageKeyExpression: headers['kafka_receivedMessageKey']`
-There is an important caveat to keep in mind for reactive functions.
-In that case, it is up to the application to manually copy the headers from the incoming messages to outbound messages.
-You can set the header, e.g. `myKey` and use `headers['myKey']` as suggested above or, for convenience, simply set the `KafkaHeaders.MESSAGE_KEY` header, and you do not need to set this property at all.
 +
 Default: `none`.
 headerPatterns::
@@ -774,6 +769,7 @@ you can implement the following customizers.
 Both of these interfaces provide a way to configure the config map used for consumer and producer properties.
 For example, if you want to gain access to a bean that is defined at the application level, you can inject that in the implementation of the `configure` method.
 When the binder discovers that these customizers are available as beans, it will invoke the `configure` method right before creating the consumer and producer factories.
+
 
 = Appendices
 [appendix]
