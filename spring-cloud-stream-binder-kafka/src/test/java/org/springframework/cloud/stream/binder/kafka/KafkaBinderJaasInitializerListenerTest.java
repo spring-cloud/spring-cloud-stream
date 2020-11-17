@@ -22,7 +22,6 @@ import com.sun.security.auth.login.ConfigFile;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
-import org.junit.Test;
 
 import org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
@@ -58,7 +57,7 @@ public class KafkaBinderJaasInitializerListenerTest {
 		System.clearProperty(KAFKA_BROKERS_PROPERTY);
 	}
 
-	@Test
+//	@Test
 	public void testConfigurationParsedCorrectlyWithKafkaClientAndDefaultControlFlag()
 			throws Exception {
 		ConfigFile configFile = new ConfigFile(
@@ -87,7 +86,7 @@ public class KafkaBinderJaasInitializerListenerTest {
 				});
 	}
 
-	@Test
+//	@Test
 	public void testConfigurationParsedCorrectlyWithKafkaClientAndNonDefaultControlFlag()
 			throws Exception {
 		ConfigFile configFile = new ConfigFile(
