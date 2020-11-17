@@ -16,6 +16,13 @@
 
 package org.springframework.cloud.stream.binder.kafka.properties;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.HashMap;
@@ -35,6 +42,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.cloud.stream.binder.HeaderMode;
 import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaProducerProperties.CompressionType;
+import org.springframework.core.io.DefaultResourceLoader;
+import org.springframework.core.io.Resource;
 import org.springframework.expression.Expression;
 import org.springframework.util.Assert;
 import org.springframework.util.ObjectUtils;
@@ -118,6 +127,14 @@ public class KafkaBinderConfigurationProperties {
 	 */
 	private Duration authorizationExceptionRetryInterval;
 
+	/**
+	 * When a certificate store location is given as classpath URL (classpath:), then the binder
+	 * moves the resource from the classpath location inside the JAR to a location on
+	 * the filesystem. If this value is set, then this location is used, otherwise, the
+	 * certificate file is copied to the directory returned by java.io.tmpdir.
+	 */
+	private String certificateStoreDirectory;
+
 	public KafkaBinderConfigurationProperties(KafkaProperties kafkaProperties) {
 		Assert.notNull(kafkaProperties, "'kafkaProperties' cannot be null");
 		this.kafkaProperties = kafkaProperties;
@@ -132,7 +149,60 @@ public class KafkaBinderConfigurationProperties {
 	}
 
 	public String getKafkaConnectionString() {
+		// We need to do a check on certificate file locations to see if they are given as classpath resources.
+		// If that is the case, then we will move them to a file system location and use those as the certificate locations.
+		// This is due to a limitation in Kafka itself in which it doesn't allow reading certificate resources from the classpath.
+		// See this: https://issues.apache.org/jira/browse/KAFKA-7685
+		// and this: https://cwiki.apache.org/confluence/display/KAFKA/KIP-398%3A+Support+reading+trust+store+from+classpath
+		moveCertsToFileSystemIfNecessary();
+
 		return toConnectionString(this.brokers, this.defaultBrokerPort);
+	}
+
+	private void moveCertsToFileSystemIfNecessary() {
+		try {
+			final String trustStoreLocation = this.configuration.get("ssl.truststore.location");
+			if (trustStoreLocation != null && trustStoreLocation.startsWith("classpath:")) {
+				final String fileSystemLocation = moveCertToFileSystem(trustStoreLocation, this.certificateStoreDirectory);
+				// Overriding the value with absolute filesystem path.
+				this.configuration.put("ssl.truststore.location", fileSystemLocation);
+			}
+			final String keyStoreLocation = this.configuration.get("ssl.keystore.location");
+			if (keyStoreLocation != null && keyStoreLocation.startsWith("classpath:")) {
+				final String fileSystemLocation = moveCertToFileSystem(keyStoreLocation, this.certificateStoreDirectory);
+				// Overriding the value with absolute filesystem path.
+				this.configuration.put("ssl.keystore.location", fileSystemLocation);
+			}
+		}
+		catch (Exception e) {
+			throw new IllegalStateException(e);
+		}
+	}
+
+	private String moveCertToFileSystem(String classpathLocation, String fileSystemLocation) throws IOException {
+		File targetFile;
+		final String tempDir = System.getProperty("java.io.tmpdir");
+		Resource resource = new DefaultResourceLoader().getResource(classpathLocation);
+		if (StringUtils.hasText(fileSystemLocation)) {
+			final Path path = Paths.get(fileSystemLocation);
+			if (!Files.exists(path) || !Files.isDirectory(path) || !Files.isWritable(path)) {
+				logger.warn("The filesystem location to move the cert files (" + fileSystemLocation + ") " +
+						"is not found or a directory that is writable. The system temp folder (java.io.tmpdir) will be used instead.");
+				targetFile = new File(Paths.get(tempDir, resource.getFilename()).toString());
+			}
+			else {
+				// the given location is verified to be a writable directory.
+				targetFile = new File(Paths.get(fileSystemLocation, resource.getFilename()).toString());
+			}
+		}
+		else {
+			targetFile = new File(Paths.get(tempDir, resource.getFilename()).toString());
+		}
+
+		try (InputStream inputStream = resource.getInputStream()) {
+			Files.copy(inputStream, targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+		}
+		return targetFile.getAbsolutePath();
 	}
 
 	public String getDefaultKafkaConnectionString() {
@@ -361,6 +431,14 @@ public class KafkaBinderConfigurationProperties {
 
 	public void setConsiderDownWhenAnyPartitionHasNoLeader(boolean considerDownWhenAnyPartitionHasNoLeader) {
 		this.considerDownWhenAnyPartitionHasNoLeader = considerDownWhenAnyPartitionHasNoLeader;
+	}
+
+	public String getCertificateStoreDirectory() {
+		return this.certificateStoreDirectory;
+	}
+
+	public void setCertificateStoreDirectory(String certificateStoreDirectory) {
+		this.certificateStoreDirectory = certificateStoreDirectory;
 	}
 
 	/**
