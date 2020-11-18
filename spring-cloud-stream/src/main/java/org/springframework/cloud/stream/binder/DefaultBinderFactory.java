@@ -143,7 +143,7 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 			binder = this.doGetBinder(binderName, bindingTargetType);
 		}
 		if (this.binderCustomizer != null) {
-			this.binderCustomizer.customize(binder);
+			this.binderCustomizer.customize(binder, binderName);
 		}
 		return binder;
 	}

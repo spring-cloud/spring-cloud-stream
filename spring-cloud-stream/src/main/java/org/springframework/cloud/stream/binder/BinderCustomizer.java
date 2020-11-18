@@ -34,6 +34,7 @@ public interface BinderCustomizer {
 	 * In the case of a single binder, the use of this customizer is redundant.
 	 *
 	 * @param binder to be customized
+	 * @param binderName binder name to distinguish between two different instances of the same binder type
 	 */
-	void customize(Binder<?, ConsumerProperties, ProducerProperties> binder);
+	void customize(Binder<?, ConsumerProperties, ProducerProperties> binder, String binderName);
 }

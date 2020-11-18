@@ -316,7 +316,7 @@ public class BinderFactoryAutoConfigurationTests {
 
 		@Bean
 		public BinderCustomizer binderCustomizer() {
-			return binder -> {
+			return (binder, binderName) -> {
 				if (binder instanceof StubBinder1) {
 					((StubBinder1) binder).setFromCustomization("customizer-applied-binder1");
 				}

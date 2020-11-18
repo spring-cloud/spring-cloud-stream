@@ -1643,7 +1643,7 @@ Here is an example of providing a `BinderCustomizer` bean.
 ```
 @Bean
 public BinderCustomizer binderCustomizer() {
-    return binder -> {
+    return (binder, binderName) -> {
         if (binder instanceof KafkaMessageChannelBinder) {
             ((KafkaMessageChannelBinder) binder).setRebalanceListener(...);
         }
@@ -1656,6 +1656,8 @@ public BinderCustomizer binderCustomizer() {
     };
 }
 ```
+
+Note that, when there are more than one instance of the same type of the binder, the binder name can be used to filter customization.
 
 [[binding_visualization_control]]
 === Binding visualization and control
