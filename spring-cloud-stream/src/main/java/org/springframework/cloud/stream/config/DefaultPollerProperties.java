@@ -16,6 +16,8 @@
 
 package org.springframework.cloud.stream.config;
 
+import java.util.concurrent.TimeUnit;
+
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.integration.scheduling.PollerMetadata;
 import org.springframework.scheduling.support.CronTrigger;
@@ -49,13 +51,18 @@ public class DefaultPollerProperties {
 	 */
 	private int initialDelay = 0;
 
+	/**
+	 * The TimeUnit to apply to delay values.
+	 */
+	private TimeUnit timeUnit = TimeUnit.MILLISECONDS;
+
 	public PollerMetadata getPollerMetadata() {
 		PollerMetadata pollerMetadata = new PollerMetadata();
 		if (cron != null) {
 			pollerMetadata.setTrigger(new CronTrigger(cron));
 		}
 		else {
-			final PeriodicTrigger periodicTrigger = new PeriodicTrigger(this.fixedDelay);
+			final PeriodicTrigger periodicTrigger = new PeriodicTrigger(this.fixedDelay, this.timeUnit);
 			periodicTrigger.setInitialDelay(initialDelay);
 			pollerMetadata.setTrigger(periodicTrigger);
 		}
@@ -94,5 +101,13 @@ public class DefaultPollerProperties {
 
 	public void setInitialDelay(int initialDelay) {
 		this.initialDelay = initialDelay;
+	}
+
+	public TimeUnit getTimeUnit() {
+		return timeUnit;
+	}
+
+	public void setTimeUnit(TimeUnit timeUnit) {
+		this.timeUnit = timeUnit;
 	}
 }
