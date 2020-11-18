@@ -31,6 +31,8 @@ public class StubBinder2
 	@SuppressWarnings("unused")
 	private final StubBinder2Dependency stubBinder2Dependency;
 
+	private String fromCustomization;
+
 	public StubBinder2(StubBinder2Dependency stubBinder2Dependency) {
 		this.stubBinder2Dependency = stubBinder2Dependency;
 	}
@@ -47,4 +49,11 @@ public class StubBinder2
 		return null;
 	}
 
+	public String getFromCustomization() {
+		return fromCustomization;
+	}
+
+	public void setFromCustomization(String fromCustomization) {
+		this.fromCustomization = fromCustomization;
+	}
 }

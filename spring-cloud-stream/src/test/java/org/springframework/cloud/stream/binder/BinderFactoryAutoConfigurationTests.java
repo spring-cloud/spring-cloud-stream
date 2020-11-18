@@ -289,8 +289,10 @@ public class BinderFactoryAutoConfigurationTests {
 
 		Binder binder1 = binderFactory.getBinder("binder1", MessageChannel.class);
 		assertThat(binder1).isInstanceOf(StubBinder1.class);
+		assertThat(((StubBinder1) binder1).getFromCustomization()).isEqualTo("customizer-applied-binder1");
 		Binder binder2 = binderFactory.getBinder("binder2", MessageChannel.class);
 		assertThat(binder2).isInstanceOf(StubBinder2.class);
+		assertThat(((StubBinder2) binder2).getFromCustomization()).isEqualTo("customizer-applied-binder2");
 
 		Binder defaultBinder = binderFactory.getBinder(null, MessageChannel.class);
 		assertThat(defaultBinder).isSameAs(binder2);
@@ -312,6 +314,17 @@ public class BinderFactoryAutoConfigurationTests {
 
 		}
 
+		@Bean
+		public BinderCustomizer binderCustomizer() {
+			return binder -> {
+				if (binder instanceof StubBinder1) {
+					((StubBinder1) binder).setFromCustomization("customizer-applied-binder1");
+				}
+				else if (binder instanceof StubBinder2) {
+					((StubBinder2) binder).setFromCustomization("customizer-applied-binder2");
+				}
+			};
+		}
 	}
 
 	@Configuration
@@ -321,7 +334,6 @@ public class BinderFactoryAutoConfigurationTests {
 		public String fooBean() {
 			return "foo";
 		}
-
 	}
 
 }

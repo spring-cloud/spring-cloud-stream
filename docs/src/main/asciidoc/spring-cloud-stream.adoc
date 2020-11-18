@@ -1627,6 +1627,36 @@ environment:
         profiles:
            active: myBinderProfile
 ----
+
+[[binder-customizer]]
+=== Customizing binders in multi binder applications
+
+When an application has multiple binders in it and wants to customize the binders, then that can be achieved by providing a `BinderCustomizer` implementation.
+In the case of applications with a single binder, this special customizer is not necessary since the binder context can access the customization beans directly.
+However, this is not the case in a multi-binder scenario, since various binders live in different application contexts.
+By providing an implementation of `BinderCustomizer` interface, the binders, although reside in different application contexts, will receive the customization.
+Spring Cloud Stream ensures that the customizations take place before the applications start using the binders.
+The user must check for the binder type and then apply the necessary customizations.
+
+Here is an example of providing a `BinderCustomizer` bean.
+
+```
+@Bean
+public BinderCustomizer binderCustomizer() {
+    return binder -> {
+        if (binder instanceof KafkaMessageChannelBinder) {
+            ((KafkaMessageChannelBinder) binder).setRebalanceListener(...);
+        }
+        else if (binder instanceof KStreamBinder) {
+            ...
+        }
+        else if (binder instanceof RabbitMessageChannelBinder) {
+            ...
+        }
+    };
+}
+```
+
 [[binding_visualization_control]]
 === Binding visualization and control
 Since version 2.0, Spring Cloud Stream supports visualization and control of the Bindings through Actuator endpoints.

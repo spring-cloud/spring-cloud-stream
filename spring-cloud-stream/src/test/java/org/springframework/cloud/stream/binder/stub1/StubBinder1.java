@@ -34,6 +34,8 @@ public class StubBinder1
 
 	private ConfigurableApplicationContext outerContext;
 
+	private String fromCustomization;
+
 	public ConfigurableApplicationContext getOuterContext() {
 		return this.outerContext;
 	}
@@ -62,4 +64,11 @@ public class StubBinder1
 		return null;
 	}
 
+	public String getFromCustomization() {
+		return fromCustomization;
+	}
+
+	public void setFromCustomization(String fromCustomization) {
+		this.fromCustomization = fromCustomization;
+	}
 }
