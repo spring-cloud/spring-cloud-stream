@@ -550,6 +550,21 @@ Maximum messages for each polling event of the default poller.
 +
 Default: 1L.
 
+cron::
+Cron expression value for the Cron Trigger.
++
+Default: none.
+
+initialDelay::
+Initial delay for periodic triggers.
++
+Default: 0.
+
+timeUnit::
+The TimeUnit to apply to delay values.
++
+Default: MILLISECONDS.
+
 For example `--spring.cloud.stream.poller.fixed-delay=2000` sets the poller interval to poll every two seconds.
 
 ===== Sending arbitrary data to an output (e.g. Foreign event-driven sources)
