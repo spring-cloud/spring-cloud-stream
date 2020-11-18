@@ -38,6 +38,7 @@ import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.WebApplicationType;
@@ -530,6 +531,7 @@ public class BindingServiceTests {
 		}
 	}
 
+	@SuppressWarnings("unchecked")
 	@Test
 	public void testUnrecognizedBinderAllowedIfNotUsed() {
 		HashMap<String, String> properties = new HashMap<>();
@@ -541,13 +543,14 @@ public class BindingServiceTests {
 		BindingServiceProperties bindingServiceProperties = createBindingServiceProperties(
 				properties);
 		BinderFactory binderFactory = new BindingServiceConfiguration()
-				.binderFactory(createMockBinderTypeRegistry(), bindingServiceProperties);
+				.binderFactory(createMockBinderTypeRegistry(), bindingServiceProperties, Mockito.mock(ObjectProvider.class));
 		BindingService bindingService = new BindingService(bindingServiceProperties,
 				binderFactory);
 		bindingService.bindConsumer(new DirectChannel(), "input");
 		bindingService.bindProducer(new DirectChannel(), "output");
 	}
 
+	@SuppressWarnings("unchecked")
 	@Test
 	public void testUnrecognizedBinderDisallowedIfUsed() {
 		HashMap<String, String> properties = new HashMap<>();
@@ -560,7 +563,7 @@ public class BindingServiceTests {
 		BindingServiceProperties bindingServiceProperties = createBindingServiceProperties(
 				properties);
 		BinderFactory binderFactory = new BindingServiceConfiguration()
-				.binderFactory(createMockBinderTypeRegistry(), bindingServiceProperties);
+				.binderFactory(createMockBinderTypeRegistry(), bindingServiceProperties, Mockito.mock(ObjectProvider.class));
 		BindingService bindingService = new BindingService(bindingServiceProperties,
 				binderFactory);
 		bindingService.bindConsumer(new DirectChannel(), "input");
@@ -693,7 +696,7 @@ public class BindingServiceTests {
 		return new DefaultBinderFactory(
 				Collections.singletonMap("mock",
 						new BinderConfiguration("mock", new HashMap<>(), true, true)),
-				binderTypeRegistry);
+				binderTypeRegistry, null);
 	}
 
 	private DefaultBinderTypeRegistry createMockBinderTypeRegistry() {

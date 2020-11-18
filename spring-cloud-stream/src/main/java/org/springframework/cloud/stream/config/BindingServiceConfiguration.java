@@ -23,6 +23,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -32,6 +33,7 @@ import org.springframework.boot.autoconfigure.condition.SearchStrategy;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.context.properties.source.ConfigurationPropertyName;
 import org.springframework.cloud.stream.binder.BinderConfiguration;
+import org.springframework.cloud.stream.binder.BinderCustomizer;
 import org.springframework.cloud.stream.binder.BinderFactory;
 import org.springframework.cloud.stream.binder.BinderType;
 import org.springframework.cloud.stream.binder.BinderTypeRegistry;
@@ -177,11 +179,12 @@ public class BindingServiceConfiguration {
 	@Bean
 	@ConditionalOnMissingBean(BinderFactory.class)
 	public BinderFactory binderFactory(BinderTypeRegistry binderTypeRegistry,
-			BindingServiceProperties bindingServiceProperties) {
+			BindingServiceProperties bindingServiceProperties,
+			ObjectProvider<BinderCustomizer> binderCustomizerProvider) {
 
 		DefaultBinderFactory binderFactory = new DefaultBinderFactory(
 				getBinderConfigurations(binderTypeRegistry, bindingServiceProperties),
-				binderTypeRegistry);
+				binderTypeRegistry, binderCustomizerProvider.getIfUnique());
 		binderFactory.setDefaultBinder(bindingServiceProperties.getDefaultBinder());
 		binderFactory.setListeners(this.binderFactoryListeners);
 		return binderFactory;

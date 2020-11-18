@@ -62,7 +62,7 @@ public class ExtendedPropertiesDefaultTests {
 		return new DefaultBinderFactory(
 				Collections.singletonMap("mock",
 						new BinderConfiguration("mock", new HashMap<>(), true, true)),
-				binderTypeRegistry);
+				binderTypeRegistry, null);
 	}
 
 	private DefaultBinderTypeRegistry createMockExtendedBinderTypeRegistry() {

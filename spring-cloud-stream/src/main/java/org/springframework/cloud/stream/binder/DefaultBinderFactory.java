@@ -77,6 +77,8 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 
 	private final BinderTypeRegistry binderTypeRegistry;
 
+	private final BinderCustomizer binderCustomizer;
+
 	private volatile ConfigurableApplicationContext context;
 
 	private Collection<Listener> listeners;
@@ -84,9 +86,10 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 	private volatile String defaultBinder;
 
 	public DefaultBinderFactory(Map<String, BinderConfiguration> binderConfigurations,
-			BinderTypeRegistry binderTypeRegistry) {
+								BinderTypeRegistry binderTypeRegistry, BinderCustomizer binderCustomizer) {
 		this.binderConfigurations = new HashMap<>(binderConfigurations);
 		this.binderTypeRegistry = binderTypeRegistry;
+		this.binderCustomizer = binderCustomizer;
 	}
 
 	@Override
@@ -138,6 +141,9 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 			 * This is the fall back to the old bootstrap that relies on spring.binders.
 			 */
 			binder = this.doGetBinder(binderName, bindingTargetType);
+		}
+		if (this.binderCustomizer != null) {
+			this.binderCustomizer.customize(binder, binderName);
 		}
 		return binder;
 	}
