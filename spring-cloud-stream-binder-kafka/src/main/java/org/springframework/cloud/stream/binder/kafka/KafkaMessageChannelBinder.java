@@ -213,11 +213,11 @@ public class KafkaMessageChannelBinder extends
 
 	private final TransactionTemplate transactionTemplate;
 
-	private final KafkaBindingRebalanceListener rebalanceListener;
+	private KafkaBindingRebalanceListener rebalanceListener;
 
-	private final DlqPartitionFunction dlqPartitionFunction;
+	private DlqPartitionFunction dlqPartitionFunction;
 
-	private final DlqDestinationResolver dlqDestinationResolver;
+	private DlqDestinationResolver dlqDestinationResolver;
 
 	private final Map<ConsumerDestination, ContainerProperties.AckMode> ackModeInfo = new ConcurrentHashMap<>();
 
@@ -307,6 +307,18 @@ public class KafkaMessageChannelBinder extends
 
 	public void setClientFactoryCustomizer(ClientFactoryCustomizer customizer) {
 		this.clientFactoryCustomizer = customizer;
+	}
+
+	public void setRebalanceListener(KafkaBindingRebalanceListener rebalanceListener) {
+		this.rebalanceListener = rebalanceListener;
+	}
+
+	public void setDlqPartitionFunction(DlqPartitionFunction dlqPartitionFunction) {
+		this.dlqPartitionFunction = dlqPartitionFunction;
+	}
+
+	public void setDlqDestinationResolver(DlqDestinationResolver dlqDestinationResolver) {
+		this.dlqDestinationResolver = dlqDestinationResolver;
 	}
 
 	Map<String, TopicInformation> getTopicsInUse() {
