@@ -9,9 +9,7 @@
 [[spring-cloud-stream-reference]]
 
 :doctype: book
-
 // ======================================================================================
-
 == Preface
 include::preface.adoc[]
 
