@@ -2611,7 +2611,7 @@ To enable Spring Integration Test Binder all you need is:
 
 ***Add required dependencies***
 
-Below is the example of the required Maven POM entries which could be easily retrofitted into Gradle.
+Below is the example of the required Maven POM entries.
 
 [source,xml]
 ----
@@ -2624,6 +2624,20 @@ Below is the example of the required Maven POM entries which could be easily ret
     <classifier>test-binder</classifier>
 </dependency>
 ----
+
+Or for build.gradle.kts
+
+[source,kotlin]
+---
+testImplementation("org.springframework.cloud:spring-cloud-stream") {
+	artifact {
+		name = "spring-cloud-stream"
+		extension = "jar"
+		type ="test-jar"
+		classifier = "test-binder"
+	}
+}
+---
 
 ***Remove the dependency for `spring-cloud-stream-test-support`***
 
