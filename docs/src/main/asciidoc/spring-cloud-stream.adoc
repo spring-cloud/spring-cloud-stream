@@ -319,7 +319,7 @@ bindings that require explicit names.
 
 For example,
 ----
---spring.cloud.stream.function.bindings.uppercase-in-0=input`
+--spring.cloud.stream.function.bindings.uppercase-in-0=input
 ----
 
 In the preceding example you mapped and effectively renamed `uppercase-in-0` binding name to `input`. Now all configuration
