@@ -118,6 +118,11 @@ public class DefaultBinding<T> implements Binding<T> {
 	}
 
 	@Override
+	public boolean isPaused() {
+		return this.paused;
+	}
+
+	@Override
 	public final synchronized void start() {
 		if (!this.isRunning()) {
 			if (this.lifecycle != null && this.restartable) {
