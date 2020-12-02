@@ -38,6 +38,7 @@ import org.springframework.util.StringUtils;
  * @author Gary Russell
  * @author Marius Bogoevici
  * @author Oleg Zhurakousky
+ * @author Myeonghyeon Lee
  * @see org.springframework.cloud.stream.annotation.EnableBinding
  */
 
@@ -115,6 +116,11 @@ public class DefaultBinding<T> implements Binding<T> {
 
 	public boolean isPausable() {
 		return this.lifecycle instanceof Pausable;
+	}
+
+	@Override
+	public boolean isPaused() {
+		return this.paused;
 	}
 
 	@Override
