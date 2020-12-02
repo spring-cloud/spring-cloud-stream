@@ -38,6 +38,7 @@ import org.springframework.util.StringUtils;
  * @author Gary Russell
  * @author Marius Bogoevici
  * @author Oleg Zhurakousky
+ * @author Myeonghyeon Lee
  * @see org.springframework.cloud.stream.annotation.EnableBinding
  */
 
