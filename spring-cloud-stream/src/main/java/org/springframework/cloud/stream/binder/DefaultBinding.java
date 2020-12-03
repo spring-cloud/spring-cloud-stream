@@ -83,10 +83,12 @@ public class DefaultBinding<T> implements Binding<T> {
 		this.restartable = true;
 	}
 
+	@Override
 	public String getName() {
 		return this.name;
 	}
 
+	@Override
 	public String getBindingName() {
 		String resolvedName = (this.target instanceof IntegrationObjectSupport)
 				? ((IntegrationObjectSupport) this.target).getComponentName() : getName();
@@ -110,6 +112,7 @@ public class DefaultBinding<T> implements Binding<T> {
 		return state;
 	}
 
+	@Override
 	public boolean isRunning() {
 		return this.lifecycle != null && this.lifecycle.isRunning();
 	}
@@ -118,7 +121,6 @@ public class DefaultBinding<T> implements Binding<T> {
 		return this.lifecycle instanceof Pausable;
 	}
 
-	@Override
 	public boolean isPaused() {
 		return this.paused;
 	}

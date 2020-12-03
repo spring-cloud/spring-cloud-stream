@@ -593,7 +593,7 @@ public class FunctionConfiguration {
 				}
 				int outputCount = FunctionTypeUtils.getOutputCount(functionType);
 				for (int i = 0; i < outputCount; i++) {
-					Assert.isTrue(FunctionTypeUtils.isReactive(FunctionTypeUtils.getInputType(functionType, i)),
+					Assert.isTrue(FunctionTypeUtils.isReactive(FunctionTypeUtils.getOutputType(functionType, i)),
 							"Function '" + functionProperties.getDefinition() + "' has the following signature: ["
 									+ functionType + "]. Non-reactive functions with multiple "
 									+ "inputs/outputs are not supported in the context of Spring Cloud Stream.");
