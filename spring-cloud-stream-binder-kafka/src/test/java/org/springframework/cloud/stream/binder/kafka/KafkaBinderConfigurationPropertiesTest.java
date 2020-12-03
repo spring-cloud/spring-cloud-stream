@@ -70,10 +70,10 @@ public class KafkaBinderConfigurationPropertiesTest {
 				kafkaProducerProperties);
 		Method getProducerFactoryMethod = KafkaMessageChannelBinder.class
 				.getDeclaredMethod("getProducerFactory", String.class,
-						ExtendedProducerProperties.class, String.class);
+						ExtendedProducerProperties.class, String.class, String.class);
 		getProducerFactoryMethod.setAccessible(true);
 		DefaultKafkaProducerFactory producerFactory = (DefaultKafkaProducerFactory) getProducerFactoryMethod
-				.invoke(this.kafkaMessageChannelBinder, "bar", producerProperties, "bar.producer");
+				.invoke(this.kafkaMessageChannelBinder, "bar", producerProperties, "bar.producer", "bar");
 		Field producerFactoryConfigField = ReflectionUtils
 				.findField(DefaultKafkaProducerFactory.class, "configs", Map.class);
 		ReflectionUtils.makeAccessible(producerFactoryConfigField);
@@ -100,12 +100,12 @@ public class KafkaBinderConfigurationPropertiesTest {
 				.contains("10.98.09.199:9082"))).isTrue();
 		Method createKafkaConsumerFactoryMethod = KafkaMessageChannelBinder.class
 				.getDeclaredMethod("createKafkaConsumerFactory", boolean.class,
-						String.class, ExtendedConsumerProperties.class, String.class);
+						String.class, ExtendedConsumerProperties.class, String.class, String.class);
 		createKafkaConsumerFactoryMethod.setAccessible(true);
 		ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = new ExtendedConsumerProperties<>(
 				new KafkaConsumerProperties());
 		DefaultKafkaConsumerFactory consumerFactory = (DefaultKafkaConsumerFactory) createKafkaConsumerFactoryMethod
-				.invoke(this.kafkaMessageChannelBinder, true, "test", consumerProperties, "test.consumer");
+				.invoke(this.kafkaMessageChannelBinder, true, "test", consumerProperties, "test.consumer", "test");
 		Field consumerFactoryConfigField = ReflectionUtils
 				.findField(DefaultKafkaConsumerFactory.class, "configs", Map.class);
 		ReflectionUtils.makeAccessible(consumerFactoryConfigField);

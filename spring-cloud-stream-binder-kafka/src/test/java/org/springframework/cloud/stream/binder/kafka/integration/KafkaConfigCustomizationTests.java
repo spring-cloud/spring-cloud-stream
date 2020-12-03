@@ -100,7 +100,9 @@ public class KafkaConfigCustomizationTests {
 
 		@Bean
 		public ConsumerConfigCustomizer consumerConfigCustomizer() {
-			return consumerProperties -> {
+			return (consumerProperties, binding, destination) -> {
+				assertThat(binding).isEqualTo("process-in-0");
+				assertThat(destination).isEqualTo("process-in-0");
 				consumerProperties.put(ConsumerConfig.INTERCEPTOR_CLASSES_CONFIG, MyConsumerInterceptor.class.getName());
 				consumerProperties.put("foo.bean", foo());
 			};
@@ -108,7 +110,9 @@ public class KafkaConfigCustomizationTests {
 
 		@Bean
 		public ProducerConfigCustomizer producerConfigCustomizer() {
-			return producerProperties -> {
+			return (producerProperties, binding, destination) -> {
+				assertThat(binding).isEqualTo("process-out-0");
+				assertThat(destination).isEqualTo("process-out-0");
 				producerProperties.put(ProducerConfig.INTERCEPTOR_CLASSES_CONFIG, MyProducerInterceptor.class.getName());
 				producerProperties.put("foo.bean", foo());
 			};

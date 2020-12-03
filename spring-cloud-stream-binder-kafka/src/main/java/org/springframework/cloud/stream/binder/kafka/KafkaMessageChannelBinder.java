@@ -265,7 +265,7 @@ public class KafkaMessageChannelBinder extends
 		if (StringUtils.hasText(txId)) {
 			this.transactionManager = new KafkaTransactionManager<>(getProducerFactory(
 					txId, new ExtendedProducerProperties<>(configurationProperties
-							.getTransaction().getProducer().getExtension()), txId + ".producer"));
+							.getTransaction().getProducer().getExtension()), txId + ".producer", null));
 			this.transactionTemplate = new TransactionTemplate(this.transactionManager);
 		}
 		else {
@@ -333,6 +333,7 @@ public class KafkaMessageChannelBinder extends
 
 	@Override
 	public KafkaProducerProperties getExtendedProducerProperties(String channelName) {
+		bindingNameHolder.set(channelName);
 		return this.extendedBindingProperties.getExtendedProducerProperties(channelName);
 	}
 
@@ -383,7 +384,8 @@ public class KafkaMessageChannelBinder extends
 				producerProperties.getExtension().getTransactionManager());
 		final ProducerFactory<byte[], byte[]> producerFB = transMan != null
 				? transMan.getProducerFactory()
-				: getProducerFactory(null, producerProperties, destination.getName() + ".producer");
+				: getProducerFactory(null, producerProperties, destination.getName() + ".producer",
+				destination.getName());
 		Collection<PartitionInfo> partitions = provisioningProvider.getPartitionsForTopic(
 				producerProperties.getPartitionCount(), false, () -> {
 					Producer<byte[], byte[]> producer = producerFB.createProducer();
@@ -520,7 +522,7 @@ public class KafkaMessageChannelBinder extends
 
 	protected DefaultKafkaProducerFactory<byte[], byte[]> getProducerFactory(
 			String transactionIdPrefix,
-			ExtendedProducerProperties<KafkaProducerProperties> producerProperties, String beanName) {
+			ExtendedProducerProperties<KafkaProducerProperties> producerProperties, String beanName, String destination) {
 		Map<String, Object> props = new HashMap<>();
 		props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class);
 		props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG,
@@ -560,7 +562,8 @@ public class KafkaMessageChannelBinder extends
 			props.putAll(kafkaProducerProperties.getConfiguration());
 		}
 		if (this.producerConfigCustomizer != null) {
-			this.producerConfigCustomizer.configure(props);
+			this.producerConfigCustomizer.configure(props, bindingNameHolder.get(), destination);
+			bindingNameHolder.remove();
 		}
 		DefaultKafkaProducerFactory<byte[], byte[]> producerFactory = new DefaultKafkaProducerFactory<>(
 				props);
@@ -600,7 +603,7 @@ public class KafkaMessageChannelBinder extends
 		String consumerGroup = anonymous ? "anonymous." + UUID.randomUUID().toString()
 				: group;
 		final ConsumerFactory<?, ?> consumerFactory = createKafkaConsumerFactory(
-				anonymous, consumerGroup, extendedConsumerProperties, destination.getName() + ".consumer");
+				anonymous, consumerGroup, extendedConsumerProperties, destination.getName() + ".consumer", destination.getName());
 		int partitionCount = extendedConsumerProperties.getInstanceCount()
 				* extendedConsumerProperties.getConcurrency();
 
@@ -950,7 +953,8 @@ public class KafkaMessageChannelBinder extends
 		String consumerGroup = anonymous ? "anonymous." + UUID.randomUUID().toString()
 				: group;
 		final ConsumerFactory<?, ?> consumerFactory = createKafkaConsumerFactory(
-				anonymous, consumerGroup, extendedConsumerProperties, destination.getName() + ".polled.consumer");
+				anonymous, consumerGroup, extendedConsumerProperties, destination.getName() + ".polled.consumer",
+				destination.getName());
 		String[] topics = extendedConsumerProperties.isMultiplex()
 				? StringUtils.commaDelimitedListToStringArray(destination.getName())
 				: new String[] { destination.getName() };
@@ -1121,7 +1125,7 @@ public class KafkaMessageChannelBinder extends
 					? transMan.getProducerFactory()
 					: getProducerFactory(null,
 							new ExtendedProducerProperties<>(dlqProducerProperties),
-							destination.getName() + ".dlq.producer");
+							destination.getName() + ".dlq.producer", destination.getName());
 			final KafkaTemplate<?, ?> kafkaTemplate = new KafkaTemplate<>(
 					producerFactory);
 
@@ -1345,7 +1349,7 @@ public class KafkaMessageChannelBinder extends
 
 	protected ConsumerFactory<?, ?> createKafkaConsumerFactory(boolean anonymous,
 			String consumerGroup, ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties,
-			String beanName) {
+			String beanName, String destination) {
 		Map<String, Object> props = new HashMap<>();
 		props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG,
 				ByteArrayDeserializer.class);
@@ -1379,7 +1383,7 @@ public class KafkaMessageChannelBinder extends
 		}
 
 		if (this.consumerConfigCustomizer != null) {
-			this.consumerConfigCustomizer.configure(props);
+			this.consumerConfigCustomizer.configure(props, bindingNameHolder.get(), destination);
 		}
 		DefaultKafkaConsumerFactory<Object, Object> factory = new DefaultKafkaConsumerFactory<>(props);
 		factory.setBeanName(beanName);
