@@ -27,16 +27,16 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 public class DefaultBinderTests {
 
-    @Test
-    public void testDefaultBinderIsPaused() {
-        @SuppressWarnings({ "rawtypes" })
-        DefaultBinding<?> binding = new DefaultBinding<>("foo", "bar", "target", (Binding) () -> {
-        });
+	@Test
+	public void testDefaultBinderIsPaused() {
+		@SuppressWarnings({ "rawtypes" })
+		DefaultBinding<?> binding = new DefaultBinding<>("foo", "bar", "target", (Binding) () -> {
+		});
 
-        assertThat(binding.isPaused()).isFalse();
+		assertThat(binding.isPaused()).isFalse();
 
-        binding.pause();
+		binding.pause();
 
-        assertThat(binding.isPaused()).isTrue();
-    }
+		assertThat(binding.isPaused()).isTrue();
+	}
 }
