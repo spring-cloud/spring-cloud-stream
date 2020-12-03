@@ -424,6 +424,10 @@ public class KafkaMessageChannelBinder extends
 		if (transMan != null) {
 			kafkaTemplate.setTransactionIdPrefix(configurationProperties.getTransaction().getTransactionIdPrefix());
 		}
+		final boolean allowNonTransactional = producerProperties.getExtension().isAllowNonTransactional();
+		if (allowNonTransactional) {
+			kafkaTemplate.setAllowNonTransactional(allowNonTransactional);
+		}
 		ProducerConfigurationMessageHandler handler = new ProducerConfigurationMessageHandler(
 				kafkaTemplate, destination.getName(), producerProperties, producerFB);
 		if (errorChannel != null) {

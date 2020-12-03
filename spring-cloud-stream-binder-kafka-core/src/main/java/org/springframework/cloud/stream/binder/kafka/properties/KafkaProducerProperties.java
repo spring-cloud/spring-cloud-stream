@@ -106,6 +106,11 @@ public class KafkaProducerProperties {
 	private int closeTimeout;
 
 	/**
+	 * Set to true to disable transactions.
+	 */
+	private boolean allowNonTransactional;
+
+	/**
 	 * @return buffer size
 	 *
 	 * Upper limit, in bytes, of how much data the Kafka producer attempts to batch before sending.
@@ -277,6 +282,14 @@ public class KafkaProducerProperties {
 
 	public void setCloseTimeout(int closeTimeout) {
 		this.closeTimeout = closeTimeout;
+	}
+
+	public boolean isAllowNonTransactional() {
+		return this.allowNonTransactional;
+	}
+
+	public void setAllowNonTransactional(boolean allowNonTransactional) {
+		this.allowNonTransactional = allowNonTransactional;
 	}
 
 	/**

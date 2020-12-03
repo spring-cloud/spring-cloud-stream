@@ -443,6 +443,13 @@ Timeout in number of seconds to wait for when closing the producer.
 +
 Default: `30`
 
+allowNonTransactional::
+Normally, all output bindings associated with a transactional binder will publish in a new transaction, if one is not already in process.
+This property allows you to override that behavior.
+If set to true, records published to this output binding will not be run in a transaction, unless one is already in process.
++
+Default: `false`
+
 ==== Usage examples
 
 In this section, we show the use of the preceding properties for specific scenarios.

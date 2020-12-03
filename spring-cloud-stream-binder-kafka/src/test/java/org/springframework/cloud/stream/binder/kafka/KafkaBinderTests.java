@@ -2276,6 +2276,28 @@ public class KafkaBinderTests extends
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Test
+	public void testAllowNonTransactionalProducerSetting() throws Exception {
+		AbstractKafkaTestBinder binder = getBinder();
+		DirectChannel moduleOutputChannel = createBindableChannel("output",
+				new BindingProperties());
+		ExtendedProducerProperties<KafkaProducerProperties> producerProps = new ExtendedProducerProperties<>(
+				new KafkaProducerProperties());
+		producerProps.getExtension().setAllowNonTransactional(true);
+		Binding<MessageChannel> producerBinding = binder.bindProducer("allwNonTrans.0",
+				moduleOutputChannel, producerProps);
+
+		KafkaProducerMessageHandler endpoint = TestUtils.getPropertyValue(producerBinding,
+				"lifecycle", KafkaProducerMessageHandler.class);
+
+		final KafkaTemplate kafkaTemplate = (KafkaTemplate) new DirectFieldAccessor(endpoint).getPropertyValue("kafkaTemplate");
+
+		assertThat(kafkaTemplate.isAllowNonTransactional()).isTrue();
+
+		producerBinding.unbind();
+	}
+
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	@Test
 	public void testProducerErrorChannel() throws Exception {
 		AbstractKafkaTestBinder binder = getBinder();
 		DirectChannel moduleOutputChannel = createBindableChannel("output",
