@@ -889,6 +889,25 @@ public class ImplicitFunctionBindingTests {
 		}
 	}
 
+	@Test
+	public void testGh2054B() {
+		System.clearProperty("spring.cloud.function.definition");
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+				TestChannelBinderConfiguration.getCompleteConfiguration(ReactiveFunctionConfiguration.class))
+						.web(WebApplicationType.NONE).run("--spring.jmx.enabled=false",
+								"--spring.cloud.function.definition=reactivePojo")) {
+			InputDestination inputDestination = context.getBean(InputDestination.class);
+			OutputDestination outputDestination = context.getBean(OutputDestination.class);
+
+			String jsonPerson = "{\"name\":\"Ricky\",\"id\":1}";
+
+			inputDestination.send(MessageBuilder.withPayload(jsonPerson.getBytes()).build());
+
+			Message<byte[]> result = outputDestination.receive(2000);
+			assertThat(new String(result.getPayload())).isEqualTo("{\"name\":\"RICKY\",\"id\":1}");
+		}
+	}
+
 
 
 	@SuppressWarnings("rawtypes")
@@ -1172,6 +1191,14 @@ public class ImplicitFunctionBindingTests {
 				Person p = message.getPayload();
 				p.setName(p.getName().toUpperCase());
 				return MessageBuilder.withPayload(p).copyHeaders(message.getHeaders()).build();
+			});
+		}
+
+		@Bean
+		public Function<Flux<Person>, Flux<Person>> reactivePojo() {
+			return flux -> flux.map(p -> {
+				p.setName(p.getName().toUpperCase());
+				return p;
 			});
 		}
 	}
