@@ -183,7 +183,7 @@ class KafkaStreamsStreamListenerSetupMethodOrchestrator extends AbstractKafkaStr
 								"Result does not match with the number of declared outbounds");
 					}
 				}
-				kafkaStreamsBindingInformationCatalogue.setOutboundKStreamResolvable(ResolvableType.forMethodReturnType(method));
+
 				if (methodAnnotatedOutboundNames != null && methodAnnotatedOutboundNames.length > 0) {
 					if (result.getClass().isArray()) {
 						Object[] outboundKStreams = (Object[]) result;
@@ -191,12 +191,14 @@ class KafkaStreamsStreamListenerSetupMethodOrchestrator extends AbstractKafkaStr
 						for (Object outboundKStream : outboundKStreams) {
 							Object targetBean = this.applicationContext
 									.getBean(methodAnnotatedOutboundNames[i++]);
+							kafkaStreamsBindingInformationCatalogue.addOutboundKStreamResolvable(targetBean, ResolvableType.forMethodReturnType(method));
 							adaptStreamListenerResult(outboundKStream, targetBean);
 						}
 					}
 					else {
 						Object targetBean = this.applicationContext
 								.getBean(methodAnnotatedOutboundNames[0]);
+						kafkaStreamsBindingInformationCatalogue.addOutboundKStreamResolvable(targetBean, ResolvableType.forMethodReturnType(method));
 						adaptStreamListenerResult(result, targetBean);
 					}
 				}

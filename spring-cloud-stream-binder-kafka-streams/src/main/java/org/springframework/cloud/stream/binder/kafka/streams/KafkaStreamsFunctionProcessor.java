@@ -218,8 +218,6 @@ public class KafkaStreamsFunctionProcessor extends AbstractKafkaStreamsBinderPro
 					i++;
 				}
 				if (result != null) {
-					kafkaStreamsBindingInformationCatalogue.setOutboundKStreamResolvable(
-							outboundResolvableType != null ? outboundResolvableType : resolvableType.getGeneric(1));
 					final Set<String> outputs = new TreeSet<>(kafkaStreamsBindableProxyFactory.getOutputs());
 					final Iterator<String> outboundDefinitionIterator = outputs.iterator();
 
@@ -248,6 +246,8 @@ public class KafkaStreamsFunctionProcessor extends AbstractKafkaStreamsBinderPro
 									boundElement = (KStreamBoundElementFactory.KStreamWrapper) targetBean;
 							boundElement.wrap((KStream) outboundKStreams[ij]);
 
+							kafkaStreamsBindingInformationCatalogue.addOutboundKStreamResolvable(
+									targetBean, outboundResolvableType != null ? outboundResolvableType : resolvableType.getGeneric(1));
 						}
 					}
 					else {
@@ -257,6 +257,9 @@ public class KafkaStreamsFunctionProcessor extends AbstractKafkaStreamsBinderPro
 							KStreamBoundElementFactory.KStreamWrapper
 									boundElement = (KStreamBoundElementFactory.KStreamWrapper) targetBean;
 							boundElement.wrap((KStream) result);
+
+							kafkaStreamsBindingInformationCatalogue.addOutboundKStreamResolvable(
+									targetBean, outboundResolvableType != null ? outboundResolvableType : resolvableType.getGeneric(1));
 						}
 					}
 				}

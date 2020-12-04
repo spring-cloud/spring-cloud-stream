@@ -121,13 +121,13 @@ class KStreamBinder extends
 
 		this.kafkaTopicProvisioner.provisionProducerDestination(name, extendedProducerProperties);
 		Serde<?> keySerde = this.keyValueSerdeResolver
-				.getOuboundKeySerde(properties.getExtension(), kafkaStreamsBindingInformationCatalogue.getOutboundKStreamResolvable());
+				.getOuboundKeySerde(properties.getExtension(), kafkaStreamsBindingInformationCatalogue.getOutboundKStreamResolvable(outboundBindTarget));
 		LOG.info("Key Serde used for (outbound) " + name + ": " + keySerde.getClass().getName());
 
 		Serde<?> valueSerde;
 		if (properties.isUseNativeEncoding()) {
 			valueSerde = this.keyValueSerdeResolver.getOutboundValueSerde(properties,
-					properties.getExtension(), kafkaStreamsBindingInformationCatalogue.getOutboundKStreamResolvable());
+					properties.getExtension(), kafkaStreamsBindingInformationCatalogue.getOutboundKStreamResolvable(outboundBindTarget));
 		}
 		else {
 			valueSerde = Serdes.ByteArray();

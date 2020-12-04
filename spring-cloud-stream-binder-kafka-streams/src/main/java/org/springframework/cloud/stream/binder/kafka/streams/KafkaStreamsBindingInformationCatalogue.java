@@ -49,7 +49,7 @@ class KafkaStreamsBindingInformationCatalogue {
 
 	private final Set<StreamsBuilderFactoryBean> streamsBuilderFactoryBeans = new HashSet<>();
 
-	private ResolvableType outboundKStreamResolvable;
+	private final Map<Object, ResolvableType> outboundKStreamResolvables = new HashMap<>();
 
 	private final Map<KStream<?, ?>, Serde<?>> keySerdeInfo = new HashMap<>();
 
@@ -135,12 +135,12 @@ class KafkaStreamsBindingInformationCatalogue {
 		return this.streamsBuilderFactoryBeans;
 	}
 
-	void setOutboundKStreamResolvable(ResolvableType outboundResolvable) {
-		this.outboundKStreamResolvable = outboundResolvable;
+	void addOutboundKStreamResolvable(Object key, ResolvableType outboundResolvable) {
+		this.outboundKStreamResolvables.put(key, outboundResolvable);
 	}
 
-	ResolvableType getOutboundKStreamResolvable() {
-		return outboundKStreamResolvable;
+	ResolvableType getOutboundKStreamResolvable(Object key) {
+		return outboundKStreamResolvables.get(key);
 	}
 
 	/**
