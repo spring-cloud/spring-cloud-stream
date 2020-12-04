@@ -270,6 +270,14 @@ public class KafkaStreamsBinderSupportAutoConfiguration {
 		if (!ObjectUtils.isEmpty(configProperties.getConfiguration())) {
 			properties.putAll(configProperties.getConfiguration());
 		}
+		Map<String, Object> mergedConsumerConfig = configProperties.mergedConsumerConfiguration();
+		if (!ObjectUtils.isEmpty(mergedConsumerConfig)) {
+			properties.putAll(mergedConsumerConfig);
+		}
+		Map<String, Object> mergedProducerConfig = configProperties.mergedProducerConfiguration();
+		if (!ObjectUtils.isEmpty(mergedProducerConfig)) {
+			properties.putAll(mergedProducerConfig);
+		}
 		if (!properties.containsKey(StreamsConfig.REPLICATION_FACTOR_CONFIG)) {
 			properties.put(StreamsConfig.REPLICATION_FACTOR_CONFIG,
 					(int) configProperties.getReplicationFactor());

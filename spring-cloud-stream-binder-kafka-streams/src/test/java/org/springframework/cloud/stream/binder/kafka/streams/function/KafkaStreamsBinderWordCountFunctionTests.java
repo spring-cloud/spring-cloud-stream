@@ -89,6 +89,7 @@ public class KafkaStreamsBinderWordCountFunctionTests {
 	}
 
 	@Test
+	@SuppressWarnings("unchecked")
 	public void testKstreamWordCountFunction() throws Exception {
 		SpringApplication app = new SpringApplication(WordCountProcessorApplication.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
@@ -100,6 +101,8 @@ public class KafkaStreamsBinderWordCountFunctionTests {
 				"--spring.cloud.stream.bindings.process-out-0.destination=counts",
 				"--spring.cloud.stream.kafka.streams.default.consumer.application-id=testKstreamWordCountFunction",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.commit.interval.ms=1000",
+				"--spring.cloud.stream.kafka.streams.binder.consumerProperties.request.timeout.ms=29000", //for testing ...binder.consumerProperties
+				"--spring.cloud.stream.kafka.streams.binder.producerProperties.max.block.ms=90000", //for testing ...binder.producerProperties
 				"--spring.cloud.stream.kafka.streams.binder.configuration.default.key.serde" +
 						"=org.apache.kafka.common.serialization.Serdes$StringSerde",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.default.value.serde" +
@@ -118,6 +121,11 @@ public class KafkaStreamsBinderWordCountFunctionTests {
 			final String topology2 = kafkaStreamsTopologyEndpoint.kafkaStreamsTopology("testKstreamWordCountFunction");
 			assertThat(topology1).isNotEmpty();
 			assertThat(topology1).isEqualTo(topology2);
+
+			//verify that ...binder.consumerProperties and ...binder.producerProperties work.
+			Map<String, Object> streamConfigGlobalProperties = (Map<String, Object>) context.getBean("streamConfigGlobalProperties");
+			assertThat(streamConfigGlobalProperties.get("request.timeout.ms")).isEqualTo("29000");
+			assertThat(streamConfigGlobalProperties.get("max.block.ms")).isEqualTo("90000");
 		}
 	}
 

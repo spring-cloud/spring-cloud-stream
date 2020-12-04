@@ -1666,6 +1666,12 @@ stateStoreRetry.backoffPeriod::
 +
 Default: 1000 ms
 
+consumerProperties::
+ Arbitrary consumer properties at the binder level.
+
+producerProperties::
+ Arbitrary producer properties at the binder level.
+
 ==== Kafka Streams Producer Properties
 
 The following properties are _only_ available for Kafka Streams producers and must be prefixed with `spring.cloud.stream.kafka.streams.bindings.<binding name>.producer.`
