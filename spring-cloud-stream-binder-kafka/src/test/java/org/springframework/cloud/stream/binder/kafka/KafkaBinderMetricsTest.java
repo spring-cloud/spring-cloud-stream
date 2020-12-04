@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2018 the original author or authors.
+ * Copyright 2016-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import java.util.Map;
 
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.config.MeterFilter;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
@@ -73,7 +74,7 @@ public class KafkaBinderMetricsTest {
 
 	@Before
 	public void setup() {
-		MockitoAnnotations.initMocks(this);
+		MockitoAnnotations.openMocks(this);
 		org.mockito.BDDMockito.given(consumerFactory
 				.createConsumer(ArgumentMatchers.any(), ArgumentMatchers.any()))
 				.willReturn(consumer);
@@ -101,6 +102,27 @@ public class KafkaBinderMetricsTest {
 		assertThat(meterRegistry.get(KafkaBinderMetrics.METRIC_NAME)
 				.tag("group", "group1-metrics").tag("topic", TEST_TOPIC).gauge().value())
 						.isEqualTo(500.0);
+	}
+
+	@Test
+	public void shouldNotContainAnyMetricsWhenUsingNoopGauge() {
+		// Adding NoopGauge for the offset metric.
+		meterRegistry.config().meterFilter(
+				MeterFilter.denyNameStartsWith("spring.cloud.stream.binder.kafka.offset"));
+
+		// Because we have NoopGauge for the offset metric  in the meter registry, none of these expectations matter.
+		org.mockito.BDDMockito
+				.given(consumer.committed(ArgumentMatchers.any(TopicPartition.class)))
+				.willReturn(new OffsetAndMetadata(500));
+		List<PartitionInfo> partitions = partitions(new Node(0, null, 0));
+		topicsInUse.put(TEST_TOPIC,
+				new TopicInformation("group1-metrics", partitions, false));
+		org.mockito.BDDMockito.given(consumer.partitionsFor(TEST_TOPIC))
+				.willReturn(partitions);
+		metrics.bindTo(meterRegistry);
+
+		// Because of the NoopGauge, the meterRegistry should contain no metric.
+		assertThat(meterRegistry.getMeters()).hasSize(0);
 	}
 
 	@Test

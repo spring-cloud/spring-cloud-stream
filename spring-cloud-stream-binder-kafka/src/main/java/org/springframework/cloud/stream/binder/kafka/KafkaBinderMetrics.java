@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2018 the original author or authors.
+ * Copyright 2016-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ import java.util.concurrent.TimeoutException;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.binder.MeterBinder;
+import io.micrometer.core.instrument.noop.NoopGauge;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.kafka.clients.consumer.Consumer;
@@ -124,15 +125,17 @@ public class KafkaBinderMetrics
 			String topic = topicInfo.getKey();
 			String group = topicInfo.getValue().getConsumerGroup();
 
-			//Schedule a task to compute the unconsumed messages for this group/topic every minute.
-			this.scheduler.scheduleWithFixedDelay(computeUnconsumedMessagesRunnable(topic, group, this.metadataConsumers),
-					10, DELAY_BETWEEN_TASK_EXECUTION, TimeUnit.SECONDS);
-
-			Gauge.builder(METRIC_NAME, this,
+			final Gauge register = Gauge.builder(METRIC_NAME, this,
 					(o) -> computeAndGetUnconsumedMessages(topic, group)).tag("group", group)
 					.tag("topic", topic)
 					.description("Unconsumed messages for a particular group and topic")
 					.register(registry);
+
+			if (!(register instanceof NoopGauge)) {
+				//Schedule a task to compute the unconsumed messages for this group/topic every minute.
+				this.scheduler.scheduleWithFixedDelay(computeUnconsumedMessagesRunnable(topic, group, this.metadataConsumers),
+						10, DELAY_BETWEEN_TASK_EXECUTION, TimeUnit.SECONDS);
+			}
 		}
 	}
 
