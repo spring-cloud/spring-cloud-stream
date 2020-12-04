@@ -99,7 +99,7 @@ public class KafkaBinderMetricsTest {
 				.willReturn(partitions);
 		metrics.bindTo(meterRegistry);
 		assertThat(meterRegistry.getMeters()).hasSize(1);
-		assertThat(meterRegistry.get(KafkaBinderMetrics.METRIC_NAME)
+		assertThat(meterRegistry.get(KafkaBinderMetrics.OFFSET_LAG_METRIC_NAME)
 				.tag("group", "group1-metrics").tag("topic", TEST_TOPIC).gauge().value())
 						.isEqualTo(500.0);
 	}
@@ -144,7 +144,7 @@ public class KafkaBinderMetricsTest {
 				.willReturn(partitions);
 		metrics.bindTo(meterRegistry);
 		assertThat(meterRegistry.getMeters()).hasSize(1);
-		assertThat(meterRegistry.get(KafkaBinderMetrics.METRIC_NAME)
+		assertThat(meterRegistry.get(KafkaBinderMetrics.OFFSET_LAG_METRIC_NAME)
 				.tag("group", "group2-metrics").tag("topic", TEST_TOPIC).gauge().value())
 						.isEqualTo(1000.0);
 	}
@@ -158,7 +158,7 @@ public class KafkaBinderMetricsTest {
 				.willReturn(partitions);
 		metrics.bindTo(meterRegistry);
 		assertThat(meterRegistry.getMeters()).hasSize(1);
-		assertThat(meterRegistry.get(KafkaBinderMetrics.METRIC_NAME)
+		assertThat(meterRegistry.get(KafkaBinderMetrics.OFFSET_LAG_METRIC_NAME)
 				.tag("group", "group3-metrics").tag("topic", TEST_TOPIC).gauge().value())
 						.isEqualTo(1000.0);
 	}
@@ -179,7 +179,7 @@ public class KafkaBinderMetricsTest {
 
 		metrics.bindTo(meterRegistry);
 
-		Gauge gauge = meterRegistry.get(KafkaBinderMetrics.METRIC_NAME)
+		Gauge gauge = meterRegistry.get(KafkaBinderMetrics.OFFSET_LAG_METRIC_NAME)
 				.tag("group", "group4-metrics").tag("topic", TEST_TOPIC).gauge();
 		gauge.value();
 		assertThat(gauge.value()).isEqualTo(1000.0);
@@ -201,7 +201,7 @@ public class KafkaBinderMetricsTest {
 
 		metrics.bindTo(meterRegistry);
 
-		Gauge gauge = meterRegistry.get(KafkaBinderMetrics.METRIC_NAME)
+		Gauge gauge = meterRegistry.get(KafkaBinderMetrics.OFFSET_LAG_METRIC_NAME)
 				.tag("group", "group5-metrics").tag("topic", TEST_TOPIC).gauge();
 		assertThat(gauge.value()).isEqualTo(0);
 		assertThat(gauge.value()).isEqualTo(1000.0);
@@ -231,9 +231,9 @@ public class KafkaBinderMetricsTest {
 				.willReturn(java.util.Collections
 						.singletonMap(new TopicPartition("test2", 0), 50L));
 
-		Gauge gauge1 = meterRegistry.get(KafkaBinderMetrics.METRIC_NAME)
+		Gauge gauge1 = meterRegistry.get(KafkaBinderMetrics.OFFSET_LAG_METRIC_NAME)
 				.tag("group", "group1-metrics").tag("topic", TEST_TOPIC).gauge();
-		Gauge gauge2 = meterRegistry.get(KafkaBinderMetrics.METRIC_NAME)
+		Gauge gauge2 = meterRegistry.get(KafkaBinderMetrics.OFFSET_LAG_METRIC_NAME)
 				.tag("group", "group2-metrics").tag("topic", "test2").gauge();
 		gauge1.value();
 		gauge2.value();

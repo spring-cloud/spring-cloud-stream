@@ -70,7 +70,7 @@ public class KafkaBinderMetrics
 
 	private static final Log LOG = LogFactory.getLog(KafkaBinderMetrics.class);
 
-	static final String METRIC_NAME = "spring.cloud.stream.binder.kafka.offset";
+	public static final String OFFSET_LAG_METRIC_NAME = "spring.cloud.stream.binder.kafka.offset";
 
 	private final KafkaMessageChannelBinder binder;
 
@@ -125,7 +125,7 @@ public class KafkaBinderMetrics
 			String topic = topicInfo.getKey();
 			String group = topicInfo.getValue().getConsumerGroup();
 
-			final Gauge register = Gauge.builder(METRIC_NAME, this,
+			final Gauge register = Gauge.builder(OFFSET_LAG_METRIC_NAME, this,
 					(o) -> computeAndGetUnconsumedMessages(topic, group)).tag("group", group)
 					.tag("topic", topic)
 					.description("Unconsumed messages for a particular group and topic")

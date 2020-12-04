@@ -684,8 +684,24 @@ You can consume these exceptions with your own Spring Integration flow.
 Kafka binder module exposes the following metrics:
 
 `spring.cloud.stream.binder.kafka.offset`: This metric indicates how many messages have not been yet consumed from a given binder's topic by a given consumer group.
-The metrics provided are based on the Mircometer metrics library. The metric contains the consumer group information, topic and the actual lag in committed offset from the latest offset on the topic.
+The metrics provided are based on the Micrometer library.
+The binder creates the `KafkaBinderMetrics` bean if Micrometer is on the classpath and no other such beans provided by the application.
+The metric contains the consumer group information, topic and the actual lag in committed offset from the latest offset on the topic.
 This metric is particularly useful for providing auto-scaling feedback to a PaaS platform.
+
+You can exclude `KafkaBinderMetrics` from creating the necessary infrastructure like consumers and then reporting the metrics by providing the following component in the application.
+
+```
+@Component
+class NoOpBindingMeters {
+	NoOpBindingMeters(MeterRegistry registry) {
+		registry.config().meterFilter(
+				MeterFilter.denyNameStartsWith(KafkaBinderMetrics.OFFSET_LAG_METRIC_NAME));
+	}
+}
+```
+
+More details on how to suppress meters selectively can be found https://micrometer.io/docs/concepts#_meter_filters[here].
 
 [[kafka-tombstones]]
 === Tombstone Records (null record values)
