@@ -472,6 +472,9 @@ public class FunctionConfiguration {
 								}
 								outputChannel.send((Message) message);
 							}
+						}).doOnError(e -> {
+							logger.error("Failure was detected during execution of the reactive function '" +  functionDefinition + "'");
+							((Throwable) e).printStackTrace();
 						});
 					}
 					if (!function.isConsumer()) {
