@@ -893,6 +893,20 @@ public class ImplicitFunctionBindingTests {
 	}
 
 
+	@Test
+	public void testGh2062() {
+		System.clearProperty("spring.cloud.function.definition");
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+				TestChannelBinderConfiguration.getCompleteConfiguration(ReactiveFunctionConfiguration.class))
+						.web(WebApplicationType.NONE).run("--spring.jmx.enabled=false",
+								"--spring.cloud.function.definition=echo")) {
+			InputDestination inputDestination = context.getBean(InputDestination.class);
+			String jsonPerson = "error";
+
+			inputDestination.send(MessageBuilder.withPayload(jsonPerson.getBytes()).build());
+			// there is really nothing to assert other then check the logs for stack trace and error message
+		}
+	}
 
 	@SuppressWarnings("rawtypes")
 	@Test
@@ -1216,6 +1230,9 @@ public class ImplicitFunctionBindingTests {
 		public Function<Flux<String>, Flux<String>> echo() {
 			return flux -> flux.map(value -> {
 				System.out.println("echo value reqctive " + value);
+				if (value.equals("error")) {
+					throw new RuntimeException("intentional");
+				}
 				return value;
 			});
 		}
