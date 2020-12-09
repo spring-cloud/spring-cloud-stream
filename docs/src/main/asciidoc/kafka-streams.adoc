@@ -635,9 +635,9 @@ public BiFunction<KStream<String, Long>, KTable<String, String>, KStream<String,
 Binder will generate bindings with names, `process-in-0`, `process-in-1` and `process-out-0`.
 Now, if you want to change them to something else completely, maybe more domain specific binding names, then you can do so as below.
 
-`springc.cloud.stream.function.bindings.process-in-0=users`
+`spring.cloud.stream.function.bindings.process-in-0=users`
 
-`springc.cloud.stream.function.bindings.process-in-0=regions`
+`spring.cloud.stream.function.bindings.process-in-0=regions`
 
 and
 
