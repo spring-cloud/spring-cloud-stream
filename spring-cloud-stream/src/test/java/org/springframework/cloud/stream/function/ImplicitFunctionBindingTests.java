@@ -1361,7 +1361,10 @@ public class ImplicitFunctionBindingTests {
 
 		@Bean
 		public Function<Message<List<Map<String, String>>>, Message<List<Map<String, String>>>> funcB() {
-			return v -> v;
+			return v -> {
+				System.out.println(v);
+				return v;
+			};
 		}
 	}
 

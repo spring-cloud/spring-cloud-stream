@@ -152,6 +152,31 @@ public class MultipleInputOutputFunctionTests {
 	}
 
 	@Test
+	public void testMultiInputMessageSingleOutput() {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+				TestChannelBinderConfiguration.getCompleteConfiguration(
+						ReactiveFunctionConfiguration.class))
+								.web(WebApplicationType.NONE)
+								.run("--spring.jmx.enabled=false",
+									"--spring.cloud.function.definition=multiInputSingleOutputMessage")) {
+			context.getBean(InputDestination.class);
+
+			InputDestination inputDestination = context.getBean(InputDestination.class);
+			OutputDestination outputDestination = context.getBean(OutputDestination.class);
+
+			Message<byte[]> stringInputMessage = MessageBuilder.withPayload("one".getBytes()).build();
+			Message<byte[]> integerInputMessage = MessageBuilder.withPayload("1".getBytes()).build();
+			inputDestination.send(stringInputMessage, "multiInputSingleOutputMessage-in-0");
+			inputDestination.send(integerInputMessage, "multiInputSingleOutputMessage-in-1");
+
+			Message<byte[]> outputMessage = outputDestination.receive();
+			assertThat(outputMessage.getPayload()).isEqualTo("one".getBytes());
+			outputMessage = outputDestination.receive(0, "multiInputSingleOutputMessage-out-0");
+			assertThat(outputMessage.getPayload()).isEqualTo("1".getBytes());
+		}
+	}
+
+	@Test
 	public void testSingleInputMultiOutput() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 				TestChannelBinderConfiguration.getCompleteConfiguration(
@@ -332,6 +357,18 @@ public class MultipleInputOutputFunctionTests {
 			return tuple -> {
 				Flux<String> stringStream = tuple.getT1();
 				Flux<String> intStream = tuple.getT2().map(i -> String.valueOf(i));
+				return Flux.merge(stringStream, intStream);
+			};
+		}
+
+		@Bean
+		public  Function<Tuple2<Flux<Message<String>>, Flux<Message<Integer>>>, Flux<String>> multiInputSingleOutputMessage() {
+			return tuple -> {
+				Flux<String> stringStream = tuple.getT1().map(m -> m.getPayload());
+				Flux<String> intStream = tuple.getT2().map(i -> {
+					int v = i.getPayload();
+					return String.valueOf(v);
+				});
 				return Flux.merge(stringStream, intStream);
 			};
 		}
