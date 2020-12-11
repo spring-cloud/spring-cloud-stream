@@ -289,9 +289,9 @@ In summary, the following table shows the various options that can be used in th
 
 ==== Imperative programming model.
 
-Although the functional programming model outlined above is the preferred approach, you can still use the classic `StreamListener` based approach if you prefer.
-
-Here are some examples.
+Starting with `3.1.0` version of the binder, we recommend using the functional programming model described above for Kafka Streams binder based applications.
+The support for `StreamListener` is deprecated starting with `3.1.0` of Spring Cloud Stream.
+Below, we are providing some details on the `StreamListener` based Kafka Streams processors as a reference.
 
 Following is the equivalent of the Word count example using `StreamListener`.
 
