@@ -1579,7 +1579,6 @@ By default, the `Kafkastreams.cleanup()` method is called when the binding is st
 See https://docs.spring.io/spring-kafka/reference/html/_reference.html#_configuration[the Spring Kafka documentation].
 To modify this behavior simply add a single `CleanupConfig` `@Bean` (configured to clean up on start, stop, or neither) to the application context; the bean will be detected and wired into the factory bean.
 
-
 === Kafka Streams topology visualization
 
 Kafka Streams binder provides the following actuator endpoints for retrieving the topology description using which you can visualize the topology using external tools.
@@ -1592,6 +1591,39 @@ You need to include the actuator and web dependencies from Spring Boot to access
 Further, you also need to add `kafkastreamstopology` to `management.endpoints.web.exposure.include` property.
 By default, the `kafkastreamstopology` endpoint is disabled.
 
+=== Event type based routing in Kafka Streams applications
+
+Routing functions available in regular message channel based binders are not supported in Kafka Streams binder.
+However, Kafka Streams binder still provides routing capabilities through the event type record header on the inbound records.
+
+To enable routing based on event types, the application must provide the following property.
+
+`spring.cloud.stream.kafka.streams.bindings.<binding-name>.consumer.eventTypes`.
+
+This can be a comma separated value.
+
+For example, lets assume we have this function:
+
+```
+@Bean
+public Function<KStream<Integer, Foo>, KStream<Integer, Foo>> process() {
+    return input -> input;
+}
+```
+
+Let us also assume that we only want the business logic in this function to be executed, if the incoming record has event types as `foo` or `bar`.
+That can be expressed as below using the `eventTypes` property on the binding.
+
+`spring.cloud.stream.kafka.streams.bindings.process-in-0.consumer.eventTypes=foo,bar`
+
+Now, when the application runs, the binder checks each incoming records for the header `event_type` and see if it has value set as `foo` or `bar`.
+If it does not find either of them, then the function execution will be skipped.
+
+By default, the binder expects the record header key to be `event_type`, but that can be changed per binding.
+For instance, if we want to change the header key on this binding to `my_event` instead of the default, that can be changed as below.
+
+`spring.cloud.stream.kafka.streams.bindings.process-in-0.consumer.eventTypeHeaderKey=my_event`.
+
 === Configuration Options
 
 This section contains the configuration options used by the Kafka Streams binder.
@@ -1603,9 +1635,9 @@ For common configuration options and properties pertaining to binder, refer to t
 The following properties are available at the binder level and must be prefixed with `spring.cloud.stream.kafka.streams.binder.`
 
 configuration::
-  Map with a key/value pair containing properties pertaining to Apache Kafka Streams API.
-  This property must be prefixed with `spring.cloud.stream.kafka.streams.binder.`.
- Following are some examples of using this property.
+Map with a key/value pair containing properties pertaining to Apache Kafka Streams API.
+This property must be prefixed with `spring.cloud.stream.kafka.streams.binder.`.
+Following are some examples of using this property.
 
 [source]
 ----
@@ -1621,56 +1653,56 @@ If you have more than processors in the application, all of them will acquire th
 In the case of properties like `application.id`, this will become problematic and therefore you have to carefully examine how the properties from `StreamsConfig` are mapped using this binder level `configuration` property.
 
 functions.<function-bean-name>.applicationId::
-  Applicable only for functional style processors.
-  This can be used for setting application ID per function in the application.
-  In the case of multiple functions, this is a handy way to set the application ID.
+Applicable only for functional style processors.
+This can be used for setting application ID per function in the application.
+In the case of multiple functions, this is a handy way to set the application ID.
 
 functions.<function-bean-name>.configuration::
-  Applicable only for functional style processors.
-  Map with a key/value pair containing properties pertaining to Apache Kafka Streams API.
-  This is similar to the binder level `configuration` property describe above, but this level of `configuration` property is restricted only against the named function.
-  When you have multiple processors and you want to restrict access to the configuration based on particular functions, you might want to use this.
-  All `StreamsConfig` properties can be used here.
+Applicable only for functional style processors.
+Map with a key/value pair containing properties pertaining to Apache Kafka Streams API.
+This is similar to the binder level `configuration` property describe above, but this level of `configuration` property is restricted only against the named function.
+When you have multiple processors and you want to restrict access to the configuration based on particular functions, you might want to use this.
+All `StreamsConfig` properties can be used here.
 
 brokers::
- Broker URL
+Broker URL
 +
 Default: `localhost`
 zkNodes::
- Zookeeper URL
+Zookeeper URL
 +
 Default: `localhost`
 
 deserializationExceptionHandler::
- Deserialization error handler type.
- This handler is applied at the binder level and thus applied against all input binding in the application.
- There is a way to control it in a more fine-grained way at the consumer binding level.
- Possible values are - `logAndContinue`, `logAndFail` or `sendToDlq`
+Deserialization error handler type.
+This handler is applied at the binder level and thus applied against all input binding in the application.
+There is a way to control it in a more fine-grained way at the consumer binding level.
+Possible values are - `logAndContinue`, `logAndFail` or `sendToDlq`
 +
 Default: `logAndFail`
 
 applicationId::
- Convenient way to set the application.id for the Kafka Streams application globally at the binder level.
- If the application contains multiple functions or `StreamListener` methods, then the application id should be set differently.
- See above where setting the application id is discussed in detail.
+Convenient way to set the application.id for the Kafka Streams application globally at the binder level.
+If the application contains multiple functions or `StreamListener` methods, then the application id should be set differently.
+See above where setting the application id is discussed in detail.
 +
 Default: application will generate a static application ID. See the application ID section for more details.
 
 stateStoreRetry.maxAttempts::
-  Max attempts for trying to connect to a state store.
+Max attempts for trying to connect to a state store.
 +
 Default: 1
 
 stateStoreRetry.backoffPeriod::
-  Backoff period when trying to connect to a state store on a retry.
+Backoff period when trying to connect to a state store on a retry.
 +
 Default: 1000 ms
 
 consumerProperties::
- Arbitrary consumer properties at the binder level.
+Arbitrary consumer properties at the binder level.
 
 producerProperties::
- Arbitrary producer properties at the binder level.
+Arbitrary producer properties at the binder level.
 
 ==== Kafka Streams Producer Properties
 
@@ -1678,23 +1710,23 @@ The following properties are _only_ available for Kafka Streams producers and mu
 For convenience, if there are multiple output bindings and they all require a common value, that can be configured by using the prefix `spring.cloud.stream.kafka.streams.default.producer.`.
 
 keySerde::
-  key serde to use
+key serde to use
 +
 Default: See the above discussion on message de/serialization
 
 valueSerde::
-  value serde to use
+value serde to use
 +
 Default: See the above discussion on message de/serialization
 
 useNativeEncoding::
-  flag to enable/disable native encoding
+flag to enable/disable native encoding
 +
 Default: `true`.
 
 streamPartitionerBeanName:
- Custom outbound partitioner bean name to be used at the consumer.
- Applications can provide custom `StreamPartitioner` as a Spring bean and the name of this bean can be provided to the producer to use instead of the default one.
+Custom outbound partitioner bean name to be used at the consumer.
+Applications can provide custom `StreamPartitioner` as a Spring bean and the name of this bean can be provided to the producer to use instead of the default one.
 +
 Default: See the discussion above on outbound partition support.
 
@@ -1704,40 +1736,40 @@ The following properties are available for Kafka Streams consumers and must be p
 For convenience, if there are multiple input bindings and they all require a common value, that can be configured by using the prefix `spring.cloud.stream.kafka.streams.default.consumer.`.
 
 applicationId::
- Setting application.id per input binding. This is only preferred for `StreamListener` based processors, for function based processors see other approaches outlined above.
+Setting application.id per input binding. This is only preferred for `StreamListener` based processors, for function based processors see other approaches outlined above.
 +
 Default: See above.
 
 keySerde::
-  key serde to use
+key serde to use
 +
 Default: See the above discussion on message de/serialization
 
 valueSerde::
-  value serde to use
+value serde to use
 +
 Default: See the above discussion on message de/serialization
 
 materializedAs::
-  state store to materialize when using incoming KTable types
+state store to materialize when using incoming KTable types
 +
 Default: `none`.
 
 useNativeDecoding::
-  flag to enable/disable native decoding
+flag to enable/disable native decoding
 +
 Default: `true`.
 
 dlqName::
-  DLQ topic name.
+DLQ topic name.
 +
 Default: See above on the discussion of error handling and DLQ.
 
 startOffset::
-  Offset to start from if there is no committed offset to consume from.
-  This is mostly used when the consumer is consuming from a topic for the first time.
-  Kafka Streams uses `earliest` as the default strategy and the binder uses the same default.
-  This can be overridden to `latest` using this property.
+Offset to start from if there is no committed offset to consume from.
+This is mostly used when the consumer is consuming from a topic for the first time.
+Kafka Streams uses `earliest` as the default strategy and the binder uses the same default.
+This can be overridden to `latest` using this property.
 +
 Default: `earliest`.
 
@@ -1745,17 +1777,27 @@ Note: Using `resetOffsets` on the consumer does not have any effect on Kafka Str
 Unlike the message channel based binder, Kafka Streams binder does not seek to beginning or end on demand.
 
 deserializationExceptionHandler::
- Deserialization error handler type.
- This handler is applied per consumer binding as opposed to the binder level property described before.
- Possible values are - `logAndContinue`, `logAndFail` or `sendToDlq`
+Deserialization error handler type.
+This handler is applied per consumer binding as opposed to the binder level property described before.
+Possible values are - `logAndContinue`, `logAndFail` or `sendToDlq`
 +
 Default: `logAndFail`
 
 timestampExtractorBeanName::
- Specific time stamp extractor bean name to be used at the consumer.
- Applications can provide `TimestampExtractor` as a Spring bean and the name of this bean can be provided to the consumer to use instead of the default one.
+Specific time stamp extractor bean name to be used at the consumer.
+Applications can provide `TimestampExtractor` as a Spring bean and the name of this bean can be provided to the consumer to use instead of the default one.
 +
 Default: See the discussion above on timestamp extractors.
+
+eventTypes::
+Comma separated list of supported event types for this binding.
++
+Default: `none`
+
+eventTypeHeaderKey::
+Event type header key on each incoming records through this binding.
++
+Default: `event_type`
 
 ==== Special note on concurrency
 

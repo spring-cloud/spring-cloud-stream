@@ -54,6 +54,18 @@ public class KafkaStreamsConsumerProperties extends KafkaConsumerProperties {
 	 */
 	private String timestampExtractorBeanName;
 
+	/**
+	 * Comma separated list of supported event types for this binding.
+	 */
+	private String eventTypes;
+
+	/**
+	 * Record level header key for event type.
+	 * If the default value is overridden, then that is expected on each record header if eventType based
+	 * routing is enabled on this binding (by setting eventTypes).
+	 */
+	private String eventTypeHeaderKey = "event_type";
+
 	public String getApplicationId() {
 		return this.applicationId;
 	}
@@ -100,5 +112,21 @@ public class KafkaStreamsConsumerProperties extends KafkaConsumerProperties {
 
 	public void setDeserializationExceptionHandler(DeserializationExceptionHandler deserializationExceptionHandler) {
 		this.deserializationExceptionHandler = deserializationExceptionHandler;
+	}
+
+	public String getEventTypes() {
+		return eventTypes;
+	}
+
+	public void setEventTypes(String eventTypes) {
+		this.eventTypes = eventTypes;
+	}
+
+	public String getEventTypeHeaderKey() {
+		return this.eventTypeHeaderKey;
+	}
+
+	public void setEventTypeHeaderKey(String eventTypeHeaderKey) {
+		this.eventTypeHeaderKey = eventTypeHeaderKey;
 	}
 }

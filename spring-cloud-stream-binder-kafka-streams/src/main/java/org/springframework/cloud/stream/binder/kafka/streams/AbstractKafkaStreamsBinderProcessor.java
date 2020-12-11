@@ -19,11 +19,14 @@ package org.springframework.cloud.stream.binder.kafka.streams;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.common.header.Header;
+import org.apache.kafka.common.header.Headers;
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.common.utils.Bytes;
@@ -37,6 +40,8 @@ import org.apache.kafka.streams.kstream.GlobalKTable;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.KTable;
 import org.apache.kafka.streams.kstream.Materialized;
+import org.apache.kafka.streams.processor.Processor;
+import org.apache.kafka.streams.processor.ProcessorContext;
 import org.apache.kafka.streams.processor.TimestampExtractor;
 import org.apache.kafka.streams.state.KeyValueStore;
 import org.apache.kafka.streams.state.StoreBuilder;
@@ -396,25 +401,13 @@ public abstract class AbstractKafkaStreamsBinderProcessor implements Application
 		}
 	}
 
+	@SuppressWarnings({"rawtypes", "unchecked"})
 	protected KStream<?, ?> getKStream(String inboundName, BindingProperties bindingProperties, KafkaStreamsConsumerProperties kafkaStreamsConsumerProperties,
-			StreamsBuilder streamsBuilder, Serde<?> keySerde, Serde<?> valueSerde, Topology.AutoOffsetReset autoOffsetReset, boolean firstBuild) {
+									StreamsBuilder streamsBuilder, Serde<?> keySerde, Serde<?> valueSerde, Topology.AutoOffsetReset autoOffsetReset, boolean firstBuild) {
 		if (firstBuild) {
 			addStateStoreBeans(streamsBuilder);
 		}
 
-		KStream<?, ?> stream;
-		if (this.kafkaStreamsExtendedBindingProperties
-				.getExtendedConsumerProperties(inboundName).isDestinationIsPattern()) {
-			final Pattern pattern = Pattern.compile(this.bindingServiceProperties.getBindingDestination(inboundName));
-			stream = streamsBuilder.stream(pattern);
-		}
-		else {
-			String[] bindingTargets = StringUtils.commaDelimitedListToStringArray(
-					this.bindingServiceProperties.getBindingDestination(inboundName));
-			final Consumed<?, ?> consumed = getConsumed(kafkaStreamsConsumerProperties, keySerde, valueSerde, autoOffsetReset);
-			stream = streamsBuilder.stream(Arrays.asList(bindingTargets),
-					consumed);
-		}
 		final boolean nativeDecoding = this.bindingServiceProperties
 				.getConsumerProperties(inboundName).isUseNativeDecoding();
 		if (nativeDecoding) {
@@ -426,6 +419,62 @@ public abstract class AbstractKafkaStreamsBinderProcessor implements Application
 					+ ". Inbound message conversion done by Spring Cloud Stream.");
 		}
 
+		KStream<?, ?> stream;
+		if (this.kafkaStreamsExtendedBindingProperties
+				.getExtendedConsumerProperties(inboundName).isDestinationIsPattern()) {
+			final Pattern pattern = Pattern.compile(this.bindingServiceProperties.getBindingDestination(inboundName));
+			stream = streamsBuilder.stream(pattern);
+		}
+		else {
+			String[] bindingTargets = StringUtils.commaDelimitedListToStringArray(
+					this.bindingServiceProperties.getBindingDestination(inboundName));
+			final Serde<?> valueSerdeToUse = StringUtils.hasText(kafkaStreamsConsumerProperties.getEventTypes()) ?
+					new Serdes.BytesSerde() : valueSerde;
+			final Consumed<?, ?> consumed = getConsumed(kafkaStreamsConsumerProperties, keySerde, valueSerdeToUse, autoOffsetReset);
+			stream = streamsBuilder.stream(Arrays.asList(bindingTargets),
+					consumed);
+		}
+		//Check to see if event type based routing is enabled.
+		//See this issue for more context: https://github.com/spring-cloud/spring-cloud-stream-binder-kafka/issues/1003
+		if (StringUtils.hasText(kafkaStreamsConsumerProperties.getEventTypes())) {
+			AtomicBoolean matched = new AtomicBoolean();
+			// Processor to retrieve the header value.
+			stream.process(() -> new Processor() {
+
+				ProcessorContext context;
+
+				@Override
+				public void init(ProcessorContext context) {
+					this.context = context;
+				}
+
+				@Override
+				public void process(Object key, Object value) {
+					final Headers headers = this.context.headers();
+					final Iterable<Header> eventTypeHeader = headers.headers(kafkaStreamsConsumerProperties.getEventTypeHeaderKey());
+					if (eventTypeHeader != null && eventTypeHeader.iterator().hasNext()) {
+						String eventTypeFromHeader = new String(eventTypeHeader.iterator().next().value());
+						final String[] eventTypesFromBinding = StringUtils.commaDelimitedListToStringArray(kafkaStreamsConsumerProperties.getEventTypes());
+						for (String eventTypeFromBinding : eventTypesFromBinding) {
+							if (eventTypeFromHeader.equals(eventTypeFromBinding)) {
+								matched.set(true);
+								break;
+							}
+						}
+					}
+				}
+
+				@Override
+				public void close() {
+
+				}
+			});
+			// Branching based on event type match.
+			final KStream<?, ?>[] branch = stream.branch((key, value) -> matched.getAndSet(false));
+			// Deserialize if we have a branch from above.
+			final KStream<?, Object> deserializedKStream = branch[0].mapValues(value -> valueSerde.deserializer().deserialize(null, ((Bytes) value).get()));
+			return getkStream(bindingProperties, deserializedKStream, nativeDecoding);
+		}
 		return getkStream(bindingProperties, stream, nativeDecoding);
 	}
 
