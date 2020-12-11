@@ -63,7 +63,9 @@ import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry
 import org.springframework.cloud.function.context.config.ContextFunctionCatalogAutoConfiguration;
 import org.springframework.cloud.function.context.config.FunctionContextUtils;
 import org.springframework.cloud.function.context.config.RoutingFunction;
+import org.springframework.cloud.function.context.message.MessageUtils;
 import org.springframework.cloud.stream.annotation.EnableBinding;
+import org.springframework.cloud.stream.binder.BinderFactory;
 import org.springframework.cloud.stream.binder.BindingCreatedEvent;
 import org.springframework.cloud.stream.binder.ConsumerProperties;
 import org.springframework.cloud.stream.binder.ProducerProperties;
@@ -403,6 +405,7 @@ public class FunctionConfiguration {
 		private void bindFunctionToDestinations(BindableProxyFactory bindableProxyFactory, String functionDefinition) {
 			this.assertBindingIsPossible(bindableProxyFactory);
 
+
 			Set<String> inputBindingNames = bindableProxyFactory.getInputs();
 			Set<String> outputBindingNames = bindableProxyFactory.getOutputs();
 
@@ -428,6 +431,24 @@ public class FunctionConfiguration {
 			}
 
 			if (isReactiveOrMultipleInputOutput(bindableProxyFactory, functionType)) {
+				//String targetProtocol = null;
+				AtomicReference<Function<Message<?>, Message<?>>> targetProtocolEnhancer = new AtomicReference<>();
+				if (!CollectionUtils.isEmpty(outputBindingNames)) {
+					String outputBindingName = outputBindingNames.iterator().next(); // TODO only gets the first one
+					String binderConfigurationName = this.serviceProperties.getBinder(outputBindingName);
+					BinderFactory binderFactory = applicationContext.getBean(BinderFactory.class);
+					Object binder = binderFactory.getBinder(binderConfigurationName, MessageChannel.class);
+					String targetProtocol = binder.getClass().getSimpleName().startsWith("Rabbit") ? "amqp" : "kafka";
+					Field headersField = ReflectionUtils.findField(MessageHeaders.class, "headers");
+					headersField.setAccessible(true);
+					targetProtocolEnhancer.set(message -> {
+						Map<String, Object> headersMap = (Map<String, Object>) ReflectionUtils
+								.getField(headersField, ((Message) message).getHeaders());
+						headersMap.putIfAbsent(MessageUtils.TARGET_PROTOCOL, targetProtocol);
+						return message;
+					});
+				}
+
 				Publisher[] inputPublishers = inputBindingNames.stream().map(inputBindingName -> {
 					BindingProperties bindingProperties = this.serviceProperties.getBindings().get(inputBindingName);
 					ConsumerProperties consumerProperties = bindingProperties == null ? null : bindingProperties.getConsumer();
@@ -439,7 +460,16 @@ public class FunctionConfiguration {
 					}
 					SubscribableChannel inputChannel = this.applicationContext.getBean(inputBindingName, SubscribableChannel.class);
 					return IntegrationReactiveUtils.messageChannelToFlux(inputChannel);
-				}).toArray(Publisher[]::new);
+				})
+				.map(publisher -> {
+					if (targetProtocolEnhancer.get() != null) {
+						return publisher.map(targetProtocolEnhancer.get());
+					}
+					else {
+						return publisher;
+					}
+				})
+				.toArray(Publisher[]::new);
 
 				Function functionToInvoke = function;
 				if (!CollectionUtils.isEmpty(outputBindingNames)) {
@@ -481,7 +511,8 @@ public class FunctionConfiguration {
 								}
 								outputChannel.send((Message) message);
 							}
-						}).doOnError(e -> {
+						})
+						.doOnError(e -> {
 							logger.error("Failure was detected during execution of the reactive function '" +  functionDefinition + "'");
 							((Throwable) e).printStackTrace();
 						});
@@ -513,8 +544,9 @@ public class FunctionConfiguration {
 			ProducerProperties producerProperties = StringUtils.hasText(outputChannelName)
 					? this.serviceProperties.getBindingProperties(outputChannelName).getProducer()
 							: null;
+
 			ServiceActivatingHandler handler = new ServiceActivatingHandler(new FunctionWrapper(function, consumerProperties,
-					producerProperties, applicationContext)) {
+					producerProperties, applicationContext, this.determineTargetProtocol(outputChannelName))) {
 				@Override
 				protected void sendOutputs(Object result, Message<?> requestMessage) {
 					if (result instanceof Iterable) {
@@ -551,7 +583,16 @@ public class FunctionConfiguration {
 			return handler;
 		}
 
-
+		private String determineTargetProtocol(String outputBindingName) {
+			if (StringUtils.hasText(outputBindingName)) {
+				String binderConfigurationName = this.serviceProperties.getBinder(outputBindingName);
+				BinderFactory binderFactory = applicationContext.getBean(BinderFactory.class);
+				Object binder = binderFactory.getBinder(binderConfigurationName, MessageChannel.class);
+				String protocol = binder.getClass().getSimpleName().startsWith("Rabbit") ? "amqp" : "kafka";
+				return protocol;
+			}
+			return null;
+		}
 
 		private boolean isReactiveOrMultipleInputOutput(BindableProxyFactory bindableProxyFactory, Type functionType) {
 			boolean reactiveInputsOutputs = FunctionTypeUtils.isPublisher(FunctionTypeUtils.getInputType(functionType)) ||
@@ -624,8 +665,10 @@ public class FunctionConfiguration {
 
 		private final boolean isRoutingFunction;
 
+		private final String targetProtocol;
+
 		FunctionWrapper(Function function, ConsumerProperties consumerProperties,
-				ProducerProperties producerProperties, ConfigurableApplicationContext applicationContext) {
+				ProducerProperties producerProperties, ConfigurableApplicationContext applicationContext, String targetProtocol) {
 
 			isRoutingFunction = ((FunctionInvocationWrapper) function).getTarget() instanceof RoutingFunction;
 			this.applicationContext = applicationContext;
@@ -640,17 +683,20 @@ public class FunctionConfiguration {
 			}
 			this.headersField = ReflectionUtils.findField(MessageHeaders.class, "headers");
 			this.headersField.setAccessible(true);
+			this.targetProtocol = targetProtocol;
 		}
 
 		@SuppressWarnings("unchecked")
 		@Override
 		public Object apply(Message<byte[]> message) {
+			Map<String, Object> headersMap = (Map<String, Object>) ReflectionUtils
+					.getField(this.headersField, message.getHeaders());
+			if (StringUtils.hasText(targetProtocol)) {
+				headersMap.putIfAbsent(MessageUtils.TARGET_PROTOCOL, targetProtocol);
+			}
 			if (message != null && consumerProperties != null) {
-				Map<String, Object> headersMap = (Map<String, Object>) ReflectionUtils
-						.getField(this.headersField, message.getHeaders());
 				headersMap.put(FunctionProperties.SKIP_CONVERSION_HEADER, consumerProperties.isUseNativeDecoding());
 			}
-
 			Object result = function.apply(message);
 			if (result instanceof Publisher && this.isRoutingFunction) {
 				throw new IllegalStateException("Routing to functions that return Publisher "
@@ -745,7 +791,6 @@ public class FunctionConfiguration {
 							functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(this.streamFunctionProperties);
 							try {
 								String name = functionDefinition + "_binding";
-								System.out.println(registry.containsBeanDefinition(name));
 								registry.registerBeanDefinition(name, functionBindableProxyDefinition);
 							}
 							catch (Exception e) {
