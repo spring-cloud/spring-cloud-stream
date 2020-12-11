@@ -70,6 +70,9 @@ public class KafkaBinderMetrics
 
 	private static final Log LOG = LogFactory.getLog(KafkaBinderMetrics.class);
 
+	/**
+	 * Offset lag micrometer metric name. This can be used for meter filtering.
+	 */
 	public static final String OFFSET_LAG_METRIC_NAME = "spring.cloud.stream.binder.kafka.offset";
 
 	private final KafkaMessageChannelBinder binder;
