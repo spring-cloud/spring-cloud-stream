@@ -109,7 +109,7 @@ public class InteractiveQueryService {
 			if (store != null) {
 				return store;
 			}
-			throw new IllegalStateException("Error when retrieving state store: j " + storeName, throwable);
+			throw new IllegalStateException("Error when retrieving state store: " + storeName, throwable);
 		});
 	}
 
