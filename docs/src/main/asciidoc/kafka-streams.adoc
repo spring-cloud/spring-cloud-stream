@@ -403,7 +403,7 @@ Finally, here is the `StreamListener` equivalent of the application with three i
     @SendTo("output")
     public KStream<Long, EnrichedOrder> process(
             @Input("input-1") KStream<Long, Order> ordersStream,
-            @Input("input-"2) GlobalKTable<Long, Customer> customers,
+            @Input("input-2") GlobalKTable<Long, Customer> customers,
             @Input("input-3") GlobalKTable<Long, Product> products) {
 
         KStream<Long, CustomerOrder> customerOrdersStream = ordersStream.join(
