@@ -88,7 +88,7 @@ You can exclude the class by using the `@SpringBootApplication` annotation.
 
 Starting with version 2.0, the `RabbitMessageChannelBinder` sets the `RabbitTemplate.userPublisherConnection` property to `true` so that the non-transactional producers avoid deadlocks on consumers, which can happen if cached connections are blocked because of a https://www.rabbitmq.com/memory.html[memory alarm] on the broker.
 
-NOTE: Currently, a `multiplex` consumer (a single consumer listening to multiple queues) is only supported for message-driven conssumers; polled consumers can only retrieve messages from a single queue.
+NOTE: Currently, a `multiplex` consumer (a single consumer listening to multiple queues) is only supported for message-driven consumers; polled consumers can only retrieve messages from a single queue.
 
 == Configuration Options
 
