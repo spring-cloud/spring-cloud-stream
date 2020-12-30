@@ -2955,12 +2955,12 @@ public void testMultipleFunctions() {
 
 		Message<byte[]> inputMessage = MessageBuilder.withPayload("Hello".getBytes()).build();
 		inputDestination.send(inputMessage, "uppercase-in-0");
-		inputDestination.send(inputMessage, "uppercase-in-0");
+		inputDestination.send(inputMessage, "reverse-in-0");
 
 		Message<byte[]> outputMessage = outputDestination.receive(0, "uppercase-out-0");
 		assertThat(outputMessage.getPayload()).isEqualTo("HELLO".getBytes());
 
-		outputMessage = outputDestination.receive(0, "uppercase-out-0");
+		outputMessage = outputDestination.receive(0, "reverse-out-0");
 		assertThat(outputMessage.getPayload()).isEqualTo("olleH".getBytes());
 	}
 }
@@ -2978,7 +2978,7 @@ public void testMultipleFunctions() {
 							.run(
 							"--spring.cloud.function.definition=uppercase;reverse",
 							"--spring.cloud.stream.bindings.uppercase-in-0.destination=myInput",
-							"--spring.cloud.stream.bindings.uppercase-out-0.destination=myOutput",
+							"--spring.cloud.stream.bindings.uppercase-out-0.destination=myOutput"
 							)) {
 
 		InputDestination inputDestination = context.getBean(InputDestination.class);
@@ -2986,12 +2986,12 @@ public void testMultipleFunctions() {
 
 		Message<byte[]> inputMessage = MessageBuilder.withPayload("Hello".getBytes()).build();
 		inputDestination.send(inputMessage, "myInput");
-		inputDestination.send(inputMessage, "myInput");
+		inputDestination.send(inputMessage, "reverse-in-0");
 
 		Message<byte[]> outputMessage = outputDestination.receive(0, "myOutput");
 		assertThat(outputMessage.getPayload()).isEqualTo("HELLO".getBytes());
 
-		outputMessage = outputDestination.receive(0, "myOutput");
+		outputMessage = outputDestination.receive(0, "reverse-out-0");
 		assertThat(outputMessage.getPayload()).isEqualTo("olleH".getBytes());
 	}
 }
