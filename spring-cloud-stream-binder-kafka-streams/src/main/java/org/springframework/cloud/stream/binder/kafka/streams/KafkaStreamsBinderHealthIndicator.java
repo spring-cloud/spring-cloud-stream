@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2020 the original author or authors.
+ * Copyright 2019-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.binder.kafka.streams;
 
+import java.lang.reflect.Method;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
@@ -26,8 +27,6 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.ListTopicsResult;
 import org.apache.kafka.streams.KafkaStreams;
@@ -52,25 +51,46 @@ import org.springframework.kafka.config.StreamsBuilderFactoryBean;
  */
 public class KafkaStreamsBinderHealthIndicator extends AbstractHealthIndicator implements DisposableBean {
 
-	private final Log logger = LogFactory.getLog(getClass());
+	/**
+	 * Static initialization for detecting whether the application is using Kafka client 2.5 vs lower versions.
+	 */
+	private static ClassLoader CLASS_LOADER = KafkaStreamsBinderHealthIndicator.class.getClassLoader();
+	private static boolean isKafkaStreams25 = true;
+	private static Method methodForIsRunning;
+
+	static {
+		try {
+			Class<?> KAFKA_STREAMS_STATE_CLASS = CLASS_LOADER.loadClass("org.apache.kafka.streams.KafkaStreams$State");
+
+			Method[] declaredMethods = KAFKA_STREAMS_STATE_CLASS.getDeclaredMethods();
+			for (Method m : declaredMethods) {
+				if (m.getName().equals("isRunning")) {
+					isKafkaStreams25 = false;
+					methodForIsRunning = m;
+				}
+			}
+		}
+		catch (ClassNotFoundException e) {
+			throw new IllegalStateException("KafkaStreams$State class not found", e);
+		}
+	}
 
 	private final KafkaStreamsRegistry kafkaStreamsRegistry;
+
 	private final KafkaStreamsBinderConfigurationProperties configurationProperties;
 
 	private final Map<String, Object> adminClientProperties;
 
 	private final KafkaStreamsBindingInformationCatalogue kafkaStreamsBindingInformationCatalogue;
 
-	private static final ThreadLocal<Status> healthStatusThreadLocal = new ThreadLocal<>();
-
 	private AdminClient adminClient;
 
 	private final Lock lock = new ReentrantLock();
 
 	KafkaStreamsBinderHealthIndicator(KafkaStreamsRegistry kafkaStreamsRegistry,
-									KafkaStreamsBinderConfigurationProperties kafkaStreamsBinderConfigurationProperties,
-									KafkaProperties kafkaProperties,
-									KafkaStreamsBindingInformationCatalogue kafkaStreamsBindingInformationCatalogue) {
+									  KafkaStreamsBinderConfigurationProperties kafkaStreamsBinderConfigurationProperties,
+									  KafkaProperties kafkaProperties,
+									  KafkaStreamsBindingInformationCatalogue kafkaStreamsBindingInformationCatalogue) {
 		super("Kafka-streams health check failed");
 		kafkaProperties.buildAdminProperties();
 		this.configurationProperties = kafkaStreamsBinderConfigurationProperties;
@@ -88,50 +108,54 @@ public class KafkaStreamsBinderHealthIndicator extends AbstractHealthIndicator i
 			if (this.adminClient == null) {
 				this.adminClient = AdminClient.create(this.adminClientProperties);
 			}
-			final Status status = healthStatusThreadLocal.get();
-			//If one of the kafka streams binders (kstream, ktable, globalktable) was down before on the same request,
-			//retrieve that from the thead local storage where it was saved before. This is done in order to avoid
-			//the duration of the total health check since in the case of Kafka Streams each binder tries to do
-			//its own health check and since we already know that this is DOWN, simply pass that information along.
-			if (status == Status.DOWN) {
-				builder.withDetail("No topic information available", "Kafka broker is not reachable");
-				builder.status(Status.DOWN);
+
+			final ListTopicsResult listTopicsResult = this.adminClient.listTopics();
+			listTopicsResult.listings().get(this.configurationProperties.getHealthTimeout(), TimeUnit.SECONDS);
+
+			if (this.kafkaStreamsBindingInformationCatalogue.getStreamsBuilderFactoryBeans().isEmpty()) {
+				builder.withDetail("No Kafka Streams bindings have been established", "Kafka Streams binder did not detect any processors");
+				builder.status(Status.UNKNOWN);
 			}
 			else {
-				final ListTopicsResult listTopicsResult = this.adminClient.listTopics();
-				listTopicsResult.listings().get(this.configurationProperties.getHealthTimeout(), TimeUnit.SECONDS);
-
-				if (this.kafkaStreamsBindingInformationCatalogue.getStreamsBuilderFactoryBeans().isEmpty()) {
-					builder.withDetail("No Kafka Streams bindings have been established", "Kafka Streams binder did not detect any processors");
-					builder.status(Status.UNKNOWN);
-				}
-				else {
-					boolean up = true;
-					for (KafkaStreams kStream : kafkaStreamsRegistry.getKafkaStreams()) {
+				boolean up = true;
+				for (KafkaStreams kStream : kafkaStreamsRegistry.getKafkaStreams()) {
+					if (isKafkaStreams25) {
 						up &= kStream.state().isRunningOrRebalancing();
-						builder.withDetails(buildDetails(kStream));
 					}
-					builder.status(up ? Status.UP : Status.DOWN);
+					else {
+						// if Kafka client version is lower than 2.5, then call the method reflectively.
+						final boolean isRunningInvokedResult = (boolean) methodForIsRunning.invoke(kStream.state());
+						up &= isRunningInvokedResult;
+					}
+					builder.withDetails(buildDetails(kStream));
 				}
+				builder.status(up ? Status.UP : Status.DOWN);
 			}
 		}
 		catch (Exception e) {
 			builder.withDetail("No topic information available", "Kafka broker is not reachable");
 			builder.status(Status.DOWN);
 			builder.withException(e);
-			//Store binder down status into a thread local storage.
-			healthStatusThreadLocal.set(Status.DOWN);
 		}
 		finally {
 			this.lock.unlock();
 		}
 	}
 
-	private Map<String, Object> buildDetails(KafkaStreams kafkaStreams) {
+	private Map<String, Object> buildDetails(KafkaStreams kafkaStreams) throws Exception {
 		final Map<String, Object> details = new HashMap<>();
 		final Map<String, Object> perAppdIdDetails = new HashMap<>();
 
-		if (kafkaStreams.state().isRunningOrRebalancing()) {
+		boolean isRunningResult;
+		if (isKafkaStreams25) {
+			isRunningResult = kafkaStreams.state().isRunningOrRebalancing();
+		}
+		else {
+			// if Kafka client version is lower than 2.5, then call the method reflectively.
+			isRunningResult = (boolean) methodForIsRunning.invoke(kafkaStreams.state());
+		}
+
+		if (isRunningResult) {
 			for (ThreadMetadata metadata : kafkaStreams.localThreadsMetadata()) {
 				perAppdIdDetails.put("threadName", metadata.threadName());
 				perAppdIdDetails.put("threadState", metadata.threadState());
