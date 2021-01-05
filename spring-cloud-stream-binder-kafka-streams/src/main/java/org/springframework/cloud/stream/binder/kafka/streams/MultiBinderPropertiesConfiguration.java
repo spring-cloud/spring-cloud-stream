@@ -34,7 +34,7 @@ public class MultiBinderPropertiesConfiguration {
 	@Bean
 	@ConfigurationProperties(prefix = "spring.cloud.stream.kafka.streams.binder")
 	@ConditionalOnBean(name = "outerContext")
-	public KafkaBinderConfigurationProperties kafkaBinderConfigurationProperties(KafkaProperties kafkaProperties) {
+	public KafkaBinderConfigurationProperties binderConfigurationProperties(KafkaProperties kafkaProperties) {
 		return new KafkaStreamsBinderConfigurationProperties(kafkaProperties);
 	}
 }

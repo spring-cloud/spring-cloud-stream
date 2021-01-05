@@ -39,8 +39,8 @@ import org.springframework.context.annotation.Import;
  */
 @Configuration
 @Import({ KafkaAutoConfiguration.class,
-		KafkaStreamsBinderHealthIndicatorConfiguration.class,
-		MultiBinderPropertiesConfiguration.class})
+		MultiBinderPropertiesConfiguration.class,
+		KafkaStreamsBinderHealthIndicatorConfiguration.class})
 public class GlobalKTableBinderConfiguration {
 
 	@Bean
@@ -81,6 +81,9 @@ public class GlobalKTableBinderConfiguration {
 			beanFactory.registerSingleton(
 					KafkaStreamsBindingInformationCatalogue.class.getSimpleName(),
 					outerContext.getBean(KafkaStreamsBindingInformationCatalogue.class));
+			beanFactory.registerSingleton(
+					KafkaStreamsRegistry.class.getSimpleName(),
+					outerContext.getBean(KafkaStreamsRegistry.class));
 		};
 	}
 

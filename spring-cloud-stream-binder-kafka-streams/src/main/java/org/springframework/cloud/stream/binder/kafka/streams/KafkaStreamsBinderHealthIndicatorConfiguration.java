@@ -16,9 +16,9 @@
 
 package org.springframework.cloud.stream.binder.kafka.streams;
 
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.actuate.autoconfigure.health.ConditionalOnEnabledHealthIndicator;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsBinderConfigurationProperties;
@@ -36,13 +36,15 @@ import org.springframework.context.annotation.Configuration;
 class KafkaStreamsBinderHealthIndicatorConfiguration {
 
 	@Bean
-	@ConditionalOnBean(KafkaStreamsRegistry.class)
 	KafkaStreamsBinderHealthIndicator kafkaStreamsBinderHealthIndicator(
-			KafkaStreamsRegistry kafkaStreamsRegistry, @Qualifier("binderConfigurationProperties")KafkaStreamsBinderConfigurationProperties kafkaStreamsBinderConfigurationProperties,
+			ObjectProvider<KafkaStreamsRegistry> kafkaStreamsRegistry,
+			@Qualifier("binderConfigurationProperties")KafkaStreamsBinderConfigurationProperties kafkaStreamsBinderConfigurationProperties,
 			KafkaProperties kafkaProperties, KafkaStreamsBindingInformationCatalogue kafkaStreamsBindingInformationCatalogue) {
-
-		return new KafkaStreamsBinderHealthIndicator(kafkaStreamsRegistry, kafkaStreamsBinderConfigurationProperties,
-				kafkaProperties, kafkaStreamsBindingInformationCatalogue);
+		if (kafkaStreamsRegistry.getIfUnique() != null) {
+			return new KafkaStreamsBinderHealthIndicator(kafkaStreamsRegistry.getIfUnique(), kafkaStreamsBinderConfigurationProperties,
+					kafkaProperties, kafkaStreamsBindingInformationCatalogue);
+		}
+		return null;
 	}
 
 }
