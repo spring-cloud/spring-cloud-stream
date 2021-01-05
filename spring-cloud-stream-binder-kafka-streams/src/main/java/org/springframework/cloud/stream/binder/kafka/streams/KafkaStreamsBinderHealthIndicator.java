@@ -88,9 +88,9 @@ public class KafkaStreamsBinderHealthIndicator extends AbstractHealthIndicator i
 	private final Lock lock = new ReentrantLock();
 
 	KafkaStreamsBinderHealthIndicator(KafkaStreamsRegistry kafkaStreamsRegistry,
-									  KafkaStreamsBinderConfigurationProperties kafkaStreamsBinderConfigurationProperties,
-									  KafkaProperties kafkaProperties,
-									  KafkaStreamsBindingInformationCatalogue kafkaStreamsBindingInformationCatalogue) {
+									KafkaStreamsBinderConfigurationProperties kafkaStreamsBinderConfigurationProperties,
+									KafkaProperties kafkaProperties,
+									KafkaStreamsBindingInformationCatalogue kafkaStreamsBindingInformationCatalogue) {
 		super("Kafka-streams health check failed");
 		kafkaProperties.buildAdminProperties();
 		this.configurationProperties = kafkaStreamsBinderConfigurationProperties;
