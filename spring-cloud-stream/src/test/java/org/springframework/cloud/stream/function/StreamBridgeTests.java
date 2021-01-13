@@ -37,6 +37,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.integration.dsl.IntegrationFlow;
 import org.springframework.integration.dsl.IntegrationFlows;
 import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageChannel;
+import org.springframework.messaging.support.ChannelInterceptor;
 import org.springframework.messaging.support.MessageBuilder;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -54,6 +56,26 @@ public class StreamBridgeTests {
 	public void before() {
 		System.clearProperty("spring.cloud.function.definition");
 	}
+
+	@Test
+	public void testWithInterceptor() {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration
+				.getCompleteConfiguration(ConsumerConfiguration.class, InterceptorConfiguration.class))
+						.web(WebApplicationType.NONE).run(
+								"--spring.cloud.function.definition=function",
+								"--spring.jmx.enabled=false")) {
+
+
+			StreamBridge bridge = context.getBean(StreamBridge.class);
+			bridge.send("function-in-0", "hello foo");
+
+			OutputDestination outputDestination = context.getBean(OutputDestination.class);
+			Message<byte[]> message = outputDestination.receive(100, "function-out-0");
+			assertThat(new String(message.getPayload())).isEqualTo("hello foo");
+			assertThat(message.getHeaders().get("intercepted")).isEqualTo("true");
+		}
+	}
+
 
 	@Test
 	public void testBindingPropertiesAreHonored() {
@@ -272,6 +294,19 @@ public class StreamBridgeTests {
 						.setHeader("concurrency", concurrency)
 						.setHeader("partitionCount", partitionCount)
 						.build();
+			};
+		}
+	}
+
+	@EnableAutoConfiguration
+	public static class InterceptorConfiguration {
+		@Bean
+		public ChannelInterceptor interceptor() {
+			return new ChannelInterceptor() {
+				@Override
+				public Message<?> preSend(Message<?> message, MessageChannel channel) {
+					return MessageBuilder.fromMessage(message).setHeader("intercepted", "true").build();
+				}
 			};
 		}
 	}
