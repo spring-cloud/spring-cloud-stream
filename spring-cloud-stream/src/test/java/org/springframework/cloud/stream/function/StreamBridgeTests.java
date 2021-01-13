@@ -17,6 +17,7 @@
 package org.springframework.cloud.stream.function;
 
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -30,6 +31,7 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.stream.binder.test.OutputDestination;
 import org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration;
 import org.springframework.cloud.stream.binding.BinderAwareChannelResolver.NewDestinationBindingCallback;
+import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.integration.dsl.IntegrationFlow;
@@ -53,6 +55,30 @@ public class StreamBridgeTests {
 		System.clearProperty("spring.cloud.function.definition");
 	}
 
+	@Test
+	public void testBindingPropertiesAreHonored() {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration
+				.getCompleteConfiguration(ConsumerConfiguration.class))
+						.web(WebApplicationType.NONE).run(
+								"--spring.cloud.function.definition=consumer;function",
+								"--spring.jmx.enabled=false",
+								"--spring.cloud.stream.bindings.foo.destination=function-in-0",
+								"--spring.cloud.stream.bindings.foo.producer.partitionCount=5",
+								"--spring.cloud.stream.bindings.foo.consumer.concurrency=2")) {
+
+			BindingServiceProperties bsProperties = context.getBean(BindingServiceProperties.class);
+			assertThat(bsProperties.getConsumerProperties("foo").getConcurrency()).isEqualTo(2);
+			assertThat(bsProperties.getProducerProperties("foo").getPartitionCount()).isEqualTo(5);
+			StreamBridge bridge = context.getBean(StreamBridge.class);
+			bridge.send("consumer-in-0", "hello foo");
+
+			OutputDestination outputDestination = context.getBean(OutputDestination.class);
+			Message<byte[]> message = outputDestination.receive(100, "function-out-0");
+			assertThat(new String(message.getPayload())).isEqualTo("hello foo");
+			assertThat(message.getHeaders().get("concurrency")).isEqualTo(2);
+			assertThat(message.getHeaders().get("partitionCount")).isEqualTo(5);
+		}
+	}
 
 	//see https://github.com/spring-cloud/spring-cloud-function/issues/573 for more details
 	@Test
@@ -225,6 +251,29 @@ public class StreamBridgeTests {
 	@EnableAutoConfiguration
 	public static class EmptyConfiguration {
 
+	}
+
+	@EnableAutoConfiguration
+	public static class ConsumerConfiguration {
+		@Bean
+		public Consumer<String> consumer(StreamBridge bridge, BindingServiceProperties properties) {
+			return v -> {
+				BindingServiceProperties p = properties;
+				bridge.send("foo", v);
+			};
+		}
+		@Bean
+		public Function<String, Message<String>> function(StreamBridge bridge, BindingServiceProperties properties) {
+			return v -> {
+				int concurrency = properties.getConsumerProperties("foo").getConcurrency();
+				int partitionCount = properties.getProducerProperties("foo").getPartitionCount();
+				BindingServiceProperties p = properties;
+				return MessageBuilder.withPayload(v)
+						.setHeader("concurrency", concurrency)
+						.setHeader("partitionCount", partitionCount)
+						.build();
+			};
+		}
 	}
 
 	@EnableAutoConfiguration

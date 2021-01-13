@@ -116,7 +116,9 @@ public final class StreamBridge implements SmartInitializingSingleton {
 	/**
 	 * Sends 'data' to an output binding specified by 'bindingName' argument while
 	 * using default content type to deal with output type conversion (if necessary).
-	 * @param bindingName the name of the output binding
+	 * @param bindingName the name of the output binding. That said it requires a bit of clarification.
+	 *        When using bridge.send("foo"...), the 'foo' typically represents the binding name. However
+	 *        if such binding does not exist, the new binding will be created to support dynamic destinations.
 	 * @param data the data to send
 	 * @return true if data was sent successfully, otherwise false or throws an exception.
 	 */
@@ -133,7 +135,9 @@ public final class StreamBridge implements SmartInitializingSingleton {
 	 * provided via 'bindingName' does not have a corresponding binding such name will be
 	 * treated as dynamic destination.
 	 *
-	 * @param bindingName the name of the output binding
+	 * @param bindingName the name of the output binding. That said it requires a bit of clarification.
+	 *        When using bridge.send("foo"...), the 'foo' typically represents the binding name. However
+	 *        if such binding does not exist, the new binding will be created to support dynamic destinations.
 	 * @param data the data to send
 	 * @param outputContentType content type to be used to deal with output type conversion
 	 * @return true if data was sent successfully, otherwise false or throws an exception.
