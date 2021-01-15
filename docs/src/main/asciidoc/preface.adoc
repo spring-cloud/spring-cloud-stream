@@ -18,7 +18,7 @@ With Spring Cloud Stream, developers can:
 
 === Quick Start
 
-You can try Spring Cloud Stream in less then 5 min even before you jump into any details by following this three-step guide.
+You can try Spring Cloud Stream in less than 5 min even before you jump into any details by following this three-step guide.
 
 We show you how to create a Spring Cloud Stream application that receives messages coming from the messaging middleware of your choice (more on this later) and logs received messages to the console.
 We call it `LoggingConsumer`.
