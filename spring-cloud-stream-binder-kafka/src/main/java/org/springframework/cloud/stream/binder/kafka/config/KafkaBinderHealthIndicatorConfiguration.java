@@ -43,10 +43,10 @@ import org.springframework.util.ObjectUtils;
 @Configuration
 @ConditionalOnClass(name = "org.springframework.boot.actuate.health.HealthIndicator")
 @ConditionalOnEnabledHealthIndicator("binders")
-class KafkaBinderHealthIndicatorConfiguration {
+public class KafkaBinderHealthIndicatorConfiguration {
 
 	@Bean
-	KafkaBinderHealthIndicator kafkaBinderHealthIndicator(
+	public KafkaBinderHealthIndicator kafkaBinderHealthIndicator(
 			KafkaMessageChannelBinder kafkaMessageChannelBinder,
 			KafkaBinderConfigurationProperties configurationProperties) {
 		Map<String, Object> props = new HashMap<>();

@@ -33,10 +33,10 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @ConditionalOnClass(name = "org.springframework.boot.actuate.health.HealthIndicator")
 @ConditionalOnEnabledHealthIndicator("binders")
-class KafkaStreamsBinderHealthIndicatorConfiguration {
+public class KafkaStreamsBinderHealthIndicatorConfiguration {
 
 	@Bean
-	KafkaStreamsBinderHealthIndicator kafkaStreamsBinderHealthIndicator(
+	public KafkaStreamsBinderHealthIndicator kafkaStreamsBinderHealthIndicator(
 			ObjectProvider<KafkaStreamsRegistry> kafkaStreamsRegistry,
 			@Qualifier("binderConfigurationProperties")KafkaStreamsBinderConfigurationProperties kafkaStreamsBinderConfigurationProperties,
 			KafkaProperties kafkaProperties, KafkaStreamsBindingInformationCatalogue kafkaStreamsBindingInformationCatalogue) {
