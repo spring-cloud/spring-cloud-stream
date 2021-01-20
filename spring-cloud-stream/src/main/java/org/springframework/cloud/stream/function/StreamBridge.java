@@ -73,6 +73,8 @@ public final class StreamBridge implements SmartInitializingSingleton {
 
 	private final Map<String, SubscribableChannel> channelCache;
 
+	private final Map<BindingMimeTypeKey, Function<Object, Object>> functionCache;
+
 	private final FunctionCatalog functionCatalog;
 
 	private final FunctionRegistry functionRegistry;
@@ -115,6 +117,16 @@ public final class StreamBridge implements SmartInitializingSingleton {
 				return remove;
 			}
 		};
+		this.functionCache = new LinkedHashMap<BindingMimeTypeKey, Function<Object, Object>>() {
+			@Override
+			protected boolean removeEldestEntry(Map.Entry<BindingMimeTypeKey, Function<Object, Object>> eldest) {
+				boolean remove = size() > bindingServiceProperties.getDynamicDestinationCacheSize();
+				if (remove && logger.isDebugEnabled()) {
+					logger.debug("Removing output conversion function from cache " + eldest.getKey());
+				}
+				return remove;
+			}
+		};
 	}
 
 	/**
@@ -153,6 +165,16 @@ public final class StreamBridge implements SmartInitializingSingleton {
 
 		boolean skipConversion = producerProperties.isUseNativeEncoding();
 
+		Function<Object, Object> functionToInvoke = functionCache.computeIfAbsent(new BindingMimeTypeKey(bindingName, outputContentType), //
+				k -> createFunction(outputContentType, producerProperties, skipConversion));
+
+		// this function is a pass through and is only required to force output conversion if necessary on SCF side.
+		Message<byte[]> resultMessage = (Message<byte[]>) functionToInvoke.apply(data);
+		return messageChannel.send(resultMessage);
+	}
+
+	private Function<Object, Object> createFunction(MimeType outputContentType, ProducerProperties producerProperties,
+			boolean skipConversion) {
 		Function<Object, Object> functionToInvoke = skipConversion
 				? v -> v instanceof Message ? v :  MessageBuilder.withPayload(v).build()
 						: this.functionCatalog.lookup(STREAM_BRIDGE_FUNC_NAME, outputContentType.toString());
@@ -160,9 +182,7 @@ public final class StreamBridge implements SmartInitializingSingleton {
 		if (producerProperties != null && producerProperties.isPartitioned()) {
 			functionToInvoke = new PartitionAwareFunctionWrapper((FunctionInvocationWrapper) functionToInvoke, this.applicationContext, producerProperties);
 		}
-		// this function is a pass through and is only required to force output conversion if necessary on SCF side.
-		Message<byte[]> resultMessage = (Message<byte[]>) functionToInvoke.apply(data);
-		return messageChannel.send(resultMessage);
+		return functionToInvoke;
 	}
 
 	@Override
@@ -216,3 +236,4 @@ public final class StreamBridge implements SmartInitializingSingleton {
 		}
 	}
 }
+
