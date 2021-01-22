@@ -239,7 +239,7 @@ Default: `false`.
 startOffset::
 The starting offset for new groups.
 Allowed values: `earliest` and `latest`.
-If the consumer group is set explicitly for the consumer 'binding' (through `spring.cloud.stream.bindings.<channelName>.group`), 'startOffset' is set to `earliest`. Otherwise, it is set to `latest` for the `anonymous` consumer group.
+If the consumer group is set explicitly for the consumer 'binding' (through `spring.cloud.stream.kafka.bindings.<channelName>.group`), 'startOffset' is set to `earliest`. Otherwise, it is set to `latest` for the `anonymous` consumer group.
 Also see `resetOffsets` (earlier in this list).
 +
 Default: null (equivalent to `earliest`).
