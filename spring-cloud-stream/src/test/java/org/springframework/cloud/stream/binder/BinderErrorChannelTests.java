@@ -17,10 +17,13 @@
 package org.springframework.cloud.stream.binder;
 
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import org.springframework.beans.DirectFieldAccessor;
 import org.springframework.integration.dispatcher.AbstractDispatcher;
+import org.springframework.messaging.MessageDeliveryException;
 import org.springframework.messaging.MessageHandler;
+import org.springframework.messaging.support.GenericMessage;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -40,6 +43,14 @@ public class BinderErrorChannelTests {
 	private static final MessageHandler SECOND_HANDLER = message -> {
 
 	};
+
+	@Test
+	public void testExceptionIsThrownWhenNoSubscribers() {
+		BinderErrorChannel channel = new BinderErrorChannel();
+		Assertions.assertThrows(MessageDeliveryException.class, () -> {
+			channel.send(new GenericMessage<String>("hello"));
+		});
+	}
 
 	@Test
 	public void testSubscribeUnsubscribe() {
