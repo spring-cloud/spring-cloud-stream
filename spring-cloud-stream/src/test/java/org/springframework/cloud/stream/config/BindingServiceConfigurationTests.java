@@ -17,6 +17,7 @@
 package org.springframework.cloud.stream.config;
 
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.Test;
 
@@ -24,10 +25,13 @@ import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.integration.annotation.ServiceActivator;
+import org.springframework.integration.channel.PublishSubscribeChannel;
 import org.springframework.integration.handler.AbstractReplyProducingMessageHandler;
+import org.springframework.messaging.support.GenericMessage;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -36,6 +40,32 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  */
 public class BindingServiceConfigurationTests {
+
+	@Test
+	public void testErroChannelDistributesMessagesInCaseOfException() {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+				TestChannelBinderConfiguration
+				.getCompleteConfiguration(EmptyConfiguration.class))
+						.web(WebApplicationType.NONE).run()) {
+			AtomicInteger counter = new AtomicInteger();
+			PublishSubscribeChannel channel = context.getBean("errorChannel", PublishSubscribeChannel.class);
+			//channel.setIgnoreFailures(true);
+			channel.subscribe(m -> {
+				counter.incrementAndGet();
+				throw new RuntimeException("one");
+			});
+			channel.subscribe(m -> {
+				counter.incrementAndGet();
+				throw new RuntimeException("two");
+			});
+			channel.subscribe(m -> {
+				counter.incrementAndGet();
+				throw new RuntimeException("three");
+			});
+			channel.send(new GenericMessage<String>("foo"));
+			assertThat(counter.get()).isEqualTo(3);
+		}
+	}
 
 	@Test
 	public void valdateImportedConfiguartionHandlerPostProcessing() {
@@ -67,6 +97,11 @@ public class BindingServiceConfigurationTests {
 		@ServiceActivator(inputChannel = "input")
 		public void importedService(String val) {
 		}
+
+	}
+
+	@Configuration
+	public static class EmptyConfiguration {
 
 	}
 
