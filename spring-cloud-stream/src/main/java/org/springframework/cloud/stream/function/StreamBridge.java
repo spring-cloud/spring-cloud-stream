@@ -181,8 +181,8 @@ public final class StreamBridge implements SmartInitializingSingleton {
 		this.initialized = true;
 	}
 
-	@SuppressWarnings({ "unchecked", "deprecation" })
-	SubscribableChannel resolveDestination(String destinationName, ProducerProperties producerProperties) {
+	@SuppressWarnings("unchecked")
+	synchronized SubscribableChannel resolveDestination(String destinationName, ProducerProperties producerProperties) {
 		SubscribableChannel messageChannel = this.channelCache.get(destinationName);
 		if (messageChannel == null && this.applicationContext.containsBean(destinationName)) {
 			messageChannel = this.applicationContext.getBean(destinationName, SubscribableChannel.class);
