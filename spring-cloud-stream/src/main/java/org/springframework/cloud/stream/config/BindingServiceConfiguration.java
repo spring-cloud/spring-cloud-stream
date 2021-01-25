@@ -23,10 +23,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.SearchStrategy;
@@ -59,6 +61,7 @@ import org.springframework.context.annotation.DependsOn;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Role;
 import org.springframework.context.event.ContextRefreshedEvent;
+import org.springframework.integration.channel.PublishSubscribeChannel;
 import org.springframework.integration.handler.AbstractReplyProducingMessageHandler;
 import org.springframework.integration.router.AbstractMappingMessageRouter;
 import org.springframework.lang.Nullable;
@@ -155,6 +158,19 @@ public class BindingServiceConfiguration {
 			}
 		}
 		return binderConfigurations;
+	}
+
+	@Bean
+	public BeanPostProcessor globalErrorChannelCustomizer() {
+		return new BeanPostProcessor() {
+			@Override
+			public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
+				if ("errorChannel".equals(beanName)) {
+					((PublishSubscribeChannel) bean).setIgnoreFailures(true);
+				}
+				return bean;
+			}
+		};
 	}
 
 	@Bean(name = STREAM_LISTENER_ANNOTATION_BEAN_POST_PROCESSOR_NAME)
