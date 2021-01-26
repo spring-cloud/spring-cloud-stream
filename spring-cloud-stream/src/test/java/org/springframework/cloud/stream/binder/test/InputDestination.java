@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2020 the original author or authors.
+ * Copyright 2017-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,13 +48,45 @@ public class InputDestination extends AbstractDestination {
 	}
 
 	/**
-	 * Allows the {@link Message} to be sent to a Binder to be delegated to a named binding
-	 * destination (e.g., "function-in-0" for cases where you want to send input to function with the name 'function').
-	 * @param message message to send
-	 * @param bindingName binding name
+	 * Allows the {@link Message} to be sent to a Binder's destination.<br>
+	 * This needs a bit of clarification. Just like with any binder, 'destination'
+	 * name and 'binding' name are usually the same unless additional configuration
+	 * is provided. For example; Assume you have a function 'uppercase'. The
+	 * 'binding' names for this function would be 'uppercase-in-0' (for input) and
+	 * 'uppercase-out-0' (for output). The 'destination' names would match as well
+	 * unless you decide to provide something like
+	 * 'spring.cloud.stream.bindings.uppercase-in-0.destination=upper' at which
+	 * point the binding names and destination names are different. <br>
+	 * <br>
+	 * So, it is important to remember that since this binder's goal is to emulate
+	 * real binders and real messaging systems you are sending TO and receiving FROM
+	 * destination (as if it was real broker destination) and binder will map and
+	 * delegate what you send to the binder's destination to individual bindings as
+	 * would the real binder.
+	 *
+	 * *
+	 *
+	 * <pre>
+	 *
+	 * // assume the following properties
+	 * "--spring.cloud.fuunction.definition=uppercase",
+	 * "--spring.cloud.stream.bindings.uppercase-in-0.destination=upper",
+	 * "--spring.cloud.stream.bindings.uppercase-out-0.destination=upperout"
+	 *
+	 * // send/receive
+	 * inputDestination.send(message, "upper");
+	 * Message&lt;byte[]&gt; resultMessage = outputDestination.receive(1000, "upperout");
+	 *
+	 * // if 'destination' property is not provided for both input and output
+	 * inputDestination.send(message, "uppercase-in-0");
+	 * Message&lt;byte[]&gt; resultMessage = outputDestination.receive(1000, "upprecase-out-0");
+	 * </pre>
+	 *
+	 * @param message    message to send
+	 * @param destinationName the name of the destination
 	 */
-	public void send(Message<?> message, String bindingName) {
-		this.getChannelByName(bindingName).send(message);
+	public void send(Message<?> message, String destinationName) {
+		this.getChannelByName(destinationName).send(message);
 	}
 
 }

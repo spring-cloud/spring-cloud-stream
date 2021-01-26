@@ -111,6 +111,7 @@ public class TestChannelBinder extends
 
 	private Message<?> lastError;
 
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	private MessageSource<?> messageSourceDelegate = () -> new GenericMessage<>(
 			"polled data", new MapBuilder()
 					.put(MessageHeaders.CONTENT_TYPE, "text/plain")
