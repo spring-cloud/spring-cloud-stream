@@ -2864,18 +2864,7 @@ testImplementation("org.springframework.cloud:spring-cloud-stream") {
 }
 ---
 
-***Remove the dependency for `spring-cloud-stream-test-support`***
 
-To avoid conflicts with the existing test binder you must remove the following entry
-
-[source,xml]
-----
-<dependency>
-	<groupId>org.springframework.cloud</groupId>
-	<artifactId>spring-cloud-stream-test-support</artifactId>
-	<scope>test</scope>
-</dependency>
-----
 
 ==== Test Binder usage
 
