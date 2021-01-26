@@ -1565,19 +1565,41 @@ In this section we'll explain the general idea behind error handling mechanisms 
 We'll be using Rabbit binder as an example, since individual binders define different set
 of properties for certain supported mechanisms specific to underlying broker capabilities (such as Kafka binder).
 
-Errors happen, and Spring Cloud Stream provides several flexible mechanisms to deal with them. Note that the techniques are dependent on binder implementation and the
-capability of the underlying messaging middleware.
+Errors happen, and Spring Cloud Stream provides several flexible mechanisms to deal with them. Note, the techniques are dependent on binder implementation and the
+capability of the underlying messaging middleware as well as programming model (more on this later).
 
-Whenever there is an exception during message processing, the framework will make several attempts at re-trying
-the same message (3 by default). For that, the framework uses https://github.com/spring-projects/spring-retry[Spring Retry] library
-(for imperative functions and standard message handlers) and `retryBackoff` capabilities of the reactive API (for reactive
-functions).
+Whenever Message handler (function) throws an exception, it is propagated back to the binder, and the binder subsequently propagates
+the error back to the messaging system. The framework then will make several attempts at re-trying
+the same message (3 by default) using `RetryTemplate` provided by the https://github.com/spring-projects/spring-retry[Spring Retry] library.
 
-Whenever handler (function) throws and exception, it is propagated back to the binder, and the binder subsequently propagates
-the error back to the messaging system.
-Depending on the capabilities of the messaging system such system may _drop_ the message, _re-queue_ the message for re-processing or _send the failed message to DLQ_.
+After that, depending on the capabilities of the messaging system such system may _drop_ the message, _re-queue_ the message for re-processing or _send the failed message to DLQ_.
 Both Rabbit and Kafka support these concepts. However, other binders may not, so refer to your individual binder’s documentation for details on supported
 error-handling options.
+
+Keep in mind however, the _reactive function_ does NOT qualify as a Message handler, since it does not handle individual messages and 
+instead provides a way to connect stream (i.e., Flux) provided by the framework with the one provided by the user. In other way of looking 
+at it is - Message handler (i.e., imperative function) is invoked for each Message, while the reactive function is invoked only once 
+during the initialization to connect two stream definitions at which point framework effectively hands 
+off any and all control to the reactive API. 
+
+Why is this important? 
+That is because anything you read later in this section with regard to Retry Template, dropping failed messages, retrying, 
+DLQ and configuration properties that assist with all of it ***only*** applies to Message handlers (i.e., imperative functions).
+
+Reactive API provides a very rich library of its own operators and mechanisms to assist you with error handling specific to 
+variety of reactive uses cases which are far more complex then simple Message handler cases, So use them, such 
+as `public final Flux<T> retryWhen(Retry retrySpec);` that you can find in `reactor.core.publisher.Flux`.
+
+[source,java]
+----
+@Bean
+public Function<Flux<String>, Flux<String>> uppercase() {
+	return flux -> flux
+			.retryWhen(Retry.backoff(3, Duration.ofMillis(1000)))
+			.map(v -> v.toUpperCase());
+}
+----
+
 
 ==== Drop Failed Messages
 
@@ -1652,24 +1674,24 @@ You can also facilitate immediate dispatch to DLQ (without re-tries) by setting 
 ==== Retry Template and retryBackoff
 
 In this section we cover configuration properties relevant to configuration of retry capabilities.
-Given that we use two different mechanisms for imperative and reactive handlers (RetryTemplate and retryBackoff), properties that corresponds to both will be identified as such.
 
 The `RetryTemplate` is part of the https://github.com/spring-projects/spring-retry[Spring Retry] library.
-While it is out of scope of this document to cover all of the capabilities of the `RetryTemplate`, we will mention the following consumer properties that are specifically related to
+While it is out of scope of this document to cover all of the capabilities of the `RetryTemplate`, 
+we will mention the following consumer properties that are specifically related to
 the `RetryTemplate`:
 
 maxAttempts::
 The number of attempts to process the message.
 +
-Default: 3. - Applies to 'retryBackoff'
+Default: 3. 
 backOffInitialInterval::
 The backoff initial interval on retry.
 +
-Default 1000 milliseconds. -  Applies to 'retryBackoff'
+Default 1000 milliseconds. 
 backOffMaxInterval::
 The maximum backoff interval.
 +
-Default 10000 milliseconds. - Applies to 'retryBackoff'
+Default 10000 milliseconds. 
 backOffMultiplier::
 The backoff multiplier.
 +
