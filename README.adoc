@@ -70,7 +70,7 @@ Also, 0.11.x.x does not support the `autoAddPartitions` property.
 
 This section contains the configuration options used by the Apache Kafka binder.
 
-For common configuration options and properties pertaining to binder, see the <<binding-properties,core documentation>>.
+For common configuration options and properties pertaining to the binder, see the https://cloud.spring.io/spring-cloud-static/spring-cloud-stream/current/reference/html/spring-cloud-stream.html#binding-properties[binding properties] in core documentation.
 
 ==== Kafka Binder Properties
 
@@ -147,11 +147,6 @@ If set to `false`, the binder relies on the partition size of the topic being al
 If the partition count of the target topic is smaller than the expected value, the binder fails to start.
 +
 Default: `false`.
-spring.cloud.stream.kafka.binder.autoAlterTopics::
-If set to `true`, the binder alters destination topic configs if required.
-If set to `false`, the binder relies on existing configs of the topic.
-+
-Default: `false`.
 spring.cloud.stream.kafka.binder.transaction.transactionIdPrefix::
 Enables transactions in the binder. See `transaction.id` in the Kafka documentation and https://docs.spring.io/spring-kafka/reference/html/_reference.html#transactions[Transactions] in the `spring-kafka` documentation.
 When transactions are enabled, individual `producer` properties are ignored and all producers use the `spring.cloud.stream.kafka.binder.transaction.producer.*` properties.
@@ -174,6 +169,14 @@ spring.cloud.stream.kafka.binder.considerDownWhenAnyPartitionHasNoLeader::
 Flag to set the binder health as `down`, when any partitions on the topic, regardless of the consumer that is receiving data from it, is found without a leader.
 +
 Default: `false`.
+
+spring.cloud.stream.kafka.binder.certificateStoreDirectory::
+When the truststore or keystore certificate location is given as a classpath URL (`classpath:...`), the binder copies the resource from the classpath location inside the JAR file to a location on the filesystem.
+The file will be moved to the location specified as the value for this property which must be an existing directory on the filesystem that is writable by the process running the application.
+If this value is not set and the certificate file is a classpath resource, then it will be moved to System's temp directory as returned by `System.getProperty("java.io.tmpdir")`.
+This is also true, if this value is present, but the directory cannot be found on the filesystem or is not writable.
++
+Default: none.
 
 [[kafka-consumer-properties]]
 ==== Kafka Consumer Properties
@@ -246,7 +249,7 @@ Default: null (equivalent to `earliest`).
 enableDlq::
 When set to true, it enables DLQ behavior for the consumer.
 By default, messages that result in errors are forwarded to a topic named `error.<destination>.<group>`.
-The DLQ topic name can be configurable by setting the `dlqName` property.
+The DLQ topic name can be configurable by setting the `dlqName` property or by defining a `@Bean` of type `DlqDestinationResolver`.
 This provides an alternative option to the more common Kafka replay scenario for the case when the number of errors is relatively small and replaying the entire original topic may be too cumbersome.
 See <<kafka-dlq-processing>> processing for more information.
 Starting with version 2.0, messages sent to the DLQ topic are enhanced with the following headers: `x-original-topic`, `x-exception-message`, and `x-exception-stacktrace` as `byte[]`.
@@ -333,7 +336,7 @@ Default: none.
 
 ==== Consuming Batches
 
-Starting with version 3.0, when `spring.cloud.stream.bindings.<name>.consumer.batch-mode` is set to `true`, all of the records received by polling the Kafka `Consumer` will be presented as a `List<?>` to the listener method.
+Starting with version 3.0, when `spring.cloud.stream.binding.<name>.consumer.batch-mode` is set to `true`, all of the records received by polling the Kafka `Consumer` will be presented as a `List<?>` to the listener method.
 Otherwise, the method will be called with one record at a time.
 The size of the batch is controlled by Kafka consumer properties `max.poll.records`, `min.fetch.bytes`, `fetch.max.wait.ms`; refer to the Kafka documentation for more information.
 
@@ -386,6 +389,11 @@ messageKeyExpression::
 A SpEL expression evaluated against the outgoing message used to populate the key of the produced Kafka message -- for example, `headers['myKey']`.
 With versions before 3.0, the payload could not be used unless native encoding was being used because, by the time this expression was evaluated, the payload was already in the form of a `byte[]`.
 Now, the expression is evaluated before the payload is converted.
+In the case of a regular processor (`Function<String, String>` or `Function<Message<?>, Message<?>`), if the produced key needs to be same as the incoming key from the topic, this property can be set as below.
+`spring.cloud.stream.kafka.bindings.<output-binding-name>.producer.messageKeyExpression: headers['kafka_receivedMessageKey']`
+There is an important caveat to keep in mind for reactive functions.
+In that case, it is up to the application to manually copy the headers from the incoming messages to outbound messages.
+You can set the header, e.g. `myKey` and use `headers['myKey']` as suggested above or, for convenience, simply set the `KafkaHeaders.MESSAGE_KEY` header, and you do not need to set this property at all.
 +
 Default: `none`.
 headerPatterns::
@@ -455,6 +463,13 @@ closeTimeout::
 Timeout in number of seconds to wait for when closing the producer.
 +
 Default: `30`
+
+allowNonTransactional::
+Normally, all output bindings associated with a transactional binder will publish in a new transaction, if one is not already in process.
+This property allows you to override that behavior.
+If set to true, records published to this output binding will not be run in a transaction, unless one is already in process.
++
+Default: `false`
 
 ==== Usage examples
 
@@ -674,7 +689,7 @@ IMPORTANT: If you deploy multiple instances of your application, each instance n
 === Error Channels
 
 Starting with version 1.3, the binder unconditionally sends exceptions to an error channel for each consumer destination and can also be configured to send async producer send failures to an error channel.
-See <<spring-cloud-stream-overview-error-handling>> for more information.
+See https://cloud.spring.io/spring-cloud-static/spring-cloud-stream/current/reference/html/spring-cloud-stream.html#spring-cloud-stream-overview-error-handling[this section on error handling] for more information.
 
 The payload of the `ErrorMessage` for a send failure is a `KafkaSendFailureException` with properties:
 
@@ -690,8 +705,24 @@ You can consume these exceptions with your own Spring Integration flow.
 Kafka binder module exposes the following metrics:
 
 `spring.cloud.stream.binder.kafka.offset`: This metric indicates how many messages have not been yet consumed from a given binder's topic by a given consumer group.
-The metrics provided are based on the Mircometer metrics library. The metric contains the consumer group information, topic and the actual lag in committed offset from the latest offset on the topic.
+The metrics provided are based on the Micrometer library.
+The binder creates the `KafkaBinderMetrics` bean if Micrometer is on the classpath and no other such beans provided by the application.
+The metric contains the consumer group information, topic and the actual lag in committed offset from the latest offset on the topic.
 This metric is particularly useful for providing auto-scaling feedback to a PaaS platform.
+
+You can exclude `KafkaBinderMetrics` from creating the necessary infrastructure like consumers and then reporting the metrics by providing the following component in the application.
+
+```
+@Component
+class NoOpBindingMeters {
+	NoOpBindingMeters(MeterRegistry registry) {
+		registry.config().meterFilter(
+				MeterFilter.denyNameStartsWith(KafkaBinderMetrics.OFFSET_LAG_METRIC_NAME));
+	}
+}
+```
+
+More details on how to suppress meters selectively can be found https://micrometer.io/docs/concepts#_meter_filters[here].
 
 [[kafka-tombstones]]
 === Tombstone Records (null record values)
@@ -775,6 +806,7 @@ Both of these interfaces provide a way to configure the config map used for cons
 For example, if you want to gain access to a bean that is defined at the application level, you can inject that in the implementation of the `configure` method.
 When the binder discovers that these customizers are available as beans, it will invoke the `configure` method right before creating the consumer and producer factories.
 
+Both of these interfaces also provide access to both the binding and destination names so that they can be accessed while customizing producer and consumer properties.
 
 = Appendices
 [appendix]

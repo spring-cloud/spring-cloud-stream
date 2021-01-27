@@ -2,12 +2,12 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<artifactId>spring-cloud-stream-binder-kafka-parent</artifactId>
-	<version>3.1.1-SNAPSHOT</version>
+	<version>3.1.1</version>
 	<packaging>pom</packaging>
 	<parent>
 		<groupId>org.springframework.cloud</groupId>
 		<artifactId>spring-cloud-build</artifactId>
-		<version>3.0.1-SNAPSHOT</version>
+		<version>3.0.1</version>
 		<relativePath />
 	</parent>
 	<properties>
@@ -15,8 +15,8 @@
 		<spring-kafka.version>2.6.5</spring-kafka.version>
 		<spring-integration-kafka.version>5.4.3</spring-integration-kafka.version>
 		<kafka.version>2.6.1</kafka.version>
-		<spring-cloud-schema-registry.version>1.1.1-SNAPSHOT</spring-cloud-schema-registry.version>
-		<spring-cloud-stream.version>3.1.1-SNAPSHOT</spring-cloud-stream.version>
+		<spring-cloud-schema-registry.version>1.1.1</spring-cloud-schema-registry.version>
+		<spring-cloud-stream.version>3.1.1</spring-cloud-stream.version>
 		<maven-checkstyle-plugin.failsOnError>true</maven-checkstyle-plugin.failsOnError>
 		<maven-checkstyle-plugin.failsOnViolation>true</maven-checkstyle-plugin.failsOnViolation>
 		<maven-checkstyle-plugin.includeTestSourceDirectory>true</maven-checkstyle-plugin.includeTestSourceDirectory>
