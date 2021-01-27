@@ -601,9 +601,11 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 				errorChannel.subscribe(bridge);
 			}
 		}
+		else {
+			((GenericApplicationContext) getApplicationContext()).registerBean(
+					errorChannelName, SubscribableChannel.class, () -> errorChannel);
+		}
 
-		((GenericApplicationContext) getApplicationContext()).registerBean(
-				errorChannelName, SubscribableChannel.class, () -> errorChannel);
 		MessageChannel defaultErrorChannel = null;
 		if (getApplicationContext()
 				.containsBean(IntegrationContextUtils.ERROR_CHANNEL_BEAN_NAME)) {
@@ -898,7 +900,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 	}
 
 	protected String getErrorBridgeName(ProducerDestination destination) {
-		return errorsBaseName(destination) + ".bridge";
+		return errorsBaseName(destination) + ".bridge" + destination.hashCode();
 	}
 
 	protected String errorsBaseName(ProducerDestination destination) {
