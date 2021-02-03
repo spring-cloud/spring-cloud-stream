@@ -105,16 +105,23 @@ public class KafkaTopicProvisioner implements
 	 * Create an instance.
 	 * @param kafkaBinderConfigurationProperties the binder configuration properties.
 	 * @param kafkaProperties the boot Kafka properties used to build the
+	 * @param adminClientConfigCustomizer to customize {@link AdminClient}.
 	 * {@link AdminClient}.
 	 */
 	public KafkaTopicProvisioner(
 			KafkaBinderConfigurationProperties kafkaBinderConfigurationProperties,
-			KafkaProperties kafkaProperties) {
+			KafkaProperties kafkaProperties,
+			AdminClientConfigCustomizer adminClientConfigCustomizer) {
 		Assert.isTrue(kafkaProperties != null, "KafkaProperties cannot be null");
-		this.adminClientProperties = kafkaProperties.buildAdminProperties();
 		this.configurationProperties = kafkaBinderConfigurationProperties;
+		this.adminClientProperties = kafkaProperties.buildAdminProperties();
 		normalalizeBootPropsWithBinder(this.adminClientProperties, kafkaProperties,
 				kafkaBinderConfigurationProperties);
+		// If the application provides an AdminConfig customizer
+		// and overrides properties, that takes precedence.
+		if (adminClientConfigCustomizer != null) {
+			adminClientConfigCustomizer.configure(this.adminClientProperties);
+		}
 	}
 
 	/**
@@ -151,7 +158,7 @@ public class KafkaTopicProvisioner implements
 			logger.info("Using kafka topic for outbound: " + name);
 		}
 		KafkaTopicUtils.validateTopicName(name);
-		try (AdminClient adminClient = AdminClient.create(this.adminClientProperties)) {
+		try (AdminClient adminClient = createAdminClient()) {
 			createTopic(adminClient, name, properties.getPartitionCount(), false,
 					properties.getExtension().getTopic());
 			int partitions = 0;

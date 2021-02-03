@@ -42,6 +42,8 @@ import static org.assertj.core.api.Assertions.fail;
  */
 public class KafkaTopicProvisionerTests {
 
+	AdminClientConfigCustomizer adminClientConfigCustomizer = adminClientProperties -> adminClientProperties.put("foo", "bar");
+
 	@SuppressWarnings("rawtypes")
 	@Test
 	public void bootPropertiesOverriddenExceptServers() throws Exception {
@@ -58,7 +60,7 @@ public class KafkaTopicProvisionerTests {
 				ts.getFile().getAbsolutePath());
 		binderConfig.setBrokers("localhost:9092");
 		KafkaTopicProvisioner provisioner = new KafkaTopicProvisioner(binderConfig,
-				bootConfig);
+				bootConfig, adminClientConfigCustomizer);
 		AdminClient adminClient = provisioner.createAdminClient();
 		assertThat(KafkaTestUtils.getPropertyValue(adminClient,
 				"client.selector.channelBuilder")).isInstanceOf(SslChannelBuilder.class);
@@ -67,6 +69,7 @@ public class KafkaTopicProvisionerTests {
 		assertThat(
 				((List) configs.get(CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG)).get(0))
 						.isEqualTo("localhost:1234");
+		assertThat(configs.get("foo")).isEqualTo("bar");
 		adminClient.close();
 	}
 
@@ -86,7 +89,7 @@ public class KafkaTopicProvisionerTests {
 				ts.getFile().getAbsolutePath());
 		binderConfig.setBrokers("localhost:1234");
 		KafkaTopicProvisioner provisioner = new KafkaTopicProvisioner(binderConfig,
-				bootConfig);
+				bootConfig, adminClientConfigCustomizer);
 		AdminClient adminClient = provisioner.createAdminClient();
 		assertThat(KafkaTestUtils.getPropertyValue(adminClient,
 				"client.selector.channelBuilder")).isInstanceOf(SslChannelBuilder.class);
@@ -106,7 +109,7 @@ public class KafkaTopicProvisionerTests {
 		binderConfig.getConfiguration().put(CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG,
 				"localhost:1234");
 		try {
-			new KafkaTopicProvisioner(binderConfig, bootConfig);
+			new KafkaTopicProvisioner(binderConfig, bootConfig, adminClientConfigCustomizer);
 			fail("Expected illegal state");
 		}
 		catch (IllegalStateException e) {

@@ -73,7 +73,7 @@ public class KafkaTransactionTests {
 		configurationProperties.getTransaction().setTransactionIdPrefix("foo-");
 		configurationProperties.getTransaction().getProducer().setUseNativeEncoding(true);
 		KafkaTopicProvisioner provisioningProvider = new KafkaTopicProvisioner(
-				configurationProperties, kafkaProperties);
+				configurationProperties, kafkaProperties, null);
 		provisioningProvider.setMetadataRetryOperations(new RetryTemplate());
 		final Producer mockProducer = mock(Producer.class);
 		given(mockProducer.send(any(), any())).willReturn(new SettableListenableFuture<>());

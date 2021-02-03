@@ -38,6 +38,7 @@ import org.springframework.cloud.stream.binder.kafka.KafkaNullConverter;
 import org.springframework.cloud.stream.binder.kafka.properties.JaasLoginModuleConfiguration;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaBinderConfigurationProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaExtendedBindingProperties;
+import org.springframework.cloud.stream.binder.kafka.provisioning.AdminClientConfigCustomizer;
 import org.springframework.cloud.stream.binder.kafka.provisioning.KafkaTopicProvisioner;
 import org.springframework.cloud.stream.binder.kafka.utils.DlqDestinationResolver;
 import org.springframework.cloud.stream.binder.kafka.utils.DlqPartitionFunction;
@@ -104,8 +105,10 @@ public class KafkaBinderConfiguration {
 
 	@Bean
 	KafkaTopicProvisioner provisioningProvider(
-			KafkaBinderConfigurationProperties configurationProperties) {
-		return new KafkaTopicProvisioner(configurationProperties, this.kafkaProperties);
+			KafkaBinderConfigurationProperties configurationProperties,
+			ObjectProvider<AdminClientConfigCustomizer> adminClientConfigCustomizer) {
+		return new KafkaTopicProvisioner(configurationProperties,
+				this.kafkaProperties, adminClientConfigCustomizer.getIfUnique());
 	}
 
 	@SuppressWarnings("unchecked")

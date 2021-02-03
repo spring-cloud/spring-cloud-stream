@@ -78,7 +78,7 @@ public class KafkaBinderUnitTests {
 		KafkaBinderConfigurationProperties binderConfigurationProperties = new KafkaBinderConfigurationProperties(
 				kafkaProperties);
 		KafkaTopicProvisioner provisioningProvider = new KafkaTopicProvisioner(
-				binderConfigurationProperties, kafkaProperties);
+				binderConfigurationProperties, kafkaProperties, null);
 		KafkaMessageChannelBinder binder = new KafkaMessageChannelBinder(
 				binderConfigurationProperties, provisioningProvider);
 		KafkaConsumerProperties consumerProps = new KafkaConsumerProperties();

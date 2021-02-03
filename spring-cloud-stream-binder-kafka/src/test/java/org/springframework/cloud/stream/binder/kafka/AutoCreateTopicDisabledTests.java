@@ -65,7 +65,7 @@ public class AutoCreateTopicDisabledTests {
 		configurationProperties.setAutoCreateTopics(false);
 
 		KafkaTopicProvisioner provisioningProvider = new KafkaTopicProvisioner(
-				configurationProperties, kafkaProperties);
+				configurationProperties, kafkaProperties, null);
 		provisioningProvider.setMetadataRetryOperations(new RetryTemplate());
 
 		KafkaMessageChannelBinder binder = new KafkaMessageChannelBinder(
@@ -97,7 +97,7 @@ public class AutoCreateTopicDisabledTests {
 		configurationProperties.getConfiguration().put("max.block.ms", "3000");
 
 		KafkaTopicProvisioner provisioningProvider = new KafkaTopicProvisioner(
-				configurationProperties, kafkaProperties);
+				configurationProperties, kafkaProperties, null);
 		SimpleRetryPolicy simpleRetryPolicy = new SimpleRetryPolicy(1);
 		final RetryTemplate metadataRetryOperations = new RetryTemplate();
 		metadataRetryOperations.setRetryPolicy(simpleRetryPolicy);
