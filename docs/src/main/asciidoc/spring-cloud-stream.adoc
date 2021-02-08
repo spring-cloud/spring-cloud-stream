@@ -517,6 +517,16 @@ the framework will split the returning sending out each item as an individual me
 he desired behavior you can set it to `false` at which point such supplier will simply return
 the produced Flux without splitting it.
 
+====== Supplier & threading
+
+NOTE: As you have learned by now, unlike `Function` and `Consumer`, which are triggered by an event (they have input data), `Supplier` does not have
+any input and thus triggered by a different mechanism - _poller_, which may have an unpredictable threading mechanism. And while the details of the 
+threading mechanism most of the time are not relevant to the downstream execution of the function it may present an issue in certain cases 
+especially with integrated frameworks that may have certain expectations to thread affinity. For example, https://spring.io/projects/spring-cloud-sleuth[Spring Cloud Sleuth] which relies 
+on tracing data stored in thread local.
+For those cases we have another mechanism via `StreamBridge`, where user has more control over threading mechanism. You can get more details 
+in <<Sending arbitrary data to an output (e.g. Foreign event-driven sources)>> section.
+
 ===== Consumer (Reactive)
 
 Reactive `Consumer` is a little bit special because it has a void return type, leaving framework with no reference to subscribe to.
