@@ -60,7 +60,7 @@ public class ScenarioTests {
 	@Test
 	public void test2107() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
-				TestChannelBinderConfiguration.getCompleteConfiguration(SupplierReturningNullConfiguration.class))
+				TestChannelBinderConfiguration.getCompleteConfiguration(FunctionReturningNullConfiguration.class))
 						.web(WebApplicationType.NONE)
 						.run("--spring.jmx.enabled=false",
 								"--spring.cloud.function.definition=uppercase")) {
@@ -89,7 +89,7 @@ public class ScenarioTests {
 
 	@EnableAutoConfiguration
 	@Configuration
-	public static class SupplierReturningNullConfiguration {
+	public static class FunctionReturningNullConfiguration {
 		@Bean
 		public Function<String, String> uppercase() {
 			return v -> {
