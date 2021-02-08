@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.cloud.stream.binder.test.InputDestination;
 import org.springframework.cloud.stream.binder.test.OutputDestination;
 import org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -56,6 +57,23 @@ public class ScenarioTests {
 		}
 	}
 
+	@Test
+	public void test2107() {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+				TestChannelBinderConfiguration.getCompleteConfiguration(SupplierReturningNullConfiguration.class))
+						.web(WebApplicationType.NONE)
+						.run("--spring.jmx.enabled=false",
+								"--spring.cloud.function.definition=uppercase")) {
+
+			InputDestination input = context.getBean(InputDestination.class);
+			input.send(new GenericMessage<byte[]>("a".getBytes()), "uppercase-in-0");
+			OutputDestination output = context.getBean(OutputDestination.class);
+			assertThat(new String(output.receive(2000, "uppercase-out-0").getPayload())).isEqualTo("a");
+			input.send(new GenericMessage<byte[]>("b".getBytes()), "uppercase-in-0");
+			assertThat(output.receive(2000, "uppercase-out-0")).isNull();
+		}
+	}
+
 	@EnableAutoConfiguration
 	@Configuration
 	public static class TestConfiguration {
@@ -66,6 +84,22 @@ public class ScenarioTests {
 		@Bean
 		public Function<Message<?>, Message<?>> messageFunction() {
 			return message -> message;
+		}
+	}
+
+	@EnableAutoConfiguration
+	@Configuration
+	public static class SupplierReturningNullConfiguration {
+		@Bean
+		public Function<String, String> uppercase() {
+			return v -> {
+				if ("a".equals(v)) {
+					return v;
+				}
+				else {
+					return null;
+				}
+			};
 		}
 	}
 }

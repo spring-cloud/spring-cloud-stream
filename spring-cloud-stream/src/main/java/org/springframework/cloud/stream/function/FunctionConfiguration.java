@@ -557,6 +557,10 @@ public class FunctionConfiguration {
 				@Override
 				public void handleMessageInternal(Message<?> message) throws MessagingException {
 					Object result = functionInvocationWrapper.apply((Message<byte[]>) message);
+					if (result == null) {
+						logger.debug("Function execution resulted in null. No message will be sent");
+						return;
+					}
 					if (result instanceof Iterable) {
 						for (Object resultElement : (Iterable<?>) result) {
 							this.doSendMessage(resultElement, message);
