@@ -23,6 +23,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
@@ -39,7 +42,10 @@ import org.springframework.amqp.core.MessageProperties;
 import org.springframework.amqp.rabbit.batch.BatchingStrategy;
 import org.springframework.amqp.rabbit.batch.SimpleBatchingStrategy;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
+import org.springframework.amqp.rabbit.connection.CachingConnectionFactory.ConfirmType;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
+import org.springframework.amqp.rabbit.connection.CorrelationData;
+import org.springframework.amqp.rabbit.connection.CorrelationData.Confirm;
 import org.springframework.amqp.rabbit.connection.LocalizedQueueConnectionFactory;
 import org.springframework.amqp.rabbit.connection.RabbitUtils;
 import org.springframework.amqp.rabbit.core.BatchingRabbitTemplate;
@@ -618,11 +624,27 @@ public class RabbitMessageChannelBinder extends
 		if (properties.getExtension().isRepublishToDlq()) {
 			return new MessageHandler() {
 
+				private static final long ACK_TIMEOUT = 10_000;
+
 				private final RabbitTemplate template = new RabbitTemplate(
 						RabbitMessageChannelBinder.this.connectionFactory);
 
+				private final ConfirmType confirmType;
+
+
 				{
 					this.template.setUsePublisherConnection(true);
+					this.template.setChannelTransacted(properties.getExtension().isTransacted());
+					this.template.setMandatory(RabbitMessageChannelBinder.this.connectionFactory.isPublisherReturns());
+					if (RabbitMessageChannelBinder.this.connectionFactory.isSimplePublisherConfirms()) {
+						this.confirmType = ConfirmType.SIMPLE;
+					}
+					else if (RabbitMessageChannelBinder.this.connectionFactory.isPublisherConfirms()) {
+						this.confirmType = ConfirmType.CORRELATED;
+					}
+					else {
+						this.confirmType = ConfirmType.NONE;
+					}
 				}
 
 				private final String exchange = deadLetterExchangeName(properties.getExtension());
@@ -694,7 +716,7 @@ public class RabbitMessageChannelBinder extends
 							messageProperties.setDeliveryMode(
 									properties.getExtension().getRepublishDeliveyMode());
 						}
-						this.template.send(this.exchange,
+						doSend(this.exchange,
 								this.routingKey != null ? this.routingKey
 										: messageProperties.getConsumerQueue(),
 								amqpMessage);
@@ -713,6 +735,45 @@ public class RabbitMessageChannelBinder extends
 								}
 							}
 						}
+					}
+				}
+
+				private void doSend(String exchange, String routingKey, Message amqpMessage) {
+					if (ConfirmType.SIMPLE.equals(this.confirmType)) {
+						this.template.invoke(temp -> {
+							temp.send(exchange, routingKey, amqpMessage);
+							if (!temp.waitForConfirms(ACK_TIMEOUT)) {
+								throw new AmqpRejectAndDontRequeueException("Negative ack for DLQ message received");
+							}
+							return null;
+						});
+					}
+					else if (ConfirmType.CORRELATED.equals(this.confirmType)) {
+						CorrelationData corr = new CorrelationData();
+						this.template.send(exchange, routingKey, amqpMessage, corr);
+						try {
+							Confirm confirm = corr.getFuture().get(ACK_TIMEOUT, TimeUnit.MILLISECONDS);
+							if (!confirm.isAck()) {
+								throw new AmqpRejectAndDontRequeueException("Negative ack for DLQ message received");
+							}
+						}
+						catch (InterruptedException e) {
+							Thread.currentThread().interrupt();
+							throw new AmqpRejectAndDontRequeueException(e);
+						}
+						catch (ExecutionException e) {
+							throw new AmqpRejectAndDontRequeueException(e.getCause());
+						}
+						catch (TimeoutException e) {
+							throw new AmqpRejectAndDontRequeueException(e);
+						}
+						if (corr.getReturned() != null) {
+							RabbitMessageChannelBinder.this.logger.error("DLQ message was returned: " + amqpMessage);
+							throw new AmqpRejectAndDontRequeueException("DLQ message was returned");
+						}
+					}
+					else {
+						this.template.send(exchange, routingKey, amqpMessage);
 					}
 				}
 

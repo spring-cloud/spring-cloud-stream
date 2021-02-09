@@ -29,11 +29,13 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 import java.util.zip.Deflater;
 
 import com.rabbitmq.client.LongString;
@@ -115,6 +117,7 @@ import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.channel.QueueChannel;
 import org.springframework.integration.context.IntegrationContextUtils;
 import org.springframework.integration.expression.ValueExpression;
+import org.springframework.integration.handler.BridgeHandler;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
@@ -167,10 +170,7 @@ public class RabbitBinderTests extends
 	protected RabbitTestBinder getBinder() {
 		if (this.testBinder == null) {
 			RabbitProperties rabbitProperties = new RabbitProperties();
-			rabbitProperties.setPublisherConfirmType(ConfirmType.SIMPLE);
-			rabbitProperties.setPublisherReturns(true);
-			this.testBinder = new RabbitTestBinder(rabbitAvailableRule.getResource(),
-					rabbitProperties);
+			this.testBinder = new RabbitTestBinder(this.rabbitAvailableRule.getResource(), rabbitProperties);
 		}
 		return this.testBinder;
 	}
@@ -1517,6 +1517,148 @@ public class RabbitBinderTests extends
 		template.setReceiveTimeout(500);
 		assertThat(template.receive(TEST_PREFIX + "foo.dlqpubtest2.foo.dlq")).isNull();
 
+		consumerBinding.unbind();
+	}
+
+	@SuppressWarnings("unchecked")
+	@Test
+	public void testAutoBindDLQwithRepublishTx() throws Exception {
+		RabbitTestBinder binder = getBinder();
+		ExtendedConsumerProperties<RabbitConsumerProperties> consumerProperties = createConsumerProperties();
+		consumerProperties.getExtension().setPrefix(TEST_PREFIX);
+		consumerProperties.getExtension().setAutoBindDlq(true);
+		consumerProperties.getExtension().setRepublishToDlq(true);
+		consumerProperties.setMaxAttempts(1); // disable retry
+		consumerProperties.getExtension().setDurableSubscription(true);
+		consumerProperties.getExtension().setTransacted(true);
+		DirectChannel moduleInputChannel = createBindableChannel("input",
+				createConsumerBindingProperties(consumerProperties));
+		moduleInputChannel.setBeanName("dlqPubTestTx");
+		moduleInputChannel.subscribe(new MessageHandler() {
+
+			@Override
+			public void handleMessage(Message<?> message) throws MessagingException {
+				throw new RuntimeException("test");
+			}
+
+		});
+		Binding<MessageChannel> consumerBinding = binder.bindConsumer(
+				"foo.dlqpubtestTx", "foo", moduleInputChannel, consumerProperties);
+
+		RabbitTemplate template = new RabbitTemplate(this.rabbitAvailableRule.getResource());
+		template.convertAndSend("", TEST_PREFIX + "foo.dlqpubtestTx.foo", "foo");
+
+		template.setReceiveTimeout(10_000);
+		org.springframework.amqp.core.Message deadLetter = template
+				.receive(TEST_PREFIX + "foo.dlqpubtestTx.foo.dlq");
+		assertThat(deadLetter).isNotNull();
+		assertThat(deadLetter.getBody()).isEqualTo("foo".getBytes());
+		assertThat(deadLetter.getMessageProperties().getHeaders())
+				.containsKey((RepublishMessageRecoverer.X_EXCEPTION_STACKTRACE));
+		List<Object> errorHandler = (List<Object>) TestUtils.getPropertyValue(consumerBinding,
+				"lifecycle.errorChannel.dispatcher.handlers", Set.class).stream()
+			.filter(handler -> !handler.getClass().equals(BridgeHandler.class))
+			.collect(Collectors.toList());
+		assertThat(errorHandler).hasSize(1);
+		assertThat(TestUtils.getPropertyValue(errorHandler.get(0), "template.transactional", Boolean.class)).isTrue();
+		assertThat(TestUtils.getPropertyValue(errorHandler.get(0), "confirmType", ConfirmType.class))
+				.isEqualTo(ConfirmType.NONE);
+		consumerBinding.unbind();
+	}
+
+	@SuppressWarnings("unchecked")
+	@Test
+	public void testAutoBindDLQwithRepublishSimpleConfirms() throws Exception {
+		CachingConnectionFactory ccf = this.rabbitAvailableRule.getResource();
+		ccf.setPublisherReturns(true);
+		ccf.setPublisherConfirmType(ConfirmType.SIMPLE);
+		ccf.resetConnection();
+		RabbitTestBinder binder = getBinder();
+		ExtendedConsumerProperties<RabbitConsumerProperties> consumerProperties = createConsumerProperties();
+		consumerProperties.getExtension().setPrefix(TEST_PREFIX);
+		consumerProperties.getExtension().setAutoBindDlq(true);
+		consumerProperties.getExtension().setRepublishToDlq(true);
+		consumerProperties.setMaxAttempts(1); // disable retry
+		consumerProperties.getExtension().setDurableSubscription(true);
+		DirectChannel moduleInputChannel = createBindableChannel("input",
+				createConsumerBindingProperties(consumerProperties));
+		moduleInputChannel.setBeanName("dlqPubtestSimple");
+		moduleInputChannel.subscribe(new MessageHandler() {
+
+			@Override
+			public void handleMessage(Message<?> message) throws MessagingException {
+				throw new RuntimeException("test");
+			}
+
+		});
+		Binding<MessageChannel> consumerBinding = binder.bindConsumer(
+				"foo.dlqpubtestSimple", "foo", moduleInputChannel, consumerProperties);
+
+		RabbitTemplate template = new RabbitTemplate(this.rabbitAvailableRule.getResource());
+		template.convertAndSend("", TEST_PREFIX + "foo.dlqpubtestSimple.foo", "foo");
+
+		template.setReceiveTimeout(10_000);
+		org.springframework.amqp.core.Message deadLetter = template
+				.receive(TEST_PREFIX + "foo.dlqpubtestSimple.foo.dlq");
+		assertThat(deadLetter).isNotNull();
+		assertThat(deadLetter.getBody()).isEqualTo("foo".getBytes());
+		assertThat(deadLetter.getMessageProperties().getHeaders())
+				.containsKey((RepublishMessageRecoverer.X_EXCEPTION_STACKTRACE));
+		List<Object> errorHandler = (List<Object>) TestUtils.getPropertyValue(consumerBinding,
+				"lifecycle.errorChannel.dispatcher.handlers", Set.class).stream()
+			.filter(handler -> !handler.getClass().equals(BridgeHandler.class))
+			.collect(Collectors.toList());
+		assertThat(errorHandler).hasSize(1);
+		assertThat(TestUtils.getPropertyValue(errorHandler.get(0), "confirmType", ConfirmType.class))
+				.isEqualTo(ConfirmType.SIMPLE);
+		consumerBinding.unbind();
+	}
+
+	@SuppressWarnings("unchecked")
+	@Test
+	public void testAutoBindDLQwithRepublishCorrelatedConfirms() throws Exception {
+		CachingConnectionFactory ccf = this.rabbitAvailableRule.getResource();
+		ccf.setPublisherReturns(true);
+		ccf.setPublisherConfirmType(ConfirmType.CORRELATED);
+		ccf.resetConnection();
+		RabbitTestBinder binder = getBinder();
+		ExtendedConsumerProperties<RabbitConsumerProperties> consumerProperties = createConsumerProperties();
+		consumerProperties.getExtension().setPrefix(TEST_PREFIX);
+		consumerProperties.getExtension().setAutoBindDlq(true);
+		consumerProperties.getExtension().setRepublishToDlq(true);
+		consumerProperties.setMaxAttempts(1); // disable retry
+		consumerProperties.getExtension().setDurableSubscription(true);
+		DirectChannel moduleInputChannel = createBindableChannel("input",
+				createConsumerBindingProperties(consumerProperties));
+		moduleInputChannel.setBeanName("dlqPubtestCorrelated");
+		moduleInputChannel.subscribe(new MessageHandler() {
+
+			@Override
+			public void handleMessage(Message<?> message) throws MessagingException {
+				throw new RuntimeException("test");
+			}
+
+		});
+		Binding<MessageChannel> consumerBinding = binder.bindConsumer(
+				"foo.dlqpubtestCorrelated", "foo", moduleInputChannel, consumerProperties);
+
+		RabbitTemplate template = new RabbitTemplate(this.rabbitAvailableRule.getResource());
+		template.convertAndSend("", TEST_PREFIX + "foo.dlqpubtestCorrelated.foo", "foo");
+
+		template.setReceiveTimeout(10_000);
+		org.springframework.amqp.core.Message deadLetter = template
+				.receive(TEST_PREFIX + "foo.dlqpubtestCorrelated.foo.dlq");
+		assertThat(deadLetter).isNotNull();
+		assertThat(deadLetter.getBody()).isEqualTo("foo".getBytes());
+		assertThat(deadLetter.getMessageProperties().getHeaders())
+				.containsKey((RepublishMessageRecoverer.X_EXCEPTION_STACKTRACE));
+		List<Object> errorHandler = (List<Object>) TestUtils.getPropertyValue(consumerBinding,
+				"lifecycle.errorChannel.dispatcher.handlers", Set.class).stream()
+			.filter(handler -> !handler.getClass().equals(BridgeHandler.class))
+			.collect(Collectors.toList());
+		assertThat(errorHandler).hasSize(1);
+		assertThat(TestUtils.getPropertyValue(errorHandler.get(0), "confirmType", ConfirmType.class))
+				.isEqualTo(ConfirmType.CORRELATED);
 		consumerBinding.unbind();
 	}
 
