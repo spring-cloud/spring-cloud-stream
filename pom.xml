@@ -234,6 +234,11 @@
 		        <enabled>true</enabled>
 		    </snapshots>
 		</repository>
+		<repository>
+			<id>spring-releases</id>
+			<name>Spring Releases</name>
+			<url>https://repo.spring.io/release</url>
+		</repository>
 	</repositories>
 	<pluginRepositories>
 		<pluginRepository>
