@@ -114,14 +114,8 @@ public class KafkaConsumerProperties {
 	private ContainerProperties.AckMode ackMode;
 
 	/**
-	 * Effective only if autoCommitOffset is set to true.
-	 * If set to false, it suppresses auto-commits for messages that result in errors and commits only for successful messages.
-	 * It allows a stream to automatically replay from the last successfully processed message, in case of persistent failures.
-	 * If set to true, it always auto-commits (if auto-commit is enabled).
-	 * If not set (the default), it effectively has the same value as enableDlq,
-	 * auto-committing erroneous messages if they are sent to a DLQ and not committing them otherwise.
+	 * Flag to enable auto commit on error in polled consumers.
 	 */
-	@Deprecated
 	private Boolean autoCommitOnError;
 
 	/**
@@ -312,29 +306,19 @@ public class KafkaConsumerProperties {
 	}
 
 	/**
-	 * @return is autocommit on error
+	 * @return is autocommit on error in polled consumers.
 	 *
-	 * Effective only if autoCommitOffset is set to true.
-	 * If set to false, it suppresses auto-commits for messages that result in errors and commits only for successful messages.
-	 * It allows a stream to automatically replay from the last successfully processed message, in case of persistent failures.
-	 * If set to true, it always auto-commits (if auto-commit is enabled).
-	 * If not set (the default), it effectively has the same value as enableDlq,
-	 * auto-committing erroneous messages if they are sent to a DLQ and not committing them otherwise.
-	 *
-	 * @deprecated in favor of using an error handler and customize the container with that error handler.
+	 * This property accessor is only used in polled consumers.
 	 */
-	@Deprecated
 	public Boolean getAutoCommitOnError() {
 		return this.autoCommitOnError;
 	}
 
 	/**
 	 *
-	 * @param autoCommitOnError commit on error
+	 * @param autoCommitOnError commit on error in polled consumers.
 	 *
-	 * @deprecated in favor of using an error handler and customize the container with that error handler.
 	 */
-	@Deprecated
 	public void setAutoCommitOnError(Boolean autoCommitOnError) {
 		this.autoCommitOnError = autoCommitOnError;
 	}

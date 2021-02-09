@@ -694,16 +694,35 @@ public class KafkaMessageChannelBinder extends
 		messageListenerContainer.setBeanName(destination + ".container");
 		// end of these won't be needed...
 		ContainerProperties.AckMode ackMode = extendedConsumerProperties.getExtension().getAckMode();
-		if (ackMode == null && extendedConsumerProperties.getExtension().isAckEachRecord()) {
-			ackMode = ContainerProperties.AckMode.RECORD;
+		if (ackMode == null) {
+			if (extendedConsumerProperties.getExtension().isAckEachRecord()) {
+				ackMode = ContainerProperties.AckMode.RECORD;
+			}
+			else {
+				if (!extendedConsumerProperties.getExtension().isAutoCommitOffset()) {
+					messageListenerContainer.getContainerProperties()
+							.setAckMode(ContainerProperties.AckMode.MANUAL);
+					messageListenerContainer.getContainerProperties().setAckOnError(false);
+				}
+				else {
+					messageListenerContainer.getContainerProperties()
+							.setAckOnError(isAutoCommitOnError(extendedConsumerProperties));
+					if (extendedConsumerProperties.getExtension().isAckEachRecord()) {
+						messageListenerContainer.getContainerProperties()
+								.setAckMode(ContainerProperties.AckMode.RECORD);
+					}
+				}
+			}
 		}
-		if (ackMode != null) {
+		else {
 			if ((extendedConsumerProperties.isBatchMode() && ackMode != ContainerProperties.AckMode.RECORD) ||
 					!extendedConsumerProperties.isBatchMode()) {
 				messageListenerContainer.getContainerProperties()
 						.setAckMode(ackMode);
 			}
 		}
+
+
 
 		if (this.logger.isDebugEnabled()) {
 			this.logger.debug("Listened partitions: "
@@ -1397,8 +1416,7 @@ public class KafkaMessageChannelBinder extends
 			ExtendedConsumerProperties<KafkaConsumerProperties> properties) {
 		return properties.getExtension().getAutoCommitOnError() != null
 				? properties.getExtension().getAutoCommitOnError()
-				: properties.getExtension().isAutoCommitOffset()
-						&& properties.getExtension().isEnableDlq();
+				: false;
 	}
 
 	private TopicPartitionOffset[] getTopicPartitionOffsets(

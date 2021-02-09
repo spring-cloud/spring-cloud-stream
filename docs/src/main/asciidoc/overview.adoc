@@ -192,13 +192,17 @@ This property is deprecated as of 3.1 in favor of using `ackMode`.
 If the `ackMode` is not set and batch mode is not enabled, `RECORD` ackMode will be used.
 +
 Default: `false`.
+
 autoCommitOffset::
+
+Starting with version 3.1, this property is deprecated.
+See `ackMode` for more details on alternatives.
 Whether to autocommit offsets when a message has been processed.
 If set to `false`, a header with the key `kafka_acknowledgment` of the type `org.springframework.kafka.support.Acknowledgment` header is present in the inbound message.
 Applications may use this header for acknowledging messages.
 See the examples section for details.
 When this property is set to `false`, Kafka binder sets the ack mode to `org.springframework.kafka.listener.AbstractMessageListenerContainer.AckMode.MANUAL` and the application is responsible for acknowledging records.
-Also see `ackEachRecord`. This property is deprecated as of 3.1. See `ackMode` for more details.
+Also see `ackEachRecord`.
 +
 Default: `true`.
 ackMode::
@@ -207,10 +211,9 @@ This is based on the AckMode enumeration defined in Spring Kafka.
 If `ackEachRecord` property is set to `true` and consumer is not in batch mode, then this will use the ack mode of `RECORD`, otherwise, use the provided ack mode using this property.
 
 autoCommitOnError::
-Effective only if `autoCommitOffset` is set to `true`.
-If set to `false`, it suppresses auto-commits for messages that result in errors and commits only for successful messages. It allows a stream to automatically replay from the last successfully processed message, in case of persistent failures.
-If set to `true`, it always auto-commits (if auto-commit is enabled).
-If not set (the default), it effectively has the same value as `enableDlq`, auto-committing erroneous messages if they are sent to a DLQ and not committing them otherwise.
+In pollable consumers, if set to `true`, it always auto commits on error.
+If not set (the default) or false, it will not auto commit in pollable consumers.
+Note that this property is only applicable for pollable consumers.
 +
 Default: not set.
 resetOffsets::
