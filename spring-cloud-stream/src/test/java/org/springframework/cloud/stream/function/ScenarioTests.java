@@ -75,28 +75,22 @@ public class ScenarioTests {
 	}
 
 	@Test
-	public void test2112() {
+	public void test2113() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 				TestChannelBinderConfiguration.getCompleteConfiguration(TestConfiguration.class))
 						.web(WebApplicationType.NONE)
 						.run("--spring.jmx.enabled=false",
-								"--spring.cloud.function.definition=messageFunction")) {
+								"--spring.cloud.function.definition=genericTypeFunction")) {
 
 			InputDestination input = context.getBean(InputDestination.class);
 			OutputDestination output = context.getBean(OutputDestination.class);
 
-			input.send(new GenericMessage<byte[]>("hello-1".getBytes()), "messageFunction-in-0");
-			output.clear("messageFunction-out-0");
-			input.send(new GenericMessage<byte[]>("hello-2".getBytes()), "messageFunction-in-0");
-			assertThat(new String(output.receive(1000, "messageFunction-out-0").getPayload())).isEqualTo("hello-2");
-
-			input.send(new GenericMessage<byte[]>("hello-1".getBytes()), "messageFunction-in-0");
-			input.send(new GenericMessage<byte[]>("hello-2".getBytes()), "messageFunction-in-0");
-			output.clear();
-			input.send(new GenericMessage<byte[]>("hello-3".getBytes()), "messageFunction-in-0");
-			assertThat(new String(output.receive(1000, "messageFunction-out-0").getPayload())).isEqualTo("hello-3");
+			input.send(new GenericMessage<byte[]>("hello".getBytes()), "genericTypeFunction-in-0");
+			assertThat(new String(output.receive(1000, "genericTypeFunction-out-0").getPayload())).isEqualTo("hello_hello");
 		}
 	}
+
+
 
 	@EnableAutoConfiguration
 	@Configuration
@@ -108,6 +102,15 @@ public class ScenarioTests {
 		@Bean
 		public Function<Message<?>, Message<?>> messageFunction() {
 			return message -> message;
+		}
+
+		@SuppressWarnings("unchecked")
+		@Bean
+		public <I, O> Function<I, O> genericTypeFunction() {
+			return v -> {
+				System.out.println(v);
+				return (O) ("hello_" + v);
+			};
 		}
 	}
 
