@@ -29,6 +29,7 @@ import org.springframework.cloud.stream.binder.test.TestChannelBinderConfigurati
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.messaging.Message;
 import org.springframework.messaging.support.GenericMessage;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -77,6 +78,15 @@ public class ScenarioTests {
 			output.clear();
 			input.send(new GenericMessage<byte[]>("hello-3".getBytes()), "messageFunction-in-0");
 			assertThat(new String(output.receive(1000, "messageFunction-out-0").getPayload())).isEqualTo("hello-3");
+		}
+	}
+
+	@EnableAutoConfiguration
+	@Configuration
+	public static class TestConfiguration {
+		@Bean
+		public Function<Message<String>, Message<String>> messageFunction() {
+			return v -> v;
 		}
 	}
 
