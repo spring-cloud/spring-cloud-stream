@@ -55,7 +55,7 @@ public class OutputDestination extends AbstractDestination {
 	 * @since 3.0.6
 	 */
 	public void clear() {
-		this.messageQueues.clear();
+		this.messageQueues.values().forEach(v -> v.clear());
 	}
 
 	/**
@@ -66,8 +66,9 @@ public class OutputDestination extends AbstractDestination {
 	 * @since 3.0.6
 	 */
 	public boolean clear(String destinationName) {
-		if (StringUtils.hasText(destinationName) && this.messageQueues.containsKey(destinationName)) {
-			this.messageQueues.clear();
+		String queueName = destinationName.endsWith(".destination") ? destinationName : destinationName + ".destination";
+		if (StringUtils.hasText(destinationName) && this.messageQueues.containsKey(queueName)) {
+			this.messageQueues.get(queueName).clear();
 			return true;
 		}
 		return false;
