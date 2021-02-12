@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.binder;
 
+import java.lang.reflect.Field;
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -34,6 +35,7 @@ import org.springframework.beans.factory.DisposableBean;
 import org.springframework.boot.Banner.Mode;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.stream.config.ListenerContainerCustomizer;
 import org.springframework.cloud.stream.config.SpelExpressionConverterConfiguration.SpelConverter;
 import org.springframework.cloud.stream.reflection.GenericsUtils;
@@ -49,8 +51,12 @@ import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.MapPropertySource;
 import org.springframework.core.env.StandardEnvironment;
 import org.springframework.messaging.MessageChannel;
+import org.springframework.messaging.converter.CompositeMessageConverter;
+import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.ObjectUtils;
+import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
 
 /**
@@ -276,6 +282,7 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 			// not inherit any beans from the parent
 			boolean useApplicationContextAsParent = binderProperties.isEmpty()
 					&& this.context != null;
+
 			if (useApplicationContextAsParent) {
 				springApplicationBuilder.parent(this.context);
 			}
@@ -318,6 +325,21 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 
 			ConfigurableApplicationContext binderProducingContext = springApplicationBuilder
 					.run(args.toArray(new String[0]));
+
+
+			Map<String, MessageConverter> messageConverters = binderProducingContext.getBeansOfType(MessageConverter.class);
+			if (!CollectionUtils.isEmpty(messageConverters) && !ObjectUtils.isEmpty(context.getBeansOfType(FunctionCatalog.class))) {
+				FunctionCatalog functionCatalog = this.context.getBean(FunctionCatalog.class);
+				try {
+					Field field = ReflectionUtils.findField(functionCatalog.getClass(), "messageConverter");
+					field.setAccessible(true);
+					CompositeMessageConverter mc = (CompositeMessageConverter) field.get(functionCatalog);
+					mc.getConverters().addAll(0, messageConverters.values());
+				}
+				catch (Exception e) {
+					logger.warn("Failed to add additional Message Converters from child context", e);
+				}
+			}
 
 			Binder<T, ?, ?> binder = binderProducingContext.getBean(Binder.class);
 			/*
