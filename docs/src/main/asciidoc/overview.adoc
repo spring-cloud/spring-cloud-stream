@@ -1022,7 +1022,7 @@ There are a number of rabbit-specific binding properties that allow you to modif
 
 If you have an existing exchange/queue that you wish to use, you can completely disable automatic provisioning as follows, assuming the exchange is named `myExchange` and the queue is named `myQueue`:
 
-* `spring.cloud.stream.bindings.<binding name>.destination=myExhange`
+* `spring.cloud.stream.bindings.<binding name>.destination=myExchange`
 * `spring.cloud.stream.bindings.<binding name>.group=myQueue`
 * `spring.cloud.stream.rabbit.bindings.<binding name>.consumer.bindQueue=false`
 * `spring.cloud.stream.rabbit.bindings.<binding name>.consumer.declareExchange=false`
