@@ -707,22 +707,16 @@ public class KafkaMessageChannelBinder extends
 				else {
 					messageListenerContainer.getContainerProperties()
 							.setAckOnError(isAutoCommitOnError(extendedConsumerProperties));
-					if (extendedConsumerProperties.getExtension().isAckEachRecord()) {
-						messageListenerContainer.getContainerProperties()
-								.setAckMode(ContainerProperties.AckMode.RECORD);
-					}
 				}
 			}
 		}
-		else {
+		if (ackMode != null) {
 			if ((extendedConsumerProperties.isBatchMode() && ackMode != ContainerProperties.AckMode.RECORD) ||
 					!extendedConsumerProperties.isBatchMode()) {
 				messageListenerContainer.getContainerProperties()
 						.setAckMode(ackMode);
 			}
 		}
-
-
 
 		if (this.logger.isDebugEnabled()) {
 			this.logger.debug("Listened partitions: "
