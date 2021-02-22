@@ -155,13 +155,10 @@ public class MessageConverterConfigurer
 		ConsumerProperties consumerProperties = bindingProperties.getConsumer();
 		if (this.isNativeEncodingNotSet(producerProperties, consumerProperties, inbound)) {
 			if (inbound) {
-				messageChannel.addInterceptor(
-						new InboundContentTypeEnhancingInterceptor(contentType));
+				messageChannel.addInterceptor(new InboundContentTypeEnhancingInterceptor(contentType));
 			}
-			else {
-				messageChannel.addInterceptor(
-						new OutboundContentTypeConvertingInterceptor(contentType,
-								this.compositeMessageConverter));
+			else if (!functional) {
+				messageChannel.addInterceptor(new OutboundContentTypeConvertingInterceptor(contentType, this.compositeMessageConverter));
 			}
 		}
 	}

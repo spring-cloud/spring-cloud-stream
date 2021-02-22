@@ -64,7 +64,8 @@ public class DynamicDestinationFunctionTests {
 							serviceProperties.getProducerProperties("fooDestination").getPartitionKeyExtractorName());
 
 					OutputDestination output = context.getBean(OutputDestination.class);
-					assertThat(output.receive(1000).getPayload()).isEqualTo("fooDestination".getBytes());
+					Object result = output.receive(1000).getPayload();
+					assertThat(result).isEqualTo("fooDestination");
 				});
 	}
 
@@ -88,7 +89,6 @@ public class DynamicDestinationFunctionTests {
 		@Bean
 		public Consumer<String> cons() {
 			return value -> {
-				System.out.println("Sending to " + value);
 				resolver.resolveDestination(value).send(new GenericMessage<String>(value));
 			};
 		}
