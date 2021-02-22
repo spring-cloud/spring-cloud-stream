@@ -202,8 +202,8 @@ public class ImplicitFunctionBindingTests {
 			Message<byte[]> inputMessage = MessageBuilder.withPayload("Hello".getBytes()).build();
 			inputDestination.send(inputMessage);
 
-			Message<byte[]> outputMessage = outputDestination.receive();
-			assertThat(outputMessage.getPayload()).isEqualTo("Hello".getBytes());
+			Message outputMessage = outputDestination.receive();
+			assertThat(outputMessage.getPayload()).isEqualTo("Hello");
 
 		}
 	}
