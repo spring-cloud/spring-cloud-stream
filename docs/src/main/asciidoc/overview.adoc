@@ -956,18 +956,17 @@ public class Application {
 					if (correlation.getReturnedMessage() != null) {
 						log.error("Message for " + correlation.getPayload() + " was returned ");
 
-						// try to re-publish, send a DLQ, etc
+						// throw some exception to invoke binder retry/error handling
 
 					}
 				}
 				catch (InterruptedException e) {
 					Thread.currentThread().interrupt();
-					e.printStackTrace();
+					throw new IllegalStateException(e);
 				}
 				catch (ExecutionException | TimeoutException e) {
-					e.printStackTrace();
+					throw new IllegalStateException(e);
 				}
-			});
 		};
 	}
 
