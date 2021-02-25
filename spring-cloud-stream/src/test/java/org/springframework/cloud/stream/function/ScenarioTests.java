@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.function;
 
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import org.junit.jupiter.api.Test;
@@ -78,6 +79,69 @@ public class ScenarioTests {
 			output.clear();
 			input.send(new GenericMessage<byte[]>("hello-3".getBytes()), "messageFunction-in-0");
 			assertThat(new String(output.receive(1000, "messageFunction-out-0").getPayload())).isEqualTo("hello-3");
+		}
+	}
+
+	@Test
+	public void test2106() {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration
+				.getCompleteConfiguration(ConsumerConfiguration.class, ConsumerConfiguration.class))
+						.web(WebApplicationType.NONE).run(
+								"--spring.cloud.function.definition=consume;echo",
+								"--spring.cloud.stream.bindings.consume-in-0.destination=input",
+								"--spring.cloud.stream.bindings.echo-in-0.destination=echoin",
+								"--spring.cloud.stream.bindings.echo-out-0.destination=echoout",
+								"--spring.jmx.enabled=false")) {
+
+			ConsumerConfiguration configuration = context.getBean(ConsumerConfiguration.class);
+
+			OutputDestination output = context.getBean(OutputDestination.class);
+
+			StreamBridge bridge = context.getBean(StreamBridge.class);
+			bridge.send("input", "destination");
+			bridge.send("input", "destination");
+			bridge.send("input", "destination");
+
+			bridge.send("consume-in-0", "hello");
+			bridge.send("consume-in-0", "hello");
+			bridge.send("consume-in-0", "hello");
+
+			bridge.send("echoin", "hello");
+			bridge.send("echoin", "hello");
+			bridge.send("echoin", "hello");
+
+			assertThat(configuration.destinationCounter).isEqualTo(3);
+			assertThat(configuration.bindingCounter).isEqualTo(3);
+
+			assertThat(output.receive(1000, "echoout")).isNotNull();
+			assertThat(output.receive(1000, "echoout")).isNotNull();
+			assertThat(output.receive(1000, "echoout")).isNotNull();
+			assertThat(output.receive(1000, "echoout")).isNull();
+		}
+	}
+
+	@EnableAutoConfiguration
+	public static class ConsumerConfiguration {
+
+		private int destinationCounter;
+
+		private int bindingCounter;
+
+		@Bean
+		public Consumer<String> consume() {
+			return v -> {
+				if (v.equals("destination")) {
+					destinationCounter++;
+				}
+				else {
+					bindingCounter++;
+				}
+			};
+		}
+
+		@Bean
+		public Function<String, String> echo() {
+			return v -> v;
 		}
 	}
 

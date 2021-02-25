@@ -19,6 +19,7 @@ package org.springframework.cloud.stream.binder.test;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.ConsumerProperties;
@@ -27,6 +28,9 @@ import org.springframework.cloud.stream.provisioning.ConsumerDestination;
 import org.springframework.cloud.stream.provisioning.ProducerDestination;
 import org.springframework.cloud.stream.provisioning.ProvisioningException;
 import org.springframework.cloud.stream.provisioning.ProvisioningProvider;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
+import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.integration.channel.AbstractMessageChannel;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.channel.PublishSubscribeChannel;
@@ -43,7 +47,7 @@ import org.springframework.messaging.SubscribableChannel;
  *
  */
 public class TestChannelBinderProvisioner
-		implements ProvisioningProvider<ConsumerProperties, ProducerProperties> {
+		implements ProvisioningProvider<ConsumerProperties, ProducerProperties>, ApplicationContextAware {
 
 	private final Map<String, SubscribableChannel> provisionedDestinations = new HashMap<>();
 
@@ -52,6 +56,14 @@ public class TestChannelBinderProvisioner
 
 	@Autowired
 	private OutputDestination target;
+
+	private GenericApplicationContext applicationContext;
+
+	@Override
+	public void setApplicationContext(ApplicationContext applicationContext)
+			throws BeansException {
+		this.applicationContext = (GenericApplicationContext) applicationContext;
+	}
 
 	/**
 	 * Will provision producer destination as an SI {@link PublishSubscribeChannel}. <br>
@@ -81,7 +93,7 @@ public class TestChannelBinderProvisioner
 	}
 
 	private SubscribableChannel provisionDestination(String name, boolean pubSub) {
-		String destinationName = name + ".destination";
+		String destinationName = name; // + ".destination";
 		SubscribableChannel destination = this.provisionedDestinations
 				.get(destinationName);
 		if (destination == null) {
@@ -141,5 +153,4 @@ public class TestChannelBinderProvisioner
 		}
 
 	}
-
 }
