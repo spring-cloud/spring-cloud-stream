@@ -44,7 +44,7 @@ abstract class AbstractDestination {
 	}
 
 	SubscribableChannel getChannelByName(String name) {
-		name = name.endsWith(".destination") ? name : name + ".destination";
+		//name = name.endsWith(".destination") ? name : name + ".destination";
 		for (AbstractSubscribableChannel subscribableChannel : channels) {
 			if (subscribableChannel.getBeanName().equals(name)) {
 				return subscribableChannel;

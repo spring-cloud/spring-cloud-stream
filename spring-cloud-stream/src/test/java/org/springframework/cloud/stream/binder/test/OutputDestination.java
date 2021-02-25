@@ -23,6 +23,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedTransferQueue;
 import java.util.concurrent.TimeUnit;
 
+import org.springframework.integration.channel.AbstractSubscribableChannel;
 import org.springframework.messaging.Message;
 import org.springframework.util.StringUtils;
 
@@ -40,7 +41,6 @@ public class OutputDestination extends AbstractDestination {
 
 	public Message<byte[]> receive(long timeout, String bindingName) {
 		try {
-			bindingName = bindingName.endsWith(".destination") ? bindingName : bindingName + ".destination";
 			return this.messageQueues.get(bindingName).poll(timeout, TimeUnit.MILLISECONDS);
 		}
 		catch (InterruptedException e) {
@@ -109,7 +109,9 @@ public class OutputDestination extends AbstractDestination {
 		if (!this.messageQueues.containsKey(bindingName)) {
 			BlockingQueue<Message<byte[]>> messageQueue = new LinkedTransferQueue<>();
 			this.messageQueues.put(bindingName, messageQueue);
-			this.getChannelByName(bindingName).subscribe(message -> this.messageQueues.get(bindingName).offer((Message<byte[]>) message));
+			if (((AbstractSubscribableChannel) this.getChannelByName(bindingName)).getSubscriberCount() < 1) {
+				this.getChannelByName(bindingName).subscribe(message -> this.messageQueues.get(bindingName).offer((Message<byte[]>) message));
+			}
 		}
 	}
 
