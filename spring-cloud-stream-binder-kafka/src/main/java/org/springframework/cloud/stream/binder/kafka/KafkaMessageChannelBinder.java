@@ -1,5 +1,5 @@
 /*
- * Copyright 2014-2019 the original author or authors.
+ * Copyright 2014-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -79,7 +79,6 @@ import org.springframework.cloud.stream.config.ListenerContainerCustomizer;
 import org.springframework.cloud.stream.config.MessageSourceCustomizer;
 import org.springframework.cloud.stream.provisioning.ConsumerDestination;
 import org.springframework.cloud.stream.provisioning.ProducerDestination;
-import org.springframework.context.Lifecycle;
 import org.springframework.context.support.AbstractApplicationContext;
 import org.springframework.expression.Expression;
 import org.springframework.expression.common.LiteralExpression;
@@ -1510,8 +1509,14 @@ public class KafkaMessageChannelBinder extends
 
 		@Override
 		public void stop() {
-			if (this.producerFactory instanceof Lifecycle) {
-				((Lifecycle) producerFactory).stop();
+			if (this.producerFactory instanceof DisposableBean) {
+				try {
+					((DisposableBean) producerFactory).destroy();
+				}
+				catch (Exception ex) {
+					this.logger.error(ex, "Error destroying the producer factory bean: ");
+					throw new RuntimeException(ex);
+				}
 			}
 			this.running = false;
 		}

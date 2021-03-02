@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2020 the original author or authors.
+ * Copyright 2018-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,10 @@
 
 package org.springframework.cloud.stream.binder.kafka.streams;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -31,6 +33,7 @@ import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStr
 import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.core.ResolvableType;
 import org.springframework.kafka.config.StreamsBuilderFactoryBean;
+import org.springframework.kafka.core.ProducerFactory;
 
 /**
  * A catalogue that provides binding information for Kafka Streams target types such as
@@ -41,7 +44,7 @@ import org.springframework.kafka.config.StreamsBuilderFactoryBean;
  *
  * @author Soby Chacko
  */
-class KafkaStreamsBindingInformationCatalogue {
+public class KafkaStreamsBindingInformationCatalogue {
 
 	private final Map<KStream<?, ?>, BindingProperties> bindingProperties = new ConcurrentHashMap<>();
 
@@ -54,6 +57,8 @@ class KafkaStreamsBindingInformationCatalogue {
 	private final Map<KStream<?, ?>, Serde<?>> keySerdeInfo = new HashMap<>();
 
 	private final Map<Object, String> bindingNamesPerTarget = new HashMap<>();
+
+	private final List<ProducerFactory<byte[], byte[]>> dlqProducerFactories = new ArrayList<>();
 
 	/**
 	 * For a given bounded {@link KStream}, retrieve it's corresponding destination on the
@@ -174,5 +179,13 @@ class KafkaStreamsBindingInformationCatalogue {
 
 	String bindingNamePerTarget(Object target) {
 		return this.bindingNamesPerTarget.get(target);
+	}
+
+	public List<ProducerFactory<byte[], byte[]>> getDlqProducerFactories() {
+		return this.dlqProducerFactories;
+	}
+
+	public void addDlqProducerFactory(ProducerFactory<byte[], byte[]> producerFactory) {
+		this.dlqProducerFactories.add(producerFactory);
 	}
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2019 the original author or authors.
+ * Copyright 2018-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,11 @@ package org.springframework.cloud.stream.binder.kafka.streams;
 
 import java.util.Set;
 
+import org.springframework.beans.factory.DisposableBean;
 import org.springframework.context.SmartLifecycle;
 import org.springframework.kafka.KafkaException;
 import org.springframework.kafka.config.StreamsBuilderFactoryBean;
+import org.springframework.kafka.core.ProducerFactory;
 
 /**
  * Iterate through all {@link StreamsBuilderFactoryBean} in the application context and
@@ -107,6 +109,9 @@ class StreamsBuilderFactoryManager implements SmartLifecycle {
 					if (this.listener != null) {
 						this.listener.streamsRemoved("streams." + n++, streamsBuilderFactoryBean.getKafkaStreams());
 					}
+				}
+				for (ProducerFactory<byte[], byte[]> dlqProducerFactory : this.kafkaStreamsBindingInformationCatalogue.getDlqProducerFactories()) {
+					((DisposableBean) dlqProducerFactory).destroy();
 				}
 			}
 			catch (Exception ex) {

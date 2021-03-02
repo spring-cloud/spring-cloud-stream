@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2020 the original author or authors.
+ * Copyright 2020-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,6 +36,7 @@ import org.junit.Test;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.cloud.stream.binder.kafka.streams.KafkaStreamsBindingInformationCatalogue;
 import org.springframework.cloud.stream.binder.kafka.utils.DlqDestinationResolver;
 import org.springframework.cloud.stream.binder.kafka.utils.DlqPartitionFunction;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -67,7 +68,7 @@ public class DlqDestinationResolverTests {
 		SpringApplication app = new SpringApplication(WordCountProcessorApplication.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 
-		try (ConfigurableApplicationContext ignored = app.run(
+		try (ConfigurableApplicationContext context = app.run(
 				"--server.port=0",
 				"--spring.jmx.enabled=false",
 				"--spring.cloud.function.definition=process",
@@ -104,6 +105,9 @@ public class DlqDestinationResolverTests {
 				ConsumerRecord<String, String> cr2 = KafkaTestUtils.getSingleRecord(consumer1,
 						"topic2-dlq");
 				assertThat(cr2.value()).isEqualTo("foobar");
+
+				final KafkaStreamsBindingInformationCatalogue catalogue = context.getBean(KafkaStreamsBindingInformationCatalogue.class);
+				assertThat(catalogue.getDlqProducerFactories().size()).isEqualTo(1);
 			}
 			finally {
 				pf.destroy();

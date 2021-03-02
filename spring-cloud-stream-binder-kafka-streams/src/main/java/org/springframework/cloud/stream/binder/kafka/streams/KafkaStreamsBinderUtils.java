@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2020 the original author or authors.
+ * Copyright 2018-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -73,7 +73,8 @@ final class KafkaStreamsBinderUtils {
 									KafkaStreamsBinderConfigurationProperties binderConfigurationProperties,
 									ExtendedConsumerProperties<KafkaStreamsConsumerProperties> properties,
 									RetryTemplate retryTemplate,
-									ConfigurableListableBeanFactory beanFactory, String bindingName) {
+									ConfigurableListableBeanFactory beanFactory, String bindingName,
+									KafkaStreamsBindingInformationCatalogue kafkaStreamsBindingInformationCatalogue) {
 
 		ExtendedConsumerProperties<KafkaConsumerProperties> extendedConsumerProperties =
 				(ExtendedConsumerProperties) properties;
@@ -109,6 +110,8 @@ final class KafkaStreamsBinderUtils {
 					new ExtendedProducerProperties<>(
 							extendedConsumerProperties.getExtension().getDlqProducerProperties()),
 					binderConfigurationProperties);
+			kafkaStreamsBindingInformationCatalogue.addDlqProducerFactory(producerFactory);
+
 			KafkaOperations<byte[], byte[]> kafkaTemplate = new KafkaTemplate<>(producerFactory);
 
 			Map<String, DlqDestinationResolver> dlqDestinationResolvers =
