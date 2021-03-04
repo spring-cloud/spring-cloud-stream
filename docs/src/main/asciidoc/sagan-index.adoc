@@ -11,7 +11,7 @@ Spring Cloud Stream supports a variety of binder implementations and the followi
 * https://github.com/spring-cloud/spring-cloud-stream-binder-kafka[Apache Kafka]
 * https://github.com/spring-cloud/spring-cloud-stream-binder-kafka/tree/master/spring-cloud-stream-binder-kafka-streams[Kafka Streams]
 * https://github.com/spring-cloud/spring-cloud-stream-binder-aws-kinesis[Amazon Kinesis]
-* https://github.com/spring-cloud/spring-cloud-gcp/tree/master/spring-cloud-gcp-pubsub-stream-binder[Google PubSub _(partner maintained)_]
+* https://github.com/GoogleCloudPlatform/spring-cloud-gcp/tree/main/spring-cloud-gcp-pubsub-stream-binder[Google PubSub _(partner maintained)_]
 * https://github.com/SolaceProducts/spring-cloud-stream-binder-solace[Solace PubSub+ _(partner maintained)_]
 * https://github.com/microsoft/spring-cloud-azure/tree/master/spring-cloud-azure-stream-binder/spring-cloud-azure-eventhubs-stream-binder[Azure Event Hubs _(partner maintained)_]
 * https://github.com/alibaba/spring-cloud-alibaba/wiki/RocketMQ-en[Apache RocketMQ _(partner maintained)_]
