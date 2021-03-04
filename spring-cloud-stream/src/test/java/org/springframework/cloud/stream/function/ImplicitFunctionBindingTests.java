@@ -1143,14 +1143,8 @@ public class ImplicitFunctionBindingTests {
 		public Function<Message<Person>, String> funcMessage() {
 			return value -> {
 				Object v = value.getPayload();
-				System.out.println(v.getClass());
-				if (value.getPayload() instanceof Object) {
-					System.out.println("");
-				}
-				if (((Object) value.getPayload()).getClass() != null) {
-					System.out.println();
-				}
-				//assertThat(value.getPayload().getClass().getName()).isEqualTo("org.springframework.kafka.support.KafkaNull");
+				String className = v.getClass().getName();
+				assertThat(className).isEqualTo("org.springframework.kafka.support.KafkaNull");
 				return "NULL";
 			};
 		}
