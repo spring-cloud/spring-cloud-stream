@@ -537,7 +537,7 @@ For example:
 
 [source,java]
 ----
-public Function<Flux<?>, Mono<Void>>`consumer() {
+public Function<Flux<?>, Mono<Void>>consumer() {
 	return flux -> flux.map(..).filter(..).then();
 }
 ----
