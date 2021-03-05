@@ -298,7 +298,12 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 					@Override
 					public void onApplicationEvent(ApplicationEvent event) {
 						if (context != null) {
-							context.publishEvent(event);
+							try {
+								context.publishEvent(event);
+							}
+							catch (Exception e) {
+								logger.warn("Failed to publish " + event, e);
+							}
 						}
 					}
 				});
