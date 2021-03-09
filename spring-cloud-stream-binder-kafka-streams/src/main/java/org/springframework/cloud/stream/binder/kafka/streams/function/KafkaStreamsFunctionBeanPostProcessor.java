@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2019 the original author or authors.
+ * Copyright 2019-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,6 +40,7 @@ import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.AnnotatedBeanDefinition;
+import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.RootBeanDefinition;
@@ -48,10 +49,8 @@ import org.springframework.core.ResolvableType;
 import org.springframework.util.ClassUtils;
 
 /**
- *
  * @author Soby Chacko
  * @since 2.2.0
- *
  */
 public class KafkaStreamsFunctionBeanPostProcessor implements InitializingBean, BeanFactoryAware {
 
@@ -62,6 +61,7 @@ public class KafkaStreamsFunctionBeanPostProcessor implements InitializingBean, 
 	private ConfigurableListableBeanFactory beanFactory;
 	private boolean onlySingleFunction;
 	private Map<String, ResolvableType> resolvableTypeMap = new TreeMap<>();
+	private Map<String, Method> methods = new TreeMap<>();
 
 	private final StreamFunctionProperties streamFunctionProperties;
 
@@ -71,6 +71,10 @@ public class KafkaStreamsFunctionBeanPostProcessor implements InitializingBean, 
 
 	public Map<String, ResolvableType> getResolvableTypes() {
 		return this.resolvableTypeMap;
+	}
+
+	public Map<String, Method> getMethods() {
+		return methods;
 	}
 
 	@Override
@@ -98,6 +102,8 @@ public class KafkaStreamsFunctionBeanPostProcessor implements InitializingBean, 
 					.addGenericArgumentValue(getResolvableTypes().get(s));
 			rootBeanDefinition.getConstructorArgumentValues()
 					.addGenericArgumentValue(s);
+			rootBeanDefinition.getConstructorArgumentValues()
+					.addGenericArgumentValue(getMethods().get(s));
 			registry.registerBeanDefinition("kafkaStreamsBindableProxyFactory-" + s, rootBeanDefinition);
 		}
 	}
@@ -110,6 +116,12 @@ public class KafkaStreamsFunctionBeanPostProcessor implements InitializingBean, 
 		try {
 			Method[] methods = classObj.getMethods();
 			Optional<Method> kafkaStreamMethod = Arrays.stream(methods).filter(m -> m.getName().equals(key)).findFirst();
+			if (!kafkaStreamMethod.isPresent()) {
+				final BeanDefinition beanDefinition = this.beanFactory.getBeanDefinition(key);
+				final String factoryMethodName = beanDefinition.getFactoryMethodName();
+				kafkaStreamMethod = Arrays.stream(methods).filter(m -> m.getName().equals(factoryMethodName)).findFirst();
+			}
+
 			if (kafkaStreamMethod.isPresent()) {
 				Method method = kafkaStreamMethod.get();
 				ResolvableType resolvableType = ResolvableType.forMethodReturnType(method, classObj);
@@ -119,12 +131,25 @@ public class KafkaStreamsFunctionBeanPostProcessor implements InitializingBean, 
 						resolvableTypeMap.put(key, resolvableType);
 					}
 					else {
-						final String definition = streamFunctionProperties.getDefinition();
-						if (definition == null) {
-							throw new IllegalStateException("Multiple functions found, but function definition property is not set.");
-						}
-						else if (definition.contains(key)) {
+						addResolvableTypeInfo(key, resolvableType);
+					}
+				}
+			}
+			else {
+				Optional<Method> componentBeanMethods = Arrays.stream(methods)
+						.filter(m -> m.getName().equals("apply") && isKafkaStreamsTypeFound(m) ||
+								m.getName().equals("accept") && isKafkaStreamsTypeFound(m)).findFirst();
+				if (componentBeanMethods.isPresent()) {
+					Method method = componentBeanMethods.get();
+					final ResolvableType resolvableType = ResolvableType.forMethodParameter(method, 0);
+					final Class<?> rawClass = resolvableType.getRawClass();
+					if (rawClass == KStream.class || rawClass == KTable.class || rawClass == GlobalKTable.class) {
+						if (onlySingleFunction) {
 							resolvableTypeMap.put(key, resolvableType);
+							this.methods.put(key, method);
+						}
+						else {
+							addResolvableTypeInfo(key, resolvableType);
 						}
 					}
 				}
@@ -133,6 +158,22 @@ public class KafkaStreamsFunctionBeanPostProcessor implements InitializingBean, 
 		catch (Exception e) {
 			LOG.error("Function activation issues while mapping the function: " + key, e);
 		}
+	}
+
+	private void addResolvableTypeInfo(String key, ResolvableType resolvableType) {
+		final String definition = streamFunctionProperties.getDefinition();
+		if (definition == null) {
+			throw new IllegalStateException("Multiple functions found, but function definition property is not set.");
+		}
+		else if (definition.contains(key)) {
+			resolvableTypeMap.put(key, resolvableType);
+		}
+	}
+
+	private boolean isKafkaStreamsTypeFound(Method method) {
+		return KStream.class.isAssignableFrom(method.getParameters()[0].getType()) ||
+				KTable.class.isAssignableFrom(method.getParameters()[0].getType()) ||
+				GlobalKTable.class.isAssignableFrom(method.getParameters()[0].getType());
 	}
 
 	@Override

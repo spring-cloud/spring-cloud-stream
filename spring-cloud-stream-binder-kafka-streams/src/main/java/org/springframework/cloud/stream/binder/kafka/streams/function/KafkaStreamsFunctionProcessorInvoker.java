@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2019 the original author or authors.
+ * Copyright 2019-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.binder.kafka.streams.function;
 
+import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
@@ -35,13 +36,16 @@ public class KafkaStreamsFunctionProcessorInvoker {
 	private final KafkaStreamsFunctionProcessor kafkaStreamsFunctionProcessor;
 	private final Map<String, ResolvableType> resolvableTypeMap;
 	private final KafkaStreamsBindableProxyFactory[] kafkaStreamsBindableProxyFactories;
+	private final Map<String, Method> methods;
 
 	public KafkaStreamsFunctionProcessorInvoker(Map<String, ResolvableType> resolvableTypeMap,
 										KafkaStreamsFunctionProcessor kafkaStreamsFunctionProcessor,
-										KafkaStreamsBindableProxyFactory[] kafkaStreamsBindableProxyFactories) {
+										KafkaStreamsBindableProxyFactory[] kafkaStreamsBindableProxyFactories,
+												Map<String, Method> methods) {
 		this.kafkaStreamsFunctionProcessor = kafkaStreamsFunctionProcessor;
 		this.resolvableTypeMap = resolvableTypeMap;
 		this.kafkaStreamsBindableProxyFactories = kafkaStreamsBindableProxyFactories;
+		this.methods = methods;
 	}
 
 	@PostConstruct
@@ -49,7 +53,7 @@ public class KafkaStreamsFunctionProcessorInvoker {
 		resolvableTypeMap.forEach((key, value) -> {
 			Optional<KafkaStreamsBindableProxyFactory> proxyFactory =
 					Arrays.stream(kafkaStreamsBindableProxyFactories).filter(p -> p.getFunctionName().equals(key)).findFirst();
-			this.kafkaStreamsFunctionProcessor.setupFunctionInvokerForKafkaStreams(value, key, proxyFactory.get());
+			this.kafkaStreamsFunctionProcessor.setupFunctionInvokerForKafkaStreams(value, key, proxyFactory.get(), methods.get(key));
 		});
 	}
 }

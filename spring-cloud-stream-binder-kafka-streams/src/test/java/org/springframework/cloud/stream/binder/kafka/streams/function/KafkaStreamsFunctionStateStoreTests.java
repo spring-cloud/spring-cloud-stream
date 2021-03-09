@@ -60,10 +60,10 @@ public class KafkaStreamsFunctionStateStoreTests {
 
 		try (ConfigurableApplicationContext context = app.run("--server.port=0",
 				"--spring.jmx.enabled=false",
-				"--spring.cloud.stream.function.definition=process;hello",
-				"--spring.cloud.stream.bindings.process-in-0.destination=words",
+				"--spring.cloud.stream.function.definition=biConsumerBean;hello",
+				"--spring.cloud.stream.bindings.biConsumerBean-in-0.destination=words",
 				"--spring.cloud.stream.bindings.hello-in-0.destination=words",
-				"--spring.cloud.stream.kafka.streams.binder.functions.process.applicationId=testKafkaStreamsFuncionWithMultipleStateStores-123",
+				"--spring.cloud.stream.kafka.streams.binder.functions.changed.applicationId=testKafkaStreamsFuncionWithMultipleStateStores-123",
 				"--spring.cloud.stream.kafka.streams.binder.functions.hello.applicationId=testKafkaStreamsFuncionWithMultipleStateStores-456",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.commit.interval.ms=1000",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.default.key.serde" +
@@ -121,7 +121,7 @@ public class KafkaStreamsFunctionStateStoreTests {
 		boolean processed1;
 		boolean processed2;
 
-		@Bean
+		@Bean(name = "biConsumerBean")
 		public java.util.function.BiConsumer<KStream<Object, String>, KStream<Object, String>> process() {
 			return (input0, input1) ->
 					input0.process((ProcessorSupplier<Object, String>) () -> new Processor<Object, String>() {

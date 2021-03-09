@@ -77,6 +77,22 @@ NOTE: If the destination property is not set on the binding, a topic is created 
 
 Once built as a uber-jar (e.g., `kstream-consumer-app.jar`), you can run the above example like the following.
 
+If the applications choose to define the functional beans using Spring's `Component` annotation, the binder also suppports that model.
+The above functional bean could be rewritten as below.
+
+```
+@Component(name = "process")
+public class SimpleConsumer implements java.util.function.Consumer<KStream<Object, String>> {
+
+    @Override
+    public void accept(KStream<Object, String> input) {
+        input.foreach((key, value) -> {
+            System.out.println("Key: " + key + " Value: " + value);
+        });
+    }
+}
+```
+
 [source]
 ----
 java -jar kstream-consumer-app.jar --spring.cloud.stream.bindings.process-in-0.destination=my-topic
