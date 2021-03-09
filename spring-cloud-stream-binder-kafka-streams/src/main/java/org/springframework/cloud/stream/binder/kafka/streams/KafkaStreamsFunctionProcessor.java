@@ -168,7 +168,7 @@ public class KafkaStreamsFunctionProcessor extends AbstractKafkaStreamsBinderPro
 	}
 
 	private void traverseReturnTypeForComponentBeans(Map<String, ResolvableType> resolvableTypeMap, ResolvableType currentOutputGeneric,
-													 Set<String> inputs, Iterator<String> iterator, Class<?> outputRawclass) {
+													Set<String> inputs, Iterator<String> iterator, Class<?> outputRawclass) {
 		if (outputRawclass != null && !outputRawclass.equals(Void.TYPE)) {
 			ResolvableType iterableResType = currentOutputGeneric;
 			int i = 1;
