@@ -109,9 +109,15 @@ public class KafkaStreamsBinderWordCountFunctionTests {
 						"=org.apache.kafka.common.serialization.Serdes$StringSerde",
 				"--spring.cloud.stream.kafka.streams.binder.brokers=" + embeddedKafka.getBrokersAsString())) {
 			receiveAndValidate("words", "counts");
+
 			final MeterRegistry meterRegistry = context.getBean(MeterRegistry.class);
 			Thread.sleep(100);
-			assertThat(meterRegistry.getMeters().size() > 1).isTrue();
+
+			assertThat(meterRegistry.getMeters().stream().anyMatch(m -> m.getId().getName().equals("kafka.stream.thread.poll.records.max"))).isTrue();
+			assertThat(meterRegistry.getMeters().stream().anyMatch(m -> m.getId().getName().equals("kafka.consumer.network.io.total"))).isTrue();
+			assertThat(meterRegistry.getMeters().stream().anyMatch(m -> m.getId().getName().equals("kafka.producer.record.send.total"))).isTrue();
+			assertThat(meterRegistry.getMeters().stream().anyMatch(m -> m.getId().getName().equals("kafka.admin.client.network.io.total"))).isTrue();
+
 			Assert.isTrue(LATCH.await(5, TimeUnit.SECONDS), "Failed to call customizers");
 			//Testing topology endpoint
 			final KafkaStreamsRegistry kafkaStreamsRegistry = context.getBean(KafkaStreamsRegistry.class);

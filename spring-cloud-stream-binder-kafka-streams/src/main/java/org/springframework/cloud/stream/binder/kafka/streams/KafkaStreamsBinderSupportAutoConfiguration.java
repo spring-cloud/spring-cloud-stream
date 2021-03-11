@@ -17,7 +17,6 @@
 package org.springframework.cloud.stream.binder.kafka.streams;
 
 import java.lang.reflect.Constructor;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -25,12 +24,8 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
-import io.micrometer.core.instrument.ImmutableTag;
 import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.Tag;
-import io.micrometer.core.instrument.binder.kafka.KafkaStreamsMetrics;
 import org.apache.kafka.common.serialization.Serdes;
-import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.errors.LogAndContinueExceptionHandler;
 import org.apache.kafka.streams.errors.LogAndFailExceptionHandler;
@@ -76,6 +71,7 @@ import org.springframework.integration.support.utils.IntegrationUtils;
 import org.springframework.kafka.config.KafkaStreamsConfiguration;
 import org.springframework.kafka.config.StreamsBuilderFactoryBeanCustomizer;
 import org.springframework.kafka.core.CleanupConfig;
+import org.springframework.kafka.streams.KafkaStreamsMicrometerListener;
 import org.springframework.kafka.streams.RecoveringDeserializationExceptionHandler;
 import org.springframework.lang.Nullable;
 import org.springframework.messaging.converter.CompositeMessageConverter;
@@ -402,7 +398,7 @@ public class KafkaStreamsBinderSupportAutoConfiguration {
 			KafkaStreamsBindingInformationCatalogue catalogue,
 			KafkaStreamsRegistry kafkaStreamsRegistry,
 			@Nullable KafkaStreamsBinderMetrics kafkaStreamsBinderMetrics,
-			@Nullable StreamsListener listener) {
+			@Nullable KafkaStreamsMicrometerListener listener) {
 		return new StreamsBuilderFactoryManager(catalogue, kafkaStreamsRegistry, kafkaStreamsBinderMetrics, listener);
 	}
 
@@ -448,33 +444,10 @@ public class KafkaStreamsBinderSupportAutoConfiguration {
 
 			@Bean
 			@ConditionalOnMissingBean(name = "binderStreamsListener")
-			public StreamsListener binderStreamsListener(MeterRegistry meterRegistry) {
-				return new StreamsListener() {
-
-					private final Map<String, KafkaStreamsMetrics> metrics = new HashMap<>();
-
-					@Override
-					public synchronized void streamsAdded(String id, KafkaStreams kafkaStreams) {
-						if (!this.metrics.containsKey(id)) {
-							List<Tag> streamsTags = new ArrayList<>();
-							streamsTags.add(new ImmutableTag("spring.id", id));
-							this.metrics.put(id, new KafkaStreamsMetrics(kafkaStreams, streamsTags));
-							this.metrics.get(id).bindTo(meterRegistry);
-						}
-					}
-
-					@Override
-					public synchronized void streamsRemoved(String id, KafkaStreams streams) {
-						KafkaStreamsMetrics removed = this.metrics.remove(id);
-						if (removed != null) {
-							removed.close();
-						}
-					}
-
-				};
+			public KafkaStreamsMicrometerListener binderStreamsListener(MeterRegistry meterRegistry) {
+				return new KafkaStreamsMicrometerListener(meterRegistry);
 			}
 		}
-
 	}
 
 	@Configuration
@@ -498,34 +471,9 @@ public class KafkaStreamsBinderSupportAutoConfiguration {
 
 			@Bean
 			@ConditionalOnMissingBean(name = "binderStreamsListener")
-			public StreamsListener binderStreamsListener(ConfigurableApplicationContext context) {
-				MeterRegistry meterRegistry = context.getBean("outerContext", ApplicationContext.class)
-						.getBean(MeterRegistry.class);
-				return new StreamsListener() {
-
-					private final Map<String, KafkaStreamsMetrics> metrics = new HashMap<>();
-
-					@Override
-					public synchronized void streamsAdded(String id, KafkaStreams kafkaStreams) {
-						if (!this.metrics.containsKey(id)) {
-							List<Tag> streamsTags = new ArrayList<>();
-							streamsTags.add(new ImmutableTag("spring.id", id));
-							this.metrics.put(id, new KafkaStreamsMetrics(kafkaStreams, streamsTags));
-							this.metrics.get(id).bindTo(meterRegistry);
-						}
-					}
-
-					@Override
-					public synchronized void streamsRemoved(String id, KafkaStreams streams) {
-						KafkaStreamsMetrics removed = this.metrics.remove(id);
-						if (removed != null) {
-							removed.close();
-						}
-					}
-
-				};
+			public KafkaStreamsMicrometerListener binderStreamsListener(MeterRegistry meterRegistry) {
+				return new KafkaStreamsMicrometerListener(meterRegistry);
 			}
 		}
-
 	}
 }

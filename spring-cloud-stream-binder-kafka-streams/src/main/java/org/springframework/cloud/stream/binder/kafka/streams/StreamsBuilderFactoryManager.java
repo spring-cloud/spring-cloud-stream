@@ -23,6 +23,7 @@ import org.springframework.context.SmartLifecycle;
 import org.springframework.kafka.KafkaException;
 import org.springframework.kafka.config.StreamsBuilderFactoryBean;
 import org.springframework.kafka.core.ProducerFactory;
+import org.springframework.kafka.streams.KafkaStreamsMicrometerListener;
 
 /**
  * Iterate through all {@link StreamsBuilderFactoryBean} in the application context and
@@ -45,14 +46,14 @@ class StreamsBuilderFactoryManager implements SmartLifecycle {
 
 	private final KafkaStreamsBinderMetrics kafkaStreamsBinderMetrics;
 
-	private final StreamsListener listener;
+	private final KafkaStreamsMicrometerListener listener;
 
 	private volatile boolean running;
 
 	StreamsBuilderFactoryManager(KafkaStreamsBindingInformationCatalogue kafkaStreamsBindingInformationCatalogue,
 										KafkaStreamsRegistry kafkaStreamsRegistry,
 										KafkaStreamsBinderMetrics kafkaStreamsBinderMetrics,
-										StreamsListener listener) {
+										KafkaStreamsMicrometerListener listener) {
 		this.kafkaStreamsBindingInformationCatalogue = kafkaStreamsBindingInformationCatalogue;
 		this.kafkaStreamsRegistry = kafkaStreamsRegistry;
 		this.kafkaStreamsBinderMetrics = kafkaStreamsBinderMetrics;
@@ -80,11 +81,9 @@ class StreamsBuilderFactoryManager implements SmartLifecycle {
 						.getStreamsBuilderFactoryBeans();
 				int n = 0;
 				for (StreamsBuilderFactoryBean streamsBuilderFactoryBean : streamsBuilderFactoryBeans) {
+					streamsBuilderFactoryBean.addListener(this.listener);
 					streamsBuilderFactoryBean.start();
 					this.kafkaStreamsRegistry.registerKafkaStreams(streamsBuilderFactoryBean);
-					if (this.listener != null) {
-						this.listener.streamsAdded("streams." + n++, streamsBuilderFactoryBean.getKafkaStreams());
-					}
 				}
 				if (this.kafkaStreamsBinderMetrics != null) {
 					this.kafkaStreamsBinderMetrics.addMetrics(streamsBuilderFactoryBeans);
@@ -105,10 +104,8 @@ class StreamsBuilderFactoryManager implements SmartLifecycle {
 						.getStreamsBuilderFactoryBeans();
 				int n = 0;
 				for (StreamsBuilderFactoryBean streamsBuilderFactoryBean : streamsBuilderFactoryBeans) {
+					streamsBuilderFactoryBean.removeListener(this.listener);
 					streamsBuilderFactoryBean.stop();
-					if (this.listener != null) {
-						this.listener.streamsRemoved("streams." + n++, streamsBuilderFactoryBean.getKafkaStreams());
-					}
 				}
 				for (ProducerFactory<byte[], byte[]> dlqProducerFactory : this.kafkaStreamsBindingInformationCatalogue.getDlqProducerFactories()) {
 					((DisposableBean) dlqProducerFactory).destroy();
