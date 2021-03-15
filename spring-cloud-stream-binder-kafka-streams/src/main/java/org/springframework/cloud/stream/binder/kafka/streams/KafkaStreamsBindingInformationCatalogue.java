@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.streams.StreamsConfig;
@@ -34,6 +35,7 @@ import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.core.ResolvableType;
 import org.springframework.kafka.config.StreamsBuilderFactoryBean;
 import org.springframework.kafka.core.ProducerFactory;
+import org.springframework.util.CollectionUtils;
 
 /**
  * A catalogue that provides binding information for Kafka Streams target types such as
@@ -50,7 +52,7 @@ public class KafkaStreamsBindingInformationCatalogue {
 
 	private final Map<KStream<?, ?>, KafkaStreamsConsumerProperties> consumerProperties = new ConcurrentHashMap<>();
 
-	private final Set<StreamsBuilderFactoryBean> streamsBuilderFactoryBeans = new HashSet<>();
+	private final Map<String, StreamsBuilderFactoryBean> streamsBuilderFactoryBeanPerBinding = new HashMap<>();
 
 	private final Map<Object, ResolvableType> outboundKStreamResolvables = new HashMap<>();
 
@@ -58,7 +60,7 @@ public class KafkaStreamsBindingInformationCatalogue {
 
 	private final Map<Object, String> bindingNamesPerTarget = new HashMap<>();
 
-	private final List<ProducerFactory<byte[], byte[]>> dlqProducerFactories = new ArrayList<>();
+	private final Map<StreamsBuilderFactoryBean, List<ProducerFactory<byte[], byte[]>>> dlqProducerFactories = new HashMap<>();
 
 	/**
 	 * For a given bounded {@link KStream}, retrieve it's corresponding destination on the
@@ -127,18 +129,18 @@ public class KafkaStreamsBindingInformationCatalogue {
 		}
 	}
 
-	/**
-	 * Adds a mapping for KStream -> {@link StreamsBuilderFactoryBean}.
-	 * @param streamsBuilderFactoryBean provides the {@link StreamsBuilderFactoryBean}
-	 * mapped to the KStream
-	 */
-	void addStreamBuilderFactory(StreamsBuilderFactoryBean streamsBuilderFactoryBean) {
-		this.streamsBuilderFactoryBeans.add(streamsBuilderFactoryBean);
+	Set<StreamsBuilderFactoryBean> getStreamsBuilderFactoryBeans() {
+		return new HashSet<>(this.streamsBuilderFactoryBeanPerBinding.values());
 	}
 
-	Set<StreamsBuilderFactoryBean> getStreamsBuilderFactoryBeans() {
-		return this.streamsBuilderFactoryBeans;
+	void addStreamBuilderFactoryPerBinding(String binding, StreamsBuilderFactoryBean streamsBuilderFactoryBean) {
+		this.streamsBuilderFactoryBeanPerBinding.put(binding, streamsBuilderFactoryBean);
 	}
+
+	Map<String, StreamsBuilderFactoryBean> getStreamsBuilderFactoryBeanPerBinding() {
+		return this.streamsBuilderFactoryBeanPerBinding;
+	}
+
 
 	void addOutboundKStreamResolvable(Object key, ResolvableType outboundResolvable) {
 		this.outboundKStreamResolvables.put(key, outboundResolvable);
@@ -182,10 +184,23 @@ public class KafkaStreamsBindingInformationCatalogue {
 	}
 
 	public List<ProducerFactory<byte[], byte[]>> getDlqProducerFactories() {
-		return this.dlqProducerFactories;
+		return this.dlqProducerFactories.values()
+				.stream()
+				.flatMap(List::stream)
+				.collect(Collectors.toList());
 	}
 
-	public void addDlqProducerFactory(ProducerFactory<byte[], byte[]> producerFactory) {
-		this.dlqProducerFactories.add(producerFactory);
+	public List<ProducerFactory<byte[], byte[]>> getDlqProducerFactory(StreamsBuilderFactoryBean streamsBuilderFactoryBean) {
+		return this.dlqProducerFactories.get(streamsBuilderFactoryBean);
+	}
+
+	public void addDlqProducerFactory(StreamsBuilderFactoryBean streamsBuilderFactoryBean,
+									ProducerFactory<byte[], byte[]> producerFactory) {
+		List<ProducerFactory<byte[], byte[]>> producerFactories = this.dlqProducerFactories.get(streamsBuilderFactoryBean);
+		if (CollectionUtils.isEmpty(producerFactories)) {
+			producerFactories = new ArrayList<>();
+			this.dlqProducerFactories.put(streamsBuilderFactoryBean, producerFactories);
+		}
+		producerFactories.add(producerFactory);
 	}
 }

@@ -17,9 +17,11 @@
 package org.springframework.cloud.stream.binder.kafka.streams.function;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
@@ -40,15 +42,22 @@ import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
 
+import org.springframework.beans.DirectFieldAccessor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.cloud.stream.binder.Binding;
+import org.springframework.cloud.stream.binder.DefaultBinding;
 import org.springframework.cloud.stream.binder.kafka.streams.InteractiveQueryService;
 import org.springframework.cloud.stream.binder.kafka.streams.KafkaStreamsRegistry;
 import org.springframework.cloud.stream.binder.kafka.streams.endpoint.KafkaStreamsTopologyEndpoint;
+import org.springframework.cloud.stream.binding.InputBindingLifecycle;
+import org.springframework.cloud.stream.binding.OutputBindingLifecycle;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.Lifecycle;
 import org.springframework.context.annotation.Bean;
+import org.springframework.kafka.config.StreamsBuilderFactoryBean;
 import org.springframework.kafka.config.StreamsBuilderFactoryBeanCustomizer;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
@@ -90,7 +99,7 @@ public class KafkaStreamsBinderWordCountFunctionTests {
 
 	@Test
 	@SuppressWarnings("unchecked")
-	public void testKstreamWordCountFunction() throws Exception {
+	public void testBasicKStreamTopologyExecution() throws Exception {
 		SpringApplication app = new SpringApplication(WordCountProcessorApplication.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 
@@ -132,6 +141,31 @@ public class KafkaStreamsBinderWordCountFunctionTests {
 			Map<String, Object> streamConfigGlobalProperties = (Map<String, Object>) context.getBean("streamConfigGlobalProperties");
 			assertThat(streamConfigGlobalProperties.get("request.timeout.ms")).isEqualTo("29000");
 			assertThat(streamConfigGlobalProperties.get("max.block.ms")).isEqualTo("90000");
+
+			InputBindingLifecycle inputBindingLifecycle = context.getBean(InputBindingLifecycle.class);
+			final Collection<Binding<Object>> inputBindings = (Collection<Binding<Object>>) new DirectFieldAccessor(inputBindingLifecycle)
+					.getPropertyValue("inputBindings");
+			assertThat(inputBindings).isNotNull();
+			final Optional<Binding<Object>> theOnlyInputBinding = inputBindings.stream().findFirst();
+			assertThat(theOnlyInputBinding.isPresent()).isTrue();
+			final DefaultBinding<Object> objectBinding = (DefaultBinding<Object>) theOnlyInputBinding.get();
+			assertThat(objectBinding.getBindingName()).isEqualTo("process-in-0");
+
+			final Lifecycle lifecycle = (Lifecycle) new DirectFieldAccessor(objectBinding).getPropertyValue("lifecycle");
+			final StreamsBuilderFactoryBean streamsBuilderFactoryBean = context.getBean(StreamsBuilderFactoryBean.class);
+			assertThat(lifecycle).isEqualTo(streamsBuilderFactoryBean);
+
+			OutputBindingLifecycle outputBindingLifecycle = context.getBean(OutputBindingLifecycle.class);
+			final Collection<Binding<Object>> outputBindings = (Collection<Binding<Object>>) new DirectFieldAccessor(outputBindingLifecycle)
+					.getPropertyValue("outputBindings");
+			assertThat(outputBindings).isNotNull();
+			final Optional<Binding<Object>> theOnlyOutputBinding = outputBindings.stream().findFirst();
+			assertThat(theOnlyOutputBinding.isPresent()).isTrue();
+			final DefaultBinding<Object> objectBinding1 = (DefaultBinding<Object>) theOnlyOutputBinding.get();
+			assertThat(objectBinding1.getBindingName()).isEqualTo("process-out-0");
+
+			final Lifecycle lifecycle1 = (Lifecycle) new DirectFieldAccessor(objectBinding1).getPropertyValue("lifecycle");
+			assertThat(lifecycle1).isEqualTo(streamsBuilderFactoryBean);
 		}
 	}
 

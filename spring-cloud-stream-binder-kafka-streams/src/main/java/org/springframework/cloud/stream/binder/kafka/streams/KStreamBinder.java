@@ -16,6 +16,8 @@
 
 package org.springframework.cloud.stream.binder.kafka.streams;
 
+import java.util.Properties;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.kafka.common.serialization.Serde;
@@ -38,6 +40,7 @@ import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStr
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsConsumerProperties;
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsExtendedBindingProperties;
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsProducerProperties;
+import org.springframework.kafka.config.StreamsBuilderFactoryBean;
 import org.springframework.retry.support.RetryTemplate;
 import org.springframework.util.StringUtils;
 
@@ -76,10 +79,10 @@ class KStreamBinder extends
 	private final KeyValueSerdeResolver keyValueSerdeResolver;
 
 	KStreamBinder(KafkaStreamsBinderConfigurationProperties binderConfigurationProperties,
-			KafkaTopicProvisioner kafkaTopicProvisioner,
-			KafkaStreamsMessageConversionDelegate kafkaStreamsMessageConversionDelegate,
-			KafkaStreamsBindingInformationCatalogue KafkaStreamsBindingInformationCatalogue,
-			KeyValueSerdeResolver keyValueSerdeResolver) {
+				KafkaTopicProvisioner kafkaTopicProvisioner,
+				KafkaStreamsMessageConversionDelegate kafkaStreamsMessageConversionDelegate,
+				KafkaStreamsBindingInformationCatalogue KafkaStreamsBindingInformationCatalogue,
+				KeyValueSerdeResolver keyValueSerdeResolver) {
 		this.binderConfigurationProperties = binderConfigurationProperties;
 		this.kafkaTopicProvisioner = kafkaTopicProvisioner;
 		this.kafkaStreamsMessageConversionDelegate = kafkaStreamsMessageConversionDelegate;
@@ -103,13 +106,31 @@ class KStreamBinder extends
 
 		final RetryTemplate retryTemplate = buildRetryTemplate(properties);
 
+		final String bindingName = this.kafkaStreamsBindingInformationCatalogue.bindingNamePerTarget(inputTarget);
+		final StreamsBuilderFactoryBean streamsBuilderFactoryBean = this.kafkaStreamsBindingInformationCatalogue
+				.getStreamsBuilderFactoryBeanPerBinding().get(bindingName);
+
 		KafkaStreamsBinderUtils.prepareConsumerBinding(name, group,
 				getApplicationContext(), this.kafkaTopicProvisioner,
 				this.binderConfigurationProperties, properties, retryTemplate, getBeanFactory(),
 				this.kafkaStreamsBindingInformationCatalogue.bindingNamePerTarget(inputTarget),
-				this.kafkaStreamsBindingInformationCatalogue);
+				this.kafkaStreamsBindingInformationCatalogue, streamsBuilderFactoryBean);
 
-		return new DefaultBinding<>(name, group, inputTarget, null);
+
+		return new DefaultBinding<KStream<Object, Object>>(bindingName, group,
+				inputTarget, streamsBuilderFactoryBean) {
+
+			@Override
+			public boolean isInput() {
+				return true;
+			}
+
+			@Override
+			public synchronized void stop() {
+				super.stop();
+				KafkaStreamsBinderUtils.closeDlqProducerFactories(kafkaStreamsBindingInformationCatalogue, streamsBuilderFactoryBean);
+			}
+		};
 	}
 
 	@Override
@@ -138,7 +159,31 @@ class KStreamBinder extends
 
 		to(properties.isUseNativeEncoding(), name, outboundBindTarget,
 				(Serde<Object>) keySerde, (Serde<Object>) valueSerde, properties.getExtension());
-		return new DefaultBinding<>(name, null, outboundBindTarget, null);
+
+		final String bindingName = this.kafkaStreamsBindingInformationCatalogue.bindingNamePerTarget(outboundBindTarget);
+		final StreamsBuilderFactoryBean streamsBuilderFactoryBean = this.kafkaStreamsBindingInformationCatalogue
+				.getStreamsBuilderFactoryBeanPerBinding().get(bindingName);
+
+		// We need the application id to pass to DefaultBinding so that it won't be interpreted as an anonymous group.
+		// In case, if we can't find application.id (which is unlikely), we just default to bindingName.
+		// This will only be used for lifecycle management through actuator endpoints.
+		final Properties streamsConfiguration = streamsBuilderFactoryBean.getStreamsConfiguration();
+		final String applicationId = streamsConfiguration != null ? (String) streamsConfiguration.get("application.id") : bindingName;
+
+		return new DefaultBinding<KStream<Object, Object>>(bindingName,
+				applicationId, outboundBindTarget, streamsBuilderFactoryBean) {
+
+			@Override
+			public boolean isInput() {
+				return false;
+			}
+
+			@Override
+			public synchronized void stop() {
+				super.stop();
+				KafkaStreamsBinderUtils.closeDlqProducerFactories(kafkaStreamsBindingInformationCatalogue, streamsBuilderFactoryBean);
+			}
+		};
 	}
 
 	@SuppressWarnings("unchecked")

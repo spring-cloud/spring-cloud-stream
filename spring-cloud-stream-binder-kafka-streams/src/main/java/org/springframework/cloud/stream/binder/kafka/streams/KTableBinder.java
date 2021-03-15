@@ -30,6 +30,7 @@ import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStr
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsConsumerProperties;
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsExtendedBindingProperties;
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsProducerProperties;
+import org.springframework.kafka.config.StreamsBuilderFactoryBean;
 import org.springframework.retry.support.RetryTemplate;
 import org.springframework.util.StringUtils;
 
@@ -81,13 +82,30 @@ class KTableBinder extends
 		}
 
 		final RetryTemplate retryTemplate = buildRetryTemplate(properties);
+
+		final String bindingName = this.kafkaStreamsBindingInformationCatalogue.bindingNamePerTarget(inputTarget);
+		final StreamsBuilderFactoryBean streamsBuilderFactoryBean = this.kafkaStreamsBindingInformationCatalogue
+				.getStreamsBuilderFactoryBeanPerBinding().get(bindingName);
+
 		KafkaStreamsBinderUtils.prepareConsumerBinding(name, group,
 				getApplicationContext(), this.kafkaTopicProvisioner,
 				this.binderConfigurationProperties, properties, retryTemplate, getBeanFactory(),
 				this.kafkaStreamsBindingInformationCatalogue.bindingNamePerTarget(inputTarget),
-				this.kafkaStreamsBindingInformationCatalogue);
+				this.kafkaStreamsBindingInformationCatalogue, streamsBuilderFactoryBean);
 
-		return new DefaultBinding<>(name, group, inputTarget, null);
+		return new DefaultBinding<KTable<Object, Object>>(bindingName, group, inputTarget, streamsBuilderFactoryBean) {
+
+			@Override
+			public boolean isInput() {
+				return true;
+			}
+
+			@Override
+			public synchronized void stop() {
+				super.stop();
+				KafkaStreamsBinderUtils.closeDlqProducerFactories(kafkaStreamsBindingInformationCatalogue, streamsBuilderFactoryBean);
+			}
+		};
 	}
 
 	@Override

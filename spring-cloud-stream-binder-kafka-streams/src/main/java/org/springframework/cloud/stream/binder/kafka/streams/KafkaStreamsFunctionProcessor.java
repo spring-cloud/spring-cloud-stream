@@ -273,14 +273,14 @@ public class KafkaStreamsFunctionProcessor extends AbstractKafkaStreamsBinderPro
 						final Set<String> outputs = new TreeSet<>(kafkaStreamsBindableProxyFactory.getOutputs());
 						final Iterator<String> outboundDefinitionIterator = outputs.iterator();
 						if (result.getClass().isArray()) {
-							handleKStreamArrayOutbound(resolvableType, functionName, kafkaStreamsBindableProxyFactory, outboundResolvableType, (Object[]) result);
+							final String initialInput = resolvableTypes.keySet().iterator().next();
+							final StreamsBuilderFactoryBean streamsBuilderFactoryBean =
+									this.kafkaStreamsBindingInformationCatalogue.getStreamsBuilderFactoryBeanPerBinding().get(initialInput);
+							handleKStreamArrayOutbound(resolvableType, functionName, kafkaStreamsBindableProxyFactory,
+									outboundResolvableType, (Object[]) result, streamsBuilderFactoryBean);
 						}
 						else {
-							if (outboundDefinitionIterator.hasNext()) {
-								Object targetBean = handleSingleKStreamOutbound((KStream) result, outboundDefinitionIterator);
-								kafkaStreamsBindingInformationCatalogue.addOutboundKStreamResolvable(targetBean,
-										outboundResolvableType);
-							}
+							handleSingleKStreamOutbound(resolvableTypes, outboundResolvableType, (KStream) result, outboundDefinitionIterator);
 						}
 					}
 				}
@@ -311,14 +311,15 @@ public class KafkaStreamsFunctionProcessor extends AbstractKafkaStreamsBinderPro
 					final Iterator<String> outboundDefinitionIterator = outputs.iterator();
 
 					if (result.getClass().isArray()) {
-						handleKStreamArrayOutbound(resolvableType, functionName, kafkaStreamsBindableProxyFactory, outboundResolvableType, (Object[]) result);
+						final String initialInput = resolvableTypes.keySet().iterator().next();
+						final StreamsBuilderFactoryBean streamsBuilderFactoryBean =
+								this.kafkaStreamsBindingInformationCatalogue.getStreamsBuilderFactoryBeanPerBinding().get(initialInput);
+						handleKStreamArrayOutbound(resolvableType, functionName, kafkaStreamsBindableProxyFactory,
+								outboundResolvableType, (Object[]) result, streamsBuilderFactoryBean);
 					}
 					else {
-						if (outboundDefinitionIterator.hasNext()) {
-							Object targetBean = handleSingleKStreamOutbound((KStream) result, outboundDefinitionIterator);
-							kafkaStreamsBindingInformationCatalogue.addOutboundKStreamResolvable(
-										targetBean, outboundResolvableType != null ? outboundResolvableType : resolvableType.getGeneric(1));
-						}
+						handleSingleKStreamOutbound(resolvableTypes, outboundResolvableType != null ?
+								outboundResolvableType : resolvableType.getGeneric(1), (KStream) result, outboundDefinitionIterator);
 					}
 				}
 			}
@@ -328,8 +329,22 @@ public class KafkaStreamsFunctionProcessor extends AbstractKafkaStreamsBinderPro
 		}
 	}
 
-	private Object handleSingleKStreamOutbound(KStream result, Iterator<String> outboundDefinitionIterator) {
-		final String next = outboundDefinitionIterator.next();
+	private void handleSingleKStreamOutbound(Map<String, ResolvableType> resolvableTypes, ResolvableType outboundResolvableType,
+											KStream<Object, Object> result, Iterator<String> outboundDefinitionIterator) {
+		if (outboundDefinitionIterator.hasNext()) {
+			String outbound = outboundDefinitionIterator.next();
+			Object targetBean = handleSingleKStreamOutbound(result, outbound);
+			kafkaStreamsBindingInformationCatalogue.addOutboundKStreamResolvable(targetBean,
+					outboundResolvableType);
+
+			final String next = resolvableTypes.keySet().iterator().next();
+			final StreamsBuilderFactoryBean streamsBuilderFactoryBean = this.kafkaStreamsBindingInformationCatalogue
+					.getStreamsBuilderFactoryBeanPerBinding().get(next);
+			this.kafkaStreamsBindingInformationCatalogue.addStreamBuilderFactoryPerBinding(outbound, streamsBuilderFactoryBean);
+		}
+	}
+
+	private Object handleSingleKStreamOutbound(KStream<Object, Object> result, String next) {
 		Object targetBean = this.applicationContext.getBean(next);
 		KStreamBoundElementFactory.KStreamWrapper
 				boundElement = (KStreamBoundElementFactory.KStreamWrapper) targetBean;
@@ -340,7 +355,8 @@ public class KafkaStreamsFunctionProcessor extends AbstractKafkaStreamsBinderPro
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	private void handleKStreamArrayOutbound(ResolvableType resolvableType, String functionName,
 											KafkaStreamsBindableProxyFactory kafkaStreamsBindableProxyFactory,
-											ResolvableType outboundResolvableType, Object[] result) {
+											ResolvableType outboundResolvableType, Object[] result,
+											StreamsBuilderFactoryBean streamsBuilderFactoryBean) {
 		// Binding target as the output bindings were deferred in the KafkaStreamsBindableProxyFactory
 		// due to the fact that it didn't know the returned array size. At this point in the execution,
 		// we know exactly the number of outbound components (from the array length), so do the binding.
@@ -365,6 +381,8 @@ public class KafkaStreamsFunctionProcessor extends AbstractKafkaStreamsBinderPro
 
 			kafkaStreamsBindingInformationCatalogue.addOutboundKStreamResolvable(
 					targetBean, outboundResolvableType != null ? outboundResolvableType : resolvableType.getGeneric(1));
+
+			this.kafkaStreamsBindingInformationCatalogue.addStreamBuilderFactoryPerBinding(next, streamsBuilderFactoryBean);
 		}
 	}
 
@@ -428,7 +446,8 @@ public class KafkaStreamsFunctionProcessor extends AbstractKafkaStreamsBinderPro
 						kStreamWrapper.wrap((KStream<Object, Object>) stream);
 
 						this.kafkaStreamsBindingInformationCatalogue.addKeySerde((KStream<?, ?>) kStreamWrapper, keySerde);
-						this.kafkaStreamsBindingInformationCatalogue.addStreamBuilderFactory(streamsBuilderFactoryBean);
+
+						this.kafkaStreamsBindingInformationCatalogue.addStreamBuilderFactoryPerBinding(input, streamsBuilderFactoryBean);
 
 						if (KStream.class.isAssignableFrom(stringResolvableTypeMap.get(input).getRawClass())) {
 							final Class<?> valueClass =

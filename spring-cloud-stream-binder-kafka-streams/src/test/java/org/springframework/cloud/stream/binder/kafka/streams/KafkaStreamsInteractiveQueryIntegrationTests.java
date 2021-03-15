@@ -102,6 +102,7 @@ public class KafkaStreamsInteractiveQueryIntegrationTests {
 		Mockito.when(mock.getKafkaStreams()).thenReturn(mockKafkaStreams);
 		KafkaStreamsRegistry kafkaStreamsRegistry = new KafkaStreamsRegistry();
 		kafkaStreamsRegistry.registerKafkaStreams(mock);
+		Mockito.when(mock.isRunning()).thenReturn(true);
 		KafkaStreamsBinderConfigurationProperties binderConfigurationProperties =
 				new KafkaStreamsBinderConfigurationProperties(new KafkaProperties());
 		binderConfigurationProperties.getStateStoreRetry().setMaxAttempts(3);

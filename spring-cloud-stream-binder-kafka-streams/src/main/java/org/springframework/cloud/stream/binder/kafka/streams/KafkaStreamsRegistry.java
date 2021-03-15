@@ -42,7 +42,14 @@ public class KafkaStreamsRegistry {
 	private final Set<KafkaStreams> kafkaStreams = new HashSet<>();
 
 	Set<KafkaStreams> getKafkaStreams() {
-		return this.kafkaStreams;
+		Set<KafkaStreams> currentlyRunningKafkaStreams = new HashSet<>();
+		for (KafkaStreams ks : this.kafkaStreams) {
+			final StreamsBuilderFactoryBean streamsBuilderFactoryBean = streamsBuilderFactoryBeanMap.get(ks);
+			if (streamsBuilderFactoryBean.isRunning()) {
+				currentlyRunningKafkaStreams.add(ks);
+			}
+		}
+		return currentlyRunningKafkaStreams;
 	}
 
 	/**
@@ -67,7 +74,7 @@ public class KafkaStreamsRegistry {
 	public StreamsBuilderFactoryBean streamsBuilderFactoryBean(String applicationId) {
 		final Optional<StreamsBuilderFactoryBean> first = this.streamsBuilderFactoryBeanMap.values()
 				.stream()
-				.filter(streamsBuilderFactoryBean -> streamsBuilderFactoryBean
+				.filter(streamsBuilderFactoryBean -> streamsBuilderFactoryBean.isRunning() && streamsBuilderFactoryBean
 						.getStreamsConfiguration().getProperty(StreamsConfig.APPLICATION_ID_CONFIG)
 						.equals(applicationId))
 				.findFirst();

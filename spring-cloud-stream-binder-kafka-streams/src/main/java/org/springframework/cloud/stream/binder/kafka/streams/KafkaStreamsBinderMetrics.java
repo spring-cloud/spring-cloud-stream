@@ -92,11 +92,13 @@ public class KafkaStreamsBinderMetrics {
 			this.meterBinder = registry -> {
 				if (streamsBuilderFactoryBeans != null) {
 					for (StreamsBuilderFactoryBean streamsBuilderFactoryBean : streamsBuilderFactoryBeans) {
-						KafkaStreams kafkaStreams = streamsBuilderFactoryBean.getKafkaStreams();
-						final Map<MetricName, ? extends Metric> metrics = kafkaStreams.metrics();
+						if (streamsBuilderFactoryBean.isRunning()) {
+							KafkaStreams kafkaStreams = streamsBuilderFactoryBean.getKafkaStreams();
+							final Map<MetricName, ? extends Metric> metrics = kafkaStreams.metrics();
 
-						prepareToBindMetrics(registry, metrics);
-						checkAndBindMetrics(registry, metrics);
+							prepareToBindMetrics(registry, metrics);
+							checkAndBindMetrics(registry, metrics);
+						}
 					}
 				}
 			};

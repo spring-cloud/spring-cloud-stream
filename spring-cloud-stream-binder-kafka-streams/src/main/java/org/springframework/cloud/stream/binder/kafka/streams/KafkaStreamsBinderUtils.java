@@ -17,6 +17,7 @@
 package org.springframework.cloud.stream.binder.kafka.streams;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
 
@@ -28,6 +29,7 @@ import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.apache.kafka.streams.kstream.KStream;
 
+import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
@@ -44,6 +46,7 @@ import org.springframework.cloud.stream.binder.kafka.utils.DlqDestinationResolve
 import org.springframework.cloud.stream.binder.kafka.utils.DlqPartitionFunction;
 import org.springframework.context.ApplicationContext;
 import org.springframework.core.MethodParameter;
+import org.springframework.kafka.config.StreamsBuilderFactoryBean;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaOperations;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -51,6 +54,7 @@ import org.springframework.kafka.core.ProducerFactory;
 import org.springframework.kafka.listener.DeadLetterPublishingRecoverer;
 import org.springframework.retry.support.RetryTemplate;
 import org.springframework.util.Assert;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 
@@ -74,7 +78,8 @@ final class KafkaStreamsBinderUtils {
 									ExtendedConsumerProperties<KafkaStreamsConsumerProperties> properties,
 									RetryTemplate retryTemplate,
 									ConfigurableListableBeanFactory beanFactory, String bindingName,
-									KafkaStreamsBindingInformationCatalogue kafkaStreamsBindingInformationCatalogue) {
+									KafkaStreamsBindingInformationCatalogue kafkaStreamsBindingInformationCatalogue,
+									StreamsBuilderFactoryBean streamsBuilderFactoryBean) {
 
 		ExtendedConsumerProperties<KafkaConsumerProperties> extendedConsumerProperties =
 				(ExtendedConsumerProperties) properties;
@@ -110,7 +115,7 @@ final class KafkaStreamsBinderUtils {
 					new ExtendedProducerProperties<>(
 							extendedConsumerProperties.getExtension().getDlqProducerProperties()),
 					binderConfigurationProperties);
-			kafkaStreamsBindingInformationCatalogue.addDlqProducerFactory(producerFactory);
+			kafkaStreamsBindingInformationCatalogue.addDlqProducerFactory(streamsBuilderFactoryBean, producerFactory);
 
 			KafkaOperations<byte[], byte[]> kafkaTemplate = new KafkaTemplate<>(producerFactory);
 
@@ -201,4 +206,23 @@ final class KafkaStreamsBinderUtils {
 		return KStream.class.isAssignableFrom(targetBeanClass)
 				&& KStream.class.isAssignableFrom(methodParameter.getParameterType());
 	}
+
+	static void closeDlqProducerFactories(KafkaStreamsBindingInformationCatalogue kafkaStreamsBindingInformationCatalogue,
+										StreamsBuilderFactoryBean streamsBuilderFactoryBean) {
+
+		final List<ProducerFactory<byte[], byte[]>> dlqProducerFactories =
+				kafkaStreamsBindingInformationCatalogue.getDlqProducerFactory(streamsBuilderFactoryBean);
+
+		if (!CollectionUtils.isEmpty(dlqProducerFactories)) {
+			for (ProducerFactory<byte[], byte[]> producerFactory : dlqProducerFactories) {
+				try {
+					((DisposableBean) producerFactory).destroy();
+				}
+				catch (Exception exception) {
+					throw new IllegalStateException(exception);
+				}
+			}
+		}
+	}
+
 }

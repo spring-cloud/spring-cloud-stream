@@ -185,17 +185,29 @@ class KafkaStreamsStreamListenerSetupMethodOrchestrator extends AbstractKafkaStr
 				}
 
 				if (methodAnnotatedOutboundNames != null && methodAnnotatedOutboundNames.length > 0) {
+					methodAnnotatedInboundName = populateInboundIfMissing(method, methodAnnotatedInboundName);
+					final StreamsBuilderFactoryBean streamsBuilderFactoryBean = this.kafkaStreamsBindingInformationCatalogue
+							.getStreamsBuilderFactoryBeanPerBinding().get(methodAnnotatedInboundName);
+
 					if (result.getClass().isArray()) {
 						Object[] outboundKStreams = (Object[]) result;
 						int i = 0;
 						for (Object outboundKStream : outboundKStreams) {
+							final String methodAnnotatedOutboundName = methodAnnotatedOutboundNames[i++];
+
+							this.kafkaStreamsBindingInformationCatalogue.addStreamBuilderFactoryPerBinding(
+									methodAnnotatedOutboundName, streamsBuilderFactoryBean);
+
 							Object targetBean = this.applicationContext
-									.getBean(methodAnnotatedOutboundNames[i++]);
+									.getBean(methodAnnotatedOutboundName);
 							kafkaStreamsBindingInformationCatalogue.addOutboundKStreamResolvable(targetBean, ResolvableType.forMethodReturnType(method));
 							adaptStreamListenerResult(outboundKStream, targetBean);
 						}
 					}
 					else {
+						this.kafkaStreamsBindingInformationCatalogue.addStreamBuilderFactoryPerBinding(
+								methodAnnotatedOutboundNames[0], streamsBuilderFactoryBean);
+
 						Object targetBean = this.applicationContext
 								.getBean(methodAnnotatedOutboundNames[0]);
 						kafkaStreamsBindingInformationCatalogue.addOutboundKStreamResolvable(targetBean, ResolvableType.forMethodReturnType(method));
@@ -208,6 +220,21 @@ class KafkaStreamsStreamListenerSetupMethodOrchestrator extends AbstractKafkaStr
 			throw new BeanInitializationException(
 					"Cannot setup StreamListener for " + method, ex);
 		}
+	}
+
+	private String populateInboundIfMissing(Method method, String methodAnnotatedInboundName) {
+		if (!StringUtils.hasText(methodAnnotatedInboundName)) {
+			Object[] arguments = new Object[method.getParameterTypes().length];
+			if (arguments.length > 0) {
+				MethodParameter methodParameter = MethodParameter.forExecutable(method, 0);
+				if (methodParameter.hasParameterAnnotation(Input.class)) {
+					Input methodAnnotation = methodParameter
+							.getParameterAnnotation(Input.class);
+					methodAnnotatedInboundName = methodAnnotation.value();
+				}
+			}
+		}
+		return methodAnnotatedInboundName;
 	}
 
 	@SuppressWarnings("unchecked")
@@ -292,8 +319,7 @@ class KafkaStreamsStreamListenerSetupMethodOrchestrator extends AbstractKafkaStr
 						BindingProperties bindingProperties1 = this.kafkaStreamsBindingInformationCatalogue.getBindingProperties().get(kStreamWrapper);
 						this.kafkaStreamsBindingInformationCatalogue.registerBindingProperties(stream, bindingProperties1);
 
-						this.kafkaStreamsBindingInformationCatalogue
-								.addStreamBuilderFactory(streamsBuilderFactoryBean);
+						this.kafkaStreamsBindingInformationCatalogue.addStreamBuilderFactoryPerBinding(inboundName, streamsBuilderFactoryBean);
 						for (StreamListenerParameterAdapter streamListenerParameterAdapter : adapters) {
 							if (streamListenerParameterAdapter.supports(stream.getClass(),
 									methodParameter)) {
