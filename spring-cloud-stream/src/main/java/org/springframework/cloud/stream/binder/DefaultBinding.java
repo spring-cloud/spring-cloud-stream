@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2019 the original author or authors.
+ * Copyright 2013-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,6 +39,7 @@ import org.springframework.util.StringUtils;
  * @author Marius Bogoevici
  * @author Oleg Zhurakousky
  * @author Myeonghyeon Lee
+ * @author Soby Chacko
  * @see org.springframework.cloud.stream.annotation.EnableBinding
  */
 
@@ -124,7 +125,7 @@ public class DefaultBinding<T> implements Binding<T> {
 	}
 
 	@Override
-	public final synchronized void start() {
+	public synchronized void start() {
 		if (!this.isRunning()) {
 			if (this.lifecycle != null && this.restartable) {
 				this.lifecycle.start();
@@ -136,14 +137,14 @@ public class DefaultBinding<T> implements Binding<T> {
 	}
 
 	@Override
-	public final synchronized void stop() {
+	public synchronized void stop() {
 		if (this.isRunning()) {
 			this.lifecycle.stop();
 		}
 	}
 
 	@Override
-	public final synchronized void pause() {
+	public synchronized void pause() {
 		if (this.lifecycle instanceof Pausable) {
 			((Pausable) this.lifecycle).pause();
 			this.paused = true;
@@ -156,7 +157,7 @@ public class DefaultBinding<T> implements Binding<T> {
 	}
 
 	@Override
-	public final synchronized void resume() {
+	public synchronized void resume() {
 		if (this.lifecycle instanceof Pausable) {
 			((Pausable) this.lifecycle).resume();
 			this.paused = false;
@@ -169,7 +170,7 @@ public class DefaultBinding<T> implements Binding<T> {
 	}
 
 	@Override
-	public final void unbind() {
+	public void unbind() {
 		this.stop();
 		afterUnbind();
 	}
