@@ -314,6 +314,11 @@ public abstract class AbstractKafkaStreamsBinderProcessor implements Application
 			streamConfiguration.put(RecoveringDeserializationExceptionHandler.KSTREAM_DESERIALIZATION_RECOVERER,
 					applicationContext.getBean(SendToDlqAndContinue.class));
 		}
+		else if (deserializationExceptionHandler == DeserializationExceptionHandler.skipAndContinue) {
+			streamConfiguration.put(
+					StreamsConfig.DEFAULT_DESERIALIZATION_EXCEPTION_HANDLER_CLASS_CONFIG,
+					SkipAndContinueExceptionHandler.class);
+		}
 
 		KafkaStreamsConfiguration kafkaStreamsConfiguration = new KafkaStreamsConfiguration(streamConfiguration);
 
@@ -439,36 +444,7 @@ public abstract class AbstractKafkaStreamsBinderProcessor implements Application
 		if (StringUtils.hasText(kafkaStreamsConsumerProperties.getEventTypes())) {
 			AtomicBoolean matched = new AtomicBoolean();
 			// Processor to retrieve the header value.
-			stream.process(() -> new Processor() {
-
-				ProcessorContext context;
-
-				@Override
-				public void init(ProcessorContext context) {
-					this.context = context;
-				}
-
-				@Override
-				public void process(Object key, Object value) {
-					final Headers headers = this.context.headers();
-					final Iterable<Header> eventTypeHeader = headers.headers(kafkaStreamsConsumerProperties.getEventTypeHeaderKey());
-					if (eventTypeHeader != null && eventTypeHeader.iterator().hasNext()) {
-						String eventTypeFromHeader = new String(eventTypeHeader.iterator().next().value());
-						final String[] eventTypesFromBinding = StringUtils.commaDelimitedListToStringArray(kafkaStreamsConsumerProperties.getEventTypes());
-						for (String eventTypeFromBinding : eventTypesFromBinding) {
-							if (eventTypeFromHeader.equals(eventTypeFromBinding)) {
-								matched.set(true);
-								break;
-							}
-						}
-					}
-				}
-
-				@Override
-				public void close() {
-
-				}
-			});
+			stream.process(() -> eventTypeProcessor(kafkaStreamsConsumerProperties, matched));
 			// Branching based on event type match.
 			final KStream<?, ?>[] branch = stream.branch((key, value) -> matched.getAndSet(false));
 			// Deserialize if we have a branch from above.
@@ -554,12 +530,31 @@ public abstract class AbstractKafkaStreamsBinderProcessor implements Application
 			StreamsBuilder streamsBuilder, Serde<?> keySerde,
 			Serde<?> valueSerde, String materializedAs, String bindingDestination,
 			Topology.AutoOffsetReset autoOffsetReset) {
-		final Consumed<?, ?> consumed = getConsumed(kafkaStreamsConsumerProperties, keySerde, valueSerde, autoOffsetReset);
-		return materializedAs != null
+
+		final Serde<?> valueSerdeToUse = StringUtils.hasText(kafkaStreamsConsumerProperties.getEventTypes()) ?
+				new Serdes.BytesSerde() : valueSerde;
+
+		final Consumed<?, ?> consumed = getConsumed(kafkaStreamsConsumerProperties, keySerde, valueSerdeToUse, autoOffsetReset);
+
+		final KTable<?, ?> kTable = materializedAs != null
 				? materializedAs(streamsBuilder, bindingDestination, materializedAs,
-				keySerde, valueSerde, autoOffsetReset, kafkaStreamsConsumerProperties)
+				keySerde, valueSerdeToUse, autoOffsetReset, kafkaStreamsConsumerProperties)
 				: streamsBuilder.table(bindingDestination,
 				consumed);
+		if (StringUtils.hasText(kafkaStreamsConsumerProperties.getEventTypes())) {
+			AtomicBoolean matched = new AtomicBoolean();
+			final KStream<?, ?> stream = kTable.toStream();
+
+			// Processor to retrieve the header value.
+			stream.process(() -> eventTypeProcessor(kafkaStreamsConsumerProperties, matched));
+			// Branching based on event type match.
+			final KStream<?, ?>[] branch = stream.branch((key, value) -> matched.getAndSet(false));
+			// Deserialize if we have a branch from above.
+			final KStream<?, Object> deserializedKStream = branch[0].mapValues(value -> valueSerde.deserializer().deserialize(null, ((Bytes) value).get()));
+
+			return deserializedKStream.toTable();
+		}
+		return kTable;
 	}
 
 	private <K, V> Consumed<K, V> getConsumed(KafkaStreamsConsumerProperties kafkaStreamsConsumerProperties,
@@ -575,5 +570,38 @@ public abstract class AbstractKafkaStreamsBinderProcessor implements Application
 			consumed.withTimestampExtractor(timestampExtractor);
 		}
 		return consumed;
+	}
+
+	private <K, V> Processor<K, V> eventTypeProcessor(KafkaStreamsConsumerProperties kafkaStreamsConsumerProperties, AtomicBoolean matched) {
+		return new Processor() {
+
+			ProcessorContext context;
+
+			@Override
+			public void init(ProcessorContext context) {
+				this.context = context;
+			}
+
+			@Override
+			public void process(Object key, Object value) {
+				final Headers headers = this.context.headers();
+				final Iterable<Header> eventTypeHeader = headers.headers(kafkaStreamsConsumerProperties.getEventTypeHeaderKey());
+				if (eventTypeHeader != null && eventTypeHeader.iterator().hasNext()) {
+					String eventTypeFromHeader = new String(eventTypeHeader.iterator().next().value());
+					final String[] eventTypesFromBinding = StringUtils.commaDelimitedListToStringArray(kafkaStreamsConsumerProperties.getEventTypes());
+					for (String eventTypeFromBinding : eventTypesFromBinding) {
+						if (eventTypeFromHeader.equals(eventTypeFromBinding)) {
+							matched.set(true);
+							break;
+						}
+					}
+				}
+			}
+
+			@Override
+			public void close() {
+
+			}
+		};
 	}
 }

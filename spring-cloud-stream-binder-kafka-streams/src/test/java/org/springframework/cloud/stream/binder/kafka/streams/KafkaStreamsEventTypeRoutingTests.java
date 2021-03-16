@@ -20,6 +20,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 import org.apache.kafka.clients.consumer.Consumer;
@@ -29,7 +31,9 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.header.Headers;
 import org.apache.kafka.common.header.internals.RecordHeader;
 import org.apache.kafka.common.header.internals.RecordHeaders;
+import org.apache.kafka.streams.kstream.GlobalKTable;
 import org.apache.kafka.streams.kstream.KStream;
+import org.apache.kafka.streams.kstream.KTable;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
@@ -48,6 +52,7 @@ import org.springframework.kafka.support.serializer.JsonSerializer;
 import org.springframework.kafka.test.EmbeddedKafkaBroker;
 import org.springframework.kafka.test.rule.EmbeddedKafkaRule;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
+import org.springframework.util.Assert;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -60,6 +65,8 @@ public class KafkaStreamsEventTypeRoutingTests {
 	private static EmbeddedKafkaBroker embeddedKafka = embeddedKafkaRule.getEmbeddedKafka();
 
 	private static Consumer<Integer, Foo> consumer;
+
+	private static CountDownLatch LATCH = new CountDownLatch(3);
 
 	@BeforeClass
 	public static void setUp() {
@@ -149,12 +156,80 @@ public class KafkaStreamsEventTypeRoutingTests {
 		}
 	}
 
+	@Test
+	public void testRoutingWorksBasedOnEventTypesConsumer() throws Exception {
+		SpringApplication app = new SpringApplication(EventTypeRoutingTestConfig.class);
+		app.setWebApplicationType(WebApplicationType.NONE);
+
+		try (ConfigurableApplicationContext context = app.run(
+				"--server.port=0",
+				"--spring.jmx.enabled=false",
+				"--spring.cloud.stream.function.definition=consumer",
+				"--spring.cloud.stream.bindings.consumer-in-0.destination=foo-consumer-1",
+				"--spring.cloud.stream.kafka.streams.bindings.consumer-in-0.consumer.eventTypes=foo,bar",
+				"--spring.cloud.stream.kafka.streams.binder.functions.consumer.applicationId=consumer-id-foo-0",
+				"--spring.cloud.stream.kafka.streams.binder.brokers=" + embeddedKafka.getBrokersAsString())) {
+			Map<String, Object> senderProps = KafkaTestUtils.producerProps(embeddedKafka);
+			senderProps.put("value.serializer", JsonSerializer.class);
+			DefaultKafkaProducerFactory<Integer, Foo> pf = new DefaultKafkaProducerFactory<>(senderProps);
+			try {
+				KafkaTemplate<Integer, Foo> template = new KafkaTemplate<>(pf, true);
+				template.setDefaultTopic("foo-consumer-1");
+				Foo foo1 = new Foo();
+				foo1.setFoo("foo-1");
+				Headers headers = new RecordHeaders();
+				headers.add(new RecordHeader("event_type", "foo".getBytes()));
+
+				final ProducerRecord<Integer, Foo> producerRecord1 = new ProducerRecord<>("foo-consumer-1", 0, 56, foo1, headers);
+				template.send(producerRecord1);
+
+				Foo foo2 = new Foo();
+				foo2.setFoo("foo-2");
+
+				final ProducerRecord<Integer, Foo> producerRecord2 = new ProducerRecord<>("foo-consumer-1", 0, 57, foo2);
+				template.send(producerRecord2);
+
+				Foo foo3 = new Foo();
+				foo3.setFoo("foo-3");
+
+				final ProducerRecord<Integer, Foo> producerRecord3 = new ProducerRecord<>("foo-consumer-1", 0, 58, foo3, headers);
+				template.send(producerRecord3);
+
+				Foo foo4 = new Foo();
+				foo4.setFoo("foo-4");
+				Headers headers1 = new RecordHeaders();
+				headers1.add(new RecordHeader("event_type", "bar".getBytes()));
+
+				final ProducerRecord<Integer, Foo> producerRecord4 = new ProducerRecord<>("foo-consumer-1", 0, 59, foo4, headers1);
+				template.send(producerRecord4);
+
+				Assert.isTrue(LATCH.await(10, TimeUnit.SECONDS), "Foo");
+			}
+			finally {
+				pf.destroy();
+			}
+		}
+	}
+
 	@EnableAutoConfiguration
 	public static class EventTypeRoutingTestConfig {
 
 		@Bean
 		public Function<KStream<Integer, Foo>, KStream<Integer, Foo>> process() {
 			return input -> input;
+		}
+
+		@Bean
+		public java.util.function.Consumer<KTable<Integer, Foo>> consumer() {
+				return ktable -> ktable.toStream().foreach((key, value) -> {
+					LATCH.countDown();
+				});
+		}
+
+		@Bean
+		public java.util.function.Consumer<GlobalKTable<Integer, Foo>> global() {
+			return ktable -> {
+			};
 		}
 
 	}

@@ -16,8 +16,6 @@
 
 package org.springframework.cloud.stream.binder.kafka.streams;
 
-import java.util.List;
-
 import org.apache.kafka.streams.kstream.GlobalKTable;
 
 import org.springframework.cloud.stream.binder.AbstractBinder;
@@ -33,7 +31,6 @@ import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStr
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsExtendedBindingProperties;
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsProducerProperties;
 import org.springframework.kafka.config.StreamsBuilderFactoryBean;
-import org.springframework.kafka.core.ProducerFactory;
 import org.springframework.retry.support.RetryTemplate;
 import org.springframework.util.StringUtils;
 

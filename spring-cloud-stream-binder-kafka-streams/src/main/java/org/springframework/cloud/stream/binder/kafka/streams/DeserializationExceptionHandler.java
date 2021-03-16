@@ -38,6 +38,10 @@ public enum DeserializationExceptionHandler {
 	 * Deserialization error handler with DLQ send.
 	 * See {@link org.springframework.kafka.streams.RecoveringDeserializationExceptionHandler}
 	 */
-	sendToDlq
+	sendToDlq,
+	/**
+	 * Deserialization error handler that silently skips the error and continue.
+	 */
+	skipAndContinue;
 
 }
