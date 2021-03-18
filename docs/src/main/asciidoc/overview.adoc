@@ -219,13 +219,14 @@ Default: not set.
 resetOffsets::
 Whether to reset offsets on the consumer to the value provided by startOffset.
 Must be false if a `KafkaRebalanceListener` is provided; see <<rebalance-listener>>.
+See <<reset-offsets>> for more information about this property.
 +
 Default: `false`.
 startOffset::
 The starting offset for new groups.
 Allowed values: `earliest` and `latest`.
 If the consumer group is set explicitly for the consumer 'binding' (through `spring.cloud.stream.bindings.<channelName>.group`), 'startOffset' is set to `earliest`. Otherwise, it is set to `latest` for the `anonymous` consumer group.
-Also see `resetOffsets` (earlier in this list).
+See <<reset-offsets>> for more information about this property.
 +
 Default: null (equivalent to `earliest`).
 enableDlq::
@@ -315,6 +316,33 @@ Usually needed if you want to synchronize another transaction with the Kafka tra
 To achieve exactly once consumption and production of records, the consumer and producer bindings must all be configured with the same transaction manager.
 +
 Default: none.
+
+[[reset-offsets]]
+==== Resetting Offsets
+
+When an application starts, the initial position in each assigned partition depends on two properties `startOffset` and `resetOffsets`.
+If `resetOffsets` is `false`, normal Kafka consumer https://kafka.apache.org/documentation/#consumerconfigs_auto.offset.reset[`auto.offset.reset`] semantics apply.
+i.e. If there is no committed offset for a partition for the binding's consumer group, the position is `earliest` or `latest`.
+By default, bindings with an explicit `group` use `earliest`, and anonymous bindings (with no `group`) use `latest`.
+These defaults can be overriden by setting the `startOffset` binding property.
+There will be no committed offset(s) the first time the binding is started with a particular `group`.
+The other condition where no committed offset exists is if the offset has been expired.
+With modern brokers (since 2.1), and default broker properties, the offsets are expired 7 days after the last member leaves the group.
+See the https://kafka.apache.org/documentation/#brokerconfigs_offsets.retention.minutes[`offsets.retention.minutes`] broker property for more information.
+
+When `resetOffsets` is `true`, the binder applies similar semantics to those that apply when there is no committed offset on the broker, as if this binding has never consumed from the topic; i.e. any current committed offset is ignored.
+
+Following are two use cases when this might be used.
+
+1. Consuming from a compacted topic containing key/value pairs.
+Set `resetOffsets` to `true` and `startOffset` to `earliest`; the binding will perform a `seekToBeginning` on all newly assigned partitions.
+
+2. Consuming from a topic containing events, where you are only interested in events that occur while this binding is running.
+Set `resetOffsets` to `true` and `startOffset` to `latest`; the binding will perform a `seekToEnd` on all newly assigned partitions.
+
+IMPORTANT: If a rebalance occurs after the initial assignment, the seeks will only be performed on any newly assigned partitions that were not assigned during the initial assignment.
+
+For more control over topic offsets, see <<rebalance-listener>>; when a listener is provided, `resetOffsets: true` is ignored.
 
 ==== Consuming Batches
 
