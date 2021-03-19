@@ -871,6 +871,7 @@ public class FunctionConfiguration {
 		}
 
 		private boolean determineFunctionName(FunctionCatalog catalog, Environment environment) {
+			boolean autodetect = environment.getProperty("spring.cloud.stream.function.autodetect", boolean.class, true);
 			String definition = streamFunctionProperties.getDefinition();
 			if (!StringUtils.hasText(definition)) {
 				definition = environment.getProperty("spring.cloud.function.definition");
@@ -883,7 +884,7 @@ public class FunctionConfiguration {
 					|| environment.containsProperty("spring.cloud.function.routing-expression")) {
 				streamFunctionProperties.setDefinition(RoutingFunction.FUNCTION_NAME);
 			}
-			else {
+			else if (autodetect) {
 				streamFunctionProperties.setDefinition(((FunctionInspector) functionCatalog).getName(functionCatalog.lookup("")));
 			}
 			return StringUtils.hasText(streamFunctionProperties.getDefinition());
