@@ -762,10 +762,7 @@ public class FunctionConfiguration {
 
 
 		private void determineFunctionName(FunctionCatalog catalog, Environment environment) {
-//=======
-//		private boolean determineFunctionName(FunctionCatalog catalog, Environment environment) {
 			boolean autodetect = environment.getProperty("spring.cloud.stream.function.autodetect", boolean.class, true);
-//>>>>>>> 9db08ec6... GH-2035 Add autodetect property to give user control over function autodetection
 			String definition = streamFunctionProperties.getDefinition();
 			if (!StringUtils.hasText(definition)) {
 				definition = environment.getProperty("spring.cloud.function.definition");
