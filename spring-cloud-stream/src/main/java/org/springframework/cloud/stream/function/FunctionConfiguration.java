@@ -586,6 +586,9 @@ public class FunctionConfiguration {
 						outputChannel.send(((Message<?>) result));
 					}
 					else if (StringUtils.hasText(outputChannelName)) {
+						if (!(result instanceof Message)) {
+							result = MessageBuilder.withPayload(result).copyHeadersIfAbsent(requestMessage.getHeaders()).build();
+						}
 						template.send(outputChannelName, (Message<?>) result);
 					}
 				}
