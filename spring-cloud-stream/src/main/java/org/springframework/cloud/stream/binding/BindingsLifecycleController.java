@@ -128,6 +128,7 @@ public class BindingsLifecycleController {
 	 * Queries the individual state of a binding. The returned list
 	 * {@link Binding} object could be further interrogated
 	 * using {@link Binding#isPaused()} and {@link Binding#isRunning()}.
+	 * @param name the name of the binding
 	 * @return instance of {@link Binding} object.
 	 */
 	public Binding<?> queryState(String name) {
