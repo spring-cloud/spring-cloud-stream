@@ -43,6 +43,7 @@ import org.springframework.cloud.stream.binding.Bindable;
 import org.springframework.cloud.stream.binding.BinderAwareChannelResolver;
 import org.springframework.cloud.stream.binding.BinderAwareRouter;
 import org.springframework.cloud.stream.binding.BindingService;
+import org.springframework.cloud.stream.binding.BindingsLifecycleController;
 import org.springframework.cloud.stream.binding.ContextStartAfterRefreshListener;
 import org.springframework.cloud.stream.binding.DynamicDestinationsBindable;
 import org.springframework.cloud.stream.binding.InputBindingLifecycle;
@@ -233,6 +234,12 @@ public class BindingServiceConfiguration {
 	public InputBindingLifecycle inputBindingLifecycle(BindingService bindingService,
 			Map<String, Bindable> bindables) {
 		return new InputBindingLifecycle(bindingService, bindables);
+	}
+
+	@Bean
+	public BindingsLifecycleController bindingsLifecycleController(List<InputBindingLifecycle> inputBindingLifecycles,
+			List<OutputBindingLifecycle> outputBindingsLifecycles) {
+		return new BindingsLifecycleController(inputBindingLifecycles, outputBindingsLifecycles);
 	}
 
 	@Bean

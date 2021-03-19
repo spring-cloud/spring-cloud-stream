@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2019 the original author or authors.
+ * Copyright 2018-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,13 @@
 
 package org.springframework.cloud.stream.config;
 
-import java.util.List;
-
 import org.springframework.boot.actuate.autoconfigure.endpoint.EndpointAutoConfiguration;
 import org.springframework.boot.actuate.autoconfigure.endpoint.condition.ConditionalOnAvailableEndpoint;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.cloud.stream.binding.BindingService;
-import org.springframework.cloud.stream.binding.InputBindingLifecycle;
-import org.springframework.cloud.stream.binding.OutputBindingLifecycle;
+import org.springframework.cloud.stream.binding.BindingsLifecycleController;
 import org.springframework.cloud.stream.endpoint.BindingsEndpoint;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -43,9 +40,8 @@ public class BindingsEndpointAutoConfiguration {
 
 	@Bean
 	@ConditionalOnAvailableEndpoint
-	public BindingsEndpoint bindingsEndpoint(List<InputBindingLifecycle> inputBindings,
-			List<OutputBindingLifecycle> outputBindings) {
-		return new BindingsEndpoint(inputBindings, outputBindings);
+	public BindingsEndpoint bindingsEndpoint(BindingsLifecycleController bindingsLifecycleController) {
+		return new BindingsEndpoint(bindingsLifecycleController);
 	}
 
 }

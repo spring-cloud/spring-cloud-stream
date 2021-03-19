@@ -1833,9 +1833,27 @@ environment:
 ----
 [[binding_visualization_control]]
 === Binding visualization and control
-Since version 2.0, Spring Cloud Stream supports visualization and control of the Bindings through Actuator endpoints.
+Spring Cloud Stream supports visualization and control of the Bindings through Actuator endpoints as well as programmatic way.
 
-Starting with version 2.0 actuator and web are optional, you must first add one of the web dependencies as well as add the actuator dependency manually.
+==== Programmatic way
+
+Since version 3.1 we expose `org.springframework.cloud.stream.binding.BindingsLifecycleController` which is registered as bean and once 
+injected could be used to control the lifecycle of individual bindings
+
+For example, looks at the fragment from one of the test cases. As you can see we retrieve `BindingsLifecycleController` 
+from spring application context and execute individual methods to control the lifecycle of `echo-in-0` binding..
+
+[source,java]
+----
+BindingsLifecycleController bindingsController = context.getBean(BindingsLifecycleController.class);
+Binding binding = bindingsController.queryState("echo-in-0");
+assertThat(binding.isRunning()).isTrue();
+bindingsController.changeState("echo-in-0", State.STOPPED);
+//bindingsController.stop("echo-in-0") alternative way of changing state. For convenience we expose start/stop and pause/resume operations.
+assertThat(binding.isRunning()).isFalse();
+
+==== Actuator
+Since actuator and web are optional, you must first add one of the web dependencies as well as add the actuator dependency manually.
 The following example shows how to add the dependency for the Web framework:
 
 [source,xml]

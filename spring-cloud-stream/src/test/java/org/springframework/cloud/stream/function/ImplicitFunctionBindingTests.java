@@ -43,10 +43,13 @@ import org.springframework.cloud.function.context.FunctionType;
 import org.springframework.cloud.function.context.config.ContextFunctionCatalogAutoConfiguration;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.StreamListener;
+import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binder.test.FunctionBindingTestUtils;
 import org.springframework.cloud.stream.binder.test.InputDestination;
 import org.springframework.cloud.stream.binder.test.OutputDestination;
 import org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration;
+import org.springframework.cloud.stream.binding.BindingsLifecycleController;
+import org.springframework.cloud.stream.binding.BindingsLifecycleController.State;
 import org.springframework.cloud.stream.messaging.Sink;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
@@ -74,6 +77,23 @@ public class ImplicitFunctionBindingTests {
 	@AfterEach
 	public void after() {
 		System.clearProperty("spring.cloud.function.definition");
+	}
+
+	@SuppressWarnings({"rawtypes" })
+	@Test
+	public void testBindingControl() {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+				TestChannelBinderConfiguration.getCompleteConfiguration(SendToDestinationConfiguration.class))
+						.web(WebApplicationType.NONE)
+						.run("--spring.jmx.enabled=false")) {
+
+			BindingsLifecycleController ctrl = context.getBean(BindingsLifecycleController.class);
+			Binding input = ctrl.queryState("echo-in-0");
+			Binding output = ctrl.queryState("echo-out-0");
+			assertThat(input.isRunning()).isTrue();
+			ctrl.changeState("echo-in-0", State.STOPPED);
+			assertThat(input.isRunning()).isFalse();
+		}
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
