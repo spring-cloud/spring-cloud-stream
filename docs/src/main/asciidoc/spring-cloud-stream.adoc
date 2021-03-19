@@ -358,6 +358,9 @@ you must provide `spring.cloud.function.definition` property.
 NOTE: In the event you only have single bean of type `java.util.function.[Supplier/Function/Consumer]`, you can
 skip the `spring.cloud.function.definition` property, since such functional bean will be auto-discovered. However,
 it is considered best practice to use such property to avoid any confusion.
+Some time this auto-discovery can get in the way, since single bean of type `java.util.function.[Supplier/Function/Consumer]` 
+could be there for purposes other then handling messages, yet being single it is auto-discovered and auto-bound.
+For these rare scenarios you can disable auto-discovery by providing `spring.cloud.stream.function.autodetect` property with value set to `false`. 
 
 Here is the example of the application exposing message handler as `java.util.function.Function` effectively supporting
 _pass-thru_ semantics by acting as consumer and producer of data.

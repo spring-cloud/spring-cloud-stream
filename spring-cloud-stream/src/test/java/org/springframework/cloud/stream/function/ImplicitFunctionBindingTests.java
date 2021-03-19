@@ -81,6 +81,23 @@ public class ImplicitFunctionBindingTests {
 
 	@SuppressWarnings({"rawtypes" })
 	@Test
+	public void testDisableAutodetect() {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+				TestChannelBinderConfiguration.getCompleteConfiguration(SendToDestinationConfiguration.class))
+						.web(WebApplicationType.NONE)
+						.run("--spring.jmx.enabled=false", "--spring.cloud.stream.function.autodetect=false")) {
+
+			BindingsLifecycleController ctrl = context.getBean(BindingsLifecycleController.class);
+			Binding input = ctrl.queryState("echo-in-0");
+			Binding output = ctrl.queryState("echo-out-0");
+			assertThat(input).isNull();
+			assertThat(output).isNull();
+		}
+	}
+
+
+	@SuppressWarnings({"rawtypes" })
+	@Test
 	public void testBindingControl() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 				TestChannelBinderConfiguration.getCompleteConfiguration(SendToDestinationConfiguration.class))
@@ -214,7 +231,9 @@ public class ImplicitFunctionBindingTests {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 				TestChannelBinderConfiguration.getCompleteConfiguration(NoEnableBindingConfiguration.class))
 						.web(WebApplicationType.NONE)
-						.run("--spring.jmx.enabled=false", "--spring.cloud.function.definition=func|addHeaders")) {
+						.run("--spring.jmx.enabled=false",
+								"--spring.cloud.stream.function.autodetect=false",
+								"--spring.cloud.function.definition=func|addHeaders")) {
 
 			InputDestination inputDestination = context.getBean(InputDestination.class);
 			OutputDestination outputDestination = context.getBean(OutputDestination.class);
