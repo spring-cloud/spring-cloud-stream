@@ -30,6 +30,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
@@ -1141,8 +1142,21 @@ public class KafkaMessageChannelBinder extends
 			final KafkaTemplate<?, ?> kafkaTemplate = new KafkaTemplate<>(
 					producerFactory);
 
+			Object timeout = producerFactory.getConfigurationProperties().get(ProducerConfig.DELIVERY_TIMEOUT_MS_CONFIG);
+			Long sendTimeout = null;
+			if (timeout instanceof Number) {
+				sendTimeout = ((Number) timeout).longValue() + 2000L;
+			}
+			else if (timeout instanceof String) {
+				sendTimeout = Long.parseLong((String) timeout) + 2000L;
+			}
+			if (timeout == null) {
+				sendTimeout = ((Integer) ProducerConfig.configDef()
+						.defaultValues()
+						.get(ProducerConfig.DELIVERY_TIMEOUT_MS_CONFIG)).longValue() + 2000L;
+			}
 			@SuppressWarnings("rawtypes")
-			DlqSender<?, ?> dlqSender = new DlqSender(kafkaTemplate);
+			DlqSender<?, ?> dlqSender = new DlqSender(kafkaTemplate, sendTimeout);
 
 			return (message) -> {
 
@@ -1574,8 +1588,11 @@ public class KafkaMessageChannelBinder extends
 
 		private final KafkaTemplate<K, V> kafkaTemplate;
 
-		DlqSender(KafkaTemplate<K, V> kafkaTemplate) {
+		private final long sendTimeout;
+
+		DlqSender(KafkaTemplate<K, V> kafkaTemplate, long timeout) {
 			this.kafkaTemplate = kafkaTemplate;
+			this.sendTimeout = timeout;
 		}
 
 		@SuppressWarnings("unchecked")
@@ -1609,18 +1626,26 @@ public class KafkaMessageChannelBinder extends
 					public void onSuccess(SendResult<K, V> result) {
 						if (KafkaMessageChannelBinder.this.logger.isDebugEnabled()) {
 							KafkaMessageChannelBinder.this.logger
-									.debug("Sent to DLQ " + sb.toString());
-						}
-						if (ackMode == ContainerProperties.AckMode.MANUAL || ackMode == ContainerProperties.AckMode.MANUAL_IMMEDIATE) {
-							messageHeaders.get(KafkaHeaders.ACKNOWLEDGMENT, Acknowledgment.class).acknowledge();
+									.debug("Sent to DLQ " + sb.toString() + ": " + result.getRecordMetadata());
 						}
 					}
 				});
+				try {
+					sentDlq.get(this.sendTimeout, TimeUnit.MILLISECONDS);
+				}
+				catch (InterruptedException ex) {
+					Thread.currentThread().interrupt();
+					throw ex;
+				}
 			}
 			catch (Exception ex) {
-				if (sentDlq == null) {
-					KafkaMessageChannelBinder.this.logger
-							.error("Error sending to DLQ " + sb.toString(), ex);
+				KafkaMessageChannelBinder.this.logger
+						.error("Error sending to DLQ " + sb.toString(), ex);
+			}
+			finally {
+				if (ackMode == ContainerProperties.AckMode.MANUAL
+						|| ackMode == ContainerProperties.AckMode.MANUAL_IMMEDIATE) {
+					messageHeaders.get(KafkaHeaders.ACKNOWLEDGMENT, Acknowledgment.class).acknowledge();
 				}
 			}
 
