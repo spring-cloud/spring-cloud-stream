@@ -50,6 +50,7 @@ import org.springframework.cloud.stream.binder.test.OutputDestination;
 import org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration;
 import org.springframework.cloud.stream.binding.BindingsLifecycleController;
 import org.springframework.cloud.stream.binding.BindingsLifecycleController.State;
+import org.springframework.cloud.stream.messaging.DirectWithAttributesChannel;
 import org.springframework.cloud.stream.messaging.Sink;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
@@ -63,6 +64,7 @@ import org.springframework.kafka.support.KafkaNull;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHeaders;
+import org.springframework.messaging.SubscribableChannel;
 import org.springframework.messaging.support.GenericMessage;
 import org.springframework.scheduling.support.PeriodicTrigger;
 
@@ -79,6 +81,23 @@ public class ImplicitFunctionBindingTests {
 	@AfterEach
 	public void after() {
 		System.clearProperty("spring.cloud.function.definition");
+	}
+
+
+	@Test
+	public void testExplicitChannelConfiguration() {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+				TestChannelBinderConfiguration.getCompleteConfiguration(ExplicitChannelConfiguration.class))
+						.web(WebApplicationType.NONE)
+						.run("--spring.jmx.enabled=false", "--spring.cloud.function.definition=echo")) {
+
+			InputDestination input = context.getBean(InputDestination.class);
+			input.send(new GenericMessage<byte[]>("hello".getBytes()), "echo-in-0");
+
+			OutputDestination output = context.getBean(OutputDestination.class);
+			Message<byte[]> result = output.receive(1000, "echo-out-0");
+			assertThat(result.getPayload()).isEqualTo("hello".getBytes());
+		}
 	}
 
 	@SuppressWarnings({"rawtypes" })
@@ -1474,6 +1493,20 @@ public class ImplicitFunctionBindingTests {
 				person.setId(3);
 				return person;
 			});
+		}
+	}
+
+	@EnableAutoConfiguration
+	public static class ExplicitChannelConfiguration {
+
+		@Bean("echo-in-0")
+		public SubscribableChannel myChannel() {
+			return new DirectWithAttributesChannel();
+		}
+
+		@Bean
+		public Function<String, String> echo() {
+			return x -> x;
 		}
 	}
 
