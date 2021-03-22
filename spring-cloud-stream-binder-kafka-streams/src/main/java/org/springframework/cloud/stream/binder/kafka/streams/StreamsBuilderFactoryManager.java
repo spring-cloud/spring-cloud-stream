@@ -81,7 +81,9 @@ class StreamsBuilderFactoryManager implements SmartLifecycle {
 						.getStreamsBuilderFactoryBeans();
 				int n = 0;
 				for (StreamsBuilderFactoryBean streamsBuilderFactoryBean : streamsBuilderFactoryBeans) {
-					streamsBuilderFactoryBean.addListener(this.listener);
+					if (this.listener != null) {
+						streamsBuilderFactoryBean.addListener(this.listener);
+					}
 					streamsBuilderFactoryBean.start();
 					this.kafkaStreamsRegistry.registerKafkaStreams(streamsBuilderFactoryBean);
 				}
