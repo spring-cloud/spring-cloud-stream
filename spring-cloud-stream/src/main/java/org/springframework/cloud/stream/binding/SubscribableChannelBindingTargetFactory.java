@@ -16,10 +16,9 @@
 
 package org.springframework.cloud.stream.binding;
 
+import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.stream.messaging.DirectWithAttributesChannel;
-import org.springframework.cloud.stream.messaging.Sink;
-import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.messaging.SubscribableChannel;
 
@@ -48,25 +47,59 @@ public class SubscribableChannelBindingTargetFactory
 
 	@Override
 	public SubscribableChannel createInput(String name) {
-		DirectWithAttributesChannel subscribableChannel = new DirectWithAttributesChannel();
-		subscribableChannel.setComponentName(name);
-		subscribableChannel.setAttribute("type", Sink.INPUT);
-		this.messageChannelConfigurer.configureInputChannel(subscribableChannel, name);
-		if (context != null && !context.containsBean(name)) {
-			context.registerBean(name, DirectWithAttributesChannel.class, () -> subscribableChannel);
+		SubscribableChannel subscribableChannel = null;
+		if (context != null && context.containsBean(name)) {
+			try {
+				subscribableChannel = context.getBean(name, SubscribableChannel.class);
+			}
+			catch (BeanCreationException e) {
+				// ignore
+				/*
+				 * Since we still support annotation-based programming model, this exception happens
+				 * because of proxies related to @Input @Output
+				 */
+			}
 		}
+		if (subscribableChannel == null) {
+			DirectWithAttributesChannel channel = new DirectWithAttributesChannel();
+			channel.setComponentName(name);
+			if (context != null && !context.containsBean(name)) {
+				context.registerBean(name, DirectWithAttributesChannel.class, () -> channel);
+			}
+			subscribableChannel = channel;
+		}
+		if (subscribableChannel instanceof DirectWithAttributesChannel) {
+			((DirectWithAttributesChannel) subscribableChannel).setAttribute("type", "input");
+			this.messageChannelConfigurer.configureInputChannel(subscribableChannel, name);
+		}
+
 		return subscribableChannel;
 	}
 
 	@Override
 	public SubscribableChannel createOutput(String name) {
-		DirectWithAttributesChannel subscribableChannel = new DirectWithAttributesChannel();
-		subscribableChannel.setComponentName(name);
-		subscribableChannel.setAttribute("type", Source.OUTPUT);
-		this.messageChannelConfigurer.configureOutputChannel(subscribableChannel, name);
-		if (context != null && !context.containsBean(name)) {
-			context.registerBean(name, DirectWithAttributesChannel.class, () -> subscribableChannel);
+		SubscribableChannel subscribableChannel = null;
+		if (context != null && context.containsBean(name)) {
+			try {
+				subscribableChannel = context.getBean(name, SubscribableChannel.class);
+			}
+			catch (BeanCreationException e) {
+				// ignore
+			}
 		}
+		if (subscribableChannel == null) {
+			DirectWithAttributesChannel channel = new DirectWithAttributesChannel();
+			channel.setComponentName(name);
+			if (context != null && !context.containsBean(name)) {
+				context.registerBean(name, DirectWithAttributesChannel.class, () -> channel);
+			}
+			subscribableChannel = channel;
+		}
+		if (subscribableChannel instanceof DirectWithAttributesChannel) {
+			((DirectWithAttributesChannel) subscribableChannel).setAttribute("type", "output");
+			this.messageChannelConfigurer.configureOutputChannel(subscribableChannel, name);
+		}
+
 		return subscribableChannel;
 	}
 
