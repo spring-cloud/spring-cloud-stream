@@ -917,7 +917,15 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 
 	private void doPublishEvent(ApplicationEvent event) {
 		if (this.applicationEventPublisher != null) {
-			this.applicationEventPublisher.publishEvent(event);
+			try {
+				this.applicationEventPublisher.publishEvent(event);
+			}
+			catch (Exception e) {
+				logger.warn("Failed while publishing event " + event + ". "
+						+ "From the framework perspective this is harmless and typically "
+						+ "happens when use implement custom ApplicationListener");
+				logger.debug(e);
+			}
 		}
 	}
 

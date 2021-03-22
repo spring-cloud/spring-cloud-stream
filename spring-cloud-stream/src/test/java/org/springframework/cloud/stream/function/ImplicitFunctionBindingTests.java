@@ -44,6 +44,7 @@ import org.springframework.cloud.function.context.config.ContextFunctionCatalogA
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.StreamListener;
 import org.springframework.cloud.stream.binder.Binding;
+import org.springframework.cloud.stream.binder.BindingCreatedEvent;
 import org.springframework.cloud.stream.binder.test.FunctionBindingTestUtils;
 import org.springframework.cloud.stream.binder.test.InputDestination;
 import org.springframework.cloud.stream.binder.test.OutputDestination;
@@ -52,6 +53,7 @@ import org.springframework.cloud.stream.binding.BindingsLifecycleController;
 import org.springframework.cloud.stream.binding.BindingsLifecycleController.State;
 import org.springframework.cloud.stream.messaging.DirectWithAttributesChannel;
 import org.springframework.cloud.stream.messaging.Sink;
+import org.springframework.context.ApplicationListener;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.integration.channel.QueueChannel;
@@ -84,10 +86,11 @@ public class ImplicitFunctionBindingTests {
 	}
 
 
+
 	@Test
-	public void testExplicitChannelConfiguration() {
+	public void testFailedApplicationListenerConfiguration() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
-				TestChannelBinderConfiguration.getCompleteConfiguration(ExplicitChannelConfiguration.class))
+				TestChannelBinderConfiguration.getCompleteConfiguration(FailedApplicationListenerConfiguration.class))
 						.web(WebApplicationType.NONE)
 						.run("--spring.jmx.enabled=false", "--spring.cloud.function.definition=echo")) {
 
@@ -1507,6 +1510,22 @@ public class ImplicitFunctionBindingTests {
 		@Bean
 		public Function<String, String> echo() {
 			return x -> x;
+		}
+	}
+
+	@EnableAutoConfiguration
+	public static class FailedApplicationListenerConfiguration {
+
+		@Bean
+		public Function<String, String> echo() {
+			return x -> x;
+		}
+
+		@Bean
+		public ApplicationListener<BindingCreatedEvent> bindingCreatedEventListener() {
+			return bindingCreatedEvent -> {
+				throw new RuntimeException("Test");
+			};
 		}
 	}
 
