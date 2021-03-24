@@ -114,7 +114,9 @@ import org.springframework.kafka.support.ProducerListener;
 import org.springframework.kafka.support.SendResult;
 import org.springframework.kafka.support.TopicPartitionOffset;
 import org.springframework.kafka.support.TopicPartitionOffset.SeekPosition;
+import org.springframework.kafka.support.converter.MessageConverter;
 import org.springframework.kafka.support.converter.MessagingMessageConverter;
+import org.springframework.kafka.support.converter.RecordMessageConverter;
 import org.springframework.kafka.transaction.KafkaAwareTransactionManager;
 import org.springframework.kafka.transaction.KafkaTransactionManager;
 import org.springframework.lang.Nullable;
@@ -725,7 +727,7 @@ public class KafkaMessageChannelBinder extends
 		final KafkaMessageDrivenChannelAdapter<?, ?> kafkaMessageDrivenChannelAdapter =
 				new KafkaMessageDrivenChannelAdapter<>(messageListenerContainer,
 						extendedConsumerProperties.isBatchMode() ? ListenerMode.batch : ListenerMode.record);
-		MessagingMessageConverter messageConverter = getMessageConverter(extendedConsumerProperties);
+		MessageConverter messageConverter = getMessageConverter(extendedConsumerProperties);
 		kafkaMessageDrivenChannelAdapter.setMessageConverter(messageConverter);
 		kafkaMessageDrivenChannelAdapter.setBeanFactory(getBeanFactory());
 		kafkaMessageDrivenChannelAdapter.setApplicationContext(applicationContext);
@@ -744,7 +746,8 @@ public class KafkaMessageChannelBinder extends
 			messageListenerContainer.setAfterRollbackProcessor(new DefaultAfterRollbackProcessor<>(
 					(record, exception) -> {
 						MessagingException payload =
-								new MessagingException(messageConverter.toMessage(record, null, null, null),
+								new MessagingException(((RecordMessageConverter) messageConverter)
+											.toMessage(record, null, null, null),
 										"Transaction rollback limit exceeded", exception);
 						try {
 							errorInfrastructure.getErrorChannel()
@@ -1003,7 +1006,10 @@ public class KafkaMessageChannelBinder extends
 
 		KafkaMessageSource<?, ?> source = new KafkaMessageSource<>(consumerFactory,
 				consumerProperties);
-		source.setMessageConverter(getMessageConverter(extendedConsumerProperties));
+		MessageConverter messageConverter = getMessageConverter(extendedConsumerProperties);
+		Assert.isInstanceOf(RecordMessageConverter.class, messageConverter,
+				"'messageConverter' must be a 'RecordMessageConverter' for polled consumers");
+		source.setMessageConverter((RecordMessageConverter) messageConverter);
 		source.setRawMessageHeader(extension.isEnableDlq());
 
 		if (!extendedConsumerProperties.isMultiplex()) {
@@ -1040,32 +1046,35 @@ public class KafkaMessageChannelBinder extends
 		});
 	}
 
-	private MessagingMessageConverter getMessageConverter(
+	private MessageConverter getMessageConverter(
 			final ExtendedConsumerProperties<KafkaConsumerProperties> extendedConsumerProperties) {
-		MessagingMessageConverter messageConverter;
+
+		MessageConverter messageConverter;
 		if (extendedConsumerProperties.getExtension().getConverterBeanName() == null) {
-			messageConverter = new MessagingMessageConverter();
+			MessagingMessageConverter mmc = new MessagingMessageConverter();
 			StandardHeaders standardHeaders = extendedConsumerProperties.getExtension()
 					.getStandardHeaders();
-			messageConverter
-					.setGenerateMessageId(StandardHeaders.id.equals(standardHeaders)
+			mmc.setGenerateMessageId(StandardHeaders.id.equals(standardHeaders)
 							|| StandardHeaders.both.equals(standardHeaders));
-			messageConverter.setGenerateTimestamp(
+			mmc.setGenerateTimestamp(
 					StandardHeaders.timestamp.equals(standardHeaders)
 							|| StandardHeaders.both.equals(standardHeaders));
+			messageConverter = mmc;
 		}
 		else {
 			try {
 				messageConverter = getApplicationContext().getBean(
 						extendedConsumerProperties.getExtension().getConverterBeanName(),
-						MessagingMessageConverter.class);
+						MessageConverter.class);
 			}
 			catch (NoSuchBeanDefinitionException ex) {
 				throw new IllegalStateException(
 						"Converter bean not present in application context", ex);
 			}
 		}
-		messageConverter.setHeaderMapper(getHeaderMapper(extendedConsumerProperties));
+		if (messageConverter instanceof MessagingMessageConverter) {
+			((MessagingMessageConverter) messageConverter).setHeaderMapper(getHeaderMapper(extendedConsumerProperties));
+		}
 		return messageConverter;
 	}
 

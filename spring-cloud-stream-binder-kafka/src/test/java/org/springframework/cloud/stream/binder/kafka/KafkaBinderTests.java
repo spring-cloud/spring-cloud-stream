@@ -127,6 +127,7 @@ import org.springframework.kafka.support.KafkaHeaderMapper;
 import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.kafka.support.SendResult;
 import org.springframework.kafka.support.TopicPartitionOffset;
+import org.springframework.kafka.support.converter.BatchMessagingMessageConverter;
 import org.springframework.kafka.support.converter.MessagingMessageConverter;
 import org.springframework.kafka.test.core.BrokerAddress;
 import org.springframework.kafka.test.rule.EmbeddedKafkaRule;
@@ -612,6 +613,11 @@ public class KafkaBinderTests extends
 		DirectChannel moduleInputChannel = createBindableChannel("input",
 				createConsumerBindingProperties(consumerProperties));
 
+		MessagingMessageConverter mmc = new MessagingMessageConverter();
+		((GenericApplicationContext) ((KafkaTestBinder) binder).getApplicationContext())
+				.registerBean("tSARmmc", MessagingMessageConverter.class, () -> mmc);
+		consumerProperties.getExtension().setConverterBeanName("tSARmmc");
+
 		Binding<MessageChannel> producerBinding = binder.bindProducer("foo.bar",
 				moduleOutputChannel, outputBindingProperties.getProducer());
 		Binding<MessageChannel> consumerBinding = binder.bindConsumer("foo.bar",
@@ -653,6 +659,8 @@ public class KafkaBinderTests extends
 		assertThat(topic.isConsumerTopic()).isTrue();
 		assertThat(topic.getConsumerGroup()).isEqualTo("testSendAndReceive");
 
+		assertThat(KafkaTestUtils.getPropertyValue(consumerBinding, "lifecycle.recordListener.messageConverter"))
+				.isSameAs(mmc);
 		producerBinding.unbind();
 		consumerBinding.unbind();
 	}
@@ -670,6 +678,10 @@ public class KafkaBinderTests extends
 		consumerProperties.getExtension().getConfiguration().put("fetch.min.bytes", "1000");
 		consumerProperties.getExtension().getConfiguration().put("fetch.max.wait.ms", "5000");
 		consumerProperties.getExtension().getConfiguration().put("max.poll.records", "2");
+		BatchMessagingMessageConverter bmmc = new BatchMessagingMessageConverter();
+		((GenericApplicationContext) ((KafkaTestBinder) binder).getApplicationContext())
+				.registerBean("tSARBbmmc", BatchMessagingMessageConverter.class, () -> bmmc);
+		consumerProperties.getExtension().setConverterBeanName("tSARBbmmc");
 		DirectChannel moduleInputChannel = createBindableChannel("input",
 				createConsumerBindingProperties(consumerProperties));
 
@@ -709,6 +721,8 @@ public class KafkaBinderTests extends
 			assertThat(payload.get(1)).isEqualTo("bar".getBytes());
 		}
 
+		assertThat(KafkaTestUtils.getPropertyValue(consumerBinding, "lifecycle.batchListener.batchMessageConverter"))
+				.isSameAs(bmmc);
 		producerBinding.unbind();
 		consumerBinding.unbind();
 	}
