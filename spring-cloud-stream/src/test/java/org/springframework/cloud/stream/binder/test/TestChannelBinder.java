@@ -20,15 +20,12 @@ import java.util.function.Consumer;
 
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.binder.AbstractMessageChannelBinder;
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.ConsumerProperties;
 import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.cloud.stream.binder.test.TestChannelBinderProvisioner.SpringIntegrationConsumerDestination;
 import org.springframework.cloud.stream.binder.test.TestChannelBinderProvisioner.SpringIntegrationProducerDestination;
-import org.springframework.cloud.stream.config.BindingProperties;
-import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.cloud.stream.provisioning.ConsumerDestination;
 import org.springframework.cloud.stream.provisioning.ProducerDestination;
 import org.springframework.core.AttributeAccessor;
@@ -54,7 +51,6 @@ import org.springframework.retry.RetryContext;
 import org.springframework.retry.RetryListener;
 import org.springframework.retry.support.RetryTemplate;
 import org.springframework.util.Assert;
-import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 
 /**
@@ -173,25 +169,7 @@ public class TestChannelBinder extends
 			adapter.setErrorChannel(errorInfrastructure.getErrorChannel());
 		}
 
-		SubscribableChannel bindingChannel = null;
-		if (ObjectUtils.isEmpty(this.getApplicationContext().getBeanNamesForAnnotation(EnableBinding.class))) {
-			BindingServiceProperties bs = this.getApplicationContext().getBean(BindingServiceProperties.class);
-			for (String bindingName : bs.getBindings().keySet()) {
-				BindingProperties bindingProperties = bs.getBindingProperties(bindingName);
-				if (!bindingName.equals(destination.getName()) && destination.getName().equals(bindingProperties.getDestination())) {
-					BridgeHandler bridge = new BridgeHandler();
-					if (this.getApplicationContext().containsBean(bindingName)) {
-						bindingChannel = this.getApplicationContext().getBean(bindingName, SubscribableChannel.class);
-						bridge.setOutputChannel(bindingChannel);
-						siBinderInputChannel.subscribe(bridge);
-					}
-				}
-			}
-		}
-
-		if (bindingChannel == null) {
-			siBinderInputChannel.subscribe(messageListenerContainer);
-		}
+		siBinderInputChannel.subscribe(messageListenerContainer);
 
 		return adapter;
 	}
