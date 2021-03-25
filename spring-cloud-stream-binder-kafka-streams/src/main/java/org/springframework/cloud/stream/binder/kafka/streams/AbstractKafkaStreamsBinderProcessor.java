@@ -425,17 +425,19 @@ public abstract class AbstractKafkaStreamsBinderProcessor implements Application
 		}
 
 		KStream<?, ?> stream;
+		final Serde<?> valueSerdeToUse = StringUtils.hasText(kafkaStreamsConsumerProperties.getEventTypes()) ?
+				new Serdes.BytesSerde() : valueSerde;
+		final Consumed<?, ?> consumed = getConsumed(kafkaStreamsConsumerProperties, keySerde, valueSerdeToUse, autoOffsetReset);
+
 		if (this.kafkaStreamsExtendedBindingProperties
 				.getExtendedConsumerProperties(inboundName).isDestinationIsPattern()) {
 			final Pattern pattern = Pattern.compile(this.bindingServiceProperties.getBindingDestination(inboundName));
-			stream = streamsBuilder.stream(pattern);
+
+			stream = streamsBuilder.stream(pattern, consumed);
 		}
 		else {
 			String[] bindingTargets = StringUtils.commaDelimitedListToStringArray(
 					this.bindingServiceProperties.getBindingDestination(inboundName));
-			final Serde<?> valueSerdeToUse = StringUtils.hasText(kafkaStreamsConsumerProperties.getEventTypes()) ?
-					new Serdes.BytesSerde() : valueSerde;
-			final Consumed<?, ?> consumed = getConsumed(kafkaStreamsConsumerProperties, keySerde, valueSerdeToUse, autoOffsetReset);
 			stream = streamsBuilder.stream(Arrays.asList(bindingTargets),
 					consumed);
 		}

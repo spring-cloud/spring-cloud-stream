@@ -76,7 +76,6 @@ public class KafkaStreamsBinderDestinationIsPatternTests {
 		ConfigurableApplicationContext context = app.run("--server.port=0",
 				"--spring.cloud.stream.bindings.process-out-0.destination=out",
 				"--spring.cloud.stream.bindings.process-in-0.destination=in.*",
-				"--spring.cloud.stream.bindings.process-in-0.consumer.use-native-decoding=false",
 				"--spring.cloud.stream.kafka.streams.bindings.process-in-0.consumer.destinationIsPattern=true",
 				"--spring.cloud.stream.kafka.streams.binder.brokers="
 						+ embeddedKafka.getBrokersAsString());
