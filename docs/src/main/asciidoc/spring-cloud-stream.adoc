@@ -790,8 +790,59 @@ presenting a great deal of inconvenience when it comes to other configuration pr
 feature described in <<Functional binding names>> section can help.
 
 For example, if we want to give our `toUpperCase|wrapInQuotes` a more descriptive name we can do so
-with the following property `spring.cloud.stream.function.bindings.toUpperCase|wrapInQuotes=quotedUpperCase` allowing
-other configuration properties to refer to that binding name (e.g., `spring.cloud.stream.bindings.quotedUpperCase.destination=myDestination`).
+with the following property `spring.cloud.stream.function.bindings.toUpperCase|wrapInQuotes-in-0=quotedUpperCaseInput` allowing
+other configuration properties to refer to that binding name (e.g., `spring.cloud.stream.bindings.quotedUpperCaseInput.destination=myDestination`).
+
+====== Functional Composition and Cross-cutting Concerns
+
+Function composition effectively allows you to address complexity by breaking it down
+to a set of simple and individually manageable/testable components that could still be  
+represented as one at runtime. But that is not the only benefit.
+
+You can also use composition to address certain cross-cutting non-functional concerns, 
+such as content enrichment. For example, assume you have an incoming message that may 
+be lacking certain headers, or some headers are not in the exact state your business 
+function would expect. You can now implement a separate function that addresses those 
+concerns and then compose it with the main business function.
+
+Let’s look at the example
+
+[source,java]
+----
+@SpringBootApplication
+public class DemoStreamApplication {
+
+	public static void main(String[] args) {
+		SpringApplication.run(DemoStreamApplication.class,
+				"--spring.cloud.function.definition=enrich|echo",
+				"--spring.cloud.stream.function.bindings.enrich|echo-in-0=input",
+				"--spring.cloud.stream.bindings.input.destination=myDestination",
+				"--spring.cloud.stream.bindings.input.group=myGroup");
+
+	}
+
+	@Bean
+	public Function<Message<String>, Message<String>> enrich() {
+		return message -> {
+			Assert.isTrue(!message.getHeaders().containsKey("foo"), "Should NOT contain 'foo' header");
+			return MessageBuilder.fromMessage(message).setHeader("foo", "bar").build();
+		};
+	}
+
+	@Bean
+	public Function<Message<String>, Message<String>> echo() {
+		return message -> {
+			Assert.isTrue(message.getHeaders().containsKey("foo"), "Should contain 'foo' header");
+			System.out.println("Incoming message " + message);
+			return message;
+		};
+	}
+}
+----
+
+While trivial, this example demonstrates how one function enriches the incoming Message with the additional header(s) (non-functional concern), 
+so the other function - `echo` - can benefit form it. The `echo` function stays clean and focused on business logic only.
+You can also see the usage of `spring.cloud.stream.function.bindings` property to simplify composed binding name. 
 
 ===== Functions with multiple input and output arguments
 
