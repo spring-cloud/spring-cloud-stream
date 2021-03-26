@@ -85,7 +85,7 @@ public class TestChannelBinderProvisioner
 		SubscribableChannel destination = this.provisionedDestinations
 				.get(destinationName);
 		if (destination == null) {
-			destination = pubSub ? new PublishSubscribeChannel() : new DirectChannel();
+			destination = new PublishSubscribeChannel();
 			((AbstractMessageChannel) destination).setBeanName(destinationName);
 			((AbstractMessageChannel) destination).setComponentName(destinationName);
 			this.provisionedDestinations.put(destinationName, destination);
