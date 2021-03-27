@@ -78,6 +78,11 @@ Starting with version 2.1, this is true regardless of the setting of `republishT
 IMPORTANT: Setting `requeueRejected` to `true` (with `republishToDlq=false` ) causes the message to be re-queued and redelivered continually, which is likely not what you want unless the reason for the failure is transient.
 In general, you should enable retry within the binder by setting `maxAttempts` to greater than one or by setting `republishToDlq` to `true`.
 
+Starting with version 3.1.2, if the consumer is marked as `transacted`, publishing to the DLQ will participate in the transaction.
+This allows the transaction to roll back if the publishing fails for some reason (for example, if the user is not authorized to publish to the dead letter exchange).
+In addition, if the connection factory is configured for publisher confirms or returns, the publication to the DLQ will wait for the confirmation and check for a returned message.
+If a negative acknowledgment or returned message is received, the binder will throw an `AmqpRejectAndDontRequeueException`, allowing the broker to take care of publishing to the DLQ as if the `republishToDlq` property is `false`.
+
 See <<rabbit-binder-properties>> for more information about these properties.
 
 The framework does not provide any standard mechanism to consume dead-letter messages (or to re-route them back to the primary queue).
@@ -88,7 +93,7 @@ You can exclude the class by using the `@SpringBootApplication` annotation.
 
 Starting with version 2.0, the `RabbitMessageChannelBinder` sets the `RabbitTemplate.userPublisherConnection` property to `true` so that the non-transactional producers avoid deadlocks on consumers, which can happen if cached connections are blocked because of a https://www.rabbitmq.com/memory.html[memory alarm] on the broker.
 
-NOTE: Currently, a `multiplex` consumer (a single consumer listening to multiple queues) is only supported for message-driven conssumers; polled consumers can only retrieve messages from a single queue.
+NOTE: Currently, a `multiplex` consumer (a single consumer listening to multiple queues) is only supported for message-driven consumers; polled consumers can only retrieve messages from a single queue.
 
 == Configuration Options
 
