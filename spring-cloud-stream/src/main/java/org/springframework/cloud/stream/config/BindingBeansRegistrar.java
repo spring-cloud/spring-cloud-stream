@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2017 the original author or authors.
+ * Copyright 2015-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,9 @@
  */
 
 package org.springframework.cloud.stream.config;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.cloud.stream.annotation.EnableBinding;
@@ -34,21 +37,32 @@ import org.springframework.util.ClassUtils;
  */
 public class BindingBeansRegistrar implements ImportBeanDefinitionRegistrar {
 
+
+	private Log logger = LogFactory.getLog(this.getClass());
+
 	@Override
 	public void registerBeanDefinitions(AnnotationMetadata metadata,
 			BeanDefinitionRegistry registry) {
 		AnnotationAttributes attrs = AnnotatedElementUtils.getMergedAnnotationAttributes(
 				ClassUtils.resolveClassName(metadata.getClassName(), null),
 				EnableBinding.class);
-		for (Class<?> type : collectClasses(attrs, metadata.getClassName())) {
-			if (!registry.containsBeanDefinition(type.getName())) {
-				BindingBeanDefinitionRegistryUtils.registerBindingTargetBeanDefinitions(
-						type, type.getName(), registry);
-				BindingBeanDefinitionRegistryUtils
-						.registerBindingTargetsQualifiedBeanDefinitions(ClassUtils
-								.resolveClassName(metadata.getClassName(), null), type,
-								registry);
+		try {
+			for (Class<?> type : collectClasses(attrs, metadata.getClassName())) {
+				if (!registry.containsBeanDefinition(type.getName())) {
+					BindingBeanDefinitionRegistryUtils.registerBindingTargetBeanDefinitions(
+							type, type.getName(), registry);
+					BindingBeanDefinitionRegistryUtils
+							.registerBindingTargetsQualifiedBeanDefinitions(ClassUtils
+									.resolveClassName(metadata.getClassName(), null), type,
+									registry);
+				}
 			}
+		}
+		catch (Exception e) {
+			logger.warn("Failed to proxy EnableBinding annotation. If you are using functional programming style, "
+					+ "ignore this warning, otherwise, annotation-based programming model is not and will "
+					+ "not be suppported in native images.");
+			// happens in native images, but we do not intend supporting annotation-based model for much longer
 		}
 	}
 
