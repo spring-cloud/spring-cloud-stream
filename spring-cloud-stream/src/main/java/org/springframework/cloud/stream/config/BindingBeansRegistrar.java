@@ -58,7 +58,7 @@ public class BindingBeansRegistrar implements ImportBeanDefinitionRegistrar {
 				}
 			}
 		}
-		catch (Exception e) {
+		catch (Throwable e) {
 			logger.warn("Failed to proxy EnableBinding annotation. If you are using functional programming style, "
 					+ "ignore this warning, otherwise, annotation-based programming model is not and will "
 					+ "not be suppported in native images.");
