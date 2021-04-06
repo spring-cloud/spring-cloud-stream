@@ -567,11 +567,9 @@ source of the data may be a classic REST endpoint. How do we bridge such source 
 
 Spring Cloud Stream provides two mechanisms, so let's look at them in more details
 
-Here, for both samples we'll use a standard MVC endpoint method called `delegateToSupplier` bound to the root web context, 
-delegating incoming requests to stream via two different mechanisms - 
-imperative (via StreamBridge) and reactive (via EmitterProcessor).
+Here, for both samples we'll use a standard MVC endpoint method called `delegateToSupplier` bound to the root web context,
+delegating incoming requests to stream via StreamBridge mechanism.
 
-====== Using StreamBridge
 
 [source, java]
 ----
@@ -595,24 +593,24 @@ public class WebSourceApplication {
 }
 ----
 
-Here we autowire a `StreamBridge` bean which allows us to send data to an output binding effectively 
-bridging non-stream application with spring-cloud-stream. Note that preceding example does not have any 
-source functions defined (e.g., Supplier bean) leaving the framework with no trigger to create source bindings, which would be typical for cases where 
+Here we autowire a `StreamBridge` bean which allows us to send data to an output binding effectively
+bridging non-stream application with spring-cloud-stream. Note that preceding example does not have any
+source functions defined (e.g., Supplier bean) leaving the framework with no trigger to create source bindings, which would be typical for cases where
 configuration contains function beans.
 So to trigger the creation of source binding we use `spring.cloud.stream.source` property where you can declare the name of your sources.
-The provided name will be used as a trigger to create a source binding. 
-So in the preceding example the name of the output binding will be `toStream-out-0` which is consistent with the binding naming 
-convention used by functions (see <<Binding and Binding names>>). You can use `;` to signify multiple sources 
+The provided name will be used as a trigger to create a source binding.
+So in the preceding example the name of the output binding will be `toStream-out-0` which is consistent with the binding naming
+convention used by functions (see <<Binding and Binding names>>). You can use `;` to signify multiple sources
 (e.g., `--spring.cloud.stream.source=foo;bar`)
 
-Also, note that `streamBridge.send(..)` method takes an `Object` for data. This means you can send POJO or `Message` to it and it 
-will go through the same routine when sending output as if it was from any Function or Supplier providing the same level 
+Also, note that `streamBridge.send(..)` method takes an `Object` for data. This means you can send POJO or `Message` to it and it
+will go through the same routine when sending output as if it was from any Function or Supplier providing the same level
 of consistency as with functions. This means the output type conversion, partitioning etc are honored as if it was from the output produced by functions.
 
 ====== StreamBridge and Dynamic Destinations
 
-`StreamBridge` can also be used for cases when output destination(s) are not known ahead of time similar to the use cases 
-described in <<Routing FROM Consumer>> section. 
+`StreamBridge` can also be used for cases when output destination(s) are not known ahead of time similar to the use cases
+described in <<Routing FROM Consumer>> section.
 
 Let's look at the example
 
@@ -633,57 +631,16 @@ public class WebSourceApplication {
 	@ResponseStatus(HttpStatus.ACCEPTED)
 	public void delegateToSupplier(@RequestBody String body) {
 		System.out.println("Sending " + body);
-		streamBridge.send("myDestiniation", body);
+		streamBridge.send("myDestination", body);
 	}
 }
 ----
 
-As you can see the preceding example is very similar to the previous one with the exception of explicit binding instruction provided via  
-`spring.cloud.stream.source` property (which is not provided). 
-Here we're sending data to `myDestiniation` name which does not exist as a binding. Therefore such name will be treated as dynamic destination
+As you can see the preceding example is very similar to the previous one with the exception of explicit binding instruction provided via
+`spring.cloud.stream.source` property (which is not provided).
+Here we're sending data to `myDestination` name which does not exist as a binding. Therefore such name will be treated as dynamic destination
 as described in <<Routing FROM Consumer>> section.
 
-====== Using reactor API
-
-Another approach that can be used to send arbitrary data to the output is using Reactor API.
-
-All we need to do is declare a `Supplier<Flux<whatever>>` which returns https://projectreactor.io/docs/core/release/api/reactor/core/publisher/EmitterProcessor.html[EmitterProcessor]
-from the reactor API (see <<Reactive Functions support>> for more details) to effectively provide a
-bridge between the actual event source (_foreign source_) and spring-cloud-stream. 
-Now, all you need to do now is feed the `EmitterProcessor` with data via `EmitterProcessor#onNext(data)` operation. 
-
-For example,
-
-[source, java]
-----
-public class SampleApplication {
-
-    public static void main(String[] args) {
-               SpringApplication.run(SampleApplication.class);
-    }
-
-    EmitterProcessor<String> processor = EmitterProcessor.create();
-
-    @Bean
-    public ApplicationRunner runner() {
-        Message<String> msg1 = MessageBuilder.withPayload("foo")
-                .setHeader("*.events", "test1.events.billing")
-                .build();
-        Message<String> msg2 = MessageBuilder.withPayload("bar")
-                .setHeader("*.events", "test2.events.messages")
-                .build();
-        return args -> {
-            this.processor.onNext(msg1);
-            this.processor.onNext(msg2);
-        };
-    }
-
-    @Bean
-    public Supplier<Flux<String>> supplier() {
-               return () -> this.processor;
-    }
-}
-----
 
 In the preceding example, we are using `ApplicationRunner` as a _foreign source_ to feed the stream.
 
@@ -700,23 +657,20 @@ public class WebSourceApplication {
 		SpringApplication.run(WebSourceApplication.class);
 	}
 
-	EmitterProcessor<String> processor = EmitterProcessor.create();
+	@Autowired
+	private StreamBridge streamBridge;
 
 	@RequestMapping
 	@ResponseStatus(HttpStatus.ACCEPTED)
 	public void delegateToSupplier(@RequestBody String body) {
-		processor.onNext(body);
-	}
-
-	@Bean
-	public Supplier<Flux<String>> supplier() {
-		return () -> this.processor;
+		//processor.onNext(body);
+		streamBridge.send("myBinidng", body);
 	}
 }
 ----
 
-Same as before we declare a `Supplier` bean which returns `Flux<String>`. But given that this is a REST endpoint
-we send messages by simply posting to this REST endpoint.
+As you can see inside of `delegateToSupplier` method we're using StreamBridge to send data to `myBinidng` binding. And here you're also benefiting from 
+the dynamic features of StreamBridge where if `myBinidng` doesn't exist it will be created automatically, otherwise existing binding will be used.
 
 ----
 curl -H "Content-Type: text/plain" -X POST -d "hello from the other side" http://localhost:8080/
