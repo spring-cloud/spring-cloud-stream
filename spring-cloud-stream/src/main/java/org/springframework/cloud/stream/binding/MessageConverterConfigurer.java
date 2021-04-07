@@ -23,6 +23,8 @@ import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.cloud.function.context.FunctionCatalog;
+import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.cloud.stream.binder.BinderHeaders;
 import org.springframework.cloud.stream.binder.ConsumerProperties;
 import org.springframework.cloud.stream.binder.DefaultPollableMessageSource;
@@ -34,6 +36,7 @@ import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.cloud.stream.converter.MessageConverterUtils;
 import org.springframework.cloud.stream.function.StreamFunctionProperties;
+import org.springframework.core.env.Environment;
 import org.springframework.integration.channel.AbstractMessageChannel;
 import org.springframework.integration.expression.ExpressionUtils;
 import org.springframework.integration.support.MessageBuilderFactory;
@@ -152,13 +155,22 @@ public class MessageConverterConfigurer
 			}
 		}
 
+		Environment environment = this.beanFactory  == null ? null : this.beanFactory.getBean(Environment.class);
 		ConsumerProperties consumerProperties = bindingProperties.getConsumer();
 		if (this.isNativeEncodingNotSet(producerProperties, consumerProperties, inbound)) {
 			if (inbound) {
 				messageChannel.addInterceptor(new InboundContentTypeEnhancingInterceptor(contentType));
 			}
-			else if (!functional) {
-				messageChannel.addInterceptor(new OutboundContentTypeConvertingInterceptor(contentType, this.compositeMessageConverter));
+			else {
+				if (environment != null && environment.containsProperty("spring.cloud.stream.rabbit.bindings." + channelName + ".producer.routing-key-expression")) {
+					FunctionCatalog catalog = this.beanFactory.getBean(FunctionCatalog.class);
+					FunctionInvocationWrapper function = catalog.lookup(this.streamFunctionProperties.getDefinition());
+					function.setSkipOutputConversion(true);
+					functional = false;
+				}
+				if (!functional) {
+					messageChannel.addInterceptor(new OutboundContentTypeConvertingInterceptor(contentType, this.compositeMessageConverter));
+				}
 			}
 		}
 	}
