@@ -148,6 +148,9 @@ public final class StreamBridge implements SmartInitializingSingleton {
 	 */
 	@SuppressWarnings("unchecked")
 	public boolean send(String bindingName, Object data, MimeType outputContentType) {
+		if (!(data instanceof Message)) {
+			data = MessageBuilder.withPayload(data).build();
+		}
 		ProducerProperties producerProperties = this.bindingServiceProperties.getProducerProperties(bindingName);
 		SubscribableChannel messageChannel = this.resolveDestination(bindingName, producerProperties);
 
