@@ -1734,22 +1734,23 @@ The user must check for the binder type and then apply the necessary customizati
 
 Here is an example of providing a `BinderCustomizer` bean.
 
-```
+[source, java]
+----
 @Bean
 public BinderCustomizer binderCustomizer() {
     return (binder, binderName) -> {
         if (binder instanceof KafkaMessageChannelBinder) {
-            ((KafkaMessageChannelBinder) binder).setRebalanceListener(...);
+            ((KafkaMessageChannelBinder) binder).setRebalanceListener(/*...*/);
         }
         else if (binder instanceof KStreamBinder) {
-            ...
+            // ...
         }
         else if (binder instanceof RabbitMessageChannelBinder) {
-            ...
+            // ...
         }
     };
 }
-```
+----
 
 Note that, when there are more than one instance of the same type of the binder, the binder name can be used to filter customization.
 
@@ -1771,7 +1772,8 @@ BindingsLifecycleController bindingsController = context.getBean(BindingsLifecyc
 Binding binding = bindingsController.queryState("echo-in-0");
 assertThat(binding.isRunning()).isTrue();
 bindingsController.changeState("echo-in-0", State.STOPPED);
-//bindingsController.stop("echo-in-0") alternative way of changing state. For convenience we expose start/stop and pause/resume operations.
+//Alternative way of changing state. For convenience we expose start/stop and pause/resume operations.
+//bindingsController.stop("echo-in-0")
 assertThat(binding.isRunning()).isFalse();
 ----
 
@@ -2726,7 +2728,7 @@ Below is the example of the required Maven POM entries.
 Or for build.gradle.kts
 
 [source,kotlin]
----
+----
 testImplementation("org.springframework.cloud:spring-cloud-stream") {
 	artifact {
 		name = "spring-cloud-stream"
@@ -2735,7 +2737,7 @@ testImplementation("org.springframework.cloud:spring-cloud-stream") {
 		classifier = "test-binder"
 	}
 }
----
+----
 
 
 
@@ -2932,7 +2934,7 @@ public static class SamplePolledConfiguration {
 
 The above (very rudimentary) example will produce 3 messages in 2 second intervals sending them to the output destination of `Source`
 which this binder sends to `OutputDestination` where we retrieve them (for any assertions).
-Currently it prints the following:
+Currently, it prints the following:
 [source, text]
 ----
 Message 1: POLLED DATA
