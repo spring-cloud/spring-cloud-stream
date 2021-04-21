@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 the original author or authors.
+ * Copyright 2015-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -70,6 +70,7 @@ import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.core.DestinationResolver;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.util.Assert;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.ObjectUtils;
 
 /**
@@ -198,7 +199,6 @@ public class BindingServiceConfiguration {
 	public BinderFactory binderFactory(BinderTypeRegistry binderTypeRegistry,
 			BindingServiceProperties bindingServiceProperties,
 			ObjectProvider<BinderCustomizer> binderCustomizerProvider) {
-
 		DefaultBinderFactory binderFactory = new DefaultBinderFactory(
 				getBinderConfigurations(binderTypeRegistry, bindingServiceProperties),
 				binderTypeRegistry, binderCustomizerProvider.getIfUnique());
@@ -271,11 +271,12 @@ public class BindingServiceConfiguration {
 	@Bean
 	@ConditionalOnMissingBean
 	public BinderAwareRouter binderAwareRouterBeanPostProcessor(
-			@Autowired(required = false) AbstractMappingMessageRouter[] routers,
+			@Autowired(required = false) List<AbstractMappingMessageRouter> routers,
 			@Autowired(required = false) @Qualifier("binderAwareChannelResolver")
 				DestinationResolver<MessageChannel> channelResolver) {
-
-		return new BinderAwareRouter(routers, channelResolver);
+		final AbstractMappingMessageRouter[] routersArray = CollectionUtils.isEmpty(routers) ?
+			new AbstractMappingMessageRouter[]{} : routers.toArray(new AbstractMappingMessageRouter[]{});
+		return new BinderAwareRouter(routersArray, channelResolver);
 	}
 
 	@Bean

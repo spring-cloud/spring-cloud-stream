@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2019 the original author or authors.
+ * Copyright 2019-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,8 @@ import java.util.Set;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.BeanFactory;
+import org.springframework.beans.factory.ListableBeanFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.internal.InternalPropertyNames;
@@ -48,7 +49,6 @@ public class AbstractBindableProxyFactory implements Bindable {
 	@Value("${" + InternalPropertyNames.NAMESPACE_PROPERTY_NAME + ":}")
 	private String namespace;
 
-	@Autowired
 	protected Map<String, BindingTargetFactory> bindingTargetFactories;
 
 	protected Map<String, BoundTargetHolder> inputHolders = new LinkedHashMap<>();
@@ -57,8 +57,14 @@ public class AbstractBindableProxyFactory implements Bindable {
 
 	protected Class<?> type;
 
+	private BeanFactory beanFactory;
+
 	public AbstractBindableProxyFactory(Class<?> type) {
 		this.type = type;
+	}
+
+	protected void populateBindingTargetFactories(BeanFactory beanFactory) {
+		this.bindingTargetFactories = ((ListableBeanFactory) beanFactory).getBeansOfType(BindingTargetFactory.class);
 	}
 
 	protected BindingTargetFactory getBindingTargetFactory(Class<?> bindingTargetType) {
