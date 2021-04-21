@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2020 the original author or authors.
+ * Copyright 2018-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -116,6 +116,7 @@ import org.springframework.util.StringUtils;
  * @author Oleg Zhurakousky
  * @author David Turanski
  * @author Ilayaperumal Gopinathan
+ * @author Soby Chacko
  * @since 2.1
  */
 @Configuration
@@ -147,10 +148,10 @@ public class FunctionConfiguration {
 	}
 
 	@Bean
-	public InitializingBean functionInitializer(FunctionCatalog functionCatalog, FunctionInspector functionInspector,
-			StreamFunctionProperties functionProperties, @Nullable BindableProxyFactory[] bindableProxyFactories,
-			BindingServiceProperties serviceProperties, ConfigurableApplicationContext applicationContext,
-			FunctionBindingRegistrar bindingHolder, StreamBridge streamBridge) {
+	public InitializingBean functionInitializer(FunctionCatalog functionCatalog,
+												StreamFunctionProperties functionProperties,
+												BindingServiceProperties serviceProperties, ConfigurableApplicationContext applicationContext,
+												StreamBridge streamBridge) {
 
 		boolean shouldCreateInitializer = applicationContext.containsBean("output")
 				|| ObjectUtils.isEmpty(applicationContext.getBeanNamesForAnnotation(EnableBinding.class));
@@ -167,10 +168,10 @@ public class FunctionConfiguration {
 	@Bean
 	InitializingBean supplierInitializer(FunctionCatalog functionCatalog, StreamFunctionProperties functionProperties,
 			GenericApplicationContext context, BindingServiceProperties serviceProperties,
-			@Nullable BindableFunctionProxyFactory[] proxyFactories, StreamBridge streamBridge,
+			@Nullable List<BindableFunctionProxyFactory> proxyFactories, StreamBridge streamBridge,
 			TaskScheduler taskScheduler) {
 
-		if (!ObjectUtils.isEmpty(context.getBeanNamesForAnnotation(EnableBinding.class)) || proxyFactories == null) {
+		if (!ObjectUtils.isEmpty(context.getBeanNamesForAnnotation(EnableBinding.class)) || CollectionUtils.isEmpty(proxyFactories)) {
 			return null;
 		}
 

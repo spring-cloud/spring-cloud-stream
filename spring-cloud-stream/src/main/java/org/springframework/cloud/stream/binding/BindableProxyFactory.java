@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 the original author or authors.
+ * Copyright 2015-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,9 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.springframework.aop.framework.ProxyFactory;
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.BeanFactory;
+import org.springframework.beans.factory.BeanFactoryAware;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.cloud.stream.annotation.EnableBinding;
@@ -45,16 +48,19 @@ import org.springframework.util.ReflectionUtils;
  * @author David Syer
  * @author Ilayaperumal Gopinathan
  * @author Oleg Zhurakousky
+ * @author Soby Chacko
  * @see EnableBinding
  */
 public class BindableProxyFactory extends AbstractBindableProxyFactory
-		implements MethodInterceptor, FactoryBean<Object>, InitializingBean {
+		implements MethodInterceptor, FactoryBean<Object>, InitializingBean, BeanFactoryAware {
 
 	private static Log log = LogFactory.getLog(BindableProxyFactory.class);
 
 	private final Map<Method, Object> targetCache = new HashMap<>(2);
 
 	private Object proxy;
+
+	private BeanFactory beanFactory;
 
 	public BindableProxyFactory(Class<?> type) {
 		super(type);
@@ -112,6 +118,7 @@ public class BindableProxyFactory extends AbstractBindableProxyFactory
 
 	@Override
 	public void afterPropertiesSet() {
+		populateBindingTargetFactories(this.beanFactory);
 		Assert.notEmpty(BindableProxyFactory.this.bindingTargetFactories,
 				"'bindingTargetFactories' cannot be empty");
 		ReflectionUtils.doWithMethods(this.type, method -> {
@@ -159,4 +166,8 @@ public class BindableProxyFactory extends AbstractBindableProxyFactory
 		return true;
 	}
 
+	@Override
+	public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
+		this.beanFactory = beanFactory;
+	}
 }
