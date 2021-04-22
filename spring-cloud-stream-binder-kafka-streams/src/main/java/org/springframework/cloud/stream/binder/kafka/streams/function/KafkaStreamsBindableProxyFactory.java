@@ -88,6 +88,7 @@ public class KafkaStreamsBindableProxyFactory extends AbstractBindableProxyFacto
 
 	@Override
 	public void afterPropertiesSet() {
+		populateBindingTargetFactories(beanFactory);
 		Assert.notEmpty(KafkaStreamsBindableProxyFactory.this.bindingTargetFactories,
 				"'bindingTargetFactories' cannot be empty");
 
