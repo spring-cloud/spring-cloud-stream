@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2020 the original author or authors.
+ * Copyright 2020-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.springframework.cloud.stream.function;
 
-import java.lang.reflect.Field;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -32,7 +31,6 @@ import org.springframework.expression.spel.support.StandardEvaluationContext;
 import org.springframework.integration.expression.ExpressionUtils;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
-import org.springframework.util.ReflectionUtils;
 
 /**
  * This class is effectively a wrapper which is aware of the stream related partition information
@@ -45,15 +43,15 @@ class PartitionAwareFunctionWrapper implements Function<Object, Object>, Supplie
 
 	private final FunctionInvocationWrapper function;
 
-	private final Field enhancerFiled;
+	private Function<Object, Message> enhancerFunction;
 
 	@SuppressWarnings("rawtypes")
 	private final Function<Object, Message> outputMessageEnricher;
 
 	PartitionAwareFunctionWrapper(FunctionInvocationWrapper function, ConfigurableApplicationContext context, ProducerProperties producerProperties) {
 		this.function = function;
-		this.enhancerFiled = ReflectionUtils.findField(FunctionInvocationWrapper.class, "enhancer");
-		this.enhancerFiled.setAccessible(true);
+		this.enhancerFunction = function.getEnhancer();
+
 		if (producerProperties != null && producerProperties.isPartitioned()) {
 			StandardEvaluationContext evaluationContext = ExpressionUtils.createStandardEvaluationContext(context.getBeanFactory());
 			PartitionHandler partitionHandler = new PartitionHandler(evaluationContext, producerProperties, context.getBeanFactory());
@@ -86,11 +84,6 @@ class PartitionAwareFunctionWrapper implements Function<Object, Object>, Supplie
 	}
 
 	private void setEnhancerIfNecessary() {
-		try {
-			this.enhancerFiled.set(this.function, this.outputMessageEnricher);
-		}
-		catch (Exception e) {
-			logger.warn("Failed to set the enhancer", e);
-		}
+		this.function.setEnhancer(this.outputMessageEnricher);
 	}
 }
