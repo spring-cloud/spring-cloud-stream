@@ -42,6 +42,10 @@ import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.BeanFactory;
+import org.springframework.beans.factory.BeanFactoryAware;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.cloud.stream.binder.BindingCreatedEvent;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaBinderConfigurationProperties;
 import org.springframework.context.ApplicationListener;
@@ -62,7 +66,7 @@ import org.springframework.util.ObjectUtils;
  * @author Gary Russell
  */
 public class KafkaBinderMetrics
-		implements MeterBinder, ApplicationListener<BindingCreatedEvent> {
+		implements MeterBinder, ApplicationListener<BindingCreatedEvent>, BeanFactoryAware, InitializingBean {
 
 	private static final int DEFAULT_TIMEOUT = 5;
 
@@ -75,7 +79,7 @@ public class KafkaBinderMetrics
 	 */
 	public static final String OFFSET_LAG_METRIC_NAME = "spring.cloud.stream.binder.kafka.offset";
 
-	private final KafkaMessageChannelBinder binder;
+	private KafkaMessageChannelBinder binder;
 
 	private final KafkaBinderConfigurationProperties binderConfigurationProperties;
 
@@ -91,22 +95,21 @@ public class KafkaBinderMetrics
 
 	Map<String, Long> unconsumedMessages = new ConcurrentHashMap<>();
 
-	public KafkaBinderMetrics(KafkaMessageChannelBinder binder,
-			KafkaBinderConfigurationProperties binderConfigurationProperties,
+	private BeanFactory beanFactory;
+
+	public KafkaBinderMetrics(KafkaBinderConfigurationProperties binderConfigurationProperties,
 			ConsumerFactory<?, ?> defaultConsumerFactory,
 			@Nullable MeterRegistry meterRegistry) {
 
-		this.binder = binder;
 		this.binderConfigurationProperties = binderConfigurationProperties;
 		this.defaultConsumerFactory = defaultConsumerFactory;
 		this.meterRegistry = meterRegistry;
 		this.metadataConsumers = new ConcurrentHashMap<>();
 	}
 
-	public KafkaBinderMetrics(KafkaMessageChannelBinder binder,
-			KafkaBinderConfigurationProperties binderConfigurationProperties) {
+	public KafkaBinderMetrics(KafkaBinderConfigurationProperties binderConfigurationProperties) {
 
-		this(binder, binderConfigurationProperties, null, null);
+		this(binderConfigurationProperties, null, null);
 	}
 
 	public void setTimeout(int timeout) {
@@ -241,4 +244,13 @@ public class KafkaBinderMetrics
 		}
 	}
 
+	@Override
+	public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
+		this.beanFactory = beanFactory;
+	}
+
+	@Override
+	public void afterPropertiesSet() throws Exception {
+		this.binder = this.beanFactory.getBean(KafkaMessageChannelBinder.class);
+	}
 }

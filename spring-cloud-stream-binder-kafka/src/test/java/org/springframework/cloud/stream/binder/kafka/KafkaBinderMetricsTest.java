@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.binder.kafka;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -41,6 +42,7 @@ import org.mockito.MockitoAnnotations;
 import org.springframework.cloud.stream.binder.kafka.KafkaMessageChannelBinder.TopicInformation;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaBinderConfigurationProperties;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
+import org.springframework.util.ReflectionUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -79,8 +81,14 @@ public class KafkaBinderMetricsTest {
 				.createConsumer(ArgumentMatchers.any(), ArgumentMatchers.any()))
 				.willReturn(consumer);
 		org.mockito.BDDMockito.given(binder.getTopicsInUse()).willReturn(topicsInUse);
-		metrics = new KafkaBinderMetrics(binder, kafkaBinderConfigurationProperties,
+		metrics = new KafkaBinderMetrics(kafkaBinderConfigurationProperties,
 				consumerFactory, null);
+
+		Field binderField = ReflectionUtils
+				.findField(KafkaBinderMetrics.class, "binder", KafkaMessageChannelBinder.class);
+		ReflectionUtils.makeAccessible(binderField);
+		ReflectionUtils.setField(binderField, metrics, this.binder);
+
 		org.mockito.BDDMockito
 				.given(consumer.endOffsets(ArgumentMatchers.anyCollection()))
 				.willReturn(java.util.Collections
