@@ -21,6 +21,7 @@ import java.util.Map;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
+import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
@@ -43,25 +44,26 @@ import org.springframework.context.annotation.Import;
 @Import({ KafkaAutoConfiguration.class,
 		MultiBinderPropertiesConfiguration.class,
 		KafkaStreamsBinderHealthIndicatorConfiguration.class})
+@AutoConfigureAfter(KafkaStreamsBinderSupportAutoConfiguration.class)
 public class GlobalKTableBinderConfiguration {
 
 	@Bean
-	public KafkaTopicProvisioner provisioningProvider(
-			KafkaStreamsBinderConfigurationProperties binderConfigurationProperties,
+	public KafkaTopicProvisioner globalKTableProvisioningProvider(
+			@Qualifier("binderConfigurationProperties") KafkaStreamsBinderConfigurationProperties binderConfigurationProperties,
 			KafkaProperties kafkaProperties, ObjectProvider<AdminClientConfigCustomizer> adminClientConfigCustomizer) {
 		return new KafkaTopicProvisioner(binderConfigurationProperties, kafkaProperties, adminClientConfigCustomizer.getIfUnique());
 	}
 
-	@Bean
+	@Bean("globalktable")
 	public GlobalKTableBinder GlobalKTableBinder(
 			KafkaStreamsBinderConfigurationProperties binderConfigurationProperties,
-			KafkaTopicProvisioner kafkaTopicProvisioner,
+			KafkaTopicProvisioner globalKTableProvisioningProvider,
 			KafkaStreamsExtendedBindingProperties kafkaStreamsExtendedBindingProperties,
 			KafkaStreamsBindingInformationCatalogue kafkaStreamsBindingInformationCatalogue,
 			@Qualifier("streamConfigGlobalProperties") Map<String, Object> streamConfigGlobalProperties) {
 
 		GlobalKTableBinder globalKTableBinder = new GlobalKTableBinder(binderConfigurationProperties,
-				kafkaTopicProvisioner, kafkaStreamsBindingInformationCatalogue);
+				globalKTableProvisioningProvider, kafkaStreamsBindingInformationCatalogue);
 		globalKTableBinder.setKafkaStreamsExtendedBindingProperties(
 				kafkaStreamsExtendedBindingProperties);
 		return globalKTableBinder;
@@ -69,7 +71,7 @@ public class GlobalKTableBinderConfiguration {
 
 	@Bean
 	@ConditionalOnBean(name = "outerContext")
-	public static BeanFactoryPostProcessor outerContextBeanFactoryPostProcessor() {
+	public static BeanFactoryPostProcessor globalKTableOuterContextBeanFactoryPostProcessor() {
 		return beanFactory -> {
 
 			// It is safe to call getBean("outerContext") here, because this bean is

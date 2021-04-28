@@ -50,21 +50,21 @@ public class KafkaStreamsBinderBootstrapTest {
 				"--spring.cloud.stream.kafka.streams.bindings.input-3.consumer.application-id"
 						+ "=testKStreamBinderWithCustomEnvironmentCanStart-foobar",
 						"--spring.cloud.stream.bindings.input-1.destination=foo",
-						"--spring.cloud.stream.bindings.input-1.binder=kstreamBinder",
-						"--spring.cloud.stream.binders.kstreamBinder.type=kstream",
-						"--spring.cloud.stream.binders.kstreamBinder.environment"
+						"--spring.cloud.stream.bindings.input-1.binder=kstream",
+						"--spring.cloud.stream.binders.kstream.type=kstream",
+						"--spring.cloud.stream.binders.kstream.environment"
 								+ ".spring.cloud.stream.kafka.streams.binder.brokers"
 								+ "=" + embeddedKafka.getEmbeddedKafka().getBrokersAsString(),
 				"--spring.cloud.stream.bindings.input-2.destination=bar",
-				"--spring.cloud.stream.bindings.input-2.binder=ktableBinder",
-				"--spring.cloud.stream.binders.ktableBinder.type=ktable",
-				"--spring.cloud.stream.binders.ktableBinder.environment"
+				"--spring.cloud.stream.bindings.input-2.binder=ktable",
+				"--spring.cloud.stream.binders.ktable.type=ktable",
+				"--spring.cloud.stream.binders.ktable.environment"
 						+ ".spring.cloud.stream.kafka.streams.binder.brokers"
 						+ "=" + embeddedKafka.getEmbeddedKafka().getBrokersAsString(),
 				"--spring.cloud.stream.bindings.input-3.destination=foobar",
-				"--spring.cloud.stream.bindings.input-3.binder=globalktableBinder",
-				"--spring.cloud.stream.binders.globalktableBinder.type=globalktable",
-				"--spring.cloud.stream.binders.globalktableBinder.environment"
+				"--spring.cloud.stream.bindings.input-3.binder=globalktable",
+				"--spring.cloud.stream.binders.globalktable.type=globalktable",
+				"--spring.cloud.stream.binders.globalktable.environment"
 						+ ".spring.cloud.stream.kafka.streams.binder.brokers"
 						+ "=" + embeddedKafka.getEmbeddedKafka().getBrokersAsString());
 
