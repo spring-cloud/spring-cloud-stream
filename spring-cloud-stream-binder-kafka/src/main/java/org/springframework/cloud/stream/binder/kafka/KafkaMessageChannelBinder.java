@@ -52,8 +52,11 @@ import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
 
 import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.BeanFactory;
+import org.springframework.beans.factory.BeanFactoryAware;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
+import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.cloud.stream.binder.AbstractMessageChannelBinder;
 import org.springframework.cloud.stream.binder.BinderHeaders;
 import org.springframework.cloud.stream.binder.BinderSpecificPropertiesProvider;
@@ -159,7 +162,7 @@ public class KafkaMessageChannelBinder extends
 		AbstractMessageChannelBinder<ExtendedConsumerProperties<KafkaConsumerProperties>, ExtendedProducerProperties<KafkaProducerProperties>, KafkaTopicProvisioner>
 		// @checkstyle:on
 		implements
-		ExtendedPropertiesBinder<MessageChannel, KafkaConsumerProperties, KafkaProducerProperties> {
+		ExtendedPropertiesBinder<MessageChannel, KafkaConsumerProperties, KafkaProducerProperties>, SmartInitializingSingleton, BeanFactoryAware {
 
 	/**
 	 * Kafka header for x-exception-fqcn.
@@ -233,6 +236,8 @@ public class KafkaMessageChannelBinder extends
 
 	private ConsumerConfigCustomizer consumerConfigCustomizer;
 
+	private BeanFactory beanFactory;
+
 	public KafkaMessageChannelBinder(
 			KafkaBinderConfigurationProperties configurationProperties,
 			KafkaTopicProvisioner provisioningProvider) {
@@ -277,6 +282,22 @@ public class KafkaMessageChannelBinder extends
 		this.rebalanceListener = rebalanceListener;
 		this.dlqPartitionFunction = dlqPartitionFunction;
 		this.dlqDestinationResolver = dlqDestinationResolver;
+	}
+
+	@Override
+	public void afterSingletonsInstantiated() {
+		try {
+			final ClientFactoryCustomizer clientFactoryCustomizer = beanFactory.getBean(ClientFactoryCustomizer.class);
+			setClientFactoryCustomizer(clientFactoryCustomizer);
+		}
+		catch (Exception e) {
+			// nothing to do.
+		}
+	}
+
+	@Override
+	public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
+		this.beanFactory = beanFactory;
 	}
 
 	private static String[] headersToMap(

@@ -1,3 +1,8 @@
-org.springframework.boot.env.EnvironmentPostProcessor=\
-  org.springframework.cloud.stream.binder.kafka.KafkaBinderEnvironmentPostProcessor
-org.springframework.boot.autoconfigure.EnableAutoConfiguration=org.springframework.cloud.stream.binder.kafka.config.ExtendedBindingHandlerMappingsProviderConfiguration
+org.springframework.boot.env.EnvironmentPostProcessor:\
+org.springframework.cloud.stream.binder.kafka.KafkaBinderEnvironmentPostProcessor
+org.springframework.boot.autoconfigure.EnableAutoConfiguration:\
+org.springframework.cloud.stream.binder.kafka.config.ExtendedBindingHandlerMappingsProviderConfiguration,\
+org.springframework.cloud.stream.binder.kafka.config.KafkaBinderConfiguration,\
+org.springframework.cloud.stream.binder.kafka.config.KafkaBinderMetricsConfiguration,\
+org.springframework.cloud.stream.binder.kafka.config.KafkaBinderMetricsConfigurationWithMultiBinder
+
