@@ -46,28 +46,28 @@ import org.springframework.context.annotation.Import;
 public class KTableBinderConfiguration {
 
 	@Bean
-	public KafkaTopicProvisioner provisioningProvider(
-			KafkaStreamsBinderConfigurationProperties binderConfigurationProperties,
+	public KafkaTopicProvisioner ktableProvisioningProvider(
+			@Qualifier("binderConfigurationProperties") KafkaStreamsBinderConfigurationProperties binderConfigurationProperties,
 			KafkaProperties kafkaProperties, ObjectProvider<AdminClientConfigCustomizer> adminClientConfigCustomizer) {
 		return new KafkaTopicProvisioner(binderConfigurationProperties, kafkaProperties, adminClientConfigCustomizer.getIfUnique());
 	}
 
-	@Bean
+	@Bean("ktable")
 	public KTableBinder kTableBinder(
 			KafkaStreamsBinderConfigurationProperties binderConfigurationProperties,
-			KafkaTopicProvisioner kafkaTopicProvisioner,
+			KafkaTopicProvisioner ktableProvisioningProvider,
 			KafkaStreamsExtendedBindingProperties kafkaStreamsExtendedBindingProperties,
 			KafkaStreamsBindingInformationCatalogue kafkaStreamsBindingInformationCatalogue,
 			@Qualifier("streamConfigGlobalProperties") Map<String, Object> streamConfigGlobalProperties) {
 		KTableBinder kTableBinder = new KTableBinder(binderConfigurationProperties,
-				kafkaTopicProvisioner, kafkaStreamsBindingInformationCatalogue);
+				ktableProvisioningProvider, kafkaStreamsBindingInformationCatalogue);
 		kTableBinder.setKafkaStreamsExtendedBindingProperties(kafkaStreamsExtendedBindingProperties);
 		return kTableBinder;
 	}
 
 	@Bean
 	@ConditionalOnBean(name = "outerContext")
-	public static BeanFactoryPostProcessor outerContextBeanFactoryPostProcessor() {
+	public static BeanFactoryPostProcessor ktableOuterContextBeanFactoryPostProcessor() {
 		return beanFactory -> {
 
 			// It is safe to call getBean("outerContext") here, because this bean is

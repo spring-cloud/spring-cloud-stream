@@ -17,7 +17,9 @@
 package org.springframework.cloud.stream.binder.kafka.streams;
 
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
+import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
@@ -41,26 +43,27 @@ import org.springframework.context.annotation.Import;
 @Import({ KafkaAutoConfiguration.class,
 		MultiBinderPropertiesConfiguration.class,
 		KafkaStreamsBinderHealthIndicatorConfiguration.class})
+@AutoConfigureAfter(KafkaStreamsBinderSupportAutoConfiguration.class)
 public class KStreamBinderConfiguration {
 
 	@Bean
-	public KafkaTopicProvisioner provisioningProvider(
-			KafkaStreamsBinderConfigurationProperties kafkaStreamsBinderConfigurationProperties,
+	public KafkaTopicProvisioner kstreamProvisioningProvider(
+			@Qualifier("binderConfigurationProperties") KafkaStreamsBinderConfigurationProperties kafkaStreamsBinderConfigurationProperties,
 			KafkaProperties kafkaProperties, ObjectProvider<AdminClientConfigCustomizer> adminClientConfigCustomizer) {
 		return new KafkaTopicProvisioner(kafkaStreamsBinderConfigurationProperties,
 				kafkaProperties, adminClientConfigCustomizer.getIfUnique());
 	}
 
-	@Bean
+	@Bean("kstream")
 	public KStreamBinder kStreamBinder(
 			KafkaStreamsBinderConfigurationProperties binderConfigurationProperties,
-			KafkaTopicProvisioner kafkaTopicProvisioner,
+			KafkaTopicProvisioner kstreamProvisioningProvider,
 			KafkaStreamsMessageConversionDelegate KafkaStreamsMessageConversionDelegate,
 			KafkaStreamsBindingInformationCatalogue KafkaStreamsBindingInformationCatalogue,
 			KeyValueSerdeResolver keyValueSerdeResolver,
 			KafkaStreamsExtendedBindingProperties kafkaStreamsExtendedBindingProperties) {
 		KStreamBinder kStreamBinder = new KStreamBinder(binderConfigurationProperties,
-				kafkaTopicProvisioner, KafkaStreamsMessageConversionDelegate,
+				kstreamProvisioningProvider, KafkaStreamsMessageConversionDelegate,
 				KafkaStreamsBindingInformationCatalogue, keyValueSerdeResolver);
 		kStreamBinder.setKafkaStreamsExtendedBindingProperties(
 				kafkaStreamsExtendedBindingProperties);
@@ -69,7 +72,7 @@ public class KStreamBinderConfiguration {
 
 	@Bean
 	@ConditionalOnBean(name = "outerContext")
-	public static BeanFactoryPostProcessor outerContextBeanFactoryPostProcessor() {
+	public static BeanFactoryPostProcessor kstreamOuterContextBeanFactoryPostProcessor() {
 		return beanFactory -> {
 
 			// It is safe to call getBean("outerContext") here, because this bean is
