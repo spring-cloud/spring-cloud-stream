@@ -140,7 +140,8 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 		String[] bindingTargetTypeNameForLambda = new String[]{bindingTargetTypeName};
 		final Optional<String> foundBinder = binders.keySet().stream().filter(b -> b.equals(bindingTargetTypeNameForLambda[0])).findFirst();
 		if (foundBinder.isPresent()) { // found a match - now do all the customizations.
-			binder = binders.get(foundBinder.get());
+//			binder = binders.get(foundBinder.get());
+			binder = this.doGetBinder(binderName, bindingTargetType);
 			if (!CollectionUtils.isEmpty(this.listeners)) {
 				for (Listener binderFactoryListener : this.listeners) {
 					binderFactoryListener.afterBinderContextInitialized(bindingTargetTypeName,
@@ -153,15 +154,18 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 				binder = (Binder<T, ConsumerProperties, ProducerProperties>) this.context
 					.getBean(binderName);
 			}
-			else if (binders.size() == 1) {
+			else if (binders.size() == 1 && name == null) {
 				binder = binders.values().iterator().next();
 			}
-			else if (binders.size() > 1) {
-				throw new IllegalStateException(
-					"Multiple binders are available, however neither default nor "
-						+ "per-destination binder name is provided. Available binders are "
-						+ binders.keySet());
+			else if (binders.size() == 1 && binders.keySet().iterator().next().equals(name)) {
+				binder = binders.values().iterator().next();
 			}
+//			else if (binders.size() > 1) {
+//				throw new IllegalStateException(
+//					"Multiple binders are available, however neither default nor "
+//						+ "per-destination binder name is provided. Available binders are "
+//						+ binders.keySet());
+//			}
 			else {
 				/*
 				 * This is the fall back to the old bootstrap that relies on spring.binders.
@@ -311,7 +315,7 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 					&& this.context != null;
 
 			if (useApplicationContextAsParent) {
-				springApplicationBuilder.parent(this.context);
+//				springApplicationBuilder.parent(this.context);
 			}
 			else {
 				this.customizeParentChildContextRelationship(springApplicationBuilder, this.context);
@@ -355,9 +359,12 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 				springApplicationBuilder.environment(binderEnvironment);
 			}
 
+
+
 			ConfigurableApplicationContext binderProducingContext = springApplicationBuilder
 					.run(args.toArray(new String[0]));
 
+			Binder<T, ?, ?> binder = binderProducingContext.getBean(Binder.class);
 
 			Map<String, MessageConverter> messageConverters = binderProducingContext.getBeansOfType(MessageConverter.class);
 			if (!CollectionUtils.isEmpty(messageConverters) && !ObjectUtils.isEmpty(context.getBeansOfType(FunctionCatalog.class))) {
@@ -373,7 +380,6 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 				}
 			}
 
-			Binder<T, ?, ?> binder = binderProducingContext.getBean(Binder.class);
 			/*
 			 * This will ensure that application defined errorChannel and other beans are
 			 * accessible within binder's context (see

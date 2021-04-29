@@ -195,6 +195,16 @@ public class BinderFactoryAutoConfiguration {
 						binderTypes.put(binderType.getDefaultName(), binderType);
 					}
 				}
+
+				try {
+					BinderType kafkaType = new BinderType("kafka", new Class[] {Class.forName("org.springframework.cloud.stream.binder.kafka.config.KafkaBinderConfiguration")});
+					binderTypes.put("kafka", kafkaType);
+				}
+				catch (Exception e) {
+					// TODO: handle exception
+				}
+//				kafka:\
+//
 			}
 
 		}
