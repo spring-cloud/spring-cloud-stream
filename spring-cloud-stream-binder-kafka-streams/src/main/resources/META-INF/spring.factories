@@ -1,7 +1,4 @@
-org.springframework.boot.autoconfigure.EnableAutoConfiguration:\
-org.springframework.cloud.stream.binder.kafka.streams.KafkaStreamsBinderSupportAutoConfiguration,\
-org.springframework.cloud.stream.binder.kafka.streams.function.KafkaStreamsFunctionAutoConfiguration,\
-org.springframework.cloud.stream.binder.kafka.streams.endpoint.KafkaStreamsTopologyEndpointAutoConfiguration,\
-org.springframework.cloud.stream.binder.kafka.streams.KStreamBinderConfiguration,\
-org.springframework.cloud.stream.binder.kafka.streams.KTableBinderConfiguration,\
-org.springframework.cloud.stream.binder.kafka.streams.GlobalKTableBinderConfiguration
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+  org.springframework.cloud.stream.binder.kafka.streams.KafkaStreamsBinderSupportAutoConfiguration,\
+  org.springframework.cloud.stream.binder.kafka.streams.function.KafkaStreamsFunctionAutoConfiguration,\
+  org.springframework.cloud.stream.binder.kafka.streams.endpoint.KafkaStreamsTopologyEndpointAutoConfiguration

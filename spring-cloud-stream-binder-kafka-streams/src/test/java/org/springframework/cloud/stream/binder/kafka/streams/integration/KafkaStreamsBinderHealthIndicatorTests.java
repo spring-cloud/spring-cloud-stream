@@ -34,6 +34,7 @@ import org.junit.Test;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.WebApplicationType;
+import org.springframework.boot.actuate.health.CompositeHealthContributor;
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.Status;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -187,13 +188,9 @@ public class KafkaStreamsBinderHealthIndicatorTests {
 
 	private static void checkHealth(ConfigurableApplicationContext context,
 			Status expected) throws InterruptedException {
-//		CompositeHealthContributor healthIndicator = context
-//				.getBean("bindersHealthContributor", CompositeHealthContributor.class);
-
-		KafkaStreamsBinderHealthIndicator kafkaStreamsBinderHealthIndicator = context
-				.getBean("kafkaStreamsBinderHealthIndicator", KafkaStreamsBinderHealthIndicator.class);
-
-		//KafkaStreamsBinderHealthIndicator kafkaStreamsBinderHealthIndicator = (KafkaStreamsBinderHealthIndicator) healthIndicator.getContributor("kstream");
+		CompositeHealthContributor healthIndicator = context
+				.getBean("bindersHealthContributor", CompositeHealthContributor.class);
+		KafkaStreamsBinderHealthIndicator kafkaStreamsBinderHealthIndicator = (KafkaStreamsBinderHealthIndicator) healthIndicator.getContributor("kstream");
 		Health health = kafkaStreamsBinderHealthIndicator.health();
 		while (waitFor(health.getStatus(), health.getDetails())) {
 			TimeUnit.SECONDS.sleep(2);
