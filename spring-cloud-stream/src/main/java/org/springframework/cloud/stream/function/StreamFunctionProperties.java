@@ -70,7 +70,7 @@ public class StreamFunctionProperties {
 		return this.filterBindings(functionName, "-in-");
 	}
 
-	public void setDefinition(String definition) {
+	void setDefinition(String definition) {
 		if (StringUtils.hasText(definition)) {
 			this.composeFrom = definition.startsWith("|");
 			this.composeTo = definition.endsWith("|");
