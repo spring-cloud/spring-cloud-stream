@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2018 the original author or authors.
+ * Copyright 2016-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
 package org.springframework.cloud.stream.binder.kafka;
 
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -34,7 +36,10 @@ import org.apache.kafka.common.PartitionInfo;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.HealthIndicator;
+import org.springframework.boot.actuate.health.Status;
+import org.springframework.boot.actuate.health.StatusAggregator;
 import org.springframework.kafka.core.ConsumerFactory;
+import org.springframework.kafka.listener.AbstractMessageListenerContainer;
 import org.springframework.scheduling.concurrent.CustomizableThreadFactory;
 
 /**
@@ -48,6 +53,7 @@ import org.springframework.scheduling.concurrent.CustomizableThreadFactory;
  * @author Soby Chacko
  * @author Vladislav Fefelov
  * @author Chukwubuikem Ume-Ugwa
+ * @author Taras Danylchuk
  */
 public class KafkaBinderHealthIndicator implements HealthIndicator, DisposableBean {
 
@@ -86,7 +92,22 @@ public class KafkaBinderHealthIndicator implements HealthIndicator, DisposableBe
 
 	@Override
 	public Health health() {
-		Future<Health> future = executor.submit(this::buildHealthStatus);
+		Health topicsHealth = safelyBuildTopicsHealth();
+		Health listenerContainersHealth = buildListenerContainersHealth();
+		return merge(topicsHealth, listenerContainersHealth);
+	}
+
+	private Health merge(Health topicsHealth, Health listenerContainersHealth) {
+		Status aggregatedStatus = StatusAggregator.getDefault()
+						.getAggregateStatus(topicsHealth.getStatus(), listenerContainersHealth.getStatus());
+		Map<String, Object> aggregatedDetails = new HashMap<>();
+		aggregatedDetails.putAll(topicsHealth.getDetails());
+		aggregatedDetails.putAll(listenerContainersHealth.getDetails());
+		return Health.status(aggregatedStatus).withDetails(aggregatedDetails).build();
+	}
+
+	private Health safelyBuildTopicsHealth() {
+		Future<Health> future = executor.submit(this::buildTopicsHealth);
 		try {
 			return future.get(this.timeout, TimeUnit.SECONDS);
 		}
@@ -112,10 +133,11 @@ public class KafkaBinderHealthIndicator implements HealthIndicator, DisposableBe
 		}
 	}
 
-	private Health buildHealthStatus() {
+	private Health buildTopicsHealth() {
 		try {
 			initMetadataConsumer();
 			Set<String> downMessages = new HashSet<>();
+			Set<String> checkedTopics = new HashSet<>();
 			final Map<String, KafkaMessageChannelBinder.TopicInformation> topicsInUse = KafkaBinderHealthIndicator.this.binder
 					.getTopicsInUse();
 			if (topicsInUse.isEmpty()) {
@@ -148,11 +170,12 @@ public class KafkaBinderHealthIndicator implements HealthIndicator, DisposableBe
 								downMessages.add(partitionInfo.toString());
 							}
 						}
+						checkedTopics.add(topic);
 					}
 				}
 			}
 			if (downMessages.isEmpty()) {
-				return Health.up().build();
+				return Health.up().withDetail("topicsInUse", checkedTopics).build();
 			}
 			else {
 				return Health.down()
@@ -164,6 +187,33 @@ public class KafkaBinderHealthIndicator implements HealthIndicator, DisposableBe
 		catch (Exception ex) {
 			return Health.down(ex).build();
 		}
+	}
+
+	private Health buildListenerContainersHealth() {
+		List<AbstractMessageListenerContainer<?, ?>> listenerContainers = binder.getKafkaMessageListenerContainers();
+		if (listenerContainers.isEmpty()) {
+			return Health.unknown().build();
+		}
+
+		Status status = Status.UP;
+		List<Map<String, Object>> containersDetails = new ArrayList<>();
+
+		for (AbstractMessageListenerContainer<?, ?> container : listenerContainers) {
+			Map<String, Object> containerDetails = new HashMap<>();
+			boolean isRunning = container.isRunning();
+			if (!isRunning) {
+				status = Status.DOWN;
+			}
+			containerDetails.put("isRunning", isRunning);
+			containerDetails.put("isPaused", container.isContainerPaused());
+			containerDetails.put("listenerId", container.getListenerId());
+			containerDetails.put("groupId", container.getGroupId());
+
+			containersDetails.add(containerDetails);
+		}
+		return Health.status(status)
+				.withDetail("listenerContainers", containersDetails)
+				.build();
 	}
 
 	@Override

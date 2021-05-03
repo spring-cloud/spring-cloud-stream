@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2018 the original author or authors.
+ * Copyright 2017-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
 package org.springframework.cloud.stream.binder.kafka;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,7 +36,9 @@ import org.mockito.MockitoAnnotations;
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.Status;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
+import org.springframework.kafka.listener.AbstractMessageListenerContainer;
 
+import static java.util.Collections.singleton;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -43,6 +47,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Laur Aliste
  * @author Soby Chacko
  * @author Chukwubuikem Ume-Ugwa
+ * @author Taras Danylchuk
  */
 public class KafkaBinderHealthIndicatorTest {
 
@@ -57,6 +62,12 @@ public class KafkaBinderHealthIndicatorTest {
 
 	@Mock
 	private KafkaConsumer consumer;
+
+	@Mock
+	AbstractMessageListenerContainer<?, ?> listenerContainerA;
+
+	@Mock
+	AbstractMessageListenerContainer<?, ?> listenerContainerB;
 
 	@Mock
 	private KafkaMessageChannelBinder binder;
@@ -74,14 +85,63 @@ public class KafkaBinderHealthIndicatorTest {
 	}
 
 	@Test
+	public void kafkaBinderIsUpWithNoConsumers() {
+		final List<PartitionInfo> partitions = partitions(new Node(0, null, 0));
+		topicsInUse.put(TEST_TOPIC, new KafkaMessageChannelBinder.TopicInformation(
+				"group1-healthIndicator", partitions, false));
+		org.mockito.BDDMockito.given(consumer.partitionsFor(TEST_TOPIC))
+				.willReturn(partitions);
+		org.mockito.BDDMockito.given(binder.getKafkaMessageListenerContainers())
+				.willReturn(Collections.emptyList());
+
+		Health health = indicator.health();
+		assertThat(health.getStatus()).isEqualTo(Status.UP);
+		assertThat(health.getDetails()).containsEntry("topicsInUse", singleton(TEST_TOPIC));
+	}
+
+	@Test
 	public void kafkaBinderIsUp() {
 		final List<PartitionInfo> partitions = partitions(new Node(0, null, 0));
 		topicsInUse.put(TEST_TOPIC, new KafkaMessageChannelBinder.TopicInformation(
 				"group1-healthIndicator", partitions, false));
 		org.mockito.BDDMockito.given(consumer.partitionsFor(TEST_TOPIC))
 				.willReturn(partitions);
+		org.mockito.BDDMockito.given(binder.getKafkaMessageListenerContainers())
+				.willReturn(Arrays.asList(listenerContainerA, listenerContainerB));
+		mockContainer(listenerContainerA, true);
+		mockContainer(listenerContainerB, true);
+
 		Health health = indicator.health();
 		assertThat(health.getStatus()).isEqualTo(Status.UP);
+		assertThat(health.getDetails()).containsEntry("topicsInUse", singleton(TEST_TOPIC));
+		assertThat(health.getDetails()).hasEntrySatisfying("listenerContainers", value ->
+				assertThat((ArrayList<?>) value).hasSize(2));
+	}
+
+	@Test
+	public void kafkaBinderIsDownWhenOneOfConsumersIsNotRunning() {
+		final List<PartitionInfo> partitions = partitions(new Node(0, null, 0));
+		topicsInUse.put(TEST_TOPIC, new KafkaMessageChannelBinder.TopicInformation(
+				"group1-healthIndicator", partitions, false));
+		org.mockito.BDDMockito.given(consumer.partitionsFor(TEST_TOPIC))
+				.willReturn(partitions);
+		org.mockito.BDDMockito.given(binder.getKafkaMessageListenerContainers())
+				.willReturn(Arrays.asList(listenerContainerA, listenerContainerB));
+		mockContainer(listenerContainerA, false);
+		mockContainer(listenerContainerB, true);
+
+		Health health = indicator.health();
+		assertThat(health.getStatus()).isEqualTo(Status.DOWN);
+		assertThat(health.getDetails()).containsEntry("topicsInUse", singleton(TEST_TOPIC));
+		assertThat(health.getDetails()).hasEntrySatisfying("listenerContainers", value ->
+				assertThat((ArrayList<?>) value).hasSize(2));
+	}
+
+	private void mockContainer(AbstractMessageListenerContainer<?, ?> container, boolean isRunning) {
+		org.mockito.BDDMockito.given(container.isRunning()).willReturn(isRunning);
+		org.mockito.BDDMockito.given(container.isContainerPaused()).willReturn(true);
+		org.mockito.BDDMockito.given(container.getListenerId()).willReturn("someListenerId");
+		org.mockito.BDDMockito.given(container.getGroupId()).willReturn("someGroupId");
 	}
 
 	@Test

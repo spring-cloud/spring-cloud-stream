@@ -153,6 +153,7 @@ import org.springframework.util.concurrent.ListenableFutureCallback;
  * @author Henryk Konsek
  * @author Doug Saus
  * @author Lukasz Kaminski
+ * @author Taras Danylchuk
  */
 public class KafkaMessageChannelBinder extends
 		// @checkstyle:off
@@ -232,6 +233,8 @@ public class KafkaMessageChannelBinder extends
 	private ProducerConfigCustomizer producerConfigCustomizer;
 
 	private ConsumerConfigCustomizer consumerConfigCustomizer;
+
+	private final List<AbstractMessageListenerContainer<?, ?>> kafkaMessageListenerContainers = new ArrayList<>();
 
 	public KafkaMessageChannelBinder(
 			KafkaBinderConfigurationProperties configurationProperties,
@@ -681,6 +684,8 @@ public class KafkaMessageChannelBinder extends
 			}
 
 		};
+
+		this.kafkaMessageListenerContainers.add(messageListenerContainer);
 		messageListenerContainer.setConcurrency(concurrency);
 		// these won't be needed if the container is made a bean
 		AbstractApplicationContext applicationContext = getApplicationContext();
@@ -1477,6 +1482,10 @@ public class KafkaMessageChannelBinder extends
 
 	public void setProducerConfigCustomizer(ProducerConfigCustomizer producerConfigCustomizer) {
 		this.producerConfigCustomizer = producerConfigCustomizer;
+	}
+
+	List<AbstractMessageListenerContainer<?, ?>> getKafkaMessageListenerContainers() {
+		return Collections.unmodifiableList(kafkaMessageListenerContainers);
 	}
 
 	private final class ProducerConfigurationMessageHandler
