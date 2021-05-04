@@ -19,6 +19,7 @@ package org.springframework.cloud.stream.binder;
 import java.lang.reflect.Field;
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -27,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -45,6 +47,7 @@ import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.core.convert.support.GenericConversionService;
 import org.springframework.core.env.ConfigurableEnvironment;
@@ -256,86 +259,14 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 			Assert.notNull(binderType, "Binder type "
 					+ binderConfiguration.getBinderType() + " is not defined");
 
-			Map<String, String> binderProperties = new HashMap<>();
+			Map<String, Object> binderProperties = new HashMap<>();
 			this.flatten(null, binderConfiguration.getProperties(), binderProperties);
 
-			// Convert all properties to arguments, so that they receive maximum
-			// precedence
-			ArrayList<String> args = new ArrayList<>();
-			for (Map.Entry<String, String> property : binderProperties.entrySet()) {
-				args.add(
-						String.format("--%s=%s", property.getKey(), property.getValue()));
-			}
-			// Initialize the domain with a unique name based on the bootstrapping context
-			// setting
-			ConfigurableEnvironment environment = this.context != null
-					? this.context.getEnvironment() : null;
-			String defaultDomain = environment != null
-					? environment.getProperty("spring.jmx.default-domain") : "";
-			args.add("--spring.jmx.default-domain=" + defaultDomain + "binder."
-					+ configurationName);
+			ConfigurableApplicationContext binderProducingContext =
+					this.initializeBinderContextSimple(configurationName, binderProperties, binderType, binderConfiguration);
 
-			SpringApplicationBuilder springApplicationBuilder = new SpringApplicationBuilder(
-					binderType.getConfigurationClasses())
-							.bannerMode(Mode.OFF).logStartupInfo(false)
-							.web(WebApplicationType.NONE);
-			// If the environment is not customized and a main context is available, we
-			// will set the latter as parent.
-			// This ensures that the defaults and user-defined customizations (e.g. custom
-			// connection factory beans)
-			// are propagated to the binder context. If the environment is customized,
-			// then the binder context should
-			// not inherit any beans from the parent
-			boolean useApplicationContextAsParent = binderProperties.isEmpty()
-					&& this.context != null;
-
-			if (useApplicationContextAsParent) {
-				springApplicationBuilder.parent(this.context);
-			}
-			else {
-				this.customizeParentChildContextRelationship(springApplicationBuilder, this.context);
-				springApplicationBuilder.listeners(new ApplicationListener<ApplicationEvent>() {
-					@Override
-					public void onApplicationEvent(ApplicationEvent event) {
-						if (context != null) {
-							try {
-								context.publishEvent(event);
-							}
-							catch (Exception e) {
-								logger.warn("Failed to publish " + event, e);
-							}
-						}
-					}
-				});
-			}
-			// If the current application context is not set as parent and the environment
-			// is set,
-			// provide the current context as an additional bean in the BeanFactory.
-			if (environment != null && !useApplicationContextAsParent) {
-				springApplicationBuilder
-						.initializers(new InitializerWithOuterContext(this.context));
-			}
-
-			if (environment != null && (useApplicationContextAsParent
-					|| binderConfiguration.isInheritEnvironment())) {
-				StandardEnvironment binderEnvironment = new StandardEnvironment();
-				binderEnvironment.merge(environment);
-				// See ConfigurationPropertySources.ATTACHED_PROPERTY_SOURCE_NAME
-				binderEnvironment.getPropertySources().remove("configurationProperties");
-				/*
-				 * Ensure that the web mode is set to NONE despite what the
-				 * parent application context says.
-				 * https://github.com/spring-cloud/spring-cloud-stream/issues/1708
-				 */
-				binderEnvironment.getPropertySources()
-					.addFirst(new MapPropertySource("defaultBinderFactoryProperties",
-						Collections.singletonMap("spring.main.web-application-type", "NONE")));
-
-				springApplicationBuilder.environment(binderEnvironment);
-			}
-
-			ConfigurableApplicationContext binderProducingContext = springApplicationBuilder
-					.run(args.toArray(new String[0]));
+//			ConfigurableApplicationContext binderProducingContext =
+//					this.initializeBinderContextBoot(configurationName, binderProperties, binderType, binderConfiguration);
 
 
 			Map<String, MessageConverter> messageConverters = binderProducingContext.getBeansOfType(MessageConverter.class);
@@ -374,6 +305,182 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 		logger.info("Retrieving cached binder: " + configurationName);
 		return (Binder<T, ConsumerProperties, ProducerProperties>) this.binderInstanceCache
 				.get(configurationName).getKey();
+	}
+
+	@SuppressWarnings("unused")
+	private ConfigurableApplicationContext initializeBinderContextBoot(String configurationName, Map<String, Object> binderProperties,
+			BinderType binderType, BinderConfiguration binderConfiguration) {
+		// Convert all properties to arguments, so that they receive maximum
+//		// precedence
+		ArrayList<String> args = new ArrayList<>();
+		for (Map.Entry<String, Object> property : binderProperties.entrySet()) {
+			args.add(
+					String.format("--%s=%s", property.getKey(), property.getValue()));
+		}
+		// Initialize the domain with a unique name based on the bootstrapping context
+		// setting
+		ConfigurableEnvironment environment = this.context != null
+				? this.context.getEnvironment() : null;
+		String defaultDomain = environment != null
+				? environment.getProperty("spring.jmx.default-domain") : "";
+		args.add("--spring.jmx.default-domain=" + defaultDomain + "binder."
+				+ configurationName);
+
+		SpringApplicationBuilder springApplicationBuilder = new SpringApplicationBuilder(
+				binderType.getConfigurationClasses())
+						.bannerMode(Mode.OFF).logStartupInfo(false)
+						.web(WebApplicationType.NONE);
+		// If the environment is not customized and a main context is available, we
+		// will set the latter as parent.
+		// This ensures that the defaults and user-defined customizations (e.g. custom
+		// connection factory beans)
+		// are propagated to the binder context. If the environment is customized,
+		// then the binder context should
+		// not inherit any beans from the parent
+		boolean useApplicationContextAsParent = binderProperties.isEmpty()
+				&& this.context != null;
+
+		if (useApplicationContextAsParent) {
+			springApplicationBuilder.parent(this.context);
+		}
+		else {
+			this.customizeParentChildContextRelationship(springApplicationBuilder, this.context);
+			springApplicationBuilder.listeners(new ApplicationListener<ApplicationEvent>() {
+				@Override
+				public void onApplicationEvent(ApplicationEvent event) {
+					if (context != null) {
+						try {
+							context.publishEvent(event);
+						}
+						catch (Exception e) {
+							logger.warn("Failed to publish " + event, e);
+						}
+					}
+				}
+			});
+		}
+		// If the current application context is not set as parent and the environment
+		// is set,
+		// provide the current context as an additional bean in the BeanFactory.
+		if (environment != null && !useApplicationContextAsParent) {
+			springApplicationBuilder
+					.initializers(new InitializerWithOuterContext(this.context));
+		}
+
+		if (environment != null && (useApplicationContextAsParent
+				|| binderConfiguration.isInheritEnvironment())) {
+			StandardEnvironment binderEnvironment = new StandardEnvironment();
+			binderEnvironment.merge(environment);
+			// See ConfigurationPropertySources.ATTACHED_PROPERTY_SOURCE_NAME
+			binderEnvironment.getPropertySources().remove("configurationProperties");
+			/*
+			 * Ensure that the web mode is set to NONE despite what the
+			 * parent application context says.
+			 * https://github.com/spring-cloud/spring-cloud-stream/issues/1708
+			 */
+			binderEnvironment.getPropertySources()
+				.addFirst(new MapPropertySource("defaultBinderFactoryProperties",
+					Collections.singletonMap("spring.main.web-application-type", "NONE")));
+
+			springApplicationBuilder.environment(binderEnvironment);
+		}
+
+		ConfigurableApplicationContext binderProducingContext = springApplicationBuilder
+				.run(args.toArray(new String[0]));
+		return binderProducingContext;
+	}
+
+	@SuppressWarnings("rawtypes")
+	private ConfigurableApplicationContext initializeBinderContextSimple(String configurationName, Map<String, Object> binderProperties,
+			BinderType binderType, BinderConfiguration binderConfiguration) {
+		//======= NEW CODE
+
+		AnnotationConfigApplicationContext binderProducingContext = new AnnotationConfigApplicationContext();
+
+		List<Class> sourceClasses = new ArrayList<>();
+		sourceClasses.addAll(Arrays.asList(binderType.getConfigurationClasses()));
+		if (binderProperties.containsKey("spring.main.sources")) {
+			String sources = (String) binderProperties.get("spring.main.sources");
+			if (StringUtils.hasText(sources)) {
+				Stream.of(sources.split(",")).forEach(source -> {
+					try {
+						sourceClasses.add(Thread.currentThread().getContextClassLoader().loadClass(source.trim()));
+					}
+					catch (Exception e) {
+						throw new IllegalStateException("Failed to load class " + source, e);
+					}
+				});
+			}
+		}
+
+		binderProducingContext.register(sourceClasses.toArray(new Class[] {}));
+		MapPropertySource binderPropertySource = new MapPropertySource(configurationName, binderProperties);
+		binderProducingContext.getEnvironment().getPropertySources().addFirst(binderPropertySource);
+		binderProducingContext.setDisplayName(configurationName + "_context");
+		boolean useApplicationContextAsParent = binderProperties.isEmpty()
+				&& this.context != null;
+		ConfigurableEnvironment environment = this.context != null
+				? this.context.getEnvironment() : null;
+		if (useApplicationContextAsParent) {
+			binderProducingContext.setParent(this.context);
+		}
+		else if (this.context != null) {
+			Map<String, ListenerContainerCustomizer> customizers = this.context.getBeansOfType(ListenerContainerCustomizer.class);
+			if (!CollectionUtils.isEmpty(customizers)) {
+				for (Entry<String, ListenerContainerCustomizer> customizerEntry : customizers.entrySet()) {
+					ListenerContainerCustomizer customizerWrapper = new ListenerContainerCustomizer() {
+						@SuppressWarnings("unchecked")
+						@Override
+						public void configure(Object container, String destinationName, String group) {
+							try {
+								customizerEntry.getValue().configure(container, destinationName, group);
+							}
+							catch (Exception e) {
+								logger.warn("Failed while applying ListenerContainerCustomizer. In situations when multiple "
+										+ "binders are used this is expected, since a particular customizer may not be applicable.");
+							}
+						}
+					};
+
+					((GenericApplicationContext) binderProducingContext).registerBean(customizerEntry.getKey(),
+							ListenerContainerCustomizer.class, () -> customizerWrapper);
+				}
+				GenericConversionService cs = (GenericConversionService) ((GenericApplicationContext) binderProducingContext).getBeanFactory().getConversionService();
+				if (cs != null) {
+					SpelConverter spelConverter = new SpelConverter();
+					cs.addConverter(spelConverter);
+				}
+			}
+			binderProducingContext.addApplicationListener(new ApplicationListener<ApplicationEvent>() {
+				@Override
+				public void onApplicationEvent(ApplicationEvent event) {
+					if (context != null) {
+						try {
+							context.publishEvent(event);
+						}
+						catch (Exception e) {
+							logger.warn("Failed to publish " + event, e);
+						}
+					}
+				}
+			});
+
+			if (environment != null && !useApplicationContextAsParent) {
+				InitializerWithOuterContext initializer = new InitializerWithOuterContext(this.context);
+				initializer.initialize(binderProducingContext);
+			}
+
+			if (environment != null && (useApplicationContextAsParent
+					|| binderConfiguration.isInheritEnvironment())) {
+				binderProducingContext.getEnvironment().merge(environment);
+				binderProducingContext.getEnvironment().getPropertySources().remove("configurationProperties");
+				binderProducingContext.getEnvironment().getPropertySources()
+				.addFirst(new MapPropertySource("defaultBinderFactoryProperties",
+					Collections.singletonMap("spring.main.web-application-type", "NONE")));
+			}
+		}
+		binderProducingContext.refresh();
+		return binderProducingContext;
 	}
 
 	/*
@@ -422,7 +529,7 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 	 */
 	@SuppressWarnings("unchecked")
 	private void flatten(String propertyName, Object value,
-			Map<String, String> flattenedProperties) {
+			Map<String, Object> flattenedProperties) {
 		if (value instanceof Map) {
 			((Map<Object, Object>) value).forEach((k, v) -> flatten(
 					(propertyName != null ? propertyName + "." : "") + k, v,
