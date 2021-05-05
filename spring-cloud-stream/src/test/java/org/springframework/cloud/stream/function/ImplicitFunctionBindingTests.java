@@ -286,14 +286,14 @@ public class ImplicitFunctionBindingTests {
 			inputDestination.send(inputMessage);
 			inputDestination.send(inputMessage);
 			inputDestination.send(inputMessage);
-			assertThat(new String(outputDestination.receive(2000).getPayload())).isEqualTo("HelloHelloHello");
-			assertThat(new String(outputDestination.receive(2000).getPayload())).isEqualTo("");
+			assertThat(new String(outputDestination.receive(2000, "aggregate-out-0").getPayload())).isEqualTo("HelloHelloHello");
+			assertThat(new String(outputDestination.receive(2000, "aggregate-out-0").getPayload())).isEqualTo("");
 
 			inputDestination.send(inputMessage);
 			inputDestination.send(inputMessage);
 			inputDestination.send(inputMessage);
 			inputDestination.send(inputMessage);
-			assertThat(new String(outputDestination.receive(2000).getPayload())).isEqualTo("HelloHelloHelloHello");
+			assertThat(new String(outputDestination.receive(2000, "aggregate-out-0").getPayload())).isEqualTo("HelloHelloHelloHello");
 		}
 	}
 
@@ -565,16 +565,16 @@ public class ImplicitFunctionBindingTests {
 
 			OutputDestination outputDestination = context.getBean(OutputDestination.class);
 
-			Message<byte[]> outputMessage = outputDestination.receive(2000);
+			Message<byte[]> outputMessage = outputDestination.receive(2000, "supplierfunctionA-out-0");
 			Long value = Long.parseLong(new String(outputMessage.getPayload()));
 
-			outputMessage = outputDestination.receive(5000);
+			outputMessage = outputDestination.receive(5000, "supplierfunctionA-out-0");
 			assertThat(Long.parseLong(new String(outputMessage.getPayload())) - value).isGreaterThanOrEqualTo(1000);
 
-			outputMessage = outputDestination.receive(5000);
+			outputMessage = outputDestination.receive(5000, "supplierfunctionA-out-0");
 			assertThat(Long.parseLong(new String(outputMessage.getPayload())) - value).isGreaterThanOrEqualTo(1000);
 
-			outputMessage = outputDestination.receive(5000);
+			outputMessage = outputDestination.receive(5000, "supplierfunctionA-out-0");
 			assertThat(Long.parseLong(new String(outputMessage.getPayload())) - value).isGreaterThanOrEqualTo(1000);
 		}
 	}

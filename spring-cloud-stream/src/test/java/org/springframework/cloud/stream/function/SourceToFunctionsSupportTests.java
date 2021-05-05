@@ -240,40 +240,15 @@ public class SourceToFunctionsSupportTests {
 
 			OutputDestination target = context.getBean(OutputDestination.class);
 
-			assertThat(new String(target.receive(2000).getPayload())).isEqualTo("1");
-			assertThat(new String(target.receive(2000).getPayload())).isEqualTo("2");
-			assertThat(new String(target.receive(2000).getPayload())).isEqualTo("3");
-			assertThat(new String(target.receive(2000).getPayload())).isEqualTo("4");
-			assertThat(new String(target.receive(2000).getPayload())).isEqualTo("5");
-			assertThat(new String(target.receive(2000).getPayload())).isEqualTo("6");
-
-			//assertThat(context.getBean("supplierInitializer")).isNotEqualTo(null);
+			assertThat(new String(target.receive(2000, "simpleStreamSupplier-out-0").getPayload())).isEqualTo("1");
+			assertThat(new String(target.receive(2000, "simpleStreamSupplier-out-0").getPayload())).isEqualTo("2");
+			assertThat(new String(target.receive(2000, "simpleStreamSupplier-out-0").getPayload())).isEqualTo("3");
+			assertThat(new String(target.receive(2000, "simpleStreamSupplier-out-0").getPayload())).isEqualTo("4");
+			assertThat(new String(target.receive(2000, "simpleStreamSupplier-out-0").getPayload())).isEqualTo("5");
+			assertThat(new String(target.receive(2000, "simpleStreamSupplier-out-0").getPayload())).isEqualTo("6");
 		}
 	}
 
-	@Test
-	public void testMultipleSuppliers() {
-		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
-				TestChannelBinderConfiguration.getCompleteConfiguration(FunctionsConfiguration.class,
-						MultipleSupplierConfiguration.class)).web(WebApplicationType.NONE).run(
-								"--spring.cloud.function.definition=supplier1;supplier2",
-								"--spring.jmx.enabled=false"
-//								"--spring.cloud.stream.function.bindings.supplier1-out-0=output1",
-//								"--spring.cloud.stream.function.bindings.supplier2-out-0=output2"
-								)) {
-
-			OutputDestination target = context.getBean(OutputDestination.class);
-
-//			assertThat(new String(target.receive(2000).getPayload())).isEqualTo("1");
-//			assertThat(new String(target.receive(2000).getPayload())).isEqualTo("2");
-//			assertThat(new String(target.receive(2000).getPayload())).isEqualTo("3");
-//			assertThat(new String(target.receive(2000).getPayload())).isEqualTo("4");
-//			assertThat(new String(target.receive(2000).getPayload())).isEqualTo("5");
-//			assertThat(new String(target.receive(2000).getPayload())).isEqualTo("6");
-//
-//			assertThat(context.getBean("supplierInitializer")).isNotEqualTo(null);
-		}
-	}
 
 	@EnableAutoConfiguration
 	public static class MessageFluxSupplierConfiguration {

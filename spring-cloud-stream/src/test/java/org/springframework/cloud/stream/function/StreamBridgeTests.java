@@ -16,6 +16,9 @@
 
 package org.springframework.cloud.stream.function;
 
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -55,6 +58,27 @@ public class StreamBridgeTests {
 	@Before
 	public void before() {
 		System.clearProperty("spring.cloud.function.definition");
+	}
+
+	@Test
+	public void testDelayedSend() {
+		ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration
+				.getCompleteConfiguration(ConsumerConfiguration.class, EmptyConfiguration.class))
+						.web(WebApplicationType.NONE).run(
+								"--spring.jmx.enabled=false")) {
+
+			StreamBridge bridge = context.getBean(StreamBridge.class);
+			executor.schedule(() -> bridge.send("blah", "hello foo"), 5000, TimeUnit.MILLISECONDS);
+
+			OutputDestination outputDestination = context.getBean(OutputDestination.class);
+			Message<byte[]> message = outputDestination.receive(10000, "blah");
+			assertThat(message).isNotNull();
+			assertThat(new String(message.getPayload())).isEqualTo("hello foo");
+		}
+		finally {
+			executor.shutdownNow();
+		}
 	}
 
 	@Test

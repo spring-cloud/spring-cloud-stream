@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2019 the original author or authors.
+ * Copyright 2017-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,12 +17,15 @@
 package org.springframework.cloud.stream.binder.test;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.Map;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedTransferQueue;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
+import org.springframework.integration.channel.AbstractSubscribableChannel;
 import org.springframework.messaging.Message;
 import org.springframework.util.StringUtils;
 
@@ -36,12 +39,14 @@ import org.springframework.util.StringUtils;
  */
 public class OutputDestination extends AbstractDestination {
 
-	private final Map<String, BlockingQueue<Message<byte[]>>> messageQueues = new LinkedHashMap<>();
+	private final Log log = LogFactory.getLog(OutputDestination.class);
+
+	private final ConcurrentHashMap<String, BlockingQueue<Message<byte[]>>> messageQueues = new ConcurrentHashMap<>();
 
 	public Message<byte[]> receive(long timeout, String bindingName) {
 		try {
 			bindingName = bindingName.endsWith(".destination") ? bindingName : bindingName + ".destination";
-			return this.messageQueues.get(bindingName).poll(timeout, TimeUnit.MILLISECONDS);
+			return this.outputQueue(bindingName).poll(timeout, TimeUnit.MILLISECONDS);
 		}
 		catch (InterruptedException e) {
 			Thread.currentThread().interrupt();
@@ -81,11 +86,13 @@ public class OutputDestination extends AbstractDestination {
 	 */
 	@Deprecated
 	public Message<byte[]> receive(long timeout, int bindingIndex) {
+		log.warn("!!!While 'receive(long timeout, int bindingIndex)' method may still work it is deprecated no longer supported. "
+				+ "It will be removed after 3.1.3 release. Please use 'receive(long timeout, String bindingName)'");
 		try {
 			BlockingQueue<Message<byte[]>> destinationQueue = (new ArrayList<>(this.messageQueues.values())).get(bindingIndex);
 			return destinationQueue.poll(timeout, TimeUnit.MILLISECONDS);
 		}
-		catch (InterruptedException e) {
+		catch (Exception e) {
 			Thread.currentThread().interrupt();
 		}
 		return null;
@@ -106,11 +113,13 @@ public class OutputDestination extends AbstractDestination {
 	@SuppressWarnings("unchecked")
 	@Override
 	void afterChannelIsSet(int channelIndex, String bindingName) {
-		if (!this.messageQueues.containsKey(bindingName)) {
-			BlockingQueue<Message<byte[]>> messageQueue = new LinkedTransferQueue<>();
-			this.messageQueues.put(bindingName, messageQueue);
-			this.getChannelByName(bindingName).subscribe(message -> this.messageQueues.get(bindingName).offer((Message<byte[]>) message));
+		if (((AbstractSubscribableChannel) this.getChannelByName(bindingName)).getSubscriberCount() < 1) {
+			this.getChannelByName(bindingName).subscribe(message -> this.outputQueue(bindingName).offer((Message<byte[]>) message));
 		}
 	}
 
+	private BlockingQueue<Message<byte[]>> outputQueue(String bindingName) {
+		this.messageQueues.putIfAbsent(bindingName, new LinkedTransferQueue<>());
+		return this.messageQueues.get(bindingName);
+	}
 }
