@@ -163,14 +163,22 @@ public class MessageConverterConfigurer
 			}
 			else {
 				if (environment != null && environment.containsProperty("spring.cloud.stream.rabbit.bindings." + channelName + ".producer.routing-key-expression")) {
-					FunctionCatalog catalog = this.beanFactory.getBean(FunctionCatalog.class);
-					FunctionInvocationWrapper function = catalog.lookup(this.streamFunctionProperties.getDefinition());
-					function.setSkipOutputConversion(true);
+					this.setSkipOutputConversionIfNecessary();
 					functional = false;
 				}
 				if (!functional) {
 					messageChannel.addInterceptor(new OutboundContentTypeConvertingInterceptor(contentType, this.compositeMessageConverter));
 				}
+			}
+		}
+	}
+
+	private void setSkipOutputConversionIfNecessary() {
+		FunctionCatalog catalog = this.beanFactory.getBean(FunctionCatalog.class);
+		if (catalog != null) {
+			FunctionInvocationWrapper function = catalog.lookup(this.streamFunctionProperties.getDefinition());
+			if (function != null) {
+				function.setSkipOutputConversion(true);
 			}
 		}
 	}
