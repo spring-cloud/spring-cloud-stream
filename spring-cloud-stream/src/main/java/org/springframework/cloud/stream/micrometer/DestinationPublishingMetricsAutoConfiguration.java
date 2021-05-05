@@ -43,7 +43,7 @@ import org.springframework.util.StringUtils;
  * @author Oleg Zhurakousky
  * @since 2.0
  */
-@Configuration
+@Configuration(proxyBeanMethods = false)
 @AutoConfigureBefore(SimpleMetricsExportAutoConfiguration.class)
 @AutoConfigureAfter(MetricsAutoConfiguration.class)
 @ConditionalOnClass({ Binder.class, MetricsAutoConfiguration.class })

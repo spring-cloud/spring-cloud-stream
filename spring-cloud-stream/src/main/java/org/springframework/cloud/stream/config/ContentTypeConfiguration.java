@@ -36,7 +36,7 @@ import org.springframework.messaging.converter.MessageConverter;
  * @author Artem Bilan
  * @author Oleg Zhurakousky
  */
-@Configuration
+@Configuration(proxyBeanMethods = false)
 @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
 class ContentTypeConfiguration {
 

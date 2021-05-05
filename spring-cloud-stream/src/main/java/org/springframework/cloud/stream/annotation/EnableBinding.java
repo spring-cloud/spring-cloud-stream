@@ -44,7 +44,7 @@ import org.springframework.integration.config.EnableIntegration;
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 @Inherited
-@Configuration
+@Configuration(proxyBeanMethods = false)
 @Import({ BindingBeansRegistrar.class, BinderFactoryAutoConfiguration.class })
 @EnableIntegration
 @Deprecated

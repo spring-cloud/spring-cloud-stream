@@ -46,7 +46,7 @@ import org.springframework.context.annotation.Configuration;
 @AutoConfigureBefore(EndpointAutoConfiguration.class)
 @ConditionalOnBean(BinderFactory.class)
 @AutoConfigureAfter(BindingServiceConfiguration.class)
-@Configuration
+@Configuration(proxyBeanMethods = false)
 public class BindersHealthIndicatorAutoConfiguration {
 
 	@Bean

@@ -35,7 +35,7 @@ import org.springframework.context.annotation.Configuration;
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
  */
-@Configuration
+@Configuration(proxyBeanMethods = false)
 @ConditionalOnClass(name = "org.springframework.boot.actuate.endpoint.annotation.Endpoint")
 @ConditionalOnBean(BindingService.class)
 @AutoConfigureAfter(EndpointAutoConfiguration.class)

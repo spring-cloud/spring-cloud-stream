@@ -119,7 +119,7 @@ import org.springframework.util.StringUtils;
  * @author Soby Chacko
  * @since 2.1
  */
-@Configuration
+@Configuration(proxyBeanMethods = false)
 @EnableConfigurationProperties(StreamFunctionProperties.class)
 @Import({ BindingBeansRegistrar.class, BinderFactoryAutoConfiguration.class })
 @AutoConfigureBefore(BindingServiceConfiguration.class)

@@ -34,7 +34,7 @@ import org.springframework.messaging.MessageChannel;
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
  */
-@Configuration
+@Configuration(proxyBeanMethods = false)
 @ConditionalOnBean(BindingService.class)
 @EnableConfigurationProperties(DefaultPollerProperties.class)
 public class ChannelBindingAutoConfiguration {

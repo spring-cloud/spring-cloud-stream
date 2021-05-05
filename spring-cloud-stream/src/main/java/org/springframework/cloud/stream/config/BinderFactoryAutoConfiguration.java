@@ -76,7 +76,7 @@ import org.springframework.validation.Validator;
  * @author Soby Chacko
  * @author David Harrigan
  */
-@Configuration
+@Configuration(proxyBeanMethods = false)
 @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
 @EnableConfigurationProperties({ BindingServiceProperties.class })
 @Import(ContentTypeConfiguration.class)

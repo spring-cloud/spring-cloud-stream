@@ -43,7 +43,7 @@ import org.springframework.integration.json.JsonPropertyAccessor;
  * @author Eric Bottard
  * @author Artem Bilan
  */
-@Configuration
+@Configuration(proxyBeanMethods = false)
 @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
 public class SpelExpressionConverterConfiguration {
 

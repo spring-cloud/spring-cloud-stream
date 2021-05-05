@@ -87,7 +87,7 @@ import org.springframework.util.ObjectUtils;
  * @author Soby Chacko
  */
 @SuppressWarnings("deprecation")
-@Configuration
+@Configuration(proxyBeanMethods = false)
 @EnableConfigurationProperties({ BindingServiceProperties.class,
 		SpringIntegrationProperties.class, StreamFunctionProperties.class })
 @Import({ DestinationPublishingMetricsAutoConfiguration.class,
