@@ -592,6 +592,12 @@ public class FunctionConfiguration {
 						}
 						template.send(outputChannelName, (Message<?>) result);
 					}
+					else if (function.getFunctionDefinition().equals(RoutingFunction.FUNCTION_NAME)) {
+						if (!(result instanceof Message)) {
+							result = MessageBuilder.withPayload(result).copyHeadersIfAbsent(requestMessage.getHeaders()).build();
+						}
+						streamBridge.send(RoutingFunction.FUNCTION_NAME + "-out-0", result);
+					}
 				}
 
 			};
@@ -797,7 +803,7 @@ public class FunctionConfiguration {
 								this.inputCount = 0;
 								this.outputCount = this.getOutputCount(functionType, true);
 							}
-							else if (function.isConsumer()) {
+							else if (function.isConsumer() || functionDefinition.equals(RoutingFunction.FUNCTION_NAME)) {
 								this.inputCount = FunctionTypeUtils.getInputCount(functionType);
 								this.outputCount = 0;
 							}
@@ -810,14 +816,7 @@ public class FunctionConfiguration {
 							functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(this.inputCount);
 							functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(this.outputCount);
 							functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(this.streamFunctionProperties);
-							try {
-								String name = functionDefinition + "_binding";
-								registry.registerBeanDefinition(name, functionBindableProxyDefinition);
-							}
-							catch (Exception e) {
-								e.printStackTrace();
-							}
-
+							registry.registerBeanDefinition(functionDefinition + "_binding", functionBindableProxyDefinition);
 						}
 						else {
 							logger.warn("The function definition '" + streamFunctionProperties.getDefinition() +

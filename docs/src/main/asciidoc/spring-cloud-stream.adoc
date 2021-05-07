@@ -1239,6 +1239,22 @@ public class RoutingStreamApplication {
 IMPORTANT: Passing instructions via application properties is especially important for reactive functions given that a reactive
 function is only invoked once to pass the Publisher, so access to the individual items is limited.
 
+===== Routing Function and output binding
+
+`RoutingFunction` is a `Function` and as such treated no differently than any other function. Well. . . almost.
+
+When `RoutingFunction` routes to another `Function`, its output is sent to the output binding of the `RoutingFunction` which 
+is `functionRouter-in-0` as expected. But what if `RoutingFunction` routes to a `Consumer`? In other words the result of invocation 
+of the `RoutingFunction` may not produce anything to be sent to the output binding, thus making it necessary to even have one. 
+So, we do treat `RoutingFunction` a little bit differently when we create bindings. And even though it is transparent to you as a user 
+(there is really nothing for you to do), being aware of some of the mechanics would help you understand its inner workings. 
+
+So, the rule is; 
+We never create output binding for the `RoutingFunction`, only input. So when you routing to `Consumer`, the `RoutingFunction` effectively 
+becomes as a `Consumer` by not having any output bindings. However, if `RoutingFunction` happen to route to another `Function` which produces 
+the output, the output binding for the `RoutingFunction` will be create dynamically at which point `RoutingFunction` will act as a regular `Function` 
+with regards to bindings (having both input and output bindings).
+
 ==== Routing FROM Consumer
 
 Aside from static destinations, Spring Cloud Stream lets applications send messages to dynamically bound destinations.

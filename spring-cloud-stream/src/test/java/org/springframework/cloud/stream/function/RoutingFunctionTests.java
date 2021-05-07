@@ -16,6 +16,9 @@
 
 package org.springframework.cloud.stream.function;
 
+import java.lang.reflect.Field;
+import java.util.List;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import org.junit.Before;
@@ -33,10 +36,12 @@ import org.springframework.cloud.stream.binder.test.TestChannelBinder;
 import org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
+import org.springframework.integration.channel.AbstractSubscribableChannel;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.util.MimeTypeUtils;
+import org.springframework.util.ReflectionUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -267,7 +272,8 @@ public class RoutingFunctionTests {
 					.getBean(OutputDestination.class);
 
 			Message<byte[]> inputMessage = MessageBuilder
-					.withPayload("Hello".getBytes()).build();
+					.withPayload("Hello".getBytes())
+					.build();
 			inputDestination.send(inputMessage);
 
 			Message<byte[]> outputMessage = outputDestination.receive();
@@ -297,7 +303,48 @@ public class RoutingFunctionTests {
 		}
 	}
 
+	@SuppressWarnings("unchecked")
+	@Test
+	public void testRoutingToConsumers() throws Exception {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+				TestChannelBinderConfiguration.getCompleteConfiguration(
+						RoutingConsumerConfiguration.class))
+								.web(WebApplicationType.NONE)
+								.run("--spring.jmx.enabled=false",
+										"--spring.cloud.function.routing-expression=headers['func_name']")) {
 
+			InputDestination inputDestination = context.getBean(InputDestination.class);
+			Message<byte[]> inputMessage = MessageBuilder
+					.withPayload("foo".getBytes())
+					.setHeader("func_name", "consume")
+					.build();
+			OutputDestination outputDestination = context.getBean(OutputDestination.class);
+			Field chField = ReflectionUtils.findField(outputDestination.getClass(), "channels");
+			chField.setAccessible(true);
+			List<AbstractSubscribableChannel> outputChannels = (List<AbstractSubscribableChannel>) chField.get(outputDestination);
+			assertThat(outputChannels.isEmpty());
+			inputDestination.send(inputMessage);
+			assertThat(outputChannels.isEmpty());
+			inputMessage = MessageBuilder
+					.withPayload("foo".getBytes())
+					.setHeader("func_name", "echo")
+					.build();
+			inputDestination.send(inputMessage);
+			assertThat(outputChannels.size()).isEqualTo(1);
+		}
+	}
+
+	@EnableAutoConfiguration
+	public static class RoutingConsumerConfiguration  {
+		@Bean
+		public Consumer<String> consume() {
+			return System.out::println;
+		}
+		@Bean
+		public Function<String, String> echo() {
+			return x -> x;
+		}
+	}
 
 	@EnableAutoConfiguration
 	public static class RoutingFunctionConfiguration  {
