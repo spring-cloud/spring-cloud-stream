@@ -1749,6 +1749,7 @@ assertThat(binding.isRunning()).isTrue();
 bindingsController.changeState("echo-in-0", State.STOPPED);
 //bindingsController.stop("echo-in-0") alternative way of changing state. For convenience we expose start/stop and pause/resume operations.
 assertThat(binding.isRunning()).isFalse();
+----
 
 ==== Actuator
 Since actuator and web are optional, you must first add one of the web dependencies as well as add the actuator dependency manually.
