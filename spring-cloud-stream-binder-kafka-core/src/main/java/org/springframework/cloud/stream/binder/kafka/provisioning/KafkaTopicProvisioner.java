@@ -310,9 +310,10 @@ public class KafkaTopicProvisioner implements
 					? partitions
 					: properties.getExtension().getDlqPartitions();
 			try {
+				final KafkaProducerProperties dlqProducerProperties = properties.getExtension().getDlqProducerProperties();
 				createTopicAndPartitions(adminClient, dlqTopic, dlqPartitions,
 						properties.getExtension().isAutoRebalanceEnabled(),
-						properties.getExtension().getTopic());
+						dlqProducerProperties.getTopic());
 			}
 			catch (Throwable throwable) {
 				if (throwable instanceof Error) {
