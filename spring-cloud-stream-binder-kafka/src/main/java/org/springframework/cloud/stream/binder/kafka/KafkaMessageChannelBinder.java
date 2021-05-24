@@ -709,11 +709,6 @@ public class KafkaMessageChannelBinder extends
 				if (!extendedConsumerProperties.getExtension().isAutoCommitOffset()) {
 					messageListenerContainer.getContainerProperties()
 							.setAckMode(ContainerProperties.AckMode.MANUAL);
-					messageListenerContainer.getContainerProperties().setAckOnError(false);
-				}
-				else {
-					messageListenerContainer.getContainerProperties()
-							.setAckOnError(isAutoCommitOnError(extendedConsumerProperties));
 				}
 			}
 		}
