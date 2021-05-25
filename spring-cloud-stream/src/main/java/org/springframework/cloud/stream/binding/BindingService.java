@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 the original author or authors.
+ * Copyright 2015-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,6 +43,7 @@ import org.springframework.cloud.stream.binder.PollableConsumerBinder;
 import org.springframework.cloud.stream.binder.PollableSource;
 import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
+import org.springframework.lang.Nullable;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
@@ -256,17 +257,19 @@ public class BindingService {
 			}
 		});
 	}
+
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	public <T> Binding<T> bindProducer(T output, String outputName, boolean cache) {
-		String bindingTarget = this.bindingServiceProperties
-				.getBindingDestination(outputName);
+	public <T> Binding<T> bindProducer(T output, String outputName, boolean cache, @Nullable Binder<T, ?, ProducerProperties> binder) {
+		String bindingTarget = this.bindingServiceProperties.getBindingDestination(outputName);
 		Class<?> outputClass = output.getClass();
 		if (output instanceof Advised) {
 			outputClass = Stream.of(((Advised) output).getProxiedInterfaces()).filter(c -> !c.getName().contains("org.springframework")).findFirst()
 					.orElse(outputClass);
 		}
-		Binder<T, ?, ProducerProperties> binder = (Binder<T, ?, ProducerProperties>) getBinder(
-				outputName, outputClass);
+		if (binder == null) {
+			binder = (Binder<T, ?, ProducerProperties>) getBinder(outputName, outputClass);
+		}
+
 		ProducerProperties producerProperties = this.bindingServiceProperties
 				.getProducerProperties(outputName);
 		if (binder instanceof ExtendedPropertiesBinder) {
@@ -285,6 +288,10 @@ public class BindingService {
 			this.producerBindings.put(outputName, binding);
 		}
 		return binding;
+	}
+
+	public <T> Binding<T> bindProducer(T output, String outputName, boolean cache) {
+		return this.bindProducer(output, outputName, cache, null);
 	}
 
 	public <T> Binding<T> bindProducer(T output, String outputName) {

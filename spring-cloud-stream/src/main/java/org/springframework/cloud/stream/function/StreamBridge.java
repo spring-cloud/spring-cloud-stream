@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2020 the original author or authors.
+ * Copyright 2020-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,12 +26,13 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.springframework.beans.factory.SmartInitializingSingleton;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionRegistry;
 import org.springframework.cloud.function.context.FunctionType;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
+import org.springframework.cloud.stream.binder.Binder;
+import org.springframework.cloud.stream.binder.BinderFactory;
 import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.cloud.stream.binding.BinderAwareChannelResolver.NewDestinationBindingCallback;
 import org.springframework.cloud.stream.binding.BindingService;
@@ -47,6 +48,7 @@ import org.springframework.messaging.support.ChannelInterceptor;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.MimeType;
 import org.springframework.util.MimeTypeUtils;
+import org.springframework.util.StringUtils;
 
 /**
  * A class which allows user to send data to an output binding.
@@ -85,9 +87,7 @@ public final class StreamBridge implements SmartInitializingSingleton {
 
 	private boolean initialized;
 
-
-	@Autowired
-	private BindingService bindingService;
+	private final BindingService bindingService;
 
 	/**
 	 *
@@ -100,6 +100,7 @@ public final class StreamBridge implements SmartInitializingSingleton {
 	StreamBridge(FunctionCatalog functionCatalog, FunctionRegistry functionRegistry,
 			BindingServiceProperties bindingServiceProperties, ConfigurableApplicationContext applicationContext,
 			@Nullable NewDestinationBindingCallback destinationBindingCallback) {
+		this.bindingService = applicationContext.getBean(BindingService.class);
 		this.functionCatalog = functionCatalog;
 		this.functionRegistry = functionRegistry;
 		this.applicationContext = applicationContext;
@@ -120,6 +121,11 @@ public final class StreamBridge implements SmartInitializingSingleton {
 	/**
 	 * Sends 'data' to an output binding specified by 'bindingName' argument while
 	 * using default content type to deal with output type conversion (if necessary).
+	 * For typical cases `bindingName` is configured using 'spring.cloud.stream.source' property.
+	 * However, this operation also supports sending to truly dynamic destinations. This means if the name
+	 * provided via 'bindingName' does not have a corresponding binding such name will be
+	 * treated as dynamic destination.<br>
+	 * Will use default binder. For specific binder type see {@link #send(String, String, Object)} and {@link #send(String, String, Object, MimeType)} methods.
 	 * @param bindingName the name of the output binding. That said it requires a bit of clarification.
 	 *        When using bridge.send("foo"...), the 'foo' typically represents the binding name. However
 	 *        if such binding does not exist, the new binding will be created to support dynamic destinations.
@@ -137,8 +143,8 @@ public final class StreamBridge implements SmartInitializingSingleton {
 	 * For typical cases `bindingName` is configured using 'spring.cloud.stream.source' property.
 	 * However, this operation also supports sending to truly dynamic destinations. This means if the name
 	 * provided via 'bindingName' does not have a corresponding binding such name will be
-	 * treated as dynamic destination.
-	 *
+	 * treated as dynamic destination.<br>
+	 * Will use default binder. For specific binder type see {@link #send(String, String, Object)} and {@link #send(String, String, Object, MimeType)} methods.
 	 * @param bindingName the name of the output binding. That said it requires a bit of clarification.
 	 *        When using bridge.send("foo"...), the 'foo' typically represents the binding name. However
 	 *        if such binding does not exist, the new binding will be created to support dynamic destinations.
@@ -146,13 +152,54 @@ public final class StreamBridge implements SmartInitializingSingleton {
 	 * @param outputContentType content type to be used to deal with output type conversion
 	 * @return true if data was sent successfully, otherwise false or throws an exception.
 	 */
-	@SuppressWarnings("unchecked")
 	public boolean send(String bindingName, Object data, MimeType outputContentType) {
+		return this.send(bindingName, null, data, outputContentType);
+	}
+
+	/**
+	 * Sends 'data' to an output binding specified by 'bindingName' argument while
+	 * using the content type specified by the 'outputContentType' argument to deal
+	 * with output type conversion (if necessary).
+	 * For typical cases `bindingName` is configured using 'spring.cloud.stream.source' property.
+	 * However, this operation also supports sending to truly dynamic destinations. This means if the name
+	 * provided via 'bindingName' does not have a corresponding binding such name will be
+	 * treated as dynamic destination.
+	 *
+	 * @param bindingName the name of the output binding. That said it requires a bit of clarification.
+	 *        When using bridge.send("foo"...), the 'foo' typically represents the binding name. However
+	 *        if such binding does not exist, the new binding will be created to support dynamic destinations.
+	 * @param binderType the type of the binder to use (e.g., 'kafka', 'rabbit') for cases where multiple binders are used. Can be null.
+	 * @param data the data to send
+	 * @return true if data was sent successfully, otherwise false or throws an exception.
+	 */
+	public boolean send(String bindingName, @Nullable String binderType, Object data) {
+		return this.send(bindingName, binderType, data, MimeTypeUtils.APPLICATION_JSON);
+	}
+
+	/**
+	 * Sends 'data' to an output binding specified by 'bindingName' argument while
+	 * using the content type specified by the 'outputContentType' argument to deal
+	 * with output type conversion (if necessary).
+	 * For typical cases `bindingName` is configured using 'spring.cloud.stream.source' property.
+	 * However, this operation also supports sending to truly dynamic destinations. This means if the name
+	 * provided via 'bindingName' does not have a corresponding binding such name will be
+	 * treated as dynamic destination.
+	 *
+	 * @param bindingName the name of the output binding. That said it requires a bit of clarification.
+	 *        When using bridge.send("foo"...), the 'foo' typically represents the binding name. However
+	 *        if such binding does not exist, the new binding will be created to support dynamic destinations.
+	 * @param binderType the type of the binder to use (e.g., 'kafka', 'rabbit') for cases where multiple binders are used. Can be null.
+	 * @param data the data to send
+	 * @param outputContentType content type to be used to deal with output type conversion
+	 * @return true if data was sent successfully, otherwise false or throws an exception.
+	 */
+	@SuppressWarnings("unchecked")
+	public boolean send(String bindingName, @Nullable String binderType, Object data, MimeType outputContentType) {
 		if (!(data instanceof Message)) {
 			data = MessageBuilder.withPayload(data).build();
 		}
 		ProducerProperties producerProperties = this.bindingServiceProperties.getProducerProperties(bindingName);
-		SubscribableChannel messageChannel = this.resolveDestination(bindingName, producerProperties);
+		SubscribableChannel messageChannel = this.resolveDestination(bindingName, producerProperties, binderType);
 
 		boolean skipConversion = producerProperties.isUseNativeEncoding();
 
@@ -184,8 +231,8 @@ public final class StreamBridge implements SmartInitializingSingleton {
 		this.initialized = true;
 	}
 
-	@SuppressWarnings("unchecked")
-	synchronized SubscribableChannel resolveDestination(String destinationName, ProducerProperties producerProperties) {
+	@SuppressWarnings({ "unchecked", "rawtypes"})
+	synchronized SubscribableChannel resolveDestination(String destinationName, ProducerProperties producerProperties, String binderName) {
 		SubscribableChannel messageChannel = this.channelCache.get(destinationName);
 		if (messageChannel == null && this.applicationContext.containsBean(destinationName)) {
 			messageChannel = this.applicationContext.getBean(destinationName, SubscribableChannel.class);
@@ -200,7 +247,13 @@ public final class StreamBridge implements SmartInitializingSingleton {
 						producerProperties, extendedProducerProperties);
 			}
 
-			this.bindingService.bindProducer(messageChannel, destinationName, false);
+			Binder binder = null;
+			if (StringUtils.hasText(binderName)) {
+				BinderFactory binderFactory = this.applicationContext.getBean(BinderFactory.class);
+				binder = binderFactory.getBinder(binderName, messageChannel.getClass());
+			}
+
+			this.bindingService.bindProducer(messageChannel, destinationName, false, binder);
 			this.channelCache.put(destinationName, messageChannel);
 			this.addInterceptors((AbstractMessageChannel) messageChannel);
 		}

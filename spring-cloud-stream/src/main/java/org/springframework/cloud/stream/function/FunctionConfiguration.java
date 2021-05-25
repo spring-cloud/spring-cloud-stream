@@ -233,7 +233,7 @@ public class FunctionConfiguration {
 										.route(Message.class, message -> {
 											if (message.getHeaders().get("spring.cloud.stream.sendto.destination") != null) {
 												String destinationName = (String) message.getHeaders().get("spring.cloud.stream.sendto.destination");
-												return streamBridge.resolveDestination(destinationName, producerProperties);
+												return streamBridge.resolveDestination(destinationName, producerProperties, null);
 											}
 											return outputName;
 										}).get();
@@ -250,7 +250,7 @@ public class FunctionConfiguration {
 										.route(Message.class, message -> {
 											if (message.getHeaders().get("spring.cloud.stream.sendto.destination") != null) {
 												String destinationName = (String) message.getHeaders().get("spring.cloud.stream.sendto.destination");
-												return streamBridge.resolveDestination(destinationName, producerProperties);
+												return streamBridge.resolveDestination(destinationName, producerProperties, null);
 											}
 											return outputName;
 										})
@@ -503,7 +503,7 @@ public class FunctionConfiguration {
 							if (message instanceof Message && ((Message<?>) message).getHeaders().get("spring.cloud.stream.sendto.destination") != null) {
 								String destinationName = (String) ((Message<?>) message).getHeaders().get("spring.cloud.stream.sendto.destination");
 								ProducerProperties producerProperties = this.serviceProperties.getBindings().get(outputBindingNames.iterator().next()).getProducer();
-								MessageChannel dynamicChannel = streamBridge.resolveDestination(destinationName, producerProperties);
+								MessageChannel dynamicChannel = streamBridge.resolveDestination(destinationName, producerProperties, null);
 								if (logger.isInfoEnabled()) {
 									logger.info("Output message is sent to '" + destinationName + "' destination");
 								}
@@ -580,7 +580,7 @@ public class FunctionConfiguration {
 				private void doSendMessage(Object result, Message<?> requestMessage) {
 					if (result instanceof Message && ((Message<?>) result).getHeaders().get("spring.cloud.stream.sendto.destination") != null) {
 						String destinationName = (String) ((Message<?>) result).getHeaders().get("spring.cloud.stream.sendto.destination");
-						SubscribableChannel outputChannel = streamBridge.resolveDestination(destinationName, producerProperties);
+						SubscribableChannel outputChannel = streamBridge.resolveDestination(destinationName, producerProperties, null);
 						if (logger.isInfoEnabled()) {
 							logger.info("Output message is sent to '" + destinationName + "' destination");
 						}

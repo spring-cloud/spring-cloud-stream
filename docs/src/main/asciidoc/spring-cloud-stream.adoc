@@ -683,7 +683,6 @@ public class WebSourceApplication {
 	@RequestMapping
 	@ResponseStatus(HttpStatus.ACCEPTED)
 	public void delegateToSupplier(@RequestBody String body) {
-		//processor.onNext(body);
 		streamBridge.send("myBinidng", body);
 	}
 }
@@ -697,6 +696,32 @@ curl -H "Content-Type: text/plain" -X POST -d "hello from the other side" http:/
 ----
 
 By showing two example we want to emphasize the approach will work with any type of foreign sources.
+
+====== Output Content Type with StreamBridge
+
+You can also provide specific content type if necessary with the following method signature `public boolean send(String bindingName, Object data, MimeType outputContentType)`.
+Or if you send data as a `Message`, its content type will be honored.
+
+====== Using specific binder type with StreamBridge
+
+Spring Cloud Stream supports multiple binder scenarios. For example you may be receiving data from Kafka and sending it to RabbitMQ.
+
+For more information on multiple binders scenarios, please see <<Binders>> section and specifically <<Multiple Binders on the Classpath>>
+
+In the event you are planning to use StreamBridge and have more then one binder configured in your application you must also tell StreamBridge 
+which binder to use. And for that there are two more variations of `send` method:
+
+[source, java]
+----
+public boolean send(String bindingName, @Nullable String binderType, Object data) 
+
+public boolean send(String bindingName, @Nullable String binderType, Object data, MimeType outputContentType)
+----
+
+As you can see there is one additional argument that you can provide - `binderType`, telling BindingService which binder to use when creating dynamic binding. 
+
+NOTE: For cases where `spring.cloud.stream.source` property is used or the binding was already created under different binder, the `binderType` 
+argument will have no effect.
 
 ===== Reactive Functions support
 
