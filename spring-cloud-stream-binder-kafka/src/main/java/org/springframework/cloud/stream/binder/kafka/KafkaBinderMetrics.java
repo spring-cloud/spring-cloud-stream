@@ -26,6 +26,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -92,9 +93,9 @@ public class KafkaBinderMetrics
 	Map<String, Long> unconsumedMessages = new ConcurrentHashMap<>();
 
 	public KafkaBinderMetrics(KafkaMessageChannelBinder binder,
-			KafkaBinderConfigurationProperties binderConfigurationProperties,
-			ConsumerFactory<?, ?> defaultConsumerFactory,
-			@Nullable MeterRegistry meterRegistry) {
+							KafkaBinderConfigurationProperties binderConfigurationProperties,
+							ConsumerFactory<?, ?> defaultConsumerFactory,
+							@Nullable MeterRegistry meterRegistry) {
 
 		this.binder = binder;
 		this.binderConfigurationProperties = binderConfigurationProperties;
@@ -104,7 +105,7 @@ public class KafkaBinderMetrics
 	}
 
 	public KafkaBinderMetrics(KafkaMessageChannelBinder binder,
-			KafkaBinderConfigurationProperties binderConfigurationProperties) {
+							KafkaBinderConfigurationProperties binderConfigurationProperties) {
 
 		this(binder, binderConfigurationProperties, null, null);
 	}
@@ -115,6 +116,15 @@ public class KafkaBinderMetrics
 
 	@Override
 	public void bindTo(MeterRegistry registry) {
+		/**
+		 * We can't just replace one scheduler with another.
+		 * Before and even after the old one is gathered by GC, it's threads still exist, consume memory and CPU resources to switch contexts.
+		 * Theoretically, as a result of processing n topics, there will be about (1+n)*n/2 threads simultaneously at the same time.
+		 */
+		if (this.scheduler != null) {
+			LOG.info("Try to shutdown the old scheduler with " + ((ScheduledThreadPoolExecutor) scheduler).getPoolSize() + " threads");
+			this.scheduler.shutdown();
+		}
 
 		this.scheduler = Executors.newScheduledThreadPool(this.binder.getTopicsInUse().size());
 
@@ -210,7 +220,7 @@ public class KafkaBinderMetrics
 		return lag;
 	}
 
-	private synchronized  ConsumerFactory<?, ?> createConsumerFactory() {
+	private synchronized ConsumerFactory<?, ?> createConsumerFactory() {
 		if (this.defaultConsumerFactory == null) {
 			Map<String, Object> props = new HashMap<>();
 			props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG,
