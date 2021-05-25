@@ -1740,13 +1740,13 @@ Here is an example of providing a `BinderCustomizer` bean.
 public BinderCustomizer binderCustomizer() {
     return (binder, binderName) -> {
         if (binder instanceof KafkaMessageChannelBinder) {
-            ((KafkaMessageChannelBinder) binder).setRebalanceListener(/*...*/);
+            ((KafkaMessageChannelBinder) binder).setRebalanceListener(...);
         }
         else if (binder instanceof KStreamBinder) {
-            // ...
+            ...
         }
         else if (binder instanceof RabbitMessageChannelBinder) {
-            // ...
+            ...
         }
     };
 }
