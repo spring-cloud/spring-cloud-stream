@@ -986,6 +986,30 @@ public Function<List<Person>, Person> findFirstPerson() {
 }
 ----
 
+===== Batch Producers
+
+You can also use the concept of batching on the producer side by returning a collection of Messages which effectively provides an 
+inverse effect where each message in the collection will be sent individually by the binder.
+
+Consider the following function:
+
+[source, java]
+----
+@Bean
+public Function<String, List<Message<String>>> batch() {
+	return p -> {
+		List<Message<String>> list = new ArrayList<>();
+		list.add(MessageBuilder.withPayload(p + ":1").build());
+		list.add(MessageBuilder.withPayload(p + ":2").build());
+		list.add(MessageBuilder.withPayload(p + ":3").build());
+		list.add(MessageBuilder.withPayload(p + ":4").build());
+		return list;
+	};
+}
+----
+
+Each message in the returned list will be sent individually resulting in four messages sent to output destination. 
+
 ===== Spring Integration flow as functions
 When you implement a function, you may have complex requirements that fit the category
 of https://www.enterpriseintegrationpatterns.com[Enterprise Integration Patterns] (EIP). These are best handled by using a
