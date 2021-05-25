@@ -335,28 +335,6 @@ where you are clearly correlating the input of `uppercase` function to `sample-t
 
 For more on properties and other configuration options please see <<Configuration Options>> section.
 
-
-*Pollable Destination Binding*
-
-While the previously described bindings support event-based message consumption, sometimes you need more control, such as rate of consumption.
-
-Starting with version 2.0, you can now bind a pollable consumer:
-
-The following example shows how to bind a pollable consumer:
-
-[source, java]
-----
-public interface PolledBarista {
-
-    @Input
-    PollableMessageSource orders();
-	. . .
-}
-----
-
-In this case, an implementation of `PollableMessageSource` is bound to the `orders` “channel”. See <<Using Polled Consumers>> for more details.
-
-
 [[spring-cloud-stream-overview-producing-consuming-messages]]
 === Producing and Consuming Messages
 
