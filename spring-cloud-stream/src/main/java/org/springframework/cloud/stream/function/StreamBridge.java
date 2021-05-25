@@ -168,12 +168,12 @@ public final class StreamBridge implements SmartInitializingSingleton {
 	 * @param bindingName the name of the output binding. That said it requires a bit of clarification.
 	 *        When using bridge.send("foo"...), the 'foo' typically represents the binding name. However
 	 *        if such binding does not exist, the new binding will be created to support dynamic destinations.
-	 * @param binderType the type of the binder to use (e.g., 'kafka', 'rabbit') for cases where multiple binders are used. Can be null.
+	 * @param binderName the name of the binder to use (e.g., 'kafka', 'rabbit') for cases where multiple binders are used. Can be null.
 	 * @param data the data to send
 	 * @return true if data was sent successfully, otherwise false or throws an exception.
 	 */
-	public boolean send(String bindingName, @Nullable String binderType, Object data) {
-		return this.send(bindingName, binderType, data, MimeTypeUtils.APPLICATION_JSON);
+	public boolean send(String bindingName, @Nullable String binderName, Object data) {
+		return this.send(bindingName, binderName, data, MimeTypeUtils.APPLICATION_JSON);
 	}
 
 	/**
@@ -188,18 +188,18 @@ public final class StreamBridge implements SmartInitializingSingleton {
 	 * @param bindingName the name of the output binding. That said it requires a bit of clarification.
 	 *        When using bridge.send("foo"...), the 'foo' typically represents the binding name. However
 	 *        if such binding does not exist, the new binding will be created to support dynamic destinations.
-	 * @param binderType the type of the binder to use (e.g., 'kafka', 'rabbit') for cases where multiple binders are used. Can be null.
+	 * @param binderName the name of the binder to use (e.g., 'kafka', 'rabbit') for cases where multiple binders are used. Can be null.
 	 * @param data the data to send
 	 * @param outputContentType content type to be used to deal with output type conversion
 	 * @return true if data was sent successfully, otherwise false or throws an exception.
 	 */
 	@SuppressWarnings("unchecked")
-	public boolean send(String bindingName, @Nullable String binderType, Object data, MimeType outputContentType) {
+	public boolean send(String bindingName, @Nullable String binderName, Object data, MimeType outputContentType) {
 		if (!(data instanceof Message)) {
 			data = MessageBuilder.withPayload(data).build();
 		}
 		ProducerProperties producerProperties = this.bindingServiceProperties.getProducerProperties(bindingName);
-		SubscribableChannel messageChannel = this.resolveDestination(bindingName, producerProperties, binderType);
+		SubscribableChannel messageChannel = this.resolveDestination(bindingName, producerProperties, binderName);
 
 		boolean skipConversion = producerProperties.isUseNativeEncoding();
 
