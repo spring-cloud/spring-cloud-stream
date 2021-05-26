@@ -1,0 +1,231 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>org.springframework.cloud</groupId>
+    <artifactId>spring-cloud-dependencies-parent</artifactId>
+    <version>3.0.3</version>
+    <relativePath></relativePath>
+  </parent>
+  <groupId>org.springframework.cloud</groupId>
+  <artifactId>spring-cloud-stream-dependencies</artifactId>
+  <version>3.1.3</version>
+  <packaging>pom</packaging>
+  <name>spring-cloud-stream-dependencies</name>
+  <description>Spring Cloud Stream Dependencies</description>
+  <url>https://projects.spring.io/spring-cloud/spring-cloud-stream-dependencies/</url>
+  <organization>
+    <name>Pivotal Software, Inc.</name>
+    <url>https://www.spring.io</url>
+  </organization>
+  <licenses>
+    <license>
+      <name>Apache License, Version 2.0</name>
+      <url>https://www.apache.org/licenses/LICENSE-2.0</url>
+      <comments>Copyright 2014-2015 the original author or authors.
+
+				Licensed under the Apache License, Version 2.0 (the "License");
+				you may not use this file except in compliance with the License.
+				You may obtain a copy of the License at
+
+				https://www.apache.org/licenses/LICENSE-2.0
+
+				Unless required by applicable law or agreed to in writing, software
+				distributed under the License is distributed on an "AS IS" BASIS,
+				WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+				implied.
+
+				See the License for the specific language governing permissions and
+				limitations under the License.</comments>
+    </license>
+  </licenses>
+  <developers>
+    <developer>
+      <id>dsyer</id>
+      <name>Dave Syer</name>
+      <email>dsyer at pivotal.io</email>
+      <organization>Pivotal Software, Inc.</organization>
+      <organizationUrl>https://www.spring.io</organizationUrl>
+      <roles>
+        <role>Project lead</role>
+      </roles>
+    </developer>
+    <developer>
+      <id>sgibb</id>
+      <name>Spencer Gibb</name>
+      <email>sgibb at pivotal.io</email>
+      <organization>Pivotal Software, Inc.</organization>
+      <organizationUrl>https://www.spring.io</organizationUrl>
+      <roles>
+        <role>Project lead</role>
+      </roles>
+    </developer>
+  </developers>
+  <scm>
+    <connection>scm:git:git://github.com/spring-cloud/spring-cloud-build.git/spring-cloud-stream-dependencies</connection>
+    <developerConnection>scm:git:ssh://git@github.com/spring-cloud/spring-cloud-build.git/spring-cloud-stream-dependencies</developerConnection>
+    <url>https://github.com/spring-cloud/spring-cloud-build/spring-cloud-stream-dependencies</url>
+  </scm>
+  <distributionManagement>
+    <repository>
+      <id>repo.spring.io</id>
+      <name>Spring Release Repository</name>
+      <url>https://repo.spring.io/libs-release-local</url>
+    </repository>
+    <snapshotRepository>
+      <id>repo.spring.io</id>
+      <name>Spring Snapshot Repository</name>
+      <url>https://repo.spring.io/libs-snapshot-local</url>
+    </snapshotRepository>
+    <site>
+      <id>spring-docs</id>
+      <url>scp://static.springframework.org/var/www/domains/springframework.org/static/htdocs/spring-cloud/docs/spring-cloud-dependencies-parent/3.0.3/spring-cloud-stream-dependencies</url>
+    </site>
+    <downloadUrl>https://github.com/spring-cloud</downloadUrl>
+  </distributionManagement>
+  <properties>
+    <spring-cloud-stream-dependencies.version>3.1.3</spring-cloud-stream-dependencies.version>
+    <spring-cloud-stream-binder-rabbit.version>3.1.3</spring-cloud-stream-binder-rabbit.version>
+    <spring-cloud-stream-binder-kafka.version>3.1.3</spring-cloud-stream-binder-kafka.version>
+    <spring-cloud-schema-registry.version>1.1.3</spring-cloud-schema-registry.version>
+    <spring-cloud-stream.version>3.1.3</spring-cloud-stream.version>
+  </properties>
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>org.springframework.cloud</groupId>
+        <artifactId>spring-cloud-stream</artifactId>
+        <version>${spring-cloud-stream.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.springframework.cloud</groupId>
+        <artifactId>spring-cloud-stream</artifactId>
+        <version>${spring-cloud-stream.version}</version>
+        <type>test-jar</type>
+        <classifier>test-binder</classifier>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.springframework.cloud</groupId>
+        <artifactId>spring-cloud-stream-binder-test</artifactId>
+        <version>${spring-cloud-stream.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.springframework.cloud</groupId>
+        <artifactId>spring-cloud-schema-registry-core</artifactId>
+        <version>${spring-cloud-schema-registry.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.springframework.cloud</groupId>
+        <artifactId>spring-cloud-schema-registry-server</artifactId>
+        <version>${spring-cloud-schema-registry.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.springframework.cloud</groupId>
+        <artifactId>spring-cloud-schema-registry-client</artifactId>
+        <version>${spring-cloud-schema-registry.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.springframework.cloud</groupId>
+        <artifactId>spring-cloud-stream-test-support</artifactId>
+        <version>${spring-cloud-stream.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.springframework.cloud</groupId>
+        <artifactId>spring-cloud-stream-binder-kafka</artifactId>
+        <version>${spring-cloud-stream-binder-kafka.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.springframework.cloud</groupId>
+        <artifactId>spring-cloud-stream-binder-kafka-streams</artifactId>
+        <version>${spring-cloud-stream-binder-kafka.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.springframework.cloud</groupId>
+        <artifactId>spring-cloud-stream-binder-kafka-core</artifactId>
+        <version>${spring-cloud-stream-binder-kafka.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.springframework.cloud</groupId>
+        <artifactId>spring-cloud-starter-stream-kafka</artifactId>
+        <version>${spring-cloud-stream-binder-kafka.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.springframework.cloud</groupId>
+        <artifactId>spring-cloud-stream-binder-rabbit</artifactId>
+        <version>${spring-cloud-stream-binder-rabbit.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.springframework.cloud</groupId>
+        <artifactId>spring-cloud-stream-binder-rabbit-core</artifactId>
+        <version>${spring-cloud-stream-binder-rabbit.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.springframework.cloud</groupId>
+        <artifactId>spring-cloud-starter-stream-rabbit</artifactId>
+        <version>${spring-cloud-stream-binder-rabbit.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.springframework.cloud</groupId>
+        <artifactId>spring-cloud-stream-binder-rabbit-test-support</artifactId>
+        <version>${spring-cloud-stream-binder-rabbit.version}</version>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+  <profiles>
+    <profile>
+      <id>spring</id>
+      <repositories>
+        <repository>
+          <releases>
+            <enabled>false</enabled>
+          </releases>
+          <snapshots>
+            <enabled>true</enabled>
+          </snapshots>
+          <id>spring-snapshots</id>
+          <name>Spring Snapshots</name>
+          <url>https://repo.spring.io/libs-snapshot-local</url>
+        </repository>
+        <repository>
+          <snapshots>
+            <enabled>false</enabled>
+          </snapshots>
+          <id>spring-milestones</id>
+          <name>Spring Milestones</name>
+          <url>https://repo.spring.io/libs-milestone-local</url>
+        </repository>
+        <repository>
+          <snapshots>
+            <enabled>false</enabled>
+          </snapshots>
+          <id>spring-releases</id>
+          <name>Spring Releases</name>
+          <url>https://repo.spring.io/release</url>
+        </repository>
+      </repositories>
+      <pluginRepositories>
+        <pluginRepository>
+          <releases>
+            <enabled>false</enabled>
+          </releases>
+          <snapshots>
+            <enabled>true</enabled>
+          </snapshots>
+          <id>spring-snapshots</id>
+          <name>Spring Snapshots</name>
+          <url>https://repo.spring.io/libs-snapshot-local</url>
+        </pluginRepository>
+        <pluginRepository>
+          <snapshots>
+            <enabled>false</enabled>
+          </snapshots>
+          <id>spring-milestones</id>
+          <name>Spring Milestones</name>
+          <url>https://repo.spring.io/libs-milestone-local</url>
+        </pluginRepository>
+      </pluginRepositories>
+    </profile>
+  </profiles>
+</project>
