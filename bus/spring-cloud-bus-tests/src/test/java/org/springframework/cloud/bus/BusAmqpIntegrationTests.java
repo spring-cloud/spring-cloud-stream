@@ -33,6 +33,8 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cloud.bus.event.EnvironmentChangeRemoteApplicationEvent;
+import org.springframework.cloud.stream.binder.ProducerProperties;
+import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.test.context.DynamicPropertyRegistry;
@@ -43,6 +45,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 
 @SpringBootTest(webEnvironment = RANDOM_PORT, properties = { "management.endpoints.web.exposure.include=*",
+		"spring.cloud.stream.bindings.springCloudBusOutput.producer.errorChannelEnabled=true",
 		"logging.level.org.springframework.cloud.bus=TRACE", "spring.cloud.bus.id=app:1",
 		"spring.autoconfigure.exclude=org.springframework.cloud.stream.test.binder.TestSupportBinderAutoConfiguration" })
 @Testcontainers
@@ -52,6 +55,9 @@ public class BusAmqpIntegrationTests {
 	private static final RabbitMQContainer rabbitMQContainer = new RabbitMQContainer();
 
 	private static ConfigurableApplicationContext context;
+
+	@Autowired
+	private BindingServiceProperties bindingServiceProperties;
 
 	@DynamicPropertySource
 	static void properties(DynamicPropertyRegistry registry) {
@@ -87,6 +93,8 @@ public class BusAmqpIntegrationTests {
 		TestConfig remoteTestConfig = context.getBean(TestConfig.class);
 		assertThat(remoteTestConfig.latch.await(5, TimeUnit.SECONDS)).isTrue();
 		assertThat(testConfig.latch.await(5, TimeUnit.SECONDS)).isTrue();
+		ProducerProperties producerProperties = bindingServiceProperties.getProducerProperties(BusConstants.OUTPUT);
+		assertThat(producerProperties.isErrorChannelEnabled()).isTrue();
 	}
 
 	@SpringBootConfiguration

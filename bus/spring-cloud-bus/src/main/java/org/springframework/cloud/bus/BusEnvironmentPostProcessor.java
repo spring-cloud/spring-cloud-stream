@@ -70,6 +70,7 @@ public class BusEnvironmentPostProcessor implements EnvironmentPostProcessor {
 				BusConstants.INPUT);
 		String destination = environment.getProperty(PREFIX + ".destination", BusConstants.DESTINATION);
 		defaults.put("spring.cloud.stream.bindings." + BusConstants.INPUT + ".destination", destination);
+		defaults.put("spring.cloud.stream.bindings." + BusConstants.OUTPUT + ".destination", destination);
 		if (!environment.containsProperty(PREFIX + ".id")) {
 			defaults.put(PREFIX + ".id", IdUtils.getUnresolvedServiceId());
 		}

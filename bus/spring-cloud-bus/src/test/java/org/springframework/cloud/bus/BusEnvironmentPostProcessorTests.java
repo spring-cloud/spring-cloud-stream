@@ -27,6 +27,7 @@ import static org.mockito.Mockito.mock;
 import static org.springframework.cloud.bus.BusConstants.BUS_CONSUMER;
 import static org.springframework.cloud.bus.BusConstants.DESTINATION;
 import static org.springframework.cloud.bus.BusConstants.INPUT;
+import static org.springframework.cloud.bus.BusConstants.OUTPUT;
 import static org.springframework.cloud.bus.BusEnvironmentPostProcessor.DEFAULTS_PROPERTY_SOURCE_NAME;
 import static org.springframework.cloud.bus.BusEnvironmentPostProcessor.OVERRIDES_PROPERTY_SOURCE_NAME;
 
@@ -39,6 +40,7 @@ public class BusEnvironmentPostProcessorTests {
 		assertThat(env.getProperty(FunctionProperties.PREFIX + ".definition")).isEqualTo(BUS_CONSUMER);
 		assertThat(env.getProperty("spring.cloud.stream.function.bindings." + BUS_CONSUMER + "-in-0")).isEqualTo(INPUT);
 		assertThat(env.getProperty("spring.cloud.stream.bindings." + INPUT + ".destination")).isEqualTo(DESTINATION);
+		assertThat(env.getProperty("spring.cloud.stream.bindings." + OUTPUT + ".destination")).isEqualTo(DESTINATION);
 		assertThat(env.getProperty(BusProperties.PREFIX + ".id")).isNotBlank();
 		assertThat(env.getPropertySources().contains(OVERRIDES_PROPERTY_SOURCE_NAME));
 		assertThat(env.getPropertySources().contains(DEFAULTS_PROPERTY_SOURCE_NAME));
@@ -55,6 +57,8 @@ public class BusEnvironmentPostProcessorTests {
 		assertThat(env.getProperty(fnDefKey)).isEqualTo("uppercase;" + BUS_CONSUMER);
 		assertThat(env.getProperty("spring.cloud.stream.function.bindings." + BUS_CONSUMER + "-in-0")).isEqualTo(INPUT);
 		assertThat(env.getProperty("spring.cloud.stream.bindings." + INPUT + ".destination"))
+				.isEqualTo("mydestination");
+		assertThat(env.getProperty("spring.cloud.stream.bindings." + OUTPUT + ".destination"))
 				.isEqualTo("mydestination");
 		assertThat(env.getProperty(idKey)).isEqualTo("app:1");
 		assertThat(env.getPropertySources().contains(OVERRIDES_PROPERTY_SOURCE_NAME));

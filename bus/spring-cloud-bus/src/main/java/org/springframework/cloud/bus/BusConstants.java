@@ -33,7 +33,7 @@ public abstract class BusConstants {
 	public static final String OUTPUT = "springCloudBusOutput";
 
 	/**
-	 * Name of the output channel for Spring Cloud Bus.
+	 * Name of the binding destination for Spring Cloud Bus.
 	 */
 	public static final String DESTINATION = "springCloudBus";
 
