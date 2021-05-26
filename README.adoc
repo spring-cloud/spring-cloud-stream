@@ -977,17 +977,18 @@ public class Application {
                     if (correlation.getReturnedMessage() != null) {
                         log.error("Message for " + correlation.getPayload() + " was returned ");
 
-                        // throw some exception to invoke binder retry/error handling
+                        // try to re-publish, send a DLQ, etc
 
                     }
                 }
                 catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
-                    throw new IllegalStateException(e);
+                    e.printStackTrace();
                 }
                 catch (ExecutionException | TimeoutException e) {
-                    throw new IllegalStateException(e);
+                    e.printStackTrace();
                 }
+            });
         };
     }
 
@@ -1043,7 +1044,7 @@ There are a number of rabbit-specific binding properties that allow you to modif
 
 If you have an existing exchange/queue that you wish to use, you can completely disable automatic provisioning as follows, assuming the exchange is named `myExchange` and the queue is named `myQueue`:
 
-* `spring.cloud.stream.bindings.<binding name>.destination=myExchange`
+* `spring.cloud.stream.bindings.<binding name>.destination=myExhange`
 * `spring.cloud.stream.bindings.<binding name>.group=myQueue`
 * `spring.cloud.stream.rabbit.bindings.<binding name>.consumer.bindQueue=false`
 * `spring.cloud.stream.rabbit.bindings.<binding name>.consumer.declareExchange=false`
