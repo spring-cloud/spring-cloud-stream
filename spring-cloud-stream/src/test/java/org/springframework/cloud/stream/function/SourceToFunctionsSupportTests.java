@@ -23,6 +23,7 @@ import java.util.function.Supplier;
 
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.rules.ExpectedException;
 import reactor.core.publisher.Flux;
 
@@ -55,6 +56,11 @@ public class SourceToFunctionsSupportTests {
 
 	@Rule
 	public ExpectedException expectedException = ExpectedException.none();
+
+	@BeforeEach
+	public void before() {
+		System.clearProperty("spring.cloud.stream.function.definition");
+	}
 
 	@Test
 	public void testFunctionIsAppliedToExistingMessageSource() {
