@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2019 the original author or authors.
+ * Copyright 2016-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -121,7 +121,6 @@ import org.springframework.kafka.core.ProducerFactory;
 import org.springframework.kafka.listener.AbstractMessageListenerContainer;
 import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;
 import org.springframework.kafka.listener.ContainerProperties;
-import org.springframework.kafka.listener.MessageListenerContainer;
 import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.kafka.support.KafkaHeaderMapper;
 import org.springframework.kafka.support.KafkaHeaders;
@@ -1049,10 +1048,16 @@ public class KafkaBinderTests extends
 		Binding<MessageChannel> consumerBinding = binder.bindConsumer(consumerDest,
 				"testGroup", moduleInputChannel, consumerProperties);
 
-		MessageListenerContainer container = TestUtils.getPropertyValue(consumerBinding,
-				"lifecycle.messageListenerContainer", MessageListenerContainer.class);
+		AbstractMessageListenerContainer container = TestUtils.getPropertyValue(consumerBinding,
+				"lifecycle.messageListenerContainer", AbstractMessageListenerContainer.class);
 		assertThat(container.getContainerProperties().getTopicPartitionsToAssign().length)
 				.isEqualTo(4); // 2 topics 2 partitions each
+		if (transactional) {
+			assertThat(TestUtils.getPropertyValue(container.getAfterRollbackProcessor(), "kafkaTemplate")).isNotNull();
+			assertThat(
+					TestUtils.getPropertyValue(container.getAfterRollbackProcessor(), "commitRecovered", Boolean.class))
+							.isTrue();
+		}
 
 		String dlqTopic = useDlqDestResolver ? "foo.dlq" : "error.dlqTest." + uniqueBindingId + ".0.testGroup";
 		try (AdminClient admin = AdminClient.create(Collections.singletonMap(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG,
@@ -1074,6 +1079,7 @@ public class KafkaBinderTests extends
 		ExtendedConsumerProperties<KafkaConsumerProperties> dlqConsumerProperties = createConsumerProperties();
 		dlqConsumerProperties.setMaxAttempts(1);
 		dlqConsumerProperties.setHeaderMode(headerMode);
+		dlqConsumerProperties.getExtension().setTxCommitRecovered(false);
 
 		ApplicationContext context = TestUtils.getPropertyValue(binder.getBinder(),
 				"applicationContext", ApplicationContext.class);
@@ -1098,6 +1104,15 @@ public class KafkaBinderTests extends
 				dlqTopic, null, dlqChannel,
 				dlqConsumerProperties);
 		binderBindUnbindLatency();
+		if (transactional) {
+			assertThat(TestUtils.getPropertyValue(dlqConsumerBinding,
+					"lifecycle.messageListenerContainer.afterRollbackProcessor.kafkaTemplate")).isNotNull();
+			assertThat(
+					TestUtils.getPropertyValue(dlqConsumerBinding,
+							"lifecycle.messageListenerContainer.afterRollbackProcessor.commitRecovered", Boolean.class))
+							.isFalse();
+		}
+
 		String testMessagePayload = "test." + UUID.randomUUID().toString();
 		Message<byte[]> testMessage = MessageBuilder
 				.withPayload(testMessagePayload.getBytes())

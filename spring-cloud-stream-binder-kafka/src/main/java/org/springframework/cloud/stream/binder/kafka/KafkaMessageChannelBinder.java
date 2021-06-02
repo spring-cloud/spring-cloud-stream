@@ -766,7 +766,9 @@ public class KafkaMessageChannelBinder extends
 								throw e;
 							}
 						}
-					}, createBackOff(extendedConsumerProperties)));
+					}, createBackOff(extendedConsumerProperties),
+					new KafkaTemplate<>(transMan.getProducerFactory()),
+					extendedConsumerProperties.getExtension().isTxCommitRecovered()));
 		}
 		else {
 			kafkaMessageDrivenChannelAdapter.setErrorChannel(errorInfrastructure.getErrorChannel());
