@@ -250,7 +250,7 @@ public class SampleApplication {
 	public Function<String, String> uppercase() {
 	    return value -> {
 	        System.out.println("Received: " + value);
-	        return value.toUpperCase()
+	        return value.toUpperCase();
 	    };
 	}
 }
