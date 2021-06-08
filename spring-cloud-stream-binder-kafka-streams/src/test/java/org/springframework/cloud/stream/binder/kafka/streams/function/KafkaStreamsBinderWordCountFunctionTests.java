@@ -58,7 +58,7 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.Lifecycle;
 import org.springframework.context.annotation.Bean;
 import org.springframework.kafka.config.StreamsBuilderFactoryBean;
-import org.springframework.kafka.config.StreamsBuilderFactoryBeanCustomizer;
+import org.springframework.kafka.config.StreamsBuilderFactoryBeanConfigurer;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -314,7 +314,7 @@ public class KafkaStreamsBinderWordCountFunctionTests {
 		}
 
 		@Bean
-		public StreamsBuilderFactoryBeanCustomizer customizer() {
+		public StreamsBuilderFactoryBeanConfigurer customizer() {
 			return fb -> {
 				try {
 					fb.setStateListener((newState, oldState) -> {

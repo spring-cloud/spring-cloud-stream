@@ -69,7 +69,7 @@ import org.springframework.core.env.MapPropertySource;
 import org.springframework.integration.context.IntegrationContextUtils;
 import org.springframework.integration.support.utils.IntegrationUtils;
 import org.springframework.kafka.config.KafkaStreamsConfiguration;
-import org.springframework.kafka.config.StreamsBuilderFactoryBeanCustomizer;
+import org.springframework.kafka.config.StreamsBuilderFactoryBeanConfigurer;
 import org.springframework.kafka.core.CleanupConfig;
 import org.springframework.kafka.streams.KafkaStreamsMicrometerListener;
 import org.springframework.kafka.streams.RecoveringDeserializationExceptionHandler;
@@ -305,7 +305,7 @@ public class KafkaStreamsBinderSupportAutoConfiguration {
 			KStreamStreamListenerParameterAdapter kafkaStreamListenerParameterAdapter,
 			Collection<StreamListenerResultAdapter> streamListenerResultAdapters,
 			ObjectProvider<CleanupConfig> cleanupConfig,
-			ObjectProvider<StreamsBuilderFactoryBeanCustomizer> customizerProvider, ConfigurableEnvironment environment) {
+			ObjectProvider<StreamsBuilderFactoryBeanConfigurer> customizerProvider, ConfigurableEnvironment environment) {
 		return new KafkaStreamsStreamListenerSetupMethodOrchestrator(
 				bindingServiceProperties, kafkaStreamsExtendedBindingProperties,
 				keyValueSerdeResolver, kafkaStreamsBindingInformationCatalogue,
@@ -412,7 +412,7 @@ public class KafkaStreamsBinderSupportAutoConfiguration {
 																	ObjectProvider<CleanupConfig> cleanupConfig,
 																	StreamFunctionProperties streamFunctionProperties,
 																	@Qualifier("binderConfigurationProperties") KafkaStreamsBinderConfigurationProperties kafkaStreamsBinderConfigurationProperties,
-																	ObjectProvider<StreamsBuilderFactoryBeanCustomizer> customizerProvider, ConfigurableEnvironment environment) {
+																	ObjectProvider<StreamsBuilderFactoryBeanConfigurer> customizerProvider, ConfigurableEnvironment environment) {
 		return new KafkaStreamsFunctionProcessor(bindingServiceProperties, kafkaStreamsExtendedBindingProperties,
 				keyValueSerdeResolver, kafkaStreamsBindingInformationCatalogue, kafkaStreamsMessageConversionDelegate,
 				cleanupConfig.getIfUnique(), streamFunctionProperties, kafkaStreamsBinderConfigurationProperties,

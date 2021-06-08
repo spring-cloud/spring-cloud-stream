@@ -72,7 +72,7 @@ import org.springframework.core.env.MutablePropertySources;
 import org.springframework.integration.support.utils.IntegrationUtils;
 import org.springframework.kafka.config.KafkaStreamsConfiguration;
 import org.springframework.kafka.config.StreamsBuilderFactoryBean;
-import org.springframework.kafka.config.StreamsBuilderFactoryBeanCustomizer;
+import org.springframework.kafka.config.StreamsBuilderFactoryBeanConfigurer;
 import org.springframework.kafka.core.CleanupConfig;
 import org.springframework.kafka.streams.RecoveringDeserializationExceptionHandler;
 import org.springframework.messaging.MessageHeaders;
@@ -181,7 +181,7 @@ public abstract class AbstractKafkaStreamsBinderProcessor implements Application
 	protected StreamsBuilderFactoryBean buildStreamsBuilderAndRetrieveConfig(String beanNamePostPrefix,
 																			ApplicationContext applicationContext, String inboundName,
 																			KafkaStreamsBinderConfigurationProperties kafkaStreamsBinderConfigurationProperties,
-																			StreamsBuilderFactoryBeanCustomizer customizer,
+																			StreamsBuilderFactoryBeanConfigurer customizer,
 																			ConfigurableEnvironment environment, BindingProperties bindingProperties) {
 		ConfigurableListableBeanFactory beanFactory = this.applicationContext
 				.getBeanFactory();

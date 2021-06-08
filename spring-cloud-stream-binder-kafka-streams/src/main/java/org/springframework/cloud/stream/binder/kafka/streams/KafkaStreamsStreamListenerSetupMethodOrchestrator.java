@@ -55,7 +55,7 @@ import org.springframework.core.ResolvableType;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.kafka.config.StreamsBuilderFactoryBean;
-import org.springframework.kafka.config.StreamsBuilderFactoryBeanCustomizer;
+import org.springframework.kafka.config.StreamsBuilderFactoryBeanConfigurer;
 import org.springframework.kafka.core.CleanupConfig;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.util.Assert;
@@ -100,7 +100,7 @@ class KafkaStreamsStreamListenerSetupMethodOrchestrator extends AbstractKafkaStr
 
 	private final Map<Method, StreamsBuilderFactoryBean> methodStreamsBuilderFactoryBeanMap = new HashMap<>();
 
-	StreamsBuilderFactoryBeanCustomizer customizer;
+	StreamsBuilderFactoryBeanConfigurer customizer;
 
 	private final ConfigurableEnvironment environment;
 
@@ -112,7 +112,7 @@ class KafkaStreamsStreamListenerSetupMethodOrchestrator extends AbstractKafkaStr
 			StreamListenerParameterAdapter streamListenerParameterAdapter,
 			Collection<StreamListenerResultAdapter> listenerResultAdapters,
 			CleanupConfig cleanupConfig,
-			StreamsBuilderFactoryBeanCustomizer customizer,
+			StreamsBuilderFactoryBeanConfigurer customizer,
 			ConfigurableEnvironment environment) {
 		super(bindingServiceProperties, bindingInformationCatalogue, extendedBindingProperties, keyValueSerdeResolver, cleanupConfig);
 		this.bindingServiceProperties = bindingServiceProperties;

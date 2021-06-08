@@ -58,7 +58,7 @@ import org.springframework.cloud.stream.function.StreamFunctionProperties;
 import org.springframework.core.ResolvableType;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.kafka.config.StreamsBuilderFactoryBean;
-import org.springframework.kafka.config.StreamsBuilderFactoryBeanCustomizer;
+import org.springframework.kafka.config.StreamsBuilderFactoryBeanConfigurer;
 import org.springframework.kafka.core.CleanupConfig;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
@@ -82,7 +82,7 @@ public class KafkaStreamsFunctionProcessor extends AbstractKafkaStreamsBinderPro
 	private BeanFactory beanFactory;
 	private StreamFunctionProperties streamFunctionProperties;
 	private KafkaStreamsBinderConfigurationProperties kafkaStreamsBinderConfigurationProperties;
-	StreamsBuilderFactoryBeanCustomizer customizer;
+	StreamsBuilderFactoryBeanConfigurer customizer;
 	ConfigurableEnvironment environment;
 
 	public KafkaStreamsFunctionProcessor(BindingServiceProperties bindingServiceProperties,
@@ -93,7 +93,7 @@ public class KafkaStreamsFunctionProcessor extends AbstractKafkaStreamsBinderPro
 										CleanupConfig cleanupConfig,
 										StreamFunctionProperties streamFunctionProperties,
 										KafkaStreamsBinderConfigurationProperties kafkaStreamsBinderConfigurationProperties,
-										StreamsBuilderFactoryBeanCustomizer customizer, ConfigurableEnvironment environment) {
+										StreamsBuilderFactoryBeanConfigurer customizer, ConfigurableEnvironment environment) {
 		super(bindingServiceProperties, kafkaStreamsBindingInformationCatalogue, kafkaStreamsExtendedBindingProperties,
 				keyValueSerdeResolver, cleanupConfig);
 		this.bindingServiceProperties = bindingServiceProperties;
