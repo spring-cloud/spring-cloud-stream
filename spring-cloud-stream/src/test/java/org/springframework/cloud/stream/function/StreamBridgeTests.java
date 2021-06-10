@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2020 the original author or authors.
+ * Copyright 2020-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.function;
 
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -37,10 +38,14 @@ import org.springframework.cloud.stream.binding.BinderAwareChannelResolver.NewDe
 import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
+import org.springframework.integration.channel.DirectChannel;
+import org.springframework.integration.config.GlobalChannelInterceptor;
 import org.springframework.integration.dsl.IntegrationFlow;
 import org.springframework.integration.dsl.IntegrationFlows;
+import org.springframework.integration.handler.LoggingHandler;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
+import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.support.ChannelInterceptor;
 import org.springframework.messaging.support.MessageBuilder;
 
@@ -50,6 +55,7 @@ import static org.junit.Assert.fail;
 /**
  *
  * @author Oleg Zhurakousky
+ * @author Soby Chacko
  *
  */
 @SuppressWarnings("deprecation")
@@ -82,14 +88,12 @@ public class StreamBridgeTests {
 	}
 
 	@Test
-	public void testWithInterceptor() {
+	public void testWithInterceptorsMatchedAgainstAllPatterns() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration
 				.getCompleteConfiguration(ConsumerConfiguration.class, InterceptorConfiguration.class))
 						.web(WebApplicationType.NONE).run(
 								"--spring.cloud.function.definition=function",
 								"--spring.jmx.enabled=false")) {
-
-
 			StreamBridge bridge = context.getBean(StreamBridge.class);
 			bridge.send("function-in-0", "hello foo");
 
@@ -100,6 +104,26 @@ public class StreamBridgeTests {
 		}
 	}
 
+	@Test
+	public void testWithInterceptorsRegisteredOnlyOnOutputChannel() throws InterruptedException {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration
+			.getCompleteConfiguration(GH2180Configuration.class))
+			.web(WebApplicationType.NONE).run(
+				"--spring.jmx.enabled=false")) {
+
+			MessageChannel inputChannel = context.getBean("inputChannel", MessageChannel.class);
+			inputChannel.send(MessageBuilder.withPayload("hello foo").build());
+
+			OutputDestination outputDestination = context.getBean(OutputDestination.class);
+			Message<byte[]> message = outputDestination.receive(100, "outgoing-out-0");
+			assertThat(new String(message.getPayload())).isEqualTo("hello foo");
+			assertThat(message.getHeaders().get("intercepted")).isEqualTo("true");
+			//Ensure that the LoggingHandler in the first SI flow is invoked.
+			GH2180Configuration.LATCH1.await(10, TimeUnit.SECONDS);
+			//Ensure that the second SI flow does not trigger its LoggingHandler (aka wiretap/interceptor).
+			assertThat(GH2180Configuration.LATCH2.getCount()).isEqualTo(1);
+		}
+	}
 
 	@Test
 	public void testBindingPropertiesAreHonored() {
@@ -325,6 +349,7 @@ public class StreamBridgeTests {
 	@EnableAutoConfiguration
 	public static class InterceptorConfiguration {
 		@Bean
+		@GlobalChannelInterceptor(patterns = "*")
 		public ChannelInterceptor interceptor() {
 			return new ChannelInterceptor() {
 				@Override
@@ -399,4 +424,62 @@ public class StreamBridgeTests {
 			.get();
 		}
 	}
+
+	@EnableAutoConfiguration
+	public static class GH2180Configuration {
+
+		static CountDownLatch LATCH1 = new CountDownLatch(1);
+		static CountDownLatch LATCH2 = new CountDownLatch(1);
+
+		@Bean
+		MessageChannel inputChannel() {
+			return new DirectChannel();
+		}
+
+		@Bean
+		MessageChannel otherInputChannel() {
+			return new DirectChannel();
+		}
+
+		@Bean
+		public IntegrationFlow someFlow(MessageHandler sendMessage, MessageChannel inputChannel) {
+			return IntegrationFlows.from(inputChannel)
+				.log(LoggingHandler.Level.INFO, (m) -> {
+					LATCH1.countDown();
+					return "Going through the first flow: " + m.getPayload();
+				})
+				.handle(sendMessage)
+				.get();
+		}
+
+		@Bean
+		public IntegrationFlow someOtherFlow(MessageHandler sendMessage) {
+			return IntegrationFlows.from(otherInputChannel())
+				.log(LoggingHandler.Level.INFO, (m) -> {
+					LATCH2.countDown();
+					return "Going through the second flow: " + m.getPayload();
+				})
+				.handle(sendMessage)
+				.get();
+		}
+
+		@Bean
+		@GlobalChannelInterceptor(patterns = "outgoing-*")
+		public ChannelInterceptor fooInterceptor() {
+			return new ChannelInterceptor() {
+				@Override
+				public Message<?> preSend(Message<?> message, MessageChannel channel) {
+					return MessageBuilder.fromMessage(message).setHeader("intercepted", "true").build();
+				}
+			};
+		}
+
+		@Bean
+		public MessageHandler sendMessage(StreamBridge streamBridge) {
+			return message -> {
+				streamBridge.send("outgoing-out-0", message);
+			};
+		}
+	}
+
 }

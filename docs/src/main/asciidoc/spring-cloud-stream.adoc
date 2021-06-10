@@ -701,6 +701,69 @@ As you can see there is one additional argument that you can provide - `binderTy
 NOTE: For cases where `spring.cloud.stream.source` property is used or the binding was already created under different binder, the `binderType` 
 argument will have no effect.
 
+====== Using channel interceptors with StreamBridge
+
+Since `StreamBridge` uses a `MessageChannel` to establish the output binding, you can activate channel interceptors when sending data through `StreamBridge`.
+It is up to the application to decide which channel interceptors to apply on `StreamBridge`.
+Spring Cloud Stream does not inject all the channel interceptors detected into `StreamBridge` unless they are annoatated with `@GlobalChannelInterceptor(patterns = "*")`.
+
+Let us assume that you have the following two different `StreamBridge` bindings in the application.
+
+`streamBridge.send("foo-out-0", message);`
+
+and
+
+`streamBridge.send("bar-out-0", message);`
+
+Now, if you want a channel interceptor applied on both the `StreamBridge` bindings, then you can declare the following `GlobalChannelInterceptor` bean.
+
+```
+@Bean
+@GlobalChannelInterceptor(patterns = "*")
+public ChannelInterceptor customInterceptor() {
+    return new ChannelInterceptor() {
+        @Override
+        public Message<?> preSend(Message<?> message, MessageChannel channel) {
+            ...
+        }
+    };
+}
+```
+
+However, if you don't like the global approach above and want to have a dedicated interceptor for each binding, then you can do the following.
+
+```
+@Bean
+@GlobalChannelInterceptor(patterns = "foo-*")
+public ChannelInterceptor fooInterceptor() {
+    return new ChannelInterceptor() {
+        @Override
+        public Message<?> preSend(Message<?> message, MessageChannel channel) {
+            ...
+        }
+    };
+}
+```
+
+and
+
+```
+@Bean
+@GlobalChannelInterceptor(patterns = "bar-*")
+public ChannelInterceptor barInterceptor() {
+    return new ChannelInterceptor() {
+        @Override
+        public Message<?> preSend(Message<?> message, MessageChannel channel) {
+            ...
+        }
+    };
+}
+```
+
+You have the flexibility to make the patterns more strict or customized to your business needs.
+
+With this approach, the application gets the ability to decide which interceptors to inject in `StreamBridge` rather than applying all the available interceptors.
+
 ===== Reactive Functions support
 
 
