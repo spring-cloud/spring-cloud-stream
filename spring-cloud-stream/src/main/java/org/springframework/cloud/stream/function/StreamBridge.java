@@ -17,7 +17,6 @@
 package org.springframework.cloud.stream.function;
 
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.Function;
@@ -40,12 +39,11 @@ import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.cloud.stream.messaging.DirectWithAttributesChannel;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.integration.channel.AbstractMessageChannel;
+import org.springframework.integration.config.GlobalChannelInterceptorProcessor;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.SubscribableChannel;
-import org.springframework.messaging.support.ChannelInterceptor;
-import org.springframework.util.CollectionUtils;
 import org.springframework.util.MimeType;
 import org.springframework.util.MimeTypeUtils;
 import org.springframework.util.StringUtils;
@@ -63,6 +61,7 @@ import org.springframework.util.StringUtils;
  * done through a declared function.
  *
  * @author Oleg Zhurakousky
+ * @author Soby Chacko
  * @since 3.0.3
  *
  */
@@ -236,7 +235,7 @@ public final class StreamBridge implements SmartInitializingSingleton {
 		SubscribableChannel messageChannel = this.channelCache.get(destinationName);
 		if (messageChannel == null && this.applicationContext.containsBean(destinationName)) {
 			messageChannel = this.applicationContext.getBean(destinationName, SubscribableChannel.class);
-			this.addInterceptors((AbstractMessageChannel) messageChannel);
+			this.addInterceptors((AbstractMessageChannel) messageChannel, destinationName);
 		}
 		if (messageChannel == null) {
 			messageChannel = new DirectWithAttributesChannel();
@@ -255,20 +254,15 @@ public final class StreamBridge implements SmartInitializingSingleton {
 
 			this.bindingService.bindProducer(messageChannel, destinationName, false, binder);
 			this.channelCache.put(destinationName, messageChannel);
-			this.addInterceptors((AbstractMessageChannel) messageChannel);
+			this.addInterceptors((AbstractMessageChannel) messageChannel, destinationName);
 		}
 
 		return messageChannel;
 	}
 
-	private void addInterceptors(AbstractMessageChannel messageChannel) {
-		String[] interceptorNames = this.applicationContext.getBeanNamesForType(ChannelInterceptor.class);
-		List<ChannelInterceptor> interceptors = messageChannel.getInterceptors();
-		for (String interceptorName : interceptorNames) {
-			ChannelInterceptor interceptor = this.applicationContext.getBean(interceptorName, ChannelInterceptor.class);
-			if (!CollectionUtils.containsInstance(interceptors, interceptor)) {
-				messageChannel.addInterceptor(interceptor);
-			}
-		}
+	private void addInterceptors(AbstractMessageChannel messageChannel, String destinationName) {
+		final GlobalChannelInterceptorProcessor globalChannelInterceptorProcessor =
+			this.applicationContext.getBean(GlobalChannelInterceptorProcessor.class);
+		globalChannelInterceptorProcessor.postProcessAfterInitialization(messageChannel, destinationName);
 	}
 }
