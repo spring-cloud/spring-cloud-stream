@@ -216,6 +216,23 @@ public class KafkaStreamsFunctionProcessor extends AbstractKafkaStreamsBinderPro
 		}
 	}
 
+	private ResolvableType checkOutboundForComposedFunctions(
+			ResolvableType outputResolvableType) {
+
+		ResolvableType currentOutputGeneric;
+
+		if (outputResolvableType.getRawClass() != null && outputResolvableType.getRawClass().isAssignableFrom(BiFunction.class)) {
+			currentOutputGeneric = outputResolvableType.getGeneric(2);
+		}
+		else {
+			currentOutputGeneric = outputResolvableType.getGeneric(1);
+		}
+		while (currentOutputGeneric.getRawClass() != null && functionOrConsumerFound(currentOutputGeneric)) {
+			currentOutputGeneric = currentOutputGeneric.getGeneric(1);
+		}
+		return currentOutputGeneric;
+	}
+
 	/**
 	 * This method must be kept stateless. In the case of multiple function beans in an application,
 	 * isolated {@link KafkaStreamsBindableProxyFactory} instances are passed in separately for those functions. If the
@@ -228,10 +245,21 @@ public class KafkaStreamsFunctionProcessor extends AbstractKafkaStreamsBinderPro
 	 */
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public void setupFunctionInvokerForKafkaStreams(ResolvableType resolvableType, String functionName,
-													KafkaStreamsBindableProxyFactory kafkaStreamsBindableProxyFactory, Method method) {
+													KafkaStreamsBindableProxyFactory kafkaStreamsBindableProxyFactory, Method method,
+													ResolvableType outputResolvableType,
+													String... composedFunctionNames) {
 		final Map<String, ResolvableType> resolvableTypes = buildTypeMap(resolvableType,
 				kafkaStreamsBindableProxyFactory, method, functionName);
-		ResolvableType outboundResolvableType = resolvableTypes.remove(OUTBOUND);
+
+		ResolvableType outboundResolvableType;
+		if (outputResolvableType != null) {
+			outboundResolvableType = checkOutboundForComposedFunctions(outputResolvableType);
+			resolvableTypes.remove(OUTBOUND);
+		}
+		else {
+			outboundResolvableType = resolvableTypes.remove(OUTBOUND);
+		}
+
 		Object[] adaptedInboundArguments = adaptAndRetrieveInboundArguments(resolvableTypes, functionName);
 		try {
 			if (resolvableType.getRawClass() != null && resolvableType.getRawClass().equals(Consumer.class)) {
@@ -258,17 +286,7 @@ public class KafkaStreamsFunctionProcessor extends AbstractKafkaStreamsBinderPro
 					else {
 						result = ((Function) bean).apply(adaptedInboundArguments[0]);
 					}
-					int i = 1;
-					while (result instanceof Function || result instanceof Consumer) {
-						if (result instanceof Function) {
-							result = ((Function) result).apply(adaptedInboundArguments[i]);
-						}
-						else {
-							((Consumer) result).accept(adaptedInboundArguments[i]);
-							result = null;
-						}
-						i++;
-					}
+					result = handleCurriedFunctions(adaptedInboundArguments, result);
 					if (result != null) {
 						final Set<String> outputs = new TreeSet<>(kafkaStreamsBindableProxyFactory.getOutputs());
 						final Iterator<String> outboundDefinitionIterator = outputs.iterator();
@@ -286,25 +304,26 @@ public class KafkaStreamsFunctionProcessor extends AbstractKafkaStreamsBinderPro
 				}
 			}
 			else {
-				Object result;
+				Object result = null;
 				if (resolvableType.getRawClass() != null && resolvableType.getRawClass().equals(BiFunction.class)) {
-					BiFunction<Object, Object, Object> biFunction = (BiFunction) beanFactory.getBean(functionName);
-					result = biFunction.apply(adaptedInboundArguments[0], adaptedInboundArguments[1]);
-				}
-				else {
-					Function<Object, Object> function = (Function) beanFactory.getBean(functionName);
-					result = function.apply(adaptedInboundArguments[0]);
-				}
-				int i = 1;
-				while (result instanceof Function || result instanceof Consumer) {
-					if (result instanceof Function) {
-						result = ((Function) result).apply(adaptedInboundArguments[i]);
+					if (composedFunctionNames != null && composedFunctionNames.length > 0) {
+						result = handleComposedFunctions(adaptedInboundArguments, result, composedFunctionNames);
 					}
 					else {
-						((Consumer) result).accept(adaptedInboundArguments[i]);
-						result = null;
+						BiFunction<Object, Object, Object> biFunction = (BiFunction) beanFactory.getBean(functionName);
+						result = biFunction.apply(adaptedInboundArguments[0], adaptedInboundArguments[1]);
+						result = handleCurriedFunctions(adaptedInboundArguments, result);
 					}
-					i++;
+				}
+				else {
+					if (composedFunctionNames != null && composedFunctionNames.length > 0) {
+						result = handleComposedFunctions(adaptedInboundArguments, result, composedFunctionNames);
+					}
+					else {
+						Function<Object, Object> function = (Function) beanFactory.getBean(functionName);
+						result = function.apply(adaptedInboundArguments[0]);
+						result = handleCurriedFunctions(adaptedInboundArguments, result);
+					}
 				}
 				if (result != null) {
 					final Set<String> outputs = new TreeSet<>(kafkaStreamsBindableProxyFactory.getOutputs());
@@ -327,6 +346,55 @@ public class KafkaStreamsFunctionProcessor extends AbstractKafkaStreamsBinderPro
 		catch (Exception ex) {
 			throw new BeanInitializationException("Cannot setup function invoker for this Kafka Streams function.", ex);
 		}
+	}
+
+	@SuppressWarnings({"unchecked"})
+	private Object handleComposedFunctions(Object[] adaptedInboundArguments, Object result, String... composedFunctionNames) {
+		Object bean = beanFactory.getBean(composedFunctionNames[0]);
+		if (BiFunction.class.isAssignableFrom(bean.getClass())) {
+			result = ((BiFunction<Object, Object, Object>) bean).apply(adaptedInboundArguments[0], adaptedInboundArguments[1]);
+		}
+		else if (Function.class.isAssignableFrom(bean.getClass())) {
+			result = ((Function<Object, Object>) bean).apply(adaptedInboundArguments[0]);
+		}
+		// If the return is a curried function, apply it
+		result = handleCurriedFunctions(adaptedInboundArguments, result);
+		// Apply composed functions
+		return applyComposedFunctions(result, composedFunctionNames);
+	}
+
+	@SuppressWarnings({"unchecked"})
+	private Object applyComposedFunctions(Object result, String[] composedFunctionNames) {
+		for (int i = 1; i < composedFunctionNames.length; i++) {
+			final Object bean = beanFactory.getBean(composedFunctionNames[i]);
+			if (Consumer.class.isAssignableFrom(bean.getClass())) {
+				((Consumer<Object>) bean).accept(result);
+				result = null;
+			}
+			else if (Function.class.isAssignableFrom(bean.getClass())) {
+				result = ((Function<Object, Object>) bean).apply(result);
+			}
+			else {
+				throw new IllegalStateException("You can only compose functions of type either java.util.function.Function or java.util.function.Consumer.");
+			}
+		}
+		return result;
+	}
+
+	@SuppressWarnings({"unchecked"})
+	private Object handleCurriedFunctions(Object[] adaptedInboundArguments, Object result) {
+		int i = 1;
+		while (result instanceof Function || result instanceof Consumer) {
+			if (result instanceof Function) {
+				result = ((Function<Object, Object>) result).apply(adaptedInboundArguments[i]);
+			}
+			else {
+				((Consumer<Object>) result).accept(adaptedInboundArguments[i]);
+				result = null;
+			}
+			i++;
+		}
+		return result;
 	}
 
 	private void handleSingleKStreamOutbound(Map<String, ResolvableType> resolvableTypes, ResolvableType outboundResolvableType,

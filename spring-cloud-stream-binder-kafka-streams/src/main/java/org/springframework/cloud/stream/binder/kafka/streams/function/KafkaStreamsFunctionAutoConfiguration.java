@@ -36,9 +36,11 @@ public class KafkaStreamsFunctionAutoConfiguration {
 	public KafkaStreamsFunctionProcessorInvoker kafkaStreamsFunctionProcessorInvoker(
 																					KafkaStreamsFunctionBeanPostProcessor kafkaStreamsFunctionBeanPostProcessor,
 																					KafkaStreamsFunctionProcessor kafkaStreamsFunctionProcessor,
-																					KafkaStreamsBindableProxyFactory[] kafkaStreamsBindableProxyFactories) {
+																					KafkaStreamsBindableProxyFactory[] kafkaStreamsBindableProxyFactories,
+																					StreamFunctionProperties streamFunctionProperties) {
 		return new KafkaStreamsFunctionProcessorInvoker(kafkaStreamsFunctionBeanPostProcessor.getResolvableTypes(),
-				kafkaStreamsFunctionProcessor, kafkaStreamsBindableProxyFactories, kafkaStreamsFunctionBeanPostProcessor.getMethods());
+				kafkaStreamsFunctionProcessor, kafkaStreamsBindableProxyFactories, kafkaStreamsFunctionBeanPostProcessor.getMethods(),
+				streamFunctionProperties);
 	}
 
 	@Bean

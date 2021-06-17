@@ -303,6 +303,107 @@ In summary, the following table shows the various options that can be used in th
 
 * In the case of more than one output in this table, the type simply becomes `KStream[]`.
 
+===== Function composition in Kafka Streams binder
+
+Kafka Streams binder supports minimal forms of functional composition for linear topologies.
+Using the Java functional API support, you can write multiple functions and then compose them  on your own using the `andThen` method.
+For example, assume that you have the following two functions.
+
+```
+@Bean
+public Function<KStream<String, String>, KStream<String, String>> foo() {
+    return input -> input.peek((s, s2) -> {});
+}
+
+@Bean
+public Function<KStream<String, String>, KStream<String, Long>> bar() {
+    return input -> input.peek((s, s2) -> {});
+}
+```
+
+Even without the functional composition support in the binder, you can compose these two functions as below.
+
+```
+@Bean
+pubic Funcion<KStream<String, String>, KStream<String, Long>> composed() {
+    foo().andThen(bar());
+}
+```
+
+Then you can provide deefinitions of the form `spring.cloud.stream.function.definition=foo;bar;composed`.
+With the functional composition support in the binder, you don't need to write this third function in which you are doing explicit function composition.
+
+You can simply do this instead:
+
+```
+spring.cloud.stream.function.definition=foo|bar
+```
+
+You can even do this:
+
+```
+spring.cloud.stream.function.definition=foo|bar;foo;bar
+```
+
+The composed function's default binding names in this example becomes `foobar-in-0` and `foobar-out-0`.
+
+====== Limitations of functional composition in Kafka Streams bincer
+
+When you have `java.util.function.Function` bean, that can be composed with another function or multiple functions.
+The same function bean can be composed with a `java.util.function.Consumer` as well. In this case, consumer is the last component composed.
+A function can be composed with multiple functions, then end with a `java.util.function.Consumer` bean as well.
+
+When composing the beans of type `java.util.function.BiFunction`, the `BiFunction` must be the first function in the definition.
+The composed entities must be either of type `java.util.function.Function` or `java.util.funciton.Consumer`.
+In other words, you cannot take a `BiFunction` bean and then compose with another `BiFunction`.
+
+You cannot compose with types of `BiConsumer` or definitions where `Consumer` is the first component.
+You cannot also compose with functions where the output is an array (`KStream[]` for branching) unless this is the last component in the definition.
+
+The very first `Function` of `BiFunction` in the function definition may use a curried form also.
+For example, the following is possible.
+
+```
+@Bean
+public Function<KStream<String, String>, Function<KTable<String, String>, KStream<String, String>>> curriedFoo() {
+    return a -> b ->
+            a.join(b, (value1, value2) -> value1 + value2);
+}
+
+@Bean
+public Function<KStream<String, String>, KStream<String, String>> bar() {
+    return input -> input.mapValues(value -> value + "From-anotherFooFunc");
+}
+```
+
+and the function definition could be `curriedFoo|bar`.
+Behind the scenes, the binder will create two input bindings for the curried function, and an output binding based on the final function in the definition.
+The default input bindings in this case are going to be `curriedFoobar-in-0` and `curriedFoobar-in-1`.
+The default output binding for this example becomes `curriedFoobar-out-0`.
+
+====== Special note on using `KTable` as output in function composition
+
+When using function composition, for intermediate functions, you can use `KTable` as output.
+For instance, lets say you have the following two functions.
+
+```
+@Bean
+public Function<KStream<String, String>, KTable<String, String>> foo() {
+    return KStream::toTable;
+    };
+}
+
+@Bean
+public Function<KTable<String, String>, KStream<String, String>> bar() {
+    return KTable::toStream;
+}
+```
+
+You can compose them as `foo|bar` although foo's output is `KTable`.
+In normal case, when you use `foo` as standalone, this will not work, as the binder does not support `KTable` as the final output.
+Note that in the example above, bar's output is still a `KStream`.
+We are only able to use `foo` which has a `KTable` output, since we are composing with another function that has `KStream` as its output.
+
 ==== Imperative programming model.
 
 Starting with `3.1.0` version of the binder, we recommend using the functional programming model described above for Kafka Streams binder based applications.

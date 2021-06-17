@@ -48,6 +48,7 @@ import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.cloud.stream.function.StreamFunctionProperties;
 import org.springframework.core.ResolvableType;
 import org.springframework.util.ClassUtils;
+import org.springframework.util.StringUtils;
 
 /**
  * @author Soby Chacko
@@ -103,17 +104,53 @@ public class KafkaStreamsFunctionBeanPostProcessor implements InitializingBean, 
 
 		BeanDefinitionRegistry registry = (BeanDefinitionRegistry) beanFactory;
 
-		for (String s : getResolvableTypes().keySet()) {
-			RootBeanDefinition rootBeanDefinition = new RootBeanDefinition(
-					KafkaStreamsBindableProxyFactory.class);
-			rootBeanDefinition.getConstructorArgumentValues()
-					.addGenericArgumentValue(getResolvableTypes().get(s));
-			rootBeanDefinition.getConstructorArgumentValues()
-					.addGenericArgumentValue(s);
-			rootBeanDefinition.getConstructorArgumentValues()
-					.addGenericArgumentValue(getMethods().get(s));
-			registry.registerBeanDefinition("kafkaStreamsBindableProxyFactory-" + s, rootBeanDefinition);
+		final String definition = streamFunctionProperties.getDefinition();
+		final String[] functionUnits = StringUtils.hasText(definition) ? definition.split(";") : new String[]{};
+
+		if (functionUnits.length == 0) {
+			for (String s : getResolvableTypes().keySet()) {
+				ResolvableType[] resolvableTypes = new ResolvableType[]{getResolvableTypes().get(s)};
+				RootBeanDefinition rootBeanDefinition = new RootBeanDefinition(
+						KafkaStreamsBindableProxyFactory.class);
+				registerKakaStreamsProxyFactory(registry, s, resolvableTypes, rootBeanDefinition);
+			}
 		}
+		else {
+			for (String functionUnit : functionUnits) {
+				if (functionUnit.contains("|")) {
+					final String[] composedFunctions = functionUnit.split("\\|");
+					String derivedNameFromComposed = "";
+					ResolvableType[] resolvableTypes = new ResolvableType[composedFunctions.length];
+
+					int i = 0;
+					for (String split : composedFunctions) {
+						derivedNameFromComposed = derivedNameFromComposed.concat(split);
+						resolvableTypes[i++] = getResolvableTypes().get(split);
+					}
+
+					RootBeanDefinition rootBeanDefinition = new RootBeanDefinition(
+							KafkaStreamsBindableProxyFactory.class);
+					registerKakaStreamsProxyFactory(registry, derivedNameFromComposed, resolvableTypes, rootBeanDefinition);
+				}
+				else {
+
+					ResolvableType[] resolvableTypes = new ResolvableType[]{getResolvableTypes().get(functionUnit)};
+					RootBeanDefinition rootBeanDefinition = new RootBeanDefinition(
+							KafkaStreamsBindableProxyFactory.class);
+					registerKakaStreamsProxyFactory(registry, functionUnit, resolvableTypes, rootBeanDefinition);
+				}
+			}
+		}
+	}
+
+	private void registerKakaStreamsProxyFactory(BeanDefinitionRegistry registry, String s, ResolvableType[] resolvableTypes, RootBeanDefinition rootBeanDefinition) {
+		rootBeanDefinition.getConstructorArgumentValues()
+				.addGenericArgumentValue(resolvableTypes);
+		rootBeanDefinition.getConstructorArgumentValues()
+				.addGenericArgumentValue(s);
+		rootBeanDefinition.getConstructorArgumentValues()
+				.addGenericArgumentValue(getMethods().get(s));
+		registry.registerBeanDefinition("kafkaStreamsBindableProxyFactory-" + s, rootBeanDefinition);
 	}
 
 	private void extractResolvableTypes(String key) {

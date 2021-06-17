@@ -49,16 +49,16 @@ import org.springframework.util.CollectionUtils;
 
 /**
  * Kafka Streams specific target bindings proxy factory. See {@link AbstractBindableProxyFactory} for more details.
- *
+ * <p>
  * Targets bound by this factory:
- *
+ * <p>
  * {@link KStream}
  * {@link KTable}
  * {@link GlobalKTable}
- *
+ * <p>
  * This class looks at the Function bean's return signature as {@link ResolvableType} and introspect the individual types,
  * binding them on the way.
- *
+ * <p>
  * All types on the {@link ResolvableType} are bound except for KStream[] array types on the outbound, which will be
  * deferred for binding at a later stage. The reason for doing that is because in this class, we don't have any way to know
  * the actual size in the returned array. That has to wait until the function is invoked and we get a result.
@@ -71,17 +71,17 @@ public class KafkaStreamsBindableProxyFactory extends AbstractBindableProxyFacto
 	@Autowired
 	private StreamFunctionProperties streamFunctionProperties;
 
-	private final ResolvableType type;
+	private ResolvableType[] types;
 
-	private final Method method;
+	private Method method;
 
 	private final String functionName;
 
 	private BeanFactory beanFactory;
 
-	public KafkaStreamsBindableProxyFactory(ResolvableType type, String functionName, Method method) {
-		super(type.getType().getClass());
-		this.type = type;
+	public KafkaStreamsBindableProxyFactory(ResolvableType[] types, String functionName, Method method) {
+		super(types[0].getType().getClass());
+		this.types = types;
 		this.functionName = functionName;
 		this.method = method;
 	}
@@ -93,10 +93,10 @@ public class KafkaStreamsBindableProxyFactory extends AbstractBindableProxyFacto
 				"'bindingTargetFactories' cannot be empty");
 
 		int resolvableTypeDepthCounter = 0;
-		boolean isKafkaStreamsType = this.type.getRawClass().isAssignableFrom(KStream.class) ||
-				this.type.getRawClass().isAssignableFrom(KTable.class) ||
-				this.type.getRawClass().isAssignableFrom(GlobalKTable.class);
-		ResolvableType argument = isKafkaStreamsType ? this.type : this.type.getGeneric(resolvableTypeDepthCounter++);
+		boolean isKafkaStreamsType = this.types[0].getRawClass().isAssignableFrom(KStream.class) ||
+				this.types[0].getRawClass().isAssignableFrom(KTable.class) ||
+				this.types[0].getRawClass().isAssignableFrom(GlobalKTable.class);
+		ResolvableType argument = isKafkaStreamsType ? this.types[0] : this.types[0].getGeneric(resolvableTypeDepthCounter++);
 		List<String> inputBindings = buildInputBindings();
 		Iterator<String> iterator = inputBindings.iterator();
 		String next = iterator.next();
@@ -112,18 +112,21 @@ public class KafkaStreamsBindableProxyFactory extends AbstractBindableProxyFacto
 			}
 		}
 		// Normal functional bean
-		if (this.type.getRawClass() != null &&
-				(this.type.getRawClass().isAssignableFrom(BiFunction.class) ||
-				this.type.getRawClass().isAssignableFrom(BiConsumer.class))) {
-			argument = this.type.getGeneric(resolvableTypeDepthCounter++);
+		if (this.types[0].getRawClass() != null &&
+				(this.types[0].getRawClass().isAssignableFrom(BiFunction.class) ||
+						this.types[0].getRawClass().isAssignableFrom(BiConsumer.class))) {
+			argument = this.types[0].getGeneric(resolvableTypeDepthCounter++);
 			next = iterator.next();
 			bindInput(argument, next);
 		}
-		ResolvableType outboundArgument = this.type.getGeneric(resolvableTypeDepthCounter);
-
+		ResolvableType outboundArgument;
 		if (method != null) {
 			outboundArgument = ResolvableType.forMethodReturnType(method);
 		}
+		else {
+			outboundArgument = this.types[0].getGeneric(resolvableTypeDepthCounter);
+		}
+
 		while (isAnotherFunctionOrConsumerFound(outboundArgument)) {
 			//The function is a curried function. We should introspect the partial function chain hierarchy.
 			argument = outboundArgument.getGeneric(0);
@@ -132,7 +135,16 @@ public class KafkaStreamsBindableProxyFactory extends AbstractBindableProxyFacto
 			outboundArgument = outboundArgument.getGeneric(1);
 		}
 
-		if (outboundArgument.getRawClass() != null && (!outboundArgument.isArray() &&
+
+		final int lastTypeIndex = this.types.length - 1;
+		if (this.types.length > 1 && this.types[lastTypeIndex] != null && this.types[lastTypeIndex].getRawClass() != null) {
+			if (this.types[lastTypeIndex].getRawClass().isAssignableFrom(Function.class) ||
+					this.types[lastTypeIndex].getRawClass().isAssignableFrom(Consumer.class)) {
+				outboundArgument = this.types[lastTypeIndex].getGeneric(1);
+			}
+		}
+
+		if (outboundArgument != null && outboundArgument.getRawClass() != null && (!outboundArgument.isArray() &&
 				outboundArgument.getRawClass().isAssignableFrom(KStream.class))) {
 			// if the type is array, we need to do a late binding as we don't know the number of
 			// output bindings at this point in the flow.
@@ -181,9 +193,9 @@ public class KafkaStreamsBindableProxyFactory extends AbstractBindableProxyFacto
 			inputs.addAll(inputBindings);
 			return inputs;
 		}
-		int numberOfInputs = this.type.getRawClass() != null &&
-				(this.type.getRawClass().isAssignableFrom(BiFunction.class) ||
-						this.type.getRawClass().isAssignableFrom(BiConsumer.class)) ? 2 : getNumberOfInputs();
+		int numberOfInputs = this.types[0].getRawClass() != null &&
+				(this.types[0].getRawClass().isAssignableFrom(BiFunction.class) ||
+						this.types[0].getRawClass().isAssignableFrom(BiConsumer.class)) ? 2 : getNumberOfInputs();
 
 		// For @Component style beans.
 		if (method != null) {
@@ -213,7 +225,7 @@ public class KafkaStreamsBindableProxyFactory extends AbstractBindableProxyFacto
 
 	private int getNumberOfInputs() {
 		int numberOfInputs = 1;
-		ResolvableType arg1 = this.type.getGeneric(1);
+		ResolvableType arg1 = this.types[0].getGeneric(1);
 
 		while (isAnotherFunctionOrConsumerFound(arg1)) {
 			arg1 = arg1.getGeneric(1);
