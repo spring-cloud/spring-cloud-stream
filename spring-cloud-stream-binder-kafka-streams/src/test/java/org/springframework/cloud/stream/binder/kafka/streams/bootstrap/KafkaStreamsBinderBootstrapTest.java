@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2019 the original author or authors.
+ * Copyright 2018-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package org.springframework.cloud.stream.binder.kafka.streams.bootstrap;
 
+import javax.security.auth.login.AppConfigurationEntry;
+
 import org.apache.kafka.streams.kstream.GlobalKTable;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.KTable;
@@ -30,6 +32,8 @@ import org.springframework.cloud.stream.annotation.Input;
 import org.springframework.cloud.stream.annotation.StreamListener;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.kafka.test.rule.EmbeddedKafkaRule;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Soby Chacko
@@ -84,6 +88,33 @@ public class KafkaStreamsBinderBootstrapTest {
 						"--spring.cloud.stream.kafka.streams.binder.brokers="
 								+ embeddedKafka.getEmbeddedKafka().getBrokersAsString());
 
+		applicationContext.close();
+	}
+
+	@Test
+	public void testKafkaStreamsBinderJaasInitialization() {
+		ConfigurableApplicationContext applicationContext = new SpringApplicationBuilder(
+				SimpleKafkaStreamsApplication.class).web(WebApplicationType.NONE).run(
+				"--spring.cloud.stream.kafka.streams.bindings.input-1.consumer.application-id"
+						+ "=testKafkaStreamsBinderWithStandardConfigurationCanStart",
+				"--spring.cloud.stream.kafka.streams.bindings.input-2.consumer.application-id"
+						+ "=testKafkaStreamsBinderWithStandardConfigurationCanStart-foo",
+				"--spring.cloud.stream.kafka.streams.bindings.input-3.consumer.application-id"
+						+ "=testKafkaStreamsBinderWithStandardConfigurationCanStart-foobar",
+				"--spring.cloud.stream.kafka.streams.binder.jaas.loginModule=org.apache.kafka.common.security.plain.PlainLoginModule",
+				"--spring.cloud.stream.kafka.streams.binder.jaas.options.username=foo",
+				"--spring.cloud.stream.kafka.streams.binder.jaas.options.password=bar",
+				"--spring.cloud.stream.kafka.streams.binder.brokers="
+						+ embeddedKafka.getEmbeddedKafka().getBrokersAsString());
+		javax.security.auth.login.Configuration configuration = javax.security.auth.login.Configuration
+				.getConfiguration();
+		final AppConfigurationEntry[] kafkaConfiguration = configuration
+				.getAppConfigurationEntry("KafkaClient");
+		assertThat(kafkaConfiguration).hasSize(1);
+		assertThat(kafkaConfiguration[0].getOptions().get("username")).isEqualTo("foo");
+		assertThat(kafkaConfiguration[0].getOptions().get("password")).isEqualTo("bar");
+		assertThat(kafkaConfiguration[0].getControlFlag())
+				.isEqualTo(AppConfigurationEntry.LoginModuleControlFlag.REQUIRED);
 		applicationContext.close();
 	}
 
