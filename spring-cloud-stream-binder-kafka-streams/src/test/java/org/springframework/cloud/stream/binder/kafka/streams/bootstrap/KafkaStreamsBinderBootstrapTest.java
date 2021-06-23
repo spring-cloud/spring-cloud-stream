@@ -18,11 +18,12 @@ package org.springframework.cloud.stream.binder.kafka.streams.bootstrap;
 
 import javax.security.auth.login.AppConfigurationEntry;
 
+import org.apache.kafka.common.security.JaasUtils;
 import org.apache.kafka.streams.kstream.GlobalKTable;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.KTable;
+import org.junit.Before;
 import org.junit.ClassRule;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import org.springframework.boot.WebApplicationType;
@@ -43,6 +44,11 @@ public class KafkaStreamsBinderBootstrapTest {
 
 	@ClassRule
 	public static EmbeddedKafkaRule embeddedKafka = new EmbeddedKafkaRule(1, true, 10);
+
+	@Before
+	public void before() {
+		System.clearProperty(JaasUtils.JAVA_LOGIN_CONFIG_PARAM);
+	}
 
 	@Test
 	public void testKStreamBinderWithCustomEnvironmentCanStart() {
@@ -93,7 +99,6 @@ public class KafkaStreamsBinderBootstrapTest {
 	}
 
 	@Test
-	@Ignore("Need to investigate why this test fails on CI")
 	public void testKafkaStreamsBinderJaasInitialization() {
 		ConfigurableApplicationContext applicationContext = new SpringApplicationBuilder(
 				SimpleKafkaStreamsApplication.class).web(WebApplicationType.NONE).run(

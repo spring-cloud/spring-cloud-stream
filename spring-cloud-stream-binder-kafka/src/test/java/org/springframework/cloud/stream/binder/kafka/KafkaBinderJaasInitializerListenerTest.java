@@ -19,9 +19,12 @@ package org.springframework.cloud.stream.binder.kafka;
 import javax.security.auth.login.AppConfigurationEntry;
 
 import com.sun.security.auth.login.ConfigFile;
+import org.apache.kafka.common.security.JaasUtils;
 import org.junit.AfterClass;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
+import org.junit.Test;
 
 import org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
@@ -57,7 +60,12 @@ public class KafkaBinderJaasInitializerListenerTest {
 		System.clearProperty(KAFKA_BROKERS_PROPERTY);
 	}
 
-//	@Test
+	@Before
+	public void before() {
+		System.clearProperty(JaasUtils.JAVA_LOGIN_CONFIG_PARAM);
+	}
+
+	@Test
 	public void testConfigurationParsedCorrectlyWithKafkaClientAndDefaultControlFlag()
 			throws Exception {
 		ConfigFile configFile = new ConfigFile(
@@ -86,7 +94,7 @@ public class KafkaBinderJaasInitializerListenerTest {
 				});
 	}
 
-//	@Test
+	@Test
 	public void testConfigurationParsedCorrectlyWithKafkaClientAndNonDefaultControlFlag()
 			throws Exception {
 		ConfigFile configFile = new ConfigFile(
