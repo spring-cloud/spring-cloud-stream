@@ -96,11 +96,11 @@ public class KafkaStreamsBinderBootstrapTest {
 		ConfigurableApplicationContext applicationContext = new SpringApplicationBuilder(
 				SimpleKafkaStreamsApplication.class).web(WebApplicationType.NONE).run(
 				"--spring.cloud.stream.kafka.streams.bindings.input-1.consumer.application-id"
-						+ "=testKafkaStreamsBinderWithStandardConfigurationCanStart",
+						+ "=testKafkaStreamsBinderWithStandardConfigurationCanStart-jaas",
 				"--spring.cloud.stream.kafka.streams.bindings.input-2.consumer.application-id"
-						+ "=testKafkaStreamsBinderWithStandardConfigurationCanStart-foo",
+						+ "=testKafkaStreamsBinderWithStandardConfigurationCanStart-foo-jaas",
 				"--spring.cloud.stream.kafka.streams.bindings.input-3.consumer.application-id"
-						+ "=testKafkaStreamsBinderWithStandardConfigurationCanStart-foobar",
+						+ "=testKafkaStreamsBinderWithStandardConfigurationCanStart-foobar-jaas",
 				"--spring.cloud.stream.kafka.streams.binder.jaas.loginModule=org.apache.kafka.common.security.plain.PlainLoginModule",
 				"--spring.cloud.stream.kafka.streams.binder.jaas.options.username=foo",
 				"--spring.cloud.stream.kafka.streams.binder.jaas.options.password=bar",
