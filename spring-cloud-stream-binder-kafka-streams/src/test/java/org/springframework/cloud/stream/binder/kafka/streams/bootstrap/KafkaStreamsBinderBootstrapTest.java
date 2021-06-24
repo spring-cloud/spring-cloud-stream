@@ -18,8 +18,6 @@ package org.springframework.cloud.stream.binder.kafka.streams.bootstrap;
 
 import java.util.function.Consumer;
 
-import javax.security.auth.login.AppConfigurationEntry;
-
 import org.apache.kafka.common.security.JaasUtils;
 import org.apache.kafka.streams.kstream.GlobalKTable;
 import org.apache.kafka.streams.kstream.KStream;
@@ -34,8 +32,6 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.kafka.test.rule.EmbeddedKafkaRule;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Soby Chacko
@@ -97,34 +93,6 @@ public class KafkaStreamsBinderBootstrapTest {
 						"--spring.cloud.stream.kafka.streams.binder.brokers="
 								+ embeddedKafka.getEmbeddedKafka().getBrokersAsString());
 
-		applicationContext.close();
-	}
-
-	@Test
-	public void testKafkaStreamsBinderJaasInitialization() {
-		ConfigurableApplicationContext applicationContext = new SpringApplicationBuilder(
-				SimpleKafkaStreamsApplication.class).web(WebApplicationType.NONE).run(
-				"--spring.cloud.function.definition=input1;input2;input3",
-				"--spring.cloud.stream.kafka.streams.bindings.input1-in-0.consumer.application-id"
-						+ "=testKafkaStreamsBinderWithStandardConfigurationCanStart-jaas",
-				"--spring.cloud.stream.kafka.streams.bindings.input2-in-0.consumer.application-id"
-						+ "=testKafkaStreamsBinderWithStandardConfigurationCanStart-foo-jaas",
-				"--spring.cloud.stream.kafka.streams.bindings.input3-in-0.consumer.application-id"
-						+ "=testKafkaStreamsBinderWithStandardConfigurationCanStart-foobar-jaas",
-				"--spring.cloud.stream.kafka.streams.binder.jaas.loginModule=org.apache.kafka.common.security.plain.PlainLoginModule",
-				"--spring.cloud.stream.kafka.streams.binder.jaas.options.username=foo",
-				"--spring.cloud.stream.kafka.streams.binder.jaas.options.password=bar",
-				"--spring.cloud.stream.kafka.streams.binder.brokers="
-						+ embeddedKafka.getEmbeddedKafka().getBrokersAsString());
-		javax.security.auth.login.Configuration configuration = javax.security.auth.login.Configuration
-				.getConfiguration();
-		final AppConfigurationEntry[] kafkaConfiguration = configuration
-				.getAppConfigurationEntry("KafkaClient");
-		assertThat(kafkaConfiguration).hasSize(1);
-		assertThat(kafkaConfiguration[0].getOptions().get("username")).isEqualTo("foo");
-		assertThat(kafkaConfiguration[0].getOptions().get("password")).isEqualTo("bar");
-		assertThat(kafkaConfiguration[0].getControlFlag())
-				.isEqualTo(AppConfigurationEntry.LoginModuleControlFlag.REQUIRED);
 		applicationContext.close();
 	}
 
