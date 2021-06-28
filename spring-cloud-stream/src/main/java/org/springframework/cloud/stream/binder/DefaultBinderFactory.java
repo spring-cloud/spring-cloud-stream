@@ -39,6 +39,7 @@ import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.stream.config.ListenerContainerCustomizer;
+import org.springframework.cloud.stream.config.SpelExpressionConverterConfiguration;
 import org.springframework.cloud.stream.config.SpelExpressionConverterConfiguration.SpelConverter;
 import org.springframework.cloud.stream.reflection.GenericsUtils;
 import org.springframework.context.ApplicationContext;
@@ -399,6 +400,7 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 
 		List<Class> sourceClasses = new ArrayList<>();
 		sourceClasses.addAll(Arrays.asList(binderType.getConfigurationClasses()));
+		sourceClasses.addAll(Collections.singletonList(SpelExpressionConverterConfiguration.class));
 		if (binderProperties.containsKey("spring.main.sources")) {
 			String sources = (String) binderProperties.get("spring.main.sources");
 			if (StringUtils.hasText(sources)) {
@@ -444,11 +446,6 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 
 					((GenericApplicationContext) binderProducingContext).registerBean(customizerEntry.getKey(),
 							ListenerContainerCustomizer.class, () -> customizerWrapper);
-				}
-				GenericConversionService cs = (GenericConversionService) ((GenericApplicationContext) binderProducingContext).getBeanFactory().getConversionService();
-				if (cs != null) {
-					SpelConverter spelConverter = new SpelConverter();
-					cs.addConverter(spelConverter);
 				}
 			}
 			binderProducingContext.addApplicationListener(new ApplicationListener<ApplicationEvent>() {
