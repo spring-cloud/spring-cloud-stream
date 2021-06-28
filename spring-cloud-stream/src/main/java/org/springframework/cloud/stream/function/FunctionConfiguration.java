@@ -337,6 +337,11 @@ public class FunctionConfiguration {
 						: MessageBuilder.withPayload(value).build();
 	}
 
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	private static Message sanitize(Message inputMessage) {
+		return MessageBuilder.fromMessage(inputMessage).removeHeader("spring.cloud.stream.sendto.destination").build();
+	}
+
 	private static class FunctionToDestinationBinder implements InitializingBean, ApplicationContextAware {
 
 		protected final Log logger = LogFactory.getLog(getClass());
@@ -429,7 +434,12 @@ public class FunctionConfiguration {
 								+ inputBindingName + ".consumer.concurrency=" + consumerProperties.getConcurrency() + "'");
 					}
 					SubscribableChannel inputChannel = this.applicationContext.getBean(inputBindingName, SubscribableChannel.class);
-					return IntegrationReactiveUtils.messageChannelToFlux(inputChannel);
+					return IntegrationReactiveUtils.messageChannelToFlux(inputChannel).map(m -> {
+						if (m instanceof Message) {
+							m = sanitize(m);
+						}
+						return m;
+					});
 				}).toArray(Publisher[]::new);
 
 				Function functionToInvoke = function;
@@ -647,6 +657,7 @@ public class FunctionConfiguration {
 		@SuppressWarnings("unchecked")
 		@Override
 		public Object apply(Message<byte[]> message) {
+			message = sanitize(message);
 			if (message != null && consumerProperties != null) {
 				Map<String, Object> headersMap = (Map<String, Object>) ReflectionUtils
 						.getField(this.headersField, message.getHeaders());
