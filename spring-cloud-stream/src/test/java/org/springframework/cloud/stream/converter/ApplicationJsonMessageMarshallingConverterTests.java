@@ -37,6 +37,7 @@ public class ApplicationJsonMessageMarshallingConverterTests {
 					initObjectMapper());
 			converter.convertFromInternal(
 					new GenericMessage<>("{ notjson }".getBytes()), JsonNode.class, null);
+			fail();
 		}
 		catch (MessageConversionException e) {
 			// Good
