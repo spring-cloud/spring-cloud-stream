@@ -110,12 +110,7 @@ class ApplicationJsonMessageMarshallingConverter extends MappingJackson2MessageC
 						StandardCharsets.UTF_8);
 			}
 			else {
-				try {
-					result = super.convertFromInternal(message, targetClass, conversionHint);
-				}
-				catch (Exception e) {
-					// ignore
-				}
+				result = super.convertFromInternal(message, targetClass, conversionHint);
 			}
 		}
 
