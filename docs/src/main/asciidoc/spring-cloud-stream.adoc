@@ -2454,6 +2454,35 @@ When set to true, if the binder supports asynchroous send results, send failures
 +
 Default: false.
 
+
+==== Advanced Producer Configuration
+
+In some cases Producer Properties are not enough to properly configure a producing MessageHandler in the binder, or may be you prefer a programmatic approach 
+while configuring such producing MessageHandler. Regardless of the reason, spring-cloud-stream provides `ProducerMessageHandlerCustomizer` to accomplish it.
+
+
+====
+[source, java]
+----
+@FunctionalInterface
+public interface ProducerMessageHandlerCustomizer<H extends MessageHandler> {
+
+	/**
+	 * Configure a {@link MessageHandler} that is being created by the binder for the
+	 * provided destination name.
+	 * @param handler the {@link MessageHandler} from the binder.
+	 * @param destinationName the bound destination name.
+	 */
+	void configure(H handler, String destinationName);
+
+}
+----
+
+As you can see it gives you access to an actual instance of producing` MessageHandler` which you can configure as you wish.
+All you need to do is provide implementation of this strategy and configure it as a `@Bean`.
+
+====
+
 [[content-type-management]]
 == Content Type Negotiation
 
