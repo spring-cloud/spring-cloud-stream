@@ -41,16 +41,14 @@ class PartitionAwareFunctionWrapper implements Function<Object, Object>, Supplie
 
 	protected final Log logger = LogFactory.getLog(PartitionAwareFunctionWrapper.class);
 
-	private final FunctionInvocationWrapper function;
-
-	private Function<Object, Message> enhancerFunction;
+	@SuppressWarnings("rawtypes")
+	private final Function function;
 
 	@SuppressWarnings("rawtypes")
 	private final Function<Object, Message> outputMessageEnricher;
 
-	PartitionAwareFunctionWrapper(FunctionInvocationWrapper function, ConfigurableApplicationContext context, ProducerProperties producerProperties) {
+	PartitionAwareFunctionWrapper(Function<?, ?> function, ConfigurableApplicationContext context, ProducerProperties producerProperties) {
 		this.function = function;
-		this.enhancerFunction = function.getEnhancer();
 
 		if (producerProperties != null && producerProperties.isPartitioned()) {
 			StandardEvaluationContext evaluationContext = ExpressionUtils.createStandardEvaluationContext(context.getBeanFactory());
@@ -71,6 +69,7 @@ class PartitionAwareFunctionWrapper implements Function<Object, Object>, Supplie
 		}
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public Object apply(Object input) {
 		this.setEnhancerIfNecessary();
@@ -79,11 +78,16 @@ class PartitionAwareFunctionWrapper implements Function<Object, Object>, Supplie
 
 	@Override
 	public Object get() {
-		this.setEnhancerIfNecessary();
-		return this.function.get();
+		if (this.function instanceof FunctionInvocationWrapper) {
+			this.setEnhancerIfNecessary();
+			return ((FunctionInvocationWrapper) this.function).get();
+		}
+		throw new IllegalStateException("Call to get() is not allowed since this function is not a Supplier.");
 	}
 
 	private void setEnhancerIfNecessary() {
-		this.function.setEnhancer(this.outputMessageEnricher);
+		if (this.function instanceof FunctionInvocationWrapper) {
+			((FunctionInvocationWrapper) this.function).setEnhancer(this.outputMessageEnricher);
+		}
 	}
 }

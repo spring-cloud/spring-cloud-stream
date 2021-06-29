@@ -29,7 +29,6 @@ import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionRegistry;
 import org.springframework.cloud.function.context.FunctionType;
-import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.BinderFactory;
 import org.springframework.cloud.stream.binder.ProducerProperties;
@@ -203,11 +202,11 @@ public final class StreamBridge implements SmartInitializingSingleton {
 		boolean skipConversion = producerProperties.isUseNativeEncoding();
 
 		Function<Object, Object> functionToInvoke = skipConversion
-				? v -> v instanceof Message ? v :  MessageBuilder.withPayload(v).build()
+				? (v -> v instanceof Message ? v :  MessageBuilder.withPayload(v).build())
 						: this.functionCatalog.lookup(STREAM_BRIDGE_FUNC_NAME, outputContentType.toString());
 
 		if (producerProperties != null && producerProperties.isPartitioned()) {
-			functionToInvoke = new PartitionAwareFunctionWrapper((FunctionInvocationWrapper) functionToInvoke, this.applicationContext, producerProperties);
+			functionToInvoke = new PartitionAwareFunctionWrapper(functionToInvoke, this.applicationContext, producerProperties);
 		}
 		// this function is a pass through and is only required to force output conversion if necessary on SCF side.
 		Message<byte[]> resultMessage = (Message<byte[]>) functionToInvoke.apply(data);
