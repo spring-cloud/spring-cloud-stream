@@ -41,13 +41,14 @@ class PartitionAwareFunctionWrapper implements Function<Object, Object>, Supplie
 
 	protected final Log logger = LogFactory.getLog(PartitionAwareFunctionWrapper.class);
 
-	private final org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper function;
+	@SuppressWarnings("rawtypes")
+	private final Function function;
 
 	@SuppressWarnings("rawtypes")
 	private final Function<Message, Message> outputMessageEnricher;
 
-	@SuppressWarnings("unchecked")
-	PartitionAwareFunctionWrapper(FunctionInvocationWrapper function, ConfigurableApplicationContext context, ProducerProperties producerProperties) {
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	PartitionAwareFunctionWrapper(Function function, ConfigurableApplicationContext context, ProducerProperties producerProperties) {
 		this.function = function;
 		if (producerProperties != null && producerProperties.isPartitioned()) {
 			StandardEvaluationContext evaluationContext = ExpressionUtils.createStandardEvaluationContext(context.getBeanFactory());
@@ -65,26 +66,36 @@ class PartitionAwareFunctionWrapper implements Function<Object, Object>, Supplie
 		}
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public Object apply(Object input) {
-		if (this.outputMessageEnricher == null) { // to avoid breaking change
-			return this.function.apply(input);
+		if (this.function instanceof FunctionInvocationWrapper && this.outputMessageEnricher != null) {
+			try {
+				return ((FunctionInvocationWrapper) this.function).apply(input, this.outputMessageEnricher);
+			}
+			catch (NoSuchMethodError e) {
+				logger.warn("Versions of spring-cloud-function older then 3.0.2.RELEASE do not support generation of partition information. "
+						+ "Output message will not contain any partition header unless spring-cloud-function dependency is 3.0.2.RELEASE or higher.");
+				return this.function.apply(input);
+			}
 		}
-		try {
-			return this.function.apply(input, this.outputMessageEnricher);
-		}
-		catch (NoSuchMethodError e) {
-			logger.warn("Versions of spring-cloud-function older then 3.0.2.RELEASE do not support generation of partition information. "
-					+ "Output message will not contain any partition header unless spring-cloud-function dependency is 3.0.2.RELEASE or higher.");
+		else {
 			return this.function.apply(input);
 		}
 	}
 
 	@Override
 	public Object get() {
-		if (this.outputMessageEnricher == null) { // to avoid breaking change
-			return this.function.get();
+		if (this.function instanceof FunctionInvocationWrapper) {
+			if (this.outputMessageEnricher != null) {
+				return ((FunctionInvocationWrapper) this.function).get(this.outputMessageEnricher);
+			}
+			else {
+				return ((FunctionInvocationWrapper) this.function).get();
+			}
 		}
-		return this.function.get(this.outputMessageEnricher);
+		else {
+			throw new IllegalStateException("THis function is not a Supplier. Call to get() is not allowed");
+		}
 	}
 }

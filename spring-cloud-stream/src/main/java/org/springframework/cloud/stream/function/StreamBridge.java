@@ -31,7 +31,6 @@ import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionRegistry;
 import org.springframework.cloud.function.context.FunctionType;
-import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.cloud.stream.binding.BinderAwareChannelResolver.NewDestinationBindingCallback;
 import org.springframework.cloud.stream.binding.BindingService;
@@ -161,7 +160,7 @@ public final class StreamBridge implements SmartInitializingSingleton {
 						: this.functionCatalog.lookup(STREAM_BRIDGE_FUNC_NAME, outputContentType.toString());
 
 		if (producerProperties != null && producerProperties.isPartitioned()) {
-			functionToInvoke = new PartitionAwareFunctionWrapper((FunctionInvocationWrapper) functionToInvoke, this.applicationContext, producerProperties);
+			functionToInvoke = new PartitionAwareFunctionWrapper(functionToInvoke, this.applicationContext, producerProperties);
 		}
 		// this function is a pass through and is only required to force output conversion if necessary on SCF side.
 		Message<byte[]> resultMessage = (Message<byte[]>) functionToInvoke.apply(data);
