@@ -243,7 +243,7 @@ public class FunctionConfiguration {
 							}
 							else {
 								Type functionType = ((FunctionInvocationWrapper) supplier).getFunctionType();
-								IntegrationFlow integrationFlow = integrationFlowFromProvidedSupplier(new PartitionAwareFunctionWrapper((FunctionInvocationWrapper) supplier, context, producerProperties),
+								IntegrationFlow integrationFlow = integrationFlowFromProvidedSupplier(new PartitionAwareFunctionWrapper(supplier, context, producerProperties),
 										beginPublishingTrigger, pollable, context, taskScheduler, functionType)
 										.channel(c -> c.direct())
 										.fluxTransform((Function<? super Flux<Message<Object>>, ? extends Publisher<Object>>) function)
@@ -354,7 +354,15 @@ public class FunctionConfiguration {
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	private static Message sanitize(Message inputMessage) {
-		return MessageBuilder.fromMessage(inputMessage).removeHeader("spring.cloud.stream.sendto.destination").build();
+		MessageBuilder builder = MessageBuilder
+				.fromMessage(inputMessage)
+				.removeHeader("spring.cloud.stream.sendto.destination")
+				.removeHeader(MessageUtils.SOURCE_TYPE);
+		if (builder.getHeaders().containsKey(MessageUtils.TARGET_PROTOCOL)) {
+			builder = builder.setHeader(MessageUtils.SOURCE_TYPE, builder.getHeaders().get(MessageUtils.TARGET_PROTOCOL));
+		}
+		builder = builder.removeHeader(MessageUtils.TARGET_PROTOCOL);
+		return builder.build();
 	}
 
 	private static class FunctionToDestinationBinder implements InitializingBean, ApplicationContextAware {
@@ -706,7 +714,7 @@ public class FunctionConfiguration {
 
 			isRoutingFunction = ((FunctionInvocationWrapper) function).getTarget() instanceof RoutingFunction;
 			this.applicationContext = applicationContext;
-			this.function = new PartitionAwareFunctionWrapper((FunctionInvocationWrapper) function, this.applicationContext, producerProperties);
+			this.function = new PartitionAwareFunctionWrapper(function, this.applicationContext, producerProperties);
 			this.consumerProperties = consumerProperties;
 			if (this.consumerProperties != null) {
 				((FunctionInvocationWrapper) function).setSkipInputConversion(this.consumerProperties.isUseNativeDecoding());

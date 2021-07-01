@@ -29,6 +29,7 @@ import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionRegistry;
 import org.springframework.cloud.function.context.FunctionType;
+import org.springframework.cloud.function.context.message.MessageUtils;
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.BinderFactory;
 import org.springframework.cloud.stream.binder.ProducerProperties;
@@ -191,7 +192,7 @@ public final class StreamBridge implements SmartInitializingSingleton {
 	 * @param outputContentType content type to be used to deal with output type conversion
 	 * @return true if data was sent successfully, otherwise false or throws an exception.
 	 */
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public boolean send(String bindingName, @Nullable String binderName, Object data, MimeType outputContentType) {
 		if (!(data instanceof Message)) {
 			data = MessageBuilder.withPayload(data).build();
@@ -209,6 +210,9 @@ public final class StreamBridge implements SmartInitializingSingleton {
 			functionToInvoke = new PartitionAwareFunctionWrapper(functionToInvoke, this.applicationContext, producerProperties);
 		}
 		// this function is a pass through and is only required to force output conversion if necessary on SCF side.
+		if (data instanceof Message) {
+			data = MessageBuilder.fromMessage((Message) data).setHeader(MessageUtils.TARGET_PROTOCOL, "streamBridge").build();
+		}
 		Message<byte[]> resultMessage = (Message<byte[]>) functionToInvoke.apply(data);
 		return messageChannel.send(resultMessage);
 	}
