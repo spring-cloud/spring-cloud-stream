@@ -108,7 +108,7 @@ public class KafkaStreamsBinderWordCountFunctionTests {
 				"--spring.jmx.enabled=false",
 				"--spring.cloud.stream.bindings.process-in-0.destination=words",
 				"--spring.cloud.stream.bindings.process-out-0.destination=counts",
-				"--spring.cloud.stream.kafka.streams.default.consumer.application-id=testKstreamWordCountFunction",
+				"--spring.cloud.stream.kafka.streams.binder.application-id=testKstreamWordCountFunction",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.commit.interval.ms=1000",
 				"--spring.cloud.stream.kafka.streams.binder.consumerProperties.request.timeout.ms=29000", //for testing ...binder.consumerProperties
 				"--spring.cloud.stream.kafka.streams.binder.producerProperties.max.block.ms=90000", //for testing ...binder.producerProperties
@@ -116,6 +116,8 @@ public class KafkaStreamsBinderWordCountFunctionTests {
 						"=org.apache.kafka.common.serialization.Serdes$StringSerde",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.default.value.serde" +
 						"=org.apache.kafka.common.serialization.Serdes$StringSerde",
+				"--spring.cloud.stream.kafka.streams.bindings.process-in-0.consumer.consumedAs=custom-consumer",
+				"--spring.cloud.stream.kafka.streams.bindings.process-out-0.producer.producedAs=custom-producer",
 				"--spring.cloud.stream.kafka.streams.binder.brokers=" + embeddedKafka.getBrokersAsString())) {
 			receiveAndValidate("words", "counts");
 
@@ -136,6 +138,8 @@ public class KafkaStreamsBinderWordCountFunctionTests {
 			final String topology2 = kafkaStreamsTopologyEndpoint.kafkaStreamsTopology("testKstreamWordCountFunction");
 			assertThat(topology1).isNotEmpty();
 			assertThat(topology1).isEqualTo(topology2);
+			assertThat(topology1.contains("Source: custom-consumer")).isTrue();
+			assertThat(topology1.contains("Sink: custom-producer")).isTrue();
 
 			//verify that ...binder.consumerProperties and ...binder.producerProperties work.
 			Map<String, Object> streamConfigGlobalProperties = (Map<String, Object>) context.getBean("streamConfigGlobalProperties");

@@ -66,6 +66,11 @@ public class KafkaStreamsConsumerProperties extends KafkaConsumerProperties {
 	 */
 	private String eventTypeHeaderKey = "event_type";
 
+	/**
+	 * Custom name for the source component from which the processor is consuming from.
+	 */
+	private String consumedAs;
+
 	public String getApplicationId() {
 		return this.applicationId;
 	}
@@ -128,5 +133,13 @@ public class KafkaStreamsConsumerProperties extends KafkaConsumerProperties {
 
 	public void setEventTypeHeaderKey(String eventTypeHeaderKey) {
 		this.eventTypeHeaderKey = eventTypeHeaderKey;
+	}
+
+	public String getConsumedAs() {
+		return consumedAs;
+	}
+
+	public void setConsumedAs(String consumedAs) {
+		this.consumedAs = consumedAs;
 	}
 }

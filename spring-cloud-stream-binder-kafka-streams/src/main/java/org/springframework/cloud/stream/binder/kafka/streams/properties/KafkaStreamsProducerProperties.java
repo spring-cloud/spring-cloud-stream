@@ -41,6 +41,11 @@ public class KafkaStreamsProducerProperties extends KafkaProducerProperties {
 	 */
 	private String streamPartitionerBeanName;
 
+	/**
+	 * Custom name for the sink component to which the processor is producing to.
+	 */
+	private String producedAs;
+
 	public String getKeySerde() {
 		return this.keySerde;
 	}
@@ -63,5 +68,13 @@ public class KafkaStreamsProducerProperties extends KafkaProducerProperties {
 
 	public void setStreamPartitionerBeanName(String streamPartitionerBeanName) {
 		this.streamPartitionerBeanName = streamPartitionerBeanName;
+	}
+
+	public String getProducedAs() {
+		return producedAs;
+	}
+
+	public void setProducedAs(String producedAs) {
+		this.producedAs = producedAs;
 	}
 }
