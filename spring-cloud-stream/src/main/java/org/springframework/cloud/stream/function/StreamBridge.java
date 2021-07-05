@@ -29,6 +29,7 @@ import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionRegistry;
 import org.springframework.cloud.function.context.FunctionType;
+import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.cloud.function.context.message.MessageUtils;
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.BinderFactory;
@@ -200,11 +201,8 @@ public final class StreamBridge implements SmartInitializingSingleton {
 		ProducerProperties producerProperties = this.bindingServiceProperties.getProducerProperties(bindingName);
 		SubscribableChannel messageChannel = this.resolveDestination(bindingName, producerProperties, binderName);
 
-		boolean skipConversion = producerProperties.isUseNativeEncoding();
-
-		Function<Object, Object> functionToInvoke = skipConversion
-				? (v -> v instanceof Message ? v :  MessageBuilder.withPayload(v).build())
-						: this.functionCatalog.lookup(STREAM_BRIDGE_FUNC_NAME, outputContentType.toString());
+		Function functionToInvoke = this.functionCatalog.lookup(STREAM_BRIDGE_FUNC_NAME, outputContentType.toString());
+		((FunctionInvocationWrapper) functionToInvoke).setSkipOutputConversion(producerProperties.isUseNativeEncoding());
 
 		if (producerProperties != null && producerProperties.isPartitioned()) {
 			functionToInvoke = new PartitionAwareFunctionWrapper(functionToInvoke, this.applicationContext, producerProperties);
