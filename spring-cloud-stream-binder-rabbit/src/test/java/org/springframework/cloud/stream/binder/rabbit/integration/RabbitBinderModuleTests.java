@@ -27,9 +27,9 @@ import com.rabbitmq.http.client.Client;
 import com.rabbitmq.http.client.domain.BindingInfo;
 import com.rabbitmq.http.client.domain.ExchangeInfo;
 import com.rabbitmq.http.client.domain.QueueInfo;
-import org.junit.After;
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.Mockito;
 
 import org.springframework.amqp.core.DeclarableCustomizer;
@@ -94,7 +94,7 @@ import static org.mockito.Mockito.verify;
  */
 public class RabbitBinderModuleTests {
 
-	@ClassRule
+	@RegisterExtension
 	public static RabbitTestSupport rabbitTestSupport = new RabbitTestSupport();
 
 	private ConfigurableApplicationContext context;
@@ -102,7 +102,7 @@ public class RabbitBinderModuleTests {
 	public static final ConnectionFactory MOCK_CONNECTION_FACTORY = mock(
 			ConnectionFactory.class, Mockito.RETURNS_MOCKS);
 
-	@After
+	@AfterEach
 	public void tearDown() {
 		if (context != null) {
 			context.close();

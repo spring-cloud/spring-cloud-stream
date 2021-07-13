@@ -18,9 +18,9 @@ package org.springframework.cloud.stream.binder.rabbit;
 
 import java.util.UUID;
 
-import org.junit.Before;
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
@@ -37,12 +37,12 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 public class LocalizedQueueConnectionFactoryIntegrationTests {
 
-	@ClassRule
+	@RegisterExtension
 	public static RabbitTestSupport rabbitAvailableRule = new RabbitTestSupport(true);
 
 	private LocalizedQueueConnectionFactory lqcf;
 
-	@Before
+	@BeforeEach
 	public void setup() {
 		ConnectionFactory defaultConnectionFactory = rabbitAvailableRule.getResource();
 		String[] addresses = new String[] { "localhost:9999", "localhost:5672" };

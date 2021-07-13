@@ -27,8 +27,8 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.http.client.Client;
 import com.rabbitmq.http.client.domain.QueueInfo;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 import org.springframework.amqp.core.Base64UrlNamingStrategy;
 import org.springframework.amqp.core.BindingBuilder;
@@ -65,7 +65,7 @@ public class RabbitBinderCleanerTests {
 		}
 	}
 
-	@Rule
+	@RegisterExtension
 	public RabbitTestSupport rabbitWithMgmtEnabled = new RabbitTestSupport(true);
 
 	@Test
