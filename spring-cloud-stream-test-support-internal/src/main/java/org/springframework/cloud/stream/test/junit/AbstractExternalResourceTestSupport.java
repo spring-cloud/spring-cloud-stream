@@ -20,7 +20,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.junit.Assume;
 import org.junit.Rule;
-import org.junit.rules.TestRule;
+import org.junit.jupiter.api.extension.BeforeEachCallback;
+import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
 
@@ -39,7 +40,7 @@ import static org.junit.Assert.fail;
  * @author Eric Bottard
  * @author Gary Russell
  */
-public abstract class AbstractExternalResourceTestSupport<R> implements TestRule {
+public abstract class AbstractExternalResourceTestSupport<R> implements BeforeEachCallback {
 
 	/**
 	 * SCS external servers required environment variable.
@@ -58,6 +59,18 @@ public abstract class AbstractExternalResourceTestSupport<R> implements TestRule
 	}
 
 	@Override
+	public void beforeEach(ExtensionContext context) throws Exception {
+		try {
+			obtainResource();
+		}
+		catch (Exception e) {
+			maybeCleanup();
+
+			failOrSkip(e);
+		}
+	}
+
+//	@Override
 	public Statement apply(final Statement base, Description description) {
 		try {
 			obtainResource();
