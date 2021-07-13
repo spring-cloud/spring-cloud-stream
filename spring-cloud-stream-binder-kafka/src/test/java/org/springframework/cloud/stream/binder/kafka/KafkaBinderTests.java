@@ -66,11 +66,11 @@ import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.assertj.core.api.Assertions;
 import org.assertj.core.api.Condition;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
 import org.springframework.beans.DirectFieldAccessor;
 import org.springframework.cloud.stream.binder.Binder;
@@ -97,6 +97,7 @@ import org.springframework.cloud.stream.binder.kafka.utils.DlqPartitionFunction;
 import org.springframework.cloud.stream.binder.kafka.utils.KafkaTopicUtils;
 import org.springframework.cloud.stream.binding.MessageConverterConfigurer.PartitioningInterceptor;
 import org.springframework.cloud.stream.config.BindingProperties;
+import org.springframework.cloud.stream.provisioning.ProvisioningException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.support.GenericApplicationContext;
@@ -126,8 +127,10 @@ import org.springframework.kafka.support.SendResult;
 import org.springframework.kafka.support.TopicPartitionOffset;
 import org.springframework.kafka.support.converter.BatchMessagingMessageConverter;
 import org.springframework.kafka.support.converter.MessagingMessageConverter;
+import org.springframework.kafka.test.EmbeddedKafkaBroker;
+import org.springframework.kafka.test.condition.EmbeddedKafkaCondition;
+import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.kafka.test.core.BrokerAddress;
-import org.springframework.kafka.test.rule.EmbeddedKafkaRule;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
@@ -156,28 +159,27 @@ import static org.mockito.Mockito.mock;
  * @author Henryk Konsek
  * @author Gary Russell
  */
+@EmbeddedKafka(count = 1, controlledShutdown = true, topics = "error.pollableDlq.group-pcWithDlq", brokerProperties = {"transaction.state.log.replication.factor=1",
+		"transaction.state.log.min.isr=1"})
 public class KafkaBinderTests extends
 
 	PartitionCapableBinderTests<AbstractKafkaTestBinder, ExtendedConsumerProperties<KafkaConsumerProperties>, ExtendedProducerProperties<KafkaProducerProperties>> {
 
-
 	private static final int DEFAULT_OPERATION_TIMEOUT = 30;
-
-//	@RegisterExtension
-//	public ExpectedException expectedProvisioningException = ExpectedException.none();
 
 	private final String CLASS_UNDER_TEST_NAME = KafkaMessageChannelBinder.class
 			.getSimpleName();
 
-	@RegisterExtension
-	public static EmbeddedKafkaRule embeddedKafka = new EmbeddedKafkaRuleExtension(1, true, 10,
-			"error.pollableDlq.group-pcWithDlq")
-					.brokerProperty("transaction.state.log.replication.factor", "1")
-					.brokerProperty("transaction.state.log.min.isr", "1");
-
 	private KafkaTestBinder binder;
 
 	private AdminClient adminClient;
+
+	private static EmbeddedKafkaBroker embeddedKafka;
+
+	@BeforeAll
+	public static void setup() {
+		embeddedKafka = EmbeddedKafkaCondition.getBroker();
+	}
 
 	@Override
 	protected ExtendedConsumerProperties<KafkaConsumerProperties> createConsumerProperties() {
@@ -248,8 +250,8 @@ public class KafkaBinderTests extends
 	private KafkaBinderConfigurationProperties createConfigurationProperties() {
 		KafkaBinderConfigurationProperties binderConfiguration = new KafkaBinderConfigurationProperties(
 				new TestKafkaProperties());
-		BrokerAddress[] brokerAddresses = embeddedKafka.getEmbeddedKafka()
-				.getBrokerAddresses();
+		BrokerAddress[] brokerAddresses = embeddedKafka.getBrokerAddresses();
+
 		List<String> bAddresses = new ArrayList<>();
 		for (BrokerAddress bAddress : brokerAddresses) {
 			bAddresses.add(bAddress.toString());
@@ -283,8 +285,7 @@ public class KafkaBinderTests extends
 			timeoutMultiplier = Double.parseDouble(multiplier);
 		}
 
-		BrokerAddress[] brokerAddresses = embeddedKafka.getEmbeddedKafka()
-				.getBrokerAddresses();
+		BrokerAddress[] brokerAddresses = embeddedKafka.getBrokerAddresses();
 		List<String> bAddresses = new ArrayList<>();
 		for (BrokerAddress bAddress : brokerAddresses) {
 			bAddresses.add(bAddress.toString());
@@ -554,7 +555,6 @@ public class KafkaBinderTests extends
 	@Test
 	@Override
 	@SuppressWarnings("unchecked")
-	@Disabled
 	public void testSendAndReceiveNoOriginalContentType(TestInfo testInfo) throws Exception {
 		Binder binder = getBinder();
 
@@ -731,7 +731,7 @@ public class KafkaBinderTests extends
 
 	@Test
 	@SuppressWarnings("unchecked")
-	@Disabled
+	@Disabled("Failing when run as part of test suite")
 	public void testDlqWithNativeSerializationEnabledOnDlqProducer() throws Exception {
 		Binder binder = getBinder();
 		ExtendedProducerProperties<KafkaProducerProperties> producerProperties = createProducerProperties();
@@ -1064,7 +1064,7 @@ public class KafkaBinderTests extends
 
 		String dlqTopic = useDlqDestResolver ? "foo.dlq" : "error.dlqTest." + uniqueBindingId + ".0.testGroup";
 		try (AdminClient admin = AdminClient.create(Collections.singletonMap(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG,
-				embeddedKafka.getEmbeddedKafka().getBrokersAsString()))) {
+				embeddedKafka.getBrokersAsString()))) {
 			if (useDlqDestResolver) {
 				List<NewTopic> nonProvisionedDlqTopics = new ArrayList<>();
 				NewTopic nTopic = new NewTopic(dlqTopic, 3, (short) 1);
@@ -2879,7 +2879,6 @@ public class KafkaBinderTests extends
 
 	@Test
 	@SuppressWarnings("unchecked")
-	@Disabled
 	public void testAutoAddPartitionsDisabledFailsIfTopicUnderPartitionedAndAutoRebalanceDisabled()
 			throws Throwable {
 		KafkaBinderConfigurationProperties configurationProperties = createConfigurationProperties();
@@ -2898,14 +2897,13 @@ public class KafkaBinderTests extends
 		consumerProperties.setInstanceCount(3);
 		consumerProperties.setInstanceIndex(2);
 		consumerProperties.getExtension().setAutoRebalanceEnabled(false);
-//		expectedProvisioningException.expect(ProvisioningException.class);
-//		expectedProvisioningException.expectMessage(
-//				"The number of expected partitions was: 3, but 1 has been found instead");
-		Binding binding = binder.bindConsumer(testTopicName, "test", output,
-				consumerProperties);
-		if (binding != null) {
-			binding.unbind();
-		}
+		Assertions.assertThatThrownBy(() -> {
+			Binding binding = binder.bindConsumer(testTopicName, "test", output,
+					consumerProperties);
+			if (binding != null) {
+				binding.unbind();
+			}
+		}).isInstanceOf(ProvisioningException.class);
 	}
 
 	@Test
@@ -3300,7 +3298,7 @@ public class KafkaBinderTests extends
 
 		Map<String, Object> consumerProps = KafkaTestUtils.consumerProps(
 				"testSendAndReceiveWithMixedMode", "false",
-				embeddedKafka.getEmbeddedKafka());
+				embeddedKafka);
 		consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
 		consumerProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG,
 				ByteArrayDeserializer.class);
@@ -3345,7 +3343,7 @@ public class KafkaBinderTests extends
 				"pollable,anotherOne", "group-polledConsumer", inboundBindTarget,
 				consumerProps);
 		Map<String, Object> producerProps = KafkaTestUtils
-				.producerProps(embeddedKafka.getEmbeddedKafka());
+				.producerProps(embeddedKafka);
 		KafkaTemplate template = new KafkaTemplate(
 				new DefaultKafkaProducerFactory<>(producerProps));
 		template.send("pollable", "testPollable");
@@ -3396,7 +3394,7 @@ public class KafkaBinderTests extends
 		Binding<PollableSource<MessageHandler>> binding = binder.bindPollableConsumer(
 				"pollableRequeue", "group", inboundBindTarget, properties);
 		Map<String, Object> producerProps = KafkaTestUtils
-				.producerProps(embeddedKafka.getEmbeddedKafka());
+				.producerProps(embeddedKafka);
 		KafkaTemplate template = new KafkaTemplate(
 				new DefaultKafkaProducerFactory<>(producerProps));
 		template.send("pollableRequeue", "testPollable");
@@ -3432,7 +3430,7 @@ public class KafkaBinderTests extends
 		properties.setBackOffInitialInterval(0);
 		properties.getExtension().setEnableDlq(true);
 		Map<String, Object> producerProps = KafkaTestUtils
-				.producerProps(embeddedKafka.getEmbeddedKafka());
+				.producerProps(embeddedKafka);
 		Binding<PollableSource<MessageHandler>> binding = binder.bindPollableConsumer(
 				"pollableDlq", "group-pcWithDlq", inboundBindTarget, properties);
 		KafkaTemplate template = new KafkaTemplate(
@@ -3451,11 +3449,11 @@ public class KafkaBinderTests extends
 			assertThat(e.getCause().getMessage()).isEqualTo("test DLQ");
 		}
 		Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("dlq", "false",
-				embeddedKafka.getEmbeddedKafka());
+				embeddedKafka);
 		consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
 		ConsumerFactory cf = new DefaultKafkaConsumerFactory<>(consumerProps);
 		Consumer consumer = cf.createConsumer();
-		embeddedKafka.getEmbeddedKafka().consumeFromAnEmbeddedTopic(consumer,
+		embeddedKafka.consumeFromAnEmbeddedTopic(consumer,
 				"error.pollableDlq.group-pcWithDlq");
 		ConsumerRecord deadLetter = KafkaTestUtils.getSingleRecord(consumer,
 				"error.pollableDlq.group-pcWithDlq");
@@ -3470,7 +3468,7 @@ public class KafkaBinderTests extends
 	public void testTopicPatterns() throws Exception {
 		try (AdminClient admin = AdminClient.create(
 				Collections.singletonMap(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG,
-						embeddedKafka.getEmbeddedKafka().getBrokersAsString()))) {
+						embeddedKafka.getBrokersAsString()))) {
 			admin.createTopics(Collections
 					.singletonList(new NewTopic("topicPatterns.1", 1, (short) 1))).all()
 					.get();
@@ -3489,7 +3487,7 @@ public class KafkaBinderTests extends
 					"topicPatterns\\..*", "testTopicPatterns", moduleInputChannel,
 					consumerProperties);
 			DefaultKafkaProducerFactory pf = new DefaultKafkaProducerFactory(
-					KafkaTestUtils.producerProps(embeddedKafka.getEmbeddedKafka()));
+					KafkaTestUtils.producerProps(embeddedKafka));
 			KafkaTemplate template = new KafkaTemplate(pf);
 			template.send("topicPatterns.1", "foo");
 			assertThat(latch.await(10, TimeUnit.SECONDS)).isTrue();
@@ -3500,11 +3498,11 @@ public class KafkaBinderTests extends
 	}
 
 	@Test
-	@Disabled
 	public void testSameTopicCannotBeProvisionedAgain() throws Throwable {
+		CountDownLatch latch = new CountDownLatch(1);
 		try (AdminClient admin = AdminClient.create(
 				Collections.singletonMap(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG,
-						embeddedKafka.getEmbeddedKafka().getBrokersAsString()))) {
+						embeddedKafka.getBrokersAsString()))) {
 			admin.createTopics(Collections
 					.singletonList(new NewTopic("fooUniqueTopic", 1, (short) 1))).all()
 					.get();
@@ -3516,8 +3514,9 @@ public class KafkaBinderTests extends
 			}
 			catch (Exception ex) {
 				assertThat(ex.getCause() instanceof TopicExistsException).isTrue();
-				throw ex.getCause();
+				latch.countDown();
 			}
+			latch.await(1, TimeUnit.SECONDS);
 		}
 	}
 
@@ -3719,7 +3718,7 @@ public class KafkaBinderTests extends
 		input.setBeanName(name + ".in");
 		ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = createConsumerProperties();
 		Binding<MessageChannel> consumerBinding = binder.bindConsumer(name + ".0", name, input, consumerProperties);
-		Map<String, Object> producerProps = KafkaTestUtils.producerProps(embeddedKafka.getEmbeddedKafka());
+		Map<String, Object> producerProps = KafkaTestUtils.producerProps(embeddedKafka);
 		KafkaTemplate template = new KafkaTemplate(new DefaultKafkaProducerFactory<>(producerProps));
 		template.send(MessageBuilder.withPayload("internalHeaderPropagation")
 				.setHeader(KafkaHeaders.TOPIC, name + ".0")
@@ -3733,7 +3732,7 @@ public class KafkaBinderTests extends
 		output.send(consumed);
 
 		Map<String, Object> consumerProps = KafkaTestUtils.consumerProps(name, "false",
-				embeddedKafka.getEmbeddedKafka());
+				embeddedKafka);
 		consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
 		consumerProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class);
 		consumerProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class);
