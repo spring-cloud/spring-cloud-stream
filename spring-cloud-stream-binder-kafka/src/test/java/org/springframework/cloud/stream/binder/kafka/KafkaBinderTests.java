@@ -157,10 +157,10 @@ import static org.mockito.Mockito.mock;
  * @author Gary Russell
  */
 public class KafkaBinderTests extends
-		// @checkstyle:off
-		PartitionCapableBinderTests<AbstractKafkaTestBinder, ExtendedConsumerProperties<KafkaConsumerProperties>, ExtendedProducerProperties<KafkaProducerProperties>> {
 
-	// @checkstyle:on
+	PartitionCapableBinderTests<AbstractKafkaTestBinder, ExtendedConsumerProperties<KafkaConsumerProperties>, ExtendedProducerProperties<KafkaProducerProperties>> {
+
+
 	private static final int DEFAULT_OPERATION_TIMEOUT = 30;
 
 //	@RegisterExtension
@@ -554,6 +554,7 @@ public class KafkaBinderTests extends
 	@Test
 	@Override
 	@SuppressWarnings("unchecked")
+	@Disabled
 	public void testSendAndReceiveNoOriginalContentType(TestInfo testInfo) throws Exception {
 		Binder binder = getBinder();
 
