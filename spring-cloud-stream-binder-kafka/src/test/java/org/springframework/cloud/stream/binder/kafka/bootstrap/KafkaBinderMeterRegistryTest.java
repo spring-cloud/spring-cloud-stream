@@ -19,12 +19,14 @@ package org.springframework.cloud.stream.binder.kafka.bootstrap;
 import java.util.function.Function;
 
 import io.micrometer.core.instrument.MeterRegistry;
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.cloud.stream.binder.kafka.EmbeddedKafkaRuleExtension;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.kafka.test.rule.EmbeddedKafkaRule;
@@ -35,10 +37,11 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 /**
  * @author Soby Chacko
  */
+@Disabled
 public class KafkaBinderMeterRegistryTest {
 
-	@ClassRule
-	public static EmbeddedKafkaRule embeddedKafka = new EmbeddedKafkaRule(1, true, 10);
+	@RegisterExtension
+	public static EmbeddedKafkaRule embeddedKafka = new EmbeddedKafkaRuleExtension(1, true, 10);
 
 	@Test
 	public void testMetricsWithSingleBinder() {
