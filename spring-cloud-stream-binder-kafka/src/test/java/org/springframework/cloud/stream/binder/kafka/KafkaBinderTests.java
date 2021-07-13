@@ -156,7 +156,6 @@ import static org.mockito.Mockito.mock;
  * @author Henryk Konsek
  * @author Gary Russell
  */
-@Disabled
 public class KafkaBinderTests extends
 
 	PartitionCapableBinderTests<AbstractKafkaTestBinder, ExtendedConsumerProperties<KafkaConsumerProperties>, ExtendedProducerProperties<KafkaProducerProperties>> {
