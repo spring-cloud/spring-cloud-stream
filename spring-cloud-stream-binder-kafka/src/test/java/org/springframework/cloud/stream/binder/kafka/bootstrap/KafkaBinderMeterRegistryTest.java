@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2019 the original author or authors.
+ * Copyright 2019-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,13 @@
 
 package org.springframework.cloud.stream.binder.kafka.bootstrap;
 
+import java.util.Map;
 import java.util.function.Function;
 
 import io.micrometer.core.instrument.MeterRegistry;
+import org.apache.kafka.clients.consumer.Consumer;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -27,9 +31,13 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
+import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
+import org.springframework.kafka.core.DefaultKafkaProducerFactory;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.test.EmbeddedKafkaBroker;
 import org.springframework.kafka.test.condition.EmbeddedKafkaCondition;
 import org.springframework.kafka.test.context.EmbeddedKafka;
+import org.springframework.kafka.test.utils.KafkaTestUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
@@ -37,18 +45,33 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 /**
  * @author Soby Chacko
  */
-@EmbeddedKafka(count = 1, controlledShutdown = true, partitions = 10)
+@EmbeddedKafka(count = 1, controlledShutdown = true, partitions = 10, topics = "outputTopic")
 public class KafkaBinderMeterRegistryTest {
 
 	private static EmbeddedKafkaBroker embeddedKafka;
 
+	private static Consumer<String, String> consumer;
+
 	@BeforeAll
 	public static void setup() {
 		embeddedKafka = EmbeddedKafkaCondition.getBroker();
+
+		Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("group", "false",
+				embeddedKafka);
+		consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+		consumerProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer");
+		DefaultKafkaConsumerFactory<String, String> cf = new DefaultKafkaConsumerFactory<>(consumerProps);
+		consumer = cf.createConsumer();
+		embeddedKafka.consumeFromEmbeddedTopics(consumer, "outputTopic");
+	}
+
+	@AfterAll
+	public static void tearDown() {
+		consumer.close();
 	}
 
 	@Test
-	public void testMetricsWithSingleBinder() {
+	public void testMetricsWithSingleBinder() throws Exception {
 		ConfigurableApplicationContext applicationContext = new SpringApplicationBuilder(SimpleApplication.class)
 				.web(WebApplicationType.NONE)
 				.run("--spring.cloud.stream.bindings.uppercase-in-0.destination=inputTopic",
@@ -56,6 +79,19 @@ public class KafkaBinderMeterRegistryTest {
 						"--spring.cloud.stream.bindings.uppercase-out-0.destination=outputTopic",
 						"--spring.cloud.stream.kafka.binder.brokers" + "="
 								+ embeddedKafka.getBrokersAsString());
+
+
+		Map<String, Object> senderProps = KafkaTestUtils.producerProps(embeddedKafka);
+		DefaultKafkaProducerFactory<Integer, String> pf = new DefaultKafkaProducerFactory<>(senderProps);
+
+		KafkaTemplate<Integer, String> template = new KafkaTemplate<>(pf, true);
+		template.setDefaultTopic("inputTopic");
+		template.sendDefault("foo");
+
+		// Forcing the retrieval of the data on the outbound so that the producer factory has
+		// a chance to add the micrometer listener properly. Only on the first send, binder's
+		// internal KafkaTemplate adds the Micrometer listener (using the producer factory).
+		KafkaTestUtils.getSingleRecord(consumer, "outputTopic");
 
 		final MeterRegistry meterRegistry = applicationContext.getBean(MeterRegistry.class);
 		assertMeterRegistry(meterRegistry);
@@ -80,6 +116,18 @@ public class KafkaBinderMeterRegistryTest {
 								+ ".spring.cloud.stream.kafka.binder.brokers" + "="
 								+ embeddedKafka.getBrokersAsString());
 
+		Map<String, Object> senderProps = KafkaTestUtils.producerProps(embeddedKafka);
+		DefaultKafkaProducerFactory<Integer, String> pf = new DefaultKafkaProducerFactory<>(senderProps);
+
+		KafkaTemplate<Integer, String> template = new KafkaTemplate<>(pf, true);
+		template.setDefaultTopic("inputTopic");
+		template.sendDefault("foo");
+
+		// Forcing the retrieval of the data on the outbound so that the producer factory has
+		// a chance to add the micrometer listener properly. Only on the first send, binder's
+		// internal KafkaTemplate adds the Micrometer listener (using the producer factory).
+		KafkaTestUtils.getSingleRecord(consumer, "outputTopic");
+
 		final MeterRegistry meterRegistry = applicationContext.getBean(MeterRegistry.class);
 		assertMeterRegistry(meterRegistry);
 		applicationContext.close();
@@ -97,8 +145,7 @@ public class KafkaBinderMeterRegistryTest {
 		assertThatCode(() -> meterRegistry.get("kafka.consumer.fetch.manager.fetch.total").meter()).doesNotThrowAnyException();
 
 		// assert producer metrics
-		// TODO: Investigate why Kafka producer metrics are missing.
-//		assertThatCode(() -> meterRegistry.get("kafka.producer.connection.count").meter()).doesNotThrowAnyException();
+		assertThatCode(() -> meterRegistry.get("kafka.producer.io.ratio").meter()).doesNotThrowAnyException();
 	}
 
 	@SpringBootApplication

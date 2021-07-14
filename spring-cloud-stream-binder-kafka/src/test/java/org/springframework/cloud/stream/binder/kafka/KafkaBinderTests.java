@@ -66,9 +66,9 @@ import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.assertj.core.api.Assertions;
 import org.assertj.core.api.Condition;
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 
@@ -731,7 +731,6 @@ public class KafkaBinderTests extends
 
 	@Test
 	@SuppressWarnings("unchecked")
-	@Disabled("Failing when run as part of test suite")
 	public void testDlqWithNativeSerializationEnabledOnDlqProducer() throws Exception {
 		Binder binder = getBinder();
 		ExtendedProducerProperties<KafkaProducerProperties> producerProperties = createProducerProperties();
@@ -790,12 +789,10 @@ public class KafkaBinderTests extends
 				.withPayload("foo").build();
 
 		moduleOutputChannel.send(message);
-
 		Message<?> receivedMessage = receive(dlqChannel, 5);
 		assertThat(receivedMessage).isNotNull();
 		assertThat(receivedMessage.getPayload()).isEqualTo("foo".getBytes());
-		assertThat(handler.getInvocationCount())
-				.isEqualTo(consumerProperties.getMaxAttempts());
+		Awaitility.await().until(() -> handler.getInvocationCount() == consumerProperties.getMaxAttempts());
 		assertThat(receivedMessage.getHeaders()
 				.get(KafkaMessageChannelBinder.X_ORIGINAL_TOPIC))
 						.isEqualTo("foo.bar".getBytes(StandardCharsets.UTF_8));
