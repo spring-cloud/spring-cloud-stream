@@ -21,8 +21,8 @@ import java.util.List;
 import java.util.UUID;
 
 import org.assertj.core.api.Condition;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInfo;
+import org.junit.Ignore;
+import org.junit.Test;
 
 import org.springframework.beans.DirectFieldAccessor;
 import org.springframework.cloud.stream.config.BindingProperties;
@@ -57,10 +57,10 @@ public abstract class PartitionCapableBinderTests<B extends AbstractTestBinder<?
 
 	@Test
 	@SuppressWarnings("unchecked")
-	public void testAnonymousGroup(TestInfo testInfo) throws Exception {
+	public void testAnonymousGroup() throws Exception {
 		B binder = getBinder();
 		BindingProperties producerBindingProperties = createProducerBindingProperties(
-				createProducerProperties(testInfo));
+				createProducerProperties());
 		DirectChannel output = createBindableChannel("output", producerBindingProperties);
 		Binding<MessageChannel> producerBinding = binder.bindProducer(
 				String.format("defaultGroup%s0", getDestinationNameDelimiter()), output,
@@ -121,9 +121,9 @@ public abstract class PartitionCapableBinderTests<B extends AbstractTestBinder<?
 	}
 
 	@Test
-	public void testOneRequiredGroup(TestInfo testInfo) throws Exception {
+	public void testOneRequiredGroup() throws Exception {
 		B binder = getBinder();
-		PP producerProperties = createProducerProperties(testInfo);
+		PP producerProperties = createProducerProperties();
 		DirectChannel output = createBindableChannel("output",
 				createProducerBindingProperties(producerProperties));
 
@@ -153,9 +153,9 @@ public abstract class PartitionCapableBinderTests<B extends AbstractTestBinder<?
 	}
 
 	@Test
-	public void testTwoRequiredGroups(TestInfo testInfo) throws Exception {
+	public void testTwoRequiredGroups() throws Exception {
 		B binder = getBinder();
-		PP producerProperties = createProducerProperties(testInfo);
+		PP producerProperties = createProducerProperties();
 
 		DirectChannel output = createBindableChannel("output",
 				createProducerBindingProperties(producerProperties));
@@ -194,7 +194,7 @@ public abstract class PartitionCapableBinderTests<B extends AbstractTestBinder<?
 	}
 
 	@Test
-	public void testPartitionedModuleSpEL(TestInfo testInfo) throws Exception {
+	public void testPartitionedModuleSpEL() throws Exception {
 		B binder = getBinder();
 
 		CP consumerProperties = createConsumerProperties();
@@ -220,7 +220,7 @@ public abstract class PartitionCapableBinderTests<B extends AbstractTestBinder<?
 				String.format("part%s0", getDestinationNameDelimiter()),
 				"testPartitionedModuleSpEL", input2, consumerProperties);
 
-		PP producerProperties = createProducerProperties(testInfo);
+		PP producerProperties = createProducerProperties();
 		producerProperties.setPartitionKeyExpression(
 				spelExpressionParser.parseExpression("payload"));
 		producerProperties.setPartitionSelectorExpression(
@@ -304,6 +304,85 @@ public abstract class PartitionCapableBinderTests<B extends AbstractTestBinder<?
 				.contains(getExpectedRoutingBaseDestination(
 						String.format("part%s0", getDestinationNameDelimiter()), "test")
 						+ "-' + headers['partition']");
+	}
+
+	@Test
+	@Ignore
+	public void testPartitionedModuleJava() throws Exception {
+		B binder = getBinder();
+
+		CP consumerProperties = createConsumerProperties();
+		consumerProperties.setConcurrency(2);
+		consumerProperties.setInstanceCount(3);
+		consumerProperties.setInstanceIndex(0);
+		consumerProperties.setPartitioned(true);
+		QueueChannel input0 = new QueueChannel();
+		input0.setBeanName("test.input0J");
+		Binding<MessageChannel> input0Binding = binder.bindConsumer(
+				String.format("partJ%s0", getDestinationNameDelimiter()),
+				"testPartitionedModuleJava", input0, consumerProperties);
+		consumerProperties.setInstanceIndex(1);
+		QueueChannel input1 = new QueueChannel();
+		input1.setBeanName("test.input1J");
+		Binding<MessageChannel> input1Binding = binder.bindConsumer(
+				String.format("partJ%s0", getDestinationNameDelimiter()),
+				"testPartitionedModuleJava", input1, consumerProperties);
+		consumerProperties.setInstanceIndex(2);
+		QueueChannel input2 = new QueueChannel();
+		input2.setBeanName("test.input2J");
+		Binding<MessageChannel> input2Binding = binder.bindConsumer(
+				String.format("partJ%s0", getDestinationNameDelimiter()),
+				"testPartitionedModuleJava", input2, consumerProperties);
+
+		PP producerProperties = createProducerProperties();
+		producerProperties.setPartitionCount(3);
+		DirectChannel output = createBindableChannel("output",
+				createProducerBindingProperties(producerProperties));
+		output.setBeanName("test.output");
+		Binding<MessageChannel> outputBinding = binder.bindProducer("partJ.0", output,
+				producerProperties);
+		if (usesExplicitRouting()) {
+			Object endpoint = extractEndpoint(outputBinding);
+			assertThat(getEndpointRouting(endpoint))
+					.contains(getExpectedRoutingBaseDestination(
+							String.format("partJ%s0", getDestinationNameDelimiter()),
+							"testPartitionedModuleJava") + "-' + headers['"
+							+ BinderHeaders.PARTITION_HEADER + "']");
+		}
+
+		output.send(MessageBuilder.withPayload("2")
+				.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN)
+				.build());
+		output.send(MessageBuilder.withPayload("1")
+				.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN)
+				.build());
+		output.send(MessageBuilder.withPayload("0")
+				.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN)
+				.build());
+
+		Message<?> receive0 = receive(input0);
+		assertThat(receive0).isNotNull();
+		Message<?> receive1 = receive(input1);
+		assertThat(receive1).isNotNull();
+		Message<?> receive2 = receive(input2);
+		assertThat(receive2).isNotNull();
+
+		if (usesExplicitRouting()) {
+			assertThat(receive0.getPayload()).isEqualTo("0".getBytes());
+			assertThat(receive1.getPayload()).isEqualTo("1".getBytes());
+			assertThat(receive2.getPayload()).isEqualTo("2".getBytes());
+		}
+		else {
+			List<Message<?>> receivedMessages = Arrays.asList(receive0, receive1,
+					receive2);
+			assertThat(receivedMessages).extracting("payload").containsExactlyInAnyOrder(
+					"0".getBytes(), "1".getBytes(), "2".getBytes());
+		}
+
+		input0Binding.unbind();
+		input1Binding.unbind();
+		input2Binding.unbind();
+		outputBinding.unbind();
 	}
 
 	/**

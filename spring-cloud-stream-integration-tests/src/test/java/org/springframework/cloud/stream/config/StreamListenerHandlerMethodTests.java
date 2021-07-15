@@ -19,8 +19,7 @@ package org.springframework.cloud.stream.config;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
 
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.boot.SpringApplication;
@@ -128,7 +127,6 @@ public class StreamListenerHandlerMethodTests {
 
 	@SuppressWarnings("unchecked")
 	@Test
-	@Disabled
 	public void testMethodHeadersNotPropagatged() throws Exception {
 		ConfigurableApplicationContext context = SpringApplication.run(
 				TestMethodHeadersNotPropagated.class, "--server.port=0",

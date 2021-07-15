@@ -29,10 +29,9 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInfo;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 import org.springframework.cloud.stream.binder.AbstractBinderTests.Station.Readings;
 import org.springframework.cloud.stream.binding.MessageConverterConfigurer;
@@ -91,7 +90,7 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 	 */
 	protected double timeoutMultiplier = 1.0D;
 
-	@BeforeEach
+	@Before
 	public void before() {
 		applicationContext = new GenericApplicationContext();
 		applicationContext.refresh();
@@ -124,12 +123,12 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 
 	@Test
 	@SuppressWarnings("rawtypes")
-	public void testClean(TestInfo testInfo) throws Exception {
+	public void testClean() throws Exception {
 		Binder binder = getBinder();
 		Binding<MessageChannel> foo0ProducerBinding = binder.bindProducer(
 				String.format("foo%s0", getDestinationNameDelimiter()),
 				this.createBindableChannel("output", new BindingProperties()),
-				createProducerProperties(testInfo));
+				createProducerProperties());
 		Binding<MessageChannel> foo0ConsumerBinding = binder.bindConsumer(
 				String.format("foo%s0", getDestinationNameDelimiter()), "testClean",
 				this.createBindableChannel("input", new BindingProperties()),
@@ -137,7 +136,7 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 		Binding<MessageChannel> foo1ProducerBinding = binder.bindProducer(
 				String.format("foo%s1", getDestinationNameDelimiter()),
 				this.createBindableChannel("output", new BindingProperties()),
-				createProducerProperties(testInfo));
+				createProducerProperties());
 		Binding<MessageChannel> foo1ConsumerBinding = binder.bindConsumer(
 				String.format("foo%s1", getDestinationNameDelimiter()), "testClean",
 				this.createBindableChannel("input", new BindingProperties()),
@@ -145,7 +144,7 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 		Binding<MessageChannel> foo2ProducerBinding = binder.bindProducer(
 				String.format("foo%s2", getDestinationNameDelimiter()),
 				this.createBindableChannel("output", new BindingProperties()),
-				createProducerProperties(testInfo));
+				createProducerProperties());
 		foo0ProducerBinding.unbind();
 		assertThat(TestUtils
 				.getPropertyValue(foo0ProducerBinding, "lifecycle", Lifecycle.class)
@@ -170,10 +169,10 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 
 	@SuppressWarnings("rawtypes")
 	@Test
-	public void testSendAndReceive(TestInfo testInfo) throws Exception {
+	public void testSendAndReceive() throws Exception {
 		Binder binder = getBinder();
 		BindingProperties outputBindingProperties = createProducerBindingProperties(
-				createProducerProperties(testInfo));
+				createProducerProperties());
 		DirectChannel moduleOutputChannel = createBindableChannel("output",
 				outputBindingProperties);
 
@@ -217,11 +216,11 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 
 	@Test
 	@SuppressWarnings("rawtypes")
-	public void testSendAndReceiveMultipleTopics(TestInfo testInfo) throws Exception {
+	public void testSendAndReceiveMultipleTopics() throws Exception {
 		Binder binder = getBinder();
 
 		BindingProperties producerBindingProperties = createProducerBindingProperties(
-				createProducerProperties(testInfo));
+				createProducerProperties());
 
 		DirectChannel moduleOutputChannel1 = createBindableChannel("output1",
 				producerBindingProperties);
@@ -283,11 +282,11 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 
 	@Test
 	@SuppressWarnings("rawtypes")
-	public void testSendAndReceiveNoOriginalContentType(TestInfo testInfo) throws Exception {
+	public void testSendAndReceiveNoOriginalContentType() throws Exception {
 		Binder binder = getBinder();
 
 		BindingProperties producerBindingProperties = createProducerBindingProperties(
-				createProducerProperties(testInfo));
+				createProducerProperties());
 		DirectChannel moduleOutputChannel = createBindableChannel("output",
 				producerBindingProperties);
 		BindingProperties inputBindingProperties = createConsumerBindingProperties(
@@ -331,7 +330,7 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 
 	protected abstract CP createConsumerProperties();
 
-	protected abstract PP createProducerProperties(TestInfo testInfo);
+	protected abstract PP createProducerProperties();
 
 	protected final BindingProperties createConsumerBindingProperties(
 			CP consumerProperties) {
@@ -393,7 +392,7 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 		return messageConverterConfigurer;
 	}
 
-	@AfterEach
+	@After
 	public void cleanup() {
 		if (this.testBinder != null) {
 			this.testBinder.cleanup();
@@ -426,7 +425,7 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 
 	@SuppressWarnings("rawtypes")
 	@Test
-	public void testSendPojoReceivePojoWithStreamListenerDefaultContentType(TestInfo testInfo)
+	public void testSendPojoReceivePojoWithStreamListenerDefaultContentType()
 			throws Exception {
 		StreamListenerMessageHandler handler = this.buildStreamListener(
 				AbstractBinderTests.class, "echoStation", Station.class);
@@ -434,7 +433,7 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 		Binder binder = getBinder();
 
 		BindingProperties producerBindingProperties = createProducerBindingProperties(
-				createProducerProperties(testInfo));
+				createProducerProperties());
 
 		DirectChannel moduleOutputChannel = createBindableChannel("output",
 				producerBindingProperties);
@@ -468,13 +467,13 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 
 	@SuppressWarnings("rawtypes")
 	@Test
-	public void testSendJsonReceivePojoWithStreamListener(TestInfo testInfo) throws Exception {
+	public void testSendJsonReceivePojoWithStreamListener() throws Exception {
 		StreamListenerMessageHandler handler = this.buildStreamListener(
 				AbstractBinderTests.class, "echoStation", Station.class);
 		Binder binder = getBinder();
 
 		BindingProperties producerBindingProperties = createProducerBindingProperties(
-				createProducerProperties(testInfo));
+				createProducerProperties());
 
 		DirectChannel moduleOutputChannel = createBindableChannel("output",
 				producerBindingProperties);
@@ -515,13 +514,13 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 
 	@SuppressWarnings("rawtypes")
 	@Test
-	public void testSendJsonReceiveJsonWithStreamListener(TestInfo testInfo) throws Exception {
+	public void testSendJsonReceiveJsonWithStreamListener() throws Exception {
 		StreamListenerMessageHandler handler = this.buildStreamListener(
 				AbstractBinderTests.class, "echoStationString", String.class);
 		Binder binder = getBinder();
 
 		BindingProperties producerBindingProperties = createProducerBindingProperties(
-				createProducerProperties(testInfo));
+				createProducerProperties());
 
 		DirectChannel moduleOutputChannel = createBindableChannel("output",
 				producerBindingProperties);
@@ -562,13 +561,13 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 
 	@SuppressWarnings("rawtypes")
 	@Test
-	public void testSendPojoReceivePojoWithStreamListener(TestInfo testInfo) throws Exception {
+	public void testSendPojoReceivePojoWithStreamListener() throws Exception {
 		StreamListenerMessageHandler handler = this.buildStreamListener(
 				AbstractBinderTests.class, "echoStation", Station.class);
 		Binder binder = getBinder();
 
 		BindingProperties producerBindingProperties = createProducerBindingProperties(
-				createProducerProperties(testInfo));
+				createProducerProperties());
 
 		DirectChannel moduleOutputChannel = createBindableChannel("output",
 				producerBindingProperties);
