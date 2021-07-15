@@ -252,7 +252,28 @@ The input from the three partial functions which are `KStream`, `GlobalKTable`, 
 Input bindings are named as `enrichOrder-in-0`, `enrichOrder-in-1` and `enrichOrder-in-2` respectively. Output binding is named as `enrichOrder-out-0`.
 
 With curried functions, you can virtually have any number of inputs. However, keep in mind that, anything more than a smaller number of inputs and partially applied functions for them as above in Java might lead to unreadable code.
-Therefore if your Kafka Streams application requires more than a reasonably smaller number of input bindings and you want to use this functional model, then you may want to rethink your design and decompose the application appropriately.
+Therefore if your Kafka Streams application requires more than a reasonably smaller number of input bindings, and you want to use this functional model, then you may want to rethink your design and decompose the application appropriately.
+
+===== Output Bindings
+
+Kafka Streams binder allows types of either `KStream` or `KTable` as output bindings.
+Behind the scenes, the binder uses the `to` method on `KStream` to send the resultant records to the output topic.
+If the application provides a `KTable` as output in the function, the binder still uses this technique by delegating to the `to` method of `KStream`.
+
+For example both functions below will work:
+
+```
+@Bean
+public Function<KStream<String, String>, KTable<String, String>> foo() {
+    return KStream::toTable;
+    };
+}
+
+@Bean
+public Function<KTable<String, String>, KStream<String, String>> bar() {
+    return KTable::toStream;
+}
+```
 
 ===== Multiple Output Bindings
 
@@ -383,8 +404,7 @@ The default output binding for this example becomes `curriedFoobar-out-0`.
 
 ====== Special note on using `KTable` as output in function composition
 
-When using function composition, for intermediate functions, you can use `KTable` as output.
-For instance, lets say you have the following two functions.
+Lets say you have the following two functions.
 
 ```
 @Bean
@@ -399,10 +419,7 @@ public Function<KTable<String, String>, KStream<String, String>> bar() {
 }
 ```
 
-You can compose them as `foo|bar` although foo's output is `KTable`.
-In normal case, when you use `foo` as standalone, this will not work, as the binder does not support `KTable` as the final output.
-Note that in the example above, bar's output is still a `KStream`.
-We are only able to use `foo` which has a `KTable` output, since we are composing with another function that has `KStream` as its output.
+You can compose them as `foo|bar`, but keep in mind that the second function (`bar` in this case) must have a `KTable` as input since the first function (`foo`) has `KTable` as output.
 
 ==== Imperative programming model.
 

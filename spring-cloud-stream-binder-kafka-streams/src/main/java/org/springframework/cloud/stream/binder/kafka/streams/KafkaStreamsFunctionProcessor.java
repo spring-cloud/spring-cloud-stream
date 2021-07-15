@@ -39,6 +39,7 @@ import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.Topology;
 import org.apache.kafka.streams.kstream.KStream;
+import org.apache.kafka.streams.kstream.KTable;
 
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
@@ -298,7 +299,13 @@ public class KafkaStreamsFunctionProcessor extends AbstractKafkaStreamsBinderPro
 									outboundResolvableType, (Object[]) result, streamsBuilderFactoryBean);
 						}
 						else {
-							handleSingleKStreamOutbound(resolvableTypes, outboundResolvableType, (KStream) result, outboundDefinitionIterator);
+							if (KTable.class.isAssignableFrom(result.getClass())) {
+								handleSingleKStreamOutbound(resolvableTypes, outboundResolvableType != null ?
+										outboundResolvableType : resolvableType.getGeneric(1), ((KTable) result).toStream(), outboundDefinitionIterator);
+							}
+							else {
+								handleSingleKStreamOutbound(resolvableTypes, outboundResolvableType, (KStream) result, outboundDefinitionIterator);
+							}
 						}
 					}
 				}
@@ -337,8 +344,14 @@ public class KafkaStreamsFunctionProcessor extends AbstractKafkaStreamsBinderPro
 								outboundResolvableType, (Object[]) result, streamsBuilderFactoryBean);
 					}
 					else {
-						handleSingleKStreamOutbound(resolvableTypes, outboundResolvableType != null ?
-								outboundResolvableType : resolvableType.getGeneric(1), (KStream) result, outboundDefinitionIterator);
+						if (KTable.class.isAssignableFrom(result.getClass())) {
+							handleSingleKStreamOutbound(resolvableTypes, outboundResolvableType != null ?
+									outboundResolvableType : resolvableType.getGeneric(1), ((KTable) result).toStream(), outboundDefinitionIterator);
+						}
+						else {
+							handleSingleKStreamOutbound(resolvableTypes, outboundResolvableType != null ?
+									outboundResolvableType : resolvableType.getGeneric(1), (KStream) result, outboundDefinitionIterator);
+						}
 					}
 				}
 			}

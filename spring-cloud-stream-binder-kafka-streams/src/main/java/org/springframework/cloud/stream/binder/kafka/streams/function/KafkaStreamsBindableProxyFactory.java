@@ -145,7 +145,8 @@ public class KafkaStreamsBindableProxyFactory extends AbstractBindableProxyFacto
 		}
 
 		if (outboundArgument != null && outboundArgument.getRawClass() != null && (!outboundArgument.isArray() &&
-				outboundArgument.getRawClass().isAssignableFrom(KStream.class))) {
+				(outboundArgument.getRawClass().isAssignableFrom(KStream.class) ||
+						outboundArgument.getRawClass().isAssignableFrom(KTable.class)))) { //Allowing both KStream and KTable on the outbound.
 			// if the type is array, we need to do a late binding as we don't know the number of
 			// output bindings at this point in the flow.
 
@@ -157,12 +158,15 @@ public class KafkaStreamsBindableProxyFactory extends AbstractBindableProxyFacto
 				if (outputBindingsIter.hasNext()) {
 					outputBinding = outputBindingsIter.next();
 				}
-
 			}
 			else {
 				outputBinding = String.format("%s-%s-0", this.functionName, FunctionConstants.DEFAULT_OUTPUT_SUFFIX);
 			}
 			Assert.isTrue(outputBinding != null, "output binding is not inferred.");
+			// We will only allow KStream targets on the outbound. If the user provides a KTable,
+			// we still use the KStreamBinder to send it through the outbound.
+			// In that case before sending, we do a cast from KTable to KStream.
+			// See KafkaStreamsFunctionsProcessor#setupFunctionInvokerForKafkaStreams for details.
 			KafkaStreamsBindableProxyFactory.this.outputHolders.put(outputBinding,
 					new BoundTargetHolder(getBindingTargetFactory(KStream.class)
 							.createOutput(outputBinding), true));

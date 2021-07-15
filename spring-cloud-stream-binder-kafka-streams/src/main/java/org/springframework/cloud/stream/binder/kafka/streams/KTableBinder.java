@@ -44,12 +44,9 @@ import org.springframework.util.StringUtils;
  * @author Soby Chacko
  */
 class KTableBinder extends
-		// @checkstyle:off
 		AbstractBinder<KTable<Object, Object>, ExtendedConsumerProperties<KafkaStreamsConsumerProperties>, ExtendedProducerProperties<KafkaStreamsProducerProperties>>
 		implements
 		ExtendedPropertiesBinder<KTable<Object, Object>, KafkaStreamsConsumerProperties, KafkaStreamsProducerProperties> {
-
-	// @checkstyle:on
 
 	private final KafkaStreamsBinderConfigurationProperties binderConfigurationProperties;
 
@@ -111,9 +108,7 @@ class KTableBinder extends
 	@Override
 	protected Binding<KTable<Object, Object>> doBindProducer(String name,
 			KTable<Object, Object> outboundBindTarget,
-			// @checkstyle:off
 			ExtendedProducerProperties<KafkaStreamsProducerProperties> properties) {
-		// @checkstyle:on
 		throw new UnsupportedOperationException(
 				"No producer level binding is allowed for KTable");
 	}
