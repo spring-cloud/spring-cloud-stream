@@ -228,19 +228,52 @@ public class StreamBridgeTests {
 				.getCompleteConfiguration(EmptyConfiguration.class))
 						.web(WebApplicationType.NONE).run("--spring.cloud.stream.source=foo;bar",
 								"--spring.cloud.stream.bindings.foo-out-0.producer.partitionKeyExpression=payload",
-								"--spring.cloud.stream.bindings.foo-out-0.producer.partitionCount=2",
+								"--spring.cloud.stream.bindings.foo-out-0.producer.partitionCount=5",
+								"--spring.cloud.stream.bindings.bar-out-0.producer.partitionKeyExpression=payload",
+								"--spring.cloud.stream.bindings.bar-out-0.producer.partitionCount=1",
 								"--spring.jmx.enabled=false")) {
 
 			StreamBridge bridge = context.getBean(StreamBridge.class);
 			bridge.send("foo-out-0", "a");
 			bridge.send("bar-out-0", "b");
+			bridge.send("foo-out-0", "c");
+			bridge.send("foo-out-0", "d");
+			bridge.send("bar-out-0", "e");
+			bridge.send("foo-out-0", "f");
+			bridge.send("bar-out-0", "g");
 
 
 			OutputDestination outputDestination = context.getBean(OutputDestination.class);
 			Message<byte[]> message = outputDestination.receive(100, "foo-out-0");
+
 			assertThat(new String(message.getPayload())).isEqualTo("a");
-			assertThat(message.getHeaders().get("scst_partition")).isEqualTo(1);
-			assertThat(new String(outputDestination.receive(100, "bar-out-0").getPayload())).isEqualTo("b");
+			assertThat(message.getHeaders().get("scst_partition")).isEqualTo(2);
+
+			message = outputDestination.receive(100, "foo-out-0");
+			assertThat(new String(message.getPayload())).isEqualTo("c");
+			assertThat(message.getHeaders().get("scst_partition")).isEqualTo(4);
+
+			message = outputDestination.receive(100, "foo-out-0");
+			assertThat(new String(message.getPayload())).isEqualTo("d");
+			assertThat(message.getHeaders().get("scst_partition")).isEqualTo(0);
+
+			message = outputDestination.receive(100, "bar-out-0");
+			assertThat(new String(message.getPayload())).isEqualTo("b");
+			assertThat(message.getHeaders().get("scst_partition")).isEqualTo(0);
+
+			message = outputDestination.receive(100, "bar-out-0");
+			assertThat(new String(message.getPayload())).isEqualTo("e");
+			assertThat(message.getHeaders().get("scst_partition")).isEqualTo(0);
+
+			message = outputDestination.receive(100, "bar-out-0");
+			assertThat(new String(message.getPayload())).isEqualTo("g");
+			assertThat(message.getHeaders().get("scst_partition")).isEqualTo(0);
+
+			message = outputDestination.receive(100, "foo-out-0");
+			assertThat(new String(message.getPayload())).isEqualTo("f");
+			assertThat(message.getHeaders().get("scst_partition")).isEqualTo(2);
+
+			//assertThat(new String(outputDestination.receive(100, "bar-out-0").getPayload())).isEqualTo("b");
 		}
 	}
 
