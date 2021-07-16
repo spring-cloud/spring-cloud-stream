@@ -71,7 +71,7 @@ public class SourceToFunctionsSupportTests {
 								"--spring.jmx.enabled=false")) {
 
 			OutputDestination target = context.getBean(OutputDestination.class);
-			assertThat(target.receive(1000).getPayload())
+			assertThat(target.receive(5000).getPayload())
 					.isEqualTo("HELLO FUNCTION".getBytes(StandardCharsets.UTF_8));
 		}
 	}
