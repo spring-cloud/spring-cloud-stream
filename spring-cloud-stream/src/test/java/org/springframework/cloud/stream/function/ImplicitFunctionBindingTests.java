@@ -587,15 +587,15 @@ public class ImplicitFunctionBindingTests {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 				TestChannelBinderConfiguration.getCompleteConfiguration(SupplierWithExplicitPollerConfiguration.class))
 						.web(WebApplicationType.NONE).run("--spring.jmx.enabled=false",
-								"--spring.cloud.stream.poller.fixed-delay=2000",
+								"--spring.cloud.stream.poller.fixed-delay=1200",
 								"--spring.cloud.function.bindings.supplier-out-0=output")) {
 
 			OutputDestination outputDestination = context.getBean(OutputDestination.class);
 
 			PollerMetadata pollerMetadata = context.getBean(PollerMetadata.class);
-			assertThat(((PeriodicTrigger) pollerMetadata.getTrigger()).getPeriod()).isEqualTo(2000);
+			assertThat(((PeriodicTrigger) pollerMetadata.getTrigger()).getPeriod()).isEqualTo(1200);
 
-			Message<byte[]> outputMessage = outputDestination.receive(6000);
+			Message<byte[]> outputMessage = outputDestination.receive(10000);
 			assertThat(outputMessage.getPayload()).isEqualTo("hello".getBytes());
 		}
 	}
