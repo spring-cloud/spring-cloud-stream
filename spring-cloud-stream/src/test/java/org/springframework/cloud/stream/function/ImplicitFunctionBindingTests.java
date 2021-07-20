@@ -933,7 +933,7 @@ public class ImplicitFunctionBindingTests {
 								"--spring.cloud.function.definition=supplier")) {
 			OutputDestination outputDestination = context.getBean(OutputDestination.class);
 
-			Message<byte[]> result = outputDestination.receive(2000);
+			Message<byte[]> result = outputDestination.receive(5000);
 			assertThat(new String(result.getPayload())).isEqualTo("[{\"name\":\"Ricky\",\"id\":1},{\"name\":\"Julien\",\"id\":2}]");
 		}
 	}
