@@ -64,6 +64,11 @@ public class SourceToFunctionsSupportTests {
 		System.clearProperty("spring.cloud.stream.function.definition");
 	}
 
+	@BeforeEach
+	public void after() {
+		System.clearProperty("spring.cloud.stream.function.definition");
+	}
+
 	@Test
 	@Disabled
 	@Ignore
