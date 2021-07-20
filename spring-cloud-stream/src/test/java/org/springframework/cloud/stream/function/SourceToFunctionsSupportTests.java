@@ -94,7 +94,7 @@ public class SourceToFunctionsSupportTests {
 								"--spring.jmx.enabled=false")) {
 
 			OutputDestination target = context.getBean(OutputDestination.class);
-			assertThat(target.receive(1000).getPayload())
+			assertThat(target.receive(5000).getPayload())
 					.isEqualTo("HELLO FUNCTION:HELLO FUNCTION".getBytes(StandardCharsets.UTF_8));
 		}
 	}
@@ -108,7 +108,7 @@ public class SourceToFunctionsSupportTests {
 								"--spring.jmx.enabled=false")) {
 
 			OutputDestination target = context.getBean(OutputDestination.class);
-			assertThat(target.receive(1000).getPayload())
+			assertThat(target.receive(5000).getPayload())
 					.isEqualTo("HELLO FUNCTION:HELLO FUNCTION".getBytes(StandardCharsets.UTF_8));
 		}
 	}
@@ -122,7 +122,7 @@ public class SourceToFunctionsSupportTests {
 								"--spring.jmx.enabled=false")) {
 
 			OutputDestination target = context.getBean(OutputDestination.class);
-			String result = new String(target.receive(1000).getPayload(), StandardCharsets.UTF_8);
+			String result = new String(target.receive(5000).getPayload(), StandardCharsets.UTF_8);
 			assertThat(result).isEqualTo("1");
 		}
 	}
@@ -136,7 +136,7 @@ public class SourceToFunctionsSupportTests {
 								"--spring.jmx.enabled=false")) {
 
 			OutputDestination target = context.getBean(OutputDestination.class);
-			String result = new String(target.receive(1000).getPayload(), StandardCharsets.UTF_8);
+			String result = new String(target.receive(5000).getPayload(), StandardCharsets.UTF_8);
 			assertThat(result).isEqualTo("1:1");
 		}
 	}
@@ -150,7 +150,7 @@ public class SourceToFunctionsSupportTests {
 								"--spring.jmx.enabled=false")) {
 
 			OutputDestination target = context.getBean(OutputDestination.class);
-			String result = new String(target.receive(1000).getPayload(), StandardCharsets.UTF_8);
+			String result = new String(target.receive(5000).getPayload(), StandardCharsets.UTF_8);
 			assertThat(result).isEqualTo("1:1");
 		}
 	}
@@ -163,11 +163,11 @@ public class SourceToFunctionsSupportTests {
 								"--spring.jmx.enabled=false")) {
 
 			OutputDestination target = context.getBean(OutputDestination.class);
-			String result = new String(target.receive(1000).getPayload(), StandardCharsets.UTF_8);
+			String result = new String(target.receive(5000).getPayload(), StandardCharsets.UTF_8);
 			assertThat(result).isEqualTo("0");
-			result = new String(target.receive(1000).getPayload(), StandardCharsets.UTF_8);
+			result = new String(target.receive(5000).getPayload(), StandardCharsets.UTF_8);
 			assertThat(result).isEqualTo("1");
-			result = new String(target.receive(1000).getPayload(), StandardCharsets.UTF_8);
+			result = new String(target.receive(5000).getPayload(), StandardCharsets.UTF_8);
 			assertThat(result).isEqualTo("2");
 		}
 	}
@@ -181,11 +181,11 @@ public class SourceToFunctionsSupportTests {
 								"--spring.jmx.enabled=false")) {
 
 			OutputDestination target = context.getBean(OutputDestination.class);
-			String result = new String(target.receive(1000).getPayload(), StandardCharsets.UTF_8);
+			String result = new String(target.receive(5000).getPayload(), StandardCharsets.UTF_8);
 			assertThat(result).isEqualTo("0:0");
-			result = new String(target.receive(1000).getPayload(), StandardCharsets.UTF_8);
+			result = new String(target.receive(5000).getPayload(), StandardCharsets.UTF_8);
 			assertThat(result).isEqualTo("1:1");
-			result = new String(target.receive(1000).getPayload(), StandardCharsets.UTF_8);
+			result = new String(target.receive(5000).getPayload(), StandardCharsets.UTF_8);
 			assertThat(result).isEqualTo("2:2");
 		}
 	}
@@ -199,11 +199,11 @@ public class SourceToFunctionsSupportTests {
 								"--spring.jmx.enabled=false")) {
 
 			OutputDestination target = context.getBean(OutputDestination.class);
-			String result = new String(target.receive(1000).getPayload(), StandardCharsets.UTF_8);
+			String result = new String(target.receive(5000).getPayload(), StandardCharsets.UTF_8);
 			assertThat(result).isEqualTo("0:0");
-			result = new String(target.receive(1000).getPayload(), StandardCharsets.UTF_8);
+			result = new String(target.receive(5000).getPayload(), StandardCharsets.UTF_8);
 			assertThat(result).isEqualTo("1:1");
-			result = new String(target.receive(1000).getPayload(), StandardCharsets.UTF_8);
+			result = new String(target.receive(5000).getPayload(), StandardCharsets.UTF_8);
 			assertThat(result).isEqualTo("2:2");
 		}
 	}
@@ -217,11 +217,11 @@ public class SourceToFunctionsSupportTests {
 								"--spring.jmx.enabled=false")) {
 
 			OutputDestination target = context.getBean(OutputDestination.class);
-			String result = new String(target.receive(1000).getPayload(), StandardCharsets.UTF_8);
+			String result = new String(target.receive(5000).getPayload(), StandardCharsets.UTF_8);
 			assertThat(result).isEqualTo("0:0");
-			result = new String(target.receive(1000).getPayload(), StandardCharsets.UTF_8);
+			result = new String(target.receive(5000).getPayload(), StandardCharsets.UTF_8);
 			assertThat(result).isEqualTo("1:1");
-			result = new String(target.receive(1000).getPayload(), StandardCharsets.UTF_8);
+			result = new String(target.receive(5000).getPayload(), StandardCharsets.UTF_8);
 			assertThat(result).isEqualTo("2:2");
 		}
 	}
