@@ -1181,18 +1181,21 @@ You can consume these exceptions with your own Spring Integration flow.
 
 === Basic Compile and Test
 
-To build the source you will need to install JDK {jdkversion}.
+Pre-requisites:
+
+* To compile, JDK {jdkversion} installed.
+* To run tests, RabbitMQ server running on `localhost:5672`
+
 
 The build uses the Maven wrapper so you don't have to install a specific
-version of Maven. To enable the tests, you should have RabbitMQ server running
-on localhost and the default port (5672)
-before building.
-
-The main build command is
+version of Maven. The main build command is
 
 ----
 $ ./mvnw clean install
 ----
+
+NOTE: There are scripts in `./ci-docker-compose` that use https://docs.docker.com/compose//[Docker Compose] to
+start/stop a local RabbitMQ server.
 
 You can also add '-DskipTests' if you like, to avoid running the tests.
 
@@ -1208,11 +1211,6 @@ the `.mvn` configuration, so if you find you have to do it to make a
 build succeed, please raise a ticket to get the settings added to
 source control.
 
-
-The projects that require middleware generally include a
-`docker-compose.yml`, so consider using
-https://compose.docker.io/[Docker Compose] to run the middeware servers
-in Docker containers.
 
 === Documentation
 
