@@ -20,7 +20,6 @@ import javax.validation.constraints.Min;
 
 import org.springframework.amqp.core.AcknowledgeMode;
 import org.springframework.amqp.core.MessageDeliveryMode;
-import org.springframework.boot.autoconfigure.amqp.RabbitProperties.ContainerType;
 import org.springframework.util.Assert;
 
 /**
@@ -346,6 +345,32 @@ public class RabbitConsumerProperties extends RabbitCommonProperties {
 
 	public void setReceiveTimeout(Long receiveTimeout) {
 		this.receiveTimeout = receiveTimeout;
+	}
+
+	/**
+	 * Container type.
+	 * @author Gary Russell
+	 * @since 3.2
+	 *
+	 */
+	public enum ContainerType {
+
+		/**
+		 * Container where the RabbitMQ consumer dispatches messages to an invoker thread.
+		 */
+		SIMPLE,
+
+		/**
+		 * Container where the listener is invoked directly on the RabbitMQ consumer
+		 * thread.
+		 */
+		DIRECT,
+
+		/**
+		 * Container that uses the RabbitMQ Stream Client.
+		 */
+		STREAM
+
 	}
 
 }

@@ -52,6 +52,7 @@ import org.springframework.amqp.rabbit.core.BatchingRabbitTemplate;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer;
 import org.springframework.amqp.rabbit.listener.DirectMessageListenerContainer;
+import org.springframework.amqp.rabbit.listener.MessageListenerContainer;
 import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
 import org.springframework.amqp.rabbit.retry.RejectAndDontRequeueRecoverer;
 import org.springframework.amqp.rabbit.retry.RepublishMessageRecoverer;
@@ -66,7 +67,6 @@ import org.springframework.amqp.support.postprocessor.DelegatingDecompressingPos
 import org.springframework.amqp.support.postprocessor.GZipPostProcessor;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.boot.autoconfigure.amqp.RabbitProperties;
-import org.springframework.boot.autoconfigure.amqp.RabbitProperties.ContainerType;
 import org.springframework.boot.autoconfigure.amqp.RabbitProperties.Retry;
 import org.springframework.cloud.stream.binder.AbstractMessageChannelBinder;
 import org.springframework.cloud.stream.binder.BinderHeaders;
@@ -78,6 +78,7 @@ import org.springframework.cloud.stream.binder.ExtendedPropertiesBinder;
 import org.springframework.cloud.stream.binder.HeaderMode;
 import org.springframework.cloud.stream.binder.rabbit.properties.RabbitCommonProperties;
 import org.springframework.cloud.stream.binder.rabbit.properties.RabbitConsumerProperties;
+import org.springframework.cloud.stream.binder.rabbit.properties.RabbitConsumerProperties.ContainerType;
 import org.springframework.cloud.stream.binder.rabbit.properties.RabbitExtendedBindingProperties;
 import org.springframework.cloud.stream.binder.rabbit.properties.RabbitProducerProperties;
 import org.springframework.cloud.stream.binder.rabbit.provisioning.RabbitExchangeQueueProvisioner;
@@ -186,7 +187,7 @@ public class RabbitMessageChannelBinder extends
 	public RabbitMessageChannelBinder(ConnectionFactory connectionFactory,
 			RabbitProperties rabbitProperties,
 			RabbitExchangeQueueProvisioner provisioningProvider,
-			ListenerContainerCustomizer<AbstractMessageListenerContainer> containerCustomizer) {
+			ListenerContainerCustomizer<MessageListenerContainer> containerCustomizer) {
 
 		this(connectionFactory, rabbitProperties, provisioningProvider, containerCustomizer, null);
 	}
@@ -194,7 +195,7 @@ public class RabbitMessageChannelBinder extends
 	public RabbitMessageChannelBinder(ConnectionFactory connectionFactory,
 			RabbitProperties rabbitProperties,
 			RabbitExchangeQueueProvisioner provisioningProvider,
-			ListenerContainerCustomizer<AbstractMessageListenerContainer> containerCustomizer,
+			ListenerContainerCustomizer<MessageListenerContainer> containerCustomizer,
 			MessageSourceCustomizer<AmqpMessageSource> sourceCustomizer) {
 
 		super(new String[0], provisioningProvider, containerCustomizer, sourceCustomizer);
@@ -361,6 +362,7 @@ public class RabbitMessageChannelBinder extends
 		headerPatterns.add("!" + BinderHeaders.PARTITION_HEADER);
 		headerPatterns.add("!" + IntegrationMessageHeaderAccessor.SOURCE_DATA);
 		headerPatterns.add("!" + IntegrationMessageHeaderAccessor.DELIVERY_ATTEMPT);
+		headerPatterns.add("!rabbitmq_streamContext");
 		headerPatterns.addAll(Arrays.asList(extendedProperties.getHeaderPatterns()));
 		mapper.setRequestHeaderNames(
 				headerPatterns.toArray(new String[headerPatterns.size()]));
@@ -460,6 +462,50 @@ public class RabbitMessageChannelBinder extends
 				"the RabbitMQ binder does not support embedded headers since RabbitMQ supports headers natively");
 		String destination = consumerDestination.getName();
 		RabbitConsumerProperties extension = properties.getExtension();
+		MessageListenerContainer listenerContainer = createAndConfigureContainer(consumerDestination, group,
+				properties, destination, extension);
+		String[] queues = StringUtils.tokenizeToStringArray(destination, ",", true, true);
+		listenerContainer.setQueueNames(queues);
+		getContainerCustomizer().configure(listenerContainer,
+				consumerDestination.getName(), group);
+		listenerContainer.afterPropertiesSet();
+
+		AmqpInboundChannelAdapter adapter = new AmqpInboundChannelAdapter(listenerContainer);
+		adapter.setBindSourceMessage(true);
+		adapter.setBeanFactory(this.getBeanFactory());
+		adapter.setBeanName("inbound." + destination);
+		DefaultAmqpHeaderMapper mapper = DefaultAmqpHeaderMapper.inboundMapper();
+		mapper.setRequestHeaderNames(extension.getHeaderPatterns());
+		adapter.setHeaderMapper(mapper);
+		ErrorInfrastructure errorInfrastructure = registerErrorInfrastructure(
+				consumerDestination, group, properties);
+		if (properties.getMaxAttempts() > 1) {
+			adapter.setRetryTemplate(buildRetryTemplate(properties));
+			adapter.setRecoveryCallback(errorInfrastructure.getRecoverer());
+		}
+		else {
+			adapter.setErrorMessageStrategy(errorMessageStrategy);
+			adapter.setErrorChannel(errorInfrastructure.getErrorChannel());
+		}
+		adapter.setMessageConverter(passThoughConverter);
+		if (properties.isBatchMode() && extension.isEnableBatching()
+				&& ContainerType.SIMPLE.equals(extension.getContainerType())) {
+			adapter.setBatchMode(BatchMode.EXTRACT_PAYLOADS_WITH_HEADERS);
+		}
+		if (extension.getContainerType().equals(ContainerType.STREAM)) {
+			StreamContainerUtils.configureAdapter(adapter);
+		}
+		return adapter;
+	}
+
+	private MessageListenerContainer createAndConfigureContainer(ConsumerDestination consumerDestination,
+			String group, ExtendedConsumerProperties<RabbitConsumerProperties> properties, String destination,
+			RabbitConsumerProperties extension) {
+
+		if (extension.getContainerType().equals(ContainerType.STREAM)) {
+			return StreamContainerUtils.createContainer(consumerDestination, group, properties, destination, extension,
+					getApplicationContext());
+		}
 		boolean directContainer = extension.getContainerType()
 				.equals(ContainerType.DIRECT);
 		AbstractMessageListenerContainer listenerContainer = directContainer
@@ -485,8 +531,6 @@ public class RabbitMessageChannelBinder extends
 				.setRecoveryInterval(extension.getRecoveryInterval());
 		listenerContainer.setTaskExecutor(
 				new SimpleAsyncTaskExecutor(consumerDestination.getName() + "-"));
-		String[] queues = StringUtils.tokenizeToStringArray(destination, ",", true, true);
-		listenerContainer.setQueueNames(queues);
 		listenerContainer.setAfterReceivePostProcessors(this.decompressingPostProcessor);
 		listenerContainer.setMessagePropertiesConverter(
 				RabbitMessageChannelBinder.inboundMessagePropertiesConverter);
@@ -504,40 +548,13 @@ public class RabbitMessageChannelBinder extends
 		else if (getApplicationContext() != null) {
 			listenerContainer.setApplicationEventPublisher(getApplicationContext());
 		}
-		getContainerCustomizer().configure(listenerContainer,
-				consumerDestination.getName(), group);
 		if (StringUtils.hasText(extension.getConsumerTagPrefix())) {
 			final AtomicInteger index = new AtomicInteger();
 			listenerContainer.setConsumerTagStrategy(
 					q -> extension.getConsumerTagPrefix() + "#"
 							+ index.getAndIncrement());
 		}
-		listenerContainer.afterPropertiesSet();
-
-		AmqpInboundChannelAdapter adapter = new AmqpInboundChannelAdapter(
-				listenerContainer);
-		adapter.setBindSourceMessage(true);
-		adapter.setBeanFactory(this.getBeanFactory());
-		adapter.setBeanName("inbound." + destination);
-		DefaultAmqpHeaderMapper mapper = DefaultAmqpHeaderMapper.inboundMapper();
-		mapper.setRequestHeaderNames(extension.getHeaderPatterns());
-		adapter.setHeaderMapper(mapper);
-		ErrorInfrastructure errorInfrastructure = registerErrorInfrastructure(
-				consumerDestination, group, properties);
-		if (properties.getMaxAttempts() > 1) {
-			adapter.setRetryTemplate(buildRetryTemplate(properties));
-			adapter.setRecoveryCallback(errorInfrastructure.getRecoverer());
-		}
-		else {
-			adapter.setErrorMessageStrategy(errorMessageStrategy);
-			adapter.setErrorChannel(errorInfrastructure.getErrorChannel());
-		}
-		adapter.setMessageConverter(passThoughConverter);
-		if (properties.isBatchMode() && extension.isEnableBatching()
-				&& ContainerType.SIMPLE.equals(extension.getContainerType())) {
-			adapter.setBatchMode(BatchMode.EXTRACT_PAYLOADS_WITH_HEADERS);
-		}
-		return adapter;
+		return listenerContainer;
 	}
 
 	private void setSMLCProperties(

@@ -27,6 +27,9 @@ import java.util.concurrent.Executors;
 import javax.net.ServerSocketFactory;
 import javax.net.SocketFactory;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.cloud.stream.test.junit.AbstractExternalResourceTestSupport;
 
@@ -72,6 +75,8 @@ public class RabbitTestSupport
 	 */
 	public static class RabbitProxy {
 
+		private static final Log LOGGER = LogFactory.getLog(RabbitProxy.class);
+
 		private final int port;
 
 		private final ExecutorService serverExec = Executors.newSingleThreadExecutor();
@@ -93,7 +98,8 @@ public class RabbitTestSupport
 
 		public void start() throws IOException {
 			this.serverSocket = ServerSocketFactory.getDefault()
-					.createServerSocket(this.port);
+					.createServerSocket(this.port, 10);
+			LOGGER.info("Proxy started");
 			this.serverExec.execute(new Runnable() {
 
 				@Override
@@ -101,6 +107,7 @@ public class RabbitTestSupport
 					try {
 						while (true) {
 							final Socket socket = serverSocket.accept();
+							LOGGER.info("Accepted Connection");
 							socketExec.execute(new Runnable() {
 
 								@Override
@@ -113,6 +120,7 @@ public class RabbitTestSupport
 
 											@Override
 											public void run() {
+												LOGGER.info("Running: " + rabbitSocket.getLocalPort());
 												try {
 													InputStream is = rabbitSocket
 															.getInputStream();

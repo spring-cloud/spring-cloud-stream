@@ -51,6 +51,7 @@ import org.springframework.cloud.stream.binder.ExtendedProducerProperties;
 import org.springframework.cloud.stream.binder.rabbit.properties.RabbitCommonProperties;
 import org.springframework.cloud.stream.binder.rabbit.properties.RabbitCommonProperties.QuorumConfig;
 import org.springframework.cloud.stream.binder.rabbit.properties.RabbitConsumerProperties;
+import org.springframework.cloud.stream.binder.rabbit.properties.RabbitConsumerProperties.ContainerType;
 import org.springframework.cloud.stream.binder.rabbit.properties.RabbitProducerProperties;
 import org.springframework.cloud.stream.provisioning.ConsumerDestination;
 import org.springframework.cloud.stream.provisioning.ProducerDestination;
@@ -268,6 +269,9 @@ public class RabbitExchangeQueueProvisioner
 		}
 		Binding binding = null;
 		if (properties.getExtension().isBindQueue()) {
+			if (properties.getExtension().getContainerType().equals(ContainerType.STREAM)) {
+				queue.getArguments().put("x-queue-type", "stream");
+			}
 			declareQueue(queueName, queue);
 			String[] routingKeys = bindingRoutingKeys(properties.getExtension());
 			if (ObjectUtils.isEmpty(routingKeys)) {

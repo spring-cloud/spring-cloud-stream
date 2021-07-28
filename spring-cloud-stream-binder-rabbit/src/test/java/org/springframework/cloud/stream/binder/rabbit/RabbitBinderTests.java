@@ -83,7 +83,6 @@ import org.springframework.amqp.utils.test.TestUtils;
 import org.springframework.beans.DirectFieldAccessor;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.boot.autoconfigure.amqp.RabbitProperties;
-import org.springframework.boot.autoconfigure.amqp.RabbitProperties.ContainerType;
 import org.springframework.cloud.stream.binder.BinderException;
 import org.springframework.cloud.stream.binder.BinderHeaders;
 import org.springframework.cloud.stream.binder.Binding;
@@ -99,6 +98,7 @@ import org.springframework.cloud.stream.binder.RequeueCurrentMessageException;
 import org.springframework.cloud.stream.binder.Spy;
 import org.springframework.cloud.stream.binder.rabbit.properties.RabbitCommonProperties.QuorumConfig;
 import org.springframework.cloud.stream.binder.rabbit.properties.RabbitConsumerProperties;
+import org.springframework.cloud.stream.binder.rabbit.properties.RabbitConsumerProperties.ContainerType;
 import org.springframework.cloud.stream.binder.rabbit.properties.RabbitProducerProperties;
 import org.springframework.cloud.stream.binder.rabbit.provisioning.RabbitExchangeQueueProvisioner;
 import org.springframework.cloud.stream.binder.test.junit.rabbit.RabbitTestSupport;
@@ -801,7 +801,7 @@ public class RabbitBinderTests extends
 		assertThat(mode).isEqualTo(MessageDeliveryMode.PERSISTENT);
 		List<?> requestHeaders = TestUtils.getPropertyValue(endpoint,
 				"headerMapper.requestHeaderMatcher.matchers", List.class);
-		assertThat(requestHeaders).hasSize(4);
+		assertThat(requestHeaders).hasSize(5);
 		producerBinding.unbind();
 		assertThat(endpoint.isRunning()).isFalse();
 		assertThat(TestUtils.getPropertyValue(endpoint, "amqpTemplate.transactional",
@@ -2340,8 +2340,8 @@ public class RabbitBinderTests extends
 	private void verifyFooRequestProducer(Lifecycle endpoint) {
 		List<?> requestMatchers = TestUtils.getPropertyValue(endpoint,
 				"headerMapper.requestHeaderMatcher.matchers", List.class);
-		assertThat(requestMatchers).hasSize(4);
-		assertThat(TestUtils.getPropertyValue(requestMatchers.get(3), "pattern"))
+		assertThat(requestMatchers).hasSize(5);
+		assertThat(TestUtils.getPropertyValue(requestMatchers.get(4), "pattern"))
 				.isEqualTo("foo");
 	}
 

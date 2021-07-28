@@ -39,6 +39,7 @@ import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionNameStrategy;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer;
+import org.springframework.amqp.rabbit.listener.MessageListenerContainer;
 import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
 import org.springframework.amqp.utils.test.TestUtils;
 import org.springframework.beans.DirectFieldAccessor;
@@ -381,8 +382,8 @@ public class RabbitBinderModuleTests {
 	public static class SimpleProcessor {
 
 		@Bean
-		public ListenerContainerCustomizer<AbstractMessageListenerContainer> containerCustomizer() {
-			return (c, q, g) -> c.setBeanName(
+		public ListenerContainerCustomizer<MessageListenerContainer> containerCustomizer() {
+			return (c, q, g) -> ((AbstractMessageListenerContainer) c).setBeanName(
 					"setByCustomizerForQueue:" + q + (g == null ? "" : ",andGroup:" + g));
 		}
 

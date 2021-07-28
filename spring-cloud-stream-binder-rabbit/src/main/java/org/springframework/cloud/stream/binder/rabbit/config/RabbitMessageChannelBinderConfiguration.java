@@ -24,7 +24,7 @@ import org.springframework.amqp.core.MessagePostProcessor;
 import org.springframework.amqp.rabbit.connection.AbstractConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionNameStrategy;
-import org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer;
+import org.springframework.amqp.rabbit.listener.MessageListenerContainer;
 import org.springframework.amqp.support.postprocessor.DelegatingDecompressingPostProcessor;
 import org.springframework.amqp.support.postprocessor.GZipPostProcessor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -77,7 +77,7 @@ public class RabbitMessageChannelBinderConfiguration {
 
 	@Bean
 	RabbitMessageChannelBinder rabbitMessageChannelBinder(
-			@Nullable ListenerContainerCustomizer<AbstractMessageListenerContainer> listenerContainerCustomizer,
+			@Nullable ListenerContainerCustomizer<MessageListenerContainer> listenerContainerCustomizer,
 			@Nullable MessageSourceCustomizer<AmqpMessageSource> sourceCustomizer,
 			@Nullable ProducerMessageHandlerCustomizer<AmqpOutboundEndpoint> producerMessageHandlerCustomizer,
 			@Nullable ConsumerEndpointCustomizer<AmqpInboundChannelAdapter> consumerCustomizer,
