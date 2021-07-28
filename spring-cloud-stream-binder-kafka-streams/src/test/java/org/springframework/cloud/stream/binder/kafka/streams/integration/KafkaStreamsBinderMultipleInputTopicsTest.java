@@ -32,7 +32,6 @@ import org.apache.kafka.streams.kstream.Serialized;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import org.springframework.boot.SpringApplication;
@@ -43,6 +42,8 @@ import org.springframework.cloud.stream.annotation.Input;
 import org.springframework.cloud.stream.annotation.StreamListener;
 import org.springframework.cloud.stream.binder.kafka.streams.annotations.KafkaStreamsProcessor;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.annotation.Bean;
+import org.springframework.kafka.core.CleanupConfig;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -92,7 +93,6 @@ public class KafkaStreamsBinderMultipleInputTopicsTest {
 	}
 
 	@Test
-	@Ignore("Investigate why this test fails")
 	public void testKstreamWordCountWithStringInputAndPojoOuput() throws Exception {
 		SpringApplication app = new SpringApplication(
 				WordCountProcessorApplication.class);
@@ -165,8 +165,13 @@ public class KafkaStreamsBinderMultipleInputTopicsTest {
 							value -> Arrays.asList(value.toLowerCase().split("\\W+")))
 					.map((key, value) -> new KeyValue<>(value, value))
 					.groupByKey(Serialized.with(Serdes.String(), Serdes.String()))
-					.count(Materialized.as("WordCounts")).toStream()
+					.count(Materialized.as("WordCounts-tKWCWSIAP0")).toStream()
 					.map((key, value) -> new KeyValue<>(null, new WordCount(key, value)));
+		}
+
+		@Bean
+		public CleanupConfig cleanupConfig() {
+			return new CleanupConfig(false, true);
 		}
 
 	}

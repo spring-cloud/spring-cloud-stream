@@ -52,6 +52,7 @@ import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStr
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.kafka.config.StreamsBuilderFactoryBean;
+import org.springframework.kafka.core.CleanupConfig;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -220,6 +221,11 @@ public class KafkaStreamsInteractiveQueryIntegrationTests {
 		@Bean
 		public Foo foo(InteractiveQueryService interactiveQueryService) {
 			return new Foo(interactiveQueryService);
+		}
+
+		@Bean
+		public CleanupConfig cleanupConfig() {
+			return new CleanupConfig(false, true);
 		}
 
 		static class Foo {

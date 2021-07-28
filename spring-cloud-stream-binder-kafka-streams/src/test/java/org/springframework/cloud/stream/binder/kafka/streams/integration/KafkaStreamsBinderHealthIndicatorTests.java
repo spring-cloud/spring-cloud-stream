@@ -25,12 +25,12 @@ import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.streams.KafkaStreams;
+import org.apache.kafka.streams.errors.StreamsUncaughtExceptionHandler;
 import org.apache.kafka.streams.kstream.KStream;
 import org.assertj.core.util.Lists;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import org.springframework.boot.SpringApplication;
@@ -46,6 +46,9 @@ import org.springframework.cloud.stream.annotation.StreamListener;
 import org.springframework.cloud.stream.binder.kafka.streams.KafkaStreamsBinderHealthIndicator;
 import org.springframework.cloud.stream.binder.kafka.streams.annotations.KafkaStreamsProcessor;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.annotation.Bean;
+import org.springframework.kafka.config.KafkaStreamsCustomizer;
+import org.springframework.kafka.config.StreamsBuilderFactoryBeanConfigurer;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -100,7 +103,6 @@ public class KafkaStreamsBinderHealthIndicatorTests {
 	}
 
 	@Test
-	@Ignore
 	public void healthIndicatorDownTest() throws Exception {
 		try (ConfigurableApplicationContext context = singleStream("ApplicationHealthTest-xyzabc")) {
 			receive(context,
@@ -121,7 +123,6 @@ public class KafkaStreamsBinderHealthIndicatorTests {
 	}
 
 	@Test
-	@Ignore
 	public void healthIndicatorDownMultipleKStreamsTest() throws Exception {
 		try (ConfigurableApplicationContext context = multipleStream()) {
 			receive(context,
@@ -181,7 +182,7 @@ public class KafkaStreamsBinderHealthIndicatorTests {
 			embeddedKafka.consumeFromEmbeddedTopics(consumer, topics);
 			KafkaTestUtils.getRecords(consumer, 1000);
 
-			TimeUnit.SECONDS.sleep(2);
+			TimeUnit.SECONDS.sleep(5);
 			checkHealth(context, expected);
 		}
 		finally {
@@ -256,6 +257,19 @@ public class KafkaStreamsBinderHealthIndicatorTests {
 			});
 		}
 
+		@Bean
+		public StreamsBuilderFactoryBeanConfigurer customizer() {
+			return factoryBean -> {
+				factoryBean.setKafkaStreamsCustomizer(new KafkaStreamsCustomizer() {
+					@Override
+					public void customize(KafkaStreams kafkaStreams) {
+						kafkaStreams.setUncaughtExceptionHandler(exception ->
+								StreamsUncaughtExceptionHandler.StreamThreadExceptionResponse.SHUTDOWN_CLIENT);
+					}
+				});
+			};
+		}
+
 	}
 
 	@EnableBinding({ KafkaStreamsProcessor.class, KafkaStreamsProcessorX.class })
@@ -282,6 +296,19 @@ public class KafkaStreamsBinderHealthIndicatorTests {
 				}
 				return true;
 			});
+		}
+
+		@Bean
+		public StreamsBuilderFactoryBeanConfigurer customizer() {
+			return factoryBean -> {
+				factoryBean.setKafkaStreamsCustomizer(new KafkaStreamsCustomizer() {
+					@Override
+					public void customize(KafkaStreams kafkaStreams) {
+						kafkaStreams.setUncaughtExceptionHandler(exception ->
+								StreamsUncaughtExceptionHandler.StreamThreadExceptionResponse.SHUTDOWN_CLIENT);
+					}
+				});
+			};
 		}
 
 	}

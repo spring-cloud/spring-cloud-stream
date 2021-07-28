@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
@@ -41,8 +42,8 @@ import org.apache.kafka.streams.kstream.Grouped;
 import org.apache.kafka.streams.kstream.Joined;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.KTable;
+import org.apache.kafka.streams.kstream.Materialized;
 import org.junit.ClassRule;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import org.springframework.boot.SpringApplication;
@@ -50,6 +51,7 @@ import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
+import org.springframework.kafka.core.CleanupConfig;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -60,7 +62,6 @@ import org.springframework.util.Assert;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@Ignore("Investigate why these tests are failing")
 public class StreamToTableJoinFunctionTests {
 
 	@ClassRule
@@ -441,8 +442,13 @@ public class StreamToTableJoinFunctionTests {
 					.map((user, regionWithClicks) -> new KeyValue<>(regionWithClicks.getRegion(),
 							regionWithClicks.getClicks()))
 					.groupByKey(Grouped.with(Serdes.String(), Serdes.Long()))
-					.reduce(Long::sum)
+					.reduce(Long::sum, Materialized.as("CountClicks-" + UUID.randomUUID()))
 					.toStream()));
+		}
+
+		@Bean
+		public CleanupConfig cleanupConfig() {
+			return new CleanupConfig(false, true);
 		}
 	}
 
@@ -458,8 +464,13 @@ public class StreamToTableJoinFunctionTests {
 					.map((user, regionWithClicks) -> new KeyValue<>(regionWithClicks.getRegion(),
 							regionWithClicks.getClicks()))
 					.groupByKey(Grouped.with(Serdes.String(), Serdes.Long()))
-					.reduce(Long::sum)
+					.reduce(Long::sum, Materialized.as("CountClicks-" + UUID.randomUUID()))
 					.toStream());
+		}
+
+		@Bean
+		public CleanupConfig cleanupConfig() {
+			return new CleanupConfig(false, true);
 		}
 	}
 
