@@ -1050,7 +1050,7 @@ public class KafkaBinderTests extends
 
 		AbstractMessageListenerContainer container = TestUtils.getPropertyValue(consumerBinding,
 				"lifecycle.messageListenerContainer", AbstractMessageListenerContainer.class);
-		assertThat(container.getContainerProperties().getTopicPartitionsToAssign().length)
+		assertThat(container.getContainerProperties().getTopicPartitions().length)
 				.isEqualTo(4); // 2 topics 2 partitions each
 		if (transactional) {
 			assertThat(TestUtils.getPropertyValue(container.getAfterRollbackProcessor(), "kafkaTemplate")).isNotNull();
@@ -2932,7 +2932,7 @@ public class KafkaBinderTests extends
 					binding,
 					"lifecycle.messageListenerContainer.containerProperties",
 					ContainerProperties.class);
-			TopicPartitionOffset[] listenedPartitions = containerProps.getTopicPartitionsToAssign();
+			TopicPartitionOffset[] listenedPartitions = containerProps.getTopicPartitions();
 			assertThat(listenedPartitions).hasSize(2);
 			assertThat(listenedPartitions).contains(
 					new TopicPartitionOffset(testTopicName, 2),

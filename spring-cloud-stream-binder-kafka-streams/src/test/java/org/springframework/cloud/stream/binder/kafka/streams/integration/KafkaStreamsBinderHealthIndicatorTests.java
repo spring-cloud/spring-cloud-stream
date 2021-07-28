@@ -30,6 +30,7 @@ import org.assertj.core.util.Lists;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import org.springframework.boot.SpringApplication;
@@ -99,6 +100,7 @@ public class KafkaStreamsBinderHealthIndicatorTests {
 	}
 
 	@Test
+	@Ignore
 	public void healthIndicatorDownTest() throws Exception {
 		try (ConfigurableApplicationContext context = singleStream("ApplicationHealthTest-xyzabc")) {
 			receive(context,
@@ -119,6 +121,7 @@ public class KafkaStreamsBinderHealthIndicatorTests {
 	}
 
 	@Test
+	@Ignore
 	public void healthIndicatorDownMultipleKStreamsTest() throws Exception {
 		try (ConfigurableApplicationContext context = multipleStream()) {
 			receive(context,

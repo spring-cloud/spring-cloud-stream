@@ -108,7 +108,7 @@ public class KafkastreamsBinderPojoInputStringOutputIntegrationTests {
 			CleanupConfig cleanup = TestUtils.getPropertyValue(streamsBuilderFactoryBean,
 					"cleanupConfig", CleanupConfig.class);
 			assertThat(cleanup.cleanupOnStart()).isFalse();
-			assertThat(cleanup.cleanupOnStop()).isTrue();
+			assertThat(cleanup.cleanupOnStop()).isFalse();
 		}
 		finally {
 			context.close();
