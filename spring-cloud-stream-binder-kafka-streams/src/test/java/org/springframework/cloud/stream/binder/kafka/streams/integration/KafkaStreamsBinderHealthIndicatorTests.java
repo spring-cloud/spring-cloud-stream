@@ -257,19 +257,6 @@ public class KafkaStreamsBinderHealthIndicatorTests {
 			});
 		}
 
-		@Bean
-		public StreamsBuilderFactoryBeanConfigurer customizer() {
-			return factoryBean -> {
-				factoryBean.setKafkaStreamsCustomizer(new KafkaStreamsCustomizer() {
-					@Override
-					public void customize(KafkaStreams kafkaStreams) {
-						kafkaStreams.setUncaughtExceptionHandler(exception ->
-								StreamsUncaughtExceptionHandler.StreamThreadExceptionResponse.SHUTDOWN_CLIENT);
-					}
-				});
-			};
-		}
-
 	}
 
 	@EnableBinding({ KafkaStreamsProcessor.class, KafkaStreamsProcessorX.class })

@@ -18,6 +18,8 @@ package org.springframework.cloud.stream.binder.kafka.streams;
 
 import java.util.Set;
 
+import org.apache.kafka.streams.errors.StreamsUncaughtExceptionHandler;
+
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.context.SmartLifecycle;
 import org.springframework.kafka.KafkaException;
@@ -84,6 +86,12 @@ class StreamsBuilderFactoryManager implements SmartLifecycle {
 					if (this.listener != null) {
 						streamsBuilderFactoryBean.addListener(this.listener);
 					}
+					// By default, we shutdown the client if there is an uncaught exception in the application.
+					// Users can override this by customizing SBFB. See this issue for more details:
+					// https://github.com/spring-cloud/spring-cloud-stream-binder-kafka/issues/1110
+					streamsBuilderFactoryBean.setStreamsUncaughtExceptionHandler(exception ->
+							StreamsUncaughtExceptionHandler.StreamThreadExceptionResponse.SHUTDOWN_CLIENT);
+					// Starting the stream.
 					streamsBuilderFactoryBean.start();
 					this.kafkaStreamsRegistry.registerKafkaStreams(streamsBuilderFactoryBean);
 				}
