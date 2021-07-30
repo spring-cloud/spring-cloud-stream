@@ -185,6 +185,7 @@ Default: none - the broker will generate random consumer tags.
 containerType::
 Select the type of listener container to be used.
 See https://docs.spring.io/spring-amqp/reference/html/_reference.html#choose-container[Choosing a Container] in the Spring AMQP documentation for more information.
+Also see <<rabbitmq-stream>>.
 +
 Default: `simple`
 deadLetterQueueName::
@@ -433,6 +434,62 @@ The number of deliveries between acks.
 Not supported when the `containerType` is `direct`.
 +
 Default: `1`.
+
+[[rabbitmq-stream]]
+=== Initial Support for the RabbitMQ Stream Plugin
+
+Basic support for the https://rabbitmq.com/stream.html[RabbitMQ Stream Plugin] is now provided.
+To enable this feature, you must add the `spring-rabbit-stream` jar to the class path - it must be the same version as `spring-amqp` and `spring-rabbit`.
+
+IMPORTANT: The consumer properties described above are not supported when you set the `containerType` property to `stream`; `concurrency` is also not supported at this time.
+Only a single stream queue can be consumed by each binding.
+
+To configure the binder to use `containerType=stream`, you must add an `Environment` `@Bean` and, optionally, a customizer to customize the listener container.
+
+====
+[source, java]
+----
+@Bean
+Environment streamEnv() {
+    return Environment.builder()
+            .build();
+}
+
+@Bean
+ListenerContainerCustomizer<MessageListenerContainer> customizer() {
+    return (cont, dest, group) -> {
+        StreamListenerContainer container = (StreamListenerContainer) cont;
+        container.setConsumerCustomizer(builder -> {
+            builder.offset(OffsetSpecification.first());
+        });
+        // ...
+    };
+}
+----
+====
+
+The stream name (for the purpose of offset tracking) is set to the binding `destination + '.' + group`.
+If you decide to use manual offset tracking, the `Context` is available as a message header:
+
+====
+[source, java]
+----
+int count;
+
+@Bean
+public Consumer<Message<?>> input() {
+    return msg -> {
+        System.out.println(msg);
+        if (++count % 1000 == 0) {
+            Context context = msg.getHeaders().get("rabbitmq_streamContext", Context.class);
+            context.consumer().store(context.offset());
+        }
+    };
+}
+----
+====
+
+Refer to the https://rabbitmq.github.io/rabbitmq-stream-java-client/stable/htmlsingle/[RabbitMQ Stream Java Client documentation] for information about configuring the environment and consumer builder.
 
 === Advanced Listener Container Configuration
 
@@ -977,18 +1034,17 @@ public class Application {
                     if (correlation.getReturnedMessage() != null) {
                         log.error("Message for " + correlation.getPayload() + " was returned ");
 
-                        // try to re-publish, send a DLQ, etc
+                        // throw some exception to invoke binder retry/error handling
 
                     }
                 }
                 catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
-                    e.printStackTrace();
+                    throw new IllegalStateException(e);
                 }
                 catch (ExecutionException | TimeoutException e) {
-                    e.printStackTrace();
+                    throw new IllegalStateException(e);
                 }
-            });
         };
     }
 
@@ -1044,7 +1100,7 @@ There are a number of rabbit-specific binding properties that allow you to modif
 
 If you have an existing exchange/queue that you wish to use, you can completely disable automatic provisioning as follows, assuming the exchange is named `myExchange` and the queue is named `myQueue`:
 
-* `spring.cloud.stream.bindings.<binding name>.destination=myExhange`
+* `spring.cloud.stream.bindings.<binding name>.destination=myExchange`
 * `spring.cloud.stream.bindings.<binding name>.group=myQueue`
 * `spring.cloud.stream.rabbit.bindings.<binding name>.consumer.bindQueue=false`
 * `spring.cloud.stream.rabbit.bindings.<binding name>.consumer.declareExchange=false`
