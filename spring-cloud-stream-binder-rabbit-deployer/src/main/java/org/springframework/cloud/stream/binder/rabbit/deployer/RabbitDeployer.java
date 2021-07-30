@@ -34,7 +34,6 @@ public class RabbitDeployer {
 
 	public static void main(String[] args) {
 		SpringApplication.run(RabbitDeployer.class,
-
 				//target/it/bootjar/target/bootjar-1.0.0.RELEASE-exec.jar
 				"--spring.cloud.function.definition=reverseFunction;echo",
 				"--spring.cloud.function.location=/Users/ozhurakousky/dev/repo/spring-cloud-function/spring-cloud-function-deployer/target/it/bootjar/target/bootjar-1.0.0.RELEASE-exec.jar",
@@ -44,7 +43,22 @@ public class RabbitDeployer {
 
 	@Bean
 	public Function<String, String> echo() {
+		// java -jar timesource-kafka.jar
+
+		// java -jar rabbit-bundle.jar -Dspring.cloud.function.location=.....jar
+		// java -jar rabbit-kafka-bundle.jar -Dspring.cloud.function.location=.....jar
+
+		// java -jar rabbit-rsocket-bundle.jar  = GATEWAY
 		return v -> v;
 	}
+
+	// Step-1 - rabbit-bundle.jar(time) | rabbit-bundle.jar(log) - Step One - local
+	// Step-2 - polyglot
+	// Step-3 - SCDF
+	// Step-4 - Kubernetes
+
+	//http | rabbit-rsocket-bundle.jar(producer) | python | rabbit-rsocket-bundle.jar(consumer) | rabbit-bundle.jar(log)
+
+	//http => pyjon
 
 }
