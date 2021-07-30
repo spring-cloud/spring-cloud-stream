@@ -337,11 +337,6 @@ Usually needed if you want to synchronize another transaction with the Kafka tra
 To achieve exactly once consumption and production of records, the consumer and producer bindings must all be configured with the same transaction manager.
 +
 Default: none.
-txCommitRecovered::
-When using a transactional binder, the offset of a recovered record (e.g. when retries are exhausted and the record is sent to a dead letter topic) will be committed via a new transaction, by default.
-Setting this property to `false` suppresses committing the offset of recovered record.
-+
-Default: true.
 
 [[reset-offsets]]
 ==== Resetting Offsets
@@ -368,7 +363,7 @@ Set `resetOffsets` to `true` and `startOffset` to `latest`; the binding will per
 
 IMPORTANT: If a rebalance occurs after the initial assignment, the seeks will only be performed on any newly assigned partitions that were not assigned during the initial assignment.
 
-For more control over topic offsets, see <<rebalance-listener>>; when a listener is provided, `resetOffsets` should not be set to `true`, otherwise, that will cause an error.
+For more control over topic offsets, see <<rebalance-listener>>; when a listener is provided, `resetOffsets: true` is ignored.
 
 ==== Consuming Batches
 
@@ -626,47 +621,6 @@ NOTE: Be careful when using the `autoCreateTopics` and `autoAddPartitions` with 
 Usually, applications may use principals that do not have administrative rights in Kafka and Zookeeper.
 Consequently, relying on Spring Cloud Stream to create/modify topics may fail.
 In secure environments, we strongly recommend creating topics and managing ACLs administratively by using Kafka tooling.
-
-====== Multi-binder configuration and JAAS
-
-When connecting to multiple clusters in which each one requires separate JAAS configuration, then set the JAAS configuration using the property `sasl.jaas.config`.
-When this property is present in the applicaiton, it takes precedence over the other strategies mentioned above.
-See this https://cwiki.apache.org/confluence/display/KAFKA/KIP-85%3A+Dynamic+JAAS+configuration+for+Kafka+clients[KIP-85] for more details.
-
-For example, if you have two clusters in your application with separate JAAS configuration, then the following is a template that you can use:
-
-```
-spring.cloud.stream:
-    binders:
-        kafka1:
-          type: kafka
-          environment:
-             spring:
-               cloud:
-                 stream:
-                  kafka:
-                    binder:
-                      brokers: localhost:9092
-                      configuration.sasl.jaas.config: "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"admin\" password=\"admin-secret\";"
-        kafka2:
-          type: kafka
-          environment:
-            spring:
-              cloud:
-                stream:
-                  kafka:
-                    binder:
-                      brokers: localhost:9093
-                      configuration.sasl.jaas.config: "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"user1\" password=\"user1-secret\";"
-    kafka.binder:
-        configuration:
-          security.protocol: SASL_PLAINTEXT
-          sasl.mechanism: PLAIN
-```
-
-Note that both the Kafka clusters, and the `sasl.jaas.config` values for each of them are different in the above configuration.
-
-See this https://github.com/spring-cloud/spring-cloud-stream-samples/tree/main/multi-binder-samples/kafka-multi-binder-jaas[sample application] for more details on how to setup and run such an application.
 
 [[pause-resume]]
 ===== Example: Pausing and Resuming the Consumer
