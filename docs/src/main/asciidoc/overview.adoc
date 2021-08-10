@@ -438,7 +438,7 @@ Environment streamEnv() {
 ListenerContainerCustomizer<MessageListenerContainer> customizer() {
     return (cont, dest, group) -> {
         StreamListenerContainer container = (StreamListenerContainer) cont;
-        container.setConsumerCustomizer(builder -> {
+        container.setConsumerCustomizer((name, builder) -> {
             builder.offset(OffsetSpecification.first());
         });
         // ...
@@ -447,7 +447,10 @@ ListenerContainerCustomizer<MessageListenerContainer> customizer() {
 ----
 ====
 
-The stream name (for the purpose of offset tracking) is set to the binding `destination + '.' + group`.
+The `name` argument passed to the customizer is `destination + '.' + group + '.container'`.
+
+The stream `name()` (for the purpose of offset tracking) is set to the binding `destination + '.' + group`.
+It can be changed using a `ConsumerCustomizer` shown above.
 If you decide to use manual offset tracking, the `Context` is available as a message header:
 
 ====

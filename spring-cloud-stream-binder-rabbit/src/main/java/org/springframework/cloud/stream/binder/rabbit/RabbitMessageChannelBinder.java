@@ -511,6 +511,7 @@ public class RabbitMessageChannelBinder extends
 		AbstractMessageListenerContainer listenerContainer = directContainer
 				? new DirectMessageListenerContainer(this.connectionFactory)
 				: new SimpleMessageListenerContainer(this.connectionFactory);
+		listenerContainer.setBeanName(consumerDestination.getName() + "." + group + ".container");
 		listenerContainer
 				.setAcknowledgeMode(extension.getAcknowledgeMode());
 		listenerContainer.setChannelTransacted(extension.isTransacted());

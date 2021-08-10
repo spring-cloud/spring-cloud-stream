@@ -18,6 +18,7 @@ package org.springframework.cloud.stream.binder.rabbit.stream;
 
 import com.rabbitmq.stream.ConsumerBuilder;
 import com.rabbitmq.stream.Environment;
+import com.rabbitmq.stream.OffsetSpecification;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
@@ -42,6 +43,7 @@ import org.springframework.rabbit.stream.listener.StreamListenerContainer;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 /**
  * @author Gary Russell
@@ -59,7 +61,7 @@ public class RabbitStreamBinderModuleTests {
 	}
 
 	@Test
-	public void testExtendedProperties() {
+	public void testStreamContainer() {
 		context = new SpringApplicationBuilder(SimpleProcessor.class)
 				.web(WebApplicationType.NONE)
 				.run("--server.port=0");
@@ -72,8 +74,11 @@ public class RabbitStreamBinderModuleTests {
 				new ExtendedConsumerProperties<RabbitConsumerProperties>(rProps);
 		props.setAutoStartup(false);
 		Binding<MessageChannel> binding = rabbitBinder.bindConsumer("testStream", "grp", new QueueChannel(), props);
-		assertThat(TestUtils.getPropertyValue(binding, "lifecycle.messageListenerContainer"))
-				.isInstanceOf(StreamListenerContainer.class);
+		Object container = TestUtils.getPropertyValue(binding, "lifecycle.messageListenerContainer");
+		assertThat(container).isInstanceOf(StreamListenerContainer.class);
+		((StreamListenerContainer) container).start();
+		verify(this.context.getBean(ConsumerBuilder.class)).offset(OffsetSpecification.first());
+		((StreamListenerContainer) container).stop();
 	}
 
 	@SpringBootApplication
@@ -81,15 +86,24 @@ public class RabbitStreamBinderModuleTests {
 
 		@Bean
 		public ListenerContainerCustomizer<MessageListenerContainer> containerCustomizer() {
-			return (c, q, g) -> ((StreamListenerContainer) c).setBeanName(
-					"setByCustomizerForQueue:" + q + (g == null ? "" : ",andGroup:" + g));
+			return (cont, dest, group) -> {
+				StreamListenerContainer container = (StreamListenerContainer) cont;
+				container.setConsumerCustomizer((name, builder) -> {
+					builder.offset(OffsetSpecification.first());
+				});
+			};
 		}
 
 		@Bean
-		Environment env() {
+		Environment env(ConsumerBuilder builder) {
 			Environment env = mock(Environment.class);
-			given(env.consumerBuilder()).willReturn(mock(ConsumerBuilder.class));
+			given(env.consumerBuilder()).willReturn(builder);
 			return env;
+		}
+
+		@Bean
+		ConsumerBuilder consumerBuilder() {
+			return mock(ConsumerBuilder.class);
 		}
 
 	}

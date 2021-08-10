@@ -20,11 +20,9 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.UUID;
-import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import com.rabbitmq.stream.Codec;
-import com.rabbitmq.stream.ConsumerBuilder;
 import com.rabbitmq.stream.Environment;
 import com.rabbitmq.stream.MessageBuilder;
 import com.rabbitmq.stream.MessageBuilder.ApplicationPropertiesBuilder;
@@ -46,6 +44,7 @@ import org.springframework.integration.amqp.support.AmqpHeaderMapper;
 import org.springframework.integration.amqp.support.DefaultAmqpHeaderMapper;
 import org.springframework.lang.Nullable;
 import org.springframework.messaging.MessageHeaders;
+import org.springframework.rabbit.stream.listener.ConsumerCustomizer;
 import org.springframework.rabbit.stream.listener.StreamListenerContainer;
 import org.springframework.rabbit.stream.support.StreamMessageProperties;
 import org.springframework.rabbit.stream.support.converter.StreamMessageConverter;
@@ -82,15 +81,16 @@ public final class StreamContainerUtils {
 		StreamListenerContainer container = new StreamListenerContainer(applicationContext.getBean(Environment.class)) {
 
 			@Override
-			public synchronized void setConsumerCustomizer(Consumer<ConsumerBuilder> consumerCustomizer) {
-				super.setConsumerCustomizer(builder -> {
-					builder.name(consumerDestination.getName());
-					consumerCustomizer.accept(builder);
+			public synchronized void setConsumerCustomizer(ConsumerCustomizer consumerCustomizer) {
+				super.setConsumerCustomizer((id, builder) -> {
+					builder.name(consumerDestination.getName() + "." + group);
+					consumerCustomizer.accept(id, builder);
 				});
 			}
 
 
 		};
+		container.setBeanName(consumerDestination.getName() + "." + group + ".container");
 		container.setMessageConverter(new DefaultStreamMessageConverter());
 		return container;
 	}
