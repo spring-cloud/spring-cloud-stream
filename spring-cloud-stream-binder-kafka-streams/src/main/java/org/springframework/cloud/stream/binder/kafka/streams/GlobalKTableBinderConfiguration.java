@@ -59,10 +59,11 @@ public class GlobalKTableBinderConfiguration {
 			KafkaTopicProvisioner kafkaTopicProvisioner,
 			KafkaStreamsExtendedBindingProperties kafkaStreamsExtendedBindingProperties,
 			KafkaStreamsBindingInformationCatalogue kafkaStreamsBindingInformationCatalogue,
-			@Qualifier("streamConfigGlobalProperties") Map<String, Object> streamConfigGlobalProperties) {
+			@Qualifier("streamConfigGlobalProperties") Map<String, Object> streamConfigGlobalProperties,
+			KafkaStreamsRegistry kafkaStreamsRegistry) {
 
 		GlobalKTableBinder globalKTableBinder = new GlobalKTableBinder(binderConfigurationProperties,
-				kafkaTopicProvisioner, kafkaStreamsBindingInformationCatalogue);
+				kafkaTopicProvisioner, kafkaStreamsBindingInformationCatalogue, kafkaStreamsRegistry);
 		globalKTableBinder.setKafkaStreamsExtendedBindingProperties(
 				kafkaStreamsExtendedBindingProperties);
 		return globalKTableBinder;

@@ -59,10 +59,10 @@ public class KStreamBinderConfiguration {
 			KafkaStreamsMessageConversionDelegate KafkaStreamsMessageConversionDelegate,
 			KafkaStreamsBindingInformationCatalogue KafkaStreamsBindingInformationCatalogue,
 			KeyValueSerdeResolver keyValueSerdeResolver,
-			KafkaStreamsExtendedBindingProperties kafkaStreamsExtendedBindingProperties) {
+			KafkaStreamsExtendedBindingProperties kafkaStreamsExtendedBindingProperties, KafkaStreamsRegistry kafkaStreamsRegistry) {
 		KStreamBinder kStreamBinder = new KStreamBinder(binderConfigurationProperties,
 				kafkaTopicProvisioner, KafkaStreamsMessageConversionDelegate,
-				KafkaStreamsBindingInformationCatalogue, keyValueSerdeResolver);
+				KafkaStreamsBindingInformationCatalogue, keyValueSerdeResolver, kafkaStreamsRegistry);
 		kStreamBinder.setKafkaStreamsExtendedBindingProperties(
 				kafkaStreamsExtendedBindingProperties);
 		return kStreamBinder;

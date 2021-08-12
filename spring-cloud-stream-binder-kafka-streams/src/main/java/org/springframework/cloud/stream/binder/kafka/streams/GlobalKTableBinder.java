@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.binder.kafka.streams;
 
+import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.kstream.GlobalKTable;
 
 import org.springframework.cloud.stream.binder.AbstractBinder;
@@ -58,16 +59,18 @@ public class GlobalKTableBinder extends
 
 	// @checkstyle:off
 	private KafkaStreamsExtendedBindingProperties kafkaStreamsExtendedBindingProperties = new KafkaStreamsExtendedBindingProperties();
+	private final KafkaStreamsRegistry kafkaStreamsRegistry;
 
 	// @checkstyle:on
 
 	public GlobalKTableBinder(
 			KafkaStreamsBinderConfigurationProperties binderConfigurationProperties,
 			KafkaTopicProvisioner kafkaTopicProvisioner,
-			KafkaStreamsBindingInformationCatalogue kafkaStreamsBindingInformationCatalogue) {
+			KafkaStreamsBindingInformationCatalogue kafkaStreamsBindingInformationCatalogue, KafkaStreamsRegistry kafkaStreamsRegistry) {
 		this.binderConfigurationProperties = binderConfigurationProperties;
 		this.kafkaTopicProvisioner = kafkaTopicProvisioner;
 		this.kafkaStreamsBindingInformationCatalogue = kafkaStreamsBindingInformationCatalogue;
+		this.kafkaStreamsRegistry = kafkaStreamsRegistry;
 	}
 
 	@Override
@@ -98,8 +101,16 @@ public class GlobalKTableBinder extends
 			}
 
 			@Override
+			public synchronized void start() {
+				super.start();
+				GlobalKTableBinder.this.kafkaStreamsRegistry.registerKafkaStreams(streamsBuilderFactoryBean);
+			}
+
+			@Override
 			public synchronized void stop() {
+				final KafkaStreams kafkaStreams = streamsBuilderFactoryBean.getKafkaStreams();
 				super.stop();
+				GlobalKTableBinder.this.kafkaStreamsRegistry.unregisterKafkaStreams(kafkaStreams);
 				KafkaStreamsBinderUtils.closeDlqProducerFactories(kafkaStreamsBindingInformationCatalogue, streamsBuilderFactoryBean);
 			}
 		};

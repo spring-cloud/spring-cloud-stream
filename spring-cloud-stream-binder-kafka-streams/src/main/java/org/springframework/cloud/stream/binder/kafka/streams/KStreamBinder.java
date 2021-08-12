@@ -22,6 +22,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serdes;
+import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.Produced;
 import org.apache.kafka.streams.processor.StreamPartitioner;
@@ -78,16 +79,19 @@ class KStreamBinder extends
 
 	private final KeyValueSerdeResolver keyValueSerdeResolver;
 
+	private final KafkaStreamsRegistry kafkaStreamsRegistry;
+
 	KStreamBinder(KafkaStreamsBinderConfigurationProperties binderConfigurationProperties,
 				KafkaTopicProvisioner kafkaTopicProvisioner,
 				KafkaStreamsMessageConversionDelegate kafkaStreamsMessageConversionDelegate,
 				KafkaStreamsBindingInformationCatalogue KafkaStreamsBindingInformationCatalogue,
-				KeyValueSerdeResolver keyValueSerdeResolver) {
+				KeyValueSerdeResolver keyValueSerdeResolver, KafkaStreamsRegistry kafkaStreamsRegistry) {
 		this.binderConfigurationProperties = binderConfigurationProperties;
 		this.kafkaTopicProvisioner = kafkaTopicProvisioner;
 		this.kafkaStreamsMessageConversionDelegate = kafkaStreamsMessageConversionDelegate;
 		this.kafkaStreamsBindingInformationCatalogue = KafkaStreamsBindingInformationCatalogue;
 		this.keyValueSerdeResolver = keyValueSerdeResolver;
+		this.kafkaStreamsRegistry = kafkaStreamsRegistry;
 	}
 
 	@Override
@@ -126,8 +130,16 @@ class KStreamBinder extends
 			}
 
 			@Override
+			public synchronized void start() {
+				super.start();
+				KStreamBinder.this.kafkaStreamsRegistry.registerKafkaStreams(streamsBuilderFactoryBean);
+			}
+
+			@Override
 			public synchronized void stop() {
+				final KafkaStreams kafkaStreams = streamsBuilderFactoryBean.getKafkaStreams();
 				super.stop();
+				KStreamBinder.this.kafkaStreamsRegistry.unregisterKafkaStreams(kafkaStreams);
 				KafkaStreamsBinderUtils.closeDlqProducerFactories(kafkaStreamsBindingInformationCatalogue, streamsBuilderFactoryBean);
 			}
 		};
@@ -179,8 +191,16 @@ class KStreamBinder extends
 			}
 
 			@Override
+			public synchronized void start() {
+				super.start();
+				KStreamBinder.this.kafkaStreamsRegistry.registerKafkaStreams(streamsBuilderFactoryBean);
+			}
+
+			@Override
 			public synchronized void stop() {
+				final KafkaStreams kafkaStreams = streamsBuilderFactoryBean.getKafkaStreams();
 				super.stop();
+				KStreamBinder.this.kafkaStreamsRegistry.unregisterKafkaStreams(kafkaStreams);
 				KafkaStreamsBinderUtils.closeDlqProducerFactories(kafkaStreamsBindingInformationCatalogue, streamsBuilderFactoryBean);
 			}
 		};

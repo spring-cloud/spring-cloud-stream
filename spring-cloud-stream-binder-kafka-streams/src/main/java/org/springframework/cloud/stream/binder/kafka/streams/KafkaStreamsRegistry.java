@@ -62,6 +62,11 @@ public class KafkaStreamsRegistry {
 		this.streamsBuilderFactoryBeanMap.put(kafkaStreams, streamsBuilderFactoryBean);
 	}
 
+	void unregisterKafkaStreams(KafkaStreams kafkaStreams) {
+		this.kafkaStreams.remove(kafkaStreams);
+		this.streamsBuilderFactoryBeanMap.remove(kafkaStreams);
+	}
+
 	/**
 	 *
 	 * @param kafkaStreams {@link KafkaStreams} object
