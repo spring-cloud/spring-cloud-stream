@@ -991,7 +991,7 @@ One important thing to keep in mind when providing an implementation for `DlqDes
 This is because there is no way for the binder to infer the names of all the DLQ topics the implementation might send to.
 Therefore, if you provide DLQ names using this strategy, it is the application's responsibility to ensure that those topics are created beforehand.
 
-If `DlqDestinationResolver` is present in the application as a bean, that takes higher prcedence.
+If `DlqDestinationResolver` is present in the application as a bean, that takes higher precedence.
 If you do not want to follow this approach and rather provide a static DLQ name using configuration, you can set the following property.
 
 [source]
@@ -1019,10 +1019,10 @@ public BiFunction<KStream<String, Long>, KTable<String, String>, KStream<String,
 }
 ```
 
-and you only want to enable DLQ on the first input binding and logAndSkip on the second binding, then you can do so on the consumer as below.
+and you only want to enable DLQ on the first input binding and skipAndContinue on the second binding, then you can do so on the consumer as below.
 
 `spring.cloud.stream.kafka.streams.bindings.process-in-0.consumer.deserializationExceptionHandler: sendToDlq`
-`spring.cloud.stream.kafka.streams.bindings.process-in-1.consumer.deserializationExceptionHandler: logAndSkip`
+`spring.cloud.stream.kafka.streams.bindings.process-in-1.consumer.deserializationExceptionHandler: skipAndContinue`
 
 Setting deserialization exception handlers this way has a higher precedence than setting at the binder level.
 
@@ -1923,7 +1923,7 @@ deserializationExceptionHandler::
 Deserialization error handler type.
 This handler is applied at the binder level and thus applied against all input binding in the application.
 There is a way to control it in a more fine-grained way at the consumer binding level.
-Possible values are - `logAndContinue`, `logAndFail` or `sendToDlq`
+Possible values are - `logAndContinue`, `logAndFail`, `skipAndContinue` or `sendToDlq`
 +
 Default: `logAndFail`
 
@@ -2030,7 +2030,7 @@ Unlike the message channel based binder, Kafka Streams binder does not seek to b
 deserializationExceptionHandler::
 Deserialization error handler type.
 This handler is applied per consumer binding as opposed to the binder level property described before.
-Possible values are - `logAndContinue`, `logAndFail` or `sendToDlq`
+Possible values are - `logAndContinue`, `logAndFail`, `skipAndContinue` or `sendToDlq`
 +
 Default: `logAndFail`
 
