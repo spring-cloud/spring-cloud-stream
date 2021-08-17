@@ -35,7 +35,9 @@ class RabbitDeployerEnvironmentPostProcessor implements EnvironmentPostProcessor
 		if (!environment.containsProperty("spring.cloud.function.rsocket.enabled")) {
 			environment.getSystemProperties().putIfAbsent("spring.cloud.function.rsocket.enabled", false);
 		}
-
+		if (!environment.containsProperty("spring.cloud.function.deployer.enabled")) {
+			environment.getSystemProperties().putIfAbsent("spring.cloud.function.deployer.enabled", false);
+		}
 	}
 
 }

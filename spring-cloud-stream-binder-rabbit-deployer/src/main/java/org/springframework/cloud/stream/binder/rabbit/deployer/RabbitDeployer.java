@@ -16,22 +16,34 @@
 
 package org.springframework.cloud.stream.binder.rabbit.deployer;
 
-import java.util.function.Consumer;
-import java.util.function.Function;
-
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.cloud.function.context.FunctionProperties;
-import org.springframework.cloud.stream.function.StreamBridge;
-import org.springframework.context.annotation.Bean;
-import org.springframework.core.env.Environment;
-import org.springframework.messaging.Message;
-import org.springframework.messaging.rsocket.RSocketRequester;
-import org.springframework.messaging.support.MessageBuilder;
 
 
 /**
+ * Main application class to trigger the deployment of Java Functions based
+ * user application with RabitMQ bindings.
+ * <br>
+ * <br>
+ * It is based on Spring Cloud Function
+ * <a href="https://docs.spring.io/spring-cloud-function/docs/3.1.3/reference/html/spring-cloud-function.html#_deploying_a_packaged_function">deploy feature</a>
+ *
+ * <br>
+ * All you need to do is to provide few additional properties to assist Spring Cloud Function deployer.
+ * <br>
+ * For example:
+ * <br>
+ * <pre class="code">
+ *
+ * java -jar spring-cloud-stream-binder-rabbit-deployer/target/spring-cloud-stream-binder-rabbit-deployer-3.2.0-SNAPSHOT.jar\
+ * 		 	--spring.cloud.function.location=/foo/bar/simplestjar-1.0.0.RELEASE.jar
+ * 			--spring.cloud.function.function-class=function.example.UpperCaseFunction
+ *
+ * </pre>
+ * The only required property is 'spring.cloud.function.location'. Every other property is optional and is based on the style of user application.
+ * For more details on the supported styles of user application please refer to
+ * <a href="https://docs.spring.io/spring-cloud-function/docs/3.1.3/reference/html/spring-cloud-function.html#_deploying_a_packaged_function">
+ * Deploying a Packaged Function</a> section of Spring Cloud Function.
  *
  * @author Oleg Zhurakousky
  * @since 3.1.2
@@ -40,49 +52,8 @@ import org.springframework.messaging.support.MessageBuilder;
 @SpringBootApplication
 public class RabbitDeployer {
 
-	/*
-	 * SpringApplication.run(RabbitDeployer.class,
-				"--spring.cloud.function.definition=reverseFunction",
-				"--spring.cloud.function.location=/bootjar-1.0.0.RELEASE-exec.jar",
-				"--spring.cloud.function.function-class=function.example.ReverseFunction"
-				);
-	 */
 	public static void main(String[] args) {
-		SpringApplication.run(RabbitDeployer.class);
+		SpringApplication.run(RabbitDeployer.class, args);
 	}
-
-	@Bean
-	@ConditionalOnProperty(name = FunctionProperties.PREFIX + ".rsocket.enabled", matchIfMissing = true)
-	public Function<Message<byte[]>, Message<byte[]>> gateway(StreamBridge bridge) {
-		return message -> {
-			String destinationName = (String) message.getHeaders().get("target_destination");
-			bridge.send(destinationName, message);
-			return MessageBuilder.withPayload("Successfully sent to reverseFunction-in-0".getBytes()).build();
-		};
-	}
-
-	/*
-	 * Just like any other stream bean. This one will subscribe to broker destination (using regular stream mechanisms)
-	 * and using some configuration provided by the user will propagate message to remote (rsocket) subscriber
-	 */
-	@Bean
-	@ConditionalOnProperty(name = FunctionProperties.PREFIX + ".rsocket.enabled", matchIfMissing = true)
-	public Consumer<Message<byte[]>> delegatingConsumer(RSocketRequester.Builder rsocketRequesterBuilder, Environment environment) {
-		String host = environment.getProperty("spring.cloud.function.rsocket.subscriber.host");
-		String port = environment.getProperty("spring.cloud.function.rsocket.subscriber.port");
-		return message -> {
-//			rsocketRequesterBuilder.tcp("host", Integer.valueOf(port))
-//			.route("pojoToString")
-//			.data(message)
-//			.retrieveMono(String.class);
-		};
-	}
-
-	// Step-1 - rabbit-bundle.jar(time) | rabbit-bundle.jar(log) - Step One - local
-	// Step-2 - polyglot
-	// Step-3 - SCDF
-	// Step-4 - Kubernetes
-
-	//http | rabbit-rsocket-bundle.jar(producer) | python | rabbit-rsocket-bundle.jar(consumer) | rabbit-bundle.jar(log)
 
 }
