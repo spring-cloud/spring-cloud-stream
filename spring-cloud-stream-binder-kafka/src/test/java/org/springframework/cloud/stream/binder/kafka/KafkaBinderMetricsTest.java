@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2020 the original author or authors.
+ * Copyright 2016-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -89,9 +89,12 @@ public class KafkaBinderMetricsTest {
 
 	@Test
 	public void shouldIndicateLag() {
+		final Map<TopicPartition, OffsetAndMetadata> committed = new HashMap<>();
+		TopicPartition topicPartition = new TopicPartition(TEST_TOPIC, 0);
+		committed.put(topicPartition, new OffsetAndMetadata(500));
 		org.mockito.BDDMockito
-				.given(consumer.committed(ArgumentMatchers.any(TopicPartition.class)))
-				.willReturn(new OffsetAndMetadata(500));
+				.given(consumer.committed(ArgumentMatchers.anySet()))
+				.willReturn(committed);
 		List<PartitionInfo> partitions = partitions(new Node(0, null, 0));
 		topicsInUse.put(TEST_TOPIC,
 				new TopicInformation("group1-metrics", partitions, false));
@@ -133,9 +136,14 @@ public class KafkaBinderMetricsTest {
 		org.mockito.BDDMockito
 				.given(consumer.endOffsets(ArgumentMatchers.anyCollection()))
 				.willReturn(endOffsets);
+		final Map<TopicPartition, OffsetAndMetadata> committed = new HashMap<>();
+		TopicPartition topicPartition1 = new TopicPartition(TEST_TOPIC, 0);
+		TopicPartition topicPartition2 = new TopicPartition(TEST_TOPIC, 1);
+		committed.put(topicPartition1, new OffsetAndMetadata(500));
+		committed.put(topicPartition2, new OffsetAndMetadata(500));
 		org.mockito.BDDMockito
-				.given(consumer.committed(ArgumentMatchers.any(TopicPartition.class)))
-				.willReturn(new OffsetAndMetadata(500));
+				.given(consumer.committed(ArgumentMatchers.anySet()))
+				.willReturn(committed);
 		List<PartitionInfo> partitions = partitions(new Node(0, null, 0),
 				new Node(0, null, 0));
 		topicsInUse.put(TEST_TOPIC,
