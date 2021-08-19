@@ -855,7 +855,7 @@ You cannot set the `resetOffsets` consumer property to `true` when you provide a
 If you want advanced customization of consumer and producer configuration that is used for creating `ConsumerFactory` and `ProducerFactory` in Kafka,
 you can implement the following customizers.
 
-* ConsusumerConfigCustomizer
+* ConsumerConfigCustomizer
 * ProducerConfigCustomizer
 
 Both of these interfaces provide a way to configure the config map used for consumer and producer properties.
