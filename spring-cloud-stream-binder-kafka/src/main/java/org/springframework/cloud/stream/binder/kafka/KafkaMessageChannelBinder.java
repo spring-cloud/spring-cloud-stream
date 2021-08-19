@@ -1621,9 +1621,9 @@ public class KafkaMessageChannelBinder extends
 					key, value, headers);
 
 			StringBuilder sb = new StringBuilder().append(" a message with key='")
-					.append(toDisplayString(ObjectUtils.nullSafeToString(key), 50))
+					.append(keyOrValue(key))
 					.append("'").append(" and payload='")
-					.append(toDisplayString(ObjectUtils.nullSafeToString(value), 50))
+					.append(keyOrValue(value))
 					.append("'").append(" received from ")
 					.append(consumerRecord.partition());
 			ListenableFuture<SendResult<K, V>> sentDlq = null;
@@ -1663,9 +1663,16 @@ public class KafkaMessageChannelBinder extends
 					messageHeaders.get(KafkaHeaders.ACKNOWLEDGMENT, Acknowledgment.class).acknowledge();
 				}
 			}
-
 		}
 
+		private String keyOrValue(Object keyOrValue) {
+			if (keyOrValue instanceof byte[]) {
+				return "byte[" + ((byte[]) keyOrValue).length + "]";
+			}
+			else {
+				return toDisplayString(ObjectUtils.nullSafeToString(keyOrValue), 50);
+			}
+		}
 	}
 
 }
