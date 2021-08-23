@@ -51,6 +51,7 @@ import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binder.DefaultBinding;
 import org.springframework.cloud.stream.binder.kafka.streams.InteractiveQueryService;
 import org.springframework.cloud.stream.binder.kafka.streams.KafkaStreamsRegistry;
+import org.springframework.cloud.stream.binder.kafka.streams.StreamsBuilderFactoryManager;
 import org.springframework.cloud.stream.binder.kafka.streams.endpoint.KafkaStreamsTopologyEndpoint;
 import org.springframework.cloud.stream.binding.InputBindingLifecycle;
 import org.springframework.cloud.stream.binding.OutputBindingLifecycle;
@@ -229,6 +230,51 @@ public class KafkaStreamsBinderWordCountFunctionTests {
 			finally {
 				pf.destroy();
 			}
+		}
+	}
+
+	@Test
+	public void testKstreamBinderAutoStartup() throws Exception {
+		SpringApplication app = new SpringApplication(WordCountProcessorApplication.class);
+		app.setWebApplicationType(WebApplicationType.NONE);
+
+		try (ConfigurableApplicationContext context = app.run(
+				"--server.port=0",
+				"--spring.jmx.enabled=false",
+				"--spring.kafka.streams.auto-startup=false",
+				"--spring.cloud.stream.bindings.process-in-0.destination=words-3",
+				"--spring.cloud.stream.bindings.process-out-0.destination=counts-3",
+				"--spring.cloud.stream.kafka.streams.binder.configuration.default.key.serde" +
+						"=org.apache.kafka.common.serialization.Serdes$StringSerde",
+				"--spring.cloud.stream.kafka.streams.binder.configuration.default.value.serde" +
+						"=org.apache.kafka.common.serialization.Serdes$StringSerde",
+				"--spring.cloud.stream.kafka.streams.binder.brokers=" + embeddedKafka.getBrokersAsString())) {
+			final StreamsBuilderFactoryManager streamsBuilderFactoryManager = context.getBean(StreamsBuilderFactoryManager.class);
+			assertThat(streamsBuilderFactoryManager.isAutoStartup()).isFalse();
+			assertThat(streamsBuilderFactoryManager.isRunning()).isFalse();
+		}
+	}
+
+	@Test
+	public void testKstreamIndividualBindingAutoStartup() throws Exception {
+		SpringApplication app = new SpringApplication(WordCountProcessorApplication.class);
+		app.setWebApplicationType(WebApplicationType.NONE);
+
+		try (ConfigurableApplicationContext context = app.run(
+				"--server.port=0",
+				"--spring.jmx.enabled=false",
+				"--spring.cloud.stream.bindings.process-in-0.destination=words-4",
+				"--spring.cloud.stream.bindings.process-in-0.consumer.auto-startup=false",
+				"--spring.cloud.stream.bindings.process-out-0.destination=counts-4",
+				"--spring.cloud.stream.kafka.streams.binder.configuration.default.key.serde" +
+						"=org.apache.kafka.common.serialization.Serdes$StringSerde",
+				"--spring.cloud.stream.kafka.streams.binder.configuration.default.value.serde" +
+						"=org.apache.kafka.common.serialization.Serdes$StringSerde",
+				"--spring.cloud.stream.kafka.streams.binder.brokers=" + embeddedKafka.getBrokersAsString())) {
+			final StreamsBuilderFactoryBean streamsBuilderFactoryBean = context.getBean(StreamsBuilderFactoryBean.class);
+			assertThat(streamsBuilderFactoryBean.isRunning()).isFalse();
+			streamsBuilderFactoryBean.start();
+			assertThat(streamsBuilderFactoryBean.isRunning()).isTrue();
 		}
 	}
 

@@ -529,6 +529,8 @@ public class KafkaStreamsFunctionProcessor extends AbstractKafkaStreamsBinderPro
 						this.kafkaStreamsBindingInformationCatalogue.addKeySerde((KStream<?, ?>) kStreamWrapper, keySerde);
 
 						this.kafkaStreamsBindingInformationCatalogue.addStreamBuilderFactoryPerBinding(input, streamsBuilderFactoryBean);
+						this.kafkaStreamsBindingInformationCatalogue.addConsumerPropertiesPerSbfb(streamsBuilderFactoryBean,
+								bindingServiceProperties.getConsumerProperties(input));
 
 						if (KStream.class.isAssignableFrom(stringResolvableTypeMap.get(input).getRawClass())) {
 							final Class<?> valueClass =

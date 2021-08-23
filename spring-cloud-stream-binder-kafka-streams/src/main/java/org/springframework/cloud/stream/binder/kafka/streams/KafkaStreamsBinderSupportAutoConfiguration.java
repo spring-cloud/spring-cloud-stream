@@ -398,8 +398,8 @@ public class KafkaStreamsBinderSupportAutoConfiguration {
 			KafkaStreamsBindingInformationCatalogue catalogue,
 			KafkaStreamsRegistry kafkaStreamsRegistry,
 			@Nullable KafkaStreamsBinderMetrics kafkaStreamsBinderMetrics,
-			@Nullable KafkaStreamsMicrometerListener listener) {
-		return new StreamsBuilderFactoryManager(catalogue, kafkaStreamsRegistry, kafkaStreamsBinderMetrics, listener);
+			@Nullable KafkaStreamsMicrometerListener listener, KafkaProperties kafkaProperties) {
+		return new StreamsBuilderFactoryManager(catalogue, kafkaStreamsRegistry, kafkaStreamsBinderMetrics, listener, kafkaProperties);
 	}
 
 	@Bean

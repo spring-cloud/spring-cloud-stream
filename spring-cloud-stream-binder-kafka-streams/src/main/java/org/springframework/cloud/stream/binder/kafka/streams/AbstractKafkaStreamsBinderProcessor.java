@@ -161,6 +161,8 @@ public abstract class AbstractKafkaStreamsBinderProcessor implements Application
 			//wrap the proxy created during the initial target type binding with real object (KTable)
 			kTableWrapper.wrap((KTable<Object, Object>) table);
 			this.kafkaStreamsBindingInformationCatalogue.addStreamBuilderFactoryPerBinding(input, streamsBuilderFactoryBean);
+			this.kafkaStreamsBindingInformationCatalogue.addConsumerPropertiesPerSbfb(streamsBuilderFactoryBean,
+					bindingServiceProperties.getConsumerProperties(input));
 			arguments[index] = table;
 		}
 		else if (parameterType.isAssignableFrom(GlobalKTable.class)) {
@@ -173,6 +175,8 @@ public abstract class AbstractKafkaStreamsBinderProcessor implements Application
 			//wrap the proxy created during the initial target type binding with real object (KTable)
 			globalKTableWrapper.wrap((GlobalKTable<Object, Object>) table);
 			this.kafkaStreamsBindingInformationCatalogue.addStreamBuilderFactoryPerBinding(input, streamsBuilderFactoryBean);
+			this.kafkaStreamsBindingInformationCatalogue.addConsumerPropertiesPerSbfb(streamsBuilderFactoryBean,
+					bindingServiceProperties.getConsumerProperties(input));
 			arguments[index] = table;
 		}
 	}

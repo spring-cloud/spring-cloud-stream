@@ -320,6 +320,9 @@ class KafkaStreamsStreamListenerSetupMethodOrchestrator extends AbstractKafkaStr
 						this.kafkaStreamsBindingInformationCatalogue.registerBindingProperties(stream, bindingProperties1);
 
 						this.kafkaStreamsBindingInformationCatalogue.addStreamBuilderFactoryPerBinding(inboundName, streamsBuilderFactoryBean);
+						this.kafkaStreamsBindingInformationCatalogue.addConsumerPropertiesPerSbfb(streamsBuilderFactoryBean,
+								bindingServiceProperties.getConsumerProperties(inboundName));
+
 						for (StreamListenerParameterAdapter streamListenerParameterAdapter : adapters) {
 							if (streamListenerParameterAdapter.supports(stream.getClass(),
 									methodParameter)) {

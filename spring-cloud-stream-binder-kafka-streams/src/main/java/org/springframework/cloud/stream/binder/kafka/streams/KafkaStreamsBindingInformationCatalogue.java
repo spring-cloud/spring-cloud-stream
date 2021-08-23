@@ -54,6 +54,8 @@ public class KafkaStreamsBindingInformationCatalogue {
 
 	private final Map<String, StreamsBuilderFactoryBean> streamsBuilderFactoryBeanPerBinding = new HashMap<>();
 
+	private final Map<StreamsBuilderFactoryBean, List<ConsumerProperties>> consumerPropertiesPerSbfb = new HashMap<>();
+
 	private final Map<Object, ResolvableType> outboundKStreamResolvables = new HashMap<>();
 
 	private final Map<KStream<?, ?>, Serde<?>> keySerdeInfo = new HashMap<>();
@@ -137,10 +139,18 @@ public class KafkaStreamsBindingInformationCatalogue {
 		this.streamsBuilderFactoryBeanPerBinding.put(binding, streamsBuilderFactoryBean);
 	}
 
+	void addConsumerPropertiesPerSbfb(StreamsBuilderFactoryBean streamsBuilderFactoryBean, ConsumerProperties consumerProperties) {
+		this.consumerPropertiesPerSbfb.computeIfAbsent(streamsBuilderFactoryBean, k -> new ArrayList<>());
+		this.consumerPropertiesPerSbfb.get(streamsBuilderFactoryBean).add(consumerProperties);
+	}
+
+	public Map<StreamsBuilderFactoryBean, List<ConsumerProperties>> getConsumerPropertiesPerSbfb() {
+		return this.consumerPropertiesPerSbfb;
+	}
+
 	Map<String, StreamsBuilderFactoryBean> getStreamsBuilderFactoryBeanPerBinding() {
 		return this.streamsBuilderFactoryBeanPerBinding;
 	}
-
 
 	void addOutboundKStreamResolvable(Object key, ResolvableType outboundResolvable) {
 		this.outboundKStreamResolvables.put(key, outboundResolvable);

@@ -1870,6 +1870,102 @@ When there are multiple bindings present on a single function, invoking these op
 This is because all the bindings on a single function are backed by the same `StreamsBuilderFactoryBean`.
 Therefore, for the function above, either `function-in-0` or `function-out-0` will work.
 
+=== Manually starting Kafka Streams processors
+
+Spring Cloud Stream Kafka Streams binder offers an abstraction called `StreamsBuilderFactoryManager` on top of the `StreamsBuilderFactoryBean` from Spring for Apache Kafka.
+This manager API is used for controlling the multiple `StreamsBuilderFactoryBean` per processor in a binder based application.
+Therefore, when using the binder, if you manually want to control the auto starting of the various `StreamsBuilderFactoryBean` objects in the application, you need to use `StreamsBuilderFactoryManager`.
+You can use the property `spring.kafka.streams.auto-startup` and set this to `false` in order to turn off auto starting of the processors.
+Then, in the application, you can use something as below to start the processors using `StreamsBuilderFactoryManager`.
+
+```
+@Bean
+public ApplicationRunner runner(StreamsBuilderFactoryManager sbfm) {
+    return args -> {
+        sbfm.start();
+    };
+}
+```
+
+This feature is handy, when you want your application to start in the main thread and let Kafka Streams processors start separately.
+For example, when you have a large state store that needs to be restored, if the processors are started normally as is the default case, this may block your application to start.
+If you are using some sort of liveness probe mechanism (for example on Kubernetes), it may think that the application is down and attempt a restart.
+In order to correct this, you can set `spring.kafka.streams.auto-startup` to `false` and follow the approach above.
+
+Keep in mind that, when using the Spring Cloud Stream binder, you are not directly dealing with `StreamsBuilderFactoryBean` from Spring for Apache Kafka, rather `StreamsBuilderFactoryManager`, as the `StreamsBuilderFactoryBean` objects are internally managed by the binder.
+
+=== Manually starting Kafka Streams processors selectively
+
+While the approach laid out above will unconditionally apply auto start `false` to all the Kafka Streams processors in the application through `StreamsBuilderFactoryManager`, it is often desirable that only individually selected Kafka Streams processors are not auto started.
+For instance, let us assume that you have three different functions (processors) in your application and for one of the processors, you do not want to start it as part of the application startup.
+Here is an example of such a situation.
+
+```
+
+@Bean
+public Function<KStream<?, ?>, KStream<?, ?>> process1() {
+
+}
+
+@Bean
+public Consumer<KStream<?, ?>> process2() {
+
+}
+
+@Bean
+public BiFunction<KStream<?, ?>, KTable<?, ?>, KStream<?, ?>> process3() {
+
+}
+
+```
+
+In this scenario above, if you set `spring.kafka.streams.auto-startup` to `false`, then none of the processors will auto start during the application startup.
+In that case, you have to programmatically start them as described above by calling `start()` on the underlying `StreamsBuilderFactoryManager`.
+However, if we have a use case to selectively disable only one processor, then you have to set `auto-startup` on the individual binding for that processor.
+Let us assume that we don't want our `process3` function to auto start.
+This is a `BiFunction` with two input bindings - `process3-in-0` and `process3-in-1`.
+In order to avoid auto start for this processor, you can pick any of these input bindings and set `auto-startup` on them.
+It does not matter which binding you pick; if you wish, you can set `auto-startup` to `false` on both of them, but one will be sufficient.
+Because they share the same factory bean, you don't have to set autoStartup to false on both bindings, but it probably makes sense to do so, for clarity.
+
+Here is the Spring Cloud Stream property that you can use to disable auto startup for this processor.
+
+```
+spring.cloud.stream.bindings.process3-in-0.consumer.auto-startup: false
+```
+
+or
+
+```
+spring.cloud.stream.bindings.process3-in-1.consumer.auto-startup: false
+```
+
+Then, you can manually start the processor either using the REST endpoint or using the `BindingsEndpoint` API as shown below.
+For this, you need to ensure that you have the Spring Boot actuator dependency on the classpath.
+
+```
+curl -d '{"state":"STARTED"}' -H "Content-Type: application/json" -X POST http://localhost:8080/actuator/bindings/process3-in-0
+```
+
+or
+
+```
+@Autowired
+BindingsEndpoint endpoint;
+
+@Bean
+public ApplicationRunner runner() {
+    return args -> {
+        endpoint.changeState("process3-in-0", State.STARTED);
+    };
+}
+```
+
+See https://docs.spring.io/spring-cloud-stream/docs/current/reference/html/spring-cloud-stream.html#binding_visualization_control[this section] from the reference docs for more details on this mechanism.
+
+NOTE: When controlling the bindings by disabling `auto-startup` as described in this section, please note that this is only available for consumer bindings.
+In other words, if you use the producer binding, `process3-out-0`, that does not have any effect in terms of disabling the auto starting of the processor, although this producer binding uses the same `StreamsBuilderFactoryBean` as the consumer bindings.
+
 === Tracing using Spring Cloud Sleuth
 
 When Spring Cloud Sleuth is on the classpath of a Spring Cloud Stream Kafka Streams binder based application, both its consumer and producer are automatically instrumented with tracing information.

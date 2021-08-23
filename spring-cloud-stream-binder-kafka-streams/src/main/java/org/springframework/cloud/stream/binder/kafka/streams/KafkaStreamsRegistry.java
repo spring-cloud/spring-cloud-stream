@@ -17,12 +17,12 @@
 package org.springframework.cloud.stream.binder.kafka.streams;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.StreamsConfig;
@@ -37,9 +37,9 @@ import org.springframework.kafka.config.StreamsBuilderFactoryBean;
  */
 public class KafkaStreamsRegistry {
 
-	private Map<KafkaStreams, StreamsBuilderFactoryBean> streamsBuilderFactoryBeanMap = new HashMap<>();
+	private final Map<KafkaStreams, StreamsBuilderFactoryBean> streamsBuilderFactoryBeanMap = new ConcurrentHashMap<>();
 
-	private final Set<KafkaStreams> kafkaStreams = new HashSet<>();
+	private final Set<KafkaStreams> kafkaStreams = ConcurrentHashMap.newKeySet();
 
 	Set<KafkaStreams> getKafkaStreams() {
 		Set<KafkaStreams> currentlyRunningKafkaStreams = new HashSet<>();
