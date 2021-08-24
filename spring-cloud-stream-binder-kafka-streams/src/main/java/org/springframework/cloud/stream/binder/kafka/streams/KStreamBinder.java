@@ -131,16 +131,20 @@ class KStreamBinder extends
 
 			@Override
 			public synchronized void start() {
-				super.start();
-				KStreamBinder.this.kafkaStreamsRegistry.registerKafkaStreams(streamsBuilderFactoryBean);
+				if (!streamsBuilderFactoryBean.isRunning()) {
+					super.start();
+					KStreamBinder.this.kafkaStreamsRegistry.registerKafkaStreams(streamsBuilderFactoryBean);
+				}
 			}
 
 			@Override
 			public synchronized void stop() {
-				final KafkaStreams kafkaStreams = streamsBuilderFactoryBean.getKafkaStreams();
-				super.stop();
-				KStreamBinder.this.kafkaStreamsRegistry.unregisterKafkaStreams(kafkaStreams);
-				KafkaStreamsBinderUtils.closeDlqProducerFactories(kafkaStreamsBindingInformationCatalogue, streamsBuilderFactoryBean);
+				if (streamsBuilderFactoryBean.isRunning()) {
+					final KafkaStreams kafkaStreams = streamsBuilderFactoryBean.getKafkaStreams();
+					super.stop();
+					KStreamBinder.this.kafkaStreamsRegistry.unregisterKafkaStreams(kafkaStreams);
+					KafkaStreamsBinderUtils.closeDlqProducerFactories(kafkaStreamsBindingInformationCatalogue, streamsBuilderFactoryBean);
+				}
 			}
 		};
 	}
@@ -192,16 +196,20 @@ class KStreamBinder extends
 
 			@Override
 			public synchronized void start() {
-				super.start();
-				KStreamBinder.this.kafkaStreamsRegistry.registerKafkaStreams(streamsBuilderFactoryBean);
+				if (!streamsBuilderFactoryBean.isRunning()) {
+					super.start();
+					KStreamBinder.this.kafkaStreamsRegistry.registerKafkaStreams(streamsBuilderFactoryBean);
+				}
 			}
 
 			@Override
 			public synchronized void stop() {
-				final KafkaStreams kafkaStreams = streamsBuilderFactoryBean.getKafkaStreams();
-				super.stop();
-				KStreamBinder.this.kafkaStreamsRegistry.unregisterKafkaStreams(kafkaStreams);
-				KafkaStreamsBinderUtils.closeDlqProducerFactories(kafkaStreamsBindingInformationCatalogue, streamsBuilderFactoryBean);
+				if (streamsBuilderFactoryBean.isRunning()) {
+					final KafkaStreams kafkaStreams = streamsBuilderFactoryBean.getKafkaStreams();
+					super.stop();
+					KStreamBinder.this.kafkaStreamsRegistry.unregisterKafkaStreams(kafkaStreams);
+					KafkaStreamsBinderUtils.closeDlqProducerFactories(kafkaStreamsBindingInformationCatalogue, streamsBuilderFactoryBean);
+				}
 			}
 		};
 	}

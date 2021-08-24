@@ -102,16 +102,20 @@ public class GlobalKTableBinder extends
 
 			@Override
 			public synchronized void start() {
-				super.start();
-				GlobalKTableBinder.this.kafkaStreamsRegistry.registerKafkaStreams(streamsBuilderFactoryBean);
+				if (!streamsBuilderFactoryBean.isRunning()) {
+					super.start();
+					GlobalKTableBinder.this.kafkaStreamsRegistry.registerKafkaStreams(streamsBuilderFactoryBean);
+				}
 			}
 
 			@Override
 			public synchronized void stop() {
-				final KafkaStreams kafkaStreams = streamsBuilderFactoryBean.getKafkaStreams();
-				super.stop();
-				GlobalKTableBinder.this.kafkaStreamsRegistry.unregisterKafkaStreams(kafkaStreams);
-				KafkaStreamsBinderUtils.closeDlqProducerFactories(kafkaStreamsBindingInformationCatalogue, streamsBuilderFactoryBean);
+				if (streamsBuilderFactoryBean.isRunning()) {
+					final KafkaStreams kafkaStreams = streamsBuilderFactoryBean.getKafkaStreams();
+					super.stop();
+					GlobalKTableBinder.this.kafkaStreamsRegistry.unregisterKafkaStreams(kafkaStreams);
+					KafkaStreamsBinderUtils.closeDlqProducerFactories(kafkaStreamsBindingInformationCatalogue, streamsBuilderFactoryBean);
+				}
 			}
 		};
 	}
