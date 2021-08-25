@@ -41,7 +41,13 @@ import org.junit.Test;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.cloud.stream.binder.Binder;
+import org.springframework.cloud.stream.binder.BinderFactory;
+import org.springframework.cloud.stream.binder.ConsumerProperties;
+import org.springframework.cloud.stream.binder.ExtendedPropertiesBinder;
+import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsBindingProperties;
+import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsConsumerProperties;
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsExtendedBindingProperties;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
@@ -70,7 +76,7 @@ public class StreamToGlobalKTableFunctionTests {
 	public void testStreamToGlobalKTable() throws Exception {
 		SpringApplication app = new SpringApplication(OrderEnricherApplication.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
-		try (ConfigurableApplicationContext ignored = app.run("--server.port=0",
+		try (ConfigurableApplicationContext context = app.run("--server.port=0",
 				"--spring.jmx.enabled=false",
 				"--spring.cloud.stream.function.definition=process",
 				"--spring.cloud.stream.function.bindings.process-in-0=order",
@@ -89,7 +95,44 @@ public class StreamToGlobalKTableFunctionTests {
 				"--spring.cloud.stream.kafka.streams.binder.configuration.commit.interval.ms=10000",
 				"--spring.cloud.stream.kafka.streams.bindings.order.consumer.applicationId=" +
 						"StreamToGlobalKTableJoinFunctionTests-abc",
+
+				"--spring.cloud.stream.kafka.streams.bindings.process-in-0.consumer.topic.properties.cleanup.policy=compact",
+				"--spring.cloud.stream.kafka.streams.bindings.process-in-1.consumer.topic.properties.cleanup.policy=compact",
+				"--spring.cloud.stream.kafka.streams.bindings.process-in-2.consumer.topic.properties.cleanup.policy=compact",
+
 				"--spring.cloud.stream.kafka.streams.binder.brokers=" + embeddedKafka.getBrokersAsString())) {
+
+			// Testing certain ancillary configuration of GlobalKTable around topics creation.
+			// See this issue: https://github.com/spring-cloud/spring-cloud-stream-binder-kafka/issues/687
+
+			BinderFactory binderFactory = context.getBeanFactory()
+					.getBean(BinderFactory.class);
+
+			Binder<KStream, ? extends ConsumerProperties, ? extends ProducerProperties> kStreamBinder = binderFactory
+					.getBinder("kstream", KStream.class);
+
+			KafkaStreamsConsumerProperties input = (KafkaStreamsConsumerProperties) ((ExtendedPropertiesBinder) kStreamBinder)
+					.getExtendedConsumerProperties("process-in-0");
+			String cleanupPolicy = input.getTopic().getProperties().get("cleanup.policy");
+
+			assertThat(cleanupPolicy).isEqualTo("compact");
+
+			Binder<GlobalKTable, ? extends ConsumerProperties, ? extends ProducerProperties> globalKTableBinder = binderFactory
+					.getBinder("globalktable", GlobalKTable.class);
+
+			KafkaStreamsConsumerProperties inputX = (KafkaStreamsConsumerProperties) ((ExtendedPropertiesBinder) globalKTableBinder)
+					.getExtendedConsumerProperties("process-in-1");
+			String cleanupPolicyX = inputX.getTopic().getProperties().get("cleanup.policy");
+
+			assertThat(cleanupPolicyX).isEqualTo("compact");
+
+			KafkaStreamsConsumerProperties inputY = (KafkaStreamsConsumerProperties) ((ExtendedPropertiesBinder) globalKTableBinder)
+					.getExtendedConsumerProperties("process-in-2");
+			String cleanupPolicyY = inputY.getTopic().getProperties().get("cleanup.policy");
+
+			assertThat(cleanupPolicyY).isEqualTo("compact");
+
+
 			Map<String, Object> senderPropsCustomer = KafkaTestUtils.producerProps(embeddedKafka);
 			senderPropsCustomer.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, LongSerializer.class);
 			senderPropsCustomer.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG,

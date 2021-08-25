@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.binder.kafka.streams.function;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -39,16 +40,25 @@ import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.kstream.Grouped;
+import org.apache.kafka.streams.kstream.JoinWindows;
 import org.apache.kafka.streams.kstream.Joined;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.KTable;
 import org.apache.kafka.streams.kstream.Materialized;
+import org.apache.kafka.streams.kstream.StreamJoined;
 import org.junit.ClassRule;
 import org.junit.Test;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.cloud.stream.binder.Binder;
+import org.springframework.cloud.stream.binder.BinderFactory;
+import org.springframework.cloud.stream.binder.ConsumerProperties;
+import org.springframework.cloud.stream.binder.ExtendedPropertiesBinder;
+import org.springframework.cloud.stream.binder.ProducerProperties;
+import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsConsumerProperties;
+import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsProducerProperties;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.kafka.core.CleanupConfig;
@@ -176,9 +186,8 @@ public class StreamToTableJoinFunctionTests {
 		}
 	}
 
-
 	private void runTest(SpringApplication app, Consumer<String, Long> consumer) {
-		try (ConfigurableApplicationContext ignored = app.run("--server.port=0",
+		try (ConfigurableApplicationContext context = app.run("--server.port=0",
 				"--spring.jmx.enabled=false",
 				"--spring.cloud.stream.bindings.process-in-0.destination=user-clicks-1",
 				"--spring.cloud.stream.bindings.process-in-1.destination=user-regions-1",
@@ -190,6 +199,8 @@ public class StreamToTableJoinFunctionTests {
 				"--spring.cloud.stream.kafka.streams.binder.configuration.commit.interval.ms=10000",
 				"--spring.cloud.stream.kafka.streams.bindings.process-in-0.consumer.applicationId" +
 						"=StreamToTableJoinFunctionTests-abc",
+				"--spring.cloud.stream.kafka.streams.bindings.process-in-1.consumer.topic.properties.cleanup.policy=compact",
+				"--spring.cloud.stream.kafka.streams.bindings.process-out-0.producer.topic.properties.cleanup.policy=compact",
 				"--spring.cloud.stream.kafka.streams.binder.brokers=" + embeddedKafka.getBrokersAsString())) {
 
 			// Input 1: Region per user (multiple records allowed per user).
@@ -259,6 +270,30 @@ public class StreamToTableJoinFunctionTests {
 
 			assertThat(count == expectedClicksPerRegion.size()).isTrue();
 			assertThat(actualClicksPerRegion).hasSameElementsAs(expectedClicksPerRegion);
+
+			// Testing certain ancillary configuration of GlobalKTable around topics creation.
+			// See this issue: https://github.com/spring-cloud/spring-cloud-stream-binder-kafka/issues/687
+			BinderFactory binderFactory = context.getBeanFactory()
+					.getBean(BinderFactory.class);
+
+			Binder<KTable, ? extends ConsumerProperties, ? extends ProducerProperties> ktableBinder = binderFactory
+					.getBinder("ktable", KTable.class);
+
+			KafkaStreamsConsumerProperties inputX = (KafkaStreamsConsumerProperties) ((ExtendedPropertiesBinder) ktableBinder)
+					.getExtendedConsumerProperties("process-in-1");
+			String cleanupPolicyX = inputX.getTopic().getProperties().get("cleanup.policy");
+
+			assertThat(cleanupPolicyX).isEqualTo("compact");
+
+			Binder<KStream, ? extends ConsumerProperties, ? extends ProducerProperties> kStreamBinder = binderFactory
+					.getBinder("kstream", KStream.class);
+
+			KafkaStreamsProducerProperties producerProperties = (KafkaStreamsProducerProperties) ((ExtendedPropertiesBinder) kStreamBinder)
+					.getExtendedProducerProperties("process-out-0");
+
+			String cleanupPolicyOutput = producerProperties.getTopic().getProperties().get("cleanup.policy");
+
+			assertThat(cleanupPolicyOutput).isEqualTo("compact");
 		}
 		finally {
 			consumer.close();
@@ -401,6 +436,34 @@ public class StreamToTableJoinFunctionTests {
 		}
 	}
 
+	@Test
+	public void testTrivialSingleKTableInputAsNonDeclarative() {
+		SpringApplication app = new SpringApplication(TrivialKTableApp.class);
+		app.setWebApplicationType(WebApplicationType.NONE);
+		app.run("--server.port=0",
+				"--spring.cloud.stream.kafka.streams.binder.brokers="
+						+ embeddedKafka.getBrokersAsString(),
+				"--spring.cloud.stream.kafka.streams.bindings.process-in-0.consumer.application-id=" +
+						"testTrivialSingleKTableInputAsNonDeclarative");
+		//All we are verifying is that this application didn't throw any errors.
+		//See this issue: https://github.com/spring-cloud/spring-cloud-stream-binder-kafka/issues/536
+	}
+
+	@Test
+	public void testTwoKStreamsCanBeJoined() {
+		SpringApplication app = new SpringApplication(
+				JoinProcessor.class);
+		app.setWebApplicationType(WebApplicationType.NONE);
+		app.run("--server.port=0",
+				"--spring.cloud.stream.kafka.streams.binder.brokers="
+						+ embeddedKafka.getBrokersAsString(),
+				"--spring.application.name=" +
+						"two-kstream-input-join-integ-test");
+		//All we are verifying is that this application didn't throw any errors.
+		//See this issue: https://github.com/spring-cloud/spring-cloud-stream-binder-kafka/issues/701
+	}
+
+
 	/**
 	 * Tuple for a region and its associated number of clicks.
 	 */
@@ -485,6 +548,31 @@ public class StreamToTableJoinFunctionTests {
 				userClicksStream.foreach((key, value) -> latch.countDown());
 				userRegionsTable.toStream().foreach((key, value) -> latch.countDown());
 			};
+		}
+	}
+
+	@EnableAutoConfiguration
+	public static class TrivialKTableApp {
+
+		public java.util.function.Consumer<KTable<String, String>> process() {
+			return inputTable -> inputTable.toStream().foreach((key, value) -> System.out.println("key : value " + key + " : " + value));
+		}
+	}
+
+	@EnableAutoConfiguration
+	public static class JoinProcessor {
+
+		public BiConsumer<KStream<String, String>, KStream<String, String>> testProcessor() {
+			return (input1Stream, input2Stream) -> input1Stream
+					.join(input2Stream,
+							(event1, event2) -> null,
+							JoinWindows.of(Duration.ofMillis(5)),
+							StreamJoined.with(
+									Serdes.String(),
+									Serdes.String(),
+									Serdes.String()
+							)
+					);
 		}
 	}
 
