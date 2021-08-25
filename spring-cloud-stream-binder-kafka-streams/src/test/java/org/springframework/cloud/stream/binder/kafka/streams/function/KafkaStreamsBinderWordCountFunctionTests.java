@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2019 the original author or authors.
+ * Copyright 2019-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -112,6 +112,7 @@ public class KafkaStreamsBinderWordCountFunctionTests {
 				"--spring.cloud.stream.kafka.streams.binder.application-id=testKstreamWordCountFunction",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.commit.interval.ms=1000",
 				"--spring.cloud.stream.kafka.streams.binder.consumerProperties.request.timeout.ms=29000", //for testing ...binder.consumerProperties
+				"--spring.cloud.stream.kafka.streams.binder.consumerProperties.consumer.value.deserializer=org.apache.kafka.common.serialization.StringDeserializer",
 				"--spring.cloud.stream.kafka.streams.binder.producerProperties.max.block.ms=90000", //for testing ...binder.producerProperties
 				"--spring.cloud.stream.kafka.streams.binder.configuration.default.key.serde" +
 						"=org.apache.kafka.common.serialization.Serdes$StringSerde",
@@ -144,8 +145,9 @@ public class KafkaStreamsBinderWordCountFunctionTests {
 
 			//verify that ...binder.consumerProperties and ...binder.producerProperties work.
 			Map<String, Object> streamConfigGlobalProperties = (Map<String, Object>) context.getBean("streamConfigGlobalProperties");
-			assertThat(streamConfigGlobalProperties.get("request.timeout.ms")).isEqualTo("29000");
-			assertThat(streamConfigGlobalProperties.get("max.block.ms")).isEqualTo("90000");
+			assertThat(streamConfigGlobalProperties.get("consumer.request.timeout.ms")).isEqualTo("29000");
+			assertThat(streamConfigGlobalProperties.get("consumer.value.deserializer")).isEqualTo("org.apache.kafka.common.serialization.StringDeserializer");
+			assertThat(streamConfigGlobalProperties.get("producer.max.block.ms")).isEqualTo("90000");
 
 			InputBindingLifecycle inputBindingLifecycle = context.getBean(InputBindingLifecycle.class);
 			final Collection<Binding<Object>> inputBindings = (Collection<Binding<Object>>) new DirectFieldAccessor(inputBindingLifecycle)

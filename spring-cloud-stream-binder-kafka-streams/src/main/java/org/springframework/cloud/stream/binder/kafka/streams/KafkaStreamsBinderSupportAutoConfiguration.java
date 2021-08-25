@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2020 the original author or authors.
+ * Copyright 2017-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -97,6 +97,9 @@ public class KafkaStreamsBinderSupportAutoConfiguration {
 	private static final String KTABLE_BINDER_TYPE = "ktable";
 
 	private static final String GLOBALKTABLE_BINDER_TYPE = "globalktable";
+
+	private static final String CONSUMER_PROPERTIES_PREFIX = "consumer.";
+	private static final String PRODUCER_PROPERTIES_PREFIX = "producer.";
 
 	@Bean
 	@ConfigurationProperties(prefix = "spring.cloud.stream.kafka.streams.binder")
@@ -266,20 +269,31 @@ public class KafkaStreamsBinderSupportAutoConfiguration {
 		if (!ObjectUtils.isEmpty(configProperties.getConfiguration())) {
 			properties.putAll(configProperties.getConfiguration());
 		}
-		Map<String, Object> mergedConsumerConfig = configProperties.mergedConsumerConfiguration();
-		if (!ObjectUtils.isEmpty(mergedConsumerConfig)) {
-			properties.putAll(mergedConsumerConfig);
-		}
-		Map<String, Object> mergedProducerConfig = configProperties.mergedProducerConfiguration();
-		if (!ObjectUtils.isEmpty(mergedProducerConfig)) {
-			properties.putAll(mergedProducerConfig);
-		}
+
+		Map<String, Object> mergedConsumerConfig = new HashMap<>(configProperties.mergedConsumerConfiguration());
+		//Adding consumer. prefix if they are missing (in order to differentiate them from other property categories such as stream, producer etc.)
+		addPrefix(properties, mergedConsumerConfig, CONSUMER_PROPERTIES_PREFIX);
+
+		Map<String, Object> mergedProducerConfig = new HashMap<>(configProperties.mergedProducerConfiguration());
+		//Adding producer. prefix if they are missing (in order to differentiate them from other property categories such as stream, consumer etc.)
+		addPrefix(properties, mergedProducerConfig, PRODUCER_PROPERTIES_PREFIX);
+
 		if (!properties.containsKey(StreamsConfig.REPLICATION_FACTOR_CONFIG)) {
 			properties.put(StreamsConfig.REPLICATION_FACTOR_CONFIG,
 					(int) configProperties.getReplicationFactor());
 		}
 		return properties.entrySet().stream().collect(
 				Collectors.toMap((e) -> String.valueOf(e.getKey()), Map.Entry::getValue));
+	}
+
+	private void addPrefix(Properties properties, Map<String, Object> mergedConsProdConfig, String prefix) {
+		Map<String, Object> mergedConfigs = new HashMap<>();
+		for (String key : mergedConsProdConfig.keySet()) {
+			mergedConfigs.put(key.startsWith(prefix) ? key : prefix + key, mergedConsProdConfig.get(key));
+		}
+		if (!ObjectUtils.isEmpty(mergedConfigs)) {
+			properties.putAll(mergedConfigs);
+		}
 	}
 
 	@Bean
