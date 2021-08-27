@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2019 the original author or authors.
+ * Copyright 2019-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.binder.kafka.streams.function;
 
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.Map;
@@ -48,6 +49,9 @@ import org.springframework.kafka.test.utils.KafkaTestUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+/**
+ * @author Soby Chacko
+ */
 public class KafkaStreamsBinderWordCountBranchesFunctionTests {
 
 	@ClassRule
@@ -179,22 +183,30 @@ public class KafkaStreamsBinderWordCountBranchesFunctionTests {
 	public static class WordCountProcessorApplication {
 
 		@Bean
-		@SuppressWarnings("unchecked")
+		@SuppressWarnings({"unchecked"})
 		public Function<KStream<Object, String>, KStream<?, WordCount>[]> process() {
 
 			Predicate<Object, WordCount> isEnglish = (k, v) -> v.word.equals("english");
 			Predicate<Object, WordCount> isFrench = (k, v) -> v.word.equals("french");
 			Predicate<Object, WordCount> isSpanish = (k, v) -> v.word.equals("spanish");
 
-			return input -> input
-					.flatMapValues(value -> Arrays.asList(value.toLowerCase().split("\\W+")))
-					.groupBy((key, value) -> value)
-					.windowedBy(TimeWindows.of(5000))
-					.count(Materialized.as("WordCounts-branch"))
-					.toStream()
-					.map((key, value) -> new KeyValue<>(null, new WordCount(key.key(), value,
-							new Date(key.window().start()), new Date(key.window().end()))))
-					.branch(isEnglish, isFrench, isSpanish);
+			return input -> {
+				final Map<String, KStream<Object, WordCount>> stringKStreamMap = input
+						.flatMapValues(value -> Arrays.asList(value.toLowerCase().split("\\W+")))
+						.groupBy((key, value) -> value)
+						.windowedBy(TimeWindows.of(Duration.ofSeconds(5)))
+						.count(Materialized.as("WordCounts-branch"))
+						.toStream()
+						.map((key, value) -> new KeyValue<>(null, new WordCount(key.key(), value,
+								new Date(key.window().start()), new Date(key.window().end()))))
+						.split()
+						.branch(isEnglish)
+						.branch(isFrench)
+						.branch(isSpanish)
+						.noDefaultBranch();
+
+				return stringKStreamMap.values().toArray(new KStream[0]);
+			};
 		}
 	}
 
