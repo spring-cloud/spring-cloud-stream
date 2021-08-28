@@ -684,8 +684,11 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 
 		String recovererBeanName = getErrorRecovererName(destination, group,
 				consumerProperties);
-		((GenericApplicationContext) getApplicationContext()).registerBean(
-				recovererBeanName, ErrorMessageSendingRecoverer.class, () -> recoverer);
+		if (!getApplicationContext().containsBean(recovererBeanName)) {
+			((GenericApplicationContext) getApplicationContext()).registerBean(
+					recovererBeanName, ErrorMessageSendingRecoverer.class, () -> recoverer);
+		}
+
 		MessageHandler handler;
 		if (polled) {
 			handler = getPolledConsumerErrorMessageHandler(destination, group,
@@ -711,11 +714,13 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 
 		if (handler != null) {
 			if (this.isSubscribable(errorChannel)) {
-				MessageHandler errorHandler = handler;
-				((GenericApplicationContext) getApplicationContext()).registerBean(
-						errorMessageHandlerName, MessageHandler.class,
-						() -> errorHandler);
-				errorChannel.subscribe(handler);
+				if (!getApplicationContext().containsBean(errorMessageHandlerName)) {
+					MessageHandler errorHandler = handler;
+					((GenericApplicationContext) getApplicationContext()).registerBean(
+							errorMessageHandlerName, MessageHandler.class,
+							() -> errorHandler);
+					errorChannel.subscribe(handler);
+				}
 			}
 			else {
 				this.logger.warn("The provided errorChannel '" + errorChannelName
@@ -734,8 +739,10 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 
 				String errorBridgeHandlerName = getErrorBridgeName(destination, group,
 						consumerProperties);
-				((GenericApplicationContext) getApplicationContext()).registerBean(
-						errorBridgeHandlerName, BridgeHandler.class, () -> errorBridge);
+				if (getApplicationContext().containsBean(errorBridgeHandlerName)) {
+					((GenericApplicationContext) getApplicationContext()).registerBean(
+							errorBridgeHandlerName, BridgeHandler.class, () -> errorBridge);
+				}
 			}
 			else {
 				this.logger.warn("The provided errorChannel '" + errorChannelName
