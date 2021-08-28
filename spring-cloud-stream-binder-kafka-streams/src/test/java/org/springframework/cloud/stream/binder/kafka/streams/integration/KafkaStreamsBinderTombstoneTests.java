@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2018 the original author or authors.
+ * Copyright 2017-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.Map;
 import java.util.Properties;
+import java.util.function.Function;
 
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -42,10 +43,6 @@ import org.junit.Test;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.cloud.stream.annotation.EnableBinding;
-import org.springframework.cloud.stream.annotation.Input;
-import org.springframework.cloud.stream.annotation.StreamListener;
-import org.springframework.cloud.stream.binder.kafka.streams.annotations.KafkaStreamsProcessor;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.integration.test.util.TestUtils;
@@ -57,7 +54,6 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.test.EmbeddedKafkaBroker;
 import org.springframework.kafka.test.rule.EmbeddedKafkaRule;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
-import org.springframework.messaging.handler.annotation.SendTo;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -66,11 +62,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Soby Chacko
  * @author Gary Russell
  */
-public class KafkaStreamsBinderWordCountIntegrationTests {
+public class KafkaStreamsBinderTombstoneTests {
 
 	@ClassRule
 	public static EmbeddedKafkaRule embeddedKafkaRule = new EmbeddedKafkaRule(1, true,
-			"counts", "counts-1");
+			"counts-1");
 
 	private static EmbeddedKafkaBroker embeddedKafka = embeddedKafkaRule
 			.getEmbeddedKafka();
@@ -85,37 +81,12 @@ public class KafkaStreamsBinderWordCountIntegrationTests {
 		DefaultKafkaConsumerFactory<String, String> cf = new DefaultKafkaConsumerFactory<>(
 				consumerProps);
 		consumer = cf.createConsumer();
-		embeddedKafka.consumeFromEmbeddedTopics(consumer, "counts", "counts-1");
+		embeddedKafka.consumeFromEmbeddedTopics(consumer, "counts-1");
 	}
 
 	@AfterClass
 	public static void tearDown() {
 		consumer.close();
-	}
-
-	@Test
-	public void testKstreamWordCountWithApplicationIdSpecifiedAtDefaultConsumer()
-			throws Exception {
-		SpringApplication app = new SpringApplication(
-				WordCountProcessorApplication.class);
-		app.setWebApplicationType(WebApplicationType.NONE);
-
-		try (ConfigurableApplicationContext context = app.run("--server.port=0",
-				"--spring.jmx.enabled=false",
-				"--spring.cloud.stream.bindings.input.destination=words",
-				"--spring.cloud.stream.bindings.output.destination=counts",
-				"--spring.cloud.stream.kafka.streams.default.consumer.application-id=testKstreamWordCountWithApplicationIdSpecifiedAtDefaultConsumer",
-				"--spring.cloud.stream.kafka.streams.binder.configuration.commit.interval.ms=1000",
-				"--spring.cloud.stream.kafka.streams.binder.configuration.default.key.serde"
-						+ "=org.apache.kafka.common.serialization.Serdes$StringSerde",
-				"--spring.cloud.stream.kafka.streams.binder.configuration.default.value.serde"
-						+ "=org.apache.kafka.common.serialization.Serdes$StringSerde",
-				"--spring.cloud.stream.kafka.streams.timeWindow.length=5000",
-				"--spring.cloud.stream.kafka.streams.timeWindow.advanceBy=0",
-				"--spring.cloud.stream.kafka.binder.brokers="
-						+ embeddedKafka.getBrokersAsString())) {
-			receiveAndValidate("words", "counts");
-		}
 	}
 
 	@Test
@@ -127,24 +98,22 @@ public class KafkaStreamsBinderWordCountIntegrationTests {
 
 		try (ConfigurableApplicationContext context = app.run("--server.port=0",
 				"--spring.jmx.enabled=false",
-				"--spring.cloud.stream.bindings.input.destination=words-1",
-				"--spring.cloud.stream.bindings.output.destination=counts-1",
-				"--spring.cloud.stream.kafka.streams.bindings.input.consumer.application-id=testKstreamWordCountWithInputBindingLevelApplicationId",
+				"--spring.cloud.stream.bindings.process-in-0.destination=words-1",
+				"--spring.cloud.stream.bindings.process-out-0.destination=counts-1",
+				"--spring.cloud.stream.kafka.streams.bindings.process-in-0.consumer.application-id=testKstreamWordCountWithInputBindingLevelApplicationId",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.commit.interval.ms=1000",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.default.key.serde"
 						+ "=org.apache.kafka.common.serialization.Serdes$StringSerde",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.default.value.serde"
 						+ "=org.apache.kafka.common.serialization.Serdes$StringSerde",
-				"--spring.cloud.stream.kafka.streams.bindings.output.producer.valueSerde=org.springframework.kafka.support.serializer.JsonSerde",
-				"--spring.cloud.stream.kafka.streams.timeWindow.length=5000",
-				"--spring.cloud.stream.kafka.streams.timeWindow.advanceBy=0",
-				"--spring.cloud.stream.bindings.input.consumer.concurrency=2",
+				"--spring.cloud.stream.kafka.streams.bindings.process-out-0.producer.valueSerde=org.springframework.kafka.support.serializer.JsonSerde",
+				"--spring.cloud.stream.bindings.process-in-0.consumer.concurrency=2",
 				"--spring.cloud.stream.kafka.streams.binder.brokers="
 						+ embeddedKafka.getBrokersAsString())) {
 			receiveAndValidate("words-1", "counts-1");
 			// Assertions on StreamBuilderFactoryBean
 			StreamsBuilderFactoryBean streamsBuilderFactoryBean = context
-					.getBean("&stream-builder-WordCountProcessorApplication-process", StreamsBuilderFactoryBean.class);
+					.getBean("&stream-builder-process", StreamsBuilderFactoryBean.class);
 			KafkaStreams kafkaStreams = streamsBuilderFactoryBean.getKafkaStreams();
 			assertThat(kafkaStreams).isNotNull();
 			// Ensure that concurrency settings are mapped to number of stream task
@@ -200,26 +169,21 @@ public class KafkaStreamsBinderWordCountIntegrationTests {
 		}
 	}
 
-	@EnableBinding(KafkaStreamsProcessor.class)
 	@EnableAutoConfiguration
 	static class WordCountProcessorApplication {
 
-		@StreamListener
-		@SendTo("output")
-		public KStream<?, WordCount> process(
-				@Input("input") KStream<Object, String> input) {
+		@Bean
+		public Function<KStream<Object, String>, KStream<String, WordCount>> process() {
 
-			return input
-					.flatMapValues(
-							value -> Arrays.asList(value.toLowerCase().split("\\W+")))
+			return input -> input
+					.flatMapValues(value -> Arrays.asList(value.toLowerCase().split("\\W+")))
 					.map((key, value) -> new KeyValue<>(value, value))
 					.groupByKey(Grouped.with(Serdes.String(), Serdes.String()))
-					.windowedBy(TimeWindows.of(Duration.ofSeconds(5))).count(Materialized.as("foo-WordCounts"))
+					.windowedBy(TimeWindows.of(5000))
+					.count(Materialized.as("foo-WordCounts"))
 					.toStream()
-					.map((key, value) -> new KeyValue<>(null,
-							new WordCount(key.key(), value,
-									new Date(key.window().start()),
-									new Date(key.window().end()))));
+					.map((key, value) -> new KeyValue<>(null, new WordCount(key.key(), value,
+							new Date(key.window().start()), new Date(key.window().end()))));
 		}
 
 		@Bean
