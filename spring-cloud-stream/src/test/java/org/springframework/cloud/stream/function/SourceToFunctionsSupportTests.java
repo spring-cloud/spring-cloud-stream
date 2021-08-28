@@ -23,6 +23,7 @@ import java.util.function.Supplier;
 
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.rules.ExpectedException;
 import reactor.core.publisher.Flux;
@@ -59,6 +60,10 @@ public class SourceToFunctionsSupportTests {
 
 	@BeforeEach
 	public void before() {
+		System.clearProperty("spring.cloud.stream.function.definition");
+	}
+	@AfterEach
+	public void after() {
 		System.clearProperty("spring.cloud.stream.function.definition");
 	}
 
