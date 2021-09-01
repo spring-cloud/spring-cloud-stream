@@ -107,6 +107,7 @@ import org.springframework.kafka.listener.ConsumerAwareRebalanceListener;
 import org.springframework.kafka.listener.ConsumerProperties;
 import org.springframework.kafka.listener.ContainerProperties;
 import org.springframework.kafka.listener.DefaultAfterRollbackProcessor;
+import org.springframework.kafka.listener.DefaultErrorHandler;
 import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.kafka.support.KafkaHeaderMapper;
 import org.springframework.kafka.support.KafkaHeaders;
@@ -733,14 +734,17 @@ public class KafkaMessageChannelBinder extends
 		kafkaMessageDrivenChannelAdapter.setApplicationContext(applicationContext);
 		ErrorInfrastructure errorInfrastructure = registerErrorInfrastructure(destination,
 				consumerGroup, extendedConsumerProperties);
+
 		if (!extendedConsumerProperties.isBatchMode()
 				&& extendedConsumerProperties.getMaxAttempts() > 1
 				&& transMan == null) {
-
 			kafkaMessageDrivenChannelAdapter
 					.setRetryTemplate(buildRetryTemplate(extendedConsumerProperties));
 			kafkaMessageDrivenChannelAdapter
 					.setRecoveryCallback(errorInfrastructure.getRecoverer());
+			if (!extendedConsumerProperties.getExtension().isEnableDlq()) {
+				messageListenerContainer.setCommonErrorHandler(new DefaultErrorHandler(new FixedBackOff(0L, 0L)));
+			}
 		}
 		else if (!extendedConsumerProperties.isBatchMode() && transMan != null) {
 			messageListenerContainer.setAfterRollbackProcessor(new DefaultAfterRollbackProcessor<>(

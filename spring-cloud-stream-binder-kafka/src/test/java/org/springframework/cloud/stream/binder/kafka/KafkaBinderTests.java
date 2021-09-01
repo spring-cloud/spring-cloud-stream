@@ -1298,6 +1298,51 @@ public class KafkaBinderTests extends
 		producerBinding.unbind();
 	}
 
+	@Test
+	@SuppressWarnings("unchecked")
+	public void testRetriesWithoutDlq() throws Exception {
+		Binder binder = getBinder();
+		ExtendedProducerProperties<KafkaProducerProperties> producerProperties = createProducerProperties();
+		BindingProperties producerBindingProperties = createProducerBindingProperties(
+				producerProperties);
+
+		DirectChannel moduleOutputChannel = createBindableChannel("output",
+				producerBindingProperties);
+
+		ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = createConsumerProperties();
+		consumerProperties.setMaxAttempts(2);
+		consumerProperties.setBackOffInitialInterval(100);
+		consumerProperties.setBackOffMaxInterval(150);
+
+		DirectChannel moduleInputChannel = createBindableChannel("input",
+				createConsumerBindingProperties(consumerProperties));
+
+		FailingInvocationCountingMessageHandler handler = new FailingInvocationCountingMessageHandler();
+		moduleInputChannel.subscribe(handler);
+		long uniqueBindingId = System.currentTimeMillis();
+		Binding<MessageChannel> producerBinding = binder.bindProducer(
+				"retryTest." + uniqueBindingId + ".0", moduleOutputChannel,
+				producerProperties);
+		Binding<MessageChannel> consumerBinding = binder.bindConsumer(
+				"retryTest." + uniqueBindingId + ".0", "testGroup", moduleInputChannel,
+				consumerProperties);
+
+		String testMessagePayload = "test." + UUID.randomUUID();
+		Message<byte[]> testMessage = MessageBuilder
+				.withPayload(testMessagePayload.getBytes()).build();
+		moduleOutputChannel.send(testMessage);
+
+		Thread.sleep(3000);
+
+		// Since we don't have a DLQ, assert that we are invoking the handler exactly the same number of times
+		// as set in consumerProperties.maxAttempt and not the default set by Spring Kafka (10 times).
+		assertThat(handler.getInvocationCount())
+				.isEqualTo(consumerProperties.getMaxAttempts());
+		binderBindUnbindLatency();
+		consumerBinding.unbind();
+		producerBinding.unbind();
+	}
+
 	//See https://github.com/spring-cloud/spring-cloud-stream-binder-kafka/issues/870 for motivation for this test.
 	@Test
 	@SuppressWarnings("unchecked")
