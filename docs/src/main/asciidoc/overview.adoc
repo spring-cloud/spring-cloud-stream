@@ -490,11 +490,11 @@ Default: `false`
 
 In this section, we show the use of the preceding properties for specific scenarios.
 
-===== Example: Setting `autoCommitOffset` to `false` and Relying on Manual Acking
+===== Example: Setting `ackMode` to `MANUAL` and Relying on Manual Acknowledgement
 
 This example illustrates how one may manually acknowledge offsets in a consumer application.
 
-This example requires that `spring.cloud.stream.kafka.bindings.input.consumer.autoCommitOffset` be set to `false`.
+This example requires that `spring.cloud.stream.kafka.bindings.input.consumer.ackMode` be set to `MANUAL`.
 Use the corresponding input channel name for your example.
 
 [source]
