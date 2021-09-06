@@ -928,9 +928,13 @@ Applies only when `requiredGroups` are provided and then only to those groups.
 Default: none - broker default will apply.
 routingKeyExpression::
 A SpEL expression to determine the routing key to use when publishing messages.
-For a fixed routing key, use a literal expression, such as `routingKeyExpression='my.routingKey'` in a properties file or `routingKeyExpression: '''my.routingKey'''` in a YAML file.
+For a fixed routing key, use `routingKey`.
 +
 Default: `destination` or `destination-<partition>` for partitioned destinations.
+routingKey::
+A string defining a fixed routing key to use when publishing messages.
++
+Default: see `routingKeyExpression`
 singleActiveConsumer::
 Set to true to set the `x-single-active-consumer` queue property to true.
 Applies only when `requiredGroups` are provided and then only to those groups.

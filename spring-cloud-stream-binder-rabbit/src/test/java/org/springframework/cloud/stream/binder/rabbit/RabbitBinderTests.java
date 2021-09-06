@@ -2065,6 +2065,38 @@ public class RabbitBinderTests extends
 	}
 
 	@Test
+	public void testRoutingKey(TestInfo testInfo) throws Exception {
+		String routingKey = "static.key";
+		RabbitTestBinder binder = getBinder();
+		ExtendedProducerProperties<RabbitProducerProperties> producerProperties = createProducerProperties(testInfo);
+		producerProperties.getExtension().setRoutingKey(routingKey);
+
+		DirectChannel output = createBindableChannel("output",
+				createProducerBindingProperties(producerProperties));
+		output.setBeanName("rkeProducer");
+		Binding<MessageChannel> producerBinding = binder.bindProducer("rke", output,
+				producerProperties);
+
+		RabbitAdmin admin = new RabbitAdmin(this.rabbitAvailableRule.getResource());
+		Queue queue = new AnonymousQueue();
+		DirectExchange exchange = new DirectExchange("rke");
+		org.springframework.amqp.core.Binding binding = BindingBuilder.bind(queue)
+				.to(exchange).with(routingKey);
+		admin.declareQueue(queue);
+		admin.declareBinding(binding);
+
+		output.send(new GenericMessage<>(new Pojo("rkeTest")));
+
+		Object out = spyOn(queue.getName()).receive(false);
+		assertThat(out).isInstanceOf(byte[].class);
+		assertThat(new String((byte[]) out, StandardCharsets.UTF_8))
+				.isEqualTo("{\"field\":\"rkeTest\"}");
+
+
+		producerBinding.unbind();
+	}
+
+	@Test
 	public void testRoutingKeyExpressionPartitionedAndDelay(TestInfo testInfo) throws Exception {
 		RabbitTestBinder binder = getBinder();
 		ExtendedProducerProperties<RabbitProducerProperties> producerProperties = createProducerProperties(testInfo);

@@ -16,11 +16,16 @@
 
 package org.springframework.cloud.stream.binder.rabbit.properties;
 
+import java.util.Optional;
+
 import jakarta.validation.constraints.Min;
 
 import org.springframework.amqp.core.MessageDeliveryMode;
 import org.springframework.expression.Expression;
+import org.springframework.expression.common.LiteralExpression;
 import org.springframework.util.Assert;
+
+
 
 /**
  * @author Marius Bogoevici
@@ -101,6 +106,12 @@ public class RabbitProducerProperties extends RabbitCommonProperties {
 	 * apply to messages.
 	 */
 	private Expression delayExpression;
+
+	/**
+	 * a static routing key when publishing messages; default is the destination name;
+	 * suffixed by "-partition" when partitioned. This is only used if `routingKeyExpression` is null
+	 */
+	private String routingKey;
 
 	/**
 	 * a custom routing key when publishing messages; default is the destination name;
@@ -232,11 +243,22 @@ public class RabbitProducerProperties extends RabbitCommonProperties {
 	}
 
 	public Expression getRoutingKeyExpression() {
-		return this.routingKeyExpression;
+		return Optional.ofNullable(this.routingKeyExpression)
+				.orElseGet(() -> Optional.ofNullable(this.routingKey)
+						.map(LiteralExpression::new)
+						.orElse(null));
 	}
 
 	public void setRoutingKeyExpression(Expression routingKeyExpression) {
 		this.routingKeyExpression = routingKeyExpression;
+	}
+
+	public String getRoutingKey() {
+		return this.routingKey;
+	}
+
+	public void setRoutingKey(String routingKey) {
+		this.routingKey = routingKey;
 	}
 
 	public String getConfirmAckChannel() {
