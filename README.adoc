@@ -116,7 +116,7 @@ A comma-separated list of RabbitMQ management plugin URLs.
 Only used when `nodes` contains more than one entry.
 Each entry in this list must have a corresponding entry in `spring.rabbitmq.addresses`.
 Only needed if you use a RabbitMQ cluster and wish to consume from the node that hosts the queue.
-See https://docs.spring.io/spring-amqp/reference/html/_reference.html#queue-affinity[Queue Affinity and the LocalizedQueueConnectionFactory] for more information.
+See https://docs.spring.io/spring-amqp/reference/html/#queue-affinity[Queue Affinity and the LocalizedQueueConnectionFactory] for more information.
 +
 Default: empty.
 spring.cloud.stream.rabbit.binder.nodes::
