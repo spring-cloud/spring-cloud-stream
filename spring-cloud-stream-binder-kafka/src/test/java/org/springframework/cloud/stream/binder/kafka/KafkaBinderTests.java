@@ -118,8 +118,11 @@ import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
 import org.springframework.kafka.listener.AbstractMessageListenerContainer;
+import org.springframework.kafka.listener.CommonErrorHandler;
 import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;
 import org.springframework.kafka.listener.ContainerProperties;
+import org.springframework.kafka.listener.DefaultErrorHandler;
+import org.springframework.kafka.listener.MessageListenerContainer;
 import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.kafka.support.KafkaHeaderMapper;
 import org.springframework.kafka.support.KafkaHeaders;
@@ -145,6 +148,7 @@ import org.springframework.messaging.support.GenericMessage;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.Assert;
 import org.springframework.util.MimeTypeUtils;
+import org.springframework.util.backoff.FixedBackOff;
 import org.springframework.util.concurrent.ListenableFuture;
 import org.springframework.util.concurrent.SettableListenableFuture;
 
@@ -1342,6 +1346,68 @@ public class KafkaBinderTests extends
 		consumerBinding.unbind();
 		producerBinding.unbind();
 	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	public void testCommonErrorHandlerBeanNameOnConsumerBinding() throws Exception {
+		Binder binder = getBinder();
+		ExtendedProducerProperties<KafkaProducerProperties> producerProperties = createProducerProperties();
+		BindingProperties producerBindingProperties = createProducerBindingProperties(
+				producerProperties);
+
+		DirectChannel moduleOutputChannel = createBindableChannel("output",
+				producerBindingProperties);
+
+		CountDownLatch latch = new CountDownLatch(1);
+		CommonErrorHandler commonErrorHandler = new DefaultErrorHandler(new FixedBackOff(0L, 0L)) {
+			@Override
+			public void handleRemaining(Exception thrownException, List<ConsumerRecord<?, ?>> records,
+										Consumer<?, ?> consumer, MessageListenerContainer container) {
+				super.handleRemaining(thrownException, records, consumer, container);
+				latch.countDown();
+			}
+		};
+
+		ConfigurableApplicationContext context = TestUtils.getPropertyValue(binder,
+				"binder.applicationContext", ConfigurableApplicationContext.class);
+		context.getBeanFactory().registerSingleton("fooCommonErrorHandler", commonErrorHandler);
+
+		ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = createConsumerProperties();
+		consumerProperties.setMaxAttempts(2);
+		consumerProperties.setBackOffInitialInterval(100);
+		consumerProperties.setBackOffMaxInterval(150);
+		consumerProperties.getExtension().setCommonErrorHandlerBeanName("fooCommonErrorHandler");
+
+		DirectChannel moduleInputChannel = createBindableChannel("input",
+				createConsumerBindingProperties(consumerProperties));
+
+		FailingInvocationCountingMessageHandler handler = new FailingInvocationCountingMessageHandler();
+		moduleInputChannel.subscribe(handler);
+		long uniqueBindingId = System.currentTimeMillis();
+		Binding<MessageChannel> producerBinding = binder.bindProducer(
+				"retryTest." + uniqueBindingId + ".0", moduleOutputChannel,
+				producerProperties);
+		Binding<MessageChannel> consumerBinding = binder.bindConsumer(
+				"retryTest." + uniqueBindingId + ".0", "testGroup", moduleInputChannel,
+				consumerProperties);
+
+		String testMessagePayload = "test." + UUID.randomUUID();
+		Message<byte[]> testMessage = MessageBuilder
+				.withPayload(testMessagePayload.getBytes()).build();
+		moduleOutputChannel.send(testMessage);
+
+		Thread.sleep(3000);
+
+		//Assertions for the CommonErrorHandler configured on the consumer binding (commonErrorHandlerBeanName).
+		assertThat(KafkaTestUtils.getPropertyValue(consumerBinding,
+				"lifecycle.messageListenerContainer.commonErrorHandler")).isSameAs(commonErrorHandler);
+		latch.await(10, TimeUnit.SECONDS);
+
+		binderBindUnbindLatency();
+		consumerBinding.unbind();
+		producerBinding.unbind();
+	}
+
 
 	//See https://github.com/spring-cloud/spring-cloud-stream-binder-kafka/issues/870 for motivation for this test.
 	@Test

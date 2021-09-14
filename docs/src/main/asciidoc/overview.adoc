@@ -321,6 +321,12 @@ When using a transactional binder, the offset of a recovered record (e.g. when r
 Setting this property to `false` suppresses committing the offset of recovered record.
 +
 Default: true.
+commonErrorHandlerBeanName::
+`CommonErrorHandler` bean name to use per consumer binding.
+When present, this user provided `CommonErrorHandler` takes precedence over any other error handlers defined by the binder.
+This is a handy way to express error handlers, if the application does not want to use a `ListenerContainerCustomizer` and then check the destination/group combination to set an error handler.
++
+Default: none.
 
 [[reset-offsets]]
 ==== Resetting Offsets

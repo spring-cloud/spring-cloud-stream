@@ -211,6 +211,12 @@ public class KafkaConsumerProperties {
 	private boolean txCommitRecovered = true;
 
 	/**
+	 * CommonErrorHandler bean name per consumer binding.
+	 * @since 3.2
+	 */
+	private String commonErrorHandlerBeanName;
+
+	/**
 	 * @return if each record needs to be acknowledged.
 	 *
 	 * When true the offset is committed after each record, otherwise the offsets for the complete set of records
@@ -529,4 +535,11 @@ public class KafkaConsumerProperties {
 		this.txCommitRecovered = txCommitRecovered;
 	}
 
+	public String getCommonErrorHandlerBeanName() {
+		return commonErrorHandlerBeanName;
+	}
+
+	public void setCommonErrorHandlerBeanName(String commonErrorHandlerBeanName) {
+		this.commonErrorHandlerBeanName = commonErrorHandlerBeanName;
+	}
 }

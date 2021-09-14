@@ -102,6 +102,7 @@ import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
 import org.springframework.kafka.listener.AbstractMessageListenerContainer;
+import org.springframework.kafka.listener.CommonErrorHandler;
 import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;
 import org.springframework.kafka.listener.ConsumerAwareRebalanceListener;
 import org.springframework.kafka.listener.ConsumerProperties;
@@ -776,6 +777,12 @@ public class KafkaMessageChannelBinder extends
 		}
 		else {
 			kafkaMessageDrivenChannelAdapter.setErrorChannel(errorInfrastructure.getErrorChannel());
+		}
+		final String commonErrorHandlerBeanName = extendedConsumerProperties.getExtension().getCommonErrorHandlerBeanName();
+		if (StringUtils.hasText(commonErrorHandlerBeanName)) {
+			final CommonErrorHandler commonErrorHandler = getApplicationContext().getBean(commonErrorHandlerBeanName,
+					CommonErrorHandler.class);
+			messageListenerContainer.setCommonErrorHandler(commonErrorHandler);
 		}
 		this.getContainerCustomizer().configure(messageListenerContainer, destination.getName(), group);
 		this.ackModeInfo.put(destination, messageListenerContainer.getContainerProperties().getAckMode());
