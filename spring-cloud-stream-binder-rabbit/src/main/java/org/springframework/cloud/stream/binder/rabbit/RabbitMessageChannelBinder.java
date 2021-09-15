@@ -81,6 +81,7 @@ import org.springframework.cloud.stream.binder.rabbit.properties.RabbitConsumerP
 import org.springframework.cloud.stream.binder.rabbit.properties.RabbitConsumerProperties.ContainerType;
 import org.springframework.cloud.stream.binder.rabbit.properties.RabbitExtendedBindingProperties;
 import org.springframework.cloud.stream.binder.rabbit.properties.RabbitProducerProperties;
+import org.springframework.cloud.stream.binder.rabbit.properties.RabbitProducerProperties.ProducerType;
 import org.springframework.cloud.stream.binder.rabbit.provisioning.RabbitExchangeQueueProvisioner;
 import org.springframework.cloud.stream.config.ListenerContainerCustomizer;
 import org.springframework.cloud.stream.config.MessageSourceCustomizer;
@@ -98,6 +99,7 @@ import org.springframework.integration.amqp.inbound.AmqpInboundChannelAdapter;
 import org.springframework.integration.amqp.inbound.AmqpInboundChannelAdapter.BatchMode;
 import org.springframework.integration.amqp.inbound.AmqpMessageSource;
 import org.springframework.integration.amqp.outbound.AmqpOutboundEndpoint;
+import org.springframework.integration.amqp.support.AmqpHeaderMapper;
 import org.springframework.integration.amqp.support.AmqpMessageHeaderErrorMessageStrategy;
 import org.springframework.integration.amqp.support.DefaultAmqpHeaderMapper;
 import org.springframework.integration.channel.AbstractMessageChannel;
@@ -308,6 +310,21 @@ public class RabbitMessageChannelBinder extends
 		String destination = StringUtils.isEmpty(prefix) ? exchangeName
 				: exchangeName.substring(prefix.length());
 		RabbitProducerProperties extendedProperties = producerProperties.getExtension();
+		final MessageHandler endpoint;
+		if (!ProducerType.AMQP.equals(producerProperties.getExtension().getProducerType())) {
+			endpoint = StreamUtils.createStreamMessageHandler(producerDestination, producerProperties, errorChannel,
+					destination, extendedProperties, getApplicationContext(), this::configureHeaderMapper);
+		}
+		else {
+			endpoint = amqpHandler(producerDestination, producerProperties, errorChannel,
+					destination, extendedProperties);
+		}
+		return endpoint;
+	}
+
+	private AmqpOutboundEndpoint amqpHandler(final ProducerDestination producerDestination,
+			ExtendedProducerProperties<RabbitProducerProperties> producerProperties, MessageChannel errorChannel,
+			String destination, RabbitProducerProperties extendedProperties) {
 		final AmqpOutboundEndpoint endpoint = new AmqpOutboundEndpoint(
 				buildRabbitTemplate(extendedProperties,
 						errorChannel != null || extendedProperties.isUseConfirmHeader()));
@@ -357,16 +374,7 @@ public class RabbitMessageChannelBinder extends
 				endpoint.setDelayExpression(extendedProperties.getDelayExpression());
 			}
 		}
-		DefaultAmqpHeaderMapper mapper = DefaultAmqpHeaderMapper.outboundMapper();
-		List<String> headerPatterns = new ArrayList<>(extendedProperties.getHeaderPatterns().length + 3);
-		headerPatterns.add("!" + BinderHeaders.PARTITION_HEADER);
-		headerPatterns.add("!" + IntegrationMessageHeaderAccessor.SOURCE_DATA);
-		headerPatterns.add("!" + IntegrationMessageHeaderAccessor.DELIVERY_ATTEMPT);
-		headerPatterns.add("!rabbitmq_streamContext");
-		headerPatterns.addAll(Arrays.asList(extendedProperties.getHeaderPatterns()));
-		mapper.setRequestHeaderNames(
-				headerPatterns.toArray(new String[headerPatterns.size()]));
-		endpoint.setHeaderMapper(mapper);
+		endpoint.setHeaderMapper(configureHeaderMapper(extendedProperties));
 		endpoint.setDefaultDeliveryMode(extendedProperties.getDeliveryMode());
 		endpoint.setBeanFactory(this.getBeanFactory());
 		if (errorChannel != null) {
@@ -395,6 +403,19 @@ public class RabbitMessageChannelBinder extends
 		}
 		endpoint.setHeadersMappedLast(true);
 		return endpoint;
+	}
+
+	private AmqpHeaderMapper configureHeaderMapper(RabbitProducerProperties extendedProperties) {
+		DefaultAmqpHeaderMapper mapper = DefaultAmqpHeaderMapper.outboundMapper();
+		List<String> headerPatterns = new ArrayList<>(extendedProperties.getHeaderPatterns().length + 3);
+		headerPatterns.add("!" + BinderHeaders.PARTITION_HEADER);
+		headerPatterns.add("!" + IntegrationMessageHeaderAccessor.SOURCE_DATA);
+		headerPatterns.add("!" + IntegrationMessageHeaderAccessor.DELIVERY_ATTEMPT);
+		headerPatterns.add("!rabbitmq_streamContext");
+		headerPatterns.addAll(Arrays.asList(extendedProperties.getHeaderPatterns()));
+		mapper.setRequestHeaderNames(
+				headerPatterns.toArray(new String[headerPatterns.size()]));
+		return mapper;
 	}
 
 	@Override
@@ -493,7 +514,7 @@ public class RabbitMessageChannelBinder extends
 			adapter.setBatchMode(BatchMode.EXTRACT_PAYLOADS_WITH_HEADERS);
 		}
 		if (extension.getContainerType().equals(ContainerType.STREAM)) {
-			StreamContainerUtils.configureAdapter(adapter);
+			StreamUtils.configureAdapter(adapter);
 		}
 		return adapter;
 	}
@@ -503,7 +524,7 @@ public class RabbitMessageChannelBinder extends
 			RabbitConsumerProperties extension) {
 
 		if (extension.getContainerType().equals(ContainerType.STREAM)) {
-			return StreamContainerUtils.createContainer(consumerDestination, group, properties, destination, extension,
+			return StreamUtils.createContainer(consumerDestination, group, properties, destination, extension,
 					getApplicationContext());
 		}
 		boolean directContainer = extension.getContainerType()
