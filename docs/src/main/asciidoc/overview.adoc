@@ -218,7 +218,7 @@ Note that this property is only applicable for pollable consumers.
 Default: not set.
 resetOffsets::
 Whether to reset offsets on the consumer to the value provided by startOffset.
-Must be false if a `KafkaRebalanceListener` is provided; see <<rebalance-listener>>.
+Must be false if a `KafkaBindingRebalanceListener` is provided; see <<rebalance-listener>>.
 See <<reset-offsets>> for more information about this property.
 +
 Default: `false`.
@@ -805,10 +805,10 @@ public void in(@Header(KafkaHeaders.RECEIVED_MESSAGE_KEY) byte[] key,
 ====
 
 [[rebalance-listener]]
-=== Using a KafkaRebalanceListener
+=== Using a KafkaBindingRebalanceListener
 
 Applications may wish to seek topics/partitions to arbitrary offsets when the partitions are initially assigned, or perform other operations on the consumer.
-Starting with version 2.1, if you provide a single `KafkaRebalanceListener` bean in the application context, it will be wired into all Kafka consumer bindings.
+Starting with version 2.1, if you provide a single `KafkaBindingRebalanceListener` bean in the application context, it will be wired into all Kafka consumer bindings.
 
 ====
 [source, java]
