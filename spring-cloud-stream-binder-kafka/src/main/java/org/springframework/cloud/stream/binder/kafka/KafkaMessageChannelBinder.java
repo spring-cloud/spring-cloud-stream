@@ -399,9 +399,6 @@ public class KafkaMessageChannelBinder extends
 					List<PartitionInfo> partitionsFor = producer
 							.partitionsFor(destination.getName());
 					producer.close();
-					if (transMan == null) {
-						((DisposableBean) producerFB).destroy();
-					}
 					return partitionsFor;
 				}, destination.getName());
 		this.topicsInUse.put(destination.getName(),
