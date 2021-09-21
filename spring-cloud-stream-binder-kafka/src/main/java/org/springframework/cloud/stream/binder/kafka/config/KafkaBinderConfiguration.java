@@ -22,7 +22,6 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.binder.MeterBinder;
 
 import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -81,21 +80,11 @@ import org.springframework.messaging.converter.MessageConverter;
  * @author Artem Bilan
  * @author Aldo Sinanaj
  */
-@Configuration
+@Configuration(proxyBeanMethods = false)
 @ConditionalOnMissingBean(Binder.class)
 @Import({ KafkaAutoConfiguration.class, KafkaBinderHealthIndicatorConfiguration.class })
 @EnableConfigurationProperties({ KafkaExtendedBindingProperties.class })
 public class KafkaBinderConfiguration {
-
-	@Autowired
-	private KafkaExtendedBindingProperties kafkaExtendedBindingProperties;
-
-	@SuppressWarnings("rawtypes")
-	@Autowired
-	private ProducerListener producerListener;
-
-	@Autowired
-	private KafkaProperties kafkaProperties;
 
 	@Bean
 	KafkaBinderConfigurationProperties configurationProperties(
@@ -106,12 +95,12 @@ public class KafkaBinderConfiguration {
 	@Bean
 	KafkaTopicProvisioner provisioningProvider(
 			KafkaBinderConfigurationProperties configurationProperties,
-			ObjectProvider<AdminClientConfigCustomizer> adminClientConfigCustomizer) {
+			ObjectProvider<AdminClientConfigCustomizer> adminClientConfigCustomizer, KafkaProperties kafkaProperties) {
 		return new KafkaTopicProvisioner(configurationProperties,
-				this.kafkaProperties, adminClientConfigCustomizer.getIfUnique());
+				kafkaProperties, adminClientConfigCustomizer.getIfUnique());
 	}
 
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({"rawtypes", "unchecked"})
 	@Bean
 	KafkaMessageChannelBinder kafkaMessageChannelBinder(
 			KafkaBinderConfigurationProperties configurationProperties,
@@ -125,16 +114,17 @@ public class KafkaBinderConfiguration {
 			ObjectProvider<DlqDestinationResolver> dlqDestinationResolver,
 			ObjectProvider<ClientFactoryCustomizer> clientFactoryCustomizer,
 			ObjectProvider<ConsumerConfigCustomizer> consumerConfigCustomizer,
-			ObjectProvider<ProducerConfigCustomizer> producerConfigCustomizer
+			ObjectProvider<ProducerConfigCustomizer> producerConfigCustomizer,
+			ProducerListener producerListener, KafkaExtendedBindingProperties kafkaExtendedBindingProperties
 			) {
 
 		KafkaMessageChannelBinder kafkaMessageChannelBinder = new KafkaMessageChannelBinder(
 				configurationProperties, provisioningProvider,
 				listenerContainerCustomizer, sourceCustomizer, rebalanceListener.getIfUnique(),
 				dlqPartitionFunction.getIfUnique(), dlqDestinationResolver.getIfUnique());
-		kafkaMessageChannelBinder.setProducerListener(this.producerListener);
+		kafkaMessageChannelBinder.setProducerListener(producerListener);
 		kafkaMessageChannelBinder
-				.setExtendedBindingProperties(this.kafkaExtendedBindingProperties);
+				.setExtendedBindingProperties(kafkaExtendedBindingProperties);
 		kafkaMessageChannelBinder.setProducerMessageHandlerCustomizer(messageHandlerCustomizer);
 		kafkaMessageChannelBinder.setConsumerEndpointCustomizer(consumerCustomizer);
 		kafkaMessageChannelBinder.setClientFactoryCustomizer(clientFactoryCustomizer.getIfUnique());
