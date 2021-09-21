@@ -16,11 +16,13 @@
 
 package org.springframework.cloud.stream.function;
 
+import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.FactoryBean;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.stream.binder.PollableMessageSource;
 import org.springframework.cloud.stream.binding.BindableProxyFactory;
 import org.springframework.cloud.stream.binding.BoundTargetHolder;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.SubscribableChannel;
@@ -43,7 +45,7 @@ import org.springframework.util.CollectionUtils;
  *
  * @since 3.0
  */
-class BindableFunctionProxyFactory extends BindableProxyFactory {
+class BindableFunctionProxyFactory extends BindableProxyFactory implements ApplicationContextAware {
 
 	private final int inputCount;
 
@@ -55,9 +57,7 @@ class BindableFunctionProxyFactory extends BindableProxyFactory {
 
 	private final boolean pollable;
 
-	@Autowired
 	private GenericApplicationContext context;
-
 
 	BindableFunctionProxyFactory(String functionDefinition, int inputCount, int outputCount, StreamFunctionProperties functionProperties) {
 		this(functionDefinition, inputCount, outputCount, functionProperties, false);
@@ -75,7 +75,7 @@ class BindableFunctionProxyFactory extends BindableProxyFactory {
 
 	@Override
 	public void afterPropertiesSet() {
-		populateBindingTargetFactories(context.getBeanFactory());
+		populateBindingTargetFactories(beanFactory);
 		Assert.notEmpty(BindableFunctionProxyFactory.this.bindingTargetFactories,
 				"'bindingTargetFactories' cannot be empty");
 
@@ -171,4 +171,8 @@ class BindableFunctionProxyFactory extends BindableProxyFactory {
 						.createOutput(name), true));
 	}
 
+	@Override
+	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+		this.context = (GenericApplicationContext) applicationContext;
+	}
 }

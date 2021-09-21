@@ -60,7 +60,7 @@ public class BindableProxyFactory extends AbstractBindableProxyFactory
 
 	private Object proxy;
 
-	private BeanFactory beanFactory;
+	protected BeanFactory beanFactory;
 
 	public BindableProxyFactory(Class<?> type) {
 		super(type);
