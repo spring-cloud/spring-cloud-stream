@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2019 the original author or authors.
+ * Copyright 2018-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,32 +14,36 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.stream.binder.kafka.config;
+package org.springframework.cloud.stream.binder.kafka.streams;
 
 import java.util.HashMap;
 import java.util.Map;
 
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.context.properties.source.ConfigurationPropertyName;
 import org.springframework.cloud.stream.config.BindingHandlerAdvise.MappingsProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * Configuration for extended binding metadata.
+ * {@link EnableAutoConfiguration Auto-configuration} for extended binding metadata for Kafka Streams.
  *
- * @author Oleg Zhurakousky
+ * @author Chris Bono
+ * @since 3.2
  */
-
-@Configuration
-public class ExtendedBindingHandlerMappingsProviderConfiguration {
+@Configuration(proxyBeanMethods = false)
+public class ExtendedBindingHandlerMappingsProviderAutoConfiguration {
 
 	@Bean
-	public MappingsProvider kafkaExtendedPropertiesDefaultMappingsProvider() {
+	public MappingsProvider kafkaStreamsExtendedPropertiesDefaultMappingsProvider() {
 		return () -> {
 			Map<ConfigurationPropertyName, ConfigurationPropertyName> mappings = new HashMap<>();
 			mappings.put(
-					ConfigurationPropertyName.of("spring.cloud.stream.kafka.bindings"),
-					ConfigurationPropertyName.of("spring.cloud.stream.kafka.default"));
+					ConfigurationPropertyName.of("spring.cloud.stream.kafka.streams"),
+					ConfigurationPropertyName.of("spring.cloud.stream.kafka.streams.default"));
+			mappings.put(
+					ConfigurationPropertyName.of("spring.cloud.stream.kafka.streams.bindings"),
+					ConfigurationPropertyName.of("spring.cloud.stream.kafka.streams.default"));
 			return mappings;
 		};
 	}
