@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2019 the original author or authors.
+ * Copyright 2019-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -271,9 +271,9 @@ public abstract class AbstractKafkaStreamsBinderProcessor implements Application
 		Assert.state(!bindingConfig.containsKey(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG),
 				ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG + " cannot be overridden at the binding level; "
 						+ "use multiple binders instead");
-		streamConfigGlobalProperties.putAll(bindingConfig);
+		// We will only add the per binding configuration to the current streamConfiguration and not the global one.
 		streamConfiguration
-				.putAll(extendedConsumerProperties.getConfiguration());
+				.putAll(bindingConfig);
 
 		String bindingLevelApplicationId = extendedConsumerProperties.getApplicationId();
 		// override application.id if set at the individual binding level.

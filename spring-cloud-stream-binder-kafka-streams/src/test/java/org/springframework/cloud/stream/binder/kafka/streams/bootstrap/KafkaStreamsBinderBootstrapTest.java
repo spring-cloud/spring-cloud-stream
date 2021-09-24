@@ -16,6 +16,8 @@
 
 package org.springframework.cloud.stream.binder.kafka.streams.bootstrap;
 
+import java.util.Map;
+import java.util.Properties;
 import java.util.function.Consumer;
 
 import org.apache.kafka.common.security.JaasUtils;
@@ -31,7 +33,10 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
+import org.springframework.kafka.config.StreamsBuilderFactoryBean;
 import org.springframework.kafka.test.rule.EmbeddedKafkaRule;
+
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 /**
  * @author Soby Chacko
@@ -92,6 +97,43 @@ public class KafkaStreamsBinderBootstrapTest {
 						+ "=testKafkaStreamsBinderWithStandardConfigurationCanStart-foobar",
 						"--spring.cloud.stream.kafka.streams.binder.brokers="
 								+ embeddedKafka.getEmbeddedKafka().getBrokersAsString());
+
+		applicationContext.close();
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	public void testStreamConfigGlobalProperties_GH1149() {
+		ConfigurableApplicationContext applicationContext = new SpringApplicationBuilder(
+				SimpleKafkaStreamsApplication.class).web(WebApplicationType.NONE).run(
+				"--spring.cloud.function.definition=input1;input2;input3",
+				"--spring.cloud.stream.kafka.streams.bindings.input1-in-0.consumer.application-id"
+						+ "=testKafkaStreamsBinderWithStandardConfigurationCanStart",
+				"--spring.cloud.stream.kafka.streams.bindings.input2-in-0.consumer.application-id"
+						+ "=testKafkaStreamsBinderWithStandardConfigurationCanStart-foo",
+				"--spring.cloud.stream.kafka.streams.bindings.input2-in-0.consumer.configuration.spring.json.value.type.method=com.test.MyClass",
+				"--spring.cloud.stream.kafka.streams.bindings.input3-in-0.consumer.application-id"
+						+ "=testKafkaStreamsBinderWithStandardConfigurationCanStart-foobar",
+				"--spring.cloud.stream.kafka.streams.binder.brokers="
+						+ embeddedKafka.getEmbeddedKafka().getBrokersAsString());
+
+		Map<String, Object> streamConfigGlobalProperties = applicationContext
+				.getBean("streamConfigGlobalProperties", Map.class);
+		// Make sure that global stream configs do not contain individual binding config set on second function.
+		assertThat(streamConfigGlobalProperties.containsKey("spring.json.value.type.method")).isFalse();
+
+		// Make sure that only input2 function gets the specific binding property set on it.
+		final StreamsBuilderFactoryBean input1SBFB = applicationContext.getBean("&stream-builder-input1", StreamsBuilderFactoryBean.class);
+		final Properties streamsConfiguration1 = input1SBFB.getStreamsConfiguration();
+		assertThat(streamsConfiguration1.containsKey("spring.json.value.type.method")).isFalse();
+
+		final StreamsBuilderFactoryBean input2SBFB = applicationContext.getBean("&stream-builder-input2", StreamsBuilderFactoryBean.class);
+		final Properties streamsConfiguration2 = input2SBFB.getStreamsConfiguration();
+		assertThat(streamsConfiguration2.containsKey("spring.json.value.type.method")).isTrue();
+
+		final StreamsBuilderFactoryBean input3SBFB = applicationContext.getBean("&stream-builder-input3", StreamsBuilderFactoryBean.class);
+		final Properties streamsConfiguration3 = input3SBFB.getStreamsConfiguration();
+		assertThat(streamsConfiguration3.containsKey("spring.json.value.type.method")).isFalse();
 
 		applicationContext.close();
 	}
