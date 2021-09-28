@@ -19,9 +19,11 @@ package org.springframework.cloud.stream.binder.kafka.streams.function;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -107,6 +109,9 @@ public class KafkaStreamsFunctionBeanPostProcessor implements InitializingBean, 
 		final String definition = streamFunctionProperties.getDefinition();
 		final String[] functionUnits = StringUtils.hasText(definition) ? definition.split(";") : new String[]{};
 
+		final Set<String> kafkaStreamsMethodNames = new HashSet<>(kafkaStreamsOnlyResolvableTypes.keySet());
+		kafkaStreamsMethodNames.addAll(this.resolvableTypeMap.keySet());
+
 		if (functionUnits.length == 0) {
 			for (String s : getResolvableTypes().keySet()) {
 				ResolvableType[] resolvableTypes = new ResolvableType[]{getResolvableTypes().get(s)};
@@ -123,21 +128,30 @@ public class KafkaStreamsFunctionBeanPostProcessor implements InitializingBean, 
 					ResolvableType[] resolvableTypes = new ResolvableType[composedFunctions.length];
 
 					int i = 0;
+					boolean nonKafkaStreamsFunctionsFound = false;
+
 					for (String split : composedFunctions) {
 						derivedNameFromComposed = derivedNameFromComposed.concat(split);
 						resolvableTypes[i++] = getResolvableTypes().get(split);
+						if (!kafkaStreamsMethodNames.contains(split)) {
+							nonKafkaStreamsFunctionsFound = true;
+							break;
+						}
 					}
-
-					RootBeanDefinition rootBeanDefinition = new RootBeanDefinition(
-							KafkaStreamsBindableProxyFactory.class);
-					registerKakaStreamsProxyFactory(registry, derivedNameFromComposed, resolvableTypes, rootBeanDefinition);
+					if (!nonKafkaStreamsFunctionsFound) {
+						RootBeanDefinition rootBeanDefinition = new RootBeanDefinition(
+								KafkaStreamsBindableProxyFactory.class);
+						registerKakaStreamsProxyFactory(registry, derivedNameFromComposed, resolvableTypes, rootBeanDefinition);
+					}
 				}
 				else {
-
-					ResolvableType[] resolvableTypes = new ResolvableType[]{getResolvableTypes().get(functionUnit)};
-					RootBeanDefinition rootBeanDefinition = new RootBeanDefinition(
-							KafkaStreamsBindableProxyFactory.class);
-					registerKakaStreamsProxyFactory(registry, functionUnit, resolvableTypes, rootBeanDefinition);
+					// Ensure that the function unit is a Kafka Streams function
+					if (kafkaStreamsMethodNames.contains(functionUnit)) {
+						ResolvableType[] resolvableTypes = new ResolvableType[]{getResolvableTypes().get(functionUnit)};
+						RootBeanDefinition rootBeanDefinition = new RootBeanDefinition(
+								KafkaStreamsBindableProxyFactory.class);
+						registerKakaStreamsProxyFactory(registry, functionUnit, resolvableTypes, rootBeanDefinition);
+					}
 				}
 			}
 		}
