@@ -448,18 +448,18 @@ Default: none (the binder-wide default of -1 is used).
 useTopicHeader::
 Set to `true` to override the default binding destination (topic name) with the value of the `KafkaHeaders.TOPIC` message header in the outbound message.
 If the header is not present, the default binding destination is used.
-Default: `false`.
 +
+Default: `false`.
 recordMetadataChannel::
 The bean name of a `MessageChannel` to which successful send results should be sent; the bean must exist in the application context.
 The message sent to the channel is the sent message (after conversion, if any) with an additional header `KafkaHeaders.RECORD_METADATA`.
 The header contains a `RecordMetadata` object provided by the Kafka client; it includes the partition and offset where the record was written in the topic.
-
-`ResultMetadata meta = sendResultMsg.getHeaders().get(KafkaHeaders.RECORD_METADATA, RecordMetadata.class)`
-
-Failed sends go the producer error channel (if configured); see <<kafka-error-channels>>.
-Default: null
 +
+`ResultMetadata meta = sendResultMsg.getHeaders().get(KafkaHeaders.RECORD_METADATA, RecordMetadata.class)`
++
+Failed sends go the producer error channel (if configured); see <<kafka-error-channels>>.
++
+Default: null.
 
 NOTE: The Kafka binder uses the `partitionCount` setting of the producer as a hint to create a topic with the given partition count (in conjunction with the `minPartitionCount`, the maximum of the two being the value being used).
 Exercise caution when configuring both `minPartitionCount` for a binder and `partitionCount` for an application, as the larger value is used.

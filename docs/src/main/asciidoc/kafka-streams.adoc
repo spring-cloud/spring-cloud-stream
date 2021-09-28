@@ -2048,6 +2048,8 @@ For common configuration options and properties pertaining to binder, refer to t
 ==== Kafka Streams Binder Properties
 
 The following properties are available at the binder level and must be prefixed with `spring.cloud.stream.kafka.streams.binder.`
+Any Kafka binder provided properties re-used in Kafka Streams binder must be prefixed with `spring.cloud.stream.kafka.streams.binder` instead of `spring.cloud.stream.kafka.binder`.
+The only exception to this rule is when defining the Kafka bootstrap server property in which case either prefix works.
 
 configuration::
 Map with a key/value pair containing properties pertaining to Apache Kafka Streams API.
