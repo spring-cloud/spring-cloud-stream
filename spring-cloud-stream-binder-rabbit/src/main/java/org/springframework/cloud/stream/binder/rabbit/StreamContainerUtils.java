@@ -44,7 +44,6 @@ import org.springframework.integration.amqp.support.AmqpHeaderMapper;
 import org.springframework.integration.amqp.support.DefaultAmqpHeaderMapper;
 import org.springframework.lang.Nullable;
 import org.springframework.messaging.MessageHeaders;
-import org.springframework.rabbit.stream.listener.ConsumerCustomizer;
 import org.springframework.rabbit.stream.listener.StreamListenerContainer;
 import org.springframework.rabbit.stream.support.StreamMessageProperties;
 import org.springframework.rabbit.stream.support.converter.StreamMessageConverter;
@@ -80,13 +79,13 @@ public final class StreamContainerUtils {
 
 		StreamListenerContainer container = new StreamListenerContainer(applicationContext.getBean(Environment.class)) {
 
-			@Override
-			public synchronized void setConsumerCustomizer(ConsumerCustomizer consumerCustomizer) {
-				super.setConsumerCustomizer((id, builder) -> {
-					builder.name(consumerDestination.getName() + "." + group);
-					consumerCustomizer.accept(id, builder);
-				});
-			}
+//			@Override
+//			public synchronized void setConsumerCustomizer(ConsumerEndpointCustomizer consumerCustomizer) {
+//				super.setConsumerCustomizer((id, builder) -> {
+//					builder.name(consumerDestination.getName() + "." + group);
+//					consumerCustomizer.accept(id, builder);
+//				});
+//			}
 
 
 		};
