@@ -231,13 +231,6 @@ public abstract class RabbitCommonProperties {
 	 */
 	private boolean dlqSingleActiveConsumer;
 
-	/**
-	 * The bean name of a stream message converter to convert from a Spring AMQP Message
-	 * to a Stream Message.
-	 * @since 3.2
-	 */
-	private String streamStreamMessageConverterBeanName;
-
 	public String getExchangeType() {
 		return this.exchangeType;
 	}
@@ -541,14 +534,6 @@ public abstract class RabbitCommonProperties {
 
 	public void setDlqSingleActiveConsumer(boolean dlqSingleActiveConsumer) {
 		this.dlqSingleActiveConsumer = dlqSingleActiveConsumer;
-	}
-
-	public String getStreamStreamMessageConverterBeanName() {
-		return this.streamStreamMessageConverterBeanName;
-	}
-
-	public void setStreamStreamMessageConverterBeanName(String streamStreamMessageConverterBeanName) {
-		this.streamStreamMessageConverterBeanName = streamStreamMessageConverterBeanName;
 	}
 
 	public static class QuorumConfig {

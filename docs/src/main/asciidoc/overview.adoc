@@ -414,8 +414,8 @@ Not supported when the `containerType` is `direct`.
 +
 Default: `1`.
 
-[[rabbitmq-stream-consumer]]
-=== Initial Consumer Support for the RabbitMQ Stream Plugin
+[[rabbitmq-stream]]
+=== Initial Support for the RabbitMQ Stream Plugin
 
 Basic support for the https://rabbitmq.com/stream.html[RabbitMQ Stream Plugin] is now provided.
 To enable this feature, you must add the `spring-rabbit-stream` jar to the class path - it must be the same version as `spring-amqp` and `spring-rabbit`.
@@ -1027,7 +1027,6 @@ public class Application {
 				catch (ExecutionException | TimeoutException e) {
 					throw new IllegalStateException(e);
 				}
-			});
 		};
 	}
 
@@ -1210,38 +1209,3 @@ For negatively acknowledged confirmations, the payload is a `NackedAmqpMessageEx
 
 There is no automatic handling of these exceptions (such as sending to a <<rabbit-dlq-processing, dead-letter queue>>).
 You can consume these exceptions with your own Spring Integration flow.
-
-[[rabbitmq-stream-producer]]
-=== Initial Producer Support for the RabbitMQ Stream Plugin
-
-Basic support for the https://rabbitmq.com/stream.html[RabbitMQ Stream Plugin] is now provided.
-To enable this feature, you must add the `spring-rabbit-stream` jar to the class path - it must be the same version as `spring-amqp` and `spring-rabbit`.
-
-IMPORTANT: The producer properties described above are not supported when you set the `producerType` property to `STREAM_SYNC` or `STREAM_ASYNC`.
-
-To configure the binder to use a stream `ProducerType`, you must add an `Environment` `@Bean` and, optionally, a customizer to customize the message handler.
-
-====
-[source, java]
-----
-@Bean
-Environment streamEnv() {
-    return Environment.builder()
-            .build();
-}
-
-@Bean
-ProducerMessageHandlerCustomizer<MessageHandler> handlerCustomizer() {
-    return (hand, dest) -> {
-        RabbitStreamMessageHandler handler = (RabbitStreamMessageHandler) hand;
-        handler.setConfirmTimeout(5000);
-        ((RabbitStreamTemplate) handler.getStreamOperations()).setProducerCustomizer(
-                (name, builder) -> {
-                    ...
-                });
-    };
-}
-----
-====
-
-Refer to the https://rabbitmq.github.io/rabbitmq-stream-java-client/stable/htmlsingle/[RabbitMQ Stream Java Client documentation] for information about configuring the environment and producer builder.

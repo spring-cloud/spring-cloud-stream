@@ -20,35 +20,12 @@ import javax.validation.constraints.Min;
 
 import org.springframework.amqp.core.MessageDeliveryMode;
 import org.springframework.expression.Expression;
-import org.springframework.util.Assert;
 
 /**
  * @author Marius Bogoevici
  * @author Gary Russell
  */
 public class RabbitProducerProperties extends RabbitCommonProperties {
-
-	/**
-	 * Determines the producer type.
-	 * @since 3.2
-	 */
-	public enum ProducerType {
-
-		/**
-		 * RabbitMQ Stream producer - blocks until confirm received.
-		 */
-		STREAM_SYNC,
-
-		/**
-		 * RabbitMQ Stream producer - does not block.
-		 */
-		STREAM_ASYNC,
-
-		/**
-		 * Classic AMQP producer.
-		 */
-		AMQP
-	}
 
 	/**
 	 * true to compress messages.
@@ -123,20 +100,6 @@ public class RabbitProducerProperties extends RabbitCommonProperties {
 	 * header when the confirmation is received.
 	 */
 	private boolean useConfirmHeader;
-
-	/**
-	 * When STREAM_SYNC or STREAM_ASYNC, create a RabbitMQ Stream producer instead of an
-	 * AMQP producer.
-	 * @since 3.2
-	 */
-	private ProducerType producerType = ProducerType.AMQP;
-
-	/**
-	 * The bean name of a message converter to convert from spring-messaging Message to
-	 * a Spring AMQP Message.
-	 * @since 3.2
-	 */
-	private String streamMessageConverterBeanName;
 
 	/**
 	 * @deprecated - use {@link #setHeaderPatterns(String[])}.
@@ -261,23 +224,6 @@ public class RabbitProducerProperties extends RabbitCommonProperties {
 
 	public void setUseConfirmHeader(boolean useConfirmHeader) {
 		this.useConfirmHeader = useConfirmHeader;
-	}
-
-	public ProducerType getProducerType() {
-		return this.producerType;
-	}
-
-	public void setProducerType(ProducerType producerType) {
-		Assert.notNull(producerType, "'producerType' cannot be null");
-		this.producerType = producerType;
-	}
-
-	public String getStreamMessageConverterBeanName() {
-		return this.streamMessageConverterBeanName;
-	}
-
-	public void setStreamMessageConverterBeanName(String streamMessageConverterBeanName) {
-		this.streamMessageConverterBeanName = streamMessageConverterBeanName;
 	}
 
 }
