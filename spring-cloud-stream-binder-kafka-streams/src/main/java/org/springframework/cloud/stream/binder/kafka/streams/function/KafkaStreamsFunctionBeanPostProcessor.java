@@ -29,6 +29,7 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -96,6 +97,7 @@ public class KafkaStreamsFunctionBeanPostProcessor implements InitializingBean, 
 				Stream.concat(Stream.of(biFunctionNames), Stream.of(biConsumerNames)));
 		final List<String> collect = concat.collect(Collectors.toList());
 		collect.removeIf(s -> Arrays.stream(EXCLUDE_FUNCTIONS).anyMatch(t -> t.equals(s)));
+		collect.removeIf(Pattern.compile(".*_registration").asPredicate());
 
 		onlySingleFunction = collect.size() == 1;
 		collect.stream()
