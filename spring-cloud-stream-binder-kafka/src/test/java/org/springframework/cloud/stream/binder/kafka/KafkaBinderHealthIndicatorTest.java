@@ -108,8 +108,8 @@ public class KafkaBinderHealthIndicatorTest {
 				.willReturn(partitions);
 		org.mockito.BDDMockito.given(binder.getKafkaMessageListenerContainers())
 				.willReturn(Arrays.asList(listenerContainerA, listenerContainerB));
-		mockContainer(listenerContainerA, true);
-		mockContainer(listenerContainerB, true);
+		mockContainer(listenerContainerA, true, true);
+		mockContainer(listenerContainerB, true, true);
 
 		Health health = indicator.health();
 		assertThat(health.getStatus()).isEqualTo(Status.UP);
@@ -127,8 +127,27 @@ public class KafkaBinderHealthIndicatorTest {
 				.willReturn(partitions);
 		org.mockito.BDDMockito.given(binder.getKafkaMessageListenerContainers())
 				.willReturn(Arrays.asList(listenerContainerA, listenerContainerB));
-		mockContainer(listenerContainerA, false);
-		mockContainer(listenerContainerB, true);
+		mockContainer(listenerContainerA, false, true);
+		mockContainer(listenerContainerB, true, true);
+
+		Health health = indicator.health();
+		assertThat(health.getStatus()).isEqualTo(Status.UP);
+		assertThat(health.getDetails()).containsEntry("topicsInUse", singleton(TEST_TOPIC));
+		assertThat(health.getDetails()).hasEntrySatisfying("listenerContainers", value ->
+				assertThat((ArrayList<?>) value).hasSize(2));
+	}
+
+	@Test
+	public void kafkaBinderIsDownWhenOneOfContainersWasStoppedAbnormally() {
+		final List<PartitionInfo> partitions = partitions(new Node(0, null, 0));
+		topicsInUse.put(TEST_TOPIC, new KafkaMessageChannelBinder.TopicInformation(
+				"group1-healthIndicator", partitions, false));
+		org.mockito.BDDMockito.given(consumer.partitionsFor(TEST_TOPIC))
+				.willReturn(partitions);
+		org.mockito.BDDMockito.given(binder.getKafkaMessageListenerContainers())
+				.willReturn(Arrays.asList(listenerContainerA, listenerContainerB));
+		mockContainer(listenerContainerA, false, false);
+		mockContainer(listenerContainerB, true, true);
 
 		Health health = indicator.health();
 		assertThat(health.getStatus()).isEqualTo(Status.DOWN);
@@ -137,11 +156,14 @@ public class KafkaBinderHealthIndicatorTest {
 				assertThat((ArrayList<?>) value).hasSize(2));
 	}
 
-	private void mockContainer(AbstractMessageListenerContainer<?, ?> container, boolean isRunning) {
+	private void mockContainer(AbstractMessageListenerContainer<?, ?> container, boolean isRunning,
+			boolean normalState) {
+
 		org.mockito.BDDMockito.given(container.isRunning()).willReturn(isRunning);
 		org.mockito.BDDMockito.given(container.isContainerPaused()).willReturn(true);
 		org.mockito.BDDMockito.given(container.getListenerId()).willReturn("someListenerId");
 		org.mockito.BDDMockito.given(container.getGroupId()).willReturn("someGroupId");
+		org.mockito.BDDMockito.given(container.isInExpectedState()).willReturn(normalState);
 	}
 
 	@Test

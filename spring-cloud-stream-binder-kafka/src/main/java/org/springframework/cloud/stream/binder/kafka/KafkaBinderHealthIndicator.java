@@ -201,10 +201,12 @@ public class KafkaBinderHealthIndicator implements HealthIndicator, DisposableBe
 		for (AbstractMessageListenerContainer<?, ?> container : listenerContainers) {
 			Map<String, Object> containerDetails = new HashMap<>();
 			boolean isRunning = container.isRunning();
-			if (!isRunning) {
+			boolean isOk = container.isInExpectedState();
+			if (!isOk) {
 				status = Status.DOWN;
 			}
 			containerDetails.put("isRunning", isRunning);
+			containerDetails.put("isStoppedAbnormally", !isRunning && !isOk);
 			containerDetails.put("isPaused", container.isContainerPaused());
 			containerDetails.put("listenerId", container.getListenerId());
 			containerDetails.put("groupId", container.getGroupId());
