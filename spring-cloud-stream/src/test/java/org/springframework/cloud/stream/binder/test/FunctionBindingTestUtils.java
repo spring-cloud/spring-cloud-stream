@@ -36,7 +36,7 @@ import org.springframework.messaging.MessageChannel;
 
 /**
  * A utility class to assist with just-in-time bindings.
- * It is intended for internal framework testing and is NOTfor public use. Breaking changes are likely!!!
+ * It is intended for internal framework testing and is NOT for public use. Breaking changes are likely!!!
  *
  * @author Oleg Zhurakousky
  * @since 3.0.2
