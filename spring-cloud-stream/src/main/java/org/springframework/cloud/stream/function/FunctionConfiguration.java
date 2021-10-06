@@ -848,7 +848,10 @@ public class FunctionConfiguration {
 					String[] sourceNames = this.environment.getProperty(SOURCE_PROPERY).split(";");
 
 					for (String sourceName : sourceNames) {
-						if (functionCatalog.lookup(sourceName) == null) {
+						FunctionInvocationWrapper sourceFunc = functionCatalog.lookup(sourceName);
+
+						if (sourceFunc == null || //see https://github.com/spring-cloud/spring-cloud-stream/issues/2229
+								(!sourceFunc.getFunctionDefinition().equals(sourceName) && applicationContext.containsBean(sourceName))) {
 							RootBeanDefinition functionBindableProxyDefinition = new RootBeanDefinition(BindableFunctionProxyFactory.class);
 							functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(sourceName);
 							functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(0);
