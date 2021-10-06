@@ -69,7 +69,7 @@ public class InputDestination extends AbstractDestination {
 	 * <pre>
 	 *
 	 * // assume the following properties
-	 * "--spring.cloud.fuunction.definition=uppercase",
+	 * "--spring.cloud.function.definition=uppercase",
 	 * "--spring.cloud.stream.bindings.uppercase-in-0.destination=upper",
 	 * "--spring.cloud.stream.bindings.uppercase-out-0.destination=upperout"
 	 *
@@ -79,7 +79,7 @@ public class InputDestination extends AbstractDestination {
 	 *
 	 * // if 'destination' property is not provided for both input and output
 	 * inputDestination.send(message, "uppercase-in-0");
-	 * Message&lt;byte[]&gt; resultMessage = outputDestination.receive(1000, "upprecase-out-0");
+	 * Message&lt;byte[]&gt; resultMessage = outputDestination.receive(1000, "uppercase-out-0");
 	 * </pre>
 	 *
 	 * @param message    message to send
