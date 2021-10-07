@@ -17,8 +17,10 @@
 package org.springframework.cloud.stream.config;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.integration.IntegrationAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.binding.BindingService;
 import org.springframework.context.annotation.Bean;
@@ -37,6 +39,7 @@ import org.springframework.messaging.MessageChannel;
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnBean(BindingService.class)
 @EnableConfigurationProperties(DefaultPollerProperties.class)
+@AutoConfigureBefore(IntegrationAutoConfiguration.class)
 public class ChannelBindingAutoConfiguration {
 
 	@Autowired

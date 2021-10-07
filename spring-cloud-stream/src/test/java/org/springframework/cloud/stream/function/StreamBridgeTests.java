@@ -16,6 +16,8 @@
 
 package org.springframework.cloud.stream.function;
 
+import java.lang.reflect.Field;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -32,6 +34,7 @@ import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.cloud.stream.binder.test.OutputDestination;
 import org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration;
 import org.springframework.cloud.stream.binding.BinderAwareChannelResolver.NewDestinationBindingCallback;
@@ -48,6 +51,8 @@ import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.support.ChannelInterceptor;
 import org.springframework.messaging.support.MessageBuilder;
+import org.springframework.util.MimeTypeUtils;
+import org.springframework.util.ReflectionUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.fail;
@@ -64,6 +69,26 @@ public class StreamBridgeTests {
 	@Before
 	public void before() {
 		System.clearProperty("spring.cloud.function.definition");
+	}
+
+	@SuppressWarnings("unchecked")
+	@Test
+	public void testNoCachingOfStreamBridgeFunction() throws Exception {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration
+				.getCompleteConfiguration(ConsumerConfiguration.class, InterceptorConfiguration.class))
+						.web(WebApplicationType.NONE).run(
+								"--spring.cloud.function.definition=function",
+								"--spring.jmx.enabled=false")) {
+			StreamBridge bridge = context.getBean(StreamBridge.class);
+			bridge.send("function-in-0", (Object) "hello foo", MimeTypeUtils.TEXT_PLAIN);
+			bridge.send("function-in-0", (Object) "hello foo", MimeTypeUtils.APPLICATION_JSON);
+			bridge.send("function-in-0", (Object) "hello foo", MimeTypeUtils.TEXT_HTML);
+
+			Field field = ReflectionUtils.findField(StreamBridge.class, "streamBridgeFunctionCache");
+			field.setAccessible(true);
+			Map<String, FunctionInvocationWrapper> map = (Map<String, FunctionInvocationWrapper>) field.get(bridge);
+			assertThat(map.size()).isEqualTo(3);
+		}
 	}
 
 	@Test

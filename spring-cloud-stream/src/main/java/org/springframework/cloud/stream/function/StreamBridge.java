@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.function;
 
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -89,6 +90,8 @@ public final class StreamBridge implements SmartInitializingSingleton {
 
 	private final BindingService bindingService;
 
+	private final Map<String, FunctionInvocationWrapper> streamBridgeFunctionCache;
+
 	/**
 	 *
 	 * @param functionCatalog instance of {@link FunctionCatalog}
@@ -116,6 +119,7 @@ public final class StreamBridge implements SmartInitializingSingleton {
 				return remove;
 			}
 		};
+		this.streamBridgeFunctionCache = new HashMap<>();
 	}
 
 	/**
@@ -201,8 +205,9 @@ public final class StreamBridge implements SmartInitializingSingleton {
 		ProducerProperties producerProperties = this.bindingServiceProperties.getProducerProperties(bindingName);
 		SubscribableChannel messageChannel = this.resolveDestination(bindingName, producerProperties, binderName);
 
-		Function functionToInvoke = this.functionCatalog.lookup(STREAM_BRIDGE_FUNC_NAME, outputContentType.toString());
-		((FunctionInvocationWrapper) functionToInvoke).setSkipOutputConversion(producerProperties.isUseNativeEncoding());
+//		Function functionToInvoke = this.functionCatalog.lookup(STREAM_BRIDGE_FUNC_NAME, outputContentType.toString());
+//		((FunctionInvocationWrapper) functionToInvoke).setSkipOutputConversion(producerProperties.isUseNativeEncoding());
+		Function functionToInvoke = this.getStreamBridgeFunction(outputContentType.toString(), producerProperties);
 
 		if (producerProperties != null && producerProperties.isPartitioned()) {
 			functionToInvoke = new PartitionAwareFunctionWrapper(functionToInvoke, this.applicationContext, producerProperties);
@@ -215,12 +220,25 @@ public final class StreamBridge implements SmartInitializingSingleton {
 		return messageChannel.send(resultMessage);
 	}
 
+	private synchronized FunctionInvocationWrapper getStreamBridgeFunction(String outputContentType, ProducerProperties producerProperties) {
+		if (StringUtils.hasText(outputContentType) && this.streamBridgeFunctionCache.containsKey(outputContentType)) {
+			return this.streamBridgeFunctionCache.get(outputContentType);
+		}
+		else {
+			FunctionInvocationWrapper functionToInvoke = this.functionCatalog.lookup(STREAM_BRIDGE_FUNC_NAME, outputContentType.toString());
+			this.streamBridgeFunctionCache.put(outputContentType, functionToInvoke);
+			functionToInvoke.setSkipOutputConversion(producerProperties.isUseNativeEncoding());
+			return functionToInvoke;
+		}
+	}
+
 	@Override
 	public void afterSingletonsInstantiated() {
 		if (this.initialized) {
 			return;
 		}
 		FunctionRegistration<Function<Object, Object>> fr = new FunctionRegistration<>(v -> v, STREAM_BRIDGE_FUNC_NAME);
+		fr.getProperties().put("singleton", "false");
 		this.functionRegistry.register(fr.type(FunctionType.from(Object.class).to(Object.class).message()));
 		Map<String, DirectWithAttributesChannel> channels = applicationContext.getBeansOfType(DirectWithAttributesChannel.class);
 		for (Entry<String, DirectWithAttributesChannel> channelEntry : channels.entrySet()) {
