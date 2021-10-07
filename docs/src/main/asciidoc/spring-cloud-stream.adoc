@@ -528,8 +528,7 @@ But if you do need to write an explicit `Consumer<Flux<?>>`, remember to subscri
 
 ====== Polling Configuration Properties
 
-The following properties are exposed by `org.springframework.cloud.stream.config.DefaultPollerProperties` and are prefixed with
-`spring.cloud.stream.poller`:
+The following properties are exposed (although deprecated since version 3.2) by Spring Cloud Stream and are prefixed with the `spring.cloud.stream.poller`:
 
 fixedDelay::
 Fixed delay for default poller in milliseconds.
@@ -557,6 +556,9 @@ The TimeUnit to apply to delay values.
 Default: MILLISECONDS.
 
 For example `--spring.cloud.stream.poller.fixed-delay=2000` sets the poller interval to poll every two seconds.
+
+IMPORTANT: These poller properties are deprecated starting version 3.2 in favor of similar configuration properties from Spring Boot auto-configuration for Spring Integration.
+See `org.springframework.boot.autoconfigure.integration.IntegrationProperties.Poller` for more information.
 
 ===== Sending arbitrary data to an output (e.g. Foreign event-driven sources)
 

@@ -1,5 +1,4 @@
 org.springframework.boot.autoconfigure.EnableAutoConfiguration:\
-org.springframework.cloud.stream.config.ChannelBindingAutoConfiguration,\
 org.springframework.cloud.stream.config.BindersHealthIndicatorAutoConfiguration,\
 org.springframework.cloud.stream.config.ChannelsEndpointAutoConfiguration,\
 org.springframework.cloud.stream.config.BindingsEndpointAutoConfiguration,\
@@ -7,7 +6,7 @@ org.springframework.cloud.stream.config.BindingServiceConfiguration,\
 org.springframework.cloud.stream.function.FunctionConfiguration
 
 org.springframework.boot.env.EnvironmentPostProcessor:\
-org.springframework.cloud.stream.function.RoutingFunctionEnvironmentPostProcessor
-
+org.springframework.cloud.stream.function.RoutingFunctionEnvironmentPostProcessor,\
+org.springframework.cloud.stream.config.PollerConfigEnvironmentPostProcessor
 
 
