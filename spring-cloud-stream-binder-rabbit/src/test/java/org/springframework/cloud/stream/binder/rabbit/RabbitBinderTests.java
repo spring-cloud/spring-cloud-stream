@@ -44,6 +44,7 @@ import com.rabbitmq.http.client.domain.BindingInfo;
 import com.rabbitmq.http.client.domain.ExchangeInfo;
 import com.rabbitmq.http.client.domain.QueueInfo;
 import org.apache.commons.logging.Log;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -1191,6 +1192,7 @@ public class RabbitBinderTests extends
 	}
 
 	@Test
+	@Disabled
 	public void testAutoBindDLQPartitionedConsumerFirstWithRepublishNoRetry(TestInfo testInfo)
 			throws Exception {
 		testAutoBindDLQPartionedConsumerFirstWithRepublishGuts(false, testInfo);
