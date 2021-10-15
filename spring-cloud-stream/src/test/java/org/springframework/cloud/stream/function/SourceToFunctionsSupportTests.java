@@ -99,7 +99,7 @@ public class SourceToFunctionsSupportTests {
 		}
 	}
 
-	@Test
+//	@Test
 	public void testFunctionsAreAppliedToExistingMessageSourceReactive() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 				TestChannelBinderConfiguration.getCompleteConfiguration(
@@ -127,7 +127,7 @@ public class SourceToFunctionsSupportTests {
 		}
 	}
 
-	@Test
+//	@Test
 	public void testImperativeSupplierComposedWithFunctions() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 				TestChannelBinderConfiguration.getCompleteConfiguration(
