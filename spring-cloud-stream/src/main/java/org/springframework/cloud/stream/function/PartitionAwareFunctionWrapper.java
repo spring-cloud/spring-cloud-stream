@@ -16,6 +16,9 @@
 
 package org.springframework.cloud.stream.function;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -31,6 +34,7 @@ import org.springframework.expression.spel.support.StandardEvaluationContext;
 import org.springframework.integration.expression.ExpressionUtils;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
+import org.springframework.util.ObjectUtils;
 
 /**
  * This class is effectively a wrapper which is aware of the stream related partition information
@@ -45,7 +49,7 @@ class PartitionAwareFunctionWrapper implements Function<Object, Object>, Supplie
 	private final Function function;
 
 	@SuppressWarnings("rawtypes")
-	private final Function<Object, Message> outputMessageEnricher;
+	private final Function<Object, Object> outputMessageEnricher;
 
 	PartitionAwareFunctionWrapper(Function<?, ?> function, ConfigurableApplicationContext context, ProducerProperties producerProperties) {
 		this.function = function;
@@ -55,18 +59,37 @@ class PartitionAwareFunctionWrapper implements Function<Object, Object>, Supplie
 			PartitionHandler partitionHandler = new PartitionHandler(evaluationContext, producerProperties, context.getBeanFactory());
 
 			this.outputMessageEnricher = output -> {
-				if (!(output instanceof Message)) {
+				if (ObjectUtils.isArray(output) && !(output instanceof byte[])) {
+					output = Arrays.asList(output);
+				}
+				if (output instanceof Iterable) {
+					Iterable elements = (Iterable) output;
+					List<Message> messages = new ArrayList<>();
+					for (Object element : elements) {
+						if (!(element instanceof Message)) {
+							element = MessageBuilder.withPayload(element).build();
+						}
+						messages.add(toMessageWithPartitionHeader((Message) element, partitionHandler));
+					}
+					return messages;
+				}
+				else if (!(output instanceof Message)) {
 					output = MessageBuilder.withPayload(output).build();
 				}
-				int partitionId = partitionHandler.determinePartition((Message<?>) output);
-				return MessageBuilder
-					.fromMessage((Message<?>) output)
-					.setHeader(BinderHeaders.PARTITION_HEADER, partitionId).build();
+				return toMessageWithPartitionHeader((Message) output, partitionHandler);
 			};
 		}
 		else {
 			this.outputMessageEnricher = null;
 		}
+	}
+
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	private Message<?> toMessageWithPartitionHeader(Message message, PartitionHandler partitionHandler) {
+		int partitionId = partitionHandler.determinePartition(message);
+		return MessageBuilder
+			.fromMessage(message)
+			.setHeader(BinderHeaders.PARTITION_HEADER, partitionId).build();
 	}
 
 	@SuppressWarnings("unchecked")
