@@ -16,9 +16,6 @@
 
 package org.springframework.cloud.stream.function;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -48,7 +45,6 @@ class PartitionAwareFunctionWrapper implements Function<Object, Object>, Supplie
 	@SuppressWarnings("rawtypes")
 	private final Function function;
 
-	@SuppressWarnings("rawtypes")
 	private final Function<Object, Object> outputMessageEnricher;
 
 	PartitionAwareFunctionWrapper(Function<?, ?> function, ConfigurableApplicationContext context, ProducerProperties producerProperties) {
@@ -59,24 +55,13 @@ class PartitionAwareFunctionWrapper implements Function<Object, Object>, Supplie
 			PartitionHandler partitionHandler = new PartitionHandler(evaluationContext, producerProperties, context.getBeanFactory());
 
 			this.outputMessageEnricher = output -> {
-				if (ObjectUtils.isArray(output) && !(output instanceof byte[])) {
-					output = Arrays.asList(output);
-				}
-				if (output instanceof Iterable) {
-					Iterable elements = (Iterable) output;
-					List<Message> messages = new ArrayList<>();
-					for (Object element : elements) {
-						if (!(element instanceof Message)) {
-							element = MessageBuilder.withPayload(element).build();
-						}
-						messages.add(toMessageWithPartitionHeader((Message) element, partitionHandler));
-					}
-					return messages;
+				if ((ObjectUtils.isArray(output) && !(output instanceof byte[])) || output instanceof Iterable) {
+					return output;
 				}
 				else if (!(output instanceof Message)) {
 					output = MessageBuilder.withPayload(output).build();
 				}
-				return toMessageWithPartitionHeader((Message) output, partitionHandler);
+				return toMessageWithPartitionHeader((Message<?>) output, partitionHandler);
 			};
 		}
 		else {
