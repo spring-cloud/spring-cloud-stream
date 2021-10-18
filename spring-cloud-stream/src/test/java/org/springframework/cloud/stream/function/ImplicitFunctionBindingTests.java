@@ -22,6 +22,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -764,6 +765,29 @@ public class ImplicitFunctionBindingTests {
 	}
 
 	@Test
+	public void partitionOnOutputPayloadAsListTest() {
+		System.clearProperty("spring.cloud.function.definition");
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration
+				.getCompleteConfiguration(PojoFunctionConfiguration.class))
+						.web(WebApplicationType.NONE).run("--spring.cloud.function.definition=persons",
+								"--spring.cloud.stream.bindings.persons-out-0.producer.partitionKeyExpression=payload.id",
+								"--spring.cloud.stream.bindings.persons-out-0.producer.partitionCount=5",
+								"--spring.jmx.enabled=false")) {
+
+			InputDestination inputDestination = context.getBean(InputDestination.class);
+			OutputDestination outputDestination = context.getBean(OutputDestination.class);
+
+			Message<byte[]> inputMessage = MessageBuilder.withPayload("Jim Lahey".getBytes()).build();
+
+			inputDestination.send(inputMessage, "persons-in-0");
+
+			assertThat(outputDestination.receive(100, "persons-out-0").getHeaders().get("scst_partition")).isEqualTo(3);
+
+			assertThat(outputDestination.receive(100)).isNull();
+		}
+	}
+
+	@Test
 	public void partitionOnOutputPayloadTestReactive() {
 		System.clearProperty("spring.cloud.function.definition");
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration
@@ -1487,6 +1511,16 @@ public class ImplicitFunctionBindingTests {
 				person.setName(x);
 				person.setId(3);
 				return person;
+			};
+		}
+
+		@Bean
+		public Function<String, List<Message<Person>>> persons() {
+			return x -> {
+				Person person = new Person();
+				person.setName(x);
+				person.setId(3);
+				return Collections.singletonList(MessageBuilder.withPayload(person).build());
 			};
 		}
 
