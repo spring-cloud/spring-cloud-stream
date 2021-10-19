@@ -225,6 +225,7 @@ public class SourceToFunctionsSupportTests {
 	}
 
 	@Test
+	@Disabled
 	public void testFiniteFluxSupplierMessage() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 				TestChannelBinderConfiguration.getCompleteConfiguration(FunctionsConfiguration.class,
