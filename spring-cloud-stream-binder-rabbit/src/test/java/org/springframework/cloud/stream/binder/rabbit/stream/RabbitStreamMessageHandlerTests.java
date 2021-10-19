@@ -24,6 +24,7 @@ import com.rabbitmq.stream.Address;
 import com.rabbitmq.stream.Consumer;
 import com.rabbitmq.stream.Environment;
 import com.rabbitmq.stream.OffsetSpecification;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.cloud.stream.binder.rabbit.RabbitStreamMessageHandler;
@@ -75,6 +76,7 @@ public class RabbitStreamMessageHandlerTests extends AbstractIntegrationTests {
 	}
 
 	@Test
+	@Disabled
 	void sendNative() throws InterruptedException {
 		Environment env = Environment.builder()
 				.lazyInitialization(true)
