@@ -43,6 +43,8 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionType;
+import org.springframework.cloud.function.context.catalog.FunctionAroundWrapper;
+import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.cloud.function.context.config.ContextFunctionCatalogAutoConfiguration;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.StreamListener;
@@ -767,13 +769,13 @@ public class ImplicitFunctionBindingTests {
 	}
 
 	@Test
-	public void partitionOnOutputPayloadAsListTest() {
+	public void partitionOnOutputPayloadAsListAndFunctionAroundWrapperTest() {
 		System.clearProperty("spring.cloud.function.definition");
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration
 				.getCompleteConfiguration(PojoFunctionConfiguration.class))
-						.web(WebApplicationType.NONE).run("--spring.cloud.function.definition=persons",
-								"--spring.cloud.stream.bindings.persons-out-0.producer.partitionKeyExpression=payload.id",
-								"--spring.cloud.stream.bindings.persons-out-0.producer.partitionCount=5",
+						.web(WebApplicationType.NONE).run("--spring.cloud.function.definition=uppercase|persons",
+								"--spring.cloud.stream.bindings.uppercase|persons-out-0.producer.partitionKeyExpression=payload.id",
+								"--spring.cloud.stream.bindings.uppercase|persons-out-0.producer.partitionCount=5",
 								"--spring.jmx.enabled=false")) {
 
 			InputDestination inputDestination = context.getBean(InputDestination.class);
@@ -781,9 +783,9 @@ public class ImplicitFunctionBindingTests {
 
 			Message<byte[]> inputMessage = MessageBuilder.withPayload("Jim Lahey".getBytes()).build();
 
-			inputDestination.send(inputMessage, "persons-in-0");
+			inputDestination.send(inputMessage, "uppercasepersons-in-0");
 
-			assertThat(outputDestination.receive(100, "persons-out-0").getHeaders().get("scst_partition")).isEqualTo(3);
+			assertThat(outputDestination.receive(100, "uppercasepersons-out-0").getHeaders().get("scst_partition")).isEqualTo(3);
 
 			assertThat(outputDestination.receive(100)).isNull();
 		}
@@ -957,7 +959,7 @@ public class ImplicitFunctionBindingTests {
 								"--spring.cloud.function.definition=supplier")) {
 			OutputDestination outputDestination = context.getBean(OutputDestination.class);
 
-			Message<byte[]> result = outputDestination.receive(5000);
+			Message<byte[]> result = outputDestination.receive(1000, "supplier-out-0");
 			assertThat(new String(result.getPayload())).isEqualTo("[{\"name\":\"Ricky\",\"id\":1},{\"name\":\"Julien\",\"id\":2}]");
 		}
 	}
@@ -1489,6 +1491,18 @@ public class ImplicitFunctionBindingTests {
 		}
 
 		@Bean
+		public FunctionAroundWrapper faw() {
+			return new FunctionAroundWrapper() {
+
+				@Override
+				protected Object doApply(Message<byte[]> input,
+						FunctionInvocationWrapper targetFunction) {
+					return targetFunction.apply(input);
+				}
+			};
+		}
+
+		@Bean
 		public Supplier<Person> personSupplier() {
 			Person p = new Person();
 			p.setId(21);
@@ -1514,6 +1528,11 @@ public class ImplicitFunctionBindingTests {
 				person.setId(3);
 				return person;
 			};
+		}
+
+		@Bean
+		public Function<String, String> uppercase() {
+			return v -> v.toUpperCase();
 		}
 
 		@Bean
