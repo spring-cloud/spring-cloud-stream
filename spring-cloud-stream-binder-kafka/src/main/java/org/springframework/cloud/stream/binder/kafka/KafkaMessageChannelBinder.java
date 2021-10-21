@@ -32,6 +32,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiFunction;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -110,6 +111,7 @@ import org.springframework.kafka.listener.ContainerProperties;
 import org.springframework.kafka.listener.DefaultAfterRollbackProcessor;
 import org.springframework.kafka.listener.DefaultErrorHandler;
 import org.springframework.kafka.support.Acknowledgment;
+import org.springframework.kafka.support.ExponentialBackOffWithMaxRetries;
 import org.springframework.kafka.support.KafkaHeaderMapper;
 import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.kafka.support.ProducerListener;
@@ -733,13 +735,19 @@ public class KafkaMessageChannelBinder extends
 		ErrorInfrastructure errorInfrastructure = registerErrorInfrastructure(destination,
 				consumerGroup, extendedConsumerProperties);
 
+		ListenerContainerCustomizer<?> customizer = getContainerCustomizer();
+
 		if (!extendedConsumerProperties.isBatchMode()
 				&& extendedConsumerProperties.getMaxAttempts() > 1
 				&& transMan == null) {
-			kafkaMessageDrivenChannelAdapter
-					.setRetryTemplate(buildRetryTemplate(extendedConsumerProperties));
-			kafkaMessageDrivenChannelAdapter
-					.setRecoveryCallback(errorInfrastructure.getRecoverer());
+			if (!(customizer instanceof ListenerContainerWithDlqAndRetryCustomizer)
+					|| ((ListenerContainerWithDlqAndRetryCustomizer) customizer)
+							.retryAndDlqInBinding(destination.getName(), group)) {
+				kafkaMessageDrivenChannelAdapter
+						.setRetryTemplate(buildRetryTemplate(extendedConsumerProperties));
+				kafkaMessageDrivenChannelAdapter
+						.setRecoveryCallback(errorInfrastructure.getRecoverer());
+			}
 			if (!extendedConsumerProperties.getExtension().isEnableDlq()) {
 				messageListenerContainer.setCommonErrorHandler(new DefaultErrorHandler(new FixedBackOff(0L, 0L)));
 			}
@@ -781,17 +789,43 @@ public class KafkaMessageChannelBinder extends
 					CommonErrorHandler.class);
 			messageListenerContainer.setCommonErrorHandler(commonErrorHandler);
 		}
-		this.getContainerCustomizer().configure(messageListenerContainer, destination.getName(), group);
+		if (customizer instanceof ListenerContainerWithDlqAndRetryCustomizer) {
+
+			BiFunction<ConsumerRecord<?, ?>, Exception, TopicPartition> destinationResolver = createDestResolver(
+					extendedConsumerProperties.getExtension());
+			BackOff createBackOff = extendedConsumerProperties.getMaxAttempts() > 1
+					? createBackOff(extendedConsumerProperties)
+					: null;
+			((ListenerContainerWithDlqAndRetryCustomizer) customizer)
+					.configure(messageListenerContainer, destination.getName(), consumerGroup, destinationResolver,
+							createBackOff);
+		}
+		else {
+			((ListenerContainerCustomizer<Object>) customizer)
+					.configure(messageListenerContainer, destination.getName(), consumerGroup);
+		}
 		this.ackModeInfo.put(destination, messageListenerContainer.getContainerProperties().getAckMode());
 		return kafkaMessageDrivenChannelAdapter;
+	}
+
+	private BiFunction<ConsumerRecord<?, ?>, Exception, TopicPartition> createDestResolver(
+			KafkaConsumerProperties extension) {
+
+		Integer dlqPartitions = extension.getDlqPartitions();
+		if (extension.isEnableDlq()) {
+			return (rec, ex) -> dlqPartitions == null || dlqPartitions > 1
+						? new TopicPartition(extension.getDlqName(), rec.partition())
+						: new TopicPartition(extension.getDlqName(), 0);
+		}
+		else {
+			return null;
+		}
 	}
 
 	/**
 	 * Configure a {@link BackOff} for the after rollback processor, based on the consumer
 	 * retry properties. If retry is disabled, return a {@link BackOff} that disables
-	 * retry. Otherwise calculate the {@link ExponentialBackOff#setMaxElapsedTime(long)}
-	 * so that the {@link BackOff} stops after the configured
-	 * {@link ExtendedConsumerProperties#getMaxAttempts()}.
+	 * retry. Otherwise use an {@link ExponentialBackOffWithMaxRetries}.
 	 * @param extendedConsumerProperties the properties.
 	 * @return the backoff.
 	 */
@@ -803,20 +837,10 @@ public class KafkaMessageChannelBinder extends
 			return new FixedBackOff(0L, 0L);
 		}
 		int initialInterval = extendedConsumerProperties.getBackOffInitialInterval();
-		double multiplier = extendedConsumerProperties.getBackOffMultiplier();
 		int maxInterval = extendedConsumerProperties.getBackOffMaxInterval();
-		ExponentialBackOff backOff = new ExponentialBackOff(initialInterval, multiplier);
+		ExponentialBackOff backOff = new ExponentialBackOffWithMaxRetries(maxAttempts - 1);
+		backOff.setInitialInterval(initialInterval);
 		backOff.setMaxInterval(maxInterval);
-		long maxElapsed = extendedConsumerProperties.getBackOffInitialInterval();
-		double accum = maxElapsed;
-		for (int i = 1; i < maxAttempts - 1; i++) {
-			accum = accum * multiplier;
-			if (accum > maxInterval) {
-				accum = maxInterval;
-			}
-			maxElapsed += accum;
-		}
-		backOff.setMaxElapsedTime(maxElapsed);
 		return backOff;
 	}
 
