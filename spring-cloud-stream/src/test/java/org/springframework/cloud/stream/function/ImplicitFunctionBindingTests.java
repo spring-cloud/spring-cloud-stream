@@ -1493,7 +1493,7 @@ public class ImplicitFunctionBindingTests {
 			return new FunctionAroundWrapper() {
 
 				@Override
-				protected Object doApply(Message<byte[]> input,
+				protected Object doApply(Object input,
 						FunctionInvocationWrapper targetFunction) {
 					return targetFunction.apply(input);
 				}
