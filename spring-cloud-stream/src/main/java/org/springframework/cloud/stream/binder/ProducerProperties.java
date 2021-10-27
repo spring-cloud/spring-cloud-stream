@@ -40,10 +40,6 @@ import org.springframework.expression.Expression;
 @JsonInclude(Include.NON_DEFAULT)
 public class ProducerProperties {
 
-	public ProducerProperties() {
-		System.out.println();
-	}
-
 	/**
 	 * Signals if this producer needs to be started automatically. Default: true
 	 */
