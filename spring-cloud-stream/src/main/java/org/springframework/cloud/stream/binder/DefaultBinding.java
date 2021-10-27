@@ -61,6 +61,8 @@ public class DefaultBinding<T> implements Binding<T> {
 
 	private boolean restartable;
 
+	private Lifecycle companion;
+
 	/**
 	 * Creates an instance that associates a given name, group and binding target with an
 	 * optional {@link Lifecycle} component, which will be stopped during unbinding.
@@ -84,10 +86,12 @@ public class DefaultBinding<T> implements Binding<T> {
 		this.restartable = true;
 	}
 
+	@Override
 	public String getName() {
 		return this.name;
 	}
 
+	@Override
 	public String getBindingName() {
 		String resolvedName = (this.target instanceof IntegrationObjectSupport)
 				? ((IntegrationObjectSupport) this.target).getComponentName() : getName();
@@ -111,6 +115,7 @@ public class DefaultBinding<T> implements Binding<T> {
 		return state;
 	}
 
+	@Override
 	public boolean isRunning() {
 		return this.lifecycle != null && this.lifecycle.isRunning();
 	}
@@ -129,6 +134,9 @@ public class DefaultBinding<T> implements Binding<T> {
 		if (!this.isRunning()) {
 			if (this.lifecycle != null && this.restartable) {
 				this.lifecycle.start();
+				if (this.companion != null) {
+					this.companion.start();
+				}
 			}
 			else {
 				this.logger.warn("Can not re-bind an anonymous binding");
@@ -140,6 +148,9 @@ public class DefaultBinding<T> implements Binding<T> {
 	public synchronized void stop() {
 		if (this.isRunning()) {
 			this.lifecycle.stop();
+			if (this.companion != null) {
+				this.companion.stop();
+			}
 		}
 	}
 
@@ -197,6 +208,18 @@ public class DefaultBinding<T> implements Binding<T> {
 
 	private String getRunningState() {
 		return isRunning() ? "running" : "stopped";
+	}
+
+	/**
+	 * Sets the companion Lifecycle.
+	 * In most cases, when dealing with message producer (e.g., Supplier), performing
+	 * any lifecycle operation on it does nothing as we may need to also perform the same operation on its companion
+	 * object (e.g., SourcePollingChannelAdapter)
+	 *
+	 * @param companion instance of companion {@link Lifecycle} object
+	 */
+	public void setCompanion(Lifecycle companion) {
+		this.companion = companion;
 	}
 
 }

@@ -229,7 +229,7 @@ public class FunctionConfiguration {
 							if (functionWrapper != null) {
 								Type functionType = functionWrapper.getFunctionType();
 								IntegrationFlow integrationFlow = integrationFlowFromProvidedSupplier(new PartitionAwareFunctionWrapper(functionWrapper, context, producerProperties),
-										beginPublishingTrigger, pollable, context, taskScheduler, functionType)
+										beginPublishingTrigger, pollable, context, taskScheduler, functionType, producerProperties, outputName)
 										.route(Message.class, message -> {
 											if (message.getHeaders().get("spring.cloud.stream.sendto.destination") != null) {
 												String destinationName = (String) message.getHeaders().get("spring.cloud.stream.sendto.destination");
@@ -244,7 +244,7 @@ public class FunctionConfiguration {
 							else {
 								Type functionType = ((FunctionInvocationWrapper) supplier).getFunctionType();
 								IntegrationFlow integrationFlow = integrationFlowFromProvidedSupplier(new PartitionAwareFunctionWrapper(supplier, context, producerProperties),
-										beginPublishingTrigger, pollable, context, taskScheduler, functionType)
+										beginPublishingTrigger, pollable, context, taskScheduler, functionType, producerProperties, outputName)
 										.channel(c -> c.direct())
 										.fluxTransform((Function<? super Flux<Message<Object>>, ? extends Publisher<Object>>) function)
 										.route(Message.class, message -> {
@@ -288,7 +288,7 @@ public class FunctionConfiguration {
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	private IntegrationFlowBuilder integrationFlowFromProvidedSupplier(Supplier<?> supplier,
 			Publisher<Object> beginPublishingTrigger, PollableBean pollable, GenericApplicationContext context,
-			TaskScheduler taskScheduler, Type functionType) {
+			TaskScheduler taskScheduler, Type functionType, ProducerProperties producerProperties, String bindingName) {
 
 		IntegrationFlowBuilder integrationFlowBuilder;
 
@@ -308,7 +308,10 @@ public class FunctionConfiguration {
 			taskScheduler.schedule(() -> { }, Instant.now()); // will keep AC alive
 		}
 		else { // implies pollable
-			integrationFlowBuilder = IntegrationFlows.fromSupplier(supplier);
+
+			boolean autoStartup = producerProperties != null ? producerProperties.isAutoStartup() : true;
+			integrationFlowBuilder = IntegrationFlows
+					.fromSupplier(supplier, spca -> spca.id(bindingName + "_spca").autoStartup(autoStartup));
 			//only apply the PollableBean attributes if this is a reactive function.
 			if (splittable && reactive) {
 				integrationFlowBuilder = integrationFlowBuilder.split();
