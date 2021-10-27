@@ -44,12 +44,12 @@ public class BindingsLifecycleController {
 	private final ObjectMapper objectMapper;
 
 	public BindingsLifecycleController(List<InputBindingLifecycle> inputBindingLifecycles,
-			List<OutputBindingLifecycle> outputBindingsLifecycles) {
+			List<OutputBindingLifecycle> outputBindingsLifecycles, ObjectMapper objectMapper) {
 		Assert.notEmpty(inputBindingLifecycles,
 				"'inputBindingLifecycles' must not be null or empty");
 		this.inputBindingLifecycles = inputBindingLifecycles;
 		this.outputBindingsLifecycles = outputBindingsLifecycles;
-		this.objectMapper = new ObjectMapper();
+		this.objectMapper = objectMapper;
 	}
 
 	/**

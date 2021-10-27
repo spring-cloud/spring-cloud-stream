@@ -30,6 +30,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -121,7 +122,7 @@ public class BindingServiceTests {
 		properties.setBindings(bindingProperties);
 		DefaultBinderFactory binderFactory = createMockBinderFactory();
 		Binder binder = binderFactory.getBinder("mock", MessageChannel.class);
-		BindingService service = new BindingService(properties, binderFactory);
+		BindingService service = new BindingService(properties, binderFactory, new ObjectMapper());
 		MessageChannel inputChannel = new DirectChannel();
 		Binding<MessageChannel> mockBinding = Mockito.mock(Binding.class);
 		when(binder.bindConsumer(eq("foo"), isNull(), same(inputChannel),
@@ -153,7 +154,7 @@ public class BindingServiceTests {
 		DefaultBinderFactory binderFactory = createMockBinderFactory();
 
 		Binder binder = binderFactory.getBinder("mock", MessageChannel.class);
-		BindingService service = new BindingService(properties, binderFactory);
+		BindingService service = new BindingService(properties, binderFactory, new ObjectMapper());
 		MessageChannel inputChannel = new DirectChannel();
 
 		Binding<MessageChannel> mockBinding1 = Mockito.mock(Binding.class);
@@ -209,7 +210,7 @@ public class BindingServiceTests {
 		DefaultBinderFactory binderFactory = createMockBinderFactory();
 
 		Binder binder = binderFactory.getBinder("mock", MessageChannel.class);
-		BindingService service = new BindingService(properties, binderFactory);
+		BindingService service = new BindingService(properties, binderFactory, new ObjectMapper());
 		MessageChannel inputChannel = new DirectChannel();
 
 		Binding<MessageChannel> mockBinding1 = Mockito.mock(Binding.class, "FirstBinding");
@@ -268,7 +269,7 @@ public class BindingServiceTests {
 		DefaultBinderFactory binderFactory = createMockBinderFactory();
 
 		Binder binder = binderFactory.getBinder("mock", MessageChannel.class);
-		BindingService service = new BindingService(properties, binderFactory);
+		BindingService service = new BindingService(properties, binderFactory, new ObjectMapper());
 		MessageChannel inputChannel = new DirectChannel();
 
 		Binding<MessageChannel> mockBinding1 = Mockito.mock(Binding.class);
@@ -307,7 +308,7 @@ public class BindingServiceTests {
 		properties.setBindings(bindingProperties);
 		DefaultBinderFactory binderFactory = createMockBinderFactory();
 		Binder binder = binderFactory.getBinder("mock", MessageChannel.class);
-		BindingService service = new BindingService(properties, binderFactory);
+		BindingService service = new BindingService(properties, binderFactory, new ObjectMapper());
 		MessageChannel inputChannel = new DirectChannel();
 		Binding<MessageChannel> mockBinding = Mockito.mock(Binding.class);
 		when(binder.bindConsumer(eq("foo"), eq("fooGroup"), same(inputChannel),
@@ -340,7 +341,7 @@ public class BindingServiceTests {
 		final AtomicReference<MessageChannel> dynamic = new AtomicReference<>();
 		when(binder.bindProducer(matches("foo"), any(DirectChannel.class),
 				any(ProducerProperties.class))).thenReturn(mockBinding);
-		BindingService bindingService = new BindingService(properties, binderFactory) {
+		BindingService bindingService = new BindingService(properties, binderFactory, new ObjectMapper()) {
 
 			@Override
 			protected <T> Binder<T, ?, ?> getBinder(String channelName,
@@ -426,7 +427,7 @@ public class BindingServiceTests {
 		bindingProperties.put(outputChannelName, props);
 		serviceProperties.setBindings(bindingProperties);
 		DefaultBinderFactory binderFactory = createMockBinderFactory();
-		BindingService service = new BindingService(serviceProperties, binderFactory);
+		BindingService service = new BindingService(serviceProperties, binderFactory, new ObjectMapper());
 		MessageChannel outputChannel = new DirectChannel();
 		try {
 			service.bindProducer(outputChannel, outputChannelName);
@@ -498,7 +499,7 @@ public class BindingServiceTests {
 		bindingProperties.put(inputChannelName, props);
 		serviceProperties.setBindings(bindingProperties);
 		DefaultBinderFactory binderFactory = createMockBinderFactory();
-		BindingService service = new BindingService(serviceProperties, binderFactory);
+		BindingService service = new BindingService(serviceProperties, binderFactory, new ObjectMapper());
 		MessageChannel inputChannel = new DirectChannel();
 		try {
 			service.bindConsumer(inputChannel, inputChannelName);
@@ -520,7 +521,7 @@ public class BindingServiceTests {
 		BindingServiceProperties bindingServiceProperties = createBindingServiceProperties(
 				properties);
 		BindingService bindingService = new BindingService(bindingServiceProperties,
-				createMockBinderFactory());
+				createMockBinderFactory(), new ObjectMapper());
 		bindingService.bindConsumer(new DirectChannel(), "input");
 		try {
 			bindingService.bindProducer(new DirectChannel(), "output");
@@ -545,7 +546,7 @@ public class BindingServiceTests {
 		BinderFactory binderFactory = new BindingServiceConfiguration()
 				.binderFactory(createMockBinderTypeRegistry(), bindingServiceProperties, Mockito.mock(ObjectProvider.class));
 		BindingService bindingService = new BindingService(bindingServiceProperties,
-				binderFactory);
+				binderFactory, new ObjectMapper());
 		bindingService.bindConsumer(new DirectChannel(), "input");
 		bindingService.bindProducer(new DirectChannel(), "output");
 	}
@@ -565,7 +566,7 @@ public class BindingServiceTests {
 		BinderFactory binderFactory = new BindingServiceConfiguration()
 				.binderFactory(createMockBinderTypeRegistry(), bindingServiceProperties, Mockito.mock(ObjectProvider.class));
 		BindingService bindingService = new BindingService(bindingServiceProperties,
-				binderFactory);
+				binderFactory, new ObjectMapper());
 		bindingService.bindConsumer(new DirectChannel(), "input");
 		try {
 			bindingService.bindProducer(new DirectChannel(), "output");
@@ -599,7 +600,7 @@ public class BindingServiceTests {
 		Binder binder = binderFactory.getBinder("mock", MessageChannel.class);
 		ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
 		scheduler.initialize();
-		BindingService service = new BindingService(properties, binderFactory, scheduler);
+		BindingService service = new BindingService(properties, binderFactory, scheduler, new ObjectMapper());
 		MessageChannel inputChannel = new DirectChannel();
 		final Binding<MessageChannel> mockBinding = Mockito.mock(Binding.class);
 		final CountDownLatch fail = new CountDownLatch(2);
@@ -644,7 +645,7 @@ public class BindingServiceTests {
 		Binder binder = binderFactory.getBinder("mock", MessageChannel.class);
 		ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
 		scheduler.initialize();
-		BindingService service = new BindingService(properties, binderFactory, scheduler);
+		BindingService service = new BindingService(properties, binderFactory, scheduler, new ObjectMapper());
 		MessageChannel outputChannel = new DirectChannel();
 		final Binding<MessageChannel> mockBinding = Mockito.mock(Binding.class);
 		final CountDownLatch fail = new CountDownLatch(2);
