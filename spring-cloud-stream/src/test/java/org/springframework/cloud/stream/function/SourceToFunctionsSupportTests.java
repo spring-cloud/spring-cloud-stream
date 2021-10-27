@@ -115,7 +115,7 @@ public class SourceToFunctionsSupportTests {
 	}
 
 	@Test
-	public void testImperativeSupplier() {
+	public void testImperativeSupplier() throws Exception {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 				TestChannelBinderConfiguration.getCompleteConfiguration(
 						FunctionsConfiguration.class, SupplierConfiguration.class)).web(WebApplicationType.NONE).run(
@@ -126,8 +126,14 @@ public class SourceToFunctionsSupportTests {
 			String result = new String(target.receive(5000).getPayload(), StandardCharsets.UTF_8);
 			assertThat(result).isEqualTo("1");
 			result = new String(target.receive(1000).getPayload(), StandardCharsets.UTF_8);
-			lifecycle.stop("number-out-0");
 			assertThat(result).isEqualTo("2");
+
+			lifecycle.stop("number-out-0");
+			for (int i = 0; i < 2; i++) { //drain
+				target.receive(1000);
+			}
+
+			Thread.sleep(2000);
 			assertThat(target.receive(1000)).isNull();
 		}
 	}
@@ -320,7 +326,10 @@ public class SourceToFunctionsSupportTests {
 
 		@Bean
 		public Supplier<String> number() {
-			return () -> String.valueOf(this.counter.incrementAndGet());
+			return () -> {
+				System.out.println("Supplying");
+				return String.valueOf(this.counter.incrementAndGet());
+			};
 		}
 
 		@Bean
