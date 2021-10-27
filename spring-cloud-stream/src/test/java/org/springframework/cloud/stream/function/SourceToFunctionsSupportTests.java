@@ -36,6 +36,7 @@ import org.springframework.cloud.function.context.PollableBean;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.binder.test.OutputDestination;
 import org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration;
+import org.springframework.cloud.stream.binding.BindingsLifecycleController;
 import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
@@ -120,10 +121,14 @@ public class SourceToFunctionsSupportTests {
 						FunctionsConfiguration.class, SupplierConfiguration.class)).web(WebApplicationType.NONE).run(
 								"--spring.cloud.stream.function.definition=number",
 								"--spring.jmx.enabled=false")) {
-
+			BindingsLifecycleController lifecycle = context .getBean(BindingsLifecycleController.class);
 			OutputDestination target = context.getBean(OutputDestination.class);
 			String result = new String(target.receive(5000).getPayload(), StandardCharsets.UTF_8);
 			assertThat(result).isEqualTo("1");
+			result = new String(target.receive(1000).getPayload(), StandardCharsets.UTF_8);
+			lifecycle.stop("number-out-0");
+			assertThat(result).isEqualTo("2");
+			assertThat(target.receive(1000)).isNull();
 		}
 	}
 

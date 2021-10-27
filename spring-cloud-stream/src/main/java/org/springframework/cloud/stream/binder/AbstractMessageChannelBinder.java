@@ -255,6 +255,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 								.equals(producerProperties.getHeaderMode()),
 						this.headersToEmbed, useNativeEncoding(producerProperties)));
 
+
 		Binding<MessageChannel> binding = new DefaultBinding<MessageChannel>(destination,
 				outputChannel, producerMessageHandler instanceof Lifecycle
 						? (Lifecycle) producerMessageHandler : null) {
@@ -284,6 +285,13 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 				afterUnbindProducer(producerDestination, producerProperties);
 			}
 		};
+
+		Lifecycle companion = null;
+		String companionLifecycleName = destination + "_spca";
+		if (this.getApplicationContext().containsBean(companionLifecycleName)) {
+			companion = this.getApplicationContext().getBean(companionLifecycleName, Lifecycle.class);
+		}
+		((DefaultBinding<?>) binding).setCompanion(companion);
 
 		doPublishEvent(new BindingCreatedEvent(binding));
 		return binding;
