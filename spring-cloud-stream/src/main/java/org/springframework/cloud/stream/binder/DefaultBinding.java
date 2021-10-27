@@ -131,12 +131,12 @@ public class DefaultBinding<T> implements Binding<T> {
 
 	@Override
 	public synchronized void start() {
+		if (this.companion != null) {
+			this.companion.start();
+		}
 		if (!this.isRunning()) {
 			if (this.lifecycle != null && this.restartable) {
 				this.lifecycle.start();
-				if (this.companion != null) {
-					this.companion.start();
-				}
 			}
 			else {
 				this.logger.warn("Can not re-bind an anonymous binding");
@@ -146,11 +146,11 @@ public class DefaultBinding<T> implements Binding<T> {
 
 	@Override
 	public synchronized void stop() {
+		if (this.companion != null) {
+			this.companion.stop();
+		}
 		if (this.isRunning()) {
 			this.lifecycle.stop();
-			if (this.companion != null) {
-				this.companion.stop();
-			}
 		}
 	}
 
