@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -177,7 +178,7 @@ public class BinderAwareChannelResolverTests {
 		when(mockBinderFactory.getBinder("someTransport",
 				DirectWithAttributesChannel.class)).thenReturn(binder2);
 		BindingService bindingService = new BindingService(this.bindingServiceProperties,
-				mockBinderFactory);
+				mockBinderFactory, new ObjectMapper());
 		BinderAwareChannelResolver resolver = new BinderAwareChannelResolver(
 				bindingService, this.bindingTargetFactory,
 				new DynamicDestinationsBindable());

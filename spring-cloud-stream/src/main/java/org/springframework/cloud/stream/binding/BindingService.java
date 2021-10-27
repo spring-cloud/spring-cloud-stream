@@ -78,18 +78,21 @@ public class BindingService {
 
 	private final BinderFactory binderFactory;
 
+	private final ObjectMapper objectMapper;
+
 	public BindingService(BindingServiceProperties bindingServiceProperties,
-			BinderFactory binderFactory) {
-		this(bindingServiceProperties, binderFactory, null);
+			BinderFactory binderFactory, ObjectMapper objectMapper) {
+		this(bindingServiceProperties, binderFactory, null, objectMapper);
 	}
 
 	public BindingService(BindingServiceProperties bindingServiceProperties,
-			BinderFactory binderFactory, TaskScheduler taskScheduler) {
+			BinderFactory binderFactory, TaskScheduler taskScheduler, ObjectMapper objectMapper) {
 		this.bindingServiceProperties = bindingServiceProperties;
 		this.binderFactory = binderFactory;
 		this.validator = new CustomValidatorBean();
 		this.validator.afterPropertiesSet();
 		this.taskScheduler = taskScheduler;
+		this.objectMapper = objectMapper;
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
@@ -180,7 +183,7 @@ public class BindingService {
 			}
 			catch (RuntimeException e) {
 				LateBinding<T> late = new LateBinding<T>(target,
-						e.getCause() == null ? e.toString() : e.getCause().getMessage(), consumerProperties, true);
+						e.getCause() == null ? e.toString() : e.getCause().getMessage(), consumerProperties, true, this.objectMapper);
 				rescheduleConsumerBinding(input, inputName, binder, consumerProperties,
 						target, late, e);
 				this.consumerBindings.put(inputName, Collections.singletonList(late));
@@ -228,7 +231,7 @@ public class BindingService {
 			}
 			catch (RuntimeException e) {
 				LateBinding<T> late = new LateBinding<T>(target,
-						e.getCause() == null ? e.toString() : e.getCause().getMessage(), consumerProperties, true);
+						e.getCause() == null ? e.toString() : e.getCause().getMessage(), consumerProperties, true, this.objectMapper);
 				reschedulePollableConsumerBinding(input, inputName, binder,
 						consumerProperties, target, late, e);
 				return late;
@@ -321,7 +324,7 @@ public class BindingService {
 			}
 			catch (RuntimeException e) {
 				LateBinding<T> late = new LateBinding<T>(bindingTarget,
-						e.getCause() == null ? e.toString() : e.getCause().getMessage(), producerProperties, false);
+						e.getCause() == null ? e.toString() : e.getCause().getMessage(), producerProperties, false, this.objectMapper);
 				rescheduleProducerBinding(output, bindingTarget, binder,
 						producerProperties, late, e);
 				return late;
@@ -422,14 +425,15 @@ public class BindingService {
 
 		private final boolean isInput;
 
-		ObjectMapper mapper = new ObjectMapper();
+		final ObjectMapper objectMapper;
 
-		LateBinding(String bindingName, String error, Object consumerOrProducerproperties, boolean isInput) {
+		LateBinding(String bindingName, String error, Object consumerOrProducerproperties, boolean isInput, ObjectMapper objectMapper) {
 			super();
 			this.error = error;
 			this.bindingName = bindingName;
 			this.consumerOrProducerproperties = consumerOrProducerproperties;
 			this.isInput = isInput;
+			this.objectMapper = objectMapper;
 		}
 
 		public synchronized void setDelegate(Binding<T> delegate) {
@@ -474,7 +478,7 @@ public class BindingService {
 			Map<String, Object> extendedInfo = new LinkedHashMap<>();
 			extendedInfo.put("bindingDestination", this.getBindingName());
 			extendedInfo.put(consumerOrProducerproperties.getClass().getSimpleName(),
-					mapper.convertValue(consumerOrProducerproperties, Map.class));
+					this.objectMapper.convertValue(consumerOrProducerproperties, Map.class));
 			return extendedInfo;
 		}
 

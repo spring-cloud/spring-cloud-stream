@@ -23,6 +23,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -219,9 +221,9 @@ public class BindingServiceConfiguration {
 	@ConditionalOnMissingBean(search = SearchStrategy.CURRENT)
 	public BindingService bindingService(
 			BindingServiceProperties bindingServiceProperties,
-			BinderFactory binderFactory, TaskScheduler taskScheduler) {
-
-		return new BindingService(bindingServiceProperties, binderFactory, taskScheduler);
+			BinderFactory binderFactory, TaskScheduler taskScheduler, @Nullable ObjectMapper objectMapper) {
+		objectMapper = objectMapper == null ? new ObjectMapper() : objectMapper;
+		return new BindingService(bindingServiceProperties, binderFactory, taskScheduler, objectMapper);
 	}
 
 	@Bean
@@ -241,8 +243,9 @@ public class BindingServiceConfiguration {
 
 	@Bean
 	public BindingsLifecycleController bindingsLifecycleController(List<InputBindingLifecycle> inputBindingLifecycles,
-			List<OutputBindingLifecycle> outputBindingsLifecycles) {
-		return new BindingsLifecycleController(inputBindingLifecycles, outputBindingsLifecycles);
+			List<OutputBindingLifecycle> outputBindingsLifecycles, @Nullable ObjectMapper objectMapper) {
+		objectMapper = objectMapper == null ? new ObjectMapper() : objectMapper;
+		return new BindingsLifecycleController(inputBindingLifecycles, outputBindingsLifecycles, objectMapper);
 	}
 
 	@Bean

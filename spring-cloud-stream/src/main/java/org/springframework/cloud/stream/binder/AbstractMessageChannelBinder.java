@@ -65,6 +65,7 @@ import org.springframework.messaging.SubscribableChannel;
 import org.springframework.messaging.support.ChannelInterceptor;
 import org.springframework.retry.RecoveryCallback;
 import org.springframework.util.Assert;
+import org.springframework.util.CollectionUtils;
 
 /**
  * {@link AbstractBinder} that serves as base class for {@link MessageChannel} binders.
@@ -101,7 +102,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 	private final EmbeddedHeadersChannelInterceptor embeddedHeadersChannelInterceptor = new EmbeddedHeadersChannelInterceptor(
 			this.logger);
 
-	private final ObjectMapper objectMapper = new ObjectMapper();
+	private volatile ObjectMapper objectMapper;
 
 	/**
 	 * Indicates which headers are to be embedded in the payload if a binding requires
@@ -126,13 +127,22 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		this(headersToEmbed, provisioningProvider, null, null);
 	}
 
+	@Override
+	protected void onInit() throws Exception {
+		if (!CollectionUtils.isEmpty(this.getApplicationContext().getBeansOfType(ObjectMapper.class))) {
+			this.objectMapper = this.getApplicationContext().getBean(ObjectMapper.class);
+		}
+		else {
+			this.objectMapper = new ObjectMapper();
+		}
+		SimpleModule module = new SimpleModule();
+		module.addSerializer(Expression.class, new ExpressionSerializer(Expression.class));
+		this.objectMapper.registerModule(module);
+	}
+
 	public AbstractMessageChannelBinder(String[] headersToEmbed, PP provisioningProvider,
 			@Nullable ListenerContainerCustomizer<?> containerCustomizer,
 			@Nullable MessageSourceCustomizer<?> sourceCustomizer) {
-
-		SimpleModule module = new SimpleModule();
-		module.addSerializer(Expression.class, new ExpressionSerializer(Expression.class));
-		objectMapper.registerModule(module);
 
 		this.headersToEmbed = headersToEmbed == null ? new String[0] : headersToEmbed;
 		this.provisioningProvider = provisioningProvider;
