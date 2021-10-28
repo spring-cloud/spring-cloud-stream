@@ -75,7 +75,9 @@ import org.springframework.util.MimeTypeUtils;
  * @param <T> type of the object to marshall
  * @author Soby Chacko
  * @since 3.0
+ * @deprecated in favor of other schema registry providers instead of Spring Cloud Schema Registry. See its motivation above.
  */
+@Deprecated
 public class MessageConverterDelegateSerde<T> implements Serde<T> {
 
 	private static final String VALUE_CLASS_HEADER = "valueClass";

@@ -21,8 +21,8 @@ import java.util.Map;
 
 import org.apache.kafka.common.serialization.Serializer;
 
-import org.springframework.cloud.schema.registry.avro.AvroSchemaMessageConverter;
-import org.springframework.cloud.schema.registry.avro.AvroSchemaServiceManagerImpl;
+import org.springframework.cloud.function.context.converter.avro.AvroSchemaMessageConverter;
+import org.springframework.cloud.function.context.converter.avro.AvroSchemaServiceManagerImpl;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.MessageBuilder;

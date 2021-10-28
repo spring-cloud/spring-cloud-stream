@@ -73,12 +73,7 @@
 			<artifactId>kafka_2.13</artifactId>
 			<classifier>test</classifier>
 		</dependency>
-		<!-- Following dependencies are only provided for testing and won't be packaged with the binder apps-->
-		<dependency>
-			<groupId>org.springframework.cloud</groupId>
-			<artifactId>spring-cloud-schema-registry-client</artifactId>
-			<scope>test</scope>
-		</dependency>
+		<!-- Following dependency is only provided for testing and won't be packaged with the binder apps-->
 		<dependency>
 			<groupId>org.apache.avro</groupId>
 			<artifactId>avro</artifactId>

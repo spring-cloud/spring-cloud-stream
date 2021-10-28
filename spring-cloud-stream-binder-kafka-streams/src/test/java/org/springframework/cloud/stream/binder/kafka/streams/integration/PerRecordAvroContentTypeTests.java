@@ -37,8 +37,8 @@ import org.junit.Test;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.cloud.schema.registry.avro.AvroSchemaMessageConverter;
-import org.springframework.cloud.schema.registry.avro.AvroSchemaServiceManagerImpl;
+import org.springframework.cloud.function.context.converter.avro.AvroSchemaMessageConverter;
+import org.springframework.cloud.function.context.converter.avro.AvroSchemaServiceManagerImpl;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.Input;
 import org.springframework.cloud.stream.annotation.StreamListener;
@@ -146,7 +146,7 @@ public class PerRecordAvroContentTypeTests {
 
 				// Convert the byte[] received back to avro object and verify that it is
 				// the same as the one we sent ^^.
-				AvroSchemaMessageConverter avroSchemaMessageConverter = new AvroSchemaMessageConverter();
+				AvroSchemaMessageConverter avroSchemaMessageConverter = new AvroSchemaMessageConverter(new AvroSchemaServiceManagerImpl());
 
 				Message<?> receivedMessage = MessageBuilder.withPayload(value)
 						.setHeader("contentType",
