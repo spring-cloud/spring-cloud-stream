@@ -2657,10 +2657,6 @@ public class MyCustomMessageConverter extends AbstractMessageConverter {
 }
 ----
 
-Spring Cloud Stream also provides support for Avro-based converters and schema evolution.
-See `<<schema-evolution>>` for details.
-
-[
 == Inter-Application Communication
 
 Spring Cloud Stream enables communication between applications. Inter-application communication is a complex issue spanning several concerns, as described in the following topics:
