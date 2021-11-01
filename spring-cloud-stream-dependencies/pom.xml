@@ -18,7 +18,6 @@
 		<spring-cloud-stream.version>3.2.0-SNAPSHOT</spring-cloud-stream.version>
 		<spring-cloud-stream-binder-kafka.version>3.2.0-SNAPSHOT</spring-cloud-stream-binder-kafka.version>
 		<spring-cloud-stream-binder-rabbit.version>3.2.0-SNAPSHOT</spring-cloud-stream-binder-rabbit.version>
-		<spring-cloud-schema-registry.version>1.2.0-SNAPSHOT</spring-cloud-schema-registry.version>
 		<spring-cloud-stream-dependencies.version>3.2.0-SNAPSHOT</spring-cloud-stream-dependencies.version>
 	</properties>
 	<dependencyManagement>
@@ -40,21 +39,6 @@
 				<groupId>org.springframework.cloud</groupId>
 				<artifactId>spring-cloud-stream-binder-test</artifactId>
 				<version>${spring-cloud-stream.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.springframework.cloud</groupId>
-				<artifactId>spring-cloud-schema-registry-core</artifactId>
-				<version>${spring-cloud-schema-registry.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.springframework.cloud</groupId>
-				<artifactId>spring-cloud-schema-registry-server</artifactId>
-				<version>${spring-cloud-schema-registry.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.springframework.cloud</groupId>
-				<artifactId>spring-cloud-schema-registry-client</artifactId>
-				<version>${spring-cloud-schema-registry.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
