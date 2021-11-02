@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.binder.kafka.streams.integration;
 
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Map;
 
@@ -24,9 +25,9 @@ import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.KeyValue;
+import org.apache.kafka.streams.kstream.Grouped;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.Materialized;
-import org.apache.kafka.streams.kstream.Serialized;
 import org.apache.kafka.streams.kstream.TimeWindows;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -254,8 +255,8 @@ public abstract class DeserializationErrorHandlerByKafkaTests {
 					.flatMapValues(
 							value -> Arrays.asList(value.toLowerCase().split("\\W+")))
 					.map((key, value) -> new KeyValue<>(value, value))
-					.groupByKey(Serialized.with(Serdes.String(), Serdes.String()))
-					.windowedBy(TimeWindows.of(5000)).count(Materialized.as("foo-WordCounts-x"))
+					.groupByKey(Grouped.with(Serdes.String(), Serdes.String()))
+					.windowedBy(TimeWindows.of(Duration.ofMillis(5000))).count(Materialized.as("foo-WordCounts-x"))
 					.toStream().map((key, value) -> new KeyValue<>(null,
 							"Count for " + key.key() + " : " + value));
 		}

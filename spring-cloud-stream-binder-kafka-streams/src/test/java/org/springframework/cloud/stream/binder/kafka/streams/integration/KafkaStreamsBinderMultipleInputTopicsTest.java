@@ -26,9 +26,9 @@ import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.KeyValue;
+import org.apache.kafka.streams.kstream.Grouped;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.Materialized;
-import org.apache.kafka.streams.kstream.Serialized;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
@@ -164,7 +164,7 @@ public class KafkaStreamsBinderMultipleInputTopicsTest {
 					.flatMapValues(
 							value -> Arrays.asList(value.toLowerCase().split("\\W+")))
 					.map((key, value) -> new KeyValue<>(value, value))
-					.groupByKey(Serialized.with(Serdes.String(), Serdes.String()))
+					.groupByKey(Grouped.with(Serdes.String(), Serdes.String()))
 					.count(Materialized.as("WordCounts-tKWCWSIAP0")).toStream()
 					.map((key, value) -> new KeyValue<>(null, new WordCount(key, value)));
 		}

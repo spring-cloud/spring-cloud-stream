@@ -27,9 +27,10 @@ import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.KeyQueryMetadata;
 import org.apache.kafka.streams.KeyValue;
+import org.apache.kafka.streams.StoreQueryParameters;
+import org.apache.kafka.streams.kstream.Grouped;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.Materialized;
-import org.apache.kafka.streams.kstream.Serialized;
 import org.apache.kafka.streams.state.HostInfo;
 import org.apache.kafka.streams.state.QueryableStoreType;
 import org.apache.kafka.streams.state.QueryableStoreTypes;
@@ -119,7 +120,8 @@ public class KafkaStreamsInteractiveQueryIntegrationTests {
 
 		}
 
-		Mockito.verify(mockKafkaStreams, times(3)).store("foo", storeType);
+		Mockito.verify(mockKafkaStreams, times(3))
+				.store(StoreQueryParameters.fromNameAndType("foo", storeType));
 	}
 
 	@Test
@@ -211,7 +213,7 @@ public class KafkaStreamsInteractiveQueryIntegrationTests {
 
 			return input.filter((key, product) -> product.getId() == 123)
 					.map((key, value) -> new KeyValue<>(value.id, value))
-					.groupByKey(Serialized.with(new Serdes.IntegerSerde(),
+					.groupByKey(Grouped.with(new Serdes.IntegerSerde(),
 							new JsonSerde<>(Product.class)))
 					.count(Materialized.as("prod-id-count-store")).toStream()
 					.map((key, value) -> new KeyValue<>(null,

@@ -30,6 +30,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.kafka.common.serialization.Serializer;
 import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.KeyQueryMetadata;
+import org.apache.kafka.streams.StoreQueryParameters;
 import org.apache.kafka.streams.errors.InvalidStateStoreException;
 import org.apache.kafka.streams.state.HostInfo;
 import org.apache.kafka.streams.state.QueryableStoreType;
@@ -99,7 +100,7 @@ public class InteractiveQueryService {
 			Throwable throwable = null;
 			while (iterator.hasNext()) {
 				try {
-					store = iterator.next().store(storeName, storeType);
+					store = iterator.next().store(StoreQueryParameters.fromNameAndType(storeName, storeType));
 				}
 				catch (InvalidStateStoreException e) {
 					// pass through..

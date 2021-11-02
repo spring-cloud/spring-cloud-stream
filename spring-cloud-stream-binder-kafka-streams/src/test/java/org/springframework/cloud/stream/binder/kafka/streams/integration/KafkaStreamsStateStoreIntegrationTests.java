@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.binder.kafka.streams.integration;
 
+import java.time.Duration;
 import java.util.Map;
 
 import org.apache.kafka.common.serialization.Serdes;
@@ -257,7 +258,7 @@ public class KafkaStreamsStateStoreIntegrationTests {
 		public StoreBuilder mystore() {
 			return Stores.windowStoreBuilder(
 					Stores.persistentWindowStore("mystate",
-							3L, 3, 3L, false), Serdes.String(),
+							Duration.ofMillis(3), Duration.ofMillis(3), false), Serdes.String(),
 					Serdes.String());
 		}
 	}

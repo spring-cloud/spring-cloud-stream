@@ -17,6 +17,7 @@
 package org.springframework.cloud.stream.binder.kafka.streams;
 
 import java.lang.reflect.Method;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -375,12 +376,12 @@ class KafkaStreamsStreamListenerSetupMethodOrchestrator extends AbstractKafkaStr
 					builder = Stores
 							.windowStoreBuilder(
 									Stores.persistentWindowStore(spec.getName(),
-											spec.getRetention(), 3, spec.getLength(), false),
+											Duration.ofMillis(spec.getRetention()), Duration.ofMillis(3), false),
 									keySerde, valueSerde);
 					break;
 				case SESSION:
 					builder = Stores.sessionStoreBuilder(Stores.persistentSessionStore(
-							spec.getName(), spec.getRetention()), keySerde, valueSerde);
+							spec.getName(), Duration.ofMillis(spec.getRetention())), keySerde, valueSerde);
 					break;
 				default:
 					throw new UnsupportedOperationException(

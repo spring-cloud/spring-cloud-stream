@@ -21,10 +21,9 @@
 	</scm>
 	<properties>
 		<java.version>1.8</java.version>
-		<spring-kafka.version>2.8.0-M3</spring-kafka.version>
-		<spring-integration-kafka.version>5.5.2</spring-integration-kafka.version>
-		<kafka.version>2.8.0</kafka.version>
-		<spring-cloud-schema-registry.version>1.2.0-SNAPSHOT</spring-cloud-schema-registry.version>
+		<spring-kafka.version>2.8.0-RC1</spring-kafka.version>
+		<spring-integration-kafka.version>5.5.5</spring-integration-kafka.version>
+		<kafka.version>3.0.0</kafka.version>
 		<spring-cloud-stream.version>3.2.0-SNAPSHOT</spring-cloud-stream.version>
 		<maven-checkstyle-plugin.failsOnError>true</maven-checkstyle-plugin.failsOnError>
 		<maven-checkstyle-plugin.failsOnViolation>true</maven-checkstyle-plugin.failsOnViolation>
@@ -126,12 +125,6 @@
 				<artifactId>kafka-clients</artifactId>
 				<version>${kafka.version}</version>
 				<classifier>test</classifier>
-				<scope>test</scope>
-			</dependency>
-			<dependency>
-				<groupId>org.springframework.cloud</groupId>
-				<artifactId>spring-cloud-schema-registry-client</artifactId>
-				<version>${spring-cloud-schema-registry.version}</version>
 				<scope>test</scope>
 			</dependency>
 		</dependencies>

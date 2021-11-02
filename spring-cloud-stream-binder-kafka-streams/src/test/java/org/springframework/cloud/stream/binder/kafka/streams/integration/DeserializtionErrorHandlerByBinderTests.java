@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.binder.kafka.streams.integration;
 
+import java.time.Duration;
 import java.util.Map;
 
 import org.apache.kafka.clients.consumer.Consumer;
@@ -261,7 +262,7 @@ public abstract class DeserializtionErrorHandlerByBinderTests {
 					.map((key, value) -> new KeyValue<>(value, value))
 					.groupByKey(Grouped.with(new JsonSerde<>(Product.class),
 							new JsonSerde<>(Product.class)))
-					.windowedBy(TimeWindows.of(5000))
+					.windowedBy(TimeWindows.of(Duration.ofMillis(5000)))
 					.count(Materialized.as("id-count-store-x")).toStream()
 					.map((key, value) -> new KeyValue<>(key.key().id, value));
 		}
