@@ -193,7 +193,7 @@ compatibility you can still bring `spring-cloud-stream-reactive` from previous v
 [[spring-cloud-stream-preface-notable-deprecations]]
 === Notable Deprecations
 
-- Annotation-based programming model. Basically the @EnableBinding, @StreamListener and all related annotations are now deprecated in
+- Annotation-based programming model. Basically the @EnableBInding, @StreamListener and all related annotations are now deprecated in
 favor of the functional programming model. See <<Spring Cloud Function support>> for more details.
 - _Reactive module_ (`spring-cloud-stream-reactive`) is discontinued and no longer distributed in favor of native support via spring-cloud-function.
 For backward
