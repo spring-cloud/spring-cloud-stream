@@ -595,12 +595,14 @@ public class WebSourceApplication {
 
 Here we autowire a `StreamBridge` bean which allows us to send data to an output binding effectively
 bridging non-stream application with spring-cloud-stream. Note that preceding example does not have any
-source functions defined (e.g., Supplier bean) leaving the framework with no trigger to create source bindings, which would be typical for cases where
-configuration contains function beans.
-So to trigger the creation of source binding we use `spring.cloud.stream.source` property where you can declare the name of your sources.
+source functions defined (e.g., Supplier bean) leaving the framework with no trigger to create source bindings in advance, which would be typical for cases where configuration contains function beans. And that is fine, since `StreamBridge` will initiate creation of output bindings (as well as
+destination auto-provisioning if necessary) for non existing bindings on the first call to its `send(..)` operation caching it for 
+subsequent reuse (see <<StreamBridge and Dynamic Destinations>> for more details). 
+
+However, if you want to pre-create an output binding at the initialization (startup) time you can benefit from `spring.cloud.stream.source` property where you can declare the name of your sources.
 The provided name will be used as a trigger to create a source binding.
 So in the preceding example the name of the output binding will be `toStream-out-0` which is consistent with the binding naming
-convention used by functions (see <<Binding and Binding names>>). You can use `;` to signify multiple sources
+convention used by functions (see <<Binding and Binding names>>). You can use `;` to signify multiple sources (multiple output bindings)
 (e.g., `--spring.cloud.stream.source=foo;bar`)
 
 Also, note that `streamBridge.send(..)` method takes an `Object` for data. This means you can send POJO or `Message` to it and it
@@ -669,13 +671,17 @@ public class WebSourceApplication {
 ----
 
 As you can see inside of `delegateToSupplier` method we're using StreamBridge to send data to `myBinidng` binding. And here you're also benefiting from 
-the dynamic features of StreamBridge where if `myBinidng` doesn't exist it will be created automatically, otherwise existing binding will be used.
+the dynamic features of `StreamBridge` where if `myBinidng` doesn't exist it will be created automatically and cached, otherwise existing binding will be used.
+
+NOTE: Caching dynamic destinations (bindings) could result in memory leaks in the event there are many dynamic destinations. To have some level of control 
+we provide a self-evicting caching mechanism for output bindings with default cache size of 10. This means that if your dynamic destination size goes above that number, there is a possibility that an existing binding will be evicted and thus would need to be recreated which could cause minor performance degradation. You can increase the cache size via `spring.cloud.stream.dynamic-destination-cache-size` property setting it to the desired value.
+
 
 ----
 curl -H "Content-Type: text/plain" -X POST -d "hello from the other side" http://localhost:8080/
 ----
 
-By showing two example we want to emphasize the approach will work with any type of foreign sources.
+By showing two examples we want to emphasize the approach will work with any type of foreign sources.
 
 ====== Output Content Type with StreamBridge
 
