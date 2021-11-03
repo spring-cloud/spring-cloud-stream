@@ -9,6 +9,7 @@
 |spring.cloud.stream.dynamic-destinations | `[]` | A list of destinations that can be bound dynamically. If set, only listed destinations can be bound.
 |spring.cloud.stream.function.batch-mode | `false` | 
 |spring.cloud.stream.function.bindings |  | 
+|spring.cloud.stream.function.definition |  | Definition of functions to bind. If several functions need to be composed into one, use pipes (e.g., 'fooFunc\|barFunc')
 |spring.cloud.stream.instance-count | `1` | The number of deployed instances of an application. Default: 1. NOTE: Could also be managed per individual binding "spring.cloud.stream.bindings.foo.consumer.instance-count" where 'foo' is the name of the binding.
 |spring.cloud.stream.instance-index | `0` | The instance id of the application: a number from 0 to instanceCount-1. Used for partitioning and with Kafka. NOTE: Could also be managed per individual binding "spring.cloud.stream.bindings.foo.consumer.instance-index" where 'foo' is the name of the binding.
 |spring.cloud.stream.instance-index-list |  | A list of instance id's from 0 to instanceCount-1. Used for partitioning and with Kafka. NOTE: Could also be managed per individual binding "spring.cloud.stream.bindings.foo.consumer.instance-index-list" where 'foo' is the name of the binding. This setting will override the one set in 'spring.cloud.stream.instance-index'
@@ -20,6 +21,11 @@
 |spring.cloud.stream.metrics.schedule-interval | `60s` | Interval expressed as Duration for scheduling metrics snapshots publishing. Defaults to 60 seconds
 |spring.cloud.stream.override-cloud-connectors | `false` | This property is only applicable when the cloud profile is active and Spring Cloud Connectors are provided with the application. If the property is false (the default), the binder detects a suitable bound service (for example, a RabbitMQ service bound in Cloud Foundry for the RabbitMQ binder) and uses it for creating connections (usually through Spring Cloud Connectors). When set to true, this property instructs binders to completely ignore the bound services and rely on Spring Boot properties (for example, relying on the spring.rabbitmq.* properties provided in the environment for the RabbitMQ binder). The typical usage of this property is to be nested in a customized environment when connecting to multiple systems.
 |spring.cloud.stream.pollable-source | `none` | A semi-colon delimited list of binding names of pollable sources. Binding names follow the same naming convention as functions. For example, name '...pollable-source=foobar' will be accessible as 'foobar-iin-0'' binding
+|spring.cloud.stream.poller.cron |  | Cron expression value for the Cron Trigger.
+|spring.cloud.stream.poller.fixed-delay | `1000` | Fixed delay for default poller.
+|spring.cloud.stream.poller.initial-delay | `0` | Initial delay for periodic triggers.
+|spring.cloud.stream.poller.max-messages-per-poll | `1` | Maximum messages per poll for the default poller.
+|spring.cloud.stream.poller.time-unit |  | The TimeUnit to apply to delay values.
 |spring.cloud.stream.rabbit.binder.admin-addresses | `[]` | Urls for management plugins; only needed for queue affinity.
 |spring.cloud.stream.rabbit.binder.admin-adresses |  | 
 |spring.cloud.stream.rabbit.binder.compression-level | `0` | Compression level for compressed bindings; see 'java.util.zip.Deflator'.
