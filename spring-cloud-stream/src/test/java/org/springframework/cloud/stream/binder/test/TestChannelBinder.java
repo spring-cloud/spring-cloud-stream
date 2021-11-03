@@ -135,6 +135,10 @@ public class TestChannelBinder extends
 		return this.lastError;
 	}
 
+	public void resetLastError() {
+		this.lastError = null;
+	}
+
 	@Override
 	protected MessageHandler createProducerMessageHandler(ProducerDestination destination,
 			ProducerProperties producerProperties, MessageChannel errorChannel)
