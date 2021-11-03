@@ -300,7 +300,7 @@ public class StreamToTableJoinFunctionTests {
 		}
 	}
 
-	@Test
+//	@Test
 	public void testGlobalStartOffsetWithLatestAndIndividualBindingWthEarliest() throws Exception {
 		SpringApplication app = new SpringApplication(BiFunctionCountClicksPerRegionApplication.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
