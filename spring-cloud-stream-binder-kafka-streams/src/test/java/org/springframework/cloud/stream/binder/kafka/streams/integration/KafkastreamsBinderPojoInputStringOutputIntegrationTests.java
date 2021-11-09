@@ -18,6 +18,7 @@ package org.springframework.cloud.stream.binder.kafka.streams.integration;
 
 import java.time.Duration;
 import java.util.Map;
+import java.util.function.Function;
 
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -35,10 +36,8 @@ import org.junit.Test;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.cloud.stream.annotation.EnableBinding;
-import org.springframework.cloud.stream.annotation.StreamListener;
-import org.springframework.cloud.stream.binder.kafka.streams.annotations.KafkaStreamsProcessor;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.annotation.Bean;
 import org.springframework.integration.test.util.TestUtils;
 import org.springframework.kafka.config.StreamsBuilderFactoryBean;
 import org.springframework.kafka.core.CleanupConfig;
@@ -49,7 +48,6 @@ import org.springframework.kafka.support.serializer.JsonSerde;
 import org.springframework.kafka.test.EmbeddedKafkaBroker;
 import org.springframework.kafka.test.rule.EmbeddedKafkaRule;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
-import org.springframework.messaging.handler.annotation.SendTo;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -91,6 +89,8 @@ public class KafkastreamsBinderPojoInputStringOutputIntegrationTests {
 		app.setWebApplicationType(WebApplicationType.NONE);
 		ConfigurableApplicationContext context = app.run("--server.port=0",
 				"--spring.jmx.enabled=false",
+				"--spring.cloud.stream.function.bindings.process-in-0=input",
+				"--spring.cloud.stream.function.bindings.process-out-0=output",
 				"--spring.cloud.stream.bindings.input.destination=foos",
 				"--spring.cloud.stream.bindings.output.destination=counts-id",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.commit.interval.ms=1000",
@@ -105,7 +105,7 @@ public class KafkastreamsBinderPojoInputStringOutputIntegrationTests {
 			receiveAndValidateFoo();
 			// Assertions on StreamBuilderFactoryBean
 			StreamsBuilderFactoryBean streamsBuilderFactoryBean = context
-					.getBean("&stream-builder-ProductCountApplication-process", StreamsBuilderFactoryBean.class);
+					.getBean("&stream-builder-process", StreamsBuilderFactoryBean.class);
 			CleanupConfig cleanup = TestUtils.getPropertyValue(streamsBuilderFactoryBean,
 					"cleanupConfig", CleanupConfig.class);
 			assertThat(cleanup.cleanupOnStart()).isFalse();
@@ -128,15 +128,12 @@ public class KafkastreamsBinderPojoInputStringOutputIntegrationTests {
 		assertThat(cr.value().contains("Count for product with ID 123: 1")).isTrue();
 	}
 
-	@EnableBinding(KafkaStreamsProcessor.class)
 	@EnableAutoConfiguration
 	public static class ProductCountApplication {
 
-		@StreamListener("input")
-		@SendTo("output")
-		public KStream<Integer, String> process(KStream<Object, Product> input) {
-
-			return input.filter((key, product) -> product.getId() == 123)
+		@Bean
+		public Function<KStream<Object, Product>, KStream<Integer, String>> process() {
+			return input -> input.filter((key, product) -> product.getId() == 123)
 					.map((key, value) -> new KeyValue<>(value, value))
 					.groupByKey(Grouped.with(new JsonSerde<>(Product.class),
 							new JsonSerde<>(Product.class)))

@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -37,10 +38,6 @@ import org.junit.Test;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.cloud.stream.annotation.EnableBinding;
-import org.springframework.cloud.stream.annotation.Input;
-import org.springframework.cloud.stream.annotation.StreamListener;
-import org.springframework.cloud.stream.binder.kafka.streams.annotations.KafkaStreamsProcessor;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.kafka.core.CleanupConfig;
@@ -50,7 +47,6 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.test.EmbeddedKafkaBroker;
 import org.springframework.kafka.test.rule.EmbeddedKafkaRule;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
-import org.springframework.messaging.handler.annotation.SendTo;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -100,6 +96,8 @@ public class KafkaStreamsBinderMultipleInputTopicsTest {
 
 		ConfigurableApplicationContext context = app.run("--server.port=0",
 				"--spring.jmx.enabled=false",
+				"--spring.cloud.stream.function.bindings.process-in-0=input",
+				"--spring.cloud.stream.function.bindings.process-out-0=output",
 				"--spring.cloud.stream.bindings.input.destination=words1,words2",
 				"--spring.cloud.stream.bindings.output.destination=counts",
 				"--spring.cloud.stream.bindings.output.contentType=application/json",
@@ -146,21 +144,13 @@ public class KafkaStreamsBinderMultipleInputTopicsTest {
 		assertThat(wordCounts.contains("{\"word\":\"foobar2\",\"count\":1}")).isTrue();
 	}
 
-	@EnableBinding(KafkaStreamsProcessor.class)
 	@EnableAutoConfiguration
 	static class WordCountProcessorApplication {
 
-		@StreamListener
-		@SendTo("output")
-		public KStream<?, WordCount> process(
-				@Input("input") KStream<Object, String> input) {
+		@Bean
+		public Function<KStream<Object, String>, KStream<?, WordCount>> process() {
 
-			input.map((k, v) -> {
-				System.out.println(k);
-				System.out.println(v);
-				return new KeyValue<>(k, v);
-			});
-			return input
+			return input -> input
 					.flatMapValues(
 							value -> Arrays.asList(value.toLowerCase().split("\\W+")))
 					.map((key, value) -> new KeyValue<>(value, value))
