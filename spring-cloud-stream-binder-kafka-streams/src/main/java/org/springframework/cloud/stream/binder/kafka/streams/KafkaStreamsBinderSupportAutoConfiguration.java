@@ -17,7 +17,6 @@
 package org.springframework.cloud.stream.binder.kafka.streams;
 
 import java.lang.reflect.Constructor;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -50,10 +49,7 @@ import org.springframework.cloud.stream.binder.BinderConfiguration;
 import org.springframework.cloud.stream.binder.kafka.streams.function.FunctionDetectorCondition;
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsBinderConfigurationProperties;
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsExtendedBindingProperties;
-import org.springframework.cloud.stream.binder.kafka.streams.serde.CompositeNonNativeSerde;
-import org.springframework.cloud.stream.binder.kafka.streams.serde.MessageConverterDelegateSerde;
 import org.springframework.cloud.stream.binding.BindingService;
-import org.springframework.cloud.stream.binding.StreamListenerResultAdapter;
 import org.springframework.cloud.stream.config.BinderProperties;
 import org.springframework.cloud.stream.config.BindingServiceConfiguration;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
@@ -297,37 +293,6 @@ public class KafkaStreamsBinderSupportAutoConfiguration {
 	}
 
 	@Bean
-	public KStreamStreamListenerResultAdapter kstreamStreamListenerResultAdapter() {
-		return new KStreamStreamListenerResultAdapter();
-	}
-
-	@Bean
-	public KStreamStreamListenerParameterAdapter kstreamStreamListenerParameterAdapter(
-			KafkaStreamsMessageConversionDelegate kstreamBoundMessageConversionDelegate,
-			KafkaStreamsBindingInformationCatalogue KafkaStreamsBindingInformationCatalogue) {
-		return new KStreamStreamListenerParameterAdapter(
-				kstreamBoundMessageConversionDelegate,
-				KafkaStreamsBindingInformationCatalogue);
-	}
-
-	@Bean
-	public KafkaStreamsStreamListenerSetupMethodOrchestrator kafkaStreamsStreamListenerSetupMethodOrchestrator(
-			BindingServiceProperties bindingServiceProperties,
-			KafkaStreamsExtendedBindingProperties kafkaStreamsExtendedBindingProperties,
-			KeyValueSerdeResolver keyValueSerdeResolver,
-			KafkaStreamsBindingInformationCatalogue kafkaStreamsBindingInformationCatalogue,
-			KStreamStreamListenerParameterAdapter kafkaStreamListenerParameterAdapter,
-			Collection<StreamListenerResultAdapter> streamListenerResultAdapters,
-			ObjectProvider<CleanupConfig> cleanupConfig,
-			ObjectProvider<StreamsBuilderFactoryBeanConfigurer> customizerProvider, ConfigurableEnvironment environment) {
-		return new KafkaStreamsStreamListenerSetupMethodOrchestrator(
-				bindingServiceProperties, kafkaStreamsExtendedBindingProperties,
-				keyValueSerdeResolver, kafkaStreamsBindingInformationCatalogue,
-				kafkaStreamListenerParameterAdapter, streamListenerResultAdapters,
-				cleanupConfig.getIfUnique(), customizerProvider.getIfUnique(), environment);
-	}
-
-	@Bean
 	public KafkaStreamsMessageConversionDelegate messageConversionDelegate(
 			@Qualifier(IntegrationContextUtils.ARGUMENT_RESOLVER_MESSAGE_CONVERTER_BEAN_NAME)
 					CompositeMessageConverter compositeMessageConverter,
@@ -336,20 +301,6 @@ public class KafkaStreamsBinderSupportAutoConfiguration {
 			@Qualifier("binderConfigurationProperties") KafkaStreamsBinderConfigurationProperties binderConfigurationProperties) {
 		return new KafkaStreamsMessageConversionDelegate(compositeMessageConverter, sendToDlqAndContinue,
 				KafkaStreamsBindingInformationCatalogue, binderConfigurationProperties);
-	}
-
-	@Bean
-	public MessageConverterDelegateSerde messageConverterDelegateSerde(
-			@Qualifier(IntegrationContextUtils.ARGUMENT_RESOLVER_MESSAGE_CONVERTER_BEAN_NAME)
-					CompositeMessageConverter compositeMessageConverterFactory) {
-		return new MessageConverterDelegateSerde(compositeMessageConverterFactory);
-	}
-
-	@Bean
-	public CompositeNonNativeSerde compositeNonNativeSerde(
-			@Qualifier(IntegrationContextUtils.ARGUMENT_RESOLVER_MESSAGE_CONVERTER_BEAN_NAME)
-					CompositeMessageConverter compositeMessageConverterFactory) {
-		return new CompositeNonNativeSerde(compositeMessageConverterFactory);
 	}
 
 	@Bean
