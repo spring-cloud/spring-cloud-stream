@@ -41,7 +41,7 @@ import org.springframework.util.CollectionUtils;
  * A catalogue that provides binding information for Kafka Streams target types such as
  * KStream. It also keeps a catalogue for the underlying {@link StreamsBuilderFactoryBean}
  * and {@link StreamsConfig} associated with various
- * {@link org.springframework.cloud.stream.annotation.StreamListener} methods in the
+ * Kafka Streams functions in the
  * {@link org.springframework.context.ApplicationContext}.
  *
  * @author Soby Chacko

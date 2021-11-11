@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2019 the original author or authors.
+ * Copyright 2019-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,11 +35,12 @@ import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.binder.BinderFactory;
 import org.springframework.cloud.stream.binder.kafka.KafkaMessageChannelBinder;
-import org.springframework.cloud.stream.messaging.Source;
+import org.springframework.cloud.stream.function.StreamBridge;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.core.ProducerFactory;
 import org.springframework.kafka.test.rule.EmbeddedKafkaRule;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
@@ -58,6 +59,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Gary Russell
+ * @author Soby Chacko
  * @since 2.1.4
  *
  */
@@ -80,7 +82,7 @@ public class ProducerOnlyTransactionTests {
 	private Sender sender;
 
 	@Autowired
-	private MessageChannel output;
+	private ApplicationContext context;
 
 	@BeforeClass
 	public static void setup() {
@@ -95,7 +97,8 @@ public class ProducerOnlyTransactionTests {
 
 	@Test
 	public void testProducerTx() {
-		this.sender.DoInTransaction(this.output);
+		final StreamBridge streamBridge = context.getBean(StreamBridge.class);
+		this.sender.DoInTransaction(streamBridge);
 		assertThat(this.sender.isInTx()).isTrue();
 		Map<String, Object> props = KafkaTestUtils.consumerProps("consumeTx", "false",
 				embeddedKafka.getEmbeddedKafka());
@@ -109,9 +112,9 @@ public class ProducerOnlyTransactionTests {
 		assertThat(record.value()).isEqualTo("foo".getBytes());
 	}
 
-	@EnableBinding(Source.class)
 	@EnableAutoConfiguration
 	@EnableTransactionManagement
+	@Configuration
 	public static class Config {
 
 		@Bean
@@ -140,9 +143,9 @@ public class ProducerOnlyTransactionTests {
 		private boolean isInTx;
 
 		@Transactional
-		public void DoInTransaction(MessageChannel output) {
+		public void DoInTransaction(StreamBridge streamBridge) {
 			this.isInTx = TransactionSynchronizationManager.isActualTransactionActive();
-			output.send(new GenericMessage<>("foo"));
+			streamBridge.send("output", new GenericMessage<>("foo".getBytes()));
 		}
 
 		public boolean isInTx() {
