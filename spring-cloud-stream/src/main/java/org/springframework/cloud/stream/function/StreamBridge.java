@@ -37,6 +37,8 @@ import org.springframework.cloud.stream.binder.BinderFactory;
 import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.cloud.stream.binding.BinderAwareChannelResolver.NewDestinationBindingCallback;
 import org.springframework.cloud.stream.binding.BindingService;
+import org.springframework.cloud.stream.binding.DefaultPartitioningInterceptor;
+import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.cloud.stream.messaging.DirectWithAttributesChannel;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -205,8 +207,6 @@ public final class StreamBridge implements SmartInitializingSingleton {
 		ProducerProperties producerProperties = this.bindingServiceProperties.getProducerProperties(bindingName);
 		SubscribableChannel messageChannel = this.resolveDestination(bindingName, producerProperties, binderName);
 
-//		Function functionToInvoke = this.functionCatalog.lookup(STREAM_BRIDGE_FUNC_NAME, outputContentType.toString());
-//		((FunctionInvocationWrapper) functionToInvoke).setSkipOutputConversion(producerProperties.isUseNativeEncoding());
 		Function functionToInvoke = this.getStreamBridgeFunction(outputContentType.toString(), producerProperties);
 
 		if (producerProperties != null && producerProperties.isPartitioned()) {
@@ -273,6 +273,11 @@ public final class StreamBridge implements SmartInitializingSingleton {
 
 			this.bindingService.bindProducer(messageChannel, destinationName, false, binder);
 			this.channelCache.put(destinationName, messageChannel);
+			if (producerProperties.isPartitioned()) {
+				BindingProperties bindingProperties = this.bindingServiceProperties.getBindingProperties(destinationName);
+				((AbstractMessageChannel) messageChannel)
+					.addInterceptor(new DefaultPartitioningInterceptor(bindingProperties, this.applicationContext.getBeanFactory()));
+			}
 			this.addInterceptors((AbstractMessageChannel) messageChannel, destinationName);
 		}
 
