@@ -76,6 +76,7 @@ import org.springframework.cloud.stream.binder.kafka.properties.KafkaProducerPro
 import org.springframework.cloud.stream.binder.kafka.provisioning.KafkaTopicProvisioner;
 import org.springframework.cloud.stream.binder.kafka.utils.DlqDestinationResolver;
 import org.springframework.cloud.stream.binder.kafka.utils.DlqPartitionFunction;
+import org.springframework.cloud.stream.binding.DefaultPartitioningInterceptor;
 import org.springframework.cloud.stream.binding.MessageConverterConfigurer.PartitioningInterceptor;
 import org.springframework.cloud.stream.config.ListenerContainerCustomizer;
 import org.springframework.cloud.stream.config.MessageSourceCustomizer;
@@ -418,7 +419,7 @@ public class KafkaMessageChannelBinder extends
 			List<ChannelInterceptor> interceptors = ((InterceptableChannel) channel)
 					.getInterceptors();
 			interceptors.forEach((interceptor) -> {
-				if (interceptor instanceof PartitioningInterceptor) {
+				if (interceptor instanceof PartitioningInterceptor || interceptor instanceof DefaultPartitioningInterceptor) {
 					((PartitioningInterceptor) interceptor)
 							.setPartitionCount(partitions.size());
 				}
