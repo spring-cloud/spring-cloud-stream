@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2020 the original author or authors.
+ * Copyright 2017-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package org.springframework.cloud.stream.binder.kafka.streams;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.Properties;
 
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -29,6 +30,7 @@ import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.KeyQueryMetadata;
 import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.StoreQueryParameters;
+import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.kstream.Grouped;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.Materialized;
@@ -65,6 +67,7 @@ import static org.mockito.internal.verification.VerificationModeFactory.times;
 /**
  * @author Soby Chacko
  * @author Gary Russell
+ * @author Nico Pommerening
  */
 public class KafkaStreamsInteractiveQueryIntegrationTests {
 
@@ -102,6 +105,9 @@ public class KafkaStreamsInteractiveQueryIntegrationTests {
 		KafkaStreamsRegistry kafkaStreamsRegistry = new KafkaStreamsRegistry();
 		kafkaStreamsRegistry.registerKafkaStreams(mock);
 		Mockito.when(mock.isRunning()).thenReturn(true);
+		Properties mockProperties = new Properties();
+		mockProperties.put(StreamsConfig.APPLICATION_ID_CONFIG, "fooApp");
+		Mockito.when(mock.getStreamsConfiguration()).thenReturn(mockProperties);
 		KafkaStreamsBinderConfigurationProperties binderConfigurationProperties =
 				new KafkaStreamsBinderConfigurationProperties(new KafkaProperties());
 		binderConfigurationProperties.getStateStoreRetry().setMaxAttempts(3);
