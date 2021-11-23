@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 the original author or authors.
+ * Copyright 2015-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -163,21 +163,41 @@ public class KafkaBinderConfigurationProperties {
 
 	private void moveCertsToFileSystemIfNecessary() {
 		try {
-			final String trustStoreLocation = this.configuration.get("ssl.truststore.location");
-			if (trustStoreLocation != null && trustStoreLocation.startsWith("classpath:")) {
-				final String fileSystemLocation = moveCertToFileSystem(trustStoreLocation, this.certificateStoreDirectory);
-				// Overriding the value with absolute filesystem path.
-				this.configuration.put("ssl.truststore.location", fileSystemLocation);
-			}
-			final String keyStoreLocation = this.configuration.get("ssl.keystore.location");
-			if (keyStoreLocation != null && keyStoreLocation.startsWith("classpath:")) {
-				final String fileSystemLocation = moveCertToFileSystem(keyStoreLocation, this.certificateStoreDirectory);
-				// Overriding the value with absolute filesystem path.
-				this.configuration.put("ssl.keystore.location", fileSystemLocation);
-			}
+			moveBrokerCertsIfApplicable();
+			moveSchemaRegistryCertsIfApplicable();
 		}
 		catch (Exception e) {
 			throw new IllegalStateException(e);
+		}
+	}
+
+	private void moveBrokerCertsIfApplicable() throws IOException {
+		final String trustStoreLocation = this.configuration.get("ssl.truststore.location");
+		if (trustStoreLocation != null && trustStoreLocation.startsWith("classpath:")) {
+			final String fileSystemLocation = moveCertToFileSystem(trustStoreLocation, this.certificateStoreDirectory);
+			// Overriding the value with absolute filesystem path.
+			this.configuration.put("ssl.truststore.location", fileSystemLocation);
+		}
+		final String keyStoreLocation = this.configuration.get("ssl.keystore.location");
+		if (keyStoreLocation != null && keyStoreLocation.startsWith("classpath:")) {
+			final String fileSystemLocation = moveCertToFileSystem(keyStoreLocation, this.certificateStoreDirectory);
+			// Overriding the value with absolute filesystem path.
+			this.configuration.put("ssl.keystore.location", fileSystemLocation);
+		}
+	}
+
+	private void moveSchemaRegistryCertsIfApplicable() throws IOException {
+		String trustStoreLocation = this.configuration.get("schema.registry.ssl.truststore.location");
+		if (trustStoreLocation != null && trustStoreLocation.startsWith("classpath:")) {
+			final String fileSystemLocation = moveCertToFileSystem(trustStoreLocation, this.certificateStoreDirectory);
+			// Overriding the value with absolute filesystem path.
+			this.configuration.put("schema.registry.ssl.truststore.location", fileSystemLocation);
+		}
+		final String keyStoreLocation = this.configuration.get("schema.registry.ssl.keystore.location");
+		if (keyStoreLocation != null && keyStoreLocation.startsWith("classpath:")) {
+			final String fileSystemLocation = moveCertToFileSystem(keyStoreLocation, this.certificateStoreDirectory);
+			// Overriding the value with absolute filesystem path.
+			this.configuration.put("schema.registry.ssl.keystore.location", fileSystemLocation);
 		}
 	}
 

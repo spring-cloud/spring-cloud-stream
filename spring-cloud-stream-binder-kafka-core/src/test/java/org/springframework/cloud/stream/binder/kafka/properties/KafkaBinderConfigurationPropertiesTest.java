@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2019 the original author or authors.
+ * Copyright 2018-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -140,6 +140,24 @@ public class KafkaBinderConfigurationPropertiesTest {
 		assertThat(configuration.get("ssl.truststore.location")).isEqualTo(
 				Paths.get(Files.currentFolder().toString(), "target", "testclient.truststore").toString());
 		assertThat(configuration.get("ssl.keystore.location")).isEqualTo(
+				Paths.get(Files.currentFolder().toString(), "target", "testclient.keystore").toString());
+	}
+
+	@Test
+	public void testCertificateFilesAreMovedForSchemaRegistryConfiguration() {
+		KafkaProperties kafkaProperties = new KafkaProperties();
+		KafkaBinderConfigurationProperties kafkaBinderConfigurationProperties =
+				new KafkaBinderConfigurationProperties(kafkaProperties);
+		final Map<String, String> configuration = kafkaBinderConfigurationProperties.getConfiguration();
+		configuration.put("schema.registry.ssl.truststore.location", "classpath:testclient.truststore");
+		configuration.put("schema.registry.ssl.keystore.location", "classpath:testclient.keystore");
+		kafkaBinderConfigurationProperties.setCertificateStoreDirectory("target");
+
+		kafkaBinderConfigurationProperties.getKafkaConnectionString();
+
+		assertThat(configuration.get("schema.registry.ssl.truststore.location")).isEqualTo(
+				Paths.get(Files.currentFolder().toString(), "target", "testclient.truststore").toString());
+		assertThat(configuration.get("schema.registry.ssl.keystore.location")).isEqualTo(
 				Paths.get(Files.currentFolder().toString(), "target", "testclient.keystore").toString());
 	}
 }
