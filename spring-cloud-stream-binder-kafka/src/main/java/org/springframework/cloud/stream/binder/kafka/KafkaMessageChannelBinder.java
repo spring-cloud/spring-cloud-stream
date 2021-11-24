@@ -419,8 +419,12 @@ public class KafkaMessageChannelBinder extends
 			List<ChannelInterceptor> interceptors = ((InterceptableChannel) channel)
 					.getInterceptors();
 			interceptors.forEach((interceptor) -> {
-				if (interceptor instanceof PartitioningInterceptor || interceptor instanceof DefaultPartitioningInterceptor) {
+				if (interceptor instanceof PartitioningInterceptor) {
 					((PartitioningInterceptor) interceptor)
+							.setPartitionCount(partitions.size());
+				}
+				else if (interceptor instanceof DefaultPartitioningInterceptor) {
+					((DefaultPartitioningInterceptor) interceptor)
 							.setPartitionCount(partitions.size());
 				}
 			});
