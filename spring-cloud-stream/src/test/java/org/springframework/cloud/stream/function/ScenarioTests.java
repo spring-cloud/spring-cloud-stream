@@ -46,7 +46,7 @@ public class ScenarioTests {
 	@Test
 	public void test2106() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration
-				.getCompleteConfiguration(ConsumerConfiguration.class, ConsumerConfiguration.class))
+				.getCompleteConfiguration(ConsumerConfiguration.class))
 						.web(WebApplicationType.NONE).run(
 								"--spring.cloud.function.definition=consume;echo",
 								"--spring.cloud.stream.bindings.consume-in-0.destination=input",
@@ -82,17 +82,17 @@ public class ScenarioTests {
 	}
 
 	@Test
-	public void testComposingSupplierWuthTypelessMessageFunction() {
+	public void testComposingSupplierWuthTypelessMessageFunction() throws Exception {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
-				TestChannelBinderConfiguration.getCompleteConfiguration(TestConfiguration.class))
+				TestChannelBinderConfiguration.getCompleteConfiguration(SupplierConfiguration.class))
 						.web(WebApplicationType.NONE)
 						.run("--spring.jmx.enabled=false",
 								"--spring.cloud.function.definition=messageSupplier|messageFunction")) {
 
 			OutputDestination output = context.getBean(OutputDestination.class);
-			assertThat(output.receive(1000)).isNotNull();
-			assertThat(output.receive(1100)).isNotNull();
-			assertThat(output.receive(1200)).isNotNull();
+			assertThat(output.receive(1000, "messageSuppliermessageFunction-out-0")).isNotNull();
+			assertThat(output.receive(1200, "messageSuppliermessageFunction-out-0")).isNotNull();
+			assertThat(output.receive(1300, "messageSuppliermessageFunction-out-0")).isNotNull();
 		}
 	}
 
@@ -134,23 +134,29 @@ public class ScenarioTests {
 	@EnableAutoConfiguration
 	@Configuration
 	public static class TestConfiguration {
+		@SuppressWarnings("unchecked")
+		@Bean
+		public <I, O> Function<I, O> genericTypeFunction() {
+			return v -> {
+				return (O) ("hello_" + new String((byte[]) v));
+			};
+		}
+	}
+
+	@EnableAutoConfiguration
+	@Configuration
+	public static class SupplierConfiguration {
 		@Bean
 		public Supplier<Message<?>> messageSupplier() {
 			return () -> new GenericMessage<>("10/27/20 07:20:01");
 		}
 		@Bean
 		public Function<Message<?>, Message<?>> messageFunction() {
-			return message -> message;
-		}
-
-		@SuppressWarnings("unchecked")
-		@Bean
-		public <I, O> Function<I, O> genericTypeFunction() {
-			return v -> {
-				System.out.println(v);
-				return (O) ("hello_" + v);
+			return message -> {
+				return message;
 			};
 		}
+
 	}
 
 	@EnableAutoConfiguration
