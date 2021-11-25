@@ -745,7 +745,9 @@ public class ContentTypeTckTests {
 		public Person echo(Object value) throws Exception {
 			ObjectMapper mapper = new ObjectMapper();
 			// assume it is string because CT is text/plain
-			return mapper.readValue((String) value, Person.class);
+			return value instanceof byte[]
+					? mapper.readValue((byte[]) value, Person.class)
+							: mapper.readValue((String) value, Person.class);
 		}
 
 	}
@@ -760,7 +762,9 @@ public class ContentTypeTckTests {
 		public Person echo(Message<?> message) throws Exception {
 			ObjectMapper mapper = new ObjectMapper();
 			// assume it is string because CT is text/plain
-			return mapper.readValue((String) message.getPayload(), Person.class);
+			return message.getPayload() instanceof byte[]
+					? mapper.readValue((byte[]) message.getPayload(), Person.class)
+							: mapper.readValue((String) message.getPayload(), Person.class);
 		}
 
 	}

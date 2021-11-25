@@ -185,7 +185,7 @@ public class ImplicitFunctionBindingTests {
 				// good, we expected it
 			}
 
-			Function<String, String> function = v -> v.toUpperCase();
+			Function<byte[], String> function = v -> new String(v).toUpperCase();
 			FunctionBindingTestUtils.bind(context, function);
 
 			input.send(new GenericMessage<byte[]>("hello".getBytes()));
@@ -1013,7 +1013,7 @@ public class ImplicitFunctionBindingTests {
 
 			Message result = outputDestination.receive(2000);
 			assertThat(result.getPayload()).isInstanceOf(byte[].class); // check output type
-			assertThat(new String((byte[]) result.getPayload())).isEqualTo("String"); // check input type
+			assertThat(new String((byte[]) result.getPayload())).isEqualTo("byte[]"); // check input type
 		}
 
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
@@ -1051,7 +1051,7 @@ public class ImplicitFunctionBindingTests {
 
 			Message result = outputDestination.receive(2000);
 			assertThat(result.getPayload()).isInstanceOf(byte[].class); // check output type
-			assertThat(new String((byte[]) result.getPayload())).isEqualTo("String"); // check input type
+			assertThat(new String((byte[]) result.getPayload())).isEqualTo("byte[]"); // check input type
 		}
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 				TestChannelBinderConfiguration.getCompleteConfiguration(SingleFunctionConfiguration2.class))

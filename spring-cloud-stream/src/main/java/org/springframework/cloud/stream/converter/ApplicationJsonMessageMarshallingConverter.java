@@ -105,7 +105,7 @@ class ApplicationJsonMessageMarshallingConverter extends MappingJackson2MessageC
 		}
 		if (result == null) {
 			if (message.getPayload() instanceof byte[]
-					&& targetClass.isAssignableFrom(String.class)) {
+					&& String.class.isAssignableFrom(targetClass)) {
 				result = new String((byte[]) message.getPayload(),
 						StandardCharsets.UTF_8);
 			}
