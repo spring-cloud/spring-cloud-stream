@@ -2514,7 +2514,7 @@ To better understand the mechanics and the necessity behind content-type negotia
 [source, java]
 ----
 
-public Function<Person, Person> personFunction {..}
+public Function<Person, String> personFunction {..}
 ----
 
 NOTE: For simplicity, we assume that this is the only handler function in the application (we assume there is no internal pipeline).
