@@ -46,11 +46,16 @@ import org.springframework.integration.config.GlobalChannelInterceptor;
 import org.springframework.integration.dsl.IntegrationFlow;
 import org.springframework.integration.dsl.IntegrationFlows;
 import org.springframework.integration.handler.LoggingHandler;
+import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
+import org.springframework.messaging.MessageHeaders;
+import org.springframework.messaging.converter.AbstractMessageConverter;
+import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.messaging.support.ChannelInterceptor;
 import org.springframework.messaging.support.MessageBuilder;
+import org.springframework.util.MimeType;
 import org.springframework.util.MimeTypeUtils;
 import org.springframework.util.ReflectionUtils;
 
@@ -69,6 +74,28 @@ public class StreamBridgeTests {
 	@Before
 	public void before() {
 		System.clearProperty("spring.cloud.function.definition");
+	}
+
+	@Test
+	public void testWithOutputContentTypeWildCardBindings() throws Exception {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration
+				.getCompleteConfiguration(ConsumerConfiguration.class, EmptyConfigurationWithCustomConverters.class))
+						.web(WebApplicationType.NONE).run(
+								"--spring.cloud.stream.bindings.foo.content-type=application/*+foo  ",
+								"--spring.cloud.stream.bindings.bar.content-type=application/*+non-registered-foo",
+								"--spring.jmx.enabled=false")) {
+			StreamBridge bridge = context.getBean(StreamBridge.class);
+			bridge.send("foo", "hello foo");
+			bridge.send("bar", "hello bar");
+
+			OutputDestination output = context.getBean(OutputDestination.class);
+
+			assertThat(output.receive(1000, "foo").getHeaders().get(MessageHeaders.CONTENT_TYPE))
+				.isEqualTo(MimeType.valueOf("application/json+foo"));
+			assertThat(output.receive(1000, "bar").getHeaders().get(MessageHeaders.CONTENT_TYPE))
+				.isEqualTo(MimeType.valueOf("application/blahblah+non-registered-foo"));
+
+		}
 	}
 
 	@SuppressWarnings("unchecked")
@@ -379,6 +406,63 @@ public class StreamBridgeTests {
 	@EnableAutoConfiguration
 	public static class EmptyConfiguration {
 
+	}
+
+	@EnableAutoConfiguration
+	public static class EmptyConfigurationWithCustomConverters {
+
+		@Bean
+		public MessageConverter fooConverter() {
+			return new AbstractMessageConverter(MimeType.valueOf("application/json+foo"), MimeType.valueOf("application/json+blah")) {
+				@Override
+				protected boolean supports(Class<?> clazz) {
+					return true;
+				}
+
+				@Override
+				@Nullable
+				protected Object convertFromInternal(Message<?> message, Class<?> targetClass, @Nullable Object conversionHint) {
+					return message.getPayload();
+				}
+
+				@Override
+				@Nullable
+				protected Object convertToInternal(Object payload, @Nullable MessageHeaders headers, @Nullable Object conversionHint) {
+					if (headers.containsKey(MessageHeaders.CONTENT_TYPE) &&
+							(headers.get(MessageHeaders.CONTENT_TYPE).toString().endsWith("+foo") ||
+									headers.get(MessageHeaders.CONTENT_TYPE).toString().endsWith("+blah"))) {
+						return payload;
+					}
+					return null;
+				}
+			};
+		}
+
+		@Bean
+		public MessageConverter barConverter() {
+			return new AbstractMessageConverter(MimeType.valueOf("application/blahblah+non-registered-foo")) {
+				@Override
+				protected boolean supports(Class<?> clazz) {
+					return true;
+				}
+
+				@Override
+				@Nullable
+				protected Object convertFromInternal(Message<?> message, Class<?> targetClass, @Nullable Object conversionHint) {
+					return message.getPayload();
+				}
+
+				@Override
+				@Nullable
+				protected Object convertToInternal(Object payload, @Nullable MessageHeaders headers, @Nullable Object conversionHint) {
+					if (headers.containsKey(MessageHeaders.CONTENT_TYPE) &&
+							(headers.get(MessageHeaders.CONTENT_TYPE).toString().endsWith("+non-registered-foo"))) {
+						return payload;
+					}
+					return null;
+				}
+			};
+		}
 	}
 
 	@EnableAutoConfiguration
