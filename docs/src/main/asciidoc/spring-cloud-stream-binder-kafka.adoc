@@ -44,6 +44,8 @@ include::partitions.adoc[]
 
 include::kafka-streams.adoc[]
 
+include::tips.adoc[]
+
 = Appendices
 [appendix]
 include::building.adoc[]
