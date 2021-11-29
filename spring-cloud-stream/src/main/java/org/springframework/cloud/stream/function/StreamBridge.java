@@ -139,7 +139,9 @@ public final class StreamBridge implements SmartInitializingSingleton {
 	 * @return true if data was sent successfully, otherwise false or throws an exception.
 	 */
 	public boolean send(String bindingName, Object data) {
-		return this.send(bindingName, data, MimeTypeUtils.APPLICATION_JSON);
+		BindingProperties bindingProperties = this.bindingServiceProperties.getBindingProperties(bindingName);
+		MimeType contentType = StringUtils.hasText(bindingProperties.getContentType()) ? MimeType.valueOf(bindingProperties.getContentType()) : MimeTypeUtils.APPLICATION_JSON;
+		return this.send(bindingName, data, contentType);
 	}
 
 	/**

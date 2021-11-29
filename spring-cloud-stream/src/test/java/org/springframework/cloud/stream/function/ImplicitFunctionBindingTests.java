@@ -436,8 +436,7 @@ public class ImplicitFunctionBindingTests {
 				TestChannelBinderConfiguration.getCompleteConfiguration(SingleConsumerConfiguration.class))
 						.web(WebApplicationType.NONE).run("--spring.cloud.function.definition=consumer",
 								"--spring.jmx.enabled=false",
-								"--spring.cloud.stream.bindings.input.content-type=text/plain",
-								"--spring.cloud.stream.bindings.input.consumer.use-native-decoding=true")) {
+								"--spring.cloud.stream.bindings.consumer-in-0.content-type=text/plain")) {
 
 			InputDestination source = context.getBean(InputDestination.class);
 			source.send(new GenericMessage<byte[]>("John Doe".getBytes()));
