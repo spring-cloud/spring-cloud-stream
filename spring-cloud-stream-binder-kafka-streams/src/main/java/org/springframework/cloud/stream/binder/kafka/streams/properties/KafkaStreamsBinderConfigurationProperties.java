@@ -74,6 +74,7 @@ public class KafkaStreamsBinderConfigurationProperties
 	 */
 	private DeserializationExceptionHandler deserializationExceptionHandler;
 
+	private boolean includeStoppedProcessorsForHealthCheck;
 
 	public Map<String, Functions> getFunctions() {
 		return functions;
@@ -125,6 +126,14 @@ public class KafkaStreamsBinderConfigurationProperties
 
 	public void setDeserializationExceptionHandler(DeserializationExceptionHandler deserializationExceptionHandler) {
 		this.deserializationExceptionHandler = deserializationExceptionHandler;
+	}
+
+	public boolean isIncludeStoppedProcessorsForHealthCheck() {
+		return includeStoppedProcessorsForHealthCheck;
+	}
+
+	public void setIncludeStoppedProcessorsForHealthCheck(boolean includeStoppedProcessorsForHealthCheck) {
+		this.includeStoppedProcessorsForHealthCheck = includeStoppedProcessorsForHealthCheck;
 	}
 
 	public static class StateStoreRetry {

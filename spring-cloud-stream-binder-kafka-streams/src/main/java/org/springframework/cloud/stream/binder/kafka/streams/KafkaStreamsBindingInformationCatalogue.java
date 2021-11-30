@@ -26,6 +26,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import org.apache.kafka.common.serialization.Serde;
+import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.kstream.KStream;
 
@@ -61,6 +62,8 @@ public class KafkaStreamsBindingInformationCatalogue {
 	private final Map<KStream<?, ?>, Serde<?>> keySerdeInfo = new HashMap<>();
 
 	private final Map<Object, String> bindingNamesPerTarget = new HashMap<>();
+
+	private final Map<String, KafkaStreams> previousKafkaStreamsPerApplicationId = new HashMap<>();
 
 	private final Map<StreamsBuilderFactoryBean, List<ProducerFactory<byte[], byte[]>>> dlqProducerFactories = new HashMap<>();
 
@@ -212,5 +215,36 @@ public class KafkaStreamsBindingInformationCatalogue {
 			this.dlqProducerFactories.put(streamsBuilderFactoryBean, producerFactories);
 		}
 		producerFactories.add(producerFactory);
+	}
+
+	/**
+	 * Caching the previous KafkaStreams for the applicaiton.id when binding is stopped through actuator.
+	 * See https://github.com/spring-cloud/spring-cloud-stream-binder-kafka/issues/1165
+	 *
+	 * @param applicationId application.id
+	 * @param kafkaStreams {@link KafkaStreams} object
+	 */
+	public void addPreviousKafkaStreamsForApplicationId(String applicationId, KafkaStreams kafkaStreams) {
+		this.previousKafkaStreamsPerApplicationId.put(applicationId, kafkaStreams);
+	}
+
+	/**
+	 * Remove the previously cached KafkaStreams object.
+	 * See https://github.com/spring-cloud/spring-cloud-stream-binder-kafka/issues/1165
+	 *
+	 * @param applicationId application.id
+	 */
+	public void removePreviousKafkaStreamsForApplicationId(String applicationId) {
+		this.previousKafkaStreamsPerApplicationId.remove(applicationId);
+	}
+
+	/**
+	 * Get all stopped KafkaStreams objects through actuator binding stop.
+	 * See https://github.com/spring-cloud/spring-cloud-stream-binder-kafka/issues/1165
+	 *
+	 * @return stopped KafkaStreams objects map
+	 */
+	public Map<String, KafkaStreams> getStoppedKafkaStreams() {
+		return this.previousKafkaStreamsPerApplicationId;
 	}
 }

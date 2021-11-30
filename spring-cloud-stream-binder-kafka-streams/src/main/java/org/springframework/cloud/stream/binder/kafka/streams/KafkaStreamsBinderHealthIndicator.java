@@ -19,6 +19,7 @@ package org.springframework.cloud.stream.binder.kafka.streams;
 import java.lang.reflect.Method;
 import java.time.Duration;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -31,8 +32,8 @@ import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.ListTopicsResult;
 import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.StreamsConfig;
-import org.apache.kafka.streams.processor.TaskMetadata;
-import org.apache.kafka.streams.processor.ThreadMetadata;
+import org.apache.kafka.streams.TaskMetadata;
+import org.apache.kafka.streams.ThreadMetadata;
 
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.boot.actuate.health.AbstractHealthIndicator;
@@ -118,7 +119,12 @@ public class KafkaStreamsBinderHealthIndicator extends AbstractHealthIndicator i
 			}
 			else {
 				boolean up = true;
-				for (KafkaStreams kStream : kafkaStreamsRegistry.getKafkaStreams()) {
+				final Set<KafkaStreams> kafkaStreams = kafkaStreamsRegistry.getKafkaStreams();
+				Set<KafkaStreams> allKafkaStreams = new HashSet<>(kafkaStreams);
+				if (this.configurationProperties.isIncludeStoppedProcessorsForHealthCheck()) {
+					allKafkaStreams.addAll(kafkaStreamsBindingInformationCatalogue.getStoppedKafkaStreams().values());
+				}
+				for (KafkaStreams kStream : allKafkaStreams) {
 					if (isKafkaStreams25) {
 						up &= kStream.state().isRunningOrRebalancing();
 					}
@@ -156,7 +162,8 @@ public class KafkaStreamsBinderHealthIndicator extends AbstractHealthIndicator i
 		}
 
 		if (isRunningResult) {
-			for (ThreadMetadata metadata : kafkaStreams.localThreadsMetadata()) {
+			final Set<ThreadMetadata> threadMetadata = kafkaStreams.metadataForLocalThreads();
+			for (ThreadMetadata metadata : threadMetadata) {
 				perAppdIdDetails.put("threadName", metadata.threadName());
 				perAppdIdDetails.put("threadState", metadata.threadState());
 				perAppdIdDetails.put("adminClientId", metadata.adminClientId());
@@ -172,8 +179,19 @@ public class KafkaStreamsBinderHealthIndicator extends AbstractHealthIndicator i
 		}
 		else {
 			final StreamsBuilderFactoryBean streamsBuilderFactoryBean = this.kafkaStreamsRegistry.streamBuilderFactoryBean(kafkaStreams);
-			final String applicationId = (String) streamsBuilderFactoryBean.getStreamsConfiguration().get(StreamsConfig.APPLICATION_ID_CONFIG);
-			details.put(applicationId, String.format("The processor with application.id %s is down", applicationId));
+			String applicationId = null;
+			if (streamsBuilderFactoryBean != null) {
+				applicationId = (String) streamsBuilderFactoryBean.getStreamsConfiguration().get(StreamsConfig.APPLICATION_ID_CONFIG);
+			}
+			else {
+				final Map<String, KafkaStreams> stoppedKafkaStreamsPerBinding = kafkaStreamsBindingInformationCatalogue.getStoppedKafkaStreams();
+				for (String appId : stoppedKafkaStreamsPerBinding.keySet()) {
+					if (stoppedKafkaStreamsPerBinding.get(appId).equals(kafkaStreams)) {
+						applicationId = appId;
+					}
+				}
+			}
+			details.put(applicationId, String.format("The processor with application.id %s is down. Current state: %s", applicationId, kafkaStreams.state()));
 		}
 		return details;
 	}

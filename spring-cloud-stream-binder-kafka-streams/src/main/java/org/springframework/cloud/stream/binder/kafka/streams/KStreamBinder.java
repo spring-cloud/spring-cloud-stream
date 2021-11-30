@@ -23,6 +23,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.KafkaStreams;
+import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.Produced;
 import org.apache.kafka.streams.processor.StreamPartitioner;
@@ -134,6 +135,12 @@ class KStreamBinder extends
 				if (!streamsBuilderFactoryBean.isRunning()) {
 					super.start();
 					KStreamBinder.this.kafkaStreamsRegistry.registerKafkaStreams(streamsBuilderFactoryBean);
+					//If we cached the previous KafkaStreams object (from a binding stop on the actuator), remove it.
+					//See this issue for more details: https://github.com/spring-cloud/spring-cloud-stream-binder-kafka/issues/1165
+					final String applicationId = (String) streamsBuilderFactoryBean.getStreamsConfiguration().get(StreamsConfig.APPLICATION_ID_CONFIG);
+					if (kafkaStreamsBindingInformationCatalogue.getStoppedKafkaStreams().containsKey(applicationId)) {
+						kafkaStreamsBindingInformationCatalogue.removePreviousKafkaStreamsForApplicationId(applicationId);
+					}
 				}
 			}
 
@@ -144,6 +151,10 @@ class KStreamBinder extends
 					super.stop();
 					KStreamBinder.this.kafkaStreamsRegistry.unregisterKafkaStreams(kafkaStreams);
 					KafkaStreamsBinderUtils.closeDlqProducerFactories(kafkaStreamsBindingInformationCatalogue, streamsBuilderFactoryBean);
+					//Caching the stopped KafkaStreams for health indicator purposes on the underlying processor.
+					//See this issue for more details: https://github.com/spring-cloud/spring-cloud-stream-binder-kafka/issues/1165
+					KStreamBinder.this.kafkaStreamsBindingInformationCatalogue.addPreviousKafkaStreamsForApplicationId(
+							(String) streamsBuilderFactoryBean.getStreamsConfiguration().get(StreamsConfig.APPLICATION_ID_CONFIG), kafkaStreams);
 				}
 			}
 		};
@@ -199,6 +210,12 @@ class KStreamBinder extends
 				if (!streamsBuilderFactoryBean.isRunning()) {
 					super.start();
 					KStreamBinder.this.kafkaStreamsRegistry.registerKafkaStreams(streamsBuilderFactoryBean);
+					//If we cached the previous KafkaStreams object (from a binding stop on the actuator), remove it.
+					//See this issue for more details: https://github.com/spring-cloud/spring-cloud-stream-binder-kafka/issues/1165
+					final String applicationId = (String) streamsBuilderFactoryBean.getStreamsConfiguration().get(StreamsConfig.APPLICATION_ID_CONFIG);
+					if (kafkaStreamsBindingInformationCatalogue.getStoppedKafkaStreams().containsKey(applicationId)) {
+						kafkaStreamsBindingInformationCatalogue.removePreviousKafkaStreamsForApplicationId(applicationId);
+					}
 				}
 			}
 
@@ -209,6 +226,10 @@ class KStreamBinder extends
 					super.stop();
 					KStreamBinder.this.kafkaStreamsRegistry.unregisterKafkaStreams(kafkaStreams);
 					KafkaStreamsBinderUtils.closeDlqProducerFactories(kafkaStreamsBindingInformationCatalogue, streamsBuilderFactoryBean);
+					//Caching the stopped KafkaStreams for health indicator purposes on the underlying processor
+					//See this issue for more details: https://github.com/spring-cloud/spring-cloud-stream-binder-kafka/issues/1165
+					KStreamBinder.this.kafkaStreamsBindingInformationCatalogue.addPreviousKafkaStreamsForApplicationId(
+							(String) streamsBuilderFactoryBean.getStreamsConfiguration().get(StreamsConfig.APPLICATION_ID_CONFIG), kafkaStreams);
 				}
 			}
 		};
