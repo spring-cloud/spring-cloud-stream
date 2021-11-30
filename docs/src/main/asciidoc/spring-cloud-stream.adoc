@@ -2398,9 +2398,9 @@ public MessageSourceCustomizer<AmqpMessageSource> sourceCustomizer() {
 These properties are exposed via `org.springframework.cloud.stream.binder.ProducerProperties`
 
 The following binding properties are available for output bindings only and must be prefixed with `spring.cloud.stream.bindings.<bindingName>.producer.`
-(for example, `spring.cloud.stream.bindings.func-out-0.producer.partitionKeyExpression=payload.id`).
+(for example, `spring.cloud.stream.bindings.func-out-0.producer.partitionKeyExpression=headers.id`).
 
-Default values can be set by using the prefix `spring.cloud.stream.default.producer` (for example, `spring.cloud.stream.default.producer.partitionKeyExpression=payload.id`).
+Default values can be set by using the prefix `spring.cloud.stream.default.producer` (for example, `spring.cloud.stream.default.producer.partitionKeyExpression=headers.id`).
 
 autoStartup::
 Signals if this consumer needs to be started automatically
@@ -2719,14 +2719,14 @@ You can configure an output binding to send partitioned data by setting one and 
 For example, the following is a valid and typical configuration:
 
 ----
-spring.cloud.stream.bindings.func-out-0.producer.partitionKeyExpression=payload.id
+spring.cloud.stream.bindings.func-out-0.producer.partitionKeyExpression=headers.id
 spring.cloud.stream.bindings.func-out-0.producer.partitionCount=5
 ----
 
 Based on that example configuration, data is sent to the target partition by using the following logic.
 
 A partition key's value is calculated for each message sent to a partitioned output binding based on the `partitionKeyExpression`.
-The `partitionKeyExpression` is a SpEL expression that is evaluated against the outbound message for extracting the partitioning key.
+The `partitionKeyExpression` is a SpEL expression that is evaluated against the outbound message (in the preceding example it's the value of the `id` from message headers) for extracting the partitioning key.
 
 If a SpEL expression is not sufficient for your needs, you can instead calculate the partition key value by providing an implementation of `org.springframework.cloud.stream.binder.PartitionKeyExtractorStrategy` and configuring it as a bean (by using the `@Bean` annotation).
 If you have more then one bean of type `org.springframework.cloud.stream.binder.PartitionKeyExtractorStrategy` available in the Application Context, you can further filter it by specifying its name with the `partitionKeyExtractorName` property, as shown in the following example:
