@@ -2121,6 +2121,12 @@ Arbitrary consumer properties at the binder level.
 producerProperties::
 Arbitrary producer properties at the binder level.
 
+includeStoppedProcessorsForHealthCheck::
+When bindings for processors are stopped through actuator, then this processor will not participate in the health check by default.
+Set this property to `true` to enable health check for all processors including the ones that are currently stopped through bindings actuator endpoint.
++
+Default: false
+
 ==== Kafka Streams Producer Properties
 
 The following properties are _only_ available for Kafka Streams producers and must be prefixed with `spring.cloud.stream.kafka.streams.bindings.<binding name>.producer.`
