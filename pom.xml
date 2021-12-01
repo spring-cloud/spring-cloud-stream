@@ -2,7 +2,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<artifactId>spring-cloud-stream-binder-rabbit-parent</artifactId>
-	<version>3.2.1-SNAPSHOT</version>
+	<version>3.2.1</version>
 	<packaging>pom</packaging>
 	<parent>
 		<groupId>org.springframework.cloud</groupId>
@@ -11,7 +11,7 @@
 		<relativePath />
 	</parent>
 	<properties>
-		<spring-cloud-stream.version>3.2.1-SNAPSHOT</spring-cloud-stream.version>
+		<spring-cloud-stream.version>3.2.1</spring-cloud-stream.version>
 		<java.version>1.8</java.version>
 		<spring-cloud-function.version>3.2.1</spring-cloud-function.version>
 		<maven-checkstyle-plugin.failsOnError>true</maven-checkstyle-plugin.failsOnError>
