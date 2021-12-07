@@ -65,7 +65,7 @@ public class BindersHealthIndicatorAutoConfiguration {
 	 * A {@link DefaultBinderFactory.Listener} that provides {@link HealthIndicator}
 	 * support.
 	 */
-	private static class BindersHealthIndicatorListener
+	public static class BindersHealthIndicatorListener
 			implements DefaultBinderFactory.Listener {
 
 		private final BindersHealthContributor bindersHealthContributor;
@@ -88,7 +88,7 @@ public class BindersHealthIndicatorAutoConfiguration {
 	/**
 	 * {@link CompositeHealthContributor} that provides binder health contributions.
 	 */
-	private static class BindersHealthContributor implements CompositeHealthContributor {
+	public static class BindersHealthContributor implements CompositeHealthContributor {
 
 		private static final HealthIndicator UNKNOWN = () -> Health.unknown().build();
 
