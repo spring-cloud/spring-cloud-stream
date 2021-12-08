@@ -81,7 +81,11 @@ class PartitionAwareFunctionWrapper implements Function<Object, Object>, Supplie
 	@Override
 	public Object apply(Object input) {
 		this.setEnhancerIfNecessary();
-		return this.function.apply(input);
+		Object result = this.function.apply(input);
+		if (!((FunctionInvocationWrapper) this.function).isInputTypePublisher()) {
+			((FunctionInvocationWrapper) this.function).setEnhancer(null);
+		}
+		return result;
 	}
 
 	@Override
