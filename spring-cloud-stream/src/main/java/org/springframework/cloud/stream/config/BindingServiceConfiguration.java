@@ -243,9 +243,8 @@ public class BindingServiceConfiguration {
 
 	@Bean
 	public BindingsLifecycleController bindingsLifecycleController(List<InputBindingLifecycle> inputBindingLifecycles,
-			List<OutputBindingLifecycle> outputBindingsLifecycles, @Nullable ObjectMapper objectMapper) {
-		objectMapper = objectMapper == null ? new ObjectMapper() : objectMapper;
-		return new BindingsLifecycleController(inputBindingLifecycles, outputBindingsLifecycles, objectMapper);
+			List<OutputBindingLifecycle> outputBindingsLifecycles) {
+		return new BindingsLifecycleController(inputBindingLifecycles, outputBindingsLifecycles);
 	}
 
 	@Bean

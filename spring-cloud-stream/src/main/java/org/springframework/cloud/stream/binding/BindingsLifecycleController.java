@@ -19,6 +19,7 @@ package org.springframework.cloud.stream.binding;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -44,12 +45,13 @@ public class BindingsLifecycleController {
 	private final ObjectMapper objectMapper;
 
 	public BindingsLifecycleController(List<InputBindingLifecycle> inputBindingLifecycles,
-			List<OutputBindingLifecycle> outputBindingsLifecycles, ObjectMapper objectMapper) {
+			List<OutputBindingLifecycle> outputBindingsLifecycles) {
 		Assert.notEmpty(inputBindingLifecycles,
 				"'inputBindingLifecycles' must not be null or empty");
 		this.inputBindingLifecycles = inputBindingLifecycles;
 		this.outputBindingsLifecycles = outputBindingsLifecycles;
-		this.objectMapper = objectMapper;
+		this.objectMapper = new ObjectMapper(); //see https://github.com/spring-cloud/spring-cloud-stream/issues/2253
+		// we need to use ObjectMapper that could not be modified by the user.
 	}
 
 	/**
@@ -118,7 +120,7 @@ public class BindingsLifecycleController {
 	 * @return the list of {@link Binding}s
 	 */
 	@SuppressWarnings("unchecked")
-	public List<Binding<?>> queryStates() {
+	public List<Map<?, ?>> queryStates() {
 		List<Binding<?>> bindings = new ArrayList<>(gatherInputBindings());
 		bindings.addAll(gatherOutputBindings());
 		return this.objectMapper.convertValue(bindings, List.class);
