@@ -76,6 +76,35 @@ public class StreamBridgeTests {
 		System.clearProperty("spring.cloud.function.definition");
 	}
 
+	/*
+	 * This test must not result in exception stating "Partition key cannot be null"
+	 * See https://github.com/spring-cloud/spring-cloud-stream/issues/2249 for more details
+	 */
+	@Test
+	public void test_2249() throws Exception {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+				TestChannelBinderConfiguration.getCompleteConfiguration(
+						EmptyConfiguration.class)).web(WebApplicationType.NONE).run(
+								"--spring.cloud.stream.source=outputA;outputB",
+								"--spring.cloud.stream.bindings.outputA-out-0.producer.partition-count=3",
+								"--spring.cloud.stream.bindings.outputA-out-0.producer.partition-key-expression=headers['partitionKey']",
+								"--spring.cloud.stream.bindings.outputB-out-0.destination=outputB",
+								"--spring.cloud.stream.bindings.outputB-out-0.producer.partition-count=3",
+								"--spring.jmx.enabled=false")) {
+			StreamBridge streamBridge = context.getBean(StreamBridge.class);
+			streamBridge.send("outputA-out-0", MessageBuilder.withPayload("A").setHeader("partitionKey", "A").build());
+			streamBridge.send("outputB", MessageBuilder.withPayload("B").build());
+			streamBridge.send("outputA-out-0", MessageBuilder.withPayload("C").setHeader("partitionKey", "C").build());
+			streamBridge.send("outputB", MessageBuilder.withPayload("D").build());
+
+			OutputDestination output = context.getBean(OutputDestination.class);
+			assertThat(output.receive(1000, "outputA-out-0").getHeaders().containsKey("scst_partition")).isTrue();
+			assertThat(output.receive(1000, "outputB").getHeaders().containsKey("scst_partition")).isFalse();
+			assertThat(output.receive(1000, "outputA-out-0").getHeaders().containsKey("scst_partition")).isTrue();
+			assertThat(output.receive(1000, "outputB").getHeaders().containsKey("scst_partition")).isFalse();
+		}
+	}
+
 	@Test
 	public void testWithOutputContentTypeWildCardBindings() throws Exception {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration
