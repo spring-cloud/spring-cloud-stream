@@ -20,6 +20,9 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.function.Consumer;
 
+import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.type.TypeFactory;
+import org.apache.kafka.common.header.Headers;
 import org.apache.kafka.common.security.JaasUtils;
 import org.apache.kafka.streams.kstream.GlobalKTable;
 import org.apache.kafka.streams.kstream.KStream;
@@ -28,9 +31,11 @@ import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
 
+import org.springframework.beans.DirectFieldAccessor;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.cloud.stream.binder.kafka.streams.KeyValueSerdeResolver;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.kafka.config.StreamsBuilderFactoryBean;
@@ -40,6 +45,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 /**
  * @author Soby Chacko
+ * @author Eduard Domínguez
  */
 public class KafkaStreamsBinderBootstrapTest {
 
@@ -111,7 +117,7 @@ public class KafkaStreamsBinderBootstrapTest {
 						+ "=testKafkaStreamsBinderWithStandardConfigurationCanStart",
 				"--spring.cloud.stream.kafka.streams.bindings.input2-in-0.consumer.application-id"
 						+ "=testKafkaStreamsBinderWithStandardConfigurationCanStart-foo",
-				"--spring.cloud.stream.kafka.streams.bindings.input2-in-0.consumer.configuration.spring.json.value.type.method=com.test.MyClass",
+				"--spring.cloud.stream.kafka.streams.bindings.input2-in-0.consumer.configuration.spring.json.value.type.method=" + this.getClass().getName() + ".determineType",
 				"--spring.cloud.stream.kafka.streams.bindings.input3-in-0.consumer.application-id"
 						+ "=testKafkaStreamsBinderWithStandardConfigurationCanStart-foobar",
 				"--spring.cloud.stream.kafka.streams.binder.brokers="
@@ -134,8 +140,17 @@ public class KafkaStreamsBinderBootstrapTest {
 		final StreamsBuilderFactoryBean input3SBFB = applicationContext.getBean("&stream-builder-input3", StreamsBuilderFactoryBean.class);
 		final Properties streamsConfiguration3 = input3SBFB.getStreamsConfiguration();
 		assertThat(streamsConfiguration3.containsKey("spring.json.value.type.method")).isFalse();
+		applicationContext.getBean(KeyValueSerdeResolver.class);
 
+		String configuredSerdeTypeResolver = (String) new DirectFieldAccessor(input2SBFB.getKafkaStreams())
+				.getPropertyValue("taskTopology.processorNodes[0].valDeserializer.typeResolver.arg$2");
+
+		assertThat(this.getClass().getName() + ".determineType").isEqualTo(configuredSerdeTypeResolver);
 		applicationContext.close();
+	}
+
+	public static JavaType determineType(byte[] data, Headers headers) {
+		return TypeFactory.defaultInstance().constructParametricType(Map.class, String.class, String.class);
 	}
 
 	@SpringBootApplication
@@ -149,7 +164,7 @@ public class KafkaStreamsBinderBootstrapTest {
 		}
 
 		@Bean
-		public Consumer<KTable<Object, String>> input2() {
+		public Consumer<KTable<Object, Map<String, String>>> input2() {
 			return s -> {
 				// No-op consumer
 			};
