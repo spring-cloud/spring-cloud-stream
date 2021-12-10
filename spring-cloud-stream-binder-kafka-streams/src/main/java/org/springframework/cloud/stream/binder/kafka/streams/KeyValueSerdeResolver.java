@@ -243,7 +243,7 @@ public class KeyValueSerdeResolver implements ApplicationContextAware {
 			else {
 				keySerde = getFallbackSerde("default.key.serde");
 			}
-			keySerde.configure(combineStreamConfigProperties(extendedConfiguration), false);
+			keySerde.configure(combineStreamConfigProperties(extendedConfiguration), true);
 		}
 		catch (ClassNotFoundException ex) {
 			throw new IllegalStateException("Serde class not found: ", ex);
@@ -268,7 +268,7 @@ public class KeyValueSerdeResolver implements ApplicationContextAware {
 					keySerde = Serdes.ByteArray();
 				}
 			}
-			keySerde.configure(combineStreamConfigProperties(extendedConfiguration), false);
+			keySerde.configure(combineStreamConfigProperties(extendedConfiguration), true);
 		}
 		catch (ClassNotFoundException ex) {
 			throw new IllegalStateException("Serde class not found: ", ex);
