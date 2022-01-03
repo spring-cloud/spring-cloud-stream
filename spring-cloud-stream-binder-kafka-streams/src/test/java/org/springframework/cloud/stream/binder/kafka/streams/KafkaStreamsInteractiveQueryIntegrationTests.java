@@ -18,8 +18,8 @@ package org.springframework.cloud.stream.binder.kafka.streams;
 
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
 import java.util.Properties;
+import java.util.function.Function;
 
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
