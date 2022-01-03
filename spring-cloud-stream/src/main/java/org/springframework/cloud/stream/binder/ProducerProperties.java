@@ -18,14 +18,13 @@ package org.springframework.cloud.stream.binder;
 
 import java.io.IOException;
 
-import javax.validation.constraints.Min;
-
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import jakarta.validation.constraints.Min;
 
 import org.springframework.expression.Expression;
 

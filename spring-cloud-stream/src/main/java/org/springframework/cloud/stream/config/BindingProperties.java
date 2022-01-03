@@ -16,10 +16,9 @@
 
 package org.springframework.cloud.stream.config;
 
-import javax.validation.constraints.AssertTrue;
-
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import jakarta.validation.constraints.AssertTrue;
 
 import org.springframework.cloud.stream.binder.ConsumerProperties;
 import org.springframework.cloud.stream.binder.ProducerProperties;

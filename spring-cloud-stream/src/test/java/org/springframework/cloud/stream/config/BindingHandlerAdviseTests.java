@@ -16,9 +16,8 @@
 
 package org.springframework.cloud.stream.config;
 
-import javax.validation.constraints.Min;
-import javax.validation.constraints.NotNull;
-
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
 import org.junit.Test;
 
 import org.springframework.beans.factory.BeanCreationException;

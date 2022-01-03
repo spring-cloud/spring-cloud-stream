@@ -51,7 +51,7 @@ import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.PollableChannel;
 import org.springframework.messaging.converter.SmartMessageConverter;
-import org.springframework.messaging.handler.annotation.support.PayloadArgumentResolver;
+import org.springframework.messaging.handler.annotation.support.PayloadMethodArgumentResolver;
 import org.springframework.messaging.handler.invocation.HandlerMethodArgumentResolverComposite;
 import org.springframework.messaging.handler.invocation.InvocableHandlerMethod;
 import org.springframework.util.Assert;
@@ -632,7 +632,7 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 		InvocableHandlerMethod method = new InvocableHandlerMethod(this, m);
 		HandlerMethodArgumentResolverComposite resolver = new HandlerMethodArgumentResolverComposite();
 		CompositeMessageConverterFactory factory = new CompositeMessageConverterFactory();
-		resolver.addResolver(new PayloadArgumentResolver(
+		resolver.addResolver(new PayloadMethodArgumentResolver(
 				factory.getMessageConverterForAllRegistered()));
 		method.setMessageMethodArgumentResolvers(resolver);
 		Constructor<?> c = ReflectionUtils.accessibleConstructor(

@@ -16,8 +16,6 @@
 
 package org.springframework.cloud.stream.config;
 
-import javax.validation.constraints.NotBlank;
-
 import org.springframework.cloud.stream.annotation.Input;
 import org.springframework.cloud.stream.annotation.Output;
 import org.springframework.messaging.MessageChannel;
@@ -92,7 +90,6 @@ public class StreamListenerTestUtils {
 
 	public static class PojoWithValidation {
 
-		@NotBlank
 		private String foo;
 
 		public String getFoo() {
