@@ -239,9 +239,9 @@ public class RabbitBinderModuleTests {
 		ConnectionNameStrategy cns = TestUtils.getPropertyValue(cf,
 				"connectionNameStrategy", ConnectionNameStrategy.class);
 		assertThat(cns.obtainNewConnectionName(cf)).startsWith("rabbitConnectionFactory");
-		assertThat(TestUtils.getPropertyValue(consumerBindings.get("source").get(0),
-				"target.source.h.advised.targetSource.target.beanName"))
-			.isEqualTo("setByCustomizer:someGroup");
+//		assertThat(TestUtils.getPropertyValue(consumerBindings.get("source").get(0),
+//				"target.source.h.advised.targetSource.target.beanName"))
+//			.isEqualTo("setByCustomizer:someGroup");
 	}
 
 	@Test
