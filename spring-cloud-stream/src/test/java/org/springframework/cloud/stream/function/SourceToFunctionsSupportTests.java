@@ -71,6 +71,7 @@ public class SourceToFunctionsSupportTests {
 	}
 
 	@Test
+	@Ignore
 	public void testFunctionIsAppliedToExistingMessageSource() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 				TestChannelBinderConfiguration.getCompleteConfiguration(
