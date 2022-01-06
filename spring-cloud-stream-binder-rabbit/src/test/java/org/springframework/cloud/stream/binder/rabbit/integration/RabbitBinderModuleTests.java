@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Function;
 
 import com.rabbitmq.http.client.Client;
 import com.rabbitmq.http.client.domain.BindingInfo;
@@ -50,15 +51,12 @@ import org.springframework.boot.actuate.health.Status;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.Cloud;
-import org.springframework.cloud.stream.annotation.EnableBinding;
-import org.springframework.cloud.stream.annotation.Input;
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.BinderFactory;
 import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
 import org.springframework.cloud.stream.binder.ExtendedProducerProperties;
 import org.springframework.cloud.stream.binder.ExtendedPropertiesBinder;
-import org.springframework.cloud.stream.binder.PollableMessageSource;
 import org.springframework.cloud.stream.binder.rabbit.RabbitMessageChannelBinder;
 import org.springframework.cloud.stream.binder.rabbit.properties.RabbitConsumerProperties;
 import org.springframework.cloud.stream.binder.rabbit.properties.RabbitProducerProperties;
@@ -68,7 +66,6 @@ import org.springframework.cloud.stream.config.ConsumerEndpointCustomizer;
 import org.springframework.cloud.stream.config.ListenerContainerCustomizer;
 import org.springframework.cloud.stream.config.MessageSourceCustomizer;
 import org.springframework.cloud.stream.config.ProducerMessageHandlerCustomizer;
-import org.springframework.cloud.stream.messaging.Processor;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.integration.amqp.inbound.AmqpInboundChannelAdapter;
@@ -110,16 +107,17 @@ public class RabbitBinderModuleTests {
 			context = null;
 		}
 		RabbitAdmin admin = new RabbitAdmin(rabbitTestSupport.getResource());
-		admin.deleteExchange("input");
-		admin.deleteExchange("output");
+		admin.deleteExchange("process-in-0");
+		admin.deleteExchange("process-out-0");
 	}
 
 	@Test
 	public void testParentConnectionFactoryInheritedByDefault() throws Exception {
 		context = new SpringApplicationBuilder(SimpleProcessor.class)
 				.web(WebApplicationType.NONE).run("--server.port=0",
+						"--spring.cloud.function.definition=process",
 						"--spring.cloud.stream.rabbit.binder.connection-name-prefix=foo",
-						"--spring.cloud.stream.rabbit.bindings.input.consumer.single-active-consumer=true");
+						"--spring.cloud.stream.rabbit.bindings.process-in-0.consumer.single-active-consumer=true");
 		BinderFactory binderFactory = context.getBean(BinderFactory.class);
 		Binder<?, ?, ?> binder = binderFactory.getBinder(null, MessageChannel.class);
 		assertThat(binder).isInstanceOf(RabbitMessageChannelBinder.class);
@@ -167,15 +165,15 @@ public class RabbitBinderModuleTests {
 
 	private void checkCustomizedArgs() throws MalformedURLException, URISyntaxException, InterruptedException {
 		Client client = new Client("http://guest:guest@localhost:15672/api");
-		List<BindingInfo> bindings = client.getBindingsBySource("/", "input");
+		List<BindingInfo> bindings = client.getBindingsBySource("/", "process-in-0");
 		int n = 0;
 		while (n++ < 100 && bindings == null || bindings.size() < 1) {
 			Thread.sleep(100);
-			bindings = client.getBindingsBySource("/", "input");
+			bindings = client.getBindingsBySource("/", "process-in-0");
 		}
 		assertThat(bindings).isNotNull();
 		assertThat(bindings.get(0).getArguments()).contains(entry("added.by", "customizer"));
-		ExchangeInfo exchange = client.getExchange("/", "input");
+		ExchangeInfo exchange = client.getExchange("/", "process-in-0");
 		assertThat(exchange.getArguments()).contains(entry("added.by", "customizer"));
 		QueueInfo queue = client.getQueue("/", bindings.get(0).getDestination());
 		assertThat(queue.getArguments()).contains(entry("added.by", "customizer"));
@@ -187,10 +185,11 @@ public class RabbitBinderModuleTests {
 	public void testParentConnectionFactoryInheritedByDefaultAndRabbitSettingsPropagated() {
 		context = new SpringApplicationBuilder(SimpleProcessor.class)
 				.web(WebApplicationType.NONE).run("--server.port=0",
+						"--spring.cloud.function.definition=process",
 						"--spring.cloud.stream.bindings.source.group=someGroup",
-						"--spring.cloud.stream.bindings.input.group=someGroup",
-						"--spring.cloud.stream.rabbit.bindings.input.consumer.transacted=true",
-						"--spring.cloud.stream.rabbit.bindings.output.producer.transacted=true");
+						"--spring.cloud.stream.bindings.process-in-0.group=someGroup",
+						"--spring.cloud.stream.rabbit.bindings.process-in-0.consumer.transacted=true",
+						"--spring.cloud.stream.rabbit.bindings.process-out-0.producer.transacted=true");
 		BinderFactory binderFactory = context.getBean(BinderFactory.class);
 		Binder<?, ?, ?> binder = binderFactory.getBinder(null, MessageChannel.class);
 		assertThat(binder).isInstanceOf(RabbitMessageChannelBinder.class);
@@ -201,23 +200,23 @@ public class RabbitBinderModuleTests {
 		Map<String, List<Binding<MessageChannel>>> consumerBindings = (Map<String, List<Binding<MessageChannel>>>) channelBindingServiceAccessor
 				.getPropertyValue("consumerBindings");
 		// @checkstyle:on
-		Binding<MessageChannel> inputBinding = consumerBindings.get("input").get(0);
+		Binding<MessageChannel> inputBinding = consumerBindings.get("process-in-0").get(0);
 		assertThat(TestUtils.getPropertyValue(inputBinding, "lifecycle.beanName"))
 				.isEqualTo("setByCustomizer:someGroup");
 		SimpleMessageListenerContainer container = TestUtils.getPropertyValue(
 				inputBinding, "lifecycle.messageListenerContainer",
 				SimpleMessageListenerContainer.class);
 		assertThat(TestUtils.getPropertyValue(container, "beanName"))
-				.isEqualTo("setByCustomizerForQueue:input.someGroup,andGroup:someGroup");
+				.isEqualTo("setByCustomizerForQueue:process-in-0.someGroup,andGroup:someGroup");
 		assertThat(TestUtils.getPropertyValue(container, "transactional", Boolean.class))
 				.isTrue();
 		Map<String, Binding<MessageChannel>> producerBindings = (Map<String, Binding<MessageChannel>>) TestUtils
 				.getPropertyValue(bindingService, "producerBindings");
-		Binding<MessageChannel> outputBinding = producerBindings.get("output");
+		Binding<MessageChannel> outputBinding = producerBindings.get("process-out-0");
 		assertThat(TestUtils.getPropertyValue(outputBinding,
 				"lifecycle.amqpTemplate.transactional", Boolean.class)).isTrue();
 		assertThat(TestUtils.getPropertyValue(outputBinding, "lifecycle.beanName"))
-				.isEqualTo("setByCustomizer:output");
+				.isEqualTo("setByCustomizer:process-out-0");
 		DirectFieldAccessor binderFieldAccessor = new DirectFieldAccessor(binder);
 		ConnectionFactory binderConnectionFactory = (ConnectionFactory) binderFieldAccessor
 				.getPropertyValue("connectionFactory");
@@ -271,8 +270,9 @@ public class RabbitBinderModuleTests {
 	@Test
 	public void testParentConnectionFactoryNotInheritedByCustomizedBindersAndProducerRetryBootProperties() {
 		List<String> params = new ArrayList<>();
-		params.add("--spring.cloud.stream.input.binder=custom");
-		params.add("--spring.cloud.stream.output.binder=custom");
+		params.add("--spring.cloud.function.definition=process");
+		params.add("--spring.cloud.stream.process-in-0.binder=custom");
+		params.add("--spring.cloud.stream.process-out-0.binder=custom");
 		params.add("--spring.cloud.stream.binders.custom.type=rabbit");
 		params.add("--spring.cloud.stream.binders.custom.environment.foo=bar");
 		params.add("--server.port=0");
@@ -352,17 +352,18 @@ public class RabbitBinderModuleTests {
 	public void testExtendedProperties() {
 		context = new SpringApplicationBuilder(SimpleProcessor.class)
 				.web(WebApplicationType.NONE).run("--server.port=0",
+						"--spring.cloud.function.definition=process",
 						"--spring.cloud.stream.rabbit.default.producer.routing-key-expression=fooRoutingKey",
 						"--spring.cloud.stream.rabbit.default.consumer.exchange-type=direct",
-						"--spring.cloud.stream.rabbit.bindings.output.producer.batch-size=512",
+						"--spring.cloud.stream.rabbit.bindings.process-out-0.producer.batch-size=512",
 						"--spring.cloud.stream.rabbit.default.consumer.max-concurrency=4",
-						"--spring.cloud.stream.rabbit.bindings.input.consumer.exchange-type=fanout");
+						"--spring.cloud.stream.rabbit.bindings.process-in-0.consumer.exchange-type=fanout");
 		BinderFactory binderFactory = context.getBean(BinderFactory.class);
 		Binder<?, ?, ?> rabbitBinder = binderFactory.getBinder(null,
 				MessageChannel.class);
 
 		RabbitProducerProperties rabbitProducerProperties = (RabbitProducerProperties) ((ExtendedPropertiesBinder) rabbitBinder)
-				.getExtendedProducerProperties("output");
+				.getExtendedProducerProperties("process-out-0");
 
 		assertThat(
 				rabbitProducerProperties.getRoutingKeyExpression().getExpressionString())
@@ -370,14 +371,13 @@ public class RabbitBinderModuleTests {
 		assertThat(rabbitProducerProperties.getBatchSize()).isEqualTo(512);
 
 		RabbitConsumerProperties rabbitConsumerProperties = (RabbitConsumerProperties) ((ExtendedPropertiesBinder) rabbitBinder)
-				.getExtendedConsumerProperties("input");
+				.getExtendedConsumerProperties("process-in-0");
 
 		assertThat(rabbitConsumerProperties.getExchangeType())
 				.isEqualTo(ExchangeTypes.FANOUT);
 		assertThat(rabbitConsumerProperties.getMaxConcurrency()).isEqualTo(4);
 	}
 
-	@EnableBinding({ Processor.class, PMS.class })
 	@SpringBootApplication
 	public static class SimpleProcessor {
 
@@ -409,6 +409,11 @@ public class RabbitBinderModuleTests {
 				return dec;
 			};
 		}
+
+		@Bean
+		public Function<String, String> process() {
+			return s -> s;
+		}
 	}
 
 	public static class ConnectionFactoryConfiguration {
@@ -433,12 +438,4 @@ public class RabbitBinderModuleTests {
 		}
 
 	}
-
-	public interface PMS {
-
-		@Input
-		PollableMessageSource source();
-
-	}
-
 }
