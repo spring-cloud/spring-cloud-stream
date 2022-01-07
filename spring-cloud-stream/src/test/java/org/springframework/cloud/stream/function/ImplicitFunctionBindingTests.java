@@ -45,8 +45,6 @@ import org.springframework.cloud.function.context.FunctionType;
 import org.springframework.cloud.function.context.catalog.FunctionAroundWrapper;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.cloud.function.context.config.ContextFunctionCatalogAutoConfiguration;
-import org.springframework.cloud.stream.annotation.EnableBinding;
-import org.springframework.cloud.stream.annotation.StreamListener;
 import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binder.BindingCreatedEvent;
 import org.springframework.cloud.stream.binder.test.FunctionBindingTestUtils;
@@ -56,7 +54,6 @@ import org.springframework.cloud.stream.binder.test.TestChannelBinderConfigurati
 import org.springframework.cloud.stream.binding.BindingsLifecycleController;
 import org.springframework.cloud.stream.binding.BindingsLifecycleController.State;
 import org.springframework.cloud.stream.messaging.DirectWithAttributesChannel;
-import org.springframework.cloud.stream.messaging.Sink;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
@@ -466,16 +463,16 @@ public class ImplicitFunctionBindingTests {
 		}
 	}
 
-	@Test
-	public void testFunctionConfigDisabledIfStreamListenerIsUsed() {
-		System.clearProperty("spring.cloud.function.definition");
-		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
-				TestChannelBinderConfiguration.getCompleteConfiguration(LegacyConfiguration.class))
-						.web(WebApplicationType.NONE).run("--spring.jmx.enabled=false")) {
-
-			assertThat(context.getBean("supplierInitializer").getClass().getSimpleName()).isEqualTo("NullBean");
-		}
-	}
+//	@Test
+//	public void testFunctionConfigDisabledIfStreamListenerIsUsed() {
+//		System.clearProperty("spring.cloud.function.definition");
+//		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+//				TestChannelBinderConfiguration.getCompleteConfiguration(LegacyConfiguration.class))
+//						.web(WebApplicationType.NONE).run("--spring.jmx.enabled=false")) {
+//
+//			assertThat(context.getBean("supplierInitializer").getClass().getSimpleName()).isEqualTo("NullBean");
+//		}
+//	}
 
 	@Test
 	public void testDeclaredTypeVsActualInstance() {
@@ -1337,16 +1334,6 @@ public class ImplicitFunctionBindingTests {
 				System.out.println(value);
 				System.setProperty("consumer", value);
 			}).then();
-		}
-	}
-
-	@EnableAutoConfiguration
-	@EnableBinding(Sink.class)
-	public static class LegacyConfiguration {
-
-		@StreamListener(Sink.INPUT)
-		public void handle(String value) {
-
 		}
 	}
 

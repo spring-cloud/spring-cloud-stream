@@ -16,6 +16,9 @@
 
 package org.springframework.cloud.stream.binder;
 
+import java.util.function.Consumer;
+import java.util.function.Function;
+
 import org.junit.Test;
 import org.mockito.Mockito;
 
@@ -23,14 +26,11 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
-import org.springframework.cloud.stream.annotation.EnableBinding;
-import org.springframework.cloud.stream.annotation.StreamListener;
 import org.springframework.cloud.stream.binder.test.InputDestination;
 import org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration;
-import org.springframework.cloud.stream.messaging.Processor;
-import org.springframework.cloud.stream.messaging.Sink;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.annotation.Bean;
 import org.springframework.integration.annotation.ServiceActivator;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
@@ -58,9 +58,9 @@ public class ErrorBindingTests {
 
 		Binder binder = binderFactory.getBinder(null, MessageChannel.class);
 
-		Mockito.verify(binder).bindConsumer(eq("input"), isNull(),
+		Mockito.verify(binder).bindConsumer(eq("processor-in-0"), isNull(),
 				any(MessageChannel.class), any(ConsumerProperties.class));
-		Mockito.verify(binder).bindProducer(eq("output"), any(MessageChannel.class),
+		Mockito.verify(binder).bindProducer(eq("processor-out-0"), any(MessageChannel.class),
 				any(ProducerProperties.class));
 		Mockito.verifyNoMoreInteractions(binder);
 		applicationContext.close();
@@ -72,7 +72,7 @@ public class ErrorBindingTests {
 				TestChannelBinderConfiguration.getCompleteConfiguration(
 						ErrorBindingTests.ErrorConfigurationDefault.class))
 								.web(WebApplicationType.NONE)
-								.run("--spring.cloud.stream.bindings.input.consumer.max-attempts=1",
+								.run("--spring.cloud.stream.bindings.handle-in-0.consumer.max-attempts=1",
 										"--spring.jmx.enabled=false");
 
 		InputDestination source = context.getBean(InputDestination.class);
@@ -91,7 +91,7 @@ public class ErrorBindingTests {
 				TestChannelBinderConfiguration.getCompleteConfiguration(
 						ErrorBindingTests.ErrorConfigurationWithCustomErrorHandler.class))
 								.web(WebApplicationType.NONE)
-								.run("--spring.cloud.stream.bindings.input.consumer.max-attempts=1",
+								.run("--spring.cloud.stream.bindings.handle-in-0.consumer.max-attempts=1",
 										"--spring.jmx.enabled=false");
 
 		InputDestination source = context.getBean(InputDestination.class);
@@ -104,36 +104,41 @@ public class ErrorBindingTests {
 		assertThat(errorConfiguration.counter == 6);
 	}
 
-	@EnableBinding(Processor.class)
 	@EnableAutoConfiguration
 	public static class TestProcessor {
 
+		@Bean
+		public Function<String, String> processor() {
+			return s -> s;
+		}
 	}
 
-	@EnableBinding(Processor.class)
 	@EnableAutoConfiguration
 	public static class ErrorConfigurationDefault {
 
 		private int counter;
 
-		@StreamListener(Sink.INPUT)
-		public void handle(Object value) {
-			this.counter++;
-			throw new RuntimeException("BOOM!");
+		@Bean
+		public Consumer<Object> handle() {
+			return v -> {
+				this.counter++;
+				throw new RuntimeException("BOOM!");
+			};
 		}
 
 	}
 
-	@EnableBinding(Processor.class)
 	@EnableAutoConfiguration
 	public static class ErrorConfigurationWithCustomErrorHandler {
 
 		private int counter;
 
-		@StreamListener(Sink.INPUT)
-		public void handle(Object value) {
-			this.counter++;
-			throw new RuntimeException("BOOM!");
+		@Bean
+		public Consumer<Object> handle() {
+			return v -> {
+				this.counter++;
+				throw new RuntimeException("BOOM!");
+			};
 		}
 
 		@ServiceActivator(inputChannel = "input.anonymous.errors")
