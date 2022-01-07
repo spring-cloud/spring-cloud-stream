@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import org.springframework.boot.SpringApplication;
@@ -48,6 +49,7 @@ public class StreamListenerAnnotationBeanPostProcessorOverrideTest {
 
 	@Test
 	@SuppressWarnings("unchecked")
+	@Ignore
 	public void testOverrideStreamListenerAnnotationBeanPostProcessor() throws Exception {
 		ConfigurableApplicationContext context = SpringApplication
 				.run(TestPojoWithAnnotatedArguments.class, "--server.port=0");

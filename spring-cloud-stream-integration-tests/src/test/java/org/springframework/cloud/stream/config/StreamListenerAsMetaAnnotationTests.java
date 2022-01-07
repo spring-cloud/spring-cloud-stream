@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import org.springframework.boot.SpringApplication;
@@ -76,6 +77,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class StreamListenerAsMetaAnnotationTests {
 
 	@Test
+	@Ignore
 	public void testCustomAnnotation() {
 		ConfigurableApplicationContext context = SpringApplication
 				.run(TestPojoWithCustomAnnotatedArguments.class, "--server.port=0");
@@ -94,6 +96,7 @@ public class StreamListenerAsMetaAnnotationTests {
 	}
 
 	@Test
+	@Ignore
 	public void testAnnotation() {
 		ConfigurableApplicationContext context = SpringApplication
 				.run(TestPojoWithAnnotatedArguments.class, "--server.port=0");

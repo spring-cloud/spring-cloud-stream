@@ -51,7 +51,6 @@ import org.springframework.integration.context.IntegrationContextUtils;
 import org.springframework.integration.handler.AbstractReplyProducingMessageHandler;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.SubscribableChannel;
-import org.springframework.messaging.core.DestinationResolver;
 import org.springframework.messaging.handler.annotation.support.MessageHandlerMethodFactory;
 import org.springframework.messaging.handler.invocation.InvocableHandlerMethod;
 import org.springframework.util.Assert;
@@ -83,7 +82,7 @@ public class StreamListenerAnnotationBeanPostProcessor implements BeanPostProces
 
 	// == dependencies that are injected in 'afterSingletonsInstantiated' to avoid early
 	// initialization
-	private DestinationResolver<MessageChannel> binderAwareChannelResolver;
+	//private DestinationResolver<MessageChannel> binderAwareChannelResolver;
 
 	private MessageHandlerMethodFactory messageHandlerMethodFactory;
 
@@ -173,7 +172,7 @@ public class StreamListenerAnnotationBeanPostProcessor implements BeanPostProces
 				handler = handlers.get(0).getStreamListenerMessageHandler();
 			}
 			handler.setApplicationContext(this.applicationContext);
-			handler.setChannelResolver(this.binderAwareChannelResolver);
+			//handler.setChannelResolver(this.binderAwareChannelResolver);
 			handler.afterPropertiesSet();
 			this.applicationContext.getBeanFactory().registerSingleton(
 					handler.getClass().getSimpleName() + handler.hashCode(), handler);
@@ -317,8 +316,8 @@ public class StreamListenerAnnotationBeanPostProcessor implements BeanPostProces
 				.getBeansOfType(StreamListenerParameterAdapter.class).values();
 		Collection<StreamListenerResultAdapter> streamListenerResultAdapters = this.applicationContext
 				.getBeansOfType(StreamListenerResultAdapter.class).values();
-		this.binderAwareChannelResolver = this.applicationContext
-				.getBean("binderAwareChannelResolver", DestinationResolver.class);
+		//this.binderAwareChannelResolver = this.applicationContext
+			//	.getBean("binderAwareChannelResolver", DestinationResolver.class);
 		this.messageHandlerMethodFactory = this.applicationContext
 				.getBean("integrationMessageHandlerMethodFactory", MessageHandlerMethodFactory.class);
 		this.springIntegrationProperties = this.applicationContext

@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import org.springframework.boot.SpringApplication;
@@ -43,6 +44,7 @@ import static org.assertj.core.api.Assertions.fail;
 public class StreamListenerWithConditionsTest {
 
 	@Test
+	@Ignore
 	public void testAnnotatedArgumentsWithConditionalClass() throws Exception {
 		ConfigurableApplicationContext context = SpringApplication
 				.run(TestPojoWithAnnotatedArguments.class, "--server.port=0");

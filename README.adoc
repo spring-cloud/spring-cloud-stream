@@ -201,7 +201,6 @@ compatibility you can still bring `spring-cloud-stream-reactive` from previous v
 - _Test support binder_ `spring-cloud-stream-test-support` with MessageCollector in favor of a new test binder. See <<Testing>> for more details.
 - _@StreamMessageConverter_ - deprecated as it is no longer required.
 - The `original-content-type` header references have been removed after it's been deprecated in v2.0.
-- The `BinderAwareChannelResolver` is deprecated in favor if providing `spring.cloud.stream.sendto.destination` property.
 This is primarily for function-based programming model. For StreamListener it would still be required and thus will stay until we deprecate and eventually discontinue StreamListener
 and annotation-based programming model.
 

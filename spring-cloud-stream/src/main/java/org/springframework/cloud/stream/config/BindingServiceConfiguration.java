@@ -42,9 +42,7 @@ import org.springframework.cloud.stream.binder.BinderFactory;
 import org.springframework.cloud.stream.binder.BinderType;
 import org.springframework.cloud.stream.binder.BinderTypeRegistry;
 import org.springframework.cloud.stream.binder.DefaultBinderFactory;
-import org.springframework.cloud.stream.binding.AbstractBindingTargetFactory;
 import org.springframework.cloud.stream.binding.Bindable;
-import org.springframework.cloud.stream.binding.BinderAwareChannelResolver;
 import org.springframework.cloud.stream.binding.BinderAwareRouter;
 import org.springframework.cloud.stream.binding.BindingService;
 import org.springframework.cloud.stream.binding.BindingsLifecycleController;
@@ -251,18 +249,6 @@ public class BindingServiceConfiguration {
 	@DependsOn("bindingService")
 	public ContextStartAfterRefreshListener contextStartAfterRefreshListener() {
 		return new ContextStartAfterRefreshListener();
-	}
-
-	@SuppressWarnings("rawtypes")
-	@Bean
-	public BinderAwareChannelResolver binderAwareChannelResolver(
-			BindingService bindingService,
-			AbstractBindingTargetFactory<? extends MessageChannel> bindingTargetFactory,
-			DynamicDestinationsBindable dynamicDestinationsBindable,
-			@Nullable BinderAwareChannelResolver.NewDestinationBindingCallback callback) {
-
-		return new BinderAwareChannelResolver(bindingService, bindingTargetFactory,
-				dynamicDestinationsBindable, callback);
 	}
 
 	@Bean
