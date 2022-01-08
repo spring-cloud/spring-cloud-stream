@@ -28,7 +28,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.cloud.stream.annotation.StreamMessageConverter;
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.kafka.KafkaBinderMetrics;
 import org.springframework.cloud.stream.binder.kafka.KafkaBindingRebalanceListener;
@@ -141,7 +140,6 @@ public class KafkaBinderConfiguration {
 	}
 
 	@Bean
-	@StreamMessageConverter
 	@ConditionalOnMissingBean(KafkaNullConverter.class)
 	MessageConverter kafkaNullConverter() {
 		return new KafkaNullConverter();
