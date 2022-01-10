@@ -100,7 +100,7 @@ public class SourceToFunctionsSupportTests {
 	}
 
 	@Test
-	@Disabled // fails intermittently
+	@Ignore // fails intermittently
 	public void testFunctionsAreAppliedToExistingMessageSourceReactive() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 				TestChannelBinderConfiguration.getCompleteConfiguration(
