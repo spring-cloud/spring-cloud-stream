@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2021 the original author or authors.
+ * Copyright 2017-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.serialization.IntegerSerializer;
 import org.apache.kafka.common.serialization.Serdes;
+import org.apache.kafka.common.serialization.StringSerializer;
 import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.KeyQueryMetadata;
 import org.apache.kafka.streams.KeyValue;
@@ -125,9 +126,37 @@ public class KafkaStreamsInteractiveQueryIntegrationTests {
 		catch (Exception ignored) {
 
 		}
-
 		Mockito.verify(mockKafkaStreams, times(3))
 				.store(StoreQueryParameters.fromNameAndType("foo", storeType));
+	}
+
+	@Test
+	public void testStateStoreRetrievalRetryForHostInfoService() {
+		StreamsBuilderFactoryBean mock = Mockito.mock(StreamsBuilderFactoryBean.class);
+		KafkaStreams mockKafkaStreams = Mockito.mock(KafkaStreams.class);
+		Mockito.when(mock.getKafkaStreams()).thenReturn(mockKafkaStreams);
+		KafkaStreamsRegistry kafkaStreamsRegistry = new KafkaStreamsRegistry();
+		kafkaStreamsRegistry.registerKafkaStreams(mock);
+		Mockito.when(mock.isRunning()).thenReturn(true);
+		Properties mockProperties = new Properties();
+		mockProperties.put(StreamsConfig.APPLICATION_ID_CONFIG, "foobarApp-123");
+		Mockito.when(mock.getStreamsConfiguration()).thenReturn(mockProperties);
+		KafkaStreamsBinderConfigurationProperties binderConfigurationProperties =
+				new KafkaStreamsBinderConfigurationProperties(new KafkaProperties());
+		binderConfigurationProperties.getStateStoreRetry().setMaxAttempts(3);
+		InteractiveQueryService interactiveQueryService = new InteractiveQueryService(kafkaStreamsRegistry,
+				binderConfigurationProperties);
+
+		QueryableStoreType<ReadOnlyKeyValueStore<Object, Object>> storeType = QueryableStoreTypes.keyValueStore();
+		final StringSerializer serializer = new StringSerializer();
+		try {
+			interactiveQueryService.getHostInfo("foo", "fooKey", serializer);
+		}
+		catch (Exception ignored) {
+
+		}
+		Mockito.verify(mockKafkaStreams, times(3))
+				.queryMetadataForKey("foo", "fooKey", serializer);
 	}
 
 	@Test

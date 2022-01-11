@@ -1261,7 +1261,7 @@ ReadOnlyKeyValueStore<Object, Object> keyValueStore =
 ----
 
 During the startup, the above method call to retrieve the store might fail.
-For e.g it might still be in the middle of initializing the state store.
+For example, it might still be in the middle of initializing the state store.
 In such cases, it will be useful to retry this operation.
 Kafka Streams binder provides a simple retry mechanism to accommodate this.
 
@@ -1295,6 +1295,10 @@ else {
     //query from the remote host
 }
 ----
+
+For more information on these host finding methods, please see the Javadoc on the methods.
+For these methods also, during startup, if the underlying KafkaStreams objects are not ready, they might throw exceptions.
+The aforementioned retry properties are applicable for these methods as well.
 
 ==== Other API methods available through the InteractiveQueryService
 

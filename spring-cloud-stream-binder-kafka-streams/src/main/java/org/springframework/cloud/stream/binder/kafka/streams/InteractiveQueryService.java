@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 the original author or authors.
+ * Copyright 2018-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -84,15 +84,7 @@ public class InteractiveQueryService {
 	 */
 	public <T> T getQueryableStore(String storeName, QueryableStoreType<T> storeType) {
 
-		RetryTemplate retryTemplate = new RetryTemplate();
-
-		KafkaStreamsBinderConfigurationProperties.StateStoreRetry stateStoreRetry = this.binderConfigurationProperties.getStateStoreRetry();
-		RetryPolicy retryPolicy = new SimpleRetryPolicy(stateStoreRetry.getMaxAttempts());
-		FixedBackOffPolicy backOffPolicy = new FixedBackOffPolicy();
-		backOffPolicy.setBackOffPeriod(stateStoreRetry.getBackoffPeriod());
-
-		retryTemplate.setBackOffPolicy(backOffPolicy);
-		retryTemplate.setRetryPolicy(retryPolicy);
+		final RetryTemplate retryTemplate = getRetryTemplate();
 
 		KafkaStreams contextSpecificKafkaStreams = getThreadContextSpecificKafkaStreams();
 
@@ -191,7 +183,7 @@ public class InteractiveQueryService {
 	 * through all the consumer instances under the same application id and retrieves the
 	 * proper host.
 	 *
-	 * Note that the end user applications must provide `applicaiton.server` as a
+	 * Note that the end user applications must provide `application.server` as a
 	 * configuration property for all the application instances when calling this method.
 	 * If this is not available, then null maybe returned.
 	 * @param <K> generic type for key
@@ -201,11 +193,40 @@ public class InteractiveQueryService {
 	 * @return the {@link HostInfo} where the key for the provided store is hosted currently
 	 */
 	public <K> HostInfo getHostInfo(String store, K key, Serializer<K> serializer) {
-		final KeyQueryMetadata keyQueryMetadata = this.kafkaStreamsRegistry.getKafkaStreams()
-				.stream()
-				.map((k) -> Optional.ofNullable(k.queryMetadataForKey(store, key, serializer)))
-				.filter(Optional::isPresent).map(Optional::get).findFirst().orElse(null);
-		return keyQueryMetadata != null ? keyQueryMetadata.getActiveHost() : null;
+		final RetryTemplate retryTemplate = getRetryTemplate();
+
+
+		return retryTemplate.execute(context -> {
+			Throwable throwable = null;
+			try {
+				final KeyQueryMetadata keyQueryMetadata = this.kafkaStreamsRegistry.getKafkaStreams()
+						.stream()
+						.map((k) -> Optional.ofNullable(k.queryMetadataForKey(store, key, serializer)))
+						.filter(Optional::isPresent).map(Optional::get).findFirst().orElse(null);
+				if (keyQueryMetadata != null) {
+					return keyQueryMetadata.activeHost();
+				}
+			}
+			catch (Exception e) {
+				throwable = e;
+			}
+			throw new IllegalStateException(
+					"Error when retrieving state store", throwable != null ? throwable : new Throwable("Kafka Streams is not ready."));
+		});
+	}
+
+	private RetryTemplate getRetryTemplate() {
+		RetryTemplate retryTemplate = new RetryTemplate();
+
+		KafkaStreamsBinderConfigurationProperties.StateStoreRetry stateStoreRetry = this.binderConfigurationProperties.getStateStoreRetry();
+		RetryPolicy retryPolicy = new SimpleRetryPolicy(stateStoreRetry.getMaxAttempts());
+		FixedBackOffPolicy backOffPolicy = new FixedBackOffPolicy();
+		backOffPolicy.setBackOffPeriod(stateStoreRetry.getBackoffPeriod());
+
+		retryTemplate.setBackOffPolicy(backOffPolicy);
+		retryTemplate.setRetryPolicy(retryPolicy);
+
+		return retryTemplate;
 	}
 
 	/**
