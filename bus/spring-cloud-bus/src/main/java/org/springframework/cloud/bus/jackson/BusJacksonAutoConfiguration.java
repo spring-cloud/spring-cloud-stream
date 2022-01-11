@@ -39,7 +39,6 @@ import org.springframework.cloud.bus.ConditionalOnBusEnabled;
 import org.springframework.cloud.bus.endpoint.RefreshBusEndpoint;
 import org.springframework.cloud.bus.event.RemoteApplicationEvent;
 import org.springframework.cloud.bus.event.UnknownRemoteApplicationEvent;
-import org.springframework.cloud.stream.annotation.StreamMessageConverter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
 import org.springframework.context.annotation.Configuration;
@@ -67,7 +66,6 @@ public class BusJacksonAutoConfiguration {
 	// otherwise RemoteApplicationEventRegistrar will register the bean
 	@Bean
 	@ConditionalOnMissingBean(name = "busJsonConverter")
-	@StreamMessageConverter
 	public AbstractMessageConverter busJsonConverter(@Autowired(required = false) ObjectMapper objectMapper) {
 		return new BusJacksonMessageConverter(objectMapper);
 	}
