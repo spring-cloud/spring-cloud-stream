@@ -969,3 +969,28 @@ public AdminClientConfigCustomizer adminClientConfigCustomizer() {
     };
 }
 ```
+
+[[custom-kafka-binder-health-indicator]]
+=== Custom Kafka Binder Health Indicator
+
+Kafka binder activates a default health indicator when Spring Boot actuator is on the classpath.
+This health indicator checks the health of the binder and any communication issues with the Kafka broker.
+If an application wants to disable this default health check implementation and include a custom implementation, then it can provide an implementation for `KafkaBinderHealth` interface.
+`KafkaBinderHealth` is a marker interface that extends from `HealthIndicator`.
+In the custom implementation, it must provide an implementation for the `health()` method.
+The custom implementation must be present in the application configuration as a bean.
+When the binder discovers the custom implementation, it will use that instead of the default implementation.
+Here is an example of such a custom implementation bean in the application.
+
+```
+@Bean
+public KafkaBinderHealth kafkaBinderHealthIndicator() {
+    return new KafkaBinderHealth() {
+        @Override
+        public Health health() {
+            // custom implementation details.
+        }
+    };
+}
+```
+
