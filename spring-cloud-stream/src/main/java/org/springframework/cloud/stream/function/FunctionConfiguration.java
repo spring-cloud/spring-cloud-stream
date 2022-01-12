@@ -65,7 +65,6 @@ import org.springframework.cloud.function.context.config.ContextFunctionCatalogA
 import org.springframework.cloud.function.context.config.FunctionContextUtils;
 import org.springframework.cloud.function.context.config.RoutingFunction;
 import org.springframework.cloud.function.context.message.MessageUtils;
-import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.binder.BinderFactory;
 import org.springframework.cloud.stream.binder.BindingCreatedEvent;
 import org.springframework.cloud.stream.binder.ConsumerProperties;
@@ -153,8 +152,9 @@ public class FunctionConfiguration {
 												BindingServiceProperties serviceProperties, ConfigurableApplicationContext applicationContext,
 												StreamBridge streamBridge) {
 
-		boolean shouldCreateInitializer = applicationContext.containsBean("output")
-				|| ObjectUtils.isEmpty(applicationContext.getBeanNamesForAnnotation(EnableBinding.class));
+		boolean shouldCreateInitializer = true;
+//		boolean shouldCreateInitializer = applicationContext.containsBean("output");
+//				|| ObjectUtils.isEmpty(applicationContext.getBeanNamesForAnnotation(EnableBinding.class));
 
 		return shouldCreateInitializer
 				? new FunctionToDestinationBinder(functionCatalog, functionProperties,
@@ -171,7 +171,7 @@ public class FunctionConfiguration {
 			@Nullable List<BindableFunctionProxyFactory> proxyFactories, StreamBridge streamBridge,
 			TaskScheduler taskScheduler) {
 
-		if (!ObjectUtils.isEmpty(context.getBeanNamesForAnnotation(EnableBinding.class)) || CollectionUtils.isEmpty(proxyFactories)) {
+		if (CollectionUtils.isEmpty(proxyFactories)) {
 			return null;
 		}
 
@@ -810,61 +810,61 @@ public class FunctionConfiguration {
 
 		@Override
 		public void afterPropertiesSet() throws Exception {
-			if (ObjectUtils.isEmpty(applicationContext.getBeanNamesForAnnotation(EnableBinding.class))) {
-				this.determineFunctionName(functionCatalog, environment);
-				BeanDefinitionRegistry registry = (BeanDefinitionRegistry) applicationContext.getBeanFactory();
+//			if (ObjectUtils.isEmpty(applicationContext.getBeanNamesForAnnotation(EnableBinding.class))) {
+			this.determineFunctionName(functionCatalog, environment);
+			BeanDefinitionRegistry registry = (BeanDefinitionRegistry) applicationContext.getBeanFactory();
 
-				if (StringUtils.hasText(streamFunctionProperties.getDefinition())) {
-					String[] functionDefinitions = this.filterEligibleFunctionDefinitions();
-					for (String functionDefinition : functionDefinitions) {
-						RootBeanDefinition functionBindableProxyDefinition = new RootBeanDefinition(BindableFunctionProxyFactory.class);
-						FunctionInvocationWrapper function = functionCatalog.lookup(functionDefinition);
-						if (function != null) {
-							Type functionType = function.getFunctionType();
-							if (function.isSupplier()) {
-								this.inputCount = 0;
-								this.outputCount = this.getOutputCount(functionType, true);
-							}
-							else if (function.isConsumer() || functionDefinition.equals(RoutingFunction.FUNCTION_NAME)) {
-								this.inputCount = FunctionTypeUtils.getInputCount(functionType);
-								this.outputCount = 0;
-							}
-							else {
-								this.inputCount = FunctionTypeUtils.getInputCount(functionType);
-								this.outputCount = this.getOutputCount(functionType, false);
-							}
-
-							functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(functionDefinition);
-							functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(this.inputCount);
-							functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(this.outputCount);
-							functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(this.streamFunctionProperties);
-							registry.registerBeanDefinition(functionDefinition + "_binding", functionBindableProxyDefinition);
+			if (StringUtils.hasText(streamFunctionProperties.getDefinition())) {
+				String[] functionDefinitions = this.filterEligibleFunctionDefinitions();
+				for (String functionDefinition : functionDefinitions) {
+					RootBeanDefinition functionBindableProxyDefinition = new RootBeanDefinition(BindableFunctionProxyFactory.class);
+					FunctionInvocationWrapper function = functionCatalog.lookup(functionDefinition);
+					if (function != null) {
+						Type functionType = function.getFunctionType();
+						if (function.isSupplier()) {
+							this.inputCount = 0;
+							this.outputCount = this.getOutputCount(functionType, true);
+						}
+						else if (function.isConsumer() || functionDefinition.equals(RoutingFunction.FUNCTION_NAME)) {
+							this.inputCount = FunctionTypeUtils.getInputCount(functionType);
+							this.outputCount = 0;
 						}
 						else {
-							logger.warn("The function definition '" + streamFunctionProperties.getDefinition() +
-									"' is not valid. The referenced function bean or one of its components does not exist");
+							this.inputCount = FunctionTypeUtils.getInputCount(functionType);
+							this.outputCount = this.getOutputCount(functionType, false);
 						}
+
+						functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(functionDefinition);
+						functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(this.inputCount);
+						functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(this.outputCount);
+						functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(this.streamFunctionProperties);
+						registry.registerBeanDefinition(functionDefinition + "_binding", functionBindableProxyDefinition);
 					}
-				}
-
-				if (StringUtils.hasText(this.environment.getProperty(SOURCE_PROPERY))) {
-					String[] sourceNames = this.environment.getProperty(SOURCE_PROPERY).split(";");
-
-					for (String sourceName : sourceNames) {
-						FunctionInvocationWrapper sourceFunc = functionCatalog.lookup(sourceName);
-
-						if (sourceFunc == null || //see https://github.com/spring-cloud/spring-cloud-stream/issues/2229
-								(!sourceFunc.getFunctionDefinition().equals(sourceName) && applicationContext.containsBean(sourceName))) {
-							RootBeanDefinition functionBindableProxyDefinition = new RootBeanDefinition(BindableFunctionProxyFactory.class);
-							functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(sourceName);
-							functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(0);
-							functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(1);
-							functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(this.streamFunctionProperties);
-							registry.registerBeanDefinition(sourceName + "_binding", functionBindableProxyDefinition);
-						}
+					else {
+						logger.warn("The function definition '" + streamFunctionProperties.getDefinition() +
+								"' is not valid. The referenced function bean or one of its components does not exist");
 					}
 				}
 			}
+
+			if (StringUtils.hasText(this.environment.getProperty(SOURCE_PROPERY))) {
+				String[] sourceNames = this.environment.getProperty(SOURCE_PROPERY).split(";");
+
+				for (String sourceName : sourceNames) {
+					FunctionInvocationWrapper sourceFunc = functionCatalog.lookup(sourceName);
+
+					if (sourceFunc == null || //see https://github.com/spring-cloud/spring-cloud-stream/issues/2229
+							(!sourceFunc.getFunctionDefinition().equals(sourceName) && applicationContext.containsBean(sourceName))) {
+						RootBeanDefinition functionBindableProxyDefinition = new RootBeanDefinition(BindableFunctionProxyFactory.class);
+						functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(sourceName);
+						functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(0);
+						functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(1);
+						functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(this.streamFunctionProperties);
+						registry.registerBeanDefinition(sourceName + "_binding", functionBindableProxyDefinition);
+					}
+				}
+			}
+//			}
 			else {
 				logger.info("Functional binding is disabled due to the presense of @EnableBinding annotation in your configuration");
 			}
