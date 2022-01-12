@@ -1,0 +1,1 @@
+- MetersPublisherBinding uses Output. Need to rework

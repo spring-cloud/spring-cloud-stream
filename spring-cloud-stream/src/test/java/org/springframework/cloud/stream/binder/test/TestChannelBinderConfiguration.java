@@ -19,11 +19,9 @@ package org.springframework.cloud.stream.binder.test;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
-import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.ConsumerProperties;
 import org.springframework.cloud.stream.binder.ProducerProperties;
@@ -32,7 +30,6 @@ import org.springframework.cloud.stream.config.BindingServiceConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
-import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.integration.config.EnableIntegration;
 
 /**
@@ -67,12 +64,6 @@ public class TestChannelBinderConfiguration<T> {
 			Class<?>... additionalConfigurationClasses) {
 		List<Class<?>> configClasses = new ArrayList<>();
 		configClasses.add(TestChannelBinderConfiguration.class);
-		Import annotation = AnnotationUtils.getAnnotation(EnableBinding.class,
-				Import.class);
-		Map<String, Object> annotationAttributes = AnnotationUtils
-				.getAnnotationAttributes(annotation);
-		configClasses
-				.addAll(Arrays.asList((Class<?>[]) annotationAttributes.get("value")));
 		configClasses.add(BindingServiceConfiguration.class);
 		if (additionalConfigurationClasses != null) {
 			configClasses.addAll(Arrays.asList(additionalConfigurationClasses));

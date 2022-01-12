@@ -18,13 +18,11 @@ package org.springframework.cloud.stream.binding;
 
 import java.lang.reflect.Method;
 
-import org.springframework.cloud.stream.annotation.Output;
 import org.springframework.core.MethodParameter;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.util.Assert;
 import org.springframework.util.ObjectUtils;
-import org.springframework.util.StringUtils;
 
 /**
  * Common methods that can be used across various Stream annotations.
@@ -45,12 +43,12 @@ public abstract class StreamAnnotationCommonMethodUtils {
 					StreamAnnotationErrorMessages.SEND_TO_EMPTY_DESTINATION);
 			return sendTo.value()[0];
 		}
-		Output output = AnnotationUtils.findAnnotation(method, Output.class);
-		if (output != null) {
-			Assert.isTrue(StringUtils.hasText(output.value()),
-					StreamAnnotationErrorMessages.ATLEAST_ONE_OUTPUT);
-			return output.value();
-		}
+//		Output output = AnnotationUtils.findAnnotation(method, Output.class);
+//		if (output != null) {
+//			Assert.isTrue(StringUtils.hasText(output.value()),
+//					StreamAnnotationErrorMessages.ATLEAST_ONE_OUTPUT);
+//			return output.value();
+//		}
 		return null;
 	}
 
@@ -60,9 +58,9 @@ public abstract class StreamAnnotationCommonMethodUtils {
 				.getParameterTypes().length; parameterIndex++) {
 			MethodParameter methodParameter = MethodParameter.forExecutable(method,
 					parameterIndex);
-			if (methodParameter.hasParameterAnnotation(Output.class)) {
-				outputAnnotationCount++;
-			}
+//			if (methodParameter.hasParameterAnnotation(Output.class)) {
+//				outputAnnotationCount++;
+//			}
 		}
 		return outputAnnotationCount;
 	}

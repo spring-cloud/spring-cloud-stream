@@ -31,14 +31,9 @@ import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.InitializingBean;
-import org.springframework.cloud.stream.annotation.EnableBinding;
-import org.springframework.cloud.stream.annotation.Input;
-import org.springframework.cloud.stream.annotation.Output;
-import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.SubscribableChannel;
 import org.springframework.util.Assert;
-import org.springframework.util.ReflectionUtils;
 
 /**
  * {@link FactoryBean} for instantiating the interfaces specified via
@@ -77,24 +72,24 @@ public class BindableProxyFactory extends AbstractBindableProxyFactory
 			return boundTarget;
 		}
 
-		Input input = AnnotationUtils.findAnnotation(method, Input.class);
-		if (input != null) {
-			String name = BindingBeanDefinitionRegistryUtils.getBindingTargetName(input,
-					method);
-			boundTarget = this.inputHolders.get(name).getBoundTarget();
-			this.targetCache.put(method, boundTarget);
-			return boundTarget;
-		}
-		else {
-			Output output = AnnotationUtils.findAnnotation(method, Output.class);
-			if (output != null) {
-				String name = BindingBeanDefinitionRegistryUtils
-						.getBindingTargetName(output, method);
-				boundTarget = this.outputHolders.get(name).getBoundTarget();
-				this.targetCache.put(method, boundTarget);
-				return boundTarget;
-			}
-		}
+//		Input input = AnnotationUtils.findAnnotation(method, Input.class);
+//		if (input != null) {
+//			String name = BindingBeanDefinitionRegistryUtils.getBindingTargetName(input,
+//					method);
+//			boundTarget = this.inputHolders.get(name).getBoundTarget();
+//			this.targetCache.put(method, boundTarget);
+//			return boundTarget;
+//		}
+//		else {
+//			Output output = AnnotationUtils.findAnnotation(method, Output.class);
+//			if (output != null) {
+//				String name = BindingBeanDefinitionRegistryUtils
+//						.getBindingTargetName(output, method);
+//				boundTarget = this.outputHolders.get(name).getBoundTarget();
+//				this.targetCache.put(method, boundTarget);
+//				return boundTarget;
+//			}
+//		}
 		return null;
 	}
 
@@ -121,30 +116,30 @@ public class BindableProxyFactory extends AbstractBindableProxyFactory
 		populateBindingTargetFactories(this.beanFactory);
 		Assert.notEmpty(BindableProxyFactory.this.bindingTargetFactories,
 				"'bindingTargetFactories' cannot be empty");
-		ReflectionUtils.doWithMethods(this.type, method -> {
-			Input input = AnnotationUtils.findAnnotation(method, Input.class);
-			if (input != null) {
-				String name = BindingBeanDefinitionRegistryUtils
-						.getBindingTargetName(input, method);
-				Class<?> returnType = method.getReturnType();
-
-				BindableProxyFactory.this.inputHolders.put(name,
-						new BoundTargetHolder(getBindingTargetFactory(returnType)
-								.createInput(name), true));
-			}
-		});
-		ReflectionUtils.doWithMethods(this.type, method -> {
-			Output output = AnnotationUtils.findAnnotation(method, Output.class);
-			if (output != null) {
-				String name = BindingBeanDefinitionRegistryUtils
-						.getBindingTargetName(output, method);
-				Class<?> returnType = method.getReturnType();
-
-				BindableProxyFactory.this.outputHolders.put(name,
-						new BoundTargetHolder(getBindingTargetFactory(returnType)
-								.createOutput(name), true));
-			}
-		});
+//		ReflectionUtils.doWithMethods(this.type, method -> {
+//			Input input = AnnotationUtils.findAnnotation(method, Input.class);
+//			if (input != null) {
+//				String name = BindingBeanDefinitionRegistryUtils
+//						.getBindingTargetName(input, method);
+//				Class<?> returnType = method.getReturnType();
+//
+//				BindableProxyFactory.this.inputHolders.put(name,
+//						new BoundTargetHolder(getBindingTargetFactory(returnType)
+//								.createInput(name), true));
+//			}
+//		});
+//		ReflectionUtils.doWithMethods(this.type, method -> {
+//			Output output = AnnotationUtils.findAnnotation(method, Output.class);
+//			if (output != null) {
+//				String name = BindingBeanDefinitionRegistryUtils
+//						.getBindingTargetName(output, method);
+//				Class<?> returnType = method.getReturnType();
+//
+//				BindableProxyFactory.this.outputHolders.put(name,
+//						new BoundTargetHolder(getBindingTargetFactory(returnType)
+//								.createOutput(name), true));
+//			}
+//		});
 	}
 
 	@Override
