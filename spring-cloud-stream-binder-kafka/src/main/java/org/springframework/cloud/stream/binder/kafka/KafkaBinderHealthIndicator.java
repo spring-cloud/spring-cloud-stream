@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2021 the original author or authors.
+ * Copyright 2016-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,6 @@ import org.apache.kafka.common.PartitionInfo;
 
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.boot.actuate.health.Health;
-import org.springframework.boot.actuate.health.HealthIndicator;
 import org.springframework.boot.actuate.health.Status;
 import org.springframework.boot.actuate.health.StatusAggregator;
 import org.springframework.kafka.core.ConsumerFactory;
@@ -55,7 +54,7 @@ import org.springframework.scheduling.concurrent.CustomizableThreadFactory;
  * @author Chukwubuikem Ume-Ugwa
  * @author Taras Danylchuk
  */
-public class KafkaBinderHealthIndicator implements HealthIndicator, DisposableBean {
+public class KafkaBinderHealthIndicator implements KafkaBinderHealth, DisposableBean {
 
 	private static final int DEFAULT_TIMEOUT = 60;
 
@@ -73,7 +72,7 @@ public class KafkaBinderHealthIndicator implements HealthIndicator, DisposableBe
 	private boolean considerDownWhenAnyPartitionHasNoLeader;
 
 	public KafkaBinderHealthIndicator(KafkaMessageChannelBinder binder,
-			ConsumerFactory<?, ?> consumerFactory) {
+									ConsumerFactory<?, ?> consumerFactory) {
 		this.binder = binder;
 		this.consumerFactory = consumerFactory;
 	}
@@ -219,7 +218,7 @@ public class KafkaBinderHealthIndicator implements HealthIndicator, DisposableBe
 	}
 
 	@Override
-	public void destroy() throws Exception {
+	public void destroy() {
 		executor.shutdown();
 	}
 
