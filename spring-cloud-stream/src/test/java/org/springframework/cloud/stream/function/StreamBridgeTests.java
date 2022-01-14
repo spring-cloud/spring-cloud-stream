@@ -23,6 +23,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -39,6 +40,7 @@ import org.springframework.cloud.stream.binder.test.OutputDestination;
 import org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration;
 import org.springframework.cloud.stream.binding.BinderAwareChannelResolver.NewDestinationBindingCallback;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
+import org.springframework.cloud.stream.function.StreamBridgeTests.InterceptorConfiguration.PreSendCountingChannelInterceptor;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.integration.channel.DirectChannel;
@@ -182,6 +184,26 @@ public class StreamBridgeTests {
 			Message<byte[]> message = outputDestination.receive(100, "function-out-0");
 			assertThat(new String(message.getPayload())).isEqualTo("hello foo");
 			assertThat(message.getHeaders().get("intercepted")).isEqualTo("true");
+		}
+	}
+
+	@Test
+	public void testInterceptorIsNotAddedMultipleTimesToTheMessageChannel() {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration
+				.getCompleteConfiguration(InterceptorConfiguration.class))
+				.web(WebApplicationType.NONE).run(
+						"--spring.jmx.enabled=false",
+						"--spring.cloud.stream.dynamic-destination-cache-size=1",
+						"--spring.cloud.stream.source=outputA;outputB",
+						"--spring.cloud.stream.bindings.outputA-out-0.destination=outputA",
+						"--spring.cloud.stream.bindings.outputB-out-0.destination=outputB")) {
+			StreamBridge bridge = context.getBean(StreamBridge.class);
+			PreSendCountingChannelInterceptor interceptor = context.getBean("interceptor", PreSendCountingChannelInterceptor.class);
+
+			bridge.send("outputA-out-0", "hello foo");
+			bridge.send("outputA-out-0", "hello foo");
+
+			assertThat(interceptor.getPresendCallCount()).isEqualTo(2);
 		}
 	}
 
@@ -521,13 +543,22 @@ public class StreamBridgeTests {
 	public static class InterceptorConfiguration {
 		@Bean
 		@GlobalChannelInterceptor(patterns = "*")
-		public ChannelInterceptor interceptor() {
-			return new ChannelInterceptor() {
-				@Override
-				public Message<?> preSend(Message<?> message, MessageChannel channel) {
-					return MessageBuilder.fromMessage(message).setHeader("intercepted", "true").build();
-				}
-			};
+		public PreSendCountingChannelInterceptor interceptor() {
+			return new PreSendCountingChannelInterceptor();
+		}
+		static class PreSendCountingChannelInterceptor implements ChannelInterceptor {
+
+			private final AtomicInteger preSendCallCount = new AtomicInteger(0);
+
+			@Override
+			public Message<?> preSend(Message<?> message, MessageChannel channel) {
+				preSendCallCount.incrementAndGet();
+				return MessageBuilder.fromMessage(message).setHeader("intercepted", "true").build();
+			}
+
+			public int getPresendCallCount() {
+				return preSendCallCount.get();
+			}
 		}
 	}
 
