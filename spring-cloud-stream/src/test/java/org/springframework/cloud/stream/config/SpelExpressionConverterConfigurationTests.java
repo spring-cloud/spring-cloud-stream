@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 the original author or authors.
+ * Copyright 2015-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,6 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.expression.EvaluationContext;
@@ -49,6 +48,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * @author Eric Bottard
  * @author Artem Bilan
+ * @author Soby Chacko
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest(classes = SpelExpressionConverterConfigurationTests.Config.class, properties = {
@@ -99,7 +99,6 @@ public class SpelExpressionConverterConfigurationTests {
 	}
 
 	@Configuration
-	@EnableBinding
 	@EnableAutoConfiguration
 	@EnableConfigurationProperties(Pojo.class)
 	public static class Config implements BeanFactoryAware {
@@ -123,7 +122,5 @@ public class SpelExpressionConverterConfigurationTests {
 			this.evaluationContext = ExpressionUtils
 					.createStandardEvaluationContext(this.beanFactory);
 		}
-
 	}
-
 }
