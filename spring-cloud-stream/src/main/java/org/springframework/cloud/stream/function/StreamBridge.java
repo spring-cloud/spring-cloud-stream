@@ -29,7 +29,7 @@ import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionRegistry;
-import org.springframework.cloud.function.context.FunctionType;
+import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.cloud.function.context.message.MessageUtils;
 import org.springframework.cloud.stream.binder.Binder;
@@ -241,7 +241,8 @@ public final class StreamBridge implements SmartInitializingSingleton {
 		}
 		FunctionRegistration<Function<Object, Object>> fr = new FunctionRegistration<>(v -> v, STREAM_BRIDGE_FUNC_NAME);
 		fr.getProperties().put("singleton", "false");
-		this.functionRegistry.register(fr.type(FunctionType.from(Object.class).to(Object.class).message()));
+
+		this.functionRegistry.register(fr.type(FunctionTypeUtils.functionType(Object.class, Object.class)));
 		Map<String, DirectWithAttributesChannel> channels = applicationContext.getBeansOfType(DirectWithAttributesChannel.class);
 		for (Entry<String, DirectWithAttributesChannel> channelEntry : channels.entrySet()) {
 			if (channelEntry.getValue().getAttribute("type").equals("output")) {
