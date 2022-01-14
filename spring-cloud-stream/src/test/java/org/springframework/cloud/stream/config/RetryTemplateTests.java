@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2019 the original author or authors.
+ * Copyright 2018-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,18 +19,17 @@ package org.springframework.cloud.stream.config;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Map;
+import java.util.function.Function;
 
 import org.junit.Test;
 
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
-import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.StreamRetryTemplate;
 import org.springframework.cloud.stream.binder.AbstractBinder;
 import org.springframework.cloud.stream.binder.ConsumerProperties;
 import org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration;
-import org.springframework.cloud.stream.messaging.Processor;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
@@ -40,7 +39,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Oleg Zhurakousky
- *
+ * @author Soby Chacko
  */
 public class RetryTemplateTests {
 
@@ -65,14 +64,14 @@ public class RetryTemplateTests {
 		ApplicationContext context = new SpringApplicationBuilder(
 				SpecificCustomRetryTemplateConfiguration.class)
 						.web(WebApplicationType.NONE).run("--spring.jmx.enabled=false",
-								"--spring.cloud.stream.bindings.input.consumer.retry-template-name=retryTemplateTwo");
+								"--spring.cloud.stream.bindings.processor-in-0.consumer.retry-template-name=retryTemplateTwo");
 
 		RetryTemplate retryTemplateTwo = context.getBean("retryTemplateTwo",
 				RetryTemplate.class);
 		BindingServiceProperties bindingServiceProperties = context
 				.getBean(BindingServiceProperties.class);
 		ConsumerProperties consumerProperties = bindingServiceProperties
-				.getConsumerProperties("input");
+				.getConsumerProperties("processor-in-0");
 		AbstractBinder binder = context.getBean(AbstractBinder.class);
 
 		Method m = AbstractBinder.class.getDeclaredMethod("buildRetryTemplate",
@@ -83,7 +82,6 @@ public class RetryTemplateTests {
 		assertThat(retryTemplate).isEqualTo(retryTemplateTwo);
 	}
 
-	@EnableBinding(Processor.class)
 	@Import(TestChannelBinderConfiguration.class)
 	@EnableAutoConfiguration
 	public static class SpecificCustomRetryTemplateConfiguration {
@@ -103,9 +101,12 @@ public class RetryTemplateTests {
 			return new RetryTemplate();
 		}
 
+		@Bean
+		public Function<String, String> processor() {
+			return s -> s;
+		}
 	}
 
-	@EnableBinding(Processor.class)
 	@Import(TestChannelBinderConfiguration.class)
 	@EnableAutoConfiguration
 	public static class SingleCustomRetryTemplateConfiguration {
@@ -120,6 +121,9 @@ public class RetryTemplateTests {
 			return new RetryTemplate();
 		}
 
+		@Bean
+		public Function<String, String> processor() {
+			return s -> s;
+		}
 	}
-
 }
