@@ -129,6 +129,8 @@ public class FunctionConfiguration {
 
 	private final static String SOURCE_PROPERY = "spring.cloud.stream.source";
 
+//	private final static String OUT_BINDINGS = "spring.cloud.stream.output-bindings";
+
 	@Bean
 	public StreamBridge streamBridgeUtils(FunctionCatalog functionCatalog, FunctionRegistry functionRegistry,
 			BindingServiceProperties bindingServiceProperties, ConfigurableApplicationContext applicationContext,
@@ -847,27 +849,49 @@ public class FunctionConfiguration {
 					}
 				}
 
-				if (StringUtils.hasText(this.environment.getProperty(SOURCE_PROPERY))) {
-					String[] sourceNames = this.environment.getProperty(SOURCE_PROPERY).split(";");
+				this.createStandAloneBindingsIfNecessary(registry, applicationContext.getBean(BindingServiceProperties.class));
 
-					for (String sourceName : sourceNames) {
-						FunctionInvocationWrapper sourceFunc = functionCatalog.lookup(sourceName);
-
-						if (sourceFunc == null || //see https://github.com/spring-cloud/spring-cloud-stream/issues/2229
-								(!sourceFunc.getFunctionDefinition().equals(sourceName) && applicationContext.containsBean(sourceName))) {
-							RootBeanDefinition functionBindableProxyDefinition = new RootBeanDefinition(BindableFunctionProxyFactory.class);
-							functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(sourceName);
-							functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(0);
-							functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(1);
-							functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(this.streamFunctionProperties);
-							registry.registerBeanDefinition(sourceName + "_binding", functionBindableProxyDefinition);
-						}
-					}
-				}
 			}
 			else {
 				logger.info("Functional binding is disabled due to the presense of @EnableBinding annotation in your configuration");
 			}
+		}
+
+		private void createStandAloneBindingsIfNecessary(BeanDefinitionRegistry registry, BindingServiceProperties bindingProperties) {
+			String[] inputBindings = StringUtils.hasText(bindingProperties.getInputBindings())
+					? bindingProperties.getInputBindings().split(";") : new String[0];
+
+			String[] outputBindings = StringUtils.hasText(bindingProperties.getSource()) ? bindingProperties.getSource().split(";") : (
+					StringUtils.hasText(bindingProperties.getOutputBindings()) ? bindingProperties.getOutputBindings().split(";") : new String[0]
+					);
+			for (String inputBindingName : inputBindings) {
+				FunctionInvocationWrapper sourceFunc = functionCatalog.lookup(inputBindingName);
+
+				if (sourceFunc == null || //see https://github.com/spring-cloud/spring-cloud-stream/issues/2229
+						(!sourceFunc.getFunctionDefinition().equals(inputBindingName) && applicationContext.containsBean(inputBindingName))) {
+					RootBeanDefinition functionBindableProxyDefinition = new RootBeanDefinition(BindableFunctionProxyFactory.class);
+					functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(inputBindingName);
+					functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(1);
+					functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(0);
+					functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(this.streamFunctionProperties);
+					registry.registerBeanDefinition(inputBindingName + "_binding", functionBindableProxyDefinition);
+				}
+			}
+
+			for (String outputBindingName : outputBindings) {
+				FunctionInvocationWrapper sourceFunc = functionCatalog.lookup(outputBindingName);
+
+				if (sourceFunc == null || //see https://github.com/spring-cloud/spring-cloud-stream/issues/2229
+						(!sourceFunc.getFunctionDefinition().equals(outputBindingName) && applicationContext.containsBean(outputBindingName))) {
+					RootBeanDefinition functionBindableProxyDefinition = new RootBeanDefinition(BindableFunctionProxyFactory.class);
+					functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(outputBindingName);
+					functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(0);
+					functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(1);
+					functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(this.streamFunctionProperties);
+					registry.registerBeanDefinition(outputBindingName + "_binding", functionBindableProxyDefinition);
+				}
+			}
+
 		}
 
 		@Override

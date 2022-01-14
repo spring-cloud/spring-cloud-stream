@@ -61,11 +61,25 @@ public class BindingServiceProperties
 	private static final int DEFAULT_BINDING_RETRY_INTERVAL = 30;
 
 	/**
-	 *  A colon delimited string representing the names of the sources based on which source bindings will be created.
+	 *  A semi-colon delimited string representing the names of the sources based on which source bindings will be created.
 	 *  This is primarily to support cases where source binding may be required without providing a corresponding Supplier.
 	 *  (e.g., for cases where the actual source of data is outside of scope of spring-cloud-stream - HTTP -> Stream)
+	 *  @deprecated use {@link #outputBindings}
 	 */
+	@Deprecated
 	private String source;
+
+	/**
+	 * A semi-colon delimited string to explicitly define input bindings (specifically for cases when there
+	 * is no implicit trigger to create such bindings such as Function, Supplier or Consumer).
+	 */
+	private String inputBindings;
+
+	/**
+	 * A semi-colon delimited string to explicitly define output bindings (specifically for cases when there
+	 * is no implicit trigger to create such bindings such as Function, Supplier or Consumer).
+	 */
+	private String outputBindings;
 
 	/**
 	 * The instance id of the application: a number from 0 to instanceCount-1. Used for
@@ -302,10 +316,18 @@ public class BindingServiceProperties
 		this.bindingRetryInterval = bindingRetryInterval;
 	}
 
+	/**
+	 * @deprecated in favor of {@link #getOutputBindings()}
+	 */
+	@Deprecated
 	public String getSource() {
 		return source;
 	}
 
+	/**
+	 * @deprecated in favor of {@link #setOutputBindings()}
+	 */
+	@Deprecated
 	public void setSource(String source) {
 		this.source = source;
 	}
@@ -323,6 +345,22 @@ public class BindingServiceProperties
 
 	public void setDynamicDestinationCacheSize(int dynamicDestinationCacheSize) {
 		this.dynamicDestinationCacheSize = dynamicDestinationCacheSize;
+	}
+
+	public String getInputBindings() {
+		return inputBindings;
+	}
+
+	public void setInputBindings(String inputBindings) {
+		this.inputBindings = inputBindings;
+	}
+
+	public String getOutputBindings() {
+		return outputBindings;
+	}
+
+	public void setOutputBindings(String outputBindings) {
+		this.outputBindings = outputBindings;
 	}
 
 	/*
