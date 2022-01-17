@@ -41,6 +41,7 @@ import org.springframework.cloud.stream.binding.BinderAwareChannelResolver.NewDe
 import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
+import org.springframework.integration.channel.AbstractMessageChannel;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.config.GlobalChannelInterceptor;
 import org.springframework.integration.dsl.IntegrationFlow;
@@ -182,6 +183,27 @@ public class StreamBridgeTests {
 			Message<byte[]> message = outputDestination.receive(100, "function-out-0");
 			assertThat(new String(message.getPayload())).isEqualTo("hello foo");
 			assertThat(message.getHeaders().get("intercepted")).isEqualTo("true");
+		}
+	}
+
+	@Test
+	public void testInterceptorIsNotAddedMultipleTimesToTheMessageChannel() {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration
+				.getCompleteConfiguration(InterceptorConfiguration.class))
+				.web(WebApplicationType.NONE).run(
+						"--spring.jmx.enabled=false",
+						"--spring.cloud.stream.dynamic-destination-cache-size=1",
+						"--spring.cloud.stream.source=outputA;outputB",
+						"--spring.cloud.stream.bindings.outputA-out-0.destination=outputA",
+						"--spring.cloud.stream.bindings.outputB-out-0.destination=outputB")) {
+			StreamBridge bridge = context.getBean(StreamBridge.class);
+
+			bridge.send("outputA-out-0", "hello foo");
+			bridge.send("outputA-out-0", "hello foo");
+
+			AbstractMessageChannel messageChannel = context.getBean("outputA-out-0", AbstractMessageChannel.class);
+
+			assertThat(messageChannel.getInterceptors()).hasSize(1);
 		}
 	}
 
