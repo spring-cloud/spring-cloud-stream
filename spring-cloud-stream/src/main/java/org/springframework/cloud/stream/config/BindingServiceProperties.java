@@ -44,6 +44,7 @@ import org.springframework.core.convert.converter.Converter;
 import org.springframework.core.convert.support.GenericConversionService;
 import org.springframework.integration.support.utils.IntegrationUtils;
 import org.springframework.util.Assert;
+import org.springframework.util.StringUtils;
 
 /**
  * @author Dave Syer
@@ -330,6 +331,7 @@ public class BindingServiceProperties
 	@Deprecated
 	public void setSource(String source) {
 		this.source = source;
+		this.outputBindings = source;
 	}
 
 	public void updateProducerProperties(String bindingName,
@@ -356,10 +358,13 @@ public class BindingServiceProperties
 	}
 
 	public String getOutputBindings() {
+
 		return outputBindings;
 	}
 
 	public void setOutputBindings(String outputBindings) {
+		Assert.state(!StringUtils.hasText(this.source), "Setting 'source' and 'output-binding' is not allowed "
+				+ "because 'source' is deprecated in favor of 'output-binding'.");
 		this.outputBindings = outputBindings;
 	}
 
