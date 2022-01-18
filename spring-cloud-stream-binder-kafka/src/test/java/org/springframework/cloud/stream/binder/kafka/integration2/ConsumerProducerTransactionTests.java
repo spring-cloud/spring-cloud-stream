@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2019 the original author or authors.
+ * Copyright 2019-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 
 import kafka.server.KafkaConfig;
 import org.junit.AfterClass;
@@ -33,13 +34,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.cloud.stream.annotation.EnableBinding;
-import org.springframework.cloud.stream.annotation.Input;
-import org.springframework.cloud.stream.annotation.Output;
-import org.springframework.cloud.stream.annotation.StreamListener;
 import org.springframework.cloud.stream.config.ListenerContainerCustomizer;
-import org.springframework.cloud.stream.messaging.Processor;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
@@ -49,8 +47,6 @@ import org.springframework.kafka.test.rule.EmbeddedKafkaRule;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
 import org.springframework.kafka.transaction.KafkaAwareTransactionManager;
 import org.springframework.messaging.MessageChannel;
-import org.springframework.messaging.SubscribableChannel;
-import org.springframework.messaging.support.GenericMessage;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.util.backoff.FixedBackOff;
@@ -61,6 +57,7 @@ import static org.mockito.Mockito.mock;
 
 /**
  * @author Gary Russell
+ * @author Soby Chacko
  * @since 3.0
  *
  */
@@ -69,6 +66,11 @@ import static org.mockito.Mockito.mock;
 		"spring.kafka.consumer.properties.isolation.level=read_committed",
 		"spring.kafka.consumer.enable-auto-commit=false",
 		"spring.kafka.consumer.auto-offset-reset=earliest",
+		"spring.cloud.function.definition=listenIn;listenIn2",
+		"spring.cloud.stream.function.bindings.listenIn-in-0=input",
+		"spring.cloud.stream.function.bindings.listenIn-out-0=output",
+		"spring.cloud.stream.function.bindings.listenIn2-in-0=input2",
+		"spring.cloud.stream.function.bindings.listenIn2-out-0=output2",
 		"spring.cloud.stream.bindings.input.destination=consumer.producer.txIn",
 		"spring.cloud.stream.bindings.input.group=consumer.producer.tx",
 		"spring.cloud.stream.bindings.input.consumer.max-attempts=1",
@@ -90,6 +92,9 @@ public class ConsumerProducerTransactionTests {
 
 	@Autowired
 	private Config config;
+
+	@Autowired
+	private ApplicationContext context;
 
 	@BeforeClass
 	public static void setup() {
@@ -115,25 +120,21 @@ public class ConsumerProducerTransactionTests {
 	public void externalTM() {
 		assertThat(this.config.input2Container.getContainerProperties().getTransactionManager())
 				.isSameAs(this.config.tm);
-		Object handler = KafkaTestUtils.getPropertyValue(this.config.output2, "dispatcher.handlers", Set.class)
+		final MessageChannel output2 = context.getBean("output2", MessageChannel.class);
+
+		Object handler = KafkaTestUtils.getPropertyValue(output2, "dispatcher.handlers", Set.class)
 				.iterator().next();
 		assertThat(KafkaTestUtils.getPropertyValue(handler, "delegate.kafkaTemplate.producerFactory"))
 				.isSameAs(this.config.pf);
 	}
 
-	@EnableBinding(TwoProcessors.class)
 	@EnableAutoConfiguration
+	@Configuration
 	public static class Config {
 
 		final List<String> outs = new ArrayList<>();
 
 		final CountDownLatch latch = new CountDownLatch(2);
-
-		@Autowired
-		private MessageChannel output;
-
-		@Autowired
-		MessageChannel output2;
 
 		AbstractMessageListenerContainer<?, ?> input2Container;
 
@@ -147,16 +148,19 @@ public class ConsumerProducerTransactionTests {
 			this.latch.countDown();
 		}
 
-		@StreamListener(Processor.INPUT)
-		public void listenIn(String in) {
-			this.output.send(new GenericMessage<>(in.toUpperCase()));
-			if (in.equals("two")) {
-				throw new RuntimeException("fail");
-			}
+		@Bean
+		public Function<String, String> listenIn() {
+			return in -> {
+				if (in.equals("two")) {
+					throw new RuntimeException("fail");
+				}
+				return in.toUpperCase();
+			};
 		}
 
-		@StreamListener("input2")
-		public void listenIn2(String in) {
+		@Bean
+		public Function<String, String> listenIn2() {
+			return in -> in;
 		}
 
 		@Bean
@@ -187,17 +191,6 @@ public class ConsumerProducerTransactionTests {
 			this.tm = mock;
 			return mock;
 		}
-
 	}
-
-	public interface TwoProcessors extends Processor {
-
-		@Input
-		SubscribableChannel input2();
-
-		@Output
-		MessageChannel output2();
-
-	}
-
 }
+

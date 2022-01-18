@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -39,12 +40,7 @@ import org.springframework.boot.actuate.health.CompositeHealthContributor;
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.Status;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.cloud.stream.annotation.EnableBinding;
-import org.springframework.cloud.stream.annotation.Input;
-import org.springframework.cloud.stream.annotation.Output;
-import org.springframework.cloud.stream.annotation.StreamListener;
 import org.springframework.cloud.stream.binder.kafka.streams.KafkaStreamsBinderHealthIndicator;
-import org.springframework.cloud.stream.binder.kafka.streams.annotations.KafkaStreamsProcessor;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.kafka.config.KafkaStreamsCustomizer;
@@ -56,7 +52,6 @@ import org.springframework.kafka.support.SendResult;
 import org.springframework.kafka.test.EmbeddedKafkaBroker;
 import org.springframework.kafka.test.rule.EmbeddedKafkaRule;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
-import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.util.concurrent.ListenableFuture;
 import org.springframework.util.concurrent.ListenableFutureCallback;
 
@@ -207,6 +202,8 @@ public class KafkaStreamsBinderHealthIndicatorTests {
 		SpringApplication app = new SpringApplication(KStreamApplication.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 		return app.run("--server.port=0", "--spring.jmx.enabled=false",
+				"--spring.cloud.stream.function.bindings.process-in-0=input",
+				"--spring.cloud.stream.function.bindings.process-out-0=output",
 				"--spring.cloud.stream.bindings.input.destination=in",
 				"--spring.cloud.stream.bindings.output.destination=out",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.commit.interval.ms=1000",
@@ -225,6 +222,11 @@ public class KafkaStreamsBinderHealthIndicatorTests {
 		SpringApplication app = new SpringApplication(AnotherKStreamApplication.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 		return app.run("--server.port=0", "--spring.jmx.enabled=false",
+				"--spring.cloud.function.definition=process;process2",
+				"--spring.cloud.stream.function.bindings.process-in-0=input",
+				"--spring.cloud.stream.function.bindings.process-out-0=output",
+				"--spring.cloud.stream.function.bindings.process2-in-0=input2",
+				"--spring.cloud.stream.function.bindings.process2-out-0=output2",
 				"--spring.cloud.stream.bindings.input.destination=in",
 				"--spring.cloud.stream.bindings.output.destination=out",
 				"--spring.cloud.stream.bindings.input2.destination=in2",
@@ -242,14 +244,12 @@ public class KafkaStreamsBinderHealthIndicatorTests {
 						+ embeddedKafka.getBrokersAsString());
 	}
 
-	@EnableBinding(KafkaStreamsProcessor.class)
 	@EnableAutoConfiguration
 	public static class KStreamApplication {
 
-		@StreamListener("input")
-		@SendTo("output")
-		public KStream<Object, Product> process(KStream<Object, Product> input) {
-			return input.filter((key, product) -> {
+		@Bean
+		public Function<KStream<Object, Product>, KStream<Object, Product>> process() {
+			return input -> input.filter((key, product) -> {
 				if (product.getId() != 123) {
 					throw new IllegalArgumentException();
 				}
@@ -259,14 +259,12 @@ public class KafkaStreamsBinderHealthIndicatorTests {
 
 	}
 
-	@EnableBinding({ KafkaStreamsProcessor.class, KafkaStreamsProcessorX.class })
 	@EnableAutoConfiguration
 	public static class AnotherKStreamApplication {
 
-		@StreamListener("input")
-		@SendTo("output")
-		public KStream<Object, Product> process(KStream<Object, Product> input) {
-			return input.filter((key, product) -> {
+		@Bean
+		public Function<KStream<Object, Product>, KStream<Object, Product>> process() {
+			return input -> input.filter((key, product) -> {
 				if (product.getId() != 123) {
 					throw new IllegalArgumentException();
 				}
@@ -274,10 +272,9 @@ public class KafkaStreamsBinderHealthIndicatorTests {
 			});
 		}
 
-		@StreamListener("input2")
-		@SendTo("output2")
-		public KStream<Object, Product> process2(KStream<Object, Product> input) {
-			return input.filter((key, product) -> {
+		@Bean
+		public Function<KStream<Object, Product>, KStream<Object, Product>> process2() {
+			return input -> input.filter((key, product) -> {
 				if (product.getId() != 123) {
 					throw new IllegalArgumentException();
 				}
@@ -300,16 +297,6 @@ public class KafkaStreamsBinderHealthIndicatorTests {
 
 	}
 
-	public interface KafkaStreamsProcessorX {
-
-		@Input("input2")
-		KStream<?, ?> input();
-
-		@Output("output2")
-		KStream<?, ?> output();
-
-	}
-
 	public static class Product {
 
 		Integer id;
@@ -323,5 +310,4 @@ public class KafkaStreamsBinderHealthIndicatorTests {
 		}
 
 	}
-
 }

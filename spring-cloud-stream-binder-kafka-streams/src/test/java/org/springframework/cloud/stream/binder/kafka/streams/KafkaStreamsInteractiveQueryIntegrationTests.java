@@ -19,6 +19,7 @@ package org.springframework.cloud.stream.binder.kafka.streams;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.function.Function;
 
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -41,7 +42,6 @@ import org.apache.kafka.streams.state.ReadOnlyKeyValueStore;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mockito;
 
@@ -49,9 +49,6 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
-import org.springframework.cloud.stream.annotation.EnableBinding;
-import org.springframework.cloud.stream.annotation.StreamListener;
-import org.springframework.cloud.stream.binder.kafka.streams.annotations.KafkaStreamsProcessor;
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsBinderConfigurationProperties;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
@@ -64,9 +61,9 @@ import org.springframework.kafka.support.serializer.JsonSerde;
 import org.springframework.kafka.test.EmbeddedKafkaBroker;
 import org.springframework.kafka.test.rule.EmbeddedKafkaRule;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
-import org.springframework.messaging.handler.annotation.SendTo;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.internal.verification.VerificationModeFactory.times;
 
 /**
@@ -150,22 +147,23 @@ public class KafkaStreamsInteractiveQueryIntegrationTests {
 		QueryableStoreType<ReadOnlyKeyValueStore<Object, Object>> storeType = QueryableStoreTypes.keyValueStore();
 		final StringSerializer serializer = new StringSerializer();
 		try {
-			interactiveQueryService.getHostInfo("foo", "fooKey", serializer);
+			interactiveQueryService.getHostInfo("foo", "foobarApp-key", serializer);
 		}
 		catch (Exception ignored) {
 
 		}
 		Mockito.verify(mockKafkaStreams, times(3))
-				.queryMetadataForKey("foo", "fooKey", serializer);
+				.queryMetadataForKey("foo", "foobarApp-key", serializer);
 	}
 
 	@Test
-	@Ignore
-	public void testKstreamBinderWithPojoInputAndStringOuput() throws Exception {
+	public void testKstreamBinderWithPojoInputAndStringOuput() {
 		SpringApplication app = new SpringApplication(ProductCountApplication.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 		ConfigurableApplicationContext context = app.run("--server.port=0",
 				"--spring.jmx.enabled=false",
+				"--spring.cloud.stream.function.bindings.process-in-0=input",
+				"--spring.cloud.stream.function.bindings.process-out-0=output",
 				"--spring.cloud.stream.bindings.input.destination=foos",
 				"--spring.cloud.stream.bindings.output.destination=counts-id",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.commit.interval.ms=1000",
@@ -226,27 +224,25 @@ public class KafkaStreamsInteractiveQueryIntegrationTests {
 		assertThat(hostInfo.host() + ":" + hostInfo.port())
 				.isEqualTo(embeddedKafka.getBrokersAsString());
 
-		HostInfo hostInfoFoo = interactiveQueryService
-				.getHostInfo("prod-id-count-store-foo", 123, new IntegerSerializer());
-		assertThat(hostInfoFoo).isNull();
+		assertThatThrownBy(() -> interactiveQueryService
+				.getHostInfo("prod-id-count-store-foo", 123, new IntegerSerializer()))
+				.isInstanceOf(IllegalStateException.class)
+				.hasMessageContaining("Error when retrieving state store.");
 
 		final List<HostInfo> hostInfos = interactiveQueryService.getAllHostsInfo("prod-id-count-store");
 		assertThat(hostInfos.size()).isEqualTo(1);
 		final HostInfo hostInfo1 = hostInfos.get(0);
 		assertThat(hostInfo1.host() + ":" + hostInfo1.port())
 				.isEqualTo(embeddedKafka.getBrokersAsString());
-
 	}
 
-	@EnableBinding(KafkaStreamsProcessor.class)
 	@EnableAutoConfiguration
 	public static class ProductCountApplication {
 
-		@StreamListener("input")
-		@SendTo("output")
-		public KStream<?, String> process(KStream<Object, Product> input) {
+		@Bean
+		public Function<KStream<Object, Product>, KStream<?, String>> process() {
 
-			return input.filter((key, product) -> product.getId() == 123)
+			return input -> input.filter((key, product) -> product.getId() == 123)
 					.map((key, value) -> new KeyValue<>(value.id, value))
 					.groupByKey(Grouped.with(new Serdes.IntegerSerde(),
 							new JsonSerde<>(Product.class)))

@@ -364,8 +364,6 @@ Starting with version 3.0, when `spring.cloud.stream.binding.<name>.consumer.bat
 Otherwise, the method will be called with one record at a time.
 The size of the batch is controlled by Kafka consumer properties `max.poll.records`, `fetch.min.bytes`, `fetch.max.wait.ms`; refer to the Kafka documentation for more information.
 
-Bear in mind that batch mode is not supported with `@StreamListener` - it only works with the newer functional programming model.
-
 IMPORTANT: Retry within the binder is not supported when using batch mode, so `maxAttempts` will be overridden to 1.
 You can configure a `SeekToCurrentBatchErrorHandler` (using a `ListenerContainerCustomizer`) to achieve similar functionality to retry in the binder.
 You can also use a manual `AckMode` and call `Ackowledgment.nack(index, sleep)` to commit the offsets for a partial batch and have the remaining records redelivered.

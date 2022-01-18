@@ -224,6 +224,7 @@ public class KafkaStreamsFunctionCompositionTests {
 		try (ConfigurableApplicationContext context = app.run(
 				"--server.port=0",
 				"--spring.jmx.enabled=false",
+				"--spring.cloud.stream.kafka.streams.binder.applicationId=my-app-id",
 				"--spring.cloud.stream.function.definition=fooBiFunc|anotherFooFunc|yetAnotherFooFunc|lastFunctionInChain",
 				"--spring.cloud.stream.function.bindings.fooBiFuncanotherFooFuncyetAnotherFooFunclastFunctionInChain-in-0=input1",
 				"--spring.cloud.stream.function.bindings.fooBiFuncanotherFooFuncyetAnotherFooFunclastFunctionInChain-in-1=input2",
@@ -266,6 +267,7 @@ public class KafkaStreamsFunctionCompositionTests {
 		try (ConfigurableApplicationContext context = app.run(
 				"--server.port=0",
 				"--spring.jmx.enabled=false",
+				"--spring.cloud.stream.kafka.streams.binder.applicationId=my-app-id-xyz",
 				"--spring.cloud.stream.function.definition=curriedFunc|anotherFooFunc|yetAnotherFooFunc|lastFunctionInChain",
 				"--spring.cloud.stream.function.bindings.curriedFuncanotherFooFuncyetAnotherFooFunclastFunctionInChain-in-0=input1",
 				"--spring.cloud.stream.function.bindings.curriedFuncanotherFooFuncyetAnotherFooFunclastFunctionInChain-in-1=input2",

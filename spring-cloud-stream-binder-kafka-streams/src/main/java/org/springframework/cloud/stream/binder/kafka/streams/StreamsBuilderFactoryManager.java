@@ -39,8 +39,7 @@ import org.springframework.kafka.streams.KafkaStreamsMicrometerListener;
  * This {@link SmartLifecycle} class ensures that the bean created from it is started very
  * late through the bootstrap process by setting the phase value closer to
  * Integer.MAX_VALUE. This is to guarantee that the {@link StreamsBuilderFactoryBean} on a
- * {@link org.springframework.cloud.stream.annotation.StreamListener} method with multiple
- * bindings is only started after all the binding phases have completed successfully.
+ * function with multiple bindings is only started after all the binding phases have completed successfully.
  *
  * @author Soby Chacko
  */

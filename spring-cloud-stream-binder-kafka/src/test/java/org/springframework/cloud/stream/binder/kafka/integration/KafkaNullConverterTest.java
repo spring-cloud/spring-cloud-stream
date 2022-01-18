@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2017 the original author or authors.
+ * Copyright 2016-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,21 +18,21 @@ package org.springframework.cloud.stream.binder.kafka.integration;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.cloud.stream.annotation.EnableBinding;
-import org.springframework.cloud.stream.annotation.Input;
-import org.springframework.cloud.stream.annotation.Output;
-import org.springframework.cloud.stream.annotation.StreamListener;
+import org.springframework.cloud.stream.function.StreamBridge;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.support.KafkaNull;
 import org.springframework.kafka.test.rule.EmbeddedKafkaRule;
@@ -47,21 +47,19 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * @author Aldo Sinanaj
  * @author Gary Russell
+ * @author Soby Chacko
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE, properties = {
-		"spring.kafka.consumer.auto-offset-reset=earliest" })
+		"spring.kafka.consumer.auto-offset-reset=earliest",
+		"spring.cloud.stream.function.bindings.inputListen-in-0=kafkaNullInput"})
 @DirtiesContext
-@Ignore
 public class KafkaNullConverterTest {
 
 	private static final String KAFKA_BROKERS_PROPERTY = "spring.kafka.bootstrap-servers";
 
 	@Autowired
-	private MessageChannel kafkaNullOutput;
-
-	@Autowired
-	private MessageChannel kafkaNullInput;
+	private ApplicationContext context;
 
 	@Autowired
 	private KafkaNullConverterTestConfig config;
@@ -82,7 +80,9 @@ public class KafkaNullConverterTest {
 
 	@Test
 	public void testKafkaNullConverterOutput() throws InterruptedException {
-		this.kafkaNullOutput.send(new GenericMessage<>(KafkaNull.INSTANCE));
+		final StreamBridge streamBridge = context.getBean(StreamBridge.class);
+
+		streamBridge.send("kafkaNullOutput", new GenericMessage<>(KafkaNull.INSTANCE));
 
 		assertThat(this.config.countDownLatchOutput.await(10, TimeUnit.SECONDS)).isTrue();
 		assertThat(this.config.outputPayload).isNull();
@@ -90,14 +90,17 @@ public class KafkaNullConverterTest {
 
 	@Test
 	public void testKafkaNullConverterInput() throws InterruptedException {
-		this.kafkaNullInput.send(new GenericMessage<>(KafkaNull.INSTANCE));
+
+		final MessageChannel kafkaNullInput = context.getBean("kafkaNullInput", MessageChannel.class);
+
+		kafkaNullInput.send(new GenericMessage<>(KafkaNull.INSTANCE));
 
 		assertThat(this.config.countDownLatchInput.await(10, TimeUnit.SECONDS)).isTrue();
 		assertThat(this.config.inputPayload).isNull();
 	}
 
-	@TestConfiguration
-	@EnableBinding(KafkaNullTestChannels.class)
+	@EnableAutoConfiguration
+	@Configuration
 	public static class KafkaNullConverterTestConfig {
 
 		final CountDownLatch countDownLatchOutput = new CountDownLatch(1);
@@ -114,22 +117,13 @@ public class KafkaNullConverterTest {
 			countDownLatchOutput.countDown();
 		}
 
-		@StreamListener("kafkaNullInput")
-		public void inputListen(@Payload(required = false) byte[] payload) {
-			this.inputPayload = payload;
-			countDownLatchInput.countDown();
+		@Bean
+		public Consumer<byte[]> inputListen() {
+			return in -> {
+				this.inputPayload = in;
+				countDownLatchInput.countDown();
+			};
 		}
 
 	}
-
-	public interface KafkaNullTestChannels {
-
-		@Input
-		MessageChannel kafkaNullInput();
-
-		@Output
-		MessageChannel kafkaNullOutput();
-
-	}
-
 }

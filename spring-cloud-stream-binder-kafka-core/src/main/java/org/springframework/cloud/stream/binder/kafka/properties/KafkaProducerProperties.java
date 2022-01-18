@@ -19,7 +19,7 @@ package org.springframework.cloud.stream.binder.kafka.properties;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 
 import org.springframework.expression.Expression;
 
