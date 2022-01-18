@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.stream.binder.kafka.integration2;
+package org.springframework.cloud.stream.binder.kafka.bootstrap;
 
 import org.junit.ClassRule;
 import org.junit.Test;
