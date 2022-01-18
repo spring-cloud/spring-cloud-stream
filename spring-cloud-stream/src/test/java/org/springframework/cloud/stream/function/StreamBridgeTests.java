@@ -186,6 +186,18 @@ public class StreamBridgeTests {
 		}
 	}
 
+	@Test // validate that there is no exception thrown when sending to null channel
+	public void test_2268() {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration
+				.getCompleteConfiguration(InterceptorConfiguration.class))
+				.web(WebApplicationType.NONE).run(
+						"--spring.jmx.enabled=false")) {
+			StreamBridge bridge = context.getBean(StreamBridge.class);
+
+			bridge.send("nullChannel", "blah");
+		}
+	}
+
 	@Test
 	public void testInterceptorIsNotAddedMultipleTimesToTheMessageChannel() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration

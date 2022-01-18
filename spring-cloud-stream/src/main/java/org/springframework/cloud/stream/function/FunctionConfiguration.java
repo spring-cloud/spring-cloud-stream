@@ -601,7 +601,7 @@ public class FunctionConfiguration {
 				private void doSendMessage(Object result, Message<?> requestMessage) {
 					if (result instanceof Message && ((Message<?>) result).getHeaders().get("spring.cloud.stream.sendto.destination") != null) {
 						String destinationName = (String) ((Message<?>) result).getHeaders().get("spring.cloud.stream.sendto.destination");
-						SubscribableChannel outputChannel = streamBridge.resolveDestination(destinationName, producerProperties, null);
+						MessageChannel outputChannel = streamBridge.resolveDestination(destinationName, producerProperties, null);
 						if (logger.isInfoEnabled()) {
 							logger.info("Output message is sent to '" + destinationName + "' destination");
 						}

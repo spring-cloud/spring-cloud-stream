@@ -47,7 +47,7 @@ import org.springframework.integration.config.GlobalChannelInterceptorProcessor;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
-import org.springframework.messaging.SubscribableChannel;
+import org.springframework.messaging.MessageChannel;
 import org.springframework.util.MimeType;
 import org.springframework.util.MimeTypeUtils;
 import org.springframework.util.StringUtils;
@@ -76,7 +76,7 @@ public final class StreamBridge implements SmartInitializingSingleton {
 
 	private final Log logger = LogFactory.getLog(getClass());
 
-	private final Map<String, SubscribableChannel> channelCache;
+	private final Map<String, MessageChannel> channelCache;
 
 	private final FunctionCatalog functionCatalog;
 
@@ -111,9 +111,9 @@ public final class StreamBridge implements SmartInitializingSingleton {
 		this.applicationContext = applicationContext;
 		this.bindingServiceProperties = bindingServiceProperties;
 		this.destinationBindingCallback = destinationBindingCallback;
-		this.channelCache = new LinkedHashMap<String, SubscribableChannel>() {
+		this.channelCache = new LinkedHashMap<String, MessageChannel>() {
 			@Override
-			protected boolean removeEldestEntry(Map.Entry<String, SubscribableChannel> eldest) {
+			protected boolean removeEldestEntry(Map.Entry<String, MessageChannel> eldest) {
 				boolean remove = size() > bindingServiceProperties.getDynamicDestinationCacheSize();
 				if (remove && logger.isDebugEnabled()) {
 					logger.debug("Removing message channel from cache " + eldest.getKey());
@@ -207,7 +207,7 @@ public final class StreamBridge implements SmartInitializingSingleton {
 			data = MessageBuilder.withPayload(data).build();
 		}
 		ProducerProperties producerProperties = this.bindingServiceProperties.getProducerProperties(bindingName);
-		SubscribableChannel messageChannel = this.resolveDestination(bindingName, producerProperties, binderName);
+		MessageChannel messageChannel = this.resolveDestination(bindingName, producerProperties, binderName);
 
 		Function functionToInvoke = this.getStreamBridgeFunction(outputContentType.toString(), producerProperties);
 
@@ -252,10 +252,10 @@ public final class StreamBridge implements SmartInitializingSingleton {
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes"})
-	synchronized SubscribableChannel resolveDestination(String destinationName, ProducerProperties producerProperties, String binderName) {
-		SubscribableChannel messageChannel = this.channelCache.get(destinationName);
+	synchronized MessageChannel resolveDestination(String destinationName, ProducerProperties producerProperties, String binderName) {
+		MessageChannel messageChannel = this.channelCache.get(destinationName);
 		if (messageChannel == null && this.applicationContext.containsBean(destinationName)) {
-			messageChannel = this.applicationContext.getBean(destinationName, SubscribableChannel.class);
+			messageChannel = this.applicationContext.getBean(destinationName, MessageChannel.class);
 		}
 		if (messageChannel == null) {
 			messageChannel = new DirectWithAttributesChannel();
