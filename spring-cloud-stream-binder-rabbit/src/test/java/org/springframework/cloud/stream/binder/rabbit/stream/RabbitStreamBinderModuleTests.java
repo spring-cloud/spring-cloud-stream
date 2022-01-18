@@ -21,6 +21,7 @@ import com.rabbitmq.stream.Environment;
 import com.rabbitmq.stream.OffsetSpecification;
 import com.rabbitmq.stream.ProducerBuilder;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.amqp.rabbit.listener.MessageListenerContainer;
@@ -56,6 +57,7 @@ import static org.mockito.Mockito.verify;
 /**
  * @author Gary Russell
  */
+@Disabled
 public class RabbitStreamBinderModuleTests {
 
 	private ConfigurableApplicationContext context;
