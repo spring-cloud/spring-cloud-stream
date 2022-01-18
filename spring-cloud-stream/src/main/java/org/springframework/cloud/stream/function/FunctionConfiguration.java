@@ -185,6 +185,9 @@ public class FunctionConfiguration {
 					if (functionWrapper != null && functionWrapper.isSupplier()) {
 						// gather output content types
 						List<String> contentTypes = new ArrayList<String>();
+						if (proxyFactory.getOutputs().size() == 0) {
+							return;
+						}
 						Assert.isTrue(proxyFactory.getOutputs().size() == 1, "Supplier with multiple outputs is not supported at the moment.");
 						String outputName  = proxyFactory.getOutputs().iterator().next();
 
@@ -552,11 +555,13 @@ public class FunctionConfiguration {
 			}
 			else {
 				String outputDestinationName = this.determineOutputDestinationName(0, bindableProxyFactory, functionType);
-				String inputDestinationName = inputBindingNames.iterator().next();
-				Object inputDestination = this.applicationContext.getBean(inputDestinationName);
-				if (inputDestination != null && inputDestination instanceof SubscribableChannel) {
-					AbstractMessageHandler handler = createFunctionHandler(function, inputDestinationName, outputDestinationName);
-					((SubscribableChannel) inputDestination).subscribe(handler);
+				if (!ObjectUtils.isEmpty(inputBindingNames)) {
+					String inputDestinationName = inputBindingNames.iterator().next();
+					Object inputDestination = this.applicationContext.getBean(inputDestinationName);
+					if (inputDestination != null && inputDestination instanceof SubscribableChannel) {
+						AbstractMessageHandler handler = createFunctionHandler(function, inputDestinationName, outputDestinationName);
+						((SubscribableChannel) inputDestination).subscribe(handler);
+					}
 				}
 			}
 		}
@@ -866,13 +871,14 @@ public class FunctionConfiguration {
 				FunctionInvocationWrapper sourceFunc = functionCatalog.lookup(inputBindingName);
 
 				if (sourceFunc == null || //see https://github.com/spring-cloud/spring-cloud-stream/issues/2229
+						sourceFunc.isSupplier() ||
 						(!sourceFunc.getFunctionDefinition().equals(inputBindingName) && applicationContext.containsBean(inputBindingName))) {
 					RootBeanDefinition functionBindableProxyDefinition = new RootBeanDefinition(BindableFunctionProxyFactory.class);
 					functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(inputBindingName);
 					functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(1);
 					functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(0);
 					functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(this.streamFunctionProperties);
-					registry.registerBeanDefinition(inputBindingName + "_binding", functionBindableProxyDefinition);
+					registry.registerBeanDefinition(inputBindingName + "_binding_in", functionBindableProxyDefinition);
 				}
 			}
 
@@ -880,13 +886,14 @@ public class FunctionConfiguration {
 				FunctionInvocationWrapper sourceFunc = functionCatalog.lookup(outputBindingName);
 
 				if (sourceFunc == null || //see https://github.com/spring-cloud/spring-cloud-stream/issues/2229
+						sourceFunc.isConsumer() ||
 						(!sourceFunc.getFunctionDefinition().equals(outputBindingName) && applicationContext.containsBean(outputBindingName))) {
 					RootBeanDefinition functionBindableProxyDefinition = new RootBeanDefinition(BindableFunctionProxyFactory.class);
 					functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(outputBindingName);
 					functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(0);
 					functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(1);
 					functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(this.streamFunctionProperties);
-					registry.registerBeanDefinition(outputBindingName + "_binding", functionBindableProxyDefinition);
+					registry.registerBeanDefinition(outputBindingName + "_binding_out", functionBindableProxyDefinition);
 				}
 			}
 
