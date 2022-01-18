@@ -211,7 +211,7 @@ public class InteractiveQueryService {
 				throwable = e;
 			}
 			throw new IllegalStateException(
-					"Error when retrieving state store", throwable != null ? throwable : new Throwable("Kafka Streams is not ready."));
+					"Error when retrieving state store.", throwable != null ? throwable : new Throwable("Kafka Streams is not ready."));
 		});
 	}
 
