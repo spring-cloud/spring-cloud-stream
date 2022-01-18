@@ -129,8 +129,6 @@ public class FunctionConfiguration {
 
 	private final static String SOURCE_PROPERY = "spring.cloud.stream.source";
 
-//	private final static String OUT_BINDINGS = "spring.cloud.stream.output-bindings";
-
 	@Bean
 	public StreamBridge streamBridgeUtils(FunctionCatalog functionCatalog, FunctionRegistry functionRegistry,
 			BindingServiceProperties bindingServiceProperties, ConfigurableApplicationContext applicationContext,

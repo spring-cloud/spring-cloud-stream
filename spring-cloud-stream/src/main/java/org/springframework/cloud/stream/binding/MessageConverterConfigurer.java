@@ -147,7 +147,9 @@ public class MessageConverterConfigurer
 		ProducerProperties producerProperties = bindingProperties.getProducer();
 		boolean partitioned = !inbound && producerProperties != null && producerProperties.isPartitioned();
 		boolean functional = streamFunctionProperties != null
-				&& (StringUtils.hasText(streamFunctionProperties.getDefinition()) || StringUtils.hasText(bindingServiceProperties.getSource()));
+				&& (StringUtils.hasText(streamFunctionProperties.getDefinition())
+						|| StringUtils.hasText(bindingServiceProperties.getInputBindings())
+						|| StringUtils.hasText(bindingServiceProperties.getOutputBindings()));
 
 		if (partitioned) {
 			if (inbound || !functional) {
