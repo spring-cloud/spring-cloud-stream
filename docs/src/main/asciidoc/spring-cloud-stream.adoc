@@ -702,13 +702,13 @@ public class WebSourceApplication {
 	@RequestMapping
 	@ResponseStatus(HttpStatus.ACCEPTED)
 	public void delegateToSupplier(@RequestBody String body) {
-		streamBridge.send("myBinidng", body);
+		streamBridge.send("myBinding", body);
 	}
 }
 ----
 
-As you can see inside of `delegateToSupplier` method we're using StreamBridge to send data to `myBinidng` binding. And here you're also benefiting from 
-the dynamic features of `StreamBridge` where if `myBinidng` doesn't exist it will be created automatically and cached, otherwise existing binding will be used.
+As you can see inside of `delegateToSupplier` method we're using StreamBridge to send data to `myBinding` binding. And here you're also benefiting from 
+the dynamic features of `StreamBridge` where if `myBinding` doesn't exist it will be created automatically and cached, otherwise existing binding will be used.
 
 NOTE: Caching dynamic destinations (bindings) could result in memory leaks in the event there are many dynamic destinations. To have some level of control 
 we provide a self-evicting caching mechanism for output bindings with default cache size of 10. This means that if your dynamic destination size goes above that number, there is a possibility that an existing binding will be evicted and thus would need to be recreated which could cause minor performance degradation. You can increase the cache size via `spring.cloud.stream.dynamic-destination-cache-size` property setting it to the desired value.
