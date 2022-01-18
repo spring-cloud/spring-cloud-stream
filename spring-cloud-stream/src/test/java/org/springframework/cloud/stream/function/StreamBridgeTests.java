@@ -37,7 +37,7 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.cloud.stream.binder.test.OutputDestination;
 import org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration;
-import org.springframework.cloud.stream.binding.BinderAwareChannelResolver.NewDestinationBindingCallback;
+import org.springframework.cloud.stream.binding.NewDestinationBindingCallback;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;

@@ -42,18 +42,14 @@ import org.springframework.cloud.stream.binder.BinderFactory;
 import org.springframework.cloud.stream.binder.BinderType;
 import org.springframework.cloud.stream.binder.BinderTypeRegistry;
 import org.springframework.cloud.stream.binder.DefaultBinderFactory;
-import org.springframework.cloud.stream.binding.AbstractBindingTargetFactory;
 import org.springframework.cloud.stream.binding.Bindable;
-import org.springframework.cloud.stream.binding.BinderAwareChannelResolver;
 import org.springframework.cloud.stream.binding.BinderAwareRouter;
 import org.springframework.cloud.stream.binding.BindingService;
 import org.springframework.cloud.stream.binding.BindingsLifecycleController;
 import org.springframework.cloud.stream.binding.ContextStartAfterRefreshListener;
 import org.springframework.cloud.stream.binding.DynamicDestinationsBindable;
 import org.springframework.cloud.stream.binding.InputBindingLifecycle;
-import org.springframework.cloud.stream.binding.MessageChannelStreamListenerResultAdapter;
 import org.springframework.cloud.stream.binding.OutputBindingLifecycle;
-import org.springframework.cloud.stream.binding.StreamListenerAnnotationBeanPostProcessor;
 import org.springframework.cloud.stream.config.BindingHandlerAdvise.MappingsProvider;
 import org.springframework.cloud.stream.function.StreamFunctionProperties;
 import org.springframework.cloud.stream.micrometer.DestinationPublishingMetricsAutoConfiguration;
@@ -177,12 +173,6 @@ public class BindingServiceConfiguration {
 		};
 	}
 
-	@Bean(name = STREAM_LISTENER_ANNOTATION_BEAN_POST_PROCESSOR_NAME)
-	@ConditionalOnMissingBean(search = SearchStrategy.CURRENT)
-	public static StreamListenerAnnotationBeanPostProcessor streamListenerAnnotationBeanPostProcessor() {
-		return new StreamListenerAnnotationBeanPostProcessor();
-	}
-
 	@Bean
 	public BindingHandlerAdvise BindingHandlerAdvise(
 			@Nullable MappingsProvider[] providers) {
@@ -207,11 +197,6 @@ public class BindingServiceConfiguration {
 		binderFactory.setDefaultBinder(bindingServiceProperties.getDefaultBinder());
 		binderFactory.setListeners(this.binderFactoryListeners);
 		return binderFactory;
-	}
-
-	@Bean
-	public MessageChannelStreamListenerResultAdapter messageChannelStreamListenerResultAdapter() {
-		return new MessageChannelStreamListenerResultAdapter();
 	}
 
 	@Bean
@@ -251,18 +236,6 @@ public class BindingServiceConfiguration {
 	@DependsOn("bindingService")
 	public ContextStartAfterRefreshListener contextStartAfterRefreshListener() {
 		return new ContextStartAfterRefreshListener();
-	}
-
-	@SuppressWarnings("rawtypes")
-	@Bean
-	public BinderAwareChannelResolver binderAwareChannelResolver(
-			BindingService bindingService,
-			AbstractBindingTargetFactory<? extends MessageChannel> bindingTargetFactory,
-			DynamicDestinationsBindable dynamicDestinationsBindable,
-			@Nullable BinderAwareChannelResolver.NewDestinationBindingCallback callback) {
-
-		return new BinderAwareChannelResolver(bindingService, bindingTargetFactory,
-				dynamicDestinationsBindable, callback);
 	}
 
 	@Bean

@@ -21,11 +21,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.rules.ExpectedException;
 import reactor.core.publisher.Flux;
 
@@ -70,6 +70,7 @@ public class SourceToFunctionsSupportTests {
 	}
 
 	@Test
+	@Ignore
 	public void testFunctionIsAppliedToExistingMessageSource() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 				TestChannelBinderConfiguration.getCompleteConfiguration(
@@ -98,7 +99,7 @@ public class SourceToFunctionsSupportTests {
 	}
 
 	@Test
-	@Disabled // fails intermittently
+	@Ignore // fails intermittently
 	public void testFunctionsAreAppliedToExistingMessageSourceReactive() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 				TestChannelBinderConfiguration.getCompleteConfiguration(
@@ -113,6 +114,7 @@ public class SourceToFunctionsSupportTests {
 	}
 
 	@Test
+	@Ignore
 	public void testImperativeSupplier() throws Exception {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 				TestChannelBinderConfiguration.getCompleteConfiguration(
@@ -236,7 +238,7 @@ public class SourceToFunctionsSupportTests {
 	}
 
 	@Test
-	@Disabled
+	@Ignore
 	public void testFiniteFluxSupplierMessage() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 				TestChannelBinderConfiguration.getCompleteConfiguration(FunctionsConfiguration.class,

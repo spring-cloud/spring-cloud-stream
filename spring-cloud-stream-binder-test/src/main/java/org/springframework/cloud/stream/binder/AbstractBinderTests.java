@@ -17,10 +17,7 @@
 package org.springframework.cloud.stream.binder;
 
 import java.io.Serializable;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
@@ -34,9 +31,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 
-import org.springframework.cloud.stream.binder.AbstractBinderTests.Station.Readings;
 import org.springframework.cloud.stream.binding.MessageConverterConfigurer;
-import org.springframework.cloud.stream.binding.StreamListenerMessageHandler;
 import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
@@ -51,12 +46,8 @@ import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.PollableChannel;
 import org.springframework.messaging.converter.SmartMessageConverter;
-import org.springframework.messaging.handler.annotation.support.PayloadArgumentResolver;
-import org.springframework.messaging.handler.invocation.HandlerMethodArgumentResolverComposite;
-import org.springframework.messaging.handler.invocation.InvocableHandlerMethod;
 import org.springframework.util.Assert;
 import org.springframework.util.MimeTypeUtils;
-import org.springframework.util.ReflectionUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -424,193 +415,6 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 		return ".";
 	}
 
-	@SuppressWarnings("rawtypes")
-	@Test
-	public void testSendPojoReceivePojoWithStreamListenerDefaultContentType(TestInfo testInfo)
-			throws Exception {
-		StreamListenerMessageHandler handler = this.buildStreamListener(
-				AbstractBinderTests.class, "echoStation", Station.class);
-
-		Binder binder = getBinder();
-
-		BindingProperties producerBindingProperties = createProducerBindingProperties(
-				createProducerProperties(testInfo));
-
-		DirectChannel moduleOutputChannel = createBindableChannel("output",
-				producerBindingProperties);
-
-		BindingProperties consumerBindingProperties = createConsumerBindingProperties(
-				createConsumerProperties());
-
-		DirectChannel moduleInputChannel = createBindableChannel("input",
-				consumerBindingProperties);
-
-		Binding<MessageChannel> producerBinding = binder.bindProducer(
-				String.format("bad%s0a", getDestinationNameDelimiter()),
-				moduleOutputChannel, producerBindingProperties.getProducer());
-
-		Binding<MessageChannel> consumerBinding = binder.bindConsumer(
-				String.format("bad%s0a", getDestinationNameDelimiter()), "test-1",
-				moduleInputChannel, consumerBindingProperties.getConsumer());
-
-		Station station = new Station();
-		Message<?> message = MessageBuilder.withPayload(station).build();
-		moduleInputChannel.subscribe(handler);
-		moduleOutputChannel.send(message);
-
-		QueueChannel replyChannel = (QueueChannel) handler.getOutputChannel();
-
-		Message<?> replyMessage = replyChannel.receive(5000);
-		assertThat(replyMessage.getPayload() instanceof Station).isTrue();
-		producerBinding.unbind();
-		consumerBinding.unbind();
-	}
-
-	@SuppressWarnings("rawtypes")
-	@Test
-	public void testSendJsonReceivePojoWithStreamListener(TestInfo testInfo) throws Exception {
-		StreamListenerMessageHandler handler = this.buildStreamListener(
-				AbstractBinderTests.class, "echoStation", Station.class);
-		Binder binder = getBinder();
-
-		BindingProperties producerBindingProperties = createProducerBindingProperties(
-				createProducerProperties(testInfo));
-
-		DirectChannel moduleOutputChannel = createBindableChannel("output",
-				producerBindingProperties);
-
-		BindingProperties consumerBindingProperties = createConsumerBindingProperties(
-				createConsumerProperties());
-
-		DirectChannel moduleInputChannel = createBindableChannel("input",
-				consumerBindingProperties);
-
-		Binding<MessageChannel> producerBinding = binder.bindProducer(
-				String.format("bad%s0d", getDestinationNameDelimiter()),
-				moduleOutputChannel, producerBindingProperties.getProducer());
-
-		Binding<MessageChannel> consumerBinding = binder.bindConsumer(
-				String.format("bad%s0d", getDestinationNameDelimiter()), "test-4",
-				moduleInputChannel, consumerBindingProperties.getConsumer());
-
-		String value = "{\"readings\":[{\"stationid\":\"fgh\","
-				+ "\"customerid\":\"12345\",\"timestamp\":null},"
-				+ "{\"stationid\":\"hjk\",\"customerid\":\"222\",\"timestamp\":null}]}";
-
-		Message<?> message = MessageBuilder.withPayload(value)
-				.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.APPLICATION_JSON)
-				.build();
-		moduleInputChannel.subscribe(handler);
-		moduleOutputChannel.send(message);
-
-		QueueChannel channel = (QueueChannel) handler.getOutputChannel();
-
-		Message<Station> reply = (Message<Station>) channel.receive(5000);
-
-		assertThat(reply).isNotNull();
-		assertThat(reply.getPayload() instanceof Station).isTrue();
-		producerBinding.unbind();
-		consumerBinding.unbind();
-	}
-
-	@SuppressWarnings("rawtypes")
-	@Test
-	public void testSendJsonReceiveJsonWithStreamListener(TestInfo testInfo) throws Exception {
-		StreamListenerMessageHandler handler = this.buildStreamListener(
-				AbstractBinderTests.class, "echoStationString", String.class);
-		Binder binder = getBinder();
-
-		BindingProperties producerBindingProperties = createProducerBindingProperties(
-				createProducerProperties(testInfo));
-
-		DirectChannel moduleOutputChannel = createBindableChannel("output",
-				producerBindingProperties);
-
-		BindingProperties consumerBindingProperties = createConsumerBindingProperties(
-				createConsumerProperties());
-
-		DirectChannel moduleInputChannel = createBindableChannel("input",
-				consumerBindingProperties);
-
-		Binding<MessageChannel> producerBinding = binder.bindProducer(
-				String.format("bad%s0e", getDestinationNameDelimiter()),
-				moduleOutputChannel, producerBindingProperties.getProducer());
-
-		Binding<MessageChannel> consumerBinding = binder.bindConsumer(
-				String.format("bad%s0e", getDestinationNameDelimiter()), "test-5",
-				moduleInputChannel, consumerBindingProperties.getConsumer());
-
-		String value = "{\"readings\":[{\"stationid\":\"fgh\","
-				+ "\"customerid\":\"12345\",\"timestamp\":null},"
-				+ "{\"stationid\":\"hjk\",\"customerid\":\"222\",\"timestamp\":null}]}";
-
-		Message<?> message = MessageBuilder.withPayload(value)
-				.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.APPLICATION_JSON)
-				.build();
-		moduleInputChannel.subscribe(handler);
-		moduleOutputChannel.send(message);
-
-		QueueChannel channel = (QueueChannel) handler.getOutputChannel();
-
-		Message<String> reply = (Message<String>) channel.receive(5000);
-
-		assertThat(reply).isNotNull();
-		assertThat(reply.getPayload() instanceof String).isTrue();
-		producerBinding.unbind();
-		consumerBinding.unbind();
-	}
-
-	@SuppressWarnings("rawtypes")
-	@Test
-	public void testSendPojoReceivePojoWithStreamListener(TestInfo testInfo) throws Exception {
-		StreamListenerMessageHandler handler = this.buildStreamListener(
-				AbstractBinderTests.class, "echoStation", Station.class);
-		Binder binder = getBinder();
-
-		BindingProperties producerBindingProperties = createProducerBindingProperties(
-				createProducerProperties(testInfo));
-
-		DirectChannel moduleOutputChannel = createBindableChannel("output",
-				producerBindingProperties);
-
-		BindingProperties consumerBindingProperties = createConsumerBindingProperties(
-				createConsumerProperties());
-
-		DirectChannel moduleInputChannel = createBindableChannel("input",
-				consumerBindingProperties);
-
-		Binding<MessageChannel> producerBinding = binder.bindProducer(
-				String.format("bad%s0f", getDestinationNameDelimiter()),
-				moduleOutputChannel, producerBindingProperties.getProducer());
-
-		Binding<MessageChannel> consumerBinding = binder.bindConsumer(
-				String.format("bad%s0f", getDestinationNameDelimiter()), "test-6",
-				moduleInputChannel, consumerBindingProperties.getConsumer());
-
-		Readings r1 = new Readings();
-		r1.setCustomerid("123");
-		r1.setStationid("XYZ");
-		Readings r2 = new Readings();
-		r2.setCustomerid("546");
-		r2.setStationid("ABC");
-		Station station = new Station();
-		station.setReadings(Arrays.asList(r1, r2));
-		Message<?> message = MessageBuilder.withPayload(station)
-				.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.APPLICATION_JSON)
-				.build();
-		moduleInputChannel.subscribe(handler);
-		moduleOutputChannel.send(message);
-
-		QueueChannel channel = (QueueChannel) handler.getOutputChannel();
-
-		Message<Station> reply = (Message<Station>) channel.receive(5000);
-
-		assertThat(reply).isNotNull();
-		assertThat(reply.getPayload() instanceof Station).isTrue();
-		producerBinding.unbind();
-		consumerBinding.unbind();
-	}
-
 	@SuppressWarnings("unused") // it is used via reflection
 	private Station echoStation(Station station) {
 		return station;
@@ -619,32 +423,6 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 	@SuppressWarnings("unused") // it is used via reflection
 	private String echoStationString(String station) {
 		return station;
-	}
-
-	private StreamListenerMessageHandler buildStreamListener(Class<?> handlerClass,
-			String handlerMethodName, Class<?>... parameters) throws Exception {
-		String channelName = "reply_" + System.nanoTime();
-
-		this.applicationContext.getBeanFactory().registerSingleton(channelName, new QueueChannel());
-
-		Method m = ReflectionUtils.findMethod(handlerClass, handlerMethodName,
-				parameters);
-		InvocableHandlerMethod method = new InvocableHandlerMethod(this, m);
-		HandlerMethodArgumentResolverComposite resolver = new HandlerMethodArgumentResolverComposite();
-		CompositeMessageConverterFactory factory = new CompositeMessageConverterFactory();
-		resolver.addResolver(new PayloadArgumentResolver(
-				factory.getMessageConverterForAllRegistered()));
-		method.setMessageMethodArgumentResolvers(resolver);
-		Constructor<?> c = ReflectionUtils.accessibleConstructor(
-				StreamListenerMessageHandler.class, InvocableHandlerMethod.class,
-				boolean.class, String[].class);
-		StreamListenerMessageHandler handler = (StreamListenerMessageHandler) c
-				.newInstance(method, false, new String[] {});
-		handler.setOutputChannelName(channelName);
-		handler.setBeanFactory(this.applicationContext);
-		handler.afterPropertiesSet();
-//		context.refresh();
-		return handler;
 	}
 
 	public static class Station {

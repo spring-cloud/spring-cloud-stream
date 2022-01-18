@@ -71,7 +71,7 @@ import org.springframework.cloud.stream.binder.BindingCreatedEvent;
 import org.springframework.cloud.stream.binder.ConsumerProperties;
 import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.cloud.stream.binding.BindableProxyFactory;
-import org.springframework.cloud.stream.binding.BinderAwareChannelResolver.NewDestinationBindingCallback;
+import org.springframework.cloud.stream.binding.NewDestinationBindingCallback;
 import org.springframework.cloud.stream.config.BinderFactoryAutoConfiguration;
 import org.springframework.cloud.stream.config.BindingBeansRegistrar;
 import org.springframework.cloud.stream.config.BindingProperties;

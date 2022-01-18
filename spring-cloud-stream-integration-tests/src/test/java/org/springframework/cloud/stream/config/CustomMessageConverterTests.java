@@ -26,7 +26,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cloud.stream.annotation.EnableBinding;
-import org.springframework.cloud.stream.annotation.StreamMessageConverter;
 import org.springframework.cloud.stream.binder.BinderFactory;
 import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.cloud.stream.test.binder.TestSupportBinder;
@@ -59,12 +58,10 @@ public class CustomMessageConverterTests {
 	private BinderFactory binderFactory;
 
 	@Autowired
-	@StreamMessageConverter
 	private List<MessageConverter> customMessageConverters;
 
 	@Test
 	public void testCustomMessageConverter() throws Exception {
-		assertThat(this.customMessageConverters).hasSize(2);
 		assertThat(this.customMessageConverters).extracting("class")
 				.contains(FooConverter.class, BarConverter.class);
 		this.testSource.output().send(MessageBuilder.withPayload(new Foo("hi")).build());
@@ -84,13 +81,11 @@ public class CustomMessageConverterTests {
 	public static class TestSource {
 
 		@Bean
-		@StreamMessageConverter
 		public MessageConverter fooConverter() {
 			return new FooConverter();
 		}
 
 		@Bean
-		@StreamMessageConverter
 		public MessageConverter barConverter() {
 			return new BarConverter();
 		}

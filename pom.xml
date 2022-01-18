@@ -4,12 +4,16 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<artifactId>spring-cloud-stream-parent</artifactId>
+<<<<<<< HEAD
 	<version>3.2.2-SNAPSHOT</version>
+=======
+	<version>4.0.0-SNAPSHOT</version>
+>>>>>>> 4.x
 	<packaging>pom</packaging>
 	<parent>
 		<groupId>org.springframework.cloud</groupId>
 		<artifactId>spring-cloud-build</artifactId>
-		<version>3.1.0</version>
+		<version>4.0.0-SNAPSHOT</version>
 		<relativePath />
 	</parent>
 	<scm>
@@ -22,7 +26,7 @@
 		<tag>HEAD</tag>
 	</scm>
 	<properties>
-		<java.version>1.8</java.version>
+		<java.version>17</java.version>
 		<reactor.version>2020.0.7</reactor.version>
 		<objenesis.version>2.1</objenesis.version>
 		<spring-cloud-function.version>3.2.2-SNAPSHOT</spring-cloud-function.version>
@@ -130,7 +134,7 @@
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-antrun-plugin</artifactId>
-					<version>1.7</version>
+<!--					<version>1.7</version>-->
 				</plugin>
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>

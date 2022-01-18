@@ -1398,44 +1398,6 @@ Aside from static destinations, Spring Cloud Stream lets applications send messa
 This is useful, for example, when the target destination needs to be determined at runtime.
 Applications can do so in one of two ways.
 
-===== BinderAwareChannelResolver
-
-The `BinderAwareChannelResolver` is a special bean registered automatically by the framework.
-You can autowire this bean into your application and use it to resolve output destination at runtime
-
-The 'spring.cloud.stream.dynamicDestinations' property can be used for restricting the dynamic destination names to a known set (that is, intentionally allowed values).
-If this property is not set, any destination can be bound dynamically.
-
-The following example demonstrates one of the common scenarios where REST controller uses a path variable to determine target destination:
-
-[source,java]
-----
-@SpringBootApplication
-@Controller
-public class SourceWithDynamicDestination {
-
-    @Autowired
-    private BinderAwareChannelResolver resolver;
-
-    @RequestMapping(value="/{target}")
-	@ResponseStatus(HttpStatus.ACCEPTED)
-	public void send(@RequestBody String body, @PathVariable("target") String target){
-		resolver.resolveDestination(target).send(new GenericMessage<String>(body));
-	}
-}
-----
-
-Now consider what happens when we start the application on the default port (8080) and make the following requests with CURL:
-
-----
-curl -H "Content-Type: application/json" -X POST -d "customer-1" http://localhost:8080/customers
-
-curl -H "Content-Type: application/json" -X POST -d "order-1" http://localhost:8080/orders
-----
-
-The destinations, 'customers' and 'orders', are created in the broker (in the exchange for Rabbit or in the topic for Kafka)
-with names of 'customers' and 'orders', and the data is published to the appropriate destinations.
-
 ===== spring.cloud.stream.sendto.destination
 
 You can also delegate to the framework to dynamically resolve the output destination by specifying `spring.cloud.stream.sendto.destination` header
