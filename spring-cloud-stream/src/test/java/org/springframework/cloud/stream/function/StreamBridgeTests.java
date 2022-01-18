@@ -193,11 +193,13 @@ public class StreamBridgeTests {
 				.web(WebApplicationType.NONE).run(
 						"--spring.jmx.enabled=false",
 						"--spring.cloud.stream.dynamic-destination-cache-size=1",
-						"--spring.cloud.stream.source=outputA;outputB",
+						"--spring.cloud.stream.output-bindings=outputA;outputB",
 						"--spring.cloud.stream.bindings.outputA-out-0.destination=outputA",
 						"--spring.cloud.stream.bindings.outputB-out-0.destination=outputB")) {
 			StreamBridge bridge = context.getBean(StreamBridge.class);
 
+			bridge.send("outputA-out-0", "hello foo");
+			bridge.send("outputA-out-0", "hello foo");
 			bridge.send("outputA-out-0", "hello foo");
 			bridge.send("outputA-out-0", "hello foo");
 
