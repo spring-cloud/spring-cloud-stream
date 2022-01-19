@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2017 the original author or authors.
+ * Copyright 2015-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package org.springframework.cloud.stream.binder;
 
+import java.util.function.Consumer;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
@@ -23,8 +25,7 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.cloud.stream.annotation.EnableBinding;
-import org.springframework.cloud.stream.messaging.Sink;
+import org.springframework.context.annotation.Bean;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
@@ -36,32 +37,31 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 /**
  * @author Marius Bogoevici
  * @author Janne Valkealahti
+ * @author Soby Chacko
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-// @checkstyle:off
 @SpringBootTest(classes = SinkBindingWithDefaultsTests.TestSink.class, properties = "spring.cloud.stream.defaultBinder=mock")
-// @checkstyle:on
 public class SinkBindingWithDefaultsTests {
 
 	@Autowired
 	private BinderFactory binderFactory;
 
-	@Autowired
-	private Sink testSink;
-
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Test
-	public void testSourceOutputChannelBound() {
+	public void testSinkInputChannelBound() {
 		Binder binder = this.binderFactory.getBinder(null, MessageChannel.class);
-		verify(binder).bindConsumer(eq("input"), isNull(), eq(this.testSink.input()),
+		verify(binder).bindConsumer(eq("consumer-in-0"), isNull(), Mockito.any(MessageChannel.class),
 				Mockito.any());
 		verifyNoMoreInteractions(binder);
 	}
 
-	@EnableBinding(Sink.class)
 	@EnableAutoConfiguration
 	public static class TestSink {
 
+		@Bean
+		public Consumer<String> consumer() {
+			return s -> System.out.println();
+		}
 	}
 
 }
