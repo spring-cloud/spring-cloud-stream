@@ -23,6 +23,7 @@ import java.util.function.Consumer;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -79,6 +80,7 @@ public class KafkaNullConverterTest {
 	}
 
 	@Test
+	@Ignore
 	public void testKafkaNullConverterOutput() throws InterruptedException {
 		final StreamBridge streamBridge = context.getBean(StreamBridge.class);
 
