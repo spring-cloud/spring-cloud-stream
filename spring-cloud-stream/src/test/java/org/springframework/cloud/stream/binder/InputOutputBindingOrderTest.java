@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2017 the original author or authors.
+ * Copyright 2015-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package org.springframework.cloud.stream.binder;
 
+import java.util.function.Function;
+
 import org.junit.Test;
 import org.mockito.Mockito;
 
@@ -23,8 +25,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
-import org.springframework.cloud.stream.annotation.EnableBinding;
-import org.springframework.cloud.stream.messaging.Processor;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.SmartLifecycle;
 import org.springframework.context.annotation.Bean;
@@ -40,6 +40,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
  * @author Janne Valkealahti
+ * @author Soby Chacko
  */
 public class InputOutputBindingOrderTest {
 
@@ -52,9 +53,8 @@ public class InputOutputBindingOrderTest {
 						"--spring.jmx.enabled=false");
 		Binder binder = applicationContext.getBean(BinderFactory.class).getBinder(null,
 				MessageChannel.class);
-		Processor processor = applicationContext.getBean(Processor.class);
 		// input is bound after the context has been started
-		verify(binder).bindConsumer(eq("input"), isNull(), eq(processor.input()),
+		verify(binder).bindConsumer(eq("processor-in-0"), isNull(), Mockito.any(MessageChannel.class),
 				Mockito.any());
 		SomeLifecycle someLifecycle = applicationContext.getBean(SomeLifecycle.class);
 		assertThat(someLifecycle.isRunning());
@@ -63,13 +63,17 @@ public class InputOutputBindingOrderTest {
 		applicationContext.close();
 	}
 
-	@EnableBinding(Processor.class)
 	@EnableAutoConfiguration
 	public static class TestSource {
 
 		@Bean
 		public SomeLifecycle someLifecycle() {
 			return new SomeLifecycle();
+		}
+
+		@Bean
+		public Function<String, String> processor() {
+			return s -> s;
 		}
 
 	}
@@ -79,16 +83,13 @@ public class InputOutputBindingOrderTest {
 		@Autowired
 		private BinderFactory binderFactory;
 
-		@Autowired
-		private Processor processor;
-
 		private boolean running;
 
 		@Override
 		@SuppressWarnings({ "rawtypes", "unchecked" })
 		public synchronized void start() {
 			Binder binder = this.binderFactory.getBinder(null, MessageChannel.class);
-			verify(binder).bindProducer(eq("output"), eq(this.processor.output()),
+			verify(binder).bindProducer(eq("processor-out-0"), Mockito.any(MessageChannel.class),
 					Mockito.any());
 			// input was not bound yet
 			verifyNoMoreInteractions(binder);
