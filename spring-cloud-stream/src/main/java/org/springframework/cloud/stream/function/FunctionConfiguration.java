@@ -814,7 +814,6 @@ public class FunctionConfiguration {
 
 		@Override
 		public void afterPropertiesSet() throws Exception {
-//			if (ObjectUtils.isEmpty(applicationContext.getBeanNamesForAnnotation(EnableBinding.class))) {
 			this.determineFunctionName(functionCatalog, environment);
 			BeanDefinitionRegistry registry = (BeanDefinitionRegistry) applicationContext.getBeanFactory();
 
@@ -852,11 +851,7 @@ public class FunctionConfiguration {
 			}
 
 			this.createStandAloneBindingsIfNecessary(registry, applicationContext.getBean(BindingServiceProperties.class));
-			}
-//			}
-			else {
-				logger.info("Functional binding is disabled due to the presense of @EnableBinding annotation in your configuration");
-			}
+
 		}
 
 		private void createStandAloneBindingsIfNecessary(BeanDefinitionRegistry registry, BindingServiceProperties bindingProperties) {
