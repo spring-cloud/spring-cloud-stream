@@ -29,7 +29,6 @@ import com.rabbitmq.http.client.domain.BindingInfo;
 import com.rabbitmq.http.client.domain.ExchangeInfo;
 import com.rabbitmq.http.client.domain.QueueInfo;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.Mockito;
@@ -91,7 +90,6 @@ import static org.mockito.Mockito.verify;
  * @author Artem Bilan
  * @author Soby Chacko
  */
-@Disabled
 public class RabbitBinderModuleTests {
 
 	@RegisterExtension
