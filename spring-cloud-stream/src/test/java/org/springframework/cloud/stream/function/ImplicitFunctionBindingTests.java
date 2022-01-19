@@ -41,7 +41,6 @@ import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.function.context.FunctionRegistration;
-import org.springframework.cloud.function.context.FunctionType;
 import org.springframework.cloud.function.context.catalog.FunctionAroundWrapper;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.cloud.function.context.config.ContextFunctionCatalogAutoConfiguration;
@@ -57,6 +56,7 @@ import org.springframework.cloud.stream.messaging.DirectWithAttributesChannel;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
+import org.springframework.core.ResolvableType;
 import org.springframework.integration.channel.QueueChannel;
 import org.springframework.integration.dsl.IntegrationFlow;
 import org.springframework.integration.dsl.IntegrationFlows;
@@ -157,7 +157,7 @@ public class ImplicitFunctionBindingTests {
 
 			Function<byte[], byte[]> function = v -> v;
 			FunctionRegistration functionRegistration = new FunctionRegistration(function, "function");
-			functionRegistration = functionRegistration.type(FunctionType.from(byte[].class).to(byte[].class));
+			functionRegistration = functionRegistration.type(ResolvableType.forClassWithGenerics(Function.class, Object.class, Object.class).getType());
 			FunctionBindingTestUtils.bind(context, functionRegistration);
 
 			input.send(new GenericMessage<byte[]>("hello".getBytes()), "input");

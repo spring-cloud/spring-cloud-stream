@@ -58,7 +58,6 @@ import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionProperties;
 import org.springframework.cloud.function.context.FunctionRegistry;
 import org.springframework.cloud.function.context.PollableBean;
-import org.springframework.cloud.function.context.catalog.FunctionInspector;
 import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.cloud.function.context.config.ContextFunctionCatalogAutoConfiguration;
@@ -939,7 +938,10 @@ public class FunctionConfiguration {
 				streamFunctionProperties.setDefinition(RoutingFunction.FUNCTION_NAME);
 			}
 			else if (autodetect) {
-				streamFunctionProperties.setDefinition(((FunctionInspector) functionCatalog).getName(functionCatalog.lookup("")));
+				FunctionInvocationWrapper function = functionCatalog.lookup("");
+				if (function != null) {
+					streamFunctionProperties.setDefinition(function.getFunctionDefinition());
+				}
 			}
 			return StringUtils.hasText(streamFunctionProperties.getDefinition());
 		}

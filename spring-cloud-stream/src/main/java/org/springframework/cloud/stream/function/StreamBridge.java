@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.function;
 
+import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -29,7 +30,6 @@ import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionRegistry;
-import org.springframework.cloud.function.context.FunctionType;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.cloud.function.context.message.MessageUtils;
 import org.springframework.cloud.stream.binder.Binder;
@@ -42,6 +42,7 @@ import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.cloud.stream.messaging.DirectWithAttributesChannel;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.core.ResolvableType;
 import org.springframework.integration.channel.AbstractMessageChannel;
 import org.springframework.integration.config.GlobalChannelInterceptorProcessor;
 import org.springframework.integration.support.MessageBuilder;
@@ -241,7 +242,8 @@ public final class StreamBridge implements SmartInitializingSingleton {
 		}
 		FunctionRegistration<Function<Object, Object>> fr = new FunctionRegistration<>(v -> v, STREAM_BRIDGE_FUNC_NAME);
 		fr.getProperties().put("singleton", "false");
-		this.functionRegistry.register(fr.type(FunctionType.from(Object.class).to(Object.class).message()));
+		Type functionType = ResolvableType.forClassWithGenerics(Function.class, Object.class, Object.class).getType();
+		this.functionRegistry.register(fr.type(functionType));
 		Map<String, DirectWithAttributesChannel> channels = applicationContext.getBeansOfType(DirectWithAttributesChannel.class);
 		for (Entry<String, DirectWithAttributesChannel> channelEntry : channels.entrySet()) {
 			if (channelEntry.getValue().getAttribute("type").equals("output")) {
