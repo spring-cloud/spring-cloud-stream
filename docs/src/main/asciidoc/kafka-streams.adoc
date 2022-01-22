@@ -826,7 +826,7 @@ It will use that for inbound deserialization.
 
 ```
 @Bean
-public Serde<Foo() customSerde{
+public Serde<Foo> customSerde() {
  ...
 }
 
