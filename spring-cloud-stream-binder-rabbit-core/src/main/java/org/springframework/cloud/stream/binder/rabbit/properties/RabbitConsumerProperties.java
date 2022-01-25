@@ -175,8 +175,8 @@ public class RabbitConsumerProperties extends RabbitCommonProperties {
 	}
 
 	/**
-	 * @deprecated - use {@link #getHeaderPatterns()}.
 	 * @return the header patterns.
+	 * @deprecated - use {@link #getHeaderPatterns()}.
 	 */
 	@Deprecated
 	public String[] getRequestHeaderPatterns() {
@@ -184,8 +184,8 @@ public class RabbitConsumerProperties extends RabbitCommonProperties {
 	}
 
 	/**
-	 * @deprecated - use {@link #setHeaderPatterns(String[])}.
 	 * @param requestHeaderPatterns request header patterns
+	 * @deprecated - use {@link #setHeaderPatterns(String[])}.
 	 */
 	@Deprecated
 	public void setRequestHeaderPatterns(String[] requestHeaderPatterns) {
@@ -193,8 +193,8 @@ public class RabbitConsumerProperties extends RabbitCommonProperties {
 	}
 
 	/**
-	 * @deprecated in favor of {@link #getBatchSize()}
 	 * @return the tx size.
+	 * @deprecated in favor of {@link #getBatchSize()}
 	 */
 	@Deprecated
 	@Min(value = 1, message = "Tx Size should be greater than zero.")
@@ -203,8 +203,8 @@ public class RabbitConsumerProperties extends RabbitCommonProperties {
 	}
 
 	/**
-	 * deprecated in favor of {@link #setBatchSize(int)}.
 	 * @param txSize the tx size
+	 * deprecated in favor of {@link #setBatchSize(int)}.
 	 */
 	public void setTxSize(int txSize) {
 		setBatchSize(txSize);

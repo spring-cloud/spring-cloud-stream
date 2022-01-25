@@ -139,8 +139,8 @@ public class RabbitProducerProperties extends RabbitCommonProperties {
 	private String streamMessageConverterBeanName;
 
 	/**
-	 * @deprecated - use {@link #setHeaderPatterns(String[])}.
 	 * @param requestHeaderPatterns the patterns.
+	 * @deprecated - use {@link #setHeaderPatterns(String[])}.
 	 */
 	@Deprecated
 	public void setRequestHeaderPatterns(String[] requestHeaderPatterns) {
@@ -148,8 +148,8 @@ public class RabbitProducerProperties extends RabbitCommonProperties {
 	}
 
 	/**
-	 * @deprecated - use {@link #getHeaderPatterns()}.
 	 * @return the header patterns.
+	 * @deprecated - use {@link #getHeaderPatterns()}.
 	 */
 	@Deprecated
 	public String[] getRequestHeaderPatterns() {
