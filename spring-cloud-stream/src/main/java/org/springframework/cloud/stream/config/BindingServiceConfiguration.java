@@ -153,7 +153,7 @@ public class BindingServiceConfiguration {
 				if (!existingBinderConfigurations.contains(binderEntry.getKey())) {
 					binderConfigurations.put(binderEntry.getKey(),
 							new BinderConfiguration(binderEntry.getKey(), new HashMap<>(),
-									true, "integration".equals(binderEntry.getKey()) ? false : true));
+									true, !"integration".equals(binderEntry.getKey())));
 				}
 			}
 		}
