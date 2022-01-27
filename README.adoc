@@ -14,9 +14,17 @@ Edit the files in the src/main/asciidoc/ directory instead.
 
 image::https://circleci.com/gh/spring-cloud/spring-cloud-stream-binder-kafka.svg?style=svg["CircleCI", link="https://circleci.com/gh/spring-cloud/spring-cloud-stream-binder-kafka"]
 image::https://codecov.io/gh/spring-cloud/spring-cloud-stream-binder-kafka/branch/{github-tag}/graph/badge.svg["codecov", link="https://codecov.io/gh/spring-cloud/spring-cloud-stream-binder-kafka"]
-image::https://badges.gitter.im/spring-cloud/spring-cloud-stream-binder-kafka.svg[Gitter, link="https://gitter.im/spring-cloud/spring-cloud-stream-binder-kafka?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge"]
+image::https://badges.gitter.im/spring-cloud/spring-cloud-stream.svg[Gitter, link="https://gitter.im/spring-cloud/spring-cloud-stream?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge"]
 
 // ======================================================================================
+
+//= Overview
+[partintro]
+--
+This guide describes the Apache Kafka implementation of the Spring Cloud Stream Binder.
+It contains information about its design, usage, and configuration options, as well as information on how the Stream Cloud Stream concepts map onto Apache Kafka specific constructs.
+In addition, this guide explains the Kafka Streams binding capabilities of Spring Cloud Stream.
+--
 
 == Apache Kafka Binder
 
