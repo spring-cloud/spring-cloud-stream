@@ -176,19 +176,20 @@ You can also build and package your application into a boot jar (by using `./mvn
 Now you have a working (albeit very basic) Spring Cloud Stream application.
 
 
-[[spring-cloud-stream-preface-notable-deprecations]]
-== Notable Deprecations
+[[spel-and-streaming-data]]
 
-- Annotation-based programming model. Basically the @EnableBInding, @StreamListener and all related annotations are now deprecated in
-favor of the functional programming model. See <<Spring Cloud Function support>> for more details.
-- _Reactive module_ (`spring-cloud-stream-reactive`) is discontinued and no longer distributed in favor of native support via spring-cloud-function.
-For backward
-compatibility you can still bring `spring-cloud-stream-reactive` from previous versions.
-- _Test support binder_ `spring-cloud-stream-test-support` with MessageCollector in favor of a new test binder. See <<Testing>> for more details.
-- _@StreamMessageConverter_ - deprecated as it is no longer required.
-- The `original-content-type` header references have been removed after it's been deprecated in v2.0.
-This is primarily for function-based programming model. For StreamListener it would still be required and thus will stay until we deprecate and eventually discontinue StreamListener
-and annotation-based programming model.
+== Spring Expression Language (SpEL) in the context of Streaming data
+
+Throughout this reference manual you will encounter many features and examples where you can utilize Spring Expression Language (SpEL). It is important to understand certain limitations when it comes to using it.
+
+SpEL gives you access to the current Message as well as the Application Context you are running in.
+However it is important to understand what type of data SpEL can see especially in the context of the incoming Message.
+From the broker, the message arrives in a form of a byte[]. It is then transformed to a `Message<byte[]>` by the binders where as you can see the payload of the message maintains its raw form. The headers of the message are `<String, Object>`, where values are typically another primitive or a collection/array of primitives, hence Object.
+That is because binder does not know the required input type as it has no access to the user code (function). So effectively binder delivered an envelope with the payload and some readable meta-data in the form of message headers, just like the letter delivered by mail.
+This means that while accessing payload of the message is possible you will only have access to it as raw data (i.e., byte[]). And while it may be very common for developers to ask for ability to have SpEL access to fields of a payload object as concrete type (e.g., Foo, Bar etc), you can see how difficult or even impossible would it be to achieve.
+Here is one example to demonstrate the problem; Imagine you have a routing expression to route to different functions based on payload type. This requirement would imply payload conversion from byte[] to a specific type and then applying the SpEL. However, in order to perform such conversion we would need to know the actual type to pass to converter and that comes from function's signature which we don’t know which one. A better approach to solve this requirement would be to pass the type information as message headers (e.g., `application/json;type=foo.bar.Baz` ). You’ll get a clear readable String value that could be accessed and evaluated in a year and easy to read SpEL expression.
+
+Additionally it is considered very bad practice to use payload for routing decisions, since the payload is considered to be privileged data - data only to be read by its final recipient. Again, using the mail delivery analogy you would not want the mailman to open your envelope and read the contents of the letter to make some delivery decisions. The same concept applies here, especially when it is relatively easy to include such information when generating a Message. It enforces certain level of discipline related to the design of data to be transmitted over the network and which pieces of such data can be considered as public and which are privileged.
 
 [[spel-and-streaming-data]]
 
