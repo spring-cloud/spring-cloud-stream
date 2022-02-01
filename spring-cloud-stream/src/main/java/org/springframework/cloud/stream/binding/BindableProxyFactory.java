@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2021 the original author or authors.
+ * Copyright 2015-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,15 +36,13 @@ import org.springframework.messaging.SubscribableChannel;
 import org.springframework.util.Assert;
 
 /**
- * {@link FactoryBean} for instantiating the interfaces specified via
- * {@link EnableBinding}.
+ * {@link FactoryBean} for instantiating the functions.
  *
  * @author Marius Bogoevici
  * @author David Syer
  * @author Ilayaperumal Gopinathan
  * @author Oleg Zhurakousky
  * @author Soby Chacko
- * @see EnableBinding
  */
 public class BindableProxyFactory extends AbstractBindableProxyFactory
 		implements MethodInterceptor, FactoryBean<Object>, InitializingBean, BeanFactoryAware {
@@ -71,25 +69,6 @@ public class BindableProxyFactory extends AbstractBindableProxyFactory
 		if (boundTarget != null) {
 			return boundTarget;
 		}
-
-//		Input input = AnnotationUtils.findAnnotation(method, Input.class);
-//		if (input != null) {
-//			String name = BindingBeanDefinitionRegistryUtils.getBindingTargetName(input,
-//					method);
-//			boundTarget = this.inputHolders.get(name).getBoundTarget();
-//			this.targetCache.put(method, boundTarget);
-//			return boundTarget;
-//		}
-//		else {
-//			Output output = AnnotationUtils.findAnnotation(method, Output.class);
-//			if (output != null) {
-//				String name = BindingBeanDefinitionRegistryUtils
-//						.getBindingTargetName(output, method);
-//				boundTarget = this.outputHolders.get(name).getBoundTarget();
-//				this.targetCache.put(method, boundTarget);
-//				return boundTarget;
-//			}
-//		}
 		return null;
 	}
 
@@ -116,30 +95,6 @@ public class BindableProxyFactory extends AbstractBindableProxyFactory
 		populateBindingTargetFactories(this.beanFactory);
 		Assert.notEmpty(BindableProxyFactory.this.bindingTargetFactories,
 				"'bindingTargetFactories' cannot be empty");
-//		ReflectionUtils.doWithMethods(this.type, method -> {
-//			Input input = AnnotationUtils.findAnnotation(method, Input.class);
-//			if (input != null) {
-//				String name = BindingBeanDefinitionRegistryUtils
-//						.getBindingTargetName(input, method);
-//				Class<?> returnType = method.getReturnType();
-//
-//				BindableProxyFactory.this.inputHolders.put(name,
-//						new BoundTargetHolder(getBindingTargetFactory(returnType)
-//								.createInput(name), true));
-//			}
-//		});
-//		ReflectionUtils.doWithMethods(this.type, method -> {
-//			Output output = AnnotationUtils.findAnnotation(method, Output.class);
-//			if (output != null) {
-//				String name = BindingBeanDefinitionRegistryUtils
-//						.getBindingTargetName(output, method);
-//				Class<?> returnType = method.getReturnType();
-//
-//				BindableProxyFactory.this.outputHolders.put(name,
-//						new BoundTargetHolder(getBindingTargetFactory(returnType)
-//								.createOutput(name), true));
-//			}
-//		});
 	}
 
 	@Override
