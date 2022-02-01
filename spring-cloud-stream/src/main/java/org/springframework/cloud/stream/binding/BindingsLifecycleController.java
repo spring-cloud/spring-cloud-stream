@@ -22,11 +22,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
+import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.DirectFieldAccessor;
 import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.util.Assert;
+import org.springframework.util.ClassUtils;
 
 /**
  *
@@ -44,14 +47,27 @@ public class BindingsLifecycleController {
 
 	private final ObjectMapper objectMapper;
 
+	@SuppressWarnings("unchecked")
 	public BindingsLifecycleController(List<InputBindingLifecycle> inputBindingLifecycles,
 			List<OutputBindingLifecycle> outputBindingsLifecycles) {
 		Assert.notEmpty(inputBindingLifecycles,
 				"'inputBindingLifecycles' must not be null or empty");
 		this.inputBindingLifecycles = inputBindingLifecycles;
 		this.outputBindingsLifecycles = outputBindingsLifecycles;
+
+
 		this.objectMapper = new ObjectMapper(); //see https://github.com/spring-cloud/spring-cloud-stream/issues/2253
 		// we need to use ObjectMapper that could not be modified by the user.
+
+		try {
+			Class<? extends Module> javaTimeModuleClass = (Class<? extends Module>)
+					ClassUtils.forName("com.fasterxml.jackson.datatype.jsr310.JavaTimeModule", ClassUtils.getDefaultClassLoader());
+			Module javaTimeModule = BeanUtils.instantiateClass(javaTimeModuleClass);
+			this.objectMapper.registerModule(javaTimeModule);
+		}
+		catch (ClassNotFoundException ex) {
+			// ignore; jackson-datatype-jsr310 not available
+		}
 	}
 
 	/**
