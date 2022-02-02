@@ -118,15 +118,13 @@ import org.springframework.util.StringUtils;
  */
 @Configuration(proxyBeanMethods = false)
 @EnableConfigurationProperties(StreamFunctionProperties.class)
-//@Import({ BindingBeansRegistrar.class, BinderFactoryAutoConfiguration.class })
 @Import({ BinderFactoryAutoConfiguration.class })
 @AutoConfigureBefore(BindingServiceConfiguration.class)
 @AutoConfigureAfter(ContextFunctionCatalogAutoConfiguration.class)
 @ConditionalOnBean(FunctionRegistry.class)
 public class FunctionConfiguration {
 
-	private final static String SOURCE_PROPERY = "spring.cloud.stream.source";
-
+	@SuppressWarnings("rawtypes")
 	@Bean
 	public StreamBridge streamBridgeUtils(FunctionCatalog functionCatalog, FunctionRegistry functionRegistry,
 			BindingServiceProperties bindingServiceProperties, ConfigurableApplicationContext applicationContext,
@@ -229,9 +227,9 @@ public class FunctionConfiguration {
 							PollableBean pollable = extractPollableAnnotation(functionProperties, context, proxyFactory);
 
 							if (functionWrapper != null) {
-								Type functionType = functionWrapper.getFunctionType();
+//								Type functionType = functionWrapper.getFunctionType();
 								IntegrationFlow integrationFlow = integrationFlowFromProvidedSupplier(new PartitionAwareFunctionWrapper(functionWrapper, context, producerProperties),
-										beginPublishingTrigger, pollable, context, taskScheduler, functionType, producerProperties, outputName)
+										beginPublishingTrigger, pollable, context, taskScheduler, producerProperties, outputName)
 										.route(Message.class, message -> {
 											if (message.getHeaders().get("spring.cloud.stream.sendto.destination") != null) {
 												String destinationName = (String) message.getHeaders().get("spring.cloud.stream.sendto.destination");
@@ -244,9 +242,9 @@ public class FunctionConfiguration {
 								context.registerBean(integrationFlowName, IntegrationFlow.class, () -> postProcessedFlow);
 							}
 							else {
-								Type functionType = ((FunctionInvocationWrapper) supplier).getFunctionType();
+								//Type functionType = ((FunctionInvocationWrapper) supplier).getFunctionType();
 								IntegrationFlow integrationFlow = integrationFlowFromProvidedSupplier(new PartitionAwareFunctionWrapper(supplier, context, producerProperties),
-										beginPublishingTrigger, pollable, context, taskScheduler, functionType, producerProperties, outputName)
+										beginPublishingTrigger, pollable, context, taskScheduler, producerProperties, outputName)
 										.channel(c -> c.direct())
 										.fluxTransform((Function<? super Flux<Message<Object>>, ? extends Publisher<Object>>) function)
 										.route(Message.class, message -> {
@@ -290,13 +288,16 @@ public class FunctionConfiguration {
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	private IntegrationFlowBuilder integrationFlowFromProvidedSupplier(Supplier<?> supplier,
 			Publisher<Object> beginPublishingTrigger, PollableBean pollable, GenericApplicationContext context,
-			TaskScheduler taskScheduler, Type functionType, ProducerProperties producerProperties, String bindingName) {
+			TaskScheduler taskScheduler, ProducerProperties producerProperties, String bindingName) {
 
 		IntegrationFlowBuilder integrationFlowBuilder;
 
 		boolean splittable = pollable != null
 				&& (boolean) AnnotationUtils.getAnnotationAttributes(pollable).get("splittable");
-		boolean reactive = FunctionTypeUtils.isPublisher(FunctionTypeUtils.getOutputType(functionType));
+
+		FunctionInvocationWrapper function = (supplier instanceof PartitionAwareFunctionWrapper)
+				? (FunctionInvocationWrapper) ((PartitionAwareFunctionWrapper) supplier).function : (FunctionInvocationWrapper) supplier;
+		boolean reactive = FunctionTypeUtils.isPublisher(function.getOutputType());
 
 		if (pollable == null && reactive) {
 			Publisher publisher = (Publisher) supplier.get();

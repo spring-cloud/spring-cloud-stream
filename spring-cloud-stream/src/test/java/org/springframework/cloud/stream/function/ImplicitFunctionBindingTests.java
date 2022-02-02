@@ -87,7 +87,6 @@ public class ImplicitFunctionBindingTests {
 	}
 
 
-
 	@Test
 	public void testFailedApplicationListenerConfiguration() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(

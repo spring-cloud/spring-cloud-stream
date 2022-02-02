@@ -43,7 +43,7 @@ class PartitionAwareFunctionWrapper implements Function<Object, Object>, Supplie
 	protected final Log logger = LogFactory.getLog(PartitionAwareFunctionWrapper.class);
 
 	@SuppressWarnings("rawtypes")
-	private final Function function;
+	protected final Function function;
 
 	private final Function<Object, Object> outputMessageEnricher;
 

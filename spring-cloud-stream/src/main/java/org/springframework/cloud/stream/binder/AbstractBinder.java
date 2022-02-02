@@ -136,7 +136,7 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 	@Override
 	public final Binding<T> bindConsumer(String name, String group, T target,
 			C properties) {
-		if (StringUtils.isEmpty(group)) {
+		if (!StringUtils.hasText(group)) {
 			Assert.isTrue(!properties.isPartitioned(),
 					"A consumer group is required for a partitioned subscription");
 		}

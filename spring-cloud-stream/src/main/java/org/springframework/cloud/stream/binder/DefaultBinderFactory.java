@@ -167,7 +167,7 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 		}
 		String configurationName;
 		// Fall back to a default if no argument is provided
-		if (StringUtils.isEmpty(name)) {
+		if (!StringUtils.hasText(name)) {
 			Assert.notEmpty(this.binderConfigurations,
 					"A default binder has been requested, but there is no binder available");
 			if (!StringUtils.hasText(this.defaultBinder)) {
