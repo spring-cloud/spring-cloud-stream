@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2021 the original author or authors.
+ * Copyright 2019-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,14 +23,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.ListableBeanFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.stream.binder.Binding;
-import org.springframework.cloud.stream.internal.InternalPropertyNames;
 import org.springframework.util.StringUtils;
 
 /**
@@ -43,11 +38,6 @@ import org.springframework.util.StringUtils;
  * @since 3.0.0
  */
 public class AbstractBindableProxyFactory implements Bindable {
-
-	private static Log log = LogFactory.getLog(AbstractBindableProxyFactory.class);
-
-	@Value("${" + InternalPropertyNames.NAMESPACE_PROPERTY_NAME + ":}")
-	private String namespace;
 
 	protected Map<String, BindingTargetFactory> bindingTargetFactories;
 
@@ -100,19 +90,11 @@ public class AbstractBindableProxyFactory implements Bindable {
 	public Collection<Binding<Object>> createAndBindInputs(
 		BindingService bindingService) {
 		List<Binding<Object>> bindings = new ArrayList<>();
-		if (log.isDebugEnabled()) {
-			log.debug(
-				String.format("Binding inputs for %s:%s", this.namespace, this.type));
-		}
 		for (Map.Entry<String, BoundTargetHolder> boundTargetHolderEntry : this.inputHolders
 			.entrySet()) {
 			String inputTargetName = boundTargetHolderEntry.getKey();
 			BoundTargetHolder boundTargetHolder = boundTargetHolderEntry.getValue();
 			if (boundTargetHolder.isBindable()) {
-				if (log.isDebugEnabled()) {
-					log.debug(String.format("Binding %s:%s:%s", this.namespace, this.type,
-						inputTargetName));
-				}
 				bindings.addAll(bindingService.bindConsumer(
 					boundTargetHolder.getBoundTarget(), inputTargetName));
 			}
@@ -124,19 +106,12 @@ public class AbstractBindableProxyFactory implements Bindable {
 	public Collection<Binding<Object>> createAndBindOutputs(
 		BindingService bindingService) {
 		List<Binding<Object>> bindings = new ArrayList<>();
-		if (log.isDebugEnabled()) {
-			log.debug(String.format("Binding outputs for %s:%s", this.namespace,
-				this.type));
-		}
+
 		for (Map.Entry<String, BoundTargetHolder> boundTargetHolderEntry : this.outputHolders
 			.entrySet()) {
 			BoundTargetHolder boundTargetHolder = boundTargetHolderEntry.getValue();
 			String outputTargetName = boundTargetHolderEntry.getKey();
 			if (boundTargetHolderEntry.getValue().isBindable()) {
-				if (log.isDebugEnabled()) {
-					log.debug(String.format("Binding %s:%s:%s", this.namespace, this.type,
-						outputTargetName));
-				}
 				bindings.add(bindingService.bindProducer(
 					boundTargetHolder.getBoundTarget(), outputTargetName));
 			}
@@ -146,17 +121,9 @@ public class AbstractBindableProxyFactory implements Bindable {
 
 	@Override
 	public void unbindInputs(BindingService bindingService) {
-		if (log.isDebugEnabled()) {
-			log.debug(String.format("Unbinding inputs for %s:%s", this.namespace,
-				this.type));
-		}
 		for (Map.Entry<String, BoundTargetHolder> boundTargetHolderEntry : this.inputHolders
 			.entrySet()) {
 			if (boundTargetHolderEntry.getValue().isBindable()) {
-				if (log.isDebugEnabled()) {
-					log.debug(String.format("Unbinding %s:%s:%s", this.namespace,
-						this.type, boundTargetHolderEntry.getKey()));
-				}
 				bindingService.unbindConsumers(boundTargetHolderEntry.getKey());
 			}
 		}
@@ -164,17 +131,9 @@ public class AbstractBindableProxyFactory implements Bindable {
 
 	@Override
 	public void unbindOutputs(BindingService bindingService) {
-		if (log.isDebugEnabled()) {
-			log.debug(String.format("Unbinding outputs for %s:%s", this.namespace,
-				this.type));
-		}
 		for (Map.Entry<String, BoundTargetHolder> boundTargetHolderEntry : this.outputHolders
 			.entrySet()) {
 			if (boundTargetHolderEntry.getValue().isBindable()) {
-				if (log.isDebugEnabled()) {
-					log.debug(String.format("Binding %s:%s:%s", this.namespace, this.type,
-						boundTargetHolderEntry.getKey()));
-				}
 				bindingService.unbindProducers(boundTargetHolderEntry.getKey());
 			}
 		}
