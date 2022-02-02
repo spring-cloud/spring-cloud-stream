@@ -57,8 +57,6 @@ public class AbstractBindableProxyFactory implements Bindable {
 
 	protected Class<?> type;
 
-	private BeanFactory beanFactory;
-
 	public AbstractBindableProxyFactory(Class<?> type) {
 		this.type = type;
 	}

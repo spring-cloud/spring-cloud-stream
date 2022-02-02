@@ -70,7 +70,7 @@ import org.springframework.util.StringUtils;
  * @since 3.0.3
  *
  */
-@SuppressWarnings("deprecation")
+@SuppressWarnings("rawtypes")
 public final class StreamBridge implements SmartInitializingSingleton {
 
 	private static String STREAM_BRIDGE_FUNC_NAME = "streamBridge";
@@ -202,7 +202,7 @@ public final class StreamBridge implements SmartInitializingSingleton {
 	 * @param outputContentType content type to be used to deal with output type conversion
 	 * @return true if data was sent successfully, otherwise false or throws an exception.
 	 */
-	@SuppressWarnings({ "unchecked", "rawtypes" })
+	@SuppressWarnings({ "unchecked"})
 	public boolean send(String bindingName, @Nullable String binderName, Object data, MimeType outputContentType) {
 		if (!(data instanceof Message)) {
 			data = MessageBuilder.withPayload(data).build();
@@ -253,7 +253,7 @@ public final class StreamBridge implements SmartInitializingSingleton {
 		this.initialized = true;
 	}
 
-	@SuppressWarnings({ "unchecked", "rawtypes"})
+	@SuppressWarnings({ "unchecked"})
 	synchronized MessageChannel resolveDestination(String destinationName, ProducerProperties producerProperties, String binderName) {
 		MessageChannel messageChannel = this.channelCache.get(destinationName);
 		if (messageChannel == null && this.applicationContext.containsBean(destinationName)) {

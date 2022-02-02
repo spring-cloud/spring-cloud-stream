@@ -28,7 +28,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
@@ -43,7 +42,6 @@ import org.springframework.cloud.stream.binder.BinderType;
 import org.springframework.cloud.stream.binder.BinderTypeRegistry;
 import org.springframework.cloud.stream.binder.DefaultBinderFactory;
 import org.springframework.cloud.stream.binding.Bindable;
-import org.springframework.cloud.stream.binding.BinderAwareRouter;
 import org.springframework.cloud.stream.binding.BindingService;
 import org.springframework.cloud.stream.binding.BindingsLifecycleController;
 import org.springframework.cloud.stream.binding.ContextStartAfterRefreshListener;
@@ -62,13 +60,10 @@ import org.springframework.context.annotation.Role;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.integration.channel.PublishSubscribeChannel;
 import org.springframework.integration.handler.AbstractReplyProducingMessageHandler;
-import org.springframework.integration.router.AbstractMappingMessageRouter;
 import org.springframework.lang.Nullable;
 import org.springframework.messaging.MessageChannel;
-import org.springframework.messaging.core.DestinationResolver;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.util.Assert;
-import org.springframework.util.CollectionUtils;
 import org.springframework.util.ObjectUtils;
 
 /**
@@ -84,7 +79,6 @@ import org.springframework.util.ObjectUtils;
  * @author Oleg Zhurakousky
  * @author Soby Chacko
  */
-@SuppressWarnings("deprecation")
 @Configuration(proxyBeanMethods = false)
 @EnableConfigurationProperties({ BindingServiceProperties.class,
 		SpringIntegrationProperties.class, StreamFunctionProperties.class })
@@ -243,16 +237,16 @@ public class BindingServiceConfiguration {
 		return new DynamicDestinationsBindable();
 	}
 
-	@Bean
-	@ConditionalOnMissingBean
-	public BinderAwareRouter binderAwareRouterBeanPostProcessor(
-			@Autowired(required = false) List<AbstractMappingMessageRouter> routers,
-			@Autowired(required = false) @Qualifier("binderAwareChannelResolver")
-				DestinationResolver<MessageChannel> channelResolver) {
-		final AbstractMappingMessageRouter[] routersArray = CollectionUtils.isEmpty(routers) ?
-			new AbstractMappingMessageRouter[]{} : routers.toArray(new AbstractMappingMessageRouter[]{});
-		return new BinderAwareRouter(routersArray, channelResolver);
-	}
+//	@Bean
+//	@ConditionalOnMissingBean
+//	public BinderAwareRouter binderAwareRouterBeanPostProcessor(
+//			@Autowired(required = false) List<AbstractMappingMessageRouter> routers,
+//			@Autowired(required = false) @Qualifier("binderAwareChannelResolver")
+//				DestinationResolver<MessageChannel> channelResolver) {
+//		final AbstractMappingMessageRouter[] routersArray = CollectionUtils.isEmpty(routers) ?
+//			new AbstractMappingMessageRouter[]{} : routers.toArray(new AbstractMappingMessageRouter[]{});
+//		return new BinderAwareRouter(routersArray, channelResolver);
+//	}
 
 	@Bean
 	public ApplicationListener<ContextRefreshedEvent> appListener(
