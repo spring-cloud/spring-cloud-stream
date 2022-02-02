@@ -71,7 +71,6 @@ import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.cloud.stream.binding.BindableProxyFactory;
 import org.springframework.cloud.stream.binding.NewDestinationBindingCallback;
 import org.springframework.cloud.stream.config.BinderFactoryAutoConfiguration;
-import org.springframework.cloud.stream.config.BindingBeansRegistrar;
 import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.cloud.stream.config.BindingServiceConfiguration;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
@@ -119,7 +118,8 @@ import org.springframework.util.StringUtils;
  */
 @Configuration(proxyBeanMethods = false)
 @EnableConfigurationProperties(StreamFunctionProperties.class)
-@Import({ BindingBeansRegistrar.class, BinderFactoryAutoConfiguration.class })
+//@Import({ BindingBeansRegistrar.class, BinderFactoryAutoConfiguration.class })
+@Import({ BinderFactoryAutoConfiguration.class })
 @AutoConfigureBefore(BindingServiceConfiguration.class)
 @AutoConfigureAfter(ContextFunctionCatalogAutoConfiguration.class)
 @ConditionalOnBean(FunctionRegistry.class)

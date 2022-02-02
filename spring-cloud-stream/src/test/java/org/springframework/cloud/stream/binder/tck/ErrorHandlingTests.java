@@ -16,6 +16,8 @@
 
 package org.springframework.cloud.stream.binder.tck;
 
+import java.util.function.Function;
+
 import org.junit.Test;
 
 import org.springframework.boot.WebApplicationType;
@@ -32,7 +34,7 @@ import org.springframework.messaging.support.GenericMessage;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.util.function.Function;
+
 
 /**
  * @author Oleg Zhurakousky
@@ -42,9 +44,8 @@ public class ErrorHandlingTests {
 
 	@Test
 	public void testGlobalErrorWithMessage() {
-		ApplicationContext context = new SpringApplicationBuilder(
-				GlobalErrorHandlerWithErrorMessageConfig.class)
-						.web(WebApplicationType.NONE).run("--spring.jmx.enabled=false");
+		ApplicationContext context = new SpringApplicationBuilder(GlobalErrorHandlerWithErrorMessageConfig.class)
+				.web(WebApplicationType.NONE).run("--spring.jmx.enabled=false");
 		InputDestination source = context.getBean(InputDestination.class);
 		source.send(new GenericMessage<>("foo".getBytes()));
 		GlobalErrorHandlerWithErrorMessageConfig config = context
@@ -54,17 +55,14 @@ public class ErrorHandlingTests {
 
 	@Test
 	public void testGlobalErrorWithThrowable() {
-		ApplicationContext context = new SpringApplicationBuilder(
-				GlobalErrorHandlerWithThrowableConfig.class).web(WebApplicationType.NONE)
-						.run("--spring.jmx.enabled=false");
+		ApplicationContext context = new SpringApplicationBuilder(GlobalErrorHandlerWithThrowableConfig.class)
+				.web(WebApplicationType.NONE).run("--spring.jmx.enabled=false");
 		InputDestination source = context.getBean(InputDestination.class);
 		source.send(new GenericMessage<>("foo".getBytes()));
-		GlobalErrorHandlerWithThrowableConfig config = context
-				.getBean(GlobalErrorHandlerWithThrowableConfig.class);
+		GlobalErrorHandlerWithThrowableConfig config = context.getBean(GlobalErrorHandlerWithThrowableConfig.class);
 		assertThat(config.globalErroInvoked).isTrue();
 	}
 
-	
 	@Import(TestChannelBinderConfiguration.class)
 	@EnableAutoConfiguration
 	public static class GlobalErrorHandlerWithErrorMessageConfig {
@@ -77,8 +75,8 @@ public class ErrorHandlingTests {
 				throw new RuntimeException("test exception");
 			};
 		}
-		
-		@ServiceActivator(inputChannel="errorChannel")
+
+		@ServiceActivator(inputChannel = "errorChannel")
 		public void generalError(Message<?> message) {
 			this.globalErroInvoked = true;
 		}
@@ -98,7 +96,7 @@ public class ErrorHandlingTests {
 			};
 		}
 
-		@ServiceActivator(inputChannel="errorChannel")
+		@ServiceActivator(inputChannel = "errorChannel")
 		public void generalError(Throwable exception) {
 			this.globalErroInvoked = true;
 		}

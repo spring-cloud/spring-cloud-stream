@@ -45,7 +45,7 @@ import org.springframework.util.CollectionUtils;
  *
  * @since 3.0
  */
-class BindableFunctionProxyFactory extends BindableProxyFactory implements ApplicationContextAware {
+public class BindableFunctionProxyFactory extends BindableProxyFactory implements ApplicationContextAware {
 
 	private final int inputCount;
 
