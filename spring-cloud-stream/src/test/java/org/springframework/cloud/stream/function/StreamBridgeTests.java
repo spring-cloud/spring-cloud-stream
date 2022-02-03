@@ -472,7 +472,7 @@ public class StreamBridgeTests {
 		}
 	}
 	@EnableAutoConfiguration
-	public static class DynamicProducerConfig {
+	public static class DynamicProducerDestinationConfig {
 		@Bean
 		public Function<Message<String>, Message<String>> uppercase() {
 			return msg -> MessageBuilder.withPayload(msg.getPayload().toUpperCase())
@@ -484,7 +484,7 @@ public class StreamBridgeTests {
 	public void testDynamicProducerDestination() {
 		System.clearProperty("spring.cloud.function.definition");
 		ConfigurableApplicationContext context = new SpringApplicationBuilder(
-			TestChannelBinderConfiguration.getCompleteConfiguration(DynamicProducerConfig.class))
+			TestChannelBinderConfiguration.getCompleteConfiguration(DynamicProducerDestinationConfig.class))
 			.web(WebApplicationType.NONE)
 			.run("--spring.jmx.enabled=false",
 				"--spring.cloud.function.definition=uppercase",
