@@ -274,7 +274,7 @@ public final class StreamBridge implements SmartInitializingSingleton {
 				binder = binderFactory.getBinder(binderName, messageChannel.getClass());
 			}
 
-			if (producerProperties.isPartitioned()) {
+			if (producerProperties != null && producerProperties.isPartitioned()) {
 				BindingProperties bindingProperties = this.bindingServiceProperties.getBindingProperties(destinationName);
 				((AbstractMessageChannel) messageChannel)
 					.addInterceptor(new DefaultPartitioningInterceptor(bindingProperties, this.applicationContext.getBeanFactory()));
