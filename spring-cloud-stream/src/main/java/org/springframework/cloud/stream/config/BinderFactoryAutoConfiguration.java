@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2021 the original author or authors.
+ * Copyright 2015-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,11 +35,13 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.binder.BinderType;
 import org.springframework.cloud.stream.binder.BinderTypeRegistry;
 import org.springframework.cloud.stream.binder.DefaultBinderTypeRegistry;
 import org.springframework.cloud.stream.binding.CompositeMessageChannelConfigurer;
+import org.springframework.cloud.stream.binding.FluxMessageChannelBindingTargetFactory;
 import org.springframework.cloud.stream.binding.MessageChannelConfigurer;
 import org.springframework.cloud.stream.binding.MessageConverterConfigurer;
 import org.springframework.cloud.stream.binding.MessageSourceBindingTargetFactory;
@@ -215,10 +217,19 @@ public class BinderFactoryAutoConfiguration {
 
 
 	@Bean
+	@ConditionalOnProperty(name = "spring.cloud.stream.reactive", havingValue = "false", matchIfMissing = true)
 	public SubscribableChannelBindingTargetFactory channelFactory(
 			CompositeMessageChannelConfigurer compositeMessageChannelConfigurer) {
 		return new SubscribableChannelBindingTargetFactory(
 				compositeMessageChannelConfigurer);
+	}
+
+	@Bean
+	@ConditionalOnProperty(value = "spring.cloud.stream.reactive", havingValue = "true")
+	public FluxMessageChannelBindingTargetFactory fluxMessageChannelBindingTargetFactory(
+		CompositeMessageChannelConfigurer compositeMessageChannelConfigurer) {
+		return new FluxMessageChannelBindingTargetFactory(
+			compositeMessageChannelConfigurer);
 	}
 
 	@Bean

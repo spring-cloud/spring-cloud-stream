@@ -41,7 +41,6 @@ import reactor.core.publisher.Mono;
 import reactor.core.publisher.MonoSink;
 import reactor.util.function.Tuples;
 
-
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -84,10 +83,12 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.core.annotation.AnnotationUtils;
+import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.Environment;
 import org.springframework.core.type.MethodMetadata;
 import org.springframework.integration.channel.AbstractMessageChannel;
 import org.springframework.integration.channel.AbstractSubscribableChannel;
+import org.springframework.integration.channel.FluxMessageChannel;
 import org.springframework.integration.core.MessagingTemplate;
 import org.springframework.integration.dsl.IntegrationFlow;
 import org.springframework.integration.dsl.IntegrationFlowBuilder;
@@ -418,14 +419,14 @@ public class FunctionConfiguration {
 				if (StringUtils.hasText(functionDefinition) && !shouldNotProcess) {
 					FunctionInvocationWrapper function = functionCatalog.lookup(functionDefinition);
 					if (function != null && !function.isSupplier()) {
-						this.bindFunctionToDestinations(bindableProxyFactory, functionDefinition);
+						this.bindFunctionToDestinations(bindableProxyFactory, functionDefinition, applicationContext.getEnvironment());
 					}
 				}
 			}
 		}
 
 		@SuppressWarnings({ "rawtypes", "unchecked" })
-		private void bindFunctionToDestinations(BindableProxyFactory bindableProxyFactory, String functionDefinition) {
+		private void bindFunctionToDestinations(BindableProxyFactory bindableProxyFactory, String functionDefinition, ConfigurableEnvironment environment) {
 			this.assertBindingIsPossible(bindableProxyFactory);
 
 
@@ -484,7 +485,17 @@ public class FunctionConfiguration {
 								+ "consumer, given that project reactor maintains its own concurrency mechanism. Was '..."
 								+ inputBindingName + ".consumer.concurrency=" + consumerProperties.getConcurrency() + "'");
 					}
-					SubscribableChannel inputChannel = this.applicationContext.getBean(inputBindingName, SubscribableChannel.class);
+					MessageChannel inputChannel = null;
+					final String reactive = environment.getProperty("spring.cloud.stream.reactive");
+					if (StringUtils.hasText(reactive)) {
+						boolean reactiveFn = Boolean.parseBoolean(reactive);
+						if (reactiveFn) {
+							inputChannel = this.applicationContext.getBean(inputBindingName, FluxMessageChannel.class);
+						}
+					}
+					else {
+						inputChannel = this.applicationContext.getBean(inputBindingName, SubscribableChannel.class);
+					}
 					return IntegrationReactiveUtils.messageChannelToFlux(inputChannel).map(m -> {
 						if (m instanceof Message) {
 							m = sanitize(m);
@@ -778,7 +789,7 @@ public class FunctionConfiguration {
 					functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(1);
 					functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(0);
 					functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(new StreamFunctionProperties());
-					functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(true);
+					functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(new SupportedBindableFeatures(true, false));
 					((BeanDefinitionRegistry) beanFactory).registerBeanDefinition(sourceName + "_binding", functionBindableProxyDefinition);
 				}
 			}
@@ -842,6 +853,15 @@ public class FunctionConfiguration {
 						functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(this.inputCount);
 						functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(this.outputCount);
 						functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(this.streamFunctionProperties);
+
+						final String reactive = this.environment.getProperty("spring.cloud.stream.reactive");
+						if (StringUtils.hasText(reactive)) {
+							boolean reactiveFn = Boolean.parseBoolean(reactive);
+							if (reactiveFn) {
+								functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(new SupportedBindableFeatures(false, true));
+							}
+						}
+
 						registry.registerBeanDefinition(functionDefinition + "_binding", functionBindableProxyDefinition);
 					}
 					else {

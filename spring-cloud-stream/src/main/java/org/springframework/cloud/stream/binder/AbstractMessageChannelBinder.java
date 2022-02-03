@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2019 the original author or authors.
+ * Copyright 2016-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,10 +48,12 @@ import org.springframework.expression.Expression;
 import org.springframework.integration.channel.AbstractMessageChannel;
 import org.springframework.integration.channel.AbstractSubscribableChannel;
 import org.springframework.integration.channel.DirectChannel;
+import org.springframework.integration.channel.FluxMessageChannel;
 import org.springframework.integration.channel.PublishSubscribeChannel;
 import org.springframework.integration.context.IntegrationContextUtils;
 import org.springframework.integration.core.MessageProducer;
 import org.springframework.integration.core.MessageSource;
+import org.springframework.integration.endpoint.ReactiveStreamsConsumer;
 import org.springframework.integration.handler.AbstractMessageHandler;
 import org.springframework.integration.handler.BridgeHandler;
 import org.springframework.integration.handler.advice.ErrorMessageSendingRecoverer;
@@ -224,8 +226,6 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 	public final Binding<MessageChannel> doBindProducer(final String destination,
 			MessageChannel outputChannel, final P producerProperties)
 			throws BinderException {
-		Assert.isInstanceOf(SubscribableChannel.class, outputChannel,
-				"Binding is supported only for SubscribableChannel instances");
 		final MessageHandler producerMessageHandler;
 		final ProducerDestination producerDestination;
 		try {
@@ -259,12 +259,19 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		}
 		this.postProcessOutputChannel(outputChannel, producerProperties);
 
-		((SubscribableChannel) outputChannel)
-				.subscribe(new SendingHandler(producerMessageHandler,
-						HeaderMode.embeddedHeaders
-								.equals(producerProperties.getHeaderMode()),
-						this.headersToEmbed, useNativeEncoding(producerProperties)));
+		ReactiveStreamsConsumer[] reactiveStreamsConsumer = new ReactiveStreamsConsumer[1];
 
+		if (outputChannel instanceof SubscribableChannel) {
+			((SubscribableChannel) outputChannel)
+				.subscribe(new SendingHandler(producerMessageHandler,
+					HeaderMode.embeddedHeaders
+						.equals(producerProperties.getHeaderMode()),
+					this.headersToEmbed, useNativeEncoding(producerProperties)));
+		}
+		else if (outputChannel instanceof FluxMessageChannel) {
+			reactiveStreamsConsumer[0] = new ReactiveStreamsConsumer(outputChannel, producerMessageHandler);
+			reactiveStreamsConsumer[0].start();
+		}
 
 		Binding<MessageChannel> binding = new DefaultBinding<MessageChannel>(destination,
 				outputChannel, producerMessageHandler instanceof Lifecycle
@@ -284,9 +291,14 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 			public void afterUnbind() {
 				try {
 					destroyErrorInfrastructure(producerDestination);
+					final ReactiveStreamsConsumer rsc = reactiveStreamsConsumer[0];
+					if (rsc != null && rsc.isRunning()) {
+						rsc.destroy();
+					}
 					if (producerMessageHandler instanceof DisposableBean) {
 						((DisposableBean) producerMessageHandler).destroy();
 					}
+
 				}
 				catch (Exception e) {
 					AbstractMessageChannelBinder.this.logger
@@ -1128,5 +1140,4 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 			gen.writeString(value.getExpressionString());
 		}
 	}
-
 }
