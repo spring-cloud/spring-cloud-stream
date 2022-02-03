@@ -35,6 +35,7 @@ import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
+import org.springframework.cloud.stream.binder.test.InputDestination;
 import org.springframework.cloud.stream.binder.test.OutputDestination;
 import org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration;
 import org.springframework.cloud.stream.binding.BinderAwareChannelResolver.NewDestinationBindingCallback;
@@ -55,12 +56,15 @@ import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.converter.AbstractMessageConverter;
 import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.messaging.support.ChannelInterceptor;
+import org.springframework.messaging.support.GenericMessage;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.MimeType;
 import org.springframework.util.MimeTypeUtils;
 import org.springframework.util.ReflectionUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
 /**
@@ -466,6 +470,35 @@ public class StreamBridgeTests {
 			bridge.send("uppercase-in-0", "hello");
 			assertThat(context.getBean("callbackVerifier", AtomicBoolean.class)).isTrue();
 		}
+	}
+	@EnableAutoConfiguration
+	public static class DynamicProducerConfig {
+		@Bean
+		public Function<Message<String>, Message<String>> uppercase() {
+			return msg -> MessageBuilder.withPayload(msg.getPayload().toUpperCase())
+				.setHeader("spring.cloud.stream.sendto.destination", "dynamicTopic").build();
+		}
+	}
+
+	@Test
+	public void testDynamicProducerDestination() {
+		System.clearProperty("spring.cloud.function.definition");
+		ConfigurableApplicationContext context = new SpringApplicationBuilder(
+			TestChannelBinderConfiguration.getCompleteConfiguration(DynamicProducerConfig.class))
+			.web(WebApplicationType.NONE)
+			.run("--spring.jmx.enabled=false",
+				"--spring.cloud.function.definition=uppercase",
+				"--spring.cloud.stream.bindings.uppercase-in-0.destination=upper"
+			);
+
+		InputDestination source = context.getBean(InputDestination.class);
+		source.send(new GenericMessage<>("John Doe".getBytes()), "upper");
+
+		OutputDestination target = context.getBean(OutputDestination.class);
+		Message<byte[]> message = target.receive(5, "dynamicTopic");
+
+		assertNotNull(message);
+		assertEquals(new String(message.getPayload()), "JOHN DOE");
 	}
 
 	@EnableAutoConfiguration
