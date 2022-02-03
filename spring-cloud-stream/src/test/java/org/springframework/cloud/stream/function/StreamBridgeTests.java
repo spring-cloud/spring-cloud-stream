@@ -498,7 +498,7 @@ public class StreamBridgeTests {
 		Message<byte[]> message = target.receive(5, "dynamicTopic");
 
 		assertNotNull(message);
-		assertEquals(new String(message.getPayload()), "JOHN DOE");
+		assertEquals("JOHN DOE", new String(message.getPayload()));
 	}
 
 	@EnableAutoConfiguration
