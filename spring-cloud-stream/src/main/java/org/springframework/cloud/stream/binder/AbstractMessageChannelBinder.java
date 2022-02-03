@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2019 the original author or authors.
+ * Copyright 2016-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package org.springframework.cloud.stream.binder;
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -48,10 +49,12 @@ import org.springframework.expression.Expression;
 import org.springframework.integration.channel.AbstractMessageChannel;
 import org.springframework.integration.channel.AbstractSubscribableChannel;
 import org.springframework.integration.channel.DirectChannel;
+import org.springframework.integration.channel.FluxMessageChannel;
 import org.springframework.integration.channel.PublishSubscribeChannel;
 import org.springframework.integration.context.IntegrationContextUtils;
 import org.springframework.integration.core.MessageProducer;
 import org.springframework.integration.core.MessageSource;
+import org.springframework.integration.endpoint.ReactiveStreamsConsumer;
 import org.springframework.integration.handler.AbstractMessageHandler;
 import org.springframework.integration.handler.BridgeHandler;
 import org.springframework.integration.handler.advice.ErrorMessageSendingRecoverer;
@@ -224,8 +227,6 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 	public final Binding<MessageChannel> doBindProducer(final String destination,
 			MessageChannel outputChannel, final P producerProperties)
 			throws BinderException {
-		Assert.isInstanceOf(SubscribableChannel.class, outputChannel,
-				"Binding is supported only for SubscribableChannel instances");
 		final MessageHandler producerMessageHandler;
 		final ProducerDestination producerDestination;
 		try {
@@ -259,12 +260,23 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		}
 		this.postProcessOutputChannel(outputChannel, producerProperties);
 
-		((SubscribableChannel) outputChannel)
-				.subscribe(new SendingHandler(producerMessageHandler,
-						HeaderMode.embeddedHeaders
-								.equals(producerProperties.getHeaderMode()),
-						this.headersToEmbed, useNativeEncoding(producerProperties)));
+		AtomicReference<ReactiveStreamsConsumer> reactiveStreamsConsumerRef = new AtomicReference<>();
 
+		if (outputChannel instanceof SubscribableChannel) {
+			((SubscribableChannel) outputChannel)
+				.subscribe(new SendingHandler(producerMessageHandler,
+					HeaderMode.embeddedHeaders
+						.equals(producerProperties.getHeaderMode()),
+					this.headersToEmbed, useNativeEncoding(producerProperties)));
+		}
+		else if (outputChannel instanceof FluxMessageChannel) {
+			final ReactiveStreamsConsumer reactiveStreamsConsumer = new ReactiveStreamsConsumer(outputChannel, producerMessageHandler);
+			reactiveStreamsConsumerRef.set(reactiveStreamsConsumer);
+			reactiveStreamsConsumer.start();
+		}
+		else {
+			throw new IllegalStateException("No capable binding targets found.");
+		}
 
 		Binding<MessageChannel> binding = new DefaultBinding<MessageChannel>(destination,
 				outputChannel, producerMessageHandler instanceof Lifecycle
@@ -284,6 +296,10 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 			public void afterUnbind() {
 				try {
 					destroyErrorInfrastructure(producerDestination);
+					final ReactiveStreamsConsumer rsc = reactiveStreamsConsumerRef.get();
+					if (rsc != null && rsc.isRunning()) {
+						rsc.destroy();
+					}
 					if (producerMessageHandler instanceof DisposableBean) {
 						((DisposableBean) producerMessageHandler).destroy();
 					}
@@ -1128,5 +1144,4 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 			gen.writeString(value.getExpressionString());
 		}
 	}
-
 }

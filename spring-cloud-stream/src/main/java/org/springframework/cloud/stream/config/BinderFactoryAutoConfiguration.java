@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2021 the original author or authors.
+ * Copyright 2015-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,6 +40,7 @@ import org.springframework.cloud.stream.binder.BinderType;
 import org.springframework.cloud.stream.binder.BinderTypeRegistry;
 import org.springframework.cloud.stream.binder.DefaultBinderTypeRegistry;
 import org.springframework.cloud.stream.binding.CompositeMessageChannelConfigurer;
+import org.springframework.cloud.stream.binding.FluxMessageChannelBindingTargetFactory;
 import org.springframework.cloud.stream.binding.MessageChannelConfigurer;
 import org.springframework.cloud.stream.binding.MessageConverterConfigurer;
 import org.springframework.cloud.stream.binding.MessageSourceBindingTargetFactory;
@@ -50,6 +51,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Role;
+import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.core.io.support.PropertiesLoaderUtils;
@@ -219,6 +221,13 @@ public class BinderFactoryAutoConfiguration {
 			CompositeMessageChannelConfigurer compositeMessageChannelConfigurer) {
 		return new SubscribableChannelBindingTargetFactory(
 				compositeMessageChannelConfigurer);
+	}
+
+	@Bean
+	public FluxMessageChannelBindingTargetFactory fluxMessageChannelBindingTargetFactory(
+		CompositeMessageChannelConfigurer compositeMessageChannelConfigurer, GenericApplicationContext context) {
+		return new FluxMessageChannelBindingTargetFactory(
+			compositeMessageChannelConfigurer, context);
 	}
 
 	@Bean

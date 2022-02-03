@@ -21,10 +21,11 @@ import org.springframework.beans.factory.FactoryBean;
 import org.springframework.cloud.stream.binder.PollableMessageSource;
 import org.springframework.cloud.stream.binding.BindableProxyFactory;
 import org.springframework.cloud.stream.binding.BoundTargetHolder;
+import org.springframework.cloud.stream.binding.SupportedBindableFeatures;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.support.GenericApplicationContext;
-import org.springframework.messaging.MessageChannel;
+import org.springframework.integration.channel.FluxMessageChannel;
 import org.springframework.messaging.SubscribableChannel;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
@@ -55,22 +56,22 @@ public class BindableFunctionProxyFactory extends BindableProxyFactory implement
 
 	private final StreamFunctionProperties functionProperties;
 
-	private final boolean pollable;
+	private final SupportedBindableFeatures supportedBindableFeatures;
 
 	private GenericApplicationContext context;
 
 	BindableFunctionProxyFactory(String functionDefinition, int inputCount, int outputCount, StreamFunctionProperties functionProperties) {
-		this(functionDefinition, inputCount, outputCount, functionProperties, false);
+		this(functionDefinition, inputCount, outputCount, functionProperties, new SupportedBindableFeatures());
 	}
 
 	BindableFunctionProxyFactory(String functionDefinition, int inputCount, int outputCount, StreamFunctionProperties functionProperties,
-			boolean pollable) {
+			SupportedBindableFeatures supportedBindableFeatures) {
 		super(null);
 		this.inputCount = inputCount;
 		this.outputCount = outputCount;
 		this.functionDefinition = functionDefinition;
 		this.functionProperties = functionProperties;
-		this.pollable = pollable;
+		this.supportedBindableFeatures = supportedBindableFeatures;
 	}
 
 	@Override
@@ -148,12 +149,17 @@ public class BindableFunctionProxyFactory extends BindableProxyFactory implement
 		if (this.functionProperties.getBindings().containsKey(name)) {
 			name = this.functionProperties.getBindings().get(name);
 		}
-		if (this.pollable) {
+		if (this.supportedBindableFeatures.isPollable()) {
 			PollableMessageSource pollableSource = (PollableMessageSource) getBindingTargetFactory(PollableMessageSource.class).createInput(name);
 			if (context != null && !context.containsBean(name)) {
 				context.registerBean(name, PollableMessageSource.class, () -> pollableSource);
 			}
 			this.inputHolders.put(name, new BoundTargetHolder(pollableSource, true));
+		}
+		else if (this.supportedBindableFeatures.isReactive()) {
+			this.inputHolders.put(name,
+				new BoundTargetHolder(getBindingTargetFactory(FluxMessageChannel.class)
+					.createInput(name), true));
 		}
 		else {
 			this.inputHolders.put(name,
@@ -166,9 +172,16 @@ public class BindableFunctionProxyFactory extends BindableProxyFactory implement
 		if (this.functionProperties.getBindings().containsKey(name)) {
 			name = this.functionProperties.getBindings().get(name);
 		}
-		this.outputHolders.put(name,
-				new BoundTargetHolder(getBindingTargetFactory(MessageChannel.class)
-						.createOutput(name), true));
+		if (this.supportedBindableFeatures.isReactive()) {
+			this.outputHolders.put(name,
+				new BoundTargetHolder(getBindingTargetFactory(FluxMessageChannel.class)
+					.createOutput(name), true));
+		}
+		else {
+			this.outputHolders.put(name,
+				new BoundTargetHolder(getBindingTargetFactory(SubscribableChannel.class)
+					.createOutput(name), true));
+		}
 	}
 
 	@Override

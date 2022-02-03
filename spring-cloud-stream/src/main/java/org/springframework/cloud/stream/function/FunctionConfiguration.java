@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 the original author or authors.
+ * Copyright 2018-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,7 +41,6 @@ import reactor.core.publisher.Mono;
 import reactor.core.publisher.MonoSink;
 import reactor.util.function.Tuples;
 
-
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -70,6 +69,7 @@ import org.springframework.cloud.stream.binder.ConsumerProperties;
 import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.cloud.stream.binding.BindableProxyFactory;
 import org.springframework.cloud.stream.binding.NewDestinationBindingCallback;
+import org.springframework.cloud.stream.binding.SupportedBindableFeatures;
 import org.springframework.cloud.stream.config.BinderFactoryAutoConfiguration;
 import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.cloud.stream.config.BindingServiceConfiguration;
@@ -84,10 +84,12 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.core.annotation.AnnotationUtils;
+import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.Environment;
 import org.springframework.core.type.MethodMetadata;
 import org.springframework.integration.channel.AbstractMessageChannel;
 import org.springframework.integration.channel.AbstractSubscribableChannel;
+import org.springframework.integration.channel.FluxMessageChannel;
 import org.springframework.integration.core.MessagingTemplate;
 import org.springframework.integration.dsl.IntegrationFlow;
 import org.springframework.integration.dsl.IntegrationFlowBuilder;
@@ -418,14 +420,14 @@ public class FunctionConfiguration {
 				if (StringUtils.hasText(functionDefinition) && !shouldNotProcess) {
 					FunctionInvocationWrapper function = functionCatalog.lookup(functionDefinition);
 					if (function != null && !function.isSupplier()) {
-						this.bindFunctionToDestinations(bindableProxyFactory, functionDefinition);
+						this.bindFunctionToDestinations(bindableProxyFactory, functionDefinition, applicationContext.getEnvironment());
 					}
 				}
 			}
 		}
 
 		@SuppressWarnings({ "rawtypes", "unchecked" })
-		private void bindFunctionToDestinations(BindableProxyFactory bindableProxyFactory, String functionDefinition) {
+		private void bindFunctionToDestinations(BindableProxyFactory bindableProxyFactory, String functionDefinition, ConfigurableEnvironment environment) {
 			this.assertBindingIsPossible(bindableProxyFactory);
 
 
@@ -460,7 +462,13 @@ public class FunctionConfiguration {
 					String outputBindingName = outputBindingNames.iterator().next(); // TODO only gets the first one
 					String binderConfigurationName = this.serviceProperties.getBinder(outputBindingName);
 					BinderFactory binderFactory = applicationContext.getBean(BinderFactory.class);
-					Object binder = binderFactory.getBinder(binderConfigurationName, MessageChannel.class);
+					final Boolean reactive = functionProperties.getReactive().get(functionDefinition);
+					final boolean reactiveFn = reactive != null && reactive;
+					Class<?> bindableType = MessageChannel.class;
+					if (reactiveFn) {
+						bindableType = FluxMessageChannel.class;
+					}
+					Object binder = binderFactory.getBinder(binderConfigurationName, bindableType);
 					String targetProtocol = binder.getClass().getSimpleName().startsWith("Rabbit") ? "amqp" : "kafka";
 					Field headersField = ReflectionUtils.findField(MessageHeaders.class, "headers");
 					headersField.setAccessible(true);
@@ -484,7 +492,7 @@ public class FunctionConfiguration {
 								+ "consumer, given that project reactor maintains its own concurrency mechanism. Was '..."
 								+ inputBindingName + ".consumer.concurrency=" + consumerProperties.getConcurrency() + "'");
 					}
-					SubscribableChannel inputChannel = this.applicationContext.getBean(inputBindingName, SubscribableChannel.class);
+					MessageChannel inputChannel = this.applicationContext.getBean(inputBindingName, MessageChannel.class);
 					return IntegrationReactiveUtils.messageChannelToFlux(inputChannel).map(m -> {
 						if (m instanceof Message) {
 							m = sanitize(m);
@@ -778,7 +786,10 @@ public class FunctionConfiguration {
 					functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(1);
 					functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(0);
 					functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(new StreamFunctionProperties());
-					functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(true);
+					final SupportedBindableFeatures supportedBindableFeatures = new SupportedBindableFeatures();
+					supportedBindableFeatures.setPollable(true);
+					supportedBindableFeatures.setReactive(false);
+					functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(supportedBindableFeatures);
 					((BeanDefinitionRegistry) beanFactory).registerBeanDefinition(sourceName + "_binding", functionBindableProxyDefinition);
 				}
 			}
@@ -842,6 +853,15 @@ public class FunctionConfiguration {
 						functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(this.inputCount);
 						functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(this.outputCount);
 						functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(this.streamFunctionProperties);
+
+						final Map<String, Boolean> reactiveFunctions = streamFunctionProperties.getReactive();
+						final boolean reactiveFn = reactiveFunctions.get(functionDefinition) != null;
+						if (reactiveFn) {
+							final SupportedBindableFeatures supportedBindableFeatures = new SupportedBindableFeatures();
+							supportedBindableFeatures.setPollable(false);
+							supportedBindableFeatures.setReactive(true);
+							functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(supportedBindableFeatures);
+						}
 						registry.registerBeanDefinition(functionDefinition + "_binding", functionBindableProxyDefinition);
 					}
 					else {
