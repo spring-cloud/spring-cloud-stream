@@ -62,7 +62,7 @@ works with `spring-cloud-bus`.
 
 == Building
 
-:jdkversion: 1.8
+:jdkversion: 17
 
 === Basic Compile and Test
 
