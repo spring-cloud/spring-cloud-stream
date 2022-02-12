@@ -19,6 +19,7 @@ package org.springframework.cloud.stream.binder;
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -259,7 +260,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		}
 		this.postProcessOutputChannel(outputChannel, producerProperties);
 
-		ReactiveStreamsConsumer[] reactiveStreamsConsumer = new ReactiveStreamsConsumer[1];
+		AtomicReference<ReactiveStreamsConsumer> reactiveStreamsConsumerRef = new AtomicReference<>();
 
 		if (outputChannel instanceof SubscribableChannel) {
 			((SubscribableChannel) outputChannel)
@@ -269,8 +270,9 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 					this.headersToEmbed, useNativeEncoding(producerProperties)));
 		}
 		else if (outputChannel instanceof FluxMessageChannel) {
-			reactiveStreamsConsumer[0] = new ReactiveStreamsConsumer(outputChannel, producerMessageHandler);
-			reactiveStreamsConsumer[0].start();
+			final ReactiveStreamsConsumer reactiveStreamsConsumer = new ReactiveStreamsConsumer(outputChannel, producerMessageHandler);
+			reactiveStreamsConsumerRef.set(reactiveStreamsConsumer);
+			reactiveStreamsConsumer.start();
 		}
 
 		Binding<MessageChannel> binding = new DefaultBinding<MessageChannel>(destination,
@@ -291,14 +293,13 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 			public void afterUnbind() {
 				try {
 					destroyErrorInfrastructure(producerDestination);
-					final ReactiveStreamsConsumer rsc = reactiveStreamsConsumer[0];
+					final ReactiveStreamsConsumer rsc = reactiveStreamsConsumerRef.get();
 					if (rsc != null && rsc.isRunning()) {
 						rsc.destroy();
 					}
 					if (producerMessageHandler instanceof DisposableBean) {
 						((DisposableBean) producerMessageHandler).destroy();
 					}
-
 				}
 				catch (Exception e) {
 					AbstractMessageChannelBinder.this.logger

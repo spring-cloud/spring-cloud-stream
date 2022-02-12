@@ -487,11 +487,8 @@ public class FunctionConfiguration {
 					}
 					MessageChannel inputChannel = null;
 					final String reactive = environment.getProperty("spring.cloud.stream.reactive");
-					if (StringUtils.hasText(reactive)) {
-						boolean reactiveFn = Boolean.parseBoolean(reactive);
-						if (reactiveFn) {
-							inputChannel = this.applicationContext.getBean(inputBindingName, FluxMessageChannel.class);
-						}
+					if (Boolean.parseBoolean(reactive)) {
+						inputChannel = this.applicationContext.getBean(inputBindingName, FluxMessageChannel.class);
 					}
 					else {
 						inputChannel = this.applicationContext.getBean(inputBindingName, SubscribableChannel.class);

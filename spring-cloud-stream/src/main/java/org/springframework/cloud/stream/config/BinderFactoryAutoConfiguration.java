@@ -52,6 +52,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Role;
+import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.core.io.support.PropertiesLoaderUtils;
@@ -227,9 +228,9 @@ public class BinderFactoryAutoConfiguration {
 	@Bean
 	@ConditionalOnProperty(value = "spring.cloud.stream.reactive", havingValue = "true")
 	public FluxMessageChannelBindingTargetFactory fluxMessageChannelBindingTargetFactory(
-		CompositeMessageChannelConfigurer compositeMessageChannelConfigurer) {
+		CompositeMessageChannelConfigurer compositeMessageChannelConfigurer, GenericApplicationContext context) {
 		return new FluxMessageChannelBindingTargetFactory(
-			compositeMessageChannelConfigurer);
+			compositeMessageChannelConfigurer, context);
 	}
 
 	@Bean
