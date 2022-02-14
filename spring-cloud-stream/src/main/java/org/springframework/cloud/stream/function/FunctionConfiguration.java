@@ -88,7 +88,6 @@ import org.springframework.core.env.Environment;
 import org.springframework.core.type.MethodMetadata;
 import org.springframework.integration.channel.AbstractMessageChannel;
 import org.springframework.integration.channel.AbstractSubscribableChannel;
-import org.springframework.integration.channel.FluxMessageChannel;
 import org.springframework.integration.core.MessagingTemplate;
 import org.springframework.integration.dsl.IntegrationFlow;
 import org.springframework.integration.dsl.IntegrationFlowBuilder;
@@ -485,14 +484,7 @@ public class FunctionConfiguration {
 								+ "consumer, given that project reactor maintains its own concurrency mechanism. Was '..."
 								+ inputBindingName + ".consumer.concurrency=" + consumerProperties.getConcurrency() + "'");
 					}
-					MessageChannel inputChannel = null;
-					final String reactive = environment.getProperty("spring.cloud.stream.reactive");
-					if (Boolean.parseBoolean(reactive)) {
-						inputChannel = this.applicationContext.getBean(inputBindingName, FluxMessageChannel.class);
-					}
-					else {
-						inputChannel = this.applicationContext.getBean(inputBindingName, SubscribableChannel.class);
-					}
+					MessageChannel inputChannel = this.applicationContext.getBean(inputBindingName, MessageChannel.class);
 					return IntegrationReactiveUtils.messageChannelToFlux(inputChannel).map(m -> {
 						if (m instanceof Message) {
 							m = sanitize(m);
