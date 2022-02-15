@@ -679,7 +679,7 @@ public class KafkaMessageChannelBinder extends
 			concurrency = extendedConsumerProperties.getConcurrency();
 		}
 		resetOffsetsForAutoRebalance(extendedConsumerProperties, consumerFactory, containerProperties);
-		containerProperties.setAuthorizationExceptionRetryInterval(this.configurationProperties.getAuthorizationExceptionRetryInterval());
+		containerProperties.setAuthExceptionRetryInterval(this.configurationProperties.getAuthorizationExceptionRetryInterval());
 		@SuppressWarnings("rawtypes")
 		final ConcurrentMessageListenerContainer<?, ?> messageListenerContainer = new ConcurrentMessageListenerContainer(
 				consumerFactory, containerProperties) {
