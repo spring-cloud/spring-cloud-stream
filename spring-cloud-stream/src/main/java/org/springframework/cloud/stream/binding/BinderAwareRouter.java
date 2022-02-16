@@ -16,13 +16,12 @@
 
 package org.springframework.cloud.stream.binding;
 
-import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.integration.router.AbstractMappingMessageRouter;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.core.DestinationResolver;
 
 /**
- * A {@link BeanPostProcessor} that sets a BinderAwareChannelResolver on any bean
+ * Sets a BinderAwareChannelResolver on any bean
  * of type {@link AbstractMappingMessageRouter} within the context.
  *
  * @author Mark Fisher

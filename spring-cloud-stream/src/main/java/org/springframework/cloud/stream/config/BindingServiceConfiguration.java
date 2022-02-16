@@ -88,12 +88,6 @@ import org.springframework.util.ObjectUtils;
 @ConditionalOnBean(value = BinderTypeRegistry.class, search = SearchStrategy.CURRENT)
 public class BindingServiceConfiguration {
 
-	/**
-	 * Name of the Spring Cloud Stream stream listener annotation bean post processor.
-	 */
-	public static final String STREAM_LISTENER_ANNOTATION_BEAN_POST_PROCESSOR_NAME = "streamListenerAnnotationBeanPostProcessor";
-
-
 	@Autowired(required = false)
 	private Collection<DefaultBinderFactory.Listener> binderFactoryListeners;
 
@@ -155,7 +149,7 @@ public class BindingServiceConfiguration {
 	}
 
 	@Bean
-	public BeanPostProcessor globalErrorChannelCustomizer() {
+	public static BeanPostProcessor globalErrorChannelCustomizer() {
 		return new BeanPostProcessor() {
 			@Override
 			public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
@@ -236,17 +230,6 @@ public class BindingServiceConfiguration {
 	public DynamicDestinationsBindable dynamicDestinationsBindable() {
 		return new DynamicDestinationsBindable();
 	}
-
-//	@Bean
-//	@ConditionalOnMissingBean
-//	public BinderAwareRouter binderAwareRouterBeanPostProcessor(
-//			@Autowired(required = false) List<AbstractMappingMessageRouter> routers,
-//			@Autowired(required = false) @Qualifier("binderAwareChannelResolver")
-//				DestinationResolver<MessageChannel> channelResolver) {
-//		final AbstractMappingMessageRouter[] routersArray = CollectionUtils.isEmpty(routers) ?
-//			new AbstractMappingMessageRouter[]{} : routers.toArray(new AbstractMappingMessageRouter[]{});
-//		return new BinderAwareRouter(routersArray, channelResolver);
-//	}
 
 	@Bean
 	public ApplicationListener<ContextRefreshedEvent> appListener(
