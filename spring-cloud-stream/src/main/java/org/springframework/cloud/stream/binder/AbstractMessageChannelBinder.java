@@ -274,6 +274,9 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 			reactiveStreamsConsumerRef.set(reactiveStreamsConsumer);
 			reactiveStreamsConsumer.start();
 		}
+		else {
+			throw new IllegalStateException("No capable binding targets found.");
+		}
 
 		Binding<MessageChannel> binding = new DefaultBinding<MessageChannel>(destination,
 				outputChannel, producerMessageHandler instanceof Lifecycle

@@ -35,7 +35,6 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.binder.BinderType;
 import org.springframework.cloud.stream.binder.BinderTypeRegistry;
@@ -218,7 +217,6 @@ public class BinderFactoryAutoConfiguration {
 
 
 	@Bean
-	@ConditionalOnProperty(name = "spring.cloud.stream.reactive", havingValue = "false", matchIfMissing = true)
 	public SubscribableChannelBindingTargetFactory channelFactory(
 			CompositeMessageChannelConfigurer compositeMessageChannelConfigurer) {
 		return new SubscribableChannelBindingTargetFactory(
@@ -226,7 +224,6 @@ public class BinderFactoryAutoConfiguration {
 	}
 
 	@Bean
-	@ConditionalOnProperty(value = "spring.cloud.stream.reactive", havingValue = "true")
 	public FluxMessageChannelBindingTargetFactory fluxMessageChannelBindingTargetFactory(
 		CompositeMessageChannelConfigurer compositeMessageChannelConfigurer, GenericApplicationContext context) {
 		return new FluxMessageChannelBindingTargetFactory(

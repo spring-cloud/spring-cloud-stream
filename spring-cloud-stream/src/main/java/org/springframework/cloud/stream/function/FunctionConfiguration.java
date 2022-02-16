@@ -88,6 +88,7 @@ import org.springframework.core.env.Environment;
 import org.springframework.core.type.MethodMetadata;
 import org.springframework.integration.channel.AbstractMessageChannel;
 import org.springframework.integration.channel.AbstractSubscribableChannel;
+import org.springframework.integration.channel.FluxMessageChannel;
 import org.springframework.integration.core.MessagingTemplate;
 import org.springframework.integration.dsl.IntegrationFlow;
 import org.springframework.integration.dsl.IntegrationFlowBuilder;
@@ -460,7 +461,13 @@ public class FunctionConfiguration {
 					String outputBindingName = outputBindingNames.iterator().next(); // TODO only gets the first one
 					String binderConfigurationName = this.serviceProperties.getBinder(outputBindingName);
 					BinderFactory binderFactory = applicationContext.getBean(BinderFactory.class);
-					Object binder = binderFactory.getBinder(binderConfigurationName, MessageChannel.class);
+					final Boolean reactive = functionProperties.getReactive().get(functionDefinition);
+					final boolean reactiveFn = reactive != null && reactive;
+					Class<?> bindableType = MessageChannel.class;
+					if (reactiveFn) {
+						bindableType = FluxMessageChannel.class;
+					}
+					Object binder = binderFactory.getBinder(binderConfigurationName, bindableType);
 					String targetProtocol = binder.getClass().getSimpleName().startsWith("Rabbit") ? "amqp" : "kafka";
 					Field headersField = ReflectionUtils.findField(MessageHeaders.class, "headers");
 					headersField.setAccessible(true);
@@ -843,14 +850,11 @@ public class FunctionConfiguration {
 						functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(this.outputCount);
 						functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(this.streamFunctionProperties);
 
-						final String reactive = this.environment.getProperty("spring.cloud.stream.reactive");
-						if (StringUtils.hasText(reactive)) {
-							boolean reactiveFn = Boolean.parseBoolean(reactive);
-							if (reactiveFn) {
-								functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(new SupportedBindableFeatures(false, true));
-							}
+						final Map<String, Boolean> reactiveFunctions = streamFunctionProperties.getReactive();
+						final boolean reactiveFn = reactiveFunctions.get(functionDefinition) != null;
+						if (reactiveFn) {
+							functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(new SupportedBindableFeatures(false, true));
 						}
-
 						registry.registerBeanDefinition(functionDefinition + "_binding", functionBindableProxyDefinition);
 					}
 					else {

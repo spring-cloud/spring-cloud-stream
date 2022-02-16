@@ -50,6 +50,8 @@ public class StreamFunctionProperties {
 
 	private boolean composeFrom;
 
+	private Map<String, Boolean> reactive = new HashMap<>();
+
 	public boolean isComposeTo() {
 		return composeTo;
 	}
@@ -110,5 +112,13 @@ public class StreamFunctionProperties {
 				.map(bKey -> bindings.get(bKey))
 				.collect(Collectors.toList());
 		return list;
+	}
+
+	public Map<String, Boolean> getReactive() {
+		return this.reactive;
+	}
+
+	public void setReactive(Map<String, Boolean> reactive) {
+		this.reactive = reactive;
 	}
 }

@@ -44,7 +44,7 @@ public class FluxMessageChannelBindingTests {
 			TestChannelBinderConfiguration.getCompleteConfiguration(ReactiveFunctionConfiguration.class))
 			.web(WebApplicationType.NONE)
 			.run("--spring.jmx.enabled=false",
-				"--spring.cloud.stream.reactive=true")) {
+				"--spring.cloud.stream.function.reactive.uppercase=true")) {
 			assertThat(context.getBean("uppercase-in-0", MessageChannel.class)).isInstanceOf(FluxMessageChannel.class);
 			assertThat(context.getBean("uppercase-out-0", MessageChannel.class)).isInstanceOf(FluxMessageChannel.class);
 		}

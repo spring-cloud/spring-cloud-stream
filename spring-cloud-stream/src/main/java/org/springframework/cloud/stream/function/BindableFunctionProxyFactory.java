@@ -25,7 +25,6 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.integration.channel.FluxMessageChannel;
-import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.SubscribableChannel;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
@@ -179,7 +178,7 @@ public class BindableFunctionProxyFactory extends BindableProxyFactory implement
 		}
 		else {
 			this.outputHolders.put(name,
-				new BoundTargetHolder(getBindingTargetFactory(MessageChannel.class)
+				new BoundTargetHolder(getBindingTargetFactory(SubscribableChannel.class)
 					.createOutput(name), true));
 		}
 	}
