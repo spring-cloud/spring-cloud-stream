@@ -63,8 +63,6 @@ import org.springframework.util.MimeTypeUtils;
 import org.springframework.util.ReflectionUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
 /**
@@ -73,7 +71,6 @@ import static org.junit.Assert.fail;
  * @author Soby Chacko
  *
  */
-@SuppressWarnings("deprecation")
 public class StreamBridgeTests {
 
 	@Before
@@ -471,14 +468,6 @@ public class StreamBridgeTests {
 			assertThat(context.getBean("callbackVerifier", AtomicBoolean.class)).isTrue();
 		}
 	}
-	@EnableAutoConfiguration
-	public static class DynamicProducerDestinationConfig {
-		@Bean
-		public Function<Message<String>, Message<String>> uppercase() {
-			return msg -> MessageBuilder.withPayload(msg.getPayload().toUpperCase())
-				.setHeader("spring.cloud.stream.sendto.destination", "dynamicTopic").build();
-		}
-	}
 
 	@Test
 	public void testDynamicProducerDestination() {
@@ -497,8 +486,17 @@ public class StreamBridgeTests {
 		OutputDestination target = context.getBean(OutputDestination.class);
 		Message<byte[]> message = target.receive(5, "dynamicTopic");
 
-		assertNotNull(message);
-		assertEquals("JOHN DOE", new String(message.getPayload()));
+		assertThat(message).isNotNull();
+		assertThat(new String(message.getPayload())).isEqualTo("JOHN DOE");
+	}
+
+	@EnableAutoConfiguration
+	public static class DynamicProducerDestinationConfig {
+		@Bean
+		public Function<Message<String>, Message<String>> uppercase() {
+			return msg -> MessageBuilder.withPayload(msg.getPayload().toUpperCase())
+				.setHeader("spring.cloud.stream.sendto.destination", "dynamicTopic").build();
+		}
 	}
 
 	@EnableAutoConfiguration
