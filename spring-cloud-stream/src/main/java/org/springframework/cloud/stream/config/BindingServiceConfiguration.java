@@ -165,7 +165,7 @@ public class BindingServiceConfiguration {
 	}
 
 	@Bean
-	public BeanPostProcessor globalErrorChannelCustomizer() {
+	public static BeanPostProcessor globalErrorChannelCustomizer() {
 		return new BeanPostProcessor() {
 			@Override
 			public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
