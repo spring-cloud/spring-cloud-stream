@@ -59,10 +59,6 @@ public class FluxMessageChannelBindingTargetFactory extends AbstractBindingTarge
 			}
 			catch (BeanCreationException e) {
 				// ignore
-				/*
-				 * Since we still support annotation-based programming model, this exception happens
-				 * because of proxies related to @Input @Output
-				 */
 			}
 		}
 		if (fluxMessageChannel == null) {

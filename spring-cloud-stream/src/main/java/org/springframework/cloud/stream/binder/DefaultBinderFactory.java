@@ -230,17 +230,12 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 
 	private <T> void populateCandidatesForBindableType(Class<? extends T> bindingTargetType, List<String> candidatesForBindableType,
 													String defaultCandidateConfiguration) {
-		if (FluxMessageChannel.class.isAssignableFrom(bindingTargetType)) {
-			// Going by the convention of proper reactor based binders start with the key literal - reactor
-			if (defaultCandidateConfiguration.startsWith("reactor")) {
-				candidatesForBindableType.add(defaultCandidateConfiguration);
-			}
+		// Going by the convention of proper reactor based binders start with the key literal - reactor
+		if (FluxMessageChannel.class.isAssignableFrom(bindingTargetType) && defaultCandidateConfiguration.startsWith("reactor")) {
+			candidatesForBindableType.add(defaultCandidateConfiguration);
 		}
-		else {
-			// Only add if it is not a reactor based binder
-			if (!defaultCandidateConfiguration.startsWith("reactor")) {
-				candidatesForBindableType.add(defaultCandidateConfiguration);
-			}
+		else if (!defaultCandidateConfiguration.startsWith("reactor")) {
+			candidatesForBindableType.add(defaultCandidateConfiguration);
 		}
 	}
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 the original author or authors.
+ * Copyright 2018-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,6 +69,7 @@ import org.springframework.cloud.stream.binder.ConsumerProperties;
 import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.cloud.stream.binding.BindableProxyFactory;
 import org.springframework.cloud.stream.binding.NewDestinationBindingCallback;
+import org.springframework.cloud.stream.binding.SupportedBindableFeatures;
 import org.springframework.cloud.stream.config.BinderFactoryAutoConfiguration;
 import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.cloud.stream.config.BindingServiceConfiguration;
@@ -785,7 +786,10 @@ public class FunctionConfiguration {
 					functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(1);
 					functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(0);
 					functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(new StreamFunctionProperties());
-					functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(new SupportedBindableFeatures(true, false));
+					final SupportedBindableFeatures supportedBindableFeatures = new SupportedBindableFeatures();
+					supportedBindableFeatures.setPollable(true);
+					supportedBindableFeatures.setReactive(false);
+					functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(supportedBindableFeatures);
 					((BeanDefinitionRegistry) beanFactory).registerBeanDefinition(sourceName + "_binding", functionBindableProxyDefinition);
 				}
 			}
@@ -853,7 +857,10 @@ public class FunctionConfiguration {
 						final Map<String, Boolean> reactiveFunctions = streamFunctionProperties.getReactive();
 						final boolean reactiveFn = reactiveFunctions.get(functionDefinition) != null;
 						if (reactiveFn) {
-							functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(new SupportedBindableFeatures(false, true));
+							final SupportedBindableFeatures supportedBindableFeatures = new SupportedBindableFeatures();
+							supportedBindableFeatures.setPollable(false);
+							supportedBindableFeatures.setReactive(true);
+							functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(supportedBindableFeatures);
 						}
 						registry.registerBeanDefinition(functionDefinition + "_binding", functionBindableProxyDefinition);
 					}

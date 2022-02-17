@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.stream.function;
+package org.springframework.cloud.stream.binding;
 
 /**
  * Internal abstraction for the supported bindable features.
@@ -22,22 +22,25 @@ package org.springframework.cloud.stream.function;
  * @author Soby Chacko
  * @since 4.0.0
  */
-class SupportedBindableFeatures {
+public class SupportedBindableFeatures {
 
-	private final boolean pollable;
+	private boolean pollable;
 
-	private final boolean reactive;
+	private boolean reactive;
 
-	SupportedBindableFeatures(boolean pollable, boolean reactive) {
+	public void setPollable(boolean pollable) {
 		this.pollable = pollable;
+	}
+
+	public void setReactive(boolean reactive) {
 		this.reactive = reactive;
 	}
 
-	boolean isPollable() {
+	public boolean isPollable() {
 		return pollable;
 	}
 
-	boolean isReactive() {
+	public boolean isReactive() {
 		return reactive;
 	}
 }

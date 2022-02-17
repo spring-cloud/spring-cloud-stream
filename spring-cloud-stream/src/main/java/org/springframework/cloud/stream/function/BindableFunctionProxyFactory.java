@@ -21,6 +21,7 @@ import org.springframework.beans.factory.FactoryBean;
 import org.springframework.cloud.stream.binder.PollableMessageSource;
 import org.springframework.cloud.stream.binding.BindableProxyFactory;
 import org.springframework.cloud.stream.binding.BoundTargetHolder;
+import org.springframework.cloud.stream.binding.SupportedBindableFeatures;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.support.GenericApplicationContext;
@@ -60,7 +61,7 @@ public class BindableFunctionProxyFactory extends BindableProxyFactory implement
 	private GenericApplicationContext context;
 
 	BindableFunctionProxyFactory(String functionDefinition, int inputCount, int outputCount, StreamFunctionProperties functionProperties) {
-		this(functionDefinition, inputCount, outputCount, functionProperties, new SupportedBindableFeatures(false, false));
+		this(functionDefinition, inputCount, outputCount, functionProperties, new SupportedBindableFeatures());
 	}
 
 	BindableFunctionProxyFactory(String functionDefinition, int inputCount, int outputCount, StreamFunctionProperties functionProperties,
