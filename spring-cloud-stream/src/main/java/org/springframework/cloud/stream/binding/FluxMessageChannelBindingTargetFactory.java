@@ -16,9 +16,9 @@
 
 package org.springframework.cloud.stream.binding;
 
-import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.integration.channel.FluxMessageChannel;
+import org.springframework.util.Assert;
 
 /**
  * @author Soby Chacko
@@ -33,6 +33,7 @@ public class FluxMessageChannelBindingTargetFactory extends AbstractBindingTarge
 	public FluxMessageChannelBindingTargetFactory(MessageChannelConfigurer messageChannelConfigurer,
 												GenericApplicationContext context) {
 		super(FluxMessageChannel.class);
+		Assert.notNull(context, "'context' must not be null");
 		this.messageChannelConfigurer = messageChannelConfigurer;
 		this.context = context;
 	}
@@ -53,20 +54,13 @@ public class FluxMessageChannelBindingTargetFactory extends AbstractBindingTarge
 
 	public FluxMessageChannel fluxMessageChannel(String name) {
 		FluxMessageChannel fluxMessageChannel = null;
-		if (context != null && context.containsBean(name)) {
-			try {
-				fluxMessageChannel = context.getBean(name, FluxMessageChannel.class);
-			}
-			catch (BeanCreationException e) {
-				// ignore
-			}
+		if (context.containsBean(name)) {
+			fluxMessageChannel = context.getBean(name, FluxMessageChannel.class);
 		}
 		if (fluxMessageChannel == null) {
 			FluxMessageChannel channel = new FluxMessageChannel();
 			channel.setComponentName(name);
-			if (context != null && !context.containsBean(name)) {
-				context.registerBean(name, FluxMessageChannel.class, () -> channel);
-			}
+			context.registerBean(name, FluxMessageChannel.class, () -> channel);
 			fluxMessageChannel = channel;
 		}
 		return fluxMessageChannel;

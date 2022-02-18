@@ -231,10 +231,9 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 	private <T> void populateCandidatesForBindableType(Class<? extends T> bindingTargetType, List<String> candidatesForBindableType,
 													String defaultCandidateConfiguration) {
 		// Going by the convention of proper reactor based binders start with the key literal - reactor
-		if (FluxMessageChannel.class.isAssignableFrom(bindingTargetType) && defaultCandidateConfiguration.startsWith("reactor")) {
-			candidatesForBindableType.add(defaultCandidateConfiguration);
-		}
-		else if (!defaultCandidateConfiguration.startsWith("reactor")) {
+		boolean isCandidate = (FluxMessageChannel.class.isAssignableFrom(bindingTargetType) && defaultCandidateConfiguration.startsWith("reactor"))
+				|| !defaultCandidateConfiguration.startsWith("reactor");
+		if (isCandidate) {
 			candidatesForBindableType.add(defaultCandidateConfiguration);
 		}
 	}
@@ -275,10 +274,6 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 
 			ConfigurableApplicationContext binderProducingContext =
 					this.initializeBinderContextSimple(configurationName, binderProperties, binderType, binderConfiguration);
-
-//			ConfigurableApplicationContext binderProducingContext =
-//					this.initializeBinderContextBoot(configurationName, binderProperties, binderType, binderConfiguration);
-
 
 			Map<String, MessageConverter> messageConverters = binderProducingContext.getBeansOfType(MessageConverter.class);
 			if (!CollectionUtils.isEmpty(messageConverters) && !ObjectUtils.isEmpty(context.getBeansOfType(FunctionCatalog.class))) {
