@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2019 the original author or authors.
+ * Copyright 2012-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.MapPropertySource;
 import org.springframework.core.env.MutablePropertySources;
 import org.springframework.core.env.PropertySource;
+import org.springframework.util.StringUtils;
 
 import static org.springframework.cloud.bus.BusProperties.PREFIX;
 
@@ -72,7 +73,11 @@ public class BusEnvironmentPostProcessor implements EnvironmentPostProcessor {
 		defaults.put("spring.cloud.stream.bindings." + BusConstants.INPUT + ".destination", destination);
 		defaults.put("spring.cloud.stream.bindings." + BusConstants.OUTPUT + ".destination", destination);
 		if (!environment.containsProperty(PREFIX + ".id")) {
-			defaults.put(PREFIX + ".id", IdUtils.getUnresolvedServiceId());
+			String unresolvedServiceId = IdUtils.getUnresolvedServiceId();
+			if (StringUtils.hasText(environment.getProperty("spring.profiles.active"))) {
+				unresolvedServiceId = IdUtils.getUnresolvedServiceIdWithActiveProfiles();
+			}
+			defaults.put(PREFIX + ".id", unresolvedServiceId);
 		}
 		addOrReplace(environment.getPropertySources(), defaults, DEFAULTS_PROPERTY_SOURCE_NAME, false);
 	}
