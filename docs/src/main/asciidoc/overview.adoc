@@ -898,6 +898,13 @@ prefix::
 A prefix to be added to the name of the `destination` exchange.
 +
 Default: "".
+producerType::
+The type of producer.
+* `AMQP` AMQP Client for classic and quorum queues
+* `STREAM_SYNC` RabbitMQ Streams Plugin client, blocks until confirm is received
+* `STREAM_ASYNC` RabbitMQ Streams Plugin client, does not block
++
+Default: "".
 queueBindingArguments::
 Arguments applied when binding the queue to the exchange; used with `headers` `exchangeType` to specify headers to match on.
 For example `...queueBindingArguments.x-match=any`, `...queueBindingArguments.someHeader=someValue`.
