@@ -1,0 +1,2013 @@
+== Kafka Streams Binder
+
+
+=== Usage
+
+For using the Kafka Streams binder, you just need to add it to your Spring Cloud Stream application, using the following maven coordinates:
+
+[source,xml]
+----
+<dependency>
+  <groupId>org.springframework.cloud</groupId>
+  <artifactId>spring-cloud-stream-binder-kafka-streams</artifactId>
+</dependency>
+----
+
+A quick way to bootstrap a new project for Kafka Streams binder is to use http://start.spring.io[Spring Initializr] and then select "Cloud Streams" and "Spring for Kafka Streams" as shown below
+
+image::{github-raw}/docs/src/main/asciidoc/images/spring-initializr-kafka-streams.png[width=800,scaledwidth="75%",align="center"]
+
+=== Overview
+
+Spring Cloud Stream includes a binder implementation designed explicitly for https://kafka.apache.org/documentation/streams/[Apache Kafka Streams] binding.
+With this native integration, a Spring Cloud Stream "processor" application can directly use the
+https://kafka.apache.org/documentation/streams/developer-guide[Apache Kafka Streams] APIs in the core business logic.
+
+Kafka Streams binder implementation builds on the foundations provided by the https://docs.spring.io/spring-kafka/reference/html/#kafka-streams[Spring for Apache Kafka] project.
+
+Kafka Streams binder provides binding capabilities for the three major types in Kafka Streams - `KStream`, `KTable` and `GlobalKTable`.
+
+Kafka Streams applications typically follow a model in which the records are read from an inbound topic, apply business logic, and then write the transformed records to an outbound topic.
+Alternatively, a Processor application with no outbound destination can be defined as well.
+
+In the following sections, we are going to look at the details of Spring Cloud Stream's integration with Kafka Streams.
+
+=== Programming Model
+
+When using the programming model provided by Kafka Streams binder, both the high-level https://docs.confluent.io/current/streams/developer-guide/dsl-api.html[Streams DSL] and a mix of both the higher level and the lower level https://docs.confluent.io/current/streams/developer-guide/processor-api.html[Processor-API] can be used as options.
+When mixing both higher and lower level API's, this is usually achieved by invoking `transform` or `process` API methods on `KStream`.
+
+==== Functional Style
+
+Starting with Spring Cloud Stream `3.0.0`, Kafka Streams binder allows the applications to be designed and developed using the functional programming style that is available in Java 8.
+This means that the applications can be concisely represented as a lambda expression of types `java.util.function.Function` or `java.util.function.Consumer`.
+
+Let's take a very basic example.
+
+[source]
+----
+@SpringBootApplication
+public class SimpleConsumerApplication {
+
+    @Bean
+    public java.util.function.Consumer<KStream<Object, String>> process() {
+
+        return input ->
+                input.foreach((key, value) -> {
+                    System.out.println("Key: " + key + " Value: " + value);
+                });
+    }
+}
+----
+
+Albeit simple, this is a complete standalone Spring Boot application that is leveraging Kafka Streams for stream processing.
+This is a consumer application with no outbound binding and only a single inbound binding.
+The application consumes data and it simply logs the information from the `KStream` key and value on the standard output.
+The application contains the `SpringBootApplication` annotation and a method that is marked as `Bean`.
+The bean method is of type `java.util.function.Consumer` which is parameterized with `KStream`.
+Then in the implementation, we are returning a Consumer object that is essentially a lambda expression.
+Inside the lambda expression, the code for processing the data is provided.
+
+In this application, there is a single input binding that is of type `KStream`.
+The binder creates this binding for the application with a name `process-in-0`, i.e. the name of the function bean name followed by a dash character (`-`) and the literal `in` followed by another dash and then the ordinal position of the parameter.
+You use this binding name to set other properties such as destination.
+For example, `spring.cloud.stream.bindings.process-in-0.destination=my-topic`.
+
+NOTE: If the destination property is not set on the binding, a topic is created with the same name as the binding (if there are sufficient privileges for the application) or that topic is expected to be already available.
+
+Once built as a uber-jar (e.g., `kstream-consumer-app.jar`), you can run the above example like the following.
+
+If the applications choose to define the functional beans using Spring's `Component` annotation, the binder also suppports that model.
+The above functional bean could be rewritten as below.
+
+```
+@Component(name = "process")
+public class SimpleConsumer implements java.util.function.Consumer<KStream<Object, String>> {
+
+    @Override
+    public void accept(KStream<Object, String> input) {
+        input.foreach((key, value) -> {
+            System.out.println("Key: " + key + " Value: " + value);
+        });
+    }
+}
+```
+
+[source]
+----
+java -jar kstream-consumer-app.jar --spring.cloud.stream.bindings.process-in-0.destination=my-topic
+----
+
+Here is another example, where it is a full processor with both input and output bindings.
+This is the classic word-count example in which the application receives data from a topic, the number of occurrences for each word is then computed in a tumbling time-window.
+
+[source]
+----
+@SpringBootApplication
+public class WordCountProcessorApplication {
+
+  @Bean
+  public Function<KStream<Object, String>, KStream<?, WordCount>> process() {
+
+    return input -> input
+                .flatMapValues(value -> Arrays.asList(value.toLowerCase().split("\\W+")))
+                .map((key, value) -> new KeyValue<>(value, value))
+                .groupByKey(Serialized.with(Serdes.String(), Serdes.String()))
+                .windowedBy(TimeWindows.of(5000))
+                .count(Materialized.as("word-counts-state-store"))
+                .toStream()
+                .map((key, value) -> new KeyValue<>(key.key(), new WordCount(key.key(), value,
+                        new Date(key.window().start()), new Date(key.window().end()))));
+  }
+
+	public static void main(String[] args) {
+		SpringApplication.run(WordCountProcessorApplication.class, args);
+	}
+}
+----
+
+Here again, this is a complete Spring Boot application. The difference here from the first application is that the bean method is of type `java.util.function.Function`.
+The first parameterized type for the `Function` is for the input `KStream` and the second one is for the output.
+In the method body, a lambda expression is provided that is of type `Function` and as implementation, the actual business logic is given.
+Similar to the previously discussed Consumer based application, the input binding here is named as `process-in-0` by default. For the output, the binding name is automatically also set to `process-out-0`.
+
+Once built as an uber-jar (e.g., `wordcount-processor.jar`), you can run the above example like the following.
+
+[source]
+----
+java -jar wordcount-processor.jar --spring.cloud.stream.bindings.process-in-0.destination=words --spring.cloud.stream.bindings.process-out-0.destination=counts
+----
+
+This application will consume messages from the Kafka topic `words` and the computed results are published to an output
+topic `counts`.
+
+Spring Cloud Stream will ensure that the messages from both the incoming and outgoing topics are automatically bound as
+KStream objects. As a developer, you can exclusively focus on the business aspects of the code, i.e. writing the logic
+required in the processor. Setting up Kafka Streams specific configuration required by the Kafka Streams infrastructure
+is automatically handled by the framework.
+
+The two examples we saw above have a single `KStream` input binding. In both cases, the bindings received the records from a single topic.
+If you want to multiplex multiple topics into a single `KStream` binding, you can provide comma separated Kafka topics as destinations below.
+
+`spring.cloud.stream.bindings.process-in-0.destination=topic-1,topic-2,topic-3`
+
+In addition, you can also provide topic patterns as destinations if you want to match topics against a regular exression.
+
+`spring.cloud.stream.bindings.process-in-0.destination=input.*`
+
+===== Multiple Input Bindings
+
+Many non-trivial Kafka Streams applications often consume data from more than one topic through multiple bindings.
+For instance, one topic is consumed as `Kstream` and another as `KTable` or `GlobalKTable`.
+There are many reasons why an application might want to receive data as a table type.
+Think of a use-case where the underlying topic is populated through a change data capture (CDC) mechanism from a database or perhaps the application only cares about the latest updates for downstream processing.
+If the application specifies that the data needs to be bound as `KTable` or `GlobalKTable`, then Kafka Streams binder will properly bind the destination to a `KTable` or `GlobalKTable` and make them available for the application to operate upon.
+We will look at a few different scenarios how multiple input bindings are handled in the Kafka Streams binder.
+
+====== BiFunction in Kafka Streams Binder
+
+Here is an example where we have two inputs and an output. In this case, the application can leverage on `java.util.function.BiFunction`.
+
+[source]
+----
+@Bean
+public BiFunction<KStream<String, Long>, KTable<String, String>, KStream<String, Long>> process() {
+    return (userClicksStream, userRegionsTable) -> (userClicksStream
+            .leftJoin(userRegionsTable, (clicks, region) -> new RegionWithClicks(region == null ?
+                            "UNKNOWN" : region, clicks),
+                    Joined.with(Serdes.String(), Serdes.Long(), null))
+            .map((user, regionWithClicks) -> new KeyValue<>(regionWithClicks.getRegion(),
+                    regionWithClicks.getClicks()))
+            .groupByKey(Grouped.with(Serdes.String(), Serdes.Long()))
+            .reduce(Long::sum)
+            .toStream());
+}
+----
+
+Here again, the basic theme is the same as in the previous examples, but here we have two inputs.
+Java's `BiFunction` support is used to bind the inputs to the desired destinations.
+The default binding names generated by the binder for the inputs are `process-in-0` and `process-in-1` respectively. The default output binding is `process-out-0`.
+In this example, the first parameter of `BiFunction` is bound as a `KStream` for the first input and the second parameter is bound as a `KTable` for the second input.
+
+====== BiConsumer in Kafka Streams Binder
+
+If there are two inputs, but no outputs, in that case we can use `java.util.function.BiConsumer` as shown below.
+
+[source]
+----
+@Bean
+public BiConsumer<KStream<String, Long>, KTable<String, String>> process() {
+    return (userClicksStream, userRegionsTable) -> {}
+}
+----
+
+====== Beyond two inputs
+
+What if you have more than two inputs?
+There are situations in which you need more than two inputs. In that case, the binder allows you to chain partial functions.
+In functional programming jargon, this technique is generally known as currying.
+With the functional programming support added as part of Java 8, Java now enables you to write curried functions.
+Spring Cloud Stream Kafka Streams binder can make use of this feature to enable multiple input bindings.
+
+Let's see an example.
+
+[source]
+----
+@Bean
+public Function<KStream<Long, Order>,
+        Function<GlobalKTable<Long, Customer>,
+                Function<GlobalKTable<Long, Product>, KStream<Long, EnrichedOrder>>>> enrichOrder() {
+
+    return orders -> (
+              customers -> (
+                    products -> (
+                        orders.join(customers,
+                            (orderId, order) -> order.getCustomerId(),
+                                (order, customer) -> new CustomerOrder(customer, order))
+                                .join(products,
+                                        (orderId, customerOrder) -> customerOrder
+                                                .productId(),
+                                        (customerOrder, product) -> {
+                                            EnrichedOrder enrichedOrder = new EnrichedOrder();
+                                            enrichedOrder.setProduct(product);
+                                            enrichedOrder.setCustomer(customerOrder.customer);
+                                            enrichedOrder.setOrder(customerOrder.order);
+                                            return enrichedOrder;
+                                        })
+                        )
+                )
+    );
+}
+----
+
+Let's look at the details of the binding model presented above.
+In this model, we have 3 partially applied functions on the inbound. Let's call them as `f(x)`, `f(y)` and `f(z)`.
+If we expand these functions in the sense of true mathematical functions, it will look like these: `f(x) -> (fy) -> f(z) ->  KStream<Long, EnrichedOrder>`.
+The `x` variable stands for `KStream<Long, Order>`, the `y` variable stands for `GlobalKTable<Long, Customer>` and the `z` variable stands for `GlobalKTable<Long, Product>`.
+The first function `f(x)` has the first input binding of the application (`KStream<Long, Order>`) and its output is the function, f(y).
+The function `f(y)` has the second input binding for the application  (`GlobalKTable<Long, Customer>`) and its output is yet another function, `f(z)`.
+The input for the function `f(z)` is the third input for the application (`GlobalKTable<Long, Product>`) and its output is `KStream<Long, EnrichedOrder>` which is the final output binding for the application.
+The input from the three partial functions which are `KStream`, `GlobalKTable`, `GlobalKTable` respectively are available for you in the method body for implementing the business logic as part of the lambda expression.
+
+Input bindings are named as `enrichOrder-in-0`, `enrichOrder-in-1` and `enrichOrder-in-2` respectively. Output binding is named as `enrichOrder-out-0`.
+
+With curried functions, you can virtually have any number of inputs. However, keep in mind that, anything more than a smaller number of inputs and partially applied functions for them as above in Java might lead to unreadable code.
+Therefore if your Kafka Streams application requires more than a reasonably smaller number of input bindings, and you want to use this functional model, then you may want to rethink your design and decompose the application appropriately.
+
+===== Output Bindings
+
+Kafka Streams binder allows types of either `KStream` or `KTable` as output bindings.
+Behind the scenes, the binder uses the `to` method on `KStream` to send the resultant records to the output topic.
+If the application provides a `KTable` as output in the function, the binder still uses this technique by delegating to the `to` method of `KStream`.
+
+For example both functions below will work:
+
+```
+@Bean
+public Function<KStream<String, String>, KTable<String, String>> foo() {
+    return KStream::toTable;
+    };
+}
+
+@Bean
+public Function<KTable<String, String>, KStream<String, String>> bar() {
+    return KTable::toStream;
+}
+```
+
+===== Multiple Output Bindings
+
+Kafka Streams allows writing outbound data into multiple topics. This feature is known as branching in Kafka Streams.
+When using multiple output bindings, you need to provide an array of KStream (`KStream[]`) as the outbound return type.
+
+Here is an example:
+
+[source]
+----
+@Bean
+public Function<KStream<Object, String>, KStream<?, WordCount>[]> process() {
+
+    Predicate<Object, WordCount> isEnglish = (k, v) -> v.word.equals("english");
+    Predicate<Object, WordCount> isFrench = (k, v) -> v.word.equals("french");
+    Predicate<Object, WordCount> isSpanish = (k, v) -> v.word.equals("spanish");
+
+    return input -> {
+        final Map<String, KStream<Object, WordCount>> stringKStreamMap = input
+                .flatMapValues(value -> Arrays.asList(value.toLowerCase().split("\\W+")))
+                .groupBy((key, value) -> value)
+                .windowedBy(TimeWindows.of(Duration.ofSeconds(5)))
+                .count(Materialized.as("WordCounts-branch"))
+                .toStream()
+                .map((key, value) -> new KeyValue<>(null, new WordCount(key.key(), value,
+                        new Date(key.window().start()), new Date(key.window().end()))))
+                .split()
+                .branch(isEnglish)
+                .branch(isFrench)
+                .branch(isSpanish)
+                .noDefaultBranch();
+
+        return stringKStreamMap.values().toArray(new KStream[0]);
+    };
+}
+----
+
+The programming model remains the same, however the outbound parameterized type is `KStream[]`.
+The default output binding names are `process-out-0`, `process-out-1`, `process-out-2` respectively for the function above.
+The reason why the binder generates three output bindings is because it detects the length of the returned `KStream` array as three.
+Note that in this example, we provide a `noDefaultBranch()`; if we have used `defaultBranch()` instead, that would have required an extra output binding, essentially returning a `KStream` array of length four.
+
+===== Summary of Function based Programming Styles for Kafka Streams
+
+In summary, the following table shows the various options that can be used in the functional paradigm.
+
+|===
+|Number of Inputs |Number of Outputs |Component to use
+
+|1|0|java.util.function.Consumer
+|2|0|java.util.function.BiConsumer
+|1|1..n |java.util.function.Function
+|2|1..n |java.util.function.BiFunction
+|>= 3 |0..n |Use curried functions
+
+|===
+
+* In the case of more than one output in this table, the type simply becomes `KStream[]`.
+
+===== Function composition in Kafka Streams binder
+
+Kafka Streams binder supports minimal forms of functional composition for linear topologies.
+Using the Java functional API support, you can write multiple functions and then compose them  on your own using the `andThen` method.
+For example, assume that you have the following two functions.
+
+```
+@Bean
+public Function<KStream<String, String>, KStream<String, String>> foo() {
+    return input -> input.peek((s, s2) -> {});
+}
+
+@Bean
+public Function<KStream<String, String>, KStream<String, Long>> bar() {
+    return input -> input.peek((s, s2) -> {});
+}
+```
+
+Even without the functional composition support in the binder, you can compose these two functions as below.
+
+```
+@Bean
+pubic Funcion<KStream<String, String>, KStream<String, Long>> composed() {
+    foo().andThen(bar());
+}
+```
+
+Then you can provide deefinitions of the form `spring.cloud.stream.function.definition=foo;bar;composed`.
+With the functional composition support in the binder, you don't need to write this third function in which you are doing explicit function composition.
+
+You can simply do this instead:
+
+```
+spring.cloud.stream.function.definition=foo|bar
+```
+
+You can even do this:
+
+```
+spring.cloud.stream.function.definition=foo|bar;foo;bar
+```
+
+The composed function's default binding names in this example becomes `foobar-in-0` and `foobar-out-0`.
+
+====== Limitations of functional composition in Kafka Streams bincer
+
+When you have `java.util.function.Function` bean, that can be composed with another function or multiple functions.
+The same function bean can be composed with a `java.util.function.Consumer` as well. In this case, consumer is the last component composed.
+A function can be composed with multiple functions, then end with a `java.util.function.Consumer` bean as well.
+
+When composing the beans of type `java.util.function.BiFunction`, the `BiFunction` must be the first function in the definition.
+The composed entities must be either of type `java.util.function.Function` or `java.util.funciton.Consumer`.
+In other words, you cannot take a `BiFunction` bean and then compose with another `BiFunction`.
+
+You cannot compose with types of `BiConsumer` or definitions where `Consumer` is the first component.
+You cannot also compose with functions where the output is an array (`KStream[]` for branching) unless this is the last component in the definition.
+
+The very first `Function` of `BiFunction` in the function definition may use a curried form also.
+For example, the following is possible.
+
+```
+@Bean
+public Function<KStream<String, String>, Function<KTable<String, String>, KStream<String, String>>> curriedFoo() {
+    return a -> b ->
+            a.join(b, (value1, value2) -> value1 + value2);
+}
+
+@Bean
+public Function<KStream<String, String>, KStream<String, String>> bar() {
+    return input -> input.mapValues(value -> value + "From-anotherFooFunc");
+}
+```
+
+and the function definition could be `curriedFoo|bar`.
+Behind the scenes, the binder will create two input bindings for the curried function, and an output binding based on the final function in the definition.
+The default input bindings in this case are going to be `curriedFoobar-in-0` and `curriedFoobar-in-1`.
+The default output binding for this example becomes `curriedFoobar-out-0`.
+
+====== Special note on using `KTable` as output in function composition
+
+Lets say you have the following two functions.
+
+```
+@Bean
+public Function<KStream<String, String>, KTable<String, String>> foo() {
+    return KStream::toTable;
+    };
+}
+
+@Bean
+public Function<KTable<String, String>, KStream<String, String>> bar() {
+    return KTable::toStream;
+}
+```
+
+You can compose them as `foo|bar`, but keep in mind that the second function (`bar` in this case) must have a `KTable` as input since the first function (`foo`) has `KTable` as output.
+
+=== Ancillaries to the programming model
+
+==== Multiple Kafka Streams processors within a single application
+
+Binder allows to have multiple Kafka Streams processors within a single Spring Cloud Stream application.
+You can have an application as below.
+
+```
+@Bean
+public java.util.function.Function<KStream<Object, String>, KStream<Object, String>> process() {
+   ...
+}
+
+@Bean
+public java.util.function.Consumer<KStream<Object, String>> anotherProcess() {
+  ...
+}
+
+@Bean
+public java.util.function.BiFunction<KStream<Object, String>, KTable<Integer, String>, KStream<Object, String>> yetAnotherProcess() {
+   ...
+}
+
+```
+
+In this case, the binder will create 3 separate Kafka Streams objects with different application ID's (more on this below).
+However, if you have more than one processor in the application, you have to tell Spring Cloud Stream, which functions need to be activated.
+Here is how you activate the functions.
+
+`spring.cloud.stream.function.definition: process;anotherProcess;yetAnotherProcess`
+
+If you want certain functions to be not activated right away, you can remove that from this list.
+
+This is also true when you have a single Kafka Streams processor and other types of `Function` beans in the same application that is handled through a different binder (for e.g., a function bean that is based on the regular Kafka Message Channel binder)
+
+==== Kafka Streams Application ID
+
+Application id is a mandatory property that you need to provide for a Kafka Streams application.
+Spring Cloud Stream Kafka Streams binder allows you to configure this application id in multiple ways.
+
+If you only have one single processor in the application, then you can set this at the binder level using the following property:
+
+`spring.cloud.stream.kafka.streams.binder.applicationId`.
+
+As a convenience, if you only have a single processor, you can also use `spring.application.name` as the property to delegate the application id.
+
+If you have multiple Kafka Streams processors in the application, then you need to set the application id per processor.
+In the case of the functional model, you can attach it to each function as a property.
+
+For e.g. imagine that you have the following functions.
+
+```
+@Bean
+public java.util.function.Consumer<KStream<Object, String>> process() {
+   ...
+}
+```
+
+and
+
+```
+@Bean
+public java.util.function.Consumer<KStream<Object, String>> anotherProcess() {
+  ...
+}
+```
+
+Then you can set the application id for each, using the following binder level properties.
+
+`spring.cloud.stream.kafka.streams.binder.functions.process.applicationId`
+
+and
+
+`spring.cloud.stream.kafka.streams.binder.functions.anotherProcess.applicationId`
+
+For function based model also, this approach of setting application id at the binding level will work.
+However, setting per function at the binder level as we have seen above is much easier if you are using the functional model.
+
+For production deployments, it is highly recommended to explicitly specify the application ID through configuration.
+This is especially going to be very critical if you are auto scaling your application in which case you need to make sure that you are deploying each instance with the same application ID.
+
+If the application does not provide an application ID, then in that case the binder will auto generate a static application ID for you.
+This is convenient in development scenarios as it avoids the need for explicitly providing the application ID.
+The generated application ID in this manner will be static over application restarts.
+In the case of functional model, the generated application ID will be the function bean name followed by the literal `applicationID`, for e.g `process-applicationID` if `process` if the function bean name.
+
+====== Summary of setting Application ID
+
+* By default, binder will auto generate the application ID per function methods.
+* If you have a single processor, then you can use `spring.kafka.streams.applicationId`, `spring.application.name` or `spring.cloud.stream.kafka.streams.binder.applicationId`.
+* If you have multiple processors, then application ID can be set per function using the property - `spring.cloud.stream.kafka.streams.binder.functions.<function-name>.applicationId`.
+
+==== Overriding the default binding names generated by the binder with the functional style
+
+By default, the binder uses the strategy discussed above to generate the binding name when using the functional style, i.e. <function-bean-name>-<in>|<out>-[0..n], for e.g. process-in-0, process-out-0 etc.
+If you want to override those binding names, you can do that by specifying the following properties.
+
+`spring.cloud.stream.function.bindings.<default binding name>`. Default binding name is the original binding name generated by the binder.
+
+For e.g. lets say, you have this function.
+
+[source]
+----
+@Bean
+public BiFunction<KStream<String, Long>, KTable<String, String>, KStream<String, Long>> process() {
+...
+}
+----
+
+Binder will generate bindings with names, `process-in-0`, `process-in-1` and `process-out-0`.
+Now, if you want to change them to something else completely, maybe more domain specific binding names, then you can do so as below.
+
+`spring.cloud.stream.function.bindings.process-in-0=users`
+
+`spring.cloud.stream.function.bindings.process-in-0=regions`
+
+and
+
+`spring.cloud.stream.function.bindings.process-out-0=clicks`
+
+After that, you must set all the binding level properties on these new binding names.
+
+Please keep in mind that with the functional programming model described above, adhering to the default binding names make sense in most situations.
+The only reason you may still want to do this overriding is when you have larger number of configuration properties and you want to map the bindings to something more domain friendly.
+
+==== Setting up bootstrap server configuration
+
+When running Kafka Streams applications, you must provide the Kafka broker server information.
+If you don't provide this information, the binder expects that you are running the broker at the default `localhost:9092`.
+If that is not the case, then you need to override that. There are a couple of ways to do that.
+
+* Using the boot property - `spring.kafka.bootstrapServers`
+* Binder level property - `spring.cloud.stream.kafka.streams.binder.brokers`
+
+When it comes to the binder level property, it doesn't matter if you use the broker property provided through the regular Kafka binder - `spring.cloud.stream.kafka.binder.brokers`.
+Kafka Streams binder will first check if Kafka Streams binder specific broker property is set (`spring.cloud.stream.kafka.streams.binder.brokers`)  and if not found, it looks for `spring.cloud.stream.kafka.binder.brokers`.
+
+=== Record serialization and deserialization
+
+Kafka Streams binder allows you to serialize and deserialize records in two ways.
+One is the native serialization and deserialization facilities provided by Kafka and the other one is the message conversion capabilities of Spring Cloud Stream framework.
+Lets look at some details.
+
+==== Inbound deserialization
+
+Keys are always deserialized using native Serdes.
+
+For values, by default, deserialization on the inbound is natively performed by Kafka.
+Please note that this is a major change on default behavior from previous versions of Kafka Streams binder where the deserialization was done by the framework.
+
+Kafka Streams binder will try to infer matching `Serde` types by looking at the type signature of `java.util.function.Function|Consumer`.
+Here is the order that it matches the Serdes.
+
+* If the application provides a bean of type `Serde` and if the return type is parameterized with the actual type of the incoming key or value type, then it will use that `Serde` for inbound deserialization.
+For e.g. if you have the following in the application, the binder detects that the incoming value type for the `KStream` matches with a type that is parameterized on a `Serde` bean.
+It will use that for inbound deserialization.
+
+
+```
+@Bean
+public Serde<Foo> customSerde() {
+ ...
+}
+
+@Bean
+public Function<KStream<String, Foo>, KStream<String, Foo>> process() {
+}
+```
+
+* Next, it looks at the types and see if they are one of the types exposed by Kafka Streams. If so, use them.
+Here are the Serde types that the binder will try to match from Kafka Streams.
+
+  Integer, Long, Short, Double, Float, byte[], UUID and String.
+
+* If none of the Serdes provided by Kafka Streams don't match the types, then it will use JsonSerde provided by Spring Kafka. In this case, the binder assumes that the types are JSON friendly.
+This is useful if you have multiple value objects as inputs since the binder will internally infer them to correct Java types.
+Before falling back to the `JsonSerde` though, the binder checks at the default `Serde`s set in the Kafka Streams configuration to see if it is a `Serde` that it can match with the incoming KStream's types.
+
+If none of the above strategies worked, then the applications must provide the `Serde`s through configuration.
+This can be configured in two ways - binding or default.
+
+First the binder will look if a `Serde` is provided at the binding level.
+For e.g. if you have the following processor,
+
+```
+@Bean
+public BiFunction<KStream<CustomKey, AvroIn1>, KTable<CustomKey, AvroIn2>, KStream<CustomKey, AvroOutput>> process() {...}
+```
+
+then, you can provide a binding level `Serde` using the following:
+
+```
+spring.cloud.stream.kafka.streams.bindings.process-in-0.consumer.keySerde=CustomKeySerde
+spring.cloud.stream.kafka.streams.bindings.process-in-0.consumer.valueSerde=io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde
+
+spring.cloud.stream.kafka.streams.bindings.process-in-1.consumer.keySerde=CustomKeySerde
+spring.cloud.stream.kafka.streams.bindings.process-in-1.consumer.valueSerde=io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde
+```
+
+NOTE: If you provide `Serde` as abover per input binding, then that will takes higher precedence and the binder will stay away from any `Serde` inference.
+
+If you want the default key/value Serdes to be used for inbound deserialization, you can do so at the binder level.
+
+```
+spring.cloud.stream.kafka.streams.binder.configuration.default.key.serde
+spring.cloud.stream.kafka.streams.binder.configuration.default.value.serde
+```
+
+If you don't want the native decoding provided by Kafka, you can rely on the message conversion features that Spring Cloud Stream provides.
+Since native decoding is the default, in order to let Spring Cloud Stream deserialize the inbound value object, you need to explicitly disable native decoding.
+
+For e.g. if you have the same BiFunction processor as above, then `spring.cloud.stream.bindings.process-in-0.consumer.nativeDecoding: false`
+You need to disable native decoding for all the inputs individually. Otherwise, native decoding will still be applied for those you do not disable.
+
+By default, Spring Cloud Stream will use `application/json` as the content type and use an appropriate json message converter.
+You can use custom message converters by using the following property and an appropriate `MessageConverter` bean.
+```
+spring.cloud.stream.bindings.process-in-0.contentType
+```
+
+==== Outbound serialization
+
+Outbound serialization pretty much follows the same rules as above for inbound deserialization.
+As with the inbound deserialization, one major change from the previous versions of Spring Cloud Stream is that the serialization on the outbound is handled by Kafka natively.
+Before 3.0 versions of the binder, this was done by the framework itself.
+
+Keys on the outbound are always serialized by Kafka using a matching `Serde` that is inferred by the binder.
+If it can't infer the type of the key, then that needs to be specified using configuration.
+
+Value serdes are inferred using the same rules used for inbound deserialization.
+First it matches to see if the outbound type is from a provided bean in the application.
+If not, it checks to see if it matches with a `Serde` exposed by Kafka such as - `Integer`, `Long`, `Short`, `Double`, `Float`, `byte[]`, `UUID` and `String`.
+If that doesnt't work, then it falls back to `JsonSerde` provided by the Spring Kafka project, but first look at the default `Serde` configuration to see if there is a match.
+Keep in mind that all these happen transparently to the application.
+If none of these work, then the user has to provide the `Serde` to use by configuration.
+
+Lets say you are using the same `BiFunction` processor as above. Then you can configure outbound key/value Serdes as following.
+
+```
+spring.cloud.stream.kafka.streams.bindings.process-out-0.producer.keySerde=CustomKeySerde
+spring.cloud.stream.kafka.streams.bindings.process-out-0.producer.valueSerde=io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde
+```
+
+If Serde inference fails, and no binding level Serdes are provided, then the binder falls back to the `JsonSerde`, but look at the default Serdes for a match.
+
+Default serdes are configured in the same way as above where it is described under deserialization.
+
+`spring.cloud.stream.kafka.streams.binder.configuration.default.key.serde`
+`spring.cloud.stream.kafka.streams.binder.configuration.default.value.serde`
+
+If your application uses the branching feature and has multiple output bindings, then these have to be configured per binding.
+Once again, if the binder is capable of inferring the `Serde` types, you don't need to do this configuration.
+
+If you don't want the native encoding provided by Kafka, but want to use the framework provided message conversion, then you need to explicitly disable native encoding since since native encoding is the default.
+For e.g. if you have the same BiFunction processor as above, then `spring.cloud.stream.bindings.process-out-0.producer.nativeEncoding: false`
+You need to disable native encoding for all the output individually in the case of branching. Otherwise, native encoding will still be applied for those you don't disable.
+
+When conversion is done by Spring Cloud Stream, by default, it will use `application/json` as the content type and use an appropriate json message converter.
+You can use custom message converters by using the following property and a corresponding `MessageConverter` bean.
+```
+spring.cloud.stream.bindings.process-out-0.contentType
+```
+
+When native encoding/decoding is disabled, binder will not do any inference as in the case of native Serdes.
+Applications need to explicitly provide all the configuration options.
+For that reason, it is generally advised to stay with the default options for de/serialization and stick with native de/serialization provided by Kafka Streams when you write Spring Cloud Stream Kafka Streams applications.
+The one scenario in which you must use message conversion capabilities provided by the framework is when your upstream producer is using a specific serialization strategy.
+In that case, you want to use a matching deserialization strategy as native mechanisms may fail.
+When relying on the default `Serde` mechanism, the applications must ensure that the binder has a way forward with correctly map the inbound and outbound with a proper `Serde`, as otherwise things might fail.
+
+It is worth to mention that the data de/serialization approaches outlined above are only applicable on the edges of your processors, i.e. - inbound and outbound.
+Your business logic might still need to call Kafka Streams API's that explicitly need `Serde` objects.
+Those are still the responsibility of the application and must be handled accordingly by the developer.
+
+=== Error Handling
+
+Apache Kafka Streams provides the capability for natively handling exceptions from deserialization errors.
+For details on this support, please see https://cwiki.apache.org/confluence/display/KAFKA/KIP-161%3A+streams+deserialization+exception+handlers[this].
+Out of the box, Apache Kafka Streams provides two kinds of deserialization exception handlers - `LogAndContinueExceptionHandler` and `LogAndFailExceptionHandler`.
+As the name indicates, the former will log the error and continue processing the next records and the latter will log the error and fail. `LogAndFailExceptionHandler` is the default deserialization exception handler.
+
+==== Handling Deserialization Exceptions in the Binder
+
+Kafka Streams binder allows to specify the deserialization exception handlers above using the following property.
+
+[source]
+----
+spring.cloud.stream.kafka.streams.binder.deserializationExceptionHandler: logAndContinue
+----
+
+or
+
+[source]
+----
+spring.cloud.stream.kafka.streams.binder.deserializationExceptionHandler: logAndFail
+----
+
+In addition to the above two deserialization exception handlers, the binder also provides a third one for sending the erroneous records (poison pills) to a DLQ (dead letter queue) topic.
+Here is how you enable this DLQ exception handler.
+
+[source]
+----
+spring.cloud.stream.kafka.streams.binder.deserializationExceptionHandler: sendToDlq
+----
+
+When the above property is set, all the records in deserialization error are automatically sent to the DLQ topic.
+
+You can set the topic name where the DLQ messages are published as below.
+
+You can provide an implementation for `DlqDestinationResolver` which is a functional interface.
+`DlqDestinationResolver` takes `ConsumerRecord` and the exception as inputs and then allows to specify a topic name as the output.
+By gaining access to the Kafka `ConsumerRecord`, the header records can be introspected in the implementation of the `BiFunction`.
+
+Here is an example of providing an implementation for `DlqDestinationResolver`.
+
+[source]
+----
+@Bean
+public DlqDestinationResolver dlqDestinationResolver() {
+    return (rec, ex) -> {
+        if (rec.topic().equals("word1")) {
+            return "topic1-dlq";
+        }
+        else {
+            return "topic2-dlq";
+        }
+    };
+}
+----
+
+One important thing to keep in mind when providing an implementation for `DlqDestinationResolver` is that the provisioner in the binder will not auto create topics for the application.
+This is because there is no way for the binder to infer the names of all the DLQ topics the implementation might send to.
+Therefore, if you provide DLQ names using this strategy, it is the application's responsibility to ensure that those topics are created beforehand.
+
+If `DlqDestinationResolver` is present in the application as a bean, that takes higher precedence.
+If you do not want to follow this approach and rather provide a static DLQ name using configuration, you can set the following property.
+
+[source]
+----
+spring.cloud.stream.kafka.streams.bindings.process-in-0.consumer.dlqName: custom-dlq (Change the binding name accordingly)
+----
+
+If this is set, then the error records are sent to the topic `custom-dlq`.
+If the application is not using either of the above strategies, then it will create a DLQ topic with the name `error.<input-topic-name>.<application-id>`.
+For instance, if your binding's destination topic is `inputTopic` and the application ID is `process-applicationId`, then the default DLQ topic is `error.inputTopic.process-applicationId`.
+It is always recommended to explicitly create a DLQ topic for each input binding if it is your intention to enable DLQ.
+
+==== DLQ per input consumer binding
+
+The property `spring.cloud.stream.kafka.streams.binder.deserializationExceptionHandler` is applicable for the entire application.
+This implies that if there are multiple functions in the same application, this property is applied to all of them.
+However, if you have multiple processors or multiple input bindings within a single processor, then you can use the finer-grained DLQ control that the binder provides per input consumer binding.
+
+If you have the following processor,
+
+```
+@Bean
+public BiFunction<KStream<String, Long>, KTable<String, String>, KStream<String, Long>> process() {
+...
+}
+```
+
+and you only want to enable DLQ on the first input binding and skipAndContinue on the second binding, then you can do so on the consumer as below.
+
+`spring.cloud.stream.kafka.streams.bindings.process-in-0.consumer.deserializationExceptionHandler: sendToDlq`
+`spring.cloud.stream.kafka.streams.bindings.process-in-1.consumer.deserializationExceptionHandler: skipAndContinue`
+
+Setting deserialization exception handlers this way has a higher precedence than setting at the binder level.
+
+==== DLQ partitioning
+
+By default, records are published to the Dead-Letter topic using the same partition as the original record.
+This means the Dead-Letter topic must have at least as many partitions as the original record.
+
+To change this behavior, add a `DlqPartitionFunction` implementation as a `@Bean` to the application context.
+Only one such bean can be present.
+The function is provided with the consumer group (which is the same as the application ID in most situations), the failed `ConsumerRecord` and the exception.
+For example, if you always want to route to partition 0, you might use:
+
+
+[source, java]
+----
+@Bean
+public DlqPartitionFunction partitionFunction() {
+    return (group, record, ex) -> 0;
+}
+----
+
+NOTE: If you set a consumer binding's `dlqPartitions` property to 1 (and the binder's `minPartitionCount` is equal to `1`), there is no need to supply a `DlqPartitionFunction`; the framework will always use partition 0.
+If you set a consumer binding's `dlqPartitions` property to a value greater than `1` (or the binder's `minPartitionCount` is greater than `1`), you **must** provide a `DlqPartitionFunction` bean, even if the partition count is the same as the original topic's.
+
+
+A couple of things to keep in mind when using the exception handling feature in Kafka Streams binder.
+
+* The property `spring.cloud.stream.kafka.streams.binder.deserializationExceptionHandler` is applicable for the entire application.
+This implies that if there are multiple functions in the same application, this property is applied to all of them.
+* The exception handling for deserialization works consistently with native deserialization and framework provided message conversion.
+
+==== Handling Production Exceptions in the Binder
+
+Unlike the support for deserialization exception handlers as described above, the binder does not provide such first class mechanisms for handling production exceptions.
+However, you still can configure production exception handlers using the `StreamsBuilderFactoryBean` customizer which you can find more details about, in a subsequent section below.
+
+=== Retrying critical business logic
+
+There are scenarios in which you might want to retry parts of your business logic that are critical to the application.
+There maybe an external call to a relational database or invoking a REST endpoint from the Kafka Streams processor.
+These calls can fail for various reasons such as network issues or remote service unavailability.
+More often, these failures may self resolve if you can try them again.
+By default, Kafka Streams binder creates `RetryTemplate` beans for all the input bindings.
+
+If the function has the following signature,
+```
+@Bean
+public java.util.function.Consumer<KStream<Object, String>> process()
+```
+and with default binding name, the `RetryTemplate` will be registered as `process-in-0-RetryTemplate`.
+This is following the convention of binding name (`process-in-0`) followed by the literal `-RetryTemplate`.
+In the case of multiple input bindings, there will be a separate `RetryTemplate` bean available per binding.
+If there is a custom `RetryTemplate` bean available in the application and provided through `spring.cloud.stream.bindings.<binding-name>.consumer.retryTemplateName`, then that takes precedence over any input binding level retry template configuration properties.
+
+Once the `RetryTemplate` from the binding is injected into the application, it can be used to retry any critical sections of the application.
+Here is an example:
+
+```
+@Bean
+public java.util.function.Consumer<KStream<Object, String>> process(@Lazy @Qualifier("process-in-0-RetryTemplate") RetryTemplate retryTemplate) {
+
+    return input -> input
+            .process(() -> new Processor<Object, String>() {
+                @Override
+                public void init(ProcessorContext processorContext) {
+                }
+
+                @Override
+                public void process(Object o, String s) {
+                    retryTemplate.execute(context -> {
+                       //Critical business logic goes here.
+                    });
+                }
+
+                @Override
+                public void close() {
+                }
+            });
+}
+```
+
+Or you can use a custom `RetryTemplate` as below.
+
+```
+@EnableAutoConfiguration
+public static class CustomRetryTemplateApp {
+
+    @Bean
+    @StreamRetryTemplate
+    RetryTemplate fooRetryTemplate() {
+        RetryTemplate retryTemplate = new RetryTemplate();
+
+        RetryPolicy retryPolicy = new SimpleRetryPolicy(4);
+        FixedBackOffPolicy backOffPolicy = new FixedBackOffPolicy();
+        backOffPolicy.setBackOffPeriod(1);
+
+        retryTemplate.setBackOffPolicy(backOffPolicy);
+        retryTemplate.setRetryPolicy(retryPolicy);
+
+        return retryTemplate;
+    }
+
+    @Bean
+    public java.util.function.Consumer<KStream<Object, String>> process() {
+
+        return input -> input
+                .process(() -> new Processor<Object, String>() {
+                    @Override
+                    public void init(ProcessorContext processorContext) {
+                    }
+
+                    @Override
+                    public void process(Object o, String s) {
+                        fooRetryTemplate().execute(context -> {
+                           //Critical business logic goes here.
+                        });
+
+                    }
+
+                    @Override
+                    public void close() {
+                    }
+                });
+    }
+}
+```
+
+Note that when retries are exhausted, by default, the last exception will be thrown, causing the processor to terminate.
+If you wish to handle the exception and continue processing, you can add a RecoveryCallback to the `execute` method:
+Here is an example.
+```
+retryTemplate.execute(context -> {
+    //Critical business logic goes here.
+    }, context -> {
+       //Recovery logic goes here.
+       return null;
+    ));
+```
+Refer to the https://github.com/spring-projects/spring-retry[Spring Retry] project for more information about the RetryTemplate, retry policies, backoff policies and more.
+
+=== State Store
+
+State stores are created automatically by Kafka Streams when the high level DSL is used and appropriate calls are made those trigger a state store.
+
+If you want to materialize an incoming `KTable` binding as a named state store, then you can do so by using the following strategy.
+
+Lets say you have the following function.
+
+[source]
+----
+@Bean
+public BiFunction<KStream<String, Long>, KTable<String, String>, KStream<String, Long>> process() {
+   ...
+}
+----
+
+Then by setting the following property, the incoming `KTable` data will be materialized in to the named state store.
+
+[source]
+----
+spring.cloud.stream.kafka.streams.bindings.process-in-1.consumer.materializedAs: incoming-store
+----
+
+You can define custom state stores as beans in your application and those will be detected and added to the Kafka Streams builder by the binder.
+Especially when the processor API is used, you need to register a state store manually.
+In order to do so, you can create the StateStore as a bean in the application.
+Here are examples of defining such beans.
+
+[source]
+----
+@Bean
+public StoreBuilder myStore() {
+    return Stores.keyValueStoreBuilder(
+            Stores.persistentKeyValueStore("my-store"), Serdes.Long(),
+            Serdes.Long());
+}
+
+@Bean
+public StoreBuilder otherStore() {
+    return Stores.windowStoreBuilder(
+            Stores.persistentWindowStore("other-store",
+                    1L, 3, 3L, false), Serdes.Long(),
+            Serdes.Long());
+}
+----
+
+These state stores can be then accessed by the applications directly.
+
+During the bootstrap, the above beans will be processed by the binder and passed on to the Streams builder object.
+
+Accessing the state store:
+[source]
+----
+Processor<Object, Product>() {
+
+    WindowStore<Object, String> state;
+
+    @Override
+    public void init(ProcessorContext processorContext) {
+        state = (WindowStore)processorContext.getStateStore("mystate");
+    }
+    ...
+}
+----
+
+This will not work when it comes to registering global state stores.
+In order to register a global state store, please see the section below on customizing `StreamsBuilderFactoryBean`.
+
+=== Interactive Queries
+
+Kafka Streams binder API exposes a class called `InteractiveQueryService` to interactively query the state stores.
+You can access this as a Spring bean in your application. An easy way to get access to this bean from your application is to `autowire` the bean.
+
+[source]
+----
+@Autowired
+private InteractiveQueryService interactiveQueryService;
+----
+
+Once you gain access to this bean, then you can query for the particular state-store that you are interested. See below.
+
+[source]
+----
+ReadOnlyKeyValueStore<Object, Object> keyValueStore =
+						interactiveQueryService.getQueryableStoreType("my-store", QueryableStoreTypes.keyValueStore());
+----
+
+During the startup, the above method call to retrieve the store might fail.
+For example, it might still be in the middle of initializing the state store.
+In such cases, it will be useful to retry this operation.
+Kafka Streams binder provides a simple retry mechanism to accommodate this.
+
+Following are the two properties that you can use to control this retrying.
+
+* spring.cloud.stream.kafka.streams.binder.stateStoreRetry.maxAttempts - Default is `1` .
+* spring.cloud.stream.kafka.streams.binder.stateStoreRetry.backOffInterval - Default is `1000` milliseconds.
+
+If there are multiple instances of the kafka streams application running, then before you can query them interactively, you need to identify which application instance hosts the particular key that you are querying.
+`InteractiveQueryService` API provides methods for identifying the host information.
+
+In order for this to work, you must configure the property `application.server` as below:
+
+[source]
+----
+spring.cloud.stream.kafka.streams.binder.configuration.application.server: <server>:<port>
+----
+
+Here are some code snippets:
+
+[source]
+----
+org.apache.kafka.streams.state.HostInfo hostInfo = interactiveQueryService.getHostInfo("store-name",
+						key, keySerializer);
+
+if (interactiveQueryService.getCurrentHostInfo().equals(hostInfo)) {
+
+    //query from the store that is locally available
+}
+else {
+    //query from the remote host
+}
+----
+
+For more information on these host finding methods, please see the Javadoc on the methods.
+For these methods also, during startup, if the underlying KafkaStreams objects are not ready, they might throw exceptions.
+The aforementioned retry properties are applicable for these methods as well.
+
+==== Other API methods available through the InteractiveQueryService
+
+Use the following API method to retrieve the `KeyQueryMetadata` object associated with the combination of given store and key.
+
+```
+public <K> KeyQueryMetadata getKeyQueryMetadata(String store, K key, Serializer<K> serializer)
+```
+
+Use the following API method to retrieve the `KakfaStreams` object associated with the combination of given store and key.
+
+```
+public <K> KafkaStreams getKafkaStreams(String store, K key, Serializer<K> serializer)
+```
+
+=== Health Indicator
+
+The health indicator requires the dependency `spring-boot-starter-actuator`. For maven use:
+[source,xml]
+----
+<dependency>
+  <groupId>org.springframework.boot</groupId>
+  <artifactId>spring-boot-starter-actuator</artifactId>
+</dependency>
+----
+
+Spring Cloud Stream Kafka Streams Binder provides a health indicator to check the state of the underlying streams threads.
+Spring Cloud Stream defines a property `management.health.binders.enabled` to enable the health indicator. See the
+https://docs.spring.io/spring-cloud-stream/docs/current/reference/htmlsingle/#_health_indicator[Spring Cloud Stream documentation].
+
+The health indicator provides the following details for each stream thread's metadata:
+
+* Thread name
+* Thread state:  `CREATED`, `RUNNING`, `PARTITIONS_REVOKED`, `PARTITIONS_ASSIGNED`, `PENDING_SHUTDOWN` or `DEAD`
+* Active tasks: task ID and partitions
+* Standby tasks: task ID and partitions
+
+By default, only the global status is visible (`UP` or `DOWN`). To show the details, the property `management.endpoint.health.show-details` must be set to `ALWAYS` or `WHEN_AUTHORIZED`.
+For more details about the health information, see the
+https://docs.spring.io/spring-boot/docs/current/reference/html/production-ready-endpoints.html#production-ready-health[Spring Boot Actuator documentation].
+
+NOTE: The status of the health indicator is `UP` if all the Kafka threads registered are in the `RUNNING` state.
+
+Since there are three individual binders in Kafka Streams binder (`KStream`, `KTable` and `GlobalKTable`), all of them will report the health status.
+When enabling `show-details`, some of the information reported may be redundant.
+
+When there are multiple Kafka Streams processors present in the same application, then the health checks will be reported for all of them and will be categorized by the application ID of Kafka Streams.
+
+=== Accessing Kafka Streams Metrics
+
+Spring Cloud Stream Kafka Streams binder provides Kafka Streams metrics which can be exported through a Micrometer `MeterRegistry`.
+
+For Spring Boot version 2.2.x, the metrics support is provided through a custom Micrometer metrics implementation by the binder.
+For Spring Boot version 2.3.x, the Kafka Streams metrics support is provided natively through Micrometer.
+
+When accessing metrics through the Boot actuator endpoint, make sure to add `metrics` to the property `management.endpoints.web.exposure.include`.
+Then you can access `/acutator/metrics` to get a list of all the available metrics, which then can be individually accessed through the same URI (`/actuator/metrics/<metric-name>`).
+
+=== Mixing high level DSL and low level Processor API
+
+Kafka Streams provides two variants of APIs.
+It has a higher level DSL like API where you can chain various operations that maybe familiar to a lot of functional programmers.
+Kafka Streams also gives access to a low level Processor API.
+The processor API, although very powerful and gives the ability to control things in a much lower level, is imperative in nature.
+Kafka Streams binder for Spring Cloud Stream, allows you to use either the high level DSL or mixing both the DSL and the processor API.
+Mixing both of these variants give you a lot of options to control various use cases in an application.
+Applications can use the `transform` or `process` method API calls to get access to the processor API.
+
+Here is a look at how one may combine both the DSL and the processor API in a Spring Cloud Stream application using the `process` API.
+
+```
+@Bean
+public Consumer<KStream<Object, String>> process() {
+    return input ->
+        input.process(() -> new Processor<Object, String>() {
+            @Override
+            @SuppressWarnings("unchecked")
+            public void init(ProcessorContext context) {
+               this.context = context;
+            }
+
+            @Override
+            public void process(Object key, String value) {
+                //business logic
+            }
+
+            @Override
+            public void close() {
+
+        });
+}
+```
+
+Here is an example using the `transform` API.
+
+```
+@Bean
+public Consumer<KStream<Object, String>> process() {
+    return (input, a) ->
+        input.transform(() -> new Transformer<Object, String, KeyValue<Object, String>>() {
+            @Override
+            public void init(ProcessorContext context) {
+
+            }
+
+            @Override
+            public void close() {
+
+            }
+
+            @Override
+            public KeyValue<Object, String> transform(Object key, String value) {
+                // business logic - return transformed KStream;
+            }
+        });
+}
+```
+
+The `process` API method call is a terminal operation while the `transform` API is non terminal and gives you a potentially transformed `KStream` using which you can continue further processing using either the DSL or the processor API.
+
+=== Partition support on the outbound
+
+A Kafka Streams processor usually sends the processed output into an outbound Kafka topic.
+If the outbound topic is partitioned and the processor needs to send the outgoing data into particular partitions, the applications needs to provide a bean of type `StreamPartitioner`.
+See https://kafka.apache.org/23/javadoc/org/apache/kafka/streams/processor/StreamPartitioner.html[StreamPartitioner] for more details.
+Let's see some examples.
+
+This is the same processor we already saw multiple times,
+
+```
+@Bean
+public Function<KStream<Object, String>, KStream<?, WordCount>> process() {
+
+    ...
+}
+```
+
+Here is the output binding destination:
+
+```
+spring.cloud.stream.bindings.process-out-0.destination: outputTopic
+```
+
+If the topic `outputTopic` has 4 partitions, if you don't provide a partitioning strategy, Kafka Streams will use default partitioning strategy which may not be the outcome you want depending on the particular use case.
+Let's say, you want to send any key that matches to `spring` to partition 0, `cloud` to partition 1, `stream` to partition 2, and everything else to partition 3.
+This is what you need to do in the application.
+
+```
+@Bean
+public StreamPartitioner<String, WordCount> streamPartitioner() {
+    return (t, k, v, n) -> {
+        if (k.equals("spring")) {
+            return 0;
+        }
+        else if (k.equals("cloud")) {
+            return 1;
+        }
+        else if (k.equals("stream")) {
+            return 2;
+        }
+        else {
+            return 3;
+        }
+    };
+}
+```
+
+This is a rudimentary implementation, however, you have access to the key/value of the record, the topic name and the total number of partitions.
+Therefore, you can implement complex partitioning strategies if need be.
+
+You also need to provide this bean name along with the application configuration.
+
+```
+spring.cloud.stream.kafka.streams.bindings.process-out-0.producer.streamPartitionerBeanName: streamPartitioner
+```
+
+Each output topic in the application needs to be configured separately like this.
+
+=== StreamsBuilderFactoryBean customizer
+
+It is often required to customize the `StreamsBuilderFactoryBean` that creates the `KafkaStreams` objects.
+Based on the underlying support provided by Spring Kafka, the binder allows you to customize the `StreamsBuilderFactoryBean`.
+You can use the `StreamsBuilderFactoryBeanCustomizer` to customize the `StreamsBuilderFactoryBean` itself.
+Then, once you get access to the `StreamsBuilderFactoryBean` through this customizer, you can customize the corresponding `KafkaStreams` using `KafkaStreamsCustomzier`.
+Both of these customizers are part of the Spring for Apache Kafka project.
+
+Here is an example of using the `StreamsBuilderFactoryBeanCustomizer`.
+
+```
+@Bean
+public StreamsBuilderFactoryBeanCustomizer streamsBuilderFactoryBeanCustomizer() {
+    return sfb -> sfb.setStateListener((newState, oldState) -> {
+         //Do some action here!
+    });
+}
+```
+
+The above is shown as an illustration of the things you can do to customize the `StreamsBuilderFactoryBean`.
+You can essentially call any available mutation operations from `StreamsBuilderFactoryBean` to customize it.
+This customizer will be invoked by the binder right before the factory bean is started.
+
+Once you get access to the `StreamsBuilderFactoryBean`, you can also customize the underlying `KafkaStreams` object.
+Here is a blueprint for doing so.
+
+```
+@Bean
+public StreamsBuilderFactoryBeanCustomizer streamsBuilderFactoryBeanCustomizer() {
+    return factoryBean -> {
+        factoryBean.setKafkaStreamsCustomizer(new KafkaStreamsCustomizer() {
+            @Override
+            public void customize(KafkaStreams kafkaStreams) {
+                kafkaStreams.setUncaughtExceptionHandler((t, e) -> {
+
+                });
+            }
+        });
+    };
+}
+```
+
+`KafkaStreamsCustomizer` will be called by the `StreamsBuilderFactoryBeabn` right before the underlying `KafkaStreams` gets started.
+
+There can only be one `StreamsBuilderFactoryBeanCustomizer` in the entire application.
+Then how do we account for multiple Kafka Streams processors as each of them are backed up by individual `StreamsBuilderFactoryBean` objects?
+In that case, if the customization needs to be different for those processors, then the application needs to apply some filter based on the application ID.
+
+For e.g,
+
+```
+@Bean
+public StreamsBuilderFactoryBeanCustomizer streamsBuilderFactoryBeanCustomizer() {
+
+    return factoryBean -> {
+        if (factoryBean.getStreamsConfiguration().getProperty(StreamsConfig.APPLICATION_ID_CONFIG)
+                .equals("processor1-application-id")) {
+            factoryBean.setKafkaStreamsCustomizer(new KafkaStreamsCustomizer() {
+                @Override
+                public void customize(KafkaStreams kafkaStreams) {
+                    kafkaStreams.setUncaughtExceptionHandler((t, e) -> {
+
+                    });
+                }
+            });
+        }
+    };
+```
+
+==== Using Customizer to register a global state store
+
+As mentioned above, the binder does not provide a first class way to register global state stores as a feature.
+For that, you need to use the customizer.
+Here is how that can be done.
+
+```
+@Bean
+public StreamsBuilderFactoryBeanCustomizer customizer() {
+    return fb -> {
+        try {
+            final StreamsBuilder streamsBuilder = fb.getObject();
+            streamsBuilder.addGlobalStore(...);
+        }
+        catch (Exception e) {
+
+        }
+    };
+}
+```
+
+Again, if you have multiple processors, you want to attach the global state store to the right `StreamsBuilder` by filtering out the other `StreamsBuilderFactoryBean` objects using the application id as outlined above.
+
+==== Using customizer to register a production exception handler
+
+In the error handling section, we indicated that the binder does not provide a first class way to deal with production exceptions.
+Though that is the case, you can still use the `StreamsBuilderFacotryBean` customizer to register production exception handlers. See below.
+
+```
+@Bean
+public StreamsBuilderFactoryBeanCustomizer customizer() {
+    return fb -> {
+        fb.getStreamsConfiguration().put(StreamsConfig.DEFAULT_PRODUCTION_EXCEPTION_HANDLER_CLASS_CONFIG,
+                            CustomProductionExceptionHandler.class);
+    };
+}
+```
+
+Once again, if you have multiple processors, you may want to set it appropriately against the correct `StreamsBuilderFactoryBean`.
+You may also add such production exception handlers using the configuration property (See below for more on that), but this is an option if you choose to go with a programmatic approach.
+
+=== Timestamp extractor
+
+Kafka Streams allows you to control the processing of the consumer records based on various notions of timestamp.
+By default, Kafka Streams extracts the timestamp metadata embedded in the consumer record.
+You can change this default behavior by providing a different `TimestampExtractor` implementation per input binding.
+Here are some details on how that can be done.
+
+```
+@Bean
+public Function<KStream<Long, Order>,
+        Function<KTable<Long, Customer>,
+                Function<GlobalKTable<Long, Product>, KStream<Long, Order>>>> process() {
+    return orderStream ->
+            customers ->
+                products -> orderStream;
+}
+
+@Bean
+public TimestampExtractor timestampExtractor() {
+    return new WallclockTimestampExtractor();
+}
+```
+
+Then you set the above `TimestampExtractor` bean name per consumer binding.
+
+```
+spring.cloud.stream.kafka.streams.bindings.process-in-0.consumer.timestampExtractorBeanName=timestampExtractor
+spring.cloud.stream.kafka.streams.bindings.process-in-1.consumer.timestampExtractorBeanName=timestampExtractor
+spring.cloud.stream.kafka.streams.bindings.process-in-2.consumer.timestampExtractorBeanName=timestampExtractor"
+```
+
+If you skip an input consumer binding for setting a custom timestamp extractor, that consumer will use the default settings.
+
+=== Multi binders with Kafka Streams based binders and regular Kafka Binder
+
+You can have an application where you have both a function/consumer/supplier that is based on the regular Kafka binder and a Kafka Streams based processor.
+However, you cannot mix both of them within a single function or consumer.
+
+Here is an example, where you have both binder based components within the same application.
+
+```
+@Bean
+public Function<String, String> process() {
+    return s -> s;
+}
+
+@Bean
+public Function<KStream<Object, String>, KStream<?, WordCount>> kstreamProcess() {
+
+    return input -> input;
+}
+
+```
+
+This is the relevant parts from the configuration:
+
+```
+spring.cloud.stream.function.definition=process;kstreamProcess
+spring.cloud.stream.bindings.process-in-0.destination=foo
+spring.cloud.stream.bindings.process-out-0.destination=bar
+spring.cloud.stream.bindings.kstreamProcess-in-0.destination=bar
+spring.cloud.stream.bindings.kstreamProcess-out-0.destination=foobar
+```
+
+Things become a bit more complex if you have the same application as above, but is dealing with two different Kafka clusters, for e.g. the regular `process` is acting upon both Kafka cluster 1 and cluster 2 (receiving data from cluster-1 and sending to cluster-2) and the Kafka Streams processor is acting upon Kafka cluster 2.
+Then you have to use the https://cloud.spring.io/spring-cloud-stream/reference/html/spring-cloud-stream.html#multiple-binders[multi binder] facilities provided by Spring Cloud Stream.
+
+Here is how your configuration may change in that scenario.
+
+```
+# multi binder configuration
+spring.cloud.stream.binders.kafka1.type: kafka
+spring.cloud.stream.binders.kafka1.environment.spring.cloud.stream.kafka.streams.binder.brokers=${kafkaCluster-1} #Replace kafkaCluster-1 with the approprate IP of the cluster
+spring.cloud.stream.binders.kafka2.type: kafka
+spring.cloud.stream.binders.kafka2.environment.spring.cloud.stream.kafka.streams.binder.brokers=${kafkaCluster-2} #Replace kafkaCluster-2 with the approprate IP of the cluster
+spring.cloud.stream.binders.kafka3.type: kstream
+spring.cloud.stream.binders.kafka3.environment.spring.cloud.stream.kafka.streams.binder.brokers=${kafkaCluster-2} #Replace kafkaCluster-2 with the approprate IP of the cluster
+
+spring.cloud.stream.function.definition=process;kstreamProcess
+
+# From cluster 1 to cluster 2 with regular process function
+spring.cloud.stream.bindings.process-in-0.destination=foo
+spring.cloud.stream.bindings.process-in-0.binder=kafka1 # source from cluster 1
+spring.cloud.stream.bindings.process-out-0.destination=bar
+spring.cloud.stream.bindings.process-out-0.binder=kafka2 # send to cluster 2
+
+# Kafka Streams processor on cluster 2
+spring.cloud.stream.bindings.kstreamProcess-in-0.destination=bar
+spring.cloud.stream.bindings.kstreamProcess-in-0.binder=kafka3
+spring.cloud.stream.bindings.kstreamProcess-out-0.destination=foobar
+spring.cloud.stream.bindings.kstreamProcess-out-0.binder=kafka3
+```
+
+Pay attention to the above configuration.
+We have two kinds of binders, but 3 binders all in all, first one is the regular Kafka  binder based on cluster 1 (`kafka1`), then another Kafka binder based on cluster 2 (`kafka2`) and finally the `kstream` one (`kafka3`).
+The first processor in the application receives data from  `kafka1` and publishes to `kafka2` where both binders are based on regular Kafka binder but differnt clusters.
+The second processor, which is a Kafka Streams processor consumes data from `kafka3` which is the same cluster as `kafka2`, but a different binder type.
+
+Since there are three different binder types available in the Kafka Streams family of binders - `kstream`, `ktable` and `globalktable` - if your application has multiple bindings based on any of these binders, that needs to be explicitly provided as the binder type.
+
+For e.g if you have a processor as below,
+
+```
+@Bean
+public Function<KStream<Long, Order>,
+        Function<KTable<Long, Customer>,
+                Function<GlobalKTable<Long, Product>, KStream<Long, EnrichedOrder>>>> enrichOrder() {
+
+    ...
+}
+```
+
+then, this has to be configured in a multi binder scenario as the following.
+Please note that this is only needed if you have a true multi-binder scenario where there are multiple processors dealing with multiple clusters within a single application.
+In that case, the binders need to be explicitly provided with the bindings to distinguish from other processor's binder types and clusters.
+
+```
+spring.cloud.stream.binders.kafka1.type: kstream
+spring.cloud.stream.binders.kafka1.environment.spring.cloud.stream.kafka.streams.binder.brokers=${kafkaCluster-2}
+spring.cloud.stream.binders.kafka2.type: ktable
+spring.cloud.stream.binders.kafka2.environment.spring.cloud.stream.kafka.streams.binder.brokers=${kafkaCluster-2}
+spring.cloud.stream.binders.kafka3.type: globalktable
+spring.cloud.stream.binders.kafka3.environment.spring.cloud.stream.kafka.streams.binder.brokers=${kafkaCluster-2}
+
+spring.cloud.stream.bindings.enrichOrder-in-0.binder=kafka1  #kstream
+spring.cloud.stream.bindings.enrichOrder-in-1.binder=kafka2  #ktablr
+spring.cloud.stream.bindings.enrichOrder-in-2.binder=kafka3  #globalktable
+spring.cloud.stream.bindings.enrichOrder-out-0.binder=kafka1 #kstream
+
+# rest of the configuration is omitted.
+
+```
+
+=== State Cleanup
+
+By default, no local state is cleaned up when the binding is stopped.
+This is the same behavior effective from Spring Kafka version 2.7.
+See https://docs.spring.io/spring-kafka/reference/html/#streams-config[Spring Kafka documentation] for more details.
+To modify this behavior simply add a single `CleanupConfig` `@Bean` (configured to clean up on start, stop, or neither) to the application context; the bean will be detected and wired into the factory bean.
+
+=== Kafka Streams topology visualization
+
+Kafka Streams binder provides the following actuator endpoints for retrieving the topology description using which you can visualize the topology using external tools.
+
+`/actuator/kafkastreamstopology`
+
+`/actuator/kafkastreamstopology/<application-id of the processor>`
+
+You need to include the actuator and web dependencies from Spring Boot to access these endpoints.
+Further, you also need to add `kafkastreamstopology` to `management.endpoints.web.exposure.include` property.
+By default, the `kafkastreamstopology` endpoint is disabled.
+
+=== Event type based routing in Kafka Streams applications
+
+Routing functions available in regular message channel based binders are not supported in Kafka Streams binder.
+However, Kafka Streams binder still provides routing capabilities through the event type record header on the inbound records.
+
+To enable routing based on event types, the application must provide the following property.
+
+`spring.cloud.stream.kafka.streams.bindings.<binding-name>.consumer.eventTypes`.
+
+This can be a comma separated value.
+
+For example, lets assume we have this function:
+
+```
+@Bean
+public Function<KStream<Integer, Foo>, KStream<Integer, Foo>> process() {
+    return input -> input;
+}
+```
+
+Let us also assume that we only want the business logic in this function to be executed, if the incoming record has event types as `foo` or `bar`.
+That can be expressed as below using the `eventTypes` property on the binding.
+
+`spring.cloud.stream.kafka.streams.bindings.process-in-0.consumer.eventTypes=foo,bar`
+
+Now, when the application runs, the binder checks each incoming records for the header `event_type` and see if it has value set as `foo` or `bar`.
+If it does not find either of them, then the function execution will be skipped.
+
+By default, the binder expects the record header key to be `event_type`, but that can be changed per binding.
+For instance, if we want to change the header key on this binding to `my_event` instead of the default, that can be changed as below.
+
+`spring.cloud.stream.kafka.streams.bindings.process-in-0.consumer.eventTypeHeaderKey=my_event`.
+
+=== Binding visualization and control in Kafka Streams binder
+
+Starting with version 3.1.2, Kafka Streams binder supports binding visualization and control.
+The only two lifecycle phases supported are `STOPPED` and `STARTED`.
+The lifecycle phases `PAUSED` and `RESUMED` are not available in Kafka Streams binder.
+
+In order to activate binding visualization and control, the application needs to include the following two dependencies.
+
+```
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-actuator</artifactId>
+</dependency>
+<dependency>
+     <groupId>org.springframework.boot</groupId>
+     <artifactId>spring-boot-starter-web</artifactId>
+</dependency>
+```
+
+If you prefer using webflux, you can then include `spring-boot-starter-webflux` instead of the standard web dependency.
+
+In addition, you also need to set the following property:
+
+```
+management.endpoints.web.exposure.include=bindings
+```
+
+To illustrate this feature further, let us use the following application as a guide:
+
+```
+@SpringBootApplication
+public class KafkaStreamsApplication {
+
+	public static void main(String[] args) {
+		SpringApplication.run(KafkaStreamsApplication.class, args);
+	}
+
+	@Bean
+	public Consumer<KStream<String, String>> consumer() {
+		return s -> s.foreach((key, value) -> System.out.println(value));
+	}
+
+	@Bean
+	public Function<KStream<String, String>, KStream<String, String>> function() {
+		return ks -> ks;
+	}
+
+}
+```
+
+As we can see, the application has two Kafka Streams functions - one, a consumer and another a function.
+The consumer binding is named by default as `consumer-in-0`.
+Similarly, for the function, the input binding is `function-in-0` and the output binding is `function-out-0`.
+
+Once the application is started, we can find details about the bindings using the following bindings endpoint.
+
+```
+ curl http://localhost:8080/actuator/bindings | jq .
+[
+  {
+    "bindingName": "consumer-in-0",
+    "name": "consumer-in-0",
+    "group": "consumer-applicationId",
+    "pausable": false,
+    "state": "running",
+    "paused": false,
+    "input": true,
+    "extendedInfo": {}
+  },
+  {
+    "bindingName": "function-in-0",
+    "name": "function-in-0",
+    "group": "function-applicationId",
+    "pausable": false,
+    "state": "running",
+    "paused": false,
+    "input": true,
+    "extendedInfo": {}
+  },
+  {
+    "bindingName": "function-out-0",
+    "name": "function-out-0",
+    "group": "function-applicationId",
+    "pausable": false,
+    "state": "running",
+    "paused": false,
+    "input": false,
+    "extendedInfo": {}
+  }
+]
+```
+
+The details about all three bindings can be found above.
+
+Let us now stop the consumer-in-0 binding.
+
+```
+curl -d '{"state":"STOPPED"}' -H "Content-Type: application/json" -X POST http://localhost:8080/actuator/bindings/consumer-in-0
+```
+
+At this point, no records will be received through this binding.
+
+Start the binding again.
+
+```
+curl -d '{"state":"STARTED"}' -H "Content-Type: application/json" -X POST http://localhost:8080/actuator/bindings/consumer-in-0
+```
+
+When there are multiple bindings present on a single function, invoking these operations on any of those bindings will work.
+This is because all the bindings on a single function are backed by the same `StreamsBuilderFactoryBean`.
+Therefore, for the function above, either `function-in-0` or `function-out-0` will work.
+
+=== Manually starting Kafka Streams processors
+
+Spring Cloud Stream Kafka Streams binder offers an abstraction called `StreamsBuilderFactoryManager` on top of the `StreamsBuilderFactoryBean` from Spring for Apache Kafka.
+This manager API is used for controlling the multiple `StreamsBuilderFactoryBean` per processor in a binder based application.
+Therefore, when using the binder, if you manually want to control the auto starting of the various `StreamsBuilderFactoryBean` objects in the application, you need to use `StreamsBuilderFactoryManager`.
+You can use the property `spring.kafka.streams.auto-startup` and set this to `false` in order to turn off auto starting of the processors.
+Then, in the application, you can use something as below to start the processors using `StreamsBuilderFactoryManager`.
+
+```
+@Bean
+public ApplicationRunner runner(StreamsBuilderFactoryManager sbfm) {
+    return args -> {
+        sbfm.start();
+    };
+}
+```
+
+This feature is handy, when you want your application to start in the main thread and let Kafka Streams processors start separately.
+For example, when you have a large state store that needs to be restored, if the processors are started normally as is the default case, this may block your application to start.
+If you are using some sort of liveness probe mechanism (for example on Kubernetes), it may think that the application is down and attempt a restart.
+In order to correct this, you can set `spring.kafka.streams.auto-startup` to `false` and follow the approach above.
+
+Keep in mind that, when using the Spring Cloud Stream binder, you are not directly dealing with `StreamsBuilderFactoryBean` from Spring for Apache Kafka, rather `StreamsBuilderFactoryManager`, as the `StreamsBuilderFactoryBean` objects are internally managed by the binder.
+
+=== Manually starting Kafka Streams processors selectively
+
+While the approach laid out above will unconditionally apply auto start `false` to all the Kafka Streams processors in the application through `StreamsBuilderFactoryManager`, it is often desirable that only individually selected Kafka Streams processors are not auto started.
+For instance, let us assume that you have three different functions (processors) in your application and for one of the processors, you do not want to start it as part of the application startup.
+Here is an example of such a situation.
+
+```
+
+@Bean
+public Function<KStream<?, ?>, KStream<?, ?>> process1() {
+
+}
+
+@Bean
+public Consumer<KStream<?, ?>> process2() {
+
+}
+
+@Bean
+public BiFunction<KStream<?, ?>, KTable<?, ?>, KStream<?, ?>> process3() {
+
+}
+
+```
+
+In this scenario above, if you set `spring.kafka.streams.auto-startup` to `false`, then none of the processors will auto start during the application startup.
+In that case, you have to programmatically start them as described above by calling `start()` on the underlying `StreamsBuilderFactoryManager`.
+However, if we have a use case to selectively disable only one processor, then you have to set `auto-startup` on the individual binding for that processor.
+Let us assume that we don't want our `process3` function to auto start.
+This is a `BiFunction` with two input bindings - `process3-in-0` and `process3-in-1`.
+In order to avoid auto start for this processor, you can pick any of these input bindings and set `auto-startup` on them.
+It does not matter which binding you pick; if you wish, you can set `auto-startup` to `false` on both of them, but one will be sufficient.
+Because they share the same factory bean, you don't have to set autoStartup to false on both bindings, but it probably makes sense to do so, for clarity.
+
+Here is the Spring Cloud Stream property that you can use to disable auto startup for this processor.
+
+```
+spring.cloud.stream.bindings.process3-in-0.consumer.auto-startup: false
+```
+
+or
+
+```
+spring.cloud.stream.bindings.process3-in-1.consumer.auto-startup: false
+```
+
+Then, you can manually start the processor either using the REST endpoint or using the `BindingsEndpoint` API as shown below.
+For this, you need to ensure that you have the Spring Boot actuator dependency on the classpath.
+
+```
+curl -d '{"state":"STARTED"}' -H "Content-Type: application/json" -X POST http://localhost:8080/actuator/bindings/process3-in-0
+```
+
+or
+
+```
+@Autowired
+BindingsEndpoint endpoint;
+
+@Bean
+public ApplicationRunner runner() {
+    return args -> {
+        endpoint.changeState("process3-in-0", State.STARTED);
+    };
+}
+```
+
+See https://docs.spring.io/spring-cloud-stream/docs/current/reference/html/spring-cloud-stream.html#binding_visualization_control[this section] from the reference docs for more details on this mechanism.
+
+NOTE: When controlling the bindings by disabling `auto-startup` as described in this section, please note that this is only available for consumer bindings.
+In other words, if you use the producer binding, `process3-out-0`, that does not have any effect in terms of disabling the auto starting of the processor, although this producer binding uses the same `StreamsBuilderFactoryBean` as the consumer bindings.
+
+=== Tracing using Spring Cloud Sleuth
+
+When Spring Cloud Sleuth is on the classpath of a Spring Cloud Stream Kafka Streams binder based application, both its consumer and producer are automatically instrumented with tracing information.
+However, in order to trace any application specific operations, those need to be explicitly instrumented by the user code.
+This can be done by injecting the `KafkaStreamsTracing` bean from Spring Cloud Sleuth in the application and then invoke various Kafka Streams operations through this injected bean.
+Here are some examples of using it.
+
+```
+@Bean
+public BiFunction<KStream<String, Long>, KTable<String, String>, KStream<String, Long>> clicks(KafkaStreamsTracing kafkaStreamsTracing) {
+    return (userClicksStream, userRegionsTable) -> (userClicksStream
+            .transformValues(kafkaStreamsTracing.peek("span-1", (key, value) -> LOG.info("key/value: " + key + "/" + value)))
+            .leftJoin(userRegionsTable, (clicks, region) -> new RegionWithClicks(region == null ?
+                            "UNKNOWN" : region, clicks),
+                    Joined.with(Serdes.String(), Serdes.Long(), null))
+            .transform(kafkaStreamsTracing.map("span-2", (key, value) -> {
+                LOG.info("Click Info: " + value.getRegion() + "/" + value.getClicks());
+                return new KeyValue<>(value.getRegion(),
+                        value.getClicks());
+            }))
+            .groupByKey(Grouped.with(Serdes.String(), Serdes.Long()))
+            .reduce(Long::sum, Materialized.as(CLICK_UPDATES))
+            .toStream());
+}
+```
+
+In the example above, there are two places where it adds explicit tracing instrumentation.
+First, we are logging the key/value information from the incoming `KStream`.
+When this information is logged, the associated span and trace IDs get logged as well so that a monitoring system can track them and correlate with the same span id.
+Second, when we call a `map` operation, instead of calling it directly on the `KStream` class, we wrap it inside a `transform` operation and then call `map` from `KafkaStreamsTracing`.
+In this case also, the logged message will contain the span ID and trace ID.
+
+Here is another example, where we use the low-level transformer API for accessing the various Kafka Streams headers.
+When spring-cloud-sleuth is on the classpath, all the tracing headers can also be accessed like this.
+
+```
+@Bean
+public Function<KStream<String, String>, KStream<String, String>> process(KafkaStreamsTracing kafkaStreamsTracing) {
+    return input -> input.transform(kafkaStreamsTracing.transformer(
+            "transformer-1",
+            () -> new Transformer<String, String, KeyValue<String, String>>() {
+                ProcessorContext context;
+
+                @Override
+                public void init(ProcessorContext context) {
+                    this.context = context;
+                }
+
+                @Override
+                public KeyValue<String, String> transform(String key, String value) {
+                    LOG.info("Headers: " + this.context.headers());
+                    LOG.info("K/V:" + key + "/" + value);
+                    // More transformations, business logic execution, etc. go here.
+                    return KeyValue.pair(key, value);
+                }
+
+                @Override
+                public void close() {
+                }
+            }));
+}
+```
+
+=== Configuration Options
+
+This section contains the configuration options used by the Kafka Streams binder.
+
+For common configuration options and properties pertaining to binder, refer to the <<binding-properties,core documentation>>.
+
+==== Kafka Streams Binder Properties
+
+The following properties are available at the binder level and must be prefixed with `spring.cloud.stream.kafka.streams.binder.`
+Any Kafka binder provided properties re-used in Kafka Streams binder must be prefixed with `spring.cloud.stream.kafka.streams.binder` instead of `spring.cloud.stream.kafka.binder`.
+The only exception to this rule is when defining the Kafka bootstrap server property in which case either prefix works.
+
+configuration::
+Map with a key/value pair containing properties pertaining to Apache Kafka Streams API.
+This property must be prefixed with `spring.cloud.stream.kafka.streams.binder.`.
+Following are some examples of using this property.
+
+[source]
+----
+spring.cloud.stream.kafka.streams.binder.configuration.default.key.serde=org.apache.kafka.common.serialization.Serdes$StringSerde
+spring.cloud.stream.kafka.streams.binder.configuration.default.value.serde=org.apache.kafka.common.serialization.Serdes$StringSerde
+spring.cloud.stream.kafka.streams.binder.configuration.commit.interval.ms=1000
+----
+
+For more information about all the properties that may go into streams configuration, see `StreamsConfig` JavaDocs in Apache Kafka Streams docs.
+All configuration that you can set from `StreamsConfig` can be set through this.
+When using this property, it is applicable against the entire application since this is a binder level property.
+If you have more than processors in the application, all of them will acquire these properties.
+In the case of properties like `application.id`, this will become problematic and therefore you have to carefully examine how the properties from `StreamsConfig` are mapped using this binder level `configuration` property.
+
+functions.<function-bean-name>.applicationId::
+Applicable only for functional style processors.
+This can be used for setting application ID per function in the application.
+In the case of multiple functions, this is a handy way to set the application ID.
+
+functions.<function-bean-name>.configuration::
+Applicable only for functional style processors.
+Map with a key/value pair containing properties pertaining to Apache Kafka Streams API.
+This is similar to the binder level `configuration` property describe above, but this level of `configuration` property is restricted only against the named function.
+When you have multiple processors and you want to restrict access to the configuration based on particular functions, you might want to use this.
+All `StreamsConfig` properties can be used here.
+
+brokers::
+Broker URL
++
+Default: `localhost`
+zkNodes::
+Zookeeper URL
++
+Default: `localhost`
+
+deserializationExceptionHandler::
+Deserialization error handler type.
+This handler is applied at the binder level and thus applied against all input binding in the application.
+There is a way to control it in a more fine-grained way at the consumer binding level.
+Possible values are - `logAndContinue`, `logAndFail`, `skipAndContinue` or `sendToDlq`
++
+Default: `logAndFail`
+
+applicationId::
+Convenient way to set the application.id for the Kafka Streams application globally at the binder level.
+If the application contains multiple functions, then the application id should be set differently.
+See above where setting the application id is discussed in detail.
++
+Default: application will generate a static application ID. See the application ID section for more details.
+
+stateStoreRetry.maxAttempts::
+Max attempts for trying to connect to a state store.
++
+Default: 1
+
+stateStoreRetry.backoffPeriod::
+Backoff period when trying to connect to a state store on a retry.
++
+Default: 1000 ms
+
+consumerProperties::
+Arbitrary consumer properties at the binder level.
+
+producerProperties::
+Arbitrary producer properties at the binder level.
+
+includeStoppedProcessorsForHealthCheck::
+When bindings for processors are stopped through actuator, then this processor will not participate in the health check by default.
+Set this property to `true` to enable health check for all processors including the ones that are currently stopped through bindings actuator endpoint.
++
+Default: false
+
+==== Kafka Streams Producer Properties
+
+The following properties are _only_ available for Kafka Streams producers and must be prefixed with `spring.cloud.stream.kafka.streams.bindings.<binding name>.producer.`
+For convenience, if there are multiple output bindings and they all require a common value, that can be configured by using the prefix `spring.cloud.stream.kafka.streams.default.producer.`.
+
+keySerde::
+key serde to use
++
+Default: See the above discussion on message de/serialization
+
+valueSerde::
+value serde to use
++
+Default: See the above discussion on message de/serialization
+
+useNativeEncoding::
+flag to enable/disable native encoding
++
+Default: `true`.
+
+streamPartitionerBeanName::
+Custom outbound partitioner bean name to be used at the consumer.
+Applications can provide custom `StreamPartitioner` as a Spring bean and the name of this bean can be provided to the producer to use instead of the default one.
++
+Default: See the discussion above on outbound partition support.
+
+producedAs::
+Custom name for the sink component to which the processor is producing to.
++
+Deafult: `none` (generated by Kafka Streams)
+
+==== Kafka Streams Consumer Properties
+
+The following properties are available for Kafka Streams consumers and must be prefixed with `spring.cloud.stream.kafka.streams.bindings.<binding-name>.consumer.`
+For convenience, if there are multiple input bindings and they all require a common value, that can be configured by using the prefix `spring.cloud.stream.kafka.streams.default.consumer.`.
+
+applicationId::
+Setting application.id per input binding.
++
+Default: See above.
+
+keySerde::
+key serde to use
++
+Default: See the above discussion on message de/serialization
+
+valueSerde::
+value serde to use
++
+Default: See the above discussion on message de/serialization
+
+materializedAs::
+state store to materialize when using incoming KTable types
++
+Default: `none`.
+
+useNativeDecoding::
+flag to enable/disable native decoding
++
+Default: `true`.
+
+dlqName::
+DLQ topic name.
++
+Default: See above on the discussion of error handling and DLQ.
+
+startOffset::
+Offset to start from if there is no committed offset to consume from.
+This is mostly used when the consumer is consuming from a topic for the first time.
+Kafka Streams uses `earliest` as the default strategy and the binder uses the same default.
+This can be overridden to `latest` using this property.
++
+Default: `earliest`.
+
+Note: Using `resetOffsets` on the consumer does not have any effect on Kafka Streams binder.
+Unlike the message channel based binder, Kafka Streams binder does not seek to beginning or end on demand.
+
+deserializationExceptionHandler::
+Deserialization error handler type.
+This handler is applied per consumer binding as opposed to the binder level property described before.
+Possible values are - `logAndContinue`, `logAndFail`, `skipAndContinue` or `sendToDlq`
++
+Default: `logAndFail`
+
+timestampExtractorBeanName::
+Specific time stamp extractor bean name to be used at the consumer.
+Applications can provide `TimestampExtractor` as a Spring bean and the name of this bean can be provided to the consumer to use instead of the default one.
++
+Default: See the discussion above on timestamp extractors.
+
+eventTypes::
+Comma separated list of supported event types for this binding.
++
+Default: `none`
+
+eventTypeHeaderKey::
+Event type header key on each incoming records through this binding.
++
+Default: `event_type`
+
+consumedAs::
+Custom name for the source component from which the processor is consuming from.
++
+Deafult: `none` (generated by Kafka Streams)
+
+==== Special note on concurrency
+
+In Kafka Streams, you can control of the number of threads a processor can create using the `num.stream.threads` property.
+This, you can do using the various `configuration` options described above under binder, functions, producer or consumer level.
+You can also use the `concurrency` property that core Spring Cloud Stream provides for this purpose.
+When using this, you need to use it on the consumer.
+When you have more than one input binding, set this on the first input binding.
+For e.g. when setting `spring.cloud.stream.bindings.process-in-0.consumer.concurrency`, it will be translated as `num.stream.threads` by the binder.
+If you have multiple processors and one processor defines binding level concurrency, but not the others, those ones with no binding level concurrency will default back to the binder wide property specified through
+`spring.cloud.stream.kafka.streams.binder.configuration.num.stream.threads`.
+If this binder configuration is not available, then the application will use the default set by Kafka Streams.
