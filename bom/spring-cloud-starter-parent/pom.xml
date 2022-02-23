@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		 xmlns="http://maven.apache.org/POM/4.0.0"
+		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>org.springframework.boot</groupId>
+		<artifactId>spring-boot-starter-parent</artifactId>
+		<version>3.0.0-SNAPSHOT</version>
+	</parent>
+	<groupId>org.springframework.cloud</groupId>
+	<artifactId>spring-cloud-stream-starter-parent</artifactId>
+	<version>4.0.0-SNAPSHOT</version>
+	<name>spring-cloud-stream-starter-parent</name>
+	<description>Specifies Boot version for the releaser</description>
+	<packaging>pom</packaging>
+	<url>https://projects.spring.io/spring-cloud</url>
+	<organization>
+		<name>Pivotal Software, Inc.</name>
+		<url>https://www.spring.io</url>
+	</organization>
+	<properties>
+		<main.basedir>${basedir}/../..</main.basedir>
+	</properties>
+	<distributionManagement>
+		<downloadUrl>https://github.com/spring-cloud</downloadUrl>
+		<site>
+			<id>spring-docs</id>
+			<url>
+				scp://static.springframework.org/var/www/domains/springframework.org/static/htdocs/spring-cloud/docs/${project.artifactId}/${project.version}
+			</url>
+		</site>
+		<repository>
+			<id>repo.spring.io</id>
+			<name>Spring Release Repository</name>
+			<url>https://repo.spring.io/libs-release-local</url>
+		</repository>
+		<snapshotRepository>
+			<id>repo.spring.io</id>
+			<name>Spring Snapshot Repository</name>
+			<url>https://repo.spring.io/libs-snapshot-local</url>
+		</snapshotRepository>
+	</distributionManagement>
+	<profiles>
+		<profile>
+			<id>spring</id>
+			<repositories>
+				<repository>
+					<id>spring-snapshots</id>
+					<name>Spring Snapshots</name>
+					<url>https://repo.spring.io/libs-snapshot-local</url>
+					<snapshots>
+						<enabled>true</enabled>
+					</snapshots>
+				</repository>
+				<repository>
+					<id>spring-milestones</id>
+					<name>Spring Milestones</name>
+					<url>https://repo.spring.io/libs-milestone-local</url>
+					<snapshots>
+						<enabled>false</enabled>
+					</snapshots>
+				</repository>
+				<repository>
+					<id>spring-releases</id>
+					<name>Spring Releases</name>
+					<url>https://repo.spring.io/release</url>
+					<snapshots>
+						<enabled>false</enabled>
+					</snapshots>
+				</repository>
+			</repositories>
+			<pluginRepositories>
+				<pluginRepository>
+					<id>spring-snapshots</id>
+					<name>Spring Snapshots</name>
+					<url>https://repo.spring.io/libs-snapshot-local</url>
+					<snapshots>
+						<enabled>true</enabled>
+					</snapshots>
+				</pluginRepository>
+				<pluginRepository>
+					<id>spring-milestones</id>
+					<name>Spring Milestones</name>
+					<url>https://repo.spring.io/libs-milestone-local</url>
+					<snapshots>
+						<enabled>false</enabled>
+					</snapshots>
+				</pluginRepository>
+			</pluginRepositories>
+		</profile>
+		<profile>
+			<id>milestone</id>
+			<distributionManagement>
+				<repository>
+					<id>repo.spring.io</id>
+					<name>Spring Milestone Repository</name>
+					<url>https://repo.spring.io/libs-milestone-local</url>
+				</repository>
+			</distributionManagement>
+		</profile>
+		<profile>
+			<id>bintray</id>
+			<distributionManagement>
+				<repository>
+					<id>bintray</id>
+					<name>Jcenter Repository</name>
+					<url>
+						https://api.bintray.com/maven/spring/jars/org.springframework.cloud:${bintray.package}
+					</url>
+				</repository>
+			</distributionManagement>
+		</profile>
+		<profile>
+			<id>central</id>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-gpg-plugin</artifactId>
+						<executions>
+							<execution>
+								<id>sign-artifacts</id>
+								<phase>verify</phase>
+								<goals>
+									<goal>sign</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+			<!--
+			<distributionManagement>
+				<snapshotRepository>
+					<id>sonatype-nexus-snapshots</id>
+					<name>Sonatype Nexus Snapshots</name>
+					<url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+				</snapshotRepository>
+				<repository>
+					<id>sonatype-nexus-staging</id>
+					<name>Nexus Release Repository</name>
+					<url>https://oss.sonatype.org/service/local/staging/deploy/maven2/
+					</url>
+				</repository>
+			</distributionManagement>
+			-->
+		</profile>
+	</profiles>
+</project>

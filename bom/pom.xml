@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		 xmlns="http://maven.apache.org/POM/4.0.0"
+		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<artifactId>spring-cloud-stream-starter-build</artifactId>
+	<packaging>pom</packaging>
+	<name>spring-cloud-stream-release-build</name>
+	<description>Spring Cloud Stream Release Build</description>
+	<version>4.0.0-SNAPSHOT</version>
+	<parent>
+		<groupId>org.springframework.cloud</groupId>
+		<artifactId>spring-cloud-build</artifactId>
+		<version>4.0.0-SNAPSHOT</version>
+		<relativePath/>
+	</parent>
+
+	<scm>
+		<url>https://github.com/spring-cloud/spring-cloud-stream-starters</url>
+		<connection>
+			scm:git:git://github.com/spring-cloud/spring-cloud-stream-starters.git
+		</connection>
+		<developerConnection>
+			scm:git:ssh://git@github.com/spring-cloud/spring-cloud-stream-starters.git
+		</developerConnection>
+		<tag>HEAD</tag>
+	</scm>
+
+	<properties>
+		<maven-checkstyle-plugin.failsOnError>true</maven-checkstyle-plugin.failsOnError>
+		<maven-checkstyle-plugin.failsOnViolation>true
+		</maven-checkstyle-plugin.failsOnViolation>
+		<maven-checkstyle-plugin.includeTestSourceDirectory>true
+		</maven-checkstyle-plugin.includeTestSourceDirectory>
+	</properties>
+
+	<modules>
+		<module>spring-cloud-stream-dependencies</module>
+		<module>spring-cloud-starter-parent</module>
+	</modules>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-enforcer-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>enforce-rules</id>
+						<goals>
+							<goal>enforce</goal>
+						</goals>
+						<configuration>
+							<rules>
+								<bannedDependencies>
+									<excludes>
+										<exclude>commons-logging:*:*</exclude>
+									</excludes>
+									<searchTransitive>true</searchTransitive>
+								</bannedDependencies>
+								<!--dependencyConvergence / -->
+							</rules>
+							<fail>true</fail>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-checkstyle-plugin</artifactId>
+			</plugin>
+			<plugin>
+				<groupId>io.spring.javaformat</groupId>
+				<artifactId>spring-javaformat-maven-plugin</artifactId>
+			</plugin>
+		</plugins>
+	</build>
+
+	<reporting>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-checkstyle-plugin</artifactId>
+			</plugin>
+		</plugins>
+	</reporting>
+
+	<profiles>
+		<profile>
+			<id>spring</id>
+			<repositories>
+				<repository>
+					<id>spring-snapshots</id>
+					<name>Spring Snapshots</name>
+					<url>https://repo.spring.io/libs-snapshot-local</url>
+					<snapshots>
+						<enabled>true</enabled>
+					</snapshots>
+				</repository>
+				<repository>
+					<id>spring-milestones</id>
+					<name>Spring Milestones</name>
+					<url>https://repo.spring.io/libs-milestone-local</url>
+					<snapshots>
+						<enabled>false</enabled>
+					</snapshots>
+				</repository>
+				<repository>
+					<id>spring-releases</id>
+					<name>Spring Releases</name>
+					<url>https://repo.spring.io/release</url>
+					<snapshots>
+						<enabled>false</enabled>
+					</snapshots>
+				</repository>
+			</repositories>
+			<pluginRepositories>
+				<pluginRepository>
+					<id>spring-snapshots</id>
+					<name>Spring Snapshots</name>
+					<url>https://repo.spring.io/libs-snapshot-local</url>
+					<snapshots>
+						<enabled>true</enabled>
+					</snapshots>
+				</pluginRepository>
+				<pluginRepository>
+					<id>spring-milestones</id>
+					<name>Spring Milestones</name>
+					<url>https://repo.spring.io/libs-milestone-local</url>
+					<snapshots>
+						<enabled>false</enabled>
+					</snapshots>
+				</pluginRepository>
+			</pluginRepositories>
+		</profile>
+	</profiles>
+
+</project>

@@ -1,0 +1,9 @@
+[submodule "spring-cloud-stream-docs/kafka"]
+	path = spring-cloud-stream-docs/kafka
+	url = https://github.com/spring-cloud/spring-cloud-stream-binder-kafka.git
+[submodule "spring-cloud-stream-docs/rabbit"]
+	path = spring-cloud-stream-docs/rabbit
+	url = https://github.com/spring-cloud/spring-cloud-stream-binder-rabbit.git
+[submodule "spring-cloud-stream-docs/core"]
+	path = spring-cloud-stream-docs/core
+	url = https://github.com/spring-cloud/spring-cloud-stream.git
