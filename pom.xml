@@ -30,15 +30,7 @@
 		<maven-checkstyle-plugin.failsOnViolation>true</maven-checkstyle-plugin.failsOnViolation>
 		<maven-checkstyle-plugin.includeTestSourceDirectory>true</maven-checkstyle-plugin.includeTestSourceDirectory>
 	</properties>
-	<modules>
-		<module>spring-cloud-stream</module>
-		<module>spring-cloud-stream-binder-test</module>
 
-		<module>spring-cloud-stream-test-support</module>
-		<module>spring-cloud-stream-test-support-internal</module>
-		<module>spring-cloud-stream-integration-tests</module>
-		<module>docs</module>
-	</modules>
 	<dependencyManagement>
 		<dependencies>
 			<dependency>
@@ -176,9 +168,42 @@
 
 	<profiles>
 		<profile>
+			<id>full</id>
+			<activation>
+				<activeByDefault>true</activeByDefault>
+			</activation>
+			<modules>
+				<module>core</module>
+				<module>binders</module>
+				<module>bom</module>
+			</modules>
+		</profile>
+		<profile>
+			<id>kafka</id>
+			<modules>
+				<module>binders/kafka-binder</module>
+			</modules>
+		</profile>
+		<profile>
+			<id>rabbit</id>
+			<modules>
+				<module>binders/rabbit-binder</module>
+			</modules>
+		</profile>
+		<profile>
+			<id>bom</id>
+			<modules>
+				<module>bom</module>
+			</modules>
+		</profile>
+		<profile>
+			<id>core</id>
+			<modules>
+				<module>core</module>
+			</modules>
+		</profile>
+		<profile>
 			<id>spring</id>
-
-
 		</profile>
 		<profile>
 			<id>coverage</id>
