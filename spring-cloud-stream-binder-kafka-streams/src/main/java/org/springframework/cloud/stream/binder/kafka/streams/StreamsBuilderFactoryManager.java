@@ -96,8 +96,10 @@ public class StreamsBuilderFactoryManager implements SmartLifecycle {
 					// By default, we shut down the client if there is an uncaught exception in the application.
 					// Users can override this by customizing SBFB. See this issue for more details:
 					// https://github.com/spring-cloud/spring-cloud-stream-binder-kafka/issues/1110
-					streamsBuilderFactoryBean.setStreamsUncaughtExceptionHandler(exception ->
-							StreamsUncaughtExceptionHandler.StreamThreadExceptionResponse.SHUTDOWN_CLIENT);
+					if (streamsBuilderFactoryBean.getStreamsUncaughtExceptionHandler() == null) {
+						streamsBuilderFactoryBean.setStreamsUncaughtExceptionHandler(exception ->
+								StreamsUncaughtExceptionHandler.StreamThreadExceptionResponse.SHUTDOWN_CLIENT);
+					}
 					// Starting the stream.
 					final Map<StreamsBuilderFactoryBean, List<ConsumerProperties>> bindingServicePropertiesPerSbfb =
 							this.kafkaStreamsBindingInformationCatalogue.getConsumerPropertiesPerSbfb();
