@@ -44,7 +44,6 @@ import io.micrometer.core.instrument.Timer;
 import io.micrometer.core.instrument.distribution.DistributionStatisticConfig;
 import io.micrometer.core.instrument.distribution.pause.PauseDetector;
 import io.micrometer.core.instrument.internal.DefaultGauge;
-import io.micrometer.core.instrument.internal.DefaultLongTaskTimer;
 import io.micrometer.core.instrument.internal.DefaultMeter;
 import io.micrometer.core.instrument.step.StepCounter;
 import io.micrometer.core.instrument.step.StepDistributionSummary;
@@ -133,10 +132,10 @@ class DefaultDestinationPublishingMeterRegistry extends MeterRegistry
 				this.metricsPublisherConfig.step().toMillis());
 	}
 
-	@Override
-	protected LongTaskTimer newLongTaskTimer(Meter.Id id) {
-		return new DefaultLongTaskTimer(id, this.clock);
-	}
+//	@Override
+//	protected LongTaskTimer newLongTaskTimer(Meter.Id id) {
+//		return new DefaultLongTaskTimer(id, this.clock);
+//	}
 
 	@Override
 	protected TimeUnit getBaseTimeUnit() {
@@ -230,6 +229,12 @@ class DefaultDestinationPublishingMeterRegistry extends MeterRegistry
 		return new Metric<Number>(timer.getId(), timer.takeSnapshot());
 	}
 
+	@Override
+	protected LongTaskTimer newLongTaskTimer(Id id, DistributionStatisticConfig distributionStatisticConfig) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 	/**
 	 *
 	 */
@@ -250,5 +255,4 @@ class DefaultDestinationPublishingMeterRegistry extends MeterRegistry
 		}
 
 	}
-
 }
