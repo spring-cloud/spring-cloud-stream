@@ -26,6 +26,8 @@ These are called binder implementations in the parlance of Spring Cloud Stream.
 Out of the box, Spring Cloud Stream provides binder implementations for Apache Kafka and RabbitMQ.
 While these two binder implementations are based on Message Channels, Spring Cloud Stream also provides another binder implementation for Kafka Streams that does not use message channels, but native Kafka Streams types such as KStream, KTable etc.
 
+Below, you can find more information on how to use these various out-of-the-box binder implementations in your applications.
+
 == Apache Kafka Binder
 
 === Usage
