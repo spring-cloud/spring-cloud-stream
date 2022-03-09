@@ -93,7 +93,7 @@ exposed by the external brokers and input/output arguments in your code. Broker 
 necessary to establish bindings are handled by middleware-specific _Binder_ implementations.
 
 .Spring Cloud Stream Application
-image::{github-raw}/docs/src/main/asciidoc/images/SCSt-with-binder.png[width=800,scaledwidth="75%",align="center"]
+image::{github-raw}/core/docs/src/main/asciidoc/images/SCSt-with-binder.png[width=800,scaledwidth="75%",align="center"]
 
 ==== Fat JAR
 
@@ -130,7 +130,7 @@ Communication between applications follows a publish-subscribe model, where data
 This can be seen in the following figure, which shows a typical deployment for a set of interacting Spring Cloud Stream applications.
 
 .Spring Cloud Stream Publish-Subscribe
-image::{github-raw}/docs/src/main/asciidoc/images/SCSt-sensors.png[width=800,scaledwidth="75%",align="center"]
+image::{github-raw}/core/docs/src/main/asciidoc/images/SCSt-sensors.png[width=800,scaledwidth="75%",align="center"]
 
 Data reported by sensors to an HTTP endpoint is sent to a common destination named `raw-sensor-data`.
 From the destination, it is independently processed by a microservice application that computes time-windowed averages and by another microservice application that ingests the raw data into HDFS (Hadoop Distributed File System).
@@ -155,7 +155,7 @@ Each consumer binding can use the `spring.cloud.stream.bindings.<bindingName>.gr
 For the consumers shown in the following figure, this property would be set as `spring.cloud.stream.bindings.<bindingName>.group=hdfsWrite` or `spring.cloud.stream.bindings.<bindingName>.group=average`.
 
 .Spring Cloud Stream Consumer Groups
-image::{github-raw}/docs/src/main/asciidoc/images/SCSt-groups.png[width=800,scaledwidth="75%",align="center"]
+image::{github-raw}/core/docs/src/main/asciidoc/images/SCSt-groups.png[width=800,scaledwidth="75%",align="center"]
 
 All groups that subscribe to a given destination receive a copy of published data, but only one member of each group receives a given message from that destination.
 By default, when a group is not specified, Spring Cloud Stream assigns the application to an anonymous and independent single-member consumer group that is in a publish-subscribe relationship with all other consumer groups.
@@ -200,7 +200,7 @@ Spring Cloud Stream provides a common abstraction for implementing partitioned p
 Partitioning can thus be used whether the broker itself is naturally partitioned (for example, Kafka) or not (for example, RabbitMQ).
 
 .Spring Cloud Stream Partitioning
-image::{github-raw}/docs/src/main/asciidoc/images/SCSt-partitioning.png[width=800,scaledwidth="75%",align="center"]
+image::{github-raw}/core/docs/src/main/asciidoc/images/SCSt-partitioning.png[width=800,scaledwidth="75%",align="center"]
 
 Partitioning is a critical concept in stateful processing, where it is critical (for either performance or consistency reasons) to ensure that all related data is processed together.
 For example, in the time-windowed average calculation example, it is important that all measurements from any given sensor are processed by the same application instance.
@@ -215,7 +215,7 @@ To understand the programming model, you should be familiar with the following c
 * *Bindings:* Bridge between the external messaging systems and application provided _Producers_ and _Consumers_ of messages (created by the Destination Binders).
 * *Message:* The canonical data structure used by producers and consumers to communicate with Destination Binders (and thus other applications via external messaging systems).
 
-image::{github-raw}/docs/src/main/asciidoc/images/SCSt-overview.png[width=800,scaledwidth="75%",align="center"]
+image::{github-raw}/core/docs/src/main/asciidoc/images/SCSt-overview.png[width=800,scaledwidth="75%",align="center"]
 
 === Destination Binders
 
@@ -1639,7 +1639,7 @@ This section provides information about the main concepts behind the Binder SPI,
 The following image shows the general relationship of producers and consumers:
 
 .Producers and Consumers
-image::{github-raw}/docs/src/main/asciidoc/images/producers-consumers.png[width=800,scaledwidth="75%",align="center"]
+image::{github-raw}/core/docs/src/main/asciidoc/images/producers-consumers.png[width=800,scaledwidth="75%",align="center"]
 
 A producer is any component that sends messages to a binding destination.
 The binding destination can be bound to an external message broker with a `Binder` implementation for that broker.
