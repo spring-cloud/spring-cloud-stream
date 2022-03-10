@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.stream.binder.kafka;
+package org.springframework.cloud.stream.binder.kafka.common;
 
 import java.util.HashMap;
 import java.util.Map;
