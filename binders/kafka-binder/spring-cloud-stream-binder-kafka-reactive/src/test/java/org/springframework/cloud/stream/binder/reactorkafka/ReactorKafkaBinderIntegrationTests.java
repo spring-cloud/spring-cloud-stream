@@ -16,16 +16,16 @@
 
 package org.springframework.cloud.stream.binder.reactorkafka;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import java.util.Map;
 import java.util.function.Function;
 
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
-import reactor.core.publisher.Flux;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.WebApplicationType;
@@ -36,24 +36,24 @@ import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.test.EmbeddedKafkaBroker;
-import org.springframework.kafka.test.rule.EmbeddedKafkaRule;
+import org.springframework.kafka.test.condition.EmbeddedKafkaCondition;
+import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import reactor.core.publisher.Flux;
 
 /**
  * @author Soby Chacko
+ * @author Gary Russell
  */
-public class RecatorKafkaBinderITTests {
+@EmbeddedKafka(topics = "uppercased-words")
+public class ReactorKafkaBinderIntegrationTests {
 
-	@ClassRule
-	public static EmbeddedKafkaRule embeddedKafkaRule = new EmbeddedKafkaRule(1, true, "uppercased-words");
-
-	private static final EmbeddedKafkaBroker embeddedKafka = embeddedKafkaRule.getEmbeddedKafka();
+	private static final EmbeddedKafkaBroker embeddedKafka = EmbeddedKafkaCondition.getBroker();
 
 	private static Consumer<String, String> consumer;
 
-	@BeforeClass
+	@BeforeAll
 	public static void setUp() {
 		Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("group", "false",
 				embeddedKafka);
@@ -64,7 +64,7 @@ public class RecatorKafkaBinderITTests {
 	}
 
 	@Test
-	public void testEndtoEndReactorKafkaBinder() throws Exception {
+	void testEndtoEndReactorKafkaBinder() throws Exception {
 		SpringApplication app = new SpringApplication(ReactiveKafkaApplication.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 

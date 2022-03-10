@@ -4,12 +4,16 @@
             <pattern>%d{ISO8601} %5p %t %c{2}:%L - %m%n</pattern>
         </encoder>
     </appender>
-    <logger name="org.apache.kafka" level="INFO"/>
+    <logger name="org.apache.kafka" level="WARN"/>
     <logger name="reactor.kafka" level="DEBUG"/>
     <logger name="org.springframework.integration.kafka" level="INFO"/>
     <logger name="org.springframework.kafka" level="INFO"/>
     <logger name="org.springframework.cloud.stream" level="INFO" />
     <logger name="org.springframework.integration.channel" level="INFO" />
+	<logger name="kafka.server.ReplicaFetcherThread" level="ERROR"/>
+	<logger name="kafka.server.LogDirFailureChannel" level="FATAL"/>
+	<logger name="kafka.server.BrokerMetadataCheckpoint" level="ERROR"/>
+	<logger name="kafka.utils.CoreUtils$" level="ERROR"/>
     <root level="WARN">
         <appender-ref ref="stdout"/>
     </root>

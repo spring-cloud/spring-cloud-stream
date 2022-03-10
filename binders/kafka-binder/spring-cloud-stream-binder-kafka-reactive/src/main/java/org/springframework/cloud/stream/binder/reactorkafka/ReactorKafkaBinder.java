@@ -30,15 +30,6 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
-import reactor.core.publisher.Sinks;
-import reactor.kafka.receiver.KafkaReceiver;
-import reactor.kafka.receiver.ReceiverOptions;
-import reactor.kafka.sender.KafkaSender;
-import reactor.kafka.sender.SenderOptions;
-import reactor.kafka.sender.SenderRecord;
-import reactor.kafka.sender.SenderResult;
 
 import org.springframework.cloud.stream.binder.AbstractMessageChannelBinder;
 import org.springframework.cloud.stream.binder.BinderSpecificPropertiesProvider;
@@ -52,9 +43,10 @@ import org.springframework.cloud.stream.binder.kafka.properties.KafkaProducerPro
 import org.springframework.cloud.stream.binder.kafka.provisioning.KafkaTopicProvisioner;
 import org.springframework.cloud.stream.provisioning.ConsumerDestination;
 import org.springframework.cloud.stream.provisioning.ProducerDestination;
+import org.springframework.context.Lifecycle;
 import org.springframework.integration.core.MessageProducer;
 import org.springframework.integration.endpoint.MessageProducerSupport;
-import org.springframework.integration.support.MessageBuilder;
+import org.springframework.integration.handler.AbstractMessageHandler;
 import org.springframework.kafka.support.converter.MessagingMessageConverter;
 import org.springframework.kafka.support.converter.RecordMessageConverter;
 import org.springframework.messaging.Message;
@@ -63,6 +55,16 @@ import org.springframework.messaging.MessageHandler;
 import org.springframework.util.Assert;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
+
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+import reactor.core.publisher.Sinks;
+import reactor.kafka.receiver.KafkaReceiver;
+import reactor.kafka.receiver.ReceiverOptions;
+import reactor.kafka.sender.KafkaSender;
+import reactor.kafka.sender.SenderOptions;
+import reactor.kafka.sender.SenderRecord;
+import reactor.kafka.sender.SenderResult;
 
 /**
  * @author Gary Russell
@@ -79,7 +81,7 @@ public class ReactorKafkaBinder
 
 	private final KafkaBinderConfigurationProperties configurationProperties;
 
-	private KafkaExtendedBindingProperties extendedBindingProperties = new KafkaExtendedBindingProperties();
+	private final KafkaExtendedBindingProperties extendedBindingProperties = new KafkaExtendedBindingProperties();
 
 	public ReactorKafkaBinder(KafkaBinderConfigurationProperties configurationProperties,
 			KafkaTopicProvisioner provisioner) {
@@ -102,25 +104,9 @@ public class ReactorKafkaBinder
 //		}
 
 		SenderOptions<Object, Object> opts = SenderOptions.create(configs);
-		KafkaSender<Object, Object> sender = KafkaSender.create(opts);
-		// TODO bean?
+		// TODO bean for converter.
 		RecordMessageConverter converter = new MessagingMessageConverter();
-		// TODO Lifecycle etc
-		return message -> {
-			Object sendResultHeader = message.getHeaders().get("sendResult");
-			Sinks.One<RecordMetadata> sink = Sinks.one();
-			if (sendResultHeader instanceof AtomicReference) {
-				AtomicReference<Mono<RecordMetadata>> result =
-						(AtomicReference<Mono<RecordMetadata>>) sendResultHeader;
-				result.set(sink.asMono());
-			}
-			UUID uuid = UUID.randomUUID();
-			@SuppressWarnings("unchecked")
-			SenderRecord<Object, Object, UUID> sr = SenderRecord.create(
-					(ProducerRecord<Object, Object>) converter.fromMessage(message, destination.getName()), uuid);
-			Flux<SenderResult<UUID>> result = sender.send(Flux.just(sr));
-			result.subscribe(res -> sink.emitValue(res.recordMetadata(), null));
-		};
+		return new ReactorMessageHandler(opts, converter, destination.getName());
 	}
 
 
@@ -137,28 +123,27 @@ public class ReactorKafkaBinder
 //			this.consumerConfigCustomizer.configure(configs, bindingNameHolder.get(), destination);
 //		}
 
+		RecordMessageConverter converter = new MessagingMessageConverter();
 		ReceiverOptions<Object, Object> opts = ReceiverOptions.create(configs)
 			.addAssignListener(parts -> System.out.println("Assigned: " + parts))
 			.subscription(Collections.singletonList(destination.getName()));
 
-		Flux<Message<Object>> flux = KafkaReceiver.create(opts)
-				.receive()
-				// TODO: ReceiverRecord to Message Mapper
-				.map(rec -> {
-					log.info(rec.value().toString());
-					return rec;
-				})
-				.map(record -> MessageBuilder.withPayload(record.value()).build())
-				.map(msg -> {
-					log.info(msg.toString());
-					return msg;
-				});
-
 		return new MessageProducerSupport() {
 
+			private final KafkaReceiver<Object, Object> receiver = KafkaReceiver.create(opts);
+
+			@SuppressWarnings("unchecked")
 			@Override
 			protected void doStart() {
+				Flux<Message<Object>> flux = receiver
+						.receive()
+						.map(record -> (Message<Object>) converter.toMessage(record, null, null, null));
 				subscribeToPublisher(flux);
+			}
+
+			@Override
+			protected void doStop() {
+				// TODO how do we dispose of the Disposable created by subscribeToPublisher?
 			}
 
 		};
@@ -270,4 +255,73 @@ public class ReactorKafkaBinder
 	public Class<? extends BinderSpecificPropertiesProvider> getExtendedPropertiesEntryClass() {
 		return this.extendedBindingProperties.getExtendedPropertiesEntryClass();
 	}
+
+	private static class ReactorMessageHandler extends AbstractMessageHandler implements Lifecycle {
+
+		private final RecordMessageConverter converter;
+
+		private final String topic;
+
+		private final SenderOptions<Object, Object> senderOptions;
+
+		private volatile KafkaSender<Object, Object> sender;
+
+		private volatile boolean running;
+
+		public ReactorMessageHandler(SenderOptions<Object, Object> opts, RecordMessageConverter converter,
+				String topic) {
+
+			this.senderOptions = opts;
+			this.converter = converter;
+			this.topic = topic;
+		}
+
+		@Override
+		protected void handleMessageInternal(Message<?> message) {
+			Object sendResultHeader = message.getHeaders().get("sendResult");
+			Sinks.One<RecordMetadata> sink = Sinks.one();
+			if (sendResultHeader instanceof AtomicReference) {
+				@SuppressWarnings("unchecked")
+				AtomicReference<Mono<RecordMetadata>> result =
+						(AtomicReference<Mono<RecordMetadata>>) sendResultHeader;
+				result.set(sink.asMono());
+			}
+			if (this.sender != null) {
+				UUID uuid = UUID.randomUUID();
+				@SuppressWarnings("unchecked")
+				SenderRecord<Object, Object, UUID> sr = SenderRecord.create(
+						(ProducerRecord<Object, Object>) converter.fromMessage(message, topic), uuid);
+				Flux<SenderResult<UUID>> result = sender.send(Flux.just(sr));
+				result.subscribe(res -> sink.emitValue(res.recordMetadata(), null));
+			}
+			else {
+				sink.emitError(new IllegalStateException("Handler is not running"), null);
+			}
+		}
+
+		@Override
+		public synchronized void start() {
+			if (!this.running) {
+				this.sender = KafkaSender.create(this.senderOptions);
+				this.running = true;
+			}
+		}
+
+		@Override
+		public synchronized void stop() {
+			if (this.running) {
+				KafkaSender<Object, Object> theSender = this.sender;
+				this.sender = null;
+				theSender.close();
+				this.running = false;
+			}
+		}
+
+		@Override
+		public boolean isRunning() {
+			return this.running;
+		}
+
+	}
+
 }
