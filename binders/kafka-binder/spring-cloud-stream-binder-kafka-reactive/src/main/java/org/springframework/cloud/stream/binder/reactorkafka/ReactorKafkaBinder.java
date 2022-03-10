@@ -30,6 +30,15 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+import reactor.core.publisher.Sinks;
+import reactor.kafka.receiver.KafkaReceiver;
+import reactor.kafka.receiver.ReceiverOptions;
+import reactor.kafka.sender.KafkaSender;
+import reactor.kafka.sender.SenderOptions;
+import reactor.kafka.sender.SenderRecord;
+import reactor.kafka.sender.SenderResult;
 
 import org.springframework.cloud.stream.binder.AbstractMessageChannelBinder;
 import org.springframework.cloud.stream.binder.BinderSpecificPropertiesProvider;
@@ -55,16 +64,6 @@ import org.springframework.messaging.MessageHandler;
 import org.springframework.util.Assert;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
-
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
-import reactor.core.publisher.Sinks;
-import reactor.kafka.receiver.KafkaReceiver;
-import reactor.kafka.receiver.ReceiverOptions;
-import reactor.kafka.sender.KafkaSender;
-import reactor.kafka.sender.SenderOptions;
-import reactor.kafka.sender.SenderRecord;
-import reactor.kafka.sender.SenderResult;
 
 /**
  * @author Gary Russell
@@ -263,7 +262,7 @@ public class ReactorKafkaBinder
 
 		private volatile boolean running;
 
-		public ReactorMessageHandler(SenderOptions<Object, Object> opts, RecordMessageConverter converter,
+		ReactorMessageHandler(SenderOptions<Object, Object> opts, RecordMessageConverter converter,
 				String topic) {
 
 			this.senderOptions = opts;
