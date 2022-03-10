@@ -141,11 +141,6 @@ public class ReactorKafkaBinder
 				subscribeToPublisher(flux);
 			}
 
-			@Override
-			protected void doStop() {
-				// TODO how do we dispose of the Disposable created by subscribeToPublisher?
-			}
-
 		};
 	}
 
