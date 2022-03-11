@@ -565,6 +565,13 @@ public Function<Flux<?>, Mono<Void>>consumer() {
 But if you do need to write an explicit `Consumer<Flux<?>>`, remember to subscribe to the incoming Flux.
 
 
+Also, keep in mind that the same rule applies for function composition when mixing reactive and imperative functions. 
+Spring Cloud Function indeed supports composing reactive functions with imperative, however you must be aware of certain limitations. 
+For example, assume you have composed reactive function with imperative consumer.
+The result of such composition is a reactive `Consumer`. However, there is no way to subscribe to such consumer as discussed earlier in this section, 
+so this limitation can only be addressed by either making your consumer reactive and subscribing manually (as discussed earlier), or changing your function to be imperative.
+
+
 ====== Polling Configuration Properties
 
 The following properties are exposed (although deprecated since version 3.2) by Spring Cloud Stream and are prefixed with the `spring.cloud.stream.poller`:
