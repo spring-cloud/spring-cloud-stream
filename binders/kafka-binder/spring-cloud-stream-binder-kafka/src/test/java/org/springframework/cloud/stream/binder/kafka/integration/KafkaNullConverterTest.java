@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2021 the original author or authors.
+ * Copyright 2016-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,12 +20,9 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -36,12 +33,12 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.support.KafkaNull;
-import org.springframework.kafka.test.rule.EmbeddedKafkaRule;
+import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.support.GenericMessage;
 import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -50,14 +47,13 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Gary Russell
  * @author Soby Chacko
  */
-@RunWith(SpringRunner.class)
+@ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE, properties = {
 		"spring.kafka.consumer.auto-offset-reset=earliest",
 		"spring.cloud.stream.function.bindings.inputListen-in-0=kafkaNullInput"})
 @DirtiesContext
+@EmbeddedKafka(bootstrapServersProperty = "spring.kafka.bootstrap-servers")
 public class KafkaNullConverterTest {
-
-	private static final String KAFKA_BROKERS_PROPERTY = "spring.kafka.bootstrap-servers";
 
 	@Autowired
 	private ApplicationContext context;
@@ -65,23 +61,9 @@ public class KafkaNullConverterTest {
 	@Autowired
 	private KafkaNullConverterTestConfig config;
 
-	@ClassRule
-	public static EmbeddedKafkaRule kafkaEmbedded = new EmbeddedKafkaRule(1, true);
-
-	@BeforeClass
-	public static void setup() {
-		System.setProperty(KAFKA_BROKERS_PROPERTY,
-				kafkaEmbedded.getEmbeddedKafka().getBrokersAsString());
-	}
-
-	@AfterClass
-	public static void clean() {
-		System.clearProperty(KAFKA_BROKERS_PROPERTY);
-	}
-
 	@Test
-	@Ignore
-	public void testKafkaNullConverterOutput() throws InterruptedException {
+	@Disabled
+	void testKafkaNullConverterOutput() throws InterruptedException {
 		final StreamBridge streamBridge = context.getBean(StreamBridge.class);
 
 		streamBridge.send("kafkaNullOutput", new GenericMessage<>(KafkaNull.INSTANCE));
@@ -91,7 +73,7 @@ public class KafkaNullConverterTest {
 	}
 
 	@Test
-	public void testKafkaNullConverterInput() throws InterruptedException {
+	void testKafkaNullConverterInput() throws InterruptedException {
 
 		final MessageChannel kafkaNullInput = context.getBean("kafkaNullInput", MessageChannel.class);
 

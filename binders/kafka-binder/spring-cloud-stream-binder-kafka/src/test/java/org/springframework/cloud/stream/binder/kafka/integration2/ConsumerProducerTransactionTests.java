@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2021 the original author or authors.
+ * Copyright 2019-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,12 +23,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
-import kafka.server.KafkaConfig;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationRunner;
@@ -43,12 +39,12 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
 import org.springframework.kafka.listener.AbstractMessageListenerContainer;
 import org.springframework.kafka.listener.DefaultAfterRollbackProcessor;
-import org.springframework.kafka.test.rule.EmbeddedKafkaRule;
+import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
 import org.springframework.kafka.transaction.KafkaAwareTransactionManager;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.util.backoff.FixedBackOff;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -61,7 +57,7 @@ import static org.mockito.Mockito.mock;
  * @since 3.0
  *
  */
-@RunWith(SpringRunner.class)
+@ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE, properties = {
 		"spring.kafka.consumer.properties.isolation.level=read_committed",
 		"spring.kafka.consumer.enable-auto-commit=false",
@@ -81,34 +77,15 @@ import static org.mockito.Mockito.mock;
 		"spring.cloud.stream.kafka.binder.transaction.producer.configuration.retries=99",
 		"spring.cloud.stream.kafka.binder.transaction.producer.configuration.acks=all"})
 @DirtiesContext
+@EmbeddedKafka(topics = "consumer.producer.txOut", controlledShutdown = true, brokerProperties = {"transaction.state.log.replication.factor=1",
+	"transaction.state.log.min.isr=1"}, bootstrapServersProperty = "spring.kafka.bootstrap-servers")
 public class ConsumerProducerTransactionTests {
-
-	private static final String KAFKA_BROKERS_PROPERTY = "spring.cloud.stream.kafka.binder.brokers";
-
-	@ClassRule
-	public static EmbeddedKafkaRule embeddedKafka = new EmbeddedKafkaRule(1, true, "consumer.producer.txOut")
-			.brokerProperty(KafkaConfig.TransactionsTopicReplicationFactorProp(), "1")
-			.brokerProperty(KafkaConfig.TransactionsTopicMinISRProp(), "1");
 
 	@Autowired
 	private Config config;
 
 	@Autowired
 	private ApplicationContext context;
-
-	@BeforeClass
-	public static void setup() {
-		System.setProperty(KAFKA_BROKERS_PROPERTY,
-				embeddedKafka.getEmbeddedKafka().getBrokersAsString());
-		System.setProperty("spring.kafka.bootstrap-servers",
-				embeddedKafka.getEmbeddedKafka().getBrokersAsString());
-	}
-
-	@AfterClass
-	public static void clean() {
-		System.clearProperty(KAFKA_BROKERS_PROPERTY);
-		System.clearProperty("spring.kafka.bootstrap-servers");
-	}
 
 	@Test
 	public void testProducerRunsInConsumerTransaction() throws InterruptedException {
@@ -117,7 +94,7 @@ public class ConsumerProducerTransactionTests {
 	}
 
 	@Test
-	public void externalTM() {
+	void externalTM() {
 		assertThat(this.config.input2Container.getContainerProperties().getTransactionManager())
 				.isSameAs(this.config.tm);
 		final MessageChannel output2 = context.getBean("output2", MessageChannel.class);

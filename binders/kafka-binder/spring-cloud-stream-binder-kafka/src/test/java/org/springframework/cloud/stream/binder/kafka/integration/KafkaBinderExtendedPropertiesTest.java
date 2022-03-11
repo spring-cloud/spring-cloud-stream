@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 the original author or authors.
+ * Copyright 2018-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,11 +25,8 @@ import java.util.function.Function;
 
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.common.TopicPartition;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -45,10 +42,10 @@ import org.springframework.cloud.stream.binder.kafka.properties.KafkaProducerPro
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.kafka.test.rule.EmbeddedKafkaRule;
+import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -56,7 +53,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Soby Chacko
  * @author Gary Russell
  */
-@RunWith(SpringRunner.class)
+@ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE, properties = {
 		"spring.cloud.stream.function.definition=process;processCustom",
 		"spring.cloud.stream.function.bindings.process-in-0=standard-in",
@@ -75,29 +72,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 		"spring.cloud.stream.kafka.default.consumer.ackEachRecord=true",
 		"spring.cloud.stream.kafka.bindings.custom-in.consumer.ackEachRecord=false" })
 @DirtiesContext
+@EmbeddedKafka(bootstrapServersProperty = "spring.kafka.bootstrap-servers")
 public class KafkaBinderExtendedPropertiesTest {
-
-	private static final String KAFKA_BROKERS_PROPERTY = "spring.cloud.stream.kafka.binder.brokers";
-
-	@ClassRule
-	public static EmbeddedKafkaRule kafkaEmbedded = new EmbeddedKafkaRule(1, true);
-
-	@BeforeClass
-	public static void setup() {
-		System.setProperty(KAFKA_BROKERS_PROPERTY,
-				kafkaEmbedded.getEmbeddedKafka().getBrokersAsString());
-	}
-
-	@AfterClass
-	public static void clean() {
-		System.clearProperty(KAFKA_BROKERS_PROPERTY);
-	}
 
 	@Autowired
 	private ConfigurableApplicationContext context;
 
 	@Test
-	public void testKafkaBinderExtendedProperties() throws Exception {
+	void testKafkaBinderExtendedProperties() throws Exception {
 
 		BinderFactory binderFactory = context.getBeanFactory()
 				.getBean(BinderFactory.class);

@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2020 the original author or authors.
+ * Copyright 2020-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,12 +30,10 @@ import org.apache.kafka.clients.producer.ProducerInterceptor;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.common.TopicPartition;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cloud.stream.binder.kafka.config.ConsumerConfigCustomizer;
@@ -43,10 +41,11 @@ import org.springframework.cloud.stream.binder.kafka.config.ProducerConfigCustom
 import org.springframework.context.annotation.Bean;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.kafka.test.rule.EmbeddedKafkaRule;
+import org.springframework.kafka.test.EmbeddedKafkaBroker;
+import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
 import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -55,34 +54,24 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * Based on: https://github.com/spring-projects/spring-kafka/issues/897#issuecomment-466060097
  */
-@RunWith(SpringRunner.class)
+@ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE, properties = {"spring.cloud.function.definition=process",
 		"spring.cloud.stream.bindings.process-in-0.group=KafkaConfigCustomizationTests.group"})
 @DirtiesContext
+@EmbeddedKafka(bootstrapServersProperty = "spring.kafka.bootstrap-servers")
 public class KafkaConfigCustomizationTests {
 
 	private static final String KAFKA_BROKERS_PROPERTY = "spring.cloud.stream.kafka.binder.brokers";
 
-	@ClassRule
-	public static EmbeddedKafkaRule kafkaEmbedded = new EmbeddedKafkaRule(1, true);
-
 	static final CountDownLatch countDownLatch = new CountDownLatch(2);
 
-	@BeforeClass
-	public static void setup() {
-		System.setProperty(KAFKA_BROKERS_PROPERTY,
-				kafkaEmbedded.getEmbeddedKafka().getBrokersAsString());
-	}
-
-	@AfterClass
-	public static void clean() {
-		System.clearProperty(KAFKA_BROKERS_PROPERTY);
-	}
+	@Autowired
+	EmbeddedKafkaBroker embeddedKafkaBroker;
 
 	@Test
-	public void testBothConsumerAndProducerConfigsCanBeCustomized() throws InterruptedException {
+	void testBothConsumerAndProducerConfigsCanBeCustomized() throws InterruptedException {
 		Map<String, Object> producerProps = KafkaTestUtils
-				.producerProps(kafkaEmbedded.getEmbeddedKafka());
+				.producerProps(embeddedKafkaBroker);
 		KafkaTemplate<Integer, String> template = new KafkaTemplate<>(
 				new DefaultKafkaProducerFactory<>(producerProps));
 		template.send("process-in-0", "test-foo");

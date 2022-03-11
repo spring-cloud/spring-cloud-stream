@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2019 the original author or authors.
+ * Copyright 2018-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ import org.apache.kafka.clients.admin.Config;
 import org.apache.kafka.clients.admin.DescribeConfigsResult;
 import org.apache.kafka.common.KafkaFuture;
 import org.apache.kafka.common.config.ConfigResource;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -37,9 +37,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class DisabledKafkaBinderTopicPropertiesUpdateTest extends BaseKafkaBinderTopicPropertiesUpdateTest {
 
 	@Test
-	public void testKafkaBinderShouldNotUpdateTopicConfigurationOnDisabledFeature() throws Exception {
+	void testKafkaBinderShouldNotUpdateTopicConfigurationOnDisabledFeature() throws Exception {
 		Map<String, Object> adminClientConfig = new HashMap<>();
-		adminClientConfig.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaEmbedded.getEmbeddedKafka().getBrokersAsString());
+		adminClientConfig.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, embeddedKafka.getBrokersAsString());
 		AdminClient adminClient = AdminClient.create(adminClientConfig);
 		ConfigResource standardInConfigResource = new ConfigResource(ConfigResource.Type.TOPIC, "standard-in");
 		ConfigResource standardOutConfigResource = new ConfigResource(ConfigResource.Type.TOPIC, "standard-out");
@@ -48,9 +48,9 @@ public class DisabledKafkaBinderTopicPropertiesUpdateTest extends BaseKafkaBinde
 		KafkaFuture<Map<ConfigResource, Config>> kafkaFuture = describeConfigsResult.all();
 		Map<ConfigResource, Config> configResourceConfigMap = kafkaFuture.get(3, TimeUnit.SECONDS);
 		Config standardInTopicConfig = configResourceConfigMap.get(standardInConfigResource);
-		assertThat(standardInTopicConfig.get("retention.ms").value()).isEqualTo("604800000");
+		assertThat(standardInTopicConfig.get("retention.ms").value()).isEqualTo("9001");
 
 		Config standardOutTopicConfig = configResourceConfigMap.get(standardOutConfigResource);
-		assertThat(standardOutTopicConfig.get("retention.ms").value()).isEqualTo("604800000");
+		assertThat(standardOutTopicConfig.get("retention.ms").value()).isEqualTo("9001");
 	}
 }
