@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2018 the original author or authors.
+ * Copyright 2017-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,8 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Properties;
 
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.boot.actuate.context.properties.ConfigurationPropertiesReportEndpoint;
@@ -42,7 +42,7 @@ public class BinderPropertiesTests {
 
 	@SuppressWarnings("unchecked")
 	@Test
-	@Ignore
+	@Disabled
 	public void testSerializationWithNonStringValues() {
 		StaticApplicationContext context = new StaticApplicationContext();
 		DefaultListableBeanFactory bf = (DefaultListableBeanFactory) context

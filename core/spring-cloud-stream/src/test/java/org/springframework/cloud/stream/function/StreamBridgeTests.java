@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2021 the original author or authors.
+ * Copyright 2020-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,8 +27,8 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.boot.WebApplicationType;
@@ -63,7 +63,7 @@ import org.springframework.util.MimeTypeUtils;
 import org.springframework.util.ReflectionUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.fail;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 /**
  *
@@ -73,8 +73,8 @@ import static org.junit.Assert.fail;
  */
 public class StreamBridgeTests {
 
-	@Before
-	public void before() {
+	@BeforeAll
+	public static void before() {
 		System.clearProperty("spring.cloud.function.definition");
 	}
 
@@ -285,16 +285,15 @@ public class StreamBridgeTests {
 		}
 	}
 
-	@Test(expected = NoSuchBeanDefinitionException.class)
+	@Test
 	public void testNoBridgeIfNoSourcePropertyDefined() {
-
-		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration
-				.getCompleteConfiguration())
-						.web(WebApplicationType.NONE).run("--spring.jmx.enabled=false")) {
-
-			context.getBean(StreamBridge.class);
-			fail();
-		}
+		assertThatExceptionOfType(NoSuchBeanDefinitionException.class)
+			.isThrownBy(() -> {
+				ConfigurableApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration
+					.getCompleteConfiguration())
+					.web(WebApplicationType.NONE).run("--spring.jmx.enabled=false");
+				context.getBean(StreamBridge.class);
+			});
 	}
 
 	@Test

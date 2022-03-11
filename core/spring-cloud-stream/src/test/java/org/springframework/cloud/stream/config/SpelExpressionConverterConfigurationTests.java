@@ -20,8 +20,8 @@ import java.util.List;
 
 import javax.annotation.PostConstruct;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
@@ -39,7 +39,7 @@ import org.springframework.expression.PropertyAccessor;
 import org.springframework.integration.expression.ExpressionUtils;
 import org.springframework.integration.json.JsonPropertyAccessor;
 import org.springframework.integration.test.util.TestUtils;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -50,7 +50,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Artem Bilan
  * @author Soby Chacko
  */
-@RunWith(SpringJUnit4ClassRunner.class)
+@ExtendWith(SpringExtension.class)
 @SpringBootTest(classes = SpelExpressionConverterConfigurationTests.Config.class, properties = {
 		"expression: a.b" })
 public class SpelExpressionConverterConfigurationTests {

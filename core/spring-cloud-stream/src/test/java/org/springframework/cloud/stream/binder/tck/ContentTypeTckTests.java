@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2018 the original author or authors.
+ * Copyright 2017-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,8 +22,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -426,7 +426,7 @@ public class ContentTypeTckTests {
 	}
 
 	@Test
-	@Ignore
+	@Disabled
 	public void _toStringDefaultContentTypePropertyUnknownContentType() {
 		ApplicationContext context = new SpringApplicationBuilder(
 				StringToStringConfiguration.class).web(WebApplicationType.NONE).run(
@@ -498,7 +498,7 @@ public class ContentTypeTckTests {
 	}
 
 	@Test
-	@Ignore // TODO fix it. We can recognize MessageHeaders and parse it out of the message properly
+	@Disabled // TODO fix it. We can recognize MessageHeaders and parse it out of the message properly
 	public void testWithMessageHeadersInputParameter() {
 		ApplicationContext context = new SpringApplicationBuilder(
 				MessageHeadersInputConfiguration.class).web(WebApplicationType.NONE)

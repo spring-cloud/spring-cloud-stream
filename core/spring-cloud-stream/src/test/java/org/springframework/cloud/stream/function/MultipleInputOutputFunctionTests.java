@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2019 the original author or authors.
+ * Copyright 2019-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import java.time.Duration;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.UnicastProcessor;
 import reactor.util.function.Tuple2;
@@ -45,7 +45,7 @@ import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.util.MimeType;
 
 import static org.assertj.core.api.Assertions.assertThat;
-
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 /**
  *
@@ -54,76 +54,70 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 public class MultipleInputOutputFunctionTests {
 
-	@Test(expected = BeanCreationException.class)
+	@Test
 	public void testFailureWithNonReactiveFunction() {
-		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+		assertThatExceptionOfType(BeanCreationException.class)
+			.isThrownBy(() -> new SpringApplicationBuilder(
 				TestChannelBinderConfiguration.getCompleteConfiguration(
-						ReactiveFunctionConfiguration.class))
-								.web(WebApplicationType.NONE)
-								.run("--spring.jmx.enabled=false",
-									"--spring.cloud.function.definition=multipleInputNonReactive")) {
-			context.getBean(InputDestination.class);
-		}
+					ReactiveFunctionConfiguration.class))
+				.web(WebApplicationType.NONE)
+				.run("--spring.jmx.enabled=false",
+					"--spring.cloud.function.definition=multipleInputNonReactive"));
 	}
 
-	@Test(expected = BeanCreationException.class)
+	@Test
 	public void testFailureWithReactiveArrayOutput() {
-		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+		assertThatExceptionOfType(BeanCreationException.class)
+			.isThrownBy(() -> new SpringApplicationBuilder(
 				TestChannelBinderConfiguration.getCompleteConfiguration(
-						ReactiveFunctionConfiguration.class))
-								.web(WebApplicationType.NONE)
-								.run("--spring.jmx.enabled=false",
-									"--spring.cloud.function.definition=multiReactiveInputReactiveArrayOutput")) {
-			context.getBean(InputDestination.class);
-		}
+					ReactiveFunctionConfiguration.class))
+				.web(WebApplicationType.NONE)
+				.run("--spring.jmx.enabled=false",
+					"--spring.cloud.function.definition=multiReactiveInputReactiveArrayOutput"));
 	}
 
-	@Test(expected = BeanCreationException.class)
+	@Test
 	public void testFailureWithReactiveArrayOutputNonGeneric() {
-		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+		assertThatExceptionOfType(BeanCreationException.class)
+			.isThrownBy(() -> new SpringApplicationBuilder(
 				TestChannelBinderConfiguration.getCompleteConfiguration(
-						ReactiveFunctionConfiguration.class))
-								.web(WebApplicationType.NONE)
-								.run("--spring.jmx.enabled=false",
-									"--spring.cloud.function.definition=multiReactiveInputReactiveArrayOutputNoGeneric")) {
-			context.getBean(InputDestination.class);
-		}
+					ReactiveFunctionConfiguration.class))
+				.web(WebApplicationType.NONE)
+				.run("--spring.jmx.enabled=false",
+					"--spring.cloud.function.definition=multiReactiveInputReactiveArrayOutputNoGeneric"));
 	}
 
-	@Test(expected = BeanCreationException.class)
+	@Test
 	public void testFailureWithReactiveArrayInput() {
-		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+		assertThatExceptionOfType(BeanCreationException.class)
+			.isThrownBy(() -> new SpringApplicationBuilder(
 				TestChannelBinderConfiguration.getCompleteConfiguration(
-						ReactiveFunctionConfiguration.class))
-								.web(WebApplicationType.NONE)
-								.run("--spring.jmx.enabled=false",
-									"--spring.cloud.function.definition=genericReactiveArrayInput")) {
-			context.getBean(InputDestination.class);
-		}
+					ReactiveFunctionConfiguration.class))
+				.web(WebApplicationType.NONE)
+				.run("--spring.jmx.enabled=false",
+					"--spring.cloud.function.definition=genericReactiveArrayInput"));
 	}
 
-	@Test(expected = BeanCreationException.class)
+	@Test
 	public void testFailureWithReactiveArrayInputNonGeneric() {
-		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+		assertThatExceptionOfType(BeanCreationException.class)
+			.isThrownBy(() -> new SpringApplicationBuilder(
 				TestChannelBinderConfiguration.getCompleteConfiguration(
-						ReactiveFunctionConfiguration.class))
-								.web(WebApplicationType.NONE)
-								.run("--spring.jmx.enabled=false",
-									"--spring.cloud.function.definition=nonGenericReactiveArrayInput")) {
-			context.getBean(InputDestination.class);
-		}
+					ReactiveFunctionConfiguration.class))
+				.web(WebApplicationType.NONE)
+				.run("--spring.jmx.enabled=false",
+					"--spring.cloud.function.definition=nonGenericReactiveArrayInput"));
 	}
 
-	@Test(expected = BeanCreationException.class)
+	@Test
 	public void testFailureWithConsumer() {
-		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+		assertThatExceptionOfType(BeanCreationException.class)
+			.isThrownBy(() -> new SpringApplicationBuilder(
 				TestChannelBinderConfiguration.getCompleteConfiguration(
-						ReactiveFunctionConfiguration.class))
-								.web(WebApplicationType.NONE)
-								.run("--spring.jmx.enabled=false",
-									"--spring.cloud.function.definition=multiInputConsumer")) {
-			context.getBean(InputDestination.class);
-		}
+					ReactiveFunctionConfiguration.class))
+				.web(WebApplicationType.NONE)
+				.run("--spring.jmx.enabled=false",
+					"--spring.cloud.function.definition=multiInputConsumer"));
 	}
 
 	@Test

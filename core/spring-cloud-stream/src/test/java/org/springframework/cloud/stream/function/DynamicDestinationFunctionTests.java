@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2020 the original author or authors.
+ * Copyright 2019-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
 
 package org.springframework.cloud.stream.function;
 
-import org.junit.After;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.cloud.stream.binder.PartitionKeyExtractorStrategy;
@@ -42,14 +42,14 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 public class DynamicDestinationFunctionTests {
 
-	@After
-	public void after() {
+	@AfterAll
+	public static void after() {
 		System.clearProperty("spring.cloud.stream.function.definition");
 		System.clearProperty("spring.cloud.function.definition");
 	}
 
 	@Test
-	@Ignore
+	@Disabled
 	public void testEmptyConfiguration() {
 		TestChannelBinderConfiguration.applicationContextRunner(SampleConfiguration.class)
 				.withPropertyValues(

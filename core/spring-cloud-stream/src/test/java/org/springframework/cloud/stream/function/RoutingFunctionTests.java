@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2019 the original author or authors.
+ * Copyright 2019-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,8 +21,8 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Flux;
 
 import org.springframework.boot.WebApplicationType;
@@ -53,8 +53,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class RoutingFunctionTests {
 
 
-	@Before
-	public void before() {
+	@BeforeAll
+	public static void before() {
 		System.getProperties().remove("spring.cloud.function.routing.enabled");
 		System.getProperties().remove("spring.cloud.stream.function.definition");
 		System.getProperties().remove("spring.cloud.function.definition");
