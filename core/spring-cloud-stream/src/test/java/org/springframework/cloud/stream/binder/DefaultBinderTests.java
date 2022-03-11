@@ -28,7 +28,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class DefaultBinderTests {
 
 	@Test
-	public void testDefaultBinderIsPaused() {
+	void testDefaultBinderIsPaused() {
 		@SuppressWarnings({ "rawtypes" })
 		DefaultBinding<?> binding = new DefaultBinding<>("foo", "bar", "target", (Binding) () -> {
 		});

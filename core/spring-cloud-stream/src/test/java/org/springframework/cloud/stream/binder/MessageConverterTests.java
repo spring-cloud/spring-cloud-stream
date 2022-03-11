@@ -35,7 +35,7 @@ import static org.assertj.core.api.Assertions.fail;
 public class MessageConverterTests {
 
 	@Test
-	public void testHeaderEmbedding() throws Exception {
+	void testHeaderEmbedding() throws Exception {
 		Message<byte[]> message = MessageBuilder.withPayload("Hello".getBytes())
 				.setHeader("foo", "bar").setHeader("baz", "quxx").build();
 		byte[] embedded = EmbeddedHeaderUtils.embedHeaders(new MessageValues(message),
@@ -52,7 +52,7 @@ public class MessageConverterTests {
 	}
 
 	@Test
-	public void testConfigurableHeaders() throws Exception {
+	void testConfigurableHeaders() throws Exception {
 		Message<byte[]> message = MessageBuilder.withPayload("Hello".getBytes())
 				.setHeader("foo", "bar").setHeader("baz", "quxx")
 				.setHeader("contentType", "text/plain").build();
@@ -79,7 +79,7 @@ public class MessageConverterTests {
 	}
 
 	@Test
-	public void testHeaderExtractionWithDirectPayload() throws Exception {
+	void testHeaderExtractionWithDirectPayload() throws Exception {
 		Message<byte[]> message = MessageBuilder.withPayload("Hello".getBytes())
 				.setHeader("foo", "bar").setHeader("baz", "quxx").build();
 		byte[] embedded = EmbeddedHeaderUtils.embedHeaders(new MessageValues(message),
@@ -95,7 +95,7 @@ public class MessageConverterTests {
 	}
 
 	@Test
-	public void testUnicodeHeader() throws Exception {
+	void testUnicodeHeader() throws Exception {
 		Message<byte[]> message = MessageBuilder.withPayload("Hello".getBytes())
 				.setHeader("foo", "bar").setHeader("baz", "ØØØØØØØØ").build();
 		byte[] embedded = EmbeddedHeaderUtils.embedHeaders(new MessageValues(message),
@@ -112,7 +112,7 @@ public class MessageConverterTests {
 	}
 
 	@Test
-	public void testHeaderEmbeddingMissingHeader() throws Exception {
+	void testHeaderEmbeddingMissingHeader() throws Exception {
 		Message<byte[]> message = MessageBuilder.withPayload("Hello".getBytes())
 				.setHeader("foo", "bar").build();
 		byte[] embedded = EmbeddedHeaderUtils.embedHeaders(new MessageValues(message),
@@ -123,7 +123,7 @@ public class MessageConverterTests {
 	}
 
 	@Test
-	public void testBadDecode() throws Exception {
+	void testBadDecode() throws Exception {
 		byte[] bytes = new byte[] { (byte) 0xff, 99 };
 		Message<byte[]> message = new GenericMessage<>(bytes);
 		try {

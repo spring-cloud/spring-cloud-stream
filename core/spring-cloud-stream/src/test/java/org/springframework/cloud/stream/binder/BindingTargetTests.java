@@ -50,7 +50,7 @@ public class BindingTargetTests {
 
 	@SuppressWarnings({"rawtypes", "unchecked"})
 	@Test
-	public void testArbitraryInterfaceChannelsBound() {
+	void testArbitraryInterfaceChannelsBound() {
 		Binder binder = this.binderFactory.getBinder(null, MessageChannel.class);
 		verify(binder).bindConsumer(eq("someQueue.0"), isNull(),
 			Mockito.any(MessageChannel.class), Mockito.any());

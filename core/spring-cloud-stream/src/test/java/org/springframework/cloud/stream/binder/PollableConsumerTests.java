@@ -81,7 +81,7 @@ public class PollableConsumerTests {
 	}
 
 	@Test
-	public void testDefaultMessageSource() {
+	void testDefaultMessageSource() {
 		TestChannelBinder binder = createBinder();
 		MessageConverterConfigurer configurer = this.context
 				.getBean(MessageConverterConfigurer.class);
@@ -103,7 +103,7 @@ public class PollableConsumerTests {
 	}
 
 	@Test
-	public void testSimple() {
+	void testSimple() {
 		TestChannelBinder binder = createBinder();
 		MessageConverterConfigurer configurer = this.context
 				.getBean(MessageConverterConfigurer.class);
@@ -139,7 +139,7 @@ public class PollableConsumerTests {
 	}
 
 	@Test
-	public void testConvertSimple() {
+	void testConvertSimple() {
 		TestChannelBinder binder = createBinder();
 		MessageConverterConfigurer configurer = this.context
 				.getBean(MessageConverterConfigurer.class);
@@ -172,7 +172,7 @@ public class PollableConsumerTests {
 	}
 
 	@Test
-	public void testConvertSimpler() {
+	void testConvertSimpler() {
 		TestChannelBinder binder = createBinder();
 		MessageConverterConfigurer configurer = this.context
 				.getBean(MessageConverterConfigurer.class);
@@ -209,7 +209,7 @@ public class PollableConsumerTests {
 	}
 
 	@Test
-	public void testConvertList() {
+	void testConvertList() {
 		TestChannelBinder binder = createBinder();
 		MessageConverterConfigurer configurer = this.context
 				.getBean(MessageConverterConfigurer.class);
@@ -240,7 +240,7 @@ public class PollableConsumerTests {
 	}
 
 	@Test
-	public void testConvertMap() {
+	void testConvertMap() {
 		TestChannelBinder binder = createBinder();
 		MessageConverterConfigurer configurer = this.context
 				.getBean(MessageConverterConfigurer.class);
@@ -268,7 +268,7 @@ public class PollableConsumerTests {
 	}
 
 	@Test
-	public void testEmbedded() {
+	void testEmbedded() {
 		TestChannelBinder binder = createBinder();
 		MessageConverterConfigurer configurer = this.context
 				.getBean(MessageConverterConfigurer.class);
@@ -313,7 +313,7 @@ public class PollableConsumerTests {
 	}
 
 	@Test
-	public void testErrors() {
+	void testErrors() {
 		TestChannelBinder binder = createBinder();
 		MessageConverterConfigurer configurer = this.context
 				.getBean(MessageConverterConfigurer.class);
@@ -364,7 +364,7 @@ public class PollableConsumerTests {
 	}
 
 	@Test
-	public void testErrorsNoRetry() {
+	void testErrorsNoRetry() {
 		TestChannelBinder binder = createBinder();
 		MessageConverterConfigurer configurer = this.context
 				.getBean(MessageConverterConfigurer.class);
@@ -400,7 +400,7 @@ public class PollableConsumerTests {
 	}
 
 	@Test
-	public void testRequeue() {
+	void testRequeue() {
 		TestChannelBinder binder = createBinder();
 		MessageConverterConfigurer configurer = this.context
 				.getBean(MessageConverterConfigurer.class);
@@ -440,7 +440,7 @@ public class PollableConsumerTests {
 	}
 
 	@Test
-	public void testRequeueWithNoAcknowledgementCallback() {
+	void testRequeueWithNoAcknowledgementCallback() {
 		TestChannelBinder binder = createBinder();
 		MessageConverterConfigurer configurer = this.context
 				.getBean(MessageConverterConfigurer.class);
@@ -473,7 +473,7 @@ public class PollableConsumerTests {
 	}
 
 	@Test
-	public void testRequeueFromErrorFlow() {
+	void testRequeueFromErrorFlow() {
 		TestChannelBinder binder = createBinder();
 		MessageConverterConfigurer configurer = this.context
 				.getBean(MessageConverterConfigurer.class);
@@ -515,7 +515,7 @@ public class PollableConsumerTests {
 
 	@SuppressWarnings("unchecked")
 	@Test
-	public void testAutoStartupOff() {
+	void testAutoStartupOff() {
 		TestChannelBinder binder = createBinder();
 		binder.setMessageSourceDelegate(new LifecycleMessageSource(
 				() -> new GenericMessage<>("{\"foo\":\"bar\"}".getBytes())));
@@ -537,7 +537,7 @@ public class PollableConsumerTests {
 
 	@SuppressWarnings("unchecked")
 	@Test
-	public void testAutoStartupOn() {
+	void testAutoStartupOn() {
 		TestChannelBinder binder = createBinder();
 		binder.setMessageSourceDelegate(new LifecycleMessageSource(
 				() -> new GenericMessage<>("{\"foo\":\"bar\"}".getBytes())));

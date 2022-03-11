@@ -37,7 +37,7 @@ import org.springframework.messaging.Message;
 public class GH1801Test {
 
 	@Test
-	public void test() {
+	void test() {
 		SampleBootApplication.main("--spring.cloud.stream.defaultBinder=integration");
 	}
 

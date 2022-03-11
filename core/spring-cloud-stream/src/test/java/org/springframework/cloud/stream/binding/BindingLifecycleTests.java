@@ -37,7 +37,7 @@ import static org.mockito.Mockito.mock;
 public class BindingLifecycleTests {
 
 	@Test
-	public void testInputBindingLifecycle() {
+	void testInputBindingLifecycle() {
 		Map<String, Bindable> bindables = new HashMap<>();
 
 		Bindable bindableWithTwo = new Bindable() {
@@ -71,7 +71,7 @@ public class BindingLifecycleTests {
 	}
 
 	@Test
-	public void testOutputBindingLifecycle() {
+	void testOutputBindingLifecycle() {
 		Map<String, Bindable> bindables = new HashMap<>();
 
 		Bindable bindableWithTwo = new Bindable() {

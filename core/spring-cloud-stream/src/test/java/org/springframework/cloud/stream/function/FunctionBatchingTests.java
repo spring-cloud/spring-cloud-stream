@@ -44,7 +44,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class FunctionBatchingTests {
 
 	@Test
-	public void testMessageBatchConfiguration() {
+	void testMessageBatchConfiguration() {
 		TestChannelBinderConfiguration.applicationContextRunner(MessageBatchConfiguration.class)
 				.withPropertyValues("spring.jmx.enabled=false",
 						"spring.cloud.stream.function.definition=func",
@@ -72,7 +72,7 @@ public class FunctionBatchingTests {
 	}
 
 	@Test
-	public void testListPayloadConfiguration() {
+	void testListPayloadConfiguration() {
 		TestChannelBinderConfiguration.applicationContextRunner(ListPayloadNotBatchConfiguration.class)
 				.withPropertyValues("spring.jmx.enabled=false",
 						"spring.cloud.stream.function.definition=func")
@@ -96,7 +96,7 @@ public class FunctionBatchingTests {
 	}
 
 	@Test
-	public void testListStringPayloadConfigurationTextPlain() {
+	void testListStringPayloadConfigurationTextPlain() {
 		TestChannelBinderConfiguration.applicationContextRunner(ListStringPayloadConfiguration.class)
 				.withPropertyValues("spring.jmx.enabled=false",
 						"spring.cloud.stream.function.definition=func",
@@ -117,7 +117,7 @@ public class FunctionBatchingTests {
 	}
 
 	@Test
-	public void testListObjectPayloadObjectConfigurationTextPlain() {
+	void testListObjectPayloadObjectConfigurationTextPlain() {
 		TestChannelBinderConfiguration.applicationContextRunner(ListObjectPayloadConfiguration.class)
 				.withPropertyValues("spring.jmx.enabled=false",
 						"spring.cloud.stream.function.definition=func",
@@ -138,7 +138,7 @@ public class FunctionBatchingTests {
 	}
 
 	@Test
-	public void testSimpleBatchConfiguration() {
+	void testSimpleBatchConfiguration() {
 		TestChannelBinderConfiguration.applicationContextRunner(SimpleBatchConfiguration.class)
 				.withPropertyValues(
 						"spring.jmx.enabled=false",
@@ -166,7 +166,7 @@ public class FunctionBatchingTests {
 	}
 
 	@Test
-	public void testNestedBatchConfiguration() {
+	void testNestedBatchConfiguration() {
 		TestChannelBinderConfiguration.applicationContextRunner(NestedBatchConfiguration.class)
 				.withPropertyValues("spring.jmx.enabled=false",
 						"spring.cloud.stream.function.definition=func",

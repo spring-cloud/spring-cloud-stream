@@ -47,14 +47,14 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 public class BindingHandlerAdviseTests {
 
 	@Test
-	public void testFailureWithWrongValue() {
+	void testFailureWithWrongValue() {
 		assertThatExceptionOfType(BeanCreationException.class)
 			.isThrownBy(() -> new SpringApplicationBuilder(SampleConfiguration.class).web(WebApplicationType.NONE).run("--props.value=-1",
 				"--spring.jmx.enabled=false"));
 	}
 
 	@Test
-	public void testValidatedValueValue() {
+	void testValidatedValueValue() {
 		ValidatedProps validatedProps = new SpringApplicationBuilder(SampleConfiguration.class)
 				.web(WebApplicationType.NONE).run("--props.value=2", "--spring.jmx.enabled=false")
 				.getBean(ValidatedProps.class);
@@ -62,14 +62,14 @@ public class BindingHandlerAdviseTests {
 	}
 
 	@Test
-	public void nonValidatedConfigProperties() {
+	void nonValidatedConfigProperties() {
 		new SpringApplicationBuilder(NonValidatedConfiguration.class).web(WebApplicationType.NONE)
 				.run("--spring.jmx.enabled=false");
 		// simply should not fail
 	}
 
 	@Test
-	public void validatedConfigProperties() {
+	void validatedConfigProperties() {
 		assertThatExceptionOfType(ConfigurationPropertiesBindException.class)
 			.isThrownBy(() -> new SpringApplicationBuilder(ValidatedConfiguration.class).web(WebApplicationType.NONE)
 				.run("--spring.jmx.enabled=false"));

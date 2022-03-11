@@ -62,7 +62,7 @@ public class RoutingFunctionTests {
 	}
 
 	@Test
-	public void testRoutingViaExplicitEnablingAndDefinitionHeader() {
+	void testRoutingViaExplicitEnablingAndDefinitionHeader() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 				TestChannelBinderConfiguration.getCompleteConfiguration(
 						RoutingFunctionConfiguration.class))
@@ -87,7 +87,7 @@ public class RoutingFunctionTests {
 	}
 
 	@Test
-	public void testRoutingViaExplicitEnablingAndRoutingExpressionProperty() {
+	void testRoutingViaExplicitEnablingAndRoutingExpressionProperty() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 				TestChannelBinderConfiguration.getCompleteConfiguration(
 						RoutingFunctionConfiguration.class))
@@ -112,7 +112,7 @@ public class RoutingFunctionTests {
 	}
 
 	@Test
-	public void testRoutingViaExplicitEnablingAndRoutingExpressionHeader() {
+	void testRoutingViaExplicitEnablingAndRoutingExpressionHeader() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 				TestChannelBinderConfiguration.getCompleteConfiguration(
 						RoutingFunctionConfiguration.class))
@@ -137,7 +137,7 @@ public class RoutingFunctionTests {
 	}
 
 	@Test
-	public void testRoutingViaExplicitDefinitionAndDefinitionHeader() {
+	void testRoutingViaExplicitDefinitionAndDefinitionHeader() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 				TestChannelBinderConfiguration.getCompleteConfiguration(
 						RoutingFunctionConfiguration.class))
@@ -162,7 +162,7 @@ public class RoutingFunctionTests {
 	}
 
 	@Test
-	public void testDefaultRoutingFunctionBindingFlux() {
+	void testDefaultRoutingFunctionBindingFlux() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 				TestChannelBinderConfiguration.getCompleteConfiguration(
 						RoutingFunctionConfiguration.class))
@@ -188,7 +188,7 @@ public class RoutingFunctionTests {
 
 
 	@Test
-	public void testPojoFunction() {
+	void testPojoFunction() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 				TestChannelBinderConfiguration.getCompleteConfiguration(
 						RoutingFunctionConfiguration.class))
@@ -213,7 +213,7 @@ public class RoutingFunctionTests {
 	}
 
 	@Test
-	public void testExplicitRoutingFunctionBindingWithCompositionAndRoutingEnabledExplicitly() {
+	void testExplicitRoutingFunctionBindingWithCompositionAndRoutingEnabledExplicitly() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 				TestChannelBinderConfiguration.getCompleteConfiguration(
 						RoutingFunctionConfiguration.class))
@@ -236,7 +236,7 @@ public class RoutingFunctionTests {
 	}
 
 	@Test
-	public void testExplicitRoutingFunctionBindingWithCompositionAndRoutingEnabledImplicitly() {
+	void testExplicitRoutingFunctionBindingWithCompositionAndRoutingEnabledImplicitly() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 				TestChannelBinderConfiguration.getCompleteConfiguration(
 						RoutingFunctionConfiguration.class))
@@ -258,7 +258,7 @@ public class RoutingFunctionTests {
 	}
 
 	@Test
-	public void testExplicitRoutingFunctionBindingWithCompositionAndRoutingEnabledExplicitlyAndMoreComposition() {
+	void testExplicitRoutingFunctionBindingWithCompositionAndRoutingEnabledExplicitlyAndMoreComposition() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 				TestChannelBinderConfiguration.getCompleteConfiguration(
 						RoutingFunctionConfiguration.class))
@@ -282,7 +282,7 @@ public class RoutingFunctionTests {
 	}
 
 	@Test
-	public void testExplicitRoutingFunctionBindingWithCompositionAndRoutingEnabledImplicitlyAndMoreComposition() {
+	void testExplicitRoutingFunctionBindingWithCompositionAndRoutingEnabledImplicitlyAndMoreComposition() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 				TestChannelBinderConfiguration.getCompleteConfiguration(
 						RoutingFunctionConfiguration.class))
@@ -305,7 +305,7 @@ public class RoutingFunctionTests {
 
 	@SuppressWarnings("unchecked")
 	@Test
-	public void testRoutingToConsumers() throws Exception {
+	void testRoutingToConsumers() throws Exception {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 				TestChannelBinderConfiguration.getCompleteConfiguration(
 						RoutingConsumerConfiguration.class))

@@ -49,7 +49,7 @@ public class ErrorBindingTests {
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Test
-	public void testErrorChannelNotBoundByDefault() {
+	void testErrorChannelNotBoundByDefault() {
 		ConfigurableApplicationContext applicationContext = SpringApplication.run(
 				TestProcessor.class, "--server.port=0",
 				"--spring.cloud.stream.default-binder=mock",
@@ -67,7 +67,7 @@ public class ErrorBindingTests {
 	}
 
 	@Test
-	public void testConfigurationWithDefaultErrorHandler() {
+	void testConfigurationWithDefaultErrorHandler() {
 		ApplicationContext context = new SpringApplicationBuilder(
 				TestChannelBinderConfiguration.getCompleteConfiguration(
 						ErrorBindingTests.ErrorConfigurationDefault.class))
@@ -86,7 +86,7 @@ public class ErrorBindingTests {
 	}
 
 	@Test
-	public void testConfigurationWithCustomErrorHandler() {
+	void testConfigurationWithCustomErrorHandler() {
 		ApplicationContext context = new SpringApplicationBuilder(
 				TestChannelBinderConfiguration.getCompleteConfiguration(
 						ErrorBindingTests.ErrorConfigurationWithCustomErrorHandler.class))

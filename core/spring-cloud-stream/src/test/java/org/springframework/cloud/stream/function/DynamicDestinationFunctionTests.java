@@ -50,7 +50,7 @@ public class DynamicDestinationFunctionTests {
 
 	@Test
 	@Disabled
-	public void testEmptyConfiguration() {
+	void testEmptyConfiguration() {
 		TestChannelBinderConfiguration.applicationContextRunner(SampleConfiguration.class)
 				.withPropertyValues(
 						"spring.jmx.enabled=false",

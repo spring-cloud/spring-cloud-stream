@@ -45,7 +45,7 @@ public class BinderErrorChannelTests {
 	};
 
 	@Test
-	public void testExceptionIsThrownWhenNoSubscribers() {
+	void testExceptionIsThrownWhenNoSubscribers() {
 		BinderErrorChannel channel = new BinderErrorChannel();
 		Assertions.assertThrows(MessageDeliveryException.class, () -> {
 			channel.send(new GenericMessage<String>("hello"));
@@ -53,7 +53,7 @@ public class BinderErrorChannelTests {
 	}
 
 	@Test
-	public void testSubscribeUnsubscribe() {
+	void testSubscribeUnsubscribe() {
 		BinderErrorChannel channel = new BinderErrorChannel();
 		DirectFieldAccessor fieldAccessor = new DirectFieldAccessor(channel);
 		AbstractDispatcher dispatcher = (AbstractDispatcher) fieldAccessor

@@ -42,7 +42,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class BindingServiceConfigurationTests {
 
 	@Test
-	public void testErroChannelDistributesMessagesInCaseOfException() {
+	void testErroChannelDistributesMessagesInCaseOfException() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 				TestChannelBinderConfiguration
 				.getCompleteConfiguration(EmptyConfiguration.class))
@@ -68,7 +68,7 @@ public class BindingServiceConfigurationTests {
 	}
 
 	@Test
-	public void valdateImportedConfiguartionHandlerPostProcessing() {
+	void valdateImportedConfiguartionHandlerPostProcessing() {
 		ApplicationContext context = new SpringApplicationBuilder(
 				TestChannelBinderConfiguration
 						.getCompleteConfiguration(RootConfiguration.class))

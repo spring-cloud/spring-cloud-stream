@@ -41,7 +41,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class ErrorHandlingTests {
 
 	@Test
-	public void testGlobalErrorWithMessage() {
+	void testGlobalErrorWithMessage() {
 		ApplicationContext context = new SpringApplicationBuilder(GlobalErrorHandlerWithErrorMessageConfig.class)
 				.web(WebApplicationType.NONE).run("--spring.jmx.enabled=false");
 		InputDestination source = context.getBean(InputDestination.class);
@@ -52,7 +52,7 @@ public class ErrorHandlingTests {
 	}
 
 	@Test
-	public void testGlobalErrorWithThrowable() {
+	void testGlobalErrorWithThrowable() {
 		ApplicationContext context = new SpringApplicationBuilder(GlobalErrorHandlerWithThrowableConfig.class)
 				.web(WebApplicationType.NONE).run("--spring.jmx.enabled=false");
 		InputDestination source = context.getBean(InputDestination.class);

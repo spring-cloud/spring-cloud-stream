@@ -45,7 +45,7 @@ public class RetryTemplateTests {
 
 	@SuppressWarnings("rawtypes")
 	@Test
-	public void testSingleCustomRetryTemplate() throws Exception {
+	void testSingleCustomRetryTemplate() throws Exception {
 		ApplicationContext context = new SpringApplicationBuilder(
 				SingleCustomRetryTemplateConfiguration.class).web(WebApplicationType.NONE)
 						.run("--spring.jmx.enabled=false");
@@ -60,7 +60,7 @@ public class RetryTemplateTests {
 
 	@SuppressWarnings("rawtypes")
 	@Test
-	public void testSpecificCustomRetryTemplate() throws Exception {
+	void testSpecificCustomRetryTemplate() throws Exception {
 		ApplicationContext context = new SpringApplicationBuilder(
 				SpecificCustomRetryTemplateConfiguration.class)
 						.web(WebApplicationType.NONE).run("--spring.jmx.enabled=false",

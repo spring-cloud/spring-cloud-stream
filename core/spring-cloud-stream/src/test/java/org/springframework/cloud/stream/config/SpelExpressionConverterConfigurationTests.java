@@ -66,7 +66,7 @@ public class SpelExpressionConverterConfigurationTests {
 
 	@Test
 	@SuppressWarnings("unchecked")
-	public void converterCorrectlyInstalled() {
+	void converterCorrectlyInstalled() {
 		Expression expression = this.pojo.getExpression();
 		assertThat(expression.getValue("{\"a\": {\"b\": 5}}").toString()).isEqualTo("5");
 

@@ -37,7 +37,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class PollableSourceTests {
 
 	@Test
-	public void test() {
+	void test() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration
 				.getCompleteConfiguration(PollableAppSampleConfiguration.class))
 						.web(WebApplicationType.NONE).run(

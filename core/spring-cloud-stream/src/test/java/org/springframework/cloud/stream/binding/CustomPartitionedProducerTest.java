@@ -48,7 +48,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class CustomPartitionedProducerTest {
 
 	@Test
-	public void testCustomPartitionedProducer() {
+	void testCustomPartitionedProducer() {
 		ApplicationContext context = SpringApplication.run(
 				CustomPartitionedProducerTest.TestSource.class,
 				"--spring.cloud.stream.output-bindings=output",
@@ -85,7 +85,7 @@ public class CustomPartitionedProducerTest {
 	}
 
 	@Test
-	public void testCustomPartitionedProducerByName() {
+	void testCustomPartitionedProducerByName() {
 		ApplicationContext context = SpringApplication.run(
 				CustomPartitionedProducerTest.TestSource.class,
 				"--spring.cloud.stream.output-bindings=output",
@@ -120,7 +120,7 @@ public class CustomPartitionedProducerTest {
 	}
 
 	@Test
-	public void testCustomPartitionedProducerAsSingletons() {
+	void testCustomPartitionedProducerAsSingletons() {
 		ApplicationContext context = SpringApplication.run(
 				CustomPartitionedProducerTest.TestSource.class,
 				"--spring.cloud.stream.output-bindings=output",

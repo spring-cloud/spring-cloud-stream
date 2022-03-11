@@ -44,7 +44,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class ScenarioTests {
 
 	@Test
-	public void test2106() {
+	void test2106() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration
 				.getCompleteConfiguration(ConsumerConfiguration.class))
 						.web(WebApplicationType.NONE).run(
@@ -82,7 +82,7 @@ public class ScenarioTests {
 	}
 
 	@Test
-	public void testComposingSupplierWuthTypelessMessageFunction() throws Exception {
+	void testComposingSupplierWuthTypelessMessageFunction() throws Exception {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 				TestChannelBinderConfiguration.getCompleteConfiguration(SupplierConfiguration.class))
 						.web(WebApplicationType.NONE)
@@ -97,7 +97,7 @@ public class ScenarioTests {
 	}
 
 	@Test
-	public void test2107() {
+	void test2107() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 				TestChannelBinderConfiguration.getCompleteConfiguration(FunctionReturningNullConfiguration.class))
 						.web(WebApplicationType.NONE)
@@ -114,7 +114,7 @@ public class ScenarioTests {
 	}
 
 	@Test
-	public void test2113() {
+	void test2113() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 				TestChannelBinderConfiguration.getCompleteConfiguration(TestConfiguration.class))
 						.web(WebApplicationType.NONE)

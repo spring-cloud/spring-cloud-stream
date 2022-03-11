@@ -48,7 +48,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class GreenfieldFunctionEnableBindingTests {
 
 	@Test
-	public void testProcessorFromFunction() {
+	void testProcessorFromFunction() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 				TestChannelBinderConfiguration.getCompleteConfiguration(
 						ProcessorFromFunction.class)).web(WebApplicationType.NONE).run(
@@ -64,7 +64,7 @@ public class GreenfieldFunctionEnableBindingTests {
 	}
 
 	@Test
-	public void testSinkFromConsumer() {
+	void testSinkFromConsumer() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 				TestChannelBinderConfiguration
 						.getCompleteConfiguration(SinkFromConsumer.class))

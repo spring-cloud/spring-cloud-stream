@@ -46,7 +46,7 @@ public class InputOutputBindingOrderTest {
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Test
-	public void testInputOutputBindingOrder() {
+	void testInputOutputBindingOrder() {
 		ConfigurableApplicationContext applicationContext = new SpringApplicationBuilder(
 				TestSource.class).web(WebApplicationType.NONE).run(
 						"--spring.cloud.stream.defaultBinder=mock",

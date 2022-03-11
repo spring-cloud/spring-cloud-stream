@@ -62,7 +62,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class ContentTypeTckTests {
 
 	@Test
-	public void stringToMapMessageStreamListener() {
+	void stringToMapMessageStreamListener() {
 		ApplicationContext context = new SpringApplicationBuilder(
 				StringToMapMessageConfiguration.class).web(WebApplicationType.NONE)
 						.run("--spring.jmx.enabled=false");
@@ -75,7 +75,7 @@ public class ContentTypeTckTests {
 	}
 
 	@Test
-	public void pojoToPojo() {
+	void pojoToPojo() {
 		ApplicationContext context = new SpringApplicationBuilder(
 				PojoToPojoConfiguration.class).web(WebApplicationType.NONE)
 						.run("--spring.jmx.enabled=false");
@@ -91,7 +91,7 @@ public class ContentTypeTckTests {
 	}
 
 	@Test
-	public void pojoToString() {
+	void pojoToString() {
 		ApplicationContext context = new SpringApplicationBuilder(
 				PojoToStringConfiguration.class).web(WebApplicationType.NONE)
 						.run("--spring.jmx.enabled=false");
@@ -107,7 +107,7 @@ public class ContentTypeTckTests {
 	}
 
 	@Test
-	public void pojoToStringOutboundContentTypeBinding() {
+	void pojoToStringOutboundContentTypeBinding() {
 		ApplicationContext context = new SpringApplicationBuilder(
 				PojoToStringConfiguration.class).web(WebApplicationType.NONE).run(
 						"--spring.cloud.stream.bindings.echo-out-0.contentType=text/plain",
@@ -124,7 +124,7 @@ public class ContentTypeTckTests {
 	}
 
 	@Test
-	public void pojoToByteArray() {
+	void pojoToByteArray() {
 		ApplicationContext context = new SpringApplicationBuilder(
 				PojoToByteArrayConfiguration.class).web(WebApplicationType.NONE)
 						.run("--spring.jmx.enabled=false");
@@ -138,7 +138,7 @@ public class ContentTypeTckTests {
 	}
 
 	@Test
-	public void pojoToByteArrayOutboundContentTypeBinding() {
+	void pojoToByteArrayOutboundContentTypeBinding() {
 		ApplicationContext context = new SpringApplicationBuilder(
 				PojoToByteArrayConfiguration.class).web(WebApplicationType.NONE).run(
 						"--spring.jmx.enabled=false");
@@ -152,7 +152,7 @@ public class ContentTypeTckTests {
 	}
 
 	@Test
-	public void stringToPojoInboundContentTypeBinding() {
+	void stringToPojoInboundContentTypeBinding() {
 		ApplicationContext context = new SpringApplicationBuilder(
 				StringToPojoConfiguration.class).web(WebApplicationType.NONE).run(
 						"--spring.cloud.stream.bindings.echo-on-0.contentType=text/plain",
@@ -169,7 +169,7 @@ public class ContentTypeTckTests {
 	}
 
 	@Test
-	public void typelessToPojoInboundContentTypeBinding() {
+	void typelessToPojoInboundContentTypeBinding() {
 		ApplicationContext context = new SpringApplicationBuilder(
 				TypelessToPojoConfiguration.class).web(WebApplicationType.NONE).run(
 						"--spring.cloud.stream.bindings.echo-in-0.contentType=text/plain",
@@ -186,7 +186,7 @@ public class ContentTypeTckTests {
 	}
 
 	@Test
-	public void typelessToPojoInboundContentTypeBindingJson() {
+	void typelessToPojoInboundContentTypeBindingJson() {
 		ApplicationContext context = new SpringApplicationBuilder(
 				TypelessToPojoConfiguration.class).web(WebApplicationType.NONE).run(
 						"--spring.cloud.stream.bindings.echo-in-0.contentType=application/json",
@@ -203,7 +203,7 @@ public class ContentTypeTckTests {
 	}
 
 	@Test
-	public void typelessMessageToPojoInboundContentTypeBinding() {
+	void typelessMessageToPojoInboundContentTypeBinding() {
 		ApplicationContext context = new SpringApplicationBuilder(
 				TypelessMessageToPojoConfiguration.class).web(WebApplicationType.NONE)
 						.run("--spring.cloud.stream.bindings.echo-in-0.contentType=text/plain",
@@ -220,7 +220,7 @@ public class ContentTypeTckTests {
 	}
 
 	@Test
-	public void typelessMessageToPojoInboundContentTypeBindingJson() {
+	void typelessMessageToPojoInboundContentTypeBindingJson() {
 		ApplicationContext context = new SpringApplicationBuilder(
 				TypelessMessageToPojoConfiguration.class).web(WebApplicationType.NONE)
 						.run("--spring.cloud.stream.bindings.echo-in-0.contentType=application/json",
@@ -237,7 +237,7 @@ public class ContentTypeTckTests {
 	}
 
 	@Test
-	public void typelessToPojoWithTextHeaderContentTypeBinding() {
+	void typelessToPojoWithTextHeaderContentTypeBinding() {
 		ApplicationContext context = new SpringApplicationBuilder(
 				TypelessToPojoConfiguration.class).web(WebApplicationType.NONE)
 						.run("--spring.jmx.enabled=false");
@@ -255,7 +255,7 @@ public class ContentTypeTckTests {
 	}
 
 	@Test
-	public void typelessToPojoOutboundContentTypeBinding() {
+	void typelessToPojoOutboundContentTypeBinding() {
 		ApplicationContext context = new SpringApplicationBuilder(
 				TypelessToMessageConfiguration.class).web(WebApplicationType.NONE).run(
 						"--spring.cloud.stream.bindings.echo-out-0.contentType=text/plain",
@@ -274,7 +274,7 @@ public class ContentTypeTckTests {
 	}
 
 	@Test
-	public void outboundMessageWithTextContentTypeOnly() {
+	void outboundMessageWithTextContentTypeOnly() {
 		ApplicationContext context = new SpringApplicationBuilder(
 				TypelessToMessageTextOnlyContentTypeConfiguration.class)
 						.web(WebApplicationType.NONE).run("--spring.jmx.enabled=false");
@@ -292,7 +292,7 @@ public class ContentTypeTckTests {
 	}
 
 	@Test
-	public void stringToPojoInboundContentTypeHeader() {
+	void stringToPojoInboundContentTypeHeader() {
 		ApplicationContext context = new SpringApplicationBuilder(
 				StringToPojoConfiguration.class).web(WebApplicationType.NONE)
 						.run("--spring.jmx.enabled=false");
@@ -310,7 +310,7 @@ public class ContentTypeTckTests {
 	}
 
 	@Test
-	public void byteArrayToPojoInboundContentTypeBinding() {
+	void byteArrayToPojoInboundContentTypeBinding() {
 		ApplicationContext context = new SpringApplicationBuilder(
 				ByteArrayToPojoConfiguration.class).web(WebApplicationType.NONE).run(
 						"--spring.cloud.stream.bindings.echo-in-0.contentType=text/plain",
@@ -327,7 +327,7 @@ public class ContentTypeTckTests {
 	}
 
 	@Test
-	public void byteArrayToPojoInboundContentTypeHeader() {
+	void byteArrayToPojoInboundContentTypeHeader() {
 		ApplicationContext context = new SpringApplicationBuilder(
 				StringToPojoConfiguration.class).web(WebApplicationType.NONE)
 						.run("--spring.jmx.enabled=false");
@@ -345,7 +345,7 @@ public class ContentTypeTckTests {
 	}
 
 	@Test
-	public void byteArrayToByteArray() {
+	void byteArrayToByteArray() {
 		ApplicationContext context = new SpringApplicationBuilder(
 				ByteArrayToByteArrayConfiguration.class).web(WebApplicationType.NONE)
 						.run("--spring.jmx.enabled=false");
@@ -359,7 +359,7 @@ public class ContentTypeTckTests {
 	}
 
 	@Test
-	public void byteArrayToByteArrayInboundOutboundContentTypeBinding() {
+	void byteArrayToByteArrayInboundOutboundContentTypeBinding() {
 		ApplicationContext context = new SpringApplicationBuilder(
 				ByteArrayToByteArrayConfiguration.class).web(WebApplicationType.NONE)
 						.run("--spring.cloud.stream.bindings.input.contentType=text/plain",
@@ -375,7 +375,7 @@ public class ContentTypeTckTests {
 	}
 
 	@Test
-	public void pojoMessageToStringMessage() {
+	void pojoMessageToStringMessage() {
 		ApplicationContext context = new SpringApplicationBuilder(
 				PojoMessageToStringMessageConfiguration.class)
 						.web(WebApplicationType.NONE).run("--spring.jmx.enabled=false");
@@ -391,7 +391,7 @@ public class ContentTypeTckTests {
 	}
 
 	@Test
-	public void customMessageConverter_defaultContentTypeBinding() {
+	void customMessageConverter_defaultContentTypeBinding() {
 		ApplicationContext context = new SpringApplicationBuilder(
 				StringToStringConfiguration.class, CustomConverters.class)
 						.web(WebApplicationType.NONE)
@@ -412,7 +412,7 @@ public class ContentTypeTckTests {
 	// Failure tests
 
 	@Test
-	public void _jsonToPojoWrongDefaultContentTypeProperty() {
+	void _jsonToPojoWrongDefaultContentTypeProperty() {
 		ApplicationContext context = new SpringApplicationBuilder(
 				PojoToPojoConfiguration.class).web(WebApplicationType.NONE).run(
 						"--spring.cloud.stream.default.contentType=text/plain",
@@ -427,7 +427,7 @@ public class ContentTypeTckTests {
 
 	@Test
 	@Disabled
-	public void _toStringDefaultContentTypePropertyUnknownContentType() {
+	void _toStringDefaultContentTypePropertyUnknownContentType() {
 		ApplicationContext context = new SpringApplicationBuilder(
 				StringToStringConfiguration.class).web(WebApplicationType.NONE).run(
 						"--spring.cloud.stream.default.contentType=foo/bar",
@@ -442,7 +442,7 @@ public class ContentTypeTckTests {
 	}
 
 	@Test
-	public void toCollectionWithParameterizedType() {
+	void toCollectionWithParameterizedType() {
 		ApplicationContext context = new SpringApplicationBuilder(
 				CollectionWithParameterizedTypes.class).web(WebApplicationType.NONE)
 						.run("--spring.jmx.enabled=false");
@@ -456,7 +456,7 @@ public class ContentTypeTckTests {
 
 	// ======
 	@Test
-	public void testWithMapInputParameter() {
+	void testWithMapInputParameter() {
 		ApplicationContext context = new SpringApplicationBuilder(
 				MapInputConfiguration.class).web(WebApplicationType.NONE)
 						.run("--spring.jmx.enabled=false");
@@ -470,7 +470,7 @@ public class ContentTypeTckTests {
 	}
 
 	@Test
-	public void testWithMapPayloadParameter() {
+	void testWithMapPayloadParameter() {
 		ApplicationContext context = new SpringApplicationBuilder(
 				MapInputConfiguration.class).web(WebApplicationType.NONE)
 						.run("--spring.jmx.enabled=false");
@@ -484,7 +484,7 @@ public class ContentTypeTckTests {
 	}
 
 	@Test
-	public void testWithListInputParameter() {
+	void testWithListInputParameter() {
 		ApplicationContext context = new SpringApplicationBuilder(
 				ListInputConfiguration.class).web(WebApplicationType.NONE)
 						.run("--spring.jmx.enabled=false", "--debug");
@@ -499,7 +499,7 @@ public class ContentTypeTckTests {
 
 	@Test
 	@Disabled // TODO fix it. We can recognize MessageHeaders and parse it out of the message properly
-	public void testWithMessageHeadersInputParameter() {
+	void testWithMessageHeadersInputParameter() {
 		ApplicationContext context = new SpringApplicationBuilder(
 				MessageHeadersInputConfiguration.class).web(WebApplicationType.NONE)
 						.run("--spring.jmx.enabled=false");

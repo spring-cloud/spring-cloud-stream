@@ -43,7 +43,7 @@ public class BinderPropertiesTests {
 	@SuppressWarnings("unchecked")
 	@Test
 	@Disabled
-	public void testSerializationWithNonStringValues() {
+	void testSerializationWithNonStringValues() {
 		StaticApplicationContext context = new StaticApplicationContext();
 		DefaultListableBeanFactory bf = (DefaultListableBeanFactory) context
 				.getBeanFactory();
