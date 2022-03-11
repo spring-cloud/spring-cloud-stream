@@ -71,7 +71,7 @@ public class KafkaBinderMeterRegistryTest {
 	}
 
 	@Test
-	public void testMetricsWithSingleBinder() throws Exception {
+	void testMetricsWithSingleBinder() throws Exception {
 		ConfigurableApplicationContext applicationContext = new SpringApplicationBuilder(SimpleApplication.class)
 				.web(WebApplicationType.NONE)
 				.run("--spring.cloud.stream.bindings.uppercase-in-0.destination=inputTopic",
@@ -99,7 +99,7 @@ public class KafkaBinderMeterRegistryTest {
 	}
 
 	@Test
-	public void testMetricsWithMultiBinders() {
+	void testMetricsWithMultiBinders() {
 		ConfigurableApplicationContext applicationContext = new SpringApplicationBuilder(SimpleApplication.class)
 				.web(WebApplicationType.NONE)
 				.run("--spring.cloud.stream.bindings.uppercase-in-0.destination=inputTopic",

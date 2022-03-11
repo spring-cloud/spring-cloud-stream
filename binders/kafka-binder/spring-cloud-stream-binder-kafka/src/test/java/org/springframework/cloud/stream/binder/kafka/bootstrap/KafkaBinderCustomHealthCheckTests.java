@@ -16,8 +16,8 @@
 
 package org.springframework.cloud.stream.binder.kafka.bootstrap;
 
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.boot.WebApplicationType;
@@ -28,7 +28,9 @@ import org.springframework.cloud.stream.binder.kafka.KafkaBinderHealth;
 import org.springframework.cloud.stream.binder.kafka.KafkaBinderHealthIndicator;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
-import org.springframework.kafka.test.rule.EmbeddedKafkaRule;
+import org.springframework.kafka.test.EmbeddedKafkaBroker;
+import org.springframework.kafka.test.condition.EmbeddedKafkaCondition;
+import org.springframework.kafka.test.context.EmbeddedKafka;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
@@ -36,17 +38,22 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 /**
  * @author Soby Chacko
  */
+@EmbeddedKafka(count = 1, controlledShutdown = true)
 public class KafkaBinderCustomHealthCheckTests {
 
-	@ClassRule
-	public static EmbeddedKafkaRule embeddedKafka = new EmbeddedKafkaRule(1, true, 10);
+	private static EmbeddedKafkaBroker embeddedKafka;
+
+	@BeforeAll
+	public static void setup() {
+		embeddedKafka = EmbeddedKafkaCondition.getBroker();
+	}
 
 	@Test
-	public void testCustomHealthIndicatorIsActivated() {
+	void testCustomHealthIndicatorIsActivated() {
 		ConfigurableApplicationContext applicationContext = new SpringApplicationBuilder(
 				CustomHealthCheckApplication.class).web(WebApplicationType.NONE).run(
 				"--spring.cloud.stream.kafka.binder.brokers="
-						+ embeddedKafka.getEmbeddedKafka().getBrokersAsString());
+						+ embeddedKafka.getBrokersAsString());
 		final KafkaBinderHealth kafkaBinderHealth = applicationContext.getBean(KafkaBinderHealth.class);
 		assertThat(kafkaBinderHealth).isInstanceOf(CustomHealthIndicator.class);
 		assertThatThrownBy(() -> applicationContext.getBean(KafkaBinderHealthIndicator.class)).isInstanceOf(NoSuchBeanDefinitionException.class);

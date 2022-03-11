@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2019 the original author or authors.
+ * Copyright 2017-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,31 +16,36 @@
 
 package org.springframework.cloud.stream.binder.kafka.bootstrap;
 
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.kafka.test.rule.EmbeddedKafkaRule;
+import org.springframework.kafka.test.EmbeddedKafkaBroker;
+import org.springframework.kafka.test.condition.EmbeddedKafkaCondition;
+import org.springframework.kafka.test.context.EmbeddedKafka;
 
 /**
  * @author Marius Bogoevici
  */
+@EmbeddedKafka(count = 1, controlledShutdown = true)
 public class KafkaBinderBootstrapTest {
 
-	@ClassRule
-	public static EmbeddedKafkaRule embeddedKafka = new EmbeddedKafkaRule(1, true, 10);
+	private static EmbeddedKafkaBroker embeddedKafka;
+
+	@BeforeAll
+	public static void setup() {
+		embeddedKafka = EmbeddedKafkaCondition.getBroker();
+	}
 
 	@Test
-	public void testKafkaBinderConfiguration() throws Exception {
+	void testKafkaBinderConfiguration() throws Exception {
 		ConfigurableApplicationContext applicationContext = new SpringApplicationBuilder(
 				SimpleApplication.class).web(WebApplicationType.NONE).run(
 						"--spring.cloud.stream.kafka.binder.brokers="
-								+ embeddedKafka.getEmbeddedKafka().getBrokersAsString(),
-						"--spring.cloud.stream.kafka.binder.zkNodes=" + embeddedKafka
-								.getEmbeddedKafka().getZookeeperConnectionString());
+								+ embeddedKafka.getBrokersAsString());
 		applicationContext.close();
 	}
 

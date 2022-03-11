@@ -61,7 +61,7 @@ public class AdminConfigTests {
 	private KafkaMessageChannelBinder binder;
 
 	@Test
-	public void testConsumerTopicProperties() {
+	void testConsumerTopicProperties() {
 		final KafkaConsumerProperties consumerProperties = this.binder
 				.getExtendedConsumerProperties("secondInput");
 		final KafkaTopicProperties kafkaTopicProperties = consumerProperties.getTopic();
@@ -74,7 +74,7 @@ public class AdminConfigTests {
 	}
 
 	@Test
-	public void testProducerTopicProperties() {
+	void testProducerTopicProperties() {
 		final KafkaProducerProperties producerProperties = this.binder
 				.getExtendedProducerProperties("output");
 		final KafkaTopicProperties kafkaTopicProperties = producerProperties.getTopic();

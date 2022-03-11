@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2018 the original author or authors.
+ * Copyright 2016-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,8 +24,8 @@ import java.util.Map;
 
 import org.apache.kafka.common.serialization.LongDeserializer;
 import org.apache.kafka.common.serialization.LongSerializer;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -38,7 +38,7 @@ import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.util.ReflectionUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -46,7 +46,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * @author Ilayaperumal Gopinathan
  */
-@RunWith(SpringJUnit4ClassRunner.class)
+@ExtendWith(SpringExtension.class)
 @SpringBootTest(classes = { KafkaBinderConfiguration.class })
 @TestPropertySource(locations = "classpath:binder-config-autoconfig.properties")
 public class KafkaBinderAutoConfigurationPropertiesTest {
@@ -59,7 +59,7 @@ public class KafkaBinderAutoConfigurationPropertiesTest {
 
 	@Test
 	@SuppressWarnings("unchecked")
-	public void testKafkaBinderConfigurationWithKafkaProperties() throws Exception {
+	void testKafkaBinderConfigurationWithKafkaProperties() throws Exception {
 		assertThat(this.kafkaMessageChannelBinder).isNotNull();
 		ExtendedProducerProperties<KafkaProducerProperties> producerProperties = new ExtendedProducerProperties<>(
 				new KafkaProducerProperties());
@@ -113,7 +113,7 @@ public class KafkaBinderAutoConfigurationPropertiesTest {
 
 	@Test
 	@SuppressWarnings("unchecked")
-	public void testKafkaHealthIndicatorProperties() {
+	void testKafkaHealthIndicatorProperties() {
 		assertThat(this.kafkaBinderHealthIndicator).isNotNull();
 		Field consumerFactoryField = ReflectionUtils.findField(
 				KafkaBinderHealthIndicator.class, "consumerFactory",

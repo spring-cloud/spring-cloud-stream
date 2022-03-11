@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2019 the original author or authors.
+ * Copyright 2017-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.serialization.Deserializer;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
@@ -73,7 +73,7 @@ import static org.mockito.Mockito.verify;
 public class KafkaBinderUnitTests {
 
 	@Test
-	public void testPropertyOverrides() throws Exception {
+	void testPropertyOverrides() throws Exception {
 		KafkaProperties kafkaProperties = new TestKafkaProperties();
 		KafkaBinderConfigurationProperties binderConfigurationProperties = new KafkaBinderConfigurationProperties(
 				kafkaProperties);
@@ -119,7 +119,7 @@ public class KafkaBinderUnitTests {
 	}
 
 	@Test
-	public void testMergedConsumerProperties() {
+	void testMergedConsumerProperties() {
 		KafkaProperties bootProps = new TestKafkaProperties();
 		bootProps.getConsumer().getProperties()
 				.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "bar");
@@ -136,7 +136,7 @@ public class KafkaBinderUnitTests {
 	}
 
 	@Test
-	public void testMergedProducerProperties() {
+	void testMergedProducerProperties() {
 		KafkaProperties bootProps = new TestKafkaProperties();
 		bootProps.getProducer().getProperties().put(ProducerConfig.RETRIES_CONFIG, "bar");
 		KafkaBinderConfigurationProperties props = new KafkaBinderConfigurationProperties(
@@ -152,30 +152,30 @@ public class KafkaBinderUnitTests {
 	}
 
 	@Test
-	public void testOffsetResetWithGroupManagementEarliest() throws Exception {
+	void testOffsetResetWithGroupManagementEarliest() throws Exception {
 		testOffsetResetWithGroupManagement(true, true, "foo-100",
 				"testOffsetResetWithGroupManagementEarliest");
 	}
 
 	@Test
-	public void testOffsetResetWithGroupManagementLatest() throws Throwable {
+	void testOffsetResetWithGroupManagementLatest() throws Throwable {
 		testOffsetResetWithGroupManagement(false, true, "foo-101",
 				"testOffsetResetWithGroupManagementLatest");
 	}
 
 	@Test
-	public void testOffsetResetWithManualAssignmentEarliest() throws Exception {
+	void testOffsetResetWithManualAssignmentEarliest() throws Exception {
 		testOffsetResetWithGroupManagement(true, false, "foo-102",
 				"testOffsetResetWithManualAssignmentEarliest");
 	}
 
 	@Test
-	public void testOffsetResetWithGroupManualAssignmentLatest() throws Throwable {
+	void testOffsetResetWithGroupManualAssignmentLatest() throws Throwable {
 		testOffsetResetWithGroupManagement(false, false, "foo-103",
 				"testOffsetResetWithGroupManualAssignmentLatest");
 	}
 
-	private void testOffsetResetWithGroupManagement(final boolean earliest,
+	void testOffsetResetWithGroupManagement(final boolean earliest,
 			boolean groupManage, String topic, String group) throws Exception {
 
 		final List<TopicPartition> partitions = new ArrayList<>();

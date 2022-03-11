@@ -47,7 +47,7 @@ public class AutoCreateTopicDisabledTests {
 	private static final EmbeddedKafkaBroker embeddedKafka = EmbeddedKafkaCondition.getBroker();
 
 	@Test
-	public void testAutoCreateTopicDisabledFailsOnConsumerIfTopicNonExistentOnBroker() {
+	void testAutoCreateTopicDisabledFailsOnConsumerIfTopicNonExistentOnBroker() {
 
 		KafkaProperties kafkaProperties = new TestKafkaProperties();
 		kafkaProperties.setBootstrapServers(Collections
@@ -75,7 +75,7 @@ public class AutoCreateTopicDisabledTests {
 	}
 
 	@Test
-	public void testAutoCreateTopicDisabledFailsOnProducerIfTopicNonExistentOnBroker() {
+	void testAutoCreateTopicDisabledFailsOnProducerIfTopicNonExistentOnBroker() {
 
 		KafkaProperties kafkaProperties = new TestKafkaProperties();
 		kafkaProperties.setBootstrapServers(Collections

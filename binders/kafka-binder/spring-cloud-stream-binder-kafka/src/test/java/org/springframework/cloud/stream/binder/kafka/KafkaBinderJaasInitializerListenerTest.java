@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2018 the original author or authors.
+ * Copyright 2016-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,17 +20,18 @@ import javax.security.auth.login.AppConfigurationEntry;
 
 import com.sun.security.auth.login.ConfigFile;
 import org.apache.kafka.common.security.JaasUtils;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.cloud.stream.binder.kafka.config.KafkaBinderConfiguration;
 import org.springframework.core.io.ClassPathResource;
-import org.springframework.kafka.test.rule.EmbeddedKafkaRule;
+import org.springframework.kafka.test.EmbeddedKafkaBroker;
+import org.springframework.kafka.test.condition.EmbeddedKafkaCondition;
+import org.springframework.kafka.test.context.EmbeddedKafka;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -38,28 +39,28 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Marius Bogoevici
  * @author Soby Chacko
  */
+@EmbeddedKafka
 public class KafkaBinderJaasInitializerListenerTest {
 
 	private static final String KAFKA_BROKERS_PROPERTY = "spring.cloud.stream.kafka.binder.brokers";
 
-	@ClassRule
-	public static EmbeddedKafkaRule kafkaEmbedded = new EmbeddedKafkaRule(1, true);
+	private static final EmbeddedKafkaBroker embeddedKafka = EmbeddedKafkaCondition.getBroker();
 
 	private static String JAVA_LOGIN_CONFIG_PARAM_VALUE;
 
 	private final ApplicationContextRunner contextRunner = new ApplicationContextRunner()
 			.withUserConfiguration(KafkaBinderConfiguration.class, KafkaAutoConfiguration.class);
 
-	@BeforeClass
+	@BeforeAll
 	public static void setup() {
 		System.setProperty(KAFKA_BROKERS_PROPERTY,
-				kafkaEmbedded.getEmbeddedKafka().getBrokersAsString());
+				embeddedKafka.getBrokersAsString());
 		//Retrieve the current value for this system property if there is one set.
 		JAVA_LOGIN_CONFIG_PARAM_VALUE = System.getProperty(JaasUtils.JAVA_LOGIN_CONFIG_PARAM);
 		System.clearProperty(JaasUtils.JAVA_LOGIN_CONFIG_PARAM);
 	}
 
-	@AfterClass
+	@AfterAll
 	public static void clean() {
 		System.clearProperty(KAFKA_BROKERS_PROPERTY);
 		//If there was a previous value for this property, then restore it.
@@ -68,13 +69,13 @@ public class KafkaBinderJaasInitializerListenerTest {
 		}
 	}
 
-	@Before
+	@BeforeEach
 	public void before() {
 		System.clearProperty(JaasUtils.JAVA_LOGIN_CONFIG_PARAM);
 	}
 
 	@Test
-	public void testConfigurationParsedCorrectlyWithKafkaClientAndDefaultControlFlag()
+	void testConfigurationParsedCorrectlyWithKafkaClientAndDefaultControlFlag()
 			throws Exception {
 		ConfigFile configFile = new ConfigFile(
 				new ClassPathResource("jaas-sample-kafka-only.conf").getURI());
@@ -103,7 +104,7 @@ public class KafkaBinderJaasInitializerListenerTest {
 	}
 
 	@Test
-	public void testConfigurationParsedCorrectlyWithKafkaClientAndNonDefaultControlFlag()
+	void testConfigurationParsedCorrectlyWithKafkaClientAndNonDefaultControlFlag()
 			throws Exception {
 		ConfigFile configFile = new ConfigFile(
 				new ClassPathResource("jaas-sample-kafka-only.conf").getURI());

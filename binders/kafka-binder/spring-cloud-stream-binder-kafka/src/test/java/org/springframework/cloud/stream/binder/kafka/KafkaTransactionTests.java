@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2019 the original author or authors.
+ * Copyright 2018-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,8 +23,8 @@ import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.TopicPartition;
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.mockito.InOrder;
 
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
@@ -36,7 +36,9 @@ import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.test.util.TestUtils;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
-import org.springframework.kafka.test.rule.EmbeddedKafkaRule;
+import org.springframework.kafka.test.EmbeddedKafkaBroker;
+import org.springframework.kafka.test.condition.EmbeddedKafkaCondition;
+import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.messaging.support.GenericMessage;
 import org.springframework.retry.support.RetryTemplate;
 import org.springframework.util.concurrent.SettableListenableFuture;
@@ -55,19 +57,23 @@ import static org.mockito.Mockito.spy;
  * @since 2.0
  *
  */
+@EmbeddedKafka(count = 1, controlledShutdown = true, brokerProperties = {"transaction.state.log.replication.factor=1",
+	"transaction.state.log.min.isr=1"})
 public class KafkaTransactionTests {
 
-	@ClassRule
-	public static final EmbeddedKafkaRule embeddedKafka = new EmbeddedKafkaRule(1)
-			.brokerProperty("transaction.state.log.replication.factor", "1")
-			.brokerProperty("transaction.state.log.min.isr", "1");
+	private static EmbeddedKafkaBroker embeddedKafka;
+
+	@BeforeAll
+	public static void setup() {
+		embeddedKafka = EmbeddedKafkaCondition.getBroker();
+	}
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Test
-	public void testProducerRunsInTx() {
+	void testProducerRunsInTx() {
 		KafkaProperties kafkaProperties = new TestKafkaProperties();
 		kafkaProperties.setBootstrapServers(Collections
-				.singletonList(embeddedKafka.getEmbeddedKafka().getBrokersAsString()));
+				.singletonList(embeddedKafka.getBrokersAsString()));
 		KafkaBinderConfigurationProperties configurationProperties = new KafkaBinderConfigurationProperties(
 				kafkaProperties);
 		configurationProperties.getTransaction().setTransactionIdPrefix("foo-");

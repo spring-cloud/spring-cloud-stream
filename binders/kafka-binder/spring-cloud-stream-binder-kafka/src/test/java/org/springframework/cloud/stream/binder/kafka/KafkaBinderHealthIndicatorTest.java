@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2021 the original author or authors.
+ * Copyright 2017-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,8 +27,10 @@ import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.KafkaException;
 import org.apache.kafka.common.Node;
 import org.apache.kafka.common.PartitionInfo;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.Timeout;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
@@ -49,6 +51,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Chukwubuikem Ume-Ugwa
  * @author Taras Danylchuk
  */
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class KafkaBinderHealthIndicatorTest {
 
 	private static final String TEST_TOPIC = "test";
@@ -74,7 +77,7 @@ public class KafkaBinderHealthIndicatorTest {
 
 	private final Map<String, KafkaMessageChannelBinder.TopicInformation> topicsInUse = new HashMap<>();
 
-	@Before
+	@BeforeEach
 	public void setup() {
 		MockitoAnnotations.initMocks(this);
 		org.mockito.BDDMockito.given(consumerFactory.createConsumer())
@@ -85,7 +88,7 @@ public class KafkaBinderHealthIndicatorTest {
 	}
 
 	@Test
-	public void kafkaBinderIsUpWithNoConsumers() {
+	void kafkaBinderIsUpWithNoConsumers() {
 		final List<PartitionInfo> partitions = partitions(new Node(0, null, 0));
 		topicsInUse.put(TEST_TOPIC, new KafkaMessageChannelBinder.TopicInformation(
 				"group1-healthIndicator", partitions, false));
@@ -100,7 +103,7 @@ public class KafkaBinderHealthIndicatorTest {
 	}
 
 	@Test
-	public void kafkaBinderIsUp() {
+	void kafkaBinderIsUp() {
 		final List<PartitionInfo> partitions = partitions(new Node(0, null, 0));
 		topicsInUse.put(TEST_TOPIC, new KafkaMessageChannelBinder.TopicInformation(
 				"group1-healthIndicator", partitions, false));
@@ -119,7 +122,7 @@ public class KafkaBinderHealthIndicatorTest {
 	}
 
 	@Test
-	public void kafkaBinderIsDownWhenOneOfConsumersIsNotRunning() {
+	void kafkaBinderIsDownWhenOneOfConsumersIsNotRunning() {
 		final List<PartitionInfo> partitions = partitions(new Node(0, null, 0));
 		topicsInUse.put(TEST_TOPIC, new KafkaMessageChannelBinder.TopicInformation(
 				"group1-healthIndicator", partitions, false));
@@ -138,7 +141,7 @@ public class KafkaBinderHealthIndicatorTest {
 	}
 
 	@Test
-	public void kafkaBinderIsDownWhenOneOfContainersWasStoppedAbnormally() {
+	void kafkaBinderIsDownWhenOneOfContainersWasStoppedAbnormally() {
 		final List<PartitionInfo> partitions = partitions(new Node(0, null, 0));
 		topicsInUse.put(TEST_TOPIC, new KafkaMessageChannelBinder.TopicInformation(
 				"group1-healthIndicator", partitions, false));
@@ -167,7 +170,7 @@ public class KafkaBinderHealthIndicatorTest {
 	}
 
 	@Test
-	public void kafkaBinderIsUpWithRegexTopic() {
+	void kafkaBinderIsUpWithRegexTopic() {
 		topicsInUse.put(REGEX_TOPIC, new KafkaMessageChannelBinder.TopicInformation(
 				"regex-healthIndicator", null, true));
 		Health health = indicator.health();
@@ -179,7 +182,7 @@ public class KafkaBinderHealthIndicatorTest {
 	}
 
 	@Test
-	public void kafkaBinderIsDown() {
+	void kafkaBinderIsDown() {
 		final List<PartitionInfo> partitions = partitions(null);
 		topicsInUse.put(TEST_TOPIC, new KafkaMessageChannelBinder.TopicInformation(
 				"group2-healthIndicator", partitions, false));
@@ -190,7 +193,7 @@ public class KafkaBinderHealthIndicatorTest {
 	}
 
 	@Test
-	public void kafkaBinderIsDownWhenConsiderDownWhenAnyPartitionHasNoLeaderIsTrue() {
+	void kafkaBinderIsDownWhenConsiderDownWhenAnyPartitionHasNoLeaderIsTrue() {
 		final List<PartitionInfo> partitions = partitions(new Node(0, null, 0));
 		partitions.add(new PartitionInfo(TEST_TOPIC, 0, null, null, null));
 		indicator.setConsiderDownWhenAnyPartitionHasNoLeader(true);
@@ -203,7 +206,7 @@ public class KafkaBinderHealthIndicatorTest {
 	}
 
 	@Test
-	public void kafkaBinderIsUpWhenConsiderDownWhenAnyPartitionHasNoLeaderIsFalse() {
+	void kafkaBinderIsUpWhenConsiderDownWhenAnyPartitionHasNoLeaderIsFalse() {
 		Node node = new Node(0, null, 0);
 		final List<PartitionInfo> partitions = partitions(node);
 		partitions.add(new PartitionInfo(TEST_TOPIC, 0, null, null, null));
@@ -216,8 +219,9 @@ public class KafkaBinderHealthIndicatorTest {
 		assertThat(health.getStatus()).isEqualTo(Status.UP);
 	}
 
-	@Test(timeout = 5000)
-	public void kafkaBinderDoesNotAnswer() {
+	@Test
+	@Timeout(5)
+	void kafkaBinderDoesNotAnswer() {
 		final List<PartitionInfo> partitions = partitions(new Node(-1, null, 0));
 		topicsInUse.put(TEST_TOPIC, new KafkaMessageChannelBinder.TopicInformation(
 				"group3-healthIndicator", partitions, false));
@@ -233,7 +237,7 @@ public class KafkaBinderHealthIndicatorTest {
 	}
 
 	@Test
-	public void createsConsumerOnceWhenInvokedMultipleTimes() {
+	void createsConsumerOnceWhenInvokedMultipleTimes() {
 		final List<PartitionInfo> partitions = partitions(new Node(0, null, 0));
 		topicsInUse.put(TEST_TOPIC, new KafkaMessageChannelBinder.TopicInformation(
 				"group4-healthIndicator", partitions, false));
@@ -248,7 +252,7 @@ public class KafkaBinderHealthIndicatorTest {
 	}
 
 	@Test
-	public void consumerCreationFailsFirstTime() {
+	void consumerCreationFailsFirstTime() {
 		final List<PartitionInfo> partitions = partitions(new Node(0, null, 0));
 		topicsInUse.put(TEST_TOPIC, new KafkaMessageChannelBinder.TopicInformation(
 				"foo-healthIndicator", partitions, false));
@@ -267,7 +271,7 @@ public class KafkaBinderHealthIndicatorTest {
 	}
 
 	@Test
-	public void testIfNoTopicsRegisteredByTheBinderProvidesDownStatus() {
+	void testIfNoTopicsRegisteredByTheBinderProvidesDownStatus() {
 		Health health = indicator.health();
 		assertThat(health.getStatus()).isEqualTo(Status.UNKNOWN);
 	}
@@ -277,5 +281,4 @@ public class KafkaBinderHealthIndicatorTest {
 		partitions.add(new PartitionInfo(TEST_TOPIC, 0, leader, null, null));
 		return partitions;
 	}
-
 }

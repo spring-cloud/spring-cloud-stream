@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2021 the original author or authors.
+ * Copyright 2016-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,8 +31,8 @@ import org.apache.kafka.common.KafkaException;
 import org.apache.kafka.common.Node;
 import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -72,7 +72,7 @@ public class KafkaBinderMetricsTest {
 	@Mock
 	private KafkaBinderConfigurationProperties kafkaBinderConfigurationProperties;
 
-	@Before
+	@BeforeEach
 	public void setup() {
 		MockitoAnnotations.openMocks(this);
 		org.mockito.BDDMockito.given(consumerFactory
@@ -88,7 +88,7 @@ public class KafkaBinderMetricsTest {
 	}
 
 	@Test
-	public void shouldIndicateLag() {
+	void shouldIndicateLag() {
 		final Map<TopicPartition, OffsetAndMetadata> committed = new HashMap<>();
 		TopicPartition topicPartition = new TopicPartition(TEST_TOPIC, 0);
 		committed.put(topicPartition, new OffsetAndMetadata(500));
@@ -108,7 +108,7 @@ public class KafkaBinderMetricsTest {
 	}
 
 	@Test
-	public void shouldNotContainAnyMetricsWhenUsingNoopGauge() {
+	void shouldNotContainAnyMetricsWhenUsingNoopGauge() {
 		// Adding NoopGauge for the offset metric.
 		meterRegistry.config().meterFilter(
 				MeterFilter.denyNameStartsWith("spring.cloud.stream.binder.kafka.offset"));
@@ -129,7 +129,7 @@ public class KafkaBinderMetricsTest {
 	}
 
 	@Test
-	public void shouldSumUpPartitionsLags() {
+	void shouldSumUpPartitionsLags() {
 		Map<TopicPartition, Long> endOffsets = new HashMap<>();
 		endOffsets.put(new TopicPartition(TEST_TOPIC, 0), 1000L);
 		endOffsets.put(new TopicPartition(TEST_TOPIC, 1), 1000L);
@@ -158,7 +158,7 @@ public class KafkaBinderMetricsTest {
 	}
 
 	@Test
-	public void shouldIndicateFullLagForNotCommittedGroups() {
+	void shouldIndicateFullLagForNotCommittedGroups() {
 		List<PartitionInfo> partitions = partitions(new Node(0, null, 0));
 		topicsInUse.put(TEST_TOPIC,
 				new TopicInformation("group3-metrics", partitions, false));
@@ -172,7 +172,7 @@ public class KafkaBinderMetricsTest {
 	}
 
 	@Test
-	public void shouldNotCalculateLagForProducerTopics() {
+	void shouldNotCalculateLagForProducerTopics() {
 		List<PartitionInfo> partitions = partitions(new Node(0, null, 0));
 		topicsInUse.put(TEST_TOPIC, new TopicInformation(null, partitions, false));
 		metrics.bindTo(meterRegistry);
@@ -180,7 +180,7 @@ public class KafkaBinderMetricsTest {
 	}
 
 	@Test
-	public void createsConsumerOnceWhenInvokedMultipleTimes() {
+	void createsConsumerOnceWhenInvokedMultipleTimes() {
 		final List<PartitionInfo> partitions = partitions(new Node(0, null, 0));
 		topicsInUse.put(TEST_TOPIC,
 				new TopicInformation("group4-metrics", partitions, false));
@@ -197,7 +197,7 @@ public class KafkaBinderMetricsTest {
 	}
 
 	@Test
-	public void consumerCreationFailsFirstTime() {
+	void consumerCreationFailsFirstTime() {
 		org.mockito.BDDMockito
 				.given(consumerFactory.createConsumer(ArgumentMatchers.any(),
 						ArgumentMatchers.any()))
@@ -219,7 +219,7 @@ public class KafkaBinderMetricsTest {
 	}
 
 	@Test
-	public void createOneConsumerPerGroup() {
+	void createOneConsumerPerGroup() {
 		final List<PartitionInfo> partitions1 = partitions(new Node(0, null, 0));
 		final List<PartitionInfo> partitions2 = partitions(new Node(0, null, 0));
 		topicsInUse.put(TEST_TOPIC,
