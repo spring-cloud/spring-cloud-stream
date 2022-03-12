@@ -41,6 +41,7 @@ import reactor.kafka.sender.SenderOptions;
 import reactor.kafka.sender.SenderRecord;
 import reactor.kafka.sender.SenderResult;
 
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.cloud.stream.binder.AbstractMessageChannelBinder;
 import org.springframework.cloud.stream.binder.BinderSpecificPropertiesProvider;
 import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
@@ -48,6 +49,7 @@ import org.springframework.cloud.stream.binder.ExtendedProducerProperties;
 import org.springframework.cloud.stream.binder.ExtendedPropertiesBinder;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaBinderConfigurationProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaConsumerProperties;
+import org.springframework.cloud.stream.binder.kafka.properties.KafkaConsumerProperties.StandardHeaders;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaExtendedBindingProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaProducerProperties;
 import org.springframework.cloud.stream.binder.kafka.provisioning.KafkaTopicProvisioner;
@@ -57,6 +59,7 @@ import org.springframework.context.Lifecycle;
 import org.springframework.integration.core.MessageProducer;
 import org.springframework.integration.endpoint.MessageProducerSupport;
 import org.springframework.integration.handler.AbstractMessageHandler;
+import org.springframework.kafka.support.DefaultKafkaHeaderMapper;
 import org.springframework.kafka.support.converter.MessagingMessageConverter;
 import org.springframework.kafka.support.converter.RecordMessageConverter;
 import org.springframework.messaging.Message;
@@ -81,7 +84,7 @@ public class ReactorKafkaBinder
 
 	private final KafkaBinderConfigurationProperties configurationProperties;
 
-	private final KafkaExtendedBindingProperties extendedBindingProperties = new KafkaExtendedBindingProperties();
+	private KafkaExtendedBindingProperties extendedBindingProperties = new KafkaExtendedBindingProperties();
 
 	public ReactorKafkaBinder(KafkaBinderConfigurationProperties configurationProperties,
 			KafkaTopicProvisioner provisioner) {
@@ -123,7 +126,7 @@ public class ReactorKafkaBinder
 //			this.consumerConfigCustomizer.configure(configs, bindingNameHolder.get(), destination);
 //		}
 
-		RecordMessageConverter converter = new MessagingMessageConverter();
+		RecordMessageConverter converter = getMessageConverter(properties);
 		ReceiverOptions<Object, Object> opts = ReceiverOptions.create(configs)
 			.addAssignListener(parts -> System.out.println("Assigned: " + parts))
 			.subscription(Collections.singletonList(destination.getName()));
@@ -153,6 +156,39 @@ public class ReactorKafkaBinder
 			}
 
 		};
+	}
+
+	/*
+	 * TODO: Copied (and modified) from Kafka binder - refactor to core
+	 */
+	private RecordMessageConverter getMessageConverter(
+			final ExtendedConsumerProperties<KafkaConsumerProperties> extendedConsumerProperties) {
+
+		RecordMessageConverter messageConverter;
+		if (extendedConsumerProperties.getExtension().getConverterBeanName() == null) {
+			MessagingMessageConverter mmc = new MessagingMessageConverter();
+			StandardHeaders standardHeaders = extendedConsumerProperties.getExtension()
+					.getStandardHeaders();
+			mmc.setGenerateMessageId(StandardHeaders.id.equals(standardHeaders)
+							|| StandardHeaders.both.equals(standardHeaders));
+			mmc.setGenerateTimestamp(
+					StandardHeaders.timestamp.equals(standardHeaders)
+							|| StandardHeaders.both.equals(standardHeaders));
+			mmc.setHeaderMapper(new DefaultKafkaHeaderMapper()); //TODO
+			messageConverter = mmc;
+		}
+		else {
+			try {
+				messageConverter = getApplicationContext().getBean(
+						extendedConsumerProperties.getExtension().getConverterBeanName(),
+						RecordMessageConverter.class);
+			}
+			catch (NoSuchBeanDefinitionException ex) {
+				throw new IllegalStateException(
+						"Converter bean not present in application context", ex);
+			}
+		}
+		return messageConverter;
 	}
 
 	/*
@@ -260,6 +296,12 @@ public class ReactorKafkaBinder
 	@Override
 	public Class<? extends BinderSpecificPropertiesProvider> getExtendedPropertiesEntryClass() {
 		return this.extendedBindingProperties.getExtendedPropertiesEntryClass();
+	}
+
+	public void setExtendedBindingProperties(
+			KafkaExtendedBindingProperties extendedBindingProperties) {
+
+		this.extendedBindingProperties = extendedBindingProperties;
 	}
 
 	private static class ReactorMessageHandler extends AbstractMessageHandler implements Lifecycle {
