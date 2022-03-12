@@ -30,6 +30,7 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
+import org.reactivestreams.Subscription;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.Sinks;
@@ -131,13 +132,24 @@ public class ReactorKafkaBinder
 
 			private final KafkaReceiver<Object, Object> receiver = KafkaReceiver.create(opts);
 
+			private volatile Subscription subscription;
+
 			@SuppressWarnings("unchecked")
 			@Override
 			protected void doStart() {
 				Flux<Message<Object>> flux = receiver
 						.receive()
+						.doOnSubscribe(subs -> this.subscription = subs)
 						.map(record -> (Message<Object>) converter.toMessage(record, null, null, null));
 				subscribeToPublisher(flux);
+			}
+
+			@Override
+			protected synchronized void doStop() {
+				if (this.subscription != null) {
+					this.subscription.cancel();
+					this.subscription = null;
+				}
 			}
 
 		};
