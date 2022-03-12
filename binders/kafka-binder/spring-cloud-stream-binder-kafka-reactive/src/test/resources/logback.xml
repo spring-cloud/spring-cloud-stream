@@ -7,9 +7,9 @@
     <logger name="org.apache.kafka" level="WARN"/>
     <logger name="reactor.kafka" level="DEBUG"/>
     <logger name="org.springframework.integration.kafka" level="INFO"/>
-    <logger name="org.springframework.kafka" level="INFO"/>
+    <logger name="org.springframework.kafka" level="DEBUG"/>
     <logger name="org.springframework.cloud.stream" level="INFO" />
-    <logger name="org.springframework.integration.channel" level="INFO" />
+    <logger name="org.springframework.integration.channel" level="DEBUG" />
 	<logger name="kafka.server.ReplicaFetcherThread" level="ERROR"/>
 	<logger name="kafka.server.LogDirFailureChannel" level="FATAL"/>
 	<logger name="kafka.server.BrokerMetadataCheckpoint" level="ERROR"/>

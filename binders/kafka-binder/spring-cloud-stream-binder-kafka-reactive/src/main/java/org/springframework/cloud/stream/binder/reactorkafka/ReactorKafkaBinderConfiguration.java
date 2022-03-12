@@ -52,9 +52,11 @@ public class ReactorKafkaBinderConfiguration {
 
 	@Bean
 	ReactorKafkaBinder reactorKafkaBinder(KafkaBinderConfigurationProperties configurationProperties,
-			KafkaTopicProvisioner provisioningProvider) {
+			KafkaTopicProvisioner provisioningProvider,
+			KafkaExtendedBindingProperties extendedBindingProperties) {
 
 		ReactorKafkaBinder reactorKafkaBinder = new ReactorKafkaBinder(configurationProperties, provisioningProvider);
+		reactorKafkaBinder.setExtendedBindingProperties(extendedBindingProperties);
 		return reactorKafkaBinder;
 	}
 
