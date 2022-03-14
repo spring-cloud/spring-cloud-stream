@@ -18,6 +18,7 @@ package org.springframework.cloud.stream.function;
 
 import java.lang.reflect.Field;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -26,6 +27,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -104,6 +107,47 @@ public class StreamBridgeTests {
 			assertThat(output.receive(1000, "outputB").getHeaders().containsKey("scst_partition")).isFalse();
 			assertThat(output.receive(1000, "outputA-out-0").getHeaders().containsKey("scst_partition")).isTrue();
 			assertThat(output.receive(1000, "outputB").getHeaders().containsKey("scst_partition")).isFalse();
+		}
+	}
+
+	/*
+	 * This test verifies that when a partition key expression is set, then scst_partition is always set, even in
+	 * concurrent scenarios.
+	 * See https://github.com/spring-cloud/spring-cloud-stream/issues/2299 for more details
+	 */
+	@Test
+	void test_2299_scstPartitionAlwaysSetEvenInConcurrentScenarios() throws Exception {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+				TestChannelBinderConfiguration.getCompleteConfiguration(EmptyConfiguration.class)).web(
+				WebApplicationType.NONE).run("--spring.cloud.stream.source=outputA",
+				"--spring.cloud.stream.bindings.outputA-out-0.producer.partition-count=3",
+				"--spring.cloud.stream.bindings.outputA-out-0.producer.partition-key-expression=headers['partitionKey']",
+				"--spring.jmx.enabled=false")) {
+			StreamBridge streamBridge = context.getBean(StreamBridge.class);
+
+			int threadCount = 10;
+			Set<Thread> threads = IntStream.range(0, threadCount)
+					.mapToObj(i -> (Runnable) () -> IntStream.range(0, 100).forEach(j -> {
+						String value = "M-" + i + "-" + j;
+						streamBridge.send("outputA-out-0",
+								MessageBuilder.withPayload(value).setHeader("partitionKey", value).build());
+					})).map(Thread::new).collect(Collectors.toSet());
+
+			threads.forEach(Thread::start);
+			for (Thread thread : threads) {
+				thread.join();
+			}
+
+			int messagesWithoutScstPartition = 0;
+			OutputDestination output = context.getBean(OutputDestination.class);
+			Message<byte[]> message = output.receive(1000, "outputA-out-0");
+			while (message != null) {
+				if (!message.getHeaders().containsKey("scst_partition")) {
+					messagesWithoutScstPartition++;
+				}
+				message = output.receive(1000, "outputA-out-0");
+			}
+			assertThat(messagesWithoutScstPartition).isEqualTo(0);
 		}
 	}
 
