@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2021 the original author or authors.
+ * Copyright 2017-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,10 +35,9 @@ import org.apache.kafka.streams.kstream.Grouped;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.Materialized;
 import org.apache.kafka.streams.kstream.TimeWindows;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.WebApplicationType;
@@ -52,7 +51,8 @@ import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.test.EmbeddedKafkaBroker;
-import org.springframework.kafka.test.rule.EmbeddedKafkaRule;
+import org.springframework.kafka.test.condition.EmbeddedKafkaCondition;
+import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -62,18 +62,14 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Soby Chacko
  * @author Gary Russell
  */
+@EmbeddedKafka(topics = "counts-1")
 public class KafkaStreamsBinderTombstoneTests {
 
-	@ClassRule
-	public static EmbeddedKafkaRule embeddedKafkaRule = new EmbeddedKafkaRule(1, true,
-			"counts-1");
-
-	private static EmbeddedKafkaBroker embeddedKafka = embeddedKafkaRule
-			.getEmbeddedKafka();
+	private static final EmbeddedKafkaBroker embeddedKafka = EmbeddedKafkaCondition.getBroker();
 
 	private static Consumer<String, String> consumer;
 
-	@BeforeClass
+	@BeforeAll
 	public static void setUp() {
 		Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("group", "false",
 				embeddedKafka);
@@ -84,13 +80,13 @@ public class KafkaStreamsBinderTombstoneTests {
 		embeddedKafka.consumeFromEmbeddedTopics(consumer, "counts-1");
 	}
 
-	@AfterClass
+	@AfterAll
 	public static void tearDown() {
 		consumer.close();
 	}
 
 	@Test
-	public void testSendToTombstone()
+	void testSendToTombstone()
 			throws Exception {
 		SpringApplication app = new SpringApplication(
 				WordCountProcessorApplication.class);

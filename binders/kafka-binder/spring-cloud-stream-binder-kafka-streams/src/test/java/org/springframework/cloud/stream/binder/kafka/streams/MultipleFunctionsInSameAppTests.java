@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2019 the original author or authors.
+ * Copyright 2019-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,10 +30,9 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.kstream.KStream;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.WebApplicationType;
@@ -46,26 +45,24 @@ import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.test.EmbeddedKafkaBroker;
-import org.springframework.kafka.test.rule.EmbeddedKafkaRule;
+import org.springframework.kafka.test.condition.EmbeddedKafkaCondition;
+import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
 import org.springframework.util.Assert;
 import org.springframework.util.ReflectionUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@EmbeddedKafka(topics = {"coffee", "electronics"})
 public class MultipleFunctionsInSameAppTests {
 
-	@ClassRule
-	public static EmbeddedKafkaRule embeddedKafkaRule = new EmbeddedKafkaRule(1, true,
-			"coffee", "electronics");
-
-	private static EmbeddedKafkaBroker embeddedKafka = embeddedKafkaRule.getEmbeddedKafka();
+	private static final EmbeddedKafkaBroker embeddedKafka = EmbeddedKafkaCondition.getBroker();
 
 	private static Consumer<String, String> consumer;
 
 	private static CountDownLatch countDownLatch = new CountDownLatch(2);
 
-	@BeforeClass
+	@BeforeAll
 	public static void setUp() {
 		Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("purchase-groups", "false",
 				embeddedKafka);
@@ -75,14 +72,14 @@ public class MultipleFunctionsInSameAppTests {
 		embeddedKafka.consumeFromEmbeddedTopics(consumer, "coffee", "electronics");
 	}
 
-	@AfterClass
+	@AfterAll
 	public static void tearDown() {
 		consumer.close();
 	}
 
 	@Test
 	@SuppressWarnings("unchecked")
-	public void testMultiFunctionsInSameApp() throws InterruptedException {
+	void testMultiFunctionsInSameApp() throws InterruptedException {
 		SpringApplication app = new SpringApplication(MultipleFunctionsInSameApp.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 
@@ -140,7 +137,7 @@ public class MultipleFunctionsInSameAppTests {
 	}
 
 	@Test
-	public void testMultiFunctionsInSameAppWithMultiBinders() throws Exception {
+	void testMultiFunctionsInSameAppWithMultiBinders() throws Exception {
 		SpringApplication app = new SpringApplication(MultipleFunctionsInSameApp.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 

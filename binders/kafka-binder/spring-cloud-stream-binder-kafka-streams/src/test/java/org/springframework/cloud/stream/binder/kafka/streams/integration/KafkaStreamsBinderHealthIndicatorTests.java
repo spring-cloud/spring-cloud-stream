@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2019 the original author or authors.
+ * Copyright 2019-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,9 +30,8 @@ import org.apache.kafka.streams.errors.StreamsUncaughtExceptionHandler;
 import org.apache.kafka.streams.kstream.KStream;
 import org.assertj.core.util.Lists;
 import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.WebApplicationType;
@@ -50,7 +49,8 @@ import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.SendResult;
 import org.springframework.kafka.test.EmbeddedKafkaBroker;
-import org.springframework.kafka.test.rule.EmbeddedKafkaRule;
+import org.springframework.kafka.test.condition.EmbeddedKafkaCondition;
+import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
 import org.springframework.util.concurrent.ListenableFuture;
 import org.springframework.util.concurrent.ListenableFutureCallback;
@@ -60,22 +60,18 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * @author Arnaud Jardiné
  */
+@EmbeddedKafka(topics = {"out", "out2"})
 public class KafkaStreamsBinderHealthIndicatorTests {
 
-	@ClassRule
-	public static EmbeddedKafkaRule embeddedKafkaRule = new EmbeddedKafkaRule(1, true,
-			"out", "out2");
+	private static final EmbeddedKafkaBroker embeddedKafka = EmbeddedKafkaCondition.getBroker();
 
-	private static EmbeddedKafkaBroker embeddedKafka = embeddedKafkaRule
-			.getEmbeddedKafka();
-
-	@BeforeClass
+	@BeforeAll
 	public static void setUp() {
 		System.setProperty("logging.level.org.apache.kafka", "OFF");
 	}
 
 	@Test
-	public void healthIndicatorUpTest() throws Exception {
+	void healthIndicatorUpTest() throws Exception {
 		try (ConfigurableApplicationContext context = singleStream("ApplicationHealthTest-xyz")) {
 			receive(context,
 					Lists.newArrayList(new ProducerRecord<>("in", "{\"id\":\"123\"}"),
@@ -85,7 +81,7 @@ public class KafkaStreamsBinderHealthIndicatorTests {
 	}
 
 	@Test
-	public void healthIndicatorUpMultipleCallsTest() throws Exception {
+	void healthIndicatorUpMultipleCallsTest() throws Exception {
 		try (ConfigurableApplicationContext context = singleStream("ApplicationHealthTest-xyz")) {
 			int callsToPerform = 5;
 			for (int i = 0; i < callsToPerform; i++) {

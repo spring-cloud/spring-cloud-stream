@@ -1,5 +1,5 @@
 /*
- * Copyright 2021-2021 the original author or authors.
+ * Copyright 2021-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,34 +22,35 @@ import javax.security.auth.login.AppConfigurationEntry;
 
 import org.apache.kafka.common.security.JaasUtils;
 import org.apache.kafka.streams.kstream.KStream;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
-import org.springframework.kafka.test.rule.EmbeddedKafkaRule;
+import org.springframework.kafka.test.EmbeddedKafkaBroker;
+import org.springframework.kafka.test.condition.EmbeddedKafkaCondition;
+import org.springframework.kafka.test.context.EmbeddedKafka;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@EmbeddedKafka
 public class KafkaStreamsBinderJaasInitTests {
 
-	@ClassRule
-	public static EmbeddedKafkaRule embeddedKafka = new EmbeddedKafkaRule(1, true, 10);
+	private static final EmbeddedKafkaBroker embeddedKafka = EmbeddedKafkaCondition.getBroker();
 
 	private static String JAVA_LOGIN_CONFIG_PARAM_VALUE;
 
-	@BeforeClass
+	@BeforeAll
 	public static void beforeAll() {
 		JAVA_LOGIN_CONFIG_PARAM_VALUE = System.getProperty(JaasUtils.JAVA_LOGIN_CONFIG_PARAM);
 		System.clearProperty(JaasUtils.JAVA_LOGIN_CONFIG_PARAM);
 	}
 
-	@AfterClass
+	@AfterAll
 	public static void afterAll() {
 		if (JAVA_LOGIN_CONFIG_PARAM_VALUE != null) {
 			System.setProperty(JaasUtils.JAVA_LOGIN_CONFIG_PARAM, JAVA_LOGIN_CONFIG_PARAM_VALUE);
@@ -57,7 +58,7 @@ public class KafkaStreamsBinderJaasInitTests {
 	}
 
 	@Test
-	public void testKafkaStreamsBinderJaasInitialization() {
+	void testKafkaStreamsBinderJaasInitialization() {
 		ConfigurableApplicationContext applicationContext = new SpringApplicationBuilder(
 				KafkaStreamsBinderJaasInitTestsApplication.class).web(WebApplicationType.NONE).run(
 				"--spring.cloud.function.definition=foo",
@@ -67,7 +68,7 @@ public class KafkaStreamsBinderJaasInitTests {
 				"--spring.cloud.stream.kafka.streams.binder.jaas.options.username=foo",
 				"--spring.cloud.stream.kafka.streams.binder.jaas.options.password=bar",
 				"--spring.cloud.stream.kafka.streams.binder.brokers="
-						+ embeddedKafka.getEmbeddedKafka().getBrokersAsString());
+						+ embeddedKafka.getBrokersAsString());
 		javax.security.auth.login.Configuration configuration = javax.security.auth.login.Configuration
 				.getConfiguration();
 		final AppConfigurationEntry[] kafkaConfiguration = configuration

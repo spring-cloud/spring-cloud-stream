@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2020 the original author or authors.
+ * Copyright 2020-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,8 +26,7 @@ import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.KTable;
 import org.apache.kafka.streams.processor.Processor;
 import org.apache.kafka.streams.processor.ProcessorContext;
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -41,7 +40,8 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.test.EmbeddedKafkaBroker;
-import org.springframework.kafka.test.rule.EmbeddedKafkaRule;
+import org.springframework.kafka.test.condition.EmbeddedKafkaCondition;
+import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
 import org.springframework.retry.RetryPolicy;
 import org.springframework.retry.backoff.FixedBackOffPolicy;
@@ -52,18 +52,16 @@ import org.springframework.util.Assert;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 
+@EmbeddedKafka
 public class KafkaStreamsRetryTests {
 
-	@ClassRule
-	public static EmbeddedKafkaRule embeddedKafkaRule = new EmbeddedKafkaRule(1, true);
-
-	private static final EmbeddedKafkaBroker embeddedKafka = embeddedKafkaRule.getEmbeddedKafka();
+	private static final EmbeddedKafkaBroker embeddedKafka = EmbeddedKafkaCondition.getBroker();
 
 	private final static CountDownLatch LATCH1 = new CountDownLatch(2);
 	private final static CountDownLatch LATCH2 = new CountDownLatch(4);
 
 	@Test
-	public void testRetryTemplatePerBindingOnKStream() throws Exception {
+	void testRetryTemplatePerBindingOnKStream() throws Exception {
 		SpringApplication app = new SpringApplication(RetryTemplatePerConsumerBindingApp.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 
@@ -85,7 +83,7 @@ public class KafkaStreamsRetryTests {
 	}
 
 	@Test
-	public void testRetryTemplateOnTableTypes() throws Exception {
+	void testRetryTemplateOnTableTypes() throws Exception {
 		SpringApplication app = new SpringApplication(RetryTemplatePerConsumerBindingApp.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 
@@ -102,7 +100,7 @@ public class KafkaStreamsRetryTests {
 	}
 
 	@Test
-	public void testRetryTemplateBeanProvidedByTheApp() throws Exception {
+	void testRetryTemplateBeanProvidedByTheApp() throws Exception {
 		SpringApplication app = new SpringApplication(CustomRetryTemplateApp.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 

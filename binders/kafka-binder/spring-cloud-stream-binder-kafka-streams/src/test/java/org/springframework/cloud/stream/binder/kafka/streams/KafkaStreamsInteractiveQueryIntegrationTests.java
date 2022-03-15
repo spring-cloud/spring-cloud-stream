@@ -39,10 +39,9 @@ import org.apache.kafka.streams.state.HostInfo;
 import org.apache.kafka.streams.state.QueryableStoreType;
 import org.apache.kafka.streams.state.QueryableStoreTypes;
 import org.apache.kafka.streams.state.ReadOnlyKeyValueStore;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import org.springframework.boot.SpringApplication;
@@ -59,7 +58,8 @@ import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.serializer.JsonSerde;
 import org.springframework.kafka.test.EmbeddedKafkaBroker;
-import org.springframework.kafka.test.rule.EmbeddedKafkaRule;
+import org.springframework.kafka.test.condition.EmbeddedKafkaCondition;
+import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -71,18 +71,14 @@ import static org.mockito.internal.verification.VerificationModeFactory.times;
  * @author Gary Russell
  * @author Nico Pommerening
  */
+@EmbeddedKafka(topics = "counts-id")
 public class KafkaStreamsInteractiveQueryIntegrationTests {
 
-	@ClassRule
-	public static EmbeddedKafkaRule embeddedKafkaRule = new EmbeddedKafkaRule(1, true,
-			"counts-id");
-
-	private static EmbeddedKafkaBroker embeddedKafka = embeddedKafkaRule
-			.getEmbeddedKafka();
+	private static final EmbeddedKafkaBroker embeddedKafka = EmbeddedKafkaCondition.getBroker();
 
 	private static Consumer<String, String> consumer;
 
-	@BeforeClass
+	@BeforeAll
 	public static void setUp() throws Exception {
 		Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("group-id",
 				"false", embeddedKafka);
@@ -93,13 +89,13 @@ public class KafkaStreamsInteractiveQueryIntegrationTests {
 		embeddedKafka.consumeFromAnEmbeddedTopic(consumer, "counts-id");
 	}
 
-	@AfterClass
+	@AfterAll
 	public static void tearDown() {
 		consumer.close();
 	}
 
 	@Test
-	public void testStateStoreRetrievalRetry() {
+	void testStateStoreRetrievalRetry() {
 
 		StreamsBuilderFactoryBean mock = Mockito.mock(StreamsBuilderFactoryBean.class);
 		KafkaStreams mockKafkaStreams = Mockito.mock(KafkaStreams.class);
@@ -128,7 +124,7 @@ public class KafkaStreamsInteractiveQueryIntegrationTests {
 	}
 
 	@Test
-	public void testStateStoreRetrievalRetryForHostInfoService() {
+	void testStateStoreRetrievalRetryForHostInfoService() {
 		StreamsBuilderFactoryBean mock = Mockito.mock(StreamsBuilderFactoryBean.class);
 		KafkaStreams mockKafkaStreams = Mockito.mock(KafkaStreams.class);
 		Mockito.when(mock.getKafkaStreams()).thenReturn(mockKafkaStreams);
@@ -157,7 +153,7 @@ public class KafkaStreamsInteractiveQueryIntegrationTests {
 	}
 
 	@Test
-	public void testKstreamBinderWithPojoInputAndStringOuput() {
+	void testKstreamBinderWithPojoInputAndStringOuput() {
 		SpringApplication app = new SpringApplication(ProductCountApplication.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 		ConfigurableApplicationContext context = app.run("--server.port=0",

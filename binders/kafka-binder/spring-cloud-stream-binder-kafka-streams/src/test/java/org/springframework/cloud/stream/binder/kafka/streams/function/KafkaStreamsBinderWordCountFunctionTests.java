@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2021 the original author or authors.
+ * Copyright 2019-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,10 +38,9 @@ import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.Materialized;
 import org.apache.kafka.streams.kstream.TimeWindows;
 import org.apache.kafka.streams.processor.StreamPartitioner;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import org.springframework.beans.DirectFieldAccessor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -65,25 +64,23 @@ import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.test.EmbeddedKafkaBroker;
-import org.springframework.kafka.test.rule.EmbeddedKafkaRule;
+import org.springframework.kafka.test.condition.EmbeddedKafkaCondition;
+import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
 import org.springframework.util.Assert;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@EmbeddedKafka(topics = {"counts", "counts-1", "counts-2", "counts-5", "counts-6"})
 public class KafkaStreamsBinderWordCountFunctionTests {
 
-	@ClassRule
-	public static EmbeddedKafkaRule embeddedKafkaRule = new EmbeddedKafkaRule(1, true,
-			"counts", "counts-1", "counts-2", "counts-5",  "counts-6");
-
-	private static EmbeddedKafkaBroker embeddedKafka = embeddedKafkaRule.getEmbeddedKafka();
+	private static final EmbeddedKafkaBroker embeddedKafka = EmbeddedKafkaCondition.getBroker();
 
 	private static Consumer<String, String> consumer;
 
 	private final static CountDownLatch LATCH = new CountDownLatch(1);
 
-	@BeforeClass
+	@BeforeAll
 	public static void setUp() {
 		Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("group", "false",
 				embeddedKafka);
@@ -94,14 +91,14 @@ public class KafkaStreamsBinderWordCountFunctionTests {
 		embeddedKafka.consumeFromEmbeddedTopics(consumer, "counts", "counts-1", "counts-2", "counts-5",  "counts-6");
 	}
 
-	@AfterClass
+	@AfterAll
 	public static void tearDown() {
 		consumer.close();
 	}
 
 	@Test
 	@SuppressWarnings("unchecked")
-	public void testBasicKStreamTopologyExecution() throws Exception {
+	void testBasicKStreamTopologyExecution() throws Exception {
 		SpringApplication app = new SpringApplication(WordCountProcessorApplication.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 
@@ -178,7 +175,7 @@ public class KafkaStreamsBinderWordCountFunctionTests {
 	}
 
 	@Test
-	public void testKstreamWordCountWithApplicationIdSpecifiedAtDefaultConsumer() {
+	void testKstreamWordCountWithApplicationIdSpecifiedAtDefaultConsumer() {
 		SpringApplication app = new SpringApplication(WordCountProcessorApplication.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 
@@ -199,7 +196,7 @@ public class KafkaStreamsBinderWordCountFunctionTests {
 	}
 
 	@Test
-	public void testKstreamWordCountFunctionWithCustomProducerStreamPartitioner() throws Exception {
+	void testKstreamWordCountFunctionWithCustomProducerStreamPartitioner() throws Exception {
 		SpringApplication app = new SpringApplication(WordCountProcessorApplication.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 
@@ -239,7 +236,7 @@ public class KafkaStreamsBinderWordCountFunctionTests {
 	}
 
 	@Test
-	public void testKstreamBinderAutoStartup() throws Exception {
+	void testKstreamBinderAutoStartup() throws Exception {
 		SpringApplication app = new SpringApplication(WordCountProcessorApplication.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 
@@ -261,7 +258,7 @@ public class KafkaStreamsBinderWordCountFunctionTests {
 	}
 
 	@Test
-	public void testKstreamIndividualBindingAutoStartup() throws Exception {
+	void testKstreamIndividualBindingAutoStartup() throws Exception {
 		SpringApplication app = new SpringApplication(WordCountProcessorApplication.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 
@@ -286,7 +283,7 @@ public class KafkaStreamsBinderWordCountFunctionTests {
 	// The following test verifies the fixes made for this issue:
 	// https://github.com/spring-cloud/spring-cloud-stream-binder-kafka/issues/774
 	@Test
-	public void testOutboundNullValueIsHandledGracefully()
+	void testOutboundNullValueIsHandledGracefully()
 			throws Exception {
 		SpringApplication app = new SpringApplication(OutboundNullApplication.class);
 		app.setWebApplicationType(WebApplicationType.NONE);

@@ -1,5 +1,5 @@
 /*
- * Copyright 2021-2021 the original author or authors.
+ * Copyright 2021-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,10 +29,9 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.kstream.KStream;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.WebApplicationType;
@@ -42,7 +41,8 @@ import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.test.EmbeddedKafkaBroker;
-import org.springframework.kafka.test.rule.EmbeddedKafkaRule;
+import org.springframework.kafka.test.condition.EmbeddedKafkaCondition;
+import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
@@ -52,13 +52,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * @author Soby Chacko
  */
+@EmbeddedKafka(topics = {"testFunctionComponent-out", "testBiFunctionComponent-out", "testCurriedFunctionWithFunctionTerminal-out"})
 public class KafkaStreamsComponentBeansTests {
 
-	@ClassRule
-	public static EmbeddedKafkaRule embeddedKafkaRule = new EmbeddedKafkaRule(1, true,
-			"testFunctionComponent-out", "testBiFunctionComponent-out", "testCurriedFunctionWithFunctionTerminal-out");
-
-	private static EmbeddedKafkaBroker embeddedKafka = embeddedKafkaRule.getEmbeddedKafka();
+	private static final EmbeddedKafkaBroker embeddedKafka = EmbeddedKafkaCondition.getBroker();
 
 	private static Consumer<String, String> consumer1;
 	private static Consumer<String, String> consumer2;
@@ -68,7 +65,7 @@ public class KafkaStreamsComponentBeansTests {
 	private final static CountDownLatch LATCH_2 = new CountDownLatch(2);
 	private final static CountDownLatch LATCH_3 = new CountDownLatch(3);
 
-	@BeforeClass
+	@BeforeAll
 	public static void setUp() {
 		Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("group", "false",
 				embeddedKafka);
@@ -95,7 +92,7 @@ public class KafkaStreamsComponentBeansTests {
 		embeddedKafka.consumeFromEmbeddedTopics(consumer3, "testCurriedFunctionWithFunctionTerminal-out");
 	}
 
-	@AfterClass
+	@AfterAll
 	public static void tearDown() {
 		consumer1.close();
 		consumer2.close();
@@ -103,7 +100,7 @@ public class KafkaStreamsComponentBeansTests {
 	}
 
 	@Test
-	public void testFunctionComponent() {
+	void testFunctionComponent() {
 		SpringApplication app = new SpringApplication(FunctionAsComponent.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 		try (ConfigurableApplicationContext ignored = app.run(
@@ -129,7 +126,7 @@ public class KafkaStreamsComponentBeansTests {
 	}
 
 	@Test
-	public void testConsumerComponent() throws Exception {
+	void testConsumerComponent() throws Exception {
 		SpringApplication app = new SpringApplication(ConsumerAsComponent.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 		try (ConfigurableApplicationContext context = app.run(
@@ -153,7 +150,7 @@ public class KafkaStreamsComponentBeansTests {
 	}
 
 	@Test
-	public void testBiFunctionComponent() {
+	void testBiFunctionComponent() {
 		SpringApplication app = new SpringApplication(BiFunctionAsComponent.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 		try (ConfigurableApplicationContext ignored = app.run(
@@ -183,7 +180,7 @@ public class KafkaStreamsComponentBeansTests {
 	}
 
 	@Test
-	public void testBiConsumerComponent() throws Exception {
+	void testBiConsumerComponent() throws Exception {
 		SpringApplication app = new SpringApplication(BiConsumerAsComponent.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 		try (ConfigurableApplicationContext context = app.run(
@@ -210,7 +207,7 @@ public class KafkaStreamsComponentBeansTests {
 	}
 
 	@Test
-	public void testCurriedFunctionWithConsumerTerminal() throws Exception {
+	void testCurriedFunctionWithConsumerTerminal() throws Exception {
 		SpringApplication app = new SpringApplication(CurriedFunctionWithConsumerTerminal.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 		try (ConfigurableApplicationContext context = app.run(
@@ -240,7 +237,7 @@ public class KafkaStreamsComponentBeansTests {
 	}
 
 	@Test
-	public void testCurriedFunctionWithFunctionTerminal() {
+	void testCurriedFunctionWithFunctionTerminal() {
 		SpringApplication app = new SpringApplication(CurriedFunctionWithFunctionTerminal.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 		try (ConfigurableApplicationContext context = app.run(

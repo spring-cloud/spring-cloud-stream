@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2019 the original author or authors.
+ * Copyright 2019-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,8 +35,7 @@ import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.KTable;
 import org.apache.kafka.streams.processor.TimestampExtractor;
 import org.apache.kafka.streams.processor.WallclockTimestampExtractor;
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.WebApplicationType;
@@ -57,23 +56,21 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.serializer.JsonDeserializer;
 import org.springframework.kafka.support.serializer.JsonSerializer;
 import org.springframework.kafka.test.EmbeddedKafkaBroker;
-import org.springframework.kafka.test.rule.EmbeddedKafkaRule;
+import org.springframework.kafka.test.condition.EmbeddedKafkaCondition;
+import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@EmbeddedKafka(topics = "enriched-order")
 public class StreamToGlobalKTableFunctionTests {
 
-	@ClassRule
-	public static EmbeddedKafkaRule embeddedKafkaRule = new EmbeddedKafkaRule(1, true,
-			"enriched-order");
-
-	private static EmbeddedKafkaBroker embeddedKafka = embeddedKafkaRule.getEmbeddedKafka();
+	private static final EmbeddedKafkaBroker embeddedKafka = EmbeddedKafkaCondition.getBroker();
 
 	private static Consumer<Long, EnrichedOrder> consumer;
 
 	@Test
-	public void testStreamToGlobalKTable() throws Exception {
+	void testStreamToGlobalKTable() throws Exception {
 		SpringApplication app = new SpringApplication(OrderEnricherApplication.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 		try (ConfigurableApplicationContext context = app.run("--server.port=0",
@@ -225,7 +222,7 @@ public class StreamToGlobalKTableFunctionTests {
 	}
 
 	@Test
-	public void testTimeExtractor() throws Exception {
+	void testTimeExtractor() throws Exception {
 		SpringApplication app = new SpringApplication(OrderEnricherApplication.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 

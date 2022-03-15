@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2019 the original author or authors.
+ * Copyright 2019-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,8 +46,7 @@ import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.KTable;
 import org.apache.kafka.streams.kstream.Materialized;
 import org.apache.kafka.streams.kstream.StreamJoined;
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.WebApplicationType;
@@ -66,22 +65,20 @@ import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.test.EmbeddedKafkaBroker;
-import org.springframework.kafka.test.rule.EmbeddedKafkaRule;
+import org.springframework.kafka.test.condition.EmbeddedKafkaCondition;
+import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
 import org.springframework.util.Assert;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@EmbeddedKafka(topics = "output-topic-1")
 public class StreamToTableJoinFunctionTests {
 
-	@ClassRule
-	public static EmbeddedKafkaRule embeddedKafkaRule = new EmbeddedKafkaRule(1,
-			true, "output-topic-1", "output-topic-2", "user-clicks-2", "user-regions-2");
-
-	private static EmbeddedKafkaBroker embeddedKafka = embeddedKafkaRule.getEmbeddedKafka();
+	private static final EmbeddedKafkaBroker embeddedKafka = EmbeddedKafkaCondition.getBroker();
 
 	@Test
-	public void testStreamToTable() {
+	void testStreamToTable() {
 		SpringApplication app = new SpringApplication(CountClicksPerRegionApplication.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 
@@ -99,7 +96,7 @@ public class StreamToTableJoinFunctionTests {
 	}
 
 	@Test
-	public void testStreamToTableBiFunction() {
+	void testStreamToTableBiFunction() {
 		SpringApplication app = new SpringApplication(BiFunctionCountClicksPerRegionApplication.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 
@@ -117,7 +114,7 @@ public class StreamToTableJoinFunctionTests {
 	}
 
 	@Test
-	public void testStreamToTableBiConsumer() throws Exception {
+	void testStreamToTableBiConsumer() throws Exception {
 		SpringApplication app = new SpringApplication(BiConsumerApplication.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 

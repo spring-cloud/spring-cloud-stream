@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2020 the original author or authors.
+ * Copyright 2019-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,10 +34,9 @@ import org.apache.kafka.common.header.internals.RecordHeaders;
 import org.apache.kafka.streams.kstream.GlobalKTable;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.KTable;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.WebApplicationType;
@@ -50,25 +49,23 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.serializer.JsonDeserializer;
 import org.springframework.kafka.support.serializer.JsonSerializer;
 import org.springframework.kafka.test.EmbeddedKafkaBroker;
-import org.springframework.kafka.test.rule.EmbeddedKafkaRule;
+import org.springframework.kafka.test.condition.EmbeddedKafkaCondition;
+import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
 import org.springframework.util.Assert;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@EmbeddedKafka(topics = "foo-2")
 public class KafkaStreamsEventTypeRoutingTests {
 
-	@ClassRule
-	public static EmbeddedKafkaRule embeddedKafkaRule = new EmbeddedKafkaRule(1, true,
-			"foo-1", "foo-2");
-
-	private static EmbeddedKafkaBroker embeddedKafka = embeddedKafkaRule.getEmbeddedKafka();
+	private static final EmbeddedKafkaBroker embeddedKafka = EmbeddedKafkaCondition.getBroker();
 
 	private static Consumer<Integer, Foo> consumer;
 
 	private static CountDownLatch LATCH = new CountDownLatch(3);
 
-	@BeforeClass
+	@BeforeAll
 	public static void setUp() {
 		Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("test-group-1", "false",
 				embeddedKafka);
@@ -80,14 +77,14 @@ public class KafkaStreamsEventTypeRoutingTests {
 		embeddedKafka.consumeFromEmbeddedTopics(consumer, "foo-2");
 	}
 
-	@AfterClass
+	@AfterAll
 	public static void tearDown() {
 		consumer.close();
 	}
 
 	//See https://github.com/spring-cloud/spring-cloud-stream-binder-kafka/issues/1003 for more context on this test.
 	@Test
-	public void testRoutingWorksBasedOnEventTypes() {
+	void testRoutingWorksBasedOnEventTypes() {
 		SpringApplication app = new SpringApplication(EventTypeRoutingTestConfig.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 
@@ -157,7 +154,7 @@ public class KafkaStreamsEventTypeRoutingTests {
 	}
 
 	@Test
-	public void testRoutingWorksBasedOnEventTypesConsumer() throws Exception {
+	void testRoutingWorksBasedOnEventTypesConsumer() throws Exception {
 		SpringApplication app = new SpringApplication(EventTypeRoutingTestConfig.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 

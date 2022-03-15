@@ -1,5 +1,5 @@
 /*
- * Copyright 2021-2021 the original author or authors.
+ * Copyright 2021-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,10 +32,9 @@ import org.apache.kafka.common.serialization.StringSerializer;
 import org.apache.kafka.streams.kstream.ForeachAction;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.KTable;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.WebApplicationType;
@@ -46,19 +45,17 @@ import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.test.EmbeddedKafkaBroker;
-import org.springframework.kafka.test.rule.EmbeddedKafkaRule;
+import org.springframework.kafka.test.condition.EmbeddedKafkaCondition;
+import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
 import org.springframework.util.Assert;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@EmbeddedKafka(topics = {"fooFuncanotherFooFunc-out-0", "bar"})
 public class KafkaStreamsFunctionCompositionTests {
 
-	@ClassRule
-	public static EmbeddedKafkaRule embeddedKafkaRule = new EmbeddedKafkaRule(1, true,
-			"fooFuncanotherFooFunc-out-0", "bar");
-
-	private static EmbeddedKafkaBroker embeddedKafka = embeddedKafkaRule.getEmbeddedKafka();
+	private static final EmbeddedKafkaBroker embeddedKafka = EmbeddedKafkaCondition.getBroker();
 
 	private static Consumer<String, String> consumer;
 
@@ -66,7 +63,7 @@ public class KafkaStreamsFunctionCompositionTests {
 	private static final CountDownLatch countDownLatch2 = new CountDownLatch(1);
 	private static final CountDownLatch countDownLatch3 = new CountDownLatch(2);
 
-	@BeforeClass
+	@BeforeAll
 	public static void setUp() {
 		Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("fn-composition-group", "false",
 				embeddedKafka);
@@ -77,13 +74,13 @@ public class KafkaStreamsFunctionCompositionTests {
 		embeddedKafka.consumeFromEmbeddedTopics(consumer, "fooFuncanotherFooFunc-out-0", "bar");
 	}
 
-	@AfterClass
+	@AfterAll
 	public static void tearDown() {
 		consumer.close();
 	}
 
 	@Test
-	public void testBasicFunctionCompositionWithDefaultDestination() throws InterruptedException {
+	void testBasicFunctionCompositionWithDefaultDestination() throws InterruptedException {
 		SpringApplication app = new SpringApplication(FunctionCompositionConfig1.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 
@@ -117,7 +114,7 @@ public class KafkaStreamsFunctionCompositionTests {
 	}
 
 	@Test
-	public void testBasicFunctionCompositionWithDestinaion() throws InterruptedException {
+	void testBasicFunctionCompositionWithDestinaion() throws InterruptedException {
 		SpringApplication app = new SpringApplication(FunctionCompositionConfig1.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 
@@ -153,7 +150,7 @@ public class KafkaStreamsFunctionCompositionTests {
 	}
 
 	@Test
-	public void testFunctionToConsumerComposition() throws InterruptedException {
+	void testFunctionToConsumerComposition() throws InterruptedException {
 		SpringApplication app = new SpringApplication(FunctionCompositionConfig2.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 
@@ -183,7 +180,7 @@ public class KafkaStreamsFunctionCompositionTests {
 	}
 
 	@Test
-	public void testBiFunctionToConsumerComposition() throws InterruptedException {
+	void testBiFunctionToConsumerComposition() throws InterruptedException {
 		SpringApplication app = new SpringApplication(FunctionCompositionConfig3.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 
@@ -217,7 +214,7 @@ public class KafkaStreamsFunctionCompositionTests {
 	}
 
 	@Test
-	public void testChainedFunctionsAsComposed() throws InterruptedException {
+	void testChainedFunctionsAsComposed() throws InterruptedException {
 		SpringApplication app = new SpringApplication(FunctionCompositionConfig4.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 
@@ -260,7 +257,7 @@ public class KafkaStreamsFunctionCompositionTests {
 	}
 
 	@Test
-	public void testFirstFunctionCurriedThenComposeWithOtherFunctions() throws InterruptedException {
+	void testFirstFunctionCurriedThenComposeWithOtherFunctions() throws InterruptedException {
 		SpringApplication app = new SpringApplication(FunctionCompositionConfig5.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 
@@ -305,7 +302,7 @@ public class KafkaStreamsFunctionCompositionTests {
 	}
 
 	@Test
-	public void testFunctionToConsumerCompositionWithFunctionProducesKTable() throws InterruptedException {
+	void testFunctionToConsumerCompositionWithFunctionProducesKTable() throws InterruptedException {
 		SpringApplication app = new SpringApplication(FunctionCompositionConfig6.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 
