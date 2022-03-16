@@ -1,5 +1,0 @@
-org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
-org.springframework.cloud.stream.test.binder.TestSupportBinderAutoConfiguration,\
-org.springframework.cloud.stream.test.binder.MessageCollectorAutoConfiguration
-org.springframework.boot.env.EnvironmentPostProcessor=\
-  org.springframework.cloud.stream.test.binder.TestBinderEnvironmentPostProcessor

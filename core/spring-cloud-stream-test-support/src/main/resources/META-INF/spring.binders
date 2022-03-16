@@ -1,2 +1,0 @@
-test:\
-org.springframework.cloud.stream.test.binder.TestSupportBinderConfiguration
