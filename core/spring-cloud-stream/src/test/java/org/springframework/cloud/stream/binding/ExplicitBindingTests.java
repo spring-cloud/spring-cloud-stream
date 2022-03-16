@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.cloud.stream.binder.test.OutputDestination;
 import org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
@@ -73,10 +74,21 @@ public class ExplicitBindingTests {
 				TestChannelBinderConfiguration.getCompleteConfiguration(SupplierConfiguration.class))
 						.web(WebApplicationType.NONE)
 						.run("--spring.jmx.enabled=false",
-								"--spring.cloud.stream.input-bindings=supply")) {
+								"--spring.cloud.stream.input-bindings=supply",
+								"--spring.cloud.stream.bindings.supply-out-0.producer.poller.fixed-delay=3000")) {
+
 
 			assertThat(context.getBean("supply-in-0", MessageChannel.class)).isNotNull();
 			assertThat(context.getBean("supply-out-0", MessageChannel.class)).isNotNull();
+
+			OutputDestination output = context.getBean(OutputDestination.class);
+			assertThat(output.receive()).isNotNull();
+			assertThat(output.receive(500)).isNull();
+			assertThat(output.receive(500)).isNull();
+			assertThat(output.receive(500)).isNull();
+			assertThat(output.receive(500)).isNull();
+			assertThat(output.receive(500)).isNull();
+			assertThat(output.receive(500)).isNotNull();
 		}
 	}
 

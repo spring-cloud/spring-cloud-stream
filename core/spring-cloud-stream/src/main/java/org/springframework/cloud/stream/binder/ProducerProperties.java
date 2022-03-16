@@ -17,6 +17,7 @@
 package org.springframework.cloud.stream.binder;
 
 import java.io.IOException;
+import java.time.Duration;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
@@ -73,6 +74,8 @@ public class ProducerProperties {
 	private boolean useNativeEncoding = false;
 
 	private boolean errorChannelEnabled = false;
+
+	private PollerProperties poller;
 
 	public Expression getPartitionKeyExpression() {
 		return this.partitionKeyExpression;
@@ -168,6 +171,14 @@ public class ProducerProperties {
 		this.autoStartup = autoStartup;
 	}
 
+	public PollerProperties getPoller() {
+		return poller;
+	}
+
+	public void setPoller(PollerProperties poller) {
+		this.poller = poller;
+	}
+
 	static class ExpressionSerializer extends JsonSerializer<Expression> {
 
 		@Override
@@ -178,6 +189,49 @@ public class ProducerProperties {
 			}
 		}
 
+	}
+
+	public static class PollerProperties {
+
+		private Duration fixedDelay = Duration.ofMillis(1000);
+
+		private long maxMessagesPerPoll = 1L;
+
+		private String cron;
+
+		private Duration initialDelay = Duration.ofMillis(0);
+
+		public long getMaxMessagesPerPoll() {
+			return maxMessagesPerPoll;
+		}
+
+		public void setMaxMessagesPerPoll(long maxMessagesPerPoll) {
+			this.maxMessagesPerPoll = maxMessagesPerPoll;
+		}
+
+		public String getCron() {
+			return cron;
+		}
+
+		public void setCron(String cron) {
+			this.cron = cron;
+		}
+
+		public Duration getInitialDelay() {
+			return initialDelay;
+		}
+
+		public void setInitialDelay(Duration initialDelay) {
+			this.initialDelay = initialDelay;
+		}
+
+		public Duration getFixedDelay() {
+			return fixedDelay;
+		}
+
+		public void setFixedDelay(Duration fixedDelay) {
+			this.fixedDelay = fixedDelay;
+		}
 	}
 
 }
