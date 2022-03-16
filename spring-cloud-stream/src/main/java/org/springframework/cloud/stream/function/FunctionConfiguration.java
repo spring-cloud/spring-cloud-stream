@@ -21,6 +21,7 @@ import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -53,6 +54,7 @@ import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.context.properties.PropertyMapper;
 import org.springframework.cloud.function.cloudevent.CloudEventMessageUtils;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionProperties;
@@ -70,6 +72,7 @@ import org.springframework.cloud.stream.binder.BinderFactory;
 import org.springframework.cloud.stream.binder.BindingCreatedEvent;
 import org.springframework.cloud.stream.binder.ConsumerProperties;
 import org.springframework.cloud.stream.binder.ProducerProperties;
+import org.springframework.cloud.stream.binder.ProducerProperties.PollerProperties;
 import org.springframework.cloud.stream.binding.BindableProxyFactory;
 import org.springframework.cloud.stream.binding.BinderAwareChannelResolver.NewDestinationBindingCallback;
 import org.springframework.cloud.stream.config.BinderFactoryAutoConfiguration;
@@ -96,6 +99,7 @@ import org.springframework.integration.dsl.IntegrationFlow;
 import org.springframework.integration.dsl.IntegrationFlowBuilder;
 import org.springframework.integration.dsl.IntegrationFlows;
 import org.springframework.integration.handler.AbstractMessageHandler;
+import org.springframework.integration.scheduling.PollerMetadata;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.integration.util.IntegrationReactiveUtils;
 import org.springframework.lang.Nullable;
@@ -105,6 +109,9 @@ import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.MessagingException;
 import org.springframework.messaging.SubscribableChannel;
 import org.springframework.scheduling.TaskScheduler;
+import org.springframework.scheduling.Trigger;
+import org.springframework.scheduling.support.CronTrigger;
+import org.springframework.scheduling.support.PeriodicTrigger;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.CollectionUtils;
@@ -311,17 +318,46 @@ public class FunctionConfiguration {
 			taskScheduler.schedule(() -> { }, Instant.now()); // will keep AC alive
 		}
 		else { // implies pollable
+			AtomicReference<PollerMetadata> pollerMetadata = new AtomicReference<>();
+			if (producerProperties != null && producerProperties.getPoller() != null) {
+				PollerProperties poller = producerProperties.getPoller();
+
+				PollerMetadata pm = new PollerMetadata();
+				PropertyMapper map = PropertyMapper.get().alwaysApplyingWhenNonNull();
+				map.from(poller::getMaxMessagesPerPoll).to(pm::setMaxMessagesPerPoll);
+				map.from(poller).as(this::asTrigger).to(pm::setTrigger);
+				pollerMetadata.set(pm);
+			}
 
 			boolean autoStartup = producerProperties != null ? producerProperties.isAutoStartup() : true;
-			integrationFlowBuilder = IntegrationFlows
-					.fromSupplier(supplier, spca -> spca.id(bindingName + "_spca").autoStartup(autoStartup));
-			//only apply the PollableBean attributes if this is a reactive function.
+			integrationFlowBuilder = pollerMetadata == null
+					? IntegrationFlows.fromSupplier(supplier,
+							spca -> spca.id(bindingName + "_spca").autoStartup(autoStartup))
+					: IntegrationFlows.fromSupplier(supplier, spca -> spca.id(bindingName + "_spca")
+							.poller(pollerMetadata.get()).autoStartup(autoStartup));
+
+			// only apply the PollableBean attributes if this is a reactive function.
 			if (splittable && reactive) {
 				integrationFlowBuilder = integrationFlowBuilder.split();
 			}
 		}
 
 		return integrationFlowBuilder;
+	}
+
+	private Trigger asTrigger(PollerProperties poller) {
+		if (StringUtils.hasText(poller.getCron())) {
+			return new CronTrigger(poller.getCron());
+		}
+		return createPeriodicTrigger(poller.getFixedDelay(), poller.getInitialDelay());
+	}
+
+	private Trigger createPeriodicTrigger(Duration period, Duration initialDelay) {
+		PeriodicTrigger trigger = new PeriodicTrigger(period.toMillis());
+		if (initialDelay != null) {
+			trigger.setInitialDelay(initialDelay.toMillis());
+		}
+		return trigger;
 	}
 
 	private PollableBean extractPollableAnnotation(StreamFunctionProperties functionProperties, GenericApplicationContext context,

@@ -606,6 +606,15 @@ For example `--spring.cloud.stream.poller.fixed-delay=2000` sets the poller inte
 IMPORTANT: These poller properties are deprecated starting version 3.2 in favor of similar configuration properties from Spring Boot auto-configuration for Spring Integration.
 See `org.springframework.boot.autoconfigure.integration.IntegrationProperties.Poller` for more information.
 
+====== Per-binding polling configuration
+
+The previous section shows how to configure a single default poller that will be applied to all bindings. While it fits well with the model of microservices spring-cloud-stream designed for where each microservice represents a single component (e.g., Supplier) and thus default poller configuration is enough, there are edge cases where
+you may have several components that require different polling configurations 
+
+For such cases please use per-binding way of configuring poller. For example, assume you have an output binding `supply-out-0`. In this case you can configure poller for such
+binding using `spring.cloud.stream.bindings.supply-out-0.producer.poller..` prefix (e.g., `spring.cloud.stream.bindings.supply-out-0.producer.poller.fixed-delay=2000`).
+
+
 ===== Sending arbitrary data to an output (e.g. Foreign event-driven sources)
 
 There are cases where the actual source of data may be coming from the external (foreign) system that is not a binder. For example, the
