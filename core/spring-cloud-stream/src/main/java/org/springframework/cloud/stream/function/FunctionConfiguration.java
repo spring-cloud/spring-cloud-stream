@@ -99,6 +99,7 @@ import org.springframework.integration.dsl.IntegrationFlowBuilder;
 import org.springframework.integration.dsl.IntegrationFlows;
 import org.springframework.integration.handler.AbstractMessageHandler;
 import org.springframework.integration.scheduling.PollerMetadata;
+import org.springframework.integration.support.IdGenerators.SimpleIncrementingIdGenerator;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.integration.util.IntegrationReactiveUtils;
 import org.springframework.lang.Nullable;
@@ -114,6 +115,7 @@ import org.springframework.scheduling.support.PeriodicTrigger;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.IdGenerator;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
@@ -132,6 +134,11 @@ import org.springframework.util.StringUtils;
 @AutoConfigureAfter(ContextFunctionCatalogAutoConfiguration.class)
 @ConditionalOnBean(FunctionRegistry.class)
 public class FunctionConfiguration {
+
+	@Bean
+	public IdGenerator idGenerator() {
+		return new SimpleIncrementingIdGenerator();
+	}
 
 	@SuppressWarnings("rawtypes")
 	@Bean

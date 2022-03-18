@@ -17,6 +17,7 @@
 package org.springframework.cloud.stream.function;
 
 import java.lang.reflect.Type;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -31,9 +32,12 @@ import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionRegistry;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
+import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.PassThruFunction;
 import org.springframework.cloud.function.context.message.MessageUtils;
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.BinderFactory;
+import org.springframework.cloud.stream.binder.BinderHeaders;
+import org.springframework.cloud.stream.binder.PartitionHandler;
 import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.cloud.stream.binding.BindingService;
 import org.springframework.cloud.stream.binding.DefaultPartitioningInterceptor;
@@ -43,12 +47,15 @@ import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.cloud.stream.messaging.DirectWithAttributesChannel;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.ResolvableType;
+import org.springframework.expression.spel.support.StandardEvaluationContext;
 import org.springframework.integration.channel.AbstractMessageChannel;
 import org.springframework.integration.config.GlobalChannelInterceptorProcessor;
+import org.springframework.integration.expression.ExpressionUtils;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
+import org.springframework.messaging.support.GenericMessage;
 import org.springframework.util.MimeType;
 import org.springframework.util.MimeTypeUtils;
 import org.springframework.util.StringUtils;
@@ -204,22 +211,22 @@ public final class StreamBridge implements SmartInitializingSingleton {
 	 */
 	@SuppressWarnings({ "unchecked"})
 	public boolean send(String bindingName, @Nullable String binderName, Object data, MimeType outputContentType) {
-		if (!(data instanceof Message)) {
-			data = MessageBuilder.withPayload(data).build();
+
+		if (data instanceof Message) {
+			data = MessageBuilder.fromMessage((Message) data).setHeader(MessageUtils.TARGET_PROTOCOL, "streamBridge").build();
+		}
+		else {
+			data = new GenericMessage<>(data, Collections.singletonMap(MessageUtils.TARGET_PROTOCOL, "streamBridge"));
 		}
 		ProducerProperties producerProperties = this.bindingServiceProperties.getProducerProperties(bindingName);
 		MessageChannel messageChannel = this.resolveDestination(bindingName, producerProperties, binderName);
 
 		Function functionToInvoke = this.getStreamBridgeFunction(outputContentType.toString(), producerProperties);
-
 		if (producerProperties != null && producerProperties.isPartitioned()) {
 			functionToInvoke = new PartitionAwareFunctionWrapper(functionToInvoke, this.applicationContext, producerProperties);
 		}
-		// this function is a pass through and is only required to force output conversion if necessary on SCF side.
-		if (data instanceof Message) {
-			data = MessageBuilder.fromMessage((Message) data).setHeader(MessageUtils.TARGET_PROTOCOL, "streamBridge").build();
-		}
 		Message<byte[]> resultMessage = (Message<byte[]>) functionToInvoke.apply(data);
+		
 		return messageChannel.send(resultMessage);
 	}
 
@@ -240,7 +247,8 @@ public final class StreamBridge implements SmartInitializingSingleton {
 		if (this.initialized) {
 			return;
 		}
-		FunctionRegistration<Function<Object, Object>> fr = new FunctionRegistration<>(v -> v, STREAM_BRIDGE_FUNC_NAME);
+		
+		FunctionRegistration<Function<Object, Object>> fr = new FunctionRegistration<>(new PassThruFunction(), STREAM_BRIDGE_FUNC_NAME);
 		fr.getProperties().put("singleton", "false");
 		Type functionType = ResolvableType.forClassWithGenerics(Function.class, Object.class, Object.class).getType();
 		this.functionRegistry.register(fr.type(functionType));
@@ -256,33 +264,35 @@ public final class StreamBridge implements SmartInitializingSingleton {
 	@SuppressWarnings({ "unchecked"})
 	synchronized MessageChannel resolveDestination(String destinationName, ProducerProperties producerProperties, String binderName) {
 		MessageChannel messageChannel = this.channelCache.get(destinationName);
-		if (messageChannel == null && this.applicationContext.containsBean(destinationName)) {
-			messageChannel = this.applicationContext.getBean(destinationName, MessageChannel.class);
-		}
 		if (messageChannel == null) {
-			messageChannel = new DirectWithAttributesChannel();
-			if (this.destinationBindingCallback != null) {
-				Object extendedProducerProperties = this.bindingService
-						.getExtendedProducerProperties(messageChannel, destinationName);
-				this.destinationBindingCallback.configure(destinationName, messageChannel,
-						producerProperties, extendedProducerProperties);
+			if (this.applicationContext.containsBean(destinationName)) {
+				messageChannel = this.applicationContext.getBean(destinationName, MessageChannel.class);
 			}
+			else {
+				messageChannel = new DirectWithAttributesChannel();
+				if (this.destinationBindingCallback != null) {
+					Object extendedProducerProperties = this.bindingService
+							.getExtendedProducerProperties(messageChannel, destinationName);
+					this.destinationBindingCallback.configure(destinationName, messageChannel,
+							producerProperties, extendedProducerProperties);
+				}
 
-			Binder binder = null;
-			if (StringUtils.hasText(binderName)) {
-				BinderFactory binderFactory = this.applicationContext.getBean(BinderFactory.class);
-				binder = binderFactory.getBinder(binderName, messageChannel.getClass());
+				Binder binder = null;
+				if (StringUtils.hasText(binderName)) {
+					BinderFactory binderFactory = this.applicationContext.getBean(BinderFactory.class);
+					binder = binderFactory.getBinder(binderName, messageChannel.getClass());
+				}
+
+				if (producerProperties != null && producerProperties.isPartitioned()) {
+					BindingProperties bindingProperties = this.bindingServiceProperties.getBindingProperties(destinationName);
+					((AbstractMessageChannel) messageChannel)
+						.addInterceptor(new DefaultPartitioningInterceptor(bindingProperties, this.applicationContext.getBeanFactory()));
+				}
+				this.addInterceptors((AbstractMessageChannel) messageChannel, destinationName);
+
+				this.bindingService.bindProducer(messageChannel, destinationName, false, binder);
+				this.channelCache.put(destinationName, messageChannel);
 			}
-
-			if (producerProperties != null && producerProperties.isPartitioned()) {
-				BindingProperties bindingProperties = this.bindingServiceProperties.getBindingProperties(destinationName);
-				((AbstractMessageChannel) messageChannel)
-					.addInterceptor(new DefaultPartitioningInterceptor(bindingProperties, this.applicationContext.getBeanFactory()));
-			}
-			this.addInterceptors((AbstractMessageChannel) messageChannel, destinationName);
-
-			this.bindingService.bindProducer(messageChannel, destinationName, false, binder);
-			this.channelCache.put(destinationName, messageChannel);
 		}
 
 		return messageChannel;
