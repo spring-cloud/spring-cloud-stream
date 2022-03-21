@@ -217,6 +217,10 @@ public class RabbitMessageChannelBinder extends
 		this.decompressingPostProcessor = decompressingPostProcessor;
 	}
 
+	public String getProtocolIdentifier() {
+		return "amqp";
+	}
+
 	/**
 	 * Set a {@link org.springframework.amqp.core.MessagePostProcessor} to compress
 	 * messages. Defaults to a
