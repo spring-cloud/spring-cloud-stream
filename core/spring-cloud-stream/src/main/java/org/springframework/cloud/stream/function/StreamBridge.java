@@ -36,8 +36,6 @@ import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry
 import org.springframework.cloud.function.context.message.MessageUtils;
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.BinderFactory;
-import org.springframework.cloud.stream.binder.BinderHeaders;
-import org.springframework.cloud.stream.binder.PartitionHandler;
 import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.cloud.stream.binding.BindingService;
 import org.springframework.cloud.stream.binding.DefaultPartitioningInterceptor;
@@ -47,10 +45,8 @@ import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.cloud.stream.messaging.DirectWithAttributesChannel;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.ResolvableType;
-import org.springframework.expression.spel.support.StandardEvaluationContext;
 import org.springframework.integration.channel.AbstractMessageChannel;
 import org.springframework.integration.config.GlobalChannelInterceptorProcessor;
-import org.springframework.integration.expression.ExpressionUtils;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
@@ -226,7 +222,7 @@ public final class StreamBridge implements SmartInitializingSingleton {
 			functionToInvoke = new PartitionAwareFunctionWrapper(functionToInvoke, this.applicationContext, producerProperties);
 		}
 		Message<byte[]> resultMessage = (Message<byte[]>) functionToInvoke.apply(data);
-		
+
 		return messageChannel.send(resultMessage);
 	}
 
@@ -247,7 +243,7 @@ public final class StreamBridge implements SmartInitializingSingleton {
 		if (this.initialized) {
 			return;
 		}
-		
+
 		FunctionRegistration<Function<Object, Object>> fr = new FunctionRegistration<>(new PassThruFunction(), STREAM_BRIDGE_FUNC_NAME);
 		fr.getProperties().put("singleton", "false");
 		Type functionType = ResolvableType.forClassWithGenerics(Function.class, Object.class, Object.class).getType();

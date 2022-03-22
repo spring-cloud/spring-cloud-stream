@@ -99,7 +99,6 @@ import org.springframework.integration.dsl.IntegrationFlowBuilder;
 import org.springframework.integration.dsl.IntegrationFlows;
 import org.springframework.integration.handler.AbstractMessageHandler;
 import org.springframework.integration.scheduling.PollerMetadata;
-import org.springframework.integration.support.IdGenerators.SimpleIncrementingIdGenerator;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.integration.util.IntegrationReactiveUtils;
 import org.springframework.lang.Nullable;
@@ -115,7 +114,6 @@ import org.springframework.scheduling.support.PeriodicTrigger;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.CollectionUtils;
-import org.springframework.util.IdGenerator;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
@@ -134,11 +132,6 @@ import org.springframework.util.StringUtils;
 @AutoConfigureAfter(ContextFunctionCatalogAutoConfiguration.class)
 @ConditionalOnBean(FunctionRegistry.class)
 public class FunctionConfiguration {
-
-	@Bean
-	public IdGenerator idGenerator() {
-		return new SimpleIncrementingIdGenerator();
-	}
 
 	@SuppressWarnings("rawtypes")
 	@Bean
@@ -166,9 +159,6 @@ public class FunctionConfiguration {
 												StreamBridge streamBridge) {
 
 		boolean shouldCreateInitializer = true;
-//		boolean shouldCreateInitializer = applicationContext.containsBean("output");
-//				|| ObjectUtils.isEmpty(applicationContext.getBeanNamesForAnnotation(EnableBinding.class));
-
 		return shouldCreateInitializer
 				? new FunctionToDestinationBinder(functionCatalog, functionProperties,
 						serviceProperties, streamBridge)
@@ -243,7 +233,6 @@ public class FunctionConfiguration {
 							PollableBean pollable = extractPollableAnnotation(functionProperties, context, proxyFactory);
 
 							if (functionWrapper != null) {
-//								Type functionType = functionWrapper.getFunctionType();
 								IntegrationFlow integrationFlow = integrationFlowFromProvidedSupplier(new PartitionAwareFunctionWrapper(functionWrapper, context, producerProperties),
 										beginPublishingTrigger, pollable, context, taskScheduler, producerProperties, outputName)
 										.route(Message.class, message -> {
