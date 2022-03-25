@@ -208,20 +208,26 @@ public final class StreamBridge implements SmartInitializingSingleton {
 	@SuppressWarnings({ "unchecked"})
 	public boolean send(String bindingName, @Nullable String binderName, Object data, MimeType outputContentType) {
 
-		if (data instanceof Message) {
-			data = MessageBuilder.fromMessage((Message) data).setHeader(MessageUtils.TARGET_PROTOCOL, "streamBridge").build();
-		}
-		else {
-			data = new GenericMessage<>(data, Collections.singletonMap(MessageUtils.TARGET_PROTOCOL, "streamBridge"));
-		}
+
+
 		ProducerProperties producerProperties = this.bindingServiceProperties.getProducerProperties(bindingName);
 		MessageChannel messageChannel = this.resolveDestination(bindingName, producerProperties, binderName);
 
 		Function functionToInvoke = this.getStreamBridgeFunction(outputContentType.toString(), producerProperties);
+
 		if (producerProperties != null && producerProperties.isPartitioned()) {
 			functionToInvoke = new PartitionAwareFunctionWrapper(functionToInvoke, this.applicationContext, producerProperties);
 		}
-		Message<byte[]> resultMessage = (Message<byte[]>) functionToInvoke.apply(data);
+
+
+		Message<?> messageToSend = data instanceof Message
+				? MessageBuilder.fromMessage((Message) data).setHeader(MessageUtils.TARGET_PROTOCOL, "streamBridge").build()
+						: new GenericMessage<>(data, Collections.singletonMap(MessageUtils.TARGET_PROTOCOL, "streamBridge"));
+
+		Message<?> resultMessage;
+		synchronized (this) {
+			resultMessage = (Message<byte[]>) functionToInvoke.apply(messageToSend);
+		}
 
 		return messageChannel.send(resultMessage);
 	}

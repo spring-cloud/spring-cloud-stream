@@ -267,10 +267,11 @@ public class ContentTypeTckTests {
 				.setHeader("contentType", new MimeType("text", "plain")).build());
 
 		Message<byte[]> outputMessage = target.receive();
+		System.out.println(new String(outputMessage.getPayload()));
 		assertThat(outputMessage.getHeaders().get(MessageHeaders.CONTENT_TYPE))
 				.isEqualTo(MimeTypeUtils.TEXT_PLAIN_VALUE);
-		assertThat(new String(outputMessage.getPayload(), StandardCharsets.UTF_8))
-				.isEqualTo(jsonPayload);
+		assertThat(outputMessage.getPayload())
+				.isEqualTo(jsonPayload.getBytes());
 	}
 
 	@Test
