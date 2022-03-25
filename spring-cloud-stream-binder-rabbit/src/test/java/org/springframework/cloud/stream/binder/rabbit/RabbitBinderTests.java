@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2019 the original author or authors.
+ * Copyright 2013-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,6 +57,7 @@ import org.springframework.amqp.core.AmqpTemplate;
 import org.springframework.amqp.core.AnonymousQueue;
 import org.springframework.amqp.core.Binding.DestinationType;
 import org.springframework.amqp.core.BindingBuilder;
+import org.springframework.amqp.core.Declarable;
 import org.springframework.amqp.core.DirectExchange;
 import org.springframework.amqp.core.ExchangeTypes;
 import org.springframework.amqp.core.MessageDeliveryMode;
@@ -241,6 +242,8 @@ public class RabbitBinderTests extends
 		assertThat(event.get()).isNotNull();
 		producerBinding.unbind();
 		consumerBinding.unbind();
+
+		verifyAutoDeclareContextClear(binder);
 	}
 
 	@Test
@@ -322,6 +325,8 @@ public class RabbitBinderTests extends
 		assertThat(nack.getCorrelationData()).isEqualTo(message);
 		assertThat(nack.getFailedMessage()).isEqualTo(message);
 		producerBinding.unbind();
+
+		verifyAutoDeclareContextClear(binder);
 	}
 
 	@Test
@@ -351,6 +356,8 @@ public class RabbitBinderTests extends
 		assertThat(confirmLatch.await(10, TimeUnit.SECONDS)).isTrue();
 		assertThat(confirm.get().getPayload()).isEqualTo("acksMessage".getBytes());
 		producerBinding.unbind();
+
+		verifyAutoDeclareContextClear(binder);
 	}
 
 	@Test
@@ -375,6 +382,8 @@ public class RabbitBinderTests extends
 		assertThat(confirm.isAck()).isTrue();
 		assertThat(correlation.getReturnedMessage()).isNotNull();
 		producerBinding.unbind();
+
+		verifyAutoDeclareContextClear(binder);
 	}
 
 	@Test
@@ -454,6 +463,8 @@ public class RabbitBinderTests extends
 
 		consumerBinding.unbind();
 		assertThat(endpoint.isRunning()).isFalse();
+
+		verifyAutoDeclareContextClear(binder);
 	}
 
 	@Test
@@ -543,7 +554,10 @@ public class RabbitBinderTests extends
 		assertThat(container.isRunning()).isTrue();
 		consumerBinding.unbind();
 		assertThat(container.isRunning()).isFalse();
+
+		verifyAutoDeclareContextClear(binder);
 	}
+
 
 	@Test
 	public void testAnonWithBuiltInExchangeCustomPrefix() throws Exception {
@@ -563,7 +577,10 @@ public class RabbitBinderTests extends
 		assertThat(container.isRunning()).isTrue();
 		consumerBinding.unbind();
 		assertThat(container.isRunning()).isFalse();
+
+		verifyAutoDeclareContextClear(binder);
 	}
+
 
 	@Test
 	public void testConsumerPropertiesWithUserInfrastructureCustomExchangeAndRK()
@@ -611,7 +628,10 @@ public class RabbitBinderTests extends
 		assertThat(exchange.getType()).isEqualTo("direct");
 		assertThat(exchange.isDurable()).isEqualTo(true);
 		assertThat(exchange.isAutoDelete()).isEqualTo(false);
+
+		verifyAutoDeclareContextClear(binder);
 	}
+
 
 	@Test
 	public void testConsumerPropertiesWithUserInfrastructureCustomQueueArgs()
@@ -738,7 +758,10 @@ public class RabbitBinderTests extends
 
 		consumerBinding.unbind();
 		assertThat(container.isRunning()).isFalse();
+
+		verifyAutoDeclareContextClear(binder);
 	}
+
 
 	@Test
 	public void testConsumerPropertiesWithHeaderExchanges() throws Exception {
@@ -788,7 +811,10 @@ public class RabbitBinderTests extends
 		assertThat(bindings.get(0).getDestination()).isEqualTo("propsHeader." + group + ".dlq");
 		assertThat(bindings.get(0).getArguments()).hasEntrySatisfying("x-match", v -> assertThat(v).isEqualTo("any"));
 		assertThat(bindings.get(0).getArguments()).hasEntrySatisfying("foo", v -> assertThat(v).isEqualTo("bar"));
+
+		verifyAutoDeclareContextClear(binder);
 	}
+
 
 	@Test
 	public void testProducerProperties(TestInfo testInfo) throws Exception {
@@ -863,7 +889,10 @@ public class RabbitBinderTests extends
 
 		producerBinding.unbind();
 		assertThat(endpoint.isRunning()).isFalse();
+
+		verifyAutoDeclareContextClear(binder);
 	}
+
 
 	@Test
 	public void testDurablePubSubWithAutoBindDLQ() throws Exception {
@@ -909,7 +938,10 @@ public class RabbitBinderTests extends
 		consumerBinding.unbind();
 		assertThat(admin.getQueueProperties(TEST_PREFIX + "durabletest.0.tgroup.dlq"))
 				.isNotNull();
+
+		verifyAutoDeclareContextClear(binder);
 	}
+
 
 	@Test
 	public void testNonDurablePubSubWithAutoBindDLQ() throws Exception {
@@ -940,7 +972,10 @@ public class RabbitBinderTests extends
 		consumerBinding.unbind();
 		assertThat(admin.getQueueProperties(TEST_PREFIX + "nondurabletest.0.dlq"))
 				.isNull();
+
+		verifyAutoDeclareContextClear(binder);
 	}
+
 
 	@Test
 	public void testAutoBindDLQ() throws Exception {
@@ -1012,7 +1047,10 @@ public class RabbitBinderTests extends
 		assertThat(context.containsBean(TEST_PREFIX + "dlqtest.default.dlq.binding"))
 				.isFalse();
 		assertThat(context.containsBean(TEST_PREFIX + "dlqtest.default.dlq")).isFalse();
+
+		verifyAutoDeclareContextClear(binder);
 	}
+
 
 	@Test
 	public void testAutoBindDLQManualAcks() throws Exception {
@@ -1087,7 +1125,10 @@ public class RabbitBinderTests extends
 		assertThat(context.containsBean(TEST_PREFIX + "dlqTestManual.default.dlq.binding"))
 				.isFalse();
 		assertThat(context.containsBean(TEST_PREFIX + "dlqTestManual.default.dlq")).isFalse();
+
+		verifyAutoDeclareContextClear(binder);
 	}
+
 
 	@Test
 	public void testAutoBindDLQPartionedConsumerFirst(TestInfo testInfo) throws Exception {
@@ -1189,7 +1230,10 @@ public class RabbitBinderTests extends
 		defaultConsumerBinding1.unbind();
 		defaultConsumerBinding2.unbind();
 		outputBinding.unbind();
+
+		verifyAutoDeclareContextClear(binder);
 	}
+
 
 	@Test
 	@Disabled
@@ -1347,6 +1391,8 @@ public class RabbitBinderTests extends
 		defaultConsumerBinding1.unbind();
 		defaultConsumerBinding2.unbind();
 		outputBinding.unbind();
+
+		verifyAutoDeclareContextClear(binder);
 	}
 
 	@Test
@@ -1451,7 +1497,10 @@ public class RabbitBinderTests extends
 		defaultConsumerBinding1.unbind();
 		defaultConsumerBinding2.unbind();
 		outputBinding.unbind();
+
+		verifyAutoDeclareContextClear(binder);
 	}
+
 
 	@Test
 	public void testAutoBindDLQwithRepublish() throws Exception {
@@ -1519,7 +1568,10 @@ public class RabbitBinderTests extends
 		assertThat(template.receive(TEST_PREFIX + "foo.dlqpubtest2.foo.dlq")).isNull();
 
 		consumerBinding.unbind();
+
+		verifyAutoDeclareContextClear(binder);
 	}
+
 
 	@SuppressWarnings("unchecked")
 	@Test
@@ -1565,7 +1617,10 @@ public class RabbitBinderTests extends
 		assertThat(TestUtils.getPropertyValue(errorHandler.get(0), "confirmType", ConfirmType.class))
 				.isEqualTo(ConfirmType.NONE);
 		consumerBinding.unbind();
+
+		verifyAutoDeclareContextClear(binder);
 	}
+
 
 	@SuppressWarnings("unchecked")
 	@Test
@@ -1613,7 +1668,10 @@ public class RabbitBinderTests extends
 		assertThat(TestUtils.getPropertyValue(errorHandler.get(0), "confirmType", ConfirmType.class))
 				.isEqualTo(ConfirmType.SIMPLE);
 		consumerBinding.unbind();
+
+		verifyAutoDeclareContextClear(binder);
 	}
+
 
 	@SuppressWarnings("unchecked")
 	@Test
@@ -1661,7 +1719,10 @@ public class RabbitBinderTests extends
 		assertThat(TestUtils.getPropertyValue(errorHandler.get(0), "confirmType", ConfirmType.class))
 				.isEqualTo(ConfirmType.CORRELATED);
 		consumerBinding.unbind();
+
+		verifyAutoDeclareContextClear(binder);
 	}
+
 
 	@SuppressWarnings("unchecked")
 	@Test
@@ -1723,7 +1784,10 @@ public class RabbitBinderTests extends
 
 		producerBinding.unbind();
 		consumerBinding.unbind();
+
+		verifyAutoDeclareContextClear(binder);
 	}
+
 
 	@SuppressWarnings("unchecked")
 	@Test
@@ -1765,7 +1829,10 @@ public class RabbitBinderTests extends
 
 		producerBinding.unbind();
 		consumerBinding.unbind();
+
+		verifyAutoDeclareContextClear(binder);
 	}
+
 
 	@SuppressWarnings("unchecked")
 	@Test
@@ -1803,7 +1870,10 @@ public class RabbitBinderTests extends
 
 		producerBinding.unbind();
 		consumerBinding.unbind();
+
+		verifyAutoDeclareContextClear(binder);
 	}
+
 
 	@SuppressWarnings("unchecked")
 	@Test
@@ -1842,7 +1912,10 @@ public class RabbitBinderTests extends
 		producerBinding.unbind();
 		consumerBinding.unbind();
 		admin.deleteQueue("propagate");
+
+		verifyAutoDeclareContextClear(binder);
 	}
+
 
 	/*
 	 * Test late binding due to broker down; queues with and without DLQs, and partitioned
@@ -1980,7 +2053,10 @@ public class RabbitBinderTests extends
 		cf.destroy();
 
 		this.rabbitAvailableRule.getResource().destroy();
+
+		verifyAutoDeclareContextClear(binder);
 	}
+
 
 	@Test
 	public void testBadUserDeclarationsFatal() throws Exception {
@@ -2019,7 +2095,10 @@ public class RabbitBinderTests extends
 				binding.unbind();
 			}
 		}
+
+		verifyAutoDeclareContextClear(binder);
 	}
+
 
 	@Test
 	public void testRoutingKeyExpression(TestInfo testInfo) throws Exception {
@@ -2062,7 +2141,45 @@ public class RabbitBinderTests extends
 				.isEqualTo("{\"field\":\"rkeTest\"}");
 
 		producerBinding.unbind();
+
+		verifyAutoDeclareContextClear(binder);
 	}
+
+
+	@Test
+	public void testRoutingKey(TestInfo testInfo) throws Exception {
+		String routingKey = "static.key";
+		RabbitTestBinder binder = getBinder();
+		ExtendedProducerProperties<RabbitProducerProperties> producerProperties = createProducerProperties(testInfo);
+		producerProperties.getExtension().setRoutingKey(routingKey);
+
+		DirectChannel output = createBindableChannel("output",
+				createProducerBindingProperties(producerProperties));
+		output.setBeanName("rkeProducer");
+		Binding<MessageChannel> producerBinding = binder.bindProducer("rke", output,
+				producerProperties);
+
+		RabbitAdmin admin = new RabbitAdmin(this.rabbitAvailableRule.getResource());
+		Queue queue = new AnonymousQueue();
+		DirectExchange exchange = new DirectExchange("rke");
+		org.springframework.amqp.core.Binding binding = BindingBuilder.bind(queue)
+				.to(exchange).with(routingKey);
+		admin.declareQueue(queue);
+		admin.declareBinding(binding);
+
+		output.send(new GenericMessage<>(new Pojo("rkeTest")));
+
+		Object out = spyOn(queue.getName()).receive(false);
+		assertThat(out).isInstanceOf(byte[].class);
+		assertThat(new String((byte[]) out, StandardCharsets.UTF_8))
+				.isEqualTo("{\"field\":\"rkeTest\"}");
+
+
+		producerBinding.unbind();
+
+		verifyAutoDeclareContextClear(binder);
+	}
+
 
 	@Test
 	public void testRoutingKeyExpressionPartitionedAndDelay(TestInfo testInfo) throws Exception {
@@ -2113,7 +2230,10 @@ public class RabbitBinderTests extends
 				.isEqualTo("{\"field\":\"rkepTest\"}");
 
 		producerBinding.unbind();
+
+		verifyAutoDeclareContextClear(binder);
 	}
+
 
 	@Test
 	public void testPolledConsumer() throws Exception {
@@ -2136,7 +2256,10 @@ public class RabbitBinderTests extends
 		}
 		assertThat(polled).isTrue();
 		binding.unbind();
+
+		verifyAutoDeclareContextClear(binder);
 	}
+
 
 	@Test
 	public void testPolledConsumerRequeue() throws Exception {
@@ -2167,7 +2290,10 @@ public class RabbitBinderTests extends
 		});
 		assertThat(polled).isTrue();
 		binding.unbind();
+
+		verifyAutoDeclareContextClear(binder);
 	}
+
 
 	@Test
 	public void testPolledConsumerWithDlq() throws Exception {
@@ -2201,7 +2327,10 @@ public class RabbitBinderTests extends
 				.receive("pollableDlq.group.dlq", 10_000);
 		assertThat(deadLetter).isNotNull();
 		binding.unbind();
+
+		verifyAutoDeclareContextClear(binder);
 	}
+
 
 	@Test
 	public void testPolledConsumerWithDlqNoRetry() throws Exception {
@@ -2233,7 +2362,10 @@ public class RabbitBinderTests extends
 				.receive("pollableDlqNoRetry.group.dlq", 10_000);
 		assertThat(deadLetter).isNotNull();
 		binding.unbind();
+
+		verifyAutoDeclareContextClear(binder);
 	}
+
 
 	@Test
 	public void testPolledConsumerWithDlqRePub() throws Exception {
@@ -2263,7 +2395,10 @@ public class RabbitBinderTests extends
 				.receive("pollableDlqRePub.group.dlq", 10_000);
 		assertThat(deadLetter).isNotNull();
 		binding.unbind();
+
+		verifyAutoDeclareContextClear(binder);
 	}
+
 
 	@Test
 	public void testCustomBatchingStrategy(TestInfo testInfo) throws Exception {
@@ -2300,7 +2435,10 @@ public class RabbitBinderTests extends
 		assertThat(new String((byte[]) out)).isEqualTo("0\u0000\n1\u0000\n2\u0000\n3\u0000\n4\u0000\n");
 
 		producerBinding.unbind();
+
+		verifyAutoDeclareContextClear(binder);
 	}
+
 
 	private SimpleMessageListenerContainer verifyContainer(Lifecycle endpoint) {
 		SimpleMessageListenerContainer container;
@@ -2413,6 +2551,13 @@ public class RabbitBinderTests extends
 		PrintWriter printWriter = new PrintWriter(stringWriter, true);
 		cause.printStackTrace(printWriter);
 		return stringWriter.getBuffer().toString();
+	}
+
+	private void verifyAutoDeclareContextClear(RabbitTestBinder binder) {
+		ApplicationContext ctx =
+				TestUtils.getPropertyValue(binder, "binder.provisioningProvider.autoDeclareContext",
+						ApplicationContext.class);
+		assertThat(ctx.getBeansOfType(Declarable.class)).isEmpty();
 	}
 
 	public static class TestPartitionKeyExtractorClass

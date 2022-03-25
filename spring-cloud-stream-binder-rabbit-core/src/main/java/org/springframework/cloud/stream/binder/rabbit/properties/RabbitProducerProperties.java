@@ -103,6 +103,12 @@ public class RabbitProducerProperties extends RabbitCommonProperties {
 	private Expression delayExpression;
 
 	/**
+	 * a static routing key when publishing messages; default is the destination name;
+	 * suffixed by "-partition" when partitioned. This is only used if `routingKeyExpression` is null
+	 */
+	private String routingKey;
+
+	/**
 	 * a custom routing key when publishing messages; default is the destination name;
 	 * suffixed by "-partition" when partitioned.
 	 */
@@ -237,6 +243,14 @@ public class RabbitProducerProperties extends RabbitCommonProperties {
 
 	public void setRoutingKeyExpression(Expression routingKeyExpression) {
 		this.routingKeyExpression = routingKeyExpression;
+	}
+
+	public String getRoutingKey() {
+		return this.routingKey;
+	}
+
+	public void setRoutingKey(String routingKey) {
+		this.routingKey = routingKey;
 	}
 
 	public String getConfirmAckChannel() {
