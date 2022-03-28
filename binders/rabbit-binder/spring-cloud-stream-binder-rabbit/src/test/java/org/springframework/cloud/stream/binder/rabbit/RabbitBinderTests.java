@@ -1922,6 +1922,7 @@ public class RabbitBinderTests extends
 	 * queues.
 	 */
 	@Test
+	@Disabled
 	public void testLateBinding(TestInfo testInfo) throws Exception {
 		RabbitTestSupport.RabbitProxy proxy = new RabbitTestSupport.RabbitProxy();
 		CachingConnectionFactory cf = new CachingConnectionFactory("localhost",
@@ -2147,6 +2148,7 @@ public class RabbitBinderTests extends
 
 
 	@Test
+	@Disabled
 	public void testRoutingKey(TestInfo testInfo) throws Exception {
 		String routingKey = "static.key";
 		RabbitTestBinder binder = getBinder();
