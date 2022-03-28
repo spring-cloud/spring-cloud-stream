@@ -30,15 +30,14 @@
 		<maven-checkstyle-plugin.failsOnViolation>true</maven-checkstyle-plugin.failsOnViolation>
 		<maven-checkstyle-plugin.includeTestSourceDirectory>true</maven-checkstyle-plugin.includeTestSourceDirectory>
 	</properties>
+
 	<modules>
-		<module>spring-cloud-stream</module>
-		<module>spring-cloud-stream-binder-test</module>
-		<module>spring-cloud-stream-test-support</module>
-		<module>spring-cloud-stream-test-support-internal</module>
-		<module>spring-cloud-stream-integration-tests</module>
-		<module>docs</module>
+		<module>core</module>
+		<module>binders</module>
+		<module>bom</module>
 	</modules>
-	<dependencyManagement>
+  
+        <dependencyManagement>
 		<dependencies>
 			<dependency>
 				<groupId>org.springframework.boot</groupId>
