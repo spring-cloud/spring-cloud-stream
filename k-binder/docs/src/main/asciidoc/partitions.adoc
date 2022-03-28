@@ -1,0 +1,103 @@
+=== Partitioning with the Kafka Binder
+
+Apache Kafka supports topic partitioning natively.
+
+Sometimes it is advantageous to send data to specific partitions -- for example, when you want to strictly order message processing (all messages for a particular customer should go to the same partition).
+
+The following example shows how to configure the producer and consumer side:
+
+[source, java]
+----
+@SpringBootApplication
+@EnableBinding(Source.class)
+public class KafkaPartitionProducerApplication {
+
+    private static final Random RANDOM = new Random(System.currentTimeMillis());
+
+    private static final String[] data = new String[] {
+            "foo1", "bar1", "qux1",
+            "foo2", "bar2", "qux2",
+            "foo3", "bar3", "qux3",
+            "foo4", "bar4", "qux4",
+            };
+
+    public static void main(String[] args) {
+        new SpringApplicationBuilder(KafkaPartitionProducerApplication.class)
+            .web(false)
+            .run(args);
+    }
+
+    @InboundChannelAdapter(channel = Source.OUTPUT, poller = @Poller(fixedRate = "5000"))
+    public Message<?> generate() {
+        String value = data[RANDOM.nextInt(data.length)];
+        System.out.println("Sending: " + value);
+        return MessageBuilder.withPayload(value)
+                .setHeader("partitionKey", value)
+                .build();
+    }
+
+}
+----
+
+.application.yml
+[source, yaml]
+----
+spring:
+  cloud:
+    stream:
+      bindings:
+        output:
+          destination: partitioned.topic
+          producer:
+            partition-key-expression: headers['partitionKey']
+            partition-count: 12
+----
+
+IMPORTANT: The topic must be provisioned to have enough partitions to achieve the desired concurrency for all consumer groups.
+The above configuration supports up to 12 consumer instances (6 if their `concurrency` is 2, 4 if their concurrency is 3, and so on).
+It is generally best to "`over-provision`" the partitions to allow for future increases in consumers or concurrency.
+
+NOTE: The preceding configuration uses the default partitioning (`key.hashCode() % partitionCount`).
+This may or may not provide a suitably balanced algorithm, depending on the key values.
+You can override this default by using the `partitionSelectorExpression` or `partitionSelectorClass` properties.
+
+Since partitions are natively handled by Kafka, no special configuration is needed on the consumer side.
+Kafka allocates partitions across the instances.
+
+The following Spring Boot application listens to a Kafka stream and prints (to the console) the partition ID to which each message goes:
+
+[source, java]
+----
+@SpringBootApplication
+@EnableBinding(Sink.class)
+public class KafkaPartitionConsumerApplication {
+
+    public static void main(String[] args) {
+        new SpringApplicationBuilder(KafkaPartitionConsumerApplication.class)
+            .web(false)
+            .run(args);
+    }
+
+    @StreamListener(Sink.INPUT)
+    public void listen(@Payload String in, @Header(KafkaHeaders.RECEIVED_PARTITION_ID) int partition) {
+        System.out.println(in + " received from partition " + partition);
+    }
+
+}
+----
+
+.application.yml
+[source, yaml]
+----
+spring:
+  cloud:
+    stream:
+      bindings:
+        input:
+          destination: partitioned.topic
+          group: myGroup
+----
+
+You can add instances as needed.
+Kafka rebalances the partition allocations.
+If the instance count (or `instance count * concurrency`) exceeds the number of partitions, some consumers are idle.
