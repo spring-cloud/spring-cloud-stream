@@ -19,6 +19,5 @@
 	  <module>spring-cloud-stream-test-support</module>
 	  <module>spring-cloud-stream-test-support-internal</module>
 	  <module>spring-cloud-stream-integration-tests</module>
-	  <module>docs</module>
 	</modules>
 </project>
