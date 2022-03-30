@@ -134,6 +134,7 @@ import org.springframework.util.StringUtils;
  * @author Artem Bilan
  * @author Soby Chacko
  * @author Oleg Zhurakousky
+ * @author Christian Tzolov
  */
 // @checkstyle:off
 public class RabbitMessageChannelBinder extends
@@ -275,6 +276,14 @@ public class RabbitMessageChannelBinder extends
 				((DisposableBean) this.connectionFactory).destroy();
 			}
 		}
+	}
+
+	/**
+	 * Get the underlying {@link ConnectionFactory} instance to 
+	 * allow manually altering the connection lifecycle.
+	 */
+	public ConnectionFactory getConnectionFactory() {
+		return this.connectionFactory;
 	}
 
 	@Override
