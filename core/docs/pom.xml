@@ -62,6 +62,29 @@
 					</plugin>
 					<plugin>
 						<artifactId>maven-antrun-plugin</artifactId>
+						<executions>
+							<execution>
+								<id>readme</id>
+								<phase>prepare-package</phase>
+								<goals>
+									<goal>run</goal>
+								</goals>
+								<configuration>
+									<target>
+										<path id="readme.class.path">
+											<pathelement location="${readme.main.classpath}"/>
+										</path>
+										<java classname="org.springframework.cloud.internal.asciidoctor.ReadmeMain"
+											  failonerror="yes" classpathref="${readme.class.path}">
+											<!-- Input -->
+											<arg value="${project.basedir}/src/main/asciidoc/README.adoc"/>
+											<!-- Output -->
+											<arg value="${main.basedir}/../README.adoc"/>
+										</java>
+									</target>
+								</configuration>
+							</execution>
+						</executions>
 					</plugin>
 					<plugin>
 						<artifactId>maven-deploy-plugin</artifactId>

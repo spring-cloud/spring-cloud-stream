@@ -5,7 +5,7 @@ Edit the files in the src/main/asciidoc/ directory instead.
 ////
 
 
-:jdkversion: 1.8
+:jdkversion: 17
 :github-tag: master
 :github-repo: spring-cloud/spring-cloud-stream
 
@@ -18,217 +18,96 @@ image::https://badges.gitter.im/spring-cloud/spring-cloud-stream.svg[Gitter, lin
 
 // ======================================================================================
 
-= Preface
-=== A Brief History of Spring's Data Integration Journey
+== Introuduction
+Spring Cloud Stream is a framework for building message-driven microservice applications.
+Spring Cloud Stream builds upon Spring Boot to create standalone, production-grade Spring applications and uses Spring Integration to provide connectivity to message brokers.
+It provides opinionated configuration of middleware from several vendors, introducing the concepts of persistent publish-subscribe semantics, consumer groups, and partitions.
+These are called binder implementations in the parlance of Spring Cloud Stream.
+Out of the box, Spring Cloud Stream provides binder implementations for Apache Kafka and RabbitMQ.
+While these two binder implementations are based on Message Channels, Spring Cloud Stream also provides another binder implementation for Kafka Streams that does not use message channels, but native Kafka Streams types such as KStream, KTable etc.
 
-Spring's journey on Data Integration started with https://projects.spring.io/spring-integration/[Spring Integration]. With its programming model, it provided a consistent developer experience to build applications that can embrace http://www.enterpriseintegrationpatterns.com/[Enterprise Integration Patterns] to connect with external systems such as, databases, message brokers, and among others.
+Below, you can find more information on how to use these various out-of-the-box binder implementations in your applications.
 
-Fast forward to the cloud-era, where microservices have become prominent in the enterprise setting. https://projects.spring.io/spring-boot/[Spring Boot] transformed the way how developers built Applications. With Spring's programming model and the runtime responsibilities handled by Spring Boot, it became seamless to develop stand-alone, production-grade Spring-based microservices.
+== Apache Kafka Binder
 
-To extend this to Data Integration workloads, Spring Integration and Spring Boot were put together into a new project. Spring Cloud Stream was born.
+=== Usage
 
-[%hardbreaks]
-With Spring Cloud Stream, developers can:
+To use Apache Kafka binder, you need to add `spring-cloud-stream-binder-kafka` as a dependency to your Spring Cloud Stream application, as shown in the following example for Maven:
 
-- Build, test and deploy data-centric applications in isolation.
-- Apply modern microservices architecture patterns, including composition through messaging.
-- Decouple application responsibilities with event-centric thinking. An event can represent something that has happened in time, to which the downstream consumer applications can react without knowing where it originated or the producer's identity.
-- Port the business logic onto message brokers (such as RabbitMQ, Apache Kafka, Amazon Kinesis).
-- Rely on the framework's automatic content-type support for common use-cases. Extending to different data conversion types is possible.
-- and many more. . .
-
-=== Quick Start
-
-You can try Spring Cloud Stream in less than 5 min even before you jump into any details by following this three-step guide.
-
-We show you how to create a Spring Cloud Stream application that receives messages coming from the messaging middleware of your choice (more on this later) and logs received messages to the console.
-We call it `LoggingConsumer`.
-While not very practical, it provides a good introduction to some of the main concepts
-and abstractions, making it easier to digest the rest of this user guide.
-
-The three steps are as follows:
-
-. <<spring-cloud-stream-preface-creating-sample-application>>
-. <<spring-cloud-stream-preface-importing-project>>
-. <<spring-cloud-stream-preface-adding-message-handler>>
-
-[[spring-cloud-stream-preface-creating-sample-application]]
-==== Creating a Sample Application by Using Spring Initializr
-To get started, visit the https://start.spring.io[Spring Initializr]. From there, you can generate our `LoggingConsumer` application. To do so:
-
-. In the *Dependencies* section, start typing `stream`.
-When the "`Cloud Stream`" option should appears, select it.
-. Start typing either 'kafka' or 'rabbit'.
-. Select "`Kafka`" or "`RabbitMQ`".
-+
-Basically, you choose the messaging middleware to which your application binds.
-We recommend using the one you have already installed or feel more comfortable with installing and running.
-Also, as you can see from the Initilaizer screen, there are a few other options you can choose.
-For example, you can choose Gradle as your build tool instead of Maven (the default).
-. In the *Artifact* field, type 'logging-consumer'.
-+
-The value of the *Artifact* field becomes the application name.
-If you chose RabbitMQ for the middleware, your Spring Initializr should now be as follows:
-
-[%hardbreaks]
-[%hardbreaks]
-[%hardbreaks]
-image::/docs/src/main/asciidoc/images/spring-initializr.png[align="center"]
-
-[%hardbreaks]
-[%hardbreaks]
-
-. Click the *Generate Project* button.
-+
-Doing so downloads the zipped version of the generated project to your hard drive.
-. Unzip the file into the folder you want to use as your project directory.
-
-TIP: We encourage you to explore the many possibilities available in the Spring Initializr.
-It lets you create many different kinds of Spring applications.
-
-[[spring-cloud-stream-preface-importing-project]]
-==== Importing the Project into Your IDE
-
-Now you can import the project into your IDE.
-Keep in mind that, depending on the IDE, you may need to follow a specific import procedure.
-For example, depending on how the project was generated (Maven or Gradle), you may need to follow specific import procedure (for example, in Eclipse or STS, you need to use File -> Import -> Maven -> Existing Maven Project).
-
-Once imported, the project must have no errors of any kind. Also, `src/main/java` should contain `com.example.loggingconsumer.LoggingConsumerApplication`.
-
-Technically, at this point, you can run the application's main class.
-It is already a valid Spring Boot application.
-However, it does not do anything, so we want to add some code.
-
-[[spring-cloud-stream-preface-adding-message-handler]]
-==== Adding a Message Handler, Building, and Running
-
-Modify the `com.example.loggingconsumer.LoggingConsumerApplication` class to look as follows:
-
-[source, java]
+[source,xml]
 ----
-@SpringBootApplication
-public class LoggingConsumerApplication {
-
-    public static void main(String[] args) {
-        SpringApplication.run(LoggingConsumerApplication.class, args);
-    }
-
-    @Bean
-    public Consumer<Person> log() {
-        return person -> {
-            System.out.println("Received: " + person);
-        };
-    }
-
-    public static class Person {
-        private String name;
-        public String getName() {
-            return name;
-        }
-        public void setName(String name) {
-            this.name = name;
-        }
-        public String toString() {
-            return this.name;
-        }
-    }
-}
+<dependency>
+  <groupId>org.springframework.cloud</groupId>
+  <artifactId>spring-cloud-stream-binder-kafka</artifactId>
+</dependency>
 ----
 
-As you can see from the preceding listing:
+Alternatively, you can also use the Spring Cloud Stream Kafka Starter, as shown in the following example for Maven:
 
-* We are using functional programming model (see <<Spring Cloud Function support>>) to define a single message handler as `Consumer`.
-* We are relying on framework conventions to bind such handler to the input destination binding exposed by the binder.
-
-Doing so also lets you see one of the core features of the framework: It tries to automatically convert incoming message payloads to type `Person`.
-
-You now have a fully functional Spring Cloud Stream application that does listens for messages.
-From here, for simplicity, we assume you selected RabbitMQ in <<spring-cloud-stream-preface-creating-sample-application,step one>>.
-Assuming you have RabbitMQ installed and running, you can start the application by running its `main` method in your IDE.
-
-You should see following output:
-
-[source]
+[source,xml]
 ----
-    --- [ main] c.s.b.r.p.RabbitExchangeQueueProvisioner : declaring queue for inbound: input.anonymous.CbMIwdkJSBO1ZoPDOtHtCg, bound to: input
-    --- [ main] o.s.a.r.c.CachingConnectionFactory       : Attempting to connect to: [localhost:5672]
-    --- [ main] o.s.a.r.c.CachingConnectionFactory       : Created new connection: rabbitConnectionFactory#2a3a299:0/SimpleConnection@66c83fc8. . .
-    . . .
-    --- [ main] o.s.i.a.i.AmqpInboundChannelAdapter      : started inbound.input.anonymous.CbMIwdkJSBO1ZoPDOtHtCg
-    . . .
-    --- [ main] c.e.l.LoggingConsumerApplication         : Started LoggingConsumerApplication in 2.531 seconds (JVM running for 2.897)
+<dependency>
+  <groupId>org.springframework.cloud</groupId>
+  <artifactId>spring-cloud-starter-stream-kafka</artifactId>
+</dependency>
 ----
 
-Go to the RabbitMQ management console or any other RabbitMQ client and send a message to `input.anonymous.CbMIwdkJSBO1ZoPDOtHtCg`.
-The `anonymous.CbMIwdkJSBO1ZoPDOtHtCg` part represents the group name and is generated, so it is bound to be different in your environment.
-For something more predictable, you can use an explicit group name by setting `spring.cloud.stream.bindings.input.group=hello` (or whatever name you like).
+== Apache Kafka Streams Binder
 
-The contents of the message should be a JSON representation of the `Person` class, as follows:
+=== Usage
 
-	{"name":"Sam Spade"}
+To use Apache Kafka Streams binder, you need to add `spring-cloud-stream-binder-kafka-streams` as a dependency to your Spring Cloud Stream application, as shown in the following example for Maven:
 
-Then, in your console, you should see:
+[source,xml]
+----
+<dependency>
+  <groupId>org.springframework.cloud</groupId>
+  <artifactId>spring-cloud-stream-binder-kafka-streams</artifactId>
+</dependency>
+----
 
-`Received: Sam Spade`
+== RabbitMQ Binder
+=== Usage
 
-You can also build and package your application into a boot jar (by using `./mvnw clean install`) and run the built JAR by using the `java -jar` command.
+To use the RabbitMQ binder, you can add it to your Spring Cloud Stream application, by using the following Maven coordinates:
 
-Now you have a working (albeit very basic) Spring Cloud Stream application.
+[source,xml]
+----
+<dependency>
+  <groupId>org.springframework.cloud</groupId>
+  <artifactId>spring-cloud-stream-binder-rabbit</artifactId>
+</dependency>
+----
 
+Alternatively, you can use the Spring Cloud Stream RabbitMQ Starter, as follows:
 
-[[spring-cloud-stream-preface-notable-deprecations]]
-== Notable Deprecations
+[source,xml]
+----
+<dependency>
+  <groupId>org.springframework.cloud</groupId>
+  <artifactId>spring-cloud-starter-stream-rabbit</artifactId>
+</dependency>
+----
 
-- Annotation-based programming model. Basically the @EnableBInding, @StreamListener and all related annotations are now deprecated in
-favor of the functional programming model. See <<Spring Cloud Function support>> for more details.
-- _Reactive module_ (`spring-cloud-stream-reactive`) is discontinued and no longer distributed in favor of native support via spring-cloud-function.
-For backward
-compatibility you can still bring `spring-cloud-stream-reactive` from previous versions.
-- _Test support binder_ `spring-cloud-stream-test-support` with MessageCollector in favor of a new test binder. See <<Testing>> for more details.
-- _@StreamMessageConverter_ - deprecated as it is no longer required.
-- The `original-content-type` header references have been removed after it's been deprecated in v2.0.
-- The `BinderAwareChannelResolver` is deprecated in favor if providing `spring.cloud.stream.sendto.destination` property.
-This is primarily for function-based programming model. For StreamListener it would still be required and thus will stay until we deprecate and eventually discontinue StreamListener
-and annotation-based programming model.
+== Resources
 
-[[spel-and-streaming-data]]
+For more information, please visit the https://spring.io/projects/spring-cloud-stream[project website]:
 
-== Spring Expression Language (SpEL) in the context of Streaming data
-
-Throughout this reference manual you will encounter many features and examples where you can utilize Spring Expression Language (SpEL). It is important to understand certain limitations when it comes to using it.
-
-SpEL gives you access to the current Message as well as the Application Context you are running in.
-However it is important to understand what type of data SpEL can see especially in the context of the incoming Message.
-From the broker, the message arrives in a form of a byte[]. It is then transformed to a `Message<byte[]>` by the binders where as you can see the payload of the message maintains its raw form. The headers of the message are `<String, Object>`, where values are typically another primitive or a collection/array of primitives, hence Object.
-That is because binder does not know the required input type as it has no access to the user code (function). So effectively binder delivered an envelope with the payload and some readable meta-data in the form of message headers, just like the letter delivered by mail.
-This means that while accessing payload of the message is possible you will only have access to it as raw data (i.e., byte[]). And while it may be very common for developers to ask for ability to have SpEL access to fields of a payload object as concrete type (e.g., Foo, Bar etc), you can see how difficult or even impossible would it be to achieve.
-Here is one example to demonstrate the problem; Imagine you have a routing expression to route to different functions based on payload type. This requirement would imply payload conversion from byte[] to a specific type and then applying the SpEL. However, in order to perform such conversion we would need to know the actual type to pass to converter and that comes from function's signature which we don’t know which one. A better approach to solve this requirement would be to pass the type information as message headers (e.g., `application/json;type=foo.bar.Baz` ). You’ll get a clear readable String value that could be accessed and evaluated in a year and easy to read SpEL expression.
-
-Additionally it is considered very bad practice to use payload for routing decisions, since the payload is considered to be privileged data - data only to be read by its final recipient. Again, using the mail delivery analogy you would not want the mailman to open your envelope and read the contents of the letter to make some delivery decisions. The same concept applies here, especially when it is relatively easy to include such information when generating a Message. It enforces certain level of discipline related to the design of data to be transmitted over the network and which pieces of such data can be considered as public and which are privileged.
-
-= Appendices
-[appendix]
-[[building]]
 == Building
 
-:jdkversion: 1.8
+:jdkversion: 17
 
 === Basic Compile and Test
 
 To build the source you will need to install JDK {jdkversion}.
 
-The build uses the Maven wrapper so you don't have to install a specific
-version of Maven.  To enable the tests for Redis, Rabbit, and Kafka bindings you
-should have those servers running before building. See below for more
-information on running the servers.
-
-The main build command is
+Spring Cloud uses Maven for most build-related activities, and you
+should be able to get off the ground quite quickly by cloning the
+project you are interested in and typing
 
 ----
-$ ./mvnw clean install
+$ ./mvnw install
 ----
-
-You can also add '-DskipTests' if you like, to avoid running the tests.
 
 NOTE: You can also install Maven (>=3.3.3) yourself and run the `mvn` command
 in place of `./mvnw` in the examples below. If you do that you also
@@ -242,42 +121,46 @@ the `.mvn` configuration, so if you find you have to do it to make a
 build succeed, please raise a ticket to get the settings added to
 source control.
 
+The projects that require middleware (i.e. Redis) for testing generally
+require that a local instance of [Docker](https://www.docker.com/get-started) is installed and running.
 
-The projects that require middleware generally include a
-`docker-compose.yml`, so consider using
-http://compose.docker.io/[Docker Compose] to run the middeware servers
-in Docker containers. See the README in the
-https://github.com/spring-cloud-samples/scripts[scripts demo
-repository] for specific instructions about the common cases of mongo,
-rabbit and redis.
 
 === Documentation
 
-There is a "full" profile that will generate documentation.
+The spring-cloud-build module has a "docs" profile, and if you switch
+that on it will try to build asciidoc sources from
+`src/main/asciidoc`. As part of that process it will look for a
+`README.adoc` and process it by loading all the includes, but not
+parsing or rendering it, just copying it to `${main.basedir}`
+(defaults to `${basedir}`, i.e. the root of the project). If there are
+any changes in the README it will then show up after a Maven build as
+a modified file in the correct place. Just commit it and push the change.
 
 === Working with the code
 If you don't have an IDE preference we would recommend that you use
-http://www.springsource.com/developer/sts[Spring Tools Suite] or
-http://eclipse.org[Eclipse] when working with the code. We use the
-http://eclipse.org/m2e/[m2eclipe] eclipse plugin for maven support. Other IDEs and tools
-should also work without issue.
+https://www.springsource.com/developer/sts[Spring Tools Suite] or
+https://eclipse.org[Eclipse] when working with the code. We use the
+https://eclipse.org/m2e/[m2eclipse] eclipse plugin for maven support. Other IDEs and tools
+should also work without issue as long as they use Maven 3.3.3 or better.
+
+==== Activate the Spring Maven profile
+Spring Cloud projects require the 'spring' Maven profile to be activated to resolve
+the spring milestone and snapshot repositories. Use your preferred IDE to set this
+profile to be active, or you may experience build errors.
 
 ==== Importing into eclipse with m2eclipse
-We recommend the http://eclipse.org/m2e/[m2eclipe] eclipse plugin when working with
+We recommend the https://eclipse.org/m2e/[m2eclipse] eclipse plugin when working with
 eclipse. If you don't already have m2eclipse installed it is available from the "eclipse
 marketplace".
 
-Unfortunately m2e does not yet support Maven 3.3, so once the projects
-are imported into Eclipse you will also need to tell m2eclipse to use
-the `.settings.xml` file for the projects.  If you do not do this you
-may see many different errors related to the POMs in the
-projects.  Open your Eclipse preferences, expand the Maven
-preferences, and select User Settings.  In the User Settings field
-click Browse and navigate to the Spring Cloud project you imported
-selecting the `.settings.xml` file in that project.  Click Apply and
-then OK to save the preference changes.
-
-NOTE: Alternatively you can copy the repository settings from https://github.com/spring-cloud/spring-cloud-build/blob/master/.settings.xml[`.settings.xml`] into your own `~/.m2/settings.xml`.
+NOTE: Older versions of m2e do not support Maven 3.3, so once the
+projects are imported into Eclipse you will also need to tell
+m2eclipse to use the right profile for the projects.  If you
+see many different errors related to the POMs in the projects, check
+that you have an up to date installation.  If you can't upgrade m2e,
+add the "spring" profile to your `settings.xml`. Alternatively you can
+copy the repository settings from the "spring" profile of the parent
+pom into your `settings.xml`.
 
 ==== Importing into eclipse without m2eclipse
 If you prefer not to use m2eclipse you can generate eclipse project metadata using the
@@ -291,8 +174,10 @@ following command:
 The generated eclipse projects can be imported by selecting `import existing projects`
 from the `file` menu.
 
-[[contributing]]
+
 == Contributing
+
+:spring-cloud-build-branch: master
 
 Spring Cloud is released under the non-restrictive Apache 2.0 license,
 and follows a very standard Github development process, using Github
@@ -302,11 +187,16 @@ follow the guidelines below.
 
 === Sign the Contributor License Agreement
 Before we accept a non-trivial patch or pull request we will need you to sign the
-https://support.springsource.com/spring_committer_signup[contributor's agreement].
+https://cla.pivotal.io/sign/spring[Contributor License Agreement].
 Signing the contributor's agreement does not grant anyone commit rights to the main
 repository, but it does mean that we can accept your contributions, and you will get an
 author credit if we do.  Active contributors might be asked to join the core team, and
 given the ability to merge pull requests.
+
+=== Code of Conduct
+This project adheres to the Contributor Covenant https://github.com/spring-cloud/spring-cloud-build/blob/master/docs/src/main/asciidoc/code-of-conduct.adoc[code of
+conduct]. By participating, you  are expected to uphold this code. Please report
+unacceptable behavior to spring-code-of-conduct@pivotal.io.
 
 === Code Conventions and Housekeeping
 None of these is essential for a pull request, but they will all help.  They can also be
@@ -315,9 +205,9 @@ added after the original pull request but before a merge.
 * Use the Spring Framework code format conventions. If you use Eclipse
   you can import formatter settings using the
   `eclipse-code-formatter.xml` file from the
-  https://github.com/spring-cloud/build/tree/master/eclipse-coding-conventions.xml[Spring
+  https://raw.githubusercontent.com/spring-cloud/spring-cloud-build/master/spring-cloud-dependencies-parent/eclipse-code-formatter.xml[Spring
   Cloud Build] project. If using IntelliJ, you can use the
-  http://plugins.jetbrains.com/plugin/6546[Eclipse Code Formatter
+  https://plugins.jetbrains.com/plugin/6546[Eclipse Code Formatter
   Plugin] to import the same file.
 * Make sure all new `.java` files to have a simple Javadoc class comment with at least an
   `@author` tag identifying you, and preferably at least a paragraph on what the class is
@@ -330,9 +220,190 @@ added after the original pull request but before a merge.
 * A few unit tests would help a lot as well -- someone has to do it.
 * If no-one else is using your branch, please rebase it against the current master (or
   other target branch in the main project).
-* When writing a commit message please follow http://tbaggery.com/2008/04/19/a-note-about-git-commit-messages.html[these conventions],
+* When writing a commit message please follow https://tbaggery.com/2008/04/19/a-note-about-git-commit-messages.html[these conventions],
   if you are fixing an existing issue please add `Fixes gh-XXXX` at the end of the commit
   message (where XXXX is the issue number).
 
+=== Checkstyle
 
-// ======================================================================================
+Spring Cloud Build comes with a set of checkstyle rules. You can find them in the `spring-cloud-build-tools` module. The most notable files under the module are:
+
+.spring-cloud-build-tools/
+----
+└── src
+    ├── checkstyle
+    │   └── checkstyle-suppressions.xml <3>
+    └── main
+        └── resources
+            ├── checkstyle-header.txt <2>
+            └── checkstyle.xml <1>
+----
+<1> Default Checkstyle rules
+<2> File header setup
+<3> Default suppression rules
+
+==== Checkstyle configuration
+
+Checkstyle rules are *disabled by default*. To add checkstyle to your project just define the following properties and plugins.
+
+.pom.xml
+----
+<properties>
+<maven-checkstyle-plugin.failsOnError>true</maven-checkstyle-plugin.failsOnError> <1>
+        <maven-checkstyle-plugin.failsOnViolation>true
+        </maven-checkstyle-plugin.failsOnViolation> <2>
+        <maven-checkstyle-plugin.includeTestSourceDirectory>true
+        </maven-checkstyle-plugin.includeTestSourceDirectory> <3>
+</properties>
+
+<build>
+        <plugins>
+            <plugin> <4>
+                <groupId>io.spring.javaformat</groupId>
+                <artifactId>spring-javaformat-maven-plugin</artifactId>
+            </plugin>
+            <plugin> <5>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+            </plugin>
+        </plugins>
+
+    <reporting>
+        <plugins>
+            <plugin> <5>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </reporting>
+</build>
+----
+<1> Fails the build upon Checkstyle errors
+<2> Fails the build upon Checkstyle violations
+<3> Checkstyle analyzes also the test sources
+<4> Add the Spring Java Format plugin that will reformat your code to pass most of the Checkstyle formatting rules
+<5> Add checkstyle plugin to your build and reporting phases
+
+If you need to suppress some rules (e.g. line length needs to be longer), then it's enough for you to define a file under `${project.root}/src/checkstyle/checkstyle-suppressions.xml` with your suppressions. Example:
+
+.projectRoot/src/checkstyle/checkstyle-suppresions.xml
+----
+<?xml version="1.0"?>
+<!DOCTYPE suppressions PUBLIC
+		"-//Puppy Crawl//DTD Suppressions 1.1//EN"
+		"https://www.puppycrawl.com/dtds/suppressions_1_1.dtd">
+<suppressions>
+	<suppress files=".*ConfigServerApplication\.java" checks="HideUtilityClassConstructor"/>
+	<suppress files=".*ConfigClientWatch\.java" checks="LineLengthCheck"/>
+</suppressions>
+----
+
+It's advisable to copy the `${spring-cloud-build.rootFolder}/.editorconfig` and `${spring-cloud-build.rootFolder}/.springformat` to your project. That way, some default formatting rules will be applied. You can do so by running this script:
+
+```bash
+$ curl https://raw.githubusercontent.com/spring-cloud/spring-cloud-build/master/.editorconfig -o .editorconfig
+$ touch .springformat
+```
+
+=== IDE setup
+
+==== Intellij IDEA
+
+In order to setup Intellij you should import our coding conventions, inspection profiles and set up the checkstyle plugin.
+The following files can be found in the https://github.com/spring-cloud/spring-cloud-build/tree/master/spring-cloud-build-tools[Spring Cloud Build] project.
+
+.spring-cloud-build-tools/
+----
+└── src
+    ├── checkstyle
+    │   └── checkstyle-suppressions.xml <3>
+    └── main
+        └── resources
+            ├── checkstyle-header.txt <2>
+            ├── checkstyle.xml <1>
+            └── intellij
+                ├── Intellij_Project_Defaults.xml <4>
+                └── Intellij_Spring_Boot_Java_Conventions.xml <5>
+----
+<1> Default Checkstyle rules
+<2> File header setup
+<3> Default suppression rules
+<4> Project defaults for Intellij that apply most of Checkstyle rules
+<5> Project style conventions for Intellij that apply most of Checkstyle rules
+
+.Code style
+
+image::https://raw.githubusercontent.com/spring-cloud/spring-cloud-build/{spring-cloud-build-branch}/docs/src/main/asciidoc/images/intellij-code-style.png[Code style]
+
+Go to `File` -> `Settings` -> `Editor` -> `Code style`. There click on the icon next to the `Scheme` section. There, click on the `Import Scheme` value and pick the `Intellij IDEA code style XML` option. Import the `spring-cloud-build-tools/src/main/resources/intellij/Intellij_Spring_Boot_Java_Conventions.xml` file.
+
+.Inspection profiles
+
+image::https://raw.githubusercontent.com/spring-cloud/spring-cloud-build/{spring-cloud-build-branch}/docs/src/main/asciidoc/images/intellij-inspections.png[Code style]
+
+Go to `File` -> `Settings` -> `Editor` -> `Inspections`. There click on the icon next to the `Profile` section. There, click on the `Import Profile` and import the `spring-cloud-build-tools/src/main/resources/intellij/Intellij_Project_Defaults.xml` file.
+
+.Checkstyle
+
+To have Intellij work with Checkstyle, you have to install the `Checkstyle` plugin. It's advisable to also install the `Assertions2Assertj` to automatically convert the JUnit assertions
+
+image::https://raw.githubusercontent.com/spring-cloud/spring-cloud-build/{spring-cloud-build-branch}/docs/src/main/asciidoc/images/intellij-checkstyle.png[Checkstyle]
+
+Go to `File` -> `Settings` -> `Other settings` -> `Checkstyle`. There click on the `+` icon in the `Configuration file` section. There, you'll have to define where the checkstyle rules should be picked from. In the image above, we've picked the rules from the cloned Spring Cloud Build repository. However, you can point to the Spring Cloud Build's GitHub repository (e.g. for the `checkstyle.xml` : `https://raw.githubusercontent.com/spring-cloud/spring-cloud-build/master/spring-cloud-build-tools/src/main/resources/checkstyle.xml`). We need to provide the following variables:
+
+- `checkstyle.header.file` - please point it to the Spring Cloud Build's, `spring-cloud-build-tools/src/main/resources/checkstyle-header.txt` file either in your cloned repo or via the `https://raw.githubusercontent.com/spring-cloud/spring-cloud-build/master/spring-cloud-build-tools/src/main/resources/checkstyle-header.txt` URL.
+- `checkstyle.suppressions.file` - default suppressions. Please point it to the Spring Cloud Build's, `spring-cloud-build-tools/src/checkstyle/checkstyle-suppressions.xml` file either in your cloned repo or via the `https://raw.githubusercontent.com/spring-cloud/spring-cloud-build/master/spring-cloud-build-tools/src/checkstyle/checkstyle-suppressions.xml` URL.
+- `checkstyle.additional.suppressions.file` - this variable corresponds to suppressions in your local project. E.g. you're working on `spring-cloud-contract`. Then point to the `project-root/src/checkstyle/checkstyle-suppressions.xml` folder. Example for `spring-cloud-contract` would be: `/home/username/spring-cloud-contract/src/checkstyle/checkstyle-suppressions.xml`.
+
+IMPORTANT: Remember to set the `Scan Scope` to `All sources` since we apply checkstyle rules for production and test sources.
+
+=== Duplicate Finder
+
+Spring Cloud Build brings along the  `basepom:duplicate-finder-maven-plugin`, that enables flagging duplicate and conflicting classes and resources on the java classpath.
+
+==== Duplicate Finder configuration
+
+Duplicate finder is *enabled by default* and will run in the `verify` phase of your Maven build, but it will only take effect in your project if you add the `duplicate-finder-maven-plugin` to the `build` section of the projecst's `pom.xml`.
+
+.pom.xml
+[source,xml]
+----
+<build>
+    <plugins>
+        <plugin>
+            <groupId>org.basepom.maven</groupId>
+            <artifactId>duplicate-finder-maven-plugin</artifactId>
+        </plugin>
+    </plugins>
+</build>
+----
+
+For other properties, we have set defaults as listed in the https://github.com/basepom/duplicate-finder-maven-plugin/wiki[plugin documentation].
+
+You can easily override them but setting the value of the selected property prefixed with `duplicate-finder-maven-plugin`. For example, set `duplicate-finder-maven-plugin.skip` to `true` in order to skip duplicates check in your build.
+
+If you need to add `ignoredClassPatterns` or `ignoredResourcePatterns` to your setup, make sure to add them in the plugin configuration section of your project:
+
+[source,xml]
+----
+<build>
+    <plugins>
+        <plugin>
+            <groupId>org.basepom.maven</groupId>
+            <artifactId>duplicate-finder-maven-plugin</artifactId>
+            <configuration>
+                <ignoredClassPatterns>
+                    <ignoredClassPattern>org.joda.time.base.BaseDateTime</ignoredClassPattern>
+                    <ignoredClassPattern>.*module-info</ignoredClassPattern>
+                </ignoredClassPatterns>
+                <ignoredResourcePatterns>
+                    <ignoredResourcePattern>changelog.txt</ignoredResourcePattern>
+                </ignoredResourcePatterns>
+            </configuration>
+        </plugin>
+    </plugins>
+</build>
+
+
+----
+
