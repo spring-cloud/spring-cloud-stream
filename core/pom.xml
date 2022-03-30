@@ -16,7 +16,6 @@
 	<modules>
 		<module>spring-cloud-stream</module>
 		<module>spring-cloud-stream-binder-test</module>
-		<module>docs</module>
 	</modules>
 
 </project>
