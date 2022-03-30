@@ -279,7 +279,7 @@ public class RabbitMessageChannelBinder extends
 	}
 
 	/**
-	 * Get the underlying {@link ConnectionFactory} instance to 
+	 * Get the underlying {@link ConnectionFactory} instance to
 	 * allow manually altering the connection lifecycle.
 	 */
 	public ConnectionFactory getConnectionFactory() {
