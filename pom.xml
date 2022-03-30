@@ -35,6 +35,7 @@
 		<module>core</module>
 		<module>binders</module>
 		<module>bom</module>
+		<module>docs</module>
 	</modules>
 
 	<dependencyManagement>
