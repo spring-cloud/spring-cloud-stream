@@ -11,8 +11,13 @@
 
 	<parent>
 		<groupId>org.springframework.cloud</groupId>
+<<<<<<< HEAD
 		<artifactId>spring-cloud-stream-parent</artifactId>
 		<version>3.2.3-SNAPSHOT</version>
+=======
+		<artifactId>spring-cloud-stream-core</artifactId>
+		<version>4.0.0-SNAPSHOT</version>
+>>>>>>> a951837e4... Fixes parent
 	</parent>
 
 	<dependencies>

@@ -11,7 +11,7 @@
 
 	<parent>
 		<groupId>org.springframework.cloud</groupId>
-		<artifactId>spring-cloud-stream-parent</artifactId>
+		<artifactId>spring-cloud-stream-core</artifactId>
 		<version>3.2.3-SNAPSHOT</version>
 	</parent>
 
