@@ -18,6 +18,7 @@ package org.springframework.cloud.bus;
 
 import java.util.HashMap;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -49,6 +50,7 @@ public class RefreshListenerIntegrationTests {
 	@MockBean
 	private BusBridge busBridge;
 
+	@Ignore // see gh-259
 	@Test
 	public void testEndpoint() {
 		System.out.println(rest.getForObject("/actuator", String.class));
