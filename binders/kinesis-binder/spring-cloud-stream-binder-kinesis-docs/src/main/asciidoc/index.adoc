@@ -1,0 +1,34 @@
+[[spring-cloud-stream-binder-kinesis-reference]]
+= Spring Cloud Stream AWS Kinesis Binder Reference Guide
+Artem Bilan
+:doctype: book
+:toc:
+:toclevels: 4
+:source-highlighter: prettify
+:numbered:
+:icons: font
+:hide-uri-scheme:
+:spring-cloud-stream-binder-kinesis-repo: snapshot
+:github-tag: main
+:spring-cloud-stream-binder-kinesis-docs-version: current
+:spring-cloud-stream-binder-kinesis-docs: https://docs.spring.io/spring-cloud-stream-binder-kinesis/docs/{spring-cloud-stream-binder-kinesis-docs-version}/reference
+:spring-cloud-stream-binder-kinesis-docs-current: https://docs.spring.io/spring-cloud-stream-binder-kinesis/docs/current-SNAPSHOT/reference/html/
+:github-repo: spring-cloud/spring-cloud-stream-binder-aws-kinesis
+:github-raw: https://raw.github.com/{github-repo}/{github-tag}
+:github-code: https://github.com/{github-repo}/tree/{github-tag}
+:github-wiki: https://github.com/{github-repo}/wiki
+:github-main-code: https://github.com/{github-repo}/tree/main
+:sc-ext: java
+// ======================================================================================
+
+= Reference Guide
+include::overview.adoc[]
+
+
+= Appendices
+[appendix]
+include::building.adoc[]
+[appendix]
+include::contributing.adoc[]
+
+// ======================================================================================
