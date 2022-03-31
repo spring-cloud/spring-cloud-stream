@@ -1,0 +1,14 @@
+<productname>Spring Cloud Stream Kinesis Binder</productname>
+<releaseinfo>{spring-cloud-stream-binder-kinesis-version}</releaseinfo>
+<copyright>
+	<year>2017-2021</year>
+	<holder>VMWare, Inc.</holder>
+</copyright>
+<legalnotice>
+	<para>
+		Copies of this document may be made for your own use and for distribution to
+		others, provided that you do not charge any fee for such copies and further
+		provided that each copy contains this Copyright Notice, whether distributed in
+		print or electronically.
+	</para>
+</legalnotice>
