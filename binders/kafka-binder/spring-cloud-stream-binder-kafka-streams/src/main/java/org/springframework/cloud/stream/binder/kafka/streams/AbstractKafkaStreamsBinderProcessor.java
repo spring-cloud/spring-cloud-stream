@@ -371,10 +371,10 @@ public abstract class AbstractKafkaStreamsBinderProcessor implements Application
 			public Object onSuccess(ConfigurationPropertyName name, Bindable<?> target,
 									BindContext context, Object result) {
 				if (!concurrencyExplicitlyProvided[0]) {
-
-					concurrencyExplicitlyProvided[0] = name.getLastElement(ConfigurationPropertyName.Form.UNIFORM)
-							.equals("concurrency") &&
-					ConfigurationPropertyName.of("spring.cloud.stream.bindings." + inboundName + ".consumer").isAncestorOf(name);
+					concurrencyExplicitlyProvided[0] = name.getLastElement(ConfigurationPropertyName.Form.UNIFORM).equals("concurrency") &&
+						// name is normalized to contain only uniform elements and thus safe to call toLowerCase here.
+						ConfigurationPropertyName.of("spring.cloud.stream.bindings." + inboundName.toLowerCase() + ".consumer")
+							.isAncestorOf(name);
 				}
 				return result;
 			}
