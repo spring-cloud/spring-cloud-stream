@@ -31,7 +31,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
-import org.springframework.cloud.stream.test.junit.AbstractExternalResourceTestSupport;
 
 /**
  * JUnit {@link org.junit.Rule} that detects the fact that RabbitMQ is available on
