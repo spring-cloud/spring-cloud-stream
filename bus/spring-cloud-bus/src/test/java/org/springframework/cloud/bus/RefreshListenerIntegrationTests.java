@@ -27,6 +27,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.context.junit4.SpringRunner;
 
@@ -50,7 +52,6 @@ public class RefreshListenerIntegrationTests {
 	@MockBean
 	private BusBridge busBridge;
 
-	@Ignore // see gh-259
 	@Test
 	public void testEndpoint() {
 		System.out.println(rest.getForObject("/actuator", String.class));
@@ -62,6 +63,7 @@ public class RefreshListenerIntegrationTests {
 	}
 
 	@SpringBootApplication
+	@Import(TestChannelBinderConfiguration.class)
 	static class MyApp {
 
 	}

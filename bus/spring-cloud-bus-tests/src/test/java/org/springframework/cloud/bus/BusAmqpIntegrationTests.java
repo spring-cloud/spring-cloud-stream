@@ -48,7 +48,7 @@ import static org.springframework.boot.test.context.SpringBootTest.WebEnvironmen
 		"spring.cloud.stream.bindings.springCloudBusOutput.producer.errorChannelEnabled=true",
 		"logging.level.org.springframework.cloud.bus=TRACE", "spring.cloud.bus.id=app:1",
 		"spring.autoconfigure.exclude=org.springframework.cloud.stream.test.binder.TestSupportBinderAutoConfiguration" })
-@Testcontainers(disabledWithoutDocker = true)
+@Testcontainers
 public class BusAmqpIntegrationTests {
 
 	@Container

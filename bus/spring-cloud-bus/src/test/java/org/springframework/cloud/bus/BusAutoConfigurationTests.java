@@ -21,7 +21,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.After;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import org.springframework.boot.SpringApplication;
@@ -35,6 +34,7 @@ import org.springframework.cloud.bus.event.RemoteApplicationEvent;
 import org.springframework.cloud.bus.event.SentApplicationEvent;
 import org.springframework.cloud.bus.event.UnknownRemoteApplicationEvent;
 import org.springframework.cloud.context.refresh.ContextRefresher;
+import org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration;
 import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.cloud.stream.function.StreamBridge;
@@ -50,7 +50,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-@Ignore // see gh-259
 public class BusAutoConfigurationTests {
 
 	private ConfigurableApplicationContext context;
@@ -230,7 +229,7 @@ public class BusAutoConfigurationTests {
 	// see https://github.com/spring-cloud/spring-cloud-bus/issues/101
 	@Test
 	public void serviceMatcherIdIsConstantAfterRefresh() {
-		this.context = SpringApplication.run(new Class[] { RefreshConfig.class, },
+		this.context = SpringApplication.run(new Class[] { RefreshConfig.class, TestChannelBinderConfiguration.class },
 				new String[] { "--server.port=0", "--spring.main.allow-bean-definition-overriding=true" });
 		String originalServiceId = this.context.getBean(ServiceMatcher.class).getBusId();
 		this.context.getBean(ContextRefresher.class).refresh();
@@ -246,10 +245,7 @@ public class BusAutoConfigurationTests {
 
 	@Configuration(proxyBeanMethods = false)
 	@EnableAutoConfiguration
-	@ImportAutoConfiguration({ BusAutoConfiguration.class, /*
-															 * TestSupportBinderAutoConfiguration
-															 * .class,
-															 */
+	@ImportAutoConfiguration({ BusAutoConfiguration.class, TestChannelBinderConfiguration.class,
 			PropertyPlaceholderAutoConfiguration.class })
 	protected static class OutboundMessageHandlerConfiguration {
 
@@ -282,10 +278,7 @@ public class BusAutoConfigurationTests {
 
 	@Configuration(proxyBeanMethods = false)
 	@EnableAutoConfiguration
-	@ImportAutoConfiguration({ BusAutoConfiguration.class, /*
-															 * TestSupportBinderAutoConfiguration
-															 * .class,
-															 */
+	@ImportAutoConfiguration({ BusAutoConfiguration.class, TestChannelBinderConfiguration.class,
 			PropertyPlaceholderAutoConfiguration.class })
 	protected static class InboundMessageHandlerConfiguration
 			implements ApplicationListener<RefreshRemoteApplicationEvent> {

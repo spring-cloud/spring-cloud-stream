@@ -71,11 +71,14 @@
 			<artifactId>spring-cloud-test-support</artifactId>
 			<scope>test</scope>
 		</dependency>
-		<!--<dependency>
+		<dependency>
 			<groupId>org.springframework.cloud</groupId>
-			<artifactId>spring-cloud-stream-test-support</artifactId>
+			<artifactId>spring-cloud-stream</artifactId>
+			<version>${spring-cloud-stream.version}</version>
+			<type>test-jar</type>
+			<classifier>test-binder</classifier>
 			<scope>test</scope>
-		</dependency>-->
+		</dependency>
 	</dependencies>
 
 </project>
