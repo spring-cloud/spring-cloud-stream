@@ -14,23 +14,17 @@
 	<packaging>pom</packaging>
 	<name>spring-cloud-stream-dependencies</name>
 	<description>Spring Cloud Stream Dependencies</description>
-	<properties>
-		<spring-cloud-stream.version>3.2.3-SNAPSHOT</spring-cloud-stream.version>
-		<spring-cloud-stream-binder-kafka.version>3.2.3-SNAPSHOT</spring-cloud-stream-binder-kafka.version>
-		<spring-cloud-stream-binder-rabbit.version>3.2.3-SNAPSHOT</spring-cloud-stream-binder-rabbit.version>
-		<spring-cloud-stream-dependencies.version>3.2.3-SNAPSHOT</spring-cloud-stream-dependencies.version>
-	</properties>
 	<dependencyManagement>
 		<dependencies>
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
 				<artifactId>spring-cloud-stream</artifactId>
-				<version>${spring-cloud-stream.version}</version>
+				<version>${project.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
 				<artifactId>spring-cloud-stream</artifactId>
-				<version>${spring-cloud-stream.version}</version>
+				<version>${project.version}</version>
 				<type>test-jar</type>
 				<scope>test</scope>
 				<classifier>test-binder</classifier>
@@ -38,52 +32,52 @@
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
 				<artifactId>spring-cloud-stream-binder-test</artifactId>
-				<version>${spring-cloud-stream.version}</version>
+				<version>${project.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
 				<artifactId>spring-cloud-stream-test-support</artifactId>
-				<version>${spring-cloud-stream.version}</version>
+				<version>${project.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
 				<artifactId>spring-cloud-stream-binder-kafka</artifactId>
-				<version>${spring-cloud-stream-binder-kafka.version}</version>
+				<version>${project.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
 				<artifactId>spring-cloud-stream-binder-kafka-streams</artifactId>
-				<version>${spring-cloud-stream-binder-kafka.version}</version>
+				<version>${project.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
 				<artifactId>spring-cloud-stream-binder-kafka-core</artifactId>
-				<version>${spring-cloud-stream-binder-kafka.version}</version>
+				<version>${project.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
 				<artifactId>spring-cloud-starter-stream-kafka</artifactId>
-				<version>${spring-cloud-stream-binder-kafka.version}</version>
+				<version>${project.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
 				<artifactId>spring-cloud-stream-binder-rabbit</artifactId>
-				<version>${spring-cloud-stream-binder-rabbit.version}</version>
+				<version>${project.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
 				<artifactId>spring-cloud-stream-binder-rabbit-core</artifactId>
-				<version>${spring-cloud-stream-binder-rabbit.version}</version>
+				<version>${project.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
 				<artifactId>spring-cloud-starter-stream-rabbit</artifactId>
-				<version>${spring-cloud-stream-binder-rabbit.version}</version>
+				<version>${project.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
 				<artifactId>spring-cloud-stream-binder-rabbit-test-support</artifactId>
-				<version>${spring-cloud-stream-binder-rabbit.version}</version>
+				<version>${project.version}</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
