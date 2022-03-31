@@ -6,9 +6,8 @@
 	<packaging>pom</packaging>
 	<parent>
 		<groupId>org.springframework.cloud</groupId>
-		<artifactId>spring-cloud-build</artifactId>
-		<version>3.1.1</version>
-		<relativePath />
+		<artifactId>spring-cloud-stream-binders</artifactId>
+		<version>3.2.3-SNAPSHOT</version>
 	</parent>
 	<properties>
 		<spring-cloud-stream.version>3.2.3-SNAPSHOT</spring-cloud-stream.version>
@@ -27,38 +26,6 @@
 		<module>spring-cloud-stream-binder-rabbit-test-support</module>
 		<module>docs</module>
 	</modules>
-	<dependencyManagement>
-		<dependencies>
-			<dependency>
-				<groupId>org.springframework.cloud</groupId>
-				<artifactId>spring-cloud-stream</artifactId>
-				<version>${spring-cloud-stream.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.springframework.cloud</groupId>
-				<artifactId>spring-cloud-stream-binder-rabbit</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.springframework.cloud</groupId>
-				<artifactId>spring-cloud-stream-binder-test</artifactId>
-				<version>${spring-cloud-stream.version}</version>
-				<scope>test</scope>
-			</dependency>
-			<dependency>
-				<groupId>org.springframework.cloud</groupId>
-				<artifactId>spring-cloud-stream-test-support-internal</artifactId>
-				<version>${spring-cloud-stream.version}</version>
-				<scope>test</scope>
-			</dependency>
-			<dependency>
-				<groupId>org.springframework.cloud</groupId>
-				<artifactId>spring-cloud-stream-binder-rabbit-test-support</artifactId>
-				<version>${project.version}</version>
-				<scope>test</scope>
-			</dependency>
-		</dependencies>
-	</dependencyManagement>
 	<dependencies>
 		<dependency>
 			<groupId>org.junit.vintage</groupId>
