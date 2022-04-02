@@ -872,8 +872,7 @@ default boolean retryAndDlqInBinding(String destinationName, String group) {
 ----
 ====
 
-The destination resolver and `BackOff` are created from the binding properties (if configured).
-You can then use these to create a custom error handler and dead letter publisher; for example:
+The destination resolver and `BackOff` are created from the binding properties (if configured). The `KafkaTemplate` uses configuration from `spring.kafka....` properties. You can then use these to create a custom error handler and dead letter publisher; for example:
 
 ====
 [source, java]
