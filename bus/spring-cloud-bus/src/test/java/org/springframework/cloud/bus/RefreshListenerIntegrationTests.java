@@ -18,7 +18,6 @@ package org.springframework.cloud.bus;
 
 import java.util.HashMap;
 
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
