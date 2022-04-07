@@ -113,7 +113,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 	 */
 	private final String[] headersToEmbed;
 
-	private final ListenerContainerCustomizer<?> containerCustomizer;
+	private ListenerContainerCustomizer<?> containerCustomizer;
 
 	private final MessageSourceCustomizer<?> sourceCustomizer;
 
@@ -195,6 +195,20 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 				endpointCustomizer == null
 				? (handler, destination, group) -> { }
 				: (ConsumerEndpointCustomizer<MessageProducer>) endpointCustomizer;
+	}
+
+	/**
+	 * Configure an optional {@link ListenerContainerCustomizer} for further
+	 * configuration of the listener container instance created by the binder.
+	 * @param containerCustomizer the {@link ListenerContainerCustomizer} to use.
+	 */
+	@SuppressWarnings("unchecked")
+	public void setContainerCustomizer(@Nullable ListenerContainerCustomizer<?> containerCustomizer) {
+
+		this.containerCustomizer =
+			containerCustomizer == null
+				? (container, destinationName, group) -> { }
+				: containerCustomizer;
 	}
 
 	@SuppressWarnings("unchecked")
