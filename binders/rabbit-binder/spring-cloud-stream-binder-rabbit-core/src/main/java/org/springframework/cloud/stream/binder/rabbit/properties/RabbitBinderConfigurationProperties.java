@@ -38,7 +38,7 @@ public class RabbitBinderConfigurationProperties {
 	/**
 	 * Compression level for compressed bindings; see 'java.util.zip.Deflator'.
 	 */
-	private int compressionLevel;
+	private Integer compressionLevel;
 
 	/**
 	 * Prefix for connection names from this binder.
@@ -76,11 +76,11 @@ public class RabbitBinderConfigurationProperties {
 		this.nodes = nodes;
 	}
 
-	public int getCompressionLevel() {
+	public Integer getCompressionLevel() {
 		return compressionLevel;
 	}
 
-	public void setCompressionLevel(int compressionLevel) {
+	public void setCompressionLevel(Integer compressionLevel) {
 		this.compressionLevel = compressionLevel;
 	}
 

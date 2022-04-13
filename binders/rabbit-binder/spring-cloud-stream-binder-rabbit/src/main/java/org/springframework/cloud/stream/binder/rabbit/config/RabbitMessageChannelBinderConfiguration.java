@@ -112,8 +112,11 @@ public class RabbitMessageChannelBinderConfiguration {
 	@Bean
 	MessagePostProcessor gZipPostProcessor() {
 		GZipPostProcessor gZipPostProcessor = new GZipPostProcessor();
-		gZipPostProcessor
-				.setLevel(this.rabbitBinderConfigurationProperties.getCompressionLevel());
+
+		if (this.rabbitBinderConfigurationProperties.getCompressionLevel() != null) {
+			gZipPostProcessor.setLevel(this.rabbitBinderConfigurationProperties.getCompressionLevel());
+		}
+
 		return gZipPostProcessor;
 	}
 
