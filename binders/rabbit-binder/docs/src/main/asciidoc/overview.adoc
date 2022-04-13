@@ -249,7 +249,7 @@ dlqQuorum.enabled::
 When true, create a quorum dead letter queue instead of a classic queue.
 +
 Default: false
-dlqQuorum.initialQuorumSize::
+dlqQuorum.initialGroupSize::
 When `quorum.enabled=true`, set the initial quorum size.
 +
 Default: none - broker default will apply.
@@ -372,7 +372,7 @@ quorum.enabled::
 When true, create a quorum queue instead of a classic queue.
 +
 Default: false
-quorum.initialQuorumSize::
+quorum.initialGroupSize::
 When `quorum.enabled=true`, set the initial quorum size.
 +
 Default: none - broker default will apply.
@@ -836,7 +836,7 @@ When true, create a quorum dead letter queue instead of a classic queue.
 Applies only when `requiredGroups` are provided and then only to those groups.
 +
 Default: false
-dlqQuorum.initialQuorumSize::
+dlqQuorum.initialGroupSize::
 When `quorum.enabled=true`, set the initial quorum size.
 Applies only when `requiredGroups` are provided and then only to those groups.
 +
@@ -928,7 +928,7 @@ When true, create a quorum queue instead of a classic queue.
 Applies only when `requiredGroups` are provided and then only to those groups.
 +
 Default: false
-quorum.initialQuorumSize::
+quorum.initialGroupSize::
 When `quorum.enabled=true`, set the initial quorum size.
 Applies only when `requiredGroups` are provided and then only to those groups.
 +
