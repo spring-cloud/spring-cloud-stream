@@ -209,13 +209,18 @@ public class KafkaBinderMetrics
 				.endOffsets(topicPartitions);
 
 		final Map<TopicPartition, OffsetAndMetadata> committedOffsets = metadataConsumer.committed(endOffsets.keySet());
+		final Map<TopicPartition, Long> beginningOffsets = metadataConsumer.beginningOffsets(endOffsets.keySet());
 
 		for (Map.Entry<TopicPartition, Long> endOffset : endOffsets
 				.entrySet()) {
 			OffsetAndMetadata current = committedOffsets.get(endOffset.getKey());
+			Long beginningOffset = beginningOffsets.get(endOffset.getKey());
 			lag += endOffset.getValue();
 			if (current != null) {
 				lag -= current.offset();
+			}
+			else if (beginningOffset != null) {
+				lag -= beginningOffset;
 			}
 		}
 		return lag;
