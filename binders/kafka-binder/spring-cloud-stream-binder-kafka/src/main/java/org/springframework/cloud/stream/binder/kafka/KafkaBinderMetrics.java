@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2021 the original author or authors.
+ * Copyright 2016-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,6 +61,7 @@ import org.springframework.util.ObjectUtils;
  * @author Jon Schneider
  * @author Thomas Cheyney
  * @author Gary Russell
+ * @author Lars Bilger
  */
 public class KafkaBinderMetrics
 		implements MeterBinder, ApplicationListener<BindingCreatedEvent> {
@@ -209,13 +210,18 @@ public class KafkaBinderMetrics
 				.endOffsets(topicPartitions);
 
 		final Map<TopicPartition, OffsetAndMetadata> committedOffsets = metadataConsumer.committed(endOffsets.keySet());
+		final Map<TopicPartition, Long> beginningOffsets = metadataConsumer.beginningOffsets(endOffsets.keySet());
 
 		for (Map.Entry<TopicPartition, Long> endOffset : endOffsets
 				.entrySet()) {
 			OffsetAndMetadata current = committedOffsets.get(endOffset.getKey());
+			Long beginningOffset = beginningOffsets.get(endOffset.getKey());
 			lag += endOffset.getValue();
 			if (current != null) {
 				lag -= current.offset();
+			}
+			else if (beginningOffset != null) {
+				lag -= beginningOffset;
 			}
 		}
 		return lag;

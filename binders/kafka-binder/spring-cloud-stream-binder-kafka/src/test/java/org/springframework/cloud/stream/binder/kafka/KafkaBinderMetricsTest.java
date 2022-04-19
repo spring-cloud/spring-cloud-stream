@@ -17,6 +17,7 @@
 package org.springframework.cloud.stream.binder.kafka;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -49,6 +50,7 @@ import static org.mockito.Mockito.mock;
  * @author Henryk Konsek
  * @author Thomas Cheyney
  * @author Soby Chacko
+ * @author Lars Bilger
  */
 public class KafkaBinderMetricsTest {
 
@@ -252,6 +254,29 @@ public class KafkaBinderMetricsTest {
 				ArgumentMatchers.eq("group1-metrics"), ArgumentMatchers.any());
 		org.mockito.Mockito.verify(this.consumerFactory).createConsumer(
 				ArgumentMatchers.eq("group2-metrics"), ArgumentMatchers.any());
+	}
+
+	@Test
+	public void usesBeginningOffsetIfNoCommittedOffsetFound() {
+		org.mockito.BDDMockito
+			.given(consumer.committed(ArgumentMatchers.anySet()))
+			.willReturn(Collections.emptyMap());
+		final Map<TopicPartition, Long> beginnings = new HashMap<>();
+		TopicPartition topicPartition = new TopicPartition(TEST_TOPIC, 0);
+		beginnings.put(topicPartition, 500L);
+		org.mockito.BDDMockito
+			.given(consumer.beginningOffsets(ArgumentMatchers.anySet()))
+			.willReturn(beginnings);
+		List<PartitionInfo> partitions = partitions(new Node(0, null, 0));
+		topicsInUse.put(TEST_TOPIC,
+						new TopicInformation("group1-metrics", partitions, false));
+		org.mockito.BDDMockito.given(consumer.partitionsFor(TEST_TOPIC))
+							.willReturn(partitions);
+		metrics.bindTo(meterRegistry);
+		assertThat(meterRegistry.getMeters()).hasSize(1);
+		assertThat(meterRegistry.get(KafkaBinderMetrics.OFFSET_LAG_METRIC_NAME)
+								.tag("group", "group1-metrics").tag("topic", TEST_TOPIC).gauge().value())
+			.isEqualTo(500.0);
 	}
 
 	private List<PartitionInfo> partitions(Node... nodes) {
