@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 the original author or authors.
+ * Copyright 2015-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
+import org.testcontainers.containers.RabbitMQContainer;
 
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
@@ -34,20 +35,22 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Gary Russell
+ * @author Chris Bono
  */
 public class LocalizedQueueConnectionFactoryIntegrationTests {
 
+	private static final RabbitMQContainer RABBITMQ = RabbitTestContainer.sharedInstance();
+
 	@RegisterExtension
-	public static RabbitTestSupport rabbitAvailableRule = new RabbitTestSupport(true);
+	private RabbitTestSupport rabbitTestSupport = new RabbitTestSupport(true, RABBITMQ.getAmqpPort(), RABBITMQ.getHttpPort());
 
 	private LocalizedQueueConnectionFactory lqcf;
 
 	@BeforeEach
 	public void setup() {
-		ConnectionFactory defaultConnectionFactory = rabbitAvailableRule.getResource();
-		String[] addresses = new String[] { "localhost:9999", "localhost:5672" };
-		String[] adminAddresses = new String[] { "http://localhost:15672",
-				"http://localhost:15672" };
+		ConnectionFactory defaultConnectionFactory = rabbitTestSupport.getResource();
+		String[] addresses = new String[] { "localhost:9999", "localhost:" + RABBITMQ.getAmqpPort() };
+		String[] adminAddresses = new String[] { RABBITMQ.getHttpUrl(), RABBITMQ.getHttpUrl() };
 		String[] nodes = new String[] { "foo@bar", "rabbit@localhost" };
 		String vhost = "/";
 		String username = "guest";
