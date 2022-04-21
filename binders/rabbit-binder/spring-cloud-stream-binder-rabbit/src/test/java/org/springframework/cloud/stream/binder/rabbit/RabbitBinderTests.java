@@ -49,6 +49,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.ArgumentCaptor;
+import org.testcontainers.containers.RabbitMQContainer;
 
 import org.springframework.amqp.AmqpIOException;
 import org.springframework.amqp.ImmediateAcknowledgeAmqpException;
@@ -147,30 +148,30 @@ import static org.mockito.Mockito.when;
  * @author Gary Russell
  * @author David Turanski
  * @author Artem Bilan
+ * @author Chris Bono
  */
 // @checkstyle:off
 public class RabbitBinderTests extends
 		PartitionCapableBinderTests<RabbitTestBinder, ExtendedConsumerProperties<RabbitConsumerProperties>, ExtendedProducerProperties<RabbitProducerProperties>> {
 
-	private final String CLASS_UNDER_TEST_NAME = RabbitMessageChannelBinder.class
-			.getSimpleName();
+	private static final RabbitMQContainer RABBITMQ = RabbitTestContainer.sharedInstance();
 
-	public static final String TEST_PREFIX = "bindertest.";
+	private static final String CLASS_UNDER_TEST_NAME = RabbitMessageChannelBinder.class.getSimpleName();
 
-	private static final String BIG_EXCEPTION_MESSAGE = new String(new byte[10_000])
-			.replaceAll("\u0000", "x");
+	private static final String TEST_PREFIX = "bindertest.";
 
-	private int maxStackTraceSize;
-
+	private static final String BIG_EXCEPTION_MESSAGE = new String(new byte[10_000]).replaceAll("\u0000", "x");
 
 	@RegisterExtension
-	RabbitTestSupport rabbitAvailableRule = new RabbitTestSupport(true);
+	private RabbitTestSupport rabbitTestSupport = new RabbitTestSupport(true, RABBITMQ.getAmqpPort(), RABBITMQ.getHttpPort());
+
+	private int maxStackTraceSize;
 
 	@Override
 	protected RabbitTestBinder getBinder() {
 		if (this.testBinder == null) {
 			RabbitProperties rabbitProperties = new RabbitProperties();
-			this.testBinder = new RabbitTestBinder(this.rabbitAvailableRule.getResource(), rabbitProperties);
+			this.testBinder = new RabbitTestBinder(this.rabbitTestSupport.getResource(), rabbitProperties);
 		}
 		return this.testBinder;
 	}
@@ -249,7 +250,7 @@ public class RabbitBinderTests extends
 	@Test
 	public void testProducerErrorChannel(TestInfo testInfo) throws Exception {
 		RabbitTestBinder binder = getBinder();
-		CachingConnectionFactory ccf = this.rabbitAvailableRule.getResource();
+		CachingConnectionFactory ccf = this.rabbitTestSupport.getResource();
 		ccf.setPublisherReturns(true);
 		ccf.setPublisherConfirmType(ConfirmType.CORRELATED);
 		ccf.resetConnection();
@@ -332,7 +333,7 @@ public class RabbitBinderTests extends
 	@Test
 	public void testProducerAckChannel(TestInfo testInfo) throws Exception {
 		RabbitTestBinder binder = getBinder();
-		CachingConnectionFactory ccf = this.rabbitAvailableRule.getResource();
+		CachingConnectionFactory ccf = this.rabbitTestSupport.getResource();
 		ccf.setPublisherReturns(true);
 		ccf.setPublisherConfirmType(ConfirmType.CORRELATED);
 		ccf.resetConnection();
@@ -363,7 +364,7 @@ public class RabbitBinderTests extends
 	@Test
 	public void testProducerConfirmHeader(TestInfo testInfo) throws Exception {
 		RabbitTestBinder binder = getBinder();
-		CachingConnectionFactory ccf = this.rabbitAvailableRule.getResource();
+		CachingConnectionFactory ccf = this.rabbitTestSupport.getResource();
 		ccf.setPublisherReturns(true);
 		ccf.setPublisherConfirmType(ConfirmType.CORRELATED);
 		ccf.resetConnection();
@@ -509,7 +510,7 @@ public class RabbitBinderTests extends
 
 	@Test
 	public void testConsumerPropertiesWithUserInfrastructureNoBind() throws Exception {
-		RabbitAdmin admin = new RabbitAdmin(this.rabbitAvailableRule.getResource());
+		RabbitAdmin admin = new RabbitAdmin(this.rabbitTestSupport.getResource());
 		Queue queue = new Queue("propsUser1.infra");
 		admin.declareQueue(queue);
 		DirectExchange exchange = new DirectExchange("propsUser1");
@@ -532,7 +533,7 @@ public class RabbitBinderTests extends
 		assertThat(container.isRunning()).isTrue();
 		consumerBinding.unbind();
 		assertThat(container.isRunning()).isFalse();
-		Client client = new Client("http://guest:guest@localhost:15672/api/");
+		Client client = new Client(adminUri());
 		List<?> bindings = client.getBindingsBySource("/", exchange.getName());
 		assertThat(bindings.size()).isEqualTo(1);
 	}
@@ -604,7 +605,7 @@ public class RabbitBinderTests extends
 		consumerBinding.unbind();
 		assertThat(container.isRunning()).isFalse();
 		assertThat(container.getQueueNames()[0]).isEqualTo(group);
-		Client client = new Client("http://guest:guest@localhost:15672/api/");
+		Client client = new Client(adminUri());
 		List<BindingInfo> bindings = client.getBindingsBySource("/", "propsUser2");
 		int n = 0;
 		while (n++ < 100 && bindings == null || bindings.size() < 1) {
@@ -632,6 +633,9 @@ public class RabbitBinderTests extends
 		verifyAutoDeclareContextClear(binder);
 	}
 
+	private String adminUri() {
+		return String.format("http://guest:guest@localhost:%d/api", RABBITMQ.getHttpPort());
+	}
 
 	@Test
 	public void testConsumerPropertiesWithUserInfrastructureCustomQueueArgs()
@@ -675,7 +679,7 @@ public class RabbitBinderTests extends
 		SimpleMessageListenerContainer container = TestUtils.getPropertyValue(endpoint,
 				"messageListenerContainer", SimpleMessageListenerContainer.class);
 		assertThat(container.isRunning()).isTrue();
-		Client client = new Client("http://guest:guest@localhost:15672/api");
+		Client client = new Client(adminUri());
 		List<BindingInfo> bindings = client.getBindingsBySource("/", "propsUser3");
 		int n = 0;
 		while (n++ < 100 && bindings == null || bindings.size() < 1) {
@@ -787,7 +791,7 @@ public class RabbitBinderTests extends
 		consumerBinding.unbind();
 		assertThat(container.isRunning()).isFalse();
 		assertThat(container.getQueueNames()[0]).isEqualTo("propsHeader." + group);
-		Client client = new Client("http://guest:guest@localhost:15672/api/");
+		Client client = new Client(adminUri());
 		List<BindingInfo> bindings = client.getBindingsBySource("/", "propsHeader");
 		int n = 0;
 		while (n++ < 100 && bindings == null || bindings.size() < 1) {
@@ -865,7 +869,7 @@ public class RabbitBinderTests extends
 				producerBinding, "lifecycle.amqpTemplate.connectionFactory",
 				ConnectionFactory.class);
 
-		assertThat(this.rabbitAvailableRule.getResource())
+		assertThat(this.rabbitTestSupport.getResource())
 				.isSameAs(producerConnectionFactory);
 
 		endpoint = extractEndpoint(producerBinding);
@@ -882,7 +886,7 @@ public class RabbitBinderTests extends
 		verifyFooRequestProducer(endpoint);
 		channel.send(new GenericMessage<>("foo"));
 		org.springframework.amqp.core.Message received = new RabbitTemplate(
-				this.rabbitAvailableRule.getResource())
+				this.rabbitTestSupport.getResource())
 						.receive("foo.props.0.prodPropsRequired-0", 10_000);
 		assertThat(received).isNotNull();
 		assertThat(received.getMessageProperties().getReceivedDelay()).isEqualTo(42);
@@ -896,7 +900,7 @@ public class RabbitBinderTests extends
 
 	@Test
 	public void testDurablePubSubWithAutoBindDLQ() throws Exception {
-		RabbitAdmin admin = new RabbitAdmin(this.rabbitAvailableRule.getResource());
+		RabbitAdmin admin = new RabbitAdmin(this.rabbitTestSupport.getResource());
 
 		RabbitTestBinder binder = getBinder();
 
@@ -920,7 +924,7 @@ public class RabbitBinderTests extends
 				"tgroup", moduleInputChannel, consumerProperties);
 
 		RabbitTemplate template = new RabbitTemplate(
-				this.rabbitAvailableRule.getResource());
+				this.rabbitTestSupport.getResource());
 		template.convertAndSend(TEST_PREFIX + "durabletest.0", "", "foo");
 
 		int n = 0;
@@ -945,7 +949,7 @@ public class RabbitBinderTests extends
 
 	@Test
 	public void testNonDurablePubSubWithAutoBindDLQ() throws Exception {
-		RabbitAdmin admin = new RabbitAdmin(this.rabbitAvailableRule.getResource());
+		RabbitAdmin admin = new RabbitAdmin(this.rabbitTestSupport.getResource());
 
 		RabbitTestBinder binder = getBinder();
 		ExtendedConsumerProperties<RabbitConsumerProperties> consumerProperties = createConsumerProperties();
@@ -1007,7 +1011,7 @@ public class RabbitBinderTests extends
 		assertThat(container.getQueueNames().length).isEqualTo(2);
 
 		RabbitTemplate template = new RabbitTemplate(
-				this.rabbitAvailableRule.getResource());
+				this.rabbitTestSupport.getResource());
 		template.convertAndSend("", TEST_PREFIX + "dlqtest.default", "foo");
 
 		int n = 0;
@@ -1066,7 +1070,7 @@ public class RabbitBinderTests extends
 		DirectChannel moduleInputChannel = createBindableChannel("input",
 				bindingProperties);
 		moduleInputChannel.setBeanName("dlqTestManual");
-		Client client = new Client("http://guest:guest@localhost:15672/api");
+		Client client = new Client(adminUri());
 		moduleInputChannel.subscribe(new MessageHandler() {
 
 			@Override
@@ -1091,7 +1095,7 @@ public class RabbitBinderTests extends
 				"default", moduleInputChannel, consumerProperties);
 
 		RabbitTemplate template = new RabbitTemplate(
-				this.rabbitAvailableRule.getResource());
+				this.rabbitTestSupport.getResource());
 		template.convertAndSend("", TEST_PREFIX + "dlqTestManual.default", "foo");
 
 		int n = 0;
@@ -1205,7 +1209,7 @@ public class RabbitBinderTests extends
 		output.send(new GenericMessage<>(1));
 
 		RabbitTemplate template = new RabbitTemplate(
-				this.rabbitAvailableRule.getResource());
+				this.rabbitTestSupport.getResource());
 		template.setReceiveTimeout(10000);
 
 		String streamDLQName = "bindertest.partDLQ.0.dlqPartGrp.dlq";
@@ -1356,7 +1360,7 @@ public class RabbitBinderTests extends
 		output.send(new GenericMessage<>(1));
 
 		RabbitTemplate template = new RabbitTemplate(
-				this.rabbitAvailableRule.getResource());
+				this.rabbitTestSupport.getResource());
 		template.setReceiveTimeout(10000);
 
 		String streamDLQName = "bindertest.partPubDLQ.0.dlqPartGrp.dlq";
@@ -1470,7 +1474,7 @@ public class RabbitBinderTests extends
 		output.send(new GenericMessage<Integer>(1));
 
 		RabbitTemplate template = new RabbitTemplate(
-				this.rabbitAvailableRule.getResource());
+				this.rabbitTestSupport.getResource());
 		template.setReceiveTimeout(10000);
 
 		String streamDLQName = "bindertest.partDLQ.1.dlqPartGrp.dlq";
@@ -1505,7 +1509,7 @@ public class RabbitBinderTests extends
 	@Test
 	public void testAutoBindDLQwithRepublish() throws Exception {
 		this.maxStackTraceSize = RabbitUtils
-				.getMaxFrame(rabbitAvailableRule.getResource()) - 20_000;
+				.getMaxFrame(rabbitTestSupport.getResource()) - 20_000;
 		assertThat(this.maxStackTraceSize).isGreaterThan(0);
 
 		RabbitTestBinder binder = getBinder();
@@ -1540,7 +1544,7 @@ public class RabbitBinderTests extends
 				consumerProperties);
 
 		RabbitTemplate template = new RabbitTemplate(
-				this.rabbitAvailableRule.getResource());
+				this.rabbitTestSupport.getResource());
 		template.convertAndSend("", TEST_PREFIX + "foo.dlqpubtest.foo", "foo");
 
 		template.setReceiveTimeout(10_000);
@@ -1598,7 +1602,7 @@ public class RabbitBinderTests extends
 		Binding<MessageChannel> consumerBinding = binder.bindConsumer(
 				"foo.dlqpubtestTx", "foo", moduleInputChannel, consumerProperties);
 
-		RabbitTemplate template = new RabbitTemplate(this.rabbitAvailableRule.getResource());
+		RabbitTemplate template = new RabbitTemplate(this.rabbitTestSupport.getResource());
 		template.convertAndSend("", TEST_PREFIX + "foo.dlqpubtestTx.foo", "foo");
 
 		template.setReceiveTimeout(10_000);
@@ -1625,7 +1629,7 @@ public class RabbitBinderTests extends
 	@SuppressWarnings("unchecked")
 	@Test
 	public void testAutoBindDLQwithRepublishSimpleConfirms() throws Exception {
-		CachingConnectionFactory ccf = this.rabbitAvailableRule.getResource();
+		CachingConnectionFactory ccf = this.rabbitTestSupport.getResource();
 		ccf.setPublisherReturns(true);
 		ccf.setPublisherConfirmType(ConfirmType.SIMPLE);
 		ccf.resetConnection();
@@ -1650,7 +1654,7 @@ public class RabbitBinderTests extends
 		Binding<MessageChannel> consumerBinding = binder.bindConsumer(
 				"foo.dlqpubtestSimple", "foo", moduleInputChannel, consumerProperties);
 
-		RabbitTemplate template = new RabbitTemplate(this.rabbitAvailableRule.getResource());
+		RabbitTemplate template = new RabbitTemplate(this.rabbitTestSupport.getResource());
 		template.convertAndSend("", TEST_PREFIX + "foo.dlqpubtestSimple.foo", "foo");
 
 		template.setReceiveTimeout(10_000);
@@ -1676,7 +1680,7 @@ public class RabbitBinderTests extends
 	@SuppressWarnings("unchecked")
 	@Test
 	public void testAutoBindDLQwithRepublishCorrelatedConfirms() throws Exception {
-		CachingConnectionFactory ccf = this.rabbitAvailableRule.getResource();
+		CachingConnectionFactory ccf = this.rabbitTestSupport.getResource();
 		ccf.setPublisherReturns(true);
 		ccf.setPublisherConfirmType(ConfirmType.CORRELATED);
 		ccf.resetConnection();
@@ -1701,7 +1705,7 @@ public class RabbitBinderTests extends
 		Binding<MessageChannel> consumerBinding = binder.bindConsumer(
 				"foo.dlqpubtestCorrelated", "foo", moduleInputChannel, consumerProperties);
 
-		RabbitTemplate template = new RabbitTemplate(this.rabbitAvailableRule.getResource());
+		RabbitTemplate template = new RabbitTemplate(this.rabbitTestSupport.getResource());
 		template.convertAndSend("", TEST_PREFIX + "foo.dlqpubtestCorrelated.foo", "foo");
 
 		template.setReceiveTimeout(10_000);
@@ -1894,11 +1898,11 @@ public class RabbitBinderTests extends
 		ExtendedConsumerProperties<RabbitConsumerProperties> consumerProperties = createConsumerProperties();
 		Binding<MessageChannel> consumerBinding = binder.bindConsumer("propagate.0",
 				"propagate", input, consumerProperties);
-		RabbitAdmin admin = new RabbitAdmin(rabbitAvailableRule.getResource());
+		RabbitAdmin admin = new RabbitAdmin(rabbitTestSupport.getResource());
 		admin.declareQueue(new Queue("propagate"));
 		admin.declareBinding(new org.springframework.amqp.core.Binding("propagate", DestinationType.QUEUE,
 				"propagate.1", "#", null));
-		RabbitTemplate template = new RabbitTemplate(this.rabbitAvailableRule.getResource());
+		RabbitTemplate template = new RabbitTemplate(this.rabbitTestSupport.getResource());
 		template.convertAndSend("propagate.0.propagate", "foo");
 		output.send(input.receive(10_000));
 		org.springframework.amqp.core.Message received = template.receive("propagate", 10_000);
@@ -1997,7 +2001,7 @@ public class RabbitBinderTests extends
 		Binding<MessageChannel> durableConsumerBinding = binder.bindConsumer("latePubSub",
 				"lateDurableGroup", durablePubSubInputChannel, noDlqConsumerProperties);
 
-		proxy.start();
+		proxy.start(RABBITMQ.getAmqpPort());
 
 		moduleOutputChannel.send(MessageBuilder.withPayload("foo")
 				.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN)
@@ -2052,7 +2056,7 @@ public class RabbitBinderTests extends
 		proxy.stop();
 		cf.destroy();
 
-		this.rabbitAvailableRule.getResource().destroy();
+		this.rabbitTestSupport.getResource().destroy();
 
 		verifyAutoDeclareContextClear(binder);
 	}
@@ -2071,10 +2075,10 @@ public class RabbitBinderTests extends
 		bf.initializeBean(provisioner, "provisioner");
 		bf.registerSingleton("provisioner", provisioner);
 		context.addApplicationListener(provisioner);
-		RabbitAdmin admin = new RabbitAdmin(rabbitAvailableRule.getResource());
+		RabbitAdmin admin = new RabbitAdmin(rabbitTestSupport.getResource());
 		admin.declareQueue(new Queue("testBadUserDeclarationsFatal"));
 		// reset the connection and configure the "user" admin to auto declare queues...
-		rabbitAvailableRule.getResource().resetConnection();
+		rabbitTestSupport.getResource().resetConnection();
 		bf.initializeBean(admin, "rabbitAdmin");
 		bf.registerSingleton("rabbitAdmin", admin);
 		admin.afterPropertiesSet();
@@ -2113,7 +2117,7 @@ public class RabbitBinderTests extends
 		Binding<MessageChannel> producerBinding = binder.bindProducer("rke", output,
 				producerProperties);
 
-		RabbitAdmin admin = new RabbitAdmin(this.rabbitAvailableRule.getResource());
+		RabbitAdmin admin = new RabbitAdmin(this.rabbitTestSupport.getResource());
 		Queue queue = new AnonymousQueue();
 		TopicExchange exchange = new TopicExchange("rke");
 		org.springframework.amqp.core.Binding binding = BindingBuilder.bind(queue)
@@ -2159,7 +2163,7 @@ public class RabbitBinderTests extends
 		Binding<MessageChannel> producerBinding = binder.bindProducer("rke", output,
 				producerProperties);
 
-		RabbitAdmin admin = new RabbitAdmin(this.rabbitAvailableRule.getResource());
+		RabbitAdmin admin = new RabbitAdmin(this.rabbitTestSupport.getResource());
 		Queue queue = new AnonymousQueue();
 		DirectExchange exchange = new DirectExchange("rke");
 		org.springframework.amqp.core.Binding binding = BindingBuilder.bind(queue)
@@ -2199,7 +2203,7 @@ public class RabbitBinderTests extends
 		Binding<MessageChannel> producerBinding = binder.bindProducer("rkep", output,
 				producerProperties);
 
-		RabbitAdmin admin = new RabbitAdmin(this.rabbitAvailableRule.getResource());
+		RabbitAdmin admin = new RabbitAdmin(this.rabbitTestSupport.getResource());
 		Queue queue = new AnonymousQueue();
 		TopicExchange exchange = new TopicExchange("rkep");
 		org.springframework.amqp.core.Binding binding = BindingBuilder.bind(queue)
@@ -2243,7 +2247,7 @@ public class RabbitBinderTests extends
 		Binding<PollableSource<MessageHandler>> binding = binder.bindPollableConsumer(
 				"pollable", "group", inboundBindTarget, createConsumerProperties());
 		RabbitTemplate template = new RabbitTemplate(
-				this.rabbitAvailableRule.getResource());
+				this.rabbitTestSupport.getResource());
 		template.convertAndSend("pollable.group", "testPollable");
 		boolean polled = inboundBindTarget.poll(m -> {
 			assertThat(m.getPayload()).isEqualTo("testPollable");
@@ -2270,7 +2274,7 @@ public class RabbitBinderTests extends
 		Binding<PollableSource<MessageHandler>> binding = binder.bindPollableConsumer(
 				"pollableRequeue", "group", inboundBindTarget, properties);
 		RabbitTemplate template = new RabbitTemplate(
-				this.rabbitAvailableRule.getResource());
+				this.rabbitTestSupport.getResource());
 		template.convertAndSend("pollableRequeue.group", "testPollable");
 		try {
 			boolean polled = false;
@@ -2307,7 +2311,7 @@ public class RabbitBinderTests extends
 		Binding<PollableSource<MessageHandler>> binding = binder.bindPollableConsumer(
 				"pollableDlq", "group", inboundBindTarget, properties);
 		RabbitTemplate template = new RabbitTemplate(
-				this.rabbitAvailableRule.getResource());
+				this.rabbitTestSupport.getResource());
 		template.convertAndSend("pollableDlq.group", "testPollable");
 		try {
 			int n = 0;
@@ -2344,7 +2348,7 @@ public class RabbitBinderTests extends
 		Binding<PollableSource<MessageHandler>> binding = binder.bindPollableConsumer(
 				"pollableDlqNoRetry", "group", inboundBindTarget, properties);
 		RabbitTemplate template = new RabbitTemplate(
-				this.rabbitAvailableRule.getResource());
+				this.rabbitTestSupport.getResource());
 		template.convertAndSend("pollableDlqNoRetry.group", "testPollable");
 		try {
 			int n = 0;
@@ -2380,7 +2384,7 @@ public class RabbitBinderTests extends
 		Binding<PollableSource<MessageHandler>> binding = binder.bindPollableConsumer(
 				"pollableDlqRePub", "group", inboundBindTarget, properties);
 		RabbitTemplate template = new RabbitTemplate(
-				this.rabbitAvailableRule.getResource());
+				this.rabbitTestSupport.getResource());
 		template.convertAndSend("pollableDlqRePub.group", "testPollable");
 		boolean polled = false;
 		int n = 0;
@@ -2512,7 +2516,7 @@ public class RabbitBinderTests extends
 	@Override
 	public Spy spyOn(final String queue) {
 		final RabbitTemplate template = new RabbitTemplate(
-				this.rabbitAvailableRule.getResource());
+				this.rabbitTestSupport.getResource());
 		template.setAfterReceivePostProcessors(
 				new DelegatingDecompressingPostProcessor());
 		return new Spy() {
