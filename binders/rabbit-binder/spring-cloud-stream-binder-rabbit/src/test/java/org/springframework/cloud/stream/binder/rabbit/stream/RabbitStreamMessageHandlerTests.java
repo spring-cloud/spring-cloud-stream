@@ -1,5 +1,5 @@
 /*
- * Copyright 2021-2021 the original author or authors.
+ * Copyright 2021-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,8 +26,10 @@ import com.rabbitmq.stream.Environment;
 import com.rabbitmq.stream.OffsetSpecification;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.testcontainers.containers.RabbitMQContainer;
 
 import org.springframework.cloud.stream.binder.rabbit.RabbitStreamMessageHandler;
+import org.springframework.cloud.stream.binder.rabbit.RabbitTestContainer;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.rabbit.stream.producer.RabbitStreamTemplate;
 
@@ -35,16 +37,18 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Gary Russell
+ * @author Chris Bono
  * @since 3.2
- *
  */
-public class RabbitStreamMessageHandlerTests extends AbstractIntegrationTests {
+public class RabbitStreamMessageHandlerTests {
+
+	private static final RabbitMQContainer RABBITMQ = RabbitTestContainer.sharedInstance();
 
 	@Test
 	void convertAndSend() throws InterruptedException {
 		Environment env = Environment.builder()
 				.lazyInitialization(true)
-				.addressResolver(add -> new Address("localhost", streamPort()))
+				.addressResolver(add -> new Address("localhost", RABBITMQ.getMappedPort(5552)))
 				.build();
 		try {
 			env.deleteStream("stream.stream");

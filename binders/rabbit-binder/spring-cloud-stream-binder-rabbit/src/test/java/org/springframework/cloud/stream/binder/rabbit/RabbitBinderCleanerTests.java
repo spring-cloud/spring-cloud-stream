@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 the original author or authors.
+ * Copyright 2015-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,13 +22,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.http.client.Client;
 import com.rabbitmq.http.client.domain.QueueInfo;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
+import org.testcontainers.containers.RabbitMQContainer;
 
 import org.springframework.amqp.core.Base64UrlNamingStrategy;
 import org.springframework.amqp.core.BindingBuilder;
@@ -48,17 +48,19 @@ import static org.junit.Assert.fail;
 
 /**
  * @author Gary Russell
+ * @author Chris Bono
  * @since 1.2
  */
 public class RabbitBinderCleanerTests {
 
+	private static final RabbitMQContainer RABBITMQ = RabbitTestContainer.sharedInstance();
+
 	private static final String BINDER_PREFIX = "binder.";
 
 	private static final Client client;
-
 	static {
 		try {
-			client = new Client("http://localhost:15672/api", "guest", "guest");
+			client = new Client(RABBITMQ.getHttpUrl() + "/api", "guest", "guest");
 		}
 		catch (MalformedURLException | URISyntaxException e) {
 			throw new RabbitAdminException("Couldn't create a Client", e);
@@ -66,7 +68,7 @@ public class RabbitBinderCleanerTests {
 	}
 
 	@RegisterExtension
-	public RabbitTestSupport rabbitWithMgmtEnabled = new RabbitTestSupport(true);
+	private RabbitTestSupport rabbitTestSupport = new RabbitTestSupport(true, RABBITMQ.getAmqpPort(), RABBITMQ.getHttpPort());
 
 	@Test
 	public void testCleanStream() {
@@ -74,7 +76,7 @@ public class RabbitBinderCleanerTests {
 		final String stream1 = new Base64UrlNamingStrategy("foo").generateName();
 		String stream2 = stream1 + "-1";
 		String firstQueue = null;
-		CachingConnectionFactory connectionFactory = rabbitWithMgmtEnabled.getResource();
+		CachingConnectionFactory connectionFactory = rabbitTestSupport.getResource();
 		RabbitAdmin rabbitAdmin = new RabbitAdmin(connectionFactory);
 		for (int i = 0; i < 5; i++) {
 			String queue1Name = AbstractBinder.applyPrefix(BINDER_PREFIX,
@@ -120,7 +122,7 @@ public class RabbitBinderCleanerTests {
 						new DefaultConsumer(channel));
 				try {
 					waitForConsumerStateNot(queueName, 0);
-					cleaner.clean(stream1, false);
+					doClean(cleaner, stream1, false);
 					fail("Expected exception");
 				}
 				catch (RabbitAdminException e) {
@@ -130,7 +132,7 @@ public class RabbitBinderCleanerTests {
 				channel.basicCancel(consumerTag);
 				waitForConsumerStateNot(queueName, 1);
 				try {
-					cleaner.clean(stream1, false);
+					doClean(cleaner, stream1, false);
 					fail("Expected exception");
 				}
 				catch (RabbitAdminException e) {
@@ -157,7 +159,7 @@ public class RabbitBinderCleanerTests {
 		rabbitAdmin.declareExchange(topic1);
 		rabbitAdmin.deleteQueue(foreignQueue);
 		connectionFactory.destroy();
-		Map<String, List<String>> cleanedMap = cleaner.clean(stream1, false);
+		Map<String, List<String>> cleanedMap = doClean(cleaner, stream1, false);
 		assertThat(cleanedMap).hasSize(2);
 		List<String> cleanedQueues = cleanedMap.get("queues");
 		// should *not* clean stream2
@@ -172,7 +174,7 @@ public class RabbitBinderCleanerTests {
 		assertThat(cleanedExchanges).hasSize(6);
 
 		// wild card *should* clean stream2
-		cleanedMap = cleaner.clean(stream1 + "*", false);
+		cleanedMap = doClean(cleaner, stream1 + "*", false);
 		assertThat(cleanedMap).hasSize(2);
 		cleanedQueues = cleanedMap.get("queues");
 		assertThat(cleanedQueues).hasSize(5);
@@ -184,34 +186,8 @@ public class RabbitBinderCleanerTests {
 		assertThat(cleanedExchanges).hasSize(6);
 	}
 
-	public static class AmqpQueue {
-
-		private boolean autoDelete;
-
-		private boolean durable;
-
-		public AmqpQueue(boolean autoDelete, boolean durable) {
-			this.autoDelete = autoDelete;
-			this.durable = durable;
-		}
-
-		@JsonProperty("auto_delete")
-		protected boolean isAutoDelete() {
-			return autoDelete;
-		}
-
-		protected void setAutoDelete(boolean autoDelete) {
-			this.autoDelete = autoDelete;
-		}
-
-		protected boolean isDurable() {
-			return durable;
-		}
-
-		protected void setDurable(boolean durable) {
-			this.durable = durable;
-		}
-
+	private static Map<String, List<String>> doClean(RabbitBindingCleaner cleaner, String entity, boolean isJob) {
+		return cleaner.clean(RABBITMQ.getHttpUrl() + "/api", "guest", "guest", "/", BINDER_PREFIX, entity, isJob);
 	}
 
 }
