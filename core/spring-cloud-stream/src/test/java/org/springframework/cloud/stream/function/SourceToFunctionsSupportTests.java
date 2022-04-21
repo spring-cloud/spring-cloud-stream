@@ -34,20 +34,12 @@ import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.function.context.PollableBean;
-import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.binder.test.OutputDestination;
 import org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration;
-import org.springframework.cloud.stream.binding.BindingsLifecycleController;
-import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
-import org.springframework.integration.dsl.IntegrationFlow;
-import org.springframework.integration.dsl.IntegrationFlows;
-import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
-import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.GenericMessage;
-import org.springframework.util.MimeTypeUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -70,72 +62,29 @@ public class SourceToFunctionsSupportTests {
 		System.clearProperty("spring.cloud.stream.function.definition");
 	}
 
-	@Test
-	public void testFunctionIsAppliedToExistingMessageSource() {
-		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
-				TestChannelBinderConfiguration.getCompleteConfiguration(
-						FunctionsConfiguration.class, ExistingMessageSourceConfiguration.class)).web(WebApplicationType.NONE).run(
-								"--spring.cloud.stream.function.definition=|toUpperCase",
-								"--spring.jmx.enabled=false")) {
-
-			OutputDestination target = context.getBean(OutputDestination.class);
-			assertThat(target.receive(5000).getPayload())
-					.isEqualTo("HELLO FUNCTION".getBytes(StandardCharsets.UTF_8));
-		}
-	}
-
-	//@Test
-	public void testFunctionsAreAppliedToExistingMessageSource() {
-		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
-				TestChannelBinderConfiguration.getCompleteConfiguration(
-						FunctionsConfiguration.class, ExistingMessageSourceConfiguration.class)).web(WebApplicationType.NONE).run(
-								"--spring.cloud.stream.function.definition=|toUpperCase|concatWithSelf",
-								"--spring.jmx.enabled=false")) {
-
-			OutputDestination target = context.getBean(OutputDestination.class);
-			assertThat(target.receive(1000).getPayload())
-					.isEqualTo("HELLO FUNCTION:HELLO FUNCTION".getBytes(StandardCharsets.UTF_8));
-		}
-	}
-
-	@Test
-	@Disabled // fails intermittently
-	public void testFunctionsAreAppliedToExistingMessageSourceReactive() {
-		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
-				TestChannelBinderConfiguration.getCompleteConfiguration(
-						FunctionsConfiguration.class, ExistingMessageSourceConfiguration.class)).web(WebApplicationType.NONE).run(
-								"--spring.cloud.stream.function.definition=|toUpperCaseReactive|concatWithSelf",
-								"--spring.jmx.enabled=false")) {
-
-			OutputDestination target = context.getBean(OutputDestination.class);
-			assertThat(target.receive(1000).getPayload())
-					.isEqualTo("HELLO FUNCTION:HELLO FUNCTION".getBytes(StandardCharsets.UTF_8));
-		}
-	}
-
-	@Test
-	public void testImperativeSupplier() throws Exception {
-		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
-				TestChannelBinderConfiguration.getCompleteConfiguration(
-						FunctionsConfiguration.class, SupplierConfiguration.class)).web(WebApplicationType.NONE).run(
-								"--spring.cloud.stream.function.definition=number",
-								"--spring.jmx.enabled=false")) {
-			BindingsLifecycleController lifecycle = context .getBean(BindingsLifecycleController.class);
-			OutputDestination target = context.getBean(OutputDestination.class);
-			String result = new String(target.receive(1000).getPayload(), StandardCharsets.UTF_8);
-			assertThat(result).isEqualTo("1");
-			result = new String(target.receive(1000).getPayload(), StandardCharsets.UTF_8);
-			assertThat(result).isEqualTo("2");
-
-			lifecycle.stop("number-out-0");
-			for (int i = 0; i < 2; i++) { //drain
-				target.receive(1000);
-			}
-
-			Thread.sleep(2000);
-			assertThat(target.receive(1000)).isNull();
-		}
-	}
+//	@Test
+//	public void testImperativeSupplier() throws Exception {
+//		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+//				TestChannelBinderConfiguration.getCompleteConfiguration(
+//						FunctionsConfiguration.class, SupplierConfiguration.class)).web(WebApplicationType.NONE).run(
+//								"--spring.cloud.stream.function.definition=number",
+//								"--spring.jmx.enabled=false")) {
+//			BindingsLifecycleController lifecycle = context .getBean(BindingsLifecycleController.class);
+//			OutputDestination target = context.getBean(OutputDestination.class);
+//			String result = new String(target.receive(1000).getPayload(), StandardCharsets.UTF_8);
+//			assertThat(result).isEqualTo("1");
+//			result = new String(target.receive(1000).getPayload(), StandardCharsets.UTF_8);
+//			assertThat(result).isEqualTo("2");
+//
+//			lifecycle.stop("number-out-0");
+//			for (int i = 0; i < 2; i++) { //drain
+//				target.receive(1000);
+//			}
+//
+//			Thread.sleep(2000);
+//			assertThat(target.receive(1000)).isNull();
+//		}
+//	}
 
 	@Test
 	@Ignore
@@ -367,25 +316,6 @@ public class SourceToFunctionsSupportTests {
 		@Bean
 		public Function<String, String> concatWithSelf() {
 			return x -> x + ":" + x;
-		}
-
-	}
-
-	/**
-	 * This configuration essentially emulates our existing app-starters for Sources and
-	 * essentially demonstrates how a function(s) could be applied to an existing source
-	 * via {@link IntegrationFlowFunctionSupport} class.
-	 */
-	@EnableBinding(Source.class)
-	public static class ExistingMessageSourceConfiguration {
-
-		@Bean
-		public IntegrationFlow messageSourceFlow(Source source) {
-			Supplier<Message<String>> messageSource = () -> MessageBuilder
-					.withPayload("hello function")
-					.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN)
-					.build();
-			return IntegrationFlows.fromSupplier(messageSource).channel(source.output()).get();
 		}
 
 	}
