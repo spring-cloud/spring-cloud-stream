@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 the original author or authors.
+ * Copyright 2015-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,22 +45,31 @@ public class RabbitTestSupport
 		extends AbstractExternalResourceTestSupport<CachingConnectionFactory> {
 
 	private final boolean management;
+	private final int ampqPort;
+	private final int managmentPort;
 
 	public RabbitTestSupport() {
 		this(false);
 	}
 
 	public RabbitTestSupport(boolean management) {
+		this(management, 5672, 15672);
+	}
+
+	public RabbitTestSupport(boolean management, int amqpPort, int managementPort) {
 		super("RABBIT");
 		this.management = management;
+		this.ampqPort = amqpPort;
+		this.managmentPort = managementPort;
+
 	}
 
 	@Override
 	protected void obtainResource() throws Exception {
-		resource = new CachingConnectionFactory("localhost");
+		resource = new CachingConnectionFactory("localhost", this.ampqPort);
 		resource.createConnection().close();
 		if (management) {
-			Socket socket = SocketFactory.getDefault().createSocket("localhost", 15672);
+			Socket socket = SocketFactory.getDefault().createSocket("localhost", this.managmentPort);
 			socket.close();
 		}
 	}
@@ -97,6 +106,10 @@ public class RabbitTestSupport
 		}
 
 		public void start() throws IOException {
+			start(5672);
+		}
+
+		public void start(int amqpPort) throws IOException {
 			this.serverSocket = ServerSocketFactory.getDefault()
 					.createServerSocket(this.port, 10);
 			LOGGER.info("Proxy started");
@@ -115,7 +128,7 @@ public class RabbitTestSupport
 									try {
 										final Socket rabbitSocket = SocketFactory
 												.getDefault()
-												.createSocket("localhost", 5672);
+												.createSocket("localhost", amqpPort);
 										socketExec.execute(new Runnable() {
 
 											@Override

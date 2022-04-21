@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 the original author or authors.
+ * Copyright 2015-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.Mockito;
+import org.testcontainers.containers.RabbitMQContainer;
 
 import org.springframework.amqp.core.DeclarableCustomizer;
 import org.springframework.amqp.core.ExchangeTypes;
@@ -60,6 +61,7 @@ import org.springframework.cloud.stream.binder.ExtendedProducerProperties;
 import org.springframework.cloud.stream.binder.ExtendedPropertiesBinder;
 import org.springframework.cloud.stream.binder.PollableMessageSource;
 import org.springframework.cloud.stream.binder.rabbit.RabbitMessageChannelBinder;
+import org.springframework.cloud.stream.binder.rabbit.RabbitTestContainer;
 import org.springframework.cloud.stream.binder.rabbit.properties.RabbitConsumerProperties;
 import org.springframework.cloud.stream.binder.rabbit.properties.RabbitProducerProperties;
 import org.springframework.cloud.stream.binder.test.junit.rabbit.RabbitTestSupport;
@@ -92,11 +94,14 @@ import static org.mockito.Mockito.verify;
  * @author Gary Russell
  * @author Artem Bilan
  * @author Soby Chacko
+ * @author Chris Bono
  */
 public class RabbitBinderModuleTests {
 
+	private static final RabbitMQContainer RABBITMQ = RabbitTestContainer.sharedInstance();
+
 	@RegisterExtension
-	public static RabbitTestSupport rabbitTestSupport = new RabbitTestSupport();
+	private RabbitTestSupport rabbitTestSupport = new RabbitTestSupport(true, RABBITMQ.getAmqpPort(), RABBITMQ.getHttpPort());
 
 	private ConfigurableApplicationContext context;
 
@@ -118,6 +123,7 @@ public class RabbitBinderModuleTests {
 	public void testParentConnectionFactoryInheritedByDefault() throws Exception {
 		context = new SpringApplicationBuilder(SimpleProcessor.class)
 				.web(WebApplicationType.NONE).run("--server.port=0",
+						"--spring.rabbitmq.port=" + RABBITMQ.getAmqpPort(),
 						"--spring.cloud.stream.rabbit.binder.connection-name-prefix=foo",
 						"--spring.cloud.stream.rabbit.bindings.input.consumer.single-active-consumer=true");
 		BinderFactory binderFactory = context.getBean(BinderFactory.class);
@@ -166,7 +172,7 @@ public class RabbitBinderModuleTests {
 	}
 
 	private void checkCustomizedArgs() throws MalformedURLException, URISyntaxException, InterruptedException {
-		Client client = new Client("http://guest:guest@localhost:15672/api");
+		Client client = new Client(String.format("http://guest:guest@localhost:%d/api", RABBITMQ.getHttpPort()));
 		List<BindingInfo> bindings = client.getBindingsBySource("/", "input");
 		int n = 0;
 		while (n++ < 100 && bindings == null || bindings.size() < 1) {
@@ -187,6 +193,7 @@ public class RabbitBinderModuleTests {
 	public void testParentConnectionFactoryInheritedByDefaultAndRabbitSettingsPropagated() {
 		context = new SpringApplicationBuilder(SimpleProcessor.class)
 				.web(WebApplicationType.NONE).run("--server.port=0",
+						"--spring.rabbitmq.port=" + RABBITMQ.getAmqpPort(),
 						"--spring.cloud.stream.bindings.source.group=someGroup",
 						"--spring.cloud.stream.bindings.input.group=someGroup",
 						"--spring.cloud.stream.rabbit.bindings.input.consumer.transacted=true",
@@ -232,7 +239,7 @@ public class RabbitBinderModuleTests {
 		RabbitHealthIndicator indicator = (RabbitHealthIndicator) bindersHealthIndicator.getContributor("rabbit");
 		assertThat(indicator).isNotNull();
 		assertThat(indicator.health().getStatus())
-				.isEqualTo(Status.UP);
+			.isEqualTo(Status.UP);
 
 		CachingConnectionFactory cf = this.context
 				.getBean(CachingConnectionFactory.class);
@@ -247,8 +254,8 @@ public class RabbitBinderModuleTests {
 	@Test
 	public void testParentConnectionFactoryInheritedIfOverridden() {
 		context = new SpringApplicationBuilder(SimpleProcessor.class,
-				ConnectionFactoryConfiguration.class).web(WebApplicationType.NONE)
-						.run("--server.port=0");
+			ConnectionFactoryConfiguration.class).web(WebApplicationType.NONE)
+			.run("--server.port=0", "--spring.rabbitmq.port=" + RABBITMQ.getAmqpPort());
 		BinderFactory binderFactory = context.getBean(BinderFactory.class);
 		Binder<?, ?, ?> binder = binderFactory.getBinder(null, MessageChannel.class);
 		assertThat(binder).isInstanceOf(RabbitMessageChannelBinder.class);
@@ -276,6 +283,7 @@ public class RabbitBinderModuleTests {
 		params.add("--spring.cloud.stream.binders.custom.type=rabbit");
 		params.add("--spring.cloud.stream.binders.custom.environment.foo=bar");
 		params.add("--server.port=0");
+		params.add("--spring.rabbitmq.port=" + RABBITMQ.getAmqpPort());
 		params.add("--spring.rabbitmq.template.retry.enabled=true");
 		params.add("--spring.rabbitmq.template.retry.maxAttempts=2");
 		params.add("--spring.rabbitmq.template.retry.initial-interval=1000");
@@ -352,6 +360,7 @@ public class RabbitBinderModuleTests {
 	public void testExtendedProperties() {
 		context = new SpringApplicationBuilder(SimpleProcessor.class)
 				.web(WebApplicationType.NONE).run("--server.port=0",
+						"--spring.rabbitmq.port=" + RABBITMQ.getAmqpPort(),
 						"--spring.cloud.stream.rabbit.default.producer.routing-key-expression=fooRoutingKey",
 						"--spring.cloud.stream.rabbit.default.consumer.exchange-type=direct",
 						"--spring.cloud.stream.rabbit.bindings.output.producer.batch-size=512",
