@@ -145,7 +145,11 @@ public class BindingService {
 							continue;
 						}
 
-						ConsumerProperties consumerPropertiesTemp = new ExtendedConsumerProperties<>("");
+						Object extensiion = consumerProperties instanceof ExtendedConsumerProperties
+								? ((ExtendedConsumerProperties) consumerProperties).getExtension()
+										: null;
+
+						ConsumerProperties consumerPropertiesTemp = new ExtendedConsumerProperties<>(extensiion);
 						BeanUtils.copyProperties(consumerProperties, consumerPropertiesTemp);
 
 						consumerPropertiesTemp.setInstanceIndex(index);
