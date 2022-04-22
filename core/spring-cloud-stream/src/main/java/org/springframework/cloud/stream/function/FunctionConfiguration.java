@@ -1002,6 +1002,7 @@ public class FunctionConfiguration {
 			List<String> eligibleFunctionDefinitions = new ArrayList<>();
 			String[] functionDefinitions = streamFunctionProperties.getDefinition().split(";");
 			for (String functionDefinition : functionDefinitions) {
+				functionDefinition = functionDefinition.trim();
 				String[] functionNames = StringUtils.delimitedListToStringArray(functionDefinition.replaceAll(",", "|").trim(), "|");
 				boolean eligibleDefinition = true;
 				for (int i = 0; i < functionNames.length && eligibleDefinition; i++) {

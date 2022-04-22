@@ -32,7 +32,7 @@ class RoutingFunctionEnvironmentPostProcessor implements EnvironmentPostProcesso
 
 	@Override
 	public void postProcessEnvironment(ConfigurableEnvironment environment, SpringApplication application) {
-		String name = environment.getProperty("spring.cloud.stream.function.definition");
+		String name = environment.getProperty("spring.cloud.function.definition");
 		if (StringUtils.hasText(name) && (
 				name.equals(RoutingFunction.FUNCTION_NAME) ||
 				name.contains(RoutingFunction.FUNCTION_NAME + "|") ||
