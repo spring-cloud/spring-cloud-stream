@@ -16,37 +16,67 @@
 
 package org.springframework.cloud.stream.binder.kafka.bootstrap;
 
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.kafka.test.EmbeddedKafkaBroker;
-import org.springframework.kafka.test.condition.EmbeddedKafkaCondition;
 import org.springframework.kafka.test.context.EmbeddedKafka;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 /**
+ * Integration tests to verify the bootstrap of a SpringBoot application using the Kafka binder.
+ *
  * @author Marius Bogoevici
+ * @author Chris Bono
  */
+@ExtendWith(SpringExtension.class)
 @EmbeddedKafka(count = 1, controlledShutdown = true)
-public class KafkaBinderBootstrapTest {
+class KafkaBinderBootstrapTest {
 
-	private static EmbeddedKafkaBroker embeddedKafka;
+	@Autowired
+	private EmbeddedKafkaBroker embeddedKafka;
 
-	@BeforeAll
-	public static void setup() {
-		embeddedKafka = EmbeddedKafkaCondition.getBroker();
+	@ParameterizedTest
+	@ValueSource(booleans = { false, true })
+	void kafkaBinderWithStandardConfigCanStart(boolean excludeKafkaAutoConfig) {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(SimpleApplication.class)
+			.web(WebApplicationType.NONE).run(
+				"--spring.cloud.stream.kafka.binder.brokers=" + embeddedKafka.getBrokersAsString(),
+				excludeKafkaAutoConfigParam(excludeKafkaAutoConfig))) { // @checkstyle:off
+		} // @checkstyle:on
+
 	}
 
-	@Test
-	void testKafkaBinderConfiguration() throws Exception {
-		ConfigurableApplicationContext applicationContext = new SpringApplicationBuilder(
-				SimpleApplication.class).web(WebApplicationType.NONE).run(
-						"--spring.cloud.stream.kafka.binder.brokers="
-								+ embeddedKafka.getBrokersAsString());
-		applicationContext.close();
+	@ParameterizedTest
+	@ValueSource(booleans = { false, true })
+	void kafkaBinderWithCustomConfigCanStart(boolean excludeKafkaAutoConfig) {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(SimpleApplication.class)
+			.web(WebApplicationType.NONE).run(
+				"--spring.cloud.stream.bindings.uppercase-in-0.destination=inputTopic",
+				"--spring.cloud.stream.bindings.uppercase-in-0.group=inputGroup",
+				"--spring.cloud.stream.bindings.uppercase-in-0.binder=kafka1",
+				"--spring.cloud.stream.bindings.uppercase-out-0.destination=outputTopic",
+				"--spring.cloud.stream.bindings.uppercase-out-0.binder=kafka2",
+				"--spring.cloud.stream.binders.kafka1.type=kafka",
+				"--spring.cloud.stream.binders.kafka2.type=kafka",
+				"--spring.cloud.stream.binders.kafka1.environment"
+					+ ".spring.cloud.stream.kafka.binder.brokers=" + embeddedKafka.getBrokersAsString(),
+				"--spring.cloud.stream.binders.kafka2.environment"
+					+ ".spring.cloud.stream.kafka.binder.brokers=" + embeddedKafka.getBrokersAsString(),
+				excludeKafkaAutoConfigParam(excludeKafkaAutoConfig))) { // @checkstyle:off
+		} // @checkstyle:on
+
+	}
+
+	private String excludeKafkaAutoConfigParam(boolean excludeKafkaAutoConfig) {
+		return excludeKafkaAutoConfig ?
+			"--spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration" : "a=a";
 	}
 
 	@SpringBootApplication

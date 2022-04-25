@@ -16,42 +16,25 @@
 
 package org.springframework.cloud.stream.binder.kafka;
 
-import java.lang.reflect.Field;
-
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cloud.stream.binder.kafka.config.KafkaBinderConfiguration;
-import org.springframework.kafka.support.ProducerListener;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
-import org.springframework.util.ReflectionUtils;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Ilayaperumal Gopinathan
+ * @author Chris Bono
  */
-@ExtendWith(SpringExtension.class)
-@SpringBootTest(classes = { KafkaBinderConfiguration.class, KafkaAutoConfiguration.class,
-		KafkaBinderConfigurationTest.class })
-public class KafkaBinderConfigurationTest {
-
-	@Autowired
-	private KafkaMessageChannelBinder kafkaMessageChannelBinder;
+@SpringBootTest(classes = { KafkaBinderConfiguration.class })
+class KafkaBinderConfigurationTest {
 
 	@Test
-	void testKafkaBinderProducerListener() {
-		assertThat(this.kafkaMessageChannelBinder).isNotNull();
-		Field producerListenerField = ReflectionUtils.findField(
-				KafkaMessageChannelBinder.class, "producerListener",
-				ProducerListener.class);
-		ReflectionUtils.makeAccessible(producerListenerField);
-		ProducerListener producerListener = (ProducerListener) ReflectionUtils
-				.getField(producerListenerField, this.kafkaMessageChannelBinder);
-		assertThat(producerListener).isNotNull();
+	void binderAutoConfiguredWithProducerListener(@Autowired KafkaMessageChannelBinder kafkaMessageChannelBinder) {
+		assertThat(ReflectionTestUtils.getField(kafkaMessageChannelBinder, "producerListener")).isNotNull();
 	}
 
 }
