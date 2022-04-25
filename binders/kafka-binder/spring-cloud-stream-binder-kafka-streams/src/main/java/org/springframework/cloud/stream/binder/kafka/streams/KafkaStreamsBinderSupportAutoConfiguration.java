@@ -83,7 +83,7 @@ import org.springframework.util.StringUtils;
  * @author Gary Russell
  */
 @Configuration
-@EnableConfigurationProperties(KafkaStreamsExtendedBindingProperties.class)
+@EnableConfigurationProperties({ KafkaProperties.class, KafkaStreamsExtendedBindingProperties.class })
 @ConditionalOnBean(BindingService.class)
 @AutoConfigureAfter(BindingServiceConfiguration.class)
 public class KafkaStreamsBinderSupportAutoConfiguration {
