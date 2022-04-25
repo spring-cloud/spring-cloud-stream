@@ -16,18 +16,16 @@
 
 package org.springframework.cloud.stream.binder.kafka.bootstrap;
 
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.kafka.test.EmbeddedKafkaBroker;
+import org.springframework.kafka.test.condition.EmbeddedKafkaCondition;
 import org.springframework.kafka.test.context.EmbeddedKafka;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 /**
  * Integration tests to verify the bootstrap of a SpringBoot application using the Kafka binder.
@@ -35,12 +33,10 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
  * @author Marius Bogoevici
  * @author Chris Bono
  */
-@ExtendWith(SpringExtension.class)
-@EmbeddedKafka(count = 1, controlledShutdown = true)
+@EmbeddedKafka(controlledShutdown = true)
 class KafkaBinderBootstrapTest {
 
-	@Autowired
-	private EmbeddedKafkaBroker embeddedKafka;
+	private static final EmbeddedKafkaBroker embeddedKafka = EmbeddedKafkaCondition.getBroker();
 
 	@ParameterizedTest
 	@ValueSource(booleans = { false, true })
