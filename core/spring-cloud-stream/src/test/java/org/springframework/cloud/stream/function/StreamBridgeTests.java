@@ -82,7 +82,7 @@ public class StreamBridgeTests {
 	}
 
 	@Test
-	void test_SCF_856() throws Exception {
+	public void test_SCF_856() throws Exception {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 				TestChannelBinderConfiguration.getCompleteConfiguration(EmptyConfiguration.class))
 				.web(WebApplicationType.NONE).run("--spring.jmx.enabled=false")) {
