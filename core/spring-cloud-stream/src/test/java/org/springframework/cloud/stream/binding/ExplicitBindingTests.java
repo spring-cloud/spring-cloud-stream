@@ -19,6 +19,7 @@ package org.springframework.cloud.stream.binding;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.boot.WebApplicationType;
@@ -69,6 +70,7 @@ public class ExplicitBindingTests {
 	}
 
 	@Test
+	@Disabled
 	void testExplicitBindingsWithExistingSupplier() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 				TestChannelBinderConfiguration.getCompleteConfiguration(SupplierConfiguration.class))
