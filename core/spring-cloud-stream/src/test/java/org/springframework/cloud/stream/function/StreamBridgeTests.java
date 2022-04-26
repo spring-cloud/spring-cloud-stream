@@ -19,6 +19,7 @@ package org.springframework.cloud.stream.function;
 import java.lang.reflect.Field;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -37,7 +38,9 @@ import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.cloud.function.cloudevent.CloudEventMessageBuilder;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
+import org.springframework.cloud.function.context.message.MessageUtils;
 import org.springframework.cloud.stream.binder.test.InputDestination;
 import org.springframework.cloud.stream.binder.test.OutputDestination;
 import org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration;
@@ -79,6 +82,24 @@ public class StreamBridgeTests {
 	@BeforeAll
 	public static void before() {
 		System.clearProperty("spring.cloud.function.definition");
+	}
+
+	@Test
+	void test_SCF_856() throws Exception {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+				TestChannelBinderConfiguration.getCompleteConfiguration(EmptyConfiguration.class))
+				.web(WebApplicationType.NONE).run("--spring.jmx.enabled=false")) {
+			StreamBridge streamBridge = context.getBean(StreamBridge.class);
+			streamBridge.send("myBinding-out-0",
+					CloudEventMessageBuilder.withData("hello").setSource("my-source")
+							.setId(UUID.randomUUID().toString()).setSpecVersion("1.0").setType("myType")
+							.setHeader(MessageUtils.TARGET_PROTOCOL, "kafka").build(),
+					MimeTypeUtils.APPLICATION_JSON);
+			OutputDestination output = context.getBean(OutputDestination.class);
+			Message<byte[]> result = output.receive();
+			assertThat(result.getHeaders().get("ce_type")).isNotNull();
+			assertThat(result.getHeaders().get("ce_source")).isNotNull();
+		}
 	}
 
 	/*

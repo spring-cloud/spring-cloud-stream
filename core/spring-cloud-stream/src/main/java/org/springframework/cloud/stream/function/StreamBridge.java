@@ -34,6 +34,7 @@ import org.springframework.cloud.function.context.FunctionRegistry;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.PassThruFunction;
 import org.springframework.cloud.function.context.message.MessageUtils;
+import org.springframework.cloud.function.core.FunctionInvocationHelper;
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.BinderFactory;
 import org.springframework.cloud.stream.binder.ProducerProperties;
@@ -98,6 +99,8 @@ public final class StreamBridge implements SmartInitializingSingleton {
 
 	private final Map<String, FunctionInvocationWrapper> streamBridgeFunctionCache;
 
+	private FunctionInvocationHelper<?> functionInvocationHelper;
+
 	/**
 	 *
 	 * @param functionCatalog instance of {@link FunctionCatalog}
@@ -125,6 +128,7 @@ public final class StreamBridge implements SmartInitializingSingleton {
 				return remove;
 			}
 		};
+		this.functionInvocationHelper = applicationContext.getBean(FunctionInvocationHelper.class);
 		this.streamBridgeFunctionCache = new HashMap<>();
 	}
 
@@ -208,8 +212,6 @@ public final class StreamBridge implements SmartInitializingSingleton {
 	@SuppressWarnings({ "unchecked"})
 	public boolean send(String bindingName, @Nullable String binderName, Object data, MimeType outputContentType) {
 
-
-
 		ProducerProperties producerProperties = this.bindingServiceProperties.getProducerProperties(bindingName);
 		MessageChannel messageChannel = this.resolveDestination(bindingName, producerProperties, binderName);
 
@@ -219,15 +221,18 @@ public final class StreamBridge implements SmartInitializingSingleton {
 			functionToInvoke = new PartitionAwareFunctionWrapper(functionToInvoke, this.applicationContext, producerProperties);
 		}
 
+		String targetType = this.resolveBinderTargetType(bindingName, MessageChannel.class, this.applicationContext.getBean(BinderFactory.class));
 
 		Message<?> messageToSend = data instanceof Message
-				? MessageBuilder.fromMessage((Message) data).setHeader(MessageUtils.TARGET_PROTOCOL, "streamBridge").build()
-						: new GenericMessage<>(data, Collections.singletonMap(MessageUtils.TARGET_PROTOCOL, "streamBridge"));
+				? MessageBuilder.fromMessage((Message) data).setHeaderIfAbsent(MessageUtils.TARGET_PROTOCOL, targetType).build()
+						: new GenericMessage<>(data, Collections.singletonMap(MessageUtils.TARGET_PROTOCOL, targetType));
 
 		Message<?> resultMessage;
 		synchronized (this) {
 			resultMessage = (Message<byte[]>) functionToInvoke.apply(messageToSend);
 		}
+
+		resultMessage = (Message<?>) this.functionInvocationHelper.postProcessResult(resultMessage, null);
 
 		return messageChannel.send(resultMessage);
 	}
@@ -298,6 +303,14 @@ public final class StreamBridge implements SmartInitializingSingleton {
 		}
 
 		return messageChannel;
+	}
+
+	private String resolveBinderTargetType(String channelName, Class<?> bindableType, BinderFactory binderFactory) {
+		String binderConfigurationName = this.bindingServiceProperties
+				.getBinder(channelName);
+		Binder binder = binderFactory.getBinder(binderConfigurationName, bindableType);
+		String targetProtocol = binder.getClass().getSimpleName().startsWith("Rabbit") ? "amqp" : "kafka";
+		return targetProtocol;
 	}
 
 	private void addInterceptors(AbstractMessageChannel messageChannel, String destinationName) {
