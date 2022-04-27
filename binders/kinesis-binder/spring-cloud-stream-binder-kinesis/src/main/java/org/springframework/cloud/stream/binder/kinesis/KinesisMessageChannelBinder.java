@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2020 the original author or authors.
+ * Copyright 2017-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.binder.kinesis;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -26,6 +27,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
+import com.amazonaws.ClientConfiguration;
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.services.cloudwatch.AmazonCloudWatch;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
@@ -36,6 +38,7 @@ import com.amazonaws.services.kinesis.AmazonKinesis;
 import com.amazonaws.services.kinesis.AmazonKinesisAsync;
 import com.amazonaws.services.kinesis.clientlibrary.lib.worker.InitialPositionInStream;
 import com.amazonaws.services.kinesis.clientlibrary.lib.worker.KinesisClientLibConfiguration;
+import com.amazonaws.services.kinesis.clientlibrary.lib.worker.SimpleRecordsFetcherFactory;
 import com.amazonaws.services.kinesis.model.InvalidArgumentException;
 import com.amazonaws.services.kinesis.model.Shard;
 import com.amazonaws.services.kinesis.model.ShardIteratorType;
@@ -341,8 +344,6 @@ public class KinesisMessageChannelBinder extends
 					"Ignoring 'shardId' property");
 		}
 
-		String shardIteratorType = kinesisConsumerProperties.getShardIteratorType();
-
 		AmazonKinesis amazonKinesisClient =
 				kinesisConsumerProperties.isDynamoDbStreams()
 						? this.dynamoDBStreamsAdapter
@@ -350,31 +351,13 @@ public class KinesisMessageChannelBinder extends
 
 		String stream = destination.getName();
 
-		KinesisClientLibConfiguration kinesisClientLibConfiguration = obtainKinesisClientLibConfiguration(stream, group);
+		KinesisClientLibConfiguration kinesisClientLibConfiguration =
+			obtainKinesisClientLibConfiguration(properties.getExtension(), stream, group);
 
-		KclMessageDrivenChannelAdapter adapter;
-
-		String consumerGroup;
-		if (kinesisClientLibConfiguration == null) {
-			adapter = new KclMessageDrivenChannelAdapter(stream, amazonKinesisClient, this.cloudWatchClient,
-							this.dynamoDBClient, this.awsCredentialsProvider);
-			boolean anonymous = !StringUtils.hasText(group);
-			consumerGroup = anonymous ? "anonymous." + UUID.randomUUID() : group;
-			adapter.setConsumerGroup(consumerGroup);
-			if (StringUtils.hasText(shardIteratorType)) {
-				adapter.setStreamInitialSequence(InitialPositionInStream.valueOf(shardIteratorType));
-			}
-			adapter.setIdleBetweenPolls(kinesisConsumerProperties.getIdleBetweenPolls());
-			adapter.setConsumerBackoff(kinesisConsumerProperties.getConsumerBackoff());
-			if (kinesisConsumerProperties.getWorkerId() != null) {
-				adapter.setWorkerId(kinesisConsumerProperties.getWorkerId());
-			}
-		}
-		else {
-			adapter = new KclMessageDrivenChannelAdapter(kinesisClientLibConfiguration, amazonKinesisClient,
-					this.cloudWatchClient, this.dynamoDBClient);
-			consumerGroup = kinesisClientLibConfiguration.getApplicationName();
-		}
+		KclMessageDrivenChannelAdapter adapter =
+			new KclMessageDrivenChannelAdapter(kinesisClientLibConfiguration, amazonKinesisClient,
+				this.cloudWatchClient, this.dynamoDBClient);
+		String consumerGroup = kinesisClientLibConfiguration.getApplicationName();
 
 		adapter.setCheckpointMode(kinesisConsumerProperties.getCheckpointMode());
 		adapter.setCheckpointsInterval(kinesisConsumerProperties.getCheckpointInterval());
@@ -396,7 +379,9 @@ public class KinesisMessageChannelBinder extends
 		return adapter;
 	}
 
-	private KinesisClientLibConfiguration obtainKinesisClientLibConfiguration(String stream, String group) {
+	private KinesisClientLibConfiguration obtainKinesisClientLibConfiguration(
+		KinesisConsumerProperties properties, String stream, String group) {
+
 		KinesisClientLibConfiguration candidate = null;
 		for (KinesisClientLibConfiguration conf : this.kinesisClientLibConfigurations) {
 			if (stream.equals(conf.getStreamName())) {
@@ -406,6 +391,81 @@ public class KinesisMessageChannelBinder extends
 				}
 			}
 		}
+
+		if (candidate == null) {
+			boolean anonymous = !StringUtils.hasText(group);
+			String consumerGroup = anonymous ? "anonymous." + UUID.randomUUID() : group;
+
+			candidate = new KinesisClientLibConfiguration(consumerGroup,
+				stream,
+				null,
+				null,
+				InitialPositionInStream.LATEST,
+				this.awsCredentialsProvider,
+				null,
+				null,
+				KinesisClientLibConfiguration.DEFAULT_FAILOVER_TIME_MILLIS,
+				properties.getWorkerId() != null ? properties.getWorkerId() : UUID.randomUUID().toString(),
+				KinesisClientLibConfiguration.DEFAULT_MAX_RECORDS,
+				properties.getIdleBetweenPolls(),
+				false,
+				KinesisClientLibConfiguration.DEFAULT_PARENT_SHARD_POLL_INTERVAL_MILLIS,
+				KinesisClientLibConfiguration.DEFAULT_SHARD_SYNC_INTERVAL_MILLIS,
+				KinesisClientLibConfiguration.DEFAULT_CLEANUP_LEASES_UPON_SHARDS_COMPLETION,
+				new ClientConfiguration(),
+				new ClientConfiguration(),
+				new ClientConfiguration(),
+				properties.getConsumerBackoff(),
+				KinesisClientLibConfiguration.DEFAULT_METRICS_BUFFER_TIME_MILLIS,
+				KinesisClientLibConfiguration.DEFAULT_METRICS_MAX_QUEUE_SIZE,
+				KinesisClientLibConfiguration.DEFAULT_VALIDATE_SEQUENCE_NUMBER_BEFORE_CHECKPOINTING,
+				null,
+				KinesisClientLibConfiguration.DEFAULT_SHUTDOWN_GRACE_MILLIS,
+				KinesisClientLibConfiguration.DEFAULT_DDB_BILLING_MODE,
+				new SimpleRecordsFetcherFactory(),
+				Duration.ofMinutes(1).toMillis(),
+				Duration.ofMinutes(5).toMillis(),
+				Duration.ofMinutes(30).toMillis());
+
+			String shardIteratorType = properties.getShardIteratorType();
+
+			KinesisShardOffset kinesisShardOffset = KinesisShardOffset.latest();
+
+			if (StringUtils.hasText(shardIteratorType)) {
+				String[] typeValue = shardIteratorType.split(":", 2);
+				ShardIteratorType iteratorType = ShardIteratorType.valueOf(typeValue[0]);
+				kinesisShardOffset = new KinesisShardOffset(iteratorType);
+				if (typeValue.length > 1) {
+					if (ShardIteratorType.AT_TIMESTAMP.equals(iteratorType)) {
+						kinesisShardOffset
+							.setTimestamp(new Date(Long.parseLong(typeValue[1])));
+					}
+					else {
+						kinesisShardOffset.setSequenceNumber(typeValue[1]);
+					}
+				}
+			}
+
+			kinesisShardOffset =
+				anonymous || StringUtils.hasText(shardIteratorType)
+					? kinesisShardOffset
+					: KinesisShardOffset.trimHorizon();
+
+			if (kinesisShardOffset.getIteratorType().equals(ShardIteratorType.AT_TIMESTAMP)) {
+				candidate.withTimestampAtInitialPositionInStream(kinesisShardOffset.getTimestamp());
+			}
+			else if (kinesisShardOffset.getIteratorType().equals(ShardIteratorType.AT_SEQUENCE_NUMBER) ||
+				kinesisShardOffset.getIteratorType().equals(ShardIteratorType.AFTER_SEQUENCE_NUMBER)) {
+
+				throw new IllegalArgumentException("The KCL does not support 'AT_SEQUENCE_NUMBER' " +
+					"or 'AFTER_SEQUENCE_NUMBER' initial position in stream.");
+			}
+			else {
+				candidate.withInitialPositionInStream(
+					InitialPositionInStream.valueOf(kinesisShardOffset.getIteratorType().name()));
+			}
+		}
+
 		return candidate;
 	}
 
