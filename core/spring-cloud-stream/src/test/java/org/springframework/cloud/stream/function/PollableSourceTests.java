@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2020 the original author or authors.
+ * Copyright 2020-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,12 +26,16 @@ import org.springframework.cloud.stream.binder.PollableMessageSource;
 import org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.integration.scheduling.PollerMetadata;
+import org.springframework.integration.test.util.TestUtils;
+import org.springframework.scheduling.support.CronTrigger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  *
  * @author Oleg Zhurakousky
+ * @author Artem Bilan
  *
  */
 public class PollableSourceTests {
@@ -42,13 +46,17 @@ public class PollableSourceTests {
 				.getCompleteConfiguration(PollableAppSampleConfiguration.class))
 						.web(WebApplicationType.NONE).run(
 								"--spring.jmx.enabled=false",
-								"--spring.cloud.stream.pollable-source=blah")) {
+								"--spring.cloud.stream.pollable-source=blah",
+								"--spring.integration.poller.cron=*/2 * * * * *")) {
 
 
 			DefaultPollableMessageSource pollableSource = (DefaultPollableMessageSource) context.getBean(PollableMessageSource.class);
-			pollableSource.poll(message -> {
-				assertThat(message.getPayload()).isNotNull();
-			});
+			pollableSource.poll(message -> assertThat(message.getPayload()).isNotNull());
+
+			PollerMetadata pollerMetadata = context.getBean(PollerMetadata.class);
+			assertThat(pollerMetadata.getTrigger()).isInstanceOf(CronTrigger.class);
+			assertThat(TestUtils.getPropertyValue(pollerMetadata.getTrigger(), "expression.expression"))
+				.isEqualTo("*/2 * * * * *");
 		}
 	}
 
@@ -56,4 +64,5 @@ public class PollableSourceTests {
 	@Configuration
 	public static class PollableAppSampleConfiguration {
 	}
+
 }
