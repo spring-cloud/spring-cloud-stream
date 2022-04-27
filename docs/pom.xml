@@ -7,7 +7,7 @@
 	<parent>
 		<groupId>org.springframework.cloud</groupId>
 		<artifactId>spring-cloud-stream-parent</artifactId>
-		<version>3.2.3-SNAPSHOT</version>
+		<version>3.2.3</version>
 	</parent>
 	<packaging>jar</packaging>
 	<name>spring-cloud-stream-docs</name>
