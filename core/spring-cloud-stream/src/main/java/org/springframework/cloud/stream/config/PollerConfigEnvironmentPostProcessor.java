@@ -1,5 +1,5 @@
 /*
- * Copyright 2021-2021 the original author or authors.
+ * Copyright 2021-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,15 +56,26 @@ public class PollerConfigEnvironmentPostProcessor implements EnvironmentPostProc
 		}
 
 		if (!streamPollerProperties.isEmpty()) {
-			logger.info("'spring.cloud.stream.poller' properties are deprecated in favor of 'spring.integration.poller' properties.");
+			logger.info("'spring.cloud.stream.poller' " +
+				"properties are deprecated in favor of 'spring.integration.poller' properties.");
 		}
 
 		//TODO Must remain after removal of deprecated code above in the future
-		streamPollerProperties.putIfAbsent(INTEGRATION_PROPERTY_PREFIX + "fixed-delay", "1s");
-		streamPollerProperties.putIfAbsent(INTEGRATION_PROPERTY_PREFIX + "max-messages-per-poll", "1");
+		if (!streamPollerProperties.containsKey(INTEGRATION_PROPERTY_PREFIX + "cron") &&
+			!environment.containsProperty(INTEGRATION_PROPERTY_PREFIX + "cron") &&
+			!environment.containsProperty(INTEGRATION_PROPERTY_PREFIX + "fixed-rate") &&
+			!environment.containsProperty(INTEGRATION_PROPERTY_PREFIX + "fixed-delay")) {
 
-		environment.getPropertySources()
-			.addLast(new MapPropertySource("spring.integration.poller", streamPollerProperties));
+			streamPollerProperties.putIfAbsent(INTEGRATION_PROPERTY_PREFIX + "fixed-delay", "1s");
+		}
+		if (!environment.containsProperty(INTEGRATION_PROPERTY_PREFIX + "max-messages-per-poll")) {
+			streamPollerProperties.putIfAbsent(INTEGRATION_PROPERTY_PREFIX + "max-messages-per-poll", "1");
+		}
+
+		if (!streamPollerProperties.isEmpty()) {
+			environment.getPropertySources()
+				.addLast(new MapPropertySource("spring.integration.poller", streamPollerProperties));
+		}
 	}
 
 }
