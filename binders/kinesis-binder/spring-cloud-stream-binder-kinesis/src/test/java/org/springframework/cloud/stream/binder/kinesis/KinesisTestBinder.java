@@ -16,10 +16,12 @@
 
 package org.springframework.cloud.stream.binder.kinesis;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.services.cloudwatch.AmazonCloudWatch;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBAsync;
 import com.amazonaws.services.kinesis.AmazonKinesisAsync;
 import com.amazonaws.services.kinesis.model.ListStreamsRequest;
@@ -40,6 +42,7 @@ import org.springframework.context.annotation.AnnotationConfigApplicationContext
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.support.GenericApplicationContext;
+import org.springframework.integration.aws.inbound.kinesis.KinesisMessageDrivenChannelAdapter;
 import org.springframework.integration.config.EnableIntegration;
 import org.springframework.integration.core.MessageProducer;
 
@@ -58,7 +61,7 @@ public class KinesisTestBinder extends
 	private final GenericApplicationContext applicationContext;
 
 	public KinesisTestBinder(AmazonKinesisAsync amazonKinesis, AmazonDynamoDBAsync dynamoDbClient,
-			KinesisBinderConfigurationProperties kinesisBinderConfigurationProperties) {
+		AmazonCloudWatch cloudWatchClient, KinesisBinderConfigurationProperties kinesisBinderConfigurationProperties) {
 
 		this.applicationContext = new AnnotationConfigApplicationContext(Config.class);
 
@@ -68,10 +71,11 @@ public class KinesisTestBinder extends
 				amazonKinesis, kinesisBinderConfigurationProperties);
 
 		KinesisMessageChannelBinder binder = new TestKinesisMessageChannelBinder(
-				amazonKinesis, dynamoDbClient, kinesisBinderConfigurationProperties,
+				amazonKinesis, dynamoDbClient, cloudWatchClient, kinesisBinderConfigurationProperties,
 				provisioningProvider);
 
 		binder.setApplicationContext(this.applicationContext);
+		binder.setKinesisClientLibConfigurations(new ArrayList<>());
 
 		setBinder(binder);
 	}
@@ -136,11 +140,12 @@ public class KinesisTestBinder extends
 
 		TestKinesisMessageChannelBinder(AmazonKinesisAsync amazonKinesis,
 				AmazonDynamoDBAsync dynamoDbClient,
+				AmazonCloudWatch cloudWatchClient,
 				KinesisBinderConfigurationProperties kinesisBinderConfigurationProperties,
 				KinesisStreamProvisioner provisioningProvider) {
 
 			super(kinesisBinderConfigurationProperties, provisioningProvider, amazonKinesis,
-					new AWSStaticCredentialsProvider(new BasicAWSCredentials("", "")), dynamoDbClient, null, null);
+					new AWSStaticCredentialsProvider(new BasicAWSCredentials("", "")), dynamoDbClient, null, cloudWatchClient);
 		}
 
 		/*
@@ -161,10 +166,12 @@ public class KinesisTestBinder extends
 
 			MessageProducer messageProducer = super.createConsumerEndpoint(destination,
 					group, properties);
-			DirectFieldAccessor dfa = new DirectFieldAccessor(messageProducer);
-			dfa.setPropertyValue("describeStreamBackoff", 10);
-			dfa.setPropertyValue("consumerBackoff", 10);
-			dfa.setPropertyValue("idleBetweenPolls", 1);
+			if (messageProducer instanceof KinesisMessageDrivenChannelAdapter) {
+				DirectFieldAccessor dfa = new DirectFieldAccessor(messageProducer);
+				dfa.setPropertyValue("describeStreamBackoff", 10);
+				dfa.setPropertyValue("consumerBackoff", 10);
+				dfa.setPropertyValue("idleBetweenPolls", 1);
+			}
 			return messageProducer;
 		}
 

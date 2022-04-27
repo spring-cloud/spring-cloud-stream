@@ -27,8 +27,11 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import com.amazonaws.SDKGlobalConfiguration;
 import com.amazonaws.handlers.AsyncHandler;
+import com.amazonaws.services.cloudwatch.AmazonCloudWatch;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBAsync;
 import com.amazonaws.services.kinesis.AmazonKinesisAsync;
+import com.amazonaws.services.kinesis.clientlibrary.lib.worker.InitialPositionInStream;
+import com.amazonaws.services.kinesis.clientlibrary.lib.worker.KinesisClientLibConfiguration;
 import com.amazonaws.services.kinesis.model.DescribeStreamRequest;
 import com.amazonaws.services.kinesis.model.DescribeStreamResult;
 import com.amazonaws.services.kinesis.model.PutRecordRequest;
@@ -57,7 +60,9 @@ import org.springframework.cloud.stream.binder.kinesis.properties.KinesisConsume
 import org.springframework.cloud.stream.binder.kinesis.properties.KinesisProducerProperties;
 import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.Lifecycle;
 import org.springframework.expression.common.LiteralExpression;
+import org.springframework.integration.aws.inbound.kinesis.KclMessageDrivenChannelAdapter;
 import org.springframework.integration.aws.inbound.kinesis.KinesisShardOffset;
 import org.springframework.integration.aws.inbound.kinesis.ListenerMode;
 import org.springframework.integration.aws.support.AwsRequestFailureException;
@@ -95,6 +100,8 @@ public class KinesisBinderTests extends
 
 	private static AmazonDynamoDBAsync DYNAMO_DB;
 
+	private static AmazonCloudWatch CLOUD_WATCH;
+
 
 	public KinesisBinderTests() {
 		this.timeoutMultiplier = 10D;
@@ -104,6 +111,7 @@ public class KinesisBinderTests extends
 	public static void setup() {
 		AMAZON_KINESIS = LocalstackContainerTest.kinesisClient();
 		DYNAMO_DB = LocalstackContainerTest.dynamoDbClient();
+		CLOUD_WATCH = LocalstackContainerTest.cloudWatchClient();
 		System.setProperty(SDKGlobalConfiguration.AWS_CBOR_DISABLE_SYSTEM_PROPERTY, "true");
 	}
 
@@ -323,6 +331,50 @@ public class KinesisBinderTests extends
 	}
 
 	@Test
+	public void testKclWithTimestampAtInitialPositionInStream() throws Exception {
+		KinesisBinderConfigurationProperties configurationProperties = new KinesisBinderConfigurationProperties();
+		configurationProperties.setKplKclEnabled(true);
+		KinesisTestBinder binder = getBinder(configurationProperties);
+		DirectChannel output = createBindableChannel("output", new BindingProperties());
+		ExtendedConsumerProperties<KinesisConsumerProperties> consumerProperties = createConsumerProperties();
+		Date testDate = new Date();
+		consumerProperties.getExtension()
+			.setShardIteratorType(ShardIteratorType.AT_TIMESTAMP.name() + ":" + testDate.getTime());
+		Binding<?> binding = binder.bindConsumer("testKclStream", "test", output, consumerProperties);
+
+		Lifecycle lifecycle = TestUtils.getPropertyValue(binding, "lifecycle", Lifecycle.class);
+		assertThat(lifecycle).isInstanceOf(KclMessageDrivenChannelAdapter.class);
+
+		KinesisClientLibConfiguration config =
+			TestUtils.getPropertyValue(lifecycle, "config", KinesisClientLibConfiguration.class);
+
+		assertThat(config.getInitialPositionInStream()).isEqualTo(InitialPositionInStream.AT_TIMESTAMP);
+		assertThat(config.getTimestampAtInitialPositionInStream()).isEqualTo(testDate);
+
+		binding.unbind();
+	}
+
+	@Test
+	public void testKclWithTrimHorizonInitialPositionInStream() throws Exception {
+		KinesisBinderConfigurationProperties configurationProperties = new KinesisBinderConfigurationProperties();
+		configurationProperties.setKplKclEnabled(true);
+		KinesisTestBinder binder = getBinder(configurationProperties);
+		DirectChannel output = createBindableChannel("output", new BindingProperties());
+		ExtendedConsumerProperties<KinesisConsumerProperties> consumerProperties = createConsumerProperties();
+		Binding<?> binding = binder.bindConsumer("testKclStream", null, output, consumerProperties);
+
+		Lifecycle lifecycle = TestUtils.getPropertyValue(binding, "lifecycle", Lifecycle.class);
+		assertThat(lifecycle).isInstanceOf(KclMessageDrivenChannelAdapter.class);
+
+		KinesisClientLibConfiguration config =
+			TestUtils.getPropertyValue(lifecycle, "config", KinesisClientLibConfiguration.class);
+
+		assertThat(config.getInitialPositionInStream()).isEqualTo(InitialPositionInStream.TRIM_HORIZON);
+
+		binding.unbind();
+	}
+
+	@Test
 	@Disabled("Localstack doesn't support updateShardCount. Test only against real AWS Kinesis")
 	public void testPartitionCountIncreasedIfAutoAddPartitionsSet() throws Exception {
 		KinesisBinderConfigurationProperties configurationProperties = new KinesisBinderConfigurationProperties();
@@ -405,7 +457,8 @@ public class KinesisBinderTests extends
 	private KinesisTestBinder getBinder(
 		KinesisBinderConfigurationProperties kinesisBinderConfigurationProperties) {
 		if (this.testBinder == null) {
-			this.testBinder = new KinesisTestBinder(AMAZON_KINESIS, DYNAMO_DB, kinesisBinderConfigurationProperties);
+			this.testBinder = new KinesisTestBinder(AMAZON_KINESIS, DYNAMO_DB, CLOUD_WATCH,
+				kinesisBinderConfigurationProperties);
 			this.timeoutMultiplier = 20;
 		}
 		return this.testBinder;
