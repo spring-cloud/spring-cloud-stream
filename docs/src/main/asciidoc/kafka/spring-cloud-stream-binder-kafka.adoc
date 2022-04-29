@@ -36,20 +36,14 @@ Sabby Anandan, Marius Bogoevici, Eric Bottard, Mark Fisher, Ilayaperumal Gopinat
 
 
 = Reference Guide
-include::overview.adoc[]
+include::kafka/kafka_overview.adoc[]
 
-include::dlq.adoc[]
+include::kafka/kafka_dlq.adoc[]
 
-include::partitions.adoc[]
+include::kafka/kafka_partitions.adoc[]
 
-include::kafka-streams.adoc[]
+include::kafka/kafka-streams.adoc[]
 
-include::tips.adoc[]
-
-= Appendices
-[appendix]
-include::building.adoc[]
-
-include::contributing.adoc[]
+include::kafka/kafka_tips.adoc[]
 
 // ======================================================================================

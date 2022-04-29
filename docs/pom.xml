@@ -7,7 +7,7 @@
 	<parent>
 		<groupId>org.springframework.cloud</groupId>
 		<artifactId>spring-cloud-stream-parent</artifactId>
-		<version>3.2.3-SNAPSHOT</version>
+		<version>3.2.4-SNAPSHOT</version>
 	</parent>
 	<packaging>jar</packaging>
 	<name>spring-cloud-stream-docs</name>
@@ -47,50 +47,97 @@
 						<artifactId>git-commit-id-plugin</artifactId>
 					</plugin>
 					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-dependency-plugin</artifactId>
 					</plugin>
 					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-resources-plugin</artifactId>
 					</plugin>
 					<plugin>
-						<groupId>org.codehaus.mojo</groupId>
-						<artifactId>exec-maven-plugin</artifactId>
-					</plugin>
+	                    <groupId>org.codehaus.mojo</groupId>
+	                    <artifactId>exec-maven-plugin</artifactId> 
+	                </plugin>
 					<plugin>
 						<groupId>org.asciidoctor</groupId>
 						<artifactId>asciidoctor-maven-plugin</artifactId>
+						<configuration>
+							<attributes>
+								<project-version>${project.version}</project-version>
+								<spring-boot-version>${spring-boot.version}</spring-boot-version>
+							</attributes>
+						</configuration>
 					</plugin>
+					
 					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-antrun-plugin</artifactId>
-						<executions>
-							<execution>
-								<id>readme</id>
-								<phase>prepare-package</phase>
-								<goals>
-									<goal>run</goal>
-								</goals>
-								<configuration>
-									<target>
-										<path id="readme.class.path">
-											<pathelement location="${readme.main.classpath}"/>
-										</path>
-										<java classname="org.springframework.cloud.internal.asciidoctor.ReadmeMain"
-											  failonerror="yes" classpathref="${readme.class.path}">
-											<!-- Input -->
-											<arg value="${project.basedir}/src/main/asciidoc/README.adoc"/>
-											<!-- Output -->
-											<arg value="${main.basedir}/../README.adoc"/>
-										</java>
-									</target>
-								</configuration>
-							</execution>
-						</executions>
 					</plugin>
 					<plugin>
-						<artifactId>maven-deploy-plugin</artifactId>
+						<groupId>org.codehaus.mojo</groupId>
+						<artifactId>build-helper-maven-plugin</artifactId>
 					</plugin>
+	                <plugin>
+	                    <artifactId>maven-deploy-plugin</artifactId>
+	                </plugin>
 				</plugins>
 			</build>
 		</profile>
 	</profiles>
+<!-- 	<profiles> -->
+<!-- 		<profile> -->
+<!-- 			<id>docs</id> -->
+<!-- 			<build> -->
+<!-- 				<plugins> -->
+<!-- 					<plugin> -->
+<!-- 						<groupId>pl.project13.maven</groupId> -->
+<!-- 						<artifactId>git-commit-id-plugin</artifactId> -->
+<!-- 					</plugin> -->
+<!-- 					<plugin> -->
+<!-- 						<artifactId>maven-dependency-plugin</artifactId> -->
+<!-- 					</plugin> -->
+<!-- 					<plugin> -->
+<!-- 						<artifactId>maven-resources-plugin</artifactId> -->
+<!-- 					</plugin> -->
+<!-- 					<plugin> -->
+<!-- 						<groupId>org.codehaus.mojo</groupId> -->
+<!-- 						<artifactId>exec-maven-plugin</artifactId> -->
+<!-- 					</plugin> -->
+<!-- 					<plugin> -->
+<!-- 						<groupId>org.asciidoctor</groupId> -->
+<!-- 						<artifactId>asciidoctor-maven-plugin</artifactId> -->
+<!-- 					</plugin> -->
+<!-- 					<plugin> -->
+<!-- 						<artifactId>maven-antrun-plugin</artifactId> -->
+<!-- 						<executions> -->
+<!-- 							<execution> -->
+<!-- 								<id>readme</id> -->
+<!-- 								<phase>prepare-package</phase> -->
+<!-- 								<goals> -->
+<!-- 									<goal>run</goal> -->
+<!-- 								</goals> -->
+<!-- 								<configuration> -->
+<!-- 									<target> -->
+<!-- 										<path id="readme.class.path"> -->
+<!-- 											<pathelement location="${readme.main.classpath}"/> -->
+<!-- 										</path> -->
+<!-- 										<java classname="org.springframework.cloud.internal.asciidoctor.ReadmeMain" -->
+<!-- 											  failonerror="yes" classpathref="${readme.class.path}"> -->
+<!-- 											Input -->
+<!-- 											<arg value="${project.basedir}/src/main/asciidoc/README.adoc"/> -->
+<!-- 											Output -->
+<!-- 											<arg value="${main.basedir}/../README.adoc"/> -->
+<!-- 										</java> -->
+<!-- 									</target> -->
+<!-- 								</configuration> -->
+<!-- 							</execution> -->
+<!-- 						</executions> -->
+<!-- 					</plugin> -->
+<!-- 					<plugin> -->
+<!-- 						<artifactId>maven-deploy-plugin</artifactId> -->
+<!-- 					</plugin> -->
+<!-- 				</plugins> -->
+<!-- 			</build> -->
+<!-- 		</profile> -->
+<!-- 	</profiles> -->
 </project>

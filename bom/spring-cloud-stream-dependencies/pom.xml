@@ -10,7 +10,7 @@
 		<relativePath/>
 	</parent>
 	<artifactId>spring-cloud-stream-dependencies</artifactId>
-	<version>3.2.3-SNAPSHOT</version>
+	<version>3.2.4-SNAPSHOT</version>
 	<packaging>pom</packaging>
 	<name>spring-cloud-stream-dependencies</name>
 	<description>Spring Cloud Stream Dependencies</description>
