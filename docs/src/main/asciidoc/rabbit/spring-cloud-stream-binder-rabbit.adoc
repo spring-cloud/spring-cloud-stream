@@ -1,0 +1,46 @@
+:github-tag: master
+:github-repo: spring-cloud/spring-cloud-stream-binder-rabbit
+:github-raw: https://raw.githubusercontent.com/{github-repo}/{github-tag}
+:github-code: https://github.com/{github-repo}/tree/{github-tag}
+:toc: left
+:toclevels: 8
+:nofooter:
+:sectlinks: true
+
+[[spring-cloud-stream-binder-rabbit-reference]]
+= Spring Cloud Stream RabbitMQ Binder Reference Guide
+Sabby Anandan, Marius Bogoevici, Eric Bottard, Mark Fisher, Ilayaperumal Gopinathan, Gunnar Hillert, Mark Pollack, Patrick Peralta, Glenn Renfro, Thomas Risberg, Dave Syer, David Turanski, Janne Valkealahti, Benjamin Klein, Gary Russell, Jay Bryant
+:doctype: book
+:toc:
+:toclevels: 4
+:source-highlighter: prettify
+:numbered:
+:icons: font
+:hide-uri-scheme:
+:spring-cloud-stream-binder-rabbit-repo: snapshot
+:github-tag: master
+:spring-cloud-stream-binder-rabbit-docs-version: current
+:spring-cloud-stream-binder-rabbit-docs: https://docs.spring.io/spring-cloud-stream-binder-rabbit/docs/{spring-cloud-stream-binder-rabbit-docs-version}/reference
+:spring-cloud-stream-binder-rabbit-docs-current: https://docs.spring.io/spring-cloud-stream-binder-rabbit/docs/current-SNAPSHOT/reference/html/
+:github-repo: spring-cloud/spring-cloud-stream-binder-rabbit
+:github-raw: https://raw.github.com/{github-repo}/{github-tag}
+:github-code: https://github.com/{github-repo}/tree/{github-tag}
+:github-wiki: https://github.com/{github-repo}/wiki
+:github-master-code: https://github.com/{github-repo}/tree/master
+:sc-ext: java
+
+// ======================================================================================
+
+*{project-version}*
+
+
+= Reference Guide
+
+
+include::rabbit/rabbit_overview.adoc[]
+
+include::rabbit/rabbit_dlq.adoc[]
+
+include::rabbit/rabbit_partitions.adoc[]
+
+// ======================================================================================

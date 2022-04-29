@@ -47,6 +47,12 @@
 						<artifactId>git-commit-id-plugin</artifactId>
 					</plugin>
 					<plugin>
+						<artifactId>maven-gpg-plugin</artifactId>
+						<configuration>
+							<skip>true</skip>
+						</configuration>
+					</plugin>
+					<plugin>
 						<artifactId>maven-dependency-plugin</artifactId>
 					</plugin>
 					<plugin>
