@@ -16,15 +16,9 @@
 
 package org.springframework.cloud.stream.binder.kafka.streams;
 
-import java.lang.reflect.Method;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.common.utils.Utils;
@@ -33,7 +27,6 @@ import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.KTable;
 
 import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.annotation.AnnotatedBeanDefinition;
 import org.springframework.cloud.stream.binder.ConsumerProperties;
 import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsBinderConfigurationProperties;
@@ -43,8 +36,6 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.ResolvableType;
-import org.springframework.kafka.support.serializer.JsonSerde;
-import org.springframework.util.ClassUtils;
 import org.springframework.util.StringUtils;
 
 /**
@@ -71,10 +62,9 @@ import org.springframework.util.StringUtils;
  * @author Soby Chacko
  * @author Lei Chen
  * @author Eduard Domínguez
+ * @author Chris Bono
  */
 public class KeyValueSerdeResolver implements ApplicationContextAware {
-
-	private static final Log LOG = LogFactory.getLog(KeyValueSerdeResolver.class);
 
 	private final Map<String, Object> streamConfigGlobalProperties;
 
@@ -262,7 +252,7 @@ public class KeyValueSerdeResolver implements ApplicationContextAware {
 						(isResolvalbeKafkaStreamsType(resolvableType) || isResolvableKStreamArrayType(resolvableType))) {
 					ResolvableType generic = resolvableType.isArray() ? resolvableType.getComponentType().getGeneric(0) : resolvableType.getGeneric(0);
 					Serde<?> fallbackSerde = getFallbackSerde("default.key.serde");
-					keySerde = getSerde(generic, fallbackSerde);
+					keySerde = SerdeResolverUtils.resolveForType(this.context, generic, fallbackSerde);
 				}
 				if (keySerde == null) {
 					keySerde = Serdes.ByteArray();
@@ -285,101 +275,6 @@ public class KeyValueSerdeResolver implements ApplicationContextAware {
 		return resolvableType.getRawClass() != null && (KStream.class.isAssignableFrom(resolvableType.getRawClass()) || KTable.class.isAssignableFrom(resolvableType.getRawClass()) ||
 				GlobalKTable.class.isAssignableFrom(resolvableType.getRawClass()));
 	}
-
-	private Serde<?> getSerde(ResolvableType generic, Serde<?> fallbackSerde) {
-		Serde<?> serde = null;
-
-		Map<String, Serde> beansOfType = context.getBeansOfType(Serde.class);
-		Serde<?>[] serdeBeans = new Serde<?>[1];
-
-		final Class<?> genericRawClazz = generic.getRawClass();
-		beansOfType.forEach((k, v) -> {
-			final Class<?> classObj = ClassUtils.resolveClassName(((AnnotatedBeanDefinition)
-							context.getBeanFactory().getBeanDefinition(k))
-							.getMetadata().getClassName(),
-					ClassUtils.getDefaultClassLoader());
-			try {
-				Method[] methods = classObj.getMethods();
-				Optional<Method> serdeBeanMethod = Arrays.stream(methods).filter(m -> m.getName().equals(k)).findFirst();
-				if (serdeBeanMethod.isPresent()) {
-					Method method = serdeBeanMethod.get();
-					ResolvableType resolvableType = ResolvableType.forMethodReturnType(method, classObj);
-					ResolvableType serdeBeanGeneric = resolvableType.getGeneric(0);
-					Class<?> serdeGenericRawClazz = serdeBeanGeneric.getRawClass();
-					if (serdeGenericRawClazz != null && genericRawClazz != null) {
-						if (serdeGenericRawClazz.isAssignableFrom(genericRawClazz)) {
-							serdeBeans[0] = v;
-						}
-					}
-				}
-			}
-			catch (Exception e) {
-				// Pass through...
-			}
-
-		});
-
-		if (serdeBeans[0] != null) {
-			return serdeBeans[0];
-		}
-
-		if (genericRawClazz != null) {
-			if (Integer.class.isAssignableFrom(genericRawClazz)) {
-				serde = Serdes.Integer();
-			}
-			else if (Long.class.isAssignableFrom(genericRawClazz)) {
-				serde = Serdes.Long();
-			}
-			else if (Short.class.isAssignableFrom(genericRawClazz)) {
-				serde = Serdes.Short();
-			}
-			else if (Double.class.isAssignableFrom(genericRawClazz)) {
-				serde = Serdes.Double();
-			}
-			else if (Float.class.isAssignableFrom(genericRawClazz)) {
-				serde = Serdes.Float();
-			}
-			else if (byte[].class.isAssignableFrom(genericRawClazz)) {
-				serde = Serdes.ByteArray();
-			}
-			else if (String.class.isAssignableFrom(genericRawClazz)) {
-				serde = Serdes.String();
-			}
-			else if (UUID.class.isAssignableFrom(genericRawClazz)) {
-				serde = Serdes.UUID();
-			}
-			else if (!isSerdeFromStandardDefaults(fallbackSerde)) {
-				//User purposely set a default serde that is not one of the above
-				serde = fallbackSerde;
-			}
-			else {
-				// If the type is Object, then skip assigning the JsonSerde and let the fallback mechanism takes precedence.
-				if (!genericRawClazz.isAssignableFrom((Object.class))) {
-					serde = new JsonSerde(genericRawClazz);
-				}
-			}
-		}
-		return serde;
-	}
-
-	private boolean isSerdeFromStandardDefaults(Serde<?> serde) {
-		if (serde != null) {
-			if (Number.class.isAssignableFrom(serde.getClass())) {
-				return true;
-			}
-			else if (Serdes.ByteArray().getClass().isAssignableFrom(serde.getClass())) {
-				return true;
-			}
-			else if (Serdes.String().getClass().isAssignableFrom(serde.getClass())) {
-				return true;
-			}
-			else if (Serdes.UUID().getClass().isAssignableFrom(serde.getClass())) {
-				return true;
-			}
-		}
-		return false;
-	}
-
 
 	private Serde<?> getValueSerde(String valueSerdeString, Map<String, ?> extendedConfiguration)
 			throws ClassNotFoundException {
@@ -416,7 +311,7 @@ public class KeyValueSerdeResolver implements ApplicationContextAware {
 					(isResolvableKStreamArrayType(resolvableType)))) {
 				Serde<?> fallbackSerde = getFallbackSerde("default.value.serde");
 				ResolvableType generic = resolvableType.isArray() ? resolvableType.getComponentType().getGeneric(1) : resolvableType.getGeneric(1);
-				valueSerde = getSerde(generic, fallbackSerde);
+				valueSerde = SerdeResolverUtils.resolveForType(this.context, generic, fallbackSerde);
 			}
 			if (valueSerde == null) {
 

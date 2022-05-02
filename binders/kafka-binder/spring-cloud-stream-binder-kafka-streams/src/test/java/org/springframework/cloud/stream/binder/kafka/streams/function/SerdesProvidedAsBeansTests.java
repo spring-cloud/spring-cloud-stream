@@ -23,6 +23,7 @@ import java.util.function.Function;
 import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serializer;
+import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.kstream.KStream;
 import org.junit.jupiter.api.Test;
 
@@ -42,52 +43,93 @@ import org.springframework.core.ResolvableType;
 import org.springframework.kafka.test.EmbeddedKafkaBroker;
 import org.springframework.kafka.test.condition.EmbeddedKafkaCondition;
 import org.springframework.kafka.test.context.EmbeddedKafka;
-import org.springframework.util.Assert;
 
-@EmbeddedKafka
+import static org.assertj.core.api.Assertions.assertThat;
+
+/**
+ * Tests to verify proper resolution of {@link Serde serdes} when they are provided as beans.
+ *
+ * @author Soby Chako
+ * @author Chris Bono
+ */
+@EmbeddedKafka(topics = { "topic1", "topic2" })
 public class SerdesProvidedAsBeansTests {
 
 	private static final EmbeddedKafkaBroker embeddedKafka = EmbeddedKafkaCondition.getBroker();
 
 	@Test
-	void testKstreamWordCountFunction() throws NoSuchMethodException {
-		SpringApplication app = new SpringApplication(SerdeProvidedAsBeanApp.class);
+	void simpleSerdeBeansAreResolvedProperly() throws Exception {
+		SpringApplication app = new SpringApplication(SerdesProvidedAsBeansTestApp.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
-
 		try (ConfigurableApplicationContext context = app.run(
-				"--server.port=0",
-				"--spring.jmx.enabled=false",
-				"--spring.cloud.stream.bindings.process-in-0.destination=purchases",
-				"--spring.cloud.stream.bindings.process-out-0.destination=coffee",
-				"--spring.cloud.stream.kafka.streams.binder.functions.process.applicationId=process-id-0",
-				"--spring.cloud.stream.kafka.streams.binder.configuration.commit.interval.ms=1000",
-				"--spring.cloud.stream.kafka.streams.binder.configuration.default.key.serde" +
-						"=org.apache.kafka.common.serialization.Serdes$StringSerde",
-				"--spring.cloud.stream.kafka.streams.binder.configuration.default.value.serde" +
-						"=org.apache.kafka.common.serialization.Serdes$StringSerde",
-				"--spring.cloud.stream.kafka.streams.binder.brokers=" + embeddedKafka.getBrokersAsString())) {
+			"--server.port=0",
+			"--spring.jmx.enabled=false",
+			"--spring.cloud.function.definition=simpleProcess",
+			"--spring.cloud.stream.bindings.simpleProcess-in-0.destination=topic1",
+			"--spring.cloud.stream.bindings.simpleProcess-out-0.destination=topic2",
+			"--spring.cloud.stream.kafka.streams.binder.configuration.commit.interval.ms=1000",
+			"--spring.cloud.stream.kafka.streams.binder.configuration.default.key.serde" +
+				"=org.apache.kafka.common.serialization.Serdes$StringSerde",
+			"--spring.cloud.stream.kafka.streams.binder.configuration.default.value.serde" +
+				"=org.apache.kafka.common.serialization.Serdes$StringSerde",
+			"--spring.cloud.stream.kafka.streams.binder.brokers=" + embeddedKafka.getBrokersAsString())) {
 
-			final Method method = SerdeProvidedAsBeanApp.class.getMethod("process");
+			Method method = SerdesProvidedAsBeansTestApp.class.getMethod("simpleProcess");
+			ResolvableType resolvableType = ResolvableType.forMethodReturnType(method, SerdesProvidedAsBeansTestApp.class);
 
-			ResolvableType resolvableType = ResolvableType.forMethodReturnType(method, SerdeProvidedAsBeanApp.class);
+			KeyValueSerdeResolver keyValueSerdeResolver = context.getBean(KeyValueSerdeResolver.class);
 
-			final KeyValueSerdeResolver keyValueSerdeResolver = context.getBean(KeyValueSerdeResolver.class);
-			final BindingServiceProperties bindingServiceProperties = context.getBean(BindingServiceProperties.class);
-			final KafkaStreamsExtendedBindingProperties kafkaStreamsExtendedBindingProperties = context.getBean(KafkaStreamsExtendedBindingProperties.class);
+			BindingServiceProperties bindingServiceProperties = context.getBean(BindingServiceProperties.class);
+			ConsumerProperties consumerProperties = bindingServiceProperties.getBindingProperties("simpleProcess-in-0").getConsumer();
+			KafkaStreamsExtendedBindingProperties kafkaStreamsExtendedBindingProperties = context.getBean(KafkaStreamsExtendedBindingProperties.class);
+			KafkaStreamsConsumerProperties kafkaStreamsConsumerProperties = kafkaStreamsExtendedBindingProperties.getExtendedConsumerProperties("input");
+			Serde<?> inboundValueSerde = keyValueSerdeResolver.getInboundValueSerde(consumerProperties, kafkaStreamsConsumerProperties, resolvableType.getGeneric(0));
 
-			final ConsumerProperties consumerProperties = bindingServiceProperties.getBindingProperties("process-in-0").getConsumer();
-			final KafkaStreamsConsumerProperties kafkaStreamsConsumerProperties = kafkaStreamsExtendedBindingProperties.getExtendedConsumerProperties("input");
-			kafkaStreamsExtendedBindingProperties.getExtendedConsumerProperties("input");
-			final Serde<?> inboundValueSerde = keyValueSerdeResolver.getInboundValueSerde(consumerProperties, kafkaStreamsConsumerProperties, resolvableType.getGeneric(0));
+			assertThat(inboundValueSerde).isInstanceOf(FooSerde.class);
 
-			Assert.isTrue(inboundValueSerde instanceof FooSerde, "Inbound Value Serde is not matched");
+			ProducerProperties producerProperties = bindingServiceProperties.getBindingProperties("simpleProcess-out-0").getProducer();
+			KafkaStreamsProducerProperties kafkaStreamsProducerProperties = kafkaStreamsExtendedBindingProperties.getExtendedProducerProperties("output");
+			Serde<?> outboundValueSerde = keyValueSerdeResolver.getOutboundValueSerde(producerProperties, kafkaStreamsProducerProperties, resolvableType.getGeneric(1));
 
-			final ProducerProperties producerProperties = bindingServiceProperties.getBindingProperties("process-out-0").getProducer();
-			final KafkaStreamsProducerProperties kafkaStreamsProducerProperties = kafkaStreamsExtendedBindingProperties.getExtendedProducerProperties("output");
-			kafkaStreamsExtendedBindingProperties.getExtendedProducerProperties("output");
-			final Serde<?> outboundValueSerde = keyValueSerdeResolver.getOutboundValueSerde(producerProperties, kafkaStreamsProducerProperties, resolvableType.getGeneric(1));
+			assertThat(outboundValueSerde).isInstanceOf(FooSerde.class);
+		}
+	}
 
-			Assert.isTrue(outboundValueSerde instanceof FooSerde, "Outbound Value Serde is not matched");
+	@Test
+	void genericSerdeBeansAreResolvedProperly() throws Exception {
+		SpringApplication app = new SpringApplication(SerdesProvidedAsBeansTestApp.class);
+		app.setWebApplicationType(WebApplicationType.NONE);
+		try (ConfigurableApplicationContext context = app.run(
+			"--server.port=0",
+			"--spring.jmx.enabled=false",
+			"--spring.cloud.function.definition=genericProcess",
+			"--spring.cloud.stream.bindings.genericProcess-in-0.destination=topic1",
+			"--spring.cloud.stream.bindings.genericProcess-out-0.destination=topic2",
+			"--spring.cloud.stream.kafka.streams.binder.configuration.commit.interval.ms=1000",
+			"--spring.cloud.stream.kafka.streams.binder.configuration.default.key.serde" +
+				"=org.apache.kafka.common.serialization.Serdes$StringSerde",
+			"--spring.cloud.stream.kafka.streams.binder.configuration.default.value.serde" +
+				"=org.apache.kafka.common.serialization.Serdes$StringSerde",
+			"--spring.cloud.stream.kafka.streams.binder.brokers=" + embeddedKafka.getBrokersAsString())) {
+
+			Method method = SerdesProvidedAsBeansTestApp.class.getMethod("genericProcess");
+			ResolvableType resolvableType = ResolvableType.forMethodReturnType(method, SerdesProvidedAsBeansTestApp.class);
+
+			KeyValueSerdeResolver keyValueSerdeResolver = context.getBean(KeyValueSerdeResolver.class);
+
+			BindingServiceProperties bindingServiceProperties = context.getBean(BindingServiceProperties.class);
+			ConsumerProperties consumerProperties = bindingServiceProperties.getBindingProperties("genericProcess-in-0").getConsumer();
+			KafkaStreamsExtendedBindingProperties kafkaStreamsExtendedBindingProperties = context.getBean(KafkaStreamsExtendedBindingProperties.class);
+			KafkaStreamsConsumerProperties kafkaStreamsConsumerProperties = kafkaStreamsExtendedBindingProperties.getExtendedConsumerProperties("input");
+			Serde<?> inboundValueSerde = keyValueSerdeResolver.getInboundValueSerde(consumerProperties, kafkaStreamsConsumerProperties, resolvableType.getGeneric(0));
+
+			assertThat(inboundValueSerde).isInstanceOf(GenericEventDateSerde.class);
+
+			ProducerProperties producerProperties = bindingServiceProperties.getBindingProperties("genericProcess-out-0").getProducer();
+			KafkaStreamsProducerProperties kafkaStreamsProducerProperties = kafkaStreamsExtendedBindingProperties.getExtendedProducerProperties("output");
+			Serde<?> outboundValueSerde = keyValueSerdeResolver.getOutboundValueSerde(producerProperties, kafkaStreamsProducerProperties, resolvableType.getGeneric(1));
+
+			assertThat(outboundValueSerde).isInstanceOf(GenericEventStringSerde.class);
 		}
 	}
 
@@ -103,17 +145,76 @@ public class SerdesProvidedAsBeansTests {
 		}
 	}
 
+	static class GenericEventDateSerde implements Serde<GenericEvent<Date>> {
+		@Override
+		public Serializer<GenericEvent<Date>> serializer() {
+			return null;
+		}
+
+		@Override
+		public Deserializer<GenericEvent<Date>> deserializer() {
+			return null;
+		}
+	}
+
+	static class GenericEventStringSerde implements Serde<GenericEvent<String>> {
+		@Override
+		public Serializer<GenericEvent<String>> serializer() {
+			return null;
+		}
+
+		@Override
+		public Deserializer<GenericEvent<String>> deserializer() {
+			return null;
+		}
+	}
+
+	static class GenericEvent<T> {
+
+		static <X> GenericEvent<X> of(X newThing) {
+			GenericEvent<X> newEvent = new GenericEvent<>();
+			newEvent.setThing(newThing);
+			return newEvent;
+		}
+
+		private T thing;
+
+		public T getThing() {
+			return thing;
+		}
+
+		public void setThing(T thing) {
+			this.thing = thing;
+		}
+	}
+
 	@EnableAutoConfiguration
-	public static class SerdeProvidedAsBeanApp {
+	public static class SerdesProvidedAsBeansTestApp {
 
 		@Bean
-		public Function<KStream<String, Date>, KStream<String, Date>> process() {
-			return input -> input;
+		public Serde<GenericEvent<Date>> genericEventDataSerde() {
+			return new GenericEventDateSerde();
+		}
+
+		@Bean
+		public Serde<GenericEvent<String>> genericEventStringSerde() {
+			return new GenericEventStringSerde();
 		}
 
 		@Bean
 		public Serde<Date> fooSerde() {
 			return new FooSerde<>();
 		}
+
+		@Bean
+		public Function<KStream<String, Date>, KStream<String, Date>> simpleProcess() {
+			return input -> input;
+		}
+
+		@Bean
+		public Function<KStream<String, GenericEvent<Date>>, KStream<String, GenericEvent<String>>> genericProcess() {
+			return input -> input.map((k, v) -> new KeyValue(k, GenericEvent.of(v.toString())));
+		}
+
 	}
 }
