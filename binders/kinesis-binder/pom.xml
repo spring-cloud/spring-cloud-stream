@@ -28,7 +28,6 @@
 
 	<modules>
 		<module>spring-cloud-stream-binder-kinesis</module>
-		<module>spring-cloud-stream-binder-kinesis-docs</module>
 	</modules>
 
 	<dependencyManagement>
