@@ -31,7 +31,6 @@
 		<module>spring-cloud-stream-binder-kafka-core</module>
 		<module>spring-cloud-stream-binder-kafka-streams</module>
         <module>spring-cloud-stream-binder-kafka-reactive</module>
-		<module>docs</module>
 	</modules>
 
 	<dependencyManagement>
