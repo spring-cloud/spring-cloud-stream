@@ -68,9 +68,7 @@ public class PollerConfigEnvironmentPostProcessor implements EnvironmentPostProc
 
 			streamPollerProperties.putIfAbsent(INTEGRATION_PROPERTY_PREFIX + "fixed-delay", "1s");
 		}
-		if (!environment.containsProperty(INTEGRATION_PROPERTY_PREFIX + "max-messages-per-poll") &&
-			streamPollerProperties.containsKey(INTEGRATION_PROPERTY_PREFIX + "max-messages-per-poll")) {
-
+		if (!environment.containsProperty(INTEGRATION_PROPERTY_PREFIX + "max-messages-per-poll")) {
 			streamPollerProperties.putIfAbsent(INTEGRATION_PROPERTY_PREFIX + "max-messages-per-poll", "1");
 		}
 
