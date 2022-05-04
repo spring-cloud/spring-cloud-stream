@@ -157,14 +157,14 @@ In the case of `String` types, it does not make much sense, but for more complex
 Now when the consumer receives the data, let us assume that there is a bad record that causes a deserilziation errror, maybe someone passed an `Integer` instead of a `String` for example.
 In that case, if you don't do something in the application, the excption will be propagated through the chain and your application will exit eventually.
 
-In order to handle this, you can add a `ListenerContainerCustomizer` `@Bean` that configures a `SeekToCurrentErrorHandler`.
-This `SeekToCurrentErrorHandler` is configured with a `DeadLetterPublishingRecoverer`.
+In order to handle this, you can add a `ListenerContainerCustomizer` `@Bean` that configures a `DefaultErrorHandler`.
+This `DefaultErrorHandler` is configured with a `DeadLetterPublishingRecoverer`.
 We also need to configure an `ErrorHandlingDeserializer` for the consumer.
 That sounds like a lot of complex things, but in reality, it boils down to these 3 beans in this case.
 
 ```
 @Bean
-	public ListenerContainerCustomizer<AbstractMessageListenerContainer<byte[], byte[]>> customizer(SeekToCurrentErrorHandler errorHandler) {
+	public ListenerContainerCustomizer<AbstractMessageListenerContainer<byte[], byte[]>> customizer(DefaultErrorHandler errorHandler) {
 		return (container, dest, group) -> {
 			container.setErrorHandler(errorHandler);
 		};
@@ -173,8 +173,8 @@ That sounds like a lot of complex things, but in reality, it boils down to these
 
 ```
 	@Bean
-	public SeekToCurrentErrorHandler errorHandler(DeadLetterPublishingRecoverer deadLetterPublishingRecoverer) {
-		return new SeekToCurrentErrorHandler(deadLetterPublishingRecoverer);
+	public DefaultErrorHandler errorHandler(DeadLetterPublishingRecoverer deadLetterPublishingRecoverer) {
+		return new DefaultErrorHandler(deadLetterPublishingRecoverer);
 	}
 ```
 
@@ -186,12 +186,12 @@ That sounds like a lot of complex things, but in reality, it boils down to these
 ```
 
 Let us analyze each of them.
-The first one is the `ListenerContainerCustomizer` bean that takes a `SeekToCurrentErrorHandler`.
+The first one is the `ListenerContainerCustomizer` bean that takes a `DefaultErrorHandler`.
 The container is now customized with that particular error handler.
 You can learn more about container customization https://docs.spring.io/spring-cloud-stream/docs/current/reference/html/spring-cloud-stream.html#_advanced_consumer_configuration[here].
 
-The second bean is the `SeekToCurrentErrorHandler` that is configured with a publishing to a `DLT`.
-See https://docs.spring.io/spring-kafka/docs/current/reference/html/#seek-to-current[here] for more details on `SeekToCurrentErrorHandler`.
+The second bean is the `DefaultErrorHandler` that is configured with a publishing to a `DLT`.
+See https://docs.spring.io/spring-kafka/docs/current/reference/html/#seek-to-current[here] for more details on `DefaultErrorHandler`.
 
 The third bean is the `DeadLetterPublishingRecoverer` that is ultimately responsible for sending to the `DLT`.
 By default, the `DLT` topic is named as the ORIGINAL_TOPIC_NAME.DLT.
