@@ -365,7 +365,7 @@ Otherwise, the method will be called with one record at a time.
 The size of the batch is controlled by Kafka consumer properties `max.poll.records`, `fetch.min.bytes`, `fetch.max.wait.ms`; refer to the Kafka documentation for more information.
 
 IMPORTANT: Retry within the binder is not supported when using batch mode, so `maxAttempts` will be overridden to 1.
-You can configure a `SeekToCurrentBatchErrorHandler` (using a `ListenerContainerCustomizer`) to achieve similar functionality to retry in the binder.
+You can configure a `DefaultErrorHandler` (using a `ListenerContainerCustomizer`) to achieve similar functionality to retry in the binder.
 You can also use a manual `AckMode` and call `Ackowledgment.nack(index, sleep)` to commit the offsets for a partial batch and have the remaining records redelivered.
 Refer to the https://docs.spring.io/spring-kafka/docs/2.3.0.BUILD-SNAPSHOT/reference/html/#committing-offsets[Spring for Apache Kafka documentation] for more information about these techniques.
 
