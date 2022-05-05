@@ -1,0 +1,23 @@
+spring:
+  cloud:
+    stream:
+      bindings:
+        supplier-out-0:
+          destination: sensor-topic
+          producer:
+            useNativeEncoding: true
+      kafka:
+        #        binder:
+        #          producerProperties:
+        #            value:
+        #              subject:
+        #                name:
+        #                  strategy: io.confluent.kafka.serializers.subject.RecordNameStrategy
+
+        bindings:
+          supplier-out-0:
+            producer:
+              configuration:
+                value.serializer: io.confluent.kafka.serializers.KafkaAvroSerializer
+                schema.registry.url: http://localhost:8081
+server.port: 9010

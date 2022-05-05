@@ -36,6 +36,7 @@
 		<module>binders</module>
 		<module>bom</module>
 		<module>docs</module>
+		<module>samples</module>
 	</modules>
 
 	<dependencyManagement>
