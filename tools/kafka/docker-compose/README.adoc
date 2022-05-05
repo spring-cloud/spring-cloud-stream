@@ -1,0 +1,64 @@
+== Docker Compose scripts for Kafka
+
+=== Kafka Cluster
+Runs a multi-node Kafka cluster w/ 3 brokers available at `locahost:9091,localhost:9092,localhost:9093`.
+
+To start the brokers run the following command:
+[source,shell]
+----
+docker-compose -f ./kafka-cluster.yml up
+----
+To stop the brokers run the following command:
+[source,shell]
+----
+docker-compose -f ./kafka-cluster.yml down
+----
+
+TIP: To start the containers in the foreground simply add `-d` to the start command. To stop containers that are running in the foreground simple issue `CTRL-C` command.
+
+
+=== Control Center UI
+Runs a https://docs.confluent.io/platform/current/control-center/index.html[Confluent Control Center] that exposes a UI at http://locahost:9021.
+
+NOTE: The scripts must be chained together as the UI depends on the brokers
+
+To start the brokers and the Control Center UI run the following command:
+[source,shell]
+----
+docker-compose -f ./kafka-cluster.yml -f ./control-center-ui.yml up
+----
+To stop the brokers and the Control Center UI run the following command:
+[source,shell]
+----
+docker-compose -f ./kafka-cluster.yml -f ./control-center-ui.yml down
+----
+
+=== Schema Registry
+Runs a https://docs.confluent.io/platform/current/schema-registry/index.html[Confluent Schema Registry] available at http://locahost:8081.
+
+NOTE: The scripts must be chained together as the schema registry depends on the brokers
+
+To start the brokers and the schema registry run the following command:
+[source,shell]
+----
+docker-compose -f ./kafka-cluster.yml -f ./schema-registry.yml up
+----
+To stop the brokers and the schema registry run the following command:
+[source,shell]
+----
+docker-compose -f ./kafka-cluster.yml -f ./schema-registry.yml down
+----
+
+=== All The Things
+The scripts can be chained together to start the cluster, UI and schema registry with the following commmand:
+[source,shell]
+----
+docker-compose -f kafka-cluster.yml -f ./control-center-ui.yml -f ./schema-registry.yml up
+----
+Likewise, to stop all the things:
+[source,shell]
+----
+docker-compose -f kafka-cluster.yml -f ./control-center-ui.yml -f ./schema-registry.yml down
+----
+
+TIP: The only "UI" representation of the schema registry is by navigating to a `Topic` and then clicking the `Schema` tab for the topic
