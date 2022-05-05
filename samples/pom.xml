@@ -21,7 +21,6 @@
 		<spring-cloud.version>2022.0.0-SNAPSHOT</spring-cloud.version>
 	</properties>
 
-
 	<modules>
 		<module>avro-samples</module>
 	</modules>
@@ -30,8 +29,8 @@
 		<dependencies>
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
-				<artifactId>spring-cloud-dependencies</artifactId>
-				<version>${spring-cloud.version}</version>
+				<artifactId>spring-cloud-stream-dependencies</artifactId>
+				<version>${project.version}</version>
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>
