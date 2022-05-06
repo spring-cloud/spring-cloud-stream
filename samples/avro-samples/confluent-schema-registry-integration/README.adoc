@@ -76,11 +76,11 @@ java -jar target/confluent-schema-registry-integration-producer2-4.0.0-SNAPSHOT.
 The producer apps each expose a REST endpoint which sends a sample Kafka event when invoked. Execute the following commands to send some sample data.
 [source,bash]
 ----
-curl -X POST http://localhost:9009/messages
-curl -X POST http://localhost:9010/messages
-curl -X POST http://localhost:9009/messages
-curl -X POST http://localhost:9009/messages
-curl -X POST http://localhost:9010/messages
+curl -X POST http://localhost:9009/randomMessage
+curl -X POST http://localhost:9010/randomMessage
+curl -X POST http://localhost:9009/randomMessage
+curl -X POST http://localhost:9009/randomMessage
+curl -X POST http://localhost:9010/randomMessage
 ----
 
 ===== View consumer output

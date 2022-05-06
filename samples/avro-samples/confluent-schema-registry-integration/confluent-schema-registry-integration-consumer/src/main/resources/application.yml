@@ -7,14 +7,12 @@ spring:
           consumer:
             useNativeDecoding: true
       kafka:
-
 #        binder:
 #          consumerProperties:
 #            value:
 #              subject:
 #                name:
 #                  strategy: io.confluent.kafka.serializers.subject.RecordNameStrategy
-
         bindings:
           process-in-0:
             consumer:

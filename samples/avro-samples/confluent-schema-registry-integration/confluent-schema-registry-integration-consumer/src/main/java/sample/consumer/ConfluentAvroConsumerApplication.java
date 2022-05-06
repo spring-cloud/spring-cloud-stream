@@ -3,24 +3,25 @@ package sample.consumer;
 import java.util.function.Consumer;
 
 import com.example.Sensor;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 
-@SpringBootApplication
+@SpringBootApplication(proxyBeanMethods = false)
 public class ConfluentAvroConsumerApplication {
 
-	private final Log logger = LogFactory.getLog(getClass());
+	private final Logger logger = LoggerFactory.getLogger(ConfluentAvroConsumerApplication.class);
 
 	public static void main(String[] args) {
 		SpringApplication.run(ConfluentAvroConsumerApplication.class, args);
 	}
 
 	@Bean
-	public Consumer<Sensor> process()  {
-		return input -> logger.info("input: " + input);
+	Consumer<Sensor> process()  {
+		return input -> logger.info("input: {}", input);
 	}
 
 }
