@@ -1,168 +1,171 @@
-== Spring Cloud Stream and Schema Evolution in Action with Confluent Schema Registry Server and Confluent Avro Serializers!
+== Schema evolution with Confluent Schema Registry
 
-These are collection of Spring Boot applications to demonstrate Schema Evolution using Spring Cloud Stream and Confluent Schema Registry.
-Producer V1 (`producer1`), Producer V2 (`producer2`), and Consumer (`consumer`) are included in this project.
+A collection of Spring Boot applications to demonstrate schema evolution using Spring Cloud Stream and Confluent Schema Registry.
 
-All the components (producers and consumer) use the Avro serializer provided by Confluent, rather than using the Spring Cloud Stream provided Avro serializers.
-Spring Cloud Stream producers in this sample are using native encoding to use the Confluent avro serializer and similarly the consumer is using native decoding to use the Confluent Avro deserializer.
-The benefit is that these components are now cross compatible with external tools that use the Confluent Avro serializers such as the out-of-the box tools - `kafka-avro-console-consumer` and `kafka-avro-console-producer` - that come with Confluent Schema registry.
+All components (producers and consumers) in this sample are configured to use native encoding which ensures their use of the Confluent provided Avro serializers, rather than the Spring Cloud Stream provided Avro serializers. The Confluent serializers leverage the Confluent schema registry to validate schemas during record production. An additional benefit is that these components are now cross compatible with external tools that use the Confluent Avro serializers such as the out-of-the box tools - `kafka-avro-console-consumer` and `kafka-avro-console-producer` - that come with Confluent Schema registry.
 
 === Requirement
 As a developer, I'd like to design my consumer to be resilient to differing payload schemas, and I want to use Confluent Schema Registry.
 
 === Assumptions
-There are a lot of online literature on Schema Evolution, so we are going to skip defining them here.
-For this sample, however, we will simply assume there are two producers producing events with different payload schemas.
-A consumer that consumes both the payload versions will be designed to adapt to evolving schemas.
+There are a lot of online literature on schema evolution, so we are going to skip defining them here. For this sample, however, we will simply assume there are two producers producing events with different payload schemas and a consumer that is able to consume both of the payloads.
 
-=== Running the application
-
-Before running the samples, please ensure that you have Apache Kafka available at `localhost:9092` and Confluent Schema Registry at `localhost:8081`.
-
-Make sure you are in the directory `confluent-schema-registry-integration`
-
-In order to run this sample, you need to set compatibility to `NONE` on Confluent schema registry server.
-
-`curl -X PUT http://127.0.0.1:8081/config -d '{"compatibility": "NONE"}' -H "Content-Type:application/json"`
-
-For the following `java- jar...` commands, first build the corresponding projects and make sure that you are in the right folders.
-Alternatively, you can run these from your IDE environment as well.
-
-- Start `consumer` on another terminal session
+[[build-apps]]
+=== Building the applications
+To build the applications simply execute the following command from the `confluent-schema-registry-integration` directory:
 [source,bash]
 ----
+./mvnw clean install
+----
+NOTE: The apps can be built and run from w/in an IDE (such as IntelliJ) but you will need to invoke the Maven `package` goal and then `refresh` the project as the Avro Maven plugin needs to execute so that it generates the required model classes - otherwise you will see compile failures around missing `Sensor` class.
+
+[[run-apps]]
+=== Running the applications
+
+==== Pre-requisites
+****
+* The components have all been built by following the <<build-apps>> steps.
+* Apache Kafka broker available at `localhost:9092`
+* Confluent Schema Registry available at `localhost:8081`
+
+TIP: The included link:../../../tools/kafka/docker-compose/README.adoc#_all_the_things[Kafka tools] can be used to easily start a broker and schema registry locally on the required coordinates
+****
+
+==== Steps
+Make sure the above pre-requisites are satisfied and that you are in the `confluent-schema-registry-integration` directory and follow the steps below.
+
+===== Adjust schema compatibility
+Execute the following command to set the schema compatibility mode to `NONE` on the Confluent schema registry:
+[source,bash]
+----
+curl -X PUT http://localhost:8081/config -d '{"compatibility": "NONE"}' -H "Content-Type:application/json"
+----
+.Expected output
+[source,json]
+----
+{"compatibility":"NONE"}
+----
+
+===== Start the applications
+
+* Start `consumer` on another terminal session
+
+[source,bash]
+----
+cd confluent-schema-registry-integration-consumer
 java -jar target/confluent-schema-registry-integration-consumer-4.0.0-SNAPSHOT.jar
 ----
-- Start `producer1` on another terminal session
+
+* Start `producer1` on another terminal session
+
 [source,bash]
 ----
+cd confluent-schema-registry-integration-producer1
 java -jar target/confluent-schema-registry-integration-producer1-4.0.0-SNAPSHOT.jar
 ----
-- Start `producer2` on another terminal session
+
+* Start `producer2` on another terminal session
+
 [source,bash]
 ----
+cd confluent-schema-registry-integration-producer2
 java -jar target/confluent-schema-registry-integration-producer2-4.0.0-SNAPSHOT.jar
 ----
 
-=== Sample Data
-Both the producers in the demonstration are _also_ REST controllers. We will hit the `/messages` endpoint on each producer
-to POST sample data.
-
-_Example:_
+===== Send sample data
+The producer apps each expose a REST endpoint which sends a sample Kafka event when invoked. Execute the following commands to send some sample data.
 [source,bash]
 ----
-curl -X POST http://localhost:9009/messages
-curl -X POST http://localhost:9010/messages
-curl -X POST http://localhost:9009/messages
-curl -X POST http://localhost:9009/messages
-curl -X POST http://localhost:9010/messages
+curl -X POST http://localhost:9009/randomMessage
+curl -X POST http://localhost:9010/randomMessage
+curl -X POST http://localhost:9009/randomMessage
+curl -X POST http://localhost:9009/randomMessage
+curl -X POST http://localhost:9010/randomMessage
 ----
 
-=== Output
-The consumer should log the results.
+===== View consumer output
+The consumer should log the results which should look something like:
 
 [source,bash,options=nowrap,subs=attributes]
 ----
-{"id": "d135efc3-72f8-4612-9497-184cae508e31-v1", "internalTemperature": 34.36362, "externalTemperature": 0.0, "acceleration": 9.656547, "velocity": 33.29733}
-{"id": "fd2467ce-ae09-4fd4-9cde-d9ff33fac89b-v2", "internalTemperature": 34.840473, "externalTemperature": 0.0, "acceleration": 9.709609, "velocity": 23.046476}
-{"id": "4ac70c32-9ffe-4c90-914a-fa28024f5faa-v1", "internalTemperature": 23.74807, "externalTemperature": 0.0, "acceleration": 7.5003176, "velocity": 15.848035}
-{"id": "3ecaae18-3144-4570-800a-223ca3198001-v1", "internalTemperature": 28.410656, "externalTemperature": 0.0, "acceleration": 1.752817, "velocity": 69.82016}
-{"id": "149637a9-c7a6-4ab8-b7aa-021c72d9ebd7-v2", "internalTemperature": 2.2332578, "externalTemperature": 0.0, "acceleration": 6.251889, "velocity": 65.84996}
+{"id": "10fd4598-0a12-4d9b-9512-3e2257d9b713-v1", "internalTemperature": 28.674625, "externalTemperature": 0.0, "acceleration": 5.3196855, "velocity": 41.38155}
+{"id": "cc3555b0-0a52-44ef-9a06-89ffda361e0b-v2", "internalTemperature": 8.026814, "externalTemperature": 0.0, "acceleration": 7.5858965, "velocity": 79.71516}
+{"id": "5a23d687-093f-4b13-a42f-19842041a96f-v1", "internalTemperature": 31.853527, "externalTemperature": 0.0, "acceleration": 6.006965, "velocity": 19.520967}
+{"id": "3fe53513-def6-4376-81b9-a5b332d54fc2-v1", "internalTemperature": 33.353485, "externalTemperature": 0.0, "acceleration": 5.429616, "velocity": 82.439064}
+{"id": "5813a495-748c-4485-ac85-cd6ad28a839c-v2", "internalTemperature": 6.988123, "externalTemperature": 0.0, "acceleration": 1.4945298, "velocity": 51.230377}
 ----
 
-You can also sue external tools to query:
+NOTE: The `id` value is appended with `-v1` or `-v2` indicating if it was sent from `producer1` or `producer2`, respectively.
 
-For example, here is how you may use the avro consumer tool that is part of Confluent Schema Registry.
-
+Alternatively, the Confluent command line tools can also be used to view the output with the following command:
+[source,bash]
 ----
-./bin/kafka-avro-console-consumer --topic sensor-topic \
---bootstrap-server localhost:9092 \
---from-beginning
-{"id":"a4c03b84-3598-4b29-8507-edf05f211263-v1","temperature":7.0681753,"acceleration":6.8061967,"velocity":86.663795}
-{"id":"92e5fa92-c90b-49ca-b3c1-1b0b98fb3d82-v1","temperature":3.0760436,"acceleration":4.700919,"velocity":20.379478}
-{"id":"0ac79b9f-6ba3-4381-b933-da8355555650-v1","temperature":21.31792,"acceleration":7.2651076,"velocity":14.394546}
-{"id":"c6c6a453-b8a0-4c67-ab5d-be4f6f04123a-v2","internalTemperature":31.67511,"externalTemperature":0.0,"acceleration":3.66884,"velocity":80.335815,"accelerometer":null,"magneticField":null}
+<confluent-tools-install-dir>/bin/kafka-avro-console-consumer \
+    --topic sensor-topic \
+    --bootstrap-server localhost:9092 \
+    --from-beginning
 ----
 
-NOTE: Refer to the payload suffix in the `id` field. Each of them are appended with `-v1` or `-v2` indicating they are from
-`producer1` and `producer2` respectively.
-
-=== What just happened?
-The schema evolved on the `temperature` field. That field is now split into `internalTemperature` and `externalTemperature`,
-as two separate fields. The `producer1` produces payload only with `temperature` and on the other hand, `producer2` produces
-payload with `internalTemperature` and `externalTemperature` fields in it.
+==== What just happened?
+The schema evolved on the `temperature` field. That field is now split into two separate fields, `internalTemperature` and `externalTemperature`. The `producer1` produces payload only with `temperature` and on the other hand, `producer2` produces payload with `internalTemperature` and `externalTemperature`.
 
 The `consumer` is coded against a base schema that include the split fields.
 
-The `consumer` app can happily deserialize the payload with `internalTemperature` and `externalTemperature` fields. However, when
-a `producer1` payload arrives (which includes `temperature` field), the schema evolution and compatibility check are automatically
-applied.
+The `consumer` app can happily deserialize the payload with `internalTemperature` and `externalTemperature` fields. However, when a `producer1` payload arrives (which includes only the single `temperature` field), the schema evolution and compatibility check are automatically applied.
 
 Because each payload also includes the payload version in the header, Spring Cloud Stream with the help of Schema
 Registry server and Avro, the schema evolution occurs behind the scenes. The automatic mapping of `temperature` to
 `internalTemperature` field is applied.
 
 === Using Confluent Control Center
+Confluent provides the https://docs.confluent.io/current/control-center/index.html[Confluent Control Center] UI - a web-based tool for managing and monitoring Apache Kafka®.
 
-This test can be run with the https://docs.confluent.io/current/control-center/index.html[Confluent Control Center] - a web-based tool for managing and monitoring Apache Kafka®. Control Center facilitates building and monitoring production data pipelines and streaming applications.
+TIP: The included link:../../../tools/kafka/docker-compose/README.adoc#_all_the_things[Kafka tools] can be used to easily start a Control Center UI locally
 
-Please ensure that you have Confluent Control Center running locally.
+Once the UI is running locally and you have followed the <<run-apps>> section:
+****
+* Open the control center at `http://localhost:9021` and click on the provided cluster
+* From the vertical menu select `Topics` tab
+* From the list of topics select the `sensor-topic` (created by the samples)
+* Click on the `Schema` tab to view the `Sensors` schema.
+****
 
-For further info check the Confluent's https://docs.confluent.io/current/quickstart/ce-docker-quickstart.html[Quick Start].
+=== Confluent Schema Registry REST API
+The Confluent Schema Registry also makes available a REST API for schema related operations.
 
-The https://docs.confluent.io/current/control-center/topics/schema.html[Schema Registry feature in Control Center] would help you to visualize and manage the topic schemas.
+For example, the `http://localhost:8081/subjects` endpoint will list the schema names (e.g. subjects) currently defined in the registry. After you have run the samples you should be able to see a schema subject name `sensor-topic-value`.
 
-After you run the samples and post couple of messages as explained above.
 
-1. Open the control center at `http://localhost:9021` and click on the provided cluster.
-2. From the vertical menu select `Topics` tab.
-3. From the list of topics select the `sensor-topic` - the topic created by the samples.
-4. Click on the `Schema` tab to see the `Sensors` schema.
+==== Schema naming
 
-You can also use the Confluent Schema REST API at `http://localhost:8081`. For example the `http://localhost:8081/subjects` will list the schema names (e.g. subjects) defined.
-After you have run the samples you should be able to see a schema subject name `sensor-topic-value`.
+By default, Confluent uses the https://docs.confluent.io/platform/current/schema-registry/serdes-develop/index.html#subject-name-strategy[TopicNameStrategy] to create the name of the message payload schema. The name of the schema is your topic name (e.g. `spring.cloud.stream.bindings.<channel>:destination`) appended with `-value`.
 
-==== NOTE
+This means that by default you can use a single schema per topic. However, the subject naming strategy can be changed to `RecordNameStrategy` or `TopicRecordNameStrategy` by setting the following properties:
 
-By default Kafka uses the https://docs.confluent.io/current/schema-registry/serdes-develop/index.html[TopicNameStrategy] to create the name of the message payload schema. Later means that the schema is named after your topic name (e.g. spring.cloud.stream.bindings.<channel>:destination) with `-value` suffix.
-
-That means that by default you can use a single schema per topic. The subject naming strategy can be changed to `RecordNameStrategy` or `TopicRecordNameStrategy` with the help of the `spring.cloud.stream.kafka.binder.consumerProperties` and `spring.cloud.stream.kafka.binder.producerProperties` properties like this:
-
-Extend your consumer configuration like this:
-
+.consumer
 [source,yaml]
 ----
 spring:
   cloud:
     stream:
-      .........
       kafka:
         binder:
           consumerProperties:
-            value:
-              subject:
-                name:
-                  strategy: io.confluent.kafka.serializers.subject.RecordNameStrategy
+            value.subject.name.strategy: io.confluent.kafka.serializers.subject.RecordNameStrategy
 ----
-
-Extend your producer configuration like this:
-
+.producer
 [source,yaml]
 ----
 spring:
   cloud:
     stream:
-      .........
       kafka:
         binder:
           producerProperties:
-            value:
-              subject:
-                name:
-                  strategy: io.confluent.kafka.serializers.subject.RecordNameStrategy
+            value.subject.name.strategy: io.confluent.kafka.serializers.subject.RecordNameStrategy
 ----
 
-Note that currently the Control Center seams to be recognizing only the subjects created with `TopicNameStrategy` . If you configure the `RecordNameStrategy` the schema will not appear in the UI.
+NOTE: Currently the Control Center seems to only recognize the subjects created with the `TopicNameStrategy` . If you configure the `RecordNameStrategy` the schema will not appear in the UI.
 
 
 

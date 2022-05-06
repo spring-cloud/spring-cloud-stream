@@ -9,11 +9,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.stream.function.StreamBridge;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-@SpringBootApplication
+@SpringBootApplication(proxyBeanMethods = false)
 @RestController
 public class ConfluentAvroProducer1Application {
 
@@ -26,6 +25,12 @@ public class ConfluentAvroProducer1Application {
 		SpringApplication.run(ConfluentAvroProducer1Application.class, args);
 	}
 
+	@PostMapping("/randomMessage")
+	public String sendRandomMessage() {
+		streamBridge.send("supplier-out-0", randomSensor());
+		return "ok, have fun with v1 payload!";
+	}
+
 	private Sensor randomSensor() {
 		Sensor sensor = new Sensor();
 		sensor.setId(UUID.randomUUID() + "-v1");
@@ -34,13 +39,6 @@ public class ConfluentAvroProducer1Application {
 		sensor.setTemperature(random.nextFloat() * 50);
 		return sensor;
 	}
-
-	@RequestMapping(value = "/messages", method = RequestMethod.POST)
-	public String sendMessage() {
-		streamBridge.send("supplier-out-0", randomSensor());
-		return "ok, have fun with v1 payload!";
-	}
-
 }
 
 
