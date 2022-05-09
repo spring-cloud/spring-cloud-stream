@@ -697,7 +697,7 @@ public class KafkaBinderTests extends
 				"testSendAndReceiveBatch", moduleInputChannel, consumerProperties);
 		Message<?> message = org.springframework.integration.support.MessageBuilder
 				.withPayload("foo".getBytes(StandardCharsets.UTF_8))
-				.setHeader(KafkaHeaders.PARTITION_ID, 0)
+				.setHeader(KafkaHeaders.PARTITION, 0)
 				.build();
 
 		// Let the consumer actually bind to the producer before sending a msg
@@ -705,7 +705,7 @@ public class KafkaBinderTests extends
 		moduleOutputChannel.send(message);
 		message = MessageBuilder
 				.withPayload("bar".getBytes(StandardCharsets.UTF_8))
-				.setHeader(KafkaHeaders.PARTITION_ID, 0)
+				.setHeader(KafkaHeaders.PARTITION, 0)
 				.build();
 		moduleOutputChannel.send(message);
 		CountDownLatch latch = new CountDownLatch(1);
@@ -1120,7 +1120,7 @@ public class KafkaBinderTests extends
 		String testMessagePayload = "test." + UUID.randomUUID().toString();
 		Message<byte[]> testMessage = MessageBuilder
 				.withPayload(testMessagePayload.getBytes())
-				.setHeader(KafkaHeaders.PARTITION_ID, 1)
+				.setHeader(KafkaHeaders.PARTITION, 1)
 				.build();
 		moduleOutputChannel.send(testMessage);
 
@@ -1157,7 +1157,7 @@ public class KafkaBinderTests extends
 			assertThat(receivedMessage.getHeaders()
 					.get(KafkaMessageChannelBinder.X_EXCEPTION_FQCN)).isNotNull();
 			assertThat(receivedMessage.getHeaders()
-					.get(KafkaHeaders.RECEIVED_PARTITION_ID)).isEqualTo(expectedDlqPartition);
+					.get(KafkaHeaders.RECEIVED_KEY)).isEqualTo(expectedDlqPartition);
 		}
 		else if (!HeaderMode.none.equals(headerMode)) {
 			assertThat(handler.getInvocationCount())
@@ -1205,7 +1205,7 @@ public class KafkaBinderTests extends
 					.get(KafkaMessageChannelBinder.X_EXCEPTION_FQCN)).isNotNull();
 
 			assertThat(receivedMessage.getHeaders()
-					.get(KafkaHeaders.RECEIVED_PARTITION_ID)).isEqualTo(expectedDlqPartition);
+					.get(KafkaHeaders.RECEIVED_KEY)).isEqualTo(expectedDlqPartition);
 		}
 		else {
 			assertThat(receivedMessage.getHeaders()
@@ -2362,13 +2362,13 @@ public class KafkaBinderTests extends
 				"test", input0, consumerProperties);
 
 		output.send(new GenericMessage<>("foo".getBytes(),
-				Collections.singletonMap(KafkaHeaders.PARTITION_ID, 5)));
+				Collections.singletonMap(KafkaHeaders.PARTITION, 5)));
 
 		Message<?> received = receive(input0);
 		assertThat(received).isNotNull();
 
 		assertThat(received.getPayload()).isEqualTo("foo".getBytes());
-		assertThat(received.getHeaders().get(KafkaHeaders.RECEIVED_PARTITION_ID))
+		assertThat(received.getHeaders().get(KafkaHeaders.RECEIVED_PARTITION))
 				.isEqualTo(5);
 
 		inputBinding.unbind();
@@ -2627,7 +2627,7 @@ public class KafkaBinderTests extends
 		Message<?> inbound = receive(moduleInputChannel);
 		assertThat(inbound).isNotNull();
 		String receivedKey = new String(inbound.getHeaders()
-				.get(KafkaHeaders.RECEIVED_MESSAGE_KEY, byte[].class));
+				.get(KafkaHeaders.RECEIVED_KEY, byte[].class));
 		assertThat(receivedKey).isEqualTo("myDynamicKey");
 		producerBinding.unbind();
 		consumerBinding.unbind();
@@ -3662,7 +3662,7 @@ public class KafkaBinderTests extends
 			binderBindUnbindLatency();
 			IntStream.range(0, 10).forEach(i -> moduleOutputChannel.send(MessageBuilder.withPayload(testPayload)
 					.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN)
-					.setHeader(KafkaHeaders.PARTITION_ID, i)
+					.setHeader(KafkaHeaders.PARTITION, i)
 					.build()));
 			CountDownLatch latch1 = new CountDownLatch(10);
 			CountDownLatch latch2 = new CountDownLatch(20);
@@ -3723,7 +3723,7 @@ public class KafkaBinderTests extends
 			producerBinding = binder.bindProducer(testTopicName, moduleOutputChannel,
 					producerProperties);
 			moduleOutputChannel
-					.send(new GenericMessage<>("foo", Collections.singletonMap(KafkaHeaders.PARTITION_ID, 0)));
+					.send(new GenericMessage<>("foo", Collections.singletonMap(KafkaHeaders.PARTITION, 0)));
 			Message<?> sendResult = metaChannel.receive(10_000);
 			assertThat(sendResult).isNotNull();
 			RecordMetadata meta = sendResult.getHeaders().get(KafkaHeaders.RECORD_METADATA, RecordMetadata.class);
@@ -3768,7 +3768,7 @@ public class KafkaBinderTests extends
 
 			});
 			moduleOutputChannel.send(
-					new GenericMessage<>(new Pojo("foo"), Collections.singletonMap(KafkaHeaders.PARTITION_ID, 0)));
+					new GenericMessage<>(new Pojo("foo"), Collections.singletonMap(KafkaHeaders.PARTITION, 0)));
 		}
 		finally {
 			if (producerBinding != null) {
