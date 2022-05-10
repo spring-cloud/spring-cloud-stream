@@ -1,5 +1,5 @@
 /*
- * Copyright 2014-2021 the original author or authors.
+ * Copyright 2014-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -207,8 +207,6 @@ public class KafkaMessageChannelBinder extends
 	 */
 	public static final String X_ORIGINAL_TIMESTAMP_TYPE = "x-original-timestamp-type";
 
-	private static final ThreadLocal<String> bindingNameHolder = new ThreadLocal<>();
-
 	private static final Pattern interceptorNeededPattern = Pattern.compile("(payload|#root|#this)");
 
 	private static final SpelExpressionParser PARSER = new SpelExpressionParser();
@@ -337,13 +335,11 @@ public class KafkaMessageChannelBinder extends
 
 	@Override
 	public KafkaConsumerProperties getExtendedConsumerProperties(String channelName) {
-		bindingNameHolder.set(channelName);
 		return this.extendedBindingProperties.getExtendedConsumerProperties(channelName);
 	}
 
 	@Override
 	public KafkaProducerProperties getExtendedProducerProperties(String channelName) {
-		bindingNameHolder.set(channelName);
 		return this.extendedBindingProperties.getExtendedProducerProperties(channelName);
 	}
 
@@ -573,8 +569,7 @@ public class KafkaMessageChannelBinder extends
 			props.putAll(kafkaProducerProperties.getConfiguration());
 		}
 		if (this.producerConfigCustomizer != null) {
-			this.producerConfigCustomizer.configure(props, bindingNameHolder.get(), destination);
-			bindingNameHolder.remove();
+			this.producerConfigCustomizer.configure(props, producerProperties.getBindingName(), destination);
 		}
 		DefaultKafkaProducerFactory<byte[], byte[]> producerFactory = new DefaultKafkaProducerFactory<>(
 				props);
@@ -855,8 +850,7 @@ public class KafkaMessageChannelBinder extends
 
 		Assert.isTrue(!extendedConsumerProperties.getExtension().isResetOffsets(),
 				"'resetOffsets' cannot be set when a KafkaBindingRebalanceListener is provided");
-		final String bindingName = bindingNameHolder.get();
-		bindingNameHolder.remove();
+		final String bindingName = extendedConsumerProperties.getBindingName();
 		Assert.notNull(bindingName, "'bindingName' cannot be null");
 		final KafkaBindingRebalanceListener userRebalanceListener = this.rebalanceListener;
 		containerProperties
@@ -1457,7 +1451,7 @@ public class KafkaMessageChannelBinder extends
 		}
 
 		if (this.consumerConfigCustomizer != null) {
-			this.consumerConfigCustomizer.configure(props, bindingNameHolder.get(), destination);
+			this.consumerConfigCustomizer.configure(props, consumerProperties.getBindingName(), destination);
 		}
 		DefaultKafkaConsumerFactory<Object, Object> factory = new DefaultKafkaConsumerFactory<>(props);
 		factory.setBeanName(beanName);
