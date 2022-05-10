@@ -29,6 +29,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Ignore;
@@ -692,6 +693,20 @@ public class BindingServiceTests {
 		assertThat(inputBinding.isRunning()).isFalse();
 	}
 
+	@SuppressWarnings("unchecked")
+	@Test
+	public void testBindingNameAsTopLevelProperty() throws Exception {
+		ApplicationContext context = new SpringApplicationBuilder(BarConfiguration.class)
+			.web(WebApplicationType.NONE).run();
+
+		final BindingServiceProperties bindingServiceProperties = context.getBean(BindingServiceProperties.class);
+
+		final ConsumerProperties consumerProperties = bindingServiceProperties.getConsumerProperties("myFunction-in-0");
+		assertThat(consumerProperties.getBindingName()).isEqualTo("myFunction-in-0");
+		final ProducerProperties producerProperties = bindingServiceProperties.getProducerProperties("myFunction-out-0");
+		assertThat(producerProperties.getBindingName()).isEqualTo("myFunction-out-0");
+	}
+
 	private DefaultBinderFactory createMockBinderFactory() {
 		BinderTypeRegistry binderTypeRegistry = createMockBinderTypeRegistry();
 		return new DefaultBinderFactory(
@@ -764,6 +779,17 @@ public class BindingServiceTests {
 
 		@ServiceActivator(inputChannel = Processor.INPUT)
 		public void echo(Message<?> value) throws Exception {
+		}
+
+	}
+
+	@Import(TestChannelBinderConfiguration.class)
+	@EnableAutoConfiguration
+	public static class BarConfiguration {
+
+		@Bean
+		public Function<String, String> myFunction() {
+			return s -> s;
 		}
 
 	}
