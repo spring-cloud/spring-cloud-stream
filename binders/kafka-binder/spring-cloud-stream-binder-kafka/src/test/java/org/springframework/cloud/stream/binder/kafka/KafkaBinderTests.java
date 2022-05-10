@@ -1157,7 +1157,7 @@ public class KafkaBinderTests extends
 			assertThat(receivedMessage.getHeaders()
 					.get(KafkaMessageChannelBinder.X_EXCEPTION_FQCN)).isNotNull();
 			assertThat(receivedMessage.getHeaders()
-					.get(KafkaHeaders.RECEIVED_KEY)).isEqualTo(expectedDlqPartition);
+					.get(KafkaHeaders.RECEIVED_PARTITION)).isEqualTo(expectedDlqPartition);
 		}
 		else if (!HeaderMode.none.equals(headerMode)) {
 			assertThat(handler.getInvocationCount())
@@ -1205,7 +1205,7 @@ public class KafkaBinderTests extends
 					.get(KafkaMessageChannelBinder.X_EXCEPTION_FQCN)).isNotNull();
 
 			assertThat(receivedMessage.getHeaders()
-					.get(KafkaHeaders.RECEIVED_KEY)).isEqualTo(expectedDlqPartition);
+					.get(KafkaHeaders.RECEIVED_PARTITION)).isEqualTo(expectedDlqPartition);
 		}
 		else {
 			assertThat(receivedMessage.getHeaders()

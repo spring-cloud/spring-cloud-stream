@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2019 the original author or authors.
+ * Copyright 2016-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,6 +41,11 @@ import org.springframework.expression.Expression;
 public class ProducerProperties {
 
 	/**
+	 * Binding name for this producer binding.
+	 */
+	private String bindingName;
+
+	/**
 	 * Signals if this producer needs to be started automatically. Default: true
 	 */
 	private boolean autoStartup = true;
@@ -76,6 +81,19 @@ public class ProducerProperties {
 	private boolean errorChannelEnabled = false;
 
 	private PollerProperties poller;
+
+	public String getBindingName() {
+		return bindingName;
+	}
+
+	/**
+	 * This method is not intended as a configuration property to set by the applications.
+	 * Therefore, we are not providing a proper setter method for this.
+	 * @param bindingName binding name populated by the framework.
+	 */
+	public void populateBindingName(String bindingName) {
+		this.bindingName = bindingName;
+	}
 
 	public Expression getPartitionKeyExpression() {
 		return this.partitionKeyExpression;
