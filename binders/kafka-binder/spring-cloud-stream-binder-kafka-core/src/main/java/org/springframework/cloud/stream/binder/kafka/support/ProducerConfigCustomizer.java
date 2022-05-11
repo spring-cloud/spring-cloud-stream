@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2020 the original author or authors.
+ * Copyright 2020-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,19 +14,20 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.stream.binder.kafka.config;
+package org.springframework.cloud.stream.binder.kafka.support;
 
 import java.util.Map;
 
 /**
- * This customizer is called by the binder to customize consumer configuration in
- * Kafka Consumer factory.
+ * This customizer is called by the binder to customize producer configuration in
+ * Kafka Producer factory.
  *
  * @author Soby Chacko
  * @since 3.0.9
  */
 @FunctionalInterface
-public interface ConsumerConfigCustomizer {
+public interface ProducerConfigCustomizer {
 
-	void configure(Map<String, Object> consumerProperties, String bindingName, String destination);
+	void configure(Map<String, Object> producerProperties, String bindingName, String destination);
+
 }

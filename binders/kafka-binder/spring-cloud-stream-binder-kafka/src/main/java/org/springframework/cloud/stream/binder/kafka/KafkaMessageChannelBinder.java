@@ -24,7 +24,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -49,12 +48,8 @@ import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.header.Headers;
 import org.apache.kafka.common.header.internals.RecordHeader;
 import org.apache.kafka.common.header.internals.RecordHeaders;
-import org.apache.kafka.common.serialization.ByteArrayDeserializer;
-import org.apache.kafka.common.serialization.ByteArraySerializer;
 
-import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.DisposableBean;
-import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.cloud.stream.binder.AbstractMessageChannelBinder;
 import org.springframework.cloud.stream.binder.BinderHeaders;
 import org.springframework.cloud.stream.binder.BinderSpecificPropertiesProvider;
@@ -66,14 +61,14 @@ import org.springframework.cloud.stream.binder.ExtendedPropertiesBinder;
 import org.springframework.cloud.stream.binder.HeaderMode;
 import org.springframework.cloud.stream.binder.MessageValues;
 import org.springframework.cloud.stream.binder.kafka.config.ClientFactoryCustomizer;
-import org.springframework.cloud.stream.binder.kafka.config.ConsumerConfigCustomizer;
-import org.springframework.cloud.stream.binder.kafka.config.ProducerConfigCustomizer;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaBinderConfigurationProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaConsumerProperties;
-import org.springframework.cloud.stream.binder.kafka.properties.KafkaConsumerProperties.StandardHeaders;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaExtendedBindingProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaProducerProperties;
 import org.springframework.cloud.stream.binder.kafka.provisioning.KafkaTopicProvisioner;
+import org.springframework.cloud.stream.binder.kafka.support.ConsumerConfigCustomizer;
+import org.springframework.cloud.stream.binder.kafka.support.ProducerConfigCustomizer;
+import org.springframework.cloud.stream.binder.kafka.utils.BindingUtils;
 import org.springframework.cloud.stream.binder.kafka.utils.DlqDestinationResolver;
 import org.springframework.cloud.stream.binder.kafka.utils.DlqPartitionFunction;
 import org.springframework.cloud.stream.binding.DefaultPartitioningInterceptor;
@@ -448,21 +443,7 @@ public class KafkaMessageChannelBinder extends
 		AbstractApplicationContext applicationContext = getApplicationContext();
 		handler.setApplicationContext(applicationContext);
 
-		KafkaHeaderMapper mapper = null;
-		if (this.configurationProperties.getHeaderMapperBeanName() != null) {
-			mapper = applicationContext.getBean(
-					this.configurationProperties.getHeaderMapperBeanName(),
-					KafkaHeaderMapper.class);
-		}
-		if (mapper == null) {
-			//First, try to see if there is a bean named headerMapper registered by other frameworks using the binder (for e.g. spring cloud sleuth)
-			try {
-				mapper = applicationContext.getBean("kafkaBinderHeaderMapper", KafkaHeaderMapper.class);
-			}
-			catch (BeansException be) {
-				// Pass through
-			}
-		}
+		KafkaHeaderMapper mapper = BindingUtils.getHeaderMapper(applicationContext, this.configurationProperties);
 
 		/*
 		 * Even if the user configures a bean, we must not use it if the header mode is
@@ -530,44 +511,10 @@ public class KafkaMessageChannelBinder extends
 	protected DefaultKafkaProducerFactory<byte[], byte[]> getProducerFactory(
 			String transactionIdPrefix,
 			ExtendedProducerProperties<KafkaProducerProperties> producerProperties, String beanName, String destination) {
-		Map<String, Object> props = new HashMap<>();
-		props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class);
-		props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG,
-				ByteArraySerializer.class);
-		props.put(ProducerConfig.ACKS_CONFIG,
-				String.valueOf(this.configurationProperties.getRequiredAcks()));
-		Map<String, Object> mergedConfig = this.configurationProperties
-				.mergedProducerConfiguration();
-		if (!ObjectUtils.isEmpty(mergedConfig)) {
-			props.putAll(mergedConfig);
-		}
-		if (ObjectUtils.isEmpty(props.get(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG))) {
-			props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG,
-					this.configurationProperties.getKafkaConnectionString());
-		}
+
+		Map<String, Object> props = BindingUtils.createProducerConfigs(producerProperties,
+				this.configurationProperties);
 		final KafkaProducerProperties kafkaProducerProperties = producerProperties.getExtension();
-		if (ObjectUtils.isEmpty(props.get(ProducerConfig.BATCH_SIZE_CONFIG))) {
-			props.put(ProducerConfig.BATCH_SIZE_CONFIG,
-					String.valueOf(kafkaProducerProperties.getBufferSize()));
-		}
-		if (ObjectUtils.isEmpty(props.get(ProducerConfig.LINGER_MS_CONFIG))) {
-			props.put(ProducerConfig.LINGER_MS_CONFIG,
-					String.valueOf(kafkaProducerProperties.getBatchTimeout()));
-		}
-		if (ObjectUtils.isEmpty(props.get(ProducerConfig.COMPRESSION_TYPE_CONFIG))) {
-			props.put(ProducerConfig.COMPRESSION_TYPE_CONFIG,
-					kafkaProducerProperties.getCompressionType().toString());
-		}
-		Map<String, String> configs = producerProperties.getExtension().getConfiguration();
-		Assert.state(!configs.containsKey(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG),
-				ProducerConfig.BOOTSTRAP_SERVERS_CONFIG + " cannot be overridden at the binding level; "
-						+ "use multiple binders instead");
-		if (!ObjectUtils.isEmpty(configs)) {
-			props.putAll(configs);
-		}
-		if (!ObjectUtils.isEmpty(kafkaProducerProperties.getConfiguration())) {
-			props.putAll(kafkaProducerProperties.getConfiguration());
-		}
 		if (this.producerConfigCustomizer != null) {
 			this.producerConfigCustomizer.configure(props, producerProperties.getBindingName(), destination);
 		}
@@ -1082,29 +1029,8 @@ public class KafkaMessageChannelBinder extends
 	private MessageConverter getMessageConverter(
 			final ExtendedConsumerProperties<KafkaConsumerProperties> extendedConsumerProperties) {
 
-		MessageConverter messageConverter;
-		if (extendedConsumerProperties.getExtension().getConverterBeanName() == null) {
-			MessagingMessageConverter mmc = new MessagingMessageConverter();
-			StandardHeaders standardHeaders = extendedConsumerProperties.getExtension()
-					.getStandardHeaders();
-			mmc.setGenerateMessageId(StandardHeaders.id.equals(standardHeaders)
-							|| StandardHeaders.both.equals(standardHeaders));
-			mmc.setGenerateTimestamp(
-					StandardHeaders.timestamp.equals(standardHeaders)
-							|| StandardHeaders.both.equals(standardHeaders));
-			messageConverter = mmc;
-		}
-		else {
-			try {
-				messageConverter = getApplicationContext().getBean(
-						extendedConsumerProperties.getExtension().getConverterBeanName(),
-						MessageConverter.class);
-			}
-			catch (NoSuchBeanDefinitionException ex) {
-				throw new IllegalStateException(
-						"Converter bean not present in application context", ex);
-			}
-		}
+		MessageConverter messageConverter = BindingUtils.getConsumerMessageConverter(getApplicationContext(),
+				extendedConsumerProperties, this.configurationProperties);
 		if (messageConverter instanceof MessagingMessageConverter) {
 			((MessagingMessageConverter) messageConverter).setHeaderMapper(getHeaderMapper(extendedConsumerProperties));
 		}
@@ -1113,36 +1039,26 @@ public class KafkaMessageChannelBinder extends
 
 	private KafkaHeaderMapper getHeaderMapper(
 			final ExtendedConsumerProperties<KafkaConsumerProperties> extendedConsumerProperties) {
-		KafkaHeaderMapper mapper = null;
-		if (this.configurationProperties.getHeaderMapperBeanName() != null) {
-			mapper = getApplicationContext().getBean(
-					this.configurationProperties.getHeaderMapperBeanName(),
-					KafkaHeaderMapper.class);
-		}
+
+		KafkaHeaderMapper mapper = BindingUtils.getHeaderMapper(getApplicationContext(), this.configurationProperties);
 		if (mapper == null) {
-			//First, try to see if there is a bean named headerMapper registered by other frameworks using the binder (for e.g. spring cloud sleuth)
-			try {
-				mapper = getApplicationContext().getBean("kafkaBinderHeaderMapper", KafkaHeaderMapper.class);
-			}
-			catch (BeansException be) {
-				BinderHeaderMapper headerMapper = new BinderHeaderMapper() {
+			BinderHeaderMapper headerMapper = new BinderHeaderMapper() {
 
-					@Override
-					public void toHeaders(Headers source, Map<String, Object> headers) {
-						super.toHeaders(source, headers);
-						if (headers.size() > 0) {
-							headers.put(BinderHeaders.NATIVE_HEADERS_PRESENT, Boolean.TRUE);
-						}
+				@Override
+				public void toHeaders(Headers source, Map<String, Object> headers) {
+					super.toHeaders(source, headers);
+					if (headers.size() > 0) {
+						headers.put(BinderHeaders.NATIVE_HEADERS_PRESENT, Boolean.TRUE);
 					}
-
-				};
-				String[] trustedPackages = extendedConsumerProperties.getExtension()
-						.getTrustedPackages();
-				if (!StringUtils.isEmpty(trustedPackages)) {
-					headerMapper.addTrustedPackages(trustedPackages);
 				}
-				mapper = headerMapper;
+
+			};
+			String[] trustedPackages = extendedConsumerProperties.getExtension()
+					.getTrustedPackages();
+			if (!ObjectUtils.isEmpty(trustedPackages)) {
+				headerMapper.addTrustedPackages(trustedPackages);
 			}
+			mapper = headerMapper;
 		}
 		return mapper;
 	}
@@ -1418,37 +1334,9 @@ public class KafkaMessageChannelBinder extends
 	protected ConsumerFactory<?, ?> createKafkaConsumerFactory(boolean anonymous,
 			String consumerGroup, ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties,
 			String beanName, String destination) {
-		Map<String, Object> props = new HashMap<>();
-		props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG,
-				ByteArrayDeserializer.class);
-		props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,
-				ByteArrayDeserializer.class);
-		props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
-		props.put(ConsumerConfig.AUTO_COMMIT_INTERVAL_MS_CONFIG, 100);
-		props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG,
-				anonymous ? "latest" : "earliest");
-		props.put(ConsumerConfig.GROUP_ID_CONFIG, consumerGroup);
 
-		Map<String, Object> mergedConfig = this.configurationProperties
-				.mergedConsumerConfiguration();
-		if (!ObjectUtils.isEmpty(mergedConfig)) {
-			props.putAll(mergedConfig);
-		}
-		if (ObjectUtils.isEmpty(props.get(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG))) {
-			props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG,
-					this.configurationProperties.getKafkaConnectionString());
-		}
-		Map<String, String> config = consumerProperties.getExtension().getConfiguration();
-		if (!ObjectUtils.isEmpty(config)) {
-			Assert.state(!config.containsKey(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG),
-					ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG + " cannot be overridden at the binding level; "
-							+ "use multiple binders instead");
-			props.putAll(config);
-		}
-		if (!ObjectUtils.isEmpty(consumerProperties.getExtension().getStartOffset())) {
-			props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG,
-					consumerProperties.getExtension().getStartOffset().name());
-		}
+		Map<String, Object> props = BindingUtils.createConsumerConfigs(anonymous, consumerGroup, consumerProperties,
+				this.configurationProperties);
 
 		if (this.consumerConfigCustomizer != null) {
 			this.consumerConfigCustomizer.configure(props, consumerProperties.getBindingName(), destination);
