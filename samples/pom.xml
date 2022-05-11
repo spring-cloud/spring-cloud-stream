@@ -22,7 +22,7 @@
 	</properties>
 
 	<modules>
-		<module>avro-samples</module>
+		<module>confluent-schema-registry-integration</module>
 	</modules>
 
 	<dependencyManagement>
