@@ -5,7 +5,7 @@
 	<artifactId>spring-cloud-stream-samples-parent</artifactId>
 	<version>4.0.0-SNAPSHOT</version>
 	<name>spring-cloud-stream-samples</name>
-	<description>spring-cloud-stream-samples</description>
+	<description>spring-cloud-stream-samples-parent</description>
 	<packaging>pom</packaging>
 
 	<parent>
@@ -23,6 +23,7 @@
 
 	<modules>
 		<module>confluent-schema-registry-integration</module>
+		<module>kafka-native-serialization</module>
 	</modules>
 
 	<dependencyManagement>

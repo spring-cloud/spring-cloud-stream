@@ -1,0 +1,17 @@
+spring.cloud:
+  stream:
+    function.definition: process
+    bindings:
+      process-in-0:
+        destination: topic1
+        group: group1
+      process-out-0:
+        destination: topic2
+        producer:
+          useNativeEncoding: true
+    kafka:
+      bindings:
+        process-out-0:
+          producer:
+            configuration:
+              value.serializer: org.springframework.kafka.support.serializer.JsonSerializer
