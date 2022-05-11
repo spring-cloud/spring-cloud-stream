@@ -37,6 +37,8 @@ import org.springframework.cloud.stream.binder.kafka.properties.KafkaBinderConfi
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaExtendedBindingProperties;
 import org.springframework.cloud.stream.binder.kafka.provisioning.AdminClientConfigCustomizer;
 import org.springframework.cloud.stream.binder.kafka.provisioning.KafkaTopicProvisioner;
+import org.springframework.cloud.stream.binder.kafka.support.ConsumerConfigCustomizer;
+import org.springframework.cloud.stream.binder.kafka.support.ProducerConfigCustomizer;
 import org.springframework.cloud.stream.binder.kafka.utils.DlqDestinationResolver;
 import org.springframework.cloud.stream.binder.kafka.utils.DlqPartitionFunction;
 import org.springframework.cloud.stream.config.ConsumerEndpointCustomizer;

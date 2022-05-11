@@ -25,6 +25,8 @@ import org.springframework.cloud.stream.binder.kafka.properties.KafkaBinderConfi
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaExtendedBindingProperties;
 import org.springframework.cloud.stream.binder.kafka.provisioning.AdminClientConfigCustomizer;
 import org.springframework.cloud.stream.binder.kafka.provisioning.KafkaTopicProvisioner;
+import org.springframework.cloud.stream.binder.kafka.support.ConsumerConfigCustomizer;
+import org.springframework.cloud.stream.binder.kafka.support.ProducerConfigCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -56,10 +58,14 @@ public class ReactorKafkaBinderConfiguration {
 	@Bean
 	ReactorKafkaBinder reactorKafkaBinder(KafkaBinderConfigurationProperties configurationProperties,
 			KafkaTopicProvisioner provisioningProvider,
-			KafkaExtendedBindingProperties extendedBindingProperties) {
+			KafkaExtendedBindingProperties extendedBindingProperties,
+			ObjectProvider<ConsumerConfigCustomizer> consumerConfigCustomizer,
+			ObjectProvider<ProducerConfigCustomizer> producerConfigCustomizer) {
 
 		ReactorKafkaBinder reactorKafkaBinder = new ReactorKafkaBinder(configurationProperties, provisioningProvider);
 		reactorKafkaBinder.setExtendedBindingProperties(extendedBindingProperties);
+		reactorKafkaBinder.setConsumerConfigCustomizer(consumerConfigCustomizer.getIfUnique());
+		reactorKafkaBinder.setProducerConfigCustomizer(producerConfigCustomizer.getIfUnique());
 		return reactorKafkaBinder;
 	}
 
