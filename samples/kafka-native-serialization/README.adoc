@@ -1,0 +1,11 @@
+Spring Cloud Stream Kafka and native encoding
+==============================================
+
+In this *Spring Cloud Stream* sample, we demonstrate native encoding with Kafka and functions.
+Spring Cloud Stream will skip the regular message conversion on the outbound and let Kafka natively perform serialization.
+
+There is a test provided where we verify the native conversion done by Kafka. This test uses `EmbeddedKafka`.
+You can also run the application against a real Kafka cluster to see it in action.
+
+
+
