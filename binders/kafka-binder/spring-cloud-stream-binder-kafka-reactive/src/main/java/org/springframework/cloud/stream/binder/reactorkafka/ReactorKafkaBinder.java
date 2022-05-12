@@ -132,7 +132,7 @@ public class ReactorKafkaBinder
 			this.consumerConfigCustomizer.configure(configs, properties.getBindingName(), destination.getName());
 		}
 
-		MessageConverter converter = BindingUtils.getConsumerMessageConverter(properties, getApplicationContext(),
+		MessageConverter converter = BindingUtils.getConsumerMessageConverter(getApplicationContext(), properties,
 				this.configurationProperties);
 		Assert.isInstanceOf(RecordMessageConverter.class, converter);
 		ReceiverOptions<Object, Object> opts = ReceiverOptions.create(configs)

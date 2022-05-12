@@ -53,9 +53,21 @@ public final class BindingUtils {
 	private BindingUtils() {
 	}
 
-	public static MessageConverter getConsumerMessageConverter(
+	/**
+	 * Get the message converter for consumer bindings from the application context. If
+	 * the binding properties do not contain a bean name, a default
+	 * {@link MessagingMessageConverter} is returned; if the binder properties contain a
+	 * header mapper bean name, it is used in the default converter, otherwise a
+	 * {@link DefaultKafkaHeaderMapper} is used.
+	 * @param applicationContext the application context.
+	 * @param extendedConsumerProperties the consumer binding properties.
+	 * @param configurationProperties the binder properties.
+	 * @return the converter
+	 * @throws IllegalStateException if a bean name is specified but not found.
+	 */
+	public static MessageConverter getConsumerMessageConverter(ApplicationContext applicationContext,
 			ExtendedConsumerProperties<KafkaConsumerProperties> extendedConsumerProperties,
-			ApplicationContext applicationContext, KafkaBinderConfigurationProperties configurationProperties) {
+			KafkaBinderConfigurationProperties configurationProperties) {
 
 		MessageConverter messageConverter;
 		if (extendedConsumerProperties.getExtension().getConverterBeanName() == null) {
@@ -87,6 +99,14 @@ public final class BindingUtils {
 		return messageConverter;
 	}
 
+	/**
+	 * Get the header mapper bean, if the binder properties contains a bean name; if not
+	 * look for a bean with name  {@code kafkaBinderHeaderMapper} is looked up; if that
+	 * doesn't exist, null is returned.
+	 * @param applicationContext the application context.
+	 * @param configurationProperties the binder properties.
+	 * @return the mapper.
+	 */
 	@Nullable
 	public static KafkaHeaderMapper getHeaderMapper(ApplicationContext applicationContext,
 			KafkaBinderConfigurationProperties configurationProperties) {
@@ -108,6 +128,17 @@ public final class BindingUtils {
 		return mapper;
 	}
 
+	/**
+	 * Create the Kafka configuration map for a consumer binding. With anonymous bindings
+	 * (those without a {@code group} property, which are given a {@code UUID.toString()}
+	 * in the group id) consumption begins from the current end of the topic, otherwise
+	 * consumption starts from the beginning, the first time the binding consumes.
+	 * @param anonymous true if this is for an anonymous binding.
+	 * @param consumerGroup the group.
+	 * @param consumerProperties the binding properties.
+	 * @param configurationProperties the binder properties.
+	 * @return the config map.
+	 */
 	public static Map<String, Object> createConsumerConfigs(boolean anonymous, String consumerGroup,
 			ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties,
 			KafkaBinderConfigurationProperties configurationProperties) {
@@ -145,6 +176,12 @@ public final class BindingUtils {
 		return props;
 	}
 
+	/**
+	 * Create the Kafka configuration map for a producer binding.
+	 * @param producerProperties the binding properties.
+	 * @param configurationProperties the binder properties.
+	 * @return the config map.
+	 */
 	public static Map<String, Object> createProducerConfigs(
 			ExtendedProducerProperties<KafkaProducerProperties> producerProperties,
 			KafkaBinderConfigurationProperties configurationProperties) {

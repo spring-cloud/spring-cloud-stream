@@ -1029,8 +1029,8 @@ public class KafkaMessageChannelBinder extends
 	private MessageConverter getMessageConverter(
 			final ExtendedConsumerProperties<KafkaConsumerProperties> extendedConsumerProperties) {
 
-		MessageConverter messageConverter = BindingUtils.getConsumerMessageConverter(extendedConsumerProperties,
-				getApplicationContext(), this.configurationProperties);
+		MessageConverter messageConverter = BindingUtils.getConsumerMessageConverter(getApplicationContext(),
+				extendedConsumerProperties, this.configurationProperties);
 		if (messageConverter instanceof MessagingMessageConverter) {
 			((MessagingMessageConverter) messageConverter).setHeaderMapper(getHeaderMapper(extendedConsumerProperties));
 		}
