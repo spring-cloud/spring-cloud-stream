@@ -17,6 +17,8 @@
 package org.springframework.cloud.stream.binder.reactorkafka;
 
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -40,6 +42,7 @@ import org.springframework.integration.channel.FluxMessageChannel;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.kafka.test.condition.EmbeddedKafkaCondition;
 import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
@@ -55,7 +58,7 @@ import static org.mockito.Mockito.mock;
  * @since 4.0
  *
  */
-@EmbeddedKafka(topics = { "testC", "testP" })
+@EmbeddedKafka(topics = { "testC", "testC1", "testP" })
 public class ReactorKafkaBinderTests {
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
@@ -106,6 +109,72 @@ public class ReactorKafkaBinderTests {
 		KafkaTemplate kt = new KafkaTemplate<>(pf);
 		kt.send("testC", "foo").get(10, TimeUnit.SECONDS);
 		assertThat(latch.await(10, TimeUnit.SECONDS)).isTrue();
+		consumer.unbind();
+		pf.destroy();
+	}
+
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	@Test
+	void concurrency() throws Exception {
+		KafkaProperties kafkaProperties = new KafkaProperties();
+		kafkaProperties.setBootstrapServers(
+				Collections.singletonList(EmbeddedKafkaCondition.getBroker().getBrokersAsString()));
+		KafkaBinderConfigurationProperties binderProps = new KafkaBinderConfigurationProperties(kafkaProperties);
+		KafkaTopicProvisioner provisioner = new KafkaTopicProvisioner(binderProps, kafkaProperties, null);
+		ReactorKafkaBinder binder = new ReactorKafkaBinder(binderProps, provisioner);
+		binder.setApplicationContext(mock(GenericApplicationContext.class));
+
+		CountDownLatch subscriptionLatch = new CountDownLatch(1);
+		CountDownLatch messageLatch = new CountDownLatch(4);
+		Set<Integer> partitions = new HashSet<>();
+
+		FluxMessageChannel inbound = new FluxMessageChannel();
+		Subscriber<Message<?>> sub = new Subscriber<Message<?>>() {
+
+			@Override
+			public void onSubscribe(Subscription s) {
+				s.request(6);
+				subscriptionLatch.countDown();
+			}
+
+			@Override
+			public void onNext(Message<?> msg) {
+				partitions.add(msg.getHeaders().get(KafkaHeaders.RECEIVED_PARTITION, Integer.class));
+				messageLatch.countDown();
+			}
+
+			@Override
+			public void onError(Throwable t) {
+			}
+
+			@Override
+			public void onComplete() {
+			}
+
+		};
+		inbound.subscribe(sub);
+
+		KafkaConsumerProperties ext = new KafkaConsumerProperties();
+		ExtendedConsumerProperties<KafkaConsumerProperties> props =
+				new ExtendedConsumerProperties<KafkaConsumerProperties>(ext);
+		props.setConcurrency(2);
+
+		Binding<MessageChannel> consumer = binder.bindConsumer("testC1", "foo", inbound, props);
+
+		assertThat(subscriptionLatch.await(10, TimeUnit.SECONDS)).isTrue();
+		DefaultKafkaProducerFactory pf =
+				new DefaultKafkaProducerFactory<>(KafkaTestUtils.producerProps(EmbeddedKafkaCondition.getBroker()));
+		KafkaTemplate kt = new KafkaTemplate<>(pf);
+		kt.send("testC1", 0, null, "foo").get(10, TimeUnit.SECONDS);
+		kt.send("testC1", 1, null, "bar").get(10, TimeUnit.SECONDS);
+		kt.send("testC1", 0, null, "baz").get(10, TimeUnit.SECONDS);
+		kt.send("testC1", 1, null, "qux").get(10, TimeUnit.SECONDS);
+		consumer.stop();
+		consumer.start();
+		kt.send("testC1", 0, null, "fiz").get(10, TimeUnit.SECONDS);
+		kt.send("testC1", 1, null, "buz").get(10, TimeUnit.SECONDS);
+		assertThat(messageLatch.await(10, TimeUnit.SECONDS)).isTrue();
+		assertThat(partitions).hasSize(2);
 		consumer.unbind();
 		pf.destroy();
 	}

@@ -16,7 +16,9 @@
 
 package org.springframework.cloud.stream.binder.reactorkafka;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
@@ -25,7 +27,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
-import org.reactivestreams.Subscription;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.Sinks;
@@ -75,7 +76,7 @@ public class ReactorKafkaBinder
 		implements
 		ExtendedPropertiesBinder<MessageChannel, KafkaConsumerProperties, KafkaProducerProperties> {
 
-	private static final Log log = LogFactory.getLog(ReactorKafkaBinder.class);
+	private static final Log logger = LogFactory.getLog(ReactorKafkaBinder.class);
 
 	private final KafkaBinderConfigurationProperties configurationProperties;
 
@@ -136,35 +137,40 @@ public class ReactorKafkaBinder
 				this.configurationProperties);
 		Assert.isInstanceOf(RecordMessageConverter.class, converter);
 		ReceiverOptions<Object, Object> opts = ReceiverOptions.create(configs)
-			.addAssignListener(parts -> System.out.println("Assigned: " + parts))
+			.addAssignListener(parts -> logger.info("Assigned: " + parts))
 			.subscription(Collections.singletonList(destination.getName()));
 
-		return new MessageProducerSupport() {
+		class ReactorMessageProducer extends MessageProducerSupport {
 
-			private final KafkaReceiver<Object, Object> receiver = KafkaReceiver.create(opts);
+			private final List<KafkaReceiver<Object, Object>> receivers = new ArrayList<>();
 
-			private volatile Subscription subscription;
+			ReactorMessageProducer() {
+				for (int i = 0; i < properties.getConcurrency(); i++) {
+					this.receivers.add(KafkaReceiver.create(opts));
+				}
+			}
 
 			@SuppressWarnings("unchecked")
 			@Override
 			protected void doStart() {
-				Flux<Message<Object>> flux = receiver
-						.receive()
-						.doOnSubscribe(subs -> this.subscription = subs)
-						.map(record -> (Message<Object>) ((RecordMessageConverter) converter)
-								.toMessage(record, null, null, null));
-				subscribeToPublisher(flux);
-			}
-
-			@Override
-			protected synchronized void doStop() {
-				if (this.subscription != null) {
-					this.subscription.cancel();
-					this.subscription = null;
+				List<Flux<Message<Object>>> fluxes = new ArrayList<>();
+				int concurrency = properties.getConcurrency();
+				for (int i = 0; i < concurrency; i++) {
+					fluxes.add(this.receivers.get(i)
+							.receive()
+							.map(record -> (Message<Object>) ((RecordMessageConverter) converter)
+									.toMessage(record, null, null, null)));
+				}
+				if (concurrency == 1) {
+					subscribeToPublisher(fluxes.get(0));
+				}
+				else {
+					subscribeToPublisher(Flux.merge(fluxes));
 				}
 			}
 
-		};
+		}
+		return new ReactorMessageProducer();
 	}
 
 	@Override
