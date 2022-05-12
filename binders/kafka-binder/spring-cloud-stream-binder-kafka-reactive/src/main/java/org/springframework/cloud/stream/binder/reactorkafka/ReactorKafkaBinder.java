@@ -27,7 +27,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
-import org.reactivestreams.Subscription;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.Sinks;
@@ -145,8 +144,6 @@ public class ReactorKafkaBinder
 
 			private final List<KafkaReceiver<Object, Object>> receivers = new ArrayList<>();
 
-			private final List<Subscription> subscriptions = new ArrayList<>();
-
 			ReactorMessageProducer() {
 				for (int i = 0; i < properties.getConcurrency(); i++) {
 					this.receivers.add(KafkaReceiver.create(opts));
@@ -161,7 +158,6 @@ public class ReactorKafkaBinder
 				for (int i = 0; i < concurrency; i++) {
 					fluxes.add(this.receivers.get(i)
 							.receive()
-							.doOnSubscribe(subs -> this.subscriptions.add(subs))
 							.map(record -> (Message<Object>) ((RecordMessageConverter) converter)
 									.toMessage(record, null, null, null)));
 				}
@@ -170,13 +166,6 @@ public class ReactorKafkaBinder
 				}
 				else {
 					subscribeToPublisher(Flux.merge(fluxes));
-				}
-			}
-
-			@Override
-			protected synchronized void doStop() {
-				while (this.subscriptions.size() > 0) {
-					this.subscriptions.remove(0).cancel();
 				}
 			}
 
