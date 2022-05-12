@@ -169,8 +169,7 @@ public class ReactorKafkaBinder
 					subscribeToPublisher(fluxes.get(0));
 				}
 				else {
-					Flux<Message<Object>> merged = Flux.merge(fluxes);
-					subscribeToPublisher(merged);
+					subscribeToPublisher(Flux.merge(fluxes));
 				}
 			}
 
