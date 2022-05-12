@@ -16,15 +16,13 @@
 
 package org.springframework.cloud.stream.binder.kafka.streams;
 
-import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.commons.logging.Log;
@@ -32,11 +30,12 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serdes;
 
-import org.springframework.beans.factory.annotation.AnnotatedBeanDefinition;
+import org.springframework.beans.factory.BeanFactoryUtils;
+import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.ResolvableType;
 import org.springframework.kafka.support.serializer.JsonSerde;
-import org.springframework.util.ClassUtils;
+import org.springframework.lang.Nullable;
 
 /**
  * Utility class that contains various methods to help resolve {@link Serde Serdes}.
@@ -48,124 +47,120 @@ abstract class SerdeResolverUtils {
 
 	private static final Log LOG = LogFactory.getLog(SerdeResolverUtils.class);
 
+	/** Classnames of the standard built-in Serdes supported in {@link Serdes#serdeFrom(Class)} */
+	private static final Set<String> STANDARD_SERDE_CLASSNAMES = Set.of(
+		Serdes.String().getClass().getName(),
+		Serdes.Short().getClass().getName(),
+		Serdes.Integer().getClass().getName(),
+		Serdes.Long().getClass().getName(),
+		Serdes.Float().getClass().getName(),
+		Serdes.Double().getClass().getName(),
+		Serdes.ByteArray().getClass().getName(),
+		Serdes.ByteBuffer().getClass().getName(),
+		Serdes.Bytes().getClass().getName(),
+		Serdes.UUID().getClass().getName());
+		
 	/**
-	 *  Return the closest matching configured {@code Serde<?>} bean if one exists, or the specified
-	 *  {@code fallbackSerde}, or finally a standard default serde if no fallback specified.
-	 *
+	 *  Return the {@code Serde<?>} to use for the specified type using the following steps until a match is found:
+	 *  <p><ul>
+	 *    <li>the closest matching configured {@code Serde<?>} bean if one exists</li>
+	 *    <li>the Kafka Streams built-in serde if the target type is one of the built-in types exposed by Kafka Streams
+	 *    (Integer, Long, Short, Double, Float, byte[], UUID and String)
+	 *    <li>the fallback serde if specified and not one of the Kafka Streams exposed type serdes</li>
+	 *	  <li>the {@link JsonSerde} if the target type is not exactly {@code Object}</li>
+	 *	  <li>the fallback as the last resort</li>
+	 *  </ul>
 	 * @param context the application context
 	 * @param targetType the target type to find the serde for
-	 * @param fallbackSerde the fallback serde in case no matching serde bean found in the context
-	 * @return serde to use for the target type
+	 * @param fallbackSerde the serde to use when no type can be inferred
+	 * @return serde to use for the target type or {@code fallbackSerde} as outlined in the method description
 	 */
-	static Serde<?> resolveForType(ConfigurableApplicationContext context, ResolvableType targetType, Serde<?> fallbackSerde) {
+	static Serde<?> resolveForType(ConfigurableApplicationContext context, ResolvableType targetType, @Nullable Serde<?> fallbackSerde) {
 
-		List<Serde<?>> matchingSerdes = findMatchingSerdes(context, targetType);
-		if (!matchingSerdes.isEmpty()) {
-			return matchingSerdes.get(0);
-		}
-
-		// We don't attempt to find a matching Serde for type '?'
-		if (targetType.getRawClass() == null) {
-			return null;
-		}
-
-		Serde<?> serde = null;
 		Class<?> genericRawClazz = targetType.getRawClass();
-		if (Integer.class.isAssignableFrom(genericRawClazz)) {
-			serde = Serdes.Integer();
+
+		// We don't attempt to find a matching Serde for type '?' - just return fallback
+		if (genericRawClazz == null) {
+			return fallbackSerde;
 		}
-		else if (Long.class.isAssignableFrom(genericRawClazz)) {
-			serde = Serdes.Long();
+
+		List<String> matchingSerdes = SerdeResolverUtils.beanNamesForMatchingSerdes(context, targetType);
+		if (!matchingSerdes.isEmpty()) {
+			return context.getBean(matchingSerdes.get(0), Serde.class);
 		}
-		else if (Short.class.isAssignableFrom(genericRawClazz)) {
-			serde = Serdes.Short();
+
+		// Use standard serde for built-in types
+		Serde<?> standardDefaultSerde = getStandardDefaultSerde(genericRawClazz);
+		if (standardDefaultSerde != null) {
+			return standardDefaultSerde;
 		}
-		else if (Double.class.isAssignableFrom(genericRawClazz)) {
-			serde = Serdes.Double();
+
+		// Use fallback if specified and not from std defaults (we know from above that type is not std default
+		// so using a fallback that is std default type would not work)
+		if (fallbackSerde != null && !isSerdeFromStandardDefaults(fallbackSerde)) {
+			return fallbackSerde;
 		}
-		else if (Float.class.isAssignableFrom(genericRawClazz)) {
-			serde = Serdes.Float();
+
+		// Use JsonSerde if type is not exactly Object
+		if (!genericRawClazz.isAssignableFrom((Object.class))) {
+			return new JsonSerde<>(genericRawClazz);
 		}
-		else if (byte[].class.isAssignableFrom(genericRawClazz)) {
-			serde = Serdes.ByteArray();
+
+		// Finally, just resort to using the fallback
+		return fallbackSerde;
+	}
+
+	private static Serde<?> getStandardDefaultSerde(Class<?> genericRawClazz) {
+		try {
+			return Serdes.serdeFrom(genericRawClazz);
 		}
-		else if (String.class.isAssignableFrom(genericRawClazz)) {
-			serde = Serdes.String();
-		}
-		else if (UUID.class.isAssignableFrom(genericRawClazz)) {
-			serde = Serdes.UUID();
-		}
-		else if (!isSerdeFromStandardDefaults(fallbackSerde)) {
-			// User purposely set a default serde that is not one of the above
-			serde = fallbackSerde;
-		}
-		else {
-			// If the type is Object, then skip assigning the JsonSerde and let the fallback mechanism takes precedence.
-			if (!genericRawClazz.isAssignableFrom((Object.class))) {
-				serde = new JsonSerde(genericRawClazz);
+		catch (IllegalArgumentException ex) {
+			if (LOG.isTraceEnabled()) {
+				LOG.trace(ex);
 			}
 		}
-		return serde;
+		return null;
 	}
 
 	private static boolean isSerdeFromStandardDefaults(Serde<?> serde) {
-		if (serde != null) {
-			if (Number.class.isAssignableFrom(serde.getClass())) {
-				return true;
-			}
-			else if (Serdes.ByteArray().getClass().isAssignableFrom(serde.getClass())) {
-				return true;
-			}
-			else if (Serdes.String().getClass().isAssignableFrom(serde.getClass())) {
-				return true;
-			}
-			else if (Serdes.UUID().getClass().isAssignableFrom(serde.getClass())) {
-				return true;
-			}
+		if (serde == null) {
+			return false;
 		}
-		return false;
+		return STANDARD_SERDE_CLASSNAMES.contains(serde.getClass().getName());
 	}
 
 	/**
-	 * Find all {@link Serde} beans that are assignable from {@code targetType}.
+	 * Find the names of all {@link Serde} beans that can be used for {@code targetType}.
 	 *
 	 * @param context the application context
 	 * @param targetType the target type the serdes are being matched for
-	 * @return list of matching serdes order by most specific match, or an empty list if no matches found
+	 * @return list of bean names for matching serdes ordered by most specific match, or an empty list if no matches found
 	 */
-	static List<Serde<?>> findMatchingSerdes(ConfigurableApplicationContext context, ResolvableType targetType) {
+	static List<String> beanNamesForMatchingSerdes(ConfigurableApplicationContext context, ResolvableType targetType) {
 		// We don't attempt to find a matching Serde for type '?'
 		if (targetType.getRawClass() == null) {
 			return Collections.emptyList();
 		}
 		List<SerdeWithSpecificityScore> matchingSerdes = new ArrayList<>();
-
-		context.getBeansOfType(Serde.class).forEach((beanName, serdeBean) -> {
-			final Class<?> beanConfigClass = ClassUtils.resolveClassName(((AnnotatedBeanDefinition)
-					context.getBeanFactory().getBeanDefinition(beanName))
-					.getMetadata().getClassName(),
-				ClassUtils.getDefaultClassLoader());
+		ResolvableType serdeType = ResolvableType.forClassWithGenerics(Serde.class, targetType);
+		String[] serdeBeanNames = BeanFactoryUtils.beanNamesForTypeIncludingAncestors(context.getBeanFactory(),
+			serdeType, false, false);
+		Arrays.stream(serdeBeanNames).forEach((beanName) -> {
 			try {
-				Method[] methods = beanConfigClass.getMethods();
-				Optional<Method> serdeBeanMethod = Arrays.stream(methods).filter(m -> m.getName().equals(beanName)).findFirst();
-				serdeBeanMethod.ifPresent((method) -> {
-					ResolvableType serdeBeanMethodReturnType = ResolvableType.forMethodReturnType(method, beanConfigClass);
-					ResolvableType serdeBeanGeneric = serdeBeanMethodReturnType.getGeneric(0);
-					// We don't attempt to use a Serde<?> as a match for anything currently
-					if (serdeBeanGeneric.getRawClass() != null && serdeBeanGeneric.isAssignableFrom(targetType)) {
-						matchingSerdes.add(new SerdeWithSpecificityScore(calculateScore(targetType, serdeBeanGeneric), serdeBean));
-					}
-				});
-			}
-			catch (Exception e) {
-				if (LOG.isTraceEnabled()) {
-					LOG.trace("Failed to introspect Serde bean method '" + serdeBean + "'", e);
+				BeanDefinition beanDefinition = context.getBeanFactory().getMergedBeanDefinition(beanName);
+				ResolvableType serdeBeanGeneric = beanDefinition.getResolvableType().getGeneric(0);
+				if (LOG.isDebugEnabled()) {
+					LOG.debug("Found matching Serde<" + serdeBeanGeneric.getType() + "> under beanName=" + beanName);
 				}
+				matchingSerdes.add(new SerdeWithSpecificityScore(calculateScore(targetType, serdeBeanGeneric), beanName));
+			}
+			catch (Exception ex) {
+				LOG.warn("Failed introspecting Serde bean '" + beanName + "'", ex);
 			}
 		});
 		if (!matchingSerdes.isEmpty()) {
 			return matchingSerdes.stream().sorted(Collections.reverseOrder())
-				.map(SerdeWithSpecificityScore::getSerde)
+				.map(SerdeWithSpecificityScore::getSerdeBeanName)
 				.collect(Collectors.toList());
 		}
 		return Collections.emptyList();
@@ -182,7 +177,7 @@ abstract class SerdeResolverUtils {
 	 * <p><br><b>Example:</b>
 	 * <pre>{@code
 	 * -------------------------------------------------------------------------------------------------------
-	 * targetType: Foo<Date>               toString='Foo<Date>'     typeName='Foo<java.util.Date>'
+	 * targetType:   Foo<Date>             toString='Foo<Date>'     typeName='Foo<java.util.Date>'
 	 * typeToCheck1: Foo<Date>             toString='Foo<Date>'     typeName='Foo<java.util.Date>'
 	 * typeToCheck2: Foo<? extends Date>   toString='Foo<Date>'     typeName='Foo<? extends java.util.Date>'
 	 * -------------------------------------------------------------------------------------------------------
@@ -221,15 +216,15 @@ abstract class SerdeResolverUtils {
 	 */
 	private static class SerdeWithSpecificityScore implements Comparable<SerdeWithSpecificityScore> {
 		private Integer score;
-		private Serde<?> serde;
+		private String serdeBeanName;
 
-		SerdeWithSpecificityScore(Integer score, Serde<?> serde) {
+		SerdeWithSpecificityScore(Integer score, String serdeBeanName) {
 			this.score = Objects.requireNonNull(score);
-			this.serde = Objects.requireNonNull(serde);
+			this.serdeBeanName = Objects.requireNonNull(serdeBeanName);
 		}
 
-		Serde<?> getSerde() {
-			return serde;
+		String getSerdeBeanName() {
+			return serdeBeanName;
 		}
 
 		@Override
