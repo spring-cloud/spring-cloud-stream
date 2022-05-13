@@ -403,12 +403,12 @@ class SerdeResolverUtilsTests {
 
 	@EnableAutoConfiguration
 	static class SerdeResolverSimpleTestApp {
-		
+
 		@Bean
 		public Serde<GenericEvent<Date>> geDateSerde() {
 			return new GenericEventSerde("geDateSerde");
 		}
-		
+
 		@Bean
 		public Serde<GenericEvent<? extends Date>> geDateBoundedSerde() {
 			return new GenericEventSerde("geDateBoundedSerde");
@@ -418,7 +418,7 @@ class SerdeResolverUtilsTests {
 		public Serde<GenericEvent<String>> geStringSerde() {
 			return new GenericEventSerde("geStringSerde");
 		}
-		
+
 		@Bean
 		public Serde<GenericEvent<?>> geWildcardSerde() {
 			return new GenericEventSerde("geWildcardSerde");
@@ -435,7 +435,9 @@ class SerdeResolverUtilsTests {
 		}
 
 		@Bean
-		public Serde<Foo> fooSerde() { return new FooSerde(); }
+		public Serde<Foo> fooSerde() {
+			return new FooSerde();
+		}
 	}
 
 	@EnableAutoConfiguration
@@ -507,7 +509,9 @@ class SerdeResolverUtilsTests {
 		}
 
 		@Bean
-		public Serde<Foo> fooSerde() { return new FooSerde(); }
+		public Serde<Foo> fooSerde() {
+			return new FooSerde();
+		}
 	}
 
 }

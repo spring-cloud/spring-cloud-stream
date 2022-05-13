@@ -47,7 +47,7 @@ abstract class SerdeResolverUtils {
 
 	private static final Log LOG = LogFactory.getLog(SerdeResolverUtils.class);
 
-	/** Classnames of the standard built-in Serdes supported in {@link Serdes#serdeFrom(Class)} */
+	/** Classnames of the standard built-in Serdes supported in {@link Serdes#serdeFrom(Class)}. */
 	private static final Set<String> STANDARD_SERDE_CLASSNAMES = Set.of(
 		Serdes.String().getClass().getName(),
 		Serdes.Short().getClass().getName(),
@@ -59,9 +59,9 @@ abstract class SerdeResolverUtils {
 		Serdes.ByteBuffer().getClass().getName(),
 		Serdes.Bytes().getClass().getName(),
 		Serdes.UUID().getClass().getName());
-		
+
 	/**
-	 *  Return the {@code Serde<?>} to use for the specified type using the following steps until a match is found:
+	 *  Return the {@code Serde<?>} to use for the specified type using the following steps until a match is found.
 	 *  <p><ul>
 	 *    <li>the closest matching configured {@code Serde<?>} bean if one exists</li>
 	 *    <li>the Kafka Streams built-in serde if the target type is one of the built-in types exposed by Kafka Streams
