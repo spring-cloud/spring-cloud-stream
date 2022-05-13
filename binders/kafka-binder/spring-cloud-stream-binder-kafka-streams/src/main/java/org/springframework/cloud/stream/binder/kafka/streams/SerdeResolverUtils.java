@@ -84,7 +84,7 @@ abstract class SerdeResolverUtils {
 			return fallbackSerde;
 		}
 
-		List<String> matchingSerdes = SerdeResolverUtils.beanNamesForMatchingSerdes(context, targetType);
+		List<String> matchingSerdes = beanNamesForMatchingSerdes(context, targetType);
 		if (!matchingSerdes.isEmpty()) {
 			return context.getBean(matchingSerdes.get(0), Serde.class);
 		}
