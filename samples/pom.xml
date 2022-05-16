@@ -5,7 +5,7 @@
 	<artifactId>spring-cloud-stream-samples-parent</artifactId>
 	<version>4.0.0-SNAPSHOT</version>
 	<name>spring-cloud-stream-samples</name>
-	<description>spring-cloud-stream-samples-parent</description>
+	<description>Spring Cloud Stream Sample Apps</description>
 	<packaging>pom</packaging>
 
 	<parent>
