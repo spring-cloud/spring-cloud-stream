@@ -1,11 +1,32 @@
-Spring Cloud Stream Kafka and native encoding
-==============================================
+== Spring Cloud Stream Kafka with native encoding
 
-In this *Spring Cloud Stream* sample, we demonstrate native encoding with Kafka and functions.
-Spring Cloud Stream will skip the regular message conversion on the outbound and let Kafka natively perform serialization.
+This sample demonstrates native message encoding with Kafka.
 
-There is a test provided where we verify the native conversion done by Kafka. This test uses `EmbeddedKafka`.
-You can also run the application against a real Kafka cluster to see it in action.
+By default, message encoding is performed transparently by the framework based on contentType. However, when native encoding is used, the default encoding is disabled and instead handled by the client library. It is the responsibility of the consumer to use an appropriate decoder to deserialize the inbound message and the responsibility of the producer to use an appropriate encoder to serialize the outbound message.
+
+More simply put, Spring Cloud Stream will skip the regular message conversion and let Kafka natively perform de/serialization.
+
+=== Application
+The app consists of a simple function that takes in a string name and returns a Person object for the name.
+
+* The function input comes from `topic1` and uses the default framework encoding.
+* The function output goes to `topic2` and uses native encoding (`JsonSerializer`).
+
+NOTE: By design, looking at the function code provides none of the above context. However, it can easily be seen where it is configured in link:./src/main/resources/application.yml[application.yml].
 
 
+=== Building
+To build the app simply execute the following command:
+[source,bash]
+----
+./mvnw clean install
+----
+
+=== Running
+The sample can be run directly but there is no source of events to the input topic. There is a link:./src/test/java/com/example/kafkanativeserialization/KafkaNativeSerializationApplicationTests.java[@SpringBootTest] provided that exercises the functionality though. The test does the following:
+
+* produces a Kafka event w/ a simple string payload (the name) to the input topic
+* consumes from the output topic using a custom `JsonDeserializer`
+
+This works because the function output was natively encoded with the `JsonSerializer` and therefore a JSON representation of the Person was sent to the output topic.
 
