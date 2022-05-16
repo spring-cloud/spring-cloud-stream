@@ -5,7 +5,7 @@
 	<artifactId>spring-cloud-stream-samples-parent</artifactId>
 	<version>4.0.0-SNAPSHOT</version>
 	<name>spring-cloud-stream-samples</name>
-	<description>spring-cloud-stream-samples-parent</description>
+	<description>Spring Cloud Stream Sample Apps</description>
 	<packaging>pom</packaging>
 
 	<parent>
@@ -18,7 +18,7 @@
 	<properties>
 		<avro.version>1.11.0</avro.version>
 		<confluent.version>7.0.1</confluent.version>
-		<spring-cloud.version>2022.0.0-SNAPSHOT</spring-cloud.version>
+		<spring-cloud.version>2022.0.3-SNAPSHOT</spring-cloud.version>
 	</properties>
 
 	<modules>
