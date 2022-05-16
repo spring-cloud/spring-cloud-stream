@@ -125,7 +125,8 @@ public class ReactorKafkaBinderTests {
 		binder.setApplicationContext(mock(GenericApplicationContext.class));
 
 		CountDownLatch subscriptionLatch = new CountDownLatch(1);
-		CountDownLatch messageLatch = new CountDownLatch(4);
+		CountDownLatch messageLatch1 = new CountDownLatch(4);
+		CountDownLatch messageLatch2 = new CountDownLatch(10);
 		Set<Integer> partitions = new HashSet<>();
 
 		FluxMessageChannel inbound = new FluxMessageChannel();
@@ -133,14 +134,15 @@ public class ReactorKafkaBinderTests {
 
 			@Override
 			public void onSubscribe(Subscription s) {
-				s.request(6);
+				s.request(10);
 				subscriptionLatch.countDown();
 			}
 
 			@Override
 			public void onNext(Message<?> msg) {
 				partitions.add(msg.getHeaders().get(KafkaHeaders.RECEIVED_PARTITION, Integer.class));
-				messageLatch.countDown();
+				messageLatch1.countDown();
+				messageLatch2.countDown();
 			}
 
 			@Override
@@ -169,11 +171,12 @@ public class ReactorKafkaBinderTests {
 		kt.send("testC1", 1, null, "bar").get(10, TimeUnit.SECONDS);
 		kt.send("testC1", 0, null, "baz").get(10, TimeUnit.SECONDS);
 		kt.send("testC1", 1, null, "qux").get(10, TimeUnit.SECONDS);
+		assertThat(messageLatch1.await(10, TimeUnit.SECONDS)).isTrue();
 		consumer.stop();
 		consumer.start();
 		kt.send("testC1", 0, null, "fiz").get(10, TimeUnit.SECONDS);
 		kt.send("testC1", 1, null, "buz").get(10, TimeUnit.SECONDS);
-		assertThat(messageLatch.await(10, TimeUnit.SECONDS)).isTrue();
+		assertThat(messageLatch2.await(10, TimeUnit.SECONDS)).isTrue();
 		assertThat(partitions).hasSize(2);
 		consumer.unbind();
 		pf.destroy();
