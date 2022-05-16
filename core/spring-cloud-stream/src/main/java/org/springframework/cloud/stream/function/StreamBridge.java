@@ -221,7 +221,8 @@ public final class StreamBridge implements SmartInitializingSingleton {
 			functionToInvoke = new PartitionAwareFunctionWrapper(functionToInvoke, this.applicationContext, producerProperties);
 		}
 
-		String targetType = this.resolveBinderTargetType(bindingName, MessageChannel.class, this.applicationContext.getBean(BinderFactory.class));
+		String targetType = this.resolveBinderTargetType(bindingName, binderName, MessageChannel.class,
+			this.applicationContext.getBean(BinderFactory.class));
 
 		Message<?> messageToSend = data instanceof Message
 				? MessageBuilder.fromMessage((Message) data).setHeaderIfAbsent(MessageUtils.TARGET_PROTOCOL, targetType).build()
@@ -305,10 +306,10 @@ public final class StreamBridge implements SmartInitializingSingleton {
 		return messageChannel;
 	}
 
-	private String resolveBinderTargetType(String channelName, Class<?> bindableType, BinderFactory binderFactory) {
-		String binderConfigurationName = this.bindingServiceProperties
+	private String resolveBinderTargetType(String channelName, String binderName, Class<?> bindableType, BinderFactory binderFactory) {
+		String binderConfigurationName = binderName != null ? binderName : this.bindingServiceProperties
 				.getBinder(channelName);
-		Binder binder = binderFactory.getBinder(binderConfigurationName, bindableType);
+		Binder<?, ?, ?> binder = binderFactory.getBinder(binderConfigurationName, bindableType);
 		String targetProtocol = binder.getClass().getSimpleName().startsWith("Rabbit") ? "amqp" : "kafka";
 		return targetProtocol;
 	}
