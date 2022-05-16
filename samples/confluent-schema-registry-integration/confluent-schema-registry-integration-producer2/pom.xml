@@ -6,7 +6,7 @@
     <version>4.0.0-SNAPSHOT</version>
     <packaging>jar</packaging>
     <name>confluent-schema-registry-integration-producer2</name>
-    <description>Schema Registry Producer2</description>
+    <description>Confluent Schema Registry Producer2</description>
 
 	<parent>
 		<groupId>org.springframework.cloud</groupId>
