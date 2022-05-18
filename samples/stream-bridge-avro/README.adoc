@@ -1,0 +1,52 @@
+== StreamBridge API with Avro encoding
+
+This sample demonstrates using the StreamBridge API with Avro encoding.
+
+It consists of the following components:
+
+* Supplier function that generates a `Sensor` which is an Avro object
+* Consumer function that receives the sensor and forwards to a destination using the `StreamBridge` API
+* Another Consumer function that receives the sensor from the destination where `StreamBridge` sent it in previous step
+
+See link:src/main/java/com/example/stream/bridge/avro/StreamBridgeAvroApplication.java[StreamBridgeAvroApplication] for more details.
+
+NOTE: All components in this sample are configured to use native encoding with the Confluent provided Avro serializers. See link:src/main/resources/application.yml[application.yml] for configuration details
+
+[[build-app]]
+=== Building the app
+To build the app simply execute the following command:
+[source,bash]
+----
+./mvnw clean install
+----
+NOTE: The apps can be built and run from w/in an IDE (such as IntelliJ) but you will need to invoke the Maven `package` goal and then `refresh` the project as the Avro Maven plugin needs to execute so that it generates the required model classes - otherwise you will see compile failures around missing `Sensor` class.
+
+[[run-app]]
+=== Running the app
+
+==== Ensure these pre-requisites
+****
+* The app has been built by following the <<build-app>> steps
+* Apache Kafka broker available at `localhost:9092`
+* Confluent Schema Registry available at `localhost:8081`
+
+TIP: The included link:../../../tools/kafka/docker-compose/README.adoc#_all_the_things[Kafka tools] can be used to easily start a broker and schema registry locally on the required coordinates
+****
+
+==== Start the app
+[source,bash]
+----
+java -jar target/stream-bridge-avro-4.0.0-SNAPSHOT.jar
+----
+
+===== View consumer output
+The supplier generates a new Sensor every 10 seconds which the consumer should log - looking similar to the following:
+[source,bash,options=nowrap,subs=attributes]
+----
+Received Sensor: {"id": "adff755e-cf57-4ac5-b87f-8d3cfafb0019-v1", "temperature": 32.038853, "acceleration": 7.5411835, "velocity": 44.620956}
+Received Sensor: {"id": "b508a938-e577-4029-a275-815647068582-v1", "temperature": 40.967136, "acceleration": 8.228367, "velocity": 53.80139}
+Received Sensor: {"id": "02320ee6-8866-4fa3-ac9d-6d59f9a5dc92-v1", "temperature": 46.077457, "acceleration": 1.0671729, "velocity": 79.42661}
+----
+
+
+
