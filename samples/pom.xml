@@ -24,6 +24,7 @@
 	<modules>
 		<module>confluent-schema-registry-integration</module>
 		<module>kafka-native-serialization</module>
+		<module>stream-bridge-avro</module>
 	</modules>
 
 	<dependencyManagement>
