@@ -28,6 +28,7 @@ import org.apache.kafka.common.serialization.Serializer;
 import org.apache.kafka.common.utils.Bytes;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -80,6 +81,7 @@ class SerdeResolverUtilsTests {
 		}
 
 		@Nested
+		@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 		class NoMatchingSerdeBeans {
 
 			@ParameterizedTest
@@ -90,7 +92,7 @@ class SerdeResolverUtilsTests {
 						.isInstanceOf(expectedBuiltInSerde.getClass()));
 			}
 
-			static Stream<Arguments> kafkaStreamsBuiltInTypes() {
+			Stream<Arguments> kafkaStreamsBuiltInTypes() {
 				return Stream.of(
 					arguments(String.class, Serdes.String()),
 					arguments(Short.class, Serdes.Short()),
@@ -106,6 +108,7 @@ class SerdeResolverUtilsTests {
 			}
 
 			@Nested
+			@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 			class ForNonKafkaStreamsBuiltInType {
 
 				@Test
@@ -123,7 +126,7 @@ class SerdeResolverUtilsTests {
 							.isInstanceOf(JsonSerde.class));
 				}
 
-				static Stream<Serde<?>> invalidFallbackSerdeProvider() {
+				Stream<Serde<?>> invalidFallbackSerdeProvider() {
 					return Stream.of(
 						Serdes.String(),
 						Serdes.Short(),

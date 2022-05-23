@@ -20,6 +20,7 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -48,17 +49,19 @@ abstract class SerdeResolverUtils {
 	private static final Log LOG = LogFactory.getLog(SerdeResolverUtils.class);
 
 	/** Classnames of the standard built-in Serdes supported in {@link Serdes#serdeFrom(Class)}. */
-	private static final Set<String> STANDARD_SERDE_CLASSNAMES = Set.of(
-		Serdes.String().getClass().getName(),
-		Serdes.Short().getClass().getName(),
-		Serdes.Integer().getClass().getName(),
-		Serdes.Long().getClass().getName(),
-		Serdes.Float().getClass().getName(),
-		Serdes.Double().getClass().getName(),
-		Serdes.ByteArray().getClass().getName(),
-		Serdes.ByteBuffer().getClass().getName(),
-		Serdes.Bytes().getClass().getName(),
-		Serdes.UUID().getClass().getName());
+	private static final Set<String> STANDARD_SERDE_CLASSNAMES = new HashSet<>();
+	static {
+		STANDARD_SERDE_CLASSNAMES.add(Serdes.String().getClass().getName());
+		STANDARD_SERDE_CLASSNAMES.add(Serdes.Short().getClass().getName());
+		STANDARD_SERDE_CLASSNAMES.add(Serdes.Integer().getClass().getName());
+		STANDARD_SERDE_CLASSNAMES.add(Serdes.Long().getClass().getName());
+		STANDARD_SERDE_CLASSNAMES.add(Serdes.Float().getClass().getName());
+		STANDARD_SERDE_CLASSNAMES.add(Serdes.Double().getClass().getName());
+		STANDARD_SERDE_CLASSNAMES.add(Serdes.ByteArray().getClass().getName());
+		STANDARD_SERDE_CLASSNAMES.add(Serdes.ByteBuffer().getClass().getName());
+		STANDARD_SERDE_CLASSNAMES.add(Serdes.Bytes().getClass().getName());
+		STANDARD_SERDE_CLASSNAMES.add(Serdes.UUID().getClass().getName());
+	}
 
 	/**
 	 *  Return the {@code Serde<?>} to use for the specified type using the following steps until a match is found.
@@ -75,6 +78,7 @@ abstract class SerdeResolverUtils {
 	 * @param fallbackSerde the serde to use when no type can be inferred
 	 * @return serde to use for the target type or {@code fallbackSerde} as outlined in the method description
 	 */
+	@SuppressWarnings("unchecked")
 	static Serde<?> resolveForType(ConfigurableApplicationContext context, ResolvableType targetType, @Nullable Serde<?> fallbackSerde) {
 
 		Class<?> genericRawClazz = targetType.getRawClass();
@@ -103,7 +107,7 @@ abstract class SerdeResolverUtils {
 
 		// Use JsonSerde if type is not exactly Object
 		if (!genericRawClazz.isAssignableFrom((Object.class))) {
-			return new JsonSerde<>(genericRawClazz);
+			return new JsonSerde(genericRawClazz);
 		}
 
 		// Finally, just resort to using the fallback
