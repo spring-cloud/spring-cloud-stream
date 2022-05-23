@@ -29,8 +29,6 @@ import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
-
-import org.springframework.integration.test.util.TestUtils;
 /**
  *
  * @author Artem Bilan
@@ -43,7 +41,7 @@ public interface LocalstackContainerTest {
 
 	@Container
 	LocalStackContainer localStack =
-			new LocalStackContainer(DockerImageName.parse(TestUtils.dockerRegistryFromEnv() + "localstack/localstack"))
+			new LocalStackContainer(DockerImageName.parse("localstack/localstack"))
 					.withServices(
 							LocalStackContainer.Service.DYNAMODB,
 							LocalStackContainer.Service.KINESIS,
