@@ -23,15 +23,16 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDBAsync;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBAsyncClientBuilder;
 import com.amazonaws.services.kinesis.AmazonKinesisAsync;
 import com.amazonaws.services.kinesis.AmazonKinesisAsyncClientBuilder;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.condition.DisabledOnOs;
 import org.junit.jupiter.api.condition.OS;
 import org.testcontainers.containers.localstack.LocalStackContainer;
-import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 /**
  *
  * @author Artem Bilan
+ * @author Chris Bono
  *
  * @since 4.0
  */
@@ -39,14 +40,17 @@ import org.testcontainers.utility.DockerImageName;
 @DisabledOnOs(OS.MAC)
 public interface LocalstackContainerTest {
 
-	@Container
-	LocalStackContainer localStack =
-			new LocalStackContainer(DockerImageName.parse("localstack/localstack"))
-					.withServices(
-							LocalStackContainer.Service.DYNAMODB,
-							LocalStackContainer.Service.KINESIS,
-							LocalStackContainer.Service.CLOUDWATCH);
+	LocalStackContainer LOCAL_STACK_CONTAINER =
+		new LocalStackContainer(DockerImageName.parse("localstack/localstack"))
+			.withServices(
+				LocalStackContainer.Service.DYNAMODB,
+				LocalStackContainer.Service.KINESIS,
+				LocalStackContainer.Service.CLOUDWATCH);
 
+	@BeforeAll
+	static void startContainer() {
+		LOCAL_STACK_CONTAINER.start();
+	}
 
 	static AmazonDynamoDBAsync dynamoDbClient() {
 		return applyAwsClientOptions(AmazonDynamoDBAsyncClientBuilder.standard(), LocalStackContainer.Service.DYNAMODB);
@@ -63,8 +67,8 @@ public interface LocalstackContainerTest {
 	private static <B extends AwsClientBuilder<B, T>, T> T applyAwsClientOptions(B clientBuilder,
 			LocalStackContainer.Service serviceToBuild) {
 
-		return clientBuilder.withEndpointConfiguration(localStack.getEndpointConfiguration(serviceToBuild))
-				.withCredentials(localStack.getDefaultCredentialsProvider())
+		return clientBuilder.withEndpointConfiguration(LOCAL_STACK_CONTAINER.getEndpointConfiguration(serviceToBuild))
+				.withCredentials(LOCAL_STACK_CONTAINER.getDefaultCredentialsProvider())
 				.build();
 	}
 
