@@ -141,8 +141,10 @@ abstract class SerdeResolverUtils {
 	 * @return list of bean names for matching serdes ordered by most specific match, or an empty list if no matches found
 	 */
 	static List<String> beanNamesForMatchingSerdes(ConfigurableApplicationContext context, ResolvableType targetType) {
-		// We don't attempt to find a matching Serde for type '?'
 		if (targetType.getRawClass() == null) {
+			if (LOG.isDebugEnabled()) {
+				LOG.debug("Not looking for matching Serdes for raw or wildcard type: " + targetType);
+			}
 			return Collections.emptyList();
 		}
 		List<SerdeWithSpecificityScore> matchingSerdes = new ArrayList<>();
@@ -154,9 +156,15 @@ abstract class SerdeResolverUtils {
 				BeanDefinition beanDefinition = context.getBeanFactory().getMergedBeanDefinition(beanName);
 				ResolvableType serdeBeanGeneric = beanDefinition.getResolvableType().getGeneric(0);
 				if (LOG.isDebugEnabled()) {
-					LOG.debug("Found matching Serde<" + serdeBeanGeneric.getType() + "> under beanName=" + beanName);
+					LOG.debug("Found matching Serde<" + serdeBeanGeneric.getType() + "> with beanName=" + beanName);
 				}
-				matchingSerdes.add(new SerdeWithSpecificityScore(calculateScore(targetType, serdeBeanGeneric), beanName));
+				Class<?> serdeGenericRawClazz = serdeBeanGeneric.getRawClass();
+				if (serdeGenericRawClazz != null) {
+					matchingSerdes.add(new SerdeWithSpecificityScore(calculateScore(targetType, serdeBeanGeneric), beanName));
+				}
+				else if (LOG.isDebugEnabled()) {
+					LOG.debug("Discarding raw or wildcard match Serde<" + serdeBeanGeneric.getType() + "> with beanName=" + beanName);
+				}
 			}
 			catch (Exception ex) {
 				LOG.warn("Failed introspecting Serde bean '" + beanName + "'", ex);

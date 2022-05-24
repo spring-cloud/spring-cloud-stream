@@ -173,6 +173,15 @@ class SerdeResolverUtilsTests {
 				});
 		}
 
+		@Test
+		void discardsWildcardMatchesForJavaLangObject() {
+			new ApplicationContextRunner().withUserConfiguration(SerdeResolverSimpleTestApp.class)
+				.run((context) -> {
+					ResolvableType javaLangObjectSerdeType = ResolvableType.forClassWithGenerics(Serde.class, Object.class).getGeneric(0);
+					assertThat(SerdeResolverUtils.beanNamesForMatchingSerdes(context, javaLangObjectSerdeType)).isEmpty();
+				});
+		}
+
 		/**
 		 *
 		 * Verify that {@link SerdeResolverUtils#beanNamesForMatchingSerdes} returns the proper serdes in the proper order
