@@ -785,9 +785,11 @@ public class KafkaMessageChannelBinder extends
 		}
 		int initialInterval = extendedConsumerProperties.getBackOffInitialInterval();
 		int maxInterval = extendedConsumerProperties.getBackOffMaxInterval();
+		double multiplier = extendedConsumerProperties.getBackOffMultiplier();
 		ExponentialBackOff backOff = new ExponentialBackOffWithMaxRetries(maxAttempts - 1);
 		backOff.setInitialInterval(initialInterval);
 		backOff.setMaxInterval(maxInterval);
+		backOff.setMultiplier(multiplier);
 		return backOff;
 	}
 
