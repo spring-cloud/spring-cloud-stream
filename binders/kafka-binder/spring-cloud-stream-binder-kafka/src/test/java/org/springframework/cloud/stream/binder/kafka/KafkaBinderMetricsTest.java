@@ -279,6 +279,13 @@ public class KafkaBinderMetricsTest {
 			.isEqualTo(500.0);
 	}
 
+	@Test
+	public void shouldShutdownSchedulerOnClose() throws Exception {
+		metrics.bindTo(meterRegistry);
+		metrics.close();
+		assertThat(metrics.scheduler.isShutdown()).isTrue();
+	}
+
 	private List<PartitionInfo> partitions(Node... nodes) {
 		List<PartitionInfo> partitions = new ArrayList<>();
 		for (int i = 0; i < nodes.length; i++) {
