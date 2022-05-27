@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -62,9 +63,10 @@ import org.springframework.util.ObjectUtils;
  * @author Thomas Cheyney
  * @author Gary Russell
  * @author Lars Bilger
+ * @author Tomek Szmytka
  */
 public class KafkaBinderMetrics
-		implements MeterBinder, ApplicationListener<BindingCreatedEvent> {
+		implements MeterBinder, ApplicationListener<BindingCreatedEvent>, AutoCloseable {
 
 	private static final int DEFAULT_TIMEOUT = 5;
 
@@ -258,4 +260,8 @@ public class KafkaBinderMetrics
 		}
 	}
 
+	@Override
+	public void close() throws Exception {
+		Optional.ofNullable(scheduler).ifPresent(ExecutorService::shutdown);
+	}
 }
