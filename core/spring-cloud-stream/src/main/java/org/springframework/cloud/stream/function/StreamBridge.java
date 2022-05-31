@@ -267,34 +267,47 @@ public final class StreamBridge implements SmartInitializingSingleton {
 
 	@SuppressWarnings({ "unchecked", "rawtypes"})
 	synchronized MessageChannel resolveDestination(String destinationName, ProducerProperties producerProperties, String binderName) {
-		MessageChannel messageChannel = this.channelCache.get(destinationName);
-		if (messageChannel == null && this.applicationContext.containsBean(destinationName)) {
-			messageChannel = this.applicationContext.getBean(destinationName, MessageChannel.class);
+		MessageChannel messageChannel = null;
+		if (StringUtils.hasText(binderName)) {
+			messageChannel = this.channelCache.get(binderName + ":" + destinationName);
+		}
+		else {
+			messageChannel = this.channelCache.get(destinationName);
 		}
 		if (messageChannel == null) {
-			messageChannel = new DirectWithAttributesChannel();
-			if (this.destinationBindingCallback != null) {
-				Object extendedProducerProperties = this.bindingService
-						.getExtendedProducerProperties(messageChannel, destinationName);
-				this.destinationBindingCallback.configure(destinationName, messageChannel,
-						producerProperties, extendedProducerProperties);
+			if (this.applicationContext.containsBean(destinationName)) {
+				messageChannel = this.applicationContext.getBean(destinationName, MessageChannel.class);
 			}
+			else {
+				messageChannel = new DirectWithAttributesChannel();
+				if (this.destinationBindingCallback != null) {
+					Object extendedProducerProperties = this.bindingService
+							.getExtendedProducerProperties(messageChannel, destinationName);
+					this.destinationBindingCallback.configure(destinationName, messageChannel,
+							producerProperties, extendedProducerProperties);
+				}
 
-			Binder binder = null;
-			if (StringUtils.hasText(binderName)) {
-				BinderFactory binderFactory = this.applicationContext.getBean(BinderFactory.class);
-				binder = binderFactory.getBinder(binderName, messageChannel.getClass());
+				Binder binder = null;
+				if (StringUtils.hasText(binderName)) {
+					BinderFactory binderFactory = this.applicationContext.getBean(BinderFactory.class);
+					binder = binderFactory.getBinder(binderName, messageChannel.getClass());
+				}
+
+				if (producerProperties != null && producerProperties.isPartitioned()) {
+					BindingProperties bindingProperties = this.bindingServiceProperties.getBindingProperties(destinationName);
+					((AbstractMessageChannel) messageChannel)
+						.addInterceptor(new DefaultPartitioningInterceptor(bindingProperties, this.applicationContext.getBeanFactory()));
+				}
+				this.addInterceptors((AbstractMessageChannel) messageChannel, destinationName);
+
+				this.bindingService.bindProducer(messageChannel, destinationName, false, binder);
+				if (StringUtils.hasText(binderName)) {
+					this.channelCache.put(binderName + ":" + destinationName, messageChannel);
+				}
+				else {
+					this.channelCache.put(destinationName, messageChannel);
+				}
 			}
-
-			if (producerProperties != null && producerProperties.isPartitioned()) {
-				BindingProperties bindingProperties = this.bindingServiceProperties.getBindingProperties(destinationName);
-				((AbstractMessageChannel) messageChannel)
-					.addInterceptor(new DefaultPartitioningInterceptor(bindingProperties, this.applicationContext.getBeanFactory()));
-			}
-			this.addInterceptors((AbstractMessageChannel) messageChannel, destinationName);
-
-			this.bindingService.bindProducer(messageChannel, destinationName, false, binder);
-			this.channelCache.put(destinationName, messageChannel);
 		}
 
 		return messageChannel;
