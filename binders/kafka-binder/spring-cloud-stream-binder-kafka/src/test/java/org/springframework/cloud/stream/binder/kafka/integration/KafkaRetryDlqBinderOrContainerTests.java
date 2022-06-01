@@ -16,6 +16,8 @@
 
 package org.springframework.cloud.stream.binder.kafka.integration;
 
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
@@ -28,6 +30,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binder.kafka.ListenerContainerWithDlqAndRetryCustomizer;
+import org.springframework.cloud.stream.binder.kafka.support.ProducerConfigCustomizer;
 import org.springframework.cloud.stream.binding.BindingsLifecycleController;
 import org.springframework.context.annotation.Bean;
 import org.springframework.kafka.core.KafkaOperations;
@@ -48,6 +51,7 @@ import static org.mockito.Mockito.mock;
 
 /**
  * @author Gary Russell
+ * @author Soby Chacko
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE, properties = {
 		"spring.cloud.function.definition=retryInBinder;retryInContainer",
@@ -59,8 +63,10 @@ import static org.mockito.Mockito.mock;
 @DirtiesContext
 public class KafkaRetryDlqBinderOrContainerTests {
 
+	private static final CountDownLatch latch = new CountDownLatch(2);
+
 	@Test
-	void retryAndDlqInRightPlace(@Autowired BindingsLifecycleController controller) {
+	void retryAndDlqInRightPlace(@Autowired BindingsLifecycleController controller) throws Exception {
 		Binding<?> retryInBinder = controller.queryState("retryInBinder-in-0");
 		assertThat(KafkaTestUtils.getPropertyValue(retryInBinder, "lifecycle.retryTemplate")).isNotNull();
 		assertThat(KafkaTestUtils.getPropertyValue(retryInBinder,
@@ -72,6 +78,9 @@ public class KafkaRetryDlqBinderOrContainerTests {
 		assertThat(KafkaTestUtils.getPropertyValue(retryInContainer,
 					"lifecycle.messageListenerContainer.commonErrorHandler.failureTracker.backOff"))
 				.isInstanceOf(ExponentialBackOffWithMaxRetries.class);
+		boolean await = latch.await(5, TimeUnit.SECONDS);
+		assertThat(await).isTrue();
+
 	}
 
 	@SpringBootApplication
@@ -112,6 +121,19 @@ public class KafkaRetryDlqBinderOrContainerTests {
 			};
 		}
 
+		// Because we have DLQ enabled on the consumer binding,
+		// this ProducerConfigCustomizer is used by the producer on DLQ.
+		@Bean
+		public ProducerConfigCustomizer producerConfigCustomizer() {
+			return (producerProperties, binding, destination) -> {
+				if (binding.equals("retryInBinder-in-0")) {
+					latch.countDown();
+				}
+				else if (binding.equals("retryInContainer-in-0")) {
+					latch.countDown();
+				}
+			};
+		}
 	}
 
 }
