@@ -63,6 +63,7 @@ import org.springframework.util.ObjectUtils;
  * @author Thomas Cheyney
  * @author Gary Russell
  * @author Lars Bilger
+ * @author Tomek Szmytka
  */
 public class KafkaBinderMetrics
 		implements MeterBinder, ApplicationListener<BindingCreatedEvent>, AutoCloseable {
