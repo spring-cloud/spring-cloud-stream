@@ -1094,10 +1094,11 @@ public class KafkaMessageChannelBinder extends
 					.getDlqProducerProperties();
 			KafkaAwareTransactionManager<byte[], byte[]> transMan = transactionManager(
 					properties.getExtension().getTransactionManager());
+			final ExtendedProducerProperties<KafkaProducerProperties> producerProperties = new ExtendedProducerProperties<>(dlqProducerProperties);
+			producerProperties.populateBindingName(properties.getBindingName());
 			ProducerFactory<?, ?> producerFactory = transMan != null
 					? transMan.getProducerFactory()
-					: getProducerFactory(null,
-							new ExtendedProducerProperties<>(dlqProducerProperties),
+					: getProducerFactory(null, producerProperties,
 							destination.getName() + ".dlq.producer", destination.getName());
 			final KafkaTemplate<?, ?> kafkaTemplate = new KafkaTemplate<>(
 					producerFactory);
