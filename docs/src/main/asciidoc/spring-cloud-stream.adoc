@@ -1557,6 +1557,43 @@ public Function<Flux<String>, Flux<String>> uppercase() {
 By default, if no additional system-level configuration is provided, the messaging system drops the failed message.
 While acceptable in some cases, for most cases, it is not, and we need some recovery mechanism to avoid message loss.
 
+==== Handle Error Messages
+
+In the previous section we mentioned that by default messages that resulted in error are logged and dropped. In the event you want to add some additional error handling (i.e., send notification, write to database etc), you can add a `Consumer` that is specifically designed to accept `ErrorMessage`. 
+
+[source,java]
+----
+@Bean
+public Consumer<ErrorMessage> myErrorHandler() {
+	return v -> {
+		// send SMS notification code
+	};
+}
+----
+
+If by accident you declare such handler as a `Function`, it will still work with the exception that nothing is going to be done with its output. However, given that such handler is still relying on functionality provided by Spring Cloud Function, you can also benefit from function composition in the event your handler has some complexity which you would like to address through function composition.
+
+To identify such function/consumer as an error handler all you need is to provide `error-handler-definition` property  pointing to the function name - `spring.cloud.stream.bindings.<binding-name>.error-handler-definition=myErrorHandler`. This is where you can specify function composition instruction using ‘|’ symbol as you would do with `spring.cloud.function.definition`.
+
+For example, for binding name `uppercase-in-0` the property would look like this:
+
+[source,text]
+----
+spring.cloud.stream.bindings.uppercase-in-0.error-handler-definition=myErrorHandler
+----
+And if you used special mapping instruction to map binding to a more readable name - `spring.cloud.stream.function.bindings.uppercase-in-0=upper`, then this property would look like this: 
+[source,text]
+----
+spring.cloud.stream.bindings.upper.error-handler-definition=myErrorHandler`.
+----
+
+***Default Error Handler***
+
+If you want to have a single error handler for all function beans, you can use the standard  spring-cloud-stream mechanism for defining default properties `spring.cloud.stream.default.error-handler-definition=myErrorHandler`
+
+NOTE: When declaring function-based error handler you MUST define `spring-cloud-function-definition` to identify your bindings, since
+you are effectively declaring another function that will be available in Function Catalog. So for the above case even if until declaring `myErrorHandler` function you only had a single `uppercase` function in your configuration, you now must explicitly declare `spring-cloud-function-definition=uppercase`. But as we mentioned several times before, it is a best practice and recommended approach to ALWAYS declare `spring.cloud.function.definition`.
+
 ==== DLQ - Dead Letter Queue
 
 Perhaps the most common mechanism, DLQ allows failed messages to be sent to a special destination: the _Dead Letter Queue_.
