@@ -47,6 +47,11 @@ public class BindingProperties {
 	private static final String COMMA = ",";
 
 	/**
+	 * Function that corresponds to the error handler of the underlying function.
+	 */
+	private String errorHandlerDefinition;
+
+	/**
 	 * The physical name at the broker that the binder binds to.
 	 */
 	private String destination;
@@ -155,6 +160,14 @@ public class BindingProperties {
 		}
 		sb.deleteCharAt(sb.lastIndexOf(COMMA));
 		return "BindingProperties{" + sb.toString() + "}";
+	}
+
+	public String getErrorHandlerDefinition() {
+		return errorHandlerDefinition;
+	}
+
+	public void setErrorHandlerDefinition(String errorHandlerDefinition) {
+		this.errorHandlerDefinition = errorHandlerDefinition;
 	}
 
 }

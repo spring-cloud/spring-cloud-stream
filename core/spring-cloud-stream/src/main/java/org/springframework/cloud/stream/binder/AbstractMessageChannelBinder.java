@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -32,6 +33,9 @@ import org.springframework.beans.factory.BeanFactoryAware;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.support.DefaultSingletonBeanRegistry;
+import org.springframework.cloud.function.context.FunctionCatalog;
+import org.springframework.cloud.stream.config.BindingProperties;
+import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.cloud.stream.config.ConsumerEndpointCustomizer;
 import org.springframework.cloud.stream.config.ListenerContainerCustomizer;
 import org.springframework.cloud.stream.config.MessageSourceCustomizer;
@@ -66,9 +70,11 @@ import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.SubscribableChannel;
 import org.springframework.messaging.support.ChannelInterceptor;
+import org.springframework.messaging.support.ErrorMessage;
 import org.springframework.retry.RecoveryCallback;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
 
 /**
  * {@link AbstractBinder} that serves as base class for {@link MessageChannel} binders.
@@ -687,6 +693,25 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		return registerErrorInfrastructure(destination, group, consumerProperties, false);
 	}
 
+	private void subscribeFunctionErrorHandler(String errorChannelName, String bindingName) {
+		if (!StringUtils.hasText(bindingName)) {
+			return;
+		}
+		BindingServiceProperties bsp = getApplicationContext().getBean(BindingServiceProperties.class);
+		BindingProperties bp = bsp.getBindingProperties(bindingName);
+		if (StringUtils.hasText(bp.getErrorHandlerDefinition())) {
+			FunctionCatalog catalog = getApplicationContext().getBean(FunctionCatalog.class);
+			Consumer<ErrorMessage> errorHandler = catalog.lookup(Consumer.class, bp.getErrorHandlerDefinition());
+			if (errorHandler == null) {
+				logger.warn("Failed to retrieve error handling function with definition: " + bp.getErrorHandlerDefinition() + ", for binding: " + bindingName);
+			}
+			else {
+				SubscribableChannel functionErrorChannel = getApplicationContext().getBean(errorChannelName, SubscribableChannel.class);
+				functionErrorChannel.subscribe(errorMessage -> errorHandler.accept((ErrorMessage) errorMessage));
+			}
+		}
+	}
+
 	/**
 	 * Build an errorChannelRecoverer that writes to a pub/sub channel for the destination
 	 * when an exception is thrown to a consumer.
@@ -720,7 +745,10 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 
 			((GenericApplicationContext) getApplicationContext()).registerBean(
 					errorChannelName, SubscribableChannel.class, () -> errorChannel);
+
+			this.subscribeFunctionErrorHandler(errorChannelName, consumerProperties.getBindingName());
 		}
+
 		ErrorMessageSendingRecoverer recoverer;
 		if (errorMessageStrategy == null) {
 			recoverer = new ErrorMessageSendingRecoverer(errorChannel);
