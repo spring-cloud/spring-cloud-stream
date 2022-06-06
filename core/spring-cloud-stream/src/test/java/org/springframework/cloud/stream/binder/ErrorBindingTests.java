@@ -18,6 +18,7 @@ package org.springframework.cloud.stream.binder;
 
 import java.util.function.Consumer;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.boot.WebApplicationType;
@@ -38,6 +39,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class ErrorBindingTests {
 
 	@Test
+	@Disabled
 	public void testConfigurationWithDefaultErrorHandler() {
 		ApplicationContext context = new SpringApplicationBuilder(
 				TestChannelBinderConfiguration.getCompleteConfiguration(
@@ -59,6 +61,7 @@ public class ErrorBindingTests {
 	}
 
 	@Test
+	@Disabled
 	void testConfigurationWithBindingSpecificErrorHandler() {
 		ApplicationContext context = new SpringApplicationBuilder(
 				TestChannelBinderConfiguration.getCompleteConfiguration(
