@@ -44,6 +44,8 @@ import org.apache.kafka.streams.kstream.KTable;
 import org.apache.kafka.streams.kstream.Materialized;
 import org.apache.kafka.streams.processor.TimestampExtractor;
 import org.apache.kafka.streams.processor.api.Processor;
+import org.apache.kafka.streams.processor.api.ProcessorContext;
+import org.apache.kafka.streams.processor.api.ProcessorSupplier;
 import org.apache.kafka.streams.processor.api.Record;
 import org.apache.kafka.streams.processor.api.RecordMetadata;
 import org.apache.kafka.streams.state.KeyValueStore;
@@ -468,11 +470,33 @@ public abstract class AbstractKafkaStreamsBinderProcessor implements Application
 
 	private KStream<?, ?> getkStream(BindingProperties bindingProperties, KStream<?, ?> stream, boolean nativeDecoding) {
 		if (!nativeDecoding) {
+			AtomicReference<Headers> headersAtomicReference = new AtomicReference<>();
+			stream.process((ProcessorSupplier<Object, Object, Void, Void>) () -> new Processor<Object, Object, Void, Void>() {
+
+				@Override
+				public void init(ProcessorContext<Void, Void> context) {
+					Processor.super.init(context);
+				}
+
+				@Override
+				public void process(Record<Object, Object> record) {
+					final Headers headers = record.headers();
+					headersAtomicReference.set(headers);
+				}
+
+				@Override
+				public void close() {
+					Processor.super.close();
+				}
+			});
 			stream = stream.mapValues((value) -> {
 				Object returnValue;
 				String contentType = bindingProperties.getContentType();
-				if (value != null && !StringUtils.isEmpty(contentType)) {
-					returnValue = MessageBuilder.withPayload(value)
+				if (value != null && !StringUtils.hasText(contentType)) {
+					final Headers headers = headersAtomicReference.get();
+					final Map<String, Object> headersMap = new HashMap<>();
+					headers.forEach(header -> headersMap.put(header.key(), header.value()));
+					returnValue = MessageBuilder.withPayload(value).copyHeaders(headersMap)
 							.setHeader(MessageHeaders.CONTENT_TYPE, contentType).build();
 				}
 				else {

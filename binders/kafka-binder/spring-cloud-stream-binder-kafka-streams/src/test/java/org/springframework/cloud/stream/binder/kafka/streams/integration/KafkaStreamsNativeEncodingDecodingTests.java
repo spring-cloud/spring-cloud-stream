@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2019 the original author or authors.
+ * Copyright 2018-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.binder.kafka.streams.integration;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Map;
@@ -23,6 +24,8 @@ import java.util.Map;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.common.header.Header;
+import org.apache.kafka.common.header.Headers;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.kstream.Grouped;
@@ -47,7 +50,9 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.test.EmbeddedKafkaBroker;
 import org.springframework.kafka.test.rule.EmbeddedKafkaRule;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
+import org.springframework.messaging.Message;
 import org.springframework.messaging.handler.annotation.SendTo;
+import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -146,7 +151,8 @@ public abstract class KafkaStreamsNativeEncodingDecodingTests {
 					senderProps);
 			KafkaTemplate<Integer, String> template = new KafkaTemplate<>(pf, true);
 			template.setDefaultTopic("decode-words");
-			template.sendDefault("foobar");
+			Message<String> msg = MessageBuilder.withPayload("foobar").setHeader("foo", "bar").build();
+			template.send(msg);
 			StopWatch stopWatch = new StopWatch();
 			stopWatch.start();
 			System.out.println("Starting: ");
@@ -154,6 +160,13 @@ public abstract class KafkaStreamsNativeEncodingDecodingTests {
 					"decode-counts");
 			stopWatch.stop();
 			System.out.println("Total time: " + stopWatch.getTotalTimeSeconds());
+
+			final Headers headers = cr.headers();
+			final Iterable<Header> foo = headers.headers("foo");
+			assertThat(foo.iterator().hasNext()).isTrue();
+			final Header fooHeader = foo.iterator().next();
+			assertThat(fooHeader.value()).isEqualTo("bar".getBytes(StandardCharsets.UTF_8));
+
 			assertThat(cr.value().equals("Count for foobar : 1")).isTrue();
 
 			verify(conversionDelegate).serializeOnOutbound(any(KStream.class));
