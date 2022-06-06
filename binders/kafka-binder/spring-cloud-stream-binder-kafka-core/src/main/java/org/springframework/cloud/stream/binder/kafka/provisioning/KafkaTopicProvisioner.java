@@ -542,7 +542,8 @@ public class KafkaTopicProvisioner implements
 					if (ex instanceof UnknownTopicOrPartitionException) {
 						throw ex;
 					}
-					logger.error("Failed to obtain partition information", ex);
+					logger.error("Failed to obtain partition information for the topic "
+						+ "(" + topicName + ").", ex);
 				}
 				// In some cases, the above partition query may not throw an UnknownTopic..Exception for various reasons.
 				// For that, we are forcing another query to ensure that the topic is present on the server.
@@ -587,8 +588,8 @@ public class KafkaTopicProvisioner implements
 			});
 		}
 		catch (Exception ex) {
-			logger.error("Cannot initialize Binder", ex);
-			throw new BinderException("Cannot initialize binder:", ex);
+			logger.error("Cannot initialize Binder checking the topic (" + topicName + ").", ex);
+			throw new BinderException("Cannot initialize binder checking the topic (" + topicName + "):", ex);
 		}
 	}
 
