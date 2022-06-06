@@ -16,18 +16,15 @@
 
 package org.springframework.cloud.stream.binder;
 
-
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 import org.junit.jupiter.api.Test;
+
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.stream.binder.test.InputDestination;
 import org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration;
-import org.springframework.cloud.stream.messaging.Processor;
-import org.springframework.cloud.stream.messaging.Sink;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.messaging.support.GenericMessage;
@@ -106,7 +103,7 @@ public class ErrorBindingTests {
 	public static class ErrorConfigurationWithCustomErrorHandler {
 
 		private int counter;
-		
+
 		@Bean
 		public Consumer<Object> errorHandler() {
 			return v -> {
