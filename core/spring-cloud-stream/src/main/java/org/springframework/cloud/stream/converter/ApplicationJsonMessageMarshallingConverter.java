@@ -142,7 +142,10 @@ class ApplicationJsonMessageMarshallingConverter extends MappingJackson2MessageC
 					Collection<?> collection = ((Collection<?>) payload).stream()
 							.map(value -> {
 								try {
-									if (value instanceof byte[]) {
+									if (value.getClass().getName().startsWith("org.springframework.kafka.support.KafkaNull")) {
+										return value;
+									}
+									else if (value instanceof byte[]) {
 										return objectMapper.readValue((byte[]) value, typeToUse.getContentType());
 									}
 									else if (value instanceof String) {
