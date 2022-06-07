@@ -39,7 +39,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class ErrorBindingTests {
 
 	@Test
+<<<<<<< HEAD
 	void testConfigurationWithDefaultErrorHandler() {
+=======
+	public void testConfigurationWithDefaultErrorHandler() {
+>>>>>>> 3a7ab48d5... Fix ErrorBindingTests
 		ApplicationContext context = new SpringApplicationBuilder(
 				TestChannelBinderConfiguration.getCompleteConfiguration(
 						ErrorBindingTests.ErrorConfigurationDefault.class))
@@ -95,10 +99,10 @@ public class ErrorBindingTests {
 		private int counter;
 
 		@Bean
-		public Consumer<Object> handle() {
+		public Function<String, String> handle() {
 			return v -> {
 				this.counter++;
-				throw new RuntimeException("BOOM!");
+				throw new RuntimeException("Intentional");
 			};
 		}
 
@@ -116,11 +120,10 @@ public class ErrorBindingTests {
 
 		private int counter;
 
-		@Bean
-		public Consumer<Object> handle() {
+		public Function<String, String> handle() {
 			return v -> {
 				this.counter++;
-				throw new RuntimeException("BOOM!");
+				throw new RuntimeException("Intentional");
 			};
 		}
 
