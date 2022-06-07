@@ -39,11 +39,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class ErrorBindingTests {
 
 	@Test
-<<<<<<< HEAD
-	void testConfigurationWithDefaultErrorHandler() {
-=======
 	public void testConfigurationWithDefaultErrorHandler() {
->>>>>>> 3a7ab48d5... Fix ErrorBindingTests
 		ApplicationContext context = new SpringApplicationBuilder(
 				TestChannelBinderConfiguration.getCompleteConfiguration(
 						ErrorBindingTests.ErrorConfigurationDefault.class))
@@ -120,6 +116,7 @@ public class ErrorBindingTests {
 
 		private int counter;
 
+		@Bean
 		public Function<String, String> handle() {
 			return v -> {
 				this.counter++;
