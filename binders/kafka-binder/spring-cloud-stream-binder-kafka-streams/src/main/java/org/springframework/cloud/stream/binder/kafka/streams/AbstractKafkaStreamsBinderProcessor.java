@@ -492,7 +492,7 @@ public abstract class AbstractKafkaStreamsBinderProcessor implements Application
 			stream = stream.mapValues((value) -> {
 				Object returnValue;
 				String contentType = bindingProperties.getContentType();
-				if (value != null && !StringUtils.hasText(contentType)) {
+				if (value != null && StringUtils.hasText(contentType)) {
 					final Headers headers = headersAtomicReference.get();
 					final Map<String, Object> headersMap = new HashMap<>();
 					headers.forEach(header -> headersMap.put(header.key(), header.value()));
