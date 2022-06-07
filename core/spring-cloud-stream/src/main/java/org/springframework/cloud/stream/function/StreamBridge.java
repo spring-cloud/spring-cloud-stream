@@ -273,8 +273,9 @@ public final class StreamBridge implements SmartInitializingSingleton {
 	synchronized MessageChannel resolveDestination(String destinationName, ProducerProperties producerProperties, String binderName) {
 		MessageChannel messageChannel = null;
 		if (StringUtils.hasText(binderName)) {
-			messageChannel = this.channelCache.get(binderName + " " + destinationName);
-		} else {
+			messageChannel = this.channelCache.get(binderName + ":" + destinationName);
+		}
+		else {
 			messageChannel = this.channelCache.get(destinationName);
 		}
 		if (messageChannel == null) {
@@ -305,8 +306,9 @@ public final class StreamBridge implements SmartInitializingSingleton {
 
 				this.bindingService.bindProducer(messageChannel, destinationName, false, binder);
 				if (StringUtils.hasText(binderName)) {
-					this.channelCache.put(binderName + " " + destinationName, messageChannel);
-				} else {
+					this.channelCache.put(binderName + ":" + destinationName, messageChannel);
+				}
+				else {
 					this.channelCache.put(destinationName, messageChannel);
 				}
 			}
