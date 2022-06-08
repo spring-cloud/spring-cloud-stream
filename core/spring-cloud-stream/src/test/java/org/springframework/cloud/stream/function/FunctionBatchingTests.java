@@ -29,6 +29,7 @@ import org.springframework.cloud.stream.binder.test.OutputDestination;
 import org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.integration.support.MessageBuilder;
+import org.springframework.kafka.support.KafkaNull;
 import org.springframework.messaging.Message;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -44,7 +45,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class FunctionBatchingTests {
 
 	@Test
-	void testMessageBatchConfiguration() {
+	void testMessageBatchConfigurationWithKafkaNull() {
 		TestChannelBinderConfiguration.applicationContextRunner(MessageBatchConfiguration.class)
 				.withPropertyValues("spring.jmx.enabled=false",
 						"spring.cloud.stream.function.definition=func",
@@ -54,10 +55,12 @@ public class FunctionBatchingTests {
 					OutputDestination outputDestination = context
 							.getBean(OutputDestination.class);
 
-					List<byte[]> list = new ArrayList<>();
+					List<Object> list = new ArrayList<>();
 					list.add("{\"name\":\"bob\"}".getBytes());
 					list.add("{\"name\":\"jill\"}".getBytes());
-					Message<List<byte[]>> inputMessage = MessageBuilder
+					list.add(KafkaNull.INSTANCE);
+					list.add("{\"name\":\"steve\"}".getBytes());
+					Message<List<Object>> inputMessage = MessageBuilder
 							.withPayload(list)
 							.build();
 					inputDestination.send(inputMessage);
@@ -282,7 +285,11 @@ public class FunctionBatchingTests {
 
 		@Bean
 		public Function<Message<List<Person>>, Person> func() {
-			return x -> x.getPayload().get(0);
+			return x -> {
+				Object o = x.getPayload().get(2);
+				assertThat(o).isInstanceOf(KafkaNull.class);
+				return (Person) x.getPayload().get(0);
+			};
 		}
 
 		public static class Person {

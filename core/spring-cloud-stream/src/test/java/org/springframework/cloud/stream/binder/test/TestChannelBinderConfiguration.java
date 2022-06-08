@@ -48,6 +48,9 @@ import org.springframework.integration.config.EnableIntegration;
 @EnableIntegration
 public class TestChannelBinderConfiguration<T> {
 
+	/**
+	 * The name of the test binder.
+	 */
 	public static final String NAME = "integration";
 
 	/**

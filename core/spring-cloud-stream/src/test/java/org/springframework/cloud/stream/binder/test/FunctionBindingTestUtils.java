@@ -42,7 +42,11 @@ import org.springframework.messaging.MessageChannel;
  * @since 3.0.2
  *
  */
-public class FunctionBindingTestUtils {
+public final class FunctionBindingTestUtils {
+
+	private FunctionBindingTestUtils() {
+
+	}
 
 	@SuppressWarnings("rawtypes")
 	public static void bind(ConfigurableApplicationContext applicationContext, Object function) {
