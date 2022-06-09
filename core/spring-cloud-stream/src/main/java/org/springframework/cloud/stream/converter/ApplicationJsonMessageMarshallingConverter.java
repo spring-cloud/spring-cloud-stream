@@ -20,10 +20,11 @@ import java.io.IOException;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -45,6 +46,7 @@ import org.springframework.messaging.converter.MessageConversionException;
  * @author Oleg Zhurakousky
  * @author Gary Russell
  * @since 2.0
+ * @deprecated since 3.2 as we are no longer needed since functional-based programming model is no longer using it.
  */
 class ApplicationJsonMessageMarshallingConverter extends MappingJackson2MessageConverter {
 
@@ -139,27 +141,25 @@ class ApplicationJsonMessageMarshallingConverter extends MappingJackson2MessageC
 			else {
 				final JavaType typeToUse = type;
 				if (payload instanceof Collection) {
-					Collection<?> collection = ((Collection<?>) payload).stream()
-							.map(value -> {
-								try {
-									if (value instanceof byte[]) {
-										return objectMapper.readValue((byte[]) value, typeToUse.getContentType());
-									}
-									else if (value instanceof String) {
-										return objectMapper.readValue((String) value, typeToUse.getContentType());
-									}
-									else {
-										// fall back to simple type-conversion
-										// see https://github.com/spring-cloud/spring-cloud-stream/issues/1898
-										return objectMapper.convertValue(value, typeToUse.getContentType());
-									}
-								}
-								catch (Exception e) {
-									logger.error("Failed to convert payload " + value, e);
-								}
-								return null;
-							}).collect(Collectors.toList());
-
+					List<Object> collection = new ArrayList<>();
+					for (Object value : ((Collection<?>) payload)) {
+						try {
+							if (value instanceof byte[]) {
+								collection.add(objectMapper.readValue((byte[]) value, typeToUse.getContentType()));
+							}
+							else if (value instanceof String) {
+								collection.add(objectMapper.readValue((String) value, typeToUse.getContentType()));
+							}
+							else {
+								// fall back to simple type-conversion
+								// see https://github.com/spring-cloud/spring-cloud-stream/issues/1898
+								collection.add(objectMapper.convertValue(value, typeToUse.getContentType()));
+							}
+						}
+						catch (Exception e) {
+							throw new MessageConversionException("Failed to convert payload " + value, e);
+						}
+					}
 					return collection;
 				}
 				return null;
