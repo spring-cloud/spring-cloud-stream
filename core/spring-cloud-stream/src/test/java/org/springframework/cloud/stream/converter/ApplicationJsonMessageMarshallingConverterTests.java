@@ -16,19 +16,25 @@
 
 package org.springframework.cloud.stream.converter;
 
+import java.util.Collections;
+import java.util.Map;
+
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.json.JsonMapper;
 import org.junit.jupiter.api.Test;
 
+import org.springframework.core.ResolvableType;
 import org.springframework.messaging.converter.MessageConversionException;
 import org.springframework.messaging.support.GenericMessage;
 
 import static org.junit.Assert.fail;
 
-
+@SuppressWarnings("deprecation")
 public class ApplicationJsonMessageMarshallingConverterTests {
+
 	@Test
 	void badJson() {
 
@@ -47,10 +53,29 @@ public class ApplicationJsonMessageMarshallingConverterTests {
 		}
 	}
 
+	@Test
+	void errorPropagationTestOnCollection() {
+		ApplicationJsonMessageMarshallingConverter converter = new ApplicationJsonMessageMarshallingConverter(
+				JsonMapper.builder().build());
+
+		try {
+			converter.fromMessage(new GenericMessage<>(Collections.singletonList("{ \"field1\": 1 }")), Map.class,
+					ResolvableType.forClassWithGenerics(Map.class, String.class, String.class).getType());
+			fail();
+		}
+		catch (MessageConversionException e) {
+			// good
+		}
+		catch (Throwable t) {
+			fail();
+		}
+	}
+
 	private ObjectMapper initObjectMapper() {
 		ObjectMapper objectMapper = new ObjectMapper();
 		objectMapper.configure(MapperFeature.DEFAULT_VIEW_INCLUSION, false);
 		objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 		return objectMapper;
 	}
+
 }
