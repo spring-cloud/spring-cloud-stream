@@ -453,7 +453,8 @@ public class FunctionConfiguration {
 				}
 				if (StringUtils.hasText(functionDefinition) && !shouldNotProcess) {
 					FunctionInvocationWrapper function = functionCatalog.lookup(functionDefinition);
-					if (function != null && !function.isSupplier()) {
+
+					if (function != null && !function.isSupplier() && functionDefinition.equals(function.getFunctionDefinition())) {
 						this.bindFunctionToDestinations(bindableProxyFactory, functionDefinition);
 					}
 				}
