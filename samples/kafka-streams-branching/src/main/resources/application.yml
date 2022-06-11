@@ -1,0 +1,18 @@
+spring:
+  application.name: kafka-streams-branching-sample
+  cloud:
+    stream:
+      kafka.streams.binder:
+        configuration:
+          commit.interval.ms: 1000
+          default.key.serde: org.apache.kafka.common.serialization.Serdes$StringSerde
+          default.value.serde: org.apache.kafka.common.serialization.Serdes$StringSerde
+      bindings:
+        process-in-0:
+          destination: words
+        process-out-0:
+          destination: english-counts
+        process-out-1:
+          destination: french-counts
+        process-out-2:
+          destination: spanish-counts
