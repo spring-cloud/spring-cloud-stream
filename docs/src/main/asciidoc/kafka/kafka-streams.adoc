@@ -355,12 +355,12 @@ Even without the functional composition support in the binder, you can compose t
 
 ```
 @Bean
-pubic Funcion<KStream<String, String>, KStream<String, Long>> composed() {
+public Function<KStream<String, String>, KStream<String, Long>> composed() {
     foo().andThen(bar());
 }
 ```
 
-Then you can provide deefinitions of the form `spring.cloud.stream.function.definition=foo;bar;composed`.
+Then you can provide definitions of the form `spring.cloud.stream.function.definition=foo;bar;composed`.
 With the functional composition support in the binder, you don't need to write this third function in which you are doing explicit function composition.
 
 You can simply do this instead:
