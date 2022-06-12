@@ -32,12 +32,6 @@
 			<artifactId>spring-kafka-test</artifactId>
 			<scope>test</scope>
 		</dependency>
-		<dependency>
-			<groupId>org.apache.kafka</groupId>
-			<artifactId>kafka-streams-test-utils</artifactId>
-			<version>${kafka.version}</version>
-			<scope>test</scope>
-		</dependency>
 	</dependencies>
 
 </project>

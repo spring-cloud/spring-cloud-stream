@@ -1,4 +1,4 @@
-== Spring Cloud Stream Kafka with native encoding
+== Spring Cloud Stream Kafka Streams with branching
 
 This sample demonstrates a Spring Cloud Stream processor using Kafka Streams branching support.
 
