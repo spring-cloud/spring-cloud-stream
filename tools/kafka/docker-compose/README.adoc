@@ -1,5 +1,6 @@
 == Docker Compose scripts for Kafka
 
+[#run_kafka_cluster]
 === Kafka Cluster
 Runs a multi-node Kafka cluster w/ 3 brokers available at `locahost:9091,localhost:9092,localhost:9093`.
 
@@ -49,6 +50,7 @@ To stop the brokers and the schema registry run the following command:
 docker-compose -f ./kafka-cluster.yml -f ./schema-registry.yml down
 ----
 
+[#_all_the_things]
 === All The Things
 The scripts can be chained together to start the cluster, UI and schema registry with the following commmand:
 [source,shell]

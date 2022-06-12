@@ -1,0 +1,63 @@
+== Spring Cloud Stream Kafka Streams Interactive Query (basic)
+
+This sample demonstrates a Spring Cloud Stream processor using Kafka Streams basic state store query support.
+
+=== Application
+The app is based on a contrived use case of tracking products by interactively querying their status. The program accepts product ID's and tracks their counts hitherto by interactively querying the underlying store.
+
+[[build-app]]
+=== Building
+To build the app simply execute the following command:
+[source,bash]
+----
+./mvnw clean install
+----
+
+=== Running
+
+==== Ensure these pre-requisites
+****
+* The app has been built by following the <<build-app>> steps
+* Apache Kafka broker available at `localhost:9092`
+
+[#kafka_tools]
+TIP: The included xref:../../../tools/kafka/docker-compose/README.adoc#run_kafka_cluster[Kafka tools] can be used to easily start a broker at the required coordinates
+****
+
+==== Start the streams app
+[source,bash]
+----
+java -jar target/kafka-streams-interactive-query-basic-4.0.0-SNAPSHOT.jar --app.product.tracker.product-ids=123,124,125
+----
+The above command will track products with ID's `123`,`124` and `125` and print their counts seen so far every 30 seconds.
+
+===== Send input messages
+Leverage the Kafka command line tool `kafka-console-producer` to send messges (products) to the input topic.
+
+Issue the following command on a separate terminal:
+
+[source,bash]
+----
+docker exec -it broker1 /bin/kafka-console-producer --broker-list broker1:29091 --topic products
+----
+NOTE: The command reference `broker1` and `broker1:29091` as they assume the aforementioned <<kafka_tools,Kafka Tools>> are used to create the cluster. If you start up your own cluster you will need to adjust the coordinates accordingly. Also note that the port is `29091` as that is the internal port configured on the cluster (rather than the expected `9091`)
+
+Enter the following in the console producer (one line at a time) and watch the output on the console (or IDE) where the application is running.
+
+[source,bash]
+----
+{"id":"123"}
+{"id":"124"}
+{"id":"125"}
+{"id":"123"}
+{"id":"123"}
+{"id":"123"}
+----
+
+The output should look something like the following:
+[source,bash]
+----
+Product ID: 123 Count: 4
+Product ID: 124 Count: 1
+Product ID: 125 Count: 1
+----
