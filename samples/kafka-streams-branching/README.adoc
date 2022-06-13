@@ -1,0 +1,110 @@
+== Spring Cloud Stream Kafka Streams with branching
+
+This sample demonstrates a Spring Cloud Stream processor using Kafka Streams branching support.
+
+=== Application
+The app is based on the word count application from the Confluent https://github.com/confluentinc/kafka-streams-examples/blob/5.3.0-post/src/main/java/io/confluent/examples/streams/WordCountLambdaExample.java[Kafka Streams examples] and does the following:
+
+In essence, the application receives text messages from an input topic, filters them by language (English, French, Spanish
+and ignoring the rest), and computes word occurrence counts in a configurable time window and finally report that in
+the corresponding output topics.
+
+It uses a single input topic and 3 output topics.
+
+[[build-app]]
+=== Building
+To build the app simply execute the following command:
+[source,bash]
+----
+./mvnw clean install
+----
+
+=== Running
+The sample is exercised via the provided link:./src/test/java/com/example/kafka/streams/branching/KafkaStreamsBranchingSampleTests.java[@SpringBootTest].
+However, it can also be run manually as follows:
+
+==== Ensure these pre-requisites
+****
+* The app has been built by following the <<build-app>> steps
+* Apache Kafka broker available at `localhost:9092`
+
+[[kafka-tools]]
+TIP: The included link:../../../tools/kafka/docker-compose/README.adoc#_all_the_things[Kafka tools] can be used to easily start a broker at the required coordinates
+****
+
+==== Start the streams app
+[source,bash]
+----
+java -jar target/kafka-streams-branching-4.0.0-SNAPSHOT.jar
+----
+
+===== Start output topic consumers
+Leverage the Kafka command line tool `kafka-console-consumer` to watch events on each output topic.
+
+Issue the following commands, each on a separate terminal:
+
+NOTE: The commands reference `broker1` and `broker1:29091` as they assume the aforementioned <<kafka-tools,Kafka Tools>> are used to create the cluster. If you start up your own cluster you will need to adjust the coordinates accordingly.
+
+NOTE: Also note that the port is `29091` as that is the internal port configured on the cluster (rather than the expected `9091`)
+[source,bash]
+----
+docker exec -it broker1 /bin/kafka-console-consumer --bootstrap-server broker1:29091 --topic english-counts
+----
+
+[source,bash]
+----
+docker exec -it broker1 /bin/kafka-console-consumer --bootstrap-server broker1:29091 --topic french-counts
+----
+
+[source,bash]
+----
+docker exec -it broker1 /bin/kafka-console-consumer --bootstrap-server broker1:29091 --topic spanish-counts
+----
+At this point each of the consumers is just waiting for events to be sent to the output topics.
+
+===== Send input messages
+Leverage the Kafka command line tool `kafka-console-producer` to send messges (words) to the input topic.
+
+Issue the following command on a separate terminal:
+
+[source,bash]
+----
+docker exec -it broker1 /bin/kafka-console-producer --broker-list broker1:29091 --topic words
+----
+
+Type one of the expected words and click "<Enter>". Repeat a few times. Something like the following:
+
+[source,bash]
+----
+>english
+>english
+>english
+>french
+>french
+>foo
+>spanish
+----
+
+===== View output messages
+As you enter words in the console producer (input into Kafka streams processor) the corresponding console consumer will log the processed word count event (output from the Kafka Streams processor).
+
+The word "english" goes to topic english-counts, "french" goes to topic french-counts and "spanish" goes to spanish-counts. Something like the following:
+
+.english-counts
+[source,bash]
+----
+{"word":"english","count":1,"start":1654923396000,"end":1654923402000}
+{"word":"english","count":1,"start":1654923402000,"end":1654923408000}
+{"word":"english","count":1,"start":1654923422000,"end":1654923424000}
+----
+.french-counts
+[source,bash]
+----
+{"word":"french","count":1,"start":1654923396000,"end":1654923402000}
+{"word":"french","count":1,"start":1654923402000,"end":1654923408000}
+----
+.spanish-counts
+[source,bash]
+----
+{"word":"spanish","count":1,"start":1654923396000,"end":1654923402000}
+----
