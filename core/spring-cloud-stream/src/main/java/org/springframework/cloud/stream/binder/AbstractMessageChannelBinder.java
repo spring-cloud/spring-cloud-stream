@@ -208,7 +208,6 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 	 * configuration of the listener container instance created by the binder.
 	 * @param containerCustomizer the {@link ListenerContainerCustomizer} to use.
 	 */
-	@SuppressWarnings("unchecked")
 	public void setContainerCustomizer(@Nullable ListenerContainerCustomizer<?> containerCustomizer) {
 
 		this.containerCustomizer =
@@ -737,6 +736,9 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 					"Error channel '" + errorChannelName
 							+ "' must be a SubscribableChannel");
 			errorChannel = (SubscribableChannel) errorChannelObject;
+			if (this.isSubscribable(errorChannel)) {
+				this.subscribeFunctionErrorHandler(errorChannelName, consumerProperties.getBindingName());
+			}
 		}
 		else {
 			BinderErrorChannel binderErrorChannel = new BinderErrorChannel();
@@ -745,7 +747,6 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 
 			((GenericApplicationContext) getApplicationContext()).registerBean(
 					errorChannelName, SubscribableChannel.class, () -> errorChannel);
-
 			this.subscribeFunctionErrorHandler(errorChannelName, consumerProperties.getBindingName());
 		}
 
