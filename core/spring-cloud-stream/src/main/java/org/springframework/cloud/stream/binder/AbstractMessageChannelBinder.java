@@ -707,6 +707,9 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 					"Error channel '" + errorChannelName
 							+ "' must be a SubscribableChannel");
 			errorChannel = (SubscribableChannel) errorChannelObject;
+			if (this.isSubscribable(errorChannel)) {
+				this.subscribeFunctionErrorHandler(errorChannelName, consumerProperties.getBindingName());
+			}
 		}
 		else {
 			BinderErrorChannel binderErrorChannel = new BinderErrorChannel();
@@ -715,7 +718,6 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 
 			((GenericApplicationContext) getApplicationContext()).registerBean(
 					errorChannelName, SubscribableChannel.class, () -> errorChannel);
-
 			this.subscribeFunctionErrorHandler(errorChannelName, consumerProperties.getBindingName());
 		}
 
