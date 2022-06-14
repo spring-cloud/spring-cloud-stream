@@ -802,7 +802,7 @@ public class KafkaBinderTests extends
 						.isEqualTo("foo.bar".getBytes(StandardCharsets.UTF_8));
 		assertThat(new String((byte[]) receivedMessage.getHeaders()
 				.get(KafkaMessageChannelBinder.X_EXCEPTION_MESSAGE))).startsWith(
-						"Dispatcher failed to deliver Message; nested exception is java.lang.RuntimeException: fail");
+						"Dispatcher failed to deliver Message");
 		assertThat(receivedMessage.getHeaders()
 				.get(KafkaMessageChannelBinder.X_EXCEPTION_STACKTRACE)).isNotNull();
 		binderBindUnbindLatency();
@@ -1150,8 +1150,7 @@ public class KafkaBinderTests extends
 
 			assertThat(((String) receivedMessage.getHeaders()
 					.get(KafkaMessageChannelBinder.X_EXCEPTION_MESSAGE))).startsWith(
-							"Dispatcher failed to deliver Message; nested exception "
-									+ "is java.lang.RuntimeException: fail");
+							"Dispatcher failed to deliver Message");
 			assertThat(receivedMessage.getHeaders()
 					.get(KafkaMessageChannelBinder.X_EXCEPTION_STACKTRACE)).isNotNull();
 			assertThat(receivedMessage.getHeaders()
@@ -1186,16 +1185,11 @@ public class KafkaBinderTests extends
 				assertThat(new String((byte[]) receivedMessage.getHeaders()
 						.get(KafkaMessageChannelBinder.X_EXCEPTION_MESSAGE))).startsWith(
 								"Transaction rollback limit exceeded");
-				assertThat(new String((byte[]) receivedMessage.getHeaders()
-						.get(KafkaMessageChannelBinder.X_EXCEPTION_MESSAGE))).contains(
-								"Dispatcher failed to deliver Message; nested exception "
-										+ "is java.lang.RuntimeException: fail");
 			}
 			else {
 				assertThat(new String((byte[]) receivedMessage.getHeaders()
 						.get(KafkaMessageChannelBinder.X_EXCEPTION_MESSAGE))).startsWith(
-								"Dispatcher failed to deliver Message; nested exception "
-										+ "is java.lang.RuntimeException: fail");
+								"Dispatcher failed to deliver Message");
 			}
 
 			assertThat(receivedMessage.getHeaders()
