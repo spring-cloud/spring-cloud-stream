@@ -18,7 +18,7 @@
 		<spring-cloud-stream.version>4.0.0-SNAPSHOT</spring-cloud-stream.version>
 		<java.version>17</java.version>
 		<spring-cloud-aws.version>2.4.0</spring-cloud-aws.version>
-		<spring-integration-aws.version>3.0.0-SNAPSHOT</spring-integration-aws.version>
+		<spring-integration-aws.version>3.0.0-M1</spring-integration-aws.version>
 		<dynamodb-lock-client.version>1.1.0</dynamodb-lock-client.version>
 		<amazon-kinesis-client.version>1.14.8</amazon-kinesis-client.version>
 		<amazon-kinesis-producer.version>0.14.12</amazon-kinesis-producer.version>
