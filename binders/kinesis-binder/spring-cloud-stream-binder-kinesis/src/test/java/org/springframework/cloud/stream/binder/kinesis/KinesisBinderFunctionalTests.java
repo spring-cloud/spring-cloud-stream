@@ -33,6 +33,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.awspring.cloud.autoconfigure.context.ContextResourceLoaderAutoConfiguration;
 import io.awspring.cloud.autoconfigure.context.ContextStackAutoConfiguration;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -66,6 +67,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 		"spring.cloud.stream.kinesis.binder.autoAddShards = true",
 		"cloud.aws.region.static=eu-west-2" })
 @DirtiesContext
+@Disabled
 public class KinesisBinderFunctionalTests implements LocalstackContainerTest {
 
 	static final String KINESIS_STREAM = "test_stream";
