@@ -287,7 +287,7 @@ public class FunctionBatchingTests {
 		public Function<Message<List<Person>>, Person> func() {
 			return x -> {
 				Object o = x.getPayload().get(2);
-				assertThat(o).isInstanceOf(KafkaNull.class);
+				assertThat(o).isNull();
 				return (Person) x.getPayload().get(0);
 			};
 		}
