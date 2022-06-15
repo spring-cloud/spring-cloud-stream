@@ -47,7 +47,7 @@ public class FunctionBatchingTests {
 	public void testMessageBatchConfiguration() {
 		TestChannelBinderConfiguration.applicationContextRunner(MessageBatchConfiguration.class)
 				.withPropertyValues("spring.jmx.enabled=false",
-						"spring.cloud.stream.function.definition=func",
+						"spring.cloud.stream.function.definition=func2",
 						"spring.cloud.stream.bindings.input.consumer.batch-mode=true")
 				.run(context -> {
 					InputDestination inputDestination = context.getBean(InputDestination.class);
@@ -282,6 +282,15 @@ public class FunctionBatchingTests {
 
 		@Bean
 		public Function<Message<List<Person>>, Person> func() {
+			return x -> {
+				Object o = x.getPayload().get(2);
+				assertThat(o).isNull();
+				return (Person) x.getPayload().get(0);
+			};
+		}
+
+		@Bean
+		public Function<Message<List<Person>>, Person> func2() {
 			return x -> x.getPayload().get(0);
 		}
 
