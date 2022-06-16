@@ -217,7 +217,8 @@ public class KafkaBinderTests extends
 		if (binder == null) {
 			KafkaBinderConfigurationProperties binderConfiguration = createConfigurationProperties();
 			KafkaTopicProvisioner kafkaTopicProvisioner = new KafkaTopicProvisioner(
-					binderConfiguration, new TestKafkaProperties(), null);
+					binderConfiguration, new TestKafkaProperties(), prop -> {
+			});
 			try {
 				kafkaTopicProvisioner.afterPropertiesSet();
 			}
@@ -240,7 +241,8 @@ public class KafkaBinderTests extends
 			DlqPartitionFunction dlqPartitionFunction, DlqDestinationResolver dlqDestinationResolver) {
 
 		KafkaTopicProvisioner provisioningProvider = new KafkaTopicProvisioner(
-				kafkaBinderConfigurationProperties, new TestKafkaProperties(), null);
+				kafkaBinderConfigurationProperties, new TestKafkaProperties(), prop -> {
+		});
 		try {
 			provisioningProvider.afterPropertiesSet();
 		}
@@ -408,7 +410,8 @@ public class KafkaBinderTests extends
 		binderConfiguration.setHeaderMapperBeanName("headerMapper");
 
 		KafkaTopicProvisioner kafkaTopicProvisioner = new KafkaTopicProvisioner(
-				binderConfiguration, new TestKafkaProperties(), null);
+				binderConfiguration, new TestKafkaProperties(), prop -> {
+		});
 		try {
 			kafkaTopicProvisioner.afterPropertiesSet();
 		}
@@ -485,7 +488,8 @@ public class KafkaBinderTests extends
 		KafkaBinderConfigurationProperties binderConfiguration = createConfigurationProperties();
 
 		KafkaTopicProvisioner kafkaTopicProvisioner = new KafkaTopicProvisioner(
-				binderConfiguration, new TestKafkaProperties(), null);
+				binderConfiguration, new TestKafkaProperties(), prop -> {
+		});
 		try {
 			kafkaTopicProvisioner.afterPropertiesSet();
 		}
@@ -3798,7 +3802,8 @@ public class KafkaBinderTests extends
 			binderConfiguration.setHeaderMapperBeanName("headerMapper");
 
 			KafkaTopicProvisioner kafkaTopicProvisioner = new KafkaTopicProvisioner(
-					binderConfiguration, new TestKafkaProperties(), null);
+					binderConfiguration, new TestKafkaProperties(), prop -> {
+			});
 			try {
 				kafkaTopicProvisioner.afterPropertiesSet();
 			}

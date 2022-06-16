@@ -16,6 +16,8 @@
 
 package org.springframework.cloud.stream.binder.kafka.provisioning;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -82,6 +84,7 @@ import org.springframework.util.StringUtils;
  * @author Simon Flandergan
  * @author Oleg Zhurakousky
  * @author Aldo Sinanaj
+ * @author Yi Liu
  */
 public class KafkaTopicProvisioner implements
 		// @checkstyle:off
@@ -112,16 +115,30 @@ public class KafkaTopicProvisioner implements
 			KafkaBinderConfigurationProperties kafkaBinderConfigurationProperties,
 			KafkaProperties kafkaProperties,
 			AdminClientConfigCustomizer adminClientConfigCustomizer) {
+		this(kafkaBinderConfigurationProperties, kafkaProperties, adminClientConfigCustomizer != null ?
+				Arrays.asList(adminClientConfigCustomizer) : new ArrayList<>());
+	}
+
+	/**
+	 * Create an instance.
+	 *
+	 * @param kafkaBinderConfigurationProperties the binder configuration properties.
+	 * @param kafkaProperties the boot Kafka properties used to build the
+	 * @param adminClientConfigCustomizers to customize {@link AdminClient}.
+	 * {@link AdminClient}.
+	 */
+	public KafkaTopicProvisioner(
+		KafkaBinderConfigurationProperties kafkaBinderConfigurationProperties,
+		KafkaProperties kafkaProperties,
+		List<AdminClientConfigCustomizer> adminClientConfigCustomizers) {
 		Assert.isTrue(kafkaProperties != null, "KafkaProperties cannot be null");
 		this.configurationProperties = kafkaBinderConfigurationProperties;
 		this.adminClientProperties = kafkaProperties.buildAdminProperties();
 		normalalizeBootPropsWithBinder(this.adminClientProperties, kafkaProperties,
-				kafkaBinderConfigurationProperties);
-		// If the application provides an AdminConfig customizer
-		// and overrides properties, that takes precedence.
-		if (adminClientConfigCustomizer != null) {
-			adminClientConfigCustomizer.configure(this.adminClientProperties);
-		}
+			kafkaBinderConfigurationProperties);
+		// If the application provides AdminConfig customizers
+		// and overrides properties, those take precedence.
+		adminClientConfigCustomizers.forEach(customizer -> customizer.configure(this.adminClientProperties));
 	}
 
 	/**
