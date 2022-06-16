@@ -166,7 +166,7 @@ That sounds like a lot of complex things, but in reality, it boils down to these
 @Bean
 	public ListenerContainerCustomizer<AbstractMessageListenerContainer<byte[], byte[]>> customizer(DefaultErrorHandler errorHandler) {
 		return (container, dest, group) -> {
-			container.setErrorHandler(errorHandler);
+			container.setCommonErrorHandler(errorHandler);
 		};
 	}
 ```
@@ -862,4 +862,3 @@ spring.cloud.stream.kafka.bindings.foo-in-0.consumer.configuration.client.id=${c
 ```
 
 See this https://github.com/spring-cloud/spring-cloud-stream-binder-kafka/issues/1139[GitHub issue] for more details.
-
