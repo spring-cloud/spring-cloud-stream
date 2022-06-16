@@ -68,7 +68,8 @@ public class ReactorKafkaBinderTests {
 		kafkaProperties.setBootstrapServers(
 				Collections.singletonList(EmbeddedKafkaCondition.getBroker().getBrokersAsString()));
 		KafkaBinderConfigurationProperties binderProps = new KafkaBinderConfigurationProperties(kafkaProperties);
-		KafkaTopicProvisioner provisioner = new KafkaTopicProvisioner(binderProps, kafkaProperties, null);
+		KafkaTopicProvisioner provisioner = new KafkaTopicProvisioner(binderProps, kafkaProperties, prop -> {
+		});
 		ReactorKafkaBinder binder = new ReactorKafkaBinder(binderProps, provisioner);
 		binder.setApplicationContext(mock(GenericApplicationContext.class));
 
@@ -120,7 +121,8 @@ public class ReactorKafkaBinderTests {
 		kafkaProperties.setBootstrapServers(
 				Collections.singletonList(EmbeddedKafkaCondition.getBroker().getBrokersAsString()));
 		KafkaBinderConfigurationProperties binderProps = new KafkaBinderConfigurationProperties(kafkaProperties);
-		KafkaTopicProvisioner provisioner = new KafkaTopicProvisioner(binderProps, kafkaProperties, null);
+		KafkaTopicProvisioner provisioner = new KafkaTopicProvisioner(binderProps, kafkaProperties, prop -> {
+		});
 		ReactorKafkaBinder binder = new ReactorKafkaBinder(binderProps, provisioner);
 		binder.setApplicationContext(mock(GenericApplicationContext.class));
 
@@ -188,7 +190,8 @@ public class ReactorKafkaBinderTests {
 		kafkaProperties.setBootstrapServers(
 				Collections.singletonList(EmbeddedKafkaCondition.getBroker().getBrokersAsString()));
 		KafkaBinderConfigurationProperties binderProps = new KafkaBinderConfigurationProperties(kafkaProperties);
-		KafkaTopicProvisioner provisioner = new KafkaTopicProvisioner(binderProps, kafkaProperties, null);
+		KafkaTopicProvisioner provisioner = new KafkaTopicProvisioner(binderProps, kafkaProperties, prop -> {
+		});
 		provisioner.setMetadataRetryOperations(new RetryTemplate());
 		ReactorKafkaBinder binder = new ReactorKafkaBinder(binderProps, provisioner);
 		binder.setApplicationContext(new GenericApplicationContext());
