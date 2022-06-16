@@ -17,6 +17,8 @@
 package org.springframework.cloud.stream.binder.kafka;
 
 import java.lang.reflect.Field;
+import java.util.List;
+import java.util.Map;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -24,12 +26,22 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.runner.ApplicationContextRunner;
+import org.springframework.cloud.stream.binder.kafka.config.ClientFactoryCustomizer;
 import org.springframework.cloud.stream.binder.kafka.config.KafkaBinderConfiguration;
+import org.springframework.cloud.stream.binder.kafka.provisioning.AdminClientConfigCustomizer;
+import org.springframework.cloud.stream.binder.kafka.provisioning.KafkaTopicProvisioner;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.kafka.core.ProducerFactory;
 import org.springframework.kafka.support.ProducerListener;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.util.ReflectionUtils;
 
+import static org.apache.kafka.clients.admin.AdminClientConfig.SECURITY_PROTOCOL_CONFIG;
+import static org.apache.kafka.common.config.SaslConfigs.SASL_MECHANISM;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.util.ReflectionUtils.getField;
 
 /**
  * @author Ilayaperumal Gopinathan
@@ -42,6 +54,9 @@ public class KafkaBinderConfigurationTest {
 	@Autowired
 	private KafkaMessageChannelBinder kafkaMessageChannelBinder;
 
+	private final ApplicationContextRunner contextRunner = new ApplicationContextRunner()
+		.withUserConfiguration(KafkaBinderConfiguration.class, KafkaAutoConfiguration.class);
+
 	@Test
 	public void testKafkaBinderProducerListener() {
 		assertThat(this.kafkaMessageChannelBinder).isNotNull();
@@ -52,6 +67,83 @@ public class KafkaBinderConfigurationTest {
 		ProducerListener producerListener = (ProducerListener) ReflectionUtils
 				.getField(producerListenerField, this.kafkaMessageChannelBinder);
 		assertThat(producerListener).isNotNull();
+	}
+
+	@Test
+	public void testMultipleClientFactoryCustomizers() {
+		contextRunner.withUserConfiguration(ClientFactoryCustomizerConfigs.class)
+					.run(context -> {
+						assertThat(context).hasSingleBean(KafkaMessageChannelBinder.class);
+						KafkaMessageChannelBinder kafkaMessageChannelBinder =
+							context.getBean(KafkaMessageChannelBinder.class);
+						Map<String, ClientFactoryCustomizer> customizers =
+							context.getBeansOfType(ClientFactoryCustomizer.class);
+						assertThat(customizers).hasSize(2);
+						Field clientFactoryCustomizersField = ReflectionUtils.findField(
+							KafkaMessageChannelBinder.class, "clientFactoryCustomizers",
+							List.class);
+						ReflectionUtils.makeAccessible(clientFactoryCustomizersField);
+						List<ClientFactoryCustomizer> clientFactoryCustomizers =
+							(List<ClientFactoryCustomizer>) getField(clientFactoryCustomizersField, kafkaMessageChannelBinder);
+						assertThat(clientFactoryCustomizers).hasSize(2);
+					});
+	}
+
+	@Test
+	public void testMultipleAdminClientConfigCustomizers() {
+		contextRunner.withUserConfiguration(AdminClientConfigCustomizerConfigs.class)
+					.run(context -> {
+						assertThat(context).hasSingleBean(KafkaTopicProvisioner.class);
+						KafkaTopicProvisioner kafkaTopicProvisioner = context.getBean(KafkaTopicProvisioner.class);
+						Map<String, AdminClientConfigCustomizer> customizers =
+							context.getBeansOfType(AdminClientConfigCustomizer.class);
+						assertThat(customizers).hasSize(2);
+						Field adminClientPropertiesField = ReflectionUtils.findField(
+							KafkaTopicProvisioner.class, "adminClientProperties", Map.class);
+						ReflectionUtils.makeAccessible(adminClientPropertiesField);
+						Map<String, Object> adminClientProperties = (Map<String, Object>) ReflectionUtils.
+							getField(adminClientPropertiesField, kafkaTopicProvisioner);
+						assertThat(adminClientProperties.get(SECURITY_PROTOCOL_CONFIG)).isEqualTo("SASL_SSL");
+						assertThat(adminClientProperties.get(SASL_MECHANISM)).isEqualTo("OAUTHBEARER");
+					});
+	}
+
+	@Configuration
+	static class ClientFactoryCustomizerConfigs {
+
+		@Bean
+		ClientFactoryCustomizer testClientFactoryCustomizerOne() {
+			return new ClientFactoryCustomizer() {
+				@Override
+				public void configure(ProducerFactory<?, ?> pf) {
+					ClientFactoryCustomizer.super.configure(pf);
+				}
+			};
+		}
+
+		@Bean
+		ClientFactoryCustomizer testClientFactoryCustomizerTwo() {
+			return new ClientFactoryCustomizer() {
+				@Override
+				public void configure(ProducerFactory<?, ?> pf) {
+					ClientFactoryCustomizer.super.configure(pf);
+				}
+			};
+		}
+	}
+
+	@Configuration
+	static class AdminClientConfigCustomizerConfigs {
+
+		@Bean
+		AdminClientConfigCustomizer testAdminClientConfigCustomizerOne() {
+			return prop -> prop.put(SECURITY_PROTOCOL_CONFIG, "SASL_SSL");
+		}
+
+		@Bean
+		AdminClientConfigCustomizer testAdminClientConfigCustomizerTwo() {
+			return prop -> prop.put(SASL_MECHANISM, "OAUTHBEARER");
+		}
 	}
 
 }
