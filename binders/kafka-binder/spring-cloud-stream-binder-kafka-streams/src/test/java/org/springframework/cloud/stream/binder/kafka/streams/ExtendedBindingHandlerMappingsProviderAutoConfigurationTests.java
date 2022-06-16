@@ -32,6 +32,7 @@ class ExtendedBindingHandlerMappingsProviderAutoConfigurationTests {
 	private final ApplicationContextRunner contextRunner = new ApplicationContextRunner()
 			.withUserConfiguration(KafkaStreamsTestApp.class)
 			.withPropertyValues(
+					"spring.cloud.function.ineligible-definitions: sendToDlqAndContinue",
 					"spring.cloud.stream.kafka.streams.default.consumer.application-id: testApp123",
 					"spring.cloud.stream.kafka.streams.default.consumer.consumed-as: default-consumer",
 					"spring.cloud.stream.kafka.streams.default.consumer.materialized-as: default-materializer",
