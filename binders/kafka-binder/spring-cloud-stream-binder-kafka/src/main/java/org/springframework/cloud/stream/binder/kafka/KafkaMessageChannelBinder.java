@@ -159,6 +159,7 @@ import org.springframework.util.concurrent.ListenableFutureCallback;
  * @author Doug Saus
  * @author Lukasz Kaminski
  * @author Taras Danylchuk
+ * @author Yi Liu
  */
 public class KafkaMessageChannelBinder extends
 		// @checkstyle:off
@@ -231,11 +232,11 @@ public class KafkaMessageChannelBinder extends
 
 	private KafkaExtendedBindingProperties extendedBindingProperties = new KafkaExtendedBindingProperties();
 
-	private ClientFactoryCustomizer clientFactoryCustomizer;
+	private final List<ClientFactoryCustomizer> clientFactoryCustomizers = new ArrayList<>();
 
-	private ProducerConfigCustomizer producerConfigCustomizer;
+	private final List<ProducerConfigCustomizer> producerConfigCustomizers = new ArrayList<>();
 
-	private ConsumerConfigCustomizer consumerConfigCustomizer;
+	private final List<ConsumerConfigCustomizer> consumerConfigCustomizers = new ArrayList<>();
 
 	private final List<AbstractMessageListenerContainer<?, ?>> kafkaMessageListenerContainers = new ArrayList<>();
 
@@ -313,8 +314,22 @@ public class KafkaMessageChannelBinder extends
 		this.producerListener = producerListener;
 	}
 
+	/**
+	 * Set a {@link ClientFactoryCustomizer} for the {@link ProducerFactory} and {@link ConsumerFactory} created inside
+	 * the binder.
+	 *
+	 * @param customizer the client factory customizer
+	 * @deprecated in favor of {@link #addClientFactoryCustomizer(ClientFactoryCustomizer)}.
+	 */
+	@Deprecated
 	public void setClientFactoryCustomizer(ClientFactoryCustomizer customizer) {
-		this.clientFactoryCustomizer = customizer;
+		addClientFactoryCustomizer(customizer);
+	}
+
+	public void addClientFactoryCustomizer(ClientFactoryCustomizer customizer) {
+		if (customizer != null) {
+			this.clientFactoryCustomizers.add(customizer);
+		}
 	}
 
 	public void setRebalanceListener(KafkaBindingRebalanceListener rebalanceListener) {
@@ -568,9 +583,8 @@ public class KafkaMessageChannelBinder extends
 		if (!ObjectUtils.isEmpty(kafkaProducerProperties.getConfiguration())) {
 			props.putAll(kafkaProducerProperties.getConfiguration());
 		}
-		if (this.producerConfigCustomizer != null) {
-			this.producerConfigCustomizer.configure(props, producerProperties.getBindingName(), destination);
-		}
+		this.producerConfigCustomizers
+				.forEach(customizer -> customizer.configure(props, producerProperties.getBindingName(), destination));
 		DefaultKafkaProducerFactory<byte[], byte[]> producerFactory = new DefaultKafkaProducerFactory<>(
 				props);
 		if (transactionIdPrefix != null) {
@@ -580,9 +594,7 @@ public class KafkaMessageChannelBinder extends
 			producerFactory.setPhysicalCloseTimeout(kafkaProducerProperties.getCloseTimeout());
 		}
 		producerFactory.setBeanName(beanName);
-		if (this.clientFactoryCustomizer != null) {
-			this.clientFactoryCustomizer.configure(producerFactory);
-		}
+		this.clientFactoryCustomizers.forEach(customizer -> customizer.configure(producerFactory));
 		return producerFactory;
 	}
 
@@ -1452,14 +1464,11 @@ public class KafkaMessageChannelBinder extends
 					consumerProperties.getExtension().getStartOffset().name());
 		}
 
-		if (this.consumerConfigCustomizer != null) {
-			this.consumerConfigCustomizer.configure(props, consumerProperties.getBindingName(), destination);
-		}
+		this.consumerConfigCustomizers
+			.forEach(customizer -> customizer.configure(props, consumerProperties.getBindingName(), destination));
 		DefaultKafkaConsumerFactory<Object, Object> factory = new DefaultKafkaConsumerFactory<>(props);
 		factory.setBeanName(beanName);
-		if (this.clientFactoryCustomizer != null) {
-			this.clientFactoryCustomizer.configure(factory);
-		}
+		this.clientFactoryCustomizers.forEach(customizer -> customizer.configure(factory));
 		return factory;
 	}
 
@@ -1506,12 +1515,36 @@ public class KafkaMessageChannelBinder extends
 		return stringWriter.getBuffer().toString();
 	}
 
+	/**
+	 * Set a {@link ConsumerConfigCustomizer} for the {@link ConsumerFactory} created inside the binder.
+	 * @param consumerConfigCustomizer the consumer config customizer
+	 * @deprecated in favor of {@link #addConsumerConfigCustomizer(ConsumerConfigCustomizer)}.
+	 */
+	@Deprecated
 	public void setConsumerConfigCustomizer(ConsumerConfigCustomizer consumerConfigCustomizer) {
-		this.consumerConfigCustomizer = consumerConfigCustomizer;
+		addConsumerConfigCustomizer(consumerConfigCustomizer);
 	}
 
+	public void addConsumerConfigCustomizer(ConsumerConfigCustomizer consumerConfigCustomizer) {
+		if (consumerConfigCustomizer != null) {
+			this.consumerConfigCustomizers.add(consumerConfigCustomizer);
+		}
+	}
+
+	/**
+	 * Set a {@link ProducerConfigCustomizer} for the {@link ProducerFactory} created inside the binder.
+	 * @param producerConfigCustomizer the producer config customizer
+	 * @deprecated in favor of {@link #addProducerConfigCustomizer(ProducerConfigCustomizer)}.
+	 */
+	@Deprecated
 	public void setProducerConfigCustomizer(ProducerConfigCustomizer producerConfigCustomizer) {
-		this.producerConfigCustomizer = producerConfigCustomizer;
+		addProducerConfigCustomizer(producerConfigCustomizer);
+	}
+
+	public void addProducerConfigCustomizer(ProducerConfigCustomizer producerConfigCustomizer) {
+		if (producerConfigCustomizer != null) {
+			this.producerConfigCustomizers.add(producerConfigCustomizer);
+		}
 	}
 
 	List<AbstractMessageListenerContainer<?, ?>> getKafkaMessageListenerContainers() {
