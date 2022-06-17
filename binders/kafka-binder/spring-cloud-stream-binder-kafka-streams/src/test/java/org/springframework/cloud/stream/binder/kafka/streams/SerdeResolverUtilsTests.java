@@ -55,7 +55,8 @@ class SerdeResolverUtilsTests {
 	@Nested
 	class ResolveForType {
 
-		private ApplicationContextRunner contextRunner = new ApplicationContextRunner();
+		private ApplicationContextRunner contextRunner = new ApplicationContextRunner()
+				.withPropertyValues("spring.cloud.function.ineligible-definitions: sendToDlqAndContinue");
 
 		private Serde<?> fallback = mock(Serde.class);
 
@@ -73,7 +74,6 @@ class SerdeResolverUtilsTests {
 		void returnsSerdeBeanForMatchingType() {
 			this.contextRunner
 				.withConfiguration(AutoConfigurations.of(SerdeResolverSimpleTestApp.class))
-				.withPropertyValues("spring.cloud.function.ineligible-definitions: sendToDlqAndContinue")
 				.run((context) -> {
 					ResolvableType fooType = ResolvableType.forClass(Foo.class);
 					assertThat(SerdeResolverUtils.resolveForType(context, fooType, fallback)).isInstanceOf(FooSerde.class);
@@ -162,9 +162,12 @@ class SerdeResolverUtilsTests {
 	@Nested
 	class BeanNamesForMatchingSerdes {
 
+		private ApplicationContextRunner contextRunner = new ApplicationContextRunner()
+				.withPropertyValues("spring.cloud.function.ineligible-definitions: sendToDlqAndContinue");
+
 		@Test
 		void returnsNoSerdesForWildcardType() {
-			new ApplicationContextRunner().withUserConfiguration(SerdeResolverSimpleTestApp.class)
+			this.contextRunner.withUserConfiguration(SerdeResolverSimpleTestApp.class)
 				.run((context) -> {
 					ResolvableType wildcardType = ResolvableType.forClass(Serde.class).getGeneric(0);
 					assertThat(SerdeResolverUtils.beanNamesForMatchingSerdes(context, wildcardType)).isEmpty();
@@ -203,8 +206,7 @@ class SerdeResolverUtilsTests {
 			ResolvableType geWildcard = ResolvableType.forType(new ParameterizedTypeReference<GenericEvent<?>>() { });
 			ResolvableType geRaw = ResolvableType.forRawClass(GenericEvent.class);
 
-			new ApplicationContextRunner().withUserConfiguration(SerdeResolverSimpleTestApp.class)
-				.withPropertyValues("spring.cloud.function.ineligible-definitions: sendToDlqAndContinue")
+			this.contextRunner.withUserConfiguration(SerdeResolverSimpleTestApp.class)
 				.run((context) -> {
 
 				assertThat(SerdeResolverUtils.beanNamesForMatchingSerdes(context, geDate))
@@ -275,8 +277,7 @@ class SerdeResolverUtilsTests {
 			ResolvableType geWildcard = ResolvableType.forType(new ParameterizedTypeReference<GenericEvent<?>>() { });
 			ResolvableType geRaw = ResolvableType.forRawClass(GenericEvent.class);
 
-			new ApplicationContextRunner().withUserConfiguration(SerdeResolverComplexTestApp.class)
-				.withPropertyValues("spring.cloud.function.ineligible-definitions: sendToDlqAndContinue")
+			this.contextRunner.withUserConfiguration(SerdeResolverComplexTestApp.class)
 				.run((context) -> {
 
 				assertThat(SerdeResolverUtils.beanNamesForMatchingSerdes(context, geFooDate))
