@@ -16,8 +16,7 @@
 
 package org.springframework.cloud.stream.binder.kafka.streams;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Collections;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.env.EnvironmentPostProcessor;
@@ -25,22 +24,30 @@ import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.MapPropertySource;
 
 /**
- * {@link EnvironmentPostProcessor} to exclude the SendToDlqAndContinue BiFunction
- * in core Spring Cloud Function by adding it to the ineligible function definitions.
+ * {@link EnvironmentPostProcessor} to ensure the {@link SendToDlqAndContinue sendToDlqAndContinue} BiFunction
+ * is excluded in core Spring Cloud Function by adding it to the ineligible function definitions.
  *
  * @author Soby Chacko
+ * @author Chris Bono
  */
 public class KafkaStreamsBinderEnvironmentPostProcessor implements EnvironmentPostProcessor {
 
-	@Override
-	public void postProcessEnvironment(ConfigurableEnvironment environment,
-									SpringApplication application) {
-		Map<String, Object> kafkaStreamsBinderIneligibleDefns = new HashMap<>();
-		kafkaStreamsBinderIneligibleDefns.put("spring.cloud.function.ineligible-definitions",
-			"sendToDlqAndContinue");
+	/**
+	 * The bean name of the SendToDlqAndContinue function - must remain in sync w/
+	 * {@link KafkaStreamsBinderSupportAutoConfiguration#sendToDlqAndContinue()}.
+	 */
+	private static final String SEND_TO_DLQ_AND_CONTINUE_BEAN_NAME = "sendToDlqAndContinue";
 
-		environment.getPropertySources().addLast(new MapPropertySource(
-			"KAFKA_STREAMS_BINDER_INELIGIBLE_DEFINITIONS", kafkaStreamsBinderIneligibleDefns));
+	@Override
+	public void postProcessEnvironment(ConfigurableEnvironment environment, SpringApplication application) {
+		String ineligibleDefinitionsPropertyKey = "spring.cloud.function.ineligible-definitions";
+		String ineligibleDefinitions = SEND_TO_DLQ_AND_CONTINUE_BEAN_NAME;
+		if (environment.getProperty(ineligibleDefinitionsPropertyKey) != null) {
+			ineligibleDefinitions += ("," + environment.getProperty(ineligibleDefinitionsPropertyKey));
+		}
+		environment.getPropertySources().addFirst(new MapPropertySource(
+				"kafkaStreamsBinderIneligibleDefinitions",
+				Collections.singletonMap(ineligibleDefinitionsPropertyKey, ineligibleDefinitions)));
 	}
 
 }
