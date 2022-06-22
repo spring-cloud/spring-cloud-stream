@@ -163,16 +163,20 @@ public class KafkaStreamsBinderHealthIndicator extends AbstractHealthIndicator i
 
 		if (isRunningResult) {
 			final Set<ThreadMetadata> threadMetadata = kafkaStreams.metadataForLocalThreads();
+			final Map<String, Object> threadDetails = new HashMap();
 			for (ThreadMetadata metadata : threadMetadata) {
-				perAppdIdDetails.put("threadName", metadata.threadName());
-				perAppdIdDetails.put("threadState", metadata.threadState());
-				perAppdIdDetails.put("adminClientId", metadata.adminClientId());
-				perAppdIdDetails.put("consumerClientId", metadata.consumerClientId());
-				perAppdIdDetails.put("restoreConsumerClientId", metadata.restoreConsumerClientId());
-				perAppdIdDetails.put("producerClientIds", metadata.producerClientIds());
-				perAppdIdDetails.put("activeTasks", taskDetails(metadata.activeTasks()));
-				perAppdIdDetails.put("standbyTasks", taskDetails(metadata.standbyTasks()));
+				final Map<String, Object> threadDetail = new HashMap();
+				threadDetail.put("threadName", metadata.threadName());
+				threadDetail.put("threadState", metadata.threadState());
+				threadDetail.put("adminClientId", metadata.adminClientId());
+				threadDetail.put("consumerClientId", metadata.consumerClientId());
+				threadDetail.put("restoreConsumerClientId", metadata.restoreConsumerClientId());
+				threadDetail.put("producerClientIds", metadata.producerClientIds());
+				threadDetail.put("activeTasks", taskDetails(metadata.activeTasks()));
+				threadDetail.put("standbyTasks", taskDetails(metadata.standbyTasks()));
+				threadDetails.put(metadata.threadName(),threadDetail);
 			}
+			perAppdIdDetails.put("threadDetails",threadDetails);
 			final StreamsBuilderFactoryBean streamsBuilderFactoryBean = this.kafkaStreamsRegistry.streamBuilderFactoryBean(kafkaStreams);
 			final String applicationId = (String) streamsBuilderFactoryBean.getStreamsConfiguration().get(StreamsConfig.APPLICATION_ID_CONFIG);
 			details.put(applicationId, perAppdIdDetails);
