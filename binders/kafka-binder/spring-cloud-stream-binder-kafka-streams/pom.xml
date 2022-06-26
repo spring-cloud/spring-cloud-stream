@@ -73,6 +73,11 @@
 			<artifactId>kafka_2.13</artifactId>
 			<classifier>test</classifier>
 		</dependency>
+		<dependency>
+			<groupId>org.awaitility</groupId>
+			<artifactId>awaitility</artifactId>
+			<scope>test</scope>
+		</dependency>
 	</dependencies>
 
 </project>
