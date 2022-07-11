@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2021 the original author or authors.
+ * Copyright 2019-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,13 +65,13 @@ public class KafkaStreamsFunctionBeanPostProcessor implements InitializingBean, 
 
 	private ConfigurableListableBeanFactory beanFactory;
 	private boolean onlySingleFunction;
-	private Map<String, ResolvableType> resolvableTypeMap = new TreeMap<>();
-	private Map<String, Method> methods = new TreeMap<>();
+	private final Map<String, ResolvableType> resolvableTypeMap = new TreeMap<>();
+	private final Map<String, Method> methods = new TreeMap<>();
 
 	private final StreamFunctionProperties streamFunctionProperties;
 
-	private Map<String, ResolvableType> kafkaStreamsOnlyResolvableTypes = new HashMap<>();
-	private Map<String, Method> kafakStreamsOnlyMethods = new HashMap<>();
+	private final Map<String, ResolvableType> kafkaStreamsOnlyResolvableTypes = new HashMap<>();
+	private final Map<String, Method> kafakStreamsOnlyMethods = new HashMap<>();
 
 	public KafkaStreamsFunctionBeanPostProcessor(StreamFunctionProperties streamFunctionProperties) {
 		this.streamFunctionProperties = streamFunctionProperties;
@@ -177,7 +177,7 @@ public class KafkaStreamsFunctionBeanPostProcessor implements InitializingBean, 
 		try {
 			Method[] methods = classObj.getMethods();
 			Optional<Method> functionalBeanMethods = Arrays.stream(methods).filter(m -> m.getName().equals(key)).findFirst();
-			if (!functionalBeanMethods.isPresent()) {
+			if (functionalBeanMethods.isEmpty()) {
 				final BeanDefinition beanDefinition = this.beanFactory.getBeanDefinition(key);
 				final String factoryMethodName = beanDefinition.getFactoryMethodName();
 				functionalBeanMethods = Arrays.stream(methods).filter(m -> m.getName().equals(factoryMethodName)).findFirst();

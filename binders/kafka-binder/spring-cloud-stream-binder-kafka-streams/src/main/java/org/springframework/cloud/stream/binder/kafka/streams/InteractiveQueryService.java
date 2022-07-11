@@ -169,7 +169,7 @@ public class InteractiveQueryService {
 			String applicationServer = configuration.get("application.server");
 			String[] splits = StringUtils.split(applicationServer, ":");
 
-			return new HostInfo(splits[0], Integer.valueOf(splits[1]));
+			return new HostInfo(splits[0], Integer.parseInt(splits[1]));
 		}
 		return null;
 	}

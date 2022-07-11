@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2021 the original author or authors.
+ * Copyright 2017-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -222,8 +222,7 @@ public class KafkaStreamsBinderSupportAutoConfiguration {
 							kafkaConnectionString);
 				}
 			}
-			else if (bootstrapServerConfig instanceof List) {
-				List bootStrapCollection = (List) bootstrapServerConfig;
+			else if (bootstrapServerConfig instanceof List bootStrapCollection) {
 				if (bootStrapCollection.size() == 1 && bootStrapCollection.get(0).equals("localhost:9092")) {
 					properties.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG,
 							kafkaConnectionString);

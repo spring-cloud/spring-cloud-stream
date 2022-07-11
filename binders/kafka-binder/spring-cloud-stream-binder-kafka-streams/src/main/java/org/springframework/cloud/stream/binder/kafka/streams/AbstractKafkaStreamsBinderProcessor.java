@@ -129,16 +129,10 @@ public abstract class AbstractKafkaStreamsBinderProcessor implements Application
 				.getStartOffset();
 		Topology.AutoOffsetReset autoOffsetReset = null;
 		if (startOffset != null) {
-			switch (startOffset) {
-				case earliest:
-					autoOffsetReset = Topology.AutoOffsetReset.EARLIEST;
-					break;
-				case latest:
-					autoOffsetReset = Topology.AutoOffsetReset.LATEST;
-					break;
-				default:
-					break;
-			}
+			autoOffsetReset = switch (startOffset) {
+				case earliest -> Topology.AutoOffsetReset.EARLIEST;
+				case latest -> Topology.AutoOffsetReset.LATEST;
+			};
 		}
 		if (extendedConsumerProperties.isResetOffsets()) {
 			AbstractKafkaStreamsBinderProcessor.LOG.warn("Detected resetOffsets configured on binding "
@@ -221,11 +215,11 @@ public abstract class AbstractKafkaStreamsBinderProcessor implements Application
 
 		final MutablePropertySources propertySources = environment.getPropertySources();
 
-		if (!StringUtils.isEmpty(bindingProperties.getBinder())) {
+		if (StringUtils.hasText(bindingProperties.getBinder())) {
 			final KafkaStreamsBinderConfigurationProperties multiBinderKafkaStreamsBinderConfigurationProperties =
 					applicationContext.getBean(bindingProperties.getBinder() + "-KafkaStreamsBinderConfigurationProperties", KafkaStreamsBinderConfigurationProperties.class);
 			String connectionString = multiBinderKafkaStreamsBinderConfigurationProperties.getKafkaConnectionString();
-			if (StringUtils.isEmpty(connectionString)) {
+			if (!StringUtils.hasText(connectionString)) {
 				connectionString = (String) propertySources.get(bindingProperties.getBinder() + "-kafkaStreamsBinderEnv").getProperty("spring.cloud.stream.kafka.binder.brokers");
 			}
 
@@ -587,7 +581,10 @@ public abstract class AbstractKafkaStreamsBinderProcessor implements Application
 			// Processor to retrieve the header value.
 			stream.process(() -> eventTypeProcessor(kafkaStreamsConsumerProperties, matched, topicObject, headersObject));
 			// Branching based on event type match.
-			final KStream<?, ?>[] branch = stream.branch((key, value) -> matched.getAndSet(false));
+			final Map<String, ? extends KStream<?, ?>> stringKStreamMap = stream.split()
+				.branch((key, value) -> matched.getAndSet(false))
+				.noDefaultBranch();
+			final KStream<?, ?>[] branch = stringKStreamMap.values().toArray(new KStream[0]);
 			// Deserialize if we have a branch from above.
 			final KStream<?, Object> deserializedKStream = branch[0].mapValues(value -> valueSerde.deserializer().deserialize(
 					topicObject.get(), headersObject.get(), ((Bytes) value).get()));
@@ -600,7 +597,7 @@ public abstract class AbstractKafkaStreamsBinderProcessor implements Application
 	private <K, V> Consumed<K, V> getConsumed(KafkaStreamsConsumerProperties kafkaStreamsConsumerProperties,
 			Serde<K> keySerde, Serde<V> valueSerde, Topology.AutoOffsetReset autoOffsetReset) {
 		TimestampExtractor timestampExtractor = null;
-		if (!StringUtils.isEmpty(kafkaStreamsConsumerProperties.getTimestampExtractorBeanName())) {
+		if (StringUtils.hasText(kafkaStreamsConsumerProperties.getTimestampExtractorBeanName())) {
 			timestampExtractor = applicationContext.getBean(kafkaStreamsConsumerProperties.getTimestampExtractorBeanName(),
 					TimestampExtractor.class);
 		}

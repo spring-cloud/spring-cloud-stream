@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2021 the original author or authors.
+ * Copyright 2017-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -244,7 +244,7 @@ class KStreamBinder extends
 			produced.withName(properties.getProducedAs());
 		}
 		StreamPartitioner streamPartitioner = null;
-		if (!StringUtils.isEmpty(properties.getStreamPartitionerBeanName())) {
+		if (StringUtils.hasText(properties.getStreamPartitionerBeanName())) {
 			streamPartitioner = getApplicationContext().getBean(properties.getStreamPartitionerBeanName(),
 					StreamPartitioner.class);
 		}

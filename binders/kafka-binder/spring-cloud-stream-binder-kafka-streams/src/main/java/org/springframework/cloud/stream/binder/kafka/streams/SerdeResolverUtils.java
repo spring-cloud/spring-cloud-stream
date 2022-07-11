@@ -215,8 +215,8 @@ abstract class SerdeResolverUtils {
 	 * Private internal class used strictly to 'remember' a score for a serde and use it for sorting later.
 	 */
 	private static class SerdeWithSpecificityScore implements Comparable<SerdeWithSpecificityScore> {
-		private Integer score;
-		private String serdeBeanName;
+		private final Integer score;
+		private final String serdeBeanName;
 
 		SerdeWithSpecificityScore(Integer score, String serdeBeanName) {
 			this.score = Objects.requireNonNull(score);

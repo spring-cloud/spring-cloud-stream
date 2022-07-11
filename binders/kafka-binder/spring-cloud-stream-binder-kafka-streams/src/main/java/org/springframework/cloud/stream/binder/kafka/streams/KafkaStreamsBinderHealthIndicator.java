@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2021 the original author or authors.
+ * Copyright 2019-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -163,9 +163,9 @@ public class KafkaStreamsBinderHealthIndicator extends AbstractHealthIndicator i
 
 		if (isRunningResult) {
 			final Set<ThreadMetadata> threadMetadata = kafkaStreams.metadataForLocalThreads();
-			final Map<String, Object> threadDetails = new HashMap();
+			final Map<String, Object> threadDetails = new HashMap<>();
 			for (ThreadMetadata metadata : threadMetadata) {
-				final Map<String, Object> threadDetail = new HashMap();
+				final Map<String, Object> threadDetail = new HashMap<>();
 				threadDetail.put("threadName", metadata.threadName());
 				threadDetail.put("threadState", metadata.threadState());
 				threadDetail.put("adminClientId", metadata.adminClientId());

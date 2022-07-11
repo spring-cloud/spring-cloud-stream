@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2019 the original author or authors.
+ * Copyright 2019-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ public class EncodingDecodingBindAdviceHandler implements ConfigurationPropertie
 	private boolean decodingSettingProvided;
 
 	public boolean isDecodingSettingProvided() {
-		return decodingSettingProvided;
+		return this.decodingSettingProvided;
 	}
 
 	public boolean isEncodingSettingProvided() {
@@ -46,7 +46,7 @@ public class EncodingDecodingBindAdviceHandler implements ConfigurationPropertie
 
 	@Override
 	public BindHandler apply(BindHandler bindHandler) {
-		BindHandler handler = new AbstractBindHandler(bindHandler) {
+		return new AbstractBindHandler(bindHandler) {
 			@Override
 			public <T> Bindable<T> onStart(ConfigurationPropertyName name,
 										Bindable<T> target, BindContext context) {
@@ -67,6 +67,5 @@ public class EncodingDecodingBindAdviceHandler implements ConfigurationPropertie
 				return bindHandler.onStart(name, target, context);
 			}
 		};
-		return handler;
 	}
 }

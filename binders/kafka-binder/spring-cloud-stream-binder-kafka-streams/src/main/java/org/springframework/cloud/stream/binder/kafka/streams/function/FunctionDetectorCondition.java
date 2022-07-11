@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2021 the original author or authors.
+ * Copyright 2019-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -96,7 +96,7 @@ public class FunctionDetectorCondition extends SpringBootCondition {
 				Method[] methods = classObj.getMethods();
 				Optional<Method> kafkaStreamMethod = Arrays.stream(methods).filter(m -> m.getName().equals(key)).findFirst();
 				// check if the bean name is overridden.
-				if (!kafkaStreamMethod.isPresent()) {
+				if (kafkaStreamMethod.isEmpty()) {
 					final BeanDefinition beanDefinition = context.getBeanFactory().getBeanDefinition(key);
 					final String factoryMethodName = beanDefinition.getFactoryMethodName();
 					kafkaStreamMethod = Arrays.stream(methods).filter(m -> m.getName().equals(factoryMethodName)).findFirst();
