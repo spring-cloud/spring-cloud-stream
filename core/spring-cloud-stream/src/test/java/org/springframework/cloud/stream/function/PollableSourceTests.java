@@ -16,6 +16,8 @@
 
 package org.springframework.cloud.stream.function;
 
+import java.time.Duration;
+
 import org.junit.jupiter.api.Test;
 
 import org.springframework.beans.factory.BeanCreationException;
@@ -35,6 +37,8 @@ import org.springframework.scheduling.support.PeriodicTrigger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+
+
 
 /**
  *
@@ -75,7 +79,7 @@ public class PollableSourceTests {
 			PollerMetadata pollerMetadata = context.getBean(PollerMetadata.class);
 			assertThat(pollerMetadata.getTrigger()).isInstanceOf(PeriodicTrigger.class);
 			assertThat(TestUtils.getPropertyValue(pollerMetadata.getTrigger(), "fixedRate")).isEqualTo(false);
-			assertThat(TestUtils.getPropertyValue(pollerMetadata.getTrigger(), "period")).isEqualTo(1000L);
+			assertThat(TestUtils.getPropertyValue(pollerMetadata.getTrigger(), "period")).isEqualTo(Duration.ofSeconds(1));
 			assertThat(pollerMetadata.getMaxMessagesPerPoll()).isEqualTo(1);
 		}
 	}
@@ -91,7 +95,7 @@ public class PollableSourceTests {
 			PollerMetadata pollerMetadata = context.getBean(PollerMetadata.class);
 			assertThat(pollerMetadata.getTrigger()).isInstanceOf(PeriodicTrigger.class);
 			assertThat(TestUtils.getPropertyValue(pollerMetadata.getTrigger(), "fixedRate")).isEqualTo(false);
-			assertThat(TestUtils.getPropertyValue(pollerMetadata.getTrigger(), "period")).isEqualTo(7000L);
+			assertThat(TestUtils.getPropertyValue(pollerMetadata.getTrigger(), "period")).isEqualTo(Duration.ofSeconds(7));
 			assertThat(pollerMetadata.getMaxMessagesPerPoll()).isEqualTo(13);
 		}
 	}
@@ -105,7 +109,7 @@ public class PollableSourceTests {
 			PollerMetadata pollerMetadata = context.getBean(PollerMetadata.class);
 			assertThat(pollerMetadata.getTrigger()).isInstanceOf(PeriodicTrigger.class);
 			assertThat(TestUtils.getPropertyValue(pollerMetadata.getTrigger(), "fixedRate")).isEqualTo(true);
-			assertThat(TestUtils.getPropertyValue(pollerMetadata.getTrigger(), "period")).isEqualTo(200L);
+			assertThat(TestUtils.getPropertyValue(pollerMetadata.getTrigger(), "period")).isEqualTo(Duration.ofMillis(200));
 			assertThat(pollerMetadata.getMaxMessagesPerPoll()).isEqualTo(1);
 		}
 	}

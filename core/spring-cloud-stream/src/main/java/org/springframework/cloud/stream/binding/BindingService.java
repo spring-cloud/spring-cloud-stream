@@ -16,10 +16,10 @@
 
 package org.springframework.cloud.stream.binding;
 
-import java.sql.Date;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -404,8 +404,9 @@ public class BindingService {
 	}
 
 	private void scheduleTask(Runnable task) {
-		this.taskScheduler.schedule(task, new Date(System.currentTimeMillis()
-				+ this.bindingServiceProperties.getBindingRetryInterval() * 1_000));
+		Date d = new Date(System.currentTimeMillis()
+				+ this.bindingServiceProperties.getBindingRetryInterval() * 1_000);
+		this.taskScheduler.schedule(task, d.toInstant());
 	}
 
 	private void assertNotIllegalException(RuntimeException exception)
