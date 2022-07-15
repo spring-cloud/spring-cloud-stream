@@ -41,6 +41,7 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.context.properties.source.MapConfigurationPropertySource;
 import org.springframework.cloud.stream.binder.Binder;
+import org.springframework.cloud.stream.binder.BinderChildContextInitializer;
 import org.springframework.cloud.stream.binder.BinderConfiguration;
 import org.springframework.cloud.stream.binder.BinderFactory;
 import org.springframework.cloud.stream.binder.BinderType;
@@ -86,6 +87,7 @@ import static org.mockito.Mockito.when;
  * @author Janne Valkealahti
  * @author Soby Chacko
  * @author Michael Michailidis
+ * @author Chris Bono
  */
 public class BindingServiceTests {
 
@@ -437,7 +439,8 @@ public class BindingServiceTests {
 		BindingServiceProperties bindingServiceProperties = createBindingServiceProperties(
 				properties);
 		BinderFactory binderFactory = new BindingServiceConfiguration()
-				.binderFactory(createMockBinderTypeRegistry(), bindingServiceProperties, Mockito.mock(ObjectProvider.class));
+				.binderFactory(createMockBinderTypeRegistry(), bindingServiceProperties, Mockito.mock(ObjectProvider.class),
+						Mockito.mock(BinderChildContextInitializer.class));
 		BindingService bindingService = new BindingService(bindingServiceProperties,
 				binderFactory, new ObjectMapper());
 		bindingService.bindConsumer(new DirectChannel(), "input");
@@ -457,7 +460,8 @@ public class BindingServiceTests {
 		BindingServiceProperties bindingServiceProperties = createBindingServiceProperties(
 				properties);
 		BinderFactory binderFactory = new BindingServiceConfiguration()
-				.binderFactory(createMockBinderTypeRegistry(), bindingServiceProperties, Mockito.mock(ObjectProvider.class));
+				.binderFactory(createMockBinderTypeRegistry(), bindingServiceProperties, Mockito.mock(ObjectProvider.class),
+						Mockito.mock(BinderChildContextInitializer.class));
 		BindingService bindingService = new BindingService(bindingServiceProperties,
 				binderFactory, new ObjectMapper());
 		bindingService.bindConsumer(new DirectChannel(), "input");
