@@ -16,10 +16,10 @@
 
 package org.springframework.cloud.stream.binding;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -61,6 +61,7 @@ import org.springframework.validation.beanvalidation.CustomValidatorBean;
  * @author Janne Valkealahti
  * @author Soby Chacko
  * @author Michael Michailidis
+ * @author Chris Bono
  */
 public class BindingService {
 
@@ -404,9 +405,8 @@ public class BindingService {
 	}
 
 	private void scheduleTask(Runnable task) {
-		Date d = new Date(System.currentTimeMillis()
-				+ this.bindingServiceProperties.getBindingRetryInterval() * 1_000);
-		this.taskScheduler.schedule(task, d.toInstant());
+		this.taskScheduler.schedule(task, Instant.ofEpochMilli(System.currentTimeMillis()
+				+ this.bindingServiceProperties.getBindingRetryInterval() * 1_000));
 	}
 
 	private void assertNotIllegalException(RuntimeException exception)

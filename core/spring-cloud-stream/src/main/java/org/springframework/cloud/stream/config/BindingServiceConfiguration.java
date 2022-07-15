@@ -35,6 +35,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.SearchStrategy;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.context.properties.source.ConfigurationPropertyName;
+import org.springframework.cloud.stream.binder.BinderChildContextInitializer;
 import org.springframework.cloud.stream.binder.BinderConfiguration;
 import org.springframework.cloud.stream.binder.BinderCustomizer;
 import org.springframework.cloud.stream.binder.BinderFactory;
@@ -77,6 +78,7 @@ import org.springframework.util.ObjectUtils;
  * @author Artem Bilan
  * @author Oleg Zhurakousky
  * @author Soby Chacko
+ * @author Chris Bono
  */
 @Configuration(proxyBeanMethods = false)
 @EnableConfigurationProperties({ BindingServiceProperties.class,
@@ -174,15 +176,22 @@ public class BindingServiceConfiguration {
 
 	@Bean
 	@ConditionalOnMissingBean(BinderFactory.class)
-	public BinderFactory binderFactory(BinderTypeRegistry binderTypeRegistry,
+	public DefaultBinderFactory binderFactory(BinderTypeRegistry binderTypeRegistry,
 			BindingServiceProperties bindingServiceProperties,
-			ObjectProvider<BinderCustomizer> binderCustomizerProvider) {
+			ObjectProvider<BinderCustomizer> binderCustomizerProvider,
+			BinderChildContextInitializer binderChildContextInitializer) {
 		DefaultBinderFactory binderFactory = new DefaultBinderFactory(
 				getBinderConfigurations(binderTypeRegistry, bindingServiceProperties),
 				binderTypeRegistry, binderCustomizerProvider.getIfUnique());
 		binderFactory.setDefaultBinder(bindingServiceProperties.getDefaultBinder());
 		binderFactory.setListeners(this.binderFactoryListeners);
+		binderChildContextInitializer.setBinderFactory(binderFactory);
 		return binderFactory;
+	}
+
+	@Bean
+	public BinderChildContextInitializer binderChildContextInitializer() {
+		return new BinderChildContextInitializer();
 	}
 
 	@Bean
