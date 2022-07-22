@@ -251,7 +251,6 @@ public class FunctionConfiguration {
 								context.registerBean(integrationFlowName, IntegrationFlow.class, () -> postProcessedFlow);
 							}
 							else {
-								//Type functionType = ((FunctionInvocationWrapper) supplier).getFunctionType();
 								IntegrationFlow integrationFlow = integrationFlowFromProvidedSupplier(new PartitionAwareFunctionWrapper(supplier, context, producerProperties),
 										beginPublishingTrigger, pollable, context, taskScheduler, producerProperties, outputName)
 										.channel(c -> c.direct())

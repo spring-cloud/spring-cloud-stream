@@ -48,7 +48,6 @@ import org.springframework.scheduling.TaskScheduler;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.DataBinder;
-import org.springframework.validation.beanvalidation.CustomValidatorBean;
 
 /**
  * Handles binding of input/output targets by delegating to an underlying {@link Binder}.
@@ -65,7 +64,7 @@ import org.springframework.validation.beanvalidation.CustomValidatorBean;
  */
 public class BindingService {
 
-	private final CustomValidatorBean validator;
+//	private final CustomValidatorBean validator;
 
 	private final Log log = LogFactory.getLog(BindingService.class);
 
@@ -90,8 +89,8 @@ public class BindingService {
 			BinderFactory binderFactory, TaskScheduler taskScheduler, ObjectMapper objectMapper) {
 		this.bindingServiceProperties = bindingServiceProperties;
 		this.binderFactory = binderFactory;
-		this.validator = new CustomValidatorBean();
-		this.validator.afterPropertiesSet();
+//		this.validator = new CustomValidatorBean();
+//		this.validator.afterPropertiesSet();
 		this.taskScheduler = taskScheduler;
 		this.objectMapper = objectMapper;
 	}
@@ -397,7 +396,7 @@ public class BindingService {
 
 	private void validate(Object properties) {
 		DataBinder dataBinder = new DataBinder(properties);
-		dataBinder.setValidator(this.validator);
+//		dataBinder.setValidator(this.validator);
 		dataBinder.validate();
 		if (dataBinder.getBindingResult().hasErrors()) {
 			throw new IllegalStateException(dataBinder.getBindingResult().toString());

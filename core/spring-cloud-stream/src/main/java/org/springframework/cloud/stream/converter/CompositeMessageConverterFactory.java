@@ -16,10 +16,10 @@
 
 package org.springframework.cloud.stream.converter;
 
-import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -37,8 +37,6 @@ import org.springframework.messaging.converter.DefaultContentTypeResolver;
 import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.MimeType;
-import org.springframework.util.ReflectionUtils;
-
 /**
  * A factory for creating an instance of {@link CompositeMessageConverter} for a given
  * target MIME type.
@@ -77,20 +75,17 @@ public class CompositeMessageConverterFactory {
 		}
 		initDefaultConverters();
 
-		Field headersField = ReflectionUtils.findField(MessageHeaders.class, "headers");
-		headersField.setAccessible(true);
 		DefaultContentTypeResolver resolver = new DefaultContentTypeResolver() {
 			@Override
-			@SuppressWarnings("unchecked")
 			public MimeType resolve(@Nullable MessageHeaders headers) {
+				Map<String, Object> messageHeaders = new HashMap<>(headers);
 				Object contentType = headers.get(MessageHeaders.CONTENT_TYPE);
 				if (contentType instanceof byte[]) {
 					contentType = new String((byte[]) contentType, StandardCharsets.UTF_8);
 					contentType = ((String) contentType).replace("\"", "");
-					Map<String, Object> headersMap = (Map<String, Object>) ReflectionUtils.getField(headersField, headers);
-					headersMap.put(MessageHeaders.CONTENT_TYPE, contentType);
+					messageHeaders.put(MessageHeaders.CONTENT_TYPE, contentType);
 				}
-				return super.resolve(headers);
+				return super.resolve(new MessageHeaders(messageHeaders));
 			}
 		};
 		resolver.setDefaultMimeType(BindingProperties.DEFAULT_CONTENT_TYPE);

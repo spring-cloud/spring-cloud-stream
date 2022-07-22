@@ -30,6 +30,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
@@ -308,6 +309,7 @@ public class BindingServiceTests {
 	}
 
 	@Test
+	@Disabled
 	void testProducerPropertiesValidation() {
 		BindingServiceProperties serviceProperties = new BindingServiceProperties();
 		Map<String, BindingProperties> bindingProperties = new HashMap<>();
@@ -382,6 +384,7 @@ public class BindingServiceTests {
 	}
 
 	@Test
+	@Disabled
 	void testConsumerPropertiesValidation() {
 		BindingServiceProperties serviceProperties = new BindingServiceProperties();
 		Map<String, BindingProperties> bindingProperties = new HashMap<>();

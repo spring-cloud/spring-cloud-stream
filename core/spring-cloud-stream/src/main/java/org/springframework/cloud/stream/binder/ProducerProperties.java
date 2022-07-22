@@ -25,7 +25,6 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import jakarta.validation.constraints.Min;
 
 import org.springframework.expression.Expression;
 
@@ -116,7 +115,6 @@ public class ProducerProperties {
 		this.partitionSelectorExpression = partitionSelectorExpression;
 	}
 
-	@Min(value = 1, message = "Partition count should be greater than zero.")
 	public int getPartitionCount() {
 		return this.partitionCount;
 	}

@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import jakarta.validation.constraints.Min;
 
 import org.springframework.messaging.Message;
 
@@ -201,7 +200,6 @@ public class ConsumerProperties {
 		this.retryTemplateName = retryTemplateName;
 	}
 
-	@Min(value = 1, message = "Concurrency should be greater than zero.")
 	public int getConcurrency() {
 		return this.concurrency;
 	}
@@ -218,7 +216,6 @@ public class ConsumerProperties {
 		this.partitioned = partitioned;
 	}
 
-	@Min(value = -1, message = "Instance count should be greater than or equal to -1.")
 	public int getInstanceCount() {
 		return this.instanceCount;
 	}
@@ -227,7 +224,6 @@ public class ConsumerProperties {
 		this.instanceCount = instanceCount;
 	}
 
-	@Min(value = -1, message = "Instance index should be greater than or equal to -1")
 	public int getInstanceIndex() {
 		return this.instanceIndex;
 	}
@@ -244,7 +240,6 @@ public class ConsumerProperties {
 		this.instanceIndexList = instanceIndexList;
 	}
 
-	@Min(value = 1, message = "Max attempts should be greater than zero.")
 	public int getMaxAttempts() {
 		return this.maxAttempts;
 	}
@@ -253,7 +248,6 @@ public class ConsumerProperties {
 		this.maxAttempts = maxAttempts;
 	}
 
-	@Min(value = 1, message = "Backoff initial interval should be greater than zero.")
 	public int getBackOffInitialInterval() {
 		return this.backOffInitialInterval;
 	}
@@ -262,7 +256,6 @@ public class ConsumerProperties {
 		this.backOffInitialInterval = backOffInitialInterval;
 	}
 
-	@Min(value = 1, message = "Backoff max interval should be greater than zero.")
 	public int getBackOffMaxInterval() {
 		return this.backOffMaxInterval;
 	}
@@ -271,7 +264,6 @@ public class ConsumerProperties {
 		this.backOffMaxInterval = backOffMaxInterval;
 	}
 
-	@Min(value = 1, message = "Backoff multiplier should be greater than zero.")
 	public double getBackOffMultiplier() {
 		return this.backOffMultiplier;
 	}

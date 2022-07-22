@@ -18,7 +18,6 @@ package org.springframework.cloud.stream.config;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import jakarta.validation.constraints.AssertTrue;
 
 import org.springframework.cloud.stream.binder.ConsumerProperties;
 import org.springframework.cloud.stream.binder.ProducerProperties;
@@ -138,7 +137,6 @@ public class BindingProperties {
 		this.producer = producer;
 	}
 
-	@AssertTrue(message = "A binding must not set both producer and consumer properties.")
 	public boolean onlyOneOfProducerOrConsumerSet() {
 		return this.consumer == null || this.producer == null;
 	}

@@ -61,7 +61,11 @@ import org.springframework.util.StringUtils;
 @ConditionalOnMissingBean(Binder.class)
 @Import({ RabbitMessageChannelBinderConfiguration.class,
 		RabbitBinderConfiguration.RabbitHealthIndicatorConfiguration.class })
-public abstract class RabbitBinderConfiguration {
+public class RabbitBinderConfiguration {
+
+	public String binderName() {
+		return "rabbit";
+	}
 
 	static void configureCachingConnectionFactory(
 			CachingConnectionFactory connectionFactory,
