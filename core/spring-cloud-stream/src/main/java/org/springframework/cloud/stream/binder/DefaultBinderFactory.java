@@ -248,7 +248,7 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 	@SuppressWarnings("unchecked")
 	private <T> Binder<T, ConsumerProperties, ProducerProperties> getBinderInstance(String configurationName) {
 		if (!this.binderInstanceCache.containsKey(configurationName)) {
-			logger.info("Creating binder: " + configurationName);
+			logger.debug("Creating binder: " + configurationName);
 			BinderConfiguration binderConfiguration = this.binderConfigurations
 					.get(configurationName);
 			Assert.state(binderConfiguration != null,
@@ -291,11 +291,11 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 							binderProducingContext);
 				}
 			}
-			logger.info("Caching the binder: " + configurationName);
+			logger.debug("Caching the binder: " + configurationName);
 			this.binderInstanceCache.put(configurationName,
 					new SimpleImmutableEntry<>(binder, binderProducingContext));
 		}
-		logger.info("Retrieving cached binder: " + configurationName);
+		logger.debug("Retrieving cached binder: " + configurationName);
 		return (Binder<T, ConsumerProperties, ProducerProperties>) this.binderInstanceCache
 				.get(configurationName).getKey();
 	}
