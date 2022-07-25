@@ -232,9 +232,13 @@ public class FunctionConfiguration {
 						if (!functionProperties.isComposeFrom() && !functionProperties.isComposeTo()) {
 							String integrationFlowName = proxyFactory.getFunctionDefinition() + "_integrationflow";
 
-							// Add back once https://github.com/spring-projects/spring-framework/issues/28748 is fixed
-							// PollableBean pollable = extractPollableAnnotation(functionProperties, context, proxyFactory);
 							PollableBean pollable = null;
+							try {
+								pollable = extractPollableAnnotation(functionProperties, context, proxyFactory);
+							} 
+							catch (Exception e) {
+								// Will fix itself once https://github.com/spring-projects/spring-framework/issues/28748 is fixed
+							}
 
 							if (functionWrapper != null) {
 								IntegrationFlow integrationFlow = integrationFlowFromProvidedSupplier(new PartitionAwareFunctionWrapper(functionWrapper, context, producerProperties),
