@@ -42,6 +42,7 @@ import org.springframework.cloud.stream.binder.test.InputDestination;
 import org.springframework.cloud.stream.binder.test.OutputDestination;
 import org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration;
 import org.springframework.cloud.stream.binding.BinderAwareChannelResolver.NewDestinationBindingCallback;
+import org.springframework.cloud.stream.binding.BindingService;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
@@ -229,7 +230,8 @@ public class StreamBridgeTests {
 						"--spring.cloud.stream.dynamic-destination-cache-size=1",
 						"--spring.cloud.stream.output-bindings=outputA;outputB",
 						"--spring.cloud.stream.bindings.outputA-out-0.destination=outputA",
-						"--spring.cloud.stream.bindings.outputB-out-0.destination=outputB")) {
+						"--spring.cloud.stream.bindings.outputB-out-0.destination=outputB"
+						)) {
 			StreamBridge bridge = context.getBean(StreamBridge.class);
 
 			bridge.send("outputA-out-0", "hello foo");
@@ -240,6 +242,27 @@ public class StreamBridgeTests {
 			AbstractMessageChannel messageChannel = context.getBean("outputA-out-0", AbstractMessageChannel.class);
 
 			assertThat(messageChannel.getInterceptors()).hasSize(1);
+		}
+	}
+
+	@Test
+	public void testBindingsAreRemovedWithCache() {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration
+				.getCompleteConfiguration(InterceptorConfiguration.class))
+				.web(WebApplicationType.NONE).run(
+						"--spring.jmx.enabled=false",
+						"--spring.cloud.stream.dynamic-destination-cache-size=1"
+						)) {
+			StreamBridge bridge = context.getBean(StreamBridge.class);
+
+			bridge.send("a", "hello foo");
+			bridge.send("b", "hello foo");
+			bridge.send("c", "hello foo");
+			bridge.send("d", "hello foo");
+
+			BindingService bindingService = context.getBean(BindingService.class);
+			assertThat(bindingService.getProducerBindingNames().length).isEqualTo(1);
+			assertThat(bindingService.getProducerBindingNames()[0]).isEqualTo("d");
 		}
 	}
 

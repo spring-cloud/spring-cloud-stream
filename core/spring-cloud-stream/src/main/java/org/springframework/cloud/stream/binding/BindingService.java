@@ -316,6 +316,14 @@ public class BindingService {
 		return null;
 	}
 
+	public String[] getProducerBindingNames() {
+		return this.producerBindings.keySet().toArray(new String[] {});
+	}
+
+	public String[] getConsumerBindingNames() {
+		return this.consumerBindings.keySet().toArray(new String[] {});
+	}
+
 	public <T> Binding<T> doBindProducer(T output, String bindingTarget,
 			Binder<T, ?, ProducerProperties> binder,
 			ProducerProperties producerProperties) {

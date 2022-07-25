@@ -20,7 +20,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.function.Function;
 
 import org.apache.commons.logging.Log;
@@ -120,8 +119,11 @@ public final class StreamBridge implements SmartInitializingSingleton {
 			@Override
 			protected boolean removeEldestEntry(Map.Entry<String, MessageChannel> eldest) {
 				boolean remove = size() > bindingServiceProperties.getDynamicDestinationCacheSize();
-				if (remove && logger.isDebugEnabled()) {
-					logger.debug("Removing message channel from cache " + eldest.getKey());
+				if (remove) {
+					if (logger.isDebugEnabled()) {
+						logger.debug("Removing message channel from cache " + eldest.getKey());
+					}
+					bindingService.unbindProducers(eldest.getKey());
 				}
 				return remove;
 			}
@@ -257,11 +259,11 @@ public final class StreamBridge implements SmartInitializingSingleton {
 		fr.getProperties().put("singleton", "false");
 		this.functionRegistry.register(fr.type(FunctionType.from(Object.class).to(Object.class).message()));
 		Map<String, DirectWithAttributesChannel> channels = applicationContext.getBeansOfType(DirectWithAttributesChannel.class);
-		for (Entry<String, DirectWithAttributesChannel> channelEntry : channels.entrySet()) {
-			if (channelEntry.getValue().getAttribute("type").equals("output")) {
-				this.channelCache.put(channelEntry.getKey(), channelEntry.getValue());
-			}
-		}
+//		for (Entry<String, DirectWithAttributesChannel> channelEntry : channels.entrySet()) {
+//			if (channelEntry.getValue().getAttribute("type").equals("output")) {
+//				this.channelCache.put(channelEntry.getKey(), channelEntry.getValue());
+//			}
+//		}
 		this.initialized = true;
 	}
 
@@ -300,7 +302,7 @@ public final class StreamBridge implements SmartInitializingSingleton {
 				}
 				this.addInterceptors((AbstractMessageChannel) messageChannel, destinationName);
 
-				this.bindingService.bindProducer(messageChannel, destinationName, false, binder);
+				this.bindingService.bindProducer(messageChannel, destinationName, true, binder);
 				if (StringUtils.hasText(binderName)) {
 					this.channelCache.put(binderName + ":" + destinationName, messageChannel);
 				}
