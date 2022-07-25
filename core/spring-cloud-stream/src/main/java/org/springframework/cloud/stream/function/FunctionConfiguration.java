@@ -235,7 +235,7 @@ public class FunctionConfiguration {
 							PollableBean pollable = null;
 							try {
 								pollable = extractPollableAnnotation(functionProperties, context, proxyFactory);
-							} 
+							}
 							catch (Exception e) {
 								// Will fix itself once https://github.com/spring-projects/spring-framework/issues/28748 is fixed
 							}
