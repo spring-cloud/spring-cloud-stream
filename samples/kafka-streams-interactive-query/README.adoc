@@ -1,0 +1,101 @@
+== Spring Cloud Stream Kafka Streams Interactive Query
+
+This sample demonstrates a Spring Cloud Stream processor using Kafka Streams state store interactive query support. There is a REST service provided as part of the application that can be used to query the store interactively.
+
+=== Application
+
+The app is based on a contrived use case of tracking products by interactively querying their status. The program accepts product ID's and tracks their counts (including the top two) and makes the results available by interactively querying the underlying state stores.
+
+[[build-app]]
+=== Building
+To build the app simply execute the following command in the base directory:
+[source,bash]
+----
+./mvnw clean install
+----
+
+=== Running
+
+==== Ensure these pre-requisites
+****
+* The app has been built by following the <<build-app>> steps
+* Apache Kafka broker available at `localhost:9092`
+
+[#kafka_tools]
+TIP: The included xref:../../../tools/kafka/docker-compose/README.adoc#run_kafka_cluster[Kafka tools] can be used to easily start a broker at the required coordinates
+****
+
+We will run 2 instances of the app to demonstrate that regardless of which instance hosts the keys, the REST endpoint will serve the requests.
+
+NOTE: For more information on how this is done, please take a look at the link:./src/main/java/com/example/kafka/streams/music/ProductQueryController.java[ProductQueryController]
+
+==== Start the streams app (instance 1)
+[source,bash]
+----
+java -jar target/kafka-streams-interactive-query-advanced-4.0.0-SNAPSHOT.jar --app.product.tracker.product-ids=123,124,125
+----
+
+==== Start the streams app (instance 2)
+[source,bash]
+----
+java -jar target/kafka-streams-interactive-query-advanced-4.0.0-SNAPSHOT.jar --server.port=8082 --spring.cloud.stream.kafka.streams.binder.configuration.application.server=localhost:8082 --app.product.tracker.product-ids=123,124,125
+----
+
+==== Start the data generator
+Run the stand-alone link:./src/main/java/com/example/kafka/streams/music/GenerateProducts.java[GenerateProducts] app to create random input data.
+
+NOTE: It can easily be started from within your IDE or on the command line with the following command:
+
+[source,bash]
+----
+./mvnw exec:java -Dexec.mainClass="com.example.kafka.streams.music.GenerateProducts"
+----
+
+The output should look something like the following:
+[source,bash]
+----
+GenerateProducts - Writing product event for productId = 124
+GenerateProducts - Writing product event for productId = 127
+GenerateProducts - Writing product event for productId = 127
+GenerateProducts - Writing product event for productId = 124
+----
+
+==== Query the state stores
+
+===== Product count
+Navigate to http://localhost:8080/product/123 to view the count for a particular product id. Keep refreshing the URL and you will see the product count increase as the generator runs.
+
+Now navigate to http://localhost:8082/product/123 to view the count for the same product but served from the second app instance. Keep refreshing the URL and you will see the product count increase as the generator runs.
+
+Take a look at the console sessions for the applications and you will notice that one of the instances actually serves the count from its state store and the other instance simply proxies the request to that instance to retrieve the count info.
+
+For example, the first app instance logs may look like:
+[source,bash,options=nowrap,subs=attributes]
+----
+Product count for productId: 123 served from different host: HostInfo{host='localhost', port=8082}
+20
+----
+and the second app instance logs may look like:
+[source,bash,options=nowrap,subs=attributes]
+----
+Product count for productId: 123 served from same host: HostInfo{host='localhost', port=8082}
+----
+
+===== Top-two products
+
+Navigate to http://localhost:8080/product/top-two to view the two products with the highest count at the time of the query. Keep refreshing the URL and you may see the top-two products change as the generator runs.
+
+Now navigate to http://localhost:8082/product/top-two to view the top-two products but served from the second app instance. Keep refreshing the URL and you may see the top-two products change as the generator runs.
+
+Take a look at the console sessions for the applications and you will notice that one of the instances actually serves the results from its state store and the other instance simply proxies the request to that instance to retrieve the top-two info.
+
+For example, the first app instance logs may look like:
+[source,bash,options=nowrap,subs=attributes]
+----
+Top two products served from different host: HostInfo{host='localhost', port=8082}
+----
+and the second app instance logs may look like:
+[source,bash,options=nowrap,subs=attributes]
+----
+Top two products served from same host: HostInfo{host='localhost', port=8082}
+----
