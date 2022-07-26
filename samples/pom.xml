@@ -23,8 +23,6 @@
 
 	<modules>
 		<module>confluent-schema-registry-integration</module>
-		<module>kafka-native-serialization</module>
-		<module>kafka-streams-branching</module>
 		<module>kafka-streams-interactive-query</module>
 		<module>stream-bridge-avro</module>
 	</modules>
