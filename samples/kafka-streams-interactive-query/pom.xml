@@ -3,8 +3,8 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.example</groupId>
-	<artifactId>kafka-streams-interactive-query-advanced</artifactId>
-	<name>kafka-streams-interactive-query-advanced</name>
+	<artifactId>kafka-streams-interactive-query</artifactId>
+	<name>kafka-streams-interactive-query</name>
 
 	<parent>
 		<groupId>org.springframework.cloud</groupId>

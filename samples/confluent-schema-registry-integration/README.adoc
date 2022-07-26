@@ -2,7 +2,9 @@
 
 A collection of Spring Boot applications to demonstrate schema evolution using Spring Cloud Stream and Confluent Schema Registry.
 
-All components (producers and consumers) in this sample are configured to use native encoding which ensures their use of the Confluent provided Avro serializers, rather than the Spring Cloud Stream provided Avro serializers. The Confluent serializers leverage the Confluent schema registry to validate schemas during record production. An additional benefit is that these components are now cross compatible with external tools that use the Confluent Avro serializers such as the out-of-the box tools - `kafka-avro-console-consumer` and `kafka-avro-console-producer` - that come with Confluent Schema registry.
+:fn-native-encoding: footnote:[By default, message encoding is performed transparently by the framework based on contentType. However, when native encoding is used, the default encoding is disabled and instead handled by the client library. It is the responsibility of the consumer to use an appropriate decoder to deserialize the inbound message and the responsibility of the producer to use an appropriate encoder to serialize the outbound message.]
+
+All components (producers and consumers) in this sample are configured to use native encoding{fn-native-encoding} which ensures their use of the Confluent provided Avro serializers, rather than the Spring Cloud Stream provided Avro serializers. The Confluent serializers leverage the Confluent schema registry to validate schemas during record production. An additional benefit is that these components are now cross compatible with external tools that use the Confluent Avro serializers such as the out-of-the box tools - `kafka-avro-console-consumer` and `kafka-avro-console-producer` - that come with Confluent Schema registry.
 
 === Requirement
 As a developer, I'd like to design my consumer to be resilient to differing payload schemas, and I want to use Confluent Schema Registry.
@@ -166,9 +168,3 @@ spring:
 ----
 
 NOTE: Currently the Control Center seems to only recognize the subjects created with the `TopicNameStrategy` . If you configure the `RecordNameStrategy` the schema will not appear in the UI.
-
-
-
-
-
-
