@@ -56,7 +56,6 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.context.properties.PropertyMapper;
 import org.springframework.cloud.function.cloudevent.CloudEventMessageUtils;
 import org.springframework.cloud.function.context.FunctionCatalog;
-import org.springframework.cloud.function.context.FunctionProperties;
 import org.springframework.cloud.function.context.FunctionRegistry;
 import org.springframework.cloud.function.context.PollableBean;
 import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
@@ -96,7 +95,6 @@ import org.springframework.integration.channel.FluxMessageChannel;
 import org.springframework.integration.core.MessagingTemplate;
 import org.springframework.integration.dsl.IntegrationFlow;
 import org.springframework.integration.dsl.IntegrationFlowBuilder;
-import org.springframework.integration.dsl.IntegrationFlows;
 import org.springframework.integration.handler.AbstractMessageHandler;
 import org.springframework.integration.scheduling.PollerMetadata;
 import org.springframework.integration.support.MessageBuilder;
@@ -181,7 +179,7 @@ public class FunctionConfiguration {
 
 		return new InitializingBean() {
 
-			@SuppressWarnings("rawtypes")
+			@SuppressWarnings({ "rawtypes", "unchecked" })
 			@Override
 			public void afterPropertiesSet() throws Exception {
 				for (BindableFunctionProxyFactory proxyFactory : proxyFactories) {
@@ -317,7 +315,7 @@ public class FunctionConfiguration {
 					? ((Mono) publisher).delaySubscription(beginPublishingTrigger).map(this::wrapToMessageIfNecessary)
 					: ((Flux) publisher).delaySubscription(beginPublishingTrigger).map(this::wrapToMessageIfNecessary);
 
-			integrationFlowBuilder = IntegrationFlows.from(publisher);
+			integrationFlowBuilder = IntegrationFlow.from(publisher);
 
 			// see https://github.com/spring-cloud/spring-cloud-stream/issues/1863 for details about the following code
 			taskScheduler.schedule(() -> { }, Instant.now()); // will keep AC alive
@@ -336,9 +334,9 @@ public class FunctionConfiguration {
 
 			boolean autoStartup = producerProperties != null ? producerProperties.isAutoStartup() : true;
 			integrationFlowBuilder = pollerMetadata == null
-					? IntegrationFlows.fromSupplier(supplier,
+					? IntegrationFlow.fromSupplier(supplier,
 							spca -> spca.id(bindingName + "_spca").autoStartup(autoStartup))
-					: IntegrationFlows.fromSupplier(supplier, spca -> spca.id(bindingName + "_spca")
+					: IntegrationFlow.fromSupplier(supplier, spca -> spca.id(bindingName + "_spca")
 							.poller(pollerMetadata.get()).autoStartup(autoStartup));
 
 			// only apply the PollableBean attributes if this is a reactive function.
@@ -358,9 +356,9 @@ public class FunctionConfiguration {
 	}
 
 	private Trigger createPeriodicTrigger(Duration period, Duration initialDelay) {
-		PeriodicTrigger trigger = new PeriodicTrigger(period.toMillis());
+		PeriodicTrigger trigger = new PeriodicTrigger(period);
 		if (initialDelay != null) {
-			trigger.setInitialDelay(initialDelay.toMillis());
+			trigger.setInitialDelay(initialDelay);
 		}
 		return trigger;
 	}
@@ -478,7 +476,6 @@ public class FunctionConfiguration {
 					.toArray(String[]::new);
 
 			FunctionInvocationWrapper function = this.functionCatalog.lookup(functionDefinition, outputContentTypes);
-			Type functionType = function.getFunctionType();
 			this.assertSupportedSignatures(bindableProxyFactory, function);
 
 
@@ -494,8 +491,7 @@ public class FunctionConfiguration {
 				inputBindingNames = Collections.singleton("output");
 			}
 
-			if (isReactiveOrMultipleInputOutput(bindableProxyFactory, functionType)) {
-				//String targetProtocol = null;
+			if (isReactiveOrMultipleInputOutput(bindableProxyFactory, function.getInputType(), function.getOutputType())) {
 				AtomicReference<Function<Message<?>, Message<?>>> targetProtocolEnhancer = new AtomicReference<>();
 				if (!CollectionUtils.isEmpty(outputBindingNames)) {
 					String outputBindingName = outputBindingNames.iterator().next(); // TODO only gets the first one
@@ -601,7 +597,7 @@ public class FunctionConfiguration {
 				});
 			}
 			else {
-				String outputDestinationName = this.determineOutputDestinationName(0, bindableProxyFactory, functionType);
+				String outputDestinationName = this.determineOutputDestinationName(0, bindableProxyFactory, function.isConsumer());
 				if (!ObjectUtils.isEmpty(inputBindingNames)) {
 					String inputDestinationName = inputBindingNames.iterator().next();
 					Object inputDestination = this.applicationContext.getBean(inputDestinationName);
@@ -628,6 +624,7 @@ public class FunctionConfiguration {
 			MessagingTemplate template = new MessagingTemplate();
 			template.setBeanFactory(applicationContext.getBeanFactory());
 			AbstractMessageHandler handler = new AbstractMessageHandler() {
+				@SuppressWarnings("unchecked")
 				@Override
 				public void handleMessageInternal(Message<?> message) throws MessagingException {
 					Object result = functionInvocationWrapper.apply((Message<byte[]>) message);
@@ -691,20 +688,20 @@ public class FunctionConfiguration {
 			return null;
 		}
 
-		private boolean isReactiveOrMultipleInputOutput(BindableProxyFactory bindableProxyFactory, Type functionType) {
-			boolean reactiveInputsOutputs = FunctionTypeUtils.isPublisher(FunctionTypeUtils.getInputType(functionType)) ||
-					FunctionTypeUtils.isPublisher(FunctionTypeUtils.getOutputType(functionType));
+		private boolean isReactiveOrMultipleInputOutput(BindableProxyFactory bindableProxyFactory, Type inputType, Type outputType) {
+			boolean reactiveInputsOutputs = FunctionTypeUtils.isPublisher(inputType) ||
+					FunctionTypeUtils.isPublisher(outputType);
 			return isMultipleInputOutput(bindableProxyFactory) || reactiveInputsOutputs;
 		}
 
-		private String determineOutputDestinationName(int index, BindableProxyFactory bindableProxyFactory, Type functionType) {
+		private String determineOutputDestinationName(int index, BindableProxyFactory bindableProxyFactory, boolean isConsumer) {
 			List<String> outputNames = new ArrayList<>(bindableProxyFactory.getOutputs());
 			if (CollectionUtils.isEmpty(outputNames)) {
 				outputNames = Collections.singletonList("output");
 			}
 			String outputDestinationName = bindableProxyFactory instanceof BindableFunctionProxyFactory
 					? ((BindableFunctionProxyFactory) bindableProxyFactory).getOutputName(index)
-							: (FunctionTypeUtils.isConsumer(functionType) ? null : outputNames.get(index));
+							: (isConsumer ? null : outputNames.get(index));
 			return outputDestinationName;
 		}
 
@@ -734,7 +731,7 @@ public class FunctionConfiguration {
 								+ "for multi-in/out reactive streams. Only Functions are supported");
 				Assert.isTrue(!this.isArray(function.getInputType()) && !this.isArray(function.getOutputType()),
 						"Function '" + functionProperties.getDefinition() + "' has the following signature: ["
-						+ function.getFunctionType() + "]. Your input and/or outout lacks arity and therefore we "
+						+ function + "]. Your input and/or outout lacks arity and therefore we "
 								+ "can not determine how many input/output destinations are required in the context of "
 								+ "function input/output binding.");
 			}
@@ -796,7 +793,7 @@ public class FunctionConfiguration {
 				headersMap.putIfAbsent(MessageUtils.MESSAGE_TYPE, CloudEventMessageUtils.CLOUDEVENT_VALUE);
 			}
 			if (message != null && consumerProperties != null) {
-				headersMap.put(FunctionProperties.SKIP_CONVERSION_HEADER, consumerProperties.isUseNativeDecoding());
+				//headersMap.put(FunctionProperties.SKIP_CONVERSION_HEADER, consumerProperties.isUseNativeDecoding());
 			}
 			Object result = function.apply(message);
 			if (result instanceof Publisher && this.isRoutingFunction) {
@@ -874,18 +871,18 @@ public class FunctionConfiguration {
 					RootBeanDefinition functionBindableProxyDefinition = new RootBeanDefinition(BindableFunctionProxyFactory.class);
 					FunctionInvocationWrapper function = functionCatalog.lookup(functionDefinition);
 					if (function != null) {
-						Type functionType = function.getFunctionType();
+						//Type functionType = function.getFunctionType();
 						if (function.isSupplier()) {
 							this.inputCount = 0;
-							this.outputCount = this.getOutputCount(functionType, true);
+							this.outputCount = this.getOutputCount(function, true);
 						}
 						else if (function.isConsumer() || functionDefinition.equals(RoutingFunction.FUNCTION_NAME)) {
-							this.inputCount = FunctionTypeUtils.getInputCount(functionType);
+							this.inputCount = FunctionTypeUtils.getInputCount(function);
 							this.outputCount = 0;
 						}
 						else {
-							this.inputCount = FunctionTypeUtils.getInputCount(functionType);
-							this.outputCount = this.getOutputCount(functionType, false);
+							this.inputCount = FunctionTypeUtils.getInputCount(function);
+							this.outputCount = this.getOutputCount(function, false);
 						}
 
 						functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(functionDefinition);
@@ -918,7 +915,7 @@ public class FunctionConfiguration {
 			String[] inputBindings = StringUtils.hasText(bindingProperties.getInputBindings())
 					? bindingProperties.getInputBindings().split(";") : new String[0];
 
-			String[] outputBindings = StringUtils.hasText(bindingProperties.getSource()) ? bindingProperties.getSource().split(";") : (
+			String[] outputBindings = StringUtils.hasText(bindingProperties.getOutputBindings()) ? bindingProperties.getOutputBindings().split(";") : (
 					StringUtils.hasText(bindingProperties.getOutputBindings()) ? bindingProperties.getOutputBindings().split(";") : new String[0]
 					);
 			for (String inputBindingName : inputBindings) {
@@ -963,10 +960,10 @@ public class FunctionConfiguration {
 			this.environment = environment;
 		}
 
-		private int getOutputCount(Type functionType, boolean isSupplier) {
-			int outputCount = FunctionTypeUtils.getOutputCount(functionType);
-			if (!isSupplier && functionType instanceof ParameterizedType) {
-				Type outputType = ((ParameterizedType) functionType).getActualTypeArguments()[1];
+		private int getOutputCount(FunctionInvocationWrapper function, boolean isSupplier) {
+			int outputCount = FunctionTypeUtils.getOutputCount(function);
+			if (!function.isSupplier() && function.getOutputType() instanceof ParameterizedType) {
+				Type outputType = function.getOutputType();
 				if (FunctionTypeUtils.isMono(outputType) && outputType instanceof ParameterizedType
 						&& FunctionTypeUtils.getRawType(((ParameterizedType) outputType).getActualTypeArguments()[0]).equals(Void.class)) {
 					outputCount = 0;
