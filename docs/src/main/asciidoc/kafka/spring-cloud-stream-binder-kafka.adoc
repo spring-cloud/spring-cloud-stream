@@ -42,6 +42,8 @@ include::kafka/kafka_dlq.adoc[]
 
 include::kafka/kafka_partitions.adoc[]
 
+include::kafka/kafka-reactive.adoc[]
+
 include::kafka/kafka-streams.adoc[]
 
 include::kafka/kafka_tips.adoc[]
