@@ -43,7 +43,7 @@ public interface Binding<T> extends Pausable {
 	}
 
 	/**
-	 * Stops the target component represented by this instance. NOTE: At the time the
+	 * Starts the target component represented by this instance. NOTE: At the time the
 	 * instance is created the component is already started. This operation is typically
 	 * used by actuator to re-bind/re-start.
 	 *
@@ -53,7 +53,7 @@ public interface Binding<T> extends Pausable {
 	}
 
 	/**
-	 * Starts the target component represented by this instance. NOTE: At the time the
+	 * Stops the target component represented by this instance. NOTE: At the time the
 	 * instance is created the component is already started. This operation is typically
 	 * used by actuator to re-bind/re-start.
 	 *
