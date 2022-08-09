@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2021 the original author or authors.
+ * Copyright 2016-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -149,8 +150,6 @@ import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.Assert;
 import org.springframework.util.MimeTypeUtils;
 import org.springframework.util.backoff.FixedBackOff;
-import org.springframework.util.concurrent.ListenableFuture;
-import org.springframework.util.concurrent.SettableListenableFuture;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
@@ -162,6 +161,7 @@ import static org.mockito.Mockito.mock;
  * @author Ilayaperumal Gopinathan
  * @author Henryk Konsek
  * @author Gary Russell
+ * @author Chris Bono
  */
 @EmbeddedKafka(count = 1, controlledShutdown = true, topics = "error.pollableDlq.group-pcWithDlq", brokerProperties = {"transaction.state.log.replication.factor=1",
 		"transaction.state.log.min.isr=1"})
@@ -2474,19 +2474,18 @@ public class KafkaBinderTests extends
 				new KafkaTemplate(mock(ProducerFactory.class)) {
 
 					@Override // SIK < 2.3
-					public ListenableFuture<SendResult> send(String topic,
-							Object payload) {
+					public CompletableFuture<SendResult> send(String topic, Object payload) {
 						sent.set(payload);
-						SettableListenableFuture<SendResult> future = new SettableListenableFuture<>();
-						future.setException(fooException);
+						CompletableFuture<SendResult> future = new CompletableFuture<>();
+						future.completeExceptionally(fooException);
 						return future;
 					}
 
 					@Override // SIK 2.3+
-					public ListenableFuture send(ProducerRecord record) {
+					public CompletableFuture<SendResult> send(ProducerRecord record) {
 						sent.set(record.value());
-						SettableListenableFuture<SendResult> future = new SettableListenableFuture<>();
-						future.setException(fooException);
+						CompletableFuture<SendResult> future = new CompletableFuture<>();
+						future.completeExceptionally(fooException);
 						return future;
 					}
 

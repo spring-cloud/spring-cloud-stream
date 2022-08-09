@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -136,8 +137,6 @@ import org.springframework.util.StringUtils;
 import org.springframework.util.backoff.BackOff;
 import org.springframework.util.backoff.ExponentialBackOff;
 import org.springframework.util.backoff.FixedBackOff;
-import org.springframework.util.concurrent.ListenableFuture;
-import org.springframework.util.concurrent.ListenableFutureCallback;
 
 /**
  * A {@link org.springframework.cloud.stream.binder.Binder} that uses Kafka as the
@@ -155,6 +154,7 @@ import org.springframework.util.concurrent.ListenableFutureCallback;
  * @author Lukasz Kaminski
  * @author Taras Danylchuk
  * @author Yi Liu
+ * @author Chris Bono
  */
 public class KafkaMessageChannelBinder extends
 		// @checkstyle:off
@@ -1581,22 +1581,16 @@ public class KafkaMessageChannelBinder extends
 					.append(keyOrValue(value))
 					.append("'").append(" received from ")
 					.append(consumerRecord.partition());
-			ListenableFuture<SendResult<K, V>> sentDlq = null;
+			CompletableFuture<SendResult<K, V>> sentDlq = null;
 			try {
 				sentDlq = this.kafkaTemplate.send(producerRecord);
-				sentDlq.addCallback(new ListenableFutureCallback<SendResult<K, V>>() {
-
-					@Override
-					public void onFailure(Throwable ex) {
-						KafkaMessageChannelBinder.this.logger
-								.error("Error sending to DLQ " + sb.toString(), ex);
+				sentDlq.whenComplete((result, ex) -> {
+					if (ex != null) {
+						KafkaMessageChannelBinder.this.logger.error("Error sending to DLQ " + sb, ex);
 					}
-
-					@Override
-					public void onSuccess(SendResult<K, V> result) {
+					else {
 						if (KafkaMessageChannelBinder.this.logger.isDebugEnabled()) {
-							KafkaMessageChannelBinder.this.logger
-									.debug("Sent to DLQ " + sb.toString() + ": " + result.getRecordMetadata());
+							KafkaMessageChannelBinder.this.logger.debug("Sent to DLQ " + sb + ": " + result.getRecordMetadata());
 						}
 					}
 				});

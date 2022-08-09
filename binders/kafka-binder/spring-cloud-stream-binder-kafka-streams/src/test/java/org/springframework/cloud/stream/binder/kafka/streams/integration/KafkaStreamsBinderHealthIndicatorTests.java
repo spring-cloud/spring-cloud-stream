@@ -18,6 +18,7 @@ package org.springframework.cloud.stream.binder.kafka.streams.integration;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
@@ -30,6 +31,7 @@ import org.apache.kafka.streams.errors.StreamsUncaughtExceptionHandler;
 import org.apache.kafka.streams.kstream.KStream;
 import org.assertj.core.util.Lists;
 import org.junit.Assert;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -52,13 +54,12 @@ import org.springframework.kafka.test.EmbeddedKafkaBroker;
 import org.springframework.kafka.test.condition.EmbeddedKafkaCondition;
 import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
-import org.springframework.util.concurrent.ListenableFuture;
-import org.springframework.util.concurrent.ListenableFutureCallback;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Arnaud Jardiné
+ * @author Chris Bono
  */
 @EmbeddedKafka(topics = {"out", "out2"})
 public class KafkaStreamsBinderHealthIndicatorTests {
@@ -152,22 +153,16 @@ public class KafkaStreamsBinderHealthIndicatorTests {
 			KafkaTemplate<Integer, String> template = new KafkaTemplate<>(pf, true);
 			CountDownLatch latch = new CountDownLatch(records.size());
 			for (ProducerRecord<Integer, String> record : records) {
-				ListenableFuture<SendResult<Integer, String>> future = template
-						.send(record);
-				future.addCallback(
-						new ListenableFutureCallback<SendResult<Integer, String>>() {
-							@Override
-							public void onFailure(Throwable ex) {
-								Assert.fail();
-							}
-
-							@Override
-							public void onSuccess(SendResult<Integer, String> result) {
-								latch.countDown();
-							}
-						});
+				CompletableFuture<SendResult<Integer, String>> future = template.send(record);
+				future.whenComplete((result, ex) -> {
+					if (ex != null) {
+						Assertions.fail();
+					}
+					else {
+						latch.countDown();
+					}
+				});
 			}
-
 			latch.await(5, TimeUnit.SECONDS);
 
 			embeddedKafka.consumeFromEmbeddedTopics(consumer, topics);
@@ -281,13 +276,8 @@ public class KafkaStreamsBinderHealthIndicatorTests {
 		@Bean
 		public StreamsBuilderFactoryBeanConfigurer customizer() {
 			return factoryBean -> {
-				factoryBean.setKafkaStreamsCustomizer(new KafkaStreamsCustomizer() {
-					@Override
-					public void customize(KafkaStreams kafkaStreams) {
-						kafkaStreams.setUncaughtExceptionHandler(exception ->
-								StreamsUncaughtExceptionHandler.StreamThreadExceptionResponse.SHUTDOWN_CLIENT);
-					}
-				});
+				factoryBean.setKafkaStreamsCustomizer(kafkaStreams -> kafkaStreams.setUncaughtExceptionHandler(exception ->
+						StreamsUncaughtExceptionHandler.StreamThreadExceptionResponse.SHUTDOWN_CLIENT));
 			};
 		}
 
