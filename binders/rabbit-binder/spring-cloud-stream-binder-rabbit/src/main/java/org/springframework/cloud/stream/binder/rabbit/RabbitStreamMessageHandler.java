@@ -1,5 +1,5 @@
 /*
- * Copyright 2021-2021 the original author or authors.
+ * Copyright 2021-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.binder.rabbit;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -28,6 +29,7 @@ import org.springframework.context.Lifecycle;
 import org.springframework.integration.amqp.support.AmqpHeaderMapper;
 import org.springframework.integration.amqp.support.DefaultAmqpHeaderMapper;
 import org.springframework.integration.handler.AbstractMessageHandler;
+import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.MessageHandlingException;
@@ -36,8 +38,6 @@ import org.springframework.rabbit.stream.producer.RabbitStreamOperations;
 import org.springframework.rabbit.stream.support.StreamMessageProperties;
 import org.springframework.util.Assert;
 import org.springframework.util.MimeType;
-import org.springframework.util.concurrent.ListenableFuture;
-import org.springframework.util.concurrent.SuccessCallback;
 
 /**
  * {@link MessageHandler} based on {@link RabbitStreamOperations}.
@@ -45,6 +45,7 @@ import org.springframework.util.concurrent.SuccessCallback;
  * TODO: This class will move to Spring Integration in 6.0.
  *
  * @author Gary Russell
+ * @author Chris Bono
  * @since 3.2
  *
  */
@@ -148,7 +149,7 @@ public class RabbitStreamMessageHandler extends AbstractMessageHandler implement
 
 	@Override
 	protected void handleMessageInternal(Message<?> requestMessage) {
-		ListenableFuture<Boolean> future;
+		CompletableFuture<Boolean> future;
 		com.rabbitmq.stream.Message streamMessage;
 		if (requestMessage.getPayload() instanceof com.rabbitmq.stream.Message) {
 			streamMessage = (com.rabbitmq.stream.Message) requestMessage.getPayload();
@@ -163,9 +164,15 @@ public class RabbitStreamMessageHandler extends AbstractMessageHandler implement
 		handleConfirms(requestMessage, future);
 	}
 
-	private void handleConfirms(Message<?> message, ListenableFuture<Boolean> future) {
-		future.addCallback(bool -> this.successCallback.onSuccess(message),
-				ex -> this.failureCallback.failure(message, ex));
+	private void handleConfirms(Message<?> message, CompletableFuture<Boolean> future) {
+		future.whenComplete((bool, ex) -> {
+			if (ex != null) {
+				this.failureCallback.failure(message, ex);
+			}
+			else {
+				this.successCallback.onSuccess(message);
+			}
+		});
 		if (this.sync) {
 			try {
 				future.get(this.confirmTimeout, TimeUnit.MILLISECONDS);
@@ -243,17 +250,26 @@ public class RabbitStreamMessageHandler extends AbstractMessageHandler implement
 	}
 
 	/**
+	 * Callback for when publishing succeeds.
+	 */
+	interface SuccessCallback<T> {
+		/**
+		 * Called when the future completes with success.
+		 * Note that Exceptions raised by this method are ignored.
+		 * @param result the result of the future
+		 */
+		void onSuccess(@Nullable T result);
+	}
+
+	/**
 	 * Callback for when publishing fails.
 	 */
-	public interface FailureCallback {
-
+	interface FailureCallback {
 		/**
 		 * Message publish failure.
 		 * @param message the message.
 		 * @param throwable the throwable.
 		 */
 		void failure(Message<?> message, Throwable throwable);
-
 	}
-
 }

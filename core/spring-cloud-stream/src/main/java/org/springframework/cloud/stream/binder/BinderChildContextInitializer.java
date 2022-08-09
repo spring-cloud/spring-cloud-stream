@@ -30,7 +30,6 @@ import org.springframework.aot.generate.MethodReference;
 import org.springframework.beans.factory.aot.BeanRegistrationAotContribution;
 import org.springframework.beans.factory.aot.BeanRegistrationAotProcessor;
 import org.springframework.beans.factory.aot.BeanRegistrationCode;
-import org.springframework.beans.factory.aot.BeanRegistrationExcludeFilter;
 import org.springframework.beans.factory.support.RegisteredBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -46,7 +45,7 @@ import org.springframework.util.Assert;
  * @author Chris Bono
  * @since 4.0
  */
-public class BinderChildContextInitializer implements ApplicationContextAware, BeanRegistrationAotProcessor, BeanRegistrationExcludeFilter {
+public class BinderChildContextInitializer implements ApplicationContextAware, BeanRegistrationAotProcessor {
 
 	private final LogAccessor logger = new LogAccessor(LogFactory.getLog(getClass()));
 	private DefaultBinderFactory binderFactory;
@@ -78,7 +77,7 @@ public class BinderChildContextInitializer implements ApplicationContextAware, B
 	}
 
 	@Override
-	public boolean isExcluded(RegisteredBean registeredBean) {
+	public boolean isBeanExcludedFromAotProcessing() {
 		return false;
 	}
 
@@ -140,24 +139,25 @@ public class BinderChildContextInitializer implements ApplicationContextAware, B
 		@Override
 		public void applyTo(GenerationContext generationContext, BeanRegistrationCode beanRegistrationCode) {
 			ApplicationContextAotGenerator aotGenerator = new ApplicationContextAotGenerator();
-			GeneratedMethod postProcessorMethod = beanRegistrationCode.getMethodGenerator()
-					.generateMethod("addChildContextInitializers").using(builder -> {
-						builder.addJavadoc("Use AOT child context initialization");
-						builder.addModifiers(Modifier.PRIVATE, Modifier.STATIC);
-						builder.addParameter(RegisteredBean.class, "registeredBean");
-						builder.addParameter(BinderChildContextInitializer.class, "instance");
-						builder.returns(BinderChildContextInitializer.class);
-						builder.addStatement("$T<String, $T<? extends $T>> initializers = new $T<>()", Map.class,
+
+			GeneratedMethod postProcessorMethod = beanRegistrationCode.getMethods().add("addChildContextInitializers",
+					(method) -> {
+						method.addJavadoc("Use AOT child context initialization");
+						method.addModifiers(Modifier.PRIVATE, Modifier.STATIC);
+						method.addParameter(RegisteredBean.class, "registeredBean");
+						method.addParameter(BinderChildContextInitializer.class, "instance");
+						method.returns(BinderChildContextInitializer.class);
+						method.addStatement("$T<String, $T<? extends $T>> initializers = new $T<>()", Map.class,
 								ApplicationContextInitializer.class, ConfigurableApplicationContext.class, HashMap.class);
 						this.childContexts.forEach((name, context) -> {
 							this.logger.debug(() -> "Generating AOT child context initializer for " + name);
 							GenerationContext childGenerationContext = generationContext.withName(name + "Binder");
-							ClassName initializerClassName = aotGenerator.generateApplicationContext(context, childGenerationContext);
-							builder.addStatement("$T<? extends $T>" + name + "Initializer = new $L()", ApplicationContextInitializer.class,
+							ClassName initializerClassName = aotGenerator.processAheadOfTime(context, childGenerationContext);
+							method.addStatement("$T<? extends $T>" + name + "Initializer = new $L()", ApplicationContextInitializer.class,
 									ConfigurableApplicationContext.class, initializerClassName);
-							builder.addStatement("initializers.put($S," + name + "Initializer)", name);
+							method.addStatement("initializers.put($S," + name + "Initializer)", name);
 						});
-						builder.addStatement("return instance.withChildContextInitializers(initializers)");
+						method.addStatement("return instance.withChildContextInitializers(initializers)");
 					});
 			beanRegistrationCode.addInstancePostProcessor(
 					MethodReference.ofStatic(beanRegistrationCode.getClassName(), postProcessorMethod.getName()));
