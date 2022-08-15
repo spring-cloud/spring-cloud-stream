@@ -77,7 +77,7 @@ NOTE: If the destination property is not set on the binding, a topic is created 
 
 Once built as a uber-jar (e.g., `kstream-consumer-app.jar`), you can run the above example like the following.
 
-If the applications choose to define the functional beans using Spring's `Component` annotation, the binder also suppports that model.
+If the applications choose to define the functional beans using Spring's `Component` annotation, the binder also supports that model.
 The above functional bean could be rewritten as below.
 
 ```
