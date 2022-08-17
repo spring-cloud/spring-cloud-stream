@@ -153,7 +153,7 @@ public class BinderChildContextInitializer implements ApplicationContextAware, B
 							this.logger.debug(() -> "Generating AOT child context initializer for " + name);
 							GenerationContext childGenerationContext = generationContext.withName(name + "Binder");
 							ClassName initializerClassName = aotGenerator.processAheadOfTime(context, childGenerationContext);
-							method.addStatement("$T<? extends $T>" + name + "Initializer = new $L()", ApplicationContextInitializer.class,
+							method.addStatement("$T<? extends $T> " + name + "Initializer = new $L()", ApplicationContextInitializer.class,
 									ConfigurableApplicationContext.class, initializerClassName);
 							method.addStatement("initializers.put($S," + name + "Initializer)", name);
 						});
