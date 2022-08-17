@@ -265,9 +265,7 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 			ConfigurableApplicationContext binderProducingContext;
 			if (this.binderChildContextInitializers.containsKey(configurationName)) {
 				this.logger.info("Using AOT pre-prepared initializer to construct binder child context for " + configurationName);
-				binderProducingContext = this.initializeBinderContextSimple(configurationName, binderProperties,
-						binderType, binderConfiguration, false);
-				GenericApplicationContext c = null;
+				binderProducingContext = this.createUnitializedContextForAOT(configurationName, binderProperties, binderConfiguration);
 				this.binderChildContextInitializers.get(configurationName).initialize(binderProducingContext);
 				binderProducingContext.refresh();
 			}
@@ -445,6 +443,49 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 		}
 
 		return binderProducingContext;
+	}
+
+	/**
+	 * Creates a bare minimum application context that can be initialized by AOT.
+	 *
+	 * @param configurationName binder configuration name
+	 * @param binderProperties binder properties
+	 * @param binderConfiguration binder configuration
+	 * @return a binder child application context suitable for AOT initialization
+	 */
+	GenericApplicationContext createUnitializedContextForAOT(String configurationName,
+			Map<String, Object> binderProperties, BinderConfiguration binderConfiguration) {
+
+		GenericApplicationContext binderContext = new GenericApplicationContext();
+
+		MapPropertySource binderPropertySource = new MapPropertySource(configurationName, binderProperties);
+		binderContext.getEnvironment().getPropertySources().addFirst(binderPropertySource);
+		binderContext.setDisplayName(configurationName + "_context");
+		boolean useApplicationContextAsParent = binderProperties.isEmpty() && this.context != null;
+		ConfigurableEnvironment environment = this.context != null ? this.context.getEnvironment() : null;
+		if (useApplicationContextAsParent) {
+			binderContext.setParent(this.context);
+		}
+		else if (this.context != null) {
+			binderContext.addApplicationListener(event -> {
+				if (context != null) {
+					try {
+						context.publishEvent(event);
+					}
+					catch (Exception e) {
+						logger.warn("Failed to publish " + event, e);
+					}
+				}
+			});
+			if (environment != null && (useApplicationContextAsParent || binderConfiguration.isInheritEnvironment())) {
+				binderContext.getEnvironment().merge(environment);
+				binderContext.getEnvironment().getPropertySources().remove("configurationProperties");
+				binderContext.getEnvironment().getPropertySources()
+						.addFirst(new MapPropertySource("defaultBinderFactoryProperties",
+								Collections.singletonMap("spring.main.web-application-type", "NONE")));
+			}
+		}
+		return binderContext;
 	}
 
 	/**
