@@ -33,7 +33,9 @@ import org.springframework.amqp.core.Base64UrlNamingStrategy;
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.Binding.DestinationType;
 import org.springframework.amqp.core.BindingBuilder;
+import org.springframework.amqp.core.Declarable;
 import org.springframework.amqp.core.DeclarableCustomizer;
+import org.springframework.amqp.core.Declarables;
 import org.springframework.amqp.core.DirectExchange;
 import org.springframework.amqp.core.Exchange;
 import org.springframework.amqp.core.ExchangeBuilder;
@@ -632,10 +634,13 @@ public class RabbitExchangeQueueProvisioner
 		addToAutoDeclareContext(rootName + "." + group + ".exchange", exchange);
 	}
 
-	private void addToAutoDeclareContext(String name, Object bean) {
+	private void addToAutoDeclareContext(String name, Declarable bean) {
 		synchronized (this.autoDeclareContext) {
 			if (!this.autoDeclareContext.containsBean(name)) {
-				this.autoDeclareContext.getBeanFactory().registerSingleton(name, bean);
+				this.autoDeclareContext.getBeanFactory().registerSingleton(name, new Declarables(bean));
+			}
+			else {
+				this.autoDeclareContext.getBean(name, Declarables.class).getDeclarables().add(bean);
 			}
 		}
 	}

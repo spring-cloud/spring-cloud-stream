@@ -59,6 +59,7 @@ import org.springframework.amqp.core.AnonymousQueue;
 import org.springframework.amqp.core.Binding.DestinationType;
 import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.Declarable;
+import org.springframework.amqp.core.Declarables;
 import org.springframework.amqp.core.DirectExchange;
 import org.springframework.amqp.core.ExchangeTypes;
 import org.springframework.amqp.core.MessageDeliveryMode;
@@ -163,7 +164,7 @@ public class RabbitBinderTests extends
 	private static final String BIG_EXCEPTION_MESSAGE = new String(new byte[10_000]).replaceAll("\u0000", "x");
 
 	@RegisterExtension
-	private RabbitTestSupport rabbitTestSupport = new RabbitTestSupport(true, RABBITMQ.getAmqpPort(), RABBITMQ.getHttpPort());
+	private final RabbitTestSupport rabbitTestSupport = new RabbitTestSupport(true, RABBITMQ.getAmqpPort(), RABBITMQ.getHttpPort());
 
 	private int maxStackTraceSize;
 
@@ -602,6 +603,10 @@ public class RabbitBinderTests extends
 		SimpleMessageListenerContainer container = TestUtils.getPropertyValue(endpoint,
 				"messageListenerContainer", SimpleMessageListenerContainer.class);
 		assertThat(container.isRunning()).isTrue();
+		ApplicationContext ctx =
+				TestUtils.getPropertyValue(binder, "binder.provisioningProvider.autoDeclareContext",
+						ApplicationContext.class);
+		assertThat(ctx.getBean("infra.binding", Declarables.class).getDeclarables()).hasSize(2);
 		consumerBinding.unbind();
 		assertThat(container.isRunning()).isFalse();
 		assertThat(container.getQueueNames()[0]).isEqualTo(group);
