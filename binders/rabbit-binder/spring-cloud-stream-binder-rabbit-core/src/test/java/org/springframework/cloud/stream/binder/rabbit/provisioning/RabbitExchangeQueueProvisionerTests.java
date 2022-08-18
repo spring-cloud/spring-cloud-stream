@@ -23,7 +23,7 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.impl.AMQImpl.Queue.DeclareOk;
 import org.junit.jupiter.api.Test;
 
-import org.springframework.amqp.core.Declarable;
+import org.springframework.amqp.core.Declarables;
 import org.springframework.amqp.rabbit.connection.Connection;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.utils.test.TestUtils;
@@ -69,11 +69,11 @@ public class RabbitExchangeQueueProvisionerTests {
 		ConsumerDestination dest = provisioner.provisionConsumerDestination("foo", "group", properties);
 		ApplicationContext ctx =
 				TestUtils.getPropertyValue(provisioner, "autoDeclareContext", ApplicationContext.class);
-		Set<String> declarables = ctx.getBeansOfType(Declarable.class).keySet();
+		Set<String> declarables = ctx.getBeansOfType(Declarables.class).keySet();
 		assertThat(declarables).contains("foo.group.exchange", "foo.group", "foo.group.binding", "foo.group.dlq",
 				"DLX.group.exchange", "foo.group.dlq.binding", "foo.group.dlq.2.binding");
 		provisioner.cleanAutoDeclareContext(dest, properties);
-		assertThat(ctx.getBeansOfType(Declarable.class)).isEmpty();
+		assertThat(ctx.getBeansOfType(Declarables.class)).isEmpty();
 	}
 
 	@Test
@@ -95,11 +95,11 @@ public class RabbitExchangeQueueProvisionerTests {
 		ConsumerDestination dest = provisioner.provisionConsumerDestination("fiz", "group", properties);
 		ApplicationContext ctx =
 				TestUtils.getPropertyValue(provisioner, "autoDeclareContext", ApplicationContext.class);
-		Set<String> declarables = ctx.getBeansOfType(Declarable.class).keySet();
+		Set<String> declarables = ctx.getBeansOfType(Declarables.class).keySet();
 		assertThat(declarables).contains("fiz.group.exchange", "group", "group.binding", "group.dlq",
 				"DLX.group.exchange", "group.dlq.binding", "group.dlq.2.binding");
 		provisioner.cleanAutoDeclareContext(dest, properties);
-		assertThat(ctx.getBeansOfType(Declarable.class)).isEmpty();
+		assertThat(ctx.getBeansOfType(Declarables.class)).isEmpty();
 	}
 
 	@Test
@@ -119,11 +119,11 @@ public class RabbitExchangeQueueProvisionerTests {
 		ProducerDestination dest = provisioner.provisionProducerDestination("bar", properties);
 		ApplicationContext ctx =
 				TestUtils.getPropertyValue(provisioner, "autoDeclareContext", ApplicationContext.class);
-		Set<String> declarables = ctx.getBeansOfType(Declarable.class).keySet();
+		Set<String> declarables = ctx.getBeansOfType(Declarables.class).keySet();
 		String qual = TestUtils.getPropertyValue(dest, "beanNameQualifier", String.class);
 		assertThat(declarables).contains("bar." + qual + ".exchange");
 		provisioner.cleanAutoDeclareContext(dest, properties);
-		assertThat(ctx.getBeansOfType(Declarable.class)).isEmpty();
+		assertThat(ctx.getBeansOfType(Declarables.class)).isEmpty();
 	}
 
 	@Test
@@ -145,13 +145,13 @@ public class RabbitExchangeQueueProvisionerTests {
 		ProducerDestination dest = provisioner.provisionProducerDestination("baz", properties);
 		ApplicationContext ctx =
 				TestUtils.getPropertyValue(provisioner, "autoDeclareContext", ApplicationContext.class);
-		Set<String> declarables = ctx.getBeansOfType(Declarable.class).keySet();
+		Set<String> declarables = ctx.getBeansOfType(Declarables.class).keySet();
 		String qual = TestUtils.getPropertyValue(dest, "beanNameQualifier", String.class);
 		assertThat(declarables).contains("baz." + qual + ".exchange", "baz.group1", "baz.group1.binding",
 				"baz.group1.dlq", "DLX.group1.exchange", "baz.group1.dlq.binding", "baz.group2", "baz.group2.binding",
 				"baz.group2.dlq", "DLX.group2.exchange", "baz.group2.dlq.binding");
 		provisioner.cleanAutoDeclareContext(dest, properties);
-		assertThat(ctx.getBeansOfType(Declarable.class)).isEmpty();
+		assertThat(ctx.getBeansOfType(Declarables.class)).isEmpty();
 	}
 
 	@Test
@@ -175,7 +175,7 @@ public class RabbitExchangeQueueProvisionerTests {
 		ProducerDestination dest = provisioner.provisionProducerDestination("qux", properties);
 		ApplicationContext ctx =
 				TestUtils.getPropertyValue(provisioner, "autoDeclareContext", ApplicationContext.class);
-		Set<String> declarables = ctx.getBeansOfType(Declarable.class).keySet();
+		Set<String> declarables = ctx.getBeansOfType(Declarables.class).keySet();
 		String qual = TestUtils.getPropertyValue(dest, "beanNameQualifier", String.class);
 		assertThat(declarables).contains("qux." + qual + ".exchange", "qux.group1-0", "qux.group1-0.binding",
 				"qux.group1-1", "qux.group1-1.binding", "qux.group1.dlq", "DLX.group1.exchange",
@@ -183,7 +183,7 @@ public class RabbitExchangeQueueProvisionerTests {
 				"qux.group2-0.binding", "qux.group2-1", "qux.group2-1.binding", "qux.group2.dlq", "DLX.group2.exchange",
 				"qux.group2.dlq.binding");
 		provisioner.cleanAutoDeclareContext(dest, properties);
-		assertThat(ctx.getBeansOfType(Declarable.class)).isEmpty();
+		assertThat(ctx.getBeansOfType(Declarables.class)).isEmpty();
 	}
 
 	@Test
@@ -208,14 +208,14 @@ public class RabbitExchangeQueueProvisionerTests {
 		ProducerDestination dest = provisioner.provisionProducerDestination("qux", properties);
 		ApplicationContext ctx =
 				TestUtils.getPropertyValue(provisioner, "autoDeclareContext", ApplicationContext.class);
-		Set<String> declarables = ctx.getBeansOfType(Declarable.class).keySet();
+		Set<String> declarables = ctx.getBeansOfType(Declarables.class).keySet();
 		String qual = TestUtils.getPropertyValue(dest, "beanNameQualifier", String.class);
 		assertThat(declarables).contains("qux." + qual + ".exchange", "group1-0", "group1-0.binding", "group1-1",
 				"group1-1.binding", "group1.dlq", "DLX.group1.exchange", "group1.dlq.binding", "group2-0",
 				"group2-0.binding", "group2-1", "group2-1.binding", "group2.dlq", "DLX.group2.exchange",
 				"group2.dlq.binding");
 		provisioner.cleanAutoDeclareContext(dest, properties);
-		assertThat(ctx.getBeansOfType(Declarable.class)).isEmpty();
+		assertThat(ctx.getBeansOfType(Declarables.class)).isEmpty();
 	}
 
 }
