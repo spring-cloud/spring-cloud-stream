@@ -31,7 +31,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(properties = { "spring.jmx.enabled=true", "endpoints.default.jmx.enabled=true",
-	"management.endpoints..jmx.exposure.include=busrefresh,busenv", "debug=true" })
+		"management.endpoints..jmx.exposure.include=busrefresh,busenv", "debug=true" })
 public class BusJmxEndpointTests {
 
 	@Autowired(required = false)
