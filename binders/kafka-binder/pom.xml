@@ -20,10 +20,6 @@
 	</scm>
 	<properties>
 		<java.version>1.8</java.version>
-		<spring-kafka.version>2.8.5</spring-kafka.version>
-		<spring-integration-kafka.version>5.5.8</spring-integration-kafka.version>
-		<kafka.version>3.0.0</kafka.version>
-		<spring-cloud-stream.version>3.2.5-SNAPSHOT</spring-cloud-stream.version>
 		<maven-checkstyle-plugin.failsOnError>true</maven-checkstyle-plugin.failsOnError>
 		<maven-checkstyle-plugin.failsOnViolation>true</maven-checkstyle-plugin.failsOnViolation>
 		<maven-checkstyle-plugin.includeTestSourceDirectory>true</maven-checkstyle-plugin.includeTestSourceDirectory>
@@ -34,34 +30,6 @@
 		<module>spring-cloud-stream-binder-kafka-core</module>
 		<module>spring-cloud-stream-binder-kafka-streams</module>
 	</modules>
-
-	<dependencyManagement>
-		<dependencies>
-			<dependency>
-				<groupId>org.springframework.kafka</groupId>
-				<artifactId>spring-kafka</artifactId>
-				<version>${spring-kafka.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.apache.kafka</groupId>
-				<artifactId>kafka-streams</artifactId>
-				<version>${kafka.version}</version>
-				<exclusions>
-					<exclusion>
-						<groupId>org.slf4j</groupId>
-						<artifactId>slf4j-log4j12</artifactId>
-					</exclusion>
-				</exclusions>
-			</dependency>
-			<dependency>
-				<groupId>org.apache.kafka</groupId>
-				<artifactId>kafka-clients</artifactId>
-				<version>${kafka.version}</version>
-				<classifier>test</classifier>
-				<scope>test</scope>
-			</dependency>
-		</dependencies>
-	</dependencyManagement>
 
 	<dependencies>
 		<dependency>

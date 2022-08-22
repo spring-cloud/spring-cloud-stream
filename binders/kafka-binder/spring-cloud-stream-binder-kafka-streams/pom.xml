@@ -64,6 +64,15 @@
 			<artifactId>spring-boot-autoconfigure-processor</artifactId>
 			<optional>true</optional>
 		</dependency>
+		<dependency>
+			<groupId>org.apache.kafka</groupId>
+			<artifactId>kafka_2.13</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.kafka</groupId>
+			<artifactId>kafka_2.13</artifactId>
+			<classifier>test</classifier>
+		</dependency>
 		<!-- Following dependency is only provided for testing and won't be packaged with the binder apps-->
 		<dependency>
 			<groupId>org.apache.avro</groupId>
