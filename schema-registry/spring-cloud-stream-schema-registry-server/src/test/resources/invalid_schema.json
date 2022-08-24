@@ -1,0 +1,11 @@
+{
+  "type": "record",
+  "name": "SuperType",
+  "namespace": "some.namespace",
+  "fields": [
+    {
+      "name": "field",
+      "type": "SomeType"
+    }
+  ]
+}

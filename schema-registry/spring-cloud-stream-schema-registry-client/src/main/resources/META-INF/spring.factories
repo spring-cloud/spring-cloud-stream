@@ -1,0 +1,3 @@
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+org.springframework.cloud.stream.schema.registry.avro.AvroMessageConverterAutoConfiguration
+

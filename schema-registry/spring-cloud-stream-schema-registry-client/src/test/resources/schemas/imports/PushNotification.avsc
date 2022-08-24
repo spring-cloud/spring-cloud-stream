@@ -1,0 +1,15 @@
+{
+ "namespace":"example.avro",
+ "name": "PushNotification",
+ "type": "record",
+ "fields":[
+    {
+        "name":"arn",
+        "type":"string"
+    },
+    {
+        "name":"text",
+        "type":"string"
+    }
+ ]
+}

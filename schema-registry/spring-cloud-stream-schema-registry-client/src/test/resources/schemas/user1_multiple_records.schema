@@ -1,0 +1,22 @@
+[
+    {"namespace": "org.springframework.cloud.schema.avro",
+      "type": "record",
+      "name": "User1",
+      "fields": [
+        {"name": "name", "type": "string"},
+        {"name": "favoriteNumber",  "type": ["int", "null"]},
+        {"name": "favoriteColor", "type": ["string", "null"]}
+
+      ]
+    },
+    {"namespace": "org.springframework.cloud.schema.avro.v2",
+      "type": "record",
+      "name": "User1",
+      "fields": [
+        {"name": "name", "type": "string"},
+        {"name": "favoriteNumber",  "type": ["int", "null"]},
+        {"name": "favoriteColor", "type": ["string", "null"]},
+        {"name": "favoritePlace", "type": ["string","null"], "default" : "NYC"}
+      ]
+    }
+]
