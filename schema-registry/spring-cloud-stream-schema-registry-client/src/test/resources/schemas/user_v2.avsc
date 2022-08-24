@@ -1,0 +1,10 @@
+{"namespace": "example.avro.v2",
+  "type": "record",
+  "name": "User",
+  "fields": [
+    {"name": "name", "type": "string"},
+    {"name": "favoriteNumber",  "type": ["int", "null"]},
+    {"name": "favoriteColor", "type": ["string", "null"]},
+    {"name": "favoritePlace", "type": ["string","null"], "default" : "NYC"}
+  ]
+}

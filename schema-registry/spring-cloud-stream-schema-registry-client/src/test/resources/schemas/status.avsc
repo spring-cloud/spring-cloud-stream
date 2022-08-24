@@ -1,0 +1,10 @@
+{
+  "namespace":"org.springframework.cloud.stream.samples",
+  "name": "Status",
+  "type" : "record",
+  "fields": [
+    {"name": "id", "type": "string"},
+    {"name": "text", "type": "string"},
+    {"name": "timestamp", "type": "long"}
+  ]
+}
