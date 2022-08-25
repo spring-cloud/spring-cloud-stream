@@ -1,5 +1,5 @@
 /*
- * Copyright 2014-2018 the original author or authors.
+ * Copyright 2014-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -174,22 +174,22 @@ public class KafkaTopicProvisioner implements
 		if (logger.isInfoEnabled()) {
 			logger.info("Using kafka topic for outbound: " + name);
 		}
-		KafkaTopicUtils.validateTopicName(name);
-		try (AdminClient adminClient = createAdminClient()) {
-			createTopic(adminClient, name, properties.getPartitionCount(), false,
+		if (this.configurationProperties.isAutoCreateTopics()) {
+			KafkaTopicUtils.validateTopicName(name);
+			try (AdminClient adminClient = createAdminClient()) {
+				createTopic(adminClient, name, properties.getPartitionCount(), false,
 					properties.getExtension().getTopic());
-			int partitions = 0;
-			Map<String, TopicDescription> topicDescriptions = new HashMap<>();
-			if (this.configurationProperties.isAutoCreateTopics()) {
+				int partitions = 0;
+				Map<String, TopicDescription> topicDescriptions = new HashMap<>();
 				this.metadataRetryOperations.execute(context -> {
 					try {
 						if (logger.isDebugEnabled()) {
 							logger.debug("Attempting to retrieve the description for the topic: " + name);
 						}
 						DescribeTopicsResult describeTopicsResult = adminClient
-								.describeTopics(Collections.singletonList(name));
+							.describeTopics(Collections.singletonList(name));
 						KafkaFuture<Map<String, TopicDescription>> all = describeTopicsResult
-								.all();
+							.allTopicNames();
 						topicDescriptions.putAll(all.get(this.operationTimeout, TimeUnit.SECONDS));
 					}
 					catch (Exception ex) {
@@ -197,13 +197,14 @@ public class KafkaTopicProvisioner implements
 					}
 					return null;
 				});
+				TopicDescription topicDescription = topicDescriptions.get(name);
+				if (topicDescription != null) {
+					partitions = topicDescription.partitions().size();
+				}
+				return new KafkaProducerDestination(name, partitions);
 			}
-			TopicDescription topicDescription = topicDescriptions.get(name);
-			if (topicDescription != null) {
-				partitions = topicDescription.partitions().size();
-			}
-			return new KafkaProducerDestination(name, partitions);
 		}
+		return new KafkaProducerDestination(name, 0);
 	}
 
 	@Override
@@ -225,7 +226,7 @@ public class KafkaTopicProvisioner implements
 	private ConsumerDestination doProvisionConsumerDestination(final String name,
 			final String group,
 			ExtendedConsumerProperties<KafkaConsumerProperties> properties) {
-
+		final KafkaConsumerDestination kafkaConsumerDestination = new KafkaConsumerDestination(name);
 		if (properties.getExtension().isDestinationIsPattern()) {
 			Assert.isTrue(!properties.getExtension().isEnableDlq(),
 					"enableDLQ is not allowed when listening to topic patterns");
@@ -233,44 +234,45 @@ public class KafkaTopicProvisioner implements
 				logger.debug("Listening to a topic pattern - " + name
 						+ " - no provisioning performed");
 			}
-			return new KafkaConsumerDestination(name);
+			return kafkaConsumerDestination;
 		}
-		KafkaTopicUtils.validateTopicName(name);
-		boolean anonymous = !StringUtils.hasText(group);
-		Assert.isTrue(!anonymous || !properties.getExtension().isEnableDlq(),
+		if (this.configurationProperties.isAutoCreateTopics()) {
+			KafkaTopicUtils.validateTopicName(name);
+			boolean anonymous = !StringUtils.hasText(group);
+			Assert.isTrue(!anonymous || !properties.getExtension().isEnableDlq(),
 				"DLQ support is not available for anonymous subscriptions");
-		if (properties.getInstanceCount() == 0) {
-			throw new IllegalArgumentException("Instance count cannot be zero");
-		}
-		int partitionCount = properties.getInstanceCount() * properties.getConcurrency();
-		ConsumerDestination consumerDestination = new KafkaConsumerDestination(name);
-		try (AdminClient adminClient = createAdminClient()) {
-			createTopic(adminClient, name, partitionCount,
+			if (properties.getInstanceCount() == 0) {
+				throw new IllegalArgumentException("Instance count cannot be zero");
+			}
+			int partitionCount = properties.getInstanceCount() * properties.getConcurrency();
+			ConsumerDestination consumerDestination;
+			try (AdminClient adminClient = createAdminClient()) {
+				createTopic(adminClient, name, partitionCount,
 					properties.getExtension().isAutoRebalanceEnabled(),
 					properties.getExtension().getTopic());
-			if (this.configurationProperties.isAutoCreateTopics()) {
 				DescribeTopicsResult describeTopicsResult = adminClient
-						.describeTopics(Collections.singletonList(name));
+					.describeTopics(Collections.singletonList(name));
 				KafkaFuture<Map<String, TopicDescription>> all = describeTopicsResult
-						.all();
+					.allTopicNames();
 				try {
 					Map<String, TopicDescription> topicDescriptions = all
-							.get(this.operationTimeout, TimeUnit.SECONDS);
+						.get(this.operationTimeout, TimeUnit.SECONDS);
 					TopicDescription topicDescription = topicDescriptions.get(name);
 					int partitions = topicDescription.partitions().size();
 					consumerDestination = createDlqIfNeedBe(adminClient, name, group,
-							properties, anonymous, partitions);
+						properties, anonymous, partitions);
 					if (consumerDestination == null) {
 						consumerDestination = new KafkaConsumerDestination(name,
-								partitions);
+							partitions);
 					}
+					return consumerDestination;
 				}
 				catch (Exception ex) {
 					throw new ProvisioningException("Provisioning exception encountered for " + name, ex);
 				}
 			}
 		}
-		return consumerDestination;
+		return kafkaConsumerDestination;
 	}
 
 	AdminClient createAdminClient() {
