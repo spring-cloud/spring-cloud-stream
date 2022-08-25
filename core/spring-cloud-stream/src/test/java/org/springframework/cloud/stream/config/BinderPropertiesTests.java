@@ -20,12 +20,10 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Properties;
 
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.boot.actuate.context.properties.ConfigurationPropertiesReportEndpoint;
 import org.springframework.boot.actuate.context.properties.ConfigurationPropertiesReportEndpoint.ContextConfigurationProperties;
+import org.springframework.boot.actuate.endpoint.Show;
 import org.springframework.context.support.StaticApplicationContext;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -41,8 +39,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class BinderPropertiesTests {
 
 	@SuppressWarnings("unchecked")
-	@Test
-	@Disabled
+	//@Test
+	//@Disabled
 	void testSerializationWithNonStringValues() {
 		StaticApplicationContext context = new StaticApplicationContext();
 		DefaultListableBeanFactory bf = (DefaultListableBeanFactory) context
@@ -60,7 +58,9 @@ public class BinderPropertiesTests {
 
 		// using Spring Boot class to ensure that reliance on the same ObjectMapper
 		// configuration
-		ConfigurationPropertiesReportEndpoint endpoint = new ConfigurationPropertiesReportEndpoint();
+
+
+		ConfigurationPropertiesReportEndpoint endpoint = new ConfigurationPropertiesReportEndpoint(Collections.emptyList(), Show.ALWAYS);
 		endpoint.setApplicationContext(context);
 
 		ContextConfigurationProperties configurationProperties = endpoint
