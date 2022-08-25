@@ -143,17 +143,23 @@ public class KafkaStreamsBinderBootstrapTest {
 		assertThat(streamsConfiguration3.containsKey("spring.json.value.type.method")).isFalse();
 		applicationContext.getBean(KeyValueSerdeResolver.class);
 
-		String configuredSerdeTypeResolver = (String) new DirectFieldAccessor(input2SBFB.getKafkaStreams())
-				.getPropertyValue("taskTopology.processorNodes[0].valDeserializer.typeResolver.arg$2");
+		// SCSt 3.2.x should work for both SB 2.6.x and SB 2.7.x. The latter pulls the kafka-clients jar from 3.0.1 to 3.1.1.
+		// kafka-clients removed the 'KafkaStreams.taskTopology' field in 3.1.1. In order to verify across both we have to
+		// do some nasty reflection digging to get at the processor node info.
+		Object rawProcessorNodeRef = new DirectFieldAccessor(input2SBFB.getTopology())
+					.getPropertyValue("internalTopologyBuilder.nodeFactories['KSTREAM-SOURCE-0000000001']");
+		DirectFieldAccessor processorNodeFieldAccessor = new DirectFieldAccessor(rawProcessorNodeRef);
 
+		String configuredSerdeTypeResolver = (String) processorNodeFieldAccessor
+				.getPropertyValue("valDeserializer.typeResolver.arg$2");
 		assertThat(this.getClass().getName() + ".determineType").isEqualTo(configuredSerdeTypeResolver);
 
-		String configuredKeyDeserializerFieldName = ((String) new DirectFieldAccessor(input2SBFB.getKafkaStreams())
-				.getPropertyValue("taskTopology.processorNodes[0].keyDeserializer.typeMapper.classIdFieldName"));
+		String configuredKeyDeserializerFieldName = ((String) processorNodeFieldAccessor
+				.getPropertyValue("keyDeserializer.typeMapper.classIdFieldName"));
 		assertThat(DefaultJackson2JavaTypeMapper.KEY_DEFAULT_CLASSID_FIELD_NAME).isEqualTo(configuredKeyDeserializerFieldName);
 
-		String configuredValueDeserializerFieldName = ((String) new DirectFieldAccessor(input2SBFB.getKafkaStreams())
-				.getPropertyValue("taskTopology.processorNodes[0].valDeserializer.typeMapper.classIdFieldName"));
+		String configuredValueDeserializerFieldName = ((String) processorNodeFieldAccessor
+				.getPropertyValue("valDeserializer.typeMapper.classIdFieldName"));
 		assertThat(DefaultJackson2JavaTypeMapper.DEFAULT_CLASSID_FIELD_NAME).isEqualTo(configuredValueDeserializerFieldName);
 
 		applicationContext.close();
