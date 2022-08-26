@@ -66,7 +66,7 @@ public class AvroSchemaServiceManagerTests {
 			foodOrder.setRestaurant("Spring Kitchen");
 			foodOrder.setOrderDescription("avro makhani");
 			foodOrder.setCustomerAddress("world wide web");
-			File file = new File("foodorder.avro");
+			File file = new File("target/foodorder.avro");
 
 			DatumWriter datumWriter = defaultServiceManager.getDatumWriter(foodOrder.getClass(), schema);
 			DataFileWriter<FoodOrder> dataFileWriter = new DataFileWriter<FoodOrder>(datumWriter);
