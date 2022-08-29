@@ -32,8 +32,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
@@ -587,7 +587,7 @@ public class BindingServiceTests {
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Test
-	@Ignore
+	@Disabled
 	public void testLateBindingConsumer() throws Exception {
 		BindingServiceProperties properties = new BindingServiceProperties();
 		properties.setBindingRetryInterval(1);

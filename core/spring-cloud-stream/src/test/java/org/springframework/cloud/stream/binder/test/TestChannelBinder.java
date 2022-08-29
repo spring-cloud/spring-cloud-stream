@@ -71,7 +71,7 @@ import org.springframework.util.StringUtils;
  * You must also add {@link TestChannelBinderConfiguration} to your configuration. Below
  * is the example using Spring Boot test. <pre class="code">
  *
- * &#064;RunWith(SpringJUnit4ClassRunner.class)
+ * &#064;@ExtendWith(SpringExtension.class)
  * &#064;SpringBootTest(classes = {SpringIntegrationBinderConfiguration.class, TestWithSIBinder.MyProcessor.class})
  * public class TestWithSIBinder {
  *     &#064;Autowired
@@ -88,12 +88,10 @@ import org.springframework.util.StringUtils;
  *     }
  *
  *     &#064;SpringBootApplication
- *     &#064;EnableBinding(Processor.class)
  *     public static class MyProcessor {
- *         &#064;StreamListener(Processor.INPUT)
- *         &#064;SendTo(Processor.OUTPUT)
- *         public String transform(String in) {
- *             return in + " world";
+ *         &#064;Bean
+ *         public Function&lt;String, String&gt; transform() {
+ *             return in -> in + " world";
  *         }
  *     }
  * }

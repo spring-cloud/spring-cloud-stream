@@ -19,7 +19,8 @@ package org.springframework.cloud.stream.config;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.boot.WebApplicationType;
@@ -37,7 +38,6 @@ import org.springframework.context.annotation.Import;
 import org.springframework.validation.annotation.Validated;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.fail;
 
 // see https://github.com/spring-cloud/spring-cloud-stream/issues/1573 for more details
 /**
@@ -46,10 +46,12 @@ import static org.junit.Assert.fail;
  */
 public class BindingHandlerAdviseTests {
 
-	@Test(expected = BeanCreationException.class)
+	@Test
 	public void testFailureWithWrongValue() {
-		new SpringApplicationBuilder(SampleConfiguration.class).web(WebApplicationType.NONE).run("--props.value=-1",
+		BeanCreationException thrown = Assertions.assertThrows(BeanCreationException.class, () -> {
+			new SpringApplicationBuilder(SampleConfiguration.class).web(WebApplicationType.NONE).run("--props.value=-1",
 				"--spring.jmx.enabled=false");
+		});
 	}
 
 	@Test
@@ -67,12 +69,15 @@ public class BindingHandlerAdviseTests {
 		// simply should not fail
 	}
 
-	@Test(expected = ConfigurationPropertiesBindException.class)
+	@Test//(expected = ConfigurationPropertiesBindException.class)
 	public void validatedConfigProperties() {
-		new SpringApplicationBuilder(ValidatedConfiguration.class).web(WebApplicationType.NONE)
+		ConfigurationPropertiesBindException thrown = Assertions.assertThrows(ConfigurationPropertiesBindException.class, () -> {
+			new SpringApplicationBuilder(ValidatedConfiguration.class).web(WebApplicationType.NONE)
 				.run("--spring.jmx.enabled=false");
+		});
 
-		fail();
+
+		//fail();
 	}
 
 	@EnableBinding(Processor.class)

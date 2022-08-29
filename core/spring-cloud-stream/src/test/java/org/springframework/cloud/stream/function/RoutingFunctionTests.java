@@ -21,8 +21,8 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Flux;
 
 import org.springframework.boot.WebApplicationType;
@@ -53,7 +53,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class RoutingFunctionTests {
 
 
-	@Before
+	@BeforeEach
 	public void before() {
 		System.getProperties().remove("spring.cloud.function.routing.enabled");
 		System.getProperties().remove("spring.cloud.stream.function.definition");

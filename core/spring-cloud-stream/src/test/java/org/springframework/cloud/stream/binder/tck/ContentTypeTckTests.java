@@ -22,8 +22,8 @@ import java.util.List;
 import java.util.Map;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -507,7 +507,7 @@ public class ContentTypeTckTests {
 	}
 
 	@Test
-	@Ignore
+	@Disabled
 	public void _toStringDefaultContentTypePropertyUnknownContentType() {
 		ApplicationContext context = new SpringApplicationBuilder(
 				StringToStringStreamListener.class).web(WebApplicationType.NONE).run(

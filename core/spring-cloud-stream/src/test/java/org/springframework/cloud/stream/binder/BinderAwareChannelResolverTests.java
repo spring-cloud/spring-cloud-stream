@@ -24,8 +24,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import org.springframework.boot.WebApplicationType;
@@ -83,7 +83,7 @@ public class BinderAwareChannelResolverTests {
 	protected volatile DynamicDestinationsBindable dynamicDestinationsBindable;
 
 	@SuppressWarnings("unchecked")
-	@Before
+	@BeforeEach
 	public void setupContext() throws Exception {
 
 		this.context = new SpringApplicationBuilder(

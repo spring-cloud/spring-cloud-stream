@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.function.Function;
 
 import org.assertj.core.util.Arrays;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.cloud.stream.binder.test.InputDestination;

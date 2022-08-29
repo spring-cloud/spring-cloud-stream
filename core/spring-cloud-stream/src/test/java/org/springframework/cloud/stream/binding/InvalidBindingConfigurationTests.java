@@ -16,8 +16,8 @@
 
 package org.springframework.cloud.stream.binding;
 
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import org.springframework.beans.factory.BeanDefinitionStoreException;
 import org.springframework.boot.SpringApplication;
@@ -37,7 +37,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 public class InvalidBindingConfigurationTests {
 
 	@Test
-	@Ignore
+	@Disabled
 	public void testDuplicateBeanByBindingConfig() {
 		assertThatThrownBy(() -> SpringApplication.run(TestBindingConfig.class))
 				.isInstanceOf(BeanDefinitionStoreException.class)

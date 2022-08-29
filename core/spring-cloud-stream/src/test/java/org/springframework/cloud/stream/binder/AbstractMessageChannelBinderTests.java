@@ -19,8 +19,8 @@ package org.springframework.cloud.stream.binder;
 import java.util.Iterator;
 import java.util.Set;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import org.springframework.beans.DirectFieldAccessor;
 import org.springframework.boot.WebApplicationType;
@@ -50,7 +50,7 @@ public class AbstractMessageChannelBinderTests {
 
 	private ApplicationContext context;
 
-	@Before
+	@BeforeEach
 	public void prepare() {
 		this.context = new SpringApplicationBuilder(
 				TestChannelBinderConfiguration.getCompleteConfiguration())

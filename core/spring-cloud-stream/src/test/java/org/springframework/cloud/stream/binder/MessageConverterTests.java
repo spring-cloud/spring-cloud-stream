@@ -18,7 +18,7 @@ package org.springframework.cloud.stream.binder;
 
 import java.nio.BufferUnderflowException;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;

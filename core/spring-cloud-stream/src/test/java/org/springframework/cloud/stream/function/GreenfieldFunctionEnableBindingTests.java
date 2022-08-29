@@ -24,8 +24,8 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -121,7 +121,7 @@ public class GreenfieldFunctionEnableBindingTests {
 	}
 
 	@Test
-	@Ignore
+	@Disabled
 	public void testHttpEndpoint() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 				TestChannelBinderConfiguration.getCompleteConfiguration(
@@ -141,7 +141,7 @@ public class GreenfieldFunctionEnableBindingTests {
 	}
 
 	@Test
-	@Ignore
+	@Disabled
 	public void testPojoReturn() throws IOException {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 				TestChannelBinderConfiguration.getCompleteConfiguration(

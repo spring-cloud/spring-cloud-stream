@@ -19,7 +19,7 @@ package org.springframework.cloud.stream.binder;
 import java.util.Collections;
 import java.util.HashMap;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import org.springframework.cloud.stream.utils.FooConsumerProperties;
 import org.springframework.cloud.stream.utils.FooProducerProperties;

@@ -28,8 +28,9 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.boot.WebApplicationType;
@@ -67,7 +68,6 @@ import org.springframework.util.MimeTypeUtils;
 import org.springframework.util.ReflectionUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.fail;
 
 /**
  *
@@ -77,7 +77,7 @@ import static org.junit.Assert.fail;
  */
 public class StreamBridgeTests {
 
-	@Before
+	@BeforeEach
 	public void before() {
 		System.clearProperty("spring.cloud.function.definition");
 	}
@@ -329,16 +329,16 @@ public class StreamBridgeTests {
 		}
 	}
 
-	@Test(expected = NoSuchBeanDefinitionException.class)
+	@Test
 	public void testNoBridgeIfNoSourcePropertyDefined() {
-
-		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration
+		NoSuchBeanDefinitionException thrown = Assertions.assertThrows(NoSuchBeanDefinitionException.class, () -> {
+			try (ConfigurableApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration
 				.getCompleteConfiguration())
-						.web(WebApplicationType.NONE).run("--spring.jmx.enabled=false")) {
+				.web(WebApplicationType.NONE).run("--spring.jmx.enabled=false")) {
 
-			context.getBean(StreamBridge.class);
-			fail();
-		}
+				context.getBean(StreamBridge.class);
+			}
+		});
 	}
 
 	@Test

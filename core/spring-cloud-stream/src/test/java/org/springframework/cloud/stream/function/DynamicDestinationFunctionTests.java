@@ -18,8 +18,8 @@ package org.springframework.cloud.stream.function;
 
 import java.util.function.Consumer;
 
-import org.junit.After;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -43,7 +43,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 public class DynamicDestinationFunctionTests {
 
-	@After
+	@AfterEach
 	public void after() {
 		System.clearProperty("spring.cloud.stream.function.definition");
 		System.clearProperty("spring.cloud.function.definition");

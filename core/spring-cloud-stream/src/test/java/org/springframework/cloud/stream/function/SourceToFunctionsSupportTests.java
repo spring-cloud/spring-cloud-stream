@@ -21,13 +21,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import org.junit.Ignore;
-import org.junit.Rule;
-import org.junit.Test;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
-import org.junit.rules.ExpectedException;
+import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Flux;
 
 import org.springframework.boot.WebApplicationType;
@@ -49,9 +46,6 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @since 2.1
  */
 public class SourceToFunctionsSupportTests {
-
-	@Rule
-	public ExpectedException expectedException = ExpectedException.none();
 
 	@BeforeEach
 	public void before() {
@@ -87,7 +81,7 @@ public class SourceToFunctionsSupportTests {
 //	}
 
 	@Test
-	@Ignore
+	@Disabled
 	public void testImperativeSupplierComposedWithFunctions() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 				TestChannelBinderConfiguration.getCompleteConfiguration(
@@ -102,7 +96,7 @@ public class SourceToFunctionsSupportTests {
 	}
 
 	@Test
-	@Ignore
+	@Disabled
 	public void testImperativeSupplierComposedWithMixedFunctions() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 				TestChannelBinderConfiguration.getCompleteConfiguration(

@@ -18,8 +18,8 @@ package org.springframework.cloud.stream.binding;
 
 import java.util.Collections;
 
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
@@ -64,7 +64,7 @@ public class MessageConverterConfigurerTests {
 	}
 
 	@Test
-	@Ignore
+	@Disabled
 	public void testConfigureOutputChannelCannotConvert() {
 		BindingServiceProperties props = new BindingServiceProperties();
 		BindingProperties bindingProps = new BindingProperties();

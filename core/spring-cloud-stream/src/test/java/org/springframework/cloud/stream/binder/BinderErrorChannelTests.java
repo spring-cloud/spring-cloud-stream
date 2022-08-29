@@ -16,8 +16,8 @@
 
 package org.springframework.cloud.stream.binder;
 
-import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import org.springframework.beans.DirectFieldAccessor;
 import org.springframework.integration.dispatcher.AbstractDispatcher;
