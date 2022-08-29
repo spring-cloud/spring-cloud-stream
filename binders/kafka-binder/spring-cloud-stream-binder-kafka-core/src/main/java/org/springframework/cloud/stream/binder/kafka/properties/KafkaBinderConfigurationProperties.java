@@ -674,12 +674,22 @@ public class KafkaBinderConfigurationProperties {
 	public static class Metrics {
 		private boolean realtimeOffsetLagEnabled = true;
 
+		private Duration scheduledOffsetLagComputationInterval = Duration.ofSeconds(60);
+
 		public boolean isRealtimeOffsetLagEnabled() {
 			return realtimeOffsetLagEnabled;
 		}
 
 		public void setRealtimeOffsetLagEnabled(boolean realtimeOffsetLagEnabled) {
 			this.realtimeOffsetLagEnabled = realtimeOffsetLagEnabled;
+		}
+
+		public Duration getScheduledOffsetLagComputationInterval() {
+			return scheduledOffsetLagComputationInterval;
+		}
+
+		public void setScheduledOffsetLagComputationInterval(Duration scheduledOffsetLagComputationInterval) {
+			this.scheduledOffsetLagComputationInterval = scheduledOffsetLagComputationInterval;
 		}
 	}
 }

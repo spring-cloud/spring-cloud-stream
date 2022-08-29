@@ -70,8 +70,6 @@ public class KafkaBinderMetrics
 
 	private static final int DEFAULT_TIMEOUT = 5;
 
-	private static final int DELAY_BETWEEN_TASK_EXECUTION = 60;
-
 	private static final Log LOG = LogFactory.getLog(KafkaBinderMetrics.class);
 
 	/**
@@ -153,8 +151,8 @@ public class KafkaBinderMetrics
 				//Schedule a task to compute the unconsumed messages for this group/topic every minute.
 				this.scheduler.scheduleWithFixedDelay(
 					() -> computeUnconsumedMessages(topic, group),
-			10,
-					DELAY_BETWEEN_TASK_EXECUTION,
+			1,
+					binderConfigurationProperties.getMetrics().getScheduledOffsetLagComputationInterval().toSeconds(),
 					TimeUnit.SECONDS
 				);
 			}
