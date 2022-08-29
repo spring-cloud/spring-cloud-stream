@@ -84,8 +84,6 @@ public final class StreamBridge implements SmartInitializingSingleton {
 
 	private final FunctionCatalog functionCatalog;
 
-	private final FunctionRegistry functionRegistry;
-
 	private final NewDestinationBindingCallback destinationBindingCallback;
 
 	private BindingServiceProperties bindingServiceProperties;
@@ -103,17 +101,14 @@ public final class StreamBridge implements SmartInitializingSingleton {
 	/**
 	 *
 	 * @param functionCatalog instance of {@link FunctionCatalog}
-	 * @param functionRegistry instance of {@link FunctionRegistry}
 	 * @param bindingServiceProperties instance of {@link BindingServiceProperties}
 	 * @param applicationContext instance of {@link ConfigurableApplicationContext}
 	 */
 	@SuppressWarnings("serial")
-	StreamBridge(FunctionCatalog functionCatalog, FunctionRegistry functionRegistry,
-			BindingServiceProperties bindingServiceProperties, ConfigurableApplicationContext applicationContext,
-			@Nullable NewDestinationBindingCallback destinationBindingCallback) {
+	StreamBridge(FunctionCatalog functionCatalog, BindingServiceProperties bindingServiceProperties,
+		ConfigurableApplicationContext applicationContext, @Nullable NewDestinationBindingCallback destinationBindingCallback) {
 		this.bindingService = applicationContext.getBean(BindingService.class);
 		this.functionCatalog = functionCatalog;
-		this.functionRegistry = functionRegistry;
 		this.applicationContext = applicationContext;
 		this.bindingServiceProperties = bindingServiceProperties;
 		this.destinationBindingCallback = destinationBindingCallback;
@@ -260,14 +255,10 @@ public final class StreamBridge implements SmartInitializingSingleton {
 
 		FunctionRegistration<Function<Object, Object>> fr = new FunctionRegistration<>(new PassThruFunction(), STREAM_BRIDGE_FUNC_NAME);
 		fr.getProperties().put("singleton", "false");
+
 		Type functionType = ResolvableType.forClassWithGenerics(Function.class, Object.class, Object.class).getType();
-		this.functionRegistry.register(fr.type(functionType));
+		((FunctionRegistry) this.functionCatalog).register(fr.type(functionType));
 		Map<String, DirectWithAttributesChannel> channels = applicationContext.getBeansOfType(DirectWithAttributesChannel.class);
-//		for (Entry<String, DirectWithAttributesChannel> channelEntry : channels.entrySet()) {
-//			if (channelEntry.getValue().getAttribute("type").equals("output")) {
-//				this.channelCache.put(channelEntry.getKey(), channelEntry.getValue());
-//			}
-//		}
 		this.initialized = true;
 	}
 
