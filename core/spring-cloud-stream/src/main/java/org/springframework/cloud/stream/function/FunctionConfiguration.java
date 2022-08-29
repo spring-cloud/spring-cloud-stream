@@ -137,10 +137,10 @@ public class FunctionConfiguration {
 	private final static String SOURCE_PROPERY = "spring.cloud.stream.source";
 
 	@Bean
-	public StreamBridge streamBridgeUtils(FunctionCatalog functionCatalog, FunctionRegistry functionRegistry,
+	public StreamBridge streamBridgeUtils(FunctionCatalog functionCatalog,
 			BindingServiceProperties bindingServiceProperties, ConfigurableApplicationContext applicationContext,
 			@Nullable NewDestinationBindingCallback callback) {
-		return new StreamBridge(functionCatalog, functionRegistry, bindingServiceProperties, applicationContext, callback);
+		return new StreamBridge(functionCatalog, bindingServiceProperties, applicationContext, callback);
 	}
 
 	@Bean
