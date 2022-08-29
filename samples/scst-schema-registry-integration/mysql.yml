@@ -1,0 +1,13 @@
+version: '3'
+services:
+  mysql:
+    image: mysql:5.7.25
+    container_name: schema-registry-mysql
+    environment:
+      MYSQL_DATABASE: registry
+      MYSQL_USER: root
+      MYSQL_ROOT_PASSWORD: rootpw
+    expose:
+      - 3306
+    ports:
+      - 3306:3306
