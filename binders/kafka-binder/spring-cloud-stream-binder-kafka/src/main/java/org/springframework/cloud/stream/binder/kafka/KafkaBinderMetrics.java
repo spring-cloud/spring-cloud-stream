@@ -30,6 +30,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.ToDoubleFunction;
 
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -141,45 +142,35 @@ public class KafkaBinderMetrics
 			String topic = topicInfo.getKey();
 			String group = topicInfo.getValue().getConsumerGroup();
 
-			final Gauge register = Gauge.builder(OFFSET_LAG_METRIC_NAME, this,
-					(o) -> computeAndGetUnconsumedMessages(topic, group)).tag("group", group)
-					.tag("topic", topic)
-					.description("Unconsumed messages for a particular group and topic")
-					.register(registry);
+			ToDoubleFunction<KafkaBinderMetrics> offsetComputation = computeOffsetComputationFunction(topic, group);
+			final Gauge register = Gauge.builder(OFFSET_LAG_METRIC_NAME, this, offsetComputation)
+				.tag("group", group)
+				.tag("topic", topic)
+				.description("Unconsumed messages for a particular group and topic")
+				.register(registry);
 
 			if (!(register instanceof NoopGauge)) {
 				//Schedule a task to compute the unconsumed messages for this group/topic every minute.
-				this.scheduler.scheduleWithFixedDelay(computeUnconsumedMessagesRunnable(topic, group, this.metadataConsumers),
-						10, DELAY_BETWEEN_TASK_EXECUTION, TimeUnit.SECONDS);
+				this.scheduler.scheduleWithFixedDelay(
+					() -> computeAndGetUnconsumedMessages(topic, group),
+			10,
+					DELAY_BETWEEN_TASK_EXECUTION,
+					TimeUnit.SECONDS
+				);
 			}
 		}
 	}
 
-	private Runnable computeUnconsumedMessagesRunnable(String topic, String group, Map<String, Consumer<?, ?>> metadataConsumers) {
-		return () -> {
-			try {
-				long lag = findTotalTopicGroupLag(topic, group, this.metadataConsumers);
-				this.unconsumedMessages.put(topic + "-" + group, lag);
-			}
-			catch (Exception ex) {
-				LOG.debug("Cannot generate metric for topic: " + topic, ex);
-			}
-		};
+	private ToDoubleFunction<KafkaBinderMetrics> computeOffsetComputationFunction(String topic, String group) {
+		if (this.binderConfigurationProperties.getMetrics().isRealtimeOffsetLagEnabled()) {
+			return (o) -> computeAndGetUnconsumedMessagesWithTimeout(topic, group);
+		} else {
+			return (o) -> this.unconsumedMessages.getOrDefault(topic + "-" + group, 0L);
+		}
 	}
 
-	private long computeAndGetUnconsumedMessages(String topic, String group) {
-		ExecutorService exec = Executors.newCachedThreadPool();
-		Future<Long> future = exec.submit(() -> {
-
-			long lag = 0;
-			try {
-				lag = findTotalTopicGroupLag(topic, group, this.metadataConsumers);
-			}
-			catch (Exception ex) {
-				LOG.debug("Cannot generate metric for topic: " + topic, ex);
-			}
-			return lag;
-		});
+	private long computeAndGetUnconsumedMessagesWithTimeout(String topic, String group) {
+		Future<Long> future = scheduler.submit(() -> computeAndGetUnconsumedMessages(topic, group));
 		try {
 			return future.get(this.timeout, TimeUnit.SECONDS);
 		}
@@ -190,9 +181,17 @@ public class KafkaBinderMetrics
 		catch (ExecutionException | TimeoutException ex) {
 			return this.unconsumedMessages.getOrDefault(topic + "-" + group, 0L);
 		}
-		finally {
-			exec.shutdownNow();
+	}
+
+	private long computeAndGetUnconsumedMessages(String topic, String group) {
+		long lag = 0;
+		try {
+			lag = findTotalTopicGroupLag(topic, group, this.metadataConsumers);
 		}
+		catch (Exception ex) {
+			LOG.debug("Cannot generate metric for topic: " + topic, ex);
+		}
+		return lag;
 	}
 
 	private long findTotalTopicGroupLag(String topic, String group, Map<String, Consumer<?, ?>> metadataConsumers) {

@@ -71,6 +71,8 @@ public class KafkaBinderConfigurationProperties {
 
 	private final Transaction transaction = new Transaction();
 
+	private final Metrics metrics = new Metrics();
+
 	private final KafkaProperties kafkaProperties;
 
 	/**
@@ -147,6 +149,10 @@ public class KafkaBinderConfigurationProperties {
 
 	public Transaction getTransaction() {
 		return this.transaction;
+	}
+
+	public Metrics getMetrics() {
+		return metrics;
 	}
 
 	public String getKafkaConnectionString() {
@@ -665,4 +671,15 @@ public class KafkaBinderConfigurationProperties {
 
 	}
 
+	public static class Metrics {
+		private boolean realtimeOffsetLagEnabled = true;
+
+		public boolean isRealtimeOffsetLagEnabled() {
+			return realtimeOffsetLagEnabled;
+		}
+
+		public void setRealtimeOffsetLagEnabled(boolean realtimeOffsetLagEnabled) {
+			this.realtimeOffsetLagEnabled = realtimeOffsetLagEnabled;
+		}
+	}
 }

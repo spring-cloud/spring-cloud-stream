@@ -34,6 +34,7 @@ import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Answers;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -72,7 +73,7 @@ public class KafkaBinderMetricsTest {
 
 	private Map<String, TopicInformation> topicsInUse = new HashMap<>();
 
-	@Mock
+	@Mock(answer = Answers.RETURNS_DEEP_STUBS)
 	private KafkaBinderConfigurationProperties kafkaBinderConfigurationProperties;
 
 	@BeforeEach
@@ -82,6 +83,8 @@ public class KafkaBinderMetricsTest {
 				.createConsumer(ArgumentMatchers.any(), ArgumentMatchers.any()))
 			.willReturn(consumer);
 		org.mockito.BDDMockito.given(binder.getTopicsInUse()).willReturn(topicsInUse);
+		org.mockito.BDDMockito.given(kafkaBinderConfigurationProperties.getMetrics().isRealtimeOffsetLagEnabled())
+			.willReturn(true);
 		metrics = new KafkaBinderMetrics(binder, kafkaBinderConfigurationProperties,
 			consumerFactory, null
 		);
