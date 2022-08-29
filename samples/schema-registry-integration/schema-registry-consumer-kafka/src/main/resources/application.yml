@@ -1,0 +1,13 @@
+spring:
+  cloud:
+    stream:
+      bindings:
+        process-in-0:
+          destination: sensor-topic
+      schema-registry-client:
+        endpoint: http://localhost:8990
+      schema:
+        avro:
+          schema-locations: classpath:avro/sensor.avsc
+server.port: 9999
+spring.cloud.stream.function.definition: process

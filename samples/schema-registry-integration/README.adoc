@@ -1,0 +1,133 @@
+== Spring Cloud Stream and Schema Evolution in Action with Kafka Binder.
+
+These are a set of Spring Boot applications to demonstrate Schema Evolution using Spring Cloud Stream with Kafka binder.
+Producer V1 (`producer1`), Producer V2 (`producer2`), and Consumer (`consumer`) are included in this project.
+
+=== Requirement
+As a developer, I'd like to design my consumer to be resilient to differing payload schemas.
+
+=== Assumptions
+For this demonstration, we will simply assume there are two producers producing events with different payload schemas.
+A consumer that consumes both the payload versions will be designed to adapt to evolving schemas.
+
+These applications integrate with Spring Cloud Stream Scheam Registry.
+Both producers and consumers interact with this Schema Registry to register and evolve the schema.
+
+[[build-apps]]
+=== Building the applications
+To build the applications simply execute the following command from the `schema-registry-integration` directory:
+[source,bash]
+----
+./mvnw clean install
+----
+NOTE: The apps can be built and run from w/in an IDE (such as IntelliJ) but you will need to invoke the Maven `package` goal and then `refresh` the project as the Avro Maven plugin needs to execute so that it generates the required model classes - otherwise you will see compile failures around missing `Sensor` class.
+
+[[run-apps]]
+=== Running the applications
+
+==== Pre-requisites
+****
+* The components have all been built by following the <<build-apps>> steps.
+* Apache Kafka broker available at `localhost:9092`
+
+TIP: The included link:../../../tools/kafka/docker-compose/README.adoc#_all_the_things[Kafka tools] can be used to easily start a broker locally on the required coordinates
+****
+
+If you want to use schema registry with Postgres or MYSQL, either start them locally or use the provided docker-compose scripts above.
+
+==== Steps
+Make sure the above pre-requisites are satisfied and that you are in the `schema-registry-integration` directory and follow the steps below.
+
+- Start the Schema Registry server (Change these commands accordingly if you are not on a Unix like platform)
+[source,bash]
+----
+java -jar <ROOT-OF-SPRING-CLOUD-STREAM-CHECKOUT>/schema-registry/spring-cloud-stream-schema-registry-server-<VERSION>.jar
+----
+
+This starts the schema registry with a local H2 database.
+
+To use Postgres database instead of H2, set the following property :
+[source,bash]
+----
+java -jar <ROOT-OF-SPRING-CLOUD-STREAM-CHECKOUT>/schema-registry/spring-cloud-stream-schema-registry-server-<VERSION>.jar \
+  --spring.datasource.url=jdbc:postgresql://localhost:5432/registry \
+  --spring.datasource.username=root \
+  --spring.datasource.password=rootpw \
+  --spring.datasource.driver-class-name=org.postgresql.Driver \
+  --spring.jpa.database-platform=org.hibernate.dialect.PostgreSQLDialect \
+  --spring.jpa.hibernate.ddl-auto-create=true \
+  --spring.jpa.hibernate.ddl-auto=update \
+  --spring.jpa.generate-ddl=true
+----
+
+to use MySQL database instead of H2, set the following property :
+[source,bash]
+----
+java -jar <ROOT-OF-SPRING-CLOUD-STREAM-CHECKOUT>/schema-registry/spring-cloud-stream-schema-registry-server-<VERSION>.jar \
+  --spring.datasource.url=jdbc:mariadb://localhost:3306/registry \
+  --spring.datasource.username=root \
+  --spring.datasource.password=rootpw \
+  --spring.datasource.driver-class-name=org.mariadb.jdbc.Driver \
+  --spring.jpa.database-platform=org.hibernate.dialect.MariaDB53Dialect \
+  --spring.jpa.hibernate.ddl-auto-create=true \
+  --spring.jpa.hibernate.ddl-auto=update \
+  --spring.jpa.generate-ddl=true
+----
+
+- Start `consumer` on another terminal session (or run it from an IDE)
+[source,bash]
+----
+java -jar schema-registry-consumer-kafka/target/schema-registry-consumer-kafka-<VERSION>-SNAPSHOT.jar
+----
+
+- Start `producer1` on another terminal session (or run it from an IDE)
+[source,bash]
+----
+java -jar schema-registry-producer1-kafka/target/schema-registry-producer1-kafka-<VERSION>-SNAPSHOT.jar
+----
+- Start `producer2` on another terminal session (or run it from an IDE)
+[source,bash]
+----
+java -jar schema-registry-producer2-kafka/target/schema-registry-producer2-kafka-<VERSION>-SNAPSHOT.jar
+----
+
+=== Sample Data
+Both the producers in the demonstration are _also_ REST controllers. We will hit the `/messages` endpoint on each producer
+to POST sample data.
+
+_Example:_
+[source,bash]
+----
+curl -X POST http://localhost:9009/messages
+curl -X POST http://localhost:9010/messages
+curl -X POST http://localhost:9009/messages
+curl -X POST http://localhost:9009/messages
+curl -X POST http://localhost:9010/messages
+----
+
+=== Output
+The consumer should log the results.
+
+[source,bash,options=nowrap,subs=attributes]
+----
+{"id": "d135efc3-72f8-4612-9497-184cae508e31-v1", "internalTemperature": 34.36362, "externalTemperature": 0.0, "acceleration": 9.656547, "velocity": 33.29733}
+{"id": "3ecaae18-3144-4570-800a-223ca3198001-v1", "internalTemperature": 28.410656, "externalTemperature": 0.0, "acceleration": 1.752817, "velocity": 69.82016}
+{"id": "81262d85-2d60-40e8-9fcc-7f797fd6dcd4-v2", "internalTemperature": 11.2908125, "externalTemperature": 26.260101, "acceleration": 3.268205, "velocity": 3.331542}
+----
+
+NOTE: Refer to the payload suffix in the `id` field. Each of them are appended with `-v1` or `-v2` indicating they are from
+`producer1` and `producer2` respectively.
+
+=== What just happened?
+The schema evolved on the `temperature` field. That field is now split into `internalTemperature` and `externalTemperature`,
+as two separate fields. The `producer1` produces payload only with `temperature` and on the other hand, `producer2` produces
+payload with `internalTemperature` and `externalTemperature` fields in it.
+
+The `consumer` is coded against a base schema that include the split fields.
+
+The `consumer` app can happily deserialize the payload with `internalTemperature` and `externalTemperature` fields. However, when
+a `producer1` payload arrives (which includes `temperature` field), the schema evolution and compatibility check are automatically
+applied.
+
+Because each payload also includes the payload version in the header, Spring Cloud Stream with the help of Schema Registry server and Avro, the schema evolution occurs behind the scenes.
+The automatic mapping of `temperature` to `internalTemperature` field is applied, since that's the field where the `aliases` is defined.
