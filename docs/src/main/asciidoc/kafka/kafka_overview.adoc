@@ -51,6 +51,7 @@ This section contains the configuration options used by the Apache Kafka binder.
 
 For common configuration options and properties pertaining to the binder, see the https://cloud.spring.io/spring-cloud-static/spring-cloud-stream/current/reference/html/spring-cloud-stream.html#binding-properties[binding properties] in core documentation.
 
+[[kafka-binder-properties]]
 ==== Kafka Binder Properties
 
 spring.cloud.stream.kafka.binder.brokers::
@@ -159,6 +160,19 @@ If this value is not set and the certificate file is a classpath resource, then 
 This is also true, if this value is present, but the directory cannot be found on the filesystem or is not writable.
 +
 Default: none.
+
+spring.cloud.stream.kafka.binder.metrics.defaultOffsetLagMetricsEnabled::
+When set to true, the offset lag metric of each consumer topic is computed whenever the metric is accessed.
+When set to false only the periodically calculated offset lag is used.
++
+Default: true
+
+spring.cloud.stream.kafka.binder.metrics.offsetLagMetricsInterval::
+The interval in which the offset lag for each consumer topic is computed.
+This value is used whenever `metrics.defaultOffsetLagMetricsEnabled` is disabled or its
+computation is taking too long.
++
+Default: 60 seconds
 
 [[kafka-consumer-properties]]
 ==== Kafka Consumer Properties
@@ -743,6 +757,9 @@ The metrics provided are based on the Micrometer library.
 The binder creates the `KafkaBinderMetrics` bean if Micrometer is on the classpath and no other such beans provided by the application.
 The metric contains the consumer group information, topic and the actual lag in committed offset from the latest offset on the topic.
 This metric is particularly useful for providing auto-scaling feedback to a PaaS platform.
+
+The metric collection behaviour can be configured by setting properties in the `spring.cloud.stream.kafka.binder.metrics` namespace,
+refer to the <<kafka-binder-properties, kafka binder properties section>> for more information.
 
 You can exclude `KafkaBinderMetrics` from creating the necessary infrastructure like consumers and then reporting the metrics by providing the following component in the application.
 
