@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2021 the original author or authors.
+ * Copyright 2015-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,6 +61,7 @@ import org.springframework.util.StringUtils;
  * @author Aldo Sinanaj
  * @author Lukasz Kaminski
  * @author Chukwubuikem Ume-Ugwa
+ * @author Nico Heller
  */
 @ConfigurationProperties(prefix = "spring.cloud.stream.kafka.binder")
 public class KafkaBinderConfigurationProperties {
@@ -70,6 +71,8 @@ public class KafkaBinderConfigurationProperties {
 	private final Log logger = LogFactory.getLog(getClass());
 
 	private final Transaction transaction = new Transaction();
+
+	private final Metrics metrics = new Metrics();
 
 	private final KafkaProperties kafkaProperties;
 
@@ -147,6 +150,10 @@ public class KafkaBinderConfigurationProperties {
 
 	public Transaction getTransaction() {
 		return this.transaction;
+	}
+
+	public Metrics getMetrics() {
+		return metrics;
 	}
 
 	public String getKafkaConnectionString() {
@@ -665,4 +672,34 @@ public class KafkaBinderConfigurationProperties {
 
 	}
 
+	public static class Metrics {
+		/**
+		 * When set to true, the offset lag metric of each consumer topic is computed whenever the metric is queried (default: true).
+		 * When set to false only the periodically calculated offset lag is used.
+		 * See {@link #offsetLagMetricsInterval} for more information.
+		 */
+		private boolean defaultOffsetLagMetricsEnabled = true;
+
+		/**
+		 * The interval in which the offset lag for each consumer topic is computed (default: 60 seconds).
+		 * This value is used whenever {@link #defaultOffsetLagMetricsEnabled} is disabled or its computation is taking too long.
+		 */
+		private Duration offsetLagMetricsInterval = Duration.ofSeconds(60);
+
+		public boolean isDefaultOffsetLagMetricsEnabled() {
+			return defaultOffsetLagMetricsEnabled;
+		}
+
+		public void setDefaultOffsetLagMetricsEnabled(boolean defaultOffsetLagMetricsEnabled) {
+			this.defaultOffsetLagMetricsEnabled = defaultOffsetLagMetricsEnabled;
+		}
+
+		public Duration getOffsetLagMetricsInterval() {
+			return offsetLagMetricsInterval;
+		}
+
+		public void setOffsetLagMetricsInterval(Duration offsetLagMetricsInterval) {
+			this.offsetLagMetricsInterval = offsetLagMetricsInterval;
+		}
+	}
 }
