@@ -85,7 +85,7 @@ public class KafkaBinderMetricsTest {
 				.createConsumer(ArgumentMatchers.any(), ArgumentMatchers.any()))
 			.willReturn(consumer);
 		org.mockito.BDDMockito.given(binder.getTopicsInUse()).willReturn(topicsInUse);
-		org.mockito.BDDMockito.given(kafkaBinderConfigurationProperties.getMetrics().isRealtimeOffsetLagEnabled())
+		org.mockito.BDDMockito.given(kafkaBinderConfigurationProperties.getMetrics().isRealtimeOffsetLagComputationEnabled())
 			.willReturn(true);
 		org.mockito.BDDMockito.given(kafkaBinderConfigurationProperties.getMetrics().getScheduledOffsetLagComputationInterval())
 			.willReturn(Duration.ofSeconds(60));
@@ -135,7 +135,7 @@ public class KafkaBinderMetricsTest {
 		);
 		org.mockito.BDDMockito.given(consumer.partitionsFor(TEST_TOPIC))
 			.willReturn(partitions);
-		org.mockito.BDDMockito.given(kafkaBinderConfigurationProperties.getMetrics().isRealtimeOffsetLagEnabled())
+		org.mockito.BDDMockito.given(kafkaBinderConfigurationProperties.getMetrics().isRealtimeOffsetLagComputationEnabled())
 			.willReturn(false);
 		metrics.bindTo(meterRegistry);
 		assertThat(meterRegistry.getMeters()).hasSize(1);

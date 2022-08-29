@@ -34,6 +34,7 @@ import org.springframework.context.ApplicationListener;
 import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.lang.Nullable;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.util.ObjectUtils;
 
 import java.util.HashMap;
@@ -89,9 +90,9 @@ public class KafkaBinderMetrics
 
 	private int timeout = DEFAULT_TIMEOUT;
 
-	ScheduledExecutorService scheduler;
+	private final Map<String, Long> lastUnconsumedMessagesValues = new ConcurrentHashMap<>();
 
-	Map<String, Long> lastUnconsumedMessagesValues = new ConcurrentHashMap<>();
+	ScheduledExecutorService scheduler;
 
 	public KafkaBinderMetrics(KafkaMessageChannelBinder binder,
 							KafkaBinderConfigurationProperties binderConfigurationProperties,
@@ -148,7 +149,6 @@ public class KafkaBinderMetrics
 
 			if (!(register instanceof NoopGauge)) {
 				lastUnconsumedMessagesValues.put(topic + "-" + group, 0L);
-				//Schedule a task to compute the unconsumed messages for this group/topic every minute.
 				this.scheduler.scheduleWithFixedDelay(
 					() -> computeUnconsumedMessages(topic, group),
 			1,
@@ -160,7 +160,7 @@ public class KafkaBinderMetrics
 	}
 
 	private ToDoubleFunction<KafkaBinderMetrics> computeOffsetComputationFunction(String topic, String group) {
-		if (this.binderConfigurationProperties.getMetrics().isRealtimeOffsetLagEnabled()) {
+		if (this.binderConfigurationProperties.getMetrics().isRealtimeOffsetLagComputationEnabled()) {
 			return (o) -> computeAndGetUnconsumedMessagesWithTimeout(topic, group);
 		} else {
 			return (o) -> lastUnconsumedMessagesValues.get(topic + "-" + group);
