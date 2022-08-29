@@ -16,7 +16,7 @@ import java.util.function.Supplier;
 
 import com.example.Sensor;
 
-@SpringBootApplication
+@SpringBootApplication(proxyBeanMethods = false)
 @EnableSchemaRegistryClient
 @RestController
 public class Producer2ApplicationKafka {

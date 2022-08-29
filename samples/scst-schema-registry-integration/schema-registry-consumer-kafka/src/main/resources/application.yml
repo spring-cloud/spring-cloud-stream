@@ -10,4 +10,3 @@ spring:
         avro:
           schema-locations: classpath:avro/sensor.avsc
 server.port: 9999
-spring.cloud.stream.function.definition: process

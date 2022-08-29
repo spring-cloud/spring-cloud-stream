@@ -10,7 +10,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.stream.schema.registry.client.EnableSchemaRegistryClient;
 import org.springframework.context.annotation.Bean;
 
-@SpringBootApplication
+@SpringBootApplication(proxyBeanMethods = false)
 @EnableSchemaRegistryClient
 public class ConsumerApplication {
 
@@ -22,7 +22,7 @@ public class ConsumerApplication {
 
 	@Bean
 	public Consumer<Sensor> process()  {
-			return input -> logger.info("input: " + input);
+		return input -> logger.info("input: " + input);
 	}
 
 }
