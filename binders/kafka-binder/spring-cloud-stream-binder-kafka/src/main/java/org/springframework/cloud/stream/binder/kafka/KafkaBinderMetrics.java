@@ -16,6 +16,26 @@
 
 package org.springframework.cloud.stream.binder.kafka;
 
+import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.binder.MeterBinder;
+import io.micrometer.core.instrument.noop.NoopGauge;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.kafka.clients.consumer.Consumer;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.consumer.OffsetAndMetadata;
+import org.apache.kafka.common.PartitionInfo;
+import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.common.serialization.ByteArrayDeserializer;
+import org.springframework.cloud.stream.binder.BindingCreatedEvent;
+import org.springframework.cloud.stream.binder.kafka.properties.KafkaBinderConfigurationProperties;
+import org.springframework.context.ApplicationListener;
+import org.springframework.kafka.core.ConsumerFactory;
+import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
+import org.springframework.lang.Nullable;
+import org.springframework.util.ObjectUtils;
+
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -31,27 +51,6 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.ToDoubleFunction;
-
-import io.micrometer.core.instrument.Gauge;
-import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.binder.MeterBinder;
-import io.micrometer.core.instrument.noop.NoopGauge;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.apache.kafka.clients.consumer.Consumer;
-import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.clients.consumer.OffsetAndMetadata;
-import org.apache.kafka.common.PartitionInfo;
-import org.apache.kafka.common.TopicPartition;
-import org.apache.kafka.common.serialization.ByteArrayDeserializer;
-
-import org.springframework.cloud.stream.binder.BindingCreatedEvent;
-import org.springframework.cloud.stream.binder.kafka.properties.KafkaBinderConfigurationProperties;
-import org.springframework.context.ApplicationListener;
-import org.springframework.kafka.core.ConsumerFactory;
-import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
-import org.springframework.lang.Nullable;
-import org.springframework.util.ObjectUtils;
 
 /**
  * Metrics for Kafka binder.
@@ -94,7 +93,7 @@ public class KafkaBinderMetrics
 
 	ScheduledExecutorService scheduler;
 
-	Map<String, Long> unconsumedMessages = new ConcurrentHashMap<>();
+	Map<String, Long> lastUnconsumedMessagesValues = new ConcurrentHashMap<>();
 
 	public KafkaBinderMetrics(KafkaMessageChannelBinder binder,
 							KafkaBinderConfigurationProperties binderConfigurationProperties,
@@ -150,9 +149,10 @@ public class KafkaBinderMetrics
 				.register(registry);
 
 			if (!(register instanceof NoopGauge)) {
+				lastUnconsumedMessagesValues.put(topic + "-" + group, 0L);
 				//Schedule a task to compute the unconsumed messages for this group/topic every minute.
 				this.scheduler.scheduleWithFixedDelay(
-					() -> computeAndGetUnconsumedMessages(topic, group),
+					() -> computeUnconsumedMessages(topic, group),
 			10,
 					DELAY_BETWEEN_TASK_EXECUTION,
 					TimeUnit.SECONDS
@@ -165,28 +165,29 @@ public class KafkaBinderMetrics
 		if (this.binderConfigurationProperties.getMetrics().isRealtimeOffsetLagEnabled()) {
 			return (o) -> computeAndGetUnconsumedMessagesWithTimeout(topic, group);
 		} else {
-			return (o) -> this.unconsumedMessages.getOrDefault(topic + "-" + group, 0L);
+			return (o) -> lastUnconsumedMessagesValues.get(topic + "-" + group);
 		}
 	}
 
 	private long computeAndGetUnconsumedMessagesWithTimeout(String topic, String group) {
-		Future<Long> future = scheduler.submit(() -> computeAndGetUnconsumedMessages(topic, group));
+		Future<Long> future = scheduler.submit(() -> computeUnconsumedMessages(topic, group));
 		try {
 			return future.get(this.timeout, TimeUnit.SECONDS);
 		}
 		catch (InterruptedException ex) {
 			Thread.currentThread().interrupt();
-			return this.unconsumedMessages.getOrDefault(topic + "-" + group, 0L);
+			return lastUnconsumedMessagesValues.get(topic + "-" + group);
 		}
 		catch (ExecutionException | TimeoutException ex) {
-			return this.unconsumedMessages.getOrDefault(topic + "-" + group, 0L);
+			return lastUnconsumedMessagesValues.get(topic + "-" + group);
 		}
 	}
 
-	private long computeAndGetUnconsumedMessages(String topic, String group) {
+	private long computeUnconsumedMessages(String topic, String group) {
 		long lag = 0;
 		try {
 			lag = findTotalTopicGroupLag(topic, group, this.metadataConsumers);
+			this.lastUnconsumedMessagesValues.put(topic + "-" + group, lag);
 		}
 		catch (Exception ex) {
 			LOG.debug("Cannot generate metric for topic: " + topic, ex);
