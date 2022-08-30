@@ -7,19 +7,6 @@
     {"name":"internalTemperature", "type":"float", "default":0.0, "aliases":["temperature"]},
     {"name":"externalTemperature", "type":"float", "default":0.0},
     {"name":"acceleration", "type":"float","default":0.0},
-    {"name":"velocity","type":"float","default":0.0},
-    {"name":"accelerometer","type":[
-      "null",{
-        "type":"array",
-        "items":"float"
-      }
-    ]},
-    {"name":"magneticField","type":[
-      "null",{
-        "type":"array",
-        "items":"float"
-      }
-    ]}
+    {"name":"velocity","type":"float","default":0.0}
   ]
-
 }

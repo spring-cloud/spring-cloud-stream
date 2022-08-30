@@ -22,7 +22,7 @@
 	</properties>
 
 	<modules>
-		<module>schema-registry-integration</module>
+		<module>spring-cloud-stream-schema-registry-integration</module>
 		<module>confluent-schema-registry-integration</module>
 		<module>kafka-streams-interactive-query</module>
 	</modules>
