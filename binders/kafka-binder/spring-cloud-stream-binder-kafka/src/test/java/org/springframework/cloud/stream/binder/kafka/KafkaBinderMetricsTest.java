@@ -55,6 +55,7 @@ import static org.mockito.Mockito.mock;
  * @author Soby Chacko
  * @author Lars Bilger
  * @author Tomek Szmytka
+ * @author Nico Heller
  */
 public class KafkaBinderMetricsTest {
 

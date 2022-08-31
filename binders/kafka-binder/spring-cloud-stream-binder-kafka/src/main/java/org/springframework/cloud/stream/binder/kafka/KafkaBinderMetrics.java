@@ -65,6 +65,7 @@ import java.util.function.ToDoubleFunction;
  * @author Gary Russell
  * @author Lars Bilger
  * @author Tomek Szmytka
+ * @author Nico Heller
  */
 public class KafkaBinderMetrics
 		implements MeterBinder, ApplicationListener<BindingCreatedEvent>, AutoCloseable {

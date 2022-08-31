@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2021 the original author or authors.
+ * Copyright 2015-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,6 +61,7 @@ import org.springframework.util.StringUtils;
  * @author Aldo Sinanaj
  * @author Lukasz Kaminski
  * @author Chukwubuikem Ume-Ugwa
+ * @author Nico Heller
  */
 @ConfigurationProperties(prefix = "spring.cloud.stream.kafka.binder")
 public class KafkaBinderConfigurationProperties {
@@ -672,8 +673,18 @@ public class KafkaBinderConfigurationProperties {
 	}
 
 	public static class Metrics {
+		/**
+		 * When set to true, the offset lag metric of each consumer topic is computed whenever the metric is accessed (default: true).
+		 * When set to false only the periodically calculated offset lag is returned.
+		 * See {@link #scheduledOffsetLagComputationInterval} for more information.
+		 */
 		private boolean realtimeOffsetLagComputationEnabled = true;
 
+		/**
+		 * The interval in which the offset lag for each consumer topic is computed (default: 60 seconds).
+		 * This value is used whenever {@link #realtimeOffsetLagComputationEnabled} is disabled or the real time
+		 * computation is taking too long.
+		 */
 		private Duration scheduledOffsetLagComputationInterval = Duration.ofSeconds(60);
 
 		public boolean isRealtimeOffsetLagComputationEnabled() {
