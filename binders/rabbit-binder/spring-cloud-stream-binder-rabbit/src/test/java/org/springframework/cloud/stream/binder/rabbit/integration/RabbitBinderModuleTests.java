@@ -62,6 +62,7 @@ import org.springframework.cloud.stream.binder.rabbit.RabbitMessageChannelBinder
 import org.springframework.cloud.stream.binder.rabbit.RabbitTestContainer;
 import org.springframework.cloud.stream.binder.rabbit.properties.RabbitConsumerProperties;
 import org.springframework.cloud.stream.binder.rabbit.properties.RabbitProducerProperties;
+import org.springframework.cloud.stream.binder.rabbit.properties.RabbitProducerProperties.AlternateExchange;
 import org.springframework.cloud.stream.binder.test.junit.rabbit.RabbitTestSupport;
 import org.springframework.cloud.stream.binding.BindingService;
 import org.springframework.cloud.stream.config.ConsumerEndpointCustomizer;
@@ -100,7 +101,7 @@ public class RabbitBinderModuleTests {
 	private static final ConnectionFactory MOCK_CONNECTION_FACTORY = mock(ConnectionFactory.class, Mockito.RETURNS_MOCKS);
 
 	@RegisterExtension
-	private RabbitTestSupport rabbitTestSupport = new RabbitTestSupport(true, RABBITMQ.getAmqpPort(), RABBITMQ.getHttpPort());
+	private final RabbitTestSupport rabbitTestSupport = new RabbitTestSupport(true, RABBITMQ.getAmqpPort(), RABBITMQ.getHttpPort());
 
 	private ConfigurableApplicationContext context;
 
@@ -365,7 +366,12 @@ public class RabbitBinderModuleTests {
 				"--spring.cloud.stream.rabbit.default.consumer.exchange-type=direct",
 				"--spring.cloud.stream.rabbit.bindings.process-out-0.producer.batch-size=512",
 				"--spring.cloud.stream.rabbit.default.consumer.max-concurrency=4",
-				"--spring.cloud.stream.rabbit.bindings.process-in-0.consumer.exchange-type=fanout");
+				"--spring.cloud.stream.rabbit.bindings.process-in-0.consumer.exchange-type=fanout",
+				"--spring.cloud.stream.rabbit.bindings.process-out-0.producer.alternateExchange.name=altEx",
+				"--spring.cloud.stream.rabbit.bindings.process-out-0.producer.alternate-exchange.exists=true",
+				"--spring.cloud.stream.rabbit.bindings.process-out-0.producer.alternate-exchange.type=direct",
+				"--spring.cloud.stream.rabbit.bindings.process-out-0.producer.alternate-exchange.binding.queue=altQ",
+				"--spring.cloud.stream.rabbit.bindings.process-out-0.producer.alternate-exchange.binding.routing-key=altRK");
 		BinderFactory binderFactory = context.getBean(BinderFactory.class);
 		Binder<?, ?, ?> rabbitBinder = binderFactory.getBinder(null,
 			MessageChannel.class);
@@ -377,6 +383,12 @@ public class RabbitBinderModuleTests {
 			rabbitProducerProperties.getRoutingKeyExpression().getExpressionString())
 			.isEqualTo("fooRoutingKey");
 		assertThat(rabbitProducerProperties.getBatchSize()).isEqualTo(512);
+		AlternateExchange alternate = rabbitProducerProperties.getAlternateExchange();
+		assertThat(alternate.getName()).isEqualTo("altEx");
+		assertThat(alternate.isExists()).isTrue();
+		assertThat(alternate.getType()).isEqualTo("direct");
+		assertThat(alternate.getBinding().getQueue()).isEqualTo("altQ");
+		assertThat(alternate.getBinding().getRoutingKey()).isEqualTo("altRK");
 
 		RabbitConsumerProperties rabbitConsumerProperties = (RabbitConsumerProperties) ((ExtendedPropertiesBinder) rabbitBinder)
 			.getExtendedConsumerProperties("process-in-0");

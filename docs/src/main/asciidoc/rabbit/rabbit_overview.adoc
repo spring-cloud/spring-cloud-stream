@@ -682,7 +682,27 @@ in the format of `spring.cloud.stream.rabbit.default.<property>=<value>`.
 
 Also, keep in mind that binding specific property will override its equivalent in the default.
 
-
+altermateExchange.binding.queue::
+If the exchange does not already exist, and a `name` is provided, bind this queue to the alternate exhange.
+A simple durable queue with no arguments is provisioned; if more sophisticated configuration is required, you must configure and bind the queue yourself.
++
+Default: `null`
+alternateExchange.binding.routingKey
+If the exchange does not already exist, and a `name` and `queue` is provided, bind the queue to the alternate exhange using this routing key.
++
+Default: `#` (for the default `topic` alternate exchange)
+alternateExchange.exists::
+Whether the alternate exchange exists, or needs to be provisioned.
++
+Default: `false`
+alternateExchange.type::
+If the alternate exchange does not already exist, the type of exchange to provision.
++
+Default: `topic`
+alternateExchange.name::
+Configure an alternate exchange on the destination exchange.
++
+Default: `null`
 autoBindDlq::
 Whether to automatically declare the DLQ and bind it to the binder DLX.
 +
