@@ -50,6 +50,7 @@ import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.support.GenericMessage;
+import org.springframework.util.Assert;
 import org.springframework.util.MimeType;
 import org.springframework.util.MimeTypeUtils;
 import org.springframework.util.StringUtils;
@@ -105,6 +106,9 @@ public final class StreamBridge implements SmartInitializingSingleton {
 	@SuppressWarnings("serial")
 	StreamBridge(FunctionCatalog functionCatalog, BindingServiceProperties bindingServiceProperties,
 		ConfigurableApplicationContext applicationContext, @Nullable NewDestinationBindingCallback destinationBindingCallback) {
+		Assert.notNull(functionCatalog, "'functionCatalog' must not be null");
+		Assert.notNull(applicationContext, "'applicationContext' must not be null");
+		Assert.notNull(bindingServiceProperties, "'bindingServiceProperties' must not be null");
 		this.bindingService = applicationContext.getBean(BindingService.class);
 		this.functionCatalog = functionCatalog;
 		this.applicationContext = applicationContext;
@@ -206,6 +210,9 @@ public final class StreamBridge implements SmartInitializingSingleton {
 	 */
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public boolean send(String bindingName, @Nullable String binderName, Object data, MimeType outputContentType) {
+		if (!this.initialized) {
+			this.afterSingletonsInstantiated();
+		}
 		ProducerProperties producerProperties = this.bindingServiceProperties.getProducerProperties(bindingName);
 		MessageChannel messageChannel = this.resolveDestination(bindingName, producerProperties, binderName);
 
