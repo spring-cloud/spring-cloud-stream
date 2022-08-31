@@ -17,6 +17,7 @@
 package org.springframework.cloud.stream.binder.rabbit.provisioning;
 
 import java.io.IOException;
+import java.util.Map;
 import java.util.Set;
 
 import com.rabbitmq.client.Channel;
@@ -24,6 +25,10 @@ import com.rabbitmq.client.impl.AMQImpl.Queue.DeclareOk;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.amqp.core.Declarables;
+import org.springframework.amqp.core.DirectExchange;
+import org.springframework.amqp.core.Exchange;
+import org.springframework.amqp.core.ExchangeTypes;
+import org.springframework.amqp.core.TopicExchange;
 import org.springframework.amqp.rabbit.connection.Connection;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.utils.test.TestUtils;
@@ -31,6 +36,8 @@ import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
 import org.springframework.cloud.stream.binder.ExtendedProducerProperties;
 import org.springframework.cloud.stream.binder.rabbit.properties.RabbitConsumerProperties;
 import org.springframework.cloud.stream.binder.rabbit.properties.RabbitProducerProperties;
+import org.springframework.cloud.stream.binder.rabbit.properties.RabbitProducerProperties.AlternateExchange;
+import org.springframework.cloud.stream.binder.rabbit.properties.RabbitProducerProperties.AlternateExchange.Binding;
 import org.springframework.cloud.stream.provisioning.ConsumerDestination;
 import org.springframework.cloud.stream.provisioning.ProducerDestination;
 import org.springframework.context.ApplicationContext;
@@ -122,6 +129,89 @@ public class RabbitExchangeQueueProvisionerTests {
 		Set<String> declarables = ctx.getBeansOfType(Declarables.class).keySet();
 		String qual = TestUtils.getPropertyValue(dest, "beanNameQualifier", String.class);
 		assertThat(declarables).contains("bar." + qual + ".exchange");
+		provisioner.cleanAutoDeclareContext(dest, properties);
+		assertThat(ctx.getBeansOfType(Declarables.class)).isEmpty();
+	}
+
+	@Test
+	void producerDeclarationsWithAlternateNoQueue() throws IOException {
+		ConnectionFactory cf = mock(ConnectionFactory.class);
+		Connection conn = mock(Connection.class);
+		given(cf.createConnection()).willReturn(conn);
+		Channel channel = mock(Channel.class);
+		given(conn.createChannel(anyBoolean())).willReturn(channel);
+		RabbitExchangeQueueProvisioner provisioner = new RabbitExchangeQueueProvisioner(cf);
+
+		RabbitProducerProperties props = new RabbitProducerProperties();
+		AlternateExchange alternate = new AlternateExchange();
+		alternate.setName("altEx");
+		props.setAlternateExchange(alternate);
+		ExtendedProducerProperties<RabbitProducerProperties> properties =
+				new ExtendedProducerProperties<RabbitProducerProperties>(props);
+		ProducerDestination dest = provisioner.provisionProducerDestination("withAlt", properties);
+		ApplicationContext ctx =
+				TestUtils.getPropertyValue(provisioner, "autoDeclareContext", ApplicationContext.class);
+		Map<String, Declarables> declarables = ctx.getBeansOfType(Declarables.class);
+		assertThat(declarables).hasSize(2);
+		String qual = TestUtils.getPropertyValue(dest, "beanNameQualifier", String.class);
+		Declarables mainEx = declarables.get("withAlt." + qual + ".exchange");
+		assertThat(mainEx).isNotNull();
+		Exchange exch = (Exchange) mainEx.getDeclarables().iterator().next();
+		assertThat(exch.getArguments().get("alternate-exchange")).isEqualTo("altEx");
+		Declarables altEx = declarables.get("altEx." + qual + ".exchange");
+		assertThat(altEx).isNotNull();
+		exch = (Exchange) altEx.getDeclarables().iterator().next();
+		assertThat(exch).isInstanceOf(TopicExchange.class);
+		provisioner.cleanAutoDeclareContext(dest, properties);
+		assertThat(ctx.getBeansOfType(Declarables.class)).isEmpty();
+	}
+
+	@Test
+	void producerDeclarationsWithAlternateWithQueue() throws IOException {
+		ConnectionFactory cf = mock(ConnectionFactory.class);
+		Connection conn = mock(Connection.class);
+		given(cf.createConnection()).willReturn(conn);
+		Channel channel = mock(Channel.class);
+		willReturn(new DeclareOk("x", 0, 0))
+				.given(channel).queueDeclare(any(), eq(Boolean.TRUE), eq(Boolean.FALSE), eq(Boolean.FALSE), any());
+		given(conn.createChannel(anyBoolean())).willReturn(channel);
+		RabbitExchangeQueueProvisioner provisioner = new RabbitExchangeQueueProvisioner(cf);
+
+		RabbitProducerProperties props = new RabbitProducerProperties();
+		AlternateExchange alternate = new AlternateExchange();
+		alternate.setName("altEx");
+		alternate.setType(ExchangeTypes.DIRECT);
+		Binding binding = new Binding();
+		binding.setQueue("altQ");
+		binding.setRoutingKey("altRK");
+		alternate.setBinding(binding);
+		props.setAlternateExchange(alternate);
+		ExtendedProducerProperties<RabbitProducerProperties> properties =
+				new ExtendedProducerProperties<RabbitProducerProperties>(props);
+		ProducerDestination dest = provisioner.provisionProducerDestination("withAlt", properties);
+		ApplicationContext ctx =
+				TestUtils.getPropertyValue(provisioner, "autoDeclareContext", ApplicationContext.class);
+		Map<String, Declarables> declarables = ctx.getBeansOfType(Declarables.class);
+		assertThat(declarables).hasSize(4);
+		String qual = TestUtils.getPropertyValue(dest, "beanNameQualifier", String.class);
+		Declarables mainEx = declarables.get("withAlt." + qual + ".exchange");
+		assertThat(mainEx).isNotNull();
+		Exchange exch = (Exchange) mainEx.getDeclarables().iterator().next();
+		assertThat(exch).isInstanceOf(TopicExchange.class);
+		assertThat(exch.getArguments().get("alternate-exchange")).isEqualTo("altEx");
+		Declarables altEx = declarables.get("altEx." + qual + ".exchange");
+		assertThat(altEx).isNotNull();
+		exch = (Exchange) altEx.getDeclarables().iterator().next();
+		assertThat(exch).isInstanceOf(DirectExchange.class);
+		Declarables queueDec = declarables.get("altEx.altQ." + qual);
+		assertThat(queueDec).isNotNull();
+		Declarables bindingDec = declarables.get("altEx.altQ." + qual + ".binding");
+		assertThat(bindingDec).isNotNull();
+		org.springframework.amqp.core.Binding bdg = (org.springframework.amqp.core.Binding) bindingDec.getDeclarables()
+				.iterator().next();
+		assertThat(bdg.getExchange()).isEqualTo("altEx");
+		assertThat(bdg.getDestination()).isEqualTo("altQ");
+		assertThat(bdg.getRoutingKey()).isEqualTo("altRK");
 		provisioner.cleanAutoDeclareContext(dest, properties);
 		assertThat(ctx.getBeansOfType(Declarables.class)).isEmpty();
 	}

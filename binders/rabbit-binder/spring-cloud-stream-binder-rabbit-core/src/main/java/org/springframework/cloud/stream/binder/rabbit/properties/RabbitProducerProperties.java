@@ -20,9 +20,11 @@ import java.util.Optional;
 
 import jakarta.validation.constraints.Min;
 
+import org.springframework.amqp.core.ExchangeTypes;
 import org.springframework.amqp.core.MessageDeliveryMode;
 import org.springframework.expression.Expression;
 import org.springframework.expression.common.LiteralExpression;
+import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 
 
@@ -148,6 +150,12 @@ public class RabbitProducerProperties extends RabbitCommonProperties {
 	 * @since 3.2
 	 */
 	private String streamMessageConverterBeanName;
+
+	/**
+	 * Configure an alternate exchange for when no queues are bound.
+	 * @since 4.0
+	 */
+	private AlternateExchange alternateExchange;
 
 	/**
 	 * @param requestHeaderPatterns the patterns.
@@ -300,6 +308,102 @@ public class RabbitProducerProperties extends RabbitCommonProperties {
 
 	public void setStreamMessageConverterBeanName(String streamMessageConverterBeanName) {
 		this.streamMessageConverterBeanName = streamMessageConverterBeanName;
+	}
+
+	@Nullable
+	public AlternateExchange getAlternateExchange() {
+		return this.alternateExchange;
+	}
+
+	public void setAlternateExchange(AlternateExchange alternate) {
+		this.alternateExchange = alternate;
+	}
+
+	public static class AlternateExchange {
+
+		/**
+		 * The alternate exchange name.
+		 */
+		private String name;
+
+		/**
+		 * Whether the exchange exists or should be provisioned.
+		 */
+		private boolean exists = false;
+
+		/**
+		 * The alternate exchange type.
+		 */
+		private String type = ExchangeTypes.TOPIC;
+
+		/**
+		 * Bind a durable queue to the alternate exchange.
+		 */
+		private Binding binding;
+
+		public String getName() {
+			return this.name;
+		}
+
+		public void setName(String name) {
+			this.name = name;
+		}
+
+		public boolean isExists() {
+			return this.exists;
+		}
+
+		public void setExists(boolean exists) {
+			this.exists = exists;
+		}
+
+		public String getType() {
+			return this.type;
+		}
+
+		public void setType(String type) {
+			this.type = type;
+		}
+
+		public Binding getBinding() {
+			return this.binding;
+		}
+
+		public void setBinding(Binding binding) {
+			this.binding = binding;
+		}
+
+		public static class Binding {
+
+			/**
+			 * The routing key.
+			 */
+			private String routingKey = "#";
+
+			/**
+			 * The queue name.
+			 */
+			private String queue;
+
+			public String getRoutingKey() {
+				return this.routingKey;
+			}
+
+			public void setRoutingKey(String routingKey) {
+				this.routingKey = routingKey;
+			}
+
+			public String getQueue() {
+				return this.queue;
+			}
+
+			public void setQueue(String queue) {
+				this.queue = queue;
+			}
+
+
+		}
+
 	}
 
 }

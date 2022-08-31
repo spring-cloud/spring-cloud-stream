@@ -56,6 +56,7 @@ import org.springframework.cloud.stream.binder.rabbit.properties.RabbitCommonPro
 import org.springframework.cloud.stream.binder.rabbit.properties.RabbitConsumerProperties;
 import org.springframework.cloud.stream.binder.rabbit.properties.RabbitConsumerProperties.ContainerType;
 import org.springframework.cloud.stream.binder.rabbit.properties.RabbitProducerProperties;
+import org.springframework.cloud.stream.binder.rabbit.properties.RabbitProducerProperties.AlternateExchange;
 import org.springframework.cloud.stream.provisioning.ConsumerDestination;
 import org.springframework.cloud.stream.provisioning.ProducerDestination;
 import org.springframework.cloud.stream.provisioning.ProvisioningException;
@@ -119,9 +120,9 @@ public class RabbitExchangeQueueProvisioner
 			ExtendedProducerProperties<RabbitProducerProperties> producerProperties) {
 		final String exchangeName = applyPrefix(
 				producerProperties.getExtension().getPrefix(), name);
-		Exchange exchange = buildExchange(producerProperties.getExtension(),
-				exchangeName);
 		String beanNameQualifier = "prod" + this.producerExchangeBeanNameQualifier.incrementAndGet();
+		Exchange exchange = buildExchange(producerProperties.getExtension(),
+				exchangeName, producerProperties.getExtension().getAlternateExchange(), beanNameQualifier);
 		if (producerProperties.getExtension().isDeclareExchange()) {
 			declareExchange(exchangeName, beanNameQualifier, exchange);
 		}
@@ -245,7 +246,7 @@ public class RabbitExchangeQueueProvisioner
 		}
 		String prefix = properties.getExtension().getPrefix();
 		final String exchangeName = applyPrefix(prefix, name);
-		Exchange exchange = buildExchange(properties.getExtension(), exchangeName);
+		Exchange exchange = buildExchange(properties.getExtension(), exchangeName, null, null);
 		if (properties.getExtension().isDeclareExchange()) {
 			declareExchange(exchangeName, anonymous ? anonymousGroup : group, exchange);
 		}
@@ -364,25 +365,31 @@ public class RabbitExchangeQueueProvisioner
 			routingKey = "#";
 		}
 		Map<String, Object> arguments = new HashMap<>(extendedProperties.getQueueBindingArguments());
+		return createBinding(exchange, queue, routingKey, arguments, queue.getName());
+	}
+
+	private Binding createBinding(Exchange exchange, Queue queue, String routingKey,
+			@Nullable Map<String, Object> arguments, String beanName) {
+
 		if (exchange instanceof TopicExchange) {
 			Binding binding = BindingBuilder.bind(queue).to((TopicExchange) exchange)
 					.with(routingKey);
-			declareBinding(queue.getName(), binding);
+			declareBinding(beanName, binding);
 			return binding;
 		}
 		else if (exchange instanceof DirectExchange) {
 			Binding binding = BindingBuilder.bind(queue).to((DirectExchange) exchange)
 					.with(routingKey);
-			declareBinding(queue.getName(), binding);
+			declareBinding(beanName, binding);
 			return binding;
 		}
 		else if (exchange instanceof FanoutExchange) {
 			Binding binding = BindingBuilder.bind(queue).to((FanoutExchange) exchange);
-			declareBinding(queue.getName(), binding);
+			declareBinding(beanName, binding);
 			return binding;
 		}
 		else if (exchange instanceof HeadersExchange) {
-			Binding binding = new Binding(queue.getName(), DestinationType.QUEUE, exchange.getName(), "", arguments);
+			Binding binding = new Binding(beanName, DestinationType.QUEUE, exchange.getName(), "", arguments);
 			declareBinding(queue.getName(), binding);
 			return binding;
 		}
@@ -587,8 +594,9 @@ public class RabbitExchangeQueueProvisioner
 		return prefix + name;
 	}
 
-	private Exchange buildExchange(RabbitCommonProperties properties,
-			String exchangeName) {
+	private Exchange buildExchange(RabbitCommonProperties properties, String exchangeName,
+			@Nullable AlternateExchange alternate, @Nullable String beanNameQualifier) {
+
 		try {
 			ExchangeBuilder builder = new ExchangeBuilder(exchangeName,
 					properties.getExchangeType());
@@ -599,6 +607,10 @@ public class RabbitExchangeQueueProvisioner
 			if (properties.isDelayedExchange()) {
 				builder.delayed();
 			}
+			if (alternate != null && !alternate.isExists()) {
+				builder.alternate(alternate.getName());
+				configureAlternate(alternate, beanNameQualifier);
+			}
 			return builder.build();
 		}
 		catch (Exception e) {
@@ -606,8 +618,26 @@ public class RabbitExchangeQueueProvisioner
 		}
 	}
 
+	private void configureAlternate(AlternateExchange alternate, String beanNameQualifier) {
+		Exchange exchange = customizeAndDeclare(new ExchangeBuilder(alternate.getName(), alternate.getType())
+			.durable(true)
+			.build());
+		addToAutoDeclareContext(alternate.getName() + "." + beanNameQualifier + ".exchange", exchange);
+		AlternateExchange.Binding binding = alternate.getBinding();
+		if (binding != null) {
+			Queue queue = new Queue(binding.getQueue());
+			String beanName = alternate.getName() + "." + binding.getQueue() + "." + beanNameQualifier;
+			declareQueue(beanName, queue);
+			Binding toBind = createBinding(exchange, queue, binding.getRoutingKey(), null, beanName);
+		}
+	}
+
 	private void declareExchange(final String rootName, String group, final Exchange exchangeArg) {
-		Exchange exchange = exchangeArg;
+		Exchange exchange = customizeAndDeclare(exchangeArg);
+		addToAutoDeclareContext(rootName + "." + group + ".exchange", exchange);
+	}
+
+	private Exchange customizeAndDeclare(Exchange exchange) {
 		for (DeclarableCustomizer customizer : this.customizers) {
 			exchange = (Exchange) customizer.apply(exchange);
 		}
@@ -631,7 +661,7 @@ public class RabbitExchangeQueueProvisioner
 						e);
 			}
 		}
-		addToAutoDeclareContext(rootName + "." + group + ".exchange", exchange);
+		return exchange;
 	}
 
 	private void addToAutoDeclareContext(String name, Declarable bean) {
@@ -717,6 +747,15 @@ public class RabbitExchangeQueueProvisioner
 							removeQueueAndBindingBeans(properties.getExtension(), dest.getName() + "." + group, "",
 									group, false);
 						}
+					}
+				}
+				AlternateExchange alternate = properties.getExtension().getAlternateExchange();
+				if (alternate != null) {
+					removeSingleton(alternate.getName() + "." + qual + ".exchange");
+					RabbitProducerProperties.AlternateExchange.Binding binding = alternate.getBinding();
+					if (binding != null) {
+						removeSingleton(alternate.getName() + "." + binding.getQueue() + "." + qual);
+						removeSingleton(alternate.getName() + "." + binding.getQueue() + "." + qual + ".binding");
 					}
 				}
 			}

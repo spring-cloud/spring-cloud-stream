@@ -104,6 +104,7 @@ import org.springframework.cloud.stream.binder.rabbit.properties.RabbitCommonPro
 import org.springframework.cloud.stream.binder.rabbit.properties.RabbitConsumerProperties;
 import org.springframework.cloud.stream.binder.rabbit.properties.RabbitConsumerProperties.ContainerType;
 import org.springframework.cloud.stream.binder.rabbit.properties.RabbitProducerProperties;
+import org.springframework.cloud.stream.binder.rabbit.properties.RabbitProducerProperties.AlternateExchange;
 import org.springframework.cloud.stream.binder.rabbit.provisioning.RabbitExchangeQueueProvisioner;
 import org.springframework.cloud.stream.binder.test.junit.rabbit.RabbitTestSupport;
 import org.springframework.cloud.stream.config.BindingProperties;
@@ -386,6 +387,35 @@ public class RabbitBinderTests extends
 		producerBinding.unbind();
 
 		verifyAutoDeclareContextClear(binder);
+	}
+
+	@Test
+	void producerWithAlternateExchange(TestInfo testInfo) throws Exception {
+		RabbitTestBinder binder = getBinder();
+		DirectChannel moduleOutputChannel = createBindableChannel("output",
+				new BindingProperties());
+		ExtendedProducerProperties<RabbitProducerProperties> producerProps = createProducerProperties(testInfo);
+		AlternateExchange alternate = new AlternateExchange();
+		alternate.setName("altEx");
+		RabbitProducerProperties.AlternateExchange.Binding binding =
+				new RabbitProducerProperties.AlternateExchange.Binding();
+		binding.setQueue("altQ");
+		alternate.setBinding(binding);
+		producerProps.getExtension().setAlternateExchange(alternate);
+		Binding<MessageChannel> producerBinding = binder.bindProducer("alt.0",
+				moduleOutputChannel, producerProps);
+		final Message<?> message = MessageBuilder.withPayload("altMessage".getBytes())
+				.build();
+		moduleOutputChannel.send(message);
+		producerBinding.unbind();
+
+		verifyAutoDeclareContextClear(binder);
+		RabbitTemplate template = new RabbitTemplate(this.rabbitTestSupport.getResource());
+		Object received = template.receiveAndConvert("altQ", 10_000);
+		assertThat(received).isEqualTo("altMessage".getBytes());
+		RabbitAdmin admin = new RabbitAdmin(template.getConnectionFactory());
+		admin.deleteQueue("altQ");
+		admin.deleteExchange("altEx");
 	}
 
 	@Test
