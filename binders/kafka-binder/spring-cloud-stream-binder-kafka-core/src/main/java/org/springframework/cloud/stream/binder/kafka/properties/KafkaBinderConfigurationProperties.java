@@ -675,7 +675,7 @@ public class KafkaBinderConfigurationProperties {
 	public static class Metrics {
 		/**
 		 * When set to true, the offset lag metric of each consumer topic is computed whenever the metric is accessed (default: true).
-		 * When set to false only the periodically calculated offset lag is returned.
+		 * When set to false only the periodically calculated offset lag is used.
 		 * See {@link #scheduledOffsetLagComputationInterval} for more information.
 		 */
 		private boolean realtimeOffsetLagComputationEnabled = true;
