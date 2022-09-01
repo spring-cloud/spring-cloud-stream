@@ -153,7 +153,7 @@ public class KafkaBinderMetrics
 				this.scheduler.scheduleWithFixedDelay(
 					() -> computeUnconsumedMessages(topic, group),
 			1,
-					binderConfigurationProperties.getMetrics().getScheduledOffsetLagComputationInterval().toSeconds(),
+					binderConfigurationProperties.getMetrics().getOffsetLagMetricsInterval().toSeconds(),
 					TimeUnit.SECONDS
 				);
 			}
@@ -161,7 +161,7 @@ public class KafkaBinderMetrics
 	}
 
 	private ToDoubleFunction<KafkaBinderMetrics> computeOffsetComputationFunction(String topic, String group) {
-		if (this.binderConfigurationProperties.getMetrics().isRealtimeOffsetLagComputationEnabled()) {
+		if (this.binderConfigurationProperties.getMetrics().isDefaultOffsetLagMetricsEnabled()) {
 			return (o) -> computeAndGetUnconsumedMessagesWithTimeout(topic, group);
 		}
 		else {

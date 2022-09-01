@@ -86,9 +86,9 @@ public class KafkaBinderMetricsTest {
 				.createConsumer(ArgumentMatchers.any(), ArgumentMatchers.any()))
 			.willReturn(consumer);
 		org.mockito.BDDMockito.given(binder.getTopicsInUse()).willReturn(topicsInUse);
-		org.mockito.BDDMockito.given(kafkaBinderConfigurationProperties.getMetrics().isRealtimeOffsetLagComputationEnabled())
+		org.mockito.BDDMockito.given(kafkaBinderConfigurationProperties.getMetrics().isDefaultOffsetLagMetricsEnabled())
 			.willReturn(true);
-		org.mockito.BDDMockito.given(kafkaBinderConfigurationProperties.getMetrics().getScheduledOffsetLagComputationInterval())
+		org.mockito.BDDMockito.given(kafkaBinderConfigurationProperties.getMetrics().getOffsetLagMetricsInterval())
 			.willReturn(Duration.ofSeconds(60));
 		metrics = new KafkaBinderMetrics(binder, kafkaBinderConfigurationProperties,
 			consumerFactory, null
@@ -136,7 +136,7 @@ public class KafkaBinderMetricsTest {
 		);
 		org.mockito.BDDMockito.given(consumer.partitionsFor(TEST_TOPIC))
 			.willReturn(partitions);
-		org.mockito.BDDMockito.given(kafkaBinderConfigurationProperties.getMetrics().isRealtimeOffsetLagComputationEnabled())
+		org.mockito.BDDMockito.given(kafkaBinderConfigurationProperties.getMetrics().isDefaultOffsetLagMetricsEnabled())
 			.willReturn(false);
 		metrics.bindTo(meterRegistry);
 		assertThat(meterRegistry.getMeters()).hasSize(1);
@@ -144,7 +144,7 @@ public class KafkaBinderMetricsTest {
 			.tag("group", "group1-metrics").tag("topic", TEST_TOPIC).gauge().value())
 			.isEqualTo(0);
 
-		org.mockito.BDDMockito.given(kafkaBinderConfigurationProperties.getMetrics().getScheduledOffsetLagComputationInterval())
+		org.mockito.BDDMockito.given(kafkaBinderConfigurationProperties.getMetrics().getOffsetLagMetricsInterval())
 			.willReturn(Duration.ofSeconds(1));
 		metrics.bindTo(meterRegistry);
 		Awaitility.waitAtMost(Duration.ofSeconds(5)).untilAsserted(() -> {

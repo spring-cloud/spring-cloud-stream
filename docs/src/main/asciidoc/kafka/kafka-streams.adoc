@@ -1807,6 +1807,16 @@ public Function<KStream<String, String>, KStream<String, String>> process(KafkaS
 }
 ```
 
+=== Metrics using Micrometer
+When Micrometer is on the classpath of a Spring Cloud Stream Kafka Streams binder based application, its consumer topic offset lags are collected as a gauge metric -
+`spring.cloud.stream.binder.kafka.offset`.
+
+The offset lag is computed for each consumed topic and partition whenever the mentioned metric is queried.
+When this computation fails (i.e. because of a timeout) a fallback value is used that is periodically calculated in the background.
+
+The metric collection behaviour can be configured by setting properties in the `spring.cloud.stream.kafka.binder.metrics` namespace,
+refer to the <<kafka-streams-binder-properties, properties section>> for more information.
+
 === Configuration Options
 
 This section contains the configuration options used by the Kafka Streams binder.
@@ -1814,6 +1824,7 @@ This section contains the configuration options used by the Kafka Streams binder
 For common configuration options and properties pertaining to binder, refer to the <<binding-properties,core documentation>>.
 
 ==== Kafka Streams Binder Properties
+[[kafka-streams-binder-properties]]
 
 The following properties are available at the binder level and must be prefixed with `spring.cloud.stream.kafka.streams.binder.`
 Any Kafka binder provided properties re-used in Kafka Streams binder must be prefixed with `spring.cloud.stream.kafka.streams.binder` instead of `spring.cloud.stream.kafka.binder`.
@@ -1894,6 +1905,19 @@ When bindings for processors are stopped through actuator, then this processor w
 Set this property to `true` to enable health check for all processors including the ones that are currently stopped through bindings actuator endpoint.
 +
 Default: false
+
+metrics.defaultOffsetLagMetricsEnabled::
+When set to true, the offset lag metric of each consumer topic is computed whenever the metric is accessed.
+When set to false only the periodically calculated offset lag is used.
++
+Default: true
+
+metrics.offsetLagMetricsInterval::
+The interval in which the offset lag for each consumer topic is computed.
+This value is used whenever `metrics.defaultOffsetLagMetricsEnabled` is disabled or its
+computation is taking too long.
++
+Default: 60 seconds
 
 ==== Kafka Streams Producer Properties
 

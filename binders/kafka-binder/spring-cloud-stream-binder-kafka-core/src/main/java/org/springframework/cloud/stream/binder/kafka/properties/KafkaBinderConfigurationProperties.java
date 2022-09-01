@@ -674,33 +674,32 @@ public class KafkaBinderConfigurationProperties {
 
 	public static class Metrics {
 		/**
-		 * When set to true, the offset lag metric of each consumer topic is computed whenever the metric is accessed (default: true).
+		 * When set to true, the offset lag metric of each consumer topic is computed whenever the metric is queried (default: true).
 		 * When set to false only the periodically calculated offset lag is used.
-		 * See {@link #scheduledOffsetLagComputationInterval} for more information.
+		 * See {@link #offsetLagMetricsInterval} for more information.
 		 */
-		private boolean realtimeOffsetLagComputationEnabled = true;
+		private boolean defaultOffsetLagMetricsEnabled = true;
 
 		/**
 		 * The interval in which the offset lag for each consumer topic is computed (default: 60 seconds).
-		 * This value is used whenever {@link #realtimeOffsetLagComputationEnabled} is disabled or the real time
-		 * computation is taking too long.
+		 * This value is used whenever {@link #defaultOffsetLagMetricsEnabled} is disabled or its computation is taking too long.
 		 */
-		private Duration scheduledOffsetLagComputationInterval = Duration.ofSeconds(60);
+		private Duration offsetLagMetricsInterval = Duration.ofSeconds(60);
 
-		public boolean isRealtimeOffsetLagComputationEnabled() {
-			return realtimeOffsetLagComputationEnabled;
+		public boolean isDefaultOffsetLagMetricsEnabled() {
+			return defaultOffsetLagMetricsEnabled;
 		}
 
-		public void setRealtimeOffsetLagComputationEnabled(boolean realtimeOffsetLagComputationEnabled) {
-			this.realtimeOffsetLagComputationEnabled = realtimeOffsetLagComputationEnabled;
+		public void setDefaultOffsetLagMetricsEnabled(boolean defaultOffsetLagMetricsEnabled) {
+			this.defaultOffsetLagMetricsEnabled = defaultOffsetLagMetricsEnabled;
 		}
 
-		public Duration getScheduledOffsetLagComputationInterval() {
-			return scheduledOffsetLagComputationInterval;
+		public Duration getOffsetLagMetricsInterval() {
+			return offsetLagMetricsInterval;
 		}
 
-		public void setScheduledOffsetLagComputationInterval(Duration scheduledOffsetLagComputationInterval) {
-			this.scheduledOffsetLagComputationInterval = scheduledOffsetLagComputationInterval;
+		public void setOffsetLagMetricsInterval(Duration offsetLagMetricsInterval) {
+			this.offsetLagMetricsInterval = offsetLagMetricsInterval;
 		}
 	}
 }
