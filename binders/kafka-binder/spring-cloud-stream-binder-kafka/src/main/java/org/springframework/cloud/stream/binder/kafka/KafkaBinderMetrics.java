@@ -16,27 +16,6 @@
 
 package org.springframework.cloud.stream.binder.kafka;
 
-import io.micrometer.core.instrument.Gauge;
-import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.binder.MeterBinder;
-import io.micrometer.core.instrument.noop.NoopGauge;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.apache.kafka.clients.consumer.Consumer;
-import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.clients.consumer.OffsetAndMetadata;
-import org.apache.kafka.common.PartitionInfo;
-import org.apache.kafka.common.TopicPartition;
-import org.apache.kafka.common.serialization.ByteArrayDeserializer;
-import org.springframework.cloud.stream.binder.BindingCreatedEvent;
-import org.springframework.cloud.stream.binder.kafka.properties.KafkaBinderConfigurationProperties;
-import org.springframework.context.ApplicationListener;
-import org.springframework.kafka.core.ConsumerFactory;
-import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
-import org.springframework.lang.Nullable;
-import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
-import org.springframework.util.ObjectUtils;
-
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -52,6 +31,27 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.ToDoubleFunction;
+
+import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.binder.MeterBinder;
+import io.micrometer.core.instrument.noop.NoopGauge;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.kafka.clients.consumer.Consumer;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.consumer.OffsetAndMetadata;
+import org.apache.kafka.common.PartitionInfo;
+import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.common.serialization.ByteArrayDeserializer;
+
+import org.springframework.cloud.stream.binder.BindingCreatedEvent;
+import org.springframework.cloud.stream.binder.kafka.properties.KafkaBinderConfigurationProperties;
+import org.springframework.context.ApplicationListener;
+import org.springframework.kafka.core.ConsumerFactory;
+import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
+import org.springframework.lang.Nullable;
+import org.springframework.util.ObjectUtils;
 
 /**
  * Metrics for Kafka binder.
@@ -163,7 +163,8 @@ public class KafkaBinderMetrics
 	private ToDoubleFunction<KafkaBinderMetrics> computeOffsetComputationFunction(String topic, String group) {
 		if (this.binderConfigurationProperties.getMetrics().isRealtimeOffsetLagComputationEnabled()) {
 			return (o) -> computeAndGetUnconsumedMessagesWithTimeout(topic, group);
-		} else {
+		}
+		else {
 			return (o) -> lastUnconsumedMessagesValues.get(topic + "-" + group);
 		}
 	}
