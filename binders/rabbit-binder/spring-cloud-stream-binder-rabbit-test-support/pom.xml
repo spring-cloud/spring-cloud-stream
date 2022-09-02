@@ -4,7 +4,7 @@
     <parent>
         <groupId>org.springframework.cloud</groupId>
         <artifactId>spring-cloud-stream-binder-rabbit-parent</artifactId>
-        <version>3.2.5</version>
+        <version>3.2.5-SNAPSHOT</version>
     </parent>
     <artifactId>spring-cloud-stream-binder-rabbit-test-support</artifactId>
     <description>Rabbit related test classes</description>
