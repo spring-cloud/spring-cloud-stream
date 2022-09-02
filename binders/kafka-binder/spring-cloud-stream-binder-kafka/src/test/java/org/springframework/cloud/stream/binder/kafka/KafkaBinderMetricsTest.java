@@ -122,7 +122,7 @@ public class KafkaBinderMetricsTest {
 	}
 
 	@Test
-	void shouldFallbackToScheduledOffsetLagComputationWhenRealtimeOffsetLagIsDisabled() {
+	public void shouldFallbackToScheduledOffsetLagComputationWhenRealtimeOffsetLagIsDisabled() {
 		final Map<TopicPartition, OffsetAndMetadata> committed = new HashMap<>();
 		TopicPartition topicPartition = new TopicPartition(TEST_TOPIC, 0);
 		committed.put(topicPartition, new OffsetAndMetadata(500));

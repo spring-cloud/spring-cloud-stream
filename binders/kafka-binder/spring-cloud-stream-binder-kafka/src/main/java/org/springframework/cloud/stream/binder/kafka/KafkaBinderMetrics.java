@@ -153,7 +153,7 @@ public class KafkaBinderMetrics
 				this.scheduler.scheduleWithFixedDelay(
 					() -> computeUnconsumedMessages(topic, group),
 			1,
-					binderConfigurationProperties.getMetrics().getOffsetLagMetricsInterval().toSeconds(),
+					binderConfigurationProperties.getMetrics().getOffsetLagMetricsInterval().getSeconds(),
 					TimeUnit.SECONDS
 				);
 			}
