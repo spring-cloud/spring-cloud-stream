@@ -6,7 +6,7 @@
 	<parent>
 		<groupId>org.springframework.cloud</groupId>
 		<artifactId>spring-cloud-stream-core</artifactId>
-		<version>3.2.5-SNAPSHOT</version>
+		<version>3.2.6-SNAPSHOT</version>
 	</parent>
 	<artifactId>spring-cloud-stream-test-support-internal</artifactId>
 	<description>Set of classes and utility code that may assist in testing both
