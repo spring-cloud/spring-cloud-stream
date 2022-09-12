@@ -383,7 +383,7 @@ public class RabbitBinderTests extends
 		moduleOutputChannel.send(message);
 		Confirm confirm = correlation.getFuture().get(10, TimeUnit.SECONDS);
 		assertThat(confirm.isAck()).isTrue();
-		assertThat(correlation.getReturnedMessage()).isNotNull();
+		assertThat(correlation.getReturned()).isNotNull();
 		producerBinding.unbind();
 
 		verifyAutoDeclareContextClear(binder);
