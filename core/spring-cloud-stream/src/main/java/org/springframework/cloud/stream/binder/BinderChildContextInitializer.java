@@ -26,7 +26,6 @@ import org.apache.commons.logging.LogFactory;
 
 import org.springframework.aot.generate.GeneratedMethod;
 import org.springframework.aot.generate.GenerationContext;
-import org.springframework.aot.generate.MethodReference;
 import org.springframework.beans.factory.aot.BeanRegistrationAotContribution;
 import org.springframework.beans.factory.aot.BeanRegistrationAotProcessor;
 import org.springframework.beans.factory.aot.BeanRegistrationCode;
@@ -159,8 +158,7 @@ public class BinderChildContextInitializer implements ApplicationContextAware, B
 						});
 						method.addStatement("return instance.withChildContextInitializers(initializers)");
 					});
-			beanRegistrationCode.addInstancePostProcessor(
-					MethodReference.ofStatic(beanRegistrationCode.getClassName(), postProcessorMethod.getName()));
+			beanRegistrationCode.addInstancePostProcessor(postProcessorMethod.toMethodReference());
 		}
 	}
 
