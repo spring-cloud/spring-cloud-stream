@@ -17,6 +17,7 @@ The reference documentation consists of the following sections:
 
 
 <<binders.adoc#binders,Additional Binders>> :: A collection of Partner maintained binder implementations for Spring Cloud Stream (e.g., Azure Event Hubs, Google PubSub, Solace PubSub+)
+<<spring-cloud-stream-schema-registry.adoc#spring-cloud-stream-schema-registry-reference,Schema Registry>> :: Spring Cloud Stream Schema Registry Reference
 https://github.com/spring-cloud/spring-cloud-stream-samples/[Spring Cloud Stream Samples]  :: A curated collection of repeatable Spring Cloud Stream samples to walk through the features
 
 Relevant Links:
