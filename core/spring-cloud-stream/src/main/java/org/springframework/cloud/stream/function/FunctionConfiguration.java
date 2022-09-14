@@ -46,7 +46,6 @@ import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.beans.factory.config.BeanDefinition;
-import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
@@ -466,7 +465,6 @@ public class FunctionConfiguration {
 		private void bindFunctionToDestinations(BindableProxyFactory bindableProxyFactory, String functionDefinition, ConfigurableEnvironment environment) {
 			this.assertBindingIsPossible(bindableProxyFactory);
 
-
 			Set<String> inputBindingNames = bindableProxyFactory.getInputs();
 			Set<String> outputBindingNames = bindableProxyFactory.getOutputs();
 
@@ -862,7 +860,6 @@ public class FunctionConfiguration {
 		@Override
 		public void afterPropertiesSet() throws Exception {
 			this.determineFunctionName(functionCatalog, environment);
-			BeanDefinitionRegistry registry = (BeanDefinitionRegistry) applicationContext.getBeanFactory();
 
 			if (StringUtils.hasText(streamFunctionProperties.getDefinition())) {
 				String[] functionDefinitions = this.filterEligibleFunctionDefinitions();
@@ -870,7 +867,6 @@ public class FunctionConfiguration {
 
 					FunctionInvocationWrapper function = functionCatalog.lookup(functionDefinition);
 					if (function != null) {
-						//Type functionType = function.getFunctionType();
 						if (function.isSupplier()) {
 							this.inputCount = 0;
 							this.outputCount = this.getOutputCount(function, true);
@@ -909,11 +905,11 @@ public class FunctionConfiguration {
 				}
 			}
 
-			this.createStandAloneBindingsIfNecessary(registry, applicationContext.getBean(BindingServiceProperties.class));
+			this.createStandAloneBindingsIfNecessary(applicationContext.getBean(BindingServiceProperties.class));
 
 		}
 
-		private void createStandAloneBindingsIfNecessary(BeanDefinitionRegistry registry, BindingServiceProperties bindingProperties) {
+		private void createStandAloneBindingsIfNecessary(BindingServiceProperties bindingProperties) {
 			String[] inputBindings = StringUtils.hasText(bindingProperties.getInputBindings())
 					? bindingProperties.getInputBindings().split(";") : new String[0];
 
