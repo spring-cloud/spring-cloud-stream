@@ -44,9 +44,8 @@ import reactor.util.function.Tuples;
 
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.beans.factory.config.BeanDefinition;
-import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
-import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
@@ -147,8 +146,8 @@ public class FunctionConfiguration {
 	}
 
 	@Bean
-	public BeanFactoryPostProcessor po(Environment environment) {
-		return new PollableSourceRegistrar(environment);
+	public SmartInitializingSingleton po(GenericApplicationContext context) {
+		return new PollableSourceRegistrar(context);
 	}
 
 	@Bean
@@ -804,29 +803,29 @@ public class FunctionConfiguration {
 		}
 	}
 
-	private static class PollableSourceRegistrar implements BeanFactoryPostProcessor {
+	private static class PollableSourceRegistrar implements SmartInitializingSingleton {
 		private final Environment environment;
 
-		PollableSourceRegistrar(Environment environment) {
-			this.environment = environment;
+		private final GenericApplicationContext context;
+
+		PollableSourceRegistrar(GenericApplicationContext context) {
+			this.environment = context.getEnvironment();
+			this.context = context;
 		}
 
 		@Override
-		public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
+		public void afterSingletonsInstantiated() {
 			if (StringUtils.hasText(this.environment.getProperty("spring.cloud.stream.pollable-source"))) {
 				String[] sourceNames = this.environment.getProperty("spring.cloud.stream.pollable-source").split(";");
 
 				for (String sourceName : sourceNames) {
-					RootBeanDefinition functionBindableProxyDefinition = new RootBeanDefinition(BindableFunctionProxyFactory.class);
-					functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(sourceName);
-					functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(1);
-					functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(0);
-					functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(new StreamFunctionProperties());
 					final SupportedBindableFeatures supportedBindableFeatures = new SupportedBindableFeatures();
 					supportedBindableFeatures.setPollable(true);
 					supportedBindableFeatures.setReactive(false);
-					functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(supportedBindableFeatures);
-					((BeanDefinitionRegistry) beanFactory).registerBeanDefinition(sourceName + "_binding", functionBindableProxyDefinition);
+
+					BindableFunctionProxyFactory proxyFactory =
+						new BindableFunctionProxyFactory(sourceName, 1, 0, new StreamFunctionProperties(), supportedBindableFeatures);
+					context.registerBean(sourceName + "_binding", BindableFunctionProxyFactory.class, () -> proxyFactory);
 				}
 			}
 		}
@@ -868,7 +867,7 @@ public class FunctionConfiguration {
 			if (StringUtils.hasText(streamFunctionProperties.getDefinition())) {
 				String[] functionDefinitions = this.filterEligibleFunctionDefinitions();
 				for (String functionDefinition : functionDefinitions) {
-					RootBeanDefinition functionBindableProxyDefinition = new RootBeanDefinition(BindableFunctionProxyFactory.class);
+
 					FunctionInvocationWrapper function = functionCatalog.lookup(functionDefinition);
 					if (function != null) {
 						//Type functionType = function.getFunctionType();
@@ -885,20 +884,23 @@ public class FunctionConfiguration {
 							this.outputCount = this.getOutputCount(function, false);
 						}
 
-						functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(functionDefinition);
-						functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(this.inputCount);
-						functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(this.outputCount);
-						functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(this.streamFunctionProperties);
-
+						AtomicReference<BindableFunctionProxyFactory> proxyFactory = new AtomicReference<>();
 						final Map<String, Boolean> reactiveFunctions = streamFunctionProperties.getReactive();
 						final boolean reactiveFn = reactiveFunctions.get(functionDefinition) != null;
 						if (reactiveFn) {
 							final SupportedBindableFeatures supportedBindableFeatures = new SupportedBindableFeatures();
 							supportedBindableFeatures.setPollable(false);
 							supportedBindableFeatures.setReactive(true);
-							functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(supportedBindableFeatures);
+
+							proxyFactory.set(new BindableFunctionProxyFactory(functionDefinition,
+								this.inputCount, this.outputCount, this.streamFunctionProperties, supportedBindableFeatures));
 						}
-						registry.registerBeanDefinition(functionDefinition + "_binding", functionBindableProxyDefinition);
+						else {
+							proxyFactory.set(new BindableFunctionProxyFactory(functionDefinition,
+								this.inputCount, this.outputCount, this.streamFunctionProperties));
+						}
+						((GenericApplicationContext) this.applicationContext).registerBean(functionDefinition + "_binding",
+							BindableFunctionProxyFactory.class, () -> proxyFactory.get());
 					}
 					else {
 						logger.warn("The function definition '" + streamFunctionProperties.getDefinition() +
@@ -924,12 +926,10 @@ public class FunctionConfiguration {
 				if (sourceFunc == null || //see https://github.com/spring-cloud/spring-cloud-stream/issues/2229
 						sourceFunc.isSupplier() ||
 						(!sourceFunc.getFunctionDefinition().equals(inputBindingName) && applicationContext.containsBean(inputBindingName))) {
-					RootBeanDefinition functionBindableProxyDefinition = new RootBeanDefinition(BindableFunctionProxyFactory.class);
-					functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(inputBindingName);
-					functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(1);
-					functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(0);
-					functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(this.streamFunctionProperties);
-					registry.registerBeanDefinition(inputBindingName + "_binding_in", functionBindableProxyDefinition);
+
+					BindableFunctionProxyFactory proxyFactory = new BindableFunctionProxyFactory(inputBindingName, 1, 0, this.streamFunctionProperties);
+					((GenericApplicationContext) this.applicationContext).registerBean(inputBindingName + "_binding_in",
+						BindableFunctionProxyFactory.class, () -> proxyFactory);
 				}
 			}
 
@@ -939,12 +939,10 @@ public class FunctionConfiguration {
 				if (sourceFunc == null || //see https://github.com/spring-cloud/spring-cloud-stream/issues/2229
 						sourceFunc.isConsumer() ||
 						(!sourceFunc.getFunctionDefinition().equals(outputBindingName) && applicationContext.containsBean(outputBindingName))) {
-					RootBeanDefinition functionBindableProxyDefinition = new RootBeanDefinition(BindableFunctionProxyFactory.class);
-					functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(outputBindingName);
-					functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(0);
-					functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(1);
-					functionBindableProxyDefinition.getConstructorArgumentValues().addGenericArgumentValue(this.streamFunctionProperties);
-					registry.registerBeanDefinition(outputBindingName + "_binding_out", functionBindableProxyDefinition);
+
+					BindableFunctionProxyFactory proxyFactory = new BindableFunctionProxyFactory(outputBindingName, 0, 1, this.streamFunctionProperties);
+					((GenericApplicationContext) this.applicationContext).registerBean(outputBindingName + "_binding_out",
+						BindableFunctionProxyFactory.class, () -> proxyFactory);
 				}
 			}
 

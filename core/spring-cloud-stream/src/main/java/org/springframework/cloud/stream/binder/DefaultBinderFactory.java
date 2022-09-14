@@ -152,7 +152,22 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 		return binder;
 	}
 
-	private <T> Binder<T, ConsumerProperties, ProducerProperties> doGetBinder(String name,
+	private <T> Binder<T, ConsumerProperties, ProducerProperties> doGetBinder(String name, Class<? extends T> bindingTargetType) {
+		if (CollectionUtils.isEmpty(this.binderChildContextInitializers)) {
+			return this.doGetBinderConventional(name, bindingTargetType);
+		}
+		else {
+			if (!StringUtils.hasText(name) && this.binderChildContextInitializers.size() == 1) {
+				String configurationName = this.binderChildContextInitializers.keySet().iterator().next();
+				return this.getBinderInstance(configurationName);
+			}
+			else {
+				throw new IllegalStateException("Can't determine which binder to use: " + name + "/" + this.binderChildContextInitializers.size());
+			}
+		}
+	}
+
+	private <T> Binder<T, ConsumerProperties, ProducerProperties> doGetBinderConventional(String name,
 			Class<? extends T> bindingTargetType) {
 
 		if (!MessageChannel.class.isAssignableFrom(bindingTargetType)
@@ -165,7 +180,7 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 		// Fall back to a default if no argument is provided
 		if (!StringUtils.hasText(name)) {
 			Assert.notEmpty(this.binderConfigurations,
-					"A default binder has been requested, but there is no binder available");
+					"A default binder has been requested, but there is no binder available ");
 			if (!StringUtils.hasText(this.defaultBinder)) {
 				Set<String> defaultCandidateConfigurations = new HashSet<>();
 				for (Map.Entry<String, BinderConfiguration> binderConfigurationEntry : this.binderConfigurations
@@ -256,11 +271,7 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 		if (!this.binderInstanceCache.containsKey(configurationName)) {
 			this.logger.info("Creating binder: " + configurationName);
 			BinderConfiguration binderConfiguration = this.binderConfigurations.get(configurationName);
-			Assert.state(binderConfiguration != null, "Unknown binder configuration: " + configurationName);
-			BinderType binderType = this.binderTypeRegistry.get(binderConfiguration.getBinderType());
-			Assert.notNull(binderType, "Binder type " + binderConfiguration.getBinderType() + " is not defined");
 			Map<String, Object> binderProperties = new HashMap<>();
-			this.flatten(null, binderConfiguration.getProperties(), binderProperties);
 
 			ConfigurableApplicationContext binderProducingContext;
 			if (this.binderChildContextInitializers.containsKey(configurationName)) {
@@ -270,6 +281,10 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 				binderProducingContext.refresh();
 			}
 			else {
+				Assert.state(binderConfiguration != null, "Unknown binder configuration: " + configurationName);
+				BinderType binderType = this.binderTypeRegistry.get(binderConfiguration.getBinderType());
+				Assert.notNull(binderType, "Binder type " + binderConfiguration.getBinderType() + " is not defined");
+				this.flatten(null, binderConfiguration.getProperties(), binderProperties);
 				this.logger.info("Constructing binder child context for " + configurationName);
 				binderProducingContext = this.initializeBinderContextSimple(configurationName, binderProperties,
 						binderType, binderConfiguration, true);
