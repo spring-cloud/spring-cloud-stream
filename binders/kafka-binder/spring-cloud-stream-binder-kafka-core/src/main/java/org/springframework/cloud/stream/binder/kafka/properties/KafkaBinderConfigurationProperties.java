@@ -410,7 +410,7 @@ public class KafkaBinderConfigurationProperties {
 
 	private void filterStreamManagedConfiguration(Map<String, Object> configuration) {
 		if (configuration.containsKey(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG)
-				&& configuration.get(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG).equalsIgnoreCase("true")) {
+				&& configuration.get(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG).equals("true")) {
 			logger.warn(constructIgnoredConfigMessage(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG) +
 					ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG + "=true is not supported by the Kafka binder");
 			configuration.remove(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG);
