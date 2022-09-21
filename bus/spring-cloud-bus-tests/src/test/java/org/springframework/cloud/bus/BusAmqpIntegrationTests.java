@@ -52,7 +52,7 @@ import static org.springframework.boot.test.context.SpringBootTest.WebEnvironmen
 public class BusAmqpIntegrationTests {
 
 	@Container
-	private static final RabbitMQContainer rabbitMQContainer = new RabbitMQContainer();
+	private static final RabbitMQContainer rabbitMQContainer = new RabbitMQContainer("rabbitmq:3.7.25-management-alpine");
 
 	private static ConfigurableApplicationContext context;
 
