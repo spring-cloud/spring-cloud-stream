@@ -1,0 +1,5 @@
+org.springframework.cloud.bus.PathServiceMatcherAutoConfiguration
+org.springframework.cloud.bus.BusAutoConfiguration
+org.springframework.cloud.bus.BusRefreshAutoConfiguration
+org.springframework.cloud.bus.BusStreamAutoConfiguration
+org.springframework.cloud.bus.jackson.BusJacksonAutoConfiguration
