@@ -23,7 +23,7 @@
 		<amazon-kinesis-client.version>1.14.8</amazon-kinesis-client.version>
 		<amazon-kinesis-producer.version>0.14.12</amazon-kinesis-producer.version>
 		<dynamodb-stream.version>1.5.3</dynamodb-stream.version>
-		<testcontainers.version>1.16.3</testcontainers.version>
+		<testcontainers.version>1.17.3</testcontainers.version>
 	</properties>
 
 	<modules>
