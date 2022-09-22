@@ -30,6 +30,7 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.BeanPostProcessor;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.SearchStrategy;
@@ -53,7 +54,6 @@ import org.springframework.cloud.stream.config.BindingHandlerAdvise.MappingsProv
 import org.springframework.cloud.stream.function.StreamFunctionProperties;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Role;
@@ -80,7 +80,7 @@ import org.springframework.util.ObjectUtils;
  * @author Soby Chacko
  * @author Chris Bono
  */
-@Configuration(proxyBeanMethods = false)
+@AutoConfiguration
 @EnableConfigurationProperties({ BindingServiceProperties.class,
 		SpringIntegrationProperties.class, StreamFunctionProperties.class })
 @Import({ SpelExpressionConverterConfiguration.class })

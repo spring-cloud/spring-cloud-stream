@@ -27,6 +27,7 @@ import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.HealthContributor;
 import org.springframework.boot.actuate.health.HealthIndicator;
 import org.springframework.boot.actuate.health.NamedContributor;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
@@ -36,7 +37,6 @@ import org.springframework.cloud.stream.binder.BinderFactory;
 import org.springframework.cloud.stream.binder.DefaultBinderFactory;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 
 /**
  * @author Ilayaperumal Gopinathan
@@ -46,7 +46,7 @@ import org.springframework.context.annotation.Configuration;
 @AutoConfigureBefore(EndpointAutoConfiguration.class)
 @ConditionalOnBean(BinderFactory.class)
 @AutoConfigureAfter(BindingServiceConfiguration.class)
-@Configuration(proxyBeanMethods = false)
+@AutoConfiguration
 public class BindersHealthIndicatorAutoConfiguration {
 
 	@Bean

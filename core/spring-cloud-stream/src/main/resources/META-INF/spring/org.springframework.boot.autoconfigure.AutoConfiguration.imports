@@ -1,0 +1,5 @@
+org.springframework.cloud.stream.config.BindersHealthIndicatorAutoConfiguration
+org.springframework.cloud.stream.config.ChannelsEndpointAutoConfiguration
+org.springframework.cloud.stream.config.BindingsEndpointAutoConfiguration
+org.springframework.cloud.stream.config.BindingServiceConfiguration
+org.springframework.cloud.stream.function.FunctionConfiguration

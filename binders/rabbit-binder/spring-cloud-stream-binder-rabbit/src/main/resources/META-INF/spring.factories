@@ -1,4 +1,2 @@
-org.springframework.boot.autoconfigure.EnableAutoConfiguration:\
-org.springframework.cloud.stream.binder.rabbit.config.ExtendedBindingHandlerMappingsProviderConfiguration
 org.springframework.boot.env.EnvironmentPostProcessor:\
 org.springframework.cloud.stream.binder.rabbit.deployer.RabbitDeployerEnvironmentPostProcessor

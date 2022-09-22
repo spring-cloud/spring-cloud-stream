@@ -1,7 +1,2 @@
-org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
-  org.springframework.cloud.stream.binder.kafka.streams.ExtendedBindingHandlerMappingsProviderAutoConfiguration,\
-  org.springframework.cloud.stream.binder.kafka.streams.KafkaStreamsBinderSupportAutoConfiguration,\
-  org.springframework.cloud.stream.binder.kafka.streams.function.KafkaStreamsFunctionAutoConfiguration,\
-  org.springframework.cloud.stream.binder.kafka.streams.endpoint.KafkaStreamsTopologyEndpointAutoConfiguration
 org.springframework.boot.env.EnvironmentPostProcessor=\
 org.springframework.cloud.stream.binder.kafka.streams.KafkaStreamsBinderEnvironmentPostProcessor
