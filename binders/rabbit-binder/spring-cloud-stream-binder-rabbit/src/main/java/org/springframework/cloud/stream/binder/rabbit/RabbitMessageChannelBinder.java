@@ -316,7 +316,7 @@ public class RabbitMessageChannelBinder extends
 				"the RabbitMQ binder does not support embedded headers since RabbitMQ supports headers natively");
 		String prefix = producerProperties.getExtension().getPrefix();
 		String exchangeName = producerDestination.getName();
-		String destination = StringUtils.isEmpty(prefix) ? exchangeName
+		String destination = !StringUtils.hasText(prefix) ? exchangeName
 				: exchangeName.substring(prefix.length());
 		RabbitProducerProperties extendedProperties = producerProperties.getExtension();
 		final MessageHandler endpoint;

@@ -26,6 +26,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.amqp.rabbit.listener.MessageListenerContainer;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.stream.binder.BinderFactory;
 import org.springframework.cloud.stream.binder.Binding;
@@ -128,7 +129,8 @@ public class RabbitStreamBinderModuleTests {
 		}
 
 		@Bean
-		Environment env(ConsumerBuilder consumerBuilder, ProducerBuilder producerBuilder) {
+		@ConditionalOnMissingBean
+		Environment rabbitStreamEnvironment(ConsumerBuilder consumerBuilder, ProducerBuilder producerBuilder) {
 			Environment env = mock(Environment.class);
 			given(env.consumerBuilder()).willReturn(consumerBuilder);
 			given(env.producerBuilder()).willReturn(producerBuilder);
