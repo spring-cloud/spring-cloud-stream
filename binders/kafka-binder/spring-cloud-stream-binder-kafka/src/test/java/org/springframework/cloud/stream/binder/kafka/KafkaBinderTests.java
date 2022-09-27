@@ -1039,6 +1039,7 @@ public class KafkaBinderTests extends
 		consumerProperties.setMultiplex(true);
 		consumerProperties.getExtension().setDlqPartitions(dlqPartitions);
 		consumerProperties.setConcurrency(2);
+		consumerProperties.populateBindingName("foobar");
 
 		DirectChannel moduleInputChannel = createBindableChannel("input",
 				createConsumerBindingProperties(consumerProperties));
@@ -1091,8 +1092,9 @@ public class KafkaBinderTests extends
 
 		ApplicationContext context = TestUtils.getPropertyValue(binder.getBinder(),
 				"applicationContext", ApplicationContext.class);
-		SubscribableChannel boundErrorChannel = context
-				.getBean(consumerDest + ".testGroup.errors-0", SubscribableChannel.class);
+		SubscribableChannel boundErrorChannel = context.getBean(binder.getBinder().getBinderIdentity() + ".foobar.errors-0", SubscribableChannel.class);
+//		SubscribableChannel boundErrorChannel = context
+//				.getBean(consumerDest + ".errors-0", SubscribableChannel.class);
 		SubscribableChannel globalErrorChannel = context.getBean("errorChannel",
 				SubscribableChannel.class);
 		final AtomicReference<Message<?>> boundErrorChannelMessage = new AtomicReference<>();
@@ -2450,12 +2452,12 @@ public class KafkaBinderTests extends
 				new KafkaProducerProperties());
 		producerProps.setHeaderMode(HeaderMode.none);
 		producerProps.setErrorChannelEnabled(true);
+		producerProps.populateBindingName("foobar");
 		Binding<MessageChannel> producerBinding = binder.bindProducer("ec.0",
 				moduleOutputChannel, producerProps);
 		final Message<?> message = MessageBuilder.withPayload("bad")
 				.setHeader(MessageHeaders.CONTENT_TYPE, "application/json").build();
-		SubscribableChannel ec = binder.getApplicationContext().getBean("ec.0.errors",
-				SubscribableChannel.class);
+		SubscribableChannel ec = binder.getApplicationContext().getBean(binder.getBinder().getBinderIdentity() + ".foobar.errors", SubscribableChannel.class);
 		final AtomicReference<Message<?>> errorMessage = new AtomicReference<>();
 		final CountDownLatch latch = new CountDownLatch(2);
 		ec.subscribe(message1 -> {

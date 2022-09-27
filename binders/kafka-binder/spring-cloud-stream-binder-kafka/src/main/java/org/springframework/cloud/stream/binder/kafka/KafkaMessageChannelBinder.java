@@ -375,6 +375,11 @@ public class KafkaMessageChannelBinder extends
 	}
 
 	@Override
+	public String getBinderIdentity() {
+		return "kafka-" + super.getBinderIdentity();
+	}
+
+	@Override
 	protected MessageHandler createProducerMessageHandler(
 			final ProducerDestination destination,
 			ExtendedProducerProperties<KafkaProducerProperties> producerProperties,

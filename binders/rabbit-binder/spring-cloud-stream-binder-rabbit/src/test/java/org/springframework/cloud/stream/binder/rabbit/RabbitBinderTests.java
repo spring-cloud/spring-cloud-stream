@@ -260,11 +260,14 @@ public class RabbitBinderTests extends
 				new BindingProperties());
 		ExtendedProducerProperties<RabbitProducerProperties> producerProps = createProducerProperties(testInfo);
 		producerProps.setErrorChannelEnabled(true);
+		producerProps.populateBindingName("output");
 		Binding<MessageChannel> producerBinding = binder.bindProducer("ec.0",
 				moduleOutputChannel, producerProps);
 		final Message<?> message = MessageBuilder.withPayload("bad".getBytes())
 				.setHeader(MessageHeaders.CONTENT_TYPE, "foo/bar").build();
-		SubscribableChannel ec = binder.getApplicationContext().getBean("ec.0.errors",
+		String s = testBinder.getBinder().getBinderIdentity() + ".output.errors";
+		//return this.getBinderIdentity() + "-" + this.hashCode() + "." + bindingName + ".errors";
+		SubscribableChannel ec = binder.getApplicationContext().getBean(s,
 				SubscribableChannel.class);
 		final AtomicReference<Message<?>> errorMessage = new AtomicReference<>();
 		final CountDownLatch latch = new CountDownLatch(2);
@@ -1299,6 +1302,7 @@ public class RabbitBinderTests extends
 		properties.setMaxAttempts(withRetry ? 2 : 1);
 		properties.setPartitioned(true);
 		properties.setInstanceIndex(0);
+		properties.populateBindingName("blahblah");
 		DirectChannel input0 = createBindableChannel("input",
 				createConsumerBindingProperties(properties));
 		input0.setBeanName("test.input0DLQ");
@@ -1355,11 +1359,9 @@ public class RabbitBinderTests extends
 			}
 
 		});
-
 		ApplicationContext context = TestUtils.getPropertyValue(binder.getBinder(),
 				"applicationContext", ApplicationContext.class);
-		SubscribableChannel boundErrorChannel = context.getBean(
-				"bindertest.partPubDLQ.0.dlqPartGrp-0.errors", SubscribableChannel.class);
+		SubscribableChannel boundErrorChannel = context.getBean(testBinder.getBinder().getBinderIdentity() + ".blahblah.errors", SubscribableChannel.class);
 		SubscribableChannel globalErrorChannel = context.getBean("errorChannel",
 				SubscribableChannel.class);
 		final AtomicReference<Message<?>> boundErrorChannelMessage = new AtomicReference<>();

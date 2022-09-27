@@ -30,9 +30,19 @@ package org.springframework.cloud.stream.binder;
  * @author Jennifer Hickey
  * @author Ilayaperumal Gopinathan
  * @author Marius Bogoevici
+ * @author Oleg Zhurakousky
  * @since 1.0
  */
 public interface Binder<T, C extends ConsumerProperties, P extends ProducerProperties> {
+
+	/**
+	 * Returns instance identity of this binder.
+	 * Individual binders should normally override this method.
+	 * @return instance identity of this binder
+	 */
+	default String getBinderIdentity() {
+		return String.valueOf(this.hashCode());
+	}
 
 	/**
 	 * Bind the target component as a message consumer to the logical entity identified by

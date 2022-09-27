@@ -251,8 +251,18 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		try {
 			producerDestination = this.provisioningProvider
 					.provisionProducerDestination(destination, producerProperties);
-			SubscribableChannel errorChannel = producerProperties.isErrorChannelEnabled()
-					? registerErrorInfrastructure(producerDestination) : null;
+
+
+			BindingProperties bp = null;
+			BindingServiceProperties bsp = this.getBindingServiceProperties();
+			if (bsp != null) {
+				String bindingName = StringUtils.hasText(producerProperties.getBindingName()) ? producerProperties.getBindingName() : destination;
+				bp = bsp.getBindingProperties(bindingName);
+			}
+
+			SubscribableChannel errorChannel = (bp != null && StringUtils.hasText(bp.getErrorHandlerDefinition())) || producerProperties.isErrorChannelEnabled()
+					? registerErrorInfrastructure(producerDestination, producerProperties.getBindingName()) : null;
+
 			producerMessageHandler = createProducerMessageHandler(producerDestination,
 					producerProperties, outputChannel, errorChannel);
 			customizeProducerMessageHandler(producerMessageHandler, producerDestination.getName());
@@ -314,7 +324,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 			@Override
 			public void afterUnbind() {
 				try {
-					destroyErrorInfrastructure(producerDestination);
+					destroyErrorInfrastructure(producerDestination, producerProperties.getBindingName());
 					final ReactiveStreamsConsumer rsc = reactiveStreamsConsumerRef.get();
 					if (rsc != null && rsc.isRunning()) {
 						rsc.destroy();
@@ -636,9 +646,9 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 	 * @return the channel.
 	 */
 	private SubscribableChannel registerErrorInfrastructure(
-			ProducerDestination destination) {
+			ProducerDestination destination, String bindingName) {
 
-		String errorChannelName = errorsBaseName(destination);
+		String errorChannelName = errorsBaseName(destination, bindingName);
 		SubscribableChannel errorChannel = new PublishSubscribeChannel();
 
 		if (getApplicationContext().containsBean(errorChannelName)) {
@@ -670,7 +680,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 			BridgeHandler errorBridge = new BridgeHandler();
 			errorBridge.setOutputChannel(defaultErrorChannel);
 			errorChannel.subscribe(errorBridge);
-			String errorBridgeHandlerName = getErrorBridgeName(destination);
+			String errorBridgeHandlerName = getErrorBridgeName(destination, bindingName);
 			((GenericApplicationContext) getApplicationContext()).registerBean(
 					errorBridgeHandlerName, BridgeHandler.class, () -> errorBridge);
 		}
@@ -696,17 +706,19 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		if (!StringUtils.hasText(bindingName)) {
 			return;
 		}
-		BindingServiceProperties bsp = getApplicationContext().getBean(BindingServiceProperties.class);
-		BindingProperties bp = bsp.getBindingProperties(bindingName);
-		if (StringUtils.hasText(bp.getErrorHandlerDefinition())) {
-			FunctionCatalog catalog = getApplicationContext().getBean(FunctionCatalog.class);
-			Consumer<ErrorMessage> errorHandler = catalog.lookup(Consumer.class, bp.getErrorHandlerDefinition());
-			if (errorHandler == null) {
-				logger.warn("Failed to retrieve error handling function with definition: " + bp.getErrorHandlerDefinition() + ", for binding: " + bindingName);
-			}
-			else {
-				SubscribableChannel functionErrorChannel = getApplicationContext().getBean(errorChannelName, SubscribableChannel.class);
-				functionErrorChannel.subscribe(errorMessage -> errorHandler.accept((ErrorMessage) errorMessage));
+		BindingServiceProperties bsp = this.getBindingServiceProperties();
+		if (bsp != null) {
+			BindingProperties bp = bsp.getBindingProperties(bindingName);
+			if (bp != null && StringUtils.hasText(bp.getErrorHandlerDefinition())) {
+				FunctionCatalog catalog = getApplicationContext().getBean(FunctionCatalog.class);
+				Consumer<ErrorMessage> errorHandler = catalog.lookup(Consumer.class, bp.getErrorHandlerDefinition());
+				if (errorHandler == null) {
+					logger.warn("Failed to retrieve error handling function with definition: " + bp.getErrorHandlerDefinition() + ", for binding: " + bindingName);
+				}
+				else {
+					SubscribableChannel functionErrorChannel = getApplicationContext().getBean(errorChannelName, SubscribableChannel.class);
+					functionErrorChannel.subscribe(errorMessage -> errorHandler.accept((ErrorMessage) errorMessage));
+				}
 			}
 		}
 	}
@@ -841,9 +853,9 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 				: true;
 	}
 
-	private void destroyErrorInfrastructure(ProducerDestination destination) {
-		String errorChannelName = errorsBaseName(destination);
-		String errorBridgeHandlerName = getErrorBridgeName(destination);
+	private void destroyErrorInfrastructure(ProducerDestination destination, String bindingName) {
+		String errorChannelName = errorsBaseName(destination, bindingName);
+		String errorBridgeHandlerName = getErrorBridgeName(destination, bindingName);
 		MessageHandler bridgeHandler = null;
 		if (getApplicationContext().containsBean(errorBridgeHandlerName)) {
 			bridgeHandler = getApplicationContext().getBean(errorBridgeHandlerName,
@@ -980,15 +992,19 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 
 	protected String errorsBaseName(ConsumerDestination destination, String group,
 			C consumerProperties) {
-		return destination.getName() + "." + group + ".errors";
+		return this.doErrorBaseName(consumerProperties.getBindingName());
 	}
 
-	protected String getErrorBridgeName(ProducerDestination destination) {
-		return errorsBaseName(destination) + ".bridge" + destination.hashCode();
+	protected String getErrorBridgeName(ProducerDestination destination, String bindingName) {
+		return errorsBaseName(destination, bindingName) + ".bridge" + destination.hashCode();
 	}
 
-	protected String errorsBaseName(ProducerDestination destination) {
-		return destination.getName() + ".errors";
+	protected String errorsBaseName(ProducerDestination destination, String bindingName) {
+		return this.doErrorBaseName(bindingName);
+	}
+
+	private String doErrorBaseName(String bindingName) {
+		return this.getBinderIdentity() + "." + bindingName + ".errors";
 	}
 
 	private Map<String, Object> doGetExtendedInfo(Object destination, Object properties) {

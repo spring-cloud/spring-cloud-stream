@@ -26,6 +26,7 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.cloud.stream.annotation.StreamRetryTemplate;
+import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.support.AbstractApplicationContext;
@@ -164,6 +165,21 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 	protected final String groupedName(String name, String group) {
 		return name + GROUP_INDEX_DELIMITER
 				+ (StringUtils.hasText(group) ? group : "default");
+	}
+
+	/**
+	 * Attempts to get {@link BindingServiceProperties} from application context.
+	 *
+	 * @return instance of {@link BindingServiceProperties} or null.
+	 */
+	protected BindingServiceProperties getBindingServiceProperties() {
+		try {
+			return getApplicationContext().getBean(BindingServiceProperties.class);
+		}
+		catch (Exception e) {
+			// ignore
+			return null;
+		}
 	}
 
 	/**
