@@ -22,6 +22,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import org.apache.commons.logging.Log;
@@ -64,6 +66,7 @@ import org.springframework.cloud.stream.provisioning.ProvisioningProvider;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.lang.Nullable;
+import org.springframework.rabbit.stream.config.SuperStream;
 import org.springframework.util.Assert;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
@@ -245,9 +248,11 @@ public class RabbitExchangeQueueProvisioner
 					+ ", bound to: " + name);
 		}
 		String prefix = properties.getExtension().getPrefix();
-		final String exchangeName = applyPrefix(prefix, name);
+		String exchangeName = applyPrefix(prefix, name);
+		ContainerType containerType = properties.getExtension().getContainerType();
+		boolean superStream = containerType.equals(ContainerType.STREAM) && properties.getExtension().isSuperStream();
 		Exchange exchange = buildExchange(properties.getExtension(), exchangeName, null, null);
-		if (properties.getExtension().isDeclareExchange()) {
+		if (!superStream && properties.getExtension().isDeclareExchange()) {
 			declareExchange(exchangeName, anonymous ? anonymousGroup : group, exchange);
 		}
 		String queueName = applyPrefix(prefix, baseQueueName);
@@ -258,6 +263,7 @@ public class RabbitExchangeQueueProvisioner
 			String anonQueueName = queueName;
 			queue = new AnonymousQueue((org.springframework.amqp.core.NamingStrategy) () -> anonQueueName,
 					queueArgs(queueName, properties.getExtension(), false));
+			queueName = queue.getName();
 		}
 		else {
 			if (partitioned) {
@@ -275,25 +281,68 @@ public class RabbitExchangeQueueProvisioner
 		}
 		Binding binding = null;
 		if (properties.getExtension().isBindQueue()) {
-			if (properties.getExtension().getContainerType().equals(ContainerType.STREAM)) {
-				queue.getArguments().put("x-queue-type", "stream");
-			}
-			declareQueue(queueName, queue);
-			String[] routingKeys = bindingRoutingKeys(properties.getExtension());
-			if (ObjectUtils.isEmpty(routingKeys)) {
-				binding = declareConsumerBindings(name, null, properties, exchange, partitioned, queue);
+			if (superStream) {
+				provisionSuperStream(properties, name);
 			}
 			else {
-				for (String routingKey : routingKeys) {
-					binding = declareConsumerBindings(name, routingKey, properties, exchange, partitioned, queue);
+				if (containerType.equals(ContainerType.STREAM)) {
+					queue.getArguments().put("x-queue-type", "stream");
+				}
+				declareQueue(queueName, queue);
+				String[] routingKeys = bindingRoutingKeys(properties.getExtension());
+				if (ObjectUtils.isEmpty(routingKeys)) {
+					binding = declareConsumerBindings(name, null, properties, exchange, partitioned, queue);
+				}
+				else {
+					for (String routingKey : routingKeys) {
+						binding = declareConsumerBindings(name, routingKey, properties, exchange, partitioned, queue);
+					}
 				}
 			}
 		}
-		if (durable) {
+		if (durable && !superStream) {
 			autoBindDLQ(applyPrefix(properties.getExtension().getPrefix(), baseQueueName),
 					queueName, group, properties.getExtension());
 		}
-		return new RabbitConsumerDestination(queue.getName(), binding, anonymous ? baseQueueName : group, name);
+		if (superStream) {
+			queueName = name; // group is used in the consumer for super streams so not part of the name.
+		}
+		return new RabbitConsumerDestination(queueName, binding, anonymous ? baseQueueName : group, name);
+	}
+
+	private void provisionSuperStream(ExtendedConsumerProperties<RabbitConsumerProperties> properties,
+			String name) {
+
+		String routingKey = properties.getExtension().getBindingRoutingKey();
+		String rk = routingKey == null ? name : routingKey;
+		SuperStream ss = new SuperStream(name, properties.getInstanceCount(), (q, i) -> IntStream.range(0, i)
+				.mapToObj(j -> rk + "-" + j)
+				.collect(Collectors.toList()));
+		synchronized (this.autoDeclareContext) {
+			if (!this.autoDeclareContext.containsBean(name + ".superStream")) {
+				this.autoDeclareContext.getBeanFactory().registerSingleton(name + ".superStream", ss);
+			}
+		}
+		try {
+			ss.getDeclarables().forEach(dec -> {
+				if (dec instanceof Exchange exch) {
+					this.rabbitAdmin.declareExchange(exch);
+				}
+				else if (dec instanceof Queue queue) {
+					this.rabbitAdmin.declareQueue(queue);
+				}
+				else if (dec instanceof Binding binding) {
+					this.rabbitAdmin.declareBinding(binding);
+				}
+			});
+		}
+		catch (AmqpConnectException e) {
+			if (this.logger.isDebugEnabled()) {
+				this.logger.debug("Declaration of super stream: " + name
+						+ " deferred - connection not available");
+			}
+		}
+
 	}
 
 	/**
