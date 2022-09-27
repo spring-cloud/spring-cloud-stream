@@ -216,6 +216,11 @@ public class KinesisMessageChannelBinder extends
 	}
 
 	@Override
+	public String getBinderIdentity() {
+		return "kinesis-" + super.getBinderIdentity();
+	}
+
+	@Override
 	protected MessageHandler createProducerMessageHandler(ProducerDestination destination,
 			ExtendedProducerProperties<KinesisProducerProperties> producerProperties,
 			MessageChannel errorChannel) {

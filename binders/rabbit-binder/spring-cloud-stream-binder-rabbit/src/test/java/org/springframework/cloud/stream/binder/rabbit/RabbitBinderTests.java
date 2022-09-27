@@ -266,7 +266,6 @@ public class RabbitBinderTests extends
 		final Message<?> message = MessageBuilder.withPayload("bad".getBytes())
 				.setHeader(MessageHeaders.CONTENT_TYPE, "foo/bar").build();
 		String s = testBinder.getBinder().getBinderIdentity() + ".output.errors";
-		//return this.getBinderIdentity() + "-" + this.hashCode() + "." + bindingName + ".errors";
 		SubscribableChannel ec = binder.getApplicationContext().getBean(s,
 				SubscribableChannel.class);
 		final AtomicReference<Message<?>> errorMessage = new AtomicReference<>();

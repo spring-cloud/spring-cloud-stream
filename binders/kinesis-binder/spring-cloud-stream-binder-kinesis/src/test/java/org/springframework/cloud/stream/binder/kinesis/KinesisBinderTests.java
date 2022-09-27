@@ -264,6 +264,7 @@ public class KinesisBinderTests extends
 
 		ExtendedProducerProperties<KinesisProducerProperties> producerProps = createProducerProperties();
 		producerProps.setErrorChannelEnabled(true);
+		producerProps.populateBindingName("foobar");
 		DirectChannel moduleOutputChannel = createBindableChannel("output",
 			createProducerBindingProperties(producerProps));
 		Binding<MessageChannel> producerBinding = binder.bindProducer("ec.0",
@@ -271,7 +272,8 @@ public class KinesisBinderTests extends
 
 		ApplicationContext applicationContext = TestUtils.getPropertyValue(
 			binder.getBinder(), "applicationContext", ApplicationContext.class);
-		SubscribableChannel ec = applicationContext.getBean("ec.0.errors",
+		String s = testBinder.getBinder().getBinderIdentity() + "." + producerProps.getBindingName() + ".errors";
+		SubscribableChannel ec = applicationContext.getBean(s,
 			SubscribableChannel.class);
 		final AtomicReference<Message<?>> errorMessage = new AtomicReference<>();
 		final CountDownLatch latch = new CountDownLatch(1);

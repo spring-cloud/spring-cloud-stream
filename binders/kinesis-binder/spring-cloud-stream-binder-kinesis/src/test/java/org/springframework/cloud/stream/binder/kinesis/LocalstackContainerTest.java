@@ -24,8 +24,6 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDBAsyncClientBuilder;
 import com.amazonaws.services.kinesis.AmazonKinesisAsync;
 import com.amazonaws.services.kinesis.AmazonKinesisAsyncClientBuilder;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.condition.DisabledOnOs;
-import org.junit.jupiter.api.condition.OS;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
@@ -37,7 +35,6 @@ import org.testcontainers.utility.DockerImageName;
  * @since 4.0
  */
 @Testcontainers(disabledWithoutDocker = true)
-@DisabledOnOs(OS.MAC)
 public interface LocalstackContainerTest {
 
 	LocalStackContainer LOCAL_STACK_CONTAINER =
