@@ -843,6 +843,25 @@ public static class SinkFromConsumer {
 	}
 }
 ----
+
+[IMPORTANT]
+====
+Few important things must be understood when choosing reactive or imperative programming model.
+
+_Fully reactive or just API?_
+
+Using reactive API does not necessarily imply that you can benefit from all of the reactive features of such API. In other words things like back-pressure and other advanced features will only work when they are working with compatible system - such as Reactive Kafka binder. In the event you are using regular Kafka or Rabbit or any other non-reactive binder, you can only benefit from the conveniences of the reactive API itself and not its advanced features, since the actual sources or targets of the stream are not reactive. 
+
+
+_Error handling and retries_
+
+Throughout this manual you will see several reference on the framework-based error handling, retries and other features as well as configuration properties associated with them. It is important to understand that they only effect the imperative functions and you should NOT have the same expectations when it comes to reactive functions. And here is why. . .
+There is a fundamental difference between reactive and imperative functions.
+Imperative function is a _message handler_ that is invoked by the framework on each message it receives. So for N messages there will be N invocations of such function and because of that we can wrap such function and add additional functionality such as error handling, retries etc.
+Reactive function is _initialization function_. It is invoked only once to get a reference to a Flux/Mono provided by the user to be connected with the one provided by the framework. After that we (the framework) have absolutely no visibility nor control of the stream.
+Therefore, with reactive functions you must rely on the richness of the reactive API when it comes to error handling and retries (i.e., `doOnError()`, `.onError*()` etc).
+====
+
 ===== Functional Composition
 
 Using functional programming model you can also benefit from functional composition where you can dynamically compose complex handlers from a set of simple functions.
