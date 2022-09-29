@@ -175,7 +175,7 @@ public class KafkaStreamsFunctionBeanPostProcessor implements InitializingBean, 
 						.getMetadata().getClassName(),
 				ClassUtils.getDefaultClassLoader());
 		try {
-			Method[] methods = classObj.getMethods();
+			Method[] methods = classObj.getDeclaredMethods();
 			Optional<Method> functionalBeanMethods = Arrays.stream(methods).filter(m -> m.getName().equals(key)).findFirst();
 			if (functionalBeanMethods.isEmpty()) {
 				final BeanDefinition beanDefinition = this.beanFactory.getBeanDefinition(key);

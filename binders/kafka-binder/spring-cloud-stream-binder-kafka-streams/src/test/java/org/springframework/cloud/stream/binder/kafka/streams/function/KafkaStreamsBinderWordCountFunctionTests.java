@@ -391,7 +391,7 @@ public class KafkaStreamsBinderWordCountFunctionTests {
 		InteractiveQueryService interactiveQueryService;
 
 		@Bean
-		public Function<KStream<Object, String>, KStream<String, WordCount>> process() {
+		Function<KStream<Object, String>, KStream<String, WordCount>> process() {
 
 			return input -> input
 					.flatMapValues(value -> Arrays.asList(value.toLowerCase().split("\\W+")))
@@ -405,7 +405,7 @@ public class KafkaStreamsBinderWordCountFunctionTests {
 		}
 
 		@Bean
-		public StreamsBuilderFactoryBeanConfigurer customizer() {
+		StreamsBuilderFactoryBeanConfigurer customizer() {
 			return fb -> {
 				try {
 					fb.setStateListener((newState, oldState) -> {
@@ -422,7 +422,7 @@ public class KafkaStreamsBinderWordCountFunctionTests {
 		}
 
 		@Bean
-		public StreamPartitioner<String, WordCount> streamPartitioner() {
+		StreamPartitioner<String, WordCount> streamPartitioner() {
 			return (t, k, v, n) -> k.equals("foo") ? 0 : 1;
 		}
 	}
@@ -431,7 +431,7 @@ public class KafkaStreamsBinderWordCountFunctionTests {
 	static class OutboundNullApplication {
 
 		@Bean
-		public Function<KStream<Object, String>, KStream<?, WordCount>> process() {
+		Function<KStream<Object, String>, KStream<?, WordCount>> process() {
 			return input -> input
 					.flatMapValues(
 							value -> Arrays.asList(value.toLowerCase().split("\\W+")))
