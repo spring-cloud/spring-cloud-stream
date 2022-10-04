@@ -37,6 +37,7 @@ import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry;
 import org.springframework.cloud.stream.config.ListenerContainerCustomizer;
 import org.springframework.cloud.stream.config.SpelExpressionConverterConfiguration;
+import org.springframework.cloud.stream.config.SpelExpressionConverterConfiguration.SpelConverter;
 import org.springframework.cloud.stream.reflection.GenericsUtils;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -46,6 +47,7 @@ import org.springframework.context.ApplicationListener;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.support.GenericApplicationContext;
+import org.springframework.core.convert.support.GenericConversionService;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.MapPropertySource;
 import org.springframework.integration.channel.FluxMessageChannel;
@@ -373,7 +375,12 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 	ConfigurableApplicationContext initializeBinderContextSimple(String configurationName, Map<String, Object> binderProperties,
 			BinderType binderType, BinderConfiguration binderConfiguration, boolean refresh) {
 		AnnotationConfigApplicationContext binderProducingContext = new AnnotationConfigApplicationContext();
-
+		if (this.context != null) {
+			binderProducingContext.getBeanFactory().setConversionService(this.context.getBeanFactory().getConversionService());
+			GenericConversionService cs = (GenericConversionService) ((GenericApplicationContext) binderProducingContext).getBeanFactory().getConversionService();
+			SpelConverter spelConverter = new SpelConverter();
+			cs.addConverter(spelConverter);
+		}
 		List<Class> sourceClasses = new ArrayList<>();
 		sourceClasses.addAll(Arrays.asList(binderType.getConfigurationClasses()));
 		sourceClasses.addAll(Collections.singletonList(SpelExpressionConverterConfiguration.class));
