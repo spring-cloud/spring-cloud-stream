@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2019 the original author or authors.
+ * Copyright 2018-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,8 +30,6 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.support.GenericApplicationContext;
-import org.springframework.integration.support.utils.IntegrationUtils;
-
 /**
  * Base implementation of {@link ExtendedBindingProperties}.
  *
@@ -90,9 +88,9 @@ public abstract class AbstractExtendedBindingProperties<C, P, T extends BinderSp
 						.get(this.applicationContext.getEnvironment()),
 				new PropertySourcesPlaceholdersResolver(
 						this.applicationContext.getEnvironment()),
-				IntegrationUtils.getConversionService(
-						this.applicationContext.getBeanFactory()),
+				this.applicationContext.getBeanFactory().getConversionService(),
 				null);
+
 		binder.bind(this.getDefaultsPrefix(),
 				Bindable.ofInstance(extendedBindingPropertiesTarget));
 		this.bindings.put(binding, extendedBindingPropertiesTarget);

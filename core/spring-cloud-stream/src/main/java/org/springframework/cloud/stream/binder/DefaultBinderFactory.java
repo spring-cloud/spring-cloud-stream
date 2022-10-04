@@ -389,7 +389,12 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 		//======= NEW CODE
 
 		AnnotationConfigApplicationContext binderProducingContext = new AnnotationConfigApplicationContext();
-
+		if (this.context != null) {
+			binderProducingContext.getBeanFactory().setConversionService(this.context.getBeanFactory().getConversionService());
+			GenericConversionService cs = (GenericConversionService) ((GenericApplicationContext) binderProducingContext).getBeanFactory().getConversionService();
+			SpelConverter spelConverter = new SpelConverter();
+			cs.addConverter(spelConverter);
+		}
 		List<Class> sourceClasses = new ArrayList<>();
 		sourceClasses.addAll(Arrays.asList(binderType.getConfigurationClasses()));
 		sourceClasses.addAll(Collections.singletonList(SpelExpressionConverterConfiguration.class));
