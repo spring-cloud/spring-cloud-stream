@@ -315,9 +315,10 @@ public class RabbitExchangeQueueProvisioner
 
 		String routingKey = properties.getExtension().getBindingRoutingKey();
 		String rk = routingKey == null ? name : routingKey;
-		SuperStream ss = new SuperStream(name, properties.getInstanceCount(), (q, i) -> IntStream.range(0, i)
-				.mapToObj(j -> rk + "-" + j)
-				.collect(Collectors.toList()));
+		SuperStream ss = new SuperStream(name, properties.getInstanceCount() * properties.getConcurrency(),
+				(q, i) -> IntStream.range(0, i)
+						.mapToObj(j -> rk + "-" + j)
+						.collect(Collectors.toList()));
 		synchronized (this.autoDeclareContext) {
 			if (!this.autoDeclareContext.containsBean(name + ".superStream")) {
 				this.autoDeclareContext.getBeanFactory().registerSingleton(name + ".superStream", ss);

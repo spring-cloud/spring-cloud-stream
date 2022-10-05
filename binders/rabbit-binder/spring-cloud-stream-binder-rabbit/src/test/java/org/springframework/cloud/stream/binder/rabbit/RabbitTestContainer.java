@@ -29,7 +29,7 @@ public class RabbitTestContainer {
 
 	private static final RabbitMQContainer RABBITMQ;
 	static {
-		String image = "rabbitmq:management";
+		String image = "rabbitmq:3.11-management";
 		String cache = System.getenv().get("IMAGE_CACHE");
 		if (cache != null) {
 			image = cache + image;

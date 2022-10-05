@@ -545,7 +545,7 @@ public class RabbitMessageChannelBinder extends
 			RabbitConsumerProperties extension) {
 
 		if (extension.getContainerType().equals(ContainerType.STREAM)) {
-			return StreamUtils.createContainer(consumerDestination, group, properties, destination, extension,
+			return StreamUtils.createContainer(consumerDestination, group, properties, destination,
 					getApplicationContext());
 		}
 		boolean directContainer = extension.getContainerType()
