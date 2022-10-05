@@ -23,7 +23,6 @@ import java.util.concurrent.TimeUnit;
 import com.rabbitmq.stream.Address;
 import com.rabbitmq.stream.Environment;
 import com.rabbitmq.stream.OffsetSpecification;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.RabbitMQContainer;
 
@@ -58,44 +57,36 @@ public class RabbitStreamBinderModuleIntegrationTests {
 
 	private static final RabbitMQContainer RABBITMQ = RabbitTestContainer.sharedInstance();
 
-	private ConfigurableApplicationContext context;
-
-	@AfterEach
-	void tearDown() {
-		if (context != null) {
-			context.close();
-			context = null;
-		}
-	}
-
 	@Test
 	void testSuperStreamContainer() throws InterruptedException {
-		context = new SpringApplicationBuilder(SimpleProcessor.class)
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(SimpleProcessor.class)
 				.web(WebApplicationType.NONE)
-				.run("--server.port=0");
-		BinderFactory binderFactory = context.getBean(BinderFactory.class);
-		RabbitMessageChannelBinder rabbitBinder = (RabbitMessageChannelBinder) binderFactory.getBinder(null,
-				MessageChannel.class);
-		RabbitConsumerProperties rProps = new RabbitConsumerProperties();
-		rProps.setContainerType(ContainerType.STREAM);
-		rProps.setSuperStream(true);
-		ExtendedConsumerProperties<RabbitConsumerProperties> props =
-				new ExtendedConsumerProperties<RabbitConsumerProperties>(rProps);
-		props.setAutoStartup(false);
-		props.setInstanceCount(3);
-		props.setConcurrency(3);
-		Binding<MessageChannel> binding = rabbitBinder.bindConsumer("testSuperStream", "grp", new QueueChannel(), props);
-		Object container = TestUtils.getPropertyValue(binding, "lifecycle.messageListenerContainer");
-		assertThat(container).isInstanceOf(StreamListenerContainer.class);
-		assertThat(container).extracting("concurrency").isEqualTo(3);
-		((StreamListenerContainer) container).start();
-		assertThat(context.getBean(SimpleProcessor.class).consumerCountLatch.await(10, TimeUnit.SECONDS)).isTrue();
-		RabbitAdmin admin = context.getBean(RabbitAdmin.class);
-		for (int i = 0; i < 9; i++) {
-			Properties qProps = admin.getQueueProperties("testSuperStream-" + i);
-			assertThat(qProps).describedAs("Expected queue with index %d to exist", i).isNotNull();
+				.run("--server.port=0")) {
+			BinderFactory binderFactory = context.getBean(BinderFactory.class);
+			RabbitMessageChannelBinder rabbitBinder = (RabbitMessageChannelBinder) binderFactory.getBinder(null,
+					MessageChannel.class);
+			RabbitConsumerProperties rProps = new RabbitConsumerProperties();
+			rProps.setContainerType(ContainerType.STREAM);
+			rProps.setSuperStream(true);
+			ExtendedConsumerProperties<RabbitConsumerProperties> props =
+					new ExtendedConsumerProperties<RabbitConsumerProperties>(rProps);
+			props.setAutoStartup(false);
+			props.setInstanceCount(3);
+			props.setConcurrency(3);
+			Binding<MessageChannel> binding = rabbitBinder.bindConsumer("testSuperStream", "grp", new QueueChannel(), props);
+			Object container = TestUtils.getPropertyValue(binding, "lifecycle.messageListenerContainer");
+			assertThat(container).isInstanceOf(StreamListenerContainer.class);
+			assertThat(container).extracting("concurrency").isEqualTo(3);
+			((StreamListenerContainer) container).start();
+			assertThat(context.getBean(SimpleProcessor.class).consumerCountLatch.await(10, TimeUnit.SECONDS)).isTrue();
+			RabbitAdmin admin = context.getBean(RabbitAdmin.class);
+			System.out.println(RABBITMQ.getMappedPort(15672));
+			for (int i = 0; i < 9; i++) {
+				Properties qProps = admin.getQueueProperties("testSuperStream-" + i);
+				assertThat(qProps).describedAs("Expected queue with index %d to exist", i).isNotNull();
+			}
+			((StreamListenerContainer) container).stop();
 		}
-		((StreamListenerContainer) container).stop();
 	}
 
 	@SpringBootApplication(proxyBeanMethods = false)
