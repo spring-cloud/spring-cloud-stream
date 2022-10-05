@@ -58,7 +58,7 @@ import org.springframework.lang.Nullable;
  * @author Gary Russell
  * @author Ben Blinebury
  */
-@Configuration
+@Configuration(proxyBeanMethods = false)
 @Import({ PropertyPlaceholderAutoConfiguration.class })
 @EnableConfigurationProperties({ RabbitBinderConfigurationProperties.class,
 		RabbitExtendedBindingProperties.class })

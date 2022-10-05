@@ -57,7 +57,7 @@ import org.springframework.util.StringUtils;
  * @author Chris Bono
  * @author Soby Chacko
  */
-@Configuration
+@Configuration(proxyBeanMethods = false)
 @ConditionalOnMissingBean(Binder.class)
 @Import({ RabbitMessageChannelBinderConfiguration.class,
 		RabbitBinderConfiguration.RabbitHealthIndicatorConfiguration.class })
