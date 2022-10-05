@@ -16,16 +16,19 @@
 
 package org.springframework.cloud.stream.binder;
 
+import java.net.URL;
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -39,7 +42,6 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry;
 import org.springframework.cloud.stream.config.ListenerContainerCustomizer;
-import org.springframework.cloud.stream.config.SpelExpressionConverterConfiguration;
 import org.springframework.cloud.stream.config.SpelExpressionConverterConfiguration.SpelConverter;
 import org.springframework.cloud.stream.reflection.GenericsUtils;
 import org.springframework.context.ApplicationContext;
@@ -50,13 +52,17 @@ import org.springframework.context.ApplicationListener;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.support.GenericApplicationContext;
+import org.springframework.core.convert.converter.Converter;
 import org.springframework.core.convert.support.GenericConversionService;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.MapPropertySource;
 import org.springframework.core.env.StandardEnvironment;
+import org.springframework.core.io.UrlResource;
+import org.springframework.core.io.support.PropertiesLoaderUtils;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.util.Assert;
+import org.springframework.util.ClassUtils;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
@@ -391,13 +397,10 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 		AnnotationConfigApplicationContext binderProducingContext = new AnnotationConfigApplicationContext();
 		if (this.context != null) {
 			binderProducingContext.getBeanFactory().setConversionService(this.context.getBeanFactory().getConversionService());
-			GenericConversionService cs = (GenericConversionService) ((GenericApplicationContext) binderProducingContext).getBeanFactory().getConversionService();
-			SpelConverter spelConverter = new SpelConverter();
-			cs.addConverter(spelConverter);
 		}
+
 		List<Class> sourceClasses = new ArrayList<>();
 		sourceClasses.addAll(Arrays.asList(binderType.getConfigurationClasses()));
-		sourceClasses.addAll(Collections.singletonList(SpelExpressionConverterConfiguration.class));
 		if (binderProperties.containsKey("spring.main.sources")) {
 			String sources = (String) binderProperties.get("spring.main.sources");
 			if (StringUtils.hasText(sources)) {
@@ -424,6 +427,7 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 			binderProducingContext.setParent(this.context);
 		}
 		else if (this.context != null) {
+			this.propagateSharedBeans(binderProducingContext);
 			Map<String, ListenerContainerCustomizer> customizers = this.context.getBeansOfType(ListenerContainerCustomizer.class);
 			if (!CollectionUtils.isEmpty(customizers)) {
 				for (Entry<String, ListenerContainerCustomizer> customizerEntry : customizers.entrySet()) {
@@ -477,9 +481,56 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 		return binderProducingContext;
 	}
 
-	/*
-	 * This will propagate/copy ListenerContainerCustomizer(s) from parent context to child context for cases when multiple binders are used.
-	 * It will also register SpelConverter with child context
+	private void propagateSharedBeans(GenericApplicationContext binderProducingContext) {
+		GenericConversionService binderProducingConversionService = (GenericConversionService) binderProducingContext.getBeanFactory().getConversionService();
+		try {
+			Enumeration<URL> resources = ClassUtils.getDefaultClassLoader().getResources("META-INF/shared.beans");
+			while (resources.hasMoreElements()) {
+				URL url = (URL) resources.nextElement();
+				UrlResource resource = new UrlResource(url);
+				Properties properties = PropertiesLoaderUtils.loadProperties(resource);
+				Set<Object> classNames = properties.keySet();
+				for (Object className : classNames) {
+					Class<Object> beanType = this.loadClass(((String) className).trim());
+					if (beanType != null) {
+						Map<String, Object> beansOfType = this.context.getBeansOfType(beanType);
+						beansOfType.entrySet().stream().forEach(entry -> {
+							Object bean = entry.getValue();
+							if (bean instanceof Converter) {
+								binderProducingConversionService.addConverter((Converter<?, ?>) bean);
+							}
+							else {
+								binderProducingContext.registerBean(entry.getKey() + "_child", beanType, () -> entry.getValue());
+							}
+						});
+					}
+				}
+			}
+		}
+		catch (Exception e) {
+			logger.warn("Failed to propagate child beans. This may cause issues in your application", e);
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	private Class<Object> loadClass(String className) {
+		try {
+			return (Class<Object>) ClassUtils.getDefaultClassLoader().loadClass(((String) className).trim());
+		}
+		catch (Exception e) {
+			logger.debug("Attempt to load " + className + " failed.", e);
+			return null;
+		}
+	}
+
+	/**
+	 * Creates a bare minimum application context that can be initialized by AOT.
+	 *
+	 * @param configurationName binder configuration name
+	 * @param binderProperties binder properties
+	 * @param binderConfiguration binder configuration
+	 * @return a binder child application context suitable for AOT initialization
+>>>>>>> 80e1e37a3... GH-2522 Add support for propagating select beans across child AC
 	 */
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	private void customizeParentChildContextRelationship(SpringApplicationBuilder applicationBuilder, ApplicationContext context) {
