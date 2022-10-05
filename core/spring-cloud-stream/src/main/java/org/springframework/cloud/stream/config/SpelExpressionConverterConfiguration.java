@@ -22,11 +22,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.boot.context.properties.ConfigurationPropertiesBinding;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Role;
 import org.springframework.core.convert.converter.Converter;
+import org.springframework.core.convert.support.ConfigurableConversionService;
 import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.Expression;
 import org.springframework.expression.ParseException;
@@ -67,8 +69,13 @@ public class SpelExpressionConverterConfiguration {
 	@Bean
 	@ConfigurationPropertiesBinding
 	@IntegrationConverter
-	public Converter<String, Expression> spelConverter() {
-		return new SpelConverter();
+	public Converter<String, Expression> spelConverter(ConfigurableApplicationContext context) {
+		SpelConverter converter = new SpelConverter();
+		ConfigurableConversionService cs = (ConfigurableConversionService) context.getBeanFactory().getConversionService();
+		if (cs != null) {
+			cs.addConverter(converter);
+		}
+		return converter;
 	}
 
 	/**

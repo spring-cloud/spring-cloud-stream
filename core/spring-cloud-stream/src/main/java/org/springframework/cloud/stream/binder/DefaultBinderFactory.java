@@ -38,7 +38,6 @@ import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry;
-import org.springframework.cloud.stream.config.ListenerContainerCustomizer;
 import org.springframework.cloud.stream.reflection.GenericsUtils;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -413,27 +412,6 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 		}
 		else if (this.context != null) {
 			this.propagateSharedBeans(binderProducingContext);
-			Map<String, ListenerContainerCustomizer> customizers = this.context.getBeansOfType(ListenerContainerCustomizer.class);
-			if (!CollectionUtils.isEmpty(customizers)) {
-				for (Entry<String, ListenerContainerCustomizer> customizerEntry : customizers.entrySet()) {
-					ListenerContainerCustomizer customizerWrapper = new ListenerContainerCustomizer() {
-						@SuppressWarnings("unchecked")
-						@Override
-						public void configure(Object container, String destinationName, String group) {
-							try {
-								customizerEntry.getValue().configure(container, destinationName, group);
-							}
-							catch (Exception e) {
-								logger.warn("Failed while applying ListenerContainerCustomizer. In situations when multiple "
-										+ "binders are used this is expected, since a particular customizer may not be applicable.");
-							}
-						}
-					};
-
-					((GenericApplicationContext) binderProducingContext).registerBean(customizerEntry.getKey(),
-							ListenerContainerCustomizer.class, () -> customizerWrapper);
-				}
-			}
 			binderProducingContext.addApplicationListener(new ApplicationListener<ApplicationEvent>() {
 				@Override
 				public void onApplicationEvent(ApplicationEvent event) {
