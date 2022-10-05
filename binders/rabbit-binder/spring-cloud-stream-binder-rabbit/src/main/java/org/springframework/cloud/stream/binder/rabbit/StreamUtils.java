@@ -32,6 +32,7 @@ import org.springframework.cloud.stream.binder.rabbit.properties.RabbitProducerP
 import org.springframework.cloud.stream.binder.rabbit.properties.RabbitProducerProperties.ProducerType;
 import org.springframework.cloud.stream.provisioning.ConsumerDestination;
 import org.springframework.cloud.stream.provisioning.ProducerDestination;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.AbstractApplicationContext;
 import org.springframework.integration.amqp.inbound.AmqpInboundChannelAdapter;
 import org.springframework.integration.amqp.outbound.RabbitStreamMessageHandler;
@@ -72,7 +73,9 @@ public final class StreamUtils {
 	 */
 	public static MessageListenerContainer createContainer(ConsumerDestination consumerDestination, String group,
 			ExtendedConsumerProperties<RabbitConsumerProperties> properties, String destination,
-			RabbitConsumerProperties extension, AbstractApplicationContext applicationContext) {
+			ApplicationContext applicationContext) {
+
+		RabbitConsumerProperties extension = properties.getExtension();
 
 		StreamListenerContainer container = new StreamListenerContainer(applicationContext.getBean(Environment.class)) {
 
@@ -94,7 +97,8 @@ public final class StreamUtils {
 			container.setStreamConverter(applicationContext.getBean(beanName, StreamMessageConverter.class));
 		}
 		if (properties.getExtension().isSuperStream()) {
-			container.superStream(consumerDestination.getName(), consumerDestination.getName() + "." + group);
+			container.superStream(consumerDestination.getName(), consumerDestination.getName() + "." + group,
+					properties.getConcurrency());
 		}
 		return container;
 	}
