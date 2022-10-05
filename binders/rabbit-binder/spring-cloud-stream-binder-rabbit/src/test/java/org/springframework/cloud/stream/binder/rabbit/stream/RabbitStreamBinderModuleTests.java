@@ -22,10 +22,7 @@ import com.rabbitmq.stream.OffsetSpecification;
 import com.rabbitmq.stream.ProducerBuilder;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.containers.RabbitMQContainer;
 
-import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
-import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.listener.MessageListenerContainer;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -36,7 +33,7 @@ import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
 import org.springframework.cloud.stream.binder.ExtendedProducerProperties;
 import org.springframework.cloud.stream.binder.rabbit.RabbitMessageChannelBinder;
-import org.springframework.cloud.stream.binder.rabbit.RabbitTestContainer;
+import org.springframework.cloud.stream.binder.rabbit.RabbitStreamMessageHandler;
 import org.springframework.cloud.stream.binder.rabbit.properties.RabbitConsumerProperties;
 import org.springframework.cloud.stream.binder.rabbit.properties.RabbitConsumerProperties.ContainerType;
 import org.springframework.cloud.stream.binder.rabbit.properties.RabbitProducerProperties;
@@ -45,7 +42,6 @@ import org.springframework.cloud.stream.config.ListenerContainerCustomizer;
 import org.springframework.cloud.stream.config.ProducerMessageHandlerCustomizer;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
-import org.springframework.integration.amqp.outbound.RabbitStreamMessageHandler;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.channel.QueueChannel;
 import org.springframework.integration.test.util.TestUtils;
@@ -54,7 +50,6 @@ import org.springframework.messaging.MessageHandler;
 import org.springframework.rabbit.stream.listener.StreamListenerContainer;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -63,8 +58,6 @@ import static org.mockito.Mockito.verify;
  * @author Gary Russell
  */
 public class RabbitStreamBinderModuleTests {
-
-	private static final RabbitMQContainer RABBITMQ = RabbitTestContainer.sharedInstance();
 
 	private ConfigurableApplicationContext context;
 
@@ -98,32 +91,6 @@ public class RabbitStreamBinderModuleTests {
 	}
 
 	@Test
-	void testSuperStreamContainer() {
-		context = new SpringApplicationBuilder(SimpleProcessor.class)
-				.web(WebApplicationType.NONE)
-				.run("--server.port=0");
-		BinderFactory binderFactory = context.getBean(BinderFactory.class);
-		RabbitMessageChannelBinder rabbitBinder = (RabbitMessageChannelBinder) binderFactory.getBinder(null,
-				MessageChannel.class);
-		RabbitConsumerProperties rProps = new RabbitConsumerProperties();
-		rProps.setContainerType(ContainerType.STREAM);
-		rProps.setSuperStream(true);
-		ExtendedConsumerProperties<RabbitConsumerProperties> props =
-				new ExtendedConsumerProperties<RabbitConsumerProperties>(rProps);
-		props.setAutoStartup(false);
-		props.setInstanceCount(1);
-		Binding<MessageChannel> binding = rabbitBinder.bindConsumer("testSuperStream", "grp", new QueueChannel(), props);
-		Object container = TestUtils.getPropertyValue(binding, "lifecycle.messageListenerContainer");
-		assertThat(container).isInstanceOf(StreamListenerContainer.class);
-		((StreamListenerContainer) container).start();
-		ConsumerBuilder builder = this.context.getBean(ConsumerBuilder.class);
-		verify(builder).singleActiveConsumer();
-		verify(builder).superStream("testSuperStream");
-		verify(builder).name("testSuperStream.grp");
-		((StreamListenerContainer) container).stop();
-	}
-
-	@Test
 	void testStreamHandler() {
 		context = new SpringApplicationBuilder(SimpleProcessor.class)
 				.web(WebApplicationType.NONE)
@@ -136,17 +103,12 @@ public class RabbitStreamBinderModuleTests {
 		ExtendedProducerProperties<RabbitProducerProperties> props =
 				new ExtendedProducerProperties<RabbitProducerProperties>(rProps);
 		Binding<MessageChannel> binding = rabbitBinder.bindProducer("testStream", new DirectChannel(), props);
-		Object handler = TestUtils.getPropertyValue(binding, "val$producerMessageHandler");
+		Object handler = TestUtils.getPropertyValue(binding, "lifecycle");
 		assertThat(handler).isInstanceOf(RabbitStreamMessageHandler.class);
 	}
 
 	@SpringBootApplication(proxyBeanMethods = false)
 	public static class SimpleProcessor {
-
-		@Bean
-		ConnectionFactory cf() {
-			return new CachingConnectionFactory(RABBITMQ.getMappedPort(5672));
-		}
 
 		@Bean
 		ProducerMessageHandlerCustomizer<MessageHandler> handlerCustomizer() {
@@ -177,10 +139,7 @@ public class RabbitStreamBinderModuleTests {
 
 		@Bean
 		ConsumerBuilder consumerBuilder() {
-			ConsumerBuilder mock = mock(ConsumerBuilder.class);
-			given(mock.superStream(anyString())).willReturn(mock);
-			given(mock.singleActiveConsumer()).willReturn(mock);
-			return mock;
+			return mock(ConsumerBuilder.class);
 		}
 
 		@Bean

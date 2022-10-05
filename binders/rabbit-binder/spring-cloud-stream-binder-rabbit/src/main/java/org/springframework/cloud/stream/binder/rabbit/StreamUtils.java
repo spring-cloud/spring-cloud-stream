@@ -24,7 +24,6 @@ import com.rabbitmq.stream.Environment;
 import org.springframework.amqp.core.MessageProperties;
 import org.springframework.amqp.rabbit.listener.MessageListenerContainer;
 import org.springframework.amqp.support.converter.MessageConverter;
-import org.springframework.cloud.stream.binder.BinderHeaders;
 import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
 import org.springframework.cloud.stream.binder.ExtendedProducerProperties;
 import org.springframework.cloud.stream.binder.rabbit.properties.RabbitConsumerProperties;
@@ -34,12 +33,13 @@ import org.springframework.cloud.stream.provisioning.ConsumerDestination;
 import org.springframework.cloud.stream.provisioning.ProducerDestination;
 import org.springframework.context.support.AbstractApplicationContext;
 import org.springframework.integration.amqp.inbound.AmqpInboundChannelAdapter;
-import org.springframework.integration.amqp.outbound.RabbitStreamMessageHandler;
 import org.springframework.integration.amqp.support.AmqpHeaderMapper;
 import org.springframework.integration.amqp.support.DefaultAmqpHeaderMapper;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
+import org.springframework.messaging.MessageHandlingException;
 import org.springframework.messaging.MessageHeaders;
+import org.springframework.messaging.support.ErrorMessage;
 import org.springframework.rabbit.stream.listener.ConsumerCustomizer;
 import org.springframework.rabbit.stream.listener.StreamListenerContainer;
 import org.springframework.rabbit.stream.producer.RabbitStreamTemplate;
@@ -79,9 +79,7 @@ public final class StreamUtils {
 			@Override
 			public synchronized void setConsumerCustomizer(ConsumerCustomizer consumerCustomizer) {
 				super.setConsumerCustomizer((id, builder) -> {
-					if (!properties.getExtension().isSuperStream()) {
-						builder.name(consumerDestination.getName() + "." + group);
-					}
+					builder.name(consumerDestination.getName() + "." + group);
 					consumerCustomizer.accept(id, builder);
 				});
 			}
@@ -92,9 +90,6 @@ public final class StreamUtils {
 		String beanName = extension.getStreamStreamMessageConverterBeanName();
 		if (beanName != null) {
 			container.setStreamConverter(applicationContext.getBean(beanName, StreamMessageConverter.class));
-		}
-		if (properties.getExtension().isSuperStream()) {
-			container.superStream(consumerDestination.getName(), consumerDestination.getName() + "." + group);
 		}
 		return container;
 	}
@@ -151,13 +146,6 @@ public final class StreamUtils {
 
 		RabbitStreamTemplate template = new RabbitStreamTemplate(applicationContext.getBean(Environment.class),
 				producerDestination.getName());
-		if (extendedProperties.isSuperStream()) {
-			template.setSuperStreamRouting(message -> {
-				Object property = message.getApplicationProperties().getOrDefault(BinderHeaders.PARTITION_HEADER, "0");
-				message.getApplicationProperties().remove(BinderHeaders.PARTITION_HEADER);
-				return "" + property;
-			});
-		}
 		String beanName = extendedProperties.getStreamMessageConverterBeanName();
 		if (beanName != null) {
 			template.setMessageConverter(applicationContext.getBean(beanName, MessageConverter.class));
@@ -168,11 +156,9 @@ public final class StreamUtils {
 		}
 		RabbitStreamMessageHandler handler = new RabbitStreamMessageHandler(template);
 		if (errorChannel != null) {
-			handler.setSendFailureChannel(errorChannel);
-		}
-		beanName = extendedProperties.getConfirmAckChannel();
-		if (beanName != null) {
-			handler.setSendSuccessChannelName(beanName);
+			handler.setFailureCallback((msg, ex) -> {
+				errorChannel.send(new ErrorMessage(new MessageHandlingException(msg, ex)));
+			});
 		}
 		handler.setHeaderMapper(headerMapperFunction.apply(extendedProperties));
 		handler.setSync(ProducerType.STREAM_SYNC.equals(producerProperties.getExtension().getProducerType()));

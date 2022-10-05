@@ -422,10 +422,7 @@ public class RabbitMessageChannelBinder extends
 	private AmqpHeaderMapper configureHeaderMapper(RabbitProducerProperties extendedProperties) {
 		DefaultAmqpHeaderMapper mapper = DefaultAmqpHeaderMapper.outboundMapper();
 		List<String> headerPatterns = new ArrayList<>(extendedProperties.getHeaderPatterns().length + 3);
-		if (!extendedProperties.isSuperStream()) {
-			// need to keep this header until later
-			headerPatterns.add("!" + BinderHeaders.PARTITION_HEADER);
-		}
+		headerPatterns.add("!" + BinderHeaders.PARTITION_HEADER);
 		headerPatterns.add("!" + IntegrationMessageHeaderAccessor.SOURCE_DATA);
 		headerPatterns.add("!" + IntegrationMessageHeaderAccessor.DELIVERY_ATTEMPT);
 		headerPatterns.add("!rabbitmq_streamContext");
@@ -503,10 +500,7 @@ public class RabbitMessageChannelBinder extends
 		MessageListenerContainer listenerContainer = createAndConfigureContainer(consumerDestination, group,
 				properties, destination, extension);
 		String[] queues = StringUtils.tokenizeToStringArray(destination, ",", true, true);
-		if (properties.getExtension().getContainerType() != ContainerType.STREAM
-				|| !properties.getExtension().isSuperStream()) {
-			listenerContainer.setQueueNames(queues);
-		}
+		listenerContainer.setQueueNames(queues);
 		getContainerCustomizer().configure(listenerContainer,
 				consumerDestination.getName(), group);
 		listenerContainer.afterPropertiesSet();
@@ -529,12 +523,11 @@ public class RabbitMessageChannelBinder extends
 			adapter.setErrorChannel(errorInfrastructure.getErrorChannel());
 		}
 		adapter.setMessageConverter(passThoughConverter);
-		ContainerType containerType = extension.getContainerType();
 		if (properties.isBatchMode() && extension.isEnableBatching()
-				&& ContainerType.SIMPLE.equals(containerType)) {
+				&& ContainerType.SIMPLE.equals(extension.getContainerType())) {
 			adapter.setBatchMode(BatchMode.EXTRACT_PAYLOADS_WITH_HEADERS);
 		}
-		if (containerType.equals(ContainerType.STREAM)) {
+		if (extension.getContainerType().equals(ContainerType.STREAM)) {
 			StreamUtils.configureAdapter(adapter);
 		}
 		return adapter;

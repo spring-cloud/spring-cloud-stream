@@ -115,7 +115,7 @@ public class RabbitConsumerProperties extends RabbitCommonProperties {
 	private int frameMaxHeadroom = 20_000;
 
 	/**
-	 * The container type, SIMPLE, DIRECT, or STREAM.
+	 * The container type, SIMPLE or DIRECT.
 	 */
 	private ContainerType containerType = ContainerType.SIMPLE;
 
@@ -138,12 +138,6 @@ public class RabbitConsumerProperties extends RabbitCommonProperties {
 	 * satisfied. Only applies with {@link ContainerType#SIMPLE}.
 	 */
 	private Long receiveTimeout;
-
-	/**
-	 * When the container type is STREAM, set this to true to create a super stream with
-	 * competing consumers.
-	 */
-	private boolean superStream;
 
 	public boolean isTransacted() {
 		return transacted;
@@ -351,14 +345,6 @@ public class RabbitConsumerProperties extends RabbitCommonProperties {
 
 	public void setReceiveTimeout(Long receiveTimeout) {
 		this.receiveTimeout = receiveTimeout;
-	}
-
-	public boolean isSuperStream() {
-		return this.superStream;
-	}
-
-	public void setSuperStream(boolean superStream) {
-		this.superStream = superStream;
 	}
 
 	/**
