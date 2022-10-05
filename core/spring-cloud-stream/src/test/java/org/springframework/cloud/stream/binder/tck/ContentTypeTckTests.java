@@ -725,7 +725,7 @@ public class ContentTypeTckTests {
 
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	public static class CustomConverters {
 
 		@Bean

@@ -30,7 +30,7 @@ import org.springframework.context.annotation.Configuration;
  * @author Oleg Zhurakousky
  *
  */
-@Configuration
+@Configuration(proxyBeanMethods = false)
 public class ExtendedBindingHandlerMappingsProviderConfiguration {
 
 	@Bean

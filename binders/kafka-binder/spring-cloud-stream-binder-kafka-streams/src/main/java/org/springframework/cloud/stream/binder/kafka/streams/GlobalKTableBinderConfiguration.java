@@ -40,7 +40,7 @@ import org.springframework.context.annotation.Import;
  * @author Chris Bono
  * @since 2.1.0
  */
-@Configuration
+@Configuration(proxyBeanMethods = false)
 @Import({ MultiBinderPropertiesConfiguration.class,
 		KafkaStreamsBinderHealthIndicatorConfiguration.class,
 		KafkaStreamsJaasConfiguration.class})

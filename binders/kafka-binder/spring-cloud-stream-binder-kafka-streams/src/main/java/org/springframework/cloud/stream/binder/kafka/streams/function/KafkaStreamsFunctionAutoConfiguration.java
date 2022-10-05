@@ -27,7 +27,7 @@ import org.springframework.context.annotation.Configuration;
  * @author Soby Chacko
  * @since 2.2.0
  */
-@Configuration
+@Configuration(proxyBeanMethods = false)
 @EnableConfigurationProperties(StreamFunctionProperties.class)
 public class KafkaStreamsFunctionAutoConfiguration {
 

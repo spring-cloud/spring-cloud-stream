@@ -39,7 +39,7 @@ import org.springframework.util.ReflectionUtils;
  * @author Ish Mahajan
  * @author Christian Tzolov
  */
-@Configuration
+@Configuration(proxyBeanMethods = false)
 @ConditionalOnClass(name = "org.apache.avro.Schema")
 @ConditionalOnProperty(value = "spring.cloud.schemaRegistryClient.enabled", matchIfMissing = true)
 @ConditionalOnBean(type = "org.springframework.cloud.stream.schema.registry.client.SchemaRegistryClient")

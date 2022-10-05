@@ -30,7 +30,7 @@ import org.springframework.context.annotation.Configuration;
  *
  * @author Arnaud Jardiné
  */
-@Configuration
+@Configuration(proxyBeanMethods = false)
 @ConditionalOnClass(name = "org.springframework.boot.actuate.health.HealthIndicator")
 @ConditionalOnEnabledHealthIndicator("binders")
 public class KafkaStreamsBinderHealthIndicatorConfiguration {

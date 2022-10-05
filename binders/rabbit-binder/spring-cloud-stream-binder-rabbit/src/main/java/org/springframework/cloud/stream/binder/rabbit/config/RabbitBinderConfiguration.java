@@ -102,7 +102,7 @@ public class RabbitBinderConfiguration {
 	/**
 	 * Configuration to be used when the cloud profile is set.
 	 */
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	@Profile("cloud")
 	protected static class CloudProfile {
 
@@ -110,7 +110,7 @@ public class RabbitBinderConfiguration {
 		 * Configuration to be used when the cloud profile is set, and Cloud Connectors
 		 * are found on the classpath.
 		 */
-		@Configuration
+		@Configuration(proxyBeanMethods = false)
 		@ConditionalOnClass(Cloud.class)
 		protected static class CloudConnectors {
 
@@ -125,7 +125,7 @@ public class RabbitBinderConfiguration {
 			 * set to {@code true}.
 			 */
 			// @checkstyle:off
-			@Configuration
+			@Configuration(proxyBeanMethods = false)
 			@ConditionalOnProperty(value = "spring.cloud.stream.override-cloud-connectors", havingValue = "false", matchIfMissing = true)
 			// @checkstyle:on
 			// Required to parse Rabbit properties which are passed to the binder for
@@ -176,7 +176,7 @@ public class RabbitBinderConfiguration {
 			 * {@code spring.cloud.stream.override-cloud-connectors} is set to
 			 * {@code true}. Defers to Spring Boot auto-configuration.
 			 */
-			@Configuration
+			@Configuration(proxyBeanMethods = false)
 			@ConditionalOnProperty("spring.cloud.stream.override-cloud-connectors")
 			@Import(RabbitConfiguration.class)
 			protected static class OverrideCloudConnectors {
@@ -185,7 +185,7 @@ public class RabbitBinderConfiguration {
 
 		}
 
-		@Configuration
+		@Configuration(proxyBeanMethods = false)
 		@ConditionalOnMissingClass("org.springframework.cloud.Cloud")
 		@Import(RabbitConfiguration.class)
 		protected static class NoCloudConnectors {
@@ -198,7 +198,7 @@ public class RabbitBinderConfiguration {
 	 * Configuration to be used when the cloud profile is not set. Defer to Spring Boot
 	 * auto-configuration.
 	 */
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	@Profile("!cloud")
 	@Import(RabbitConfiguration.class)
 	protected static class NoCloudProfile {
@@ -209,7 +209,7 @@ public class RabbitBinderConfiguration {
 	 * Configuration for Rabbit health indicator.
 	 *
 	 */
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	@ConditionalOnClass(name = "org.springframework.boot.actuate.health.HealthIndicator")
 	@ConditionalOnEnabledHealthIndicator("binders")
 	public static class RabbitHealthIndicatorConfiguration {

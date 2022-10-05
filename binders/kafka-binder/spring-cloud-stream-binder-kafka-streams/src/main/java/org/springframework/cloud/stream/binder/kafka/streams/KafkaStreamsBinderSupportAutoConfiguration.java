@@ -82,7 +82,7 @@ import org.springframework.util.StringUtils;
  * @author Soby Chacko
  * @author Gary Russell
  */
-@Configuration
+@Configuration(proxyBeanMethods = false)
 @EnableConfigurationProperties({ KafkaProperties.class, KafkaStreamsExtendedBindingProperties.class })
 @ConditionalOnBean(BindingService.class)
 @AutoConfigureAfter(BindingServiceConfiguration.class)
@@ -388,7 +388,7 @@ public class KafkaStreamsBinderSupportAutoConfiguration {
 		return new EncodingDecodingBindAdviceHandler();
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	@ConditionalOnMissingBean(value = KafkaStreamsBinderMetrics.class, name = "outerContext")
 	@ConditionalOnClass(name = "io.micrometer.core.instrument.MeterRegistry")
 	protected class KafkaStreamsBinderMetricsConfiguration {
@@ -414,7 +414,7 @@ public class KafkaStreamsBinderSupportAutoConfiguration {
 		}
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	@ConditionalOnBean(name = "outerContext")
 	@ConditionalOnMissingBean(KafkaStreamsBinderMetrics.class)
 	@ConditionalOnClass(name = "io.micrometer.core.instrument.MeterRegistry")

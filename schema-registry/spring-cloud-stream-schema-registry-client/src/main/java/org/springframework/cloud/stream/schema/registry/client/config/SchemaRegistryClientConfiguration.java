@@ -31,7 +31,7 @@ import org.springframework.util.StringUtils;
  * @author Vinicius Carvalho
  * @author Soby Chacko
  */
-@Configuration
+@Configuration(proxyBeanMethods = false)
 @EnableConfigurationProperties(SchemaRegistryClientProperties.class)
 public class SchemaRegistryClientConfiguration {
 

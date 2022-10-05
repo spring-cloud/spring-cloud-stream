@@ -170,7 +170,7 @@ public class KafkaBinderConfiguration {
 		return kafkaJaasLoginModuleInitializer;
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	@ConditionalOnMissingBean(value = KafkaBinderMetrics.class, name = "outerContext")
 	@ConditionalOnClass(name = "io.micrometer.core.instrument.MeterRegistry")
 	protected class KafkaBinderMetricsConfiguration {
@@ -221,7 +221,7 @@ public class KafkaBinderConfiguration {
 
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	@ConditionalOnBean(name = "outerContext")
 	@ConditionalOnMissingBean(KafkaBinderMetrics.class)
 	@ConditionalOnClass(name = "io.micrometer.core.instrument.MeterRegistry")

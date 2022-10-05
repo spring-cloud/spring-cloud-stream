@@ -29,7 +29,7 @@ import org.springframework.context.annotation.Configuration;
  * @author Soby Chacko
  * @since 3.0.4
  */
-@Configuration
+@Configuration(proxyBeanMethods = false)
 @ConditionalOnClass(name = {
 		"org.springframework.boot.actuate.endpoint.annotation.Endpoint" })
 @AutoConfigureAfter({EndpointAutoConfiguration.class, KafkaStreamsBinderSupportAutoConfiguration.class})

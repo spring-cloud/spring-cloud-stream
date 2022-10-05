@@ -179,7 +179,7 @@ public class RabbitTestBinder extends
 		this.applicationContext.close();
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	@EnableIntegration
 	static class Config {
 

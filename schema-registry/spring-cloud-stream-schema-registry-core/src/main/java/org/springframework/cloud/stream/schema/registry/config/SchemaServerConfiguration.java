@@ -38,7 +38,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
  * @author Vinicius Carvalho
  * @author Soby Chacko
  */
-@Configuration
+@Configuration(proxyBeanMethods = false)
 @EnableJpaRepositories(basePackageClasses = SchemaRepository.class)
 @EnableConfigurationProperties(SchemaServerProperties.class)
 @Import(ServerController.class)
