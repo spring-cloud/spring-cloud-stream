@@ -446,7 +446,32 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 			});
 
 			if (environment != null && !useApplicationContextAsParent) {
-				InitializerWithOuterContext initializer = new InitializerWithOuterContext(this.context);
+
+				BinderOuterContextInitializer initializer = null;
+
+				// First try to load a binder-specific outer initializer
+				String initializerClassname = String.format("org.springframework.cloud.stream.binder.%s.config.%sBinderOuterContextInitializer",
+						binderType.getDefaultName().toLowerCase(),
+						StringUtils.capitalize(binderType.getDefaultName()));
+				logger.info("Looking for binder-specific outer context initializer '" + initializerClassname + "'");
+				try {
+					Class<?> initializerClass = Thread.currentThread().getContextClassLoader().loadClass(initializerClassname);
+					initializer = (BinderOuterContextInitializer) initializerClass.getDeclaredConstructor().newInstance();
+				}
+				catch (ClassNotFoundException cnfex) {
+					logger.info("No binder-specific outer context initializer found for " + binderType.getDefaultName());
+				}
+				catch (ReflectiveOperationException ex) {
+					throw new IllegalStateException("Failed to load binder-specific outer context initializer for " +
+							binderType.getDefaultName() + " due to: " + ex.getMessage(), ex);
+				}
+
+				// Default to the generic one if none found
+				if (initializer == null) {
+					initializer = new BinderOuterContextInitializer();
+				}
+
+				initializer.setOuterContext(this.context);
 				initializer.initialize(binderProducingContext);
 			}
 
@@ -544,23 +569,6 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 		 */
 		void afterBinderContextInitialized(String configurationName,
 				ConfigurableApplicationContext binderContext);
-
-	}
-
-	private static class InitializerWithOuterContext
-			implements ApplicationContextInitializer<ConfigurableApplicationContext> {
-
-		private final ApplicationContext context;
-
-		InitializerWithOuterContext(ApplicationContext context) {
-			this.context = context;
-		}
-
-		@Override
-		public void initialize(ConfigurableApplicationContext applicationContext) {
-			applicationContext.getBeanFactory().registerSingleton("outerContext",
-					this.context);
-		}
 
 	}
 }
