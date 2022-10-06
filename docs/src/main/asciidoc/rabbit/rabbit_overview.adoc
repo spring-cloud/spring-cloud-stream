@@ -423,17 +423,12 @@ To enable this feature, you must add the `spring-rabbit-stream` jar to the class
 IMPORTANT: The consumer properties described above are not supported when you set the `containerType` property to `stream`; `concurrency` is also not supported at this time.
 Only a single stream queue can be consumed by each binding.
 
-To configure the binder to use `containerType=stream`, you must add an `Environment` `@Bean` and, optionally, a customizer to customize the listener container.
+To configure the binder to use `containerType=stream`, Spring Boot will automatically configure an `Environment` `@Bean` from the application properties.
+You can, optionally, add a customizer to customize the listener container.
 
 ====
 [source, java]
 ----
-@Bean
-Environment streamEnv() {
-    return Environment.builder()
-            .build();
-}
-
 @Bean
 ListenerContainerCustomizer<MessageListenerContainer> customizer() {
     return (cont, dest, group) -> {
@@ -472,6 +467,39 @@ public Consumer<Message<?>> input() {
 ====
 
 Refer to the https://rabbitmq.github.io/rabbitmq-stream-java-client/stable/htmlsingle/[RabbitMQ Stream Java Client documentation] for information about configuring the environment and consumer builder.
+
+[[rabbitmq-super-stream-consumer]]
+==== Consumer Support for the RabbitMQ Super Streams
+
+See https://blog.rabbitmq.com/posts/2022/07/rabbitmq-3-11-feature-preview-super-streams[Super Streams] for information about super streams.
+
+Use of super streams allows for automatic scale-up scale-down with a single active consumer on each partition of a super stream.
+
+Configuration example:
+
+====
+[source, java]
+----
+@Bean
+public Consumer<Thing> input() {
+    ...
+}
+----
+====
+
+====
+[source, properties]
+----
+spring.cloud.stream.bindings.input-in-0.destination=super
+spring.cloud.stream.bindings.input-in-0.group=test
+spring.cloud.stream.bindings.input-in-0.consumer.instance-count=3
+spring.cloud.stream.rabbit.bindings.input-in-0.consumer.container-type=STREAM
+spring.cloud.stream.rabbit.bindings.input-in-0.consumer.super-stream=true
+----
+====
+
+The framework will create a super stream named `super`, with 3 partitions.
+Up to 3 instances of this application can be deployed.
 
 === Advanced Listener Container Configuration
 
@@ -1101,6 +1129,74 @@ IMPORTANT: The correlation data must be provided with a unique `id` so that the 
 
 You cannot set both `useConfirmHeader` and `confirmAckChannel` but you can still receive returned messages in the error channel when `useConfirmHeader` is true, but using the correlation header is more convenient.
 
+[[rabbitmq-stream-producer]]
+=== Initial Producer Support for the RabbitMQ Stream Plugin
+
+Basic support for the https://rabbitmq.com/stream.html[RabbitMQ Stream Plugin] is now provided.
+To enable this feature, you must add the `spring-rabbit-stream` jar to the class path - it must be the same version as `spring-amqp` and `spring-rabbit`.
+
+IMPORTANT: The producer properties described above are not supported when you set the `producerType` property to `STREAM_SYNC` or `STREAM_ASYNC`.
+
+To configure the binder to use a stream `ProducerType`, Spring Boot will configure an `Environment` `@Bean` from the applicaation properties.
+You can, optionally, add a customizer to customize the message handler.
+
+====
+[source, java]
+----
+@Bean
+ProducerMessageHandlerCustomizer<MessageHandler> handlerCustomizer() {
+    return (hand, dest) -> {
+        RabbitStreamMessageHandler handler = (RabbitStreamMessageHandler) hand;
+        handler.setConfirmTimeout(5000);
+        ((RabbitStreamTemplate) handler.getStreamOperations()).setProducerCustomizer(
+                (name, builder) -> {
+                    ...
+                });
+    };
+}
+----
+====
+
+Refer to the https://rabbitmq.github.io/rabbitmq-stream-java-client/stable/htmlsingle/[RabbitMQ Stream Java Client documentation] for information about configuring the environment and producer builder.
+
+[[rabbitmq-super-stream-producer]]
+==== Producer Support for the RabbitMQ Super Streams
+
+See https://blog.rabbitmq.com/posts/2022/07/rabbitmq-3-11-feature-preview-super-streams[Super Streams] for information about super streams.
+
+Use of super streams allows for automatic scale-up scale-down with a single active consumer on each partition of a super stream.
+Using Spring Cloud Stream, you can publish to a super stream either over AMQP, or using the stream client.
+
+IMPORTANT: The super stream must already exist; creating a super stream is not supported by producer bindings.
+
+Publishing to a super stream over AMQP:
+
+====
+[source, properties]
+----
+spring.cloud.stream.bindings.output.destination=super
+spring.cloud.stream.bindings.output.producer.partition-count=3
+spring.cloud.stream.bindings.output.producer.partition-key-expression=headers['cust-no']
+spring.cloud.stream.rabbit.bindings.output.producer.declare-exchange=false
+----
+====
+
+Publishing to a super stream using the stream client:
+
+====
+[source, properties]
+----
+spring.cloud.stream.bindings.output.destination=super
+spring.cloud.stream.bindings.output.producer.partition-count=3
+spring.cloud.stream.bindings.output.producer.partition-key-expression=headers['cust-no']
+spring.cloud.stream.rabbit.bindings.output.producer.producer-type=stream-async
+spring.cloud.stream.rabbit.bindings.output.producer.super-stream=true
+spring.cloud.stream.rabbit.bindings.output.producer.declare-exchange=false
+----
+====
+
+When using the stream client, if you set a `confirmAckChannel`, a copy of a successfully sent message will be sent to that channel.
+
 == Using Existing Queues/Exchanges
 
 By default, the binder will automatically provision a topic exchange with the name being derived from the value of the destination binding property `<prefix><destination>`.
@@ -1242,41 +1338,6 @@ For negatively acknowledged confirmations, the payload is a `NackedAmqpMessageEx
 There is no automatic handling of these exceptions (such as sending to a <<rabbit-dlq-processing, dead-letter queue>>).
 You can consume these exceptions with your own Spring Integration flow.
 
-[[rabbitmq-stream-producer]]
-=== Initial Producer Support for the RabbitMQ Stream Plugin
-
-Basic support for the https://rabbitmq.com/stream.html[RabbitMQ Stream Plugin] is now provided.
-To enable this feature, you must add the `spring-rabbit-stream` jar to the class path - it must be the same version as `spring-amqp` and `spring-rabbit`.
-
-IMPORTANT: The producer properties described above are not supported when you set the `producerType` property to `STREAM_SYNC` or `STREAM_ASYNC`.
-
-To configure the binder to use a stream `ProducerType`, you must add an `Environment` `@Bean` and, optionally, a customizer to customize the message handler.
-
-====
-[source, java]
-----
-@Bean
-Environment streamEnv() {
-    return Environment.builder()
-            .build();
-}
-
-@Bean
-ProducerMessageHandlerCustomizer<MessageHandler> handlerCustomizer() {
-    return (hand, dest) -> {
-        RabbitStreamMessageHandler handler = (RabbitStreamMessageHandler) hand;
-        handler.setConfirmTimeout(5000);
-        ((RabbitStreamTemplate) handler.getStreamOperations()).setProducerCustomizer(
-                (name, builder) -> {
-                    ...
-                });
-    };
-}
-----
-====
-
-Refer to the https://rabbitmq.github.io/rabbitmq-stream-java-client/stable/htmlsingle/[RabbitMQ Stream Java Client documentation] for information about configuring the environment and producer builder.
-=======
 [[rabbit-binder-health-indicator]]
 == Rabbit Binder Health Indicator
 

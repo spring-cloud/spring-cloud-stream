@@ -158,6 +158,12 @@ public class RabbitProducerProperties extends RabbitCommonProperties {
 	private AlternateExchange alternateExchange;
 
 	/**
+	 * When the producer type is STREAM_*, set this to true to publish to a super stream.
+	 * Also requires a partition key.
+	 */
+	private boolean superStream;
+
+	/**
 	 * @param requestHeaderPatterns the patterns.
 	 * @deprecated - use {@link #setHeaderPatterns(String[])}.
 	 */
@@ -317,6 +323,14 @@ public class RabbitProducerProperties extends RabbitCommonProperties {
 
 	public void setAlternateExchange(AlternateExchange alternate) {
 		this.alternateExchange = alternate;
+	}
+
+	public boolean isSuperStream() {
+		return this.superStream;
+	}
+
+	public void setSuperStream(boolean superStream) {
+		this.superStream = superStream;
 	}
 
 	public static class AlternateExchange {
