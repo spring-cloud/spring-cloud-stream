@@ -16,6 +16,8 @@
 
 package org.springframework.cloud.stream.binder.kafka.streams;
 
+import java.lang.reflect.Field;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -32,6 +34,7 @@ import org.apache.kafka.streams.StoreQueryParameters;
 import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.errors.InvalidStateStoreException;
 import org.apache.kafka.streams.errors.UnknownStateStoreException;
+import org.apache.kafka.streams.processor.internals.TopologyMetadata;
 import org.apache.kafka.streams.state.HostInfo;
 import org.apache.kafka.streams.state.QueryableStoreType;
 import org.apache.kafka.streams.state.StreamsMetadata;
@@ -41,6 +44,7 @@ import org.springframework.retry.RetryPolicy;
 import org.springframework.retry.backoff.FixedBackOffPolicy;
 import org.springframework.retry.policy.SimpleRetryPolicy;
 import org.springframework.retry.support.RetryTemplate;
+import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
 
 /**
@@ -53,6 +57,7 @@ import org.springframework.util.StringUtils;
  * @author Renwei Han
  * @author Serhii Siryi
  * @author Nico Pommerening
+ * @author Chris Bono
  * @since 2.1.0
  */
 public class InteractiveQueryService {
@@ -63,6 +68,8 @@ public class InteractiveQueryService {
 
 	private final KafkaStreamsBinderConfigurationProperties binderConfigurationProperties;
 
+	private final Field topologyMetadataField;
+
 	/**
 	 * Constructor for InteractiveQueryService.
 	 * @param kafkaStreamsRegistry holding {@link KafkaStreamsRegistry}
@@ -72,6 +79,8 @@ public class InteractiveQueryService {
 			KafkaStreamsBinderConfigurationProperties binderConfigurationProperties) {
 		this.kafkaStreamsRegistry = kafkaStreamsRegistry;
 		this.binderConfigurationProperties = binderConfigurationProperties;
+		this.topologyMetadataField = ReflectionUtils.findField(KafkaStreams.class, "topologyMetadata");
+		this.topologyMetadataField.setAccessible(true);
 	}
 
 	/**
@@ -85,15 +94,16 @@ public class InteractiveQueryService {
 
 		KafkaStreams contextSpecificKafkaStreams = getThreadContextSpecificKafkaStreams();
 
+		final StoreQueryParameters<T> storeQueryParams = StoreQueryParameters.fromNameAndType(storeName, storeType);
+
 		return getRetryTemplate().execute(context -> {
 			T store = null;
 			Throwable throwable = null;
 			if (contextSpecificKafkaStreams != null) {
 				try {
-					store = contextSpecificKafkaStreams.store(StoreQueryParameters.fromNameAndType(storeName, storeType));
+					store = contextSpecificKafkaStreams.store(storeQueryParams);
 				}
 				catch (InvalidStateStoreException e) {
-					// pass through..
 					throwable = e;
 				}
 			}
@@ -104,28 +114,51 @@ public class InteractiveQueryService {
 				LOG.warn("Store (" + storeName + ") could not be found in Streams context, falling back to all known Streams instances");
 			}
 
+			// Find all apps that know about the store
+			Map<KafkaStreams, T> candidateStores = new HashMap<>();
 			for (KafkaStreams kafkaStreamApp : kafkaStreamsRegistry.getKafkaStreams()) {
 				try {
-					return getStateStoreFromKafkaStreams(kafkaStreamApp, storeName, storeType);
+					candidateStores.put(kafkaStreamApp, kafkaStreamApp.store(storeQueryParams));
 				}
 				catch (Exception ex) {
 					throwable = ex;
 				}
 			}
+
+			// Store exists in a single app - no further resolution required
+			if (candidateStores.size() == 1) {
+				return candidateStores.values().stream().findFirst().get();
+			}
+
+			// If the store is in multiple streams apps - discard any apps that do not actually have the store
+			if (candidateStores.size() > 1) {
+
+				candidateStores = candidateStores.entrySet().stream()
+						.filter((e) -> storeActuallyAvailable(e.getKey(), storeName))
+						.collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+				if (candidateStores.size() == 1) {
+					return candidateStores.values().stream().findFirst().get();
+				}
+
+				throwable = (candidateStores.size() == 0) ?
+						new UnknownStateStoreException("Store (" + storeName + ") not available to Streams instance") :
+						new InvalidStateStoreException("Store (" + storeName + ") available to more than one Streams instance");
+
+			}
 			throw new IllegalStateException("Error retrieving state store: " + storeName, throwable);
 		});
 	}
 
-	private <T> T getStateStoreFromKafkaStreams(KafkaStreams kafkaStreams, String storeName, QueryableStoreType<T> storeType) {
-		// Check KafkaStreams app knows about the state store
-		T store = kafkaStreams.store(StoreQueryParameters.fromNameAndType(storeName, storeType));
-
-		// Check KafkaStreams app actually has the state store
-		if (kafkaStreams.streamsMetadataForStore(storeName).stream()
-				.noneMatch((sm) -> sm.stateStoreNames().contains(storeName))) {
-			throw new UnknownStateStoreException("Store (" + storeName + ") not available to Streams instance");
+	private boolean storeActuallyAvailable(KafkaStreams kafkaStreams, String storeName) {
+		try {
+			TopologyMetadata topologyMetadata = (TopologyMetadata) ReflectionUtils.getField(topologyMetadataField, kafkaStreams);
+			return !topologyMetadata.sourceTopicsForStore(storeName, null).isEmpty();
 		}
-		return store;
+		catch (Exception ex) {
+			LOG.error("Unable to determine if store (" + storeName + ") is available to the app due to: " + ex.getMessage(), ex);
+		}
+		return false;
 	}
 
 	/**
