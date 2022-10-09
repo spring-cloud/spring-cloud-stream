@@ -63,7 +63,19 @@ class InteractiveQueryServiceMultiStateStoreTests {
 	private static final EmbeddedKafkaBroker embeddedKafka = EmbeddedKafkaCondition.getBroker();
 
 	@Test
-	void stateStoreOnlyAvailableOnKafkaStreamsAppWhereItIsUsed() {
+	void stateStoreAvailableOnProperAppWhenAppServerPropertySet() {
+		stateStoreAvailableOnProperApp(true);
+	}
+
+	@Test
+	void stateStoreAvailableOnProperAppWhenAppServerPropertyNotSet() {
+		stateStoreAvailableOnProperApp(false);
+	}
+
+	private void stateStoreAvailableOnProperApp(boolean shouldSetAppServerProperty) {
+		String appServerArg = shouldSetAppServerProperty ?
+				"--spring.cloud.stream.kafka.streams.binder.configuration.application.server=" + embeddedKafka.getBrokersAsString() :
+				"--foo=bar";
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder()
 				.sources(MultipleAppsWithUsedStateStoresTestApplication.class)
 				.web(WebApplicationType.NONE)
@@ -74,16 +86,16 @@ class InteractiveQueryServiceMultiStateStoreTests {
 						"--spring.cloud.stream.function.bindings.app2-in-0=input2",
 						"--spring.cloud.stream.kafka.streams.binder.functions.app1.application-id=stateStoreTestApp1",
 						"--spring.cloud.stream.kafka.streams.binder.functions.app2.application-id=stateStoreTestApp2",
-						"--spring.cloud.stream.kafka.streams.binder.configuration.application.server="
-								+ embeddedKafka.getBrokersAsString(),
-						"--spring.cloud.stream.kafka.streams.binder.brokers="
-								+ embeddedKafka.getBrokersAsString())
+						appServerArg,
+						"--spring.cloud.stream.kafka.streams.binder.brokers=" + embeddedKafka.getBrokersAsString())
 		) {
 			waitForRunningStreams(context.getBean(KafkaStreamsRegistry.class));
+
+			InteractiveQueryService queryService = context.getBean(InteractiveQueryService.class);
+
 			// The KafkaStreams.store() used by query service is non-deterministic so perform the operation multiple times to
 			// surface any possible issues. Also, no need to actually write anything to the stores, the store.get() call will
 			// cause a failure when the state store is invalid.
-			InteractiveQueryService queryService = context.getBean(InteractiveQueryService.class);
 			for (int i = 0; i < 100; i++) {
 				assertThat(queryService.getQueryableStore(STORE_1_NAME, QueryableStoreTypes.keyValueStore())
 						.get("someKey")).isNull();

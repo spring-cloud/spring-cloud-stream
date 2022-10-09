@@ -19,6 +19,7 @@ package org.springframework.cloud.stream.binder.kafka.streams;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.function.Function;
 
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -38,20 +39,15 @@ import org.apache.kafka.streams.state.HostInfo;
 import org.apache.kafka.streams.state.QueryableStoreType;
 import org.apache.kafka.streams.state.QueryableStoreTypes;
 import org.apache.kafka.streams.state.ReadOnlyKeyValueStore;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
-import org.springframework.cloud.stream.annotation.EnableBinding;
-import org.springframework.cloud.stream.annotation.StreamListener;
-import org.springframework.cloud.stream.binder.kafka.streams.annotations.KafkaStreamsProcessor;
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsBinderConfigurationProperties;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
@@ -62,11 +58,12 @@ import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.serializer.JsonSerde;
 import org.springframework.kafka.test.EmbeddedKafkaBroker;
-import org.springframework.kafka.test.rule.EmbeddedKafkaRule;
+import org.springframework.kafka.test.condition.EmbeddedKafkaCondition;
+import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
-import org.springframework.messaging.handler.annotation.SendTo;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.internal.verification.VerificationModeFactory.times;
 
 /**
@@ -74,18 +71,14 @@ import static org.mockito.internal.verification.VerificationModeFactory.times;
  * @author Gary Russell
  * @author Nico Pommerening
  */
+@EmbeddedKafka(topics = "counts-id")
 public class KafkaStreamsInteractiveQueryIntegrationTests {
 
-	@ClassRule
-	public static EmbeddedKafkaRule embeddedKafkaRule = new EmbeddedKafkaRule(1, true,
-			"counts-id");
-
-	private static EmbeddedKafkaBroker embeddedKafka = embeddedKafkaRule
-			.getEmbeddedKafka();
+	private static final EmbeddedKafkaBroker embeddedKafka = EmbeddedKafkaCondition.getBroker();
 
 	private static Consumer<String, String> consumer;
 
-	@BeforeClass
+	@BeforeAll
 	public static void setUp() throws Exception {
 		Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("group-id",
 				"false", embeddedKafka);
@@ -96,13 +89,13 @@ public class KafkaStreamsInteractiveQueryIntegrationTests {
 		embeddedKafka.consumeFromAnEmbeddedTopic(consumer, "counts-id");
 	}
 
-	@AfterClass
+	@AfterAll
 	public static void tearDown() {
 		consumer.close();
 	}
 
 	@Test
-	public void testStateStoreRetrievalRetry() {
+	void stateStoreRetrievalRetriedOnFailure() {
 
 		StreamsBuilderFactoryBean mock = Mockito.mock(StreamsBuilderFactoryBean.class);
 		KafkaStreams mockKafkaStreams = Mockito.mock(KafkaStreams.class);
@@ -131,7 +124,7 @@ public class KafkaStreamsInteractiveQueryIntegrationTests {
 	}
 
 	@Test
-	public void testStateStoreRetrievalRetryForHostInfoService() {
+	void hostInfoRetrievalRetriedOnFailure() {
 		StreamsBuilderFactoryBean mock = Mockito.mock(StreamsBuilderFactoryBean.class);
 		KafkaStreams mockKafkaStreams = Mockito.mock(KafkaStreams.class);
 		Mockito.when(mock.getKafkaStreams()).thenReturn(mockKafkaStreams);
@@ -148,24 +141,25 @@ public class KafkaStreamsInteractiveQueryIntegrationTests {
 				binderConfigurationProperties);
 
 		QueryableStoreType<ReadOnlyKeyValueStore<Object, Object>> storeType = QueryableStoreTypes.keyValueStore();
-		final StringSerializer serializer = new StringSerializer();
+		StringSerializer serializer = new StringSerializer();
 		try {
-			interactiveQueryService.getHostInfo("foo", "fooKey", serializer);
+			interactiveQueryService.getHostInfo("foo", "foobarApp-key", serializer);
 		}
 		catch (Exception ignored) {
 
 		}
 		Mockito.verify(mockKafkaStreams, times(3))
-				.queryMetadataForKey("foo", "fooKey", serializer);
+				.queryMetadataForKey("foo", "foobarApp-key", serializer);
 	}
 
 	@Test
-	@Ignore
-	public void testKstreamBinderWithPojoInputAndStringOuput() throws Exception {
+	void queryServiceProvidesStateStoreAndHostInfo() {
 		SpringApplication app = new SpringApplication(ProductCountApplication.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 		ConfigurableApplicationContext context = app.run("--server.port=0",
 				"--spring.jmx.enabled=false",
+				"--spring.cloud.stream.function.bindings.process-in-0=input",
+				"--spring.cloud.stream.function.bindings.process-out-0=output",
 				"--spring.cloud.stream.bindings.input.destination=foos",
 				"--spring.cloud.stream.bindings.output.destination=counts-id",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.commit.interval.ms=1000",
@@ -173,7 +167,7 @@ public class KafkaStreamsInteractiveQueryIntegrationTests {
 						+ "=org.apache.kafka.common.serialization.Serdes$StringSerde",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.default.value.serde"
 						+ "=org.apache.kafka.common.serialization.Serdes$StringSerde",
-				"--spring.cloud.stream.kafka.streams.bindings.input.consumer.applicationId=ProductCountApplication-abc",
+				"--spring.cloud.stream.kafka.streams.bindings.input.consumer.applicationId=ProductCountApplication-def",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.application.server"
 						+ "=" + embeddedKafka.getBrokersAsString(),
 				"--spring.cloud.stream.kafka.streams.binder.brokers="
@@ -193,13 +187,13 @@ public class KafkaStreamsInteractiveQueryIntegrationTests {
 		KafkaTemplate<Integer, String> template = new KafkaTemplate<>(pf, true);
 		template.setDefaultTopic("foos");
 		template.sendDefault("{\"id\":\"123\"}");
-		ConsumerRecord<String, String> cr = KafkaTestUtils.getSingleRecord(consumer,
-				"counts-id");
-		assertThat(cr.value().contains("Count for product with ID 123: 1")).isTrue();
 
-		ProductCountApplication.Foo foo = context
-				.getBean(ProductCountApplication.Foo.class);
-		assertThat(foo.getProductStock(123).equals(1L));
+		ConsumerRecord<String, String> cr = KafkaTestUtils.getSingleRecord(consumer, "counts-id");
+		assertThat(cr.value()).isIn("Count for product with ID 123: 1", "Count for product with ID 123: 2");
+
+		// Make sure the count can be retrieved from local state store
+		ProductCountApplication.Foo foo = context.getBean(ProductCountApplication.Foo.class);
+		assertThat(foo.getProductStock(123)).isIn(1L, 2L);
 
 		// perform assertions on HostInfo related methods in InteractiveQueryService
 		InteractiveQueryService interactiveQueryService = context
@@ -209,13 +203,13 @@ public class KafkaStreamsInteractiveQueryIntegrationTests {
 		assertThat(currentHostInfo.host() + ":" + currentHostInfo.port())
 				.isEqualTo(embeddedKafka.getBrokersAsString());
 
-		final KeyQueryMetadata keyQueryMetadata = interactiveQueryService.getKeyQueryMetadata("prod-id-count-store",
+		KeyQueryMetadata keyQueryMetadata = interactiveQueryService.getKeyQueryMetadata("prod-id-count-store",
 				123, new IntegerSerializer());
-		final HostInfo activeHost = keyQueryMetadata.getActiveHost();
+		HostInfo activeHost = keyQueryMetadata.getActiveHost();
 		assertThat(activeHost.host() + ":" + activeHost.port())
 				.isEqualTo(embeddedKafka.getBrokersAsString());
 
-		final KafkaStreams kafkaStreams = interactiveQueryService.getKafkaStreams("prod-id-count-store",
+		KafkaStreams kafkaStreams = interactiveQueryService.getKafkaStreams("prod-id-count-store",
 				123, new IntegerSerializer());
 		assertThat(kafkaStreams).isNotNull();
 		assertThat(interactiveQueryService.getKafkaStreams("non-existent-store",
@@ -226,33 +220,65 @@ public class KafkaStreamsInteractiveQueryIntegrationTests {
 		assertThat(hostInfo.host() + ":" + hostInfo.port())
 				.isEqualTo(embeddedKafka.getBrokersAsString());
 
-		HostInfo hostInfoFoo = interactiveQueryService
-				.getHostInfo("prod-id-count-store-foo", 123, new IntegerSerializer());
-		assertThat(hostInfoFoo).isNull();
+		assertThatThrownBy(() -> interactiveQueryService
+				.getHostInfo("prod-id-count-store-foo", 123, new IntegerSerializer()))
+				.isInstanceOf(IllegalStateException.class)
+				.hasMessageContaining("Error when retrieving state store");
 
-		final List<HostInfo> hostInfos = interactiveQueryService.getAllHostsInfo("prod-id-count-store");
+		List<HostInfo> hostInfos = interactiveQueryService.getAllHostsInfo("prod-id-count-store");
 		assertThat(hostInfos.size()).isEqualTo(1);
-		final HostInfo hostInfo1 = hostInfos.get(0);
+		HostInfo hostInfo1 = hostInfos.get(0);
 		assertThat(hostInfo1.host() + ":" + hostInfo1.port())
 				.isEqualTo(embeddedKafka.getBrokersAsString());
-
 	}
 
-	@EnableBinding(KafkaStreamsProcessor.class)
+	@Test
+	void queryServiceProvidesStateStoreWithoutSettingAppServerProperty() {
+		SpringApplication app = new SpringApplication(ProductCountApplication.class);
+		app.setWebApplicationType(WebApplicationType.NONE);
+		try (ConfigurableApplicationContext context = app.run("--server.port=0",
+				"--spring.jmx.enabled=false",
+				"--spring.cloud.stream.function.bindings.process-in-0=input",
+				"--spring.cloud.stream.function.bindings.process-out-0=output",
+				"--spring.cloud.stream.bindings.input.destination=foos",
+				"--spring.cloud.stream.bindings.output.destination=counts-id",
+				"--spring.cloud.stream.kafka.streams.binder.configuration.commit.interval.ms=1000",
+				"--spring.cloud.stream.kafka.streams.binder.configuration.default.key.serde"
+						+ "=org.apache.kafka.common.serialization.Serdes$StringSerde",
+				"--spring.cloud.stream.kafka.streams.binder.configuration.default.value.serde"
+						+ "=org.apache.kafka.common.serialization.Serdes$StringSerde",
+				"--spring.cloud.stream.kafka.streams.bindings.input.consumer.applicationId=ProductCountApplication-def",
+				"--spring.cloud.stream.kafka.streams.binder.brokers=" + embeddedKafka.getBrokersAsString())
+		) {
+			// Send an input product record
+			Map<String, Object> senderProps = KafkaTestUtils.producerProps(embeddedKafka);
+			DefaultKafkaProducerFactory<Integer, String> pf = new DefaultKafkaProducerFactory<>(senderProps);
+			KafkaTemplate<Integer, String> template = new KafkaTemplate<>(pf, true);
+			template.setDefaultTopic("foos");
+			template.sendDefault("{\"id\":\"123\"}");
+
+			// Wait for output from the streams app
+			ConsumerRecord<String, String> cr = KafkaTestUtils.getSingleRecord(consumer, "counts-id");
+			assertThat(cr.value()).isIn("Count for product with ID 123: 1", "Count for product with ID 123: 2");
+
+			// Make sure the count can be retrieved from local state store
+			ProductCountApplication.Foo foo = context.getBean(ProductCountApplication.Foo.class);
+			assertThat(foo.getProductStock(123)).isIn(1L, 2L);
+		}
+	}
+
 	@EnableAutoConfiguration
 	public static class ProductCountApplication {
 
-		@StreamListener("input")
-		@SendTo("output")
-		public KStream<?, String> process(KStream<Object, Product> input) {
+		@Bean
+		public Function<KStream<Object, Product>, KStream<?, String>> process() {
 
-			return input.filter((key, product) -> product.getId() == 123)
+			return input -> input.filter((key, product) -> product.getId() == 123)
 					.map((key, value) -> new KeyValue<>(value.id, value))
 					.groupByKey(Grouped.with(new Serdes.IntegerSerde(),
 							new JsonSerde<>(Product.class)))
 					.count(Materialized.as("prod-id-count-store")).toStream()
-					.map((key, value) -> new KeyValue<>(null,
-							"Count for product with ID 123: " + value));
+					.map((key, value) -> new KeyValue<>(null, "Count for product with ID 123: " + value));
 		}
 
 		@Bean
