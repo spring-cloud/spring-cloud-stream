@@ -113,7 +113,7 @@ Default: `false`
 minShardCount::
 Effective only if `autoAddShards` is set to `true`.
 The minimum number of shards that the binder will configure on the stream from which it produces/consumes data.
-It can be superseded by the `partitionCount` setting of the producer or by the value of `instanceCount * concurrency` settings of the producer (if either is larger)
+It can be superseded by the `partitionCount` setting of the producer or by the value of `instanceCount * concurrency` settings of the consumer (if either is larger)
 +
 Default: `1`
 kplKclEnabled::
