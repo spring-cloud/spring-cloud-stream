@@ -19,6 +19,7 @@ package org.springframework.cloud.bus.rsocket;
 import java.util.ArrayList;
 
 import org.springframework.cloud.bus.event.Destination;
+import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 
 public class RoutingClientDestinationFactory implements Destination.Factory {
@@ -38,9 +39,9 @@ public class RoutingClientDestinationFactory implements Destination.Factory {
 		});
 		String defaultTags = StringUtils.collectionToDelimitedString(entries, ":");
 		return () -> {
-			String destination = (StringUtils.isEmpty(originalDestination)) ? defaultTags
+			String destination = (ObjectUtils.isEmpty(originalDestination)) ? defaultTags
 					: defaultTags + ":" + originalDestination;
-			if (StringUtils.isEmpty(destination)) {
+			if (ObjectUtils.isEmpty(destination)) {
 				throw new IllegalArgumentException("destination may not be empty");
 			}
 			return destination;
