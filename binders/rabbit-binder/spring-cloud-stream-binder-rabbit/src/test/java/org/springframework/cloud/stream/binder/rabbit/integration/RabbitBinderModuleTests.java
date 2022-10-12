@@ -17,6 +17,7 @@
 package org.springframework.cloud.stream.binder.rabbit.integration;
 
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
@@ -24,10 +25,6 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.function.Function;
 
-import com.rabbitmq.http.client.Client;
-import com.rabbitmq.http.client.domain.BindingInfo;
-import com.rabbitmq.http.client.domain.ExchangeInfo;
-import com.rabbitmq.http.client.domain.QueueInfo;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -60,6 +57,7 @@ import org.springframework.cloud.stream.binder.ExtendedProducerProperties;
 import org.springframework.cloud.stream.binder.ExtendedPropertiesBinder;
 import org.springframework.cloud.stream.binder.rabbit.RabbitMessageChannelBinder;
 import org.springframework.cloud.stream.binder.rabbit.RabbitTestContainer;
+import org.springframework.cloud.stream.binder.rabbit.RestUtils;
 import org.springframework.cloud.stream.binder.rabbit.properties.RabbitConsumerProperties;
 import org.springframework.cloud.stream.binder.rabbit.properties.RabbitProducerProperties;
 import org.springframework.cloud.stream.binder.rabbit.properties.RabbitProducerProperties.AlternateExchange;
@@ -80,6 +78,8 @@ import org.springframework.messaging.support.GenericMessage;
 import org.springframework.retry.backoff.ExponentialBackOffPolicy;
 import org.springframework.retry.policy.SimpleRetryPolicy;
 import org.springframework.retry.support.RetryTemplate;
+import org.springframework.web.reactive.function.client.ExchangeFilterFunctions;
+import org.springframework.web.reactive.function.client.WebClient;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
@@ -99,6 +99,23 @@ public class RabbitBinderModuleTests {
 	private static final RabbitMQContainer RABBITMQ = RabbitTestContainer.sharedInstance();
 
 	private static final ConnectionFactory MOCK_CONNECTION_FACTORY = mock(ConnectionFactory.class, Mockito.RETURNS_MOCKS);
+
+	private static final WebClient client;
+
+	private static final URI uri;
+
+	static {
+		client = WebClient.builder()
+				.filter(ExchangeFilterFunctions
+						.basicAuthentication(RABBITMQ.getAdminUsername(), RABBITMQ.getAdminPassword()))
+				.build();
+		try {
+			uri = new URI(RABBITMQ.getHttpUrl() + "/api/");
+		}
+		catch (URISyntaxException ex) {
+			throw new IllegalStateException(ex);
+		}
+	}
 
 	@RegisterExtension
 	private final RabbitTestSupport rabbitTestSupport = new RabbitTestSupport(true, RABBITMQ.getAmqpPort(), RABBITMQ.getHttpPort());
@@ -169,21 +186,22 @@ public class RabbitBinderModuleTests {
 		checkCustomizedArgs();
 	}
 
+	@SuppressWarnings("unchecked")
 	private void checkCustomizedArgs() throws MalformedURLException, URISyntaxException, InterruptedException {
-		Client client = new Client(String.format("http://guest:guest@localhost:%d/api", RABBITMQ.getHttpPort()));
-		List<BindingInfo> bindings = client.getBindingsBySource("/", "process-in-0");
+		List<Map<String, Object>> bindings = RestUtils.getBindingsBySource(client, uri, "/", "process-in-0");
 		int n = 0;
 		while (n++ < 100 && bindings == null || bindings.size() < 1) {
 			Thread.sleep(100);
-			bindings = client.getBindingsBySource("/", "process-in-0");
+			bindings = RestUtils.getBindingsBySource(client, uri, "/", "process-in-0");
 		}
 		assertThat(bindings).isNotNull();
-		assertThat(bindings.get(0).getArguments()).contains(entry("added.by", "customizer"));
-		ExchangeInfo exchange = client.getExchange("/", "process-in-0");
-		assertThat(exchange.getArguments()).contains(entry("added.by", "customizer"));
-		QueueInfo queue = client.getQueue("/", bindings.get(0).getDestination());
-		assertThat(queue.getArguments()).contains(entry("added.by", "customizer"));
-		assertThat(queue.getArguments()).contains(entry("x-single-active-consumer", Boolean.TRUE));
+		assertThat((Map<String, Object>) bindings.get(0).get("arguments")).contains(entry("added.by", "customizer"));
+		Map<String, Object> exchange = RestUtils.getExchange(client, uri, "/", "process-in-0");
+		assertThat((Map<String, Object>) exchange.get("arguments")).contains(entry("added.by", "customizer"));
+		Map<String, Object> queue = RestUtils.getQueue(client, uri, "/", (String) bindings.get(0).get("destination"));
+		Map<String, Object> args = (Map<String, Object>) queue.get("arguments");
+		assertThat(args).contains(entry("added.by", "customizer"));
+		assertThat(args).contains(entry("x-single-active-consumer", Boolean.TRUE));
 	}
 
 	@Test

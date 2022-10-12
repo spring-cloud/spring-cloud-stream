@@ -16,16 +16,16 @@
 
 package org.springframework.cloud.stream.binder.rabbit;
 
-import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.DefaultConsumer;
-import com.rabbitmq.http.client.Client;
-import com.rabbitmq.http.client.domain.QueueInfo;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.testcontainers.containers.RabbitMQContainer;
@@ -42,6 +42,10 @@ import org.springframework.cloud.stream.binder.AbstractBinder;
 import org.springframework.cloud.stream.binder.rabbit.admin.RabbitAdminException;
 import org.springframework.cloud.stream.binder.rabbit.admin.RabbitBindingCleaner;
 import org.springframework.cloud.stream.binder.test.junit.rabbit.RabbitTestSupport;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.web.reactive.function.client.ExchangeFilterFunctions;
+import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.util.UriUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.fail;
@@ -57,18 +61,18 @@ public class RabbitBinderCleanerTests {
 
 	private static final String BINDER_PREFIX = "binder.";
 
-	private static final Client client;
+	private static final WebClient client;
+
 	static {
-		try {
-			client = new Client(RABBITMQ.getHttpUrl() + "/api", "guest", "guest");
-		}
-		catch (MalformedURLException | URISyntaxException e) {
-			throw new RabbitAdminException("Couldn't create a Client", e);
-		}
+		client = WebClient.builder()
+				.filter(ExchangeFilterFunctions
+						.basicAuthentication(RABBITMQ.getAdminUsername(), RABBITMQ.getAdminPassword()))
+				.build();
 	}
 
 	@RegisterExtension
-	private RabbitTestSupport rabbitTestSupport = new RabbitTestSupport(true, RABBITMQ.getAmqpPort(), RABBITMQ.getHttpPort());
+	private final RabbitTestSupport rabbitTestSupport = new RabbitTestSupport(true, RABBITMQ.getAmqpPort(),
+			RABBITMQ.getHttpPort());
 
 	@Test
 	public void testCleanStream() {
@@ -121,7 +125,7 @@ public class RabbitBinderCleanerTests {
 				String consumerTag = channel.basicConsume(queueName,
 						new DefaultConsumer(channel));
 				try {
-					waitForConsumerStateNot(queueName, 0);
+					waitForConsumerState(queueName, 1);
 					doClean(cleaner, stream1, false);
 					fail("Expected exception");
 				}
@@ -130,7 +134,7 @@ public class RabbitBinderCleanerTests {
 							.hasMessageContaining("Queue " + queueName + " is in use");
 				}
 				channel.basicCancel(consumerTag);
-				waitForConsumerStateNot(queueName, 1);
+				waitForConsumerState(queueName, 0);
 				try {
 					doClean(cleaner, stream1, false);
 					fail("Expected exception");
@@ -142,16 +146,25 @@ public class RabbitBinderCleanerTests {
 				return null;
 			}
 
-			private void waitForConsumerStateNot(String queueName, long state) throws InterruptedException {
+			private void waitForConsumerState(String queueName, long state)
+					throws InterruptedException, URISyntaxException {
+
 				int n = 0;
-				QueueInfo queue = client.getQueue("/",  queueName);
-				while (n++ < 100 && (queue == null || queue.getConsumerCount() == state)) {
+				Map<String, Object> queue = getQueue("/",  queueName);
+				while (n++ < 100 && !requiredState(state, queue)) {
 					Thread.sleep(100);
-					queue = client.getQueue("/",  queueName);
+					queue = getQueue("/",  queueName);
 				}
 				assertThat(n).withFailMessage(
 						"Consumer state remained at " + state + " after 10 seconds")
 						.isLessThan(100);
+			}
+
+			private boolean requiredState(long state, Map<String, Object> queue) {
+				Object consumers = queue.get("consumers");
+				return state == 0
+						? consumers == null || (Integer) consumers == 0
+						: consumers != null && (Integer) consumers == state;
 			}
 
 		});
@@ -186,8 +199,20 @@ public class RabbitBinderCleanerTests {
 		assertThat(cleanedExchanges).hasSize(6);
 	}
 
+	protected Map<String, Object> getQueue(String string, String queueName) throws URISyntaxException {
+		URI uri = new URI(RABBITMQ.getHttpUrl())
+				.resolve("/api/queues/" + UriUtils.encodePathSegment("/", StandardCharsets.UTF_8) + "/" + queueName);
+		return client.get()
+				.uri(uri)
+				.retrieve()
+				.bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {
+				})
+				.block(Duration.ofSeconds(10));
+	}
+
 	private static Map<String, List<String>> doClean(RabbitBindingCleaner cleaner, String entity, boolean isJob) {
-		return cleaner.clean(RABBITMQ.getHttpUrl() + "/api", "guest", "guest", "/", BINDER_PREFIX, entity, isJob);
+		return cleaner.clean(RABBITMQ.getHttpUrl() + "/api", RABBITMQ.getAdminUsername(), RABBITMQ.getAdminPassword(),
+				"/", BINDER_PREFIX, entity, isJob);
 	}
 
 }

@@ -19,6 +19,8 @@ package org.springframework.cloud.stream.binder.rabbit;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.Constructor;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -39,10 +41,6 @@ import java.util.stream.Collectors;
 import java.util.zip.Deflater;
 
 import com.rabbitmq.client.LongString;
-import com.rabbitmq.http.client.Client;
-import com.rabbitmq.http.client.domain.BindingInfo;
-import com.rabbitmq.http.client.domain.ExchangeInfo;
-import com.rabbitmq.http.client.domain.QueueInfo;
 import org.apache.commons.logging.Log;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -137,6 +135,8 @@ import org.springframework.messaging.support.GenericMessage;
 import org.springframework.retry.support.RetryTemplate;
 import org.springframework.util.MimeTypeUtils;
 import org.springframework.util.ReflectionUtils;
+import org.springframework.web.reactive.function.client.ExchangeFilterFunctions;
+import org.springframework.web.reactive.function.client.WebClient;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
@@ -156,13 +156,30 @@ import static org.mockito.Mockito.when;
 public class RabbitBinderTests extends
 		PartitionCapableBinderTests<RabbitTestBinder, ExtendedConsumerProperties<RabbitConsumerProperties>, ExtendedProducerProperties<RabbitProducerProperties>> {
 
-	private static final RabbitMQContainer RABBITMQ = RabbitTestContainer.sharedInstance();
+	protected static final RabbitMQContainer RABBITMQ = RabbitTestContainer.sharedInstance();
 
 	private static final String CLASS_UNDER_TEST_NAME = RabbitMessageChannelBinder.class.getSimpleName();
 
 	private static final String TEST_PREFIX = "bindertest.";
 
 	private static final String BIG_EXCEPTION_MESSAGE = new String(new byte[10_000]).replaceAll("\u0000", "x");
+
+	private static final WebClient client;
+
+	private static final URI uri;
+
+	static {
+		client = WebClient.builder()
+				.filter(ExchangeFilterFunctions
+						.basicAuthentication(RABBITMQ.getAdminUsername(), RABBITMQ.getAdminPassword()))
+				.build();
+		try {
+			uri = new URI(RABBITMQ.getHttpUrl() + "/api/");
+		}
+		catch (URISyntaxException ex) {
+			throw new IllegalStateException(ex);
+		}
+	}
 
 	@RegisterExtension
 	private final RabbitTestSupport rabbitTestSupport = new RabbitTestSupport(true, RABBITMQ.getAmqpPort(), RABBITMQ.getHttpPort());
@@ -566,8 +583,7 @@ public class RabbitBinderTests extends
 		assertThat(container.isRunning()).isTrue();
 		consumerBinding.unbind();
 		assertThat(container.isRunning()).isFalse();
-		Client client = new Client(adminUri());
-		List<?> bindings = client.getBindingsBySource("/", exchange.getName());
+		List<?> bindings = getBindingsBySource("/", exchange.getName());
 		assertThat(bindings.size()).isEqualTo(1);
 	}
 
@@ -642,30 +658,29 @@ public class RabbitBinderTests extends
 		consumerBinding.unbind();
 		assertThat(container.isRunning()).isFalse();
 		assertThat(container.getQueueNames()[0]).isEqualTo(group);
-		Client client = new Client(adminUri());
-		List<BindingInfo> bindings = client.getBindingsBySource("/", "propsUser2");
+		List<Map<String, Object>> bindings = getBindingsBySource("/", "propsUser2");
 		int n = 0;
-		while (n++ < 100 && bindings == null || bindings.size() < 1) {
+		while (n++ < 100 && bindings == null || bindings.size() < 2) {
 			Thread.sleep(100);
-			bindings = client.getBindingsBySource("/", "propsUser2");
+			bindings = getBindingsBySource("/", "propsUser2");
 		}
 		assertThat(bindings.size()).isEqualTo(2);
-		assertThat(bindings.get(0).getSource()).isEqualTo("propsUser2");
-		assertThat(bindings.get(0).getDestination()).isEqualTo(group);
-		assertThat(bindings.get(0).getRoutingKey()).isIn("foo", "bar");
-		assertThat(bindings.get(1).getSource()).isEqualTo("propsUser2");
-		assertThat(bindings.get(1).getDestination()).isEqualTo(group);
-		assertThat(bindings.get(1).getRoutingKey()).isIn("foo", "bar");
-		assertThat(bindings.get(1).getRoutingKey()).isNotEqualTo(bindings.get(0).getRoutingKey());
+		assertThat(bindings.get(0).get("source")).isEqualTo("propsUser2");
+		assertThat(bindings.get(0).get("destination")).isEqualTo(group);
+		assertThat(bindings.get(0).get("routing_key")).isIn("foo", "bar");
+		assertThat(bindings.get(1).get("source")).isEqualTo("propsUser2");
+		assertThat(bindings.get(1).get("destination")).isEqualTo(group);
+		assertThat(bindings.get(1).get("routing_key")).isIn("foo", "bar");
+		assertThat(bindings.get(1).get("routing_key")).isNotEqualTo(bindings.get(0).get("routing_key"));
 
-		ExchangeInfo exchange = client.getExchange("/", "propsUser2");
+		Map<String, Object> exchange = getExchange("/", "propsUser2");
 		while (n++ < 100 && exchange == null) {
 			Thread.sleep(100);
-			exchange = client.getExchange("/", "propsUser2");
+			exchange = getExchange("/", "propsUser2");
 		}
-		assertThat(exchange.getType()).isEqualTo("direct");
-		assertThat(exchange.isDurable()).isEqualTo(true);
-		assertThat(exchange.isAutoDelete()).isEqualTo(false);
+		assertThat(exchange.get("type")).isEqualTo("direct");
+		assertThat(exchange.get("durable")).isEqualTo(true);
+		assertThat(exchange.get("auto_delete")).isEqualTo(false);
 
 		verifyAutoDeclareContextClear(binder);
 	}
@@ -716,57 +731,56 @@ public class RabbitBinderTests extends
 		SimpleMessageListenerContainer container = TestUtils.getPropertyValue(endpoint,
 				"messageListenerContainer", SimpleMessageListenerContainer.class);
 		assertThat(container.isRunning()).isTrue();
-		Client client = new Client(adminUri());
-		List<BindingInfo> bindings = client.getBindingsBySource("/", "propsUser3");
+		List<Map<String, Object>> bindings = getBindingsBySource("/", "propsUser3");
 		int n = 0;
 		while (n++ < 100 && bindings == null || bindings.size() < 1) {
 			Thread.sleep(100);
-			bindings = client.getBindingsBySource("/", "propsUser3");
+			bindings = getBindingsBySource("/", "propsUser3");
 		}
 		assertThat(bindings.size()).isEqualTo(1);
-		assertThat(bindings.get(0).getSource()).isEqualTo("propsUser3");
-		assertThat(bindings.get(0).getDestination()).isEqualTo("propsUser3.infra");
-		assertThat(bindings.get(0).getRoutingKey()).isEqualTo("foo");
+		assertThat(bindings.get(0).get("source")).isEqualTo("propsUser3");
+		assertThat(bindings.get(0).get("destination")).isEqualTo("propsUser3.infra");
+		assertThat(bindings.get(0).get("routing_key")).isEqualTo("foo");
 
-		bindings = client.getBindingsBySource("/", "customDLX");
+		bindings = getBindingsBySource("/", "customDLX");
 		n = 0;
 		while (n++ < 100 && bindings == null || bindings.size() < 1) {
 			Thread.sleep(100);
-			bindings = client.getBindingsBySource("/", "customDLX");
+			bindings = getBindingsBySource("/", "customDLX");
 		}
 //		assertThat(bindings.size()).isEqualTo(1);
-		assertThat(bindings.get(0).getSource()).isEqualTo("customDLX");
-		assertThat(bindings.get(0).getDestination()).isEqualTo("customDLQ");
-		assertThat(bindings.get(0).getRoutingKey()).isEqualTo("customDLRK");
+		assertThat(bindings.get(0).get("source")).isEqualTo("customDLX");
+		assertThat(bindings.get(0).get("destination")).isEqualTo("customDLQ");
+		assertThat(bindings.get(0).get("routing_key")).isEqualTo("customDLRK");
 
-		ExchangeInfo exchange = client.getExchange("/", "propsUser3");
+		Map<String, Object> exchange = getExchange("/", "propsUser3");
 		n = 0;
 		while (n++ < 100 && exchange == null) {
 			Thread.sleep(100);
-			exchange = client.getExchange("/", "propsUser3");
+			exchange = getExchange("/", "propsUser3");
 		}
-		assertThat(exchange.getType()).isEqualTo("direct");
-		assertThat(exchange.isDurable()).isEqualTo(false);
-		assertThat(exchange.isAutoDelete()).isEqualTo(true);
+		assertThat(exchange.get("type")).isEqualTo("direct");
+		assertThat(exchange.get("durable")).isEqualTo(false);
+		assertThat(exchange.get("auto_delete")).isEqualTo(true);
 
-		exchange = client.getExchange("/", "customDLX");
+		exchange = getExchange("/", "customDLX");
 		n = 0;
 		while (n++ < 100 && exchange == null) {
 			Thread.sleep(100);
-			exchange = client.getExchange("/", "customDLX");
+			exchange = getExchange("/", "customDLX");
 		}
-		assertThat(exchange.getType()).isEqualTo("topic");
-		assertThat(exchange.isDurable()).isEqualTo(true);
-		assertThat(exchange.isAutoDelete()).isEqualTo(false);
+		assertThat(exchange.get("type")).isEqualTo("topic");
+		assertThat(exchange.get("durable")).isEqualTo(true);
+		assertThat(exchange.get("auto_delete")).isEqualTo(false);
 
-		QueueInfo queue = client.getQueue("/", "propsUser3.infra");
+		Map<String, Object> queue = getQueue("/", "propsUser3.infra");
 		n = 0;
-		while (n++ < 100 && queue == null || queue.getConsumerCount() == 0) {
+		while (n++ < 100 && queue == null || !requiredConsumerState(1, queue)) {
 			Thread.sleep(100);
-			queue = client.getQueue("/", "propsUser3.infra");
+			queue = getQueue("/", "propsUser3.infra");
 		}
 		assertThat(queue).isNotNull();
-		Map<String, Object> args = queue.getArguments();
+		Map<String, Object> args = (Map<String, Object>) queue.get("arguments");
 		assertThat(args.get("x-expires")).isEqualTo(30_000);
 		assertThat(args.get("x-max-length")).isEqualTo(10_000);
 		assertThat(args.get("x-max-length-bytes")).isEqualTo(100_000);
@@ -776,17 +790,17 @@ public class RabbitBinderTests extends
 		assertThat(args.get("x-dead-letter-exchange")).isEqualTo("customDLX");
 		assertThat(args.get("x-dead-letter-routing-key")).isEqualTo("customDLRK");
 		assertThat(args.get("x-queue-mode")).isEqualTo("lazy");
-		assertThat(queue.getExclusiveConsumerTag()).isEqualTo("testConsumerTag#0");
+		assertThat(queue.get("exclusive_consumer_tag")).isEqualTo("testConsumerTag#0");
 
-		queue = client.getQueue("/", "customDLQ");
+		queue = getQueue("/", "customDLQ");
 
 		n = 0;
 		while (n++ < 100 && queue == null) {
 			Thread.sleep(100);
-			queue = client.getQueue("/", "customDLQ");
+			queue = getQueue("/", "customDLQ");
 		}
 		assertThat(queue).isNotNull();
-		args = queue.getArguments();
+		args = (Map<String, Object>) queue.get("arguments");
 		assertThat(args.get("x-expires")).isEqualTo(60_000);
 		assertThat(args.get("x-max-length")).isEqualTo(20_000);
 		assertThat(args.get("x-max-length-bytes")).isEqualTo(40_000);
@@ -804,6 +818,7 @@ public class RabbitBinderTests extends
 	}
 
 
+	@SuppressWarnings("unchecked")
 	@Test
 	public void testConsumerPropertiesWithHeaderExchanges() throws Exception {
 		RabbitTestBinder binder = getBinder();
@@ -828,30 +843,31 @@ public class RabbitBinderTests extends
 		consumerBinding.unbind();
 		assertThat(container.isRunning()).isFalse();
 		assertThat(container.getQueueNames()[0]).isEqualTo("propsHeader." + group);
-		Client client = new Client(adminUri());
-		List<BindingInfo> bindings = client.getBindingsBySource("/", "propsHeader");
+		List<Map<String, Object>> bindings = getBindingsBySource("/", "propsHeader");
 		int n = 0;
 		while (n++ < 100 && bindings == null || bindings.size() < 1) {
 			Thread.sleep(100);
-			bindings = client.getBindingsBySource("/", "propsHeader");
+			bindings = getBindingsBySource("/", "propsHeader");
 		}
 		assertThat(bindings.size()).isEqualTo(1);
-		assertThat(bindings.get(0).getSource()).isEqualTo("propsHeader");
-		assertThat(bindings.get(0).getDestination()).isEqualTo("propsHeader." + group);
-		assertThat(bindings.get(0).getArguments()).hasEntrySatisfying("x-match", v -> assertThat(v).isEqualTo("any"));
-		assertThat(bindings.get(0).getArguments()).hasEntrySatisfying("foo", v -> assertThat(v).isEqualTo("bar"));
+		assertThat(bindings.get(0).get("source")).isEqualTo("propsHeader");
+		assertThat(bindings.get(0).get("destination")).isEqualTo("propsHeader." + group);
+		Map<String, Object> args = (Map<String, Object>) bindings.get(0).get("arguments");
+		assertThat(args).hasEntrySatisfying("x-match", v -> assertThat(v).isEqualTo("any"));
+		assertThat(args).hasEntrySatisfying("foo", v -> assertThat(v).isEqualTo("bar"));
 
-		bindings = client.getBindingsBySource("/", "propsHeader.dlx");
+		bindings = getBindingsBySource("/", "propsHeader.dlx");
 		n = 0;
 		while (n++ < 100 && bindings == null || bindings.size() < 1) {
 			Thread.sleep(100);
-			bindings = client.getBindingsBySource("/", "propsHeader.dlx");
+			bindings = getBindingsBySource("/", "propsHeader.dlx");
 		}
 		assertThat(bindings.size()).isEqualTo(1);
-		assertThat(bindings.get(0).getSource()).isEqualTo("propsHeader.dlx");
-		assertThat(bindings.get(0).getDestination()).isEqualTo("propsHeader." + group + ".dlq");
-		assertThat(bindings.get(0).getArguments()).hasEntrySatisfying("x-match", v -> assertThat(v).isEqualTo("any"));
-		assertThat(bindings.get(0).getArguments()).hasEntrySatisfying("foo", v -> assertThat(v).isEqualTo("bar"));
+		assertThat(bindings.get(0).get("source")).isEqualTo("propsHeader.dlx");
+		assertThat(bindings.get(0).get("destination")).isEqualTo("propsHeader." + group + ".dlq");
+		args = (Map<String, Object>) bindings.get(0).get("arguments");
+		assertThat(args).hasEntrySatisfying("x-match", v -> assertThat(v).isEqualTo("any"));
+		assertThat(args).hasEntrySatisfying("foo", v -> assertThat(v).isEqualTo("bar"));
 
 		verifyAutoDeclareContextClear(binder);
 	}
@@ -1107,22 +1123,22 @@ public class RabbitBinderTests extends
 		DirectChannel moduleInputChannel = createBindableChannel("input",
 				bindingProperties);
 		moduleInputChannel.setBeanName("dlqTestManual");
-		Client client = new Client(adminUri());
 		moduleInputChannel.subscribe(new MessageHandler() {
 
 			@Override
 			public void handleMessage(Message<?> message) throws MessagingException {
 				// Wait until the unacked state is reflected in the admin
-				QueueInfo info = client.getQueue("/", TEST_PREFIX + "dlqTestManual.default");
+				Map<String, Object> info = getQueue("/", TEST_PREFIX + "dlqTestManual.default");
 				int n = 0;
-				while (n++ < 100 && info.getMessagesUnacknowledged() < 1L) {
+				while (n++ < 100 && ( info.get("messages_unacknowledged") == null
+						|| ((Long) info.get("messages_unacknowledged")) < 1L)) {
 					try {
 						Thread.sleep(100);
 					}
 					catch (InterruptedException e) {
 						Thread.currentThread().interrupt();
 					}
-					info = client.getQueue("/", TEST_PREFIX + "dlqTestManual.default");
+					info = getQueue("/", TEST_PREFIX + "dlqTestManual.default");
 				}
 				throw new RuntimeException("foo");
 			}
@@ -1148,12 +1164,12 @@ public class RabbitBinderTests extends
 		assertThat(n).isLessThan(100);
 
 		n = 0;
-		QueueInfo info = client.getQueue("/", TEST_PREFIX + "dlqTestManual.default");
-		while (n++ < 100 && info.getMessagesUnacknowledged() > 0L) {
+		Map<String, Object> info = getQueue("/", TEST_PREFIX + "dlqTestManual.default");
+		while (n++ < 100 && unackedMessages(info)) {
 			Thread.sleep(100);
-			info = client.getQueue("/", TEST_PREFIX + "dlqTestManual.default");
+			info = getQueue("/", TEST_PREFIX + "dlqTestManual.default");
 		}
-		assertThat(info.getMessagesUnacknowledged()).isEqualTo(0L);
+		assertThat(unackedMessages(info)).isFalse();
 
 		consumerBinding.unbind();
 
@@ -1168,6 +1184,11 @@ public class RabbitBinderTests extends
 		assertThat(context.containsBean(TEST_PREFIX + "dlqTestManual.default.dlq")).isFalse();
 
 		verifyAutoDeclareContextClear(binder);
+	}
+
+	protected boolean unackedMessages(Map<String, Object> info) {
+		Object unack = info.get("messages_unacknowledged");
+		return unack != null && ((Integer) unack) > 0L;
 	}
 
 
@@ -2598,6 +2619,25 @@ public class RabbitBinderTests extends
 				TestUtils.getPropertyValue(binder, "binder.provisioningProvider.autoDeclareContext",
 						ApplicationContext.class);
 		assertThat(ctx.getBeansOfType(Declarable.class)).isEmpty();
+	}
+
+	private List<Map<String, Object>> getBindingsBySource(String vhost, String name) {
+		return RestUtils.getBindingsBySource(client, uri, vhost, name);
+	}
+
+	private Map<String, Object> getExchange(String vhost, String name) {
+		return RestUtils.getExchange(client, uri, vhost, name);
+	}
+
+	private Map<String, Object> getQueue(String vhost, String name) {
+		return RestUtils.getQueue(client, uri, vhost, name);
+	}
+
+	private boolean requiredConsumerState(long state, Map<String, Object> queue) {
+		Object consumers = queue.get("consumers");
+		return state == 0
+				? consumers == null || (Integer) consumers == 0
+				: consumers != null && (Integer) consumers == state;
 	}
 
 	public static class TestPartitionKeyExtractorClass
