@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.binder.kafka.streams;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -53,6 +54,7 @@ import org.springframework.util.StringUtils;
  * @author Renwei Han
  * @author Serhii Siryi
  * @author Nico Pommerening
+ * @author Chris Bono
  * @since 2.1.0
  */
 public class InteractiveQueryService {
@@ -63,6 +65,8 @@ public class InteractiveQueryService {
 
 	private final KafkaStreamsBinderConfigurationProperties binderConfigurationProperties;
 
+	private final KafkaStreamsVersionAgnosticTopologyInfoFacade topologyInfoFacade;
+
 	/**
 	 * Constructor for InteractiveQueryService.
 	 * @param kafkaStreamsRegistry holding {@link KafkaStreamsRegistry}
@@ -72,6 +76,7 @@ public class InteractiveQueryService {
 			KafkaStreamsBinderConfigurationProperties binderConfigurationProperties) {
 		this.kafkaStreamsRegistry = kafkaStreamsRegistry;
 		this.binderConfigurationProperties = binderConfigurationProperties;
+		this.topologyInfoFacade = new KafkaStreamsVersionAgnosticTopologyInfoFacade();
 	}
 
 	/**
@@ -85,15 +90,16 @@ public class InteractiveQueryService {
 
 		KafkaStreams contextSpecificKafkaStreams = getThreadContextSpecificKafkaStreams();
 
+		final StoreQueryParameters<T> storeQueryParams = StoreQueryParameters.fromNameAndType(storeName, storeType);
+
 		return getRetryTemplate().execute(context -> {
 			T store = null;
 			Throwable throwable = null;
 			if (contextSpecificKafkaStreams != null) {
 				try {
-					store = contextSpecificKafkaStreams.store(StoreQueryParameters.fromNameAndType(storeName, storeType));
+					store = contextSpecificKafkaStreams.store(storeQueryParams);
 				}
 				catch (InvalidStateStoreException e) {
-					// pass through..
 					throwable = e;
 				}
 			}
@@ -104,28 +110,40 @@ public class InteractiveQueryService {
 				LOG.warn("Store (" + storeName + ") could not be found in Streams context, falling back to all known Streams instances");
 			}
 
+			// Find all apps that know about the store
+			Map<KafkaStreams, T> candidateStores = new HashMap<>();
 			for (KafkaStreams kafkaStreamApp : kafkaStreamsRegistry.getKafkaStreams()) {
 				try {
-					return getStateStoreFromKafkaStreams(kafkaStreamApp, storeName, storeType);
+					candidateStores.put(kafkaStreamApp, kafkaStreamApp.store(storeQueryParams));
 				}
 				catch (Exception ex) {
 					throwable = ex;
 				}
 			}
+
+			// Store exists in a single app - no further resolution required
+			if (candidateStores.size() == 1) {
+				return candidateStores.values().stream().findFirst().get();
+			}
+
+			// If the store is in multiple streams apps - discard any apps that do not actually have the store
+			if (candidateStores.size() > 1) {
+
+				candidateStores = candidateStores.entrySet().stream()
+						.filter((e) -> this.topologyInfoFacade.streamsAppActuallyHasStore(e.getKey(), storeName))
+						.collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+				if (candidateStores.size() == 1) {
+					return candidateStores.values().stream().findFirst().get();
+				}
+
+				throwable = (candidateStores.size() == 0) ?
+						new UnknownStateStoreException("Store (" + storeName + ") not available to Streams instance") :
+						new InvalidStateStoreException("Store (" + storeName + ") available to more than one Streams instance");
+
+			}
 			throw new IllegalStateException("Error retrieving state store: " + storeName, throwable);
 		});
-	}
-
-	private <T> T getStateStoreFromKafkaStreams(KafkaStreams kafkaStreams, String storeName, QueryableStoreType<T> storeType) {
-		// Check KafkaStreams app knows about the state store
-		T store = kafkaStreams.store(StoreQueryParameters.fromNameAndType(storeName, storeType));
-
-		// Check KafkaStreams app actually has the state store
-		if (kafkaStreams.streamsMetadataForStore(storeName).stream()
-				.noneMatch((sm) -> sm.stateStoreNames().contains(storeName))) {
-			throw new UnknownStateStoreException("Store (" + storeName + ") not available to Streams instance");
-		}
-		return store;
 	}
 
 	/**
