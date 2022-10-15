@@ -16,7 +16,6 @@
 
 package org.springframework.cloud.stream.binder.kafka.streams;
 
-import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,7 +33,6 @@ import org.apache.kafka.streams.StoreQueryParameters;
 import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.errors.InvalidStateStoreException;
 import org.apache.kafka.streams.errors.UnknownStateStoreException;
-import org.apache.kafka.streams.processor.internals.TopologyMetadata;
 import org.apache.kafka.streams.state.HostInfo;
 import org.apache.kafka.streams.state.QueryableStoreType;
 import org.apache.kafka.streams.state.StreamsMetadata;
@@ -44,7 +42,6 @@ import org.springframework.retry.RetryPolicy;
 import org.springframework.retry.backoff.FixedBackOffPolicy;
 import org.springframework.retry.policy.SimpleRetryPolicy;
 import org.springframework.retry.support.RetryTemplate;
-import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
 
 /**
@@ -68,7 +65,7 @@ public class InteractiveQueryService {
 
 	private final KafkaStreamsBinderConfigurationProperties binderConfigurationProperties;
 
-	private final Field topologyMetadataField;
+	private final KafkaStreamsVersionAgnosticTopologyInfoFacade topologyInfoFacade;
 
 	/**
 	 * Constructor for InteractiveQueryService.
@@ -79,8 +76,7 @@ public class InteractiveQueryService {
 			KafkaStreamsBinderConfigurationProperties binderConfigurationProperties) {
 		this.kafkaStreamsRegistry = kafkaStreamsRegistry;
 		this.binderConfigurationProperties = binderConfigurationProperties;
-		this.topologyMetadataField = ReflectionUtils.findField(KafkaStreams.class, "topologyMetadata");
-		this.topologyMetadataField.setAccessible(true);
+		this.topologyInfoFacade = new KafkaStreamsVersionAgnosticTopologyInfoFacade();
 	}
 
 	/**
@@ -134,7 +130,7 @@ public class InteractiveQueryService {
 			if (candidateStores.size() > 1) {
 
 				candidateStores = candidateStores.entrySet().stream()
-						.filter((e) -> storeActuallyAvailable(e.getKey(), storeName))
+						.filter((e) -> this.topologyInfoFacade.streamsAppActuallyHasStore(e.getKey(), storeName))
 						.collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
 				if (candidateStores.size() == 1) {
@@ -148,17 +144,6 @@ public class InteractiveQueryService {
 			}
 			throw new IllegalStateException("Error retrieving state store: " + storeName, throwable);
 		});
-	}
-
-	private boolean storeActuallyAvailable(KafkaStreams kafkaStreams, String storeName) {
-		try {
-			TopologyMetadata topologyMetadata = (TopologyMetadata) ReflectionUtils.getField(topologyMetadataField, kafkaStreams);
-			return !topologyMetadata.sourceTopicsForStore(storeName, null).isEmpty();
-		}
-		catch (Exception ex) {
-			LOG.error("Unable to determine if store (" + storeName + ") is available to the app due to: " + ex.getMessage(), ex);
-		}
-		return false;
 	}
 
 	/**
