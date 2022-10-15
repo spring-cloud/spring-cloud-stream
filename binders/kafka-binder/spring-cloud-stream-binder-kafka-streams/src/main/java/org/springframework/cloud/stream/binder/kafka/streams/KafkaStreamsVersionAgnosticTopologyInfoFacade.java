@@ -19,10 +19,9 @@ package org.springframework.cloud.stream.binder.kafka.streams;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Collection;
+import java.util.StringJoiner;
 
 import org.apache.kafka.streams.KafkaStreams;
-import org.apache.kafka.streams.processor.internals.InternalTopologyBuilder;
-import org.apache.kafka.streams.processor.internals.TopologyMetadata;
 
 import org.springframework.core.log.LogAccessor;
 import org.springframework.lang.Nullable;
@@ -48,31 +47,45 @@ class KafkaStreamsVersionAgnosticTopologyInfoFacade {
 	@Nullable
 	private Method sourceTopicsForStoreMethod;
 
+	private boolean sourceTopicsForStoreMethodHasTwoArgs;
+
 	KafkaStreamsVersionAgnosticTopologyInfoFacade() {
+		this(KafkaStreams.class);
+	}
+
+	KafkaStreamsVersionAgnosticTopologyInfoFacade(Class<?> rootClass) {
 
 		// First look for KafkaStreams.internalTopologyBuilder (exists in kafka-streams <= 3.0)
-		Field internalTopologyBuilderField = ReflectionUtils.findField(KafkaStreams.class, "internalTopologyBuilder");
+		Field internalTopologyBuilderField = ReflectionUtils.findField(rootClass, "internalTopologyBuilder");
 		if (internalTopologyBuilderField != null) {
 			internalTopologyBuilderField.setAccessible(true);
 			this.topologyInfoField = internalTopologyBuilderField;
-			this.sourceTopicsForStoreMethod = ReflectionUtils.findMethod(InternalTopologyBuilder.class, "sourceTopicsForStore", String.class);
-			logger.info("Using KafkaStreams.internalTopologyBuilder.sourceTopicsForStore for kafka-streams <= 3.0");
+			this.sourceTopicsForStoreMethod = ReflectionUtils.findMethod(internalTopologyBuilderField.getType(), "sourceTopicsForStore", String.class);
 		}
 
 		// Otherwise look for KafkaStreams.topologyMetadata (exists in kafka-streams >= 3.1)
-		Field topologyMetadataField = ReflectionUtils.findField(KafkaStreams.class, "topologyMetadata");
-		if (topologyMetadataField != null) {
-			topologyMetadataField.setAccessible(true);
-			this.topologyInfoField = topologyMetadataField;
-			this.sourceTopicsForStoreMethod = ReflectionUtils.findMethod(TopologyMetadata.class, "sourceTopicsForStore", String.class);
-			logger.info("Using KafkaStreams.topologyMetadata.sourceTopicsForStore for kafka-streams >= 3.1");
+		if (this.sourceTopicsForStoreMethod == null) {
+			Field topologyMetadataField = ReflectionUtils.findField(rootClass, "topologyMetadata");
+			if (topologyMetadataField != null) {
+				topologyMetadataField.setAccessible(true);
+				this.topologyInfoField = topologyMetadataField;
+				this.sourceTopicsForStoreMethod = ReflectionUtils.findMethod(topologyMetadataField.getType(), "sourceTopicsForStore", String.class);
+				if (this.sourceTopicsForStoreMethod == null) {
+					// The sourceTopicsForStore method has extra arg in kafka-streams >= 3.3
+					this.sourceTopicsForStoreMethod = ReflectionUtils.findMethod(topologyMetadataField.getType(), "sourceTopicsForStore", String.class, String.class);
+					this.sourceTopicsForStoreMethodHasTwoArgs = true;
+				}
+			}
 		}
 
-		if (this.sourceTopicsForStoreMethod == null) {
+		if (this.sourceTopicsForStoreMethod != null) {
+			this.sourceTopicsForStoreMethod.setAccessible(true);
+			logger.info(() -> "Using " + methodDescription(this.sourceTopicsForStoreMethod));
+		}
+		else {
 			logger.warn("Could not find 'topologyMetadata.sourceTopicsForStore' or 'internalTopologyBuilder.sourceTopicsForStore' " +
 					"from KafkaStreams class - will be unable to reason about state stores.");
 		}
-
 	}
 
 	/**
@@ -91,17 +104,27 @@ class KafkaStreamsVersionAgnosticTopologyInfoFacade {
 		}
 		try {
 			Object topologyInfo = ReflectionUtils.getField(this.topologyInfoField, kafkaStreams);
-			if (topologyInfo != null) {
+			if (topologyInfo == null) {
 				logger.warn("Unable to reason about state store because topologyInfo field was null - returning false");
 				return false;
 			}
+			Object[] args = this.sourceTopicsForStoreMethodHasTwoArgs ?
+					new Object[] { storeName, null } : new Object[] { storeName };
 			Collection<String> sourceTopicsForStore = (Collection<String>)
-					ReflectionUtils.invokeMethod(this.sourceTopicsForStoreMethod, topologyInfo, storeName);
+					ReflectionUtils.invokeMethod(this.sourceTopicsForStoreMethod, topologyInfo, args);
 			return !CollectionUtils.isEmpty(sourceTopicsForStore);
 		}
 		catch (Exception ex) {
 			logger.error(ex, () -> "Unable to reason about state store due to error: " + ex.getMessage() + " - returning false");
 		}
 		return false;
+	}
+
+	private String methodDescription(Method method) {
+		StringJoiner sj = new StringJoiner(",", method.getName() + "(", ")");
+		for (Class<?> parameterType : method.getParameterTypes()) {
+			sj.add(parameterType.getTypeName());
+		}
+		return "method " + method.getDeclaringClass().getTypeName() + '.' + sj.toString();
 	}
 }
