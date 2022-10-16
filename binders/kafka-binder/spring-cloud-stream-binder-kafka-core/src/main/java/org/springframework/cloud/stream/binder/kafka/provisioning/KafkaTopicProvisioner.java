@@ -231,13 +231,13 @@ public class KafkaTopicProvisioner implements
 					properties.getExtension().isAutoRebalanceEnabled(),
 					properties.getExtension().getTopic());
 				int partitions = getPartitionsForTopic(name, adminClient);
-					consumerDestination = createDlqIfNeedBe(adminClient, name, group,
-						properties, anonymous, partitions);
-					if (consumerDestination == null) {
-						consumerDestination = new KafkaConsumerDestination(name,
-							partitions);
-					}
-					return consumerDestination;
+				consumerDestination = createDlqIfNeedBe(adminClient, name, group,
+					properties, anonymous, partitions);
+				if (consumerDestination == null) {
+					consumerDestination = new KafkaConsumerDestination(name,
+						partitions);
+				}
+				return consumerDestination;
 			}
 		}
 		return kafkaConsumerDestination;
