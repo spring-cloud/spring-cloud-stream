@@ -85,6 +85,7 @@ import org.springframework.util.StringUtils;
  * @author Oleg Zhurakousky
  * @author Aldo Sinanaj
  * @author Yi Liu
+ * @author Omer Celik
  */
 public class KafkaTopicProvisioner implements
 		// @checkstyle:off
@@ -179,28 +180,7 @@ public class KafkaTopicProvisioner implements
 			try (AdminClient adminClient = createAdminClient()) {
 				createTopic(adminClient, name, properties.getPartitionCount(), false,
 					properties.getExtension().getTopic());
-				int partitions = 0;
-				Map<String, TopicDescription> topicDescriptions = new HashMap<>();
-				this.metadataRetryOperations.execute(context -> {
-					try {
-						if (logger.isDebugEnabled()) {
-							logger.debug("Attempting to retrieve the description for the topic: " + name);
-						}
-						DescribeTopicsResult describeTopicsResult = adminClient
-							.describeTopics(Collections.singletonList(name));
-						KafkaFuture<Map<String, TopicDescription>> all = describeTopicsResult
-							.allTopicNames();
-						topicDescriptions.putAll(all.get(this.operationTimeout, TimeUnit.SECONDS));
-					}
-					catch (Exception ex) {
-						throw new ProvisioningException("Problems encountered with partitions finding for: " + name, ex);
-					}
-					return null;
-				});
-				TopicDescription topicDescription = topicDescriptions.get(name);
-				if (topicDescription != null) {
-					partitions = topicDescription.partitions().size();
-				}
+				int partitions = getPartitionsForTopic(name, adminClient);
 				return new KafkaProducerDestination(name, partitions);
 			}
 		}
@@ -250,15 +230,7 @@ public class KafkaTopicProvisioner implements
 				createTopic(adminClient, name, partitionCount,
 					properties.getExtension().isAutoRebalanceEnabled(),
 					properties.getExtension().getTopic());
-				DescribeTopicsResult describeTopicsResult = adminClient
-					.describeTopics(Collections.singletonList(name));
-				KafkaFuture<Map<String, TopicDescription>> all = describeTopicsResult
-					.allTopicNames();
-				try {
-					Map<String, TopicDescription> topicDescriptions = all
-						.get(this.operationTimeout, TimeUnit.SECONDS);
-					TopicDescription topicDescription = topicDescriptions.get(name);
-					int partitions = topicDescription.partitions().size();
+				int partitions = getPartitionsForTopic(name, adminClient);
 					consumerDestination = createDlqIfNeedBe(adminClient, name, group,
 						properties, anonymous, partitions);
 					if (consumerDestination == null) {
@@ -266,13 +238,35 @@ public class KafkaTopicProvisioner implements
 							partitions);
 					}
 					return consumerDestination;
-				}
-				catch (Exception ex) {
-					throw new ProvisioningException("Provisioning exception encountered for " + name, ex);
-				}
 			}
 		}
 		return kafkaConsumerDestination;
+	}
+	private int getPartitionsForTopic(String topicName, AdminClient adminClient) {
+		int partitions = 0;
+		Map<String, TopicDescription> topicDescriptions = retrieveTopicDescriptions(topicName, adminClient);
+		TopicDescription topicDescription = topicDescriptions.get(topicName);
+		if (topicDescription != null) {
+			partitions = topicDescription.partitions().size();
+		}
+		return partitions;
+	}
+
+	private Map<String, TopicDescription> retrieveTopicDescriptions(String topicName, AdminClient adminClient) {
+		return this.metadataRetryOperations.execute(context -> {
+			try {
+				if (logger.isDebugEnabled()) {
+					logger.debug("Attempting to retrieve the description for the topic: " + topicName);
+				}
+				DescribeTopicsResult describeTopicsResult = adminClient
+					.describeTopics(Collections.singletonList(topicName));
+				KafkaFuture<Map<String, TopicDescription>> all = describeTopicsResult
+					.allTopicNames();
+				return all.get(this.operationTimeout, TimeUnit.SECONDS);
+			} catch (Exception ex) {
+				throw new ProvisioningException("Problems encountered with partitions finding for: " + topicName, ex);
+			}
+		});
 	}
 
 	AdminClient createAdminClient() {
