@@ -85,6 +85,7 @@ import org.springframework.util.StringUtils;
  * @author Oleg Zhurakousky
  * @author Aldo Sinanaj
  * @author Yi Liu
+ * @author Omer Celik
  */
 public class KafkaTopicProvisioner implements
 		// @checkstyle:off
@@ -169,47 +170,27 @@ public class KafkaTopicProvisioner implements
 
 	@Override
 	public ProducerDestination provisionProducerDestination(final String name,
-			ExtendedProducerProperties<KafkaProducerProperties> properties) {
+															ExtendedProducerProperties<KafkaProducerProperties> properties) {
 
 		if (logger.isInfoEnabled()) {
 			logger.info("Using kafka topic for outbound: " + name);
 		}
-		KafkaTopicUtils.validateTopicName(name);
-		try (AdminClient adminClient = createAdminClient()) {
-			createTopic(adminClient, name, properties.getPartitionCount(), false,
+		if (this.configurationProperties.isAutoCreateTopics()) {
+			KafkaTopicUtils.validateTopicName(name);
+			try (AdminClient adminClient = createAdminClient()) {
+				createTopic(adminClient, name, properties.getPartitionCount(), false,
 					properties.getExtension().getTopic());
-			int partitions = 0;
-			Map<String, TopicDescription> topicDescriptions = new HashMap<>();
-			if (this.configurationProperties.isAutoCreateTopics()) {
-				this.metadataRetryOperations.execute(context -> {
-					try {
-						if (logger.isDebugEnabled()) {
-							logger.debug("Attempting to retrieve the description for the topic: " + name);
-						}
-						DescribeTopicsResult describeTopicsResult = adminClient
-								.describeTopics(Collections.singletonList(name));
-						KafkaFuture<Map<String, TopicDescription>> all = describeTopicsResult
-								.all();
-						topicDescriptions.putAll(all.get(this.operationTimeout, TimeUnit.SECONDS));
-					}
-					catch (Exception ex) {
-						throw new ProvisioningException("Problems encountered with partitions finding for: " + name, ex);
-					}
-					return null;
-				});
+				int partitions = getPartitionsForTopic(name, adminClient);
+				return new KafkaProducerDestination(name, partitions);
 			}
-			TopicDescription topicDescription = topicDescriptions.get(name);
-			if (topicDescription != null) {
-				partitions = topicDescription.partitions().size();
-			}
-			return new KafkaProducerDestination(name, partitions);
 		}
+		return new KafkaProducerDestination(name, 0);
 	}
 
 	@Override
 	public ConsumerDestination provisionConsumerDestination(final String name,
-			final String group,
-			ExtendedConsumerProperties<KafkaConsumerProperties> properties) {
+															final String group,
+															ExtendedConsumerProperties<KafkaConsumerProperties> properties) {
 		if (!properties.isMultiplex()) {
 			return doProvisionConsumerDestination(name, group, properties);
 		}
@@ -221,56 +202,70 @@ public class KafkaTopicProvisioner implements
 			return new KafkaConsumerDestination(name);
 		}
 	}
-
 	private ConsumerDestination doProvisionConsumerDestination(final String name,
-			final String group,
-			ExtendedConsumerProperties<KafkaConsumerProperties> properties) {
-
+															   final String group,
+															   ExtendedConsumerProperties<KafkaConsumerProperties> properties) {
+		final KafkaConsumerDestination kafkaConsumerDestination = new KafkaConsumerDestination(name);
 		if (properties.getExtension().isDestinationIsPattern()) {
 			Assert.isTrue(!properties.getExtension().isEnableDlq(),
-					"enableDLQ is not allowed when listening to topic patterns");
+				"enableDLQ is not allowed when listening to topic patterns");
 			if (logger.isDebugEnabled()) {
 				logger.debug("Listening to a topic pattern - " + name
-						+ " - no provisioning performed");
+					+ " - no provisioning performed");
 			}
-			return new KafkaConsumerDestination(name);
+			return kafkaConsumerDestination;
 		}
-		KafkaTopicUtils.validateTopicName(name);
-		boolean anonymous = !StringUtils.hasText(group);
-		Assert.isTrue(!anonymous || !properties.getExtension().isEnableDlq(),
+		if (this.configurationProperties.isAutoCreateTopics()) {
+			KafkaTopicUtils.validateTopicName(name);
+			boolean anonymous = !StringUtils.hasText(group);
+			Assert.isTrue(!anonymous || !properties.getExtension().isEnableDlq(),
 				"DLQ support is not available for anonymous subscriptions");
-		if (properties.getInstanceCount() == 0) {
-			throw new IllegalArgumentException("Instance count cannot be zero");
-		}
-		int partitionCount = properties.getInstanceCount() * properties.getConcurrency();
-		ConsumerDestination consumerDestination = new KafkaConsumerDestination(name);
-		try (AdminClient adminClient = createAdminClient()) {
-			createTopic(adminClient, name, partitionCount,
+			if (properties.getInstanceCount() == 0) {
+				throw new IllegalArgumentException("Instance count cannot be zero");
+			}
+			int partitionCount = properties.getInstanceCount() * properties.getConcurrency();
+			ConsumerDestination consumerDestination;
+			try (AdminClient adminClient = createAdminClient()) {
+				createTopic(adminClient, name, partitionCount,
 					properties.getExtension().isAutoRebalanceEnabled(),
 					properties.getExtension().getTopic());
-			if (this.configurationProperties.isAutoCreateTopics()) {
-				DescribeTopicsResult describeTopicsResult = adminClient
-						.describeTopics(Collections.singletonList(name));
-				KafkaFuture<Map<String, TopicDescription>> all = describeTopicsResult
-						.all();
-				try {
-					Map<String, TopicDescription> topicDescriptions = all
-							.get(this.operationTimeout, TimeUnit.SECONDS);
-					TopicDescription topicDescription = topicDescriptions.get(name);
-					int partitions = topicDescription.partitions().size();
-					consumerDestination = createDlqIfNeedBe(adminClient, name, group,
-							properties, anonymous, partitions);
-					if (consumerDestination == null) {
-						consumerDestination = new KafkaConsumerDestination(name,
-								partitions);
-					}
+				int partitions = getPartitionsForTopic(name, adminClient);
+				consumerDestination = createDlqIfNeedBe(adminClient, name, group,
+					properties, anonymous, partitions);
+				if (consumerDestination == null) {
+					consumerDestination = new KafkaConsumerDestination(name,
+						partitions);
 				}
-				catch (Exception ex) {
-					throw new ProvisioningException("Provisioning exception encountered for " + name, ex);
-				}
+				return consumerDestination;
 			}
 		}
-		return consumerDestination;
+		return kafkaConsumerDestination;
+	}
+
+	private int getPartitionsForTopic(String topicName, AdminClient adminClient) {
+		int partitions = 0;
+		Map<String, TopicDescription> topicDescriptions = retrieveTopicDescriptions(topicName, adminClient);
+		TopicDescription topicDescription = topicDescriptions.get(topicName);
+		if (topicDescription != null) {
+			partitions = topicDescription.partitions().size();
+		}
+		return partitions;
+	}
+
+	private Map<String, TopicDescription> retrieveTopicDescriptions(String topicName, AdminClient adminClient) {
+		return this.metadataRetryOperations.execute(context -> {
+			try {
+				if (logger.isDebugEnabled()) {
+					logger.debug("Attempting to retrieve the description for the topic: " + topicName);
+				}
+				DescribeTopicsResult describeTopicsResult = adminClient
+					.describeTopics(Collections.singletonList(topicName));
+				KafkaFuture<Map<String, TopicDescription>> all = describeTopicsResult.all();
+				return all.get(this.operationTimeout, TimeUnit.SECONDS);
+			} catch (Exception ex) {
+				throw new ProvisioningException("Problems encountered with partitions finding for: " + topicName, ex);
+			}
+		});
 	}
 
 	AdminClient createAdminClient() {
