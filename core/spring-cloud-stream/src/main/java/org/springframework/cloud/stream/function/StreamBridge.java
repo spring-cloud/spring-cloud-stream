@@ -264,7 +264,6 @@ public final class StreamBridge implements SmartInitializingSingleton {
 
 		Type functionType = ResolvableType.forClassWithGenerics(Function.class, Object.class, Object.class).getType();
 		((FunctionRegistry) this.functionCatalog).register(fr.type(functionType));
-		Map<String, DirectWithAttributesChannel> channels = applicationContext.getBeansOfType(DirectWithAttributesChannel.class);
 		this.initialized = true;
 	}
 
