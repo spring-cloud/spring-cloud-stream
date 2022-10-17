@@ -63,6 +63,14 @@ public interface Binding<T> extends Pausable {
 	}
 
 	/**
+	 * Will always return false unless overriden.
+	 */
+	@Override
+	default boolean isPaused() {
+		return false;
+	}
+
+	/**
 	 * Pauses the target component represented by this instance if and only if the
 	 * component implements {@link Pausable} interface NOTE: At the time the instance is
 	 * created the component is already started and active. This operation is typically
