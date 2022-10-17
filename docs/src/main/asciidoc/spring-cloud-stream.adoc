@@ -2917,7 +2917,6 @@ Now you can test your microservice as a simple unit test
 [source,java]
 ----
 @SpringBootTest
-@RunWith(SpringRunner.class)
 public class SampleStreamTests {
 
 	@Autowired
