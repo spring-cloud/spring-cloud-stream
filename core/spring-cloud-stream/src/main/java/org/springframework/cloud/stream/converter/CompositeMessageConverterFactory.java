@@ -76,7 +76,7 @@ public class CompositeMessageConverterFactory {
 			List<? extends MessageConverter> customConverters,
 			ObjectMapper objectMapper, JsonMapper jsonMapper) {
 		this.objectMapper = objectMapper == null ? new ObjectMapper() : objectMapper;
-		this.jsonMapper = jsonMapper == null ? new JacksonMapper(objectMapper) : jsonMapper;	
+		this.jsonMapper = jsonMapper == null ? new JacksonMapper(objectMapper) : jsonMapper;
 		if (!CollectionUtils.isEmpty(customConverters)) {
 			this.converters = new ArrayList<>(customConverters);
 		}
@@ -111,7 +111,7 @@ public class CompositeMessageConverterFactory {
 					@Nullable Object conversionHint) {
 				/*
 				 * We must revisit this. This is a copy from ApplicationMarshallingMessageConverter which derived from an older class etc. . .
-				 * This attempts to use JSON conversion to convert something that is not json in the first place. 
+				 * This attempts to use JSON conversion to convert something that is not json in the first place.
 				 * For example Integer payload with application/json CT should actually fail since Integer is not a JSON.
 				 * This is !!!!wrong!!!!! and ONLY remains here for backward compatibility.
 				 */
