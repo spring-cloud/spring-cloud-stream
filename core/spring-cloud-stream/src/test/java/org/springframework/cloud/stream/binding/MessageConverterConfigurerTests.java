@@ -44,14 +44,14 @@ import static org.assertj.core.api.Assertions.fail;
  */
 public class MessageConverterConfigurerTests {
 
-	// @Test
+//	@Test
 	void testConfigureOutputChannelWithBadContentType() {
 		BindingServiceProperties props = new BindingServiceProperties();
 		BindingProperties bindingProps = new BindingProperties();
 		bindingProps.setContentType("application/json");
 		props.setBindings(Collections.singletonMap("foo", bindingProps));
 		CompositeMessageConverterFactory converterFactory = new CompositeMessageConverterFactory(
-				Collections.<MessageConverter>emptyList(), null);
+				Collections.<MessageConverter>emptyList(), null, null);
 		MessageConverterConfigurer configurer = new MessageConverterConfigurer(props,
 				converterFactory.getMessageConverterForAllRegistered());
 		QueueChannel out = new QueueChannel();
@@ -86,7 +86,7 @@ public class MessageConverterConfigurerTests {
 
 		};
 		CompositeMessageConverterFactory converterFactory = new CompositeMessageConverterFactory(
-				Collections.<MessageConverter>singletonList(converter), null);
+				Collections.<MessageConverter>singletonList(converter), null, null);
 		MessageConverterConfigurer configurer = new MessageConverterConfigurer(props,
 				converterFactory.getMessageConverterForAllRegistered());
 		QueueChannel out = new QueueChannel();

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2017 the original author or authors.
+ * Copyright 2015-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package org.springframework.cloud.stream.converter;
 
+import java.io.ByteArrayOutputStream;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -23,10 +25,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.fasterxml.jackson.core.JsonEncoding;
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import org.springframework.cloud.function.context.config.JsonMessageConverter;
+import org.springframework.cloud.function.json.JacksonMapper;
+import org.springframework.cloud.function.json.JsonMapper;
 import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.lang.Nullable;
 import org.springframework.messaging.MessageHeaders;
@@ -55,8 +62,10 @@ public class CompositeMessageConverterFactory {
 
 	private final List<MessageConverter> converters;
 
+	private final JsonMapper jsonMapper;
+
 	public CompositeMessageConverterFactory() {
-		this(Collections.<MessageConverter>emptyList(), new ObjectMapper());
+		this(Collections.<MessageConverter>emptyList(), new ObjectMapper(), null);
 	}
 
 	/**
@@ -65,8 +74,9 @@ public class CompositeMessageConverterFactory {
 	 */
 	public CompositeMessageConverterFactory(
 			List<? extends MessageConverter> customConverters,
-			ObjectMapper objectMapper) {
-		this.objectMapper = objectMapper;
+			ObjectMapper objectMapper, JsonMapper jsonMapper) {
+		this.objectMapper = objectMapper == null ? new ObjectMapper() : objectMapper;
+		this.jsonMapper = jsonMapper == null ? new JacksonMapper(objectMapper) : jsonMapper;	
 		if (!CollectionUtils.isEmpty(customConverters)) {
 			this.converters = new ArrayList<>(customConverters);
 		}
@@ -95,10 +105,36 @@ public class CompositeMessageConverterFactory {
 	}
 
 	private void initDefaultConverters() {
-		ApplicationJsonMessageMarshallingConverter applicationJsonConverter = new ApplicationJsonMessageMarshallingConverter(
-				this.objectMapper);
-		applicationJsonConverter.setStrictContentTypeMatch(true);
-		this.converters.add(applicationJsonConverter);
+		this.converters.add(new JsonMessageConverter(this.jsonMapper) {
+			@Override
+			protected Object convertToInternal(Object payload, @Nullable MessageHeaders headers,
+					@Nullable Object conversionHint) {
+				/*
+				 * We must revisit this. This is a copy from ApplicationMarshallingMessageConverter which derived from an older class etc. . .
+				 * This attempts to use JSON conversion to convert something that is not json in the first place. 
+				 * For example Integer payload with application/json CT should actually fail since Integer is not a JSON.
+				 * This is !!!!wrong!!!!! and ONLY remains here for backward compatibility.
+				 */
+				if (payload instanceof String) {
+					return ((String) payload).getBytes(StandardCharsets.UTF_8);
+				}
+				try {
+					if (byte[].class == getSerializedPayloadClass()) {
+						ByteArrayOutputStream out = new ByteArrayOutputStream(1024);
+						JsonEncoding encoding = getJsonEncoding(getMimeType(headers));
+						try (JsonGenerator generator = objectMapper.getFactory().createGenerator(out, encoding)) {
+							objectMapper.writeValue(generator, payload);
+							payload = out.toByteArray();
+							return payload;
+						}
+					}
+				}
+				catch (Exception e) {
+					logger.debug("Failed to convert to byte[]", e);
+				}
+				return super.convertToInternal(payload, headers, conversionHint);
+			}
+		});
 		this.converters.add(new ByteArrayMessageConverter() {
 			@Override
 			protected boolean supports(Class<?> clazz) {
@@ -109,6 +145,23 @@ public class CompositeMessageConverterFactory {
 			}
 		});
 		this.converters.add(new ObjectStringMessageConverter());
+	}
+
+	/**
+	 * Determine the JSON encoding to use for the given content type.
+	 * @param contentType the MIME type from the MessageHeaders, if any
+	 * @return the JSON encoding to use (never {@code null})
+	 */
+	private JsonEncoding getJsonEncoding(@Nullable MimeType contentType) {
+		if (contentType != null && contentType.getCharset() != null) {
+			Charset charset = contentType.getCharset();
+			for (JsonEncoding encoding : JsonEncoding.values()) {
+				if (charset.name().equals(encoding.getJavaName())) {
+					return encoding;
+				}
+			}
+		}
+		return JsonEncoding.UTF8;
 	}
 
 	/**

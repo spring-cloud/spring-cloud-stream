@@ -23,11 +23,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.cloud.function.json.JsonMapper;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Role;
 import org.springframework.integration.context.IntegrationContextUtils;
+import org.springframework.lang.Nullable;
 import org.springframework.messaging.converter.CompositeMessageConverter;
 import org.springframework.messaging.converter.MessageConverter;
 
@@ -43,13 +45,13 @@ class ContentTypeConfiguration {
 	@Bean(name = IntegrationContextUtils.ARGUMENT_RESOLVER_MESSAGE_CONVERTER_BEAN_NAME)
 	public CompositeMessageConverter configurableCompositeMessageConverter(
 			ObjectProvider<ObjectMapper> objectMapperObjectProvider,
-			List<MessageConverter> customMessageConverters) {
+			List<MessageConverter> customMessageConverters, @Nullable JsonMapper jsonMapper) {
 
 		customMessageConverters = customMessageConverters.stream()
 				.filter(c -> isConverterEligible(c)).collect(Collectors.toList());
 
 		CompositeMessageConverterFactory factory =
-				new CompositeMessageConverterFactory(customMessageConverters, objectMapperObjectProvider.getIfAvailable(ObjectMapper::new));
+				new CompositeMessageConverterFactory(customMessageConverters, objectMapperObjectProvider.getIfAvailable(ObjectMapper::new), jsonMapper);
 
 		return factory.getMessageConverterForAllRegistered();
 	}
