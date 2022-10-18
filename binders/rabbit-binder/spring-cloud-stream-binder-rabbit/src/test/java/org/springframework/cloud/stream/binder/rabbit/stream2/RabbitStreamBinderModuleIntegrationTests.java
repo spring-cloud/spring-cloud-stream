@@ -21,7 +21,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import com.rabbitmq.stream.Address;
-import com.rabbitmq.stream.Environment;
 import com.rabbitmq.stream.OffsetSpecification;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.RabbitMQContainer;
@@ -32,6 +31,7 @@ import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.listener.MessageListenerContainer;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.amqp.EnvironmentBuilderCustomizer;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.stream.binder.BinderFactory;
 import org.springframework.cloud.stream.binder.Binding;
@@ -105,10 +105,9 @@ public class RabbitStreamBinderModuleIntegrationTests {
 		}
 
 		@Bean
-		Environment rabbitEnvironment() {
-			return Environment.builder()
-					.addressResolver(add -> new Address("localhost", RABBITMQ.getMappedPort(5552)))
-					.build();
+		EnvironmentBuilderCustomizer environmenCustomizer() {
+			return env -> env
+					.addressResolver(add -> new Address("localhost", RABBITMQ.getMappedPort(5552)));
 		}
 
 		@Bean
