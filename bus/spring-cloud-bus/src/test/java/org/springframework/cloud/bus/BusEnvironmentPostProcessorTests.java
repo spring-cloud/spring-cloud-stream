@@ -41,7 +41,7 @@ public class BusEnvironmentPostProcessorTests {
 		assertThat(env.getProperty("spring.cloud.stream.function.bindings." + BUS_CONSUMER + "-in-0")).isEqualTo(INPUT);
 		assertThat(env.getProperty("spring.cloud.stream.bindings." + INPUT + ".destination")).isEqualTo(DESTINATION);
 		assertThat(env.getProperty("spring.cloud.stream.bindings." + OUTPUT + ".destination")).isEqualTo(DESTINATION);
-		assertThat(env.getProperty(BusProperties.PREFIX + ".id")).isEqualTo("application:0:123");
+		assertThat(env.getProperty(BusProperties.PREFIX + ".id")).isEqualTo("application:8080:123");
 		assertThat(env.getPropertySources().contains(OVERRIDES_PROPERTY_SOURCE_NAME));
 		assertThat(env.getPropertySources().contains(DEFAULTS_PROPERTY_SOURCE_NAME));
 	}
@@ -55,7 +55,7 @@ public class BusEnvironmentPostProcessorTests {
 		assertThat(env.getProperty("spring.cloud.stream.function.bindings." + BUS_CONSUMER + "-in-0")).isEqualTo(INPUT);
 		assertThat(env.getProperty("spring.cloud.stream.bindings." + INPUT + ".destination")).isEqualTo(DESTINATION);
 		assertThat(env.getProperty("spring.cloud.stream.bindings." + OUTPUT + ".destination")).isEqualTo(DESTINATION);
-		assertThat(env.getProperty(BusProperties.PREFIX + ".id")).isEqualTo("application:dev:0:123");
+		assertThat(env.getProperty(BusProperties.PREFIX + ".id")).isEqualTo("application:dev:8080:123");
 		assertThat(env.getPropertySources().contains(OVERRIDES_PROPERTY_SOURCE_NAME));
 		assertThat(env.getPropertySources().contains(DEFAULTS_PROPERTY_SOURCE_NAME));
 	}
