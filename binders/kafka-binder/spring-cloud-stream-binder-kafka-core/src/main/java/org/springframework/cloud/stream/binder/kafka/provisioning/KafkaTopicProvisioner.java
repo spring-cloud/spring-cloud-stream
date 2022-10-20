@@ -203,8 +203,8 @@ public class KafkaTopicProvisioner implements
 		}
 	}
 	private ConsumerDestination doProvisionConsumerDestination(final String name,
-															   final String group,
-															   ExtendedConsumerProperties<KafkaConsumerProperties> properties) {
+															final String group,
+															ExtendedConsumerProperties<KafkaConsumerProperties> properties) {
 		final KafkaConsumerDestination kafkaConsumerDestination = new KafkaConsumerDestination(name);
 		if (properties.getExtension().isDestinationIsPattern()) {
 			Assert.isTrue(!properties.getExtension().isEnableDlq(),
@@ -262,7 +262,8 @@ public class KafkaTopicProvisioner implements
 					.describeTopics(Collections.singletonList(topicName));
 				KafkaFuture<Map<String, TopicDescription>> all = describeTopicsResult.all();
 				return all.get(this.operationTimeout, TimeUnit.SECONDS);
-			} catch (Exception ex) {
+			}
+			catch (Exception ex) {
 				throw new ProvisioningException("Problems encountered with partitions finding for: " + topicName, ex);
 			}
 		});
