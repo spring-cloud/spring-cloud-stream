@@ -263,7 +263,8 @@ public class KafkaTopicProvisioner implements
 				KafkaFuture<Map<String, TopicDescription>> all = describeTopicsResult
 					.allTopicNames();
 				return all.get(this.operationTimeout, TimeUnit.SECONDS);
-			} catch (Exception ex) {
+			}
+			catch (Exception ex) {
 				throw new ProvisioningException("Problems encountered with partitions finding for: " + topicName, ex);
 			}
 		});
