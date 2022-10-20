@@ -3,15 +3,18 @@
 
 == Introduction
 
-When organizations have a messaging based pub/sub architecture and multiple producer and consumer microservices communicate each other, it is often necessary for all those microservices to agree on a contract that is based on a schema.
+When organizations have a messaging based pub/sub architecture and multiple producer and consumer microservices communicate with each other, it is often necessary for all those microservices to agree on a contract that is based on a schema.
 When such a schema needs to evolve to accommodate new business requirements, the existing components are still required to continue to work.
-This project provides support for a standalone schema registry server using which aforementioned schema can be registered and used by the applications.
-It also contains support for avro based schema registry clients, which essentially provide message converters that communicates with the schema registry for reconciling schema during message conversion.
-The schema evolution support provided by this project works both with the aforementioned standalone schema registry as well as the schema registry provided by Confluent that specifically works with Apache Kafka.
+Spring Cloud Stream provides support for a standalone schema registry server using which aforementioned schema can be registered and used by the applications.
+Spring Cloud Stream schema registry support also provides support for avro based schema registry clients, which essentially provide message converters that communicates with the schema registry for reconciling schema during message conversion.
+The schema evolution support provided by Spring Cloud Stream works both with the aforementioned standalone schema registry as well as the schema registry provided by Confluent that specifically works with Apache Kafka.
 
 ==== Spring Cloud Stream Schema Registry overview
 
-Spring Cloud Stream Schema Registry provides support for schema evolution so that the data can be evolved over time and still work with older or newer producers and consumers and vice versa. Most serialization models, especially the ones that aim for portability across different platforms and languages, rely on a schema that describes how the data is serialized in the binary payload. In order to serialize the data and then to interpret it, both the sending and receiving sides must have access to a schema that describes the binary format. In certain cases, the schema can be inferred from the payload type on serialization or from the target type on deserialization.
+Spring Cloud Stream Schema Registry provides support for schema evolution so that the data can be evolved over time and still work with older or newer producers and consumers and vice versa.
+Most serialization models, especially the ones that aim for portability across different platforms and languages, rely on a schema that describes how the data is serialized in the binary payload.
+In order to serialize the data and then to interpret it, both the sending and receiving sides must have access to a schema that describes the binary format.
+In certain cases, the schema can be inferred from the payload type on serialization or from the target type on deserialization.
 However, many applications benefit from having access to an explicit schema that describes the binary data format.
 A schema registry lets you store schema information in a textual format (typically JSON) and makes that information accessible to various applications that need it to receive and send data in binary format.
 A schema is referenceable as a tuple consisting of:
@@ -26,7 +29,7 @@ Spring Cloud Stream Schema Registry provides the following components
 
 * Standalone Schema Registry Server
 
-  By default, it is using an H2 database, but server can be used with other databases by providing appropriate datasource configuration.
+  By default, it is using an H2 database, but server can be used with PostgreSQL or MySQL by providing appropriate datasource configuration.
 
 * Schema registry clients capable of message marshalling by communicating with a Schema Registry.
 
@@ -55,12 +58,11 @@ A client for the Spring Cloud Stream schema registry can be configured by using 
 
 [source,java]
 ----
-  @EnableBinding(Sink.class)
-  @SpringBootApplication
-  @EnableSchemaRegistryClient
-  public static class AvroSinkApplication {
-    //...
-  }
+@SpringBootApplication
+@EnableSchemaRegistryClient
+public class ConsumerApplication {
+
+}
 ----
 
 NOTE: The default converter is optimized to cache not only the schemas from the remote server but also the `parse()` and `toString()` methods, which are quite expensive.
@@ -84,14 +86,14 @@ Default:: `false`
 
 === Avro Schema Registry Client Message Converters
 
-For applications that have a SchemaRegistryClient bean registered with the application context, Spring Cloud Stream auto configures an Apache Avro message converter for schema management.
+For applications that have a SchemaRegistryClient bean registered with the application context, Spring Cloud Stream auto-configures an Apache Avro message converter for schema management.
 This eases schema evolution, as applications that receive messages can get easy access to a writer schema that can be reconciled with their own reader schema.
 
-For outbound messages, if the content type of the channel is set to `application/*+avro`, the `MessageConverter` is activated, as shown in the following example:
+For outbound messages, if the content type of the binding is set to `application/*+avro`, the `MessageConverter` is activated, as shown in the following example:
 
 [source,properties]
 ----
-spring.cloud.stream.stream.bindings.output.contentType=application/*+avro
+spring.cloud.stream.stream.bindings.<output-binding-name>.contentType=application/*+avro
 ----
 
 During the outbound conversion, the message converter tries to infer the schema of each outbound messages (based on its type) and register it to a subject (based on the payload type) by using the `SchemaRegistryClient`.
@@ -105,13 +107,14 @@ When receiving messages, the converter infers the schema reference from the head
 
 ==== Avro Schema Registry Message Converter Properties
 
-If you have enabled Avro based schema registry client by setting `spring.cloud.stream.stream.bindings.output.contentType=application/*+avro`, you can customize the behavior of the registration by setting the following properties.
+If you have enabled Avro based schema registry client by setting `spring.cloud.stream.stream.bindings.<output-binding-name>.contentType=application/*+avro`, you can customize the behavior of the registration by setting the following properties.
 
 spring.cloud.stream.schema.avro.dynamicSchemaGenerationEnabled:: Enable if you want the converter to use reflection to infer a Schema from a POJO.
 +
 Default: `false`
 +
-spring.cloud.stream.schema.avro.readerSchema:: Avro compares schema versions by looking at a writer schema (origin payload) and a reader schema (your application payload). See the https://avro.apache.org/docs/1.7.6/spec.html[Avro documentation] for more information. If set, this overrides any lookups at the schema server and uses the local schema as the reader schema.
+spring.cloud.stream.schema.avro.readerSchema:: Avro compares schema versions by looking at a writer schema (origin payload) and a reader schema (your application payload). See the https://avro.apache.org/docs/1.11.1/spec.html[Avro documentation] for more information.
+If set, this overrides any lookups at the schema server and uses the local schema as the reader schema.
 Default: `null`
 +
 spring.cloud.stream.schema.avro.schemaLocations:: Registers any `.avsc` files listed in this property with the Schema Server.
@@ -121,8 +124,7 @@ Default: `empty`
 spring.cloud.stream.schema.avro.prefix:: The prefix to be used on the Content-Type header.
 +
 Default: `vnd`
-spring.cloud.stream.schema.avro.subjectNamingStrategy:: Determines the subject name used to register the Avro schema in the schema registry. Two implementations are available, `org.springframework.cloud.stream.schema.avro.DefaultSubjectNamingStrategy`,
-where the subject is the schema name, and `org.springframework.cloud.stream.schema.avro.QualifiedSubjectNamingStrategy`, which returns a fully qualified subject using the Avro schema namespace and name. Custom strategies can be created by implementing `org.springframework.cloud.stream.schema.avro.SubjectNamingStrategy`.
+spring.cloud.stream.schema.avro.subjectNamingStrategy:: Determines the subject name used to register the Avro schema in the schema registry. Two implementations are available, `org.springframework.cloud.stream.schema.avro.DefaultSubjectNamingStrategy`, where the subject is the schema name, and `org.springframework.cloud.stream.schema.avro.QualifiedSubjectNamingStrategy`, which returns a fully qualified subject using the Avro schema namespace and name. Custom strategies can be created by implementing `org.springframework.cloud.stream.schema.avro.SubjectNamingStrategy`.
 +
 Default: `org.springframework.cloud.stream.schema.avro.DefaultSubjectNamingStrategy`
 
@@ -139,7 +141,8 @@ The `spring-cloud-stream-schema-registry-client` module contains two types of me
 === Converters with Schema Support
 
 The `AvroSchemaMessageConverter` supports serializing and deserializing messages either by using a predefined schema or by using the schema information available in the class (either reflectively or contained in the `SpecificRecord`).
-If you provide a custom converter, then the default AvroSchemaMessageConverter bean is not created. The following example shows a custom converter:
+If you provide a custom converter, then the default AvroSchemaMessageConverter bean is not created.
+The following example shows a custom converter:
 
 To use custom converters, you can simply add it to the application context, optionally specifying one or more `MimeTypes` with which to associate it.
 The default `MimeType` is `application/avro`.
@@ -151,7 +154,6 @@ In this example, note that the mime type value is `avro/bytes`, not the default 
 
 [source,java]
 ----
-@EnableBinding(Sink.class)
 @SpringBootApplication
 public static class SinkApplication {
 
@@ -168,7 +170,6 @@ Conversely, the following application registers a converter with a predefined sc
 
 [source,java]
 ----
-@EnableBinding(Sink.class)
 @SpringBootApplication
 public static class SinkApplication {
 
@@ -190,8 +191,8 @@ To use it, you can download latest `spring-cloud-stream-schema-registry-server` 
 
 [source,bash]
 ----
-wget https://repo.spring.io/libs-milestone/org/springframework/cloud/spring-cloud-stream-schema-registry-server/1.0.0.RC2/spring-cloud-stream-schema-registry-server-1.0.0.RC2.jar
-java -jar ./spring-cloud-stream-schema-registry-server-1.0.0.RC2.jar
+wget https://repo.spring.io/artifactory/libs-snapshot-local/org/springframework/cloud/spring-cloud-stream-schema-registry-server/4.0.0-SNAPSHOT/spring-cloud-stream-schema-registry-server-4.0.0-SNAPSHOT.jar
+java -jar ./spring-cloud-stream-schema-registry-server-4.0.0-SNAPSHOT.jar
 ----
 
 [TIP]
