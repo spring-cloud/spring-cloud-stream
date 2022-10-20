@@ -35,7 +35,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class Producer1ApplicationKafka {
 
-	private Random random = new Random();
+	private final Random random = new Random();
 
 	@Autowired
 	private StreamBridge streamBridge;

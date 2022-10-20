@@ -41,7 +41,7 @@ import com.example.Sensor;
 @RestController
 public class Producer2ApplicationKafka {
 
-	private Random random = new Random();
+	private final Random random = new Random();
 
 	@Autowired
 	private StreamBridge streamBridge;

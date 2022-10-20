@@ -17,6 +17,26 @@ docker-compose -f ./kafka-cluster.yml down
 
 TIP: To start the containers in the foreground simply add `-d` to the start command. To stop containers that are running in the foreground simple issue `CTRL-C` command.
 
+Running a quick test:
+
+Now that we started our clusters, let us try to produce data to a topic on the cluster and then consume from it.
+
+To produce data to a topic named `input-topic`:
+
+```
+docker exec -it broker1 /bin/kafka-console-producer --bootstrap-server localhost:29091 --topic input-topic
+```
+
+Note the use of bootstrap-server at `localhost:29091`.
+This port is internal to the docker container.
+
+To consume from the `input-topic`:
+
+```
+docker exec -it broker1 /bin/kafka-console-consumer --bootstrap-server localhost:29091 --topic input-topic
+```
+
+Enter some data on the producer console and hit enter, you should see the same data gets echoed on the consumer console.
 
 === Control Center UI
 Runs a https://docs.confluent.io/platform/current/control-center/index.html[Confluent Control Center] that exposes a UI at http://locahost:9021.
