@@ -70,6 +70,7 @@ public class ReactorKafkaBinderTests {
 		KafkaBinderConfigurationProperties binderProps = new KafkaBinderConfigurationProperties(kafkaProperties);
 		KafkaTopicProvisioner provisioner = new KafkaTopicProvisioner(binderProps, kafkaProperties, prop -> {
 		});
+		provisioner.setMetadataRetryOperations(new RetryTemplate());
 		ReactorKafkaBinder binder = new ReactorKafkaBinder(binderProps, provisioner);
 		binder.setApplicationContext(mock(GenericApplicationContext.class));
 
@@ -123,6 +124,7 @@ public class ReactorKafkaBinderTests {
 		KafkaBinderConfigurationProperties binderProps = new KafkaBinderConfigurationProperties(kafkaProperties);
 		KafkaTopicProvisioner provisioner = new KafkaTopicProvisioner(binderProps, kafkaProperties, prop -> {
 		});
+		provisioner.setMetadataRetryOperations(new RetryTemplate());
 		ReactorKafkaBinder binder = new ReactorKafkaBinder(binderProps, provisioner);
 		binder.setApplicationContext(mock(GenericApplicationContext.class));
 
