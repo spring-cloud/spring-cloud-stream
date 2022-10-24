@@ -44,8 +44,9 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.integration.amqp.inbound.AmqpInboundChannelAdapter;
 import org.springframework.integration.amqp.inbound.AmqpMessageSource;
-import org.springframework.integration.amqp.outbound.AmqpOutboundEndpoint;
 import org.springframework.lang.Nullable;
+import org.springframework.messaging.MessageHandler;
+import org.springframework.util.CollectionUtils;
 
 
 /**
@@ -78,9 +79,9 @@ public class RabbitMessageChannelBinderConfiguration {
 
 	@Bean
 	RabbitMessageChannelBinder rabbitMessageChannelBinder(
-			@Nullable ListenerContainerCustomizer<MessageListenerContainer> listenerContainerCustomizer,
+			@Nullable List<ListenerContainerCustomizer<MessageListenerContainer>> listenerContainerCustomizers,
 			@Nullable MessageSourceCustomizer<AmqpMessageSource> sourceCustomizer,
-			@Nullable ProducerMessageHandlerCustomizer<AmqpOutboundEndpoint> producerMessageHandlerCustomizer,
+			@Nullable List<ProducerMessageHandlerCustomizer<MessageHandler>> producerMessageHandlerCustomizers,
 			@Nullable ConsumerEndpointCustomizer<AmqpInboundChannelAdapter> consumerCustomizer,
 			List<DeclarableCustomizer> declarableCustomizers,
 			@Nullable ConnectionNameStrategy connectionNameStrategy) {
@@ -91,9 +92,31 @@ public class RabbitMessageChannelBinderConfiguration {
 			((AbstractConnectionFactory) this.rabbitConnectionFactory).setConnectionNameStrategy(f -> connectionNamePrefix
 					+ "#" + nameIncrementer.getAndIncrement());
 		}
+
+		ListenerContainerCustomizer<MessageListenerContainer> composedCistomizer = new ListenerContainerCustomizer<>() {
+			@Override
+			public void configure(MessageListenerContainer container, String destinationName, String group) {
+				if (!CollectionUtils.isEmpty(listenerContainerCustomizers)) {
+					for (ListenerContainerCustomizer<MessageListenerContainer> customizer : listenerContainerCustomizers) {
+						customizer.configure(container, destinationName, group);
+					}
+				}
+			}
+		};
+		ProducerMessageHandlerCustomizer<MessageHandler> producerMessageHandlerCustomizer = new ProducerMessageHandlerCustomizer<>() {
+			@Override
+			public void configure(MessageHandler handler, String destinationName) {
+				if (!CollectionUtils.isEmpty(producerMessageHandlerCustomizers)) {
+					for (ProducerMessageHandlerCustomizer<MessageHandler> customizer : producerMessageHandlerCustomizers) {
+						customizer.configure(handler, destinationName);
+					}
+				}
+			}
+		};
+
 		RabbitMessageChannelBinder binder = new RabbitMessageChannelBinder(
 				this.rabbitConnectionFactory, this.rabbitProperties,
-				provisioningProvider(declarableCustomizers), listenerContainerCustomizer, sourceCustomizer);
+				provisioningProvider(declarableCustomizers), composedCistomizer, sourceCustomizer);
 		binder.setAdminAddresses(
 				this.rabbitBinderConfigurationProperties.getAdminAddresses());
 		binder.setCompressingPostProcessor(gZipPostProcessor());

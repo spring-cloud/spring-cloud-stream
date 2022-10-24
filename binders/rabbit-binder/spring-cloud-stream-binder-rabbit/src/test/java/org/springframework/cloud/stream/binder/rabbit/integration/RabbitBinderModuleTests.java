@@ -71,9 +71,10 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.integration.amqp.inbound.AmqpInboundChannelAdapter;
 import org.springframework.integration.amqp.inbound.AmqpMessageSource;
-import org.springframework.integration.amqp.outbound.AmqpOutboundEndpoint;
 import org.springframework.integration.channel.DirectChannel;
+import org.springframework.integration.handler.AbstractMessageHandler;
 import org.springframework.messaging.MessageChannel;
+import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.support.GenericMessage;
 import org.springframework.retry.backoff.ExponentialBackOffPolicy;
 import org.springframework.retry.policy.SimpleRetryPolicy;
@@ -421,8 +422,10 @@ public class RabbitBinderModuleTests {
 
 		@Bean
 		public ListenerContainerCustomizer<MessageListenerContainer> containerCustomizer() {
-			return (c, q, g) -> ((AbstractMessageListenerContainer) c).setBeanName(
-				"setByCustomizerForQueue:" + q + (g == null ? "" : ",andGroup:" + g));
+			return (c, q, g) -> {
+				((AbstractMessageListenerContainer) c).setBeanName(
+						"setByCustomizerForQueue:" + q + (g == null ? "" : ",andGroup:" + g));
+			};
 		}
 
 		@Bean
@@ -431,8 +434,12 @@ public class RabbitBinderModuleTests {
 		}
 
 		@Bean
-		public ProducerMessageHandlerCustomizer<AmqpOutboundEndpoint> messageHandlerCustomizer() {
-			return (handler, destinationName) -> handler.setBeanName("setByCustomizer:" + destinationName);
+		public ProducerMessageHandlerCustomizer<MessageHandler> messageHandlerCustomizer() {
+			return (handler, destinationName) -> {
+				if (handler instanceof AbstractMessageHandler) {
+					((AbstractMessageHandler) handler).setBeanName("setByCustomizer:" + destinationName);
+				}
+			};
 		}
 
 		@Bean

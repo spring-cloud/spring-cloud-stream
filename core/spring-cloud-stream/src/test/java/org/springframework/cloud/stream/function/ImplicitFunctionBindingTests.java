@@ -1475,8 +1475,7 @@ public class ImplicitFunctionBindingTests {
 			return new FunctionAroundWrapper() {
 
 				@Override
-				protected Object doApply(Object input,
-						FunctionInvocationWrapper targetFunction) {
+				protected Object doApply(Object input, FunctionInvocationWrapper targetFunction) {
 					return targetFunction.apply(input);
 				}
 			};
