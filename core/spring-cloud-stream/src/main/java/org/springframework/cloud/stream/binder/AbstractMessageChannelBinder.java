@@ -303,7 +303,8 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		};
 
 		Lifecycle companion = null;
-		String companionLifecycleName = destination + "_spca";
+		String outputChannelName = ((AbstractMessageChannel) outputChannel).getBeanName();
+		String companionLifecycleName = outputChannelName + "_spca";
 		if (this.getApplicationContext().containsBean(companionLifecycleName)) {
 			companion = this.getApplicationContext().getBean(companionLifecycleName, Lifecycle.class);
 		}
