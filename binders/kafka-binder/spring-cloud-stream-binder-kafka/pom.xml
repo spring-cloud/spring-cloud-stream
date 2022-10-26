@@ -60,21 +60,6 @@
 			<artifactId>spring-cloud-stream-binder-test</artifactId>
 			<scope>test</scope>
 		</dependency>
-		<!-- Following dependencies are needed to support Kafka 1.1.0 client-->
-		<dependency>
-			<groupId>org.apache.kafka</groupId>
-			<artifactId>kafka-clients</artifactId>
-			<classifier>test</classifier>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.kafka</groupId>
-			<artifactId>kafka_2.13</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.kafka</groupId>
-			<artifactId>kafka_2.13</artifactId>
-			<classifier>test</classifier>
-		</dependency>
 		<dependency>
 			<groupId>org.awaitility</groupId>
 			<artifactId>awaitility</artifactId>
