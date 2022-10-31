@@ -198,7 +198,7 @@ public class AvroSchemaRegistryClientMessageConverterTests {
 
 		@Bean
 		ServletWebServerFactory servletWebServerFactory() {
-			return new TomcatServletWebServerFactory();
+			return new TomcatServletWebServerFactory(0);
 		}
 
 	}

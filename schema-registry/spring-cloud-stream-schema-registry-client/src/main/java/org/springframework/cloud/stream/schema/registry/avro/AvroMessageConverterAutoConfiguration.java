@@ -41,8 +41,8 @@ import org.springframework.util.ReflectionUtils;
  */
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnClass(name = "org.apache.avro.Schema")
-@ConditionalOnProperty(value = "spring.cloud.schemaRegistryClient.enabled", matchIfMissing = true)
-@ConditionalOnBean(type = "org.springframework.cloud.stream.schema.registry.client.SchemaRegistryClient")
+@ConditionalOnProperty(value = "spring.cloud.stream.schemaRegistryClient.enabled", matchIfMissing = true)
+@ConditionalOnBean(SchemaRegistryClient.class)
 @EnableConfigurationProperties({ AvroMessageConverterProperties.class })
 @Import(AvroSchemaServiceManagerImpl.class)
 public class AvroMessageConverterAutoConfiguration {
