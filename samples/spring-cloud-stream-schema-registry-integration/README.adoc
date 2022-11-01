@@ -172,3 +172,34 @@ applied.
 
 Because each payload also includes the payload version in the header, Spring Cloud Stream with the help of Schema Registry server and Avro, the schema evolution occurs behind the scenes.
 The automatic mapping of `temperature` to `internalTemperature` field is applied, since that's the field where the `aliases` is defined.
+
+=== Using Confluent Schema Registry with Spring Cloud Stream Schema Registry AVRO Converter Clients
+
+In the examples above, we used Spring Cloud Stream Schema Registry Server with AVRO converter clients in Spring Cloud Stream.
+What if you want to use these converters, but against Confluent Schema Registry Server?
+In order to make it work, you need to provide a custom `SchemaRegistryClient` bean in your applications that knows how to interact with Confluent Schema Registry.
+
+```
+@Configuration
+static class ConfluentSchemaRegistryConfiguration {
+    @Bean
+    public SchemaRegistryClient schemaRegistryClient(@Value("${spring.cloud.stream.schema-registry-client.endpoint:http://localhost:8081}") String endpoint){
+        ConfluentSchemaRegistryClient client = new ConfluentSchemaRegistryClient();
+        client.setEndpoint(endpoint);
+        return client;
+    }
+}
+```
+
+As you can see, we are using a specific implementation of `SchemaRegistryClient` - `ConfluentSchemaRegistryClient`.
+
+You need to add this to both the producers and consumer applications.
+
+If you started Confluent Schema Registry server at a non-default server/port (`localhost:8081`), then you need to provide that using the following property.
+
+```
+spring.cloud.stream.schema-registry-client.endpoint
+```
+
+That's all there to it.
+The same applications that previously interacted with Spring Cloud Stream Schema Registry server now interacts with the Confluent Schema Registry Server using the same set of AVRO message converters provided by Spring Cloud Stream Schema Registry.
