@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.binder.kafka.streams.integration;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -164,7 +165,7 @@ public class KafkaStreamsBinderHealthIndicatorTests {
 			latch.await(5, TimeUnit.SECONDS);
 
 			embeddedKafka.consumeFromEmbeddedTopics(consumer, topics);
-			KafkaTestUtils.getRecords(consumer, 1000);
+			KafkaTestUtils.getRecords(consumer, Duration.ofSeconds(1));
 
 			TimeUnit.SECONDS.sleep(5);
 			checkHealth(context, expected);

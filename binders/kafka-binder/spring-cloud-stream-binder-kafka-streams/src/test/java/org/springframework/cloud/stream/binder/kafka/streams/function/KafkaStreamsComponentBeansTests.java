@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.binder.kafka.streams.function;
 
+import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -169,7 +170,7 @@ public class KafkaStreamsComponentBeansTests {
 				template.sendDefault("foobar");
 				template.setDefaultTopic("testBiFunctionComponent-in-1");
 				template.sendDefault("foobar");
-				final ConsumerRecords<String, String> records = KafkaTestUtils.getRecords(consumer2, 10_000, 2);
+				final ConsumerRecords<String, String> records = KafkaTestUtils.getRecords(consumer2, Duration.ofSeconds(10), 2);
 				assertThat(records.count()).isEqualTo(2);
 				records.forEach(stringStringConsumerRecord -> assertThat(stringStringConsumerRecord.value().contains("foobar")).isTrue());
 			}
@@ -259,7 +260,7 @@ public class KafkaStreamsComponentBeansTests {
 				template.sendDefault("foobar");
 				template.setDefaultTopic("testCurriedFunctionWithFunctionTerminal-in-2");
 				template.sendDefault("foobar");
-				final ConsumerRecords<String, String> records = KafkaTestUtils.getRecords(consumer3, 10_000, 3);
+				final ConsumerRecords<String, String> records = KafkaTestUtils.getRecords(consumer3, Duration.ofSeconds(10), 3);
 				assertThat(records.count()).isEqualTo(3);
 				records.forEach(stringStringConsumerRecord -> assertThat(stringStringConsumerRecord.value().contains("foobar")).isTrue());
 			}
