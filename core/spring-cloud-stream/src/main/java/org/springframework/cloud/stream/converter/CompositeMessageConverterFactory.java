@@ -16,7 +16,6 @@
 
 package org.springframework.cloud.stream.converter;
 
-import java.io.ByteArrayOutputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -26,7 +25,6 @@ import java.util.List;
 import java.util.Map;
 
 import com.fasterxml.jackson.core.JsonEncoding;
-import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -76,7 +74,7 @@ public class CompositeMessageConverterFactory {
 			List<? extends MessageConverter> customConverters,
 			ObjectMapper objectMapper, JsonMapper jsonMapper) {
 		this.objectMapper = objectMapper == null ? new ObjectMapper() : objectMapper;
-		this.jsonMapper = jsonMapper == null ? new JacksonMapper(objectMapper) : jsonMapper;
+		this.jsonMapper = jsonMapper == null ? new JacksonMapper(this.objectMapper) : jsonMapper;
 		if (!CollectionUtils.isEmpty(customConverters)) {
 			this.converters = new ArrayList<>(customConverters);
 		}
@@ -117,20 +115,6 @@ public class CompositeMessageConverterFactory {
 				 */
 				if (payload instanceof String) {
 					return ((String) payload).getBytes(StandardCharsets.UTF_8);
-				}
-				try {
-					if (byte[].class == getSerializedPayloadClass()) {
-						ByteArrayOutputStream out = new ByteArrayOutputStream(1024);
-						JsonEncoding encoding = getJsonEncoding(getMimeType(headers));
-						try (JsonGenerator generator = objectMapper.getFactory().createGenerator(out, encoding)) {
-							objectMapper.writeValue(generator, payload);
-							payload = out.toByteArray();
-							return payload;
-						}
-					}
-				}
-				catch (Exception e) {
-					logger.debug("Failed to convert to byte[]", e);
 				}
 				return super.convertToInternal(payload, headers, conversionHint);
 			}
