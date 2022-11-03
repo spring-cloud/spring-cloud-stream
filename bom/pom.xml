@@ -7,11 +7,11 @@
 	<packaging>pom</packaging>
 	<name>spring-cloud-stream-release-build</name>
 	<description>Spring Cloud Stream Release Build</description>
-	<version>3.2.6-SNAPSHOT</version>
+	<version>3.2.6</version>
 	<parent>
 		<groupId>org.springframework.cloud</groupId>
 		<artifactId>spring-cloud-build</artifactId>
-		<version>3.1.5-SNAPSHOT</version>
+		<version>3.1.5</version>
 		<relativePath/>
 	</parent>
 
