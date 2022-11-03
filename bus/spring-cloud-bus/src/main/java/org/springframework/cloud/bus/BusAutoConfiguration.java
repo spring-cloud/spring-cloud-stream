@@ -19,7 +19,7 @@ package org.springframework.cloud.bus;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.actuate.autoconfigure.endpoint.condition.ConditionalOnAvailableEndpoint;
 import org.springframework.boot.actuate.endpoint.annotation.Endpoint;
-import org.springframework.boot.actuate.trace.http.HttpTraceRepository;
+import org.springframework.boot.actuate.web.exchanges.HttpExchangeRepository;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -68,13 +68,13 @@ public class BusAutoConfiguration {
 
 	@Configuration(proxyBeanMethods = false)
 	@ConditionalOnClass({ Endpoint.class })
-	@ConditionalOnBean(HttpTraceRepository.class)
+	@ConditionalOnBean(HttpExchangeRepository.class)
 	@ConditionalOnProperty(BusProperties.PREFIX + ".trace.enabled")
 	protected static class BusAckTraceConfiguration {
 
 		@Bean
 		@ConditionalOnMissingBean
-		public TraceListener ackTraceListener(HttpTraceRepository repository) {
+		public TraceListener ackTraceListener(HttpExchangeRepository repository) {
 			return new TraceListener(repository);
 		}
 

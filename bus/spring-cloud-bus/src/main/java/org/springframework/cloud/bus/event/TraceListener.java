@@ -22,12 +22,12 @@ import java.util.Map;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import org.springframework.boot.actuate.trace.http.HttpTraceRepository;
+import org.springframework.boot.actuate.web.exchanges.HttpExchangeRepository;
 import org.springframework.context.event.EventListener;
 
 /**
  * A listener for sends and acks of remote application events. Inserts a record for each
- * signal in the {@link HttpTraceRepository}.
+ * signal in the {@link HttpExchangeRepository}.
  *
  * @author Dave Syer
  */
@@ -35,9 +35,9 @@ public class TraceListener {
 
 	private static Log log = LogFactory.getLog(TraceListener.class);
 
-	private HttpTraceRepository repository;
+	private HttpExchangeRepository repository;
 
-	public TraceListener(HttpTraceRepository repository) {
+	public TraceListener(HttpExchangeRepository repository) {
 		this.repository = repository;
 	}
 
