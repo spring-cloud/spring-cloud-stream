@@ -1245,7 +1245,7 @@ ProducerMessageHandlerCustomizer<MessageHandler> handlerCustomizer() {
 ====
 
 Refer to the https://rabbitmq.github.io/rabbitmq-stream-java-client/stable/htmlsingle/[RabbitMQ Stream Java Client documentation] for information about configuring the environment and producer builder.
-=======
+
 [[rabbit-binder-health-indicator]]
 == Rabbit Binder Health Indicator
 
