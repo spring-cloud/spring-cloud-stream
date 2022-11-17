@@ -19,6 +19,7 @@ package org.springframework.cloud.stream.schema.avro;
 import java.io.IOException;
 import java.util.UUID;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.boot.WebApplicationType;
@@ -44,6 +45,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * @author Christian Tzolov
  */
+@Disabled
 public class AvroSchemaLocationsTest {
 
 	@Test
