@@ -28,7 +28,7 @@ import org.springframework.util.Assert;
  */
 public class CachingRegistryClient implements SchemaRegistryClient {
 
-	private static final String CACHE_PREFIX = "org.springframework.cloud.schema.registry.client";
+	private static final String CACHE_PREFIX = "org.springframework.cloud.stream.schema.registry.client";
 
 	private static final String ID_CACHE = CACHE_PREFIX + ".schemaByIdCache";
 
