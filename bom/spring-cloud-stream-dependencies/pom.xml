@@ -25,11 +25,8 @@
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
-				<artifactId>spring-cloud-stream</artifactId>
+				<artifactId>spring-cloud-stream-test-binder</artifactId>
 				<version>${project.version}</version>
-				<type>test-jar</type>
-				<scope>test</scope>
-				<classifier>test-binder</classifier>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
