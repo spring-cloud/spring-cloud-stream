@@ -26,7 +26,7 @@ import org.springframework.context.annotation.Configuration;
  * @author Marius Bogoevici
  */
 @Configuration
-public class MockBinderConfiguration {
+public class IntegrationTestsMockBinderConfiguration {
 
 	@Bean
 	public Binder<?, ?, ?> binder() {
