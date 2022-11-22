@@ -32,6 +32,7 @@ import java.util.regex.Pattern;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Envelope;
+import org.jetbrains.annotations.NotNull;
 
 import org.springframework.amqp.AmqpRejectAndDontRequeueException;
 import org.springframework.amqp.ImmediateAcknowledgeAmqpException;
@@ -54,7 +55,6 @@ import org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer
 import org.springframework.amqp.rabbit.listener.DirectMessageListenerContainer;
 import org.springframework.amqp.rabbit.listener.MessageListenerContainer;
 import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
-import org.springframework.amqp.rabbit.retry.RejectAndDontRequeueRecoverer;
 import org.springframework.amqp.rabbit.retry.RepublishMessageRecoverer;
 import org.springframework.amqp.rabbit.support.DefaultMessagePropertiesConverter;
 import org.springframework.amqp.rabbit.support.ListenerExecutionFailedException;
@@ -121,8 +121,7 @@ import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
 /**
- * A {@link org.springframework.cloud.stream.binder.Binder} implementation backed by
- * RabbitMQ.
+ * A {@link org.springframework.cloud.stream.binder.Binder} implementation backed by RabbitMQ.
  *
  * @author Mark Fisher
  * @author Gary Russell
@@ -209,8 +208,9 @@ public class RabbitMessageChannelBinder extends
 	}
 
 	/**
-	 * Set a {@link MessagePostProcessor} to decompress messages. Defaults to a
-	 * {@link DelegatingDecompressingPostProcessor} with its default delegates.
+	 * Set a {@link MessagePostProcessor} to decompress messages. Defaults to a {@link
+	 * DelegatingDecompressingPostProcessor} with its default delegates.
+	 *
 	 * @param decompressingPostProcessor the post processor.
 	 */
 	public void setDecompressingPostProcessor(
@@ -219,9 +219,9 @@ public class RabbitMessageChannelBinder extends
 	}
 
 	/**
-	 * Set a {@link org.springframework.amqp.core.MessagePostProcessor} to compress
-	 * messages. Defaults to a
-	 * {@link org.springframework.amqp.support.postprocessor.GZipPostProcessor}.
+	 * Set a {@link org.springframework.amqp.core.MessagePostProcessor} to compress messages. Defaults to a {@link
+	 * org.springframework.amqp.support.postprocessor.GZipPostProcessor}.
+	 *
 	 * @param compressingPostProcessor the post processor.
 	 */
 	public void setCompressingPostProcessor(
@@ -279,8 +279,7 @@ public class RabbitMessageChannelBinder extends
 	}
 
 	/**
-	 * Get the underlying {@link ConnectionFactory} instance to
-	 * allow manually altering the connection lifecycle.
+	 * Get the underlying {@link ConnectionFactory} instance to allow manually altering the connection lifecycle.
 	 */
 	public ConnectionFactory getConnectionFactory() {
 		return this.connectionFactory;
@@ -398,8 +397,8 @@ public class RabbitMessageChannelBinder extends
 				endpoint.setConfirmNackChannel(errorChannel);
 				String ackChannelBeanName = StringUtils
 						.hasText(extendedProperties.getConfirmAckChannel())
-								? extendedProperties.getConfirmAckChannel()
-								: IntegrationContextUtils.NULL_CHANNEL_BEAN_NAME;
+						? extendedProperties.getConfirmAckChannel()
+						: IntegrationContextUtils.NULL_CHANNEL_BEAN_NAME;
 				if (!ackChannelBeanName.equals(IntegrationContextUtils.NULL_CHANNEL_BEAN_NAME)
 						&& !getApplicationContext().containsBean(ackChannelBeanName)) {
 					GenericApplicationContext context = (GenericApplicationContext) getApplicationContext();
@@ -453,7 +452,7 @@ public class RabbitMessageChannelBinder extends
 		Expression delayExpression = extendedProperties.getDelayExpression();
 		return (rkExpression != null && interceptorNeededPattern.matcher(rkExpression.getExpressionString()).find())
 				|| (delayExpression != null
-						&& interceptorNeededPattern.matcher(delayExpression.getExpressionString()).find());
+				&& interceptorNeededPattern.matcher(delayExpression.getExpressionString()).find());
 	}
 
 	private void checkConnectionFactoryIsErrorCapable() {
@@ -486,9 +485,9 @@ public class RabbitMessageChannelBinder extends
 			boolean rootIsExpression) {
 		String partitionRoutingExpression = rootIsExpression
 				? expressionRoot + " + '-' + headers['" + BinderHeaders.PARTITION_HEADER
-						+ "']"
+				+ "']"
 				: "'" + expressionRoot + "-' + headers['" + BinderHeaders.PARTITION_HEADER
-						+ "']";
+				+ "']";
 		return new SpelExpressionParser().parseExpression(partitionRoutingExpression);
 	}
 
@@ -692,6 +691,7 @@ public class RabbitMessageChannelBinder extends
 				private final ConfirmType confirmType;
 
 
+
 				{
 					this.template.setUsePublisherConnection(true);
 					this.template.setChannelTransacted(properties.getExtension().isTransacted());
@@ -721,13 +721,13 @@ public class RabbitMessageChannelBinder extends
 
 				@Override
 				public void handleMessage(org.springframework.messaging.Message<?> message) throws MessagingException {
-					Message amqpMessage = StaticMessageHeaderAccessor.getSourceData(message);
+					List<Message> amqpMessages = extractAmqpMessages(message, properties);
 
 					if (!(message instanceof ErrorMessage)) {
 						logger.error("Expected an ErrorMessage, not a "
 								+ message.getClass().toString() + " for: " + message);
 					}
-					else if (amqpMessage == null) {
+					else if (amqpMessages == null) {
 						logger.error("No raw message header in " + message);
 					}
 					else {
@@ -741,9 +741,7 @@ public class RabbitMessageChannelBinder extends
 							}
 							return;
 						}
-						MessageProperties messageProperties = amqpMessage
-								.getMessageProperties();
-						Map<String, Object> headers = messageProperties.getHeaders();
+
 						String stackTraceAsString = getStackTraceAsString(cause);
 						if (this.maxStackTraceLength < 0) {
 							int rabbitMaxStackTraceLength = RabbitUtils
@@ -763,23 +761,15 @@ public class RabbitMessageChannelBinder extends
 											+ "consider increasing frame_max on the broker or reduce the stack trace depth",
 									cause);
 						}
-						headers.put(RepublishMessageRecoverer.X_EXCEPTION_STACKTRACE,
-								stackTraceAsString);
-						headers.put(RepublishMessageRecoverer.X_EXCEPTION_MESSAGE,
-								cause.getCause() != null ? cause.getCause().getMessage()
-										: cause.getMessage());
-						headers.put(RepublishMessageRecoverer.X_ORIGINAL_EXCHANGE,
-								messageProperties.getReceivedExchange());
-						headers.put(RepublishMessageRecoverer.X_ORIGINAL_ROUTING_KEY,
-								messageProperties.getReceivedRoutingKey());
-						if (properties.getExtension().getRepublishDeliveyMode() != null) {
-							messageProperties.setDeliveryMode(
-									properties.getExtension().getRepublishDeliveyMode());
+						for (Message amqpMessage : amqpMessages) {
+							MessageProperties messageProperties = adjustMessagePropertiesHeader(cause,
+									stackTraceAsString,
+									amqpMessage);
+							doSend(this.exchange,
+									this.routingKey != null ? this.routingKey
+											: messageProperties.getConsumerQueue(),
+									amqpMessage);
 						}
-						doSend(this.exchange,
-								this.routingKey != null ? this.routingKey
-										: messageProperties.getConsumerQueue(),
-								amqpMessage);
 						if (properties.getExtension().getAcknowledgeMode().equals(AcknowledgeMode.MANUAL)) {
 							org.springframework.messaging.Message<?> original =
 									((ErrorMessage) message).getOriginalMessage();
@@ -787,8 +777,8 @@ public class RabbitMessageChannelBinder extends
 								// If we are using manual acks, ack the original message.
 								try {
 									original.getHeaders().get(AmqpHeaders.CHANNEL, Channel.class)
-										.basicAck(original.getHeaders()
-												.get(AmqpHeaders.DELIVERY_TAG, Long.class), false);
+											.basicAck(original.getHeaders()
+													.get(AmqpHeaders.DELIVERY_TAG, Long.class), false);
 								}
 								catch (IOException e) {
 									logger.debug("Failed to ack original message", e);
@@ -796,6 +786,27 @@ public class RabbitMessageChannelBinder extends
 							}
 						}
 					}
+				}
+
+				@NotNull
+				private MessageProperties adjustMessagePropertiesHeader(Throwable cause, String stackTraceAsString, Message amqpMessage) {
+					MessageProperties messageProperties = amqpMessage
+							.getMessageProperties();
+					Map<String, Object> headers = messageProperties.getHeaders();
+					headers.put(RepublishMessageRecoverer.X_EXCEPTION_STACKTRACE,
+							stackTraceAsString);
+					headers.put(RepublishMessageRecoverer.X_EXCEPTION_MESSAGE,
+							cause.getCause() != null ? cause.getCause().getMessage()
+									: cause.getMessage());
+					headers.put(RepublishMessageRecoverer.X_ORIGINAL_EXCHANGE,
+							messageProperties.getReceivedExchange());
+					headers.put(RepublishMessageRecoverer.X_ORIGINAL_ROUTING_KEY,
+							messageProperties.getReceivedRoutingKey());
+					if (properties.getExtension().getRepublishDeliveyMode() != null) {
+						messageProperties.setDeliveryMode(
+								properties.getExtension().getRepublishDeliveyMode());
+					}
+					return messageProperties;
 				}
 
 				private void doSend(String exchange, String routingKey, Message amqpMessage) {
@@ -877,18 +888,17 @@ public class RabbitMessageChannelBinder extends
 					}
 					return !(cause instanceof ImmediateAcknowledgeAmqpException);
 				}
-
 			};
 		}
 		else if (properties.getMaxAttempts() > 1) {
 			return new MessageHandler() {
-				private final RejectAndDontRequeueRecoverer recoverer = new RejectAndDontRequeueRecoverer();
+				private final BatchCapableRejectAndDontRequeueRecoverer recoverer = new BatchCapableRejectAndDontRequeueRecoverer();
 
 				@Override
 				public void handleMessage(
 						org.springframework.messaging.Message<?> message)
 						throws MessagingException {
-					Message amqpMessage = StaticMessageHeaderAccessor.getSourceData(message);
+					List<Message> amqpMessages = extractAmqpMessages(message, properties);
 					/*
 					 * NOTE: The following IF and subsequent ELSE IF should never happen
 					 * under normal interaction and it should always go to the last ELSE
@@ -904,14 +914,14 @@ public class RabbitMessageChannelBinder extends
 								"Unexpected error message " + message,
 								new AmqpRejectAndDontRequeueException(""), (Message[]) null);
 					}
-					else if (amqpMessage == null) {
+					else if (amqpMessages == null || amqpMessages.isEmpty()) {
 						logger.error("No raw message header in " + message);
 						throw new ListenerExecutionFailedException(
 								"Unexpected error message " + message,
-								new AmqpRejectAndDontRequeueException(""), amqpMessage);
+								new AmqpRejectAndDontRequeueException(""), amqpMessages.toArray(Message[]::new));
 					}
 					else {
-						this.recoverer.recover(amqpMessage,
+						this.recoverer.recover(amqpMessages,
 								(Throwable) message.getPayload());
 					}
 				}
@@ -920,6 +930,18 @@ public class RabbitMessageChannelBinder extends
 		}
 		else {
 			return super.getErrorMessageHandler(destination, group, properties);
+		}
+	}
+
+	private List<Message> extractAmqpMessages(org.springframework.messaging.Message<?> message, ExtendedConsumerProperties<RabbitConsumerProperties> properties) {
+
+		if (properties.isBatchMode() || properties.getExtension().isEnableBatching()) {
+			logger.debug("Batch mode enabled: Extract list instead of single message");
+			return StaticMessageHeaderAccessor.getSourceData(message);
+		}
+		else {
+			Message amqpMessage = StaticMessageHeaderAccessor.getSourceData(message);
+			return List.of(amqpMessage);
 		}
 	}
 
@@ -964,11 +986,11 @@ public class RabbitMessageChannelBinder extends
 		};
 	}
 
-//	@Override
-//	protected String errorsBaseName(ConsumerDestination destination, String group,
-//			ExtendedConsumerProperties<RabbitConsumerProperties> consumerProperties) {
-//		return destination.getName() + ".errors";
-//	}
+	//	@Override
+	//	protected String errorsBaseName(ConsumerDestination destination, String group,
+	//			ExtendedConsumerProperties<RabbitConsumerProperties> consumerProperties) {
+	//		return destination.getName() + ".errors";
+	//	}
 
 	private String deadLetterExchangeName(RabbitCommonProperties properties) {
 		if (properties.getDeadLetterExchange() == null) {

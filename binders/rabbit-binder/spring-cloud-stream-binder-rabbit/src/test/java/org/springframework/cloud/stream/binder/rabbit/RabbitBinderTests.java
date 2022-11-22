@@ -23,6 +23,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -509,6 +510,7 @@ public class RabbitBinderTests extends
 
 		endpoint = extractEndpoint(consumerBinding);
 		container = verifyContainer(endpoint);
+
 
 		assertThat(container.getQueueNames()[0]).isEqualTo("foo.props.0.test");
 
@@ -1935,6 +1937,57 @@ public class RabbitBinderTests extends
 		verifyAutoDeclareContextClear(binder);
 	}
 
+	@Test
+	public void testErrorMessageHandlerForBatchModeDLQRepublish(TestInfo testInfo) throws Exception {
+		RabbitTestBinder binder = getBinder();
+		ExtendedProducerProperties<RabbitProducerProperties> producerProperties = createProducerProperties(testInfo);
+		producerProperties.getExtension()
+				.setDeliveryMode(MessageDeliveryMode.NON_PERSISTENT);
+
+		DirectChannel output = createBindableChannel("output",
+				createProducerBindingProperties(producerProperties));
+		output.setBeanName("consumerBatching.Producer");
+		Binding<MessageChannel> producerBinding = binder.bindProducer("c.batching.0",
+				output, producerProperties);
+
+		DirectChannel moduleInputChannel = createBindableChannel("input",
+				new BindingProperties());
+		ExtendedConsumerProperties<RabbitConsumerProperties> consumerProperties = createConsumerProperties();
+		consumerProperties.setBatchMode(true);
+		consumerProperties.getExtension().setBatchSize(2);
+		consumerProperties.getExtension().setEnableBatching(true);
+		consumerProperties.getExtension().setRepublishToDlq(true);
+		consumerProperties.getExtension().setAutoBindDlq(true);
+		consumerProperties.getExtension().setDeadLetterExchange("dlqTest");
+		Binding<MessageChannel> consumerBinding = binder.bindConsumer("c.batching.0",
+				"consumerBatching", moduleInputChannel, consumerProperties);
+
+		List<String> expectedMessages = List.of("message1","message2");
+
+		output.send(new GenericMessage<>(expectedMessages.get(0).getBytes()));
+		output.send(new GenericMessage<>(expectedMessages.get(1).getBytes()));
+
+		moduleInputChannel.subscribe(message -> {
+			throw new RuntimeException("Exception");
+		});
+
+		RabbitTemplate template = new RabbitTemplate(
+				this.rabbitTestSupport.getResource());
+		long now = Instant.now().toEpochMilli();
+		List<org.springframework.amqp.core.Message> deadLetterMessages = new ArrayList<>();
+		while(deadLetterMessages.size() < 2 || (Instant.now().toEpochMilli() - now) > 60_000){
+			deadLetterMessages.add(template
+					.receive("c.batching.0.consumerBatching.dlq", 10_000));
+		}
+
+		assertThat(new String(deadLetterMessages.get(0).getBody())).isIn(expectedMessages);
+		assertThat(new String(deadLetterMessages.get(0).getBody())).isIn(expectedMessages);
+
+		producerBinding.unbind();
+		consumerBinding.unbind();
+
+		verifyAutoDeclareContextClear(binder);
+	}
 
 	@SuppressWarnings("unchecked")
 	@Test
@@ -2459,7 +2512,6 @@ public class RabbitBinderTests extends
 
 		verifyAutoDeclareContextClear(binder);
 	}
-
 
 	@Test
 	public void testCustomBatchingStrategy(TestInfo testInfo) throws Exception {
