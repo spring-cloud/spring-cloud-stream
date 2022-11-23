@@ -18,6 +18,7 @@ package org.springframework.cloud.stream.binder.tck;
 
 import java.util.function.Function;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.boot.WebApplicationType;
@@ -38,6 +39,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Oleg Zhurakousky
  *
  */
+@Disabled
 public class ErrorHandlingTests {
 
 	@Test

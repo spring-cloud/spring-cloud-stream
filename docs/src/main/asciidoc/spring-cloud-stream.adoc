@@ -1498,21 +1498,16 @@ of properties for certain supported mechanisms specific to underlying broker cap
 Errors happen, and Spring Cloud Stream provides several flexible mechanisms to deal with them. Note, the techniques are dependent on binder implementation and the
 capability of the underlying messaging middleware as well as programming model (more on this later).
 
-Whenever Message handler (function) throws an exception, it is propagated back to the binder, and the binder subsequently propagates
-the error back to the messaging system. The framework then will make several attempts at re-trying
+Whenever Message handler (function) throws an exception, it is propagated back to the binder, at which point binder will make several attempts at re-trying
 the same message (3 by default) using `RetryTemplate` provided by the https://github.com/spring-projects/spring-retry[Spring Retry] library.
+If retries are unsuccessful it is up to the error handling mechanism which may _drop_ the message, _re-queue_ the message for re-processing or _send the failed message to DLQ_.
 
-After that, depending on the capabilities of the messaging system such system may _drop_ the message, _re-queue_ the message for re-processing or _send the failed message to DLQ_.
-Both Rabbit and Kafka support these concepts. However, other binders may not, so refer to your individual binder’s documentation for details on supported
+Both Rabbit and Kafka support these concepts (especially DLQ). However, other binders may not, so refer to your individual binder’s documentation for details on supported
 error-handling options.
 
 Keep in mind however, the _reactive function_ does NOT qualify as a Message handler, since it does not handle individual messages and 
-instead provides a way to connect stream (i.e., Flux) provided by the framework with the one provided by the user. In other way of looking 
-at it is - Message handler (i.e., imperative function) is invoked for each Message, while the reactive function is invoked only once 
-during the initialization to connect two stream definitions at which point framework effectively hands 
-off any and all control to the reactive API. 
-
-Why is this important? 
+instead provides a way to connect stream (i.e., Flux) provided by the framework with the one provided by the user. 
+***Why is this important?***
 That is because anything you read later in this section with regard to Retry Template, dropping failed messages, retrying, 
 DLQ and configuration properties that assist with all of it ***only*** applies to Message handlers (i.e., imperative functions).
 
@@ -1532,12 +1527,16 @@ public Function<Flux<String>, Flux<String>> uppercase() {
 
 ==== Drop Failed Messages
 
-By default, if no additional system-level configuration is provided, the messaging system drops the failed message.
+By default, the system provides error handlers. The first error handler will simply log error message. The second error handler is binder specific error handler 
+which is responsible for handling error message in the context of a specific messaging system (e.g., send to DLQ). But since no additional error handling configuration was provided (in this current scenario) this handler will not do anything. So essentially after being logged, the message will be dropped. 
+
 While acceptable in some cases, for most cases, it is not, and we need some recovery mechanism to avoid message loss.
 
 ==== Handle Error Messages
 
-In the previous section we mentioned that by default messages that resulted in error are logged and dropped. In the event you want to add some additional error handling (i.e., send notification, write to database etc), you can add a `Consumer` that is specifically designed to accept `ErrorMessage`. 
+In the previous section we mentioned that by default messages that resulted in error are effectively logged and dropped. The framework also exposes mechanism for you
+to provide custom error handler (i.e., to send notification or write to database, etc). You can do so by adding `Consumer` that is specifically designed to accept `ErrorMessage` which aside form all the information about the error (e.g., stack trace etc) contains the original message (the one that triggered the error).
+NOTE: Custom error handler is mutually exclusive with framework provided error handlers (i.e., logging and binder error handler - see previous section) to ensure that they do not interfere. 
 
 [source,java]
 ----
@@ -1549,9 +1548,7 @@ public Consumer<ErrorMessage> myErrorHandler() {
 }
 ----
 
-If by accident you declare such handler as a `Function`, it will still work with the exception that nothing is going to be done with its output. However, given that such handler is still relying on functionality provided by Spring Cloud Function, you can also benefit from function composition in the event your handler has some complexity which you would like to address through function composition.
-
-To identify such function/consumer as an error handler all you need is to provide `error-handler-definition` property  pointing to the function name - `spring.cloud.stream.bindings.<binding-name>.error-handler-definition=myErrorHandler`. This is where you can specify function composition instruction using ‘|’ symbol as you would do with `spring.cloud.function.definition`.
+To identify such consumer as an error handler all you need is to provide `error-handler-definition` property  pointing to the function name - `spring.cloud.stream.bindings.<binding-name>.error-handler-definition=myErrorHandler`. 
 
 For example, for binding name `uppercase-in-0` the property would look like this:
 
@@ -1565,12 +1562,13 @@ And if you used special mapping instruction to map binding to a more readable na
 spring.cloud.stream.bindings.upper.error-handler-definition=myErrorHandler`.
 ----
 
+NOTE: If by accident you declare such handler as a `Function`, it will still work with the exception that nothing is going to be done with its output. However, given that such handler is still relying on functionality provided by Spring Cloud Function, you can also benefit from function composition in the event your handler has some complexity which you would like to address through function composition (however unlikely).
+
+
 ***Default Error Handler***
 
 If you want to have a single error handler for all function beans, you can use the standard  spring-cloud-stream mechanism for defining default properties `spring.cloud.stream.default.error-handler-definition=myErrorHandler`
 
-NOTE: When declaring function-based error handler you MUST define `spring-cloud-function-definition` to identify your bindings, since
-you are effectively declaring another function that will be available in Function Catalog. So for the above case even if until declaring `myErrorHandler` function you only had a single `uppercase` function in your configuration, you now must explicitly declare `spring-cloud-function-definition=uppercase`. But as we mentioned several times before, it is a best practice and recommended approach to ALWAYS declare `spring.cloud.function.definition`.
 
 ==== DLQ - Dead Letter Queue
 
