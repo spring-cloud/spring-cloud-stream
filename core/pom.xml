@@ -17,8 +17,8 @@
 	<modules>
 		<module>spring-cloud-stream</module>
 		<module>spring-cloud-stream-test-binder</module>
-		<module>spring-cloud-stream-binder-test</module>
 		<module>spring-cloud-stream-integration-tests</module>
+		<module>spring-cloud-stream-test-support</module>
 	</modules>
 
 </project>
