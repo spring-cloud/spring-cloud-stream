@@ -54,14 +54,12 @@ public class TestChannelBinderConfiguration<T> {
 	public static final String NAME = "integration";
 
 	/**
-	 * Utility operation to return an array of configuration classes defined in
-	 * {@link EnableBinding} annotation. Typically used for tests that do not rely on
-	 * creating an SCSt boot application annotated with {@link EnableBinding}, yet require
-	 * full {@link Binder} configuration.
-	 * @param additionalConfigurationClasses config classes to be added to the default
-	 * config
-	 * @return an array of configuration classes defined in {@link EnableBinding}
-	 * annotation
+	 * Utility operation to return an array of configuration classes where function
+	 * definitions are provided. Typically used for tests that do not rely on
+	 * creating an SCSt boot application, yet require full {@link Binder} configuration.
+	 *
+	 * @param additionalConfigurationClasses config classes to be added to the default config
+	 * @return an array of configuration classes
 	 */
 	public static Class<?>[] getCompleteConfiguration(
 		Class<?>... additionalConfigurationClasses) {
