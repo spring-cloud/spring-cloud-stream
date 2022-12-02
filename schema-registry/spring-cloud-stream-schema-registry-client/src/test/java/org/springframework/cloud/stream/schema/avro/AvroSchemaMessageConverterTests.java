@@ -139,7 +139,7 @@ public class AvroSchemaMessageConverterTests {
 			assertThat(receivedUser2.getName()).isEqualTo(user2.getName());
 		}
 	}
-
+	
 	@EnableAutoConfiguration
 	public static class AvroSourceApplication {
 

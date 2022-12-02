@@ -1,5 +1,5 @@
 [
-    {"namespace": "org.springframework.cloud.schema.avro",
+    {"namespace": "org.springframework.cloud.stream.schema.avro",
       "type": "record",
       "name": "User1",
       "fields": [
@@ -9,7 +9,7 @@
 
       ]
     },
-    {"namespace": "org.springframework.cloud.schema.avro.v2",
+    {"namespace": "org.springframework.cloud.stream.schema.avro.v2",
       "type": "record",
       "name": "User1",
       "fields": [
