@@ -905,7 +905,7 @@ ListenerContainerWithDlqAndRetryCustomizer cust(KafkaTemplate<?, ?> template) {
                 @Nullable BackOff backOff) {
 
             if (destinationName.equals("topicWithLongTotalRetryConfig")) {
-                ConsumerRecordRecoverer dlpr = new DeadLetterPublishingRecoverer(template),
+                ConsumerRecordRecoverer dlpr = new DeadLetterPublishingRecoverer(template,
                         dlqDestinationResolver);
                 container.setCommonErrorHandler(new DefaultErrorHandler(dlpr, backOff));
             }
