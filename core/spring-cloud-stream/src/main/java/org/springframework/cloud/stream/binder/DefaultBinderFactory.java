@@ -163,7 +163,7 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 			return this.doGetBinderConventional(name, bindingTargetType);
 		}
 		else {
-			if (!StringUtils.hasText(name) && this.binderChildContextInitializers.size() == 1) {
+			if ((!StringUtils.hasText(name) || this.defaultBinder != null) && this.binderChildContextInitializers.size() == 1) {
 				String configurationName = this.binderChildContextInitializers.keySet().iterator().next();
 				return this.getBinderInstance(configurationName);
 			}
