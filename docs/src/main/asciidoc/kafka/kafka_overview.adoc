@@ -128,7 +128,7 @@ If the partition count of the target topic is smaller than the expected value, t
 +
 Default: `false`.
 spring.cloud.stream.kafka.binder.transaction.transactionIdPrefix::
-Enables transactions in the binder. See `transaction.id` in the Kafka documentation and https://docs.spring.io/spring-kafka/reference/html/_reference.html#transactions[Transactions] in the `spring-kafka` documentation.
+Enables transactions in the binder. See `transaction.id` in the Kafka documentation and https://docs.spring.io/spring-kafka/reference/html/#transactions[Transactions] in the `spring-kafka` documentation.
 When transactions are enabled, individual `producer` properties are ignored and all producers use the `spring.cloud.stream.kafka.binder.transaction.producer.*` properties.
 +
 Default `null` (no transactions)
