@@ -173,16 +173,6 @@ public class BinderFactoryAutoConfiguration {
 		try {
 			Enumeration<URL> resources = classLoader.getResources("META-INF/spring.binders");
 
-			// see if test binder is available on the classpath and if so add it to the binderTypes
-			try {
-				BinderType bt = new BinderType("integration", new Class[] {
-						classLoader.loadClass("org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration")});
-				binderTypes.put("integration", bt);
-			}
-			catch (Exception e) {
-				// ignore. means test binder is not available
-			}
-
 			if (binderTypes.isEmpty() && !Boolean.valueOf(this.selfContained)
 					&& (resources == null || !resources.hasMoreElements())) {
 				this.logger.debug(
@@ -198,7 +188,6 @@ public class BinderFactoryAutoConfiguration {
 					}
 				}
 			}
-
 		}
 		catch (IOException | ClassNotFoundException e) {
 			throw new BeanCreationException("Cannot create binder factory:", e);

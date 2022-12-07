@@ -10,3 +10,5 @@ org.springframework.kafka.config.KafkaStreamsCustomizer
 org.springframework.rabbit.stream.listener.ConsumerCustomizer
 org.springframework.amqp.core.DeclarableCustomizer
 org.springframework.cloud.stream.config.ProducerMessageHandlerCustomizer
+org.springframework.cloud.stream.binder.test.InputDestination
+org.springframework.cloud.stream.binder.test.OutputDestination

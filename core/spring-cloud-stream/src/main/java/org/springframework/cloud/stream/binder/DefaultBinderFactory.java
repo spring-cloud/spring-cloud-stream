@@ -341,7 +341,6 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 	 * @param configurationName binder configuration name
 	 * @return binder child application context that has not been refreshed
 	 */
-	@SuppressWarnings("rawtypes")
 	ConfigurableApplicationContext createBinderContextForAOT(String configurationName) {
 		logger.info("Pre-creating binder child context (AOT) for " + configurationName);
 		BinderConfiguration binderConfiguration = this.binderConfigurations.get(configurationName);
@@ -411,7 +410,7 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 			binderProducingContext.setParent(this.context);
 		}
 		else if (this.context != null) {
-			this.propagateSharedBeans(binderProducingContext);
+			this.propagateSharedBeans((GenericApplicationContext) this.context, binderProducingContext);
 			binderProducingContext.addApplicationListener(new ApplicationListener<ApplicationEvent>() {
 				@Override
 				public void onApplicationEvent(ApplicationEvent event) {
@@ -444,12 +443,14 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 		if (refresh) {
 			binderProducingContext.refresh();
 		}
-
+		if ("integration".equals(binderType.getDefaultName())) {
+			this.propagateSharedBeans((GenericApplicationContext) this.context, binderProducingContext);
+		}
 		return binderProducingContext;
 	}
 
-	private void propagateSharedBeans(GenericApplicationContext binderProducingContext) {
-		GenericConversionService binderProducingConversionService = (GenericConversionService) binderProducingContext.getBeanFactory().getConversionService();
+	private void propagateSharedBeans(GenericApplicationContext toContext, GenericApplicationContext fromContext) {
+		GenericConversionService binderProducingConversionService = (GenericConversionService) toContext.getBeanFactory().getConversionService();
 		try {
 			Enumeration<URL> resources = ClassUtils.getDefaultClassLoader().getResources("META-INF/shared.beans");
 			while (resources.hasMoreElements()) {
@@ -460,14 +461,14 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 				for (Object className : classNames) {
 					Class<Object> beanType = this.loadClass(((String) className).trim());
 					if (beanType != null) {
-						Map<String, Object> beansOfType = this.context.getBeansOfType(beanType);
+						Map<String, Object> beansOfType = fromContext.getBeansOfType(beanType);
 						beansOfType.entrySet().stream().forEach(entry -> {
 							Object bean = entry.getValue();
 							if (bean instanceof Converter) {
 								binderProducingConversionService.addConverter((Converter<?, ?>) bean);
 							}
 							else {
-								binderProducingContext.registerBean(entry.getKey() + "_child", beanType, () -> entry.getValue());
+								toContext.registerBean(entry.getKey() + "_child", beanType, () -> entry.getValue());
 							}
 						});
 					}
