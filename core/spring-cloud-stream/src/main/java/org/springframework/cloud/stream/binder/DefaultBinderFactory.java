@@ -191,7 +191,11 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 				Set<String> defaultCandidateConfigurations = new HashSet<>();
 				for (Map.Entry<String, BinderConfiguration> binderConfigurationEntry : this.binderConfigurations
 						.entrySet()) {
-					if (binderConfigurationEntry.getValue().isDefaultCandidate()) {
+					if ("integration".equals(binderConfigurationEntry.getKey())) {
+						defaultCandidateConfigurations.add(binderConfigurationEntry.getKey());
+						break;
+					}
+					else if (binderConfigurationEntry.getValue().isDefaultCandidate()) {
 						defaultCandidateConfigurations
 								.add(binderConfigurationEntry.getKey());
 					}
