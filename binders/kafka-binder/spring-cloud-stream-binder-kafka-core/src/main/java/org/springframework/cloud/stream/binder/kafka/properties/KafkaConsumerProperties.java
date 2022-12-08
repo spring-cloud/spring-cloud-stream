@@ -216,6 +216,8 @@ public class KafkaConsumerProperties {
 	 */
 	private String commonErrorHandlerBeanName;
 
+	private boolean enableObservation;
+
 	/**
 	 * @return if each record needs to be acknowledged.
 	 *
@@ -541,5 +543,13 @@ public class KafkaConsumerProperties {
 
 	public void setCommonErrorHandlerBeanName(String commonErrorHandlerBeanName) {
 		this.commonErrorHandlerBeanName = commonErrorHandlerBeanName;
+	}
+
+	public boolean isEnableObservation() {
+		return this.enableObservation;
+	}
+
+	public void setEnableObservation(boolean enableObservation) {
+		this.enableObservation = enableObservation;
 	}
 }
