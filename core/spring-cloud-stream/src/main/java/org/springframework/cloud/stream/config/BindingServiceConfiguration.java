@@ -133,6 +133,7 @@ public class BindingServiceConfiguration {
 				.entrySet()) {
 			if (configurationEntry.getValue().isDefaultCandidate()) {
 				defaultCandidatesExist = true;
+				break;
 			}
 		}
 		if (!defaultCandidatesExist) {
