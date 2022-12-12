@@ -504,7 +504,7 @@ public class KafkaMessageChannelBinder extends
 		}
 		handler.setHeaderMapper(mapper);
 
-		if (this.configurationProperties.isEnableObservation() || producerProperties.getExtension().isEnableObservation()) {
+		if (this.configurationProperties.isEnableObservation()) {
 			kafkaTemplate.setObservationEnabled(true);
 		}
 		kafkaTemplate.setApplicationContext(getApplicationContext());
@@ -629,7 +629,7 @@ public class KafkaMessageChannelBinder extends
 								: new ContainerProperties(topics)
 						: new ContainerProperties(topicPartitionOffsets);
 
-		if (this.configurationProperties.isEnableObservation() || extendedConsumerProperties.getExtension().isEnableObservation()) {
+		if (this.configurationProperties.isEnableObservation()) {
 			containerProperties.setObservationEnabled(true);
 		}
 

@@ -217,11 +217,6 @@ public class KafkaConsumerProperties {
 	private String commonErrorHandlerBeanName;
 
 	/**
-	 * Enable Micrometer observation registry on this consumer binding.
-	 */
-	private boolean enableObservation;
-
-	/**
 	 * @return if each record needs to be acknowledged.
 	 *
 	 * When true the offset is committed after each record, otherwise the offsets for the complete set of records
@@ -546,13 +541,5 @@ public class KafkaConsumerProperties {
 
 	public void setCommonErrorHandlerBeanName(String commonErrorHandlerBeanName) {
 		this.commonErrorHandlerBeanName = commonErrorHandlerBeanName;
-	}
-
-	public boolean isEnableObservation() {
-		return this.enableObservation;
-	}
-
-	public void setEnableObservation(boolean enableObservation) {
-		this.enableObservation = enableObservation;
 	}
 }

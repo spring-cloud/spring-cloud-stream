@@ -111,11 +111,6 @@ public class KafkaProducerProperties {
 	private boolean allowNonTransactional;
 
 	/**
-	 * Enable Micrometer observation registry on this producer binding.
-	 */
-	private boolean enableObservation;
-
-	/**
 	 * @return buffer size
 	 *
 	 * Upper limit, in bytes, of how much data the Kafka producer attempts to batch before sending.
@@ -295,14 +290,6 @@ public class KafkaProducerProperties {
 
 	public void setAllowNonTransactional(boolean allowNonTransactional) {
 		this.allowNonTransactional = allowNonTransactional;
-	}
-
-	public boolean isEnableObservation() {
-		return this.enableObservation;
-	}
-
-	public void setEnableObservation(boolean enableObservation) {
-		this.enableObservation = enableObservation;
 	}
 
 	/**

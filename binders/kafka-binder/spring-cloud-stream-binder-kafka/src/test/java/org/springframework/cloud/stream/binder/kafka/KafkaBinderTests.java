@@ -3893,19 +3893,12 @@ public class KafkaBinderTests extends
 	}
 
 	@Test
-	void testObservationEnabledOnTheProducerBinding() throws Exception {
-		AbstractKafkaTestBinder binder = getBinder();
-
-		setupBindingAndAssert("enable-observation.0", binder, true);
-	}
-
-	@Test
 	void testObservationEnabledOnTheBinder() throws Exception {
 		KafkaBinderConfigurationProperties kafkaBinderConfigurationProperties = createConfigurationProperties();
 		kafkaBinderConfigurationProperties.setEnableObservation(true);
 		AbstractKafkaTestBinder binder = getBinder(kafkaBinderConfigurationProperties);
 
-		setupBindingAndAssert("enable-observation.1", binder, false);
+		setupBindingAndAssert("enable-observation.1", binder);
 	}
 
 	@SuppressWarnings("rawtypes")
@@ -3917,10 +3910,10 @@ public class KafkaBinderTests extends
 			(ProducerMessageHandlerCustomizer<KafkaProducerMessageHandler>) (handler, destinationName) ->
 				handler.getKafkaTemplate().setObservationEnabled(true));
 
-		setupBindingAndAssert("enable-observation.2", binder, false);
+		setupBindingAndAssert("enable-observation.2", binder);
 	}
 
-	private void setupBindingAndAssert(String bindingName, AbstractKafkaTestBinder binder, boolean onBinding) throws Exception {
+	private void setupBindingAndAssert(String bindingName, AbstractKafkaTestBinder binder) throws Exception {
 		ConfigurableApplicationContext applicationContext = (ConfigurableApplicationContext) binder.getApplicationContext();
 		TestObservationRegistry observationRegistry = TestObservationRegistry.create();
 
@@ -3930,9 +3923,6 @@ public class KafkaBinderTests extends
 			new BindingProperties());
 		ExtendedProducerProperties<KafkaProducerProperties> producerProps = new ExtendedProducerProperties<>(
 			new KafkaProducerProperties());
-		if (onBinding) {
-			producerProps.getExtension().setEnableObservation(true);
-		}
 		Binding<MessageChannel> producerBinding = binder.bindProducer(bindingName,
 			moduleOutputChannel, producerProps);
 
