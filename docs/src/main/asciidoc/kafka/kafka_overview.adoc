@@ -174,6 +174,11 @@ computation is taking too long.
 +
 Default: 60 seconds
 
+spring.cloud.stream.kafka.binder.enableObservation::
+Enable Micrometer observation registry on all the bindings in this binder.
++
+Default: false
+
 [[kafka-consumer-properties]]
 ==== Kafka Consumer Properties
 
@@ -344,6 +349,7 @@ When present, this user provided `CommonErrorHandler` takes precedence over any 
 This is a handy way to express error handlers, if the application does not want to use a `ListenerContainerCustomizer` and then check the destination/group combination to set an error handler.
 +
 Default: none.
+
 
 [[reset-offsets]]
 ==== Resetting Offsets

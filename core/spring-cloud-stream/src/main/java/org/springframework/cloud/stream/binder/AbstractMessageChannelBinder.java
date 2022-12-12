@@ -355,7 +355,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		return binding;
 	}
 
-	private void customizeProducerMessageHandler(MessageHandler producerMessageHandler, String destinationName) {
+	protected void customizeProducerMessageHandler(MessageHandler producerMessageHandler, String destinationName) {
 		this.handlerCustomizer.configure(producerMessageHandler, destinationName);
 	}
 

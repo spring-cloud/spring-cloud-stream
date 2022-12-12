@@ -139,6 +139,11 @@ public class KafkaBinderConfigurationProperties {
 	 */
 	private String certificateStoreDirectory;
 
+	/**
+	 * Enable Micrometer observation registry across all the bindings in the binder.
+	 */
+	private boolean enableObservation;
+
 	public KafkaBinderConfigurationProperties(KafkaProperties kafkaProperties) {
 		Assert.notNull(kafkaProperties, "'kafkaProperties' cannot be null");
 		this.kafkaProperties = kafkaProperties;
@@ -475,6 +480,14 @@ public class KafkaBinderConfigurationProperties {
 
 	public void setCertificateStoreDirectory(String certificateStoreDirectory) {
 		this.certificateStoreDirectory = certificateStoreDirectory;
+	}
+
+	public boolean isEnableObservation() {
+		return this.enableObservation;
+	}
+
+	public void setEnableObservation(boolean enableObservation) {
+		this.enableObservation = enableObservation;
 	}
 
 	/**

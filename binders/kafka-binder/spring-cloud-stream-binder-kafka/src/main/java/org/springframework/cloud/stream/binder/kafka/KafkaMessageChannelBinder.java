@@ -51,6 +51,7 @@ import org.apache.kafka.common.header.internals.RecordHeader;
 import org.apache.kafka.common.header.internals.RecordHeaders;
 
 import org.springframework.beans.factory.DisposableBean;
+import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.cloud.stream.binder.AbstractMessageChannelBinder;
 import org.springframework.cloud.stream.binder.BinderHeaders;
 import org.springframework.cloud.stream.binder.BinderSpecificPropertiesProvider;
@@ -502,9 +503,21 @@ public class KafkaMessageChannelBinder extends
 
 		}
 		handler.setHeaderMapper(mapper);
+
+		if (this.configurationProperties.isEnableObservation()) {
+			kafkaTemplate.setObservationEnabled(true);
+		}
+		kafkaTemplate.setApplicationContext(getApplicationContext());
+
 		return handler;
 	}
 
+	@Override
+	@SuppressWarnings("rawtypes")
+	protected void customizeProducerMessageHandler(MessageHandler producerMessageHandler, String destinationName) {
+		super.customizeProducerMessageHandler(producerMessageHandler, destinationName);
+		((KafkaProducerMessageHandler) producerMessageHandler).getKafkaTemplate().afterSingletonsInstantiated();
+	}
 
 	@Override
 	protected void postProcessOutputChannel(MessageChannel outputChannel,
@@ -619,6 +632,11 @@ public class KafkaMessageChannelBinder extends
 								? new ContainerProperties(Pattern.compile(topics[0]))
 								: new ContainerProperties(topics)
 						: new ContainerProperties(topicPartitionOffsets);
+
+		if (this.configurationProperties.isEnableObservation()) {
+			containerProperties.setObservationEnabled(true);
+		}
+
 		KafkaAwareTransactionManager<byte[], byte[]> transMan = transactionManager(
 				extendedConsumerProperties.getExtension().getTransactionManager());
 		if (transMan != null) {

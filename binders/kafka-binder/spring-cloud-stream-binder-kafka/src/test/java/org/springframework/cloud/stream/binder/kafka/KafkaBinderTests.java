@@ -38,6 +38,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.IntStream;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.micrometer.observation.ObservationRegistry;
+import io.micrometer.observation.tck.TestObservationRegistry;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.admin.CreateTopicsResult;
@@ -98,6 +100,7 @@ import org.springframework.cloud.stream.binder.kafka.utils.DlqPartitionFunction;
 import org.springframework.cloud.stream.binder.kafka.utils.KafkaTopicUtils;
 import org.springframework.cloud.stream.binding.MessageConverterConfigurer.PartitioningInterceptor;
 import org.springframework.cloud.stream.config.BindingProperties;
+import org.springframework.cloud.stream.config.ProducerMessageHandlerCustomizer;
 import org.springframework.cloud.stream.provisioning.ProvisioningException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -3887,6 +3890,59 @@ public class KafkaBinderTests extends
 		assertThatExceptionOfType(BinderException.class).isThrownBy(() -> binder.bindConsumer("foo.bar",
 					"testSendAndReceive", moduleInputChannel, consumerProperties))
 				.withCauseExactlyInstanceOf(IllegalStateException.class);
+	}
+
+	@Test
+	void testObservationEnabledOnTheBinder() throws Exception {
+		KafkaBinderConfigurationProperties kafkaBinderConfigurationProperties = createConfigurationProperties();
+		kafkaBinderConfigurationProperties.setEnableObservation(true);
+		AbstractKafkaTestBinder binder = getBinder(kafkaBinderConfigurationProperties);
+
+		setupBindingAndAssert("enable-observation.1", binder);
+	}
+
+	@SuppressWarnings("rawtypes")
+	@Test
+	void testObservationEnabledThroughProducerMessageHandlerCustomizer() throws Exception {
+		AbstractKafkaTestBinder binder = getBinder();
+		KafkaMessageChannelBinder kafkaMessageChannelBinder = binder.getCoreBinder();
+		kafkaMessageChannelBinder.setProducerMessageHandlerCustomizer(
+			(ProducerMessageHandlerCustomizer<KafkaProducerMessageHandler>) (handler, destinationName) ->
+				handler.getKafkaTemplate().setObservationEnabled(true));
+
+		setupBindingAndAssert("enable-observation.2", binder);
+	}
+
+	private void setupBindingAndAssert(String bindingName, AbstractKafkaTestBinder binder) throws Exception {
+		ConfigurableApplicationContext applicationContext = (ConfigurableApplicationContext) binder.getApplicationContext();
+		TestObservationRegistry observationRegistry = TestObservationRegistry.create();
+
+		applicationContext.getBeanFactory().registerSingleton("test-registry", observationRegistry);
+
+		DirectChannel moduleOutputChannel = createBindableChannel("output",
+			new BindingProperties());
+		ExtendedProducerProperties<KafkaProducerProperties> producerProps = new ExtendedProducerProperties<>(
+			new KafkaProducerProperties());
+		Binding<MessageChannel> producerBinding = binder.bindProducer(bindingName,
+			moduleOutputChannel, producerProps);
+
+		assertionsOnKafkaTemplate(observationRegistry, producerBinding);
+	}
+
+	@SuppressWarnings("rawtypes")
+	private static void assertionsOnKafkaTemplate(TestObservationRegistry observationRegistry, Binding<MessageChannel> producerBinding) {
+		KafkaProducerMessageHandler endpoint = TestUtils.getPropertyValue(producerBinding,
+			"lifecycle", KafkaProducerMessageHandler.class);
+
+		final KafkaTemplate kafkaTemplate = (KafkaTemplate) new DirectFieldAccessor(endpoint).getPropertyValue("kafkaTemplate");
+		assertThat(kafkaTemplate).isNotNull();
+		Boolean observationEnabled = (Boolean) new DirectFieldAccessor(kafkaTemplate).getPropertyValue("observationEnabled");
+		assertThat(observationEnabled).isTrue();
+
+		ObservationRegistry observationRegistry1 = (ObservationRegistry) new DirectFieldAccessor(kafkaTemplate).getPropertyValue("observationRegistry");
+		assertThat(observationRegistry).isSameAs(observationRegistry1);
+
+		producerBinding.unbind();
 	}
 
 	private final class FailingInvocationCountingMessageHandler
