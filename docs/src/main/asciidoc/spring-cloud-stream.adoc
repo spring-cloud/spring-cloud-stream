@@ -824,6 +824,8 @@ You have the flexibility to make the patterns more strict or customized to your 
 
 With this approach, the application gets the ability to decide which interceptors to inject in `StreamBridge` rather than applying all the available interceptors.
 
+NOTE: `StreamBridge` provides a contract through the `StreamOperations` interface that contains all the `send` methods of `StreamBridge`. Therefore, applications may choose to autowire using `StreamOperations`. This is handy when it comes to unit testing code that uses `StreamBridge` by providing a mock or similar mechanisms for the `StreamOperations` interface.
+
 ===== Reactive Functions support
 
 

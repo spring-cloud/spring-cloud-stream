@@ -86,6 +86,17 @@ public class StreamBridgeTests {
 	}
 
 	@Test
+	void extractStreamBridgeAsStreamOperations() {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+			TestChannelBinderConfiguration.getCompleteConfiguration(EmptyConfiguration.class))
+			.web(WebApplicationType.NONE).run("--spring.jmx.enabled=false")) {
+			StreamOperations streamOperations = context.getBean(StreamOperations.class);
+			StreamBridge streamBridge = context.getBean(StreamBridge.class);
+			assertThat(streamOperations).isSameAs(streamBridge);
+		}
+	}
+
+	@Test
 	void test_SCF_856() throws Exception {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(EmptyConfiguration.class))

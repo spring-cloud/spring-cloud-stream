@@ -75,9 +75,9 @@ import org.springframework.util.StringUtils;
  *
  */
 @SuppressWarnings("rawtypes")
-public final class StreamBridge implements SmartInitializingSingleton {
+public final class StreamBridge implements StreamOperations, SmartInitializingSingleton {
 
-	private static String STREAM_BRIDGE_FUNC_NAME = "streamBridge";
+	private static final String STREAM_BRIDGE_FUNC_NAME = "streamBridge";
 
 	private final Log logger = LogFactory.getLog(getClass());
 
@@ -87,9 +87,9 @@ public final class StreamBridge implements SmartInitializingSingleton {
 
 	private final NewDestinationBindingCallback destinationBindingCallback;
 
-	private BindingServiceProperties bindingServiceProperties;
+	private final BindingServiceProperties bindingServiceProperties;
 
-	private ConfigurableApplicationContext applicationContext;
+	private final ConfigurableApplicationContext applicationContext;
 
 	private boolean initialized;
 
@@ -97,7 +97,7 @@ public final class StreamBridge implements SmartInitializingSingleton {
 
 	private final Map<String, FunctionInvocationWrapper> streamBridgeFunctionCache;
 
-	private FunctionInvocationHelper<?> functionInvocationHelper;
+	private final FunctionInvocationHelper<?> functionInvocationHelper;
 
 	/**
 	 *
@@ -133,83 +133,19 @@ public final class StreamBridge implements SmartInitializingSingleton {
 		this.streamBridgeFunctionCache = new HashMap<>();
 	}
 
-	/**
-	 * Sends 'data' to an output binding specified by 'bindingName' argument while
-	 * using default content type to deal with output type conversion (if necessary).
-	 * For typical cases `bindingName` is configured using 'spring.cloud.stream.source' property.
-	 * However, this operation also supports sending to truly dynamic destinations. This means if the name
-	 * provided via 'bindingName' does not have a corresponding binding such name will be
-	 * treated as dynamic destination.<br>
-	 * Will use default binder. For specific binder type see {@link #send(String, String, Object)} and {@link #send(String, String, Object, MimeType)} methods.
-	 * @param bindingName the name of the output binding. That said it requires a bit of clarification.
-	 *        When using bridge.send("foo"...), the 'foo' typically represents the binding name. However
-	 *        if such binding does not exist, the new binding will be created to support dynamic destinations.
-	 * @param data the data to send
-	 * @return true if data was sent successfully, otherwise false or throws an exception.
-	 */
 	public boolean send(String bindingName, Object data) {
 		BindingProperties bindingProperties = this.bindingServiceProperties.getBindingProperties(bindingName);
 		MimeType contentType = StringUtils.hasText(bindingProperties.getContentType()) ? MimeType.valueOf(bindingProperties.getContentType()) : MimeTypeUtils.APPLICATION_JSON;
 		return this.send(bindingName, data, contentType);
 	}
 
-	/**
-	 * Sends 'data' to an output binding specified by 'bindingName' argument while
-	 * using the content type specified by the 'outputContentType' argument to deal
-	 * with output type conversion (if necessary).
-	 * For typical cases `bindingName` is configured using 'spring.cloud.stream.source' property.
-	 * However, this operation also supports sending to truly dynamic destinations. This means if the name
-	 * provided via 'bindingName' does not have a corresponding binding such name will be
-	 * treated as dynamic destination.<br>
-	 * Will use default binder. For specific binder type see {@link #send(String, String, Object)} and {@link #send(String, String, Object, MimeType)} methods.
-	 * @param bindingName the name of the output binding. That said it requires a bit of clarification.
-	 *        When using bridge.send("foo"...), the 'foo' typically represents the binding name. However
-	 *        if such binding does not exist, the new binding will be created to support dynamic destinations.
-	 * @param data the data to send
-	 * @param outputContentType content type to be used to deal with output type conversion
-	 * @return true if data was sent successfully, otherwise false or throws an exception.
-	 */
 	public boolean send(String bindingName, Object data, MimeType outputContentType) {
 		return this.send(bindingName, null, data, outputContentType);
 	}
-
-	/**
-	 * Sends 'data' to an output binding specified by 'bindingName' argument while
-	 * using the content type specified by the 'outputContentType' argument to deal
-	 * with output type conversion (if necessary).
-	 * For typical cases `bindingName` is configured using 'spring.cloud.stream.source' property.
-	 * However, this operation also supports sending to truly dynamic destinations. This means if the name
-	 * provided via 'bindingName' does not have a corresponding binding such name will be
-	 * treated as dynamic destination.
-	 *
-	 * @param bindingName the name of the output binding. That said it requires a bit of clarification.
-	 *        When using bridge.send("foo"...), the 'foo' typically represents the binding name. However
-	 *        if such binding does not exist, the new binding will be created to support dynamic destinations.
-	 * @param binderName the name of the binder to use (e.g., 'kafka', 'rabbit') for cases where multiple binders are used. Can be null.
-	 * @param data the data to send
-	 * @return true if data was sent successfully, otherwise false or throws an exception.
-	 */
 	public boolean send(String bindingName, @Nullable String binderName, Object data) {
 		return this.send(bindingName, binderName, data, MimeTypeUtils.APPLICATION_JSON);
 	}
 
-	/**
-	 * Sends 'data' to an output binding specified by 'bindingName' argument while
-	 * using the content type specified by the 'outputContentType' argument to deal
-	 * with output type conversion (if necessary).
-	 * For typical cases `bindingName` is configured using 'spring.cloud.stream.source' property.
-	 * However, this operation also supports sending to truly dynamic destinations. This means if the name
-	 * provided via 'bindingName' does not have a corresponding binding such name will be
-	 * treated as dynamic destination.
-	 *
-	 * @param bindingName the name of the output binding. That said it requires a bit of clarification.
-	 *        When using bridge.send("foo"...), the 'foo' typically represents the binding name. However
-	 *        if such binding does not exist, the new binding will be created to support dynamic destinations.
-	 * @param binderName the name of the binder to use (e.g., 'kafka', 'rabbit') for cases where multiple binders are used. Can be null.
-	 * @param data the data to send
-	 * @param outputContentType content type to be used to deal with output type conversion
-	 * @return true if data was sent successfully, otherwise false or throws an exception.
-	 */
 	@SuppressWarnings({ "unchecked"})
 	public boolean send(String bindingName, @Nullable String binderName, Object data, MimeType outputContentType) {
 		if (!this.initialized) {
