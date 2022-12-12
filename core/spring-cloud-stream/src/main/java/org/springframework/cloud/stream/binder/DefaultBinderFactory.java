@@ -167,6 +167,15 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 				String configurationName = this.binderChildContextInitializers.keySet().iterator().next();
 				return this.getBinderInstance(configurationName);
 			}
+			else if (this.defaultBinder != null && this.binderChildContextInitializers.size() > 1) {
+				// Handling default binder when different binders are present on the classpath.
+				for (String binderName : this.binderChildContextInitializers.keySet()) {
+					if (binderName.equals(this.defaultBinder)) {
+						return this.getBinderInstance(binderName);
+					}
+				}
+				throw new IllegalStateException("Default binder provided, but can't determine which binder to initialize");
+			}
 			else {
 				throw new IllegalStateException("Can't determine which binder to use: " + name + "/" + this.binderChildContextInitializers.size());
 			}
