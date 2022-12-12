@@ -516,8 +516,7 @@ public class KafkaMessageChannelBinder extends
 	@SuppressWarnings("rawtypes")
 	protected void customizeProducerMessageHandler(MessageHandler producerMessageHandler, String destinationName) {
 		super.customizeProducerMessageHandler(producerMessageHandler, destinationName);
-		KafkaTemplate<?, ?> kafkaTemplate = ((KafkaProducerMessageHandler) producerMessageHandler).getKafkaTemplate();
-		((SmartInitializingSingleton) kafkaTemplate).afterSingletonsInstantiated();
+		((KafkaProducerMessageHandler) producerMessageHandler).getKafkaTemplate().afterSingletonsInstantiated();
 	}
 
 	@Override
