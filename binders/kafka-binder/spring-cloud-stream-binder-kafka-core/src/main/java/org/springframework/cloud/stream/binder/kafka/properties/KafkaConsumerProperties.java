@@ -216,6 +216,9 @@ public class KafkaConsumerProperties {
 	 */
 	private String commonErrorHandlerBeanName;
 
+	/**
+	 * Enable Micrometer observation registry on this consumer binding.
+	 */
 	private boolean enableObservation;
 
 	/**

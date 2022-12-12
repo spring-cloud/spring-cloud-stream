@@ -110,6 +110,9 @@ public class KafkaProducerProperties {
 	 */
 	private boolean allowNonTransactional;
 
+	/**
+	 * Enable Micrometer observation registry on this producer binding.
+	 */
 	private boolean enableObservation;
 
 	/**

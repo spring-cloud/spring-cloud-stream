@@ -139,6 +139,9 @@ public class KafkaBinderConfigurationProperties {
 	 */
 	private String certificateStoreDirectory;
 
+	/**
+	 * Enable Micrometer observation registry across all the bindings in the binder.
+	 */
 	private boolean enableObservation;
 
 	public KafkaBinderConfigurationProperties(KafkaProperties kafkaProperties) {

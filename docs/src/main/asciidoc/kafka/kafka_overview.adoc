@@ -174,6 +174,11 @@ computation is taking too long.
 +
 Default: 60 seconds
 
+spring.cloud.stream.kafka.binder.enableObservation::
+Enable Micrometer observation registry on all the bindings in this binder.
++
+Default: false
+
 [[kafka-consumer-properties]]
 ==== Kafka Consumer Properties
 
@@ -345,6 +350,12 @@ This is a handy way to express error handlers, if the application does not want 
 +
 Default: none.
 
+enableObservation::
+Enable Micrometer observation registry on this consumer binding.
++
+Default: false
+
+
 [[reset-offsets]]
 ==== Resetting Offsets
 
@@ -506,6 +517,11 @@ This property allows you to override that behavior.
 If set to true, records published to this output binding will not be run in a transaction, unless one is already in process.
 +
 Default: `false`
+
+enableObservation::
+Enable Micrometer observation registry on this producer binding.
++
+Default: false
 
 ==== Usage examples
 
