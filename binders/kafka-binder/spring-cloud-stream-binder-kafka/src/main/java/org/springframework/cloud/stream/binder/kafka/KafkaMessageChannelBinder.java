@@ -508,12 +508,17 @@ public class KafkaMessageChannelBinder extends
 			kafkaTemplate.setObservationEnabled(true);
 		}
 		kafkaTemplate.setApplicationContext(getApplicationContext());
-		customizeProducerMessageHandler(handler, destination.getName());
-		((SmartInitializingSingleton) kafkaTemplate).afterSingletonsInstantiated();
 
 		return handler;
 	}
 
+	@Override
+	@SuppressWarnings("rawtypes")
+	protected void customizeProducerMessageHandler(MessageHandler producerMessageHandler, String destinationName) {
+		super.customizeProducerMessageHandler(producerMessageHandler, destinationName);
+		KafkaTemplate<?, ?> kafkaTemplate = ((KafkaProducerMessageHandler) producerMessageHandler).getKafkaTemplate();
+		((SmartInitializingSingleton) kafkaTemplate).afterSingletonsInstantiated();
+	}
 
 	@Override
 	protected void postProcessOutputChannel(MessageChannel outputChannel,
