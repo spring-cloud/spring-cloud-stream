@@ -12,7 +12,6 @@ The following Java and YAML examples show how to configure the producer:
 [source, java]
 ----
 @SpringBootApplication
-@EnableBinding(Source.class)
 public class RabbitPartitionProducerApplication {
 
     private static final Random RANDOM = new Random(System.currentTimeMillis());
@@ -30,13 +29,15 @@ public class RabbitPartitionProducerApplication {
             .run(args);
     }
 
-    @InboundChannelAdapter(channel = Source.OUTPUT, poller = @Poller(fixedRate = "5000"))
-    public Message<?> generate() {
-        String value = data[RANDOM.nextInt(data.length)];
-        System.out.println("Sending: " + value);
-        return MessageBuilder.withPayload(value)
-                .setHeader("partitionKey", value)
-                .build();
+    @Bean
+    public Supplier<Message<?>> generate() {
+        return () -> {
+            String value = data[RANDOM.nextInt(data.length)];
+            System.out.println("Sending: " + value);
+            return MessageBuilder.withPayload(value)
+                    .setHeader("partitionKey", value)
+                    .build();
+        };
     }
 
 }
@@ -49,7 +50,7 @@ public class RabbitPartitionProducerApplication {
       cloud:
         stream:
           bindings:
-            output:
+            generate-out-0:
               destination: partitioned.destination
               producer:
                 partitioned: true
@@ -87,7 +88,6 @@ The following Java and YAML examples continue the previous examples and show how
 [source, java]
 ----
 @SpringBootApplication
-@EnableBinding(Sink.class)
 public class RabbitPartitionConsumerApplication {
 
     public static void main(String[] args) {
@@ -96,9 +96,12 @@ public class RabbitPartitionConsumerApplication {
             .run(args);
     }
 
-    @StreamListener(Sink.INPUT)
-    public void listen(@Payload String in, @Header(AmqpHeaders.CONSUMER_QUEUE) String queue) {
-        System.out.println(in + " received from queue " + queue);
+    @Bean
+    public Consumer<Message<String>> listen() {
+        return message -> {
+            String queue =- message.getHeaders().get(AmqpHeaders.CONSUMER_QUEUE);
+            System.out.println(in + " received from queue " + queue);
+        };
     }
 
 }
@@ -111,7 +114,7 @@ public class RabbitPartitionConsumerApplication {
       cloud:
         stream:
           bindings:
-            input:
+            listen-in-0:
               destination: partitioned.destination
               group: myGroup
               consumer:

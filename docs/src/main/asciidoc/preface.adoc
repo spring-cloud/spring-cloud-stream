@@ -165,9 +165,6 @@ For backward
 compatibility you can still bring `spring-cloud-stream-reactive` from previous versions.
 - _Test support binder_ `spring-cloud-stream-test-support` with MessageCollector in favor of a new test binder. See <<Testing>> for more details.
 - _@StreamMessageConverter_ - deprecated as it is no longer required.
-- The `original-content-type` header references have been removed after it's been deprecated in v2.0.
-This is primarily for function-based programming model. For StreamListener it would still be required and thus will stay until we deprecate and eventually discontinue StreamListener
-and annotation-based programming model.
 
 [[spel-and-streaming-data]]
 

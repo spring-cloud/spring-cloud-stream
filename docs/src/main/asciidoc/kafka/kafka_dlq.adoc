@@ -87,10 +87,9 @@ spring.cloud.stream.kafka.binder.headers=x-retries
 ----
 
 .Application
-[source, java]
+[source,java]
 ----
 @SpringBootApplication
-@EnableBinding(TwoOutputProcessor.class)
 public class ReRouteDlqKApplication implements CommandLineRunner {
 
     private static final String X_RETRIES_HEADER = "x-retries";
@@ -102,37 +101,38 @@ public class ReRouteDlqKApplication implements CommandLineRunner {
     private final AtomicInteger processed = new AtomicInteger();
 
     @Autowired
-    private MessageChannel parkingLot;
+    private StreamBridge streamBridge;
 
-    @StreamListener(Processor.INPUT)
-    @SendTo(Processor.OUTPUT)
-    public Message<?> reRoute(Message<?> failed) {
-        processed.incrementAndGet();
-        Integer retries = failed.getHeaders().get(X_RETRIES_HEADER, Integer.class);
-        if (retries == null) {
-            System.out.println("First retry for " + failed);
-            return MessageBuilder.fromMessage(failed)
-                    .setHeader(X_RETRIES_HEADER, new Integer(1))
-                    .setHeader(BinderHeaders.PARTITION_OVERRIDE,
-                            failed.getHeaders().get(KafkaHeaders.RECEIVED_PARTITION_ID))
-                    .build();
-        }
-        else if (retries.intValue() < 3) {
-            System.out.println("Another retry for " + failed);
-            return MessageBuilder.fromMessage(failed)
-                    .setHeader(X_RETRIES_HEADER, new Integer(retries.intValue() + 1))
-                    .setHeader(BinderHeaders.PARTITION_OVERRIDE,
-                            failed.getHeaders().get(KafkaHeaders.RECEIVED_PARTITION_ID))
-                    .build();
-        }
-        else {
-            System.out.println("Retries exhausted for " + failed);
-            parkingLot.send(MessageBuilder.fromMessage(failed)
+    @Bean
+    public Function<Message<?>, Message<?>> reRoute() {
+        return failed -> {
+            processed.incrementAndGet();
+            Integer retries = failed.getHeaders().get(X_RETRIES_HEADER, Integer.class);
+            if (retries == null) {
+                System.out.println("First retry for " + failed);
+                return MessageBuilder.fromMessage(failed)
+                        .setHeader(X_RETRIES_HEADER, 1)
+                        .setHeader(BinderHeaders.PARTITION_OVERRIDE,
+                                failed.getHeaders().get(KafkaHeaders.RECEIVED_PARTITION_ID))
+                        .build();
+            }
+            else if (retries < 3) {
+                System.out.println("Another retry for " + failed);
+                return MessageBuilder.fromMessage(failed)
+                        .setHeader(X_RETRIES_HEADER, retries + 1)
+                        .setHeader(BinderHeaders.PARTITION_OVERRIDE,
+                                failed.getHeaders().get(KafkaHeaders.RECEIVED_PARTITION_ID))
+                        .build();
+            }
+            else {
+                System.out.println("Retries exhausted for " + failed);
+                streamBridge.send("parkingLot", MessageBuilder.fromMessage(failed)
                     .setHeader(BinderHeaders.PARTITION_OVERRIDE,
                             failed.getHeaders().get(KafkaHeaders.RECEIVED_PARTITION_ID))
                     .build());
-        }
-        return null;
+            }
+            return null;
+        };
     }
 
     @Override
@@ -146,13 +146,5 @@ public class ReRouteDlqKApplication implements CommandLineRunner {
             }
         }
     }
-
-    public interface TwoOutputProcessor extends Processor {
-
-        @Output("parkingLot")
-        MessageChannel parkingLot();
-
-    }
-
 }
 ----

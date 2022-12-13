@@ -6,10 +6,9 @@ Sometimes it is advantageous to send data to specific partitions -- for example,
 
 The following example shows how to configure the producer and consumer side:
 
-[source, java]
+[source,java]
 ----
 @SpringBootApplication
-@EnableBinding(Source.class)
 public class KafkaPartitionProducerApplication {
 
     private static final Random RANDOM = new Random(System.currentTimeMillis());
@@ -27,13 +26,15 @@ public class KafkaPartitionProducerApplication {
             .run(args);
     }
 
-    @InboundChannelAdapter(channel = Source.OUTPUT, poller = @Poller(fixedRate = "5000"))
-    public Message<?> generate() {
-        String value = data[RANDOM.nextInt(data.length)];
-        System.out.println("Sending: " + value);
-        return MessageBuilder.withPayload(value)
-                .setHeader("partitionKey", value)
-                .build();
+    @Bean
+    public Supplier<Message<?>> generate() {
+        return () -> {
+            String value = data[RANDOM.nextInt(data.length)];
+            System.out.println("Sending: " + value);
+            return MessageBuilder.withPayload(value)
+                    .setHeader("partitionKey", value)
+                    .build();
+        };
     }
 
 }
@@ -46,7 +47,7 @@ spring:
   cloud:
     stream:
       bindings:
-        output:
+        generate-out-0:
           destination: partitioned.topic
           producer:
             partition-key-expression: headers['partitionKey']
@@ -66,10 +67,9 @@ Kafka allocates partitions across the instances.
 
 The following Spring Boot application listens to a Kafka stream and prints (to the console) the partition ID to which each message goes:
 
-[source, java]
+[source,java]
 ----
 @SpringBootApplication
-@EnableBinding(Sink.class)
 public class KafkaPartitionConsumerApplication {
 
     public static void main(String[] args) {
@@ -78,9 +78,12 @@ public class KafkaPartitionConsumerApplication {
             .run(args);
     }
 
-    @StreamListener(Sink.INPUT)
-    public void listen(@Payload String in, @Header(KafkaHeaders.RECEIVED_PARTITION_ID) int partition) {
-        System.out.println(in + " received from partition " + partition);
+    @Bean
+    public Consumer<Message<String>> listen() {
+        return message -> {
+            int partition =- message.getHeaders().get(KafkaHeaders.RECEIVED_PARTITION_ID);
+            System.out.println(in + " received from partition " + partition);
+        };
     }
 
 }
@@ -93,7 +96,7 @@ spring:
   cloud:
     stream:
       bindings:
-        input:
+        listen-in-0:
           destination: partitioned.topic
           group: myGroup
 ----

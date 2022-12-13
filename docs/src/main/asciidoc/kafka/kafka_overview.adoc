@@ -527,21 +527,21 @@ Use the corresponding input channel name for your example.
 [source]
 ----
 @SpringBootApplication
-@EnableBinding(Sink.class)
 public class ManuallyAcknowdledgingConsumer {
 
  public static void main(String[] args) {
      SpringApplication.run(ManuallyAcknowdledgingConsumer.class, args);
  }
 
- @StreamListener(Sink.INPUT)
- public void process(Message<?> message) {
-     Acknowledgment acknowledgment = message.getHeaders().get(KafkaHeaders.ACKNOWLEDGMENT, Acknowledgment.class);
-     if (acknowledgment != null) {
+ @Bean
+ public Consumer<Message<?>> process() {
+    return message -> {
+        Acknowledgment acknowledgment = message.getHeaders().get(KafkaHeaders.ACKNOWLEDGMENT, Acknowledgment.class);
+        if (acknowledgment != null) {
          System.out.println("Acknowledgment provided");
          acknowledgment.acknowledge();
-     }
- }
+        }
+    };
 }
 ----
 
@@ -783,16 +783,23 @@ More details on how to suppress meters selectively can be found https://micromet
 === Tombstone Records (null record values)
 
 When using compacted topics, a record with a `null` value (also called a tombstone record) represents the deletion of a key.
-To receive such messages in a `@StreamListener` method, the parameter must be marked as not required to receive a `null` value argument.
+To receive such messages in a Spring Cloud Stream function, you can use the following strategy.
 
 ====
 [source, java]
 ----
-@StreamListener(Sink.INPUT)
-public void in(@Header(KafkaHeaders.RECEIVED_MESSAGE_KEY) byte[] key,
-               @Payload(required = false) Customer customer) {
-    // customer is null if a tombstone record
-    ...
+@Bean
+public Function<Message<Person>, String> myFunction() {
+    return value -> {
+        Object v = value.getPayload();
+        String className = v.getClass().getName();
+        if (className.isEqualTo("org.springframework.kafka.support.KafkaNull")) {
+            // this is a tombstone record
+        }
+        else {
+            // continue with processing
+        }
+    };
 }
 ----
 ====

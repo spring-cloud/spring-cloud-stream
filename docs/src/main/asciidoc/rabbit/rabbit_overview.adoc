@@ -1271,23 +1271,25 @@ When messages are rejected, they are routed to the DLQ.
 After 5 seconds, the message expires and is routed to the original queue by using the queue name as the routing key, as shown in the following example:
 
 .Spring Boot application
-[source, java]
+[source,java]
 ----
 @SpringBootApplication
-@EnableBinding(Sink.class)
 public class XDeathApplication {
 
     public static void main(String[] args) {
         SpringApplication.run(XDeathApplication.class, args);
     }
 
-    @StreamListener(Sink.INPUT)
-    public void listen(String in, @Header(name = "x-death", required = false) Map<?,?> death) {
-        if (death != null && death.get("count").equals(3L)) {
-            // giving up - don't send to DLX
-            throw new ImmediateAcknowledgeAmqpException("Failed after 4 attempts");
-        }
-        throw new AmqpRejectAndDontRequeueException("failed");
+    @Bean
+    public Consumer<Message<String>> listen() {
+        return message -> {
+            Map<?,?> death = message.getHeaders().get("x-death");
+            if (death != null && death.get("count").equals(3L)) {
+                // giving up - don't send to DLX
+                throw new ImmediateAcknowledgeAmqpException("Failed after 4 attempts");
+            }
+            throw new AmqpRejectAndDontRequeueException("failed");
+        };
     }
 
 }
@@ -1346,7 +1348,7 @@ The health indicator for Rabbit binder delegates to the one provided from Spring
 For more information on this, see https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#actuator.endpoints.health.auto-configured-health-indicators[this].
 
 You can disable this health indicator at the binder level by using the property - `management.health.binders.enabled` and set this to `false`.
-In the case of multibinder environements, this has to be set on the binder's environment properties.
+In the case of multi-binder environments, this has to be set on the binder's environment properties.
 
 When the health indicator is disabled, you should see something like the below in the health actuator endpoint:
 
