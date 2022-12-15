@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>schema-registry-consumer-kafka</artifactId>
-    <version>4.0.0</version>
+    <version>4.0.0-SNAPSHOT</version>
     <packaging>jar</packaging>
     <name>schema-registry-consumer-kafka</name>
     <description>SCSt Schema Registry Consumer</description>
@@ -11,7 +11,7 @@
 	<parent>
 		<groupId>org.springframework.cloud</groupId>
 		<artifactId>spring-cloud-stream-schema-registry-integration</artifactId>
-		<version>4.0.0</version>
+		<version>4.0.0-SNAPSHOT</version>
 	</parent>
 
 	<build>
