@@ -128,8 +128,6 @@ public class MultipleInputOutputFunctionTests {
 			.web(WebApplicationType.NONE)
 			.run("--spring.jmx.enabled=false",
 				"--spring.cloud.function.definition=multiInputSingleOutput")) {
-			context.getBean(InputDestination.class);
-
 			InputDestination inputDestination = context.getBean(InputDestination.class);
 			OutputDestination outputDestination = context.getBean(OutputDestination.class);
 
@@ -153,8 +151,6 @@ public class MultipleInputOutputFunctionTests {
 			.web(WebApplicationType.NONE)
 			.run("--spring.jmx.enabled=false",
 				"--spring.cloud.function.definition=multiInputSingleOutputMessage")) {
-			context.getBean(InputDestination.class);
-
 			InputDestination inputDestination = context.getBean(InputDestination.class);
 			OutputDestination outputDestination = context.getBean(OutputDestination.class);
 
@@ -178,8 +174,6 @@ public class MultipleInputOutputFunctionTests {
 			.web(WebApplicationType.NONE)
 			.run("--spring.jmx.enabled=false",
 				"--spring.cloud.function.definition=singleInputMultipleOutputs")) {
-			context.getBean(InputDestination.class);
-
 			InputDestination inputDestination = context.getBean(InputDestination.class);
 			OutputDestination outputDestination = context.getBean(OutputDestination.class);
 
@@ -205,8 +199,6 @@ public class MultipleInputOutputFunctionTests {
 			.web(WebApplicationType.NONE)
 			.run("--spring.jmx.enabled=false",
 				"--spring.cloud.function.definition=uppercase;reverse")) {
-			context.getBean(InputDestination.class);
-
 			InputDestination inputDestination = context.getBean(InputDestination.class);
 			OutputDestination outputDestination = context.getBean(OutputDestination.class);
 
@@ -230,8 +222,6 @@ public class MultipleInputOutputFunctionTests {
 			.web(WebApplicationType.NONE)
 			.run("--spring.jmx.enabled=false",
 				"--spring.cloud.function.definition=uppercase|reverse;reverse|uppercase")) {
-			context.getBean(InputDestination.class);
-
 			InputDestination inputDestination = context.getBean(InputDestination.class);
 			OutputDestination outputDestination = context.getBean(OutputDestination.class);
 
@@ -258,8 +248,6 @@ public class MultipleInputOutputFunctionTests {
 				"--spring.cloud.function.definition=multiInputSingleOutput",
 				"--spring.cloud.stream.bindings.multiInputSingleOutput-in-0.content-type=string/person",
 				"--spring.cloud.stream.bindings.multiInputSingleOutput-in-1.content-type=string/employee")) {
-			context.getBean(InputDestination.class);
-
 			InputDestination inputDestination = context.getBean(InputDestination.class);
 			OutputDestination outputDestination = context.getBean(OutputDestination.class);
 
@@ -286,8 +274,6 @@ public class MultipleInputOutputFunctionTests {
 				"--spring.cloud.stream.bindings.multiInputSingleOutput2-in-0.content-type=string/person",
 				"--spring.cloud.stream.bindings.multiInputSingleOutput2-in-1.content-type=string/employee",
 				"--spring.cloud.stream.bindings.multiInputSingleOutput2-out-0.content-type=string/person")) {
-			context.getBean(InputDestination.class);
-
 			InputDestination inputDestination = context.getBean(InputDestination.class);
 			OutputDestination outputDestination = context.getBean(OutputDestination.class);
 
