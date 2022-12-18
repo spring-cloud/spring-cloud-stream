@@ -1766,7 +1766,7 @@ public class KafkaBinderTests extends
 
 		assertThat(messages[0]).isNotNull();
 		assertThat(messages[1]).isNotNull();
-		assertThat(messages[1]).isNotNull();
+		assertThat(messages[2]).isNotNull();
 		assertThat(messages).extracting("payload").containsExactlyInAnyOrder(
 				testPayload1.getBytes(), testPayload2.getBytes(), testPayload3.getBytes());
 		Arrays.asList(messages).forEach(message -> {
