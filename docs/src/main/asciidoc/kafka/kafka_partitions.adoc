@@ -59,7 +59,7 @@ The above configuration supports up to 12 consumer instances (6 if their `concur
 It is generally best to "`over-provision`" the partitions to allow for future increases in consumers or concurrency.
 
 NOTE: The preceding configuration uses the default partitioning (`key.hashCode() % partitionCount`).
-This may or may not provide a suitably balanced algorithm, depending on the key values.
+This may or may not provide a suitably balanced algorithm, depending on the key values. In particular, note that this partitioning strategy differs from the default used by a standalone Kafka producer - such as the one used by Kafka Streams, meaning that the same key value may balance differently across partitions when produced by those clients.
 You can override this default by using the `partitionSelectorExpression` or `partitionSelectorClass` properties.
 
 Since partitions are natively handled by Kafka, no special configuration is needed on the consumer side.
