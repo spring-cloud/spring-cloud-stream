@@ -10,7 +10,7 @@
 	<description>Messaging Microservices with Spring Integration</description>
 
     <properties>
-        <kotlin.version>1.7.20-Beta</kotlin.version>
+        <kotlin.version>1.7.22</kotlin.version>
     </properties>
 
     <parent>
