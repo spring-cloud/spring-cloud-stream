@@ -2865,18 +2865,13 @@ Spring Cloud Stream provides support for testing your microservice applications 
 
 [[spring_integration_test_binder]]
 === Spring Integration Test Binder
-The old test binder defined in `spring-cloud-stream-test-support` module was specifically designed to facilitate _unit testing_ of the actual messaging components and thus bypasses some of the core functionality of the binder API.
 
-While such light-weight approach is sufficient for a lot of cases, it usually requires additional _integration testing_ with real binders (e.g., Rabbit, Kafka etc). So we are effectively deprecating it.
+Spring Cloud Stream comes with a test binder which you can use for testing the various application components without requiring an actual real-world binder implementation or a message broker.
 
-To begin bridging the gap between _unit_ and _integration_ testing we've developed a new test binder which uses https://spring.io/projects/spring-integration[Spring Integration] framework
-as an in-JVM Message Broker essentially giving you the best of both worlds - a real binder without the networking.
+This test binder acts as a bridge between _unit_ and _integration_ testing and is based on https://spring.io/projects/spring-integration[Spring Integration] framework as an in-JVM message broker essentially giving you the best of both worlds - a real binder without the networking.
 
 ==== Test Binder configuration
-To enable Spring Integration Test Binder all you need is:
-
-- Add required dependencies
-- Remove the dependency for `spring-cloud-stream-test-support`
+To enable Spring Integration test binder, all you need is to add it as a dependency.
 
 ***Add required dependencies***
 
@@ -2885,12 +2880,9 @@ Below is the example of the required Maven POM entries.
 [source,xml]
 ----
 <dependency>
-    <groupId>org.springframework.cloud</groupId>
-    <artifactId>spring-cloud-stream</artifactId>
-    <version>${spring.cloud.stream.version}</version>
-    <type>test-jar</type>
-    <scope>test</scope>
-    <classifier>test-binder</classifier>
+	<groupId>org.springframework.cloud</groupId>
+	<artifactId>spring-cloud-stream-test-binder</artifactId>
+	<scope>test</scope>
 </dependency>
 ----
 
@@ -2898,17 +2890,8 @@ Or for build.gradle.kts
 
 [source,kotlin]
 ----
-testImplementation("org.springframework.cloud:spring-cloud-stream") {
-	artifact {
-		name = "spring-cloud-stream"
-		extension = "jar"
-		type ="test-jar"
-		classifier = "test-binder"
-	}
-}
+testImplementation("org.springframework.cloud:spring-cloud-stream-test-binder")
 ----
-
-
 
 ==== Test Binder usage
 
