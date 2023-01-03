@@ -285,8 +285,7 @@ public class KafkaStreamsMessageConversionDelegate {
 				if (o2 != null) {
 					if (KafkaStreamsMessageConversionDelegate.this.kstreamBindingInformationCatalogue
 							.isDlqEnabled(bindingTarget)) {
-						if (o2 instanceof Message) {
-							Message message = (Message) o2;
+						if (o2 instanceof Message message) {
 
 							// We need to convert the key to a byte[] before sending to DLQ.
 							Serde keySerde = kstreamBindingInformationCatalogue.getKeySerde(bindingTarget);

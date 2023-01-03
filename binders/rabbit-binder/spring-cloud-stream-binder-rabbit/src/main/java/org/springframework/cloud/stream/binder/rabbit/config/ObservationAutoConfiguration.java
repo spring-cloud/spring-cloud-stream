@@ -38,8 +38,7 @@ public class ObservationAutoConfiguration {
 	ListenerContainerCustomizer<MessageListenerContainer> observedListenerContainerCustomizer(
 			ApplicationContext applicationContext) {
 		return (container, destinationName, group) -> {
-			if (container instanceof AbstractMessageListenerContainer) {
-				AbstractMessageListenerContainer abstractMessageListenerContainer = ((AbstractMessageListenerContainer) container);
+			if (container instanceof AbstractMessageListenerContainer abstractMessageListenerContainer) {
 				abstractMessageListenerContainer.setObservationEnabled(true);
 				abstractMessageListenerContainer.setApplicationContext(applicationContext);
 			}

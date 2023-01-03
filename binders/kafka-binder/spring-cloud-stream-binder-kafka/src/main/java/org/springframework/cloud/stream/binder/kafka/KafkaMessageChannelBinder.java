@@ -1265,8 +1265,7 @@ public class KafkaMessageChannelBinder extends
 				}
 
 				MessageHeaders headers;
-				if (message instanceof ErrorMessage) {
-					final ErrorMessage errorMessage = (ErrorMessage) message;
+				if (message instanceof ErrorMessage errorMessage) {
 					final Message<?> originalMessage = errorMessage.getOriginalMessage();
 					if (originalMessage != null) {
 						headers = originalMessage.getHeaders();

@@ -111,20 +111,12 @@ public class BindingsLifecycleController {
 		Binding<?> binding = BindingsLifecycleController.this.locateBinding(bindingName);
 		if (binding != null) {
 			switch (state) {
-			case STARTED:
-				binding.start();
-				break;
-			case STOPPED:
-				binding.stop();
-				break;
-			case PAUSED:
-				binding.pause();
-				break;
-			case RESUMED:
-				binding.resume();
-				break;
-			default:
-				break;
+				case STARTED -> binding.start();
+				case STOPPED -> binding.stop();
+				case PAUSED -> binding.pause();
+				case RESUMED -> binding.resume();
+				default -> {
+				}
 			}
 		}
 	}
