@@ -44,7 +44,6 @@ import reactor.util.function.Tuples;
 
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
-import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -142,11 +141,6 @@ public class FunctionConfiguration {
 	public InitializingBean functionBindingRegistrar(Environment environment, FunctionCatalog functionCatalog,
 			StreamFunctionProperties streamFunctionProperties) {
 		return new FunctionBindingRegistrar(functionCatalog, streamFunctionProperties);
-	}
-
-	@Bean
-	public SmartInitializingSingleton po(GenericApplicationContext context) {
-		return new PollableSourceRegistrar(context);
 	}
 
 	@Bean
@@ -798,34 +792,6 @@ public class FunctionConfiguration {
 						+ "is not supported in the context of Spring Cloud Stream.");
 			}
 			return result;
-		}
-	}
-
-	private static class PollableSourceRegistrar implements SmartInitializingSingleton {
-		private final Environment environment;
-
-		private final GenericApplicationContext context;
-
-		PollableSourceRegistrar(GenericApplicationContext context) {
-			this.environment = context.getEnvironment();
-			this.context = context;
-		}
-
-		@Override
-		public void afterSingletonsInstantiated() {
-			if (StringUtils.hasText(this.environment.getProperty("spring.cloud.stream.pollable-source"))) {
-				String[] sourceNames = this.environment.getProperty("spring.cloud.stream.pollable-source").split(";");
-
-				for (String sourceName : sourceNames) {
-					final SupportedBindableFeatures supportedBindableFeatures = new SupportedBindableFeatures();
-					supportedBindableFeatures.setPollable(true);
-					supportedBindableFeatures.setReactive(false);
-
-					BindableFunctionProxyFactory proxyFactory =
-						new BindableFunctionProxyFactory(sourceName, 1, 0, new StreamFunctionProperties(), supportedBindableFeatures);
-					context.registerBean(sourceName + "_binding", BindableFunctionProxyFactory.class, () -> proxyFactory);
-				}
-			}
 		}
 	}
 
