@@ -774,7 +774,6 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 				errorChannelName, SubscribableChannel.class, () -> binderErrorChannel);
 		this.subscribeFunctionErrorHandler(errorChannelName, consumerProperties.getBindingName());
 
-		//
 		ErrorMessageSendingRecoverer recoverer = new ErrorMessageSendingRecoverer(binderErrorChannel, errorMessageStrategy);
 		String recovererBeanName = getErrorRecovererName(destination, group, consumerProperties);
 		if (!getApplicationContext().containsBean(recovererBeanName)) {
@@ -789,13 +788,14 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		String errorMessageHandlerName = getErrorMessageHandlerName(destination, group,
 				consumerProperties);
 
+		if (binderProvidedErrorHandler == null) {
+			binderProvidedErrorHandler = this.getDefaultErrorMessageHandler(binderErrorChannel, polled);
+		}
 		if (binderProvidedErrorHandler != null) {
 			if (this.isSubscribable(binderErrorChannel)) {
 				if (!getApplicationContext().containsBean(errorMessageHandlerName)) {
 					MessageHandler h = binderProvidedErrorHandler;
-					((GenericApplicationContext) getApplicationContext()).registerBean(
-							errorMessageHandlerName, MessageHandler.class,
-							() -> h);
+					((GenericApplicationContext) getApplicationContext()).registerBean(errorMessageHandlerName, MessageHandler.class, () -> h);
 					binderErrorChannel.subscribe(binderProvidedErrorHandler);
 				}
 				else {
@@ -930,9 +930,8 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 	 * @return the handler.
 	 */
 	protected MessageHandler getDefaultErrorMessageHandler(
-			LastSubscriberAwareChannel errorChannel, boolean defaultErrorChannelPresent) {
-		return new FinalRethrowingErrorMessageHandler(errorChannel,
-				defaultErrorChannelPresent);
+			SubscribableChannel errorChannel, boolean defaultErrorChannelPresent) {
+		return new FinalRethrowingErrorMessageHandler();
 	}
 
 	/**

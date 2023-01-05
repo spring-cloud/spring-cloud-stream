@@ -33,23 +33,8 @@ import org.springframework.messaging.MessagingException;
 class FinalRethrowingErrorMessageHandler
 		implements MessageHandler, LastSubscriberMessageHandler {
 
-	private final LastSubscriberAwareChannel errorChannel;
-
-	private final boolean defaultErrorChannelPresent;
-
-	FinalRethrowingErrorMessageHandler(LastSubscriberAwareChannel errorChannel,
-			boolean defaultErrorChannelPresent) {
-		this.errorChannel = errorChannel;
-		this.defaultErrorChannelPresent = defaultErrorChannelPresent;
-	}
-
 	@Override
 	public void handleMessage(Message<?> message) throws MessagingException {
-		if (this.errorChannel.subscribers() > (this.defaultErrorChannelPresent ? 2 : 1)) {
-			// user has subscribed; default is 2, this and the bridge to the
-			// errorChannel
-			return;
-		}
 		if (message.getPayload() instanceof MessagingException) {
 			throw (MessagingException) message.getPayload();
 		}

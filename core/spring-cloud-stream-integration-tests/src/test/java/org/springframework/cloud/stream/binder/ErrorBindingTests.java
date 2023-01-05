@@ -25,6 +25,7 @@ import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.stream.binder.test.InputDestination;
+import org.springframework.cloud.stream.binder.test.TestChannelBinder;
 import org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
@@ -80,12 +81,39 @@ public class ErrorBindingTests {
 		assertThat(errorConfiguration.counter).isEqualTo(6);
 	}
 
+	@Test
+	void testConfigurationWithoutBinderSpecificErrorHandler() {
+		ApplicationContext context = new SpringApplicationBuilder(
+			TestChannelBinderConfiguration.getCompleteConfiguration(NoErrorHandler.class))
+			.web(WebApplicationType.NONE)
+			.run("--spring.cloud.stream.bindings.process-in-0.consumer.max-attempts=1",
+				"--spring.cloud.function.definition=process",
+				"--spring.jmx.enabled=false");
+
+		InputDestination source = context.getBean(InputDestination.class);
+		source.send(new GenericMessage<byte[]>("Hello".getBytes()));
+
+		TestChannelBinder binder = context.getBean(TestChannelBinder.class);
+		assertThat(binder.getLastError()).isNotNull();
+	}
+
 	@EnableAutoConfiguration
 	public static class TestProcessor {
 
 		@Bean
 		public Function<String, String> processor() {
 			return s -> s;
+		}
+	}
+
+	@EnableAutoConfiguration
+	public static class NoErrorHandler {
+
+		@Bean
+		public Function<String, String> process() {
+			return s -> {
+				throw new RuntimeException("intentional");
+			};
 		}
 	}
 

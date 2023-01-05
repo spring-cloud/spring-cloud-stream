@@ -190,7 +190,7 @@ public class TestChannelBinder extends
 	protected MessageHandler getErrorMessageHandler(ConsumerDestination destination,
 													String group, ConsumerProperties consumerProperties) {
 		return m -> {
-			this.logger.debug("Error handled: " + m);
+			this.logger.info("Error handled: " + m);
 			this.lastError = m;
 		};
 	}
