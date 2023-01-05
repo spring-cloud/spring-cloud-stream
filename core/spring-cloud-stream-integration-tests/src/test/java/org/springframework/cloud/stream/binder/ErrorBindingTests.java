@@ -97,6 +97,19 @@ public class ErrorBindingTests {
 		assertThat(binder.getLastError()).isNotNull();
 	}
 
+	@Test
+	void testErrorBindingWithMultipleDestinationPerBinding() {
+		new SpringApplicationBuilder(
+			TestChannelBinderConfiguration.getCompleteConfiguration(NoErrorHandler.class))
+			.web(WebApplicationType.NONE)
+			.run("--spring.cloud.stream.bindings.process-in-0.consumer.max-attempts=1",
+				"--spring.cloud.function.definition=process",
+				"--spring.cloud.stream.bindings.process-in-0.destination=one,two",
+				"--spring.jmx.enabled=false");
+
+		// must not fail GH-2599
+	}
+
 	@EnableAutoConfiguration
 	public static class TestProcessor {
 

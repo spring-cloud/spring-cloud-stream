@@ -741,7 +741,6 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 			boolean polled) {
 
 		ErrorMessageStrategy errorMessageStrategy = getErrorMessageStrategy();
-
 		String errorChannelName = errorsBaseName(destination, group, consumerProperties);
 		BindingServiceProperties bsp = this.getBindingServiceProperties();
 		FunctionInvocationWrapper userErrorHandler = null;
@@ -770,8 +769,10 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 			binderErrorChannel = new BinderErrorChannel();
 		}
 		binderErrorChannel.setComponentName(errorChannelName);
-		((GenericApplicationContext) getApplicationContext()).registerBean(
-				errorChannelName, SubscribableChannel.class, () -> binderErrorChannel);
+		if (!this.getApplicationContext().containsBean(errorChannelName)) {
+			((GenericApplicationContext) getApplicationContext()).registerBean(
+					errorChannelName, SubscribableChannel.class, () -> binderErrorChannel);
+		}
 		this.subscribeFunctionErrorHandler(errorChannelName, consumerProperties.getBindingName());
 
 		ErrorMessageSendingRecoverer recoverer = new ErrorMessageSendingRecoverer(binderErrorChannel, errorMessageStrategy);
