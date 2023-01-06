@@ -653,11 +653,11 @@ public class FunctionConfiguration {
 						}
 						template.send(outputChannelName, (Message<?>) result);
 					}
-					else if (function.getFunctionDefinition().equals(RoutingFunction.FUNCTION_NAME)) {
+					else if (function.isRoutingFunction()) {
 						if (!(result instanceof Message)) {
 							result = MessageBuilder.withPayload(result).copyHeadersIfAbsent(requestMessage.getHeaders()).build();
 						}
-						streamBridge.send(RoutingFunction.FUNCTION_NAME + "-out-0", result);
+						streamBridge.send(function.getFunctionDefinition() + "-out-0", result);
 					}
 				}
 
@@ -741,7 +741,6 @@ public class FunctionConfiguration {
 
 		private final ConsumerProperties consumerProperties;
 
-		@SuppressWarnings("unused")
 		private final ProducerProperties producerProperties;
 
 		private final Field headersField;
@@ -782,9 +781,6 @@ public class FunctionConfiguration {
 			}
 			if (CloudEventMessageUtils.isCloudEvent(message)) {
 				headersMap.putIfAbsent(MessageUtils.MESSAGE_TYPE, CloudEventMessageUtils.CLOUDEVENT_VALUE);
-			}
-			if (message != null && consumerProperties != null) {
-				//headersMap.put(FunctionProperties.SKIP_CONVERSION_HEADER, consumerProperties.isUseNativeDecoding());
 			}
 			Object result = function.apply(message);
 			if (result instanceof Publisher && this.isRoutingFunction) {
@@ -837,7 +833,7 @@ public class FunctionConfiguration {
 							this.inputCount = 0;
 							this.outputCount = this.getOutputCount(function, true);
 						}
-						else if (function.isConsumer() || functionDefinition.equals(RoutingFunction.FUNCTION_NAME)) {
+						else if (function.isConsumer() || function.isRoutingFunction()) {
 							this.inputCount = FunctionTypeUtils.getInputCount(function);
 							this.outputCount = 0;
 						}
