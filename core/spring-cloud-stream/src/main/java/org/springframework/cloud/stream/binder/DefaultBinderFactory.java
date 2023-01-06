@@ -423,7 +423,6 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 			binderProducingContext.setParent(this.context);
 		}
 		else if (this.context != null) {
-			this.propagateSharedBeans((GenericApplicationContext) this.context, binderProducingContext);
 			binderProducingContext.addApplicationListener(new ApplicationListener<ApplicationEvent>() {
 				@Override
 				public void onApplicationEvent(ApplicationEvent event) {
@@ -455,14 +454,18 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 
 		if (refresh) {
 			binderProducingContext.refresh();
+			if (!useApplicationContextAsParent || "integration".equals(binderType.getDefaultName())) {
+				this.propagateSharedBeans((GenericApplicationContext) this.context, binderProducingContext);
+			}
 		}
-		if ("integration".equals(binderType.getDefaultName())) {
-			this.propagateSharedBeans((GenericApplicationContext) this.context, binderProducingContext);
-		}
+
 		return binderProducingContext;
 	}
 
 	private void propagateSharedBeans(GenericApplicationContext toContext, GenericApplicationContext fromContext) {
+		if (toContext == null) {
+			return;
+		}
 		GenericConversionService binderProducingConversionService = (GenericConversionService) toContext.getBeanFactory().getConversionService();
 		try {
 			Enumeration<URL> resources = ClassUtils.getDefaultClassLoader().getResources("META-INF/shared.beans");
