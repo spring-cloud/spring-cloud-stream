@@ -655,11 +655,11 @@ public class FunctionConfiguration {
 						}
 						template.send(outputChannelName, (Message<?>) result);
 					}
-					else if (function.getFunctionDefinition().equals(RoutingFunction.FUNCTION_NAME)) {
+					else if (function.isRoutingFunction()) {
 						if (!(result instanceof Message)) {
 							result = MessageBuilder.withPayload(result).copyHeadersIfAbsent(requestMessage.getHeaders()).build();
 						}
-						streamBridge.send(RoutingFunction.FUNCTION_NAME + "-out-0", result);
+						streamBridge.send(function.getFunctionDefinition() + "-out-0", result);
 					}
 				}
 
@@ -867,7 +867,7 @@ public class FunctionConfiguration {
 								this.inputCount = 0;
 								this.outputCount = this.getOutputCount(functionType, true);
 							}
-							else if (function.isConsumer() || functionDefinition.equals(RoutingFunction.FUNCTION_NAME)) {
+							else if (function.isConsumer() || function.isRoutingFunction()) {
 								this.inputCount = FunctionTypeUtils.getInputCount(functionType);
 								this.outputCount = 0;
 							}
