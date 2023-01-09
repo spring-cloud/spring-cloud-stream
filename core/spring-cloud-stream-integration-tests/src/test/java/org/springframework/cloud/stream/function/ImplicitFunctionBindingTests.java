@@ -220,7 +220,7 @@ public class ImplicitFunctionBindingTests {
 			inputDestination.send(inputMessage, "func-in-0");
 
 			Message<byte[]> outputMessage = outputDestination.receive(1000, "func-out-0");
-			//assertThat(outputMessage.getPayload()).isEqualTo("NULL".getBytes());
+			assertThat(outputMessage.getPayload()).isEqualTo("NULL".getBytes());
 
 			inputDestination.send(inputMessage, "funcMessage-in-0");
 
