@@ -1078,6 +1078,22 @@ Use the following API method to retrieve the `KakfaStreams` object associated wi
 public <K> KafkaStreams getKafkaStreams(String store, K key, Serializer<K> serializer)
 ```
 
+==== Customizing Store Query Parameters
+
+Sometimes it is necessary that you need to fine tune the store query parameters before querying the store through `InteractiveQueryService`.
+For this purpose, starting with the `4.0.1` version of the binder, you can provide a bean for `StoreQueryParametersCustomizer` which is a functional interface with a `customize` method that takes a `StoreQueryParameter` as the argument.
+Here is its method signature.
+
+```
+StoreQueryParameters<T> customize(StoreQueryParameters<T> storeQueryParameters);
+```
+
+Using this approach, applications can further customize the `StoreQueryParameters` such as enabling stale stores.
+
+When this bean is present in this application, `InteractiveQueryService` will call its `customize` method before querying the state store.
+
+NOTE: Keep in mind that, there must be a unique bean for `StoreQueryParametersCustomizer` available in the application.
+
 === Health Indicator
 
 The health indicator requires the dependency `spring-boot-starter-actuator`. For maven use:

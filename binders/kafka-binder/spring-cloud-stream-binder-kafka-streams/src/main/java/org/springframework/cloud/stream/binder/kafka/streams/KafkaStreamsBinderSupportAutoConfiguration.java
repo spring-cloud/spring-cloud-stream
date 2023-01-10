@@ -348,8 +348,14 @@ public class KafkaStreamsBinderSupportAutoConfiguration {
 	@Bean
 	public InteractiveQueryService interactiveQueryServices(
 			KafkaStreamsRegistry kafkaStreamsRegistry,
-			@Qualifier("binderConfigurationProperties")KafkaStreamsBinderConfigurationProperties properties) {
-		return new InteractiveQueryService(kafkaStreamsRegistry, properties);
+			@Qualifier("binderConfigurationProperties")KafkaStreamsBinderConfigurationProperties properties,
+			ObjectProvider<StoreQueryParametersCustomizer<?>> storeQueryParametersCustomizerProvider) {
+		InteractiveQueryService interactiveQueryService = new InteractiveQueryService(kafkaStreamsRegistry, properties);
+		StoreQueryParametersCustomizer<?> storeQueryParametersCustomizer = storeQueryParametersCustomizerProvider.getIfUnique();
+		if (storeQueryParametersCustomizer != null) {
+			interactiveQueryService.setStoreQueryParametersCustomizer(storeQueryParametersCustomizer);
+		}
+		return interactiveQueryService;
 	}
 
 	@Bean
