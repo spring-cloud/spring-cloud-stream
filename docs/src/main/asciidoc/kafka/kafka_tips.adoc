@@ -127,13 +127,13 @@ spring.cloud.stream.bindings.processData-in-0.consumer.retry-template-name=<your
 
 ==== Problem Statement
 
-I have a processor that encounters a deserilzartion exception in Kafka consumer.
+I have a processor that encounters a deserialization exception in Kafka consumer.
 I would expect that the Spring Cloud Stream DLQ mechanism will catch that scenario, but it does not.
 How can I handle this?
 
 ==== Solution
 
-The normal DLQ mechanism offered by Spring Cloud Stream will not help when Kafka consumer throws an irrecoverable deserialization excepion.
+The normal DLQ mechanism offered by Spring Cloud Stream will not help when Kafka consumer throws an irrecoverable deserialization exception.
 This is because, this exception happens even before the consumer's `poll()` method returns.
 Spring for Apache Kafka project offers some great ways to help the binder with this situation.
 Let us explore those.
@@ -154,8 +154,8 @@ It is a trivial function that takes a `String` parameter.
 We want to bypass the message converters provided by Spring Cloud Stream and want to use native deserializers instead.
 In the case of `String` types, it does not make much sense, but for more complex types like AVRO etc. you have to rely on external deserializers and therefore want to delegate the conversion to Kafka.
 
-Now when the consumer receives the data, let us assume that there is a bad record that causes a deserilziation errror, maybe someone passed an `Integer` instead of a `String` for example.
-In that case, if you don't do something in the application, the excption will be propagated through the chain and your application will exit eventually.
+Now when the consumer receives the data, let us assume that there is a bad record that causes a deserialization error, maybe someone passed an `Integer` instead of a `String` for example.
+In that case, if you don't do something in the application, the exception will be propagated through the chain and your application will exit eventually.
 
 In order to handle this, you can add a `ListenerContainerCustomizer` `@Bean` that configures a `DefaultErrorHandler`.
 This `DefaultErrorHandler` is configured with a `DeadLetterPublishingRecoverer`.
@@ -241,8 +241,8 @@ They are purely meant for addressing any application level errors only.
 
 ==== Problem Statement
 
-I want to write a Spring Cloud Stream Kafka consumer applicaiton and not sure about how it manages Kafka consumer offsets.
-Can you exaplain?
+I want to write a Spring Cloud Stream Kafka consumer application and not sure about how it manages Kafka consumer offsets.
+Can you explain?
 
 ==== Solution
 
@@ -256,7 +256,7 @@ Their semantics are self-explanatory from their names.
 Assuming you are running the consumer for the first time.
 If you miss the group.id in your Spring Cloud Stream application, then it becomes an anonymous consumer.
 Whenever, you have an anonymous consumer, in that case, Spring Cloud Stream application by default will start from the `latest` available offset in the topic partition.
-On the other hand, if you explicitly specify a group.id, then by default, the Spring Cloud Stream application will start from the `earliest` available offset in the topic partiton.
+On the other hand, if you explicitly specify a group.id, then by default, the Spring Cloud Stream application will start from the `earliest` available offset in the topic partition.
 
 In both cases above (consumers with explicit groups and anonymous groups), the starting offset can be switched around by using the property `spring.cloud.stream.kafka.bindings.<binding-name>.consumer.startOffset` and setting it to either `earliest` or `latest`.
 
@@ -275,12 +275,12 @@ When you do that and then start the consumer application, each time you start, i
 ==== Problem Statement
 
 Using Kafka binder, I know that it can set the offset to either `earliest` or `latest`, but I have a requirement to seek the offset to something in the middle, an arbitrary offset.
-Is there a way to achieve this using Spring Cloud Stream Kafka biner?
+Is there a way to achieve this using Spring Cloud Stream Kafka binder?
 
 ==== Solution
 
 Previously we saw how Kafka binder allows you to tackle basic offset management.
-By default, the binder does not allow you to rewind to an arbitrary offset, at least through the mechanism we saw in that reipce.
+By default, the binder does not allow you to rewind to an arbitrary offset, at least through the mechanism we saw in that recipe.
 However, there are some low-level strategies that the binder provides to achieve this use case.
 Let's explore them.
 
@@ -347,7 +347,7 @@ public void onPartitionsAssigned(String bindingName, Consumer<?, ?> consumer, Co
                     consumer.seek(tp, offset);
                 }
                 catch (Exception e) {
-                    // Handle excpetions carefully.
+                    // Handle exceptions carefully.
                 }
             }
         });
@@ -363,9 +363,9 @@ When consumer `seek` fails, it may throw some runtime exceptions and you need to
 
 When we add a second consumer, a rebalance will occur and some partitions will be moved around.
 Let's say that the new consumer gets partitions `2` and `3`.
-When this new Spring Cloud Stream consumer calls this `onPartitionsAssigned` method, it will see that this is the initial assignment for partititon `2` and `3` on this consumer.
-Therefore, it will do the seek operation becuase of the conditional check on the `initial` argument.
-In the case of the first consumer, it now only has partitons `0` and `1`
+When this new Spring Cloud Stream consumer calls this `onPartitionsAssigned` method, it will see that this is the initial assignment for partition `2` and `3` on this consumer.
+Therefore, it will do the seek operation because of the conditional check on the `initial` argument.
+In the case of the first consumer, it now only has partitions `0` and `1`
 However, for this consumer it was simply a rebalance event and not considered as an intial assignment.
 Thus, it will not re-seek to the given offsets because of the conditional check on the `initial` argument.
 
@@ -518,19 +518,19 @@ All you have to do is to provide the following property to enable native seriali
 spring.cloud.stream.kafka.bindings.<binding-name>.producer.useNativeEncoding: true
 ```
 
-Then, you need to also set the serailzers.
+Then, you need to also set the serializers.
 There are a couple of ways to do this.
 
 ```
-spring.cloud.stream.kafka.bindings.<binding-name>.producer.configurarion.key.serializer: org.apache.kafka.common.serialization.StringSerializer
-spring.cloud.stream.kafka.bindings.<binding-name>.producer.configurarion.value.serializer: org.apache.kafka.common.serialization.StringSerializer
+spring.cloud.stream.kafka.bindings.<binding-name>.producer.configuration.key.serializer: org.apache.kafka.common.serialization.StringSerializer
+spring.cloud.stream.kafka.bindings.<binding-name>.producer.configuration.value.serializer: org.apache.kafka.common.serialization.StringSerializer
 ```
 
 or using the binder configuration.
 
 ```
-spring.cloud.stream.kafka.binder.configurarion.key.serializer: org.apache.kafka.common.serialization.StringSerializer
-spring.cloud.stream.kafka.binder.configurarion.value.serializer: org.apache.kafka.common.serialization.StringSerializer
+spring.cloud.stream.kafka.binder.configuration.key.serializer: org.apache.kafka.common.serialization.StringSerializer
+spring.cloud.stream.kafka.binder.configuration.value.serializer: org.apache.kafka.common.serialization.StringSerializer
 ```
 
 When using the binder way, it is applied against all the bindings whereas setting them at the bindings are per binding.
@@ -540,8 +540,8 @@ On the deserializing side, you just need to provide the deserializers as configu
 For example,
 
 ```
-spring.cloud.stream.kafka.bindings.<binding-name>.consumer.configurarion.key.deserializer: org.apache.kafka.common.serialization.StringDeserializer
-spring.cloud.stream.kafka.bindings.<binding-name>.producer.configurarion.value.deserializer: org.apache.kafka.common.serialization.StringDeserializer
+spring.cloud.stream.kafka.bindings.<binding-name>.consumer.configuration.key.deserializer: org.apache.kafka.common.serialization.StringDeserializer
+spring.cloud.stream.kafka.bindings.<binding-name>.producer.configuration.value.deserializer: org.apache.kafka.common.serialization.StringDeserializer
 ```
 
 You can also set them at the binder level.
@@ -552,7 +552,7 @@ There is an optional property that you can set to force native decoding.
 spring.cloud.stream.kafka.bindings.<binding-name>.consumer.useNativeDecoding: true
 ```
 
-However, in the case of Kafka binder, this is unncessary, as by the time it reaches the binder, Kafka already deserializes them using the configured deserializers.
+However, in the case of Kafka binder, this is unnecessary, as by the time it reaches the binder, Kafka already deserializes them using the configured deserializers.
 
 === Explain how offset resetting work in Kafka Streams binder
 
@@ -593,7 +593,7 @@ Keep in mind that, once there are committed offsets, these setting are *not* hon
 
 ==== Problem Statement
 
-I have a Kafka producer application and I want to keep track of all my successful sedings.
+I have a Kafka producer application and I want to keep track of all my successful sendings.
 
 ==== Solution
 
