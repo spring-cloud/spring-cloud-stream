@@ -97,7 +97,7 @@ public class KafkaStreamsMessageConversionDelegate {
 				Message<?> message = v instanceof Message<?> ? (Message<?>) v
 						: MessageBuilder.withPayload(v).build();
 				Map<String, Object> headers = new HashMap<>(message.getHeaders());
-				if (!StringUtils.isEmpty(contentType)) {
+				if (StringUtils.hasText(contentType)) {
 					headers.put(MessageHeaders.CONTENT_TYPE, contentType);
 				}
 				MessageHeaders messageHeaders = new MessageHeaders(headers);

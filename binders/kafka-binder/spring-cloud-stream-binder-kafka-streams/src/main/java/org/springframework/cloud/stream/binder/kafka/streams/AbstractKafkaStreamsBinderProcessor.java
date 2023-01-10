@@ -206,7 +206,7 @@ public abstract class AbstractKafkaStreamsBinderProcessor implements Application
 					}
 
 					String applicationId = functionConfig.getApplicationId();
-					if (!StringUtils.isEmpty(applicationId)) {
+					if (StringUtils.hasText(applicationId)) {
 						streamConfiguration.put(StreamsConfig.APPLICATION_ID_CONFIG, applicationId);
 					}
 				}
@@ -614,7 +614,7 @@ public abstract class AbstractKafkaStreamsBinderProcessor implements Application
 
 	private <K, V> Processor<K, V, Void, Void> eventTypeProcessor(KafkaStreamsConsumerProperties kafkaStreamsConsumerProperties,
 																AtomicBoolean matched, AtomicReference<String> topicObject, AtomicReference<Headers> headersObject) {
-		return new Processor<K, V, Void, Void>() {
+		return new Processor<>() {
 
 			org.apache.kafka.streams.processor.api.ProcessorContext<?, ?> context;
 

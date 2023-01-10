@@ -195,11 +195,11 @@ public class KafkaStreamsBinderSupportAutoConfiguration {
 			//Making sure that the application indeed set a property.
 			String kafkaStreamsBinderBroker = environment.getProperty("spring.cloud.stream.kafka.streams.binder.brokers");
 
-			if (StringUtils.isEmpty(kafkaStreamsBinderBroker)) {
+			if (!StringUtils.hasText(kafkaStreamsBinderBroker)) {
 				//Kafka Streams binder specific property for brokers is not set by the application.
 				//See if there is one configured at the kafka binder level.
 				String kafkaBinderBroker = environment.getProperty("spring.cloud.stream.kafka.binder.brokers");
-				if (!StringUtils.isEmpty(kafkaBinderBroker)) {
+				if (StringUtils.hasText(kafkaBinderBroker)) {
 					kafkaConnectionString = kafkaBinderBroker;
 					configProperties.setBrokers(kafkaConnectionString);
 				}

@@ -49,7 +49,6 @@ public class KafkaStreamsTopologyEndpoint {
 	@ReadOperation
 	public List<String> kafkaStreamsTopologies() {
 		final List<StreamsBuilderFactoryBean> streamsBuilderFactoryBeans = this.kafkaStreamsRegistry.streamsBuilderFactoryBeans();
-		final StringBuilder topologyDescription = new StringBuilder();
 		final List<String> descs = new ArrayList<>();
 		streamsBuilderFactoryBeans.stream()
 				.forEach(streamsBuilderFactoryBean ->
@@ -59,7 +58,7 @@ public class KafkaStreamsTopologyEndpoint {
 
 	@ReadOperation
 	public String kafkaStreamsTopology(@Selector String applicationId) {
-		if (!StringUtils.isEmpty(applicationId)) {
+		if (StringUtils.hasText(applicationId)) {
 			final StreamsBuilderFactoryBean streamsBuilderFactoryBean = this.kafkaStreamsRegistry.streamsBuilderFactoryBean(applicationId);
 			if (streamsBuilderFactoryBean != null) {
 				return streamsBuilderFactoryBean.getTopology().describe().toString();

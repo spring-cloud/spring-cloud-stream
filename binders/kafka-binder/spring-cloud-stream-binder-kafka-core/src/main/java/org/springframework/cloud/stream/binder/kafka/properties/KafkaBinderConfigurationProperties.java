@@ -272,7 +272,7 @@ public class KafkaBinderConfigurationProperties {
 	private String toConnectionString(String[] hosts, String defaultPort) {
 		String[] fullyFormattedHosts = new String[hosts.length];
 		for (int i = 0; i < hosts.length; i++) {
-			if (hosts[i].contains(":") || StringUtils.isEmpty(defaultPort)) {
+			if (hosts[i].contains(":") || !StringUtils.hasText(defaultPort)) {
 				fullyFormattedHosts[i] = hosts[i];
 			}
 			else {

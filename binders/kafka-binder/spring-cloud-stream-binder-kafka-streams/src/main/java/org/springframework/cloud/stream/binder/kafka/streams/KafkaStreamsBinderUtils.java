@@ -128,12 +128,12 @@ final class KafkaStreamsBinderUtils {
 							(cr, e) -> new TopicPartition(dlqDestinationResolvers.values().iterator().next().apply(cr, e),
 									partitionFunction.apply(group, cr, e));
 
-			DeadLetterPublishingRecoverer kafkaStreamsBinderDlqRecoverer = !dlqDestinationResolvers.isEmpty() || !StringUtils
-					.isEmpty(extendedConsumerProperties.getExtension().getDlqName())
+			DeadLetterPublishingRecoverer kafkaStreamsBinderDlqRecoverer = !dlqDestinationResolvers.isEmpty() || StringUtils
+					.hasText(extendedConsumerProperties.getExtension().getDlqName())
 					? new DeadLetterPublishingRecoverer(kafkaTemplate, destinationResolver)
 					: null;
 			for (String inputTopic : inputTopics) {
-				if (StringUtils.isEmpty(
+				if (!StringUtils.hasText(
 						extendedConsumerProperties.getExtension().getDlqName()) && dlqDestinationResolvers.isEmpty()) {
 					destinationResolver = (cr, e) -> new TopicPartition("error." + inputTopic + "." + group,
 									partitionFunction.apply(group, cr, e));

@@ -167,7 +167,7 @@ public class RabbitExchangeQueueProvisioner
 										producerProperties.getExtension(), false));
 						declareQueue(queue.getName(), queue);
 						String prefix = producerProperties.getExtension().getPrefix();
-						String destination = StringUtils.isEmpty(prefix) ? exchangeName
+						String destination = !StringUtils.hasText(prefix) ? exchangeName
 								: exchangeName.substring(prefix.length());
 						String[] routingKeys = bindingRoutingKeys(producerProperties.getExtension());
 						if (ObjectUtils.isEmpty(routingKeys)) {
