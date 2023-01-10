@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2021 the original author or authors.
+ * Copyright 2020-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -170,6 +170,11 @@ public final class StreamBridge implements StreamOperations, SmartInitializingSi
 		Message<?> resultMessage;
 		synchronized (this) {
 			resultMessage = (Message<byte[]>) functionToInvoke.apply(messageToSend);
+		}
+
+		if (resultMessage == null
+			&& ((Message) messageToSend).getPayload().getClass().getName().equals("org.springframework.kafka.support.KafkaNull")) {
+			resultMessage = messageToSend;
 		}
 
 		resultMessage = (Message<?>) this.functionInvocationHelper.postProcessResult(resultMessage, null);
