@@ -31,11 +31,11 @@ import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.KeyQueryMetadata;
 import org.apache.kafka.streams.StoreQueryParameters;
 import org.apache.kafka.streams.StreamsConfig;
-import org.apache.kafka.streams.StreamsMetadata;
 import org.apache.kafka.streams.errors.InvalidStateStoreException;
 import org.apache.kafka.streams.errors.UnknownStateStoreException;
 import org.apache.kafka.streams.state.HostInfo;
 import org.apache.kafka.streams.state.QueryableStoreType;
+import org.apache.kafka.streams.state.StreamsMetadata;
 
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsBinderConfigurationProperties;
 import org.springframework.retry.RetryPolicy;
@@ -306,7 +306,7 @@ public class InteractiveQueryService {
 	public List<HostInfo> getAllHostsInfo(String store) {
 		return kafkaStreamsRegistry.getKafkaStreams()
 				.stream()
-				.flatMap(k -> k.streamsMetadataForStore(store).stream())
+				.flatMap(k -> k.allMetadataForStore(store).stream())
 				.filter(Objects::nonNull)
 				.map(StreamsMetadata::hostInfo)
 				.collect(Collectors.toList());
