@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2022 the original author or authors.
+ * Copyright 2018-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -67,6 +67,8 @@ public class InteractiveQueryService {
 
 	private final KafkaStreamsVersionAgnosticTopologyInfoFacade topologyInfoFacade;
 
+	private StoreQueryParametersCustomizer<?> storeQueryParametersCustomizer;
+
 	/**
 	 * Constructor for InteractiveQueryService.
 	 * @param kafkaStreamsRegistry holding {@link KafkaStreamsRegistry}
@@ -86,18 +88,24 @@ public class InteractiveQueryService {
 	 * @param <T> generic queryable store
 	 * @return queryable store.
 	 */
+	@SuppressWarnings("unchecked")
 	public <T> T getQueryableStore(String storeName, QueryableStoreType<T> storeType) {
 
 		KafkaStreams contextSpecificKafkaStreams = getThreadContextSpecificKafkaStreams();
 
-		final StoreQueryParameters<T> storeQueryParams = StoreQueryParameters.fromNameAndType(storeName, storeType);
+		StoreQueryParameters<T> storeQueryParams = StoreQueryParameters.fromNameAndType(storeName, storeType);
+		if (this.storeQueryParametersCustomizer != null) {
+			storeQueryParams = ((StoreQueryParametersCustomizer<T>) this.storeQueryParametersCustomizer).customize(storeQueryParams);
+		}
+
+		AtomicReference<StoreQueryParameters<T>> storeQueryParametersAtomicReference = new AtomicReference<>(storeQueryParams);
 
 		return getRetryTemplate().execute(context -> {
 			T store = null;
 			Throwable throwable = null;
 			if (contextSpecificKafkaStreams != null) {
 				try {
-					store = contextSpecificKafkaStreams.store(storeQueryParams);
+					store = contextSpecificKafkaStreams.store(storeQueryParametersAtomicReference.get());
 				}
 				catch (InvalidStateStoreException e) {
 					throwable = e;
@@ -114,7 +122,7 @@ public class InteractiveQueryService {
 			Map<KafkaStreams, T> candidateStores = new HashMap<>();
 			for (KafkaStreams kafkaStreamApp : kafkaStreamsRegistry.getKafkaStreams()) {
 				try {
-					candidateStores.put(kafkaStreamApp, kafkaStreamApp.store(storeQueryParams));
+					candidateStores.put(kafkaStreamApp, kafkaStreamApp.store(storeQueryParametersAtomicReference.get()));
 				}
 				catch (Exception ex) {
 					throwable = ex;
@@ -304,4 +312,11 @@ public class InteractiveQueryService {
 				.collect(Collectors.toList());
 	}
 
+	/**
+	 * @param storeQueryParametersCustomizer to customize
+	 * @since 4.0.1
+	 */
+	public void setStoreQueryParametersCustomizer(StoreQueryParametersCustomizer storeQueryParametersCustomizer) {
+		this.storeQueryParametersCustomizer = storeQueryParametersCustomizer;
+	}
 }
