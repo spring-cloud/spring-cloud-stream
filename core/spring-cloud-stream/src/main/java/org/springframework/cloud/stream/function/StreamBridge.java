@@ -55,6 +55,7 @@ import org.springframework.messaging.support.GenericMessage;
 import org.springframework.util.Assert;
 import org.springframework.util.MimeType;
 import org.springframework.util.MimeTypeUtils;
+import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 
 /**
@@ -220,6 +221,11 @@ public final class StreamBridge implements StreamOperations, SmartInitializingSi
 		if (messageChannel == null) {
 			if (this.applicationContext.containsBean(destinationName)) {
 				messageChannel = this.applicationContext.getBean(destinationName, MessageChannel.class);
+				String[] consumerBindingNames = this.bindingService.getConsumerBindingNames();
+				if (ObjectUtils.containsElement(consumerBindingNames, destinationName)) { //GH-2563
+					logger.warn("You seem to be sending data to the input binding.  It is not "
+							+ "recommended, since you are bypassing the binder and this the messaging system exposed by the binder.");
+				}
 			}
 			else {
 				messageChannel = new DirectWithAttributesChannel();

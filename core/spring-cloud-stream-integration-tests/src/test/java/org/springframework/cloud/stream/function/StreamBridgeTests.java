@@ -85,26 +85,39 @@ public class StreamBridgeTests {
 	public static void before() {
 		System.clearProperty("spring.cloud.function.definition");
 	}
-	
+
 	@Test // see SCF-985
 	void ensurePassThruFunctionIsNotPrePostProcessed() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
-			TestChannelBinderConfiguration.getCompleteConfiguration(EmptyConfiguration.class))
-			.web(WebApplicationType.NONE).run("--spring.jmx.enabled=false")) {
-			
+				TestChannelBinderConfiguration.getCompleteConfiguration(EmptyConfiguration.class))
+				.web(WebApplicationType.NONE).run("--spring.jmx.enabled=false")) {
+
 			StreamBridge streamBridge = context.getBean(StreamBridge.class);
 			OutputDestination outputDestination = context.getBean(OutputDestination.class);
 			Message<String> message = CloudEventMessageBuilder.withData("foo") // cloud event
-	                .setType("CustomType")
-	                .setSource("CustomSource")
-	                .setSubject("CustomSubject")
-	                .build();
+					.setType("CustomType").setSource("CustomSource").setSubject("CustomSubject").build();
 			streamBridge.send("fooDestination", message);
 
-	        Message<byte[]> messageReceived = outputDestination.receive(1000, "fooDestination");
-	        assertThat(CloudEventMessageUtils.getSource(messageReceived)).isEqualTo(URI.create("CustomSource"));
-	        assertThat(CloudEventMessageUtils.getSubject(messageReceived)).isEqualTo("CustomSubject");
-	        assertThat(CloudEventMessageUtils.getType(messageReceived)).isEqualTo("CustomType");
+			Message<byte[]> messageReceived = outputDestination.receive(1000, "fooDestination");
+			assertThat(CloudEventMessageUtils.getSource(messageReceived)).isEqualTo(URI.create("CustomSource"));
+			assertThat(CloudEventMessageUtils.getSubject(messageReceived)).isEqualTo("CustomSubject");
+			assertThat(CloudEventMessageUtils.getType(messageReceived)).isEqualTo("CustomType");
+		}
+	}
+
+	@Test //
+	void validateWARNifSendingToINputBinding() { // GH-2563
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+				TestChannelBinderConfiguration.getCompleteConfiguration(SimpleConfiguration.class))
+				.web(WebApplicationType.NONE).run("--spring.jmx.enabled=false",
+						"--spring.cloud.function.definition=echo",
+						"--spring.cloud.stream.function.bindings.echo-in-0=input")) {
+
+			StreamBridge streamBridge = context.getBean(StreamBridge.class);
+			OutputDestination outputDestination = context.getBean(OutputDestination.class);
+
+			streamBridge.send("input", "foo");
+			// just validate that there is a WARN message about sending to the input binding
 		}
 	}
 

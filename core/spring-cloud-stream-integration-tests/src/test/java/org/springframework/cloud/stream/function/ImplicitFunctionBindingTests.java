@@ -1128,7 +1128,7 @@ public class ImplicitFunctionBindingTests {
 	@EnableAutoConfiguration
 	public static class SupplierAndProcessorConfiguration {
 		Many<Message<String>> sink = Sinks.many().unicast().onBackpressureBuffer();
-		
+
 		@Bean
 		public Supplier<Flux<Message<String>>> supplier() {
 			return () -> sink.asFlux().doOnNext(v -> {
