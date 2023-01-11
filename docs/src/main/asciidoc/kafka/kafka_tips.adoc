@@ -19,6 +19,7 @@ public Consumer<byte[]> processData() {
   return s -> {
      throw new RuntimeException();
   };
+}
 ```
 
 This is a very trivial function that throws an exception for all the records that it processes, but you can take this function and extend it to any other similar situations.
@@ -42,7 +43,7 @@ spring.cloud.stream:
 In order to activate DLQ, the application must provide a group name.
 Anonymous consumers cannot use the DLQ facilities.
 We also need to enable DLQ by setting the `enableDLQ` property on the Kafka consumer binding to `true`.
-Finally, we can optionally provide the DLT name by providing the `dlqName` on Kafka consumer binding, which otherwise default to `input-topic-dlq.my-group.error` in this case.
+Finally, we can optionally provide the DLT name by providing the `dlqName` on Kafka consumer binding, which otherwise default to `error.input-topic.my-group` in this case.
 
 Note that in the example consumer provided above, the type of the payload is `byte[]`.
 By default, the DLQ producer in Kafka binder expects the payload of type `byte[]`.
@@ -163,7 +164,7 @@ We also need to configure an `ErrorHandlingDeserializer` for the consumer.
 That sounds like a lot of complex things, but in reality, it boils down to these 3 beans in this case.
 
 ```
-@Bean
+    @Bean
 	public ListenerContainerCustomizer<AbstractMessageListenerContainer<byte[], byte[]>> customizer(DefaultErrorHandler errorHandler) {
 		return (container, dest, group) -> {
 			container.setCommonErrorHandler(errorHandler);
