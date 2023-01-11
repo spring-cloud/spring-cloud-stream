@@ -32,9 +32,10 @@ import java.util.function.Supplier;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import reactor.core.publisher.EmitterProcessor;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.publisher.Sinks;
+import reactor.core.publisher.Sinks.Many;
 
 import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.boot.WebApplicationType;
@@ -59,8 +60,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.core.ResolvableType;
 import org.springframework.integration.channel.QueueChannel;
 import org.springframework.integration.dsl.IntegrationFlow;
-import org.springframework.integration.dsl.IntegrationFlows;
-import org.springframework.integration.handler.LoggingHandler;
 import org.springframework.integration.scheduling.PollerMetadata;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.kafka.support.KafkaNull;
@@ -130,7 +129,6 @@ public class ImplicitFunctionBindingTests {
 
 			BindingsLifecycleController ctrl = context.getBean(BindingsLifecycleController.class);
 			Binding input = ctrl.queryState("echo-in-0");
-			Binding output = ctrl.queryState("echo-out-0");
 			assertThat(input.isRunning()).isTrue();
 			ctrl.changeState("echo-in-0", State.STOPPED);
 			assertThat(input.isRunning()).isFalse();
@@ -216,7 +214,7 @@ public class ImplicitFunctionBindingTests {
 			OutputDestination outputDestination = context.getBean(OutputDestination.class);
 
 
-			Message inputMessage = MessageBuilder.withPayload(KafkaNull.INSTANCE).build();
+			Message<?> inputMessage = MessageBuilder.withPayload(KafkaNull.INSTANCE).build();
 			inputDestination.send(inputMessage, "func-in-0");
 
 			Message<byte[]> outputMessage = outputDestination.receive(1000, "func-out-0");
@@ -591,7 +589,7 @@ public class ImplicitFunctionBindingTests {
 			OutputDestination outputDestination = context.getBean(OutputDestination.class);
 
 			PollerMetadata pollerMetadata = context.getBean(PollerMetadata.class);
-			assertThat(((PeriodicTrigger) pollerMetadata.getTrigger()).getPeriod()).isEqualTo(1200);
+			assertThat(((PeriodicTrigger) pollerMetadata.getTrigger()).getPeriodDuration()).isEqualTo(Duration.ofMillis(1200));
 
 			Message<byte[]> outputMessage = outputDestination.receive(10000);
 			assertThat(outputMessage.getPayload()).isEqualTo("hello".getBytes());
@@ -1129,11 +1127,11 @@ public class ImplicitFunctionBindingTests {
 
 	@EnableAutoConfiguration
 	public static class SupplierAndProcessorConfiguration {
-		EmitterProcessor<Message<String>> processor = EmitterProcessor.create();
-
+		Many<Message<String>> sink = Sinks.many().unicast().onBackpressureBuffer();
+		
 		@Bean
 		public Supplier<Flux<Message<String>>> supplier() {
-			return () -> processor.doOnNext(v -> {
+			return () -> sink.asFlux().doOnNext(v -> {
 				System.out.println("Hello " + v);
 			});
 		}
@@ -1374,8 +1372,8 @@ public class ImplicitFunctionBindingTests {
 
 		@Bean
 		public IntegrationFlow uppercaseFlow() {
-			return IntegrationFlows.from(MessageFunction.class, gateway -> gateway.beanName("uppercase"))
-				.<String, String>transform(String::toUpperCase).logAndReply(LoggingHandler.Level.WARN);
+			return IntegrationFlow.from(MessageFunction.class, gateway -> gateway.beanName("uppercase"))
+				.<String, String>transform(String::toUpperCase).get();
 		}
 
 	}

@@ -55,7 +55,6 @@ import org.springframework.integration.channel.AbstractMessageChannel;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.config.GlobalChannelInterceptor;
 import org.springframework.integration.dsl.IntegrationFlow;
-import org.springframework.integration.dsl.IntegrationFlows;
 import org.springframework.integration.handler.LoggingHandler;
 import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
@@ -776,7 +775,7 @@ public class StreamBridgeTests {
 
 		@Bean
 		public IntegrationFlow transform(StreamBridge bridge) {
-			return IntegrationFlows.from("foo").transform(v -> {
+			return IntegrationFlow.from("foo").transform(v -> {
 					String s = new String((byte[]) v);
 					return s.toUpperCase();
 				})
@@ -803,7 +802,7 @@ public class StreamBridgeTests {
 
 		@Bean
 		public IntegrationFlow someFlow(MessageHandler sendMessage, MessageChannel inputChannel) {
-			return IntegrationFlows.from(inputChannel)
+			return IntegrationFlow.from(inputChannel)
 				.log(LoggingHandler.Level.INFO, (m) -> {
 					LATCH1.countDown();
 					return "Going through the first flow: " + m.getPayload();
@@ -814,7 +813,7 @@ public class StreamBridgeTests {
 
 		@Bean
 		public IntegrationFlow someOtherFlow(MessageHandler sendMessage) {
-			return IntegrationFlows.from(otherInputChannel())
+			return IntegrationFlow.from(otherInputChannel())
 				.log(LoggingHandler.Level.INFO, (m) -> {
 					LATCH2.countDown();
 					return "Going through the second flow: " + m.getPayload();
