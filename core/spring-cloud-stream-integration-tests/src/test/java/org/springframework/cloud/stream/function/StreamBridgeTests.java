@@ -17,6 +17,7 @@
 package org.springframework.cloud.stream.function;
 
 import java.lang.reflect.Field;
+import java.net.URI;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -39,6 +40,7 @@ import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.function.cloudevent.CloudEventMessageBuilder;
+import org.springframework.cloud.function.cloudevent.CloudEventMessageUtils;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.cloud.function.context.message.MessageUtils;
 import org.springframework.cloud.stream.binder.test.InputDestination;
@@ -83,6 +85,28 @@ public class StreamBridgeTests {
 	@BeforeAll
 	public static void before() {
 		System.clearProperty("spring.cloud.function.definition");
+	}
+	
+	@Test // see SCF-985
+	void ensurePassThruFunctionIsNotPrePostProcessed() {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+			TestChannelBinderConfiguration.getCompleteConfiguration(EmptyConfiguration.class))
+			.web(WebApplicationType.NONE).run("--spring.jmx.enabled=false")) {
+			
+			StreamBridge streamBridge = context.getBean(StreamBridge.class);
+			OutputDestination outputDestination = context.getBean(OutputDestination.class);
+			Message<String> message = CloudEventMessageBuilder.withData("foo") // cloud event
+	                .setType("CustomType")
+	                .setSource("CustomSource")
+	                .setSubject("CustomSubject")
+	                .build();
+			streamBridge.send("fooDestination", message);
+
+	        Message<byte[]> messageReceived = outputDestination.receive(1000, "fooDestination");
+	        assertThat(CloudEventMessageUtils.getSource(messageReceived)).isEqualTo(URI.create("CustomSource"));
+	        assertThat(CloudEventMessageUtils.getSubject(messageReceived)).isEqualTo("CustomSubject");
+	        assertThat(CloudEventMessageUtils.getType(messageReceived)).isEqualTo("CustomType");
+		}
 	}
 
 	@Test
