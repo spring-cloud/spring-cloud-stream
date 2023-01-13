@@ -12,3 +12,4 @@ org.springframework.amqp.core.DeclarableCustomizer
 org.springframework.cloud.stream.config.ProducerMessageHandlerCustomizer
 org.springframework.cloud.stream.binder.test.InputDestination
 org.springframework.cloud.stream.binder.test.OutputDestination
+org.springframework.cloud.stream.config.BindingHandlerAdvise
