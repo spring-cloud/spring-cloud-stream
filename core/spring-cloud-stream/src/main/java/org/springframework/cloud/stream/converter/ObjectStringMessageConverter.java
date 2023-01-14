@@ -16,7 +16,6 @@
 
 package org.springframework.cloud.stream.converter;
 
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.stream.Collectors;
@@ -41,7 +40,7 @@ import org.springframework.util.MimeType;
 public class ObjectStringMessageConverter extends AbstractMessageConverter {
 
 	public ObjectStringMessageConverter() {
-		super(new MimeType("text", "*", Charset.forName("UTF-8")));
+		super(new MimeType("text", "*", StandardCharsets.UTF_8));
 		setStrictContentTypeMatch(true);
 	}
 
