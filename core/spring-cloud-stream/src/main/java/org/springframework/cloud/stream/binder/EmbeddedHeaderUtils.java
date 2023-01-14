@@ -17,6 +17,7 @@
 package org.springframework.cloud.stream.binder;
 
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -67,7 +68,7 @@ public abstract class EmbeddedHeaderUtils {
 				Object value = original.get(header);
 				if (value != null) {
 					String json = objectMapper.toJson(value);
-					headerValues[n] = json.getBytes("UTF-8");
+					headerValues[n] = json.getBytes(StandardCharsets.UTF_8);
 					headerCount++;
 					headersLength += header.length() + headerValues[n++].length;
 				}
@@ -84,7 +85,7 @@ public abstract class EmbeddedHeaderUtils {
 			for (int i = 0; i < headers.length; i++) {
 				if (headerValues[i] != null) {
 					byteBuffer.put((byte) headers[i].length());
-					byteBuffer.put(headers[i].getBytes("UTF-8"));
+					byteBuffer.put(headers[i].getBytes(StandardCharsets.UTF_8));
 					byteBuffer.putInt(headerValues[i].length);
 					byteBuffer.put(headerValues[i]);
 				}
@@ -125,11 +126,11 @@ public abstract class EmbeddedHeaderUtils {
 			for (int i = 0; i < headerCount; i++) {
 				int len = byteBuffer.get() & 0xff;
 				String headerName = new String(payload, byteBuffer.position(), len,
-						"UTF-8");
+						StandardCharsets.UTF_8);
 				byteBuffer.position(byteBuffer.position() + len);
 				len = byteBuffer.getInt();
 				String headerValue = new String(payload, byteBuffer.position(), len,
-						"UTF-8");
+						StandardCharsets.UTF_8);
 				Object headerContent = objectMapper.fromJson(headerValue, Object.class);
 				headers.put(headerName, headerContent);
 				byteBuffer.position(byteBuffer.position() + len);

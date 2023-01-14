@@ -17,6 +17,7 @@
 package org.springframework.cloud.stream.binder;
 
 import java.nio.BufferUnderflowException;
+import java.nio.charset.StandardCharsets;
 
 import org.junit.jupiter.api.Test;
 
@@ -101,7 +102,7 @@ public class MessageConverterTests {
 		byte[] embedded = EmbeddedHeaderUtils.embedHeaders(new MessageValues(message),
 				"foo", "baz");
 		assertThat(embedded[0] & 0xff).isEqualTo(0xff);
-		assertThat(new String(embedded, "UTF-8").substring(1)).isEqualTo(
+		assertThat(new String(embedded, StandardCharsets.UTF_8).substring(1)).isEqualTo(
 				"\u0002\u0003foo\u0000\u0000\u0000\u0005\"bar\"\u0003baz\u0000\u0000\u0000\u0012\"ØØØØØØØØ\"Hello");
 
 		MessageValues extracted = EmbeddedHeaderUtils
