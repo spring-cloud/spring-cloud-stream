@@ -436,9 +436,9 @@ public class FunctionConfiguration {
 			Map<String, BindableProxyFactory> beansOfType = applicationContext.getBeansOfType(BindableProxyFactory.class);
 			this.bindableProxyFactories = beansOfType.values().toArray(new BindableProxyFactory[0]);
 			for (BindableProxyFactory bindableProxyFactory : this.bindableProxyFactories) {
-				String functionDefinition = bindableProxyFactory instanceof BindableFunctionProxyFactory
+				String functionDefinition = bindableProxyFactory instanceof BindableFunctionProxyFactory && ((BindableFunctionProxyFactory) bindableProxyFactory).isFunctionExist()
 						? ((BindableFunctionProxyFactory) bindableProxyFactory).getFunctionDefinition()
-								: this.functionProperties.getDefinition();
+								: null; /*this.functionProperties.getDefinition();*/
 
 				boolean shouldNotProcess = false;
 				if (!(bindableProxyFactory instanceof BindableFunctionProxyFactory)) {
@@ -898,7 +898,7 @@ public class FunctionConfiguration {
 						sourceFunc.isConsumer() ||
 						(!sourceFunc.getFunctionDefinition().equals(outputBindingName) && applicationContext.containsBean(outputBindingName))) {
 
-					BindableFunctionProxyFactory proxyFactory = new BindableFunctionProxyFactory(outputBindingName, 0, 1, this.streamFunctionProperties);
+					BindableFunctionProxyFactory proxyFactory = new BindableFunctionProxyFactory(outputBindingName, 0, 1, this.streamFunctionProperties, sourceFunc != null);
 					((GenericApplicationContext) this.applicationContext).registerBean(outputBindingName + "_binding_out",
 						BindableFunctionProxyFactory.class, () -> proxyFactory);
 				}

@@ -58,20 +58,31 @@ public class BindableFunctionProxyFactory extends BindableProxyFactory implement
 
 	private final SupportedBindableFeatures supportedBindableFeatures;
 
+	private final boolean functionExist;
+
 	private GenericApplicationContext context;
 
 	BindableFunctionProxyFactory(String functionDefinition, int inputCount, int outputCount, StreamFunctionProperties functionProperties) {
-		this(functionDefinition, inputCount, outputCount, functionProperties, new SupportedBindableFeatures());
+		this(functionDefinition, inputCount, outputCount, functionProperties, new SupportedBindableFeatures(), true);
+	}
+
+	BindableFunctionProxyFactory(String functionDefinition, int inputCount, int outputCount, StreamFunctionProperties functionProperties, boolean functionExist) {
+		this(functionDefinition, inputCount, outputCount, functionProperties, new SupportedBindableFeatures(), functionExist);
+	}
+
+	BindableFunctionProxyFactory(String functionDefinition, int inputCount, int outputCount, StreamFunctionProperties functionProperties, SupportedBindableFeatures supportedBindableFeatures) {
+		this(functionDefinition, inputCount, outputCount, functionProperties, supportedBindableFeatures, true);
 	}
 
 	BindableFunctionProxyFactory(String functionDefinition, int inputCount, int outputCount, StreamFunctionProperties functionProperties,
-			SupportedBindableFeatures supportedBindableFeatures) {
+			SupportedBindableFeatures supportedBindableFeatures, boolean functionExist) {
 		super(null);
 		this.inputCount = inputCount;
 		this.outputCount = outputCount;
 		this.functionDefinition = functionDefinition;
 		this.functionProperties = functionProperties;
 		this.supportedBindableFeatures = supportedBindableFeatures;
+		this.functionExist = functionExist;
 	}
 
 	@Override
@@ -104,7 +115,7 @@ public class BindableFunctionProxyFactory extends BindableProxyFactory implement
 	}
 
 	protected String getFunctionDefinition() {
-		return this.functionDefinition;
+		return this.isFunctionExist() ? this.functionDefinition : null;
 	}
 
 	protected String getInputName(int index) {
@@ -187,5 +198,9 @@ public class BindableFunctionProxyFactory extends BindableProxyFactory implement
 	@Override
 	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
 		this.context = (GenericApplicationContext) applicationContext;
+	}
+
+	public boolean isFunctionExist() {
+		return functionExist;
 	}
 }
