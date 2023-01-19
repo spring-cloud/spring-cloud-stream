@@ -366,7 +366,7 @@ public class BindingServiceTests {
 		assertThat(bindings.get("input2").getConsumer().getConcurrency()).isEqualTo(1);
 		assertThat(bindings.get("input1").getConsumer().isPartitioned()).isEqualTo(true);
 		assertThat(bindings.get("input2").getConsumer().isPartitioned()).isEqualTo(false);
-		assertThat(bindings.get("output1-out-0").getProducer().getPartitionCount())
+		assertThat(bindings.get("output1").getProducer().getPartitionCount())
 			.isEqualTo(10);
 		assertThat(bindings.get("output2").getProducer().getPartitionCount())
 			.isEqualTo(1);
@@ -375,7 +375,7 @@ public class BindingServiceTests {
 			.isEqualTo("application/json");
 		assertThat(bindings.get("inputFooBar").getContentType())
 			.isEqualTo("application/avro");
-		assertThat(bindings.get("inputFooBarBuzz-in-0").getContentType())
+		assertThat(bindings.get("inputFooBarBuzz").getContentType())
 			.isEqualTo("text/plain");
 		assertThat(bindings.get("input_snake_case").getContentType())
 			.isEqualTo("application/avro");

@@ -49,10 +49,10 @@ public class ExplicitBindingTests {
 				"--spring.cloud.stream.input-bindings=fooin;barin",
 				"--spring.cloud.stream.output-bindings=fooout;barout")) {
 
-			assertThat(context.getBean("fooin-in-0", MessageChannel.class)).isNotNull();
-			assertThat(context.getBean("barin-in-0", MessageChannel.class)).isNotNull();
-			assertThat(context.getBean("fooout-out-0", MessageChannel.class)).isNotNull();
-			assertThat(context.getBean("barout-out-0", MessageChannel.class)).isNotNull();
+			assertThat(context.getBean("fooin", MessageChannel.class)).isNotNull();
+			assertThat(context.getBean("barin", MessageChannel.class)).isNotNull();
+			assertThat(context.getBean("fooout", MessageChannel.class)).isNotNull();
+			assertThat(context.getBean("barout", MessageChannel.class)).isNotNull();
 		}
 	}
 

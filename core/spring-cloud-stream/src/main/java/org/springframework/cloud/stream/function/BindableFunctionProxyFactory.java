@@ -139,6 +139,9 @@ public class BindableFunctionProxyFactory extends BindableProxyFactory implement
 	}
 
 	private String buildInputNameForIndex(int index) {
+		if (!this.isFunctionExist()) {
+			return this.functionDefinition;
+		}
 		return new StringBuilder(this.functionDefinition.replace(",", "|").replace("|", ""))
 			.append(FunctionConstants.DELIMITER)
 			.append(FunctionConstants.DEFAULT_INPUT_SUFFIX)
@@ -148,6 +151,9 @@ public class BindableFunctionProxyFactory extends BindableProxyFactory implement
 	}
 
 	private String buildOutputNameForIndex(int index) {
+		if (!this.isFunctionExist()) {
+			return this.functionDefinition;
+		}
 		return new StringBuilder(this.functionDefinition.replace(",", "|").replace("|", ""))
 				.append(FunctionConstants.DELIMITER)
 				.append(FunctionConstants.DEFAULT_OUTPUT_SUFFIX)

@@ -319,18 +319,16 @@ public class StreamBridgeTests {
 			.web(WebApplicationType.NONE).run(
 				"--spring.jmx.enabled=false",
 				"--spring.cloud.stream.dynamic-destination-cache-size=1",
-				"--spring.cloud.stream.output-bindings=outputA;outputB",
-				"--spring.cloud.stream.bindings.outputA-out-0.destination=outputA",
-				"--spring.cloud.stream.bindings.outputB-out-0.destination=outputB"
+				"--spring.cloud.stream.output-bindings=outputA;outputB"
 			)) {
 			StreamBridge bridge = context.getBean(StreamBridge.class);
 
-			bridge.send("outputA-out-0", "hello foo");
-			bridge.send("outputA-out-0", "hello foo");
-			bridge.send("outputA-out-0", "hello foo");
-			bridge.send("outputA-out-0", "hello foo");
+			bridge.send("outputA", "hello foo");
+			bridge.send("outputA", "hello foo");
+			bridge.send("outputA", "hello foo");
+			bridge.send("outputA", "hello foo");
 
-			AbstractMessageChannel messageChannel = context.getBean("outputA-out-0", AbstractMessageChannel.class);
+			AbstractMessageChannel messageChannel = context.getBean("outputA", AbstractMessageChannel.class);
 
 			assertThat(messageChannel.getInterceptors()).hasSize(1);
 		}
@@ -479,49 +477,49 @@ public class StreamBridgeTests {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration
 			.getCompleteConfiguration(EmptyConfiguration.class))
 			.web(WebApplicationType.NONE).run("--spring.cloud.stream.source=foo;bar",
-				"--spring.cloud.stream.bindings.foo-out-0.producer.partitionKeyExpression=payload",
-				"--spring.cloud.stream.bindings.foo-out-0.producer.partitionCount=5",
-				"--spring.cloud.stream.bindings.bar-out-0.producer.partitionKeyExpression=payload",
-				"--spring.cloud.stream.bindings.bar-out-0.producer.partitionCount=1",
+				"--spring.cloud.stream.bindings.foo.producer.partitionKeyExpression=payload",
+				"--spring.cloud.stream.bindings.foo.producer.partitionCount=5",
+				"--spring.cloud.stream.bindings.bar.producer.partitionKeyExpression=payload",
+				"--spring.cloud.stream.bindings.bar.producer.partitionCount=1",
 				"--spring.jmx.enabled=false")) {
 
 			StreamBridge bridge = context.getBean(StreamBridge.class);
-			bridge.send("foo-out-0", "a");
-			bridge.send("bar-out-0", "b");
-			bridge.send("foo-out-0", "c");
-			bridge.send("foo-out-0", "d");
-			bridge.send("bar-out-0", "e");
-			bridge.send("foo-out-0", "f");
-			bridge.send("bar-out-0", "g");
+			bridge.send("foo", "a");
+			bridge.send("bar", "b");
+			bridge.send("foo", "c");
+			bridge.send("foo", "d");
+			bridge.send("bar", "e");
+			bridge.send("foo", "f");
+			bridge.send("bar", "g");
 
 
 			OutputDestination outputDestination = context.getBean(OutputDestination.class);
-			Message<byte[]> message = outputDestination.receive(100, "foo-out-0");
+			Message<byte[]> message = outputDestination.receive(100, "foo");
 
 			assertThat(new String(message.getPayload())).isEqualTo("a");
 			assertThat(message.getHeaders().get("scst_partition")).isEqualTo(2);
 
-			message = outputDestination.receive(100, "foo-out-0");
+			message = outputDestination.receive(100, "foo");
 			assertThat(new String(message.getPayload())).isEqualTo("c");
 			assertThat(message.getHeaders().get("scst_partition")).isEqualTo(4);
 
-			message = outputDestination.receive(100, "foo-out-0");
+			message = outputDestination.receive(100, "foo");
 			assertThat(new String(message.getPayload())).isEqualTo("d");
 			assertThat(message.getHeaders().get("scst_partition")).isEqualTo(0);
 
-			message = outputDestination.receive(100, "bar-out-0");
+			message = outputDestination.receive(100, "bar");
 			assertThat(new String(message.getPayload())).isEqualTo("b");
 			assertThat(message.getHeaders().get("scst_partition")).isEqualTo(0);
 
-			message = outputDestination.receive(100, "bar-out-0");
+			message = outputDestination.receive(100, "bar");
 			assertThat(new String(message.getPayload())).isEqualTo("e");
 			assertThat(message.getHeaders().get("scst_partition")).isEqualTo(0);
 
-			message = outputDestination.receive(100, "bar-out-0");
+			message = outputDestination.receive(100, "bar");
 			assertThat(new String(message.getPayload())).isEqualTo("g");
 			assertThat(message.getHeaders().get("scst_partition")).isEqualTo(0);
 
-			message = outputDestination.receive(100, "foo-out-0");
+			message = outputDestination.receive(100, "foo");
 			assertThat(new String(message.getPayload())).isEqualTo("f");
 			assertThat(message.getHeaders().get("scst_partition")).isEqualTo(2);
 

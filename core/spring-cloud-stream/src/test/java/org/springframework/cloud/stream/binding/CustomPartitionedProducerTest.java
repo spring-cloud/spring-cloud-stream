@@ -58,7 +58,7 @@ public class CustomPartitionedProducerTest {
 				"--spring.cloud.stream.bindings.output.producer.partitionSelectorClass="
 						+ "org.springframework.cloud.stream.partitioning.CustomPartitionSelectorClass",
 				"--spring.cloud.stream.default-binder=mock");
-		DirectChannel messageChannel = context.getBean("output-out-0", DirectChannel.class);
+		DirectChannel messageChannel = context.getBean("output", DirectChannel.class);
 		for (ChannelInterceptor channelInterceptor : messageChannel
 				.getInterceptors()) {
 			if (channelInterceptor instanceof MessageConverterConfigurer.PartitioningInterceptor) {
@@ -93,7 +93,7 @@ public class CustomPartitionedProducerTest {
 				"--spring.cloud.stream.bindings.output.producer.partitionKeyExtractorName=customPartitionKeyExtractor",
 				"--spring.cloud.stream.bindings.output.producer.partitionSelectorName=customPartitionSelector",
 				"--spring.cloud.stream.default-binder=mock");
-		DirectChannel messageChannel = context.getBean("output-out-0", DirectChannel.class);
+		DirectChannel messageChannel = context.getBean("output", DirectChannel.class);
 		for (ChannelInterceptor channelInterceptor : messageChannel
 				.getInterceptors()) {
 			if (channelInterceptor instanceof MessageConverterConfigurer.PartitioningInterceptor) {
@@ -126,7 +126,7 @@ public class CustomPartitionedProducerTest {
 				"--spring.cloud.stream.output-bindings=output",
 				"--spring.jmx.enabled=false", "--spring.main.web-application-type=none",
 				"--spring.cloud.stream.default-binder=mock");
-		DirectChannel messageChannel = context.getBean("output-out-0", DirectChannel.class);
+		DirectChannel messageChannel = context.getBean("output", DirectChannel.class);
 		for (ChannelInterceptor channelInterceptor : messageChannel
 				.getInterceptors()) {
 			if (channelInterceptor instanceof MessageConverterConfigurer.PartitioningInterceptor) {
@@ -152,14 +152,16 @@ public class CustomPartitionedProducerTest {
 		}
 	}
 
+	@Test
 	public void testCustomPartitionedProducerMultipleInstances() {
 		ApplicationContext context = SpringApplication.run(
 				CustomPartitionedProducerTest.TestSourceMultipleStrategies.class,
+				"--spring.cloud.stream.output-bindings=output",
 				"--spring.jmx.enabled=false", "--spring.main.web-application-type=none",
 				"--spring.cloud.stream.bindings.output.producer.partitionKeyExtractorName=customPartitionKeyExtractorOne",
 				"--spring.cloud.stream.bindings.output.producer.partitionSelectorName=customPartitionSelectorTwo",
 				"--spring.cloud.stream.default-binder=mock");
-		DirectChannel messageChannel = context.getBean("output-out-0", DirectChannel.class);
+		DirectChannel messageChannel = context.getBean("output", DirectChannel.class);
 		for (ChannelInterceptor channelInterceptor : messageChannel
 				.getInterceptors()) {
 			if (channelInterceptor instanceof MessageConverterConfigurer.PartitioningInterceptor) {
@@ -200,7 +202,7 @@ public class CustomPartitionedProducerTest {
 		}
 
 		@Bean
-		@InboundChannelAdapter(value = "output-out-0", poller = @Poller(fixedDelay = "5000", maxMessagesPerPoll = "1"))
+		@InboundChannelAdapter(value = "output", poller = @Poller(fixedDelay = "5000", maxMessagesPerPoll = "1"))
 		public MessageSource<String> timerMessageSource() {
 			return new MessageSource<String>() {
 				@Override
@@ -238,7 +240,7 @@ public class CustomPartitionedProducerTest {
 		}
 
 		@Bean
-		@InboundChannelAdapter(value = "output-out-0", poller = @Poller(fixedDelay = "5000", maxMessagesPerPoll = "1"))
+		@InboundChannelAdapter(value = "output", poller = @Poller(fixedDelay = "5000", maxMessagesPerPoll = "1"))
 		public MessageSource<String> timerMessageSource() {
 			return new MessageSource<String>() {
 				@Override

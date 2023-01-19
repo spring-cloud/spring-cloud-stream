@@ -885,7 +885,7 @@ public class FunctionConfiguration {
 						sourceFunc.isSupplier() ||
 						(!sourceFunc.getFunctionDefinition().equals(inputBindingName) && applicationContext.containsBean(inputBindingName))) {
 
-					BindableFunctionProxyFactory proxyFactory = new BindableFunctionProxyFactory(inputBindingName, 1, 0, this.streamFunctionProperties);
+					BindableFunctionProxyFactory proxyFactory = new BindableFunctionProxyFactory(inputBindingName, 1, 0, this.streamFunctionProperties, sourceFunc != null);
 					((GenericApplicationContext) this.applicationContext).registerBean(inputBindingName + "_binding_in",
 						BindableFunctionProxyFactory.class, () -> proxyFactory);
 				}
