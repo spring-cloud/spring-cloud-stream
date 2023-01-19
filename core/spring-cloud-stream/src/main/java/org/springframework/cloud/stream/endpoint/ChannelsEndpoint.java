@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 the original author or authors.
+ * Copyright 2015-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 
 package org.springframework.cloud.stream.endpoint;
 
+import java.util.Collection;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -25,11 +25,14 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import org.springframework.beans.BeansException;
 import org.springframework.boot.actuate.endpoint.annotation.Endpoint;
 import org.springframework.boot.actuate.endpoint.annotation.ReadOperation;
 import org.springframework.cloud.stream.binding.Bindable;
 import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 
 /**
  * An {@link Endpoint} that has the binding information on all the {@link Bindable}
@@ -38,26 +41,31 @@ import org.springframework.cloud.stream.config.BindingServiceProperties;
  * @author Dave Syer
  * @author Ilayaperumal Gopinathan
  * @author Vinicius Carvalho
+ * @author Oleg Zhurakousky
  */
 @Endpoint(id = "channels")
-public class ChannelsEndpoint {
+public class ChannelsEndpoint implements ApplicationContextAware {
 
-	private List<Bindable> adapters;
+	private ApplicationContext applicationContext;
 
-	private BindingServiceProperties properties;
+	private final BindingServiceProperties properties;
 
-	public ChannelsEndpoint(List<Bindable> adapters,
-			BindingServiceProperties properties) {
-		this.adapters = adapters;
+	public ChannelsEndpoint(BindingServiceProperties properties) {
 		this.properties = properties;
+	}
+
+	@Override
+	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+		this.applicationContext = applicationContext;
 	}
 
 	@ReadOperation
 	public Map<String, Object> channels() {
+		Collection<Bindable> adapters = applicationContext.getBeansOfType(Bindable.class).values();
 		ChannelsMetaData map = new ChannelsMetaData();
 		Map<String, BindingProperties> inputs = map.getInputs();
 		Map<String, BindingProperties> outputs = map.getOutputs();
-		for (Bindable factory : this.adapters) {
+		for (Bindable factory : adapters) {
 			for (String name : factory.getInputs()) {
 				inputs.put(name, this.properties.getBindingProperties(name));
 			}
