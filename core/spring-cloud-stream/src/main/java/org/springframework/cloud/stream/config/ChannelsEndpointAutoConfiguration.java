@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2017 the original author or authors.
+ * Copyright 2015-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,12 @@
 
 package org.springframework.cloud.stream.config;
 
-import java.util.List;
-
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.actuate.autoconfigure.endpoint.EndpointAutoConfiguration;
 import org.springframework.boot.actuate.autoconfigure.endpoint.condition.ConditionalOnAvailableEndpoint;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
-import org.springframework.cloud.stream.binding.Bindable;
 import org.springframework.cloud.stream.binding.BindingService;
 import org.springframework.cloud.stream.endpoint.ChannelsEndpoint;
 import org.springframework.context.annotation.Bean;
@@ -34,6 +30,7 @@ import org.springframework.context.annotation.Bean;
  * @author Dave Syer
  * @author Marius Bogoevici
  * @author Ilayaperumal Gopinathan
+ * @author Oleg Zhurakousky
  */
 @AutoConfiguration
 @ConditionalOnClass(name = "org.springframework.boot.actuate.endpoint.annotation.Endpoint")
@@ -41,13 +38,10 @@ import org.springframework.context.annotation.Bean;
 @AutoConfigureAfter(EndpointAutoConfiguration.class)
 public class ChannelsEndpointAutoConfiguration {
 
-	@Autowired(required = false)
-	private List<Bindable> adapters;
-
 	@Bean
 	@ConditionalOnAvailableEndpoint
 	public ChannelsEndpoint channelsEndpoint(BindingServiceProperties properties) {
-		return new ChannelsEndpoint(this.adapters, properties);
+		return new ChannelsEndpoint(properties);
 	}
 
 }
