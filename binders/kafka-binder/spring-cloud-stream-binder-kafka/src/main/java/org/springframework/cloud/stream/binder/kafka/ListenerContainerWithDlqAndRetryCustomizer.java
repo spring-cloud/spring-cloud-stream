@@ -62,7 +62,7 @@ public interface ListenerContainerWithDlqAndRetryCustomizer
 	 * {@link #configure(AbstractMessageListenerContainer, String, String, BiFunction, BackOff)}.
 	 * @param destinationName the destination name.
 	 * @param group the group.
-	 * @return true to disable retrie in the binding
+	 * @return false to disable retries and DLQ in the binding
 	 */
 	default boolean retryAndDlqInBinding(String destinationName, String group) {
 		return true;
