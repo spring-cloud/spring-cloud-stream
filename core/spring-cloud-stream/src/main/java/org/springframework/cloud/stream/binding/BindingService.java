@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,12 +55,13 @@ import org.springframework.validation.DataBinder;
  * @author Mark Fisher
  * @author Dave Syer
  * @author Marius Bogoevici
- * @author Ilayaperumal Gopinathan`
+ * @author Ilayaperumal Gopinathan
  * @author Gary Russell
  * @author Janne Valkealahti
  * @author Soby Chacko
  * @author Michael Michailidis
  * @author Chris Bono
+ * @author Artem Bilan
  */
 public class BindingService {
 
@@ -320,8 +321,17 @@ public class BindingService {
 		return this.producerBindings.keySet().toArray(new String[] {});
 	}
 
+	@Nullable
+	public Binding<?> getProducerBinding(String bindingName) {
+		return this.producerBindings.get(bindingName);
+	}
+
 	public String[] getConsumerBindingNames() {
 		return this.consumerBindings.keySet().toArray(new String[] {});
+	}
+
+	public List<Binding<?>> getConsumerBindings(String bindingName) {
+		return this.consumerBindings.getOrDefault(bindingName, Collections.emptyList());
 	}
 
 	public <T> Binding<T> doBindProducer(T output, String bindingTarget,

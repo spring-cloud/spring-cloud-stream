@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -89,6 +89,7 @@ import static org.mockito.Mockito.when;
  * @author Soby Chacko
  * @author Michael Michailidis
  * @author Chris Bono
+ * @author Artem Bilan
  */
 public class BindingServiceTests {
 
@@ -123,12 +124,12 @@ public class BindingServiceTests {
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@Test
-	void testMultipleConsumerBindings() throws Exception {
+	void testMultipleConsumerBindings() {
 		BindingServiceProperties properties = new BindingServiceProperties();
 		Map<String, BindingProperties> bindingProperties = new HashMap<>();
 		BindingProperties props = new BindingProperties();
 		props.setDestination("foo,bar");
-		final String inputChannelName = "input";
+		String inputChannelName = "input";
 		bindingProperties.put(inputChannelName, props);
 
 		properties.setBindings(bindingProperties);
@@ -157,6 +158,8 @@ public class BindingServiceTests {
 
 		assertThat(binding1).isSameAs(mockBinding1);
 		assertThat(binding2).isSameAs(mockBinding2);
+
+		assertThat(service.getConsumerBindings("input")).containsSequence(bindings);
 
 		service.unbindConsumers("input");
 
@@ -522,6 +525,9 @@ public class BindingServiceTests {
 			delegate = TestUtils.getPropertyValue(binding, "delegate", Binding.class);
 		}
 		assertThat(delegate).isSameAs(mockBinding);
+
+		assertThat(service.getProducerBinding("output")).isSameAs(binding);
+
 		service.unbindProducers(outputChannelName);
 		verify(binder, times(2)).bindProducer(eq("foo"), same(outputChannel),
 			any(ProducerProperties.class));
