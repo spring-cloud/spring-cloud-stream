@@ -7,7 +7,6 @@
 
 image::https://circleci.com/gh/spring-cloud/spring-cloud-stream.svg?style=svg["CircleCI", link="https://circleci.com/gh/spring-cloud/spring-cloud-stream"]
 image::https://codecov.io/gh/spring-cloud/spring-cloud-stream/branch/{github-tag}/graph/badge.svg["codecov", link="https://codecov.io/gh/spring-cloud/spring-cloud-stream"]
-image::https://badges.gitter.im/spring-cloud/spring-cloud-stream.svg[Gitter, link="https://gitter.im/spring-cloud/spring-cloud-stream?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge"]
 
 // ======================================================================================
 
