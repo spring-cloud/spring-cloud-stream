@@ -35,8 +35,8 @@ class FinalRethrowingErrorMessageHandler
 
 	@Override
 	public void handleMessage(Message<?> message) throws MessagingException {
-		if (message.getPayload() instanceof MessagingException) {
-			throw (MessagingException) message.getPayload();
+		if (message.getPayload() instanceof MessagingException messagingException) {
+			throw messagingException;
 		}
 		else {
 			throw new MessagingException((Message<?>) null,

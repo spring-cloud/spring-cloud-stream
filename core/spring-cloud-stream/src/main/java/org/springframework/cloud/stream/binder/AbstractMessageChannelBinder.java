@@ -268,16 +268,16 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 			producerMessageHandler = createProducerMessageHandler(producerDestination,
 					producerProperties, outputChannel, errorChannel);
 			customizeProducerMessageHandler(producerMessageHandler, producerDestination.getName());
-			if (producerMessageHandler instanceof InitializingBean) {
-				((InitializingBean) producerMessageHandler).afterPropertiesSet();
+			if (producerMessageHandler instanceof InitializingBean initializingHandler) {
+				initializingHandler.afterPropertiesSet();
 			}
 		}
 		catch (Exception e) {
-			if (e instanceof BinderException) {
-				throw (BinderException) e;
+			if (e instanceof BinderException binderException) {
+				throw binderException;
 			}
-			else if (e instanceof ProvisioningException) {
-				throw (ProvisioningException) e;
+			else if (e instanceof ProvisioningException provisioningException) {
+				throw provisioningException;
 			}
 			else {
 				throw new BinderException(
@@ -286,15 +286,15 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		}
 
 		if (producerProperties.isAutoStartup()
-				&& producerMessageHandler instanceof Lifecycle) {
-			((Lifecycle) producerMessageHandler).start();
+			&& producerMessageHandler instanceof Lifecycle ProducerMessageHandlerWithLifeCycle) {
+			ProducerMessageHandlerWithLifeCycle.start();
 		}
 		this.postProcessOutputChannel(outputChannel, producerProperties);
 
 		AtomicReference<ReactiveStreamsConsumer> reactiveStreamsConsumerRef = new AtomicReference<>();
 
-		if (outputChannel instanceof SubscribableChannel) {
-			((SubscribableChannel) outputChannel)
+		if (outputChannel instanceof SubscribableChannel subscribableOutputChannel) {
+			subscribableOutputChannel
 				.subscribe(new SendingHandler(producerMessageHandler,
 					HeaderMode.embeddedHeaders
 						.equals(producerProperties.getHeaderMode()),
@@ -310,8 +310,8 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		}
 
 		Binding<MessageChannel> binding = new DefaultBinding<MessageChannel>(destination,
-				outputChannel, producerMessageHandler instanceof Lifecycle
-						? (Lifecycle) producerMessageHandler : null) {
+				outputChannel, producerMessageHandler instanceof Lifecycle producerMessageHandlerWithLifecycle
+			? producerMessageHandlerWithLifecycle : null) {
 
 			@Override
 			public Map<String, Object> getExtendedInfo() {
@@ -331,8 +331,8 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 					if (rsc != null && rsc.isRunning()) {
 						rsc.destroy();
 					}
-					if (producerMessageHandler instanceof DisposableBean) {
-						((DisposableBean) producerMessageHandler).destroy();
+					if (producerMessageHandler instanceof DisposableBean disposableProducerMessageHandler) {
+						disposableProducerMessageHandler.destroy();
 					}
 				}
 				catch (Exception e) {
@@ -474,16 +474,16 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 			consumerEndpoint = createConsumerEndpoint(destination, group, properties);
 			consumerEndpoint.setOutputChannel(inputChannel);
 			this.consumerCustomizer.configure(consumerEndpoint, name, group);
-			if (consumerEndpoint instanceof InitializingBean) {
-				((InitializingBean) consumerEndpoint).afterPropertiesSet();
+			if (consumerEndpoint instanceof InitializingBean initializingConsumerEndpoint) {
+				initializingConsumerEndpoint.afterPropertiesSet();
 			}
-			if (properties.isAutoStartup() && consumerEndpoint instanceof Lifecycle) {
-				((Lifecycle) consumerEndpoint).start();
+			if (properties.isAutoStartup() && consumerEndpoint instanceof Lifecycle consumerEndpointWithLifecycle) {
+				consumerEndpointWithLifecycle.start();
 			}
 
 			Binding<MessageChannel> binding = new DefaultBinding<MessageChannel>(name,
-					group, inputChannel, consumerEndpoint instanceof Lifecycle
-							? (Lifecycle) consumerEndpoint : null) {
+					group, inputChannel, consumerEndpoint instanceof Lifecycle consumerEndpointWithLifecycle
+							? consumerEndpointWithLifecycle : null) {
 
 				@Override
 				public Map<String, Object> getExtendedInfo() {
@@ -498,8 +498,8 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 				@Override
 				protected void afterUnbind() {
 					try {
-						if (getEndpoint() instanceof DisposableBean) {
-							((DisposableBean) getEndpoint()).destroy();
+						if (getEndpoint() instanceof DisposableBean disposableEndpoint) {
+							disposableEndpoint.destroy();
 						}
 					}
 					catch (Exception e) {
@@ -515,14 +515,14 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 			return binding;
 		}
 		catch (Exception e) {
-			if (consumerEndpoint instanceof Lifecycle) {
-				((Lifecycle) consumerEndpoint).stop();
+			if (consumerEndpoint instanceof Lifecycle consumerEndpointWithLifecycle) {
+				consumerEndpointWithLifecycle.stop();
 			}
-			if (e instanceof BinderException) {
-				throw (BinderException) e;
+			if (e instanceof BinderException binderException) {
+				throw binderException;
 			}
-			else if (e instanceof ProvisioningException) {
-				throw (ProvisioningException) e;
+			else if (e instanceof ProvisioningException provisioningException) {
+				throw provisioningException;
 			}
 			else {
 				throw new BinderException("Exception thrown while starting consumer: ", e);
@@ -545,8 +545,8 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 				group, destination, properties);
 
 		MessageSource<?> messageSource = resources.getSource();
-		if (messageSource instanceof BeanFactoryAware) {
-			((BeanFactoryAware) messageSource).setBeanFactory(getApplicationContext().getBeanFactory());
+		if (messageSource instanceof BeanFactoryAware beanFactoryAwareMessageSource) {
+			beanFactoryAwareMessageSource.setBeanFactory(getApplicationContext().getBeanFactory());
 		}
 		bindingTarget.setSource(messageSource);
 		if (resources.getErrorInfrastructure() != null) {
@@ -565,12 +565,12 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 					resources.getErrorInfrastructure(), properties));
 		}
 		postProcessPollableSource(bindingTarget);
-		if (properties.isAutoStartup() && resources.getSource() instanceof Lifecycle) {
-			((Lifecycle) resources.getSource()).start();
+		if (properties.isAutoStartup() && resources.getSource() instanceof Lifecycle sourceWithLifecycle) {
+			sourceWithLifecycle.start();
 		}
 		Binding<PollableSource<MessageHandler>> binding = new DefaultBinding<PollableSource<MessageHandler>>(
-				name, group, inboundBindTarget, resources.getSource() instanceof Lifecycle
-						? (Lifecycle) resources.getSource() : null) {
+				name, group, inboundBindTarget, resources.getSource() instanceof Lifecycle sourceWithLifecycle
+						? sourceWithLifecycle : null) {
 
 			@Override
 			public Map<String, Object> getExtendedInfo() {
@@ -818,9 +818,8 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		if (errorChannel instanceof PublishSubscribeChannel) {
 			return true;
 		}
-		return errorChannel instanceof AbstractSubscribableChannel
-				? ((AbstractSubscribableChannel) errorChannel).getSubscriberCount() == 0
-				: true;
+		return !(errorChannel instanceof AbstractSubscribableChannel subscribableErrorChannel)
+			|| subscribableErrorChannel.getSubscriberCount() == 0;
 	}
 
 	private void destroyErrorInfrastructure(ProducerDestination destination, String bindingName) {
@@ -1039,11 +1038,11 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		@Override
 		@SuppressWarnings("unchecked")
 		public Message<?> preSend(Message<?> message, MessageChannel channel) {
-			if (message.getPayload() instanceof byte[]
+			if (message.getPayload() instanceof byte[] messagePayload
 					&& !message.getHeaders()
 							.containsKey(BinderHeaders.NATIVE_HEADERS_PRESENT)
 					&& EmbeddedHeaderUtils
-							.mayHaveEmbeddedHeaders((byte[]) message.getPayload())) {
+							.mayHaveEmbeddedHeaders(messagePayload)) {
 
 				MessageValues messageValues;
 				try {
@@ -1140,22 +1139,22 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 
 		@Override
 		public void start() {
-			if (this.delegate instanceof Lifecycle) {
-				((Lifecycle) this.delegate).start();
+			if (this.delegate instanceof Lifecycle delegateWithLifecycle) {
+				delegateWithLifecycle.start();
 			}
 		}
 
 		@Override
 		public void stop() {
-			if (this.delegate instanceof Lifecycle) {
-				((Lifecycle) this.delegate).stop();
+			if (this.delegate instanceof Lifecycle delegateWithLifecycle) {
+				delegateWithLifecycle.stop();
 			}
 		}
 
 		@Override
 		public boolean isRunning() {
-			return this.delegate instanceof Lifecycle
-					&& ((Lifecycle) this.delegate).isRunning();
+			return this.delegate instanceof Lifecycle delegateWithLifecycle
+				&& delegateWithLifecycle.isRunning();
 		}
 
 	}

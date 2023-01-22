@@ -223,10 +223,7 @@ public class ReactorKafkaBinder
 		protected void handleMessageInternal(Message<?> message) {
 			Object sendResultHeader = message.getHeaders().get("sendResult");
 			Sinks.One<RecordMetadata> sink = Sinks.one();
-			if (sendResultHeader instanceof AtomicReference) {
-				@SuppressWarnings("unchecked")
-				AtomicReference<Mono<RecordMetadata>> result =
-						(AtomicReference<Mono<RecordMetadata>>) sendResultHeader;
+			if (sendResultHeader instanceof AtomicReference result) {
 				result.set(sink.asMono());
 			}
 			if (this.sender != null) {

@@ -115,8 +115,7 @@ public class DefaultPollableMessageSource
 			@Override
 			public Object invoke(MethodInvocation invocation) throws Throwable {
 				Object result = invocation.proceed();
-				if (result instanceof Message) {
-					Message<?> received = (Message<?>) result;
+				if (result instanceof Message received) {
 					for (ChannelInterceptor interceptor : this.interceptors) {
 						received = interceptor.preSend(received, dummyChannel);
 						if (received == null) {
@@ -181,16 +180,16 @@ public class DefaultPollableMessageSource
 
 	@Override
 	public synchronized void start() {
-		if (!this.running && this.source instanceof Lifecycle) {
-			((Lifecycle) this.source).start();
+		if (!this.running && this.source instanceof Lifecycle sourceWithLifecycle) {
+			sourceWithLifecycle.start();
 		}
 		this.running = true;
 	}
 
 	@Override
 	public synchronized void stop() {
-		if (this.running && this.source instanceof Lifecycle) {
-			((Lifecycle) this.source).stop();
+		if (this.running && this.source instanceof Lifecycle sourceWithLifeCycle) {
+			sourceWithLifeCycle.stop();
 		}
 		this.running = false;
 	}
@@ -244,8 +243,8 @@ public class DefaultPollableMessageSource
 		}
 		catch (Exception e) {
 			AckUtils.autoNack(ackCallback);
-			if (e instanceof MessageHandlingException && ((MessageHandlingException) e)
-					.getFailedMessage().equals(message)) {
+			if (e instanceof MessageHandlingException messageHandlingException &&
+				messageHandlingException.getFailedMessage().equals(message)) {
 				throw (MessageHandlingException) e;
 			}
 			throw new MessageHandlingException(message, e);
@@ -309,7 +308,7 @@ public class DefaultPollableMessageSource
 		Message<?> message = this.source.receive();
 		if (message != null && type != null && this.messageConverter != null) {
 			Class<?> targetType = type == null ? Object.class
-					: type.getType() instanceof Class ? (Class<?>) type.getType()
+					: type.getType() instanceof Class clazz? clazz
 							: Object.class;
 			Object payload = this.messageConverter.fromMessage(message, targetType, type);
 			if (payload == null) {

@@ -87,9 +87,10 @@ public class RabbitMessageChannelBinderConfiguration {
 			@Nullable ConnectionNameStrategy connectionNameStrategy) {
 
 		String connectionNamePrefix = this.rabbitBinderConfigurationProperties.getConnectionNamePrefix();
-		if (this.rabbitConnectionFactory instanceof AbstractConnectionFactory && connectionNamePrefix != null &&  connectionNameStrategy == null) {
+		if (this.rabbitConnectionFactory instanceof AbstractConnectionFactory connectionFactory
+			&& connectionNamePrefix != null &&  connectionNameStrategy == null) {
 			final AtomicInteger nameIncrementer = new AtomicInteger();
-			((AbstractConnectionFactory) this.rabbitConnectionFactory).setConnectionNameStrategy(f -> connectionNamePrefix
+			connectionFactory.setConnectionNameStrategy(f -> connectionNamePrefix
 					+ "#" + nameIncrementer.getAndIncrement());
 		}
 

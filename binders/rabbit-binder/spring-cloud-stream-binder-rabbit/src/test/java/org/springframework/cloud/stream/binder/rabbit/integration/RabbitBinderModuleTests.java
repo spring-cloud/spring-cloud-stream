@@ -436,8 +436,8 @@ public class RabbitBinderModuleTests {
 		@Bean
 		public ProducerMessageHandlerCustomizer<MessageHandler> messageHandlerCustomizer() {
 			return (handler, destinationName) -> {
-				if (handler instanceof AbstractMessageHandler) {
-					((AbstractMessageHandler) handler).setBeanName("setByCustomizer:" + destinationName);
+				if (handler instanceof AbstractMessageHandler messageHandler) {
+					messageHandler.setBeanName("setByCustomizer:" + destinationName);
 				}
 			};
 		}

@@ -164,8 +164,8 @@ public final class StreamBridge implements StreamOperations, SmartInitializingSi
 		String targetType = this.resolveBinderTargetType(bindingName, binderName, MessageChannel.class,
 			this.applicationContext.getBean(BinderFactory.class));
 
-		Message<?> messageToSend = data instanceof Message
-				? MessageBuilder.fromMessage((Message) data).setHeaderIfAbsent(MessageUtils.TARGET_PROTOCOL, targetType).build()
+		Message<?> messageToSend = data instanceof Message messageData
+				? MessageBuilder.fromMessage(messageData).setHeaderIfAbsent(MessageUtils.TARGET_PROTOCOL, targetType).build()
 						: new GenericMessage<>(data, Collections.singletonMap(MessageUtils.TARGET_PROTOCOL, targetType));
 
 		Message<?> resultMessage;

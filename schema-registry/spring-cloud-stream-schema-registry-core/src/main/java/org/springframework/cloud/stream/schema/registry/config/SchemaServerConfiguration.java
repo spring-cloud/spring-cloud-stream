@@ -47,8 +47,8 @@ public class SchemaServerConfiguration {
 	@Bean
 	public static BeanFactoryPostProcessor entityScanPackagesPostProcessor() {
 		return beanFactory -> {
-			if (beanFactory instanceof BeanDefinitionRegistry) {
-				EntityScanPackages.register((BeanDefinitionRegistry) beanFactory,
+			if (beanFactory instanceof BeanDefinitionRegistry beanDefinitionRegistry) {
+				EntityScanPackages.register(beanDefinitionRegistry,
 						Collections.singletonList(Schema.class.getPackage().getName()));
 			}
 		};

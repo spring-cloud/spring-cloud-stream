@@ -586,8 +586,8 @@ public class ContentTypeTckTests {
 
 		@Bean
 		public Function<Object, Person> echo(JsonMapper mapper) {
-			return value -> value instanceof byte[]
-				? mapper.fromJson((byte[]) value, Person.class)
+			return value -> value instanceof byte[] valueAsBytes
+				? mapper.fromJson(valueAsBytes, Person.class)
 				: mapper.fromJson((String) value, Person.class);
 		}
 	}
@@ -598,8 +598,8 @@ public class ContentTypeTckTests {
 
 		@Bean
 		public Function<Message<?>, Person> echo(JsonMapper mapper) {
-			return message -> message.getPayload() instanceof byte[]
-				? mapper.fromJson((byte[]) message.getPayload(), Person.class)
+			return message -> message.getPayload() instanceof byte[] payloadAsBytes
+				? mapper.fromJson(payloadAsBytes, Person.class)
 				: mapper.fromJson((String) message.getPayload(), Person.class);
 		}
 	}

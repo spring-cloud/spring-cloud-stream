@@ -50,9 +50,9 @@ public class ObservationAutoConfiguration {
 	ProducerMessageHandlerCustomizer<MessageHandler> observedProducerMessageHandlerCustomizer(
 			ApplicationContext applicationContext) {
 		return (handler, destinationName) -> {
-			if (handler instanceof AmqpOutboundEndpoint) {
-				((AmqpOutboundEndpoint) handler).getRabbitTemplate().setObservationEnabled(true);
-				((AmqpOutboundEndpoint) handler).getRabbitTemplate().setApplicationContext(applicationContext);
+			if (handler instanceof AmqpOutboundEndpoint amqpOutboundEndpoint) {
+				amqpOutboundEndpoint.getRabbitTemplate().setObservationEnabled(true);
+				amqpOutboundEndpoint.getRabbitTemplate().setApplicationContext(applicationContext);
 			}
 		};
 	}

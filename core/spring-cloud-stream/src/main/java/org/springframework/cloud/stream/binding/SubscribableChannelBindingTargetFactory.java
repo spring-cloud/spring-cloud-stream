@@ -68,9 +68,9 @@ public class SubscribableChannelBindingTargetFactory
 			}
 			subscribableChannel = channel;
 		}
-		if (subscribableChannel instanceof DirectWithAttributesChannel) {
-			((DirectWithAttributesChannel) subscribableChannel).setAttribute("type", "input");
-			this.messageChannelConfigurer.configureInputChannel(subscribableChannel, name);
+		if (subscribableChannel instanceof DirectWithAttributesChannel directWithAttributesChannel) {
+			directWithAttributesChannel.setAttribute("type", "input");
+			this.messageChannelConfigurer.configureInputChannel(directWithAttributesChannel, name);
 		}
 
 		return subscribableChannel;
@@ -95,9 +95,9 @@ public class SubscribableChannelBindingTargetFactory
 			}
 			subscribableChannel = channel;
 		}
-		if (subscribableChannel instanceof DirectWithAttributesChannel) {
-			((DirectWithAttributesChannel) subscribableChannel).setAttribute("type", "output");
-			this.messageChannelConfigurer.configureOutputChannel(subscribableChannel, name);
+		if (subscribableChannel instanceof DirectWithAttributesChannel directWithAttributesChannel) {
+			directWithAttributesChannel.setAttribute("type", "output");
+			this.messageChannelConfigurer.configureOutputChannel(directWithAttributesChannel, name);
 		}
 
 		return subscribableChannel;

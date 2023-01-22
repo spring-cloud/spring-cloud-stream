@@ -200,16 +200,14 @@ public class KafkaBinderConfiguration {
 					@Override
 					public void configure(ProducerFactory<?, ?> pf) {
 						if (pf instanceof DefaultKafkaProducerFactory) {
-							((DefaultKafkaProducerFactory<?, ?>) pf)
-									.addListener(new MicrometerProducerListener<>(meterRegistry));
+							pf.addListener(new MicrometerProducerListener<>(meterRegistry));
 						}
 					}
 
 					@Override
 					public void configure(ConsumerFactory<?, ?> cf) {
 						if (cf instanceof DefaultKafkaConsumerFactory) {
-							((DefaultKafkaConsumerFactory<?, ?>) cf)
-									.addListener(new MicrometerConsumerListener<>(meterRegistry));
+							cf.addListener(new MicrometerConsumerListener<>(meterRegistry));
 						}
 					}
 
@@ -255,16 +253,14 @@ public class KafkaBinderConfiguration {
 					@Override
 					public void configure(ProducerFactory<?, ?> pf) {
 						if (pf instanceof DefaultKafkaProducerFactory) {
-							((DefaultKafkaProducerFactory<?, ?>) pf)
-									.addListener(new MicrometerProducerListener<>(this.meterRegistry));
+							pf.addListener(new MicrometerProducerListener<>(this.meterRegistry));
 						}
 					}
 
 					@Override
 					public void configure(ConsumerFactory<?, ?> cf) {
 						if (cf instanceof DefaultKafkaConsumerFactory) {
-							((DefaultKafkaConsumerFactory<?, ?>) cf)
-									.addListener(new MicrometerConsumerListener<>(this.meterRegistry));
+							cf.addListener(new MicrometerConsumerListener<>(this.meterRegistry));
 						}
 					}
 

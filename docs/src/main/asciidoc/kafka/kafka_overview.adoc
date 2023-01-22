@@ -944,8 +944,8 @@ to apply, you need to use a 'BinderCustomizer' to set the container customizer (
 @Bean
 public BinderCustomizer binderCustomizer(ListenerContainerWithDlqAndRetryCustomizer containerCustomizer) {
     return (binder, binderName) -> {
-        if (binder instanceof KafkaMessageChannelBinder) {
-            ((KafkaMessageChannelBinder) binder).setContainerCustomizer(containerCustomizer);
+        if (binder instanceof KafkaMessageChannelBinder kafkaMessageChannelBinder) {
+            kafkaMessageChannelBinder.setContainerCustomizer(containerCustomizer);
         }
         else if (binder instanceof KStreamBinder) {
             ...

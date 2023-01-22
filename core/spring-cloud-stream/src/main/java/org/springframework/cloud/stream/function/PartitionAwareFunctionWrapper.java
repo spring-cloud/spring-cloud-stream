@@ -90,16 +90,16 @@ class PartitionAwareFunctionWrapper implements Function<Object, Object>, Supplie
 
 	@Override
 	public Object get() {
-		if (this.function instanceof FunctionInvocationWrapper) {
+		if (this.function instanceof FunctionInvocationWrapper functionInvocationWrapper) {
 			this.setEnhancerIfNecessary();
-			return ((FunctionInvocationWrapper) this.function).get();
+			return functionInvocationWrapper.get();
 		}
 		throw new IllegalStateException("Call to get() is not allowed since this function is not a Supplier.");
 	}
 
 	private void setEnhancerIfNecessary() {
-		if (this.function instanceof FunctionInvocationWrapper) {
-			((FunctionInvocationWrapper) this.function).setEnhancer(this.outputMessageEnricher);
+		if (this.function instanceof FunctionInvocationWrapper functionInvocationWrapper) {
+			functionInvocationWrapper.setEnhancer(this.outputMessageEnricher);
 		}
 	}
 }

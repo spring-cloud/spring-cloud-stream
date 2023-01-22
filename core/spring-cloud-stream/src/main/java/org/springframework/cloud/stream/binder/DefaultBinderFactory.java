@@ -312,8 +312,8 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 			Map<String, MessageConverter> messageConverters = binderProducingContext.getBeansOfType(MessageConverter.class);
 			if (!CollectionUtils.isEmpty(messageConverters) && !ObjectUtils.isEmpty(context.getBeansOfType(FunctionCatalog.class))) {
 				FunctionCatalog functionCatalog = this.context.getBean(FunctionCatalog.class);
-				if (functionCatalog instanceof SimpleFunctionRegistry) {
-					((SimpleFunctionRegistry) functionCatalog).addMessageConverters(messageConverters.values());
+				if (functionCatalog instanceof SimpleFunctionRegistry simpleFunctionRegistry) {
+					simpleFunctionRegistry.addMessageConverters(messageConverters.values());
 				}
 			}
 
@@ -323,8 +323,8 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 			 * accessible within binder's context (see
 			 * https://github.com/spring-cloud/spring-cloud-stream/issues/1384)
 			 */
-			if (this.context != null && binder instanceof ApplicationContextAware) {
-				((ApplicationContextAware) binder).setApplicationContext(this.context);
+			if (this.context != null && binder instanceof ApplicationContextAware applicationContextAwareBinder) {
+				applicationContextAwareBinder.setApplicationContext(this.context);
 			}
 			if (!CollectionUtils.isEmpty(this.listeners)) {
 				for (Listener binderFactoryListener : this.listeners) {
@@ -555,12 +555,12 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 	 * foo={bar=baz}).
 	 * @param propertyName property name to flatten
 	 * @param value value that contains the property name
-	 * @param flattenedProperties map to which we'll add the falttened property
+	 * @param flattenedProperties map to which we'll add the flattened property
 	 */
 	@SuppressWarnings("unchecked")
 	private void flatten(String propertyName, Object value, Map<String, Object> flattenedProperties) {
-		if (value instanceof Map) {
-			((Map<Object, Object>) value).forEach((k, v) -> flatten(
+		if (value instanceof Map valueAsMap) {
+			valueAsMap.forEach((k, v) -> flatten(
 					(propertyName != null ? propertyName + "." : "") + k, v, flattenedProperties));
 		}
 		else {

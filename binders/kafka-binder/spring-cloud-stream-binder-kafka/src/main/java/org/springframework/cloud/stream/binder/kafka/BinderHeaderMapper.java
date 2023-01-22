@@ -256,8 +256,8 @@ public class BinderHeaderMapper extends AbstractKafkaHeaderMapper {
 		headers.forEach((key, rawValue) -> {
 			if (matches(key, rawValue)) {
 				Object valueToAdd = headerValueToAddOut(key, rawValue);
-				if (valueToAdd instanceof byte[]) {
-					target.add(new RecordHeader(key, (byte[]) valueToAdd));
+				if (valueToAdd instanceof byte[] valueToAddBytes) {
+					target.add(new RecordHeader(key, valueToAddBytes));
 				}
 				else {
 					try {
@@ -268,8 +268,8 @@ public class BinderHeaderMapper extends AbstractKafkaHeaderMapper {
 						}
 						if (!this.encodeStrings
 								&& !MimeType.class.isAssignableFrom(rawValue.getClass())
-								&& valueToAdd instanceof String) {
-							target.add(new RecordHeader(key, ((String) valueToAdd).getBytes(getCharset())));
+								&& valueToAdd instanceof String stringValueToAdd) {
+							target.add(new RecordHeader(key, stringValueToAdd.getBytes(getCharset())));
 							className = JAVA_LANG_STRING;
 						}
 						else {

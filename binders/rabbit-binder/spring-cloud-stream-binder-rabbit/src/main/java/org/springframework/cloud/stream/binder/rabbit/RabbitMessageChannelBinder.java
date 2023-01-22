@@ -271,9 +271,9 @@ public class RabbitMessageChannelBinder extends
 
 	@Override
 	public void destroy() throws Exception {
-		if (this.connectionFactory instanceof DisposableBean) {
+		if (this.connectionFactory instanceof DisposableBean disposableConnectionFactory) {
 			if (this.destroyConnectionFactory) {
-				((DisposableBean) this.connectionFactory).destroy();
+				disposableConnectionFactory.destroy();
 			}
 		}
 	}
@@ -968,11 +968,9 @@ public class RabbitMessageChannelBinder extends
 				}
 			}
 			else {
-				if (message.getPayload() instanceof MessagingException) {
+				if (message.getPayload() instanceof MessagingException messagingException) {
 					AcknowledgmentCallback ack = StaticMessageHeaderAccessor
-							.getAcknowledgmentCallback(
-									((MessagingException) message.getPayload())
-											.getFailedMessage());
+							.getAcknowledgmentCallback(messagingException.getFailedMessage());
 					if (ack != null) {
 						if (properties.getExtension().isRequeueRejected()) {
 							ack.acknowledge(Status.REQUEUE);
@@ -1088,8 +1086,8 @@ public class RabbitMessageChannelBinder extends
 		@Override
 		protected Message createMessage(Object object,
 				MessageProperties messageProperties) {
-			if (object instanceof byte[]) {
-				return new Message((byte[]) object, messageProperties);
+			if (object instanceof byte[] bytes) {
+				return new Message(bytes, messageProperties);
 			}
 			else {
 				// just for safety (backwards compatibility)

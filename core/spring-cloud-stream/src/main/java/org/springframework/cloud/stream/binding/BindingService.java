@@ -100,16 +100,16 @@ public class BindingService {
 	public <T> Collection<Binding<T>> bindConsumer(T input, String inputName) {
 		Collection<Binding<T>> bindings = new ArrayList<>();
 		Class<?> inputClass = input.getClass();
-		if (input instanceof Advised) {
-			inputClass = Stream.of(((Advised) input).getProxiedInterfaces()).filter(c -> !c.getName().contains("org.springframework")).findFirst()
+		if (input instanceof Advised advisedInput) {
+			inputClass = Stream.of(advisedInput.getProxiedInterfaces()).filter(c -> !c.getName().contains("org.springframework")).findFirst()
 					.orElse(inputClass);
 		}
 		Binder<T, ConsumerProperties, ?> binder = (Binder<T, ConsumerProperties, ?>) getBinder(
 				inputName, inputClass);
 		ConsumerProperties consumerProperties = this.bindingServiceProperties
 				.getConsumerProperties(inputName);
-		if (binder instanceof ExtendedPropertiesBinder) {
-			Object extension = ((ExtendedPropertiesBinder) binder)
+		if (binder instanceof ExtendedPropertiesBinder extendedPropertiesBinder) {
+			Object extension = extendedPropertiesBinder
 					.getExtendedConsumerProperties(inputName);
 			ExtendedConsumerProperties extendedConsumerProperties = new ExtendedConsumerProperties(
 					extension);
@@ -146,11 +146,11 @@ public class BindingService {
 							continue;
 						}
 
-						Object extensiion = consumerProperties instanceof ExtendedConsumerProperties
-								? ((ExtendedConsumerProperties) consumerProperties).getExtension()
+						Object extension = consumerProperties instanceof ExtendedConsumerProperties extendedProperties
+								? extendedProperties.getExtension()
 										: null;
 
-						ConsumerProperties consumerPropertiesTemp = new ExtendedConsumerProperties<>(extensiion);
+						ConsumerProperties consumerPropertiesTemp = new ExtendedConsumerProperties<>(extension);
 						BeanUtils.copyProperties(consumerProperties, consumerPropertiesTemp);
 
 						consumerPropertiesTemp.setInstanceIndex(index);
@@ -270,8 +270,8 @@ public class BindingService {
 	public <T> Binding<T> bindProducer(T output, String outputName, boolean cache, @Nullable Binder<T, ?, ProducerProperties> binder) {
 		String bindingTarget = this.bindingServiceProperties.getBindingDestination(outputName);
 		Class<?> outputClass = output.getClass();
-		if (output instanceof Advised) {
-			outputClass = Stream.of(((Advised) output).getProxiedInterfaces()).filter(c -> !c.getName().contains("org.springframework")).findFirst()
+		if (output instanceof Advised advisedOutput) {
+			outputClass = Stream.of(advisedOutput.getProxiedInterfaces()).filter(c -> !c.getName().contains("org.springframework")).findFirst()
 					.orElse(outputClass);
 		}
 		if (binder == null) {
@@ -280,9 +280,8 @@ public class BindingService {
 
 		ProducerProperties producerProperties = this.bindingServiceProperties
 				.getProducerProperties(outputName);
-		if (binder instanceof ExtendedPropertiesBinder) {
-			Object extension = ((ExtendedPropertiesBinder) binder)
-					.getExtendedProducerProperties(outputName);
+		if (binder instanceof ExtendedPropertiesBinder extendedPropertiesBinder) {
+			Object extension = extendedPropertiesBinder.getExtendedProducerProperties(outputName);
 			ExtendedProducerProperties extendedProducerProperties = new ExtendedProducerProperties<>(
 					extension);
 			BeanUtils.copyProperties(producerProperties, extendedProducerProperties);
@@ -310,9 +309,8 @@ public class BindingService {
 	@SuppressWarnings("rawtypes")
 	public Object getExtendedProducerProperties(Object output, String outputName) {
 		Binder binder = getBinder(outputName, output.getClass());
-		if (binder instanceof ExtendedPropertiesBinder) {
-			return ((ExtendedPropertiesBinder) binder)
-					.getExtendedProducerProperties(outputName);
+		if (binder instanceof ExtendedPropertiesBinder extendedPropertiesBinder) {
+			return extendedPropertiesBinder.getExtendedProducerProperties(outputName);
 		}
 		return null;
 	}

@@ -397,8 +397,8 @@ public class KafkaStreamsFunctionProcessor extends AbstractKafkaStreamsBinderPro
 	private Object handleCurriedFunctions(Object[] adaptedInboundArguments, Object result) {
 		int i = 1;
 		while (result instanceof Function || result instanceof Consumer) {
-			if (result instanceof Function) {
-				result = ((Function<Object, Object>) result).apply(adaptedInboundArguments[i]);
+			if (result instanceof Function function) {
+				result = function.apply(adaptedInboundArguments[i]);
 			}
 			else {
 				((Consumer<Object>) result).accept(adaptedInboundArguments[i]);

@@ -86,12 +86,11 @@ public abstract class AbstractTestBinder<C extends AbstractBinder<MessageChannel
 	 * org.springframework.cloud.stream.binding.MessageConverterConfigurer
 	 */
 	private void checkChannelIsConfigured(MessageChannel messageChannel, CP properties) {
-		if (messageChannel instanceof AbstractSubscribableChannel
+		if (messageChannel instanceof AbstractSubscribableChannel subscribableMessageChannel
 				&& !properties.isUseNativeDecoding()) {
 			Assert.isTrue(
 					!CollectionUtils
-							.isEmpty(((AbstractSubscribableChannel) messageChannel)
-								.getInterceptors()),
+							.isEmpty(subscribableMessageChannel.getInterceptors()),
 					"'messageChannel' appears to be misconfigured. "
 							+ "Consider creating channel via AbstractBinderTest.createBindableChannel(..)");
 		}

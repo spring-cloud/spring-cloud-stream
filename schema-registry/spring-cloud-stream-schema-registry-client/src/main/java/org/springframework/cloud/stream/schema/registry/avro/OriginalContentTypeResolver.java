@@ -43,13 +43,12 @@ class OriginalContentTypeResolver implements ContentTypeResolver {
 						? headers.get(BINDER_ORIGINAL_CONTENT_TYPE)
 						: headers.get(MessageHeaders.CONTENT_TYPE);
 		MimeType mimeType = null;
-		if (contentType instanceof MimeType) {
-			mimeType = (MimeType) contentType;
+		if (contentType instanceof MimeType mimeContentType) {
+			mimeType = mimeContentType;
 		}
-		else if (contentType instanceof String) {
+		else if (contentType instanceof String valueAsString) {
 			mimeType = this.mimeTypeCache.get(contentType);
 			if (mimeType == null) {
-				String valueAsString = (String) contentType;
 				mimeType = MimeType.valueOf(valueAsString);
 				this.mimeTypeCache.put(valueAsString, mimeType);
 			}

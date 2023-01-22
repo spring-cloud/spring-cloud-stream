@@ -297,8 +297,9 @@ public class FunctionConfiguration {
 		boolean splittable = pollable != null
 				&& (boolean) AnnotationUtils.getAnnotationAttributes(pollable).get("splittable");
 
-		FunctionInvocationWrapper function = (supplier instanceof PartitionAwareFunctionWrapper)
-				? (FunctionInvocationWrapper) ((PartitionAwareFunctionWrapper) supplier).function : (FunctionInvocationWrapper) supplier;
+		FunctionInvocationWrapper function =
+			(supplier instanceof PartitionAwareFunctionWrapper partitionAwareFunctionWrapper)
+				? (FunctionInvocationWrapper) partitionAwareFunctionWrapper.function : (FunctionInvocationWrapper) supplier;
 		boolean reactive = FunctionTypeUtils.isPublisher(function.getOutputType());
 
 		if (pollable == null && reactive) {
@@ -361,17 +362,17 @@ public class FunctionConfiguration {
 		String supplierFunctionName = StringUtils
 				.delimitedListToStringArray(proxyFactory.getFunctionDefinition().replaceAll(",", "|").trim(), "|")[0];
 		BeanDefinition bd = context.getBeanDefinition(supplierFunctionName);
-		if (!(bd instanceof RootBeanDefinition)) {
+		if (!(bd instanceof RootBeanDefinition rootBeanDefinition)) {
 			return null;
 		}
 
-		Method factoryMethod = ((RootBeanDefinition) bd).getResolvedFactoryMethod();
+		Method factoryMethod = rootBeanDefinition.getResolvedFactoryMethod();
 		if (factoryMethod == null) {
 			Object source = bd.getSource();
-			if (source instanceof MethodMetadata) {
-				Class<?> factory = ClassUtils.resolveClassName(((MethodMetadata) source).getDeclaringClassName(), null);
+			if (source instanceof MethodMetadata methodMetadata) {
+				Class<?> factory = ClassUtils.resolveClassName(methodMetadata.getDeclaringClassName(), null);
 				Class<?>[] params = FunctionContextUtils.getParamTypesFromBeanDefinitionFactory(factory, (RootBeanDefinition) bd);
-				factoryMethod = ReflectionUtils.findMethod(factory, ((MethodMetadata) source).getMethodName(), params);
+				factoryMethod = ReflectionUtils.findMethod(factory, methodMetadata.getMethodName(), params);
 			}
 		}
 		Assert.notNull(factoryMethod, "Failed to introspect factory method since it was not discovered for function '"
@@ -384,8 +385,8 @@ public class FunctionConfiguration {
 
 	@SuppressWarnings("unchecked")
 	private <T> Message<T> wrapToMessageIfNecessary(T value) {
-		return value instanceof Message
-				? (Message<T>) value
+		return value instanceof Message message
+				? message
 						: MessageBuilder.withPayload(value).build();
 	}
 
@@ -436,8 +437,9 @@ public class FunctionConfiguration {
 			Map<String, BindableProxyFactory> beansOfType = applicationContext.getBeansOfType(BindableProxyFactory.class);
 			this.bindableProxyFactories = beansOfType.values().toArray(new BindableProxyFactory[0]);
 			for (BindableProxyFactory bindableProxyFactory : this.bindableProxyFactories) {
-				String functionDefinition = bindableProxyFactory instanceof BindableFunctionProxyFactory && ((BindableFunctionProxyFactory) bindableProxyFactory).isFunctionExist()
-						? ((BindableFunctionProxyFactory) bindableProxyFactory).getFunctionDefinition()
+				String functionDefinition = bindableProxyFactory instanceof BindableFunctionProxyFactory functionFactory
+					&& functionFactory.isFunctionExist()
+						? functionFactory.getFunctionDefinition()
 								: null; /*this.functionProperties.getDefinition();*/
 
 				boolean shouldNotProcess = false;
@@ -558,17 +560,14 @@ public class FunctionConfiguration {
 					if (!CollectionUtils.isEmpty(outputBindingNames)) {
 						MessageChannel outputChannel = this.applicationContext.getBean(outputBindingIter.next(), MessageChannel.class);
 						flux = flux.doOnNext(message -> {
-							if (message instanceof Message && ((Message<?>) message).getHeaders().get("spring.cloud.stream.sendto.destination") != null) {
-								String destinationName = (String) ((Message<?>) message).getHeaders().get("spring.cloud.stream.sendto.destination");
+							if (message instanceof Message m && m.getHeaders().get("spring.cloud.stream.sendto.destination") != null) {
+								String destinationName = (String) m.getHeaders().get("spring.cloud.stream.sendto.destination");
 								ProducerProperties producerProperties = this.serviceProperties.getBindings().get(outputBindingNames.iterator().next()).getProducer();
 								MessageChannel dynamicChannel = streamBridge.resolveDestination(destinationName, producerProperties, null);
 								if (logger.isInfoEnabled()) {
 									logger.info("Output message is sent to '" + destinationName + "' destination");
 								}
-								if (!(message instanceof Message)) {
-									message = MessageBuilder.withPayload(message).build();
-								}
-								dynamicChannel.send((Message) message);
+								dynamicChannel.send(m);
 							}
 							else {
 								if (!(message instanceof Message)) {
@@ -623,8 +622,8 @@ public class FunctionConfiguration {
 						logger.debug("Function execution resulted in null. No message will be sent");
 						return;
 					}
-					if (result instanceof Iterable) {
-						for (Object resultElement : (Iterable<?>) result) {
+					if (result instanceof Iterable iterableResult) {
+						for (Object resultElement : iterableResult) {
 							this.doSendMessage(resultElement, message);
 						}
 					}
@@ -639,13 +638,13 @@ public class FunctionConfiguration {
 				}
 
 				private void doSendMessage(Object result, Message<?> requestMessage) {
-					if (result instanceof Message && ((Message<?>) result).getHeaders().get("spring.cloud.stream.sendto.destination") != null) {
-						String destinationName = (String) ((Message<?>) result).getHeaders().get("spring.cloud.stream.sendto.destination");
+					if (result instanceof Message messageResult && messageResult.getHeaders().get("spring.cloud.stream.sendto.destination") != null) {
+						String destinationName = (String) messageResult.getHeaders().get("spring.cloud.stream.sendto.destination");
 						MessageChannel outputChannel = streamBridge.resolveDestination(destinationName, producerProperties, null);
 						if (logger.isInfoEnabled()) {
 							logger.info("Output message is sent to '" + destinationName + "' destination");
 						}
-						outputChannel.send(((Message<?>) result));
+						outputChannel.send(messageResult);
 					}
 					else if (StringUtils.hasText(outputChannelName)) {
 						if (!(result instanceof Message)) {

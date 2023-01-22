@@ -52,8 +52,8 @@ public final class FunctionBindingTestUtils {
 	public static void bind(ConfigurableApplicationContext applicationContext, Object function) {
 		try {
 			Object targetFunction = function;
-			if (function instanceof FunctionRegistration) {
-				targetFunction = ((FunctionRegistration) function).getTarget();
+			if (function instanceof FunctionRegistration functionRegistration) {
+				targetFunction = functionRegistration.getTarget();
 			}
 			String functionName = targetFunction instanceof Function ? "function" : (targetFunction instanceof Consumer ? "consumer" : "supplier");
 

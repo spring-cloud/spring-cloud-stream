@@ -56,9 +56,9 @@ class BinderErrorChannel extends PublishSubscribeChannel
 		if (this.finalHandler != null) {
 			super.subscribe(this.finalHandler);
 		}
-		if (handler instanceof LastSubscriberMessageHandler
+		if (handler instanceof LastSubscriberMessageHandler lastSubscriberMessageHandler
 				&& this.finalHandler == null) {
-			this.finalHandler = (LastSubscriberMessageHandler) handler;
+			this.finalHandler = lastSubscriberMessageHandler;
 		}
 		return result;
 	}

@@ -155,8 +155,8 @@ public class KafkaStreamsBinderSupportAutoConfiguration {
 	@SuppressWarnings("unchecked")
 	private void flatten(String propertyName, Object value,
 			Map<String, Object> flattenedProperties) {
-		if (value instanceof Map) {
-			((Map<Object, Object>) value).forEach((k, v) -> flatten(
+		if (value instanceof Map valueAsMap) {
+			valueAsMap.forEach((k, v) -> flatten(
 					(propertyName != null ? propertyName + "." : "") + k, v,
 					flattenedProperties));
 		}
@@ -213,10 +213,7 @@ public class KafkaStreamsBinderSupportAutoConfiguration {
 		else {
 			Object bootstrapServerConfig = properties
 					.get(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG);
-			if (bootstrapServerConfig instanceof String) {
-				@SuppressWarnings("unchecked")
-				String bootStrapServers = (String) properties
-						.get(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG);
+			if (bootstrapServerConfig instanceof String bootStrapServers) {
 				if (bootStrapServers.equals("localhost:9092")) {
 					properties.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG,
 							kafkaConnectionString);

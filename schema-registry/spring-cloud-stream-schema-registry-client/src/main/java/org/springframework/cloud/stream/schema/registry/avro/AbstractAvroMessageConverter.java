@@ -93,8 +93,8 @@ public abstract class AbstractAvroMessageConverter extends AbstractMessageConver
 
 			MimeType mimeType = getContentTypeResolver().resolve(message.getHeaders());
 			if (mimeType == null) {
-				if (conversionHint instanceof MimeType) {
-					mimeType = (MimeType) conversionHint;
+				if (conversionHint instanceof MimeType hintedMimeType) {
+					mimeType = hintedMimeType;
 				}
 				else {
 					return null;
@@ -117,8 +117,8 @@ public abstract class AbstractAvroMessageConverter extends AbstractMessageConver
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		try {
 			MimeType hintedContentType = null;
-			if (conversionHint instanceof MimeType) {
-				hintedContentType = (MimeType) conversionHint;
+			if (conversionHint instanceof MimeType mimeType) {
+				hintedContentType = mimeType;
 			}
 			Schema schema = resolveSchemaForWriting(payload, headers, hintedContentType);
 			@SuppressWarnings("unchecked")
