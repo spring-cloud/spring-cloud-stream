@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2022 the original author or authors.
+ * Copyright 2017-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -81,6 +81,7 @@ import org.springframework.util.StringUtils;
  * @author Marius Bogoevici
  * @author Soby Chacko
  * @author Gary Russell
+ * @author Byungjun You
  */
 @Configuration(proxyBeanMethods = false)
 @EnableConfigurationProperties({ KafkaProperties.class, KafkaStreamsExtendedBindingProperties.class })
@@ -155,8 +156,8 @@ public class KafkaStreamsBinderSupportAutoConfiguration {
 	@SuppressWarnings("unchecked")
 	private void flatten(String propertyName, Object value,
 			Map<String, Object> flattenedProperties) {
-		if (value instanceof Map) {
-			((Map<Object, Object>) value).forEach((k, v) -> flatten(
+		if (value instanceof Map valueAsMap) {
+			valueAsMap.forEach((k, v) -> flatten(
 					(propertyName != null ? propertyName + "." : "") + k, v,
 					flattenedProperties));
 		}
@@ -213,10 +214,7 @@ public class KafkaStreamsBinderSupportAutoConfiguration {
 		else {
 			Object bootstrapServerConfig = properties
 					.get(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG);
-			if (bootstrapServerConfig instanceof String) {
-				@SuppressWarnings("unchecked")
-				String bootStrapServers = (String) properties
-						.get(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG);
+			if (bootstrapServerConfig instanceof String bootStrapServers) {
 				if (bootStrapServers.equals("localhost:9092")) {
 					properties.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG,
 							kafkaConnectionString);

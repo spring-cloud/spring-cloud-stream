@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2021 the original author or authors.
+ * Copyright 2017-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import org.springframework.messaging.MessageHandler;
  *
  * @author Gary Russell
  * @author Oleg Zhurakousky
+ * @author Byungjun You
  * @since 1.3
  *
  */
@@ -56,9 +57,9 @@ class BinderErrorChannel extends PublishSubscribeChannel
 		if (this.finalHandler != null) {
 			super.subscribe(this.finalHandler);
 		}
-		if (handler instanceof LastSubscriberMessageHandler
+		if (handler instanceof LastSubscriberMessageHandler lastSubscriberMessageHandler
 				&& this.finalHandler == null) {
-			this.finalHandler = (LastSubscriberMessageHandler) handler;
+			this.finalHandler = lastSubscriberMessageHandler;
 		}
 		return result;
 	}

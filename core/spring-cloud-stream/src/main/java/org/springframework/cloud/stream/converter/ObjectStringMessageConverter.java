@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2018 the original author or authors.
+ * Copyright 2017-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ import org.springframework.util.MimeType;
  *
  * @author Marius Bogoevici
  * @author Oleg Zhurakousky
+ * @author Byungjun You
  * @since 1.2
  */
 public class ObjectStringMessageConverter extends AbstractMessageConverter {
@@ -74,30 +75,28 @@ public class ObjectStringMessageConverter extends AbstractMessageConverter {
 
 //		Assert.isTrue(String.class.isAssignableFrom(targetClass) || targetClass == Object.class, "This converter can only convert byte[] to String");
 		if (message.getPayload() != null) {
-			if (message.getPayload() instanceof byte[]) {
+			if (message.getPayload() instanceof byte[] payloadAsBytes) {
 				if (byte[].class.isAssignableFrom(targetClass)) {
 					return message.getPayload();
 				}
 				else {
-					return new String((byte[]) message.getPayload(),
+					return new String(payloadAsBytes,
 							StandardCharsets.UTF_8);
 				}
 			}
-			else if (message.getPayload() instanceof Collection) {
-				Collection<?> collection = ((Collection<?>) message.getPayload()).stream()
+			else if (message.getPayload() instanceof Collection<?> payloadAsCollection) {
+				return payloadAsCollection.stream()
 						.map(value -> {
 							if (byte[].class.isAssignableFrom(targetClass)) {
 								return value;
 							}
-							else if (value instanceof byte[]) {
-								return new String((byte[]) value, StandardCharsets.UTF_8);
+							else if (value instanceof byte[] valueAsBytes) {
+								return new String(valueAsBytes, StandardCharsets.UTF_8);
 							}
 							else {
 								return value; // String
 							}
 						}).collect(Collectors.toList());
-
-				return collection;
 			}
 			else {
 				if (byte[].class.isAssignableFrom(targetClass)) {

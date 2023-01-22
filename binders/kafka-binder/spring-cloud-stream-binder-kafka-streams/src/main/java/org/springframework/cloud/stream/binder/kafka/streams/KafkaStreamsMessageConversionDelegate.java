@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2019 the original author or authors.
+ * Copyright 2018-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,6 +50,7 @@ import org.springframework.util.StringUtils;
  * contentType. Based on the contentType, a {@link MessageConverter} will be resolved.
  *
  * @author Soby Chacko
+ * @author Byungjun You
  */
 public class KafkaStreamsMessageConversionDelegate {
 
@@ -94,7 +95,7 @@ public class KafkaStreamsMessageConversionDelegate {
 		final KStream<?, ?> kStreamWithEnrichedHeaders = outboundBindTarget
 			.filter((k, v) -> v != null)
 			.mapValues((v) -> {
-				Message<?> message = v instanceof Message<?> ? (Message<?>) v
+				Message<?> message = v instanceof Message<?> m ? m
 						: MessageBuilder.withPayload(v).build();
 				Map<String, Object> headers = new HashMap<>(message.getHeaders());
 				if (StringUtils.hasText(contentType)) {
@@ -171,14 +172,14 @@ public class KafkaStreamsMessageConversionDelegate {
 							if (o2 instanceof Message || o2 instanceof String
 									|| o2 instanceof byte[]) {
 								Message<?> m1 = null;
-								if (o2 instanceof Message) {
+								if (o2 instanceof Message message) {
 									m1 = perRecordContentTypeHolder.contentType != null
-											? MessageBuilder.fromMessage((Message<?>) o2)
+											? MessageBuilder.fromMessage(message)
 													.setHeader(
 															MessageHeaders.CONTENT_TYPE,
 															perRecordContentTypeHolder.contentType)
 													.build()
-											: (Message<?>) o2;
+											: message;
 								}
 								else {
 									m1 = perRecordContentTypeHolder.contentType != null

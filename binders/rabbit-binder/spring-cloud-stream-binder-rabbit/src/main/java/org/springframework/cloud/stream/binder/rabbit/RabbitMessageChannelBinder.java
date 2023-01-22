@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2022 the original author or authors.
+ * Copyright 2013-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -134,6 +134,7 @@ import org.springframework.util.StringUtils;
  * @author Soby Chacko
  * @author Oleg Zhurakousky
  * @author Christian Tzolov
+ * @author Byungjun You
  */
 // @checkstyle:off
 public class RabbitMessageChannelBinder extends
@@ -271,9 +272,9 @@ public class RabbitMessageChannelBinder extends
 
 	@Override
 	public void destroy() throws Exception {
-		if (this.connectionFactory instanceof DisposableBean) {
+		if (this.connectionFactory instanceof DisposableBean disposableConnectionFactory) {
 			if (this.destroyConnectionFactory) {
-				((DisposableBean) this.connectionFactory).destroy();
+				disposableConnectionFactory.destroy();
 			}
 		}
 	}
@@ -968,11 +969,9 @@ public class RabbitMessageChannelBinder extends
 				}
 			}
 			else {
-				if (message.getPayload() instanceof MessagingException) {
+				if (message.getPayload() instanceof MessagingException messagingException) {
 					AcknowledgmentCallback ack = StaticMessageHeaderAccessor
-							.getAcknowledgmentCallback(
-									((MessagingException) message.getPayload())
-											.getFailedMessage());
+							.getAcknowledgmentCallback(messagingException.getFailedMessage());
 					if (ack != null) {
 						if (properties.getExtension().isRequeueRejected()) {
 							ack.acknowledge(Status.REQUEUE);
@@ -1088,8 +1087,8 @@ public class RabbitMessageChannelBinder extends
 		@Override
 		protected Message createMessage(Object object,
 				MessageProperties messageProperties) {
-			if (object instanceof byte[]) {
-				return new Message((byte[]) object, messageProperties);
+			if (object instanceof byte[] bytes) {
+				return new Message(bytes, messageProperties);
 			}
 			else {
 				// just for safety (backwards compatibility)

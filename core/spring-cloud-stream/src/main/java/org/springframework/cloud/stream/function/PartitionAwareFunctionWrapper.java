@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2021 the original author or authors.
+ * Copyright 2020-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,6 +37,10 @@ import org.springframework.util.ObjectUtils;
  * This class is effectively a wrapper which is aware of the stream related partition information
  * for outgoing messages. It has only one responsibility and that is to modify the result message
  * with 'scst_partition' header if necessary.
+ *
+ * @author Oleg Zhurakousky
+ * @author Soby Chacko
+ * @author Byungjun You
  */
 class PartitionAwareFunctionWrapper implements Function<Object, Object>, Supplier<Object> {
 
@@ -90,16 +94,16 @@ class PartitionAwareFunctionWrapper implements Function<Object, Object>, Supplie
 
 	@Override
 	public Object get() {
-		if (this.function instanceof FunctionInvocationWrapper) {
+		if (this.function instanceof FunctionInvocationWrapper functionInvocationWrapper) {
 			this.setEnhancerIfNecessary();
-			return ((FunctionInvocationWrapper) this.function).get();
+			return functionInvocationWrapper.get();
 		}
 		throw new IllegalStateException("Call to get() is not allowed since this function is not a Supplier.");
 	}
 
 	private void setEnhancerIfNecessary() {
-		if (this.function instanceof FunctionInvocationWrapper) {
-			((FunctionInvocationWrapper) this.function).setEnhancer(this.outputMessageEnricher);
+		if (this.function instanceof FunctionInvocationWrapper functionInvocationWrapper) {
+			functionInvocationWrapper.setEnhancer(this.outputMessageEnricher);
 		}
 	}
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2021 the original author or authors.
+ * Copyright 2013-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,6 +40,7 @@ import org.springframework.util.StringUtils;
  * @author Oleg Zhurakousky
  * @author Myeonghyeon Lee
  * @author Soby Chacko
+ * @author Byungjun You
  * @see org.springframework.cloud.stream.annotation.EnableBinding
  */
 
@@ -93,8 +94,8 @@ public class DefaultBinding<T> implements Binding<T> {
 
 	@Override
 	public String getBindingName() {
-		String resolvedName = (this.target instanceof IntegrationObjectSupport)
-				? ((IntegrationObjectSupport) this.target).getComponentName() : getName();
+		String resolvedName = (this.target instanceof IntegrationObjectSupport integrationObjectSupportTarget)
+			? integrationObjectSupportTarget.getComponentName() : getName();
 		return resolvedName == null ? getName() : resolvedName;
 	}
 
@@ -156,8 +157,8 @@ public class DefaultBinding<T> implements Binding<T> {
 
 	@Override
 	public synchronized void pause() {
-		if (this.lifecycle instanceof Pausable) {
-			((Pausable) this.lifecycle).pause();
+		if (this.lifecycle instanceof Pausable pausableLifecycle) {
+			pausableLifecycle.pause();
 			this.paused = true;
 		}
 		else {
@@ -169,8 +170,8 @@ public class DefaultBinding<T> implements Binding<T> {
 
 	@Override
 	public synchronized void resume() {
-		if (this.lifecycle instanceof Pausable) {
-			((Pausable) this.lifecycle).resume();
+		if (this.lifecycle instanceof Pausable pausableLifecycle) {
+			pausableLifecycle.resume();
 			this.paused = false;
 		}
 		else {
@@ -193,8 +194,8 @@ public class DefaultBinding<T> implements Binding<T> {
 	@Override
 	public String toString() {
 		return " Binding [name=" + this.name + ", target=" + this.target + ", lifecycle="
-				+ ((this.lifecycle instanceof NamedComponent)
-						? ((NamedComponent) this.lifecycle).getComponentName()
+				+ ((this.lifecycle instanceof NamedComponent namedComponentWithLifeCycle)
+						? namedComponentWithLifeCycle.getComponentName()
 						: ObjectUtils.nullSafeToString(this.lifecycle))
 				+ "]";
 	}

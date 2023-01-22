@@ -1,5 +1,5 @@
 /*
- * Copyright 2014-2017 the original author or authors.
+ * Copyright 2014-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,7 @@ import org.springframework.util.CollectionUtils;
  * @author Gary Russell
  * @author Mark Fisher
  * @author Oleg Zhurakousky
+ * @author Byungjun You
  */
 // @checkstyle:off
 public abstract class AbstractTestBinder<C extends AbstractBinder<MessageChannel, CP, PP>, CP extends ConsumerProperties, PP extends ProducerProperties>
@@ -86,12 +87,11 @@ public abstract class AbstractTestBinder<C extends AbstractBinder<MessageChannel
 	 * org.springframework.cloud.stream.binding.MessageConverterConfigurer
 	 */
 	private void checkChannelIsConfigured(MessageChannel messageChannel, CP properties) {
-		if (messageChannel instanceof AbstractSubscribableChannel
+		if (messageChannel instanceof AbstractSubscribableChannel subscribableMessageChannel
 				&& !properties.isUseNativeDecoding()) {
 			Assert.isTrue(
 					!CollectionUtils
-							.isEmpty(((AbstractSubscribableChannel) messageChannel)
-								.getInterceptors()),
+							.isEmpty(subscribableMessageChannel.getInterceptors()),
 					"'messageChannel' appears to be misconfigured. "
 							+ "Consider creating channel via AbstractBinderTest.createBindableChannel(..)");
 		}

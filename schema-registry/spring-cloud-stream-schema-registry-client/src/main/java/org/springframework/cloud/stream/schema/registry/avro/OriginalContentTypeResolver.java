@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2018 the original author or authors.
+ * Copyright 2017-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import org.springframework.util.MimeType;
 
 /**
  * @author Vinicius Carvalho
+ * @author Byungjun You
  *
  * Resolves contentType looking for a originalContentType header first. If not found
  * returns the contentType
@@ -43,13 +44,12 @@ class OriginalContentTypeResolver implements ContentTypeResolver {
 						? headers.get(BINDER_ORIGINAL_CONTENT_TYPE)
 						: headers.get(MessageHeaders.CONTENT_TYPE);
 		MimeType mimeType = null;
-		if (contentType instanceof MimeType) {
-			mimeType = (MimeType) contentType;
+		if (contentType instanceof MimeType mimeContentType) {
+			mimeType = mimeContentType;
 		}
-		else if (contentType instanceof String) {
+		else if (contentType instanceof String valueAsString) {
 			mimeType = this.mimeTypeCache.get(contentType);
 			if (mimeType == null) {
-				String valueAsString = (String) contentType;
 				mimeType = MimeType.valueOf(valueAsString);
 				this.mimeTypeCache.put(valueAsString, mimeType);
 			}

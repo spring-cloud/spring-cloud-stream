@@ -1,5 +1,5 @@
 /*
- * Copyright 2014-2022 the original author or authors.
+ * Copyright 2014-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -155,6 +155,7 @@ import org.springframework.util.backoff.FixedBackOff;
  * @author Taras Danylchuk
  * @author Yi Liu
  * @author Chris Bono
+ * @author Byungjun You
  */
 public class KafkaMessageChannelBinder extends
 		// @checkstyle:off
@@ -430,13 +431,11 @@ public class KafkaMessageChannelBinder extends
 			List<ChannelInterceptor> interceptors = ((InterceptableChannel) channel)
 					.getInterceptors();
 			interceptors.forEach((interceptor) -> {
-				if (interceptor instanceof PartitioningInterceptor) {
-					((PartitioningInterceptor) interceptor)
-							.setPartitionCount(partitions.size());
+				if (interceptor instanceof PartitioningInterceptor partitioningInterceptor) {
+					partitioningInterceptor.setPartitionCount(partitions.size());
 				}
-				else if (interceptor instanceof DefaultPartitioningInterceptor) {
-					((DefaultPartitioningInterceptor) interceptor)
-							.setPartitionCount(partitions.size());
+				else if (interceptor instanceof DefaultPartitioningInterceptor defaultPartitioningInterceptor) {
+					defaultPartitioningInterceptor.setPartitionCount(partitions.size());
 				}
 			});
 		}
@@ -721,9 +720,8 @@ public class KafkaMessageChannelBinder extends
 		if (!extendedConsumerProperties.isBatchMode()
 				&& extendedConsumerProperties.getMaxAttempts() > 1
 				&& transMan == null) {
-			if (!(customizer instanceof ListenerContainerWithDlqAndRetryCustomizer)
-					|| ((ListenerContainerWithDlqAndRetryCustomizer) customizer)
-							.retryAndDlqInBinding(destination.getName(), group)) {
+			if (!(customizer instanceof ListenerContainerWithDlqAndRetryCustomizer c)
+					|| c.retryAndDlqInBinding(destination.getName(), group)) {
 				kafkaMessageDrivenChannelAdapter
 						.setRetryTemplate(buildRetryTemplate(extendedConsumerProperties));
 				kafkaMessageDrivenChannelAdapter
@@ -770,15 +768,14 @@ public class KafkaMessageChannelBinder extends
 					CommonErrorHandler.class);
 			messageListenerContainer.setCommonErrorHandler(commonErrorHandler);
 		}
-		if (customizer instanceof ListenerContainerWithDlqAndRetryCustomizer) {
+		if (customizer instanceof ListenerContainerWithDlqAndRetryCustomizer c) {
 
 			BiFunction<ConsumerRecord<?, ?>, Exception, TopicPartition> destinationResolver = createDestResolver(
 					extendedConsumerProperties.getExtension());
 			BackOff createBackOff = extendedConsumerProperties.getMaxAttempts() > 1
 					? createBackOff(extendedConsumerProperties)
 					: null;
-			((ListenerContainerWithDlqAndRetryCustomizer) customizer)
-					.configure(messageListenerContainer, destination.getName(), consumerGroup, destinationResolver,
+			c.configure(messageListenerContainer, destination.getName(), consumerGroup, destinationResolver,
 							createBackOff);
 		}
 		else {
@@ -1067,8 +1064,8 @@ public class KafkaMessageChannelBinder extends
 
 		MessageConverter messageConverter = BindingUtils.getConsumerMessageConverter(getApplicationContext(),
 				extendedConsumerProperties, this.configurationProperties);
-		if (messageConverter instanceof MessagingMessageConverter) {
-			((MessagingMessageConverter) messageConverter).setHeaderMapper(getHeaderMapper(extendedConsumerProperties));
+		if (messageConverter instanceof MessagingMessageConverter messagingMessageConverter) {
+			messagingMessageConverter.setHeaderMapper(getHeaderMapper(extendedConsumerProperties));
 		}
 		return messageConverter;
 	}
@@ -1139,11 +1136,11 @@ public class KafkaMessageChannelBinder extends
 
 			Object timeout = producerFactory.getConfigurationProperties().get(ProducerConfig.DELIVERY_TIMEOUT_MS_CONFIG);
 			Long sendTimeout = null;
-			if (timeout instanceof Number) {
-				sendTimeout = ((Number) timeout).longValue() + 2000L;
+			if (timeout instanceof Number timeoutAsNumber) {
+				sendTimeout = timeoutAsNumber.longValue() + 2000L;
 			}
-			else if (timeout instanceof String) {
-				sendTimeout = Long.parseLong((String) timeout) + 2000L;
+			else if (timeout instanceof String timeoutAsString) {
+				sendTimeout = Long.parseLong(timeoutAsString) + 2000L;
 			}
 			if (timeout == null) {
 				sendTimeout = ((Integer) ProducerConfig.configDef()
@@ -1197,9 +1194,9 @@ public class KafkaMessageChannelBinder extends
 				AtomicReference<ConsumerRecord<?, ?>> recordToSend = new AtomicReference<>(
 						record);
 				Throwable throwable = null;
-				if (message.getPayload() instanceof Throwable) {
+				if (message.getPayload() instanceof Throwable throwablePayload) {
 
-					throwable = (Throwable) message.getPayload();
+					throwable = throwablePayload;
 
 					HeaderMode headerMode = properties.getHeaderMode();
 
@@ -1338,11 +1335,9 @@ public class KafkaMessageChannelBinder extends
 				}
 			}
 			else {
-				if (message.getPayload() instanceof MessagingException) {
+				if (message.getPayload() instanceof MessagingException messagingException) {
 					AcknowledgmentCallback ack = StaticMessageHeaderAccessor
-							.getAcknowledgmentCallback(
-									((MessagingException) message.getPayload())
-											.getFailedMessage());
+						.getAcknowledgmentCallback(messagingException.getFailedMessage());
 					if (ack != null) {
 						if (isAutoCommitOnError(properties)) {
 							ack.acknowledge(AcknowledgmentCallback.Status.REJECT);
@@ -1514,9 +1509,9 @@ public class KafkaMessageChannelBinder extends
 
 		@Override
 		public void stop() {
-			if (this.producerFactory instanceof DisposableBean) {
+			if (this.producerFactory instanceof DisposableBean disposableProducerFactory) {
 				try {
-					((DisposableBean) producerFactory).destroy();
+					disposableProducerFactory.destroy();
 				}
 				catch (Exception ex) {
 					this.logger.error(ex, "Error destroying the producer factory bean: ");
@@ -1636,8 +1631,8 @@ public class KafkaMessageChannelBinder extends
 		}
 
 		private String keyOrValue(Object keyOrValue) {
-			if (keyOrValue instanceof byte[]) {
-				return "byte[" + ((byte[]) keyOrValue).length + "]";
+			if (keyOrValue instanceof byte[] keyOrValueBytes) {
+				return "byte[" + keyOrValueBytes.length + "]";
 			}
 			else {
 				return toDisplayString(ObjectUtils.nullSafeToString(keyOrValue), 50);

@@ -1,5 +1,5 @@
 /*
- * Copyright 2014-2022 the original author or authors.
+ * Copyright 2014-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -86,6 +86,7 @@ import org.springframework.util.StringUtils;
  * @author Aldo Sinanaj
  * @author Yi Liu
  * @author Omer Celik
+ * @author Byungjun You
  */
 public class KafkaTopicProvisioner implements
 		// @checkstyle:off
@@ -330,8 +331,8 @@ public class KafkaTopicProvisioner implements
 						dlqProducerProperties.getTopic());
 			}
 			catch (Throwable throwable) {
-				if (throwable instanceof Error) {
-					throw (Error) throwable;
+				if (throwable instanceof Error throwableError) {
+					throw throwableError;
 				}
 				else {
 					throw new ProvisioningException("Provisioning exception encountered for " + name, throwable);
@@ -352,8 +353,8 @@ public class KafkaTopicProvisioner implements
 		// TODO:
 		// https://github.com/spring-cloud/spring-cloud-stream-binder-kafka/pull/514#discussion_r241075940
 		catch (Throwable throwable) {
-			if (throwable instanceof Error) {
-				throw (Error) throwable;
+			if (throwable instanceof Error throwableError) {
+				throw throwableError;
 			}
 			else {
 				// TODO:
@@ -570,8 +571,8 @@ public class KafkaTopicProvisioner implements
 						describeTopicsResult.all().get();
 					}
 					catch (ExecutionException ex) {
-						if (ex.getCause() instanceof UnknownTopicOrPartitionException) {
-							throw (UnknownTopicOrPartitionException) ex.getCause();
+						if (ex.getCause() instanceof UnknownTopicOrPartitionException unknownTopicOrPartitionException) {
+							throw unknownTopicOrPartitionException;
 						}
 						else {
 							logger.warn("No partitions have been retrieved for the topic "

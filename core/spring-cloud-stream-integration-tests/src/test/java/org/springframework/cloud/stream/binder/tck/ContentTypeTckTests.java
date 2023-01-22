@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2022 the original author or authors.
+ * Copyright 2017-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,6 +57,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * @author Oleg Zhurakousky
  * @author Gary Russell
+ * @author Byungjun You
  *
  */
 public class ContentTypeTckTests {
@@ -586,8 +587,8 @@ public class ContentTypeTckTests {
 
 		@Bean
 		public Function<Object, Person> echo(JsonMapper mapper) {
-			return value -> value instanceof byte[]
-				? mapper.fromJson((byte[]) value, Person.class)
+			return value -> value instanceof byte[] valueAsBytes
+				? mapper.fromJson(valueAsBytes, Person.class)
 				: mapper.fromJson((String) value, Person.class);
 		}
 	}
@@ -598,8 +599,8 @@ public class ContentTypeTckTests {
 
 		@Bean
 		public Function<Message<?>, Person> echo(JsonMapper mapper) {
-			return message -> message.getPayload() instanceof byte[]
-				? mapper.fromJson((byte[]) message.getPayload(), Person.class)
+			return message -> message.getPayload() instanceof byte[] payloadAsBytes
+				? mapper.fromJson(payloadAsBytes, Person.class)
 				: mapper.fromJson((String) message.getPayload(), Person.class);
 		}
 	}

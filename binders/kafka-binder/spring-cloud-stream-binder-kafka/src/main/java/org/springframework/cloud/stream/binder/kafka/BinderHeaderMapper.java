@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2019 the original author or authors.
+ * Copyright 2017-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,6 +62,7 @@ import org.springframework.util.MimeType;
  * @author Gary Russell
  * @author Artem Bilan
  * @author Soby Chacko
+ * @author Byungjun You
  *
  * @since 3.0.0
  *
@@ -256,8 +257,8 @@ public class BinderHeaderMapper extends AbstractKafkaHeaderMapper {
 		headers.forEach((key, rawValue) -> {
 			if (matches(key, rawValue)) {
 				Object valueToAdd = headerValueToAddOut(key, rawValue);
-				if (valueToAdd instanceof byte[]) {
-					target.add(new RecordHeader(key, (byte[]) valueToAdd));
+				if (valueToAdd instanceof byte[] valueToAddBytes) {
+					target.add(new RecordHeader(key, valueToAddBytes));
 				}
 				else {
 					try {
@@ -268,8 +269,8 @@ public class BinderHeaderMapper extends AbstractKafkaHeaderMapper {
 						}
 						if (!this.encodeStrings
 								&& !MimeType.class.isAssignableFrom(rawValue.getClass())
-								&& valueToAdd instanceof String) {
-							target.add(new RecordHeader(key, ((String) valueToAdd).getBytes(getCharset())));
+								&& valueToAdd instanceof String stringValueToAdd) {
+							target.add(new RecordHeader(key, stringValueToAdd.getBytes(getCharset())));
 							className = JAVA_LANG_STRING;
 						}
 						else {

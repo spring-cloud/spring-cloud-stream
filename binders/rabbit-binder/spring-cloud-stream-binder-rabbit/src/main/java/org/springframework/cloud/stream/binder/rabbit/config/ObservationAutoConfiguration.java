@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2022 the original author or authors.
+ * Copyright 2022-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,10 @@ import org.springframework.core.annotation.Order;
 import org.springframework.integration.amqp.outbound.AmqpOutboundEndpoint;
 import org.springframework.messaging.MessageHandler;
 
+/**
+ * @author Oleg Zhurakousky
+ * @author Byungjun You
+ */
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnBean(org.springframework.boot.actuate.autoconfigure.observation.ObservationAutoConfiguration.class)
 public class ObservationAutoConfiguration {
@@ -50,9 +54,9 @@ public class ObservationAutoConfiguration {
 	ProducerMessageHandlerCustomizer<MessageHandler> observedProducerMessageHandlerCustomizer(
 			ApplicationContext applicationContext) {
 		return (handler, destinationName) -> {
-			if (handler instanceof AmqpOutboundEndpoint) {
-				((AmqpOutboundEndpoint) handler).getRabbitTemplate().setObservationEnabled(true);
-				((AmqpOutboundEndpoint) handler).getRabbitTemplate().setApplicationContext(applicationContext);
+			if (handler instanceof AmqpOutboundEndpoint amqpOutboundEndpoint) {
+				amqpOutboundEndpoint.getRabbitTemplate().setObservationEnabled(true);
+				amqpOutboundEndpoint.getRabbitTemplate().setApplicationContext(applicationContext);
 			}
 		};
 	}

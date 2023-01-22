@@ -1879,8 +1879,8 @@ Here is an example of providing a `BinderCustomizer` bean.
 @Bean
 public BinderCustomizer binderCustomizer() {
     return (binder, binderName) -> {
-        if (binder instanceof KafkaMessageChannelBinder) {
-            ((KafkaMessageChannelBinder) binder).setRebalanceListener(...);
+        if (binder instanceof KafkaMessageChannelBinder kafkaMessageChannelBinder) {
+            kafkaMessageChannelBinder.setRebalanceListener(...);
         }
         else if (binder instanceof KStreamBinder) {
             ...

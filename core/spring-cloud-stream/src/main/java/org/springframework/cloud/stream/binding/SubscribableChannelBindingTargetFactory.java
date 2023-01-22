@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 the original author or authors.
+ * Copyright 2015-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import org.springframework.messaging.SubscribableChannel;
  * @author David Syer
  * @author Ilayaperumal Gopinathan
  * @author Oleg Zhurakousky
+ * @author Byungjun You
  */
 public class SubscribableChannelBindingTargetFactory
 		extends AbstractBindingTargetFactory<SubscribableChannel> {
@@ -68,9 +69,9 @@ public class SubscribableChannelBindingTargetFactory
 			}
 			subscribableChannel = channel;
 		}
-		if (subscribableChannel instanceof DirectWithAttributesChannel) {
-			((DirectWithAttributesChannel) subscribableChannel).setAttribute("type", "input");
-			this.messageChannelConfigurer.configureInputChannel(subscribableChannel, name);
+		if (subscribableChannel instanceof DirectWithAttributesChannel directWithAttributesChannel) {
+			directWithAttributesChannel.setAttribute("type", "input");
+			this.messageChannelConfigurer.configureInputChannel(directWithAttributesChannel, name);
 		}
 
 		return subscribableChannel;
@@ -95,9 +96,9 @@ public class SubscribableChannelBindingTargetFactory
 			}
 			subscribableChannel = channel;
 		}
-		if (subscribableChannel instanceof DirectWithAttributesChannel) {
-			((DirectWithAttributesChannel) subscribableChannel).setAttribute("type", "output");
-			this.messageChannelConfigurer.configureOutputChannel(subscribableChannel, name);
+		if (subscribableChannel instanceof DirectWithAttributesChannel directWithAttributesChannel) {
+			directWithAttributesChannel.setAttribute("type", "output");
+			this.messageChannelConfigurer.configureOutputChannel(directWithAttributesChannel, name);
 		}
 
 		return subscribableChannel;

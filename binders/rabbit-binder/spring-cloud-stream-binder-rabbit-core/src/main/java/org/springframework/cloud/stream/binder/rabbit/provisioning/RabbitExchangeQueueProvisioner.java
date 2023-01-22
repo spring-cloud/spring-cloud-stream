@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2022 the original author or authors.
+ * Copyright 2016-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -78,6 +78,7 @@ import org.springframework.util.StringUtils;
  * @author Gary Russell
  * @author Oleg Zhurakousky
  * @author Michael Michailidis
+ * @author Byungjun You
  */
 // @checkstyle:off
 public class RabbitExchangeQueueProvisioner
@@ -380,14 +381,14 @@ public class RabbitExchangeQueueProvisioner
 		bindingKey += "-" + index;
 		Map<String, Object> arguments = new HashMap<>();
 		arguments.putAll(extendedProperties.getQueueBindingArguments());
-		if (exchange instanceof TopicExchange) {
-			Binding binding = BindingBuilder.bind(queue).to((TopicExchange) exchange)
+		if (exchange instanceof TopicExchange topicExchange) {
+			Binding binding = BindingBuilder.bind(queue).to(topicExchange)
 					.with(bindingKey);
 			declareBinding(queue.getName(), binding);
 			return binding;
 		}
-		else if (exchange instanceof DirectExchange) {
-			Binding binding = BindingBuilder.bind(queue).to((DirectExchange) exchange)
+		else if (exchange instanceof DirectExchange directExchange) {
+			Binding binding = BindingBuilder.bind(queue).to(directExchange)
 					.with(bindingKey);
 			declareBinding(queue.getName(), binding);
 			return binding;
@@ -497,8 +498,8 @@ public class RabbitExchangeQueueProvisioner
 							: properties.getDeadLetterRoutingKey(),
 					arguments);
 			declareBinding(dlqName, dlqBinding);
-			if (properties instanceof RabbitConsumerProperties
-					&& ((RabbitConsumerProperties) properties).isRepublishToDlq()) {
+			if (properties instanceof RabbitConsumerProperties rabbitConsumerProperties
+					&& rabbitConsumerProperties.isRepublishToDlq()) {
 				/*
 				 * Also bind with the base queue name when republishToDlq is used, which
 				 * does not know about partitioning
@@ -760,9 +761,9 @@ public class RabbitExchangeQueueProvisioner
 					true)).forEach(name -> {
 						String group = null;
 						String bindingName = null;
-						if (destination instanceof RabbitConsumerDestination) {
-							group = ((RabbitConsumerDestination) destination).getGroup();
-							bindingName = ((RabbitConsumerDestination) destination).getBindingName();
+						if (destination instanceof RabbitConsumerDestination rabbitConsumerDestination) {
+							group = rabbitConsumerDestination.getGroup();
+							bindingName = rabbitConsumerDestination.getBindingName();
 						}
 						RabbitConsumerProperties properties = consumerProperties.getExtension();
 						String toRemove = properties.isQueueNameGroupOnly() ? bindingName + "." + group : name.trim();
@@ -780,8 +781,8 @@ public class RabbitExchangeQueueProvisioner
 			ExtendedProducerProperties<RabbitProducerProperties> properties) {
 
 		synchronized (this.autoDeclareContext) {
-			if (dest instanceof RabbitProducerDestination) {
-				String qual = ((RabbitProducerDestination) dest).getBeanNameQualifier();
+			if (dest instanceof RabbitProducerDestination rabbitProducerDestination) {
+				String qual = rabbitProducerDestination.getBeanNameQualifier();
 				removeSingleton(dest.getName() + "." + qual + ".exchange");
 				String[] requiredGroups = properties.getRequiredGroups();
 				if (!ObjectUtils.isEmpty(requiredGroups)) {
@@ -854,8 +855,8 @@ public class RabbitExchangeQueueProvisioner
 		if (this.autoDeclareContext.containsBean(name)) {
 			ConfigurableListableBeanFactory beanFactory = this.autoDeclareContext
 					.getBeanFactory();
-			if (beanFactory instanceof DefaultListableBeanFactory) {
-				((DefaultListableBeanFactory) beanFactory).destroySingleton(name);
+			if (beanFactory instanceof DefaultListableBeanFactory defaultListableBeanFactory) {
+				defaultListableBeanFactory.destroySingleton(name);
 			}
 		}
 	}

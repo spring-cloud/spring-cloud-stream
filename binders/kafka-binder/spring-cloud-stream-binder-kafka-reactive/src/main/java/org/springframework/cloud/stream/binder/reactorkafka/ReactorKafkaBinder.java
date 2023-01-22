@@ -1,5 +1,5 @@
 /*
- * Copyright 2021-2022 the original author or authors.
+ * Copyright 2021-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,6 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
 import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 import reactor.core.publisher.Sinks;
 import reactor.kafka.receiver.KafkaReceiver;
 import reactor.kafka.receiver.ReceiverOptions;
@@ -67,6 +66,7 @@ import org.springframework.util.StringUtils;
 
 /**
  * @author Gary Russell
+ * @author Byungjun You
  * @since 4.0
  *
  */
@@ -223,10 +223,7 @@ public class ReactorKafkaBinder
 		protected void handleMessageInternal(Message<?> message) {
 			Object sendResultHeader = message.getHeaders().get("sendResult");
 			Sinks.One<RecordMetadata> sink = Sinks.one();
-			if (sendResultHeader instanceof AtomicReference) {
-				@SuppressWarnings("unchecked")
-				AtomicReference<Mono<RecordMetadata>> result =
-						(AtomicReference<Mono<RecordMetadata>>) sendResultHeader;
+			if (sendResultHeader instanceof AtomicReference result) {
 				result.set(sink.asMono());
 			}
 			if (this.sender != null) {
