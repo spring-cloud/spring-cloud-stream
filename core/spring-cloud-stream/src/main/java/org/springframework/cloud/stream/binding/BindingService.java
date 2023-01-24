@@ -62,6 +62,7 @@ import org.springframework.validation.DataBinder;
  * @author Michael Michailidis
  * @author Chris Bono
  * @author Artem Bilan
+ * @author Byungjun You
  */
 public class BindingService {
 
