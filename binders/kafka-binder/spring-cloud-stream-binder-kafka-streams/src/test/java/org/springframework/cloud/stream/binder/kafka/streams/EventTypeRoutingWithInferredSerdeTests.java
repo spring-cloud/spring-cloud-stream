@@ -79,7 +79,6 @@ public class EventTypeRoutingWithInferredSerdeTests {
 		consumer.close();
 	}
 
-	//For more context, https://github.com/spring-cloud/spring-cloud-stream/issues/2613
 	@Test
 	void eventTypeRoutingWorksWhenInferredSerdeThrowsException() {
 		SpringApplication app = new SpringApplication(EventTypeRoutingWithConfiguredSerdeConfig.class);
