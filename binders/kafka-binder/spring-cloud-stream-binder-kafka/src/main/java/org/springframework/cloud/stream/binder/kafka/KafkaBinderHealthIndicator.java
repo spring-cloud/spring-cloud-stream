@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2022 the original author or authors.
+ * Copyright 2016-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -170,6 +170,19 @@ public class KafkaBinderHealthIndicator implements KafkaBinderHealth, Disposable
 							}
 						}
 						checkedTopics.add(topic);
+					}
+					else {
+						try {
+							// Since destination is a pattern, all we are doing is just to make sure that
+							// we can connect to the cluster and query the topics.
+							this.metadataConsumer.listTopics(Duration.ofSeconds(this.timeout));
+						}
+						catch (Exception ex) {
+							return Health.down()
+								.withDetail("Cluster not connected",
+									"Destination provided is a pattern, but cannot connect to the cluster for any verification")
+								.build();
+						}
 					}
 				}
 			}
