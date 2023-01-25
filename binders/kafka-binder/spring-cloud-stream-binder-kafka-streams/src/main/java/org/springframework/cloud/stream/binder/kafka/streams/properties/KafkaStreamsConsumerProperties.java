@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2019 the original author or authors.
+ * Copyright 2017-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -71,6 +71,12 @@ public class KafkaStreamsConsumerProperties extends KafkaConsumerProperties {
 	 */
 	private String consumedAs;
 
+	/**
+	 * When event type based routing is enabled, the binder uses the byte[] Serde by default.
+	 * Use this property to override this default behavior by forcing the binder to use the configured or inferred Serde.
+	 */
+	private boolean useConfiguredSerdeWhenRoutingEvents;
+
 	public String getApplicationId() {
 		return this.applicationId;
 	}
@@ -141,5 +147,13 @@ public class KafkaStreamsConsumerProperties extends KafkaConsumerProperties {
 
 	public void setConsumedAs(String consumedAs) {
 		this.consumedAs = consumedAs;
+	}
+
+	public boolean isUseConfiguredSerdeWhenRoutingEvents() {
+		return this.useConfiguredSerdeWhenRoutingEvents;
+	}
+
+	public void setUseConfiguredSerdeWhenRoutingEvents(boolean useConfiguredSerdeWhenRoutingEvents) {
+		this.useConfiguredSerdeWhenRoutingEvents = useConfiguredSerdeWhenRoutingEvents;
 	}
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2022 the original author or authors.
+ * Copyright 2019-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -409,7 +409,7 @@ public abstract class AbstractKafkaStreamsBinderProcessor implements Application
 		}
 	}
 
-	@SuppressWarnings({"rawtypes", "unchecked"})
+	@SuppressWarnings({"unchecked"})
 	protected KStream<?, ?> getKStream(String inboundName, BindingProperties bindingProperties, KafkaStreamsConsumerProperties kafkaStreamsConsumerProperties,
 									StreamsBuilder streamsBuilder, Serde<?> keySerde, Serde<?> valueSerde, Topology.AutoOffsetReset autoOffsetReset, boolean firstBuild) {
 		if (firstBuild) {
@@ -428,8 +428,7 @@ public abstract class AbstractKafkaStreamsBinderProcessor implements Application
 		}
 
 		KStream<?, ?> stream;
-		final Serde<?> valueSerdeToUse = StringUtils.hasText(kafkaStreamsConsumerProperties.getEventTypes()) ?
-				new Serdes.BytesSerde() : valueSerde;
+		final Serde<?> valueSerdeToUse = getValueSerdeToUse(kafkaStreamsConsumerProperties, valueSerde);
 		final Consumed<?, ?> consumed = getConsumed(kafkaStreamsConsumerProperties, keySerde, valueSerdeToUse, autoOffsetReset);
 
 		if (this.kafkaStreamsExtendedBindingProperties
@@ -455,11 +454,19 @@ public abstract class AbstractKafkaStreamsBinderProcessor implements Application
 			// Branching based on event type match.
 			final KStream<?, ?>[] branch = stream.branch((key, value) -> matched.getAndSet(false));
 			// Deserialize if we have a branch from above.
-			final KStream<?, Object> deserializedKStream = branch[0].mapValues(value -> valueSerde.deserializer().deserialize(
-					topicObject.get(), headersObject.get(), ((Bytes) value).get()));
+			final KStream<?, Object> deserializedKStream = !kafkaStreamsConsumerProperties.isUseConfiguredSerdeWhenRoutingEvents() ?
+				branch[0].mapValues(value -> valueSerde.deserializer().deserialize(
+					topicObject.get(), headersObject.get(), ((Bytes) value).get())) : (KStream<?, Object>) branch[0];
 			return getkStream(bindingProperties, deserializedKStream, nativeDecoding);
 		}
 		return getkStream(bindingProperties, stream, nativeDecoding);
+	}
+
+	private Serde<?> getValueSerdeToUse(KafkaStreamsConsumerProperties kafkaStreamsConsumerProperties, Serde<?> valueSerde) {
+		if (StringUtils.hasText(kafkaStreamsConsumerProperties.getEventTypes())) {
+			return kafkaStreamsConsumerProperties.isUseConfiguredSerdeWhenRoutingEvents() ? valueSerde : new Serdes.BytesSerde();
+		}
+		return valueSerde;
 	}
 
 	private KStream<?, ?> getkStream(BindingProperties bindingProperties, KStream<?, ?> stream, boolean nativeDecoding) {
@@ -556,13 +563,13 @@ public abstract class AbstractKafkaStreamsBinderProcessor implements Application
 				consumed);
 	}
 
+	@SuppressWarnings({"unchecked"})
 	private KTable<?, ?> getKTable(KafkaStreamsConsumerProperties kafkaStreamsConsumerProperties,
 			StreamsBuilder streamsBuilder, Serde<?> keySerde,
 			Serde<?> valueSerde, String materializedAs, String bindingDestination,
 			Topology.AutoOffsetReset autoOffsetReset) {
 
-		final Serde<?> valueSerdeToUse = StringUtils.hasText(kafkaStreamsConsumerProperties.getEventTypes()) ?
-				new Serdes.BytesSerde() : valueSerde;
+		final Serde<?> valueSerdeToUse = getValueSerdeToUse(kafkaStreamsConsumerProperties, valueSerde);
 
 		final Consumed<?, ?> consumed = getConsumed(kafkaStreamsConsumerProperties, keySerde, valueSerdeToUse, autoOffsetReset);
 
@@ -586,8 +593,9 @@ public abstract class AbstractKafkaStreamsBinderProcessor implements Application
 				.noDefaultBranch();
 			final KStream<?, ?>[] branch = stringKStreamMap.values().toArray(new KStream[0]);
 			// Deserialize if we have a branch from above.
-			final KStream<?, Object> deserializedKStream = branch[0].mapValues(value -> valueSerde.deserializer().deserialize(
-					topicObject.get(), headersObject.get(), ((Bytes) value).get()));
+			final KStream<?, Object> deserializedKStream = !kafkaStreamsConsumerProperties.isUseConfiguredSerdeWhenRoutingEvents() ?
+				branch[0].mapValues(value -> valueSerde.deserializer().deserialize(
+					topicObject.get(), headersObject.get(), ((Bytes) value).get())) : (KStream<?, Object>) branch[0];
 
 			return deserializedKStream.toTable();
 		}

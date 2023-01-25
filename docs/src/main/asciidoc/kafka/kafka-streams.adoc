@@ -1552,6 +1552,15 @@ For instance, if we want to change the header key on this binding to `my_event` 
 
 `spring.cloud.stream.kafka.streams.bindings.process-in-0.consumer.eventTypeHeaderKey=my_event`.
 
+When using the event routing feature in Kafkfa Streams binder, it uses the byte array `Serde` to deserialze all incoming records.
+If the record headers match the event type, then only it uses the actual `Serde` to do a proper deserialization using either the configured or the inferred `Serde`.
+This introduces issues if you set a deserialization exception handler on the binding as the expected deserialization only happens down the stack causing unexpected errors.
+In order to address this issue, you can set the following property on the binding to force the binder to use the configured or inferred `Serde` instead of byte array `Serde`.
+
+`spring.cloud.stream.kafka.streams.bindings.<process-in-0>.consumer.useConfiguredSerdeWhenRoutingEvents`
+
+This way, the application can detect deserialization issues right away when using the event routing feature and can take appropriate handling decisions.
+
 === Binding visualization and control in Kafka Streams binder
 
 Starting with version 3.1.2, Kafka Streams binder supports binding visualization and control.
