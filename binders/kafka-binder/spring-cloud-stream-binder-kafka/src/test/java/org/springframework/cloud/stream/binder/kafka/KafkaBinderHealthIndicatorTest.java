@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2022 the original author or authors.
+ * Copyright 2017-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.binder.kafka;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -42,6 +43,7 @@ import org.springframework.kafka.listener.AbstractMessageListenerContainer;
 
 import static java.util.Collections.singleton;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 
 /**
  * @author Barry Commins
@@ -180,6 +182,24 @@ public class KafkaBinderHealthIndicatorTest {
 		// Ensuring the normal health check returns with status "up"
 		assertThat(health.getStatus()).isEqualTo(Status.UP);
 	}
+
+	@Test
+	void downWhenListTopicsThrowExceptionWithRegexTopic() {
+		topicsInUse.put(REGEX_TOPIC, new KafkaMessageChannelBinder.TopicInformation(
+			"regex-healthIndicator", null, true));
+		org.mockito.BDDMockito.given(consumer.listTopics(any(Duration.class)))
+			.willThrow(new IllegalStateException());
+
+		Health health = indicator.health();
+
+		// Ensuring the normal health check returns with status "up"
+		assertThat(health.getStatus()).isEqualTo(Status.DOWN);
+		Map<String, Object> details = health.getDetails();
+		assertThat(details.containsKey("Cluster not connected")).isTrue();
+		assertThat(details
+			.containsValue("Destination provided is a pattern, but cannot connect to the cluster for any verification")).isTrue();
+	}
+
 
 	@Test
 	void kafkaBinderIsDown() {
