@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2022 the original author or authors.
+ * Copyright 2022-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,12 +60,16 @@ public class ReactorKafkaBinderConfiguration {
 			KafkaTopicProvisioner provisioningProvider,
 			KafkaExtendedBindingProperties extendedBindingProperties,
 			ObjectProvider<ConsumerConfigCustomizer> consumerConfigCustomizer,
-			ObjectProvider<ProducerConfigCustomizer> producerConfigCustomizer) {
+			ObjectProvider<ProducerConfigCustomizer> producerConfigCustomizer,
+			ObjectProvider<ReceiverOptionsCustomizer> receiverOptionsCustomizers,
+			ObjectProvider<SenderOptionsCustomizer> senderOptionsptionsCustomizers) {
 
 		ReactorKafkaBinder reactorKafkaBinder = new ReactorKafkaBinder(configurationProperties, provisioningProvider);
 		reactorKafkaBinder.setExtendedBindingProperties(extendedBindingProperties);
 		reactorKafkaBinder.setConsumerConfigCustomizer(consumerConfigCustomizer.getIfUnique());
 		reactorKafkaBinder.setProducerConfigCustomizer(producerConfigCustomizer.getIfUnique());
+		reactorKafkaBinder.receiverOptionsCustomizers(receiverOptionsCustomizers);
+		reactorKafkaBinder.senderOptionsCustomizers(senderOptionsptionsCustomizers);
 		return reactorKafkaBinder;
 	}
 

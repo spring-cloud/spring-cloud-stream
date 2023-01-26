@@ -40,7 +40,11 @@ This is because the underlying binder is built on top of https://projectreactor.
 On the consumer side, it makes use of the https://projectreactor.io/docs/kafka/release/reference/#api-guide-receiver[KafkaReceiver] which is a reactive implementation of a Kafka consumer.
 Similarly, on the producer side, it uses https://projectreactor.io/docs/kafka/release/reference/#api-guide-sender[KafkaSender] API which is the reactive implementation of a Kafka producer.
 Since the foundations of the reactive Kafka binder is built upon a proper reactive Kafka API, applications get the full benefits of using reactive technologies.
-Things like automatic backpressure among other reactive capabilities are built-in for the application when using this reactive Kafka binder.
+Things like automatic back pressure, among other reactive capabilities, are built-in for the application when using this reactive Kafka binder.
+
+Starting with version 4.0.2, you can customize the `ReceiverOptions` and `SenderOptions` by providing one or more `ReceiverOptionsCustomizer` or `SenderOptionsCustomizer` beans respectively.
+They are `BiFunction` s which receive the binding name and initial options, returning the customized options.
+The interfaces extend `Ordered` so the customizers will be applied in the order required, when more than one are present.
 
 === Consuming Records in the Raw Format
 
