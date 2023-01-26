@@ -1,5 +1,5 @@
 /*
- * Copyright 2021-2022 the original author or authors.
+ * Copyright 2021-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.kafka.clients.producer.RecordMetadata;
@@ -29,6 +30,7 @@ import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 import reactor.core.publisher.Mono;
 
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
@@ -51,6 +53,7 @@ import org.springframework.messaging.MessageChannel;
 import org.springframework.retry.support.RetryTemplate;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 
 /**
@@ -197,6 +200,13 @@ public class ReactorKafkaBinderTests {
 		provisioner.setMetadataRetryOperations(new RetryTemplate());
 		ReactorKafkaBinder binder = new ReactorKafkaBinder(binderProps, provisioner);
 		binder.setApplicationContext(new GenericApplicationContext());
+		ObjectProvider<SenderOptionsCustomizer> cust = mock(ObjectProvider.class);
+		AtomicBoolean custCalled = new AtomicBoolean();
+		given(cust.getIfUnique()).willReturn((name, opts) -> {
+			custCalled.set(true);
+			return opts;
+		});
+		binder.senderOptionsCustomizers(cust);
 
 		MessageChannel outbound = new FluxMessageChannel();
 		KafkaProducerProperties ext = new KafkaProducerProperties();
@@ -213,6 +223,8 @@ public class ReactorKafkaBinderTests {
 			latch.countDown();
 		}).subscribe();
 		assertThat(latch.await(10, TimeUnit.SECONDS)).isTrue();
+		bindProducer.unbind();
+		assertThat(custCalled).isTrue();
 	}
 
 }

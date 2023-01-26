@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2022 the original author or authors.
+ * Copyright 2022-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
 package org.springframework.cloud.stream.binder.reactorkafka;
 
 import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -28,6 +30,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import reactor.core.publisher.Flux;
+import reactor.kafka.receiver.ReceiverOptions;
 import reactor.kafka.receiver.ReceiverRecord;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -64,6 +67,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 @EmbeddedKafka(topics = { "uppercased-words", "lowercased-words" })
 class ReactorKafkaBinderIntegrationTests {
 
+	private static final List<String> recOptsCustOrder = new ArrayList<>();
+
 	@Autowired
 	private EmbeddedKafkaBroker embeddedKafka;
 
@@ -71,6 +76,7 @@ class ReactorKafkaBinderIntegrationTests {
 	@ValueSource(booleans = { false, true })
 	void endToEndReactorKafkaBinder(boolean excludeKafkaAutoConfig) {
 
+		recOptsCustOrder.clear();
 		Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("group1", "false", embeddedKafka);
 		consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
 		DefaultKafkaConsumerFactory<String, String> cf = new DefaultKafkaConsumerFactory<>(consumerProps);
@@ -112,6 +118,8 @@ class ReactorKafkaBinderIntegrationTests {
 					.isNotNull()
 					.extracting(ConsumerRecord::value)
 					.isEqualTo("bazqux");
+
+				assertThat(recOptsCustOrder).containsExactly("two", "one", "two", "one");
 			}
 			finally {
 				pf.destroy();
@@ -156,6 +164,33 @@ class ReactorKafkaBinderIntegrationTests {
 		@Bean
 		public Function<Flux<ReceiverRecord<byte[], byte[]>>, Flux<String>> lowercase() {
 			return s -> s.map(rec -> new String(rec.value()).toLowerCase());
+		}
+
+		@Bean
+		ReceiverOptionsCustomizer cust1() {
+			return (t, u) -> {
+				recOptsCustOrder.add("one");
+				return u;
+			};
+		}
+
+		@Bean
+		ReceiverOptionsCustomizer cust2() {
+			return new ReceiverOptionsCustomizer() {
+
+				@Override
+				public ReceiverOptions<Object, Object> apply(String t, ReceiverOptions<Object, Object> u) {
+					recOptsCustOrder.add("two");
+					return u;
+				}
+
+				@Override
+				public int getOrder() {
+					return -1;
+				}
+
+
+			};
 		}
 
 	}

@@ -36,6 +36,7 @@ import reactor.kafka.sender.SenderOptions;
 import reactor.kafka.sender.SenderRecord;
 import reactor.kafka.sender.SenderResult;
 
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.cloud.stream.binder.AbstractMessageChannelBinder;
 import org.springframework.cloud.stream.binder.BinderSpecificPropertiesProvider;
 import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
@@ -86,6 +87,10 @@ public class ReactorKafkaBinder
 
 	private ProducerConfigCustomizer producerConfigCustomizer;
 
+	private ReceiverOptionsCustomizer receiverOptionsCustomizer = (name, opts) -> opts;
+
+	private SenderOptionsCustomizer senderOptionsCustomizer = (name, opts) -> opts;
+
 	public ReactorKafkaBinder(KafkaBinderConfigurationProperties configurationProperties,
 			KafkaTopicProvisioner provisioner) {
 
@@ -101,6 +106,44 @@ public class ReactorKafkaBinder
 		this.producerConfigCustomizer = producerConfigCustomizer;
 	}
 
+	public void receiverOptionsCustomizers(ObjectProvider<ReceiverOptionsCustomizer> customizers) {
+		if (customizers.getIfUnique() != null) {
+			this.receiverOptionsCustomizer = customizers.getIfUnique();
+		}
+		else {
+			List<ReceiverOptionsCustomizer> list = customizers.orderedStream().toList();
+			ReceiverOptionsCustomizer customizer = (name, opts) -> {
+				ReceiverOptions<Object, Object> last = null;
+				for (ReceiverOptionsCustomizer cust: list) {
+					last = cust.apply(name, opts);
+				}
+				return last;
+			};
+			if (!list.isEmpty()) {
+				this.receiverOptionsCustomizer = customizer;
+			}
+		}
+	}
+
+	public void senderOptionsCustomizers(ObjectProvider<SenderOptionsCustomizer> customizers) {
+		if (customizers.getIfUnique() != null) {
+			this.senderOptionsCustomizer = customizers.getIfUnique();
+		}
+		else {
+			List<SenderOptionsCustomizer> list = customizers.orderedStream().toList();
+			SenderOptionsCustomizer customizer = (name, opts) -> {
+				SenderOptions<Object, Object> last = null;
+				for (SenderOptionsCustomizer cust: list) {
+					last = cust.apply(name, opts);
+				}
+				return last;
+			};
+			if (!list.isEmpty()) {
+				this.senderOptionsCustomizer = customizer;
+			}
+		}
+	}
+
 	@Override
 	protected MessageHandler createProducerMessageHandler(ProducerDestination destination,
 			ExtendedProducerProperties<KafkaProducerProperties> producerProperties, MessageChannel errorChannel)
@@ -113,7 +156,8 @@ public class ReactorKafkaBinder
 					destination.getName());
 		}
 
-		SenderOptions<Object, Object> opts = SenderOptions.create(configs);
+		SenderOptions<Object, Object> opts = this.senderOptionsCustomizer.apply(producerProperties.getBindingName(),
+				SenderOptions.create(configs));
 		// TODO bean for converter; MCB doesn't use one on the producer side.
 		RecordMessageConverter converter = new MessagingMessageConverter();
 		return new ReactorMessageHandler(opts, converter, destination.getName());
@@ -139,6 +183,8 @@ public class ReactorKafkaBinder
 		ReceiverOptions<Object, Object> opts = ReceiverOptions.create(configs)
 			.addAssignListener(parts -> logger.info("Assigned: " + parts))
 			.subscription(Collections.singletonList(destination.getName()));
+		opts = this.receiverOptionsCustomizer.apply(properties.getBindingName(), opts);
+		ReceiverOptions<Object, Object> finalOpts = opts;
 
 		class ReactorMessageProducer extends MessageProducerSupport {
 
@@ -146,7 +192,7 @@ public class ReactorKafkaBinder
 
 			ReactorMessageProducer() {
 				for (int i = 0; i < properties.getConcurrency(); i++) {
-					this.receivers.add(KafkaReceiver.create(opts));
+					this.receivers.add(KafkaReceiver.create(finalOpts));
 				}
 			}
 
