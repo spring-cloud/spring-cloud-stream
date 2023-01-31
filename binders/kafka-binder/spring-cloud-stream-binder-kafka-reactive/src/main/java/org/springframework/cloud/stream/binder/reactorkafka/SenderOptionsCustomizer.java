@@ -21,12 +21,12 @@ import java.util.function.BiFunction;
 import reactor.kafka.sender.SenderOptions;
 
 import org.springframework.core.Ordered;
-import org.springframework.core.annotation.Order;
 
 /**
  * Customizer for {@link SenderOptions}; the first parameter contains the binder name; the
  * second is the {@link SenderOptions} to customize. Return the customized
- * {@link SenderOptions}. Applied in {@link Order} if multiple customizers are found.
+ * {@link SenderOptions}. Applied in {@link Ordered order} if multiple customizers are
+ * found.
  *
  * @author Gary Russell
  * @since 4.0.2
