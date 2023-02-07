@@ -7,6 +7,6 @@ spring.cloud:
         destination: graalUppercaseFunction-in-0
       graalLoggingConsumer-in-0:
         destination: graalUppercaseFunction-out-0
-spring:
-  kafka:
-    bootstrap-servers: localhost:9092
+    kafka:
+      binder:
+        brokers: localhost:9092

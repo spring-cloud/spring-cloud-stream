@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,6 +36,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.cloud.stream.binder.HeaderMode;
@@ -144,6 +145,20 @@ public class KafkaBinderConfigurationProperties {
 	 */
 	private boolean enableObservation;
 
+	/**
+	 * @Autowired on this constructor is necessary in order to make sure that all the optional (provided as JavaBean setters)
+	 * properties in this class are taken into consideration when generating configuration metadata.
+	 * In addition, in order for all the properties to be discovered and bound when running as a native
+	 * application, this @Autowired is necessary, so that Boot binding mechanism considers all the properties.
+	 * See the following issues for more details.
+	 *
+	 * https://github.com/spring-cloud/spring-cloud-stream/issues/2640
+	 * https://github.com/spring-projects/spring-boot/issues/34031
+	 * https://github.com/spring-cloud/spring-cloud-stream/issues/2644
+	 *
+	 * @param kafkaProperties Spring Kafka properties autoconfigured by Spring Boot
+	 */
+	@Autowired
 	public KafkaBinderConfigurationProperties(KafkaProperties kafkaProperties) {
 		Assert.notNull(kafkaProperties, "'kafkaProperties' cannot be null");
 		this.kafkaProperties = kafkaProperties;
