@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2019 the original author or authors.
+ * Copyright 2016-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,13 +28,12 @@ import org.springframework.integration.core.Pausable;
  * represents a connection from an adapter to an input. A producer binding represents a
  * connection from an output to an adapter.
  *
- * @param <T> type of a binding
+ * @param <T> type of binding
  * @author Jennifer Hickey
  * @author Mark Fisher
  * @author Gary Russell
  * @author Marius Bogoevici
  * @author Oleg Zhurakousky
- * @see org.springframework.cloud.stream.annotation.EnableBinding
  */
 public interface Binding<T> extends Pausable {
 
