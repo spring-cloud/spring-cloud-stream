@@ -26,6 +26,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -1151,148 +1152,164 @@ public class KafkaMessageChannelBinder extends
 			DlqSender<?, ?> dlqSender = new DlqSender(kafkaTemplate, sendTimeout);
 
 			return (message) -> {
-
-				ConsumerRecord<Object, Object> record = StaticMessageHeaderAccessor.getSourceData(message);
-
-				if (properties.isUseNativeDecoding()) {
-					if (record != null) {
-						// Give the binder configuration the least preference.
-						Map<String, String> configuration = this.configurationProperties.getConfiguration();
-						// Then give any producer specific properties specified on the binder.
-						configuration.putAll(this.configurationProperties.getProducerProperties());
-						Map<String, String> configs = transMan == null
-								? dlqProducerProperties.getConfiguration()
-								: this.configurationProperties.getTransaction()
-								.getProducer().getConfiguration();
-						Assert.state(!configs.containsKey(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG),
-								ProducerConfig.BOOTSTRAP_SERVERS_CONFIG + " cannot be overridden at the binding level; "
-										+ "use multiple binders instead");
-						// Finally merge with dlq producer properties or the transaction producer properties.
-						configuration.putAll(configs);
-						if (record.key() != null
-								&& !record.key().getClass().isInstance(byte[].class)) {
-							ensureDlqMessageCanBeProperlySerialized(configuration,
-									(Map<String, String> config) -> !config
-											.containsKey("key.serializer"),
-									"Key");
-						}
-						if (record.value() != null
-								&& !record.value().getClass().isInstance(byte[].class)) {
-							ensureDlqMessageCanBeProperlySerialized(configuration,
-									(Map<String, String> config) -> !config
-											.containsKey("value.serializer"),
-									"Payload");
-						}
-					}
-				}
-
-				if (record == null) {
-					this.logger.error("No raw record; cannot send to DLQ: " + message);
-					return;
-				}
-				Headers kafkaHeaders = new RecordHeaders(record.headers().toArray());
-				AtomicReference<ConsumerRecord<?, ?>> recordToSend = new AtomicReference<>(
-						record);
-				Throwable throwable = null;
-				if (message.getPayload() instanceof Throwable throwablePayload) {
-
-					throwable = throwablePayload;
-
-					HeaderMode headerMode = properties.getHeaderMode();
-
-					if (headerMode == null || HeaderMode.headers.equals(headerMode)) {
-
-						kafkaHeaders.add(new RecordHeader(X_ORIGINAL_TOPIC,
-								record.topic().getBytes(StandardCharsets.UTF_8)));
-						kafkaHeaders.add(new RecordHeader(X_ORIGINAL_PARTITION,
-								ByteBuffer.allocate(Integer.BYTES)
-										.putInt(record.partition()).array()));
-						kafkaHeaders.add(new RecordHeader(X_ORIGINAL_OFFSET, ByteBuffer
-								.allocate(Long.BYTES).putLong(record.offset()).array()));
-						kafkaHeaders.add(new RecordHeader(X_ORIGINAL_TIMESTAMP,
-								ByteBuffer.allocate(Long.BYTES)
-										.putLong(record.timestamp()).array()));
-						kafkaHeaders.add(new RecordHeader(X_ORIGINAL_TIMESTAMP_TYPE,
-								record.timestampType().toString()
-										.getBytes(StandardCharsets.UTF_8)));
-						kafkaHeaders.add(new RecordHeader(X_EXCEPTION_FQCN, throwable
-								.getClass().getName().getBytes(StandardCharsets.UTF_8)));
-						String exceptionMessage = throwable.getMessage();
-						if (exceptionMessage != null) {
-							kafkaHeaders.add(new RecordHeader(X_EXCEPTION_MESSAGE,
-									exceptionMessage.getBytes(StandardCharsets.UTF_8)));
-						}
-						kafkaHeaders.add(new RecordHeader(X_EXCEPTION_STACKTRACE,
-								getStackTraceAsString(throwable)
-										.getBytes(StandardCharsets.UTF_8)));
-					}
-					else if (HeaderMode.embeddedHeaders.equals(headerMode)) {
-						try {
-							MessageValues messageValues = EmbeddedHeaderUtils
-									.extractHeaders(MessageBuilder
-											.withPayload((byte[]) record.value()).build(),
-											false);
-							messageValues.put(X_ORIGINAL_TOPIC, record.topic());
-							messageValues.put(X_ORIGINAL_PARTITION, record.partition());
-							messageValues.put(X_ORIGINAL_OFFSET, record.offset());
-							messageValues.put(X_ORIGINAL_TIMESTAMP, record.timestamp());
-							messageValues.put(X_ORIGINAL_TIMESTAMP_TYPE,
-									record.timestampType().toString());
-							messageValues.put(X_EXCEPTION_FQCN,
-									throwable.getClass().getName());
-							messageValues.put(X_EXCEPTION_MESSAGE,
-									throwable.getMessage());
-							messageValues.put(X_EXCEPTION_STACKTRACE,
-									getStackTraceAsString(throwable));
-
-							final String[] headersToEmbed = new ArrayList<>(
-									messageValues.keySet()).toArray(
-											new String[messageValues.keySet().size()]);
-							byte[] payload = EmbeddedHeaderUtils.embedHeaders(
-									messageValues,
-									EmbeddedHeaderUtils.headersToEmbed(headersToEmbed));
-							recordToSend.set(new ConsumerRecord<Object, Object>(
-									record.topic(), record.partition(), record.offset(),
-									record.key(), payload));
-						}
-						catch (Exception ex) {
-							throw new RuntimeException(ex);
-						}
-					}
-				}
-
-				MessageHeaders headers;
-				if (message instanceof ErrorMessage errorMessage) {
-					final Message<?> originalMessage = errorMessage.getOriginalMessage();
-					if (originalMessage != null) {
-						headers = originalMessage.getHeaders();
-					}
-					else {
-						headers = message.getHeaders();
-					}
+				List<ConsumerRecord<Object, Object>> records;
+				if (!properties.isBatchMode()) {
+					ConsumerRecord<Object, Object> record = StaticMessageHeaderAccessor.getSourceData(message);
+					records = List.of(Objects.requireNonNull(record));
 				}
 				else {
-					headers = message.getHeaders();
+					records = StaticMessageHeaderAccessor.getSourceData(message);
 				}
-				String dlqName = this.dlqDestinationResolver != null ?
-						this.dlqDestinationResolver.apply(recordToSend.get(), new Exception(throwable)) : StringUtils.hasText(kafkaConsumerProperties.getDlqName())
-						? kafkaConsumerProperties.getDlqName()
-						: "error." + record.topic() + "." + group;
-				if (this.transactionTemplate != null) {
-					Throwable throwable2 = throwable;
-					this.transactionTemplate.executeWithoutResult(status -> {
-						dlqSender.sendToDlq(recordToSend.get(), kafkaHeaders, dlqName, group, throwable2,
-								determinDlqPartitionFunction(properties.getExtension().getDlqPartitions()),
-								headers, this.ackModeInfo.get(destination));
-					});
-				}
-				else {
-					dlqSender.sendToDlq(recordToSend.get(), kafkaHeaders, dlqName, group, throwable,
-							determinDlqPartitionFunction(properties.getExtension().getDlqPartitions()), headers, this.ackModeInfo.get(destination));
+				if (!CollectionUtils.isEmpty(records)) {
+					records.forEach(record ->
+						handleRecordForDlq(record, destination, group, properties, kafkaConsumerProperties,
+							dlqProducerProperties, transMan, dlqSender, message));
 				}
 			};
 		}
 		return null;
+	}
+
+	private void handleRecordForDlq(ConsumerRecord<Object, Object> record, ConsumerDestination destination, String group,
+									ExtendedConsumerProperties<KafkaConsumerProperties> properties, KafkaConsumerProperties kafkaConsumerProperties,
+									KafkaProducerProperties dlqProducerProperties, KafkaAwareTransactionManager<byte[], byte[]> transMan,
+									DlqSender<?, ?> dlqSender, Message<?> message) {
+		if (properties.isUseNativeDecoding()) {
+			if (record != null) {
+				// Give the binder configuration the least preference.
+				Map<String, String> configuration = this.configurationProperties.getConfiguration();
+				// Then give any producer specific properties specified on the binder.
+				configuration.putAll(this.configurationProperties.getProducerProperties());
+				Map<String, String> configs = transMan == null
+						? dlqProducerProperties.getConfiguration()
+						: this.configurationProperties.getTransaction()
+						.getProducer().getConfiguration();
+				Assert.state(!configs.containsKey(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG),
+						ProducerConfig.BOOTSTRAP_SERVERS_CONFIG + " cannot be overridden at the binding level; "
+								+ "use multiple binders instead");
+				// Finally merge with dlq producer properties or the transaction producer properties.
+				configuration.putAll(configs);
+				if (record.key() != null
+						&& !record.key().getClass().isInstance(byte[].class)) {
+					ensureDlqMessageCanBeProperlySerialized(configuration,
+							(Map<String, String> config) -> !config
+									.containsKey("key.serializer"),
+							"Key");
+				}
+				if (record.value() != null
+						&& !record.value().getClass().isInstance(byte[].class)) {
+					ensureDlqMessageCanBeProperlySerialized(configuration,
+							(Map<String, String> config) -> !config
+									.containsKey("value.serializer"),
+							"Payload");
+				}
+			}
+		}
+
+		if (record == null) {
+			this.logger.error("No raw record; cannot send to DLQ: " + message);
+			return;
+		}
+		Headers kafkaHeaders = new RecordHeaders(record.headers().toArray());
+		AtomicReference<ConsumerRecord<?, ?>> recordToSend = new AtomicReference<>(
+				record);
+		Throwable throwable = null;
+		if (message.getPayload() instanceof Throwable throwablePayload) {
+
+			throwable = throwablePayload;
+
+			HeaderMode headerMode = properties.getHeaderMode();
+
+			if (headerMode == null || HeaderMode.headers.equals(headerMode)) {
+
+				kafkaHeaders.add(new RecordHeader(X_ORIGINAL_TOPIC,
+						record.topic().getBytes(StandardCharsets.UTF_8)));
+				kafkaHeaders.add(new RecordHeader(X_ORIGINAL_PARTITION,
+						ByteBuffer.allocate(Integer.BYTES)
+								.putInt(record.partition()).array()));
+				kafkaHeaders.add(new RecordHeader(X_ORIGINAL_OFFSET, ByteBuffer
+						.allocate(Long.BYTES).putLong(record.offset()).array()));
+				kafkaHeaders.add(new RecordHeader(X_ORIGINAL_TIMESTAMP,
+						ByteBuffer.allocate(Long.BYTES)
+								.putLong(record.timestamp()).array()));
+				kafkaHeaders.add(new RecordHeader(X_ORIGINAL_TIMESTAMP_TYPE,
+						record.timestampType().toString()
+								.getBytes(StandardCharsets.UTF_8)));
+				kafkaHeaders.add(new RecordHeader(X_EXCEPTION_FQCN, throwable
+						.getClass().getName().getBytes(StandardCharsets.UTF_8)));
+				String exceptionMessage = throwable.getMessage();
+				if (exceptionMessage != null) {
+					kafkaHeaders.add(new RecordHeader(X_EXCEPTION_MESSAGE,
+							exceptionMessage.getBytes(StandardCharsets.UTF_8)));
+				}
+				kafkaHeaders.add(new RecordHeader(X_EXCEPTION_STACKTRACE,
+						getStackTraceAsString(throwable)
+								.getBytes(StandardCharsets.UTF_8)));
+			}
+			else if (HeaderMode.embeddedHeaders.equals(headerMode)) {
+				try {
+					MessageValues messageValues = EmbeddedHeaderUtils
+							.extractHeaders(MessageBuilder
+									.withPayload((byte[]) record.value()).build(),
+									false);
+					messageValues.put(X_ORIGINAL_TOPIC, record.topic());
+					messageValues.put(X_ORIGINAL_PARTITION, record.partition());
+					messageValues.put(X_ORIGINAL_OFFSET, record.offset());
+					messageValues.put(X_ORIGINAL_TIMESTAMP, record.timestamp());
+					messageValues.put(X_ORIGINAL_TIMESTAMP_TYPE,
+							record.timestampType().toString());
+					messageValues.put(X_EXCEPTION_FQCN,
+							throwable.getClass().getName());
+					messageValues.put(X_EXCEPTION_MESSAGE,
+							throwable.getMessage());
+					messageValues.put(X_EXCEPTION_STACKTRACE,
+							getStackTraceAsString(throwable));
+
+					final String[] headersToEmbed = new ArrayList<>(
+							messageValues.keySet()).toArray(
+									new String[messageValues.keySet().size()]);
+					byte[] payload = EmbeddedHeaderUtils.embedHeaders(
+							messageValues,
+							EmbeddedHeaderUtils.headersToEmbed(headersToEmbed));
+					recordToSend.set(new ConsumerRecord<Object, Object>(
+							record.topic(), record.partition(), record.offset(),
+							record.key(), payload));
+				}
+				catch (Exception ex) {
+					throw new RuntimeException(ex);
+				}
+			}
+		}
+
+		MessageHeaders headers;
+		if (message instanceof ErrorMessage errorMessage) {
+			final Message<?> originalMessage = errorMessage.getOriginalMessage();
+			if (originalMessage != null) {
+				headers = originalMessage.getHeaders();
+			}
+			else {
+				headers = message.getHeaders();
+			}
+		}
+		else {
+			headers = message.getHeaders();
+		}
+		String dlqName = this.dlqDestinationResolver != null ?
+				this.dlqDestinationResolver.apply(recordToSend.get(), new Exception(throwable)) : StringUtils.hasText(kafkaConsumerProperties.getDlqName())
+				? kafkaConsumerProperties.getDlqName()
+				: "error." + record.topic() + "." + group;
+		if (this.transactionTemplate != null) {
+			Throwable throwable2 = throwable;
+			this.transactionTemplate.executeWithoutResult(status -> {
+				dlqSender.sendToDlq(recordToSend.get(), kafkaHeaders, dlqName, group, throwable2,
+						determinDlqPartitionFunction(properties.getExtension().getDlqPartitions()),
+						headers, this.ackModeInfo.get(destination));
+			});
+		}
+		else {
+			dlqSender.sendToDlq(recordToSend.get(), kafkaHeaders, dlqName, group, throwable,
+					determinDlqPartitionFunction(properties.getExtension().getDlqPartitions()), headers, this.ackModeInfo.get(destination));
+		}
 	}
 
 	@SuppressWarnings("unchecked")
