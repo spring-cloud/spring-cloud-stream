@@ -380,6 +380,10 @@ The size of the batch is controlled by Kafka consumer properties `max.poll.recor
 
 Bear in mind that batch mode is not supported with `@StreamListener` - it only works with the newer functional programming model.
 
+
+Starting with version `4.0.2`, the binder supports DLQ capabilities when consuming in batch mode.
+Keep in mind that, when using DLQ on a consumer binding that is in batch mode, all the records received from the previous poll will be delivered to the DLQ topic.
+
 IMPORTANT: Retry within the binder is not supported when using batch mode, so `maxAttempts` will be overridden to 1.
 You can configure a `DefaultErrorHandler` (using a `ListenerContainerCustomizer`) to achieve similar functionality to retry in the binder.
 You can also use a manual `AckMode` and call `Ackowledgment.nack(index, sleep)` to commit the offsets for a partial batch and have the remaining records redelivered.

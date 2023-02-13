@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2021 the original author or authors.
+ * Copyright 2016-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -735,6 +735,62 @@ public class KafkaBinderTests extends
 				.isSameAs(bmmc);
 		producerBinding.unbind();
 		consumerBinding.unbind();
+	}
+
+	@Test
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	void testSendAndReceiveBatchWithDlqEnabled() throws Exception {
+		Binder binder = getBinder();
+		BindingProperties outputBindingProperties = createProducerBindingProperties(
+			createProducerProperties());
+		DirectChannel moduleOutputChannel = createBindableChannel("output",
+			outputBindingProperties);
+		ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = createConsumerProperties();
+		consumerProperties.setBatchMode(true);
+		consumerProperties.getExtension().setEnableDlq(true);
+		consumerProperties.getExtension().setDlqName("tsarbwde-dlq-topic");
+		consumerProperties.getExtension().getConfiguration().put("fetch.min.bytes", "1000");
+		consumerProperties.getExtension().getConfiguration().put("fetch.max.wait.ms", "5000");
+		consumerProperties.getExtension().getConfiguration().put("max.poll.records", "2");
+		BatchMessagingMessageConverter bmmc = new BatchMessagingMessageConverter();
+		((GenericApplicationContext) ((KafkaTestBinder) binder).getApplicationContext())
+			.registerBean("tSARBbmmc", BatchMessagingMessageConverter.class, () -> bmmc);
+		consumerProperties.getExtension().setConverterBeanName("tSARBbmmc");
+		DirectChannel moduleInputChannel = createBindableChannel("input",
+			createConsumerBindingProperties(consumerProperties));
+
+		Binding<MessageChannel> producerBinding = binder.bindProducer("tsarbwde.batching",
+			moduleOutputChannel, outputBindingProperties.getProducer());
+		Binding<MessageChannel> consumerBinding = binder.bindConsumer("tsarbwde.batching",
+			"testSendAndReceiveBatch", moduleInputChannel, consumerProperties);
+
+		QueueChannel dlqChannel = new QueueChannel();
+		ExtendedConsumerProperties<KafkaConsumerProperties> dlqConsumerProperties = createConsumerProperties();
+		Binding<MessageChannel> dlqConsumerBinding = binder.bindConsumer(
+			"tsarbwde-dlq-topic", null, dlqChannel,
+			dlqConsumerProperties);
+
+		// Let the consumer actually bind to the producer before sending a msg
+		binderBindUnbindLatency();
+
+		FailingInvocationCountingMessageHandler handler = new FailingInvocationCountingMessageHandler();
+		moduleInputChannel.subscribe(handler);
+
+		String testMessagePayload = "test." + UUID.randomUUID();
+		Message<?> message = org.springframework.integration.support.MessageBuilder
+			.withPayload(testMessagePayload.getBytes(StandardCharsets.UTF_8))
+			.setHeader(KafkaHeaders.PARTITION_ID, 0)
+			.build();
+
+		moduleOutputChannel.send(message);
+
+		Message<?> receivedMessage = receive(dlqChannel, 10);
+		assertThat(receivedMessage).isNotNull();
+		assertThat(receivedMessage.getPayload()).isEqualTo(testMessagePayload.getBytes());
+
+		producerBinding.unbind();
+		consumerBinding.unbind();
+		dlqConsumerBinding.unbind();
 	}
 
 	@Test
