@@ -384,7 +384,7 @@ Starting with version 3.0, when `spring.cloud.stream.binding.<name>.consumer.bat
 Otherwise, the method will be called with one record at a time.
 The size of the batch is controlled by Kafka consumer properties `max.poll.records`, `fetch.min.bytes`, `fetch.max.wait.ms`; refer to the Kafka documentation for more information.
 
-Starting with `4.0.2` release, binder supports DLQ capabilities when consuming in batch mode.
+Starting with version `4.0.2`, the binder supports DLQ capabilities when consuming in batch mode.
 Keep in mind that, when using DLQ on a consumer binding that is in batch mode, all the records received from the previous poll will be delivered to the DLQ topic.
 
 IMPORTANT: Retry within the binder is not supported when using batch mode, so `maxAttempts` will be overridden to 1.
