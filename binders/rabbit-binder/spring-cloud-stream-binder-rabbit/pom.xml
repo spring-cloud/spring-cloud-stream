@@ -100,9 +100,10 @@
 			<scope>test</scope>
 		</dependency>
 		<dependency>
-			<!-- Temporary override - see  https://github.com/spring-projects/spring-boot/issues/16043 -->
+			<!-- TODO: upgrade to httpclient 5 -->
 			<groupId>org.apache.httpcomponents</groupId>
 			<artifactId>httpclient</artifactId>
+			<version>4.5.14</version>
 		</dependency>
 	</dependencies>
 </project>
