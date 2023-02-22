@@ -46,6 +46,27 @@ Starting with version 4.0.2, you can customize the `ReceiverOptions` and `Sender
 They are `BiFunction` s which receive the binding name and initial options, returning the customized options.
 The interfaces extend `Ordered` so the customizers will be applied in the order required, when more than one are present.
 
+IMPORTANT: The binder does not commit offsets by default.
+Starting with version 4.0.2, the `KafkaHeaders.ACKNOWLEDGMENT` header contains a `ReceiverOffset` object which allows you to cause the offset to be committed by calling its `acknowledge()` or `commit()` methods.
+
+====
+[source, java]
+----
+@Bean
+public Consumer<Flux<Message<String>> consume() {
+    return msg -> {
+        process(msg.getPayload());
+        msg.getHeaders().get(KafkaHeaders.ACKNOWLEDGMENT, ReceiverOffset.class).acknowledge();
+    }
+}
+----
+====
+
+Refer to the `reactor-kafka` documentation and javadocs for more information.
+
+In addition, the Kafka consumer property `reactiveAutoCommit` can be set to `true` and the binder will automatically commit the offsets after all records returned by each poll are processed.
+In this case, the acknowledgment header is not present.
+
 === Consuming Records in the Raw Format
 
 In the above `upppercase` function, we are consuming the record as `Flux<String>` and then produce it as `Flux<String>`.
@@ -108,6 +129,9 @@ For the outbound (`lowecase-out-0`), we still use the regular `MessagingMessageC
 
 In the `toMessage` implementation above, we receive the raw `ConsumerRecord` (`ReceiverRecord` since we are in a reactive binder context) and then wrap it inside a `Message`.
 Then that message payload which is the `ReceiverRecord` is provided to the user method.
+
+If `reactiveAutoCommit` is `false` (default), call `rec.receiverOffset().acknowledge()` (or `commit()`) to cause the offset to be committed; if `reactiveAutoCommit` is `true`, the flux supplies `ConsumerRecord` s instead.
+Refer to the `reactor-kafka` documentation and javadocs for more information.
 
 === Concurrency
 

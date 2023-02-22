@@ -217,6 +217,13 @@ public class KafkaConsumerProperties {
 	private String commonErrorHandlerBeanName;
 
 	/**
+	 * When using the reactive binder, automatically commit offsets when records received
+	 * by the poll have been processed.
+	 * @since 4.0.2
+	 */
+	private boolean reactiveAutoCommit;
+
+	/**
 	 * @return if each record needs to be acknowledged.
 	 *
 	 * When true the offset is committed after each record, otherwise the offsets for the complete set of records
@@ -542,4 +549,14 @@ public class KafkaConsumerProperties {
 	public void setCommonErrorHandlerBeanName(String commonErrorHandlerBeanName) {
 		this.commonErrorHandlerBeanName = commonErrorHandlerBeanName;
 	}
+
+	public boolean isReactiveAutoCommit() {
+		return this.reactiveAutoCommit;
+	}
+
+	public void setReactiveAutoCommit(boolean reactiveAutoCommit) {
+		this.reactiveAutoCommit = reactiveAutoCommit;
+	}
+
+
 }

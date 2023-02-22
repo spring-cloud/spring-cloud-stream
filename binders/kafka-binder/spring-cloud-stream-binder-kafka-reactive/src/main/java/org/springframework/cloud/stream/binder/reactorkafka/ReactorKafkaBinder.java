@@ -25,12 +25,14 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Sinks;
 import reactor.kafka.receiver.KafkaReceiver;
 import reactor.kafka.receiver.ReceiverOptions;
+import reactor.kafka.receiver.ReceiverRecord;
 import reactor.kafka.sender.KafkaSender;
 import reactor.kafka.sender.SenderOptions;
 import reactor.kafka.sender.SenderRecord;
@@ -56,6 +58,9 @@ import org.springframework.context.Lifecycle;
 import org.springframework.integration.core.MessageProducer;
 import org.springframework.integration.endpoint.MessageProducerSupport;
 import org.springframework.integration.handler.AbstractMessageHandler;
+import org.springframework.integration.support.MessageBuilder;
+import org.springframework.kafka.support.KafkaHeaders;
+import org.springframework.kafka.support.converter.KafkaMessageHeaders;
 import org.springframework.kafka.support.converter.MessageConverter;
 import org.springframework.kafka.support.converter.MessagingMessageConverter;
 import org.springframework.kafka.support.converter.RecordMessageConverter;
@@ -201,11 +206,24 @@ public class ReactorKafkaBinder
 			protected void doStart() {
 				List<Flux<Message<Object>>> fluxes = new ArrayList<>();
 				int concurrency = properties.getConcurrency();
+				boolean autoCommit = properties.getExtension().isReactiveAutoCommit();
 				for (int i = 0; i < concurrency; i++) {
-					fluxes.add(this.receivers.get(i)
-							.receive()
-							.map(record -> (Message<Object>) ((RecordMessageConverter) converter)
-									.toMessage(record, null, null, null)));
+					Flux<? extends ConsumerRecord<Object, Object>> receive;
+					if (autoCommit) {
+						receive = this.receivers.get(i)
+								.receiveAutoAck()
+								.concatMap(rec -> rec);
+					}
+					else {
+						receive = this.receivers.get(i)
+								.receive();
+					}
+					fluxes.add(receive
+							.map(record -> {
+								Message<Object> message = (Message<Object>) ((RecordMessageConverter) converter)
+									.toMessage(record, null, null, null);
+								return addAckHeaderIfNeeded(autoCommit, record, message);
+							}));
 				}
 				if (concurrency == 1) {
 					subscribeToPublisher(fluxes.get(0));
@@ -213,6 +231,24 @@ public class ReactorKafkaBinder
 				else {
 					subscribeToPublisher(Flux.merge(fluxes));
 				}
+			}
+
+			private Message<Object> addAckHeaderIfNeeded(boolean autoCommit, ConsumerRecord<Object, Object> record,
+					Message<Object> message) {
+
+				if (!autoCommit) {
+					if (message.getHeaders() instanceof KafkaMessageHeaders headers) {
+						headers.getRawHeaders().put(KafkaHeaders.ACKNOWLEDGMENT,
+								((ReceiverRecord<Object, Object>) record).receiverOffset());
+					}
+					else {
+						message = MessageBuilder.fromMessage(message)
+								.setHeader(KafkaHeaders.ACKNOWLEDGMENT,
+										((ReceiverRecord<Object, Object>) record).receiverOffset())
+								.build();
+					}
+				}
+				return message;
 			}
 
 		}
