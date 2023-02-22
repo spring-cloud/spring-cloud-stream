@@ -1220,7 +1220,8 @@ public class KafkaMessageChannelBinder extends
 				List<ConsumerRecord<Object, Object>> records;
 				if (!properties.isBatchMode()) {
 					ConsumerRecord<Object, Object> record = StaticMessageHeaderAccessor.getSourceData(message);
-					records = List.of(Objects.requireNonNull(record));
+					records = new ArrayList<>();
+					records.add(Objects.requireNonNull(record));
 				}
 				else {
 					records = StaticMessageHeaderAccessor.getSourceData(message);
