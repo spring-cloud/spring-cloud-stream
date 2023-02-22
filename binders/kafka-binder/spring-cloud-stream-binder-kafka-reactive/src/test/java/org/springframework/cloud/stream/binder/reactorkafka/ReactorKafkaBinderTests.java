@@ -16,8 +16,10 @@
 
 package org.springframework.cloud.stream.binder.reactorkafka;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -29,6 +31,7 @@ import org.junit.jupiter.api.Test;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 import reactor.core.publisher.Mono;
+import reactor.kafka.receiver.ReceiverOffset;
 
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
@@ -118,9 +121,18 @@ public class ReactorKafkaBinderTests {
 		pf.destroy();
 	}
 
-	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Test
-	void concurrency() throws Exception {
+	void concurrencyAuto() throws Exception {
+		concurrency(false);
+	}
+
+	@Test
+	void concurrencyManual() throws Exception {
+		concurrency(true);
+	}
+
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	void concurrency(boolean manualCommit) throws Exception {
 		KafkaProperties kafkaProperties = new KafkaProperties();
 		kafkaProperties.setBootstrapServers(
 				Collections.singletonList(EmbeddedKafkaCondition.getBroker().getBrokersAsString()));
@@ -133,8 +145,9 @@ public class ReactorKafkaBinderTests {
 
 		CountDownLatch subscriptionLatch = new CountDownLatch(1);
 		CountDownLatch messageLatch1 = new CountDownLatch(4);
-		CountDownLatch messageLatch2 = new CountDownLatch(10);
+		CountDownLatch messageLatch2 = new CountDownLatch(6);
 		Set<Integer> partitions = new HashSet<>();
+		List<String> payloads = Collections.synchronizedList(new ArrayList<>());
 
 		FluxMessageChannel inbound = new FluxMessageChannel();
 		Subscriber<Message<?>> sub = new Subscriber<Message<?>>() {
@@ -147,7 +160,11 @@ public class ReactorKafkaBinderTests {
 
 			@Override
 			public void onNext(Message<?> msg) {
+				payloads.add((String) msg.getPayload());
 				partitions.add(msg.getHeaders().get(KafkaHeaders.RECEIVED_PARTITION, Integer.class));
+				if (manualCommit) {
+					msg.getHeaders().get(KafkaHeaders.ACKNOWLEDGMENT, ReceiverOffset.class).acknowledge();
+				}
 				messageLatch1.countDown();
 				messageLatch2.countDown();
 			}
@@ -164,6 +181,7 @@ public class ReactorKafkaBinderTests {
 		inbound.subscribe(sub);
 
 		KafkaConsumerProperties ext = new KafkaConsumerProperties();
+		ext.setReactiveAutoCommit(!manualCommit);
 		ExtendedConsumerProperties<KafkaConsumerProperties> props =
 				new ExtendedConsumerProperties<KafkaConsumerProperties>(ext);
 		props.setConcurrency(2);
@@ -187,6 +205,8 @@ public class ReactorKafkaBinderTests {
 		assertThat(partitions).hasSize(2);
 		consumer.unbind();
 		pf.destroy();
+		Collections.sort(payloads);
+		assertThat(payloads).containsExactly("bar", "baz", "buz", "fiz", "foo", "qux");
 	}
 
 	@Test
