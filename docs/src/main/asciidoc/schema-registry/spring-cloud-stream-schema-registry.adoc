@@ -127,6 +127,10 @@ Default: `vnd`
 spring.cloud.stream.schema.avro.subjectNamingStrategy:: Determines the subject name used to register the Avro schema in the schema registry. Two implementations are available, `org.springframework.cloud.stream.schema.avro.DefaultSubjectNamingStrategy`, where the subject is the schema name, and `org.springframework.cloud.stream.schema.avro.QualifiedSubjectNamingStrategy`, which returns a fully qualified subject using the Avro schema namespace and name. Custom strategies can be created by implementing `org.springframework.cloud.stream.schema.avro.SubjectNamingStrategy`.
 +
 Default: `org.springframework.cloud.stream.schema.avro.DefaultSubjectNamingStrategy`
++
+spring.cloud.stream.schema.avro.ignoreSchemaRegistryServer:: Ignore any schema registry communication. Useful for testing purposes so that when running a unit test, it does not unnecessarily try to connect to a Schema Registry server.
++
+Default: `false`
 
 === Apache Avro Message Converters
 

@@ -52,6 +52,8 @@ public class AvroMessageConverterProperties {
 
 	private String subjectNamePrefix;
 
+	private boolean ignoreSchemaRegistryServer;
+
 	private Class<? extends SubjectNamingStrategy> subjectNamingStrategy = DefaultSubjectNamingStrategy.class;
 
 	public Resource getReaderSchema() {
@@ -111,5 +113,13 @@ public class AvroMessageConverterProperties {
 
 	public void setSubjectNamePrefix(String subjectNamePrefix) {
 		this.subjectNamePrefix = subjectNamePrefix;
+	}
+
+	public boolean isIgnoreSchemaRegistryServer() {
+		return this.ignoreSchemaRegistryServer;
+	}
+
+	public void setIgnoreSchemaRegistryServer(boolean ignoreSchemaRegistryServer) {
+		this.ignoreSchemaRegistryServer = ignoreSchemaRegistryServer;
 	}
 }

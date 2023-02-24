@@ -71,6 +71,10 @@ public class AvroMessageConverterAutoConfiguration {
 		}
 		avroSchemaRegistryClientMessageConverter.setPrefix(avroMessageConverterProperties.getPrefix());
 
+		if (avroMessageConverterProperties.isIgnoreSchemaRegistryServer()) {
+			avroSchemaRegistryClientMessageConverter.setIgnoreSchemaRegistryServer(true);
+		}
+
 		try {
 			Class<?> clazz = avroMessageConverterProperties.getSubjectNamingStrategy();
 			Constructor constructor = ReflectionUtils.accessibleConstructor(clazz);

@@ -38,7 +38,7 @@ public class ConsumerApplication {
 
 	@Bean
 	public Consumer<Sensor> process()  {
-		return input -> logger.info("input: " + input);
+		return input -> logger.info("[INPUT-RECEIVED]: " + input);
 	}
 
 }
