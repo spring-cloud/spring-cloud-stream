@@ -90,8 +90,8 @@ public class StreamToGlobalKTableFunctionTests {
 				"--spring.cloud.stream.kafka.streams.binder.configuration.default.value.serde" +
 						"=org.apache.kafka.common.serialization.Serdes$StringSerde",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.commit.interval.ms=10000",
-				"--spring.cloud.stream.kafka.streams.bindings.order.consumer.applicationId=" +
-						"StreamToGlobalKTableJoinFunctionTests-abc",
+//				"--spring.cloud.stream.kafka.streams.bindings.order.consumer.applicationId=" +
+//						"StreamToGlobalKTableJoinFunctionTests-abc",
 
 				"--spring.cloud.stream.kafka.streams.bindings.process-in-0.consumer.topic.properties.cleanup.policy=compact",
 				"--spring.cloud.stream.kafka.streams.bindings.process-in-1.consumer.topic.properties.cleanup.policy=compact",
