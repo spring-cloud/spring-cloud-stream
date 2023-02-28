@@ -53,7 +53,7 @@ public class BindingsEndpoint {
 	}
 
 	@ReadOperation
-	public Binding<?> queryState(@Selector String name) {
+	public List<Binding<?>> queryState(@Selector String name) {
 		return this.lifecycleController.queryState(name);
 	}
 

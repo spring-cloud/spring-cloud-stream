@@ -67,11 +67,11 @@ public class KafkaRetryDlqBinderOrContainerTests {
 
 	@Test
 	void retryAndDlqInRightPlace(@Autowired BindingsLifecycleController controller) throws Exception {
-		Binding<?> retryInBinder = controller.queryState("retryInBinder-in-0");
+		Binding<?> retryInBinder = controller.queryState("retryInBinder-in-0").get(0);
 		assertThat(KafkaTestUtils.getPropertyValue(retryInBinder, "lifecycle.retryTemplate")).isNotNull();
 		assertThat(KafkaTestUtils.getPropertyValue(retryInBinder,
 				"lifecycle.messageListenerContainer.commonErrorHandler")).isNull();
-		Binding<?> retryInContainer = controller.queryState("retryInContainer-in-0");
+		Binding<?> retryInContainer = controller.queryState("retryInContainer-in-0").get(0);
 		assertThat(KafkaTestUtils.getPropertyValue(retryInContainer, "lifecycle.retryTemplate")).isNull();
 		assertThat(KafkaTestUtils.getPropertyValue(retryInContainer,
 				"lifecycle.messageListenerContainer.commonErrorHandler")).isInstanceOf(CommonErrorHandler.class);
