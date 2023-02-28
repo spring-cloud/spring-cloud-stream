@@ -33,6 +33,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import reactor.core.publisher.EmitterProcessor;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -107,41 +109,80 @@ public class ImplicitFunctionBindingTests {
 		}
 	}
 
-	@SuppressWarnings({"rawtypes" })
+	@SuppressWarnings({"rawtypes"})
 	@Test
-	public void testDisableAutodetect() {
+	void testDisableAutodetect() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
-				TestChannelBinderConfiguration.getCompleteConfiguration(SendToDestinationConfiguration.class))
-						.web(WebApplicationType.NONE)
-						.run("--spring.jmx.enabled=false", "--spring.cloud.stream.function.autodetect=false")) {
+			TestChannelBinderConfiguration.getCompleteConfiguration(SendToDestinationConfiguration.class))
+			.web(WebApplicationType.NONE)
+			.run("--spring.jmx.enabled=false", "--spring.cloud.stream.function.autodetect=false")) {
 
 			BindingsLifecycleController ctrl = context.getBean(BindingsLifecycleController.class);
-			Binding input = ctrl.queryState("echo-in-0");
-			Binding output = ctrl.queryState("echo-out-0");
-			assertThat(input).isNull();
-			assertThat(output).isNull();
+			List<Binding<?>> input = ctrl.queryState("echo-in-0");
+			List<Binding<?>> output = ctrl.queryState("echo-out-0");
+			assertThat(input).isEmpty();
+			assertThat(output).isEmpty();
 		}
 	}
 
-
 	@SuppressWarnings({"rawtypes" })
 	@Test
-	public void testBindingControl() {
+	void testBindingControl() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
-				TestChannelBinderConfiguration.getCompleteConfiguration(SendToDestinationConfiguration.class))
-						.web(WebApplicationType.NONE)
-						.run("--spring.jmx.enabled=false")) {
+			TestChannelBinderConfiguration.getCompleteConfiguration(SendToDestinationConfiguration.class))
+			.web(WebApplicationType.NONE)
+			.run("--spring.jmx.enabled=false")) {
 
 			BindingsLifecycleController ctrl = context.getBean(BindingsLifecycleController.class);
-			Binding input = ctrl.queryState("echo-in-0");
-			Binding output = ctrl.queryState("echo-out-0");
+			Binding input = ctrl.queryState("echo-in-0").get(0);
 			assertThat(input.isRunning()).isTrue();
 			ctrl.changeState("echo-in-0", State.STOPPED);
 			assertThat(input.isRunning()).isFalse();
 		}
 	}
 
-	@SuppressWarnings({ "unchecked", "rawtypes" })
+	@ParameterizedTest
+	@ValueSource(strings = {"single-destination", "destination1,destination2,destination3"})
+	void testGh2658_WithMultipleDestinations(String destination) {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+			TestChannelBinderConfiguration.getCompleteConfiguration(SingleConsumerWithMultipleDestinationConfiguration.class))
+			.web(WebApplicationType.NONE)
+			.run("--spring.jmx.enabled=false",
+				"--spring.cloud.function.definition=consumerMultiple",
+				"--spring.cloud.stream.bindings.consumerMultiple-in-0.group=group",
+				"--spring.cloud.stream.bindings.consumerMultiple-in-0.destination=" + destination)) {
+
+			BindingsLifecycleController ctrl = context.getBean(BindingsLifecycleController.class);
+			List<Binding<?>> multipleInput = ctrl.queryState("consumerMultiple-in-0");
+
+			assertThat(multipleInput).hasSize(destination.split(",").length);
+			multipleInput.stream().forEach(binding -> assertThat(binding.isRunning()).isTrue());
+
+			ctrl.changeState("consumerMultiple-in-0", State.STOPPED);
+			multipleInput.stream().forEach(binding -> assertThat(binding.isRunning()).isFalse());
+
+			ctrl.changeState("consumerMultiple-in-0", State.STARTED);
+			multipleInput.stream().forEach(binding -> assertThat(binding.isRunning()).isTrue());
+		}
+	}
+
+	@Test
+	void testGh2658_queryBindingThatNotExists() {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+			TestChannelBinderConfiguration.getCompleteConfiguration(SingleConsumerWithMultipleDestinationConfiguration.class))
+			.web(WebApplicationType.NONE)
+			.run("--spring.jmx.enabled=false",
+				"--spring.cloud.function.definition=consumerMultiple",
+				"--spring.cloud.stream.bindings.consumerMultiple-in-0.group=group",
+				"--spring.cloud.stream.bindings.consumerMultiple-in-0.destination=destination")) {
+
+			BindingsLifecycleController ctrl = context.getBean(BindingsLifecycleController.class);
+			List<Binding<?>> inputBindingList = ctrl.queryState("bindingNotExist-in-0");
+			assertThat(inputBindingList).isEmpty();
+		}
+	}
+
+	@SuppressWarnings({"unchecked", "rawtypes"})
 	@Test
 	public void dynamicBindingTestWithFunctionRegistrationAndExplicitDestination() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
@@ -1579,6 +1620,17 @@ public class ImplicitFunctionBindingTests {
 		public ApplicationListener<BindingCreatedEvent> bindingCreatedEventListener() {
 			return bindingCreatedEvent -> {
 				throw new RuntimeException("Test");
+			};
+		}
+	}
+
+	@EnableAutoConfiguration
+	public static class SingleConsumerWithMultipleDestinationConfiguration {
+
+		@Bean
+		public Consumer<String> consumerMultiple() {
+			return value -> {
+				System.out.println(value);
 			};
 		}
 	}

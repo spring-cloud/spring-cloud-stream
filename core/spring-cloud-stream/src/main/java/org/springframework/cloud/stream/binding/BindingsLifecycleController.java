@@ -21,6 +21,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
+import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -49,9 +50,9 @@ public class BindingsLifecycleController {
 
 	@SuppressWarnings("unchecked")
 	public BindingsLifecycleController(List<InputBindingLifecycle> inputBindingLifecycles,
-			List<OutputBindingLifecycle> outputBindingsLifecycles) {
+									   List<OutputBindingLifecycle> outputBindingsLifecycles) {
 		Assert.notEmpty(inputBindingLifecycles,
-				"'inputBindingLifecycles' must not be null or empty");
+			"'inputBindingLifecycles' must not be null or empty");
 		this.inputBindingLifecycles = inputBindingLifecycles;
 		this.outputBindingsLifecycles = outputBindingsLifecycles;
 
@@ -61,7 +62,7 @@ public class BindingsLifecycleController {
 
 		try {
 			Class<? extends Module> javaTimeModuleClass = (Class<? extends Module>)
-					ClassUtils.forName("com.fasterxml.jackson.datatype.jsr310.JavaTimeModule", ClassUtils.getDefaultClassLoader());
+				ClassUtils.forName("com.fasterxml.jackson.datatype.jsr310.JavaTimeModule", ClassUtils.getDefaultClassLoader());
 			Module javaTimeModule = BeanUtils.instantiateClass(javaTimeModuleClass);
 			this.objectMapper.registerModule(javaTimeModule);
 		}
@@ -108,23 +109,22 @@ public class BindingsLifecycleController {
 	 * @param state the {@link State} you wish to set this binding to
 	 */
 	public void changeState(String bindingName, State state) {
-		Binding<?> binding = BindingsLifecycleController.this.locateBinding(bindingName);
-		if (binding != null) {
+		List<Binding<?>> bindingList = BindingsLifecycleController.this.locateBinding(bindingName);
+		if (!bindingList.isEmpty()) {
 			switch (state) {
-			case STARTED:
-				binding.start();
-				break;
-			case STOPPED:
-				binding.stop();
-				break;
-			case PAUSED:
-				binding.pause();
-				break;
-			case RESUMED:
-				binding.resume();
-				break;
-			default:
-				break;
+				case STARTED :
+					bindingList.stream().forEach(Binding::start);
+					break;
+				case STOPPED :
+					bindingList.stream().forEach(Binding::stop);
+					break;
+				case PAUSED :
+					bindingList.stream().forEach(Binding::pause);
+					break;
+				case RESUMED :
+					bindingList.stream().forEach(Binding::resume);
+					break;
+				default : break;
 			}
 		}
 	}
@@ -146,13 +146,12 @@ public class BindingsLifecycleController {
 	 * Queries the individual state of a binding. The returned list
 	 * {@link Binding} object could be further interrogated
 	 * using {@link Binding#isPaused()} and {@link Binding#isRunning()}.
-	 * @return instance of {@link Binding} object.
+	 * @return collection of {@link Binding} objects.
 	 */
-	public Binding<?> queryState(String name) {
+	public List<Binding<?>> queryState(String name) {
 		Assert.notNull(name, "'name' must not be null");
 		return this.locateBinding(name);
 	}
-
 	/**
 	 * Queries for all input {@link Binding}s.
 	 * @return the list of input {@link Binding}s
@@ -162,7 +161,7 @@ public class BindingsLifecycleController {
 		List<Binding<?>> inputBindings = new ArrayList<>();
 		for (InputBindingLifecycle inputBindingLifecycle : this.inputBindingLifecycles) {
 			Collection<Binding<?>> lifecycleInputBindings = (Collection<Binding<?>>) new DirectFieldAccessor(
-					inputBindingLifecycle).getPropertyValue("inputBindings");
+				inputBindingLifecycle).getPropertyValue("inputBindings");
 			inputBindings.addAll(lifecycleInputBindings);
 		}
 		return inputBindings;
@@ -177,17 +176,16 @@ public class BindingsLifecycleController {
 		List<Binding<?>> outputBindings = new ArrayList<>();
 		for (OutputBindingLifecycle inputBindingLifecycle : this.outputBindingsLifecycles) {
 			Collection<Binding<?>> lifecycleInputBindings = (Collection<Binding<?>>) new DirectFieldAccessor(
-					inputBindingLifecycle).getPropertyValue("outputBindings");
+				inputBindingLifecycle).getPropertyValue("outputBindings");
 			outputBindings.addAll(lifecycleInputBindings);
 		}
 		return outputBindings;
 	}
 
-	private Binding<?> locateBinding(String name) {
+	private List<Binding<?>> locateBinding(String name) {
 		Stream<Binding<?>> bindings = Stream.concat(this.gatherInputBindings().stream(),
-				this.gatherOutputBindings().stream());
-		return bindings.filter(binding -> name.equals(binding.getBindingName())).findFirst()
-				.orElse(null);
+			this.gatherOutputBindings().stream());
+		return bindings.filter(binding -> name.equals(binding.getBindingName())).collect(Collectors.toList());
 	}
 
 	/**
