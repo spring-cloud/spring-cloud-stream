@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.fasterxml.jackson.databind.Module;
@@ -108,13 +109,13 @@ public class BindingsLifecycleController {
 	 * @param state the {@link State} you wish to set this binding to
 	 */
 	public void changeState(String bindingName, State state) {
-		Binding<?> binding = BindingsLifecycleController.this.locateBinding(bindingName);
-		if (binding != null) {
+		var bindingList = BindingsLifecycleController.this.locateBinding(bindingName);
+		if (!bindingList.isEmpty()) {
 			switch (state) {
-				case STARTED -> binding.start();
-				case STOPPED -> binding.stop();
-				case PAUSED -> binding.pause();
-				case RESUMED -> binding.resume();
+				case STARTED -> bindingList.stream().forEach(Binding::start);
+				case STOPPED -> bindingList.stream().forEach(Binding::stop);
+				case PAUSED -> bindingList.stream().forEach(Binding::pause);
+				case RESUMED -> bindingList.stream().forEach(Binding::resume);
 				default -> {
 				}
 			}
@@ -138,9 +139,9 @@ public class BindingsLifecycleController {
 	 * Queries the individual state of a binding. The returned list
 	 * {@link Binding} object could be further interrogated
 	 * using {@link Binding#isPaused()} and {@link Binding#isRunning()}.
-	 * @return instance of {@link Binding} object.
+	 * @return collection of {@link Binding} objects.
 	 */
-	public Binding<?> queryState(String name) {
+	public List<Binding<?>> queryState(String name) {
 		Assert.notNull(name, "'name' must not be null");
 		return this.locateBinding(name);
 	}
@@ -175,11 +176,10 @@ public class BindingsLifecycleController {
 		return outputBindings;
 	}
 
-	private Binding<?> locateBinding(String name) {
+	private List<Binding<?>> locateBinding(String name) {
 		Stream<Binding<?>> bindings = Stream.concat(this.gatherInputBindings().stream(),
-				this.gatherOutputBindings().stream());
-		return bindings.filter(binding -> name.equals(binding.getBindingName())).findFirst()
-				.orElse(null);
+			this.gatherOutputBindings().stream());
+		return bindings.filter(binding -> name.equals(binding.getBindingName())).collect(Collectors.toList());
 	}
 
 	/**
