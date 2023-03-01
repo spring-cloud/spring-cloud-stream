@@ -162,6 +162,22 @@ public class ImplicitFunctionBindingTests {
 		}
 	}
 
+	@Test
+	void testGh2658_queryBindingThatNotExists() {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+			TestChannelBinderConfiguration.getCompleteConfiguration(SingleConsumerWithMultipleDestinationConfiguration.class))
+			.web(WebApplicationType.NONE)
+			.run("--spring.jmx.enabled=false",
+				"--spring.cloud.function.definition=consumerMultiple",
+				"--spring.cloud.stream.bindings.consumerMultiple-in-0.group=group",
+				"--spring.cloud.stream.bindings.consumerMultiple-in-0.destination=destination")) {
+
+			BindingsLifecycleController ctrl = context.getBean(BindingsLifecycleController.class);
+			var inputBindingList = ctrl.queryState("bindingNotExist-in-0");
+			assertThat(inputBindingList).isEmpty();
+		}
+	}
+
 	@SuppressWarnings({"unchecked", "rawtypes"})
 	@Test
 	void dynamicBindingTestWithFunctionRegistrationAndExplicitDestination() {
