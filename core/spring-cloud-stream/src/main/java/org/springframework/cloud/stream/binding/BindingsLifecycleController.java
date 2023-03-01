@@ -50,9 +50,9 @@ public class BindingsLifecycleController {
 
 	@SuppressWarnings("unchecked")
 	public BindingsLifecycleController(List<InputBindingLifecycle> inputBindingLifecycles,
-		List<OutputBindingLifecycle> outputBindingsLifecycles) {
+			List<OutputBindingLifecycle> outputBindingsLifecycles) {
 		Assert.notEmpty(inputBindingLifecycles,
-			"'inputBindingLifecycles' must not be null or empty");
+				"'inputBindingLifecycles' must not be null or empty");
 		this.inputBindingLifecycles = inputBindingLifecycles;
 		this.outputBindingsLifecycles = outputBindingsLifecycles;
 
@@ -62,7 +62,7 @@ public class BindingsLifecycleController {
 
 		try {
 			Class<? extends Module> javaTimeModuleClass = (Class<? extends Module>)
-				ClassUtils.forName("com.fasterxml.jackson.datatype.jsr310.JavaTimeModule", ClassUtils.getDefaultClassLoader());
+					ClassUtils.forName("com.fasterxml.jackson.datatype.jsr310.JavaTimeModule", ClassUtils.getDefaultClassLoader());
 			Module javaTimeModule = BeanUtils.instantiateClass(javaTimeModuleClass);
 			this.objectMapper.registerModule(javaTimeModule);
 		}
@@ -155,7 +155,7 @@ public class BindingsLifecycleController {
 		List<Binding<?>> inputBindings = new ArrayList<>();
 		for (InputBindingLifecycle inputBindingLifecycle : this.inputBindingLifecycles) {
 			Collection<Binding<?>> lifecycleInputBindings = (Collection<Binding<?>>) new DirectFieldAccessor(
-				inputBindingLifecycle).getPropertyValue("inputBindings");
+					inputBindingLifecycle).getPropertyValue("inputBindings");
 			inputBindings.addAll(lifecycleInputBindings);
 		}
 		return inputBindings;
@@ -170,7 +170,7 @@ public class BindingsLifecycleController {
 		List<Binding<?>> outputBindings = new ArrayList<>();
 		for (OutputBindingLifecycle inputBindingLifecycle : this.outputBindingsLifecycles) {
 			Collection<Binding<?>> lifecycleInputBindings = (Collection<Binding<?>>) new DirectFieldAccessor(
-				inputBindingLifecycle).getPropertyValue("outputBindings");
+					inputBindingLifecycle).getPropertyValue("outputBindings");
 			outputBindings.addAll(lifecycleInputBindings);
 		}
 		return outputBindings;

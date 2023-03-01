@@ -121,7 +121,7 @@ public class ImplicitFunctionBindingTests {
 	}
 
 
-	@SuppressWarnings({"rawtypes"})
+	@SuppressWarnings({"rawtypes" })
 	@Test
 	void testBindingControl() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
@@ -501,10 +501,8 @@ public class ImplicitFunctionBindingTests {
 		}
 	}
 
-
 //	@Test
 //	public void testFunctionConfigDisabledIfStreamListenerIsUsed() {
-
 //		System.clearProperty("spring.cloud.function.definition");
 //		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 //				TestChannelBinderConfiguration.getCompleteConfiguration(LegacyConfiguration.class))
@@ -619,6 +617,7 @@ public class ImplicitFunctionBindingTests {
 			assertThat(Long.parseLong(new String(outputMessage.getPayload())) - value).isGreaterThanOrEqualTo(1000);
 		}
 	}
+
 
 
 	@Test
@@ -1533,7 +1532,7 @@ public class ImplicitFunctionBindingTests {
 
 		@Bean
 		public Supplier<Flux<Person>> reactivePersonSupplier() {
-			return () -> {
+			return () ->  {
 				Person p = new Person();
 				p.setId(21);
 				p.setName("Jim Lehey");
@@ -1620,7 +1619,6 @@ public class ImplicitFunctionBindingTests {
 
 	public static class Person {
 		private String name;
-
 		private int id;
 
 		public String getName() {
