@@ -155,17 +155,6 @@ You can also build and package your application into a boot jar (by using `./mvn
 Now you have a working (albeit very basic) Spring Cloud Stream application.
 
 
-[[spring-cloud-stream-preface-notable-deprecations]]
-== Notable Deprecations
-
-- Annotation-based programming model. Basically the @EnableBInding, @StreamListener and all related annotations are now deprecated in 
-favor of the functional programming model. See <<Spring Cloud Function support>> for more details.
-- _Reactive module_ (`spring-cloud-stream-reactive`) is discontinued and no longer distributed in favor of native support via spring-cloud-function.
-For backward
-compatibility you can still bring `spring-cloud-stream-reactive` from previous versions.
-- _Test support binder_ `spring-cloud-stream-test-support` with MessageCollector in favor of a new test binder. See <<Testing>> for more details.
-- _@StreamMessageConverter_ - deprecated as it is no longer required.
-
 [[spel-and-streaming-data]]
 
 == Spring Expression Language (SpEL) in the context of Streaming data
