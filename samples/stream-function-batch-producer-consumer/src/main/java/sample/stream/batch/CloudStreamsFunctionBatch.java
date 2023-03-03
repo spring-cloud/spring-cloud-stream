@@ -28,11 +28,14 @@ import java.util.UUID;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+/**
+ * @author Steven Gantz
+ */
 @SpringBootApplication
-public class KafkaStreamFunctionBatch {
+public class CloudStreamsFunctionBatch {
 
 	public static void main(String[] args) {
-		SpringApplication.run(KafkaStreamFunctionBatch.class, args);
+		SpringApplication.run(CloudStreamsFunctionBatch.class, args);
 	}
 
 	@Bean
