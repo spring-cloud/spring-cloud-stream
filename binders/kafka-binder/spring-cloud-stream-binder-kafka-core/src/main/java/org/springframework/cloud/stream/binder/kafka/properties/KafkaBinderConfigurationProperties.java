@@ -38,7 +38,6 @@ import org.apache.kafka.clients.producer.ProducerConfig;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
-import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.cloud.stream.binder.HeaderMode;
 import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaProducerProperties.CompressionType;
@@ -64,7 +63,6 @@ import org.springframework.util.StringUtils;
  * @author Chukwubuikem Ume-Ugwa
  * @author Nico Heller
  */
-@ConfigurationProperties(prefix = "spring.cloud.stream.kafka.binder")
 public class KafkaBinderConfigurationProperties {
 
 	private static final String DEFAULT_KAFKA_CONNECTION_STRING = "localhost:9092";
@@ -146,14 +144,11 @@ public class KafkaBinderConfigurationProperties {
 	private boolean enableObservation;
 
 	/**
-	 * @Autowired on this constructor is necessary in order to make sure that all the optional (provided as JavaBean setters)
-	 * properties in this class are taken into consideration when generating configuration metadata.
-	 * In addition, in order for all the properties to be discovered and bound when running as a native
-	 * application, this @Autowired is necessary, so that Boot binding mechanism considers all the properties.
-	 * See the following issues for more details.
+	 * @Autowired on this constructor is necessary for all the properties to be discovered and bound when running as a native
+	 * application.
 	 *
-	 * https://github.com/spring-cloud/spring-cloud-stream/issues/2640
-	 * https://github.com/spring-projects/spring-boot/issues/34031
+	 * See the following issue for more details:
+	 *
 	 * https://github.com/spring-cloud/spring-cloud-stream/issues/2644
 	 *
 	 * @param kafkaProperties Spring Kafka properties autoconfigured by Spring Boot

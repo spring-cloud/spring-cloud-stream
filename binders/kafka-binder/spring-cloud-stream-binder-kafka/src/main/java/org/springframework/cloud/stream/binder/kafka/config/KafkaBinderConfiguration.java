@@ -27,6 +27,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.kafka.KafkaBinderMetrics;
@@ -90,7 +91,20 @@ import org.springframework.messaging.converter.MessageConverter;
 @EnableConfigurationProperties({ KafkaProperties.class, KafkaExtendedBindingProperties.class })
 public class KafkaBinderConfiguration {
 
+	/**
+	 * @ConfigurationProperties is declared on the @Bean method for Spring Boot to ignore
+	 * constructor binding on KafkaBinderConfigurationProperties. If constructor binding is
+	 * used, it ignores all the JavaBeans style properties when generating configuration metadata.
+	 *
+	 * See the following issues for more details:
+	 *
+	 * https://github.com/spring-cloud/spring-cloud-stream/issues/2640
+	 * https://github.com/spring-projects/spring-boot/issues/34031
+	 *
+	 * @param kafkaProperties Spring Kafka properties autoconfigured by Spring Boot
+	 */
 	@Bean
+	@ConfigurationProperties(prefix = "spring.cloud.stream.kafka.binder")
 	KafkaBinderConfigurationProperties configurationProperties(
 			KafkaProperties kafkaProperties) {
 		return new KafkaBinderConfigurationProperties(kafkaProperties);
