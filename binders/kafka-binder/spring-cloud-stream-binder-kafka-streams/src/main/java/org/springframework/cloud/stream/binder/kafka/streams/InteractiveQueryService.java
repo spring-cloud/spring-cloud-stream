@@ -182,7 +182,7 @@ public class InteractiveQueryService {
 	 * Gets the current {@link HostInfo} that the calling kafka streams application is
 	 * running on.
 	 *
-	 * Note that the end user applications must provide `applicaiton.server` as a
+	 * Note that the end user applications must provide `application.server` as a
 	 * configuration property when calling this method. If this is not available, then
 	 * null is returned.
 	 * @return the current {@link HostInfo}

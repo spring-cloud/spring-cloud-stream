@@ -218,7 +218,7 @@ public class KafkaStreamsBindingInformationCatalogue {
 	}
 
 	/**
-	 * Caching the previous KafkaStreams for the applicaiton.id when binding is stopped through actuator.
+	 * Caching the previous KafkaStreams for the application.id when binding is stopped through actuator.
 	 * See https://github.com/spring-cloud/spring-cloud-stream-binder-kafka/issues/1165
 	 *
 	 * @param applicationId application.id

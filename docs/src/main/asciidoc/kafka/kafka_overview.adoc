@@ -639,7 +639,7 @@ In secure environments, we strongly recommend creating topics and managing ACLs 
 ====== Multi-binder configuration and JAAS
 
 When connecting to multiple clusters in which each one requires separate JAAS configuration, then set the JAAS configuration using the property `sasl.jaas.config`.
-When this property is present in the applicaiton, it takes precedence over the other strategies mentioned above.
+When this property is present in the application, it takes precedence over the other strategies mentioned above.
 See this https://cwiki.apache.org/confluence/display/KAFKA/KIP-85%3A+Dynamic+JAAS+configuration+for+Kafka+clients[KIP-85] for more details.
 
 For example, if you have two clusters in your application with separate JAAS configuration, then the following is a template that you can use:

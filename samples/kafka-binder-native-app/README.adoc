@@ -8,7 +8,7 @@ The application consists of a supplier that is generating a random string every 
 
 The application comes with a standard configuration properties yaml file that activates all the functions in the application.
 It then specifies the necessary destinations for all the bindings.
-Some bindings rely on the default binding destinations (see the `applicaiton.yml` for details).
+Some bindings rely on the default binding destinations (see the `application.yml` for details).
 In addition, the application expects Kafka to be available on `localhost:9092`.
 If that is not the case, please ensure to update that in `application.yml`.
 
