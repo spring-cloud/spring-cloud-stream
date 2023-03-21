@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2019 the original author or authors.
+ * Copyright 2018-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.util.StringUtils;
 
@@ -121,16 +120,4 @@ public class StreamFunctionProperties {
 		this.reactive = reactive;
 	}
 
-	@ConfigurationProperties("spring.cloud.stream.function")
-	public static class StreamFunctionConfigurationProperties {
-		private Map<String, String> bindings = new HashMap<>();
-
-		public Map<String, String> getBindings() {
-			return this.bindings;
-		}
-
-		public void setBindings(Map<String, String> bindings) {
-			this.bindings = bindings;
-		}
-	}
 }
