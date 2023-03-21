@@ -75,7 +75,7 @@ public class StreamToGlobalKTableFunctionTests {
 		app.setWebApplicationType(WebApplicationType.NONE);
 		try (ConfigurableApplicationContext context = app.run("--server.port=0",
 				"--spring.jmx.enabled=false",
-				"--spring.cloud.stream.function.definition=process",
+				"--spring.cloud.function.definition=process",
 				"--spring.cloud.stream.function.bindings.process-in-0=order",
 				"--spring.cloud.stream.function.bindings.process-in-1=customer",
 				"--spring.cloud.stream.function.bindings.process-in-2=product",
@@ -229,7 +229,7 @@ public class StreamToGlobalKTableFunctionTests {
 		try (ConfigurableApplicationContext context = app.run(
 				"--server.port=0",
 				"--spring.jmx.enabled=false",
-				"--spring.cloud.stream.function.definition=forTimeExtractorTest",
+				"--spring.cloud.function.definition=forTimeExtractorTest",
 				"--spring.cloud.stream.bindings.forTimeExtractorTest-in-0.destination=orders",
 				"--spring.cloud.stream.bindings.forTimeExtractorTest-in-1.destination=customers",
 				"--spring.cloud.stream.bindings.forTimeExtractorTest-in-2.destination=products",

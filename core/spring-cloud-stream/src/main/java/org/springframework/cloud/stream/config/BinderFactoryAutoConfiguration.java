@@ -46,6 +46,7 @@ import org.springframework.cloud.stream.binding.MessageConverterConfigurer;
 import org.springframework.cloud.stream.binding.MessageSourceBindingTargetFactory;
 import org.springframework.cloud.stream.binding.SubscribableChannelBindingTargetFactory;
 import org.springframework.cloud.stream.function.StreamFunctionProperties;
+import org.springframework.cloud.stream.function.StreamFunctionProperties.StreamFunctionConfigurationProperties;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -193,6 +194,15 @@ public class BinderFactoryAutoConfiguration {
 			throw new BeanCreationException("Cannot create binder factory:", e);
 		}
 		return new DefaultBinderTypeRegistry(binderTypes);
+	}
+
+	@Bean
+	public StreamFunctionProperties streamFunctionProperties(@Nullable StreamFunctionConfigurationProperties properties) {
+		StreamFunctionProperties streamFunctionProperties = new StreamFunctionProperties();
+		if (properties != null) {
+			streamFunctionProperties.setBindings(properties.getBindings());
+		}
+		return streamFunctionProperties;
 	}
 
 	@Bean

@@ -74,6 +74,7 @@ import org.springframework.cloud.stream.config.BinderFactoryAutoConfiguration;
 import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.cloud.stream.config.BindingServiceConfiguration;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
+import org.springframework.cloud.stream.function.StreamFunctionProperties.StreamFunctionConfigurationProperties;
 import org.springframework.cloud.stream.messaging.DirectWithAttributesChannel;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -123,7 +124,7 @@ import org.springframework.util.StringUtils;
  * @since 2.1
  */
 @AutoConfiguration
-@EnableConfigurationProperties(StreamFunctionProperties.class)
+@EnableConfigurationProperties(StreamFunctionConfigurationProperties.class)
 @Import({ BinderFactoryAutoConfiguration.class })
 @AutoConfigureBefore(BindingServiceConfiguration.class)
 @AutoConfigureAfter(ContextFunctionCatalogAutoConfiguration.class)
@@ -843,9 +844,7 @@ public class FunctionConfiguration {
 						}
 
 						AtomicReference<BindableFunctionProxyFactory> proxyFactory = new AtomicReference<>();
-						final Map<String, Boolean> reactiveFunctions = streamFunctionProperties.getReactive();
-						final boolean reactiveFn = reactiveFunctions.get(functionDefinition) != null;
-						if (reactiveFn) {
+						if (function.isInputTypePublisher()) {
 							final SupportedBindableFeatures supportedBindableFeatures = new SupportedBindableFeatures();
 							supportedBindableFeatures.setPollable(false);
 							supportedBindableFeatures.setReactive(true);

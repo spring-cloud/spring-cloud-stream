@@ -51,7 +51,6 @@ import org.springframework.cloud.stream.binding.DynamicDestinationsBindable;
 import org.springframework.cloud.stream.binding.InputBindingLifecycle;
 import org.springframework.cloud.stream.binding.OutputBindingLifecycle;
 import org.springframework.cloud.stream.config.BindingHandlerAdvise.MappingsProvider;
-import org.springframework.cloud.stream.function.StreamFunctionProperties;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.DependsOn;
@@ -82,7 +81,7 @@ import org.springframework.util.ObjectUtils;
  */
 @AutoConfiguration
 @EnableConfigurationProperties({ BindingServiceProperties.class,
-		SpringIntegrationProperties.class, StreamFunctionProperties.class })
+		SpringIntegrationProperties.class})
 @Import({ SpelExpressionConverterConfiguration.class })
 @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
 @ConditionalOnBean(value = BinderTypeRegistry.class, search = SearchStrategy.CURRENT)

@@ -91,7 +91,7 @@ public class KafkaStreamsEventTypeRoutingTests {
 		try (ConfigurableApplicationContext context = app.run(
 				"--server.port=0",
 				"--spring.jmx.enabled=false",
-				"--spring.cloud.stream.function.definition=process",
+				"--spring.cloud.function.definition=process",
 				"--spring.cloud.stream.bindings.process-in-0.destination=foo-1",
 				"--spring.cloud.stream.bindings.process-out-0.destination=foo-2",
 				"--spring.cloud.stream.kafka.streams.bindings.process-in-0.consumer.eventTypes=foo,bar",
@@ -161,7 +161,7 @@ public class KafkaStreamsEventTypeRoutingTests {
 		try (ConfigurableApplicationContext context = app.run(
 				"--server.port=0",
 				"--spring.jmx.enabled=false",
-				"--spring.cloud.stream.function.definition=consumer",
+				"--spring.cloud.function.definition=consumer",
 				"--spring.cloud.stream.bindings.consumer-in-0.destination=foo-consumer-1",
 				"--spring.cloud.stream.kafka.streams.bindings.consumer-in-0.consumer.eventTypes=foo,bar",
 				"--spring.cloud.stream.kafka.streams.binder.functions.consumer.applicationId=consumer-id-foo-0",

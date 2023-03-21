@@ -55,7 +55,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE, properties = {
-		"spring.cloud.stream.function.definition=process;processCustom",
+		"spring.cloud.function.definition=process;processCustom",
 		"spring.cloud.stream.function.bindings.process-in-0=standard-in",
 		"spring.cloud.stream.function.bindings.process-out-0=standard-out",
 		"spring.cloud.stream.function.bindings.processCustom-in-0=custom-in",

@@ -194,7 +194,7 @@ public class RoutingFunctionTests {
 				RoutingFunctionConfiguration.class))
 			.web(WebApplicationType.NONE)
 			.run("--spring.jmx.enabled=false",
-				"--spring.cloud.stream.function.definition=" + RoutingFunction.FUNCTION_NAME)) {
+				"--spring.cloud.function.definition=" + RoutingFunction.FUNCTION_NAME)) {
 
 			InputDestination inputDestination = context.getBean(InputDestination.class);
 			OutputDestination outputDestination = context
@@ -219,7 +219,7 @@ public class RoutingFunctionTests {
 				RoutingFunctionConfiguration.class))
 			.web(WebApplicationType.NONE)
 			.run("--spring.jmx.enabled=false",
-				"--spring.cloud.stream.function.definition=enrich|" + RoutingFunction.FUNCTION_NAME,
+				"--spring.cloud.function.definition=enrich|" + RoutingFunction.FUNCTION_NAME,
 				"--spring.cloud.stream.function.routing.enabled=true")) {
 
 			InputDestination inputDestination = context.getBean(InputDestination.class);
@@ -242,7 +242,7 @@ public class RoutingFunctionTests {
 				RoutingFunctionConfiguration.class))
 			.web(WebApplicationType.NONE)
 			.run("--spring.jmx.enabled=false",
-				"--spring.cloud.stream.function.definition=enrich|" + RoutingFunction.FUNCTION_NAME)) {
+				"--spring.cloud.function.definition=enrich|" + RoutingFunction.FUNCTION_NAME)) {
 
 			InputDestination inputDestination = context.getBean(InputDestination.class);
 			OutputDestination outputDestination = context
@@ -264,7 +264,7 @@ public class RoutingFunctionTests {
 				RoutingFunctionConfiguration.class))
 			.web(WebApplicationType.NONE)
 			.run("--spring.jmx.enabled=false",
-				"--spring.cloud.stream.function.definition=enrich|" + RoutingFunction.FUNCTION_NAME + "|reverse",
+				"--spring.cloud.function.definition=enrich|" + RoutingFunction.FUNCTION_NAME + "|reverse",
 				"--spring.cloud.stream.function.routing.enabled=true")) {
 
 			InputDestination inputDestination = context.getBean(InputDestination.class);
@@ -288,7 +288,7 @@ public class RoutingFunctionTests {
 				RoutingFunctionConfiguration.class))
 			.web(WebApplicationType.NONE)
 			.run("--spring.jmx.enabled=false",
-				"--spring.cloud.stream.function.definition=enrich|" + RoutingFunction.FUNCTION_NAME + "|reverse")) {
+				"--spring.cloud.function.definition=enrich|" + RoutingFunction.FUNCTION_NAME + "|reverse")) {
 
 			InputDestination inputDestination = context.getBean(InputDestination.class);
 			OutputDestination outputDestination = context

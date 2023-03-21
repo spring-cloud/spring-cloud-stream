@@ -57,7 +57,7 @@ public class KafkaStreamsFunctionStateStoreTests {
 
 		try (ConfigurableApplicationContext context = app.run("--server.port=0",
 				"--spring.jmx.enabled=false",
-				"--spring.cloud.stream.function.definition=biConsumerBean;hello",
+				"--spring.cloud.function.definition=biConsumerBean;hello",
 				"--spring.cloud.stream.bindings.biConsumerBean-in-0.destination=words",
 				"--spring.cloud.stream.bindings.hello-in-0.destination=words",
 				"--spring.cloud.stream.kafka.streams.binder.functions.changed.applicationId=testKafkaStreamsFuncionWithMultipleStateStores-123",

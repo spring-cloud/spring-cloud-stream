@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2021 the original author or authors.
+ * Copyright 2023-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package org.springframework.cloud.stream.binder.kafka.streams.function;
 
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
+//import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.binder.kafka.streams.KafkaStreamsFunctionProcessor;
 import org.springframework.cloud.stream.function.StreamFunctionProperties;
 import org.springframework.context.annotation.Bean;
@@ -28,7 +28,6 @@ import org.springframework.context.annotation.Configuration;
  * @since 2.2.0
  */
 @Configuration(proxyBeanMethods = false)
-@EnableConfigurationProperties(StreamFunctionProperties.class)
 public class KafkaStreamsFunctionAutoConfiguration {
 
 	@Bean

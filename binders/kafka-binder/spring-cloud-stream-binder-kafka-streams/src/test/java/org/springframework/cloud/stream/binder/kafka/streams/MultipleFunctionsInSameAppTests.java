@@ -86,7 +86,7 @@ public class MultipleFunctionsInSameAppTests {
 		try (ConfigurableApplicationContext context = app.run(
 				"--server.port=0",
 				"--spring.jmx.enabled=false",
-				"--spring.cloud.stream.function.definition=processItem;analyze;anotherProcess;yetAnotherProcess",
+				"--spring.cloud.function.definition=processItem;analyze;anotherProcess;yetAnotherProcess",
 				"--spring.cloud.stream.bindings.processItem-in-0.destination=purchases",
 				"--spring.cloud.stream.bindings.processItem-out-0.destination=coffee",
 				"--spring.cloud.stream.bindings.processItem-out-1.destination=electronics",
@@ -144,7 +144,7 @@ public class MultipleFunctionsInSameAppTests {
 		try (ConfigurableApplicationContext context = app.run(
 				"--server.port=0",
 				"--spring.jmx.enabled=false",
-				"--spring.cloud.stream.function.definition=processItem;analyze",
+				"--spring.cloud.function.definition=processItem;analyze",
 				"--spring.cloud.stream.bindings.processItem-in-0.destination=purchases",
 				"--spring.cloud.stream.kafka.streams.bindings.processItem-in-0.consumer.startOffset=latest",
 				"--spring.cloud.stream.bindings.processItem-in-0.binder=kafka1",

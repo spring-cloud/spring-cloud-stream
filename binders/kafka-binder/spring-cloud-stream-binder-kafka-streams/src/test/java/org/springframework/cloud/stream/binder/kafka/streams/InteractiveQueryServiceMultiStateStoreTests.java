@@ -86,7 +86,7 @@ class InteractiveQueryServiceMultiStateStoreTests {
 				.web(WebApplicationType.NONE)
 				.run("--server.port=0",
 						"--spring.jmx.enabled=false",
-						"--spring.cloud.stream.function.definition=app1;app2",
+						"--spring.cloud.function.definition=app1;app2",
 						"--spring.cloud.stream.function.bindings.app1-in-0=input1",
 						"--spring.cloud.stream.function.bindings.app2-in-0=input2",
 						"--spring.cloud.stream.kafka.streams.binder.functions.app1.application-id=stateStoreTestApp1",
@@ -117,7 +117,7 @@ class InteractiveQueryServiceMultiStateStoreTests {
 				.web(WebApplicationType.NONE)
 				.run("--server.port=0",
 						"--spring.jmx.enabled=false",
-						"--spring.cloud.stream.function.definition=app1;app2",
+						"--spring.cloud.function.definition=app1;app2",
 						"--spring.cloud.stream.function.bindings.app1-in-0=input1",
 						"--spring.cloud.stream.function.bindings.app2-in-0=input2",
 						"--spring.cloud.stream.kafka.streams.binder.functions.app1.application-id=stateStoreTestApp3",
@@ -152,7 +152,7 @@ class InteractiveQueryServiceMultiStateStoreTests {
 			.web(WebApplicationType.NONE)
 			.run("--server.port=0",
 				"--spring.jmx.enabled=false",
-				"--spring.cloud.stream.function.definition=app1",
+				"--spring.cloud.function.definition=app1",
 				"--spring.cloud.stream.function.bindings.app1-in-0=input1",
 				"--spring.cloud.stream.kafka.streams.binder.functions.app1.application-id=storeQueryParameterCustomizerIsAppliedAppId",
 				"--spring.cloud.stream.kafka.streams.binder.brokers=" + embeddedKafka.getBrokersAsString())

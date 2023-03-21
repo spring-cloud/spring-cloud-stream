@@ -31,7 +31,6 @@ import org.springframework.util.StringUtils;
  * @author Soby Chacko
  * @since 2.1
  */
-@ConfigurationProperties("spring.cloud.stream.function")
 public class StreamFunctionProperties {
 
 	/**
@@ -52,11 +51,11 @@ public class StreamFunctionProperties {
 
 	private Map<String, Boolean> reactive = new HashMap<>();
 
-	public boolean isComposeTo() {
+	boolean isComposeTo() {
 		return composeTo;
 	}
 
-	public boolean isComposeFrom() {
+	boolean isComposeFrom() {
 		return composeFrom;
 	}
 
@@ -97,11 +96,11 @@ public class StreamFunctionProperties {
 		this.bindings = bindings;
 	}
 
-	public boolean isBatchMode() {
+	boolean isBatchMode() {
 		return this.batchMode;
 	}
 
-	public void setBatchMode(boolean batchMode) {
+	void setBatchMode(boolean batchMode) {
 		this.batchMode = batchMode;
 	}
 
@@ -114,11 +113,24 @@ public class StreamFunctionProperties {
 		return list;
 	}
 
-	public Map<String, Boolean> getReactive() {
+	Map<String, Boolean> getReactive() {
 		return this.reactive;
 	}
 
-	public void setReactive(Map<String, Boolean> reactive) {
+	void setReactive(Map<String, Boolean> reactive) {
 		this.reactive = reactive;
+	}
+
+	@ConfigurationProperties("spring.cloud.stream.function")
+	public static class StreamFunctionConfigurationProperties {
+		private Map<String, String> bindings = new HashMap<>();
+
+		public Map<String, String> getBindings() {
+			return this.bindings;
+		}
+
+		public void setBindings(Map<String, String> bindings) {
+			this.bindings = bindings;
+		}
 	}
 }

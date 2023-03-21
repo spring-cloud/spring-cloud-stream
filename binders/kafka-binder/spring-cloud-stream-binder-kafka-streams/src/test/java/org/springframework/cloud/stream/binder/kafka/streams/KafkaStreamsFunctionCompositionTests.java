@@ -87,7 +87,7 @@ public class KafkaStreamsFunctionCompositionTests {
 		try (ConfigurableApplicationContext context = app.run(
 				"--server.port=0",
 				"--spring.jmx.enabled=false",
-				"--spring.cloud.stream.function.definition=fooFunc|anotherFooFunc;anotherProcess",
+				"--spring.cloud.function.definition=fooFunc|anotherFooFunc;anotherProcess",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.commit.interval.ms=1000",
 				"--spring.cloud.stream.kafka.streams.binder.brokers=" + embeddedKafka.getBrokersAsString())) {
 
@@ -121,7 +121,7 @@ public class KafkaStreamsFunctionCompositionTests {
 		try (ConfigurableApplicationContext context = app.run(
 				"--server.port=0",
 				"--spring.jmx.enabled=false",
-				"--spring.cloud.stream.function.definition=fooFunc|anotherFooFunc;anotherProcess",
+				"--spring.cloud.function.definition=fooFunc|anotherFooFunc;anotherProcess",
 				"--spring.cloud.stream.bindings.fooFuncanotherFooFunc-in-0.destination=foo",
 				"--spring.cloud.stream.bindings.fooFuncanotherFooFunc-out-0.destination=bar",
 				"--spring.cloud.stream.bindings.anotherProcess-in-0.destination=buzz",
@@ -157,7 +157,7 @@ public class KafkaStreamsFunctionCompositionTests {
 		try (ConfigurableApplicationContext context = app.run(
 				"--server.port=0",
 				"--spring.jmx.enabled=false",
-				"--spring.cloud.stream.function.definition=fooFunc|anotherProcess",
+				"--spring.cloud.function.definition=fooFunc|anotherProcess",
 				"--spring.cloud.stream.bindings.fooFuncanotherProcess-in-0.destination=foo",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.commit.interval.ms=1000",
 				"--spring.cloud.stream.kafka.streams.binder.brokers=" + embeddedKafka.getBrokersAsString())) {
@@ -187,7 +187,7 @@ public class KafkaStreamsFunctionCompositionTests {
 		try (ConfigurableApplicationContext context = app.run(
 				"--server.port=0",
 				"--spring.jmx.enabled=false",
-				"--spring.cloud.stream.function.definition=fooBiFunc|anotherProcess",
+				"--spring.cloud.function.definition=fooBiFunc|anotherProcess",
 				"--spring.cloud.stream.bindings.fooBiFuncanotherProcess-in-0.destination=foo",
 				"--spring.cloud.stream.bindings.fooBiFuncanotherProcess-in-1.destination=foo-1",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.commit.interval.ms=1000",
@@ -222,7 +222,7 @@ public class KafkaStreamsFunctionCompositionTests {
 				"--server.port=0",
 				"--spring.jmx.enabled=false",
 				"--spring.cloud.stream.kafka.streams.binder.applicationId=my-app-id",
-				"--spring.cloud.stream.function.definition=fooBiFunc|anotherFooFunc|yetAnotherFooFunc|lastFunctionInChain",
+				"--spring.cloud.function.definition=fooBiFunc|anotherFooFunc|yetAnotherFooFunc|lastFunctionInChain",
 				"--spring.cloud.stream.function.bindings.fooBiFuncanotherFooFuncyetAnotherFooFunclastFunctionInChain-in-0=input1",
 				"--spring.cloud.stream.function.bindings.fooBiFuncanotherFooFuncyetAnotherFooFunclastFunctionInChain-in-1=input2",
 				"--spring.cloud.stream.function.bindings.fooBiFuncanotherFooFuncyetAnotherFooFunclastFunctionInChain-out-0=output",
@@ -265,7 +265,7 @@ public class KafkaStreamsFunctionCompositionTests {
 				"--server.port=0",
 				"--spring.jmx.enabled=false",
 				"--spring.cloud.stream.kafka.streams.binder.applicationId=my-app-id-xyz",
-				"--spring.cloud.stream.function.definition=curriedFunc|anotherFooFunc|yetAnotherFooFunc|lastFunctionInChain",
+				"--spring.cloud.function.definition=curriedFunc|anotherFooFunc|yetAnotherFooFunc|lastFunctionInChain",
 				"--spring.cloud.stream.function.bindings.curriedFuncanotherFooFuncyetAnotherFooFunclastFunctionInChain-in-0=input1",
 				"--spring.cloud.stream.function.bindings.curriedFuncanotherFooFuncyetAnotherFooFunclastFunctionInChain-in-1=input2",
 				"--spring.cloud.stream.function.bindings.curriedFuncanotherFooFuncyetAnotherFooFunclastFunctionInChain-out-0=output",
@@ -309,7 +309,7 @@ public class KafkaStreamsFunctionCompositionTests {
 		try (ConfigurableApplicationContext context = app.run(
 				"--server.port=0",
 				"--spring.jmx.enabled=false",
-				"--spring.cloud.stream.function.definition=fooFunc|anotherProcess",
+				"--spring.cloud.function.definition=fooFunc|anotherProcess",
 				"--spring.cloud.stream.bindings.fooFuncanotherProcess-in-0.destination=foo",
 				"--spring.cloud.stream.bindings.fooFuncanotherProcess-out-0.destination=bar",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.commit.interval.ms=1000",
