@@ -839,7 +839,12 @@ public class FunctionConfiguration {
 						}
 						else {
 							this.inputCount = FunctionTypeUtils.getInputCount(function);
-							this.outputCount = this.getOutputCount(function, false);
+							if (function.isWrappedBiConsumer()) {
+								this.outputCount = 0;
+							}
+							else {
+								this.outputCount = this.getOutputCount(function, false);
+							}
 						}
 
 						AtomicReference<BindableFunctionProxyFactory> proxyFactory = new AtomicReference<>();
