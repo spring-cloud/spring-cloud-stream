@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2022 the original author or authors.
+ * Copyright 2019-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -34,6 +35,7 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.springframework.cloud.function.context.FunctionCatalog;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.Sinks;
@@ -78,6 +80,7 @@ import static org.junit.Assert.fail;
 /**
  *
  * @author Oleg Zhurakousky
+ * @author Soby Chacko
  *
  */
 public class ImplicitFunctionBindingTests {
@@ -654,6 +657,18 @@ public class ImplicitFunctionBindingTests {
 				// ignore
 			}
 
+		}
+	}
+
+	@Test
+	void functionInvocationWrapperReflectsBiConsumerTargetFunctionType() {
+		System.clearProperty("spring.cloud.function.definition");
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+			TestChannelBinderConfiguration.getCompleteConfiguration(WrappedBiConsumerAutoConfiguration.class))
+				.web(WebApplicationType.NONE).run("--spring.jmx.enabled=false")) {
+			FunctionCatalog functionCatalog = context.getBean(FunctionCatalog.class);
+			FunctionInvocationWrapper functionWrapper = functionCatalog.lookup("testBiConsumer");
+			assertThat(functionWrapper.isWrappedBiConsumer()).isTrue();
 		}
 	}
 
@@ -1615,6 +1630,16 @@ public class ImplicitFunctionBindingTests {
 				System.out.println(value);
 			};
 		}
+	}
+
+	@EnableAutoConfiguration
+	public static class WrappedBiConsumerAutoConfiguration {
+
+		@Bean
+		public BiConsumer<String, Map<Object, String>> testBiConsumer() {
+			return (a, b) -> { };
+		}
+
 	}
 
 	public static class Person {
