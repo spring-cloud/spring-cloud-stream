@@ -210,6 +210,32 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		return (MessageSourceCustomizer<S>) this.sourceCustomizer;
 	}
 
+	private String resolveBinderName(String bindingName, BindingServiceProperties bindingServiceProperties) {
+		String binder = bindingServiceProperties == null ? null : bindingServiceProperties.getBindings().get(bindingName).getBinder();
+		if (!StringUtils.hasText(binder)) {
+			return resolveFromDefaultBinder();
+		}
+		return binder;
+	}
+
+	private String resolveFromDefaultBinder() {
+		DefaultBinderTypeRegistry binderTypeRegistry =
+			AbstractMessageChannelBinder.this.getApplicationContext().getBean(DefaultBinderTypeRegistry.class);
+		Map<String, BinderType> binderTypes = binderTypeRegistry.getAll();
+		Assert.isTrue(binderTypes.entrySet().size() == 1, "More than one binder types found, but no binder specified on the binding");
+		return binderTypes.keySet().iterator().next();
+	}
+
+	private String resolveBinderType(String bindingName, BindingServiceProperties bindingServiceProperties) {
+		String binder = bindingServiceProperties == null ? null : bindingServiceProperties.getBindings().get(bindingName).getBinder();
+		if (!StringUtils.hasText(binder)) {
+			return resolveFromDefaultBinder();
+		}
+		else {
+			return bindingServiceProperties.getBinders().get(binder).getType();
+		}
+	}
+
 	/**
 	 * Binds an outbound channel to a given destination. The implementation delegates to
 	 * {@link ProvisioningProvider#provisionProducerDestination(String, ProducerProperties)}
@@ -290,12 +316,12 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 
 			@Override
 			public String getBinderName() {
-				return bsp == null ? null : bsp.getBinder(destination);
+				return resolveBinderName(getBindingName(), bsp);
 			}
 
 			@Override
 			public String getBinderType() {
-				return bsp == null ? null : bsp.getBinderType(this.getBinderName());
+				return resolveBinderType(getBindingName(), bsp);
 			}
 
 			@Override
@@ -469,12 +495,12 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 
 				@Override
 				public String getBinderName() {
-					return bsp == null ? null : bsp.getBinder(name);
+					return resolveBinderName(getBindingName(), bsp);
 				}
 
 				@Override
 				public String getBinderType() {
-					return bsp == null ? null : bsp.getBinderType(this.getBinderName());
+					return resolveBinderType(getBindingName(), bsp);
 				}
 
 				@Override
@@ -568,12 +594,12 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 
 			@Override
 			public String getBinderName() {
-				return bsp == null ? null : bsp.getBinder(name);
+				return resolveBinderName(getBindingName(), bsp);
 			}
 
 			@Override
 			public String getBinderType() {
-				return bsp == null ? null : bsp.getBinderType(this.getBinderName());
+				return resolveBinderType(getBindingName(), bsp);
 			}
 
 			@Override
