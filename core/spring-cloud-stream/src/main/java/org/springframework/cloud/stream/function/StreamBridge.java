@@ -135,19 +135,23 @@ public final class StreamBridge implements StreamOperations, SmartInitializingSi
 		this.streamBridgeFunctionCache = new HashMap<>();
 	}
 
+	@Override
 	public boolean send(String bindingName, Object data) {
 		BindingProperties bindingProperties = this.bindingServiceProperties.getBindingProperties(bindingName);
 		MimeType contentType = StringUtils.hasText(bindingProperties.getContentType()) ? MimeType.valueOf(bindingProperties.getContentType()) : MimeTypeUtils.APPLICATION_JSON;
 		return this.send(bindingName, data, contentType);
 	}
 
+	@Override
 	public boolean send(String bindingName, Object data, MimeType outputContentType) {
 		return this.send(bindingName, null, data, outputContentType);
 	}
+	@Override
 	public boolean send(String bindingName, @Nullable String binderName, Object data) {
 		return this.send(bindingName, binderName, data, MimeTypeUtils.APPLICATION_JSON);
 	}
 
+	@Override
 	@SuppressWarnings({ "unchecked"})
 	public boolean send(String bindingName, @Nullable String binderName, Object data, MimeType outputContentType) {
 		if (!this.initialized) {

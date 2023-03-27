@@ -237,6 +237,11 @@ public class BindingServiceProperties
 		}
 	}
 
+	public String getBinderType(String binderName) {
+		BinderProperties bp = this.binders.get(binderName);
+		return bp != null ? bp.getType() : this.bindings.keySet().iterator().next();
+	}
+
 	public String getBinder(String bindingName) {
 		return getBindingProperties(bindingName).getBinder();
 	}

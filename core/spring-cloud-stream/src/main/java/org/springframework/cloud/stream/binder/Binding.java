@@ -48,6 +48,7 @@ public interface Binding<T> extends Pausable {
 	 *
 	 * @see BindingsEndpoint
 	 */
+	@Override
 	default void start() {
 	}
 
@@ -58,6 +59,7 @@ public interface Binding<T> extends Pausable {
 	 *
 	 * @see BindingsEndpoint
 	 */
+	@Override
 	default void stop() {
 	}
 
@@ -77,6 +79,7 @@ public interface Binding<T> extends Pausable {
 	 *
 	 * @see BindingsEndpoint
 	 */
+	@Override
 	default void pause() {
 		this.stop();
 	}
@@ -89,6 +92,7 @@ public interface Binding<T> extends Pausable {
 	 *
 	 * @see BindingsEndpoint
 	 */
+	@Override
 	default void resume() {
 		this.start();
 	}
@@ -96,6 +100,7 @@ public interface Binding<T> extends Pausable {
 	/**
 	 * @return 'true' if the target component represented by this instance is running.
 	 */
+	@Override
 	default boolean isRunning() {
 		return false;
 	}
@@ -115,6 +120,26 @@ public interface Binding<T> extends Pausable {
 	 * @since 2.2
 	 */
 	default String getBindingName() {
+		return null;
+	}
+
+	/**
+	 * Returns the name of the binder for this binding.
+	 * @return binder name
+	 *
+	 * @since 4.0.2
+	 */
+	default String getBinderName() {
+		return null;
+	}
+
+	/**
+	 * Returns the type of the binder for this binding.
+	 * @return binder name
+	 *
+	 * @since 4.0.2
+	 */
+	default String getBinderType() {
 		return null;
 	}
 

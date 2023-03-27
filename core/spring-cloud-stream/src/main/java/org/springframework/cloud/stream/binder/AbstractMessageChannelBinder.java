@@ -308,6 +308,8 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 			throw new IllegalStateException("No capable binding targets found.");
 		}
 
+
+		BindingServiceProperties bsp = this.getBindingServiceProperties();
 		Binding<MessageChannel> binding = new DefaultBinding<MessageChannel>(destination,
 				outputChannel, producerMessageHandler instanceof Lifecycle producerMessageHandlerWithLifecycle
 			? producerMessageHandlerWithLifecycle : null) {
@@ -320,6 +322,16 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 			@Override
 			public boolean isInput() {
 				return false;
+			}
+
+			@Override
+			public String getBinderName() {
+				return bsp == null ? null : bsp.getBinder(destination);
+			}
+
+			@Override
+			public String getBinderType() {
+				return bsp == null ? null : bsp.getBinderType(this.getBinderName());
 			}
 
 			@Override
@@ -480,6 +492,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 				consumerEndpointWithLifecycle.start();
 			}
 
+			BindingServiceProperties bsp = this.getBindingServiceProperties();
 			Binding<MessageChannel> binding = new DefaultBinding<MessageChannel>(name,
 					group, inputChannel, consumerEndpoint instanceof Lifecycle consumerEndpointWithLifecycle
 							? consumerEndpointWithLifecycle : null) {
@@ -492,6 +505,16 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 				@Override
 				public boolean isInput() {
 					return true;
+				}
+
+				@Override
+				public String getBinderName() {
+					return bsp == null ? null : bsp.getBinder(name);
+				}
+
+				@Override
+				public String getBinderType() {
+					return bsp == null ? null : bsp.getBinderType(this.getBinderName());
 				}
 
 				@Override
@@ -567,6 +590,8 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		if (properties.isAutoStartup() && resources.getSource() instanceof Lifecycle sourceWithLifecycle) {
 			sourceWithLifecycle.start();
 		}
+
+		BindingServiceProperties bsp = this.getBindingServiceProperties();
 		Binding<PollableSource<MessageHandler>> binding = new DefaultBinding<PollableSource<MessageHandler>>(
 				name, group, inboundBindTarget, resources.getSource() instanceof Lifecycle sourceWithLifecycle
 						? sourceWithLifecycle : null) {
@@ -579,6 +604,16 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 			@Override
 			public boolean isInput() {
 				return true;
+			}
+
+			@Override
+			public String getBinderName() {
+				return bsp == null ? null : bsp.getBinder(name);
+			}
+
+			@Override
+			public String getBinderType() {
+				return bsp == null ? null : bsp.getBinderType(this.getBinderName());
 			}
 
 			@Override
