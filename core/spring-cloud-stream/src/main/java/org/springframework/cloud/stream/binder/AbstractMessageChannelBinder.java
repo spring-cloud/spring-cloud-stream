@@ -1020,6 +1020,15 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		}
 	}
 
+	private BindingServiceProperties getBindingServiceProperties() {
+		try {
+			return this.getApplicationContext().getBean(BindingServiceProperties.class);
+		}
+		catch (Exception e) {
+			return null;
+		}
+	}
+
 	protected static class ErrorInfrastructure {
 
 		private final SubscribableChannel errorChannel;
