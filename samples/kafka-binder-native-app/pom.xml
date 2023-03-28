@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>com.example</groupId>
 	<artifactId>kafka-binder-native-app</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>0.0.1</version>
 	<name>kafka-binder-native-app</name>
 	<description>Native Sample App based on Kafka Binder</description>
 	<properties>
