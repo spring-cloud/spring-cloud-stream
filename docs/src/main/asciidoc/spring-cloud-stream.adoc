@@ -626,7 +626,7 @@ delegating incoming requests to stream via StreamBridge mechanism.
 public class WebSourceApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(WebSourceApplication.class, "--spring.cloud.stream.source=toStream");
+		SpringApplication.run(WebSourceApplication.class, "--spring.cloud.stream.output-bindings=toStream");
 	}
 
 	@Autowired
@@ -647,11 +647,11 @@ source functions defined (e.g., Supplier bean) leaving the framework with no tri
 destination auto-provisioning if necessary) for non existing bindings on the first call to its `send(..)` operation caching it for 
 subsequent reuse (see <<StreamBridge and Dynamic Destinations>> for more details). 
 
-However, if you want to pre-create an output binding at the initialization (startup) time you can benefit from `spring.cloud.stream.source` property where you can declare the name of your sources.
+However, if you want to pre-create an output binding at the initialization (startup) time you can benefit from `spring.cloud.stream.output-bindings` property where you can declare the name of your sources.
 The provided name will be used as a trigger to create a source binding.
 So in the preceding example the name of the output binding will be `toStream-out-0` which is consistent with the binding naming
 convention used by functions (see <<Binding and Binding names>>). You can use `;` to signify multiple sources (multiple output bindings)
-(e.g., `--spring.cloud.stream.source=foo;bar`)
+(e.g., `--spring.cloud.stream.output-bindings=foo;bar`)
 
 Also, note that `streamBridge.send(..)` method takes an `Object` for data. This means you can send POJO or `Message` to it and it
 will go through the same routine when sending output as if it was from any Function or Supplier providing the same level
@@ -687,7 +687,7 @@ public class WebSourceApplication {
 ----
 
 As you can see the preceding example is very similar to the previous one with the exception of explicit binding instruction provided via
-`spring.cloud.stream.source` property (which is not provided).
+`spring.cloud.stream.output-bindings` property (which is not provided).
 Here we're sending data to `myDestination` name which does not exist as a binding. Therefore such name will be treated as dynamic destination
 as described in <<Routing FROM Consumer>> section.
 
@@ -754,7 +754,7 @@ public boolean send(String bindingName, @Nullable String binderType, Object data
 
 As you can see there is one additional argument that you can provide - `binderType`, telling BindingService which binder to use when creating dynamic binding. 
 
-NOTE: For cases where `spring.cloud.stream.source` property is used or the binding was already created under different binder, the `binderType` 
+NOTE: For cases where `spring.cloud.stream.output-bindings` property is used or the binding was already created under different binder, the `binderType` 
 argument will have no effect.
 
 ====== Using channel interceptors with StreamBridge
