@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>com.example</groupId>
 	<artifactId>stream-function-batch-producer-consumer</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>0.0.1</version>
 	<name>stream-function-batch-producer-consumer</name>
 	<description>Sample app using stream functions with batch producer and consumer using kafka</description>
 	<properties>
