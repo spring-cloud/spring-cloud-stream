@@ -15,16 +15,18 @@
 	<description>Native Sample App based on Kafka Binder</description>
 	<properties>
 		<java.version>17</java.version>
-		<spring-cloud.version>2022.0.2-SNAPSHOT</spring-cloud.version>
+		<spring-cloud-stream.version>4.0.2-SNAPSHOT</spring-cloud-stream.version>
 	</properties>
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-stream</artifactId>
+			<version>${spring-cloud-stream.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-stream-binder-kafka</artifactId>
+			<version>${spring-cloud-stream.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.kafka</groupId>
@@ -39,6 +41,7 @@
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-stream-test-binder</artifactId>
+			<version>${spring-cloud-stream.version}</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
@@ -47,17 +50,6 @@
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
-	<dependencyManagement>
-		<dependencies>
-			<dependency>
-				<groupId>org.springframework.cloud</groupId>
-				<artifactId>spring-cloud-dependencies</artifactId>
-				<version>${spring-cloud.version}</version>
-				<type>pom</type>
-				<scope>import</scope>
-			</dependency>
-		</dependencies>
-	</dependencyManagement>
 
 	<build>
 		<plugins>
