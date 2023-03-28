@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>3.0.2</version>
+		<version>3.0.5</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.example</groupId>
@@ -15,7 +15,7 @@
 	<description>Native Sample App based on Kafka Binder</description>
 	<properties>
 		<java.version>17</java.version>
-		<spring-cloud-stream.version>4.0.2-SNAPSHOT</spring-cloud-stream.version>
+		<spring-cloud-stream.version>4.0.2</spring-cloud-stream.version>
 	</properties>
 	<dependencies>
 		<dependency>
