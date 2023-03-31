@@ -424,19 +424,21 @@ public class KafkaTopicProvisioner implements
 					partitions.all().get(this.operationTimeout, TimeUnit.SECONDS);
 				}
 				else if (tolerateLowerPartitionsOnBroker) {
-					logger.warn("The number of expected partitions was: "
+					logger.warn("The number of expected partitions for topic "
+							+ topicName + " was: "
 							+ partitionCount + ", but " + partitionSize
 							+ (partitionSize > 1 ? " have " : " has ")
-							+ "been found instead." + "There will be "
+							+ "been found instead. " + "There will be "
 							+ (effectivePartitionCount - partitionSize)
 							+ " idle consumers");
 				}
 				else {
 					throw new ProvisioningException(
-							"The number of expected partitions was: " + partitionCount
+							"The number of expected partitions for topic " + topicName
+									+ " was: " + partitionCount
 									+ ", but " + partitionSize
 									+ (partitionSize > 1 ? " have " : " has ")
-									+ "been found instead."
+									+ "been found instead. "
 									+ "Consider either increasing the partition count of the topic or enabling "
 									+ "`autoAddPartitions`");
 				}
@@ -585,15 +587,17 @@ public class KafkaTopicProvisioner implements
 				int partitionSize = CollectionUtils.isEmpty(partitions) ? 0 : partitions.size();
 				if (partitionSize < partitionCount) {
 					if (tolerateLowerPartitionsOnBroker) {
-						logger.warn("The number of expected partitions was: "
+						logger.warn("The number of expected partitions for topic "
+								+ topicName + " was: "
 								+ partitionCount + ", but " + partitionSize
 								+ (partitionSize > 1 ? " have " : " has ")
-								+ "been found instead." + "There will be "
+								+ "been found instead. " + "There will be "
 								+ (partitionCount - partitionSize) + " idle consumers");
 					}
 					else {
 						throw new IllegalStateException(
-								"The number of expected partitions was: " + partitionCount
+								"The number of expected partitions for topic " + topicName
+									+ " was: " + partitionCount
 										+ ", but " + partitionSize
 										+ (partitionSize > 1 ? " have " : " has ")
 										+ "been found instead");
