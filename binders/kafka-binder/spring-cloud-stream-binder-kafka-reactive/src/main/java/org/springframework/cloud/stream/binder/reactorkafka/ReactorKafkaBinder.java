@@ -92,9 +92,9 @@ public class ReactorKafkaBinder
 
 	private ProducerConfigCustomizer producerConfigCustomizer;
 
-	private ReceiverOptionsCustomizer receiverOptionsCustomizer = (name, opts) -> opts;
+	private ReceiverOptionsCustomizer<Object, Object> receiverOptionsCustomizer = (name, opts) -> opts;
 
-	private SenderOptionsCustomizer senderOptionsCustomizer = (name, opts) -> opts;
+	private SenderOptionsCustomizer<Object, Object> senderOptionsCustomizer = (name, opts) -> opts;
 
 	public ReactorKafkaBinder(KafkaBinderConfigurationProperties configurationProperties,
 			KafkaTopicProvisioner provisioner) {
@@ -111,6 +111,7 @@ public class ReactorKafkaBinder
 		this.producerConfigCustomizer = producerConfigCustomizer;
 	}
 
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public void receiverOptionsCustomizers(ObjectProvider<ReceiverOptionsCustomizer> customizers) {
 		if (customizers.getIfUnique() != null) {
 			this.receiverOptionsCustomizer = customizers.getIfUnique();
@@ -120,7 +121,7 @@ public class ReactorKafkaBinder
 			ReceiverOptionsCustomizer customizer = (name, opts) -> {
 				ReceiverOptions<Object, Object> last = null;
 				for (ReceiverOptionsCustomizer cust: list) {
-					last = cust.apply(name, opts);
+					last = (ReceiverOptions<Object, Object>) cust.apply(name, opts);
 				}
 				return last;
 			};
@@ -130,6 +131,7 @@ public class ReactorKafkaBinder
 		}
 	}
 
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public void senderOptionsCustomizers(ObjectProvider<SenderOptionsCustomizer> customizers) {
 		if (customizers.getIfUnique() != null) {
 			this.senderOptionsCustomizer = customizers.getIfUnique();
@@ -139,7 +141,7 @@ public class ReactorKafkaBinder
 			SenderOptionsCustomizer customizer = (name, opts) -> {
 				SenderOptions<Object, Object> last = null;
 				for (SenderOptionsCustomizer cust: list) {
-					last = cust.apply(name, opts);
+					last = (SenderOptions<Object, Object>) cust.apply(name, opts);
 				}
 				return last;
 			};

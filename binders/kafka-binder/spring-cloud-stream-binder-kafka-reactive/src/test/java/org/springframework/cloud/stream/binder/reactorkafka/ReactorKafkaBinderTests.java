@@ -220,6 +220,7 @@ public class ReactorKafkaBinderTests {
 		provisioner.setMetadataRetryOperations(new RetryTemplate());
 		ReactorKafkaBinder binder = new ReactorKafkaBinder(binderProps, provisioner);
 		binder.setApplicationContext(new GenericApplicationContext());
+		@SuppressWarnings("rawtypes")
 		ObjectProvider<SenderOptionsCustomizer> cust = mock(ObjectProvider.class);
 		AtomicBoolean custCalled = new AtomicBoolean();
 		given(cust.getIfUnique()).willReturn((name, opts) -> {
