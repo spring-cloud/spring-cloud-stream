@@ -26,6 +26,7 @@ import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.common.serialization.StringDeserializer;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -167,7 +168,7 @@ class ReactorKafkaBinderIntegrationTests {
 		}
 
 		@Bean
-		ReceiverOptionsCustomizer cust1() {
+		ReceiverOptionsCustomizer<?, ?> cust1() {
 			return (t, u) -> {
 				recOptsCustOrder.add("one");
 				return u;
@@ -175,12 +176,13 @@ class ReactorKafkaBinderIntegrationTests {
 		}
 
 		@Bean
-		ReceiverOptionsCustomizer cust2() {
-			return new ReceiverOptionsCustomizer() {
+		ReceiverOptionsCustomizer<String, byte[]> cust2() {
+			return new ReceiverOptionsCustomizer<>() {
 
 				@Override
-				public ReceiverOptions<Object, Object> apply(String t, ReceiverOptions<Object, Object> u) {
+				public ReceiverOptions<String, byte[]> apply(String t, ReceiverOptions<String, byte[]> u) {
 					recOptsCustOrder.add("two");
+					u.withKeyDeserializer(new StringDeserializer());
 					return u;
 				}
 
@@ -188,7 +190,6 @@ class ReactorKafkaBinderIntegrationTests {
 				public int getOrder() {
 					return -1;
 				}
-
 
 			};
 		}

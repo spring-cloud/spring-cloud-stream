@@ -27,13 +27,18 @@ import org.springframework.core.Ordered;
  * the second is the {@link ReceiverOptions} to customize. Return the customized
  * {@link ReceiverOptions}. Applied in {@link Ordered order} if multiple customizers are
  * found.
+ * <p>
+ * Generic since 4.0.3 to allow customization of deserializers.
+ *
+ * @param <K> the key type.
+ * @param <V> the value type.
  *
  * @author Gary Russell
  * @since 4.0.2
  *
  */
-public interface ReceiverOptionsCustomizer
-		extends BiFunction<String, ReceiverOptions<Object, Object>, ReceiverOptions<Object, Object>>, Ordered {
+public interface ReceiverOptionsCustomizer<K, V>
+		extends BiFunction<String, ReceiverOptions<K, V>, ReceiverOptions<K, V>>, Ordered {
 
 	@Override
 	default int getOrder() {

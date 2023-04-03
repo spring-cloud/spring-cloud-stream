@@ -27,13 +27,18 @@ import org.springframework.core.Ordered;
  * second is the {@link SenderOptions} to customize. Return the customized
  * {@link SenderOptions}. Applied in {@link Ordered order} if multiple customizers are
  * found.
+ * <p>
+ * Generic since 4.0.3 to allow customization of serializers.
+ *
+ * @param <K> the key type.
+ * @param <V> the value type.
  *
  * @author Gary Russell
  * @since 4.0.2
  *
  */
-public interface SenderOptionsCustomizer
-		extends BiFunction<String, SenderOptions<Object, Object>, SenderOptions<Object, Object>>, Ordered {
+public interface SenderOptionsCustomizer<K, V>
+		extends BiFunction<String, SenderOptions<K, V>, SenderOptions<K, V>>, Ordered {
 
 	@Override
 	default int getOrder() {
