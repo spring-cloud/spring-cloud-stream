@@ -104,6 +104,21 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 		this.binderCustomizer = binderCustomizer;
 	}
 
+	/**
+	 * Replaces the existing binder configurations - useful in AOT processing where the binding service properties
+	 * have to be manually loaded after the binder factory is constructed.
+	 *
+	 * @param binderConfigurations the updated configurations
+	 */
+	void updateBinderConfigurations(Map<String, BinderConfiguration> binderConfigurations) {
+		this.binderConfigurations.clear();
+		this.binderConfigurations.putAll(binderConfigurations);
+	}
+
+	BinderTypeRegistry getBinderTypeRegistry() {
+		return this.binderTypeRegistry;
+	}
+
 	@Override
 	public void setApplicationContext(ApplicationContext applicationContext) {
 		Assert.isInstanceOf(ConfigurableApplicationContext.class, applicationContext);
@@ -126,17 +141,14 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@Override
-	public synchronized <T> Binder<T, ?, ?> getBinder(String name,
-			Class<? extends T> bindingTargetType) {
 
+	public synchronized <T> Binder<T, ?, ?> getBinder(String name, Class<? extends T> bindingTargetType) {
 		String binderName = StringUtils.hasText(name) ? name : this.defaultBinder;
 
-		Map<String, Binder> binders = this.context == null ? Collections.emptyMap()
-				: this.context.getBeansOfType(Binder.class);
+		Map<String, Binder> binders = this.context == null ? Collections.emptyMap() : this.context.getBeansOfType(Binder.class);
 		Binder<T, ConsumerProperties, ProducerProperties> binder;
 		if (StringUtils.hasText(binderName) && binders.containsKey(binderName)) {
-			binder = (Binder<T, ConsumerProperties, ProducerProperties>) this.context
-					.getBean(binderName);
+			binder = (Binder<T, ConsumerProperties, ProducerProperties>) this.context.getBean(binderName);
 		}
 		else if (binders.size() == 1) {
 			binder = binders.values().iterator().next();
@@ -149,7 +161,7 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 		}
 		else {
 			/*
-			 * This is the fall back to the old bootstrap that relies on spring.binders.
+			 * This is the fallback to the old bootstrap that relies on spring.binders.
 			 */
 			binder = this.doGetBinder(binderName, bindingTargetType);
 		}
@@ -160,27 +172,37 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 	}
 
 	private <T> Binder<T, ConsumerProperties, ProducerProperties> doGetBinder(String name, Class<? extends T> bindingTargetType) {
-		if (CollectionUtils.isEmpty(this.binderChildContextInitializers)) {
-			return this.doGetBinderConventional(name, bindingTargetType);
+		// If child initializers - use AOT lookup
+		if (!CollectionUtils.isEmpty(this.binderChildContextInitializers)) {
+			return this.doGetBinderAOT(name, bindingTargetType);
 		}
-		else {
-			if ((!StringUtils.hasText(name) || this.defaultBinder != null) && this.binderChildContextInitializers.size() == 1) {
+		return this.doGetBinderConventional(name, bindingTargetType);
+	}
+
+	private <T> Binder<T, ConsumerProperties, ProducerProperties> doGetBinderAOT(String name, Class<? extends T> bindingTargetType) {
+		// If neither name nor default given - return single or fail when > 1
+		if (!StringUtils.hasText(name) && !StringUtils.hasText(this.defaultBinder)) {
+			if (this.binderChildContextInitializers.size() == 1) {
 				String configurationName = this.binderChildContextInitializers.keySet().iterator().next();
+				this.logger.debug("No specific name or default given - using single available child initializer '" + configurationName + "'");
 				return this.getBinderInstance(configurationName);
 			}
-			else if (this.defaultBinder != null && this.binderChildContextInitializers.size() > 1) {
-				// Handling default binder when different binders are present on the classpath.
-				for (String binderName : this.binderChildContextInitializers.keySet()) {
-					if (binderName.equals(this.defaultBinder)) {
-						return this.getBinderInstance(binderName);
-					}
-				}
-				throw new IllegalStateException("Default binder provided, but can't determine which binder to initialize");
-			}
-			else {
-				throw new IllegalStateException("Can't determine which binder to use: " + name + "/" + this.binderChildContextInitializers.size());
-			}
+			throw new IllegalStateException("No specific name or default given - can't determine which binder to use");
 		}
+
+		// Prefer specific name over default
+		String configurationName = name;
+		if (!StringUtils.hasText(configurationName)) {
+			configurationName = this.defaultBinder;
+		}
+
+		// Check for matching child initializer
+		if (this.binderChildContextInitializers.containsKey(configurationName)) {
+			return this.getBinderInstance(configurationName);
+		}
+
+		throw new IllegalStateException("Requested binder '" + name + "' did not match available binders: " +
+				this.binderChildContextInitializers.keySet());
 	}
 
 	private <T> Binder<T, ConsumerProperties, ProducerProperties> doGetBinderConventional(String name,
@@ -296,16 +318,19 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 			ConfigurableApplicationContext binderProducingContext;
 			if (this.binderChildContextInitializers.containsKey(configurationName)) {
 				this.logger.info("Using AOT pre-prepared initializer to construct binder child context for " + configurationName);
+				if (binderConfiguration != null) {
+					this.flatten(null, binderConfiguration.getProperties(), binderProperties);
+				}
 				binderProducingContext = this.createUnitializedContextForAOT(configurationName, binderProperties, binderConfiguration);
 				this.binderChildContextInitializers.get(configurationName).initialize(binderProducingContext);
 				binderProducingContext.refresh();
 			}
 			else {
+				this.logger.info("Constructing binder child context for " + configurationName);
 				Assert.state(binderConfiguration != null, "Unknown binder configuration: " + configurationName);
+				this.flatten(null, binderConfiguration.getProperties(), binderProperties);
 				BinderType binderType = this.binderTypeRegistry.get(binderConfiguration.getBinderType());
 				Assert.notNull(binderType, "Binder type " + binderConfiguration.getBinderType() + " is not defined");
-				this.flatten(null, binderConfiguration.getProperties(), binderProperties);
-				this.logger.info("Constructing binder child context for " + configurationName);
 				binderProducingContext = this.initializeBinderContextSimple(configurationName, binderProperties,
 						binderType, binderConfiguration, true);
 			}

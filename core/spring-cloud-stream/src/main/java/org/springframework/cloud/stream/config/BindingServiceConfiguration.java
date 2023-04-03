@@ -90,7 +90,7 @@ public class BindingServiceConfiguration {
 	@Autowired(required = false)
 	private Collection<DefaultBinderFactory.Listener> binderFactoryListeners;
 
-	private static Map<String, BinderConfiguration> getBinderConfigurations(
+	public static Map<String, BinderConfiguration> getBinderConfigurations(
 			BinderTypeRegistry binderTypeRegistry,
 			BindingServiceProperties bindingServiceProperties) {
 

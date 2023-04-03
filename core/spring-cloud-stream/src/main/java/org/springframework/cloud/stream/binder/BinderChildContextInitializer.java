@@ -30,6 +30,10 @@ import org.springframework.beans.factory.aot.BeanRegistrationAotContribution;
 import org.springframework.beans.factory.aot.BeanRegistrationAotProcessor;
 import org.springframework.beans.factory.aot.BeanRegistrationCode;
 import org.springframework.beans.factory.support.RegisteredBean;
+import org.springframework.boot.context.properties.bind.Bindable;
+import org.springframework.boot.context.properties.bind.Binder;
+import org.springframework.cloud.stream.config.BindingServiceConfiguration;
+import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ApplicationContextInitializer;
@@ -85,13 +89,26 @@ public class BinderChildContextInitializer implements ApplicationContextAware, B
 		if (registeredBean.getBeanClass().equals(getClass())) { //&& registeredBean.getBeanFactory().equals(this.context)) {
 			this.logger.debug(() -> "Beginning AOT processing for binder child contexts");
 			ensureBinderFactoryIsSet();
-			Map<String, BinderConfiguration> binderConfigurations = this.binderFactory.getBinderConfigurations();
+			// Load the binding service properties from the environment and update the binder factory with them
+			// in order to pick up any user-declared binders. Without this step only the default binder defined
+			// in 'META-INF/spring.binders' will be processed.
+			BindingServiceProperties declaredBinders = this.createBindingServiceProperties();
+			Map<String, BinderConfiguration> binderConfigurations = BindingServiceConfiguration.getBinderConfigurations(
+					this.binderFactory.getBinderTypeRegistry(), declaredBinders);
+			this.binderFactory.updateBinderConfigurations(binderConfigurations);
 			Map<String, ConfigurableApplicationContext> binderChildContexts = binderConfigurations.entrySet().stream()
 					.map(e -> Map.entry(e.getKey(), binderFactory.createBinderContextForAOT(e.getKey())))
 					.collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 			return new BinderChildContextAotContribution(binderChildContexts);
 		}
 		return null;
+	}
+
+	private BindingServiceProperties createBindingServiceProperties() {
+		BindingServiceProperties bindingServiceProperties = new BindingServiceProperties();
+		Binder.get(this.context.getEnvironment())
+				.bind("spring.cloud.stream", Bindable.ofInstance(bindingServiceProperties));
+		return bindingServiceProperties;
 	}
 
 	private void ensureBinderFactoryIsSet() {
@@ -111,7 +128,7 @@ public class BinderChildContextInitializer implements ApplicationContextAware, B
 	@SuppressWarnings({"unused", "raw"})
 	public BinderChildContextInitializer withChildContextInitializers(
 			Map<String, ApplicationContextInitializer<? extends ConfigurableApplicationContext>> childContextInitializers) {
-		this.logger.debug(() -> "Replacing instance w/ one that uses; child context initializers");
+		this.logger.debug(() -> "Replacing instance w/ one that uses child context initializers");
 		Map<String, ApplicationContextInitializer<ConfigurableApplicationContext>> downcastedInitializers =
 				childContextInitializers.entrySet().stream()
 						.map(e -> Map.entry(e.getKey(), (ApplicationContextInitializer<ConfigurableApplicationContext>) e.getValue()))
