@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2021 the original author or authors.
+ * Copyright 2016-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -222,6 +222,13 @@ public class KafkaConsumerProperties {
 	 * @since 4.0.2
 	 */
 	private boolean reactiveAutoCommit;
+
+	/**
+	 * When using the reactive binder, automatically commit offsets of records before they
+	 * are passed to the user code.
+	 * @since 4.0.3
+	 */
+	private boolean reactiveAtMostOnce;
 
 	/**
 	 * @return if each record needs to be acknowledged.
@@ -558,5 +565,12 @@ public class KafkaConsumerProperties {
 		this.reactiveAutoCommit = reactiveAutoCommit;
 	}
 
+	public boolean isReactiveAtMostOnce() {
+		return this.reactiveAtMostOnce;
+	}
+
+	public void setReactiveAtMostOnce(boolean reactiveAtMostOnce) {
+		this.reactiveAtMostOnce = reactiveAtMostOnce;
+	}
 
 }

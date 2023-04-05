@@ -64,8 +64,33 @@ public Consumer<Flux<Message<String>> consume() {
 
 Refer to the `reactor-kafka` documentation and javadocs for more information.
 
-In addition, the Kafka consumer property `reactiveAutoCommit` can be set to `true` and the binder will automatically commit the offsets after all records returned by each poll are processed.
-In this case, the acknowledgment header is not present.
+In addition, starting with version 4.0.3, the Kafka consumer property `reactiveAtmostOnce` can be set to `true` and the binder will automatically commit the offsets before records returned by each poll are processed.
+Also, starting with version 4.0.3, you can set the consumer property `reactiveAutoCommit` to `true` and the the binder will automatically commit the offsets after the records returned by each poll are processed.
+In these cases, the acknowledgment header is not present.
+
+IMPORTANT: 4.0.2 also provided `reactiveAutoCommit`, but the implementation was incorrect, it behaved similarly to `reactiveAtMostOnce`.
+
+The following is an example of how to use `reaciveAutoCommit`.
+
+====
+[source, java]
+----
+@Bean
+Consumer<Flux<Flux<ConsumerRecord<?, String>>>> input() {
+	return flux -> flux
+			.doOnNext(inner -> inner
+				.doOnNext(val -> {
+					log.info(val.value());
+				})
+				.subscribe())
+			.subscribe();
+}
+----
+====
+
+Note that `reactor-kafka` returns a `Flux<Flux<ConsumerRecord<?, ?>>>` when using auto commit.
+Given that Spring has no access to the contents of the inner flux, the application must deal with the native `ConsumerRecord`; there is no message conversion or conversion service applied to the contents.
+This requires the use of native decoding (by specifying a `Deserializer` of the appropriate type in the configuration) to return record keys/values of the desired types.
 
 === Consuming Records in the Raw Format
 
