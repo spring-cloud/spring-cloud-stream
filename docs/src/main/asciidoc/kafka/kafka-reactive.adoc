@@ -172,3 +172,8 @@ spring.cloud.stream.bindings.lowercase-in-0.consumer.concurrency=3
 ```
 
 That will create three dedicated `KafkaReceiver` objects that generate three separate `Flux` implementations and then stream them to the handler method.
+
+=== Multiplex
+
+Starting with version 4.0.3, the common consumer property `multiplex` is now supported by the reactive binder, where a single binding can consume from multiple topics.
+When `false` (default), a separate binding is created for each topic specified in a comma-delimited list in the common `destination` property.

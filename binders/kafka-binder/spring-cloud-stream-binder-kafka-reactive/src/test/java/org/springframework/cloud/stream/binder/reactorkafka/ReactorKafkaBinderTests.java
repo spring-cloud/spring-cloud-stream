@@ -66,7 +66,7 @@ import static org.mockito.Mockito.mock;
  * @since 4.0
  *
  */
-@EmbeddedKafka(topics = { "testC", "testC1", "testP" })
+@EmbeddedKafka(topics = { "testCa", "testCb", "testC1", "testP" })
 public class ReactorKafkaBinderTests {
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
@@ -82,14 +82,14 @@ public class ReactorKafkaBinderTests {
 		ReactorKafkaBinder binder = new ReactorKafkaBinder(binderProps, provisioner);
 		binder.setApplicationContext(mock(GenericApplicationContext.class));
 
-		CountDownLatch latch = new CountDownLatch(1);
+		CountDownLatch latch = new CountDownLatch(2);
 
 		FluxMessageChannel inbound = new FluxMessageChannel();
 		Subscriber<Message<?>> sub = new Subscriber<Message<?>>() {
 
 			@Override
 			public void onSubscribe(Subscription s) {
-				s.request(1);
+				s.request(2);
 			}
 
 			@Override
@@ -111,13 +111,15 @@ public class ReactorKafkaBinderTests {
 		KafkaConsumerProperties ext = new KafkaConsumerProperties();
 		ExtendedConsumerProperties<KafkaConsumerProperties> props =
 				new ExtendedConsumerProperties<KafkaConsumerProperties>(ext);
+		props.setMultiplex(true);
 
-		Binding<MessageChannel> consumer = binder.bindConsumer("testC", "foo", inbound, props);
+		Binding<MessageChannel> consumer = binder.bindConsumer("testCa, testCb", "foo", inbound, props);
 
 		DefaultKafkaProducerFactory pf =
 				new DefaultKafkaProducerFactory<>(KafkaTestUtils.producerProps(EmbeddedKafkaCondition.getBroker()));
 		KafkaTemplate kt = new KafkaTemplate<>(pf);
-		kt.send("testC", "foo").get(10, TimeUnit.SECONDS);
+		kt.send("testCa", "foo").get(10, TimeUnit.SECONDS);
+		kt.send("testCb", "bar").get(10, TimeUnit.SECONDS);
 		assertThat(latch.await(10, TimeUnit.SECONDS)).isTrue();
 		consumer.unbind();
 		pf.destroy();
