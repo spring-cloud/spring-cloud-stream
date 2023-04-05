@@ -360,19 +360,19 @@ public Function<KStream<String, String>, KStream<String, Long>> composed() {
 }
 ```
 
-Then you can provide definitions of the form `spring.cloud.stream.function.definition=foo;bar;composed`.
+Then you can provide definitions of the form `spring.cloud.function.definition=foo;bar;composed`.
 With the functional composition support in the binder, you don't need to write this third function in which you are doing explicit function composition.
 
 You can simply do this instead:
 
 ```
-spring.cloud.stream.function.definition=foo|bar
+spring.cloud.function.definition=foo|bar
 ```
 
 You can even do this:
 
 ```
-spring.cloud.stream.function.definition=foo|bar;foo;bar
+spring.cloud.function.definition=foo|bar;foo;bar
 ```
 
 The composed function's default binding names in this example becomes `foobar-in-0` and `foobar-out-0`.
@@ -459,7 +459,7 @@ In this case, the binder will create 3 separate Kafka Streams objects with diffe
 However, if you have more than one processor in the application, you have to tell Spring Cloud Stream, which functions need to be activated.
 Here is how you activate the functions.
 
-`spring.cloud.stream.function.definition: process;anotherProcess;yetAnotherProcess`
+`spring.cloud.function.definition: process;anotherProcess;yetAnotherProcess`
 
 If you want certain functions to be not activated right away, you can remove that from this list.
 
@@ -1424,7 +1424,7 @@ public Function<KStream<Object, String>, KStream<?, WordCount>> kstreamProcess()
 This is the relevant parts from the configuration:
 
 ```
-spring.cloud.stream.function.definition=process;kstreamProcess
+spring.cloud.function.definition=process;kstreamProcess
 spring.cloud.stream.bindings.process-in-0.destination=foo
 spring.cloud.stream.bindings.process-out-0.destination=bar
 spring.cloud.stream.bindings.kstreamProcess-in-0.destination=bar
@@ -1445,7 +1445,7 @@ spring.cloud.stream.binders.kafka2.environment.spring.cloud.stream.kafka.streams
 spring.cloud.stream.binders.kafka3.type: kstream
 spring.cloud.stream.binders.kafka3.environment.spring.cloud.stream.kafka.streams.binder.brokers=${kafkaCluster-2} #Replace kafkaCluster-2 with the approprate IP of the cluster
 
-spring.cloud.stream.function.definition=process;kstreamProcess
+spring.cloud.function.definition=process;kstreamProcess
 
 # From cluster 1 to cluster 2 with regular process function
 spring.cloud.stream.bindings.process-in-0.destination=foo
