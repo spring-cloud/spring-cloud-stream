@@ -74,15 +74,15 @@ public class KafkaPartitionConsumerApplication {
 
     public static void main(String[] args) {
         new SpringApplicationBuilder(KafkaPartitionConsumerApplication.class)
-            .web(false)
+            .web(WebApplicationType.NONE)
             .run(args);
     }
 
     @Bean
     public Consumer<Message<String>> listen() {
         return message -> {
-            int partition =- message.getHeaders().get(KafkaHeaders.RECEIVED_PARTITION_ID);
-            System.out.println(in + " received from partition " + partition);
+            int partition = (int) message.getHeaders().get(KafkaHeaders.RECEIVED_PARTITION);
+            System.out.println(message + " received from partition " + partition);
         };
     }
 
