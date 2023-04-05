@@ -17,7 +17,7 @@
 package org.springframework.cloud.stream.binder.reactorkafka;
 
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -180,16 +180,24 @@ public class ReactorKafkaBinder
 		Map<String, Object> configs = BindingUtils.createConsumerConfigs(anonymous, consumerGroup, properties,
 				this.configurationProperties);
 
+		String destinations = destination.getName();
 		if (this.consumerConfigCustomizer != null) {
-			this.consumerConfigCustomizer.configure(configs, properties.getBindingName(), destination.getName());
+			this.consumerConfigCustomizer.configure(configs, properties.getBindingName(), destinations);
 		}
 
 		MessageConverter converter = BindingUtils.getConsumerMessageConverter(getApplicationContext(), properties,
 				this.configurationProperties);
 		Assert.isInstanceOf(RecordMessageConverter.class, converter);
+		/*
+		 *  No need to check multiplex here because, if false, the topics are bound one-at-a-time;
+		 *  it is still required by the provisioner, however.
+		 */
+		List<String> destList = Arrays.stream(StringUtils.commaDelimitedListToStringArray(destinations))
+				.map(dest -> dest.trim())
+				.toList();
 		ReceiverOptions<Object, Object> opts = ReceiverOptions.create(configs)
 			.addAssignListener(parts -> logger.info("Assigned: " + parts))
-			.subscription(Collections.singletonList(destination.getName()));
+			.subscription(destList);
 		opts = this.receiverOptionsCustomizer.apply(properties.getBindingName(), opts);
 		ReceiverOptions<Object, Object> finalOpts = opts;
 
