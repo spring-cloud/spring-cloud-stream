@@ -224,6 +224,13 @@ public class KafkaConsumerProperties {
 	private boolean reactiveAutoCommit;
 
 	/**
+	 * When using the reactive binder, automatically commit offsets of records before they
+	 * are passed to the user code.
+	 * @since 4.0.3
+	 */
+	private boolean reactiveAtMostOnce;
+
+	/**
 	 * @return if each record needs to be acknowledged.
 	 *
 	 * When true the offset is committed after each record, otherwise the offsets for the complete set of records
@@ -558,5 +565,12 @@ public class KafkaConsumerProperties {
 		this.reactiveAutoCommit = reactiveAutoCommit;
 	}
 
+	public boolean isReactiveAtMostOnce() {
+		return this.reactiveAtMostOnce;
+	}
+
+	public void setReactiveAtMostOnce(boolean reactiveAtMostOnce) {
+		this.reactiveAtMostOnce = reactiveAtMostOnce;
+	}
 
 }

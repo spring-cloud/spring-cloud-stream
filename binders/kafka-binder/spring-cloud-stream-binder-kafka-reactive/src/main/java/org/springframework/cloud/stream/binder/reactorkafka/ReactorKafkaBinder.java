@@ -67,6 +67,7 @@ import org.springframework.kafka.support.converter.RecordMessageConverter;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
+import org.springframework.messaging.support.GenericMessage;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
@@ -209,23 +210,33 @@ public class ReactorKafkaBinder
 				List<Flux<Message<Object>>> fluxes = new ArrayList<>();
 				int concurrency = properties.getConcurrency();
 				boolean autoCommit = properties.getExtension().isReactiveAutoCommit();
+				boolean atMostOnce = properties.getExtension().isReactiveAtMostOnce();
+				Assert.state(!(autoCommit && atMostOnce),
+						"Cannot set both reactiveAutoCommit and reactiveAtMostOnce");
 				for (int i = 0; i < concurrency; i++) {
-					Flux<? extends ConsumerRecord<Object, Object>> receive;
-					if (autoCommit) {
-						receive = this.receivers.get(i)
-								.receiveAutoAck()
-								.concatMap(rec -> rec);
+					Flux<? extends ConsumerRecord<Object, Object>> receive = null;
+					KafkaReceiver<Object, Object> kafkaReceiver = this.receivers.get(i);
+					if (atMostOnce) {
+						receive = kafkaReceiver
+								.receiveAtmostOnce();
 					}
-					else {
-						receive = this.receivers.get(i)
+					else if (!autoCommit) {
+						receive = kafkaReceiver
 								.receive();
 					}
-					fluxes.add(receive
-							.map(record -> {
-								Message<Object> message = (Message<Object>) ((RecordMessageConverter) converter)
-									.toMessage(record, null, null, null);
-								return addAckHeaderIfNeeded(autoCommit, record, message);
-							}));
+					if (autoCommit) {
+						fluxes.add(kafkaReceiver
+								.receiveAutoAck()
+								.map(inner -> new GenericMessage<>(inner)));
+					}
+					else {
+						fluxes.add(receive
+								.map(record -> {
+									Message<Object> message = (Message<Object>) ((RecordMessageConverter) converter)
+										.toMessage(record, null, null, null);
+									return addAckHeaderIfNeeded(atMostOnce, record, message);
+								}));
+					}
 				}
 				if (concurrency == 1) {
 					subscribeToPublisher(fluxes.get(0));

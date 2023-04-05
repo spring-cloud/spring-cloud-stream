@@ -26,10 +26,12 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
 import org.junit.jupiter.api.Test;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.kafka.receiver.ReceiverOffset;
 
@@ -122,17 +124,17 @@ public class ReactorKafkaBinderTests {
 	}
 
 	@Test
-	void concurrencyAuto() throws Exception {
+	void concurrencyManual() throws Exception {
 		concurrency(false);
 	}
 
 	@Test
-	void concurrencyManual() throws Exception {
+	void concurrencyAtMostOnce() throws Exception {
 		concurrency(true);
 	}
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
-	void concurrency(boolean manualCommit) throws Exception {
+	void concurrency(boolean atMostOnce) throws Exception {
 		KafkaProperties kafkaProperties = new KafkaProperties();
 		kafkaProperties.setBootstrapServers(
 				Collections.singletonList(EmbeddedKafkaCondition.getBroker().getBrokersAsString()));
@@ -162,7 +164,7 @@ public class ReactorKafkaBinderTests {
 			public void onNext(Message<?> msg) {
 				payloads.add((String) msg.getPayload());
 				partitions.add(msg.getHeaders().get(KafkaHeaders.RECEIVED_PARTITION, Integer.class));
-				if (manualCommit) {
+				if (!atMostOnce) {
 					msg.getHeaders().get(KafkaHeaders.ACKNOWLEDGMENT, ReceiverOffset.class).acknowledge();
 				}
 				messageLatch1.countDown();
@@ -181,7 +183,7 @@ public class ReactorKafkaBinderTests {
 		inbound.subscribe(sub);
 
 		KafkaConsumerProperties ext = new KafkaConsumerProperties();
-		ext.setReactiveAutoCommit(!manualCommit);
+		ext.setReactiveAtMostOnce(atMostOnce);
 		ExtendedConsumerProperties<KafkaConsumerProperties> props =
 				new ExtendedConsumerProperties<KafkaConsumerProperties>(ext);
 		props.setConcurrency(2);
@@ -206,7 +208,80 @@ public class ReactorKafkaBinderTests {
 		consumer.unbind();
 		pf.destroy();
 		Collections.sort(payloads);
-		assertThat(payloads).containsExactly("bar", "baz", "buz", "fiz", "foo", "qux");
+		if (!atMostOnce) {
+			assertThat(payloads).containsExactly("bar", "baz", "buz", "fiz", "foo", "qux");
+		}
+	}
+
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	@Test
+	void autoCommit() throws Exception {
+		KafkaProperties kafkaProperties = new KafkaProperties();
+		kafkaProperties.setBootstrapServers(
+				Collections.singletonList(EmbeddedKafkaCondition.getBroker().getBrokersAsString()));
+		KafkaBinderConfigurationProperties binderProps = new KafkaBinderConfigurationProperties(kafkaProperties);
+		KafkaTopicProvisioner provisioner = new KafkaTopicProvisioner(binderProps, kafkaProperties, prop -> {
+		});
+		provisioner.setMetadataRetryOperations(new RetryTemplate());
+		ReactorKafkaBinder binder = new ReactorKafkaBinder(binderProps, provisioner);
+		binder.setApplicationContext(mock(GenericApplicationContext.class));
+
+		CountDownLatch subscriptionLatch = new CountDownLatch(1);
+		CountDownLatch messageLatch1 = new CountDownLatch(4);
+		Set<Integer> partitions = new HashSet<>();
+		List<String> payloads = Collections.synchronizedList(new ArrayList<>());
+
+		FluxMessageChannel inbound = new FluxMessageChannel();
+		Subscriber<Message<?>> sub = new Subscriber<Message<?>>() {
+
+			@Override
+			public void onSubscribe(Subscription s) {
+				s.request(10);
+				subscriptionLatch.countDown();
+			}
+
+			@Override
+			public void onNext(Message<?> msg) {
+				((Message<Flux<ConsumerRecord<?, String>>>) msg).getPayload()
+						.doOnNext(rec -> {
+							payloads.add(rec.value());
+							messageLatch1.countDown();
+						})
+						.subscribe();
+			}
+
+			@Override
+			public void onError(Throwable t) {
+			}
+
+			@Override
+			public void onComplete() {
+			}
+
+		};
+		inbound.subscribe(sub);
+
+		KafkaConsumerProperties ext = new KafkaConsumerProperties();
+		ext.setReactiveAutoCommit(true);
+		ExtendedConsumerProperties<KafkaConsumerProperties> props =
+				new ExtendedConsumerProperties<KafkaConsumerProperties>(ext);
+		props.setConcurrency(2);
+
+		Binding<MessageChannel> consumer = binder.bindConsumer("testC1", "foo", inbound, props);
+
+		assertThat(subscriptionLatch.await(10, TimeUnit.SECONDS)).isTrue();
+		DefaultKafkaProducerFactory pf =
+				new DefaultKafkaProducerFactory<>(KafkaTestUtils.producerProps(EmbeddedKafkaCondition.getBroker()));
+		KafkaTemplate kt = new KafkaTemplate<>(pf);
+		kt.send("testC1", 0, null, "foo").get(10, TimeUnit.SECONDS);
+		kt.send("testC1", 1, null, "bar").get(10, TimeUnit.SECONDS);
+		kt.send("testC1", 0, null, "baz").get(10, TimeUnit.SECONDS);
+		kt.send("testC1", 1, null, "qux").get(10, TimeUnit.SECONDS);
+		assertThat(messageLatch1.await(10, TimeUnit.SECONDS)).isTrue();
+		consumer.unbind();
+		pf.destroy();
+		Collections.sort(payloads);
+		assertThat(payloads).containsExactly("bar", "baz", "foo", "qux");
 	}
 
 	@Test
