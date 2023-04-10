@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -98,6 +99,7 @@ import org.springframework.integration.support.MessageBuilder;
 import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
+import org.springframework.kafka.core.KafkaAdmin;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
 import org.springframework.kafka.listener.AbstractMessageListenerContainer;
@@ -237,6 +239,8 @@ public class KafkaMessageChannelBinder extends
 
 	private final List<AbstractMessageListenerContainer<?, ?>> kafkaMessageListenerContainers = new ArrayList<>();
 
+	private final KafkaAdmin kafkaAdmin;
+
 	public KafkaMessageChannelBinder(
 			KafkaBinderConfigurationProperties configurationProperties,
 			KafkaTopicProvisioner provisioningProvider) {
@@ -281,6 +285,7 @@ public class KafkaMessageChannelBinder extends
 		this.rebalanceListener = rebalanceListener;
 		this.dlqPartitionFunction = dlqPartitionFunction;
 		this.dlqDestinationResolver = dlqDestinationResolver;
+		this.kafkaAdmin = new KafkaAdmin(new HashMap<>(provisioningProvider.getAdminClientProperties()));
 	}
 
 	private static String[] headersToMap(
@@ -503,9 +508,8 @@ public class KafkaMessageChannelBinder extends
 		}
 		handler.setHeaderMapper(mapper);
 
-		if (this.configurationProperties.isEnableObservation()) {
-			kafkaTemplate.setObservationEnabled(true);
-		}
+		kafkaTemplate.setObservationEnabled(this.configurationProperties.isEnableObservation());
+		kafkaTemplate.setKafkaAdmin(this.kafkaAdmin);
 		kafkaTemplate.setApplicationContext(getApplicationContext());
 
 		return handler;
@@ -632,9 +636,7 @@ public class KafkaMessageChannelBinder extends
 								: new ContainerProperties(topics)
 						: new ContainerProperties(topicPartitionOffsets);
 
-		if (this.configurationProperties.isEnableObservation()) {
-			containerProperties.setObservationEnabled(true);
-		}
+		containerProperties.setObservationEnabled(this.configurationProperties.isEnableObservation());
 
 		KafkaAwareTransactionManager<byte[], byte[]> transMan = transactionManager(
 				extendedConsumerProperties.getExtension().getTransactionManager());
@@ -668,6 +670,7 @@ public class KafkaMessageChannelBinder extends
 		};
 
 		this.kafkaMessageListenerContainers.add(messageListenerContainer);
+		messageListenerContainer.setKafkaAdmin(this.kafkaAdmin);
 		messageListenerContainer.setConcurrency(concurrency);
 		// these won't be needed if the container is made a bean
 		AbstractApplicationContext applicationContext = getApplicationContext();
@@ -1126,14 +1129,16 @@ public class KafkaMessageChannelBinder extends
 					.getDlqProducerProperties();
 			KafkaAwareTransactionManager<byte[], byte[]> transMan = transactionManager(
 					properties.getExtension().getTransactionManager());
-			final ExtendedProducerProperties<KafkaProducerProperties> producerProperties = new ExtendedProducerProperties<>(dlqProducerProperties);
+			final ExtendedProducerProperties<KafkaProducerProperties> producerProperties =
+					new ExtendedProducerProperties<>(dlqProducerProperties);
 			producerProperties.populateBindingName(properties.getBindingName());
 			ProducerFactory<?, ?> producerFactory = transMan != null
 					? transMan.getProducerFactory()
 					: getProducerFactory(null, producerProperties,
 							destination.getName() + ".dlq.producer", destination.getName());
-			final KafkaTemplate<?, ?> kafkaTemplate = new KafkaTemplate<>(
-					producerFactory);
+			final KafkaTemplate<?, ?> kafkaTemplate = new KafkaTemplate<>(producerFactory);
+			kafkaTemplate.setObservationEnabled(this.configurationProperties.isEnableObservation());
+			kafkaTemplate.setKafkaAdmin(this.kafkaAdmin);
 
 			Object timeout = producerFactory.getConfigurationProperties().get(ProducerConfig.DELIVERY_TIMEOUT_MS_CONFIG);
 			Long sendTimeout = null;

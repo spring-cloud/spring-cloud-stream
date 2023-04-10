@@ -130,9 +130,10 @@ public class KafkaTopicProvisioner implements
 	 * {@link AdminClient}.
 	 */
 	public KafkaTopicProvisioner(
-		KafkaBinderConfigurationProperties kafkaBinderConfigurationProperties,
-		KafkaProperties kafkaProperties,
-		List<AdminClientConfigCustomizer> adminClientConfigCustomizers) {
+			KafkaBinderConfigurationProperties kafkaBinderConfigurationProperties,
+			KafkaProperties kafkaProperties,
+			List<AdminClientConfigCustomizer> adminClientConfigCustomizers) {
+
 		Assert.isTrue(kafkaProperties != null, "KafkaProperties cannot be null");
 		this.configurationProperties = kafkaBinderConfigurationProperties;
 		this.adminClientProperties = kafkaProperties.buildAdminProperties();
@@ -141,6 +142,15 @@ public class KafkaTopicProvisioner implements
 		// If the application provides AdminConfig customizers
 		// and overrides properties, those take precedence.
 		adminClientConfigCustomizers.forEach(customizer -> customizer.configure(this.adminClientProperties));
+	}
+
+	/**
+	 * Return an unmodifiable map of merged admin properties.
+	 * @return the properties.
+	 * @since 4.0.3
+	 */
+	public Map<String, Object> getAdminClientProperties() {
+		return Collections.unmodifiableMap(this.adminClientProperties);
 	}
 
 	/**
