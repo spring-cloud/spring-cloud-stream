@@ -119,6 +119,7 @@ import org.springframework.integration.kafka.support.KafkaSendFailureException;
 import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
+import org.springframework.kafka.core.KafkaAdmin;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
 import org.springframework.kafka.listener.AbstractMessageListenerContainer;
@@ -156,6 +157,7 @@ import org.springframework.util.backoff.FixedBackOff;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.assertj.core.api.Assertions.entry;
 import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.Mockito.mock;
 
@@ -344,6 +346,40 @@ public class KafkaBinderTests extends
 		Deserializer<byte[]> keyDecoder = new ByteArrayDeserializer();
 
 		return new DefaultKafkaConsumerFactory<>(props, keyDecoder, valueDecoder);
+	}
+
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	@Test
+	void bindersAdmin() throws Exception {
+		KafkaBinderConfigurationProperties props = createConfigurationProperties();
+		props.getConfiguration().put(AdminClientConfig.CLIENT_ID_CONFIG, "binder");
+		props.setEnableObservation(true);
+		Binder binder = getBinder(props);
+		BindingProperties producerBindingProperties = createProducerBindingProperties(
+				createProducerProperties());
+		DirectChannel moduleOutputChannel = createBindableChannel("output",
+				producerBindingProperties);
+
+		ExtendedConsumerProperties<KafkaConsumerProperties> consumerProperties = createConsumerProperties();
+		DirectChannel moduleInputChannel = createBindableChannel("input",
+				createConsumerBindingProperties(consumerProperties));
+
+		Binding<MessageChannel> producerBinding = binder.bindProducer("admin.0",
+				moduleOutputChannel, producerBindingProperties.getProducer());
+
+		Binding<MessageChannel> consumerBinding = binder.bindConsumer("admin.0",
+				"testSendAndReceiveNoOriginalContentType", moduleInputChannel,
+				consumerProperties);
+
+		assertThat(
+				KafkaTestUtils.getPropertyValue(producerBinding, "lifecycle.kafkaTemplate.kafkaAdmin", KafkaAdmin.class)
+						.getConfigurationProperties()).contains(entry(AdminClientConfig.CLIENT_ID_CONFIG, "binder"));
+		assertThat(KafkaTestUtils
+				.getPropertyValue(consumerBinding, "lifecycle.messageListenerContainer.kafkaAdmin", KafkaAdmin.class)
+				.getConfigurationProperties()).contains(entry(AdminClientConfig.CLIENT_ID_CONFIG, "binder"));
+
+		consumerBinding.unbind();
+		producerBinding.unbind();
 	}
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
