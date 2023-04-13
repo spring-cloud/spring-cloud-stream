@@ -614,6 +614,7 @@ public class FunctionConfiguration {
 
 			MessagingTemplate template = new MessagingTemplate();
 			template.setBeanFactory(applicationContext.getBeanFactory());
+
 			AbstractMessageHandler handler = new AbstractMessageHandler() {
 				@SuppressWarnings("unchecked")
 				@Override
@@ -659,6 +660,7 @@ public class FunctionConfiguration {
 						}
 						streamBridge.send(function.getFunctionDefinition() + "-out-0", result);
 					}
+					function.postProcess();
 				}
 
 			};
