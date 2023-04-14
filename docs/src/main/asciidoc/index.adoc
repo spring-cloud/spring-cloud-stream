@@ -13,6 +13,7 @@ The reference documentation consists of the following sections:
 <<spring-cloud-stream-binder-rabbit#spring-cloud-stream-binder-rabbit-reference,Rabbit MQ Binder>> :: Spring Cloud Stream binder reference for Rabbit MQ
 <<spring-cloud-stream-binder-kafka#_apache_kafka_binder,Apache Kafka Binder>> :: Spring Cloud Stream binder reference for Apache Kafka
 <<spring-cloud-stream-binder-kafka#_kafka_streams_binder,Apache Kafka Streams binder>> :: Spring Cloud Stream binder reference for Apache Kafka Streams
+https://github.com/SolaceProducts/solace-spring-cloud/tree/master/solace-spring-cloud-starters/solace-spring-cloud-stream-starter#spring-cloud-stream-binder-for-solace-pubsub[Solace PubSub+ Binder] :: Spring Cloud Stream binder reference for Solace PubSub+ (Partner Maintained)
 
 <<binders.adoc#binders,Additional Binders>> :: A collection of Partner maintained binder implementations for Spring Cloud Stream (e.g., Azure Event Hubs, Google PubSub, Solace PubSub+)
 <<spring-cloud-stream-schema-registry.adoc#spring-cloud-stream-schema-registry-reference,Schema Registry>> :: Spring Cloud Stream Schema Registry Reference
