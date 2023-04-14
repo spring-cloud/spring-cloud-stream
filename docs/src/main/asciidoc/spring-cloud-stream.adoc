@@ -734,6 +734,8 @@ curl -H "Content-Type: text/plain" -X POST -d "hello from the other side" http:/
 
 By showing two examples we want to emphasize the approach will work with any type of foreign sources.
 
+NOTE: If you are using the Solace PubSub+ binder, Spring Cloud Stream has reserved the `scst_targetDestination` header (retrievable via BinderHeaders.TARGET_DESTINATION), which allows for messages to be redirected from their bindings' configured destination to the target destination specified by this header. This allows for the binder to manage the resources necessary to publish to dynamic destinations, relieving the framework from having to do so, and avoids the caching issues mentioned in the previous Note. More info https://github.com/SolaceProducts/solace-spring-cloud/tree/master/solace-spring-cloud-starters/solace-spring-cloud-stream-starter#dynamic-producer-destinations[here]. 
+
 ====== Output Content Type with StreamBridge
 
 You can also provide specific content type if necessary with the following method signature `public boolean send(String bindingName, Object data, MimeType outputContentType)`.
@@ -2050,7 +2052,7 @@ You can also stop, start, pause, and resume individual bindings by posting to th
     curl -d '{"state":"RESUMED"}' -H "Content-Type: application/json" -X POST http://<host>:<port>/actuator/bindings/myBindingName
 
 NOTE: `PAUSED` and `RESUMED` work only when the corresponding binder and its underlying technology supports it. Otherwise, you see the warning message in the logs.
-Currently, only Kafka binder supports the `PAUSED` and `RESUMED` states.
+Currently, only Kafka and [Solace](https://github.com/SolaceProducts/solace-spring-cloud/tree/master/solace-spring-cloud-starters/solace-spring-cloud-stream-starter#consumer-bindings-pauseresume) binders supports the `PAUSED` and `RESUMED` states.
 
 === Binder Configuration Properties
 
