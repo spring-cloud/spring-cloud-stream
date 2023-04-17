@@ -3185,6 +3185,13 @@ Message 3: MY OWN DATA 20BF2E64-7FF4-4CB6-A823-4053D30B5C74
 NOTE: DO NOT name this bean `messageSource` as it is going to be in conflict with the bean of the same name (different type)
 provided by Spring Boot for unrelated reasons.
 
+==== Special Note on Mixing Test Binder and Regular Middleware Binder for Testing
+
+The Spring Integration based test binder is provided for testing the application without involving an actual middleware based binder such as the Kafka or RabbitMQ binder.
+As described in the sections above, the test binder helps you to verify the application behavior quickly by relying on the in-memory Spring Integration channels.
+When the test binder is present on the test classpath, Spring Cloud Stream will try to use this binder for all testing purposes wherever it needs a binder for communication.
+In other words, you cannot mix both the test binder and a regular middleware binder for testing purposes in the same module.
+After testing the application with the test binder, if you want to continue doing further integration tests using the actual middleware binder, it is recommended to add those tests that use the actual binder in a separate module so that those tests can make the proper connection to the actual middleware rather than relying on the in-memory channels provided by the test binder.
 
 == Health Indicator
 
