@@ -543,9 +543,11 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 	 */
 	GenericApplicationContext createUnitializedContextForAOT(String configurationName,
 			Map<String, Object> binderProperties, BinderConfiguration binderConfiguration) {
-
 		GenericApplicationContext binderContext = new GenericApplicationContext();
-
+		// Set the conversion service on the binder producing context to handle complex properties
+		if (this.context != null) {
+			binderContext.getBeanFactory().setConversionService(this.context.getBeanFactory().getConversionService());
+		}
 		MapPropertySource binderPropertySource = new MapPropertySource(configurationName, binderProperties);
 		binderContext.getEnvironment().getPropertySources().addFirst(binderPropertySource);
 		binderContext.setDisplayName(configurationName + "_context");
