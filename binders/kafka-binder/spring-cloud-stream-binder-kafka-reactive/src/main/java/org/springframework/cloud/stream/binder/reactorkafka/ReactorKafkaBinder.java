@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.regex.Pattern;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -197,8 +198,13 @@ public class ReactorKafkaBinder
 				.map(dest -> dest.trim())
 				.toList();
 		ReceiverOptions<Object, Object> opts = ReceiverOptions.create(configs)
-			.addAssignListener(parts -> logger.info("Assigned: " + parts))
-			.subscription(destList);
+			.addAssignListener(parts -> logger.info("Assigned: " + parts));
+		if (properties.getExtension().isDestinationIsPattern()) {
+			opts = opts.subscription(Pattern.compile(destinations));
+		}
+		else {
+			opts = opts.subscription(destList);
+		}
 		opts = this.receiverOptionsCustomizer.apply(properties.getBindingName(), opts);
 		ReceiverOptions<Object, Object> finalOpts = opts;
 
