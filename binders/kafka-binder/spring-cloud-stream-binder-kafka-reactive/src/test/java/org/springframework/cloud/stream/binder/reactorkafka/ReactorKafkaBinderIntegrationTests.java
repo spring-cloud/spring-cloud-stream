@@ -18,6 +18,7 @@ package org.springframework.cloud.stream.binder.reactorkafka;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -55,6 +56,7 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 /**
  * Integration tests for {@link ReactorKafkaBinder}.
@@ -68,7 +70,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 @EmbeddedKafka(topics = { "uppercased-words", "lowercased-words" })
 class ReactorKafkaBinderIntegrationTests {
 
-	private static final List<String> recOptsCustOrder = new ArrayList<>();
+	private static final List<String> recOptsCustOrder = Collections.synchronizedList(new ArrayList<>());
+
+	private static final List<String> patternedDeliveries = Collections.synchronizedList(new ArrayList<>());
 
 	@Autowired
 	private EmbeddedKafkaBroker embeddedKafka;
@@ -78,6 +82,7 @@ class ReactorKafkaBinderIntegrationTests {
 	void endToEndReactorKafkaBinder(boolean excludeKafkaAutoConfig) {
 
 		recOptsCustOrder.clear();
+		patternedDeliveries.clear();
 		Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("group1", "false", embeddedKafka);
 		consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
 		DefaultKafkaConsumerFactory<String, String> cf = new DefaultKafkaConsumerFactory<>(consumerProps);
@@ -90,7 +95,8 @@ class ReactorKafkaBinderIntegrationTests {
 			.web(WebApplicationType.NONE).run(
 				"--server.port=0",
 				"--spring.jmx.enabled=false",
-				"--spring.cloud.function.definition=uppercase;lowercase",
+				"--spring.kafka.consumer.metadata.max.age.ms=1000",
+				"--spring.cloud.function.definition=uppercase;lowercase;patternConsumer",
 				"--spring.cloud.stream.function.reactive.uppercase=true",
 				"--spring.cloud.stream.function.reactive.lowercase=true",
 				"--spring.cloud.stream.bindings.uppercase-in-0.group=grp1",
@@ -99,6 +105,9 @@ class ReactorKafkaBinderIntegrationTests {
 				"--spring.cloud.stream.bindings.lowercase-in-0.group=grp2",
 				"--spring.cloud.stream.bindings.lowercase-in-0.destination=words2",
 				"--spring.cloud.stream.bindings.lowercase-out-0.destination=lowercased-words",
+				"--spring.cloud.stream.bindings.patternConsumer-in-0.group=grp3",
+				"--spring.cloud.stream.bindings.patternConsumer-in-0.destination=.*-words",
+				"--spring.cloud.stream.kafka.bindings.patternConsumer-in-0.consumer.destination-is-pattern=true",
 				"--spring.cloud.stream.kafka.bindings.lowercase-in-0.consumer.converterBeanName=fullRR",
 				"--spring.cloud.stream.kafka.binder.brokers=" + embeddedKafka.getBrokersAsString(),
 				excludeKafkaAutoConfigParam(excludeKafkaAutoConfig))) {
@@ -120,7 +129,8 @@ class ReactorKafkaBinderIntegrationTests {
 					.extracting(ConsumerRecord::value)
 					.isEqualTo("bazqux");
 
-				assertThat(recOptsCustOrder).containsExactly("two", "one", "two", "one");
+				assertThat(recOptsCustOrder).containsExactly("two", "one", "two", "one", "two", "one");
+				await().untilAsserted(() -> assertThat(patternedDeliveries).contains("bazqux", "FOOBAR"));
 			}
 			finally {
 				pf.destroy();
@@ -158,13 +168,19 @@ class ReactorKafkaBinderIntegrationTests {
 		}
 
 		@Bean
-		public Function<Flux<String>, Flux<String>> uppercase() {
+		Function<Flux<String>, Flux<String>> uppercase() {
 			return s -> s.map(String::toUpperCase);
 		}
 
 		@Bean
-		public Function<Flux<ReceiverRecord<byte[], byte[]>>, Flux<String>> lowercase() {
+		Function<Flux<ReceiverRecord<byte[], byte[]>>, Flux<String>> lowercase() {
 			return s -> s.map(rec -> new String(rec.value()).toLowerCase());
+		}
+
+		@Bean
+		java.util.function.Consumer<Flux<String>> patternConsumer() {
+			return f -> f.doOnNext(s -> patternedDeliveries.add(s))
+					.subscribe();
 		}
 
 		@Bean
