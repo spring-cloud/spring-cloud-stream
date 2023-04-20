@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 the original author or authors.
+ * Copyright 2018-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,9 @@
 
 package org.springframework.cloud.stream.endpoint;
 
+import java.io.IOException;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -29,11 +32,17 @@ import org.springframework.cloud.stream.binder.test.TestChannelBinderConfigurati
 import org.springframework.cloud.stream.binding.BindingsLifecycleController;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.DefaultResourceLoader;
+import org.springframework.util.ObjectUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  *
+ * @author Original authors
+ * @author Soby Chacko
  */
 public class ActuatorBindingsTest {
 
@@ -58,7 +67,81 @@ public class ActuatorBindingsTest {
 			assertThat(bindings.size()).isEqualTo(1);
 			assertThat(bindings.get(0).get("bindingName")).isEqualTo("consume-in-0");
 		}
+	}
 
+	private static ClassLoader createClassLoader(String[] additionalClasspathDirectories) throws IOException {
+		URL[] urls = ObjectUtils.isEmpty(additionalClasspathDirectories) ? new URL[0]
+			: new URL[additionalClasspathDirectories.length];
+		if (!ObjectUtils.isEmpty(additionalClasspathDirectories)) {
+			for (int i = 0; i < additionalClasspathDirectories.length; i++) {
+				urls[i] = new URL(new ClassPathResource(additionalClasspathDirectories[i])
+					.getURL().toString() + "/");
+			}
+		}
+		return new URLClassLoader(urls,
+			ActuatorBindingsTest.class.getClassLoader());
+	}
+
+	// Following three tests are verifying the behavior for
+	// https://github.com/spring-cloud/spring-cloud-stream/commit/3abf06345ad1ed57dea161b35503eba107feb04a
+	// More details are at: https://github.com/spring-cloud/spring-cloud-stream/issues/2716
+	@Test
+	void whenTwoBindersFoundThrowErrorIfNoSpecificBinderIsChosen() throws Exception {
+		ClassLoader classLoader = createClassLoader(new String[] { "binder1" });
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+			TestChannelBinderConfiguration.getCompleteConfiguration(Bindings.class))
+			.resourceLoader(new DefaultResourceLoader(classLoader))
+			.web(WebApplicationType.NONE).run("--spring.jmx.enabled=false",
+				"--spring.cloud.function.definition=consume"
+			)) {
+
+			BindingsLifecycleController controller = context
+				.getBean(BindingsLifecycleController.class);
+			assertThatThrownBy(controller::queryStates).isInstanceOf(IllegalArgumentException.class)
+				.hasMessageContaining("More than one binder types found, but no binder specified on the binding");
+		}
+	}
+
+	@Test
+	void whenTwoBindersFoundNoErrorIfBinderProvidedThroughBinding() throws Exception {
+		ClassLoader classLoader = createClassLoader(new String[] { "binder1" });
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+			TestChannelBinderConfiguration.getCompleteConfiguration(Bindings.class))
+			.resourceLoader(new DefaultResourceLoader(classLoader))
+			.web(WebApplicationType.NONE).run("--spring.jmx.enabled=false",
+				"--spring.cloud.function.definition=consume",
+				"--spring.cloud.stream.bindings.consume-in-0.binder=integration"
+			)) {
+
+			BindingsLifecycleController controller = context
+				.getBean(BindingsLifecycleController.class);
+			List<Map<?, ?>> bindings = controller.queryStates();
+			assertThat(bindings.size()).isEqualTo(1);
+			assertThat(bindings.get(0).get("bindingName")).isEqualTo("consume-in-0");
+			assertThat(bindings.get(0).get("binderName")).isEqualTo("integration");
+			assertThat(bindings.get(0).get("binderType")).isEqualTo("integration");
+		}
+	}
+
+	@Test
+	void whenTwoBindersFoundNoErrorWhenDefaultBinderIsProvided() throws Exception {
+		ClassLoader classLoader = createClassLoader(new String[] { "binder1" });
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+			TestChannelBinderConfiguration.getCompleteConfiguration(Bindings.class))
+			.resourceLoader(new DefaultResourceLoader(classLoader))
+			.web(WebApplicationType.NONE).run("--spring.jmx.enabled=false",
+				"--spring.cloud.function.definition=consume",
+				"--spring.cloud.stream.default-binder=integration1"
+			)) {
+
+			BindingsLifecycleController controller = context
+				.getBean(BindingsLifecycleController.class);
+			List<Map<?, ?>> bindings = controller.queryStates();
+			assertThat(bindings.size()).isEqualTo(1);
+			assertThat(bindings.get(0).get("bindingName")).isEqualTo("consume-in-0");
+			assertThat(bindings.get(0).get("binderName")).isEqualTo("integration1");
+			assertThat(bindings.get(0).get("binderType")).isEqualTo("integration1");
+		}
 	}
 
 	@EnableAutoConfiguration
