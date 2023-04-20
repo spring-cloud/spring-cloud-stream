@@ -56,6 +56,7 @@ public class ActuatorBindingsTest {
 				TestChannelBinderConfiguration.getCompleteConfiguration(Bindings.class))
 						.web(WebApplicationType.NONE).run("--spring.jmx.enabled=false",
 								"--spring.cloud.function.definition=consume",
+								"--spring.cloud.stream.default-binder=integration",
 								"--spring.jackson.visibility.field=ANY" // see https://github.com/spring-cloud/spring-cloud-stream/issues/2253
 						// we need the above just to verify that such action does not
 						// interfere with instance of ObjectMapper inside of BindingsLifecycleController
@@ -87,7 +88,7 @@ public class ActuatorBindingsTest {
 	// More details are at: https://github.com/spring-cloud/spring-cloud-stream/issues/2716
 	@Test
 	void whenTwoBindersFoundThrowErrorIfNoSpecificBinderIsChosen() throws Exception {
-		ClassLoader classLoader = createClassLoader(new String[] { "binder1" });
+		ClassLoader classLoader = createClassLoader(new String[] { "binder3" });
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(Bindings.class))
 			.resourceLoader(new DefaultResourceLoader(classLoader))
@@ -104,7 +105,7 @@ public class ActuatorBindingsTest {
 
 	@Test
 	void whenTwoBindersFoundNoErrorIfBinderProvidedThroughBinding() throws Exception {
-		ClassLoader classLoader = createClassLoader(new String[] { "binder1" });
+		ClassLoader classLoader = createClassLoader(new String[] { "binder3" });
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(Bindings.class))
 			.resourceLoader(new DefaultResourceLoader(classLoader))
@@ -125,7 +126,7 @@ public class ActuatorBindingsTest {
 
 	@Test
 	void whenTwoBindersFoundNoErrorWhenDefaultBinderIsProvided() throws Exception {
-		ClassLoader classLoader = createClassLoader(new String[] { "binder1" });
+		ClassLoader classLoader = createClassLoader(new String[] { "binder3" });
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(Bindings.class))
 			.resourceLoader(new DefaultResourceLoader(classLoader))
