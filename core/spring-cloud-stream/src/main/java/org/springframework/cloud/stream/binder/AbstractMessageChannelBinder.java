@@ -239,6 +239,9 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		DefaultBinderTypeRegistry binderTypeRegistry =
 			AbstractMessageChannelBinder.this.getApplicationContext().getBean(DefaultBinderTypeRegistry.class);
 		Map<String, BinderType> binderTypes = binderTypeRegistry.getAll();
+		if (binderTypes.entrySet().size() > 1 && getBindingServiceProperties().getDefaultBinder() != null) {
+			return getBindingServiceProperties().getDefaultBinder();
+		}
 		Assert.isTrue(binderTypes.entrySet().size() == 1, "More than one binder types found, but no binder specified on the binding");
 		return binderTypes.keySet().iterator().next();
 	}
@@ -249,6 +252,9 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 			return resolveFromDefaultBinder();
 		}
 		else {
+			if (bindingServiceProperties.getBinders().get(binder) == null) {
+				return binder;
+			}
 			return bindingServiceProperties.getBinders().get(binder).getType();
 		}
 	}
