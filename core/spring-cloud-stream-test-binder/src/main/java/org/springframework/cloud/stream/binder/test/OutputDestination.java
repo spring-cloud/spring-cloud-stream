@@ -78,34 +78,26 @@ public class OutputDestination extends AbstractDestination {
 		}
 		return false;
 	}
-	/**
-	 * Allows to access {@link Message}s received by this {@link OutputDestination}.
-	 * @param timeout how long to wait before giving up
-	 * @return received message
-	 * @deprecated since 3.0.2 in favor of {@link #receive(long, String)} where you should use the actual binding name (e.g., "foo-in-0")
-	 */
-	@Deprecated
-	public Message<byte[]> receive(long timeout, int bindingIndex) {
-		log.warn("!!!While 'receive(long timeout, int bindingIndex)' method may still work it is deprecated no longer supported. "
-			+ "It will be removed after 3.1.3 release. Please use 'receive(long timeout, String bindingName)'");
-		try {
-			BlockingQueue<Message<byte[]>> destinationQueue = (new ArrayList<>(this.messageQueues.values())).get(bindingIndex);
-			return destinationQueue.poll(timeout, TimeUnit.MILLISECONDS);
-		}
-		catch (Exception e) {
-			Thread.currentThread().interrupt();
-		}
-		return null;
-	}
 
 	/**
 	 * Allows to access {@link Message}s received by this {@link OutputDestination}.
+	 * This is a convenience method for cases when you only have one binding.
+	 * For all other cases use {@link #receive(long, String)} method.
+	 *
 	 * @return received message
 	 */
 	public Message<byte[]> receive() {
 		return this.receive(0, 0);
 	}
 
+	/**
+	 * Allows to access {@link Message}s received by this {@link OutputDestination}.
+	 * This is a convenience method for cases when you only have one binding.
+	 * For all other cases use {@link #receive(long, String)} method.
+	 *
+	 * @param timeout timeout for receiving message
+	 * @return received message
+	 */
 	public Message<byte[]> receive(long timeout) {
 		return this.receive(timeout, 0);
 	}
@@ -121,5 +113,18 @@ public class OutputDestination extends AbstractDestination {
 	private BlockingQueue<Message<byte[]>> outputQueue(String bindingName) {
 		this.messageQueues.putIfAbsent(bindingName, new LinkedTransferQueue<>());
 		return this.messageQueues.get(bindingName);
+	}
+
+	private Message<byte[]> receive(long timeout, int bindingIndex) {
+		log.warn("!!!While 'receive(long timeout, int bindingIndex)' method may still work it is deprecated no longer supported. "
+			+ "It will be removed after 3.1.3 release. Please use 'receive(long timeout, String bindingName)'");
+		try {
+			BlockingQueue<Message<byte[]>> destinationQueue = (new ArrayList<>(this.messageQueues.values())).get(bindingIndex);
+			return destinationQueue.poll(timeout, TimeUnit.MILLISECONDS);
+		}
+		catch (Exception e) {
+			Thread.currentThread().interrupt();
+		}
+		return null;
 	}
 }
