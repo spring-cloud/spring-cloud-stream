@@ -404,7 +404,7 @@ public Consumer<Message<String>> myConsumer() {
 }
 ```
 
-Then you set the property `spring.cloud.stream.bindings.myConsumer-in-0.consumer.ackMode` to `MANUAL` or `MANUAL_IMMEDIATE`.
+Then you set the property `spring.cloud.stream.kafka.bindings.myConsumer-in-0.consumer.ackMode` to `MANUAL` or `MANUAL_IMMEDIATE`.
 
 === How do I override the default binding names in Spring Cloud Stream?
 
