@@ -305,15 +305,29 @@ public class KafkaBinderUnitTests {
 		Binding<MessageChannel> messageChannelBinding = binder.bindConsumer(topic, group,
 				channel, consumerProperties);
 		assertThat(latch.await(10, TimeUnit.SECONDS)).isTrue();
-		@SuppressWarnings("unchecked")
-		ArgumentCaptor<Set<TopicPartition>> captor = ArgumentCaptor.forClass(Set.class);
-		if (earliest) {
-			verify(consumer).seekToBeginning(captor.capture());
+
+		if (!groupManage) {
+			@SuppressWarnings("unchecked")
+			ArgumentCaptor<Set<TopicPartition>> captor = ArgumentCaptor.forClass(Set.class);
+			if (earliest) {
+				verify(consumer).seekToBeginning(captor.capture());
+			}
+			else {
+				verify(consumer).seekToEnd(captor.capture());
+			}
+			assertThat(captor.getValue()).containsExactlyInAnyOrderElementsOf(partitions);
 		}
 		else {
-			verify(consumer).seekToEnd(captor.capture());
+			@SuppressWarnings("unchecked")
+			ArgumentCaptor<List<TopicPartition>> captor = ArgumentCaptor.forClass(List.class);
+			if (earliest) {
+				verify(consumer).seekToBeginning(captor.capture());
+			}
+			else {
+				verify(consumer).seekToEnd(captor.capture());
+			}
+			assertThat(captor.getValue()).containsExactlyInAnyOrderElementsOf(partitions);
 		}
-		assertThat(captor.getValue()).containsExactlyInAnyOrderElementsOf(partitions);
 		messageChannelBinding.unbind();
 	}
 
