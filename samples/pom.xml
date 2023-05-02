@@ -26,6 +26,7 @@
 		<module>confluent-schema-registry-integration</module>
 		<module>kafka-streams-interactive-query</module>
 		<module>kafka-binder-native-app</module>
+		<module>kafka-binder-native-streambridge-app</module>
 	</modules>
 
 	<dependencyManagement>

@@ -53,6 +53,7 @@ import org.apache.kafka.common.header.internals.RecordHeader;
 import org.apache.kafka.common.header.internals.RecordHeaders;
 
 import org.springframework.beans.factory.DisposableBean;
+import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.cloud.stream.binder.AbstractMessageChannelBinder;
 import org.springframework.cloud.stream.binder.BinderHeaders;
 import org.springframework.cloud.stream.binder.BinderSpecificPropertiesProvider;
@@ -89,6 +90,7 @@ import org.springframework.integration.StaticMessageHeaderAccessor;
 import org.springframework.integration.acks.AcknowledgmentCallback;
 import org.springframework.integration.channel.AbstractMessageChannel;
 import org.springframework.integration.core.MessageProducer;
+import org.springframework.integration.expression.ExpressionUtils;
 import org.springframework.integration.kafka.inbound.KafkaMessageDrivenChannelAdapter;
 import org.springframework.integration.kafka.inbound.KafkaMessageDrivenChannelAdapter.ListenerMode;
 import org.springframework.integration.kafka.inbound.KafkaMessageSource;
@@ -458,7 +460,7 @@ public class KafkaMessageChannelBinder extends
 			kafkaTemplate.setAllowNonTransactional(allowNonTransactional);
 		}
 		ProducerConfigurationMessageHandler handler = new ProducerConfigurationMessageHandler(
-				kafkaTemplate, destination.getName(), producerProperties, producerFB);
+				kafkaTemplate, destination.getName(), producerProperties, producerFB, getBeanFactory());
 		if (errorChannel != null) {
 			handler.setSendFailureChannel(errorChannel);
 		}
@@ -1485,12 +1487,18 @@ public class KafkaMessageChannelBinder extends
 
 		private final ProducerFactory<byte[], byte[]> producerFactory;
 
+		private KafkaPartitionHandler kafkaPartitionHandler = null;
+
+		private String topic;
+
 		ProducerConfigurationMessageHandler(KafkaTemplate<byte[], byte[]> kafkaTemplate,
 				String topic,
 				ExtendedProducerProperties<KafkaProducerProperties> producerProperties,
-				ProducerFactory<byte[], byte[]> producerFactory) {
+				ProducerFactory<byte[], byte[]> producerFactory, ConfigurableListableBeanFactory beanFactory) {
 
 			super(kafkaTemplate);
+			this.topic = topic;
+
 			if (producerProperties.getExtension().isUseTopicHeader()) {
 				setTopicExpression(PARSER.parseExpression("headers['" + KafkaHeaders.TOPIC + "'] ?: '" + topic + "'"));
 			}
@@ -1516,6 +1524,19 @@ public class KafkaMessageChannelBinder extends
 				setSendTimeoutExpression(producerProperties.getExtension().getSendTimeoutExpression());
 			}
 			this.producerFactory = producerFactory;
+
+			/*
+			 	Activate kafkaPartitionHandler if 'getPartitionKeyExpression' was used to recalculate/override
+			 	partition with current partition size from kafkaTemplate just before message is send.
+			 	PartitionKeyExpression 'payload' is not supported here,
+			 	because of OutboundContentTypeConvertingInterceptor was called before.
+			 */
+			if (producerProperties.getPartitionKeyExpression() != null &&
+				! (producerProperties.getPartitionKeyExpression().getExpressionString().equals("payload") )) {
+				kafkaPartitionHandler =
+					new KafkaPartitionHandler(ExpressionUtils.createStandardEvaluationContext(beanFactory),
+						producerProperties, beanFactory);
+			}
 		}
 
 		@Override
@@ -1548,6 +1569,22 @@ public class KafkaMessageChannelBinder extends
 			return this.running;
 		}
 
+		@Override
+		public void handleMessage(Message<?> message) {
+			if (kafkaPartitionHandler != null) {
+				int partitionId = kafkaPartitionHandler.determinePartition(message,
+					getKafkaTemplate().partitionsFor(this.topic).size());
+
+				Message<?> newMessage = MessageBuilder
+					.fromMessage(message)
+					.setHeader(BinderHeaders.PARTITION_HEADER, partitionId).build();
+
+				super.handleMessage(newMessage);
+			}
+			else {
+				super.handleMessage(message);
+			}
+		}
 	}
 
 	/**
