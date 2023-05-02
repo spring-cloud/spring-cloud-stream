@@ -1532,7 +1532,7 @@ public class KafkaMessageChannelBinder extends
 			 	because of OutboundContentTypeConvertingInterceptor was called before.
 			 */
 			if (producerProperties.getPartitionKeyExpression() != null &&
-				! (producerProperties.getPartitionKeyExpression().getExpressionString().equals("payload") )) {
+				!(producerProperties.getPartitionKeyExpression().getExpressionString().equals("payload"))) {
 				kafkaPartitionHandler =
 					new KafkaPartitionHandler(ExpressionUtils.createStandardEvaluationContext(beanFactory),
 						producerProperties, beanFactory);
