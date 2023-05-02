@@ -26,7 +26,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
-import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import org.apache.avro.Schema.Parser;
@@ -38,7 +37,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.web.ServerProperties;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.boot.web.server.Ssl;
 import org.springframework.cloud.stream.schema.registry.config.SchemaServerProperties;
 import org.springframework.cloud.stream.schema.registry.controllers.ServerController;
 import org.springframework.cloud.stream.schema.registry.model.Schema;
