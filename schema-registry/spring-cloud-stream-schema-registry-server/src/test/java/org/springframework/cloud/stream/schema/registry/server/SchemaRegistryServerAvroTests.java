@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import org.apache.avro.Schema.Parser;
@@ -120,7 +121,7 @@ public class SchemaRegistryServerAvroTests {
 	public void setUp() {
 
 		String scheme = Optional.ofNullable(this.serverProperties.getSsl())
-				.filter(Ssl::isEnabled)
+				.filter(ssl -> ssl.isEnabled())
 				.map(ssl -> "https").orElse("http");
 
 		Integer port = this.serverProperties.getPort();
