@@ -1,0 +1,22 @@
+spring.cloud:
+  stream:
+    default:
+      producer:
+        partition-key-expression: headers['partitionKey']
+    default-binder: vep-binder
+    binders:
+      vep-binder:
+        type: kafka
+    kafka:
+      binder:
+        brokers: localhost:9092
+        autoCreateTopics: true
+
+spring:
+  kafka:
+    producer:
+      properties:
+        metadata:
+          max:
+            age:
+              ms: 10000
