@@ -62,7 +62,7 @@ public class BindableFunctionProxyFactory extends BindableProxyFactory implement
 
 	private GenericApplicationContext context;
 
-	BindableFunctionProxyFactory(String functionDefinition, int inputCount, int outputCount, StreamFunctionProperties functionProperties) {
+	public BindableFunctionProxyFactory(String functionDefinition, int inputCount, int outputCount, StreamFunctionProperties functionProperties) {
 		this(functionDefinition, inputCount, outputCount, functionProperties, new SupportedBindableFeatures(), true);
 	}
 
