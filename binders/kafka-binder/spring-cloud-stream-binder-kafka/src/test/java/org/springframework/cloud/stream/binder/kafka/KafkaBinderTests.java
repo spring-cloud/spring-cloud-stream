@@ -4016,10 +4016,12 @@ public class KafkaBinderTests extends
 
 	@Test
 	void testKafkaPartitionHandlerCalled() throws Exception {
+
 		Binder binder = getBinder();
 		ExtendedProducerProperties<KafkaProducerProperties> properties = createProducerProperties();
 		properties.setPartitionKeyExpression(
 			spelExpressionParser.parseExpression("headers['partitionKey']"));
+		properties.setKafkaPartitionCountUpdateEnabled(true);
 
 		DirectChannel outputChannel = createBindableChannel("output",
 			createProducerBindingProperties(createProducerProperties()));

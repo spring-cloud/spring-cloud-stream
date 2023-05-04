@@ -1531,12 +1531,12 @@ public class KafkaMessageChannelBinder extends
 			 	Activate own instance of a PartitionHandler if necessary/possible to  override any other existing
 			 	partition calculation (see other usages of PartitionHandler) by	using current partition count
 			 	(which may have changed at runtime) each time a message is handled.
-
 			 	PartitionKeyExpression 'payload' is not supported here, because of
 			 	OutboundContentTypeConvertingInterceptor would have been called before and the payload will be encoded and
 			 	not readable for PartitionHandler during handleMessage method.
 			 */
-			if (producerProperties.getPartitionKeyExpression() != null &&
+			if (producerProperties.isKafkaPartitionCountUpdateEnabled() &&
+				producerProperties.getPartitionKeyExpression() != null &&
 				!(producerProperties.getPartitionKeyExpression().getExpressionString()
 					.toLowerCase().contains("payload"))) {
 				kafkaPartitionHandler =
