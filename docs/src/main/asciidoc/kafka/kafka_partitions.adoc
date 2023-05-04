@@ -65,6 +65,8 @@ You can override this default by using the `partitionSelectorExpression` or `par
 Since partitions are natively handled by Kafka, no special configuration is needed on the consumer side.
 Kafka allocates partitions across the instances.
 
+NOTE: The partitionCount for a kafka topic may change during runtime (e.g. due to an adminstration task). The calculated  partitions will be different after that (e.g. new partitions will be used). Since SCS 4.0.3 runtime changes of partition count will be supported. Due to some limitations this is not possible if the used 'partition-key-expression' directly uses the 'payload' of the message (see also https://github.com/spring-cloud/spring-cloud-stream/issues/2706).
+
 The following Spring Boot application listens to a Kafka stream and prints (to the console) the partition ID to which each message goes:
 
 [source,java]
