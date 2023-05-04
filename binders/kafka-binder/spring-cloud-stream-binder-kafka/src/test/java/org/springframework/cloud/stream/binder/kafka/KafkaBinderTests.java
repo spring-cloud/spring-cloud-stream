@@ -86,6 +86,7 @@ import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
 import org.springframework.cloud.stream.binder.ExtendedProducerProperties;
 import org.springframework.cloud.stream.binder.HeaderMode;
 import org.springframework.cloud.stream.binder.PartitionCapableBinderTests;
+import org.springframework.cloud.stream.binder.PartitionHandler;
 import org.springframework.cloud.stream.binder.PartitionTestSupport;
 import org.springframework.cloud.stream.binder.PollableSource;
 import org.springframework.cloud.stream.binder.RequeueCurrentMessageException;
@@ -156,11 +157,11 @@ import org.springframework.util.Assert;
 import org.springframework.util.MimeTypeUtils;
 import org.springframework.util.backoff.FixedBackOff;
 
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.entry;
 import static org.assertj.core.api.Assertions.fail;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
@@ -4029,14 +4030,15 @@ public class KafkaBinderTests extends
 				producerBinding, "lifecycle", KafkaProducerMessageHandler.class);
 
 		assertThat(kafkaProducerMessageHandler.getKafkaPartitionHandler()).isNotNull();
-		KafkaPartitionHandler kafkaPartitionHandlerSpy = spy(kafkaProducerMessageHandler.getKafkaPartitionHandler());
+		PartitionHandler kafkaPartitionHandlerSpy = spy(kafkaProducerMessageHandler.getKafkaPartitionHandler());
 		kafkaProducerMessageHandler.setKafkaPartitionHandler(kafkaPartitionHandlerSpy);
 
 		Message<?> message = org.springframework.integration.support.MessageBuilder
 			.withPayload("foo").setHeader("partitionKey", "123").build();
 		outputChannel.send(message);
 
-		verify(kafkaPartitionHandlerSpy).determinePartition(ArgumentMatchers.any(), eq(1));
+		verify(kafkaPartitionHandlerSpy).setPartitionCount(1);
+		verify(kafkaPartitionHandlerSpy).determinePartition(ArgumentMatchers.any());
 	}
 
 	private void setupBindingAndAssert(String bindingName, AbstractKafkaTestBinder binder) throws Exception {
