@@ -65,7 +65,8 @@ public class PulsarExtendedBindingPropertiesTests {
 		bind(props);
 
 		assertThat(properties.getBindings()).containsOnlyKeys("my-foo");
-		Map<String, Object> producerProps = properties.getExtendedProducerProperties("my-foo").buildProperties();
+		Map<String, Object> producerProps = PulsarBinderUtils
+				.convertProducerPropertiesToMap(properties.getExtendedProducerProperties("my-foo"));
 		// Verify that the props can be loaded in a ProducerBuilder
 		assertThatNoException().isThrownBy(() -> ConfigurationDataUtils.loadData(producerProps,
 				new ProducerConfigurationData(), ProducerConfigurationData.class));

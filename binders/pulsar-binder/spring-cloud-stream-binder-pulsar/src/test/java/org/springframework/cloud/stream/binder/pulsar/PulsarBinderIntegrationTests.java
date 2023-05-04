@@ -638,10 +638,14 @@ class PulsarBinderIntegrationTests implements PulsarTestContainerSupport {
 	@Import(PrimitiveTextConfig.class)
 	static class BinderAndBindingPropsTestConfig {
 
+		@SuppressWarnings("unchecked")
 		@Bean
 		public PulsarProducerFactory<?> pulsarProducerFactory(PulsarClient pulsarClient,
 				PulsarProperties pulsarProperties, TopicResolver topicResolver) {
-			return new TrackingProducerFactory(pulsarClient, pulsarProperties.buildProducerProperties(), topicResolver);
+			var customizer = (ProducerBuilderCustomizer<String>) pulsarProperties.getProducer()
+					.toProducerBuilderCustomizer();
+			return new TrackingProducerFactory(pulsarClient, pulsarProperties.getProducer().getTopicName(), customizer,
+					topicResolver);
 		}
 
 		@Bean
@@ -656,8 +660,9 @@ class PulsarBinderIntegrationTests implements PulsarTestContainerSupport {
 
 		List<Producer<String>> producersCreated = new ArrayList<>();
 
-		TrackingProducerFactory(PulsarClient pulsarClient, Map<String, Object> config, TopicResolver topicResolver) {
-			super(pulsarClient, config, topicResolver);
+		TrackingProducerFactory(PulsarClient pulsarClient, @Nullable String defaultTopic,
+				ProducerBuilderCustomizer<String> defaultConfigCustomizer, TopicResolver topicResolver) {
+			super(pulsarClient, defaultTopic, defaultConfigCustomizer, topicResolver);
 		}
 
 		@Override

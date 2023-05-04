@@ -16,16 +16,19 @@
 
 package org.springframework.cloud.stream.binder.pulsar;
 
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
 import org.springframework.cloud.stream.binder.pulsar.properties.PulsarConsumerProperties;
+import org.springframework.boot.context.properties.PropertyMapper;
 import org.springframework.cloud.stream.provisioning.ConsumerDestination;
 import org.springframework.core.log.LogAccessor;
+import org.springframework.pulsar.autoconfigure.ProducerConfigProperties;
 import org.springframework.util.StringUtils;
-
+import org.springframework.util.unit.DataSize;
 
 /**
  * Binder utility methods.
@@ -99,6 +102,54 @@ final class PulsarBinderUtils {
 			}
 		});
 		return newOrModifiedProps;
+	}
+
+	/**
+	 * Gets a map representation of a {@link ProducerConfigProperties}.
+	 * @param producerProps the producer props
+	 * @return map representation of producer props where each entry is a field and its
+	 * associated value
+	 */
+	static Map<String, Object> convertProducerPropertiesToMap(ProducerConfigProperties producerProps) {
+		var properties = new PulsarBinderUtils.Properties();
+		var map = PropertyMapper.get().alwaysApplyingWhenNonNull();
+		map.from(producerProps::getTopicName).to(properties.in("topicName"));
+		map.from(producerProps::getProducerName).to(properties.in("producerName"));
+		map.from(producerProps::getSendTimeout).asInt(Duration::toMillis).to(properties.in("sendTimeoutMs"));
+		map.from(producerProps::getBlockIfQueueFull).to(properties.in("blockIfQueueFull"));
+		map.from(producerProps::getMaxPendingMessages).to(properties.in("maxPendingMessages"));
+		map.from(producerProps::getMaxPendingMessagesAcrossPartitions)
+				.to(properties.in("maxPendingMessagesAcrossPartitions"));
+		map.from(producerProps::getMessageRoutingMode).to(properties.in("messageRoutingMode"));
+		map.from(producerProps::getHashingScheme).to(properties.in("hashingScheme"));
+		map.from(producerProps::getCryptoFailureAction).to(properties.in("cryptoFailureAction"));
+		map.from(producerProps::getBatchingMaxPublishDelay).as(it -> it.toNanos() / 1000)
+				.to(properties.in("batchingMaxPublishDelayMicros"));
+		map.from(producerProps::getBatchingPartitionSwitchFrequencyByPublishDelay)
+				.to(properties.in("batchingPartitionSwitchFrequencyByPublishDelay"));
+		map.from(producerProps::getBatchingMaxMessages).to(properties.in("batchingMaxMessages"));
+		map.from(producerProps::getBatchingMaxBytes).asInt(DataSize::toBytes).to(properties.in("batchingMaxBytes"));
+		map.from(producerProps::getBatchingEnabled).to(properties.in("batchingEnabled"));
+		map.from(producerProps::getChunkingEnabled).to(properties.in("chunkingEnabled"));
+		map.from(producerProps::getEncryptionKeys).to(properties.in("encryptionKeys"));
+		map.from(producerProps::getCompressionType).to(properties.in("compressionType"));
+		map.from(producerProps::getInitialSequenceId).to(properties.in("initialSequenceId"));
+		map.from(producerProps::getAutoUpdatePartitions).to(properties.in("autoUpdatePartitions"));
+		map.from(producerProps::getAutoUpdatePartitionsInterval).as(Duration::toSeconds)
+				.to(properties.in("autoUpdatePartitionsIntervalSeconds"));
+		map.from(producerProps::getMultiSchema).to(properties.in("multiSchema"));
+		map.from(producerProps::getProducerAccessMode).to(properties.in("accessMode"));
+		map.from(producerProps::getLazyStartPartitionedProducers).to(properties.in("lazyStartPartitionedProducers"));
+		map.from(producerProps::getProperties).to(properties.in("properties"));
+		return properties;
+	}
+
+	static class Properties extends HashMap<String, Object> {
+
+		<V> java.util.function.Consumer<V> in(String key) {
+			return (value) -> put(key, value);
+		}
+
 	}
 
 }

@@ -17,7 +17,6 @@
 package org.springframework.cloud.stream.binder.pulsar;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
@@ -104,7 +103,7 @@ public class PulsarBinderTests extends
 				Map.of("serviceUrl", PulsarTestContainerSupport.getHttpServiceUrl()));
 		var configProps = new PulsarBinderConfigurationProperties();
 		var provisioner = new PulsarTopicProvisioner(pulsarAdministration, configProps);
-		var producerFactory = new DefaultPulsarProducerFactory<>(pulsarClient, Collections.emptyMap());
+		var producerFactory = new DefaultPulsarProducerFactory<>(pulsarClient);
 		var pulsarTemplate = new PulsarTemplate<>(producerFactory);
 		var config = Map.<String, Object>of("subscriptionInitialPosition", SubscriptionInitialPosition.Earliest);
 		var consumerFactory = new DefaultPulsarConsumerFactory<>(pulsarClient, config);

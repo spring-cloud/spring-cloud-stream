@@ -68,7 +68,7 @@ public class PulsarBinderConfigurationPropertiesTests {
 		props.put("spring.cloud.stream.pulsar.binder.producer.properties[my-prop]", "my-prop-value");
 
 		bind(props);
-		Map<String, Object> producerProps = properties.getProducer().buildProperties();
+		Map<String, Object> producerProps = PulsarBinderUtils.convertProducerPropertiesToMap(properties.getProducer());
 
 		// Verify that the props can be loaded in a ProducerBuilder
 		assertThatNoException().isThrownBy(() -> ConfigurationDataUtils.loadData(producerProps,

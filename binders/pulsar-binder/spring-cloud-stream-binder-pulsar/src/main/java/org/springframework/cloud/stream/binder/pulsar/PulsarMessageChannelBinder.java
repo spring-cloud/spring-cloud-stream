@@ -111,9 +111,11 @@ public class PulsarMessageChannelBinder extends
 		else {
 			schema = null;
 		}
-		var baseProducerProps = new ProducerConfigProperties().buildProperties();
-		var binderProducerProps = this.binderConfigProps.getProducer().buildProperties();
-		var bindingProducerProps = producerProperties.getExtension().buildProperties();
+
+		var baseProducerProps = PulsarBinderUtils.convertProducerPropertiesToMap(new ProducerConfigProperties());
+		var binderProducerProps = PulsarBinderUtils
+				.convertProducerPropertiesToMap(this.binderConfigProps.getProducer());
+		var bindingProducerProps = PulsarBinderUtils.convertProducerPropertiesToMap(producerProperties.getExtension());
 		var mergedProducerProps = PulsarBinderUtils.mergePropertiesWithPrecedence(baseProducerProps,
 				binderProducerProps, bindingProducerProps);
 
