@@ -26,6 +26,7 @@ import org.springframework.messaging.Message;
 
 /**
  * Extended default PartitionHandler with new method to determine partition with a kafka provided partition count.
+ * @Author Oliver Führer
  */
 public class KafkaPartitionHandler extends PartitionHandler {
 	/**
