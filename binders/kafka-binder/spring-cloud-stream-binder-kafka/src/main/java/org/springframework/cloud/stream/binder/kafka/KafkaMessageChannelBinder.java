@@ -64,6 +64,7 @@ import org.springframework.cloud.stream.binder.ExtendedProducerProperties;
 import org.springframework.cloud.stream.binder.ExtendedPropertiesBinder;
 import org.springframework.cloud.stream.binder.HeaderMode;
 import org.springframework.cloud.stream.binder.MessageValues;
+import org.springframework.cloud.stream.binder.PartitionHandler;
 import org.springframework.cloud.stream.binder.kafka.config.ClientFactoryCustomizer;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaBinderConfigurationProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaConsumerProperties;
@@ -1488,7 +1489,7 @@ public class KafkaMessageChannelBinder extends
 
 		private final ProducerFactory<byte[], byte[]> producerFactory;
 
-		KafkaPartitionHandler kafkaPartitionHandler = null;
+		PartitionHandler kafkaPartitionHandler = null;
 
 		private String topic;
 
@@ -1527,15 +1528,18 @@ public class KafkaMessageChannelBinder extends
 			this.producerFactory = producerFactory;
 
 			/*
-			 	Activate kafkaPartitionHandler if 'getPartitionKeyExpression' was used to recalculate/override
-			 	partition with current partition size from kafkaTemplate just before message is send.
-			 	PartitionKeyExpression 'payload' is not supported here,
-			 	because of OutboundContentTypeConvertingInterceptor was called before.
+			 	Activate own instance of a PartitionHandler if necessary/possible to  override any other existing
+			 	partition calculation (see other usages of PartitionHandler) by	using current partition count
+			 	(which may have changed at runtime) each time a message is handled.
+
+			 	PartitionKeyExpression 'payload' is not supported here, because of
+			 	OutboundContentTypeConvertingInterceptor would have been called before and the payload will be encoded and
+			 	not readable for PartitionHandler during handleMessage method.
 			 */
 			if (producerProperties.getPartitionKeyExpression() != null &&
 				!(producerProperties.getPartitionKeyExpression().getExpressionString().equals("payload"))) {
 				kafkaPartitionHandler =
-					new KafkaPartitionHandler(ExpressionUtils.createStandardEvaluationContext(beanFactory),
+					new PartitionHandler(ExpressionUtils.createStandardEvaluationContext(beanFactory),
 						producerProperties, beanFactory);
 			}
 		}
@@ -1572,9 +1576,11 @@ public class KafkaMessageChannelBinder extends
 
 		@Override
 		public void handleMessage(Message<?> message) {
+
+			// if we use our own partition handler to update partition count we recalculate partition
 			if (kafkaPartitionHandler != null) {
-				int partitionId = kafkaPartitionHandler.determinePartition(message,
-					getKafkaTemplate().partitionsFor(this.topic).size());
+				kafkaPartitionHandler.setPartitionCount(getKafkaTemplate().partitionsFor(this.topic).size());
+				int partitionId = kafkaPartitionHandler.determinePartition(message);
 
 				Message<?> newMessage = MessageBuilder
 					.fromMessage(message)
@@ -1587,11 +1593,11 @@ public class KafkaMessageChannelBinder extends
 			}
 		}
 
-		KafkaPartitionHandler getKafkaPartitionHandler() {
+		PartitionHandler getKafkaPartitionHandler() {
 			return kafkaPartitionHandler;
 		}
 
-		void setKafkaPartitionHandler(KafkaPartitionHandler kafkaPartitionHandler) {
+		void setKafkaPartitionHandler(PartitionHandler kafkaPartitionHandler) {
 			this.kafkaPartitionHandler = kafkaPartitionHandler;
 		}
 	}
