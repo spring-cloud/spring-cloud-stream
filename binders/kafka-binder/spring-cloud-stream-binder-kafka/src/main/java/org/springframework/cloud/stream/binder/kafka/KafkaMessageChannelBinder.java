@@ -1537,7 +1537,8 @@ public class KafkaMessageChannelBinder extends
 			 	not readable for PartitionHandler during handleMessage method.
 			 */
 			if (producerProperties.getPartitionKeyExpression() != null &&
-				!(producerProperties.getPartitionKeyExpression().getExpressionString().equals("payload"))) {
+				!(producerProperties.getPartitionKeyExpression().getExpressionString()
+					.toLowerCase().contains("payload"))) {
 				kafkaPartitionHandler =
 					new PartitionHandler(ExpressionUtils.createStandardEvaluationContext(beanFactory),
 						producerProperties, beanFactory);
