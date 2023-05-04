@@ -155,12 +155,13 @@ import org.springframework.util.backoff.FixedBackOff;
  * @author Mark Fisher
  * @author Soby Chacko
  * @author Henryk Konsek
- * @author Doug Saus
+ * @author Doug Saus d
  * @author Lukasz Kaminski
  * @author Taras Danylchuk
  * @author Yi Liu
  * @author Chris Bono
  * @author Byungjun You
+ * @author Oliver Führer
  */
 public class KafkaMessageChannelBinder extends
 		// @checkstyle:off
@@ -1480,14 +1481,14 @@ public class KafkaMessageChannelBinder extends
 		return Collections.unmodifiableList(kafkaMessageListenerContainers);
 	}
 
-	private final class ProducerConfigurationMessageHandler
+	final class ProducerConfigurationMessageHandler
 			extends KafkaProducerMessageHandler<byte[], byte[]> {
 
 		private boolean running = true;
 
 		private final ProducerFactory<byte[], byte[]> producerFactory;
 
-		private KafkaPartitionHandler kafkaPartitionHandler = null;
+		KafkaPartitionHandler kafkaPartitionHandler = null;
 
 		private String topic;
 
@@ -1584,6 +1585,14 @@ public class KafkaMessageChannelBinder extends
 			else {
 				super.handleMessage(message);
 			}
+		}
+
+		KafkaPartitionHandler getKafkaPartitionHandler() {
+			return kafkaPartitionHandler;
+		}
+
+		void setKafkaPartitionHandler(KafkaPartitionHandler kafkaPartitionHandler) {
+			this.kafkaPartitionHandler = kafkaPartitionHandler;
 		}
 	}
 
@@ -1698,5 +1707,4 @@ public class KafkaMessageChannelBinder extends
 			}
 		}
 	}
-
 }

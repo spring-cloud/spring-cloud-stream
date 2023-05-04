@@ -74,6 +74,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
+import org.mockito.ArgumentMatchers;
 
 import org.springframework.beans.DirectFieldAccessor;
 import org.springframework.cloud.stream.binder.Binder;
@@ -159,7 +160,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.entry;
 import static org.assertj.core.api.Assertions.fail;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
 
 /**
  * @author Soby Chacko
@@ -167,6 +171,7 @@ import static org.mockito.Mockito.mock;
  * @author Henryk Konsek
  * @author Gary Russell
  * @author Chris Bono
+ * @Author Oliver Führer
  */
 @EmbeddedKafka(count = 1, controlledShutdown = true, topics = "error.pollableDlq.group-pcWithDlq", brokerProperties = {"transaction.state.log.replication.factor=1",
 		"transaction.state.log.min.isr=1"})
@@ -4003,6 +4008,35 @@ public class KafkaBinderTests extends
 				handler.getKafkaTemplate().setObservationEnabled(true));
 
 		setupBindingAndAssert("enable-observation.2", binder);
+	}
+
+
+	@Test
+	void testKafkaPartitionHandlerCalled() throws Exception {
+		Binder binder = getBinder();
+		ExtendedProducerProperties<KafkaProducerProperties> properties = createProducerProperties();
+		properties.setPartitionKeyExpression(
+			spelExpressionParser.parseExpression("headers['partitionKey']"));
+
+		DirectChannel outputChannel = createBindableChannel("output",
+			createProducerBindingProperties(createProducerProperties()));
+
+		Binding<MessageChannel> producerBinding = binder.bindProducer("foo",
+			outputChannel, properties);
+
+		KafkaMessageChannelBinder.ProducerConfigurationMessageHandler kafkaProducerMessageHandler =
+			(KafkaMessageChannelBinder.ProducerConfigurationMessageHandler) TestUtils.getPropertyValue(
+				producerBinding, "lifecycle", KafkaProducerMessageHandler.class);
+
+		assertThat(kafkaProducerMessageHandler.getKafkaPartitionHandler()).isNotNull();
+		KafkaPartitionHandler kafkaPartitionHandlerSpy = spy(kafkaProducerMessageHandler.getKafkaPartitionHandler());
+		kafkaProducerMessageHandler.setKafkaPartitionHandler(kafkaPartitionHandlerSpy);
+
+		Message<?> message = org.springframework.integration.support.MessageBuilder
+			.withPayload("foo").setHeader("partitionKey", "123").build();
+		outputChannel.send(message);
+
+		verify(kafkaPartitionHandlerSpy).determinePartition(ArgumentMatchers.any(), eq(1));
 	}
 
 	private void setupBindingAndAssert(String bindingName, AbstractKafkaTestBinder binder) throws Exception {
