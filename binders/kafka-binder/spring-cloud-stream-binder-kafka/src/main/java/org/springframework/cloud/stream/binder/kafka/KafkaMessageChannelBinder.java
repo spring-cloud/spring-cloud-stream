@@ -1593,14 +1593,6 @@ public class KafkaMessageChannelBinder extends
 				super.handleMessage(message);
 			}
 		}
-
-		PartitionHandler getKafkaPartitionHandler() {
-			return kafkaPartitionHandler;
-		}
-
-		void setKafkaPartitionHandler(PartitionHandler kafkaPartitionHandler) {
-			this.kafkaPartitionHandler = kafkaPartitionHandler;
-		}
 	}
 
 	/**

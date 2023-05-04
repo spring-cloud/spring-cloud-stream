@@ -17,6 +17,7 @@
 package org.springframework.cloud.stream.binder.kafka;
 
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -155,6 +156,7 @@ import org.springframework.messaging.support.GenericMessage;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.Assert;
 import org.springframework.util.MimeTypeUtils;
+import org.springframework.util.ReflectionUtils;
 import org.springframework.util.backoff.FixedBackOff;
 
 
@@ -4029,9 +4031,16 @@ public class KafkaBinderTests extends
 			(KafkaMessageChannelBinder.ProducerConfigurationMessageHandler) TestUtils.getPropertyValue(
 				producerBinding, "lifecycle", KafkaProducerMessageHandler.class);
 
-		assertThat(kafkaProducerMessageHandler.getKafkaPartitionHandler()).isNotNull();
-		PartitionHandler kafkaPartitionHandlerSpy = spy(kafkaProducerMessageHandler.getKafkaPartitionHandler());
-		kafkaProducerMessageHandler.setKafkaPartitionHandler(kafkaPartitionHandlerSpy);
+		Field kafkaPartitionHandlerField = ReflectionUtils.findField(
+			KafkaMessageChannelBinder.ProducerConfigurationMessageHandler.class, "kafkaPartitionHandler");
+
+		PartitionHandler partitionHandler =
+			(PartitionHandler) kafkaPartitionHandlerField.get(kafkaProducerMessageHandler);
+
+		assertThat(partitionHandler).isNotNull();
+		PartitionHandler kafkaPartitionHandlerSpy = spy(partitionHandler);
+
+		kafkaPartitionHandlerField.set(kafkaProducerMessageHandler, kafkaPartitionHandlerSpy);
 
 		Message<?> message = org.springframework.integration.support.MessageBuilder
 			.withPayload("foo").setHeader("partitionKey", "123").build();
