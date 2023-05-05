@@ -45,6 +45,7 @@ import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.admin.CreateTopicsResult;
 import org.apache.kafka.clients.admin.DescribeTopicsResult;
+import org.apache.kafka.clients.admin.NewPartitions;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.admin.TopicDescription;
 import org.apache.kafka.clients.consumer.Consumer;
@@ -166,6 +167,7 @@ import static org.assertj.core.api.Assertions.entry;
 import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 /**
@@ -4013,20 +4015,21 @@ public class KafkaBinderTests extends
 		setupBindingAndAssert("enable-observation.2", binder);
 	}
 
-
 	@Test
-	void testKafkaPartitionHandlerCalled() throws Exception {
-
+	void testDynamicPartitionUpdates() throws Exception {
 		Binder binder = getBinder();
 		ExtendedProducerProperties<KafkaProducerProperties> properties = createProducerProperties();
 		properties.setPartitionKeyExpression(
 			spelExpressionParser.parseExpression("headers['partitionKey']"));
 		properties.setDynamicPartitionUpdatesEnabled(true);
+		properties.getExtension().getConfiguration().put(ProducerConfig.METADATA_MAX_AGE_CONFIG, "1000");
 
 		DirectChannel outputChannel = createBindableChannel("output",
 			createProducerBindingProperties(createProducerProperties()));
 
-		Binding<MessageChannel> producerBinding = binder.bindProducer("foo",
+		invokeCreateTopic("partitionTopic", 7, 1);
+
+		Binding<MessageChannel> producerBinding = binder.bindProducer("partitionTopic",
 			outputChannel, properties);
 
 		KafkaMessageChannelBinder.ProducerConfigurationMessageHandler kafkaProducerMessageHandler =
@@ -4044,12 +4047,27 @@ public class KafkaBinderTests extends
 
 		kafkaPartitionHandlerField.set(kafkaProducerMessageHandler, kafkaPartitionHandlerSpy);
 
+		// send message with initial partition size
 		Message<?> message = org.springframework.integration.support.MessageBuilder
-			.withPayload("foo").setHeader("partitionKey", "123").build();
+			.withPayload("partitionTopic").setHeader("partitionKey", "123").build();
 		outputChannel.send(message);
 
-		verify(kafkaPartitionHandlerSpy).setPartitionCount(1);
-		verify(kafkaPartitionHandlerSpy).determinePartition(ArgumentMatchers.any());
+		// change partition size
+		Map<String, NewPartitions> counts = new HashMap<>();
+		counts.put("partitionTopic", NewPartitions.increaseTo(11));
+		adminClient.createPartitions(counts);
+
+		// wait until metadata is processed in the background
+		Thread.sleep(2000);
+
+		// send message again with new partition size
+		Message<?> message2 = org.springframework.integration.support.MessageBuilder
+			.withPayload("partitionTopic").setHeader("partitionKey", "456").build();
+		outputChannel.send(message2);
+
+		verify(kafkaPartitionHandlerSpy).setPartitionCount(7);
+		verify(kafkaPartitionHandlerSpy).setPartitionCount(11);
+		verify(kafkaPartitionHandlerSpy, times(2)).determinePartition(ArgumentMatchers.any());
 	}
 
 	private void setupBindingAndAssert(String bindingName, AbstractKafkaTestBinder binder) throws Exception {
