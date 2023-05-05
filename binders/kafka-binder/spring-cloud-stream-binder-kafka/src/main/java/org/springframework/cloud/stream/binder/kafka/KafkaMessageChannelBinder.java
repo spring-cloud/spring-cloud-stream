@@ -1535,7 +1535,7 @@ public class KafkaMessageChannelBinder extends
 			 	OutboundContentTypeConvertingInterceptor would have been called before and the payload will be encoded and
 			 	not readable for PartitionHandler during handleMessage method.
 			 */
-			if (producerProperties.isKafkaPartitionCountUpdateEnabled() &&
+			if (producerProperties.isDynamicPartitionUpdatesEnabled() &&
 				producerProperties.getPartitionKeyExpression() != null &&
 				!(producerProperties.getPartitionKeyExpression().getExpressionString()
 					.toLowerCase().contains("payload"))) {

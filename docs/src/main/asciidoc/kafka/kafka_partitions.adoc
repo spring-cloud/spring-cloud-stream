@@ -65,8 +65,12 @@ You can override this default by using the `partitionSelectorExpression` or `par
 Since partitions are natively handled by Kafka, no special configuration is needed on the consumer side.
 Kafka allocates partitions across the instances.
 
-NOTE: The partitionCount for a kafka topic may change during runtime (e.g. due to an adminstration task). The calculated  partitions will be different after that (e.g. new partitions will be used). Since 4.0.3 of Spring Cloud Stream runtime changes of partition count will be supported. See also parameter 'spring.metadata.max.age.ms'.
-Due to some limitations this is not possible if the used 'partition-key-expression' directly uses the 'payload' of the message (see also https://github.com/spring-cloud/spring-cloud-stream/issues/2706). The update behaviour is disabled by default and can be enabled using configuration parameter 'producer.kafkaPartitionCountUpdateEnabled=true'.
+NOTE: The partitionCount for a kafka topic may change during runtime (e.g. due to an adminstration task).
+The calculated partitions will be different after that (e.g. new partitions will be used then).
+Since 4.0.3 of Spring Cloud Stream runtime changes of partition count will be supported.
+See also parameter 'spring.kafka.producer.properties.metadata.max.age.ms' to configure update intervall.
+Due to some limitations it is not possible to use a 'partition-key-expression' which reference the 'payload' of the message, the mechanism will be disabled in that case.
+The general behaviour is disabled by default and can be enabled using configuration parameter 'producer.dynamicPartitionUpdatesEnabled=true'.
 
 The following Spring Boot application listens to a Kafka stream and prints (to the console) the partition ID to which each message goes:
 

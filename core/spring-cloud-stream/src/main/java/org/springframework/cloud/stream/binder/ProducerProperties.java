@@ -84,7 +84,7 @@ public class ProducerProperties {
 	/**
 	 * A flag which enables/disables kafka partition count updates during runtime.
 	 */
-	private boolean kafkaPartitionCountUpdateEnabled = false;
+	private boolean dynamicPartitionUpdatesEnabled = false;
 
 	public String getBindingName() {
 		return bindingName;
@@ -203,14 +203,14 @@ public class ProducerProperties {
 	/**
 	 * @return true if partition count should be updated at runtime
 	 *
-	 * A flag which enables/disables kafka partition count updates during runtime.
+	 * A flag which enables/disables partition count updates during runtime. Currently only implemented for kafka binders.
 	 */
-	public boolean isKafkaPartitionCountUpdateEnabled() {
-		return kafkaPartitionCountUpdateEnabled;
+	public boolean isDynamicPartitionUpdatesEnabled() {
+		return dynamicPartitionUpdatesEnabled;
 	}
 
-	public void setKafkaPartitionCountUpdateEnabled(boolean enabled) {
-		this.kafkaPartitionCountUpdateEnabled = enabled;
+	public void setDynamicPartitionUpdatesEnabled(boolean enabled) {
+		this.dynamicPartitionUpdatesEnabled = enabled;
 	}
 
 	static class ExpressionSerializer extends JsonSerializer<Expression> {

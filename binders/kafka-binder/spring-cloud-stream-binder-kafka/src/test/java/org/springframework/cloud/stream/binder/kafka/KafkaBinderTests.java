@@ -4021,7 +4021,7 @@ public class KafkaBinderTests extends
 		ExtendedProducerProperties<KafkaProducerProperties> properties = createProducerProperties();
 		properties.setPartitionKeyExpression(
 			spelExpressionParser.parseExpression("headers['partitionKey']"));
-		properties.setKafkaPartitionCountUpdateEnabled(true);
+		properties.setDynamicPartitionUpdatesEnabled(true);
 
 		DirectChannel outputChannel = createBindableChannel("output",
 			createProducerBindingProperties(createProducerProperties()));
