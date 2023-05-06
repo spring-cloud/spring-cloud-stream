@@ -4048,7 +4048,7 @@ public class KafkaBinderTests extends
 		kafkaPartitionHandlerField.set(kafkaProducerMessageHandler, kafkaPartitionHandlerSpy);
 
 		// send message with initial partition size
-		Message<?> message = org.springframework.integration.support.MessageBuilder
+		Message<?> message = MessageBuilder
 			.withPayload("partitionTopic").setHeader("partitionKey", "123").build();
 		outputChannel.send(message);
 
@@ -4061,7 +4061,7 @@ public class KafkaBinderTests extends
 		Thread.sleep(2000);
 
 		// send message again with new partition size
-		Message<?> message2 = org.springframework.integration.support.MessageBuilder
+		Message<?> message2 = MessageBuilder
 			.withPayload("partitionTopic").setHeader("partitionKey", "456").build();
 		outputChannel.send(message2);
 
