@@ -22,10 +22,11 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
-import org.springframework.cloud.stream.binder.pulsar.properties.PulsarConsumerProperties;
 import org.springframework.boot.context.properties.PropertyMapper;
+import org.springframework.cloud.stream.binder.pulsar.properties.PulsarConsumerProperties;
 import org.springframework.cloud.stream.provisioning.ConsumerDestination;
 import org.springframework.core.log.LogAccessor;
+import org.springframework.pulsar.autoconfigure.ConsumerConfigProperties;
 import org.springframework.pulsar.autoconfigure.ProducerConfigProperties;
 import org.springframework.util.StringUtils;
 import org.springframework.util.unit.DataSize;
@@ -141,6 +142,57 @@ final class PulsarBinderUtils {
 		map.from(producerProps::getProducerAccessMode).to(properties.in("accessMode"));
 		map.from(producerProps::getLazyStartPartitionedProducers).to(properties.in("lazyStartPartitionedProducers"));
 		map.from(producerProps::getProperties).to(properties.in("properties"));
+		return properties;
+	}
+
+	/**
+	 * Gets a map representation of a {@link ConsumerConfigProperties}.
+	 * @param consumerProps the consumer props
+	 * @return map representation of consumer props where each entry is a field and its
+	 * associated value
+	 */
+	static Map<String, Object> convertConsumerPropertiesToMap(ConsumerConfigProperties consumerProps) {
+		var properties = new PulsarBinderUtils.Properties();
+		var map = PropertyMapper.get().alwaysApplyingWhenNonNull();
+		map.from(consumerProps::getTopics).to(properties.in("topicNames"));
+		map.from(consumerProps::getTopicsPattern).to(properties.in("topicsPattern"));
+		map.from(consumerProps::getSubscriptionName).to(properties.in("subscriptionName"));
+		map.from(consumerProps::getSubscriptionType).to(properties.in("subscriptionType"));
+		map.from(consumerProps::getSubscriptionProperties).to(properties.in("subscriptionProperties"));
+		map.from(consumerProps::getSubscriptionMode).to(properties.in("subscriptionMode"));
+		map.from(consumerProps::getReceiverQueueSize).to(properties.in("receiverQueueSize"));
+		map.from(consumerProps::getAcknowledgementsGroupTime).as(it -> it.toNanos() / 1000)
+				.to(properties.in("acknowledgementsGroupTimeMicros"));
+		map.from(consumerProps::getNegativeAckRedeliveryDelay).as(it -> it.toNanos() / 1000)
+				.to(properties.in("negativeAckRedeliveryDelayMicros"));
+		map.from(consumerProps::getMaxTotalReceiverQueueSizeAcrossPartitions)
+				.to(properties.in("maxTotalReceiverQueueSizeAcrossPartitions"));
+		map.from(consumerProps::getConsumerName).to(properties.in("consumerName"));
+		map.from(consumerProps::getAckTimeout).as(Duration::toMillis).to(properties.in("ackTimeoutMillis"));
+		map.from(consumerProps::getTickDuration).as(Duration::toMillis).to(properties.in("tickDurationMillis"));
+		map.from(consumerProps::getPriorityLevel).to(properties.in("priorityLevel"));
+		map.from(consumerProps::getCryptoFailureAction).to(properties.in("cryptoFailureAction"));
+		map.from(consumerProps::getProperties).to(properties.in("properties"));
+		map.from(consumerProps::getReadCompacted).to(properties.in("readCompacted"));
+		map.from(consumerProps::getSubscriptionInitialPosition).to(properties.in("subscriptionInitialPosition"));
+		map.from(consumerProps::getPatternAutoDiscoveryPeriod).to(properties.in("patternAutoDiscoveryPeriod"));
+		map.from(consumerProps::getRegexSubscriptionMode).to(properties.in("regexSubscriptionMode"));
+		map.from(consumerProps::getDeadLetterPolicy).to(properties.in("deadLetterPolicy"));
+		map.from(consumerProps::getRetryEnable).to(properties.in("retryEnable"));
+		map.from(consumerProps::getAutoUpdatePartitions).to(properties.in("autoUpdatePartitions"));
+		map.from(consumerProps::getAutoUpdatePartitionsInterval).as(Duration::toSeconds)
+				.to(properties.in("autoUpdatePartitionsIntervalSeconds"));
+		map.from(consumerProps::getReplicateSubscriptionState).to(properties.in("replicateSubscriptionState"));
+		map.from(consumerProps::getResetIncludeHead).to(properties.in("resetIncludeHead"));
+		map.from(consumerProps::getBatchIndexAckEnabled).to(properties.in("batchIndexAckEnabled"));
+		map.from(consumerProps::getAckReceiptEnabled).to(properties.in("ackReceiptEnabled"));
+		map.from(consumerProps::getPoolMessages).to(properties.in("poolMessages"));
+		map.from(consumerProps::getStartPaused).to(properties.in("startPaused"));
+		map.from(consumerProps::getAutoAckOldestChunkedMessageOnQueueFull)
+				.to(properties.in("autoAckOldestChunkedMessageOnQueueFull"));
+		map.from(consumerProps::getMaxPendingChunkedMessage).to(properties.in("maxPendingChunkedMessage"));
+		map.from(consumerProps::getExpireTimeOfIncompleteChunkedMessage).as(Duration::toMillis)
+				.to(properties.in("expireTimeOfIncompleteChunkedMessageMillis"));
 		return properties;
 	}
 

@@ -105,8 +105,8 @@ public class PulsarBinderTests extends
 		var provisioner = new PulsarTopicProvisioner(pulsarAdministration, configProps);
 		var producerFactory = new DefaultPulsarProducerFactory<>(pulsarClient);
 		var pulsarTemplate = new PulsarTemplate<>(producerFactory);
-		var config = Map.<String, Object>of("subscriptionInitialPosition", SubscriptionInitialPosition.Earliest);
-		var consumerFactory = new DefaultPulsarConsumerFactory<>(pulsarClient, config);
+		var consumerFactory = new DefaultPulsarConsumerFactory<>(pulsarClient,
+				(consumerBuilder -> consumerBuilder.subscriptionInitialPosition(SubscriptionInitialPosition.Earliest)));
 		if (this.binder == null) {
 			this.binder = new PulsarTestBinder(provisioner, pulsarTemplate, consumerFactory, configProps,
 					new DefaultSchemaResolver(), JsonPulsarHeaderMapper.builder().build());

@@ -167,9 +167,10 @@ public class PulsarMessageChannelBinder extends
 		var subscriptionName = PulsarBinderUtils.subscriptionName(properties.getExtension(), destination);
 		containerProperties.setSubscriptionName(subscriptionName);
 
-		var baseConsumerProps = new ConsumerConfigProperties().buildProperties();
-		var binderConsumerProps = this.binderConfigProps.getConsumer().buildProperties();
-		var bindingConsumerProps = properties.getExtension().buildProperties();
+		var baseConsumerProps = PulsarBinderUtils.convertConsumerPropertiesToMap(new ConsumerConfigProperties());
+		var binderConsumerProps = PulsarBinderUtils
+				.convertConsumerPropertiesToMap(this.binderConfigProps.getConsumer());
+		var bindingConsumerProps = PulsarBinderUtils.convertConsumerPropertiesToMap(properties.getExtension());
 		var mergedConsumerProps = PulsarBinderUtils.mergePropertiesWithPrecedence(baseConsumerProps,
 				binderConsumerProps, bindingConsumerProps);
 		containerProperties.getPulsarConsumerProperties().putAll(mergedConsumerProps);

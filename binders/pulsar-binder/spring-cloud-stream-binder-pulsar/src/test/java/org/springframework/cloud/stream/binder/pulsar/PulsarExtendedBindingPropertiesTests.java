@@ -96,7 +96,8 @@ public class PulsarExtendedBindingPropertiesTests {
 		bind(props);
 
 		assertThat(properties.getBindings()).containsOnlyKeys("my-foo");
-		Map<String, Object> consumerProps = properties.getExtendedConsumerProperties("my-foo").buildProperties();
+		Map<String, Object> consumerProps = PulsarBinderUtils
+				.convertConsumerPropertiesToMap(properties.getExtendedConsumerProperties("my-foo"));
 		// Verify that the props can be loaded in a ConsumerBuilder
 		assertThatNoException().isThrownBy(() -> ConfigurationDataUtils.loadData(consumerProps,
 				new ConsumerConfigurationData<>(), ConsumerConfigurationData.class));
@@ -122,7 +123,8 @@ public class PulsarExtendedBindingPropertiesTests {
 
 		bind(props);
 
-		var bindingConsumerProps = properties.getExtendedConsumerProperties("my-foo").buildProperties();
+		var bindingConsumerProps = PulsarBinderUtils
+				.convertConsumerPropertiesToMap(properties.getExtendedConsumerProperties("my-foo"));
 		PulsarContainerProperties pulsarContainerProperties = new PulsarContainerProperties();
 		pulsarContainerProperties.getPulsarConsumerProperties().putAll(bindingConsumerProps);
 
