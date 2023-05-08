@@ -17,8 +17,6 @@
 package org.springframework.cloud.stream.binder.pulsar;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Collections;
-import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -100,14 +98,13 @@ public class PulsarBinderTests extends
 
 	@Override
 	protected PulsarTestBinder getBinder() {
-		var pulsarAdministration = new PulsarAdministration(
-				Map.of("serviceUrl", PulsarTestContainerSupport.getHttpServiceUrl()));
+		var pulsarAdministration = new PulsarAdministration(PulsarTestContainerSupport.getHttpServiceUrl());
 		var configProps = new PulsarBinderConfigurationProperties();
 		var provisioner = new PulsarTopicProvisioner(pulsarAdministration, configProps);
-		var producerFactory = new DefaultPulsarProducerFactory<>(pulsarClient, Collections.emptyMap());
+		var producerFactory = new DefaultPulsarProducerFactory<>(pulsarClient);
 		var pulsarTemplate = new PulsarTemplate<>(producerFactory);
-		var config = Map.<String, Object>of("subscriptionInitialPosition", SubscriptionInitialPosition.Earliest);
-		var consumerFactory = new DefaultPulsarConsumerFactory<>(pulsarClient, config);
+		var consumerFactory = new DefaultPulsarConsumerFactory<>(pulsarClient,
+				(consumerBuilder -> consumerBuilder.subscriptionInitialPosition(SubscriptionInitialPosition.Earliest)));
 		if (this.binder == null) {
 			this.binder = new PulsarTestBinder(provisioner, pulsarTemplate, consumerFactory, configProps,
 					new DefaultSchemaResolver(), JsonPulsarHeaderMapper.builder().build());

@@ -68,7 +68,7 @@ public class PulsarBinderConfigurationPropertiesTests {
 		props.put("spring.cloud.stream.pulsar.binder.producer.properties[my-prop]", "my-prop-value");
 
 		bind(props);
-		Map<String, Object> producerProps = properties.getProducer().buildProperties();
+		Map<String, Object> producerProps = PulsarBinderUtils.convertProducerPropertiesToMap(properties.getProducer());
 
 		// Verify that the props can be loaded in a ProducerBuilder
 		assertThatNoException().isThrownBy(() -> ConfigurationDataUtils.loadData(producerProps,
@@ -98,7 +98,7 @@ public class PulsarBinderConfigurationPropertiesTests {
 		props.put("spring.cloud.stream.pulsar.binder.consumer.receiver-queue-size", "1");
 
 		bind(props);
-		Map<String, Object> consumerProps = properties.getConsumer().buildProperties();
+		Map<String, Object> consumerProps = PulsarBinderUtils.convertConsumerPropertiesToMap(properties.getConsumer());
 
 		// Verify that the props can be loaded in a ConsumerBuilder
 		assertThatNoException().isThrownBy(() -> ConfigurationDataUtils.loadData(consumerProps,

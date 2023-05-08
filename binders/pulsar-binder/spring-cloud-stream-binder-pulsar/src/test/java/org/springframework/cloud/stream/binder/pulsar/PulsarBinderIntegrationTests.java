@@ -638,16 +638,23 @@ class PulsarBinderIntegrationTests implements PulsarTestContainerSupport {
 	@Import(PrimitiveTextConfig.class)
 	static class BinderAndBindingPropsTestConfig {
 
+		@SuppressWarnings("unchecked")
 		@Bean
 		public PulsarProducerFactory<?> pulsarProducerFactory(PulsarClient pulsarClient,
 				PulsarProperties pulsarProperties, TopicResolver topicResolver) {
-			return new TrackingProducerFactory(pulsarClient, pulsarProperties.buildProducerProperties(), topicResolver);
+			var customizer = (ProducerBuilderCustomizer<String>) pulsarProperties.getProducer()
+					.toProducerBuilderCustomizer();
+			return new TrackingProducerFactory(pulsarClient, pulsarProperties.getProducer().getTopicName(), customizer,
+					topicResolver);
 		}
 
+		@SuppressWarnings("unchecked")
 		@Bean
 		public PulsarConsumerFactory<?> pulsarConsumerFactory(PulsarClient pulsarClient,
 				PulsarProperties pulsarProperties) {
-			return new TrackingConsumerFactory(pulsarClient, pulsarProperties.buildConsumerProperties());
+			var customizer = (ConsumerBuilderCustomizer<String>) pulsarProperties.getConsumer()
+					.toConsumerBuilderCustomizer();
+			return new TrackingConsumerFactory(pulsarClient, customizer);
 		}
 
 	}
@@ -656,8 +663,9 @@ class PulsarBinderIntegrationTests implements PulsarTestContainerSupport {
 
 		List<Producer<String>> producersCreated = new ArrayList<>();
 
-		TrackingProducerFactory(PulsarClient pulsarClient, Map<String, Object> config, TopicResolver topicResolver) {
-			super(pulsarClient, config, topicResolver);
+		TrackingProducerFactory(PulsarClient pulsarClient, @Nullable String defaultTopic,
+				ProducerBuilderCustomizer<String> defaultConfigCustomizer, TopicResolver topicResolver) {
+			super(pulsarClient, defaultTopic, defaultConfigCustomizer, topicResolver);
 		}
 
 		@Override
@@ -677,8 +685,8 @@ class PulsarBinderIntegrationTests implements PulsarTestContainerSupport {
 
 		List<org.apache.pulsar.client.api.Consumer<String>> consumersCreated = new ArrayList<>();
 
-		TrackingConsumerFactory(PulsarClient pulsarClient, Map<String, Object> consumerConfig) {
-			super(pulsarClient, consumerConfig);
+		TrackingConsumerFactory(PulsarClient pulsarClient, ConsumerBuilderCustomizer<String> defaultConsumerConfig) {
+			super(pulsarClient, defaultConsumerConfig);
 		}
 
 		@Override

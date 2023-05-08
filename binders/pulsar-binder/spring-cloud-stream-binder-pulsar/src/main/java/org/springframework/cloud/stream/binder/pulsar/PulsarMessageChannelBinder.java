@@ -111,9 +111,11 @@ public class PulsarMessageChannelBinder extends
 		else {
 			schema = null;
 		}
-		var baseProducerProps = new ProducerConfigProperties().buildProperties();
-		var binderProducerProps = this.binderConfigProps.getProducer().buildProperties();
-		var bindingProducerProps = producerProperties.getExtension().buildProperties();
+
+		var baseProducerProps = PulsarBinderUtils.convertProducerPropertiesToMap(new ProducerConfigProperties());
+		var binderProducerProps = PulsarBinderUtils
+				.convertProducerPropertiesToMap(this.binderConfigProps.getProducer());
+		var bindingProducerProps = PulsarBinderUtils.convertProducerPropertiesToMap(producerProperties.getExtension());
 		var mergedProducerProps = PulsarBinderUtils.mergePropertiesWithPrecedence(baseProducerProps,
 				binderProducerProps, bindingProducerProps);
 
@@ -165,9 +167,10 @@ public class PulsarMessageChannelBinder extends
 		var subscriptionName = PulsarBinderUtils.subscriptionName(properties.getExtension(), destination);
 		containerProperties.setSubscriptionName(subscriptionName);
 
-		var baseConsumerProps = new ConsumerConfigProperties().buildProperties();
-		var binderConsumerProps = this.binderConfigProps.getConsumer().buildProperties();
-		var bindingConsumerProps = properties.getExtension().buildProperties();
+		var baseConsumerProps = PulsarBinderUtils.convertConsumerPropertiesToMap(new ConsumerConfigProperties());
+		var binderConsumerProps = PulsarBinderUtils
+				.convertConsumerPropertiesToMap(this.binderConfigProps.getConsumer());
+		var bindingConsumerProps = PulsarBinderUtils.convertConsumerPropertiesToMap(properties.getExtension());
 		var mergedConsumerProps = PulsarBinderUtils.mergePropertiesWithPrecedence(baseConsumerProps,
 				binderConsumerProps, bindingConsumerProps);
 		containerProperties.getPulsarConsumerProperties().putAll(mergedConsumerProps);
