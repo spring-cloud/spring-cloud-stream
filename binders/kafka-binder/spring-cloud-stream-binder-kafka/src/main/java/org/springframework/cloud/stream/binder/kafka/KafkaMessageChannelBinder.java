@@ -156,7 +156,7 @@ import org.springframework.util.backoff.FixedBackOff;
  * @author Mark Fisher
  * @author Soby Chacko
  * @author Henryk Konsek
- * @author Doug Saus d
+ * @author Doug Saus
  * @author Lukasz Kaminski
  * @author Taras Danylchuk
  * @author Yi Liu
