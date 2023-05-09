@@ -198,7 +198,7 @@ public class ProducerProperties {
 	}
 
 	/**
-	 * Returns status of property dynamicPartitionUpdatesEnabled
+	 * Returns status of property dynamicPartitionUpdatesEnabled.
 	 * @return true if dynamic updates should are enabled otherwise false
 	 */
 	public boolean isDynamicPartitionUpdatesEnabled() {
