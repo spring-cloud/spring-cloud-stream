@@ -17,6 +17,7 @@
 package org.springframework.cloud.stream.binder.kafka;
 
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -44,6 +45,7 @@ import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.admin.CreateTopicsResult;
 import org.apache.kafka.clients.admin.DescribeTopicsResult;
+import org.apache.kafka.clients.admin.NewPartitions;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.admin.TopicDescription;
 import org.apache.kafka.clients.consumer.Consumer;
@@ -74,6 +76,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
+import org.mockito.ArgumentMatchers;
 
 import org.springframework.beans.DirectFieldAccessor;
 import org.springframework.cloud.stream.binder.Binder;
@@ -85,6 +88,7 @@ import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
 import org.springframework.cloud.stream.binder.ExtendedProducerProperties;
 import org.springframework.cloud.stream.binder.HeaderMode;
 import org.springframework.cloud.stream.binder.PartitionCapableBinderTests;
+import org.springframework.cloud.stream.binder.PartitionHandler;
 import org.springframework.cloud.stream.binder.PartitionTestSupport;
 import org.springframework.cloud.stream.binder.PollableSource;
 import org.springframework.cloud.stream.binder.RequeueCurrentMessageException;
@@ -153,13 +157,18 @@ import org.springframework.messaging.support.GenericMessage;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.Assert;
 import org.springframework.util.MimeTypeUtils;
+import org.springframework.util.ReflectionUtils;
 import org.springframework.util.backoff.FixedBackOff;
+
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.entry;
 import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 /**
  * @author Soby Chacko
@@ -167,6 +176,7 @@ import static org.mockito.Mockito.mock;
  * @author Henryk Konsek
  * @author Gary Russell
  * @author Chris Bono
+ * @Author Oliver Führer
  */
 @EmbeddedKafka(count = 1, controlledShutdown = true, topics = "error.pollableDlq.group-pcWithDlq", brokerProperties = {"transaction.state.log.replication.factor=1",
 		"transaction.state.log.min.isr=1"})
@@ -4003,6 +4013,61 @@ public class KafkaBinderTests extends
 				handler.getKafkaTemplate().setObservationEnabled(true));
 
 		setupBindingAndAssert("enable-observation.2", binder);
+	}
+
+	@Test
+	void testDynamicPartitionUpdates() throws Exception {
+		Binder binder = getBinder();
+		ExtendedProducerProperties<KafkaProducerProperties> properties = createProducerProperties();
+		properties.setPartitionKeyExpression(
+			spelExpressionParser.parseExpression("headers['partitionKey']"));
+		properties.setDynamicPartitionUpdatesEnabled(true);
+		properties.getExtension().getConfiguration().put(ProducerConfig.METADATA_MAX_AGE_CONFIG, "1000");
+
+		DirectChannel outputChannel = createBindableChannel("output",
+			createProducerBindingProperties(createProducerProperties()));
+
+		invokeCreateTopic("partitionTopic", 7, 1);
+
+		Binding<MessageChannel> producerBinding = binder.bindProducer("partitionTopic",
+			outputChannel, properties);
+
+		KafkaMessageChannelBinder.ProducerConfigurationMessageHandler kafkaProducerMessageHandler =
+			(KafkaMessageChannelBinder.ProducerConfigurationMessageHandler) TestUtils.getPropertyValue(
+				producerBinding, "lifecycle", KafkaProducerMessageHandler.class);
+
+		Field kafkaPartitionHandlerField = ReflectionUtils.findField(
+			KafkaMessageChannelBinder.ProducerConfigurationMessageHandler.class, "kafkaPartitionHandler");
+
+		PartitionHandler partitionHandler =
+			(PartitionHandler) kafkaPartitionHandlerField.get(kafkaProducerMessageHandler);
+
+		assertThat(partitionHandler).isNotNull();
+		PartitionHandler kafkaPartitionHandlerSpy = spy(partitionHandler);
+
+		kafkaPartitionHandlerField.set(kafkaProducerMessageHandler, kafkaPartitionHandlerSpy);
+
+		// send message with initial partition size
+		Message<?> message = MessageBuilder
+			.withPayload("partitionTopic").setHeader("partitionKey", "123").build();
+		outputChannel.send(message);
+
+		// change partition size
+		Map<String, NewPartitions> counts = new HashMap<>();
+		counts.put("partitionTopic", NewPartitions.increaseTo(11));
+		adminClient.createPartitions(counts);
+
+		// wait until metadata is processed in the background
+		Thread.sleep(2000);
+
+		// send message again with new partition size
+		Message<?> message2 = MessageBuilder
+			.withPayload("partitionTopic").setHeader("partitionKey", "456").build();
+		outputChannel.send(message2);
+
+		verify(kafkaPartitionHandlerSpy).setPartitionCount(7);
+		verify(kafkaPartitionHandlerSpy).setPartitionCount(11);
+		verify(kafkaPartitionHandlerSpy, times(2)).determinePartition(ArgumentMatchers.any());
 	}
 
 	private void setupBindingAndAssert(String bindingName, AbstractKafkaTestBinder binder) throws Exception {
