@@ -81,6 +81,8 @@ public class ProducerProperties {
 
 	private PollerProperties poller;
 
+	private boolean dynamicPartitionUpdatesEnabled = false;
+
 	public String getBindingName() {
 		return bindingName;
 	}
@@ -193,6 +195,24 @@ public class ProducerProperties {
 
 	public void setPoller(PollerProperties poller) {
 		this.poller = poller;
+	}
+
+	/**
+	 * Returns status of property dynamicPartitionUpdatesEnabled
+	 * @return true if dynamic updates should are enabled otherwise false
+	 */
+	public boolean isDynamicPartitionUpdatesEnabled() {
+		return dynamicPartitionUpdatesEnabled;
+	}
+
+	/**
+	 * A flag which enables/disables partition count updates during runtime. Disabled by default.
+	 * Depends on binder if supported or not.
+	 * Currently only supported by kafka binder (see 'Partitioning with the Kafka Binder' documentation for details)
+	 * @param enabled true if dynamic updates should be enabled otherwise false
+	 */
+	public void setDynamicPartitionUpdatesEnabled(boolean enabled) {
+		this.dynamicPartitionUpdatesEnabled = enabled;
 	}
 
 	static class ExpressionSerializer extends JsonSerializer<Expression> {
