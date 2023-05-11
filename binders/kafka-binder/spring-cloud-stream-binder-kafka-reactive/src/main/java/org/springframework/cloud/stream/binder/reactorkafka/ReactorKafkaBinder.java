@@ -21,16 +21,13 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.ProducerRecord;
-import org.apache.kafka.clients.producer.RecordMetadata;
 import reactor.core.publisher.Flux;
-import reactor.core.publisher.Sinks;
 import reactor.kafka.receiver.KafkaReceiver;
 import reactor.kafka.receiver.ReceiverOptions;
 import reactor.kafka.receiver.ReceiverRecord;
@@ -56,6 +53,9 @@ import org.springframework.cloud.stream.binder.kafka.utils.BindingUtils;
 import org.springframework.cloud.stream.provisioning.ConsumerDestination;
 import org.springframework.cloud.stream.provisioning.ProducerDestination;
 import org.springframework.context.Lifecycle;
+import org.springframework.context.support.AbstractApplicationContext;
+import org.springframework.integration.IntegrationMessageHeaderAccessor;
+import org.springframework.integration.channel.FluxMessageChannel;
 import org.springframework.integration.core.MessageProducer;
 import org.springframework.integration.endpoint.MessageProducerSupport;
 import org.springframework.integration.handler.AbstractMessageHandler;
@@ -65,6 +65,7 @@ import org.springframework.kafka.support.converter.KafkaMessageHeaders;
 import org.springframework.kafka.support.converter.MessageConverter;
 import org.springframework.kafka.support.converter.MessagingMessageConverter;
 import org.springframework.kafka.support.converter.RecordMessageConverter;
+import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
@@ -169,7 +170,13 @@ public class ReactorKafkaBinder
 				SenderOptions.create(configs));
 		// TODO bean for converter; MCB doesn't use one on the producer side.
 		RecordMessageConverter converter = new MessagingMessageConverter();
-		return new ReactorMessageHandler(opts, converter, destination.getName());
+		AbstractApplicationContext applicationContext = getApplicationContext();
+		FluxMessageChannel resultChannel = null;
+		String channelName = producerProperties.getExtension().getRecordMetadataChannel();
+		if (channelName != null && applicationContext.containsBean(channelName)) {
+			resultChannel = applicationContext.getBean(channelName, FluxMessageChannel.class);
+		}
+		return new ReactorMessageHandler(opts, converter, destination.getName(), resultChannel);
 	}
 
 
@@ -316,35 +323,40 @@ public class ReactorKafkaBinder
 
 		private final SenderOptions<Object, Object> senderOptions;
 
+		@Nullable
+		private final FluxMessageChannel results;
+
 		private volatile KafkaSender<Object, Object> sender;
 
 		private volatile boolean running;
 
 		ReactorMessageHandler(SenderOptions<Object, Object> opts, RecordMessageConverter converter,
-				String topic) {
+				String topic, @Nullable FluxMessageChannel results) {
 
 			this.senderOptions = opts;
 			this.converter = converter;
 			this.topic = topic;
+			this.results = results;
 		}
 
 		@Override
 		protected void handleMessageInternal(Message<?> message) {
-			Object sendResultHeader = message.getHeaders().get("sendResult");
-			Sinks.One<RecordMetadata> sink = Sinks.one();
-			if (sendResultHeader instanceof AtomicReference result) {
-				result.set(sink.asMono());
-			}
 			if (this.sender != null) {
-				UUID uuid = UUID.randomUUID();
+				Object correlation = message.getHeaders().get(IntegrationMessageHeaderAccessor.CORRELATION_ID);
+				if (correlation == null) {
+					correlation = UUID.randomUUID();
+				}
 				@SuppressWarnings("unchecked")
-				SenderRecord<Object, Object, UUID> sr = SenderRecord.create(
-						(ProducerRecord<Object, Object>) converter.fromMessage(message, topic), uuid);
-				Flux<SenderResult<UUID>> result = sender.send(Flux.just(sr));
-				result.subscribe(res -> sink.emitValue(res.recordMetadata(), null));
-			}
-			else {
-				sink.emitError(new IllegalStateException("Handler is not running"), null);
+				SenderRecord<Object, Object, Object> sr = SenderRecord.create(
+						(ProducerRecord<Object, Object>) converter.fromMessage(message, topic), correlation);
+				Flux<SenderResult<Object>> result = sender.send(Flux.just(sr));
+				result.subscribe(res -> {
+					if (this.results != null) {
+						this.results.send(MessageBuilder.withPayload(res)
+							.copyHeaders(message.getHeaders())
+							.build());
+					}
+				});
 			}
 		}
 

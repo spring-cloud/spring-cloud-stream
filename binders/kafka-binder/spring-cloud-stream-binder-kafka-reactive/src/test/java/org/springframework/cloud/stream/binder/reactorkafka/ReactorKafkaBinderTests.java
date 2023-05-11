@@ -34,6 +34,7 @@ import org.reactivestreams.Subscription;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.kafka.receiver.ReceiverOffset;
+import reactor.kafka.sender.SenderResult;
 
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
@@ -45,7 +46,9 @@ import org.springframework.cloud.stream.binder.kafka.properties.KafkaConsumerPro
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaProducerProperties;
 import org.springframework.cloud.stream.binder.kafka.provisioning.KafkaTopicProvisioner;
 import org.springframework.context.support.GenericApplicationContext;
+import org.springframework.integration.IntegrationMessageHeaderAccessor;
 import org.springframework.integration.channel.FluxMessageChannel;
+import org.springframework.integration.config.ConsumerEndpointFactoryBean;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -296,7 +299,27 @@ public class ReactorKafkaBinderTests {
 		});
 		provisioner.setMetadataRetryOperations(new RetryTemplate());
 		ReactorKafkaBinder binder = new ReactorKafkaBinder(binderProps, provisioner);
-		binder.setApplicationContext(new GenericApplicationContext());
+		CountDownLatch latch = new CountDownLatch(1);
+		GenericApplicationContext context = new GenericApplicationContext();
+		context.registerBean("sendResults", FluxMessageChannel.class);
+		context.refresh();
+		FluxMessageChannel results = context.getBean("sendResults", FluxMessageChannel.class);
+		ConsumerEndpointFactoryBean fb = new ConsumerEndpointFactoryBean();
+		AtomicReference<SenderResult<Integer>> senderResult = new AtomicReference<>();
+		fb.setHandler(new SenderResultMessageHandler<Integer>() {
+
+			@Override
+			public void handleResult(SenderResult<Integer> result) {
+				senderResult.set(result);
+				latch.countDown();
+			}
+
+		});
+		fb.setInputChannel(results);
+		fb.setBeanFactory(context.getBeanFactory());
+		fb.afterPropertiesSet();
+		fb.start();
+		binder.setApplicationContext(context);
 		@SuppressWarnings("rawtypes")
 		ObjectProvider<SenderOptionsCustomizer> cust = mock(ObjectProvider.class);
 		AtomicBoolean custCalled = new AtomicBoolean();
@@ -310,17 +333,15 @@ public class ReactorKafkaBinderTests {
 		KafkaProducerProperties ext = new KafkaProducerProperties();
 		ExtendedProducerProperties<KafkaProducerProperties> props =
 				new ExtendedProducerProperties<KafkaProducerProperties>(ext);
+		props.getExtension().setRecordMetadataChannel("sendResults");
 
 		Binding<MessageChannel> bindProducer = binder.bindProducer("testP", outbound, props);
 		AtomicReference<Mono<RecordMetadata>> sendResult = new AtomicReference<>();
 		outbound.send(MessageBuilder.withPayload("foo")
-				.setHeader("sendResult", sendResult)
+				.setHeader(IntegrationMessageHeaderAccessor.CORRELATION_ID, 1)
 				.build());
-		CountDownLatch latch = new CountDownLatch(1);
-		sendResult.get().doOnNext(rmd -> {
-			latch.countDown();
-		}).subscribe();
 		assertThat(latch.await(10, TimeUnit.SECONDS)).isTrue();
+		assertThat(senderResult.get().correlationMetadata()).isEqualTo(1);
 		bindProducer.unbind();
 		assertThat(custCalled).isTrue();
 	}
