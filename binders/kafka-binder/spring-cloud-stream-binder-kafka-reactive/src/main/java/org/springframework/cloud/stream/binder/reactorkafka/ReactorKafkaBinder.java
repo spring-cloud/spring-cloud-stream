@@ -21,16 +21,14 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 import java.util.regex.Pattern;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.ProducerRecord;
-import org.apache.kafka.clients.producer.RecordMetadata;
 import reactor.core.publisher.Flux;
-import reactor.core.publisher.Sinks;
 import reactor.kafka.receiver.KafkaReceiver;
 import reactor.kafka.receiver.ReceiverOptions;
 import reactor.kafka.receiver.ReceiverRecord;
@@ -169,7 +167,7 @@ public class ReactorKafkaBinder
 				SenderOptions.create(configs));
 		// TODO bean for converter; MCB doesn't use one on the producer side.
 		RecordMessageConverter converter = new MessagingMessageConverter();
-		return new ReactorMessageHandler(opts, converter, destination.getName());
+		return new ReactorMessageHandler(opts, converter, destination.getName(), this.senderOptionsCustomizer.senderResultConsumer());
 	}
 
 
@@ -315,36 +313,28 @@ public class ReactorKafkaBinder
 		private final String topic;
 
 		private final SenderOptions<Object, Object> senderOptions;
+		private final Consumer<SenderResult<UUID>> senderResultConsumer;
 
 		private volatile KafkaSender<Object, Object> sender;
 
 		private volatile boolean running;
 
-		ReactorMessageHandler(SenderOptions<Object, Object> opts, RecordMessageConverter converter,
-				String topic) {
-
+		ReactorMessageHandler(SenderOptions<Object, Object> opts, RecordMessageConverter converter, String topic, Consumer<SenderResult<UUID>> senderResultConsumer) {
 			this.senderOptions = opts;
 			this.converter = converter;
 			this.topic = topic;
+			this.senderResultConsumer = senderResultConsumer;
 		}
 
 		@Override
 		protected void handleMessageInternal(Message<?> message) {
-			Object sendResultHeader = message.getHeaders().get("sendResult");
-			Sinks.One<RecordMetadata> sink = Sinks.one();
-			if (sendResultHeader instanceof AtomicReference result) {
-				result.set(sink.asMono());
-			}
 			if (this.sender != null) {
-				UUID uuid = UUID.randomUUID();
+				UUID uuid = message.getHeaders().getId();
 				@SuppressWarnings("unchecked")
 				SenderRecord<Object, Object, UUID> sr = SenderRecord.create(
 						(ProducerRecord<Object, Object>) converter.fromMessage(message, topic), uuid);
 				Flux<SenderResult<UUID>> result = sender.send(Flux.just(sr));
-				result.subscribe(res -> sink.emitValue(res.recordMetadata(), null));
-			}
-			else {
-				sink.emitError(new IllegalStateException("Handler is not running"), null);
+				result.subscribe(senderResultConsumer);
 			}
 		}
 

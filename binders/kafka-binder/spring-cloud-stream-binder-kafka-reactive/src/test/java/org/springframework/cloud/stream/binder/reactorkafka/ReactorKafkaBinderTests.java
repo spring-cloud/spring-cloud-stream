@@ -21,19 +21,19 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 
 import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.clients.producer.RecordMetadata;
 import org.junit.jupiter.api.Test;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 import reactor.kafka.receiver.ReceiverOffset;
+import reactor.kafka.sender.SenderResult;
 
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
@@ -300,10 +300,22 @@ public class ReactorKafkaBinderTests {
 		@SuppressWarnings("rawtypes")
 		ObjectProvider<SenderOptionsCustomizer> cust = mock(ObjectProvider.class);
 		AtomicBoolean custCalled = new AtomicBoolean();
-		given(cust.getIfUnique()).willReturn((name, opts) -> {
-			custCalled.set(true);
-			return opts;
+		CountDownLatch latch = new CountDownLatch(1);
+		given(cust.getIfUnique()).willReturn(new SenderOptionsCustomizer() {
+			@Override
+			public Object apply(Object name, Object opts) {
+				custCalled.set(true);
+				return opts;
+			}
+
+			@Override
+			public Consumer<SenderResult<UUID>> senderResultConsumer() {
+				return sr -> {
+					latch.countDown();
+				};
+			}
 		});
+
 		binder.senderOptionsCustomizers(cust);
 
 		MessageChannel outbound = new FluxMessageChannel();
@@ -312,14 +324,8 @@ public class ReactorKafkaBinderTests {
 				new ExtendedProducerProperties<KafkaProducerProperties>(ext);
 
 		Binding<MessageChannel> bindProducer = binder.bindProducer("testP", outbound, props);
-		AtomicReference<Mono<RecordMetadata>> sendResult = new AtomicReference<>();
 		outbound.send(MessageBuilder.withPayload("foo")
-				.setHeader("sendResult", sendResult)
 				.build());
-		CountDownLatch latch = new CountDownLatch(1);
-		sendResult.get().doOnNext(rmd -> {
-			latch.countDown();
-		}).subscribe();
 		assertThat(latch.await(10, TimeUnit.SECONDS)).isTrue();
 		bindProducer.unbind();
 		assertThat(custCalled).isTrue();

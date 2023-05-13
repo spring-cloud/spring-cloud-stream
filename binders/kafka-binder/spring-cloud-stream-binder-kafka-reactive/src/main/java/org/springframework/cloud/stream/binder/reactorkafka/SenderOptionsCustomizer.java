@@ -16,9 +16,12 @@
 
 package org.springframework.cloud.stream.binder.reactorkafka;
 
+import java.util.UUID;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 
 import reactor.kafka.sender.SenderOptions;
+import reactor.kafka.sender.SenderResult;
 
 import org.springframework.core.Ordered;
 
@@ -43,6 +46,11 @@ public interface SenderOptionsCustomizer<K, V>
 	@Override
 	default int getOrder() {
 		return 0;
+	}
+
+	default Consumer<SenderResult<UUID>> senderResultConsumer() {
+		return sr -> {
+		};
 	}
 
 }
