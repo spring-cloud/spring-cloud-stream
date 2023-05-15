@@ -970,7 +970,7 @@ public class ImplicitFunctionBindingTests {
 				TestChannelBinderConfiguration.getCompleteConfiguration(ReactiveConsumerWithConcurrencyFailureConfiguration.class))
 				.web(WebApplicationType.NONE).run("--spring.jmx.enabled=false",
 					"--spring.cloud.stream.bindings.input-in-0.consumer.concurrency=2")) {
-			assertThat(output).contains("When using concurrency > 1 in reactive contexts, please make sure that you are using a proper reactive binder");
+			assertThat(output).contains("When using concurrency > 1 in reactive contexts, please make sure that you are using a reactive binder");
 		}
 	}
 
