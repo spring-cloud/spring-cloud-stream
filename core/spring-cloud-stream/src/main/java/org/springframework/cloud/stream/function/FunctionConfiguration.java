@@ -517,9 +517,11 @@ public class FunctionConfiguration {
 					ConsumerProperties consumerProperties = bindingProperties == null ? null : bindingProperties.getConsumer();
 					if (consumerProperties != null) {
 						function.setSkipInputConversion(consumerProperties.isUseNativeDecoding());
-						Assert.isTrue(consumerProperties.getConcurrency() <= 1, "Concurrency > 1 is not supported by reactive "
-								+ "consumer, given that project reactor maintains its own concurrency mechanism. Was '..."
-								+ inputBindingName + ".consumer.concurrency=" + consumerProperties.getConcurrency() + "'");
+						if (consumerProperties.getConcurrency() > 1) {
+							this.logger.warn("When using concurrency > 1 in reactive contexts, please make sure that you are using a " +
+								"reactive binder that supports concurrency settings. Otherwise, concurrency settings > 1 will be ignored when " +
+								"using reactive types.");
+						}
 					}
 					MessageChannel inputChannel = this.applicationContext.getBean(inputBindingName, MessageChannel.class);
 					return IntegrationReactiveUtils.messageChannelToFlux(inputChannel).map(m -> {
