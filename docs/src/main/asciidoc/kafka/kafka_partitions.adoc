@@ -54,7 +54,7 @@ spring:
             partition-count: 12
 ----
 
-IMPORTANT: It is important to keep in mind that since Apache Kafka supports partitioning natively, there is no need to rely on binder partitioning as described above unless you are using custom partition keys as in the example or an expression that involves the payload itself.
+IMPORTANT: It is important to keep in mind that, since Apache Kafka supports partitioning natively, there is no need to rely on binder partitioning as described above unless you are using custom partition keys as in the example or an expression that involves the payload itself.
 The binder-provided partitioning selection is otherwise intended for middleware technologies that do not support native partitioning.
 Note that we are using a custom key called `partitionKey` in the above example, that will be the determining factor for the partition, thus in this case it is appropriate to use binder partitioning.
 When using native Kafka partitioning, i.e, when you do not provide the `partition-key-expression`, then Apache Kafka will select a partition, which by default will be the hash value of the record key over the available number of partitions.
