@@ -519,7 +519,7 @@ public class FunctionConfiguration {
 						function.setSkipInputConversion(consumerProperties.isUseNativeDecoding());
 						if (consumerProperties.getConcurrency() > 1) {
 							this.logger.warn("When using concurrency > 1 in reactive contexts, please make sure that you are using a proper " +
-								"reactive binder that supports concurrency settings. Otherwise, concurrency settings > 1 will be a no-op when " +
+								"reactive binder that supports concurrency settings. Otherwise, concurrency settings > 1 will be ignored when " +
 								"using reactive types.");
 						}
 					}
