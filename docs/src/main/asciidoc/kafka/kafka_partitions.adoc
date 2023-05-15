@@ -58,6 +58,7 @@ IMPORTANT: It is important to keep in mind that, since Apache Kafka supports par
 The binder-provided partitioning selection is otherwise intended for middleware technologies that do not support native partitioning.
 Note that we are using a custom key called `partitionKey` in the above example, that will be the determining factor for the partition, thus in this case it is appropriate to use binder partitioning.
 When using native Kafka partitioning, i.e, when you do not provide the `partition-key-expression`, then Apache Kafka will select a partition, which by default will be the hash value of the record key over the available number of partitions.
+To add a key to an outbound record, set the `KafkaHeaders.KEY` header to the desired key value in a spring-messaging `Message<?>`.
 When no record key is provided, Apache Kafka will choose a partition based on a round-robin strategy.
 
 NOTE: The topic must be provisioned to have enough partitions to achieve the desired concurrency for all consumer groups.
