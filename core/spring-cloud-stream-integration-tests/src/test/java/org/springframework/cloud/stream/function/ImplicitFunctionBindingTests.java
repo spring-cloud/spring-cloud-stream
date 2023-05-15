@@ -33,6 +33,7 @@ import java.util.function.Supplier;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import reactor.core.publisher.Flux;
@@ -40,10 +41,11 @@ import reactor.core.publisher.Mono;
 import reactor.core.publisher.Sinks;
 import reactor.core.publisher.Sinks.Many;
 
-import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.catalog.FunctionAroundWrapper;
@@ -961,17 +963,14 @@ public class ImplicitFunctionBindingTests {
 	}
 
 	@Test
-	void testReactiveConsumerWithConcurrencyFailureConfiguration() {
+	@ExtendWith(OutputCaptureExtension.class)
+	void testReactiveConsumerWithConcurrencyGreaterThanOneLogsWarning(CapturedOutput output) {
 		System.clearProperty("spring.cloud.function.definition");
-		try {
-			new SpringApplicationBuilder(
+		try (ConfigurableApplicationContext ignored = new SpringApplicationBuilder(
 				TestChannelBinderConfiguration.getCompleteConfiguration(ReactiveConsumerWithConcurrencyFailureConfiguration.class))
 				.web(WebApplicationType.NONE).run("--spring.jmx.enabled=false",
-					"--spring.cloud.stream.bindings.input-in-0.consumer.concurrency=2");
-			fail();
-		}
-		catch (BeanCreationException e) {
-			// good
+					"--spring.cloud.stream.bindings.input-in-0.consumer.concurrency=2")) {
+			assertThat(output).contains("When using concurrency > 1 in reactive contexts, please make sure that you are using a proper reactive binder");
 		}
 	}
 
