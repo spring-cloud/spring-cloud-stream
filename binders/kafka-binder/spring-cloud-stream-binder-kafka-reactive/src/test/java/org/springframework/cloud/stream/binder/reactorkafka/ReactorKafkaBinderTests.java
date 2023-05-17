@@ -58,6 +58,8 @@ import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
+import org.springframework.messaging.MessageHandler;
+import org.springframework.messaging.MessagingException;
 import org.springframework.retry.support.RetryTemplate;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -306,11 +308,12 @@ public class ReactorKafkaBinderTests {
 		FluxMessageChannel results = context.getBean("sendResults", FluxMessageChannel.class);
 		ConsumerEndpointFactoryBean fb = new ConsumerEndpointFactoryBean();
 		AtomicReference<SenderResult<Integer>> senderResult = new AtomicReference<>();
-		fb.setHandler(new SenderResultMessageHandler<Integer>() {
+		fb.setHandler(new MessageHandler() {
 
+			@SuppressWarnings("unchecked")
 			@Override
-			public void handleResult(SenderResult<Integer> result) {
-				senderResult.set(result);
+			public void handleMessage(Message<?> message) throws MessagingException {
+				senderResult.set((SenderResult<Integer>) message.getPayload());
 				latch.countDown();
 			}
 
