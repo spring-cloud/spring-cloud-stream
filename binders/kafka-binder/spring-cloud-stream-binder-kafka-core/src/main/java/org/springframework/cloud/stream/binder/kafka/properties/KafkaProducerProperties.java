@@ -90,7 +90,8 @@ public class KafkaProducerProperties {
 
 	/**
 	 * The bean name of a MessageChannel to which successful send results should be sent;
-	 * the bean must exist in the application context.
+	 * the bean must exist in the application context. When using the reactive binder,
+	 * the channel must be of type FluxMessageChannel.
 	 */
 	private String recordMetadataChannel;
 

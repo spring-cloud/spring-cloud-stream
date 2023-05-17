@@ -34,17 +34,19 @@ import org.junit.jupiter.params.provider.ValueSource;
 import reactor.core.publisher.Flux;
 import reactor.kafka.receiver.ReceiverOptions;
 import reactor.kafka.receiver.ReceiverRecord;
+import reactor.kafka.sender.SenderResult;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.cloud.stream.function.StreamBridge;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
+import org.springframework.integration.annotation.ServiceActivator;
+import org.springframework.integration.channel.FluxMessageChannel;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
-import org.springframework.kafka.core.DefaultKafkaProducerFactory;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.kafka.support.converter.MessagingMessageConverter;
 import org.springframework.kafka.support.converter.RecordMessageConverter;
@@ -107,34 +109,30 @@ class ReactorKafkaBinderIntegrationTests {
 				"--spring.cloud.stream.bindings.lowercase-out-0.destination=lowercased-words",
 				"--spring.cloud.stream.bindings.patternConsumer-in-0.group=grp3",
 				"--spring.cloud.stream.bindings.patternConsumer-in-0.destination=.*-words",
+				"--spring.cloud.stream.kafka.bindings.words1.producer.record-metadata-channel=sendResults",
+				"--spring.cloud.stream.kafka.bindings.words2.producer.record-metadata-channel=sendResults",
 				"--spring.cloud.stream.kafka.bindings.patternConsumer-in-0.consumer.destination-is-pattern=true",
 				"--spring.cloud.stream.kafka.bindings.lowercase-in-0.consumer.converterBeanName=fullRR",
 				"--spring.cloud.stream.kafka.binder.brokers=" + embeddedKafka.getBrokersAsString(),
 				excludeKafkaAutoConfigParam(excludeKafkaAutoConfig))) {
 
-			Map<String, Object> senderProps = KafkaTestUtils.producerProps(embeddedKafka);
-			DefaultKafkaProducerFactory<Integer, String> pf = new DefaultKafkaProducerFactory<>(senderProps);
-			try {
-				KafkaTemplate<Integer, String> template = new KafkaTemplate<>(pf, true);
-				template.send("words1", "foobar");
-				template.send("words2", "BAZQUX");
+			StreamBridge streamBridge = context.getBean(StreamBridge.class);
+			streamBridge.send("words1", MessageBuilder.withPayload("foobar").setCorrelationId(42).build());
+			streamBridge.send("words2", MessageBuilder.withPayload("BAZQUX").setCorrelationId(43).build());
 
-				assertThat(KafkaTestUtils.getSingleRecord(consumer1, "uppercased-words"))
-					.isNotNull()
-					.extracting(ConsumerRecord::value)
-					.isEqualTo("FOOBAR");
+			assertThat(KafkaTestUtils.getSingleRecord(consumer1, "uppercased-words"))
+				.isNotNull()
+				.extracting(ConsumerRecord::value)
+				.isEqualTo("FOOBAR");
 
-				assertThat(KafkaTestUtils.getSingleRecord(consumer2, "lowercased-words"))
-					.isNotNull()
-					.extracting(ConsumerRecord::value)
-					.isEqualTo("bazqux");
+			assertThat(KafkaTestUtils.getSingleRecord(consumer2, "lowercased-words"))
+				.isNotNull()
+				.extracting(ConsumerRecord::value)
+				.isEqualTo("bazqux");
 
-				assertThat(recOptsCustOrder).containsExactly("two", "one", "two", "one", "two", "one");
-				await().untilAsserted(() -> assertThat(patternedDeliveries).contains("bazqux", "FOOBAR"));
-			}
-			finally {
-				pf.destroy();
-			}
+			assertThat(recOptsCustOrder).containsExactly("two", "one", "two", "one", "two", "one");
+			await().untilAsserted(() -> assertThat(patternedDeliveries).contains("bazqux", "FOOBAR"));
+			assertThat(context.getBean(ReactiveKafkaApplication.class).correlation).contains(42, 43);
 		}
 	}
 
@@ -145,6 +143,8 @@ class ReactorKafkaBinderIntegrationTests {
 
 	@EnableAutoConfiguration
 	public static class ReactiveKafkaApplication {
+
+		final List<Integer> correlation = Collections.synchronizedList(new ArrayList<>());
 
 		@Bean
 		RecordMessageConverter fullRR() {
@@ -208,6 +208,16 @@ class ReactorKafkaBinderIntegrationTests {
 				}
 
 			};
+		}
+
+		@Bean
+		FluxMessageChannel sendResults() {
+			return new FluxMessageChannel();
+		}
+
+		@ServiceActivator(inputChannel = "sendResults")
+		void handleResults(SenderResult<Integer> result) {
+			this.correlation.add(result.correlationMetadata());
 		}
 
 	}
