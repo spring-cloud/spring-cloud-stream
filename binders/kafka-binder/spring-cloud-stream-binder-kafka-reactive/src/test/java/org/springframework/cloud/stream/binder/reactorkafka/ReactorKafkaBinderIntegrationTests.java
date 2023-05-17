@@ -117,8 +117,12 @@ class ReactorKafkaBinderIntegrationTests {
 				excludeKafkaAutoConfigParam(excludeKafkaAutoConfig))) {
 
 			StreamBridge streamBridge = context.getBean(StreamBridge.class);
-			streamBridge.send("words1", MessageBuilder.withPayload("foobar").setCorrelationId(42).build());
-			streamBridge.send("words2", MessageBuilder.withPayload("BAZQUX").setCorrelationId(43).build());
+			streamBridge.send("words1", MessageBuilder.withPayload("foobar")
+					.setCorrelationId(42)
+					.build());
+			streamBridge.send("words2", MessageBuilder.withPayload("BAZQUX")
+					.setCorrelationId(43)
+					.build());
 
 			assertThat(KafkaTestUtils.getSingleRecord(consumer1, "uppercased-words"))
 				.isNotNull()
@@ -217,7 +221,20 @@ class ReactorKafkaBinderIntegrationTests {
 
 		@ServiceActivator(inputChannel = "sendResults")
 		void handleResults(SenderResult<Integer> result) {
-			this.correlation.add(result.correlationMetadata());
+			if (result.exception() != null) {
+				failureFor(result);
+			}
+			else {
+				successFor(result);
+			}
+		}
+
+		private void failureFor(SenderResult<Integer> result) {
+			this.correlation.clear();
+		}
+
+		private boolean successFor(SenderResult<Integer> result) {
+			return this.correlation.add(result.correlationMetadata());
 		}
 
 	}
