@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2022 the original author or authors.
+ * Copyright 2019-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,6 +37,7 @@ import org.springframework.beans.factory.annotation.AnnotatedBeanDefinition;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.boot.autoconfigure.condition.ConditionOutcome;
 import org.springframework.boot.autoconfigure.condition.SpringBootCondition;
+import org.springframework.cloud.stream.binder.kafka.streams.KafkaStreamsBinderUtils;
 import org.springframework.context.annotation.ConditionContext;
 import org.springframework.core.ResolvableType;
 import org.springframework.core.type.AnnotatedTypeMetadata;
@@ -94,12 +95,17 @@ public class FunctionDetectorCondition extends SpringBootCondition {
 			try {
 
 				Method[] methods = classObj.getDeclaredMethods();
-				Optional<Method> kafkaStreamMethod = Arrays.stream(methods).filter(m -> m.getName().equals(key)).findFirst();
-				// check if the bean name is overridden.
+				Optional<Method> kafkaStreamMethod = KafkaStreamsBinderUtils.findTargetMethod(key, methods);
 				if (kafkaStreamMethod.isEmpty()) {
+					// check any inherited methods
+					methods = classObj.getMethods();
+					kafkaStreamMethod = KafkaStreamsBinderUtils.findTargetMethod(key, methods);
+				}
+				if (kafkaStreamMethod.isEmpty()) {
+					// check if the bean name is overridden.
 					final BeanDefinition beanDefinition = context.getBeanFactory().getBeanDefinition(key);
 					final String factoryMethodName = beanDefinition.getFactoryMethodName();
-					kafkaStreamMethod = Arrays.stream(methods).filter(m -> m.getName().equals(factoryMethodName)).findFirst();
+					kafkaStreamMethod = KafkaStreamsBinderUtils.findTargetMethod(factoryMethodName, methods);
 				}
 
 				if (kafkaStreamMethod.isPresent()) {
