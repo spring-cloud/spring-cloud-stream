@@ -177,15 +177,15 @@ public class KafkaStreamsFunctionBeanPostProcessor implements InitializingBean, 
 				ClassUtils.getDefaultClassLoader());
 		try {
 			Method[] methods = classObj.getDeclaredMethods();
-			Optional<Method> functionalBeanMethods = KafkaStreamsBinderUtils.findTargetMethod(key, methods);
+			Optional<Method> functionalBeanMethods = KafkaStreamsBinderUtils.findMethodWithName(key, methods);
 			if (functionalBeanMethods.isEmpty()) {
 				methods = classObj.getMethods(); // check the inherited methods
-				functionalBeanMethods = KafkaStreamsBinderUtils.findTargetMethod(key, methods);
+				functionalBeanMethods = KafkaStreamsBinderUtils.findMethodWithName(key, methods);
 			}
 			if (functionalBeanMethods.isEmpty()) {
 				final BeanDefinition beanDefinition = this.beanFactory.getBeanDefinition(key);
 				final String factoryMethodName = beanDefinition.getFactoryMethodName();
-				functionalBeanMethods = KafkaStreamsBinderUtils.findTargetMethod(factoryMethodName, methods);
+				functionalBeanMethods = KafkaStreamsBinderUtils.findMethodWithName(factoryMethodName, methods);
 			}
 
 			if (functionalBeanMethods.isPresent()) {

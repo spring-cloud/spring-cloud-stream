@@ -95,17 +95,17 @@ public class FunctionDetectorCondition extends SpringBootCondition {
 			try {
 
 				Method[] methods = classObj.getDeclaredMethods();
-				Optional<Method> kafkaStreamMethod = KafkaStreamsBinderUtils.findTargetMethod(key, methods);
+				Optional<Method> kafkaStreamMethod = KafkaStreamsBinderUtils.findMethodWithName(key, methods);
 				if (kafkaStreamMethod.isEmpty()) {
 					// check any inherited methods
 					methods = classObj.getMethods();
-					kafkaStreamMethod = KafkaStreamsBinderUtils.findTargetMethod(key, methods);
+					kafkaStreamMethod = KafkaStreamsBinderUtils.findMethodWithName(key, methods);
 				}
 				if (kafkaStreamMethod.isEmpty()) {
 					// check if the bean name is overridden.
 					final BeanDefinition beanDefinition = context.getBeanFactory().getBeanDefinition(key);
 					final String factoryMethodName = beanDefinition.getFactoryMethodName();
-					kafkaStreamMethod = KafkaStreamsBinderUtils.findTargetMethod(factoryMethodName, methods);
+					kafkaStreamMethod = KafkaStreamsBinderUtils.findMethodWithName(factoryMethodName, methods);
 				}
 
 				if (kafkaStreamMethod.isPresent()) {

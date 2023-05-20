@@ -82,7 +82,7 @@ public final class KafkaStreamsBinderUtils {
 	 * @param methods collection of methods to search from
 	 * @return found method as an {@link Optional}
 	 */
-	public static Optional<Method> findTargetMethod(String key, Method[] methods) {
+	public static Optional<Method> findMethodWithName(String key, Method[] methods) {
 		return Arrays.stream(methods).filter(m -> m.getName().equals(key)).findFirst();
 	}
 
