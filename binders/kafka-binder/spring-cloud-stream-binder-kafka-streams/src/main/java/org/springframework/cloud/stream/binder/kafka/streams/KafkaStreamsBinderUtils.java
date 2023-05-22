@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 the original author or authors.
+ * Copyright 2018-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,12 @@
 
 package org.springframework.cloud.stream.binder.kafka.streams;
 
+import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.BiFunction;
 
 import org.apache.commons.logging.Log;
@@ -64,12 +67,23 @@ import org.springframework.util.StringUtils;
  * @author Soby Chacko
  * @author Gary Russell
  */
-final class KafkaStreamsBinderUtils {
+public final class KafkaStreamsBinderUtils {
 
 	private static final Log LOGGER = LogFactory.getLog(KafkaStreamsBinderUtils.class);
 
 	private KafkaStreamsBinderUtils() {
 
+	}
+
+	/**
+	 * Utility method to find the method targeted by the key.
+	 *
+	 * @param key name of the method
+	 * @param methods collection of methods to search from
+	 * @return found method as an {@link Optional}
+	 */
+	public static Optional<Method> findMethodWithName(String key, Method[] methods) {
+		return Arrays.stream(methods).filter(m -> m.getName().equals(key)).findFirst();
 	}
 
 	static void prepareConsumerBinding(String name, String group,

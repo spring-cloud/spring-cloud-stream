@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2022 the original author or authors.
+ * Copyright 2019-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,6 +48,7 @@ import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.RootBeanDefinition;
+import org.springframework.cloud.stream.binder.kafka.streams.KafkaStreamsBinderUtils;
 import org.springframework.cloud.stream.function.StreamFunctionProperties;
 import org.springframework.core.ResolvableType;
 import org.springframework.util.ClassUtils;
@@ -176,11 +177,15 @@ public class KafkaStreamsFunctionBeanPostProcessor implements InitializingBean, 
 				ClassUtils.getDefaultClassLoader());
 		try {
 			Method[] methods = classObj.getDeclaredMethods();
-			Optional<Method> functionalBeanMethods = Arrays.stream(methods).filter(m -> m.getName().equals(key)).findFirst();
+			Optional<Method> functionalBeanMethods = KafkaStreamsBinderUtils.findMethodWithName(key, methods);
+			if (functionalBeanMethods.isEmpty()) {
+				methods = classObj.getMethods(); // check the inherited methods
+				functionalBeanMethods = KafkaStreamsBinderUtils.findMethodWithName(key, methods);
+			}
 			if (functionalBeanMethods.isEmpty()) {
 				final BeanDefinition beanDefinition = this.beanFactory.getBeanDefinition(key);
 				final String factoryMethodName = beanDefinition.getFactoryMethodName();
-				functionalBeanMethods = Arrays.stream(methods).filter(m -> m.getName().equals(factoryMethodName)).findFirst();
+				functionalBeanMethods = KafkaStreamsBinderUtils.findMethodWithName(factoryMethodName, methods);
 			}
 
 			if (functionalBeanMethods.isPresent()) {
