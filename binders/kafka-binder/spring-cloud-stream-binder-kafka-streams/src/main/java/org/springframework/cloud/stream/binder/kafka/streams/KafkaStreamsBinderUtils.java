@@ -66,6 +66,7 @@ import org.springframework.util.StringUtils;
  *
  * @author Soby Chacko
  * @author Gary Russell
+ * @author James Forward
  */
 public final class KafkaStreamsBinderUtils {
 
@@ -84,6 +85,14 @@ public final class KafkaStreamsBinderUtils {
 	 */
 	public static Optional<Method> findMethodWithName(String key, Method[] methods) {
 		return Arrays.stream(methods).filter(m -> m.getName().equals(key)).findFirst();
+	}
+
+	public static String[] deriveFunctionUnits(String definition) {
+		if(!StringUtils.hasText(definition)) {
+			return new String[]{};
+		}
+		final String[] rawSplitDefinition = definition.split(";");
+		return Arrays.stream(rawSplitDefinition).map(String::trim).toArray(String[]::new);
 	}
 
 	static void prepareConsumerBinding(String name, String group,

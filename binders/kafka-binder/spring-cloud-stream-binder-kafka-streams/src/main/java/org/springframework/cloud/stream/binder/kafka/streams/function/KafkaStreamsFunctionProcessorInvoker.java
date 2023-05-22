@@ -23,6 +23,7 @@ import java.util.Optional;
 
 import jakarta.annotation.PostConstruct;
 
+import org.springframework.cloud.stream.binder.kafka.streams.KafkaStreamsBinderUtils;
 import org.springframework.cloud.stream.binder.kafka.streams.KafkaStreamsFunctionProcessor;
 import org.springframework.cloud.stream.function.StreamFunctionProperties;
 import org.springframework.core.ResolvableType;
@@ -30,6 +31,8 @@ import org.springframework.util.StringUtils;
 
 /**
  * @author Soby Chacko
+ * @author James Forward
+ *
  * @since 2.1.0
  */
 public class KafkaStreamsFunctionProcessorInvoker {
@@ -54,7 +57,7 @@ public class KafkaStreamsFunctionProcessorInvoker {
 	@PostConstruct
 	void invoke() {
 		final String definition = streamFunctionProperties.getDefinition();
-		final String[] functionUnits = StringUtils.hasText(definition) ? definition.split(";") : new String[]{};
+		final String[] functionUnits = KafkaStreamsBinderUtils.deriveFunctionUnits(definition);
 
 		if (functionUnits.length == 0) {
 						resolvableTypeMap.forEach((key, value) -> {

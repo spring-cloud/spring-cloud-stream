@@ -52,10 +52,11 @@ import org.springframework.cloud.stream.binder.kafka.streams.KafkaStreamsBinderU
 import org.springframework.cloud.stream.function.StreamFunctionProperties;
 import org.springframework.core.ResolvableType;
 import org.springframework.util.ClassUtils;
-import org.springframework.util.StringUtils;
 
 /**
  * @author Soby Chacko
+ * @author James Forward
+ *
  * @since 2.2.0
  */
 public class KafkaStreamsFunctionBeanPostProcessor implements InitializingBean, BeanFactoryAware {
@@ -110,7 +111,7 @@ public class KafkaStreamsFunctionBeanPostProcessor implements InitializingBean, 
 		BeanDefinitionRegistry registry = (BeanDefinitionRegistry) beanFactory;
 
 		final String definition = streamFunctionProperties.getDefinition();
-		final String[] functionUnits = StringUtils.hasText(definition) ? definition.split(";") : new String[]{};
+		final String[] functionUnits = KafkaStreamsBinderUtils.deriveFunctionUnits(definition);
 
 		final Set<String> kafkaStreamsMethodNames = new HashSet<>(kafkaStreamsOnlyResolvableTypes.keySet());
 		kafkaStreamsMethodNames.addAll(this.resolvableTypeMap.keySet());
