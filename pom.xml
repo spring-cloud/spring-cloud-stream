@@ -4,12 +4,12 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<artifactId>spring-cloud-stream-parent</artifactId>
-	<version>4.0.3</version> <!-- Do not remove. Ignore yellow warning -->
+	<version>4.0.3-SNAPSHOT</version> <!-- Do not remove. Ignore yellow warning -->
 	<packaging>pom</packaging>
 	<parent>
 		<groupId>org.springframework.cloud</groupId>
 		<artifactId>spring-cloud-build</artifactId>
-		<version>4.0.3</version>
+		<version>4.0.3-SNAPSHOT</version>
 		<relativePath />
 	</parent>
 	<scm>
@@ -25,7 +25,7 @@
 		<java.version>17</java.version>
 		<reactor.version>2022.0.5</reactor.version>
 		<objenesis.version>2.1</objenesis.version>
-		<spring-cloud-function.version>4.0.3</spring-cloud-function.version>
+		<spring-cloud-function.version>4.0.3-SNAPSHOT</spring-cloud-function.version>
 		<maven-checkstyle-plugin.failsOnError>true</maven-checkstyle-plugin.failsOnError>
 		<maven-checkstyle-plugin.failsOnViolation>true</maven-checkstyle-plugin.failsOnViolation>
 		<maven-checkstyle-plugin.includeTestSourceDirectory>true</maven-checkstyle-plugin.includeTestSourceDirectory>
