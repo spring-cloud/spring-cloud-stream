@@ -16,7 +16,7 @@
 	</parent>
 
 	<properties>
-		<kotlin.version>1.7.22</kotlin.version>
+		<kotlin.version>1.9.0</kotlin.version>
 	</properties>
 
 	<dependencies>
@@ -47,7 +47,7 @@
 		<dependency>
 			<groupId>org.jetbrains.kotlin</groupId>
 			<artifactId>kotlin-test</artifactId>
-			<version>${kotlin.version}</version>
+<!--			<version>${kotlin.version}</version>-->
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
@@ -57,7 +57,7 @@
 			<plugin>
 				<groupId>org.jetbrains.kotlin</groupId>
 				<artifactId>kotlin-maven-plugin</artifactId>
-				<version>${kotlin.version}</version>
+<!--				<version>${kotlin.version}</version>-->
 				<executions>
 					<execution>
 						<id>compile</id>

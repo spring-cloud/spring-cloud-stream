@@ -87,7 +87,7 @@
         <dependency>
             <groupId>org.jetbrains.kotlin</groupId>
             <artifactId>kotlin-stdlib-jdk8</artifactId>
-            <version>${kotlin.version}</version>
+<!--            <version>${kotlin.version}</version>-->
         </dependency>
     </dependencies>
 
@@ -96,7 +96,7 @@
             <plugin>
                 <groupId>org.jetbrains.kotlin</groupId>
                 <artifactId>kotlin-maven-plugin</artifactId>
-                <version>${kotlin.version}</version>
+<!--                <version>${kotlin.version}</version>-->
                 <executions>
                     <execution>
                         <id>compile</id>
