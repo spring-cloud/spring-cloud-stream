@@ -9,10 +9,6 @@
 	<name>spring-cloud-stream</name>
 	<description>Messaging Microservices with Spring Integration</description>
 
-    <properties>
-        <kotlin.version>1.7.22</kotlin.version>
-    </properties>
-
     <parent>
 		<groupId>org.springframework.cloud</groupId>
 		<artifactId>spring-cloud-stream-core</artifactId>
@@ -87,7 +83,6 @@
         <dependency>
             <groupId>org.jetbrains.kotlin</groupId>
             <artifactId>kotlin-stdlib-jdk8</artifactId>
-<!--            <version>${kotlin.version}</version>-->
         </dependency>
     </dependencies>
 
@@ -96,7 +91,6 @@
             <plugin>
                 <groupId>org.jetbrains.kotlin</groupId>
                 <artifactId>kotlin-maven-plugin</artifactId>
-<!--                <version>${kotlin.version}</version>-->
                 <executions>
                     <execution>
                         <id>compile</id>
