@@ -1,4 +1,4 @@
-*{spring-cloud-stream-version}*
+*{project-version}*
 
 [[binders]]
 == Binder Implementations
