@@ -314,7 +314,7 @@ Note how `uppercase-in-0` is used as a segment in property name. The same goes f
 
 ***Descriptive Binding Names***
 
-Some times to improve readability you may want to give your binding a more descriptive name (such as 'account', 'orders` etc).
+Some times to improve readability you may want to give your binding a more descriptive name (such as 'account', 'orders' etc).
 Another way of looking at it is you can map an _implicit binding name_ to an _explicit binding name_. And you can do it with
 `spring.cloud.stream.function.bindings.<binding-name>` property.
 This property also provides a migration path for existing applications that rely on custom interface-based
@@ -376,7 +376,7 @@ As you can see we have declared two input bindings and two output bindings while
 
 === Producing and Consuming Messages
 
-You can write a Spring Cloud Stream application by simply writing functions and exposing them as `@Bean`s.
+You can write a Spring Cloud Stream application by simply writing functions and exposing them as `@Bean` s.
 You can also use Spring Integration annotations based configuration or
 Spring Cloud Stream annotation based configuration, although starting with spring-cloud-stream 3.x
 we recommend using functional implementations.
@@ -1625,7 +1625,7 @@ public Consumer<ErrorMessage> myErrorHandler() {
 }
 ----
 
-To identify such consumer as an error handler all you need is to provide `error-handler-definition` property  pointing to the function name - `spring.cloud.stream.bindings.<binding-name>.error-handler-definition=myErrorHandler`. 
+To identify such consumer as an error handler all you need is to provide `error-handler-definition` property  pointing to the function name - `spring.cloud.stream.bindings.<binding-name>.error-handler-definition=myErrorHandler`.
 
 For example, for binding name `uppercase-in-0` the property would look like this:
 
@@ -1636,7 +1636,7 @@ spring.cloud.stream.bindings.uppercase-in-0.error-handler-definition=myErrorHand
 And if you used special mapping instruction to map binding to a more readable name - `spring.cloud.stream.function.bindings.uppercase-in-0=upper`, then this property would look like this: 
 [source,text]
 ----
-spring.cloud.stream.bindings.upper.error-handler-definition=myErrorHandler`.
+spring.cloud.stream.bindings.upper.error-handler-definition=myErrorHandler.
 ----
 
 NOTE: If by accident you declare such handler as a `Function`, it will still work with the exception that nothing is going to be done with its output. However, given that such handler is still relying on functionality provided by Spring Cloud Function, you can also benefit from function composition in the event your handler has some complexity which you would like to address through function composition (however unlikely).
@@ -2405,7 +2405,7 @@ These properties are exposed via `org.springframework.cloud.stream.config.Bindin
 The following binding properties are available for both input and output bindings and must be prefixed with `spring.cloud.stream.bindings.<bindingName>.`
 (for example, `spring.cloud.stream.bindings.uppercase-in-0.destination=ticktock`).
 
-Default values can be set by using the `spring.cloud.stream.default` prefix (for example`spring.cloud.stream.default.contentType=application/json`).
+Default values can be set by using the `spring.cloud.stream.default` prefix (for example `spring.cloud.stream.default.contentType=application/json`).
 
 destination::
 The target destination of a binding on the bound middleware (for example, the RabbitMQ exchange or Kafka topic).
@@ -2631,7 +2631,7 @@ public interface ProducerMessageHandlerCustomizer<H extends MessageHandler> {
 }
 ----
 
-As you can see it gives you access to an actual instance of producing` MessageHandler` which you can configure as you wish.
+As you can see it gives you access to an actual instance of producing `MessageHandler` which you can configure as you wish.
 All you need to do is provide implementation of this strategy and configure it as a `@Bean`.
 
 ====
@@ -2765,9 +2765,9 @@ does not know how to convert. If that is the case, you can add custom `MessageCo
 [[spring-cloud-stream-overview-user-defined-message-converters]]
 === User-defined Message Converters
 
-Spring Cloud Stream exposes a mechanism to define and register additional `MessageConverters`.
+Spring Cloud Stream exposes a mechanism to define and register additional `MessageConverter` s.
 To use it, implement `org.springframework.messaging.converter.MessageConverter`, configure it as a `@Bean`.
-It is then appended to the existing stack of `MessageConverter`s.
+It is then appended to the existing stack of `MessageConverter` s.
 
 NOTE: It is important to understand that custom `MessageConverter` implementations are added to the head of the existing stack.
 Consequently, custom `MessageConverter` implementations take precedence over the existing ones, which lets you override as well as add to the existing converters.

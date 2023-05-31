@@ -606,9 +606,9 @@ Here are the Serde types that the binder will try to match from Kafka Streams.
 
 * If none of the Serdes provided by Kafka Streams don't match the types, then it will use JsonSerde provided by Spring Kafka. In this case, the binder assumes that the types are JSON friendly.
 This is useful if you have multiple value objects as inputs since the binder will internally infer them to correct Java types.
-Before falling back to the `JsonSerde` though, the binder checks at the default `Serde`s set in the Kafka Streams configuration to see if it is a `Serde` that it can match with the incoming KStream's types.
+Before falling back to the `JsonSerde` though, the binder checks at the default `Serde` s set in the Kafka Streams configuration to see if it is a `Serde` that it can match with the incoming KStream's types.
 
-If none of the above strategies worked, then the applications must provide the `Serde`s through configuration.
+If none of the above strategies worked, then the applications must provide the `Serde` s through configuration.
 This can be configured in two ways - binding or default.
 
 First the binder will look if a `Serde` is provided at the binding level.
