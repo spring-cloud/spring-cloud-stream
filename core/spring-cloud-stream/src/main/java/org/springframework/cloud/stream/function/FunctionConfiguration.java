@@ -887,6 +887,9 @@ public class FunctionConfiguration {
 					);
 			for (String inputBindingName : inputBindings) {
 				FunctionInvocationWrapper sourceFunc = functionCatalog.lookup(inputBindingName);
+				if (sourceFunc != null && !sourceFunc.getFunctionDefinition().equals(inputBindingName) && inputBindings.length == 1) {
+					sourceFunc = null;
+				}
 
 				if (sourceFunc == null || //see https://github.com/spring-cloud/spring-cloud-stream/issues/2229
 						sourceFunc.isSupplier() ||
@@ -900,6 +903,9 @@ public class FunctionConfiguration {
 
 			for (String outputBindingName : outputBindings) {
 				FunctionInvocationWrapper sourceFunc = functionCatalog.lookup(outputBindingName);
+				if (sourceFunc != null && !sourceFunc.getFunctionDefinition().equals(outputBindingName) && outputBindings.length == 1) {
+					sourceFunc = null;
+				}
 
 				if (sourceFunc == null || //see https://github.com/spring-cloud/spring-cloud-stream/issues/2229
 						sourceFunc.isConsumer() ||
