@@ -120,6 +120,7 @@ import org.springframework.util.StringUtils;
  * @author Soby Chacko
  * @author Chris Bono
  * @author Byungjun You
+ * @author Ivan Shapoval
  * @since 2.1
  */
 @AutoConfiguration
@@ -887,7 +888,7 @@ public class FunctionConfiguration {
 					);
 			for (String inputBindingName : inputBindings) {
 				FunctionInvocationWrapper sourceFunc = functionCatalog.lookup(inputBindingName);
-				if (sourceFunc != null && !sourceFunc.getFunctionDefinition().equals(inputBindingName) && inputBindings.length == 1) {
+				if (sourceFunc != null && !sourceFunc.getFunctionDefinition().equals(inputBindingName)) {
 					sourceFunc = null;
 				}
 
@@ -903,7 +904,7 @@ public class FunctionConfiguration {
 
 			for (String outputBindingName : outputBindings) {
 				FunctionInvocationWrapper sourceFunc = functionCatalog.lookup(outputBindingName);
-				if (sourceFunc != null && !sourceFunc.getFunctionDefinition().equals(outputBindingName) && outputBindings.length == 1) {
+				if (sourceFunc != null && !sourceFunc.getFunctionDefinition().equals(outputBindingName)) {
 					sourceFunc = null;
 				}
 

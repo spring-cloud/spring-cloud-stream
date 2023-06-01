@@ -57,6 +57,28 @@ public class ExplicitBindingTests {
 	}
 
 	@Test
+	void testExplicitBindingsWithExistingFunctionalBean() {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+			TestChannelBinderConfiguration.getCompleteConfiguration(ConsumerConfiguration.class))
+			.web(WebApplicationType.NONE)
+			.run("--spring.jmx.enabled=false",
+				"--spring.cloud.stream.input-bindings=test")) {
+
+			assertThat(context.getBean("test", MessageChannel.class)).isNotNull();
+		}
+
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+			TestChannelBinderConfiguration.getCompleteConfiguration(ConsumerConfiguration.class))
+			.web(WebApplicationType.NONE)
+			.run("--spring.jmx.enabled=false",
+				"--spring.cloud.stream.input-bindings=test;test1")) {
+
+			assertThat(context.getBean("test", MessageChannel.class)).isNotNull();
+			assertThat(context.getBean("test1", MessageChannel.class)).isNotNull();
+		}
+	}
+
+	@Test
 	void testExplicitBindingsWithExistingConsumer() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(ConsumerConfiguration.class))
