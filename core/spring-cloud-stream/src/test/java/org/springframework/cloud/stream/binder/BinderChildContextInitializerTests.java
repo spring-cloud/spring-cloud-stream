@@ -85,9 +85,11 @@ class BinderChildContextInitializerTests {
 			compiler.with(generationContext).compile(compiled -> {
 				// Initialize the context w/ the generated ACI
 				GenericApplicationContext freshApplicationContext = new GenericApplicationContext();
+				System.out.println("*** Before ACI init -> OUTPUT: " + output.getAll());
 				ApplicationContextInitializer<GenericApplicationContext> initializer = compiled
 						.getInstance(ApplicationContextInitializer.class, className.toString());
 				initializer.initialize(freshApplicationContext);
+				System.out.println("*** After ACI init -> OUTPUT: " + output.getAll());
 				assertThat(output).contains("Beginning AOT processing for binder child contexts");
 				assertThat(output).contains("Pre-creating binder child context (AOT) for mock");
 				assertThat(output).contains("Generating AOT child context initializer for mock");
@@ -145,10 +147,11 @@ class BinderChildContextInitializerTests {
 			compiler.with(generationContext).compile(compiled -> {
 				// Initialize the context w/ the generated ACI
 				GenericApplicationContext freshApplicationContext = new GenericApplicationContext();
+				System.out.println("*** Before ACI init -> OUTPUT: " + output.getAll());
 				ApplicationContextInitializer<GenericApplicationContext> initializer = compiled
 						.getInstance(ApplicationContextInitializer.class, className.toString());
 				initializer.initialize(freshApplicationContext);
-
+				System.out.println("*** After ACI init -> OUTPUT: " + output.getAll());
 				assertThat(output).contains("Beginning AOT processing for binder child contexts");
 				assertThat(output).contains("Pre-creating binder child context (AOT) for mockBinder2");
 				assertThat(output).contains("Pre-creating binder child context (AOT) for mockBinder1");
