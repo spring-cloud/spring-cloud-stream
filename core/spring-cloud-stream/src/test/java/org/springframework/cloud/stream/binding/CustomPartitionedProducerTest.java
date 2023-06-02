@@ -30,12 +30,7 @@ import org.springframework.cloud.stream.partitioning.CustomPartitionSelectorClas
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.PropertySource;
-import org.springframework.integration.annotation.InboundChannelAdapter;
-import org.springframework.integration.annotation.Poller;
 import org.springframework.integration.channel.DirectChannel;
-import org.springframework.integration.core.MessageSource;
-import org.springframework.messaging.Message;
-import org.springframework.messaging.MessagingException;
 import org.springframework.messaging.support.ChannelInterceptor;
 import org.springframework.util.ReflectionUtils;
 
@@ -201,16 +196,16 @@ public class CustomPartitionedProducerTest {
 			return new CustomPartitionKeyExtractorClass();
 		}
 
-		@Bean
-		@InboundChannelAdapter(value = "output", poller = @Poller(fixedDelay = "5000", maxMessagesPerPoll = "1"))
-		public MessageSource<String> timerMessageSource() {
-			return new MessageSource<String>() {
-				@Override
-				public Message<String> receive() {
-					throw new MessagingException("test");
-				}
-			};
-		}
+//		@Bean
+//		@InboundChannelAdapter(value = "output", poller = @Poller(fixedDelay = "5000", maxMessagesPerPoll = "1"))
+//		public MessageSource<String> timerMessageSource() {
+//			return new MessageSource<String>() {
+//				@Override
+//				public Message<String> receive() {
+//					throw new MessagingException("test");
+//				}
+//			};
+//		}
 
 	}
 
@@ -239,16 +234,16 @@ public class CustomPartitionedProducerTest {
 			return new CustomPartitionKeyExtractorClass();
 		}
 
-		@Bean
-		@InboundChannelAdapter(value = "output", poller = @Poller(fixedDelay = "5000", maxMessagesPerPoll = "1"))
-		public MessageSource<String> timerMessageSource() {
-			return new MessageSource<String>() {
-				@Override
-				public Message<String> receive() {
-					throw new MessagingException("test");
-				}
-			};
-		}
+//		@Bean
+//		@InboundChannelAdapter(value = "output", poller = @Poller(fixedDelay = "5000", maxMessagesPerPoll = "1"))
+//		public MessageSource<String> timerMessageSource() {
+//			return new MessageSource<String>() {
+//				@Override
+//				public Message<String> receive() {
+//					throw new MessagingException("test");
+//				}
+//			};
+//		}
 
 	}
 
