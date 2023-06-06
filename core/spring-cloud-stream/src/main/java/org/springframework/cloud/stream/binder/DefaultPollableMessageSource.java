@@ -27,6 +27,7 @@ import org.apache.commons.logging.LogFactory;
 
 import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.aop.support.NameMatchMethodPointcutAdvisor;
+import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
 import org.springframework.context.Lifecycle;
 import org.springframework.core.AttributeAccessor;
 import org.springframework.core.ParameterizedTypeReference;
@@ -116,7 +117,7 @@ public class DefaultPollableMessageSource
 			@Override
 			public Object invoke(MethodInvocation invocation) throws Throwable {
 				Object result = invocation.proceed();
-				if (result instanceof Message received) {
+				if (result instanceof Message<?> received) {
 					for (ChannelInterceptor interceptor : this.interceptors) {
 						received = interceptor.preSend(received, dummyChannel);
 						if (received == null) {
@@ -308,16 +309,17 @@ public class DefaultPollableMessageSource
 	private Message<?> receive(ParameterizedTypeReference<?> type) {
 		Message<?> message = this.source.receive();
 		if (message != null && type != null && this.messageConverter != null) {
-			Class<?> targetType = type == null ? Object.class
-					: type.getType() instanceof Class clazz ? clazz
-							: Object.class;
-			Object payload = this.messageConverter.fromMessage(message, targetType, type);
-			if (payload == null) {
-				throw new MessageConversionException(message,
-						"No converter could convert Message");
+			Object payload;
+			if (FunctionTypeUtils.isTypeCollection(type.getType()) || FunctionTypeUtils.isTypeMap(type.getType())) {
+				payload = this.messageConverter.fromMessage(message, FunctionTypeUtils.getRawType(type.getType()), type.getType());
 			}
-			message = MessageBuilder.withPayload(payload)
-					.copyHeaders(message.getHeaders()).build();
+			else {
+				payload = this.messageConverter.fromMessage(message, (Class<?>) type.getType());
+			}
+			if (payload == null) {
+				throw new MessageConversionException(message, "No converter could convert Message");
+			}
+			message = MessageBuilder.withPayload(payload).copyHeaders(message.getHeaders()).build();
 		}
 		return message;
 	}
