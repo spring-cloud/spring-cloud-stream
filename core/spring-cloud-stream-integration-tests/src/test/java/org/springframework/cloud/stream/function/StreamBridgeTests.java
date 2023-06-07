@@ -531,7 +531,7 @@ public class StreamBridgeTests {
 	void testSendingMessageToOutputOfExistingSupplier() throws Exception {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration
 			.getCompleteConfiguration(TestConfiguration.class))
-			.web(WebApplicationType.NONE).run("--spring.cloud.stream.source=supplier;foo",
+			.web(WebApplicationType.NONE).run("--spring.cloud.stream.output-bindings=supplier;foo",
 				"--spring.jmx.enabled=false")) {
 
 			StreamBridge bridge = context.getBean(StreamBridge.class);

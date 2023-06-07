@@ -195,6 +195,9 @@ public class FunctionConfiguration {
 
 						// see https://github.com/spring-cloud/spring-cloud-stream/issues/2027
 						String functionDefinition = proxyFactory.getFunctionDefinition();
+						if (!StringUtils.hasText(functionDefinition)) {
+							continue;
+						}
 						String[] functionNames = StringUtils.delimitedListToStringArray(functionDefinition.replaceAll(",", "|").trim(), "|");
 
 						Function supplier = null;
@@ -886,6 +889,7 @@ public class FunctionConfiguration {
 			String[] outputBindings = StringUtils.hasText(bindingProperties.getOutputBindings()) ? bindingProperties.getOutputBindings().split(";") : (
 					StringUtils.hasText(bindingProperties.getOutputBindings()) ? bindingProperties.getOutputBindings().split(";") : new String[0]
 					);
+
 			for (String inputBindingName : inputBindings) {
 				FunctionInvocationWrapper sourceFunc = functionCatalog.lookup(inputBindingName);
 				if (sourceFunc != null && !sourceFunc.getFunctionDefinition().equals(inputBindingName)) {
@@ -917,7 +921,6 @@ public class FunctionConfiguration {
 						BindableFunctionProxyFactory.class, () -> proxyFactory);
 				}
 			}
-
 		}
 
 		@Override
