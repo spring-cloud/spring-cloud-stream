@@ -377,7 +377,7 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 		try {
 			Enumeration<URL> resources = ClassUtils.getDefaultClassLoader().getResources("META-INF/shared.beans");
 			while (resources.hasMoreElements()) {
-				URL url = (URL) resources.nextElement();
+				URL url = resources.nextElement();
 				UrlResource resource = new UrlResource(url);
 				Properties properties = PropertiesLoaderUtils.loadProperties(resource);
 				Set<Object> classNames = properties.keySet();
@@ -406,9 +406,9 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 	@SuppressWarnings("unchecked")
 	private Class<Object> loadClass(String className) {
 		try {
-			return (Class<Object>) ClassUtils.getDefaultClassLoader().loadClass(((String) className).trim());
+			return (Class<Object>) ClassUtils.getDefaultClassLoader().loadClass(className.trim());
 		}
-		catch (Exception e) {
+		catch (Throwable e) {
 			logger.debug("Attempt to load " + className + " failed.", e);
 			return null;
 		}
