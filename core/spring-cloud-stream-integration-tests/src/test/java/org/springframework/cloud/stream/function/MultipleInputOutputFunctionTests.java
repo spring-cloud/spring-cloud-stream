@@ -173,7 +173,11 @@ public class MultipleInputOutputFunctionTests {
 				ReactiveFunctionConfiguration.class))
 			.web(WebApplicationType.NONE)
 			.run("--spring.jmx.enabled=false",
-				"--spring.cloud.function.definition=singleInputMultipleOutputs")) {
+				"--spring.cloud.function.definition=singleInputMultipleOutputs",
+				"--spring.cloud.stream.bindings.singleInputMultipleOutputs-out-0.producer.partitionKeyExpression=payload",
+				"--spring.cloud.stream.bindings.singleInputMultipleOutputs-out-0.producer.partitionCount=10",
+				"--spring.cloud.stream.bindings.singleInputMultipleOutputs-out-1.producer.partitionKeyExpression=payload",
+				"--spring.cloud.stream.bindings.singleInputMultipleOutputs-out-1.producer.partitionCount=10")) {
 			InputDestination inputDestination = context.getBean(InputDestination.class);
 			OutputDestination outputDestination = context.getBean(OutputDestination.class);
 
