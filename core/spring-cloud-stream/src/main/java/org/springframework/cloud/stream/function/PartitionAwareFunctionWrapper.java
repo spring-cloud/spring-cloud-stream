@@ -51,6 +51,8 @@ class PartitionAwareFunctionWrapper implements Function<Object, Object>, Supplie
 
 	private final Function<Object, Object> outputMessageEnricher;
 
+	private boolean messageEnricherEnabled = true;
+
 	PartitionAwareFunctionWrapper(Function<?, ?> function, ConfigurableApplicationContext context, ProducerProperties producerProperties) {
 		this.function = function;
 
@@ -84,7 +86,9 @@ class PartitionAwareFunctionWrapper implements Function<Object, Object>, Supplie
 	@SuppressWarnings("unchecked")
 	@Override
 	public Object apply(Object input) {
-		this.setEnhancerIfNecessary();
+		if (this.messageEnricherEnabled) {
+			this.setEnhancerIfNecessary();
+		}
 		Object result = this.function.apply(input);
 		if (!((FunctionInvocationWrapper) this.function).isInputTypePublisher()) {
 			((FunctionInvocationWrapper) this.function).setEnhancer(null);
@@ -95,7 +99,9 @@ class PartitionAwareFunctionWrapper implements Function<Object, Object>, Supplie
 	@Override
 	public Object get() {
 		if (this.function instanceof FunctionInvocationWrapper functionInvocationWrapper) {
-			this.setEnhancerIfNecessary();
+			if (this.messageEnricherEnabled) {
+				this.setEnhancerIfNecessary();
+			}
 			return functionInvocationWrapper.get();
 		}
 		throw new IllegalStateException("Call to get() is not allowed since this function is not a Supplier.");
@@ -105,5 +111,9 @@ class PartitionAwareFunctionWrapper implements Function<Object, Object>, Supplie
 		if (this.function instanceof FunctionInvocationWrapper functionInvocationWrapper) {
 			functionInvocationWrapper.setEnhancer(this.outputMessageEnricher);
 		}
+	}
+
+	public void setMessageEnricherEnabled(boolean messageEnricherEnabled) {
+		this.messageEnricherEnabled = messageEnricherEnabled;
 	}
 }

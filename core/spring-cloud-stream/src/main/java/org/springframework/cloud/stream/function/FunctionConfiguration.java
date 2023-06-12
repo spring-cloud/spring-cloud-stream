@@ -33,6 +33,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.StreamSupport;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -63,8 +64,10 @@ import org.springframework.cloud.function.context.config.FunctionContextUtils;
 import org.springframework.cloud.function.context.config.RoutingFunction;
 import org.springframework.cloud.function.context.message.MessageUtils;
 import org.springframework.cloud.stream.binder.BinderFactory;
+import org.springframework.cloud.stream.binder.BinderHeaders;
 import org.springframework.cloud.stream.binder.BindingCreatedEvent;
 import org.springframework.cloud.stream.binder.ConsumerProperties;
+import org.springframework.cloud.stream.binder.PartitionHandler;
 import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.cloud.stream.binder.ProducerProperties.PollerProperties;
 import org.springframework.cloud.stream.binding.BindableProxyFactory;
@@ -86,12 +89,14 @@ import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.Environment;
 import org.springframework.core.type.MethodMetadata;
+import org.springframework.expression.spel.support.StandardEvaluationContext;
 import org.springframework.integration.channel.AbstractMessageChannel;
 import org.springframework.integration.channel.AbstractSubscribableChannel;
 import org.springframework.integration.channel.FluxMessageChannel;
 import org.springframework.integration.core.MessagingTemplate;
 import org.springframework.integration.dsl.IntegrationFlow;
 import org.springframework.integration.dsl.IntegrationFlowBuilder;
+import org.springframework.integration.expression.ExpressionUtils;
 import org.springframework.integration.handler.AbstractMessageHandler;
 import org.springframework.integration.scheduling.PollerMetadata;
 import org.springframework.integration.support.MessageBuilder;
@@ -553,20 +558,34 @@ public class FunctionConfiguration {
 						function.setSkipOutputConversion(producerProperties.isUseNativeEncoding());
 					}
 					functionToInvoke = new PartitionAwareFunctionWrapper(function, this.applicationContext, producerProperties);
+					// If we have a multi-output scenario, we will do any message enrichment (aka, determining the outbound
+					// partition) via the corresponding reactive Flux types. Currently, we support multiple output
+					// bindings for reactive types only (Tuples).
+					if (outputBindingNames.size() > 1) {
+						((PartitionAwareFunctionWrapper) functionToInvoke).setMessageEnricherEnabled(false);
+					}
 				}
-
 				Object resultPublishers = functionToInvoke.apply(inputPublishers.length == 1 ? inputPublishers[0] : Tuples.fromArray(inputPublishers));
-
 				if (!(resultPublishers instanceof Iterable)) {
 					resultPublishers = Collections.singletonList(resultPublishers);
 				}
 				Iterator<String> outputBindingIter = outputBindingNames.iterator();
+				long outputCount = StreamSupport.stream(((Iterable) resultPublishers).spliterator(), false).count();
 
 				((Iterable) resultPublishers).forEach(publisher -> {
 					Flux flux = Flux.from((Publisher) publisher);
 					if (!CollectionUtils.isEmpty(outputBindingNames)) {
-						MessageChannel outputChannel = this.applicationContext.getBean(outputBindingIter.next(), MessageChannel.class);
+						String outputBinding = outputBindingIter.next();
+						MessageChannel outputChannel = this.applicationContext.getBean(outputBinding, MessageChannel.class);
 						flux = flux.doOnNext(message -> {
+							// If there are more than 1 output bindings, then ensure that we properly calculate the partitions
+							// based on information from the correct output binding properties.
+							if (outputCount > 1) {
+								Integer partitionId = determinePartitionForOutputBinding(outputBinding, message);
+								message = MessageBuilder
+									.fromMessage((Message<?>) message)
+									.setHeader(BinderHeaders.PARTITION_HEADER, partitionId).build();
+							}
 							if (message instanceof Message m && m.getHeaders().get("spring.cloud.stream.sendto.destination") != null) {
 								String destinationName = (String) m.getHeaders().get("spring.cloud.stream.sendto.destination");
 								ProducerProperties producerProperties = this.serviceProperties.getBindings().get(outputBindingNames.iterator().next()).getProducer();
@@ -604,6 +623,19 @@ public class FunctionConfiguration {
 					}
 				}
 			}
+		}
+
+		private Integer determinePartitionForOutputBinding(String outputBinding, Object message) {
+			BindingProperties bindingProperties = FunctionToDestinationBinder.this.serviceProperties.getBindings().get(outputBinding);
+			ProducerProperties producerProperties = bindingProperties == null ? null : bindingProperties.getProducer();
+			if (producerProperties != null && producerProperties.isPartitioned()) {
+				StandardEvaluationContext evaluationContext = ExpressionUtils.createStandardEvaluationContext(this.applicationContext.getBeanFactory());
+				PartitionHandler partitionHandler = new PartitionHandler(evaluationContext, producerProperties, this.applicationContext.getBeanFactory());
+				if (message instanceof Message) {
+					return partitionHandler.determinePartition((Message<?>) message);
+				}
+			}
+			return null;
 		}
 
 		private AbstractMessageHandler createFunctionHandler(FunctionInvocationWrapper function,
