@@ -34,6 +34,7 @@ import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.common.PartitionInfo;
 
 import org.springframework.beans.factory.DisposableBean;
+import org.springframework.boot.actuate.health.AbstractHealthIndicator;
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.Status;
 import org.springframework.boot.actuate.health.StatusAggregator;
@@ -54,7 +55,7 @@ import org.springframework.scheduling.concurrent.CustomizableThreadFactory;
  * @author Chukwubuikem Ume-Ugwa
  * @author Taras Danylchuk
  */
-public class KafkaBinderHealthIndicator implements KafkaBinderHealth, DisposableBean {
+public class KafkaBinderHealthIndicator extends AbstractHealthIndicator implements DisposableBean {
 
 	private static final int DEFAULT_TIMEOUT = 60;
 
@@ -90,19 +91,19 @@ public class KafkaBinderHealthIndicator implements KafkaBinderHealth, Disposable
 	}
 
 	@Override
-	public Health health() {
+	protected void doHealthCheck(Health.Builder builder) {
 		Health topicsHealth = safelyBuildTopicsHealth();
 		Health listenerContainersHealth = buildListenerContainersHealth();
-		return merge(topicsHealth, listenerContainersHealth);
+		merge(topicsHealth, listenerContainersHealth, builder);
 	}
 
-	private Health merge(Health topicsHealth, Health listenerContainersHealth) {
+	private void merge(Health topicsHealth, Health listenerContainersHealth, Health.Builder builder) {
 		Status aggregatedStatus = StatusAggregator.getDefault()
 						.getAggregateStatus(topicsHealth.getStatus(), listenerContainersHealth.getStatus());
 		Map<String, Object> aggregatedDetails = new HashMap<>();
 		aggregatedDetails.putAll(topicsHealth.getDetails());
 		aggregatedDetails.putAll(listenerContainersHealth.getDetails());
-		return Health.status(aggregatedStatus).withDetails(aggregatedDetails).build();
+		builder.status(aggregatedStatus).withDetails(aggregatedDetails);
 	}
 
 	private Health safelyBuildTopicsHealth() {
