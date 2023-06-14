@@ -17,6 +17,7 @@
 package org.springframework.cloud.stream.binder;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.context.Lifecycle;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -38,5 +39,34 @@ public class DefaultBinderTests {
 		binding.pause();
 
 		assertThat(binding.isPaused()).isTrue();
+	}
+
+	@Test
+	void testDefaultBinderIsNull(){
+		DefaultBinding<?> binding = new DefaultBinding<>("foo", "bar", "target", null);
+		assertThat(binding.getState()).isNotNull();
+	}
+
+	@Test
+	void testDefaultBinderIsRunning(){
+		DefaultBinding<?> binding = new DefaultBinding<>("foo", "bar", "target", new Lifecycle() {
+			private Boolean running =false;
+			@Override
+			public void start() {
+				running = !this.running;
+			}
+
+			@Override
+			public void stop() {
+				running = !this.running;
+			}
+
+			@Override
+			public boolean isRunning() {
+				return running;
+			}
+		});
+		binding.start();
+		assertThat(binding.isRunning()).isTrue();
 	}
 }
