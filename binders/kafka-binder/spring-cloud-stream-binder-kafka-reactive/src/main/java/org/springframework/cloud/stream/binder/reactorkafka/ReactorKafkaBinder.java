@@ -18,15 +18,21 @@ package org.springframework.cloud.stream.binder.reactorkafka;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.common.PartitionInfo;
 import reactor.core.publisher.Flux;
 import reactor.kafka.receiver.KafkaReceiver;
 import reactor.kafka.receiver.ReceiverOptions;
@@ -60,6 +66,9 @@ import org.springframework.integration.core.MessageProducer;
 import org.springframework.integration.endpoint.MessageProducerSupport;
 import org.springframework.integration.handler.AbstractMessageHandler;
 import org.springframework.integration.support.MessageBuilder;
+import org.springframework.kafka.core.ConsumerFactory;
+import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
+import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.kafka.support.converter.KafkaMessageHeaders;
 import org.springframework.kafka.support.converter.MessageConverter;
@@ -98,6 +107,10 @@ public class ReactorKafkaBinder
 	private ReceiverOptionsCustomizer<Object, Object> receiverOptionsCustomizer = (name, opts) -> opts;
 
 	private SenderOptionsCustomizer<Object, Object> senderOptionsCustomizer = (name, opts) -> opts;
+
+	private final Map<String, TopicInformation> topicsInUse = new ConcurrentHashMap<>();
+
+	private final Map<String, MessageProducerSupport> messageProducers = new ConcurrentHashMap<>();
 
 	public ReactorKafkaBinder(KafkaBinderConfigurationProperties configurationProperties,
 			KafkaTopicProvisioner provisioner) {
@@ -165,6 +178,20 @@ public class ReactorKafkaBinder
 			this.producerConfigCustomizer.configure(configs, producerProperties.getBindingName(),
 					destination.getName());
 		}
+		Map<String, Object> props = BindingUtils.createProducerConfigs(producerProperties,
+			this.configurationProperties);
+		DefaultKafkaProducerFactory<byte[], byte[]> producerFactory = new DefaultKafkaProducerFactory<>(props);
+		Collection<PartitionInfo> partitions = provisioningProvider.getPartitionsForTopic(
+			producerProperties.getPartitionCount(), false, () -> {
+				Producer<byte[], byte[]> producer = producerFactory.createProducer();
+				List<PartitionInfo> partitionsFor = producer
+					.partitionsFor(destination.getName());
+				producer.close();
+				return partitionsFor;
+			}, destination.getName());
+
+		this.topicsInUse.put(destination.getName(),
+			new TopicInformation(null, partitions, false));
 
 		SenderOptions<Object, Object> opts = this.senderOptionsCustomizer.apply(producerProperties.getBindingName(),
 				SenderOptions.create(configs));
@@ -179,13 +206,56 @@ public class ReactorKafkaBinder
 		return new ReactorMessageHandler(opts, converter, destination.getName(), resultChannel);
 	}
 
+	// TODO: Refactor to provide in a common area since KafkaMessageChannelBinder also provides this.
+	public void processTopic(final String group, final ExtendedConsumerProperties<KafkaConsumerProperties> extendedConsumerProperties,
+							final ConsumerFactory<?, ?> consumerFactory, int partitionCount,
+							boolean usingPatterns, boolean groupManagement, String topic) {
+		Collection<PartitionInfo> listenedPartitions;
+		Collection<PartitionInfo> allPartitions = usingPatterns ? Collections.emptyList()
+			: getPartitionInfo(topic, extendedConsumerProperties, consumerFactory,
+			partitionCount);
+
+		if (groupManagement || extendedConsumerProperties.getInstanceCount() == 1) {
+			listenedPartitions = allPartitions;
+		}
+		else {
+			listenedPartitions = new ArrayList<>();
+			for (PartitionInfo partition : allPartitions) {
+				// divide partitions across modules
+				if ((partition.partition() % extendedConsumerProperties
+					.getInstanceCount()) == extendedConsumerProperties
+					.getInstanceIndex()) {
+					listenedPartitions.add(partition);
+				}
+			}
+		}
+		this.topicsInUse.put(topic,
+			new TopicInformation(group, listenedPartitions, usingPatterns));
+	}
+
+	private Collection<PartitionInfo> getPartitionInfo(String topic,
+													final ExtendedConsumerProperties<KafkaConsumerProperties> extendedConsumerProperties,
+													final ConsumerFactory<?, ?> consumerFactory, int partitionCount) {
+		return provisioningProvider.getPartitionsForTopic(partitionCount,
+			extendedConsumerProperties.getExtension().isAutoRebalanceEnabled(),
+			() -> {
+				try (Consumer<?, ?> consumer = consumerFactory.createConsumer()) {
+					return consumer.partitionsFor(topic);
+				}
+			}, topic);
+	}
+
+	Map<String, TopicInformation> getTopicsInUse() {
+		return this.topicsInUse;
+	}
+
 
 	@Override
 	protected MessageProducer createConsumerEndpoint(ConsumerDestination destination, String group,
-			ExtendedConsumerProperties<KafkaConsumerProperties> properties) throws Exception {
+			ExtendedConsumerProperties<KafkaConsumerProperties> properties) {
 
 		boolean anonymous = !StringUtils.hasText(group);
-		String consumerGroup = anonymous ? "anonymous." + UUID.randomUUID().toString() : group;
+		String consumerGroup = anonymous ? "anonymous." + UUID.randomUUID() : group;
 		Map<String, Object> configs = BindingUtils.createConsumerConfigs(anonymous, consumerGroup, properties,
 				this.configurationProperties);
 
@@ -202,7 +272,7 @@ public class ReactorKafkaBinder
 		 *  it is still required by the provisioner, however.
 		 */
 		List<String> destList = Arrays.stream(StringUtils.commaDelimitedListToStringArray(destinations))
-				.map(dest -> dest.trim())
+				.map(String::trim)
 				.toList();
 		ReceiverOptions<Object, Object> opts = ReceiverOptions.create(configs)
 			.addAssignListener(parts -> logger.info("Assigned: " + parts));
@@ -214,6 +284,15 @@ public class ReactorKafkaBinder
 		}
 		opts = this.receiverOptionsCustomizer.apply(properties.getBindingName(), opts);
 		ReceiverOptions<Object, Object> finalOpts = opts;
+
+		Map<String, Object> props = BindingUtils.createConsumerConfigs(anonymous, consumerGroup, properties,
+			this.configurationProperties);
+
+		DefaultKafkaConsumerFactory<Object, Object> factory = new DefaultKafkaConsumerFactory<>(props);
+		int partitionCount = properties.getInstanceCount() * properties.getConcurrency();
+		boolean groupManagement = properties.getExtension().isAutoRebalanceEnabled();
+		processTopic(consumerGroup, properties, factory, partitionCount, properties.getExtension().isDestinationIsPattern(),
+			groupManagement, destination.getName());
 
 		class ReactorMessageProducer extends MessageProducerSupport {
 
@@ -286,7 +365,13 @@ public class ReactorKafkaBinder
 			}
 
 		}
-		return new ReactorMessageProducer();
+		ReactorMessageProducer reactorMessageProducer = new ReactorMessageProducer();
+		this.messageProducers.put(consumerGroup, reactorMessageProducer);
+		return reactorMessageProducer;
+	}
+
+	public Map<String, MessageProducerSupport> getMessageProducers() {
+		return this.messageProducers;
 	}
 
 	@Override
@@ -381,6 +466,44 @@ public class ReactorKafkaBinder
 		@Override
 		public boolean isRunning() {
 			return this.running;
+		}
+
+	}
+
+	/**
+	 * Inner class to capture topic details.
+	 *
+	 * TODO: Refactor this as KafkaMessageChannelBinder also provides this same info
+	 */
+	static class TopicInformation {
+
+		private final String consumerGroup;
+
+		private final Collection<PartitionInfo> partitionInfos;
+
+		private final boolean isTopicPattern;
+
+		TopicInformation(String consumerGroup, Collection<PartitionInfo> partitionInfos,
+						boolean isTopicPattern) {
+			this.consumerGroup = consumerGroup;
+			this.partitionInfos = partitionInfos;
+			this.isTopicPattern = isTopicPattern;
+		}
+
+		String getConsumerGroup() {
+			return this.consumerGroup;
+		}
+
+		boolean isConsumerTopic() {
+			return this.consumerGroup != null;
+		}
+
+		boolean isTopicPattern() {
+			return this.isTopicPattern;
+		}
+
+		Collection<PartitionInfo> getPartitionInfos() {
+			return this.partitionInfos;
 		}
 
 	}

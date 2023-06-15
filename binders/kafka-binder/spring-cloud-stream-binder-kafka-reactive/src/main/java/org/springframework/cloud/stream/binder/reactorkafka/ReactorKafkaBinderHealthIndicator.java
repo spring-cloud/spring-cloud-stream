@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2023 the original author or authors.
+ * Copyright 2023-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.stream.binder.kafka;
+package org.springframework.cloud.stream.binder.reactorkafka;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -31,33 +31,21 @@ import org.apache.kafka.common.PartitionInfo;
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.Status;
 import org.springframework.cloud.stream.binder.kafka.common.AbstractKafkaBinderHealthIndicator;
+import org.springframework.integration.endpoint.MessageProducerSupport;
 import org.springframework.kafka.core.ConsumerFactory;
-import org.springframework.kafka.listener.AbstractMessageListenerContainer;
 import org.springframework.scheduling.concurrent.CustomizableThreadFactory;
 
 /**
- * Health indicator for Kafka.
+ * {@link org.springframework.boot.actuate.health.HealthIndicator} for Reactor Kafka Binder.
  *
- * @author Ilayaperumal Gopinathan
- * @author Marius Bogoevici
- * @author Henryk Konsek
- * @author Gary Russell
- * @author Laur Aliste
  * @author Soby Chacko
- * @author Vladislav Fefelov
- * @author Chukwubuikem Ume-Ugwa
- * @author Taras Danylchuk
  */
-public class KafkaBinderHealthIndicator extends AbstractKafkaBinderHealthIndicator {
+public class ReactorKafkaBinderHealthIndicator extends AbstractKafkaBinderHealthIndicator {
 
-	private final ExecutorService executor = Executors.newSingleThreadExecutor(
-		new CustomizableThreadFactory("kafka-binder-health-"));
+	private final ReactorKafkaBinder binder;
 
-	private final KafkaMessageChannelBinder binder;
-
-
-	public KafkaBinderHealthIndicator(KafkaMessageChannelBinder binder,
-									ConsumerFactory<?, ?> consumerFactory) {
+	public ReactorKafkaBinderHealthIndicator(ReactorKafkaBinder binder,
+											ConsumerFactory<?, ?> consumerFactory) {
 		super(consumerFactory);
 		this.binder = binder;
 	}
@@ -65,7 +53,7 @@ public class KafkaBinderHealthIndicator extends AbstractKafkaBinderHealthIndicat
 	@Override
 	protected ExecutorService createHealthBinderExecutorService() {
 		return Executors.newSingleThreadExecutor(
-			new CustomizableThreadFactory("kafka-binder-health-"));
+			new CustomizableThreadFactory("reactor-kafka-binder-health-"));
 	}
 
 	protected Health buildTopicsHealth() {
@@ -73,35 +61,35 @@ public class KafkaBinderHealthIndicator extends AbstractKafkaBinderHealthIndicat
 			initMetadataConsumer();
 			Set<String> downMessages = new HashSet<>();
 			Set<String> checkedTopics = new HashSet<>();
-			final Map<String, KafkaMessageChannelBinder.TopicInformation> topicsInUse = KafkaBinderHealthIndicator.this.binder
-					.getTopicsInUse();
+			final Map<String, ReactorKafkaBinder.TopicInformation> topicsInUse = ReactorKafkaBinderHealthIndicator.this.binder
+				.getTopicsInUse();
 			if (topicsInUse.isEmpty()) {
 				try {
 					this.metadataConsumer.listTopics(Duration.ofSeconds(this.timeout));
 				}
 				catch (Exception e) {
 					return Health.down().withDetail("No topic information available",
-							"Kafka broker is not reachable").build();
+						"Kafka broker is not reachable").build();
 				}
 				return Health.unknown().withDetail("No bindings found",
-						"Kafka binder may not be bound to destinations on the broker").build();
+					"Kafka binder may not be bound to destinations on the broker").build();
 			}
 			else {
 				for (String topic : topicsInUse.keySet()) {
-					KafkaMessageChannelBinder.TopicInformation topicInformation = topicsInUse
-							.get(topic);
+					ReactorKafkaBinder.TopicInformation topicInformation = topicsInUse
+						.get(topic);
 					if (!topicInformation.isTopicPattern()) {
 						List<PartitionInfo> partitionInfos = this.metadataConsumer
-								.partitionsFor(topic);
+							.partitionsFor(topic);
 						for (PartitionInfo partitionInfo : partitionInfos) {
 							if (topicInformation.getPartitionInfos()
-									.contains(partitionInfo)
-									&& partitionInfo.leader() == null ||
-									(partitionInfo.leader() != null && partitionInfo.leader().id() == -1)) {
+								.contains(partitionInfo)
+								&& partitionInfo.leader() == null ||
+								(partitionInfo.leader() != null && partitionInfo.leader().id() == -1)) {
 								downMessages.add(partitionInfo.toString());
 							}
 							else if (this.considerDownWhenAnyPartitionHasNoLeader &&
-									partitionInfo.leader() == null || (partitionInfo.leader() != null && partitionInfo.leader().id() == -1)) {
+								partitionInfo.leader() == null || (partitionInfo.leader() != null && partitionInfo.leader().id() == -1)) {
 								downMessages.add(partitionInfo.toString());
 							}
 						}
@@ -127,9 +115,9 @@ public class KafkaBinderHealthIndicator extends AbstractKafkaBinderHealthIndicat
 			}
 			else {
 				return Health.down()
-						.withDetail("Following partitions in use have no leaders: ",
-								downMessages.toString())
-						.build();
+					.withDetail("Following partitions in use have no leaders: ",
+						downMessages.toString())
+					.build();
 			}
 		}
 		catch (Exception ex) {
@@ -138,31 +126,31 @@ public class KafkaBinderHealthIndicator extends AbstractKafkaBinderHealthIndicat
 	}
 
 	protected Health buildBinderSpecificHealthDetails() {
-		List<AbstractMessageListenerContainer<?, ?>> listenerContainers = binder.getKafkaMessageListenerContainers();
-		if (listenerContainers.isEmpty()) {
+		Map<String, MessageProducerSupport> messageProducerSupportInfo = binder.getMessageProducers();
+		if (messageProducerSupportInfo.isEmpty()) {
 			return Health.unknown().build();
 		}
 
 		Status status = Status.UP;
-		List<Map<String, Object>> containersDetails = new ArrayList<>();
+		List<Map<String, Object>> messageProducers = new ArrayList<>();
 
-		for (AbstractMessageListenerContainer<?, ?> container : listenerContainers) {
-			Map<String, Object> containerDetails = new HashMap<>();
-			boolean isRunning = container.isRunning();
-			boolean isOk = container.isInExpectedState();
+		Map<String, Object> messageProducerDetails = new HashMap<>();
+		for (String groupId : messageProducerSupportInfo.keySet()) {
+			MessageProducerSupport messageProducerSupport = messageProducerSupportInfo.get(groupId);
+			boolean isRunning = messageProducerSupport.isRunning();
+			boolean isOk = messageProducerSupport.isActive();
 			if (!isOk) {
 				status = Status.DOWN;
 			}
-			containerDetails.put("isRunning", isRunning);
-			containerDetails.put("isStoppedAbnormally", !isRunning && !isOk);
-			containerDetails.put("isPaused", container.isContainerPaused());
-			containerDetails.put("listenerId", container.getListenerId());
-			containerDetails.put("groupId", container.getGroupId());
-
-			containersDetails.add(containerDetails);
+			messageProducerDetails.put("isRunning", isRunning);
+			messageProducerDetails.put("isStoppedAbnormally", !isRunning && !isOk);
+			//messageProducerDetails.put("isPaused", messageProducerSupport.isPaused());
+			messageProducerDetails.put("messageProducerId", messageProducerSupport.getApplicationContextId());
+			messageProducerDetails.put("groupId", groupId);
 		}
+		messageProducers.add(messageProducerDetails);
 		return Health.status(status)
-				.withDetail("listenerContainers", containersDetails)
-				.build();
+			.withDetail("messageProducers", messageProducers)
+			.build();
 	}
 }
