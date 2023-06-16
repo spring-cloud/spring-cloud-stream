@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2022 the original author or authors.
+ * Copyright 2023-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package org.springframework.cloud.stream.binder;
 
 import org.junit.jupiter.api.Test;
+
 import org.springframework.context.Lifecycle;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -42,15 +43,15 @@ public class DefaultBinderTests {
 	}
 
 	@Test
-	void testDefaultBinderIsNull(){
+	void testDefaultBinderIsNull() {
 		DefaultBinding<?> binding = new DefaultBinding<>("foo", "bar", "target", null);
 		assertThat(binding.getState()).isNotNull();
 	}
 
 	@Test
-	void testDefaultBinderIsRunning(){
+	void testDefaultBinderIsRunning() {
 		DefaultBinding<?> binding = new DefaultBinding<>("foo", "bar", "target", new Lifecycle() {
-			private Boolean running =false;
+			private Boolean running = false;
 			@Override
 			public void start() {
 				running = !this.running;
