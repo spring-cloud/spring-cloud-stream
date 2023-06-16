@@ -48,6 +48,7 @@ import org.springframework.cloud.stream.binder.BinderSpecificPropertiesProvider;
 import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
 import org.springframework.cloud.stream.binder.ExtendedProducerProperties;
 import org.springframework.cloud.stream.binder.ExtendedPropertiesBinder;
+import org.springframework.cloud.stream.binder.kafka.common.TopicInformation;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaBinderConfigurationProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaConsumerProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaExtendedBindingProperties;
@@ -469,43 +470,4 @@ public class ReactorKafkaBinder
 		}
 
 	}
-
-	/**
-	 * Inner class to capture topic details.
-	 *
-	 * TODO: Refactor this as KafkaMessageChannelBinder also provides this same info
-	 */
-	static class TopicInformation {
-
-		private final String consumerGroup;
-
-		private final Collection<PartitionInfo> partitionInfos;
-
-		private final boolean isTopicPattern;
-
-		TopicInformation(String consumerGroup, Collection<PartitionInfo> partitionInfos,
-						boolean isTopicPattern) {
-			this.consumerGroup = consumerGroup;
-			this.partitionInfos = partitionInfos;
-			this.isTopicPattern = isTopicPattern;
-		}
-
-		String getConsumerGroup() {
-			return this.consumerGroup;
-		}
-
-		boolean isConsumerTopic() {
-			return this.consumerGroup != null;
-		}
-
-		boolean isTopicPattern() {
-			return this.isTopicPattern;
-		}
-
-		Collection<PartitionInfo> getPartitionInfos() {
-			return this.partitionInfos;
-		}
-
-	}
-
 }

@@ -46,6 +46,7 @@ import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 
 import org.springframework.cloud.stream.binder.BindingCreatedEvent;
+import org.springframework.cloud.stream.binder.kafka.common.TopicInformation;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaBinderConfigurationProperties;
 import org.springframework.context.ApplicationListener;
 import org.springframework.kafka.core.ConsumerFactory;
@@ -131,7 +132,7 @@ public class KafkaBinderMetrics
 
 		this.scheduler = Executors.newScheduledThreadPool(this.binder.getTopicsInUse().size());
 
-		for (Map.Entry<String, KafkaMessageChannelBinder.TopicInformation> topicInfo : this.binder
+		for (Map.Entry<String, TopicInformation> topicInfo : this.binder
 				.getTopicsInUse().entrySet()) {
 
 			if (!topicInfo.getValue().isConsumerTopic()) {

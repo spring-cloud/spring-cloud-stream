@@ -65,6 +65,7 @@ import org.springframework.cloud.stream.binder.ExtendedPropertiesBinder;
 import org.springframework.cloud.stream.binder.HeaderMode;
 import org.springframework.cloud.stream.binder.MessageValues;
 import org.springframework.cloud.stream.binder.PartitionHandler;
+import org.springframework.cloud.stream.binder.kafka.common.TopicInformation;
 import org.springframework.cloud.stream.binder.kafka.config.ClientFactoryCustomizer;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaBinderConfigurationProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaConsumerProperties;
@@ -1593,42 +1594,6 @@ public class KafkaMessageChannelBinder extends
 				super.handleMessage(message);
 			}
 		}
-	}
-
-	/**
-	 * Inner class to capture topic details.
-	 */
-	static class TopicInformation {
-
-		private final String consumerGroup;
-
-		private final Collection<PartitionInfo> partitionInfos;
-
-		private final boolean isTopicPattern;
-
-		TopicInformation(String consumerGroup, Collection<PartitionInfo> partitionInfos,
-				boolean isTopicPattern) {
-			this.consumerGroup = consumerGroup;
-			this.partitionInfos = partitionInfos;
-			this.isTopicPattern = isTopicPattern;
-		}
-
-		String getConsumerGroup() {
-			return this.consumerGroup;
-		}
-
-		boolean isConsumerTopic() {
-			return this.consumerGroup != null;
-		}
-
-		boolean isTopicPattern() {
-			return this.isTopicPattern;
-		}
-
-		Collection<PartitionInfo> getPartitionInfos() {
-			return this.partitionInfos;
-		}
-
 	}
 
 	/**

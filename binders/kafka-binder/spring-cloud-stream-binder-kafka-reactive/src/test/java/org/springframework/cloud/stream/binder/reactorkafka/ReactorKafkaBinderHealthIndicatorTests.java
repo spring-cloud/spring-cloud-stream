@@ -32,6 +32,7 @@ import org.mockito.MockitoAnnotations;
 
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.Status;
+import org.springframework.cloud.stream.binder.kafka.common.TopicInformation;
 import org.springframework.integration.endpoint.MessageProducerSupport;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 
@@ -60,7 +61,7 @@ public class ReactorKafkaBinderHealthIndicatorTests {
 	@Mock
 	private ReactorKafkaBinder binder;
 
-	private final Map<String, ReactorKafkaBinder.TopicInformation> topicsInUse = new HashMap<>();
+	private final Map<String, TopicInformation> topicsInUse = new HashMap<>();
 
 	@BeforeEach
 	public void setup() {
@@ -75,7 +76,7 @@ public class ReactorKafkaBinderHealthIndicatorTests {
 	@Test
 	void reactorKafkaBinderIsUp() {
 		final List<PartitionInfo> partitions = partitions(new Node(0, null, 0));
-		topicsInUse.put(TEST_TOPIC, new ReactorKafkaBinder.TopicInformation(
+		topicsInUse.put(TEST_TOPIC, new TopicInformation(
 			"group1-healthIndicator", partitions, false));
 		org.mockito.BDDMockito.given(consumer.partitionsFor(TEST_TOPIC))
 			.willReturn(partitions);

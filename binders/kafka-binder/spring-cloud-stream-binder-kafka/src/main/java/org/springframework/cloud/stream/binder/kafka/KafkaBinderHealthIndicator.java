@@ -16,21 +16,17 @@
 
 package org.springframework.cloud.stream.binder.kafka;
 
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-
-import org.apache.kafka.common.PartitionInfo;
 
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.Status;
 import org.springframework.cloud.stream.binder.kafka.common.AbstractKafkaBinderHealthIndicator;
+import org.springframework.cloud.stream.binder.kafka.common.TopicInformation;
 import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.listener.AbstractMessageListenerContainer;
 import org.springframework.scheduling.concurrent.CustomizableThreadFactory;
@@ -50,9 +46,6 @@ import org.springframework.scheduling.concurrent.CustomizableThreadFactory;
  */
 public class KafkaBinderHealthIndicator extends AbstractKafkaBinderHealthIndicator {
 
-	private final ExecutorService executor = Executors.newSingleThreadExecutor(
-		new CustomizableThreadFactory("kafka-binder-health-"));
-
 	private final KafkaMessageChannelBinder binder;
 
 
@@ -68,75 +61,12 @@ public class KafkaBinderHealthIndicator extends AbstractKafkaBinderHealthIndicat
 			new CustomizableThreadFactory("kafka-binder-health-"));
 	}
 
-	protected Health buildTopicsHealth() {
-		try {
-			initMetadataConsumer();
-			Set<String> downMessages = new HashSet<>();
-			Set<String> checkedTopics = new HashSet<>();
-			final Map<String, KafkaMessageChannelBinder.TopicInformation> topicsInUse = KafkaBinderHealthIndicator.this.binder
-					.getTopicsInUse();
-			if (topicsInUse.isEmpty()) {
-				try {
-					this.metadataConsumer.listTopics(Duration.ofSeconds(this.timeout));
-				}
-				catch (Exception e) {
-					return Health.down().withDetail("No topic information available",
-							"Kafka broker is not reachable").build();
-				}
-				return Health.unknown().withDetail("No bindings found",
-						"Kafka binder may not be bound to destinations on the broker").build();
-			}
-			else {
-				for (String topic : topicsInUse.keySet()) {
-					KafkaMessageChannelBinder.TopicInformation topicInformation = topicsInUse
-							.get(topic);
-					if (!topicInformation.isTopicPattern()) {
-						List<PartitionInfo> partitionInfos = this.metadataConsumer
-								.partitionsFor(topic);
-						for (PartitionInfo partitionInfo : partitionInfos) {
-							if (topicInformation.getPartitionInfos()
-									.contains(partitionInfo)
-									&& partitionInfo.leader() == null ||
-									(partitionInfo.leader() != null && partitionInfo.leader().id() == -1)) {
-								downMessages.add(partitionInfo.toString());
-							}
-							else if (this.considerDownWhenAnyPartitionHasNoLeader &&
-									partitionInfo.leader() == null || (partitionInfo.leader() != null && partitionInfo.leader().id() == -1)) {
-								downMessages.add(partitionInfo.toString());
-							}
-						}
-						checkedTopics.add(topic);
-					}
-					else {
-						try {
-							// Since destination is a pattern, all we are doing is just to make sure that
-							// we can connect to the cluster and query the topics.
-							this.metadataConsumer.listTopics(Duration.ofSeconds(this.timeout));
-						}
-						catch (Exception ex) {
-							return Health.down()
-								.withDetail("Cluster not connected",
-									"Destination provided is a pattern, but cannot connect to the cluster for any verification")
-								.build();
-						}
-					}
-				}
-			}
-			if (downMessages.isEmpty()) {
-				return Health.up().withDetail("topicsInUse", checkedTopics).build();
-			}
-			else {
-				return Health.down()
-						.withDetail("Following partitions in use have no leaders: ",
-								downMessages.toString())
-						.build();
-			}
-		}
-		catch (Exception ex) {
-			return Health.down(ex).build();
-		}
+	@Override
+	protected Map<String, TopicInformation> getTopicsInUse() {
+		return this.binder.getTopicsInUse();
 	}
 
+	@Override
 	protected Health buildBinderSpecificHealthDetails() {
 		List<AbstractMessageListenerContainer<?, ?>> listenerContainers = binder.getKafkaMessageListenerContainers();
 		if (listenerContainers.isEmpty()) {
