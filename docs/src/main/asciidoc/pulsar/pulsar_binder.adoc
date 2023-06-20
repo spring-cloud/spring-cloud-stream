@@ -1,11 +1,8 @@
 [[pulsar-binder]]
 = Spring Cloud Stream Binder for Apache Pulsar
-include::attributes.adoc[]
 
 Spring for Apache Pulsar provides a binder for Spring Cloud Stream that we can use to build event-driven microservices using pub-sub paradigms.
 In this section, we will go through the basic details of this binder.
-
-TIP: For those unfamiliar with the concepts in Spring Cloud Stream, go through the primary {spring-cloud-stream-docs}[reference docs] for Spring Cloud Stream to understand the core concepts.
 
 == Usage
 
@@ -191,14 +188,13 @@ This information is provided as extended binding properties.
 As you can see above in the configuration, the properties are - `spring.cloud.stream.pulsar.bindings.<binding-name>.producer|consumer.schema-type` for schema information and `spring.cloud.stream.pulsar.bindings.<binding-name>.producer|consumer.message-type` for the actual target type.
 If you have both keys and values on the message, you can use `message-key-type` and `message-value-type` to specify their target types.
 
-TIP: Any configured <<pulsar.adoc#schema-info-template-imperative,custom schema mappings>> will be consulted when the `schema-type` property is omitted.
+TIP: Any configured custom schema mappings will be consulted when the `schema-type` property is omitted.
 
 === Message Header Conversion
 Each message typically has header information that needs to be carried along as the message traverses between Pulsar and Spring Messaging via Spring Cloud Stream input and output bindings.
 To support this traversal, the framework handles the necessary message header conversion.
 
-include::pulsar-header.adoc[leveloffset=+1]
-
+https://docs.spring.io/spring-pulsar/docs/current-SNAPSHOT/reference/html/#_pulsar_headers[Pulsar Headers]
 
 ==== Custom Header Mapper
 The Pulsar binder is configured with a default header mapper that can be overridden by providing your own `PulsarHeaderMapper` bean.
