@@ -38,7 +38,6 @@ import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.BinderFactory;
 import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.cloud.stream.binding.BindingService;
-import org.springframework.cloud.stream.binding.DefaultPartitioningInterceptor;
 import org.springframework.cloud.stream.binding.NewDestinationBindingCallback;
 import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
@@ -246,12 +245,14 @@ public final class StreamBridge implements StreamOperations, SmartInitializingSi
 					BinderFactory binderFactory = this.applicationContext.getBean(BinderFactory.class);
 					binder = binderFactory.getBinder(binderName, messageChannel.getClass());
 				}
-
-				if (producerProperties != null && producerProperties.isPartitioned()) {
-					BindingProperties bindingProperties = this.bindingServiceProperties.getBindingProperties(destinationName);
-					((AbstractMessageChannel) messageChannel)
-						.addInterceptor(new DefaultPartitioningInterceptor(bindingProperties, this.applicationContext.getBeanFactory()));
-				}
+				// Commenting out the following block due to this issue: https://github.com/spring-cloud/spring-cloud-stream/issues/2759
+				// Once we confirm that there is no unknown regression, we will remove this block from here completely,
+				// since we already perform the partition finding algorithm once via StreamBridge#send.
+//				if (producerProperties != null && producerProperties.isPartitioned()) {
+//					BindingProperties bindingProperties = this.bindingServiceProperties.getBindingProperties(destinationName);
+//					((AbstractMessageChannel) messageChannel)
+//						.addInterceptor(new DefaultPartitioningInterceptor(bindingProperties, this.applicationContext.getBeanFactory()));
+//				}
 				this.addInterceptors((AbstractMessageChannel) messageChannel, destinationName);
 
 				this.bindingService.bindProducer(messageChannel, destinationName, true, binder);
