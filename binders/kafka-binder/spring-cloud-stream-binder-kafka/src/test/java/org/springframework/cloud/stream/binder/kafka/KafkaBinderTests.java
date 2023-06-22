@@ -94,7 +94,7 @@ import org.springframework.cloud.stream.binder.PollableSource;
 import org.springframework.cloud.stream.binder.RequeueCurrentMessageException;
 import org.springframework.cloud.stream.binder.Spy;
 import org.springframework.cloud.stream.binder.TestUtils;
-import org.springframework.cloud.stream.binder.kafka.KafkaMessageChannelBinder.TopicInformation;
+import org.springframework.cloud.stream.binder.kafka.common.TopicInformation;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaBinderConfigurationProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaConsumerProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaProducerProperties;
@@ -716,7 +716,7 @@ public class KafkaBinderTests extends
 		assertThat(topicsInUse.keySet()).contains("foo.bar");
 		TopicInformation topic = topicsInUse.get("foo.bar");
 		assertThat(topic.isConsumerTopic()).isTrue();
-		assertThat(topic.getConsumerGroup()).isEqualTo("testSendAndReceive");
+		assertThat(topic.consumerGroup()).isEqualTo("testSendAndReceive");
 
 		assertThat(KafkaTestUtils.getPropertyValue(consumerBinding, "lifecycle.recordListener.messageConverter"))
 				.isSameAs(mmc);
@@ -2305,7 +2305,7 @@ public class KafkaBinderTests extends
 		assertThat(topicsInUse.keySet()).contains("defaultGroup.0");
 		TopicInformation topic = topicsInUse.get("defaultGroup.0");
 		assertThat(topic.isConsumerTopic()).isTrue();
-		assertThat(topic.getConsumerGroup()).startsWith("anonymous");
+		assertThat(topic.consumerGroup()).startsWith("anonymous");
 
 		producerBinding.unbind();
 		binding1.unbind();
