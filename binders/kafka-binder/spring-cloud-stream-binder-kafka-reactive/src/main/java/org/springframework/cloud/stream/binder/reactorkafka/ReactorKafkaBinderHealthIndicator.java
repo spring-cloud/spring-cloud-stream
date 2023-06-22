@@ -40,8 +40,7 @@ public class ReactorKafkaBinderHealthIndicator extends AbstractKafkaBinderHealth
 
 	private final ReactorKafkaBinder binder;
 
-	public ReactorKafkaBinderHealthIndicator(ReactorKafkaBinder binder,
-											ConsumerFactory<?, ?> consumerFactory) {
+	public ReactorKafkaBinderHealthIndicator(ReactorKafkaBinder binder, ConsumerFactory<?, ?> consumerFactory) {
 		super(consumerFactory);
 		this.binder = binder;
 	}

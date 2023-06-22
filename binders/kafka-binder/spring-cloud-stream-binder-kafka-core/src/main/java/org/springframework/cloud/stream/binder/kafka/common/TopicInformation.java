@@ -20,6 +20,15 @@ import java.util.Collection;
 
 import org.apache.kafka.common.PartitionInfo;
 
+/**
+ * Record to capture topic information for various binder related tasks.
+ *
+ * @param consumerGroup consumer group for the consumer
+ * @param partitionInfos collection of {@link PartitionInfo}
+ * @param isTopicPattern if the topic is specified as a pattern
+ *
+ * @author Soby Chacko (and previous authors before refactoring).
+ */
 public record TopicInformation(String consumerGroup, Collection<PartitionInfo> partitionInfos, boolean isTopicPattern) {
 
 	public boolean isConsumerTopic() {
