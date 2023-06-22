@@ -56,7 +56,7 @@ public class ReactorKafkaBinderHealthIndicatorTests {
 	private KafkaConsumer consumer;
 
 	@Mock
-	MessageProducerSupport messageProducerSupport1;
+	private MessageProducerSupport messageProducerSupport1;
 
 	@Mock
 	private ReactorKafkaBinder binder;
@@ -80,9 +80,10 @@ public class ReactorKafkaBinderHealthIndicatorTests {
 			"group1-healthIndicator", partitions, false));
 		org.mockito.BDDMockito.given(consumer.partitionsFor(TEST_TOPIC))
 			.willReturn(partitions);
+
 		org.mockito.BDDMockito.given(binder.getMessageProducers())
 			.willReturn(Map.of("group1-healthIndicator", messageProducerSupport1));
-		org.mockito.BDDMockito.given(messageProducerSupport1.isRunning()).willReturn(true);
+//		org.mockito.BDDMockito.given(messageProducerSupport1.isRunning()).willReturn(true);
 		org.mockito.BDDMockito.given(messageProducerSupport1.isActive()).willReturn(true);
 		Health health = indicator.health();
 		assertThat(health.getStatus()).isEqualTo(Status.UP);
