@@ -62,7 +62,7 @@ public abstract class AbstractKafkaBinderHealthIndicator extends AbstractHealthI
 	public AbstractKafkaBinderHealthIndicator(ConsumerFactory<?, ?> consumerFactory) {
 		this.consumerFactory = consumerFactory;
 		this.executor = createHealthBinderExecutorService();
-		Assert.isTrue(this.executor != null, "The health indicator executor service must not be null");
+		Assert.notNull(this.executor, "The health indicator executor service must not be null");
 	}
 
 	protected abstract Map<String, TopicInformation> getTopicsInUse();
@@ -71,7 +71,7 @@ public abstract class AbstractKafkaBinderHealthIndicator extends AbstractHealthI
 
 	protected  abstract ExecutorService createHealthBinderExecutorService();
 
-	protected void initMetadataConsumer() {
+	private void initMetadataConsumer() {
 		if (this.metadataConsumer == null) {
 			this.metadataConsumer = this.consumerFactory.createConsumer();
 		}
@@ -80,6 +80,9 @@ public abstract class AbstractKafkaBinderHealthIndicator extends AbstractHealthI
 	@Override
 	public void destroy() {
 		executor.shutdown();
+		if (this.metadataConsumer != null) {
+			this.metadataConsumer.close();
+		}
 	}
 
 	@Override
@@ -135,7 +138,7 @@ public abstract class AbstractKafkaBinderHealthIndicator extends AbstractHealthI
 						List<PartitionInfo> partitionInfos = this.metadataConsumer
 							.partitionsFor(topic);
 						for (PartitionInfo partitionInfo : partitionInfos) {
-							if (topicInformation.getPartitionInfos()
+							if (topicInformation.partitionInfos()
 								.contains(partitionInfo)
 								&& partitionInfo.leader() == null ||
 								(partitionInfo.leader() != null && partitionInfo.leader().id() == -1)) {

@@ -140,7 +140,7 @@ public class KafkaBinderMetrics
 			}
 
 			String topic = topicInfo.getKey();
-			String group = topicInfo.getValue().getConsumerGroup();
+			String group = topicInfo.getValue().consumerGroup();
 
 			ToDoubleFunction<KafkaBinderMetrics> offsetComputation = computeOffsetComputationFunction(topic, group);
 			final Gauge register = Gauge.builder(OFFSET_LAG_METRIC_NAME, this, offsetComputation)

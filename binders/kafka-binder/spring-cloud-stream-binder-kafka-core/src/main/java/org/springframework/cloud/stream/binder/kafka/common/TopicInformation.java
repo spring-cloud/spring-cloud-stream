@@ -20,38 +20,9 @@ import java.util.Collection;
 
 import org.apache.kafka.common.PartitionInfo;
 
-/**
- * @author Soby Chacko
- * @since 4.1.0
- */
-public class TopicInformation {
-
-	private final String consumerGroup;
-
-	private final Collection<PartitionInfo> partitionInfos;
-
-	private final boolean isTopicPattern;
-
-	public TopicInformation(String consumerGroup, Collection<PartitionInfo> partitionInfos,
-					boolean isTopicPattern) {
-		this.consumerGroup = consumerGroup;
-		this.partitionInfos = partitionInfos;
-		this.isTopicPattern = isTopicPattern;
-	}
-
-	public String getConsumerGroup() {
-		return this.consumerGroup;
-	}
+public record TopicInformation(String consumerGroup, Collection<PartitionInfo> partitionInfos, boolean isTopicPattern) {
 
 	public boolean isConsumerTopic() {
 		return this.consumerGroup != null;
-	}
-
-	public boolean isTopicPattern() {
-		return this.isTopicPattern;
-	}
-
-	public Collection<PartitionInfo> getPartitionInfos() {
-		return this.partitionInfos;
 	}
 }
