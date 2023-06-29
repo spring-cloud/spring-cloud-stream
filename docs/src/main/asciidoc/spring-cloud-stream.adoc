@@ -338,8 +338,7 @@ where you are clearly correlating the input of `uppercase` function to `sample-t
 
 For more on properties and other configuration options please see <<Configuration Options>> section.
 
-[[spring-cloud-stream-overview-producing-consuming-messages]]
-
+[[explicit-binding-creation]]
 ===== Explicit binding creation
 
 In the previous section we explained how bindings are created implicitly driven by the names of `Function`, `Supplier` or `Consumer` beans provided by your application.
