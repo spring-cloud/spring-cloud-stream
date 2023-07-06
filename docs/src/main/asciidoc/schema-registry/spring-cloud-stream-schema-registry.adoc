@@ -229,7 +229,7 @@ You can customize the schema storage by using the http://docs.spring.io/spring-b
 The Schema Registry Server API consists of the following operations:
 
 * `POST /` -- see `<<spring-cloud-stream-overview-registering-new-schema>>`
-* 'GET /{subject}/{format}/{version}' -- see `<<spring-cloud-stream-overview-retrieve-schema-subject-format-version>>`
+* `GET /{subject}/{format}/{version}` -- see `<<spring-cloud-stream-overview-retrieve-schema-subject-format-version>>`
 * `GET /{subject}/{format}` -- see `<<spring-cloud-stream-overview-retrieve-schema-subject-format>>`
 * `GET /schemas/{id}` -- see `<<spring-cloud-stream-overview-retrieve-schema-id>>`
 * `DELETE /{subject}/{format}/{version}` -- see `<<spring-cloud-stream-overview-deleting-schema-subject-format-version>>`
