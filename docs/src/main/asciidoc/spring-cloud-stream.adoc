@@ -638,7 +638,7 @@ public class WebSourceApplication {
 	@ResponseStatus(HttpStatus.ACCEPTED)
 	public void delegateToSupplier(@RequestBody String body) {
 		System.out.println("Sending " + body);
-		streamBridge.send("toStream-out-0", body);
+		streamBridge.send("toStream", body);
 	}
 }
 ----
@@ -651,8 +651,7 @@ subsequent reuse (see <<StreamBridge and Dynamic Destinations>> for more details
 
 However, if you want to pre-create an output binding at the initialization (startup) time you can benefit from `spring.cloud.stream.output-bindings` property where you can declare the name of your sources.
 The provided name will be used as a trigger to create a source binding.
-So in the preceding example the name of the output binding will be `toStream-out-0` which is consistent with the binding naming
-convention used by functions (see <<Binding and Binding names>>). You can use `;` to signify multiple sources (multiple output bindings)
+You can use `;` to signify multiple sources (multiple output bindings)
 (e.g., `--spring.cloud.stream.output-bindings=foo;bar`)
 
 Also, note that `streamBridge.send(..)` method takes an `Object` for data. This means you can send POJO or `Message` to it and it
