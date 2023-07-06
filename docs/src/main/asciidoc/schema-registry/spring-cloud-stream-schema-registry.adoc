@@ -195,8 +195,8 @@ To use it, you can download latest `spring-cloud-stream-schema-registry-server` 
 
 [source,bash]
 ----
-wget https://repo.spring.io/artifactory/libs-snapshot-local/org/springframework/cloud/spring-cloud-stream-schema-registry-server/4.0.0-SNAPSHOT/spring-cloud-stream-schema-registry-server-4.0.0-SNAPSHOT.jar
-java -jar ./spring-cloud-stream-schema-registry-server-4.0.0-SNAPSHOT.jar
+wget https://repo1.maven.org/maven2/org/springframework/cloud/spring-cloud-stream-schema-registry-server/4.0.3/spring-cloud-stream-schema-registry-server-4.0.3.jar
+java -jar ./spring-cloud-stream-schema-registry-server-4.0.3.jar
 ----
 
 [TIP]
