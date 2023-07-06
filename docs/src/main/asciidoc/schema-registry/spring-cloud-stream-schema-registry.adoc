@@ -195,14 +195,14 @@ To use it, you can download latest `spring-cloud-stream-schema-registry-server` 
 
 [source,bash]
 ----
-wget https://repo.spring.io/artifactory/libs-snapshot-local/org/springframework/cloud/spring-cloud-stream-schema-registry-server/4.0.0-SNAPSHOT/spring-cloud-stream-schema-registry-server-4.0.0-SNAPSHOT.jar
-java -jar ./spring-cloud-stream-schema-registry-server-4.0.0-SNAPSHOT.jar
+wget https://repo1.maven.org/maven2/org/springframework/cloud/spring-cloud-stream-schema-registry-server/4.0.3/spring-cloud-stream-schema-registry-server-4.0.3.jar
+java -jar ./spring-cloud-stream-schema-registry-server-4.0.3.jar
 ----
 
 [TIP]
 ====
 You can embed the schema registry in your existing Spring Boot web application.
-To do this, add the `spring-cloud-stream-schema-server` artifact to your project and use the `@EnableSchemaRegistryServer` annotation, which adds the schema registry server REST controller to your application.
+To do this, add the `spring-cloud-stream-schema-registry-core` artifact to your project and use the `@EnableSchemaRegistryServer` annotation, which adds the schema registry server REST controller to your application.
 The following example shows a Spring Boot application that enables the schema registry:
 [source,java]
 ----
@@ -229,7 +229,7 @@ You can customize the schema storage by using the http://docs.spring.io/spring-b
 The Schema Registry Server API consists of the following operations:
 
 * `POST /` -- see `<<spring-cloud-stream-overview-registering-new-schema>>`
-* 'GET /{subject}/{format}/{version}' -- see `<<spring-cloud-stream-overview-retrieve-schema-subject-format-version>>`
+* `GET /{subject}/{format}/{version}` -- see `<<spring-cloud-stream-overview-retrieve-schema-subject-format-version>>`
 * `GET /{subject}/{format}` -- see `<<spring-cloud-stream-overview-retrieve-schema-subject-format>>`
 * `GET /schemas/{id}` -- see `<<spring-cloud-stream-overview-retrieve-schema-id>>`
 * `DELETE /{subject}/{format}/{version}` -- see `<<spring-cloud-stream-overview-deleting-schema-subject-format-version>>`
