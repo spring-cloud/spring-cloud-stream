@@ -202,7 +202,7 @@ java -jar ./spring-cloud-stream-schema-registry-server-4.0.3.jar
 [TIP]
 ====
 You can embed the schema registry in your existing Spring Boot web application.
-To do this, add the `spring-cloud-stream-schema-server` artifact to your project and use the `@EnableSchemaRegistryServer` annotation, which adds the schema registry server REST controller to your application.
+To do this, add the `spring-cloud-stream-schema-registry-core` artifact to your project and use the `@EnableSchemaRegistryServer` annotation, which adds the schema registry server REST controller to your application.
 The following example shows a Spring Boot application that enables the schema registry:
 [source,java]
 ----
