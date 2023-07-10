@@ -17,6 +17,7 @@
 package org.springframework.cloud.stream.binder.kafka;
 
 import javax.security.auth.login.AppConfigurationEntry;
+import javax.security.auth.login.Configuration;
 
 import com.sun.security.auth.login.ConfigFile;
 import org.apache.kafka.common.security.JaasUtils;
@@ -72,6 +73,8 @@ public class KafkaBinderJaasInitializerListenerTest {
 	@BeforeEach
 	public void before() {
 		System.clearProperty(JaasUtils.JAVA_LOGIN_CONFIG_PARAM);
+		// Invalidate any existing security configuration so that tests are forced to create/use fresh configuration.
+		Configuration.setConfiguration(null);
 	}
 
 	@Test
