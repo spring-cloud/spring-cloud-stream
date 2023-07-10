@@ -24,6 +24,7 @@ import org.apache.kafka.common.security.JaasUtils;
 import org.apache.kafka.streams.kstream.KStream;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.boot.WebApplicationType;
@@ -55,6 +56,12 @@ public class KafkaStreamsBinderJaasInitTests {
 		if (JAVA_LOGIN_CONFIG_PARAM_VALUE != null) {
 			System.setProperty(JaasUtils.JAVA_LOGIN_CONFIG_PARAM, JAVA_LOGIN_CONFIG_PARAM_VALUE);
 		}
+	}
+
+	@BeforeEach
+	public void before() {
+		System.clearProperty(JaasUtils.JAVA_LOGIN_CONFIG_PARAM);
+		javax.security.auth.login.Configuration.setConfiguration(null);
 	}
 
 	@Test
