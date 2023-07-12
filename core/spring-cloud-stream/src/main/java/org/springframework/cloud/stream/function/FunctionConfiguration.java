@@ -71,6 +71,7 @@ import org.springframework.cloud.stream.binder.PartitionHandler;
 import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.cloud.stream.binder.ProducerProperties.PollerProperties;
 import org.springframework.cloud.stream.binding.BindableProxyFactory;
+import org.springframework.cloud.stream.binding.DefaultPartitioningInterceptor;
 import org.springframework.cloud.stream.binding.NewDestinationBindingCallback;
 import org.springframework.cloud.stream.binding.SupportedBindableFeatures;
 import org.springframework.cloud.stream.config.BinderFactoryAutoConfiguration;
@@ -681,6 +682,12 @@ public class FunctionConfiguration {
 					if (result instanceof Message messageResult && messageResult.getHeaders().get("spring.cloud.stream.sendto.destination") != null) {
 						String destinationName = (String) messageResult.getHeaders().get("spring.cloud.stream.sendto.destination");
 						MessageChannel outputChannel = streamBridge.resolveDestination(destinationName, producerProperties, null);
+						BindingProperties bindingProperties = serviceProperties.getBindingProperties(destinationName);
+						ProducerProperties sendToBindingProducerProperties = bindingProperties.getProducer();
+						if (sendToBindingProducerProperties != null && sendToBindingProducerProperties.isPartitioned()) {
+							((AbstractMessageChannel) outputChannel)
+								.addInterceptor(new DefaultPartitioningInterceptor(bindingProperties, applicationContext.getBeanFactory()));
+						}
 						if (logger.isInfoEnabled()) {
 							logger.info("Output message is sent to '" + destinationName + "' destination");
 						}

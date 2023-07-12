@@ -59,11 +59,13 @@ import org.springframework.cloud.stream.binder.test.OutputDestination;
 import org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration;
 import org.springframework.cloud.stream.binding.BindingsLifecycleController;
 import org.springframework.cloud.stream.binding.BindingsLifecycleController.State;
+import org.springframework.cloud.stream.binding.DefaultPartitioningInterceptor;
 import org.springframework.cloud.stream.messaging.DirectWithAttributesChannel;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.ResolvableType;
+import org.springframework.integration.channel.AbstractMessageChannel;
 import org.springframework.integration.channel.QueueChannel;
 import org.springframework.integration.dsl.IntegrationFlow;
 import org.springframework.integration.scheduling.PollerMetadata;
@@ -73,6 +75,7 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.SubscribableChannel;
+import org.springframework.messaging.support.ChannelInterceptor;
 import org.springframework.messaging.support.GenericMessage;
 import org.springframework.scheduling.support.PeriodicTrigger;
 
@@ -962,6 +965,49 @@ public class ImplicitFunctionBindingTests {
 		}
 	}
 
+	// See this issue for more context on this test: https://github.com/spring-cloud/spring-cloud-stream/issues/2770
+	@Test
+	void testSendToDestinationWhenPartitionsEnabled() {
+		System.clearProperty("spring.cloud.function.definition");
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+			TestChannelBinderConfiguration.getCompleteConfiguration(ImperativeSendToDestinationConfiguration.class))
+			.web(WebApplicationType.NONE).run("--spring.jmx.enabled=false",
+				// partition-key-extractor also works below, but for easy testing we picked partition-key-expression since
+				// partition-key-extractor requires defining a bean.
+				"--spring.cloud.stream.bindings.aa.producer.partition-key-expression=payload")) {
+
+			InputDestination inputDestination = context.getBean(InputDestination.class);
+			OutputDestination outputDestination = context.getBean(OutputDestination.class);
+			Message<byte[]> inputMessage = MessageBuilder.withPayload("aa".getBytes()).build();
+			inputDestination.send(inputMessage, "echo-in-0");
+			Message<byte[]> receivedMessage = outputDestination.receive(1000, "aa");
+
+			StreamBridge streamBridge = context.getBean(StreamBridge.class);
+			MessageChannel aa = streamBridge.resolveDestination("aa", null, null);
+			List<ChannelInterceptor> interceptors1 = ((AbstractMessageChannel) aa).getInterceptors();
+
+			assertThat(interceptors1.size()).isEqualTo(1);
+			assertThat(interceptors1.get(0)).isInstanceOf(DefaultPartitioningInterceptor.class);
+
+			assertThat(receivedMessage.getPayload()).isEqualTo("aa".getBytes());
+			assertThat(receivedMessage.getHeaders().get("spring.cloud.stream.sendto.destination")).isNotNull();
+
+			inputMessage = MessageBuilder.withPayload("bb".getBytes()).build();
+			inputDestination.send(inputMessage, "echo-in-0");
+			receivedMessage = outputDestination.receive(1000, "bb");
+
+			MessageChannel bb = streamBridge.resolveDestination("bb", null, null);
+			List<ChannelInterceptor> interceptors2 = ((AbstractMessageChannel) aa).getInterceptors();
+
+			assertThat(interceptors2.size()).isEqualTo(1);
+			assertThat(interceptors2.get(0)).isInstanceOf(DefaultPartitioningInterceptor.class);
+
+			assertThat(receivedMessage.getPayload()).isEqualTo("bb".getBytes());
+			assertThat(receivedMessage.getHeaders().get("spring.cloud.stream.sendto.destination")).isNotNull();
+		}
+	}
+
+
 	@Test
 	@ExtendWith(OutputCaptureExtension.class)
 	void testReactiveConsumerWithConcurrencyGreaterThanOneLogsWarning(CapturedOutput output) {
@@ -1401,6 +1447,14 @@ public class ImplicitFunctionBindingTests {
 			return flux -> flux.map(v -> {
 				return MessageBuilder.withPayload(v).setHeader("spring.cloud.stream.sendto.destination", v).build();
 			});
+		}
+	}
+
+	@EnableAutoConfiguration
+	public static class ImperativeSendToDestinationConfiguration {
+		@Bean
+		public Function<String, Message<String>> echo() {
+			return s -> MessageBuilder.withPayload(s).setHeader("spring.cloud.stream.sendto.destination", s).build();
 		}
 	}
 
