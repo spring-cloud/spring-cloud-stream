@@ -974,7 +974,8 @@ public class ImplicitFunctionBindingTests {
 			.web(WebApplicationType.NONE).run("--spring.jmx.enabled=false",
 				// partition-key-extractor also works below, but for easy testing we picked partition-key-expression since
 				// partition-key-extractor requires defining a bean.
-				"--spring.cloud.stream.bindings.aa.producer.partition-key-expression=payload")) {
+				"--spring.cloud.stream.bindings.aa.producer.partition-key-expression=payload",
+				"--spring.cloud.stream.bindings.bb.producer.partition-key-expression=payload")) {
 
 			InputDestination inputDestination = context.getBean(InputDestination.class);
 			OutputDestination outputDestination = context.getBean(OutputDestination.class);
@@ -997,7 +998,7 @@ public class ImplicitFunctionBindingTests {
 			receivedMessage = outputDestination.receive(1000, "bb");
 
 			MessageChannel bb = streamBridge.resolveDestination("bb", null, null);
-			List<ChannelInterceptor> interceptors2 = ((AbstractMessageChannel) aa).getInterceptors();
+			List<ChannelInterceptor> interceptors2 = ((AbstractMessageChannel) bb).getInterceptors();
 
 			assertThat(interceptors2.size()).isEqualTo(1);
 			assertThat(interceptors2.get(0)).isInstanceOf(DefaultPartitioningInterceptor.class);
