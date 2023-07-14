@@ -390,7 +390,7 @@ Keep in mind that, when using DLQ on a consumer binding that is in batch mode, a
 IMPORTANT: Retry within the binder is not supported when using batch mode, so `maxAttempts` will be overridden to 1.
 You can configure a `DefaultErrorHandler` (using a `ListenerContainerCustomizer`) to achieve similar functionality to retry in the binder.
 You can also use a manual `AckMode` and call `Ackowledgment.nack(index, sleep)` to commit the offsets for a partial batch and have the remaining records redelivered.
-Refer to the https://docs.spring.io/spring-kafka/docs/2.3.0.BUILD-SNAPSHOT/reference/html/#committing-offsets[Spring for Apache Kafka documentation] for more information about these techniques.
+Refer to the https://docs.spring.io/spring-kafka/docs/2.3.15.BUILD-SNAPSHOT/reference/html/#committing-offsets[Spring for Apache Kafka documentation] for more information about these techniques.
 
 [[kafka-producer-properties]]
 ==== Kafka Producer Properties
@@ -494,7 +494,7 @@ If a topic already exists with a larger number of partitions than the maximum of
 compression::
 Set the `compression.type` producer property.
 Supported values are `none`, `gzip`, `snappy`, `lz4` and `zstd`.
-If you override the `kafka-clients` jar to 2.1.0 (or later), as discussed in the https://docs.spring.io/spring-kafka/docs/2.2.x/reference/html/deps-for-21x.html[Spring for Apache Kafka documentation], and wish to use `zstd` compression, use `spring.cloud.stream.kafka.bindings.<binding-name>.producer.configuration.compression.type=zstd`.
+If you override the `kafka-clients` jar to 2.1.0 (or later), as discussed in the https://docs.spring.io/spring-kafka/docs/2.2.x/reference/html/#deps-for-21x[Spring for Apache Kafka documentation], and wish to use `zstd` compression, use `spring.cloud.stream.kafka.bindings.<binding-name>.producer.configuration.compression.type=zstd`.
 +
 Default: `none`.
 transactionManager::
