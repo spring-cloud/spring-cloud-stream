@@ -16,6 +16,10 @@
 
 package org.springframework.cloud.stream.binder.kafka.properties;
 
+import com.sun.net.httpserver.HttpServer;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.net.InetSocketAddress;
 import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.Map;
@@ -25,6 +29,7 @@ import org.assertj.core.util.Files;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
+import org.springframework.core.io.ClassPathResource;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -123,6 +128,39 @@ public class KafkaBinderConfigurationPropertiesTest {
 				.isEqualTo(Paths.get(System.getProperty("java.io.tmpdir"), "testclient.truststore").toString());
 		assertThat(configuration.get("ssl.keystore.location"))
 				.isEqualTo(Paths.get(System.getProperty("java.io.tmpdir"), "testclient.keystore").toString());
+		deleteTempCertFiles();
+	}
+
+	@Test
+	public void testCertificateFilesAreConvertedToAbsolutePathsFromHttpResources() throws IOException {
+		HttpServer server = HttpServer.create(new InetSocketAddress("localhost", 5869), 0);
+		createContextWithCertFileHandler(server, "testclient.truststore");
+		createContextWithCertFileHandler(server, "testclient.keystore");
+		server.setExecutor(null); // creates a default executor
+		server.start();
+
+		KafkaProperties kafkaProperties = new KafkaProperties();
+		KafkaBinderConfigurationProperties kafkaBinderConfigurationProperties =
+			new KafkaBinderConfigurationProperties(kafkaProperties);
+		final Map<String, String> configuration = kafkaBinderConfigurationProperties.getConfiguration();
+		configuration.put("ssl.truststore.location", "http://localhost:5869/testclient.truststore");
+		configuration.put("ssl.keystore.location", "http://localhost:5869/testclient.keystore");
+		configuration.put("schema.registry.ssl.truststore.location", "http://localhost:5869/testclient.truststore");
+		configuration.put("schema.registry.ssl.keystore.location", "http://localhost:5869/testclient.keystore");
+
+		kafkaBinderConfigurationProperties.getKafkaConnectionString();
+
+		assertThat(configuration.get("ssl.truststore.location"))
+			.isEqualTo(Paths.get(System.getProperty("java.io.tmpdir"), "testclient.truststore").toString());
+		assertThat(configuration.get("ssl.keystore.location"))
+			.isEqualTo(Paths.get(System.getProperty("java.io.tmpdir"), "testclient.keystore").toString());
+		assertThat(configuration.get("schema.registry.ssl.truststore.location"))
+			.isEqualTo(Paths.get(System.getProperty("java.io.tmpdir"), "testclient.truststore").toString());
+		assertThat(configuration.get("schema.registry.ssl.keystore.location"))
+			.isEqualTo(Paths.get(System.getProperty("java.io.tmpdir"), "testclient.keystore").toString());
+		deleteTempCertFiles();
+
+		server.stop(0);
 	}
 
 	@Test
@@ -159,5 +197,21 @@ public class KafkaBinderConfigurationPropertiesTest {
 				Paths.get(Files.currentFolder().toString(), "target", "testclient.truststore").toString());
 		assertThat(configuration.get("schema.registry.ssl.keystore.location")).isEqualTo(
 				Paths.get(Files.currentFolder().toString(), "target", "testclient.keystore").toString());
+	}
+
+	private void createContextWithCertFileHandler(HttpServer server, String path) {
+		server.createContext("/" + path, exchange -> {
+			ClassPathResource ts = new ClassPathResource(path);
+			byte[] response = ts.getContentAsByteArray();
+			exchange.sendResponseHeaders(200, response.length);
+			OutputStream os = exchange.getResponseBody();
+			os.write(response);
+			os.close();
+		});
+	}
+
+	private void deleteTempCertFiles() {
+		Paths.get(System.getProperty("java.io.tmpdir"), "testclient.truststore").toFile().delete();
+		Paths.get(System.getProperty("java.io.tmpdir"), "testclient.keystore").toFile().delete();
 	}
 }

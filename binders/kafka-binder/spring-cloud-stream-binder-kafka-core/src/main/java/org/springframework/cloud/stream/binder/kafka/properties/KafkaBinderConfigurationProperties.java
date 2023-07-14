@@ -131,8 +131,9 @@ public class KafkaBinderConfigurationProperties {
 	private Duration authorizationExceptionRetryInterval;
 
 	/**
-	 * When a certificate store location is given as classpath URL (classpath:), then the binder
-	 * moves the resource from the classpath location inside the JAR to a location on
+	 * When a certificate store location is not given as a local file system path, then the binder
+	 * converts the path to {@link org.springframework.core.io.Resource} resource, then copies
+	 * the resource from the original location to a location on
 	 * the filesystem. If this value is set, then this location is used, otherwise, the
 	 * certificate file is copied to the directory returned by java.io.tmpdir.
 	 */
@@ -172,9 +173,10 @@ public class KafkaBinderConfigurationProperties {
 	}
 
 	public String getKafkaConnectionString() {
-		// We need to do a check on certificate file locations to see if they are given as classpath resources.
-		// If that is the case, then we will move them to a file system location and use those as the certificate locations.
-		// This is due to a limitation in Kafka itself in which it doesn't allow reading certificate resources from the classpath.
+		// We need to do a check on certificate file locations to see if they are given as non-local file system resources.
+		// If that is the case, then we will copy them to a file system location and use those as the certificate locations.
+		// This is due to a limitation in Kafka itself in which it doesn't allow reading certificate resources from non-local
+		// file system locations e.g. classpath, http.
 		// See this: https://issues.apache.org/jira/browse/KAFKA-7685
 		// and this: https://cwiki.apache.org/confluence/display/KAFKA/KIP-398%3A+Support+reading+trust+store+from+classpath
 		moveCertsToFileSystemIfNecessary();
@@ -184,41 +186,35 @@ public class KafkaBinderConfigurationProperties {
 
 	private void moveCertsToFileSystemIfNecessary() {
 		try {
-			moveBrokerCertsIfApplicable();
-			moveSchemaRegistryCertsIfApplicable();
+			// broker certificates
+			moveCertsIfApplicable("ssl.truststore.location");
+			moveCertsIfApplicable("ssl.keystore.location");
+
+			// schema registry certificates
+			moveCertsIfApplicable("schema.registry.ssl.truststore.location");
+			moveCertsIfApplicable("schema.registry.ssl.keystore.location");
 		}
 		catch (Exception e) {
 			throw new IllegalStateException(e);
 		}
 	}
 
-	private void moveBrokerCertsIfApplicable() throws IOException {
-		final String trustStoreLocation = this.configuration.get("ssl.truststore.location");
-		if (trustStoreLocation != null && trustStoreLocation.startsWith("classpath:")) {
-			final String fileSystemLocation = moveCertToFileSystem(trustStoreLocation, this.certificateStoreDirectory);
+	private void moveCertsIfApplicable(String storeProperty) throws IOException {
+		final String storeLocation = this.configuration.get(storeProperty);
+
+		// If the path is not defined, or it is a local file path do not move the file
+		if (storeLocation != null && !checkIfFileExists(storeLocation)) {
+			final String fileSystemLocation = moveCertToFileSystem(storeLocation, this.certificateStoreDirectory);
 			// Overriding the value with absolute filesystem path.
-			this.configuration.put("ssl.truststore.location", fileSystemLocation);
-		}
-		final String keyStoreLocation = this.configuration.get("ssl.keystore.location");
-		if (keyStoreLocation != null && keyStoreLocation.startsWith("classpath:")) {
-			final String fileSystemLocation = moveCertToFileSystem(keyStoreLocation, this.certificateStoreDirectory);
-			// Overriding the value with absolute filesystem path.
-			this.configuration.put("ssl.keystore.location", fileSystemLocation);
+			this.configuration.put(storeProperty, fileSystemLocation);
 		}
 	}
 
-	private void moveSchemaRegistryCertsIfApplicable() throws IOException {
-		String trustStoreLocation = this.configuration.get("schema.registry.ssl.truststore.location");
-		if (trustStoreLocation != null && trustStoreLocation.startsWith("classpath:")) {
-			final String fileSystemLocation = moveCertToFileSystem(trustStoreLocation, this.certificateStoreDirectory);
-			// Overriding the value with absolute filesystem path.
-			this.configuration.put("schema.registry.ssl.truststore.location", fileSystemLocation);
-		}
-		final String keyStoreLocation = this.configuration.get("schema.registry.ssl.keystore.location");
-		if (keyStoreLocation != null && keyStoreLocation.startsWith("classpath:")) {
-			final String fileSystemLocation = moveCertToFileSystem(keyStoreLocation, this.certificateStoreDirectory);
-			// Overriding the value with absolute filesystem path.
-			this.configuration.put("schema.registry.ssl.keystore.location", fileSystemLocation);
+	private boolean checkIfFileExists(String path) {
+		try {
+			return Files.isRegularFile(Paths.get(path));
+		} catch (Exception e) {
+			return false;
 		}
 	}
 

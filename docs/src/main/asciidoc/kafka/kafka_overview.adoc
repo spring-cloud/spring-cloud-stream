@@ -151,12 +151,12 @@ Flag to set the binder health as `down`, when any partitions on the topic, regar
 Default: `false`.
 
 spring.cloud.stream.kafka.binder.certificateStoreDirectory::
-When the truststore or keystore certificate location is given as a classpath URL (`classpath:...`), the binder copies the resource from the classpath location inside the JAR file to a location on the filesystem.
+When the truststore or keystore certificate location is given as a non-local file system resources, the binder copies the resource from the path (which is convertible to org.springframework.core.io.Resource) to a location on the filesystem.
 This is true for both broker level certificates (`ssl.truststore.location` and `ssl.keystore.location`) and certificates intended for schema registry (`schema.registry.ssl.truststore.location` and `schema.registry.ssl.keystore.location`).
-Keep in mind that the truststore and keystore classpath locations must be provided under `spring.cloud.stream.kafka.binder.configuration...`.
+Keep in mind that the truststore and keystore location paths must be provided under `spring.cloud.stream.kafka.binder.configuration...`.
 For example, `spring.cloud.stream.kafka.binder.configuration.ssl.truststore.location`, `spring.cloud.stream.kafka.binder.configuration.schema.registry.ssl.truststore.location`, etc.
-The file will be moved to the location specified as the value for this property which must be an existing directory on the filesystem that is writable by the process running the application.
-If this value is not set and the certificate file is a classpath resource, then it will be moved to System's temp directory as returned by `System.getProperty("java.io.tmpdir")`.
+The file will be copied to the location specified as the value for this property which must be an existing directory on the filesystem that is writable by the process running the application.
+If this value is not set and the certificate file is a non-local file system resource, then it will be copied to System's temp directory as returned by `System.getProperty("java.io.tmpdir")`.
 This is also true, if this value is present, but the directory cannot be found on the filesystem or is not writable.
 +
 Default: none.
