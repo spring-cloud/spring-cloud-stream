@@ -1016,3 +1016,56 @@ public KafkaBinderHealth kafkaBinderHealthIndicator() {
     };
 }
 ```
+
+[[check-if-the-connection-to-the-brokers-is-in-error-or-in-topic]]
+=== Check if the connection to the brokers is in error or in topic
+
+To help identify if the cluster brokers are down or if it is just a specific topic that is having a connection problem,
+in complex scenarios where the service connects with several topics this verification helps to identify the severity of the problem.
+
+
+```
+public class KafkaBinderHealthImplementation implements KafkaBinderHealth {
+    @Value("${spring.cloud.bus.destination}")
+    private String topic;
+    private final AdminClient client;
+
+    public KafkaBinderHealthImplementation(final KafkaAdmin admin) {
+        this.client = AdminClient.create(admin.getConfigurationProperties());
+    }
+
+    @Override
+    public Health health() {
+        if (!checkBrokersConnection() || !checkTopicConnection()) {
+            logger.error("Error initializing kafka");
+        }
+        return Health.up().build();
+    }
+
+    public boolean checkBrokersConnection() {
+        try {
+            final var nodes = this.client.describeCluster().nodes().get();
+            return nodes != null && !nodes.isEmpty();
+        } catch (ExecutionException e) {
+            logger.error("ExecutionException {}", e.getMessage());
+        } catch (InterruptedException e) {
+            logger.error("InterruptedException {}", e.getMessage());
+            Thread.currentThread().interrupt();
+        }
+        return false;
+    }
+
+    public boolean checkTopicConnection() {
+        try {
+            final var topic = this.client.describeTopics(List.of(topic)).all().get();
+            return topic != null && !topic.isEmpty();
+        } catch (ExecutionException e) {
+            logger.error("ExecutionException error message {}", e.getMessage());
+        } catch (InterruptedException e) {
+            logger.error("InterruptedException error message {}", e.getMessage());
+            Thread.currentThread().interrupt();
+        }
+        return false;
+    }
+}
+```
