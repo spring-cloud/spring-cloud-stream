@@ -65,11 +65,11 @@ public class DltAwareProcessor<KIn, VIn, KOut, VOut> implements Processor<KIn, V
 
 	public DltAwareProcessor(BiFunction<KIn, VIn, KeyValue<KOut, VOut>> delegateFunction,
 							BiConsumer<Record<KIn, VIn>, Exception> processorRecordRecoverer) {
-		this(delegateFunction, System::currentTimeMillis, processorRecordRecoverer);
+		this(delegateFunction, processorRecordRecoverer, System::currentTimeMillis);
 	}
 
 	public DltAwareProcessor(BiFunction<KIn, VIn, KeyValue<KOut, VOut>> delegateFunction,
-							Supplier<Long> recordTimeSupplier, BiConsumer<Record<KIn, VIn>, Exception> processorRecordRecoverer) {
+							BiConsumer<Record<KIn, VIn>, Exception> processorRecordRecoverer, Supplier<Long> recordTimeSupplier) {
 		this.delegateFunction = delegateFunction;
 		this.recordTimeSupplier = recordTimeSupplier;
 		Assert.notNull(processorRecordRecoverer, "You must provide a valid processor recoverer");
