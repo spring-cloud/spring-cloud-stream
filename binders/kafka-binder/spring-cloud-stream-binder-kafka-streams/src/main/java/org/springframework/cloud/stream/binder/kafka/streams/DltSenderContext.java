@@ -32,6 +32,7 @@ public class DltSenderContext implements ApplicationContextAware, InitializingBe
 
 	private StreamBridge streamBridge;
 
+
 	@Override
 	public void afterPropertiesSet() {
 		this.streamBridge = applicationContext.getBean(StreamBridge.class);

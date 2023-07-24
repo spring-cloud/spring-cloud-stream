@@ -392,6 +392,12 @@ public class KafkaStreamsBinderSupportAutoConfiguration {
 		return new EncodingDecodingBindAdviceHandler();
 	}
 
+	@Bean
+	@ConditionalOnMissingBean
+	public DltSenderContext dltSenderContext() {
+		return new DltSenderContext();
+	}
+
 	@Configuration(proxyBeanMethods = false)
 	@ConditionalOnMissingBean(value = KafkaStreamsBinderMetrics.class, name = "outerContext")
 	@ConditionalOnClass(name = "io.micrometer.core.instrument.MeterRegistry")

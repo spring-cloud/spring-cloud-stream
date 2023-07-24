@@ -16,7 +16,9 @@
 
 package org.springframework.cloud.stream.binder.kafka.streams;
 
+import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
+import java.util.function.Supplier;
 
 import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.processor.api.Processor;
@@ -24,6 +26,8 @@ import org.apache.kafka.streams.processor.api.ProcessorContext;
 import org.apache.kafka.streams.processor.api.Record;
 
 import org.springframework.cloud.stream.function.StreamBridge;
+import org.springframework.util.Assert;
+import org.springframework.util.StringUtils;
 
 /**
  *
@@ -34,16 +38,42 @@ public class DltAwareProcessor<KIn, VIn, KOut, VOut> implements Processor<KIn, V
 
 	private final BiFunction<KIn, VIn, KeyValue<KOut, VOut>> delegateFunction;
 
+	private final Supplier<Long> recordTimeSupplier;
+
+	private String dltDestination;
+
+	private DltSenderContext dltSenderContext;
+
+	private BiConsumer<Record<KIn, VIn>, Exception> processorRecordRecoverer;
+
 	private ProcessorContext<KOut, VOut> context;
 
-	private final String dltDestination;
+	public DltAwareProcessor(BiFunction<KIn, VIn, KeyValue<KOut, VOut>> delegateFunction, String dltDestination,
+							DltSenderContext dltSenderContext) {
+		this(delegateFunction, dltDestination, dltSenderContext, System::currentTimeMillis);
+	}
 
-	private final DltSenderContext dltSenderContext;
-
-	public DltAwareProcessor(BiFunction<KIn, VIn, KeyValue<KOut, VOut>> businessLogic, String dltDestination, DltSenderContext dltSenderContext) {
-		this.delegateFunction = businessLogic;
+	public DltAwareProcessor(BiFunction<KIn, VIn, KeyValue<KOut, VOut>> delegateFunction, String dltDestination,
+							DltSenderContext dltSenderContext, Supplier<Long> recordTimeSupplier) {
+		this.delegateFunction = delegateFunction;
+		this.recordTimeSupplier = recordTimeSupplier;
+		Assert.isTrue(StringUtils.hasText(dltDestination), "DLT Destination topic must be provided.");
 		this.dltDestination = dltDestination;
+		Assert.notNull(dltSenderContext, "DltSenderContext cannot be null");
 		this.dltSenderContext = dltSenderContext;
+	}
+
+	public DltAwareProcessor(BiFunction<KIn, VIn, KeyValue<KOut, VOut>> delegateFunction,
+							BiConsumer<Record<KIn, VIn>, Exception> processorRecordRecoverer) {
+		this(delegateFunction, System::currentTimeMillis, processorRecordRecoverer);
+	}
+
+	public DltAwareProcessor(BiFunction<KIn, VIn, KeyValue<KOut, VOut>> delegateFunction,
+							Supplier<Long> recordTimeSupplier, BiConsumer<Record<KIn, VIn>, Exception> processorRecordRecoverer) {
+		this.delegateFunction = delegateFunction;
+		this.recordTimeSupplier = recordTimeSupplier;
+		Assert.notNull(processorRecordRecoverer, "You must provide a valid processor recoverer");
+		this.processorRecordRecoverer = processorRecordRecoverer;
 	}
 
 	@Override
@@ -56,21 +86,29 @@ public class DltAwareProcessor<KIn, VIn, KOut, VOut> implements Processor<KIn, V
 	public void process(Record<KIn, VIn> record) {
 		try {
 			KeyValue<KOut, VOut> keyValue = this.delegateFunction.apply(record.key(), record.value());
-			//TODO: What should be the timestamp?
-			Record<KOut, VOut> downstreamRecord = new Record<>(keyValue.key, keyValue.value, System.currentTimeMillis(), record.headers());
+			Record<KOut, VOut> downstreamRecord = new Record<>(keyValue.key, keyValue.value, recordTimeSupplier.get(), record.headers());
 			this.context.forward(downstreamRecord);
 		}
 		catch (Exception exception) {
-			StreamBridge streamBridge = this.dltSenderContext.getStreamBridge();
-			if (streamBridge != null) {
-				streamBridge.send(dltDestination, record.value());
+			if (this.processorRecordRecoverer == null) {
+				this.processorRecordRecoverer = defaultProcessorRecordRecoverer();
 			}
+			this.processorRecordRecoverer.accept(record, exception);
 		}
 	}
 
 	@Override
 	public void close() {
 		Processor.super.close();
+	}
+
+	BiConsumer<Record<KIn, VIn>, Exception> defaultProcessorRecordRecoverer() {
+		return (r, e) -> {
+			StreamBridge streamBridge = this.dltSenderContext.getStreamBridge();
+			if (streamBridge != null) {
+				streamBridge.send(this.dltDestination, r.value());
+			}
+		};
 	}
 
 }
