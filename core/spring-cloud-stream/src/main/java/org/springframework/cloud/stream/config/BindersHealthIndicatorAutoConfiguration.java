@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2019 the original author or authors.
+ * Copyright 2017-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,11 @@
 
 package org.springframework.cloud.stream.config;
 
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.springframework.boot.actuate.autoconfigure.endpoint.EndpointAutoConfiguration;
 import org.springframework.boot.actuate.autoconfigure.health.ConditionalOnEnabledHealthIndicator;
@@ -40,6 +42,7 @@ import org.springframework.context.annotation.Bean;
 
 /**
  * @author Ilayaperumal Gopinathan
+ * @author Soby Chacko
  */
 @ConditionalOnClass(name = "org.springframework.boot.actuate.health.HealthIndicator")
 @ConditionalOnEnabledHealthIndicator("binders")
@@ -92,16 +95,27 @@ public class BindersHealthIndicatorAutoConfiguration {
 
 		private static final HealthIndicator UNKNOWN = () -> Health.unknown().build();
 
-		private Map<String, HealthContributor> contributors = new LinkedHashMap<>();
+		private volatile Map<String, HealthContributor> contributors = Collections.emptyMap();
+
+		private final ReentrantLock lock = new ReentrantLock();
 
 		void add(String binderConfigurationName, Map<String, HealthContributor> binderHealthContributors) {
 			// if there are no health contributors in the child context, we just mark
 			// the binder's health as unknown
 			// this can happen due to the fact that configuration is inherited
-			this.contributors.put(binderConfigurationName, getContributor(binderHealthContributors));
+			this.lock.lock();
+			try {
+				Map<String, HealthContributor> newContributors = new LinkedHashMap<>(this.contributors);
+				HealthContributor contributor = obtainContributor(binderHealthContributors);
+				newContributors.put(binderConfigurationName, contributor);
+				this.contributors = newContributors;
+			}
+			finally {
+				this.lock.unlock();
+			}
 		}
 
-		private HealthContributor getContributor(Map<String, HealthContributor> binderHealthContributors) {
+		private HealthContributor obtainContributor(Map<String, HealthContributor> binderHealthContributors) {
 			if (binderHealthContributors.isEmpty()) {
 				return UNKNOWN;
 			}
