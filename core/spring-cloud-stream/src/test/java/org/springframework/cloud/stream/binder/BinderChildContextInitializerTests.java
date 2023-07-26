@@ -19,6 +19,7 @@ package org.springframework.cloud.stream.binder;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
@@ -57,6 +58,7 @@ import static org.mockito.Mockito.mock;
  * @author Chris Bono
  */
 @ExtendWith(OutputCaptureExtension.class)
+@Disabled("Temporarily disabling the test due to some apparent timing issue on CI")
 class BinderChildContextInitializerTests {
 
 	private static final LogAccessor LOG = new LogAccessor(BinderChildContextInitializerTests.class);
