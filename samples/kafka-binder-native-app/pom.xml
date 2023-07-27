@@ -15,7 +15,7 @@
 	<description>Native Sample App based on Kafka Binder</description>
 	<properties>
 		<java.version>17</java.version>
-		<spring-cloud-stream.version>4.0.4</spring-cloud-stream.version>
+		<spring-cloud-stream.version>4.0.4-SNAPSHOT</spring-cloud-stream.version>
 	</properties>
 	<dependencies>
 		<dependency>
