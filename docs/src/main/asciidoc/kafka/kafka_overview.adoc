@@ -1017,12 +1017,13 @@ public KafkaBinderHealth kafkaBinderHealthIndicator() {
 }
 ```
 
-[[check-if-the-connection-to-the-brokers-is-in-error-or-in-topic]]
-=== Check if the connection to the brokers is in error or in topic
+[[custom-kafka-binder-health-indicator-example]]
+=== Custom kafka Binder Health Indicator Example
 
-To help identify if the cluster brokers are down or if it is just a specific topic that is having a connection problem,
-in complex scenarios where the service connects with several topics this verification helps to identify the severity of the problem.
+Here is the pseudo-code for writing a custom Kafka binder HealthIndicator. In this example, we try to override the binder provided Kafka HealthIndicator by specifically checking first for cluster connectivity and then followed by topic-related issues.
 
+
+1. First we need create a custom implementation of the `KafkaBinderHealth` interface.
 
 ```
 public class KafkaBinderHealthImplementation implements KafkaBinderHealth {
@@ -1031,41 +1032,42 @@ public class KafkaBinderHealthImplementation implements KafkaBinderHealth {
     private final AdminClient client;
 
     public KafkaBinderHealthImplementation(final KafkaAdmin admin) {
+		// More about configuring Kafka
+		// https://docs.spring.io/spring-kafka/reference/html/#configuring-topics
         this.client = AdminClient.create(admin.getConfigurationProperties());
     }
 
     @Override
     public Health health() {
-        if (!checkBrokersConnection() || !checkTopicConnection()) {
-            logger.error("Error initializing kafka");
+        if (!checkBrokersConnection()) {
+            logger.error("Error when connect brokers");
         }
+		if (!checkTopicConnection()) {
+			logger.error("Error when trying to connect with specific topic");
+		}
         return Health.up().build();
     }
 
+	// The document has an example on how to implement these checks
+	// https://www.baeldung.com/apache-kafka-check-server-is-running
     public boolean checkBrokersConnection() {
-        try {
-            final var nodes = this.client.describeCluster().nodes().get();
-            return nodes != null && !nodes.isEmpty();
-        } catch (ExecutionException e) {
-            logger.error("ExecutionException {}", e.getMessage());
-        } catch (InterruptedException e) {
-            logger.error("InterruptedException {}", e.getMessage());
-            Thread.currentThread().interrupt();
-        }
-        return false;
+        // Your implementation
     }
 
     public boolean checkTopicConnection() {
-        try {
-            final var topic = this.client.describeTopics(List.of(topic)).all().get();
-            return topic != null && !topic.isEmpty();
-        } catch (ExecutionException e) {
-            logger.error("ExecutionException error message {}", e.getMessage());
-        } catch (InterruptedException e) {
-            logger.error("InterruptedException error message {}", e.getMessage());
-            Thread.currentThread().interrupt();
-        }
-        return false;
+		// Your implementation
     }
+}
+```
+
+2. Then we need to create a bean for the custom implementation.
+
+```
+@Configuration
+public class KafkaBinderHealthIndicatorConfiguration {
+	@Bean
+	public KafkaBinderHealth kafkaBinderHealthIndicator(final KafkaAdmin admin) {
+		return new KafkaBinderHealthImplementation(admin);
+	}
 }
 ```
