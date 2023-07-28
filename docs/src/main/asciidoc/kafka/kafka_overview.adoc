@@ -1041,9 +1041,11 @@ public class KafkaBinderHealthImplementation implements KafkaBinderHealth {
     public Health health() {
         if (!checkBrokersConnection()) {
             logger.error("Error when connect brokers");
+			return Health.down().withDetail("BrokersConnectionError", "Error message").build();
         }
 		if (!checkTopicConnection()) {
 			logger.error("Error when trying to connect with specific topic");
+			return Health.down().withDetail("TopicError", "Error message with topic name").build();
 		}
         return Health.up().build();
     }
