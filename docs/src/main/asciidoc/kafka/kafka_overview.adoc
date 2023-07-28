@@ -1049,7 +1049,7 @@ public class KafkaBinderHealthImplementation implements KafkaBinderHealth {
     }
 
 	// The document has an example on how to implement these checks
-	// https://www.baeldung.com/apache-kafka-check-server-is-running
+	// https://docs.spring.io/spring-kafka/reference/html/#kafka-validation
     public boolean checkBrokersConnection() {
         // Your implementation
     }
