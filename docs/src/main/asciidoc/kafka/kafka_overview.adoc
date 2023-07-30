@@ -1020,7 +1020,8 @@ public KafkaBinderHealth kafkaBinderHealthIndicator() {
 [[custom-kafka-binder-health-indicator-example]]
 === Custom kafka Binder Health Indicator Example
 
-Here is the pseudo-code for writing a custom Kafka binder HealthIndicator. In this example, we try to override the binder provided Kafka HealthIndicator by specifically checking first for cluster connectivity and then followed by topic-related issues.
+Here is the pseudo-code for writing a custom Kafka binder HealthIndicator.
+In this example, we try to override the binder provided Kafka HealthIndicator by specifically checking first for cluster connectivity and then followed by topic-related issues.
 
 
 1. First we need create a custom implementation of the `KafkaBinderHealth` interface.
@@ -1050,8 +1051,6 @@ public class KafkaBinderHealthImplementation implements KafkaBinderHealth {
         return Health.up().build();
     }
 
-	// The document has an example on how to implement these checks
-	// https://docs.spring.io/spring-kafka/reference/html/#kafka-validation
     public boolean checkBrokersConnection() {
         // Your implementation
     }
