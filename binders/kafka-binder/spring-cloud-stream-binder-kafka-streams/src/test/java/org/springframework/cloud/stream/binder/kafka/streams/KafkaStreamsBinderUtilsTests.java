@@ -21,7 +21,7 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Tests for {@link KafkaStreamsBinderUtils} functions
+ * Tests for {@link KafkaStreamsBinderUtils} functions.
  *
  * @author James Forward
  * @author Soby Chacko

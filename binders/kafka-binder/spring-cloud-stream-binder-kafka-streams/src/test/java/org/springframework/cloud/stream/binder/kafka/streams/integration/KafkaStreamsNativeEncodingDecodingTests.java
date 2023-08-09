@@ -68,6 +68,9 @@ import static org.mockito.Mockito.verify;
 @DirtiesContext
 public abstract class KafkaStreamsNativeEncodingDecodingTests {
 
+	/**
+	 * Kafka rule.
+	 */
 	@ClassRule
 	public static EmbeddedKafkaRule embeddedKafkaRule = new EmbeddedKafkaRule(1, true,
 			"decode-counts", "decode-counts-1");

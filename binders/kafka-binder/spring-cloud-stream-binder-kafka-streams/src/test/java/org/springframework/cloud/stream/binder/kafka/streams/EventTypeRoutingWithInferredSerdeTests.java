@@ -52,7 +52,7 @@ import org.springframework.kafka.test.utils.KafkaTestUtils;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * For more context around this test, see https://github.com/spring-cloud/spring-cloud-stream/issues/2613
+ * For more context around this test, see https://github.com/spring-cloud/spring-cloud-stream/issues/2613.
  *
  * @author Soby Chacko
  */
