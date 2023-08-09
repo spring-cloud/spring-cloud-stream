@@ -179,6 +179,36 @@ public class StreamBridgeTests {
 		}
 	}
 
+	@SuppressWarnings("rawtypes")
+	@Test
+	void test_2785() throws Exception {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+			TestChannelBinderConfiguration.getCompleteConfiguration(
+				EmptyConfiguration.class)).web(WebApplicationType.NONE).run(
+			"--spring.cloud.stream.source=outputA;outputB",
+			"--spring.cloud.stream.bindings.outputA-out-0.producer.use-native-encoding=false",
+			"--spring.cloud.stream.bindings.outputB-out-0.producer.partition-count=1",
+			"--spring.cloud.stream.bindings.outputC-out-0.producer.use-native-encoding=true",
+			"--spring.cloud.stream.bindings.outputD-out-0.content-type=text/html",
+			"--spring.jmx.enabled=false")) {
+			StreamBridge streamBridge = context.getBean(StreamBridge.class);
+			Field field =  ReflectionUtils.findField(StreamBridge.class, "streamBridgeFunctionCache");
+			field.setAccessible(true);
+			Map functionCache = (Map) field.get(streamBridge);
+
+			streamBridge.send("outputA-out-0", MessageBuilder.withPayload("A").build());
+			assertThat(functionCache.size()).isEqualTo(1);
+			streamBridge.send("foo", MessageBuilder.withPayload("A").build());
+			assertThat(functionCache.size()).isEqualTo(1);
+			streamBridge.send("outputB-out-0", MessageBuilder.withPayload("A").build());
+			assertThat(functionCache.size()).isEqualTo(1);
+			streamBridge.send("outputC-out-0", MessageBuilder.withPayload("A").build());
+			assertThat(functionCache.size()).isEqualTo(2);
+			streamBridge.send("outputD-out-0", MessageBuilder.withPayload("A").build());
+			assertThat(functionCache.size()).isEqualTo(3);
+		}
+	}
+
 	/*
 	 * This test verifies that when a partition key expression is set, then scst_partition is always set, even in
 	 * concurrent scenarios.

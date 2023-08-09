@@ -96,7 +96,7 @@ public final class StreamBridge implements StreamOperations, SmartInitializingSi
 
 	private final BindingService bindingService;
 
-	private final Map<String, FunctionInvocationWrapper> streamBridgeFunctionCache;
+	private final Map<Integer, FunctionInvocationWrapper> streamBridgeFunctionCache;
 
 	private final FunctionInvocationHelper<?> functionInvocationHelper;
 
@@ -187,13 +187,23 @@ public final class StreamBridge implements StreamOperations, SmartInitializingSi
 		return messageChannel.send(resultMessage);
 	}
 
+	private int hashProducerProperties(ProducerProperties producerProperties, String outputContentType) {
+		int hash = outputContentType.hashCode()
+				+ Boolean.hashCode(producerProperties.isUseNativeEncoding())
+				+ Boolean.hashCode(producerProperties.isPartitioned())
+				+ producerProperties.getPartitionCount();
+
+		return hash;
+	}
+
 	private synchronized FunctionInvocationWrapper getStreamBridgeFunction(String outputContentType, ProducerProperties producerProperties) {
-		if (StringUtils.hasText(outputContentType) && this.streamBridgeFunctionCache.containsKey(outputContentType)) {
-			return this.streamBridgeFunctionCache.get(outputContentType);
+		int streamBridgeFunctionKey = this.hashProducerProperties(producerProperties, outputContentType);
+		if (this.streamBridgeFunctionCache.containsKey(streamBridgeFunctionKey)) {
+			return this.streamBridgeFunctionCache.get(streamBridgeFunctionKey);
 		}
 		else {
 			FunctionInvocationWrapper functionToInvoke = this.functionCatalog.lookup(STREAM_BRIDGE_FUNC_NAME, outputContentType.toString());
-			this.streamBridgeFunctionCache.put(outputContentType, functionToInvoke);
+			this.streamBridgeFunctionCache.put(streamBridgeFunctionKey, functionToInvoke);
 			functionToInvoke.setSkipOutputConversion(producerProperties.isUseNativeEncoding());
 			return functionToInvoke;
 		}
