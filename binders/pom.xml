@@ -16,7 +16,8 @@
 	<modules>
 		<module>kafka-binder</module>
 		<module>rabbit-binder</module>
-		<module>pulsar-binder</module>
+		<!--TODO: add pulsar back after release-->
+		<!--<module>pulsar-binder</module>-->
 	</modules>
 
 </project>
