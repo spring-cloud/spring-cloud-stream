@@ -18,7 +18,7 @@
 			<groupId>org.springframework.pulsar</groupId>
 			<artifactId>spring-pulsar-spring-boot-starter</artifactId>
 			<!--TODO: remove version check off after pulsar release -->
-			<version>0.2.1-SNAPSHOT</version><!-- @releaser:version-check-off -->
+			<version>0.2.1-SXNAPSHOT</version><!-- @releaser:version-check-off -->
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
