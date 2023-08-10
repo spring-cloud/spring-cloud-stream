@@ -169,20 +169,23 @@ public class KafkaBinderConfiguration {
 	public KafkaJaasLoginModuleInitializer jaasInitializer(
 			KafkaBinderConfigurationProperties configurationProperties)
 			throws IOException {
-		KafkaJaasLoginModuleInitializer kafkaJaasLoginModuleInitializer = new KafkaJaasLoginModuleInitializer();
 		JaasLoginModuleConfiguration jaas = configurationProperties.getJaas();
-		if (jaas != null) {
+		if (jaas == null) {
+			return null;
+		}
+		else {
+			KafkaJaasLoginModuleInitializer kafkaJaasLoginModuleInitializer = new KafkaJaasLoginModuleInitializer();
 			kafkaJaasLoginModuleInitializer.setLoginModule(jaas.getLoginModule());
 
 			KafkaJaasLoginModuleInitializer.ControlFlag controlFlag = jaas
-					.getControlFlag();
+				.getControlFlag();
 
 			if (controlFlag != null) {
 				kafkaJaasLoginModuleInitializer.setControlFlag(controlFlag);
 			}
 			kafkaJaasLoginModuleInitializer.setOptions(jaas.getOptions());
+			return kafkaJaasLoginModuleInitializer;
 		}
-		return kafkaJaasLoginModuleInitializer;
 	}
 
 	@Configuration(proxyBeanMethods = false)
