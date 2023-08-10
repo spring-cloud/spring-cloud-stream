@@ -74,6 +74,7 @@ import org.springframework.util.StringUtils;
  * @author Anshul Mehra
  * @author Chris Bono
  * @author Byungjun You
+ * @author Omer Celik
  */
 public class DefaultBinderFactory implements BinderFactory, DisposableBean, ApplicationContextAware {
 
@@ -323,6 +324,8 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 				}
 				binderProducingContext = this.createUnitializedContextForAOT(configurationName, binderProperties, binderConfiguration);
 				this.binderChildContextInitializers.get(configurationName).initialize(binderProducingContext);
+				InitializerWithOuterContext initializer = new InitializerWithOuterContext(this.context);
+				initializer.initialize(binderProducingContext);
 				binderProducingContext.refresh();
 			}
 			else {
