@@ -309,6 +309,17 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 						.isAssignableFrom(bindingTargetType);
 	}
 
+	private void registerOuterContextBean(Map<String, Object> binderProperties, ConfigurableApplicationContext binderProducingContext) {
+		ConfigurableEnvironment environment = this.context != null
+			? this.context.getEnvironment() : null;
+		boolean useApplicationContextAsParent = binderProperties.isEmpty()
+			&& this.context != null;
+		if (environment != null && !useApplicationContextAsParent) {
+			InitializerWithOuterContext initializer = new InitializerWithOuterContext(this.context);
+			initializer.initialize(binderProducingContext);
+		}
+	}
+
 	@SuppressWarnings("unchecked")
 	private <T> Binder<T, ConsumerProperties, ProducerProperties> getBinderInstance(String configurationName) {
 		if (!this.binderInstanceCache.containsKey(configurationName)) {
@@ -324,8 +335,7 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 				}
 				binderProducingContext = this.createUnitializedContextForAOT(configurationName, binderProperties, binderConfiguration);
 				this.binderChildContextInitializers.get(configurationName).initialize(binderProducingContext);
-				InitializerWithOuterContext initializer = new InitializerWithOuterContext(this.context);
-				initializer.initialize(binderProducingContext);
+				registerOuterContextBean(binderProperties, binderProducingContext);
 				binderProducingContext.refresh();
 			}
 			else {
