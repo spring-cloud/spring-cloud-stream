@@ -74,6 +74,7 @@ import org.springframework.util.StringUtils;
  * @author Anshul Mehra
  * @author Chris Bono
  * @author Byungjun You
+ * @author Omer Celik
  */
 public class DefaultBinderFactory implements BinderFactory, DisposableBean, ApplicationContextAware {
 
@@ -323,6 +324,7 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 				}
 				binderProducingContext = this.createUnitializedContextForAOT(configurationName, binderProperties, binderConfiguration);
 				this.binderChildContextInitializers.get(configurationName).initialize(binderProducingContext);
+				registerOuterContextBean(binderProperties, binderProducingContext);
 				binderProducingContext.refresh();
 			}
 			else {
@@ -576,6 +578,17 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 			}
 		}
 		return binderContext;
+	}
+
+	private void registerOuterContextBean(Map<String, Object> binderProperties, ConfigurableApplicationContext binderProducingContext) {
+		ConfigurableEnvironment environment = this.context != null
+			? this.context.getEnvironment() : null;
+		boolean useApplicationContextAsParent = binderProperties.isEmpty()
+			&& this.context != null;
+		if (environment != null && !useApplicationContextAsParent) {
+			InitializerWithOuterContext initializer = new InitializerWithOuterContext(this.context);
+			initializer.initialize(binderProducingContext);
+		}
 	}
 
 	/**
