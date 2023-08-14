@@ -19,6 +19,7 @@ package org.springframework.cloud.stream.config;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
+import org.springframework.boot.context.properties.NestedConfigurationProperty;
 import org.springframework.cloud.stream.binder.ConsumerProperties;
 import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.util.MimeType;
@@ -33,6 +34,7 @@ import org.springframework.validation.annotation.Validated;
  * @author Gary Russell
  * @author Soby Chacko
  * @author Oleg Zhurakousky
+ * @author Omer Celik
  */
 @JsonInclude(Include.NON_DEFAULT)
 @Validated
@@ -82,11 +84,13 @@ public class BindingProperties {
 	/**
 	 * Additional consumer specific properties (see {@link ConsumerProperties}).
 	 */
+	@NestedConfigurationProperty
 	private ConsumerProperties consumer;
 
 	/**
 	 * Additional producer specific properties (see {@link ProducerProperties}).
 	 */
+	@NestedConfigurationProperty
 	private ProducerProperties producer;
 
 	public String getDestination() {
