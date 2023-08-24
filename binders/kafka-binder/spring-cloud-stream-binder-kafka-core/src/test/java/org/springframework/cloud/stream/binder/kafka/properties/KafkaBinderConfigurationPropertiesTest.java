@@ -16,7 +16,6 @@
 
 package org.springframework.cloud.stream.binder.kafka.properties;
 
-import com.sun.net.httpserver.HttpServer;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
@@ -24,6 +23,7 @@ import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.Map;
 
+import com.sun.net.httpserver.HttpServer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.assertj.core.util.Files;
 import org.junit.jupiter.api.Test;

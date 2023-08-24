@@ -62,6 +62,7 @@ import org.springframework.util.StringUtils;
  * @author Lukasz Kaminski
  * @author Chukwubuikem Ume-Ugwa
  * @author Nico Heller
+ * @author Norbert Gyurian
  */
 public class KafkaBinderConfigurationProperties {
 
@@ -213,7 +214,8 @@ public class KafkaBinderConfigurationProperties {
 	private boolean checkIfFileExists(String path) {
 		try {
 			return Files.isRegularFile(Paths.get(path));
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			return false;
 		}
 	}

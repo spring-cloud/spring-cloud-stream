@@ -151,7 +151,8 @@ Flag to set the binder health as `down`, when any partitions on the topic, regar
 Default: `false`.
 
 spring.cloud.stream.kafka.binder.certificateStoreDirectory::
-When the truststore or keystore certificate location is given as a non-local file system resources, the binder copies the resource from the path (which is convertible to org.springframework.core.io.Resource) to a location on the filesystem.
+When the truststore or keystore certificate location is given as a non-local file system resource (resources supported by org.springframework.core.io.Resource e.g. CLASSPATH, HTTP, etc.),
+the binder copies the resource from the path (which is convertible to org.springframework.core.io.Resource) to a location on the filesystem.
 This is true for both broker level certificates (`ssl.truststore.location` and `ssl.keystore.location`) and certificates intended for schema registry (`schema.registry.ssl.truststore.location` and `schema.registry.ssl.keystore.location`).
 Keep in mind that the truststore and keystore location paths must be provided under `spring.cloud.stream.kafka.binder.configuration...`.
 For example, `spring.cloud.stream.kafka.binder.configuration.ssl.truststore.location`, `spring.cloud.stream.kafka.binder.configuration.schema.registry.ssl.truststore.location`, etc.
