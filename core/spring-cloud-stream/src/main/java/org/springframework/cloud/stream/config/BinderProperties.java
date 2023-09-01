@@ -48,7 +48,7 @@ public class BinderProperties {
 
 	/**
 	 * Whether the binder configuration is a candidate for being considered a default
-	 * binder, or can be used only when explicitly referenced. Defaulys: true
+	 * binder, or can be used only when explicitly referenced. Default: true
 	 */
 	private boolean defaultCandidate = true;
 
