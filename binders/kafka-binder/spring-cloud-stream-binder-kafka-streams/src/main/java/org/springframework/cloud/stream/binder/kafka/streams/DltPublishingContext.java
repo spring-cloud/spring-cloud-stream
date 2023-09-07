@@ -24,14 +24,17 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ConfigurableApplicationContext;
 
 /**
+ * The DltPublishingContext is meant to be used along with {@link DltAwareProcessor}
+ * when publishing failed record to a DLT. DltPublishingContext is particularly used
+ * for accessing framework beans such as {@link StreamBridge}.
+ *
  * @author Soby Chacko
  */
-public class DltSenderContext implements ApplicationContextAware, InitializingBean {
+public class DltPublishingContext implements ApplicationContextAware, InitializingBean {
 
 	private ConfigurableApplicationContext applicationContext;
 
 	private StreamBridge streamBridge;
-
 
 	@Override
 	public void afterPropertiesSet() {

@@ -30,44 +30,88 @@ import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
 /**
+ * Custom {@link Processor} implementation that is capable of sending a record
+ * to a DLT if the processing fails.
  *
  * @author Soby Chacko
  * @since 4.1.0
  */
 public class DltAwareProcessor<KIn, VIn, KOut, VOut> implements Processor<KIn, VIn, KOut, VOut> {
 
+	/**
+	 * Delegate {@link BiFunction} that is responsible for processing the data.
+	 */
 	private final BiFunction<KIn, VIn, KeyValue<KOut, VOut>> delegateFunction;
 
+	/**
+	 * Event time for the forwarded downstream record.
+	 */
 	private final Supplier<Long> recordTimeSupplier;
 
+	/**
+	 * DLT destination.
+	 */
 	private String dltDestination;
 
-	private DltSenderContext dltSenderContext;
+	/**
+	 * {@link DltPublishingContext} used for DLT publishing needs.
+	 */
+	private DltPublishingContext dltPublishingContext;
 
+	/**
+	 * A {@link BiConsumer} that does the recovery of a failed record.
+	 */
 	private BiConsumer<Record<KIn, VIn>, Exception> processorRecordRecoverer;
 
+	/**
+	 * {@link ProcessorContext} used in the processor.
+	 */
 	private ProcessorContext<KOut, VOut> context;
 
+	/**
+	 *
+	 * @param delegateFunction {@link BiFunction} to process the data
+	 * @param dltDestination DLT destination
+	 * @param dltPublishingContext {@link DltPublishingContext}
+	 */
 	public DltAwareProcessor(BiFunction<KIn, VIn, KeyValue<KOut, VOut>> delegateFunction, String dltDestination,
-							DltSenderContext dltSenderContext) {
-		this(delegateFunction, dltDestination, dltSenderContext, System::currentTimeMillis);
+							DltPublishingContext dltPublishingContext) {
+		this(delegateFunction, dltDestination, dltPublishingContext, System::currentTimeMillis);
 	}
 
+	/**
+	 *
+	 * @param delegateFunction {@link BiFunction} to process the data
+	 * @param dltDestination DLT destination
+	 * @param dltPublishingContext {@link DltPublishingContext}
+	 * @param recordTimeSupplier Supplier for downstream record timestamp
+	 */
 	public DltAwareProcessor(BiFunction<KIn, VIn, KeyValue<KOut, VOut>> delegateFunction, String dltDestination,
-							DltSenderContext dltSenderContext, Supplier<Long> recordTimeSupplier) {
+							DltPublishingContext dltPublishingContext, Supplier<Long> recordTimeSupplier) {
 		this.delegateFunction = delegateFunction;
 		this.recordTimeSupplier = recordTimeSupplier;
 		Assert.isTrue(StringUtils.hasText(dltDestination), "DLT Destination topic must be provided.");
 		this.dltDestination = dltDestination;
-		Assert.notNull(dltSenderContext, "DltSenderContext cannot be null");
-		this.dltSenderContext = dltSenderContext;
+		Assert.notNull(dltPublishingContext, "DltSenderContext cannot be null");
+		this.dltPublishingContext = dltPublishingContext;
 	}
 
+	/**
+	 *
+	 * @param delegateFunction {@link BiFunction} to process the data
+	 * @param processorRecordRecoverer {@link BiConsumer} that recovers failed records
+	 */
 	public DltAwareProcessor(BiFunction<KIn, VIn, KeyValue<KOut, VOut>> delegateFunction,
 							BiConsumer<Record<KIn, VIn>, Exception> processorRecordRecoverer) {
 		this(delegateFunction, processorRecordRecoverer, System::currentTimeMillis);
 	}
 
+	/**
+	 *
+	 * @param delegateFunction {@link BiFunction} to process the data
+	 * @param processorRecordRecoverer {@link BiConsumer} that recovers failed records
+	 * @param recordTimeSupplier Supplier for downstream record timestamp
+	 */
 	public DltAwareProcessor(BiFunction<KIn, VIn, KeyValue<KOut, VOut>> delegateFunction,
 							BiConsumer<Record<KIn, VIn>, Exception> processorRecordRecoverer, Supplier<Long> recordTimeSupplier) {
 		this.delegateFunction = delegateFunction;
@@ -104,7 +148,7 @@ public class DltAwareProcessor<KIn, VIn, KOut, VOut> implements Processor<KIn, V
 
 	BiConsumer<Record<KIn, VIn>, Exception> defaultProcessorRecordRecoverer() {
 		return (r, e) -> {
-			StreamBridge streamBridge = this.dltSenderContext.getStreamBridge();
+			StreamBridge streamBridge = this.dltPublishingContext.getStreamBridge();
 			if (streamBridge != null) {
 				streamBridge.send(this.dltDestination, r.value());
 			}

@@ -394,8 +394,8 @@ public class KafkaStreamsBinderSupportAutoConfiguration {
 
 	@Bean
 	@ConditionalOnMissingBean
-	public DltSenderContext dltSenderContext() {
-		return new DltSenderContext();
+	public DltPublishingContext dltSenderContext() {
+		return new DltPublishingContext();
 	}
 
 	@Configuration(proxyBeanMethods = false)
