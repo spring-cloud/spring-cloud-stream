@@ -36,7 +36,6 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.cloud.stream.binder.HeaderMode;
 import org.springframework.cloud.stream.binder.ProducerProperties;
@@ -146,16 +145,14 @@ public class KafkaBinderConfigurationProperties {
 	private boolean enableObservation;
 
 	/**
-	 * @Autowired on this constructor is necessary for all the properties to be discovered and bound when running as a native
-	 * application.
-	 *
-	 * See the following issue for more details:
-	 *
-	 * https://github.com/spring-cloud/spring-cloud-stream/issues/2644
+	 * Earlier, @Autowired on this constructor was necessary for all the properties to be discovered
+	 * and bound when running as a native application. However, now that Spring Boot fixed the underlying
+	 * issue, we are removing the @Autowired from the constructor. See these Boot issues for more details.
+	 * https://github.com/spring-projects/spring-boot/issues/34507
+	 * https://github.com/spring-projects/spring-boot/issues/35564
 	 *
 	 * @param kafkaProperties Spring Kafka properties autoconfigured by Spring Boot
 	 */
-	@Autowired
 	public KafkaBinderConfigurationProperties(KafkaProperties kafkaProperties) {
 		Assert.notNull(kafkaProperties, "'kafkaProperties' cannot be null");
 		this.kafkaProperties = kafkaProperties;
