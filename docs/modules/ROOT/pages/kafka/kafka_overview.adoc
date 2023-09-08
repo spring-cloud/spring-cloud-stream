@@ -6,10 +6,10 @@ In addition, this guide explains the Kafka Streams binding capabilities of Sprin
 --
 
 [[apache-kafka-binder]]
-== Apache Kafka Binder
+= Apache Kafka Binder
 
 [[usage]]
-=== Usage
+== Usage
 
 To use Apache Kafka binder, you need to add `spring-cloud-stream-binder-kafka` as a dependency to your Spring Cloud Stream application, as shown in the following example for Maven:
 
@@ -32,7 +32,7 @@ Alternatively, you can also use the Spring Cloud Stream Kafka Starter, as shown 
 ----
 
 [[overview]]
-=== Overview
+== Overview
 
 The following image shows a simplified diagram of how the Apache Kafka binder operates:
 
@@ -49,14 +49,14 @@ For example, with versions earlier than 0.11.x.x, native headers are not support
 Also, 0.11.x.x does not support the `autoAddPartitions` property.
 
 [[configuration-options]]
-=== Configuration Options
+== Configuration Options
 
 This section contains the configuration options used by the Apache Kafka binder.
 
 For common configuration options and properties pertaining to the binder, see the https://cloud.spring.io/spring-cloud-static/spring-cloud-stream/current/reference/html/spring-cloud-stream.html#binding-properties[binding properties] in core documentation.
 
 [[kafka-binder-properties]]
-==== Kafka Binder Properties
+=== Kafka Binder Properties
 
 spring.cloud.stream.kafka.binder.brokers::
 A list of brokers to which the Kafka binder connects.
@@ -185,7 +185,7 @@ Enable Micrometer observation registry on all the bindings in this binder.
 Default: false
 
 [[kafka-consumer-properties]]
-==== Kafka Consumer Properties
+=== Kafka Consumer Properties
 
 NOTE: To avoid repetition, Spring Cloud Stream supports setting values for all channels, in the format of `spring.cloud.stream.kafka.default.consumer.<property>=<value>`.
 
@@ -357,7 +357,7 @@ Default: none.
 
 
 [[reset-offsets]]
-==== Resetting Offsets
+=== Resetting Offsets
 
 When an application starts, the initial position in each assigned partition depends on two properties `startOffset` and `resetOffsets`.
 If `resetOffsets` is `false`, normal Kafka consumer https://kafka.apache.org/documentation/#consumerconfigs_auto.offset.reset[`auto.offset.reset`] semantics apply.
@@ -384,7 +384,7 @@ IMPORTANT: If a rebalance occurs after the initial assignment, the seeks will on
 For more control over topic offsets, see <<rebalance-listener>>; when a listener is provided, `resetOffsets` should not be set to `true`, otherwise, that will cause an error.
 
 [[consuming-batches]]
-==== Consuming Batches
+=== Consuming Batches
 
 Starting with version 3.0, when `spring.cloud.stream.bindings.<name>.consumer.batch-mode` is set to `true`, all of the records received by polling the Kafka `Consumer` will be presented as a `List<?>` to the listener method.
 Otherwise, the method will be called with one record at a time.
@@ -399,7 +399,7 @@ You can also use a manual `AckMode` and call `Ackowledgment.nack(index, sleep)` 
 Refer to the https://docs.spring.io/spring-kafka/docs/2.3.15.BUILD-SNAPSHOT/reference/html/#committing-offsets[Spring for Apache Kafka documentation] for more information about these techniques.
 
 [[kafka-producer-properties]]
-==== Kafka Producer Properties
+=== Kafka Producer Properties
 
 NOTE: To avoid repetition, Spring Cloud Stream supports setting values for all channels, in the format of `spring.cloud.stream.kafka.default.producer.<property>=<value>`.
 
@@ -523,12 +523,12 @@ If set to true, records published to this output binding will not be run in a tr
 Default: `false`
 
 [[usage-examples]]
-==== Usage examples
+=== Usage examples
 
 In this section, we show the use of the preceding properties for specific scenarios.
 
 [[example:-setting-ackmode-to-manual-and-relying-on-manual-acknowledgement]]
-===== Example: Setting `ackMode` to `MANUAL` and Relying on Manual Acknowledgement
+==== Example: Setting `ackMode` to `MANUAL` and Relying on Manual Acknowledgement
 
 This example illustrates how one may manually acknowledge offsets in a consumer application.
 
@@ -557,7 +557,7 @@ public class ManuallyAcknowdledgingConsumer {
 ----
 
 [[example:-security-configuration]]
-===== Example: Security Configuration
+==== Example: Security Configuration
 
 Apache Kafka 0.9 supports secure connections between client and brokers.
 To take advantage of this feature, follow the guidelines in the https://kafka.apache.org/090/documentation.html#security_configclients[Apache Kafka Documentation] as well as the Kafka 0.9 https://docs.confluent.io/2.0.0/kafka/security.html[security guidelines from the Confluent documentation].
@@ -577,7 +577,7 @@ When using Kerberos, follow the instructions in the https://kafka.apache.org/090
 Spring Cloud Stream supports passing JAAS configuration information to the application by using a JAAS configuration file and using Spring Boot properties.
 
 [[using-jaas-configuration-files]]
-====== Using JAAS Configuration Files
+===== Using JAAS Configuration Files
 
 The JAAS and (optionally) krb5 file locations can be set for Spring Cloud Stream applications by using system properties.
 The following example shows how to launch a Spring Cloud Stream application with SASL and Kerberos by using a JAAS configuration file:
@@ -591,7 +591,7 @@ The following example shows how to launch a Spring Cloud Stream application with
 ----
 
 [[using-spring-boot-properties]]
-====== Using Spring Boot Properties
+===== Using Spring Boot Properties
 
 As an alternative to having a JAAS configuration file, Spring Cloud Stream provides a mechanism for setting up the JAAS configuration for Spring Cloud Stream applications by using Spring Boot properties.
 
@@ -648,7 +648,7 @@ Consequently, relying on Spring Cloud Stream to create/modify topics may fail.
 In secure environments, we strongly recommend creating topics and managing ACLs administratively by using Kafka tooling.
 
 [[multi-binder-configuration-and-jaas]]
-====== Multi-binder configuration and JAAS
+===== Multi-binder configuration and JAAS
 
 When connecting to multiple clusters in which each one requires separate JAAS configuration, then set the JAAS configuration using the property `sasl.jaas.config`.
 When this property is present in the application, it takes precedence over the other strategies mentioned above.
@@ -690,7 +690,7 @@ Note that both the Kafka clusters, and the `sasl.jaas.config` values for each of
 See this https://github.com/spring-cloud/spring-cloud-stream-samples/tree/main/multi-binder-samples/kafka-multi-binder-jaas[sample application] for more details on how to setup and run such an application.
 
 [[pause-resume]]
-===== Example: Pausing and Resuming the Consumer
+==== Example: Pausing and Resuming the Consumer
 
 If you wish to suspend consumption but not cause a partition rebalance, you can pause and resume the consumer.
 This is facilitated by managing the binding lifecycle as shown in **Binding visualization and control** in the Spring Cloud Stream documentation, using `State.PAUSED` and `State.RESUMED`.
@@ -699,7 +699,7 @@ To resume, you can use an `ApplicationListener` (or `@EventListener` method) to 
 The frequency at which events are published is controlled by the `idleEventInterval` property.
 
 [[kafka-transactional-binder]]
-=== Transactional Binder
+== Transactional Binder
 
 Enable transactions by setting `spring.cloud.stream.kafka.binder.transaction.transactionIdPrefix` to a non-empty value, e.g. `tx-`.
 When used in a processor application, the consumer starts the transaction; any records sent on the consumer thread participate in the same transaction.
@@ -753,7 +753,7 @@ If you wish to synchronize producer-only transactions with those from some other
 IMPORTANT: If you deploy multiple instances of your application, each instance needs a unique `transactionIdPrefix`.
 
 [[kafka-error-channels]]
-=== Error Channels
+== Error Channels
 
 Starting with version 1.3, the binder unconditionally sends exceptions to an error channel for each consumer destination and can also be configured to send async producer send failures to an error channel.
 See https://cloud.spring.io/spring-cloud-static/spring-cloud-stream/current/reference/html/spring-cloud-stream.html#spring-cloud-stream-overview-error-handling[this section on error handling] for more information.
@@ -767,7 +767,7 @@ There is no automatic handling of producer exceptions (such as sending to a <<ka
 You can consume these exceptions with your own Spring Integration flow.
 
 [[kafka-metrics]]
-=== Kafka Metrics
+== Kafka Metrics
 
 Kafka binder module exposes the following metrics:
 
@@ -795,7 +795,7 @@ class NoOpBindingMeters {
 More details on how to suppress meters selectively can be found https://micrometer.io/docs/concepts#_meter_filters[here].
 
 [[kafka-tombstones]]
-=== Tombstone Records (null record values)
+== Tombstone Records (null record values)
 
 When using compacted topics, a record with a `null` value (also called a tombstone record) represents the deletion of a key.
 To receive such messages in a Spring Cloud Stream function, you can use the following strategy.
@@ -820,7 +820,7 @@ public Function<Message<Person>, String> myFunction() {
 ====
 
 [[rebalance-listener]]
-=== Using a KafkaBindingRebalanceListener
+== Using a KafkaBindingRebalanceListener
 
 Applications may wish to seek topics/partitions to arbitrary offsets when the partitions are initially assigned, or perform other operations on the consumer.
 Starting with version 2.1, if you provide a single `KafkaBindingRebalanceListener` bean in the application context, it will be wired into all Kafka consumer bindings.
@@ -871,7 +871,7 @@ public interface KafkaBindingRebalanceListener {
 You cannot set the `resetOffsets` consumer property to `true` when you provide a rebalance listener.
 
 [[retry-and-dlq-processing]]
-=== Retry and Dead Letter Processing
+== Retry and Dead Letter Processing
 
 By default, when you configure retry (e.g. `maxAttemts`) and `enableDlq` in a consumer binding, these functions are performed within the binder, with no participation by the listener container or Kafka consumer.
 
@@ -974,7 +974,7 @@ public BinderCustomizer binderCustomizer(ListenerContainerWithDlqAndRetryCustomi
 ====
 
 [[consumer-producer-config-customizer]]
-=== Customizing Consumer and Producer configuration
+== Customizing Consumer and Producer configuration
 
 If you want advanced customization of consumer and producer configuration that is used for creating `ConsumerFactory` and `ProducerFactory` in Kafka,
 you can implement the following customizers.
@@ -989,7 +989,7 @@ When the binder discovers that these customizers are available as beans, it will
 Both of these interfaces also provide access to both the binding and destination names so that they can be accessed while customizing producer and consumer properties.
 
 [[admin-client-config-customization]]
-=== Customizing AdminClient Configuration
+== Customizing AdminClient Configuration
 
 As with consumer and producer config customization above, applications can also customize the configuration for admin clients by providing an `AdminClientConfigCustomizer`.
 AdminClientConfigCustomizer's configure method provides access to the admin client properties, using which you can define further customization.
@@ -1006,7 +1006,7 @@ public AdminClientConfigCustomizer adminClientConfigCustomizer() {
 ```
 
 [[custom-kafka-binder-health-indicator]]
-=== Custom Kafka Binder Health Indicator
+== Custom Kafka Binder Health Indicator
 
 Kafka binder activates a default health indicator when Spring Boot actuator is on the classpath.
 This health indicator checks the health of the binder and any communication issues with the Kafka broker.
@@ -1030,7 +1030,7 @@ public KafkaBinderHealth kafkaBinderHealthIndicator() {
 ```
 
 [[custom-kafka-binder-health-indicator-example]]
-=== Custom kafka Binder Health Indicator Example
+== Custom kafka Binder Health Indicator Example
 
 Here is the pseudo-code for writing a custom Kafka binder HealthIndicator.
 In this example, we try to override the binder provided Kafka HealthIndicator by specifically checking first for cluster connectivity and then followed by topic-related issues.

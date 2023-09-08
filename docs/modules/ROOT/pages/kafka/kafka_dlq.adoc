@@ -1,8 +1,8 @@
 [[kafka-dlq-processing]]
-=== Dead-Letter Topic Processing
+= Dead-Letter Topic Processing
 
 [[dlq-partition-selection]]
-==== Dead-Letter Topic Partition Selection
+== Dead-Letter Topic Partition Selection
 
 By default, records are published to the Dead-Letter topic using the same partition as the original record.
 This means the Dead-Letter topic must have at least as many partitions as the original record.
@@ -52,7 +52,7 @@ This is because there is no way for the binder to infer the names of all the DLQ
 Therefore, if you provide DLQ names using this strategy, it is the application's responsibility to ensure that those topics are created beforehand.
 
 [[dlq-handling]]
-==== Handling Records in a Dead-Letter Topic
+== Handling Records in a Dead-Letter Topic
 
 Because the framework cannot anticipate how users would want to dispose of dead-lettered messages, it does not provide any standard mechanism to handle them.
 If the reason for the dead-lettering is transient, you may wish to route the messages back to the original topic.

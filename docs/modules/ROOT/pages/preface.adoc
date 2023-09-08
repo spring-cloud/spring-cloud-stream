@@ -1,5 +1,5 @@
 [[a-brief-history-of-spring-s-data-integration-journey]]
-=== A Brief History of Spring's Data Integration Journey
+= A Brief History of Spring's Data Integration Journey
 
 Spring's journey on Data Integration started with https://projects.spring.io/spring-integration/[Spring Integration]. With its programming model, it provided a consistent developer experience to build applications that can embrace http://www.enterpriseintegrationpatterns.com/[Enterprise Integration Patterns] to connect with external systems such as, databases, message brokers, and among others.
 
@@ -18,7 +18,7 @@ With Spring Cloud Stream, developers can:
 - and many more. . .
 
 [[quick-start]]
-=== Quick Start
+= Quick Start
 
 You can try Spring Cloud Stream in less than 5 min even before you jump into any details by following this three-step guide.
 
@@ -34,7 +34,7 @@ The three steps are as follows:
 . <<spring-cloud-stream-preface-adding-message-handler>>
 
 [[spring-cloud-stream-preface-creating-sample-application]]
-==== Creating a Sample Application by Using Spring Initializr
+== Creating a Sample Application by Using Spring Initializr
 To get started, visit the https://start.spring.io[Spring Initializr]. From there, you can generate our `LoggingConsumer` application. To do so:
 
 . In the *Dependencies* section, start typing `stream`.
@@ -68,7 +68,7 @@ TIP: We encourage you to explore the many possibilities available in the Spring 
 It lets you create many different kinds of Spring applications.
 
 [[spring-cloud-stream-preface-importing-project]]
-==== Importing the Project into Your IDE
+== Importing the Project into Your IDE
 
 Now you can import the project into your IDE.
 Keep in mind that, depending on the IDE, you may need to follow a specific import procedure.
@@ -81,7 +81,7 @@ It is already a valid Spring Boot application.
 However, it does not do anything, so we want to add some code.
 
 [[spring-cloud-stream-preface-adding-message-handler]]
-==== Adding a Message Handler, Building, and Running
+== Adding a Message Handler, Building, and Running
 
 Modify the `com.example.loggingconsumer.LoggingConsumerApplication` class to look as follows:
 
