@@ -13,7 +13,6 @@ image::https://codecov.io/gh/spring-cloud/spring-cloud-stream/branch/{github-tag
 [[introduction]]
 = Introduction
 
-include::intro.adoc[]
 
 [[resources]]
 = Resources
