@@ -1,5 +1,6 @@
 [[state-cleanup]]
 = State Cleanup
+:page-section-summary-toc: 1
 
 By default, no local state is cleaned up when the binding is stopped.
 This is the same behavior effective from Spring Kafka version 2.7.

@@ -1,5 +1,6 @@
 [[overview]]
 = Overview
+:page-section-summary-toc: 1
 
 Spring Cloud Stream includes a binder implementation designed explicitly for https://kafka.apache.org/documentation/streams/[Apache Kafka Streams] binding.
 With this native integration, a Spring Cloud Stream "processor" application can directly use the

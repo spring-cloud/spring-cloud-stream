@@ -1,5 +1,6 @@
 [[provided-messageconverters]]
 = Provided MessageConverters
+:page-section-summary-toc: 1
 
 As mentioned earlier, the framework already provides a stack of `MessageConverters` to handle most common use cases.
 The following list describes the provided `MessageConverters`, in order of precedence (the first `MessageConverter` that works is used):

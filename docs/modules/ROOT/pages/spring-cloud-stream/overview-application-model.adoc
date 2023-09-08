@@ -1,5 +1,6 @@
 [[spring-cloud-stream-overview-application-model]]
 = Application Model
+:page-section-summary-toc: 1
 
 A Spring Cloud Stream application consists of a middleware-neutral core.
 The application communicates with the outside world by establishing _bindings_ between destinations

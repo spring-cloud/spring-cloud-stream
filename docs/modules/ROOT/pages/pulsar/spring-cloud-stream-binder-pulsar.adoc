@@ -3,6 +3,7 @@
 
 [[spring-cloud-stream-binder-pulsar-reference]]
 = Spring Cloud Stream Pulsar Binder Reference Guide
+:page-section-summary-toc: 1
 Soby Chacko; Chris Bono; Alexander Preuß; Jay Bryant; Christophe Bornet
 :doctype: book
 :source-highlighter: prettify
@@ -17,4 +18,5 @@ Soby Chacko; Chris Bono; Alexander Preuß; Jay Bryant; Christophe Bornet
 
 [[reference-guide]]
 = Reference Guide
+:page-section-summary-toc: 1
 

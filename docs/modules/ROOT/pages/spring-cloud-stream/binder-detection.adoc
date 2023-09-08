@@ -1,5 +1,6 @@
 [[binder-detection]]
 = Binder Detection
+:page-section-summary-toc: 1
 
 Spring Cloud Stream relies on implementations of the Binder SPI to perform the task of connecting (binding) user code to message brokers.
 Each Binder implementation typically connects to one type of messaging system.

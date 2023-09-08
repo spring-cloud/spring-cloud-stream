@@ -1,5 +1,6 @@
 [[kafka-streams-topology-visualization]]
 = Kafka Streams topology visualization
+:page-section-summary-toc: 1
 
 Kafka Streams binder provides the following actuator endpoints for retrieving the topology description using which you can visualize the topology using external tools.
 
