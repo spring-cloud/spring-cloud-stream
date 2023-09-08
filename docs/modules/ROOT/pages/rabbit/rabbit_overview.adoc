@@ -4,6 +4,7 @@ This guide describes the RabbitMQ implementation of the Spring Cloud Stream Bind
 It contains information about its design, usage and configuration options, as well as information on how the Stream Cloud Stream concepts map into RabbitMQ specific constructs.
 --
 
+[[usage]]
 == Usage
 
 To use the RabbitMQ binder, you can add it to your Spring Cloud Stream application, by using the following Maven coordinates:
@@ -26,6 +27,7 @@ Alternatively, you can use the Spring Cloud Stream RabbitMQ Starter, as follows:
 </dependency>
 ----
 
+[[rabbitmq-binder-overview]]
 == RabbitMQ Binder Overview
 
 The following simplified diagram shows how the RabbitMQ binder operates:
@@ -74,6 +76,7 @@ Starting with version 2.0, the `RabbitMessageChannelBinder` sets the `RabbitTemp
 
 NOTE: Currently, a `multiplex` consumer (a single consumer listening to multiple queues) is only supported for message-driven consumers; polled consumers can only retrieve messages from a single queue.
 
+[[configuration-options]]
 == Configuration Options
 
 This section contains settings specific to the RabbitMQ Binder and bound channels.
@@ -117,6 +120,7 @@ The name is this prefix followed by `#n`, where `n` increments each time a new c
 +
 Default: none (Spring AMQP default).
 
+[[rabbitmq-consumer-properties]]
 === RabbitMQ Consumer Properties
 
 The following properties are available for Rabbit consumers only and must be prefixed with `spring.cloud.stream.rabbit.bindings.<channelName>.consumer.`.
@@ -502,12 +506,14 @@ spring.cloud.stream.rabbit.bindings.input-in-0.consumer.super-stream=true
 The framework will create a super stream named `super`, with 9 partitions.
 Up to 3 instances of this application can be deployed.
 
+[[advanced-listener-container-configuration]]
 === Advanced Listener Container Configuration
 
 To set listener container properties that are not exposed as binder or binding properties, add a single bean of type `ListenerContainerCustomizer` to the application context.
 The binder and binding properties will be set and then the customizer will be called.
 The customizer (`configure()` method) is provided with the queue name as well as the consumer group as arguments.
 
+[[advanced-queue/exchange/binding-configuration]]
 === Advanced Queue/Exchange/Binding Configuration
 
 From time to time, the RabbitMQ team add new features that are enabled by setting some argument when declaring, for example, a queue.
@@ -520,11 +526,13 @@ This allows you to add arguments that are not currently directly supported by th
 
 With the RabbitMQ binder, there are two types of batches handled by consumer bindings:
 
+[[batches-created-by-producers]]
 ==== Batches Created by Producers
 
 Normally, if a producer binding has `batch-enabled=true` (see <<rabbit-prod-props>>), or a message is created by a `BatchingRabbitTemplate`, elements of the batch are returned as individual calls to the listener method.
 Starting with version 3.0, any such batch can be presented as a `List<?>` to the listener method if `spring.cloud.stream.bindings.<name>.consumer.batch-mode` is set to `true`.
 
+[[consumer-side-batching]]
 ==== Consumer-side Batching
 
 Starting with version 3.1, the consumer can be configured to assemble multiple inbound messages into a batch which is presented to the application as a `List<?>` of converted payloads.
@@ -1198,6 +1206,7 @@ spring.cloud.stream.rabbit.bindings.output.producer.declare-exchange=false
 
 When using the stream client, if you set a `confirmAckChannel`, a copy of a successfully sent message will be sent to that channel.
 
+[[using-existing-queues/exchanges]]
 == Using Existing Queues/Exchanges
 
 By default, the binder will automatically provision a topic exchange with the name being derived from the value of the destination binding property `<prefix><destination>`.
@@ -1227,6 +1236,7 @@ Refer to the property documentation above for more information.
 
 There are similar properties used when declaring a dead-letter exchange/queue, when `autoBindDlq` is `true`.
 
+[[retry-with-the-rabbitmq-binder]]
 == Retry With the RabbitMQ Binder
 
 When retry is enabled within the binder, the listener container thread is suspended for any back off periods that are configured.
@@ -1250,6 +1260,7 @@ Fortunately, RabbitMQ provides the `x-death` header, which lets you determine ho
 
 To acknowledge a message after giving up, throw an `ImmediateAcknowledgeAmqpException`.
 
+[[putting-it-all-together]]
 === Putting it All Together
 
 The following configuration creates an exchange `myDestination` with queue `myDestination.consumerGroup` bound to a topic exchange with a wildcard routing key `#`:

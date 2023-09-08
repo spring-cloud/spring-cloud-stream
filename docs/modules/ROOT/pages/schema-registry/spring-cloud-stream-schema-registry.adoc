@@ -1,6 +1,7 @@
 [[spring-cloud-stream-schema-registry-reference]]
 = Spring Cloud Stream Schema Registry
 
+[[introduction]]
 == Introduction
 
 When organizations have a messaging based pub/sub architecture and multiple producer and consumer microservices communicate with each other, it is often necessary for all those microservices to agree on a contract that is based on a schema.
@@ -9,6 +10,7 @@ Spring Cloud Stream provides support for a standalone schema registry server usi
 Spring Cloud Stream schema registry support also provides support for avro based schema registry clients, which essentially provide message converters that communicates with the schema registry for reconciling schema during message conversion.
 The schema evolution support provided by Spring Cloud Stream works both with the aforementioned standalone schema registry as well as the schema registry provided by Confluent that specifically works with Apache Kafka.
 
+[[spring-cloud-stream-schema-registry-overview]]
 ==== Spring Cloud Stream Schema Registry overview
 
 Spring Cloud Stream Schema Registry provides support for schema evolution so that the data can be evolved over time and still work with older or newer producers and consumers and vice versa.
@@ -35,6 +37,7 @@ Spring Cloud Stream Schema Registry provides the following components
 
   Currently, the client can communicate to the standalone schema registry or the Confluent Schema Registry.
 
+[[schema-registry-client]]
 === Schema Registry Client
 
 The client-side abstraction for interacting with schema registry servers is the `SchemaRegistryClient` interface, which has the following structure:
@@ -70,6 +73,7 @@ Because of this, it uses a `DefaultSchemaRegistryClient` that does not cache res
 If you intend to change the default behavior, you can use the client directly on your code and override it to the desired outcome.
 To do so, you have to add the property `spring.cloud.stream.schemaRegistryClient.cached=true` to your application properties.
 
+[[schema-registry-client-properties]]
 ==== Schema Registry Client Properties
 
 The Schema Registry Client supports the following properties:
@@ -84,6 +88,7 @@ Clients using the schema registry client should set this to `true`.
 +
 Default:: `false`
 
+[[avro-schema-registry-client-message-converters]]
 === Avro Schema Registry Client Message Converters
 
 For applications that have a SchemaRegistryClient bean registered with the application context, Spring Cloud Stream auto-configures an Apache Avro message converter for schema management.
@@ -105,6 +110,7 @@ For example, a message of the type `User` might be sent as a binary payload with
 
 When receiving messages, the converter infers the schema reference from the header of the incoming message and tries to retrieve it. The schema is used as the writer schema in the deserialization process.
 
+[[avro-schema-registry-message-converter-properties]]
 ==== Avro Schema Registry Message Converter Properties
 
 If you have enabled Avro based schema registry client by setting `spring.cloud.stream.stream.bindings.<output-binding-name>.contentType=application/*+avro`, you can customize the behavior of the registration by setting the following properties.
@@ -132,6 +138,7 @@ spring.cloud.stream.schema.avro.ignoreSchemaRegistryServer:: Ignore any schema r
 +
 Default: `false`
 
+[[apache-avro-message-converters]]
 === Apache Avro Message Converters
 
 Spring Cloud Stream provides support for schema-based message converters through its `spring-cloud-stream-schema-registry-client` module.
@@ -142,6 +149,7 @@ The `spring-cloud-stream-schema-registry-client` module contains two types of me
 * Converters that use the class information of the serialized or deserialized objects or a schema with a location known at startup.
 * Converters that use a schema registry. They locate the schemas at runtime and dynamically register new schemas as domain objects evolve.
 
+[[converters-with-schema-support]]
 === Converters with Schema Support
 
 The `AvroSchemaMessageConverter` supports serializing and deserializing messages either by using a predefined schema or by using the schema information available in the class (either reflectively or contained in the `SpecificRecord`).
@@ -188,6 +196,7 @@ public static class SinkApplication {
 }
 ----
 
+[[schema-registry-server]]
 === Schema Registry Server
 
 Spring Cloud Stream provides a schema registry server implementation.
@@ -224,6 +233,7 @@ By default, it uses an embedded database.
 You can customize the schema storage by using the http://docs.spring.io/spring-boot/docs/current-SNAPSHOT/reference/htmlsingle/#boot-features-sql[Spring Boot SQL database and JDBC configuration options].
 
 
+[[schema-registry-server-api]]
 ==== Schema Registry Server API
 
 The Schema Registry Server API consists of the following operations:
@@ -315,6 +325,7 @@ Spring Cloud Stream 1.1.0.RELEASE used the table name, `schema`, for storing `Sc
 To avoid any conflicts in the future, starting with 1.1.1.RELEASE, we have opted for the name `SCHEMA_REPOSITORY` for the storage table.
 Any Spring Cloud Stream 1.1.0.RELEASE users who upgrade should migrate their existing schemas to the new table before upgrading.
 
+[[using-confluent-s-schema-registry]]
 ==== Using Confluent's Schema Registry
 
 The default configuration creates a `DefaultSchemaRegistryClient` bean.
@@ -331,6 +342,7 @@ public SchemaRegistryClient schemaRegistryClient(@Value("${spring.cloud.stream.s
 ----
 NOTE: The ConfluentSchemaRegistryClient is tested against Confluent platform version 4.0.0.
 
+[[schema-registration-and-resolution]]
 === Schema Registration and Resolution
 
 To better understand how Spring Cloud Stream registers and resolves new schemas and its use of Avro schema comparison features, we provide two separate subsections:

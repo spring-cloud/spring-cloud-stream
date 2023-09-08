@@ -35,6 +35,7 @@ Sabby Anandan, Marius Bogoevici, Eric Bottard, Mark Fisher, Ilayaperumal Gopinat
 *{project-version}*
 
 
+[[reference-guide]]
 = Reference Guide
 include::kafka/kafka_overview.adoc[]
 

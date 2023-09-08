@@ -1,3 +1,4 @@
+[[a-brief-history-of-spring-s-data-integration-journey]]
 === A Brief History of Spring's Data Integration Journey
 
 Spring's journey on Data Integration started with https://projects.spring.io/spring-integration/[Spring Integration]. With its programming model, it provided a consistent developer experience to build applications that can embrace http://www.enterpriseintegrationpatterns.com/[Enterprise Integration Patterns] to connect with external systems such as, databases, message brokers, and among others.
@@ -16,6 +17,7 @@ With Spring Cloud Stream, developers can:
 - Rely on the framework's automatic content-type support for common use-cases. Extending to different data conversion types is possible.
 - and many more. . .
 
+[[quick-start]]
 === Quick Start
 
 You can try Spring Cloud Stream in less than 5 min even before you jump into any details by following this three-step guide.
@@ -157,6 +159,7 @@ Now you have a working (albeit very basic) Spring Cloud Stream application.
 
 [[spel-and-streaming-data]]
 
+[[spring-expression-language-spel-in-the-context-of-streaming-data]]
 == Spring Expression Language (SpEL) in the context of Streaming data
 
 Throughout this reference manual you will encounter many features and examples where you can utilize Spring Expression Language (SpEL). It is important to understand certain limitations when it comes to using it.
