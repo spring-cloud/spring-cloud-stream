@@ -2,8 +2,6 @@
 :github-repo: spring-cloud/spring-cloud-stream-binder-rabbit
 :github-raw: https://raw.githubusercontent.com/{github-repo}/{github-tag}
 :github-code: https://github.com/{github-repo}/tree/{github-tag}
-:toc: left
-:toclevels: 8
 :nofooter:
 :sectlinks: true
 
@@ -11,8 +9,6 @@
 = Spring Cloud Stream RabbitMQ Binder Reference Guide
 Sabby Anandan, Marius Bogoevici, Eric Bottard, Mark Fisher, Ilayaperumal Gopinathan, Gunnar Hillert, Mark Pollack, Patrick Peralta, Glenn Renfro, Thomas Risberg, Dave Syer, David Turanski, Janne Valkealahti, Benjamin Klein, Gary Russell, Jay Bryant
 :doctype: book
-:toc:
-:toclevels: 4
 :source-highlighter: prettify
 :numbered:
 :icons: font
