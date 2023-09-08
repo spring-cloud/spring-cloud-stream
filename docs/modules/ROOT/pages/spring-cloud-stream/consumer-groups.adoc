@@ -1,5 +1,6 @@
 [[consumer-groups]]
 = Consumer Groups
+:page-section-summary-toc: 1
 
 While the publish-subscribe model makes it easy to connect applications through shared topics, the ability to scale up by creating multiple instances of a given application is equally important.
 When doing so, different instances of an application are placed in a competing consumer relationship, where only one of the instances is expected to handle a given message.

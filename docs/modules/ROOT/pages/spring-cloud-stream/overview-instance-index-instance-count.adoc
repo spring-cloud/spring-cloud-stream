@@ -1,5 +1,6 @@
 [[spring-cloud-stream-overview-instance-index-instance-count]]
 = Instance Index and Instance Count
+:page-section-summary-toc: 1
 
 When scaling up Spring Cloud Stream applications, each instance can receive information about how many other instances of the same application exist and what its own instance index is.
 Spring Cloud Stream does this through the `spring.cloud.stream.instanceCount` and `spring.cloud.stream.instanceIndex` properties.

@@ -1,5 +1,6 @@
 [[spring-cloud-stream-overview-connecting-multiple-application-instances]]
 = Connecting Multiple Application Instances
+:page-section-summary-toc: 1
 
 While Spring Cloud Stream makes it easy for individual Spring Boot applications to connect to messaging systems, the typical scenario for Spring Cloud Stream is the creation of multi-application pipelines, where microservice applications send data to each other.
 You can achieve this scenario by correlating the input and output destinations of "`adjacent`" applications.

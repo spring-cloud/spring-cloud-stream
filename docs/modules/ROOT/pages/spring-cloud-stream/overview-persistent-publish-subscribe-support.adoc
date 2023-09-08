@@ -1,5 +1,6 @@
 [[spring-cloud-stream-overview-persistent-publish-subscribe-support]]
 = Persistent Publish-Subscribe Support
+:page-section-summary-toc: 1
 
 Communication between applications follows a publish-subscribe model, where data is broadcast through shared topics.
 This can be seen in the following figure, which shows a typical deployment for a set of interacting Spring Cloud Stream applications.

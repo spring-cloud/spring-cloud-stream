@@ -1,5 +1,6 @@
 [[manually-starting-kafka-streams-processors]]
 = Manually starting Kafka Streams processors
+:page-section-summary-toc: 1
 
 Spring Cloud Stream Kafka Streams binder offers an abstraction called `StreamsBuilderFactoryManager` on top of the `StreamsBuilderFactoryBean` from Spring for Apache Kafka.
 This manager API is used for controlling the multiple `StreamsBuilderFactoryBean` per processor in a binder based application.

@@ -1,4 +1,5 @@
 [[kafka-streams-binder]]
 = Kafka Streams Binder
+:page-section-summary-toc: 1
 
 

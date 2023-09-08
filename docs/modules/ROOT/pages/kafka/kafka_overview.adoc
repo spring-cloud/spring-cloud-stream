@@ -7,4 +7,5 @@ In addition, this guide explains the Kafka Streams binding capabilities of Sprin
 
 [[apache-kafka-binder]]
 = Apache Kafka Binder
+:page-section-summary-toc: 1
 

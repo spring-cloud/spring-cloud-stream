@@ -1,5 +1,6 @@
 [[consumer-producer-config-customizer]]
 = Customizing Consumer and Producer configuration
+:page-section-summary-toc: 1
 
 If you want advanced customization of consumer and producer configuration that is used for creating `ConsumerFactory` and `ProducerFactory` in Kafka,
 you can implement the following customizers.

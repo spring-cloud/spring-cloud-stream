@@ -1,5 +1,6 @@
 [[accessing-kafka-streams-metrics]]
 = Accessing Kafka Streams Metrics
+:page-section-summary-toc: 1
 
 Spring Cloud Stream Kafka Streams binder provides Kafka Streams metrics which can be exported through a Micrometer `MeterRegistry`.
 
