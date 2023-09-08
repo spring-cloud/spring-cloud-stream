@@ -34,8 +34,5 @@ Sabby Anandan, Marius Bogoevici, Eric Bottard, Mark Fisher, Ilayaperumal Gopinat
 = Reference Guide
 
 
-include::rabbit/rabbit_overview.adoc[]
 
-include::rabbit/rabbit_dlq.adoc[]
 
-include::rabbit/rabbit_partitions.adoc[]
