@@ -29,9 +29,9 @@ and abstractions, making it easier to digest the rest of this user guide.
 
 The three steps are as follows:
 
-. <<spring-cloud-stream-preface-creating-sample-application>>
-. <<spring-cloud-stream-preface-importing-project>>
-. <<spring-cloud-stream-preface-adding-message-handler>>
+. xref:preface.adoc#spring-cloud-stream-preface-creating-sample-application[Creating a Sample Application by Using Spring Initializr]
+. xref:preface.adoc#spring-cloud-stream-preface-importing-project[Importing the Project into Your IDE]
+. xref:preface.adoc#spring-cloud-stream-preface-adding-message-handler[Adding a Message Handler, Building, and Running]
 
 [[spring-cloud-stream-preface-creating-sample-application]]
 == Creating a Sample Application by Using Spring Initializr
@@ -124,7 +124,7 @@ As you can see from the preceding listing:
 Doing so also lets you see one of the core features of the framework: It tries to automatically convert incoming message payloads to type `Person`.
 
 You now have a fully functional Spring Cloud Stream application that does listens for messages.
-From here, for simplicity, we assume you selected RabbitMQ in <<spring-cloud-stream-preface-creating-sample-application,step one>>.
+From here, for simplicity, we assume you selected RabbitMQ in xref:preface.adoc#spring-cloud-stream-preface-creating-sample-application[step one].
 Assuming you have RabbitMQ installed and running, you can start the application by running its `main` method in your IDE.
 
 You should see following output:

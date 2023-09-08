@@ -3,8 +3,8 @@
 
 Partitioning in Spring Cloud Stream consists of two tasks:
 
-* `<<spring-cloud-stream-overview-configuring-output-bindings-partitioning>>`
-* `<<spring-cloud-stream-overview-configuring-input-bindings-partitioning>>`
+* `xref:spring-cloud-stream/overview-partitioning.adoc#spring-cloud-stream-overview-configuring-output-bindings-partitioning[Configuring Output Bindings for Partitioning]`
+* `xref:spring-cloud-stream/overview-partitioning.adoc#spring-cloud-stream-overview-configuring-input-bindings-partitioning[Configuring Input Bindings for Partitioning]`
 
 [[spring-cloud-stream-overview-configuring-output-bindings-partitioning]]
 == Configuring Output Bindings for Partitioning

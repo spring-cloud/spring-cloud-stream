@@ -270,7 +270,7 @@ After testing the application with the test binder, if you want to continue doin
 Spring Cloud Stream provides a health indicator for binders.
 It is registered under the name `binders` and can be enabled or disabled by setting the `management.health.binders.enabled` property.
 
-To enable health check you first need to enable both "web" and "actuator" by including its dependencies (see <<binding_visualization_control>>)
+To enable health check you first need to enable both "web" and "actuator" by including its dependencies (see xref:spring-cloud-stream/binding_visualization_control.adoc[Binding visualization and control])
 
 If `management.health.binders.enabled` is not set explicitly by the application, then `management.health.defaults.enabled` is matched as `true` and the binder health indicators are enabled.
 If you want to disable health indicator completely, then you have to set `management.health.binders.enabled` to `false`.
@@ -288,7 +288,7 @@ Even if you are not disabling the binder health indicators, you can still enhanc
 
 When you have multiple binders in the same application, health indicators are enabled by default unless the application turns them off by setting `management.health.binders.enabled` to `false`.
 In this case, if the user wants to disable health check for a subset of the binders, then that should be done by setting `management.health.binders.enabled` to `false` in the multi binder configurations's environment.
-See <<multiple-systems,Connecting to Multiple Systems>> for details on how environment specific properties can be provided.
+See xref:spring-cloud-stream/multiple-systems.adoc[Connecting to Multiple Systems] for details on how environment specific properties can be provided.
 
 If there are multiple binders present in the classpath but not all of them are used in the application, this may cause some issues in the context of health indicators.
 There may be implementation specific details as to how the health checks are performed. For example, a Kafka binder may decide the status as `DOWN` if there are no destinations registered by the binder.

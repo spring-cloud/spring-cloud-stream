@@ -275,7 +275,7 @@ republishToDlq::
 By default, messages that fail after retries are exhausted are rejected.
 If a dead-letter queue (DLQ) is configured, RabbitMQ routes the failed message (unchanged) to the DLQ.
 If set to `true`, the binder republishs failed messages to the DLQ with additional headers, including the exception message and stack trace from the cause of the final failure.
-Also see the <<spring-cloud-stream-rabbit-frame-max-headroom, frameMaxHeadroom property>>.
+Also see the xref:rabbit/rabbit_overview/rabbitmq-consumer-properties.adoc#spring-cloud-stream-rabbit-frame-max-headroom[frameMaxHeadroom property].
 +
 Default: `true`
 singleActiveConsumer::
