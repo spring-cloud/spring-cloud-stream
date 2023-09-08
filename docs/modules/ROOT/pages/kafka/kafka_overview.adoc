@@ -5,8 +5,10 @@ It contains information about its design, usage, and configuration options, as w
 In addition, this guide explains the Kafka Streams binding capabilities of Spring Cloud Stream.
 --
 
+[[apache-kafka-binder]]
 == Apache Kafka Binder
 
+[[usage]]
 === Usage
 
 To use Apache Kafka binder, you need to add `spring-cloud-stream-binder-kafka` as a dependency to your Spring Cloud Stream application, as shown in the following example for Maven:
@@ -29,6 +31,7 @@ Alternatively, you can also use the Spring Cloud Stream Kafka Starter, as shown 
 </dependency>
 ----
 
+[[overview]]
 === Overview
 
 The following image shows a simplified diagram of how the Apache Kafka binder operates:
@@ -45,6 +48,7 @@ This client can communicate with older brokers (see the Kafka documentation), bu
 For example, with versions earlier than 0.11.x.x, native headers are not supported.
 Also, 0.11.x.x does not support the `autoAddPartitions` property.
 
+[[configuration-options]]
 === Configuration Options
 
 This section contains the configuration options used by the Apache Kafka binder.
@@ -379,6 +383,7 @@ IMPORTANT: If a rebalance occurs after the initial assignment, the seeks will on
 
 For more control over topic offsets, see <<rebalance-listener>>; when a listener is provided, `resetOffsets` should not be set to `true`, otherwise, that will cause an error.
 
+[[consuming-batches]]
 ==== Consuming Batches
 
 Starting with version 3.0, when `spring.cloud.stream.bindings.<name>.consumer.batch-mode` is set to `true`, all of the records received by polling the Kafka `Consumer` will be presented as a `List<?>` to the listener method.
@@ -517,10 +522,12 @@ If set to true, records published to this output binding will not be run in a tr
 +
 Default: `false`
 
+[[usage-examples]]
 ==== Usage examples
 
 In this section, we show the use of the preceding properties for specific scenarios.
 
+[[example:-setting-ackmode-to-manual-and-relying-on-manual-acknowledgement]]
 ===== Example: Setting `ackMode` to `MANUAL` and Relying on Manual Acknowledgement
 
 This example illustrates how one may manually acknowledge offsets in a consumer application.
@@ -549,6 +556,7 @@ public class ManuallyAcknowdledgingConsumer {
 }
 ----
 
+[[example:-security-configuration]]
 ===== Example: Security Configuration
 
 Apache Kafka 0.9 supports secure connections between client and brokers.
@@ -568,6 +576,7 @@ When using Kerberos, follow the instructions in the https://kafka.apache.org/090
 
 Spring Cloud Stream supports passing JAAS configuration information to the application by using a JAAS configuration file and using Spring Boot properties.
 
+[[using-jaas-configuration-files]]
 ====== Using JAAS Configuration Files
 
 The JAAS and (optionally) krb5 file locations can be set for Spring Cloud Stream applications by using system properties.
@@ -581,6 +590,7 @@ The following example shows how to launch a Spring Cloud Stream application with
    --spring.cloud.stream.kafka.binder.configuration.security.protocol=SASL_PLAINTEXT
 ----
 
+[[using-spring-boot-properties]]
 ====== Using Spring Boot Properties
 
 As an alternative to having a JAAS configuration file, Spring Cloud Stream provides a mechanism for setting up the JAAS configuration for Spring Cloud Stream applications by using Spring Boot properties.
@@ -637,6 +647,7 @@ Usually, applications may use principals that do not have administrative rights 
 Consequently, relying on Spring Cloud Stream to create/modify topics may fail.
 In secure environments, we strongly recommend creating topics and managing ACLs administratively by using Kafka tooling.
 
+[[multi-binder-configuration-and-jaas]]
 ====== Multi-binder configuration and JAAS
 
 When connecting to multiple clusters in which each one requires separate JAAS configuration, then set the JAAS configuration using the property `sasl.jaas.config`.

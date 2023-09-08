@@ -1,9 +1,11 @@
+[[reactive-kafka-binder]]
 == Reactive Kafka Binder
 
 Kafka binder in Spring Cloud Stream provides a dedicated reactive binder based on the https://projectreactor.io/docs/kafka/release/reference/[Reactor Kafka] project.
 This reactive Kafka binder enables full end-to-end reactive capabilities such as backpressure, reactive streams etc. in applications based on Apache Kafka.
 When your Spring Cloud Stream Kafka application is written using reactive types (`Flux`, `Mono` etc.), it is recommended to use this reactive Kafka binder instead of the regular message channel based Kafka binder.
 
+[[maven-coordinates]]
 === Maven Coordinates
 
 Following are the maven coordinates for the reactive Kafka binder.
@@ -15,6 +17,7 @@ Following are the maven coordinates for the reactive Kafka binder.
 </dependency>
 ```
 
+[[basic-example-using-the-reactive-kafka-binder]]
 === Basic Example using the Reactive Kafka Binder
 
 In this section, we show some basic code snippets for writing a reactive Kafka application using the reactive binder and details around them.
@@ -92,6 +95,7 @@ Note that `reactor-kafka` returns a `Flux<Flux<ConsumerRecord<?, ?>>>` when usin
 Given that Spring has no access to the contents of the inner flux, the application must deal with the native `ConsumerRecord`; there is no message conversion or conversion service applied to the contents.
 This requires the use of native decoding (by specifying a `Deserializer` of the appropriate type in the configuration) to return record keys/values of the desired types.
 
+[[consuming-records-in-the-raw-format]]
 === Consuming Records in the Raw Format
 
 In the above `upppercase` function, we are consuming the record as `Flux<String>` and then produce it as `Flux<String>`.
@@ -158,6 +162,7 @@ Then that message payload which is the `ReceiverRecord` is provided to the user 
 If `reactiveAutoCommit` is `false` (default), call `rec.receiverOffset().acknowledge()` (or `commit()`) to cause the offset to be committed; if `reactiveAutoCommit` is `true`, the flux supplies `ConsumerRecord` s instead.
 Refer to the `reactor-kafka` documentation and javadocs for more information.
 
+[[concurrency]]
 === Concurrency
 
 When using reactive functions with the reactive Kafka binder, if you set concurrency on the consumer binding, then the binder creates as many dedicated `KafkaReceiver` objects as provided by the concurrency value.
@@ -173,16 +178,19 @@ spring.cloud.stream.bindings.lowercase-in-0.consumer.concurrency=3
 
 That will create three dedicated `KafkaReceiver` objects that generate three separate `Flux` implementations and then stream them to the handler method.
 
+[[multiplex]]
 === Multiplex
 
 Starting with version 4.0.3, the common consumer property `multiplex` is now supported by the reactive binder, where a single binding can consume from multiple topics.
 When `false` (default), a separate binding is created for each topic specified in a comma-delimited list in the common `destination` property.
 
+[[destination-is-pattern]]
 === Destination is Pattern
 
 Starting with version 4.0.3, the `destination-is-pattern` Kafka binding consumer property is now supported.
 The receiver options are conigured with a regex `Pattern`, allowing the binding to consume from any topic that matches the pattern.
 
+[[sender-result-channel]]
 === Sender Result Channel
 
 Starting with version 4.0.3, you can configure the `resultMetadataChannel` to receive `SenderResult<?>` s to determine success/failure of sends.
