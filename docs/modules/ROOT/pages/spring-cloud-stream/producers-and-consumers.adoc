@@ -1,0 +1,18 @@
+[[producers-and-consumers]]
+= Producers and Consumers
+
+The following image shows the general relationship of producers and consumers:
+
+.Producers and Consumers
+image::producers-consumers.png[width=800,scaledwidth="75%",align="center"]
+
+A producer is any component that sends messages to a binding destination.
+The binding destination can be bound to an external message broker with a `Binder` implementation for that broker.
+When invoking the `bindProducer()` method, the first parameter is the name of the destination within the broker, the second parameter is the instance if local destination to which the producer sends messages, and the third parameter contains properties (such as a partition key expression) to be used within the adapter that is created for that binding destination.
+
+A consumer is any component that receives messages from the binding destination.
+As with a producer, the consumer can be bound to an external message broker.
+When invoking the `bindConsumer()` method, the first parameter is the destination name, and a second parameter provides the name of a logical group of consumers.
+Each group that is represented by consumer bindings for a given destination receives a copy of each message that a producer sends to that destination (that is, it follows normal publish-subscribe semantics).
+If there are multiple consumer instances bound with the same group name, then messages are load-balanced across those consumer instances so that each message sent by a producer is consumed by only a single consumer instance within each group (that is, it follows normal queueing semantics).
+

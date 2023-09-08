@@ -1,0 +1,29 @@
+[[partitioning]]
+= Partitioning Support
+
+Spring Cloud Stream provides support for partitioning data between multiple instances of a given application.
+In a partitioned scenario, the physical communication medium (such as the broker topic) is viewed as being structured into multiple partitions.
+One or more producer application instances send data to multiple consumer application instances and ensure that data identified by common characteristics are processed by the same consumer instance.
+
+Spring Cloud Stream provides a common abstraction for implementing partitioned processing use cases in a uniform fashion.
+Partitioning can thus be used whether the broker itself is naturally partitioned (for example, Kafka) or not (for example, RabbitMQ).
+
+.Spring Cloud Stream Partitioning
+image::SCSt-partitioning.png[width=800,scaledwidth="75%",align="center"]
+
+Partitioning is a critical concept in stateful processing, where it is critical (for either performance or consistency reasons) to ensure that all related data is processed together.
+For example, in the time-windowed average calculation example, it is important that all measurements from any given sensor are processed by the same application instance.
+
+NOTE: To set up a partitioned processing scenario, you must configure both the data-producing and the data-consuming ends.
+
+[[programming-model]]
+= Programming Model
+
+To understand the programming model, you should be familiar with the following core concepts:
+
+* *Destination Binders:* Components responsible to provide integration with the external messaging systems.
+* *Bindings:* Bridge between the external messaging systems and application provided _Producers_ and _Consumers_ of messages (created by the Destination Binders).
+* *Message:* The canonical data structure used by producers and consumers to communicate with Destination Binders (and thus other applications via external messaging systems).
+
+image::SCSt-overview.png[width=800,scaledwidth="75%",align="center"]
+

@@ -1,0 +1,13 @@
+[[kafka-streams-topology-visualization]]
+= Kafka Streams topology visualization
+
+Kafka Streams binder provides the following actuator endpoints for retrieving the topology description using which you can visualize the topology using external tools.
+
+`/actuator/kafkastreamstopology`
+
+`/actuator/kafkastreamstopology/<application-id of the processor>`
+
+You need to include the actuator and web dependencies from Spring Boot to access these endpoints.
+Further, you also need to add `kafkastreamstopology` to `management.endpoints.web.exposure.include` property.
+By default, the `kafkastreamstopology` endpoint is disabled.
+

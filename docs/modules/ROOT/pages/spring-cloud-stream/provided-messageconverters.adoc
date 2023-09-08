@@ -1,0 +1,15 @@
+[[provided-messageconverters]]
+= Provided MessageConverters
+
+As mentioned earlier, the framework already provides a stack of `MessageConverters` to handle most common use cases.
+The following list describes the provided `MessageConverters`, in order of precedence (the first `MessageConverter` that works is used):
+
+. `JsonMessageConverter`: As the name suggests it supports conversion of the payload of the `Message` to/from POJO for cases when `contentType` is `application/json` (DEFAULT).
+. `ByteArrayMessageConverter`: Supports conversion of the payload of the `Message` from `byte[]` to `byte[]` for cases when `contentType` is `application/octet-stream`. It is essentially a pass through and exists primarily for backward compatibility.
+. `ObjectStringMessageConverter`: Supports conversion of any type to a `String` when `contentType` is `text/plain`.
+It invokes Object’s `toString()` method or, if the payload is `byte[]`, a new `String(byte[])`.
+
+When no appropriate converter is found, the framework throws an exception. When that happens, you should check your code and configuration and ensure you did not miss anything (that is, ensure that you provided a `contentType` by using a binding or a header).
+However, most likely, you found some uncommon case (such as a custom `contentType` perhaps) and the current stack of provided `MessageConverters`
+does not know how to convert. If that is the case, you can add custom `MessageConverter`. See <<spring-cloud-stream-overview-user-defined-message-converters>>.
+

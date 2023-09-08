@@ -1,0 +1,29 @@
+[[consumer-types]]
+= Consumer Types
+
+Two types of consumer are supported:
+
+* Message-driven (sometimes referred to as Asynchronous)
+* Polled (sometimes referred to as Synchronous)
+
+Prior to version 2.0, only asynchronous consumers were supported. A message is delivered as soon as it is available and a thread is available to process it.
+
+When you wish to control the rate at which messages are processed, you might want to use a synchronous consumer.
+// TODO This needs more description. A sentence parallel to the last sentence of the preceding paragraph would help.
+
+[[durability]]
+== Durability
+
+Consistent with the opinionated application model of Spring Cloud Stream, consumer group subscriptions are durable.
+That is, a binder implementation ensures that group subscriptions are persistent and that, once at least one subscription for a group has been created, the group receives messages, even if they are sent while all applications in the group are stopped.
+
+[NOTE]
+====
+Anonymous subscriptions are non-durable by nature.
+For some binder implementations (such as RabbitMQ), it is possible to have non-durable group subscriptions.
+====
+
+In general, it is preferable to always specify a consumer group when binding an application to a given destination.
+When scaling up a Spring Cloud Stream application, you must specify a consumer group for each of its input bindings.
+Doing so prevents the application's instances from receiving duplicate messages (unless that behavior is desired, which is unusual).
+

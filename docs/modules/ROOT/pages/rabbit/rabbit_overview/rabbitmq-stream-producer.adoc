@@ -1,0 +1,122 @@
+[[rabbitmq-stream-producer]]
+= Initial Producer Support for the RabbitMQ Stream Plugin
+
+Basic support for the https://rabbitmq.com/stream.html[RabbitMQ Stream Plugin] is now provided.
+To enable this feature, you must add the `spring-rabbit-stream` jar to the class path - it must be the same version as `spring-amqp` and `spring-rabbit`.
+
+IMPORTANT: The producer properties described above are not supported when you set the `producerType` property to `STREAM_SYNC` or `STREAM_ASYNC`.
+
+To configure the binder to use a stream `ProducerType`, Spring Boot will configure an `Environment` `@Bean` from the applicaation properties.
+You can, optionally, add a customizer to customize the message handler.
+
+====
+[source, java]
+----
+@Bean
+ProducerMessageHandlerCustomizer<MessageHandler> handlerCustomizer() {
+    return (hand, dest) -> {
+        RabbitStreamMessageHandler handler = (RabbitStreamMessageHandler) hand;
+        handler.setConfirmTimeout(5000);
+        ((RabbitStreamTemplate) handler.getStreamOperations()).setProducerCustomizer(
+                (name, builder) -> {
+                    ...
+                });
+    };
+}
+----
+====
+
+Refer to the https://rabbitmq.github.io/rabbitmq-stream-java-client/stable/htmlsingle/[RabbitMQ Stream Java Client documentation] for information about configuring the environment and producer builder.
+
+[[rabbitmq-super-stream-producer]]
+== Producer Support for the RabbitMQ Super Streams
+
+See https://blog.rabbitmq.com/posts/2022/07/rabbitmq-3-11-feature-preview-super-streams[Super Streams] for information about super streams.
+
+Use of super streams allows for automatic scale-up scale-down with a single active consumer on each partition of a super stream.
+Using Spring Cloud Stream, you can publish to a super stream either over AMQP, or using the stream client.
+
+IMPORTANT: The super stream must already exist; creating a super stream is not supported by producer bindings.
+
+Publishing to a super stream over AMQP:
+
+====
+[source, properties]
+----
+spring.cloud.stream.bindings.output.destination=super
+spring.cloud.stream.bindings.output.producer.partition-count=3
+spring.cloud.stream.bindings.output.producer.partition-key-expression=headers['cust-no']
+spring.cloud.stream.rabbit.bindings.output.producer.declare-exchange=false
+----
+====
+
+Publishing to a super stream using the stream client:
+
+====
+[source, properties]
+----
+spring.cloud.stream.bindings.output.destination=super
+spring.cloud.stream.bindings.output.producer.partition-count=3
+spring.cloud.stream.bindings.output.producer.partition-key-expression=headers['cust-no']
+spring.cloud.stream.rabbit.bindings.output.producer.producer-type=stream-async
+spring.cloud.stream.rabbit.bindings.output.producer.super-stream=true
+spring.cloud.stream.rabbit.bindings.output.producer.declare-exchange=false
+----
+====
+
+When using the stream client, if you set a `confirmAckChannel`, a copy of a successfully sent message will be sent to that channel.
+
+[[using-existing-queues/exchanges]]
+= Using Existing Queues/Exchanges
+
+By default, the binder will automatically provision a topic exchange with the name being derived from the value of the destination binding property `<prefix><destination>`.
+The destination defaults to the binding name, if not provided.
+When binding a consumer, a queue will automatically be provisioned with the name `<prefix><destination>.<group>` (if a `group` binding property is specified), or an anonymous, auto-delete queue when there is no `group`.
+The queue will be bound to the exchange with the "match-all" wildcard routing key (`#`) for a non-partitioned binding or `<destination>-<instanceIndex>` for a partitioned binding.
+The prefix is an empty `String` by default.
+If an output binding is specified with `requiredGroups`, a queue/binding will be provisioned for each group.
+
+There are a number of rabbit-specific binding properties that allow you to modify this default behavior.
+
+If you have an existing exchange/queue that you wish to use, you can completely disable automatic provisioning as follows, assuming the exchange is named `myExchange` and the queue is named `myQueue`:
+
+* `spring.cloud.stream.bindings.<binding name>.destination=myExchange`
+* `spring.cloud.stream.bindings.<binding name>.group=myQueue`
+* `spring.cloud.stream.rabbit.bindings.<binding name>.consumer.bindQueue=false`
+* `spring.cloud.stream.rabbit.bindings.<binding name>.consumer.declareExchange=false`
+* `spring.cloud.stream.rabbit.bindings.<binding name>.consumer.queueNameGroupOnly=true`
+
+If you want the binder to provision the queue/exchange, but you want to do it using something other than the defaults discussed here, use the following properties.
+Refer to the property documentation above for more information.
+
+* `spring.cloud.stream.rabbit.bindings.<binding name>.consumer.bindingRoutingKey=myRoutingKey`
+* `spring.cloud.stream.rabbit.bindings.<binding name>.consumer.exchangeType=<type>`
+
+* `spring.cloud.stream.rabbit.bindings.<binding name>.producer.routingKeyExpression='myRoutingKey'`
+
+There are similar properties used when declaring a dead-letter exchange/queue, when `autoBindDlq` is `true`.
+
+[[retry-with-the-rabbitmq-binder]]
+= Retry With the RabbitMQ Binder
+
+When retry is enabled within the binder, the listener container thread is suspended for any back off periods that are configured.
+This might be important when strict ordering is required with a single consumer. However, for other use cases, it prevents other messages from being processed on that thread.
+An alternative to using binder retry is to set up dead lettering with time to live on the dead-letter queue (DLQ) as well as dead-letter configuration on the DLQ itself.
+See "`<<rabbit-binder-properties>>`" for more information about the properties discussed here.
+You can use the following example configuration to enable this feature:
+
+* Set `autoBindDlq` to `true`.
+The binder create a DLQ.
+Optionally, you can specify a name in `deadLetterQueueName`.
+* Set `dlqTtl` to the back off time you want to wait between redeliveries.
+* Set the `dlqDeadLetterExchange` to the default exchange.
+Expired messages from the DLQ are routed to the original queue, because the default `deadLetterRoutingKey` is the queue name (`destination.group`).
+Setting to the default exchange is achieved by setting the property with no value, as shown in the next example.
+
+To force a message to be dead-lettered, either throw an `AmqpRejectAndDontRequeueException` or set `requeueRejected` to `false` (the default) and throw any exception.
+
+The loop continue without end, which is fine for transient problems, but you may want to give up after some number of attempts.
+Fortunately, RabbitMQ provides the `x-death` header, which lets you determine how many cycles have occurred.
+
+To acknowledge a message after giving up, throw an `ImmediateAcknowledgeAmqpException`.
+

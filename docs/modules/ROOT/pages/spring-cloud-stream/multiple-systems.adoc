@@ -1,0 +1,63 @@
+[[multiple-systems]]
+= Connecting to Multiple Systems
+
+By default, binders share the application's Spring Boot auto-configuration, so that one instance of each binder found on the classpath is created.
+If your application should connect to more than one broker of the same type, you can specify multiple binder configurations, each with different environment settings.
+
+NOTE: Turning on explicit binder configuration disables the default binder configuration process altogether.
+If you do so, all binders in use must be included in the configuration.
+Frameworks that intend to use Spring Cloud Stream transparently may create binder configurations that can be referenced by name, but they do not affect the default binder configuration.
+In order to do so, a binder configuration may have its `defaultCandidate` flag set to false (for example, `spring.cloud.stream.binders.<configurationName>.defaultCandidate=false`).
+This denotes a configuration that exists independently of the default binder configuration process.
+
+The following example shows a typical configuration for a processor application that connects to two RabbitMQ broker instances:
+
+[source,yml]
+----
+spring:
+  cloud:
+    stream:
+      bindings:
+        input:
+          destination: thing1
+          binder: rabbit1
+        output:
+          destination: thing2
+          binder: rabbit2
+      binders:
+        rabbit1:
+          type: rabbit
+          environment:
+            spring:
+              rabbitmq:
+                host: <host1>
+        rabbit2:
+          type: rabbit
+          environment:
+            spring:
+              rabbitmq:
+                host: <host2>
+----
+NOTE: The `environment` property of the particular binder can also be used for any Spring Boot property,
+including this `spring.main.sources` which can be useful for adding additional configurations for the
+particular binders, e.g. overriding auto-configured beans.
+
+For example;
+[source, yaml]
+----
+environment:
+    spring:
+        main:
+           sources: com.acme.config.MyCustomBinderConfiguration
+----
+
+To activate a specific profile for the particular binder environment, you should use a `spring.profiles.active` property:
+
+[source, yaml]
+----
+environment:
+    spring:
+        profiles:
+           active: myBinderProfile
+----
+
