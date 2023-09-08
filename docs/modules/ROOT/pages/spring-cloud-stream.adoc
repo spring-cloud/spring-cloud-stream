@@ -12,6 +12,7 @@
 
 // ======================================================================================
 
+[[preface]]
 == Preface
 include::preface.adoc[]
 
@@ -72,6 +73,7 @@ class BootTestStreamApplicationTests {
 }
 ----
 
+[[main-concepts]]
 == Main Concepts
 
 Spring Cloud Stream provides a number of abstractions and primitives that simplify the writing of message-driven microservice applications.
@@ -95,6 +97,7 @@ necessary to establish bindings are handled by middleware-specific _Binder_ impl
 .Spring Cloud Stream Application
 image::SCSt-with-binder.png[width=800,scaledwidth="75%",align="center"]
 
+[[fat-jar]]
 ==== Fat JAR
 
 Spring Cloud Stream applications can be run in stand-alone mode from your IDE for testing.
@@ -207,6 +210,7 @@ For example, in the time-windowed average calculation example, it is important t
 
 NOTE: To set up a partitioned processing scenario, you must configure both the data-producing and the data-consuming ends.
 
+[[programming-model]]
 == Programming Model
 
 To understand the programming model, you should be familiar with the following core concepts:
@@ -217,6 +221,7 @@ To understand the programming model, you should be familiar with the following c
 
 image::SCSt-overview.png[width=800,scaledwidth="75%",align="center"]
 
+[[destination-binders]]
 === Destination Binders
 
 Destination Binders are extension components of Spring Cloud Stream responsible for providing the necessary configuration and implementation to facilitate
@@ -230,6 +235,7 @@ some help in the form of minimalistic yet required set of instructions from the 
 While it is out of scope of this section to discuss all of the available binder and binding configuration options (the rest of the manual covers them extensively),
 _Binding_ as a concept, does require special attention. The next section discusses it in detail.
 
+[[bindings]]
 === Bindings
 
 As stated earlier, _Bindings_ provide a bridge between the external messaging system (e.g., queue, topic etc.) and application-provided _Producers_ and _Consumers_.
@@ -263,6 +269,7 @@ And in this context beans of type `Supplier`, `Function` or `Consumer` are treat
 binding of to destinations exposed by the provided binder following certain naming conventions and
 rules to avoid extra configuration.
 
+[[binding-and-binding-names]]
 ==== Binding and Binding names
 
 Binding is an abstraction that represents a bridge between sources and targets exposed by the binder and user code,
@@ -276,6 +283,7 @@ The following sub-sections will describe the naming conventions and configuratio
 NOTE: If your binding name has special characters, such as the `.` character, you need to surround the binding key with brackets (`[]`) and then wrap it in qoutes.
 For example `spring.cloud.stream.bindings."[my.output.binding.key]".destination`.
 
+[[functional-binding-names]]
 ===== Functional binding names
 
 Unlike the explicit naming required by annotation-based support (legacy) used in the previous versions of spring-cloud-stream, the functional
@@ -373,6 +381,7 @@ public static class EmptyConfiguration {
 As you can see we have declared two input bindings and two output bindings while our configuration had no functions defined, yet we were able to successfully create these bindings and access their corresponding channels.
 
 
+[[producing-and-consuming-messages]]
 === Producing and Consuming Messages
 
 You can write a Spring Cloud Stream application by simply writing functions and exposing them as `@Bean` s.
@@ -383,6 +392,7 @@ we recommend using functional implementations.
 [[spring_cloud_function]]
 ==== Spring Cloud Function support
 
+[[overview]]
 ===== Overview
 
 Since Spring Cloud Stream v2.1, another alternative for defining _stream handlers_ and _sources_ is to use build-in
@@ -449,6 +459,7 @@ public static class SinkFromConsumer {
 }
 ----
 
+[[suppliers-sources]]
 ===== Suppliers (Sources)
 
 `Function` and `Consumer` are pretty straightforward when it comes to how their invocation is triggered. They are triggered based
@@ -535,6 +546,7 @@ the framework will split the returning sending out each item as an individual me
 he desired behavior you can set it to `false` at which point such supplier will simply return
 the produced Flux without splitting it.
 
+[[supplier-threading]]
 ====== Supplier & threading
 
 NOTE: As you have learned by now, unlike `Function` and `Consumer`, which are triggered by an event (they have input data), `Supplier` does not have
@@ -545,6 +557,7 @@ on tracing data stored in thread local.
 For those cases we have another mechanism via `StreamBridge`, where user has more control over threading mechanism. You can get more details 
 in <<Sending arbitrary data to an output (e.g. Foreign event-driven sources)>> section.
 
+[[consumer-reactive]]
 ===== Consumer (Reactive)
 
 Reactive `Consumer` is a little bit special because it has a void return type, leaving framework with no reference to subscribe to.
@@ -570,6 +583,7 @@ The result of such composition is a reactive `Consumer`. However, there is no wa
 so this limitation can only be addressed by either making your consumer reactive and subscribing manually (as discussed earlier), or changing your function to be imperative.
 
 
+[[polling-configuration-properties]]
 ====== Polling Configuration Properties
 
 The following properties are exposed by Spring Cloud Stream and are prefixed with the `spring.integration.poller.`:
@@ -602,6 +616,7 @@ Default: MILLISECONDS.
 
 For example `--spring.integration.poller.fixed-delay=2000` sets the poller interval to poll every two seconds.
 
+[[per-binding-polling-configuration]]
 ====== Per-binding polling configuration
 
 The previous section shows how to configure a single default poller that will be applied to all bindings. While it fits well with the model of microservices spring-cloud-stream designed for where each microservice represents a single component (e.g., Supplier) and thus default poller configuration is enough, there are edge cases where
@@ -610,6 +625,7 @@ you may have several components that require different polling configurations
 For such cases please use per-binding way of configuring poller. For example, assume you have an output binding `supply-out-0`. In this case you can configure poller for such
 binding using `spring.cloud.stream.bindings.supply-out-0.producer.poller..` prefix (e.g., `spring.cloud.stream.bindings.supply-out-0.producer.poller.fixed-delay=2000`).
 
+[[sending-arbitrary-data-to-an-output-e-g-foreign-event-driven-sources]]
 ===== Sending arbitrary data to an output (e.g. Foreign event-driven sources)
 
 There are cases where the actual source of data may be coming from the external (foreign) system that is not a binder. For example, the
@@ -658,6 +674,7 @@ Also, note that `streamBridge.send(..)` method takes an `Object` for data. This 
 will go through the same routine when sending output as if it was from any Function or Supplier providing the same level
 of consistency as with functions. This means the output type conversion, partitioning etc are honored as if it was from the output produced by functions.
 
+[[streambridge-and-dynamic-destinations]]
 ====== StreamBridge and Dynamic Destinations
 
 `StreamBridge` can also be used for cases when output destination(s) are not known ahead of time similar to the use cases
@@ -734,11 +751,13 @@ By showing two examples we want to emphasize the approach will work with any typ
 
 NOTE: If you are using the Solace PubSub+ binder, Spring Cloud Stream has reserved the `scst_targetDestination` header (retrievable via BinderHeaders.TARGET_DESTINATION), which allows for messages to be redirected from their bindings' configured destination to the target destination specified by this header. This allows for the binder to manage the resources necessary to publish to dynamic destinations, relieving the framework from having to do so, and avoids the caching issues mentioned in the previous Note. More info https://github.com/SolaceProducts/solace-spring-cloud/tree/master/solace-spring-cloud-starters/solace-spring-cloud-stream-starter#dynamic-producer-destinations[here]. 
 
+[[output-content-type-with-streambridge]]
 ====== Output Content Type with StreamBridge
 
 You can also provide specific content type if necessary with the following method signature `public boolean send(String bindingName, Object data, MimeType outputContentType)`.
 Or if you send data as a `Message`, its content type will be honored.
 
+[[using-specific-binder-type-with-streambridge]]
 ====== Using specific binder type with StreamBridge
 
 Spring Cloud Stream supports multiple binder scenarios. For example you may be receiving data from Kafka and sending it to RabbitMQ.
@@ -760,6 +779,7 @@ As you can see there is one additional argument that you can provide - `binderTy
 NOTE: For cases where `spring.cloud.stream.output-bindings` property is used or the binding was already created under different binder, the `binderType` 
 argument will have no effect.
 
+[[using-channel-interceptors-with-streambridge]]
 ====== Using channel interceptors with StreamBridge
 
 Since `StreamBridge` uses a `MessageChannel` to establish the output binding, you can activate channel interceptors when sending data through `StreamBridge`.
@@ -825,6 +845,7 @@ With this approach, the application gets the ability to decide which interceptor
 
 NOTE: `StreamBridge` provides a contract through the `StreamOperations` interface that contains all the `send` methods of `StreamBridge`. Therefore, applications may choose to autowire using `StreamOperations`. This is handy when it comes to unit testing code that uses `StreamBridge` by providing a mock or similar mechanisms for the `StreamOperations` interface.
 
+[[reactive-functions-support]]
 ===== Reactive Functions support
 
 
@@ -863,6 +884,7 @@ Reactive function is _initialization function_. It is invoked only once to get a
 Therefore, with reactive functions you must rely on the richness of the reactive API when it comes to error handling and retries (i.e., `doOnError()`, `.onError*()` etc).
 ====
 
+[[functional-composition]]
 ===== Functional Composition
 
 Using functional programming model you can also benefit from functional composition where you can dynamically compose complex handlers from a set of simple functions.
@@ -893,6 +915,7 @@ For example, if we want to give our `toUpperCase|wrapInQuotes` a more descriptiv
 with the following property `spring.cloud.stream.function.bindings.toUpperCase|wrapInQuotes-in-0=quotedUpperCaseInput` allowing
 other configuration properties to refer to that binding name (e.g., `spring.cloud.stream.bindings.quotedUpperCaseInput.destination=myDestination`).
 
+[[functional-composition-and-cross-cutting-concerns]]
 ====== Functional Composition and Cross-cutting Concerns
 
 Function composition effectively allows you to address complexity by breaking it down
@@ -944,6 +967,7 @@ While trivial, this example demonstrates how one function enriches the incoming 
 so the other function - `echo` - can benefit form it. The `echo` function stays clean and focused on business logic only.
 You can also see the usage of `spring.cloud.stream.function.bindings` property to simplify composed binding name. 
 
+[[functions-with-multiple-input-and-output-arguments]]
 ===== Functions with multiple input and output arguments
 
 Starting with version 3.0 spring-cloud-stream provides support for functions that
@@ -1062,6 +1086,7 @@ public void testSingleInputMultiOutput() {
 }
 ----
 
+[[multiple-functions-in-a-single-application]]
 ===== Multiple functions in a single application
 
 There may also be a need for grouping several message handlers in a single application. You would do so by
@@ -1119,6 +1144,7 @@ public void testMultipleFunctions() {
 }
 ----
 
+[[batch-consumers]]
 ===== Batch Consumers
 
 When using a `MessageChannelBinder` that supports batch listeners, and the feature is enabled for the consumer binding, you can set `spring.cloud.stream.bindings.<binding-name>.consumer.batch-mode` to `true` to enable the
@@ -1132,6 +1158,7 @@ public Function<List<Person>, Person> findFirstPerson() {
 }
 ----
 
+[[batch-producers]]
 ===== Batch Producers
 
 You can also use the concept of batching on the producer side by returning a collection of Messages which effectively provides an 
@@ -1156,6 +1183,7 @@ public Function<String, List<Message<String>>> batch() {
 
 Each message in the returned list will be sent individually resulting in four messages sent to output destination. 
 
+[[spring-integration-flow-as-functions]]
 ===== Spring Integration flow as functions
 When you implement a function, you may have complex requirements that fit the category
 of https://www.enterpriseintegrationpatterns.com[Enterprise Integration Patterns] (EIP). These are best handled by using a
@@ -1207,6 +1235,7 @@ into various patterns you can apply by merging the best of Spring Integration an
 [[spring-cloud-streams-overview-using-polled-consumers]]
 ==== Using Polled Consumers
 
+[[overview]]
 ===== Overview
 
 When using polled consumers, you poll the `PollableMessageSource` on demand.
@@ -1325,6 +1354,7 @@ If the service activator throws a `RequeueCurrentMessageException`, the message 
 
 If the listener throws a `RequeueCurrentMessageException` directly, the message will be requeued, as discussed above, and will not be sent to the error channels.
 
+[[event-routing]]
 === Event Routing
 
 Event Routing, in the context of Spring Cloud Stream, is the ability to either
@@ -1332,6 +1362,7 @@ _a) route events to a particular event subscriber_ or
 _b) route events produced by an event subscriber to a particular destination_.
 Here we'll refer to it as route ‘TO’ and route ‘FROM’.
 
+[[routing-to-consumer]]
 ==== Routing TO Consumer
 Routing can be achieved by relying on `RoutingFunction` available in Spring Cloud Function 3.0. All you need to do is enable it via
 `--spring.cloud.stream.function.routing.enabled=true` application property or provide `spring.cloud.function.routing-expression` property.
@@ -1345,6 +1376,7 @@ Instruction could be provided with individual messages as well as application pr
 
 Here are couple of samples:
 
+[[using-message-headers]]
 ===== Using message headers
 [source,java]
 ----
@@ -1381,6 +1413,7 @@ For example,
 setting `spring.cloud.function.routing-expression` header to value `T(java.lang.System).currentTimeMillis() % 2 == 0 ? 'even' : 'odd'` will end up semi-randomly routing request to either `odd` or `even` functions.
 Also, for SpEL, the _root object_ of the evaluation context is `Message` so you can do evaluation on individual headers (or message) as well `....routing-expression=headers['type']`
 
+[[using-application-properties]]
 ===== Using application properties
 
 The `spring.cloud.function.routing-expression` and/or `spring.cloud.function.definition`
@@ -1409,6 +1442,7 @@ public class RoutingStreamApplication {
 IMPORTANT: Passing instructions via application properties is especially important for reactive functions given that a reactive
 function is only invoked once to pass the Publisher, so access to the individual items is limited.
 
+[[routing-function-and-output-binding]]
 ===== Routing Function and output binding
 
 `RoutingFunction` is a `Function` and as such treated no differently than any other function. Well. . . almost.
@@ -1425,12 +1459,14 @@ becomes as a `Consumer` by not having any output bindings. However, if `RoutingF
 the output, the output binding for the `RoutingFunction` will be create dynamically at which point `RoutingFunction` will act as a regular `Function` 
 with regards to bindings (having both input and output bindings).
 
+[[routing-from-consumer]]
 ==== Routing FROM Consumer
 
 Aside from static destinations, Spring Cloud Stream lets applications send messages to dynamically bound destinations.
 This is useful, for example, when the target destination needs to be determined at runtime.
 Applications can do so in one of two ways.
 
+[[spring-cloud-stream-sendto-destination]]
 ===== spring.cloud.stream.sendto.destination
 
 You can also delegate to the framework to dynamically resolve the output destination by specifying `spring.cloud.stream.sendto.destination` header
@@ -1488,6 +1524,7 @@ NOTE: If you need to support dynamic destinations with multiple binder types, us
 
 Also, please see <<Using StreamBridge>> section to see how yet another option (StreamBridge) can be utilized for similar cases.
 
+[[post-processing-after-sending-message]]
 === Post processing (after sending message)
 
 Once function is invoked, its result is sent by the framework to a target destination which effectively completes function invocation cycle. 
@@ -1600,6 +1637,7 @@ public Function<Flux<String>, Flux<String>> uppercase() {
 }
 ----
 
+[[drop-failed-messages]]
 ==== Drop Failed Messages
 
 By default, the system provides error handlers. The first error handler will simply log error message. The second error handler is binder specific error handler 
@@ -1607,6 +1645,7 @@ which is responsible for handling error message in the context of a specific mes
 
 While acceptable in some cases, for most cases, it is not, and we need some recovery mechanism to avoid message loss.
 
+[[handle-error-messages]]
 ==== Handle Error Messages
 
 In the previous section we mentioned that by default messages that resulted in error are effectively logged and dropped. The framework also exposes mechanism for you
@@ -1645,6 +1684,7 @@ NOTE: If by accident you declare such handler as a `Function`, it will still wor
 If you want to have a single error handler for all function beans, you can use the standard  spring-cloud-stream mechanism for defining default properties `spring.cloud.stream.default.error-handler-definition=myErrorHandler`
 
 
+[[dlq-dead-letter-queue]]
 ==== DLQ - Dead Letter Queue
 
 Perhaps the most common mechanism, DLQ allows failed messages to be sent to a special destination: the _Dead Letter Queue_.
@@ -1710,6 +1750,7 @@ You can also facilitate immediate dispatch to DLQ (without re-tries) by setting 
 --spring.cloud.stream.bindings.uppercase-in-0.consumer.max-attempts=1
 ----
 
+[[retry-template]]
 ==== Retry Template
 
 In this section we cover configuration properties relevant to configuration of retry capabilities.
@@ -1776,6 +1817,7 @@ spring.cloud.stream.bindings.<foo>.consumer.retry-template-name=<your-retry-temp
 Spring Cloud Stream provides a Binder abstraction for use in connecting to physical destinations at the external middleware.
 This section provides information about the main concepts behind the Binder SPI, its main components, and implementation-specific details.
 
+[[producers-and-consumers]]
 === Producers and Consumers
 
 The following image shows the general relationship of producers and consumers:
@@ -1831,11 +1873,13 @@ In the https://medium.com/@domenicosibilio/how-to-create-a-spring-cloud-stream-b
 in details, with an example, a set of steps necessary to implement a custom binder.
 The steps are also highlighted in the `<<spring-cloud-stream-overview-custom-binder-impl>>` section.
 
+[[binder-detection]]
 === Binder Detection
 
 Spring Cloud Stream relies on implementations of the Binder SPI to perform the task of connecting (binding) user code to message brokers.
 Each Binder implementation typically connects to one type of messaging system.
 
+[[classpath-detection]]
 ==== Classpath Detection
 
 By default, Spring Cloud Stream relies on Spring Boot's auto-configuration to configure the binding process.
@@ -1975,6 +2019,7 @@ Note that, when there are more than one instance of the same type of the binder,
 === Binding visualization and control
 Spring Cloud Stream supports visualization and control of the Bindings through Actuator endpoints as well as programmatic way.
 
+[[programmatic-way]]
 ==== Programmatic way
 
 Since version 3.1 we expose `org.springframework.cloud.stream.binding.BindingsLifecycleController` which is registered as bean and once 
@@ -1994,6 +2039,7 @@ bindingsController.changeState("echo-in-0", State.STOPPED);
 assertThat(binding.isRunning()).isFalse();
 ----
 
+[[actuator]]
 ==== Actuator
 Since actuator and web are optional, you must first add one of the web dependencies as well as add the actuator dependency manually.
 The following example shows how to add the dependency for the Web framework:
@@ -2052,6 +2098,7 @@ You can also stop, start, pause, and resume individual bindings by posting to th
 NOTE: `PAUSED` and `RESUMED` work only when the corresponding binder and its underlying technology supports it. Otherwise, you see the warning message in the logs.
 Currently, only Kafka and [Solace](https://github.com/SolaceProducts/solace-spring-cloud/tree/master/solace-spring-cloud-starters/solace-spring-cloud-stream-starter#consumer-bindings-pauseresume) binders supports the `PAUSED` and `RESUMED` states.
 
+[[binder-configuration-properties]]
 === Binder Configuration Properties
 
 The following properties are available when customizing binder configurations. These properties exposed via `org.springframework.cloud.stream.config.BinderProperties`
@@ -2326,6 +2373,7 @@ myFileBinder:\
 com.example.springcloudstreamcustombinder.config.FileMessageBinderConfiguration
 ----
 
+[[configuration-options]]
 == Configuration Options
 
 Spring Cloud Stream supports general configuration options as well as configuration for bindings and binders.
@@ -2334,6 +2382,7 @@ Some binders let additional binding properties support middleware-specific featu
 Configuration options can be provided to Spring Cloud Stream applications through any mechanism supported by Spring Boot.
 This includes application arguments, environment variables, and YAML or .properties files.
 
+[[binding-service-properties]]
 === Binding Service Properties
 
 These properties are exposed via `org.springframework.cloud.stream.config.BindingServiceProperties`
@@ -2396,6 +2445,7 @@ and `spring.cloud.stream.default.<producer|consumer>.<property>=<value>` for com
 
 When it comes to avoiding repetitions for extended binding properties, this format should be used - `spring.cloud.stream.<binder-type>.default.<producer|consumer>.<property>=<value>`.
 
+[[common-binding-properties]]
 ==== Common Binding Properties
 
 These properties are exposed via `org.springframework.cloud.stream.config.BindingProperties`
@@ -2427,6 +2477,7 @@ See `<<multiple-binders>>` for details.
 +
 Default: `null` (the default binder is used, if it exists).
 
+[[consumer-properties]]
 ==== Consumer Properties
 
 These properties are exposed via `org.springframework.cloud.stream.binder.ConsumerProperties`
@@ -2513,6 +2564,7 @@ When set to true, the underlying binder will natively multiplex destinations on 
 +
 Default: `false`.
 
+[[advanced-consumer-configuration]]
 ==== Advanced Consumer Configuration
 
 For advanced configuration of the underlying message listener container for message-driven consumers, add a single `ListenerContainerCustomizer` bean to the application context.
@@ -2536,6 +2588,7 @@ public MessageSourceCustomizer<AmqpMessageSource> sourceCustomizer() {
 ----
 ====
 
+[[producer-properties]]
 ==== Producer Properties
 
 These properties are exposed via `org.springframework.cloud.stream.binder.ProducerProperties`
@@ -2606,6 +2659,7 @@ When set to true, if the binder supports asynchroous send results, send failures
 Default: false.
 
 
+[[advanced-producer-configuration]]
 ==== Advanced Producer Configuration
 
 In some cases Producer Properties are not enough to properly configure a producing MessageHandler in the binder, or may be you prefer a programmatic approach 
@@ -2650,6 +2704,7 @@ In Spring Cloud Stream, message transformation is accomplished with an `org.spri
 
 NOTE: As a supplement to the details to follow, you may also want to read the following https://spring.io/blog/2018/02/26/spring-cloud-stream-2-0-content-type-negotiation-and-transformation[blog post].
 
+[[mechanics]]
 === Mechanics
 
 To better understand the mechanics and the necessity behind content-type negotiation, we take a look at a very simple use case by using the following message handler as an example:
@@ -2695,6 +2750,7 @@ You can always opt out of returning a `Message` from the handler method where yo
 
 If there is an internal pipeline, the `Message` is sent to the next handler by going through the same process of conversion. However, if there is no internal pipeline or you have reached the end of it, the `Message` is sent back to the output destination.
 
+[[content-type-versus-argument-type]]
 ==== Content Type versus Argument Type
 
 As mentioned earlier, for the framework to select the appropriate `MessageConverter`, it requires argument type and, optionally, content type information.
@@ -2716,6 +2772,7 @@ NOTE: Do not expect `Message` to be converted into some other type based only on
 Remember that the `contentType` is complementary to the target type.
 If you wish, you can provide a hint, which `MessageConverter` may or may not take into consideration.
 
+[[message-converters]]
 ==== Message Converters
 
 `MessageConverters` define two methods:
@@ -2746,6 +2803,7 @@ Object fromMessage(Message<?> message, Class<?> targetClass);
 Message<byte[]> toMessage(Object payload, @Nullable MessageHeaders headers);
 ----
 
+[[provided-messageconverters]]
 === Provided MessageConverters
 
 As mentioned earlier, the framework already provides a stack of `MessageConverters` to handle most common use cases.
@@ -2804,6 +2862,7 @@ public class MyCustomMessageConverter extends AbstractMessageConverter {
 }
 ----
 
+[[inter-application-communication]]
 == Inter-Application Communication
 
 Spring Cloud Stream enables communication between applications. Inter-application communication is a complex issue spanning several concerns, as described in the following topics:
@@ -2929,6 +2988,7 @@ When a binder configuration requires them, it is important to set both values co
 
 While a scenario in which using multiple instances for partitioned data processing may be complex to set up in a standalone case, Spring Cloud Dataflow can simplify the process significantly by populating both the input and output values correctly and by letting you rely on the runtime infrastructure to provide information about the instance index and instance count.
 
+[[testing]]
 == Testing
 
 Spring Cloud Stream provides support for testing your microservice applications without connecting to a messaging system.
@@ -2941,6 +3001,7 @@ Spring Cloud Stream comes with a test binder which you can use for testing the v
 
 This test binder acts as a bridge between _unit_ and _integration_ testing and is based on https://spring.io/projects/spring-integration[Spring Integration] framework as an in-JVM message broker essentially giving you the best of both worlds - a real binder without the networking.
 
+[[test-binder-configuration]]
 ==== Test Binder configuration
 To enable Spring Integration test binder, all you need is to add it as a dependency.
 
@@ -2964,6 +3025,7 @@ Or for build.gradle.kts
 testImplementation("org.springframework.cloud:spring-cloud-stream-test-binder")
 ----
 
+[[test-binder-usage]]
 ==== Test Binder usage
 
 Now you can test your microservice as a simple unit test
@@ -3106,6 +3168,7 @@ public void testMultipleFunctions() {
 ----
 
 
+[[test-binder-and-pollablemessagesource]]
 ==== Test Binder and PollableMessageSource
 Spring Integration Test Binder also allows you to write tests when working with `PollableMessageSource` (see <<Using Polled Consumers>> for more details).
 
@@ -3188,6 +3251,7 @@ Message 3: MY OWN DATA 20BF2E64-7FF4-4CB6-A823-4053D30B5C74
 NOTE: DO NOT name this bean `messageSource` as it is going to be in conflict with the bean of the same name (different type)
 provided by Spring Boot for unrelated reasons.
 
+[[special-note-on-mixing-test-binder-and-regular-middleware-binder-for-testing]]
 ==== Special Note on Mixing Test Binder and Regular Middleware Binder for Testing
 
 The Spring Integration based test binder is provided for testing the application without involving an actual middleware based binder such as the Kafka or RabbitMQ binder.
@@ -3196,6 +3260,7 @@ When the test binder is present on the test classpath, Spring Cloud Stream will 
 In other words, you cannot mix both the test binder and a regular middleware binder for testing purposes in the same module.
 After testing the application with the test binder, if you want to continue doing further integration tests using the actual middleware binder, it is recommended to add those tests that use the actual binder in a separate module so that those tests can make the proper connection to the actual middleware rather than relying on the in-memory channels provided by the test binder.
 
+[[health-indicator]]
 == Health Indicator
 
 Spring Cloud Stream provides a health indicator for binders.
@@ -3229,16 +3294,19 @@ Since Kafka binder is not used and it has specific checks to see if any destinat
 The top level application health check status will be reported as `DOWN`.
 In this situation, you can simply remove the dependency for kafka binder from your application since you are not using it.
 
+[[samples]]
 == Samples
 
 For Spring Cloud Stream samples, see the https://github.com/spring-cloud/spring-cloud-stream-samples[spring-cloud-stream-samples] repository on GitHub.
 
+[[deploying-stream-applications-on-cloudfoundry]]
 === Deploying Stream Applications on CloudFoundry
 
 On CloudFoundry, services are usually exposed through a special environment variable called https://docs.cloudfoundry.org/devguide/deploy-apps/environment-variable.html#VCAP-SERVICES[VCAP_SERVICES].
 
 When configuring your binder connections, you can use the values from an environment variable as explained on the http://docs.spring.io/spring-cloud-dataflow-server-cloudfoundry/docs/current-SNAPSHOT/reference/htmlsingle/#getting-started-ups[dataflow Cloud Foundry Server] docs.
 
+[[binder-implementations]]
 == Binder Implementations
 
 The following is the list of available binder implementations

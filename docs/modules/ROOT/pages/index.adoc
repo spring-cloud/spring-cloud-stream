@@ -1,3 +1,4 @@
+[[spring-cloud-stream-reference-documentation]]
 = Spring Cloud Stream Reference Documentation
 Sabby Anandan; Marius Bogoevici; Eric Bottard; Mark Fisher; Ilayaperumal Gopinathan; Mark Heckler; Gunnar Hillert; Mark Pollack; Patrick Peralta; Glenn Renfro; Thomas Risberg; Dave Syer; David Turanski; Janne Valkealahti; Benjamin Klein; Vinicius Carvalho; Gary Russell; Oleg Zhurakousky; Jay Bryant; Soby Chacko; Domenico Sibilio
 
