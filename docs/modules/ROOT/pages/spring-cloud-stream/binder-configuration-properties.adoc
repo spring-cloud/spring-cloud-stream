@@ -1,0 +1,28 @@
+[[binder-configuration-properties]]
+= Binder Configuration Properties
+
+The following properties are available when customizing binder configurations. These properties exposed via `org.springframework.cloud.stream.config.BinderProperties`
+
+They must be prefixed with `spring.cloud.stream.binders.<configurationName>`.
+
+type::
+The binder type.
+It typically references one of the binders found on the classpath -- in particular, a key in a `META-INF/spring.binders` file.
++
+By default, it has the same value as the configuration name.
+inheritEnvironment::
+Whether the configuration inherits the environment of the application itself.
++
+Default: `true`.
+environment::
+Root for a set of properties that can be used to customize the environment of the binder.
+When this property is set, the context in which the binder is being created is not a child of the application context.
+This setting allows for complete separation between the binder components and the application components.
++
+Default: `empty`.
+defaultCandidate::
+Whether the binder configuration is a candidate for being considered a default binder or can be used only when explicitly referenced.
+This setting allows adding binder configurations without interfering with the default processing.
++
+Default: `true`.
+

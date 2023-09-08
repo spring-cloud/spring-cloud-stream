@@ -1,0 +1,38 @@
+[[spring-cloud-stream-overview-binder-api]]
+= Binder SPI
+
+The Binder SPI consists of a number of interfaces, out-of-the box utility classes, and discovery strategies that provide a pluggable mechanism for connecting to external middleware.
+
+The key point of the SPI is the `Binder` interface, which is a strategy for connecting inputs and outputs to external middleware. The following listing shows the definition of the `Binder` interface:
+
+[source,java]
+----
+public interface Binder<T, C extends ConsumerProperties, P extends ProducerProperties> {
+    Binding<T> bindConsumer(String bindingName, String group, T inboundBindTarget, C consumerProperties);
+
+    Binding<T> bindProducer(String bindingName, T outboundBindTarget, P producerProperties);
+}
+----
+
+The interface is parameterized, offering a number of extension points:
+
+* Input and output bind targets.
+* Extended consumer and producer properties, allowing specific Binder implementations to add supplemental properties that can be supported in a type-safe manner.
+
+A typical binder implementation consists of the following:
+
+* A class that implements the `Binder` interface;
+* A Spring `@Configuration` class that creates a bean of type `Binder` along with the middleware connection infrastructure.
+* A `META-INF/spring.binders` file found on the classpath containing one or more binder definitions, as shown in the following example:
++
+[source]
+----
+kafka:\
+org.springframework.cloud.stream.binder.kafka.config.KafkaBinderConfiguration
+----
+
+NOTE: As it was mentioned earlier Binder abstraction is also one of the extension points of the framework. So if you can't find a suitable binder in the preceding list you can implement your own binder on top of Spring Cloud Stream.
+In the https://medium.com/@domenicosibilio/how-to-create-a-spring-cloud-stream-binder-from-scratch-ab8b29ee931b[How to create a Spring Cloud Stream Binder from scratch] post a community member documents
+in details, with an example, a set of steps necessary to implement a custom binder.
+The steps are also highlighted in the `<<spring-cloud-stream-overview-custom-binder-impl>>` section.
+

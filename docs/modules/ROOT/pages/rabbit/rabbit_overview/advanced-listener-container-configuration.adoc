@@ -1,0 +1,7 @@
+[[advanced-listener-container-configuration]]
+= Advanced Listener Container Configuration
+
+To set listener container properties that are not exposed as binder or binding properties, add a single bean of type `ListenerContainerCustomizer` to the application context.
+The binder and binding properties will be set and then the customizer will be called.
+The customizer (`configure()` method) is provided with the queue name as well as the consumer group as arguments.
+

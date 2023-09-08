@@ -1,0 +1,20 @@
+[[spring-cloud-stream-overview-connecting-multiple-application-instances]]
+= Connecting Multiple Application Instances
+
+While Spring Cloud Stream makes it easy for individual Spring Boot applications to connect to messaging systems, the typical scenario for Spring Cloud Stream is the creation of multi-application pipelines, where microservice applications send data to each other.
+You can achieve this scenario by correlating the input and output destinations of "`adjacent`" applications.
+
+Suppose a design calls for the Time Source application to send data to the Log Sink application. You could use a common destination named `ticktock` for bindings within both applications.
+
+Time Source (that has the binding named `output`) would set the following property:
+
+----
+spring.cloud.stream.bindings.output.destination=ticktock
+----
+
+Log Sink (that has the binding named `input`) would set the following property:
+
+----
+spring.cloud.stream.bindings.input.destination=ticktock
+----
+
