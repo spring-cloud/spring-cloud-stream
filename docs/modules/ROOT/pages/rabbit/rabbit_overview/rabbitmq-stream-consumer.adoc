@@ -10,7 +10,6 @@ Only a single stream queue can be consumed by each binding.
 To configure the binder to use `containerType=stream`, Spring Boot will automatically configure an `Environment` `@Bean` from the application properties.
 You can, optionally, add a customizer to customize the listener container.
 
-====
 [source, java]
 ----
 @Bean
@@ -24,7 +23,6 @@ ListenerContainerCustomizer<MessageListenerContainer> customizer() {
     };
 }
 ----
-====
 
 The `name` argument passed to the customizer is `destination + '.' + group + '.container'`.
 
@@ -32,7 +30,6 @@ The stream `name()` (for the purpose of offset tracking) is set to the binding `
 It can be changed using a `ConsumerCustomizer` shown above.
 If you decide to use manual offset tracking, the `Context` is available as a message header:
 
-====
 [source, java]
 ----
 int count;
@@ -48,7 +45,6 @@ public Consumer<Message<?>> input() {
     };
 }
 ----
-====
 
 Refer to the https://rabbitmq.github.io/rabbitmq-stream-java-client/stable/htmlsingle/[RabbitMQ Stream Java Client documentation] for information about configuring the environment and consumer builder.
 
@@ -61,7 +57,6 @@ Use of super streams allows for automatic scale-up scale-down with a single acti
 
 Configuration example:
 
-====
 [source, java]
 ----
 @Bean
@@ -69,9 +64,7 @@ public Consumer<Thing> input() {
     ...
 }
 ----
-====
 
-====
 [source, properties]
 ----
 spring.cloud.stream.bindings.input-in-0.destination=super
@@ -81,7 +74,6 @@ spring.cloud.stream.bindings.input-in-0.consumer.concurrency=3
 spring.cloud.stream.rabbit.bindings.input-in-0.consumer.container-type=STREAM
 spring.cloud.stream.rabbit.bindings.input-in-0.consumer.super-stream=true
 ----
-====
 
 The framework will create a super stream named `super`, with 9 partitions.
 Up to 3 instances of this application can be deployed.

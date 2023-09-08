@@ -9,7 +9,6 @@ IMPORTANT: The producer properties described above are not supported when you se
 To configure the binder to use a stream `ProducerType`, Spring Boot will configure an `Environment` `@Bean` from the applicaation properties.
 You can, optionally, add a customizer to customize the message handler.
 
-====
 [source, java]
 ----
 @Bean
@@ -24,7 +23,6 @@ ProducerMessageHandlerCustomizer<MessageHandler> handlerCustomizer() {
     };
 }
 ----
-====
 
 Refer to the https://rabbitmq.github.io/rabbitmq-stream-java-client/stable/htmlsingle/[RabbitMQ Stream Java Client documentation] for information about configuring the environment and producer builder.
 
@@ -40,7 +38,6 @@ IMPORTANT: The super stream must already exist; creating a super stream is not s
 
 Publishing to a super stream over AMQP:
 
-====
 [source, properties]
 ----
 spring.cloud.stream.bindings.output.destination=super
@@ -48,11 +45,9 @@ spring.cloud.stream.bindings.output.producer.partition-count=3
 spring.cloud.stream.bindings.output.producer.partition-key-expression=headers['cust-no']
 spring.cloud.stream.rabbit.bindings.output.producer.declare-exchange=false
 ----
-====
 
 Publishing to a super stream using the stream client:
 
-====
 [source, properties]
 ----
 spring.cloud.stream.bindings.output.destination=super
@@ -62,7 +57,6 @@ spring.cloud.stream.rabbit.bindings.output.producer.producer-type=stream-async
 spring.cloud.stream.rabbit.bindings.output.producer.super-stream=true
 spring.cloud.stream.rabbit.bindings.output.producer.declare-exchange=false
 ----
-====
 
 When using the stream client, if you set a `confirmAckChannel`, a copy of a successfully sent message will be sent to that channel.
 

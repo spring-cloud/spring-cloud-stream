@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xmlns="http://maven.apache.org/POM/4.0.0"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+		 xmlns="http://maven.apache.org/POM/4.0.0"
+		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
+	<groupId>org.springframework.cloud</groupId>
 	<artifactId>spring-cloud-stream-docs</artifactId>
 	<parent>
 		<groupId>org.springframework.cloud</groupId>
@@ -10,14 +11,14 @@
 		<version>4.1.0-SNAPSHOT</version>
 	</parent>
 	<packaging>jar</packaging>
-	<name>spring-cloud-stream-docs</name>
-	<description>Spring Cloud Stream Core Documentation</description>
+	<name>Spring Cloud Stream Docs</name>
+	<description>Spring Cloud Stream Docs</description>
 	<properties>
 		<docs.main>spring-cloud-stream</docs.main>
 		<main.basedir>${basedir}/..</main.basedir>
-		<maven.plugin.plugin.version>3.4</maven.plugin.plugin.version>
 		<configprops.inclusionPattern>.*stream.*</configprops.inclusionPattern>
-		<upload-docs-zip.phase>deploy</upload-docs-zip.phase>
+		<!-- Don't upload docs jar to central / repo.spring.io -->
+		<maven-deploy-plugin-default.phase>none</maven-deploy-plugin-default.phase>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -41,50 +42,36 @@
 		<profile>
 			<id>docs</id>
 			<build>
+				<resources>
+					<resource>
+						<directory>src/main/antora/resources/antora-resources</directory>
+						<filtering>true</filtering>
+					</resource>
+				</resources>
 				<plugins>
 					<plugin>
 						<groupId>pl.project13.maven</groupId>
 						<artifactId>git-commit-id-plugin</artifactId>
 					</plugin>
 					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-dependency-plugin</artifactId>
-					</plugin>
-					<plugin>
-						<artifactId>maven-resources-plugin</artifactId>
 					</plugin>
 					<plugin>
 						<groupId>org.codehaus.mojo</groupId>
 						<artifactId>exec-maven-plugin</artifactId>
 					</plugin>
 					<plugin>
-						<groupId>org.asciidoctor</groupId>
-						<artifactId>asciidoctor-maven-plugin</artifactId>
+						<groupId>io.spring.maven.antora</groupId>
+						<artifactId>antora-component-version-maven-plugin</artifactId>
 					</plugin>
 					<plugin>
+						<groupId>io.spring.maven.antora</groupId>
+						<artifactId>antora-maven-plugin</artifactId>
+					</plugin>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-antrun-plugin</artifactId>
-						<executions>
-							<execution>
-								<id>readme</id>
-								<phase>prepare-package</phase>
-								<goals>
-									<goal>run</goal>
-								</goals>
-								<configuration>
-									<target>
-										<path id="readme.class.path">
-											<pathelement location="${readme.main.classpath}"/>
-										</path>
-										<java classname="org.springframework.cloud.internal.asciidoctor.ReadmeMain"
-											  failonerror="yes" classpathref="${readme.class.path}">
-											<!-- Input -->
-											<arg value="${project.basedir}/src/main/asciidoc/README.adoc"/>
-											<!-- Output -->
-											<arg value="${main.basedir}/../README.adoc"/>
-										</java>
-									</target>
-								</configuration>
-							</execution>
-						</executions>
 					</plugin>
 					<plugin>
 						<artifactId>maven-deploy-plugin</artifactId>
