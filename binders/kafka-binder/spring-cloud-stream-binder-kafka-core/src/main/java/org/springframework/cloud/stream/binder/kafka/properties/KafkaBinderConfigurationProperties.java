@@ -102,7 +102,7 @@ public class KafkaBinderConfigurationProperties {
 
 	private boolean autoAddPartitions;
 
-	private boolean considerDownWhenAnyPartitionHasNoLeader;
+	private boolean considerDownWhenAnyPartitionHasNoLeader = true;
 
 	private String requiredAcks = "1";
 

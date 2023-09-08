@@ -148,7 +148,7 @@ Default: none.
 spring.cloud.stream.kafka.binder.considerDownWhenAnyPartitionHasNoLeader::
 Flag to set the binder health as `down`, when any partitions on the topic, regardless of the consumer that is receiving data from it, is found without a leader.
 +
-Default: `false`.
+Default: `true`.
 
 spring.cloud.stream.kafka.binder.certificateStoreDirectory::
 When the truststore or keystore certificate location is given as a non-local file system resource (resources supported by org.springframework.core.io.Resource e.g. CLASSPATH, HTTP, etc.),

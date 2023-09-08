@@ -55,7 +55,9 @@ public abstract class AbstractKafkaBinderHealthIndicator extends AbstractHealthI
 
 	protected Consumer<?, ?> metadataConsumer;
 
-	protected boolean considerDownWhenAnyPartitionHasNoLeader;
+	// if the binder detects that a partition for the topic
+	// is without a leader, mark the binder health as DOWN.
+	protected boolean considerDownWhenAnyPartitionHasNoLeader = true;
 
 	private final ConsumerFactory<?, ?> consumerFactory;
 
