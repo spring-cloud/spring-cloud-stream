@@ -1,6 +1,6 @@
-name: PROJECT_WITHOUT_SPRING
+name: cloud-stream
 version: true
-title: PROJECT_NAME
+title: spring-cloud-stream
 nav:
   - modules/ROOT/nav.adoc
 ext:

@@ -22,7 +22,6 @@ Following are the maven coordinates for the reactive Kafka binder.
 
 In this section, we show some basic code snippets for writing a reactive Kafka application using the reactive binder and details around them.
 
-====
 [source, java]
 ----
 @Bean
@@ -30,7 +29,6 @@ public Function<Flux<String>, Flux<String>> uppercase() {
     return s -> s.map(String::toUpperCase);
 }
 ----
-====
 
 You can use the above `upppercase` function with both message channel based Kafka binder (`spring-cloud-stream-binder-kafka`) as well as the reactive Kafka binder (`spring-cloud-stream-binder-kafka-reactive`), the topic of discussion in this section.
 When using this function with the regular Kafka binder, although you are using reactive types in the application (i.e., in the `uppercase` function), you only get the reactive streams within the execution of your function.
@@ -52,7 +50,6 @@ The interfaces extend `Ordered` so the customizers will be applied in the order 
 IMPORTANT: The binder does not commit offsets by default.
 Starting with version 4.0.2, the `KafkaHeaders.ACKNOWLEDGMENT` header contains a `ReceiverOffset` object which allows you to cause the offset to be committed by calling its `acknowledge()` or `commit()` methods.
 
-====
 [source, java]
 ----
 @Bean
@@ -63,7 +60,6 @@ public Consumer<Flux<Message<String>> consume() {
     }
 }
 ----
-====
 
 Refer to the `reactor-kafka` documentation and javadocs for more information.
 
@@ -75,7 +71,6 @@ IMPORTANT: 4.0.2 also provided `reactiveAutoCommit`, but the implementation was 
 
 The following is an example of how to use `reaciveAutoCommit`.
 
-====
 [source, java]
 ----
 @Bean
@@ -89,7 +84,6 @@ Consumer<Flux<Flux<ConsumerRecord<?, String>>>> input() {
 			.subscribe();
 }
 ----
-====
 
 Note that `reactor-kafka` returns a `Flux<Flux<ConsumerRecord<?, ?>>>` when using auto commit.
 Given that Spring has no access to the contents of the inner flux, the application must deal with the native `ConsumerRecord`; there is no message conversion or conversion service applied to the contents.
@@ -102,7 +96,6 @@ In the above `upppercase` function, we are consuming the record as `Flux<String>
 There might be occasions in which you need to receive the record in the original received format - the `ReceiverRecord`.
 Here is such a function.
 
-====
 [source, java]
 ----
 @Bean
@@ -110,7 +103,6 @@ public Function<Flux<ReceiverRecord<byte[], byte[]>>, Flux<String>> lowercase() 
     return s -> s.map(rec -> new String(rec.value()).toLowerCase());
 }
 ----
-====
 
 In this function, note that, we are consuming the record as `Flux<ReceiverRecord<byte[], byte[]>>` and then producing it as `Flux<String>`.
 `ReceiverRecord` is the basic received record which is a specialized Kafka `ConsumerRecord` in Reactor Kafka.
@@ -121,7 +113,6 @@ Therefore, by the time your handler method receives it, the payload is already e
 By providing a custom `RecordMessageConverter` implementation in the application, you can override the default behavior.
 For example, if you want to consume the record as raw `Flux<ReceiverRecord<byte[], byte[]>>`, then you can provide the following bean definition in the application.
 
-====
 [source, java]
 ----
 @Bean
@@ -144,7 +135,6 @@ RecordMessageConverter fullRawReceivedRecord() {
     };
 }
 ----
-====
 
 Then, you need to instruct the framework to use this converter for the required binding.
 Here is an example based on our `lowercase` function.
@@ -201,7 +191,6 @@ The `resultMetadataChannel` **must** be a `FluxMessageChannel` instance.
 
 Here is an example of how to use this feature, with correlation metadata of type `Integer`:
 
-====
 [source, java]
 ----
 @Bean
@@ -219,18 +208,15 @@ void handleResults(SenderResult<Integer> result) {
     }
 }
 ----
-====
 
 To set the correlation metadata on an output record, set the `CORRELATION_ID` header:
 
-====
 [source, java]
 ----
 streamBridge.send("words1", MessageBuilder.withPayload("foobar")
         .setCorrelationId(42)
         .build());
 ----
-====
 
 When using the feature with a `Function`, the function output type must be a `Message<?>` with the correlation id header set to the desired value.
 

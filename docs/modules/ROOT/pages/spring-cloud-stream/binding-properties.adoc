@@ -147,7 +147,6 @@ Similarly, for polled consumers, add a `MessageSourceCustomizer` bean.
 
 The following is an example for the RabbitMQ binder:
 
-====
 [source, java]
 ----
 @Bean
@@ -160,7 +159,6 @@ public MessageSourceCustomizer<AmqpMessageSource> sourceCustomizer() {
     return (source, dest, group) -> source.setPropertiesConverter(customPropertiesConverter);
 }
 ----
-====
 
 [[producer-properties]]
 == Producer Properties
@@ -240,7 +238,6 @@ In some cases Producer Properties are not enough to properly configure a produci
 while configuring such producing MessageHandler. Regardless of the reason, spring-cloud-stream provides `ProducerMessageHandlerCustomizer` to accomplish it.
 
 
-====
 [source, java]
 ----
 @FunctionalInterface
@@ -260,7 +257,6 @@ public interface ProducerMessageHandlerCustomizer<H extends MessageHandler> {
 As you can see it gives you access to an actual instance of producing `MessageHandler` which you can configure as you wish.
 All you need to do is provide implementation of this strategy and configure it as a `@Bean`.
 
-====
 
 [[content-type-management]]
 = Content Type Negotiation

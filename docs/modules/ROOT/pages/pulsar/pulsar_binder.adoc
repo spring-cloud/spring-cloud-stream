@@ -9,8 +9,11 @@ In this section, we will go through the basic details of this binder.
 
 We need to include the following dependency on your application to use Apache Pulsar binder for Spring Cloud Stream.
 
+[tabs]
+======
+Maven::
++
 [source,xml,indent=0,subs="verbatim,attributes",role="primary"]
-.Maven
 ----
 <dependencies>
     <dependency>
@@ -21,13 +24,15 @@ We need to include the following dependency on your application to use Apache Pu
 </dependencies>
 ----
 
+Gradle::
++
 [source,groovy,indent=0,subs="verbatim,attributes",role="secondary"]
-.Gradle
 ----
 dependencies {
     implementation 'org.springframework.pulsar:spring-pulsar-spring-cloud-stream-binder:{spring-pulsar-version}'
 }
 ----
+======
 
 [[overview]]
 == Overview
@@ -39,7 +44,6 @@ Applications can start from a middleware-neutral manner and then map Pulsar topi
 Spring Cloud Stream is built on top of Spring Boot, and when writing an event-driven microservice using Spring Cloud Stream, you are essentially writing a Boot application.
 Here is a straightforward Spring Cloud Stream application.
 
-====
 [source, java]
 ----
 @SpringBootApplication
@@ -79,7 +83,6 @@ public class SpringPulsarBinderSampleApp {
 }
 
 ----
-====
 
 The above sample application, a full-blown Spring Boot application, deserves a few explanations. However, on a first pass, you can see that this is just plain Java and a few Spring and Spring Boot annotations.
 We have three `Bean` methods here - a `java.util.function.Supplier`, a `java.util.function.Function`, and finally, a `java.util.function.Consumer`.
