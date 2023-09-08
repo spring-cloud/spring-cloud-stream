@@ -1,5 +1,6 @@
 [[overview]]
 = Overview
+:page-section-summary-toc: 1
 
 The following image shows a simplified diagram of how the Apache Kafka binder operates:
 

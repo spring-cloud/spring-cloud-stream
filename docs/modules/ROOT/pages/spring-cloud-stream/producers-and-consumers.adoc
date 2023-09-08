@@ -1,5 +1,6 @@
 [[producers-and-consumers]]
 = Producers and Consumers
+:page-section-summary-toc: 1
 
 The following image shows the general relationship of producers and consumers:
 

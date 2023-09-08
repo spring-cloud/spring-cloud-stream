@@ -1,5 +1,6 @@
 [[custom-kafka-binder-health-indicator]]
 = Custom Kafka Binder Health Indicator
+:page-section-summary-toc: 1
 
 Kafka binder activates a default health indicator when Spring Boot actuator is on the classpath.
 This health indicator checks the health of the binder and any communication issues with the Kafka broker.

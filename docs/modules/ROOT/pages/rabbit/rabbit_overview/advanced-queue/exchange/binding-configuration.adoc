@@ -1,5 +1,6 @@
 [[advanced-queue/exchange/binding-configuration]]
 = Advanced Queue/Exchange/Binding Configuration
+:page-section-summary-toc: 1
 
 From time to time, the RabbitMQ team add new features that are enabled by setting some argument when declaring, for example, a queue.
 Generally, such features are enabled in the binder by adding appropriate properties, but this may not be immediately available in a current version.

@@ -1,5 +1,6 @@
 [[advanced-listener-container-configuration]]
 = Advanced Listener Container Configuration
+:page-section-summary-toc: 1
 
 To set listener container properties that are not exposed as binder or binding properties, add a single bean of type `ListenerContainerCustomizer` to the application context.
 The binder and binding properties will be set and then the customizer will be called.

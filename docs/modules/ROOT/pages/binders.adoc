@@ -2,6 +2,7 @@
 
 [[binders]]
 = Binder Implementations
+:page-section-summary-toc: 1
 
 The following binder implementations are available:
 

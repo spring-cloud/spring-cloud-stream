@@ -1,5 +1,6 @@
 [[destination-binders]]
 = Destination Binders
+:page-section-summary-toc: 1
 
 Destination Binders are extension components of Spring Cloud Stream responsible for providing the necessary configuration and implementation to facilitate
 integration with external messaging systems.
