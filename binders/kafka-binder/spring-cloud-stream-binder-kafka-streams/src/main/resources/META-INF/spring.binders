@@ -1,8 +1,0 @@
-kstream:\
-org.springframework.cloud.stream.binder.kafka.streams.KStreamBinderConfiguration
-ktable:\
-org.springframework.cloud.stream.binder.kafka.streams.KTableBinderConfiguration
-globalktable:\
-org.springframework.cloud.stream.binder.kafka.streams.GlobalKTableBinderConfiguration
-
-

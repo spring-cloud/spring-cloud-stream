@@ -1,9 +1,0 @@
-[[state-cleanup]]
-= State Cleanup
-:page-section-summary-toc: 1
-
-By default, no local state is cleaned up when the binding is stopped.
-This is the same behavior effective from Spring Kafka version 2.7.
-See https://docs.spring.io/spring-kafka/reference/html/#streams-config[Spring Kafka documentation] for more details.
-To modify this behavior simply add a single `CleanupConfig` `@Bean` (configured to clean up on start, stop, or neither) to the application context; the bean will be detected and wired into the factory bean.
-

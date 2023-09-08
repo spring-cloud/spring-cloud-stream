@@ -1,9 +1,0 @@
-[[advanced-queue/exchange/binding-configuration]]
-= Advanced Queue/Exchange/Binding Configuration
-:page-section-summary-toc: 1
-
-From time to time, the RabbitMQ team add new features that are enabled by setting some argument when declaring, for example, a queue.
-Generally, such features are enabled in the binder by adding appropriate properties, but this may not be immediately available in a current version.
-Starting with version 3.0.1, you can now add `DeclarableCustomizer` bean(s) to the application context to modify a `Declarable` (`Queue`, `Exchange` or `Binding`) just before the declaration is performed.
-This allows you to add arguments that are not currently directly supported by the binder.
-
