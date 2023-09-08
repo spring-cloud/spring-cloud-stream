@@ -25,7 +25,7 @@ import org.springframework.util.Assert;
  * @author Sercan Karaoglu
  * @author Christian Tzolov
  */
-@ConfigurationProperties(prefix = "spring.cloud.schema.avro")
+@ConfigurationProperties(prefix = "spring.cloud.stream.schema.avro")
 public class AvroMessageConverterProperties {
 
 	private boolean dynamicSchemaGenerationEnabled;

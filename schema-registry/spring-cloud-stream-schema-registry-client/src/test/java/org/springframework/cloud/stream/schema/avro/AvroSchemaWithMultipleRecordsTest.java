@@ -54,20 +54,20 @@ public class AvroSchemaWithMultipleRecordsTest {
 	@Test
 	public void schemaLocationWithMultipleRecords() throws Exception {
 		testMultipleRecordsSchemaLoading("avroSchemaRegistryClientMessageConverter",
-				"--spring.cloud.schema.avro.schema-locations=classpath:schemas/user1_multiple_records.schema");
+				"--spring.cloud.stream.schema.avro.schema-locations=classpath:schemas/user1_multiple_records.schema");
 	}
 
 	@Test
 	public void schemaImportWithMultipleRecords() throws Exception {
 		testMultipleRecordsSchemaLoading(
 				"avroSchemaRegistryClientMessageConverter",
-				"--spring.cloud.schema.avro.schema-imports=classpath:schemas/user1_multiple_records.schema");
+				"--spring.cloud.stream.schema.avro.schema-imports=classpath:schemas/user1_multiple_records.schema");
 	}
 
 	@Test
 	public void schemaLocationWithMultipleRecords2() throws Exception {
 		testMultipleRecordsSchemaLoading("avroSchemaMessageConverter",
-				"--spring.cloud.schema.avro.schema-locations=classpath:schemas/user1_multiple_records.schema");
+				"--spring.cloud.stream.schema.avro.schema-locations=classpath:schemas/user1_multiple_records.schema");
 	}
 
 	private void testMultipleRecordsSchemaLoading(String avroConvertorType, String schemaLoadingProperty)
