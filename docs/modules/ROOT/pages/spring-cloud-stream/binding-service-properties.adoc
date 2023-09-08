@@ -1,0 +1,42 @@
+[[binding-service-properties]]
+= Binding Service Properties
+
+These properties are exposed via `org.springframework.cloud.stream.config.BindingServiceProperties`
+
+spring.cloud.stream.instanceCount::
+The number of deployed instances of an application.
+Must be set for partitioning on the producer side. Must be set on the consumer side when using RabbitMQ and with Kafka if `autoRebalanceEnabled=false`.
++
+Default: `1`.
+
+spring.cloud.stream.instanceIndex::
+The instance index of the application: A number from `0` to `instanceCount - 1`.
+Used for partitioning with RabbitMQ and with Kafka if `autoRebalanceEnabled=false`.
+Automatically set in Cloud Foundry to match the application's instance index.
+
+spring.cloud.stream.dynamicDestinations::
+A list of destinations that can be bound dynamically (for example, in a dynamic routing scenario).
+If set, only listed destinations can be bound.
++
+Default: empty (letting any destination be bound).
+
+spring.cloud.stream.defaultBinder::
+The default binder to use, if multiple binders are configured.
+See <<multiple-binders,Multiple Binders on the Classpath>>.
++
+Default: empty.
+
+spring.cloud.stream.overrideCloudConnectors::
+This property is only applicable when the `cloud` profile is active and Spring Cloud Connectors are provided with the application.
+If the property is `false` (the default), the binder detects a suitable bound service (for example, a RabbitMQ service bound in Cloud Foundry for the RabbitMQ binder) and uses it for creating connections (usually through Spring Cloud Connectors).
+When set to `true`, this property instructs binders to completely ignore the bound services and rely on Spring Boot properties (for example, relying on the `spring.rabbitmq.*` properties provided in the environment for the RabbitMQ binder).
+The typical usage of this property is to be nested in a customized environment <<multiple-systems, when connecting to multiple systems>>.
++
+Default: `false`.
+
+spring.cloud.stream.bindingRetryInterval::
+The interval (in seconds) between retrying binding creation when, for example, the binder does not support late binding and the broker (for example, Apache Kafka) is down.
+Set it to zero to treat such conditions as fatal, preventing the application from starting.
++
+Default: `30`
+

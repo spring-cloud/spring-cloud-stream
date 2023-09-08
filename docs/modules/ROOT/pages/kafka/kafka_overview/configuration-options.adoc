@@ -1,58 +1,12 @@
-[partintro]
---
-This guide describes the Apache Kafka implementation of the Spring Cloud Stream Binder.
-It contains information about its design, usage, and configuration options, as well as information on how the Stream Cloud Stream concepts map onto Apache Kafka specific constructs.
-In addition, this guide explains the Kafka Streams binding capabilities of Spring Cloud Stream.
---
-
-== Apache Kafka Binder
-
-=== Usage
-
-To use Apache Kafka binder, you need to add `spring-cloud-stream-binder-kafka` as a dependency to your Spring Cloud Stream application, as shown in the following example for Maven:
-
-[source,xml]
-----
-<dependency>
-  <groupId>org.springframework.cloud</groupId>
-  <artifactId>spring-cloud-stream-binder-kafka</artifactId>
-</dependency>
-----
-
-Alternatively, you can also use the Spring Cloud Stream Kafka Starter, as shown in the following example for Maven:
-
-[source,xml]
-----
-<dependency>
-  <groupId>org.springframework.cloud</groupId>
-  <artifactId>spring-cloud-starter-stream-kafka</artifactId>
-</dependency>
-----
-
-=== Overview
-
-The following image shows a simplified diagram of how the Apache Kafka binder operates:
-
-.Kafka Binder
-image::{github-raw}/docs/src/main/asciidoc/images/kafka-binder.png[width=300,scaledwidth="50%"]
-
-The Apache Kafka Binder implementation maps each destination to an Apache Kafka topic.
-The consumer group maps directly to the same Apache Kafka concept.
-Partitioning also maps directly to Apache Kafka partitions as well.
-
-The binder currently uses the Apache Kafka `kafka-clients` version `3.1.0`.
-This client can communicate with older brokers (see the Kafka documentation), but certain features may not be available.
-For example, with versions earlier than 0.11.x.x, native headers are not supported.
-Also, 0.11.x.x does not support the `autoAddPartitions` property.
-
-=== Configuration Options
+[[configuration-options]]
+= Configuration Options
 
 This section contains the configuration options used by the Apache Kafka binder.
 
 For common configuration options and properties pertaining to the binder, see the https://cloud.spring.io/spring-cloud-static/spring-cloud-stream/current/reference/html/spring-cloud-stream.html#binding-properties[binding properties] in core documentation.
 
 [[kafka-binder-properties]]
-==== Kafka Binder Properties
+== Kafka Binder Properties
 
 spring.cloud.stream.kafka.binder.brokers::
 A list of brokers to which the Kafka binder connects.
@@ -148,7 +102,7 @@ Default: none.
 spring.cloud.stream.kafka.binder.considerDownWhenAnyPartitionHasNoLeader::
 Flag to set the binder health as `down`, when any partitions on the topic, regardless of the consumer that is receiving data from it, is found without a leader.
 +
-Default: `true`.
+Default: `false`.
 
 spring.cloud.stream.kafka.binder.certificateStoreDirectory::
 When the truststore or keystore certificate location is given as a non-local file system resource (resources supported by org.springframework.core.io.Resource e.g. CLASSPATH, HTTP, etc.),
@@ -181,7 +135,7 @@ Enable Micrometer observation registry on all the bindings in this binder.
 Default: false
 
 [[kafka-consumer-properties]]
-==== Kafka Consumer Properties
+== Kafka Consumer Properties
 
 NOTE: To avoid repetition, Spring Cloud Stream supports setting values for all channels, in the format of `spring.cloud.stream.kafka.default.consumer.<property>=<value>`.
 
@@ -353,7 +307,7 @@ Default: none.
 
 
 [[reset-offsets]]
-==== Resetting Offsets
+== Resetting Offsets
 
 When an application starts, the initial position in each assigned partition depends on two properties `startOffset` and `resetOffsets`.
 If `resetOffsets` is `false`, normal Kafka consumer https://kafka.apache.org/documentation/#consumerconfigs_auto.offset.reset[`auto.offset.reset`] semantics apply.
@@ -379,7 +333,8 @@ IMPORTANT: If a rebalance occurs after the initial assignment, the seeks will on
 
 For more control over topic offsets, see <<rebalance-listener>>; when a listener is provided, `resetOffsets` should not be set to `true`, otherwise, that will cause an error.
 
-==== Consuming Batches
+[[consuming-batches]]
+== Consuming Batches
 
 Starting with version 3.0, when `spring.cloud.stream.bindings.<name>.consumer.batch-mode` is set to `true`, all of the records received by polling the Kafka `Consumer` will be presented as a `List<?>` to the listener method.
 Otherwise, the method will be called with one record at a time.
@@ -394,7 +349,7 @@ You can also use a manual `AckMode` and call `Ackowledgment.nack(index, sleep)` 
 Refer to the https://docs.spring.io/spring-kafka/docs/2.3.15.BUILD-SNAPSHOT/reference/html/#committing-offsets[Spring for Apache Kafka documentation] for more information about these techniques.
 
 [[kafka-producer-properties]]
-==== Kafka Producer Properties
+== Kafka Producer Properties
 
 NOTE: To avoid repetition, Spring Cloud Stream supports setting values for all channels, in the format of `spring.cloud.stream.kafka.default.producer.<property>=<value>`.
 
@@ -517,11 +472,13 @@ If set to true, records published to this output binding will not be run in a tr
 +
 Default: `false`
 
-==== Usage examples
+[[usage-examples]]
+== Usage examples
 
 In this section, we show the use of the preceding properties for specific scenarios.
 
-===== Example: Setting `ackMode` to `MANUAL` and Relying on Manual Acknowledgement
+[[example:-setting-ackmode-to-manual-and-relying-on-manual-acknowledgement]]
+=== Example: Setting `ackMode` to `MANUAL` and Relying on Manual Acknowledgement
 
 This example illustrates how one may manually acknowledge offsets in a consumer application.
 
@@ -549,7 +506,8 @@ public class ManuallyAcknowdledgingConsumer {
 }
 ----
 
-===== Example: Security Configuration
+[[example:-security-configuration]]
+=== Example: Security Configuration
 
 Apache Kafka 0.9 supports secure connections between client and brokers.
 To take advantage of this feature, follow the guidelines in the https://kafka.apache.org/090/documentation.html#security_configclients[Apache Kafka Documentation] as well as the Kafka 0.9 https://docs.confluent.io/2.0.0/kafka/security.html[security guidelines from the Confluent documentation].
@@ -568,7 +526,8 @@ When using Kerberos, follow the instructions in the https://kafka.apache.org/090
 
 Spring Cloud Stream supports passing JAAS configuration information to the application by using a JAAS configuration file and using Spring Boot properties.
 
-====== Using JAAS Configuration Files
+[[using-jaas-configuration-files]]
+==== Using JAAS Configuration Files
 
 The JAAS and (optionally) krb5 file locations can be set for Spring Cloud Stream applications by using system properties.
 The following example shows how to launch a Spring Cloud Stream application with SASL and Kerberos by using a JAAS configuration file:
@@ -581,7 +540,8 @@ The following example shows how to launch a Spring Cloud Stream application with
    --spring.cloud.stream.kafka.binder.configuration.security.protocol=SASL_PLAINTEXT
 ----
 
-====== Using Spring Boot Properties
+[[using-spring-boot-properties]]
+==== Using Spring Boot Properties
 
 As an alternative to having a JAAS configuration file, Spring Cloud Stream provides a mechanism for setting up the JAAS configuration for Spring Cloud Stream applications by using Spring Boot properties.
 
@@ -637,7 +597,8 @@ Usually, applications may use principals that do not have administrative rights 
 Consequently, relying on Spring Cloud Stream to create/modify topics may fail.
 In secure environments, we strongly recommend creating topics and managing ACLs administratively by using Kafka tooling.
 
-====== Multi-binder configuration and JAAS
+[[multi-binder-configuration-and-jaas]]
+==== Multi-binder configuration and JAAS
 
 When connecting to multiple clusters in which each one requires separate JAAS configuration, then set the JAAS configuration using the property `sasl.jaas.config`.
 When this property is present in the application, it takes precedence over the other strategies mentioned above.
@@ -679,7 +640,7 @@ Note that both the Kafka clusters, and the `sasl.jaas.config` values for each of
 See this https://github.com/spring-cloud/spring-cloud-stream-samples/tree/main/multi-binder-samples/kafka-multi-binder-jaas[sample application] for more details on how to setup and run such an application.
 
 [[pause-resume]]
-===== Example: Pausing and Resuming the Consumer
+=== Example: Pausing and Resuming the Consumer
 
 If you wish to suspend consumption but not cause a partition rebalance, you can pause and resume the consumer.
 This is facilitated by managing the binding lifecycle as shown in **Binding visualization and control** in the Spring Cloud Stream documentation, using `State.PAUSED` and `State.RESUMED`.
@@ -687,389 +648,3 @@ This is facilitated by managing the binding lifecycle as shown in **Binding visu
 To resume, you can use an `ApplicationListener` (or `@EventListener` method) to receive `ListenerContainerIdleEvent` instances.
 The frequency at which events are published is controlled by the `idleEventInterval` property.
 
-[[kafka-transactional-binder]]
-=== Transactional Binder
-
-Enable transactions by setting `spring.cloud.stream.kafka.binder.transaction.transactionIdPrefix` to a non-empty value, e.g. `tx-`.
-When used in a processor application, the consumer starts the transaction; any records sent on the consumer thread participate in the same transaction.
-When the listener exits normally, the listener container will send the offset to the transaction and commit it.
-A common producer factory is used for all producer bindings configured using `spring.cloud.stream.kafka.binder.transaction.producer.*` properties; individual binding Kafka producer properties are ignored.
-
-IMPORTANT: Normal binder retries (and dead lettering) are not supported with transactions because the retries will run in the original transaction, which may be rolled back and any published records will be rolled back too.
-When retries are enabled (the common property `maxAttempts` is greater than zero) the retry properties are used to configure a `DefaultAfterRollbackProcessor` to enable retries at the container level.
-Similarly, instead of publishing dead-letter records within the transaction, this functionality is moved to the listener container, again via the `DefaultAfterRollbackProcessor` which runs after the main transaction has rolled back.
-
-If you wish to use transactions in a source application, or from some arbitrary thread for producer-only transaction (e.g. `@Scheduled` method), you must get a reference to the transactional producer factory and define a `KafkaTransactionManager` bean using it.
-
-====
-[source, java]
-----
-@Bean
-public PlatformTransactionManager transactionManager(BinderFactory binders,
-        @Value("${unique.tx.id.per.instance}") String txId) {
-
-    ProducerFactory<byte[], byte[]> pf = ((KafkaMessageChannelBinder) binders.getBinder(null,
-            MessageChannel.class)).getTransactionalProducerFactory();
-    KafkaTransactionManager tm = new KafkaTransactionManager<>(pf);
-    tm.setTransactionId(txId)
-    return tm;
-}
-----
-====
-
-Notice that we get a reference to the binder using the `BinderFactory`; use `null` in the first argument when there is only one binder configured.
-If more than one binder is configured, use the binder name to get the reference.
-Once we have a reference to the binder, we can obtain a reference to the `ProducerFactory` and create a transaction manager.
-
-Then you would use normal Spring transaction support, e.g. `TransactionTemplate` or `@Transactional`, for example:
-
-====
-[source, java]
-----
-public static class Sender {
-
-    @Transactional
-    public void doInTransaction(MessageChannel output, List<String> stuffToSend) {
-        stuffToSend.forEach(stuff -> output.send(new GenericMessage<>(stuff)));
-    }
-
-}
-----
-====
-
-If you wish to synchronize producer-only transactions with those from some other transaction manager, use a `ChainedTransactionManager`.
-
-IMPORTANT: If you deploy multiple instances of your application, each instance needs a unique `transactionIdPrefix`.
-
-[[kafka-error-channels]]
-=== Error Channels
-
-Starting with version 1.3, the binder unconditionally sends exceptions to an error channel for each consumer destination and can also be configured to send async producer send failures to an error channel.
-See https://cloud.spring.io/spring-cloud-static/spring-cloud-stream/current/reference/html/spring-cloud-stream.html#spring-cloud-stream-overview-error-handling[this section on error handling] for more information.
-
-The payload of the `ErrorMessage` for a send failure is a `KafkaSendFailureException` with properties:
-
-* `failedMessage`: The Spring Messaging `Message<?>` that failed to be sent.
-* `record`: The raw `ProducerRecord` that was created from the `failedMessage`
-
-There is no automatic handling of producer exceptions (such as sending to a <<kafka-dlq-processing, Dead-Letter queue>>).
-You can consume these exceptions with your own Spring Integration flow.
-
-[[kafka-metrics]]
-=== Kafka Metrics
-
-Kafka binder module exposes the following metrics:
-
-`spring.cloud.stream.binder.kafka.offset`: This metric indicates how many messages have not been yet consumed from a given binder's topic by a given consumer group.
-The metrics provided are based on the Micrometer library.
-The binder creates the `KafkaBinderMetrics` bean if Micrometer is on the classpath and no other such beans provided by the application.
-The metric contains the consumer group information, topic and the actual lag in committed offset from the latest offset on the topic.
-This metric is particularly useful for providing auto-scaling feedback to a PaaS platform.
-
-The metric collection behaviour can be configured by setting properties in the `spring.cloud.stream.kafka.binder.metrics` namespace,
-refer to the <<kafka-binder-properties, kafka binder properties section>> for more information.
-
-You can exclude `KafkaBinderMetrics` from creating the necessary infrastructure like consumers and then reporting the metrics by providing the following component in the application.
-
-```
-@Component
-class NoOpBindingMeters {
-	NoOpBindingMeters(MeterRegistry registry) {
-		registry.config().meterFilter(
-				MeterFilter.denyNameStartsWith(KafkaBinderMetrics.OFFSET_LAG_METRIC_NAME));
-	}
-}
-```
-
-More details on how to suppress meters selectively can be found https://micrometer.io/docs/concepts#_meter_filters[here].
-
-[[kafka-tombstones]]
-=== Tombstone Records (null record values)
-
-When using compacted topics, a record with a `null` value (also called a tombstone record) represents the deletion of a key.
-To receive such messages in a Spring Cloud Stream function, you can use the following strategy.
-
-====
-[source, java]
-----
-@Bean
-public Function<Message<Person>, String> myFunction() {
-    return value -> {
-        Object v = value.getPayload();
-        String className = v.getClass().getName();
-        if (className.isEqualTo("org.springframework.kafka.support.KafkaNull")) {
-            // this is a tombstone record
-        }
-        else {
-            // continue with processing
-        }
-    };
-}
-----
-====
-
-[[rebalance-listener]]
-=== Using a KafkaBindingRebalanceListener
-
-Applications may wish to seek topics/partitions to arbitrary offsets when the partitions are initially assigned, or perform other operations on the consumer.
-Starting with version 2.1, if you provide a single `KafkaBindingRebalanceListener` bean in the application context, it will be wired into all Kafka consumer bindings.
-
-====
-[source, java]
-----
-public interface KafkaBindingRebalanceListener {
-
-	/**
-	 * Invoked by the container before any pending offsets are committed.
-	 * @param bindingName the name of the binding.
-	 * @param consumer the consumer.
-	 * @param partitions the partitions.
-	 */
-	default void onPartitionsRevokedBeforeCommit(String bindingName, Consumer<?, ?> consumer,
-			Collection<TopicPartition> partitions) {
-
-	}
-
-	/**
-	 * Invoked by the container after any pending offsets are committed.
-	 * @param bindingName the name of the binding.
-	 * @param consumer the consumer.
-	 * @param partitions the partitions.
-	 */
-	default void onPartitionsRevokedAfterCommit(String bindingName, Consumer<?, ?> consumer, Collection<TopicPartition> partitions) {
-
-	}
-
-	/**
-	 * Invoked when partitions are initially assigned or after a rebalance.
-	 * Applications might only want to perform seek operations on an initial assignment.
-	 * @param bindingName the name of the binding.
-	 * @param consumer the consumer.
-	 * @param partitions the partitions.
-	 * @param initial true if this is the initial assignment.
-	 */
-	default void onPartitionsAssigned(String bindingName, Consumer<?, ?> consumer, Collection<TopicPartition> partitions,
-			boolean initial) {
-
-	}
-
-}
-----
-====
-
-You cannot set the `resetOffsets` consumer property to `true` when you provide a rebalance listener.
-
-[[retry-and-dlq-processing]]
-=== Retry and Dead Letter Processing
-
-By default, when you configure retry (e.g. `maxAttemts`) and `enableDlq` in a consumer binding, these functions are performed within the binder, with no participation by the listener container or Kafka consumer.
-
-There are situations where it is preferable to move this functionality to the listener container, such as:
-
-* The aggregate of retries and delays will exceed the consumer's `max.poll.interval.ms` property, potentially causing a partition rebalance.
-* You wish to publish the dead letter to a different Kafka cluster.
-* You wish to add retry listeners to the error handler.
-* ...
-
-To configure moving this functionality from the binder to the container, define a `@Bean` of type `ListenerContainerWithDlqAndRetryCustomizer`.
-This interface has the following methods:
-
-====
-[source, java]
-----
-/**
- * Configure the container.
- * @param container the container.
- * @param destinationName the destination name.
- * @param group the group.
- * @param dlqDestinationResolver a destination resolver for the dead letter topic (if
- * enableDlq).
- * @param backOff the backOff using retry properties (if configured).
- * @see #retryAndDlqInBinding(String, String)
- */
-void configure(AbstractMessageListenerContainer<?, ?> container, String destinationName, String group,
-        @Nullable BiFunction<ConsumerRecord<?, ?>, Exception, TopicPartition> dlqDestinationResolver,
-        @Nullable BackOff backOff);
-
-/**
- * Return false to move retries and DLQ from the binding to a customized error handler
- * using the retry metadata and/or a {@code DeadLetterPublishingRecoverer} when
- * configured via
- * {@link #configure(AbstractMessageListenerContainer, String, String, BiFunction, BackOff)}.
- * @param destinationName the destination name.
- * @param group the group.
- * @return false to disable retries and DLQ in the binding
- */
-default boolean retryAndDlqInBinding(String destinationName, String group) {
-    return true;
-}
-----
-====
-
-The destination resolver and `BackOff` are created from the binding properties (if configured). The `KafkaTemplate` uses configuration from `spring.kafka....` properties. You can then use these to create a custom error handler and dead letter publisher; for example:
-
-====
-[source, java]
-----
-@Bean
-ListenerContainerWithDlqAndRetryCustomizer cust(KafkaTemplate<?, ?> template) {
-    return new ListenerContainerWithDlqAndRetryCustomizer() {
-
-        @Override
-        public void configure(AbstractMessageListenerContainer<?, ?> container, String destinationName,
-                String group,
-                @Nullable BiFunction<ConsumerRecord<?, ?>, Exception, TopicPartition> dlqDestinationResolver,
-                @Nullable BackOff backOff) {
-
-            if (destinationName.equals("topicWithLongTotalRetryConfig")) {
-                ConsumerRecordRecoverer dlpr = new DeadLetterPublishingRecoverer(template,
-                        dlqDestinationResolver);
-                container.setCommonErrorHandler(new DefaultErrorHandler(dlpr, backOff));
-            }
-        }
-
-        @Override
-        public boolean retryAndDlqInBinding(String destinationName, String group) {
-            return !destinationName.contains("topicWithLongTotalRetryConfig");
-        }
-
-    };
-}
-----
-====
-
-Now, only a single retry delay needs to be greater than the consumer's `max.poll.interval.ms` property.
-
-When working with several binders, the 'ListenerContainerWithDlqAndRetryCustomizer' bean gets overridden by the 'DefaultBinderFactory'. For the bean
-to apply, you need to use a 'BinderCustomizer' to set the container customizer (See <<binder-customizer>>):
-====
-[source, java]
-----
-@Bean
-public BinderCustomizer binderCustomizer(ListenerContainerWithDlqAndRetryCustomizer containerCustomizer) {
-    return (binder, binderName) -> {
-        if (binder instanceof KafkaMessageChannelBinder kafkaMessageChannelBinder) {
-            kafkaMessageChannelBinder.setContainerCustomizer(containerCustomizer);
-        }
-        else if (binder instanceof KStreamBinder) {
-            ...
-        }
-        else if (binder instanceof RabbitMessageChannelBinder) {
-            ...
-        }
-    };
-}
-----
-====
-
-[[consumer-producer-config-customizer]]
-=== Customizing Consumer and Producer configuration
-
-If you want advanced customization of consumer and producer configuration that is used for creating `ConsumerFactory` and `ProducerFactory` in Kafka,
-you can implement the following customizers.
-
-* ConsumerConfigCustomizer
-* ProducerConfigCustomizer
-
-Both of these interfaces provide a way to configure the config map used for consumer and producer properties.
-For example, if you want to gain access to a bean that is defined at the application level, you can inject that in the implementation of the `configure` method.
-When the binder discovers that these customizers are available as beans, it will invoke the `configure` method right before creating the consumer and producer factories.
-
-Both of these interfaces also provide access to both the binding and destination names so that they can be accessed while customizing producer and consumer properties.
-
-[[admin-client-config-customization]]
-=== Customizing AdminClient Configuration
-
-As with consumer and producer config customization above, applications can also customize the configuration for admin clients by providing an `AdminClientConfigCustomizer`.
-AdminClientConfigCustomizer's configure method provides access to the admin client properties, using which you can define further customization.
-Binder's Kafka topic provisioner gives the highest precedence for the properties given through this customizer.
-Here is an example of providing this customizer bean.
-
-```
-@Bean
-public AdminClientConfigCustomizer adminClientConfigCustomizer() {
-    return props -> {
-        props.put(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, "SASL_SSL");
-    };
-}
-```
-
-[[custom-kafka-binder-health-indicator]]
-=== Custom Kafka Binder Health Indicator
-
-Kafka binder activates a default health indicator when Spring Boot actuator is on the classpath.
-This health indicator checks the health of the binder and any communication issues with the Kafka broker.
-If an application wants to disable this default health check implementation and include a custom implementation, then it can provide an implementation for `KafkaBinderHealth` interface.
-`KafkaBinderHealth` is a marker interface that extends from `HealthIndicator`.
-In the custom implementation, it must provide an implementation for the `health()` method.
-The custom implementation must be present in the application configuration as a bean.
-When the binder discovers the custom implementation, it will use that instead of the default implementation.
-Here is an example of such a custom implementation bean in the application.
-
-```
-@Bean
-public KafkaBinderHealth kafkaBinderHealthIndicator() {
-    return new KafkaBinderHealth() {
-        @Override
-        public Health health() {
-            // custom implementation details.
-        }
-    };
-}
-```
-
-[[custom-kafka-binder-health-indicator-example]]
-=== Custom kafka Binder Health Indicator Example
-
-Here is the pseudo-code for writing a custom Kafka binder HealthIndicator.
-In this example, we try to override the binder provided Kafka HealthIndicator by specifically checking first for cluster connectivity and then followed by topic-related issues.
-
-
-1. First we need create a custom implementation of the `KafkaBinderHealth` interface.
-
-```
-public class KafkaBinderHealthImplementation implements KafkaBinderHealth {
-    @Value("${spring.cloud.bus.destination}")
-    private String topic;
-    private final AdminClient client;
-
-    public KafkaBinderHealthImplementation(final KafkaAdmin admin) {
-		// More about configuring Kafka
-		// https://docs.spring.io/spring-kafka/reference/html/#configuring-topics
-        this.client = AdminClient.create(admin.getConfigurationProperties());
-    }
-
-    @Override
-    public Health health() {
-        if (!checkBrokersConnection()) {
-            logger.error("Error when connect brokers");
-			return Health.down().withDetail("BrokersConnectionError", "Error message").build();
-        }
-		if (!checkTopicConnection()) {
-			logger.error("Error when trying to connect with specific topic");
-			return Health.down().withDetail("TopicError", "Error message with topic name").build();
-		}
-        return Health.up().build();
-    }
-
-    public boolean checkBrokersConnection() {
-        // Your implementation
-    }
-
-    public boolean checkTopicConnection() {
-		// Your implementation
-    }
-}
-```
-
-2. Then we need to create a bean for the custom implementation.
-
-```
-@Configuration
-public class KafkaBinderHealthIndicatorConfiguration {
-	@Bean
-	public KafkaBinderHealth kafkaBinderHealthIndicator(final KafkaAdmin admin) {
-		return new KafkaBinderHealthImplementation(admin);
-	}
-}
-```

@@ -1,0 +1,25 @@
+[[deploying-stream-applications-on-cloudfoundry]]
+= Deploying Stream Applications on CloudFoundry
+
+On CloudFoundry, services are usually exposed through a special environment variable called https://docs.cloudfoundry.org/devguide/deploy-apps/environment-variable.html#VCAP-SERVICES[VCAP_SERVICES].
+
+When configuring your binder connections, you can use the values from an environment variable as explained on the http://docs.spring.io/spring-cloud-dataflow-server-cloudfoundry/docs/current-SNAPSHOT/reference/htmlsingle/#getting-started-ups[dataflow Cloud Foundry Server] docs.
+
+[[binder-implementations]]
+= Binder Implementations
+
+The following is the list of available binder implementations
+
+* https://cloud.spring.io/spring-cloud-stream-binder-rabbit/[RabbitMQ]
+* https://cloud.spring.io/spring-cloud-stream-binder-kafka/[Apache Kafka]
+* https://github.com/spring-cloud/spring-cloud-stream-binder-aws-kinesis[Amazon Kinesis]
+* https://github.com/spring-cloud/spring-cloud-gcp/tree/master/spring-cloud-gcp-pubsub-stream-binder[Google PubSub _(partner maintained)_]
+* https://github.com/SolaceProducts/solace-spring-cloud/tree/master/solace-spring-cloud-starters/solace-spring-cloud-stream-starter#spring-cloud-stream-binder-for-solace-pubsub[Solace PubSub+ _(partner maintained)_]
+* https://aka.ms/spring/docs#spring-cloud-stream-binder-for-azure-event-hubs[Azure Event Hubs _(partner maintained)_]
+* https://aka.ms/spring/docs#spring-cloud-stream-binder-for-azure-service-bus[Azure Service Bus _(partner maintained)_]
+* https://github.com/alibaba/spring-cloud-alibaba/wiki/RocketMQ-en[Apache RocketMQ _(partner maintained)_]
+
+As it was mentioned earlier Binder abstraction is also one of the extension points of the framework. So if you can't find a suitable binder in the preceding list you can implement your own binder on top of Spring Cloud Stream.
+In the https://medium.com/@domenicosibilio/how-to-create-a-spring-cloud-stream-binder-from-scratch-ab8b29ee931b[How to create a Spring Cloud Stream Binder from scratch] post a community member documents
+in details, with an example, a set of steps necessary to implement a custom binder.
+The steps are also highlighted in the `<<spring-cloud-stream-overview-custom-binder-impl>>` section.

@@ -1,0 +1,101 @@
+[[multi-binders-with-kafka-streams-based-binders-and-regular-kafka-binder]]
+= Multi binders with Kafka Streams based binders and regular Kafka Binder
+
+You can have an application where you have both a function/consumer/supplier that is based on the regular Kafka binder and a Kafka Streams based processor.
+However, you cannot mix both of them within a single function or consumer.
+
+Here is an example, where you have both binder based components within the same application.
+
+```
+@Bean
+public Function<String, String> process() {
+    return s -> s;
+}
+
+@Bean
+public Function<KStream<Object, String>, KStream<?, WordCount>> kstreamProcess() {
+
+    return input -> input;
+}
+
+```
+
+This is the relevant parts from the configuration:
+
+```
+spring.cloud.function.definition=process;kstreamProcess
+spring.cloud.stream.bindings.process-in-0.destination=foo
+spring.cloud.stream.bindings.process-out-0.destination=bar
+spring.cloud.stream.bindings.kstreamProcess-in-0.destination=bar
+spring.cloud.stream.bindings.kstreamProcess-out-0.destination=foobar
+```
+
+Things become a bit more complex if you have the same application as above, but is dealing with two different Kafka clusters, for e.g. the regular `process` is acting upon both Kafka cluster 1 and cluster 2 (receiving data from cluster-1 and sending to cluster-2) and the Kafka Streams processor is acting upon Kafka cluster 2.
+Then you have to use the https://cloud.spring.io/spring-cloud-stream/reference/html/spring-cloud-stream.html#multiple-binders[multi binder] facilities provided by Spring Cloud Stream.
+
+Here is how your configuration may change in that scenario.
+
+```
+# multi binder configuration
+spring.cloud.stream.binders.kafka1.type: kafka
+spring.cloud.stream.binders.kafka1.environment.spring.cloud.stream.kafka.streams.binder.brokers=${kafkaCluster-1} #Replace kafkaCluster-1 with the approprate IP of the cluster
+spring.cloud.stream.binders.kafka2.type: kafka
+spring.cloud.stream.binders.kafka2.environment.spring.cloud.stream.kafka.streams.binder.brokers=${kafkaCluster-2} #Replace kafkaCluster-2 with the approprate IP of the cluster
+spring.cloud.stream.binders.kafka3.type: kstream
+spring.cloud.stream.binders.kafka3.environment.spring.cloud.stream.kafka.streams.binder.brokers=${kafkaCluster-2} #Replace kafkaCluster-2 with the approprate IP of the cluster
+
+spring.cloud.function.definition=process;kstreamProcess
+
+# From cluster 1 to cluster 2 with regular process function
+spring.cloud.stream.bindings.process-in-0.destination=foo
+spring.cloud.stream.bindings.process-in-0.binder=kafka1 # source from cluster 1
+spring.cloud.stream.bindings.process-out-0.destination=bar
+spring.cloud.stream.bindings.process-out-0.binder=kafka2 # send to cluster 2
+
+# Kafka Streams processor on cluster 2
+spring.cloud.stream.bindings.kstreamProcess-in-0.destination=bar
+spring.cloud.stream.bindings.kstreamProcess-in-0.binder=kafka3
+spring.cloud.stream.bindings.kstreamProcess-out-0.destination=foobar
+spring.cloud.stream.bindings.kstreamProcess-out-0.binder=kafka3
+```
+
+Pay attention to the above configuration.
+We have two kinds of binders, but 3 binders all in all, first one is the regular Kafka  binder based on cluster 1 (`kafka1`), then another Kafka binder based on cluster 2 (`kafka2`) and finally the `kstream` one (`kafka3`).
+The first processor in the application receives data from  `kafka1` and publishes to `kafka2` where both binders are based on regular Kafka binder but differnt clusters.
+The second processor, which is a Kafka Streams processor consumes data from `kafka3` which is the same cluster as `kafka2`, but a different binder type.
+
+Since there are three different binder types available in the Kafka Streams family of binders - `kstream`, `ktable` and `globalktable` - if your application has multiple bindings based on any of these binders, that needs to be explicitly provided as the binder type.
+
+For e.g if you have a processor as below,
+
+```
+@Bean
+public Function<KStream<Long, Order>,
+        Function<KTable<Long, Customer>,
+                Function<GlobalKTable<Long, Product>, KStream<Long, EnrichedOrder>>>> enrichOrder() {
+
+    ...
+}
+```
+
+then, this has to be configured in a multi binder scenario as the following.
+Please note that this is only needed if you have a true multi-binder scenario where there are multiple processors dealing with multiple clusters within a single application.
+In that case, the binders need to be explicitly provided with the bindings to distinguish from other processor's binder types and clusters.
+
+```
+spring.cloud.stream.binders.kafka1.type: kstream
+spring.cloud.stream.binders.kafka1.environment.spring.cloud.stream.kafka.streams.binder.brokers=${kafkaCluster-2}
+spring.cloud.stream.binders.kafka2.type: ktable
+spring.cloud.stream.binders.kafka2.environment.spring.cloud.stream.kafka.streams.binder.brokers=${kafkaCluster-2}
+spring.cloud.stream.binders.kafka3.type: globalktable
+spring.cloud.stream.binders.kafka3.environment.spring.cloud.stream.kafka.streams.binder.brokers=${kafkaCluster-2}
+
+spring.cloud.stream.bindings.enrichOrder-in-0.binder=kafka1  #kstream
+spring.cloud.stream.bindings.enrichOrder-in-1.binder=kafka2  #ktablr
+spring.cloud.stream.bindings.enrichOrder-in-2.binder=kafka3  #globalktable
+spring.cloud.stream.bindings.enrichOrder-out-0.binder=kafka1 #kstream
+
+# rest of the configuration is omitted.
+
+```
+

@@ -1,0 +1,24 @@
+[[multiple-binders]]
+= Multiple Binders on the Classpath
+
+When multiple binders are present on the classpath, the application must indicate which binder is to be used for each destination binding.
+Each binder configuration contains a `META-INF/spring.binders` file, which is a simple properties file, as shown in the following example:
+
+[source]
+----
+rabbit:\
+org.springframework.cloud.stream.binder.rabbit.config.RabbitServiceAutoConfiguration
+----
+
+Similar files exist for the other provided binder implementations (such as Kafka), and custom binder implementations are expected to provide them as well.
+The key represents an identifying name for the binder implementation, whereas the value is a comma-separated list of configuration classes that each contain one and only one bean definition of type `org.springframework.cloud.stream.binder.Binder`.
+
+Binder selection can either be performed globally, using the `spring.cloud.stream.defaultBinder` property (for example, `spring.cloud.stream.defaultBinder=rabbit`) or individually, by configuring the binder on each binding.
+For instance, a processor application (that has bindings named `input` and `output` for read and write respectively) that reads from Kafka and writes to RabbitMQ can specify the following configuration:
+
+[source]
+----
+spring.cloud.stream.bindings.input.binder=kafka
+spring.cloud.stream.bindings.output.binder=rabbit
+----
+

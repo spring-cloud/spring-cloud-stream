@@ -1,0 +1,37 @@
+[[rabbit-binder-properties]]
+= RabbitMQ Binder Properties
+
+By default, the RabbitMQ binder uses Spring Boot's `ConnectionFactory`.
+Conseuqently, it supports all Spring Boot configuration options for RabbitMQ.
+(For reference, see the https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#common-application-properties[Spring Boot documentation]).
+RabbitMQ configuration options use the `spring.rabbitmq` prefix.
+
+In addition to Spring Boot options, the RabbitMQ binder supports the following properties:
+
+spring.cloud.stream.rabbit.binder.adminAddresses::
+A comma-separated list of RabbitMQ management plugin URLs.
+Only used when `nodes` contains more than one entry.
+Each entry in this list must have a corresponding entry in `spring.rabbitmq.addresses`.
+Only needed if you use a RabbitMQ cluster and wish to consume from the node that hosts the queue.
+See https://docs.spring.io/spring-amqp/reference/html/_reference.html#queue-affinity[Queue Affinity and the LocalizedQueueConnectionFactory] for more information.
++
+Default: empty.
+spring.cloud.stream.rabbit.binder.nodes::
+A comma-separated list of RabbitMQ node names.
+When more than one entry, used to locate the server address where a queue is located.
+Each entry in this list must have a corresponding entry in `spring.rabbitmq.addresses`.
+Only needed if you use a RabbitMQ cluster and wish to consume from the node that hosts the queue.
+See https://docs.spring.io/spring-amqp/reference/html/_reference.html#queue-affinity[Queue Affinity and the LocalizedQueueConnectionFactory] for more information.
++
+Default: empty.
+spring.cloud.stream.rabbit.binder.compressionLevel::
+The compression level for compressed bindings.
+See `java.util.zip.Deflater`.
++
+Default: `1` (BEST_LEVEL).
+spring.cloud.stream.binder.connection-name-prefix::
+A connection name prefix used to name the connection(s) created by this binder.
+The name is this prefix followed by `#n`, where `n` increments each time a new connection is opened.
++
+Default: none (Spring AMQP default).
+
