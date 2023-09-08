@@ -1,5 +1,5 @@
 [[partitioning-with-the-kafka-binder]]
-=== Partitioning with the Kafka Binder
+= Partitioning with the Kafka Binder
 
 Apache Kafka supports topic partitioning natively.
 

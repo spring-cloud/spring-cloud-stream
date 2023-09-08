@@ -8,10 +8,10 @@ While these two binder implementations are based on Message Channels, Spring Clo
 Below, you can find more information on how to use these various out-of-the-box binder implementations in your applications.
 
 [[apache-kafka-binder]]
-== Apache Kafka Binder
+= Apache Kafka Binder
 
 [[usage]]
-=== Usage
+== Usage
 
 To use Apache Kafka binder, you need to add `spring-cloud-stream-binder-kafka` as a dependency to your Spring Cloud Stream application, as shown in the following example for Maven:
 
@@ -34,10 +34,10 @@ Alternatively, you can also use the Spring Cloud Stream Kafka Starter, as shown 
 ----
 
 [[apache-kafka-streams-binder]]
-== Apache Kafka Streams Binder
+= Apache Kafka Streams Binder
 
 [[usage]]
-=== Usage
+== Usage
 
 To use Apache Kafka Streams binder, you need to add `spring-cloud-stream-binder-kafka-streams` as a dependency to your Spring Cloud Stream application, as shown in the following example for Maven:
 
@@ -50,9 +50,9 @@ To use Apache Kafka Streams binder, you need to add `spring-cloud-stream-binder-
 ----
 
 [[rabbitmq-binder]]
-== RabbitMQ Binder
+= RabbitMQ Binder
 [[usage]]
-=== Usage
+== Usage
 
 To use the RabbitMQ binder, you can add it to your Spring Cloud Stream application, by using the following Maven coordinates:
 

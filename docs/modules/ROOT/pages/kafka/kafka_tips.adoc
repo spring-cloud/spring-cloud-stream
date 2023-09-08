@@ -1,18 +1,18 @@
 [[tips-tricks-and-recipes]]
-== Tips, Tricks and Recipes
+= Tips, Tricks and Recipes
 
 [[simple-dlq-with-kafka]]
-=== Simple DLQ with Kafka
+== Simple DLQ with Kafka
 
 [[problem-statement]]
-==== Problem Statement
+=== Problem Statement
 
 As a developer, I want to write a consumer application that processes records from a Kafka topic.
 However, if some error occurs in processing, I don't want the application to stop completely.
 Instead, I want to send the record in error to a DLT (Dead-Letter-Topic) and then continue processing new records.
 
 [[solution]]
-==== Solution
+=== Solution
 
 The solution for this problem is to use the DLQ feature in Spring Cloud Stream.
 For the purposes of this discussion, let us assume that the following is our processor function.
@@ -85,15 +85,15 @@ spring.cloud.stream:
 ```
 
 [[dlq-with-advanced-retry-options]]
-=== DLQ with Advanced Retry Options
+== DLQ with Advanced Retry Options
 
 [[problem-statement]]
-==== Problem Statement
+=== Problem Statement
 
 This is similar to the recipe above, but as a developer I would like to configure the way retries are handled.
 
 [[solution]]
-==== Solution
+=== Solution
 
 If you followed the above recipe, then you get the default retry options built into the Kafka binder when the processing encounters an error.
 
@@ -132,17 +132,17 @@ spring.cloud.stream.bindings.processData-in-0.consumer.retry-template-name=<your
 ```
 
 [[handling-deserialization-errors-with-dlq]]
-=== Handling Deserialization errors with DLQ
+== Handling Deserialization errors with DLQ
 
 [[problem-statement]]
-==== Problem Statement
+=== Problem Statement
 
 I have a processor that encounters a deserialization exception in Kafka consumer.
 I would expect that the Spring Cloud Stream DLQ mechanism will catch that scenario, but it does not.
 How can I handle this?
 
 [[solution]]
-==== Solution
+=== Solution
 
 The normal DLQ mechanism offered by Spring Cloud Stream will not help when Kafka consumer throws an irrecoverable deserialization exception.
 This is because, this exception happens even before the consumer's `poll()` method returns.
@@ -249,16 +249,16 @@ Keep in mind that none of the dlq properties above are relevant for the discussi
 They are purely meant for addressing any application level errors only.
 
 [[basic-offset-management-in-kafka-binder]]
-=== Basic offset management in Kafka binder
+== Basic offset management in Kafka binder
 
 [[problem-statement]]
-==== Problem Statement
+=== Problem Statement
 
 I want to write a Spring Cloud Stream Kafka consumer application and not sure about how it manages Kafka consumer offsets.
 Can you explain?
 
 [[solution]]
-==== Solution
+=== Solution
 
 We encourage you read the https://docs.spring.io/spring-cloud-stream-binder-kafka/docs/current/reference/html/spring-cloud-stream-binder-kafka.html#reset-offsets[docs] section on this to get a thorough understanding on it.
 
@@ -285,16 +285,16 @@ Then make sure you provide the `startOffset` value (either `earliest` or `latest
 When you do that and then start the consumer application, each time you start, it starts as if this is starting for the first time and ignore any committed offsets for the partition.
 
 [[seeking-to-arbitrary-offsets-in-kafka]]
-=== Seeking to arbitrary offsets in Kafka
+== Seeking to arbitrary offsets in Kafka
 
 [[problem-statement]]
-==== Problem Statement
+=== Problem Statement
 
 Using Kafka binder, I know that it can set the offset to either `earliest` or `latest`, but I have a requirement to seek the offset to something in the middle, an arbitrary offset.
 Is there a way to achieve this using Spring Cloud Stream Kafka binder?
 
 [[solution]]
-==== Solution
+=== Solution
 
 Previously we saw how Kafka binder allows you to tackle basic offset management.
 By default, the binder does not allow you to rewind to an arbitrary offset, at least through the mechanism we saw in that recipe.
@@ -377,7 +377,7 @@ Real world use cases are much more complex than this and you need to adjust acco
 When consumer `seek` fails, it may throw some runtime exceptions and you need to decide what to do in those cases.
 
 [[what-if-we-start-a-second-consumer-with-the-same-group-id?]]
-==== What if we start a second consumer with the same group id?
+=== What if we start a second consumer with the same group id?
 
 When we add a second consumer, a rebalance will occur and some partitions will be moved around.
 Let's say that the new consumer gets partitions `2` and `3`.
@@ -388,16 +388,16 @@ However, for this consumer it was simply a rebalance event and not considered as
 Thus, it will not re-seek to the given offsets because of the conditional check on the `initial` argument.
 
 [[how-do-i-manually-acknowledge-using-kafka-binder?]]
-=== How do I manually acknowledge using Kafka binder?
+== How do I manually acknowledge using Kafka binder?
 
 [[problem-statement]]
-==== Problem Statement
+=== Problem Statement
 
 Using Kafka binder, I want to manually acknowledge messages in my consumer.
 How do I do that?
 
 [[solution]]
-==== Solution
+=== Solution
 
 By default, Kafka binder delegates to the default commit settings in Spring for Apache Kafka project.
 The default `ackMode` in Spring Kafka is `batch`.
@@ -427,15 +427,15 @@ public Consumer<Message<String>> myConsumer() {
 Then you set the property `spring.cloud.stream.kafka.bindings.myConsumer-in-0.consumer.ackMode` to `MANUAL` or `MANUAL_IMMEDIATE`.
 
 [[how-do-i-override-the-default-binding-names-in-spring-cloud-stream?]]
-=== How do I override the default binding names in Spring Cloud Stream?
+== How do I override the default binding names in Spring Cloud Stream?
 
 [[problem-statement]]
-==== Problem Statement
+=== Problem Statement
 
 Spring Cloud Stream creates default bindings based on the function definition and signature, but how do I override these to more domain friendly names?
 
 [[solution]]
-==== Solution
+=== Solution
 
 Assume that following is your function signature.
 
@@ -491,15 +491,15 @@ You can easily do that by simply setting these three properties
 Once you do that, it overrides the default binding names and any properties that you want to set on them must be on these new binding names.
 
 [[how-do-i-send-a-message-key-as-part-of-my-record?]]
-=== How do I send a message key as part of my record?
+== How do I send a message key as part of my record?
 
 [[problem-statement]]
-==== Problem Statement
+=== Problem Statement
 
 I need to send a key along with the payload of the record, is there a way to do that in Spring Cloud Stream?
 
 [[solution]]
-==== Solution
+=== Solution
 
 It is often necessary that you want to send associative data structure like a map as the record with a key and value.
 Spring Cloud Stream allows you to do that in a straightforward manner.
@@ -528,17 +528,17 @@ Please note that we use the binding name `supplier-out-0` since that is our func
 Then, we use this new key when we produce the message.
 
 [[how-do-i-use-native-serializer-and-deserializer-instead-of-message-conversion-done-by-spring-cloud-stream?]]
-=== How do I use native serializer and deserializer instead of message conversion done by Spring Cloud Stream?
+== How do I use native serializer and deserializer instead of message conversion done by Spring Cloud Stream?
 
 [[problem-statement]]
-==== Problem Statement
+=== Problem Statement
 
 Instead of using the message converters in Spring Cloud Stream, I want to use native Serializer and Deserializer in Kafka.
 By default, Spring Cloud Stream takes care of this conversion using its internal built-in message converters.
 How can I bypass this and delegate the responsibility to Kafka?
 
 [[solution]]
-==== Solution
+=== Solution
 
 This is really easy to do.
 
@@ -585,17 +585,17 @@ spring.cloud.stream.kafka.bindings.<binding-name>.consumer.useNativeDecoding: tr
 However, in the case of Kafka binder, this is unnecessary, as by the time it reaches the binder, Kafka already deserializes them using the configured deserializers.
 
 [[explain-how-offset-resetting-work-in-kafka-streams-binder]]
-=== Explain how offset resetting work in Kafka Streams binder
+== Explain how offset resetting work in Kafka Streams binder
 
 [[problem-statement]]
-==== Problem Statement
+=== Problem Statement
 
 By default, Kafka Streams binder always starts from the earliest offset for a new consumer.
 Sometimes, it is beneficial or required by the application to start from the latest offset.
 Kafka Streams binder allows you to do that.
 
 [[solution]]
-==== Solution
+=== Solution
 
 Before we look at the solution, let us look at the following scenario.
 
@@ -623,15 +623,15 @@ If you want only one binding to start from the `latest` offset and the other to 
 Keep in mind that, once there are committed offsets, these setting are *not* honored and the committed offsets take precedence.
 
 [[keeping-track-of-successful-sending-of-records-producing-in-kafka]]
-=== Keeping track of successful sending of records (producing) in Kafka
+== Keeping track of successful sending of records (producing) in Kafka
 
 [[problem-statement]]
-==== Problem Statement
+=== Problem Statement
 
 I have a Kafka producer application and I want to keep track of all my successful sendings.
 
 [[solution]]
-==== Solution
+=== Solution
 
 Let us assume that we have this following supplier in the application.
 
@@ -673,15 +673,15 @@ In the `handle` method, the payload is what got sent to Kafka and the message he
 Its value is a `RecordMetadata` that contains information about topic partition, current offset etc.
 
 [[adding-custom-header-mapper-in-kafka]]
-=== Adding custom header mapper in Kafka
+== Adding custom header mapper in Kafka
 
 [[problem-statement]]
-==== Problem Statement
+=== Problem Statement
 
 I have a Kafka producer application that sets some headers, but they are missing in the consumer application. Why is that?
 
 [[solution]]
-==== Solution
+=== Solution
 
 Under normal circumstances, this should be fine.
 
@@ -751,7 +751,7 @@ public KafkaHeaderMapper kafkaBinderHeaderMapper() {
 That will properly populate the `foo` header from the producer to consumer.
 
 [[special-note-on-the-id-header]]
-==== Special note on the id header
+=== Special note on the id header
 
 In Spring Cloud Stream, the `id` header is a special header, but some applications may want to have special custom id headers - something like `custom-id` or `ID` or `Id`.
 The first one (`custom-id`) will propagate without any custom header mapper from producer to consumer.
@@ -792,17 +792,17 @@ public KafkaHeaderMapper kafkaBinderHeaderMapper1() {
 By doing this, both `id` and `Id` headers will be available from the producer to the consumer side.
 
 [[producing-to-multiple-topics-in-transaction]]
-=== Producing to multiple topics in transaction
+== Producing to multiple topics in transaction
 
 [[problem-statement]]
-==== Problem Statement
+=== Problem Statement
 
 How do I produce transactional messages to multiple Kafka topics?
 
 For more context, see this https://stackoverflow.com/questions/68928091/dlq-bounded-retry-and-eos-when-producing-to-multiple-topics-using-spring-cloud[StackOverflow question].
 
 [[solution]]
-==== Solution
+=== Solution
 
 Use transactional support in Kafka binder for transactions and then provide an `AfterRollbackProcessor`.
 In order to produce to multiple topics, use `StreamBridge` API.
@@ -844,7 +844,7 @@ DefaultAfterRollbackProcessor rollbackProcessor(KafkaTemplate<byte[], byte[]> te
 ```
 
 [[required-configuration]]
-==== Required Configuration
+=== Required Configuration
 
 ```
 spring.cloud.stream.kafka.binder.transaction.transaction-id-prefix: tx-
@@ -882,15 +882,15 @@ If you are using Spring Cloud Stream to test it by adding more consumer function
 This https://stackoverflow.com/questions/68941306/spring-cloud-stream-database-transaction-does-not-roll-back[StackOverflow thread] is also related to this discussion.
 
 [[pitfalls-to-avoid-when-running-multiple-pollable-consumers]]
-=== Pitfalls to avoid when running multiple pollable consumers
+== Pitfalls to avoid when running multiple pollable consumers
 
 [[problem-statement]]
-==== Problem Statement
+=== Problem Statement
 
 How can I run multiple instances of the pollable consumers and generate unique `client.id` for each instance?
 
 [[solution]]
-==== Solution
+=== Solution
 
 Assuming that I have the following definition:
 

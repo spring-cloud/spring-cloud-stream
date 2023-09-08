@@ -1,7 +1,7 @@
 *{project-version}*
 
 [[binders]]
-== Binder Implementations
+= Binder Implementations
 
 The following binder implementations are available:
 
