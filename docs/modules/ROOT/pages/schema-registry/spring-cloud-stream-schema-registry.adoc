@@ -238,13 +238,13 @@ You can customize the schema storage by using the http://docs.spring.io/spring-b
 
 The Schema Registry Server API consists of the following operations:
 
-* `POST /` -- see `<<spring-cloud-stream-overview-registering-new-schema>>`
-* `GET /{subject}/{format}/{version}` -- see `<<spring-cloud-stream-overview-retrieve-schema-subject-format-version>>`
-* `GET /{subject}/{format}` -- see `<<spring-cloud-stream-overview-retrieve-schema-subject-format>>`
-* `GET /schemas/{id}` -- see `<<spring-cloud-stream-overview-retrieve-schema-id>>`
-* `DELETE /{subject}/{format}/{version}` -- see `<<spring-cloud-stream-overview-deleting-schema-subject-format-version>>`
-* `DELETE /schemas/{id}` -- see `<<spring-cloud-stream-overview-deleting-schema-id>>`
-* `DELETE /{subject}` -- see `<<spring-cloud-stream-overview-deleting-schema-subject>>`
+* `POST /` -- see `xref:schema-registry/spring-cloud-stream-schema-registry.adoc#spring-cloud-stream-overview-registering-new-schema[Registering a New Schema]`
+* `GET /{subject}/{format}/{version}` -- see `xref:schema-registry/spring-cloud-stream-schema-registry.adoc#spring-cloud-stream-overview-retrieve-schema-subject-format-version[Retrieving an Existing Schema by Subject, Format, and Version]`
+* `GET /{subject}/{format}` -- see `xref:schema-registry/spring-cloud-stream-schema-registry.adoc#spring-cloud-stream-overview-retrieve-schema-subject-format[Retrieving an Existing Schema by Subject and Format]`
+* `GET /schemas/{id}` -- see `xref:schema-registry/spring-cloud-stream-schema-registry.adoc#spring-cloud-stream-overview-retrieve-schema-id[Retrieving an Existing Schema by ID]`
+* `DELETE /{subject}/{format}/{version}` -- see `xref:schema-registry/spring-cloud-stream-schema-registry.adoc#spring-cloud-stream-overview-deleting-schema-subject-format-version[Deleting a Schema by Subject, Format, and Version]`
+* `DELETE /schemas/{id}` -- see `xref:schema-registry/spring-cloud-stream-schema-registry.adoc#spring-cloud-stream-overview-deleting-schema-id[Deleting a Schema by ID]`
+* `DELETE /{subject}` -- see `xref:schema-registry/spring-cloud-stream-schema-registry.adoc#spring-cloud-stream-overview-deleting-schema-subject[Deleting a Schema by Subject]`
 
 [[spring-cloud-stream-overview-registering-new-schema]]
 ===== Registering a New Schema
@@ -347,8 +347,8 @@ NOTE: The ConfluentSchemaRegistryClient is tested against Confluent platform ver
 
 To better understand how Spring Cloud Stream registers and resolves new schemas and its use of Avro schema comparison features, we provide two separate subsections:
 
-* `<<spring-cloud-stream-overview-schema-registration-process>>`
-* `<<spring-cloud-stream-overview-schema-resolution-process>>`
+* `xref:schema-registry/spring-cloud-stream-schema-registry.adoc#spring-cloud-stream-overview-schema-registration-process[Schema Registration Process (Serialization)]`
+* `xref:schema-registry/spring-cloud-stream-schema-registry.adoc#spring-cloud-stream-overview-schema-resolution-process[Schema Resolution Process (Deserialization)]`
 
 [[spring-cloud-stream-overview-schema-registration-process]]
 ==== Schema Registration Process (Serialization)
@@ -372,7 +372,7 @@ With the schema version information, the converter sets the `contentType` header
 [[spring-cloud-stream-overview-schema-resolution-process]]
 ==== Schema Resolution Process (Deserialization)
 
-When reading messages that contain version information (that is, a `contentType` header with a scheme like the one described under `<<spring-cloud-stream-overview-schema-registration-process>>`, the converter queries the Schema server to fetch the writer schema of the message.
+When reading messages that contain version information (that is, a `contentType` header with a scheme like the one described under `xref:schema-registry/spring-cloud-stream-schema-registry.adoc#spring-cloud-stream-overview-schema-registration-process[Schema Registration Process (Serialization)]`, the converter queries the Schema server to fetch the writer schema of the message.
 Once it has found the correct schema of the incoming message, it retrieves the reader schema and, by using Avro's schema resolution support, reads it into the reader definition (setting defaults and any missing properties).
 
 .Schema Reading Resolution Process

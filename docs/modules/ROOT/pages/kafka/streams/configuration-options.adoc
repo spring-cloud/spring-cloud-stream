@@ -3,7 +3,7 @@
 
 This section contains the configuration options used by the Kafka Streams binder.
 
-For common configuration options and properties pertaining to binder, refer to the <<binding-properties,core documentation>>.
+For common configuration options and properties pertaining to binder, refer to the xref:spring-cloud-stream/binding-properties.adoc[core documentation].
 
 [[kafka-streams-binder-properties]]
 == Kafka Streams Binder Properties

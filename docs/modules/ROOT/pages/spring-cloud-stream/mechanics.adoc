@@ -56,7 +56,7 @@ operation of the MessageConverter takes `targetClass` as one of its arguments.
 The framework also ensures that the provided `Message` always contains a `contentType` header.
 When no contentType header was already present, it injects either the per-binding `contentType` header or the default `contentType` header.
 The combination of `contentType` argument type is the mechanism by which framework determines if message can be converted to a target type.
-If no appropriate `MessageConverter` is found, an exception is thrown, which you can handle by adding a custom `MessageConverter` (see `<<spring-cloud-stream-overview-user-defined-message-converters>>`).
+If no appropriate `MessageConverter` is found, an exception is thrown, which you can handle by adding a custom `MessageConverter` (see `xref:spring-cloud-stream/overview-user-defined-message-converters.adoc[User-defined Message Converters]`).
 
 But what if the payload type matches the target type declared by the handler method? In this case, there is nothing to convert, and the
 payload is passed unmodified. While this sounds pretty straightforward and logical, keep in mind handler methods that take a `Message<?>` or `Object` as an argument.

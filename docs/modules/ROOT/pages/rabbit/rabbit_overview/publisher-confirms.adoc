@@ -2,7 +2,7 @@
 = Publisher Confirms
 
 There are two mechanisms to get the result of publishing a message; in each case, the connection factory must have `publisherConfirmType` set `ConfirmType.CORRELATED`.
-The "legacy" mechanism is to set the `confirmAckChannel` to the bean name of a message channel from which you can retrieve the confirmations asynchronously; negative acks are sent to the error channel (if enabled) - see <<rabbit-error-channels>>.
+The "legacy" mechanism is to set the `confirmAckChannel` to the bean name of a message channel from which you can retrieve the confirmations asynchronously; negative acks are sent to the error channel (if enabled) - see xref:rabbit/rabbit_overview/putting-it-all-together.adoc#rabbit-error-channels[Error Channels].
 
 The preferred mechanism, added in version 3.1 is to use a correlation data header and wait for the result via its `Future<Confirm>` property.
 This is particularly useful with a batch listener because you can send multiple messages before waiting for the result.

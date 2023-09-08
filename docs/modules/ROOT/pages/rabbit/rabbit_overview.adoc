@@ -47,11 +47,11 @@ If retry is enabled (`maxAttempts > 1`), failed messages are delivered to the DL
 If retry is disabled (`maxAttempts = 1`), you should set `requeueRejected` to `false` (the default) so that failed messages are routed to the DLQ, instead of being re-queued.
 In addition, `republishToDlq` causes the binder to publish a failed message to the DLQ (instead of rejecting it).
 This feature lets additional information (such as the stack trace in the `x-exception-stacktrace` header) be added to the message in headers.
-See the <<spring-cloud-stream-rabbit-frame-max-headroom, `frameMaxHeadroom` property>> for information about truncated stack traces.
+See the xref:rabbit/rabbit_overview/rabbitmq-consumer-properties.adoc#spring-cloud-stream-rabbit-frame-max-headroom[`frameMaxHeadroom` property] for information about truncated stack traces.
 This option does not need retry enabled.
 You can republish a failed message after just one attempt.
 Starting with version 1.2, you can configure the delivery mode of republished messages.
-See the <<spring-cloud-stream-rabbit-republish-delivery-mode,`republishDeliveryMode` property>>.
+See the xref:rabbit/rabbit_overview/rabbitmq-consumer-properties.adoc#spring-cloud-stream-rabbit-republish-delivery-mode[`republishDeliveryMode` property].
 
 If the stream listener throws an `ImmediateAcknowledgeAmqpException`, the DLQ is bypassed and the message simply discarded.
 Starting with version 2.1, this is true regardless of the setting of `republishToDlq`; previously it was only the case when `republishToDlq` was `false`.
@@ -64,10 +64,10 @@ This allows the transaction to roll back if the publishing fails for some reason
 In addition, if the connection factory is configured for publisher confirms or returns, the publication to the DLQ will wait for the confirmation and check for a returned message.
 If a negative acknowledgment or returned message is received, the binder will throw an `AmqpRejectAndDontRequeueException`, allowing the broker to take care of publishing to the DLQ as if the `republishToDlq` property is `false`.
 
-See <<rabbit-binder-properties>> for more information about these properties.
+See xref:rabbit/rabbit_overview/binder-properties.adoc[RabbitMQ Binder Properties] for more information about these properties.
 
 The framework does not provide any standard mechanism to consume dead-letter messages (or to re-route them back to the primary queue).
-Some options are described in <<rabbit-dlq-processing>>.
+Some options are described in xref:rabbit/rabbit_dlq.adoc[Dead-Letter Queue Processing].
 
 NOTE: When multiple RabbitMQ binders are used in a Spring Cloud Stream application, it is important to disable 'RabbitAutoConfiguration' to avoid the same configuration from `RabbitAutoConfiguration` being applied to the two binders.
 You can exclude the class by using the `@SpringBootApplication` annotation.

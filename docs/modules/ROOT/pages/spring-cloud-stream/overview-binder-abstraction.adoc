@@ -7,13 +7,13 @@ The framework also includes a test binder for integration testing of your applic
 Binder abstraction is also one of the extension points of the framework, which means you can implement your own binder on top of Spring Cloud Stream.
 In the https://medium.com/@domenicosibilio/how-to-create-a-spring-cloud-stream-binder-from-scratch-ab8b29ee931b[How to create a Spring Cloud Stream Binder from scratch] post a community member documents
 in details, with an example, a set of steps necessary to implement a custom binder.
-The steps are also highlighted in the `<<spring-cloud-stream-overview-custom-binder-impl>>` section.
+The steps are also highlighted in the `xref:spring-cloud-stream/overview-custom-binder-impl.adoc[Implementing Custom Binders]` section.
 
 Spring Cloud Stream uses Spring Boot for configuration, and the Binder abstraction makes it possible for a Spring Cloud Stream application to be flexible in how it connects to middleware.
 For example, deployers can dynamically choose, at runtime, the mapping between the external destinations (such as the Kafka topics or RabbitMQ exchanges) and inputs
 and outputs of the message handler (such as input parameter of the function and its return argument).
 Such configuration can be provided through external configuration properties and in any form supported by Spring Boot (including application arguments, environment variables, and `application.yml` or `application.properties` files).
-In the sink example from the <<spring-cloud-stream-overview-introducing>> section, setting the `spring.cloud.stream.bindings.input.destination` application property to `raw-sensor-data` causes it to read from the `raw-sensor-data` Kafka topic or from a queue bound to the `raw-sensor-data` RabbitMQ exchange.
+In the sink example from the xref:spring-cloud-stream.adoc#spring-cloud-stream-overview-introducing[Introducing Spring Cloud Stream] section, setting the `spring.cloud.stream.bindings.input.destination` application property to `raw-sensor-data` causes it to read from the `raw-sensor-data` Kafka topic or from a queue bound to the `raw-sensor-data` RabbitMQ exchange.
 
 Spring Cloud Stream automatically detects and uses a binder found on the classpath.
 You can use different types of middleware with the same code.

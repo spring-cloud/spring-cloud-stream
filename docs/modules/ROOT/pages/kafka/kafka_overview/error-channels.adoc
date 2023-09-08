@@ -9,6 +9,6 @@ The payload of the `ErrorMessage` for a send failure is a `KafkaSendFailureExcep
 * `failedMessage`: The Spring Messaging `Message<?>` that failed to be sent.
 * `record`: The raw `ProducerRecord` that was created from the `failedMessage`
 
-There is no automatic handling of producer exceptions (such as sending to a <<kafka-dlq-processing, Dead-Letter queue>>).
+There is no automatic handling of producer exceptions (such as sending to a xref:kafka/kafka_dlq.adoc[Dead-Letter queue]).
 You can consume these exceptions with your own Spring Integration flow.
 
