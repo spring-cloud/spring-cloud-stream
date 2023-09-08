@@ -1,5 +1,5 @@
 [[partitioning-with-the-rabbitmq-binder]]
-== Partitioning with the RabbitMQ Binder
+= Partitioning with the RabbitMQ Binder
 
 RabbitMQ does not support partitioning natively.
 

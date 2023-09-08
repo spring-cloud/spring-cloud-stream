@@ -11,20 +11,21 @@ image::https://codecov.io/gh/spring-cloud/spring-cloud-stream/branch/{github-tag
 // ======================================================================================
 
 [[introduction]]
-== Introduction
+= Introduction
+
 include::intro.adoc[]
 
 [[resources]]
-== Resources
+= Resources
 
 For more information, please visit the https://spring.io/projects/spring-cloud-stream[project website]:
 
 [[building]]
-== Building
+= Building
 
 include::https://raw.githubusercontent.com/spring-cloud/spring-cloud-build/master/docs/src/main/asciidoc/building.adoc[]
 
 [[contributing]]
-== Contributing
+= Contributing
 
 include::https://raw.githubusercontent.com/spring-cloud/spring-cloud-build/master/docs/src/main/asciidoc/contributing.adoc[]

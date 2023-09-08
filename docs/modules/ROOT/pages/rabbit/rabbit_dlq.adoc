@@ -1,5 +1,5 @@
 [[rabbit-dlq-processing]]
-== Dead-Letter Queue Processing
+= Dead-Letter Queue Processing
 
 Because you cannot anticipate how users would want to dispose of dead-lettered messages, the framework does not provide any standard mechanism to handle them.
 If the reason for the dead-lettering is transient, you may wish to route the messages back to the original queue.
@@ -13,7 +13,7 @@ You could also use `RabbitTemplate.receive()` in a batch process.
 The examples assume the original destination is `so8400in` and the consumer group is `so8400`.
 
 [[non-partitioned-destinations]]
-=== Non-Partitioned Destinations
+== Non-Partitioned Destinations
 
 The first two examples are for when the destination is *not* partitioned:
 
@@ -126,12 +126,12 @@ public class ReRouteDlqApplication {
 ----
 
 [[partitioned-destinations]]
-=== Partitioned Destinations
+== Partitioned Destinations
 
 With partitioned destinations, there is one DLQ for all partitions. We determine the original queue from the headers.
 
 [[republishtodlq=false]]
-==== `republishToDlq=false`
+=== `republishToDlq=false`
 
 When `republishToDlq` is `false`, RabbitMQ publishes the message to the DLX/DLQ with an `x-death` header containing information about the original destination, as shown in the following example:
 
@@ -189,7 +189,7 @@ public class ReRouteDlqApplication {
 ----
 
 [[republishtodlq=true]]
-==== `republishToDlq=true`
+=== `republishToDlq=true`
 
 When `republishToDlq` is `true`, the republishing recoverer adds the original exchange and routing key to headers, as shown in the following example:
 
