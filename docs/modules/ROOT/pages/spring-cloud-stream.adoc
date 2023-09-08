@@ -13,7 +13,6 @@
 [[preface]]
 = Preface
 
-include::preface.adoc[]
 
 [partintro]
 --
