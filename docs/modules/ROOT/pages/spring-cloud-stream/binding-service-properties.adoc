@@ -22,7 +22,7 @@ Default: empty (letting any destination be bound).
 
 spring.cloud.stream.defaultBinder::
 The default binder to use, if multiple binders are configured.
-See <<multiple-binders,Multiple Binders on the Classpath>>.
+See xref:spring-cloud-stream/multiple-binders.adoc[Multiple Binders on the Classpath].
 +
 Default: empty.
 
@@ -30,7 +30,7 @@ spring.cloud.stream.overrideCloudConnectors::
 This property is only applicable when the `cloud` profile is active and Spring Cloud Connectors are provided with the application.
 If the property is `false` (the default), the binder detects a suitable bound service (for example, a RabbitMQ service bound in Cloud Foundry for the RabbitMQ binder) and uses it for creating connections (usually through Spring Cloud Connectors).
 When set to `true`, this property instructs binders to completely ignore the bound services and rely on Spring Boot properties (for example, relying on the `spring.rabbitmq.*` properties provided in the environment for the RabbitMQ binder).
-The typical usage of this property is to be nested in a customized environment <<multiple-systems, when connecting to multiple systems>>.
+The typical usage of this property is to be nested in a customized environment xref:spring-cloud-stream/multiple-systems.adoc[when connecting to multiple systems].
 +
 Default: `false`.
 

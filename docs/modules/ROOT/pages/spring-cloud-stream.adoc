@@ -77,10 +77,10 @@ class BootTestStreamApplicationTests {
 Spring Cloud Stream provides a number of abstractions and primitives that simplify the writing of message-driven microservice applications.
 This section gives an overview of the following:
 
-* <<spring-cloud-stream-overview-application-model,Spring Cloud Stream's application model>>
-* <<spring-cloud-stream-overview-binder-abstraction>>
-* <<spring-cloud-stream-overview-persistent-publish-subscribe-support,Persistent publish-subscribe support>>
-* <<consumer-groups,Consumer group support>>
-* <<partitioning,Partitioning support>>
-* <<spring-cloud-stream-overview-binder-api,A pluggable Binder SPI>>
+* xref:spring-cloud-stream/overview-application-model.adoc[Spring Cloud Stream's application model]
+* xref:spring-cloud-stream/overview-binder-abstraction.adoc[The Binder Abstraction]
+* xref:spring-cloud-stream/overview-persistent-publish-subscribe-support.adoc[Persistent publish-subscribe support]
+* xref:spring-cloud-stream/consumer-groups.adoc[Consumer group support]
+* xref:spring-cloud-stream/overview-partitioning.adoc[Partitioning support]
+* xref:spring-cloud-stream/overview-binder-api.adoc[A pluggable Binder SPI]
 

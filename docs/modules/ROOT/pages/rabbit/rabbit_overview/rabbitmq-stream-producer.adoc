@@ -102,7 +102,7 @@ There are similar properties used when declaring a dead-letter exchange/queue, w
 When retry is enabled within the binder, the listener container thread is suspended for any back off periods that are configured.
 This might be important when strict ordering is required with a single consumer. However, for other use cases, it prevents other messages from being processed on that thread.
 An alternative to using binder retry is to set up dead lettering with time to live on the dead-letter queue (DLQ) as well as dead-letter configuration on the DLQ itself.
-See "`<<rabbit-binder-properties>>`" for more information about the properties discussed here.
+See "`xref:rabbit/rabbit_overview/binder-properties.adoc[RabbitMQ Binder Properties]`" for more information about the properties discussed here.
 You can use the following example configuration to enable this feature:
 
 * Set `autoBindDlq` to `true`.

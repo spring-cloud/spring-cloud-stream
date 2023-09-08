@@ -912,10 +912,10 @@ The `PollableMessageSource.poll()` method takes a `MessageHandler` argument (oft
 It returns `true` if the message was received and successfully processed.
 
 As with message-driven consumers, if the `MessageHandler` throws an exception, messages are published to error channels,
-as discussed in `<<spring-cloud-stream-overview-error-handling>>`.
+as discussed in `xref:spring-cloud-stream/overview-error-handling.adoc[Error Handling]`.
 
 Normally, the `poll()` method acknowledges the message when the `MessageHandler` exits.
-If the method exits abnormally, the message is rejected (not re-queued), but see <<polled-errors>>.
+If the method exits abnormally, the message is rejected (not re-queued), but see xref:spring-cloud-stream/producing-and-consuming-messages.adoc#polled-errors[Handling Errors].
 You can override that behavior by taking responsibility for the acknowledgment, as shown in the following example:
 
 [source,java]

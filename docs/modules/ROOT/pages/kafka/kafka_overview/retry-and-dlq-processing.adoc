@@ -80,7 +80,7 @@ ListenerContainerWithDlqAndRetryCustomizer cust(KafkaTemplate<?, ?> template) {
 Now, only a single retry delay needs to be greater than the consumer's `max.poll.interval.ms` property.
 
 When working with several binders, the 'ListenerContainerWithDlqAndRetryCustomizer' bean gets overridden by the 'DefaultBinderFactory'. For the bean
-to apply, you need to use a 'BinderCustomizer' to set the container customizer (See <<binder-customizer>>):
+to apply, you need to use a 'BinderCustomizer' to set the container customizer (See xref:spring-cloud-stream/binder-customizer.adoc[Customizing binders in multi binder applications]):
 ====
 [source, java]
 ----

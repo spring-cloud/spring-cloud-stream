@@ -37,17 +37,17 @@ The default value of this property cannot be overridden.
 group::
 The consumer group of the binding.
 Applies only to inbound bindings.
-See <<consumer-groups,Consumer Groups>>.
+See xref:spring-cloud-stream/consumer-groups.adoc[Consumer Groups].
 +
 Default: `null` (indicating an anonymous consumer).
 contentType::
 The content type of this binding.
-See `<<content-type-management>>`.
+See `xref:spring-cloud-stream/binding-properties.adoc#content-type-management[Content Type Negotiation]`.
 +
 Default: `application/json`.
 binder::
 The binder used by this binding.
-See `<<multiple-binders>>` for details.
+See `xref:spring-cloud-stream/multiple-binders.adoc[Multiple Binders on the Classpath]` for details.
 +
 Default: `null` (the default binder is used, if it exists).
 
@@ -104,14 +104,14 @@ Default: `true`.
 instanceCount::
 When set to a value greater than equal to zero, it allows customizing the instance count of this consumer (if different from `spring.cloud.stream.instanceCount`).
 When set to a negative value, it defaults to `spring.cloud.stream.instanceCount`.
-See `<<spring-cloud-stream-overview-instance-index-instance-count>>` for more information.
+See `xref:spring-cloud-stream/overview-instance-index-instance-count.adoc[Instance Index and Instance Count]` for more information.
 +
 Default: `-1`.
 instanceIndex::
 When set to a value greater than equal to zero, it allows customizing the instance index of this consumer (if different from `spring.cloud.stream.instanceIndex`).
 When set to a negative value, it defaults to `spring.cloud.stream.instanceIndex`.
 Ignored if `instanceIndexList` is provided.
-See `<<spring-cloud-stream-overview-instance-index-instance-count>>` for more information.
+See `xref:spring-cloud-stream/overview-instance-index-instance-count.adoc[Instance Index and Instance Count]` for more information.
 +
 Default: `-1`.
 instanceIndexList::
@@ -179,7 +179,7 @@ Default: `true`.
 partitionKeyExpression::
 A SpEL expression that determines how to partition outbound data.
 If set, outbound data on this binding is partitioned. `partitionCount` must be set to a value greater than 1 to be effective.
-See `<<partitioning>>`.
+See `xref:spring-cloud-stream/overview-partitioning.adoc[Partitioning]`.
 +
 Default: null.
 

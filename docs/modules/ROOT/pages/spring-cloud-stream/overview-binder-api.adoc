@@ -34,5 +34,5 @@ org.springframework.cloud.stream.binder.kafka.config.KafkaBinderConfiguration
 NOTE: As it was mentioned earlier Binder abstraction is also one of the extension points of the framework. So if you can't find a suitable binder in the preceding list you can implement your own binder on top of Spring Cloud Stream.
 In the https://medium.com/@domenicosibilio/how-to-create-a-spring-cloud-stream-binder-from-scratch-ab8b29ee931b[How to create a Spring Cloud Stream Binder from scratch] post a community member documents
 in details, with an example, a set of steps necessary to implement a custom binder.
-The steps are also highlighted in the `<<spring-cloud-stream-overview-custom-binder-impl>>` section.
+The steps are also highlighted in the `xref:spring-cloud-stream/overview-custom-binder-impl.adoc[Implementing Custom Binders]` section.
 

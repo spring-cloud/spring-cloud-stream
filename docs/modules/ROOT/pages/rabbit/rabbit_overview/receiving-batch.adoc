@@ -6,7 +6,7 @@ With the RabbitMQ binder, there are two types of batches handled by consumer bin
 [[batches-created-by-producers]]
 == Batches Created by Producers
 
-Normally, if a producer binding has `batch-enabled=true` (see <<rabbit-prod-props>>), or a message is created by a `BatchingRabbitTemplate`, elements of the batch are returned as individual calls to the listener method.
+Normally, if a producer binding has `batch-enabled=true` (see xref:rabbit/rabbit_overview/prod-props.adoc[Rabbit Producer Properties]), or a message is created by a `BatchingRabbitTemplate`, elements of the batch are returned as individual calls to the listener method.
 Starting with version 3.0, any such batch can be presented as a `List<?>` to the listener method if `spring.cloud.stream.bindings.<name>.consumer.batch-mode` is set to `true`.
 
 [[consumer-side-batching]]

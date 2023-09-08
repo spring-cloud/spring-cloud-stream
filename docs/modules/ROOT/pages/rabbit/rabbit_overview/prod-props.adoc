@@ -38,7 +38,7 @@ batchingEnabled::
 Whether to enable message batching by producers.
 Messages are batched into one message according to the following properties (described in the next three entries in this list): 'batchSize', `batchBufferLimit`, and `batchTimeout`.
 See https://docs.spring.io/spring-amqp//reference/html/_reference.html#template-batching[Batching] for more information.
-Also see <<rabbit-receiving-batch>>.
+Also see xref:rabbit/rabbit_overview/receiving-batch.adoc[Receiving Batched Messages].
 +
 Default: `false`.
 batchSize::
@@ -304,7 +304,7 @@ Applies only when `requiredGroups` are provided and then only to those groups.
 +
 Default: `no limit`
 useConfirmHeader::
-See <<publisher-confirms>>.
+See xref:rabbit/rabbit_overview/publisher-confirms.adoc[Publisher Confirms].
 Mutually exclusive with `confirmAckChannel`.
 +
 
