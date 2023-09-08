@@ -57,7 +57,7 @@ public class SubjectNamingStrategyTest {
 						"--spring.jmx.enabled=false",
 						"--spring.cloud.stream.bindings.myBinding-out-0.contentType=application/*+avro",
 						"--spring.cloud.stream.schema.avro.subjectNamingStrategy="
-								+ "org.springframework.cloud.schema.registry.avro.QualifiedSubjectNamingStrategy",
+								+ "org.springframework.cloud.stream.schema.registry.avro.QualifiedSubjectNamingStrategy",
 						"--spring.cloud.stream.schema.avro.dynamicSchemaGenerationEnabled=true")) {
 			StreamBridge streamBridge = context.getBean(StreamBridge.class);
 
