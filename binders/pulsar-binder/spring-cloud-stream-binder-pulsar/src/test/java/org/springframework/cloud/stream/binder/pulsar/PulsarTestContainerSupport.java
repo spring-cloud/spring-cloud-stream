@@ -16,8 +16,6 @@
 
 package org.springframework.cloud.stream.binder.pulsar;
 
-import java.util.Locale;
-
 import org.junit.jupiter.api.BeforeAll;
 import org.testcontainers.containers.PulsarContainer;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -43,26 +41,11 @@ public interface PulsarTestContainerSupport {
 	}
 
 	static DockerImageName getPulsarImage() {
-		return isRunningOnMacM1() ? getMacM1PulsarImage() : getStandardPulsarImage();
+		return DockerImageName.parse("apachepulsar/pulsar:3.1.0");
 	}
 
 	static String getHttpServiceUrl() {
 		return PULSAR_CONTAINER.getHttpServiceUrl();
 	}
 
-	private static boolean isRunningOnMacM1() {
-		String osName = System.getProperty("os.name").toLowerCase(Locale.ENGLISH);
-		String osArchitecture = System.getProperty("os.arch").toLowerCase(Locale.ENGLISH);
-		return osName.contains("mac") && osArchitecture.equals("aarch64");
-	}
-
-	private static DockerImageName getStandardPulsarImage() {
-		return DockerImageName.parse("apachepulsar/pulsar:2.11.0");
-	}
-
-	private static DockerImageName getMacM1PulsarImage() {
-		return DockerImageName.parse("kezhenxu94/pulsar").asCompatibleSubstituteFor("apachepulsar/pulsar");
-	}
-
 }
-

@@ -47,8 +47,6 @@ import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.MessageBuilder;
-import org.springframework.pulsar.autoconfigure.ConsumerConfigProperties;
-import org.springframework.pulsar.autoconfigure.ProducerConfigProperties;
 import org.springframework.pulsar.core.ProducerBuilderConfigurationUtil;
 import org.springframework.pulsar.core.ProducerBuilderCustomizer;
 import org.springframework.pulsar.core.PulsarConsumerFactory;
@@ -60,7 +58,6 @@ import org.springframework.pulsar.listener.DefaultPulsarMessageListenerContainer
 import org.springframework.pulsar.listener.PulsarContainerProperties;
 import org.springframework.pulsar.listener.PulsarRecordMessageListener;
 import org.springframework.pulsar.support.header.PulsarHeaderMapper;
-
 
 /**
  * {@link Binder} implementation for Apache Pulsar.
@@ -112,15 +109,10 @@ public class PulsarMessageChannelBinder extends
 			schema = null;
 		}
 
-		var baseProducerProps = PulsarBinderUtils.convertProducerPropertiesToMap(new ProducerConfigProperties());
-		var binderProducerProps = PulsarBinderUtils
-				.convertProducerPropertiesToMap(this.binderConfigProps.getProducer());
-		var bindingProducerProps = PulsarBinderUtils.convertProducerPropertiesToMap(producerProperties.getExtension());
-		var mergedProducerProps = PulsarBinderUtils.mergePropertiesWithPrecedence(baseProducerProps,
-				binderProducerProps, bindingProducerProps);
-
+		var layeredProducerProps = PulsarBinderUtils.mergeModifiedProducerProperties(
+				this.binderConfigProps.getProducer(), producerProperties.getExtension());
 		var handler = new PulsarProducerConfigurationMessageHandler(this.pulsarTemplate, schema, destination.getName(),
-				(builder) -> ProducerBuilderConfigurationUtil.loadConf(builder, mergedProducerProps),
+				(builder) -> ProducerBuilderConfigurationUtil.loadConf(builder, layeredProducerProps),
 				determineOutboundHeaderMapper(producerProperties));
 		handler.setApplicationContext(getApplicationContext());
 		handler.setBeanFactory(getBeanFactory());
@@ -167,13 +159,9 @@ public class PulsarMessageChannelBinder extends
 		var subscriptionName = PulsarBinderUtils.subscriptionName(properties.getExtension(), destination);
 		containerProperties.setSubscriptionName(subscriptionName);
 
-		var baseConsumerProps = PulsarBinderUtils.convertConsumerPropertiesToMap(new ConsumerConfigProperties());
-		var binderConsumerProps = PulsarBinderUtils
-				.convertConsumerPropertiesToMap(this.binderConfigProps.getConsumer());
-		var bindingConsumerProps = PulsarBinderUtils.convertConsumerPropertiesToMap(properties.getExtension());
-		var mergedConsumerProps = PulsarBinderUtils.mergePropertiesWithPrecedence(baseConsumerProps,
-				binderConsumerProps, bindingConsumerProps);
-		containerProperties.getPulsarConsumerProperties().putAll(mergedConsumerProps);
+		var layeredConsumerProps = PulsarBinderUtils
+				.mergeModifiedConsumerProperties(this.binderConfigProps.getConsumer(), properties.getExtension());
+		containerProperties.getPulsarConsumerProperties().putAll(layeredConsumerProps);
 		containerProperties.updateContainerProperties();
 
 		var container = new DefaultPulsarMessageListenerContainer<>(this.pulsarConsumerFactory, containerProperties);

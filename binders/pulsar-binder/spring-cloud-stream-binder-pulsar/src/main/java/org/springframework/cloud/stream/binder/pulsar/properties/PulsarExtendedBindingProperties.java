@@ -22,7 +22,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.cloud.stream.binder.AbstractExtendedBindingProperties;
 import org.springframework.cloud.stream.binder.BinderSpecificPropertiesProvider;
 
-
 /**
  * {@link ConfigurationProperties @ConfigurationProperties} for Pulsar binder specific
  * extensions to the common binding properties.

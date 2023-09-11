@@ -17,6 +17,7 @@
 package org.springframework.cloud.stream.binder.pulsar;
 
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -104,7 +105,8 @@ public class PulsarBinderTests extends
 		var producerFactory = new DefaultPulsarProducerFactory<>(pulsarClient);
 		var pulsarTemplate = new PulsarTemplate<>(producerFactory);
 		var consumerFactory = new DefaultPulsarConsumerFactory<>(pulsarClient,
-				(consumerBuilder -> consumerBuilder.subscriptionInitialPosition(SubscriptionInitialPosition.Earliest)));
+				List.of((consumerBuilder) -> consumerBuilder
+						.subscriptionInitialPosition(SubscriptionInitialPosition.Earliest)));
 		if (this.binder == null) {
 			this.binder = new PulsarTestBinder(provisioner, pulsarTemplate, consumerFactory, configProps,
 					new DefaultSchemaResolver(), JsonPulsarHeaderMapper.builder().build());
@@ -155,8 +157,7 @@ public class PulsarBinderTests extends
 		Binding<MessageChannel> consumerBinding = binder.bindConsumer("foo.bar", null, moduleInputChannel,
 				consumerProperties);
 
-		Message<?> message = MessageBuilder
-				.withPayload("foo".getBytes(StandardCharsets.UTF_8)).build();
+		Message<?> message = MessageBuilder.withPayload("foo".getBytes(StandardCharsets.UTF_8)).build();
 
 		// Let the consumer actually bind to the producer before sending a msg
 		binderBindUnbindLatency();

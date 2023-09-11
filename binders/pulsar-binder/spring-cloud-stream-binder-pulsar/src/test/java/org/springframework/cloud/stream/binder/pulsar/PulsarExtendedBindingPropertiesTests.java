@@ -30,7 +30,6 @@ import org.junit.jupiter.api.Test;
 
 import org.springframework.boot.context.properties.bind.Bindable;
 import org.springframework.boot.context.properties.bind.Binder;
-import org.springframework.boot.context.properties.source.ConfigurationPropertySource;
 import org.springframework.boot.context.properties.source.MapConfigurationPropertySource;
 import org.springframework.cloud.stream.binder.pulsar.properties.PulsarExtendedBindingProperties;
 import org.springframework.pulsar.listener.PulsarContainerProperties;
@@ -45,96 +44,68 @@ import static org.assertj.core.api.Assertions.assertThatNoException;
  */
 public class PulsarExtendedBindingPropertiesTests {
 
-	private final PulsarExtendedBindingProperties properties = new PulsarExtendedBindingProperties();
-
-	private void bind(Map<String, String> map) {
-		ConfigurationPropertySource source = new MapConfigurationPropertySource(map);
-		new Binder(source).bind("spring.cloud.stream.pulsar", Bindable.ofInstance(this.properties));
-	}
-
 	@Test
 	void producerProperties() {
-		// Only spot check a few values (PulsarPropertiesTests does the heavy lifting)
-		Map<String, String> props = new HashMap<>();
-		props.put("spring.cloud.stream.pulsar.bindings.my-foo.producer.topic-name", "my-topic");
-		props.put("spring.cloud.stream.pulsar.bindings.my-foo.producer.send-timeout", "2s");
-		props.put("spring.cloud.stream.pulsar.bindings.my-foo.producer.max-pending-messages", "3");
-		props.put("spring.cloud.stream.pulsar.bindings.my-foo.producer.producer-access-mode", "exclusive");
-		props.put("spring.cloud.stream.pulsar.bindings.my-foo.producer.properties[my-prop]", "my-prop-value");
+		// Only spot check a few values (ProducerConfigPropertiesTests does the heavy
+		// lifting)
+		Map<String, String> inputProps = new HashMap<>();
+		inputProps.put("spring.cloud.stream.pulsar.bindings.my-foo.producer.topic-name", "my-topic");
+		inputProps.put("spring.cloud.stream.pulsar.bindings.my-foo.producer.send-timeout", "2s");
+		inputProps.put("spring.cloud.stream.pulsar.bindings.my-foo.producer.max-pending-messages", "3");
+		inputProps.put("spring.cloud.stream.pulsar.bindings.my-foo.producer.access-mode", "exclusive");
+		var bindingConfigProps = bindInputPropsToBindingConfigProps(inputProps);
+		assertThat(bindingConfigProps.getBindings()).containsOnlyKeys("my-foo");
+		var producerProps = bindingConfigProps.getExtendedProducerProperties("my-foo").toAllProducerPropertiesMap();
 
-		bind(props);
-
-		assertThat(properties.getBindings()).containsOnlyKeys("my-foo");
-		Map<String, Object> producerProps = PulsarBinderUtils
-				.convertProducerPropertiesToMap(properties.getExtendedProducerProperties("my-foo"));
 		// Verify that the props can be loaded in a ProducerBuilder
 		assertThatNoException().isThrownBy(() -> ConfigurationDataUtils.loadData(producerProps,
 				new ProducerConfigurationData(), ProducerConfigurationData.class));
-		// @formatter:off
-		assertThat(producerProps)
-				.containsEntry("topicName", "my-topic")
-				.containsEntry("sendTimeoutMs", 2_000)
-				.containsEntry("maxPendingMessages", 3)
-				.containsEntry("accessMode", ProducerAccessMode.Exclusive)
-				.hasEntrySatisfying("properties", properties ->
-						assertThat(properties)
-								.asInstanceOf(InstanceOfAssertFactories.map(String.class, String.class))
-								.containsEntry("my-prop", "my-prop-value"));
-		// @formatter:on
+		assertThat(producerProps).containsEntry("topicName", "my-topic").containsEntry("sendTimeoutMs", 2_000)
+				.containsEntry("maxPendingMessages", 3).containsEntry("accessMode", ProducerAccessMode.Exclusive);
 	}
 
 	@Test
 	void consumerProperties() {
-		// Only spot check a few values (PulsarPropertiesTests does the heavy lifting)
-		Map<String, String> props = new HashMap<>();
-		props.put("spring.cloud.stream.pulsar.bindings.my-foo.consumer.topics[0]", "my-topic");
-		props.put("spring.cloud.stream.pulsar.bindings.my-foo.consumer.subscription-properties[my-sub-prop]",
-				"my-sub-prop-value");
-		props.put("spring.cloud.stream.pulsar.bindings.my-foo.consumer.subscription-mode", "nondurable");
-		props.put("spring.cloud.stream.pulsar.bindings.my-foo.consumer.receiver-queue-size", "1");
+		// Only spot check a few values (ConsumerConfigPropertiesTests does the heavy
+		// lifting)
+		Map<String, String> inputProps = new HashMap<>();
+		inputProps.put("spring.cloud.stream.pulsar.bindings.my-foo.consumer.topics[0]", "my-topic");
+		inputProps.put("spring.cloud.stream.pulsar.bindings.my-foo.consumer.subscription.mode", "nondurable");
+		inputProps.put("spring.cloud.stream.pulsar.bindings.my-foo.consumer.receiver-queue-size", "1");
+		var bindingConfigProps = bindInputPropsToBindingConfigProps(inputProps);
+		assertThat(bindingConfigProps.getBindings()).containsOnlyKeys("my-foo");
+		var consumerProps = bindingConfigProps.getExtendedConsumerProperties("my-foo").toAllConsumerPropertiesMap();
 
-		bind(props);
-
-		assertThat(properties.getBindings()).containsOnlyKeys("my-foo");
-		Map<String, Object> consumerProps = PulsarBinderUtils
-				.convertConsumerPropertiesToMap(properties.getExtendedConsumerProperties("my-foo"));
 		// Verify that the props can be loaded in a ConsumerBuilder
 		assertThatNoException().isThrownBy(() -> ConfigurationDataUtils.loadData(consumerProps,
 				new ConsumerConfigurationData<>(), ConsumerConfigurationData.class));
-		// @formatter:off
 		assertThat(consumerProps)
 				.hasEntrySatisfying("topicNames",
 						topics -> assertThat(topics).asInstanceOf(InstanceOfAssertFactories.collection(String.class))
 								.containsExactly("my-topic"))
-				.hasEntrySatisfying("subscriptionProperties",
-						properties -> assertThat(properties)
-								.asInstanceOf(InstanceOfAssertFactories.map(String.class, String.class))
-								.containsEntry("my-sub-prop", "my-sub-prop-value"))
-				.containsEntry("subscriptionMode", SubscriptionMode.NonDurable)
-				.containsEntry("receiverQueueSize", 1);
-		// @formatter:on
+				.containsEntry("subscriptionMode", SubscriptionMode.NonDurable).containsEntry("receiverQueueSize", 1);
 	}
 
 	@Test
 	void extendedBindingsArePropagatedToContainerProperties() {
-		Map<String, String> props = new HashMap<>();
-		props.put("spring.cloud.stream.pulsar.bindings.my-foo.consumer.subscription-name", "my-foo-sbscription");
-		props.put("spring.cloud.stream.pulsar.bindings.my-foo.consumer.subscription-type", "Shared");
+		Map<String, String> inputProps = new HashMap<>();
+		inputProps.put("spring.cloud.stream.pulsar.bindings.my-foo.consumer.subscription.name", "my-foo-sbscription");
+		inputProps.put("spring.cloud.stream.pulsar.bindings.my-foo.consumer.subscription.type", "Shared");
+		var bindingConfigProps = bindInputPropsToBindingConfigProps(inputProps);
+		var consumerProps = bindingConfigProps.getExtendedConsumerProperties("my-foo").toAllConsumerPropertiesMap();
 
-		bind(props);
-
-		var bindingConsumerProps = PulsarBinderUtils
-				.convertConsumerPropertiesToMap(properties.getExtendedConsumerProperties("my-foo"));
 		PulsarContainerProperties pulsarContainerProperties = new PulsarContainerProperties();
-		pulsarContainerProperties.getPulsarConsumerProperties().putAll(bindingConsumerProps);
-
+		pulsarContainerProperties.getPulsarConsumerProperties().putAll(consumerProps);
 		assertThat(pulsarContainerProperties.getSubscriptionName()).isNull();
 		assertThat(pulsarContainerProperties.getSubscriptionType()).isEqualTo(SubscriptionType.Exclusive);
-
 		pulsarContainerProperties.updateContainerProperties();
-
 		assertThat(pulsarContainerProperties.getSubscriptionName()).isEqualTo("my-foo-sbscription");
 		assertThat(pulsarContainerProperties.getSubscriptionType()).isEqualTo(SubscriptionType.Shared);
+	}
+
+	private PulsarExtendedBindingProperties bindInputPropsToBindingConfigProps(Map<String, String> inputProps) {
+		return new Binder(new MapConfigurationPropertySource(inputProps))
+				.bind("spring.cloud.stream.pulsar", Bindable.ofInstance(new PulsarExtendedBindingProperties())).get();
 	}
 
 }

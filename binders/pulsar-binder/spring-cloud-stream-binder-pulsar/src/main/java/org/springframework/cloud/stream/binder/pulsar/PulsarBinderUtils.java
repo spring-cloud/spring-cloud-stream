@@ -16,20 +16,17 @@
 
 package org.springframework.cloud.stream.binder.pulsar;
 
-import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
-import org.springframework.boot.context.properties.PropertyMapper;
+import org.springframework.cloud.stream.binder.pulsar.properties.ConsumerConfigProperties;
+import org.springframework.cloud.stream.binder.pulsar.properties.ProducerConfigProperties;
 import org.springframework.cloud.stream.binder.pulsar.properties.PulsarConsumerProperties;
 import org.springframework.cloud.stream.provisioning.ConsumerDestination;
 import org.springframework.core.log.LogAccessor;
-import org.springframework.pulsar.autoconfigure.ConsumerConfigProperties;
-import org.springframework.pulsar.autoconfigure.ProducerConfigProperties;
 import org.springframework.util.StringUtils;
-import org.springframework.util.unit.DataSize;
 
 /**
  * Binder utility methods.
@@ -55,10 +52,72 @@ final class PulsarBinderUtils {
 	 * consumer properties
 	 */
 	static String subscriptionName(PulsarConsumerProperties consumerProps, ConsumerDestination consumerDestination) {
-		if (StringUtils.hasText(consumerProps.getSubscriptionName())) {
-			return consumerProps.getSubscriptionName();
+		if (StringUtils.hasText(consumerProps.getSubscription().getName())) {
+			return consumerProps.getSubscription().getName();
 		}
 		return SUBSCRIPTION_NAME_FORMAT_STR.formatted(consumerDestination.getName(), UUID.randomUUID());
+	}
+
+	/**
+	 * Merges base and extended producer properties defined at the binder and binding
+	 * level. Only properties whose value has changed from the default are considered. If
+	 * a property is defined at both the binder and binding level, the binding level
+	 * property value is given precedence.
+	 * @param binderProducerProps the binder level producer config properties (eg.
+	 * 'spring.cloud.stream.pulsar.binder.producer.*')
+	 * @param bindingProducerProps the binding level config properties (eg.
+	 * 'spring.cloud.stream.pulsar.bindings.myBinding-out-0.producer.*')
+	 * @return map of modified merged binder and binding producer properties
+	 */
+	static Map<String, Object> mergeModifiedProducerProperties(ProducerConfigProperties binderProducerProps,
+			ProducerConfigProperties bindingProducerProps) {
+		// Layer the base props for common -> binder -> bindings
+		var baseProducerProps = new ProducerConfigProperties().toBaseProducerPropertiesMap();
+		var binderBaseProducerProps = binderProducerProps.toBaseProducerPropertiesMap();
+		var bindingBaseProducerProps = bindingProducerProps.toBaseProducerPropertiesMap();
+		var layeredBaseProducerProps = PulsarBinderUtils.mergePropertiesWithPrecedence(baseProducerProps,
+				binderBaseProducerProps, bindingBaseProducerProps);
+		// Layer the extended props for binder -> bindings
+		var extProducerProps = new ProducerConfigProperties().toExtendedProducerPropertiesMap();
+		var binderExtProducerProps = binderProducerProps.toExtendedProducerPropertiesMap();
+		var bindingExtProducerProps = bindingProducerProps.toExtendedProducerPropertiesMap();
+		var layeredExtProducerProps = PulsarBinderUtils.mergePropertiesWithPrecedence(extProducerProps,
+				binderExtProducerProps, bindingExtProducerProps);
+		// Combine both base and extended layers
+		var layeredProducerProps = new HashMap<>(layeredBaseProducerProps);
+		layeredProducerProps.putAll(layeredExtProducerProps);
+		return layeredProducerProps;
+	}
+
+	/**
+	 * Merges base and extended consumer properties defined at the binder and binding
+	 * level. Only properties whose value has changed from the default are considered. If
+	 * a property is defined at both the binder and binding level, the binding level
+	 * property value is given precedence.
+	 * @param binderConsumerProps the binder level consumer config properties (eg.
+	 * 'spring.cloud.stream.pulsar.binder.consumer.*')
+	 * @param bindingConsumerProps the binding level config properties (eg.
+	 * 'spring.cloud.stream.pulsar.bindings.myBinding-in-0.consumer.*')
+	 * @return map of modified merged binder and binding consumer properties
+	 */
+	static Map<String, Object> mergeModifiedConsumerProperties(ConsumerConfigProperties binderConsumerProps,
+			ConsumerConfigProperties bindingConsumerProps) {
+		// Layer the base props for common -> binder -> bindings
+		var baseConsumerProps = new ConsumerConfigProperties().toBaseConsumerPropertiesMap();
+		var binderBaseConsumerProps = binderConsumerProps.toBaseConsumerPropertiesMap();
+		var bindingBaseConsumerProps = bindingConsumerProps.toBaseConsumerPropertiesMap();
+		var layeredBaseConsumerProps = PulsarBinderUtils.mergePropertiesWithPrecedence(baseConsumerProps,
+				binderBaseConsumerProps, bindingBaseConsumerProps);
+		// Layer the extended props for binder -> bindings
+		var extConsumerProps = new ConsumerConfigProperties().toExtendedConsumerPropertiesMap();
+		var binderExtConsumerProps = binderConsumerProps.toExtendedConsumerPropertiesMap();
+		var bindingExtConsumerProps = bindingConsumerProps.toExtendedConsumerPropertiesMap();
+		var layeredExtConsumerProps = PulsarBinderUtils.mergePropertiesWithPrecedence(extConsumerProps,
+				binderExtConsumerProps, bindingExtConsumerProps);
+		// Combine both base and extended layers
+		var layeredConsumerProps = new HashMap<>(layeredBaseConsumerProps);
+		layeredConsumerProps.putAll(layeredExtConsumerProps);
+		return layeredConsumerProps;
 	}
 
 	/**
@@ -103,105 +162,6 @@ final class PulsarBinderUtils {
 			}
 		});
 		return newOrModifiedProps;
-	}
-
-	/**
-	 * Gets a map representation of a {@link ProducerConfigProperties}.
-	 * @param producerProps the producer props
-	 * @return map representation of producer props where each entry is a field and its
-	 * associated value
-	 */
-	static Map<String, Object> convertProducerPropertiesToMap(ProducerConfigProperties producerProps) {
-		var properties = new PulsarBinderUtils.Properties();
-		var map = PropertyMapper.get().alwaysApplyingWhenNonNull();
-		map.from(producerProps::getTopicName).to(properties.in("topicName"));
-		map.from(producerProps::getProducerName).to(properties.in("producerName"));
-		map.from(producerProps::getSendTimeout).asInt(Duration::toMillis).to(properties.in("sendTimeoutMs"));
-		map.from(producerProps::getBlockIfQueueFull).to(properties.in("blockIfQueueFull"));
-		map.from(producerProps::getMaxPendingMessages).to(properties.in("maxPendingMessages"));
-		map.from(producerProps::getMaxPendingMessagesAcrossPartitions)
-				.to(properties.in("maxPendingMessagesAcrossPartitions"));
-		map.from(producerProps::getMessageRoutingMode).to(properties.in("messageRoutingMode"));
-		map.from(producerProps::getHashingScheme).to(properties.in("hashingScheme"));
-		map.from(producerProps::getCryptoFailureAction).to(properties.in("cryptoFailureAction"));
-		map.from(producerProps::getBatchingMaxPublishDelay).as(it -> it.toNanos() / 1000)
-				.to(properties.in("batchingMaxPublishDelayMicros"));
-		map.from(producerProps::getBatchingPartitionSwitchFrequencyByPublishDelay)
-				.to(properties.in("batchingPartitionSwitchFrequencyByPublishDelay"));
-		map.from(producerProps::getBatchingMaxMessages).to(properties.in("batchingMaxMessages"));
-		map.from(producerProps::getBatchingMaxBytes).asInt(DataSize::toBytes).to(properties.in("batchingMaxBytes"));
-		map.from(producerProps::getBatchingEnabled).to(properties.in("batchingEnabled"));
-		map.from(producerProps::getChunkingEnabled).to(properties.in("chunkingEnabled"));
-		map.from(producerProps::getEncryptionKeys).to(properties.in("encryptionKeys"));
-		map.from(producerProps::getCompressionType).to(properties.in("compressionType"));
-		map.from(producerProps::getInitialSequenceId).to(properties.in("initialSequenceId"));
-		map.from(producerProps::getAutoUpdatePartitions).to(properties.in("autoUpdatePartitions"));
-		map.from(producerProps::getAutoUpdatePartitionsInterval).as(Duration::toSeconds)
-				.to(properties.in("autoUpdatePartitionsIntervalSeconds"));
-		map.from(producerProps::getMultiSchema).to(properties.in("multiSchema"));
-		map.from(producerProps::getProducerAccessMode).to(properties.in("accessMode"));
-		map.from(producerProps::getLazyStartPartitionedProducers).to(properties.in("lazyStartPartitionedProducers"));
-		map.from(producerProps::getProperties).to(properties.in("properties"));
-		return properties;
-	}
-
-	/**
-	 * Gets a map representation of a {@link ConsumerConfigProperties}.
-	 * @param consumerProps the consumer props
-	 * @return map representation of consumer props where each entry is a field and its
-	 * associated value
-	 */
-	static Map<String, Object> convertConsumerPropertiesToMap(ConsumerConfigProperties consumerProps) {
-		var properties = new PulsarBinderUtils.Properties();
-		var map = PropertyMapper.get().alwaysApplyingWhenNonNull();
-		map.from(consumerProps::getTopics).to(properties.in("topicNames"));
-		map.from(consumerProps::getTopicsPattern).to(properties.in("topicsPattern"));
-		map.from(consumerProps::getSubscriptionName).to(properties.in("subscriptionName"));
-		map.from(consumerProps::getSubscriptionType).to(properties.in("subscriptionType"));
-		map.from(consumerProps::getSubscriptionProperties).to(properties.in("subscriptionProperties"));
-		map.from(consumerProps::getSubscriptionMode).to(properties.in("subscriptionMode"));
-		map.from(consumerProps::getReceiverQueueSize).to(properties.in("receiverQueueSize"));
-		map.from(consumerProps::getAcknowledgementsGroupTime).as(it -> it.toNanos() / 1000)
-				.to(properties.in("acknowledgementsGroupTimeMicros"));
-		map.from(consumerProps::getNegativeAckRedeliveryDelay).as(it -> it.toNanos() / 1000)
-				.to(properties.in("negativeAckRedeliveryDelayMicros"));
-		map.from(consumerProps::getMaxTotalReceiverQueueSizeAcrossPartitions)
-				.to(properties.in("maxTotalReceiverQueueSizeAcrossPartitions"));
-		map.from(consumerProps::getConsumerName).to(properties.in("consumerName"));
-		map.from(consumerProps::getAckTimeout).as(Duration::toMillis).to(properties.in("ackTimeoutMillis"));
-		map.from(consumerProps::getTickDuration).as(Duration::toMillis).to(properties.in("tickDurationMillis"));
-		map.from(consumerProps::getPriorityLevel).to(properties.in("priorityLevel"));
-		map.from(consumerProps::getCryptoFailureAction).to(properties.in("cryptoFailureAction"));
-		map.from(consumerProps::getProperties).to(properties.in("properties"));
-		map.from(consumerProps::getReadCompacted).to(properties.in("readCompacted"));
-		map.from(consumerProps::getSubscriptionInitialPosition).to(properties.in("subscriptionInitialPosition"));
-		map.from(consumerProps::getPatternAutoDiscoveryPeriod).to(properties.in("patternAutoDiscoveryPeriod"));
-		map.from(consumerProps::getRegexSubscriptionMode).to(properties.in("regexSubscriptionMode"));
-		map.from(consumerProps::getDeadLetterPolicy).to(properties.in("deadLetterPolicy"));
-		map.from(consumerProps::getRetryEnable).to(properties.in("retryEnable"));
-		map.from(consumerProps::getAutoUpdatePartitions).to(properties.in("autoUpdatePartitions"));
-		map.from(consumerProps::getAutoUpdatePartitionsInterval).as(Duration::toSeconds)
-				.to(properties.in("autoUpdatePartitionsIntervalSeconds"));
-		map.from(consumerProps::getReplicateSubscriptionState).to(properties.in("replicateSubscriptionState"));
-		map.from(consumerProps::getResetIncludeHead).to(properties.in("resetIncludeHead"));
-		map.from(consumerProps::getBatchIndexAckEnabled).to(properties.in("batchIndexAckEnabled"));
-		map.from(consumerProps::getAckReceiptEnabled).to(properties.in("ackReceiptEnabled"));
-		map.from(consumerProps::getPoolMessages).to(properties.in("poolMessages"));
-		map.from(consumerProps::getStartPaused).to(properties.in("startPaused"));
-		map.from(consumerProps::getAutoAckOldestChunkedMessageOnQueueFull)
-				.to(properties.in("autoAckOldestChunkedMessageOnQueueFull"));
-		map.from(consumerProps::getMaxPendingChunkedMessage).to(properties.in("maxPendingChunkedMessage"));
-		map.from(consumerProps::getExpireTimeOfIncompleteChunkedMessage).as(Duration::toMillis)
-				.to(properties.in("expireTimeOfIncompleteChunkedMessageMillis"));
-		return properties;
-	}
-
-	static class Properties extends HashMap<String, Object> {
-
-		<V> java.util.function.Consumer<V> in(String key) {
-			return (value) -> put(key, value);
-		}
-
 	}
 
 }

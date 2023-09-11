@@ -19,8 +19,6 @@ package org.springframework.cloud.stream.binder.pulsar.properties;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.NestedConfigurationProperty;
 import org.springframework.lang.Nullable;
-import org.springframework.pulsar.autoconfigure.ConsumerConfigProperties;
-import org.springframework.pulsar.autoconfigure.ProducerConfigProperties;
 
 /**
  * {@link ConfigurationProperties @ConfigurationProperties} for the Pulsar binder.
