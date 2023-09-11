@@ -19,7 +19,6 @@ package org.springframework.cloud.stream.binder.pulsar.properties;
 import org.apache.pulsar.common.schema.SchemaType;
 
 import org.springframework.lang.Nullable;
-import org.springframework.pulsar.autoconfigure.ConsumerConfigProperties;
 
 /**
  * Pulsar consumer properties used by the binder.

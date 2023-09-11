@@ -26,7 +26,6 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import org.apache.pulsar.client.api.Producer;
-import org.apache.pulsar.client.api.PulsarClient;
 import org.apache.pulsar.client.api.PulsarClientException;
 import org.apache.pulsar.client.api.Schema;
 import org.apache.pulsar.client.impl.schema.JSONSchema;
@@ -38,6 +37,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.WebApplicationType;
@@ -47,11 +48,9 @@ import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
-import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.MessageBuilder;
-import org.springframework.pulsar.autoconfigure.PulsarProperties;
 import org.springframework.pulsar.core.ConsumerBuilderCustomizer;
 import org.springframework.pulsar.core.DefaultPulsarConsumerFactory;
 import org.springframework.pulsar.core.DefaultPulsarProducerFactory;
@@ -60,7 +59,6 @@ import org.springframework.pulsar.core.ProducerBuilderCustomizer;
 import org.springframework.pulsar.core.PulsarConsumerFactory;
 import org.springframework.pulsar.core.PulsarProducerFactory;
 import org.springframework.pulsar.core.SchemaResolver.SchemaResolverCustomizer;
-import org.springframework.pulsar.core.TopicResolver;
 import org.springframework.pulsar.support.header.PulsarHeaderMapper;
 import org.springframework.pulsar.support.header.ToStringPulsarHeaderMapper;
 
@@ -84,17 +82,18 @@ class PulsarBinderIntegrationTests implements PulsarTestContainerSupport {
 		app.setWebApplicationType(WebApplicationType.NONE);
 		try (ConfigurableApplicationContext context = app.run(
 				"--spring.pulsar.client.service-url=" + PulsarTestContainerSupport.getPulsarBrokerUrl(),
-				"--spring.pulsar.administration.service-url=" + PulsarTestContainerSupport.getHttpServiceUrl(),
+				"--spring.pulsar.admin.service-url=" + PulsarTestContainerSupport.getHttpServiceUrl(),
+				"--spring.pulsar.producer.cache.enabled=false",
 				"--spring.cloud.function.definition=textSupplier;textLogger",
 				"--spring.cloud.stream.bindings.textLogger-in-0.destination=textSupplier-out-0",
-				"--spring.pulsar.producer.producer-name=textSupplierProducer-fromBase",
-				"--spring.cloud.stream.pulsar.binder.producer.producer-name=textSupplierProducer-fromBinder",
-				"--spring.cloud.stream.pulsar.bindings.textSupplier-out-0.producer.producer-name=textSupplierProducer-fromBinding",
+				"--spring.pulsar.producer.name=textSupplierProducer-fromBase",
+				"--spring.cloud.stream.pulsar.binder.producer.name=textSupplierProducer-fromBinder",
+				"--spring.cloud.stream.pulsar.bindings.textSupplier-out-0.producer.name=textSupplierProducer-fromBinding",
 				"--spring.cloud.stream.pulsar.binder.producer.max-pending-messages=1100",
-				"--spring.pulsar.producer.block-if-queue-full=true",
-				"--spring.cloud.stream.pulsar.binder.consumer.subscription-name=textLoggerSub-fromBinder",
-				"--spring.cloud.stream.pulsar.binder.consumer.consumer-name=textLogger-fromBinder",
-				"--spring.cloud.stream.pulsar.bindings.textLogger-in-0.consumer.consumer-name=textLogger-fromBinding")) {
+				"--spring.cloud.stream.pulsar.binder.producer.block-if-queue-full=true",
+				"--spring.cloud.stream.pulsar.binder.consumer.subscription.name=textLoggerSub-fromBinder",
+				"--spring.cloud.stream.pulsar.binder.consumer.name=textLogger-fromBinder",
+				"--spring.cloud.stream.pulsar.bindings.textLogger-in-0.consumer.name=textLogger-fromBinding")) {
 
 			Awaitility.await().atMost(Duration.ofSeconds(AWAIT_DURATION))
 					.until(() -> output.toString().contains("Hello binder: test-basic-scenario"));
@@ -122,10 +121,10 @@ class PulsarBinderIntegrationTests implements PulsarTestContainerSupport {
 			app.setWebApplicationType(WebApplicationType.NONE);
 			try (ConfigurableApplicationContext ignored = app.run(
 					"--spring.pulsar.client.service-url=" + PulsarTestContainerSupport.getPulsarBrokerUrl(),
-					"--spring.pulsar.administration.service-url=" + PulsarTestContainerSupport.getHttpServiceUrl(),
+					"--spring.pulsar.admin.service-url=" + PulsarTestContainerSupport.getHttpServiceUrl(),
 					"--spring.cloud.function.definition=textSupplier;textLogger",
 					"--spring.cloud.stream.bindings.textLogger-in-0.destination=textSupplier-out-0",
-					"--spring.cloud.stream.pulsar.bindings.textLogger-in-0.consumer.subscription-name=pbit-text-sub1")) {
+					"--spring.cloud.stream.pulsar.bindings.textLogger-in-0.consumer.subscription.name=pbit-text-sub1")) {
 				Awaitility.await().atMost(Duration.ofSeconds(AWAIT_DURATION))
 						.until(() -> output.toString().contains("Hello binder: test-basic-scenario"));
 			}
@@ -137,11 +136,11 @@ class PulsarBinderIntegrationTests implements PulsarTestContainerSupport {
 			app.setWebApplicationType(WebApplicationType.NONE);
 			try (ConfigurableApplicationContext ignored = app.run(
 					"--spring.pulsar.client.service-url=" + PulsarTestContainerSupport.getPulsarBrokerUrl(),
-					"--spring.pulsar.administration.service-url=" + PulsarTestContainerSupport.getHttpServiceUrl(),
+					"--spring.pulsar.admin.service-url=" + PulsarTestContainerSupport.getHttpServiceUrl(),
 					"--spring.cloud.function.definition=piSupplier;piLogger",
 					"--spring.cloud.stream.bindings.piSupplier-out-0.destination=pi-stream",
 					"--spring.cloud.stream.bindings.piLogger-in-0.destination=pi-stream",
-					"--spring.cloud.stream.pulsar.bindings.piLogger-in-0.consumer.subscription-name=pbit-float-sub1")) {
+					"--spring.cloud.stream.pulsar.bindings.piLogger-in-0.consumer.subscription.name=pbit-float-sub1")) {
 				Awaitility.await().atMost(Duration.ofSeconds(AWAIT_DURATION))
 						.until(() -> output.toString().contains("Hello binder: 3.14"));
 			}
@@ -158,14 +157,14 @@ class PulsarBinderIntegrationTests implements PulsarTestContainerSupport {
 			app.setWebApplicationType(WebApplicationType.NONE);
 			try (ConfigurableApplicationContext ignored = app.run(
 					"--spring.pulsar.client.service-url=" + PulsarTestContainerSupport.getPulsarBrokerUrl(),
-					"--spring.pulsar.administration.service-url=" + PulsarTestContainerSupport.getHttpServiceUrl(),
+					"--spring.pulsar.admin.service-url=" + PulsarTestContainerSupport.getHttpServiceUrl(),
 					"--spring.cloud.function.definition=piSupplier;piLogger",
 					"--spring.cloud.stream.bindings.piLogger-in-0.destination=piSupplier-out-0",
 					"--spring.cloud.stream.bindings.piSupplier-out-0.producer.use-native-encoding=true",
 					"--spring.cloud.stream.pulsar.bindings.piSupplier-out-0.producer.schema-type=FLOAT",
 					"--spring.cloud.stream.bindings.piLogger-in-0.consumer.use-native-decoding=true",
 					"--spring.cloud.stream.pulsar.bindings.piLogger-in-0.consumer.schema-type=FLOAT",
-					"--spring.cloud.stream.pulsar.bindings.piLogger-in-0.consumer.subscription-name=pbit-float-sub2")) {
+					"--spring.cloud.stream.pulsar.bindings.piLogger-in-0.consumer.subscription.name=pbit-float-sub2")) {
 				Awaitility.await().atMost(Duration.ofSeconds(AWAIT_DURATION))
 						.until(() -> output.toString().contains("Hello binder: 3.14"));
 			}
@@ -177,7 +176,7 @@ class PulsarBinderIntegrationTests implements PulsarTestContainerSupport {
 			app.setWebApplicationType(WebApplicationType.NONE);
 			try (ConfigurableApplicationContext ignored = app.run(
 					"--spring.pulsar.client.service-url=" + PulsarTestContainerSupport.getPulsarBrokerUrl(),
-					"--spring.pulsar.administration.service-url=" + PulsarTestContainerSupport.getHttpServiceUrl(),
+					"--spring.pulsar.admin.service-url=" + PulsarTestContainerSupport.getHttpServiceUrl(),
 					"--spring.cloud.function.definition=fooSupplier;fooLogger",
 					"--spring.cloud.stream.bindings.fooSupplier-out-0.destination=foo-stream-1",
 					"--spring.cloud.stream.bindings.fooLogger-in-0.destination=foo-stream-1",
@@ -188,7 +187,7 @@ class PulsarBinderIntegrationTests implements PulsarTestContainerSupport {
 					"--spring.cloud.stream.bindings.fooLogger-in-0.consumer.use-native-decoding=true",
 					"--spring.cloud.stream.pulsar.bindings.fooLogger-in-0.consumer.schema-type=JSON",
 					"--spring.cloud.stream.pulsar.bindings.fooLogger-in-0.consumer.message-type=" + Foo.class.getName(),
-					"--spring.cloud.stream.pulsar.bindings.fooLogger-in-0.consumer.subscription-name=pbit-foo-sub1")) {
+					"--spring.cloud.stream.pulsar.bindings.fooLogger-in-0.consumer.subscription.name=pbit-foo-sub1")) {
 				Awaitility.await().atMost(Duration.ofSeconds(AWAIT_DURATION))
 						.until(() -> output.toString().contains("Hello binder: Foo[value=5150]"));
 			}
@@ -200,7 +199,7 @@ class PulsarBinderIntegrationTests implements PulsarTestContainerSupport {
 			app.setWebApplicationType(WebApplicationType.NONE);
 			try (ConfigurableApplicationContext ignored = app.run(
 					"--spring.pulsar.client.service-url=" + PulsarTestContainerSupport.getPulsarBrokerUrl(),
-					"--spring.pulsar.administration.service-url=" + PulsarTestContainerSupport.getHttpServiceUrl(),
+					"--spring.pulsar.admin.service-url=" + PulsarTestContainerSupport.getHttpServiceUrl(),
 					"--spring.cloud.function.definition=fooSupplier;fooLogger",
 					"--spring.cloud.stream.bindings.fooSupplier-out-0.destination=foo-stream-2",
 					"--spring.cloud.stream.bindings.fooLogger-in-0.destination=foo-stream-2",
@@ -209,7 +208,7 @@ class PulsarBinderIntegrationTests implements PulsarTestContainerSupport {
 							+ Foo.class.getName(),
 					"--spring.cloud.stream.bindings.fooLogger-in-0.consumer.use-native-decoding=true",
 					"--spring.cloud.stream.pulsar.bindings.fooLogger-in-0.consumer.message-type=" + Foo.class.getName(),
-					"--spring.cloud.stream.pulsar.bindings.fooLogger-in-0.consumer.subscription-name=pbit-foo-sub2")) {
+					"--spring.cloud.stream.pulsar.bindings.fooLogger-in-0.consumer.subscription.name=pbit-foo-sub2")) {
 				Awaitility.await().atMost(Duration.ofSeconds(AWAIT_DURATION))
 						.until(() -> output.toString().contains("Hello binder: Foo[value=5150]"));
 			}
@@ -221,7 +220,7 @@ class PulsarBinderIntegrationTests implements PulsarTestContainerSupport {
 			app.setWebApplicationType(WebApplicationType.NONE);
 			try (ConfigurableApplicationContext ignored = app.run(
 					"--spring.pulsar.client.service-url=" + PulsarTestContainerSupport.getPulsarBrokerUrl(),
-					"--spring.pulsar.administration.service-url=" + PulsarTestContainerSupport.getHttpServiceUrl(),
+					"--spring.pulsar.admin.service-url=" + PulsarTestContainerSupport.getHttpServiceUrl(),
 					"--spring.cloud.function.definition=userSupplier;userLogger",
 					"--spring.cloud.stream.bindings.userSupplier-out-0.destination=user-stream-1",
 					"--spring.cloud.stream.bindings.userLogger-in-0.destination=user-stream-1",
@@ -233,7 +232,7 @@ class PulsarBinderIntegrationTests implements PulsarTestContainerSupport {
 					"--spring.cloud.stream.pulsar.bindings.userLogger-in-0.consumer.schema-type=AVRO",
 					"--spring.cloud.stream.pulsar.bindings.userLogger-in-0.consumer.message-type="
 							+ User.class.getName(),
-					"--spring.cloud.stream.pulsar.bindings.userLogger-in-0.consumer.subscription-name=pbit-user-sub1")) {
+					"--spring.cloud.stream.pulsar.bindings.userLogger-in-0.consumer.subscription.name=pbit-user-sub1")) {
 				Awaitility.await().atMost(Duration.ofSeconds(AWAIT_DURATION))
 						.until(() -> output.toString().contains("Hello binder: User{name='user21', age=21}"));
 			}
@@ -245,7 +244,7 @@ class PulsarBinderIntegrationTests implements PulsarTestContainerSupport {
 			app.setWebApplicationType(WebApplicationType.NONE);
 			try (ConfigurableApplicationContext ignored = app.run(
 					"--spring.pulsar.client.service-url=" + PulsarTestContainerSupport.getPulsarBrokerUrl(),
-					"--spring.pulsar.administration.service-url=" + PulsarTestContainerSupport.getHttpServiceUrl(),
+					"--spring.pulsar.admin.service-url=" + PulsarTestContainerSupport.getHttpServiceUrl(),
 					"--spring.cloud.function.definition=userSupplier;userLogger",
 					"--spring.cloud.stream.bindings.userSupplier-out-0.destination=user-stream-2",
 					"--spring.cloud.stream.bindings.userLogger-in-0.destination=user-stream-2",
@@ -255,7 +254,7 @@ class PulsarBinderIntegrationTests implements PulsarTestContainerSupport {
 					"--spring.cloud.stream.bindings.userLogger-in-0.consumer.use-native-decoding=true",
 					"--spring.cloud.stream.pulsar.bindings.userLogger-in-0.consumer.message-type="
 							+ User.class.getName(),
-					"--spring.cloud.stream.pulsar.bindings.userLogger-in-0.consumer.subscription-name=pbit-user-sub2",
+					"--spring.cloud.stream.pulsar.bindings.userLogger-in-0.consumer.subscription.name=pbit-user-sub2",
 					"--spring.pulsar.defaults.type-mappings[0].message-type=%s".formatted(User.class.getName()),
 					"--spring.pulsar.defaults.type-mappings[0].schema-info.schema-type=AVRO")) {
 				Awaitility.await().atMost(Duration.ofSeconds(AWAIT_DURATION))
@@ -269,7 +268,7 @@ class PulsarBinderIntegrationTests implements PulsarTestContainerSupport {
 			app.setWebApplicationType(WebApplicationType.NONE);
 			try (ConfigurableApplicationContext ignored = app.run(
 					"--spring.pulsar.client.service-url=" + PulsarTestContainerSupport.getPulsarBrokerUrl(),
-					"--spring.pulsar.administration.service-url=" + PulsarTestContainerSupport.getHttpServiceUrl(),
+					"--spring.pulsar.admin.service-url=" + PulsarTestContainerSupport.getHttpServiceUrl(),
 					"--spring.cloud.function.definition=userSupplier;userLogger",
 					"--spring.cloud.stream.bindings.userSupplier-out-0.destination=user-stream-3",
 					"--spring.cloud.stream.bindings.userLogger-in-0.destination=user-stream-3",
@@ -279,7 +278,7 @@ class PulsarBinderIntegrationTests implements PulsarTestContainerSupport {
 					"--spring.cloud.stream.bindings.userLogger-in-0.consumer.use-native-decoding=true",
 					"--spring.cloud.stream.pulsar.bindings.userLogger-in-0.consumer.message-type="
 							+ User.class.getName(),
-					"--spring.cloud.stream.pulsar.bindings.userLogger-in-0.consumer.subscription-name=pbit-user-sub3")) {
+					"--spring.cloud.stream.pulsar.bindings.userLogger-in-0.consumer.subscription.name=pbit-user-sub3")) {
 				Awaitility.await().atMost(Duration.ofSeconds(AWAIT_DURATION))
 						.until(() -> output.toString().contains("Hello binder: User{name='user21', age=21}"));
 			}
@@ -291,7 +290,7 @@ class PulsarBinderIntegrationTests implements PulsarTestContainerSupport {
 			app.setWebApplicationType(WebApplicationType.NONE);
 			try (ConfigurableApplicationContext ignored = app.run(
 					"--spring.pulsar.client.service-url=" + PulsarTestContainerSupport.getPulsarBrokerUrl(),
-					"--spring.pulsar.administration.service-url=" + PulsarTestContainerSupport.getHttpServiceUrl(),
+					"--spring.pulsar.admin.service-url=" + PulsarTestContainerSupport.getHttpServiceUrl(),
 					"--spring.cloud.function.definition=userSupplier;userLogger",
 					"--spring.cloud.stream.bindings.userSupplier-out-0.destination=kv-stream-1",
 					"--spring.cloud.stream.bindings.userLogger-in-0.destination=kv-stream-1",
@@ -307,7 +306,7 @@ class PulsarBinderIntegrationTests implements PulsarTestContainerSupport {
 							+ User.class.getName(),
 					"--spring.cloud.stream.pulsar.bindings.userLogger-in-0.consumer.message-key-type="
 							+ String.class.getName(),
-					"--spring.cloud.stream.pulsar.bindings.userLogger-in-0.consumer.subscription-name=pbit-kv-sub1",
+					"--spring.cloud.stream.pulsar.bindings.userLogger-in-0.consumer.subscription.name=pbit-kv-sub1",
 					"--spring.pulsar.defaults.type-mappings[0].message-type=%s".formatted(User.class.getName()),
 					"--spring.pulsar.defaults.type-mappings[0].schema-info.schema-type=AVRO")) {
 				Awaitility.await().atMost(Duration.ofSeconds(AWAIT_DURATION))
@@ -321,7 +320,7 @@ class PulsarBinderIntegrationTests implements PulsarTestContainerSupport {
 			app.setWebApplicationType(WebApplicationType.NONE);
 			try (ConfigurableApplicationContext ignored = app.run(
 					"--spring.pulsar.client.service-url=" + PulsarTestContainerSupport.getPulsarBrokerUrl(),
-					"--spring.pulsar.administration.service-url=" + PulsarTestContainerSupport.getHttpServiceUrl(),
+					"--spring.pulsar.admin.service-url=" + PulsarTestContainerSupport.getHttpServiceUrl(),
 					"--spring.cloud.function.definition=userSupplier;userLogger",
 					"--spring.cloud.stream.bindings.userSupplier-out-0.destination=kv-stream-2",
 					"--spring.cloud.stream.bindings.userLogger-in-0.destination=kv-stream-2",
@@ -335,7 +334,7 @@ class PulsarBinderIntegrationTests implements PulsarTestContainerSupport {
 							+ User.class.getName(),
 					"--spring.cloud.stream.pulsar.bindings.userLogger-in-0.consumer.message-key-type="
 							+ String.class.getName(),
-					"--spring.cloud.stream.pulsar.bindings.userLogger-in-0.consumer.subscription-name=pbit-kv-sub2",
+					"--spring.cloud.stream.pulsar.bindings.userLogger-in-0.consumer.subscription.name=pbit-kv-sub2",
 					"--spring.pulsar.defaults.type-mappings[0].message-type=%s".formatted(User.class.getName()),
 					"--spring.pulsar.defaults.type-mappings[0].schema-info.schema-type=AVRO")) {
 				Awaitility.await().atMost(Duration.ofSeconds(AWAIT_DURATION))
@@ -349,7 +348,7 @@ class PulsarBinderIntegrationTests implements PulsarTestContainerSupport {
 			app.setWebApplicationType(WebApplicationType.NONE);
 			try (ConfigurableApplicationContext ignored = app.run(
 					"--spring.pulsar.client.service-url=" + PulsarTestContainerSupport.getPulsarBrokerUrl(),
-					"--spring.pulsar.administration.service-url=" + PulsarTestContainerSupport.getHttpServiceUrl(),
+					"--spring.pulsar.admin.service-url=" + PulsarTestContainerSupport.getHttpServiceUrl(),
 					"--spring.cloud.function.definition=userSupplier;userLogger",
 					"--spring.cloud.stream.bindings.userSupplier-out-0.destination=kv-stream-3",
 					"--spring.cloud.stream.bindings.userLogger-in-0.destination=kv-stream-3",
@@ -365,7 +364,7 @@ class PulsarBinderIntegrationTests implements PulsarTestContainerSupport {
 							+ User.class.getName(),
 					"--spring.cloud.stream.pulsar.bindings.userLogger-in-0.consumer.message-key-type="
 							+ String.class.getName(),
-					"--spring.cloud.stream.pulsar.bindings.userLogger-in-0.consumer.subscription-name=pbit-kv-sub3")) {
+					"--spring.cloud.stream.pulsar.bindings.userLogger-in-0.consumer.subscription.name=pbit-kv-sub3")) {
 				Awaitility.await().atMost(Duration.ofSeconds(AWAIT_DURATION))
 						.until(() -> output.toString().contains("Hello binder: 21->User{name='user21', age=21}"));
 			}
@@ -377,7 +376,7 @@ class PulsarBinderIntegrationTests implements PulsarTestContainerSupport {
 			app.setWebApplicationType(WebApplicationType.NONE);
 			try (ConfigurableApplicationContext ignored = app.run(
 					"--spring.pulsar.client.service-url=" + PulsarTestContainerSupport.getPulsarBrokerUrl(),
-					"--spring.pulsar.administration.service-url=" + PulsarTestContainerSupport.getHttpServiceUrl(),
+					"--spring.pulsar.admin.service-url=" + PulsarTestContainerSupport.getHttpServiceUrl(),
 					"--spring.cloud.function.definition=fooSupplier;fooLogger",
 					"--spring.cloud.stream.bindings.fooSupplier-out-0.destination=kv-stream-4",
 					"--spring.cloud.stream.bindings.fooLogger-in-0.destination=kv-stream-4",
@@ -390,7 +389,7 @@ class PulsarBinderIntegrationTests implements PulsarTestContainerSupport {
 					"--spring.cloud.stream.pulsar.bindings.fooLogger-in-0.consumer.message-type=" + Foo.class.getName(),
 					"--spring.cloud.stream.pulsar.bindings.fooLogger-in-0.consumer.message-key-type="
 							+ String.class.getName(),
-					"--spring.cloud.stream.pulsar.bindings.fooLogger-in-0.consumer.subscription-name=pbit-kv-sub4")) {
+					"--spring.cloud.stream.pulsar.bindings.fooLogger-in-0.consumer.subscription.name=pbit-kv-sub4")) {
 				Awaitility.await().atMost(Duration.ofSeconds(AWAIT_DURATION))
 						.until(() -> output.toString().contains("Hello binder: 5150->Foo[value=5150]"));
 			}
@@ -407,11 +406,11 @@ class PulsarBinderIntegrationTests implements PulsarTestContainerSupport {
 			app.setWebApplicationType(WebApplicationType.NONE);
 			try (ConfigurableApplicationContext ignored = app.run(
 					"--spring.pulsar.client.service-url=" + PulsarTestContainerSupport.getPulsarBrokerUrl(),
-					"--spring.pulsar.administration.service-url=" + PulsarTestContainerSupport.getHttpServiceUrl(),
+					"--spring.pulsar.admin.service-url=" + PulsarTestContainerSupport.getHttpServiceUrl(),
 					"--spring.cloud.function.definition=springMessageSupplier;springMessageLogger",
 					"--spring.cloud.stream.bindings.springMessageSupplier-out-0.destination=cmh-1",
 					"--spring.cloud.stream.bindings.springMessageLogger-in-0.destination=cmh-1",
-					"--spring.cloud.stream.pulsar.bindings.springMessageLogger-in-0.consumer.subscription-name=pbit-cmh1-sub1")) {
+					"--spring.cloud.stream.pulsar.bindings.springMessageLogger-in-0.consumer.subscription.name=pbit-cmh1-sub1")) {
 				// Wait for a few of the messages to flow through (check for index = 5)
 				Awaitility.await().atMost(Duration.ofSeconds(AWAIT_DURATION)).until(
 						() -> output.toString().contains("Hello binder: test-headers-msg-5 w/ custom-id: 5150-5"));
@@ -424,11 +423,11 @@ class PulsarBinderIntegrationTests implements PulsarTestContainerSupport {
 			app.setWebApplicationType(WebApplicationType.NONE);
 			try (ConfigurableApplicationContext ignored = app.run(
 					"--spring.pulsar.client.service-url=" + PulsarTestContainerSupport.getPulsarBrokerUrl(),
-					"--spring.pulsar.administration.service-url=" + PulsarTestContainerSupport.getHttpServiceUrl(),
+					"--spring.pulsar.admin.service-url=" + PulsarTestContainerSupport.getHttpServiceUrl(),
 					"--spring.cloud.function.definition=springMessageSupplier;springMessageLogger",
 					"--spring.cloud.stream.bindings.springMessageSupplier-out-0.destination=cmh-2",
 					"--spring.cloud.stream.bindings.springMessageLogger-in-0.destination=cmh-2",
-					"--spring.cloud.stream.pulsar.bindings.springMessageLogger-in-0.consumer.subscription-name=pbit-cmh2-sub1")) {
+					"--spring.cloud.stream.pulsar.bindings.springMessageLogger-in-0.consumer.subscription.name=pbit-cmh2-sub1")) {
 				// Wait for a few of the messages to flow through (check for index = 5)
 				Awaitility.await().atMost(Duration.ofSeconds(AWAIT_DURATION)).until(() -> output.toString()
 						.contains("Hello binder: test-headers-msg-5 w/ custom-id: FooHeader[value=5150-5]"));
@@ -441,12 +440,12 @@ class PulsarBinderIntegrationTests implements PulsarTestContainerSupport {
 			app.setWebApplicationType(WebApplicationType.NONE);
 			try (ConfigurableApplicationContext ignored = app.run(
 					"--spring.pulsar.client.service-url=" + PulsarTestContainerSupport.getPulsarBrokerUrl(),
-					"--spring.pulsar.administration.service-url=" + PulsarTestContainerSupport.getHttpServiceUrl(),
+					"--spring.pulsar.admin.service-url=" + PulsarTestContainerSupport.getHttpServiceUrl(),
 					"--spring.cloud.function.definition=springMessageSupplier;springMessageLogger",
 					"--spring.cloud.stream.bindings.springMessageSupplier-out-0.destination=cmh-3",
 					"--spring.cloud.stream.bindings.springMessageSupplier-out-0.producer.header-mode=none",
 					"--spring.cloud.stream.bindings.springMessageLogger-in-0.destination=cmh-3",
-					"--spring.cloud.stream.pulsar.bindings.springMessageLogger-in-0.consumer.subscription-name=pbit-cmh3-sub1")) {
+					"--spring.cloud.stream.pulsar.bindings.springMessageLogger-in-0.consumer.subscription.name=pbit-cmh3-sub1")) {
 				// Wait for a few of the messages to flow through (check for index = 5)
 				Awaitility.await().atMost(Duration.ofSeconds(AWAIT_DURATION))
 						.until(() -> output.toString().contains("Hello binder: test-headers-msg-5 w/ custom-id: null"));
@@ -459,12 +458,12 @@ class PulsarBinderIntegrationTests implements PulsarTestContainerSupport {
 			app.setWebApplicationType(WebApplicationType.NONE);
 			try (ConfigurableApplicationContext ignored = app.run(
 					"--spring.pulsar.client.service-url=" + PulsarTestContainerSupport.getPulsarBrokerUrl(),
-					"--spring.pulsar.administration.service-url=" + PulsarTestContainerSupport.getHttpServiceUrl(),
+					"--spring.pulsar.admin.service-url=" + PulsarTestContainerSupport.getHttpServiceUrl(),
 					"--spring.cloud.function.definition=springMessageSupplier;springMessageLogger",
 					"--spring.cloud.stream.bindings.springMessageSupplier-out-0.destination=cmh-4",
 					"--spring.cloud.stream.bindings.springMessageLogger-in-0.destination=cmh-4",
 					"--spring.cloud.stream.bindings.springMessageLogger-in-0.consumer.header-mode=none",
-					"--spring.cloud.stream.pulsar.bindings.springMessageLogger-in-0.consumer.subscription-name=pbit-cmh4-sub1")) {
+					"--spring.cloud.stream.pulsar.bindings.springMessageLogger-in-0.consumer.subscription.name=pbit-cmh4-sub1")) {
 				// Wait for a few of the messages to flow through (check for index = 5)
 				Awaitility.await().atMost(Duration.ofSeconds(AWAIT_DURATION))
 						.until(() -> output.toString().contains("Hello binder: test-headers-msg-5 w/ custom-id: null"));
@@ -477,11 +476,11 @@ class PulsarBinderIntegrationTests implements PulsarTestContainerSupport {
 			app.setWebApplicationType(WebApplicationType.NONE);
 			try (ConfigurableApplicationContext ignored = app.run(
 					"--spring.pulsar.client.service-url=" + PulsarTestContainerSupport.getPulsarBrokerUrl(),
-					"--spring.pulsar.administration.service-url=" + PulsarTestContainerSupport.getHttpServiceUrl(),
+					"--spring.pulsar.admin.service-url=" + PulsarTestContainerSupport.getHttpServiceUrl(),
 					"--spring.cloud.function.definition=springMessageSupplier;springMessageLogger",
 					"--spring.cloud.stream.bindings.springMessageSupplier-out-0.destination=cmh-5",
 					"--spring.cloud.stream.bindings.springMessageLogger-in-0.destination=cmh-5",
-					"--spring.cloud.stream.pulsar.bindings.springMessageLogger-in-0.consumer.subscription-name=pbit-cmh5-sub1")) {
+					"--spring.cloud.stream.pulsar.bindings.springMessageLogger-in-0.consumer.subscription.name=pbit-cmh5-sub1")) {
 				// Wait for a few of the messages to flow through (check for index = 5)
 				Awaitility.await().atMost(Duration.ofSeconds(AWAIT_DURATION)).until(() -> output.toString()
 						.contains("Hello binder: test-headers-msg-5 w/ custom-id: tsh->tph->FooHeader[value=5150-5]"));
@@ -638,66 +637,109 @@ class PulsarBinderIntegrationTests implements PulsarTestContainerSupport {
 	@Import(PrimitiveTextConfig.class)
 	static class BinderAndBindingPropsTestConfig {
 
-		@SuppressWarnings("unchecked")
 		@Bean
-		public PulsarProducerFactory<?> pulsarProducerFactory(PulsarClient pulsarClient,
-				PulsarProperties pulsarProperties, TopicResolver topicResolver) {
-			var customizer = (ProducerBuilderCustomizer<String>) pulsarProperties.getProducer()
-					.toProducerBuilderCustomizer();
-			return new TrackingProducerFactory(pulsarClient, pulsarProperties.getProducer().getTopicName(), customizer,
-					topicResolver);
+		TrackingProducerFactoryBeanPostProcessor trackingProducerFactory() {
+			return new TrackingProducerFactoryBeanPostProcessor();
 		}
 
-		@SuppressWarnings("unchecked")
 		@Bean
-		public PulsarConsumerFactory<?> pulsarConsumerFactory(PulsarClient pulsarClient,
-				PulsarProperties pulsarProperties) {
-			var customizer = (ConsumerBuilderCustomizer<String>) pulsarProperties.getConsumer()
-					.toConsumerBuilderCustomizer();
-			return new TrackingConsumerFactory(pulsarClient, customizer);
+		TrackingConsumerFactoryBeanPostProcessor trackingConsumerFactory() {
+			return new TrackingConsumerFactoryBeanPostProcessor();
 		}
 
 	}
 
-	static class TrackingProducerFactory extends DefaultPulsarProducerFactory<String> {
+	static class TrackingProducerFactoryBeanPostProcessor implements BeanPostProcessor {
+
+		@Override
+		public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
+			if (bean instanceof DefaultPulsarProducerFactory defaultFactory) {
+				return new TrackingProducerFactory(defaultFactory);
+			}
+			return bean;
+		}
+
+	}
+
+	static class TrackingProducerFactory implements PulsarProducerFactory<String> {
+
+		private final DefaultPulsarProducerFactory<String> trackedProducerFactory;
 
 		List<Producer<String>> producersCreated = new ArrayList<>();
 
-		TrackingProducerFactory(PulsarClient pulsarClient, @Nullable String defaultTopic,
-				ProducerBuilderCustomizer<String> defaultConfigCustomizer, TopicResolver topicResolver) {
-			super(pulsarClient, defaultTopic, defaultConfigCustomizer, topicResolver);
+		TrackingProducerFactory(DefaultPulsarProducerFactory<String> trackedProducerFactory) {
+			this.trackedProducerFactory = trackedProducerFactory;
 		}
 
 		@Override
-		protected Producer<String> doCreateProducer(Schema<String> schema, @Nullable String topic,
-				@Nullable Collection<String> encryptionKeys,
-				@Nullable List<ProducerBuilderCustomizer<String>> producerBuilderCustomizers)
-				throws PulsarClientException {
-			Producer<String> producer = super.doCreateProducer(schema, topic, encryptionKeys,
-					producerBuilderCustomizers);
-			producersCreated.add(producer);
+		public Producer<String> createProducer(Schema<String> schema, String topic) throws PulsarClientException {
+			var producer = this.trackedProducerFactory.createProducer(schema, topic);
+			this.producersCreated.add(producer);
 			return producer;
+		}
+
+		@Override
+		public Producer<String> createProducer(Schema<String> schema, String topic,
+				ProducerBuilderCustomizer<String> customizer) throws PulsarClientException {
+			var producer = this.trackedProducerFactory.createProducer(schema, topic, customizer);
+			this.producersCreated.add(producer);
+			return producer;
+		}
+
+		@Override
+		public Producer<String> createProducer(Schema<String> schema, String topic, Collection<String> encryptionKeys,
+				List<ProducerBuilderCustomizer<String>> producerBuilderCustomizers) throws PulsarClientException {
+			var producer = this.trackedProducerFactory.createProducer(schema, topic, encryptionKeys,
+					producerBuilderCustomizers);
+			this.producersCreated.add(producer);
+			return producer;
+		}
+
+		@Override
+		public String getDefaultTopic() {
+			return this.trackedProducerFactory.getDefaultTopic();
 		}
 
 	}
 
-	static class TrackingConsumerFactory extends DefaultPulsarConsumerFactory<String> {
+	static class TrackingConsumerFactoryBeanPostProcessor implements BeanPostProcessor {
+
+		@Override
+		public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
+			if (bean instanceof DefaultPulsarConsumerFactory defaultFactory) {
+				return new TrackingConsumerFactory(defaultFactory);
+			}
+			return bean;
+		}
+
+	}
+
+	static class TrackingConsumerFactory implements PulsarConsumerFactory<String> {
+
+		private final DefaultPulsarConsumerFactory<String> trackedConsumerFactory;
 
 		List<org.apache.pulsar.client.api.Consumer<String>> consumersCreated = new ArrayList<>();
 
-		TrackingConsumerFactory(PulsarClient pulsarClient, ConsumerBuilderCustomizer<String> defaultConsumerConfig) {
-			super(pulsarClient, defaultConsumerConfig);
+		TrackingConsumerFactory(DefaultPulsarConsumerFactory<String> trackedConsumerFactory) {
+			this.trackedConsumerFactory = trackedConsumerFactory;
 		}
 
 		@Override
 		public org.apache.pulsar.client.api.Consumer<String> createConsumer(Schema<String> schema,
-				@Nullable Collection<String> topics, @Nullable String subscriptionName,
-				@Nullable Map<String, String> metadataProperties,
-				@Nullable List<ConsumerBuilderCustomizer<String>> consumerBuilderCustomizers)
+				Collection<String> topics, String subscriptionName, ConsumerBuilderCustomizer<String> customizer)
 				throws PulsarClientException {
-			org.apache.pulsar.client.api.Consumer<String> consumer = super.createConsumer(schema, topics,
-					subscriptionName, metadataProperties, consumerBuilderCustomizers);
-			consumersCreated.add(consumer);
+			var consumer = this.trackedConsumerFactory.createConsumer(schema, topics, subscriptionName, customizer);
+			this.consumersCreated.add(consumer);
+			return consumer;
+		}
+
+		@Override
+		public org.apache.pulsar.client.api.Consumer<String> createConsumer(Schema<String> schema,
+				Collection<String> topics, String subscriptionName, Map<String, String> metadataProperties,
+				List<ConsumerBuilderCustomizer<String>> consumerBuilderCustomizers) throws PulsarClientException {
+			var consumer = this.trackedConsumerFactory.createConsumer(schema, topics, subscriptionName,
+					metadataProperties, consumerBuilderCustomizers);
+			this.consumersCreated.add(consumer);
 			return consumer;
 		}
 

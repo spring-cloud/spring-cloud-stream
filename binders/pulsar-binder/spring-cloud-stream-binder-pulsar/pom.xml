@@ -5,7 +5,7 @@
 	<artifactId>spring-cloud-stream-binder-pulsar</artifactId>
 	<packaging>jar</packaging>
 	<name>spring-cloud-stream-binder-pulsar</name>
-	<description>PUlsar binder implementation</description>
+	<description>Pulsar binder implementation</description>
 
 	<parent>
 		<groupId>org.springframework.cloud</groupId>
@@ -15,9 +15,9 @@
 
 	<dependencies>
 		<dependency>
-			<groupId>org.springframework.pulsar</groupId>
-			<artifactId>spring-pulsar-spring-boot-starter</artifactId>
-			<version>0.2.1-SNAPSHOT</version>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-pulsar</artifactId>
+			<version>3.2.0-SNAPSHOT</version>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>

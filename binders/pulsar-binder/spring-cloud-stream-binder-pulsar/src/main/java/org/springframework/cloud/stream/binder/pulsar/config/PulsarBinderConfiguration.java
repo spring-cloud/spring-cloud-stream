@@ -17,6 +17,7 @@
 package org.springframework.cloud.stream.binder.pulsar.config;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.pulsar.PulsarProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.pulsar.PulsarMessageChannelBinder;
@@ -25,7 +26,6 @@ import org.springframework.cloud.stream.binder.pulsar.properties.PulsarExtendedB
 import org.springframework.cloud.stream.binder.pulsar.provisioning.PulsarTopicProvisioner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.pulsar.autoconfigure.PulsarProperties;
 import org.springframework.pulsar.core.PulsarAdministration;
 import org.springframework.pulsar.core.PulsarConsumerFactory;
 import org.springframework.pulsar.core.PulsarTemplate;
@@ -48,7 +48,7 @@ public class PulsarBinderConfiguration {
 
 	@Bean
 	public PulsarTopicProvisioner pulsarTopicProvisioner(PulsarAdministration pulsarAdministration,
-														PulsarBinderConfigurationProperties pulsarBinderConfigurationProperties) {
+			PulsarBinderConfigurationProperties pulsarBinderConfigurationProperties) {
 		return new PulsarTopicProvisioner(pulsarAdministration, pulsarBinderConfigurationProperties);
 	}
 
@@ -63,9 +63,9 @@ public class PulsarBinderConfiguration {
 
 	@Bean
 	public PulsarMessageChannelBinder pulsarMessageChannelBinder(PulsarTopicProvisioner pulsarTopicProvisioner,
-															PulsarTemplate<Object> pulsarTemplate, PulsarConsumerFactory<byte[]> pulsarConsumerFactory,
-															PulsarBinderConfigurationProperties binderConfigProps, PulsarExtendedBindingProperties bindingConfigProps,
-															SchemaResolver schemaResolver, PulsarHeaderMapper headerMapper) {
+			PulsarTemplate<Object> pulsarTemplate, PulsarConsumerFactory<?> pulsarConsumerFactory,
+			PulsarBinderConfigurationProperties binderConfigProps, PulsarExtendedBindingProperties bindingConfigProps,
+			SchemaResolver schemaResolver, PulsarHeaderMapper headerMapper) {
 		PulsarMessageChannelBinder pulsarMessageChannelBinder = new PulsarMessageChannelBinder(pulsarTopicProvisioner,
 				pulsarTemplate, pulsarConsumerFactory, binderConfigProps, schemaResolver, headerMapper);
 		pulsarMessageChannelBinder.setExtendedBindingProperties(bindingConfigProps);
