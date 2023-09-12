@@ -265,7 +265,7 @@ In other words, you cannot mix both the test binder and a regular middleware bin
 After testing the application with the test binder, if you want to continue doing further integration tests using the actual middleware binder, it is recommended to add those tests that use the actual binder in a separate module so that those tests can make the proper connection to the actual middleware rather than relying on the in-memory channels provided by the test binder.
 
 [[health-indicator]]
-= Health Indicator
+== Health Indicator
 
 Spring Cloud Stream provides a health indicator for binders.
 It is registered under the name `binders` and can be enabled or disabled by setting the `management.health.binders.enabled` property.
@@ -299,7 +299,7 @@ The top level application health check status will be reported as `DOWN`.
 In this situation, you can simply remove the dependency for kafka binder from your application since you are not using it.
 
 [[samples]]
-= Samples
+== Samples
 
 For Spring Cloud Stream samples, see the https://github.com/spring-cloud/spring-cloud-stream-samples[spring-cloud-stream-samples] repository on GitHub.
 

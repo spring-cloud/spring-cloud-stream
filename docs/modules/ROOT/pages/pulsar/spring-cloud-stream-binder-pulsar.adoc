@@ -14,9 +14,6 @@ Soby Chacko; Chris Bono; Alexander Preuß; Jay Bryant; Christophe Bornet
 
 // ======================================================================================
 
-*{project-version}*
+// *{project-version}*
 
-[[reference-guide]]
-= Reference Guide
-:page-section-summary-toc: 1
-
+xref:pulsar/pulsar_binder.adoc[Reference Guide]

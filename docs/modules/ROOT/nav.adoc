@@ -34,7 +34,7 @@
 * xref:preface.adoc[]
 * xref:binders.adoc[]
 * xref:README.adoc[]
-* xref:_configprops.adoc[]
+* xref:configprops.adoc[]
 * xref:intro.adoc[]
 ** xref:kafka/kafka-reactive.adoc[]
 ** xref:kafka/kafka-streams.adoc[]

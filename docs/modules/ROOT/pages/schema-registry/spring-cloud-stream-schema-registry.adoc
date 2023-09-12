@@ -11,7 +11,7 @@ Spring Cloud Stream schema registry support also provides support for avro based
 The schema evolution support provided by Spring Cloud Stream works both with the aforementioned standalone schema registry as well as the schema registry provided by Confluent that specifically works with Apache Kafka.
 
 [[spring-cloud-stream-schema-registry-overview]]
-==== Spring Cloud Stream Schema Registry overview
+== Spring Cloud Stream Schema Registry overview
 
 Spring Cloud Stream Schema Registry provides support for schema evolution so that the data can be evolved over time and still work with older or newer producers and consumers and vice versa.
 Most serialization models, especially the ones that aim for portability across different platforms and languages, rely on a schema that describes how the data is serialized in the binary payload.
@@ -38,7 +38,7 @@ Spring Cloud Stream Schema Registry provides the following components
   Currently, the client can communicate to the standalone schema registry or the Confluent Schema Registry.
 
 [[schema-registry-client]]
-=== Schema Registry Client
+== Schema Registry Client
 
 The client-side abstraction for interacting with schema registry servers is the `SchemaRegistryClient` interface, which has the following structure:
 
@@ -74,7 +74,7 @@ If you intend to change the default behavior, you can use the client directly on
 To do so, you have to add the property `spring.cloud.stream.schemaRegistryClient.cached=true` to your application properties.
 
 [[schema-registry-client-properties]]
-==== Schema Registry Client Properties
+== Schema Registry Client Properties
 
 The Schema Registry Client supports the following properties:
 
@@ -234,20 +234,20 @@ You can customize the schema storage by using the http://docs.spring.io/spring-b
 
 
 [[schema-registry-server-api]]
-==== Schema Registry Server API
+== Schema Registry Server API
 
 The Schema Registry Server API consists of the following operations:
 
 * `POST /` -- see `xref:schema-registry/spring-cloud-stream-schema-registry.adoc#spring-cloud-stream-overview-registering-new-schema[Registering a New Schema]`
-* `GET /{subject}/{format}/{version}` -- see `xref:schema-registry/spring-cloud-stream-schema-registry.adoc#spring-cloud-stream-overview-retrieve-schema-subject-format-version[Retrieving an Existing Schema by Subject, Format, and Version]`
-* `GET /{subject}/{format}` -- see `xref:schema-registry/spring-cloud-stream-schema-registry.adoc#spring-cloud-stream-overview-retrieve-schema-subject-format[Retrieving an Existing Schema by Subject and Format]`
-* `GET /schemas/{id}` -- see `xref:schema-registry/spring-cloud-stream-schema-registry.adoc#spring-cloud-stream-overview-retrieve-schema-id[Retrieving an Existing Schema by ID]`
-* `DELETE /{subject}/{format}/{version}` -- see `xref:schema-registry/spring-cloud-stream-schema-registry.adoc#spring-cloud-stream-overview-deleting-schema-subject-format-version[Deleting a Schema by Subject, Format, and Version]`
-* `DELETE /schemas/{id}` -- see `xref:schema-registry/spring-cloud-stream-schema-registry.adoc#spring-cloud-stream-overview-deleting-schema-id[Deleting a Schema by ID]`
-* `DELETE /{subject}` -- see `xref:schema-registry/spring-cloud-stream-schema-registry.adoc#spring-cloud-stream-overview-deleting-schema-subject[Deleting a Schema by Subject]`
+* `GET /\{subject\}/\{format\}/\{version\}` -- see `xref:schema-registry/spring-cloud-stream-schema-registry.adoc#spring-cloud-stream-overview-retrieve-schema-subject-format-version[Retrieving an Existing Schema by Subject, Format, and Version]`
+* `GET /\{subject\}/\{format\}` -- see `xref:schema-registry/spring-cloud-stream-schema-registry.adoc#spring-cloud-stream-overview-retrieve-schema-subject-format[Retrieving an Existing Schema by Subject and Format]`
+* `GET /schemas/\{id\}` -- see `xref:schema-registry/spring-cloud-stream-schema-registry.adoc#spring-cloud-stream-overview-retrieve-schema-id[Retrieving an Existing Schema by ID]`
+* `DELETE /\{subject\}/\{format\}/\{version\}` -- see `xref:schema-registry/spring-cloud-stream-schema-registry.adoc#spring-cloud-stream-overview-deleting-schema-subject-format-version[Deleting a Schema by Subject, Format, and Version]`
+* `DELETE /schemas/\{id\}` -- see `xref:schema-registry/spring-cloud-stream-schema-registry.adoc#spring-cloud-stream-overview-deleting-schema-id[Deleting a Schema by ID]`
+* `DELETE /\{subject\}` -- see `xref:schema-registry/spring-cloud-stream-schema-registry.adoc#spring-cloud-stream-overview-deleting-schema-subject[Deleting a Schema by Subject]`
 
 [[spring-cloud-stream-overview-registering-new-schema]]
-===== Registering a New Schema
+== Registering a New Schema
 
 To register a new schema, send a `POST` request to the `/` endpoint.
 
@@ -266,9 +266,9 @@ Its response is a schema object in JSON, with the following fields:
 *   `definition`: The schema definition
 
 [[spring-cloud-stream-overview-retrieve-schema-subject-format-version]]
-===== Retrieving an Existing Schema by Subject, Format, and Version
+== Retrieving an Existing Schema by Subject, Format, and Version
 
-To retrieve an existing schema by subject, format, and version, send `GET` request to the `/{subject}/{format}/{version}` endpoint.
+To retrieve an existing schema by subject, format, and version, send `GET` request to the `\{subject\}/\{format\}/\{version\}` endpoint.
 
 Its response is a schema object in JSON, with the following fields:
 
@@ -279,7 +279,7 @@ Its response is a schema object in JSON, with the following fields:
 *   `definition`: The schema definition
 
 [[spring-cloud-stream-overview-retrieve-schema-subject-format]]
-===== Retrieving an Existing Schema by Subject and Format
+== Retrieving an Existing Schema by Subject and Format
 
 To retrieve an existing schema by subject and format, send a `GET` request to the `/subject/format` endpoint.
 
@@ -292,9 +292,9 @@ Its response is a list of schemas with each schema object in JSON, with the foll
 *   `definition`: The schema definition
 
 [[spring-cloud-stream-overview-retrieve-schema-id]]
-===== Retrieving an Existing Schema by ID
+== Retrieving an Existing Schema by ID
 
-To retrieve a schema by its ID, send a `GET` request to the `/schemas/{id}` endpoint.
+To retrieve a schema by its ID, send a `GET` request to the `/schemas/\{id\}` endpoint.
 
 Its response is a schema object in JSON, with the following fields:
 
@@ -305,18 +305,18 @@ Its response is a schema object in JSON, with the following fields:
 *   `definition`: The schema definition
 
 [[spring-cloud-stream-overview-deleting-schema-subject-format-version]]
-===== Deleting a Schema by Subject, Format, and Version
+== Deleting a Schema by Subject, Format, and Version
 
-To delete a schema identified by its subject, format, and version, send a `DELETE` request to the `/{subject}/{format}/{version}` endpoint.
+To delete a schema identified by its subject, format, and version, send a `DELETE` request to the `\{subject\}/\{format\}/\{version\}` endpoint.
 
 [[spring-cloud-stream-overview-deleting-schema-id]]
-===== Deleting a Schema by ID
+== Deleting a Schema by ID
 
-To delete a schema by its ID, send a `DELETE` request to the `/schemas/{id}` endpoint.
+To delete a schema by its ID, send a `DELETE` request to the `/schemas/\{id\}` endpoint.
 
 [[spring-cloud-stream-overview-deleting-schema-subject]]
-===== Deleting a Schema by Subject
-`DELETE /{subject}`
+== Deleting a Schema by Subject
+`DELETE /\{subject\}`
 
 Delete existing schemas by their subject.
 
@@ -326,7 +326,7 @@ To avoid any conflicts in the future, starting with 1.1.1.RELEASE, we have opted
 Any Spring Cloud Stream 1.1.0.RELEASE users who upgrade should migrate their existing schemas to the new table before upgrading.
 
 [[using-confluent-s-schema-registry]]
-==== Using Confluent's Schema Registry
+== Using Confluent's Schema Registry
 
 The default configuration creates a `DefaultSchemaRegistryClient` bean.
 If you want to use the Confluent schema registry, you need to create a bean of type `ConfluentSchemaRegistryClient`, which supersedes the one configured by default by the framework. The following example shows how to create such a bean:
@@ -343,7 +343,7 @@ public SchemaRegistryClient schemaRegistryClient(@Value("${spring.cloud.stream.s
 NOTE: The ConfluentSchemaRegistryClient is tested against Confluent platform version 4.0.0.
 
 [[schema-registration-and-resolution]]
-=== Schema Registration and Resolution
+== Schema Registration and Resolution
 
 To better understand how Spring Cloud Stream registers and resolves new schemas and its use of Avro schema comparison features, we provide two separate subsections:
 
@@ -351,32 +351,32 @@ To better understand how Spring Cloud Stream registers and resolves new schemas 
 * `xref:schema-registry/spring-cloud-stream-schema-registry.adoc#spring-cloud-stream-overview-schema-resolution-process[Schema Resolution Process (Deserialization)]`
 
 [[spring-cloud-stream-overview-schema-registration-process]]
-==== Schema Registration Process (Serialization)
+== Schema Registration Process (Serialization)
 
 The first part of the registration process is extracting a schema from the payload that is being sent over a channel.
 Avro types such as `SpecificRecord` or `GenericRecord` already contain a schema, which can be retrieved immediately from the instance.
 In the case of POJOs, a schema is inferred if the `spring.cloud.stream.schema.avro.dynamicSchemaGenerationEnabled` property is set to `true` (the default).
 
-.Schema Writer Resolution Process
-image::{github-raw}/docs/src/main/asciidoc/images/schema_resolution.png[width=800,scaledwidth="75%",align="center"]
+// .Schema Writer Resolution Process
+// image::{github-raw}/docs/src/main/asciidoc/images/schema_resolution.png[width=800,scaledwidth="75%",align="center"]
 
 Ones a schema is obtained, the converter loads its metadata (version) from the remote server.
 First, it queries a local cache. If no result is found, it submits the data to the server, which replies with versioning information.
 The converter always caches the results to avoid the overhead of querying the Schema Server for every new message that needs to be serialized.
 
-.Schema Registration Process
-image::{github-raw}/docs/src/main/asciidoc/images/registration.png[width=800,scaledwidth="75%",align="center"]
+// .Schema Registration Process
+// image::{github-raw}/docs/src/main/asciidoc/images/registration.png[width=800,scaledwidth="75%",align="center"]
 
 With the schema version information, the converter sets the `contentType` header of the message to carry the version information -- for example: `application/vnd.user.v1+avro`.
 
 [[spring-cloud-stream-overview-schema-resolution-process]]
-==== Schema Resolution Process (Deserialization)
+== Schema Resolution Process (Deserialization)
 
 When reading messages that contain version information (that is, a `contentType` header with a scheme like the one described under `xref:schema-registry/spring-cloud-stream-schema-registry.adoc#spring-cloud-stream-overview-schema-registration-process[Schema Registration Process (Serialization)]`, the converter queries the Schema server to fetch the writer schema of the message.
 Once it has found the correct schema of the incoming message, it retrieves the reader schema and, by using Avro's schema resolution support, reads it into the reader definition (setting defaults and any missing properties).
 
-.Schema Reading Resolution Process
-image::{github-raw}/docs/src/main/asciidoc/images/schema_reading.png[width=800,scaledwidth="75%",align="center"]
+// .Schema Reading Resolution Process
+// image::{github-raw}/docs/src/main/asciidoc/images/schema_reading.png[width=800,scaledwidth="75%",align="center"]
 
 NOTE: You should understand the difference between a writer schema (the application that wrote the message) and a reader schema (the receiving application).
 We suggest taking a moment to read https://avro.apache.org/docs/1.7.6/spec.html[the Avro terminology] and understand the process.

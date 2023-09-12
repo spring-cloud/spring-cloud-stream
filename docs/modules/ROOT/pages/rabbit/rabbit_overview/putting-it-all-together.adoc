@@ -47,7 +47,7 @@ public class XDeathApplication {
 Notice that the count property in the `x-death` header is a `Long`.
 
 [[rabbit-error-channels]]
-= Error Channels
+== Error Channels
 
 Starting with version 1.3, the binder unconditionally sends exceptions to an error channel for each consumer destination and can also be configured to send async producer send failures to an error channel.
 See "`xref:spring-cloud-stream/overview-error-handling.adoc[Error Handling]`" for more information.
@@ -91,7 +91,7 @@ There is no automatic handling of these exceptions (such as sending to a xref:ra
 You can consume these exceptions with your own Spring Integration flow.
 
 [[rabbit-binder-health-indicator]]
-= Rabbit Binder Health Indicator
+== Rabbit Binder Health Indicator
 
 The health indicator for Rabbit binder delegates to the one provided from Spring Boot.
 For more information on this, see https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#actuator.endpoints.health.auto-configured-health-indicators[this].

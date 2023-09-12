@@ -14,5 +14,5 @@ For using the Kafka Streams binder, you just need to add it to your Spring Cloud
 
 A quick way to bootstrap a new project for Kafka Streams binder is to use http://start.spring.io[Spring Initializr] and then select "Cloud Streams" and "Spring for Kafka Streams" as shown below
 
-image::{github-raw}/docs/src/main/asciidoc/images/spring-initializr-kafka-streams.png[width=800,scaledwidth="75%",align="center"]
+// image::{github-raw}/docs/src/main/asciidoc/images/spring-initializr-kafka-streams.png[width=800,scaledwidth="75%",align="center"]
 

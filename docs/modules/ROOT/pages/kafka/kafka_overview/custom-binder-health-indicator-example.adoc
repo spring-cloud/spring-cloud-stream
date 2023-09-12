@@ -5,7 +5,7 @@ Here is the pseudo-code for writing a custom Kafka binder HealthIndicator.
 In this example, we try to override the binder provided Kafka HealthIndicator by specifically checking first for cluster connectivity and then followed by topic-related issues.
 
 
-1. First we need create a custom implementation of the `KafkaBinderHealth` interface.
+First, we need create a custom implementation of the `KafkaBinderHealth` interface.
 
 ```
 public class KafkaBinderHealthImplementation implements KafkaBinderHealth {
@@ -42,7 +42,8 @@ public class KafkaBinderHealthImplementation implements KafkaBinderHealth {
 }
 ```
 
-2. Then we need to create a bean for the custom implementation.
+
+Then we need to create a bean for the custom implementation.
 
 ```
 @Configuration

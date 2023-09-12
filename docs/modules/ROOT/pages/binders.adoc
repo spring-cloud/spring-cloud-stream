@@ -1,4 +1,3 @@
-*{project-version}*
 
 [[binders]]
 == Binder Implementations

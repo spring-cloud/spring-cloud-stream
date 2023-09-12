@@ -4,8 +4,8 @@
 
 The following image shows a simplified diagram of how the Apache Kafka binder operates:
 
-.Kafka Binder
-image::{github-raw}/docs/src/main/asciidoc/images/kafka-binder.png[width=300,scaledwidth="50%"]
+// .Kafka Binder
+// image::{github-raw}/docs/src/main/asciidoc/images/kafka-binder.png[width=300,scaledwidth="50%"]
 
 The Apache Kafka Binder implementation maps each destination to an Apache Kafka topic.
 The consumer group maps directly to the same Apache Kafka concept.

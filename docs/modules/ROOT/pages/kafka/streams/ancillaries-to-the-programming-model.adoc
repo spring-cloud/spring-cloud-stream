@@ -88,7 +88,7 @@ The generated application ID in this manner will be static over application rest
 In the case of functional model, the generated application ID will be the function bean name followed by the literal `applicationID`, for e.g `process-applicationID` if `process` if the function bean name.
 
 [[summary-of-setting-application-id]]
-==== Summary of setting Application ID
+== Summary of setting Application ID
 
 * By default, binder will auto generate the application ID per function methods.
 * If you have a single processor, then you can use `spring.kafka.streams.applicationId`, `spring.application.name` or `spring.cloud.stream.kafka.streams.binder.applicationId`.

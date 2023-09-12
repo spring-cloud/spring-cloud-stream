@@ -19,7 +19,6 @@ Maven::
     <dependency>
         <groupId>org.springframework.pulsar</groupId>
         <artifactId>spring-pulsar-spring-cloud-stream-binder</artifactId>
-        <version>{spring-pulsar-version}</version>
     </dependency>
 </dependencies>
 ----
@@ -29,7 +28,7 @@ Gradle::
 [source,groovy,indent=0,subs="verbatim,attributes",role="secondary"]
 ----
 dependencies {
-    implementation 'org.springframework.pulsar:spring-pulsar-spring-cloud-stream-binder:{spring-pulsar-version}'
+    implementation 'org.springframework.pulsar:spring-pulsar-spring-cloud-stream-binder'
 }
 ----
 ======
@@ -39,7 +38,7 @@ dependencies {
 
 The Spring Cloud Stream binder for Apache Pulsar allows the applications to focus on business logic rather than dealing with the lower-level details of managing and maintaining Pulsar.
 The binder takes care of all those details for the application developer.
-Spring Cloud Stream brings a powerful programming model based on {spring-cloud-function}[Spring Cloud Function] that allows the app developer to write complex event-driven applications using a functional style.
+Spring Cloud Stream brings a powerful programming model based on https://spring.io/projects/spring-cloud-function[Spring Cloud Function] that allows the app developer to write complex event-driven applications using a functional style.
 Applications can start from a middleware-neutral manner and then map Pulsar topics as destinations in Spring Cloud Stream through Spring Boot configuration properties.
 Spring Cloud Stream is built on top of Spring Boot, and when writing an event-driven microservice using Spring Cloud Stream, you are essentially writing a Boot application.
 Here is a straightforward Spring Cloud Stream application.

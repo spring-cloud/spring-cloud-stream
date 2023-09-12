@@ -91,7 +91,7 @@ Refer to the property documentation above for more information.
 There are similar properties used when declaring a dead-letter exchange/queue, when `autoBindDlq` is `true`.
 
 [[retry-with-the-rabbitmq-binder]]
-= Retry With the RabbitMQ Binder
+== Retry With the RabbitMQ Binder
 
 When retry is enabled within the binder, the listener container thread is suspended for any back off periods that are configured.
 This might be important when strict ordering is required with a single consumer. However, for other use cases, it prevents other messages from being processed on that thread.
