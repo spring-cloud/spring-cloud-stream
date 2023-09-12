@@ -852,7 +852,7 @@ into various patterns you can apply by merging the best of Spring Integration an
 [[spring-cloud-streams-overview-using-polled-consumers]]
 == Using Polled Consumers
 
-[[overview]]
+[[overview-polled-consumers]]
 === Overview
 
 When using polled consumers, you poll the `PollableMessageSource` on demand.

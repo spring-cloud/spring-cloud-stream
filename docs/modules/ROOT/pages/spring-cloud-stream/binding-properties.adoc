@@ -259,7 +259,7 @@ All you need to do is provide implementation of this strategy and configure it a
 
 
 [[content-type-management]]
-= Content Type Negotiation
+== Content Type Negotiation
 
 Data transformation is one of the core features of any message-driven microservice architecture. Given that, in Spring Cloud Stream, such data
 is represented as a Spring `Message`, a message may have to be transformed to a desired shape or size before reaching its destination. This is required for two reasons:

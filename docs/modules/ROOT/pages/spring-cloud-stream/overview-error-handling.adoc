@@ -210,7 +210,7 @@ spring.cloud.stream.bindings.<foo>.consumer.retry-template-name=<your-retry-temp
 
 
 [[spring-cloud-stream-overview-binders]]
-= Binders
+== Binders
 
 Spring Cloud Stream provides a Binder abstraction for use in connecting to physical destinations at the external middleware.
 This section provides information about the main concepts behind the Binder SPI, its main components, and implementation-specific details.

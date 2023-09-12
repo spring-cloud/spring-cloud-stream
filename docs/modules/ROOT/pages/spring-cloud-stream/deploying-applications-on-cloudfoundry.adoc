@@ -7,7 +7,7 @@ On CloudFoundry, services are usually exposed through a special environment vari
 When configuring your binder connections, you can use the values from an environment variable as explained on the http://docs.spring.io/spring-cloud-dataflow-server-cloudfoundry/docs/current-SNAPSHOT/reference/htmlsingle/#getting-started-ups[dataflow Cloud Foundry Server] docs.
 
 [[binder-implementations]]
-= Binder Implementations
+== Binder Implementations
 :page-section-summary-toc: 1
 
 The following is the list of available binder implementations

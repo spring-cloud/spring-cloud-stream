@@ -27,12 +27,6 @@ Sabby Anandan, Marius Bogoevici, Eric Bottard, Mark Fisher, Ilayaperumal Gopinat
 
 // ======================================================================================
 
-*{project-version}*
+// *{project-version}*
 
-
-[[reference-guide]]
-= Reference Guide
-
-
-
-
+xref:rabbit/rabbit_overview.adoc[Reference Guide]

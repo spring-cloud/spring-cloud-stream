@@ -84,7 +84,7 @@ When a binder configuration requires them, it is important to set both values co
 While a scenario in which using multiple instances for partitioned data processing may be complex to set up in a standalone case, Spring Cloud Dataflow can simplify the process significantly by populating both the input and output values correctly and by letting you rely on the runtime infrastructure to provide information about the instance index and instance count.
 
 [[testing]]
-= Testing
+== Testing
 
 Spring Cloud Stream provides support for testing your microservice applications without connecting to a messaging system.
 

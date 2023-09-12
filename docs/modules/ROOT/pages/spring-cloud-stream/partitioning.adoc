@@ -17,7 +17,7 @@ For example, in the time-windowed average calculation example, it is important t
 NOTE: To set up a partitioned processing scenario, you must configure both the data-producing and the data-consuming ends.
 
 [[programming-model]]
-= Programming Model
+== Programming Model
 
 To understand the programming model, you should be familiar with the following core concepts:
 

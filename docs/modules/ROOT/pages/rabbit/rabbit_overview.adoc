@@ -1,11 +1,9 @@
-[partintro]
---
 This guide describes the RabbitMQ implementation of the Spring Cloud Stream Binder.
 It contains information about its design, usage and configuration options, as well as information on how the Stream Cloud Stream concepts map into RabbitMQ specific constructs.
---
+
 
 [[usage]]
-= Usage
+== Usage
 
 To use the RabbitMQ binder, you can add it to your Spring Cloud Stream application, by using the following Maven coordinates:
 
@@ -28,12 +26,12 @@ Alternatively, you can use the Spring Cloud Stream RabbitMQ Starter, as follows:
 ----
 
 [[rabbitmq-binder-overview]]
-= RabbitMQ Binder Overview
+== RabbitMQ Binder Overview
 
 The following simplified diagram shows how the RabbitMQ binder operates:
 
-.RabbitMQ Binder
-image::{github-raw}/docs/src/main/asciidoc/images/rabbit-binder.png[width=300,scaledwidth="50%"]
+// .RabbitMQ Binder
+// image::{github-raw}/docs/src/main/asciidoc/images/rabbit-binder.png[width=300,scaledwidth="50%"]
 
 By default, the RabbitMQ Binder implementation maps each destination to a `TopicExchange`.
 For each consumer group, a `Queue` is bound to that `TopicExchange`.
@@ -77,7 +75,7 @@ Starting with version 2.0, the `RabbitMessageChannelBinder` sets the `RabbitTemp
 NOTE: Currently, a `multiplex` consumer (a single consumer listening to multiple queues) is only supported for message-driven consumers; polled consumers can only retrieve messages from a single queue.
 
 [[configuration-options]]
-= Configuration Options
+== Configuration Options
 
 This section contains settings specific to the RabbitMQ Binder and bound channels.
 

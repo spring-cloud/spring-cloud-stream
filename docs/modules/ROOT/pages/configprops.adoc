@@ -3,4 +3,4 @@
 
 Below you can find a list of configuration properties.
 
-include::configprops.adoc[]
+

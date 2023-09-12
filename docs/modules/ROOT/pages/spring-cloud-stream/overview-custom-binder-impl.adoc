@@ -246,7 +246,7 @@ com.example.springcloudstreamcustombinder.config.FileMessageBinderConfiguration
 ----
 
 [[configuration-options]]
-= Configuration Options
+== Configuration Options
 
 Spring Cloud Stream supports general configuration options as well as configuration for bindings and binders.
 Some binders let additional binding properties support middleware-specific features.

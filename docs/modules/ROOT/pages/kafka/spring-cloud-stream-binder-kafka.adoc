@@ -28,13 +28,6 @@ Sabby Anandan, Marius Bogoevici, Eric Bottard, Mark Fisher, Ilayaperumal Gopinat
 // ======================================================================================
 
 
-*{project-version}*
+// *{project-version}*
 
-
-[[reference-guide]]
-= Reference Guide
-
-
-
-
-
+xref:kafka/kafka_overview.adoc[Reference Guide]
