@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2022 the original author or authors.
+ * Copyright 2022-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,6 +46,7 @@ import org.springframework.util.Assert;
 
 /**
  * @author Chris Bono
+ * @author Soby Chacko
  * @since 4.0
  */
 public class BinderChildContextInitializer implements ApplicationContextAware, BeanRegistrationAotProcessor {
@@ -92,7 +93,7 @@ public class BinderChildContextInitializer implements ApplicationContextAware, B
 			// Load the binding service properties from the environment and update the binder factory with them
 			// in order to pick up any user-declared binders. Without this step only the default binder defined
 			// in 'META-INF/spring.binders' will be processed.
-			BindingServiceProperties declaredBinders = this.createBindingServiceProperties();
+			BindingServiceProperties declaredBinders = this.declaredBindersAsBindingServiceProperties();
 			Map<String, BinderConfiguration> binderConfigurations = BindingServiceConfiguration.getBinderConfigurations(
 					this.binderFactory.getBinderTypeRegistry(), declaredBinders);
 			this.binderFactory.updateBinderConfigurations(binderConfigurations);
@@ -104,10 +105,10 @@ public class BinderChildContextInitializer implements ApplicationContextAware, B
 		return null;
 	}
 
-	private BindingServiceProperties createBindingServiceProperties() {
+	private BindingServiceProperties declaredBindersAsBindingServiceProperties() {
 		BindingServiceProperties bindingServiceProperties = new BindingServiceProperties();
 		Binder.get(this.context.getEnvironment())
-				.bind("spring.cloud.stream", Bindable.ofInstance(bindingServiceProperties));
+			.bind("spring.cloud.stream.binders", Bindable.ofInstance(bindingServiceProperties));
 		return bindingServiceProperties;
 	}
 
