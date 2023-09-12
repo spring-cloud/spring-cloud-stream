@@ -1,0 +1,5 @@
+[[spring-cloud-bus]]
+= Spring Cloud Bus
+:page-section-summary-toc: 1
+
+*{spring-cloud-version}*

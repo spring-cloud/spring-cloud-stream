@@ -1,16 +1,18 @@
+[[spring-cloud-bus]]
 = Spring Cloud Bus
-include::_attributes.adoc[]
+:page-section-summary-toc: 1
 
-include::intro.adoc[]
 
+[[quick-start]]
 == Quick Start
 
-include::quickstart.adoc[]
 
+[[building]]
 == Building
 
-include::https://raw.githubusercontent.com/spring-cloud/spring-cloud-build/master/docs/src/main/asciidoc/building.adoc[]
+include::https://raw.githubusercontent.com/spring-cloud/spring-cloud-build/main/docs/modules/ROOT/partials/contributing.adoc[]
 
+[[contributing]]
 == Contributing
 
 include::https://raw.githubusercontent.com/spring-cloud/spring-cloud-build/master/docs/src/main/asciidoc/contributing.adoc[]

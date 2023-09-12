@@ -1,0 +1,76 @@
+[[configuration]]
+= Configuration
+:page-section-summary-toc: 1
+
+[[customizing-the-message-broker]]
+== Customizing the Message Broker
+
+Spring Cloud Bus uses https://cloud.spring.io/spring-cloud-stream[Spring Cloud Stream] to
+broadcast the messages. So, to get messages to flow, you need only include the binder
+implementation of your choice in the classpath. There are convenient starters for the bus
+with AMQP (RabbitMQ) and Kafka (`spring-cloud-starter-bus-[amqp|kafka]`). Generally
+speaking, Spring Cloud Stream relies on Spring Boot autoconfiguration conventions for
+configuring middleware. For instance, the AMQP broker address can be changed with
+`spring.rabbitmq.{asterisk}` configuration properties. Spring Cloud Bus has a handful of
+native configuration properties in `spring.cloud.bus.{asterisk}` (for example,
+`spring.cloud.bus.destination` is the name of the topic to use as the external
+middleware). Normally, the defaults suffice.
+
+To learn more about how to customize the message broker settings, consult the Spring Cloud
+Stream documentation.
+
+[[tracing-bus-events]]
+== Tracing Bus Events
+
+Bus events (subclasses of `RemoteApplicationEvent`) can be traced by setting
+`spring.cloud.bus.trace.enabled=true`. If you do so, the Spring Boot `TraceRepository`
+(if it is present) shows each event sent and all the acks from each service instance. The
+following example comes from the `/trace` endpoint:
+
+[source,json]
+----
+{
+  "timestamp": "2015-11-26T10:24:44.411+0000",
+  "info": {
+    "signal": "spring.cloud.bus.ack",
+    "type": "RefreshRemoteApplicationEvent",
+    "id": "c4d374b7-58ea-4928-a312-31984def293b",
+    "origin": "stores:8081",
+    "destination": "*:**"
+  }
+  },
+  {
+  "timestamp": "2015-11-26T10:24:41.864+0000",
+  "info": {
+    "signal": "spring.cloud.bus.sent",
+    "type": "RefreshRemoteApplicationEvent",
+    "id": "c4d374b7-58ea-4928-a312-31984def293b",
+    "origin": "customers:9000",
+    "destination": "*:**"
+  }
+  },
+  {
+  "timestamp": "2015-11-26T10:24:41.862+0000",
+  "info": {
+    "signal": "spring.cloud.bus.ack",
+    "type": "RefreshRemoteApplicationEvent",
+    "id": "c4d374b7-58ea-4928-a312-31984def293b",
+    "origin": "customers:9000",
+    "destination": "*:**"
+  }
+}
+----
+
+The preceding trace shows that a `RefreshRemoteApplicationEvent` was sent from
+`customers:9000`, broadcast to all services, and received (acked) by `customers:9000` and
+`stores:8081`.
+
+To handle the ack signals yourself, you could add an `@EventListener` for the
+`AckRemoteApplicationEvent` and `SentApplicationEvent` types to your app (and enable
+tracing). Alternatively, you could tap into the `TraceRepository` and mine the data from
+there.
+
+NOTE: Any Bus application can trace acks. However, sometimes, it is
+useful to do this in a central service that can do more complex
+queries on the data or forward it to a specialized tracing service.
+

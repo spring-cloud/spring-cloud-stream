@@ -1,0 +1,8 @@
+* xref:index.adoc[]
+* xref:quickstart.adoc[]
+* xref:spring-cloud-bus.adoc[]
+** xref:spring-cloud-bus/bus-endpoints.adoc[]
+** xref:spring-cloud-bus/addressing.adoc[]
+** xref:spring-cloud-bus/configuration.adoc[]
+** xref:spring-cloud-bus/custom-events.adoc[]
+* xref:appendix.adoc[]

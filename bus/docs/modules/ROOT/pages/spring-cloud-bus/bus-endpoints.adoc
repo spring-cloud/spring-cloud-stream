@@ -1,0 +1,44 @@
+[[bus-endpoints]]
+= Bus Endpoints
+:page-section-summary-toc: 1
+
+Spring Cloud Bus provides two endpoints, `/actuator/busrefresh` and `/actuator/busenv`
+that correspond to individual actuator endpoints in Spring Cloud Commons,
+`/actuator/refresh` and `/actuator/env` respectively.
+
+[[bus-refresh-endpoint]]
+== Bus Refresh Endpoint
+The `/actuator/busrefresh` endpoint clears the `RefreshScope` cache and rebinds
+`@ConfigurationProperties`. See the <<refresh-scope,Refresh Scope>> documentation for
+more information.
+
+To expose the `/actuator/busrefresh` endpoint, you need to add following configuration to your
+application:
+
+[source,properties]
+----
+management.endpoints.web.exposure.include=busrefresh
+----
+
+[[bus-env-endpoint]]
+== Bus Env Endpoint
+The `/actuator/busenv` endpoint updates each instances environment with the specified
+key/value pair across multiple instances.
+
+To expose the `/actuator/busenv` endpoint, you need to add following configuration to your
+application:
+
+[source,properties]
+----
+management.endpoints.web.exposure.include=busenv
+----
+
+The `/actuator/busenv` endpoint accepts `POST` requests with the following shape:
+
+[source,json]
+----
+{
+	"name": "key1",
+	"value": "value1"
+}
+----
