@@ -1,0 +1,33 @@
+[[health-indicator]]
+= Health Indicator
+
+Spring Cloud Stream provides a health indicator for binders.
+It is registered under the name `binders` and can be enabled or disabled by setting the `management.health.binders.enabled` property.
+
+To enable health check you first need to enable both "web" and "actuator" by including its dependencies (see xref:spring-cloud-stream/binding_visualization_control.adoc[Binding visualization and control])
+
+If `management.health.binders.enabled` is not set explicitly by the application, then `management.health.defaults.enabled` is matched as `true` and the binder health indicators are enabled.
+If you want to disable health indicator completely, then you have to set `management.health.binders.enabled` to `false`.
+
+You can use Spring Boot actuator health endpoint to access the health indicator - `/actuator/health`.
+By default, you will only receive the top level application status when you hit the above endpoint.
+In order to receive the full details from the binder specific health indicators, you need to include the property `management.endpoint.health.show-details` with the value `ALWAYS` in your application.
+
+Health indicators are binder-specific and certain binder implementations may not necessarily provide a health indicator.
+
+If you want to completely disable all health indicators available out of the box and instead provide your own health indicators,
+you can do so by setting property `management.health.binders.enabled` to `false` and then provide your own `HealthIndicator` beans in your application.
+In this case, the health indicator infrastructure from Spring Boot will still pick up these custom beans.
+Even if you are not disabling the binder health indicators, you can still enhance the health checks by providing your own `HealthIndicator` beans in addition to the out of the box health checks.
+
+When you have multiple binders in the same application, health indicators are enabled by default unless the application turns them off by setting `management.health.binders.enabled` to `false`.
+In this case, if the user wants to disable health check for a subset of the binders, then that should be done by setting `management.health.binders.enabled` to `false` in the multi binder configurations's environment.
+See xref:spring-cloud-stream/multiple-systems.adoc[Connecting to Multiple Systems] for details on how environment specific properties can be provided.
+
+If there are multiple binders present in the classpath but not all of them are used in the application, this may cause some issues in the context of health indicators.
+There may be implementation specific details as to how the health checks are performed. For example, a Kafka binder may decide the status as `DOWN` if there are no destinations registered by the binder.
+
+Lets take a concrete situation. Imagine you have both Kafka and Kafka Streams binders present in the classpath, but only use the Kafka Streams binder in the application code, i.e. only provide bindings using the Kafka Streams binder.
+Since Kafka binder is not used and it has specific checks to see if any destinations are registered, the binder health check will fail.
+The top level application health check status will be reported as `DOWN`.
+In this situation, you can simply remove the dependency for kafka binder from your application since you are not using it.

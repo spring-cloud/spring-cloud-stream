@@ -1,0 +1,8 @@
+[[configuration-options]]
+= Configuration Options
+
+Spring Cloud Stream supports general configuration options as well as configuration for bindings and binders.
+Some binders let additional binding properties support middleware-specific features.
+
+Configuration options can be provided to Spring Cloud Stream applications through any mechanism supported by Spring Boot.
+This includes application arguments, environment variables, and YAML or .properties files.

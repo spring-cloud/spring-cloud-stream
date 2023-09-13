@@ -256,21 +256,3 @@ public interface ProducerMessageHandlerCustomizer<H extends MessageHandler> {
 
 As you can see it gives you access to an actual instance of producing `MessageHandler` which you can configure as you wish.
 All you need to do is provide implementation of this strategy and configure it as a `@Bean`.
-
-
-[[content-type-management]]
-== Content Type Negotiation
-
-Data transformation is one of the core features of any message-driven microservice architecture. Given that, in Spring Cloud Stream, such data
-is represented as a Spring `Message`, a message may have to be transformed to a desired shape or size before reaching its destination. This is required for two reasons:
-
-. To convert the contents of the incoming message to match the signature of the application-provided handler.
-
-. To convert the contents of the outgoing message to the wire format.
-
-The wire format is typically `byte[]` (that is true for the Kafka and Rabbit binders), but it is governed by the binder implementation.
-
-In Spring Cloud Stream, message transformation is accomplished with an `org.springframework.messaging.converter.MessageConverter`.
-
-NOTE: As a supplement to the details to follow, you may also want to read the following https://spring.io/blog/2018/02/26/spring-cloud-stream-2-0-content-type-negotiation-and-transformation[blog post].
-
