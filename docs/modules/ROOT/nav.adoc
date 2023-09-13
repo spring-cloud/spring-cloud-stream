@@ -11,18 +11,43 @@
 ** xref:spring-cloud-stream/programming-model.adoc[]
 *** xref:spring-cloud-stream/destination-binders.adoc[]
 *** xref:spring-cloud-stream/bindings.adoc[]
+*** xref:spring-cloud-stream/binding_visualization_control.adoc[]
 *** xref:spring-cloud-stream/producing-and-consuming-messages.adoc[]
+*** xref:spring-cloud-stream/event-routing.adoc[]
+*** xref:spring-cloud-stream/post-processing-after-sending-message.adoc[]
+*** xref:spring-cloud-stream/overview-error-handling.adoc[]
 ** xref:spring-cloud-stream/binders.adoc[]
 *** xref:spring-cloud-stream/overview-binder-api.adoc[A pluggable Binder SPI]
 *** xref:spring-cloud-stream/binder-detection.adoc[]
 *** xref:spring-cloud-stream/multiple-binders.adoc[]
 *** xref:spring-cloud-stream/multiple-systems.adoc[]
+*** xref:spring-cloud-stream/binder-customizer.adoc[]
+** xref:spring-cloud-stream/configuration-options.adoc[]
+*** xref:spring-cloud-stream/binding-service-properties.adoc[]
+*** xref:spring-cloud-stream/binding-properties.adoc[]
+** xref:spring-cloud-stream/content-type.adoc[]
+*** xref:spring-cloud-stream/mechanics.adoc[]
+*** xref:spring-cloud-stream/provided-messageconverters.adoc[]
+*** xref:spring-cloud-stream/overview-user-defined-message-converters.adoc[]
+** xref:spring-cloud-stream/application-communication.adoc[]
+*** xref:spring-cloud-stream/overview-connecting-multiple-application-instances.adoc[Connecting Multiple Application Instances]
+*** xref:spring-cloud-stream/overview-instance-index-instance-count.adoc[Instance Index and Instance Count]
+** xref:spring-cloud-stream/overview-partitioning.adoc[Partitioning]
+** xref:spring-cloud-stream/spring_integration_test_binder.adoc[]
+** xref:spring-cloud-stream/health-indicator.adoc[]
+** xref:spring-cloud-stream/samples.adoc[]
+
 * Binders
 ** Apache Kafka
+*** Kafka Binder
+**** xref:kafka/kafka_dlq.adoc[]
+*** Kafka Stream Binder
+*** Reactive Kafka Binder
 ** RabbitMQ
 ** Apache Pulsar
 ** https://github.com/SolaceProducts/solace-spring-cloud/tree/master/solace-spring-cloud-starters/solace-spring-cloud-stream-starter#spring-cloud-stream-binder-for-solace-pubsub[Solace]
 ** https://github.com/spring-cloud/spring-cloud-stream-binder-aws-kinesis/blob/main/spring-cloud-stream-binder-kinesis-docs/src/main/asciidoc/overview.adoc[Amazon Kinesis]
+* xref:schema-registry/spring-cloud-stream-schema-registry.adoc[]
 
 
 #** xref:spring-cloud-stream/overview-application-model.adoc[]

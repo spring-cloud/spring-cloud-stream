@@ -41,13 +41,3 @@ public class MyCustomMessageConverter extends AbstractMessageConverter {
     }
 }
 ----
-
-[[inter-application-communication]]
-== Inter-Application Communication
-
-Spring Cloud Stream enables communication between applications. Inter-application communication is a complex issue spanning several concerns, as described in the following topics:
-
-* `xref:spring-cloud-stream/overview-connecting-multiple-application-instances.adoc[Connecting Multiple Application Instances]`
-* `xref:spring-cloud-stream/overview-instance-index-instance-count.adoc[Instance Index and Instance Count]`
-* `xref:spring-cloud-stream/overview-partitioning.adoc[Partitioning]`
-
