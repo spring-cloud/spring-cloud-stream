@@ -1,7 +1,7 @@
-:nofooter:
-:sectlinks: true
-
 [[spring-cloud-stream-reference]]
+= Spring Cloud Stream Reference Documentation
+:page-section-summary-toc: 1
+
 
 :doctype: book
 
@@ -69,12 +69,5 @@ class BootTestStreamApplicationTests {
 == Main Concepts
 
 Spring Cloud Stream provides a number of abstractions and primitives that simplify the writing of message-driven microservice applications.
-This section gives an overview of the following:
-
-* xref:spring-cloud-stream/overview-application-model.adoc[Spring Cloud Stream's application model]
-* xref:spring-cloud-stream/overview-binder-abstraction.adoc[The Binder Abstraction]
-* xref:spring-cloud-stream/overview-persistent-publish-subscribe-support.adoc[Persistent publish-subscribe support]
-* xref:spring-cloud-stream/consumer-groups.adoc[Consumer group support]
-* xref:spring-cloud-stream/overview-partitioning.adoc[Partitioning support]
-* xref:spring-cloud-stream/overview-binder-api.adoc[A pluggable Binder SPI]
+The rest of this reference manual provides additional details.
 
