@@ -439,6 +439,7 @@ public class KafkaMessageChannelBinder extends
 						+ partitions.size()
 						+ " for the topic. The larger number will be used instead.");
 			}
+			producerProperties.setPartitionCount(partitions.size());
 			List<ChannelInterceptor> interceptors = ((InterceptableChannel) channel)
 					.getInterceptors();
 			interceptors.forEach((interceptor) -> {

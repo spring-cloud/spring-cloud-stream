@@ -293,6 +293,14 @@ public class BindingService {
 		validate(producerProperties);
 		Binding<T> binding = doBindProducer(output, bindingTarget, binder,
 				producerProperties);
+		// If the downstream binder modified the partition count in the extended producer properties
+		// based on the higher number of partitions provisioned on the target middleware, update that
+		// in the original producer properties.
+		ProducerProperties originalProducerProperties = this.bindingServiceProperties
+			.getProducerProperties(outputName);
+		if (originalProducerProperties.getPartitionCount() < producerProperties.getPartitionCount()) {
+			originalProducerProperties.setPartitionCount(producerProperties.getPartitionCount());
+		}
 		if (cache) {
 			this.producerBindings.put(outputName, binding);
 		}
