@@ -1,5 +1,6 @@
 [[bindings]]
 = Bindings
+:page-section-summary-toc: 1
 
 As stated earlier, _Bindings_ provide a bridge between the external messaging system (e.g., queue, topic etc.) and application-provided _Producers_ and _Consumers_.
 

@@ -1,3 +1,4 @@
+* xref:preface.adoc[]
 * xref:index.adoc[]
 * xref:spring-cloud-stream.adoc[]
 ** Main Concepts and Abstractions
@@ -6,7 +7,23 @@
 *** xref:spring-cloud-stream/overview-persistent-publish-subscribe-support.adoc[Persistent publish-subscribe support]
 *** xref:spring-cloud-stream/consumer-groups.adoc[Consumer group support]
 *** xref:spring-cloud-stream/overview-partitioning.adoc[Partitioning support]
+
+** xref:spring-cloud-stream/programming-model.adoc[]
+*** xref:spring-cloud-stream/destination-binders.adoc[]
+*** xref:spring-cloud-stream/bindings.adoc[]
+*** xref:spring-cloud-stream/producing-and-consuming-messages.adoc[]
+** xref:spring-cloud-stream/binders.adoc[]
 *** xref:spring-cloud-stream/overview-binder-api.adoc[A pluggable Binder SPI]
+*** xref:spring-cloud-stream/binder-detection.adoc[]
+*** xref:spring-cloud-stream/multiple-binders.adoc[]
+*** xref:spring-cloud-stream/multiple-systems.adoc[]
+* Binders
+** Apache Kafka
+** RabbitMQ
+** Apache Pulsar
+** https://github.com/SolaceProducts/solace-spring-cloud/tree/master/solace-spring-cloud-starters/solace-spring-cloud-stream-starter#spring-cloud-stream-binder-for-solace-pubsub[Solace]
+** https://github.com/spring-cloud/spring-cloud-stream-binder-aws-kinesis/blob/main/spring-cloud-stream-binder-kinesis-docs/src/main/asciidoc/overview.adoc[Amazon Kinesis]
+
 
 #** xref:spring-cloud-stream/overview-application-model.adoc[]
 #** xref:spring-cloud-stream/overview-binder-abstraction.adoc[]

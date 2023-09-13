@@ -1,5 +1,6 @@
 [[producing-and-consuming-messages]]
 = Producing and Consuming Messages
+:page-section-summary-toc: 1
 
 You can write a Spring Cloud Stream application by simply writing functions and exposing them as `@Bean` s.
 You can also use Spring Integration annotations based configuration or
@@ -28,6 +29,7 @@ For these rare scenarios you can disable auto-discovery by providing `spring.clo
 
 Here is the example of the application exposing message handler as `java.util.function.Function` effectively supporting
 _pass-thru_ semantics by acting as consumer and producer of data.
+
 [source,java]
 ----
 @SpringBootApplication
