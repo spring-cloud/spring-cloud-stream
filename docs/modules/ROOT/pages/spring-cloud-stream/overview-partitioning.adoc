@@ -1,10 +1,28 @@
 [[spring-cloud-stream-overview-partitioning]]
 = Partitioning
 
+Spring Cloud Stream provides support for partitioning data between multiple instances of a given application.
+In a partitioned scenario, the physical communication medium (such as the broker topic) is viewed as being structured into multiple partitions.
+One or more producer application instances send data to multiple consumer application instances and ensure that data identified by common characteristics are processed by the same consumer instance.
+
+Spring Cloud Stream provides a common abstraction for implementing partitioned processing use cases in a uniform fashion.
+Partitioning can thus be used whether the broker itself is naturally partitioned (for example, Kafka) or not (for example, RabbitMQ).
+
+.Spring Cloud Stream Partitioning
+image::SCSt-partitioning.png[width=800,scaledwidth="75%",align="center"]
+
+Partitioning is a critical concept in stateful processing, where it is critical (for either performance or consistency reasons) to ensure that all related data is processed together.
+For example, in the time-windowed average calculation example, it is important that all measurements from any given sensor are processed by the same application instance.
+
+NOTE: To set up a partitioned processing scenario, you must configure both the data-producing and the data-consuming ends.
+
+
 Partitioning in Spring Cloud Stream consists of two tasks:
 
-* `xref:spring-cloud-stream/overview-partitioning.adoc#spring-cloud-stream-overview-configuring-output-bindings-partitioning[Configuring Output Bindings for Partitioning]`
-* `xref:spring-cloud-stream/overview-partitioning.adoc#spring-cloud-stream-overview-configuring-input-bindings-partitioning[Configuring Input Bindings for Partitioning]`
+
+xref:spring-cloud-stream/overview-partitioning.adoc#spring-cloud-stream-overview-configuring-output-bindings-partitioning[Configuring Output Bindings for Partitioning]
+
+xref:spring-cloud-stream/overview-partitioning.adoc#spring-cloud-stream-overview-configuring-input-bindings-partitioning[Configuring Input Bindings for Partitioning]
 
 [[spring-cloud-stream-overview-configuring-output-bindings-partitioning]]
 == Configuring Output Bindings for Partitioning
