@@ -1,5 +1,5 @@
 [[rabbit-prod-props]]
-= Rabbit Producer Properties
+= RabbitMQ Producer Properties
 
 The following properties are available for Rabbit producers only and must be prefixed with `spring.cloud.stream.rabbit.bindings.<channelName>.producer.`.
 

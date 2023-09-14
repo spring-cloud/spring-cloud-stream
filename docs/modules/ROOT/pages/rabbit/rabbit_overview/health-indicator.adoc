@@ -1,0 +1,18 @@
+[[rabbit-binder-health-indicator]]
+= Rabbit Binder Health Indicator
+
+The health indicator for Rabbit binder delegates to the one provided from Spring Boot.
+For more information on this, see https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#actuator.endpoints.health.auto-configured-health-indicators[this].
+
+You can disable this health indicator at the binder level by using the property - `management.health.binders.enabled` and set this to `false`.
+In the case of multi-binder environments, this has to be set on the binder's environment properties.
+
+When the health indicator is disabled, you should see something like the below in the health actuator endpoint:
+
+```
+"rabbit": {
+  "status": "UNKNOWN"
+}
+```
+
+At the Spring Boot level, if you want to disable the Rabbit health indicator, you need to use the property `management.health.rabbit.enabled` and set to `false`.

@@ -1,5 +1,5 @@
-[[advanced-queue/exchange/binding-configuration]]
-= Advanced Queue/Exchange/Binding Configuration
+[[advanced-configuration]]
+= Advanced Configuration
 :page-section-summary-toc: 1
 
 From time to time, the RabbitMQ team add new features that are enabled by setting some argument when declaring, for example, a queue.
