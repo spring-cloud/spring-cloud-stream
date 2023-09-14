@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2019 the original author or authors.
+ * Copyright 2017-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,10 +27,12 @@ import org.springframework.context.SmartLifecycle;
  * {@link Bindable}s.
  *
  * @author Oleg Zhurakousky
+ * @author Soby Chacko
+ *
  * @see InputBindingLifecycle
  * @see OutputBindingLifecycle
  */
-abstract class AbstractBindingLifecycle implements SmartLifecycle {
+public abstract class AbstractBindingLifecycle implements SmartLifecycle {
 
 	final BindingService bindingService;
 
