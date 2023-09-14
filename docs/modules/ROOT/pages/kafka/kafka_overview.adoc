@@ -1,7 +1,3 @@
-This guide describes the Apache Kafka implementation of the Spring Cloud Stream Binder.
-It contains information about its design, usage, and configuration options, as well as information on how the Stream Cloud Stream concepts map onto Apache Kafka specific constructs.
-In addition, this guide explains the Kafka Streams binding capabilities of Spring Cloud Stream.
-
 == Apache Kafka Binder
 
 === Usage
@@ -806,7 +802,7 @@ public Function<Message<Person>, String> myFunction() {
 ====
 
 [[rebalance-listener]]
-=== Using a KafkaBindingRebalanceListener
+=== KafkaBindingRebalanceListener
 
 Applications may wish to seek topics/partitions to arbitrary offsets when the partitions are initially assigned, or perform other operations on the consumer.
 Starting with version 2.1, if you provide a single `KafkaBindingRebalanceListener` bean in the application context, it will be wired into all Kafka consumer bindings.

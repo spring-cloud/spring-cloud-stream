@@ -10,7 +10,7 @@ The metric contains the consumer group information, topic and the actual lag in 
 This metric is particularly useful for providing auto-scaling feedback to a PaaS platform.
 
 The metric collection behaviour can be configured by setting properties in the `spring.cloud.stream.kafka.binder.metrics` namespace,
-refer to the xref:kafka/kafka_overview/configuration-options.adoc#kafka-binder-properties[kafka binder properties section] for more information.
+refer to the <<kafka-binder-properties, kafka binder properties section>> for more information.
 
 You can exclude `KafkaBinderMetrics` from creating the necessary infrastructure like consumers and then reporting the metrics by providing the following component in the application.
 
@@ -25,4 +25,3 @@ class NoOpBindingMeters {
 ```
 
 More details on how to suppress meters selectively can be found https://micrometer.io/docs/concepts#_meter_filters[here].
-

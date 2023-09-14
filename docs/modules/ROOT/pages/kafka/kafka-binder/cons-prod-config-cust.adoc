@@ -1,6 +1,5 @@
 [[consumer-producer-config-customizer]]
 = Customizing Consumer and Producer configuration
-:page-section-summary-toc: 1
 
 If you want advanced customization of consumer and producer configuration that is used for creating `ConsumerFactory` and `ProducerFactory` in Kafka,
 you can implement the following customizers.
@@ -13,4 +12,3 @@ For example, if you want to gain access to a bean that is defined at the applica
 When the binder discovers that these customizers are available as beans, it will invoke the `configure` method right before creating the consumer and producer factories.
 
 Both of these interfaces also provide access to both the binding and destination names so that they can be accessed while customizing producer and consumer properties.
-

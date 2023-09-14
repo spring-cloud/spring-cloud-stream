@@ -12,6 +12,7 @@ Similarly, instead of publishing dead-letter records within the transaction, thi
 
 If you wish to use transactions in a source application, or from some arbitrary thread for producer-only transaction (e.g. `@Scheduled` method), you must get a reference to the transactional producer factory and define a `KafkaTransactionManager` bean using it.
 
+====
 [source, java]
 ----
 @Bean
@@ -25,6 +26,7 @@ public PlatformTransactionManager transactionManager(BinderFactory binders,
     return tm;
 }
 ----
+====
 
 Notice that we get a reference to the binder using the `BinderFactory`; use `null` in the first argument when there is only one binder configured.
 If more than one binder is configured, use the binder name to get the reference.
@@ -32,6 +34,7 @@ Once we have a reference to the binder, we can obtain a reference to the `Produc
 
 Then you would use normal Spring transaction support, e.g. `TransactionTemplate` or `@Transactional`, for example:
 
+====
 [source, java]
 ----
 public static class Sender {
@@ -43,8 +46,8 @@ public static class Sender {
 
 }
 ----
+====
 
 If you wish to synchronize producer-only transactions with those from some other transaction manager, use a `ChainedTransactionManager`.
 
 IMPORTANT: If you deploy multiple instances of your application, each instance needs a unique `transactionIdPrefix`.
-

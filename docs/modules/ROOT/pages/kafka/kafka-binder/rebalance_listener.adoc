@@ -1,9 +1,10 @@
 [[rebalance-listener]]
-= Using a KafkaBindingRebalanceListener
+= KafkaBindingRebalanceListener
 
 Applications may wish to seek topics/partitions to arbitrary offsets when the partitions are initially assigned, or perform other operations on the consumer.
 Starting with version 2.1, if you provide a single `KafkaBindingRebalanceListener` bean in the application context, it will be wired into all Kafka consumer bindings.
 
+====
 [source, java]
 ----
 public interface KafkaBindingRebalanceListener {
@@ -44,6 +45,6 @@ public interface KafkaBindingRebalanceListener {
 
 }
 ----
+====
 
 You cannot set the `resetOffsets` consumer property to `true` when you provide a rebalance listener.
-

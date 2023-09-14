@@ -1,6 +1,5 @@
 [[admin-client-config-customization]]
 = Customizing AdminClient Configuration
-:page-section-summary-toc: 1
 
 As with consumer and producer config customization above, applications can also customize the configuration for admin clients by providing an `AdminClientConfigCustomizer`.
 AdminClientConfigCustomizer's configure method provides access to the admin client properties, using which you can define further customization.
@@ -15,4 +14,3 @@ public AdminClientConfigCustomizer adminClientConfigCustomizer() {
     };
 }
 ```
-

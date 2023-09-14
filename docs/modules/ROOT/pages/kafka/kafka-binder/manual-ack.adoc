@@ -1,0 +1,27 @@
+= Manual Acknowledgement
+
+This example illustrates how one may manually acknowledge offsets in a consumer application.
+
+This example requires that `spring.cloud.stream.kafka.bindings.input.consumer.ackMode` be set to `MANUAL`.
+Use the corresponding input channel name for your example.
+
+[source]
+----
+@SpringBootApplication
+public class ManuallyAcknowdledgingConsumer {
+
+ public static void main(String[] args) {
+     SpringApplication.run(ManuallyAcknowdledgingConsumer.class, args);
+ }
+
+ @Bean
+ public Consumer<Message<?>> process() {
+    return message -> {
+        Acknowledgment acknowledgment = message.getHeaders().get(KafkaHeaders.ACKNOWLEDGMENT, Acknowledgment.class);
+        if (acknowledgment != null) {
+         System.out.println("Acknowledgment provided");
+         acknowledgment.acknowledge();
+        }
+    };
+}
+----
