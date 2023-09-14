@@ -1,3 +1,6 @@
+= RabbitMQ Binder Reference Guide
+:page-section-summary-toc: 1
+
 This guide describes the RabbitMQ implementation of the Spring Cloud Stream Binder.
 It contains information about its design, usage and configuration options, as well as information on how the Stream Cloud Stream concepts map into RabbitMQ specific constructs.
 

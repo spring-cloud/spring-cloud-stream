@@ -96,7 +96,25 @@
 *** Tips and Recipes
 **** xref:kafka/kafka_tips.adoc[]
 ** RabbitMQ
+*** xref:rabbit/rabbit_overview.adoc[]
+*** Configuration Options
+***** xref:rabbit/rabbit_overview/binder-properties.adoc[]
+***** xref:rabbit/rabbit_overview/rabbitmq-consumer-properties.adoc[]
+***** xref:rabbit/rabbit_overview/prod-props.adoc[]
+***** xref:rabbit/rabbit_overview/advanced-listener-container-configuration.adoc[]
+***** xref:rabbit/rabbit_overview/advanced-binding-configuration.adoc[]
+***** xref:rabbit/rabbit_overview/receiving-batch.adoc[]
+***** xref:rabbit/rabbit_overview/publisher-confirms.adoc[]
+***** xref:rabbit/rabbit_overview/rabbitmq-stream-consumer.adoc[]
+***** xref:rabbit/rabbit_overview/rabbitmq-stream-producer.adoc[]
+*** xref:rabbit/rabbit_overview/existing-destinations.adoc[]
+*** xref:rabbit/rabbit_overview/rabbitmq-retry.adoc[]
+**** xref:rabbit/rabbit_overview/putting-it-all-together.adoc[]
+*** xref:rabbit/rabbit_overview/error-channels.adoc[]
+*** xref:rabbit/rabbit_partitions.adoc[]
+*** xref:rabbit/rabbit_overview/health-indicator.adoc[]
 ** Apache Pulsar
+*** xref:pulsar/pulsar_binder.adoc[]
 ** https://github.com/SolaceProducts/solace-spring-cloud/tree/master/solace-spring-cloud-starters/solace-spring-cloud-stream-starter#spring-cloud-stream-binder-for-solace-pubsub[Solace]
 ** https://github.com/spring-cloud/spring-cloud-stream-binder-aws-kinesis/blob/main/spring-cloud-stream-binder-kinesis-docs/src/main/asciidoc/overview.adoc[Amazon Kinesis]
 * xref:schema-registry/spring-cloud-stream-schema-registry.adoc[]
