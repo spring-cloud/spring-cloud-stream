@@ -1,0 +1,8 @@
+[[pause-resume]]
+= Pausing and Resuming the Consumer
+
+If you wish to suspend consumption but not cause a partition rebalance, you can pause and resume the consumer.
+This is facilitated by managing the binding lifecycle as shown in **Binding visualization and control** in the Spring Cloud Stream documentation, using `State.PAUSED` and `State.RESUMED`.
+
+To resume, you can use an `ApplicationListener` (or `@EventListener` method) to receive `ListenerContainerIdleEvent` instances.
+The frequency at which events are published is controlled by the `idleEventInterval` property.

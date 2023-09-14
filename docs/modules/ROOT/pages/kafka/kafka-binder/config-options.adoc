@@ -1,4 +1,3 @@
-[[configuration-options]]
 = Configuration Options
 
 This section contains the configuration options used by the Apache Kafka binder.
@@ -88,7 +87,7 @@ When transactions are enabled, individual `producer` properties are ignored and 
 Default `null` (no transactions)
 spring.cloud.stream.kafka.binder.transaction.producer.*::
 Global producer properties for producers in a transactional binder.
-See `spring.cloud.stream.kafka.binder.transaction.transactionIdPrefix` and xref:kafka/kafka_overview/configuration-options.adoc#kafka-producer-properties[Kafka Producer Properties] and the general producer properties supported by all binders.
+See `spring.cloud.stream.kafka.binder.transaction.transactionIdPrefix` and <<kafka-producer-properties>> and the general producer properties supported by all binders.
 +
 Default: See individual producer properties.
 
@@ -102,7 +101,7 @@ Default: none.
 spring.cloud.stream.kafka.binder.considerDownWhenAnyPartitionHasNoLeader::
 Flag to set the binder health as `down`, when any partitions on the topic, regardless of the consumer that is receiving data from it, is found without a leader.
 +
-Default: `false`.
+Default: `true`.
 
 spring.cloud.stream.kafka.binder.certificateStoreDirectory::
 When the truststore or keystore certificate location is given as a non-local file system resource (resources supported by org.springframework.core.io.Resource e.g. CLASSPATH, HTTP, etc.),
@@ -195,15 +194,15 @@ Note that this property is only applicable for pollable consumers.
 Default: not set.
 resetOffsets::
 Whether to reset offsets on the consumer to the value provided by startOffset.
-Must be false if a `KafkaBindingRebalanceListener` is provided; see xref:kafka/kafka_overview/rebalance-listener.adoc[Using a KafkaBindingRebalanceListener].
-See xref:kafka/kafka_overview/configuration-options.adoc#reset-offsets[Resetting Offsets] for more information about this property.
+Must be false if a `KafkaBindingRebalanceListener` is provided; see <<rebalance-listener>>.
+See <<reset-offsets>> for more information about this property.
 +
 Default: `false`.
 startOffset::
 The starting offset for new groups.
 Allowed values: `earliest` and `latest`.
 If the consumer group is set explicitly for the consumer 'binding' (through `spring.cloud.stream.bindings.<channelName>.group`), 'startOffset' is set to `earliest`. Otherwise, it is set to `latest` for the `anonymous` consumer group.
-See xref:kafka/kafka_overview/configuration-options.adoc#reset-offsets[Resetting Offsets] for more information about this property.
+See <<reset-offsets>> for more information about this property.
 +
 Default: null (equivalent to `earliest`).
 enableDlq::
@@ -211,17 +210,17 @@ When set to true, it enables DLQ behavior for the consumer.
 By default, messages that result in errors are forwarded to a topic named `error.<destination>.<group>`.
 The DLQ topic name can be configurable by setting the `dlqName` property or by defining a `@Bean` of type `DlqDestinationResolver`.
 This provides an alternative option to the more common Kafka replay scenario for the case when the number of errors is relatively small and replaying the entire original topic may be too cumbersome.
-See xref:kafka/kafka_dlq.adoc[Dead-Letter Topic Processing] processing for more information.
+See <<kafka-dlq-processing>> processing for more information.
 Starting with version 2.0, messages sent to the DLQ topic are enhanced with the following headers: `x-original-topic`, `x-exception-message`, and `x-exception-stacktrace` as `byte[]`.
 By default, a failed record is sent to the same partition number in the DLQ topic as the original record.
-See xref:kafka/kafka_dlq.adoc#dlq-partition-selection[Dead-Letter Topic Partition Selection] for how to change that behavior.
+See <<dlq-partition-selection>> for how to change that behavior.
 **Not allowed when `destinationIsPattern` is `true`.**
 +
 Default: `false`.
 dlqPartitions::
 When `enableDlq` is true, and this property is not set, a dead letter topic with the same number of partitions as the primary topic(s) is created.
 Usually, dead-letter records are sent to the same partition in the dead-letter topic as the original record.
-This behavior can be changed; see xref:kafka/kafka_dlq.adoc#dlq-partition-selection[Dead-Letter Topic Partition Selection].
+This behavior can be changed; see <<dlq-partition-selection>>.
 If this property is set to `1` and there is no `DqlPartitionFunction` bean, all dead-letter records will be written to partition `0`.
 If this property is greater than `1`, you **MUST** provide a `DlqPartitionFunction` bean.
 Note that the actual partition count is affected by the binder's `minPartitionCount` property.
@@ -258,7 +257,7 @@ Default: `null`
 idleEventInterval::
 The interval, in milliseconds, between events indicating that no messages have recently been received.
 Use an `ApplicationListener<ListenerContainerIdleEvent>` to receive these events.
-See xref:kafka/kafka_overview/configuration-options.adoc#pause-resume[Example: Pausing and Resuming the Consumer] for a usage example.
+See <<pause-resume>> for a usage example.
 +
 Default: `30000`
 destinationIsPattern::
@@ -304,49 +303,6 @@ When present, this user provided `CommonErrorHandler` takes precedence over any 
 This is a handy way to express error handlers, if the application does not want to use a `ListenerContainerCustomizer` and then check the destination/group combination to set an error handler.
 +
 Default: none.
-
-
-[[reset-offsets]]
-== Resetting Offsets
-
-When an application starts, the initial position in each assigned partition depends on two properties `startOffset` and `resetOffsets`.
-If `resetOffsets` is `false`, normal Kafka consumer https://kafka.apache.org/documentation/#consumerconfigs_auto.offset.reset[`auto.offset.reset`] semantics apply.
-i.e. If there is no committed offset for a partition for the binding's consumer group, the position is `earliest` or `latest`.
-By default, bindings with an explicit `group` use `earliest`, and anonymous bindings (with no `group`) use `latest`.
-These defaults can be overridden by setting the `startOffset` binding property.
-There will be no committed offset(s) the first time the binding is started with a particular `group`.
-The other condition where no committed offset exists is if the offset has been expired.
-With modern brokers (since 2.1), and default broker properties, the offsets are expired 7 days after the last member leaves the group.
-See the https://kafka.apache.org/documentation/#brokerconfigs_offsets.retention.minutes[`offsets.retention.minutes`] broker property for more information.
-
-When `resetOffsets` is `true`, the binder applies similar semantics to those that apply when there is no committed offset on the broker, as if this binding has never consumed from the topic; i.e. any current committed offset is ignored.
-
-Following are two use cases when this might be used.
-
-1. Consuming from a compacted topic containing key/value pairs.
-Set `resetOffsets` to `true` and `startOffset` to `earliest`; the binding will perform a `seekToBeginning` on all newly assigned partitions.
-
-2. Consuming from a topic containing events, where you are only interested in events that occur while this binding is running.
-Set `resetOffsets` to `true` and `startOffset` to `latest`; the binding will perform a `seekToEnd` on all newly assigned partitions.
-
-IMPORTANT: If a rebalance occurs after the initial assignment, the seeks will only be performed on any newly assigned partitions that were not assigned during the initial assignment.
-
-For more control over topic offsets, see xref:kafka/kafka_overview/rebalance-listener.adoc[Using a KafkaBindingRebalanceListener]; when a listener is provided, `resetOffsets` should not be set to `true`, otherwise, that will cause an error.
-
-[[consuming-batches]]
-== Consuming Batches
-
-Starting with version 3.0, when `spring.cloud.stream.bindings.<name>.consumer.batch-mode` is set to `true`, all of the records received by polling the Kafka `Consumer` will be presented as a `List<?>` to the listener method.
-Otherwise, the method will be called with one record at a time.
-The size of the batch is controlled by Kafka consumer properties `max.poll.records`, `fetch.min.bytes`, `fetch.max.wait.ms`; refer to the Kafka documentation for more information.
-
-Starting with version `4.0.2`, the binder supports DLQ capabilities when consuming in batch mode.
-Keep in mind that, when using DLQ on a consumer binding that is in batch mode, all the records received from the previous poll will be delivered to the DLQ topic.
-
-IMPORTANT: Retry within the binder is not supported when using batch mode, so `maxAttempts` will be overridden to 1.
-You can configure a `DefaultErrorHandler` (using a `ListenerContainerCustomizer`) to achieve similar functionality to retry in the binder.
-You can also use a manual `AckMode` and call `Ackowledgment.nack(index, sleep)` to commit the offsets for a partial batch and have the remaining records redelivered.
-Refer to the https://docs.spring.io/spring-kafka/docs/2.3.15.BUILD-SNAPSHOT/reference/html/#committing-offsets[Spring for Apache Kafka documentation] for more information about these techniques.
 
 [[kafka-producer-properties]]
 == Kafka Producer Properties
@@ -437,7 +393,7 @@ The header contains a `RecordMetadata` object provided by the Kafka client; it i
 +
 `ResultMetadata meta = sendResultMsg.getHeaders().get(KafkaHeaders.RECORD_METADATA, RecordMetadata.class)`
 +
-Failed sends go the producer error channel (if configured); see xref:kafka/kafka_overview/error-channels.adoc[Error Channels].
+Failed sends go the producer error channel (if configured); see <<kafka-error-channels>>.
 +
 Default: null.
 
@@ -471,180 +427,3 @@ This property allows you to override that behavior.
 If set to true, records published to this output binding will not be run in a transaction, unless one is already in process.
 +
 Default: `false`
-
-[[usage-examples]]
-== Usage examples
-
-In this section, we show the use of the preceding properties for specific scenarios.
-
-[[example:-setting-ackmode-to-manual-and-relying-on-manual-acknowledgement]]
-=== Example: Setting `ackMode` to `MANUAL` and Relying on Manual Acknowledgement
-
-This example illustrates how one may manually acknowledge offsets in a consumer application.
-
-This example requires that `spring.cloud.stream.kafka.bindings.input.consumer.ackMode` be set to `MANUAL`.
-Use the corresponding input channel name for your example.
-
-[source]
-----
-@SpringBootApplication
-public class ManuallyAcknowdledgingConsumer {
-
- public static void main(String[] args) {
-     SpringApplication.run(ManuallyAcknowdledgingConsumer.class, args);
- }
-
- @Bean
- public Consumer<Message<?>> process() {
-    return message -> {
-        Acknowledgment acknowledgment = message.getHeaders().get(KafkaHeaders.ACKNOWLEDGMENT, Acknowledgment.class);
-        if (acknowledgment != null) {
-         System.out.println("Acknowledgment provided");
-         acknowledgment.acknowledge();
-        }
-    };
-}
-----
-
-[[example:-security-configuration]]
-=== Example: Security Configuration
-
-Apache Kafka 0.9 supports secure connections between client and brokers.
-To take advantage of this feature, follow the guidelines in the https://kafka.apache.org/090/documentation.html#security_configclients[Apache Kafka Documentation] as well as the Kafka 0.9 https://docs.confluent.io/2.0.0/kafka/security.html[security guidelines from the Confluent documentation].
-Use the `spring.cloud.stream.kafka.binder.configuration` option to set security properties for all clients created by the binder.
-
-For example, to set `security.protocol` to `SASL_SSL`, set the following property:
-
-[source]
-----
-spring.cloud.stream.kafka.binder.configuration.security.protocol=SASL_SSL
-----
-
-All the other security properties can be set in a similar manner.
-
-When using Kerberos, follow the instructions in the https://kafka.apache.org/090/documentation.html#security_sasl_clientconfig[reference documentation] for creating and referencing the JAAS configuration.
-
-Spring Cloud Stream supports passing JAAS configuration information to the application by using a JAAS configuration file and using Spring Boot properties.
-
-[[using-jaas-configuration-files]]
-==== Using JAAS Configuration Files
-
-The JAAS and (optionally) krb5 file locations can be set for Spring Cloud Stream applications by using system properties.
-The following example shows how to launch a Spring Cloud Stream application with SASL and Kerberos by using a JAAS configuration file:
-
-[source,bash]
-----
- java -Djava.security.auth.login.config=/path.to/kafka_client_jaas.conf -jar log.jar \
-   --spring.cloud.stream.kafka.binder.brokers=secure.server:9092 \
-   --spring.cloud.stream.bindings.input.destination=stream.ticktock \
-   --spring.cloud.stream.kafka.binder.configuration.security.protocol=SASL_PLAINTEXT
-----
-
-[[using-spring-boot-properties]]
-==== Using Spring Boot Properties
-
-As an alternative to having a JAAS configuration file, Spring Cloud Stream provides a mechanism for setting up the JAAS configuration for Spring Cloud Stream applications by using Spring Boot properties.
-
-The following properties can be used to configure the login context of the Kafka client:
-
-spring.cloud.stream.kafka.binder.jaas.loginModule::
-The login module name. Not necessary to be set in normal cases.
-+
-Default: `com.sun.security.auth.module.Krb5LoginModule`.
-spring.cloud.stream.kafka.binder.jaas.controlFlag::
-The control flag of the login module.
-+
-Default: `required`.
-spring.cloud.stream.kafka.binder.jaas.options::
-Map with a key/value pair containing the login module options.
-+
-Default: Empty map.
-
-The following example shows how to launch a Spring Cloud Stream application with SASL and Kerberos by using Spring Boot configuration properties:
-
-[source,bash]
-----
- java --spring.cloud.stream.kafka.binder.brokers=secure.server:9092 \
-   --spring.cloud.stream.bindings.input.destination=stream.ticktock \
-   --spring.cloud.stream.kafka.binder.autoCreateTopics=false \
-   --spring.cloud.stream.kafka.binder.configuration.security.protocol=SASL_PLAINTEXT \
-   --spring.cloud.stream.kafka.binder.jaas.options.useKeyTab=true \
-   --spring.cloud.stream.kafka.binder.jaas.options.storeKey=true \
-   --spring.cloud.stream.kafka.binder.jaas.options.keyTab=/etc/security/keytabs/kafka_client.keytab \
-   --spring.cloud.stream.kafka.binder.jaas.options.principal=kafka-client-1@EXAMPLE.COM
-----
-
-The preceding example represents the equivalent of the following JAAS file:
-
-[source]
-----
-KafkaClient {
-    com.sun.security.auth.module.Krb5LoginModule required
-    useKeyTab=true
-    storeKey=true
-    keyTab="/etc/security/keytabs/kafka_client.keytab"
-    principal="kafka-client-1@EXAMPLE.COM";
-};
-----
-
-If the topics required already exist on the broker or will be created by an administrator, autocreation can be turned off and only client JAAS properties need to be sent.
-
-NOTE: Do not mix JAAS configuration files and Spring Boot properties in the same application.
-If the `-Djava.security.auth.login.config` system property is already present, Spring Cloud Stream ignores the Spring Boot properties.
-
-NOTE: Be careful when using the `autoCreateTopics` and `autoAddPartitions` with Kerberos.
-Usually, applications may use principals that do not have administrative rights in Kafka and Zookeeper.
-Consequently, relying on Spring Cloud Stream to create/modify topics may fail.
-In secure environments, we strongly recommend creating topics and managing ACLs administratively by using Kafka tooling.
-
-[[multi-binder-configuration-and-jaas]]
-==== Multi-binder configuration and JAAS
-
-When connecting to multiple clusters in which each one requires separate JAAS configuration, then set the JAAS configuration using the property `sasl.jaas.config`.
-When this property is present in the application, it takes precedence over the other strategies mentioned above.
-See this https://cwiki.apache.org/confluence/display/KAFKA/KIP-85%3A+Dynamic+JAAS+configuration+for+Kafka+clients[KIP-85] for more details.
-
-For example, if you have two clusters in your application with separate JAAS configuration, then the following is a template that you can use:
-
-```
-spring.cloud.stream:
-    binders:
-        kafka1:
-          type: kafka
-          environment:
-             spring:
-               cloud:
-                 stream:
-                  kafka:
-                    binder:
-                      brokers: localhost:9092
-                      configuration.sasl.jaas.config: "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"admin\" password=\"admin-secret\";"
-        kafka2:
-          type: kafka
-          environment:
-            spring:
-              cloud:
-                stream:
-                  kafka:
-                    binder:
-                      brokers: localhost:9093
-                      configuration.sasl.jaas.config: "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"user1\" password=\"user1-secret\";"
-    kafka.binder:
-        configuration:
-          security.protocol: SASL_PLAINTEXT
-          sasl.mechanism: PLAIN
-```
-
-Note that both the Kafka clusters, and the `sasl.jaas.config` values for each of them are different in the above configuration.
-
-See this https://github.com/spring-cloud/spring-cloud-stream-samples/tree/main/multi-binder-samples/kafka-multi-binder-jaas[sample application] for more details on how to setup and run such an application.
-
-[[pause-resume]]
-=== Example: Pausing and Resuming the Consumer
-
-If you wish to suspend consumption but not cause a partition rebalance, you can pause and resume the consumer.
-This is facilitated by managing the binding lifecycle as shown in **Binding visualization and control** in the Spring Cloud Stream documentation, using `State.PAUSED` and `State.RESUMED`.
-
-To resume, you can use an `ApplicationListener` (or `@EventListener` method) to receive `ListenerContainerIdleEvent` instances.
-The frequency at which events are published is controlled by the `idleEventInterval` property.
-

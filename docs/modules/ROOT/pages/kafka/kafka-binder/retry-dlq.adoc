@@ -13,6 +13,7 @@ There are situations where it is preferable to move this functionality to the li
 To configure moving this functionality from the binder to the container, define a `@Bean` of type `ListenerContainerWithDlqAndRetryCustomizer`.
 This interface has the following methods:
 
+====
 [source, java]
 ----
 /**
@@ -42,9 +43,11 @@ default boolean retryAndDlqInBinding(String destinationName, String group) {
     return true;
 }
 ----
+====
 
 The destination resolver and `BackOff` are created from the binding properties (if configured). The `KafkaTemplate` uses configuration from `spring.kafka....` properties. You can then use these to create a custom error handler and dead letter publisher; for example:
 
+====
 [source, java]
 ----
 @Bean
@@ -72,11 +75,13 @@ ListenerContainerWithDlqAndRetryCustomizer cust(KafkaTemplate<?, ?> template) {
     };
 }
 ----
+====
 
 Now, only a single retry delay needs to be greater than the consumer's `max.poll.interval.ms` property.
 
 When working with several binders, the 'ListenerContainerWithDlqAndRetryCustomizer' bean gets overridden by the 'DefaultBinderFactory'. For the bean
-to apply, you need to use a 'BinderCustomizer' to set the container customizer (See xref:spring-cloud-stream/binder-customizer.adoc[Customizing binders in multi binder applications]):
+to apply, you need to use a 'BinderCustomizer' to set the container customizer (See <<binder-customizer>>):
+====
 [source, java]
 ----
 @Bean
@@ -94,4 +99,4 @@ public BinderCustomizer binderCustomizer(ListenerContainerWithDlqAndRetryCustomi
     };
 }
 ----
-
+====

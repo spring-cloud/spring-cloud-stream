@@ -1,0 +1,128 @@
+= Security Configuration
+
+Apache Kafka supports secure connections between client and brokers.
+To take advantage of this feature, follow the guidelines in the https://kafka.apache.org/090/documentation.html#security_configclients[Apache Kafka Documentation] as well as the Kafka 0.9 https://docs.confluent.io/2.0.0/kafka/security.html[security guidelines from the Confluent documentation].
+Use the `spring.cloud.stream.kafka.binder.configuration` option to set security properties for all clients created by the binder.
+
+For example, to set `security.protocol` to `SASL_SSL`, set the following property:
+
+[source]
+----
+spring.cloud.stream.kafka.binder.configuration.security.protocol=SASL_SSL
+----
+
+All the other security properties can be set in a similar manner.
+
+When using Kerberos, follow the instructions in the https://kafka.apache.org/090/documentation.html#security_sasl_clientconfig[reference documentation] for creating and referencing the JAAS configuration.
+
+Spring Cloud Stream supports passing JAAS configuration information to the application by using a JAAS configuration file and using Spring Boot properties.
+
+== Using JAAS Configuration Files
+
+The JAAS and (optionally) krb5 file locations can be set for Spring Cloud Stream applications by using system properties.
+The following example shows how to launch a Spring Cloud Stream application with SASL and Kerberos by using a JAAS configuration file:
+
+[source,bash]
+----
+ java -Djava.security.auth.login.config=/path.to/kafka_client_jaas.conf -jar log.jar \
+   --spring.cloud.stream.kafka.binder.brokers=secure.server:9092 \
+   --spring.cloud.stream.bindings.input.destination=stream.ticktock \
+   --spring.cloud.stream.kafka.binder.configuration.security.protocol=SASL_PLAINTEXT
+----
+
+== Using Spring Boot Properties
+
+As an alternative to having a JAAS configuration file, Spring Cloud Stream provides a mechanism for setting up the JAAS configuration for Spring Cloud Stream applications by using Spring Boot properties.
+
+The following properties can be used to configure the login context of the Kafka client:
+
+spring.cloud.stream.kafka.binder.jaas.loginModule::
+The login module name. Not necessary to be set in normal cases.
++
+Default: `com.sun.security.auth.module.Krb5LoginModule`.
+spring.cloud.stream.kafka.binder.jaas.controlFlag::
+The control flag of the login module.
++
+Default: `required`.
+spring.cloud.stream.kafka.binder.jaas.options::
+Map with a key/value pair containing the login module options.
++
+Default: Empty map.
+
+The following example shows how to launch a Spring Cloud Stream application with SASL and Kerberos by using Spring Boot configuration properties:
+
+[source,bash]
+----
+ java --spring.cloud.stream.kafka.binder.brokers=secure.server:9092 \
+   --spring.cloud.stream.bindings.input.destination=stream.ticktock \
+   --spring.cloud.stream.kafka.binder.autoCreateTopics=false \
+   --spring.cloud.stream.kafka.binder.configuration.security.protocol=SASL_PLAINTEXT \
+   --spring.cloud.stream.kafka.binder.jaas.options.useKeyTab=true \
+   --spring.cloud.stream.kafka.binder.jaas.options.storeKey=true \
+   --spring.cloud.stream.kafka.binder.jaas.options.keyTab=/etc/security/keytabs/kafka_client.keytab \
+   --spring.cloud.stream.kafka.binder.jaas.options.principal=kafka-client-1@EXAMPLE.COM
+----
+
+The preceding example represents the equivalent of the following JAAS file:
+
+[source]
+----
+KafkaClient {
+    com.sun.security.auth.module.Krb5LoginModule required
+    useKeyTab=true
+    storeKey=true
+    keyTab="/etc/security/keytabs/kafka_client.keytab"
+    principal="kafka-client-1@EXAMPLE.COM";
+};
+----
+
+If the topics required already exist on the broker or will be created by an administrator, autocreation can be turned off and only client JAAS properties need to be sent.
+
+NOTE: Do not mix JAAS configuration files and Spring Boot properties in the same application.
+If the `-Djava.security.auth.login.config` system property is already present, Spring Cloud Stream ignores the Spring Boot properties.
+
+NOTE: Be careful when using the `autoCreateTopics` and `autoAddPartitions` with Kerberos.
+Usually, applications may use principals that do not have administrative rights in Kafka and Zookeeper.
+Consequently, relying on Spring Cloud Stream to create/modify topics may fail.
+In secure environments, we strongly recommend creating topics and managing ACLs administratively by using Kafka tooling.
+
+== Multi-binder configuration and JAAS
+
+When connecting to multiple clusters in which each one requires separate JAAS configuration, then set the JAAS configuration using the property `sasl.jaas.config`.
+When this property is present in the application, it takes precedence over the other strategies mentioned above.
+See this https://cwiki.apache.org/confluence/display/KAFKA/KIP-85%3A+Dynamic+JAAS+configuration+for+Kafka+clients[KIP-85] for more details.
+
+For example, if you have two clusters in your application with separate JAAS configuration, then the following is a template that you can use:
+
+```
+spring.cloud.stream:
+    binders:
+        kafka1:
+          type: kafka
+          environment:
+             spring:
+               cloud:
+                 stream:
+                  kafka:
+                    binder:
+                      brokers: localhost:9092
+                      configuration.sasl.jaas.config: "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"admin\" password=\"admin-secret\";"
+        kafka2:
+          type: kafka
+          environment:
+            spring:
+              cloud:
+                stream:
+                  kafka:
+                    binder:
+                      brokers: localhost:9093
+                      configuration.sasl.jaas.config: "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"user1\" password=\"user1-secret\";"
+    kafka.binder:
+        configuration:
+          security.protocol: SASL_PLAINTEXT
+          sasl.mechanism: PLAIN
+```
+
+Note that both the Kafka clusters, and the `sasl.jaas.config` values for each of them are different in the above configuration.
+
+See this https://github.com/spring-cloud/spring-cloud-stream-samples/tree/main/multi-binder-samples/kafka-multi-binder-jaas[sample application] for more details on how to setup and run such an application.

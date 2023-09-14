@@ -1,0 +1,6 @@
+[[reactive-kafka-binder]]
+= Overview
+
+Kafka binder ecosystem in Spring Cloud Stream provides a dedicated reactive binder based on the https://projectreactor.io/docs/kafka/release/reference/[Reactor Kafka] project.
+This reactive Kafka binder enables full end-to-end reactive capabilities such as backpressure, reactive streams etc. in applications based on Apache Kafka.
+When your Spring Cloud Stream Kafka application is written using reactive types (`Flux`, `Mono` etc.), it is recommended to use this reactive Kafka binder instead of the regular message channel based Kafka binder.

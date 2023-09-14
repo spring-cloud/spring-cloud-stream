@@ -1,0 +1,15 @@
+[[concurrency]]
+= Concurrency
+
+When using reactive functions with the reactive Kafka binder, if you set concurrency on the consumer binding, then the binder creates as many dedicated `KafkaReceiver` objects as provided by the concurrency value.
+In other words, this creates multiple reactive streams with separate `Flux` implementations.
+This could be useful when you are consuming records from a partitioned topic.
+
+For example, assume that the incoming topic has at least three partitions.
+Then you can set the following property.
+
+```
+spring.cloud.stream.bindings.lowercase-in-0.consumer.concurrency=3
+```
+
+That will create three dedicated `KafkaReceiver` objects that generate three separate `Flux` implementations and then stream them to the handler method.
