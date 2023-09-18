@@ -95,8 +95,7 @@
 **** xref:kafka/kafka-streams-binder/configuration-options.adoc[]
 *** Tips and Recipes
 **** xref:kafka/kafka_tips.adoc[]
-** RabbitMQ
-*** xref:rabbit/rabbit_overview.adoc[]
+** xref:rabbit/rabbit_overview.adoc[]
 *** Configuration Options
 ***** xref:rabbit/rabbit_overview/binder-properties.adoc[]
 ***** xref:rabbit/rabbit_overview/rabbitmq-consumer-properties.adoc[]
