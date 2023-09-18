@@ -482,6 +482,10 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 
 		if (refresh) {
 			binderProducingContext.refresh();
+			if (this.context != null) {
+				this.context.getBeanFactory().registerSingleton(configurationName + "_binderProducingContext",
+					binderProducingContext);
+			}
 			if (!useApplicationContextAsParent || "integration".equals(binderType.getDefaultName())) {
 				this.propagateSharedBeans((GenericApplicationContext) this.context, binderProducingContext);
 			}
