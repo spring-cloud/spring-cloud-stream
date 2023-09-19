@@ -39,7 +39,6 @@ import org.springframework.cloud.stream.binder.BinderFactory;
 import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.cloud.stream.binding.BindingService;
 import org.springframework.cloud.stream.binding.NewDestinationBindingCallback;
-import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.cloud.stream.messaging.DirectWithAttributesChannel;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -136,8 +135,7 @@ public final class StreamBridge implements StreamOperations, SmartInitializingSi
 
 	@Override
 	public boolean send(String bindingName, Object data) {
-		BindingProperties bindingProperties = this.bindingServiceProperties.getBindingProperties(bindingName);
-		MimeType contentType = StringUtils.hasText(bindingProperties.getContentType()) ? MimeType.valueOf(bindingProperties.getContentType()) : MimeTypeUtils.APPLICATION_JSON;
+		var contentType = determineContentType(bindingName, this.bindingServiceProperties);
 		return this.send(bindingName, data, contentType);
 	}
 
@@ -147,7 +145,14 @@ public final class StreamBridge implements StreamOperations, SmartInitializingSi
 	}
 	@Override
 	public boolean send(String bindingName, @Nullable String binderName, Object data) {
-		return this.send(bindingName, binderName, data, MimeTypeUtils.APPLICATION_JSON);
+		var contentType = determineContentType(bindingName, this.bindingServiceProperties);
+		return this.send(bindingName, binderName, data, contentType);
+	}
+
+	private static MimeType determineContentType(String bindingName, BindingServiceProperties bindingServiceProperties) {
+		var bindingProperties = bindingServiceProperties.getBindingProperties(bindingName);
+		return StringUtils.hasText(bindingProperties.getContentType()) ?
+			MimeType.valueOf(bindingProperties.getContentType()) : MimeTypeUtils.APPLICATION_JSON;
 	}
 
 	@Override

@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2022 the original author or authors.
+ * Copyright 2020-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -268,9 +268,26 @@ public class StreamBridgeTests {
 				.isEqualTo(MimeType.valueOf("application/json+foo"));
 			assertThat(output.receive(1000, "bar").getHeaders().get(MessageHeaders.CONTENT_TYPE))
 				.isEqualTo(MimeType.valueOf("application/blahblah+non-registered-foo"));
-
 		}
 	}
+
+	// See this issue for more details: https://github.com/spring-cloud/spring-cloud-stream/issues/2805
+	@Test
+	void testStreamBridgeSendWithBinderNameAndCustomContentType() throws Exception {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration
+			.getCompleteConfiguration(ConsumerConfiguration.class, EmptyConfigurationWithCustomConverters.class))
+			.web(WebApplicationType.NONE).run(
+				"--spring.cloud.stream.bindings.foo.content-type=application/*+foo")) {
+			StreamBridge bridge = context.getBean(StreamBridge.class);
+			bridge.send("foo", "test-binder", "hello foo");
+
+			OutputDestination output = context.getBean(OutputDestination.class);
+
+			assertThat(output.receive(1000, "foo").getHeaders().get(MessageHeaders.CONTENT_TYPE))
+				.isEqualTo(MimeType.valueOf("application/json+foo"));
+		}
+	}
+
 
 	@SuppressWarnings("unchecked")
 	@Test
