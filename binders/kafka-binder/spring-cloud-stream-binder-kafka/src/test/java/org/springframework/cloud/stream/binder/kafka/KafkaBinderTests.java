@@ -1300,7 +1300,7 @@ public class KafkaBinderTests extends
 			else {
 				assertThat(new String((byte[]) receivedMessage.getHeaders()
 						.get(KafkaMessageChannelBinder.X_EXCEPTION_MESSAGE))).startsWith(
-								"Dispatcher failed to deliver Message");
+								"Dispatcher failed to deliver Message; fail");
 			}
 
 			assertThat(receivedMessage.getHeaders()

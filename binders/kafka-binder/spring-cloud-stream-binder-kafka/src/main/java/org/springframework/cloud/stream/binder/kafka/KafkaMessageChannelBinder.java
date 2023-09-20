@@ -1228,7 +1228,7 @@ public class KafkaMessageChannelBinder extends
 		if (message.getPayload() instanceof Throwable throwablePayload) {
 
 			throwable = throwablePayload;
-
+			String exceptionMessage = buildMessage(throwable, throwable.getCause());
 			HeaderMode headerMode = properties.getHeaderMode();
 
 			if (headerMode == null || HeaderMode.headers.equals(headerMode)) {
@@ -1248,7 +1248,6 @@ public class KafkaMessageChannelBinder extends
 								.getBytes(StandardCharsets.UTF_8)));
 				kafkaHeaders.add(new RecordHeader(X_EXCEPTION_FQCN, throwable
 						.getClass().getName().getBytes(StandardCharsets.UTF_8)));
-				String exceptionMessage = throwable.getMessage();
 				if (exceptionMessage != null) {
 					kafkaHeaders.add(new RecordHeader(X_EXCEPTION_MESSAGE,
 							exceptionMessage.getBytes(StandardCharsets.UTF_8)));
@@ -1271,8 +1270,7 @@ public class KafkaMessageChannelBinder extends
 							record.timestampType().toString());
 					messageValues.put(X_EXCEPTION_FQCN,
 							throwable.getClass().getName());
-					messageValues.put(X_EXCEPTION_MESSAGE,
-							throwable.getMessage());
+					messageValues.put(X_EXCEPTION_MESSAGE, exceptionMessage);
 					messageValues.put(X_EXCEPTION_STACKTRACE,
 							getStackTraceAsString(throwable));
 
@@ -1321,6 +1319,26 @@ public class KafkaMessageChannelBinder extends
 			dlqSender.sendToDlq(recordToSend.get(), kafkaHeaders, dlqName, group, throwable,
 					determinDlqPartitionFunction(properties.getExtension().getDlqPartitions()), headers, this.ackModeInfo.get(destination));
 		}
+	}
+
+	@Nullable
+	private String buildMessage(Throwable exception, Throwable cause) {
+		String message = exception.getMessage();
+		if (!exception.equals(cause)) {
+			if (message != null) {
+				message = message + "; ";
+			}
+			String causeMsg = cause.getMessage();
+			if (causeMsg != null) {
+				if (message != null) {
+					message = message + causeMsg;
+				}
+				else {
+					message = causeMsg;
+				}
+			}
+		}
+		return message;
 	}
 
 	@SuppressWarnings("unchecked")
