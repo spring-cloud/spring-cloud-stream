@@ -6,7 +6,7 @@ Edit the files in the src/main/asciidoc/ directory instead.
 
 
 :jdkversion: 17
-:github-tag: master
+:github-tag: 4.0.x
 :github-repo: spring-cloud/spring-cloud-stream
 
 :github-raw: https://raw.githubusercontent.com/{github-repo}/{github-tag}
@@ -177,7 +177,7 @@ from the `file` menu.
 
 == Contributing
 
-:spring-cloud-build-branch: master
+:spring-cloud-build-branch: 4.0.x
 
 Spring Cloud is released under the non-restrictive Apache 2.0 license,
 and follows a very standard Github development process, using Github

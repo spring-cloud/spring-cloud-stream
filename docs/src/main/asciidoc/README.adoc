@@ -1,5 +1,5 @@
 :jdkversion: 17
-:github-tag: master
+:github-tag: 4.0.x
 :github-repo: spring-cloud/spring-cloud-stream
 
 :github-raw: https://raw.githubusercontent.com/{github-repo}/{github-tag}
@@ -19,8 +19,8 @@ For more information, please visit the https://spring.io/projects/spring-cloud-s
 
 == Building
 
-include::https://raw.githubusercontent.com/spring-cloud/spring-cloud-build/master/docs/src/main/asciidoc/building.adoc[]
+include::https://raw.githubusercontent.com/spring-cloud/spring-cloud-build/4.0.x/docs/src/main/asciidoc/building.adoc[]
 
 == Contributing
 
-include::https://raw.githubusercontent.com/spring-cloud/spring-cloud-build/master/docs/src/main/asciidoc/contributing.adoc[]
+include::https://raw.githubusercontent.com/spring-cloud/spring-cloud-build/4.0.x/docs/src/main/asciidoc/contributing.adoc[]

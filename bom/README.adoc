@@ -27,4 +27,4 @@ We love contributions.
 Follow this https://github.com/spring-cloud/spring-cloud-commons#contributing[link] for more information on how to contribute.
 
 == Code of Conduct
-This project adheres to the Contributor Covenant https://github.com/spring-cloud/spring-cloud-stream/blob/master/CODE_OF_CONDUCT.adoc[code of conduct]. By participating, you  are expected to uphold this code. Please report unacceptable behavior to spring-code-of-conduct@pivotal.io.
+This project adheres to the Contributor Covenant https://github.com/spring-cloud/spring-cloud-stream/blob/main/CODE_OF_CONDUCT.adoc[code of conduct]. By participating, you  are expected to uphold this code. Please report unacceptable behavior to spring-code-of-conduct@pivotal.io.
