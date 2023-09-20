@@ -22,6 +22,7 @@
 *** xref:spring-cloud-stream/multiple-binders.adoc[]
 *** xref:spring-cloud-stream/multiple-systems.adoc[]
 *** xref:spring-cloud-stream/binder-customizer.adoc[]
+** xref:observability.adoc[]
 ** xref:spring-cloud-stream/configuration-options.adoc[]
 *** xref:spring-cloud-stream/binding-service-properties.adoc[]
 *** xref:spring-cloud-stream/binding-properties.adoc[]

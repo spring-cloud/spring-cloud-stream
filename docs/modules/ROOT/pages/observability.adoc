@@ -1,0 +1,49 @@
+
+[[observability]]
+= Observability
+:page-section-summary-toc: 1
+
+Spring provides support for Observability via https://micrometer.io/[Micrometer] which defines an https://micrometer.io/docs/observation[Observation concept that enables both Metrics and Traces] in applications.
+
+Spring cloud Stream integrates such support at the level of Spring Cloud Function by providing amongst several abstractions an `ObservationFunctionAroundWrapper`, 
+which wraps function to handle observations out of the box.
+
+== Imperative Functions
+Imperative functions are wrapped with the observation wrapper `ObservationFunctionAroundWrapper` which provides necessary infrastructure to handle the interaction with the Observation registry. 
+Such interactions happen per each invocation of the function which effectively means that observation is attached to each invocation of the 
+function (i.e., single observation per message)
+
+== Reactive Functions
+
+Reactive functions are not wrapped with  ‘ObservationFunctionAroundWrapper’ , because there is a fundamental difference between reactive and imperative functions. Imperative function is a message handler that is invoked by the framework on each message it receives. So for N messages there will be N invocations of such function and because of that we can wrap such function and add additional functionality such as error handling, retries, observability etc. Reactive function is initialization function. It is invoked only once
+to connect user stream (Flux) to the input and output targets. Once connected we have no visibility nor control of the actual stream. It's in the hands of reactive API. 
+On top of that, what is the unit of observation? A single item in the flux? A range? What if there are no messages after some time elapsed? etc. . .  What we wanted to emphasise is that with reactive functions we can't assume anything, hecne just like with retries and error handling you need to handle observation manually. 
+
+You can do it by tapping into a segment of your stream using the `tap` operation providing an instance of `ObservationRegistry`. Such a segment defines a unit of observation, which could be a single item in the flux or a range or whatever else you may want to observe within the stream.
+
+[source,java]
+----
+@SpringBootApplication
+public class DemoStreamApplication {
+
+	Logger logger = LoggerFactory.getLogger(DemoStreamApplication.class);
+
+	public static void main(String[] args) {
+		Hooks.enableAutomaticContextPropagation();
+		SpringApplication.run(DemoStreamApplication.class, args);
+	}
+
+	@Bean
+	public Function<Flux<String>, Flux<String>> uppercase(ObservationRegistry registry) {
+		return flux -> flux.flatMap(item -> {
+			return Mono.just(item)
+                             .map(value -> value.toUpperCase())
+                             .doOnNext(v -> logger.info(v))
+                             .tap(Micrometer.observation(registry));
+		});
+	}
+}
+----
+
+The above example emulate attaching an https://projectreactor.io/docs/core/release/reference/#_observation[Observation] to a single message processing (i.e., imperative function), since in this case the unit of observation begins with Mono.just(..) and the last operation attaches the `ObservationRegistry` to the subscriber. If there is an observation already attached to the subscriber, it will be used (however, by default, the framework does not attach any Observation to the chains you return) otherwise new observation will be created
+
