@@ -41,9 +41,9 @@ class PulsarExtendedBindingDefaultPropertiesTests implements PulsarTestContainer
 	private final ApplicationContextRunner contextRunner = new ApplicationContextRunner()
 		.withUserConfiguration(DefaultPropertiesTestApp.class)
 		.withPropertyValues(
-			"--spring.pulsar.client.service-url=" + PulsarTestContainerSupport.getPulsarBrokerUrl(),
-			"--spring.pulsar.admin.service-url=" + PulsarTestContainerSupport.getHttpServiceUrl(),
-			"--spring.cloud.stream.pulsar.binder.partitionCount: 1",
+			"spring.pulsar.client.service-url=" + PulsarTestContainerSupport.getPulsarBrokerUrl(),
+			"spring.pulsar.admin.service-url=" + PulsarTestContainerSupport.getHttpServiceUrl(),
+			"spring.cloud.stream.pulsar.binder.partitionCount: 1",
 			"spring.cloud.stream.pulsar.default.consumer.schema-type: JSON",
 			"spring.cloud.stream.pulsar.default.consumer.receiverQueueSize: 5000",
 			"spring.cloud.stream.pulsar.default.consumer.startPaused: true",
