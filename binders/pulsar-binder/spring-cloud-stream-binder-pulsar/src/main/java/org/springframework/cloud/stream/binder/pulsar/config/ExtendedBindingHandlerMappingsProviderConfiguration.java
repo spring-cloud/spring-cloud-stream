@@ -16,7 +16,6 @@
 
 package org.springframework.cloud.stream.binder.pulsar.config;
 
-import java.util.HashMap;
 import java.util.Map;
 
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -37,12 +36,8 @@ public class ExtendedBindingHandlerMappingsProviderConfiguration {
 
 	@Bean
 	public BindingHandlerAdvise.MappingsProvider pulsarExtendedPropertiesDefaultMappingsProvider() {
-		return () -> {
-			Map<ConfigurationPropertyName, ConfigurationPropertyName> mappings = new HashMap<>();
-			mappings.put(
+		return () -> Map.of(
 				ConfigurationPropertyName.of("spring.cloud.stream.pulsar.bindings"),
 				ConfigurationPropertyName.of("spring.cloud.stream.pulsar.default"));
-			return mappings;
-		};
 	}
 }
