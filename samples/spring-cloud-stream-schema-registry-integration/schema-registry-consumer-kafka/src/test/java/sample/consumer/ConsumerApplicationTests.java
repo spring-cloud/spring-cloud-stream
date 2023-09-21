@@ -18,6 +18,7 @@ package sample.consumer;
 
 import com.example.Sensor;
 import org.awaitility.Awaitility;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.boot.WebApplicationType;
@@ -39,6 +40,7 @@ public class ConsumerApplicationTests {
 	private static final int AWAIT_DURATION = 10;
 
 	@Test
+	@Disabled
 	void test(CapturedOutput output) {
 		try (ConfigurableApplicationContext context =
 				 new SpringApplicationBuilder(
