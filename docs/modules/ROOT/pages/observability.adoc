@@ -8,18 +8,45 @@ Spring provides support for Observability via https://micrometer.io/[Micrometer]
 Spring cloud Stream integrates such support at the level of Spring Cloud Function by providing amongst several abstractions an `ObservationFunctionAroundWrapper`, 
 which wraps function to handle observations out of the box.
 
+Required dependencies
+
+[source,xml]
+----
+<dependency>
+	<groupId>org.springframework.boot</groupId>
+	<artifactId>spring-boot-starter-actuator</artifactId>
+</dependency>
+<dependency>
+	<groupId>io.projectreactor</groupId>
+	<artifactId>reactor-core-micrometer</artifactId>
+</dependency>
+----
+
+and one of the available tracer bridges. For example https://zipkin.io/[Zipkin Brave]
+
+[source,xml]
+----
+<dependency>
+	<groupId>io.micrometer</groupId>
+	<artifactId>micrometer-tracing-bridge-brave</artifactId>
+</dependency>
+----
+
 == Imperative Functions
 Imperative functions are wrapped with the observation wrapper `ObservationFunctionAroundWrapper` which provides necessary infrastructure to handle the interaction with the Observation registry. 
 Such interactions happen per each invocation of the function which effectively means that observation is attached to each invocation of the 
-function (i.e., single observation per message)
+function (i.e., single observation per message).
+In other words if the required dependencies mentioned earlier present it will just work 
 
 == Reactive Functions
 
 Reactive functions are not wrapped with  ‘ObservationFunctionAroundWrapper’ , because there is a fundamental difference between reactive and imperative functions. Imperative function is a message handler that is invoked by the framework on each message it receives. So for N messages there will be N invocations of such function and because of that we can wrap such function and add additional functionality such as error handling, retries, observability etc. Reactive function is initialization function. It is invoked only once
 to connect user stream (Flux) to the input and output targets. Once connected we have no visibility nor control of the actual stream. It's in the hands of reactive API. 
-On top of that, what is the unit of observation? A single item in the flux? A range? What if there are no messages after some time elapsed? etc. . .  What we wanted to emphasise is that with reactive functions we can't assume anything, hecne just like with retries and error handling you need to handle observation manually. 
+On top of that, what is the unit of observation? A single item in the flux? A range? What if there are no messages after some time elapsed? etc. . .  What we wanted to emphasise is that with reactive functions we can't assume anything, hence just like with retries and error handling you need to handle observation manually. 
 
 You can do it by tapping into a segment of your stream using the `tap` operation providing an instance of `ObservationRegistry`. Such a segment defines a unit of observation, which could be a single item in the flux or a range or whatever else you may want to observe within the stream.
+
+See xref:spring-cloud-stream/producing-and-consuming-messages.adoc#reactive-functions-support[Reactive Functions] and a "important" note there that explains the fundamental differences between the _reactive_ and _imperative_ functions.
 
 [source,java]
 ----
