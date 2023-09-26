@@ -33,7 +33,7 @@ class RabbitDeployerEnvironmentPostProcessor implements EnvironmentPostProcessor
 	public void postProcessEnvironment(ConfigurableEnvironment environment,
 			SpringApplication application) {
 		if (!environment.containsProperty("spring.cloud.function.rsocket.enabled")) {
-			environment.getSystemProperties().putIfAbsent("spring.cloud.function.rsocket.enabled", false);
+			environment.getSystemProperties().putIfAbsent("spring.cloud.function.rsocket.enabled", "false");
 		}
 	}
 
