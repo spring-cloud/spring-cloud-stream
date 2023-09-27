@@ -17,10 +17,8 @@
 package org.springframework.cloud.stream.binder.kafka.streams;
 
 import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
-import java.util.function.Supplier;
+import java.util.function.Function;
 
-import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.processor.api.Processor;
 import org.apache.kafka.streams.processor.api.ProcessorContext;
 import org.apache.kafka.streams.processor.api.Record;
@@ -39,14 +37,9 @@ import org.springframework.util.StringUtils;
 public class DltAwareProcessor<KIn, VIn, KOut, VOut> implements Processor<KIn, VIn, KOut, VOut> {
 
 	/**
-	 * Delegate {@link BiFunction} that is responsible for processing the data.
+	 * Delegate {@link Function} that is responsible for processing the data.
 	 */
-	private final BiFunction<KIn, VIn, KeyValue<KOut, VOut>> delegateFunction;
-
-	/**
-	 * Event time for the forwarded downstream record.
-	 */
-	private final Supplier<Long> recordTimeSupplier;
+	private final Function<Record<KIn, VIn>, Record<KOut, VOut>> delegateFunction;
 
 	/**
 	 * DLT destination.
@@ -70,26 +63,13 @@ public class DltAwareProcessor<KIn, VIn, KOut, VOut> implements Processor<KIn, V
 
 	/**
 	 *
-	 * @param delegateFunction {@link BiFunction} to process the data
+	 * @param delegateFunction {@link Function} to process the data
 	 * @param dltDestination DLT destination
 	 * @param dltPublishingContext {@link DltPublishingContext}
 	 */
-	public DltAwareProcessor(BiFunction<KIn, VIn, KeyValue<KOut, VOut>> delegateFunction, String dltDestination,
+	public DltAwareProcessor(Function<Record<KIn, VIn>, Record<KOut, VOut>> delegateFunction, String dltDestination,
 							DltPublishingContext dltPublishingContext) {
-		this(delegateFunction, dltDestination, dltPublishingContext, System::currentTimeMillis);
-	}
-
-	/**
-	 *
-	 * @param delegateFunction {@link BiFunction} to process the data
-	 * @param dltDestination DLT destination
-	 * @param dltPublishingContext {@link DltPublishingContext}
-	 * @param recordTimeSupplier Supplier for downstream record timestamp
-	 */
-	public DltAwareProcessor(BiFunction<KIn, VIn, KeyValue<KOut, VOut>> delegateFunction, String dltDestination,
-							DltPublishingContext dltPublishingContext, Supplier<Long> recordTimeSupplier) {
 		this.delegateFunction = delegateFunction;
-		this.recordTimeSupplier = recordTimeSupplier;
 		Assert.isTrue(StringUtils.hasText(dltDestination), "DLT Destination topic must be provided.");
 		this.dltDestination = dltDestination;
 		Assert.notNull(dltPublishingContext, "DltSenderContext cannot be null");
@@ -98,24 +78,12 @@ public class DltAwareProcessor<KIn, VIn, KOut, VOut> implements Processor<KIn, V
 
 	/**
 	 *
-	 * @param delegateFunction {@link BiFunction} to process the data
+	 * @param delegateFunction {@link Function} to process the data
 	 * @param processorRecordRecoverer {@link BiConsumer} that recovers failed records
 	 */
-	public DltAwareProcessor(BiFunction<KIn, VIn, KeyValue<KOut, VOut>> delegateFunction,
+	public DltAwareProcessor(Function<Record<KIn, VIn>, Record<KOut, VOut>> delegateFunction,
 							BiConsumer<Record<KIn, VIn>, Exception> processorRecordRecoverer) {
-		this(delegateFunction, processorRecordRecoverer, System::currentTimeMillis);
-	}
-
-	/**
-	 *
-	 * @param delegateFunction {@link BiFunction} to process the data
-	 * @param processorRecordRecoverer {@link BiConsumer} that recovers failed records
-	 * @param recordTimeSupplier Supplier for downstream record timestamp
-	 */
-	public DltAwareProcessor(BiFunction<KIn, VIn, KeyValue<KOut, VOut>> delegateFunction,
-							BiConsumer<Record<KIn, VIn>, Exception> processorRecordRecoverer, Supplier<Long> recordTimeSupplier) {
 		this.delegateFunction = delegateFunction;
-		this.recordTimeSupplier = recordTimeSupplier;
 		Assert.notNull(processorRecordRecoverer, "You must provide a valid processor recoverer");
 		this.processorRecordRecoverer = processorRecordRecoverer;
 	}
@@ -129,8 +97,7 @@ public class DltAwareProcessor<KIn, VIn, KOut, VOut> implements Processor<KIn, V
 	@Override
 	public void process(Record<KIn, VIn> record) {
 		try {
-			KeyValue<KOut, VOut> keyValue = this.delegateFunction.apply(record.key(), record.value());
-			Record<KOut, VOut> downstreamRecord = new Record<>(keyValue.key, keyValue.value, recordTimeSupplier.get(), record.headers());
+			Record<KOut, VOut> downstreamRecord = this.delegateFunction.apply(record);
 			this.context.forward(downstreamRecord);
 		}
 		catch (Exception exception) {

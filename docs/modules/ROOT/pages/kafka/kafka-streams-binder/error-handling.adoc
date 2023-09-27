@@ -158,7 +158,7 @@ Here is how you can do that.
 @Bean
 public java.util.function.Function<KStream<String, String>, KStream<String, String>> process(DltPublishingContext dltSenderContext) {
     return input -> input
-        .process(() -> new DltAwareProcessor<>((k, v) -> {
+        .process(() -> new DltAwareProcessor<>(record -> {
 					throw new RuntimeException("error");
 				}, "hello-dlt-1", dltPublishingContext));
 }
@@ -166,22 +166,20 @@ public java.util.function.Function<KStream<String, String>, KStream<String, Stri
 
 The business logic code from the original `map` call now has been moved as part of `KStream#process` method call, which takes a `ProcessorSupplier`.
 We, then, pass in the custom `DltAwareProcessor,` which is capable to publishing to a DLT.
-The constructor for `DltAwareProcessor` above takes three parameters - a `BiFunction` that takes the key and value of the input record and then the business logic operation as part of the `BiFunction` body, the DLT topic, and finally a `DltPublishingContext`. When the `BiFunction`'s lambda expression throws an exception, the `DltAwareProcessor` will send the input record to a DLT. The `DltPublishingContext` provides `DltAwareProcessor` the necessary publishing infrastructure beans.
+The constructor for `DltAwareProcessor` above takes three parameters - a `Function` that takes the input record and then the business logic operation as part of the `Function` body, the DLT topic, and finally a `DltPublishingContext`. When the `Function`'s lambda expression throws an exception, the `DltAwareProcessor` will send the input record to a DLT. The `DltPublishingContext` provides `DltAwareProcessor` the necessary publishing infrastructure beans.
 The `DltPublishingContext` is autoconfigured by the binder, so that you can inject directly this into the application.
 
-If you want to provide a custom timestamp on the record that gets published to the DLT, then you can provide an optional fourth constructor argument which is a `Supplier<Long>`.
-If this value is provided, then this `Supplier` is invoked each time `DltAwareProcessor` publishes to the DLT.
-
-If you do not want the binder to publish failed records to a DLT, then you can provide your own recoverer as a `BiConsumer`.
+If you do not want the binder to publish failed records to a DLT, then you can provide your own recoverer as a `BiConsumer` that takes the input `Record` and the exception as arguments.
 Assume a scenario, in which you do not want to send the record to the DLT, but simply log the message and move on.
-For this, it is convenient, if we can override the recovery process in `DltAwareProcessor`.
-Here is an example of how you do that.
+It is convenient, if we can override the default recovery mechanism provided by the `DltAwareProcessor`.
+
+Here is an example.
 
 ```
 @Bean
 public java.util.function.Function<KStream<String, String>, KStream<String, String>> process() {
     return input -> input
-        .process(() -> new DltAwareProcessor<>((k, v) -> {
+        .process(() -> new DltAwareProcessor<>(record -> {
 					throw new RuntimeException("error");
 				},
                 (record, exception) -> {
@@ -191,5 +189,3 @@ public java.util.function.Function<KStream<String, String>, KStream<String, Stri
 ```
 
 In this case, when the record fails, the `DltAwareProcessor`, instead of using its built-in recoverer which publishes to a DLT, uses the user provided recoverer which is a `BiConsumer` that takes the failed record and the exception thrown as arguments.
-In this case also, you can provide an optional `Supplier<Long>` to dictate the timestamp used in the record passed in to the `BiConsumer` recoverer.
-

@@ -112,7 +112,7 @@ public class DltAwareProcessorTests {
 		@Bean
 		public java.util.function.Consumer<KStream<String, String>> errorStream(DltPublishingContext dltSenderContext) {
 			return input -> input
-				.process(() -> new DltAwareProcessor<>((k, v) -> {
+				.process(() -> new DltAwareProcessor<>(rec -> {
 					throw new RuntimeException("error");
 				}, "hello-dlt-1", dltSenderContext));
 		}
