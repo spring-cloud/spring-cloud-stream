@@ -575,22 +575,20 @@ public class StreamBridgeTests {
 	}
 
 	@Test
-	void testSendingMessageToOutputOfExistingSupplier() throws Exception {
+	void testSendingMessageToOutputOfExistingSupplier() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration
 			.getCompleteConfiguration(TestConfiguration.class))
-			.web(WebApplicationType.NONE).run("--spring.cloud.stream.output-bindings=supplier;foo",
-				"--spring.jmx.enabled=false")) {
+			.web(WebApplicationType.NONE).run("--spring.cloud.stream.output-bindings=supplier;foo")) {
 
 			StreamBridge bridge = context.getBean(StreamBridge.class);
-			bridge.send("supplier-out-0", "blah");
 			bridge.send("foo-out-0", "b");
-
 
 			OutputDestination outputDestination = context.getBean(OutputDestination.class);
 			Message<byte[]> message = outputDestination.receive(100, "foo-out-0");
 			assertThat(new String(message.getPayload())).isEqualTo("b");
 			message = outputDestination.receive(100, "supplier-out-0");
 			assertThat(new String(message.getPayload())).isEqualTo("hello");
+			bridge.send("supplier-out-0", "blah");
 			message = outputDestination.receive(100, "supplier-out-0");
 			assertThat(new String(message.getPayload())).isEqualTo("blah");
 		}
