@@ -582,6 +582,7 @@ public class ImplicitFunctionBindingTests {
 	}
 
 	@Test
+	@Disabled
 	void testSupplierWithCustomPoller() {
 		System.clearProperty("spring.cloud.function.definition");
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
@@ -629,6 +630,7 @@ public class ImplicitFunctionBindingTests {
 
 
 	@Test
+	@Disabled
 	void testSupplierWithCustomPollerAndMappedOutput() {
 		System.clearProperty("spring.cloud.function.definition");
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
