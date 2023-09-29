@@ -20,7 +20,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
@@ -106,6 +105,8 @@ public abstract class AbstractKafkaStreamsBinderProcessor implements Application
 	private final KeyValueSerdeResolver keyValueSerdeResolver;
 
 	protected ConfigurableApplicationContext applicationContext;
+
+	private static final ThreadLocal<Boolean> matchedRecordThreadLocal = ThreadLocal.withInitial(() -> false);
 
 	public AbstractKafkaStreamsBinderProcessor(BindingServiceProperties bindingServiceProperties,
 			KafkaStreamsBindingInformationCatalogue kafkaStreamsBindingInformationCatalogue,
@@ -446,13 +447,18 @@ public abstract class AbstractKafkaStreamsBinderProcessor implements Application
 		//Check to see if event type based routing is enabled.
 		//See this issue for more context: https://github.com/spring-cloud/spring-cloud-stream-binder-kafka/issues/1003
 		if (StringUtils.hasText(kafkaStreamsConsumerProperties.getEventTypes())) {
-			AtomicBoolean matched = new AtomicBoolean();
 			AtomicReference<String> topicObject = new AtomicReference<>();
 			AtomicReference<Headers> headersObject = new AtomicReference<>();
 			// Processor to retrieve the header value.
-			stream.process(() -> eventTypeProcessor(kafkaStreamsConsumerProperties, matched, topicObject, headersObject));
+			stream.process(() -> eventTypeProcessor(kafkaStreamsConsumerProperties, matchedRecordThreadLocal, topicObject, headersObject));
 			// Branching based on event type match.
-			final KStream<?, ?>[] branch = stream.branch((key, value) -> matched.getAndSet(false));
+			final KStream<?, ?>[] branch = stream.branch((key, value) -> {
+					if (matchedRecordThreadLocal.get()) {
+						matchedRecordThreadLocal.set(false);
+						return true;
+					}
+					return false;
+				});
 			// Deserialize if we have a branch from above.
 			final KStream<?, Object> deserializedKStream = !kafkaStreamsConsumerProperties.isUseConfiguredSerdeWhenRoutingEvents() ?
 				branch[0].mapValues(value -> valueSerde.deserializer().deserialize(
@@ -579,17 +585,22 @@ public abstract class AbstractKafkaStreamsBinderProcessor implements Application
 				: streamsBuilder.table(bindingDestination,
 				consumed);
 		if (StringUtils.hasText(kafkaStreamsConsumerProperties.getEventTypes())) {
-			AtomicBoolean matched = new AtomicBoolean();
 			AtomicReference<String> topicObject = new AtomicReference<>();
 			AtomicReference<Headers> headersObject = new AtomicReference<>();
 
 			final KStream<?, ?> stream = kTable.toStream();
 
 			// Processor to retrieve the header value.
-			stream.process(() -> eventTypeProcessor(kafkaStreamsConsumerProperties, matched, topicObject, headersObject));
+			stream.process(() -> eventTypeProcessor(kafkaStreamsConsumerProperties, matchedRecordThreadLocal, topicObject, headersObject));
 			// Branching based on event type match.
 			final Map<String, ? extends KStream<?, ?>> stringKStreamMap = stream.split()
-				.branch((key, value) -> matched.getAndSet(false))
+				.branch((key, value) -> {
+					if (matchedRecordThreadLocal.get()) {
+						matchedRecordThreadLocal.set(false);
+						return true;
+					}
+					return false;
+				})
 				.noDefaultBranch();
 			final KStream<?, ?>[] branch = stringKStreamMap.values().toArray(new KStream[0]);
 			// Deserialize if we have a branch from above.
@@ -621,7 +632,7 @@ public abstract class AbstractKafkaStreamsBinderProcessor implements Application
 	}
 
 	private <K, V> Processor<K, V, Void, Void> eventTypeProcessor(KafkaStreamsConsumerProperties kafkaStreamsConsumerProperties,
-																AtomicBoolean matched, AtomicReference<String> topicObject, AtomicReference<Headers> headersObject) {
+																ThreadLocal<Boolean> matchedValHolder, AtomicReference<String> topicObject, AtomicReference<Headers> headersObject) {
 		return new Processor<>() {
 
 			org.apache.kafka.streams.processor.api.ProcessorContext<?, ?> context;
@@ -647,7 +658,7 @@ public abstract class AbstractKafkaStreamsBinderProcessor implements Application
 					final String[] eventTypesFromBinding = StringUtils.commaDelimitedListToStringArray(kafkaStreamsConsumerProperties.getEventTypes());
 					for (String eventTypeFromBinding : eventTypesFromBinding) {
 						if (eventTypeFromHeader.equals(eventTypeFromBinding)) {
-							matched.set(true);
+							matchedValHolder.set(true);
 							break;
 						}
 					}
