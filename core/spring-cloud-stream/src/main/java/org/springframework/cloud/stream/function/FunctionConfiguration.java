@@ -1026,11 +1026,15 @@ public class FunctionConfiguration {
 					if (this.applicationContext.containsBean(functionName)) {
 						Object functionBean = this.applicationContext.getBean(functionName);
 						Type functionType = FunctionTypeUtils.discoverFunctionType(functionBean, functionName, (GenericApplicationContext) this.applicationContext);
-						String functionTypeStringValue = functionType.toString();
-						if (functionTypeStringValue.contains("KTable") || functionTypeStringValue.contains("KStream")) {
+						if (functionType == null) {
 							eligibleDefinition = false;
 						}
-
+						else {
+							String functionTypeStringValue = functionType.toString();
+							if (functionTypeStringValue.contains("KTable") || functionTypeStringValue.contains("KStream")) {
+								eligibleDefinition = false;
+							}
+						}
 					}
 					else {
 						logger.warn("You have defined function definition that does not exist: " + functionName);
