@@ -30,7 +30,9 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
+import org.apache.kafka.streams.kstream.GlobalKTable;
 import org.apache.kafka.streams.kstream.KStream;
+import org.apache.kafka.streams.kstream.KTable;
 
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -49,6 +51,7 @@ import org.springframework.cloud.stream.binder.kafka.utils.DlqDestinationResolve
 import org.springframework.cloud.stream.binder.kafka.utils.DlqPartitionFunction;
 import org.springframework.context.ApplicationContext;
 import org.springframework.core.MethodParameter;
+import org.springframework.core.ResolvableType;
 import org.springframework.kafka.config.StreamsBuilderFactoryBean;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaOperations;
@@ -84,7 +87,19 @@ public final class KafkaStreamsBinderUtils {
 	 * @return found method as an {@link Optional}
 	 */
 	public static Optional<Method> findMethodWithName(String key, Method[] methods) {
-		return Arrays.stream(methods).filter(m -> m.getName().equals(key)).findFirst();
+		return Arrays.stream(methods).filter(m -> m.getName().equals(key) &&
+			returnTypeContainsKafkaStreamsTypes(m)).findFirst();
+	}
+
+	private static boolean returnTypeContainsKafkaStreamsTypes(Method method) {
+		ResolvableType resolvableType = ResolvableType.forMethodReturnType(method);
+		ResolvableType[] generics = resolvableType.getGenerics();
+		if (generics.length > 0) {
+			Class<?> rawClass = generics[0].getRawClass();
+			return rawClass != null && (rawClass.isAssignableFrom(KStream.class) || rawClass.isAssignableFrom(KTable.class)
+				|| rawClass.isAssignableFrom(GlobalKTable.class));
+		}
+		return false;
 	}
 
 	public static String[] deriveFunctionUnits(String definition) {
