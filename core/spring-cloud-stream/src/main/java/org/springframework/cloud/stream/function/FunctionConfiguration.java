@@ -252,7 +252,7 @@ public class FunctionConfiguration {
 											return outputName;
 										}).get();
 								IntegrationFlow postProcessedFlow = (IntegrationFlow) context.getAutowireCapableBeanFactory()
-										.applyBeanPostProcessorsBeforeInitialization(integrationFlow, integrationFlowName);
+										.initializeBean(integrationFlow, integrationFlowName);
 								context.registerBean(integrationFlowName, IntegrationFlow.class, () -> postProcessedFlow);
 							}
 							else {
@@ -269,7 +269,7 @@ public class FunctionConfiguration {
 										})
 										.get();
 								IntegrationFlow postProcessedFlow = (IntegrationFlow) context.getAutowireCapableBeanFactory()
-										.applyBeanPostProcessorsBeforeInitialization(integrationFlow, integrationFlowName);
+										.initializeBean(integrationFlow, integrationFlowName);
 								context.registerBean(integrationFlowName, IntegrationFlow.class, () -> postProcessedFlow);
 							}
 						}

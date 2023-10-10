@@ -126,7 +126,7 @@ public class BinderChildContextInitializer implements ApplicationContextAware, B
 	 * @param childContextInitializers the child context initializers to use
 	 * @return copy of this instance that uses the AOT generated child context initializers
 	 */
-	@SuppressWarnings({"unused", "raw"})
+	@SuppressWarnings({"unchecked"})
 	public BinderChildContextInitializer withChildContextInitializers(
 			Map<String, ApplicationContextInitializer<? extends ConfigurableApplicationContext>> childContextInitializers) {
 		this.logger.debug(() -> "Replacing instance w/ one that uses child context initializers");

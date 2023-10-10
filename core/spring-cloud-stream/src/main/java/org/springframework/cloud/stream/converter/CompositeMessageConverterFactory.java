@@ -16,7 +16,6 @@
 
 package org.springframework.cloud.stream.converter;
 
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -24,7 +23,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -129,23 +127,6 @@ public class CompositeMessageConverterFactory {
 			}
 		});
 		this.converters.add(new ObjectStringMessageConverter());
-	}
-
-	/**
-	 * Determine the JSON encoding to use for the given content type.
-	 * @param contentType the MIME type from the MessageHeaders, if any
-	 * @return the JSON encoding to use (never {@code null})
-	 */
-	private JsonEncoding getJsonEncoding(@Nullable MimeType contentType) {
-		if (contentType != null && contentType.getCharset() != null) {
-			Charset charset = contentType.getCharset();
-			for (JsonEncoding encoding : JsonEncoding.values()) {
-				if (charset.name().equals(encoding.getJavaName())) {
-					return encoding;
-				}
-			}
-		}
-		return JsonEncoding.UTF8;
 	}
 
 	/**
