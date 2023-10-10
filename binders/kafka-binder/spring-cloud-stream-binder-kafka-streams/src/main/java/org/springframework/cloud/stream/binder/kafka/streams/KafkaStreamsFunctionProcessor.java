@@ -24,6 +24,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.BiConsumer;
@@ -60,6 +61,7 @@ import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.kafka.config.StreamsBuilderFactoryBean;
 import org.springframework.kafka.config.StreamsBuilderFactoryBeanConfigurer;
 import org.springframework.kafka.core.CleanupConfig;
+import org.springframework.lang.NonNull;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 
@@ -81,8 +83,8 @@ public class KafkaStreamsFunctionProcessor extends AbstractKafkaStreamsBinderPro
 	private final KafkaStreamsMessageConversionDelegate kafkaStreamsMessageConversionDelegate;
 
 	private BeanFactory beanFactory;
-	private StreamFunctionProperties streamFunctionProperties;
-	private KafkaStreamsBinderConfigurationProperties kafkaStreamsBinderConfigurationProperties;
+	private final StreamFunctionProperties streamFunctionProperties;
+	private final KafkaStreamsBinderConfigurationProperties kafkaStreamsBinderConfigurationProperties;
 	StreamsBuilderFactoryBeanConfigurer customizer;
 	ConfigurableEnvironment environment;
 
@@ -189,7 +191,7 @@ public class KafkaStreamsFunctionProcessor extends AbstractKafkaStreamsBinderPro
 	}
 
 	private boolean functionOrConsumerFound(ResolvableType iterableResType) {
-		return iterableResType.getRawClass().equals(Function.class) ||
+		return Objects.requireNonNull(iterableResType.getRawClass()).equals(Function.class) ||
 				iterableResType.getRawClass().equals(Consumer.class);
 	}
 
@@ -505,7 +507,8 @@ public class KafkaStreamsFunctionProcessor extends AbstractKafkaStreamsBinderPro
 					StreamsBuilderFactoryBean streamsBuilderFactoryBean =
 							this.methodStreamsBuilderFactoryBeanMap.get(functionName);
 					StreamsBuilder streamsBuilder = streamsBuilderFactoryBean.getObject();
-					final String applicationId = streamsBuilderFactoryBean.getStreamsConfiguration().getProperty(StreamsConfig.APPLICATION_ID_CONFIG);
+					final String applicationId = Objects.requireNonNull(streamsBuilderFactoryBean.getStreamsConfiguration())
+						.getProperty(StreamsConfig.APPLICATION_ID_CONFIG);
 					KafkaStreamsConsumerProperties extendedConsumerProperties =
 							this.kafkaStreamsExtendedBindingProperties.getExtendedConsumerProperties(input);
 					extendedConsumerProperties.setApplicationId(applicationId);
@@ -518,7 +521,7 @@ public class KafkaStreamsFunctionProcessor extends AbstractKafkaStreamsBinderPro
 					LOG.info("Value Serde used for " + input + ": " + valueSerde.getClass().getName());
 					final Topology.AutoOffsetReset autoOffsetReset = getAutoOffsetReset(input, extendedConsumerProperties);
 
-					if (parameterType.isAssignableFrom(KStream.class)) {
+					if (Objects.requireNonNull(parameterType).isAssignableFrom(KStream.class)) {
 						KStream<?, ?> stream = getKStream(input, bindingProperties, extendedConsumerProperties,
 								streamsBuilder, keySerde, valueSerde, autoOffsetReset, i == 0);
 						KStreamBoundElementFactory.KStreamWrapper kStreamWrapper =
@@ -532,7 +535,7 @@ public class KafkaStreamsFunctionProcessor extends AbstractKafkaStreamsBinderPro
 						this.kafkaStreamsBindingInformationCatalogue.addConsumerPropertiesPerSbfb(streamsBuilderFactoryBean,
 								bindingServiceProperties.getConsumerProperties(input));
 
-						if (KStream.class.isAssignableFrom(stringResolvableTypeMap.get(input).getRawClass())) {
+						if (KStream.class.isAssignableFrom(Objects.requireNonNull(stringResolvableTypeMap.get(input).getRawClass()))) {
 							final Class<?> valueClass =
 									(stringResolvableTypeMap.get(input).getGeneric(1).getRawClass() != null)
 									? (stringResolvableTypeMap.get(input).getGeneric(1).getRawClass()) : Object.class;
@@ -566,7 +569,7 @@ public class KafkaStreamsFunctionProcessor extends AbstractKafkaStreamsBinderPro
 	}
 
 	@Override
-	public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
+	public void setBeanFactory(@NonNull BeanFactory beanFactory) throws BeansException {
 		this.beanFactory = beanFactory;
 	}
 }

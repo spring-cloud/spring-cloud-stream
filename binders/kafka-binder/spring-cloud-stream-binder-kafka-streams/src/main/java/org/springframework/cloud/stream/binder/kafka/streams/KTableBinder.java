@@ -16,6 +16,8 @@
 
 package org.springframework.cloud.stream.binder.kafka.streams;
 
+import java.util.Objects;
+
 import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.kstream.KTable;
@@ -35,6 +37,7 @@ import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStr
 import org.springframework.kafka.config.StreamsBuilderFactoryBean;
 import org.springframework.retry.support.RetryTemplate;
 import org.springframework.util.StringUtils;
+
 
 /**
  * {@link org.springframework.cloud.stream.binder.Binder} implementation for
@@ -73,7 +76,6 @@ class KTableBinder extends
 	}
 
 	@Override
-	@SuppressWarnings("unchecked")
 	protected Binding<KTable<Object, Object>> doBindConsumer(String name, String group,
 			KTable<Object, Object> inputTarget,
 			// @checkstyle:off
@@ -95,7 +97,7 @@ class KTableBinder extends
 				this.kafkaStreamsBindingInformationCatalogue.bindingNamePerTarget(inputTarget),
 				this.kafkaStreamsBindingInformationCatalogue, streamsBuilderFactoryBean);
 
-		return new DefaultBinding<KTable<Object, Object>>(bindingName, group, inputTarget, streamsBuilderFactoryBean) {
+		return new DefaultBinding<>(bindingName, group, inputTarget, streamsBuilderFactoryBean) {
 
 			@Override
 			public boolean isInput() {
@@ -109,7 +111,7 @@ class KTableBinder extends
 					KTableBinder.this.kafkaStreamsRegistry.registerKafkaStreams(streamsBuilderFactoryBean);
 					//If we cached the previous KafkaStreams object (from a binding stop on the actuator), remove it.
 					//See this issue for more details: https://github.com/spring-cloud/spring-cloud-stream-binder-kafka/issues/1165
-					final String applicationId = (String) streamsBuilderFactoryBean.getStreamsConfiguration().get(StreamsConfig.APPLICATION_ID_CONFIG);
+					final String applicationId = (String) Objects.requireNonNull(streamsBuilderFactoryBean.getStreamsConfiguration()).get(StreamsConfig.APPLICATION_ID_CONFIG);
 					if (kafkaStreamsBindingInformationCatalogue.getStoppedKafkaStreams().containsKey(applicationId)) {
 						kafkaStreamsBindingInformationCatalogue.removePreviousKafkaStreamsForApplicationId(applicationId);
 					}
@@ -126,7 +128,7 @@ class KTableBinder extends
 					//Caching the stopped KafkaStreams for health indicator purposes on the underlying processor.
 					//See this issue for more details: https://github.com/spring-cloud/spring-cloud-stream-binder-kafka/issues/1165
 					KTableBinder.this.kafkaStreamsBindingInformationCatalogue.addPreviousKafkaStreamsForApplicationId(
-							(String) streamsBuilderFactoryBean.getStreamsConfiguration().get(StreamsConfig.APPLICATION_ID_CONFIG), kafkaStreams);
+						(String) Objects.requireNonNull(streamsBuilderFactoryBean.getStreamsConfiguration()).get(StreamsConfig.APPLICATION_ID_CONFIG), kafkaStreams);
 				}
 			}
 		};

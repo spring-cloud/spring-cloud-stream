@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -79,8 +80,8 @@ public class KafkaStreamsRegistry {
 	public StreamsBuilderFactoryBean streamsBuilderFactoryBean(String applicationId) {
 		final Optional<StreamsBuilderFactoryBean> first = this.streamsBuilderFactoryBeanMap.values()
 				.stream()
-				.filter(streamsBuilderFactoryBean -> streamsBuilderFactoryBean.isRunning() && streamsBuilderFactoryBean
-						.getStreamsConfiguration().getProperty(StreamsConfig.APPLICATION_ID_CONFIG)
+				.filter(streamsBuilderFactoryBean -> streamsBuilderFactoryBean.isRunning() && Objects.requireNonNull(streamsBuilderFactoryBean
+						.getStreamsConfiguration()).getProperty(StreamsConfig.APPLICATION_ID_CONFIG)
 						.equals(applicationId))
 				.findFirst();
 		return first.orElse(null);

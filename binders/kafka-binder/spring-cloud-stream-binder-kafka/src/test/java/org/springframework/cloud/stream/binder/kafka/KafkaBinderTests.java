@@ -142,7 +142,6 @@ import org.springframework.kafka.support.converter.MessagingMessageConverter;
 import org.springframework.kafka.test.EmbeddedKafkaBroker;
 import org.springframework.kafka.test.condition.EmbeddedKafkaCondition;
 import org.springframework.kafka.test.context.EmbeddedKafka;
-import org.springframework.kafka.test.core.BrokerAddress;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
@@ -271,14 +270,7 @@ public class KafkaBinderTests extends
 	private KafkaBinderConfigurationProperties createConfigurationProperties() {
 		var binderConfiguration = new KafkaBinderConfigurationProperties(
 				new TestKafkaProperties());
-		BrokerAddress[] brokerAddresses = embeddedKafka.getBrokerAddresses();
-
-		List<String> bAddresses = new ArrayList<>();
-		for (var bAddress : brokerAddresses) {
-			bAddresses.add(bAddress.toString());
-		}
-		var foo = new String[bAddresses.size()];
-		binderConfiguration.setBrokers(bAddresses.toArray(foo));
+		binderConfiguration.setBrokers(embeddedKafka.getBrokersAsString());
 		return binderConfiguration;
 	}
 
@@ -306,16 +298,9 @@ public class KafkaBinderTests extends
 			timeoutMultiplier = Double.parseDouble(multiplier);
 		}
 
-		BrokerAddress[] brokerAddresses = embeddedKafka.getBrokerAddresses();
-		var bAddresses = new ArrayList<>();
-		for (var bAddress : brokerAddresses) {
-			bAddresses.add(bAddress.toString());
-		}
-		var foo = new String[bAddresses.size()];
-
 		Map<String, Object> adminConfigs = new HashMap<>();
 		adminConfigs.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG,
-				bAddresses.toArray(foo)[0]);
+				embeddedKafka.getBrokersAsString());
 		adminClient = AdminClient.create(adminConfigs);
 	}
 

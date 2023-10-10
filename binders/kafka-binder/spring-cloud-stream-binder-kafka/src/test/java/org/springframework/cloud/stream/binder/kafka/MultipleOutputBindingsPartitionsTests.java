@@ -19,9 +19,11 @@ package org.springframework.cloud.stream.binder.kafka;
 import java.util.Map;
 import java.util.function.Function;
 
+import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import reactor.core.publisher.Flux;
@@ -52,11 +54,18 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 @ExtendWith(SpringExtension.class)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
-@EmbeddedKafka(topics = { "odd-topic", "even-topic" })
+@EmbeddedKafka
 class MultipleOutputBindingsPartitionsTests {
 
 	@Autowired
 	private EmbeddedKafkaBroker embeddedKafka;
+
+	@BeforeEach
+	public void before() {
+		NewTopic newTopic1 = new NewTopic("odd-topic", 10, (short) 1);
+		NewTopic newTopic2 = new NewTopic("even-topic", 5, (short) 1);
+		embeddedKafka.addTopics(newTopic1, newTopic2);
+	}
 
 	@Test
 	void singleInputTupleOutputWithDifferentPartitions() {

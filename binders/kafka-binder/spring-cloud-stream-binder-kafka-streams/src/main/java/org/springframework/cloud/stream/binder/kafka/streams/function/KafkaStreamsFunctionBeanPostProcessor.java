@@ -51,6 +51,7 @@ import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.cloud.stream.binder.kafka.streams.KafkaStreamsBinderUtils;
 import org.springframework.cloud.stream.function.StreamFunctionProperties;
 import org.springframework.core.ResolvableType;
+import org.springframework.lang.NonNull;
 import org.springframework.util.ClassUtils;
 
 /**
@@ -273,7 +274,7 @@ public class KafkaStreamsFunctionBeanPostProcessor implements InitializingBean, 
 	}
 
 	@Override
-	public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
+	public void setBeanFactory(@NonNull BeanFactory beanFactory) throws BeansException {
 		this.beanFactory = (ConfigurableListableBeanFactory) beanFactory;
 	}
 }

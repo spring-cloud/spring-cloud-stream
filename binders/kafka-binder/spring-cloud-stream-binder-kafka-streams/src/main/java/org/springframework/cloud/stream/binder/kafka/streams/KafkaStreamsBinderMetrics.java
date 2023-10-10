@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -94,7 +95,7 @@ public class KafkaStreamsBinderMetrics {
 					for (StreamsBuilderFactoryBean streamsBuilderFactoryBean : streamsBuilderFactoryBeans) {
 						if (streamsBuilderFactoryBean.isRunning()) {
 							KafkaStreams kafkaStreams = streamsBuilderFactoryBean.getKafkaStreams();
-							final Map<MetricName, ? extends Metric> metrics = kafkaStreams.metrics();
+							final Map<MetricName, ? extends Metric> metrics = Objects.requireNonNull(kafkaStreams).metrics();
 
 							prepareToBindMetrics(registry, metrics);
 							checkAndBindMetrics(registry, metrics);

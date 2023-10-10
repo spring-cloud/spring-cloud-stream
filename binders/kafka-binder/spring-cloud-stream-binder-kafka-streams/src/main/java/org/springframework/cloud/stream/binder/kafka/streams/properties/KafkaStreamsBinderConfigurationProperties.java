@@ -36,36 +36,11 @@ public class KafkaStreamsBinderConfigurationProperties
 		super(kafkaProperties);
 	}
 
-	/**
-	 * Enumeration for various Serde errors.
-	 *
-	 * @deprecated in favor of {@link DeserializationExceptionHandler}.
-	 */
-	@Deprecated
-	public enum SerdeError {
-
-		/**
-		 * Deserialization error handler with log and continue.
-		 */
-		logAndContinue,
-		/**
-		 * Deserialization error handler with log and fail.
-		 */
-		logAndFail,
-		/**
-		 * Deserialization error handler with DLQ send.
-		 */
-		sendToDlq
-
-	}
-
 	private String applicationId;
 
 	private StateStoreRetry stateStoreRetry = new StateStoreRetry();
 
 	private Map<String, Functions> functions = new HashMap<>();
-
-	private KafkaStreamsBinderConfigurationProperties.SerdeError serdeError;
 
 	/**
 	 * {@link org.apache.kafka.streams.errors.DeserializationExceptionHandler} to use when
@@ -98,26 +73,6 @@ public class KafkaStreamsBinderConfigurationProperties
 
 	public void setApplicationId(String applicationId) {
 		this.applicationId = applicationId;
-	}
-
-	@Deprecated
-	public KafkaStreamsBinderConfigurationProperties.SerdeError getSerdeError() {
-		return this.serdeError;
-	}
-
-	@Deprecated
-	public void setSerdeError(
-			KafkaStreamsBinderConfigurationProperties.SerdeError serdeError) {
-			this.serdeError = serdeError;
-			if (serdeError == SerdeError.logAndContinue) {
-				this.deserializationExceptionHandler = DeserializationExceptionHandler.logAndContinue;
-			}
-			else if (serdeError == SerdeError.logAndFail) {
-				this.deserializationExceptionHandler = DeserializationExceptionHandler.logAndFail;
-			}
-			else if (serdeError == SerdeError.sendToDlq) {
-				this.deserializationExceptionHandler = DeserializationExceptionHandler.sendToDlq;
-			}
 	}
 
 	public DeserializationExceptionHandler getDeserializationExceptionHandler() {

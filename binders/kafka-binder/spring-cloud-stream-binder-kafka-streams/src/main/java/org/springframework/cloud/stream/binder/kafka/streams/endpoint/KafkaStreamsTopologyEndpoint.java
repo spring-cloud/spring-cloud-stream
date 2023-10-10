@@ -18,6 +18,7 @@ package org.springframework.cloud.stream.binder.kafka.streams.endpoint;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import org.springframework.boot.actuate.endpoint.annotation.Endpoint;
 import org.springframework.boot.actuate.endpoint.annotation.ReadOperation;
@@ -52,7 +53,7 @@ public class KafkaStreamsTopologyEndpoint {
 		final List<String> descs = new ArrayList<>();
 		streamsBuilderFactoryBeans.stream()
 				.forEach(streamsBuilderFactoryBean ->
-						descs.add(streamsBuilderFactoryBean.getTopology().describe().toString()));
+						descs.add(Objects.requireNonNull(streamsBuilderFactoryBean.getTopology()).describe().toString()));
 		return descs;
 	}
 
@@ -61,7 +62,7 @@ public class KafkaStreamsTopologyEndpoint {
 		if (StringUtils.hasText(applicationId)) {
 			final StreamsBuilderFactoryBean streamsBuilderFactoryBean = this.kafkaStreamsRegistry.streamsBuilderFactoryBean(applicationId);
 			if (streamsBuilderFactoryBean != null) {
-				return streamsBuilderFactoryBean.getTopology().describe().toString();
+				return Objects.requireNonNull(streamsBuilderFactoryBean.getTopology()).describe().toString();
 			}
 			else {
 				return NO_TOPOLOGY_FOUND_MSG;

@@ -20,6 +20,7 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -55,7 +56,6 @@ public class FunctionDetectorCondition extends SpringBootCondition {
 
 	private static final Log LOG = LogFactory.getLog(FunctionDetectorCondition.class);
 
-	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@Override
 	public ConditionOutcome getMatchOutcome(ConditionContext context, AnnotatedTypeMetadata metadata) {
 		if (context != null &&  context.getBeanFactory() != null) {
@@ -89,7 +89,7 @@ public class FunctionDetectorCondition extends SpringBootCondition {
 
 		for (String key : functionComponents) {
 			final Class<?> classObj = ClassUtils.resolveClassName(((AnnotatedBeanDefinition)
-							context.getBeanFactory().getBeanDefinition(key))
+							Objects.requireNonNull(context.getBeanFactory()).getBeanDefinition(key))
 							.getMetadata().getClassName(),
 					ClassUtils.getDefaultClassLoader());
 			try {

@@ -94,7 +94,7 @@ public class GlobalKTableBinder extends
 				this.kafkaStreamsBindingInformationCatalogue.bindingNamePerTarget(inputTarget),
 				this.kafkaStreamsBindingInformationCatalogue, streamsBuilderFactoryBean);
 
-		return new DefaultBinding<GlobalKTable<Object, Object>>(bindingName, group, inputTarget, streamsBuilderFactoryBean) {
+		return new DefaultBinding<>(bindingName, group, inputTarget, streamsBuilderFactoryBean) {
 
 			@Override
 			public boolean isInput() {
@@ -125,7 +125,7 @@ public class GlobalKTableBinder extends
 					//Caching the stopped KafkaStreams for health indicator purposes on the underlying processor.
 					//See this issue for more details: https://github.com/spring-cloud/spring-cloud-stream-binder-kafka/issues/1165
 					GlobalKTableBinder.this.kafkaStreamsBindingInformationCatalogue.addPreviousKafkaStreamsForApplicationId(
-							(String) streamsBuilderFactoryBean.getStreamsConfiguration().get(StreamsConfig.APPLICATION_ID_CONFIG), kafkaStreams);
+						(String) streamsBuilderFactoryBean.getStreamsConfiguration().get(StreamsConfig.APPLICATION_ID_CONFIG), kafkaStreams);
 				}
 			}
 		};

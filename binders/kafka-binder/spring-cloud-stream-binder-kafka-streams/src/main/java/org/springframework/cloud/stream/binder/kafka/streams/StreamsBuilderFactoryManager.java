@@ -30,6 +30,7 @@ import org.springframework.kafka.KafkaException;
 import org.springframework.kafka.config.StreamsBuilderFactoryBean;
 import org.springframework.kafka.core.ProducerFactory;
 import org.springframework.kafka.streams.KafkaStreamsMicrometerListener;
+import org.springframework.lang.NonNull;
 
 /**
  * Iterate through all {@link StreamsBuilderFactoryBean} in the application context and
@@ -75,11 +76,9 @@ public class StreamsBuilderFactoryManager implements SmartLifecycle {
 	}
 
 	@Override
-	public void stop(Runnable callback) {
+	public void stop(@NonNull Runnable callback) {
 		stop();
-		if (callback != null) {
-			callback.run();
-		}
+		callback.run();
 	}
 
 	@Override

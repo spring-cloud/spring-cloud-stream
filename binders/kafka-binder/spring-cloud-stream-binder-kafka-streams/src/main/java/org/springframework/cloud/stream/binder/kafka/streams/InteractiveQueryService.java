@@ -31,11 +31,11 @@ import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.KeyQueryMetadata;
 import org.apache.kafka.streams.StoreQueryParameters;
 import org.apache.kafka.streams.StreamsConfig;
+import org.apache.kafka.streams.StreamsMetadata;
 import org.apache.kafka.streams.errors.InvalidStateStoreException;
 import org.apache.kafka.streams.errors.UnknownStateStoreException;
 import org.apache.kafka.streams.state.HostInfo;
 import org.apache.kafka.streams.state.QueryableStoreType;
-import org.apache.kafka.streams.state.StreamsMetadata;
 
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsBinderConfigurationProperties;
 import org.springframework.retry.RetryPolicy;
@@ -171,8 +171,8 @@ public class InteractiveQueryService {
 	 * @return true if Streams Instance is associated with Thread
 	 */
 	private boolean filterByThreadName(KafkaStreams streams) {
-		String applicationId = kafkaStreamsRegistry.streamBuilderFactoryBean(
-						streams).getStreamsConfiguration()
+		String applicationId = Objects.requireNonNull(kafkaStreamsRegistry.streamBuilderFactoryBean(
+				streams).getStreamsConfiguration())
 				.getProperty(StreamsConfig.APPLICATION_ID_CONFIG);
 		// TODO: is there some better way to find out if a Stream App created the Thread?
 		return Thread.currentThread().getName().contains(applicationId);
@@ -195,7 +195,7 @@ public class InteractiveQueryService {
 			String applicationServer = configuration.get("application.server");
 			String[] splits = StringUtils.split(applicationServer, ":");
 
-			return new HostInfo(splits[0], Integer.parseInt(splits[1]));
+			return new HostInfo(Objects.requireNonNull(splits)[0], Integer.parseInt(splits[1]));
 		}
 		return null;
 	}
@@ -306,7 +306,7 @@ public class InteractiveQueryService {
 	public List<HostInfo> getAllHostsInfo(String store) {
 		return kafkaStreamsRegistry.getKafkaStreams()
 				.stream()
-				.flatMap(k -> k.allMetadataForStore(store).stream())
+				.flatMap(k -> k.streamsMetadataForStore(store).stream())
 				.filter(Objects::nonNull)
 				.map(StreamsMetadata::hostInfo)
 				.collect(Collectors.toList());
@@ -316,7 +316,7 @@ public class InteractiveQueryService {
 	 * @param storeQueryParametersCustomizer to customize
 	 * @since 4.0.1
 	 */
-	public void setStoreQueryParametersCustomizer(StoreQueryParametersCustomizer storeQueryParametersCustomizer) {
+	public void setStoreQueryParametersCustomizer(StoreQueryParametersCustomizer<?> storeQueryParametersCustomizer) {
 		this.storeQueryParametersCustomizer = storeQueryParametersCustomizer;
 	}
 }

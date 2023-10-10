@@ -22,6 +22,7 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -44,6 +45,7 @@ import org.springframework.cloud.stream.binding.BoundTargetHolder;
 import org.springframework.cloud.stream.function.FunctionConstants;
 import org.springframework.cloud.stream.function.StreamFunctionProperties;
 import org.springframework.core.ResolvableType;
+import org.springframework.lang.NonNull;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 
@@ -71,9 +73,9 @@ public class KafkaStreamsBindableProxyFactory extends AbstractBindableProxyFacto
 	@Autowired
 	private StreamFunctionProperties streamFunctionProperties;
 
-	private ResolvableType[] types;
+	private final ResolvableType[] types;
 
-	private Method method;
+	private final Method method;
 
 	private final String functionName;
 
@@ -93,7 +95,7 @@ public class KafkaStreamsBindableProxyFactory extends AbstractBindableProxyFacto
 				"'bindingTargetFactories' cannot be empty");
 
 		int resolvableTypeDepthCounter = 0;
-		boolean isKafkaStreamsType = this.types[0].getRawClass().isAssignableFrom(KStream.class) ||
+		boolean isKafkaStreamsType = Objects.requireNonNull(this.types[0].getRawClass()).isAssignableFrom(KStream.class) ||
 				this.types[0].getRawClass().isAssignableFrom(KTable.class) ||
 				this.types[0].getRawClass().isAssignableFrom(GlobalKTable.class);
 		ResolvableType argument = isKafkaStreamsType ? this.types[0] : this.types[0].getGeneric(resolvableTypeDepthCounter++);
@@ -138,8 +140,8 @@ public class KafkaStreamsBindableProxyFactory extends AbstractBindableProxyFacto
 
 		final int lastTypeIndex = this.types.length - 1;
 		if (this.types.length > 1 && this.types[lastTypeIndex] != null && this.types[lastTypeIndex].getRawClass() != null) {
-			if (this.types[lastTypeIndex].getRawClass().isAssignableFrom(Function.class) ||
-					this.types[lastTypeIndex].getRawClass().isAssignableFrom(Consumer.class)) {
+			if (Objects.requireNonNull(this.types[lastTypeIndex].getRawClass()).isAssignableFrom(Function.class) ||
+					Objects.requireNonNull(this.types[lastTypeIndex].getRawClass()).isAssignableFrom(Consumer.class)) {
 				outboundArgument = this.types[lastTypeIndex].getGeneric(1);
 			}
 		}
@@ -266,7 +268,7 @@ public class KafkaStreamsBindableProxyFactory extends AbstractBindableProxyFacto
 	}
 
 	@Override
-	public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
+	public void setBeanFactory(@NonNull BeanFactory beanFactory) throws BeansException {
 		this.beanFactory = beanFactory;
 	}
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2022 the original author or authors.
+ * Copyright 2022-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package org.springframework.cloud.stream.binder.kafka.streams;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Collection;
+import java.util.Objects;
 import java.util.StringJoiner;
 
 import org.apache.kafka.streams.KafkaStreams;
@@ -35,6 +36,7 @@ import org.springframework.util.ReflectionUtils;
  * Starting in kafka-streams 3.1 the topology exists at 'KafkaStreams.topologyMetadata'.
  *
  * @author Chris Bono
+ * @author Soby Chacko
  * @since 3.2.6
  */
 class KafkaStreamsVersionAgnosticTopologyInfoFacade {
@@ -80,7 +82,7 @@ class KafkaStreamsVersionAgnosticTopologyInfoFacade {
 
 		if (this.sourceTopicsForStoreMethod != null) {
 			this.sourceTopicsForStoreMethod.setAccessible(true);
-			logger.info(() -> "Using " + methodDescription(this.sourceTopicsForStoreMethod));
+			logger.info(() -> "Using " + methodDescription(Objects.requireNonNull(this.sourceTopicsForStoreMethod)));
 		}
 		else {
 			logger.warn("Could not find 'topologyMetadata.sourceTopicsForStore' or 'internalTopologyBuilder.sourceTopicsForStore' " +
@@ -97,13 +99,14 @@ class KafkaStreamsVersionAgnosticTopologyInfoFacade {
 	 * @return {@code true} if state store is available or {@code false} if the state store is
 	 * 	not available or there was a problem reflecting on the topology info
 	 */
+	@SuppressWarnings("unchecked")
 	boolean streamsAppActuallyHasStore(KafkaStreams kafkaStreams, String storeName) {
 		if (this.sourceTopicsForStoreMethod == null) {
 			logger.warn("Unable to reason about state store because sourceTopicsForStore method was not found - returning false");
 			return false;
 		}
 		try {
-			Object topologyInfo = ReflectionUtils.getField(this.topologyInfoField, kafkaStreams);
+			Object topologyInfo = ReflectionUtils.getField(Objects.requireNonNull(this.topologyInfoField), kafkaStreams);
 			if (topologyInfo == null) {
 				logger.warn("Unable to reason about state store because topologyInfo field was null - returning false");
 				return false;

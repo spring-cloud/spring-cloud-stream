@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 the original author or authors.
+ * Copyright 2018-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package org.springframework.cloud.stream.binder.kafka.streams;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serdes;
@@ -36,11 +37,11 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.ResolvableType;
+import org.springframework.lang.NonNull;
 import org.springframework.util.StringUtils;
 
 /**
  * Resolver for key and value Serde.
- *
  * On the inbound, if native decoding is enabled, then any deserialization on the value is
  * handled by Kafka. First, we look for any key/value Serde set on the binding itself, if
  * that is not available then look at the common Serde set at the global level. If that
@@ -48,16 +49,11 @@ import org.springframework.util.StringUtils;
  * the deserialization on value and ignore any Serde set for value and rely on the
  * contentType provided. Keys are always deserialized at the broker.
  *
- *
  * Same rules apply on the outbound. If native encoding is enabled, then value
  * serialization is done at the broker using any binder level Serde for value, if not
  * using common Serde, if not, then byte[]. If native encoding is disabled, then the
  * binder will do serialization using a contentType. Keys are always serialized by the
  * broker.
- *
- * For state store, use serdes class specified in
- * {@link org.springframework.cloud.stream.binder.kafka.streams.annotations.KafkaStreamsStateStore}
- * to create Serde accordingly.
  *
  * @author Soby Chacko
  * @author Lei Chen
@@ -266,7 +262,7 @@ public class KeyValueSerdeResolver implements ApplicationContextAware {
 
 	private boolean isResolvableKStreamArrayType(ResolvableType resolvableType) {
 		return resolvableType.isArray() &&
-				KStream.class.isAssignableFrom(resolvableType.getComponentType().getRawClass());
+				KStream.class.isAssignableFrom(Objects.requireNonNull(resolvableType.getComponentType().getRawClass()));
 	}
 
 	private boolean isResolvalbeKafkaStreamsType(ResolvableType resolvableType) {
@@ -316,7 +312,7 @@ public class KeyValueSerdeResolver implements ApplicationContextAware {
 	}
 
 	@Override
-	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+	public void setApplicationContext(@NonNull ApplicationContext applicationContext) throws BeansException {
 		context = (ConfigurableApplicationContext) applicationContext;
 	}
 

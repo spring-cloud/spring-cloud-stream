@@ -153,10 +153,9 @@ public class KafkaStreamsBinderSupportAutoConfiguration {
 	}
 
 	// TODO: Lifted from core - good candidate for exposing as a utility method in core.
-	@SuppressWarnings("unchecked")
 	private void flatten(String propertyName, Object value,
 			Map<String, Object> flattenedProperties) {
-		if (value instanceof Map valueAsMap) {
+		if (value instanceof Map<?, ?> valueAsMap) {
 			valueAsMap.forEach((k, v) -> flatten(
 					(propertyName != null ? propertyName + "." : "") + k, v,
 					flattenedProperties));
@@ -220,7 +219,7 @@ public class KafkaStreamsBinderSupportAutoConfiguration {
 							kafkaConnectionString);
 				}
 			}
-			else if (bootstrapServerConfig instanceof List bootStrapCollection) {
+			else if (bootstrapServerConfig instanceof List<?> bootStrapCollection) {
 				if (bootStrapCollection.size() == 1 && bootStrapCollection.get(0).equals("localhost:9092")) {
 					properties.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG,
 							kafkaConnectionString);

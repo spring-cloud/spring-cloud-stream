@@ -70,7 +70,7 @@ public class DlqDestinationResolverTests {
 				"--spring.cloud.stream.bindings.process-in-0.destination=word1,word2",
 				"--spring.cloud.stream.bindings.process-out-0.destination=test-output",
 				"--spring.cloud.stream.kafka.streams.bindings.process-in-0.consumer.application-id=dlq-dest-resolver-test",
-				"--spring.cloud.stream.kafka.streams.binder.serdeError=sendToDlq",
+				"--spring.cloud.stream.kafka.streams.binder.deserializationExceptionHandler=sendToDlq",
 				"--spring.cloud.stream.kafka.streams.bindings.process-in-0.consumer.valueSerde="
 						+ "org.apache.kafka.common.serialization.Serdes$IntegerSerde",
 				"--spring.cloud.stream.kafka.streams.binder.brokers=" + embeddedKafka.getBrokersAsString())) {

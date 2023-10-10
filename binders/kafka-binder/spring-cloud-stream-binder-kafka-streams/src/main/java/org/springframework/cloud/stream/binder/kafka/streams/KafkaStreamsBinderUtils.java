@@ -110,6 +110,7 @@ public final class KafkaStreamsBinderUtils {
 		return Arrays.stream(rawSplitDefinition).map(String::trim).toArray(String[]::new);
 	}
 
+	@SuppressWarnings({"unchecked", "rawtypes"})
 	static void prepareConsumerBinding(String name, String group,
 									ApplicationContext context, KafkaTopicProvisioner kafkaTopicProvisioner,
 									KafkaStreamsBinderConfigurationProperties binderConfigurationProperties,
