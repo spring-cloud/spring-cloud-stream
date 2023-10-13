@@ -51,8 +51,9 @@ import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.cloud.stream.binder.kafka.streams.KafkaStreamsBinderUtils;
 import org.springframework.cloud.stream.function.StreamFunctionProperties;
 import org.springframework.core.ResolvableType;
+import org.springframework.core.type.StandardClassMetadata;
+import org.springframework.core.type.StandardMethodMetadata;
 import org.springframework.lang.NonNull;
-import org.springframework.util.ClassUtils;
 
 /**
  * @author Soby Chacko
@@ -122,6 +123,7 @@ public class KafkaStreamsFunctionBeanPostProcessor implements InitializingBean, 
 				ResolvableType[] resolvableTypes = new ResolvableType[]{getResolvableTypes().get(s)};
 				RootBeanDefinition rootBeanDefinition = new RootBeanDefinition(
 						KafkaStreamsBindableProxyFactory.class);
+				rootBeanDefinition.getPropertyValues().add("streamFunctionProperties", this.streamFunctionProperties);
 				registerKakaStreamsProxyFactory(registry, s, resolvableTypes, rootBeanDefinition);
 			}
 		}
@@ -146,6 +148,7 @@ public class KafkaStreamsFunctionBeanPostProcessor implements InitializingBean, 
 					if (!nonKafkaStreamsFunctionsFound) {
 						RootBeanDefinition rootBeanDefinition = new RootBeanDefinition(
 								KafkaStreamsBindableProxyFactory.class);
+						rootBeanDefinition.getPropertyValues().add("streamFunctionProperties", this.streamFunctionProperties);
 						registerKakaStreamsProxyFactory(registry, derivedNameFromComposed, resolvableTypes, rootBeanDefinition);
 					}
 				}
@@ -155,6 +158,7 @@ public class KafkaStreamsFunctionBeanPostProcessor implements InitializingBean, 
 						ResolvableType[] resolvableTypes = new ResolvableType[]{getResolvableTypes().get(functionUnit)};
 						RootBeanDefinition rootBeanDefinition = new RootBeanDefinition(
 								KafkaStreamsBindableProxyFactory.class);
+						rootBeanDefinition.getPropertyValues().add("streamFunctionProperties", this.streamFunctionProperties);
 						registerKakaStreamsProxyFactory(registry, functionUnit, resolvableTypes, rootBeanDefinition);
 					}
 				}
@@ -173,53 +177,48 @@ public class KafkaStreamsFunctionBeanPostProcessor implements InitializingBean, 
 	}
 
 	private void extractResolvableTypes(String key) {
-		final Class<?> classObj = ClassUtils.resolveClassName(((AnnotatedBeanDefinition)
-						this.beanFactory.getBeanDefinition(key))
-						.getMetadata().getClassName(),
-				ClassUtils.getDefaultClassLoader());
+		BeanDefinition beanDefinition = this.beanFactory.getBeanDefinition(key);
+		ResolvableType resolvableType = null;
+		Class<?> rawClass = null;
 		try {
-			Method[] methods = classObj.getDeclaredMethods();
-			Optional<Method> functionalBeanMethods = KafkaStreamsBinderUtils.findMethodWithName(key, methods);
-			if (functionalBeanMethods.isEmpty()) {
-				methods = classObj.getMethods(); // check the inherited methods
-				functionalBeanMethods = KafkaStreamsBinderUtils.findMethodWithName(key, methods);
-			}
-			if (functionalBeanMethods.isEmpty()) {
-				final BeanDefinition beanDefinition = this.beanFactory.getBeanDefinition(key);
-				final String factoryMethodName = beanDefinition.getFactoryMethodName();
-				functionalBeanMethods = KafkaStreamsBinderUtils.findMethodWithName(factoryMethodName, methods);
-			}
+			if (beanDefinition instanceof AnnotatedBeanDefinition annotatedBeanDefinition) {
+				StandardMethodMetadata factoryMethodMetadata = (StandardMethodMetadata) annotatedBeanDefinition.getFactoryMethodMetadata();
+				if (factoryMethodMetadata != null) {
+					Method introspectedMethod = factoryMethodMetadata.getIntrospectedMethod();
+					resolvableType = ResolvableType.forMethodReturnType(introspectedMethod);
+					rawClass = resolvableType.getGeneric(0).getRawClass();
+				}
+				else {
+					Class<?> introspectedClass = ((StandardClassMetadata) annotatedBeanDefinition.getMetadata()).getIntrospectedClass();
+					Method[] methods = introspectedClass.getDeclaredMethods();
 
-			if (functionalBeanMethods.isPresent()) {
-				Method method = functionalBeanMethods.get();
-				ResolvableType resolvableType = ResolvableType.forMethodReturnType(method, classObj);
-				final Class<?> rawClass = resolvableType.getGeneric(0).getRawClass();
-				if (rawClass == KStream.class || rawClass == KTable.class || rawClass == GlobalKTable.class) {
-					if (onlySingleFunction) {
-						resolvableTypeMap.put(key, resolvableType);
-					}
-					else {
-						discoverOnlyKafkaStreamsResolvableTypes(key, resolvableType);
+					Optional<Method> componentBeanMethods = Arrays.stream(methods)
+						.filter(m -> m.getName().equals("apply") && isKafkaStreamsTypeFound(m) ||
+							m.getName().equals("accept") && isKafkaStreamsTypeFound(m)).findFirst();
+					if (componentBeanMethods.isPresent()) {
+						Method method = componentBeanMethods.get();
+						resolvableType = ResolvableType.forMethodParameter(method, 0);
+						rawClass = resolvableType.getRawClass();
+						if (onlySingleFunction) {
+							this.methods.put(key, method);
+						}
+						else {
+							kafakStreamsOnlyMethods.put(key, method);
+						}
 					}
 				}
 			}
 			else {
-				Optional<Method> componentBeanMethods = Arrays.stream(methods)
-						.filter(m -> m.getName().equals("apply") && isKafkaStreamsTypeFound(m) ||
-								m.getName().equals("accept") && isKafkaStreamsTypeFound(m)).findFirst();
-				if (componentBeanMethods.isPresent()) {
-					Method method = componentBeanMethods.get();
-					final ResolvableType resolvableType = ResolvableType.forMethodParameter(method, 0);
-					final Class<?> rawClass = resolvableType.getRawClass();
-					if (rawClass == KStream.class || rawClass == KTable.class || rawClass == GlobalKTable.class) {
-						if (onlySingleFunction) {
-							resolvableTypeMap.put(key, resolvableType);
-							this.methods.put(key, method);
-						}
-						else {
-							discoverOnlyKafkaStreamsResolvableTypesAndMethods(key, resolvableType, method);
-						}
-					}
+				resolvableType = beanDefinition.getResolvableType();
+				rawClass = resolvableType.getGeneric(0).getRawClass();
+			}
+
+			if (rawClass == KStream.class || rawClass == KTable.class || rawClass == GlobalKTable.class) {
+				if (onlySingleFunction) {
+					resolvableTypeMap.put(key, resolvableType);
+				}
+				else {
+					discoverOnlyKafkaStreamsResolvableTypes(key, resolvableType);
 				}
 			}
 		}

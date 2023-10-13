@@ -285,5 +285,9 @@ public class KafkaStreamsBindableProxyFactory extends AbstractBindableProxyFacto
 	public Map<String, BoundTargetHolder> getOutputHolders() {
 		return outputHolders;
 	}
+
+	public void setStreamFunctionProperties(StreamFunctionProperties streamFunctionProperties) {
+		this.streamFunctionProperties = streamFunctionProperties;
+	}
 }
 
