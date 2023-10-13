@@ -189,3 +189,17 @@ public java.util.function.Function<KStream<String, String>, KStream<String, Stri
 ```
 
 In this case, when the record fails, the `DltAwareProcessor`, instead of using its built-in recoverer which publishes to a DLT, uses the user provided recoverer which is a `BiConsumer` that takes the failed record and the exception thrown as arguments.
+
+=== Handling Record Keys in DltAwareProcessor
+
+When sending failed records to a DLT using `DltAwareProcessor`, if you want to send the record keys to the DLT topic, then you need to set the proper serializer on the DLT binding.
+This is because, `DltAwareProcessor` uses `StreamBridge` which uses the regular Kafka binder (message-channel based) which by default uses a `ByteArraySerializer` for keys.
+In the case of record values, Spring Cloud Stream converts the payload to proper `byte[]`; however, that is not the case with keys, as it simply pass along what it received in the header as a key.
+If you are providing a non-byte array key, then that might cause class cast exceptions and to avoid that you need to set a serializer on the DLT binding as below.
+
+Assuming that the DLT destination is `hello-dlt-1` and the record key is of String datatype.
+
+```
+spring.cloud.stream.kafka.bindings.hello-dlt-1.producer.configuration.key.serializer=org.apache.kafka.common.serialization.StringSerializer
+```
+

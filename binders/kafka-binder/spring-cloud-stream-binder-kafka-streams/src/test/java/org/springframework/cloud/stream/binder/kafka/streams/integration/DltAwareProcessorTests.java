@@ -21,6 +21,9 @@ import java.util.Map;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.common.serialization.StringDeserializer;
+import org.apache.kafka.common.serialization.StringSerializer;
 import org.apache.kafka.streams.kstream.KStream;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -57,6 +60,7 @@ public class DltAwareProcessorTests {
 	public static void setUp() {
 		Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("group", "false",
 			embeddedKafka);
+		consumerProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
 		consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
 		DefaultKafkaConsumerFactory<String, String> cf = new DefaultKafkaConsumerFactory<>(
 			consumerProps);
@@ -77,6 +81,7 @@ public class DltAwareProcessorTests {
 
 		try (ConfigurableApplicationContext context = app.run("--server.port=0",
 			"--spring.cloud.stream.bindings.errorStream-in-0.destination=error-stream-in",
+			"--spring.cloud.stream.kafka.bindings.hello-dlt-1.producer.configuration.key.serializer=org.apache.kafka.common.serialization.StringSerializer",
 			"--spring.cloud.stream.kafka.streams.bindings.errorStream-in-0.consumer.application-id=test-error-stream-app-id",
 			"--spring.cloud.stream.kafka.streams.binder.configuration.commit.interval.ms=1000",
 			"--spring.cloud.stream.kafka.streams.binder.configuration.default.key.serde"
@@ -91,15 +96,17 @@ public class DltAwareProcessorTests {
 
 	private void receiveAndValidate(String in, String out) {
 		Map<String, Object> senderProps = KafkaTestUtils.producerProps(embeddedKafka);
-		DefaultKafkaProducerFactory<Integer, String> pf = new DefaultKafkaProducerFactory<>(
+		senderProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+		DefaultKafkaProducerFactory<String, String> pf = new DefaultKafkaProducerFactory<>(
 			senderProps);
 		try {
-			KafkaTemplate<Integer, String> template = new KafkaTemplate<>(pf, true);
+			KafkaTemplate<String, String> template = new KafkaTemplate<>(pf, true);
 			template.setDefaultTopic(in);
-			template.sendDefault("foobar");
+			template.send(in, "my-key", "foobar");
 			ConsumerRecord<String, String> cr = KafkaTestUtils.getSingleRecord(consumer,
 				out);
 			assertThat(cr.value().contains("foobar")).isTrue();
+			assertThat(cr.key().contains("my-key")).isTrue();
 		}
 		finally {
 			pf.destroy();

@@ -24,6 +24,9 @@ import org.apache.kafka.streams.processor.api.ProcessorContext;
 import org.apache.kafka.streams.processor.api.Record;
 
 import org.springframework.cloud.stream.function.StreamBridge;
+import org.springframework.kafka.support.KafkaHeaders;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
@@ -117,7 +120,9 @@ public class DltAwareProcessor<KIn, VIn, KOut, VOut> implements Processor<KIn, V
 		return (r, e) -> {
 			StreamBridge streamBridge = this.dltPublishingContext.getStreamBridge();
 			if (streamBridge != null) {
-				streamBridge.send(this.dltDestination, r.value());
+				Message<VIn> message = MessageBuilder.withPayload(r.value())
+					.setHeader(KafkaHeaders.KEY, r.key()).build();
+				streamBridge.send(this.dltDestination, message);
 			}
 		};
 	}
