@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2021 the original author or authors.
+ * Copyright 2019-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,6 @@ import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
 import org.springframework.beans.factory.InitializingBean;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.cloud.stream.binding.AbstractBindableProxyFactory;
@@ -70,8 +69,7 @@ import org.springframework.util.CollectionUtils;
  */
 public class KafkaStreamsBindableProxyFactory extends AbstractBindableProxyFactory implements InitializingBean, BeanFactoryAware {
 
-	@Autowired
-	private StreamFunctionProperties streamFunctionProperties;
+	private final StreamFunctionProperties streamFunctionProperties;
 
 	private final ResolvableType[] types;
 
@@ -81,11 +79,12 @@ public class KafkaStreamsBindableProxyFactory extends AbstractBindableProxyFacto
 
 	private BeanFactory beanFactory;
 
-	public KafkaStreamsBindableProxyFactory(ResolvableType[] types, String functionName, Method method) {
+	public KafkaStreamsBindableProxyFactory(ResolvableType[] types, String functionName, Method method, StreamFunctionProperties streamFunctionProperties) {
 		super(types[0].getType().getClass());
 		this.types = types;
 		this.functionName = functionName;
 		this.method = method;
+		this.streamFunctionProperties = streamFunctionProperties;
 	}
 
 	@Override
@@ -286,8 +285,5 @@ public class KafkaStreamsBindableProxyFactory extends AbstractBindableProxyFacto
 		return outputHolders;
 	}
 
-	public void setStreamFunctionProperties(StreamFunctionProperties streamFunctionProperties) {
-		this.streamFunctionProperties = streamFunctionProperties;
-	}
 }
 

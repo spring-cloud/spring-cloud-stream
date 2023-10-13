@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -50,6 +51,10 @@ import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.cloud.stream.binder.kafka.streams.KafkaStreamsBinderUtils;
 import org.springframework.cloud.stream.function.StreamFunctionProperties;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
+import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.core.ResolvableType;
 import org.springframework.core.type.StandardClassMetadata;
 import org.springframework.core.type.StandardMethodMetadata;
@@ -61,7 +66,7 @@ import org.springframework.lang.NonNull;
  *
  * @since 2.2.0
  */
-public class KafkaStreamsFunctionBeanPostProcessor implements InitializingBean, BeanFactoryAware {
+public class KafkaStreamsFunctionBeanPostProcessor implements InitializingBean, BeanFactoryAware, ApplicationContextAware {
 
 	private static final Log LOG = LogFactory.getLog(KafkaStreamsFunctionBeanPostProcessor.class);
 
@@ -76,6 +81,7 @@ public class KafkaStreamsFunctionBeanPostProcessor implements InitializingBean, 
 
 	private final Map<String, ResolvableType> kafkaStreamsOnlyResolvableTypes = new HashMap<>();
 	private final Map<String, Method> kafakStreamsOnlyMethods = new HashMap<>();
+	private ConfigurableApplicationContext applicationContext;
 
 	public KafkaStreamsFunctionBeanPostProcessor(StreamFunctionProperties streamFunctionProperties) {
 		this.streamFunctionProperties = streamFunctionProperties;
@@ -167,13 +173,13 @@ public class KafkaStreamsFunctionBeanPostProcessor implements InitializingBean, 
 	}
 
 	private void registerKakaStreamsProxyFactory(BeanDefinitionRegistry registry, String s, ResolvableType[] resolvableTypes, RootBeanDefinition rootBeanDefinition) {
-		rootBeanDefinition.getConstructorArgumentValues()
-				.addGenericArgumentValue(resolvableTypes);
-		rootBeanDefinition.getConstructorArgumentValues()
-				.addGenericArgumentValue(s);
-		rootBeanDefinition.getConstructorArgumentValues()
-				.addGenericArgumentValue(getMethods().get(s));
-		registry.registerBeanDefinition("kafkaStreamsBindableProxyFactory-" + s, rootBeanDefinition);
+		AtomicReference<KafkaStreamsBindableProxyFactory> proxyFactory = new AtomicReference<>();
+		Method method = getMethods().get(s);
+		KafkaStreamsBindableProxyFactory kafkaStreamsBindableProxyFactory =
+			new KafkaStreamsBindableProxyFactory(resolvableTypes, s, method, this.streamFunctionProperties);
+		proxyFactory.set(kafkaStreamsBindableProxyFactory);
+		((GenericApplicationContext) this.applicationContext).registerBean("kafkaStreamsBindableProxyFactory-" + s,
+			KafkaStreamsBindableProxyFactory.class, proxyFactory::get);
 	}
 
 	private void extractResolvableTypes(String key) {
@@ -275,5 +281,10 @@ public class KafkaStreamsFunctionBeanPostProcessor implements InitializingBean, 
 	@Override
 	public void setBeanFactory(@NonNull BeanFactory beanFactory) throws BeansException {
 		this.beanFactory = (ConfigurableListableBeanFactory) beanFactory;
+	}
+
+	@Override
+	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+		this.applicationContext = (ConfigurableApplicationContext) applicationContext;
 	}
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2020 the original author or authors.
+ * Copyright 2017-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,14 +38,14 @@ import org.springframework.util.Assert;
  * @author Marius Bogoevici
  * @author Soby Chacko
  */
-class KStreamBoundElementFactory extends AbstractBindingTargetFactory<KStream> {
+public class KStreamBoundElementFactory extends AbstractBindingTargetFactory<KStream> {
 
 	private final BindingServiceProperties bindingServiceProperties;
 
 	private final KafkaStreamsBindingInformationCatalogue kafkaStreamsBindingInformationCatalogue;
 	private final EncodingDecodingBindAdviceHandler encodingDecodingBindAdviceHandler;
 
-	KStreamBoundElementFactory(BindingServiceProperties bindingServiceProperties,
+	public KStreamBoundElementFactory(BindingServiceProperties bindingServiceProperties,
 							KafkaStreamsBindingInformationCatalogue KafkaStreamsBindingInformationCatalogue,
 							EncodingDecodingBindAdviceHandler encodingDecodingBindAdviceHandler) {
 		super(KStream.class);

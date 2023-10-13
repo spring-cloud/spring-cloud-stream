@@ -183,7 +183,12 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 	private <T> Binder<T, ConsumerProperties, ProducerProperties> doGetBinderAOT(String name, Class<? extends T> bindingTargetType) {
 		// If neither name nor default given - return single or fail when > 1
 		if (!StringUtils.hasText(name) && !StringUtils.hasText(this.defaultBinder)) {
-			if (this.binderChildContextInitializers.size() == 1) {
+			boolean kafkaStreamsType = isKafkaStreamsType(bindingTargetType);
+			if (this.binderChildContextInitializers.size() == 1 || kafkaStreamsType) {
+				if (kafkaStreamsType) {
+					String kafkaStreamsBinderSimpleName = getKafkaStreamsBinderSimpleName(bindingTargetType);
+					return this.getBinderInstance(kafkaStreamsBinderSimpleName);
+				}
 				String configurationName = this.binderChildContextInitializers.keySet().iterator().next();
 				this.logger.debug("No specific name or default given - using single available child initializer '" + configurationName + "'");
 				return this.getBinderInstance(configurationName);
@@ -204,6 +209,15 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 
 		throw new IllegalStateException("Requested binder '" + name + "' did not match available binders: " +
 				this.binderChildContextInitializers.keySet());
+	}
+
+	private <T> String getKafkaStreamsBinderSimpleName(Class<? extends T> bindingTargetType) {
+		return bindingTargetType.getSimpleName().toLowerCase();
+	}
+
+	private <T> boolean isKafkaStreamsType(Class<? extends T> bindingTargetType) {
+		String className = bindingTargetType.getName();
+		return className.contains("KStream") || className.contains("KTable");
 	}
 
 	private <T> Binder<T, ConsumerProperties, ProducerProperties> doGetBinderConventional(String name,
