@@ -179,6 +179,25 @@ public class StreamBridgeTests {
 		}
 	}
 
+	@Test
+	void ensurePartitioningWorksWhenNativeEncodingEnabled() {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+			TestChannelBinderConfiguration.getCompleteConfiguration(
+				EmptyConfiguration.class)).web(WebApplicationType.NONE).run(
+			"--spring.cloud.stream.source=outputA;outputB",
+			"--spring.cloud.stream.bindings.outputA-out-0.producer.partition-count=3",
+			"--spring.cloud.stream.bindings.outputA-out-0.producer.use-native-encoding=true",
+			"--spring.cloud.stream.bindings.outputA-out-0.producer.partition-key-expression=headers['partitionKey']")) {
+			StreamBridge streamBridge = context.getBean(StreamBridge.class);
+			streamBridge.send("outputA-out-0", MessageBuilder.withPayload("A").setHeader("partitionKey", "A").build());
+			streamBridge.send("outputA-out-0", MessageBuilder.withPayload("C").setHeader("partitionKey", "C").build());
+
+			OutputDestination output = context.getBean(OutputDestination.class);
+			assertThat(output.receive(1000, "outputA-out-0").getHeaders().containsKey("scst_partition")).isTrue();
+			assertThat(output.receive(1000, "outputA-out-0").getHeaders().containsKey("scst_partition")).isTrue();
+		}
+	}
+
 	@SuppressWarnings("rawtypes")
 	@Test
 	void test_2785() throws Exception {
