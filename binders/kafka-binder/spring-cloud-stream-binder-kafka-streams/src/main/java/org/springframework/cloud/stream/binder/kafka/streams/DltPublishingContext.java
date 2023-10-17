@@ -26,9 +26,10 @@ import org.springframework.context.ConfigurableApplicationContext;
 /**
  * The DltPublishingContext is meant to be used along with {@link DltAwareProcessor}
  * when publishing failed record to a DLT. DltPublishingContext is particularly used
- * for accessing framework beans such as {@link StreamBridge}.
+ * for accessing framework beans such as the {@link StreamBridge}.
  *
  * @author Soby Chacko
+ * @since 4.1.0
  */
 public class DltPublishingContext implements ApplicationContextAware, InitializingBean {
 
