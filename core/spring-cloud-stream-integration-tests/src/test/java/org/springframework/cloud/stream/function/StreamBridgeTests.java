@@ -19,6 +19,7 @@ package org.springframework.cloud.stream.function;
 import java.lang.reflect.Field;
 import java.net.URI;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
@@ -56,6 +57,7 @@ import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.config.GlobalChannelInterceptor;
 import org.springframework.integration.dsl.IntegrationFlow;
 import org.springframework.integration.handler.LoggingHandler;
+import org.springframework.lang.NonNull;
 import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
@@ -133,7 +135,7 @@ public class StreamBridgeTests {
 	}
 
 	@Test
-	void test_SCF_856() throws Exception {
+	void test_SCF_856() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(EmptyConfiguration.class))
 			.web(WebApplicationType.NONE).run("--spring.jmx.enabled=false")) {
@@ -155,7 +157,7 @@ public class StreamBridgeTests {
 	 * See https://github.com/spring-cloud/spring-cloud-stream/issues/2249 for more details
 	 */
 	@Test
-	void test_2249() throws Exception {
+	void test_2249() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(
 				EmptyConfiguration.class)).web(WebApplicationType.NONE).run(
@@ -212,7 +214,7 @@ public class StreamBridgeTests {
 			"--spring.jmx.enabled=false")) {
 			StreamBridge streamBridge = context.getBean(StreamBridge.class);
 			Field field =  ReflectionUtils.findField(StreamBridge.class, "streamBridgeFunctionCache");
-			field.setAccessible(true);
+			Objects.requireNonNull(field).setAccessible(true);
 			Map functionCache = (Map) field.get(streamBridge);
 
 			streamBridge.send("outputA-out-0", MessageBuilder.withPayload("A").build());
@@ -270,7 +272,7 @@ public class StreamBridgeTests {
 	}
 
 	@Test
-	void testWithOutputContentTypeWildCardBindings() throws Exception {
+	void testWithOutputContentTypeWildCardBindings() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration
 			.getCompleteConfiguration(ConsumerConfiguration.class, EmptyConfigurationWithCustomConverters.class))
 			.web(WebApplicationType.NONE).run(
@@ -322,7 +324,7 @@ public class StreamBridgeTests {
 			bridge.send("function-in-0", (Object) "hello foo", MimeTypeUtils.TEXT_HTML);
 
 			Field field = ReflectionUtils.findField(StreamBridge.class, "streamBridgeFunctionCache");
-			field.setAccessible(true);
+			Objects.requireNonNull(field).setAccessible(true);
 			Map<String, FunctionInvocationWrapper> map = (Map<String, FunctionInvocationWrapper>) field.get(bridge);
 			assertThat(map.size()).isEqualTo(3);
 		}
@@ -707,22 +709,21 @@ public class StreamBridgeTests {
 		public MessageConverter fooConverter() {
 			return new AbstractMessageConverter(MimeType.valueOf("application/json+foo"), MimeType.valueOf("application/json+blah")) {
 				@Override
-				protected boolean supports(Class<?> clazz) {
+				protected boolean supports(@Nullable Class<?> clazz) {
 					return true;
 				}
 
 				@Override
-				@Nullable
-				protected Object convertFromInternal(Message<?> message, Class<?> targetClass, @Nullable Object conversionHint) {
+				protected Object convertFromInternal(@NonNull Message<?> message, @Nullable Class<?> targetClass, @Nullable Object conversionHint) {
 					return message.getPayload();
 				}
 
 				@Override
 				@Nullable
-				protected Object convertToInternal(Object payload, @Nullable MessageHeaders headers, @Nullable Object conversionHint) {
+				protected Object convertToInternal(@NonNull Object payload, @NonNull MessageHeaders headers, @Nullable Object conversionHint) {
 					if (headers.containsKey(MessageHeaders.CONTENT_TYPE) &&
-						(headers.get(MessageHeaders.CONTENT_TYPE).toString().endsWith("+foo") ||
-							headers.get(MessageHeaders.CONTENT_TYPE).toString().endsWith("+blah"))) {
+						(Objects.requireNonNull(headers.get(MessageHeaders.CONTENT_TYPE)).toString().endsWith("+foo") ||
+							Objects.requireNonNull(headers.get(MessageHeaders.CONTENT_TYPE)).toString().endsWith("+blah"))) {
 						return payload;
 					}
 					return null;
@@ -734,21 +735,20 @@ public class StreamBridgeTests {
 		public MessageConverter barConverter() {
 			return new AbstractMessageConverter(MimeType.valueOf("application/blahblah+non-registered-foo")) {
 				@Override
-				protected boolean supports(Class<?> clazz) {
+				protected boolean supports(@NonNull Class<?> clazz) {
 					return true;
 				}
 
 				@Override
-				@Nullable
-				protected Object convertFromInternal(Message<?> message, Class<?> targetClass, @Nullable Object conversionHint) {
+				protected Object convertFromInternal(@NonNull Message<?> message, @Nullable Class<?> targetClass, @Nullable Object conversionHint) {
 					return message.getPayload();
 				}
 
 				@Override
 				@Nullable
-				protected Object convertToInternal(Object payload, @Nullable MessageHeaders headers, @Nullable Object conversionHint) {
+				protected Object convertToInternal(@NonNull Object payload, @NonNull MessageHeaders headers, @Nullable Object conversionHint) {
 					if (headers.containsKey(MessageHeaders.CONTENT_TYPE) &&
-						(headers.get(MessageHeaders.CONTENT_TYPE).toString().endsWith("+non-registered-foo"))) {
+						(Objects.requireNonNull(headers.get(MessageHeaders.CONTENT_TYPE)).toString().endsWith("+non-registered-foo"))) {
 						return payload;
 					}
 					return null;
@@ -762,7 +762,6 @@ public class StreamBridgeTests {
 		@Bean
 		public Consumer<String> consumer(StreamBridge bridge, BindingServiceProperties properties) {
 			return v -> {
-				BindingServiceProperties p = properties;
 				bridge.send("foo", v);
 			};
 		}
@@ -771,7 +770,6 @@ public class StreamBridgeTests {
 			return v -> {
 				int concurrency = properties.getConsumerProperties("foo").getConcurrency();
 				int partitionCount = properties.getProducerProperties("foo").getPartitionCount();
-				BindingServiceProperties p = properties;
 				return MessageBuilder.withPayload(v)
 					.setHeader("concurrency", concurrency)
 					.setHeader("partitionCount", partitionCount)
@@ -787,7 +785,7 @@ public class StreamBridgeTests {
 		public ChannelInterceptor interceptor() {
 			return new ChannelInterceptor() {
 				@Override
-				public Message<?> preSend(Message<?> message, MessageChannel channel) {
+				public Message<?> preSend(@NonNull Message<?> message, @Nullable MessageChannel channel) {
 					return MessageBuilder.fromMessage(message).setHeader("intercepted", "true").build();
 				}
 			};
@@ -813,7 +811,7 @@ public class StreamBridgeTests {
 
 		@Bean
 		public Function<String, String> uppercase() {
-			return v -> v.toUpperCase();
+			return String::toUpperCase;
 		}
 	}
 
@@ -828,7 +826,7 @@ public class StreamBridgeTests {
 
 		@Bean
 		public Function<String, String> uppercase() {
-			return v -> v.toUpperCase();
+			return String::toUpperCase;
 		}
 
 		@Bean
@@ -837,7 +835,7 @@ public class StreamBridgeTests {
 		}
 
 		@Bean
-		public NewDestinationBindingCallback callback(AtomicBoolean callbackVerifier) {
+		public NewDestinationBindingCallback<?> callback(AtomicBoolean callbackVerifier) {
 
 			return (name, channel, props, extended) -> {
 				callbackVerifier.set(true);
@@ -902,7 +900,7 @@ public class StreamBridgeTests {
 		public ChannelInterceptor fooInterceptor() {
 			return new ChannelInterceptor() {
 				@Override
-				public Message<?> preSend(Message<?> message, MessageChannel channel) {
+				public Message<?> preSend(@NonNull Message<?> message, @Nullable MessageChannel channel) {
 					return MessageBuilder.fromMessage(message).setHeader("intercepted", "true").build();
 				}
 			};
