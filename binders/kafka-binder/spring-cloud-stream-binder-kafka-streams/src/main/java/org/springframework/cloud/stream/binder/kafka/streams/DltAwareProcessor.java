@@ -19,6 +19,8 @@ package org.springframework.cloud.stream.binder.kafka.streams;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.kafka.streams.processor.api.Record;
 
 import org.springframework.cloud.stream.function.StreamBridge;
@@ -32,9 +34,12 @@ import org.springframework.util.StringUtils;
  * Custom {@link RecordRecoverableProcessor} that is capable of sending the failed record to a DLT during recovery.
  *
  * @author Soby Chacko
+ * @author Steven Gantz
  * @sinc 4.1.0
  */
 public class DltAwareProcessor<KIn, VIn, KOut, VOut> extends RecordRecoverableProcessor<KIn, VIn, KOut, VOut> {
+
+	private static final Log LOG = LogFactory.getLog(DltAwareProcessor.class);
 
 	/**
 	 * DLT destination.
@@ -74,6 +79,7 @@ public class DltAwareProcessor<KIn, VIn, KOut, VOut> extends RecordRecoverablePr
 			if (streamBridge != null) {
 				Message<VIn> message = MessageBuilder.withPayload(r.value())
 					.setHeader(KafkaHeaders.KEY, r.key()).build();
+				DltAwareProcessor.LOG.trace("Recovered from Exception: ", e);
 				streamBridge.send(this.dltDestination, message);
 			}
 		};
