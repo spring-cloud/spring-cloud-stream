@@ -65,7 +65,7 @@ public class KafkaStreamsBinderRuntimeHints implements RuntimeHintsRegistrar {
 		hints.jni().registerType(RocksDBException.class, MemberCategory.DECLARED_FIELDS, MemberCategory.INVOKE_DECLARED_METHODS);
 		hints.jni().registerType(Status.class, MemberCategory.DECLARED_FIELDS, MemberCategory.INVOKE_DECLARED_METHODS);
 
-		hints.resources().registerPattern("librocksdbjni-osx-arm64.jnilib");
+		hints.resources().registerPattern("librocksdbjni-*");
 
 	}
 
