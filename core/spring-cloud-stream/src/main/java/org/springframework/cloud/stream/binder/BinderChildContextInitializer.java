@@ -32,6 +32,8 @@ import org.springframework.beans.factory.aot.BeanRegistrationCode;
 import org.springframework.beans.factory.support.RegisteredBean;
 import org.springframework.boot.context.properties.bind.Bindable;
 import org.springframework.boot.context.properties.bind.Binder;
+import org.springframework.boot.context.properties.source.ConfigurationPropertyName;
+import org.springframework.cloud.stream.config.BinderProperties;
 import org.springframework.cloud.stream.config.BindingServiceConfiguration;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.context.ApplicationContext;
@@ -107,8 +109,21 @@ public class BinderChildContextInitializer implements ApplicationContextAware, B
 
 	private BindingServiceProperties declaredBindersAsBindingServiceProperties() {
 		BindingServiceProperties bindingServiceProperties = new BindingServiceProperties();
+
+		// We only need to bind to a single property -- "binders" -- defined in BindingServiceProperties
+		// to retrieve the custom binders declared by the application.
+		// Therefore, we are binding to a custom type (DeclaredBinders) which only has this custom binders map property.
+		// If we bind to BindingServiceProperties directly, it tries to bind all the properties defined there which
+		// is unnecessary and may throw errors.
+		// For more details on why that is the case, see https://github.com/spring-cloud/spring-cloud-stream/issues/2799
+
+		// Moreover, we cannot bind directly to spring.cloud.stream.binders and use BindingServiceProperties
+		// because in that case, users have to specify custom binders like spring.cloud.stream.binders.binders..
+		// See https://github.com/spring-cloud/spring-cloud-stream/issues/2828 for more details on that.
+		DeclaredBinders declaredBinders = new DeclaredBinders();
 		Binder.get(this.context.getEnvironment())
-			.bind("spring.cloud.stream.binders", Bindable.ofInstance(bindingServiceProperties));
+			.bind(ConfigurationPropertyName.of("spring.cloud.stream"), Bindable.ofInstance(declaredBinders));
+		bindingServiceProperties.setBinders(declaredBinders.getBinders());
 		return bindingServiceProperties;
 	}
 
@@ -177,6 +192,19 @@ public class BinderChildContextInitializer implements ApplicationContextAware, B
 						method.addStatement("return instance.withChildContextInitializers(initializers)");
 					});
 			beanRegistrationCode.addInstancePostProcessor(postProcessorMethod.toMethodReference());
+		}
+	}
+
+	private static class DeclaredBinders {
+
+		Map<String, BinderProperties> binders = new HashMap<>();
+
+		public Map<String, BinderProperties> getBinders() {
+			return binders;
+		}
+
+		public void setBinders(Map<String, BinderProperties> binders) {
+			this.binders = binders;
 		}
 	}
 
