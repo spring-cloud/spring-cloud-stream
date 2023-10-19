@@ -18,7 +18,6 @@ package org.springframework.cloud.stream.binder.kafka.streams.aot;
 
 import java.util.stream.Stream;
 
-import org.apache.kafka.streams.errors.DefaultProductionExceptionHandler;
 import org.apache.kafka.streams.kstream.GlobalKTable;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.KTable;
@@ -73,7 +72,7 @@ public class KafkaStreamsBinderRuntimeHints implements RuntimeHintsRegistrar {
 		ReflectionHints reflectionHints = hints.reflection();
 
 		Stream.of(
-				DefaultProductionExceptionHandler.class,
+				org.apache.kafka.streams.errors.DefaultProductionExceptionHandler.class,
 				org.apache.kafka.streams.errors.LogAndFailExceptionHandler.class,
 				org.apache.kafka.streams.processor.FailOnInvalidTimestamp.class,
 				org.apache.kafka.streams.processor.internals.DefaultKafkaClientSupplier.class,
