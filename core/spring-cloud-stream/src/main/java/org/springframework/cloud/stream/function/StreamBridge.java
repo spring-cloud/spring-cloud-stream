@@ -26,6 +26,7 @@ import java.util.function.Function;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionRegistration;
@@ -77,7 +78,7 @@ import org.springframework.util.StringUtils;
  *
  */
 @SuppressWarnings("rawtypes")
-public final class StreamBridge implements StreamOperations, SmartInitializingSingleton {
+public final class StreamBridge implements StreamOperations, SmartInitializingSingleton, DisposableBean {
 
 	private static final String STREAM_BRIDGE_FUNC_NAME = "streamBridge";
 
@@ -297,4 +298,11 @@ public final class StreamBridge implements StreamOperations, SmartInitializingSi
 			this.applicationContext.getBean(GlobalChannelInterceptorProcessor.class);
 		globalChannelInterceptorProcessor.postProcessAfterInitialization(messageChannel, destinationName);
 	}
+
+	@Override
+	public void destroy() throws Exception {
+		channelCache.keySet().forEach(bindingService::unbindProducers);
+		channelCache.clear();
+	}
+
 }

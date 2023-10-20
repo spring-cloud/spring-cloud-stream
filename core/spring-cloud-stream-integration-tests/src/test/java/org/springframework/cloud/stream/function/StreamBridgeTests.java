@@ -640,6 +640,25 @@ public class StreamBridgeTests {
 	}
 
 	@Test
+	void testDynamicDestinationDestroy() {
+		BindingService bindingService;
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration
+			.getCompleteConfiguration(InterceptorConfiguration.class))
+			.web(WebApplicationType.NONE).run(
+				"--spring.jmx.enabled=false",
+				"--spring.cloud.stream.dynamic-destination-cache-size=1"
+			)) {
+			StreamBridge bridge = context.getBean(StreamBridge.class);
+			bridge.send("a", "hello foo");
+
+			bindingService = context.getBean(BindingService.class);
+			assertThat(bindingService.getProducerBindingNames().length).isEqualTo(1);
+			assertThat(bindingService.getProducerBindingNames()[0]).isEqualTo("a");
+		}
+		assertThat(bindingService.getProducerBindingNames().length).isEqualTo(0);
+	}
+
+	@Test
 	void testWithIntegrationFlowBecauseMarcinSaidSo() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration
 			.getCompleteConfiguration(IntegrationFlowConfiguration.class))
