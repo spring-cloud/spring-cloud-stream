@@ -1,17 +1,17 @@
-[[streamsbuilderfactorybean-customizer]]
-= StreamsBuilderFactoryBean customizer
+[[streamsbuilderfactorybean-configurer]]
+= StreamsBuilderFactoryBean configurer
 
 It is often required to customize the `StreamsBuilderFactoryBean` that creates the `KafkaStreams` objects.
 Based on the underlying support provided by Spring Kafka, the binder allows you to customize the `StreamsBuilderFactoryBean`.
-You can use the `StreamsBuilderFactoryBeanCustomizer` to customize the `StreamsBuilderFactoryBean` itself.
-Then, once you get access to the `StreamsBuilderFactoryBean` through this customizer, you can customize the corresponding `KafkaStreams` using `KafkaStreamsCustomzier`.
+You can use the `StreamsBuilderFactoryBeanConfigurer` to customize the `StreamsBuilderFactoryBean` itself.
+Then, once you get access to the `StreamsBuilderFactoryBean` through this configurer, you can customize the corresponding `KafkaStreams` using `KafkaStreamsCustomzier`.
 Both of these customizers are part of the Spring for Apache Kafka project.
 
-Here is an example of using the `StreamsBuilderFactoryBeanCustomizer`.
+Here is an example of using the `StreamsBuilderFactoryBeanConfigurer`.
 
 ```
 @Bean
-public StreamsBuilderFactoryBeanCustomizer streamsBuilderFactoryBeanCustomizer() {
+public StreamsBuilderFactoryBeanConfigurer streamsBuilderFactoryBeanConfigurer() {
     return sfb -> sfb.setStateListener((newState, oldState) -> {
          //Do some action here!
     });
@@ -27,7 +27,7 @@ Here is a blueprint for doing so.
 
 ```
 @Bean
-public StreamsBuilderFactoryBeanCustomizer streamsBuilderFactoryBeanCustomizer() {
+public StreamsBuilderFactoryBeanConfigurer streamsBuilderFactoryBeanConfigurer() {
     return factoryBean -> {
         factoryBean.setKafkaStreamsCustomizer(new KafkaStreamsCustomizer() {
             @Override
@@ -43,7 +43,7 @@ public StreamsBuilderFactoryBeanCustomizer streamsBuilderFactoryBeanCustomizer()
 
 `KafkaStreamsCustomizer` will be called by the `StreamsBuilderFactoryBeabn` right before the underlying `KafkaStreams` gets started.
 
-There can only be one `StreamsBuilderFactoryBeanCustomizer` in the entire application.
+There can only be one `StreamsBuilderFactoryBeanConfigurer` in the entire application.
 Then how do we account for multiple Kafka Streams processors as each of them are backed up by individual `StreamsBuilderFactoryBean` objects?
 In that case, if the customization needs to be different for those processors, then the application needs to apply some filter based on the application ID.
 
@@ -51,8 +51,7 @@ For e.g,
 
 ```
 @Bean
-public StreamsBuilderFactoryBeanCustomizer streamsBuilderFactoryBeanCustomizer() {
-
+public StreamsBuilderFactoryBeanConfigurer streamsBuilderFactoryBeanConfigurer() {
     return factoryBean -> {
         if (factoryBean.getStreamsConfiguration().getProperty(StreamsConfig.APPLICATION_ID_CONFIG)
                 .equals("processor1-application-id")) {
@@ -68,8 +67,8 @@ public StreamsBuilderFactoryBeanCustomizer streamsBuilderFactoryBeanCustomizer()
     };
 ```
 
-[[using-customizer-to-register-a-global-state-store]]
-== Using Customizer to register a global state store
+[[using-configurer-to-register-a-global-state-store]]
+== Using StreamsBuilderFactoryBeanConfigurer to register a global state store
 
 As mentioned above, the binder does not provide a first class way to register global state stores as a feature.
 For that, you need to use the customizer.
@@ -77,7 +76,7 @@ Here is how that can be done.
 
 ```
 @Bean
-public StreamsBuilderFactoryBeanCustomizer customizer() {
+public StreamsBuilderFactoryBeanConfigurer customizer() {
     return fb -> {
         try {
             final StreamsBuilder streamsBuilder = fb.getObject();
@@ -92,15 +91,15 @@ public StreamsBuilderFactoryBeanCustomizer customizer() {
 
 Again, if you have multiple processors, you want to attach the global state store to the right `StreamsBuilder` by filtering out the other `StreamsBuilderFactoryBean` objects using the application id as outlined above.
 
-[[using-customizer-to-register-a-production-exception-handler]]
-== Using customizer to register a production exception handler
+[[using-configurer-to-register-a-production-exception-handler]]
+== Using StreamsBuilderFactoryBeanConfigurer to register a production exception handler
 
 In the error handling section, we indicated that the binder does not provide a first class way to deal with production exceptions.
 Though that is the case, you can still use the `StreamsBuilderFacotryBean` customizer to register production exception handlers. See below.
 
 ```
 @Bean
-public StreamsBuilderFactoryBeanCustomizer customizer() {
+public StreamsBuilderFactoryBeanConfigurer configurer() {
     return fb -> {
         fb.getStreamsConfiguration().put(StreamsConfig.DEFAULT_PRODUCTION_EXCEPTION_HANDLER_CLASS_CONFIG,
                             CustomProductionExceptionHandler.class);
