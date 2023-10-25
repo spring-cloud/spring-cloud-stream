@@ -228,7 +228,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 	}
 
 	private String resolveBinderName(String bindingName, BindingServiceProperties bindingServiceProperties) {
-		String binder = bindingServiceProperties == null ? null : bindingServiceProperties.getBindings().get(bindingName).getBinder();
+		String binder = getBinderName(bindingName, bindingServiceProperties);
 		if (!StringUtils.hasText(binder)) {
 			return resolveFromDefaultBinder();
 		}
@@ -247,7 +247,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 	}
 
 	private String resolveBinderType(String bindingName, BindingServiceProperties bindingServiceProperties) {
-		String binder = bindingServiceProperties == null ? null : bindingServiceProperties.getBindings().get(bindingName).getBinder();
+		String binder = getBinderName(bindingName, bindingServiceProperties);
 		if (!StringUtils.hasText(binder)) {
 			return resolveFromDefaultBinder();
 		}
@@ -257,6 +257,18 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 			}
 			return bindingServiceProperties.getBinders().get(binder).getType();
 		}
+	}
+
+	private static String getBinderName(String bindingName, BindingServiceProperties bindingServiceProperties) {
+		String binder;
+		if (bindingServiceProperties == null) {
+			binder = null;
+		}
+		else {
+			BindingProperties bindingProperties = bindingServiceProperties.getBindings().get(bindingName);
+			binder = bindingProperties == null ? null : bindingProperties.getBinder();
+		}
+		return binder;
 	}
 
 	/**
@@ -655,7 +667,9 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 			}
 
 		};
-
+		if (properties.isAutoStartup()) {
+			binding.start();
+		}
 		doPublishEvent(new BindingCreatedEvent(binding));
 		return binding;
 	}

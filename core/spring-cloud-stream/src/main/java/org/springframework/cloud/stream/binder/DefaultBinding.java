@@ -41,7 +41,6 @@ import org.springframework.util.StringUtils;
  * @author Myeonghyeon Lee
  * @author Soby Chacko
  * @author Byungjun You
- * @see org.springframework.cloud.stream.annotation.EnableBinding
  */
 
 @JsonPropertyOrder({ "bindingName", "name", "group", "pausable", "state" })
@@ -59,6 +58,8 @@ public class DefaultBinding<T> implements Binding<T> {
 	private final Log logger = LogFactory.getLog(this.getClass().getName());
 
 	private boolean paused;
+
+	private boolean running;
 
 	private boolean restartable;
 
@@ -118,7 +119,16 @@ public class DefaultBinding<T> implements Binding<T> {
 
 	@Override
 	public boolean isRunning() {
-		return this.lifecycle != null && this.lifecycle.isRunning();
+		if (this.running) {
+			return true;
+		}
+		else {
+			if (this.lifecycle != null && this.lifecycle.isRunning()) {
+				this.running = true;
+				return true;
+			}
+			return false;
+		}
 	}
 
 	public boolean isPausable() {
@@ -138,6 +148,7 @@ public class DefaultBinding<T> implements Binding<T> {
 		if (!this.isRunning()) {
 			if (this.lifecycle != null && this.restartable) {
 				this.lifecycle.start();
+				this.running = true;
 			}
 			else {
 				this.logger.warn("Can not re-bind an anonymous binding");
@@ -152,6 +163,7 @@ public class DefaultBinding<T> implements Binding<T> {
 		}
 		if (this.isRunning()) {
 			this.lifecycle.stop();
+			this.running = false;
 		}
 	}
 
