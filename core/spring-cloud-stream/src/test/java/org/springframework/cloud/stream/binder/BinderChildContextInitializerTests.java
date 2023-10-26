@@ -76,6 +76,7 @@ class BinderChildContextInitializerTests {
 		ApplicationContextRunner contextRunner = new ApplicationContextRunner()
 				.withConfiguration(AutoConfigurations.of(BinderFactoryAutoConfiguration.class,
 						BindingServiceConfiguration.class, FunctionConfiguration.class))
+				.withPropertyValues("logging.level.org.springframework", "DEBUG")
 				.withInitializer(new ConfigDataApplicationContextInitializer())
 				.withConfiguration(UserConfigurations.of(TestFooBinderAppConfiguration.class));
 		contextRunner.prepare(context -> {
