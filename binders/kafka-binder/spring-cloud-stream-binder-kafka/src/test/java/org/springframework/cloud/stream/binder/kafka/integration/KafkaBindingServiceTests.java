@@ -19,7 +19,6 @@ package org.springframework.cloud.stream.binder.kafka.integration;
 import java.util.Map;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -32,7 +31,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.messaging.support.GenericMessage;
 import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -40,7 +38,6 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Soby Chacko
  * @since 4.1.0
  */
-@ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE, properties = {
 	"spring.cloud.stream.bindings.kafka-binding-service-test.producer.partition-count=2",
 	"spring.cloud.stream.bindings.kafka-binding-service-test.producer.partition-key-expression=headers['partitionKey']"})

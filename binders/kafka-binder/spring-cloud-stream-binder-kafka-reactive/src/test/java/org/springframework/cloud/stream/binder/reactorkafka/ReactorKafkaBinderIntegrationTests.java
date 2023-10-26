@@ -28,9 +28,10 @@ import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.StringDeserializer;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Configuration;
 import reactor.core.publisher.Flux;
 import reactor.kafka.receiver.ReceiverOptions;
 import reactor.kafka.receiver.ReceiverRecord;
@@ -55,7 +56,6 @@ import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
 import org.springframework.messaging.Message;
 import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
@@ -67,7 +67,7 @@ import static org.awaitility.Awaitility.await;
  * @author Gary Russell
  * @author Chris Bono
  */
-@ExtendWith(SpringExtension.class)
+@SpringBootTest
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 @EmbeddedKafka(topics = { "uppercased-words", "lowercased-words" })
 class ReactorKafkaBinderIntegrationTests {
@@ -146,6 +146,7 @@ class ReactorKafkaBinderIntegrationTests {
 	}
 
 	@EnableAutoConfiguration
+	@Configuration
 	public static class ReactiveKafkaApplication {
 
 		final List<Integer> correlation = Collections.synchronizedList(new ArrayList<>());

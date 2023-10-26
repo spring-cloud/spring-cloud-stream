@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2022 the original author or authors.
+ * Copyright 2018-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package org.springframework.cloud.stream.binder.kafka;
 import java.util.Arrays;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -30,17 +29,16 @@ import org.springframework.cloud.stream.binder.kafka.properties.KafkaTopicProper
 import org.springframework.cloud.stream.config.BindingServiceConfiguration;
 import org.springframework.integration.config.EnableIntegration;
 import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Gary Russell
  * @author Aldo Sinanaj
+ * @author Soby Chacko
  * @since 2.0
  *
  */
-@ExtendWith(SpringExtension.class)
 @SpringBootTest(classes = { KafkaBinderConfiguration.class,
 		BindingServiceConfiguration.class })
 @TestPropertySource(properties = {
