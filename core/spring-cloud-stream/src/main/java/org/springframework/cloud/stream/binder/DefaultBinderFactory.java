@@ -190,7 +190,7 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 					return this.getBinderInstance(kafkaStreamsBinderSimpleName);
 				}
 				String configurationName = this.binderChildContextInitializers.keySet().iterator().next();
-				this.logger.debug("No specific name or default given - using single available child initializer '" + configurationName + "'");
+				this.logger.info("No specific name or default given - using single available child initializer '" + configurationName + "'");
 				return this.getBinderInstance(configurationName);
 			}
 			throw new IllegalStateException("No specific name or default given - can't determine which binder to use");

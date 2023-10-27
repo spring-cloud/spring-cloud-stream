@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.binder;
 
+import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -42,6 +43,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.aot.ApplicationContextAotGenerator;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.core.convert.support.GenericConversionService;
+import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.core.env.MapPropertySource;
 import org.springframework.core.log.LogAccessor;
 import org.springframework.core.test.tools.CompileWithForkedClassLoader;
 import org.springframework.core.test.tools.TestCompiler;
@@ -58,7 +61,6 @@ import static org.mockito.Mockito.mock;
  * @author Chris Bono
  */
 @ExtendWith(OutputCaptureExtension.class)
-@Disabled
 class BinderChildContextInitializerTests {
 
 	private static final LogAccessor LOG = new LogAccessor(BinderChildContextInitializerTests.class);
@@ -73,10 +75,14 @@ class BinderChildContextInitializerTests {
 		// The AOT processor will then generate the ACI for the default binder (no user declared binders).
 		// We then initialize a fresh app context using the generated ACI and verify the expected output.
 
+		// For some reasons, the logging level in the child context is not adjustable from the test.
+		// Therefore, we are relying on the fact that the logging levels are the default INFO level.
+		// It only happens for tests and this doesn't seem to be the case in real applications,
+		// i.e. we can control the logging level in real applications.
+
 		ApplicationContextRunner contextRunner = new ApplicationContextRunner()
 				.withConfiguration(AutoConfigurations.of(BinderFactoryAutoConfiguration.class,
 						BindingServiceConfiguration.class, FunctionConfiguration.class))
-				.withPropertyValues("logging.level.org.springframework", "DEBUG")
 				.withInitializer(new ConfigDataApplicationContextInitializer())
 				.withConfiguration(UserConfigurations.of(TestFooBinderAppConfiguration.class));
 		contextRunner.prepare(context -> {
@@ -96,7 +102,6 @@ class BinderChildContextInitializerTests {
 				assertThat(output).contains("Beginning AOT processing for binder child contexts");
 				assertThat(output).contains("Pre-creating binder child context (AOT) for mock");
 				assertThat(output).contains("Generating AOT child context initializer for mock");
-				assertThat(output).contains("Refreshing mock_context");
 
 				// Refresh the initialized context and verify the binder child contexts are used
 				TestPropertyValues.of(AotDetector.AOT_ENABLED + "=true")
@@ -159,9 +164,7 @@ class BinderChildContextInitializerTests {
 				assertThat(output).contains("Pre-creating binder child context (AOT) for mockBinder2");
 				assertThat(output).contains("Pre-creating binder child context (AOT) for mockBinder1");
 				assertThat(output).contains("Generating AOT child context initializer for mockBinder2");
-				assertThat(output).contains("Refreshing mockBinder2_context");
 				assertThat(output).contains("Generating AOT child context initializer for mockBinder1");
-				assertThat(output).contains("Refreshing mockBinder1_context");
 
 				// Refresh the initialized context and verify the binder child contexts are used
 				TestPropertyValues.of(AotDetector.AOT_ENABLED + "=true")

@@ -77,7 +77,7 @@ public class BinderChildContextInitializer implements ApplicationContextAware, B
 		Assert.notNull(binderFactory, () -> "binderFactory must be non-null");
 		this.binderFactory = binderFactory;
 		if (!this.childContextInitializers.isEmpty()) {
-			this.logger.debug(() -> "Setting binder child context initializers on binder factory");
+			this.logger.info(() -> "Setting binder child context initializers on binder factory");
 			this.binderFactory.setBinderChildContextInitializers(this.childContextInitializers);
 		}
 	}
@@ -90,7 +90,7 @@ public class BinderChildContextInitializer implements ApplicationContextAware, B
 	@Override
 	public BeanRegistrationAotContribution processAheadOfTime(RegisteredBean registeredBean) {
 		if (registeredBean.getBeanClass().equals(getClass())) { //&& registeredBean.getBeanFactory().equals(this.context)) {
-			this.logger.debug(() -> "Beginning AOT processing for binder child contexts");
+			this.logger.info(() -> "Beginning AOT processing for binder child contexts");
 			ensureBinderFactoryIsSet();
 			// Load the binding service properties from the environment and update the binder factory with them
 			// in order to pick up any user-declared binders. Without this step only the default binder defined
@@ -144,7 +144,7 @@ public class BinderChildContextInitializer implements ApplicationContextAware, B
 	@SuppressWarnings({"unchecked"})
 	public BinderChildContextInitializer withChildContextInitializers(
 			Map<String, ApplicationContextInitializer<? extends ConfigurableApplicationContext>> childContextInitializers) {
-		this.logger.debug(() -> "Replacing instance w/ one that uses child context initializers");
+		this.logger.info(() -> "Replacing instance w/ one that uses child context initializers");
 		Map<String, ApplicationContextInitializer<ConfigurableApplicationContext>> downcastedInitializers =
 				childContextInitializers.entrySet().stream()
 						.map(e -> Map.entry(e.getKey(), (ApplicationContextInitializer<ConfigurableApplicationContext>) e.getValue()))
@@ -182,7 +182,7 @@ public class BinderChildContextInitializer implements ApplicationContextAware, B
 						method.addStatement("$T<String, $T<? extends $T>> initializers = new $T<>()", Map.class,
 								ApplicationContextInitializer.class, ConfigurableApplicationContext.class, HashMap.class);
 						this.childContexts.forEach((name, context) -> {
-							this.logger.debug(() -> "Generating AOT child context initializer for " + name);
+							this.logger.info(() -> "Generating AOT child context initializer for " + name);
 							GenerationContext childGenerationContext = generationContext.withName(name + "Binder");
 							ClassName initializerClassName = aotGenerator.processAheadOfTime(context, childGenerationContext);
 							method.addStatement("$T<? extends $T> " + name + "Initializer = new $L()", ApplicationContextInitializer.class,
