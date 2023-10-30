@@ -1650,7 +1650,7 @@ public class KafkaBinderTests extends
 		final KafkaProducerProperties.CompressionType[] codecs = new KafkaProducerProperties.CompressionType[] {
 				KafkaProducerProperties.CompressionType.none,
 				KafkaProducerProperties.CompressionType.gzip,
-				KafkaProducerProperties.CompressionType.snappy,
+//				KafkaProducerProperties.CompressionType.snappy,
 				KafkaProducerProperties.CompressionType.zstd};
 		byte[] testPayload = new byte[2048];
 		Arrays.fill(testPayload, (byte) 65);

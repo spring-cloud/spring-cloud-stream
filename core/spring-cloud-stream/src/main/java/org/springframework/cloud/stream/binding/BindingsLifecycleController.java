@@ -20,8 +20,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Stream;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -50,7 +50,7 @@ public class BindingsLifecycleController {
 
 	@SuppressWarnings("unchecked")
 	public BindingsLifecycleController(List<InputBindingLifecycle> inputBindingLifecycles,
-									   List<OutputBindingLifecycle> outputBindingsLifecycles) {
+									List<OutputBindingLifecycle> outputBindingsLifecycles) {
 		Assert.notEmpty(inputBindingLifecycles,
 			"'inputBindingLifecycles' must not be null or empty");
 		this.inputBindingLifecycles = inputBindingLifecycles;
