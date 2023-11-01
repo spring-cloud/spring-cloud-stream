@@ -43,7 +43,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Soby Chacko
  */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-public class ReactorKafkaBinderHealthIndicatorTests {
+class ReactorKafkaBinderHealthIndicatorTests {
 
 	private static final String TEST_TOPIC = "test";
 

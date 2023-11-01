@@ -72,7 +72,7 @@ import static org.mockito.Mockito.mock;
  *
  */
 @EmbeddedKafka(topics = { "testCa", "testCb", "testC1", "testP" })
-public class ReactorKafkaBinderTests {
+class ReactorKafkaBinderTests {
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Test
