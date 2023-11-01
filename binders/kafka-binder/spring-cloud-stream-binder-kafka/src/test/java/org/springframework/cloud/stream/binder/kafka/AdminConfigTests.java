@@ -53,7 +53,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 		"spring.cloud.stream.kafka.bindings.output.producer.topic.properties.message.format.version=0.9.0.0",
 		"spring.main.allow-bean-definition-overriding=true" })
 @EnableIntegration
-public class AdminConfigTests {
+class AdminConfigTests {
 
 	@Autowired
 	private KafkaMessageChannelBinder binder;

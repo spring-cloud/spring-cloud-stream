@@ -67,7 +67,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 )
 @DirtiesContext
 @EmbeddedKafka(bootstrapServersProperty = "spring.kafka.bootstrap-servers")
-public class KafkaBinderActuatorTests {
+class KafkaBinderActuatorTests {
 
 	static final String TEST_CONSUMER_GROUP = "testGroup-actuatorTests";
 

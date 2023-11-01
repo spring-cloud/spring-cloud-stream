@@ -179,7 +179,7 @@ import static org.mockito.Mockito.verify;
  */
 @EmbeddedKafka(count = 1, controlledShutdown = true, topics = "error.pollableDlq.group-pcWithDlq", brokerProperties = {"transaction.state.log.replication.factor=1",
 		"transaction.state.log.min.isr=1"})
-public class KafkaBinderTests extends
+class KafkaBinderTests extends
 
 	PartitionCapableBinderTests<AbstractKafkaTestBinder, ExtendedConsumerProperties<KafkaConsumerProperties>, ExtendedProducerProperties<KafkaProducerProperties>> {
 
@@ -4132,15 +4132,15 @@ public class KafkaBinderTests extends
 
 	}
 
-	public static class Pojo {
+	static class Pojo {
 
 		private String field;
 
-		public Pojo() {
+		Pojo() {
 			super();
 		}
 
-		public Pojo(String field) {
+		Pojo(String field) {
 			this.field = field;
 		}
 

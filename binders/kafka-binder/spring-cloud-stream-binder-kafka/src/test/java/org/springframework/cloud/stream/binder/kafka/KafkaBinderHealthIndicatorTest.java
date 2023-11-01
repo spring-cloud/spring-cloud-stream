@@ -55,7 +55,7 @@ import static org.mockito.ArgumentMatchers.any;
  * @author Taras Danylchuk
  */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-public class KafkaBinderHealthIndicatorTest {
+class KafkaBinderHealthIndicatorTest {
 
 	private static final String TEST_TOPIC = "test";
 

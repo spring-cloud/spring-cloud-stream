@@ -56,7 +56,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 		"spring.cloud.stream.bindings.process-in-0.group=KafkaConfigCustomizationTests.group"})
 @DirtiesContext
 @EmbeddedKafka(bootstrapServersProperty = "spring.kafka.bootstrap-servers")
-public class KafkaConfigCustomizationTests {
+class KafkaConfigCustomizationTests {
 
 	private static final String KAFKA_BROKERS_PROPERTY = "spring.cloud.stream.kafka.binder.brokers";
 

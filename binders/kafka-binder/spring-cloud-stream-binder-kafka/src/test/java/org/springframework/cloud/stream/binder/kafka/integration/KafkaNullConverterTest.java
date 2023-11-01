@@ -50,7 +50,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 		"spring.cloud.stream.function.bindings.inputListen-in-0=kafkaNullInput"})
 @DirtiesContext
 @EmbeddedKafka(bootstrapServersProperty = "spring.kafka.bootstrap-servers")
-public class KafkaNullConverterTest {
+class KafkaNullConverterTest {
 
 	@Autowired
 	private ApplicationContext context;

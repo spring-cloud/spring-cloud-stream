@@ -70,7 +70,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 		"spring.cloud.stream.kafka.bindings.custom-in.consumer.ackEachRecord=false" })
 @DirtiesContext
 @EmbeddedKafka(bootstrapServersProperty = "spring.kafka.bootstrap-servers")
-public class KafkaBinderExtendedPropertiesTest {
+class KafkaBinderExtendedPropertiesTest {
 
 	@Autowired
 	private ConfigurableApplicationContext context;

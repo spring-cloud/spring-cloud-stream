@@ -51,7 +51,6 @@ import static org.mockito.Mockito.mock;
 
 /**
  * @author Gary Russell
- * @author Soby Chacko
  * @since 3.0
  *
  */
@@ -76,7 +75,7 @@ import static org.mockito.Mockito.mock;
 @DirtiesContext
 @EmbeddedKafka(topics = "consumer.producer.txOut", controlledShutdown = true, brokerProperties = {"transaction.state.log.replication.factor=1",
 	"transaction.state.log.min.isr=1"}, bootstrapServersProperty = "spring.kafka.bootstrap-servers")
-public class ConsumerProducerTransactionTests {
+class ConsumerProducerTransactionTests {
 
 	@Autowired
 	private Config config;

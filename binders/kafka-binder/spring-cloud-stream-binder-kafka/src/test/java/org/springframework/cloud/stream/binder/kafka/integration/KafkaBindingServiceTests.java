@@ -44,7 +44,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DirtiesContext
 @EmbeddedKafka(topics = "kafka-binding-service-test", controlledShutdown = true, partitions = 4,
 	bootstrapServersProperty = "spring.kafka.bootstrap-servers")
-public class KafkaBindingServiceTests {
+class KafkaBindingServiceTests {
 
 	@Autowired
 	private ApplicationContext context;

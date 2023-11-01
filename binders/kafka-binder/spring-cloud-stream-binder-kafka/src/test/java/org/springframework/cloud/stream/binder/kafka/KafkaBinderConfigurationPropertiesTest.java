@@ -49,7 +49,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest(classes = { KafkaBinderConfiguration.class, KafkaAutoConfiguration.class,
 		KafkaBinderConfigurationPropertiesTest.class })
 @TestPropertySource(locations = "classpath:binder-config.properties")
-public class KafkaBinderConfigurationPropertiesTest {
+class KafkaBinderConfigurationPropertiesTest {
 
 	@Autowired
 	private KafkaMessageChannelBinder kafkaMessageChannelBinder;

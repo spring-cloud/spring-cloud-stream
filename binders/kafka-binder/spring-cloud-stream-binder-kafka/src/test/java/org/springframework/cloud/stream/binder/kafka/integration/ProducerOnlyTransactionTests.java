@@ -65,7 +65,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DirtiesContext
 @EmbeddedKafka(topics = "output", controlledShutdown = true, brokerProperties = {"transaction.state.log.replication.factor=1",
 	"transaction.state.log.min.isr=1"}, bootstrapServersProperty = "spring.kafka.bootstrap-servers")
-public class ProducerOnlyTransactionTests {
+class ProducerOnlyTransactionTests {
 
 	@Autowired
 	private Sender sender;

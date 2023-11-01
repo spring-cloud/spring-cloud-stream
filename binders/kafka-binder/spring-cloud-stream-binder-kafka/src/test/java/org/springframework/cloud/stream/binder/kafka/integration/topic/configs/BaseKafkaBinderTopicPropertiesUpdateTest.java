@@ -42,7 +42,7 @@ import org.springframework.test.annotation.DirtiesContext;
 })
 @DirtiesContext
 @EmbeddedKafka(bootstrapServersProperty = "spring.kafka.bootstrap-servers")
-public abstract class BaseKafkaBinderTopicPropertiesUpdateTest {
+abstract class BaseKafkaBinderTopicPropertiesUpdateTest {
 
 	@Autowired
 	protected EmbeddedKafkaBroker embeddedKafka;
