@@ -44,7 +44,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 		"spring.cloud.stream.schema.server.path=/testpath",
 		"spring.cloud.stream.schema.server.allowSchemaDeletion=false"
 })
-public class ServerControllerTest extends AbstractServerControllerTest {
+class ServerControllerTest extends AbstractServerControllerTest {
 
 	@Test
 	public void propertiesTest() {

@@ -70,7 +70,7 @@ import static org.springframework.test.annotation.DirtiesContext.ClassMode.AFTER
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT, properties = "spring.main.allow-bean-definition-overriding=true")
 @DirtiesContext(classMode = AFTER_EACH_TEST_METHOD)
-public class SchemaRegistryServerAvroTests {
+class SchemaRegistryServerAvroTests {
 
 	private static final String AVRO_FORMAT_NAME = "avro";
 
