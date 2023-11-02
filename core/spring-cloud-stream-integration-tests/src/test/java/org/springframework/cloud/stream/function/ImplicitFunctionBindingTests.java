@@ -88,7 +88,7 @@ import static org.junit.Assert.fail;
  * @author Soby Chacko
  *
  */
-public class ImplicitFunctionBindingTests {
+class ImplicitFunctionBindingTests {
 
 	@AfterEach
 	public void after() {

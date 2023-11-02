@@ -44,7 +44,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @author Original authors
  * @author Soby Chacko
  */
-public class ActuatorBindingsTest {
+class ActuatorBindingsTest {
 
 	/*
 	 * Even though this test performs some simple assertions, the main purpose for it is to validate that

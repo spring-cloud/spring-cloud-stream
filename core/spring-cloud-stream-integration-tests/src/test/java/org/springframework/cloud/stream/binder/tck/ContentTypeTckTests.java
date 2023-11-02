@@ -60,7 +60,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Byungjun You
  *
  */
-public class ContentTypeTckTests {
+class ContentTypeTckTests {
 
 	@Test
 	void stringToMapMessageStreamListener() {
@@ -703,11 +703,11 @@ public class ContentTypeTckTests {
 
 		private String name;
 
-		public Person() {
+		Person() {
 			this(null);
 		}
 
-		public Person(String name) {
+		Person(String name) {
 			this.name = name;
 		}
 
@@ -749,7 +749,7 @@ public class ContentTypeTckTests {
 		public static class AlwaysStringKryoMessageConverter
 			extends AbstractMessageConverter {
 
-			public AlwaysStringKryoMessageConverter(MimeType supportedMimeType) {
+			AlwaysStringKryoMessageConverter(MimeType supportedMimeType) {
 				super(supportedMimeType);
 			}
 

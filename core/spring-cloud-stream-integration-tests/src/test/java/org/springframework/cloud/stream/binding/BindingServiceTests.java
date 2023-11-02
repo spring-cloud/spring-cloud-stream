@@ -91,7 +91,7 @@ import static org.mockito.Mockito.when;
  * @author Chris Bono
  * @author Artem Bilan
  */
-public class BindingServiceTests {
+class BindingServiceTests {
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@Test

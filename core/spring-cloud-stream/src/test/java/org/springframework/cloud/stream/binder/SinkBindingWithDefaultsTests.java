@@ -38,7 +38,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
  * @author Soby Chacko
  */
 @SpringBootTest(classes = SinkBindingWithDefaultsTests.TestSink.class, properties = "spring.cloud.stream.defaultBinder=mock")
-public class SinkBindingWithDefaultsTests {
+class SinkBindingWithDefaultsTests {
 
 	@Autowired
 	private BinderFactory binderFactory;

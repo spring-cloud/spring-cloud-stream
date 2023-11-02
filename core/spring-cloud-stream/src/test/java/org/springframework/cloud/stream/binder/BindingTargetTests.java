@@ -40,7 +40,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
  */
 @SpringBootTest(classes = BindingTargetTests.TestFooChannels.class, properties = {"spring.cloud.stream.default-binder=mock",
 	"spring.cloud.function.definition=process1;process2"})
-public class BindingTargetTests {
+class BindingTargetTests {
 
 	@Autowired
 	private BinderFactory binderFactory;

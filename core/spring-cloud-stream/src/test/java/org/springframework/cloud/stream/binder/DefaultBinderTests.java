@@ -27,7 +27,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Myeonghyeon Lee
  *
  */
-public class DefaultBinderTests {
+class DefaultBinderTests {
 
 	@Test
 	void testDefaultBinderIsPaused() {

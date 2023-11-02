@@ -41,7 +41,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Oleg Zhurakousky
  * @author Soby Chacko
  */
-public class CustomPartitionedProducerTest {
+class CustomPartitionedProducerTest {
 
 	@Test
 	void testCustomPartitionedProducer() {

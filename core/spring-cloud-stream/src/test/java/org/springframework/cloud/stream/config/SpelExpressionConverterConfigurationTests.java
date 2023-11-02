@@ -49,7 +49,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 @SpringBootTest(classes = SpelExpressionConverterConfigurationTests.Config.class, properties = {
 		"expression: a.b" })
-public class SpelExpressionConverterConfigurationTests {
+class SpelExpressionConverterConfigurationTests {
 
 	@Autowired
 	private Pojo pojo;

@@ -47,7 +47,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
  * @author Soby Chacko
  */
 @SpringBootTest(classes = PartitionedConsumerTest.TestSink.class, properties = "spring.cloud.stream.default-binder=mock")
-public class PartitionedConsumerTest {
+class PartitionedConsumerTest {
 
 	@Autowired
 	private BinderFactory binderFactory;

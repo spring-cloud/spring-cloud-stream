@@ -39,7 +39,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Oleg Zhurakousky
  *
  */
-public class FunctionPostProcessingTests {
+class FunctionPostProcessingTests {
 
 	@Test
 	void testNothingIsBroken() {
