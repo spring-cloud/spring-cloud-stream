@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 the original author or authors.
+ * Copyright 2015-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,7 +47,7 @@ import org.springframework.util.StringUtils;
  * @author Mark Fisher
  */
 // @checkstyle:off
-public class RabbitTestBinder extends
+class RabbitTestBinder extends
 		AbstractPollableConsumerTestBinder<RabbitMessageChannelBinder, ExtendedConsumerProperties<RabbitConsumerProperties>, ExtendedProducerProperties<RabbitProducerProperties>> {
 
 	// @checkstyle:on
@@ -61,13 +61,13 @@ public class RabbitTestBinder extends
 
 	private final AnnotationConfigApplicationContext applicationContext;
 
-	public RabbitTestBinder(ConnectionFactory connectionFactory,
+	RabbitTestBinder(ConnectionFactory connectionFactory,
 			RabbitProperties rabbitProperties) {
 		this(connectionFactory, new RabbitMessageChannelBinder(connectionFactory,
 				rabbitProperties, new RabbitExchangeQueueProvisioner(connectionFactory)));
 	}
 
-	public RabbitTestBinder(ConnectionFactory connectionFactory,
+	RabbitTestBinder(ConnectionFactory connectionFactory,
 			RabbitMessageChannelBinder binder) {
 		this.applicationContext = new AnnotationConfigApplicationContext(Config.class);
 		binder.setApplicationContext(this.applicationContext);

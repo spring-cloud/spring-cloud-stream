@@ -96,7 +96,7 @@ import static org.mockito.Mockito.verify;
  * @author Chris Bono
  * @author Byungjun You
  */
-public class RabbitBinderModuleTests {
+class RabbitBinderModuleTests {
 
 	private static final RabbitMQContainer RABBITMQ = RabbitTestContainer.sharedInstance();
 
