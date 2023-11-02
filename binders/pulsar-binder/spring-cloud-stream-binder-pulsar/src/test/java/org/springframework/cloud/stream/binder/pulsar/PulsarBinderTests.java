@@ -66,7 +66,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * @author Soby Chacko
  */
-public class PulsarBinderTests extends
+class PulsarBinderTests extends
 		PartitionCapableBinderTests<AbstractPulsarTestBinder, ExtendedConsumerProperties<PulsarConsumerProperties>, ExtendedProducerProperties<PulsarProducerProperties>>
 		implements PulsarTestContainerSupport {
 

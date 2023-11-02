@@ -33,7 +33,7 @@ import org.springframework.pulsar.support.header.PulsarHeaderMapper;
  * @author Soby Chacko
  * @author Chris Bono
  */
-public class PulsarTestBinder extends AbstractPulsarTestBinder {
+class PulsarTestBinder extends AbstractPulsarTestBinder {
 
 	@SuppressWarnings({ "unchecked" })
 	PulsarTestBinder(PulsarTopicProvisioner pulsarTopicProvisioner, PulsarTemplate<?> pulsarTemplate,

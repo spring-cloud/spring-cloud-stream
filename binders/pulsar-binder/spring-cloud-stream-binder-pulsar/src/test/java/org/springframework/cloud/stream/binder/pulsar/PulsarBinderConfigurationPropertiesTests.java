@@ -40,7 +40,7 @@ import static org.assertj.core.api.Assertions.assertThatNoException;
  *
  * @author Chris Bono
  */
-public class PulsarBinderConfigurationPropertiesTests {
+class PulsarBinderConfigurationPropertiesTests {
 
 	@Test
 	void partitionCountProperty() {

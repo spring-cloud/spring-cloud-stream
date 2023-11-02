@@ -44,7 +44,7 @@ import static org.assertj.core.api.Assertions.assertThatNoException;
  * @author Soby Chacko
  * @author Chris Bono
  */
-public class ConsumerConfigPropertiesTests {
+class ConsumerConfigPropertiesTests {
 
 	@Test
 	void basePropsCanBeExtractedToMap() {

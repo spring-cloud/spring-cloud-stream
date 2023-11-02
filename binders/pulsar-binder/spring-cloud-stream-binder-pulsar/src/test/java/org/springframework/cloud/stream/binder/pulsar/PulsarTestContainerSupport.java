@@ -27,7 +27,7 @@ import org.testcontainers.utility.DockerImageName;
  * @author Chris Bono
  */
 @Testcontainers(disabledWithoutDocker = true)
-public interface PulsarTestContainerSupport {
+interface PulsarTestContainerSupport {
 
 	PulsarContainer PULSAR_CONTAINER = new PulsarContainer(getPulsarImage());
 

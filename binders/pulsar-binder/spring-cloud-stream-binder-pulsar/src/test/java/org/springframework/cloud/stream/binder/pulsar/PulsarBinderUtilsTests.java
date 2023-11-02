@@ -45,7 +45,7 @@ import static org.mockito.Mockito.when;
  * @author Soby Chacko
  * @author Chris Bono
  */
-public class PulsarBinderUtilsTests {
+class PulsarBinderUtilsTests {
 
 	@Nested
 	class SubscriptionNameTests {

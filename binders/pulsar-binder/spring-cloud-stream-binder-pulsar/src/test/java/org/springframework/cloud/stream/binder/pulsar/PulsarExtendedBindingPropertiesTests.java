@@ -42,7 +42,7 @@ import static org.assertj.core.api.Assertions.assertThatNoException;
  *
  * @author Chris Bono
  */
-public class PulsarExtendedBindingPropertiesTests {
+class PulsarExtendedBindingPropertiesTests {
 
 	@Test
 	void producerProperties() {

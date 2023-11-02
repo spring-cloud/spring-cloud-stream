@@ -38,7 +38,7 @@ import static org.mockito.Mockito.verify;
 /**
  * @author Soby Chacko
  */
-public class PulsarTopicProvisionerTests {
+class PulsarTopicProvisionerTests {
 
 	@Test
 	void provisionThroughProducerBindingWithDefaultPartitioning() {
