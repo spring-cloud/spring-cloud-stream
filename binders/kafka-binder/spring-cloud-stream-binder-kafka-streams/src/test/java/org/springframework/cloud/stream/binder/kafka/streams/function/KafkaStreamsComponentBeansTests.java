@@ -1,5 +1,5 @@
 /*
- * Copyright 2021-2022 the original author or authors.
+ * Copyright 2021-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,7 +54,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Soby Chacko
  */
 @EmbeddedKafka(topics = {"testFunctionComponent-out", "testBiFunctionComponent-out", "testCurriedFunctionWithFunctionTerminal-out"})
-public class KafkaStreamsComponentBeansTests {
+class KafkaStreamsComponentBeansTests {
 
 	private static final EmbeddedKafkaBroker embeddedKafka = EmbeddedKafkaCondition.getBroker();
 

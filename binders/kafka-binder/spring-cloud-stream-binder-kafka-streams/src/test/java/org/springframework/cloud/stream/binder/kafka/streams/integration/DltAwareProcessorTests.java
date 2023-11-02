@@ -50,7 +50,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Soby Chacko
  */
 @EmbeddedKafka(topics = "hello-dlt-1")
-public class DltAwareProcessorTests {
+class DltAwareProcessorTests {
 
 	private static final EmbeddedKafkaBroker embeddedKafka = EmbeddedKafkaCondition.getBroker();
 

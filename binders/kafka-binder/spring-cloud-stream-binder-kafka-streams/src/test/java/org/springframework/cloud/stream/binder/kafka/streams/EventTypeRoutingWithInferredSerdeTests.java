@@ -57,7 +57,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Soby Chacko
  */
 @EmbeddedKafka(topics = "foo-2")
-public class EventTypeRoutingWithInferredSerdeTests {
+class EventTypeRoutingWithInferredSerdeTests {
 
 	private static final EmbeddedKafkaBroker embeddedKafka = EmbeddedKafkaCondition.getBroker();
 

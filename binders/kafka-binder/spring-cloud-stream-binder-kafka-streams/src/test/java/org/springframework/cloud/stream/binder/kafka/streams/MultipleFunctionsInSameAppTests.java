@@ -54,7 +54,7 @@ import org.springframework.util.ReflectionUtils;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @EmbeddedKafka(topics = {"coffee", "electronics"})
-public class MultipleFunctionsInSameAppTests {
+class MultipleFunctionsInSameAppTests {
 
 	private static final EmbeddedKafkaBroker embeddedKafka = EmbeddedKafkaCondition.getBroker();
 
