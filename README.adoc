@@ -95,7 +95,7 @@ For more information, please visit the https://spring.io/projects/spring-cloud-s
 
 == Building
 
-:jdkversion: 17
+:jdkversion: 1.8
 
 === Basic Compile and Test
 
