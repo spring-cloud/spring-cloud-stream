@@ -61,11 +61,12 @@ public class KafkaStreamsBinderRuntimeHints implements RuntimeHintsRegistrar {
 	}
 
 	private static void registerKafkaStreamsJniHints(RuntimeHints hints) {
-		hints.jni().registerType(RocksDBException.class, MemberCategory.DECLARED_FIELDS, MemberCategory.INVOKE_DECLARED_METHODS);
-		hints.jni().registerType(Status.class, MemberCategory.DECLARED_FIELDS, MemberCategory.INVOKE_DECLARED_METHODS);
+		hints.jni().registerType(RocksDBException.class, MemberCategory.DECLARED_FIELDS, MemberCategory.INVOKE_DECLARED_METHODS,
+			MemberCategory.INVOKE_DECLARED_CONSTRUCTORS, MemberCategory.INVOKE_DECLARED_CONSTRUCTORS);
+		hints.jni().registerType(Status.class, MemberCategory.DECLARED_FIELDS, MemberCategory.INVOKE_DECLARED_METHODS,
+			MemberCategory.INVOKE_DECLARED_CONSTRUCTORS);
 
 		hints.resources().registerPattern("librocksdbjni-*");
-
 	}
 
 	private static void registerKafkaStreamsReflectionHints(RuntimeHints hints) {
