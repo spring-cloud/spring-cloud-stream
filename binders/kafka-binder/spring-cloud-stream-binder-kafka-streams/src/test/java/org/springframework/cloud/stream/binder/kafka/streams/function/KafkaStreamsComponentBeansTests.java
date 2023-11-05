@@ -52,8 +52,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Soby Chacko
+ * @author Georg Friedrich
  */
-@EmbeddedKafka(topics = {"testFunctionComponent-out", "testBiFunctionComponent-out", "testCurriedFunctionWithFunctionTerminal-out"})
+@EmbeddedKafka(topics = {"testFunctionComponent-out-0", "testFunctionComponent-out-1", "testBiFunctionComponent-out", "testCurriedFunctionWithFunctionTerminal-out"})
 class KafkaStreamsComponentBeansTests {
 
 	private static final EmbeddedKafkaBroker embeddedKafka = EmbeddedKafkaCondition.getBroker();
@@ -61,6 +62,7 @@ class KafkaStreamsComponentBeansTests {
 	private static Consumer<String, String> consumer1;
 	private static Consumer<String, String> consumer2;
 	private static Consumer<String, String> consumer3;
+	private static Consumer<String, String> consumer4;
 
 	private final static CountDownLatch LATCH_1 = new CountDownLatch(1);
 	private final static CountDownLatch LATCH_2 = new CountDownLatch(2);
@@ -74,7 +76,7 @@ class KafkaStreamsComponentBeansTests {
 		consumerProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer");
 		DefaultKafkaConsumerFactory<String, String> cf = new DefaultKafkaConsumerFactory<>(consumerProps);
 		consumer1 = cf.createConsumer();
-		embeddedKafka.consumeFromEmbeddedTopics(consumer1, "testFunctionComponent-out");
+		embeddedKafka.consumeFromEmbeddedTopics(consumer1, "testFunctionComponent-out-0");
 
 		Map<String, Object> consumerProps1 = KafkaTestUtils.consumerProps("group-x", "false",
 				embeddedKafka);
@@ -82,7 +84,7 @@ class KafkaStreamsComponentBeansTests {
 		consumerProps1.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer");
 		DefaultKafkaConsumerFactory<String, String> cf1 = new DefaultKafkaConsumerFactory<>(consumerProps1);
 		consumer2 = cf1.createConsumer();
-		embeddedKafka.consumeFromEmbeddedTopics(consumer2, "testBiFunctionComponent-out");
+		embeddedKafka.consumeFromEmbeddedTopics(consumer2, "testFunctionComponent-out-1");
 
 		Map<String, Object> consumerProps2 = KafkaTestUtils.consumerProps("group-y", "false",
 				embeddedKafka);
@@ -90,7 +92,15 @@ class KafkaStreamsComponentBeansTests {
 		consumerProps2.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer");
 		DefaultKafkaConsumerFactory<String, String> cf2 = new DefaultKafkaConsumerFactory<>(consumerProps2);
 		consumer3 = cf2.createConsumer();
-		embeddedKafka.consumeFromEmbeddedTopics(consumer3, "testCurriedFunctionWithFunctionTerminal-out");
+		embeddedKafka.consumeFromEmbeddedTopics(consumer3, "testBiFunctionComponent-out");
+
+		Map<String, Object> consumerProps3 = KafkaTestUtils.consumerProps("group-z", "false",
+				embeddedKafka);
+		consumerProps3.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+		consumerProps3.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer");
+		DefaultKafkaConsumerFactory<String, String> cf3 = new DefaultKafkaConsumerFactory<>(consumerProps3);
+		consumer4 = cf3.createConsumer();
+		embeddedKafka.consumeFromEmbeddedTopics(consumer4, "testCurriedFunctionWithFunctionTerminal-out");
 	}
 
 	@AfterAll
@@ -98,6 +108,7 @@ class KafkaStreamsComponentBeansTests {
 		consumer1.close();
 		consumer2.close();
 		consumer3.close();
+		consumer4.close();
 	}
 
 	@Test
@@ -108,7 +119,7 @@ class KafkaStreamsComponentBeansTests {
 				"--server.port=0",
 				"--spring.jmx.enabled=false",
 				"--spring.cloud.stream.bindings.foo-in-0.destination=testFunctionComponent-in",
-				"--spring.cloud.stream.bindings.foo-out-0.destination=testFunctionComponent-out",
+				"--spring.cloud.stream.bindings.foo-out-0.destination=testFunctionComponent-out-0",
 				"--spring.cloud.stream.kafka.streams.binder.configuration.commit.interval.ms=1000",
 				"--spring.cloud.stream.kafka.streams.binder.brokers=" + embeddedKafka.getBrokersAsString())) {
 			Map<String, Object> senderProps = KafkaTestUtils.producerProps(embeddedKafka);
@@ -117,8 +128,38 @@ class KafkaStreamsComponentBeansTests {
 				KafkaTemplate<Integer, String> template = new KafkaTemplate<>(pf, true);
 				template.setDefaultTopic("testFunctionComponent-in");
 				template.sendDefault("foobar");
-				ConsumerRecord<String, String> cr = KafkaTestUtils.getSingleRecord(consumer1, "testFunctionComponent-out");
+				ConsumerRecord<String, String> cr = KafkaTestUtils.getSingleRecord(consumer1, "testFunctionComponent-out-0");
 				assertThat(cr.value().contains("foobarfoobar")).isTrue();
+			}
+			finally {
+				pf.destroy();
+			}
+		}
+	}
+
+	@Test
+	void functionComponentWithBranching() {
+		SpringApplication app = new SpringApplication(FunctionAsComponentWithBranching.class);
+		app.setWebApplicationType(WebApplicationType.NONE);
+		try (ConfigurableApplicationContext ignored = app.run(
+			"--server.port=0",
+			"--spring.jmx.enabled=false",
+			"--spring.cloud.stream.bindings.branchedFoo-in-0.destination=testFunctionBranchingComponent-in",
+			"--spring.cloud.stream.bindings.branchedFoo-out-0.destination=testFunctionComponent-out-0",
+			"--spring.cloud.stream.bindings.branchedFoo-out-1.destination=testFunctionComponent-out-1",
+			"--spring.cloud.stream.kafka.streams.binder.configuration.commit.interval.ms=1000",
+			"--spring.cloud.stream.kafka.streams.binder.brokers=" + embeddedKafka.getBrokersAsString())) {
+			Map<String, Object> senderProps = KafkaTestUtils.producerProps(embeddedKafka);
+			DefaultKafkaProducerFactory<Integer, String> pf = new DefaultKafkaProducerFactory<>(senderProps);
+			try {
+				KafkaTemplate<Integer, String> template = new KafkaTemplate<>(pf, true);
+				template.setDefaultTopic("testFunctionBranchingComponent-in");
+				template.sendDefault(0, "foo");
+				template.sendDefault(1, "bar");
+				ConsumerRecord<String, String> cr = KafkaTestUtils.getSingleRecord(consumer1, "testFunctionComponent-out-0");
+				assertThat(cr.value().contains("foo")).isTrue();
+				ConsumerRecord<String, String> cr2 = KafkaTestUtils.getSingleRecord(consumer2, "testFunctionComponent-out-1");
+				assertThat(cr2.value().contains("bar")).isTrue();
 			}
 			finally {
 				pf.destroy();
@@ -170,7 +211,7 @@ class KafkaStreamsComponentBeansTests {
 				template.sendDefault("foobar");
 				template.setDefaultTopic("testBiFunctionComponent-in-1");
 				template.sendDefault("foobar");
-				final ConsumerRecords<String, String> records = KafkaTestUtils.getRecords(consumer2, Duration.ofSeconds(10), 2);
+				final ConsumerRecords<String, String> records = KafkaTestUtils.getRecords(consumer3, Duration.ofSeconds(10), 2);
 				assertThat(records.count()).isEqualTo(2);
 				records.forEach(stringStringConsumerRecord -> assertThat(stringStringConsumerRecord.value().contains("foobar")).isTrue());
 			}
@@ -260,7 +301,7 @@ class KafkaStreamsComponentBeansTests {
 				template.sendDefault("foobar");
 				template.setDefaultTopic("testCurriedFunctionWithFunctionTerminal-in-2");
 				template.sendDefault("foobar");
-				final ConsumerRecords<String, String> records = KafkaTestUtils.getRecords(consumer3, Duration.ofSeconds(10), 3);
+				final ConsumerRecords<String, String> records = KafkaTestUtils.getRecords(consumer4, Duration.ofSeconds(10), 3);
 				assertThat(records.count()).isEqualTo(3);
 				records.forEach(stringStringConsumerRecord -> assertThat(stringStringConsumerRecord.value().contains("foobar")).isTrue());
 			}
@@ -278,6 +319,22 @@ class KafkaStreamsComponentBeansTests {
 		@Override
 		public KStream<String, String> apply(KStream<Integer, String> stringIntegerKStream) {
 			return stringIntegerKStream.map((integer, s) -> new KeyValue<>(s, s + s));
+		}
+	}
+
+	@Component("branchedFoo")
+	@EnableAutoConfiguration
+	public static class FunctionAsComponentWithBranching implements Function<KStream<Integer, String>,
+		KStream<String, String>[]> {
+
+		@Override
+		public KStream<String, String>[] apply(KStream<Integer, String> stringIntegerKStream) {
+			return stringIntegerKStream.map((key, value) -> new KeyValue<>(key.toString(), value))
+				.split()
+				.branch((k, v) -> "1".equals(k))
+				.defaultBranch()
+				.values()
+				.toArray(new KStream[0]);
 		}
 	}
 
