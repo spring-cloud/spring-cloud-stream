@@ -1,5 +1,5 @@
 /*
- * Copyright 2021-2022 the original author or authors.
+ * Copyright 2021-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,15 +52,17 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Soby Chacko
+ * @author Georg Friedrich
  */
-@EmbeddedKafka(topics = {"testFunctionComponent-out", "testBiFunctionComponent-out", "testCurriedFunctionWithFunctionTerminal-out"})
-public class KafkaStreamsComponentBeansTests {
+@EmbeddedKafka(topics = {"testFunctionComponent-out-0", "testFunctionComponent-out-1", "testBiFunctionComponent-out", "testCurriedFunctionWithFunctionTerminal-out"})
+class KafkaStreamsComponentBeansTests {
 
 	private static final EmbeddedKafkaBroker embeddedKafka = EmbeddedKafkaCondition.getBroker();
 
 	private static Consumer<String, String> consumer1;
 	private static Consumer<String, String> consumer2;
 	private static Consumer<String, String> consumer3;
+	private static Consumer<String, String> consumer4;
 
 	private final static CountDownLatch LATCH_1 = new CountDownLatch(1);
 	private final static CountDownLatch LATCH_2 = new CountDownLatch(2);
@@ -69,28 +71,36 @@ public class KafkaStreamsComponentBeansTests {
 	@BeforeAll
 	public static void setUp() {
 		Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("group", "false",
-				embeddedKafka);
+			embeddedKafka);
 		consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
 		consumerProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer");
 		DefaultKafkaConsumerFactory<String, String> cf = new DefaultKafkaConsumerFactory<>(consumerProps);
 		consumer1 = cf.createConsumer();
-		embeddedKafka.consumeFromEmbeddedTopics(consumer1, "testFunctionComponent-out");
+		embeddedKafka.consumeFromEmbeddedTopics(consumer1, "testFunctionComponent-out-0");
 
 		Map<String, Object> consumerProps1 = KafkaTestUtils.consumerProps("group-x", "false",
-				embeddedKafka);
+			embeddedKafka);
 		consumerProps1.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
 		consumerProps1.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer");
 		DefaultKafkaConsumerFactory<String, String> cf1 = new DefaultKafkaConsumerFactory<>(consumerProps1);
 		consumer2 = cf1.createConsumer();
-		embeddedKafka.consumeFromEmbeddedTopics(consumer2, "testBiFunctionComponent-out");
+		embeddedKafka.consumeFromEmbeddedTopics(consumer2, "testFunctionComponent-out-1");
 
 		Map<String, Object> consumerProps2 = KafkaTestUtils.consumerProps("group-y", "false",
-				embeddedKafka);
+			embeddedKafka);
 		consumerProps2.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
 		consumerProps2.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer");
 		DefaultKafkaConsumerFactory<String, String> cf2 = new DefaultKafkaConsumerFactory<>(consumerProps2);
 		consumer3 = cf2.createConsumer();
-		embeddedKafka.consumeFromEmbeddedTopics(consumer3, "testCurriedFunctionWithFunctionTerminal-out");
+		embeddedKafka.consumeFromEmbeddedTopics(consumer3, "testBiFunctionComponent-out");
+
+		Map<String, Object> consumerProps3 = KafkaTestUtils.consumerProps("group-z", "false",
+			embeddedKafka);
+		consumerProps3.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+		consumerProps3.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer");
+		DefaultKafkaConsumerFactory<String, String> cf3 = new DefaultKafkaConsumerFactory<>(consumerProps3);
+		consumer4 = cf3.createConsumer();
+		embeddedKafka.consumeFromEmbeddedTopics(consumer4, "testCurriedFunctionWithFunctionTerminal-out");
 	}
 
 	@AfterAll
@@ -98,26 +108,27 @@ public class KafkaStreamsComponentBeansTests {
 		consumer1.close();
 		consumer2.close();
 		consumer3.close();
+		consumer4.close();
 	}
 
 	@Test
-	void testFunctionComponent() {
+	void functionComponent() {
 		SpringApplication app = new SpringApplication(FunctionAsComponent.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 		try (ConfigurableApplicationContext ignored = app.run(
-				"--server.port=0",
-				"--spring.jmx.enabled=false",
-				"--spring.cloud.stream.bindings.foo-in-0.destination=testFunctionComponent-in",
-				"--spring.cloud.stream.bindings.foo-out-0.destination=testFunctionComponent-out",
-				"--spring.cloud.stream.kafka.streams.binder.configuration.commit.interval.ms=1000",
-				"--spring.cloud.stream.kafka.streams.binder.brokers=" + embeddedKafka.getBrokersAsString())) {
+			"--server.port=0",
+			"--spring.jmx.enabled=false",
+			"--spring.cloud.stream.bindings.foo-in-0.destination=testFunctionComponent-in",
+			"--spring.cloud.stream.bindings.foo-out-0.destination=testFunctionComponent-out-0",
+			"--spring.cloud.stream.kafka.streams.binder.configuration.commit.interval.ms=1000",
+			"--spring.cloud.stream.kafka.streams.binder.brokers=" + embeddedKafka.getBrokersAsString())) {
 			Map<String, Object> senderProps = KafkaTestUtils.producerProps(embeddedKafka);
 			DefaultKafkaProducerFactory<Integer, String> pf = new DefaultKafkaProducerFactory<>(senderProps);
 			try {
 				KafkaTemplate<Integer, String> template = new KafkaTemplate<>(pf, true);
 				template.setDefaultTopic("testFunctionComponent-in");
 				template.sendDefault("foobar");
-				ConsumerRecord<String, String> cr = KafkaTestUtils.getSingleRecord(consumer1, "testFunctionComponent-out");
+				ConsumerRecord<String, String> cr = KafkaTestUtils.getSingleRecord(consumer1, "testFunctionComponent-out-0");
 				assertThat(cr.value().contains("foobarfoobar")).isTrue();
 			}
 			finally {
@@ -127,15 +138,45 @@ public class KafkaStreamsComponentBeansTests {
 	}
 
 	@Test
-	void testConsumerComponent() throws Exception {
+	void functionComponentWithBranching() {
+		SpringApplication app = new SpringApplication(FunctionAsComponentWithBranching.class);
+		app.setWebApplicationType(WebApplicationType.NONE);
+		try (ConfigurableApplicationContext ignored = app.run(
+			"--server.port=0",
+			"--spring.jmx.enabled=false",
+			"--spring.cloud.stream.bindings.branchedFoo-in-0.destination=testFunctionBranchingComponent-in",
+			"--spring.cloud.stream.bindings.branchedFoo-out-0.destination=testFunctionComponent-out-0",
+			"--spring.cloud.stream.bindings.branchedFoo-out-1.destination=testFunctionComponent-out-1",
+			"--spring.cloud.stream.kafka.streams.binder.configuration.commit.interval.ms=1000",
+			"--spring.cloud.stream.kafka.streams.binder.brokers=" + embeddedKafka.getBrokersAsString())) {
+			Map<String, Object> senderProps = KafkaTestUtils.producerProps(embeddedKafka);
+			DefaultKafkaProducerFactory<Integer, String> pf = new DefaultKafkaProducerFactory<>(senderProps);
+			try {
+				KafkaTemplate<Integer, String> template = new KafkaTemplate<>(pf, true);
+				template.setDefaultTopic("testFunctionBranchingComponent-in");
+				template.sendDefault(0, "foo");
+				template.sendDefault(1, "bar");
+				ConsumerRecord<String, String> cr = KafkaTestUtils.getSingleRecord(consumer1, "testFunctionComponent-out-0");
+				assertThat(cr.value().contains("foo")).isTrue();
+				ConsumerRecord<String, String> cr2 = KafkaTestUtils.getSingleRecord(consumer2, "testFunctionComponent-out-1");
+				assertThat(cr2.value().contains("bar")).isTrue();
+			}
+			finally {
+				pf.destroy();
+			}
+		}
+	}
+
+	@Test
+	void consumerComponent() throws Exception {
 		SpringApplication app = new SpringApplication(ConsumerAsComponent.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 		try (ConfigurableApplicationContext context = app.run(
-				"--server.port=0",
-				"--spring.jmx.enabled=false",
-				"--spring.cloud.stream.bindings.bar-in-0.destination=testConsumerComponent-in",
-				"--spring.cloud.stream.kafka.streams.binder.configuration.commit.interval.ms=1000",
-				"--spring.cloud.stream.kafka.streams.binder.brokers=" + embeddedKafka.getBrokersAsString())) {
+			"--server.port=0",
+			"--spring.jmx.enabled=false",
+			"--spring.cloud.stream.bindings.bar-in-0.destination=testConsumerComponent-in",
+			"--spring.cloud.stream.kafka.streams.binder.configuration.commit.interval.ms=1000",
+			"--spring.cloud.stream.kafka.streams.binder.brokers=" + embeddedKafka.getBrokersAsString())) {
 			Map<String, Object> senderProps = KafkaTestUtils.producerProps(embeddedKafka);
 			DefaultKafkaProducerFactory<Integer, String> pf = new DefaultKafkaProducerFactory<>(senderProps);
 			try {
@@ -151,17 +192,17 @@ public class KafkaStreamsComponentBeansTests {
 	}
 
 	@Test
-	void testBiFunctionComponent() {
+	void biFunctionComponent() {
 		SpringApplication app = new SpringApplication(BiFunctionAsComponent.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 		try (ConfigurableApplicationContext ignored = app.run(
-				"--server.port=0",
-				"--spring.jmx.enabled=false",
-				"--spring.cloud.stream.bindings.bazz-in-0.destination=testBiFunctionComponent-in-0",
-				"--spring.cloud.stream.bindings.bazz-in-1.destination=testBiFunctionComponent-in-1",
-				"--spring.cloud.stream.bindings.bazz-out-0.destination=testBiFunctionComponent-out",
-				"--spring.cloud.stream.kafka.streams.binder.configuration.commit.interval.ms=1000",
-				"--spring.cloud.stream.kafka.streams.binder.brokers=" + embeddedKafka.getBrokersAsString())) {
+			"--server.port=0",
+			"--spring.jmx.enabled=false",
+			"--spring.cloud.stream.bindings.bazz-in-0.destination=testBiFunctionComponent-in-0",
+			"--spring.cloud.stream.bindings.bazz-in-1.destination=testBiFunctionComponent-in-1",
+			"--spring.cloud.stream.bindings.bazz-out-0.destination=testBiFunctionComponent-out",
+			"--spring.cloud.stream.kafka.streams.binder.configuration.commit.interval.ms=1000",
+			"--spring.cloud.stream.kafka.streams.binder.brokers=" + embeddedKafka.getBrokersAsString())) {
 			Map<String, Object> senderProps = KafkaTestUtils.producerProps(embeddedKafka);
 			DefaultKafkaProducerFactory<Integer, String> pf = new DefaultKafkaProducerFactory<>(senderProps);
 			try {
@@ -170,7 +211,7 @@ public class KafkaStreamsComponentBeansTests {
 				template.sendDefault("foobar");
 				template.setDefaultTopic("testBiFunctionComponent-in-1");
 				template.sendDefault("foobar");
-				final ConsumerRecords<String, String> records = KafkaTestUtils.getRecords(consumer2, Duration.ofSeconds(10), 2);
+				final ConsumerRecords<String, String> records = KafkaTestUtils.getRecords(consumer3, Duration.ofSeconds(10), 2);
 				assertThat(records.count()).isEqualTo(2);
 				records.forEach(stringStringConsumerRecord -> assertThat(stringStringConsumerRecord.value().contains("foobar")).isTrue());
 			}
@@ -181,16 +222,16 @@ public class KafkaStreamsComponentBeansTests {
 	}
 
 	@Test
-	void testBiConsumerComponent() throws Exception {
+	void biConsumerComponent() throws Exception {
 		SpringApplication app = new SpringApplication(BiConsumerAsComponent.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 		try (ConfigurableApplicationContext context = app.run(
-				"--server.port=0",
-				"--spring.jmx.enabled=false",
-				"--spring.cloud.stream.bindings.buzz-in-0.destination=testBiConsumerComponent-in-0",
-				"--spring.cloud.stream.bindings.buzz-in-1.destination=testBiConsumerComponent-in-1",
-				"--spring.cloud.stream.kafka.streams.binder.configuration.commit.interval.ms=1000",
-				"--spring.cloud.stream.kafka.streams.binder.brokers=" + embeddedKafka.getBrokersAsString())) {
+			"--server.port=0",
+			"--spring.jmx.enabled=false",
+			"--spring.cloud.stream.bindings.buzz-in-0.destination=testBiConsumerComponent-in-0",
+			"--spring.cloud.stream.bindings.buzz-in-1.destination=testBiConsumerComponent-in-1",
+			"--spring.cloud.stream.kafka.streams.binder.configuration.commit.interval.ms=1000",
+			"--spring.cloud.stream.kafka.streams.binder.brokers=" + embeddedKafka.getBrokersAsString())) {
 			Map<String, Object> senderProps = KafkaTestUtils.producerProps(embeddedKafka);
 			DefaultKafkaProducerFactory<Integer, String> pf = new DefaultKafkaProducerFactory<>(senderProps);
 			try {
@@ -208,17 +249,17 @@ public class KafkaStreamsComponentBeansTests {
 	}
 
 	@Test
-	void testCurriedFunctionWithConsumerTerminal() throws Exception {
+	void curriedFunctionWithConsumerTerminal() throws Exception {
 		SpringApplication app = new SpringApplication(CurriedFunctionWithConsumerTerminal.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 		try (ConfigurableApplicationContext context = app.run(
-				"--server.port=0",
-				"--spring.jmx.enabled=false",
-				"--spring.cloud.stream.bindings.curriedConsumer-in-0.destination=testCurriedFunctionWithConsumerTerminal-in-0",
-				"--spring.cloud.stream.bindings.curriedConsumer-in-1.destination=testCurriedFunctionWithConsumerTerminal-in-1",
-				"--spring.cloud.stream.bindings.curriedConsumer-in-2.destination=testCurriedFunctionWithConsumerTerminal-in-2",
-				"--spring.cloud.stream.kafka.streams.binder.configuration.commit.interval.ms=1000",
-				"--spring.cloud.stream.kafka.streams.binder.brokers=" + embeddedKafka.getBrokersAsString())) {
+			"--server.port=0",
+			"--spring.jmx.enabled=false",
+			"--spring.cloud.stream.bindings.curriedConsumer-in-0.destination=testCurriedFunctionWithConsumerTerminal-in-0",
+			"--spring.cloud.stream.bindings.curriedConsumer-in-1.destination=testCurriedFunctionWithConsumerTerminal-in-1",
+			"--spring.cloud.stream.bindings.curriedConsumer-in-2.destination=testCurriedFunctionWithConsumerTerminal-in-2",
+			"--spring.cloud.stream.kafka.streams.binder.configuration.commit.interval.ms=1000",
+			"--spring.cloud.stream.kafka.streams.binder.brokers=" + embeddedKafka.getBrokersAsString())) {
 			Map<String, Object> senderProps = KafkaTestUtils.producerProps(embeddedKafka);
 			DefaultKafkaProducerFactory<Integer, String> pf = new DefaultKafkaProducerFactory<>(senderProps);
 			try {
@@ -238,18 +279,18 @@ public class KafkaStreamsComponentBeansTests {
 	}
 
 	@Test
-	void testCurriedFunctionWithFunctionTerminal() {
+	void curriedFunctionWithFunctionTerminal() {
 		SpringApplication app = new SpringApplication(CurriedFunctionWithFunctionTerminal.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 		try (ConfigurableApplicationContext context = app.run(
-				"--server.port=0",
-				"--spring.jmx.enabled=false",
-				"--spring.cloud.stream.bindings.curriedFunction-in-0.destination=testCurriedFunctionWithFunctionTerminal-in-0",
-				"--spring.cloud.stream.bindings.curriedFunction-in-1.destination=testCurriedFunctionWithFunctionTerminal-in-1",
-				"--spring.cloud.stream.bindings.curriedFunction-in-2.destination=testCurriedFunctionWithFunctionTerminal-in-2",
-				"--spring.cloud.stream.bindings.curriedFunction-out-0.destination=testCurriedFunctionWithFunctionTerminal-out",
-				"--spring.cloud.stream.kafka.streams.binder.configuration.commit.interval.ms=1000",
-				"--spring.cloud.stream.kafka.streams.binder.brokers=" + embeddedKafka.getBrokersAsString())) {
+			"--server.port=0",
+			"--spring.jmx.enabled=false",
+			"--spring.cloud.stream.bindings.curriedFunction-in-0.destination=testCurriedFunctionWithFunctionTerminal-in-0",
+			"--spring.cloud.stream.bindings.curriedFunction-in-1.destination=testCurriedFunctionWithFunctionTerminal-in-1",
+			"--spring.cloud.stream.bindings.curriedFunction-in-2.destination=testCurriedFunctionWithFunctionTerminal-in-2",
+			"--spring.cloud.stream.bindings.curriedFunction-out-0.destination=testCurriedFunctionWithFunctionTerminal-out",
+			"--spring.cloud.stream.kafka.streams.binder.configuration.commit.interval.ms=1000",
+			"--spring.cloud.stream.kafka.streams.binder.brokers=" + embeddedKafka.getBrokersAsString())) {
 			Map<String, Object> senderProps = KafkaTestUtils.producerProps(embeddedKafka);
 			DefaultKafkaProducerFactory<Integer, String> pf = new DefaultKafkaProducerFactory<>(senderProps);
 			try {
@@ -260,7 +301,7 @@ public class KafkaStreamsComponentBeansTests {
 				template.sendDefault("foobar");
 				template.setDefaultTopic("testCurriedFunctionWithFunctionTerminal-in-2");
 				template.sendDefault("foobar");
-				final ConsumerRecords<String, String> records = KafkaTestUtils.getRecords(consumer3, Duration.ofSeconds(10), 3);
+				final ConsumerRecords<String, String> records = KafkaTestUtils.getRecords(consumer4, Duration.ofSeconds(10), 3);
 				assertThat(records.count()).isEqualTo(3);
 				records.forEach(stringStringConsumerRecord -> assertThat(stringStringConsumerRecord.value().contains("foobar")).isTrue());
 			}
@@ -273,11 +314,27 @@ public class KafkaStreamsComponentBeansTests {
 	@Component("foo")
 	@EnableAutoConfiguration
 	public static class FunctionAsComponent implements Function<KStream<Integer, String>,
-			KStream<String, String>> {
+		KStream<String, String>> {
 
 		@Override
 		public KStream<String, String> apply(KStream<Integer, String> stringIntegerKStream) {
 			return stringIntegerKStream.map((integer, s) -> new KeyValue<>(s, s + s));
+		}
+	}
+
+	@Component("branchedFoo")
+	@EnableAutoConfiguration
+	public static class FunctionAsComponentWithBranching implements Function<KStream<Integer, String>,
+		KStream<String, String>[]> {
+
+		@Override
+		public KStream<String, String>[] apply(KStream<Integer, String> stringIntegerKStream) {
+			return stringIntegerKStream.map((key, value) -> new KeyValue<>(key.toString(), value))
+				.split()
+				.branch((k, v) -> "1".equals(k))
+				.defaultBranch()
+				.values()
+				.toArray(new KStream[0]);
 		}
 	}
 
@@ -315,8 +372,8 @@ public class KafkaStreamsComponentBeansTests {
 	@Component("curriedConsumer")
 	@EnableAutoConfiguration
 	public static class CurriedFunctionWithConsumerTerminal implements Function<KStream<String, String>,
-												Function<KStream<String, String>,
-														java.util.function.Consumer<KStream<String, String>>>> {
+		Function<KStream<String, String>,
+			java.util.function.Consumer<KStream<String, String>>>> {
 
 		@Override
 		public Function<KStream<String, String>, java.util.function.Consumer<KStream<String, String>>> apply(KStream<String, String> stringStringKStream) {
@@ -331,8 +388,8 @@ public class KafkaStreamsComponentBeansTests {
 	@Component("curriedFunction")
 	@EnableAutoConfiguration
 	public static class CurriedFunctionWithFunctionTerminal implements Function<KStream<String, String>,
-			Function<KStream<String, String>,
-					java.util.function.Function<KStream<String, String>, KStream<String, String>>>> {
+		Function<KStream<String, String>,
+			java.util.function.Function<KStream<String, String>, KStream<String, String>>>> {
 
 		@Override
 		public Function<KStream<String, String>, Function<KStream<String, String>, KStream<String, String>>> apply(KStream<String, String> stringStringKStream) {

@@ -66,6 +66,7 @@ import org.springframework.util.CollectionUtils;
 /**
  * @author Soby Chacko
  * @author Byungjun You
+ * @author Georg Friedrich
  * @since 2.2.0
  */
 public class KafkaStreamsFunctionProcessor extends AbstractKafkaStreamsBinderProcessor implements BeanFactoryAware {
@@ -120,8 +121,7 @@ public class KafkaStreamsFunctionProcessor extends AbstractKafkaStreamsBinderPro
 			final Iterator<String> iterator = inputs.iterator();
 			populateResolvableTypeMap(firstMethodParameter, resolvableTypeMap, iterator, method, functionName);
 
-			final Class<?> outputRawclass = currentOutputGeneric.getRawClass();
-			traverseReturnTypeForComponentBeans(resolvableTypeMap, currentOutputGeneric, inputs, iterator, outputRawclass);
+			traverseReturnTypeForComponentBeans(resolvableTypeMap, currentOutputGeneric, inputs, iterator);
 		}
 		else if (resolvableType != null && resolvableType.getRawClass() != null) {
 			int inputCount = 1;
@@ -169,8 +169,9 @@ public class KafkaStreamsFunctionProcessor extends AbstractKafkaStreamsBinderPro
 	}
 
 	private void traverseReturnTypeForComponentBeans(Map<String, ResolvableType> resolvableTypeMap, ResolvableType currentOutputGeneric,
-													Set<String> inputs, Iterator<String> iterator, Class<?> outputRawclass) {
-		if (outputRawclass != null && !outputRawclass.equals(Void.TYPE)) {
+													Set<String> inputs, Iterator<String> iterator) {
+		final Class<?> outputRawclass = currentOutputGeneric.getRawClass();
+		if (outputRawclass != null && !outputRawclass.equals(Void.TYPE) || currentOutputGeneric.isArray()) {
 			ResolvableType iterableResType = currentOutputGeneric;
 			int i = 1;
 			// Traverse through the return signature.
@@ -182,7 +183,9 @@ public class KafkaStreamsFunctionProcessor extends AbstractKafkaStreamsBinderPro
 				iterableResType = iterableResType.getGeneric(1);
 				i++;
 			}
-			if (iterableResType.getRawClass() != null && KStream.class.isAssignableFrom(iterableResType.getRawClass())) {
+			if (iterableResType.getRawClass() != null && KStream.class.isAssignableFrom(iterableResType.getRawClass())
+				|| iterableResType.isArray() && iterableResType.getComponentType().getRawClass() != null
+					&& KStream.class.isAssignableFrom(iterableResType.getComponentType().getRawClass())) {
 				resolvableTypeMap.put(OUTBOUND, iterableResType);
 			}
 		}
