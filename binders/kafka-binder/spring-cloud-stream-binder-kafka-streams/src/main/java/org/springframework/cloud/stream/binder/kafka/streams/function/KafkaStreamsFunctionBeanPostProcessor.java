@@ -56,9 +56,9 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.core.ResolvableType;
-import org.springframework.core.type.StandardClassMetadata;
 import org.springframework.core.type.StandardMethodMetadata;
 import org.springframework.lang.NonNull;
+import org.springframework.util.ClassUtils;
 
 /**
  * @author Soby Chacko
@@ -186,30 +186,47 @@ public class KafkaStreamsFunctionBeanPostProcessor implements InitializingBean, 
 		BeanDefinition beanDefinition = this.beanFactory.getBeanDefinition(key);
 		ResolvableType resolvableType = null;
 		Class<?> rawClass = null;
+		Optional<Method> functionalBeanMethods;
 		try {
 			if (beanDefinition instanceof AnnotatedBeanDefinition annotatedBeanDefinition) {
-				StandardMethodMetadata factoryMethodMetadata = (StandardMethodMetadata) annotatedBeanDefinition.getFactoryMethodMetadata();
-				if (factoryMethodMetadata != null) {
+				if (annotatedBeanDefinition.getFactoryMethodMetadata() instanceof StandardMethodMetadata factoryMethodMetadata) {
 					Method introspectedMethod = factoryMethodMetadata.getIntrospectedMethod();
 					resolvableType = ResolvableType.forMethodReturnType(introspectedMethod);
 					rawClass = resolvableType.getGeneric(0).getRawClass();
 				}
 				else {
-					Class<?> introspectedClass = ((StandardClassMetadata) annotatedBeanDefinition.getMetadata()).getIntrospectedClass();
-					Method[] methods = introspectedClass.getDeclaredMethods();
+					final Class<?> classObj = ClassUtils.resolveClassName(((AnnotatedBeanDefinition)
+							this.beanFactory.getBeanDefinition(key))
+							.getMetadata().getClassName(),
+						ClassUtils.getDefaultClassLoader());
+					Method[] methods = classObj.getDeclaredMethods();
+					functionalBeanMethods = KafkaStreamsBinderUtils.findMethodWithName(key, methods);
+					if (functionalBeanMethods.isEmpty()) {
+						methods = classObj.getMethods(); // check the inherited methods
+						functionalBeanMethods = KafkaStreamsBinderUtils.findMethodWithName(key, methods);
+					}
+					if (functionalBeanMethods.isEmpty()) {
+						final String factoryMethodName = beanDefinition.getFactoryMethodName();
+						functionalBeanMethods = KafkaStreamsBinderUtils.findMethodWithName(factoryMethodName, methods);
+					}
 
-					Optional<Method> componentBeanMethods = Arrays.stream(methods)
-						.filter(m -> m.getName().equals("apply") && isKafkaStreamsTypeFound(m) ||
-							m.getName().equals("accept") && isKafkaStreamsTypeFound(m)).findFirst();
-					if (componentBeanMethods.isPresent()) {
-						Method method = componentBeanMethods.get();
-						resolvableType = ResolvableType.forMethodParameter(method, 0);
-						rawClass = resolvableType.getRawClass();
-						if (onlySingleFunction) {
-							this.methods.put(key, method);
+					if (functionalBeanMethods.isPresent()) {
+						Method method = functionalBeanMethods.get();
+						resolvableType = ResolvableType.forMethodReturnType(method, classObj);
+						rawClass = resolvableType.getGeneric(0).getRawClass();
+						if (rawClass == KStream.class || rawClass == KTable.class || rawClass == GlobalKTable.class) {
+							saveTypeInformation(key, resolvableType);
 						}
-						else {
-							kafakStreamsOnlyMethods.put(key, method);
+					}
+					else {
+						Optional<Method> componentBeanMethods = Arrays.stream(methods)
+							.filter(m -> m.getName().equals("apply") && isKafkaStreamsTypeFound(m) ||
+								m.getName().equals("accept") && isKafkaStreamsTypeFound(m)).findFirst();
+						if (componentBeanMethods.isPresent()) {
+							Method method = componentBeanMethods.get();
+							resolvableType = ResolvableType.forMethodParameter(method, 0);
+							rawClass = resolvableType.getRawClass();
+							saveMethodInfoForComponentBeans(key, method);
 						}
 					}
 				}
@@ -220,16 +237,29 @@ public class KafkaStreamsFunctionBeanPostProcessor implements InitializingBean, 
 			}
 
 			if (rawClass == KStream.class || rawClass == KTable.class || rawClass == GlobalKTable.class) {
-				if (onlySingleFunction) {
-					resolvableTypeMap.put(key, resolvableType);
-				}
-				else {
-					discoverOnlyKafkaStreamsResolvableTypes(key, resolvableType);
-				}
+				saveTypeInformation(key, resolvableType);
 			}
 		}
 		catch (Exception e) {
 			LOG.error("Function activation issues while mapping the function: " + key, e);
+		}
+	}
+
+	private void saveMethodInfoForComponentBeans(String key, Method method) {
+		if (onlySingleFunction) {
+			this.methods.put(key, method);
+		}
+		else {
+			kafakStreamsOnlyMethods.put(key, method);
+		}
+	}
+
+	private void saveTypeInformation(String key, ResolvableType resolvableType) {
+		if (onlySingleFunction) {
+			resolvableTypeMap.put(key, resolvableType);
+		}
+		else {
+			discoverOnlyKafkaStreamsResolvableTypes(key, resolvableType);
 		}
 	}
 
