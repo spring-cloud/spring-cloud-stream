@@ -136,7 +136,7 @@ class RabbitBinderModuleTests {
 	}
 
 	@Test
-	public void testParentConnectionFactoryInheritedByDefault() throws Exception {
+	void parentConnectionFactoryInheritedByDefault() throws Exception {
 		context = new SpringApplicationBuilder(SimpleProcessor.class)
 			.web(WebApplicationType.NONE).run("--server.port=0",
 				"--spring.rabbitmq.port=" + RABBITMQ.getAmqpPort(),
@@ -208,7 +208,7 @@ class RabbitBinderModuleTests {
 
 	@Test
 	@SuppressWarnings("unchecked")
-	public void testParentConnectionFactoryInheritedByDefaultAndRabbitSettingsPropagated() {
+	void parentConnectionFactoryInheritedByDefaultAndRabbitSettingsPropagated() {
 		context = new SpringApplicationBuilder(SimpleProcessor.class)
 			.web(WebApplicationType.NONE).run("--server.port=0",
 				"--spring.rabbitmq.port=" + RABBITMQ.getAmqpPort(),
@@ -271,7 +271,7 @@ class RabbitBinderModuleTests {
 	}
 
 	@Test
-	public void testParentConnectionFactoryInheritedIfOverridden() {
+	void parentConnectionFactoryInheritedIfOverridden() {
 		context = new SpringApplicationBuilder(SimpleProcessor.class,
 			ConnectionFactoryConfiguration.class).web(WebApplicationType.NONE)
 			.run("--server.port=0", "--spring.rabbitmq.port=" + RABBITMQ.getAmqpPort());
@@ -295,7 +295,7 @@ class RabbitBinderModuleTests {
 	}
 
 	@Test
-	public void testParentConnectionFactoryNotInheritedByCustomizedBindersAndProducerRetryBootProperties() {
+	void parentConnectionFactoryNotInheritedByCustomizedBindersAndProducerRetryBootProperties() {
 		List<String> params = new ArrayList<>();
 		params.add("--spring.cloud.function.definition=process");
 		params.add("--spring.cloud.stream.process-in-0.binder=custom");
@@ -351,7 +351,7 @@ class RabbitBinderModuleTests {
 	}
 
 	@Test
-	public void testCloudProfile() {
+	void cloudProfile() {
 		this.context = new SpringApplicationBuilder(SimpleProcessor.class,
 			MockCloudConfiguration.class).web(WebApplicationType.NONE)
 			.profiles("cloud").run();
@@ -377,7 +377,7 @@ class RabbitBinderModuleTests {
 	}
 
 	@Test
-	public void testExtendedProperties() {
+	void extendedProperties() {
 		context = new SpringApplicationBuilder(SimpleProcessor.class)
 			.web(WebApplicationType.NONE).run("--server.port=0",
 				"--spring.rabbitmq.port=" + RABBITMQ.getAmqpPort(),

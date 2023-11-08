@@ -65,7 +65,7 @@ class RabbitStreamBinderModuleTests {
 	private static final RabbitMQContainer RABBITMQ = RabbitTestContainer.sharedInstance();
 
 	@Test
-	void testStreamContainer() {
+	void streamContainer() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(SimpleProcessor.class)
 				.web(WebApplicationType.NONE)
 				.run("--server.port=0")) {
@@ -87,7 +87,7 @@ class RabbitStreamBinderModuleTests {
 	}
 
 	@Test
-	void testSuperStreamContainer() {
+	void superStreamContainer() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(SimpleProcessor.class)
 				.web(WebApplicationType.NONE)
 				.run("--server.port=0")) {
@@ -114,7 +114,7 @@ class RabbitStreamBinderModuleTests {
 	}
 
 	@Test
-	void testStreamHandler() {
+	void streamHandler() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(SimpleProcessor.class)
 				.web(WebApplicationType.NONE)
 				.run("--server.port=0")) {

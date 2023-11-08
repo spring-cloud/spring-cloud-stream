@@ -58,7 +58,7 @@ class RabbitStreamBinderModuleIntegrationTests {
 	private static final RabbitMQContainer RABBITMQ = RabbitTestContainer.sharedInstance();
 
 	@Test
-	void testSuperStreamContainer() throws InterruptedException {
+	void superStreamContainer() throws InterruptedException {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(SimpleProcessor.class)
 				.web(WebApplicationType.NONE)
 				.run("--server.port=0")) {

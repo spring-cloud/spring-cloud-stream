@@ -50,7 +50,7 @@ import static org.mockito.Mockito.verify;
 class RepublishUnitTests {
 
 	@Test
-	public void testBadRepublishSetting() throws IOException {
+	void badRepublishSetting() throws IOException {
 		ConnectionFactory cf = mock(ConnectionFactory.class);
 		Connection conn = mock(Connection.class);
 		given(cf.createConnection()).willReturn(conn);

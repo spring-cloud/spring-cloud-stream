@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2022 the original author or authors.
+ * Copyright 2022-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class BatchCapableRejectAndDontRequeueRecovererTest {
 
 	@Test
-	void testBatchRecoverThrowExceptionCorrectly() {
+	void batchRecoverThrowExceptionCorrectly() {
 		MessageBatchRecoverer messageBatchRecoverer = new BatchCapableRejectAndDontRequeueRecoverer();
 
 		Message expectedMessage1 = new Message(new byte[] {});
@@ -51,7 +51,7 @@ class BatchCapableRejectAndDontRequeueRecovererTest {
 	}
 
 	@Test
-	void testRecoverThrowExceptionCorrectly() {
+	void recoverThrowExceptionCorrectly() {
 		MessageBatchRecoverer messageBatchRecoverer = new BatchCapableRejectAndDontRequeueRecoverer();
 
 		Message expectedMessage = new Message(new byte[] {});

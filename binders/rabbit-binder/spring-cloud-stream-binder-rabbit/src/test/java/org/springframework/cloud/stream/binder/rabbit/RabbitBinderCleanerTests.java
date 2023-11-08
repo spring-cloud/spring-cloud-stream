@@ -75,7 +75,7 @@ class RabbitBinderCleanerTests {
 			RABBITMQ.getHttpPort());
 
 	@Test
-	public void testCleanStream() {
+	void cleanStream() {
 		final RabbitBindingCleaner cleaner = new RabbitBindingCleaner();
 		final String stream1 = new Base64UrlNamingStrategy("foo").generateName();
 		String stream2 = stream1 + "-1";
