@@ -54,7 +54,7 @@ class PartitionedConsumerTest {
 
 	@Test
 	@SuppressWarnings({ "rawtypes", "unchecked" })
-	void testBindingPartitionedConsumer() {
+	void bindingPartitionedConsumer() {
 		Binder binder = this.binderFactory.getBinder(null, MessageChannel.class);
 		ArgumentCaptor<ConsumerProperties> argumentCaptor = ArgumentCaptor
 				.forClass(ConsumerProperties.class);

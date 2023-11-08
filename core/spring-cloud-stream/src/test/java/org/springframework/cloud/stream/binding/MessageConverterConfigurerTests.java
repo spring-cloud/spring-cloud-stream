@@ -45,7 +45,7 @@ import static org.assertj.core.api.Assertions.fail;
 class MessageConverterConfigurerTests {
 
 //	@Test
-	void testConfigureOutputChannelWithBadContentType() {
+	void configureOutputChannelWithBadContentType() {
 		BindingServiceProperties props = new BindingServiceProperties();
 		BindingProperties bindingProps = new BindingProperties();
 		bindingProps.setContentType("application/json");
@@ -65,7 +65,7 @@ class MessageConverterConfigurerTests {
 
 	@Test
 	@Disabled
-	void testConfigureOutputChannelCannotConvert() {
+	void configureOutputChannelCannotConvert() {
 		BindingServiceProperties props = new BindingServiceProperties();
 		BindingProperties bindingProps = new BindingProperties();
 		bindingProps.setContentType("foo/bar");

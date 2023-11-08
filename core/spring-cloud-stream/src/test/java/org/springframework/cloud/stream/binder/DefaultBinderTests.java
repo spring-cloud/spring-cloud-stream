@@ -30,7 +30,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class DefaultBinderTests {
 
 	@Test
-	void testDefaultBinderIsPaused() {
+	void defaultBinderIsPaused() {
 		@SuppressWarnings({ "rawtypes" })
 		DefaultBinding<?> binding = new DefaultBinding<>("foo", "bar", "target", (Binding) () -> {
 		});
@@ -43,13 +43,13 @@ class DefaultBinderTests {
 	}
 
 	@Test
-	void testDefaultBinderIsNull() {
+	void defaultBinderIsNull() {
 		DefaultBinding<?> binding = new DefaultBinding<>("foo", "bar", "target", null);
 		assertThat(binding.getState()).isNotNull();
 	}
 
 	@Test
-	void testDefaultBinderIsRunning() {
+	void defaultBinderIsRunning() {
 		DefaultBinding<?> binding = new DefaultBinding<>("foo", "bar", "target", new Lifecycle() {
 			private Boolean running = false;
 			@Override

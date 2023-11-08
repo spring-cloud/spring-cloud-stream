@@ -34,7 +34,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class ExtendedPropertiesDefaultTests {
 
 	@Test
-	void testExtendedDefaultProducerProperties() {
+	void extendedDefaultProducerProperties() {
 		DefaultBinderFactory binderFactory = createMockExtendedBinderFactory();
 		Binder<MessageChannel, ?, ?> binder = binderFactory.getBinder(null,
 				MessageChannel.class);
@@ -46,7 +46,7 @@ class ExtendedPropertiesDefaultTests {
 	}
 
 	@Test
-	void testExtendedDefaultConsumerProperties() {
+	void extendedDefaultConsumerProperties() {
 		DefaultBinderFactory binderFactory = createMockExtendedBinderFactory();
 		Binder<MessageChannel, ?, ?> binder = binderFactory.getBinder(null,
 				MessageChannel.class);

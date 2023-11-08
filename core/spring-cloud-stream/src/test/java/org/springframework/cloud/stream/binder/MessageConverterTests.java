@@ -36,7 +36,7 @@ import static org.assertj.core.api.Assertions.fail;
 class MessageConverterTests {
 
 	@Test
-	void testHeaderEmbedding() throws Exception {
+	void headerEmbedding() throws Exception {
 		Message<byte[]> message = MessageBuilder.withPayload("Hello".getBytes())
 				.setHeader("foo", "bar").setHeader("baz", "quxx").build();
 		byte[] embedded = EmbeddedHeaderUtils.embedHeaders(new MessageValues(message),
@@ -53,7 +53,7 @@ class MessageConverterTests {
 	}
 
 	@Test
-	void testConfigurableHeaders() throws Exception {
+	void configurableHeaders() throws Exception {
 		Message<byte[]> message = MessageBuilder.withPayload("Hello".getBytes())
 				.setHeader("foo", "bar").setHeader("baz", "quxx")
 				.setHeader("contentType", "text/plain").build();
@@ -80,7 +80,7 @@ class MessageConverterTests {
 	}
 
 	@Test
-	void testHeaderExtractionWithDirectPayload() throws Exception {
+	void headerExtractionWithDirectPayload() throws Exception {
 		Message<byte[]> message = MessageBuilder.withPayload("Hello".getBytes())
 				.setHeader("foo", "bar").setHeader("baz", "quxx").build();
 		byte[] embedded = EmbeddedHeaderUtils.embedHeaders(new MessageValues(message),
@@ -96,7 +96,7 @@ class MessageConverterTests {
 	}
 
 	@Test
-	void testUnicodeHeader() throws Exception {
+	void unicodeHeader() throws Exception {
 		Message<byte[]> message = MessageBuilder.withPayload("Hello".getBytes())
 				.setHeader("foo", "bar").setHeader("baz", "ØØØØØØØØ").build();
 		byte[] embedded = EmbeddedHeaderUtils.embedHeaders(new MessageValues(message),
@@ -113,7 +113,7 @@ class MessageConverterTests {
 	}
 
 	@Test
-	void testHeaderEmbeddingMissingHeader() throws Exception {
+	void headerEmbeddingMissingHeader() throws Exception {
 		Message<byte[]> message = MessageBuilder.withPayload("Hello".getBytes())
 				.setHeader("foo", "bar").build();
 		byte[] embedded = EmbeddedHeaderUtils.embedHeaders(new MessageValues(message),
@@ -124,7 +124,7 @@ class MessageConverterTests {
 	}
 
 	@Test
-	void testBadDecode() throws Exception {
+	void badDecode() throws Exception {
 		byte[] bytes = new byte[] { (byte) 0xff, 99 };
 		Message<byte[]> message = new GenericMessage<>(bytes);
 		try {

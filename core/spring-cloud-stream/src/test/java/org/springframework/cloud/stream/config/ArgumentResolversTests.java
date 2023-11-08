@@ -40,7 +40,7 @@ class ArgumentResolversTests {
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Test
-	void testSmartPayloadArgumentResolver() throws Exception {
+	void smartPayloadArgumentResolver() throws Exception {
 
 		SmartPayloadArgumentResolver resolver = new SmartPayloadArgumentResolver(new TestMessageConverter());
 

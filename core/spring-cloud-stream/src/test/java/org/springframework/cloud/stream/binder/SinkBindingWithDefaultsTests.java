@@ -45,7 +45,7 @@ class SinkBindingWithDefaultsTests {
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Test
-	void testSinkInputChannelBound() {
+	void sinkInputChannelBound() {
 		Binder binder = this.binderFactory.getBinder(null, MessageChannel.class);
 		verify(binder).bindConsumer(eq("consumer-in-0"), isNull(), Mockito.any(MessageChannel.class),
 				Mockito.any());
