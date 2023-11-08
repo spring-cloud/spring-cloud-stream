@@ -49,7 +49,7 @@ class AvroSchemaMessageConverterTests {
 	static StubSchemaRegistryClient stubSchemaRegistryClient = new StubSchemaRegistryClient();
 
 	@Test
-	public void testSendMessageWithLocation() throws Exception {
+	public void sendMessageWithLocation() throws Exception {
 
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 				TestChannelBinderConfiguration.getCompleteConfiguration(AvroSourceApplication.class))
@@ -96,7 +96,7 @@ class AvroSchemaMessageConverterTests {
 	}
 
 	@Test
-	public void testSendMessageWithoutLocation() throws Exception {
+	public void sendMessageWithoutLocation() throws Exception {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 				TestChannelBinderConfiguration.getCompleteConfiguration(AvroSourceApplication.class))
 				.web(WebApplicationType.NONE).run("--server.port=0",

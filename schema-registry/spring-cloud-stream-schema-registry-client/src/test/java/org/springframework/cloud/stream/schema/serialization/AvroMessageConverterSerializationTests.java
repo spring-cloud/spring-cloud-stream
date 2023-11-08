@@ -126,7 +126,7 @@ class AvroMessageConverterSerializationTests {
 	}
 
 	@Test
-	public void testSchemaImport() throws Exception {
+	public void schemaImport() throws Exception {
 		SchemaRegistryClient client = new DefaultSchemaRegistryClient(restTemplateBuilder);
 		AvroSchemaServiceManager manager = new AvroSchemaServiceManagerImpl();
 		AvroSchemaRegistryClientMessageConverter converter = new AvroSchemaRegistryClientMessageConverter(

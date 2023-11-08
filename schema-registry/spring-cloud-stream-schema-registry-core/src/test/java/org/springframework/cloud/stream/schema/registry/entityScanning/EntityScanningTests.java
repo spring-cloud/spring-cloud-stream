@@ -30,7 +30,7 @@ import org.springframework.context.ConfigurableApplicationContext;
 class EntityScanningTests {
 
 	@Test
-	public void testApplicationWithEmbeddedSchemaRegistryServerOutsideOfRootPackage()
+	public void applicationWithEmbeddedSchemaRegistryServerOutsideOfRootPackage()
 			throws Exception {
 		final ConfigurableApplicationContext context = SpringApplication
 				.run(CustomApplicationEmbeddingSchemaServer.class, "--server.port=0");

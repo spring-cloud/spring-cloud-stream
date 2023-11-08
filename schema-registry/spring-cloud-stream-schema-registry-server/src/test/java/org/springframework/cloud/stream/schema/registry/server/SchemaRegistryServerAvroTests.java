@@ -142,7 +142,7 @@ class SchemaRegistryServerAvroTests {
 	}
 
 	@Test
-	public void testUnsupportedFormat() {
+	public void unsupportedFormat() {
 		Schema schema = toSchema("spring", "boot", null);
 		try {
 			this.client.postForEntity(this.serverControllerUri, schema, Schema.class);
@@ -155,7 +155,7 @@ class SchemaRegistryServerAvroTests {
 	}
 
 	@Test
-	public void testInvalidSchema() {
+	public void invalidSchema() {
 		Schema schema = toSchema("boot", AVRO_FORMAT_NAME, "{}");
 		try {
 			this.client.postForEntity(this.serverControllerUri, schema, Schema.class);
@@ -168,7 +168,7 @@ class SchemaRegistryServerAvroTests {
 	}
 
 	@Test
-	public void testInvalidSchemaGh22() {
+	public void invalidSchemaGh22() {
 		Schema schema = toSchema("boot", AVRO_FORMAT_NAME,
 				resourceToString("classpath:/invalid_schema.json"));
 		try {
@@ -183,7 +183,7 @@ class SchemaRegistryServerAvroTests {
 	}
 
 	@Test
-	public void testRegister1AvroSchema() {
+	public void register1AvroSchema() {
 		Schema schema = toSchema("org.springframework.cloud.stream.schema.User", AVRO_FORMAT_NAME,
 				resourceToString("classpath:/avro_user_definition_schema_v1.json"));
 		registerSchemaAndAssertSuccess(schema, 1, 1);
@@ -191,7 +191,7 @@ class SchemaRegistryServerAvroTests {
 	}
 
 	@Test
-	public void testFindByIdFound() {
+	public void findByIdFound() {
 
 		ResponseEntity<Schema> registerSchemaReponse = registerSchemaAndAssertSuccess(
 				AVRO_USER_REGISTRY_SCHEMA_V1, 1, 1);
@@ -210,7 +210,7 @@ class SchemaRegistryServerAvroTests {
 	}
 
 	@Test
-	public void testFindByIdNotFound() {
+	public void findByIdNotFound() {
 
 		registerSchemaAndAssertSuccess(AVRO_USER_REGISTRY_SCHEMA_V1, 1, 1);
 
@@ -226,12 +226,12 @@ class SchemaRegistryServerAvroTests {
 	}
 
 	@Test
-	public void testUserSchemaV2() {
+	public void userSchemaV2() {
 		registerSchemasAndAssertSuccess(AVRO_USER_REGISTRY_SCHEMA_V1, AVRO_USER_REGISTRY_SCHEMA_V2);
 	}
 
 	@Test
-	public void testIdempotentRegistration() {
+	public void idempotentRegistration() {
 
 		registerSchemaAndAssertSuccess(AVRO_USER_REGISTRY_SCHEMA_V1, 1, 1);
 
@@ -245,7 +245,7 @@ class SchemaRegistryServerAvroTests {
 	}
 
 	@Test
-	public void testSchemaDeletionBySubjectFormatVersion() {
+	public void schemaDeletionBySubjectFormatVersion() {
 
 		ResponseEntity<Schema> registerSchemaAndAssertSuccess = registerSchemaAndAssertSuccess(
 				AVRO_USER_REGISTRY_SCHEMA_V1, 1, 1);
@@ -273,7 +273,7 @@ class SchemaRegistryServerAvroTests {
 	}
 
 	@Test
-	public void testSchemaDeletionBySubjectFormatVersionNotFound() {
+	public void schemaDeletionBySubjectFormatVersionNotFound() {
 
 		ResponseEntity<Schema> registerSchemaAndAssertSuccess = registerSchemaAndAssertSuccess(
 				AVRO_USER_REGISTRY_SCHEMA_V1, 1, 1);
@@ -295,7 +295,7 @@ class SchemaRegistryServerAvroTests {
 	}
 
 	@Test
-	public void testSchemaDeletionBySubjectFormatVersionNotAllowed() {
+	public void schemaDeletionBySubjectFormatVersionNotAllowed() {
 
 		ResponseEntity<Schema> registerSchemaAndAssertSuccess = registerSchemaAndAssertSuccess(
 				AVRO_USER_REGISTRY_SCHEMA_V1, 1, 1);
@@ -313,7 +313,7 @@ class SchemaRegistryServerAvroTests {
 	}
 
 	@Test
-	public void testSchemaDeletionById() {
+	public void schemaDeletionById() {
 
 		ResponseEntity<Schema> registerSchemaAndAssertSuccess = registerSchemaAndAssertSuccess(
 				AVRO_USER_REGISTRY_SCHEMA_V1, 1, 1);
@@ -334,7 +334,7 @@ class SchemaRegistryServerAvroTests {
 	}
 
 	@Test
-	public void testSchemaDeletionByIdNotFound() {
+	public void schemaDeletionByIdNotFound() {
 
 		registerSchemaAndAssertSuccess(AVRO_USER_REGISTRY_SCHEMA_V1, 1, 1);
 
@@ -352,7 +352,7 @@ class SchemaRegistryServerAvroTests {
 	}
 
 	@Test
-	public void testSchemaDeletionByIdNotAllowed() {
+	public void schemaDeletionByIdNotAllowed() {
 
 		ResponseEntity<Schema> registerSchemaAndAssertSuccess = registerSchemaAndAssertSuccess(
 				AVRO_USER_REGISTRY_SCHEMA_V1, 1, 1);
@@ -372,7 +372,7 @@ class SchemaRegistryServerAvroTests {
 	}
 
 	@Test
-	public void testSchemaDeletionBySubject() {
+	public void schemaDeletionBySubject() {
 		Map<String, Map<String, List<ResponseEntity<Schema>>>> registerSchemaResponsesByFormatBySubject = registerSchemasAndAssertSuccess(
 				AVRO_USER_REGISTRY_SCHEMA_V1,
 				AVRO_USER_REGISTRY_SCHEMA_V2, AAVRO_USER_REGISTRY_SCHEMA_V1_WITH_QUAL_SUBJECT);
@@ -409,7 +409,7 @@ class SchemaRegistryServerAvroTests {
 	}
 
 	@Test
-	public void testSchemaDeletionBySubjectNotFound() {
+	public void schemaDeletionBySubjectNotFound() {
 
 		registerSchemaAndAssertSuccess(AVRO_USER_REGISTRY_SCHEMA_V1, 1, 1);
 
@@ -423,7 +423,7 @@ class SchemaRegistryServerAvroTests {
 	}
 
 	@Test
-	public void testSchemaDeletionBySubjectNotAllowed() {
+	public void schemaDeletionBySubjectNotAllowed() {
 
 		ResponseEntity<Schema> registerSchemaAndAssertSuccess = registerSchemaAndAssertSuccess(
 				AVRO_USER_REGISTRY_SCHEMA_V1, 1, 1);
@@ -443,7 +443,7 @@ class SchemaRegistryServerAvroTests {
 	}
 
 	@Test
-	public void testFindSchemasBySubjectAndVersion() {
+	public void findSchemasBySubjectAndVersion() {
 
 		Map<String, Map<String, List<ResponseEntity<Schema>>>> registerSchemaResponsesByFormatBySubject = registerSchemasAndAssertSuccess(
 				AVRO_USER_REGISTRY_SCHEMA_V1,
@@ -471,7 +471,7 @@ class SchemaRegistryServerAvroTests {
 	}
 
 	@Test
-	public void testFindBySubjectAndFormatOrderByVersionAscNoMatch() {
+	public void findBySubjectAndFormatOrderByVersionAscNoMatch() {
 		String subject = "test";
 
 		String format = AVRO_FORMAT_NAME;
@@ -484,7 +484,7 @@ class SchemaRegistryServerAvroTests {
 	}
 
 	@Test
-	public void testFindSchemasBySubjectAndFormat() {
+	public void findSchemasBySubjectAndFormat() {
 
 		Map<String, Map<String, List<ResponseEntity<Schema>>>> registerSchemaResponsesByFormatBySubject = registerSchemasAndAssertSuccess(
 				AVRO_USER_REGISTRY_SCHEMA_V1,

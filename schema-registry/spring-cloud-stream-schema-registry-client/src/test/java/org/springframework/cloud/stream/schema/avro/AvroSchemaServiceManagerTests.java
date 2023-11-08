@@ -56,7 +56,7 @@ class AvroSchemaServiceManagerTests {
 	private final Log logger = LogFactory.getLog(AvroSchemaServiceManagerTests.class);
 
 	@Test
-	public void testWithDefaultImplementation() throws IOException {
+	public void withDefaultImplementation() throws IOException {
 		assertThatThrownBy(() -> {
 
 			AvroSchemaServiceManager defaultServiceManager = new AvroSchemaServiceManagerImpl();
@@ -91,7 +91,7 @@ class AvroSchemaServiceManagerTests {
 	}
 
 	@Test
-	public void testWithCustomImplementation() throws IOException {
+	public void withCustomImplementation() throws IOException {
 		AvroSchemaServiceManager manager = new AvroSchemaServiceManager() {
 			@Override
 			public Schema getSchema(Class<?> clazz) {
@@ -152,7 +152,7 @@ class AvroSchemaServiceManagerTests {
 	}
 
 	@Test
-	public void testAvroSchemaMessageConverter() {
+	public void avroSchemaMessageConverter() {
 		AvroSchemaMessageConverter converter = new AvroSchemaMessageConverter();
 		MimeType mimeType = new MimeType("application", "avro");
 		assertThat(mimeType).isEqualTo(converter.getSupportedMimeTypes().get(0));
@@ -177,7 +177,7 @@ class AvroSchemaServiceManagerTests {
 	}
 
 	@Test
-	public void testAvroSchemaMessageConverterException() {
+	public void avroSchemaMessageConverterException() {
 		assertThatThrownBy(() -> {
 			MimeType mimeType = new MimeType("application", "avro");
 			AvroSchemaServiceManager manager = new AvroSchemaServiceManagerImpl();

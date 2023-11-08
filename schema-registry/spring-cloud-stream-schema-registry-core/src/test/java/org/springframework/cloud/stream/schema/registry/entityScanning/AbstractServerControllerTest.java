@@ -29,9 +29,6 @@ import org.springframework.web.context.WebApplicationContext;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 
-
-
-
 /**
  * @author Christian Tzolov
  */

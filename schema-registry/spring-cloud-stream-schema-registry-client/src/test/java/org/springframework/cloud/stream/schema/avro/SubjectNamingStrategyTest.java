@@ -50,7 +50,7 @@ class SubjectNamingStrategyTest {
 	private static StubSchemaRegistryClient stubSchemaRegistryClient = new StubSchemaRegistryClient();
 
 	@Test
-	public void testQualifiedSubjectNamingStrategy() throws Exception {
+	public void qualifiedSubjectNamingStrategy() throws Exception {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 				TestChannelBinderConfiguration.getCompleteConfiguration(AvroSourceApplication.class))
 				.web(WebApplicationType.NONE).run("--server.port=0",

@@ -90,7 +90,7 @@ class AvroSchemaRegistryClientMessageConverterTests {
 	}
 
 	@Test
-	public void testSendMessage() throws Exception {
+	public void sendMessage() throws Exception {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 				TestChannelBinderConfiguration.getCompleteConfiguration(AvroSourceApplication.class))
 				.web(WebApplicationType.NONE).run("--server.port=0",
@@ -118,7 +118,7 @@ class AvroSchemaRegistryClientMessageConverterTests {
 	}
 
 	@Test
-	public void testSchemaImportConfiguration() throws Exception {
+	public void schemaImportConfiguration() throws Exception {
 
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 				TestChannelBinderConfiguration.getCompleteConfiguration(AvroSourceApplication.class))
@@ -146,7 +146,7 @@ class AvroSchemaRegistryClientMessageConverterTests {
 	}
 
 	@Test
-	public void testNoCacheConfiguration() {
+	public void noCacheConfiguration() {
 		ConfigurableApplicationContext sourceContext = SpringApplication
 				.run(NoCacheConfiguration.class, "--spring.main.web-environment=false");
 		AvroSchemaRegistryClientMessageConverter converter = sourceContext
@@ -157,7 +157,7 @@ class AvroSchemaRegistryClientMessageConverterTests {
 	}
 
 	@Test
-	public void testNamedCacheIsRequested() {
+	public void namedCacheIsRequested() {
 		CacheManager mockCache = Mockito.mock(CacheManager.class);
 		when(mockCache.getCache(any())).thenReturn(new NoOpCache(""));
 		AvroSchemaServiceManager manager = new AvroSchemaServiceManagerImpl();
