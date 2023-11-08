@@ -51,7 +51,7 @@ class KafkaStreamsFunctionStateStoreTests {
 	private static final EmbeddedKafkaBroker embeddedKafka = EmbeddedKafkaCondition.getBroker();
 
 	@Test
-	void testKafkaStreamsFuncionWithMultipleStateStores() throws Exception {
+	void kafkaStreamsFuncionWithMultipleStateStores() throws Exception {
 		SpringApplication app = new SpringApplication(StateStoreTestApplication.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 

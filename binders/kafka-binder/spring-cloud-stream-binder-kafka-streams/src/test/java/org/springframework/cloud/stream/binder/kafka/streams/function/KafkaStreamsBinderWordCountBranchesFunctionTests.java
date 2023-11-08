@@ -75,7 +75,7 @@ class KafkaStreamsBinderWordCountBranchesFunctionTests {
 	}
 
 	@Test
-	void testKstreamWordCountWithStringInputAndPojoOuput() throws Exception {
+	void kstreamWordCountWithStringInputAndPojoOuput() throws Exception {
 		SpringApplication app = new SpringApplication(WordCountProcessorApplication.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 

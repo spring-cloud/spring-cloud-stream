@@ -84,7 +84,7 @@ class KafkaStreamsStateStoreIntegrationTests {
 	}
 
 	@Test
-	void testSameStateStoreIsCreatedOnlyOnceWhenMultipleInputBindingsArePresent() throws Exception {
+	void sameStateStoreIsCreatedOnlyOnceWhenMultipleInputBindingsArePresent() throws Exception {
 		SpringApplication app = new SpringApplication(ProductCountApplicationWithMultipleInputBindings.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 		ConfigurableApplicationContext context = app.run("--server.port=0",

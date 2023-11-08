@@ -86,7 +86,7 @@ class KafkaStreamsBinderTombstoneTests {
 	}
 
 	@Test
-	void testSendToTombstone()
+	void sendToTombstone()
 			throws Exception {
 		SpringApplication app = new SpringApplication(
 				WordCountProcessorApplication.class);

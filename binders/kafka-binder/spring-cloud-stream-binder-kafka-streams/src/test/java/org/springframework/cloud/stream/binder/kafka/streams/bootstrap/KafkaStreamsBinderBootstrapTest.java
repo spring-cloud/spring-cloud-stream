@@ -121,7 +121,7 @@ class KafkaStreamsBinderBootstrapTest {
 
 	@Test
 	@SuppressWarnings("unchecked")
-	void testStreamConfigGlobalProperties_GH1149() {
+	void streamConfigGlobalProperties_GH1149() {
 		ConfigurableApplicationContext applicationContext = new SpringApplicationBuilder(
 				SimpleKafkaStreamsApplication.class).web(WebApplicationType.NONE).run(
 				"--spring.cloud.function.definition=input1;input2;input3",

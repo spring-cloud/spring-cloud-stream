@@ -32,7 +32,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class CollectionSerdeTest {
 
 	@Test
-	public void testCollectionsSerde() {
+	public void collectionsSerde() {
 
 		Foo foo1 = new Foo();
 		foo1.setData("data-1");

@@ -29,7 +29,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class KafkaStreamsBinderUtilsTests {
 
 	@Test
-	void testDeriveFunctionUnitsWithVariedSpacings() {
+	void deriveFunctionUnitsWithVariedSpacings() {
 		final String definition = "firstFunction; secondFunction;   thirdFunction;fourthFunction";
 
 		final String[] functionUnits = KafkaStreamsBinderUtils.deriveFunctionUnits(definition);

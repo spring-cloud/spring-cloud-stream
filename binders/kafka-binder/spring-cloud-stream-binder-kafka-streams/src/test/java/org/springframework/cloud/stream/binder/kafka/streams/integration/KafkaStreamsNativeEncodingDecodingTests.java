@@ -116,7 +116,7 @@ public abstract class KafkaStreamsNativeEncodingDecodingTests {
 			extends KafkaStreamsNativeEncodingDecodingTests {
 
 		@Test
-		public void test() throws Exception {
+		public void nativeEncodingDecodingEnabled() throws Exception {
 			Map<String, Object> senderProps = KafkaTestUtils.producerProps(embeddedKafka);
 			DefaultKafkaProducerFactory<Integer, String> pf = new DefaultKafkaProducerFactory<>(
 					senderProps);
@@ -146,7 +146,7 @@ public abstract class KafkaStreamsNativeEncodingDecodingTests {
 			extends KafkaStreamsNativeEncodingDecodingTests {
 
 		@Test
-		public void test() {
+		public void nativeEncodingDecodingDisabled() {
 			Map<String, Object> senderProps = KafkaTestUtils.producerProps(embeddedKafka);
 			DefaultKafkaProducerFactory<Integer, String> pf = new DefaultKafkaProducerFactory<>(
 					senderProps);

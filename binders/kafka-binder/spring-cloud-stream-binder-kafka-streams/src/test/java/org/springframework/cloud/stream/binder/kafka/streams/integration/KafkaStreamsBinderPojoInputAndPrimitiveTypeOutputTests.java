@@ -78,7 +78,7 @@ class KafkaStreamsBinderPojoInputAndPrimitiveTypeOutputTests {
 	}
 
 	@Test
-	void testKstreamBinderWithPojoInputAndStringOuput() throws Exception {
+	void kstreamBinderWithPojoInputAndStringOuput() throws Exception {
 		SpringApplication app = new SpringApplication(ProductCountApplication.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 		ConfigurableApplicationContext context = app.run("--server.port=0",

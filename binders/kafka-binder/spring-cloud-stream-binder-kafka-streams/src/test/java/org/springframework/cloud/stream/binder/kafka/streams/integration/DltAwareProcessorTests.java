@@ -74,7 +74,7 @@ class DltAwareProcessorTests {
 	}
 
 	@Test
-	void testDltAwareProcessor() {
+	void dltAwareProcessor() {
 		SpringApplication app = new SpringApplication(
 			DltAwareProcessorTests.PublishToDltOnErrorApplication.class);
 		app.setWebApplicationType(WebApplicationType.NONE);

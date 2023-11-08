@@ -80,7 +80,7 @@ class KafkaStreamsFunctionCompositionTests {
 	}
 
 	@Test
-	void testBasicFunctionCompositionWithDefaultDestination() throws InterruptedException {
+	void basicFunctionCompositionWithDefaultDestination() throws InterruptedException {
 		SpringApplication app = new SpringApplication(FunctionCompositionConfig1.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 
@@ -114,7 +114,7 @@ class KafkaStreamsFunctionCompositionTests {
 	}
 
 	@Test
-	void testBasicFunctionCompositionWithDestinaion() throws InterruptedException {
+	void basicFunctionCompositionWithDestinaion() throws InterruptedException {
 		SpringApplication app = new SpringApplication(FunctionCompositionConfig1.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 
@@ -214,7 +214,7 @@ class KafkaStreamsFunctionCompositionTests {
 	}
 
 	@Test
-	void testChainedFunctionsAsComposed() throws InterruptedException {
+	void chainedFunctionsAsComposed() throws InterruptedException {
 		SpringApplication app = new SpringApplication(FunctionCompositionConfig4.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 
@@ -257,7 +257,7 @@ class KafkaStreamsFunctionCompositionTests {
 	}
 
 	@Test
-	void testFirstFunctionCurriedThenComposeWithOtherFunctions() throws InterruptedException {
+	void firstFunctionCurriedThenComposeWithOtherFunctions() throws InterruptedException {
 		SpringApplication app = new SpringApplication(FunctionCompositionConfig5.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 

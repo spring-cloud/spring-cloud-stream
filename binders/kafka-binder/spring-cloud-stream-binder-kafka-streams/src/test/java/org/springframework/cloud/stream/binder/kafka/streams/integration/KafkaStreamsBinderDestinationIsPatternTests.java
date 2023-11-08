@@ -66,7 +66,7 @@ class KafkaStreamsBinderDestinationIsPatternTests {
 	}
 
 	@Test
-	void test() {
+	void destinationIsPattern() {
 		SpringApplication app = new SpringApplication(ConsumingApplication.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 		ConfigurableApplicationContext context = app.run("--server.port=0",

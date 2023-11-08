@@ -84,7 +84,7 @@ class KafkaStreamsEventTypeRoutingTests {
 
 	//See https://github.com/spring-cloud/spring-cloud-stream-binder-kafka/issues/1003 for more context on this test.
 	@Test
-	void testRoutingWorksBasedOnEventTypes() {
+	void routingWorksBasedOnEventTypes() {
 		SpringApplication app = new SpringApplication(EventTypeRoutingTestConfig.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 
@@ -154,7 +154,7 @@ class KafkaStreamsEventTypeRoutingTests {
 	}
 
 	@Test
-	void testRoutingWorksBasedOnEventTypesConsumer() throws Exception {
+	void routingWorksBasedOnEventTypesConsumer() throws Exception {
 		SpringApplication app = new SpringApplication(EventTypeRoutingTestConfig.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 

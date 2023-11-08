@@ -101,7 +101,7 @@ class KafkaStreamsComponentBeansTests {
 	}
 
 	@Test
-	void testFunctionComponent() {
+	void functionComponent() {
 		SpringApplication app = new SpringApplication(FunctionAsComponent.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 		try (ConfigurableApplicationContext ignored = app.run(
@@ -127,7 +127,7 @@ class KafkaStreamsComponentBeansTests {
 	}
 
 	@Test
-	void testConsumerComponent() throws Exception {
+	void consumerComponent() throws Exception {
 		SpringApplication app = new SpringApplication(ConsumerAsComponent.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 		try (ConfigurableApplicationContext context = app.run(
@@ -151,7 +151,7 @@ class KafkaStreamsComponentBeansTests {
 	}
 
 	@Test
-	void testBiFunctionComponent() {
+	void biFunctionComponent() {
 		SpringApplication app = new SpringApplication(BiFunctionAsComponent.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 		try (ConfigurableApplicationContext ignored = app.run(
@@ -181,7 +181,7 @@ class KafkaStreamsComponentBeansTests {
 	}
 
 	@Test
-	void testBiConsumerComponent() throws Exception {
+	void biConsumerComponent() throws Exception {
 		SpringApplication app = new SpringApplication(BiConsumerAsComponent.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 		try (ConfigurableApplicationContext context = app.run(
@@ -208,7 +208,7 @@ class KafkaStreamsComponentBeansTests {
 	}
 
 	@Test
-	void testCurriedFunctionWithConsumerTerminal() throws Exception {
+	void curriedFunctionWithConsumerTerminal() throws Exception {
 		SpringApplication app = new SpringApplication(CurriedFunctionWithConsumerTerminal.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 		try (ConfigurableApplicationContext context = app.run(
@@ -238,7 +238,7 @@ class KafkaStreamsComponentBeansTests {
 	}
 
 	@Test
-	void testCurriedFunctionWithFunctionTerminal() {
+	void curriedFunctionWithFunctionTerminal() {
 		SpringApplication app = new SpringApplication(CurriedFunctionWithFunctionTerminal.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 		try (ConfigurableApplicationContext context = app.run(

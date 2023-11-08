@@ -98,7 +98,7 @@ class KafkaStreamsBinderWordCountFunctionTests {
 
 	@Test
 	@SuppressWarnings("unchecked")
-	void testBasicKStreamTopologyExecution() throws Exception {
+	void basicKStreamTopologyExecution() throws Exception {
 		SpringApplication app = new SpringApplication(WordCountProcessorApplication.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 
@@ -175,7 +175,7 @@ class KafkaStreamsBinderWordCountFunctionTests {
 	}
 
 	@Test
-	void testKstreamWordCountWithApplicationIdSpecifiedAtDefaultConsumer() {
+	void kstreamWordCountWithApplicationIdSpecifiedAtDefaultConsumer() {
 		SpringApplication app = new SpringApplication(WordCountProcessorApplication.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 
@@ -196,7 +196,7 @@ class KafkaStreamsBinderWordCountFunctionTests {
 	}
 
 	@Test
-	void testKstreamWordCountFunctionWithCustomProducerStreamPartitioner() throws Exception {
+	void kstreamWordCountFunctionWithCustomProducerStreamPartitioner() throws Exception {
 		SpringApplication app = new SpringApplication(WordCountProcessorApplication.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 
@@ -236,7 +236,7 @@ class KafkaStreamsBinderWordCountFunctionTests {
 	}
 
 	@Test
-	void testKstreamBinderAutoStartup() throws Exception {
+	void kstreamBinderAutoStartup() throws Exception {
 		SpringApplication app = new SpringApplication(WordCountProcessorApplication.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 
@@ -258,7 +258,7 @@ class KafkaStreamsBinderWordCountFunctionTests {
 	}
 
 	@Test
-	void testKstreamIndividualBindingAutoStartup() throws Exception {
+	void kstreamIndividualBindingAutoStartup() throws Exception {
 		SpringApplication app = new SpringApplication(WordCountProcessorApplication.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 
@@ -283,7 +283,7 @@ class KafkaStreamsBinderWordCountFunctionTests {
 	// The following test verifies the fixes made for this issue:
 	// https://github.com/spring-cloud/spring-cloud-stream-binder-kafka/issues/774
 	@Test
-	void testOutboundNullValueIsHandledGracefully()
+	void outboundNullValueIsHandledGracefully()
 			throws Exception {
 		SpringApplication app = new SpringApplication(OutboundNullApplication.class);
 		app.setWebApplicationType(WebApplicationType.NONE);

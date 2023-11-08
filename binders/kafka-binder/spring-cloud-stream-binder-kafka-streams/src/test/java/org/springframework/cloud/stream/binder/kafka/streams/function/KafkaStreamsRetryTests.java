@@ -61,7 +61,7 @@ class KafkaStreamsRetryTests {
 	private final static CountDownLatch LATCH2 = new CountDownLatch(4);
 
 	@Test
-	void testRetryTemplatePerBindingOnKStream() throws Exception {
+	void retryTemplatePerBindingOnKStream() throws Exception {
 		SpringApplication app = new SpringApplication(RetryTemplatePerConsumerBindingApp.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 
@@ -83,7 +83,7 @@ class KafkaStreamsRetryTests {
 	}
 
 	@Test
-	void testRetryTemplateOnTableTypes() throws Exception {
+	void retryTemplateOnTableTypes() throws Exception {
 		SpringApplication app = new SpringApplication(RetryTemplatePerConsumerBindingApp.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 
@@ -100,7 +100,7 @@ class KafkaStreamsRetryTests {
 	}
 
 	@Test
-	void testRetryTemplateBeanProvidedByTheApp() throws Exception {
+	void retryTemplateBeanProvidedByTheApp() throws Exception {
 		SpringApplication app = new SpringApplication(CustomRetryTemplateApp.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 

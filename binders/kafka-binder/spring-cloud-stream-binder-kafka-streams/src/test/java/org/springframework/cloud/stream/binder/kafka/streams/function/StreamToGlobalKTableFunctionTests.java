@@ -70,7 +70,7 @@ class StreamToGlobalKTableFunctionTests {
 	private static Consumer<Long, EnrichedOrder> consumer;
 
 	@Test
-	void testStreamToGlobalKTable() throws Exception {
+	void streamToGlobalKTable() throws Exception {
 		SpringApplication app = new SpringApplication(OrderEnricherApplication.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 		try (ConfigurableApplicationContext context = app.run("--server.port=0",
@@ -222,7 +222,7 @@ class StreamToGlobalKTableFunctionTests {
 	}
 
 	@Test
-	void testTimeExtractor() throws Exception {
+	void timeExtractor() throws Exception {
 		SpringApplication app = new SpringApplication(OrderEnricherApplication.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 

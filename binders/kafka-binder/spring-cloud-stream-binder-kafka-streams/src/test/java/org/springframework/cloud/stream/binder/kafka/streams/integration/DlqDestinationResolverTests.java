@@ -59,7 +59,7 @@ class DlqDestinationResolverTests {
 	private static final EmbeddedKafkaBroker embeddedKafka = EmbeddedKafkaCondition.getBroker();
 
 	@Test
-	void testDlqDestinationResolverWorks() throws Exception {
+	void dlqDestinationResolverWorks() throws Exception {
 		SpringApplication app = new SpringApplication(WordCountProcessorApplication.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 

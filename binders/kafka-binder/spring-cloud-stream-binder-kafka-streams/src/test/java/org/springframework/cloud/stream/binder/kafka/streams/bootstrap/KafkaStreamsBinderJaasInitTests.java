@@ -65,7 +65,7 @@ class KafkaStreamsBinderJaasInitTests {
 	}
 
 	@Test
-	void testKafkaStreamsBinderJaasInitialization() {
+	void kafkaStreamsBinderJaasInitialization() {
 		ConfigurableApplicationContext applicationContext = new SpringApplicationBuilder(
 				KafkaStreamsBinderJaasInitTestsApplication.class).web(WebApplicationType.NONE).run(
 				"--spring.cloud.function.definition=foo",

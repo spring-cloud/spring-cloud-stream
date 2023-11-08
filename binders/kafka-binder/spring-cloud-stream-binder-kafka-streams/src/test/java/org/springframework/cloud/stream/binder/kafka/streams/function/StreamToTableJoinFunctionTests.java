@@ -78,7 +78,7 @@ class StreamToTableJoinFunctionTests {
 	private static final EmbeddedKafkaBroker embeddedKafka = EmbeddedKafkaCondition.getBroker();
 
 	@Test
-	void testStreamToTable() {
+	void streamToTable() {
 		SpringApplication app = new SpringApplication(CountClicksPerRegionApplication.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 
@@ -96,7 +96,7 @@ class StreamToTableJoinFunctionTests {
 	}
 
 	@Test
-	void testStreamToTableBiFunction() {
+	void streamToTableBiFunction() {
 		SpringApplication app = new SpringApplication(BiFunctionCountClicksPerRegionApplication.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 
@@ -114,7 +114,7 @@ class StreamToTableJoinFunctionTests {
 	}
 
 	@Test
-	void testStreamToTableBiConsumer() throws Exception {
+	void streamToTableBiConsumer() throws Exception {
 		SpringApplication app = new SpringApplication(BiConsumerApplication.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 
@@ -433,7 +433,7 @@ class StreamToTableJoinFunctionTests {
 	}
 
 	@Test
-	public void testTrivialSingleKTableInputAsNonDeclarative() {
+	public void trivialSingleKTableInputAsNonDeclarative() {
 		SpringApplication app = new SpringApplication(TrivialKTableApp.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 		app.run("--server.port=0",
@@ -446,7 +446,7 @@ class StreamToTableJoinFunctionTests {
 	}
 
 	@Test
-	public void testTwoKStreamsCanBeJoined() {
+	public void twoKStreamsCanBeJoined() {
 		SpringApplication app = new SpringApplication(
 				JoinProcessor.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
