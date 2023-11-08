@@ -30,7 +30,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class KotlinConfigurationTests {
 
 	@Test
-	void testKotlinSupplierPollableBean() {
+	void kotlinSupplierPollableBean() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(KotlinTestConfiguration.class))
 			.web(WebApplicationType.NONE)

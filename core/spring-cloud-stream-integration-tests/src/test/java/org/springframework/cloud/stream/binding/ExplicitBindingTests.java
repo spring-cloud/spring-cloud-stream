@@ -37,7 +37,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class ExplicitBindingTests {
 
 	@Test
-	void testExplicitBindings() {
+	void explicitBindings() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(EmptyConfiguration.class))
 			.web(WebApplicationType.NONE)
@@ -53,7 +53,7 @@ class ExplicitBindingTests {
 	}
 
 	@Test
-	void testExplicitBindingsWithExistingFunctionalBean() {
+	void explicitBindingsWithExistingFunctionalBean() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(ConsumerConfiguration.class))
 			.web(WebApplicationType.NONE)
@@ -75,7 +75,7 @@ class ExplicitBindingTests {
 	}
 
 	@Test
-	void testExplicitBindingsWithExistingConsumer() {
+	void explicitBindingsWithExistingConsumer() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(ConsumerConfiguration.class))
 			.web(WebApplicationType.NONE)
@@ -89,7 +89,7 @@ class ExplicitBindingTests {
 
 	@Disabled
 	@Test
-	void testExplicitBindingsWithExistingSupplier() {
+	void explicitBindingsWithExistingSupplier() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(SupplierConfiguration.class))
 			.web(WebApplicationType.NONE)

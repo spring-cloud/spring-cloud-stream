@@ -38,8 +38,6 @@ import org.springframework.scheduling.support.PeriodicTrigger;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
-
-
 /**
  *
  * @author Oleg Zhurakousky
@@ -49,7 +47,7 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 class PollableSourceTests {
 
 	@Test
-	void testPollableSource() {
+	void pollableSource() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration
 			.getCompleteConfiguration(PollableAppSampleConfiguration.class))
 			.web(WebApplicationType.NONE).run(
@@ -71,7 +69,7 @@ class PollableSourceTests {
 	}
 
 	@Test
-	void testPollerDefaultFixedDelay() {
+	void pollerDefaultFixedDelay() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration
 			.getCompleteConfiguration(PollableAppSampleConfiguration.class))
 			.web(WebApplicationType.NONE).run()) {
@@ -85,7 +83,7 @@ class PollableSourceTests {
 	}
 
 	@Test
-	void testPollerProvidedFixedDelayAndMaxMessagesPerPoll() {
+	void pollerProvidedFixedDelayAndMaxMessagesPerPoll() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration
 			.getCompleteConfiguration(PollableAppSampleConfiguration.class))
 			.web(WebApplicationType.NONE).run(
@@ -101,7 +99,7 @@ class PollableSourceTests {
 	}
 
 	@Test
-	void testNoPollerFixedDelayIfFixedRatePresent() {
+	void noPollerFixedDelayIfFixedRatePresent() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration
 			.getCompleteConfiguration(PollableAppSampleConfiguration.class))
 			.web(WebApplicationType.NONE).run("--spring.integration.poller.fixed-rate=200")) {
@@ -115,7 +113,7 @@ class PollableSourceTests {
 	}
 
 	@Test
-	void testPollerMutualProperties() {
+	void pollerMutualProperties() {
 		assertThatExceptionOfType(BeanCreationException.class)
 			.isThrownBy(() -> new SpringApplicationBuilder(TestChannelBinderConfiguration
 				.getCompleteConfiguration(PollableAppSampleConfiguration.class))

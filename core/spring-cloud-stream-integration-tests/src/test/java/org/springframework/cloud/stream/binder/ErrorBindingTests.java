@@ -40,7 +40,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class ErrorBindingTests {
 
 	@Test
-	public void testConfigurationWithDefaultErrorHandler() {
+	public void configurationWithDefaultErrorHandler() {
 		ApplicationContext context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(
 				ErrorBindingTests.ErrorConfigurationDefault.class))
@@ -61,7 +61,7 @@ class ErrorBindingTests {
 	}
 
 	@Test
-	void testConfigurationWithBindingSpecificErrorHandler() {
+	void configurationWithBindingSpecificErrorHandler() {
 		ApplicationContext context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(
 				ErrorBindingTests.ErrorConfigurationWithCustomErrorHandler.class))
@@ -82,7 +82,7 @@ class ErrorBindingTests {
 	}
 
 	@Test
-	void testConfigurationWithoutBinderSpecificErrorHandler() {
+	void configurationWithoutBinderSpecificErrorHandler() {
 		ApplicationContext context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(NoErrorHandler.class))
 			.web(WebApplicationType.NONE)
@@ -98,7 +98,7 @@ class ErrorBindingTests {
 	}
 
 	@Test
-	void testErrorBindingWithMultipleDestinationPerBinding() {
+	void errorBindingWithMultipleDestinationPerBinding() {
 		new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(NoErrorHandler.class))
 			.web(WebApplicationType.NONE)

@@ -81,7 +81,7 @@ class PollableConsumerTests {
 	}
 
 	@Test
-	void testDefaultMessageSource() {
+	void defaultMessageSource() {
 		TestChannelBinder binder = createBinder();
 		MessageConverterConfigurer configurer = this.context
 			.getBean(MessageConverterConfigurer.class);
@@ -103,7 +103,7 @@ class PollableConsumerTests {
 	}
 
 	@Test
-	void testSimple() {
+	void simpleCase() {
 		TestChannelBinder binder = createBinder();
 		MessageConverterConfigurer configurer = this.context
 			.getBean(MessageConverterConfigurer.class);
@@ -139,7 +139,7 @@ class PollableConsumerTests {
 	}
 
 	@Test
-	void testConvertSimple() {
+	void convertSimple() {
 		TestChannelBinder binder = createBinder();
 		MessageConverterConfigurer configurer = this.context
 			.getBean(MessageConverterConfigurer.class);
@@ -172,7 +172,7 @@ class PollableConsumerTests {
 	}
 
 	@Test
-	void testConvertSimpler() {
+	void convertSimpler() {
 		TestChannelBinder binder = createBinder();
 		MessageConverterConfigurer configurer = this.context
 			.getBean(MessageConverterConfigurer.class);
@@ -210,7 +210,7 @@ class PollableConsumerTests {
 
 	@Test
 //	@Disabled
-	void testConvertList() {
+	void convertList() {
 		TestChannelBinder binder = createBinder();
 		MessageConverterConfigurer configurer = this.context
 			.getBean(MessageConverterConfigurer.class);
@@ -242,7 +242,7 @@ class PollableConsumerTests {
 
 	@Test
 //	@Disabled
-	void testConvertMap() {
+	void convertMap() {
 		TestChannelBinder binder = createBinder();
 		MessageConverterConfigurer configurer = this.context
 			.getBean(MessageConverterConfigurer.class);
@@ -270,7 +270,7 @@ class PollableConsumerTests {
 	}
 
 	@Test
-	void testEmbedded() {
+	void embedded() {
 		TestChannelBinder binder = createBinder();
 		MessageConverterConfigurer configurer = this.context
 			.getBean(MessageConverterConfigurer.class);
@@ -315,7 +315,7 @@ class PollableConsumerTests {
 	}
 
 	@Test
-	void testErrors() {
+	void errors() {
 		TestChannelBinder binder = createBinder();
 		MessageConverterConfigurer configurer = this.context
 			.getBean(MessageConverterConfigurer.class);
@@ -366,7 +366,7 @@ class PollableConsumerTests {
 	}
 
 	@Test
-	void testErrorsNoRetry() {
+	void errorsNoRetry() {
 		TestChannelBinder binder = createBinder();
 		MessageConverterConfigurer configurer = this.context
 			.getBean(MessageConverterConfigurer.class);
@@ -402,7 +402,7 @@ class PollableConsumerTests {
 	}
 
 	@Test
-	void testRequeue() {
+	void requeue() {
 		TestChannelBinder binder = createBinder();
 		MessageConverterConfigurer configurer = this.context
 			.getBean(MessageConverterConfigurer.class);
@@ -442,7 +442,7 @@ class PollableConsumerTests {
 	}
 
 	@Test
-	void testRequeueWithNoAcknowledgementCallback() {
+	void requeueWithNoAcknowledgementCallback() {
 		TestChannelBinder binder = createBinder();
 		MessageConverterConfigurer configurer = this.context
 			.getBean(MessageConverterConfigurer.class);
@@ -475,7 +475,7 @@ class PollableConsumerTests {
 	}
 
 	@Test
-	void testRequeueFromErrorFlow() {
+	void requeueFromErrorFlow() {
 		TestChannelBinder binder = createBinder();
 		MessageConverterConfigurer configurer = this.context
 			.getBean(MessageConverterConfigurer.class);
@@ -517,7 +517,7 @@ class PollableConsumerTests {
 
 	@SuppressWarnings("unchecked")
 	@Test
-	void testAutoStartupOff() {
+	void autoStartupOff() {
 		TestChannelBinder binder = createBinder();
 		binder.setMessageSourceDelegate(new LifecycleMessageSource(
 			() -> new GenericMessage<>("{\"foo\":\"bar\"}".getBytes())));
@@ -539,7 +539,7 @@ class PollableConsumerTests {
 
 	@SuppressWarnings("unchecked")
 	@Test
-	void testAutoStartupOn() {
+	void autoStartupOn() {
 		TestChannelBinder binder = createBinder();
 		binder.setMessageSourceDelegate(new LifecycleMessageSource(
 			() -> new GenericMessage<>("{\"foo\":\"bar\"}".getBytes())));

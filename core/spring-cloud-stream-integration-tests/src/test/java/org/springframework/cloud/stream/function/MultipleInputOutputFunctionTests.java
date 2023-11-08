@@ -55,7 +55,7 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 class MultipleInputOutputFunctionTests {
 
 	@Test
-	void testFailureWithNonReactiveFunction() {
+	void failureWithNonReactiveFunction() {
 		assertThatExceptionOfType(BeanCreationException.class)
 			.isThrownBy(() -> new SpringApplicationBuilder(
 				TestChannelBinderConfiguration.getCompleteConfiguration(
@@ -66,7 +66,7 @@ class MultipleInputOutputFunctionTests {
 	}
 
 	@Test
-	void testFailureWithReactiveArrayOutput() {
+	void failureWithReactiveArrayOutput() {
 		assertThatExceptionOfType(BeanCreationException.class)
 			.isThrownBy(() -> new SpringApplicationBuilder(
 				TestChannelBinderConfiguration.getCompleteConfiguration(
@@ -77,7 +77,7 @@ class MultipleInputOutputFunctionTests {
 	}
 
 	@Test
-	void testFailureWithReactiveArrayOutputNonGeneric() {
+	void failureWithReactiveArrayOutputNonGeneric() {
 		assertThatExceptionOfType(BeanCreationException.class)
 			.isThrownBy(() -> new SpringApplicationBuilder(
 				TestChannelBinderConfiguration.getCompleteConfiguration(
@@ -88,7 +88,7 @@ class MultipleInputOutputFunctionTests {
 	}
 
 	@Test
-	void testFailureWithReactiveArrayInput() {
+	void failureWithReactiveArrayInput() {
 		assertThatExceptionOfType(BeanCreationException.class)
 			.isThrownBy(() -> new SpringApplicationBuilder(
 				TestChannelBinderConfiguration.getCompleteConfiguration(
@@ -99,7 +99,7 @@ class MultipleInputOutputFunctionTests {
 	}
 
 	@Test
-	void testFailureWithReactiveArrayInputNonGeneric() {
+	void failureWithReactiveArrayInputNonGeneric() {
 		assertThatExceptionOfType(BeanCreationException.class)
 			.isThrownBy(() -> new SpringApplicationBuilder(
 				TestChannelBinderConfiguration.getCompleteConfiguration(
@@ -110,7 +110,7 @@ class MultipleInputOutputFunctionTests {
 	}
 
 	@Test
-	void testFailureWithConsumer() {
+	void failureWithConsumer() {
 		assertThatExceptionOfType(BeanCreationException.class)
 			.isThrownBy(() -> new SpringApplicationBuilder(
 				TestChannelBinderConfiguration.getCompleteConfiguration(
@@ -121,7 +121,7 @@ class MultipleInputOutputFunctionTests {
 	}
 
 	@Test
-	void testMultiInputSingleOutput() {
+	void multiInputSingleOutput() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(
 				ReactiveFunctionConfiguration.class))
@@ -144,7 +144,7 @@ class MultipleInputOutputFunctionTests {
 	}
 
 	@Test
-	void testMultiInputMessageSingleOutput() {
+	void multiInputMessageSingleOutput() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(
 				ReactiveFunctionConfiguration.class))
@@ -167,7 +167,7 @@ class MultipleInputOutputFunctionTests {
 	}
 
 	@Test
-	void testSingleInputMultiOutput() {
+	void singleInputMultiOutput() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(
 				ReactiveFunctionConfiguration.class))
@@ -196,7 +196,7 @@ class MultipleInputOutputFunctionTests {
 	}
 
 	@Test
-	void testMultipleFunctions() {
+	void multipleFunctions() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(
 				ReactiveFunctionConfiguration.class))
@@ -219,7 +219,7 @@ class MultipleInputOutputFunctionTests {
 	}
 
 	@Test
-	void testMultipleFunctionsWithComposition() {
+	void multipleFunctionsWithComposition() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(
 				ReactiveFunctionConfiguration.class))
@@ -243,7 +243,7 @@ class MultipleInputOutputFunctionTests {
 	}
 
 	@Test
-	void testMultiInputSingleOutputWithCustomContentType() {
+	void multiInputSingleOutputWithCustomContentType() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(
 				ContentTypeConfiguration.class))
@@ -268,7 +268,7 @@ class MultipleInputOutputFunctionTests {
 	}
 
 	@Test
-	void testMultiInputSingleOutputWithCustomContentType2() {
+	void multiInputSingleOutputWithCustomContentType2() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(
 				ContentTypeConfiguration.class))

@@ -82,7 +82,7 @@ class ScenarioTests {
 	}
 
 	@Test
-	void testComposingSupplierWuthTypelessMessageFunction() throws Exception {
+	void composingSupplierWuthTypelessMessageFunction() throws Exception {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(SupplierConfiguration.class))
 			.web(WebApplicationType.NONE)

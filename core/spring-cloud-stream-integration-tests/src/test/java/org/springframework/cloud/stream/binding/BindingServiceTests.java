@@ -95,7 +95,7 @@ class BindingServiceTests {
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@Test
-	void testDefaultGroup() throws Exception {
+	void defaultGroup() throws Exception {
 		BindingServiceProperties properties = new BindingServiceProperties();
 		Map<String, BindingProperties> bindingProperties = new HashMap<>();
 		BindingProperties props = new BindingProperties();
@@ -124,7 +124,7 @@ class BindingServiceTests {
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@Test
-	void testMultipleConsumerBindings() {
+	void multipleConsumerBindings() {
 		BindingServiceProperties properties = new BindingServiceProperties();
 		Map<String, BindingProperties> bindingProperties = new HashMap<>();
 		BindingProperties props = new BindingProperties();
@@ -175,7 +175,7 @@ class BindingServiceTests {
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@Test
-	void testMultipleConsumerBindingsFromIndexList() throws Exception {
+	void multipleConsumerBindingsFromIndexList() throws Exception {
 		BindingServiceProperties properties = new BindingServiceProperties();
 		Map<String, BindingProperties> bindingProperties = new HashMap<>();
 		BindingProperties props = new BindingProperties();
@@ -236,7 +236,7 @@ class BindingServiceTests {
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@Test
-	void testConsumerBindingWhenMultiplexingIsEnabled() throws Exception {
+	void consumerBindingWhenMultiplexingIsEnabled() throws Exception {
 		BindingServiceProperties properties = new BindingServiceProperties();
 		Map<String, BindingProperties> bindingProperties = new HashMap<>();
 		BindingProperties props = new BindingProperties();
@@ -282,7 +282,7 @@ class BindingServiceTests {
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@Test
-	void testExplicitGroup() throws Exception {
+	void explicitGroup() throws Exception {
 		BindingServiceProperties properties = new BindingServiceProperties();
 		Map<String, BindingProperties> bindingProperties = new HashMap<>();
 		BindingProperties props = new BindingProperties();
@@ -313,7 +313,7 @@ class BindingServiceTests {
 
 	@Test
 	@Disabled
-	void testProducerPropertiesValidation() {
+	void producerPropertiesValidation() {
 		BindingServiceProperties serviceProperties = new BindingServiceProperties();
 		Map<String, BindingProperties> bindingProperties = new HashMap<>();
 		BindingProperties props = new BindingProperties();
@@ -338,7 +338,7 @@ class BindingServiceTests {
 	}
 
 	@Test
-	void testDefaultPropertyBehavior() {
+	void defaultPropertyBehavior() {
 		ConfigurableApplicationContext run = SpringApplication.run(
 			DefaultConsumerPropertiesTestSink.class,
 			"--server.port=0",
@@ -388,7 +388,7 @@ class BindingServiceTests {
 
 	@Test
 	@Disabled
-	void testConsumerPropertiesValidation() {
+	void consumerPropertiesValidation() {
 		BindingServiceProperties serviceProperties = new BindingServiceProperties();
 		Map<String, BindingProperties> bindingProperties = new HashMap<>();
 		BindingProperties props = new BindingProperties();
@@ -413,7 +413,7 @@ class BindingServiceTests {
 	}
 
 	@Test
-	void testUnknownBinderOnBindingFailure() {
+	void unknownBinderOnBindingFailure() {
 		HashMap<String, String> properties = new HashMap<>();
 		properties.put("spring.cloud.stream.bindings.input.destination", "fooInput");
 		properties.put("spring.cloud.stream.bindings.input.binder", "mock");
@@ -435,7 +435,7 @@ class BindingServiceTests {
 
 	@SuppressWarnings("unchecked")
 	@Test
-	void testUnrecognizedBinderAllowedIfNotUsed() {
+	void unrecognizedBinderAllowedIfNotUsed() {
 		HashMap<String, String> properties = new HashMap<>();
 		properties.put("spring.cloud.stream.bindings.input.destination", "fooInput");
 		properties.put("spring.cloud.stream.bindings.output.destination", "fooOutput");
@@ -455,7 +455,7 @@ class BindingServiceTests {
 
 	@SuppressWarnings("unchecked")
 	@Test
-	void testUnrecognizedBinderDisallowedIfUsed() {
+	void unrecognizedBinderDisallowedIfUsed() {
 		HashMap<String, String> properties = new HashMap<>();
 		properties.put("spring.cloud.stream.bindings.input.destination", "fooInput");
 		properties.put("spring.cloud.stream.bindings.input.binder", "mock1");
@@ -481,7 +481,7 @@ class BindingServiceTests {
 	}
 
 	@Test
-	void testResolveBindableType() {
+	void resolveBindableType() {
 		Class<?> bindableType = GenericsUtils.getParameterType(FooBinder.class,
 			Binder.class, 0);
 		assertThat(bindableType).isSameAs(SomeBindableType.class);
@@ -489,7 +489,7 @@ class BindingServiceTests {
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Test
-	void testLateBindingProducer() throws Exception {
+	void lateBindingProducer() throws Exception {
 		BindingServiceProperties properties = new BindingServiceProperties();
 		properties.setBindingRetryInterval(1);
 		Map<String, BindingProperties> bindingProperties = new HashMap<>();
@@ -538,7 +538,7 @@ class BindingServiceTests {
 
 	@SuppressWarnings("unchecked")
 	@Test
-	void testBindingAutostartup() throws Exception {
+	void bindingAutostartup() throws Exception {
 		ApplicationContext context = new SpringApplicationBuilder(FooConfiguration.class)
 			.web(WebApplicationType.NONE).run("--spring.jmx.enabled=false",
 				"--spring.cloud.stream.bindings.input-in-0.consumer.auto-startup=false");
@@ -554,7 +554,7 @@ class BindingServiceTests {
 
 	@SuppressWarnings("unchecked")
 	@Test
-	void testBindingNameAsTopLevelProperty() throws Exception {
+	void bindingNameAsTopLevelProperty() throws Exception {
 		ApplicationContext context = new SpringApplicationBuilder(BarConfiguration.class)
 			.web(WebApplicationType.NONE).run();
 

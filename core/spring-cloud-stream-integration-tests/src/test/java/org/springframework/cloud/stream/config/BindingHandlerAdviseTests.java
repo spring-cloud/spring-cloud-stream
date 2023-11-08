@@ -47,14 +47,14 @@ class BindingHandlerAdviseTests {
 
 	@Test
 	@Disabled
-	void testFailureWithWrongValue() {
+	void failureWithWrongValue() {
 		assertThatExceptionOfType(BeanCreationException.class)
 			.isThrownBy(() -> new SpringApplicationBuilder(SampleConfiguration.class).web(WebApplicationType.NONE).run("--props.value=-1",
 				"--spring.jmx.enabled=false"));
 	}
 
 	@Test
-	void testValidatedValueValue() {
+	void validatedValueValue() {
 		ValidatedProps validatedProps = new SpringApplicationBuilder(SampleConfiguration.class)
 			.web(WebApplicationType.NONE).run("--props.value=2", "--spring.jmx.enabled=false")
 			.getBean(ValidatedProps.class);

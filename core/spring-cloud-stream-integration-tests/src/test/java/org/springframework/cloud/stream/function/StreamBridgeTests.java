@@ -236,7 +236,7 @@ class StreamBridgeTests {
 	 * See https://github.com/spring-cloud/spring-cloud-stream/issues/2299 for more details
 	 */
 	@Test
-	void test_2299_scstPartitionAlwaysSetEvenInConcurrentScenarios() throws Exception {
+	void scstPartitionAlwaysSetEvenInConcurrentScenarios() throws Exception {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(EmptyConfiguration.class)).web(
 			WebApplicationType.NONE).run("--spring.cloud.stream.source=outputA",
@@ -272,7 +272,7 @@ class StreamBridgeTests {
 	}
 
 	@Test
-	void testWithOutputContentTypeWildCardBindings() {
+	void withOutputContentTypeWildCardBindings() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration
 			.getCompleteConfiguration(ConsumerConfiguration.class, EmptyConfigurationWithCustomConverters.class))
 			.web(WebApplicationType.NONE).run(
@@ -294,7 +294,7 @@ class StreamBridgeTests {
 
 	// See this issue for more details: https://github.com/spring-cloud/spring-cloud-stream/issues/2805
 	@Test
-	void testStreamBridgeSendWithBinderNameAndCustomContentType() throws Exception {
+	void streamBridgeSendWithBinderNameAndCustomContentType() throws Exception {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration
 			.getCompleteConfiguration(ConsumerConfiguration.class, EmptyConfigurationWithCustomConverters.class))
 			.web(WebApplicationType.NONE).run(
@@ -312,7 +312,7 @@ class StreamBridgeTests {
 
 	@SuppressWarnings("unchecked")
 	@Test
-	void testNoCachingOfStreamBridgeFunction() throws Exception {
+	void noCachingOfStreamBridgeFunction() throws Exception {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration
 			.getCompleteConfiguration(ConsumerConfiguration.class, InterceptorConfiguration.class))
 			.web(WebApplicationType.NONE).run(
@@ -331,7 +331,7 @@ class StreamBridgeTests {
 	}
 
 	@Test
-	void testDelayedSend() {
+	void delayedSend() {
 		ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration
 			.getCompleteConfiguration(ConsumerConfiguration.class, EmptyConfiguration.class))
@@ -352,7 +352,7 @@ class StreamBridgeTests {
 	}
 
 	@Test
-	void testWithInterceptorsMatchedAgainstAllPatterns() {
+	void withInterceptorsMatchedAgainstAllPatterns() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration
 			.getCompleteConfiguration(ConsumerConfiguration.class, InterceptorConfiguration.class))
 			.web(WebApplicationType.NONE).run(
@@ -381,7 +381,7 @@ class StreamBridgeTests {
 	}
 
 	@Test
-	void testInterceptorIsNotAddedMultipleTimesToTheMessageChannel() {
+	void interceptorIsNotAddedMultipleTimesToTheMessageChannel() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration
 			.getCompleteConfiguration(InterceptorConfiguration.class))
 			.web(WebApplicationType.NONE).run(
@@ -403,7 +403,7 @@ class StreamBridgeTests {
 	}
 
 	@Test
-	void testBindingsAreRemovedWithCache() {
+	void bindingsAreRemovedWithCache() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration
 			.getCompleteConfiguration(InterceptorConfiguration.class))
 			.web(WebApplicationType.NONE).run(
@@ -424,7 +424,7 @@ class StreamBridgeTests {
 	}
 
 	@Test
-	void testWithInterceptorsRegisteredOnlyOnOutputChannel() throws InterruptedException {
+	void withInterceptorsRegisteredOnlyOnOutputChannel() throws InterruptedException {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration
 			.getCompleteConfiguration(GH2180Configuration.class))
 			.web(WebApplicationType.NONE).run(
@@ -445,7 +445,7 @@ class StreamBridgeTests {
 	}
 
 	@Test
-	void testBindingPropertiesAreHonored() {
+	void bindingPropertiesAreHonored() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration
 			.getCompleteConfiguration(ConsumerConfiguration.class))
 			.web(WebApplicationType.NONE).run(
@@ -471,7 +471,7 @@ class StreamBridgeTests {
 
 	//see https://github.com/spring-cloud/spring-cloud-function/issues/573 for more details
 	@Test
-	void testBridgeActivationWhenFunctionDefinitionIsPresent() {
+	void bridgeActivationWhenFunctionDefinitionIsPresent() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration
 			.getCompleteConfiguration(SimpleConfiguration.class))
 			.web(WebApplicationType.NONE).run(
@@ -487,7 +487,7 @@ class StreamBridgeTests {
 	}
 
 	@Test
-	void testNoBridgeIfNoSourcePropertyDefined() {
+	void noBridgeIfNoSourcePropertyDefined() {
 		assertThatExceptionOfType(NoSuchBeanDefinitionException.class)
 			.isThrownBy(() -> {
 				ConfigurableApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration
@@ -498,7 +498,7 @@ class StreamBridgeTests {
 	}
 
 	@Test
-	void testBridgeFunctions() {
+	void bridgeFunctions() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration
 			.getCompleteConfiguration(EmptyConfiguration.class))
 			.web(WebApplicationType.NONE).run("--spring.cloud.stream.source=foo;bar",
@@ -516,7 +516,7 @@ class StreamBridgeTests {
 	}
 
 	@Test
-	void testBridgeFunctionsSendingMessagePreservingHeaders() {
+	void bridgeFunctionsSendingMessagePreservingHeaders() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration
 			.getCompleteConfiguration(EmptyConfiguration.class))
 			.web(WebApplicationType.NONE).run("--spring.cloud.stream.source=foo;bar",
@@ -541,7 +541,7 @@ class StreamBridgeTests {
 	}
 
 	@Test
-	void testBridgeFunctionsWitthPartitionInformation() {
+	void bridgeFunctionsWitthPartitionInformation() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration
 			.getCompleteConfiguration(EmptyConfiguration.class))
 			.web(WebApplicationType.NONE).run("--spring.cloud.stream.source=foo;bar",
@@ -596,7 +596,7 @@ class StreamBridgeTests {
 	}
 
 	@Test
-	void testSendingMessageToOutputOfExistingSupplier() {
+	void sendingMessageToOutputOfExistingSupplier() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration
 			.getCompleteConfiguration(TestConfiguration.class))
 			.web(WebApplicationType.NONE).run("--spring.cloud.stream.output-bindings=supplier;foo")) {
@@ -616,7 +616,7 @@ class StreamBridgeTests {
 	}
 
 	@Test
-	void testDynamicDestination() {
+	void dynamicDestination() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration
 			.getCompleteConfiguration(TestConfiguration.class))
 			.web(WebApplicationType.NONE).run("--spring.jmx.enabled=false")) {
@@ -640,7 +640,7 @@ class StreamBridgeTests {
 	}
 
 	@Test
-	void testDynamicDestinationDestroy() {
+	void dynamicDestinationDestroy() {
 		BindingService bindingService;
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration
 			.getCompleteConfiguration(InterceptorConfiguration.class))
@@ -659,7 +659,7 @@ class StreamBridgeTests {
 	}
 
 	@Test
-	void testWithIntegrationFlowBecauseMarcinSaidSo() {
+	void withIntegrationFlowBecauseMarcinSaidSo() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration
 			.getCompleteConfiguration(IntegrationFlowConfiguration.class))
 			.web(WebApplicationType.NONE).run("--spring.jmx.enabled=false")) {
@@ -674,7 +674,7 @@ class StreamBridgeTests {
 	}
 
 	@Test
-	void testNewBindingCallback() {
+	void newBindingCallback() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration
 			.getCompleteConfiguration(BindingCallbackConfiguration.class))
 			.web(WebApplicationType.NONE).run("--spring.cloud.stream.source=uppercase",
@@ -687,7 +687,7 @@ class StreamBridgeTests {
 	}
 
 	@Test
-	void testDynamicProducerDestination() {
+	void dynamicProducerDestination() {
 		System.clearProperty("spring.cloud.function.definition");
 		ConfigurableApplicationContext context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(DynamicProducerDestinationConfig.class))

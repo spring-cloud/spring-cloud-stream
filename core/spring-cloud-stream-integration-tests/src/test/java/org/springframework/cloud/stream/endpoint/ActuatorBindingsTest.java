@@ -51,7 +51,7 @@ class ActuatorBindingsTest {
 	 * it does not result in recursive exception described in https://github.com/spring-cloud/spring-cloud-stream/issues/2253
 	 */
 	@Test
-	void test_2253() {
+	void actuatorDoesNotCauseInfiniteRecursion() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(Bindings.class))
 			.web(WebApplicationType.NONE).run("--spring.jmx.enabled=false",

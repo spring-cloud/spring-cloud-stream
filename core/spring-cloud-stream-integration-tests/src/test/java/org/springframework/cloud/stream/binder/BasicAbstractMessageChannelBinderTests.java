@@ -61,7 +61,7 @@ class BasicAbstractMessageChannelBinderTests {
 
 	@Test
 	@SuppressWarnings("unchecked")
-	public void testEndpointLifecycle() throws Exception {
+	public void endpointLifecycle() throws Exception {
 		// @checkstyle:off
 		AbstractMessageChannelBinder<ConsumerProperties, ProducerProperties, ProvisioningProvider<ConsumerProperties, ProducerProperties>> binder = context
 			.getBean(AbstractMessageChannelBinder.class);
@@ -113,7 +113,7 @@ class BasicAbstractMessageChannelBinderTests {
 
 	@Test
 	@SuppressWarnings("unchecked")
-	public void testEndpointBinderHasRecoverer() throws Exception {
+	public void endpointBinderHasRecoverer() throws Exception {
 		// @checkstyle:off
 		ConfigurableApplicationContext context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration())

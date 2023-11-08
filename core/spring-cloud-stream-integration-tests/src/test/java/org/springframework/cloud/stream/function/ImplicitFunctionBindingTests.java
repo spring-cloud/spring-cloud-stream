@@ -97,7 +97,7 @@ class ImplicitFunctionBindingTests {
 
 
 	@Test
-	void testFailedApplicationListenerConfiguration() {
+	void failedApplicationListenerConfiguration() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(FailedApplicationListenerConfiguration.class))
 			.web(WebApplicationType.NONE)
@@ -114,7 +114,7 @@ class ImplicitFunctionBindingTests {
 
 	@SuppressWarnings({"rawtypes"})
 	@Test
-	void testDisableAutodetect() {
+	void disableAutodetect() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(SendToDestinationConfiguration.class))
 			.web(WebApplicationType.NONE)
@@ -131,7 +131,7 @@ class ImplicitFunctionBindingTests {
 
 	@SuppressWarnings({"rawtypes" })
 	@Test
-	void testBindingControl() {
+	void bindingControl() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(SendToDestinationConfiguration.class))
 			.web(WebApplicationType.NONE)
@@ -147,7 +147,7 @@ class ImplicitFunctionBindingTests {
 
 	@ParameterizedTest
 	@ValueSource(strings = {"single-destination", "destination1,destination2,destination3"})
-	void testGh2658_WithMultipleDestinations(String destination) {
+	void gh2658_WithMultipleDestinations(String destination) {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(SingleConsumerWithMultipleDestinationConfiguration.class))
 			.web(WebApplicationType.NONE)
@@ -171,7 +171,7 @@ class ImplicitFunctionBindingTests {
 	}
 
 	@Test
-	void testGh2658_queryBindingThatNotExists() {
+	void gh2658_queryBindingThatNotExists() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(SingleConsumerWithMultipleDestinationConfiguration.class))
 			.web(WebApplicationType.NONE)
@@ -241,7 +241,7 @@ class ImplicitFunctionBindingTests {
 	}
 
 	@Test
-	void testEmptyConfiguration() {
+	void emptyConfiguration() {
 
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(EmptyConfiguration.class))
@@ -254,7 +254,7 @@ class ImplicitFunctionBindingTests {
 	}
 
 	@Test
-	void testNullMessage() {
+	void nullMessage() {
 
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(NullMessagerConfiguration.class))
@@ -279,7 +279,7 @@ class ImplicitFunctionBindingTests {
 	}
 
 	@Test
-	void testSimpleFunctionWithStreamProperty() {
+	void simpleFunctionWithStreamProperty() {
 
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(NoEnableBindingConfiguration.class))
@@ -299,7 +299,7 @@ class ImplicitFunctionBindingTests {
 	}
 
 	@Test
-	void testHeaderRetentionWithComposition() {
+	void headerRetentionWithComposition() {
 
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(NoEnableBindingConfiguration.class))
@@ -321,7 +321,7 @@ class ImplicitFunctionBindingTests {
 	}
 
 	@Test
-	void testReactiveFunctionWithState() {
+	void reactiveFunctionWithState() {
 
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(NoEnableBindingConfiguration.class))
@@ -348,7 +348,7 @@ class ImplicitFunctionBindingTests {
 
 	@SuppressWarnings("rawtypes")
 	@Test
-	void testFunctionWithUseNativeEncoding() {
+	void functionWithUseNativeEncoding() {
 
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(NoEnableBindingConfiguration.class))
@@ -367,7 +367,7 @@ class ImplicitFunctionBindingTests {
 	}
 
 	@Test
-	void testSimpleFunctionWithNativeProperty() {
+	void simpleFunctionWithNativeProperty() {
 
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(NoEnableBindingConfiguration.class))
@@ -387,7 +387,7 @@ class ImplicitFunctionBindingTests {
 	}
 
 	@Test
-	void testSimpleFunctionWithoutDefinitionProperty() {
+	void simpleFunctionWithoutDefinitionProperty() {
 		System.clearProperty("spring.cloud.function.definition");
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(SingleFunctionConfiguration.class))
@@ -406,7 +406,7 @@ class ImplicitFunctionBindingTests {
 	}
 
 	@Test
-	void testSimpleConsumerWithoutDefinitionProperty() {
+	void simpleConsumerWithoutDefinitionProperty() {
 		System.clearProperty("spring.cloud.function.definition");
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(SingleConsumerConfiguration.class))
@@ -422,7 +422,7 @@ class ImplicitFunctionBindingTests {
 	}
 
 	@Test
-	void fooFunctionComposedWithConsumerNoOutputChannel() {
+	void functionComposedWithConsumerNoOutputChannel() {
 		System.clearProperty("spring.cloud.function.definition");
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(ReactiveFunctionConfiguration.class, SingleReactiveConsumerConfiguration.class))
@@ -440,7 +440,7 @@ class ImplicitFunctionBindingTests {
 	}
 
 	@Test
-	void fooFunctionComposedWithConsumerNonReactive() {
+	void functionComposedWithConsumerNonReactive() {
 		System.clearProperty("spring.cloud.function.definition");
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(FunctionConsumerCopositionConfiguration.class))
@@ -458,7 +458,7 @@ class ImplicitFunctionBindingTests {
 	}
 
 	@Test
-	void testReactiveConsumerWithoutDefinitionProperty() {
+	void reactiveConsumerWithoutDefinitionProperty() {
 		System.clearProperty("spring.cloud.function.definition");
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(SingleReactiveConsumerConfiguration.class))
@@ -474,7 +474,7 @@ class ImplicitFunctionBindingTests {
 	}
 
 	@Test
-	void testConsumer() {
+	void basicConsumer() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(SingleConsumerConfiguration.class))
 			.web(WebApplicationType.NONE).run("--spring.cloud.function.definition=consumer",
@@ -487,7 +487,7 @@ class ImplicitFunctionBindingTests {
 	}
 
 	@Test
-	void testBindingWithReactiveFunction() {
+	void bindingWithReactiveFunction() {
 		System.clearProperty("spring.cloud.function.definition");
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(ReactiveFunctionConfiguration.class))
@@ -521,7 +521,7 @@ class ImplicitFunctionBindingTests {
 //	}
 
 	@Test
-	void testDeclaredTypeVsActualInstance() {
+	void declaredTypeVsActualInstance() {
 		System.clearProperty("spring.cloud.function.definition");
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(SCF_GH_409Configuration.class))
@@ -540,7 +540,7 @@ class ImplicitFunctionBindingTests {
 	}
 
 	@Test
-	void testWithContextTypeApplicationProperty() {
+	void withContextTypeApplicationProperty() {
 		System.clearProperty("spring.cloud.function.definition");
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(SingleFunctionConfiguration.class))
@@ -563,7 +563,7 @@ class ImplicitFunctionBindingTests {
 	}
 
 	@Test
-	void testWithIntegrationFlowAsFunction() {
+	void withIntegrationFlowAsFunction() {
 		System.clearProperty("spring.cloud.function.definition");
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration
 			.getCompleteConfiguration(FunctionSampleSpringIntegrationConfiguration.class))
@@ -583,7 +583,7 @@ class ImplicitFunctionBindingTests {
 
 	@Test
 	@Disabled
-	void testSupplierWithCustomPoller() {
+	void supplierWithCustomPoller() {
 		System.clearProperty("spring.cloud.function.definition");
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(SupplierWithExplicitPollerConfiguration.class))
@@ -602,7 +602,7 @@ class ImplicitFunctionBindingTests {
 
 	@Test
 	@Disabled
-	void testImperativeSupplierReactiveFunctionComposition() {
+	void imperativeSupplierReactiveFunctionComposition() {
 		System.clearProperty("spring.cloud.function.definition");
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(ImperativeSupplierComposedWithReactiveFunctionConfiguration.class))
@@ -627,11 +627,9 @@ class ImplicitFunctionBindingTests {
 		}
 	}
 
-
-
 	@Test
 	@Disabled
-	void testSupplierWithCustomPollerAndMappedOutput() {
+	void supplierWithCustomPollerAndMappedOutput() {
 		System.clearProperty("spring.cloud.function.definition");
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(SupplierWithExplicitPollerConfiguration.class))
@@ -650,7 +648,7 @@ class ImplicitFunctionBindingTests {
 	}
 
 	@Test
-	void testNoFunctionEnabledConfiguration() {
+	void noFunctionEnabledConfiguration() {
 		System.clearProperty("spring.cloud.function.definition");
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(NoFunctionEnabledConfiguration.class))
@@ -680,7 +678,7 @@ class ImplicitFunctionBindingTests {
 	}
 
 	@Test
-	void testCollectionAndMapConversionDuringComposition() {
+	void collectionAndMapConversionDuringComposition() {
 		System.clearProperty("spring.cloud.function.definition");
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration
 			.getCompleteConfiguration(CompositionWithCollectionConfiguration.class))
@@ -701,7 +699,7 @@ class ImplicitFunctionBindingTests {
 
 	// see https://github.com/spring-cloud/spring-cloud-stream/issues/1896
 	@Test
-	void testOutputAsCollectionOfMessages() {
+	void outputAsCollectionOfMessages() {
 		System.clearProperty("spring.cloud.function.definition");
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration
 			.getCompleteConfiguration(SplittableTypesConfiguration.class))
@@ -724,7 +722,7 @@ class ImplicitFunctionBindingTests {
 	}
 
 	@Test
-	void testOutputAsArrayOfMessages() {
+	void outputAsArrayOfMessages() {
 		System.clearProperty("spring.cloud.function.definition");
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration
 			.getCompleteConfiguration(SplittableTypesConfiguration.class))
@@ -747,7 +745,7 @@ class ImplicitFunctionBindingTests {
 	}
 
 	@Test
-	void testWithExplicitBindingInstructions() {
+	void withExplicitBindingInstructions() {
 		System.clearProperty("spring.cloud.function.definition");
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration
 			.getCompleteConfiguration(SplittableTypesConfiguration.class))
@@ -774,7 +772,7 @@ class ImplicitFunctionBindingTests {
 	}
 
 	@Test
-	void testWithExplicitBindingInstructionsOnlyDestination() {
+	void withExplicitBindingInstructionsOnlyDestination() {
 		System.clearProperty("spring.cloud.function.definition");
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration
 			.getCompleteConfiguration(SplittableTypesConfiguration.class))
@@ -926,7 +924,7 @@ class ImplicitFunctionBindingTests {
 	}
 
 	@Test
-	void testReactiveFunctionWithOutputAsMonoVoid() {
+	void reactiveFunctionWithOutputAsMonoVoid() {
 		System.clearProperty("spring.cloud.function.definition");
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(FunctionalConsumerConfiguration.class))
@@ -943,7 +941,7 @@ class ImplicitFunctionBindingTests {
 	}
 
 	@Test
-	void testReactiveSendToDestinationConfiguration() {
+	void reactiveSendToDestinationConfiguration() {
 		System.clearProperty("spring.cloud.function.definition");
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(SendToDestinationConfiguration.class))
@@ -969,7 +967,7 @@ class ImplicitFunctionBindingTests {
 
 	// See this issue for more context on this test: https://github.com/spring-cloud/spring-cloud-stream/issues/2770
 	@Test
-	void testSendToDestinationWhenPartitionsEnabled() {
+	void sendToDestinationWhenPartitionsEnabled() {
 		System.clearProperty("spring.cloud.function.definition");
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(ImperativeSendToDestinationConfiguration.class))
@@ -1013,7 +1011,7 @@ class ImplicitFunctionBindingTests {
 
 	@Test
 	@ExtendWith(OutputCaptureExtension.class)
-	void testReactiveConsumerWithConcurrencyGreaterThanOneLogsWarning(CapturedOutput output) {
+	void reactiveConsumerWithConcurrencyGreaterThanOneLogsWarning(CapturedOutput output) {
 		System.clearProperty("spring.cloud.function.definition");
 		try (ConfigurableApplicationContext ignored = new SpringApplicationBuilder(
 				TestChannelBinderConfiguration.getCompleteConfiguration(ReactiveConsumerWithConcurrencyFailureConfiguration.class))
@@ -1024,7 +1022,7 @@ class ImplicitFunctionBindingTests {
 	}
 
 	@Test
-	void testGh1973() {
+	void gh1973() {
 		System.clearProperty("spring.cloud.function.definition");
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(SupplierAndProcessorConfiguration.class))
@@ -1046,7 +1044,7 @@ class ImplicitFunctionBindingTests {
 	}
 
 	@Test
-	void testGh1944() {
+	void gh1944() {
 		System.clearProperty("spring.cloud.function.definition");
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(SupplierAndPojoConfiguration.class))
@@ -1060,7 +1058,7 @@ class ImplicitFunctionBindingTests {
 	}
 
 	@Test
-	void testGh2054() {
+	void gh2054() {
 		System.clearProperty("spring.cloud.function.definition");
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(ReactiveFunctionConfiguration.class))
@@ -1080,7 +1078,7 @@ class ImplicitFunctionBindingTests {
 
 
 	@Test
-	void testGh2062() {
+	void gh2062() {
 		System.clearProperty("spring.cloud.function.definition");
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(ReactiveFunctionConfiguration.class))
@@ -1096,7 +1094,7 @@ class ImplicitFunctionBindingTests {
 
 	@SuppressWarnings("rawtypes")
 	@Test
-	void testWithNativeEncodingImperative() {
+	void withNativeEncodingImperative() {
 		System.clearProperty("spring.cloud.function.definition");
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(SingleFunctionConfiguration2.class))
@@ -1134,7 +1132,7 @@ class ImplicitFunctionBindingTests {
 
 	@SuppressWarnings("rawtypes")
 	@Test
-	void testWithNativeEncodingReactive() {
+	void withNativeEncodingReactive() {
 		System.clearProperty("spring.cloud.function.definition");
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(SingleFunctionConfiguration2.class))
@@ -1200,7 +1198,7 @@ class ImplicitFunctionBindingTests {
 	}
 
 	@Test
-	void testHeaderPropagation() {
+	void headerPropagation() {
 		System.clearProperty("spring.cloud.function.definition");
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(SingleFunctionConfiguration.class))

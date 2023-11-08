@@ -458,7 +458,7 @@ class ContentTypeTckTests {
 
 	// ======
 	@Test
-	void testWithMapInputParameter() {
+	void withMapInputParameter() {
 		ApplicationContext context = new SpringApplicationBuilder(
 			MapInputConfiguration.class).web(WebApplicationType.NONE)
 			.run("--spring.jmx.enabled=false");
@@ -472,7 +472,7 @@ class ContentTypeTckTests {
 	}
 
 	@Test
-	void testWithMapPayloadParameter() {
+	void withMapPayloadParameter() {
 		ApplicationContext context = new SpringApplicationBuilder(
 			MapInputConfiguration.class).web(WebApplicationType.NONE)
 			.run("--spring.jmx.enabled=false");
@@ -486,7 +486,7 @@ class ContentTypeTckTests {
 	}
 
 	@Test
-	void testWithListInputParameter() {
+	void withListInputParameter() {
 		ApplicationContext context = new SpringApplicationBuilder(
 			ListInputConfiguration.class).web(WebApplicationType.NONE)
 			.run("--spring.jmx.enabled=false", "--debug");
@@ -501,7 +501,7 @@ class ContentTypeTckTests {
 
 	@Test
 	@Disabled // TODO fix it. We can recognize MessageHeaders and parse it out of the message properly
-	void testWithMessageHeadersInputParameter() {
+	void withMessageHeadersInputParameter() {
 		ApplicationContext context = new SpringApplicationBuilder(
 			MessageHeadersInputConfiguration.class).web(WebApplicationType.NONE)
 			.run("--spring.jmx.enabled=false");

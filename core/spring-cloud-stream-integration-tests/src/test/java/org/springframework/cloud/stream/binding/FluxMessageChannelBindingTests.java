@@ -39,7 +39,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class FluxMessageChannelBindingTests {
 
 	@Test
-	void testFluxMessageChannelBindingWhenReactiveOptIn() {
+	void fluxMessageChannelBindingWhenReactiveOptIn() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(ReactiveFunctionConfiguration.class))
 			.web(WebApplicationType.NONE)

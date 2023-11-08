@@ -45,7 +45,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class FunctionBatchingTests {
 
 	@Test
-	void testMessageBatchConfigurationWithKafkaNull() {
+	void messageBatchConfigurationWithKafkaNull() {
 		TestChannelBinderConfiguration.applicationContextRunner(MessageBatchConfiguration.class)
 			.withPropertyValues("spring.jmx.enabled=false",
 				"spring.cloud.stream.function.definition=func",
@@ -75,7 +75,7 @@ class FunctionBatchingTests {
 	}
 
 	@Test
-	void testListPayloadConfiguration() {
+	void listPayloadConfiguration() {
 		TestChannelBinderConfiguration.applicationContextRunner(ListPayloadNotBatchConfiguration.class)
 			.withPropertyValues("spring.jmx.enabled=false",
 				"spring.cloud.stream.function.definition=func")
@@ -99,7 +99,7 @@ class FunctionBatchingTests {
 	}
 
 	@Test
-	void testListStringPayloadConfigurationTextPlain() {
+	void listStringPayloadConfigurationTextPlain() {
 		TestChannelBinderConfiguration.applicationContextRunner(ListStringPayloadConfiguration.class)
 			.withPropertyValues("spring.jmx.enabled=false",
 				"spring.cloud.stream.function.definition=func",
@@ -120,7 +120,7 @@ class FunctionBatchingTests {
 	}
 
 	@Test
-	void testListObjectPayloadObjectConfigurationTextPlain() {
+	void listObjectPayloadObjectConfigurationTextPlain() {
 		TestChannelBinderConfiguration.applicationContextRunner(ListObjectPayloadConfiguration.class)
 			.withPropertyValues("spring.jmx.enabled=false",
 				"spring.cloud.stream.function.definition=func",
@@ -141,7 +141,7 @@ class FunctionBatchingTests {
 	}
 
 	@Test
-	void testSimpleBatchConfiguration() {
+	void simpleBatchConfiguration() {
 		TestChannelBinderConfiguration.applicationContextRunner(SimpleBatchConfiguration.class)
 			.withPropertyValues(
 				"spring.jmx.enabled=false",
@@ -169,7 +169,7 @@ class FunctionBatchingTests {
 	}
 
 	@Test
-	void testNestedBatchConfiguration() {
+	void nestedBatchConfiguration() {
 		TestChannelBinderConfiguration.applicationContextRunner(NestedBatchConfiguration.class)
 			.withPropertyValues("spring.jmx.enabled=false",
 				"spring.cloud.stream.function.definition=func",

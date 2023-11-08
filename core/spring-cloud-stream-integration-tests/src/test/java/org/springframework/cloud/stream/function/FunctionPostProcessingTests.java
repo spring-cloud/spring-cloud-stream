@@ -42,7 +42,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class FunctionPostProcessingTests {
 
 	@Test
-	void testNothingIsBroken() {
+	void verifyNothingIsBroken() {
 		System.clearProperty("spring.cloud.function.definition");
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(PostProcessingTestConfiguration.class))
@@ -59,7 +59,7 @@ class FunctionPostProcessingTests {
 	}
 
 	@Test
-	void testSuccessfulPostProcessingOfSingleFunction() {
+	void successfulPostProcessingOfSingleFunction() {
 		System.clearProperty("spring.cloud.function.definition");
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(PostProcessingTestConfiguration.class))
@@ -77,7 +77,7 @@ class FunctionPostProcessingTests {
 	}
 
 	@Test
-	void testNoPostProcessingOnError() {
+	void noPostProcessingOnError() {
 		System.clearProperty("spring.cloud.function.definition");
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(PostProcessingTestConfiguration.class))
@@ -95,7 +95,7 @@ class FunctionPostProcessingTests {
 	}
 
 	@Test
-	void testNoFailureOnPostProcessingError() {
+	void noFailureOnPostProcessingError() {
 		System.clearProperty("spring.cloud.function.definition");
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(PostProcessingTestConfiguration.class))
@@ -114,7 +114,7 @@ class FunctionPostProcessingTests {
 
 
 	@Test
-	void testWithCompositionLastFunctionIsPostProcessing() {
+	void withCompositionLastFunctionIsPostProcessing() {
 		System.clearProperty("spring.cloud.function.definition");
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(PostProcessingTestConfiguration.class))
@@ -132,7 +132,7 @@ class FunctionPostProcessingTests {
 	}
 
 	@Test
-	void testWithCompositionFirstFunctionIsPostProcessing() {
+	void withCompositionFirstFunctionIsPostProcessing() {
 		System.clearProperty("spring.cloud.function.definition");
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(PostProcessingTestConfiguration.class))
@@ -150,7 +150,7 @@ class FunctionPostProcessingTests {
 	}
 
 	@Test
-	void testOlnyLastPostProcessorInvoked() {
+	void onlyLastPostProcessorInvoked() {
 		System.clearProperty("spring.cloud.function.definition");
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(PostProcessingTestConfiguration.class))
@@ -169,7 +169,7 @@ class FunctionPostProcessingTests {
 	}
 
 	@Test
-	void testOlnyLastPostProcessorInvoked2() {
+	void onlyLastPostProcessorInvoked2() {
 		System.clearProperty("spring.cloud.function.definition");
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(PostProcessingTestConfiguration.class))

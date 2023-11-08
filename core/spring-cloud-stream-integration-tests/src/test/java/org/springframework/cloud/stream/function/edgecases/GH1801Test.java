@@ -37,7 +37,7 @@ import org.springframework.messaging.Message;
 class GH1801Test {
 
 	@Test
-	void test() {
+	void verifyNoNPEWhenFactoryMethodNull() {
 		SampleBootApplication.main("--spring.cloud.stream.defaultBinder=integration");
 	}
 

@@ -27,7 +27,6 @@ import org.springframework.cloud.stream.binder.test.OutputDestination;
 import org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.context.annotation.Bean;
-import org.springframework.messaging.Message;
 import org.springframework.messaging.support.GenericMessage;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -50,7 +49,7 @@ class DynamicDestinationFunctionTests {
 
 	@Test
 	@Disabled
-	void testEmptyConfiguration() {
+	void emptyConfiguration() {
 		TestChannelBinderConfiguration.applicationContextRunner(SampleConfiguration.class)
 			.withPropertyValues(
 				"spring.jmx.enabled=false",
@@ -72,26 +71,11 @@ class DynamicDestinationFunctionTests {
 	@EnableAutoConfiguration
 	public static class SampleConfiguration {
 
-//		@Autowired
-//		private BinderAwareChannelResolver resolver;
-
 		@Bean
 		public PartitionKeyExtractorStrategy keyExtractor() {
-			return new PartitionKeyExtractorStrategy() {
-
-				@Override
-				public Object extractKey(Message<?> message) {
-					return 0;
-				}
-			};
+			return message -> 0;
 		}
 
-//		@Bean
-//		public Consumer<String> cons() {
-//			return value -> {
-//				resolver.resolveDestination(value).send(new GenericMessage<String>(value));
-//			};
-//		}
 	}
 
 }
