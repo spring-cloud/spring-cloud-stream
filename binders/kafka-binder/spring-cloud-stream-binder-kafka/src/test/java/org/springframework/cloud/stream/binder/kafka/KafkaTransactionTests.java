@@ -70,7 +70,7 @@ class KafkaTransactionTests {
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Test
-	void testProducerRunsInTx() {
+	void producerRunsInTx() {
 		KafkaProperties kafkaProperties = new TestKafkaProperties();
 		kafkaProperties.setBootstrapServers(Collections
 				.singletonList(embeddedKafka.getBrokersAsString()));

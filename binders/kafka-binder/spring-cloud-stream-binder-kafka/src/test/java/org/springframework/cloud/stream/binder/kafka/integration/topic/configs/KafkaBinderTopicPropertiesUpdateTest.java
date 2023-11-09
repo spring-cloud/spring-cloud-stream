@@ -40,7 +40,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class KafkaBinderTopicPropertiesUpdateTest extends BaseKafkaBinderTopicPropertiesUpdateTest {
 
 	@Test
-	void testKafkaBinderUpdateTopicConfiguration() throws Exception {
+	void kafkaBinderUpdateTopicConfiguration() throws Exception {
 		Map<String, Object> adminClientConfig = new HashMap<>();
 		adminClientConfig.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, embeddedKafka.getBrokersAsString());
 		AdminClient adminClient = AdminClient.create(adminClientConfig);

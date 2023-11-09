@@ -76,7 +76,7 @@ class KafkaBinderExtendedPropertiesTest {
 	private ConfigurableApplicationContext context;
 
 	@Test
-	void testKafkaBinderExtendedProperties() throws Exception {
+	void kafkaBinderExtendedProperties() throws Exception {
 
 		BinderFactory binderFactory = context.getBeanFactory()
 				.getBean(BinderFactory.class);

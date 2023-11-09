@@ -78,7 +78,7 @@ class KafkaBinderActuatorTests {
 	private KafkaTemplate<?, byte[]> kafkaTemplate;
 
 	@Test
-	void testKafkaBinderMetricsExposed() {
+	void kafkaBinderMetricsExposed() {
 		this.kafkaTemplate.send("input", null, "foo".getBytes());
 		this.kafkaTemplate.flush();
 
@@ -89,7 +89,7 @@ class KafkaBinderActuatorTests {
 
 	@Test
 	@Disabled
-	void testKafkaBinderMetricsWhenNoMicrometer() {
+	void kafkaBinderMetricsWhenNoMicrometer() {
 		new ApplicationContextRunner().withUserConfiguration(KafkaMetricsTestConfig.class)
 				.withPropertyValues(
 						"spring.cloud.stream.bindings.input.group", KafkaBinderActuatorTests.TEST_CONSUMER_GROUP,

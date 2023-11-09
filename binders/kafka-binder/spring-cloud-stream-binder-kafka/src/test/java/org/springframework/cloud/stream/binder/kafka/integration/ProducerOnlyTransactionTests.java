@@ -77,7 +77,7 @@ class ProducerOnlyTransactionTests {
 	EmbeddedKafkaBroker embeddedKafkaBrokera;
 
 	@Test
-	void testProducerTx() {
+	void producerTx() {
 		final StreamBridge streamBridge = context.getBean(StreamBridge.class);
 		this.sender.DoInTransaction(streamBridge);
 		assertThat(this.sender.isInTx()).isTrue();

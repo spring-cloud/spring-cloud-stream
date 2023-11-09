@@ -84,7 +84,7 @@ class ConsumerProducerTransactionTests {
 	private ApplicationContext context;
 
 	@Test
-	public void testProducerRunsInConsumerTransaction() throws InterruptedException {
+	public void producerRunsInConsumerTransaction() throws InterruptedException {
 		assertThat(this.config.latch.await(10, TimeUnit.SECONDS)).isTrue();
 		assertThat(this.config.outs).containsExactlyInAnyOrder("ONE", "THREE");
 	}

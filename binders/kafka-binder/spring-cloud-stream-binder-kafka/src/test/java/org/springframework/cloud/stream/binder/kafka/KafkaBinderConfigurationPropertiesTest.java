@@ -56,7 +56,7 @@ class KafkaBinderConfigurationPropertiesTest {
 
 	@Test
 	@SuppressWarnings("unchecked")
-	void testKafkaBinderConfigurationProperties() throws Exception {
+	void kafkaBinderConfigurationProperties() throws Exception {
 		assertThat(this.kafkaMessageChannelBinder).isNotNull();
 		KafkaProducerProperties kafkaProducerProperties = new KafkaProducerProperties();
 		kafkaProducerProperties.setBufferSize(12345);

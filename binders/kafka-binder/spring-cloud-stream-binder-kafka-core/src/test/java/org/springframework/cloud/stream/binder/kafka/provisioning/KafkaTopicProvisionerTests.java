@@ -46,7 +46,7 @@ class KafkaTopicProvisionerTests {
 
 	@SuppressWarnings("rawtypes")
 	@Test
-	public void bootPropertiesOverriddenExceptServers() throws Exception {
+	void bootPropertiesOverriddenExceptServers() throws Exception {
 		KafkaProperties bootConfig = new KafkaProperties();
 		bootConfig.getProperties().put(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG,
 				"PLAINTEXT");
@@ -75,7 +75,7 @@ class KafkaTopicProvisionerTests {
 
 	@SuppressWarnings("rawtypes")
 	@Test
-	public void bootPropertiesOverriddenIncludingServers() throws Exception {
+	void bootPropertiesOverriddenIncludingServers() throws Exception {
 		KafkaProperties bootConfig = new KafkaProperties();
 		bootConfig.getProperties().put(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG,
 				"PLAINTEXT");
@@ -102,7 +102,7 @@ class KafkaTopicProvisionerTests {
 	}
 
 	@Test
-	public void brokersInvalid() throws Exception {
+	void brokersInvalid() throws Exception {
 		KafkaProperties bootConfig = new KafkaProperties();
 		KafkaBinderConfigurationProperties binderConfig = new KafkaBinderConfigurationProperties(
 				bootConfig);

@@ -36,7 +36,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class KafkaBinderConfigurationPropertiesTest {
 
 	@Test
-	public void mergedConsumerConfigurationFiltersGroupIdFromKafkaProperties() {
+	void mergedConsumerConfigurationFiltersGroupIdFromKafkaProperties() {
 		KafkaProperties kafkaProperties = new KafkaProperties();
 		kafkaProperties.getConsumer().setGroupId("group1");
 		KafkaBinderConfigurationProperties kafkaBinderConfigurationProperties =
@@ -49,7 +49,7 @@ class KafkaBinderConfigurationPropertiesTest {
 	}
 
 	@Test
-	public void mergedConsumerConfigurationFiltersEnableAutoCommitFromKafkaProperties() {
+	void mergedConsumerConfigurationFiltersEnableAutoCommitFromKafkaProperties() {
 		KafkaProperties kafkaProperties = new KafkaProperties();
 		kafkaProperties.getConsumer().setEnableAutoCommit(true);
 		KafkaBinderConfigurationProperties kafkaBinderConfigurationProperties =
@@ -62,7 +62,7 @@ class KafkaBinderConfigurationPropertiesTest {
 	}
 
 	@Test
-	public void mergedConsumerConfigurationFiltersGroupIdFromKafkaBinderConfigurationPropertiesConfiguration() {
+	void mergedConsumerConfigurationFiltersGroupIdFromKafkaBinderConfigurationPropertiesConfiguration() {
 		KafkaProperties kafkaProperties = new KafkaProperties();
 		KafkaBinderConfigurationProperties kafkaBinderConfigurationProperties =
 				new KafkaBinderConfigurationProperties(kafkaProperties);
@@ -75,7 +75,7 @@ class KafkaBinderConfigurationPropertiesTest {
 	}
 
 	@Test
-	public void mergedConsumerConfigurationFiltersEnableAutoCommitFromKafkaBinderConfigurationPropertiesConfiguration() {
+	void mergedConsumerConfigurationFiltersEnableAutoCommitFromKafkaBinderConfigurationPropertiesConfiguration() {
 		KafkaProperties kafkaProperties = new KafkaProperties();
 		KafkaBinderConfigurationProperties kafkaBinderConfigurationProperties =
 				new KafkaBinderConfigurationProperties(kafkaProperties);
@@ -88,7 +88,7 @@ class KafkaBinderConfigurationPropertiesTest {
 	}
 
 	@Test
-	public void mergedConsumerConfigurationFiltersGroupIdFromKafkaBinderConfigurationPropertiesConsumerProperties() {
+	void mergedConsumerConfigurationFiltersGroupIdFromKafkaBinderConfigurationPropertiesConsumerProperties() {
 		KafkaProperties kafkaProperties = new KafkaProperties();
 		KafkaBinderConfigurationProperties kafkaBinderConfigurationProperties =
 				new KafkaBinderConfigurationProperties(kafkaProperties);
@@ -101,7 +101,7 @@ class KafkaBinderConfigurationPropertiesTest {
 	}
 
 	@Test
-	public void mergedConsumerConfigurationFiltersEnableAutoCommitFromKafkaBinderConfigurationPropertiesConsumerProps() {
+	void mergedConsumerConfigurationFiltersEnableAutoCommitFromKafkaBinderConfigurationPropertiesConsumerProps() {
 		KafkaProperties kafkaProperties = new KafkaProperties();
 		KafkaBinderConfigurationProperties kafkaBinderConfigurationProperties =
 				new KafkaBinderConfigurationProperties(kafkaProperties);
@@ -114,7 +114,7 @@ class KafkaBinderConfigurationPropertiesTest {
 	}
 
 	@Test
-	public void testCertificateFilesAreConvertedToAbsolutePathsFromClassPathResources() {
+	void certificateFilesAreConvertedToAbsolutePathsFromClassPathResources() {
 		KafkaProperties kafkaProperties = new KafkaProperties();
 		KafkaBinderConfigurationProperties kafkaBinderConfigurationProperties =
 				new KafkaBinderConfigurationProperties(kafkaProperties);
@@ -132,7 +132,7 @@ class KafkaBinderConfigurationPropertiesTest {
 	}
 
 	@Test
-	public void testCertificateFilesAreConvertedToAbsolutePathsFromHttpResources() throws IOException {
+	void certificateFilesAreConvertedToAbsolutePathsFromHttpResources() throws IOException {
 		HttpServer server = HttpServer.create(new InetSocketAddress("localhost", 5869), 0);
 		createContextWithCertFileHandler(server, "testclient.truststore");
 		createContextWithCertFileHandler(server, "testclient.keystore");
@@ -164,7 +164,7 @@ class KafkaBinderConfigurationPropertiesTest {
 	}
 
 	@Test
-	public void testCertificateFilesAreConvertedToGivenAbsolutePathsFromClassPathResources() {
+	void certificateFilesAreConvertedToGivenAbsolutePathsFromClassPathResources() {
 		KafkaProperties kafkaProperties = new KafkaProperties();
 		KafkaBinderConfigurationProperties kafkaBinderConfigurationProperties =
 				new KafkaBinderConfigurationProperties(kafkaProperties);
@@ -182,7 +182,7 @@ class KafkaBinderConfigurationPropertiesTest {
 	}
 
 	@Test
-	public void testCertificateFilesAreMovedForSchemaRegistryConfiguration() {
+	void certificateFilesAreMovedForSchemaRegistryConfiguration() {
 		KafkaProperties kafkaProperties = new KafkaProperties();
 		KafkaBinderConfigurationProperties kafkaBinderConfigurationProperties =
 				new KafkaBinderConfigurationProperties(kafkaProperties);

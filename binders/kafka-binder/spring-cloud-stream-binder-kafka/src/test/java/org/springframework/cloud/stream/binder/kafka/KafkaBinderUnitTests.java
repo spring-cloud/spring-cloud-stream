@@ -73,7 +73,7 @@ import static org.mockito.Mockito.verify;
 class KafkaBinderUnitTests {
 
 	@Test
-	void testPropertyOverrides() throws Exception {
+	void propertyOverrides() throws Exception {
 		KafkaProperties kafkaProperties = new TestKafkaProperties();
 		KafkaBinderConfigurationProperties binderConfigurationProperties = new KafkaBinderConfigurationProperties(
 				kafkaProperties);
@@ -120,7 +120,7 @@ class KafkaBinderUnitTests {
 	}
 
 	@Test
-	void testMergedConsumerProperties() {
+	void mergedConsumerProperties() {
 		KafkaProperties bootProps = new TestKafkaProperties();
 		bootProps.getConsumer().getProperties()
 				.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "bar");
@@ -137,7 +137,7 @@ class KafkaBinderUnitTests {
 	}
 
 	@Test
-	void testMergedProducerProperties() {
+	void mergedProducerProperties() {
 		KafkaProperties bootProps = new TestKafkaProperties();
 		bootProps.getProducer().getProperties().put(ProducerConfig.RETRIES_CONFIG, "bar");
 		KafkaBinderConfigurationProperties props = new KafkaBinderConfigurationProperties(
@@ -153,25 +153,25 @@ class KafkaBinderUnitTests {
 	}
 
 	@Test
-	void testOffsetResetWithGroupManagementEarliest() throws Exception {
+	void offsetResetWithGroupManagementEarliest() throws Exception {
 		testOffsetResetWithGroupManagement(true, true, "foo-100",
 				"testOffsetResetWithGroupManagementEarliest");
 	}
 
 	@Test
-	void testOffsetResetWithGroupManagementLatest() throws Throwable {
+	void offsetResetWithGroupManagementLatest() throws Throwable {
 		testOffsetResetWithGroupManagement(false, true, "foo-101",
 				"testOffsetResetWithGroupManagementLatest");
 	}
 
 	@Test
-	void testOffsetResetWithManualAssignmentEarliest() throws Exception {
+	void offsetResetWithManualAssignmentEarliest() throws Exception {
 		testOffsetResetWithGroupManagement(true, false, "foo-102",
 				"testOffsetResetWithManualAssignmentEarliest");
 	}
 
 	@Test
-	void testOffsetResetWithGroupManualAssignmentLatest() throws Throwable {
+	void offsetResetWithGroupManualAssignmentLatest() throws Throwable {
 		testOffsetResetWithGroupManagement(false, false, "foo-103",
 				"testOffsetResetWithGroupManualAssignmentLatest");
 	}

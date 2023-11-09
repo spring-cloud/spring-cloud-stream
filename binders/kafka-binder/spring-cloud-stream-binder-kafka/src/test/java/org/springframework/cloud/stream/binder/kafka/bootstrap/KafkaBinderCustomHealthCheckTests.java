@@ -49,7 +49,7 @@ class KafkaBinderCustomHealthCheckTests {
 	}
 
 	@Test
-	void testCustomHealthIndicatorIsActivated() {
+	void customHealthIndicatorIsActivated() {
 		ConfigurableApplicationContext applicationContext = new SpringApplicationBuilder(
 				CustomHealthCheckApplication.class).web(WebApplicationType.NONE).run(
 				"--spring.cloud.stream.kafka.binder.brokers="

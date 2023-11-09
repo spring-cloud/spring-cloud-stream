@@ -57,7 +57,7 @@ class KafkaBinderAutoConfigurationPropertiesTest {
 
 	@Test
 	@SuppressWarnings("unchecked")
-	void testKafkaBinderConfigurationWithKafkaProperties() throws Exception {
+	void kafkaBinderConfigurationWithKafkaProperties() throws Exception {
 		assertThat(this.kafkaMessageChannelBinder).isNotNull();
 		ExtendedProducerProperties<KafkaProducerProperties> producerProperties = new ExtendedProducerProperties<>(
 				new KafkaProducerProperties());
@@ -111,7 +111,7 @@ class KafkaBinderAutoConfigurationPropertiesTest {
 
 	@Test
 	@SuppressWarnings("unchecked")
-	void testKafkaHealthIndicatorProperties() {
+	void kafkaHealthIndicatorProperties() {
 		assertThat(this.kafkaBinderHealthIndicator).isNotNull();
 		Field consumerFactoryField = ReflectionUtils.findField(
 				KafkaBinderHealthIndicator.class, "consumerFactory",

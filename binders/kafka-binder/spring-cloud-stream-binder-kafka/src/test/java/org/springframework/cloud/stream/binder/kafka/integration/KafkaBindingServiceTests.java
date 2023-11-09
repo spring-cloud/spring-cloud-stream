@@ -50,7 +50,7 @@ class KafkaBindingServiceTests {
 	private ApplicationContext context;
 
 	@Test
-	void testKafkaBinderOverridesBindingPartitionCountToTopicPartitionsIfHigher() {
+	void kafkaBinderOverridesBindingPartitionCountToTopicPartitionsIfHigher() {
 		final StreamBridge streamBridge = this.context.getBean(StreamBridge.class);
 		GenericMessage<String> message = new GenericMessage<>("foo", Map.of("partitionKey", "key1"));
 		streamBridge.send("kafka-binding-service-test", message);

@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2022 the original author or authors.
+ * Copyright 2016-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,7 +57,7 @@ class KafkaBinderConfigurationTest {
 	}
 
 	@Test
-	public void testMultipleClientFactoryCustomizers() {
+	public void multipleClientFactoryCustomizers() {
 		contextRunner.withUserConfiguration(ClientFactoryCustomizerConfigs.class)
 					.run(context -> {
 						assertThat(context).hasSingleBean(KafkaMessageChannelBinder.class);
@@ -77,7 +77,7 @@ class KafkaBinderConfigurationTest {
 	}
 
 	@Test
-	public void testMultipleAdminClientConfigCustomizers() {
+	public void multipleAdminClientConfigCustomizers() {
 		contextRunner.withUserConfiguration(AdminClientConfigCustomizerConfigs.class)
 					.run(context -> {
 						assertThat(context).hasSingleBean(KafkaTopicProvisioner.class);

@@ -379,7 +379,7 @@ class KafkaBinderTests extends
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Test
-	void testDefaultHeaderMapper() throws Exception {
+	void defaultHeaderMapper() throws Exception {
 		Binder binder = getBinder();
 
 		BindingProperties producerBindingProperties = createProducerBindingProperties(
@@ -438,7 +438,7 @@ class KafkaBinderTests extends
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Test
-	void testCustomHeaderMapper() throws Exception {
+	void customHeaderMapper() throws Exception {
 
 		KafkaBinderConfigurationProperties binderConfiguration = createConfigurationProperties();
 		binderConfiguration.setHeaderMapperBeanName("headerMapper");
@@ -517,7 +517,7 @@ class KafkaBinderTests extends
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Test
-	void testWellKnownHeaderMapperWithBeanNameKafkaHeaderMapper() throws Exception {
+	void wellKnownHeaderMapperWithBeanNameKafkaHeaderMapper() throws Exception {
 
 		KafkaBinderConfigurationProperties binderConfiguration = createConfigurationProperties();
 
@@ -1050,37 +1050,37 @@ class KafkaBinderTests extends
 	}
 
 	@Test
-	void testDlqAndRetry() throws Exception {
+	void dlqAndRetry() throws Exception {
 		testDlqGuts(true, null, null, false, false);
 	}
 
 	@Test
-	void testDlqAndRetryTransactional() throws Exception {
+	void dlqAndRetryTransactional() throws Exception {
 		testDlqGuts(true, null, null, true, false);
 	}
 
 	@Test
-	void testDlq() throws Exception {
+	void dlq() throws Exception {
 		testDlqGuts(false, null, 3, false, false);
 	}
 
 	@Test
-	void testDlqWithDlqDestinationResolver() throws Exception {
+	void dlqWithDlqDestinationResolver() throws Exception {
 		testDlqGuts(false, null, 3, false, true);
 	}
 
 	@Test
-	void testDlqTransactional() throws Exception {
+	void dlqTransactional() throws Exception {
 		testDlqGuts(false, null, 3, true, false);
 	}
 
 	@Test
-	void testDlqNone() throws Exception {
+	void dlqNone() throws Exception {
 		testDlqGuts(false, HeaderMode.none, 1, false, false);
 	}
 
 	@Test
-	void testDlqEmbedded() throws Exception {
+	void dlqEmbedded() throws Exception {
 		testDlqGuts(false, HeaderMode.embeddedHeaders, 3, false, false);
 	}
 
@@ -1317,7 +1317,7 @@ class KafkaBinderTests extends
 
 	@Test
 	@SuppressWarnings("unchecked")
-	void testDefaultAutoCommitOnErrorWithDlq() throws Exception {
+	void defaultAutoCommitOnErrorWithDlq() throws Exception {
 		Binder binder = getBinder();
 		ExtendedProducerProperties<KafkaProducerProperties> producerProperties = createProducerProperties();
 		BindingProperties producerBindingProperties = createProducerBindingProperties(
@@ -1394,7 +1394,7 @@ class KafkaBinderTests extends
 
 	@Test
 	@SuppressWarnings("unchecked")
-	void testRetriesWithoutDlq() throws Exception {
+	void retriesWithoutDlq() throws Exception {
 		Binder binder = getBinder();
 		ExtendedProducerProperties<KafkaProducerProperties> producerProperties = createProducerProperties();
 		BindingProperties producerBindingProperties = createProducerBindingProperties(
@@ -1439,7 +1439,7 @@ class KafkaBinderTests extends
 
 	@Test
 	@SuppressWarnings("unchecked")
-	void testCommonErrorHandlerBeanNameOnConsumerBinding() throws Exception {
+	void commonErrorHandlerBeanNameOnConsumerBinding() throws Exception {
 		Binder binder = getBinder();
 		ExtendedProducerProperties<KafkaProducerProperties> producerProperties = createProducerProperties();
 		BindingProperties producerBindingProperties = createProducerBindingProperties(
@@ -1502,7 +1502,7 @@ class KafkaBinderTests extends
 	//See https://github.com/spring-cloud/spring-cloud-stream-binder-kafka/issues/870 for motivation for this test.
 	@Test
 	@SuppressWarnings("unchecked")
-	void testAutoCommitOnErrorWhenManualAcknowledgement() throws Exception {
+	void autoCommitOnErrorWhenManualAcknowledgement() throws Exception {
 		Binder binder = getBinder();
 		ExtendedProducerProperties<KafkaProducerProperties> producerProperties = createProducerProperties();
 		BindingProperties producerBindingProperties = createProducerBindingProperties(
@@ -1582,7 +1582,7 @@ class KafkaBinderTests extends
 
 	@Test
 	@SuppressWarnings("unchecked")
-	void testConfigurableDlqName() throws Exception {
+	void configurableDlqName() throws Exception {
 		Binder binder = getBinder();
 
 		ExtendedProducerProperties<KafkaProducerProperties> producerProperties = createProducerProperties();
@@ -1661,7 +1661,7 @@ class KafkaBinderTests extends
 	}
 
 	@Test
-	public void testValidateKafkaTopicName() {
+	public void validateKafkaTopicName() {
 		try {
 			KafkaTopicUtils.validateTopicName("foo:bar");
 			fail("Expecting IllegalArgumentException");
@@ -1676,7 +1676,7 @@ class KafkaBinderTests extends
 	// TODO: This test needs to be rethought - sending byte[] without explicit content
 	// type
 	// - yet being converted by the json converter
-	void testCompression() throws Exception {
+	void compression() throws Exception {
 		final KafkaProducerProperties.CompressionType[] codecs = new KafkaProducerProperties.CompressionType[] {
 				KafkaProducerProperties.CompressionType.none,
 				KafkaProducerProperties.CompressionType.gzip,
@@ -1729,7 +1729,7 @@ class KafkaBinderTests extends
 
 	@Test
 	@SuppressWarnings("unchecked")
-	void testEarliest() throws Exception {
+	void earliest() throws Exception {
 		Binding<MessageChannel> producerBinding = null;
 		Binding<MessageChannel> consumerBinding = null;
 
@@ -1877,7 +1877,7 @@ class KafkaBinderTests extends
 
 	@Test
 	@SuppressWarnings("unchecked")
-	void testManualAckSucceedsWhenAutoCommitOffsetIsTurnedOff() throws Exception {
+	void manualAckSucceedsWhenAutoCommitOffsetIsTurnedOff() throws Exception {
 		Binder binder = getBinder();
 
 		DirectChannel moduleOutputChannel = createBindableChannel("output",
@@ -1923,7 +1923,7 @@ class KafkaBinderTests extends
 
 	@Test
 	@SuppressWarnings("unchecked")
-	void testManualAckIsNotPossibleWhenAutoCommitOffsetIsEnabledOnTheBinder()
+	void manualAckIsNotPossibleWhenAutoCommitOffsetIsEnabledOnTheBinder()
 			throws Exception {
 		Binder binder = getBinder();
 
@@ -2142,7 +2142,7 @@ class KafkaBinderTests extends
 	@Test
 //	@Override
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	void testPartitionedModuleJava() throws Exception {
+	void partitionedModuleJava() throws Exception {
 		Binder binder = getBinder();
 
 		KafkaBinderConfigurationProperties configurationProperties = createConfigurationProperties();
@@ -2299,7 +2299,7 @@ class KafkaBinderTests extends
 
 	@Test
 	@SuppressWarnings("unchecked")
-	void testPartitionedModuleJavaWithRawMode() throws Exception {
+	void partitionedModuleJavaWithRawMode() throws Exception {
 		Binder binder = getBinder();
 		ExtendedProducerProperties<KafkaProducerProperties> properties = createProducerProperties();
 		properties.setHeaderMode(HeaderMode.none);
@@ -2362,7 +2362,7 @@ class KafkaBinderTests extends
 
 	@Test
 	@SuppressWarnings("unchecked")
-	void testPartitionedModuleSpELWithRawMode() throws Exception {
+	void partitionedModuleSpELWithRawMode() throws Exception {
 		Binder binder = getBinder();
 		ExtendedProducerProperties<KafkaProducerProperties> properties = createProducerProperties();
 		properties.setPartitionKeyExpression(
@@ -2434,7 +2434,7 @@ class KafkaBinderTests extends
 
 	@Test
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	void testPartitionedNative() throws Exception {
+	void partitionedNative() throws Exception {
 		Binder binder = getBinder();
 		ExtendedProducerProperties<KafkaProducerProperties> properties = createProducerProperties();
 		properties.setPartitionCount(6);
@@ -2512,7 +2512,7 @@ class KafkaBinderTests extends
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Test
-	void testAllowNonTransactionalProducerSetting() throws Exception {
+	void allowNonTransactionalProducerSetting() throws Exception {
 		AbstractKafkaTestBinder binder = getBinder();
 		DirectChannel moduleOutputChannel = createBindableChannel("output",
 				new BindingProperties());
@@ -2534,7 +2534,7 @@ class KafkaBinderTests extends
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Test
-	void testProducerErrorChannel() throws Exception {
+	void producerErrorChannel() throws Exception {
 		AbstractKafkaTestBinder binder = getBinder();
 		DirectChannel moduleOutputChannel = createBindableChannel("output",
 				new BindingProperties());
@@ -2599,7 +2599,7 @@ class KafkaBinderTests extends
 
 	@Test
 	@SuppressWarnings("unchecked")
-	void testAutoCreateTopicsEnabledSucceeds() throws Exception {
+	void autoCreateTopicsEnabledSucceeds() throws Exception {
 		KafkaBinderConfigurationProperties configurationProperties = createConfigurationProperties();
 		configurationProperties.setAutoCreateTopics(true);
 		Binder binder = getBinder(configurationProperties);
@@ -2615,7 +2615,7 @@ class KafkaBinderTests extends
 
 	@Test
 	@SuppressWarnings("unchecked")
-	void testCustomPartitionCountOverridesDefaultIfLarger() throws Exception {
+	void customPartitionCountOverridesDefaultIfLarger() throws Exception {
 		var testPayload = new byte[2048];
 		Arrays.fill(testPayload, (byte) 65);
 		KafkaBinderConfigurationProperties binderConfiguration = createConfigurationProperties();
@@ -2652,7 +2652,7 @@ class KafkaBinderTests extends
 
 	@Test
 	@SuppressWarnings("unchecked")
-	void testCustomPartitionCountDoesNotOverridePartitioningIfSmaller()
+	void customPartitionCountDoesNotOverridePartitioningIfSmaller()
 			throws Exception {
 		var testPayload = new byte[2048];
 		Arrays.fill(testPayload, (byte) 65);
@@ -2690,7 +2690,7 @@ class KafkaBinderTests extends
 
 	@Test
 	@SuppressWarnings("unchecked")
-	void testDynamicKeyExpression() throws Exception {
+	void dynamicKeyExpression() throws Exception {
 		Binder binder = getBinder(createConfigurationProperties());
 		var moduleInputChannel = new QueueChannel();
 		ExtendedProducerProperties<KafkaProducerProperties> producerProperties = createProducerProperties();
@@ -2724,7 +2724,7 @@ class KafkaBinderTests extends
 
 	@Test
 	@SuppressWarnings("unchecked")
-	void testCustomPartitionCountOverridesPartitioningIfLarger() throws Exception {
+	void customPartitionCountOverridesPartitioningIfLarger() throws Exception {
 		var testPayload = new byte[2048];
 		Arrays.fill(testPayload, (byte) 65);
 		KafkaBinderConfigurationProperties binderConfiguration = createConfigurationProperties();
@@ -2760,7 +2760,7 @@ class KafkaBinderTests extends
 
 	@Test
 	@SuppressWarnings("unchecked")
-	void testDefaultConsumerStartsAtEarliest() throws Exception {
+	void defaultConsumerStartsAtEarliest() throws Exception {
 		Binder binder = getBinder(createConfigurationProperties());
 
 		BindingProperties producerBindingProperties = createProducerBindingProperties(
@@ -2826,7 +2826,7 @@ class KafkaBinderTests extends
 
 	@Test
 	@SuppressWarnings("unchecked")
-	void testResume() throws Exception {
+	void resume() throws Exception {
 		Binding<MessageChannel> producerBinding = null;
 		Binding<MessageChannel> consumerBinding = null;
 
@@ -2921,7 +2921,7 @@ class KafkaBinderTests extends
 
 	@Test
 	@SuppressWarnings("unchecked")
-	void testSyncProducerMetadata() throws Exception {
+	void syncProducerMetadata() throws Exception {
 		Binder binder = getBinder(createConfigurationProperties());
 		var output = new DirectChannel();
 		String testTopicName = UUID.randomUUID().toString();
@@ -2941,7 +2941,7 @@ class KafkaBinderTests extends
 
 	@Test
 	@SuppressWarnings("unchecked")
-	void testSendTimeoutExpressionProducerMetadata() throws Exception {
+	void sendTimeoutExpressionProducerMetadata() throws Exception {
 		Binder binder = getBinder(createConfigurationProperties());
 		var output = new DirectChannel();
 		String testTopicName = UUID.randomUUID().toString();
@@ -2963,7 +2963,7 @@ class KafkaBinderTests extends
 
 	@Test
 	@SuppressWarnings("unchecked")
-	void testAutoCreateTopicsDisabledOnBinderStillWorksAsLongAsBrokerCreatesTopic()
+	void autoCreateTopicsDisabledOnBinderStillWorksAsLongAsBrokerCreatesTopic()
 			throws Exception {
 		KafkaBinderConfigurationProperties configurationProperties = createConfigurationProperties();
 		configurationProperties.setAutoCreateTopics(false);
@@ -3010,7 +3010,7 @@ class KafkaBinderTests extends
 
 	@Test
 	@SuppressWarnings("unchecked")
-	void testAutoConfigureTopicsDisabledSucceedsIfTopicExisting()
+	void autoConfigureTopicsDisabledSucceedsIfTopicExisting()
 			throws Throwable {
 		KafkaBinderConfigurationProperties configurationProperties = createConfigurationProperties();
 
@@ -3030,7 +3030,7 @@ class KafkaBinderTests extends
 
 	@Test
 	@SuppressWarnings("unchecked")
-	void testPartitionCountIncreasedIfAutoAddPartitionsSet() throws Throwable {
+	void partitionCountIncreasedIfAutoAddPartitionsSet() throws Throwable {
 		KafkaBinderConfigurationProperties configurationProperties = createConfigurationProperties();
 
 		String testTopicName = "existing" + System.currentTimeMillis();
@@ -3049,7 +3049,7 @@ class KafkaBinderTests extends
 
 	@Test
 	@SuppressWarnings("unchecked")
-	void testAutoAddPartitionsDisabledSucceedsIfTopicUnderPartitionedAndAutoRebalanceEnabled()
+	void autoAddPartitionsDisabledSucceedsIfTopicUnderPartitionedAndAutoRebalanceEnabled()
 			throws Throwable {
 		KafkaBinderConfigurationProperties configurationProperties = createConfigurationProperties();
 
@@ -3076,7 +3076,7 @@ class KafkaBinderTests extends
 
 	@Test
 	@SuppressWarnings("unchecked")
-	void testAutoAddPartitionsDisabledFailsIfTopicUnderPartitionedAndAutoRebalanceDisabled()
+	void autoAddPartitionsDisabledFailsIfTopicUnderPartitionedAndAutoRebalanceDisabled()
 			throws Throwable {
 		KafkaBinderConfigurationProperties configurationProperties = createConfigurationProperties();
 
@@ -3105,7 +3105,7 @@ class KafkaBinderTests extends
 
 	@Test
 	@SuppressWarnings("unchecked")
-	void testAutoAddPartitionsDisabledSucceedsIfTopicPartitionedCorrectly()
+	void autoAddPartitionsDisabledSucceedsIfTopicPartitionedCorrectly()
 			throws Throwable {
 		Binding<?> binding = null;
 		try {
@@ -3149,7 +3149,7 @@ class KafkaBinderTests extends
 
 	@Test
 	@SuppressWarnings("unchecked")
-	void testPartitionCountNotReduced() throws Throwable {
+	void partitionCountNotReduced() throws Throwable {
 		String testTopicName = "existing" + System.currentTimeMillis();
 
 		KafkaBinderConfigurationProperties configurationProperties = createConfigurationProperties();
@@ -3173,7 +3173,7 @@ class KafkaBinderTests extends
 
 	@Test
 	@SuppressWarnings("unchecked")
-	void testConsumerDefaultDeserializer() throws Throwable {
+	void consumerDefaultDeserializer() throws Throwable {
 		Binding<?> binding = null;
 		try {
 			KafkaBinderConfigurationProperties configurationProperties = createConfigurationProperties();
@@ -3205,7 +3205,7 @@ class KafkaBinderTests extends
 
 	@Test
 	@SuppressWarnings("unchecked")
-	void testConsumerCustomDeserializer() throws Exception {
+	void consumerCustomDeserializer() throws Exception {
 		Binding<?> binding = null;
 		try {
 			KafkaBinderConfigurationProperties configurationProperties = createConfigurationProperties();
@@ -3244,7 +3244,7 @@ class KafkaBinderTests extends
 
 	@Test
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	void testNativeSerializationWithCustomSerializerDeserializer()
+	void nativeSerializationWithCustomSerializerDeserializer()
 			throws Exception {
 		Binding<?> producerBinding = null;
 		Binding<?> consumerBinding = null;
@@ -3307,7 +3307,7 @@ class KafkaBinderTests extends
 
 	@Test
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	void testNativeSerializationWithCustomSerializerDeserializerBytesPayload()
+	void nativeSerializationWithCustomSerializerDeserializerBytesPayload()
 			throws Exception {
 		Binding<?> producerBinding = null;
 		Binding<?> consumerBinding = null;
@@ -3366,7 +3366,7 @@ class KafkaBinderTests extends
 
 	@Test
 	@SuppressWarnings("unchecked")
-	void testBuiltinSerialization() throws Exception {
+	void builtinSerialization() throws Exception {
 		Binding<?> producerBinding = null;
 		Binding<?> consumerBinding = null;
 		try {
@@ -3529,7 +3529,7 @@ class KafkaBinderTests extends
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Test
-	void testPolledConsumer() throws Exception {
+	void polledConsumer() throws Exception {
 		KafkaTestBinder binder = getBinder();
 		PollableSource<MessageHandler> inboundBindTarget = new DefaultPollableMessageSource(
 				this.messageConverter);
@@ -3583,7 +3583,7 @@ class KafkaBinderTests extends
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Test
-	void testPolledConsumerRequeue() throws Exception {
+	void polledConsumerRequeue() throws Exception {
 		KafkaTestBinder binder = getBinder();
 		PollableSource<MessageHandler> inboundBindTarget = new DefaultPollableMessageSource(
 				this.messageConverter);
@@ -3617,7 +3617,7 @@ class KafkaBinderTests extends
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Test
-	void testPolledConsumerWithDlq() throws Exception {
+	void polledConsumerWithDlq() throws Exception {
 		KafkaTestBinder binder = getBinder();
 		PollableSource<MessageHandler> inboundBindTarget = new DefaultPollableMessageSource(
 				this.messageConverter);
@@ -3662,7 +3662,7 @@ class KafkaBinderTests extends
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Test
-	void testTopicPatterns() throws Exception {
+	void topicPatterns() throws Exception {
 		try (AdminClient admin = AdminClient.create(
 				Collections.singletonMap(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG,
 						embeddedKafka.getBrokersAsString()))) {
@@ -3695,7 +3695,7 @@ class KafkaBinderTests extends
 	}
 
 	@Test
-	void testSameTopicCannotBeProvisionedAgain() throws Throwable {
+	void sameTopicCannotBeProvisionedAgain() throws Throwable {
 		var latch = new CountDownLatch(1);
 		try (AdminClient admin = AdminClient.create(
 				Collections.singletonMap(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG,
@@ -3719,7 +3719,7 @@ class KafkaBinderTests extends
 
 	@Test
 	@SuppressWarnings("unchecked")
-	void testResetOffsets() throws Exception {
+	void resetOffsets() throws Exception {
 		Binding<?> producerBinding = null;
 		Binding<?> consumerBinding = null;
 		try {
@@ -3793,7 +3793,7 @@ class KafkaBinderTests extends
 
 	@Test
 	@SuppressWarnings("unchecked")
-	void testRecordMetadata() throws Exception {
+	void recordMetadata() throws Exception {
 		Binding<?> producerBinding = null;
 		try {
 			String testPayload = "test";
@@ -3830,7 +3830,7 @@ class KafkaBinderTests extends
 
 	@Test
 	@SuppressWarnings("unchecked")
-	void testMessageKeyInPayload() throws Exception {
+	void messageKeyInPayload() throws Exception {
 		Binding<?> producerBinding = null;
 		try {
 			String testPayload = "test";
@@ -3867,17 +3867,17 @@ class KafkaBinderTests extends
 	}
 
 	@Test
-	void testInternalHeadersNotPropagated() throws Exception {
+	void internalHeadersNotPropagated() throws Exception {
 		testInternalHeadersNotPropagatedGuts("propagate.1", null, null);
 	}
 
 	@Test
-	void testInternalHeadersNotPropagatedCustomHeader() throws Exception {
+	void internalHeadersNotPropagatedCustomHeader() throws Exception {
 		testInternalHeadersNotPropagatedGuts("propagate.2", new String[] { "foo", "*" }, null);
 	}
 
 	@Test
-	void testInternalHeadersNotPropagatedCustomMapper() throws Exception {
+	void internalHeadersNotPropagatedCustomMapper() throws Exception {
 		testInternalHeadersNotPropagatedGuts("propagate.3", null, new BinderHeaderMapper("*"));
 	}
 
@@ -3960,7 +3960,7 @@ class KafkaBinderTests extends
 	}
 
 	@Test
-	void testNoBrokerOverride() throws Exception {
+	void noBrokerOverride() throws Exception {
 		Binder binder = getBinder();
 		ExtendedProducerProperties<KafkaProducerProperties> producerProperties = createProducerProperties();
 		producerProperties.getExtension().getConfiguration().put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "foo");
@@ -3980,7 +3980,7 @@ class KafkaBinderTests extends
 	}
 
 	@Test
-	void testObservationEnabledOnTheBinder() throws Exception {
+	void observationEnabledOnTheBinder() throws Exception {
 		KafkaBinderConfigurationProperties kafkaBinderConfigurationProperties = createConfigurationProperties();
 		kafkaBinderConfigurationProperties.setEnableObservation(true);
 		AbstractKafkaTestBinder binder = getBinder(kafkaBinderConfigurationProperties);
@@ -3990,7 +3990,7 @@ class KafkaBinderTests extends
 
 	@SuppressWarnings("rawtypes")
 	@Test
-	void testObservationEnabledThroughProducerMessageHandlerCustomizer() throws Exception {
+	void observationEnabledThroughProducerMessageHandlerCustomizer() throws Exception {
 		AbstractKafkaTestBinder binder = getBinder();
 		KafkaMessageChannelBinder kafkaMessageChannelBinder = binder.getCoreBinder();
 		kafkaMessageChannelBinder.setProducerMessageHandlerCustomizer(
@@ -4001,7 +4001,7 @@ class KafkaBinderTests extends
 	}
 
 	@Test
-	void testDynamicPartitionUpdates() throws Exception {
+	void dynamicPartitionUpdates() throws Exception {
 		Binder binder = getBinder();
 		ExtendedProducerProperties<KafkaProducerProperties> properties = createProducerProperties();
 		properties.setPartitionKeyExpression(

@@ -66,7 +66,7 @@ class KafkaConfigCustomizationTests {
 	EmbeddedKafkaBroker embeddedKafkaBroker;
 
 	@Test
-	void testBothConsumerAndProducerConfigsCanBeCustomized() throws InterruptedException {
+	void bothConsumerAndProducerConfigsCanBeCustomized() throws InterruptedException {
 		Map<String, Object> producerProps = KafkaTestUtils
 				.producerProps(embeddedKafkaBroker);
 		KafkaTemplate<Integer, String> template = new KafkaTemplate<>(

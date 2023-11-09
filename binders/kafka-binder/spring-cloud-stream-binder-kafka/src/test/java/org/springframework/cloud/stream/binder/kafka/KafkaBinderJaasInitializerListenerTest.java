@@ -78,7 +78,7 @@ class KafkaBinderJaasInitializerListenerTest {
 	}
 
 	@Test
-	void testConfigurationParsedCorrectlyWithKafkaClientAndDefaultControlFlag()
+	void configurationParsedCorrectlyWithKafkaClientAndDefaultControlFlag()
 			throws Exception {
 		ConfigFile configFile = new ConfigFile(
 				new ClassPathResource("jaas-sample-kafka-only.conf").getURI());
@@ -107,7 +107,7 @@ class KafkaBinderJaasInitializerListenerTest {
 	}
 
 	@Test
-	void testConfigurationParsedCorrectlyWithKafkaClientAndNonDefaultControlFlag()
+	void configurationParsedCorrectlyWithKafkaClientAndNonDefaultControlFlag()
 			throws Exception {
 		ConfigFile configFile = new ConfigFile(
 				new ClassPathResource("jaas-sample-kafka-only.conf").getURI());

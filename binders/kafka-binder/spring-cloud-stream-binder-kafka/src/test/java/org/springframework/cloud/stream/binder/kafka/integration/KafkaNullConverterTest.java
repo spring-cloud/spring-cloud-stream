@@ -59,7 +59,7 @@ class KafkaNullConverterTest {
 	private KafkaNullConverterTestConfig config;
 
 	@Test
-	void testKafkaNullConverterOutput() throws InterruptedException {
+	void kafkaNullConverterOutput() throws InterruptedException {
 		final StreamBridge streamBridge = context.getBean(StreamBridge.class);
 
 		streamBridge.send("kafkaNullOutput", new GenericMessage<>(KafkaNull.INSTANCE));
@@ -69,7 +69,7 @@ class KafkaNullConverterTest {
 	}
 
 	@Test
-	void testKafkaNullConverterInput() throws InterruptedException {
+	void kafkaNullConverterInput() throws InterruptedException {
 
 		final MessageChannel kafkaNullInput = context.getBean("kafkaNullInput", MessageChannel.class);
 

@@ -37,7 +37,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class DisabledKafkaBinderTopicPropertiesUpdateTest extends BaseKafkaBinderTopicPropertiesUpdateTest {
 
 	@Test
-	void testKafkaBinderShouldNotUpdateTopicConfigurationOnDisabledFeature() throws Exception {
+	void kafkaBinderShouldNotUpdateTopicConfigurationOnDisabledFeature() throws Exception {
 		Map<String, Object> adminClientConfig = new HashMap<>();
 		adminClientConfig.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, embeddedKafka.getBrokersAsString());
 		AdminClient adminClient = AdminClient.create(adminClientConfig);
