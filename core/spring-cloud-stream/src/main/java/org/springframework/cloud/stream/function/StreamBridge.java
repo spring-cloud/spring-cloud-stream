@@ -244,6 +244,9 @@ public final class StreamBridge implements StreamOperations, SmartInitializingSi
 			if (this.applicationContext.containsBean(destinationName)) {
 				messageChannel = this.applicationContext.getBean(destinationName, MessageChannel.class);
 				String[] consumerBindingNames = this.bindingService.getConsumerBindingNames();
+				if (messageChannel instanceof AbstractMessageChannel) {
+					addPartitioningInterceptorIfNeedBe(producerProperties, destinationName, (AbstractMessageChannel) messageChannel);
+				}
 				if (ObjectUtils.containsElement(consumerBindingNames, destinationName)) { //GH-2563
 					logger.warn("You seem to be sending data to the input binding.  It is not "
 							+ "recommended, since you are bypassing the binder and this the messaging system exposed by the binder.");
@@ -263,14 +266,8 @@ public final class StreamBridge implements StreamOperations, SmartInitializingSi
 					BinderFactory binderFactory = this.applicationContext.getBean(BinderFactory.class);
 					binder = binderFactory.getBinder(binderName, messageChannel.getClass());
 				}
-				// since we already perform the partition finding algorithm once via StreamBridge#send we don't need to
-				// do the following, unless the conversion is handled natively on the middleware.
-				if (producerProperties != null && producerProperties.isPartitioned() && producerProperties.isUseNativeEncoding()) {
-					BindingProperties bindingProperties = this.bindingServiceProperties.getBindingProperties(destinationName);
-					((AbstractMessageChannel) messageChannel)
-						.addInterceptor(new DefaultPartitioningInterceptor(bindingProperties, this.applicationContext.getBeanFactory()));
-				}
-				this.addInterceptors((AbstractMessageChannel) messageChannel, destinationName);
+				addPartitioningInterceptorIfNeedBe(producerProperties, destinationName, (AbstractMessageChannel) messageChannel);
+				addGlobalChannelInterceptorProcessor((AbstractMessageChannel) messageChannel, destinationName);
 
 				this.bindingService.bindProducer(messageChannel, destinationName, true, binder);
 				if (StringUtils.hasText(binderName)) {
@@ -285,6 +282,16 @@ public final class StreamBridge implements StreamOperations, SmartInitializingSi
 		return messageChannel;
 	}
 
+	private void addPartitioningInterceptorIfNeedBe(ProducerProperties producerProperties, String destinationName, AbstractMessageChannel messageChannel) {
+		// since we already perform the partition finding algorithm once via StreamBridge#send we don't need to
+		// do the following, unless the conversion is handled natively on the middleware.
+		if (producerProperties != null && producerProperties.isPartitioned() && producerProperties.isUseNativeEncoding()) {
+			BindingProperties bindingProperties = this.bindingServiceProperties.getBindingProperties(destinationName);
+			messageChannel
+				.addInterceptor(new DefaultPartitioningInterceptor(bindingProperties, this.applicationContext.getBeanFactory()));
+		}
+	}
+
 	private String resolveBinderTargetType(String channelName, String binderName, Class<?> bindableType, BinderFactory binderFactory) {
 		String binderConfigurationName = binderName != null ? binderName : this.bindingServiceProperties
 				.getBinder(channelName);
@@ -293,7 +300,7 @@ public final class StreamBridge implements StreamOperations, SmartInitializingSi
 		return targetProtocol;
 	}
 
-	private void addInterceptors(AbstractMessageChannel messageChannel, String destinationName) {
+	private void addGlobalChannelInterceptorProcessor(AbstractMessageChannel messageChannel, String destinationName) {
 		final GlobalChannelInterceptorProcessor globalChannelInterceptorProcessor =
 			this.applicationContext.getBean(GlobalChannelInterceptorProcessor.class);
 		globalChannelInterceptorProcessor.postProcessAfterInitialization(messageChannel, destinationName);
