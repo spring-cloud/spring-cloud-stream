@@ -228,9 +228,33 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 	}
 
 	private String resolveBinderName(String bindingName, BindingServiceProperties bindingServiceProperties) {
-		String binder = bindingServiceProperties == null ? null : bindingServiceProperties.getBindings().get(bindingName).getBinder();
+		String binder = resolveBinder(bindingName, bindingServiceProperties);
 		if (!StringUtils.hasText(binder)) {
 			return resolveFromDefaultBinder();
+		}
+		return binder;
+	}
+
+	private String resolveBinderType(String bindingName, BindingServiceProperties bindingServiceProperties) {
+		String binder = resolveBinder(bindingName, bindingServiceProperties);
+		if (!StringUtils.hasText(binder)) {
+			return resolveFromDefaultBinder();
+		}
+		else {
+			if (bindingServiceProperties.getBinders().get(binder) == null) {
+				return binder;
+			}
+			return bindingServiceProperties.getBinders().get(binder).getType();
+		}
+	}
+
+	private static String resolveBinder(String bindingName, BindingServiceProperties bindingServiceProperties) {
+		String binder = null;
+		if (bindingServiceProperties != null) {
+			BindingProperties bindingProperties = bindingServiceProperties.getBindings().get(bindingName);
+			if (bindingProperties != null) {
+				binder = bindingProperties.getBinder();
+			}
 		}
 		return binder;
 	}
@@ -244,19 +268,6 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		}
 		Assert.isTrue(binderTypes.entrySet().size() == 1, "More than one binder types found, but no binder specified on the binding");
 		return binderTypes.keySet().iterator().next();
-	}
-
-	private String resolveBinderType(String bindingName, BindingServiceProperties bindingServiceProperties) {
-		String binder = bindingServiceProperties == null ? null : bindingServiceProperties.getBindings().get(bindingName).getBinder();
-		if (!StringUtils.hasText(binder)) {
-			return resolveFromDefaultBinder();
-		}
-		else {
-			if (bindingServiceProperties.getBinders().get(binder) == null) {
-				return binder;
-			}
-			return bindingServiceProperties.getBinders().get(binder).getType();
-		}
 	}
 
 	/**
@@ -640,12 +651,12 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 
 			@Override
 			public String getBinderName() {
-				return resolveBinderName(getBindingName(), bsp);
+				return resolveBinderName(properties.getBindingName(), bsp);
 			}
 
 			@Override
 			public String getBinderType() {
-				return resolveBinderType(getBindingName(), bsp);
+				return resolveBinderType(properties.getBindingName(), bsp);
 			}
 
 			@Override
