@@ -33,6 +33,7 @@ import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.KeyValue;
+import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.kstream.Grouped;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.Materialized;
@@ -58,6 +59,7 @@ import org.springframework.cloud.stream.binding.OutputBindingLifecycle;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.Lifecycle;
 import org.springframework.context.annotation.Bean;
+import org.springframework.kafka.config.KafkaStreamsInfrastructureCustomizer;
 import org.springframework.kafka.config.StreamsBuilderFactoryBean;
 import org.springframework.kafka.config.StreamsBuilderFactoryBeanConfigurer;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
@@ -409,11 +411,13 @@ class KafkaStreamsBinderWordCountFunctionTests {
 			return fb -> {
 				try {
 					fb.setStateListener((newState, oldState) -> {
-
 					});
-					fb.getObject(); //make sure no exception is thrown at this call.
+					fb.setInfrastructureCustomizer(new KafkaStreamsInfrastructureCustomizer() {
+						@Override
+						public void configureBuilder(StreamsBuilder builder) {
+						}
+					});
 					KafkaStreamsBinderWordCountFunctionTests.LATCH.countDown();
-
 				}
 				catch (Exception e) {
 					//Nothing to do - When the exception is thrown above, the latch won't be count down.

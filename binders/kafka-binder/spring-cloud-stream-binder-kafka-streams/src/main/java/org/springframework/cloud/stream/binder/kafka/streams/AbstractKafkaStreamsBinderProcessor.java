@@ -344,14 +344,11 @@ public abstract class AbstractKafkaStreamsBinderProcessor implements Application
 
 		extendedConsumerProperties.setApplicationId((String) streamConfiguration.get(StreamsConfig.APPLICATION_ID_CONFIG));
 
-		final StreamsBuilderFactoryBean streamsBuilderFactoryBeanFromContext = applicationContext.getBean(
-				"&stream-builder-" + beanNamePostPrefix, StreamsBuilderFactoryBean.class);
-		//At this point, the StreamsBuilderFactoryBean is created. If the users call, getObject()
-		//in the customizer, that should grant access to the StreamsBuilder.
 		if (customizer != null) {
 			customizer.configure(streamsBuilderFactoryBean);
 		}
-		return streamsBuilderFactoryBeanFromContext;
+		return applicationContext.getBean(
+				"&stream-builder-" + beanNamePostPrefix, StreamsBuilderFactoryBean.class);
 	}
 
 	private void handleConcurrency(ApplicationContext applicationContext, String inboundName,
