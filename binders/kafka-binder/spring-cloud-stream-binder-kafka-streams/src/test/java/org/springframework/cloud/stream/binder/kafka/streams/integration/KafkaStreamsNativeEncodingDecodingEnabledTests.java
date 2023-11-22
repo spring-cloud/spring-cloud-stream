@@ -16,7 +16,6 @@
 
 package org.springframework.cloud.stream.binder.kafka.streams.integration;
 
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Map;
@@ -25,8 +24,6 @@ import java.util.function.Function;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.common.header.Header;
-import org.apache.kafka.common.header.Headers;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.kstream.Grouped;
@@ -49,8 +46,6 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.test.EmbeddedKafkaBroker;
 import org.springframework.kafka.test.rule.EmbeddedKafkaRule;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
-import org.springframework.messaging.Message;
-import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -66,7 +61,7 @@ import static org.mockito.Mockito.verify;
 @RunWith(SpringRunner.class)
 @ContextConfiguration
 @DirtiesContext
-public abstract class KafkaStreamsNativeEncodingDecodingTests {
+public abstract class KafkaStreamsNativeEncodingDecodingEnabledTests {
 
 	/**
 	 * Kafka rule.
@@ -113,7 +108,7 @@ public abstract class KafkaStreamsNativeEncodingDecodingTests {
 			"spring.cloud.stream.kafka.streams.bindings.process-in-0.consumer.applicationId"
 					+ "=NativeEncodingDecodingEnabledTests-abc" }, webEnvironment = SpringBootTest.WebEnvironment.NONE)
 	public static class NativeEncodingDecodingEnabledTests
-			extends KafkaStreamsNativeEncodingDecodingTests {
+			extends KafkaStreamsNativeEncodingDecodingEnabledTests {
 
 		@Test
 		public void nativeEncodingDecodingEnabled() throws Exception {
@@ -129,45 +124,6 @@ public abstract class KafkaStreamsNativeEncodingDecodingTests {
 
 			verify(conversionDelegate, never()).serializeOnOutbound(any(KStream.class));
 			verify(conversionDelegate, never()).deserializeOnInbound(any(Class.class),
-					any(KStream.class));
-		}
-
-	}
-
-	@SpringBootTest(classes = WordCountProcessorApplication.class, webEnvironment = SpringBootTest.WebEnvironment.NONE,
-		properties = {
-			"spring.cloud.stream.bindings.process-in-0.destination=decode-words",
-			"spring.cloud.stream.bindings.process-out-0.destination=decode-counts",
-			"spring.cloud.stream.bindings.process-in-0.consumer.useNativeDecoding=false",
-			"spring.cloud.stream.bindings.process-out-0.producer.useNativeEncoding=false",
-			"spring.cloud.stream.kafka.streams.bindings.process-in-0.consumer.applicationId"
-			+ "=hello-NativeEncodingDecodingEnabledTests-xyz" })
-	public static class NativeEncodingDecodingDisabledTests
-			extends KafkaStreamsNativeEncodingDecodingTests {
-
-		@Test
-		public void nativeEncodingDecodingDisabled() {
-			Map<String, Object> senderProps = KafkaTestUtils.producerProps(embeddedKafka);
-			DefaultKafkaProducerFactory<Integer, String> pf = new DefaultKafkaProducerFactory<>(
-					senderProps);
-			KafkaTemplate<Integer, String> template = new KafkaTemplate<>(pf, true);
-			template.setDefaultTopic("decode-words");
-			Message<String> msg = MessageBuilder.withPayload("foobar").setHeader("foo", "bar").build();
-			template.send(msg);
-
-			ConsumerRecord<String, String> cr = KafkaTestUtils.getSingleRecord(consumer,
-					"decode-counts");
-
-			final Headers headers = cr.headers();
-			final Iterable<Header> foo = headers.headers("foo");
-			assertThat(foo.iterator().hasNext()).isTrue();
-			final Header fooHeader = foo.iterator().next();
-			assertThat(fooHeader.value()).isEqualTo("bar".getBytes(StandardCharsets.UTF_8));
-
-			assertThat(cr.value().equals("Count for foobar : 1")).isTrue();
-
-			verify(conversionDelegate).serializeOnOutbound(any(KStream.class));
-			verify(conversionDelegate).deserializeOnInbound(any(Class.class),
 					any(KStream.class));
 		}
 
