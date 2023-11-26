@@ -420,7 +420,7 @@ public class KafkaMessageChannelBinder extends
 				: getProducerFactory(null, producerProperties, destination.getName() + ".producer",
 				destination.getName());
 		Collection<PartitionInfo> partitions = provisioningProvider.getPartitionsForTopic(
-				producerProperties.getPartitionCount(), false, () -> {
+				producerProperties.getPartitionCount(), () -> {
 					Producer<byte[], byte[]> producer = producerFB.createProducer();
 					List<PartitionInfo> partitionsFor = producer
 							.partitionsFor(destination.getName());
@@ -592,8 +592,7 @@ public class KafkaMessageChannelBinder extends
 		Assert.isTrue(
 				!anonymous || !extendedConsumerProperties.getExtension().isEnableDlq(),
 				"DLQ support is not available for anonymous subscriptions");
-		String consumerGroup = anonymous ? "anonymous." + UUID.randomUUID().toString()
-				: group;
+		String consumerGroup = anonymous ? "anonymous." + UUID.randomUUID() : group;
 		final ConsumerFactory<?, ?> consumerFactory = createKafkaConsumerFactory(
 				anonymous, consumerGroup, extendedConsumerProperties, destination.getName() + ".consumer", destination.getName());
 		int partitionCount = extendedConsumerProperties.getInstanceCount()
@@ -889,8 +888,7 @@ public class KafkaMessageChannelBinder extends
 			boolean usingPatterns, boolean groupManagement, String topic) {
 		Collection<PartitionInfo> listenedPartitions;
 		Collection<PartitionInfo> allPartitions = usingPatterns ? Collections.emptyList()
-				: getPartitionInfo(topic, extendedConsumerProperties, consumerFactory,
-						partitionCount);
+				: getPartitionInfo(topic, consumerFactory, partitionCount);
 
 		if (groupManagement || extendedConsumerProperties.getInstanceCount() == 1) {
 			listenedPartitions = allPartitions;
@@ -953,7 +951,7 @@ public class KafkaMessageChannelBinder extends
 									return shouldSeek;
 								})
 								.collect(Collectors.toList());
-							if (toSeek.size() > 0) {
+							if (!toSeek.isEmpty()) {
 								if ("earliest".equals(resetTo)) {
 									consumer.seekToBeginning(toSeek);
 								}
@@ -989,8 +987,7 @@ public class KafkaMessageChannelBinder extends
 		final KafkaConsumerProperties extension = extendedConsumerProperties.getExtension();
 		Assert.isTrue(!anonymous || !extension.isEnableDlq(),
 				"DLQ support is not available for anonymous subscriptions");
-		String consumerGroup = anonymous ? "anonymous." + UUID.randomUUID().toString()
-				: group;
+		String consumerGroup = anonymous ? "anonymous." + UUID.randomUUID() : group;
 		final ConsumerFactory<?, ?> consumerFactory = createKafkaConsumerFactory(
 				anonymous, consumerGroup, extendedConsumerProperties, destination.getName() + ".polled.consumer",
 				destination.getName());
@@ -1041,14 +1038,13 @@ public class KafkaMessageChannelBinder extends
 			// not just the ones this binding is listening to; doesn't seem right for a
 			// health check.
 			Collection<PartitionInfo> partitionInfos = getPartitionInfo(
-					destination.getName(), extendedConsumerProperties, consumerFactory, -1);
+					destination.getName(), consumerFactory, -1);
 			this.topicsInUse.put(destination.getName(),
 					new TopicInformation(consumerGroup, partitionInfos, false));
 		}
 		else {
 			for (int i = 0; i < topics.length; i++) {
-				Collection<PartitionInfo> partitionInfos = getPartitionInfo(topics[i],
-						extendedConsumerProperties, consumerFactory, -1);
+				Collection<PartitionInfo> partitionInfos = getPartitionInfo(topics[i], consumerFactory, -1);
 				this.topicsInUse.put(topics[i],
 						new TopicInformation(consumerGroup, partitionInfos, false));
 			}
@@ -1090,7 +1086,7 @@ public class KafkaMessageChannelBinder extends
 				@Override
 				public void toHeaders(Headers source, Map<String, Object> headers) {
 					super.toHeaders(source, headers);
-					if (headers.size() > 0) {
+					if (!headers.isEmpty()) {
 						headers.put(BinderHeaders.NATIVE_HEADERS_PRESENT, Boolean.TRUE);
 					}
 				}
@@ -1107,10 +1103,8 @@ public class KafkaMessageChannelBinder extends
 	}
 
 	private Collection<PartitionInfo> getPartitionInfo(String topic,
-			final ExtendedConsumerProperties<KafkaConsumerProperties> extendedConsumerProperties,
 			final ConsumerFactory<?, ?> consumerFactory, int partitionCount) {
 		return provisioningProvider.getPartitionsForTopic(partitionCount,
-				extendedConsumerProperties.getExtension().isAutoRebalanceEnabled(),
 				() -> {
 					try (Consumer<?, ?> consumer = consumerFactory.createConsumer()) {
 						return consumer.partitionsFor(topic);
@@ -1648,7 +1642,7 @@ public class KafkaMessageChannelBinder extends
 					.append(keyOrValue(value))
 					.append("'").append(" received from ")
 					.append(consumerRecord.partition());
-			CompletableFuture<SendResult<K, V>> sentDlq = null;
+			CompletableFuture<SendResult<K, V>> sentDlq;
 			try {
 				sentDlq = this.kafkaTemplate.send(producerRecord);
 				sentDlq.whenComplete((result, ex) -> {

@@ -56,7 +56,6 @@ import org.springframework.messaging.MessageChannel;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -83,7 +82,7 @@ class KafkaBinderUnitTests {
 		KafkaMessageChannelBinder binder = new KafkaMessageChannelBinder(
 				binderConfigurationProperties, provisioningProvider);
 		KafkaConsumerProperties consumerProps = new KafkaConsumerProperties();
-		ExtendedConsumerProperties<KafkaConsumerProperties> ecp = new ExtendedConsumerProperties<KafkaConsumerProperties>(
+		ExtendedConsumerProperties<KafkaConsumerProperties> ecp = new ExtendedConsumerProperties<>(
 				consumerProps);
 		Method method = KafkaMessageChannelBinder.class.getDeclaredMethod(
 				"createKafkaConsumerFactory", boolean.class, String.class,
@@ -194,8 +193,7 @@ class KafkaBinderUnitTests {
 			return partitions.stream().map(p -> new PartitionInfo(topic,
 					part.getAndIncrement(), null, null, null))
 					.collect(Collectors.toList());
-		}).given(provisioningProvider).getPartitionsForTopic(anyInt(), anyBoolean(),
-				any(), any());
+		}).given(provisioningProvider).getPartitionsForTopic(anyInt(), any(), any());
 		@SuppressWarnings("unchecked")
 		final Consumer<byte[], byte[]> consumer = mock(Consumer.class);
 		final CountDownLatch latch = new CountDownLatch(1);

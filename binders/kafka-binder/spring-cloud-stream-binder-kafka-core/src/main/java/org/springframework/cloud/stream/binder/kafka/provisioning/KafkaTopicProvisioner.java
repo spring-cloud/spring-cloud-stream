@@ -137,8 +137,7 @@ public class KafkaTopicProvisioner implements
 		Assert.isTrue(kafkaProperties != null, "KafkaProperties cannot be null");
 		this.configurationProperties = kafkaBinderConfigurationProperties;
 		this.adminClientProperties = kafkaProperties.buildAdminProperties();
-		normalalizeBootPropsWithBinder(this.adminClientProperties, kafkaProperties,
-			kafkaBinderConfigurationProperties);
+		normalalizeBootPropsWithBinder(this.adminClientProperties, kafkaBinderConfigurationProperties);
 		// If the application provides AdminConfig customizers
 		// and overrides properties, those take precedence.
 		adminClientConfigCustomizers.forEach(customizer -> customizer.configure(this.adminClientProperties));
@@ -294,8 +293,7 @@ public class KafkaTopicProvisioner implements
 	 * @param bootProps the boot kafka properties.
 	 * @param binderProps the binder kafka properties.
 	 */
-	public static void normalalizeBootPropsWithBinder(Map<String, Object> adminProps,
-			KafkaProperties bootProps, KafkaBinderConfigurationProperties binderProps) {
+	public static void normalalizeBootPropsWithBinder(Map<String, Object> adminProps, KafkaBinderConfigurationProperties binderProps) {
 		// First deal with the outlier
 		String kafkaConnectionString = binderProps.getKafkaConnectionString();
 		if (ObjectUtils
@@ -463,7 +461,7 @@ public class KafkaTopicProvisioner implements
 				NewTopic newTopic;
 				Map<Integer, List<Integer>> replicasAssignments = topicProperties
 						.getReplicasAssignments();
-				if (replicasAssignments != null && replicasAssignments.size() > 0) {
+				if (replicasAssignments != null && !replicasAssignments.isEmpty()) {
 					newTopic = new NewTopic(topicName,
 							topicProperties.getReplicasAssignments());
 				}
@@ -474,7 +472,7 @@ public class KafkaTopicProvisioner implements
 									: this.configurationProperties
 									.getReplicationFactor());
 				}
-				if (topicProperties.getProperties().size() > 0) {
+				if (!topicProperties.getProperties().isEmpty()) {
 					newTopic.configs(topicProperties.getProperties());
 				}
 				CreateTopicsResult createTopicsResult = adminClient
@@ -545,13 +543,11 @@ public class KafkaTopicProvisioner implements
 	/**
 	 * Check that the topic has the expected number of partitions and return the partition information.
 	 * @param partitionCount the expected count.
-	 * @param tolerateLowerPartitionsOnBroker if false, throw an exception if there are not enough partitions.
 	 * @param callable a Callable that will provide the partition information.
 	 * @param topicName the topic./
 	 * @return the partition information.
 	 */
 	public Collection<PartitionInfo> getPartitionsForTopic(final int partitionCount,
-			final boolean tolerateLowerPartitionsOnBroker,
 			final Callable<Collection<PartitionInfo>> callable, final String topicName) {
 		try {
 			return this.metadataRetryOperations.execute((context) -> {
@@ -595,22 +591,12 @@ public class KafkaTopicProvisioner implements
 				// do a sanity check on the partition set
 				int partitionSize = CollectionUtils.isEmpty(partitions) ? 0 : partitions.size();
 				if (partitionSize < partitionCount) {
-					if (tolerateLowerPartitionsOnBroker) {
-						logger.warn("The number of expected partitions for topic "
-								+ topicName + " was: "
-								+ partitionCount + ", but " + partitionSize
-								+ (partitionSize > 1 ? " have " : " has ")
-								+ "been found instead. " + "There will be "
-								+ (partitionCount - partitionSize) + " idle consumers");
-					}
-					else {
-						throw new IllegalStateException(
-								"The number of expected partitions for topic " + topicName
-									+ " was: " + partitionCount
-										+ ", but " + partitionSize
-										+ (partitionSize > 1 ? " have " : " has ")
-										+ "been found instead");
-					}
+					throw new IllegalStateException(
+						"The number of expected partitions for topic " + topicName
+							+ " was: " + partitionCount
+							+ ", but " + partitionSize
+							+ (partitionSize > 1 ? " have " : " has ")
+							+ "been found instead");
 				}
 				return partitions;
 			});

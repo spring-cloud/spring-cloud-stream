@@ -183,7 +183,7 @@ public class ReactorKafkaBinder
 			this.configurationProperties);
 		DefaultKafkaProducerFactory<byte[], byte[]> producerFactory = new DefaultKafkaProducerFactory<>(props);
 		Collection<PartitionInfo> partitions = provisioningProvider.getPartitionsForTopic(
-			producerProperties.getPartitionCount(), false, () -> {
+			producerProperties.getPartitionCount(), () -> {
 				Producer<byte[], byte[]> producer = producerFactory.createProducer();
 				List<PartitionInfo> partitionsFor = producer
 					.partitionsFor(destination.getName());
@@ -213,7 +213,7 @@ public class ReactorKafkaBinder
 							boolean usingPatterns, boolean groupManagement, String topic) {
 		Collection<PartitionInfo> listenedPartitions;
 		Collection<PartitionInfo> allPartitions = usingPatterns ? Collections.emptyList()
-			: getPartitionInfo(topic, extendedConsumerProperties, consumerFactory,
+			: getPartitionInfo(topic, consumerFactory,
 			partitionCount);
 
 		if (groupManagement || extendedConsumerProperties.getInstanceCount() == 1) {
@@ -235,10 +235,8 @@ public class ReactorKafkaBinder
 	}
 
 	private Collection<PartitionInfo> getPartitionInfo(String topic,
-													final ExtendedConsumerProperties<KafkaConsumerProperties> extendedConsumerProperties,
 													final ConsumerFactory<?, ?> consumerFactory, int partitionCount) {
 		return provisioningProvider.getPartitionsForTopic(partitionCount,
-			extendedConsumerProperties.getExtension().isAutoRebalanceEnabled(),
 			() -> {
 				try (Consumer<?, ?> consumer = consumerFactory.createConsumer()) {
 					return consumer.partitionsFor(topic);
