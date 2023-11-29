@@ -19,7 +19,6 @@ package org.springframework.cloud.stream.binder.reactorkafka;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -28,7 +27,6 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
@@ -67,7 +65,6 @@ import org.springframework.integration.core.MessageProducer;
 import org.springframework.integration.endpoint.MessageProducerSupport;
 import org.springframework.integration.handler.AbstractMessageHandler;
 import org.springframework.integration.support.MessageBuilder;
-import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.support.KafkaHeaders;
@@ -86,6 +83,7 @@ import org.springframework.util.StringUtils;
 /**
  * @author Gary Russell
  * @author Byungjun You
+ * @author Omer Celik
  * @since 4.0
  *
  */
@@ -207,45 +205,6 @@ public class ReactorKafkaBinder
 		return new ReactorMessageHandler(opts, converter, destination.getName(), resultChannel);
 	}
 
-	// TODO: Refactor to provide in a common area since KafkaMessageChannelBinder also provides this.
-	public void processTopic(final String group, final ExtendedConsumerProperties<KafkaConsumerProperties> extendedConsumerProperties,
-							final ConsumerFactory<?, ?> consumerFactory, int partitionCount,
-							boolean usingPatterns, boolean groupManagement, String topic) {
-		Collection<PartitionInfo> listenedPartitions;
-		Collection<PartitionInfo> allPartitions = usingPatterns ? Collections.emptyList()
-			: getPartitionInfo(topic, extendedConsumerProperties, consumerFactory,
-			partitionCount);
-
-		if (groupManagement || extendedConsumerProperties.getInstanceCount() == 1) {
-			listenedPartitions = allPartitions;
-		}
-		else {
-			listenedPartitions = new ArrayList<>();
-			for (PartitionInfo partition : allPartitions) {
-				// divide partitions across modules
-				if ((partition.partition() % extendedConsumerProperties
-					.getInstanceCount()) == extendedConsumerProperties
-					.getInstanceIndex()) {
-					listenedPartitions.add(partition);
-				}
-			}
-		}
-		this.topicsInUse.put(topic,
-			new TopicInformation(group, listenedPartitions, usingPatterns));
-	}
-
-	private Collection<PartitionInfo> getPartitionInfo(String topic,
-													final ExtendedConsumerProperties<KafkaConsumerProperties> extendedConsumerProperties,
-													final ConsumerFactory<?, ?> consumerFactory, int partitionCount) {
-		return provisioningProvider.getPartitionsForTopic(partitionCount,
-			extendedConsumerProperties.getExtension().isAutoRebalanceEnabled(),
-			() -> {
-				try (Consumer<?, ?> consumer = consumerFactory.createConsumer()) {
-					return consumer.partitionsFor(topic);
-				}
-			}, topic);
-	}
-
 	Map<String, TopicInformation> getTopicsInUse() {
 		return this.topicsInUse;
 	}
@@ -292,8 +251,19 @@ public class ReactorKafkaBinder
 		DefaultKafkaConsumerFactory<Object, Object> factory = new DefaultKafkaConsumerFactory<>(props);
 		int partitionCount = properties.getInstanceCount() * properties.getConcurrency();
 		boolean groupManagement = properties.getExtension().isAutoRebalanceEnabled();
-		processTopic(consumerGroup, properties, factory, partitionCount, properties.getExtension().isDestinationIsPattern(),
-			groupManagement, destination.getName());
+		if (!properties.isMultiplex()) {
+			provisioningProvider.getListenedPartitions(consumerGroup, properties, factory,
+				partitionCount, properties.getExtension().isDestinationIsPattern(),
+				groupManagement, destination.getName(), topicsInUse);
+		}
+		else {
+			for (String name : StringUtils
+				.commaDelimitedListToStringArray(destination.getName())) {
+				provisioningProvider.getListenedPartitions(consumerGroup, properties, factory,
+					partitionCount, properties.getExtension().isDestinationIsPattern(),
+					groupManagement, name.trim(), topicsInUse);
+			}
+		}
 
 		class ReactorMessageProducer extends MessageProducerSupport {
 
