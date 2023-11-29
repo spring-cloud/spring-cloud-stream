@@ -67,6 +67,7 @@ import static org.mockito.Mockito.verify;
 
 /**
  * @author Gary Russell
+ * @author Omer Celik
  * @since 1.2.2
  *
  */
@@ -194,8 +195,7 @@ class KafkaBinderUnitTests {
 			return partitions.stream().map(p -> new PartitionInfo(topic,
 					part.getAndIncrement(), null, null, null))
 					.collect(Collectors.toList());
-		}).given(provisioningProvider).getPartitionsForTopic(anyInt(), anyBoolean(),
-				any(), any());
+		}).given(provisioningProvider).getListenedPartitions(anyString(), any(), any(), anyInt(), anyBoolean(), anyBoolean(), anyString(), any());
 		@SuppressWarnings("unchecked")
 		final Consumer<byte[], byte[]> consumer = mock(Consumer.class);
 		final CountDownLatch latch = new CountDownLatch(1);
