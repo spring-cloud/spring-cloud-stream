@@ -46,6 +46,7 @@ import org.apache.kafka.clients.admin.ListTopicsResult;
 import org.apache.kafka.clients.admin.NewPartitions;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.admin.TopicDescription;
+import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.common.KafkaFuture;
 import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.config.ConfigResource;
@@ -57,6 +58,7 @@ import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.cloud.stream.binder.BinderException;
 import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
 import org.springframework.cloud.stream.binder.ExtendedProducerProperties;
+import org.springframework.cloud.stream.binder.kafka.common.TopicInformation;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaBinderConfigurationProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaConsumerProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaProducerProperties;
@@ -66,6 +68,7 @@ import org.springframework.cloud.stream.provisioning.ConsumerDestination;
 import org.springframework.cloud.stream.provisioning.ProducerDestination;
 import org.springframework.cloud.stream.provisioning.ProvisioningException;
 import org.springframework.cloud.stream.provisioning.ProvisioningProvider;
+import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.retry.RetryOperations;
 import org.springframework.retry.backoff.ExponentialBackOffPolicy;
 import org.springframework.retry.policy.SimpleRetryPolicy;
@@ -540,6 +543,47 @@ public class KafkaTopicProvisioner implements
 			AlterConfigsResult alterConfigsResult = adminClient.incrementalAlterConfigs(alterConfigForTopics);
 			alterConfigsResult.all().get(this.operationTimeout, TimeUnit.SECONDS);
 		}
+	}
+
+	public Collection<PartitionInfo> getListenedPartitions(final String group,
+		final ExtendedConsumerProperties<KafkaConsumerProperties> extendedConsumerProperties,
+		final ConsumerFactory<?, ?> consumerFactory, int partitionCount,
+		boolean usingPatterns, boolean groupManagement, String topic,
+		Map<String, TopicInformation> topicsInUse) {
+		Collection<PartitionInfo> listenedPartitions;
+		Collection<PartitionInfo> allPartitions = usingPatterns ? Collections.emptyList()
+			: getPartitionInfo(topic, extendedConsumerProperties, consumerFactory,
+			partitionCount);
+
+		if (groupManagement || extendedConsumerProperties.getInstanceCount() == 1) {
+			listenedPartitions = allPartitions;
+		}
+		else {
+			listenedPartitions = new ArrayList<>();
+			for (PartitionInfo partition : allPartitions) {
+				// divide partitions across modules
+				if ((partition.partition() % extendedConsumerProperties
+					.getInstanceCount()) == extendedConsumerProperties
+					.getInstanceIndex()) {
+					listenedPartitions.add(partition);
+				}
+			}
+		}
+		topicsInUse.put(topic,
+			new TopicInformation(group, listenedPartitions, usingPatterns));
+		return listenedPartitions;
+	}
+
+	public Collection<PartitionInfo> getPartitionInfo(String topic,
+		final ExtendedConsumerProperties<KafkaConsumerProperties> extendedConsumerProperties,
+		final ConsumerFactory<?, ?> consumerFactory, int partitionCount) {
+		return getPartitionsForTopic(partitionCount,
+			extendedConsumerProperties.getExtension().isAutoRebalanceEnabled(),
+			() -> {
+				try (Consumer<?, ?> consumer = consumerFactory.createConsumer()) {
+					return consumer.partitionsFor(topic);
+				}
+			}, topic);
 	}
 
 	/**

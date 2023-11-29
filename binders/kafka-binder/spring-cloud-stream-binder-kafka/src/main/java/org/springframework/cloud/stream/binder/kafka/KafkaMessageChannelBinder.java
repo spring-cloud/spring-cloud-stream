@@ -164,6 +164,7 @@ import org.springframework.util.backoff.FixedBackOff;
  * @author Chris Bono
  * @author Byungjun You
  * @author Oliver Führer
+ * @author Omer Celik
  */
 public class KafkaMessageChannelBinder extends
 		// @checkstyle:off
@@ -609,16 +610,16 @@ public class KafkaMessageChannelBinder extends
 		boolean groupManagement = extendedConsumerProperties.getExtension()
 				.isAutoRebalanceEnabled();
 		if (!extendedConsumerProperties.isMultiplex()) {
-			listenedPartitions.addAll(processTopic(consumerGroup,
+			listenedPartitions.addAll(provisioningProvider.getListenedPartitions(consumerGroup,
 					extendedConsumerProperties, consumerFactory, partitionCount,
-					usingPatterns, groupManagement, destination.getName()));
+					usingPatterns, groupManagement, destination.getName(), topicsInUse));
 		}
 		else {
 			for (String name : StringUtils
 					.commaDelimitedListToStringArray(destination.getName())) {
-				listenedPartitions.addAll(processTopic(consumerGroup,
+				listenedPartitions.addAll(provisioningProvider.getListenedPartitions(consumerGroup,
 						extendedConsumerProperties, consumerFactory, partitionCount,
-						usingPatterns, groupManagement, name.trim()));
+						usingPatterns, groupManagement, name.trim(), topicsInUse));
 			}
 		}
 
@@ -883,34 +884,6 @@ public class KafkaMessageChannelBinder extends
 				});
 	}
 
-	public Collection<PartitionInfo> processTopic(final String group,
-			final ExtendedConsumerProperties<KafkaConsumerProperties> extendedConsumerProperties,
-			final ConsumerFactory<?, ?> consumerFactory, int partitionCount,
-			boolean usingPatterns, boolean groupManagement, String topic) {
-		Collection<PartitionInfo> listenedPartitions;
-		Collection<PartitionInfo> allPartitions = usingPatterns ? Collections.emptyList()
-				: getPartitionInfo(topic, extendedConsumerProperties, consumerFactory,
-						partitionCount);
-
-		if (groupManagement || extendedConsumerProperties.getInstanceCount() == 1) {
-			listenedPartitions = allPartitions;
-		}
-		else {
-			listenedPartitions = new ArrayList<>();
-			for (PartitionInfo partition : allPartitions) {
-				// divide partitions across modules
-				if ((partition.partition() % extendedConsumerProperties
-						.getInstanceCount()) == extendedConsumerProperties
-								.getInstanceIndex()) {
-					listenedPartitions.add(partition);
-				}
-			}
-		}
-		this.topicsInUse.put(topic,
-				new TopicInformation(group, listenedPartitions, usingPatterns));
-		return listenedPartitions;
-	}
-
 	/*
 	 * Reset the offsets if needed; may update the offsets in in the container's
 	 * topicPartitionInitialOffsets.
@@ -1040,14 +1013,14 @@ public class KafkaMessageChannelBinder extends
 			// all partitions
 			// not just the ones this binding is listening to; doesn't seem right for a
 			// health check.
-			Collection<PartitionInfo> partitionInfos = getPartitionInfo(
+			Collection<PartitionInfo> partitionInfos = provisioningProvider.getPartitionInfo(
 					destination.getName(), extendedConsumerProperties, consumerFactory, -1);
 			this.topicsInUse.put(destination.getName(),
 					new TopicInformation(consumerGroup, partitionInfos, false));
 		}
 		else {
 			for (int i = 0; i < topics.length; i++) {
-				Collection<PartitionInfo> partitionInfos = getPartitionInfo(topics[i],
+				Collection<PartitionInfo> partitionInfos = provisioningProvider.getPartitionInfo(topics[i],
 						extendedConsumerProperties, consumerFactory, -1);
 				this.topicsInUse.put(topics[i],
 						new TopicInformation(consumerGroup, partitionInfos, false));
@@ -1104,18 +1077,6 @@ public class KafkaMessageChannelBinder extends
 			mapper = headerMapper;
 		}
 		return mapper;
-	}
-
-	private Collection<PartitionInfo> getPartitionInfo(String topic,
-			final ExtendedConsumerProperties<KafkaConsumerProperties> extendedConsumerProperties,
-			final ConsumerFactory<?, ?> consumerFactory, int partitionCount) {
-		return provisioningProvider.getPartitionsForTopic(partitionCount,
-				extendedConsumerProperties.getExtension().isAutoRebalanceEnabled(),
-				() -> {
-					try (Consumer<?, ?> consumer = consumerFactory.createConsumer()) {
-						return consumer.partitionsFor(topic);
-					}
-				}, topic);
 	}
 
 	@Override
