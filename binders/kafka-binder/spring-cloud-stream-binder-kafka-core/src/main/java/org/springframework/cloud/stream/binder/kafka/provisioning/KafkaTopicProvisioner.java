@@ -592,11 +592,12 @@ public class KafkaTopicProvisioner implements
 									+ "). This will affect the health check.");
 						}
 					}
+					throw new RuntimeException("Failed to obtain partition information for the topic " + topicName);
 				}
 				// do a sanity check on the partition set
-				int partitionSize = CollectionUtils.isEmpty(partitions) ? 0 : partitions.size();
+				int partitionSize = partitions.size();
 				if (partitionSize < partitionCount) {
-					if (Objects.nonNull(partitions) && tolerateLowerPartitionsOnBroker) {
+					if (tolerateLowerPartitionsOnBroker) {
 						logger.warn("The number of expected partitions for topic "
 								+ topicName + " was: "
 								+ partitionCount + ", but " + partitionSize
