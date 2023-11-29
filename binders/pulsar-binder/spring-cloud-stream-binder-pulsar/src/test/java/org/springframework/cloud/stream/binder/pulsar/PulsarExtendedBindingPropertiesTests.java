@@ -97,7 +97,7 @@ class PulsarExtendedBindingPropertiesTests {
 		PulsarContainerProperties pulsarContainerProperties = new PulsarContainerProperties();
 		pulsarContainerProperties.getPulsarConsumerProperties().putAll(consumerProps);
 		assertThat(pulsarContainerProperties.getSubscriptionName()).isNull();
-		assertThat(pulsarContainerProperties.getSubscriptionType()).isEqualTo(SubscriptionType.Exclusive);
+		assertThat(pulsarContainerProperties.getSubscriptionType()).isNull();
 		pulsarContainerProperties.updateContainerProperties();
 		assertThat(pulsarContainerProperties.getSubscriptionName()).isEqualTo("my-foo-sbscription");
 		assertThat(pulsarContainerProperties.getSubscriptionType()).isEqualTo(SubscriptionType.Shared);
