@@ -47,6 +47,7 @@ import org.apache.kafka.clients.admin.NewPartitions;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.admin.TopicDescription;
 import org.apache.kafka.clients.consumer.Consumer;
+import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.common.KafkaFuture;
 import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.config.ConfigResource;
@@ -69,6 +70,7 @@ import org.springframework.cloud.stream.provisioning.ProducerDestination;
 import org.springframework.cloud.stream.provisioning.ProvisioningException;
 import org.springframework.cloud.stream.provisioning.ProvisioningProvider;
 import org.springframework.kafka.core.ConsumerFactory;
+import org.springframework.kafka.core.ProducerFactory;
 import org.springframework.retry.RetryOperations;
 import org.springframework.retry.backoff.ExponentialBackOffPolicy;
 import org.springframework.retry.policy.SimpleRetryPolicy;
@@ -548,11 +550,11 @@ public class KafkaTopicProvisioner implements
 	public Collection<PartitionInfo> getListenedPartitions(final String group,
 		final ExtendedConsumerProperties<KafkaConsumerProperties> extendedConsumerProperties,
 		final ConsumerFactory<?, ?> consumerFactory, int partitionCount,
-		boolean usingPatterns, boolean groupManagement, String topic,
+		boolean usingPatterns, boolean groupManagement, final String topic,
 		Map<String, TopicInformation> topicsInUse) {
 		Collection<PartitionInfo> listenedPartitions;
 		Collection<PartitionInfo> allPartitions = usingPatterns ? Collections.emptyList()
-			: getPartitionInfo(topic, extendedConsumerProperties, consumerFactory,
+			: getPartitionInfoForConsumer(topic, extendedConsumerProperties, consumerFactory,
 			partitionCount);
 
 		if (groupManagement || extendedConsumerProperties.getInstanceCount() == 1) {
@@ -574,7 +576,10 @@ public class KafkaTopicProvisioner implements
 		return listenedPartitions;
 	}
 
-	public Collection<PartitionInfo> getPartitionInfo(String topic,
+	/**
+	 * Check that the topic has the expected number of partitions and return the partition information for consumer.
+	 */
+	public Collection<PartitionInfo> getPartitionInfoForConsumer(final String topic,
 		final ExtendedConsumerProperties<KafkaConsumerProperties> extendedConsumerProperties,
 		final ConsumerFactory<?, ?> consumerFactory, int partitionCount) {
 		return getPartitionsForTopic(partitionCount,
@@ -584,6 +589,22 @@ public class KafkaTopicProvisioner implements
 					return consumer.partitionsFor(topic);
 				}
 			}, topic);
+	}
+
+	/**
+	 * Check that the topic has the expected number of partitions and return the partition information for producer.
+	 */
+	public Collection<PartitionInfo> getPartitionInfoForProducer(final String topicName,
+		final ProducerFactory<byte[], byte[]> producerFB,
+		final ExtendedProducerProperties<KafkaProducerProperties> producerProperties) {
+		return getPartitionsForTopic(
+			producerProperties.getPartitionCount(), false, () -> {
+				Producer<byte[], byte[]> producer = producerFB.createProducer();
+				List<PartitionInfo> partitionsFor = producer
+					.partitionsFor(topicName);
+				producer.close();
+				return partitionsFor;
+			}, topicName);
 	}
 
 	/**

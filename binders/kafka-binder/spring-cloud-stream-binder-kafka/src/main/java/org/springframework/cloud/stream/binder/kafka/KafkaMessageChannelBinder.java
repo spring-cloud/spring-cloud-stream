@@ -43,7 +43,6 @@ import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.PartitionInfo;
@@ -420,14 +419,8 @@ public class KafkaMessageChannelBinder extends
 				? transMan.getProducerFactory()
 				: getProducerFactory(null, producerProperties, destination.getName() + ".producer",
 				destination.getName());
-		Collection<PartitionInfo> partitions = provisioningProvider.getPartitionsForTopic(
-				producerProperties.getPartitionCount(), false, () -> {
-					Producer<byte[], byte[]> producer = producerFB.createProducer();
-					List<PartitionInfo> partitionsFor = producer
-							.partitionsFor(destination.getName());
-					producer.close();
-					return partitionsFor;
-				}, destination.getName());
+		Collection<PartitionInfo> partitions = provisioningProvider.getPartitionInfoForProducer(
+				destination.getName(), producerFB, producerProperties);
 		this.topicsInUse.put(destination.getName(),
 				new TopicInformation(null, partitions, false));
 		if (producerProperties.isPartitioned()
@@ -1013,14 +1006,14 @@ public class KafkaMessageChannelBinder extends
 			// all partitions
 			// not just the ones this binding is listening to; doesn't seem right for a
 			// health check.
-			Collection<PartitionInfo> partitionInfos = provisioningProvider.getPartitionInfo(
+			Collection<PartitionInfo> partitionInfos = provisioningProvider.getPartitionInfoForConsumer(
 					destination.getName(), extendedConsumerProperties, consumerFactory, -1);
 			this.topicsInUse.put(destination.getName(),
 					new TopicInformation(consumerGroup, partitionInfos, false));
 		}
 		else {
 			for (int i = 0; i < topics.length; i++) {
-				Collection<PartitionInfo> partitionInfos = provisioningProvider.getPartitionInfo(topics[i],
+				Collection<PartitionInfo> partitionInfos = provisioningProvider.getPartitionInfoForConsumer(topics[i],
 						extendedConsumerProperties, consumerFactory, -1);
 				this.topicsInUse.put(topics[i],
 						new TopicInformation(consumerGroup, partitionInfos, false));
