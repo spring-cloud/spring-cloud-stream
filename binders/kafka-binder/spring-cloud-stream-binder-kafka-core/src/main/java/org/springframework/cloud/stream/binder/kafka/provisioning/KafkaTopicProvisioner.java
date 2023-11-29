@@ -468,7 +468,7 @@ public class KafkaTopicProvisioner implements
 				NewTopic newTopic;
 				Map<Integer, List<Integer>> replicasAssignments = topicProperties
 						.getReplicasAssignments();
-				if (replicasAssignments != null && replicasAssignments.size() > 0) {
+				if (!CollectionUtils.isEmpty(replicasAssignments)) {
 					newTopic = new NewTopic(topicName,
 							topicProperties.getReplicasAssignments());
 				}
@@ -479,7 +479,7 @@ public class KafkaTopicProvisioner implements
 									: this.configurationProperties
 									.getReplicationFactor());
 				}
-				if (topicProperties.getProperties().size() > 0) {
+				if (!topicProperties.getProperties().isEmpty()) {
 					newTopic.configs(topicProperties.getProperties());
 				}
 				CreateTopicsResult createTopicsResult = adminClient
@@ -634,8 +634,6 @@ public class KafkaTopicProvisioner implements
 					if (ex instanceof UnknownTopicOrPartitionException) {
 						throw ex;
 					}
-					logger.error("Failed to obtain partition information for the topic "
-						+ "(" + topicName + ").", ex);
 				}
 				// In some cases, the above partition query may not throw an UnknownTopic..Exception for various reasons.
 				// For that, we are forcing another query to ensure that the topic is present on the server.
@@ -656,9 +654,10 @@ public class KafkaTopicProvisioner implements
 									+ "). This will affect the health check.");
 						}
 					}
+					throw new RuntimeException("Failed to obtain partition information for the topic " + topicName);
 				}
 				// do a sanity check on the partition set
-				int partitionSize = CollectionUtils.isEmpty(partitions) ? 0 : partitions.size();
+				int partitionSize = partitions.size();
 				if (partitionSize < partitionCount) {
 					if (tolerateLowerPartitionsOnBroker) {
 						logger.warn("The number of expected partitions for topic "
