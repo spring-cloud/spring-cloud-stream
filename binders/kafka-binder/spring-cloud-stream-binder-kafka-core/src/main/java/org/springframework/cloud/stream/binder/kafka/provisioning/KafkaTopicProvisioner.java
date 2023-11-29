@@ -23,6 +23,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -463,7 +464,7 @@ public class KafkaTopicProvisioner implements
 				NewTopic newTopic;
 				Map<Integer, List<Integer>> replicasAssignments = topicProperties
 						.getReplicasAssignments();
-				if (replicasAssignments != null && replicasAssignments.size() > 0) {
+				if (!CollectionUtils.isEmpty(replicasAssignments)) {
 					newTopic = new NewTopic(topicName,
 							topicProperties.getReplicasAssignments());
 				}
@@ -474,7 +475,7 @@ public class KafkaTopicProvisioner implements
 									: this.configurationProperties
 									.getReplicationFactor());
 				}
-				if (topicProperties.getProperties().size() > 0) {
+				if (!topicProperties.getProperties().isEmpty()) {
 					newTopic.configs(topicProperties.getProperties());
 				}
 				CreateTopicsResult createTopicsResult = adminClient
@@ -595,7 +596,7 @@ public class KafkaTopicProvisioner implements
 				// do a sanity check on the partition set
 				int partitionSize = CollectionUtils.isEmpty(partitions) ? 0 : partitions.size();
 				if (partitionSize < partitionCount) {
-					if (tolerateLowerPartitionsOnBroker) {
+					if (Objects.nonNull(partitions) && tolerateLowerPartitionsOnBroker) {
 						logger.warn("The number of expected partitions for topic "
 								+ topicName + " was: "
 								+ partitionCount + ", but " + partitionSize
