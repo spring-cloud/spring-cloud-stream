@@ -86,6 +86,22 @@ public class StreamBridgeTests {
 		System.clearProperty("spring.cloud.function.definition");
 	}
 
+	@Test //
+	void ensureEmptyPojoIsAllowed() {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+				TestChannelBinderConfiguration.getCompleteConfiguration(EmptyConfiguration.class))
+				.web(WebApplicationType.NONE).run("--spring.jmx.enabled=false")) {
+
+			StreamBridge streamBridge = context.getBean(StreamBridge.class);
+			OutputDestination outputDestination = context.getBean(OutputDestination.class);
+			Message<EmptyPojo> message = CloudEventMessageBuilder.withData(new EmptyPojo()).build();
+			streamBridge.send("fooDestination", message);
+
+			Message<byte[]> messageReceived = outputDestination.receive(1000, "fooDestination");
+			assertThat(new String(messageReceived.getPayload())).isEqualTo("{}");
+		}
+	}
+
 	@Test // see SCF-985
 	void ensurePassThruFunctionIsNotPrePostProcessed() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
@@ -935,6 +951,10 @@ public class StreamBridgeTests {
 				streamBridge.send("outgoing-out-0", message);
 			};
 		}
+	}
+
+	public static class EmptyPojo {
+
 	}
 
 }
