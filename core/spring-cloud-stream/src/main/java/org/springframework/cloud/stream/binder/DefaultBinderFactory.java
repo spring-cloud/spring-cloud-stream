@@ -501,7 +501,7 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 					binderProducingContext);
 			}
 			if (!useApplicationContextAsParent || "integration".equals(binderType.getDefaultName())) {
-				this.propagateSharedBeans((GenericApplicationContext) this.context, binderProducingContext);
+				this.propagateSharedBeans(binderProducingContext, (GenericApplicationContext) this.context);
 			}
 		}
 
