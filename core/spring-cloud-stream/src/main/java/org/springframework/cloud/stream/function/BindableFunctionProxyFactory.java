@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2021 the original author or authors.
+ * Copyright 2019-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,9 @@
  */
 
 package org.springframework.cloud.stream.function;
+
+import java.util.HashMap;
+import java.util.Map;
 
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.FactoryBean;
@@ -61,6 +64,14 @@ public class BindableFunctionProxyFactory extends BindableProxyFactory implement
 	private final boolean functionExist;
 
 	private GenericApplicationContext context;
+
+	/**
+	 * A convenient table containing the channel-name to function-name relationship.
+	 * This will be accessed via a utility method later on during the binding phase.
+	 * It is provided to assist with identifying the correct function that a channel
+	 * binds to when there are multiple functions present in the function definition.
+	 */
+	private static Map<String, String> channelNameToFunctions = new HashMap<>();
 
 	public BindableFunctionProxyFactory(String functionDefinition, int inputCount, int outputCount, StreamFunctionProperties functionProperties) {
 		this(functionDefinition, inputCount, outputCount, functionProperties, new SupportedBindableFeatures(), true);
@@ -166,6 +177,7 @@ public class BindableFunctionProxyFactory extends BindableProxyFactory implement
 		if (this.functionProperties.getBindings().containsKey(name)) {
 			name = this.functionProperties.getBindings().get(name);
 		}
+		updateChannelNameToFunctionName(name);
 		if (this.supportedBindableFeatures.isPollable()) {
 			PollableMessageSource pollableSource = (PollableMessageSource) getBindingTargetFactory(PollableMessageSource.class).createInput(name);
 			if (context != null && !context.containsBean(name)) {
@@ -185,10 +197,18 @@ public class BindableFunctionProxyFactory extends BindableProxyFactory implement
 		}
 	}
 
+	private void updateChannelNameToFunctionName(String name) {
+		// Update the channelName -> functionName table. Even if the application provides
+		// multiple functions in the function definition configuration (function1;function2;function3 etc.),
+		// this proxy factory only knows about a single function.
+		channelNameToFunctions.put(name, this.functionDefinition);
+	}
+
 	private void createOutput(String name) {
 		if (this.functionProperties.getBindings().containsKey(name)) {
 			name = this.functionProperties.getBindings().get(name);
 		}
+		updateChannelNameToFunctionName(name);
 		if (this.supportedBindableFeatures.isReactive()) {
 			this.outputHolders.put(name,
 				new BoundTargetHolder(getBindingTargetFactory(FluxMessageChannel.class)
@@ -208,5 +228,9 @@ public class BindableFunctionProxyFactory extends BindableProxyFactory implement
 
 	public boolean isFunctionExist() {
 		return functionExist;
+	}
+
+	public static Map<String, String> getChannelNameToFunctions() {
+		return channelNameToFunctions;
 	}
 }

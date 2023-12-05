@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 the original author or authors.
+ * Copyright 2015-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.cloud.stream.converter.MessageConverterUtils;
+import org.springframework.cloud.stream.function.BindableFunctionProxyFactory;
 import org.springframework.cloud.stream.function.StreamFunctionProperties;
 import org.springframework.core.env.Environment;
 import org.springframework.integration.channel.AbstractMessageChannel;
@@ -164,7 +165,9 @@ public class MessageConverterConfigurer
 			}
 			else {
 				if (environment != null && environment.containsProperty("spring.cloud.stream.rabbit.bindings." + channelName + ".producer.routing-key-expression")) {
-					this.setSkipOutputConversionIfNecessary();
+					Map<String, String> channelNameToFunctions = BindableFunctionProxyFactory.getChannelNameToFunctions();
+					String functionName = channelNameToFunctions.get(channelName);
+					this.setSkipOutputConversionIfNecessary(functionName);
 					functional = false;
 				}
 				if (!functional) {
@@ -174,10 +177,10 @@ public class MessageConverterConfigurer
 		}
 	}
 
-	private void setSkipOutputConversionIfNecessary() {
+	private void setSkipOutputConversionIfNecessary(String functionName) {
 		FunctionCatalog catalog = this.beanFactory.getBean(FunctionCatalog.class);
 		if (catalog != null) {
-			FunctionInvocationWrapper function = catalog.lookup(this.streamFunctionProperties.getDefinition());
+			FunctionInvocationWrapper function = catalog.lookup(functionName);
 			if (function != null) {
 				function.setSkipOutputConversion(true);
 			}
