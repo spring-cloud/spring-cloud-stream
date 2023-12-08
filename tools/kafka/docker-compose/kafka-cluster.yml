@@ -7,7 +7,7 @@ version: '2'
 
 services:
   zookeeper:
-    image: confluentinc/cp-zookeeper:7.0.1
+    image: confluentinc/cp-zookeeper:7.5.0
     hostname: zookeeper
     container_name: zookeeper
     ports:
@@ -17,7 +17,7 @@ services:
       ZOOKEEPER_TICK_TIME: 2000
 
   broker1:
-    image: confluentinc/cp-kafka:7.0.1
+    image: confluentinc/cp-kafka:7.5.0
     hostname: broker1
     container_name: broker1
     depends_on:
@@ -35,7 +35,7 @@ services:
       KAFKA_ADVERTISED_HOST_NAME: broker1
 
   broker2:
-    image: confluentinc/cp-kafka:7.0.1
+    image: confluentinc/cp-kafka:7.5.0
     hostname: broker2
     container_name: broker2
     depends_on:
@@ -53,7 +53,7 @@ services:
       KAFKA_ADVERTISED_HOST_NAME: broker2
 
   broker3:
-    image: confluentinc/cp-kafka:7.0.1
+    image: confluentinc/cp-kafka:7.5.0
     hostname: broker3
     container_name: broker3
     depends_on:
