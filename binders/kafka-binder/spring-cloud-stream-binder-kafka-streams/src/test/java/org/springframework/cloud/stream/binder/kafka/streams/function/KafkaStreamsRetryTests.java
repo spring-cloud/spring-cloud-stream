@@ -24,8 +24,8 @@ import java.util.function.BiConsumer;
 import org.apache.kafka.streams.kstream.GlobalKTable;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.KTable;
-import org.apache.kafka.streams.processor.Processor;
-import org.apache.kafka.streams.processor.ProcessorContext;
+import org.apache.kafka.streams.processor.api.Processor;
+import org.apache.kafka.streams.processor.api.Record;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
@@ -143,13 +143,15 @@ class KafkaStreamsRetryTests {
 		public java.util.function.Consumer<KStream<Object, String>> process(@Lazy @Qualifier("process-in-0-RetryTemplate") RetryTemplate retryTemplate) {
 
 			return input -> input
-					.process(() -> new Processor<Object, String>() {
+					.process(() -> new Processor<Object, String, Object, String>() {
+
 						@Override
-						public void init(ProcessorContext processorContext) {
+						public void init(org.apache.kafka.streams.processor.api.ProcessorContext<Object, String> context) {
+							Processor.super.init(context);
 						}
 
 						@Override
-						public void process(Object o, String s) {
+						public void process(Record<Object, String> record) {
 							retryTemplate.execute(context -> {
 								LATCH1.countDown();
 								throw new RuntimeException();
@@ -191,18 +193,19 @@ class KafkaStreamsRetryTests {
 		public java.util.function.Consumer<KStream<Object, String>> process() {
 
 			return input -> input
-					.process(() -> new Processor<Object, String>() {
+					.process(() -> new Processor<Object, String, Object, String>() {
+
 						@Override
-						public void init(ProcessorContext processorContext) {
+						public void init(org.apache.kafka.streams.processor.api.ProcessorContext<Object, String> context) {
+							Processor.super.init(context);
 						}
 
 						@Override
-						public void process(Object o, String s) {
+						public void process(Record<Object, String> record) {
 							fooRetryTemplate().execute(context -> {
 								LATCH2.countDown();
 								throw new RuntimeException();
 							});
-
 						}
 
 						@Override

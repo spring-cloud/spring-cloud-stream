@@ -441,7 +441,7 @@ class KafkaStreamsBinderWordCountFunctionTests {
 							value -> Arrays.asList(value.toLowerCase().split("\\W+")))
 					.map((key, value) -> new KeyValue<>(value, value))
 					.groupByKey(Grouped.with(Serdes.String(), Serdes.String()))
-					.windowedBy(TimeWindows.of(Duration.ofSeconds(5))).count(Materialized.as("foobar-WordCounts"))
+					.windowedBy(TimeWindows.ofSizeWithNoGrace(Duration.ofSeconds(5))).count(Materialized.as("foobar-WordCounts"))
 					.toStream()
 					.map((key, value) -> new KeyValue<>(null, null));
 		}

@@ -328,6 +328,7 @@ class KafkaStreamsComponentBeansTests {
 		KStream<String, String>[]> {
 
 		@Override
+		@SuppressWarnings("unchecked")
 		public KStream<String, String>[] apply(KStream<Integer, String> stringIntegerKStream) {
 			return stringIntegerKStream.map((key, value) -> new KeyValue<>(key.toString(), value))
 				.split()

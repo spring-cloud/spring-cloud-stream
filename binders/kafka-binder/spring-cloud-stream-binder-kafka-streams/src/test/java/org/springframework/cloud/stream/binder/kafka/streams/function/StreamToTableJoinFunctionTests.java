@@ -562,7 +562,7 @@ class StreamToTableJoinFunctionTests {
 			return (input1Stream, input2Stream) -> input1Stream
 					.join(input2Stream,
 							(event1, event2) -> null,
-							JoinWindows.of(Duration.ofMillis(5)),
+							JoinWindows.ofTimeDifferenceWithNoGrace(Duration.ofMillis(5)),
 							StreamJoined.with(
 									Serdes.String(),
 									Serdes.String(),

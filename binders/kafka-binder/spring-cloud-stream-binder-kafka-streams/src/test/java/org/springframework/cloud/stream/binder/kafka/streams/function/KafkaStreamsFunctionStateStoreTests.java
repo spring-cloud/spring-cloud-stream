@@ -22,9 +22,8 @@ import java.util.Map;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.KTable;
-import org.apache.kafka.streams.processor.Processor;
-import org.apache.kafka.streams.processor.ProcessorContext;
-import org.apache.kafka.streams.processor.ProcessorSupplier;
+import org.apache.kafka.streams.processor.api.Processor;
+import org.apache.kafka.streams.processor.api.Record;
 import org.apache.kafka.streams.state.KeyValueStore;
 import org.apache.kafka.streams.state.StoreBuilder;
 import org.apache.kafka.streams.state.Stores;
@@ -121,16 +120,16 @@ class KafkaStreamsFunctionStateStoreTests {
 		@Bean(name = "biConsumerBean")
 		public java.util.function.BiConsumer<KStream<Object, String>, KStream<Object, String>> process() {
 			return (input0, input1) ->
-					input0.process((ProcessorSupplier<Object, String>) () -> new Processor<Object, String>() {
+					input0.process(() -> new Processor<Object, String, Object, String>() {
+
 						@Override
-						@SuppressWarnings("unchecked")
-						public void init(ProcessorContext context) {
+						public void init(org.apache.kafka.streams.processor.api.ProcessorContext<Object, String> context) {
 							state1 = (KeyValueStore<Long, Long>) context.getStateStore("my-store");
 							state2 = (WindowStore<Long, Long>) context.getStateStore("other-store");
 						}
 
 						@Override
-						public void process(Object key, String value) {
+						public void process(Record<Object, String> record) {
 							processed1 = true;
 						}
 
@@ -144,16 +143,16 @@ class KafkaStreamsFunctionStateStoreTests {
 		@Bean
 		public java.util.function.Consumer<KTable<Object, String>> hello() {
 			return input -> {
-				input.toStream().process(() -> new Processor<Object, String>() {
+				input.toStream().process(() -> new Processor<Object, String, Object, String>() {
+
 					@Override
-					@SuppressWarnings("unchecked")
-					public void init(ProcessorContext context) {
+					public void init(org.apache.kafka.streams.processor.api.ProcessorContext<Object, String> context) {
 						state3 = (KeyValueStore<Long, Long>) context.getStateStore("my-store");
 						state4 = (WindowStore<Long, Long>) context.getStateStore("other-store");
 					}
 
 					@Override
-					public void process(Object key, String value) {
+					public void process(Record<Object, String> record) {
 						processed2 = true;
 					}
 
