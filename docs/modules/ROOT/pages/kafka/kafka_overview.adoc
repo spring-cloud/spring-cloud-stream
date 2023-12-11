@@ -121,7 +121,7 @@ If the partition count of the target topic is smaller than the expected value, t
 +
 Default: `false`.
 spring.cloud.stream.kafka.binder.transaction.transactionIdPrefix::
-Enables transactions in the binder. See `transaction.id` in the Kafka documentation and https://docs.spring.io/spring-kafka/reference/html/#transactions[Transactions] in the `spring-kafka` documentation.
+Enables transactions in the binder. See `transaction.id` in the Kafka documentation and https://docs.spring.io/spring-kafka/reference/kafka/transactions.html[Transactions] in the `spring-kafka` documentation.
 When transactions are enabled, individual `producer` properties are ignored and all producers use the `spring.cloud.stream.kafka.binder.transaction.producer.*` properties.
 +
 Default `null` (no transactions)
@@ -384,7 +384,7 @@ Keep in mind that, when using DLQ on a consumer binding that is in batch mode, a
 IMPORTANT: Retry within the binder is not supported when using batch mode, so `maxAttempts` will be overridden to 1.
 You can configure a `DefaultErrorHandler` (using a `ListenerContainerCustomizer`) to achieve similar functionality to retry in the binder.
 You can also use a manual `AckMode` and call `Ackowledgment.nack(index, sleep)` to commit the offsets for a partial batch and have the remaining records redelivered.
-Refer to the https://docs.spring.io/spring-kafka/docs/2.3.15.BUILD-SNAPSHOT/reference/html/#committing-offsets[Spring for Apache Kafka documentation] for more information about these techniques.
+Refer to the https://docs.spring.io/spring-kafka/docs/current/reference/kafka/receiving-messages/message-listener-container.html#committing-offsets[Spring for Apache Kafka documentation] for more information about these techniques.
 
 [[kafka-producer-properties]]
 ==== Kafka Producer Properties
