@@ -478,7 +478,6 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 					}
 				}
 			});
-
 			if (environment != null && !useApplicationContextAsParent) {
 				InitializerWithOuterContext initializer = new InitializerWithOuterContext(this.context);
 				initializer.initialize(binderProducingContext);
@@ -496,10 +495,6 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 
 		if (refresh) {
 			binderProducingContext.refresh();
-			if (this.context != null) {
-				this.context.getBeanFactory().registerSingleton(configurationName + "_binderProducingContext",
-					binderProducingContext);
-			}
 			if (!useApplicationContextAsParent || "integration".equals(binderType.getDefaultName())) {
 				this.propagateSharedBeans(binderProducingContext, (GenericApplicationContext) this.context);
 			}

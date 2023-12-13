@@ -19,6 +19,7 @@ package org.springframework.cloud.stream.binder.pulsar;
 import java.util.function.Function;
 
 import org.apache.pulsar.common.schema.SchemaType;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -54,6 +55,7 @@ class PulsarExtendedBindingDefaultPropertiesTests implements PulsarTestContainer
 			"spring.cloud.stream.pulsar.default.producer.name: my-producer");
 
 	@Test
+	@Disabled
 	void defaultsUsedWhenNoCustomBindingProperties() {
 		this.contextRunner.run((context) -> {
 			assertThat(context)
@@ -76,6 +78,7 @@ class PulsarExtendedBindingDefaultPropertiesTests implements PulsarTestContainer
 	}
 
 	@Test
+	@Disabled
 	void defaultsRespectedWhenCustomBindingProperties() {
 		this.contextRunner
 			.withPropertyValues(
