@@ -19,16 +19,20 @@ package org.springframework.cloud.stream.binder.pulsar;
 import java.util.function.Function;
 
 import org.apache.pulsar.common.schema.SchemaType;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
+import org.springframework.cloud.stream.binder.Binder;
+import org.springframework.cloud.stream.binder.BinderFactory;
+import org.springframework.cloud.stream.binder.ConsumerProperties;
+import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.cloud.stream.binder.pulsar.config.ExtendedBindingHandlerMappingsProviderConfiguration;
+import org.springframework.cloud.stream.binder.pulsar.properties.PulsarConsumerProperties;
 import org.springframework.cloud.stream.binder.pulsar.properties.PulsarExtendedBindingProperties;
-import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.cloud.stream.binder.pulsar.properties.PulsarProducerProperties;
 import org.springframework.context.annotation.Bean;
-
+import org.springframework.messaging.MessageChannel;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -55,21 +59,25 @@ class PulsarExtendedBindingDefaultPropertiesTests implements PulsarTestContainer
 			"spring.cloud.stream.pulsar.default.producer.name: my-producer");
 
 	@Test
-	@Disabled
 	void defaultsUsedWhenNoCustomBindingProperties() {
 		this.contextRunner.run((context) -> {
 			assertThat(context)
-				.hasNotFailed()
-				.hasBean("pulsar_binderProducingContext");
-			ConfigurableApplicationContext pulsarBinderProducingContext =
-				context.getBean("pulsar_binderProducingContext", ConfigurableApplicationContext.class);
-			PulsarExtendedBindingProperties extendedBindingProperties = pulsarBinderProducingContext.getBean(PulsarExtendedBindingProperties.class);
-			assertThat(extendedBindingProperties.getExtendedConsumerProperties("process-in-0"))
+				.hasNotFailed();
+			BinderFactory binderFactory = context.getBeanFactory()
+				.getBean(BinderFactory.class);
+			Binder<MessageChannel, ? extends ConsumerProperties, ? extends ProducerProperties> pulsarBinder = binderFactory
+				.getBinder("pulsar", MessageChannel.class);
+			PulsarExtendedBindingProperties extendedBindingProperties = ((PulsarMessageChannelBinder) pulsarBinder).getExtendedBindingProperties();
+
+			PulsarConsumerProperties extendedConsumerProperties = extendedBindingProperties.getExtendedConsumerProperties("process-in-0");
+			assertThat(extendedConsumerProperties)
 				.hasFieldOrPropertyWithValue("schemaType", SchemaType.JSON)
 				.hasFieldOrPropertyWithValue("receiverQueueSize", 5000)
 				.hasFieldOrPropertyWithValue("subscription.name", "my-subscription")
 				.hasFieldOrPropertyWithValue("startPaused", true);
-			assertThat(extendedBindingProperties.getExtendedProducerProperties("process-out-0"))
+
+			PulsarProducerProperties extendedProducerProperties = extendedBindingProperties.getExtendedProducerProperties("process-out-0");
+			assertThat(extendedProducerProperties)
 				.hasFieldOrPropertyWithValue("schemaType", SchemaType.JSON)
 				.hasFieldOrPropertyWithValue("blockIfQueueFull", true)
 				.hasFieldOrPropertyWithValue("maxPendingMessages", 200)
@@ -78,7 +86,6 @@ class PulsarExtendedBindingDefaultPropertiesTests implements PulsarTestContainer
 	}
 
 	@Test
-	@Disabled
 	void defaultsRespectedWhenCustomBindingProperties() {
 		this.contextRunner
 			.withPropertyValues(
@@ -87,17 +94,22 @@ class PulsarExtendedBindingDefaultPropertiesTests implements PulsarTestContainer
 				"spring.cloud.stream.pulsar.bindings.process-out-0.producer.maxPendingMessages: 400")
 			.run((context) -> {
 				assertThat(context)
-					.hasNotFailed()
-					.hasBean("pulsar_binderProducingContext");
-				ConfigurableApplicationContext pulsarBinderProducingContext =
-					context.getBean("pulsar_binderProducingContext", ConfigurableApplicationContext.class);
-				PulsarExtendedBindingProperties extendedBindingProperties = pulsarBinderProducingContext.getBean(PulsarExtendedBindingProperties.class);
-				assertThat(extendedBindingProperties.getExtendedConsumerProperties("process-in-0"))
+					.hasNotFailed();
+				BinderFactory binderFactory = context.getBeanFactory()
+					.getBean(BinderFactory.class);
+				Binder<MessageChannel, ? extends ConsumerProperties, ? extends ProducerProperties> pulsarBinder = binderFactory
+					.getBinder("pulsar", MessageChannel.class);
+				PulsarExtendedBindingProperties extendedBindingProperties = ((PulsarMessageChannelBinder) pulsarBinder).getExtendedBindingProperties();
+
+				PulsarConsumerProperties extendedConsumerProperties = extendedBindingProperties.getExtendedConsumerProperties("process-in-0");
+				assertThat(extendedConsumerProperties)
 					.hasFieldOrPropertyWithValue("schemaType", SchemaType.JSON)
 					.hasFieldOrPropertyWithValue("receiverQueueSize", 8000)
 					.hasFieldOrPropertyWithValue("subscription.name", "my-subscription")
 					.hasFieldOrPropertyWithValue("startPaused", true);
-				assertThat(extendedBindingProperties.getExtendedProducerProperties("process-out-0"))
+
+				PulsarProducerProperties extendedProducerProperties = extendedBindingProperties.getExtendedProducerProperties("process-out-0");
+				assertThat(extendedProducerProperties)
 					.hasFieldOrPropertyWithValue("schemaType", SchemaType.JSON)
 					.hasFieldOrPropertyWithValue("blockIfQueueFull", false)
 					.hasFieldOrPropertyWithValue("maxPendingMessages", 400)
