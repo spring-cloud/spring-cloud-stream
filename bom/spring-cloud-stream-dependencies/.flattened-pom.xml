@@ -5,12 +5,12 @@
   <parent>
     <groupId>org.springframework.cloud</groupId>
     <artifactId>spring-cloud-dependencies-parent</artifactId>
-    <version>3.1.9</version>
+    <version>3.1.3</version>
     <relativePath></relativePath>
   </parent>
   <groupId>org.springframework.cloud</groupId>
   <artifactId>spring-cloud-stream-dependencies</artifactId>
-  <version>3.2.10</version>
+  <version>3.2.4</version>
   <packaging>pom</packaging>
   <name>spring-cloud-stream-dependencies</name>
   <description>Spring Cloud Stream Dependencies</description>
@@ -80,7 +80,7 @@
     </snapshotRepository>
     <site>
       <id>spring-docs</id>
-      <url>https:/docs.spring.io/spring-cloud-dependencies-parent/docs/3.1.9/reference/html/spring-cloud-stream-dependencies/</url>
+      <url>https:/docs.spring.io/spring-cloud-dependencies-parent/docs/3.1.3/reference/html/spring-cloud-stream-dependencies/</url>
     </site>
     <downloadUrl>https://github.com/spring-cloud</downloadUrl>
   </distributionManagement>

@@ -10,7 +10,7 @@
 	<parent>
 		<groupId>org.springframework.cloud</groupId>
 		<artifactId>spring-cloud-stream-binder-kafka-parent</artifactId>
-		<version>3.2.10</version>
+		<version>3.2.10-SNAPSHOT</version>
 	</parent>
 
 	<dependencies>
