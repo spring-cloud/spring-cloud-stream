@@ -27,6 +27,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.apache.commons.logging.Log;
 
 import org.springframework.beans.factory.BeanFactoryAware;
@@ -147,7 +148,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		}
 		SimpleModule module = new SimpleModule();
 		module.addSerializer(Expression.class, new ExpressionSerializer(Expression.class));
-		this.objectMapper.registerModule(module);
+		this.objectMapper.registerModules(module, new JavaTimeModule());
 	}
 
 	public AbstractMessageChannelBinder(String[] headersToEmbed, PP provisioningProvider,
