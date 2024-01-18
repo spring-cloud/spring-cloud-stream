@@ -125,7 +125,7 @@ class KafkaConfigCustomizationTests {
 
 		@Bean
 		BinderCustomizer binderCustomizer() {
-			return (binder,binderName) -> {
+			return (binder, binderName) -> {
 				if (binder instanceof KafkaMessageChannelBinder kafkaMessageChannelBinder) {
 					kafkaMessageChannelBinder.addClientFactoryCustomizer(new ClientFactoryCustomizer() {
 						@Override
