@@ -1,0 +1,62 @@
+[[functional-binding-names]]
+=== Functional binding names
+
+Unlike the explicit naming required by annotation-based support (legacy) used in the previous versions of spring-cloud-stream, the functional
+programming model defaults to a simple convention when it comes to binding names, thus greatly simplifying application configuration.
+Let's look at the first example:
+
+[source, java]
+----
+@SpringBootApplication
+public class SampleApplication {
+
+	@Bean
+	public Function<String, String> uppercase() {
+	    return value -> value.toUpperCase();
+	}
+}
+----
+
+In the preceding example we have an application with a single function which acts as message handler. As a `Function` it has an
+input and output.
+The naming convention used to name input and output bindings is as follows:
+
+* input - `<functionName> + -in- + <index>`
+* output - `<functionName> + -out- + <index>`
+
+The `in` and `out` corresponds to the type of binding (such as _input_ or _output_).
+The `index` is the index of the input or output binding. It is always 0 for typical single input/output function,
+so it's only relevant for <<Functions with multiple input and output arguments>>.
+
+So if for example you would want to map the input of this function to a remote
+destination (e.g., topic, queue etc) called "my-topic" you would do so with the following property:
+----
+--spring.cloud.stream.bindings.uppercase-in-0.destination=my-topic
+----
+Note how `uppercase-in-0` is used as a segment in property name. The same goes for `uppercase-out-0`.
+
+***Descriptive Binding Names***
+
+Some times to improve readability you may want to give your binding a more descriptive name (such as 'account', 'orders' etc).
+Another way of looking at it is you can map an _implicit binding name_ to an _explicit binding name_. And you can do it with
+`spring.cloud.stream.function.bindings.<binding-name>` property.
+This property also provides a migration path for existing applications that rely on custom interface-based
+bindings that require explicit names.
+
+For example,
+----
+--spring.cloud.stream.function.bindings.uppercase-in-0=input
+----
+
+In the preceding example you mapped and effectively renamed `uppercase-in-0` binding name to `input`. Now all configuration
+properties can refer to `input` binding name instead (e.g.,  `--spring.cloud.stream.bindings.input.destination=my-topic`).
+
+NOTE: While descriptive binding names may enhance the readability aspect of the configuration, they also create
+another level of misdirection by mapping an implicit binding name to an explicit binding name. And since all subsequent
+configuration properties will use the explicit binding name you must always refer to this 'bindings' property to
+correlate which function it actually corresponds to. We believe that for most cases (with the exception of <<Functional Composition>>)
+it may be an overkill, so, it is our recommendation to avoid using it altogether, especially
+since not using it provides a clear path between binder destination and binding name, such as `spring.cloud.stream.bindings.uppercase-in-0.destination=sample-topic`,
+where you are clearly correlating the input of `uppercase` function to `sample-topic` destination.
+
+For more on properties and other configuration options please see <<Configuration Options>> section.

@@ -1,0 +1,33 @@
+[[explicit-binding-creation]]
+=== Explicit binding creation
+
+In the previous section we explained how bindings are created implicitly driven by the names of `Function`, `Supplier` or `Consumer` beans provided by your application.
+However, there are times when you may need to create binding explicitly where bindings are not tied to any function. This is typically done to
+support integrations with other frameworks via `StreamBridge`.
+
+Spring Cloud Stream allows you to define input and output bindings explicitly via `spring.cloud.stream.input-bindings` and  `spring.cloud.stream.output-bindings`
+properties. Noticed the plural in the property names allowing you to define multiple bindings by simply using `;` as a delimiter.
+Just look at the following test case as an example:
+
+----
+@Test
+public void testExplicitBindings() {
+	try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+		TestChannelBinderConfiguration.getCompleteConfiguration(EmptyConfiguration.class))
+				.web(WebApplicationType.NONE)
+				.run("--spring.jmx.enabled=false",
+					"--spring.cloud.stream.input-bindings=fooin;barin",
+					"--spring.cloud.stream.output-bindings=fooout;barout")) {
+
+
+	. . .
+	}
+}
+
+@EnableAutoConfiguration
+@Configuration
+public static class EmptyConfiguration {
+}
+----
+
+As you can see we have declared two input bindings and two output bindings while our configuration had no functions defined, yet we were able to successfully create these bindings and access their corresponding channels.

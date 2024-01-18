@@ -1,0 +1,13 @@
+[[binding-and-binding-names]]
+== Binding and Binding names
+
+Binding is an abstraction that represents a bridge between sources and targets exposed by the binder and user code,
+This abstraction has a name and while we try to do our best to limit configuration required to run spring-cloud-stream applications,
+being aware of such name(s) is necessary for cases where additional per-binding configuration is required.
+
+Throughout this manual you will see examples of configuration properties such as `spring.cloud.stream.bindings.input.destination=myQueue`.
+The `input` segment in this property name is what we refer to as _binding name_ and it could derive via several mechanisms.
+The following sub-sections will describe the naming conventions and configuration elements used by spring-cloud-stream to control binding names.
+
+NOTE: If your binding name has special characters, such as the `.` character, you need to surround the binding key with brackets (`[]`) and then wrap it in qoutes.
+For example `spring.cloud.stream.bindings."[my.output.binding.key]".destination`.
