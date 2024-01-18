@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2023 the original author or authors.
+ * Copyright 2020-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,11 +35,16 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.cloud.stream.binder.BinderCustomizer;
+import org.springframework.cloud.stream.binder.kafka.KafkaMessageChannelBinder;
+import org.springframework.cloud.stream.binder.kafka.config.ClientFactoryCustomizer;
 import org.springframework.cloud.stream.binder.kafka.support.ConsumerConfigCustomizer;
 import org.springframework.cloud.stream.binder.kafka.support.ProducerConfigCustomizer;
 import org.springframework.context.annotation.Bean;
+import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.core.ProducerFactory;
 import org.springframework.kafka.test.EmbeddedKafkaBroker;
 import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
@@ -49,21 +54,23 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Soby Chacko
+ * @author Artem Bilan
  *
  * Based on: https://github.com/spring-projects/spring-kafka/issues/897#issuecomment-466060097
  */
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE, properties = {"spring.cloud.function.definition=process",
+@SpringBootTest(properties = {"spring.cloud.function.definition=process",
 		"spring.cloud.stream.bindings.process-in-0.group=KafkaConfigCustomizationTests.group"})
 @DirtiesContext
-@EmbeddedKafka(bootstrapServersProperty = "spring.kafka.bootstrap-servers")
+@EmbeddedKafka
 class KafkaConfigCustomizationTests {
-
-	private static final String KAFKA_BROKERS_PROPERTY = "spring.cloud.stream.kafka.binder.brokers";
 
 	static final CountDownLatch countDownLatch = new CountDownLatch(2);
 
 	@Autowired
 	EmbeddedKafkaBroker embeddedKafkaBroker;
+
+	@Autowired
+	ConfigCustomizerTestConfig configCustomizerTestConfig;
 
 	@Test
 	void bothConsumerAndProducerConfigsCanBeCustomized() throws InterruptedException {
@@ -74,6 +81,9 @@ class KafkaConfigCustomizationTests {
 		template.send("process-in-0", "test-foo");
 		template.flush();
 		assertThat(countDownLatch.await(10, TimeUnit.SECONDS)).isTrue();
+
+		assertThat(this.configCustomizerTestConfig.producerFactoryCustomized).isTrue();
+		assertThat(this.configCustomizerTestConfig.consumerFactoryCustomized).isTrue();
 	}
 
 	@SpringBootApplication
@@ -108,6 +118,30 @@ class KafkaConfigCustomizationTests {
 		public Foo foo() {
 			return new Foo();
 		}
+
+		private boolean producerFactoryCustomized;
+
+		private boolean consumerFactoryCustomized;
+
+		@Bean
+		BinderCustomizer binderCustomizer() {
+			return (binder,binderName) -> {
+				if (binder instanceof KafkaMessageChannelBinder kafkaMessageChannelBinder) {
+					kafkaMessageChannelBinder.addClientFactoryCustomizer(new ClientFactoryCustomizer() {
+						@Override
+						public void configure(ConsumerFactory<?, ?> cf) {
+							consumerFactoryCustomized = true;
+						}
+
+						@Override
+						public void configure(ProducerFactory<?, ?> pf) {
+							producerFactoryCustomized = true;
+						}
+					});
+				}
+			};
+		}
+
 	}
 
 	public static class Foo {
@@ -166,5 +200,7 @@ class KafkaConfigCustomizationTests {
 		@Override
 		public void close() {
 		}
+
 	}
+
 }
