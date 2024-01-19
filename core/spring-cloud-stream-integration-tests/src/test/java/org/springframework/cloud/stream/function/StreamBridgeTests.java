@@ -407,7 +407,7 @@ public class StreamBridgeTests {
 			bridge.send("test-channel", "blah");
 
 			Field field = ReflectionUtils.findField(StreamBridge.class, "channelCache");
-			Objects.requireNonNull(field).setAccessible(true);
+			field.setAccessible(true);
 			Map<String, MessageChannel> map = (Map<String, MessageChannel>) field.get(bridge);
 			final MessageChannel messageChannel = map.get("test-channel");
 			assertThat(((DirectWithAttributesChannel) messageChannel).getFullChannelName()).isEqualTo("application.test-channel");
