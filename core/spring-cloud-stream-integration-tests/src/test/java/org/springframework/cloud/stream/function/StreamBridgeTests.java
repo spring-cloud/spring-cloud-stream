@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2023 the original author or authors.
+ * Copyright 2020-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,6 +49,7 @@ import org.springframework.cloud.stream.binder.test.TestChannelBinderConfigurati
 import org.springframework.cloud.stream.binding.BindingService;
 import org.springframework.cloud.stream.binding.NewDestinationBindingCallback;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
+import org.springframework.cloud.stream.messaging.DirectWithAttributesChannel;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.integration.channel.AbstractMessageChannel;
@@ -391,6 +392,25 @@ public class StreamBridgeTests {
 			StreamBridge bridge = context.getBean(StreamBridge.class);
 
 			bridge.send("nullChannel", "blah");
+		}
+	}
+
+	// See https://github.com/spring-cloud/spring-cloud-stream/issues/2885 for more context on the following test
+	@SuppressWarnings("unchecked")
+	@Test
+	void ensureDirectWithAttributesChannelIsPopulatedWithName() throws Exception {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration
+			.getCompleteConfiguration(InterceptorConfiguration.class))
+			.web(WebApplicationType.NONE).run(
+				"--spring.jmx.enabled=false")) {
+			StreamBridge bridge = context.getBean(StreamBridge.class);
+			bridge.send("test-channel", "blah");
+
+			Field field = ReflectionUtils.findField(StreamBridge.class, "channelCache");
+			Objects.requireNonNull(field).setAccessible(true);
+			Map<String, MessageChannel> map = (Map<String, MessageChannel>) field.get(bridge);
+			final MessageChannel messageChannel = map.get("test-channel");
+			assertThat(((DirectWithAttributesChannel) messageChannel).getFullChannelName()).isEqualTo("application.test-channel");
 		}
 	}
 

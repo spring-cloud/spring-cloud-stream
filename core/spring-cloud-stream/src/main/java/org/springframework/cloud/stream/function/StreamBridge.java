@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2023 the original author or authors.
+ * Copyright 2020-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -251,6 +251,8 @@ public final class StreamBridge implements StreamOperations, SmartInitializingSi
 			}
 			else {
 				messageChannel = new DirectWithAttributesChannel();
+				((DirectWithAttributesChannel) messageChannel).setApplicationContext(applicationContext);
+				((DirectWithAttributesChannel) messageChannel).setComponentName(destinationName);
 				if (this.destinationBindingCallback != null) {
 					Object extendedProducerProperties = this.bindingService
 							.getExtendedProducerProperties(messageChannel, destinationName);
