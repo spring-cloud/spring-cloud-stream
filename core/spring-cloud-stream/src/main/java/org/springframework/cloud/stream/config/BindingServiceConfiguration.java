@@ -240,19 +240,12 @@ public class BindingServiceConfiguration {
 	@Bean
 	public ApplicationListener<ContextRefreshedEvent> appListener(
 			SpringIntegrationProperties springIntegrationProperties) {
-		return new ApplicationListener<ContextRefreshedEvent>() {
-
-			@Override
-			public void onApplicationEvent(ContextRefreshedEvent event) {
-				event.getApplicationContext()
-						.getBeansOfType(AbstractReplyProducingMessageHandler.class)
-						.values()
-						.forEach(mh -> mh
-								.addNotPropagatedHeaders(springIntegrationProperties
-										.getMessageHandlerNotPropagatedHeaders()));
-			}
-
-		};
+		return event -> event.getApplicationContext()
+				.getBeansOfType(AbstractReplyProducingMessageHandler.class)
+				.values()
+				.forEach(mh -> mh
+						.addNotPropagatedHeaders(springIntegrationProperties
+								.getMessageHandlerNotPropagatedHeaders()));
 	}
 
 }
