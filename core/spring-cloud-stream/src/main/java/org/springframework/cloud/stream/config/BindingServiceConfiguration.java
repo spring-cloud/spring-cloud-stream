@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -152,8 +152,8 @@ public class BindingServiceConfiguration {
 		return new BeanPostProcessor() {
 			@Override
 			public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
-				if ("errorChannel".equals(beanName)) {
-					((PublishSubscribeChannel) bean).setIgnoreFailures(true);
+				if ("errorChannel".equals(beanName) && bean instanceof PublishSubscribeChannel publishSubscribeChannel) {
+						publishSubscribeChannel.setIgnoreFailures(true);
 				}
 				return bean;
 			}
