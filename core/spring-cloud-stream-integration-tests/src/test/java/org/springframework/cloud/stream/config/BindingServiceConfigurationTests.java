@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2022 the original author or authors.
+ * Copyright 2017-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,9 +26,11 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.integration.annotation.ServiceActivator;
+import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.channel.PublishSubscribeChannel;
 import org.springframework.integration.handler.AbstractReplyProducingMessageHandler;
 import org.springframework.messaging.support.GenericMessage;
@@ -37,6 +39,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Oleg Zhurakousky
+ * @author Soby Chacko
  *
  */
 public class BindingServiceConfigurationTests {
@@ -81,6 +84,17 @@ public class BindingServiceConfigurationTests {
 		}
 	}
 
+	@Test // See: https://github.com/spring-cloud/spring-cloud-stream/issues/2883
+	void customErrorChannelDoesNotThrowExceptions() {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+			TestChannelBinderConfiguration
+				.getCompleteConfiguration(CustomErrorChannelConfiguration.class))
+			.web(WebApplicationType.NONE).run()) {
+			DirectChannel channel = context.getBean("errorChannel", DirectChannel.class);
+			assertThat(channel).isNotNull();
+		}
+	}
+
 	@Configuration
 	@Import(ImportedConfiguration.class)
 	public static class RootConfiguration {
@@ -103,6 +117,15 @@ public class BindingServiceConfigurationTests {
 	@Configuration
 	public static class EmptyConfiguration {
 
+	}
+
+	@Configuration
+	public static class CustomErrorChannelConfiguration {
+
+		@Bean
+		public DirectChannel errorChannel() {
+			return new DirectChannel();
+		}
 	}
 
 }
