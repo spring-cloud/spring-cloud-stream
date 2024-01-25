@@ -6,12 +6,12 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>3.0.9</version>
+		<version>3.0.13</version>
 		<relativePath/>
 	</parent>
 	<groupId>org.springframework.cloud</groupId>
 	<artifactId>spring-cloud-stream-starter-parent</artifactId>
-	<version>4.0.5-SNAPSHOT</version>
+	<version>4.0.5</version>
 	<name>spring-cloud-stream-starter-parent</name>
 	<description>Specifies Boot version for the releaser</description>
 	<packaging>pom</packaging>
