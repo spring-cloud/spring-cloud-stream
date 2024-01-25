@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>3.0.13</version>
+		<version>3.0.9</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.example</groupId>
@@ -15,7 +15,7 @@
 	<description>Sample app using stream functions with batch producer and consumer using kafka</description>
 	<properties>
 		<java.version>17</java.version>
-		<spring-cloud.version>2022.0.5</spring-cloud.version>
+		<spring-cloud.version>2022.0.5-SNAPSHOT</spring-cloud.version>
 	</properties>
 	<dependencies>
 		<dependency>
