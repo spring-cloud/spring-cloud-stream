@@ -2,7 +2,7 @@
 
 This section contains the configuration options used by the Apache Kafka binder.
 
-For common configuration options and properties pertaining to the binder, see the https://cloud.spring.io/spring-cloud-static/spring-cloud-stream/current/reference/html/spring-cloud-stream.html#binding-properties[binding properties] in core documentation.
+For common configuration options and properties pertaining to the binder, see the https://docs.spring.io/spring-cloud-stream/docs/current/reference/html/spring-cloud-stream.html#binding-properties[binding properties] in core documentation.
 
 [[kafka-binder-properties]]
 == Kafka Binder Properties
@@ -194,15 +194,15 @@ Note that this property is only applicable for pollable consumers.
 Default: not set.
 resetOffsets::
 Whether to reset offsets on the consumer to the value provided by startOffset.
-Must be false if a `KafkaBindingRebalanceListener` is provided; see <<rebalance-listener>>.
-See <<reset-offsets>> for more information about this property.
+Must be false if a `KafkaBindingRebalanceListener` is provided; see xref:kafka/kafka-binder/rebalance_listener.adoc[rebalance listener]
+See xref:kafka/kafka-binder/reset-offsets.adoc[reset-offsets] for more information about this property.
 +
 Default: `false`.
 startOffset::
 The starting offset for new groups.
 Allowed values: `earliest` and `latest`.
 If the consumer group is set explicitly for the consumer 'binding' (through `spring.cloud.stream.bindings.<channelName>.group`), 'startOffset' is set to `earliest`. Otherwise, it is set to `latest` for the `anonymous` consumer group.
-See <<reset-offsets>> for more information about this property.
+See xref:kafka/kafka-binder/reset-offsets.adoc[reset-offsets] for more information about this property.
 +
 Default: null (equivalent to `earliest`).
 enableDlq::
@@ -210,17 +210,17 @@ When set to true, it enables DLQ behavior for the consumer.
 By default, messages that result in errors are forwarded to a topic named `error.<destination>.<group>`.
 The DLQ topic name can be configurable by setting the `dlqName` property or by defining a `@Bean` of type `DlqDestinationResolver`.
 This provides an alternative option to the more common Kafka replay scenario for the case when the number of errors is relatively small and replaying the entire original topic may be too cumbersome.
-See <<kafka-dlq-processing>> processing for more information.
+See xref:kafka/kafka-binder/dlq.adoc[kafka dlq processing] for more information.
 Starting with version 2.0, messages sent to the DLQ topic are enhanced with the following headers: `x-original-topic`, `x-exception-message`, and `x-exception-stacktrace` as `byte[]`.
 By default, a failed record is sent to the same partition number in the DLQ topic as the original record.
-See <<dlq-partition-selection>> for how to change that behavior.
+See  xref:kafka/kafka-binder/dlq-partition.adoc[dlq partition selection] for how to change that behavior.
 **Not allowed when `destinationIsPattern` is `true`.**
 +
 Default: `false`.
 dlqPartitions::
 When `enableDlq` is true, and this property is not set, a dead letter topic with the same number of partitions as the primary topic(s) is created.
 Usually, dead-letter records are sent to the same partition in the dead-letter topic as the original record.
-This behavior can be changed; see <<dlq-partition-selection>>.
+This behavior can be changed; see xref:kafka/kafka-binder/dlq-partition.adoc[dlq partition selection].
 If this property is set to `1` and there is no `DqlPartitionFunction` bean, all dead-letter records will be written to partition `0`.
 If this property is greater than `1`, you **MUST** provide a `DlqPartitionFunction` bean.
 Note that the actual partition count is affected by the binder's `minPartitionCount` property.
@@ -257,7 +257,7 @@ Default: `null`
 idleEventInterval::
 The interval, in milliseconds, between events indicating that no messages have recently been received.
 Use an `ApplicationListener<ListenerContainerIdleEvent>` to receive these events.
-See <<pause-resume>> for a usage example.
+See xref:kafka/kafka-binder/pause_resume.adoc[pause-resume] for a usage example.
 +
 Default: `30000`
 destinationIsPattern::
@@ -393,7 +393,7 @@ The header contains a `RecordMetadata` object provided by the Kafka client; it i
 +
 `ResultMetadata meta = sendResultMsg.getHeaders().get(KafkaHeaders.RECORD_METADATA, RecordMetadata.class)`
 +
-Failed sends go the producer error channel (if configured); see <<kafka-error-channels>>.
+Failed sends go the producer error channel (if configured); see xref:kafka/kafka-binder/error-channels.adoc[Kafka error channels].
 +
 Default: null.
 

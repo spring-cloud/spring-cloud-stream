@@ -1,0 +1,46 @@
+[[dlq-partition-selection]]
+== Dead-Letter Topic Partition Selection
+
+By default, records are published to the Dead-Letter topic using the same partition as the original record.
+This means the Dead-Letter topic must have at least as many partitions as the original record.
+
+To change this behavior, add a `DlqPartitionFunction` implementation as a `@Bean` to the application context.
+Only one such bean can be present.
+The function is provided with the consumer group, the failed `ConsumerRecord` and the exception.
+For example, if you always want to route to partition 0, you might use:
+
+[source, java]
+----
+@Bean
+public DlqPartitionFunction partitionFunction() {
+    return (group, record, ex) -> 0;
+}
+----
+NOTE: If you set a consumer binding's `dlqPartitions` property to 1 (and the binder's `minPartitionCount` is equal to `1`), there is no need to supply a `DlqPartitionFunction`; the framework will always use partition 0.
+If you set a consumer binding's `dlqPartitions` property to a value greater than `1` (or the binder's `minPartitionCount` is greater than `1`), you **must** provide a `DlqPartitionFunction` bean, even if the partition count is the same as the original topic's.
+
+It is also possible to define a custom name for the DLQ topic.
+In order to do so, create an implementation of `DlqDestinationResolver` as a `@Bean` to the application context.
+When the binder detects such a bean, that takes precedence, otherwise it will use the `dlqName` property.
+If neither of these are found, it will default to `error.<destination>.<group>`.
+Here is an example of `DlqDestinationResolver` as a `@Bean`.
+
+[source]
+----
+@Bean
+public DlqDestinationResolver dlqDestinationResolver() {
+    return (rec, ex) -> {
+        if (rec.topic().equals("word1")) {
+            return "topic1-dlq";
+        }
+        else {
+            return "topic2-dlq";
+        }
+    };
+}
+----
+
+One important thing to keep in mind when providing an implementation for `DlqDestinationResolver` is that the provisioner in the binder will not auto create topics for the application.
+This is because there is no way for the binder to infer the names of all the DLQ topics the implementation might send to.
+Therefore, if you provide DLQ names using this strategy, it is the application's responsibility to ensure that those topics are created beforehand.
+

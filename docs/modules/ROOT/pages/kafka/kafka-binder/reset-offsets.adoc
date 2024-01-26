@@ -23,4 +23,4 @@ Set `resetOffsets` to `true` and `startOffset` to `latest`; the binding will per
 
 IMPORTANT: If a rebalance occurs after the initial assignment, the seeks will only be performed on any newly assigned partitions that were not assigned during the initial assignment.
 
-For more control over topic offsets, see <<rebalance-listener>>; when a listener is provided, `resetOffsets` should not be set to `true`, otherwise, that will cause an error.
+For more control over topic offsets, see xref:kafka/kafka-binder/rebalance_listener.adoc[rebalance listener]; when a listener is provided, `resetOffsets` should not be set to `true`, otherwise, that will cause an error.

@@ -62,6 +62,7 @@
 **** xref:kafka/kafka-binder/admin-client-config-cust.adoc[]
 **** xref:kafka/kafka-binder/custom-health-ind.adoc[]
 **** xref:kafka/kafka-binder/dlq.adoc[]
+**** xref:kafka/kafka-binder/dlq-partition.adoc[]
 **** xref:kafka/kafka-binder/partitions.adoc[]
 *** Reactive Kafka Binder
 **** xref:kafka/kafka-reactive-binder/overview.adoc[]
