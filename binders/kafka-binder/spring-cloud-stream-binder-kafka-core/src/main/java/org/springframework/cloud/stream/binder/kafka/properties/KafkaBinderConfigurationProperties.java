@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2023 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -376,8 +376,7 @@ public class KafkaBinderConfigurationProperties {
 	 * @return the merged properties.
 	 */
 	public Map<String, Object> mergedConsumerConfiguration() {
-		Map<String, Object> consumerConfiguration = new HashMap<>();
-		consumerConfiguration.putAll(this.kafkaProperties.buildConsumerProperties());
+		Map<String, Object> consumerConfiguration = new HashMap<>(this.kafkaProperties.buildConsumerProperties(null));
 		// Copy configured binder properties that apply to consumers
 		for (Map.Entry<String, String> configurationEntry : this.configuration
 				.entrySet()) {
@@ -401,8 +400,7 @@ public class KafkaBinderConfigurationProperties {
 	 * @return the merged properties.
 	 */
 	public Map<String, Object> mergedProducerConfiguration() {
-		Map<String, Object> producerConfiguration = new HashMap<>();
-		producerConfiguration.putAll(this.kafkaProperties.buildProducerProperties());
+		Map<String, Object> producerConfiguration = new HashMap<>(this.kafkaProperties.buildProducerProperties(null));
 		// Copy configured binder properties that apply to producers
 		for (Map.Entry<String, String> configurationEntry : this.configuration
 				.entrySet()) {
