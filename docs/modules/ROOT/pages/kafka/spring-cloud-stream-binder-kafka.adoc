@@ -30,4 +30,4 @@ Sabby Anandan, Marius Bogoevici, Eric Bottard, Mark Fisher, Ilayaperumal Gopinat
 
 // *{project-version}*
 
-xref:kafka/kafka_overview.adoc[Reference Guide]
+xref:kafka/kafka-binder/usage.adoc[Reference Guide]
