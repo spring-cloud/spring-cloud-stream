@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2023 the original author or authors.
+ * Copyright 2018-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -197,6 +197,30 @@ class KafkaBinderConfigurationPropertiesTest {
 				Paths.get(Files.currentFolder().toString(), "target", "testclient.truststore").toString());
 		assertThat(configuration.get("schema.registry.ssl.keystore.location")).isEqualTo(
 				Paths.get(Files.currentFolder().toString(), "target", "testclient.keystore").toString());
+
+		final Map<String, String> producerProperties = kafkaBinderConfigurationProperties.getProducerProperties();
+		assertThat(producerProperties.get("schema.registry.ssl.truststore.location")).isEqualTo(
+			Paths.get(Files.currentFolder().toString(), "target", "testclient.truststore").toString());
+		assertThat(producerProperties.get("schema.registry.ssl.keystore.location")).isEqualTo(
+			Paths.get(Files.currentFolder().toString(), "target", "testclient.keystore").toString());
+
+		final Map<String, String> consumerProperties = kafkaBinderConfigurationProperties.getConsumerProperties();
+		assertThat(consumerProperties.get("schema.registry.ssl.truststore.location")).isEqualTo(
+			Paths.get(Files.currentFolder().toString(), "target", "testclient.truststore").toString());
+		assertThat(consumerProperties.get("schema.registry.ssl.keystore.location")).isEqualTo(
+			Paths.get(Files.currentFolder().toString(), "target", "testclient.keystore").toString());
+
+		final Map<String, Object> mergedProducerConfiguration = kafkaBinderConfigurationProperties.mergedProducerConfiguration();
+		assertThat(mergedProducerConfiguration.get("schema.registry.ssl.truststore.location")).isEqualTo(
+			Paths.get(Files.currentFolder().toString(), "target", "testclient.truststore").toString());
+		assertThat(mergedProducerConfiguration.get("schema.registry.ssl.keystore.location")).isEqualTo(
+			Paths.get(Files.currentFolder().toString(), "target", "testclient.keystore").toString());
+
+		final Map<String, Object> mergedConsumerConfiguration = kafkaBinderConfigurationProperties.mergedConsumerConfiguration();
+		assertThat(mergedConsumerConfiguration.get("schema.registry.ssl.truststore.location")).isEqualTo(
+			Paths.get(Files.currentFolder().toString(), "target", "testclient.truststore").toString());
+		assertThat(mergedConsumerConfiguration.get("schema.registry.ssl.keystore.location")).isEqualTo(
+			Paths.get(Files.currentFolder().toString(), "target", "testclient.keystore").toString());
 	}
 
 	private void createContextWithCertFileHandler(HttpServer server, String path) {

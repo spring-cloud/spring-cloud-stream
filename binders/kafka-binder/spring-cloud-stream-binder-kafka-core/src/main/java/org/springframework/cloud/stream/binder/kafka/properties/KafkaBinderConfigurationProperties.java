@@ -205,6 +205,12 @@ public class KafkaBinderConfigurationProperties {
 			final String fileSystemLocation = moveCertToFileSystem(storeLocation, this.certificateStoreDirectory);
 			// Overriding the value with absolute filesystem path.
 			this.configuration.put(storeProperty, fileSystemLocation);
+			// Provide schema-registry properties as producer and consumer properties
+			// for potential usage by specific serializers/deserializers downstream
+			if (storeProperty.startsWith("schema.registry")) {
+				this.producerProperties.put(storeProperty, fileSystemLocation);
+				this.consumerProperties.put(storeProperty, fileSystemLocation);
+			}
 		}
 	}
 
