@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2023 the original author or authors.
+ * Copyright 2018-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -156,17 +156,14 @@ public class FunctionConfiguration {
 												StreamFunctionProperties functionProperties,
 												BindingServiceProperties serviceProperties, ConfigurableApplicationContext applicationContext,
 												StreamBridge streamBridge) {
-
-		boolean shouldCreateInitializer = true;
-		return shouldCreateInitializer
-				? new FunctionToDestinationBinder(functionCatalog, functionProperties,
-						serviceProperties, streamBridge)
-						: null;
+		return new FunctionToDestinationBinder(functionCatalog, functionProperties,
+				serviceProperties, streamBridge);
 	}
 
 	/*
 	 * Binding initializer responsible only for Suppliers
 	 */
+	@SuppressWarnings({"rawtypes", "unchecked"})
 	@Bean
 	InitializingBean supplierInitializer(FunctionCatalog functionCatalog, StreamFunctionProperties functionProperties,
 			GenericApplicationContext context, BindingServiceProperties serviceProperties,
@@ -177,101 +174,96 @@ public class FunctionConfiguration {
 			return null;
 		}
 
-		return new InitializingBean() {
+		return () -> {
+			for (BindableFunctionProxyFactory proxyFactory : proxyFactories) {
+				FunctionInvocationWrapper functionWrapper = functionCatalog.lookup(proxyFactory.getFunctionDefinition());
+				if (functionWrapper != null && functionWrapper.isSupplier()) {
+					// gather output content types
+					List<String> contentTypes = new ArrayList<String>();
+					if (proxyFactory.getOutputs().size() == 0) {
+						return;
+					}
+					Assert.isTrue(proxyFactory.getOutputs().size() == 1, "Supplier with multiple outputs is not supported at the moment.");
+					String outputName  = proxyFactory.getOutputs().iterator().next();
 
-			@SuppressWarnings({ "rawtypes", "unchecked" })
-			@Override
-			public void afterPropertiesSet() throws Exception {
-				for (BindableFunctionProxyFactory proxyFactory : proxyFactories) {
-					FunctionInvocationWrapper functionWrapper = functionCatalog.lookup(proxyFactory.getFunctionDefinition());
-					if (functionWrapper != null && functionWrapper.isSupplier()) {
-						// gather output content types
-						List<String> contentTypes = new ArrayList<String>();
-						if (proxyFactory.getOutputs().size() == 0) {
-							return;
-						}
-						Assert.isTrue(proxyFactory.getOutputs().size() == 1, "Supplier with multiple outputs is not supported at the moment.");
-						String outputName  = proxyFactory.getOutputs().iterator().next();
+					BindingProperties bindingProperties = serviceProperties.getBindingProperties(outputName);
+					ProducerProperties producerProperties = bindingProperties.getProducer();
+					if (!(bindingProperties.getProducer() != null && producerProperties.isUseNativeEncoding())) {
+						contentTypes.add(bindingProperties.getContentType());
+					}
 
-						BindingProperties bindingProperties = serviceProperties.getBindingProperties(outputName);
-						ProducerProperties producerProperties = bindingProperties.getProducer();
-						if (!(bindingProperties.getProducer() != null && producerProperties.isUseNativeEncoding())) {
-							contentTypes.add(bindingProperties.getContentType());
-						}
+					// see https://github.com/spring-cloud/spring-cloud-stream/issues/2027
+					String functionDefinition = proxyFactory.getFunctionDefinition();
+					if (!StringUtils.hasText(functionDefinition)) {
+						continue;
+					}
+					String[] functionNames = StringUtils.delimitedListToStringArray(functionDefinition.replaceAll(",", "|").trim(), "|");
 
-						// see https://github.com/spring-cloud/spring-cloud-stream/issues/2027
-						String functionDefinition = proxyFactory.getFunctionDefinition();
-						if (!StringUtils.hasText(functionDefinition)) {
-							continue;
-						}
-						String[] functionNames = StringUtils.delimitedListToStringArray(functionDefinition.replaceAll(",", "|").trim(), "|");
+					Function supplier = null;
+					Function function = null;
+					if (!ObjectUtils.isEmpty(functionNames) && functionNames.length > 1) {
+						String supplierName = functionNames[0];
+						String remainingFunctionDefinition = StringUtils
+								.arrayToCommaDelimitedString(Arrays.copyOfRange(functionNames, 1, functionNames.length));
 
-						Function supplier = null;
-						Function function = null;
-						if (!ObjectUtils.isEmpty(functionNames) && functionNames.length > 1) {
-							String supplierName = functionNames[0];
-							String remainingFunctionDefinition = StringUtils
-									.arrayToCommaDelimitedString(Arrays.copyOfRange(functionNames, 1, functionNames.length));
+						supplier = functionCatalog.lookup(supplierName);
+						function = functionCatalog.lookup(remainingFunctionDefinition, contentTypes.toArray(new String[0]));
 
-							supplier = functionCatalog.lookup(supplierName);
-							function = functionCatalog.lookup(remainingFunctionDefinition, contentTypes.toArray(new String[0]));
-
-							if (!((FunctionInvocationWrapper) supplier).isOutputTypePublisher() &&
-									((FunctionInvocationWrapper) function).isInputTypePublisher()) {
-								functionWrapper = null;
-							}
-							else {
-								functionWrapper = functionCatalog.lookup(proxyFactory.getFunctionDefinition(), contentTypes.toArray(new String[0]));
-							}
+						if (!((FunctionInvocationWrapper) supplier).isOutputTypePublisher() &&
+								((FunctionInvocationWrapper) function).isInputTypePublisher()) {
+							functionWrapper = null;
 						}
 						else {
 							functionWrapper = functionCatalog.lookup(proxyFactory.getFunctionDefinition(), contentTypes.toArray(new String[0]));
 						}
+					}
+					else {
+						functionWrapper = functionCatalog.lookup(proxyFactory.getFunctionDefinition(), contentTypes.toArray(new String[0]));
+					}
 
-						Publisher<Object> beginPublishingTrigger = setupBindingTrigger(context);
+					Publisher<Object> beginPublishingTrigger = setupBindingTrigger(context);
 
-						if (!functionProperties.isComposeFrom() && !functionProperties.isComposeTo()) {
-							String integrationFlowName = proxyFactory.getFunctionDefinition() + "_integrationflow";
+					if (!functionProperties.isComposeFrom() && !functionProperties.isComposeTo()) {
+						String integrationFlowName = proxyFactory.getFunctionDefinition() + "_integrationflow";
 
-							PollableBean pollable = null;
-							try {
-								pollable = extractPollableAnnotation(functionProperties, context, proxyFactory);
-							}
-							catch (Exception e) {
-								// Will fix itself once https://github.com/spring-projects/spring-framework/issues/28748 is fixed
-							}
+						PollableBean pollable = null;
+						try {
+							pollable = extractPollableAnnotation(functionProperties, context, proxyFactory);
+						}
+						catch (Exception e) {
+							// Will fix itself once https://github.com/spring-projects/spring-framework/issues/28748 is fixed
+						}
 
-							if (functionWrapper != null) {
-								IntegrationFlow integrationFlow = integrationFlowFromProvidedSupplier(new PartitionAwareFunctionWrapper(functionWrapper, context, producerProperties),
-										beginPublishingTrigger, pollable, context, taskScheduler, producerProperties, outputName)
-										.route(Message.class, message -> {
-											if (message.getHeaders().get("spring.cloud.stream.sendto.destination") != null) {
-												String destinationName = (String) message.getHeaders().get("spring.cloud.stream.sendto.destination");
-												return streamBridge.resolveDestination(destinationName, producerProperties, null);
-											}
-											return outputName;
-										}).get();
-								IntegrationFlow postProcessedFlow = (IntegrationFlow) context.getAutowireCapableBeanFactory()
-										.initializeBean(integrationFlow, integrationFlowName);
-								context.registerBean(integrationFlowName, IntegrationFlow.class, () -> postProcessedFlow);
-							}
-							else {
-								IntegrationFlow integrationFlow = integrationFlowFromProvidedSupplier(new PartitionAwareFunctionWrapper(supplier, context, producerProperties),
-										beginPublishingTrigger, pollable, context, taskScheduler, producerProperties, outputName)
-										.channel(c -> c.direct())
-										.fluxTransform((Function<? super Flux<Message<Object>>, ? extends Publisher<Object>>) function)
-										.route(Message.class, message -> {
-											if (message.getHeaders().get("spring.cloud.stream.sendto.destination") != null) {
-												String destinationName = (String) message.getHeaders().get("spring.cloud.stream.sendto.destination");
-												return streamBridge.resolveDestination(destinationName, producerProperties, null);
-											}
-											return outputName;
-										})
-										.get();
-								IntegrationFlow postProcessedFlow = (IntegrationFlow) context.getAutowireCapableBeanFactory()
-										.initializeBean(integrationFlow, integrationFlowName);
-								context.registerBean(integrationFlowName, IntegrationFlow.class, () -> postProcessedFlow);
-							}
+						if (functionWrapper != null) {
+							IntegrationFlow integrationFlow = integrationFlowFromProvidedSupplier(new PartitionAwareFunctionWrapper(functionWrapper, context, producerProperties),
+									beginPublishingTrigger, pollable, context, taskScheduler, producerProperties, outputName)
+									.route(Message.class, message -> {
+										if (message.getHeaders().get("spring.cloud.stream.sendto.destination") != null) {
+											String destinationName = (String) message.getHeaders().get("spring.cloud.stream.sendto.destination");
+											return streamBridge.resolveDestination(destinationName, producerProperties, null);
+										}
+										return outputName;
+									}).get();
+							IntegrationFlow postProcessedFlow = (IntegrationFlow) context.getAutowireCapableBeanFactory()
+									.initializeBean(integrationFlow, integrationFlowName);
+							context.registerBean(integrationFlowName, IntegrationFlow.class, () -> postProcessedFlow);
+						}
+						else {
+							IntegrationFlow integrationFlow = integrationFlowFromProvidedSupplier(new PartitionAwareFunctionWrapper(supplier, context, producerProperties),
+									beginPublishingTrigger, pollable, context, taskScheduler, producerProperties, outputName)
+									.channel(c -> c.direct())
+									.fluxTransform((Function<? super Flux<Message<Object>>, ? extends Publisher<Object>>) function)
+									.route(Message.class, message -> {
+										if (message.getHeaders().get("spring.cloud.stream.sendto.destination") != null) {
+											String destinationName = (String) message.getHeaders().get("spring.cloud.stream.sendto.destination");
+											return streamBridge.resolveDestination(destinationName, producerProperties, null);
+										}
+										return outputName;
+									})
+									.get();
+							IntegrationFlow postProcessedFlow = (IntegrationFlow) context.getAutowireCapableBeanFactory()
+									.initializeBean(integrationFlow, integrationFlowName);
+							context.registerBean(integrationFlowName, IntegrationFlow.class, () -> postProcessedFlow);
 						}
 					}
 				}
@@ -285,9 +277,7 @@ public class FunctionConfiguration {
 	 */
 	private Publisher<Object> setupBindingTrigger(GenericApplicationContext context) {
 		AtomicReference<MonoSink<Object>> triggerRef = new AtomicReference<>();
-		Publisher<Object> beginPublishingTrigger = Mono.create(emmiter -> {
-			triggerRef.set(emmiter);
-		});
+		Publisher<Object> beginPublishingTrigger = Mono.create(triggerRef::set);
 		context.addApplicationListener(event -> {
 			if (event instanceof BindingCreatedEvent) {
 				if (triggerRef.get() != null) {
@@ -336,7 +326,7 @@ public class FunctionConfiguration {
 				pollerMetadata.set(pm);
 			}
 
-			boolean autoStartup = producerProperties != null ? producerProperties.isAutoStartup() : true;
+			boolean autoStartup = producerProperties == null || producerProperties.isAutoStartup();
 			integrationFlowBuilder = pollerMetadata == null
 					? IntegrationFlow.fromSupplier(supplier,
 							spca -> spca.id(bindingName + "_spca").autoStartup(autoStartup))
@@ -535,7 +525,7 @@ public class FunctionConfiguration {
 					}
 					MessageChannel inputChannel = this.applicationContext.getBean(inputBindingName, MessageChannel.class);
 					return IntegrationReactiveUtils.messageChannelToFlux(inputChannel).map(m -> {
-						if (m instanceof Message) {
+						if (m != null) {
 							m = sanitize(m);
 						}
 						return m;
@@ -663,7 +653,7 @@ public class FunctionConfiguration {
 						logger.debug("Function execution resulted in null. No message will be sent");
 						return;
 					}
-					if (result instanceof Iterable iterableResult) {
+					if (result instanceof Iterable<?> iterableResult) {
 						for (Object resultElement : iterableResult) {
 							this.doSendMessage(resultElement, message);
 						}
@@ -679,7 +669,7 @@ public class FunctionConfiguration {
 				}
 
 				private void doSendMessage(Object result, Message<?> requestMessage) {
-					if (result instanceof Message messageResult && messageResult.getHeaders().get("spring.cloud.stream.sendto.destination") != null) {
+					if (result instanceof Message<?> messageResult && messageResult.getHeaders().get("spring.cloud.stream.sendto.destination") != null) {
 						String destinationName = (String) messageResult.getHeaders().get("spring.cloud.stream.sendto.destination");
 						MessageChannel outputChannel = streamBridge.resolveDestination(destinationName, producerProperties, null);
 						BindingProperties bindingProperties = serviceProperties.getBindingProperties(destinationName);
@@ -720,8 +710,7 @@ public class FunctionConfiguration {
 				String binderConfigurationName = this.serviceProperties.getBinder(outputBindingName);
 				BinderFactory binderFactory = applicationContext.getBean(BinderFactory.class);
 				Object binder = binderFactory.getBinder(binderConfigurationName, MessageChannel.class);
-				String protocol = binder.getClass().getSimpleName().startsWith("Rabbit") ? "amqp" : "kafka";
-				return protocol;
+				return binder.getClass().getSimpleName().startsWith("Rabbit") ? "amqp" : "kafka";
 			}
 			return null;
 		}
@@ -737,10 +726,9 @@ public class FunctionConfiguration {
 			if (CollectionUtils.isEmpty(outputNames)) {
 				outputNames = Collections.singletonList("output");
 			}
-			String outputDestinationName = bindableProxyFactory instanceof BindableFunctionProxyFactory
+			return bindableProxyFactory instanceof BindableFunctionProxyFactory
 					? ((BindableFunctionProxyFactory) bindableProxyFactory).getOutputName(index)
 							: (isConsumer ? null : outputNames.get(index));
-			return outputDestinationName;
 		}
 
 		private void assertBindingIsPossible(BindableProxyFactory bindableProxyFactory) {
@@ -908,7 +896,7 @@ public class FunctionConfiguration {
 								this.inputCount, this.outputCount, this.streamFunctionProperties));
 						}
 						((GenericApplicationContext) this.applicationContext).registerBean(functionDefinition + "_binding",
-							BindableFunctionProxyFactory.class, () -> proxyFactory.get());
+							BindableFunctionProxyFactory.class, proxyFactory::get);
 					}
 					else {
 						logger.warn("The function definition '" + streamFunctionProperties.getDefinition() +
