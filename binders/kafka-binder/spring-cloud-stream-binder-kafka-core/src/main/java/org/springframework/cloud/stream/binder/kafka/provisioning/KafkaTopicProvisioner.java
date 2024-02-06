@@ -642,7 +642,7 @@ public class KafkaTopicProvisioner implements
 						final DescribeTopicsResult describeTopicsResult = adminClient
 								.describeTopics(Collections.singletonList(topicName));
 
-						describeTopicsResult.all().get();
+						describeTopicsResult.allTopicNames().get();
 					}
 					catch (ExecutionException ex) {
 						if (ex.getCause() instanceof UnknownTopicOrPartitionException unknownTopicOrPartitionException) {
@@ -654,6 +654,7 @@ public class KafkaTopicProvisioner implements
 									+ "). This will affect the health check.");
 						}
 					}
+					// If we don't have partition information, that is a fatal operation and thus exiting the app.
 					throw new RuntimeException("Failed to obtain partition information for the topic " + topicName);
 				}
 				// do a sanity check on the partition set
