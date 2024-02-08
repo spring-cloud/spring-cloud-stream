@@ -185,8 +185,9 @@ public class KafkaBinderConfigurationPropertiesTest {
 	public void testCertificateFilesAreMovedForSchemaRegistryConfiguration() {
 		KafkaProperties kafkaProperties = new KafkaProperties();
 		KafkaBinderConfigurationProperties kafkaBinderConfigurationProperties =
-				new KafkaBinderConfigurationProperties(kafkaProperties);
+			new KafkaBinderConfigurationProperties(kafkaProperties);
 		final Map<String, String> configuration = kafkaBinderConfigurationProperties.getConfiguration();
+
 		configuration.put("schema.registry.ssl.truststore.location", "classpath:testclient.truststore");
 		configuration.put("schema.registry.ssl.keystore.location", "classpath:testclient.keystore");
 		kafkaBinderConfigurationProperties.setCertificateStoreDirectory("target");
@@ -194,20 +195,8 @@ public class KafkaBinderConfigurationPropertiesTest {
 		kafkaBinderConfigurationProperties.getKafkaConnectionString();
 
 		assertThat(configuration.get("schema.registry.ssl.truststore.location")).isEqualTo(
-				Paths.get(Files.currentFolder().toString(), "target", "testclient.truststore").toString());
+			Paths.get(Files.currentFolder().toString(), "target", "testclient.truststore").toString());
 		assertThat(configuration.get("schema.registry.ssl.keystore.location")).isEqualTo(
-				Paths.get(Files.currentFolder().toString(), "target", "testclient.keystore").toString());
-
-		final Map<String, String> producerProperties = kafkaBinderConfigurationProperties.getProducerProperties();
-		assertThat(producerProperties.get("schema.registry.ssl.truststore.location")).isEqualTo(
-			Paths.get(Files.currentFolder().toString(), "target", "testclient.truststore").toString());
-		assertThat(producerProperties.get("schema.registry.ssl.keystore.location")).isEqualTo(
-			Paths.get(Files.currentFolder().toString(), "target", "testclient.keystore").toString());
-
-		final Map<String, String> consumerProperties = kafkaBinderConfigurationProperties.getConsumerProperties();
-		assertThat(consumerProperties.get("schema.registry.ssl.truststore.location")).isEqualTo(
-			Paths.get(Files.currentFolder().toString(), "target", "testclient.truststore").toString());
-		assertThat(consumerProperties.get("schema.registry.ssl.keystore.location")).isEqualTo(
 			Paths.get(Files.currentFolder().toString(), "target", "testclient.keystore").toString());
 
 		final Map<String, Object> mergedProducerConfiguration = kafkaBinderConfigurationProperties.mergedProducerConfiguration();
@@ -221,6 +210,47 @@ public class KafkaBinderConfigurationPropertiesTest {
 			Paths.get(Files.currentFolder().toString(), "target", "testclient.truststore").toString());
 		assertThat(mergedConsumerConfiguration.get("schema.registry.ssl.keystore.location")).isEqualTo(
 			Paths.get(Files.currentFolder().toString(), "target", "testclient.keystore").toString());
+	}
+
+	@Test
+	void schemaRegistryPropertiesPropagatedToMergedProducerProperties() {
+		KafkaProperties kafkaProperties = new KafkaProperties();
+		KafkaBinderConfigurationProperties kafkaBinderConfigurationProperties =
+			new KafkaBinderConfigurationProperties(kafkaProperties);
+		final Map<String, String> configuration = kafkaBinderConfigurationProperties.getConfiguration();
+
+		configuration.put("schema.registry.url", "https://localhost:8081,https://localhost:8082");
+		configuration.put("schema.registry.ssl.truststore.location", "classpath:testclient.truststore");
+		configuration.put("schema.registry.ssl.keystore.location", "classpath:testclient.keystore");
+		configuration.put("schema.registry.ssl.keystore.password", "generated");
+		configuration.put("schema.registry.ssl.truststore.password", "generated");
+		configuration.put("schema.registry.ssl.key.password", "generated");
+
+		kafkaBinderConfigurationProperties.setCertificateStoreDirectory("target");
+		kafkaBinderConfigurationProperties.getKafkaConnectionString();
+
+		final Map<String, Object> mergedProducerConfiguration = kafkaBinderConfigurationProperties.mergedProducerConfiguration();
+		assertThat(mergedProducerConfiguration.get("schema.registry.url")).isEqualTo("https://localhost:8081,https://localhost:8082");
+		assertThat(mergedProducerConfiguration.get("schema.registry.ssl.keystore.location")).isEqualTo(
+			Paths.get(Files.currentFolder().toString(), "target", "testclient.keystore").toString());
+		assertThat(mergedProducerConfiguration.get("schema.registry.ssl.truststore.location")).isEqualTo(
+			Paths.get(Files.currentFolder().toString(), "target", "testclient.truststore").toString());
+		assertThat(mergedProducerConfiguration.get("schema.registry.ssl.keystore.password")).isEqualTo("generated");
+		assertThat(mergedProducerConfiguration.get("schema.registry.ssl.truststore.password")).isEqualTo("generated");
+		assertThat(mergedProducerConfiguration.get("schema.registry.ssl.key.password")).isEqualTo("generated");
+
+
+		final Map<String, Object> mergedConsumerConfiguration = kafkaBinderConfigurationProperties.mergedConsumerConfiguration();
+		assertThat(mergedConsumerConfiguration.get("schema.registry.url")).isEqualTo("https://localhost:8081,https://localhost:8082");
+		assertThat(mergedConsumerConfiguration.get("schema.registry.ssl.keystore.location")).isEqualTo(
+			Paths.get(Files.currentFolder().toString(), "target", "testclient.keystore").toString());
+		assertThat(mergedConsumerConfiguration.get("schema.registry.ssl.truststore.location")).isEqualTo(
+			Paths.get(Files.currentFolder().toString(), "target", "testclient.truststore").toString());
+		assertThat(mergedConsumerConfiguration.get("schema.registry.ssl.keystore.password")).isEqualTo("generated");
+		assertThat(mergedConsumerConfiguration.get("schema.registry.ssl.truststore.password")).isEqualTo("generated");
+		assertThat(mergedConsumerConfiguration.get("schema.registry.ssl.key.password")).isEqualTo("generated");
+
+
 	}
 
 	private void createContextWithCertFileHandler(HttpServer server, String path) {
