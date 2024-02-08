@@ -91,11 +91,11 @@ public class KafkaBinderConfigurationProperties {
 	 */
 	private Map<String, String> producerProperties = new HashMap<>();
 
-	private String[] brokers = new String[]{"localhost"};
+	private String[] brokers = new String[] { "localhost" };
 
 	private String defaultBrokerPort = "9092";
 
-	private String[] headers = new String[]{};
+	private String[] headers = new String[] {};
 
 	private boolean autoCreateTopics = true;
 
@@ -147,9 +147,9 @@ public class KafkaBinderConfigurationProperties {
 
 
 	/**
-	 * Schema registry ssl configuration properties.
+	 * Schema registry ssl configuration properties
 	 */
-	private final String[] schemaRegistryProperties = new String[]{"schema.registry.url", "schema.registry.ssl.keystore.location", "schema.registry.ssl.keystore.password", "schema.registry.ssl.truststore.location", "schema.registry.ssl.truststore.password", "schema.registry.ssl.key.password"};
+	private final String[] schemaRegistryProperties = new String[]{"schema.registry.url", "schema.registry.ssl.keystore.location", "schema.registry.ssl.keystore.password", "schema.registry.ssl.truststore.location", "schema.registry.ssl.truststore.password", "schema.registry.ssl.key.password"} ;
 
 	/**
 	 * Earlier, @Autowired on this constructor was necessary for all the properties to be discovered
@@ -198,7 +198,8 @@ public class KafkaBinderConfigurationProperties {
 			// schema registry certificates
 			moveCertsIfApplicable("schema.registry.ssl.truststore.location");
 			moveCertsIfApplicable("schema.registry.ssl.keystore.location");
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			throw new IllegalStateException(e);
 		}
 	}
@@ -218,7 +219,8 @@ public class KafkaBinderConfigurationProperties {
 	private boolean checkIfFileExists(String path) {
 		try {
 			return Files.isRegularFile(Paths.get(path));
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			return false;
 		}
 	}
@@ -231,13 +233,15 @@ public class KafkaBinderConfigurationProperties {
 			final Path path = Paths.get(fileSystemLocation);
 			if (!Files.exists(path) || !Files.isDirectory(path) || !Files.isWritable(path)) {
 				logger.warn("The filesystem location to move the cert files (" + fileSystemLocation + ") " +
-					"is not found or a directory that is writable. The system temp folder (java.io.tmpdir) will be used instead.");
+						"is not found or a directory that is writable. The system temp folder (java.io.tmpdir) will be used instead.");
 				targetFile = new File(Paths.get(tempDir, resource.getFilename()).toString());
-			} else {
+			}
+			else {
 				// the given location is verified to be a writable directory.
 				targetFile = new File(Paths.get(fileSystemLocation, resource.getFilename()).toString());
 			}
-		} else {
+		}
+		else {
 			targetFile = new File(Paths.get(tempDir, resource.getFilename()).toString());
 		}
 
@@ -274,8 +278,7 @@ public class KafkaBinderConfigurationProperties {
 	/**
 	 * Converts an array of host values to a comma-separated String. It will append the
 	 * default port value, if not already specified.
-	 *
-	 * @param hosts       host string
+	 * @param hosts host string
 	 * @param defaultPort port
 	 * @return formatted connection string
 	 */
@@ -284,7 +287,8 @@ public class KafkaBinderConfigurationProperties {
 		for (int i = 0; i < hosts.length; i++) {
 			if (hosts[i].contains(":") || !StringUtils.hasText(defaultPort)) {
 				fullyFormattedHosts[i] = hosts[i];
-			} else {
+			}
+			else {
 				fullyFormattedHosts[i] = hosts[i] + ":" + defaultPort;
 			}
 		}
@@ -377,7 +381,6 @@ public class KafkaBinderConfigurationProperties {
 	 * Merge boot consumer properties, general properties from
 	 * {@link #setConfiguration(Map)} that apply to consumers, properties from
 	 * {@link #setConsumerProperties(Map)}, in that order.
-	 *
 	 * @return the merged properties.
 	 */
 	public Map<String, Object> mergedConsumerConfiguration() {
@@ -385,11 +388,11 @@ public class KafkaBinderConfigurationProperties {
 		// Copy configured binder properties that apply to consumers
 		// allow schema registry properties to be propagated to consumer configuration
 		for (Map.Entry<String, String> configurationEntry : this.configuration
-			.entrySet()) {
+				.entrySet()) {
 			if (ConsumerConfig.configNames().contains(configurationEntry.getKey())
 				|| ObjectUtils.containsElement(schemaRegistryProperties, configurationEntry.getKey())) {
 				consumerConfiguration.put(configurationEntry.getKey(),
-					configurationEntry.getValue());
+						configurationEntry.getValue());
 			}
 		}
 		consumerConfiguration.putAll(this.consumerProperties);
@@ -397,14 +400,13 @@ public class KafkaBinderConfigurationProperties {
 		// Override Spring Boot bootstrap server setting if left to default with the value
 		// configured in the binder
 		return getConfigurationWithBootstrapServer(consumerConfiguration,
-			ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG);
+				ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG);
 	}
 
 	/**
 	 * Merge boot producer properties, general properties from
 	 * {@link #setConfiguration(Map)} that apply to producers, properties from
 	 * {@link #setProducerProperties(Map)}, in that order.
-	 *
 	 * @return the merged properties.
 	 */
 	public Map<String, Object> mergedProducerConfiguration() {
@@ -412,31 +414,31 @@ public class KafkaBinderConfigurationProperties {
 		// Copy configured binder properties that apply to producers
 		// allow schema registry properties to be propagated to consumer configuration
 		for (Map.Entry<String, String> configurationEntry : this.configuration
-			.entrySet()) {
+				.entrySet()) {
 			if (ProducerConfig.configNames().contains(configurationEntry.getKey())
-				|| ObjectUtils.containsElement(schemaRegistryProperties, configurationEntry.getKey())) {
+			|| ObjectUtils.containsElement(schemaRegistryProperties, configurationEntry.getKey())) {
 				producerConfiguration.put(configurationEntry.getKey(),
-					configurationEntry.getValue());
+						configurationEntry.getValue());
 			}
 		}
 		producerConfiguration.putAll(this.producerProperties);
 		// Override Spring Boot bootstrap server setting if left to default with the value
 		// configured in the binder
 		return getConfigurationWithBootstrapServer(producerConfiguration,
-			ProducerConfig.BOOTSTRAP_SERVERS_CONFIG);
+				ProducerConfig.BOOTSTRAP_SERVERS_CONFIG);
 	}
 
 	private void filterStreamManagedConfiguration(Map<String, Object> configuration) {
 		if (configuration.containsKey(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG)
-			&& configuration.get(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG).toString().equalsIgnoreCase("true")) {
+				&& configuration.get(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG).toString().equalsIgnoreCase("true")) {
 			logger.warn(constructIgnoredConfigMessage(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG) +
-				ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG + "=true is not supported by the Kafka binder");
+					ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG + "=true is not supported by the Kafka binder");
 			configuration.remove(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG);
 		}
 		if (configuration.containsKey(ConsumerConfig.GROUP_ID_CONFIG)) {
 			logger.warn(constructIgnoredConfigMessage(ConsumerConfig.GROUP_ID_CONFIG) +
-				"Use spring.cloud.stream.default.group or spring.cloud.stream.binding.<name>.group to specify " +
-				"the group instead of " + ConsumerConfig.GROUP_ID_CONFIG);
+					"Use spring.cloud.stream.default.group or spring.cloud.stream.binding.<name>.group to specify " +
+					"the group instead of " + ConsumerConfig.GROUP_ID_CONFIG);
 			configuration.remove(ConsumerConfig.GROUP_ID_CONFIG);
 		}
 	}
@@ -446,10 +448,10 @@ public class KafkaBinderConfigurationProperties {
 	}
 
 	private Map<String, Object> getConfigurationWithBootstrapServer(
-		Map<String, Object> configuration, String bootstrapServersConfig) {
+			Map<String, Object> configuration, String bootstrapServersConfig) {
 		final String kafkaConnectionString = getKafkaConnectionString();
 		if (ObjectUtils.isEmpty(configuration.get(bootstrapServersConfig)) ||
-			!kafkaConnectionString.equals("localhost:9092")) {
+				!kafkaConnectionString.equals("localhost:9092")) {
 			configuration.put(bootstrapServersConfig, kafkaConnectionString);
 		}
 		return Collections.unmodifiableMap(configuration);
@@ -556,9 +558,9 @@ public class KafkaBinderConfigurationProperties {
 		}
 
 		public void setPartitionSelectorExpression(
-			Expression partitionSelectorExpression) {
+				Expression partitionSelectorExpression) {
 			this.producerProperties
-				.setPartitionSelectorExpression(partitionSelectorExpression);
+					.setPartitionSelectorExpression(partitionSelectorExpression);
 		}
 
 		public @Min(value = 1, message = "Partition count should be greater than zero.") int getPartitionCount() {
@@ -578,12 +580,12 @@ public class KafkaBinderConfigurationProperties {
 		}
 
 		public @AssertTrue(message = "Partition key expression and partition key extractor class properties "
-			+ "are mutually exclusive.") boolean isValidPartitionKeyProperty() {
+				+ "are mutually exclusive.") boolean isValidPartitionKeyProperty() {
 			return this.producerProperties.isValidPartitionKeyProperty();
 		}
 
 		public @AssertTrue(message = "Partition selector class and partition selector expression "
-			+ "properties are mutually exclusive.") boolean isValidPartitionSelectorProperty() {
+				+ "properties are mutually exclusive.") boolean isValidPartitionSelectorProperty() {
 			return this.producerProperties.isValidPartitionSelectorProperty();
 		}
 
@@ -617,7 +619,7 @@ public class KafkaBinderConfigurationProperties {
 
 		public void setPartitionKeyExtractorName(String partitionKeyExtractorName) {
 			this.producerProperties
-				.setPartitionKeyExtractorName(partitionKeyExtractorName);
+					.setPartitionKeyExtractorName(partitionKeyExtractorName);
 		}
 
 		public String getPartitionSelectorName() {
