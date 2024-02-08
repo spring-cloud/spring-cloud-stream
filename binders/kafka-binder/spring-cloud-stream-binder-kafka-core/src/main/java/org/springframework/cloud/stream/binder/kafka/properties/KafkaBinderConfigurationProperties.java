@@ -62,7 +62,6 @@ import org.springframework.util.StringUtils;
  * @author Chukwubuikem Ume-Ugwa
  * @author Nico Heller
  * @author Norbert Gyurian
- * @author Boini Srinivas
  */
 public class KafkaBinderConfigurationProperties {
 
@@ -145,12 +144,6 @@ public class KafkaBinderConfigurationProperties {
 	 */
 	private boolean enableObservation;
 
-
-	/**
-	 * Schema registry ssl configuration properties
-	 */
-	private final String[] schemaRegistryProperties = new String[]{"schema.registry.url", "schema.registry.ssl.keystore.location", "schema.registry.ssl.keystore.password", "schema.registry.ssl.truststore.location", "schema.registry.ssl.truststore.password", "schema.registry.ssl.key.password"} ;
-
 	/**
 	 * Earlier, @Autowired on this constructor was necessary for all the properties to be discovered
 	 * and bound when running as a native application. However, now that Spring Boot fixed the underlying
@@ -212,7 +205,12 @@ public class KafkaBinderConfigurationProperties {
 			final String fileSystemLocation = moveCertToFileSystem(storeLocation, this.certificateStoreDirectory);
 			// Overriding the value with absolute filesystem path.
 			this.configuration.put(storeProperty, fileSystemLocation);
-
+			// Provide schema-registry properties as producer and consumer properties
+			// for potential usage by specific serializers/deserializers downstream
+			if (storeProperty.startsWith("schema.registry")) {
+				this.producerProperties.put(storeProperty, fileSystemLocation);
+				this.consumerProperties.put(storeProperty, fileSystemLocation);
+			}
 		}
 	}
 
@@ -386,11 +384,9 @@ public class KafkaBinderConfigurationProperties {
 	public Map<String, Object> mergedConsumerConfiguration() {
 		Map<String, Object> consumerConfiguration = new HashMap<>(this.kafkaProperties.buildConsumerProperties(null));
 		// Copy configured binder properties that apply to consumers
-		// allow schema registry properties to be propagated to consumer configuration
 		for (Map.Entry<String, String> configurationEntry : this.configuration
 				.entrySet()) {
-			if (ConsumerConfig.configNames().contains(configurationEntry.getKey())
-				|| ObjectUtils.containsElement(schemaRegistryProperties, configurationEntry.getKey())) {
+			if (ConsumerConfig.configNames().contains(configurationEntry.getKey())) {
 				consumerConfiguration.put(configurationEntry.getKey(),
 						configurationEntry.getValue());
 			}
@@ -412,11 +408,9 @@ public class KafkaBinderConfigurationProperties {
 	public Map<String, Object> mergedProducerConfiguration() {
 		Map<String, Object> producerConfiguration = new HashMap<>(this.kafkaProperties.buildProducerProperties(null));
 		// Copy configured binder properties that apply to producers
-		// allow schema registry properties to be propagated to consumer configuration
 		for (Map.Entry<String, String> configurationEntry : this.configuration
 				.entrySet()) {
-			if (ProducerConfig.configNames().contains(configurationEntry.getKey())
-			|| ObjectUtils.containsElement(schemaRegistryProperties, configurationEntry.getKey())) {
+			if (ProducerConfig.configNames().contains(configurationEntry.getKey())) {
 				producerConfiguration.put(configurationEntry.getKey(),
 						configurationEntry.getValue());
 			}
