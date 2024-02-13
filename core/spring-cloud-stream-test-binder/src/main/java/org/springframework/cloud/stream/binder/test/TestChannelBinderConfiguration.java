@@ -20,7 +20,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.ConsumerProperties;
@@ -28,7 +28,6 @@ import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.cloud.stream.config.BinderFactoryAutoConfiguration;
 import org.springframework.cloud.stream.config.BindingServiceConfiguration;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.integration.config.EnableIntegration;
 
@@ -42,8 +41,7 @@ import org.springframework.integration.config.EnableIntegration;
  * @author David Turanski
  * @see TestChannelBinder
  */
-@Configuration
-@ConditionalOnMissingBean(Binder.class)
+@AutoConfiguration
 @Import(BinderFactoryAutoConfiguration.class)
 @EnableIntegration
 public class TestChannelBinderConfiguration<T> {
