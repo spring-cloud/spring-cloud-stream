@@ -21,8 +21,13 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
+import io.micrometer.context.ContextExecutorService;
+import io.micrometer.context.ContextSnapshotFactory;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -47,6 +52,8 @@ import org.springframework.cloud.stream.messaging.DirectWithAttributesChannel;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.ResolvableType;
 import org.springframework.integration.channel.AbstractMessageChannel;
+import org.springframework.integration.channel.AbstractSubscribableChannel;
+import org.springframework.integration.channel.ExecutorChannel;
 import org.springframework.integration.config.GlobalChannelInterceptorProcessor;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.lang.Nullable;
@@ -54,10 +61,12 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.support.GenericMessage;
 import org.springframework.util.Assert;
+import org.springframework.util.ClassUtils;
 import org.springframework.util.MimeType;
 import org.springframework.util.MimeTypeUtils;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
+
 
 /**
  * A class which allows user to send data to an output binding.
@@ -96,11 +105,18 @@ public final class StreamBridge implements StreamOperations, SmartInitializingSi
 
 	private boolean initialized;
 
+	private boolean async;
+
 	private final BindingService bindingService;
 
 	private final Map<Integer, FunctionInvocationWrapper> streamBridgeFunctionCache;
 
 	private final FunctionInvocationHelper<?> functionInvocationHelper;
+
+	private ExecutorService executorService;
+	
+	private static final boolean isContextPropagationPresent = ClassUtils.isPresent(
+			"io.micrometer.context.ContextSnapshotFactory", StreamBridge.class.getClassLoader());
 
 	/**
 	 *
@@ -111,6 +127,7 @@ public final class StreamBridge implements StreamOperations, SmartInitializingSi
 	@SuppressWarnings("serial")
 	StreamBridge(FunctionCatalog functionCatalog, BindingServiceProperties bindingServiceProperties,
 		ConfigurableApplicationContext applicationContext, @Nullable NewDestinationBindingCallback destinationBindingCallback) {
+		this.executorService = Executors.newCachedThreadPool();
 		Assert.notNull(functionCatalog, "'functionCatalog' must not be null");
 		Assert.notNull(applicationContext, "'applicationContext' must not be null");
 		Assert.notNull(bindingServiceProperties, "'bindingServiceProperties' must not be null");
@@ -253,9 +270,9 @@ public final class StreamBridge implements StreamOperations, SmartInitializingSi
 				}
 			}
 			else {
-				messageChannel = new DirectWithAttributesChannel();
-				((DirectWithAttributesChannel) messageChannel).setApplicationContext(applicationContext);
-				((DirectWithAttributesChannel) messageChannel).setComponentName(destinationName);
+				messageChannel = this.isAsync() ? new ExecutorChannel(this.executorService) : new DirectWithAttributesChannel();
+				((AbstractSubscribableChannel) messageChannel).setApplicationContext(applicationContext);
+				((AbstractSubscribableChannel) messageChannel).setComponentName(destinationName);
 				if (this.destinationBindingCallback != null) {
 					Object extendedProducerProperties = this.bindingService
 							.getExtendedProducerProperties(messageChannel, destinationName);
@@ -310,8 +327,36 @@ public final class StreamBridge implements StreamOperations, SmartInitializingSi
 
 	@Override
 	public void destroy() throws Exception {
+		if (!this.executorService.awaitTermination(10000, TimeUnit.MILLISECONDS)) {
+			logger.warn("Failed to terminate executor. Terminating current tasks.");
+			this.executorService.shutdownNow();
+		}
+		else {
+			this.executorService.shutdown();
+		}
+		
+		this.executorService = null;
+		this.async = false;
 		channelCache.keySet().forEach(bindingService::unbindProducers);
 		channelCache.clear();
 	}
 
+	public boolean isAsync() {
+		return async;
+	}
+
+	public void setAsync(boolean async) {
+		if (isContextPropagationPresent) {
+			this.executorService = ContextPropagationHelper.wrap(this.executorService);
+		}
+		this.executorService = ContextExecutorService
+				.wrap(Executors.newCachedThreadPool(), () -> ContextSnapshotFactory.builder().build().captureAll());
+		this.async = async;
+	}
+	
+	private static final class ContextPropagationHelper {
+		static ExecutorService wrap(ExecutorService executorService) {
+			return ContextExecutorService.wrap(executorService, () -> ContextSnapshotFactory.builder().build().captureAll());
+		}
+	}
 }

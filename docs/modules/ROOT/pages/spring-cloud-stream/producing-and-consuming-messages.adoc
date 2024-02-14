@@ -293,6 +293,24 @@ Also, note that `streamBridge.send(..)` method takes an `Object` for data. This 
 will go through the same routine when sending output as if it was from any Function or Supplier providing the same level
 of consistency as with functions. This means the output type conversion, partitioning etc are honored as if it was from the output produced by functions.
 
+
+==== StreamBridge with async send
+
+`StreamBridge` uses sending mechanism provided by _Spring Integration_ framework which is at the core of the _Spring Cloud Stream_. By default this mechanism uses the sender’s thread. In other words, the send is blocking. While this is ok for many cases, there are cases when you want such send to be async. To do that use `setAsync(true)` method of the `StreamBridge` before invoking one of the send methods.
+
+**Observability Context propagation with asynchronous send**
+
+When using Observability support provided by the framework as well as supporting Spring frameworks, breaking thread boundaries will affect consistency of Observability context, thus your tracing history.  To avoid that all you need is to add `context-propagation` dependency form Micrometer (see below)
+
+[source, xml]
+----
+<dependency>
+    <groupId>io.micrometer</groupId>
+    <artifactId>context-propagation</artifactId>
+    <version>1.1.0</version>
+</dependency>
+----
+
 [[streambridge-and-dynamic-destinations]]
 ==== StreamBridge and Dynamic Destinations
 
