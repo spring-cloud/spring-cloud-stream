@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2023 the original author or authors.
+ * Copyright 2013-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ import java.util.regex.Pattern;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Envelope;
+import io.micrometer.observation.ObservationRegistry;
 import jakarta.validation.constraints.NotNull;
 
 import org.springframework.amqp.AmqpRejectAndDontRequeueException;
@@ -54,6 +55,7 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer;
 import org.springframework.amqp.rabbit.listener.DirectMessageListenerContainer;
 import org.springframework.amqp.rabbit.listener.MessageListenerContainer;
+import org.springframework.amqp.rabbit.listener.ObservableListenerContainer;
 import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
 import org.springframework.amqp.rabbit.retry.RepublishMessageRecoverer;
 import org.springframework.amqp.rabbit.support.DefaultMessagePropertiesConverter;
@@ -87,6 +89,7 @@ import org.springframework.cloud.stream.config.ListenerContainerCustomizer;
 import org.springframework.cloud.stream.config.MessageSourceCustomizer;
 import org.springframework.cloud.stream.provisioning.ConsumerDestination;
 import org.springframework.cloud.stream.provisioning.ProducerDestination;
+import org.springframework.context.support.AbstractApplicationContext;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.core.task.SimpleAsyncTaskExecutor;
 import org.springframework.expression.Expression;
@@ -500,7 +503,7 @@ public class RabbitMessageChannelBinder extends
 				"the RabbitMQ binder does not support embedded headers since RabbitMQ supports headers natively");
 		String destination = consumerDestination.getName();
 		RabbitConsumerProperties extension = properties.getExtension();
-		MessageListenerContainer listenerContainer = createAndConfigureContainer(consumerDestination, group,
+		ObservableListenerContainer listenerContainer = createAndConfigureContainer(consumerDestination, group,
 				properties, destination, extension);
 		String[] queues = StringUtils.tokenizeToStringArray(destination, ",", true, true);
 		if (properties.getExtension().getContainerType() != ContainerType.STREAM
@@ -509,6 +512,10 @@ public class RabbitMessageChannelBinder extends
 		}
 		getContainerCustomizer().configure(listenerContainer,
 				consumerDestination.getName(), group);
+		// TODO until https://github.com/spring-cloud/spring-cloud-stream/issues/2902
+		getApplicationContext().getBeanProvider(ObservationRegistry.class)
+				.ifAvailable((observationRegistry) -> listenerContainer.setObservationEnabled(true));
+
 		listenerContainer.afterPropertiesSet();
 
 		AmqpInboundChannelAdapter adapter = new AmqpInboundChannelAdapter(listenerContainer);
@@ -540,7 +547,7 @@ public class RabbitMessageChannelBinder extends
 		return adapter;
 	}
 
-	private MessageListenerContainer createAndConfigureContainer(ConsumerDestination consumerDestination,
+	private ObservableListenerContainer createAndConfigureContainer(ConsumerDestination consumerDestination,
 			String group, ExtendedConsumerProperties<RabbitConsumerProperties> properties, String destination,
 			RabbitConsumerProperties extension) {
 
@@ -597,6 +604,7 @@ public class RabbitMessageChannelBinder extends
 					q -> extension.getConsumerTagPrefix() + "#"
 							+ index.getAndIncrement());
 		}
+		listenerContainer.setApplicationContext(getApplicationContext());
 		return listenerContainer;
 	}
 
@@ -1048,6 +1056,11 @@ public class RabbitMessageChannelBinder extends
 			retryTemplate.setBackOffPolicy(backOff);
 			rabbitTemplate.setRetryTemplate(retryTemplate);
 		}
+		// TODO until https://github.com/spring-cloud/spring-cloud-stream/issues/2902
+		AbstractApplicationContext applicationContext = getApplicationContext();
+		applicationContext.getBeanProvider(ObservationRegistry.class)
+				.ifAvailable((observationRegistry) -> rabbitTemplate.setObservationEnabled(true));
+		rabbitTemplate.setApplicationContext(applicationContext);
 		rabbitTemplate.afterPropertiesSet();
 		return rabbitTemplate;
 	}
