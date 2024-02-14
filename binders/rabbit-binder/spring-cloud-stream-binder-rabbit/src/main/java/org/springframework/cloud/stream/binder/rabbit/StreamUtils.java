@@ -22,7 +22,7 @@ import java.util.function.Function;
 import com.rabbitmq.stream.Environment;
 
 import org.springframework.amqp.core.MessageProperties;
-import org.springframework.amqp.rabbit.listener.MessageListenerContainer;
+import org.springframework.amqp.rabbit.listener.ObservableListenerContainer;
 import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.cloud.stream.binder.BinderHeaders;
 import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
@@ -52,6 +52,7 @@ import org.springframework.rabbit.stream.support.converter.StreamMessageConverte
  * spring-rabbit-stream.
  *
  * @author Gary Russell
+ * @author Artem Bilan
  * @since 3.2
  *
  */
@@ -67,11 +68,10 @@ public final class StreamUtils {
 	 * @param group the group.
 	 * @param properties the properties.
 	 * @param destination the destination.
-	 * @param extension the properties extension.
 	 * @param applicationContext the application context.
 	 * @return the container.
 	 */
-	public static MessageListenerContainer createContainer(ConsumerDestination consumerDestination, String group,
+	public static ObservableListenerContainer createContainer(ConsumerDestination consumerDestination, String group,
 			ExtendedConsumerProperties<RabbitConsumerProperties> properties, String destination,
 			ApplicationContext applicationContext) {
 
@@ -143,7 +143,7 @@ public final class StreamUtils {
 	 * @param errorChannel the error channel
 	 * @param destination the destination.
 	 * @param extendedProperties the extended properties.
-	 * @param abstractApplicationContext the application context.
+	 * @param applicationContext the application context.
 	 * @param headerMapperFunction the header mapper function.
 	 * @return the handler.
 	 */
