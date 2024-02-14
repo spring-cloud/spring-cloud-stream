@@ -71,13 +71,13 @@ import org.springframework.util.StringUtils;
 /**
  * A class which allows user to send data to an output binding.
  * While in a common scenario of a typical spring-cloud-stream application user rarely
- * has to manually send data, there are times when the sources of data are outside of
- * spring-cloud-stream context and therefore we need to bridge such foreign sources
+ * has to manually send data, there are times when the sources of data are outside
+ * spring-cloud-stream context, and therefore we need to bridge such foreign sources
  * with spring-cloud-stream.
  * <br><br>
  * This utility class allows user to do just that - <i>bridge non-spring-cloud-stream applications
  * with spring-cloud-stream</i> by providing a mechanism (bridge) to send data to an output binding while
- * maintaining the  same invocation contract (i.e., type conversion, partitioning etc) as if it was
+ * maintaining the  same invocation contract (i.e., type conversion, partitioning etc.) as if it was
  * done through a declared function.
  *
  * @author Oleg Zhurakousky
@@ -114,7 +114,7 @@ public final class StreamBridge implements StreamOperations, SmartInitializingSi
 	private final FunctionInvocationHelper<?> functionInvocationHelper;
 
 	private ExecutorService executorService;
-	
+
 	private static final boolean isContextPropagationPresent = ClassUtils.isPresent(
 			"io.micrometer.context.ContextSnapshotFactory", StreamBridge.class.getClassLoader());
 
@@ -334,7 +334,7 @@ public final class StreamBridge implements StreamOperations, SmartInitializingSi
 		else {
 			this.executorService.shutdown();
 		}
-		
+
 		this.executorService = null;
 		this.async = false;
 		channelCache.keySet().forEach(bindingService::unbindProducers);
@@ -349,11 +349,9 @@ public final class StreamBridge implements StreamOperations, SmartInitializingSi
 		if (isContextPropagationPresent) {
 			this.executorService = ContextPropagationHelper.wrap(this.executorService);
 		}
-		this.executorService = ContextExecutorService
-				.wrap(Executors.newCachedThreadPool(), () -> ContextSnapshotFactory.builder().build().captureAll());
 		this.async = async;
 	}
-	
+
 	private static final class ContextPropagationHelper {
 		static ExecutorService wrap(ExecutorService executorService) {
 			return ContextExecutorService.wrap(executorService, () -> ContextSnapshotFactory.builder().build().captureAll());
