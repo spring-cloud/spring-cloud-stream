@@ -92,7 +92,7 @@ public class KafkaStreamsMessageConversionDelegate {
 		String contentType = this.kstreamBindingInformationCatalogue
 				.getContentType(outboundBindTarget);
 		MessageConverter messageConverter = this.compositeMessageConverter;
-		final PerRecordContentTypeHolder perRecordContentTypeHolder = new PerRecordContentTypeHolder();
+		final ThreadLocal<PerRecordContentTypeHolder> perRecordContentTypeHolderThreadLocal = ThreadLocal.withInitial(PerRecordContentTypeHolder::new);
 
 		final KStream<?, ?> kStreamWithEnrichedHeaders = outboundBindTarget
 			.filter((k, v) -> v != null)
@@ -105,7 +105,7 @@ public class KafkaStreamsMessageConversionDelegate {
 				}
 				MessageHeaders messageHeaders = new MessageHeaders(headers);
 				final Message<?> convertedMessage = messageConverter.toMessage(message.getPayload(), messageHeaders);
-				perRecordContentTypeHolder.setContentType((String) messageHeaders.get(MessageHeaders.CONTENT_TYPE));
+				perRecordContentTypeHolderThreadLocal.get().setContentType((String) messageHeaders.get(MessageHeaders.CONTENT_TYPE));
 				return Objects.requireNonNull(convertedMessage).getPayload();
 			});
 
@@ -120,12 +120,12 @@ public class KafkaStreamsMessageConversionDelegate {
 
 			@Override
 			public void process(Record record) {
-				if (perRecordContentTypeHolder.contentType != null) {
+				if (perRecordContentTypeHolderThreadLocal.get().contentType != null) {
 					record.headers().remove(MessageHeaders.CONTENT_TYPE);
 					final Header header;
 					try {
 						header = new RecordHeader(MessageHeaders.CONTENT_TYPE,
-							new ObjectMapper().writeValueAsBytes(perRecordContentTypeHolder.contentType));
+							new ObjectMapper().writeValueAsBytes(perRecordContentTypeHolderThreadLocal.get().contentType));
 						record.headers().add(header);
 					}
 					catch (Exception e) {
@@ -133,7 +133,7 @@ public class KafkaStreamsMessageConversionDelegate {
 							LOG.debug("Could not add content type header");
 						}
 					}
-					perRecordContentTypeHolder.unsetContentType();
+					perRecordContentTypeHolderThreadLocal.get().unsetContentType();
 				}
 			}
 
