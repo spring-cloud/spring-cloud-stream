@@ -332,7 +332,7 @@ public final class StreamBridge implements StreamOperations, SmartInitializingSi
 			logger.warn("Failed to terminate executor. Terminating current tasks.");
 			this.executorService.shutdownNow();
 		}
-		
+
 		this.executorService = null;
 		this.async = false;
 		channelCache.keySet().forEach(bindingService::unbindProducers);
