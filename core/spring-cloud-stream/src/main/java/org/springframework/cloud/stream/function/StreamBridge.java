@@ -327,14 +327,12 @@ public final class StreamBridge implements StreamOperations, SmartInitializingSi
 
 	@Override
 	public void destroy() throws Exception {
+		this.executorService.shutdown();
 		if (!this.executorService.awaitTermination(10000, TimeUnit.MILLISECONDS)) {
 			logger.warn("Failed to terminate executor. Terminating current tasks.");
 			this.executorService.shutdownNow();
 		}
-		else {
-			this.executorService.shutdown();
-		}
-
+		
 		this.executorService = null;
 		this.async = false;
 		channelCache.keySet().forEach(bindingService::unbindProducers);
