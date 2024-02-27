@@ -253,6 +253,22 @@ class KafkaBinderConfigurationPropertiesTest {
 
 	}
 
+	@Test
+	public void testEmptyLocationsAreIgnored() {
+		KafkaProperties kafkaProperties = new KafkaProperties();
+		KafkaBinderConfigurationProperties kafkaBinderConfigurationProperties =
+				new KafkaBinderConfigurationProperties(kafkaProperties);
+		final Map<String, String> configuration = kafkaBinderConfigurationProperties.getConfiguration();
+		configuration.put("schema.registry.ssl.truststore.location", "");
+		configuration.put("schema.registry.ssl.keystore.location", "");
+		kafkaBinderConfigurationProperties.setCertificateStoreDirectory("target");
+
+		kafkaBinderConfigurationProperties.getKafkaConnectionString();
+
+		assertThat(configuration.get("schema.registry.ssl.truststore.location")).isEmpty();
+		assertThat(configuration.get("schema.registry.ssl.keystore.location")).isEmpty();
+	}
+
 	private void createContextWithCertFileHandler(HttpServer server, String path) {
 		server.createContext("/" + path, exchange -> {
 			ClassPathResource ts = new ClassPathResource(path);
