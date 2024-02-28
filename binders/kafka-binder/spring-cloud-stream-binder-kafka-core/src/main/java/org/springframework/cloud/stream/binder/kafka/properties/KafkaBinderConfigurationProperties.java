@@ -64,6 +64,7 @@ import org.springframework.util.StringUtils;
  * @author Nico Heller
  * @author Norbert Gyurian
  * @author Boini Srinivas
+ * @author Felix Schultze
  */
 public class KafkaBinderConfigurationProperties {
 
@@ -211,7 +212,7 @@ public class KafkaBinderConfigurationProperties {
 		final String storeLocation = this.configuration.get(storeProperty);
 
 		// If the path is not defined, or it is a local file path do not move the file
-		if (storeLocation != null && !checkIfFileExists(storeLocation)) {
+		if (StringUtils.hasText(storeLocation) && !checkIfFileExists(storeLocation)) {
 			final String fileSystemLocation = moveCertToFileSystem(storeLocation, this.certificateStoreDirectory);
 			// Overriding the value with absolute filesystem path.
 			this.configuration.put(storeProperty, fileSystemLocation);
