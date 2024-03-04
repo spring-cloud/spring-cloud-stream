@@ -269,7 +269,7 @@ class KafkaBinderUnitTests {
 
 					@Override
 					public Consumer<byte[], byte[]> createConsumer(String groupId, String clientIdPrefix,
-																   String clientIdSuffix, Properties properties) {
+							String clientIdSuffix, Properties properties) {
 						return consumer;
 					}
 
