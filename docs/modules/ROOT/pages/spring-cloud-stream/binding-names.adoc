@@ -1,5 +1,5 @@
-[[binding-and-binding-names]]
-== Binding and Binding names
+[[binding-names]]
+= Binding and Binding names
 
 Binding is an abstraction that represents a bridge between sources and targets exposed by the binder and user code,
 This abstraction has a name and while we try to do our best to limit configuration required to run spring-cloud-stream applications,
