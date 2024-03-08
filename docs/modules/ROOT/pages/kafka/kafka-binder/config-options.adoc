@@ -136,11 +136,9 @@ Default: false
 [[kafka-consumer-properties]]
 == Kafka Consumer Properties
 
+The following properties are available for Kafka consumers only and must be prefixed with `spring.cloud.stream.kafka.bindings.<channelName>.consumer.`.
+
 NOTE: To avoid repetition, Spring Cloud Stream supports setting values for all channels, in the format of `spring.cloud.stream.kafka.default.consumer.<property>=<value>`.
-
-
-The following properties are available for Kafka consumers only and
-must be prefixed with `spring.cloud.stream.kafka.bindings.<channelName>.consumer.`.
 
 admin.configuration::
 Since version 2.1.1, this property is deprecated in favor of `topic.properties`, and support for it will be removed in a future version.
@@ -307,11 +305,10 @@ Default: none.
 [[kafka-producer-properties]]
 == Kafka Producer Properties
 
-NOTE: To avoid repetition, Spring Cloud Stream supports setting values for all channels, in the format of `spring.cloud.stream.kafka.default.producer.<property>=<value>`.
-
-
 The following properties are available for Kafka producers only and
 must be prefixed with `spring.cloud.stream.kafka.bindings.<channelName>.producer.`.
+
+NOTE: To avoid repetition, Spring Cloud Stream supports setting values for all channels, in the format of `spring.cloud.stream.kafka.default.producer.<property>=<value>`.
 
 admin.configuration::
 Since version 2.1.1, this property is deprecated in favor of `topic.properties`, and support for it will be removed in a future version.
