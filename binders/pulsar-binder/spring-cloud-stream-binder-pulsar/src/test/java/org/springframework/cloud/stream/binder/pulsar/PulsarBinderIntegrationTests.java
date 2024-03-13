@@ -88,7 +88,7 @@ class PulsarBinderIntegrationTests implements PulsarTestContainerSupport {
 				"--spring.pulsar.producer.name=textSupplierProducer-fromBase",
 				"--spring.cloud.stream.pulsar.binder.producer.name=textSupplierProducer-fromBinder",
 				"--spring.cloud.stream.pulsar.bindings.textSupplier-out-0.producer.name=textSupplierProducer-fromBinding",
-//				"--spring.cloud.stream.pulsar.binder.producer.max-pending-messages=1100",
+				"--spring.cloud.stream.pulsar.binder.producer.max-pending-messages=1100",
 				"--spring.cloud.stream.pulsar.binder.producer.block-if-queue-full=true",
 				"--spring.cloud.stream.pulsar.binder.consumer.subscription.name=textLoggerSub-fromBinder",
 				"--spring.cloud.stream.pulsar.binder.consumer.name=textLogger-fromBinder",
@@ -101,7 +101,7 @@ class PulsarBinderIntegrationTests implements PulsarTestContainerSupport {
 			TrackingProducerFactory producerFactory = context.getBean(TrackingProducerFactory.class);
 			assertThat(producerFactory.producersCreated).isNotEmpty().element(0)
 					.hasFieldOrPropertyWithValue("producerName", "textSupplierProducer-fromBinding")
-//					.hasFieldOrPropertyWithValue("conf.maxPendingMessages", 1100)
+					.hasFieldOrPropertyWithValue("conf.maxPendingMessages", 1100)
 					.hasFieldOrPropertyWithValue("conf.blockIfQueueFull", true);
 
 			TrackingConsumerFactory consumerFactory = context.getBean(TrackingConsumerFactory.class);

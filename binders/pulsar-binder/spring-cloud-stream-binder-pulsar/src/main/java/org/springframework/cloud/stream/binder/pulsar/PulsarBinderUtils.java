@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2023 the original author or authors.
+ * Copyright 2023-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,16 @@
 
 package org.springframework.cloud.stream.binder.pulsar;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
+
+import org.apache.pulsar.client.api.BatcherBuilder;
+import org.apache.pulsar.client.api.CryptoKeyReader;
+import org.apache.pulsar.client.api.MessageRouter;
+import org.apache.pulsar.client.api.ProducerBuilder;
 
 import org.springframework.cloud.stream.binder.pulsar.properties.ConsumerConfigProperties;
 import org.springframework.cloud.stream.binder.pulsar.properties.ProducerConfigProperties;
@@ -60,29 +66,32 @@ final class PulsarBinderUtils {
 
 	/**
 	 * Merges base and extended producer properties defined at the binder and binding
-	 * level. Only properties whose value has changed from the default are considered. If
-	 * a property is defined at both the binder and binding level, the binding level
-	 * property value is given precedence.
+	 * level.
+	 * <p>Only base properties whose value has changed from the default are included in
+	 * result map. All extended properties are included, regardless of their value,
+	 * which ensures that the extended property defaults are respected.
+	 * <p>If a property is defined at both the binder and binding level, the binding level
+	 * property value takes precedence.
 	 * @param binderProducerProps the binder level producer config properties (eg.
 	 * 'spring.cloud.stream.pulsar.binder.producer.*')
 	 * @param bindingProducerProps the binding level config properties (eg.
 	 * 'spring.cloud.stream.pulsar.bindings.myBinding-out-0.producer.*')
-	 * @return map of modified merged binder and binding producer properties
+	 * @return map of merged binder and binding producer properties
 	 */
 	static Map<String, Object> mergeModifiedProducerProperties(ProducerConfigProperties binderProducerProps,
 			ProducerConfigProperties bindingProducerProps) {
-		// Layer the base props for common -> binder -> bindings
-		var baseProducerProps = new ProducerConfigProperties().toBaseProducerPropertiesMap();
+		// Layer the base props for global -> binder -> bindings
+		var globalProducerProps = new ProducerConfigProperties().toBaseProducerPropertiesMap();
 		var binderBaseProducerProps = binderProducerProps.toBaseProducerPropertiesMap();
 		var bindingBaseProducerProps = bindingProducerProps.toBaseProducerPropertiesMap();
-		var layeredBaseProducerProps = PulsarBinderUtils.mergePropertiesWithPrecedence(baseProducerProps,
-				binderBaseProducerProps, bindingBaseProducerProps);
-		// Layer the extended props for binder -> bindings
-		var extProducerProps = new ProducerConfigProperties().toExtendedProducerPropertiesMap();
+		var layeredBaseProducerProps = PulsarBinderUtils.mergePropertiesWithPrecedence(globalProducerProps,
+				binderBaseProducerProps, bindingBaseProducerProps, false);
+		// Layer the extended props for global -> binder -> bindings
+		var globalExtProducerProps = new ProducerConfigProperties().toExtendedProducerPropertiesMap();
 		var binderExtProducerProps = binderProducerProps.toExtendedProducerPropertiesMap();
 		var bindingExtProducerProps = bindingProducerProps.toExtendedProducerPropertiesMap();
-		var layeredExtProducerProps = PulsarBinderUtils.mergePropertiesWithPrecedence(extProducerProps,
-				binderExtProducerProps, bindingExtProducerProps);
+		var layeredExtProducerProps = PulsarBinderUtils.mergePropertiesWithPrecedence(globalExtProducerProps,
+				binderExtProducerProps, bindingExtProducerProps, true);
 		// Combine both base and extended layers
 		var layeredProducerProps = new HashMap<>(layeredBaseProducerProps);
 		layeredProducerProps.putAll(layeredExtProducerProps);
@@ -91,29 +100,32 @@ final class PulsarBinderUtils {
 
 	/**
 	 * Merges base and extended consumer properties defined at the binder and binding
-	 * level. Only properties whose value has changed from the default are considered. If
-	 * a property is defined at both the binder and binding level, the binding level
-	 * property value is given precedence.
+	 * level.
+	 * <p>Only base properties whose value has changed from the default are included in
+	 * result map. All extended properties are included, regardless of their value,
+	 * which ensures that the extended property defaults are respected.
+	 * <p>If a property is defined at both the binder and binding level, the binding level
+	 * property value takes precedence.
 	 * @param binderConsumerProps the binder level consumer config properties (eg.
 	 * 'spring.cloud.stream.pulsar.binder.consumer.*')
 	 * @param bindingConsumerProps the binding level config properties (eg.
 	 * 'spring.cloud.stream.pulsar.bindings.myBinding-in-0.consumer.*')
-	 * @return map of modified merged binder and binding consumer properties
+	 * @return map of merged binder and binding consumer properties
 	 */
 	static Map<String, Object> mergeModifiedConsumerProperties(ConsumerConfigProperties binderConsumerProps,
 			ConsumerConfigProperties bindingConsumerProps) {
-		// Layer the base props for common -> binder -> bindings
-		var baseConsumerProps = new ConsumerConfigProperties().toBaseConsumerPropertiesMap();
+		// Layer the base props for global -> binder -> bindings
+		var globalBaseConsumerProps = new ConsumerConfigProperties().toBaseConsumerPropertiesMap();
 		var binderBaseConsumerProps = binderConsumerProps.toBaseConsumerPropertiesMap();
 		var bindingBaseConsumerProps = bindingConsumerProps.toBaseConsumerPropertiesMap();
-		var layeredBaseConsumerProps = PulsarBinderUtils.mergePropertiesWithPrecedence(baseConsumerProps,
-				binderBaseConsumerProps, bindingBaseConsumerProps);
-		// Layer the extended props for binder -> bindings
-		var extConsumerProps = new ConsumerConfigProperties().toExtendedConsumerPropertiesMap();
+		var layeredBaseConsumerProps = PulsarBinderUtils.mergePropertiesWithPrecedence(globalBaseConsumerProps,
+				binderBaseConsumerProps, bindingBaseConsumerProps, false);
+		// Layer the extended props for global -> binder -> bindings
+		var globalExtConsumerProps = new ConsumerConfigProperties().toExtendedConsumerPropertiesMap();
 		var binderExtConsumerProps = binderConsumerProps.toExtendedConsumerPropertiesMap();
 		var bindingExtConsumerProps = bindingConsumerProps.toExtendedConsumerPropertiesMap();
-		var layeredExtConsumerProps = PulsarBinderUtils.mergePropertiesWithPrecedence(extConsumerProps,
-				binderExtConsumerProps, bindingExtConsumerProps);
+		var layeredExtConsumerProps = PulsarBinderUtils.mergePropertiesWithPrecedence(globalExtConsumerProps,
+				binderExtConsumerProps, bindingExtConsumerProps, true);
 		// Combine both base and extended layers
 		var layeredConsumerProps = new HashMap<>(layeredBaseConsumerProps);
 		layeredConsumerProps.putAll(layeredExtConsumerProps);
@@ -121,35 +133,37 @@ final class PulsarBinderUtils {
 	}
 
 	/**
-	 * Merges properties defined at the binder and binding level (binding properties
-	 * override binder properties).
+	 * Merges properties defined at the binder and binding level with binding properties
+	 * overriding binder properties.
 	 * <p>
-	 * <b>NOTE:</b> Properties whose value is not different from the default value in the
-	 * {@code baseProps} are not included in the merged result.
-	 * @param baseProps the map of base level properties (eg. 'spring.pulsar.consumer.*')
+	 * @param globalProps the map of global level properties (eg. 'spring.pulsar.consumer.*')
 	 * @param binderProps the map of binder level properties (eg.
 	 * 'spring.cloud.stream.pulsar.binder.consumer.*')
 	 * @param bindingProps the map of binding level properties (eg.
 	 * 'spring.cloud.stream.pulsar.bindings.myBinding-in-0.consumer.*')
-	 * @return map of merged binder and binding properties including only properties whose
-	 * value has changed from the same property in the base properties
+	 * @param includeDefaults whether to also include unmodified properties with their default values
+	 * @return map of merged binder and binding properties with binding properties overriding binder properties
 	 */
-	static Map<String, Object> mergePropertiesWithPrecedence(Map<String, Object> baseProps,
-			Map<String, Object> binderProps, Map<String, Object> bindingProps) {
-		Objects.requireNonNull(baseProps, "baseProps must be specified");
+	static Map<String, Object> mergePropertiesWithPrecedence(Map<String, Object> globalProps,
+			Map<String, Object> binderProps, Map<String, Object> bindingProps, boolean includeDefaults) {
+		Objects.requireNonNull(globalProps, "globalProps must be specified");
 		Objects.requireNonNull(binderProps, "binderProps must be specified");
 		Objects.requireNonNull(bindingProps, "bindingProps must be specified");
 
-		Map<String, Object> newOrModifiedBinderProps = extractNewOrModifiedProperties(binderProps, baseProps);
+		Map<String, Object> newOrModifiedBinderProps = extractNewOrModifiedProperties(binderProps, globalProps);
 		LOGGER.trace(() -> "New or modified binder props: %s".formatted(newOrModifiedBinderProps));
 
-		Map<String, Object> newOrModifiedBindingProps = extractNewOrModifiedProperties(bindingProps, baseProps);
+		Map<String, Object> newOrModifiedBindingProps = extractNewOrModifiedProperties(bindingProps, globalProps);
 		LOGGER.trace(() -> "New or modified binding props: %s".formatted(newOrModifiedBindingProps));
 
 		Map<String, Object> mergedProps = new HashMap<>(newOrModifiedBinderProps);
 		mergedProps.putAll(newOrModifiedBindingProps);
-		LOGGER.trace(() -> "Final merged props: %s".formatted(mergedProps));
 
+		// Add in default properties for any props not customized by the user
+		if (includeDefaults) {
+			globalProps.forEach(mergedProps::putIfAbsent);
+		}
+		LOGGER.trace(() -> "Final merged props: %s".formatted(mergedProps));
 		return mergedProps;
 	}
 
@@ -164,4 +178,30 @@ final class PulsarBinderUtils {
 		return newOrModifiedProps;
 	}
 
+	/**
+	 * Configures the specified properties onto the specified builder in a manner that
+	 * loads non-serializable properties. See
+	 * <a href="https://github.com/apache/pulsar/pull/18344">Pulsar PR</a>.
+	 * @param builder the builder
+	 * @param properties the properties to set on the builder
+	 * @param <T> the payload type
+	 */
+	static <T> void loadConf(ProducerBuilder<T> builder, Map<String, Object> properties) {
+		builder.loadConf(properties);
+		// Set fields that are not loaded by loadConf
+		if (properties.containsKey("encryptionKeys")) {
+			@SuppressWarnings("unchecked")
+			Collection<String> keys = (Collection<String>) properties.get("encryptionKeys");
+			keys.forEach(builder::addEncryptionKey);
+		}
+		if (properties.containsKey("customMessageRouter")) {
+			builder.messageRouter((MessageRouter) properties.get("customMessageRouter"));
+		}
+		if (properties.containsKey("batcherBuilder")) {
+			builder.batcherBuilder((BatcherBuilder) properties.get("batcherBuilder"));
+		}
+		if (properties.containsKey("cryptoKeyReader")) {
+			builder.cryptoKeyReader((CryptoKeyReader) properties.get("cryptoKeyReader"));
+		}
+	}
 }

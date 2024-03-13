@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2023 the original author or authors.
+ * Copyright 2023-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -230,16 +230,20 @@ public class ProducerConfigProperties extends PulsarProperties.Producer {
 				.to(producerProps.in("maxPendingMessagesAcrossPartitions"));
 		map.from(this::getMultiSchema).to(producerProps.in("multiSchema"));
 		map.from(this::getProperties).to(producerProps.in("properties"));
+		this.mapBatchProperties(this.getBatch(), producerProps, map);
+		return producerProps;
+	}
+
+	private void mapBatchProperties(Batching batch, Properties producerProps, PropertyMapper map) {
 		if (this.isBatchingEnabled()) {
-			map.from(this::getBatch).as(Batching::getMaxPublishDelay).as(it -> it.toNanos() / 1000)
+			map.from(batch::getMaxPublishDelay).as(it -> it.toNanos() / 1000)
 					.to(producerProps.in("batchingMaxPublishDelayMicros"));
-			map.from(this::getBatch).as(Batching::getPartitionSwitchFrequencyByPublishDelay)
+			map.from(batch::getPartitionSwitchFrequencyByPublishDelay)
 					.to(producerProps.in("batchingPartitionSwitchFrequencyByPublishDelay"));
-			map.from(this::getBatch).as(Batching::getMaxMessages).to(producerProps.in("batchingMaxMessages"));
-			map.from(this::getBatch).as(Batching::getMaxBytes).asInt(DataSize::toBytes)
+			map.from(batch::getMaxMessages).to(producerProps.in("batchingMaxMessages"));
+			map.from(batch::getMaxBytes).asInt(DataSize::toBytes)
 					.to(producerProps.in("batchingMaxBytes"));
 		}
-		return producerProps;
 	}
 
 	/**
