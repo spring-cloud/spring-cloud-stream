@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2023 the original author or authors.
+ * Copyright 2023-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -76,60 +76,99 @@ class PulsarBinderUtilsTests {
 
 		@ParameterizedTest(name = "{0}")
 		@MethodSource("mergePropertiesTestProvider")
-		void mergePropertiesTest(String testName, Map<String, Object> baseProps, Map<String, Object> binderProps,
+		void mergePropertiesTest(String testName, boolean includeDefaults, Map<String, Object> globalProps, Map<String, Object> binderProps,
 				Map<String, Object> bindingProps, Map<String, Object> expectedMergedProps) {
-			assertThat(PulsarBinderUtils.mergePropertiesWithPrecedence(baseProps, binderProps, bindingProps))
+			assertThat(PulsarBinderUtils.mergePropertiesWithPrecedence(globalProps, binderProps, bindingProps, includeDefaults))
 					.containsExactlyInAnyOrderEntriesOf(expectedMergedProps);
 		}
 
 		// @formatter:off
 		static Stream<Arguments> mergePropertiesTestProvider() {
 			return Stream.of(
-					arguments("binderLevelContainsSamePropAsBaseWithDiffValue",
+					arguments("noProps",
+							true,
+							Collections.emptyMap(),
+							Collections.emptyMap(),
+							Collections.emptyMap(),
+							Collections.emptyMap()),
+					arguments("allSamePropsWithoutDefaults",
+							false,
 							Map.of("foo", "foo-base"),
+							Map.of("foo", "foo-base"),
+							Map.of("foo", "foo-base"),
+							Collections.emptyMap()),
+					arguments("allSamePropsWithDefaults",
+							true,
+							Map.of("foo", "foo-base"),
+							Map.of("foo", "foo-base"),
+							Map.of("foo", "foo-base"),
+							Map.of("foo", "foo-base")),
+					arguments("onlyBasePropsWithoutDefaults",
+							false,
+							Map.of("foo", "foo-base"),
+							Collections.emptyMap(),
+							Collections.emptyMap(),
+							Collections.emptyMap()),
+					arguments("onlyBasePropsWithDefaults",
+							true,
+							Map.of("foo", "foo-base"),
+							Collections.emptyMap(),
+							Collections.emptyMap(),
+							Map.of("foo", "foo-base")),
+					arguments("onlyBinderProps",
+							true,
+							Collections.emptyMap(),
 							Map.of("foo", "foo-binder"),
 							Collections.emptyMap(),
 							Map.of("foo", "foo-binder")),
-					arguments("binderLevelContainsNewPropNotInBase",
+					arguments("onlyBindingProps",
+							true,
 							Collections.emptyMap(),
+							Collections.emptyMap(),
+							Map.of("foo", "foo-binding"),
+							Map.of("foo", "foo-binding")),
+					arguments("binderOverridesBaseValue",
+							true,
+							Map.of("foo", "foo-base"),
 							Map.of("foo", "foo-binder"),
-							Collections.emptyMap(),
+							Map.of("foo", "foo-base"),
 							Map.of("foo", "foo-binder")),
-					arguments("binderLevelContainsSamePropAsBaseWithSameValue",
+					arguments("binderContainsNewPropWithoutDefaults",
+							false,
+							Map.of("foo", "foo-base"),
+							Map.of("foo", "foo-base", "bar", "bar-binder"),
+							Map.of("foo", "foo-base"),
+							Map.of("bar", "bar-binder")),
+					arguments("binderContainsNewPropWithDefaults",
+							true,
+							Map.of("foo", "foo-base"),
+							Map.of("foo", "foo-base", "bar", "bar-binder"),
+							Map.of("foo", "foo-base"),
+							Map.of("foo", "foo-base", "bar", "bar-binder")),
+					arguments("bindingOverridesBaseValue",
+							true,
 							Map.of("foo", "foo-base"),
 							Map.of("foo", "foo-base"),
-							Collections.emptyMap(),
-							Collections.emptyMap()),
-					arguments("bindingLevelContainsSamePropAsBaseWithDiffValue",
-							Map.of("foo", "foo-base"),
-							Collections.emptyMap(),
 							Map.of("foo", "foo-binding"),
 							Map.of("foo", "foo-binding")),
-					arguments("bindingLevelContainsNewPropNotInBase",
-							Collections.emptyMap(),
-							Map.of("foo", "foo-binding"),
-							Collections.emptyMap(),
-							Map.of("foo", "foo-binding")),
-					arguments("bindingLevelContainsSamePropAsBaseWithSameValue",
+					arguments("bindingContainsNewPropWithoutDefaults",
+							false,
 							Map.of("foo", "foo-base"),
-							Collections.emptyMap(),
 							Map.of("foo", "foo-base"),
-							Collections.emptyMap()),
-					arguments("bindingOverridesBinder",
-							Map.of("bar", "bar-base"),
-							Map.of("foo", "foo-binder"),
-							Map.of("foo", "foo-binding"),
-							Map.of("foo", "foo-binding")),
+							Map.of("foo", "foo-base", "bar", "bar-binding"),
+							Map.of("bar", "bar-binding")),
+					arguments("bindingContainsNewPropWithDefaults",
+							true,
+							Map.of("foo", "foo-base"),
+							Map.of("foo", "foo-base"),
+							Map.of("foo", "foo-base", "bar", "bar-binding"),
+							Map.of("foo", "foo-base", "bar", "bar-binding")),
 					arguments("binderOverridesBaseAndBindingOverridesBinder",
+							true,
 							Map.of("foo", "foo-base"),
 							Map.of("foo", "foo-binder"),
 							Map.of("foo", "foo-binding"),
-							Map.of("foo", "foo-binding")),
-					arguments("onlyBaseProps",
-							Map.of("foo", "foo-base"),
-							Collections.emptyMap(),
-							Collections.emptyMap(),
-							Collections.emptyMap()));
+							Map.of("foo", "foo-binding")));
 		}
 		// @formatter:on
 
@@ -142,77 +181,120 @@ class PulsarBinderUtilsTests {
 		};
 
 		@Test
-		void noPropsSpecified() {
-			doMergeProducerPropertiesTest(SET_NO_PROPS, SET_NO_PROPS, Collections.emptyMap());
+		void noPropsModified() {
+			var expectedProps = defaultExtProps();
+			doMergeProducerPropertiesTest(SET_NO_PROPS, SET_NO_PROPS, expectedProps);
+		}
+
+		// @formatter:off
+		@Test
+		void basePropModifiedAtBinderLevel() {
+			var expectedProps = defaultExtPropsWith("accessMode", ProducerAccessMode.Exclusive);
+			doMergeProducerPropertiesTest(
+					(binderProps) -> binderProps.setAccessMode(ProducerAccessMode.Exclusive),
+					SET_NO_PROPS,
+					expectedProps);
 		}
 
 		@Test
-		void basePropSpecifiedAtBinderLevelOnly() {
-			doMergeProducerPropertiesTest((binderProps) -> binderProps.setAccessMode(ProducerAccessMode.Exclusive),
-					SET_NO_PROPS, Map.of("accessMode", ProducerAccessMode.Exclusive));
-		}
-
-		@Test
-		void basePropSpecifiedAtBindingLevelOnly() {
-			doMergeProducerPropertiesTest(SET_NO_PROPS,
+		void basePropModifiedAtBindingLevel() {
+			var expectedProps = defaultExtPropsWith("accessMode", ProducerAccessMode.Exclusive);
+			doMergeProducerPropertiesTest(
+					SET_NO_PROPS,
 					(bindingProps) -> bindingProps.setAccessMode(ProducerAccessMode.Exclusive),
-					Map.of("accessMode", ProducerAccessMode.Exclusive));
+					expectedProps);
 		}
 
 		@Test
-		void basePropSpecifiedAtBinderAndBindingLevel() {
+		void basePropModifiedAtBinderAndBindingLevel() {
+			var expectedProps = defaultExtPropsWith("accessMode", ProducerAccessMode.Exclusive);
 			doMergeProducerPropertiesTest(
 					(binderProps) -> binderProps.setAccessMode(ProducerAccessMode.ExclusiveWithFencing),
 					(bindingProps) -> bindingProps.setAccessMode(ProducerAccessMode.Exclusive),
-					Map.of("accessMode", ProducerAccessMode.Exclusive));
+					expectedProps);
 		}
 
 		@Test
-		void basePropSpecifiedWithSameValueAsDefault() {
-			doMergeProducerPropertiesTest((binderProps) -> binderProps.setAccessMode(ProducerAccessMode.Shared),
-					(bindingProps) -> bindingProps.setAccessMode(ProducerAccessMode.Shared), Collections.emptyMap());
+		void basePropModifiedAtBinderAndBindingLevelWithDefaultValue() {
+			var expectedProps = defaultExtProps();
+			doMergeProducerPropertiesTest(
+					(binderProps) -> binderProps.setAccessMode(ProducerAccessMode.Shared),
+					(bindingProps) -> bindingProps.setAccessMode(ProducerAccessMode.Shared),
+					expectedProps);
 		}
 
 		@Test
-		void extPropSpecifiedAtBinderLevelOnly() {
-			doMergeProducerPropertiesTest((binderProps) -> binderProps.setMaxPendingMessages(1200), SET_NO_PROPS,
-					Map.of("maxPendingMessages", 1200));
+		void extPropModifiedAtBinderLevel() {
+			var expectedProps = defaultExtPropsWith((p) -> p.setMaxPendingMessages(1200));
+			doMergeProducerPropertiesTest(
+					(binderProps) -> binderProps.setMaxPendingMessages(1200),
+					SET_NO_PROPS,
+					expectedProps);
 		}
 
 		@Test
-		void extPropSpecifiedAtBindingLevelOnly() {
-			doMergeProducerPropertiesTest(SET_NO_PROPS, (bindingProps) -> bindingProps.setMaxPendingMessages(1200),
-					Map.of("maxPendingMessages", 1200));
+		void extPropModifiedAtBindingLevel() {
+			var expectedProps = defaultExtPropsWith((p) -> p.setMaxPendingMessages(1200));
+			doMergeProducerPropertiesTest(
+					SET_NO_PROPS,
+					(binderProps) -> binderProps.setMaxPendingMessages(1200),
+					expectedProps);
 		}
 
 		@Test
-		void extPropSpecifiedAtBinderAndBindingLevel() {
-			doMergeProducerPropertiesTest((binderProps) -> binderProps.setMaxPendingMessages(1100),
-					(bindingProps) -> bindingProps.setMaxPendingMessages(1200), Map.of("maxPendingMessages", 1200));
+		void extPropModifiedAtBinderAndBindingLevel() {
+			var expectedProps = defaultExtPropsWith((p) -> p.setMaxPendingMessages(1200));
+			doMergeProducerPropertiesTest(
+					(binderProps) -> binderProps.setMaxPendingMessages(1100),
+					(bindingProps) -> bindingProps.setMaxPendingMessages(1200),
+					expectedProps);
 		}
 
 		@Test
-		void extPropSpecifiedWithSameValueAsDefault() {
-			doMergeProducerPropertiesTest((binderProps) -> binderProps.setMaxPendingMessages(1000),
-					(bindingProps) -> bindingProps.setMaxPendingMessages(1000), Collections.emptyMap());
+		void extPropModifiedAtBinderAndBindingLevelWithDefaultValue() {
+			var expectedProps = defaultExtProps();
+			doMergeProducerPropertiesTest(
+					(binderProps) -> binderProps.setMaxPendingMessages(1000),
+					(bindingProps) -> bindingProps.setMaxPendingMessages(1000),
+					expectedProps);
 		}
 
 		@Test
 		void baseAndExtPropsAreCombined() {
-			doMergeProducerPropertiesTest((binderProps) -> binderProps.setAccessMode(ProducerAccessMode.Exclusive),
+			var expectedProps = defaultExtPropsWith((p) -> p.setMaxPendingMessages(1200));
+			expectedProps.put("accessMode", ProducerAccessMode.Exclusive);
+			doMergeProducerPropertiesTest(
+					(binderProps) -> binderProps.setAccessMode(ProducerAccessMode.Exclusive),
 					(bindingProps) -> bindingProps.setMaxPendingMessages(1200),
-					Map.of("accessMode", ProducerAccessMode.Exclusive, "maxPendingMessages", 1200));
+					expectedProps);
+		}
+		// @formatter:on
+
+		private Map<String, Object> defaultExtProps() {
+			return new ProducerConfigProperties().toExtendedProducerPropertiesMap();
 		}
 
-		void doMergeProducerPropertiesTest(Consumer<ProducerConfigProperties> binderPropsCustomizer,
-				Consumer<ProducerConfigProperties> bindingPropsCustomizer, Map<String, Object> expectedProps) {
+		private Map<String, Object> defaultExtPropsWith(String key, Object value) {
+			var defaultExtProps = defaultExtProps();
+			defaultExtProps.put(key, value);
+			return defaultExtProps;
+		}
+
+		private Map<String, Object> defaultExtPropsWith(Consumer<ProducerConfigProperties> extPropsCustomizer) {
+			var extProps = new ProducerConfigProperties();
+			extPropsCustomizer.accept(extProps);
+			return extProps.toExtendedProducerPropertiesMap();
+		}
+
+		private void doMergeProducerPropertiesTest(Consumer<ProducerConfigProperties> binderPropsCustomizer,
+				Consumer<ProducerConfigProperties> bindingPropsCustomizer,
+				Map<String, Object> expectedMergedProperties) {
 			var binderProducerProps = new ProducerConfigProperties();
 			binderPropsCustomizer.accept(binderProducerProps);
 			var bindingProducerProps = new ProducerConfigProperties();
 			bindingPropsCustomizer.accept(bindingProducerProps);
-			var mergedProps = PulsarBinderUtils.mergeModifiedProducerProperties(binderProducerProps,
-					bindingProducerProps);
-			assertThat(mergedProps).containsExactlyInAnyOrderEntriesOf(expectedProps);
+			var mergedProps = PulsarBinderUtils.mergeModifiedProducerProperties(binderProducerProps, bindingProducerProps);
+			assertThat(mergedProps).containsExactlyInAnyOrderEntriesOf(expectedMergedProperties);
 		}
 
 	}
@@ -224,74 +306,121 @@ class PulsarBinderUtilsTests {
 		};
 
 		@Test
-		void noPropsSpecified() {
-			doMergeConsumerPropertiesTest(SET_NO_PROPS, SET_NO_PROPS, Collections.emptyMap());
+		void noPropsModified() {
+			var expectedProps = defaultExtProps();
+			doMergeConsumerPropertiesTest(SET_NO_PROPS, SET_NO_PROPS, expectedProps);
+		}
+
+		// @formatter:off
+		@Test
+		void basePropModifiedAtBinderLevel() {
+			var expectedProps = defaultExtPropsWith("priorityLevel", 1000);
+			doMergeConsumerPropertiesTest(
+					(binderProps) -> binderProps.setPriorityLevel(1000),
+					SET_NO_PROPS,
+					expectedProps);
 		}
 
 		@Test
-		void basePropSpecifiedAtBinderLevelOnly() {
-			doMergeConsumerPropertiesTest((binderProps) -> binderProps.setPriorityLevel(1000), SET_NO_PROPS,
-					Map.of("priorityLevel", 1000));
+		void basePropModifiedAtBindingLevel() {
+			var expectedProps = defaultExtPropsWith("priorityLevel", 1000);
+			doMergeConsumerPropertiesTest(
+					SET_NO_PROPS,
+					(bindingProps) -> bindingProps.setPriorityLevel(1000),
+					expectedProps);
 		}
 
 		@Test
-		void basePropSpecifiedAtBindingLevelOnly() {
-			doMergeConsumerPropertiesTest(SET_NO_PROPS, (bindingProps) -> bindingProps.setPriorityLevel(1000),
-					Map.of("priorityLevel", 1000));
+		void basePropModifiedAtBinderAndBindingLevel() {
+			var expectedProps = defaultExtPropsWith("priorityLevel", 1000);
+			doMergeConsumerPropertiesTest(
+					(binderProps) -> binderProps.setPriorityLevel(2000),
+					(bindingProps) -> bindingProps.setPriorityLevel(1000),
+					expectedProps);
 		}
 
 		@Test
-		void basePropSpecifiedAtBinderAndBindingLevel() {
-			doMergeConsumerPropertiesTest((binderProps) -> binderProps.setPriorityLevel(2000),
-					(bindingProps) -> bindingProps.setPriorityLevel(1000), Map.of("priorityLevel", 1000));
+		void basePropModifiedAtBinderAndBindingLevelWithDefaultValue() {
+			var expectedProps = defaultExtProps();
+			doMergeConsumerPropertiesTest(
+					(binderProps) -> binderProps.setPriorityLevel(0),
+					(bindingProps) -> bindingProps.setPriorityLevel(0),
+					expectedProps);
 		}
 
 		@Test
-		void basePropSpecifiedWithSameValueAsDefault() {
-			doMergeConsumerPropertiesTest((binderProps) -> binderProps.setPriorityLevel(0),
-					(bindingProps) -> bindingProps.setPriorityLevel(0), Collections.emptyMap());
+		void extPropModifiedAtBinderLevel() {
+			var expectedProps = defaultExtPropsWith((p) -> p.setReceiverQueueSize(1200));
+			doMergeConsumerPropertiesTest(
+					(binderProps) -> binderProps.setReceiverQueueSize(1200),
+					SET_NO_PROPS,
+					expectedProps);
 		}
 
 		@Test
-		void extPropSpecifiedAtBinderLevelOnly() {
-			doMergeConsumerPropertiesTest((binderProps) -> binderProps.setReceiverQueueSize(1200), SET_NO_PROPS,
-					Map.of("receiverQueueSize", 1200));
+		void extPropModifiedAtBindingLevel() {
+			var expectedProps = defaultExtPropsWith((p) -> p.setReceiverQueueSize(1200));
+			doMergeConsumerPropertiesTest(
+					SET_NO_PROPS,
+					(bindingProps) -> bindingProps.setReceiverQueueSize(1200),
+					expectedProps);
 		}
 
 		@Test
-		void extPropSpecifiedAtBindingLevelOnly() {
-			doMergeConsumerPropertiesTest(SET_NO_PROPS, (bindingProps) -> bindingProps.setReceiverQueueSize(1200),
-					Map.of("receiverQueueSize", 1200));
+		void extPropModifiedAtBinderAndBindingLevel() {
+			var expectedProps = defaultExtPropsWith((p) -> p.setReceiverQueueSize(1200));
+			doMergeConsumerPropertiesTest(
+					(binderProps) -> binderProps.setReceiverQueueSize(1100),
+					(bindingProps) -> bindingProps.setReceiverQueueSize(1200),
+					expectedProps);
 		}
 
 		@Test
-		void extPropSpecifiedAtBinderAndBindingLevel() {
-			doMergeConsumerPropertiesTest((binderProps) -> binderProps.setReceiverQueueSize(1100),
-					(bindingProps) -> bindingProps.setReceiverQueueSize(1200), Map.of("receiverQueueSize", 1200));
-		}
-
-		@Test
-		void extPropSpecifiedWithSameValueAsDefault() {
-			doMergeConsumerPropertiesTest((binderProps) -> binderProps.setReceiverQueueSize(1000),
-					(bindingProps) -> bindingProps.setReceiverQueueSize(1000), Collections.emptyMap());
+		void extPropModifiedAtBinderAndBindingLevelWithDefaultValue() {
+			var expectedProps = defaultExtProps();
+			doMergeConsumerPropertiesTest(
+					(binderProps) -> binderProps.setReceiverQueueSize(1000),
+					(bindingProps) -> bindingProps.setReceiverQueueSize(1000),
+					expectedProps);
 		}
 
 		@Test
 		void baseAndExtPropsAreCombined() {
-			doMergeConsumerPropertiesTest((binderProps) -> binderProps.setPriorityLevel(1000),
+			var expectedProps = defaultExtPropsWith((p) -> p.setReceiverQueueSize(1200));
+			expectedProps.put("priorityLevel", 1000);
+			doMergeConsumerPropertiesTest(
+					(binderProps) -> binderProps.setPriorityLevel(1000),
 					(bindingProps) -> bindingProps.setReceiverQueueSize(1200),
-					Map.of("priorityLevel", 1000, "receiverQueueSize", 1200));
+					expectedProps);
+		}
+		// @formatter:on
+
+		private Map<String, Object> defaultExtProps() {
+			return new ConsumerConfigProperties().toExtendedConsumerPropertiesMap();
 		}
 
-		void doMergeConsumerPropertiesTest(Consumer<ConsumerConfigProperties> binderPropsCustomizer,
-				Consumer<ConsumerConfigProperties> bindingPropsCustomizer, Map<String, Object> expectedProps) {
+		private Map<String, Object> defaultExtPropsWith(String key, Object value) {
+			var defaultExtProps = defaultExtProps();
+			defaultExtProps.put(key, value);
+			return defaultExtProps;
+		}
+
+		private Map<String, Object> defaultExtPropsWith(Consumer<ConsumerConfigProperties> extPropsCustomizer) {
+			var extProps = new ConsumerConfigProperties();
+			extPropsCustomizer.accept(extProps);
+			return extProps.toExtendedConsumerPropertiesMap();
+		}
+
+		private void doMergeConsumerPropertiesTest(
+				Consumer<ConsumerConfigProperties> binderPropsCustomizer,
+				Consumer<ConsumerConfigProperties> bindingPropsCustomizer,
+				Map<String, Object> expectedMergedProperties) {
 			var binderConsumerProps = new ConsumerConfigProperties();
 			binderPropsCustomizer.accept(binderConsumerProps);
 			var bindingConsumerProps = new ConsumerConfigProperties();
 			bindingPropsCustomizer.accept(bindingConsumerProps);
-			var mergedProps = PulsarBinderUtils.mergeModifiedConsumerProperties(binderConsumerProps,
-					bindingConsumerProps);
-			assertThat(mergedProps).containsExactlyInAnyOrderEntriesOf(expectedProps);
+			var mergedProps = PulsarBinderUtils.mergeModifiedConsumerProperties(binderConsumerProps, bindingConsumerProps);
+			assertThat(mergedProps).containsExactlyInAnyOrderEntriesOf(expectedMergedProperties);
 		}
 
 	}
