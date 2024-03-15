@@ -85,6 +85,7 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.EnvironmentAware;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.core.env.ConfigurableEnvironment;
@@ -129,6 +130,7 @@ import org.springframework.util.StringUtils;
  * @author Ivan Shapoval
  * @since 2.1
  */
+@Lazy(false)
 @AutoConfiguration
 @EnableConfigurationProperties(StreamFunctionConfigurationProperties.class)
 @Import({ BinderFactoryAutoConfiguration.class })
