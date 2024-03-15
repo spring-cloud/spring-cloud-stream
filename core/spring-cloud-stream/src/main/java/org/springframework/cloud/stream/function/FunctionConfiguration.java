@@ -128,6 +128,7 @@ import org.springframework.util.StringUtils;
  * @author Chris Bono
  * @author Byungjun You
  * @author Ivan Shapoval
+ * @author Patrik Péter Süli
  * @since 2.1
  */
 @Lazy(false)
