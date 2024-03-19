@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 
 import io.micrometer.context.ContextExecutorService;
@@ -117,6 +118,8 @@ public final class StreamBridge implements StreamOperations, SmartInitializingSi
 
 	private static final boolean isContextPropagationPresent = ClassUtils.isPresent(
 			"io.micrometer.context.ContextSnapshotFactory", StreamBridge.class.getClassLoader());
+
+	private static final ReentrantLock lock = new ReentrantLock();
 
 	/**
 	 *
@@ -249,56 +252,62 @@ public final class StreamBridge implements StreamOperations, SmartInitializingSi
 	}
 
 	@SuppressWarnings({ "unchecked"})
-	synchronized MessageChannel resolveDestination(String destinationName, ProducerProperties producerProperties, String binderName) {
-		MessageChannel messageChannel = null;
-		if (StringUtils.hasText(binderName)) {
-			messageChannel = this.channelCache.get(binderName + ":" + destinationName);
-		}
-		else {
-			messageChannel = this.channelCache.get(destinationName);
-		}
-		if (messageChannel == null) {
-			if (this.applicationContext.containsBean(destinationName)) {
-				messageChannel = this.applicationContext.getBean(destinationName, MessageChannel.class);
-				String[] consumerBindingNames = this.bindingService.getConsumerBindingNames();
-				if (messageChannel instanceof AbstractMessageChannel) {
-					addPartitioningInterceptorIfNeedBe(producerProperties, destinationName, (AbstractMessageChannel) messageChannel);
-				}
-				if (ObjectUtils.containsElement(consumerBindingNames, destinationName)) { //GH-2563
-					logger.warn("You seem to be sending data to the input binding.  It is not "
-							+ "recommended, since you are bypassing the binder and this the messaging system exposed by the binder.");
-				}
+	MessageChannel resolveDestination(String destinationName, ProducerProperties producerProperties, String binderName) {
+		lock.lock();
+		try {
+			MessageChannel messageChannel = null;
+			if (StringUtils.hasText(binderName)) {
+				messageChannel = this.channelCache.get(binderName + ":" + destinationName);
 			}
 			else {
-				messageChannel = this.isAsync() ? new ExecutorChannel(this.executorService) : new DirectWithAttributesChannel();
-				((AbstractSubscribableChannel) messageChannel).setApplicationContext(applicationContext);
-				((AbstractSubscribableChannel) messageChannel).setComponentName(destinationName);
-				if (this.destinationBindingCallback != null) {
-					Object extendedProducerProperties = this.bindingService
-							.getExtendedProducerProperties(messageChannel, destinationName);
-					this.destinationBindingCallback.configure(destinationName, messageChannel,
-							producerProperties, extendedProducerProperties);
-				}
-
-				Binder binder = null;
-				if (StringUtils.hasText(binderName)) {
-					BinderFactory binderFactory = this.applicationContext.getBean(BinderFactory.class);
-					binder = binderFactory.getBinder(binderName, messageChannel.getClass());
-				}
-				addPartitioningInterceptorIfNeedBe(producerProperties, destinationName, (AbstractMessageChannel) messageChannel);
-				addGlobalChannelInterceptorProcessor((AbstractMessageChannel) messageChannel, destinationName);
-
-				this.bindingService.bindProducer(messageChannel, destinationName, true, binder);
-				if (StringUtils.hasText(binderName)) {
-					this.channelCache.put(binderName + ":" + destinationName, messageChannel);
+				messageChannel = this.channelCache.get(destinationName);
+			}
+			if (messageChannel == null) {
+				if (this.applicationContext.containsBean(destinationName)) {
+					messageChannel = this.applicationContext.getBean(destinationName, MessageChannel.class);
+					String[] consumerBindingNames = this.bindingService.getConsumerBindingNames();
+					if (messageChannel instanceof AbstractMessageChannel) {
+						addPartitioningInterceptorIfNeedBe(producerProperties, destinationName, (AbstractMessageChannel) messageChannel);
+					}
+					if (ObjectUtils.containsElement(consumerBindingNames, destinationName)) { //GH-2563
+						logger.warn("You seem to be sending data to the input binding.  It is not "
+								+ "recommended, since you are bypassing the binder and this the messaging system exposed by the binder.");
+					}
 				}
 				else {
-					this.channelCache.put(destinationName, messageChannel);
+					messageChannel = this.isAsync() ? new ExecutorChannel(this.executorService) : new DirectWithAttributesChannel();
+					((AbstractSubscribableChannel) messageChannel).setApplicationContext(applicationContext);
+					((AbstractSubscribableChannel) messageChannel).setComponentName(destinationName);
+					if (this.destinationBindingCallback != null) {
+						Object extendedProducerProperties = this.bindingService
+								.getExtendedProducerProperties(messageChannel, destinationName);
+						this.destinationBindingCallback.configure(destinationName, messageChannel,
+								producerProperties, extendedProducerProperties);
+					}
+
+					Binder binder = null;
+					if (StringUtils.hasText(binderName)) {
+						BinderFactory binderFactory = this.applicationContext.getBean(BinderFactory.class);
+						binder = binderFactory.getBinder(binderName, messageChannel.getClass());
+					}
+					addPartitioningInterceptorIfNeedBe(producerProperties, destinationName, (AbstractMessageChannel) messageChannel);
+					addGlobalChannelInterceptorProcessor((AbstractMessageChannel) messageChannel, destinationName);
+
+					this.bindingService.bindProducer(messageChannel, destinationName, true, binder);
+					if (StringUtils.hasText(binderName)) {
+						this.channelCache.put(binderName + ":" + destinationName, messageChannel);
+					}
+					else {
+						this.channelCache.put(destinationName, messageChannel);
+					}
 				}
 			}
-		}
 
-		return messageChannel;
+			return messageChannel;
+		}
+		finally {
+			lock.unlock();
+		}
 	}
 
 	private void addPartitioningInterceptorIfNeedBe(ProducerProperties producerProperties, String destinationName, AbstractMessageChannel messageChannel) {
