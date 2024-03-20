@@ -622,13 +622,13 @@ public abstract class AbstractKafkaStreamsBinderProcessor implements Application
 			timestampExtractor = applicationContext.getBean(kafkaStreamsConsumerProperties.getTimestampExtractorBeanName(),
 					TimestampExtractor.class);
 		}
-		final Consumed<K, V> consumed = Consumed.with(keySerde, valueSerde)
+		Consumed<K, V> consumed = Consumed.with(keySerde, valueSerde)
 				.withOffsetResetPolicy(autoOffsetReset);
 		if (timestampExtractor != null) {
-			consumed.withTimestampExtractor(timestampExtractor);
+			consumed = consumed.withTimestampExtractor(timestampExtractor);
 		}
 		if (StringUtils.hasText(kafkaStreamsConsumerProperties.getConsumedAs())) {
-			consumed.withName(kafkaStreamsConsumerProperties.getConsumedAs());
+			consumed = consumed.withName(kafkaStreamsConsumerProperties.getConsumedAs());
 		}
 		return consumed;
 	}
