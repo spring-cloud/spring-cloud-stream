@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2023 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -167,7 +167,24 @@ public class MessageConverterConfigurer
 				if (environment != null && environment.containsProperty("spring.cloud.stream.rabbit.bindings." + channelName + ".producer.routing-key-expression")) {
 					Map<String, String> channelNameToFunctions = BindableFunctionProxyFactory.getChannelNameToFunctions();
 					String functionName = channelNameToFunctions.get(channelName);
-					this.setSkipOutputConversionIfNecessary(functionName);
+					String outputBindings = environment.getProperty("spring.cloud.stream.output-bindings");
+					FunctionInvocationWrapper function = null;
+					if (outputBindings != null && outputBindings.contains(functionName)) {
+						try {
+							function = retrieveFunction(functionName);
+						}
+						catch (Exception e) {
+							// we expect an exception in this case since we didn't have a matching function
+							// for the function name due to output-bindings, hence passing through.
+							// See https://github.com/spring-cloud/spring-cloud-stream/issues/2921 for more details.
+						}
+					}
+					else {
+						function = retrieveFunction(functionName);
+					}
+					if (function != null) {
+						function.setSkipOutputConversion(true);
+					}
 					functional = false;
 				}
 				if (!functional) {
@@ -177,13 +194,19 @@ public class MessageConverterConfigurer
 		}
 	}
 
-	private void setSkipOutputConversionIfNecessary(String functionName) {
+	private FunctionInvocationWrapper retrieveFunction(String functionName) {
 		FunctionCatalog catalog = this.beanFactory.getBean(FunctionCatalog.class);
-		if (catalog != null) {
-			FunctionInvocationWrapper function = catalog.lookup(functionName);
-			if (function != null) {
-				function.setSkipOutputConversion(true);
-			}
+		FunctionInvocationWrapper function = catalog.lookup(functionName);
+		if (function != null) {
+			function.setSkipOutputConversion(true);
+		}
+		return function;
+	}
+
+	private void skipOutputConversionIfNecessary(String functionName) {
+		FunctionInvocationWrapper function = retrieveFunction(functionName);
+		if (function != null) {
+			function.setSkipOutputConversion(true);
 		}
 	}
 
