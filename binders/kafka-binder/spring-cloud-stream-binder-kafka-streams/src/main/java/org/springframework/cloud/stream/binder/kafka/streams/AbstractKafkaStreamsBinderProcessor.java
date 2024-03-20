@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2023 the original author or authors.
+ * Copyright 2019-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -90,6 +90,7 @@ import org.springframework.util.StringUtils;
 
 /**
  * @author Soby Chacko
+ * @author Ralf Wiedmann
  * @since 3.0.0
  */
 public abstract class AbstractKafkaStreamsBinderProcessor implements ApplicationContextAware {
@@ -622,13 +623,13 @@ public abstract class AbstractKafkaStreamsBinderProcessor implements Application
 			timestampExtractor = applicationContext.getBean(kafkaStreamsConsumerProperties.getTimestampExtractorBeanName(),
 					TimestampExtractor.class);
 		}
-		final Consumed<K, V> consumed = Consumed.with(keySerde, valueSerde)
+		Consumed<K, V> consumed = Consumed.with(keySerde, valueSerde)
 				.withOffsetResetPolicy(autoOffsetReset);
 		if (timestampExtractor != null) {
-			consumed.withTimestampExtractor(timestampExtractor);
+			consumed = consumed.withTimestampExtractor(timestampExtractor);
 		}
 		if (StringUtils.hasText(kafkaStreamsConsumerProperties.getConsumedAs())) {
-			consumed.withName(kafkaStreamsConsumerProperties.getConsumedAs());
+			consumed = consumed.withName(kafkaStreamsConsumerProperties.getConsumedAs());
 		}
 		return consumed;
 	}
