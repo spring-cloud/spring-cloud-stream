@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2023 the original author or authors.
+ * Copyright 2017-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,26 +25,25 @@ import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
 import org.springframework.integration.channel.QueueChannel;
-import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageDeliveryException;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.converter.AbstractMessageConverter;
-import org.springframework.messaging.converter.MessageConversionException;
 import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.messaging.support.GenericMessage;
 import org.springframework.util.MimeType;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.fail;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * @author Gary Russell
  * @author Oleg Zhurakousky
+ * @author Soby Chacko
  * @since 1.3
  *
  */
 class MessageConverterConfigurerTests {
 
-//	@Test
+	@Test
 	void configureOutputChannelWithBadContentType() {
 		BindingServiceProperties props = new BindingServiceProperties();
 		BindingProperties bindingProps = new BindingProperties();
@@ -56,11 +55,8 @@ class MessageConverterConfigurerTests {
 				converterFactory.getMessageConverterForAllRegistered());
 		QueueChannel out = new QueueChannel();
 		configurer.configureOutputChannel(out, "foo");
-		out.send(new GenericMessage<Foo>(new Foo(), Collections
-				.<String, Object>singletonMap(MessageHeaders.CONTENT_TYPE, "bad/ct")));
-		Message<?> received = out.receive(0);
-		assertThat(received).isNotNull();
-		assertThat(received.getPayload()).isInstanceOf(Foo.class);
+		assertThatThrownBy(() -> out.send(new GenericMessage<>(new Foo(), Collections
+			.singletonMap(MessageHeaders.CONTENT_TYPE, "bad/ct")))).isInstanceOf(MessageDeliveryException.class);
 	}
 
 	@Test
@@ -91,16 +87,9 @@ class MessageConverterConfigurerTests {
 				converterFactory.getMessageConverterForAllRegistered());
 		QueueChannel out = new QueueChannel();
 		configurer.configureOutputChannel(out, "foo");
-		try {
-			out.send(new GenericMessage<Foo>(new Foo(),
-					Collections.<String, Object>singletonMap(MessageHeaders.CONTENT_TYPE,
-							"bad/ct")));
-			fail("Expected MessageConversionException: " + out.receive(0));
-		}
-		catch (MessageConversionException e) {
-			assertThat(e.getMessage())
-					.endsWith("to the configured output type: 'foo/bar'");
-		}
+		assertThatThrownBy(() -> out.send(new GenericMessage<>(new Foo(),
+			Collections.singletonMap(MessageHeaders.CONTENT_TYPE,
+				"bad/ct")))).isInstanceOf(MessageDeliveryException.class);
 	}
 
 	public static class Foo {

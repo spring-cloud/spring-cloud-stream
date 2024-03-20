@@ -217,6 +217,21 @@ class StreamBridgeTests {
 		}
 	}
 
+	// See for more details: https://github.com/spring-cloud/spring-cloud-stream/issues/2921
+	@Test
+	void outputBindingsAndRabbitRoutingKeyExpressionComboDoesNotCauseIssues() {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+			TestChannelBinderConfiguration.getCompleteConfiguration(
+				EmptyConfiguration.class)).web(WebApplicationType.NONE).run(
+			"--spring.cloud.stream.output-bindings=the-exchange",
+			"--spring.cloud.stream.rabbit.bindings.the-exchange.producer.routing-key-expression=headers['key']")) {
+			// Ensure no exception is thrown from the above properties.
+			// See this issue for more details: https://github.com/spring-cloud/spring-cloud-stream/issues/2921
+			// Without the corresponding chages added in this PR, this config would throw an exception.
+
+		}
+	}
+
 	// Fore more context on this test: https://github.com/spring-cloud/spring-cloud-stream/issues/2848
 	@Test
 	void ensurePartitioningWorksWhenNativeEncodingEnabledAndOutputBindingsExist() {
