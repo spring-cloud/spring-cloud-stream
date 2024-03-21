@@ -8,7 +8,7 @@ When receiving the batches, the following type signatures are allowed:
 
 ```
 List<Person>
-Message<List<Person>
+Message<List<Person>>
 ```
 
 In the first option of `List<Person>`, the listener will not get any message headers.
@@ -31,4 +31,4 @@ You can also use a manual `AckMode` and call `Ackowledgment.nack(index, sleep)` 
 Refer to the https://docs.spring.io/spring-kafka/reference/kafka/receiving-messages/message-listener-container.html#committing-offsets[Spring for Apache Kafka documentation] for more information about these techniques.
 
 NOTE: When receiving `KafkaNull` objects in the batch-mode, the received list will contain a null element for the corresponding `KafkaNull` object.
-This is true for both `List<Person` and `Message<List<Person>` style type signatures.
+This is true for both `List<Person>` and `Message<List<Person>>` style type signatures.
