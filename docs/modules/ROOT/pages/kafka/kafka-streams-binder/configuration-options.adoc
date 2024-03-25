@@ -27,7 +27,7 @@ spring.cloud.stream.kafka.streams.binder.configuration.commit.interval.ms=1000
 For more information about all the properties that may go into streams configuration, see `StreamsConfig` JavaDocs in Apache Kafka Streams docs.
 All configuration that you can set from `StreamsConfig` can be set through this.
 When using this property, it is applicable against the entire application since this is a binder level property.
-If you have more than processors in the application, all of them will acquire these properties.
+If you have more than one processor in the application, all of them will acquire these properties.
 In the case of properties like `application.id`, this will become problematic and therefore you have to carefully examine how the properties from `StreamsConfig` are mapped using this binder level `configuration` property.
 
 functions.<function-bean-name>.applicationId::
