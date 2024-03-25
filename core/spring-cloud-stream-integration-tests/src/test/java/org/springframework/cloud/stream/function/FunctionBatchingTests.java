@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2023 the original author or authors.
+ * Copyright 2019-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,6 +39,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Gary Russel
  * @author Oleg Zhurakousky
  * @author David Turanski
+ * @author Soby Chacko
  *
  * @since 3.0
  */
@@ -47,9 +48,7 @@ class FunctionBatchingTests {
 	@Test
 	void messageBatchConfigurationWithKafkaNull() {
 		TestChannelBinderConfiguration.applicationContextRunner(MessageBatchConfiguration.class)
-			.withPropertyValues("spring.jmx.enabled=false",
-				"spring.cloud.stream.function.definition=func",
-				"spring.cloud.stream.bindings.input.consumer.batch-mode=true")
+			.withPropertyValues("spring.cloud.stream.function.definition=func")
 			.run(context -> {
 				InputDestination inputDestination = context.getBean(InputDestination.class);
 				OutputDestination outputDestination = context
@@ -77,8 +76,7 @@ class FunctionBatchingTests {
 	@Test
 	void listPayloadConfiguration() {
 		TestChannelBinderConfiguration.applicationContextRunner(ListPayloadNotBatchConfiguration.class)
-			.withPropertyValues("spring.jmx.enabled=false",
-				"spring.cloud.stream.function.definition=func")
+			.withPropertyValues("spring.cloud.stream.function.definition=func")
 			.run(context -> {
 				InputDestination inputDestination = context.getBean(InputDestination.class);
 				OutputDestination outputDestination = context
@@ -101,8 +99,7 @@ class FunctionBatchingTests {
 	@Test
 	void listStringPayloadConfigurationTextPlain() {
 		TestChannelBinderConfiguration.applicationContextRunner(ListStringPayloadConfiguration.class)
-			.withPropertyValues("spring.jmx.enabled=false",
-				"spring.cloud.stream.function.definition=func",
+			.withPropertyValues("spring.cloud.stream.function.definition=func",
 				"spring.cloud.stream.bindings.func-in-0.content-type=text/plain")
 			.run(context -> {
 				InputDestination inputDestination = context.getBean(InputDestination.class);
@@ -122,8 +119,7 @@ class FunctionBatchingTests {
 	@Test
 	void listObjectPayloadObjectConfigurationTextPlain() {
 		TestChannelBinderConfiguration.applicationContextRunner(ListObjectPayloadConfiguration.class)
-			.withPropertyValues("spring.jmx.enabled=false",
-				"spring.cloud.stream.function.definition=func",
+			.withPropertyValues("spring.cloud.stream.function.definition=func",
 				"spring.cloud.stream.bindings.func-in-0.content-type=text/plain")
 			.run(context -> {
 				InputDestination inputDestination = context.getBean(InputDestination.class);
@@ -144,9 +140,7 @@ class FunctionBatchingTests {
 	void simpleBatchConfiguration() {
 		TestChannelBinderConfiguration.applicationContextRunner(SimpleBatchConfiguration.class)
 			.withPropertyValues(
-				"spring.jmx.enabled=false",
-				"spring.cloud.stream.function.definition=func",
-				"spring.cloud.stream.bindings.input.consumer.batch-mode=true")
+				"spring.cloud.stream.function.definition=func")
 			.run(context -> {
 				InputDestination inputDestination = context.getBean(InputDestination.class);
 				OutputDestination outputDestination = context
@@ -171,9 +165,7 @@ class FunctionBatchingTests {
 	@Test
 	void nestedBatchConfiguration() {
 		TestChannelBinderConfiguration.applicationContextRunner(NestedBatchConfiguration.class)
-			.withPropertyValues("spring.jmx.enabled=false",
-				"spring.cloud.stream.function.definition=func",
-				"spring.cloud.stream.bindings.input.consumer.batch-mode=true")
+			.withPropertyValues("spring.cloud.stream.function.definition=func")
 			.run(context -> {
 				InputDestination inputDestination = context.getBean(InputDestination.class);
 				OutputDestination outputDestination = context
@@ -222,7 +214,7 @@ class FunctionBatchingTests {
 	public static class ListStringPayloadConfiguration {
 		@Bean
 		public Function<List<String>, String> func() {
-			return x -> x.toString();
+			return Object::toString;
 		}
 	}
 
@@ -230,7 +222,7 @@ class FunctionBatchingTests {
 	public static class ListObjectPayloadConfiguration {
 		@Bean
 		public Function<List<Object>, String> func() {
-			return x -> x.toString();
+			return Object::toString;
 		}
 	}
 

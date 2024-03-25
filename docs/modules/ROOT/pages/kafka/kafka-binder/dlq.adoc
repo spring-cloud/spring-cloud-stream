@@ -1,6 +1,38 @@
 [[kafka-dlq-processing]]
 = Dead-Letter Topic Processing
 
+== Enabling DLQ
+
+To enable DLQ, a Kafka binder based applications must provide a consumer group via the property `spring.cloud.stream.bindings.<binding-name>.group`.
+Anonymous consumer groups (i.e, where the application does not explicitly provide a group) cannot enable the DLQ feature.
+
+When an application wants to send the record in error to a DLQ topic, that application must enable the DLQ feature, since this is not enabled by default.
+To enable DLQ, the property `spring.cloud.stream.kafka.bindings.<binding-name>.consumer.enable-dlq` must be set to true.
+
+When DLQ is enabled, then after an error occurs from processing and all the retries are exhausted based on the `spring.cloud.stream.bindings.<binding-name>.consumer.max-attempts` property, then that record will be sent to the DLQ topic.
+
+By default, the `max-attempts` property is set to three.
+When `max-attempts` property is greater than `1`, and dlq is enabled, then you will see that the retries are honoring the `max-attempts` property.
+When no dlq is enabled (which is the default), then the `max-attempts` property does not have any bearing in the way how retries are handled.
+In that case, the retries will fall back to the container defaults in Spring for Apache Kafka, which is `10` retries.
+If an application wants to disable retries altogether when DLQ is disabled, then setting `max-attempts` property to `1` will not work.
+To completely disable retries in that case, you need to provide a `ListenerContainerCustomizer` and then use appropriate `Backoff` settings.
+Here is an example.
+
+[source, java]
+----
+@Bean
+ListenerContainerCustomizer<AbstractMessageListenerContainer<?, ?>> customizer() {
+	return (container, destinationName, group) -> {
+		var commonErrorHandler = new DefaultErrorHandler(new FixedBackOff(0L, 0l));
+		container.setCommonErrorHandler(commonErrorHandler);
+	};
+}
+----
+
+With this, the default container behavior will be disabled and no retries will be attempted.
+As noted above, when enabling DLQ, the binder settings will have precedence.
+
 [[dlq-handling]]
 == Handling Records in a Dead-Letter Topic
 

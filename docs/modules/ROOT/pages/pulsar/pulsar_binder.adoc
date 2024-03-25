@@ -249,6 +249,23 @@ This way, you can have a separate set of Pulsar properties applied for different
 The highest precedence is for extended binding properties.
 The precedence order of applying the properties in the binder is `extended binding properties -> binder properties -> Spring Boot properties.` (going from highest to lowest).
 
+[[pulsar-properties-links]]
+=== Resources for Pulsar Binder Properties
+
+Following are some resources to rely upon for finding more about the properties available through the Pulsar binder.
+
+https://github.com/spring-cloud/spring-cloud-stream/blob/main/binders/pulsar-binder/spring-cloud-stream-binder-pulsar/src/main/java/org/springframework/cloud/stream/binder/pulsar/properties/ProducerConfigProperties.java[Pulsar producer binding configuration].
+These properties need the `spring.cloud.stream.bindings.<binding-name>.producer` prefix.
+All the Spring Boot provided https://docs.spring.io/spring-boot/docs/current/reference/html/application-properties.html#appendix.application-properties.integration[Pulsar producer properties] are also available through this configuration class.
+
+https://github.com/spring-cloud/spring-cloud-stream/blob/main/binders/pulsar-binder/spring-cloud-stream-binder-pulsar/src/main/java/org/springframework/cloud/stream/binder/pulsar/properties/ConsumerConfigProperties.java[Pulsar consumer binding configuration].
+These properties need the `spring.cloud.stream.bindings.<binding-name>.consumer` prefix.
+All the Spring Boot provided https://docs.spring.io/spring-boot/docs/current/reference/html/application-properties.html#appendix.application-properties.integration[Pulsar consumer properties] are also available through this configuration class.
+
+For common Pulsar binder specific configuration properties, see https://github.com/spring-cloud/spring-cloud-stream/blob/main/binders/pulsar-binder/spring-cloud-stream-binder-pulsar/src/main/java/org/springframework/cloud/stream/binder/pulsar/properties/PulsarBinderConfigurationProperties.java[this]. These properties require a prefix of `spring.cloud.stream.pulsar.binder`.
+The above specified producer and consumer properties (including the Spring Boot ones) can be used at the binder using the `spring.cloud.stream.pulsar.binder.producer` or `spring.cloud.stream.pulsar.binder.consumer` prefix.
+
+
 [[pulsar-topic-provisioner]]
 == Pulsar Topic Provisioner
 

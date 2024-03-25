@@ -1,5 +1,5 @@
 [[functional-binding-names]]
-=== Functional binding names
+= Functional binding names
 
 Unlike the explicit naming required by annotation-based support (legacy) used in the previous versions of spring-cloud-stream, the functional
 programming model defaults to a simple convention when it comes to binding names, thus greatly simplifying application configuration.

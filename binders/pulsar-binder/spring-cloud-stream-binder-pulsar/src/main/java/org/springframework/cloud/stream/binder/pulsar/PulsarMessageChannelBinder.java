@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 the original author or authors.
+ * Copyright 2022-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package org.springframework.cloud.stream.binder.pulsar;
 import java.util.Optional;
 import java.util.Set;
 
-import org.apache.pulsar.client.api.PulsarClientException;
 import org.apache.pulsar.client.api.Schema;
 import org.apache.pulsar.common.schema.SchemaType;
 
@@ -47,7 +46,6 @@ import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.MessageBuilder;
-import org.springframework.pulsar.core.ProducerBuilderConfigurationUtil;
 import org.springframework.pulsar.core.ProducerBuilderCustomizer;
 import org.springframework.pulsar.core.PulsarConsumerFactory;
 import org.springframework.pulsar.core.PulsarTemplate;
@@ -112,7 +110,7 @@ public class PulsarMessageChannelBinder extends
 		var layeredProducerProps = PulsarBinderUtils.mergeModifiedProducerProperties(
 				this.binderConfigProps.getProducer(), producerProperties.getExtension());
 		var handler = new PulsarProducerConfigurationMessageHandler(this.pulsarTemplate, schema, destination.getName(),
-				(builder) -> ProducerBuilderConfigurationUtil.loadConf(builder, layeredProducerProps),
+				(builder) -> PulsarBinderUtils.loadConf(builder, layeredProducerProps),
 				determineOutboundHeaderMapper(producerProperties));
 		handler.setApplicationContext(getApplicationContext());
 		handler.setBeanFactory(getBeanFactory());
@@ -290,7 +288,7 @@ public class PulsarMessageChannelBinder extends
 						.sendAsync();
 				// @formatter:on
 			}
-			catch (PulsarClientException ex) {
+			catch (Exception ex) {
 				logger.trace(ex, "Failed to send message to destination: " + this.destination);
 			}
 		}

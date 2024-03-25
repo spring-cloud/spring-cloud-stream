@@ -14,7 +14,7 @@ public Function<String, String> uppercase() {
 ----
 there are two bindings named `uppercase-in-0` for input and `uppercase-out-0` for output. See <<Binding and Binding names>> for more details.
 
-To avoid repetition, Spring Cloud Stream supports setting values for all bindings, in the format of `spring.cloud.stream.default.<property>=<value>`
+NOTE: To avoid repetition, Spring Cloud Stream supports setting values for all bindings, in the format of `spring.cloud.stream.default.<property>=<value>`
 and `spring.cloud.stream.default.<producer|consumer>.<property>=<value>` for common binding properties.
 
 When it comes to avoiding repetitions for extended binding properties, this format should be used - `spring.cloud.stream.<binder-type>.default.<producer|consumer>.<property>=<value>`.

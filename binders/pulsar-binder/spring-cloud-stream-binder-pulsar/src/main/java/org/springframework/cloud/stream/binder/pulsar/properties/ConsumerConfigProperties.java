@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2023 the original author or authors.
+ * Copyright 2023-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -203,7 +203,29 @@ public class ConsumerConfigProperties extends PulsarProperties.Consumer {
 		map.from(this::isRetryEnable).to(consumerProps.in("retryEnable"));
 		map.from(this::getTopics).to(consumerProps.in("topicNames"));
 		map.from(this::getTopicsPattern).to(consumerProps.in("topicsPattern"));
+		mapBaseSubscriptionProperties(this.getSubscription(), consumerProps, map);
 		return consumerProps;
+	}
+
+	private org.apache.pulsar.client.api.DeadLetterPolicy toPulsarDeadLetterPolicy(DeadLetterPolicy policy) {
+		Assert.state(policy.getMaxRedeliverCount() > 0,
+				"Pulsar DeadLetterPolicy must have a positive 'max-redelivery-count' property value");
+		PropertyMapper map = PropertyMapper.get().alwaysApplyingWhenNonNull();
+		org.apache.pulsar.client.api.DeadLetterPolicy.DeadLetterPolicyBuilder builder = org.apache.pulsar.client.api.DeadLetterPolicy
+				.builder();
+		map.from(policy::getMaxRedeliverCount).to(builder::maxRedeliverCount);
+		map.from(policy::getRetryLetterTopic).to(builder::retryLetterTopic);
+		map.from(policy::getDeadLetterTopic).to(builder::deadLetterTopic);
+		map.from(policy::getInitialSubscriptionName).to(builder::initialSubscriptionName);
+		return builder.build();
+	}
+
+	private void mapBaseSubscriptionProperties(PulsarProperties.Consumer.Subscription subscription, Properties consumerProps, PropertyMapper map) {
+		map.from(subscription::getName).to(consumerProps.in("subscriptionName"));
+		map.from(subscription::getType).to(consumerProps.in("subscriptionType"));
+		map.from(subscription::getMode).to(consumerProps.in("subscriptionMode"));
+		map.from(subscription::getInitialPosition).to(consumerProps.in("subscriptionInitialPosition"));
+		map.from(subscription::getTopicsMode).to(consumerProps.in("regexSubscriptionMode"));
 	}
 
 	/**
@@ -226,34 +248,36 @@ public class ConsumerConfigProperties extends PulsarProperties.Consumer {
 		map.from(this::getReceiverQueueSize).to(consumerProps.in("receiverQueueSize"));
 		map.from(this::getResetIncludeHead).to(consumerProps.in("resetIncludeHead"));
 		map.from(this::getStartPaused).to(consumerProps.in("startPaused"));
-		// Acknowledgement properties
-		map.from(this::getAck).as(Acknowledgement::getGroupTime).as(it -> it.toNanos() / 1000)
-				.to(consumerProps.in("acknowledgementsGroupTimeMicros"));
-		map.from(this::getAck).as(Acknowledgement::getRedeliveryDelay).as(it -> it.toNanos() / 1000)
-				.to(consumerProps.in("negativeAckRedeliveryDelayMicros"));
-		map.from(this::getAck).as(Acknowledgement::getTimeout).as(Duration::toMillis)
-				.to(consumerProps.in("ackTimeoutMillis"));
-		map.from(this::getAck).as(Acknowledgement::getTimeoutTickDuration).as(Duration::toMillis)
-				.to(consumerProps.in("tickDurationMillis"));
-		map.from(this::getAck).as(Acknowledgement::getBatchIndexEnabled).to(consumerProps.in("batchIndexAckEnabled"));
-		map.from(this::getAck).as(Acknowledgement::getReceiptEnabled).to(consumerProps.in("ackReceiptEnabled"));
-		// Chunking properties
-		map.from(this::getChunk).as(Chunking::getExpireTimeIncomplete).as(Duration::toMillis)
-				.to(consumerProps.in("expireTimeOfIncompleteChunkedMessageMillis"));
-		map.from(this::getChunk).as(Chunking::getAutoAckOldestOnQueueFull)
-				.to(consumerProps.in("autoAckOldestChunkedMessageOnQueueFull"));
-		map.from(this::getChunk).as(Chunking::getMaxPendingMessages).to(consumerProps.in("maxPendingChunkedMessage"));
-		// Subscription properties
-		map.from(this::getSubscription).as(Subscription::getName).to(consumerProps.in("subscriptionName"));
-		map.from(this::getSubscription).as(Subscription::getType).to(consumerProps.in("subscriptionType"));
-		map.from(this::getSubscription).as(Subscription::getProperties).to(consumerProps.in("subscriptionProperties"));
-		map.from(this::getSubscription).as(Subscription::getMode).to(consumerProps.in("subscriptionMode"));
-		map.from(this::getSubscription).as(Subscription::getInitialPosition)
-				.to(consumerProps.in("subscriptionInitialPosition"));
-		map.from(this::getSubscription).as(Subscription::getTopicsMode).to(consumerProps.in("regexSubscriptionMode"));
-		map.from(this::getSubscription).as(Subscription::getReplicateState)
-				.to(consumerProps.in("replicateSubscriptionState"));
+		this.mapAcknowledgementProperties(this.getAck(), consumerProps, map);
+		this.mapChunkProperties(this.getChunk(), consumerProps, map);
+		this.mapExtendedSubscriptionProperties(this.getSubscription(), consumerProps, map);
 		return consumerProps;
+	}
+
+	private void mapAcknowledgementProperties(Acknowledgement ack, Properties consumerProps, PropertyMapper map) {
+		map.from(ack::getGroupTime).as(it -> it.toNanos() / 1000)
+				.to(consumerProps.in("acknowledgementsGroupTimeMicros"));
+		map.from(ack::getRedeliveryDelay).as(it -> it.toNanos() / 1000)
+			.to(consumerProps.in("negativeAckRedeliveryDelayMicros"));
+		map.from(ack::getTimeout).as(Duration::toMillis)
+				.to(consumerProps.in("ackTimeoutMillis"));
+		map.from(ack::getTimeoutTickDuration).as(Duration::toMillis)
+				.to(consumerProps.in("tickDurationMillis"));
+		map.from(ack::getBatchIndexEnabled).to(consumerProps.in("batchIndexAckEnabled"));
+		map.from(ack::getReceiptEnabled).to(consumerProps.in("ackReceiptEnabled"));
+	}
+
+	private void mapChunkProperties(Chunking chunk, Properties consumerProps, PropertyMapper map) {
+		map.from(chunk::getExpireTimeIncomplete).as(Duration::toMillis)
+				.to(consumerProps.in("expireTimeOfIncompleteChunkedMessageMillis"));
+		map.from(chunk::getAutoAckOldestOnQueueFull)
+				.to(consumerProps.in("autoAckOldestChunkedMessageOnQueueFull"));
+		map.from(chunk::getMaxPendingMessages).to(consumerProps.in("maxPendingChunkedMessage"));
+	}
+
+	private void mapExtendedSubscriptionProperties(Subscription subscription, Properties consumerProps, PropertyMapper map) {
+		map.from(subscription::getProperties).to(consumerProps.in("subscriptionProperties"));
+		map.from(subscription::getReplicateState).to(consumerProps.in("replicateSubscriptionState"));
 	}
 
 	/**
@@ -264,19 +288,6 @@ public class ConsumerConfigProperties extends PulsarProperties.Consumer {
 		var consumerProps = this.toBaseConsumerPropertiesMap();
 		consumerProps.putAll(this.toExtendedConsumerPropertiesMap());
 		return consumerProps;
-	}
-
-	private org.apache.pulsar.client.api.DeadLetterPolicy toPulsarDeadLetterPolicy(DeadLetterPolicy policy) {
-		Assert.state(policy.getMaxRedeliverCount() > 0,
-				"Pulsar DeadLetterPolicy must have a positive 'max-redelivery-count' property value");
-		PropertyMapper map = PropertyMapper.get().alwaysApplyingWhenNonNull();
-		org.apache.pulsar.client.api.DeadLetterPolicy.DeadLetterPolicyBuilder builder = org.apache.pulsar.client.api.DeadLetterPolicy
-				.builder();
-		map.from(policy::getMaxRedeliverCount).to(builder::maxRedeliverCount);
-		map.from(policy::getRetryLetterTopic).to(builder::retryLetterTopic);
-		map.from(policy::getDeadLetterTopic).to(builder::deadLetterTopic);
-		map.from(policy::getInitialSubscriptionName).to(builder::initialSubscriptionName);
-		return builder.build();
 	}
 
 	public static class Acknowledgement {

@@ -1,5 +1,5 @@
 [[explicit-binding-creation]]
-=== Explicit binding creation
+= Explicit binding creation
 
 In the previous section we explained how bindings are created implicitly driven by the names of `Function`, `Supplier` or `Consumer` beans provided by your application.
 However, there are times when you may need to create binding explicitly where bindings are not tied to any function. This is typically done to

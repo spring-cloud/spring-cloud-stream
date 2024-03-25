@@ -1,5 +1,5 @@
 [[dlq-partition-selection]]
-== Dead-Letter Topic Partition Selection
+= Dead-Letter Topic Partition Selection
 
 By default, records are published to the Dead-Letter topic using the same partition as the original record.
 This means the Dead-Letter topic must have at least as many partitions as the original record.
