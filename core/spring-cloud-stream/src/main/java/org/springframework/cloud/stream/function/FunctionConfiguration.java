@@ -35,11 +35,13 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.StreamSupport;
 
+import io.micrometer.context.ContextSnapshotFactory;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.util.context.ContextView;
 import reactor.util.function.Tuples;
 
 import org.springframework.beans.BeansException;
@@ -90,6 +92,7 @@ import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.Environment;
 import org.springframework.core.type.MethodMetadata;
 import org.springframework.expression.spel.support.StandardEvaluationContext;
+import org.springframework.integration.StaticMessageHeaderAccessor;
 import org.springframework.integration.channel.AbstractMessageChannel;
 import org.springframework.integration.channel.AbstractSubscribableChannel;
 import org.springframework.integration.channel.FluxMessageChannel;
@@ -138,6 +141,10 @@ import org.springframework.util.StringUtils;
 @AutoConfigureAfter(ContextFunctionCatalogAutoConfiguration.class)
 @ConditionalOnBean(FunctionRegistry.class)
 public class FunctionConfiguration {
+
+	private static final boolean isContextPropagationPresent = ClassUtils.isPresent(
+		"io.micrometer.context.ContextSnapshot", FunctionConfiguration.class.getClassLoader());
+
 
 	@SuppressWarnings("rawtypes")
 	@Bean
@@ -573,7 +580,19 @@ public class FunctionConfiguration {
 								if (!(message instanceof Message)) {
 									message = MessageBuilder.withPayload(message).build();
 								}
-								outputChannel.send((Message) message);
+								if (isContextPropagationPresent && outputChannel instanceof FluxMessageChannel) {
+									ContextView reactorContext = StaticMessageHeaderAccessor.getReactorContext((Message) message);
+									try (AutoCloseable autoCloseable = ContextSnapshotHelper.setContext(reactorContext)) {
+										outputChannel.send((Message) message);
+									}
+									catch (Exception e) {
+
+									}
+								}
+								else {
+									outputChannel.send((Message) message);
+								}
+
 							}
 						})
 						.doOnError(e -> {
@@ -1027,4 +1046,15 @@ public class FunctionConfiguration {
 		}
 
 	}
+
+	private static final class ContextSnapshotHelper {
+
+		private static final ContextSnapshotFactory CONTEXT_SNAPSHOT_FACTORY = ContextSnapshotFactory.builder().build();
+
+		static AutoCloseable setContext(ContextView context) {
+			return CONTEXT_SNAPSHOT_FACTORY.setThreadLocalsFrom(context);
+		}
+
+	}
+
 }

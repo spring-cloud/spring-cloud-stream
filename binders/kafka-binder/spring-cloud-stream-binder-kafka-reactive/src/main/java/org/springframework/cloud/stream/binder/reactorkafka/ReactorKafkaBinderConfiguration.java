@@ -16,6 +16,8 @@
 
 package org.springframework.cloud.stream.binder.reactorkafka;
 
+import io.micrometer.observation.ObservationRegistry;
+
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
@@ -37,6 +39,7 @@ import org.springframework.context.annotation.Import;
  *
  * @author Gary Russell
  * @author Chris Bono
+ * @author Soby Chacko
  */
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnMissingBean(Binder.class)
@@ -73,13 +76,15 @@ public class ReactorKafkaBinderConfiguration {
 
 	@Bean
 	ReactorKafkaBinder reactorKafkaBinder(KafkaBinderConfigurationProperties configurationProperties,
-			KafkaTopicProvisioner provisioningProvider,
-			KafkaExtendedBindingProperties extendedBindingProperties,
-			ObjectProvider<ConsumerConfigCustomizer> consumerConfigCustomizer,
-			ObjectProvider<ProducerConfigCustomizer> producerConfigCustomizer,
-			ObjectProvider<ReceiverOptionsCustomizer> receiverOptionsCustomizers,
-			ObjectProvider<SenderOptionsCustomizer> senderOptionsptionsCustomizers) {
-		ReactorKafkaBinder reactorKafkaBinder = new ReactorKafkaBinder(configurationProperties, provisioningProvider);
+										KafkaTopicProvisioner provisioningProvider,
+										KafkaExtendedBindingProperties extendedBindingProperties,
+										ObjectProvider<ConsumerConfigCustomizer> consumerConfigCustomizer,
+										ObjectProvider<ProducerConfigCustomizer> producerConfigCustomizer,
+										ObjectProvider<ReceiverOptionsCustomizer> receiverOptionsCustomizers,
+										ObjectProvider<SenderOptionsCustomizer> senderOptionsptionsCustomizers,
+										ObjectProvider<ObservationRegistry> observationRegistryObjectProvider) {
+		ReactorKafkaBinder reactorKafkaBinder = new ReactorKafkaBinder(configurationProperties, provisioningProvider,
+			observationRegistryObjectProvider.getIfUnique());
 		reactorKafkaBinder.setExtendedBindingProperties(extendedBindingProperties);
 		reactorKafkaBinder.setConsumerConfigCustomizer(consumerConfigCustomizer.getIfUnique());
 		reactorKafkaBinder.setProducerConfigCustomizer(producerConfigCustomizer.getIfUnique());

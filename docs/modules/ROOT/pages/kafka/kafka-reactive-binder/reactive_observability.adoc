@@ -1,0 +1,70 @@
+[[reactive-kafka-binder-observability]]
+= Observability in Reactive Kafka Binder
+
+In this section, we will describe how Micrometer based observability is enabled in the reactive Kafka binder.
+
+There is built in support for observability when it comes to producer binding, but you need to opt-in for this by enabling the following property.
+
+```
+spring.cloud.stream.kafka.binder.enable-observation
+```
+
+When this property is set to `true`, you can trace the publishing of records.
+
+Both publishing records using `StreamBridge` and regular `Supplier<?>` beans can be now traced when enabling the above property.
+
+However, on the consumer side, enabling observability is not as straightforward as on the producer side.
+
+There are two starting points for consumer binding - one a topic where the data is published via a producer binding, another one where the data is produced via not Spring Cloud Stream.
+In the first case, the application ideally wants to carry the observability headers down to the consumer inbound.
+In the second case, if there was no upstream observation started, it will start a new observation.
+
+Let's look at the following function.
+
+```
+@Bean
+Function<Flux<ReceiverRecord<byte[], byte[]>>, Flux<Message<String>>> receive(ObservationRegistry observationRegistry) {
+	return s -> s
+		.flatMap(record -> {
+			Observation receiverObservation =
+				KafkaReceiverObservation.RECEIVER_OBSERVATION.start(null,
+					KafkaReceiverObservation.DefaultKafkaReceiverObservationConvention.INSTANCE,
+					() ->
+						new KafkaRecordReceiverContext(
+							record, "user.receiver", "localhost:9092"),
+					observationRegistry);
+
+				return Mono.deferContextual(contextView -> Mono.just(record)
+						.map(rec -> new String(rec.value()).toLowerCase())
+						.map(rec -> MessageBuilder.withPayload(rec).setHeader(IntegrationMessageHeaderAccessor.REACTOR_CONTEXT, contextView).build()))
+					.doOnTerminate(receiverObservation::stop)
+					.doOnError(receiverObservation::error)
+					.contextWrite(context -> context.put(ObservationThreadLocalAccessor.KEY, receiverObservation));
+		});
+}
+```
+
+In this example, when we receive a record, we first create an observation.
+If there is an upstream observation, then that will be part of the `KafkaRecordReceiverContext`.
+After that, a `Mono` is created with context deferred, and when the `map` operation is invoked, the context has access to the correct observation.
+Finally, the result of the `flatMap` operation will be sent back to the binding as `Flux<Message<?>`.
+The outbound record will have the same observability headers from the input binding.
+
+If you have a `Consumer`, here is how you can do the same.
+
+```
+@Bean
+Consumer<Flux<ReceiverRecord<?, String>>> receive(ObservationRegistry observationRegistry, @Value("${spring.kafka.bootstrap-servers}") String bootstrap) {
+	return f -> f.doOnNext(record -> KafkaReceiverObservation.RECEIVER_OBSERVATION.observation(null,
+		KafkaReceiverObservation.DefaultKafkaReceiverObservationConvention.INSTANCE,
+		() ->
+			new KafkaRecordReceiverContext(
+				record, "user.receiver", bootstrap),
+		observationRegistry)
+			.observe(() -> System.out.println(record)))
+		.subscribe();
+}
+```
+
+In this case, since there is no output binding, instead of using the `flatMap`, you can simply call the `doOnNext` operation on `Flux`.
+The direct call to `observe` in this case will start the observation and properly shut it down when finished.

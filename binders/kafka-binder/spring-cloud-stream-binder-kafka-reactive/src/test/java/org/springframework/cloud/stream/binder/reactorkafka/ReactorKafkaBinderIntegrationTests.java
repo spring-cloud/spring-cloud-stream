@@ -121,11 +121,11 @@ class ReactorKafkaBinderIntegrationTests {
 
 			StreamBridge streamBridge = context.getBean(StreamBridge.class);
 			streamBridge.send("words1", MessageBuilder.withPayload("foobar")
-					.setCorrelationId(42)
-					.build());
+				.setCorrelationId(42)
+				.build());
 			streamBridge.send("words2", MessageBuilder.withPayload("BAZQUX")
-					.setCorrelationId(43)
-					.build());
+				.setCorrelationId(43)
+				.build());
 
 			assertThat(KafkaTestUtils.getSingleRecord(consumer1, "uppercased-words"))
 				.isNotNull()
@@ -173,7 +173,7 @@ class ReactorKafkaBinderIntegrationTests {
 
 				@Override
 				public Message<?> toMessage(ConsumerRecord<?, ?> record, Acknowledgment acknowledgment,
-						Consumer<?, ?> consumer, Type payloadType) {
+											Consumer<?, ?> consumer, Type payloadType) {
 
 					return MessageBuilder.withPayload(record).build();
 				}
@@ -199,7 +199,7 @@ class ReactorKafkaBinderIntegrationTests {
 		@Bean
 		java.util.function.Consumer<Flux<String>> patternConsumer() {
 			return f -> f.doOnNext(s -> patternedDeliveries.add(s))
-					.subscribe();
+				.subscribe();
 		}
 
 		@Bean
