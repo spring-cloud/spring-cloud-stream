@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2020 the original author or authors.
+ * Copyright 2017-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.ConsumerProperties;
@@ -28,6 +28,7 @@ import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.cloud.stream.config.BinderFactoryAutoConfiguration;
 import org.springframework.cloud.stream.config.BindingServiceConfiguration;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.integration.config.EnableIntegration;
 
@@ -39,9 +40,11 @@ import org.springframework.integration.config.EnableIntegration;
  * @param <T> binding type
  * @author Oleg Zhurakousky
  * @author David Turanski
+ * @author Soby Chacko
  * @see TestChannelBinder
  */
-@AutoConfiguration
+@Configuration
+@ConditionalOnMissingBean(Binder.class)
 @Import(BinderFactoryAutoConfiguration.class)
 @EnableIntegration
 public class TestChannelBinderConfiguration<T> {
