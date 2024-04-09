@@ -71,16 +71,22 @@ public StreamsBuilderFactoryBeanConfigurer streamsBuilderFactoryBeanConfigurer()
 == Using StreamsBuilderFactoryBeanConfigurer to register a global state store
 
 As mentioned above, the binder does not provide a first class way to register global state stores as a feature.
-For that, you need to use the customizer.
+For that, you need to use the customizer via `StreamsBuilderFactoryBeanConfigurer`.
 Here is how that can be done.
 
 ```
 @Bean
 public StreamsBuilderFactoryBeanConfigurer customizer() {
-    return fb -> {
+    return streamsBuilderFactoryBean -> {
         try {
-            final StreamsBuilder streamsBuilder = fb.getObject();
-            streamsBuilder.addGlobalStore(...);
+            streamsBuilderFactoryBean.setInfrastructureCustomizer(new KafkaStreamsInfrastructureCustomizer() {
+                  @Override
+                  public void configureBuilder(StreamsBuilder builder) {
+                      builder.addGlobalStore(
+                              ...
+                      );
+                  }
+              });
         }
         catch (Exception e) {
 
@@ -89,7 +95,10 @@ public StreamsBuilderFactoryBeanConfigurer customizer() {
 }
 ```
 
-Again, if you have multiple processors, you want to attach the global state store to the right `StreamsBuilder` by filtering out the other `StreamsBuilderFactoryBean` objects using the application id as outlined above.
+Any customizations on `StreamsBuilder` must be done through the `KafkaStreamsInfrastructureCustomizer` as shown above.
+If `StreamsBuilderFactoryBean#getObject()` is called to get access to the `StreamsBuilder` object, that may not work as the bean maybe in initialization and thus run into some circular dependency issues.
+
+If you have multiple processors, you want to attach the global state store to the right `StreamsBuilder` by filtering out the other `StreamsBuilderFactoryBean` objects using the application id as outlined above.
 
 [[using-configurer-to-register-a-production-exception-handler]]
 == Using StreamsBuilderFactoryBeanConfigurer to register a production exception handler
