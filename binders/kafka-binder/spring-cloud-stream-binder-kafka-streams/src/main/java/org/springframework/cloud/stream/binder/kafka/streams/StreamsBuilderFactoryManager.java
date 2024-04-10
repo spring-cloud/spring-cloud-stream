@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 the original author or authors.
+ * Copyright 2018-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import java.util.Set;
 import org.apache.kafka.streams.errors.StreamsUncaughtExceptionHandler;
 
 import org.springframework.beans.factory.DisposableBean;
+import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.cloud.stream.binder.ConsumerProperties;
 import org.springframework.context.SmartLifecycle;
@@ -102,6 +103,9 @@ public class StreamsBuilderFactoryManager implements SmartLifecycle {
 					final List<ConsumerProperties> consumerProperties = bindingServicePropertiesPerSbfb.get(streamsBuilderFactoryBean);
 					final boolean autoStartupDisabledOnAtLeastOneConsumerBinding = consumerProperties.stream().anyMatch(consumerProperties1 -> !consumerProperties1.isAutoStartup());
 					if (!autoStartupDisabledOnAtLeastOneConsumerBinding) {
+						if (streamsBuilderFactoryBean instanceof SmartInitializingSingleton sbfb) {
+							sbfb.afterSingletonsInstantiated();
+						}
 						streamsBuilderFactoryBean.start();
 						this.kafkaStreamsRegistry.registerKafkaStreams(streamsBuilderFactoryBean);
 					}
