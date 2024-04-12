@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2023 the original author or authors.
+ * Copyright 2016-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,7 +52,6 @@ import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
-import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
@@ -66,8 +65,6 @@ import org.apache.kafka.common.record.TimestampType;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.apache.kafka.common.serialization.Deserializer;
-import org.apache.kafka.common.serialization.LongDeserializer;
-import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.assertj.core.api.Assertions;
 import org.assertj.core.api.Condition;
@@ -158,7 +155,6 @@ import org.springframework.util.Assert;
 import org.springframework.util.MimeTypeUtils;
 import org.springframework.util.ReflectionUtils;
 import org.springframework.util.backoff.FixedBackOff;
-
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
@@ -3172,7 +3168,7 @@ class KafkaBinderTests extends
 	}
 
 	@Test
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({"unchecked", "rawtypes"})
 	void consumerDefaultDeserializer() throws Throwable {
 		Binding<?> binding = null;
 		try {
@@ -3188,13 +3184,21 @@ class KafkaBinderTests extends
 
 			binding = binder.bindConsumer(testTopicName, "test", input,
 					consumerProperties);
-			var consumerAccessor = new DirectFieldAccessor(
-					getKafkaConsumer(binding));
-			assertThat(consumerAccessor
-					.getPropertyValue("keyDeserializer") instanceof ByteArrayDeserializer)
-							.isTrue();
-			assertThat(consumerAccessor.getPropertyValue(
-					"valueDeserializer") instanceof ByteArrayDeserializer).isTrue();
+			var bindingAccessor = new DirectFieldAccessor(binding);
+			KafkaMessageDrivenChannelAdapter adapter = (KafkaMessageDrivenChannelAdapter) bindingAccessor
+				.getPropertyValue("lifecycle");
+			var adapterAccessor = new DirectFieldAccessor(adapter);
+			ConcurrentMessageListenerContainer messageListenerContainer = (ConcurrentMessageListenerContainer) adapterAccessor
+				.getPropertyValue("messageListenerContainer");
+			var containerAccessor = new DirectFieldAccessor(
+				messageListenerContainer);
+			DefaultKafkaConsumerFactory consumerFactory = (DefaultKafkaConsumerFactory) containerAccessor
+				.getPropertyValue("consumerFactory");
+
+			Map<String, Object> configProps = consumerFactory.getConfigurationProperties();
+
+			assertThat(configProps.get("key.deserializer")).isEqualTo(org.apache.kafka.common.serialization.ByteArrayDeserializer.class);
+			assertThat(configProps.get("value.deserializer")).isEqualTo(org.apache.kafka.common.serialization.ByteArrayDeserializer.class);
 		}
 		finally {
 			if (binding != null) {
@@ -3204,7 +3208,7 @@ class KafkaBinderTests extends
 	}
 
 	@Test
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({"unchecked", "rawtypes"})
 	void consumerCustomDeserializer() throws Exception {
 		Binding<?> binding = null;
 		try {
@@ -3226,14 +3230,23 @@ class KafkaBinderTests extends
 
 			binding = binder.bindConsumer(testTopicName, "test", input,
 					consumerProperties);
-			var consumerAccessor = new DirectFieldAccessor(
-					getKafkaConsumer(binding));
-			assertThat(consumerAccessor
-					.getPropertyValue("keyDeserializer") instanceof StringDeserializer)
-							.isTrue();
-			assertThat(consumerAccessor
-					.getPropertyValue("valueDeserializer") instanceof LongDeserializer)
-							.isTrue();
+
+			var bindingAccessor = new DirectFieldAccessor(binding);
+			KafkaMessageDrivenChannelAdapter adapter = (KafkaMessageDrivenChannelAdapter) bindingAccessor
+				.getPropertyValue("lifecycle");
+			var adapterAccessor = new DirectFieldAccessor(adapter);
+			ConcurrentMessageListenerContainer messageListenerContainer = (ConcurrentMessageListenerContainer) adapterAccessor
+				.getPropertyValue("messageListenerContainer");
+			var containerAccessor = new DirectFieldAccessor(
+				messageListenerContainer);
+			DefaultKafkaConsumerFactory consumerFactory = (DefaultKafkaConsumerFactory) containerAccessor
+				.getPropertyValue("consumerFactory");
+
+			Map<String, Object> configProps = consumerFactory.getConfigurationProperties();
+
+			assertThat(configProps.get("key.deserializer")).isEqualTo("org.apache.kafka.common.serialization.StringDeserializer");
+			assertThat(configProps.get("value.deserializer")).isEqualTo("org.apache.kafka.common.serialization.LongDeserializer");
+
 		}
 		finally {
 			if (binding != null) {
@@ -3289,20 +3302,6 @@ class KafkaBinderTests extends
 				consumerBinding.unbind();
 			}
 		}
-	}
-
-	private KafkaConsumer getKafkaConsumer(Binding binding) {
-		var bindingAccessor = new DirectFieldAccessor(binding);
-		KafkaMessageDrivenChannelAdapter adapter = (KafkaMessageDrivenChannelAdapter) bindingAccessor
-				.getPropertyValue("lifecycle");
-		var adapterAccessor = new DirectFieldAccessor(adapter);
-		ConcurrentMessageListenerContainer messageListenerContainer = (ConcurrentMessageListenerContainer) adapterAccessor
-				.getPropertyValue("messageListenerContainer");
-		var containerAccessor = new DirectFieldAccessor(
-				messageListenerContainer);
-		DefaultKafkaConsumerFactory consumerFactory = (DefaultKafkaConsumerFactory) containerAccessor
-				.getPropertyValue("consumerFactory");
-		return (KafkaConsumer) consumerFactory.createConsumer();
 	}
 
 	@Test
