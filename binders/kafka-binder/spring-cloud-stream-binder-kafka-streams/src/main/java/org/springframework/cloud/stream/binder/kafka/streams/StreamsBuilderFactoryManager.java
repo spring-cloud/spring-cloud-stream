@@ -102,10 +102,10 @@ public class StreamsBuilderFactoryManager implements SmartLifecycle {
 							this.kafkaStreamsBindingInformationCatalogue.getConsumerPropertiesPerSbfb();
 					final List<ConsumerProperties> consumerProperties = bindingServicePropertiesPerSbfb.get(streamsBuilderFactoryBean);
 					final boolean autoStartupDisabledOnAtLeastOneConsumerBinding = consumerProperties.stream().anyMatch(consumerProperties1 -> !consumerProperties1.isAutoStartup());
+					if (streamsBuilderFactoryBean instanceof SmartInitializingSingleton) {
+						((SmartInitializingSingleton) streamsBuilderFactoryBean).afterSingletonsInstantiated();
+					}
 					if (!autoStartupDisabledOnAtLeastOneConsumerBinding) {
-						if (streamsBuilderFactoryBean instanceof SmartInitializingSingleton) {
-							((SmartInitializingSingleton) streamsBuilderFactoryBean).afterSingletonsInstantiated();
-						}
 						streamsBuilderFactoryBean.start();
 						this.kafkaStreamsRegistry.registerKafkaStreams(streamsBuilderFactoryBean);
 					}
