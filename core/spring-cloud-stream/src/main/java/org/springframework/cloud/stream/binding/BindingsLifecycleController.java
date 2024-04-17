@@ -1,5 +1,5 @@
 /*
- * Copyright 2021-2021 the original author or authors.
+ * Copyright 2021-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,6 +38,7 @@ import org.springframework.util.ClassUtils;
  * It is registered as a bean and once injected could be used to control the lifecycle f the bindings.
  *
  * @author Oleg Zhurakousky
+ * @author Soby Chacko
  * @since 3.x
  */
 public class BindingsLifecycleController {
@@ -69,6 +70,15 @@ public class BindingsLifecycleController {
 		catch (ClassNotFoundException ex) {
 			// ignore; jackson-datatype-jsr310 not available
 		}
+	}
+
+	/**
+	 * Provide an accessor for the custom ObjectMapper created by this controller.
+	 * @return {@link ObjectMapper}
+	 * @since 4.1.2
+	 */
+	public ObjectMapper getObjectMapper() {
+		return objectMapper;
 	}
 
 	/**
@@ -129,7 +139,7 @@ public class BindingsLifecycleController {
 	 * @return the list of {@link Binding}s
 	 */
 	@SuppressWarnings("unchecked")
-	public List<Map<?, ?>> queryStates() {
+	public List<Map<String, Object>> queryStates() {
 		List<Binding<?>> bindings = new ArrayList<>(gatherInputBindings());
 		bindings.addAll(gatherOutputBindings());
 		return this.objectMapper.convertValue(bindings, List.class);

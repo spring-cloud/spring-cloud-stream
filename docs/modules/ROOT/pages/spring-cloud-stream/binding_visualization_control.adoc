@@ -82,3 +82,24 @@ You can also stop, start, pause, and resume individual bindings by posting to th
 NOTE: `PAUSED` and `RESUMED` work only when the corresponding binder and its underlying technology supports it. Otherwise, you see the warning message in the logs.
 Currently, only Kafka and [Solace](https://github.com/SolaceProducts/solace-spring-cloud/tree/master/solace-spring-cloud-starters/solace-spring-cloud-stream-starter#consumer-bindings-pauseresume) binders supports the `PAUSED` and `RESUMED` states.
 
+[[sanitize-sensitive-data]]
+=== Sanitize Sensitive Data
+
+When using the binding actuator endpoint, it is sometimes critical to sanitize any sensitive data such as user credentials, information about SSL keys, etc.
+To achieve this, end user applications can provide a `SanitizingFunction` from Spring Boot as a bean in the application.
+Here is an example to scramble the data when providing a value for Apache Kafka's `sasl.jaas.config` property.
+
+```
+@Bean
+public SanitizingFunction sanitizingFunction() {
+	return sanitizableData -> {
+		if (sanitizableData.getKey().equals("sasl.jaas.config")) {
+			return sanitizableData.withValue("data-scrambled!!");
+		}
+		else {
+			return sanitizableData;
+		}
+	};
+}
+```
+

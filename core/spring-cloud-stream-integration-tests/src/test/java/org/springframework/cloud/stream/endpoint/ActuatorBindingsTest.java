@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2023 the original author or authors.
+ * Copyright 2018-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,7 +63,7 @@ class ActuatorBindingsTest {
 
 			BindingsLifecycleController controller = context
 				.getBean(BindingsLifecycleController.class);
-			List<Map<?, ?>> bindings = controller.queryStates();
+			List<Map<String, Object>> bindings = controller.queryStates();
 			assertThat(bindings.size()).isEqualTo(1);
 			assertThat(bindings.get(0).get("bindingName")).isEqualTo("consume-in-0");
 		}
@@ -115,7 +115,7 @@ class ActuatorBindingsTest {
 
 			BindingsLifecycleController controller = context
 				.getBean(BindingsLifecycleController.class);
-			List<Map<?, ?>> bindings = controller.queryStates();
+			List<Map<String, Object>> bindings = controller.queryStates();
 			assertThat(bindings.size()).isEqualTo(1);
 			assertThat(bindings.get(0).get("bindingName")).isEqualTo("consume-in-0");
 			assertThat(bindings.get(0).get("binderName")).isEqualTo("integration");
@@ -136,7 +136,7 @@ class ActuatorBindingsTest {
 
 			BindingsLifecycleController controller = context
 				.getBean(BindingsLifecycleController.class);
-			List<Map<?, ?>> bindings = controller.queryStates();
+			List<Map<String, Object>> bindings = controller.queryStates();
 			assertThat(bindings.size()).isEqualTo(1);
 			assertThat(bindings.get(0).get("bindingName")).isEqualTo("consume-in-0");
 			assertThat(bindings.get(0).get("binderName")).isEqualTo("integration1");

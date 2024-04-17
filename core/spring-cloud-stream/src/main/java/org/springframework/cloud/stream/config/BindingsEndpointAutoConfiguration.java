@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 the original author or authors.
+ * Copyright 2018-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,10 @@
 
 package org.springframework.cloud.stream.config;
 
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.actuate.autoconfigure.endpoint.EndpointAutoConfiguration;
 import org.springframework.boot.actuate.autoconfigure.endpoint.condition.ConditionalOnAvailableEndpoint;
+import org.springframework.boot.actuate.endpoint.SanitizingFunction;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
@@ -29,6 +31,7 @@ import org.springframework.context.annotation.Bean;
 
 /**
  * @author Oleg Zhurakousky
+ * @author Soby Chacko
  * @since 2.0
  */
 @AutoConfiguration
@@ -40,8 +43,10 @@ public class BindingsEndpointAutoConfiguration {
 
 	@Bean
 	@ConditionalOnAvailableEndpoint
-	public BindingsEndpoint bindingsEndpoint(BindingsLifecycleController bindingsLifecycleController) {
-		return new BindingsEndpoint(bindingsLifecycleController);
+	public BindingsEndpoint bindingsEndpoint(BindingsLifecycleController bindingsLifecycleController,
+											ObjectProvider<SanitizingFunction> sanitizingFunctions) {
+		return new BindingsEndpoint(bindingsLifecycleController, sanitizingFunctions.orderedStream().toList(),
+			bindingsLifecycleController.getObjectMapper());
 	}
 
 }
