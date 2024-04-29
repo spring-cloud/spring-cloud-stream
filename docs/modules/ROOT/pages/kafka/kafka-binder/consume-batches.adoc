@@ -32,3 +32,13 @@ Refer to the https://docs.spring.io/spring-kafka/reference/kafka/receiving-messa
 
 NOTE: When receiving `KafkaNull` objects in the batch-mode, the received list will contain a null element for the corresponding `KafkaNull` object.
 This is true for both `List<Person>` and `Message<List<Person>>` style type signatures.
+
+== Observability when consuming in batch mode
+
+When consuming records in batches, observation tracing propagation feature is not supported directly.
+This is because Spring for Apache Kafka library that is used by the Kafka binder does not support tracing on batch listeners; it is only supported for record listeners.
+In a batch listener, the received records could be from multiple topics/partitions and from multiple producers where adding tracing information was optional.
+Since there may not be any correlations between records in the batch, the framework cannot make any assumptions about tracing them, such as providing them as a single trace ID, etc.
+If you use the type signature of `Message<List<String>>`, you can then get a header called `kafka_batchConvertedHeaders`, which contains a list with the same number of entries as your payload.
+This list has a `Map` that contains the tracing headers.
+However, it is up to the application to iterate over this properly and start an observation.
