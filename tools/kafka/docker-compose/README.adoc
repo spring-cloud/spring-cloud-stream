@@ -4,7 +4,7 @@
 === Kafka Cluster
 Runs a multi-node Kafka cluster w/ 3 brokers available at `locahost:9091,localhost:9092,localhost:9093`.
 
-To start the brokers run the following command:
+To start the brokers using zookeeper for leader election, run the following command:
 [source,shell]
 ----
 docker-compose -f ./kafka-cluster.yml up
@@ -16,6 +16,8 @@ docker-compose -f ./kafka-cluster.yml down
 ----
 
 TIP: To start the containers in the foreground simply add `-d` to the start command. To stop containers that are running in the foreground simple issue `CTRL-C` command.
+
+To start a single node Kafka cluster using the `kraft` protocol, use the `kraft.yml` file instead.
 
 Running a quick test:
 
