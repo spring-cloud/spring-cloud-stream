@@ -72,7 +72,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 		"spring.cloud.stream.pollable-source=input"}
 )
 @DirtiesContext
-@EmbeddedKafka(bootstrapServersProperty = "spring.kafka.bootstrap-servers")
+@EmbeddedKafka
 class KafkaBinderActuatorTests {
 
 	static final String TEST_CONSUMER_GROUP = "testGroup-actuatorTests";

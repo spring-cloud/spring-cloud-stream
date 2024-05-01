@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2023 the original author or authors.
+ * Copyright 2019-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -64,7 +64,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 		"spring.cloud.stream.kafka.binder.transaction.producer.configuration.acks=all"})
 @DirtiesContext
 @EmbeddedKafka(topics = "output", controlledShutdown = true, brokerProperties = {"transaction.state.log.replication.factor=1",
-	"transaction.state.log.min.isr=1"}, bootstrapServersProperty = "spring.kafka.bootstrap-servers")
+	"transaction.state.log.min.isr=1"})
 class ProducerOnlyTransactionTests {
 
 	@Autowired

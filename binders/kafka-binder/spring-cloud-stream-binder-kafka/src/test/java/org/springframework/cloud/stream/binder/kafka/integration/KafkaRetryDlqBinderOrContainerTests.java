@@ -1,5 +1,5 @@
 /*
- * Copyright 2021-2023 the original author or authors.
+ * Copyright 2021-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,7 +59,7 @@ import static org.mockito.Mockito.mock;
 		"spring.cloud.stream.bindings.retryInContainer-in-0.group=bar",
 		"spring.cloud.stream.kafka.bindings.retryInBinder-in-0.consumer.enable-dlq=true",
 		"spring.cloud.stream.kafka.bindings.retryInContainer-in-0.consumer.enable-dlq=true"})
-@EmbeddedKafka(bootstrapServersProperty = "spring.kafka.bootstrap-servers")
+@EmbeddedKafka
 @DirtiesContext
 class KafkaRetryDlqBinderOrContainerTests {
 

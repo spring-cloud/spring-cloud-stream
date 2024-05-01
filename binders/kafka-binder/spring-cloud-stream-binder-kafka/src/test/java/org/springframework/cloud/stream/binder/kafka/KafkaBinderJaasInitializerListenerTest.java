@@ -45,8 +45,6 @@ class KafkaBinderJaasInitializerListenerTest {
 
 	private static final String KAFKA_BROKERS_PROPERTY = "spring.cloud.stream.kafka.binder.brokers";
 
-	private static final EmbeddedKafkaBroker embeddedKafka = EmbeddedKafkaCondition.getBroker();
-
 	private static String JAVA_LOGIN_CONFIG_PARAM_VALUE;
 
 	private final ApplicationContextRunner contextRunner = new ApplicationContextRunner()
@@ -54,6 +52,7 @@ class KafkaBinderJaasInitializerListenerTest {
 
 	@BeforeAll
 	public static void setup() {
+		EmbeddedKafkaBroker embeddedKafka = EmbeddedKafkaCondition.getBroker();
 		System.setProperty(KAFKA_BROKERS_PROPERTY,
 				embeddedKafka.getBrokersAsString());
 		//Retrieve the current value for this system property if there is one set.

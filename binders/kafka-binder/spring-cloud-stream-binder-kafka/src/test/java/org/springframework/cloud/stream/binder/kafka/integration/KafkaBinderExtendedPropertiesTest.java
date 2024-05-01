@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2023 the original author or authors.
+ * Copyright 2018-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,7 +69,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 		"spring.cloud.stream.kafka.default.consumer.ackEachRecord=true",
 		"spring.cloud.stream.kafka.bindings.custom-in.consumer.ackEachRecord=false" })
 @DirtiesContext
-@EmbeddedKafka(bootstrapServersProperty = "spring.kafka.bootstrap-servers")
+@EmbeddedKafka
 class KafkaBinderExtendedPropertiesTest {
 
 	@Autowired
