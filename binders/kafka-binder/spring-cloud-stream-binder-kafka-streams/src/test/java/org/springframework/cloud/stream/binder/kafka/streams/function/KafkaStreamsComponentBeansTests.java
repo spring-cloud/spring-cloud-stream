@@ -1,5 +1,5 @@
 /*
- * Copyright 2021-2023 the original author or authors.
+ * Copyright 2021-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,7 +57,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @EmbeddedKafka(topics = {"testFunctionComponent-out-0", "testFunctionComponent-out-1", "testBiFunctionComponent-out", "testCurriedFunctionWithFunctionTerminal-out"})
 class KafkaStreamsComponentBeansTests {
 
-	private static final EmbeddedKafkaBroker embeddedKafka = EmbeddedKafkaCondition.getBroker();
+	private static EmbeddedKafkaBroker embeddedKafka;
 
 	private static Consumer<String, String> consumer1;
 	private static Consumer<String, String> consumer2;
@@ -70,6 +70,7 @@ class KafkaStreamsComponentBeansTests {
 
 	@BeforeAll
 	public static void setUp() {
+		embeddedKafka = EmbeddedKafkaCondition.getBroker();
 		Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("group", "false",
 				embeddedKafka);
 		consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
@@ -105,10 +106,15 @@ class KafkaStreamsComponentBeansTests {
 
 	@AfterAll
 	public static void tearDown() {
-		consumer1.close();
-		consumer2.close();
-		consumer3.close();
-		consumer4.close();
+		closeConsumers(consumer1, consumer2, consumer3, consumer4);
+	}
+
+	static void closeConsumers(Consumer<?, ?>... consumers) {
+		for (Consumer<?, ?> consumer : consumers) {
+			if (consumer != null) {
+				consumer.close();
+			}
+		}
 	}
 
 	@Test
@@ -130,6 +136,31 @@ class KafkaStreamsComponentBeansTests {
 				template.sendDefault("foobar");
 				ConsumerRecord<String, String> cr = KafkaTestUtils.getSingleRecord(consumer1, "testFunctionComponent-out-0");
 				assertThat(cr.value().contains("foobarfoobar")).isTrue();
+			}
+			finally {
+				pf.destroy();
+			}
+		}
+	}
+
+	@Test
+	void functionComponentBeanComposedWithConsumer() throws InterruptedException {
+		SpringApplication app = new SpringApplication(FunctionAsComponent.class, StringConsumer.class);
+		app.setWebApplicationType(WebApplicationType.NONE);
+		try (ConfigurableApplicationContext ignored = app.run(
+			"--spring.cloud.function.definition=foo|stringConsumer",
+			"--server.port=0",
+			"--spring.jmx.enabled=false",
+			"--spring.cloud.stream.bindings.foostringConsumer-in-0.destination=fooStringConsumer-in",
+			"--spring.cloud.stream.kafka.streams.binder.configuration.commit.interval.ms=1000",
+			"--spring.cloud.stream.kafka.streams.binder.brokers=" + embeddedKafka.getBrokersAsString())) {
+			Map<String, Object> senderProps = KafkaTestUtils.producerProps(embeddedKafka);
+			DefaultKafkaProducerFactory<Integer, String> pf = new DefaultKafkaProducerFactory<>(senderProps);
+			try {
+				KafkaTemplate<Integer, String> template = new KafkaTemplate<>(pf, true);
+				template.setDefaultTopic("fooStringConsumer-in");
+				template.sendDefault("foobar");
+				Assert.isTrue(LATCH_1.await(10, TimeUnit.SECONDS), "foobar");
 			}
 			finally {
 				pf.destroy();
@@ -346,6 +377,16 @@ class KafkaStreamsComponentBeansTests {
 		@Override
 		public void accept(KStream<Integer, String> integerStringKStream) {
 			integerStringKStream.foreach((integer, s) -> LATCH_1.countDown());
+		}
+	}
+
+	@Component("stringConsumer")
+	@EnableAutoConfiguration
+	public static class StringConsumer implements java.util.function.Consumer<KStream<String, String>> {
+
+		@Override
+		public void accept(KStream<String, String> integerStringKStream) {
+			integerStringKStream.foreach((s1, s2) -> LATCH_1.countDown());
 		}
 	}
 

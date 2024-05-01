@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2023 the original author or authors.
+ * Copyright 2019-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Consumer;
 
 import jakarta.annotation.PostConstruct;
 
@@ -61,8 +62,10 @@ public class KafkaStreamsFunctionProcessorInvoker {
 		if (functionUnits.length == 0) {
 						resolvableTypeMap.forEach((key, value) -> {
 				Optional<KafkaStreamsBindableProxyFactory> proxyFactory =
-						Arrays.stream(kafkaStreamsBindableProxyFactories).filter(p -> p.getFunctionName().equals(key)).findFirst();
-				this.kafkaStreamsFunctionProcessor.setupFunctionInvokerForKafkaStreams(value, key, proxyFactory.get(), methods.get(key), null);
+					Arrays.stream(kafkaStreamsBindableProxyFactories).filter(p -> p.getFunctionName().equals(key)).findFirst();
+					proxyFactory.ifPresent(kafkaStreamsBindableProxyFactory ->
+						this.kafkaStreamsFunctionProcessor.setupFunctionInvokerForKafkaStreams(value, key,
+							kafkaStreamsBindableProxyFactory, methods.get(key), null));
 			});
 		}
 
@@ -74,10 +77,16 @@ public class KafkaStreamsFunctionProcessorInvoker {
 					derivedNameFromComposed[0] = derivedNameFromComposed[0].concat(split);
 				}
 				Optional<KafkaStreamsBindableProxyFactory> proxyFactory =
-						Arrays.stream(kafkaStreamsBindableProxyFactories).filter(p -> p.getFunctionName().equals(derivedNameFromComposed[0])).findFirst();
-				proxyFactory.ifPresent(kafkaStreamsBindableProxyFactory ->
-						this.kafkaStreamsFunctionProcessor.setupFunctionInvokerForKafkaStreams(resolvableTypeMap.get(composedFunctions[0]),
-						derivedNameFromComposed[0], kafkaStreamsBindableProxyFactory, methods.get(derivedNameFromComposed[0]), resolvableTypeMap.get(composedFunctions[composedFunctions.length - 1]), composedFunctions));
+					Arrays.stream(kafkaStreamsBindableProxyFactories).filter(p ->
+						p.getFunctionName().equals(derivedNameFromComposed[0])).findFirst();
+
+				Method method = methods.isEmpty() ? null : methods.get(composedFunctions[0]);
+				Consumer<KafkaStreamsBindableProxyFactory> kafkaStreamsBindableProxyFactoryConsumer = kafkaStreamsBindableProxyFactory ->
+					this.kafkaStreamsFunctionProcessor.setupFunctionInvokerForKafkaStreams(resolvableTypeMap.get(composedFunctions[0]),
+						derivedNameFromComposed[0], kafkaStreamsBindableProxyFactory, method,
+						resolvableTypeMap.get(composedFunctions[composedFunctions.length - 1]), composedFunctions);
+
+				proxyFactory.ifPresent(kafkaStreamsBindableProxyFactoryConsumer);
 			}
 			else {
 				Optional<KafkaStreamsBindableProxyFactory> proxyFactory =
@@ -88,4 +97,5 @@ public class KafkaStreamsFunctionProcessorInvoker {
 			}
 		}
 	}
+
 }

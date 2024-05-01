@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2023 the original author or authors.
+ * Copyright 2019-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -254,8 +254,19 @@ public class KafkaStreamsFunctionProcessor extends AbstractKafkaStreamsBinderPro
 													KafkaStreamsBindableProxyFactory kafkaStreamsBindableProxyFactory, Method method,
 													ResolvableType outputResolvableType,
 													String... composedFunctionNames) {
-		final Map<String, ResolvableType> resolvableTypes = buildTypeMap(resolvableType,
+		Map<String, ResolvableType> resolvableTypes;
+
+		if (method != null && composedFunctionNames.length > 0) { // composed component methods
+			resolvableTypes = buildTypeMap(resolvableType,
+				kafkaStreamsBindableProxyFactory, method, composedFunctionNames[0]);
+		}
+		else if (method != null) { // non-composed component beans
+			resolvableTypes = buildTypeMap(resolvableType,
 				kafkaStreamsBindableProxyFactory, method, functionName);
+		}
+		else { // all other cases
+			resolvableTypes = buildTypeMap(resolvableType, kafkaStreamsBindableProxyFactory, null, functionName);
+		}
 
 		ResolvableType outboundResolvableType;
 		if (outputResolvableType != null) {
@@ -277,7 +288,8 @@ public class KafkaStreamsFunctionProcessor extends AbstractKafkaStreamsBinderPro
 				biConsumer.accept(adaptedInboundArguments[0], adaptedInboundArguments[1]);
 			}
 			else if (method != null) { // Handling component functional beans
-				final Object bean = beanFactory.getBean(functionName);
+				final Object bean = composedFunctionNames.length > 0 ? beanFactory.getBean(composedFunctionNames[0])
+					: beanFactory.getBean(functionName);
 				if (Consumer.class.isAssignableFrom(bean.getClass())) {
 					((Consumer) bean).accept(adaptedInboundArguments[0]);
 				}
@@ -293,6 +305,9 @@ public class KafkaStreamsFunctionProcessor extends AbstractKafkaStreamsBinderPro
 						result = ((Function) bean).apply(adaptedInboundArguments[0]);
 					}
 					result = handleCurriedFunctions(adaptedInboundArguments, result);
+					if (composedFunctionNames.length > 0) {
+						result = handleComposedFunctions(adaptedInboundArguments, result, composedFunctionNames);
+					}
 					if (result != null) {
 						final Set<String> outputs = new TreeSet<>(kafkaStreamsBindableProxyFactory.getOutputs());
 						final Iterator<String> outboundDefinitionIterator = outputs.iterator();
