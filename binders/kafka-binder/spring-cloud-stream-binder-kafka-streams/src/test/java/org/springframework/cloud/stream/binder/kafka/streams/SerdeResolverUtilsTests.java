@@ -49,16 +49,16 @@ import static org.mockito.Mockito.mock;
  *
  * @author Chris Bono
  */
-@SuppressWarnings({ "rawtypes", "NewClassNamingConvention", "unchecked" })
+@SuppressWarnings({ "rawtypes", "unchecked" })
 class SerdeResolverUtilsTests {
 
 	@Nested
 	class ResolveForType {
 
-		private ApplicationContextRunner contextRunner = new ApplicationContextRunner()
+		private final ApplicationContextRunner contextRunner = new ApplicationContextRunner()
 				.withPropertyValues("spring.cloud.function.ineligible-definitions: sendToDlqAndContinue");
 
-		private Serde<?> fallback = mock(Serde.class);
+		private final Serde<?> fallback = mock(Serde.class);
 
 		@Test
 		void returnsFallbackSerdeForWildcard() {
@@ -368,7 +368,7 @@ class SerdeResolverUtilsTests {
 	}
 
 	static class GenericEventSerde<T> implements Serde<GenericEvent<? extends T>> {
-		private String name;
+		private final String name;
 
 		GenericEventSerde(String name) {
 			this.name = name;

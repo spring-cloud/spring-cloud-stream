@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2023 the original author or authors.
+ * Copyright 2020-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import org.apache.kafka.streams.kstream.Grouped;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.Materialized;
 import org.apache.kafka.streams.kstream.TimeWindows;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.boot.SpringApplication;
@@ -56,7 +57,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 @EmbeddedKafka(topics = {"topic1-dlq", "topic2-dlq"})
 class DlqDestinationResolverTests {
 
-	private static final EmbeddedKafkaBroker embeddedKafka = EmbeddedKafkaCondition.getBroker();
+	private static EmbeddedKafkaBroker embeddedKafka;
+
+	@BeforeAll
+	public static void setUp() {
+		embeddedKafka = EmbeddedKafkaCondition.getBroker();
+	}
 
 	@Test
 	void dlqDestinationResolverWorks() throws Exception {

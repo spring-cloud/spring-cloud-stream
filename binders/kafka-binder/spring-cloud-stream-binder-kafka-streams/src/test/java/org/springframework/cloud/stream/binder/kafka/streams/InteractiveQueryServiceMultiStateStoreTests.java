@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 the original author or authors.
+ * Copyright 2022-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import org.apache.kafka.streams.state.KeyValueStore;
 import org.apache.kafka.streams.state.QueryableStoreTypes;
 import org.apache.kafka.streams.state.StoreBuilder;
 import org.apache.kafka.streams.state.Stores;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.slf4j.Logger;
@@ -63,9 +64,15 @@ import static org.mockito.Mockito.when;
 class InteractiveQueryServiceMultiStateStoreTests {
 
 	private static final String STORE_1_NAME = "store1";
+
 	private static final String STORE_2_NAME = "store2";
 
-	private static final EmbeddedKafkaBroker embeddedKafka = EmbeddedKafkaCondition.getBroker();
+	private static EmbeddedKafkaBroker embeddedKafka;
+
+	@BeforeAll
+	public static void setUp() {
+		embeddedKafka = EmbeddedKafkaCondition.getBroker();
+	}
 
 	@Test
 	void stateStoreAvailableOnProperAppWhenAppServerPropertySet() {

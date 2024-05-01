@@ -74,12 +74,13 @@ import static org.mockito.internal.verification.VerificationModeFactory.times;
 @EmbeddedKafka(topics = "counts-id")
 class KafkaStreamsInteractiveQueryIntegrationTests {
 
-	private static final EmbeddedKafkaBroker embeddedKafka = EmbeddedKafkaCondition.getBroker();
-
 	private static Consumer<String, String> consumer;
+
+	private static EmbeddedKafkaBroker embeddedKafka;
 
 	@BeforeAll
 	public static void setUp() throws Exception {
+		embeddedKafka = EmbeddedKafkaCondition.getBroker();
 		Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("group-id",
 				"false", embeddedKafka);
 		consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");

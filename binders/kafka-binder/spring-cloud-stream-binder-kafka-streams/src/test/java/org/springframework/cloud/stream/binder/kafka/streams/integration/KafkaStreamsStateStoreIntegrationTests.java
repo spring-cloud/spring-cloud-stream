@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2023 the original author or authors.
+ * Copyright 2018-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import org.apache.kafka.streams.processor.ProcessorContext;
 import org.apache.kafka.streams.state.StoreBuilder;
 import org.apache.kafka.streams.state.Stores;
 import org.apache.kafka.streams.state.WindowStore;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.boot.SpringApplication;
@@ -52,7 +53,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 @EmbeddedKafka
 class KafkaStreamsStateStoreIntegrationTests {
 
-	private static final EmbeddedKafkaBroker embeddedKafka = EmbeddedKafkaCondition.getBroker();
+	private static EmbeddedKafkaBroker embeddedKafka;
+
+	@BeforeAll
+	public static void setUp() {
+		embeddedKafka = EmbeddedKafkaCondition.getBroker();
+	}
 
 	@Test
 	void testKstreamStateStore() throws Exception {
