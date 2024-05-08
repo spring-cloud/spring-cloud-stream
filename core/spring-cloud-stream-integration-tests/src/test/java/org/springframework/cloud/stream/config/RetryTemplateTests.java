@@ -29,10 +29,9 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.stream.annotation.StreamRetryTemplate;
 import org.springframework.cloud.stream.binder.AbstractBinder;
 import org.springframework.cloud.stream.binder.ConsumerProperties;
-import org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration;
+import org.springframework.cloud.stream.binder.test.EnableTestBinder;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Import;
 import org.springframework.retry.support.RetryTemplate;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -82,7 +81,7 @@ class RetryTemplateTests {
 		assertThat(retryTemplate).isEqualTo(retryTemplateTwo);
 	}
 
-	@Import(TestChannelBinderConfiguration.class)
+	@EnableTestBinder
 	@EnableAutoConfiguration
 	public static class SpecificCustomRetryTemplateConfiguration {
 
@@ -107,7 +106,7 @@ class RetryTemplateTests {
 		}
 	}
 
-	@Import(TestChannelBinderConfiguration.class)
+	@EnableTestBinder
 	@EnableAutoConfiguration
 	public static class SingleCustomRetryTemplateConfiguration {
 

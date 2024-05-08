@@ -29,9 +29,8 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.ConfigurationPropertiesBindException;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration;
+import org.springframework.cloud.stream.binder.test.EnableTestBinder;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Import;
 import org.springframework.validation.annotation.Validated;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -76,7 +75,7 @@ class BindingHandlerAdviseTests {
 				.run("--spring.jmx.enabled=false"));
 	}
 
-	@Import(TestChannelBinderConfiguration.class)
+	@EnableTestBinder
 	@EnableAutoConfiguration
 	public static class NonValidatedConfiguration {
 
@@ -105,7 +104,7 @@ class BindingHandlerAdviseTests {
 		}
 	}
 
-	@Import(TestChannelBinderConfiguration.class)
+	@EnableTestBinder
 	@EnableAutoConfiguration
 	public static class ValidatedConfiguration {
 
@@ -136,7 +135,7 @@ class BindingHandlerAdviseTests {
 	}
 }
 
-@Import(TestChannelBinderConfiguration.class)
+@EnableTestBinder
 @EnableAutoConfiguration
 @EnableConfigurationProperties(ValidatedProps.class)
 class SampleConfiguration {

@@ -52,7 +52,7 @@ import org.springframework.cloud.stream.binder.ConsumerProperties;
 import org.springframework.cloud.stream.binder.DefaultBinderFactory;
 import org.springframework.cloud.stream.binder.DefaultBinderTypeRegistry;
 import org.springframework.cloud.stream.binder.ProducerProperties;
-import org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration;
+import org.springframework.cloud.stream.binder.test.EnableTestBinder;
 import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.cloud.stream.config.BindingServiceConfiguration;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
@@ -61,7 +61,6 @@ import org.springframework.cloud.stream.utils.IntegrationTestsMockBinderConfigur
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Import;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.test.util.TestUtils;
 import org.springframework.messaging.Message;
@@ -591,13 +590,13 @@ class BindingServiceTests {
 		return bindingServiceProperties;
 	}
 
-	@Import(TestChannelBinderConfiguration.class)
+	@EnableTestBinder
 	@EnableAutoConfiguration
 	public static class DefaultConsumerPropertiesTestSink {
 
 	}
 
-	@Import(TestChannelBinderConfiguration.class)
+	@EnableTestBinder
 	@EnableAutoConfiguration
 	public static class FooConfiguration {
 
@@ -608,7 +607,7 @@ class BindingServiceTests {
 
 	}
 
-	@Import(TestChannelBinderConfiguration.class)
+	@EnableTestBinder
 	@EnableAutoConfiguration
 	public static class BarConfiguration {
 
