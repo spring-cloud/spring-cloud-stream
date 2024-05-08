@@ -16,6 +16,9 @@
 
 package org.springframework.cloud.stream.function.edgecases;
 
+import java.io.IOException;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.function.Consumer;
 
 import org.junit.jupiter.api.Test;
@@ -25,7 +28,10 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.messaging.Message;
+import org.springframework.util.ObjectUtils;
 
 /**
  * This test validates that the issue https://github.com/spring-cloud/spring-cloud-stream/issues/1801
@@ -36,15 +42,29 @@ import org.springframework.messaging.Message;
  */
 class GH1801Test {
 
+	private static ClassLoader createClassLoader(String[] additionalClasspathDirectories) throws IOException {
+		URL[] urls = ObjectUtils.isEmpty(additionalClasspathDirectories) ? new URL[0]
+				: new URL[additionalClasspathDirectories.length];
+		if (!ObjectUtils.isEmpty(additionalClasspathDirectories)) {
+			for (int i = 0; i < additionalClasspathDirectories.length; i++) {
+				urls[i] = new URL(new ClassPathResource(additionalClasspathDirectories[i]).getURL().toString() + "/");
+			}
+		}
+		return new URLClassLoader(urls, GH1801Test.class.getClassLoader());
+	}
+
 	@Test
-	void verifyNoNPEWhenFactoryMethodNull() {
-		SampleBootApplication.main("--spring.cloud.stream.defaultBinder=integration");
+	void verifyNoNPEWhenFactoryMethodNull() throws Exception {
+		SampleBootApplication.main("--spring.cloud.stream.defaultBinder=integration1");
 	}
 
 	@SpringBootApplication
 	public static class SampleBootApplication {
-		public static void main(String... args) {
-			new SpringApplicationBuilder(SampleBootApplication.class).web(WebApplicationType.NONE).run(args);
+		public static void main(String... args) throws Exception {
+			ClassLoader classLoader = createClassLoader(new String[] { "binder1" });
+			new SpringApplicationBuilder(SampleBootApplication.class)
+			.resourceLoader(new DefaultResourceLoader(classLoader))
+			.web(WebApplicationType.NONE).run(args);
 		}
 	}
 }

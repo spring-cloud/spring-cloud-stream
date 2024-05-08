@@ -1,2 +1,4 @@
 integration1:\
 org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration
+integration2:\
+org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration

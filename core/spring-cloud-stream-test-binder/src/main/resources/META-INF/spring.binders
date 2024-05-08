@@ -1,2 +1,0 @@
-integration:\
-org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration

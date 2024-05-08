@@ -46,16 +46,33 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  */
 class ActuatorBindingsTest {
 
+	private static ClassLoader createClassLoader(String[] additionalClasspathDirectories) throws IOException {
+		URL[] urls = ObjectUtils.isEmpty(additionalClasspathDirectories) ? new URL[0]
+			: new URL[additionalClasspathDirectories.length];
+		if (!ObjectUtils.isEmpty(additionalClasspathDirectories)) {
+			for (int i = 0; i < additionalClasspathDirectories.length; i++) {
+				urls[i] = new URL(new ClassPathResource(additionalClasspathDirectories[i])
+					.getURL().toString() + "/");
+			}
+		}
+		return new URLClassLoader(urls,
+			ActuatorBindingsTest.class.getClassLoader());
+	}
+
+
 	/*
 	 * Even though this test performs some simple assertions, the main purpose for it is to validate that
 	 * it does not result in recursive exception described in https://github.com/spring-cloud/spring-cloud-stream/issues/2253
 	 */
 	@Test
-	void actuatorDoesNotCauseInfiniteRecursion() {
+	void actuatorDoesNotCauseInfiniteRecursion() throws Exception {
+		ClassLoader classLoader = createClassLoader(new String[] { "binder1" });
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(Bindings.class))
+			.resourceLoader(new DefaultResourceLoader(classLoader))
 			.web(WebApplicationType.NONE).run("--spring.jmx.enabled=false",
 				"--spring.cloud.function.definition=consume",
+				"--spring.cloud.stream.bindings.consume-in-0.binder=integration1",
 				"--spring.jackson.visibility.field=ANY" // see https://github.com/spring-cloud/spring-cloud-stream/issues/2253
 				// we need the above just to verify that such action does not
 				// interfere with instance of ObjectMapper inside of BindingsLifecycleController
@@ -69,18 +86,6 @@ class ActuatorBindingsTest {
 		}
 	}
 
-	private static ClassLoader createClassLoader(String[] additionalClasspathDirectories) throws IOException {
-		URL[] urls = ObjectUtils.isEmpty(additionalClasspathDirectories) ? new URL[0]
-			: new URL[additionalClasspathDirectories.length];
-		if (!ObjectUtils.isEmpty(additionalClasspathDirectories)) {
-			for (int i = 0; i < additionalClasspathDirectories.length; i++) {
-				urls[i] = new URL(new ClassPathResource(additionalClasspathDirectories[i])
-					.getURL().toString() + "/");
-			}
-		}
-		return new URLClassLoader(urls,
-			ActuatorBindingsTest.class.getClassLoader());
-	}
 
 	// Following three tests are verifying the behavior for
 	// https://github.com/spring-cloud/spring-cloud-stream/commit/3abf06345ad1ed57dea161b35503eba107feb04a
