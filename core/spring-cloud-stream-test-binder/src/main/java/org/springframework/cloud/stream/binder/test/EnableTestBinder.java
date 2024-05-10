@@ -25,7 +25,13 @@ import java.lang.annotation.Target;
 import org.springframework.context.annotation.Import;
 
 /**
+ * This annotation enables the Spring Integration Test Binder when applied to a class.
+ *
+ * Please see {@link TestChannelBinderConfiguration} and {@link TestChannelBinder} for more details.
+ *
  * @author Kotaro Matsumoto
+ * @see TestChannelBinderConfiguration
+ * @see TestChannelBinder
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
