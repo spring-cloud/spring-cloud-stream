@@ -48,7 +48,7 @@ The following listing shows the corresponding test:
 [source,java]
 ----
 @SpringBootTest(classes =  SampleApplication.class)
-@Import({TestChannelBinderConfiguration.class})
+@EnableTestBinder
 class BootTestStreamApplicationTests {
 
 	@Autowired
@@ -70,4 +70,3 @@ class BootTestStreamApplicationTests {
 
 Spring Cloud Stream provides a number of abstractions and primitives that simplify the writing of message-driven microservice applications.
 The rest of this reference manual provides additional details.
-
