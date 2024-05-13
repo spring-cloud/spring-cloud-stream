@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 the original author or authors.
+ * Copyright 2022-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,6 +37,9 @@ import reactor.kafka.sender.SenderResult;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.WebApplicationType;
+import org.springframework.boot.actuate.health.CompositeHealthContributor;
+import org.springframework.boot.actuate.health.Health;
+import org.springframework.boot.actuate.health.Status;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -81,7 +84,7 @@ class ReactorKafkaBinderIntegrationTests {
 
 	@ParameterizedTest
 	@ValueSource(booleans = { false, true })
-	void endToEndReactorKafkaBinder(boolean excludeKafkaAutoConfig) {
+	void endToEndReactorKafkaBinder(boolean excludeKafkaAutoConfig) throws InterruptedException {
 
 		recOptsCustOrder.clear();
 		patternedDeliveries.clear();
@@ -137,7 +140,18 @@ class ReactorKafkaBinderIntegrationTests {
 			assertThat(recOptsCustOrder).containsExactly("two", "one", "two", "one", "two", "one");
 			await().untilAsserted(() -> assertThat(patternedDeliveries).contains("bazqux", "FOOBAR"));
 			assertThat(context.getBean(ReactiveKafkaApplication.class).correlation).contains(42, 43);
+
+			checkHealth(context, Status.UP);
 		}
+	}
+
+	private static void checkHealth(ConfigurableApplicationContext context,
+									Status expected) throws InterruptedException {
+		CompositeHealthContributor healthIndicator = context
+			.getBean("bindersHealthContributor", CompositeHealthContributor.class);
+		ReactorKafkaBinderHealthIndicator rkbhi = (ReactorKafkaBinderHealthIndicator) healthIndicator.getContributor("reactorKafka");
+		Health health = rkbhi.health();
+		assertThat(health.getStatus()).isEqualTo(expected);
 	}
 
 	private String excludeKafkaAutoConfigParam(boolean excludeKafkaAutoConfig) {

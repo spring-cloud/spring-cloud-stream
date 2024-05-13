@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 the original author or authors.
+ * Copyright 2022-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import org.springframework.cloud.stream.binder.kafka.support.ConsumerConfigCusto
 import org.springframework.cloud.stream.binder.kafka.support.ProducerConfigCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 
 /**
  * Binder configuration for ReactorKafka.
@@ -40,6 +41,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnMissingBean(Binder.class)
 @EnableConfigurationProperties({ KafkaProperties.class, KafkaExtendedBindingProperties.class })
+@Import({ ReactorKafkaBinderHealthIndicatorConfiguration.class })
 public class ReactorKafkaBinderConfiguration {
 
 	/**
@@ -77,7 +79,6 @@ public class ReactorKafkaBinderConfiguration {
 			ObjectProvider<ProducerConfigCustomizer> producerConfigCustomizer,
 			ObjectProvider<ReceiverOptionsCustomizer> receiverOptionsCustomizers,
 			ObjectProvider<SenderOptionsCustomizer> senderOptionsptionsCustomizers) {
-
 		ReactorKafkaBinder reactorKafkaBinder = new ReactorKafkaBinder(configurationProperties, provisioningProvider);
 		reactorKafkaBinder.setExtendedBindingProperties(extendedBindingProperties);
 		reactorKafkaBinder.setConsumerConfigCustomizer(consumerConfigCustomizer.getIfUnique());
