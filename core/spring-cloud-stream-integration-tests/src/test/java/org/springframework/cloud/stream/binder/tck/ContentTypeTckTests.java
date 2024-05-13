@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2023 the original author or authors.
+ * Copyright 2017-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,14 +29,13 @@ import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.function.json.JsonMapper;
+import org.springframework.cloud.stream.binder.test.EnableTestBinder;
 import org.springframework.cloud.stream.binder.test.InputDestination;
 import org.springframework.cloud.stream.binder.test.OutputDestination;
 import org.springframework.cloud.stream.binder.test.TestChannelBinder;
-import org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
 import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
@@ -58,6 +57,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Oleg Zhurakousky
  * @author Gary Russell
  * @author Byungjun You
+ * @author Kotaro Matsumoto
  *
  */
 class ContentTypeTckTests {
@@ -518,7 +518,7 @@ class ContentTypeTckTests {
 	}
 
 
-	@Import(TestChannelBinderConfiguration.class)
+	@EnableTestBinder
 	@EnableAutoConfiguration
 	public static class CollectionWithParameterizedTypes {
 
@@ -531,7 +531,7 @@ class ContentTypeTckTests {
 		}
 	}
 
-	@Import(TestChannelBinderConfiguration.class)
+	@EnableTestBinder
 	@EnableAutoConfiguration
 	public static class PojoToPojoConfiguration {
 
@@ -541,7 +541,7 @@ class ContentTypeTckTests {
 		}
 	}
 
-	@Import(TestChannelBinderConfiguration.class)
+	@EnableTestBinder
 	@EnableAutoConfiguration
 	public static class PojoToStringConfiguration {
 
@@ -551,7 +551,7 @@ class ContentTypeTckTests {
 		}
 	}
 
-	@Import(TestChannelBinderConfiguration.class)
+	@EnableTestBinder
 	@EnableAutoConfiguration
 	public static class PojoToByteArrayConfiguration {
 
@@ -561,7 +561,7 @@ class ContentTypeTckTests {
 		}
 	}
 
-	@Import(TestChannelBinderConfiguration.class)
+	@EnableTestBinder
 	@EnableAutoConfiguration
 	public static class ByteArrayToPojoConfiguration {
 
@@ -571,7 +571,7 @@ class ContentTypeTckTests {
 		}
 	}
 
-	@Import(TestChannelBinderConfiguration.class)
+	@EnableTestBinder
 	@EnableAutoConfiguration
 	public static class StringToPojoConfiguration {
 
@@ -581,7 +581,7 @@ class ContentTypeTckTests {
 		}
 	}
 
-	@Import(TestChannelBinderConfiguration.class)
+	@EnableTestBinder
 	@EnableAutoConfiguration
 	public static class TypelessToPojoConfiguration {
 
@@ -593,7 +593,7 @@ class ContentTypeTckTests {
 		}
 	}
 
-	@Import(TestChannelBinderConfiguration.class)
+	@EnableTestBinder
 	@EnableAutoConfiguration
 	public static class TypelessMessageToPojoConfiguration {
 
@@ -605,7 +605,7 @@ class ContentTypeTckTests {
 		}
 	}
 
-	@Import(TestChannelBinderConfiguration.class)
+	@EnableTestBinder
 	@EnableAutoConfiguration
 	public static class TypelessToMessageConfiguration {
 
@@ -616,7 +616,7 @@ class ContentTypeTckTests {
 		}
 	}
 
-	@Import(TestChannelBinderConfiguration.class)
+	@EnableTestBinder
 	@EnableAutoConfiguration
 	public static class TypelessToMessageTextOnlyContentTypeConfiguration {
 
@@ -630,7 +630,7 @@ class ContentTypeTckTests {
 	}
 
 
-	@Import(TestChannelBinderConfiguration.class)
+	@EnableTestBinder
 	@EnableAutoConfiguration
 	public static class ByteArrayToByteArrayConfiguration {
 
@@ -640,7 +640,7 @@ class ContentTypeTckTests {
 		}
 	}
 
-	@Import(TestChannelBinderConfiguration.class)
+	@EnableTestBinder
 	@EnableAutoConfiguration
 	public static class StringToStringConfiguration {
 
@@ -650,7 +650,7 @@ class ContentTypeTckTests {
 		}
 	}
 
-	@Import(TestChannelBinderConfiguration.class)
+	@EnableTestBinder
 	@EnableAutoConfiguration
 	public static class StringToMapMessageConfiguration {
 
@@ -663,7 +663,7 @@ class ContentTypeTckTests {
 		}
 	}
 
-	@Import(TestChannelBinderConfiguration.class)
+	@EnableTestBinder
 	@EnableAutoConfiguration
 	public static class PojoMessageToStringMessageConfiguration {
 
@@ -799,7 +799,7 @@ class ContentTypeTckTests {
 
 	}
 
-	@Import(TestChannelBinderConfiguration.class)
+	@EnableTestBinder
 	@EnableAutoConfiguration
 	public static class MapInputConfiguration {
 
@@ -809,7 +809,7 @@ class ContentTypeTckTests {
 		}
 	}
 
-	@Import(TestChannelBinderConfiguration.class)
+	@EnableTestBinder
 	@EnableAutoConfiguration
 	public static class ListInputConfiguration {
 		@Bean
@@ -818,7 +818,7 @@ class ContentTypeTckTests {
 		}
 	}
 
-	@Import(TestChannelBinderConfiguration.class)
+	@EnableTestBinder
 	@EnableAutoConfiguration
 	public static class MessageHeadersInputConfiguration {
 
