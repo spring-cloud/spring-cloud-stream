@@ -1,0 +1,19 @@
+[[reactor-kafka-binder-health-indicator]]
+= Reactor Kafka Binder Health Indicator
+
+Reactor Kafka binder provides a `HealthIndicator` implementation that will be used when invoking the Spring Boot Actuator `health` endpoint.
+When Spring Boot actuator dependency is on the classpath, the Reactor Kafka binder can be enabled with a binder health indicator.
+This health indicator provides information about the status of the binder based application, i.e. if it is currently `UP` or `DOWN`, the topics in usage by the application, and the various details about the message producer components that the binder uses internally.
+
+
+The Reactor Kafka Binder Health Indicator is registered with the key `reactorKafka` internally by the framework.
+Therefore, it can be queried programmatically as shown below.
+
+[source, java]
+----
+CompositeHealthContributor compositeHealthContributor = context
+			.getBean("bindersHealthContributor", CompositeHealthContributor.class);
+ReactorKafkaBinderHealthIndicator healthIndicator = (ReactorKafkaBinderHealthIndicator) compositeHealthContributor.getContributor("reactorKafka");
+Health health = healthIndicator.health();
+----
+
