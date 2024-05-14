@@ -34,6 +34,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.util.ObjectUtils;
+import org.springframework.util.StringUtils;
 
 /**
  * Configuration class for Kafka binder health indicator beans.
@@ -66,6 +67,10 @@ public class KafkaBinderHealthIndicatorConfiguration {
 		if (!props.containsKey(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG)) {
 			props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG,
 					configurationProperties.getKafkaConnectionString());
+		}
+		String healthIndicatorConsumerGroup = configurationProperties.getHealthIndicatorConsumerGroup();
+		if (StringUtils.hasText(healthIndicatorConsumerGroup)) {
+			props.put(ConsumerConfig.GROUP_ID_CONFIG, healthIndicatorConsumerGroup);
 		}
 		ConsumerFactory<?, ?> consumerFactory = new DefaultKafkaConsumerFactory<>(props);
 		KafkaBinderHealthIndicator indicator = new KafkaBinderHealthIndicator(
