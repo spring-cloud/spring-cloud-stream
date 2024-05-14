@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2023 the original author or authors.
+ * Copyright 2016-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.kafka.clients.consumer.Consumer;
+import org.apache.kafka.clients.consumer.ConsumerGroupMetadata;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.junit.jupiter.api.Test;
@@ -32,9 +34,12 @@ import org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
 import org.springframework.cloud.stream.binder.ExtendedProducerProperties;
+import org.springframework.cloud.stream.binder.kafka.common.AbstractKafkaBinderHealthIndicator;
 import org.springframework.cloud.stream.binder.kafka.config.KafkaBinderConfiguration;
+import org.springframework.cloud.stream.binder.kafka.properties.KafkaBinderConfigurationProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaConsumerProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaProducerProperties;
+import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.test.context.TestPropertySource;
@@ -47,17 +52,39 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Soby Chacko
  */
 @SpringBootTest(classes = { KafkaBinderConfiguration.class, KafkaAutoConfiguration.class,
-		KafkaBinderConfigurationPropertiesTest.class })
-@TestPropertySource(locations = "classpath:binder-config.properties")
-class KafkaBinderConfigurationPropertiesTest {
+		KafkaBinderPropertiesTest.class })
+@TestPropertySource(locations = "classpath:binder-config.properties", properties =
+	"spring.cloud.stream.kafka.binder.healthIndicatorConsumerGroup=health-consumer-group")
+class KafkaBinderPropertiesTest {
 
 	@Autowired
 	private KafkaMessageChannelBinder kafkaMessageChannelBinder;
 
+	@Autowired
+	private KafkaBinderConfigurationProperties kafkaBinderConfigurationProperties;
+
+	@Autowired
+	private KafkaBinderHealthIndicator kafkaBinderHealthIndicator;
+
 	@Test
 	@SuppressWarnings("unchecked")
 	void kafkaBinderConfigurationProperties() throws Exception {
-		assertThat(this.kafkaMessageChannelBinder).isNotNull();
+		assertThat(this.kafkaBinderConfigurationProperties).isNotNull();
+
+		// Testing a scenario in health indicator that is originally triggered by a property in KafkaBinderConfigurationProperties,
+		// which ultimately creates a Kafka Consumer in the health indicator implementation.
+		assertThat(this.kafkaBinderConfigurationProperties.getHealthIndicatorConsumerGroup())
+			.isEqualTo("health-consumer-group");
+		assertThat(this.kafkaBinderHealthIndicator).isNotNull();
+		Field consumerFactoryField = AbstractKafkaBinderHealthIndicator.class.getDeclaredField("consumerFactory");
+		consumerFactoryField.setAccessible(true);
+		ConsumerFactory<?, ?> healthIndicatorConsumerFactory =
+			(ConsumerFactory<?, ?>) consumerFactoryField.get(this.kafkaBinderHealthIndicator);
+		assertThat(healthIndicatorConsumerFactory).isNotNull();
+		Consumer<?, ?> consumer = healthIndicatorConsumerFactory.createConsumer();
+		ConsumerGroupMetadata consumerGroupMetadata = consumer.groupMetadata();
+		assertThat(consumerGroupMetadata.groupId()).isEqualTo("health-consumer-group");
+
 		KafkaProducerProperties kafkaProducerProperties = new KafkaProducerProperties();
 		kafkaProducerProperties.setBufferSize(12345);
 		kafkaProducerProperties.setBatchTimeout(100);

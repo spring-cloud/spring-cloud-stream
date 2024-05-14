@@ -150,7 +150,17 @@ public class KafkaBinderConfigurationProperties {
 	/**
 	 * Schema registry ssl configuration properties.
 	 */
-	private final String[] schemaRegistryProperties = new String[]{"schema.registry.url", "schema.registry.ssl.keystore.location", "schema.registry.ssl.keystore.password", "schema.registry.ssl.truststore.location", "schema.registry.ssl.truststore.password", "schema.registry.ssl.key.password"};
+	private final String[] schemaRegistryProperties = new String[]{"schema.registry.url",
+		"schema.registry.ssl.keystore.location", "schema.registry.ssl.keystore.password",
+		"schema.registry.ssl.truststore.location", "schema.registry.ssl.truststore.password",
+		"schema.registry.ssl.key.password"};
+
+	/**
+	 * Consumer group.id of the Kafka consumer in
+	 * {@link org.springframework.cloud.stream.binder.kafka.common.AbstractKafkaBinderHealthIndicator} that is used
+	 * for querying metadata from the broker (such as metadata information about the topics).
+	 */
+	private String healthIndicatorConsumerGroup;
 
 	/**
 	 * Earlier, @Autowired on this constructor was necessary for all the properties to be discovered
@@ -504,6 +514,14 @@ public class KafkaBinderConfigurationProperties {
 		this.enableObservation = enableObservation;
 	}
 
+	public String getHealthIndicatorConsumerGroup() {
+		return healthIndicatorConsumerGroup;
+	}
+
+	public void setHealthIndicatorConsumerGroup(String healthIndicatorConsumerGroup) {
+		this.healthIndicatorConsumerGroup = healthIndicatorConsumerGroup;
+	}
+
 	/**
 	 * Domain class that models transaction capabilities in Kafka.
 	 */
@@ -696,6 +714,8 @@ public class KafkaBinderConfigurationProperties {
 		public KafkaProducerProperties getExtension() {
 			return this.kafkaProducerProperties;
 		}
+
+
 
 	}
 
