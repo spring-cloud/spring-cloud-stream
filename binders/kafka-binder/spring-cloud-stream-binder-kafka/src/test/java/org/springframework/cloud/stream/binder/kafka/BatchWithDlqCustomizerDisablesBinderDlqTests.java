@@ -33,6 +33,7 @@ import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
+import org.springframework.test.annotation.DirtiesContext;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -44,6 +45,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 	"spring.cloud.stream.bindings.consumer-in-0.group=batchWithDlqCustomizerDisablesBinderDlq",
 	"spring.cloud.stream.kafka.bindings.consumer1-in-0.consumer.enable-dlq=true"})
 @EmbeddedKafka
+@DirtiesContext
 public class BatchWithDlqCustomizerDisablesBinderDlqTests {
 
 	@Autowired
