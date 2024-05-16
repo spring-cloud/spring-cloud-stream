@@ -28,10 +28,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.boot.WebApplicationType;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.test.EmbeddedKafkaBroker;
 import org.springframework.kafka.test.condition.EmbeddedKafkaCondition;
 import org.springframework.kafka.test.context.EmbeddedKafka;
@@ -89,7 +90,8 @@ class KafkaStreamsBinderJaasInitTests {
 		applicationContext.close();
 	}
 
-	@SpringBootApplication
+	@EnableAutoConfiguration
+	@Configuration
 	static class KafkaStreamsBinderJaasInitTestsApplication {
 
 		@Bean

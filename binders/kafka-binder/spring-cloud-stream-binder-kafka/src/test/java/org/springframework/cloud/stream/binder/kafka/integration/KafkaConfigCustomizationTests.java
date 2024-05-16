@@ -33,7 +33,7 @@ import org.apache.kafka.common.TopicPartition;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cloud.stream.binder.BinderCustomizer;
 import org.springframework.cloud.stream.binder.kafka.KafkaMessageChannelBinder;
@@ -41,6 +41,7 @@ import org.springframework.cloud.stream.binder.kafka.config.ClientFactoryCustomi
 import org.springframework.cloud.stream.binder.kafka.support.ConsumerConfigCustomizer;
 import org.springframework.cloud.stream.binder.kafka.support.ProducerConfigCustomizer;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -86,7 +87,8 @@ class KafkaConfigCustomizationTests {
 		assertThat(this.configCustomizerTestConfig.consumerFactoryCustomized).isTrue();
 	}
 
-	@SpringBootApplication
+	@EnableAutoConfiguration
+	@Configuration
 	public static class ConfigCustomizerTestConfig {
 
 		@Bean

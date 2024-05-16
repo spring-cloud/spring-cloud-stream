@@ -33,11 +33,12 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import org.springframework.boot.WebApplicationType;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.stream.binder.kafka.streams.KeyValueSerdeResolver;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.config.StreamsBuilderFactoryBean;
 import org.springframework.kafka.test.EmbeddedKafkaBroker;
 import org.springframework.kafka.test.condition.EmbeddedKafkaCondition;
@@ -176,7 +177,8 @@ class KafkaStreamsBinderBootstrapTest {
 		return TypeFactory.defaultInstance().constructParametricType(Map.class, String.class, String.class);
 	}
 
-	@SpringBootApplication
+	@EnableAutoConfiguration
+	@Configuration
 	static class SimpleKafkaStreamsApplication extends BaseConfig {
 
 		@Bean

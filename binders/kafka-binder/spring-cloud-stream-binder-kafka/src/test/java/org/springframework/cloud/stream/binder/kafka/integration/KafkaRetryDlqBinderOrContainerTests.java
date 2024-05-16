@@ -26,13 +26,14 @@ import org.apache.kafka.common.TopicPartition;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binder.kafka.ListenerContainerWithDlqAndRetryCustomizer;
 import org.springframework.cloud.stream.binder.kafka.support.ProducerConfigCustomizer;
 import org.springframework.cloud.stream.binding.BindingsLifecycleController;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.core.KafkaOperations;
 import org.springframework.kafka.listener.AbstractMessageListenerContainer;
 import org.springframework.kafka.listener.CommonErrorHandler;
@@ -83,7 +84,8 @@ class KafkaRetryDlqBinderOrContainerTests {
 
 	}
 
-	@SpringBootApplication
+	@EnableAutoConfiguration
+	@Configuration
 	public static class ConfigCustomizerTestConfig {
 
 		@Bean
