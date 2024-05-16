@@ -1,5 +1,5 @@
 /*
- * Copyright 2014-2023 the original author or authors.
+ * Copyright 2014-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1077,6 +1077,11 @@ public class KafkaMessageChannelBinder extends
 		return new RawRecordHeaderErrorMessageStrategy();
 	}
 
+	private Boolean isBatchAndListenerContainerWithDlqAndRetryCustomizer(ExtendedConsumerProperties<KafkaConsumerProperties> properties) {
+		ListenerContainerCustomizer<?> customizer = getContainerCustomizer();
+		return properties.isBatchMode() && customizer instanceof ListenerContainerWithDlqAndRetryCustomizer;
+	}
+
 	@SuppressWarnings("unchecked")
 	@Override
 	protected MessageHandler getErrorMessageHandler(final ConsumerDestination destination,
@@ -1084,7 +1089,7 @@ public class KafkaMessageChannelBinder extends
 			final ExtendedConsumerProperties<KafkaConsumerProperties> properties) {
 
 		KafkaConsumerProperties kafkaConsumerProperties = properties.getExtension();
-		if (kafkaConsumerProperties.isEnableDlq()) {
+		if (kafkaConsumerProperties.isEnableDlq() && !isBatchAndListenerContainerWithDlqAndRetryCustomizer(properties)) {
 			KafkaProducerProperties dlqProducerProperties = kafkaConsumerProperties
 					.getDlqProducerProperties();
 			KafkaAwareTransactionManager<byte[], byte[]> transMan = transactionManager(
