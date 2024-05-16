@@ -1,5 +1,5 @@
 /*
- * Copyright 2021-2023 the original author or authors.
+ * Copyright 2021-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.listener.MessageListenerContainer;
 import org.springframework.boot.WebApplicationType;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.stream.binder.BinderFactory;
 import org.springframework.cloud.stream.binder.Binding;
@@ -43,6 +43,7 @@ import org.springframework.cloud.stream.config.ListenerContainerCustomizer;
 import org.springframework.cloud.stream.config.ProducerMessageHandlerCustomizer;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.integration.amqp.outbound.RabbitStreamMessageHandler;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.channel.QueueChannel;
@@ -59,6 +60,7 @@ import static org.mockito.Mockito.verify;
 
 /**
  * @author Gary Russell
+ * @author Soby Chacko
  */
 class RabbitStreamBinderModuleTests {
 
@@ -131,7 +133,8 @@ class RabbitStreamBinderModuleTests {
 		}
 	}
 
-	@SpringBootApplication(proxyBeanMethods = false)
+	@EnableAutoConfiguration
+	@Configuration
 	public static class SimpleProcessor {
 
 		@Bean

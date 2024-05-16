@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2023 the original author or authors.
+ * Copyright 2017-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,7 +40,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.cache.support.NoOpCacheManager;
 import org.springframework.cloud.stream.schema.registry.EnableSchemaRegistryServer;
@@ -52,6 +52,7 @@ import org.springframework.cloud.stream.schema.registry.avro.DefaultSubjectNamin
 import org.springframework.cloud.stream.schema.registry.client.DefaultSchemaRegistryClient;
 import org.springframework.cloud.stream.schema.registry.client.SchemaRegistryClient;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.integration.support.MutableMessageHeaders;
 import org.springframework.messaging.Message;
@@ -64,6 +65,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * @author Vinicius Carvalho
  * @author Sercan Karaoglu
+ * @author Soby Chacko
  */
 class AvroMessageConverterSerializationTests {
 
@@ -222,7 +224,8 @@ class AvroMessageConverterSerializationTests {
 		return schemaReference;
 	}
 
-	@SpringBootApplication
+	@EnableAutoConfiguration
+	@Configuration
 	@EnableSchemaRegistryServer
 	public static class ServerApplication {
 		public static void main(String[] args) {

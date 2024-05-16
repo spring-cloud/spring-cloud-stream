@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2023 the original author or authors.
+ * Copyright 2019-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import java.util.function.Consumer;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.boot.WebApplicationType;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -38,6 +38,7 @@ import org.springframework.util.ObjectUtils;
  * is addressed.
  *
  * @author Oleg Zhurakousky
+ * @author Soby Chacko
  *
  */
 class GH1801Test {
@@ -58,7 +59,7 @@ class GH1801Test {
 		SampleBootApplication.main("--spring.cloud.stream.defaultBinder=integration1");
 	}
 
-	@SpringBootApplication
+	@EnableAutoConfiguration
 	public static class SampleBootApplication {
 		public static void main(String... args) throws Exception {
 			ClassLoader classLoader = createClassLoader(new String[] { "binder1" });
