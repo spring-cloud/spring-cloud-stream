@@ -180,6 +180,12 @@ Enable Micrometer observation registry on all the bindings in this binder.
 +
 Default: false
 
+spring.cloud.stream.kafka.binder.healthIndicatorConsumerGroup::
+`KafkaHealthIndicator` metadata consumer `group.id`.
+This consumer is used by the `HealthIndicator` to query the metadata about the topics in use.
++
+Default: none.
+
 [[kafka-consumer-properties]]
 ==== Kafka Consumer Properties
 
