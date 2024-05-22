@@ -77,6 +77,11 @@ class PulsarBinderIntegrationTests implements PulsarTestContainerSupport {
 	private static final int AWAIT_DURATION = 10;
 
 	@Test
+	void someFakeTestWeWillRemove() {
+		System.out.println("**** Hello");
+	}
+
+	@Test
 	void binderAndBindingPropsAreAppliedAndRespected(CapturedOutput output) {
 		SpringApplication app = new SpringApplication(BinderAndBindingPropsTestConfig.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
