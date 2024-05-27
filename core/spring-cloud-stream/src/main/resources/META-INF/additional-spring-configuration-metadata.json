@@ -23,6 +23,30 @@
 			"name": "spring.cloud.stream.pollable-source",
 			"description": "A semi-colon delimited list of binding names of pollable sources. Binding names follow the same naming convention as functions. For example, name '...pollable-source=foobar' will be accessible as 'foobar-iin-0'' binding",
 			"type": "java.lang.String"
+		},
+		{
+			"defaultValue": "none",
+			"name": "spring.cloud.stream.default.binder",
+			"description": "The name of the default binder to use when multiple binders are present",
+			"type": "java.lang.String"
+		},
+		{
+			"defaultValue": "none",
+			"name": "spring.cloud.stream.default.group",
+			"description": "The name of the default consumer group",
+			"type": "java.lang.String"
+		},
+		{
+			"defaultValue": "none",
+			"name": "spring.cloud.stream.default.content-type",
+			"description": "The name of the default content type to apply for Message conversion",
+			"type": "java.lang.String"
+		},
+		{
+			"defaultValue": "none",
+			"name": "spring.cloud.stream.default.consumer.concurrency",
+			"description": "Default concurrency settings",
+			"type": "java.lang.String"
 		}
 	]
 }
