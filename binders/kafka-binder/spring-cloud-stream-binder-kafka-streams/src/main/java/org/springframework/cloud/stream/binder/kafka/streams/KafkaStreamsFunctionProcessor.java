@@ -298,16 +298,20 @@ public class KafkaStreamsFunctionProcessor extends AbstractKafkaStreamsBinderPro
 				}
 				else if (Function.class.isAssignableFrom(bean.getClass()) || BiFunction.class.isAssignableFrom(bean.getClass())) {
 					Object result;
-					if (BiFunction.class.isAssignableFrom(bean.getClass())) {
-						result = ((BiFunction) bean).apply(adaptedInboundArguments[0], adaptedInboundArguments[1]);
+
+					if (composedFunctionNames.length > 0) {
+						result = handleComposedFunctions(adaptedInboundArguments, null, composedFunctionNames);
 					}
 					else {
-						result = ((Function) bean).apply(adaptedInboundArguments[0]);
+						if (BiFunction.class.isAssignableFrom(bean.getClass())) {
+							result = ((BiFunction) bean).apply(adaptedInboundArguments[0], adaptedInboundArguments[1]);
+						}
+						else {
+							result = ((Function) bean).apply(adaptedInboundArguments[0]);
+						}
+						result = handleCurriedFunctions(adaptedInboundArguments, result);
 					}
-					result = handleCurriedFunctions(adaptedInboundArguments, result);
-					if (composedFunctionNames.length > 0) {
-						result = handleComposedFunctions(adaptedInboundArguments, result, composedFunctionNames);
-					}
+
 					if (result != null) {
 						final Set<String> outputs = new TreeSet<>(kafkaStreamsBindableProxyFactory.getOutputs());
 						final Iterator<String> outboundDefinitionIterator = outputs.iterator();
