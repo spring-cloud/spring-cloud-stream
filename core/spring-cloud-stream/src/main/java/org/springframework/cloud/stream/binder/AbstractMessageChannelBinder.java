@@ -267,8 +267,8 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		if (binderTypes.entrySet().size() > 1 && getBindingServiceProperties().getDefaultBinder() != null) {
 			return getBindingServiceProperties().getDefaultBinder();
 		}
-		Assert.isTrue(binderTypes.entrySet().size() == 1, "More than one binder types found, but no binder specified on the binding");
-		return binderTypes.keySet().iterator().next();
+		Assert.isTrue(binderTypes.entrySet().size() <= 1, "More than one binder types found, but no binder specified on the binding");
+		return (binderTypes.entrySet().size() < 1) ? null : binderTypes.keySet().iterator().next();
 	}
 
 	/**
