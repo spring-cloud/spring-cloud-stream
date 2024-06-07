@@ -134,12 +134,6 @@ public class BindingServiceProperties
 	private String defaultBinder;
 
 	/**
-	 * A list of destinations that can be bound dynamically. If set, only listed
-	 * destinations can be bound.
-	 */
-	private String[] dynamicDestinations = new String[0];
-
-	/**
 	 * The maximum size of Least Recently Used (LRU) cache of dynamic destinations. Once
 	 * this size is reached, new destinations will trigger the removal of old destinations.
 	 * Default: 10
@@ -203,14 +197,6 @@ public class BindingServiceProperties
 		this.instanceCount = instanceCount;
 	}
 
-	public String[] getDynamicDestinations() {
-		return this.dynamicDestinations;
-	}
-
-	public void setDynamicDestinations(String[] dynamicDestinations) {
-		this.dynamicDestinations = dynamicDestinations;
-	}
-
 	@Override
 	public void setApplicationContext(ApplicationContext applicationContext)
 			throws BeansException {
@@ -255,7 +241,6 @@ public class BindingServiceProperties
 		properties.put("instanceIndex", String.valueOf(getInstanceIndex()));
 		properties.put("instanceCount", String.valueOf(getInstanceCount()));
 		properties.put("defaultBinder", getDefaultBinder());
-		properties.put("dynamicDestinations", getDynamicDestinations());
 		for (Map.Entry<String, BindingProperties> entry : this.bindings.entrySet()) {
 			properties.put(entry.getKey(), entry.getValue().toString());
 		}
