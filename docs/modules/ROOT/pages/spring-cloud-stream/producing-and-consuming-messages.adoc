@@ -841,9 +841,11 @@ public class FunctionSampleSpringIntegrationApplication {
 
 	@Bean
 	public IntegrationFlow uppercaseFlow() {
-		return IntegrationFlows.from(MessageFunction.class, "uppercase")
+		return IntegrationFlow.from(MessageFunction.class, spec -> spec.beanName("uppercase"))
 				.<String, String>transform(String::toUpperCase)
-				.logAndReply(LoggingHandler.Level.WARN);
+				.log(LoggingHandler.Level.WARN)
+				.bridge()
+				.get();
 	}
 
 	public interface MessageFunction extends Function<Message<String>, Message<String>> {
