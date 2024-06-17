@@ -41,7 +41,6 @@ import org.springframework.util.StringUtils;
  * @author Myeonghyeon Lee
  * @author Soby Chacko
  * @author Byungjun You
- * @see org.springframework.cloud.stream.annotation.EnableBinding
  */
 
 @JsonPropertyOrder({ "bindingName", "name", "group", "pausable", "state" })
