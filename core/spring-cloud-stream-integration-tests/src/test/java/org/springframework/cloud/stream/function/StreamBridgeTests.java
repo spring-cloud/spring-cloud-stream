@@ -22,11 +22,15 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.BrokenBarrierException;
+import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -316,6 +320,42 @@ class StreamBridgeTests {
 					messagesWithoutScstPartition++;
 				}
 				message = output.receive(1000, "outputA-out-0");
+			}
+			assertThat(messagesWithoutScstPartition).isEqualTo(0);
+		}
+	}
+
+	/*
+	 * This test verifies that when a partition key expression is set, then scst_partition is always set, even in
+	 * concurrent scenarios using function binding.
+	 * See https://github.com/spring-cloud/spring-cloud-stream/issues/2961 for more details
+	 */
+	@Test
+	void scstPartitionAlwaysSetEvenInConcurrentScenariosWithFunctions() throws Exception {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+			TestChannelBinderConfiguration.getCompleteConfiguration(FunctionPartitionConfiguration.class)).web(
+			WebApplicationType.NONE).run("--spring.cloud.stream.function.definition=concurrentFunction",
+			"--spring.cloud.stream.bindings.concurrentFunction-out-0.producer.partition-count=3",
+			"--spring.cloud.stream.bindings.concurrentFunction-out-0.producer.partition-key-expression=headers['partitionKey']",
+			"--spring.jmx.enabled=false")) {
+			CyclicBarrier barrier = context.getBean(CyclicBarrier.class);
+			StreamBridge streamBridge = context.getBean(StreamBridge.class);
+
+			Thread otherThread = new Thread(() -> streamBridge.send("concurrentFunction-in-0", "wait"));
+			otherThread.start();
+			barrier.await(5, TimeUnit.SECONDS); // wait for thread to be started and function called
+			streamBridge.send("concurrentFunction-in-0", "passThrough");
+			barrier.await(5, TimeUnit.SECONDS); // notifies thread to continue function
+			otherThread.join();
+
+			int messagesWithoutScstPartition = 2; // total messages
+			OutputDestination output = context.getBean(OutputDestination.class);
+			Message<byte[]> message = output.receive(1000, "concurrentFunction-out-0");
+			while (message != null) {
+				if (message.getHeaders().containsKey("scst_partition")) {
+					messagesWithoutScstPartition--;
+				}
+				message = output.receive(1000, "concurrentFunction-out-0");
 			}
 			assertThat(messagesWithoutScstPartition).isEqualTo(0);
 		}
@@ -861,6 +901,31 @@ class StreamBridgeTests {
 				return MessageBuilder.withPayload(v)
 					.setHeader("concurrency", concurrency)
 					.setHeader("partitionCount", partitionCount)
+					.build();
+			};
+		}
+	}
+
+	@EnableAutoConfiguration
+	public static class FunctionPartitionConfiguration {
+
+		@Bean
+		public CyclicBarrier cyclicBarrierFunction() {
+			return new CyclicBarrier(2);
+		}
+		@Bean
+		public Function<String, Message<String>> concurrentFunction(StreamBridge bridge, BindingServiceProperties properties, CyclicBarrier cyclicBarrierFunction) {
+			return s -> {
+				if (s.startsWith("wait")) {
+					try {
+						cyclicBarrierFunction.await(5, TimeUnit.SECONDS); // wait for notifying main thread to send other event
+						cyclicBarrierFunction.await(5, TimeUnit.SECONDS); // wait for other event been sent
+					} catch (BrokenBarrierException | InterruptedException | TimeoutException e) {
+						throw new RuntimeException(e);
+					}
+        		}
+				return MessageBuilder.withPayload(s)
+					.setHeader("partitionKey", s.length())
 					.build();
 			};
 		}
