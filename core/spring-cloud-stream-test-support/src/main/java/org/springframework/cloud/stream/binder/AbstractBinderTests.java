@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2018 the original author or authors.
+ * Copyright 2013-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,6 +60,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Oleg Zhurakousky
  * @author Jacob Severson
  * @author Artem Bilan
+ * @author Soby Chacko
  */
 // @checkstyle:off
 @SuppressWarnings("unchecked")
@@ -440,11 +441,11 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 		@SuppressWarnings("serial")
 		public static class Readings implements Serializable {
 
-			public String stationid;
+			private String stationid;
 
-			public String customerid;
+			private String customerid;
 
-			public String timestamp;
+			private String timestamp;
 
 			public String getStationid() {
 				return this.stationid;
