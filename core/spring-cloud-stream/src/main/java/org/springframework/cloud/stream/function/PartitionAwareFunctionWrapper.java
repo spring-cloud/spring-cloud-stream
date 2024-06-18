@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2023 the original author or authors.
+ * Copyright 2020-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -90,7 +90,13 @@ class PartitionAwareFunctionWrapper implements Function<Object, Object>, Supplie
 			this.setEnhancerIfNecessary();
 		}
 		Object result = this.function.apply(input);
-		if (!((FunctionInvocationWrapper) this.function).isInputTypePublisher()) {
+		boolean messageContainsPartitionHeader = false;
+		if (result != null && Message.class.isAssignableFrom(result.getClass())) {
+			if (((Message<?>) result).getHeaders().containsKey(BinderHeaders.PARTITION_HEADER)) {
+				messageContainsPartitionHeader = true;
+			}
+		}
+		if (!((FunctionInvocationWrapper) this.function).isInputTypePublisher() && !messageContainsPartitionHeader) {
 			((FunctionInvocationWrapper) this.function).setEnhancer(null);
 		}
 		return result;
