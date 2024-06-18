@@ -23,14 +23,13 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.BrokenBarrierException;
-import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
-
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -920,10 +919,11 @@ class StreamBridgeTests {
 					try {
 						cyclicBarrierFunction.await(5, TimeUnit.SECONDS); // wait for notifying main thread to send other event
 						cyclicBarrierFunction.await(5, TimeUnit.SECONDS); // wait for other event been sent
-					} catch (BrokenBarrierException | InterruptedException | TimeoutException e) {
+					}
+					catch (BrokenBarrierException | InterruptedException | TimeoutException e) {
 						throw new RuntimeException(e);
 					}
-        		}
+				}
 				return MessageBuilder.withPayload(s)
 					.setHeader("partitionKey", s.length())
 					.build();
