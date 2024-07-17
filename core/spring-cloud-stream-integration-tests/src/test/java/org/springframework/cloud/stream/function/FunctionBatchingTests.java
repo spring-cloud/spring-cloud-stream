@@ -46,6 +46,23 @@ import static org.assertj.core.api.Assertions.assertThat;
 class FunctionBatchingTests {
 
 	@Test
+	void messageWithKafkaNull() {
+		TestChannelBinderConfiguration.applicationContextRunner(KafkaNullConfiguration.class)
+				.withPropertyValues("spring.cloud.stream.function.definition=myFunction").run(context -> {
+					InputDestination inputDestination = context.getBean(InputDestination.class);
+					OutputDestination outputDestination = context.getBean(OutputDestination.class);
+
+					var message = MessageBuilder.withPayload(KafkaNull.INSTANCE).build();
+					inputDestination.send(message);
+
+					Object kn = outputDestination.receive().getPayload();
+
+					assertThat(kn).isInstanceOf(KafkaNull.class);
+					context.stop();
+				});
+	}
+
+	@Test
 	void messageBatchConfigurationWithKafkaNull() {
 		TestChannelBinderConfiguration.applicationContextRunner(MessageBatchConfiguration.class)
 			.withPropertyValues("spring.cloud.stream.function.definition=func")
@@ -298,6 +315,14 @@ class FunctionBatchingTests {
 
 		}
 
+	}
+
+	@EnableAutoConfiguration
+	public static class KafkaNullConfiguration {
+		@Bean
+		public Function<Message<?>, Message<?>> myFunction() {
+			return v -> MessageBuilder.withPayload(KafkaNull.INSTANCE).build();
+		}
 	}
 
 }
