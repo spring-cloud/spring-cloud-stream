@@ -95,6 +95,21 @@ class ImplicitFunctionBindingTests {
 		System.clearProperty("spring.cloud.function.definition");
 	}
 
+	@Test
+	void foo() {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+			TestChannelBinderConfiguration.getCompleteConfiguration(DoNotFailOnUnknownPropertiesConfiguration.class))
+			.web(WebApplicationType.NONE)
+			.run("--spring.jmx.enabled=false", "--spring.cloud.function.definition=echo")) {
+
+			InputDestination input = context.getBean(InputDestination.class);
+			input.send(new GenericMessage<byte[]>("{\"name\":\"Bubles\",\"id\":\"2\"}".getBytes()), "echo-in-0");
+
+			OutputDestination output = context.getBean(OutputDestination.class);
+			Message<byte[]> result = output.receive(1000, "echo-out-0");
+			assertThat(result.getPayload()).isEqualTo("Bubles".getBytes());
+		}
+	}
 
 	@Test
 	void failedApplicationListenerConfiguration() {
@@ -1714,6 +1729,27 @@ class ImplicitFunctionBindingTests {
 
 		public void setId(int id) {
 			this.id = id;
+		}
+	}
+
+	public static class Employee {
+		private String name;
+
+		public String getName() {
+			return name;
+		}
+
+		public void setName(String name) {
+			this.name = name;
+		}
+	}
+
+	@EnableAutoConfiguration
+	public static class DoNotFailOnUnknownPropertiesConfiguration {
+
+		@Bean
+		public Function<Employee, String> echo() {
+			return x -> x.getName();
 		}
 	}
 
