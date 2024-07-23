@@ -88,8 +88,9 @@ public class RemoteApplicationEventScanTests {
 	}
 
 	private ConfigurableApplicationContext createTestContext(Class<?> configuration) {
-		return new SpringApplicationBuilder(configuration).web(WebApplicationType.NONE).bannerMode(Banner.Mode.OFF)
-				.run();
+		return new SpringApplicationBuilder(configuration).web(WebApplicationType.NONE)
+			.bannerMode(Banner.Mode.OFF)
+			.run();
 	}
 
 	private void assertConverterBeanAfterPropertiesSet(final String[] expectedPackageToScan,
@@ -98,20 +99,22 @@ public class RemoteApplicationEventScanTests {
 
 		@SuppressWarnings("unchecked")
 		final LinkedHashSet<NamedType> registeredSubtypes = (LinkedHashSet<NamedType>) ReflectionTestUtils
-				.getField(mapper.getSubtypeResolver(), "_registeredSubtypes");
+			.getField(mapper.getSubtypeResolver(), "_registeredSubtypes");
 
 		final List<Class<?>> expectedRegisterdClassesAsList = new ArrayList<>(Arrays.asList(expectedRegisterdClasses));
 		addStandardSpringCloudEventBusEvents(expectedRegisterdClassesAsList);
 
 		assertThat(expectedRegisterdClassesAsList.size() == registeredSubtypes.size())
-				.as("Wrong RemoteApplicationEvent classes are registerd in object mapper").isTrue();
+			.as("Wrong RemoteApplicationEvent classes are registerd in object mapper")
+			.isTrue();
 
 		for (final NamedType namedType : registeredSubtypes) {
 			assertThat(expectedRegisterdClassesAsList.contains(namedType.getType())).isTrue();
 		}
 
 		assertThat(Arrays.asList((String[]) ReflectionTestUtils.getField(this.converter, "packagesToScan")))
-				.as("RemoteApplicationEvent packages not registered").contains(expectedPackageToScan);
+			.as("RemoteApplicationEvent packages not registered")
+			.contains(expectedPackageToScan);
 
 	}
 

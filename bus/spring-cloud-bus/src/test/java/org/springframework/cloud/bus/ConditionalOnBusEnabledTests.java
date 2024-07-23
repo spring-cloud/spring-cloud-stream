@@ -61,7 +61,7 @@ public class ConditionalOnBusEnabledTests {
 	public void busDisabled() {
 		load(MyBusEnabledConfig.class, ConditionalOnBusEnabled.SPRING_CLOUD_BUS_ENABLED + ":false");
 		assertThat(this.context.containsBean("foo")).as("bean exists from disabled @ConditionalOnBusEnabled config")
-				.isFalse();
+			.isFalse();
 	}
 
 	private void load(Class<?> config, String... environment) {

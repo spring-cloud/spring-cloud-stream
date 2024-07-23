@@ -85,8 +85,11 @@ public class EnvironmentChangeRemoteApplicationEvent extends RemoteApplicationEv
 
 	@Override
 	public String toString() {
-		return new ToStringCreator(this).append("id", getId()).append("originService", getOriginService())
-				.append("destinationService", getDestinationService()).append("values", values).toString();
+		return new ToStringCreator(this).append("id", getId())
+			.append("originService", getOriginService())
+			.append("destinationService", getDestinationService())
+			.append("values", values)
+			.toString();
 
 	}
 

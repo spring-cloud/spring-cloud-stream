@@ -49,7 +49,7 @@ public class BusEnvironmentPostProcessor implements EnvironmentPostProcessor {
 	public void postProcessEnvironment(ConfigurableEnvironment environment, SpringApplication application) {
 		if (environment.containsProperty(ConditionalOnBusEnabled.SPRING_CLOUD_BUS_ENABLED)) {
 			if (Boolean.FALSE.toString()
-					.equalsIgnoreCase(environment.getProperty(ConditionalOnBusEnabled.SPRING_CLOUD_BUS_ENABLED))) {
+				.equalsIgnoreCase(environment.getProperty(ConditionalOnBusEnabled.SPRING_CLOUD_BUS_ENABLED))) {
 				return;
 			}
 		}

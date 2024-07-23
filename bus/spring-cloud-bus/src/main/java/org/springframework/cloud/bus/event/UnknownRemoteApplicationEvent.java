@@ -59,9 +59,12 @@ public class UnknownRemoteApplicationEvent extends RemoteApplicationEvent {
 
 	@Override
 	public String toString() {
-		return new ToStringCreator(this).append("id", getId()).append("originService", getOriginService())
-				.append("destinationService", getDestinationService()).append("typeInfo", typeInfo)
-				.append("payload", getPayloadAsString()).toString();
+		return new ToStringCreator(this).append("id", getId())
+			.append("originService", getOriginService())
+			.append("destinationService", getDestinationService())
+			.append("typeInfo", typeInfo)
+			.append("payload", getPayloadAsString())
+			.toString();
 
 	}
 

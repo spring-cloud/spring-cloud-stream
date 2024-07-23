@@ -32,10 +32,10 @@ public class BusAutoConfigurationClassPathTests {
 	@Test
 	public void refreshListenerCreatedWithoutActuator() {
 		new ApplicationContextRunner().withClassLoader(new FilteredClassLoader("org.springframework.boot.actuate"))
-				.withConfiguration(AutoConfigurations.of(RefreshAutoConfiguration.class,
-						PathServiceMatcherAutoConfiguration.class, BusRefreshAutoConfiguration.class))
-				.run(context -> assertThat(context).hasSingleBean(RefreshListener.class)
-						.doesNotHaveBean(RefreshBusEndpoint.class));
+			.withConfiguration(AutoConfigurations.of(RefreshAutoConfiguration.class,
+					PathServiceMatcherAutoConfiguration.class, BusRefreshAutoConfiguration.class))
+			.run(context -> assertThat(context).hasSingleBean(RefreshListener.class)
+				.doesNotHaveBean(RefreshBusEndpoint.class));
 	}
 
 }

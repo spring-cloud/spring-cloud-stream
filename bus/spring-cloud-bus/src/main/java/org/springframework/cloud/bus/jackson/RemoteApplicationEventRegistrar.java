@@ -47,7 +47,7 @@ public class RemoteApplicationEventRegistrar implements ImportBeanDefinitionRegi
 			final BeanDefinitionRegistry registry) {
 
 		Map<String, Object> componentScan = importingClassMetadata
-				.getAnnotationAttributes(RemoteApplicationEventScan.class.getName(), false);
+			.getAnnotationAttributes(RemoteApplicationEventScan.class.getName(), false);
 
 		Set<String> basePackages = new HashSet<>();
 		for (String pkg : (String[]) componentScan.get("value")) {
@@ -70,7 +70,7 @@ public class RemoteApplicationEventRegistrar implements ImportBeanDefinitionRegi
 
 		if (!registry.containsBeanDefinition(BUS_JSON_CONVERTER)) {
 			BeanDefinitionBuilder beanDefinitionBuilder = BeanDefinitionBuilder
-					.genericBeanDefinition(BusJacksonMessageConverter.class);
+				.genericBeanDefinition(BusJacksonMessageConverter.class);
 			beanDefinitionBuilder.addPropertyValue(PACKAGES_TO_SCAN,
 					basePackages.toArray(new String[basePackages.size()]));
 			AbstractBeanDefinition beanDefinition = beanDefinitionBuilder.getBeanDefinition();
@@ -80,16 +80,18 @@ public class RemoteApplicationEventRegistrar implements ImportBeanDefinitionRegi
 		}
 		else {
 			basePackages.addAll(getEarlierPackagesToScan(registry));
-			registry.getBeanDefinition(BUS_JSON_CONVERTER).getPropertyValues().addPropertyValue(PACKAGES_TO_SCAN,
-					basePackages.toArray(new String[basePackages.size()]));
+			registry.getBeanDefinition(BUS_JSON_CONVERTER)
+				.getPropertyValues()
+				.addPropertyValue(PACKAGES_TO_SCAN, basePackages.toArray(new String[basePackages.size()]));
 		}
 	}
 
 	private Set<String> getEarlierPackagesToScan(final BeanDefinitionRegistry registry) {
 		if (registry.containsBeanDefinition(BUS_JSON_CONVERTER)
 				&& registry.getBeanDefinition(BUS_JSON_CONVERTER).getPropertyValues().get(PACKAGES_TO_SCAN) != null) {
-			String[] earlierValues = (String[]) registry.getBeanDefinition(BUS_JSON_CONVERTER).getPropertyValues()
-					.get(PACKAGES_TO_SCAN);
+			String[] earlierValues = (String[]) registry.getBeanDefinition(BUS_JSON_CONVERTER)
+				.getPropertyValues()
+				.get(PACKAGES_TO_SCAN);
 			return new HashSet<>(Arrays.asList(earlierValues));
 		}
 

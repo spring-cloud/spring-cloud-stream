@@ -65,8 +65,9 @@ public class SubtypeModuleTests {
 
 		BusJacksonMessageConverter converter = new BusJacksonMessageConverter(mapper);
 		converter.afterPropertiesSet();
-		Object event = converter.fromMessage(MessageBuilder
-				.withPayload("{\"type\":\"TestRemoteApplicationEvent\", \"origin_service\":\"myorigin\"}").build(),
+		Object event = converter.fromMessage(
+				MessageBuilder.withPayload("{\"type\":\"TestRemoteApplicationEvent\", \"origin_service\":\"myorigin\"}")
+					.build(),
 				RemoteApplicationEvent.class);
 		assertThat(event).isNotNull().isInstanceOf(TestRemoteApplicationEvent.class);
 		assertThat(TestRemoteApplicationEvent.class.cast(event).getOriginService()).isEqualTo("myorigin");
@@ -91,9 +92,9 @@ public class SubtypeModuleTests {
 				RemoteApplicationEvent.class);
 		assertThat(event instanceof UnknownRemoteApplicationEvent).as("event is wrong type").isTrue();
 		assertThat(((UnknownRemoteApplicationEvent) event).getTypeInfo()).as("type information is wrong")
-				.isEqualTo("NotDefinedTestRemoteApplicationEvent");
+			.isEqualTo("NotDefinedTestRemoteApplicationEvent");
 		assertThat(((UnknownRemoteApplicationEvent) event).getPayloadAsString()).as("payload is wrong")
-				.isEqualTo("{\"type\":\"NotDefinedTestRemoteApplicationEvent\"}");
+			.isEqualTo("{\"type\":\"NotDefinedTestRemoteApplicationEvent\"}");
 	}
 
 	@Test
@@ -112,15 +113,14 @@ public class SubtypeModuleTests {
 	public void testDeserializeAckRemoteApplicationEventWithKnownType() throws Exception {
 		BusJacksonMessageConverter converter = new BusJacksonMessageConverter(null);
 		converter.afterPropertiesSet();
-		Object event = converter
-				.fromMessage(MessageBuilder
-						.withPayload("{\"type\":\"AckRemoteApplicationEvent\", "
-								+ "\"event\":\"org.springframework.cloud.bus.event.test.TestRemoteApplicationEvent\"}")
-						.build(), RemoteApplicationEvent.class);
+		Object event = converter.fromMessage(MessageBuilder
+			.withPayload("{\"type\":\"AckRemoteApplicationEvent\", "
+					+ "\"event\":\"org.springframework.cloud.bus.event.test.TestRemoteApplicationEvent\"}")
+			.build(), RemoteApplicationEvent.class);
 		assertThat(event instanceof AckRemoteApplicationEvent).as("event is no ack").isTrue();
 		AckRemoteApplicationEvent ackEvent = AckRemoteApplicationEvent.class.cast(event);
 		assertThat(ackEvent.getEvent()).as("inner ack event has wrong type")
-				.isEqualTo(TestRemoteApplicationEvent.class);
+			.isEqualTo(TestRemoteApplicationEvent.class);
 	}
 
 	/**
@@ -131,13 +131,12 @@ public class SubtypeModuleTests {
 		BusJacksonMessageConverter converter = new BusJacksonMessageConverter(null);
 		converter.afterPropertiesSet();
 		Object event = converter.fromMessage(MessageBuilder
-				.withPayload(
-						"{\"type\":\"AckRemoteApplicationEvent\", \"event\":\"foo.bar.TestRemoteApplicationEvent\"}")
-				.build(), RemoteApplicationEvent.class);
+			.withPayload("{\"type\":\"AckRemoteApplicationEvent\", \"event\":\"foo.bar.TestRemoteApplicationEvent\"}")
+			.build(), RemoteApplicationEvent.class);
 		assertThat(event instanceof AckRemoteApplicationEvent).as("event is no ack").isTrue();
 		AckRemoteApplicationEvent ackEvent = AckRemoteApplicationEvent.class.cast(event);
 		assertThat(ackEvent.getEvent()).as("inner ack event has wrong type")
-				.isEqualTo(UnknownRemoteApplicationEvent.class);
+			.isEqualTo(UnknownRemoteApplicationEvent.class);
 	}
 
 	@SuppressWarnings("serial")

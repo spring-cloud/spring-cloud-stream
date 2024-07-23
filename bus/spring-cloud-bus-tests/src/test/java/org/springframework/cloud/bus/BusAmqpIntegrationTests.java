@@ -73,7 +73,7 @@ public class BusAmqpIntegrationTests {
 				"spring.rabbitmq.port=" + rabbitMQContainer.getAmqpPort(),
 				"management.endpoints.web.exposure.include=*", "spring.cloud.bus.id=app:2",
 				"spring.autoconfigure.exclude=org.springframework.cloud.stream.test.binder.TestSupportBinderAutoConfiguration")
-				.run();
+			.run();
 	}
 
 	@AfterAll

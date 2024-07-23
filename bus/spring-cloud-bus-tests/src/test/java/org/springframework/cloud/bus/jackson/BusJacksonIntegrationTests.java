@@ -68,8 +68,9 @@ public class BusJacksonIntegrationTests {
 		assertThat(this.converter.isMapperCreated()).isFalse();
 
 		// set by configuration
-		assertThat(this.converter.getMapper().getSerializationConfig()
-				.isEnabled(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)).isTrue();
+		assertThat(this.converter.getMapper()
+			.getSerializationConfig()
+			.isEnabled(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)).isTrue();
 
 		Map map = this.rest.getForObject("http://localhost:" + this.port + "/date", Map.class);
 		assertThat(map).containsOnlyKeys("date");

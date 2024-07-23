@@ -105,8 +105,13 @@ public class BusProperties {
 
 	@Override
 	public String toString() {
-		return new ToStringCreator(this).append("ack", ack).append("trace", trace).append("destination", destination)
-				.append("id", id).append("contentType", contentType).append("enabled", enabled).toString();
+		return new ToStringCreator(this).append("ack", ack)
+			.append("trace", trace)
+			.append("destination", destination)
+			.append("id", id)
+			.append("contentType", contentType)
+			.append("enabled", enabled)
+			.toString();
 
 	}
 
@@ -143,8 +148,9 @@ public class BusProperties {
 
 		@Override
 		public String toString() {
-			return new ToStringCreator(this).append("enabled", enabled).append("destinationService", destinationService)
-					.toString();
+			return new ToStringCreator(this).append("enabled", enabled)
+				.append("destinationService", destinationService)
+				.toString();
 		}
 
 	}

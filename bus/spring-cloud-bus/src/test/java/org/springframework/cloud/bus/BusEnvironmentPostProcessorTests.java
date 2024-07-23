@@ -49,7 +49,7 @@ public class BusEnvironmentPostProcessorTests {
 	@Test
 	void testWithActiveProfile() {
 		MockEnvironment env = new MockEnvironment().withProperty("cachedrandom.application.value", "123")
-				.withProperty("spring.profiles.active", "dev");
+			.withProperty("spring.profiles.active", "dev");
 		new BusEnvironmentPostProcessor().postProcessEnvironment(env, mock(SpringApplication.class));
 		assertThat(env.getProperty(FunctionProperties.PREFIX + ".definition")).isEqualTo(BUS_CONSUMER);
 		assertThat(env.getProperty("spring.cloud.stream.function.bindings." + BUS_CONSUMER + "-in-0")).isEqualTo(INPUT);
@@ -65,15 +65,16 @@ public class BusEnvironmentPostProcessorTests {
 		String fnDefKey = FunctionProperties.PREFIX + ".definition";
 		String idKey = BusProperties.PREFIX + ".id";
 		MockEnvironment env = new MockEnvironment().withProperty("cachedrandom.application.value", "123")
-				.withProperty(BusProperties.PREFIX + ".destination", "mydestination").withProperty(idKey, "app:1")
-				.withProperty(fnDefKey, "uppercase");
+			.withProperty(BusProperties.PREFIX + ".destination", "mydestination")
+			.withProperty(idKey, "app:1")
+			.withProperty(fnDefKey, "uppercase");
 		new BusEnvironmentPostProcessor().postProcessEnvironment(env, mock(SpringApplication.class));
 		assertThat(env.getProperty(fnDefKey)).isEqualTo("uppercase;" + BUS_CONSUMER);
 		assertThat(env.getProperty("spring.cloud.stream.function.bindings." + BUS_CONSUMER + "-in-0")).isEqualTo(INPUT);
 		assertThat(env.getProperty("spring.cloud.stream.bindings." + INPUT + ".destination"))
-				.isEqualTo("mydestination");
+			.isEqualTo("mydestination");
 		assertThat(env.getProperty("spring.cloud.stream.bindings." + OUTPUT + ".destination"))
-				.isEqualTo("mydestination");
+			.isEqualTo("mydestination");
 		assertThat(env.getProperty(idKey)).isEqualTo("app:1");
 		assertThat(env.getPropertySources().contains(OVERRIDES_PROPERTY_SOURCE_NAME));
 		assertThat(env.getPropertySources().contains(DEFAULTS_PROPERTY_SOURCE_NAME));

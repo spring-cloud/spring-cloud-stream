@@ -140,8 +140,10 @@ public abstract class RemoteApplicationEvent extends ApplicationEvent {
 
 	@Override
 	public String toString() {
-		return new ToStringCreator(this).append("id", id).append("originService", originService)
-				.append("destinationService", destinationService).toString();
+		return new ToStringCreator(this).append("id", id)
+			.append("originService", originService)
+			.append("destinationService", destinationService)
+			.toString();
 
 	}
 
