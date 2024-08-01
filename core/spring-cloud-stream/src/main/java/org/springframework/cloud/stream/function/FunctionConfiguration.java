@@ -812,20 +812,27 @@ public class FunctionConfiguration {
 		@Override
 		public Object apply(Message<byte[]> message) {
 			message = sanitize(message);
+			setHeadersIfNeeded(message);
+			Object result = function.apply(message);
+			if (result instanceof Publisher && this.isRoutingFunction) {
+				throw new IllegalStateException("Routing to functions that return Publisher "
+						+ "is not supported in the context of Spring Cloud Stream.");
+			}
+			if (result instanceof Message<?> resultMessage) {
+				setHeadersIfNeeded(resultMessage);
+			}
+			return result;
+		}
+
+		private void setHeadersIfNeeded(Message message) {
 			Map<String, Object> headersMap = (Map<String, Object>) ReflectionUtils
-					.getField(this.headersField, message.getHeaders());
+				.getField(this.headersField, message.getHeaders());
 			if (StringUtils.hasText(targetProtocol)) {
 				headersMap.putIfAbsent(MessageUtils.TARGET_PROTOCOL, targetProtocol);
 			}
 			if (CloudEventMessageUtils.isCloudEvent(message)) {
 				headersMap.putIfAbsent(MessageUtils.MESSAGE_TYPE, CloudEventMessageUtils.CLOUDEVENT_VALUE);
 			}
-			Object result = function.apply(message);
-			if (result instanceof Publisher && this.isRoutingFunction) {
-				throw new IllegalStateException("Routing to functions that return Publisher "
-						+ "is not supported in the context of Spring Cloud Stream.");
-			}
-			return result;
 		}
 	}
 
