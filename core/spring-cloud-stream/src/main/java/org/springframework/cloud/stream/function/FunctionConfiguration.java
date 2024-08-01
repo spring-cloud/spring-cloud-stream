@@ -834,6 +834,7 @@ public class FunctionConfiguration {
 				headersMap.putIfAbsent(MessageUtils.MESSAGE_TYPE, CloudEventMessageUtils.CLOUDEVENT_VALUE);
 			}
 		}
+
 	}
 
 	/**

@@ -42,7 +42,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * @author Omer Celik
  */
+
 public class HeaderTests {
+
 	@BeforeAll
 	public static void before() {
 		System.clearProperty("spring.cloud.function.definition");
