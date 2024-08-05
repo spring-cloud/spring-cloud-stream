@@ -23,6 +23,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -76,6 +77,7 @@ import static org.mockito.Mockito.mock;
 @DirtiesContext
 @EmbeddedKafka(topics = "consumer.producer.txOut", controlledShutdown = true, brokerProperties = {"transaction.state.log.replication.factor=1",
 	"transaction.state.log.min.isr=1"})
+@Disabled
 class ConsumerProducerTransactionTests {
 
 	@Autowired

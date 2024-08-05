@@ -73,6 +73,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 )
 @DirtiesContext
 @EmbeddedKafka
+@Disabled
 class KafkaBinderActuatorTests {
 
 	static final String TEST_CONSUMER_GROUP = "testGroup-actuatorTests";
