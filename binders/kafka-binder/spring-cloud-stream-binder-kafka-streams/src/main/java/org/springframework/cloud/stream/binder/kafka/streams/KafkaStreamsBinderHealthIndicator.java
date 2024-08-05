@@ -93,9 +93,9 @@ public class KafkaStreamsBinderHealthIndicator extends AbstractHealthIndicator i
 									KafkaProperties kafkaProperties,
 									KafkaStreamsBindingInformationCatalogue kafkaStreamsBindingInformationCatalogue) {
 		super("Kafka-streams health check failed");
-		kafkaProperties.buildAdminProperties();
+		kafkaProperties.buildAdminProperties(null);
 		this.configurationProperties = kafkaStreamsBinderConfigurationProperties;
-		this.adminClientProperties = kafkaProperties.buildAdminProperties();
+		this.adminClientProperties = kafkaProperties.buildAdminProperties(null);
 		KafkaTopicProvisioner.normalalizeBootPropsWithBinder(this.adminClientProperties, kafkaProperties,
 				kafkaStreamsBinderConfigurationProperties);
 		this.kafkaStreamsRegistry = kafkaStreamsRegistry;

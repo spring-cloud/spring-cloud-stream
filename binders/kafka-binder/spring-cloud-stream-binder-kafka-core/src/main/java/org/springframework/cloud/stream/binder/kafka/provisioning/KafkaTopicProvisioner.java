@@ -141,7 +141,7 @@ public class KafkaTopicProvisioner implements
 
 		Assert.isTrue(kafkaProperties != null, "KafkaProperties cannot be null");
 		this.configurationProperties = kafkaBinderConfigurationProperties;
-		this.adminClientProperties = kafkaProperties.buildAdminProperties();
+		this.adminClientProperties = kafkaProperties.buildAdminProperties(null);
 		normalalizeBootPropsWithBinder(this.adminClientProperties, kafkaProperties,
 			kafkaBinderConfigurationProperties);
 		// If the application provides AdminConfig customizers

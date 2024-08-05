@@ -944,7 +944,7 @@ class RabbitBinderTests extends
 				this.rabbitTestSupport.getResource())
 						.receive("foo.props.0.prodPropsRequired-0", 10_000);
 		assertThat(received).isNotNull();
-		assertThat(received.getMessageProperties().getReceivedDelay()).isEqualTo(42);
+		assertThat(received.getMessageProperties().getReceivedDelayLong()).isEqualTo(42);
 
 		producerBinding.unbind();
 		assertThat(endpoint.isRunning()).isFalse();
