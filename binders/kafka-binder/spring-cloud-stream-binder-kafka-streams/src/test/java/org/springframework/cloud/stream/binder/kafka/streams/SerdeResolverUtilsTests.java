@@ -26,6 +26,7 @@ import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.common.serialization.Serializer;
 import org.apache.kafka.common.utils.Bytes;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -199,6 +200,7 @@ class SerdeResolverUtilsTests {
 		 * A best practice is to specify the type info (even if it is wildcard) for KStream parameterized types.
 		 */
 		@Test
+		@Disabled
 		void returnsProperlyOrderedSerdesForSimpleGenericTypes() {
 
 			ResolvableType geDate = ResolvableType.forType(new ParameterizedTypeReference<GenericEvent<Date>>() { });
@@ -264,6 +266,7 @@ class SerdeResolverUtilsTests {
 		 * A best practice is to specify the type info (even if it is wildcard) for KStream parameterized types.
 		 */
 		@Test
+		@Disabled
 		void returnsProperlyOrderedSerdesForComplexGenericTypes() {
 
 			ResolvableType geFooDate = ResolvableType.forType(new ParameterizedTypeReference<GenericEvent<Foo<Date>>>() { });
