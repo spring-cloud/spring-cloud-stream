@@ -775,7 +775,7 @@ public void testMultipleFunctions() {
 		Message<byte[]> outputMessage = outputDestination.receive(0, "uppercase-out-0");
 		assertThat(outputMessage.getPayload()).isEqualTo("HELLO".getBytes());
 
-		outputMessage = outputDestination.receive(0, "reverse-out-1");
+		outputMessage = outputDestination.receive(0, "reverse-out-0");
 		assertThat(outputMessage.getPayload()).isEqualTo("olleH".getBytes());
 	}
 }
