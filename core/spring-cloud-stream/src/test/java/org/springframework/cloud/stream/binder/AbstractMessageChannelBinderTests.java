@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2023 the original author or authors.
+ * Copyright 2023-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import java.time.Duration;
 import java.util.Map;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.validation.constraints.NotNull;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.cloud.stream.provisioning.ConsumerDestination;
@@ -44,6 +45,23 @@ public class AbstractMessageChannelBinderTests {
 	@SuppressWarnings("unchecked")
 	void serializeDurationOnObjectMapperInAMCB() throws Exception {
 
+		AbstractMessageChannelBinder<?, ?, ?> binder = createBinderInstance();
+
+		Field objectMapperField = ReflectionUtils.findField(AbstractMessageChannelBinder.class, "objectMapper");
+		assertThat(objectMapperField).isNotNull();
+		ReflectionUtils.makeAccessible(objectMapperField);
+		final ObjectMapper objectMapper = (ObjectMapper) ReflectionUtils.getField(objectMapperField, binder);
+		assertThat(objectMapper).isNotNull();
+
+		Duration duration = Duration.ofHours(1);
+		Map<String, Object> properties = Map.of("foo", duration);
+		final Map<String, Object> convertedMap = objectMapper.convertValue(properties, Map.class);
+
+		assertThat(convertedMap).isNotEmpty();
+	}
+
+	@NotNull
+	private static AbstractMessageChannelBinder<?, ?, ?> createBinderInstance() throws Exception {
 		AbstractMessageChannelBinder<?, ?, ?> binder = new AbstractMessageChannelBinder<>(null, null) {
 			@Override
 			protected MessageHandler createProducerMessageHandler(ProducerDestination destination, ProducerProperties producerProperties, MessageChannel errorChannel) {
@@ -59,17 +77,6 @@ public class AbstractMessageChannelBinderTests {
 		applicationContext.refresh();
 		binder.setApplicationContext(applicationContext);
 		binder.onInit();
-
-		Field objectMapperField = ReflectionUtils.findField(AbstractMessageChannelBinder.class, "objectMapper");
-		assertThat(objectMapperField).isNotNull();
-		ReflectionUtils.makeAccessible(objectMapperField);
-		final ObjectMapper objectMapper = (ObjectMapper) ReflectionUtils.getField(objectMapperField, binder);
-		assertThat(objectMapper).isNotNull();
-
-		Duration duration = Duration.ofHours(1);
-		Map<String, Object> properties = Map.of("foo", duration);
-		final Map<String, Object> convertedMap = objectMapper.convertValue(properties, Map.class);
-
-		assertThat(convertedMap).isNotEmpty();
+		return binder;
 	}
 }
