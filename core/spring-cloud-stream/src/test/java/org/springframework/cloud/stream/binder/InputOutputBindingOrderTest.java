@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2023 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,7 +57,7 @@ class InputOutputBindingOrderTest {
 		verify(binder).bindConsumer(eq("processor-in-0"), isNull(), Mockito.any(MessageChannel.class),
 				Mockito.any());
 		SomeLifecycle someLifecycle = applicationContext.getBean(SomeLifecycle.class);
-		assertThat(someLifecycle.isRunning());
+		assertThat(someLifecycle.isRunning()).isTrue();
 		applicationContext.close();
 		assertThat(someLifecycle.isRunning()).isFalse();
 		applicationContext.close();
