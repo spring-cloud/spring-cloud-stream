@@ -193,7 +193,7 @@ class RabbitBinderModuleTests {
 	private void checkCustomizedArgs() throws MalformedURLException, URISyntaxException, InterruptedException {
 		List<Map<String, Object>> bindings = RestUtils.getBindingsBySource(client, uri, "/", "process-in-0");
 		int n = 0;
-		while (n++ < 100 && bindings == null || bindings.isEmpty()) {
+		while (n++ < 100 && bindings == null || bindings.size() < 1) {
 			Thread.sleep(100);
 			bindings = RestUtils.getBindingsBySource(client, uri, "/", "process-in-0");
 		}
