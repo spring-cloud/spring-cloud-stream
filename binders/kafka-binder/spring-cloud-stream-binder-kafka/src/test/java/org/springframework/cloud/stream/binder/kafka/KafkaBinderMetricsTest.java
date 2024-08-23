@@ -91,7 +91,7 @@ class KafkaBinderMetricsTest {
 		org.mockito.BDDMockito.given(kafkaBinderConfigurationProperties.getMetrics().getOffsetLagMetricsInterval())
 			.willReturn(Duration.ofSeconds(60));
 		metrics = new KafkaBinderMetrics(binder, kafkaBinderConfigurationProperties,
-			consumerFactory, null
+			consumerFactory, meterRegistry
 		);
 		org.mockito.BDDMockito
 			.given(consumer.endOffsets(ArgumentMatchers.anyCollection()))
@@ -349,6 +349,19 @@ class KafkaBinderMetricsTest {
 		metrics.bindTo(meterRegistry);
 		metrics.close();
 		assertThat(metrics.scheduler.isShutdown()).isTrue();
+	}
+
+	@Test
+	public void shouldUnregisterMetersOnClose() throws Exception {
+		final List<PartitionInfo> partitions = partitions(new Node(0, null, 0));
+		topicsInUse.put(
+			TEST_TOPIC,
+			new TopicInformation("group4-metrics", partitions, false)
+		);
+		metrics.bindTo(meterRegistry);
+		assertThat(meterRegistry.find(KafkaBinderMetrics.OFFSET_LAG_METRIC_NAME).meters()).hasSize(1);
+		metrics.close();
+		assertThat(meterRegistry.find(KafkaBinderMetrics.OFFSET_LAG_METRIC_NAME).meters()).isEmpty();
 	}
 
 	private List<PartitionInfo> partitions(Node... nodes) {

@@ -263,6 +263,9 @@ public class KafkaBinderMetrics
 
 	@Override
 	public void close() throws Exception {
+		if (this.meterRegistry != null) {
+			this.meterRegistry.find(OFFSET_LAG_METRIC_NAME).meters().forEach(this.meterRegistry::remove);
+		}
 		Optional.ofNullable(scheduler).ifPresent(ExecutorService::shutdown);
 	}
 }
