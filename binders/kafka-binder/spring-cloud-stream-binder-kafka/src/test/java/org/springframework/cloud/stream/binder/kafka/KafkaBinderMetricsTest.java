@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2023 the original author or authors.
+ * Copyright 2016-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,6 +56,7 @@ import static org.mockito.Mockito.mock;
  * @author Lars Bilger
  * @author Tomek Szmytka
  * @author Nico Heller
+ * @author Kurt Hong
  */
 class KafkaBinderMetricsTest {
 
@@ -91,7 +92,7 @@ class KafkaBinderMetricsTest {
 		org.mockito.BDDMockito.given(kafkaBinderConfigurationProperties.getMetrics().getOffsetLagMetricsInterval())
 			.willReturn(Duration.ofSeconds(60));
 		metrics = new KafkaBinderMetrics(binder, kafkaBinderConfigurationProperties,
-			consumerFactory, null
+			consumerFactory, meterRegistry
 		);
 		org.mockito.BDDMockito
 			.given(consumer.endOffsets(ArgumentMatchers.anyCollection()))
@@ -349,6 +350,19 @@ class KafkaBinderMetricsTest {
 		metrics.bindTo(meterRegistry);
 		metrics.close();
 		assertThat(metrics.scheduler.isShutdown()).isTrue();
+	}
+
+	@Test
+	public void shouldUnregisterMetersOnClose() throws Exception {
+		final List<PartitionInfo> partitions = partitions(new Node(0, null, 0));
+		topicsInUse.put(
+			TEST_TOPIC,
+			new TopicInformation("group4-metrics", partitions, false)
+		);
+		metrics.bindTo(meterRegistry);
+		assertThat(meterRegistry.find(KafkaBinderMetrics.OFFSET_LAG_METRIC_NAME).meters()).hasSize(1);
+		metrics.close();
+		assertThat(meterRegistry.find(KafkaBinderMetrics.OFFSET_LAG_METRIC_NAME).meters()).isEmpty();
 	}
 
 	private List<PartitionInfo> partitions(Node... nodes) {
