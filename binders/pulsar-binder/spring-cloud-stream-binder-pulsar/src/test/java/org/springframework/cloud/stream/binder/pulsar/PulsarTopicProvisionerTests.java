@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2023 the original author or authors.
+ * Copyright 2023-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,17 +50,7 @@ class PulsarTopicProvisionerTests {
 				new PulsarProducerProperties());
 		ProducerDestination producerDestination = pulsarTopicProvisioner.provisionProducerDestination("foo",
 				properties);
-		verifyAndAssert(pulsarAdministration, producerDestination.getName(), "foo", 0);
-	}
-
-	private static void verifyAndAssert(PulsarAdministration pulsarAdministration, String actualProducerDestination,
-			String expectedProducerDestination, int expectedPartitionCount) {
-		ArgumentCaptor<PulsarTopic> pulsarTopicArgumentCaptor = ArgumentCaptor.forClass(PulsarTopic.class);
-		verify(pulsarAdministration, times(1)).createOrModifyTopics(pulsarTopicArgumentCaptor.capture());
-		assertThat(actualProducerDestination).isEqualTo(expectedProducerDestination);
-		PulsarTopic pulsarTopic = pulsarTopicArgumentCaptor.getValue();
-		assertThat(pulsarTopic.topicName()).isEqualTo(expectedProducerDestination);
-		assertThat(pulsarTopic.numberOfPartitions()).isEqualTo(expectedPartitionCount);
+		verifyAndAssert(pulsarAdministration, producerDestination.getName(), "persistent://public/default/foo", 0);
 	}
 
 	@Test
@@ -73,7 +63,7 @@ class PulsarTopicProvisionerTests {
 				new PulsarConsumerProperties());
 		ConsumerDestination consumerDestination = pulsarTopicProvisioner.provisionConsumerDestination("bar", "",
 				properties);
-		verifyAndAssert(pulsarAdministration, consumerDestination.getName(), "bar", 0);
+		verifyAndAssert(pulsarAdministration, consumerDestination.getName(), "persistent://public/default/bar", 0);
 	}
 
 	@Test
@@ -87,7 +77,7 @@ class PulsarTopicProvisionerTests {
 				new PulsarProducerProperties());
 		ProducerDestination producerDestination = pulsarTopicProvisioner.provisionProducerDestination("foo",
 				properties);
-		verifyAndAssert(pulsarAdministration, producerDestination.getName(), "foo", 4);
+		verifyAndAssert(pulsarAdministration, producerDestination.getName(), "persistent://public/default/foo", 4);
 	}
 
 	@Test
@@ -101,7 +91,7 @@ class PulsarTopicProvisionerTests {
 		properties.getExtension().setPartitionCount(4);
 		ProducerDestination producerDestination = pulsarTopicProvisioner.provisionProducerDestination("foo",
 				properties);
-		verifyAndAssert(pulsarAdministration, producerDestination.getName(), "foo", 4);
+		verifyAndAssert(pulsarAdministration, producerDestination.getName(), "persistent://public/default/foo", 4);
 	}
 
 	@Test
@@ -115,7 +105,7 @@ class PulsarTopicProvisionerTests {
 				new PulsarConsumerProperties());
 		ConsumerDestination consumerDestination = pulsarTopicProvisioner.provisionConsumerDestination("bar", "",
 				properties);
-		verifyAndAssert(pulsarAdministration, consumerDestination.getName(), "bar", 4);
+		verifyAndAssert(pulsarAdministration, consumerDestination.getName(), "persistent://public/default/bar", 4);
 	}
 
 	@Test
@@ -130,7 +120,16 @@ class PulsarTopicProvisionerTests {
 				pulsarConsumerProperties);
 		ConsumerDestination consumerDestination = pulsarTopicProvisioner.provisionConsumerDestination("bar", "",
 				properties);
-		verifyAndAssert(pulsarAdministration, consumerDestination.getName(), "bar", 4);
+		verifyAndAssert(pulsarAdministration, consumerDestination.getName(), "persistent://public/default/bar", 4);
 	}
 
+	private static void verifyAndAssert(PulsarAdministration pulsarAdministration, String actualProducerDestination,
+			String expectedProducerDestination, int expectedPartitionCount) {
+		ArgumentCaptor<PulsarTopic> pulsarTopicArgumentCaptor = ArgumentCaptor.forClass(PulsarTopic.class);
+		verify(pulsarAdministration, times(1)).createOrModifyTopics(pulsarTopicArgumentCaptor.capture());
+		assertThat(actualProducerDestination).isEqualTo(expectedProducerDestination);
+		PulsarTopic pulsarTopic = pulsarTopicArgumentCaptor.getValue();
+		assertThat(pulsarTopic.topicName()).isEqualTo(expectedProducerDestination);
+		assertThat(pulsarTopic.numberOfPartitions()).isEqualTo(expectedPartitionCount);
+	}
 }
