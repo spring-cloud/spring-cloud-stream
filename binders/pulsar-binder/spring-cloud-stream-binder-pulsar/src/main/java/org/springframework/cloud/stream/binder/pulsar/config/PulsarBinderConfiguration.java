@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2023 the original author or authors.
+ * Copyright 2023-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.pulsar.core.PulsarAdministration;
 import org.springframework.pulsar.core.PulsarConsumerFactory;
 import org.springframework.pulsar.core.PulsarTemplate;
+import org.springframework.pulsar.core.PulsarTopicBuilder;
 import org.springframework.pulsar.core.SchemaResolver;
 import org.springframework.pulsar.support.header.JacksonUtils;
 import org.springframework.pulsar.support.header.JsonPulsarHeaderMapper;
@@ -39,6 +40,7 @@ import org.springframework.pulsar.support.header.ToStringPulsarHeaderMapper;
  * Pulsar binder {@link Configuration}.
  *
  * @author Soby Chacko
+ * @author Chris Bono
  */
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnMissingBean(Binder.class)
@@ -48,8 +50,9 @@ public class PulsarBinderConfiguration {
 
 	@Bean
 	public PulsarTopicProvisioner pulsarTopicProvisioner(PulsarAdministration pulsarAdministration,
-			PulsarBinderConfigurationProperties pulsarBinderConfigurationProperties) {
-		return new PulsarTopicProvisioner(pulsarAdministration, pulsarBinderConfigurationProperties);
+			PulsarBinderConfigurationProperties pulsarBinderConfigurationProperties,
+			PulsarTopicBuilder topicBuilder) {
+		return new PulsarTopicProvisioner(pulsarAdministration, pulsarBinderConfigurationProperties, topicBuilder);
 	}
 
 	@Bean

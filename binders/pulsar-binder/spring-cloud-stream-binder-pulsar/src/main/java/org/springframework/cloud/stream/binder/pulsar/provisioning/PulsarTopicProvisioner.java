@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 the original author or authors.
+ * Copyright 2022-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,12 +27,13 @@ import org.springframework.cloud.stream.provisioning.ProvisioningException;
 import org.springframework.cloud.stream.provisioning.ProvisioningProvider;
 import org.springframework.lang.Nullable;
 import org.springframework.pulsar.core.PulsarAdministration;
-import org.springframework.pulsar.core.PulsarTopic;
+import org.springframework.pulsar.core.PulsarTopicBuilder;
 
 /**
  * Pulsar topic provisioner.
  *
  * @author Soby Chacko
+ * @author Chris Bono
  */
 public class PulsarTopicProvisioner implements
 		ProvisioningProvider<ExtendedConsumerProperties<PulsarConsumerProperties>, ExtendedProducerProperties<PulsarProducerProperties>> {
@@ -41,10 +42,19 @@ public class PulsarTopicProvisioner implements
 
 	private final PulsarBinderConfigurationProperties pulsarBinderConfigurationProperties;
 
+	private final PulsarTopicBuilder topicBuilder;
+
 	public PulsarTopicProvisioner(PulsarAdministration pulsarAdministration,
 			PulsarBinderConfigurationProperties pulsarBinderConfigurationProperties) {
+		this(pulsarAdministration, pulsarBinderConfigurationProperties, new PulsarTopicBuilder());
+	}
+
+	public PulsarTopicProvisioner(PulsarAdministration pulsarAdministration,
+			PulsarBinderConfigurationProperties pulsarBinderConfigurationProperties,
+			PulsarTopicBuilder topicBuilder) {
 		this.pulsarAdministration = pulsarAdministration;
 		this.pulsarBinderConfigurationProperties = pulsarBinderConfigurationProperties;
+		this.topicBuilder = topicBuilder;
 	}
 
 	@Override
@@ -53,7 +63,7 @@ public class PulsarTopicProvisioner implements
 			throws ProvisioningException {
 		Integer partitionCountFromBinding = pulsarProducerProperties.getExtension().getPartitionCount();
 		var partitionCount = getPartitionCount(partitionCountFromBinding);
-		var pulsarTopic = PulsarTopic.builder(name).numberOfPartitions(partitionCount).build();
+		var pulsarTopic = this.topicBuilder.name(name).numberOfPartitions(partitionCount).build();
 		this.pulsarAdministration.createOrModifyTopics(pulsarTopic);
 		return new PulsarDestination(pulsarTopic.topicName(), pulsarTopic.numberOfPartitions());
 	}
@@ -72,7 +82,7 @@ public class PulsarTopicProvisioner implements
 			throws ProvisioningException {
 		var partitionCountFromBinding = pulsarConsumerProperties.getExtension().getPartitionCount();
 		var partitionCount = getPartitionCount(partitionCountFromBinding);
-		var pulsarTopic = PulsarTopic.builder(name).numberOfPartitions(partitionCount).build();
+		var pulsarTopic = this.topicBuilder.name(name).numberOfPartitions(partitionCount).build();
 		this.pulsarAdministration.createOrModifyTopics(pulsarTopic);
 		return new PulsarDestination(pulsarTopic.topicName(), pulsarTopic.numberOfPartitions());
 	}

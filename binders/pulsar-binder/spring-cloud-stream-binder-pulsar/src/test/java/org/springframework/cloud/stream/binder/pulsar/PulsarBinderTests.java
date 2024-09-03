@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2023 the original author or authors.
+ * Copyright 2023-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,6 +55,7 @@ import org.springframework.pulsar.core.DefaultPulsarProducerFactory;
 import org.springframework.pulsar.core.DefaultSchemaResolver;
 import org.springframework.pulsar.core.PulsarAdministration;
 import org.springframework.pulsar.core.PulsarTemplate;
+import org.springframework.pulsar.core.PulsarTopicBuilder;
 import org.springframework.pulsar.support.header.JsonPulsarHeaderMapper;
 import org.springframework.util.Assert;
 import org.springframework.util.MimeTypeUtils;
@@ -101,7 +102,8 @@ class PulsarBinderTests extends
 	protected PulsarTestBinder getBinder() {
 		var pulsarAdministration = new PulsarAdministration(PulsarTestContainerSupport.getHttpServiceUrl());
 		var configProps = new PulsarBinderConfigurationProperties();
-		var provisioner = new PulsarTopicProvisioner(pulsarAdministration, configProps);
+		var topicBuilder = new PulsarTopicBuilder();
+		var provisioner = new PulsarTopicProvisioner(pulsarAdministration, configProps, topicBuilder);
 		var producerFactory = new DefaultPulsarProducerFactory<>(pulsarClient);
 		var pulsarTemplate = new PulsarTemplate<>(producerFactory);
 		var consumerFactory = new DefaultPulsarConsumerFactory<>(pulsarClient,
