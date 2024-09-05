@@ -19,6 +19,7 @@ package org.springframework.cloud.stream.binder;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import org.assertj.core.api.InstanceOfAssertFactories;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.boot.WebApplicationType;
@@ -29,6 +30,9 @@ import org.springframework.cloud.stream.binder.test.TestChannelBinder;
 import org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
+import org.springframework.integration.channel.AbstractMessageChannel;
+import org.springframework.integration.context.IntegrationContextUtils;
+import org.springframework.integration.handler.BridgeHandler;
 import org.springframework.messaging.support.GenericMessage;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -99,7 +103,7 @@ class ErrorBindingTests {
 
 	@Test
 	void errorBindingWithMultipleDestinationPerBinding() {
-		new SpringApplicationBuilder(
+		ApplicationContext context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(NoErrorHandler.class))
 			.web(WebApplicationType.NONE)
 			.run("--spring.cloud.stream.bindings.process-in-0.consumer.max-attempts=1",
@@ -108,6 +112,27 @@ class ErrorBindingTests {
 				"--spring.jmx.enabled=false");
 
 		// must not fail GH-2599
+		InputDestination source = context.getBean(InputDestination.class);
+		source.send(new GenericMessage<byte[]>("Hello".getBytes()));
+		// We validate that error is logged only once : BridgeHandler to bean 'errorChannel' subscribed only once
+		BinderErrorChannel binderErrorChannel = context.getBean(BinderErrorChannel.class);
+		assertThat(binderErrorChannel.getSubscriberCount())
+			.isEqualTo(2); // binderProvidedErrorHandler and BridgeHandler to bean 'errorChannel'
+		// The BridgeHandler bean associated with this binding bridges to 'errorChannel' bean
+		assertThat(
+			context.getBeansOfType(BridgeHandler.class)
+				.entrySet()
+				.stream()
+				.filter(entry -> entry.getKey().endsWith("process-in-0.errors.bridge"))
+				.findAny())
+			.isPresent()
+			.get()
+			.satisfies(bridgeHandler -> assertThat(bridgeHandler.getValue().getOutputChannel())
+				.isNotNull()
+				.asInstanceOf(InstanceOfAssertFactories.type(AbstractMessageChannel.class))
+				.extracting(AbstractMessageChannel::getBeanName)
+				.isEqualTo(IntegrationContextUtils.ERROR_CHANNEL_BEAN_NAME)
+			);
 	}
 
 	@EnableAutoConfiguration
