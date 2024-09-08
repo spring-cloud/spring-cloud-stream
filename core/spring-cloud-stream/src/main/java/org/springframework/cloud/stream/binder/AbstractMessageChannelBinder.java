@@ -886,10 +886,14 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 
 		// Setup a bridge to global errorChannel to ensure logging of errors could be controlled via standard SI way
 		if (this.getApplicationContext().containsBean(IntegrationContextUtils.ERROR_CHANNEL_BEAN_NAME) && this.isSubscribable(binderErrorChannel)) {
-			SubscribableChannel globalErrorChannel = this.getApplicationContext().getBean(IntegrationContextUtils.ERROR_CHANNEL_BEAN_NAME, SubscribableChannel.class);
-			BridgeHandler bridge = new BridgeHandler();
-			bridge.setOutputChannel(globalErrorChannel);
-			binderErrorChannel.subscribe(bridge);
+			String errorBridgeHandlerName = getErrorBridgeName(destination, group, consumerProperties);
+			if (!getApplicationContext().containsBean(errorBridgeHandlerName)) {
+				SubscribableChannel globalErrorChannel = this.getApplicationContext().getBean(IntegrationContextUtils.ERROR_CHANNEL_BEAN_NAME, SubscribableChannel.class);
+				BridgeHandler bridge = new BridgeHandler();
+				bridge.setOutputChannel(globalErrorChannel);
+				binderErrorChannel.subscribe(bridge);
+				((GenericApplicationContext) getApplicationContext()).registerBean(errorBridgeHandlerName, BridgeHandler.class, () -> bridge);
+			}
 		}
 		return new ErrorInfrastructure(binderErrorChannel, recoverer, binderProvidedErrorHandler);
 	}
