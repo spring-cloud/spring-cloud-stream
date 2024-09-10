@@ -58,7 +58,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Gary Russell
  * @author Byungjun You
  * @author Kotaro Matsumoto
- *
+ * @author Soby Chacko
  */
 class ContentTypeTckTests {
 
@@ -111,7 +111,7 @@ class ContentTypeTckTests {
 	void pojoToStringOutboundContentTypeBinding() {
 		ApplicationContext context = new SpringApplicationBuilder(
 			PojoToStringConfiguration.class).web(WebApplicationType.NONE).run(
-			"--spring.cloud.stream.bindings.echo-out-0.contentType=text/plain",
+			"--spring.cloud.stream.bindings.echo-in-0.contentType=application/json",
 			"--spring.jmx.enabled=false");
 		InputDestination source = context.getBean(InputDestination.class);
 		OutputDestination target = context.getBean(OutputDestination.class);
@@ -119,7 +119,7 @@ class ContentTypeTckTests {
 		source.send(new GenericMessage<>(jsonPayload.getBytes()));
 		Message<byte[]> outputMessage = target.receive();
 		assertThat(outputMessage.getHeaders().get(MessageHeaders.CONTENT_TYPE))
-			.isEqualTo(MimeTypeUtils.TEXT_PLAIN_VALUE);
+			.isEqualTo(MimeTypeUtils.APPLICATION_JSON_VALUE);
 		assertThat(new String(outputMessage.getPayload(), StandardCharsets.UTF_8))
 			.isEqualTo("oleg");
 	}
@@ -173,7 +173,7 @@ class ContentTypeTckTests {
 	void typelessToPojoInboundContentTypeBinding() {
 		ApplicationContext context = new SpringApplicationBuilder(
 			TypelessToPojoConfiguration.class).web(WebApplicationType.NONE).run(
-			"--spring.cloud.stream.bindings.echo-in-0.contentType=text/plain",
+			"--spring.cloud.stream.bindings.echo-in-0.contentType=application/json",
 			"--spring.jmx.enabled=false");
 		InputDestination source = context.getBean(InputDestination.class);
 		OutputDestination target = context.getBean(OutputDestination.class);
@@ -207,7 +207,7 @@ class ContentTypeTckTests {
 	void typelessMessageToPojoInboundContentTypeBinding() {
 		ApplicationContext context = new SpringApplicationBuilder(
 			TypelessMessageToPojoConfiguration.class).web(WebApplicationType.NONE)
-			.run("--spring.cloud.stream.bindings.echo-in-0.contentType=text/plain",
+			.run("--spring.cloud.stream.bindings.echo-in-0.contentType=application/json",
 				"--spring.jmx.enabled=false");
 		InputDestination source = context.getBean(InputDestination.class);
 		OutputDestination target = context.getBean(OutputDestination.class);
@@ -246,7 +246,7 @@ class ContentTypeTckTests {
 		OutputDestination target = context.getBean(OutputDestination.class);
 		String jsonPayload = "{\"name\":\"oleg\"}";
 		source.send(MessageBuilder.withPayload(jsonPayload.getBytes())
-			.setHeader(MessageHeaders.CONTENT_TYPE, MimeType.valueOf("text/plain"))
+			.setHeader(MessageHeaders.CONTENT_TYPE, MimeType.valueOf("application/json"))
 			.build());
 		Message<byte[]> outputMessage = target.receive();
 		assertThat(outputMessage.getHeaders().get(MessageHeaders.CONTENT_TYPE))
@@ -303,7 +303,7 @@ class ContentTypeTckTests {
 		String jsonPayload = "{\"name\":\"oleg\"}";
 		source.send(new GenericMessage<>(jsonPayload.getBytes(),
 			new MessageHeaders(Collections.singletonMap(MessageHeaders.CONTENT_TYPE,
-				MimeTypeUtils.TEXT_PLAIN))));
+				MimeTypeUtils.APPLICATION_JSON_VALUE))));
 		Message<byte[]> outputMessage = target.receive();
 		assertThat(outputMessage.getHeaders().get(MessageHeaders.CONTENT_TYPE))
 			.isEqualTo(MimeTypeUtils.APPLICATION_JSON_VALUE);
@@ -315,7 +315,7 @@ class ContentTypeTckTests {
 	void byteArrayToPojoInboundContentTypeBinding() {
 		ApplicationContext context = new SpringApplicationBuilder(
 			ByteArrayToPojoConfiguration.class).web(WebApplicationType.NONE).run(
-			"--spring.cloud.stream.bindings.echo-in-0.contentType=text/plain",
+			"--spring.cloud.stream.bindings.echo-in-0.contentType=application/json",
 			"--spring.jmx.enabled=false");
 		InputDestination source = context.getBean(InputDestination.class);
 		OutputDestination target = context.getBean(OutputDestination.class);
@@ -338,7 +338,7 @@ class ContentTypeTckTests {
 		String jsonPayload = "{\"name\":\"oleg\"}";
 		source.send(new GenericMessage<>(jsonPayload.getBytes(),
 			new MessageHeaders(Collections.singletonMap(MessageHeaders.CONTENT_TYPE,
-				MimeTypeUtils.TEXT_PLAIN))));
+				MimeTypeUtils.APPLICATION_JSON))));
 		Message<byte[]> outputMessage = target.receive();
 		assertThat(outputMessage.getHeaders().get(MessageHeaders.CONTENT_TYPE))
 			.isEqualTo(MimeTypeUtils.APPLICATION_JSON_VALUE);

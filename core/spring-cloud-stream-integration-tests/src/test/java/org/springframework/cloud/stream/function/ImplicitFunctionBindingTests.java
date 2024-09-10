@@ -17,7 +17,6 @@
 package org.springframework.cloud.stream.function;
 
 import java.io.Serializable;
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -929,7 +928,8 @@ class ImplicitFunctionBindingTests {
 			OutputDestination outputDestination = context.getBean(OutputDestination.class);
 
 			Message<byte[]> inputMessage = MessageBuilder.withPayload("{\"name\":\"Jim Lahey\",\"id\":420}".getBytes())
-				.setHeader(MessageHeaders.CONTENT_TYPE, "application/json".getBytes(StandardCharsets.UTF_8))
+//				.setHeader(MessageHeaders.CONTENT_TYPE, "application/json".getBytes(StandardCharsets.UTF_8))
+				.setHeader(MessageHeaders.CONTENT_TYPE, "application/json")
 				.build();
 
 			inputDestination.send(inputMessage, "echoPerson-in-0");
