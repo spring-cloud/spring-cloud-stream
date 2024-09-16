@@ -72,15 +72,19 @@
 			</exclusions>
 			<scope>test</scope>
 		</dependency>
-<!--		<dependency>-->
-<!--			&lt;!&ndash; used for testing https://github.com/spring-cloud/spring-cloud-schema-registry/issues/19 &ndash;&gt;-->
-<!--			<groupId>com.fasterxml.jackson.dataformat</groupId>-->
-<!--			<artifactId>jackson-dataformat-xml</artifactId>-->
-<!--			<scope>tests</scope>-->
-<!--		</dependency>-->
 	</dependencies>
 	<build>
 		<plugins>
+			<plugin>
+	            <groupId>org.apache.maven.plugins</groupId>
+	            <artifactId>maven-checkstyle-plugin</artifactId>
+	            <executions>
+	                <execution>
+	                    <id>checkstyle-validation</id>
+	                    <phase>none</phase>
+	                </execution>
+	            </executions>
+	        </plugin>
 			<plugin>
 				<groupId>org.apache.avro</groupId>
 				<artifactId>avro-maven-plugin</artifactId>
