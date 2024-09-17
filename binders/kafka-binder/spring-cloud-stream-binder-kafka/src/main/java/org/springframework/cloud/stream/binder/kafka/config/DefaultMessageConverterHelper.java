@@ -16,13 +16,18 @@
 
 package org.springframework.cloud.stream.binder.kafka.config;
 
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 
 import org.springframework.cloud.function.context.config.MessageConverterHelper;
+import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageHeaders;
 
 /**
  * @author Oleg Zhurakousky
+ * @author Soby Chacko
  */
 public class DefaultMessageConverterHelper implements MessageConverterHelper {
 
@@ -32,10 +37,22 @@ public class DefaultMessageConverterHelper implements MessageConverterHelper {
 	}
 
 	public void postProcessBatchMessageOnFailure(Message<?> message, int index) {
-		AtomicInteger deliveryAttempt = (AtomicInteger) message.getHeaders().get("deliveryAttempt");
-//		if (message.getHeaders().containsKey("amqp_batchedHeaders") && deliveryAttempt != null && deliveryAttempt.get() == 1) {
-//			ArrayList<?> list = (ArrayList<?>) message.getHeaders().get("amqp_batchedHeaders");
-//			list.remove(index);
-//		}
+		MessageHeaders headers = message.getHeaders();
+		Set<String> headerKeySet = headers.keySet();
+		List<String> matchingHeaderKeys = new ArrayList<>();
+
+		for (String string : headerKeySet) {
+			if (string.startsWith(KafkaHeaders.PREFIX)) {
+				matchingHeaderKeys.add(string);
+			}
+		}
+		for (String matchingHeaderKey : matchingHeaderKeys) {
+			Object matchingHeaderValue = message.getHeaders().get(matchingHeaderKey);
+			if (matchingHeaderValue instanceof ArrayList<?> list) {
+				if (!list.isEmpty()) {
+					list.remove(index);
+				}
+			}
+		}
 	}
 }
