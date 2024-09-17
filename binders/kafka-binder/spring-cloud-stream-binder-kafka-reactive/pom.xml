@@ -87,13 +87,9 @@
 		<dependency>
 			<groupId>io.micrometer</groupId>
 			<artifactId>context-propagation</artifactId>
+			<scope>optional</scope>
 		</dependency>
 
-		<dependency>
-			<groupId>io.micrometer</groupId>
-			<artifactId>micrometer-tracing-bridge-brave</artifactId>
-			<scope>test</scope>
-		</dependency>
 		<dependency>
 			<groupId>io.micrometer</groupId>
 			<artifactId>micrometer-tracing-integration-test</artifactId>

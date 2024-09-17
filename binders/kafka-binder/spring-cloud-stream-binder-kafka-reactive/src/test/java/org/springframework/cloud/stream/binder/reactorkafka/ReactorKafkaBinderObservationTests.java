@@ -60,15 +60,15 @@ import static org.awaitility.Awaitility.await;
 /**
  * @author Artem Bilan
  * @author Soby Chacko
- * @since 4.1.1
+ * @since 4.2.0
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE, properties = {
 	"spring.kafka.consumer.metadata.max.age.ms=1000",
 	"spring.cloud.function.definition=receive",
 	"spring.cloud.stream.function.reactive.uppercase=true",
-	"spring.cloud.stream.bindings.receive-in-0.group=grp1",
-	"spring.cloud.stream.bindings.receive-in-0.destination=words1",
-	"spring.cloud.stream.bindings.receive-out-0.destination=foobar",
+	"spring.cloud.stream.bindings.receive-in-0.group=rkbot-in-group",
+	"spring.cloud.stream.bindings.receive-in-0.destination=rkbot-in-topic",
+	"spring.cloud.stream.bindings.receive-out-0.destination=rkbot-out-topic",
 	"spring.cloud.stream.kafka.binder.enable-observation=true",
 	"spring.cloud.stream.kafka.binder.brokers=${spring.kafka.bootstrap-servers}",
 	"management.tracing.sampling.probability=1",
@@ -76,7 +76,7 @@ import static org.awaitility.Awaitility.await;
 	})
 @DirtiesContext
 @AutoConfigureObservability
-@EmbeddedKafka(topics = { "foobar" })
+@EmbeddedKafka(topics = { "rkbot-out-topic" })
 public class ReactorKafkaBinderObservationTests {
 
 	private static final TestSpanHandler SPANS = new TestSpanHandler();
@@ -96,7 +96,7 @@ public class ReactorKafkaBinderObservationTests {
 	@Test
 	void endToEndReactorKafkaBinder1() {
 
-		streamBridge.send("words1", MessageBuilder.withPayload("data")
+		streamBridge.send("rkbot-in-topic", MessageBuilder.withPayload("data")
 			.build());
 
 		await().timeout(Duration.ofSeconds(10)).untilAsserted(() -> assertThat(SPANS.spans()).hasSize(3));
