@@ -1,5 +1,5 @@
 /*
- * Copyright 2021-2023 the original author or authors.
+ * Copyright 2021-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
+import io.micrometer.observation.ObservationRegistry;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -84,6 +85,7 @@ import org.springframework.util.StringUtils;
  * @author Gary Russell
  * @author Byungjun You
  * @author Omer Celik
+ * @author Soby Chacko
  * @since 4.0
  *
  */
@@ -111,11 +113,14 @@ public class ReactorKafkaBinder
 
 	private final Map<String, MessageProducerSupport> messageProducers = new ConcurrentHashMap<>();
 
+	private final ObservationRegistry observationRegistry;
+
 	public ReactorKafkaBinder(KafkaBinderConfigurationProperties configurationProperties,
-			KafkaTopicProvisioner provisioner) {
+							KafkaTopicProvisioner provisioner, @Nullable ObservationRegistry observationRegistry) {
 
 		super(new String[0], provisioner, null, null);
 		this.configurationProperties = configurationProperties;
+		this.observationRegistry = observationRegistry;
 	}
 
 	public void setConsumerConfigCustomizer(ConsumerConfigCustomizer consumerConfigCustomizer) {
@@ -194,6 +199,9 @@ public class ReactorKafkaBinder
 
 		SenderOptions<Object, Object> opts = this.senderOptionsCustomizer.apply(producerProperties.getBindingName(),
 				SenderOptions.create(configs));
+		if (this.configurationProperties.isEnableObservation() && this.observationRegistry != null) {
+			opts = opts.withObservation(this.observationRegistry);
+		}
 		// TODO bean for converter; MCB doesn't use one on the producer side.
 		RecordMessageConverter converter = new MessagingMessageConverter();
 		AbstractApplicationContext applicationContext = getApplicationContext();
@@ -405,7 +413,7 @@ public class ReactorKafkaBinder
 				@SuppressWarnings("unchecked")
 				SenderRecord<Object, Object, Object> sr = SenderRecord.create(
 						(ProducerRecord<Object, Object>) converter.fromMessage(message, topic), correlation);
-				Flux<SenderResult<Object>> result = sender.send(Flux.just(sr));
+				Flux<SenderResult<Object>> result = sender.send(Flux.just(sr)).contextCapture();
 				result.subscribe(res -> {
 					if (this.results != null) {
 						this.results.send(MessageBuilder.withPayload(res)

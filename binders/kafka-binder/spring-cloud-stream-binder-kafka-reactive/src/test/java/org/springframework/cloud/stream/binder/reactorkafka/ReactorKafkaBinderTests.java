@@ -83,7 +83,7 @@ class ReactorKafkaBinderTests {
 		KafkaTopicProvisioner provisioner = new KafkaTopicProvisioner(binderProps, kafkaProperties, prop -> {
 		});
 		provisioner.setMetadataRetryOperations(new RetryTemplate());
-		ReactorKafkaBinder binder = new ReactorKafkaBinder(binderProps, provisioner);
+		ReactorKafkaBinder binder = new ReactorKafkaBinder(binderProps, provisioner, null);
 		binder.setApplicationContext(mock(GenericApplicationContext.class));
 
 		CountDownLatch latch = new CountDownLatch(2);
@@ -148,7 +148,7 @@ class ReactorKafkaBinderTests {
 		KafkaTopicProvisioner provisioner = new KafkaTopicProvisioner(binderProps, kafkaProperties, prop -> {
 		});
 		provisioner.setMetadataRetryOperations(new RetryTemplate());
-		ReactorKafkaBinder binder = new ReactorKafkaBinder(binderProps, provisioner);
+		ReactorKafkaBinder binder = new ReactorKafkaBinder(binderProps, provisioner, null);
 		binder.setApplicationContext(mock(GenericApplicationContext.class));
 
 		CountDownLatch subscriptionLatch = new CountDownLatch(1);
@@ -229,7 +229,7 @@ class ReactorKafkaBinderTests {
 		KafkaTopicProvisioner provisioner = new KafkaTopicProvisioner(binderProps, kafkaProperties, prop -> {
 		});
 		provisioner.setMetadataRetryOperations(new RetryTemplate());
-		ReactorKafkaBinder binder = new ReactorKafkaBinder(binderProps, provisioner);
+		ReactorKafkaBinder binder = new ReactorKafkaBinder(binderProps, provisioner, null);
 		binder.setApplicationContext(mock(GenericApplicationContext.class));
 
 		CountDownLatch subscriptionLatch = new CountDownLatch(1);
@@ -298,7 +298,7 @@ class ReactorKafkaBinderTests {
 		KafkaTopicProvisioner provisioner = new KafkaTopicProvisioner(binderProps, kafkaProperties, prop -> {
 		});
 		provisioner.setMetadataRetryOperations(new RetryTemplate());
-		ReactorKafkaBinder binder = new ReactorKafkaBinder(binderProps, provisioner);
+		ReactorKafkaBinder binder = new ReactorKafkaBinder(binderProps, provisioner, null);
 		CountDownLatch latch = new CountDownLatch(1);
 		GenericApplicationContext context = new GenericApplicationContext();
 		context.registerBean("sendResults", FluxMessageChannel.class);
