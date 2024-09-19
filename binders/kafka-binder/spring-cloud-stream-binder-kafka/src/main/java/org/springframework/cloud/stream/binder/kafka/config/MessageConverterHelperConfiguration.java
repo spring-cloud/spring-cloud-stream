@@ -28,7 +28,7 @@ import org.springframework.context.annotation.Configuration;
 public class MessageConverterHelperConfiguration {
 
 	@Bean
-	public MessageConverterHelper messageConverterHelper() {
+	public MessageConverterHelper kafkaMessageConverterHelper() {
 		return new DefaultMessageConverterHelper();
 	}
 }
