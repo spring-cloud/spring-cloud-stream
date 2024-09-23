@@ -923,9 +923,8 @@ public class FunctionConfiguration {
 			String[] inputBindings = StringUtils.hasText(bindingProperties.getInputBindings())
 					? bindingProperties.getInputBindings().split(";") : new String[0];
 
-			String[] outputBindings = StringUtils.hasText(bindingProperties.getOutputBindings()) ? bindingProperties.getOutputBindings().split(";") : (
-					StringUtils.hasText(bindingProperties.getOutputBindings()) ? bindingProperties.getOutputBindings().split(";") : new String[0]
-					);
+			String[] outputBindings = StringUtils.hasText(bindingProperties.getOutputBindings())
+					? bindingProperties.getOutputBindings().split(";") : new String[0];
 
 			for (String inputBindingName : inputBindings) {
 				FunctionInvocationWrapper sourceFunc = functionCatalog.lookup(inputBindingName);
