@@ -305,8 +305,13 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 				bp = bsp.getBindingProperties(bindingName);
 			}
 
-			SubscribableChannel errorChannel = (bp != null && StringUtils.hasText(bp.getErrorHandlerDefinition())) || producerProperties.isErrorChannelEnabled()
-					? registerErrorInfrastructure(producerDestination, producerProperties.getBindingName()) : null;
+			boolean errorHandlerDefined = bp != null && StringUtils.hasText(bp.getErrorHandlerDefinition());
+			SubscribableChannel errorChannel = errorHandlerDefined || producerProperties.isErrorChannelEnabled()
+					? registerErrorInfrastructure(producerDestination, producerProperties.getBindingName(), errorHandlerDefined)
+							: null;
+
+			String errorChannelName = errorsBaseName(producerDestination, producerProperties.getBindingName());
+			this.subscribeFunctionErrorHandler(errorChannelName, producerProperties.getBindingName());
 
 			producerMessageHandler = createProducerMessageHandler(producerDestination,
 					producerProperties, outputChannel, errorChannel);
@@ -727,7 +732,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 	 * @return the channel.
 	 */
 	private SubscribableChannel registerErrorInfrastructure(
-			ProducerDestination destination, String bindingName) {
+			ProducerDestination destination, String bindingName, boolean errorHandlerDefinitionAvailable) {
 
 		String errorChannelName = errorsBaseName(destination, bindingName);
 		SubscribableChannel errorChannel = new PublishSubscribeChannel();
@@ -751,7 +756,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		}
 
 		MessageChannel defaultErrorChannel = null;
-		if (getApplicationContext()
+		if (!errorHandlerDefinitionAvailable && getApplicationContext()
 				.containsBean(IntegrationContextUtils.ERROR_CHANNEL_BEAN_NAME)) {
 			defaultErrorChannel = getApplicationContext().getBean(
 					IntegrationContextUtils.ERROR_CHANNEL_BEAN_NAME,

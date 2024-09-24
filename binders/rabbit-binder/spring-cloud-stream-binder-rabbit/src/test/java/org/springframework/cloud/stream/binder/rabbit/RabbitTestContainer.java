@@ -28,9 +28,6 @@ import org.testcontainers.containers.RabbitMQContainer;
  */
 public final class RabbitTestContainer {
 
-	private RabbitTestContainer() {
-	}
-
 	private static final RabbitMQContainer RABBITMQ;
 	static {
 		String image = "rabbitmq:3.11-management";
@@ -46,6 +43,9 @@ public final class RabbitTestContainer {
 		RABBITMQ.start();
 	}
 
+	private RabbitTestContainer() {
+
+	}
 	/**
 	 * Should be called early by test that wants to ensure a shared {@link RabbitMQContainer} is up and running.
 	 */
