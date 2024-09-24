@@ -25,7 +25,7 @@ import org.testcontainers.containers.RabbitMQContainer;
  *
  * @author Chris Bono
  */
-public class RabbitTestContainer {
+public final class RabbitTestContainer {
 
 	private static final RabbitMQContainer RABBITMQ;
 	static {
@@ -42,6 +42,9 @@ public class RabbitTestContainer {
 		RABBITMQ.start();
 	}
 
+	private RabbitTestContainer() {
+
+	}
 	/**
 	 * Should be called early by test that wants to ensure a shared {@link RabbitMQContainer} is up and running.
 	 */

@@ -43,7 +43,7 @@ class TestChannelBinderTests {
 				"--spring.cloud.stream.bindings.function-in-0.destination=input")) {
 			TestChannelBinder binder = context.getBean(TestChannelBinder.class);
 			Method registerErrorInfrastructure = ReflectionUtils
-				.findMethod(TestChannelBinder.class, "registerErrorInfrastructure", ProducerDestination.class, String.class);
+				.findMethod(TestChannelBinder.class, "registerErrorInfrastructure", ProducerDestination.class, String.class, boolean.class);
 			registerErrorInfrastructure.setAccessible(true);
 			ProducerDestination destination = new ProducerDestination() {
 				@Override
@@ -56,7 +56,7 @@ class TestChannelBinderTests {
 					return "sample";
 				}
 			};
-			registerErrorInfrastructure.invoke(binder, destination, "function-in-0");
+			registerErrorInfrastructure.invoke(binder, destination, "function-in-0", false);
 			destination = new ProducerDestination() {
 				@Override
 				public String getNameForPartition(int partition) {
@@ -68,7 +68,7 @@ class TestChannelBinderTests {
 					return "sample";
 				}
 			};
-			registerErrorInfrastructure.invoke(binder, destination, "function-in-0");
+			registerErrorInfrastructure.invoke(binder, destination, "function-in-0", false);
 		}
 	}
 
