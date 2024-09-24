@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2023 the original author or authors.
+ * Copyright 2018-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import org.apache.kafka.common.config.SslConfigs;
 import org.apache.kafka.common.network.SslChannelBuilder;
 import org.junit.jupiter.api.Test;
 
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaBinderConfigurationProperties;
 import org.springframework.core.io.ClassPathResource;
@@ -34,6 +35,7 @@ import org.springframework.kafka.test.utils.KafkaTestUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
+import static org.mockito.Mockito.mock;
 
 /**
  * @author Gary Russell
@@ -44,7 +46,7 @@ class KafkaTopicProvisionerTests {
 
 	AdminClientConfigCustomizer adminClientConfigCustomizer = adminClientProperties -> adminClientProperties.put("foo", "bar");
 
-	@SuppressWarnings("rawtypes")
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Test
 	void bootPropertiesOverriddenExceptServers() throws Exception {
 		KafkaProperties bootConfig = new KafkaProperties();
@@ -52,7 +54,7 @@ class KafkaTopicProvisionerTests {
 				"PLAINTEXT");
 		bootConfig.setBootstrapServers(Collections.singletonList("localhost:1234"));
 		KafkaBinderConfigurationProperties binderConfig = new KafkaBinderConfigurationProperties(
-				bootConfig);
+				bootConfig, mock(ObjectProvider.class));
 		binderConfig.getConfiguration().put(AdminClientConfig.SECURITY_PROTOCOL_CONFIG,
 				"SSL");
 		ClassPathResource ts = new ClassPathResource("test.truststore.ks");
@@ -73,7 +75,7 @@ class KafkaTopicProvisionerTests {
 		adminClient.close();
 	}
 
-	@SuppressWarnings("rawtypes")
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Test
 	void bootPropertiesOverriddenIncludingServers() throws Exception {
 		KafkaProperties bootConfig = new KafkaProperties();
@@ -81,7 +83,7 @@ class KafkaTopicProvisionerTests {
 				"PLAINTEXT");
 		bootConfig.setBootstrapServers(Collections.singletonList("localhost:9092"));
 		KafkaBinderConfigurationProperties binderConfig = new KafkaBinderConfigurationProperties(
-				bootConfig);
+				bootConfig, mock(ObjectProvider.class));
 		binderConfig.getConfiguration().put(AdminClientConfig.SECURITY_PROTOCOL_CONFIG,
 				"SSL");
 		ClassPathResource ts = new ClassPathResource("test.truststore.ks");
@@ -102,10 +104,11 @@ class KafkaTopicProvisionerTests {
 	}
 
 	@Test
+	@SuppressWarnings("unchecked")
 	void brokersInvalid() throws Exception {
 		KafkaProperties bootConfig = new KafkaProperties();
 		KafkaBinderConfigurationProperties binderConfig = new KafkaBinderConfigurationProperties(
-				bootConfig);
+				bootConfig, mock(ObjectProvider.class));
 		binderConfig.getConfiguration().put(CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG,
 				"localhost:1234");
 		try {

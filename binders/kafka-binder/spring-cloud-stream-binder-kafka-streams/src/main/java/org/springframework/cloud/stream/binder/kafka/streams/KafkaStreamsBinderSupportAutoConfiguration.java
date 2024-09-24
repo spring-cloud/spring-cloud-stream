@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2023 the original author or authors.
+ * Copyright 2017-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,13 +23,12 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
-import io.micrometer.core.instrument.MeterRegistry;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.errors.LogAndContinueExceptionHandler;
 import org.apache.kafka.streams.errors.LogAndFailExceptionHandler;
-
 import org.springframework.beans.BeanUtils;
+import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
@@ -37,6 +36,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingClass;
+import org.springframework.boot.autoconfigure.kafka.KafkaConnectionDetails;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -75,6 +75,8 @@ import org.springframework.util.ObjectUtils;
 import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
 
+import io.micrometer.core.instrument.MeterRegistry;
+
 /**
  * Kafka Streams binder configuration.
  *
@@ -101,7 +103,7 @@ public class KafkaStreamsBinderSupportAutoConfiguration {
 	@Bean
 	@ConfigurationProperties(prefix = "spring.cloud.stream.kafka.streams.binder")
 	public KafkaStreamsBinderConfigurationProperties binderConfigurationProperties(
-			KafkaProperties kafkaProperties, ConfigurableEnvironment environment,
+			KafkaProperties kafkaProperties, ObjectProvider<KafkaConnectionDetails> kafkaConnectionDetails, ConfigurableEnvironment environment,
 			BindingServiceProperties properties, ConfigurableApplicationContext context) throws Exception {
 		final Map<String, BinderConfiguration> binderConfigurations = getBinderConfigurations(
 				properties);
@@ -121,16 +123,16 @@ public class KafkaStreamsBinderSupportAutoConfiguration {
 						new PropertySourcesPlaceholdersResolver(environment),
 						IntegrationUtils.getConversionService(context.getBeanFactory()), null);
 				final Constructor<KafkaStreamsBinderConfigurationProperties> kafkaStreamsBinderConfigurationPropertiesConstructor =
-						ReflectionUtils.accessibleConstructor(KafkaStreamsBinderConfigurationProperties.class, KafkaProperties.class);
+						ReflectionUtils.accessibleConstructor(KafkaStreamsBinderConfigurationProperties.class, KafkaProperties.class, ObjectProvider.class);
 				final KafkaStreamsBinderConfigurationProperties kafkaStreamsBinderConfigurationProperties =
-						BeanUtils.instantiateClass(kafkaStreamsBinderConfigurationPropertiesConstructor, kafkaProperties);
+						BeanUtils.instantiateClass(kafkaStreamsBinderConfigurationPropertiesConstructor, kafkaProperties, new EmptyObjectProvider<>());
 				final BindResult<KafkaStreamsBinderConfigurationProperties> bind = binder.bind("spring.cloud.stream.kafka.streams.binder", Bindable.ofInstance(kafkaStreamsBinderConfigurationProperties));
 				context.getBeanFactory().registerSingleton(
 						entry.getKey() + "-KafkaStreamsBinderConfigurationProperties",
 						bind.get());
 			}
 		}
-		return new KafkaStreamsBinderConfigurationProperties(kafkaProperties);
+		return new KafkaStreamsBinderConfigurationProperties(kafkaProperties, kafkaConnectionDetails);
 	}
 
 	// TODO: Lifted from core - good candidate for exposing as a utility method in core.
@@ -448,5 +450,28 @@ public class KafkaStreamsBinderSupportAutoConfiguration {
 				return new KafkaStreamsMicrometerListener(meterRegistry);
 			}
 		}
+	}
+	
+	private static class EmptyObjectProvider<T> implements ObjectProvider<T> {
+
+		public T getObject() throws BeansException {
+			return null;
+		}
+
+		@Override
+		public T getObject(Object... args) throws BeansException {
+			return null;
+		}
+
+		@Override
+		public T getIfAvailable() throws BeansException {
+			return null;
+		}
+
+		@Override
+		public T getIfUnique() throws BeansException {
+			return null;
+		}
+		
 	}
 }

@@ -76,6 +76,7 @@ import org.junit.jupiter.api.TestInfo;
 import org.mockito.ArgumentMatchers;
 
 import org.springframework.beans.DirectFieldAccessor;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.BinderException;
 import org.springframework.cloud.stream.binder.BinderHeaders;
@@ -263,9 +264,10 @@ class KafkaBinderTests extends
 				provisioningProvider, dlqPartitionFunction, dlqDestinationResolver);
 	}
 
+	@SuppressWarnings("unchecked")
 	private KafkaBinderConfigurationProperties createConfigurationProperties() {
 		var binderConfiguration = new KafkaBinderConfigurationProperties(
-				new TestKafkaProperties());
+				new TestKafkaProperties(), mock(ObjectProvider.class));
 		binderConfiguration.setBrokers(embeddedKafka.getBrokersAsString());
 		return binderConfiguration;
 	}
