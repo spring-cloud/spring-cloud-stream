@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2022 the original author or authors.
+ * Copyright 2017-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package org.springframework.cloud.stream.binder.kafka.streams;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.kafka.KafkaConnectionDetails;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.binder.kafka.provisioning.AdminClientConfigCustomizer;
@@ -48,9 +49,10 @@ public class KStreamBinderConfiguration {
 	@Bean
 	public KafkaTopicProvisioner provisioningProvider(
 			KafkaStreamsBinderConfigurationProperties kafkaStreamsBinderConfigurationProperties,
-			KafkaProperties kafkaProperties, ObjectProvider<AdminClientConfigCustomizer> adminClientConfigCustomizer) {
+			KafkaProperties kafkaProperties, ObjectProvider<KafkaConnectionDetails> kafkaConnectionDetails,
+			ObjectProvider<AdminClientConfigCustomizer> adminClientConfigCustomizer) {
 		return new KafkaTopicProvisioner(kafkaStreamsBinderConfigurationProperties,
-				kafkaProperties, adminClientConfigCustomizer.getIfUnique());
+				kafkaProperties, kafkaConnectionDetails.getIfAvailable(), adminClientConfigCustomizer.getIfUnique());
 	}
 
 	@Bean

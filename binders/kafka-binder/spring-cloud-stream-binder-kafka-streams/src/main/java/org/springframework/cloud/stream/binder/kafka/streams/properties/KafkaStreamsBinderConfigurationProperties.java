@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2019 the original author or authors.
+ * Copyright 2018-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,8 @@ package org.springframework.cloud.stream.binder.kafka.streams.properties;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.boot.autoconfigure.kafka.KafkaConnectionDetails;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaBinderConfigurationProperties;
 import org.springframework.cloud.stream.binder.kafka.streams.DeserializationExceptionHandler;
@@ -32,8 +34,8 @@ import org.springframework.cloud.stream.binder.kafka.streams.DeserializationExce
 public class KafkaStreamsBinderConfigurationProperties
 		extends KafkaBinderConfigurationProperties {
 
-	public KafkaStreamsBinderConfigurationProperties(KafkaProperties kafkaProperties) {
-		super(kafkaProperties);
+	public KafkaStreamsBinderConfigurationProperties(KafkaProperties kafkaProperties, ObjectProvider<KafkaConnectionDetails> kafkaConnectionDetails) {
+		super(kafkaProperties, kafkaConnectionDetails);
 	}
 
 	private String applicationId;

@@ -79,7 +79,7 @@ class ReactorKafkaBinderTests {
 		KafkaProperties kafkaProperties = new KafkaProperties();
 		kafkaProperties.setBootstrapServers(
 				Collections.singletonList(EmbeddedKafkaCondition.getBroker().getBrokersAsString()));
-		KafkaBinderConfigurationProperties binderProps = new KafkaBinderConfigurationProperties(kafkaProperties);
+		KafkaBinderConfigurationProperties binderProps = new KafkaBinderConfigurationProperties(kafkaProperties, mock(ObjectProvider.class));
 		KafkaTopicProvisioner provisioner = new KafkaTopicProvisioner(binderProps, kafkaProperties, prop -> {
 		});
 		provisioner.setMetadataRetryOperations(new RetryTemplate());
@@ -144,7 +144,7 @@ class ReactorKafkaBinderTests {
 		KafkaProperties kafkaProperties = new KafkaProperties();
 		kafkaProperties.setBootstrapServers(
 				Collections.singletonList(EmbeddedKafkaCondition.getBroker().getBrokersAsString()));
-		KafkaBinderConfigurationProperties binderProps = new KafkaBinderConfigurationProperties(kafkaProperties);
+		KafkaBinderConfigurationProperties binderProps = new KafkaBinderConfigurationProperties(kafkaProperties, mock(ObjectProvider.class));
 		KafkaTopicProvisioner provisioner = new KafkaTopicProvisioner(binderProps, kafkaProperties, prop -> {
 		});
 		provisioner.setMetadataRetryOperations(new RetryTemplate());
@@ -225,7 +225,7 @@ class ReactorKafkaBinderTests {
 		KafkaProperties kafkaProperties = new KafkaProperties();
 		kafkaProperties.setBootstrapServers(
 				Collections.singletonList(EmbeddedKafkaCondition.getBroker().getBrokersAsString()));
-		KafkaBinderConfigurationProperties binderProps = new KafkaBinderConfigurationProperties(kafkaProperties);
+		KafkaBinderConfigurationProperties binderProps = new KafkaBinderConfigurationProperties(kafkaProperties, mock(ObjectProvider.class));
 		KafkaTopicProvisioner provisioner = new KafkaTopicProvisioner(binderProps, kafkaProperties, prop -> {
 		});
 		provisioner.setMetadataRetryOperations(new RetryTemplate());
@@ -290,11 +290,12 @@ class ReactorKafkaBinderTests {
 	}
 
 	@Test
+	@SuppressWarnings("unchecked")
 	void producerBinding() throws InterruptedException {
 		KafkaProperties kafkaProperties = new KafkaProperties();
 		kafkaProperties.setBootstrapServers(
 				Collections.singletonList(EmbeddedKafkaCondition.getBroker().getBrokersAsString()));
-		KafkaBinderConfigurationProperties binderProps = new KafkaBinderConfigurationProperties(kafkaProperties);
+		KafkaBinderConfigurationProperties binderProps = new KafkaBinderConfigurationProperties(kafkaProperties, mock(ObjectProvider.class));
 		KafkaTopicProvisioner provisioner = new KafkaTopicProvisioner(binderProps, kafkaProperties, prop -> {
 		});
 		provisioner.setMetadataRetryOperations(new RetryTemplate());

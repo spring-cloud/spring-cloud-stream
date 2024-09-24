@@ -36,6 +36,8 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.boot.autoconfigure.kafka.KafkaConnectionDetails;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.cloud.stream.binder.HeaderMode;
 import org.springframework.cloud.stream.binder.ProducerProperties;
@@ -76,6 +78,8 @@ public class KafkaBinderConfigurationProperties {
 	private final Metrics metrics = new Metrics();
 
 	private final KafkaProperties kafkaProperties;
+
+	private final KafkaConnectionDetails kafkaConnectionDetails;
 
 	/**
 	 * Arbitrary kafka properties that apply to both producers and consumers.
@@ -170,10 +174,12 @@ public class KafkaBinderConfigurationProperties {
 	 * https://github.com/spring-projects/spring-boot/issues/35564
 	 *
 	 * @param kafkaProperties Spring Kafka properties autoconfigured by Spring Boot
+	 * @param kafkaConnectionDetails Kafka connection details autoconfigured by Spring Boot
 	 */
-	public KafkaBinderConfigurationProperties(KafkaProperties kafkaProperties) {
+	public KafkaBinderConfigurationProperties(KafkaProperties kafkaProperties, ObjectProvider<KafkaConnectionDetails> kafkaConnectionDetails) {
 		Assert.notNull(kafkaProperties, "'kafkaProperties' cannot be null");
 		this.kafkaProperties = kafkaProperties;
+		this.kafkaConnectionDetails = kafkaConnectionDetails.getIfAvailable();
 	}
 
 	public KafkaProperties getKafkaProperties() {
@@ -395,6 +401,9 @@ public class KafkaBinderConfigurationProperties {
 	 */
 	public Map<String, Object> mergedConsumerConfiguration() {
 		Map<String, Object> consumerConfiguration = new HashMap<>(this.kafkaProperties.buildConsumerProperties(null));
+		if (this.kafkaConnectionDetails != null) {
+			consumerConfiguration.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, this.kafkaConnectionDetails.getConsumerBootstrapServers());
+		}
 		// Copy configured binder properties that apply to consumers
 		// allow schema registry properties to be propagated to consumer configuration
 		for (Map.Entry<String, String> configurationEntry : this.configuration
@@ -421,6 +430,9 @@ public class KafkaBinderConfigurationProperties {
 	 */
 	public Map<String, Object> mergedProducerConfiguration() {
 		Map<String, Object> producerConfiguration = new HashMap<>(this.kafkaProperties.buildProducerProperties(null));
+		if (this.kafkaConnectionDetails != null) {
+			producerConfiguration.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, this.kafkaConnectionDetails.getProducerBootstrapServers());
+		}
 		// Copy configured binder properties that apply to producers
 		for (Map.Entry<String, String> configurationEntry : this.configuration
 			.entrySet()) {

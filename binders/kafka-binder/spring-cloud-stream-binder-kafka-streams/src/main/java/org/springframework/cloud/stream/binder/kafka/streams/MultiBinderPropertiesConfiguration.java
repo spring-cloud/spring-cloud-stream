@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2021 the original author or authors.
+ * Copyright 2019-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,9 @@
 
 package org.springframework.cloud.stream.binder.kafka.streams;
 
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.kafka.KafkaConnectionDetails;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaBinderConfigurationProperties;
@@ -34,7 +36,7 @@ public class MultiBinderPropertiesConfiguration {
 	@Bean
 	@ConfigurationProperties(prefix = "spring.cloud.stream.kafka.streams.binder")
 	@ConditionalOnBean(name = "outerContext")
-	public KafkaBinderConfigurationProperties binderConfigurationProperties(KafkaProperties kafkaProperties) {
-		return new KafkaStreamsBinderConfigurationProperties(kafkaProperties);
+	public KafkaBinderConfigurationProperties binderConfigurationProperties(KafkaProperties kafkaProperties, ObjectProvider<KafkaConnectionDetails> kafkaConnectionDetails) {
+		return new KafkaStreamsBinderConfigurationProperties(kafkaProperties, kafkaConnectionDetails);
 	}
 }

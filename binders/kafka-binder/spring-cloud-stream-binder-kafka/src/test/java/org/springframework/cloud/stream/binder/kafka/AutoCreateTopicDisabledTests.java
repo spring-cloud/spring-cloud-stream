@@ -22,6 +22,7 @@ import org.apache.kafka.common.errors.UnknownTopicOrPartitionException;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.cloud.stream.binder.BinderException;
 import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
@@ -38,6 +39,7 @@ import org.springframework.retry.policy.SimpleRetryPolicy;
 import org.springframework.retry.support.RetryTemplate;
 
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.mockito.Mockito.mock;
 
 /**
  * @author Soby Chacko
@@ -53,13 +55,14 @@ class AutoCreateTopicDisabledTests {
 	}
 
 	@Test
+	@SuppressWarnings("unchecked")
 	void autoCreateTopicDisabledFailsOnConsumerIfTopicNonExistentOnBroker() {
 
 		KafkaProperties kafkaProperties = new TestKafkaProperties();
 		kafkaProperties.setBootstrapServers(Collections
 			.singletonList(embeddedKafka.getBrokersAsString()));
 		KafkaBinderConfigurationProperties configurationProperties = new KafkaBinderConfigurationProperties(
-			kafkaProperties);
+			kafkaProperties, mock(ObjectProvider.class));
 		// disable auto create topic on the binder.
 		configurationProperties.setAutoCreateTopics(false);
 
@@ -82,6 +85,7 @@ class AutoCreateTopicDisabledTests {
 	}
 
 	@Test
+	@SuppressWarnings("unchecked")
 	void autoCreateTopicDisabledFailsOnProducerIfTopicNonExistentOnBroker() {
 
 		KafkaProperties kafkaProperties = new TestKafkaProperties();
@@ -89,7 +93,7 @@ class AutoCreateTopicDisabledTests {
 				.singletonList(embeddedKafka.getBrokersAsString()));
 
 		KafkaBinderConfigurationProperties configurationProperties = new KafkaBinderConfigurationProperties(
-				kafkaProperties);
+				kafkaProperties, mock(ObjectProvider.class));
 		// disable auto create topic on the binder.
 		configurationProperties.setAutoCreateTopics(false);
 		// reduce the wait time on the producer blocking operations.

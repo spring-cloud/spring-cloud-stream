@@ -44,6 +44,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -64,6 +65,7 @@ import org.springframework.kafka.test.utils.KafkaTestUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.mock;
 import static org.mockito.internal.verification.VerificationModeFactory.times;
 
 /**
@@ -96,6 +98,7 @@ class KafkaStreamsInteractiveQueryIntegrationTests {
 	}
 
 	@Test
+	@SuppressWarnings("unchecked")
 	void stateStoreRetrievalRetriedOnFailure() {
 
 		StreamsBuilderFactoryBean mock = Mockito.mock(StreamsBuilderFactoryBean.class);
@@ -108,7 +111,7 @@ class KafkaStreamsInteractiveQueryIntegrationTests {
 		mockProperties.put(StreamsConfig.APPLICATION_ID_CONFIG, "fooApp");
 		Mockito.when(mock.getStreamsConfiguration()).thenReturn(mockProperties);
 		KafkaStreamsBinderConfigurationProperties binderConfigurationProperties =
-				new KafkaStreamsBinderConfigurationProperties(new KafkaProperties());
+				new KafkaStreamsBinderConfigurationProperties(new KafkaProperties(), mock(ObjectProvider.class));
 		binderConfigurationProperties.getStateStoreRetry().setMaxAttempts(3);
 		InteractiveQueryService interactiveQueryService = new InteractiveQueryService(kafkaStreamsRegistry,
 				binderConfigurationProperties);
@@ -125,6 +128,7 @@ class KafkaStreamsInteractiveQueryIntegrationTests {
 	}
 
 	@Test
+	@SuppressWarnings("unchecked")
 	void hostInfoRetrievalRetriedOnFailure() {
 		StreamsBuilderFactoryBean mock = Mockito.mock(StreamsBuilderFactoryBean.class);
 		KafkaStreams mockKafkaStreams = Mockito.mock(KafkaStreams.class);
@@ -136,7 +140,7 @@ class KafkaStreamsInteractiveQueryIntegrationTests {
 		mockProperties.put(StreamsConfig.APPLICATION_ID_CONFIG, "foobarApp-123");
 		Mockito.when(mock.getStreamsConfiguration()).thenReturn(mockProperties);
 		KafkaStreamsBinderConfigurationProperties binderConfigurationProperties =
-				new KafkaStreamsBinderConfigurationProperties(new KafkaProperties());
+				new KafkaStreamsBinderConfigurationProperties(new KafkaProperties(), mock(ObjectProvider.class));
 		binderConfigurationProperties.getStateStoreRetry().setMaxAttempts(3);
 		InteractiveQueryService interactiveQueryService = new InteractiveQueryService(kafkaStreamsRegistry,
 				binderConfigurationProperties);

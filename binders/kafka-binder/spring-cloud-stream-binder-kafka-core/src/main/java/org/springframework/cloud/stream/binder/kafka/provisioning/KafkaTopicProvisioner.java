@@ -55,6 +55,7 @@ import org.apache.kafka.common.errors.TopicExistsException;
 import org.apache.kafka.common.errors.UnknownTopicOrPartitionException;
 
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.boot.autoconfigure.kafka.KafkaConnectionDetails;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.cloud.stream.binder.BinderException;
 import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
@@ -122,8 +123,24 @@ public class KafkaTopicProvisioner implements
 			KafkaBinderConfigurationProperties kafkaBinderConfigurationProperties,
 			KafkaProperties kafkaProperties,
 			AdminClientConfigCustomizer adminClientConfigCustomizer) {
-		this(kafkaBinderConfigurationProperties, kafkaProperties, adminClientConfigCustomizer != null ?
+		this(kafkaBinderConfigurationProperties, kafkaProperties, null, adminClientConfigCustomizer != null ?
 				Arrays.asList(adminClientConfigCustomizer) : new ArrayList<>());
+	}
+
+	/**
+	 * Create an instance.
+	 * @param kafkaBinderConfigurationProperties the binder configuration properties.
+	 * @param kafkaProperties the boot Kafka properties used to build the instance.
+	 * @parak kafkaConnectionDetails the Kafka connection details used to build the instance
+	 * @param adminClientConfigCustomizer to customize {@link AdminClient}.
+	 * @since 4.1.4
+	 */
+	public KafkaTopicProvisioner(
+			KafkaBinderConfigurationProperties kafkaBinderConfigurationProperties,
+			KafkaProperties kafkaProperties, KafkaConnectionDetails kafkaConnectionDetails,
+			AdminClientConfigCustomizer adminClientConfigCustomizer) {
+		this(kafkaBinderConfigurationProperties, kafkaProperties, kafkaConnectionDetails,
+				adminClientConfigCustomizer != null ? Arrays.asList(adminClientConfigCustomizer) : new ArrayList<>());
 	}
 
 	/**
@@ -138,15 +155,39 @@ public class KafkaTopicProvisioner implements
 			KafkaBinderConfigurationProperties kafkaBinderConfigurationProperties,
 			KafkaProperties kafkaProperties,
 			List<AdminClientConfigCustomizer> adminClientConfigCustomizers) {
+		this(kafkaBinderConfigurationProperties, kafkaProperties, null, adminClientConfigCustomizers);
+	}
+
+	/**
+	 * Create an instance.
+	 *
+	 * @param kafkaBinderConfigurationProperties the binder configuration properties.
+	 * @param kafkaProperties the boot Kafka properties used to build the instance.
+	 * @param kafkaConnectionDetails the Kafka connection deatils used to build the instance.
+	 * @param adminClientConfigCustomizers to customize {@link AdminClient}.
+	 * @since 4.1.4
+	 */
+	public KafkaTopicProvisioner(
+			KafkaBinderConfigurationProperties kafkaBinderConfigurationProperties,
+			KafkaProperties kafkaProperties, KafkaConnectionDetails kafkaConnectionDetails,
+			List<AdminClientConfigCustomizer> adminClientConfigCustomizers) {
 
 		Assert.isTrue(kafkaProperties != null, "KafkaProperties cannot be null");
 		this.configurationProperties = kafkaBinderConfigurationProperties;
-		this.adminClientProperties = kafkaProperties.buildAdminProperties(null);
+		this.adminClientProperties = createAdminClientProperties(kafkaProperties, kafkaConnectionDetails);
 		normalalizeBootPropsWithBinder(this.adminClientProperties, kafkaProperties,
 			kafkaBinderConfigurationProperties);
 		// If the application provides AdminConfig customizers
 		// and overrides properties, those take precedence.
 		adminClientConfigCustomizers.forEach(customizer -> customizer.configure(this.adminClientProperties));
+	}
+
+	private Map<String, Object> createAdminClientProperties(KafkaProperties properties, KafkaConnectionDetails connectionDetails) {
+		Map<String, Object> adminProperties = properties.buildAdminProperties(null);
+		if (connectionDetails != null) {
+			adminProperties.put(CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG, connectionDetails.getAdminBootstrapServers());
+		}
+		return adminProperties;
 	}
 
 	/**
