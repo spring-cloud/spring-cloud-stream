@@ -30,6 +30,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Stream;
 
 import org.apache.commons.logging.Log;
@@ -98,6 +99,8 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 
 	private volatile String defaultBinder;
 
+	private static final ReentrantLock lock = new ReentrantLock();
+
 	public DefaultBinderFactory(Map<String, BinderConfiguration> binderConfigurations,
 								BinderTypeRegistry binderTypeRegistry, BinderCustomizer binderCustomizer) {
 		this.binderConfigurations = new HashMap<>(binderConfigurations);
@@ -142,34 +145,39 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@Override
+	public <T> Binder<T, ?, ?> getBinder(String name, Class<? extends T> bindingTargetType) {
+		lock.lock();
+		try {
+			String binderName = StringUtils.hasText(name) ? name : this.defaultBinder;
 
-	public synchronized <T> Binder<T, ?, ?> getBinder(String name, Class<? extends T> bindingTargetType) {
-		String binderName = StringUtils.hasText(name) ? name : this.defaultBinder;
-
-		Map<String, Binder> binders = this.context == null ? Collections.emptyMap() : this.context.getBeansOfType(Binder.class);
-		Binder<T, ConsumerProperties, ProducerProperties> binder;
-		if (StringUtils.hasText(binderName) && binders.containsKey(binderName)) {
-			binder = (Binder<T, ConsumerProperties, ProducerProperties>) this.context.getBean(binderName);
-		}
-		else if (binders.size() == 1) {
-			binder = binders.values().iterator().next();
-		}
-		else if (binders.size() > 1) {
-			throw new IllegalStateException(
+			Map<String, Binder> binders = this.context == null ? Collections.emptyMap() : this.context.getBeansOfType(Binder.class);
+			Binder<T, ConsumerProperties, ProducerProperties> binder;
+			if (StringUtils.hasText(binderName) && binders.containsKey(binderName)) {
+				binder = (Binder<T, ConsumerProperties, ProducerProperties>) this.context.getBean(binderName);
+			}
+			else if (binders.size() == 1) {
+				binder = binders.values().iterator().next();
+			}
+			else if (binders.size() > 1) {
+				throw new IllegalStateException(
 					"Multiple binders are available, however neither default nor "
-							+ "per-destination binder name is provided. Available binders are "
-							+ binders.keySet());
+						+ "per-destination binder name is provided. Available binders are "
+						+ binders.keySet());
+			}
+			else {
+				/*
+				 * This is the fallback to the old bootstrap that relies on spring.binders.
+				 */
+				binder = this.doGetBinder(binderName, bindingTargetType);
+			}
+			if (this.binderCustomizer != null) {
+				this.binderCustomizer.customize(binder, binderName);
+			}
+			return binder;
 		}
-		else {
-			/*
-			 * This is the fallback to the old bootstrap that relies on spring.binders.
-			 */
-			binder = this.doGetBinder(binderName, bindingTargetType);
+		finally {
+			lock.unlock();
 		}
-		if (this.binderCustomizer != null) {
-			this.binderCustomizer.customize(binder, binderName);
-		}
-		return binder;
 	}
 
 	private <T> Binder<T, ConsumerProperties, ProducerProperties> doGetBinder(String name, Class<? extends T> bindingTargetType) {
