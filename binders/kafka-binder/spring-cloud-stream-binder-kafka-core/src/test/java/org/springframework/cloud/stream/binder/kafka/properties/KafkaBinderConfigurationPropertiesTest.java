@@ -28,19 +28,22 @@ import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.assertj.core.util.Files;
 import org.junit.jupiter.api.Test;
 
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.core.io.ClassPathResource;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 
 class KafkaBinderConfigurationPropertiesTest {
 
 	@Test
+	@SuppressWarnings("unchecked")
 	void mergedConsumerConfigurationFiltersGroupIdFromKafkaProperties() {
 		KafkaProperties kafkaProperties = new KafkaProperties();
 		kafkaProperties.getConsumer().setGroupId("group1");
 		KafkaBinderConfigurationProperties kafkaBinderConfigurationProperties =
-				new KafkaBinderConfigurationProperties(kafkaProperties);
+				new KafkaBinderConfigurationProperties(kafkaProperties, mock(ObjectProvider.class));
 
 		Map<String, Object> mergedConsumerConfiguration =
 				kafkaBinderConfigurationProperties.mergedConsumerConfiguration();
@@ -49,11 +52,12 @@ class KafkaBinderConfigurationPropertiesTest {
 	}
 
 	@Test
+	@SuppressWarnings("unchecked")
 	void mergedConsumerConfigurationFiltersEnableAutoCommitFromKafkaProperties() {
 		KafkaProperties kafkaProperties = new KafkaProperties();
 		kafkaProperties.getConsumer().setEnableAutoCommit(true);
 		KafkaBinderConfigurationProperties kafkaBinderConfigurationProperties =
-				new KafkaBinderConfigurationProperties(kafkaProperties);
+				new KafkaBinderConfigurationProperties(kafkaProperties, mock(ObjectProvider.class));
 
 		Map<String, Object> mergedConsumerConfiguration =
 				kafkaBinderConfigurationProperties.mergedConsumerConfiguration();
@@ -62,10 +66,11 @@ class KafkaBinderConfigurationPropertiesTest {
 	}
 
 	@Test
+	@SuppressWarnings("unchecked")
 	void mergedConsumerConfigurationFiltersGroupIdFromKafkaBinderConfigurationPropertiesConfiguration() {
 		KafkaProperties kafkaProperties = new KafkaProperties();
 		KafkaBinderConfigurationProperties kafkaBinderConfigurationProperties =
-				new KafkaBinderConfigurationProperties(kafkaProperties);
+				new KafkaBinderConfigurationProperties(kafkaProperties, mock(ObjectProvider.class));
 		kafkaBinderConfigurationProperties
 				.setConfiguration(Collections.singletonMap(ConsumerConfig.GROUP_ID_CONFIG, "group1"));
 
@@ -75,10 +80,11 @@ class KafkaBinderConfigurationPropertiesTest {
 	}
 
 	@Test
+	@SuppressWarnings("unchecked")
 	void mergedConsumerConfigurationFiltersEnableAutoCommitFromKafkaBinderConfigurationPropertiesConfiguration() {
 		KafkaProperties kafkaProperties = new KafkaProperties();
 		KafkaBinderConfigurationProperties kafkaBinderConfigurationProperties =
-				new KafkaBinderConfigurationProperties(kafkaProperties);
+				new KafkaBinderConfigurationProperties(kafkaProperties, mock(ObjectProvider.class));
 		kafkaBinderConfigurationProperties
 				.setConfiguration(Collections.singletonMap(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "true"));
 
@@ -88,10 +94,11 @@ class KafkaBinderConfigurationPropertiesTest {
 	}
 
 	@Test
+	@SuppressWarnings("unchecked")
 	void mergedConsumerConfigurationFiltersGroupIdFromKafkaBinderConfigurationPropertiesConsumerProperties() {
 		KafkaProperties kafkaProperties = new KafkaProperties();
 		KafkaBinderConfigurationProperties kafkaBinderConfigurationProperties =
-				new KafkaBinderConfigurationProperties(kafkaProperties);
+				new KafkaBinderConfigurationProperties(kafkaProperties, mock(ObjectProvider.class));
 		kafkaBinderConfigurationProperties
 				.setConsumerProperties(Collections.singletonMap(ConsumerConfig.GROUP_ID_CONFIG, "group1"));
 
@@ -101,10 +108,11 @@ class KafkaBinderConfigurationPropertiesTest {
 	}
 
 	@Test
+	@SuppressWarnings("unchecked")
 	void mergedConsumerConfigurationFiltersEnableAutoCommitFromKafkaBinderConfigurationPropertiesConsumerProps() {
 		KafkaProperties kafkaProperties = new KafkaProperties();
 		KafkaBinderConfigurationProperties kafkaBinderConfigurationProperties =
-				new KafkaBinderConfigurationProperties(kafkaProperties);
+				new KafkaBinderConfigurationProperties(kafkaProperties, mock(ObjectProvider.class));
 		kafkaBinderConfigurationProperties
 				.setConsumerProperties(Collections.singletonMap(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "true"));
 
@@ -114,10 +122,11 @@ class KafkaBinderConfigurationPropertiesTest {
 	}
 
 	@Test
+	@SuppressWarnings("unchecked")
 	void certificateFilesAreConvertedToAbsolutePathsFromClassPathResources() {
 		KafkaProperties kafkaProperties = new KafkaProperties();
 		KafkaBinderConfigurationProperties kafkaBinderConfigurationProperties =
-				new KafkaBinderConfigurationProperties(kafkaProperties);
+				new KafkaBinderConfigurationProperties(kafkaProperties, mock(ObjectProvider.class));
 		final Map<String, String> configuration = kafkaBinderConfigurationProperties.getConfiguration();
 		configuration.put("ssl.truststore.location", "classpath:testclient.truststore");
 		configuration.put("ssl.keystore.location", "classpath:testclient.keystore");
@@ -132,6 +141,7 @@ class KafkaBinderConfigurationPropertiesTest {
 	}
 
 	@Test
+	@SuppressWarnings("unchecked")
 	void certificateFilesAreConvertedToAbsolutePathsFromHttpResources() throws IOException {
 		HttpServer server = HttpServer.create(new InetSocketAddress("localhost", 5869), 0);
 		createContextWithCertFileHandler(server, "testclient.truststore");
@@ -141,7 +151,7 @@ class KafkaBinderConfigurationPropertiesTest {
 
 		KafkaProperties kafkaProperties = new KafkaProperties();
 		KafkaBinderConfigurationProperties kafkaBinderConfigurationProperties =
-			new KafkaBinderConfigurationProperties(kafkaProperties);
+			new KafkaBinderConfigurationProperties(kafkaProperties, mock(ObjectProvider.class));
 		final Map<String, String> configuration = kafkaBinderConfigurationProperties.getConfiguration();
 		configuration.put("ssl.truststore.location", "http://localhost:5869/testclient.truststore");
 		configuration.put("ssl.keystore.location", "http://localhost:5869/testclient.keystore");
@@ -164,10 +174,11 @@ class KafkaBinderConfigurationPropertiesTest {
 	}
 
 	@Test
+	@SuppressWarnings("unchecked")
 	void certificateFilesAreConvertedToGivenAbsolutePathsFromClassPathResources() {
 		KafkaProperties kafkaProperties = new KafkaProperties();
 		KafkaBinderConfigurationProperties kafkaBinderConfigurationProperties =
-				new KafkaBinderConfigurationProperties(kafkaProperties);
+				new KafkaBinderConfigurationProperties(kafkaProperties, mock(ObjectProvider.class));
 		final Map<String, String> configuration = kafkaBinderConfigurationProperties.getConfiguration();
 		configuration.put("ssl.truststore.location", "classpath:testclient.truststore");
 		configuration.put("ssl.keystore.location", "classpath:testclient.keystore");
@@ -182,10 +193,11 @@ class KafkaBinderConfigurationPropertiesTest {
 	}
 
 	@Test
+	@SuppressWarnings("unchecked")
 	void certificateFilesAreMovedForSchemaRegistryConfiguration() {
 		KafkaProperties kafkaProperties = new KafkaProperties();
 		KafkaBinderConfigurationProperties kafkaBinderConfigurationProperties =
-			new KafkaBinderConfigurationProperties(kafkaProperties);
+				new KafkaBinderConfigurationProperties(kafkaProperties, mock(ObjectProvider.class));
 		final Map<String, String> configuration = kafkaBinderConfigurationProperties.getConfiguration();
 
 		configuration.put("schema.registry.ssl.truststore.location", "classpath:testclient.truststore");
@@ -213,10 +225,11 @@ class KafkaBinderConfigurationPropertiesTest {
 	}
 
 	@Test
+	@SuppressWarnings("unchecked")
 	void schemaRegistryPropertiesPropagatedToMergedProducerProperties() {
 		KafkaProperties kafkaProperties = new KafkaProperties();
 		KafkaBinderConfigurationProperties kafkaBinderConfigurationProperties =
-			new KafkaBinderConfigurationProperties(kafkaProperties);
+			new KafkaBinderConfigurationProperties(kafkaProperties, mock(ObjectProvider.class));
 		final Map<String, String> configuration = kafkaBinderConfigurationProperties.getConfiguration();
 
 		configuration.put("schema.registry.url", "https://localhost:8081,https://localhost:8082");
@@ -254,10 +267,11 @@ class KafkaBinderConfigurationPropertiesTest {
 	}
 
 	@Test
+	@SuppressWarnings("unchecked")
 	public void testEmptyLocationsAreIgnored() {
 		KafkaProperties kafkaProperties = new KafkaProperties();
 		KafkaBinderConfigurationProperties kafkaBinderConfigurationProperties =
-				new KafkaBinderConfigurationProperties(kafkaProperties);
+				new KafkaBinderConfigurationProperties(kafkaProperties, mock(ObjectProvider.class));
 		final Map<String, String> configuration = kafkaBinderConfigurationProperties.getConfiguration();
 		configuration.put("schema.registry.ssl.truststore.location", "");
 		configuration.put("schema.registry.ssl.keystore.location", "");

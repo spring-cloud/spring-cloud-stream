@@ -18,6 +18,7 @@ package org.springframework.cloud.stream.binder.reactorkafka;
 
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.kafka.KafkaConnectionDetails;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -59,16 +60,17 @@ public class ReactorKafkaBinderConfiguration {
 	@Bean
 	@ConfigurationProperties(prefix = "spring.cloud.stream.kafka.binder")
 	KafkaBinderConfigurationProperties configurationProperties(
-			KafkaProperties kafkaProperties) {
-		return new KafkaBinderConfigurationProperties(kafkaProperties);
+			KafkaProperties kafkaProperties, ObjectProvider<KafkaConnectionDetails> kafkaConnectionDetails) {
+		return new KafkaBinderConfigurationProperties(kafkaProperties, kafkaConnectionDetails);
 	}
 
 	@Bean
 	KafkaTopicProvisioner provisioningProvider(
 			KafkaBinderConfigurationProperties configurationProperties,
-			ObjectProvider<AdminClientConfigCustomizer> adminClientConfigCustomizer, KafkaProperties kafkaProperties) {
-		return new KafkaTopicProvisioner(configurationProperties,
-				kafkaProperties, adminClientConfigCustomizer.getIfUnique());
+			ObjectProvider<AdminClientConfigCustomizer> adminClientConfigCustomizer,
+			KafkaProperties kafkaProperties, ObjectProvider<KafkaConnectionDetails> kafkaConnectionDetails) {
+		return new KafkaTopicProvisioner(configurationProperties, kafkaProperties,
+				kafkaConnectionDetails.getIfAvailable(), adminClientConfigCustomizer.getIfUnique());
 	}
 
 	@Bean

@@ -40,6 +40,7 @@ import org.apache.kafka.common.serialization.Deserializer;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
@@ -79,7 +80,7 @@ class KafkaBinderUnitTests {
 	void propertyOverrides() throws Exception {
 		KafkaProperties kafkaProperties = new TestKafkaProperties();
 		KafkaBinderConfigurationProperties binderConfigurationProperties = new KafkaBinderConfigurationProperties(
-				kafkaProperties);
+				kafkaProperties, mock(ObjectProvider.class));
 		KafkaTopicProvisioner provisioningProvider = new KafkaTopicProvisioner(
 				binderConfigurationProperties, kafkaProperties, prop -> {
 		});
@@ -128,7 +129,7 @@ class KafkaBinderUnitTests {
 		bootProps.getConsumer().getProperties()
 				.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "bar");
 		KafkaBinderConfigurationProperties props = new KafkaBinderConfigurationProperties(
-				bootProps);
+				bootProps, mock(ObjectProvider.class));
 		assertThat(props.mergedConsumerConfiguration()
 				.get(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG)).isEqualTo("bar");
 		props.getConfiguration().put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "baz");
@@ -144,7 +145,7 @@ class KafkaBinderUnitTests {
 		KafkaProperties bootProps = new TestKafkaProperties();
 		bootProps.getProducer().getProperties().put(ProducerConfig.RETRIES_CONFIG, "bar");
 		KafkaBinderConfigurationProperties props = new KafkaBinderConfigurationProperties(
-				bootProps);
+				bootProps, mock(ObjectProvider.class));
 		assertThat(props.mergedProducerConfiguration().get(ProducerConfig.RETRIES_CONFIG))
 				.isEqualTo("bar");
 		props.getConfiguration().put(ProducerConfig.RETRIES_CONFIG, "baz");
@@ -186,7 +187,7 @@ class KafkaBinderUnitTests {
 		partitions.add(new TopicPartition(topic, 0));
 		partitions.add(new TopicPartition(topic, 1));
 		KafkaBinderConfigurationProperties configurationProperties = new KafkaBinderConfigurationProperties(
-				new TestKafkaProperties());
+				new TestKafkaProperties(), mock(ObjectProvider.class));
 		KafkaTopicProvisioner provisioningProvider = mock(KafkaTopicProvisioner.class);
 		ConsumerDestination dest = mock(ConsumerDestination.class);
 		given(dest.getName()).willReturn(topic);

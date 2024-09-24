@@ -28,7 +28,9 @@ import org.junit.jupiter.api.Test;
 
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.autoconfigure.logging.ConditionEvaluationReportLoggingListener;
 import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.boot.logging.LogLevel;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -102,7 +104,7 @@ class KafkaBinderMeterRegistryTest {
 	@Test
 	void metricsWithMultiBinders() {
 		ConfigurableApplicationContext applicationContext = new SpringApplicationBuilder(SimpleApplication.class)
-				.web(WebApplicationType.NONE)
+				.web(WebApplicationType.NONE).initializers(ConditionEvaluationReportLoggingListener.forLogLevel(LogLevel.DEBUG))
 				.run("--spring.cloud.stream.bindings.uppercase-in-0.destination=inputTopic",
 						"--spring.cloud.stream.bindings.uppercase-in-0.group=inputGroup",
 						"--spring.cloud.stream.bindings.uppercase-in-0.binder=kafka1",
