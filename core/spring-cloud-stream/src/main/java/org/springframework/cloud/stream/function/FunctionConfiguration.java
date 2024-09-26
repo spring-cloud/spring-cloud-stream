@@ -107,6 +107,7 @@ import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.MessagingException;
 import org.springframework.messaging.SubscribableChannel;
+import org.springframework.messaging.support.ChannelInterceptor;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.Trigger;
 import org.springframework.scheduling.support.CronTrigger;
@@ -235,15 +236,22 @@ public class FunctionConfiguration {
 						}
 
 						if (functionWrapper != null) {
+							FunctionInvocationWrapper postProcessor = functionWrapper;
 							IntegrationFlow integrationFlow = integrationFlowFromProvidedSupplier(new PartitionAwareFunctionWrapper(functionWrapper, context, producerProperties),
 									pollable, context, taskScheduler, producerProperties, outputName)
+									.intercept(new ChannelInterceptor() {
+										public void postSend(Message<?> message, MessageChannel channel, boolean sent) {
+											postProcessor.postProcess();
+										}
+									})
 									.route(Message.class, message -> {
 										if (message.getHeaders().get("spring.cloud.stream.sendto.destination") != null) {
 											String destinationName = (String) message.getHeaders().get("spring.cloud.stream.sendto.destination");
 											return streamBridge.resolveDestination(destinationName, producerProperties, null);
 										}
 										return outputName;
-									}).get();
+									})
+									.get();
 							IntegrationFlow postProcessedFlow = (IntegrationFlow) context.getAutowireCapableBeanFactory()
 									.initializeBean(integrationFlow, integrationFlowName);
 							context.registerBean(integrationFlowName, IntegrationFlow.class, () -> postProcessedFlow);
