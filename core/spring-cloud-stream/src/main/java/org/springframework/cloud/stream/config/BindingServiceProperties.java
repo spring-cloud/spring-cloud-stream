@@ -20,7 +20,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
@@ -53,6 +53,7 @@ import org.springframework.util.StringUtils;
  * @author Ilayaperumal Gopinathan
  * @author Oleg Zhurakousky
  * @author Michael Michailidis
+ * @author Kurt Hong
  */
 @ConfigurationProperties("spring.cloud.stream")
 @JsonInclude(Include.NON_DEFAULT)
@@ -115,7 +116,7 @@ public class BindingServiceProperties
 	 * For example; This sets the content-type for the 'input' binding of a Sink
 	 * application: 'spring.cloud.stream.bindings.input.contentType=text/plain'
 	 */
-	private Map<String, BindingProperties> bindings = new TreeMap<>(
+	private Map<String, BindingProperties> bindings = new ConcurrentSkipListMap(
 		String.CASE_INSENSITIVE_ORDER);
 
 	/**
