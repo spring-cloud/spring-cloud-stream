@@ -44,15 +44,6 @@ public class AvroSchemaMessageConverter extends AbstractAvroMessageConverter {
 	/**
 	 * Create a {@link AvroSchemaMessageConverter}. Uses the default {@link MimeType} of
 	 * {@code "application/avro"}.
-	 */
-	@Deprecated
-	public AvroSchemaMessageConverter() {
-		super(new MimeType("application", "avro"));
-	}
-
-	/**
-	 * Create a {@link AvroSchemaMessageConverter}. Uses the default {@link MimeType} of
-	 * {@code "application/avro"}.
 	 * @param manager for schema management
 	 */
 	public AvroSchemaMessageConverter(AvroSchemaServiceManager manager) {
@@ -64,31 +55,10 @@ public class AvroSchemaMessageConverter extends AbstractAvroMessageConverter {
 	 * provided {@link MimeType}.
 	 * @param supportedMimeType mime type to be supported by
 	 * {@link AvroSchemaMessageConverter}
-	 */
-	@Deprecated
-	public AvroSchemaMessageConverter(MimeType supportedMimeType) {
-		super(supportedMimeType);
-	}
-
-	/**
-	 * Create a {@link AvroSchemaMessageConverter}. The converter will be used for the
-	 * provided {@link MimeType}.
-	 * @param supportedMimeType mime type to be supported by
-	 * {@link AvroSchemaMessageConverter}
 	 * @param manager for schema management
 	 */
 	public AvroSchemaMessageConverter(MimeType supportedMimeType, AvroSchemaServiceManager manager) {
 		super(supportedMimeType, manager);
-	}
-
-	/**
-	 * Create a {@link AvroSchemaMessageConverter}. The converter will be used for the
-	 * provided {@link MimeType}s.
-	 * @param supportedMimeTypes the mime types supported by this converter
-	 */
-	@Deprecated
-	public AvroSchemaMessageConverter(Collection<MimeType> supportedMimeTypes) {
-		super(supportedMimeTypes);
 	}
 
 	/**

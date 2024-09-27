@@ -54,21 +54,6 @@ public class RabbitBinderConfigurationProperties {
 		this.adminAddresses = adminAddresses;
 	}
 
-	/**
-	 * @param adminAddresses A comma-separated list of RabbitMQ management plugin URLs.
-	 * @deprecated in favor of {@link #setAdminAddresses(String[])}. Will be removed in a
-	 * future release.
-	 */
-	@Deprecated
-	public void setAdminAdresses(String[] adminAddresses) {
-		setAdminAddresses(adminAddresses);
-	}
-
-	@Deprecated
-	public String[] getAdminAdresses() {
-		return this.adminAddresses;
-	}
-
 	public String[] getNodes() {
 		return nodes;
 	}

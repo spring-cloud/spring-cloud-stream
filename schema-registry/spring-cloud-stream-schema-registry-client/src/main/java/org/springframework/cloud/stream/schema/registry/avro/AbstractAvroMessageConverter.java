@@ -51,19 +51,8 @@ public abstract class AbstractAvroMessageConverter extends AbstractMessageConver
 	private Schema.Parser schemaParser = new Schema.Parser();
 	private AvroSchemaServiceManager avroSchemaServiceManager;
 
-	@Deprecated
-	protected AbstractAvroMessageConverter(MimeType supportedMimeType) {
-		this(Collections.singletonList(supportedMimeType), new AvroSchemaServiceManagerImpl());
-	}
-
 	protected AbstractAvroMessageConverter(MimeType supportedMimeType, AvroSchemaServiceManager avroSchemaServiceManager) {
 		this(Collections.singletonList(supportedMimeType), avroSchemaServiceManager);
-	}
-
-	@Deprecated
-	protected AbstractAvroMessageConverter(Collection<MimeType> supportedMimeTypes) {
-		this(supportedMimeTypes, new AvroSchemaServiceManagerImpl());
-		setContentTypeResolver(new OriginalContentTypeResolver());
 	}
 
 	protected AbstractAvroMessageConverter(Collection<MimeType> supportedMimeTypes, AvroSchemaServiceManager manager) {

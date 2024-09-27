@@ -133,27 +133,6 @@ public class ServerController {
 	}
 
 	/**
-	 * <p>
-	 * Find by {@link Schema#getSubject() subject} and {@link Schema#getFormat() format}.
-	 *
-	 * @param subject the {@link Schema#getSubject() subject}, must not be
-	 * {@literal null}.
-	 * @param format the {@link Schema#getFormat() format}, must not be {@literal null}.
-	 * @return An {@link HttpStatus#OK} response populated with the list of {@link Schema
-	 * Schemas}, in ascending order by {@link Schema#getVersion() version}, that matched
-	 * the supplied {@link Schema#getSubject() subject} and {@link Schema#getFormat()
-	 * format}.
-	 * @deprecated use {@link #findBySubjectAndFormat(String, String)}
-	 * @see <a href=
-	 * "https://github.com/spring-cloud/spring-cloud-stream/issues/1760">GH-1760</a>
-	 */
-	@Deprecated
-	public ResponseEntity<List<Schema>> findBySubjectAndVersion(@PathVariable("subject") String subject,
-			@PathVariable("format") String format) {
-		return findBySubjectAndFormatOrderByVersionAsc(subject, format);
-	}
-
-	/**
 	 * Find by {@link Schema#getSubject() subject} and {@link Schema#getFormat() format}.
 	 *
 	 * @param subject the {@link Schema#getSubject() subject}, must not be

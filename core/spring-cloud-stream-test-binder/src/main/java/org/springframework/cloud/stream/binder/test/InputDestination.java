@@ -38,16 +38,6 @@ public class InputDestination extends AbstractDestination {
 	}
 
 	/**
-	 * @param message message to send
-	 * @param inputIndex input index
-	 * @deprecated since 3.0.2 in favor of {@link #receive(long, String)} where you should use the actual binding name (e.g., "foo-in-0")
-	 */
-	@Deprecated
-	public void send(Message<?> message, int inputIndex) {
-		this.getChannel(inputIndex).send(message);
-	}
-
-	/**
 	 * Allows the {@link Message} to be sent to a Binder's destination.<br>
 	 * This needs a bit of clarification. Just like with any binder, 'destination'
 	 * name and 'binding' name are usually the same unless additional configuration

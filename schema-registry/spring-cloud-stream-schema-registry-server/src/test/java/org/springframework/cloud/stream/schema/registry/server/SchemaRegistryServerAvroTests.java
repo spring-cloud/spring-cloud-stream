@@ -459,7 +459,7 @@ class SchemaRegistryServerAvroTests {
 				assertThat(schemas).hasSize(2);
 
 				final ResponseEntity<List<Schema>> findBySubjectAndVersionResponseEntity = this.serverController
-						.findBySubjectAndVersion(subject, format);
+						.findBySubjectAndFormat(subject, format);
 
 				assertThat(findBySubjectAndVersionResponseEntity.getStatusCode().is2xxSuccessful()).isTrue();
 

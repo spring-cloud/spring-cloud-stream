@@ -321,18 +321,6 @@ public class KafkaMessageChannelBinder extends
 		this.producerListener = producerListener;
 	}
 
-	/**
-	 * Set a {@link ClientFactoryCustomizer} for the {@link ProducerFactory} and {@link ConsumerFactory} created inside
-	 * the binder.
-	 *
-	 * @param customizer the client factory customizer
-	 * @deprecated in favor of {@link #addClientFactoryCustomizer(ClientFactoryCustomizer)}.
-	 */
-	@Deprecated
-	public void setClientFactoryCustomizer(ClientFactoryCustomizer customizer) {
-		addClientFactoryCustomizer(customizer);
-	}
-
 	public void addClientFactoryCustomizer(ClientFactoryCustomizer customizer) {
 		if (customizer != null) {
 			this.clientFactoryCustomizers.add(customizer);
@@ -686,17 +674,7 @@ public class KafkaMessageChannelBinder extends
 		messageListenerContainer.setBeanName(destination + ".container");
 		// end of these won't be needed...
 		ContainerProperties.AckMode ackMode = extendedConsumerProperties.getExtension().getAckMode();
-		if (ackMode == null) {
-			if (extendedConsumerProperties.getExtension().isAckEachRecord()) {
-				ackMode = ContainerProperties.AckMode.RECORD;
-			}
-			else {
-				if (!extendedConsumerProperties.getExtension().isAutoCommitOffset()) {
-					messageListenerContainer.getContainerProperties()
-							.setAckMode(ContainerProperties.AckMode.MANUAL);
-				}
-			}
-		}
+
 		if (ackMode != null) {
 			if ((extendedConsumerProperties.isBatchMode() && ackMode != ContainerProperties.AckMode.RECORD) ||
 					!extendedConsumerProperties.isBatchMode()) {
@@ -1425,30 +1403,10 @@ public class KafkaMessageChannelBinder extends
 		return stringWriter.getBuffer().toString();
 	}
 
-	/**
-	 * Set a {@link ConsumerConfigCustomizer} for the {@link ConsumerFactory} created inside the binder.
-	 * @param consumerConfigCustomizer the consumer config customizer
-	 * @deprecated in favor of {@link #addConsumerConfigCustomizer(ConsumerConfigCustomizer)}.
-	 */
-	@Deprecated
-	public void setConsumerConfigCustomizer(ConsumerConfigCustomizer consumerConfigCustomizer) {
-		addConsumerConfigCustomizer(consumerConfigCustomizer);
-	}
-
 	public void addConsumerConfigCustomizer(ConsumerConfigCustomizer consumerConfigCustomizer) {
 		if (consumerConfigCustomizer != null) {
 			this.consumerConfigCustomizers.add(consumerConfigCustomizer);
 		}
-	}
-
-	/**
-	 * Set a {@link ProducerConfigCustomizer} for the {@link ProducerFactory} created inside the binder.
-	 * @param producerConfigCustomizer the producer config customizer
-	 * @deprecated in favor of {@link #addProducerConfigCustomizer(ProducerConfigCustomizer)}.
-	 */
-	@Deprecated
-	public void setProducerConfigCustomizer(ProducerConfigCustomizer producerConfigCustomizer) {
-		addProducerConfigCustomizer(producerConfigCustomizer);
 	}
 
 	public void addProducerConfigCustomizer(ProducerConfigCustomizer producerConfigCustomizer) {

@@ -86,26 +86,12 @@ public class KafkaConsumerProperties {
 
 	}
 
-	/**
-	 * When true the offset is committed after each record, otherwise the offsets for the complete set of records
-	 * received from the poll() are committed after all records have been processed.
-	 */
-	@Deprecated
-	private boolean ackEachRecord;
 
 	/**
 	 * When true, topic partitions is automatically rebalanced between the members of a consumer group.
 	 * When false, each consumer is assigned a fixed set of partitions based on spring.cloud.stream.instanceCount and spring.cloud.stream.instanceIndex.
 	 */
 	private boolean autoRebalanceEnabled = true;
-
-	/**
-	 * Whether to autocommit offsets when a message has been processed.
-	 * If set to false, a header with the key kafka_acknowledgment of the type org.springframework.kafka.support.Acknowledgment header
-	 * is present in the inbound message. Applications may use this header for acknowledging messages.
-	 */
-	@Deprecated
-	private boolean autoCommitOffset = true;
 
 	/**
 	 * Controlling the container acknowledgement mode. This is the preferred way to control the ack mode on the
@@ -151,12 +137,6 @@ public class KafkaConsumerProperties {
 	 * All the properties available through kafka producer properties can be set through this property.
 	 */
 	private KafkaProducerProperties dlqProducerProperties = new KafkaProducerProperties();
-
-	/**
-	 * @deprecated No longer used by the binder.
-	 */
-	@Deprecated
-	private int recoveryInterval = 5000;
 
 	/**
 	 * List of trusted packages to provide the header mapper.
@@ -231,53 +211,6 @@ public class KafkaConsumerProperties {
 	private boolean reactiveAtMostOnce;
 
 	/**
-	 * @return if each record needs to be acknowledged.
-	 *
-	 * When true the offset is committed after each record, otherwise the offsets for the complete set of records
-	 * received from the poll() are committed after all records have been processed.
-	 *
-	 * @deprecated since 3.1 in favor of using {@link #ackMode}
-	 */
-	@Deprecated
-	public boolean isAckEachRecord() {
-		return this.ackEachRecord;
-	}
-
-	/**
-	 * @param ackEachRecord
-	 *
-	 * @deprecated in favor of using {@link #ackMode}
-	 */
-	@Deprecated
-	public void setAckEachRecord(boolean ackEachRecord) {
-		this.ackEachRecord = ackEachRecord;
-	}
-
-	/**
-	 * @return is autocommit offset enabled
-	 *
-	 * Whether to autocommit offsets when a message has been processed.
-	 * If set to false, a header with the key kafka_acknowledgment of the type org.springframework.kafka.support.Acknowledgment header
-	 * is present in the inbound message. Applications may use this header for acknowledging messages.
-	 *
-	 * @deprecated since 3.1 in favor of using {@link #ackMode}
-	 */
-	@Deprecated
-	public boolean isAutoCommitOffset() {
-		return this.autoCommitOffset;
-	}
-
-	/**
-	 * @param autoCommitOffset
-	 *
-	 * @deprecated in favor of using {@link #ackMode}
-	 */
-	@Deprecated
-	public void setAutoCommitOffset(boolean autoCommitOffset) {
-		this.autoCommitOffset = autoCommitOffset;
-	}
-
-	/**
 	 * @return Container's ack mode.
 	 */
 	public ContainerProperties.AckMode getAckMode() {
@@ -346,26 +279,6 @@ public class KafkaConsumerProperties {
 	 */
 	public void setAutoCommitOnError(Boolean autoCommitOnError) {
 		this.autoCommitOnError = autoCommitOnError;
-	}
-
-	/**
-	 * No longer used.
-	 * @return the interval.
-	 * @deprecated No longer used by the binder
-	 */
-	@Deprecated
-	public int getRecoveryInterval() {
-		return this.recoveryInterval;
-	}
-
-	/**
-	 * No longer used.
-	 * @param recoveryInterval the interval.
-	 * @deprecated No longer needed by the binder
-	 */
-	@Deprecated
-	public void setRecoveryInterval(int recoveryInterval) {
-		this.recoveryInterval = recoveryInterval;
 	}
 
 	/**

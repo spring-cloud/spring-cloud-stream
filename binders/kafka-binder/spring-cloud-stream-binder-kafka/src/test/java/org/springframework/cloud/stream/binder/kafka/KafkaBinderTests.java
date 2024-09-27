@@ -1515,7 +1515,6 @@ class KafkaBinderTests extends
 		consumerProperties.setBackOffMaxInterval(150);
 		//When auto commit is disabled, then the record is committed after publishing to DLQ using the manual acknowledgement.
 		// (if DLQ is enabled, which is, in this case).
-		consumerProperties.getExtension().setAutoCommitOffset(false);
 		consumerProperties.getExtension().setEnableDlq(true);
 
 		DirectChannel moduleInputChannel = createBindableChannel("input",

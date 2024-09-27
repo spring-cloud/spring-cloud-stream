@@ -136,9 +136,6 @@ class KafkaBinderExtendedPropertiesTest {
 				customKafkaConsumerProperties.getConfiguration().get("value.serializer"))
 						.isEqualTo("BarSerializer.class");
 
-		assertThat(kafkaConsumerProperties.isAckEachRecord()).isEqualTo(true);
-		assertThat(customKafkaConsumerProperties.isAckEachRecord()).isEqualTo(false);
-
 		RebalanceListener rebalanceListener = context.getBean(RebalanceListener.class);
 		assertThat(rebalanceListener.latch.await(10, TimeUnit.SECONDS)).isTrue();
 		assertThat(rebalanceListener.bindings.keySet()).contains("standard-in",

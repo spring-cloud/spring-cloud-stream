@@ -163,24 +163,6 @@ public class RabbitProducerProperties extends RabbitCommonProperties {
 	 */
 	private boolean superStream;
 
-	/**
-	 * @param requestHeaderPatterns the patterns.
-	 * @deprecated - use {@link #setHeaderPatterns(String[])}.
-	 */
-	@Deprecated
-	public void setRequestHeaderPatterns(String[] requestHeaderPatterns) {
-		this.headerPatterns = requestHeaderPatterns;
-	}
-
-	/**
-	 * @return the header patterns.
-	 * @deprecated - use {@link #getHeaderPatterns()}.
-	 */
-	@Deprecated
-	public String[] getRequestHeaderPatterns() {
-		return this.headerPatterns;
-	}
-
 	public void setCompress(boolean compress) {
 		this.compress = compress;
 	}

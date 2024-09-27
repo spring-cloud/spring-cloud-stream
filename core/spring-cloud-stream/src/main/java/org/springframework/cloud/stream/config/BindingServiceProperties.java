@@ -44,7 +44,6 @@ import org.springframework.core.convert.converter.Converter;
 import org.springframework.core.convert.support.GenericConversionService;
 import org.springframework.integration.support.utils.IntegrationUtils;
 import org.springframework.util.Assert;
-import org.springframework.util.StringUtils;
 
 /**
  * @author Dave Syer
@@ -61,15 +60,6 @@ public class BindingServiceProperties
 	implements ApplicationContextAware, InitializingBean {
 
 	private static final int DEFAULT_BINDING_RETRY_INTERVAL = 30;
-
-	/**
-	 *  A semi-colon delimited string representing the names of the sources based on which source bindings will be created.
-	 *  This is primarily to support cases where source binding may be required without providing a corresponding Supplier.
-	 *  (e.g., for cases where the actual source of data is outside of scope of spring-cloud-stream - HTTP -> Stream)
-	 *  @deprecated use {@link #outputBindings}
-	 */
-	@Deprecated
-	private String source;
 
 	/**
 	 * A semi-colon delimited string to explicitly define input bindings (specifically for cases when there
@@ -308,23 +298,6 @@ public class BindingServiceProperties
 		this.bindingRetryInterval = bindingRetryInterval;
 	}
 
-	/**
-	 * @deprecated in favor of {@link #getOutputBindings()}
-	 */
-	@Deprecated
-	public String getSource() {
-		return source;
-	}
-
-	/**
-	 * @deprecated in favor of {@link #setOutputBindings()}
-	 */
-	@Deprecated
-	public void setSource(String source) {
-		this.source = source;
-		this.outputBindings = source;
-	}
-
 	public void updateProducerProperties(String bindingName,
 			ProducerProperties producerProperties) {
 		if (this.bindings.containsKey(bindingName)) {
@@ -354,8 +327,6 @@ public class BindingServiceProperties
 	}
 
 	public void setOutputBindings(String outputBindings) {
-		Assert.state(!StringUtils.hasText(this.source), "Setting 'source' and 'output-binding' is not allowed "
-				+ "because 'source' is deprecated in favor of 'output-binding'.");
 		this.outputBindings = outputBindings;
 	}
 

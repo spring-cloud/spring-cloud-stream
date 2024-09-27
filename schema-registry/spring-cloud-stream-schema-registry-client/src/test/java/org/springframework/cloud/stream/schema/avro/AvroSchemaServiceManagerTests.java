@@ -19,6 +19,8 @@ package org.springframework.cloud.stream.schema.avro;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -153,17 +155,7 @@ class AvroSchemaServiceManagerTests {
 
 	@Test
 	public void avroSchemaMessageConverter() {
-		AvroSchemaMessageConverter converter = new AvroSchemaMessageConverter();
 		MimeType mimeType = new MimeType("application", "avro");
-		assertThat(mimeType).isEqualTo(converter.getSupportedMimeTypes().get(0));
-
-		AvroSchemaMessageConverter converter2 = new AvroSchemaMessageConverter(mimeType);
-		assertThat(mimeType).isEqualTo(converter2.getSupportedMimeTypes().get(0));
-
-		AvroSchemaMessageConverter converter3 =
-				new AvroSchemaMessageConverter(Lists.newArrayList(mimeType));
-		assertThat(mimeType).isEqualTo(converter3.getSupportedMimeTypes().get(0));
-
 		AvroSchemaServiceManager manager = new AvroSchemaServiceManagerImpl();
 		AvroSchemaMessageConverter converter4 = new AvroSchemaMessageConverter(manager);
 		assertThat(mimeType).isEqualTo(converter4.getSupportedMimeTypes().get(0));

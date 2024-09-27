@@ -180,42 +180,6 @@ public class RabbitConsumerProperties extends RabbitCommonProperties {
 		this.prefetch = prefetch;
 	}
 
-	/**
-	 * @return the header patterns.
-	 * @deprecated - use {@link #getHeaderPatterns()}.
-	 */
-	@Deprecated
-	public String[] getRequestHeaderPatterns() {
-		return this.headerPatterns;
-	}
-
-	/**
-	 * @param requestHeaderPatterns request header patterns
-	 * @deprecated - use {@link #setHeaderPatterns(String[])}.
-	 */
-	@Deprecated
-	public void setRequestHeaderPatterns(String[] requestHeaderPatterns) {
-		this.headerPatterns = requestHeaderPatterns;
-	}
-
-	/**
-	 * @return the tx size.
-	 * @deprecated in favor of {@link #getBatchSize()}
-	 */
-	@Deprecated
-	@Min(value = 1, message = "Tx Size should be greater than zero.")
-	public int getTxSize() {
-		return getBatchSize();
-	}
-
-	/**
-	 * @param txSize the tx size
-	 * deprecated in favor of {@link #setBatchSize(int)}.
-	 */
-	public void setTxSize(int txSize) {
-		setBatchSize(txSize);
-	}
-
 	@Min(value = 1, message = "Batch Size should be greater than zero.")
 	public int getBatchSize() {
 		return batchSize;

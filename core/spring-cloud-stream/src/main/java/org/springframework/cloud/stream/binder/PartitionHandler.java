@@ -60,24 +60,6 @@ public class PartitionHandler {
 	 * Construct a {@code PartitionHandler}.
 	 * @param evaluationContext evaluation context for binder
 	 * @param properties binder properties
-	 * @param partitionKeyExtractorStrategy PartitionKeyExtractor strategy
-	 * @param partitionSelectorStrategy PartitionSelector strategy
-	 *
-	 * @deprecated since 3.0.2. Please use another constructor which allows you to pass an instance of beanFactory
-	 */
-	@Deprecated
-	public PartitionHandler(EvaluationContext evaluationContext,
-			ProducerProperties properties,
-			PartitionKeyExtractorStrategy partitionKeyExtractorStrategy,
-			PartitionSelectorStrategy partitionSelectorStrategy) {
-
-		this(evaluationContext, properties, (ConfigurableListableBeanFactory) extractBeanFactoryFromEvaluationContext(evaluationContext));
-	}
-
-	/**
-	 * Construct a {@code PartitionHandler}.
-	 * @param evaluationContext evaluation context for binder
-	 * @param properties binder properties
 	 * @param beanFactory instance of ConfigurableListableBeanFactory
 	 *
 	 * @since 3.0.2

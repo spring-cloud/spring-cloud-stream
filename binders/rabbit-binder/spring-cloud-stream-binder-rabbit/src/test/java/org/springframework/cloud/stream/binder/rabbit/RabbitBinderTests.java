@@ -499,7 +499,7 @@ class RabbitBinderTests extends
 		properties.getExtension().setPrefix("foo.");
 		properties.getExtension().setPrefetch(20);
 		properties.getExtension().setHeaderPatterns(new String[] { "foo" });
-		properties.getExtension().setTxSize(10);
+		properties.getExtension().setBatchSize(10);
 		QuorumConfig quorum = properties.getExtension().getQuorum();
 		quorum.setEnabled(true);
 		quorum.setDeliveryLimit(10);

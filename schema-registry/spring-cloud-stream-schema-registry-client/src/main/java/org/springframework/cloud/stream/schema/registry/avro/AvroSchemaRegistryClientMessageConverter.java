@@ -146,25 +146,6 @@ public class AvroSchemaRegistryClientMessageConverter extends AbstractAvroMessag
 	 *                             the schema registry server.
 	 * @param cacheManager         instance of {@link CacheManager} to cache parsed schemas. If
 	 *                             caching is not required use {@link NoOpCacheManager}
-	 */
-	@Deprecated
-	public AvroSchemaRegistryClientMessageConverter(
-		SchemaRegistryClient schemaRegistryClient, CacheManager cacheManager) {
-		super(Collections.singletonList(DEFAULT_AVRO_MIME_TYPE), defaultAvroSchemaServiceManager);
-		Assert.notNull(schemaRegistryClient, "cannot be null");
-		Assert.notNull(cacheManager, "'cacheManager' cannot be null");
-		this.schemaRegistryClient = schemaRegistryClient;
-		this.cacheManager = cacheManager;
-	}
-
-	/**
-	 * Creates a new instance, configuring it with {@link SchemaRegistryClient} and
-	 * {@link CacheManager}.
-	 *
-	 * @param schemaRegistryClient the {@link SchemaRegistryClient} used to interact with
-	 *                             the schema registry server.
-	 * @param cacheManager         instance of {@link CacheManager} to cache parsed schemas. If
-	 *                             caching is not required use {@link NoOpCacheManager}
 	 * @param manager              instance of {@link AvroSchemaServiceManager} to manage schemas.
 	 */
 	public AvroSchemaRegistryClientMessageConverter(
