@@ -188,7 +188,14 @@ public final class StreamBridge implements StreamOperations, SmartInitializingSi
 		ProducerProperties producerProperties = this.bindingServiceProperties.getProducerProperties(bindingName);
 		MessageChannel messageChannel = this.resolveDestination(bindingName, producerProperties, binderName);
 
-		Function functionToInvoke = this.getStreamBridgeFunction(outputContentType.toString(), producerProperties);
+		Function functionToInvoke;
+		lock.lock();
+		try {
+			functionToInvoke = this.getStreamBridgeFunction(outputContentType.toString(), producerProperties);
+		} finally {
+			lock.unlock();
+		}
+
 
 		if (producerProperties != null && producerProperties.isPartitioned()) {
 			functionToInvoke = new PartitionAwareFunctionWrapper(functionToInvoke, this.applicationContext, producerProperties);
@@ -202,8 +209,11 @@ public final class StreamBridge implements StreamOperations, SmartInitializingSi
 						: new GenericMessage<>(data, Collections.singletonMap(MessageUtils.TARGET_PROTOCOL, targetType));
 
 		Message<?> resultMessage;
-		synchronized (this) {
-			resultMessage = (Message<byte[]>) functionToInvoke.apply(messageToSend);
+		lock.lock();
+		try {
+			resultMessage = (Message<byte[]>)functionToInvoke.apply(messageToSend);
+		} finally {
+			lock.unlock();
 		}
 
 		if (resultMessage == null
@@ -225,7 +235,7 @@ public final class StreamBridge implements StreamOperations, SmartInitializingSi
 		return hash;
 	}
 
-	private synchronized FunctionInvocationWrapper getStreamBridgeFunction(String outputContentType, ProducerProperties producerProperties) {
+	private FunctionInvocationWrapper getStreamBridgeFunction(String outputContentType, ProducerProperties producerProperties) {
 		int streamBridgeFunctionKey = this.hashProducerProperties(producerProperties, outputContentType);
 		if (this.streamBridgeFunctionCache.containsKey(streamBridgeFunctionKey)) {
 			return this.streamBridgeFunctionCache.get(streamBridgeFunctionKey);
