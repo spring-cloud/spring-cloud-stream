@@ -192,7 +192,8 @@ public final class StreamBridge implements StreamOperations, SmartInitializingSi
 		lock.lock();
 		try {
 			functionToInvoke = this.getStreamBridgeFunction(outputContentType.toString(), producerProperties);
-		} finally {
+		}
+		finally {
 			lock.unlock();
 		}
 
@@ -211,8 +212,9 @@ public final class StreamBridge implements StreamOperations, SmartInitializingSi
 		Message<?> resultMessage;
 		lock.lock();
 		try {
-			resultMessage = (Message<byte[]>)functionToInvoke.apply(messageToSend);
-		} finally {
+			resultMessage = (Message<byte[]>) functionToInvoke.apply(messageToSend);
+		}
+		finally {
 			lock.unlock();
 		}
 
