@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2019 the original author or authors.
+ * Copyright 2019-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.ToDoubleFunction;
 
 import io.micrometer.core.instrument.FunctionCounter;
@@ -52,6 +53,7 @@ import org.springframework.kafka.config.StreamsBuilderFactoryBean;
  * We will keep this class, as long as we support Boot 2.2.x.
  *
  * @author Soby Chacko
+ * @author Omer Celik
  * @since 3.0.0
  */
 public class KafkaStreamsBinderMetrics {
@@ -84,6 +86,8 @@ public class KafkaStreamsBinderMetrics {
 
 	private volatile Set<MetricName> currentMeters = new HashSet<>();
 
+	private static final ReentrantLock lock = new ReentrantLock();
+
 	public KafkaStreamsBinderMetrics(MeterRegistry meterRegistry) {
 		this.meterRegistry = meterRegistry;
 	}
@@ -108,8 +112,12 @@ public class KafkaStreamsBinderMetrics {
 	}
 
 	public void addMetrics(Set<StreamsBuilderFactoryBean> streamsBuilderFactoryBeans) {
-		synchronized (KafkaStreamsBinderMetrics.this) {
+		try {
+			lock.lock();
 			this.bindTo(streamsBuilderFactoryBeans);
+		}
+		finally {
+			lock.unlock();
 		}
 	}
 

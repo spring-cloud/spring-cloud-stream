@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2023 the original author or authors.
+ * Copyright 2016-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -79,6 +80,7 @@ import org.springframework.util.StringUtils;
  * @author Oleg Zhurakousky
  * @author Michael Michailidis
  * @author Byungjun You
+ * @author Omer Celik
  */
 // @checkstyle:off
 public class RabbitExchangeQueueProvisioner
@@ -104,6 +106,8 @@ public class RabbitExchangeQueueProvisioner
 	private final List<DeclarableCustomizer> customizers;
 
 	private final AtomicInteger producerExchangeBeanNameQualifier = new AtomicInteger();
+
+	private final ReentrantLock lock = new ReentrantLock();
 
 	public RabbitExchangeQueueProvisioner(ConnectionFactory connectionFactory) {
 		this(connectionFactory, Collections.emptyList());
@@ -320,10 +324,14 @@ public class RabbitExchangeQueueProvisioner
 				(q, i) -> IntStream.range(0, i)
 						.mapToObj(j -> rk + "-" + j)
 						.collect(Collectors.toList()));
-		synchronized (this.autoDeclareContext) {
+		try {
+			lock.lock();
 			if (!this.autoDeclareContext.containsBean(name + ".superStream")) {
 				this.autoDeclareContext.getBeanFactory().registerSingleton(name + ".superStream", ss);
 			}
+		}
+		finally {
+			lock.unlock();
 		}
 		try {
 			ss.getDeclarables().forEach(dec -> {
@@ -716,13 +724,17 @@ public class RabbitExchangeQueueProvisioner
 	}
 
 	private void addToAutoDeclareContext(String name, Declarable bean) {
-		synchronized (this.autoDeclareContext) {
+		try {
+			lock.lock();
 			if (!this.autoDeclareContext.containsBean(name)) {
 				this.autoDeclareContext.getBeanFactory().registerSingleton(name, new Declarables(bean));
 			}
 			else {
 				this.autoDeclareContext.getBean(name, Declarables.class).getDeclarables().add(bean);
 			}
+		}
+		finally {
+			lock.unlock();
 		}
 	}
 
@@ -756,31 +768,36 @@ public class RabbitExchangeQueueProvisioner
 	public void cleanAutoDeclareContext(ConsumerDestination destination,
 			ExtendedConsumerProperties<RabbitConsumerProperties> consumerProperties) {
 
-		synchronized (this.autoDeclareContext) {
+		try {
+			lock.lock();
 			Stream.of(StringUtils.tokenizeToStringArray(destination.getName(), ",", true,
-					true)).forEach(name -> {
-						String group = null;
-						String bindingName = null;
-						if (destination instanceof RabbitConsumerDestination rabbitConsumerDestination) {
-							group = rabbitConsumerDestination.getGroup();
-							bindingName = rabbitConsumerDestination.getBindingName();
-						}
-						RabbitConsumerProperties properties = consumerProperties.getExtension();
-						String toRemove = properties.isQueueNameGroupOnly() ? bindingName + "." + group : name.trim();
-						boolean partitioned = consumerProperties.isPartitioned();
-						if (partitioned) {
-							toRemove = removePartitionPart(toRemove);
-						}
-						removeSingleton(toRemove + ".exchange");
-						removeQueueAndBindingBeans(properties, name.trim(), "", group, partitioned);
-					});
+				true)).forEach(name -> {
+				String group = null;
+				String bindingName = null;
+				if (destination instanceof RabbitConsumerDestination rabbitConsumerDestination) {
+					group = rabbitConsumerDestination.getGroup();
+					bindingName = rabbitConsumerDestination.getBindingName();
+				}
+				RabbitConsumerProperties properties = consumerProperties.getExtension();
+				String toRemove = properties.isQueueNameGroupOnly() ? bindingName + "." + group : name.trim();
+				boolean partitioned = consumerProperties.isPartitioned();
+				if (partitioned) {
+					toRemove = removePartitionPart(toRemove);
+				}
+				removeSingleton(toRemove + ".exchange");
+				removeQueueAndBindingBeans(properties, name.trim(), "", group, partitioned);
+			});
+		}
+		finally {
+			lock.unlock();
 		}
 	}
 
 	public void cleanAutoDeclareContext(ProducerDestination dest,
 			ExtendedProducerProperties<RabbitProducerProperties> properties) {
 
-		synchronized (this.autoDeclareContext) {
+		try {
+			lock.lock();
 			if (dest instanceof RabbitProducerDestination rabbitProducerDestination) {
 				String qual = rabbitProducerDestination.getBeanNameQualifier();
 				removeSingleton(dest.getName() + "." + qual + ".exchange");
@@ -790,13 +807,13 @@ public class RabbitExchangeQueueProvisioner
 						if (properties.isPartitioned()) {
 							for (int i = 0; i < properties.getPartitionCount(); i++) {
 								removeQueueAndBindingBeans(properties.getExtension(),
-										properties.getExtension().isQueueNameGroupOnly() ? "" : dest.getName(),
-												group + "-" + i, group, true);
+									properties.getExtension().isQueueNameGroupOnly() ? "" : dest.getName(),
+									group + "-" + i, group, true);
 							}
 						}
 						else {
 							removeQueueAndBindingBeans(properties.getExtension(), dest.getName() + "." + group, "",
-									group, false);
+								group, false);
 						}
 					}
 				}
@@ -810,6 +827,9 @@ public class RabbitExchangeQueueProvisioner
 					}
 				}
 			}
+		}
+		finally {
+			lock.unlock();
 		}
 	}
 

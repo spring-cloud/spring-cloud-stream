@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package org.springframework.cloud.stream.binding;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
@@ -43,6 +44,7 @@ import org.springframework.util.Assert;
  * @author Ilayaperumal Gopinathan
  * @author Oleg Zhurakousky
  * @author Soby Chacko
+ * @author Omer Celik
  */
 public class BindableProxyFactory extends AbstractBindableProxyFactory
 		implements MethodInterceptor, FactoryBean<Object>, InitializingBean, BeanFactoryAware {
@@ -55,21 +57,25 @@ public class BindableProxyFactory extends AbstractBindableProxyFactory
 
 	protected BeanFactory beanFactory;
 
+	private final ReentrantLock lock = new ReentrantLock();
+
 	public BindableProxyFactory(Class<?> type) {
 		super(type);
 		this.type = type;
 	}
 
 	@Override
-	public synchronized Object invoke(MethodInvocation invocation) {
-		Method method = invocation.getMethod();
+	public Object invoke(MethodInvocation invocation) {
+		try {
+			lock.lock();
+			Method method = invocation.getMethod();
 
-		// try to use cached target
-		Object boundTarget = this.targetCache.get(method);
-		if (boundTarget != null) {
-			return boundTarget;
+			// try to use cached target
+            return this.targetCache.get(method);
+        }
+		finally {
+			lock.unlock();
 		}
-		return null;
 	}
 
 	public void replaceInputChannel(String originalChannelName, String newChannelName, SubscribableChannel messageChannel) {
@@ -98,12 +104,18 @@ public class BindableProxyFactory extends AbstractBindableProxyFactory
 	}
 
 	@Override
-	public synchronized Object getObject() {
-		if (this.proxy == null && this.type != null) {
-			ProxyFactory factory = new ProxyFactory(this.type, this);
-			this.proxy = factory.getProxy();
+	public Object getObject() {
+		try {
+			lock.lock();
+			if (this.proxy == null && this.type != null) {
+				ProxyFactory factory = new ProxyFactory(this.type, this);
+				this.proxy = factory.getProxy();
+			}
+			return this.proxy;
 		}
-		return this.proxy;
+		finally {
+			lock.unlock();
+		}
 	}
 
 	@Override
