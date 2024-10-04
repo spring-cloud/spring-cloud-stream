@@ -1,5 +1,5 @@
 /*
- * Copyright 2021-2021 the original author or authors.
+ * Copyright 2021-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,8 @@ import java.util.function.BiFunction;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.TopicPartition;
 
+import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
+import org.springframework.cloud.stream.binder.kafka.properties.KafkaConsumerProperties;
 import org.springframework.cloud.stream.config.ListenerContainerCustomizer;
 import org.springframework.kafka.listener.AbstractMessageListenerContainer;
 import org.springframework.lang.Nullable;
@@ -31,12 +33,21 @@ import org.springframework.util.backoff.BackOff;
  * metadata.
  *
  * @author Gary Russell
+ * @author Soby Chacko
  * @since 3.2
  *
  */
 public interface ListenerContainerWithDlqAndRetryCustomizer
 		extends ListenerContainerCustomizer<AbstractMessageListenerContainer<?, ?>> {
 
+	/**
+	 *
+	 * API method for configuring the container that also gives access to the {@link ExtendedConsumerProperties} for the binding.
+	 *
+	 * @param container the container.
+	 * @param destinationName the destination name.
+	 * @param group the consumer group.
+	 */
 	@Override
 	default void configure(AbstractMessageListenerContainer<?, ?> container, String destinationName, String group) {
 	}
@@ -54,6 +65,26 @@ public interface ListenerContainerWithDlqAndRetryCustomizer
 	void configure(AbstractMessageListenerContainer<?, ?> container, String destinationName, String group,
 			@Nullable BiFunction<ConsumerRecord<?, ?>, Exception, TopicPartition> dlqDestinationResolver,
 			@Nullable BackOff backOff);
+
+	/**
+	 *
+	 * API method for configuring the container that also gives access to the {@link ExtendedConsumerProperties} for the binding.
+	 *
+	 * @param container the container.
+	 * @param destinationName the destination name.
+	 * @param group the consumer group.
+	 * @param dlqDestinationResolver a destination resolver for the dead letter topic (if
+	 * enableDlq).
+	 * @param backOff the backOff using retry properties (if configured).
+	 * @param extendedConsumerProperties extended binding consumer properties.
+	 *
+	 * @since 4.2.0
+	 */
+	default void configure(AbstractMessageListenerContainer<?, ?> container, String destinationName, String group,
+						@Nullable BiFunction<ConsumerRecord<?, ?>, Exception, TopicPartition> dlqDestinationResolver,
+						@Nullable BackOff backOff, ExtendedConsumerProperties<KafkaConsumerProperties> extendedConsumerProperties) {
+		configure(container, destinationName, group, dlqDestinationResolver, backOff);
+	}
 
 	/**
 	 * Return false to move retries and DLQ from the binding to a customized error handler
