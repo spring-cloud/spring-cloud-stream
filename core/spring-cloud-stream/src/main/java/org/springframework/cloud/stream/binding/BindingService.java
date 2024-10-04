@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2023 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Stream;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -63,6 +64,7 @@ import org.springframework.validation.DataBinder;
  * @author Chris Bono
  * @author Artem Bilan
  * @author Byungjun You
+ * @author Omer Celik
  */
 public class BindingService {
 
@@ -451,35 +453,49 @@ public class BindingService {
 
 		private final String bindingName;
 
-		private final Object consumerOrProducerproperties;
+		private final Object consumerOrProducerProperties;
 
 		private final boolean isInput;
 
 		final ObjectMapper objectMapper;
 
-		LateBinding(String bindingName, String error, Object consumerOrProducerproperties, boolean isInput, ObjectMapper objectMapper) {
+		private final ReentrantLock lock = new ReentrantLock();
+
+		LateBinding(String bindingName, String error, Object consumerOrProducerProperties, boolean isInput, ObjectMapper objectMapper) {
 			super();
 			this.error = error;
 			this.bindingName = bindingName;
-			this.consumerOrProducerproperties = consumerOrProducerproperties;
+			this.consumerOrProducerProperties = consumerOrProducerProperties;
 			this.isInput = isInput;
 			this.objectMapper = objectMapper;
 		}
 
-		public synchronized void setDelegate(Binding<T> delegate) {
-			if (this.unbound) {
-				delegate.unbind();
+		public void setDelegate(Binding<T> delegate) {
+			try {
+				this.lock.lock();
+				if (this.unbound) {
+					delegate.unbind();
+				}
+				else {
+					this.delegate = delegate;
+				}
 			}
-			else {
-				this.delegate = delegate;
+			finally {
+				this.lock.unlock();
 			}
 		}
 
 		@Override
-		public synchronized void unbind() {
-			this.unbound = true;
-			if (this.delegate != null) {
-				this.delegate.unbind();
+		public void unbind() {
+			try {
+				this.lock.lock();
+				this.unbound = true;
+				if (this.delegate != null) {
+					this.delegate.unbind();
+				}
+			}
+			finally {
+				this.lock.unlock();
 			}
 		}
 
@@ -507,8 +523,8 @@ public class BindingService {
 		public Map<String, Object> getExtendedInfo() {
 			Map<String, Object> extendedInfo = new LinkedHashMap<>();
 			extendedInfo.put("bindingDestination", this.getBindingName());
-			extendedInfo.put(consumerOrProducerproperties.getClass().getSimpleName(),
-					this.objectMapper.convertValue(consumerOrProducerproperties, Map.class));
+			extendedInfo.put(consumerOrProducerProperties.getClass().getSimpleName(),
+					this.objectMapper.convertValue(consumerOrProducerProperties, Map.class));
 			return extendedInfo;
 		}
 

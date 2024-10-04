@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2019 the original author or authors.
+ * Copyright 2016-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package org.springframework.cloud.stream.schema.registry.controllers;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.springframework.cloud.stream.schema.registry.config.SchemaServerProperties;
 import org.springframework.cloud.stream.schema.registry.model.Schema;
@@ -52,6 +53,7 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
  * @author Ilayaperumal Gopinathan
  * @author Jeff Maxwell
  * @author Christian Tzolov
+ * @author Omer Celik
  */
 @RestController
 @RequestMapping(path = "${spring.cloud.stream.schema.server.path:}")
@@ -63,6 +65,8 @@ public class ServerController {
 
 	private final SchemaServerProperties schemaServerProperties;
 
+	private static final ReentrantLock lock = new ReentrantLock();
+
 	public ServerController(SchemaRepository repository, Map<String, SchemaValidator> validators,
 			SchemaServerProperties schemaServerProperties) {
 		Assert.notNull(repository, "cannot be null");
@@ -73,41 +77,45 @@ public class ServerController {
 	}
 
 	@RequestMapping(method = RequestMethod.POST, path = "/", consumes = "application/json", produces = "application/json")
-	public synchronized ResponseEntity<Schema> register(@RequestBody Schema schema, UriComponentsBuilder builder) {
+	public ResponseEntity<Schema> register(@RequestBody Schema schema, UriComponentsBuilder builder) {
+		try {
+			lock.lock();
+			SchemaValidator validator = this.validators.get(schema.getFormat());
 
-		SchemaValidator validator = this.validators.get(schema.getFormat());
-
-		if (validator == null) {
-			throw new UnsupportedFormatException(String.format("Invalid format, supported types are: %s",
+			if (validator == null) {
+				throw new UnsupportedFormatException(String.format("Invalid format, supported types are: %s",
 					StringUtils.collectionToCommaDelimitedString(this.validators.keySet())));
-		}
-
-		validator.validate(schema.getDefinition());
-
-		Schema result;
-		List<Schema> registeredEntities =
-				this.repository.findBySubjectAndFormatOrderByVersion(schema.getSubject(), schema.getFormat());
-		if (registeredEntities.isEmpty()) {
-			schema.setVersion(1);
-			result = this.repository.save(schema);
-		}
-		else {
-			result = validator.match(registeredEntities, schema.getDefinition());
-			if (result == null) {
-				schema.setVersion(registeredEntities.get(registeredEntities.size() - 1).getVersion() + 1);
-				result = this.repository.save(schema);
 			}
 
-		}
+			validator.validate(schema.getDefinition());
 
-		HttpHeaders headers = new HttpHeaders();
-		headers.add(HttpHeaders.LOCATION, builder.path("/{subject}/{format}/v{version}")
+			Schema result;
+			List<Schema> registeredEntities =
+				this.repository.findBySubjectAndFormatOrderByVersion(schema.getSubject(), schema.getFormat());
+			if (registeredEntities.isEmpty()) {
+				schema.setVersion(1);
+				result = this.repository.save(schema);
+			}
+			else {
+				result = validator.match(registeredEntities, schema.getDefinition());
+				if (result == null) {
+					schema.setVersion(registeredEntities.get(registeredEntities.size() - 1).getVersion() + 1);
+					result = this.repository.save(schema);
+				}
+
+			}
+
+			HttpHeaders headers = new HttpHeaders();
+			headers.add(HttpHeaders.LOCATION, builder.path("/{subject}/{format}/v{version}")
 				.buildAndExpand(result.getSubject(), result.getFormat(), result.getVersion())
 				.toString());
-		ResponseEntity<Schema> response = new ResponseEntity<>(result, headers, HttpStatus.CREATED);
+			ResponseEntity<Schema> response = new ResponseEntity<>(result, headers, HttpStatus.CREATED);
 
-		return response;
-
+			return response;
+		}
+		finally {
+			lock.unlock();
+		}
 	}
 
 	@RequestMapping(method = RequestMethod.GET, produces = "application/json", path = "/{subject}/{format}/v{version}")

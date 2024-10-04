@@ -30,6 +30,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.ToDoubleFunction;
 
 import io.micrometer.core.instrument.Gauge;
@@ -68,6 +69,7 @@ import org.springframework.util.ObjectUtils;
  * @author Tomek Szmytka
  * @author Nico Heller
  * @author Kurt Hong
+ * @author Omer Celik
  */
 public class KafkaBinderMetrics
 		implements MeterBinder, ApplicationListener<BindingCreatedEvent>, AutoCloseable {
@@ -96,6 +98,8 @@ public class KafkaBinderMetrics
 	private final Map<String, Long> lastUnconsumedMessagesValues = new ConcurrentHashMap<>();
 
 	ScheduledExecutorService scheduler;
+
+	private final ReentrantLock consumerFactoryLock = new ReentrantLock();
 
 	public KafkaBinderMetrics(KafkaMessageChannelBinder binder,
 							KafkaBinderConfigurationProperties binderConfigurationProperties,
@@ -231,25 +235,36 @@ public class KafkaBinderMetrics
 		return lag;
 	}
 
-	private synchronized ConsumerFactory<?, ?> createConsumerFactory() {
+	/**
+	 * Double-Checked Locking Optimization was used to avoid unnecessary locking overhead.
+	 */
+	private ConsumerFactory<?, ?> createConsumerFactory() {
 		if (this.defaultConsumerFactory == null) {
-			Map<String, Object> props = new HashMap<>();
-			props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG,
-					ByteArrayDeserializer.class);
-			props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,
-					ByteArrayDeserializer.class);
-			Map<String, Object> mergedConfig = this.binderConfigurationProperties
-					.mergedConsumerConfiguration();
-			if (!ObjectUtils.isEmpty(mergedConfig)) {
-				props.putAll(mergedConfig);
-			}
-			if (!props.containsKey(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG)) {
-				props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG,
-						this.binderConfigurationProperties
+			try {
+				this.consumerFactoryLock.lock();
+				if (this.defaultConsumerFactory == null) {
+					Map<String, Object> props = new HashMap<>();
+					props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG,
+						ByteArrayDeserializer.class);
+					props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,
+						ByteArrayDeserializer.class);
+					Map<String, Object> mergedConfig = this.binderConfigurationProperties
+						.mergedConsumerConfiguration();
+					if (!ObjectUtils.isEmpty(mergedConfig)) {
+						props.putAll(mergedConfig);
+					}
+					if (!props.containsKey(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG)) {
+						props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG,
+							this.binderConfigurationProperties
 								.getKafkaConnectionString());
+					}
+					this.defaultConsumerFactory = new DefaultKafkaConsumerFactory<>(
+						props);
+				}
 			}
-			this.defaultConsumerFactory = new DefaultKafkaConsumerFactory<>(
-					props);
+			finally {
+				this.consumerFactoryLock.unlock();
+			}
 		}
 		return this.defaultConsumerFactory;
 	}
