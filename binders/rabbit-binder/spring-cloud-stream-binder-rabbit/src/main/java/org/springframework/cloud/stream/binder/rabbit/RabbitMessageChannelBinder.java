@@ -85,7 +85,6 @@ import org.springframework.cloud.stream.binder.rabbit.properties.RabbitExtendedB
 import org.springframework.cloud.stream.binder.rabbit.properties.RabbitProducerProperties;
 import org.springframework.cloud.stream.binder.rabbit.properties.RabbitProducerProperties.ProducerType;
 import org.springframework.cloud.stream.binder.rabbit.provisioning.RabbitExchangeQueueProvisioner;
-import org.springframework.cloud.stream.binder.rabbit.utils.StreamUtils;
 import org.springframework.cloud.stream.config.ListenerContainerCustomizer;
 import org.springframework.cloud.stream.config.MessageSourceCustomizer;
 import org.springframework.cloud.stream.provisioning.ConsumerDestination;

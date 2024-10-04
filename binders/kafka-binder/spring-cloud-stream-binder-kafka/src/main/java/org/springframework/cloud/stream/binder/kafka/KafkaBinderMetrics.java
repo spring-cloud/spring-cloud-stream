@@ -68,7 +68,6 @@ import org.springframework.util.ObjectUtils;
  * @author Tomek Szmytka
  * @author Nico Heller
  * @author Kurt Hong
- * @author Omer Celik
  */
 public class KafkaBinderMetrics
 		implements MeterBinder, ApplicationListener<BindingCreatedEvent>, AutoCloseable {
@@ -90,7 +89,7 @@ public class KafkaBinderMetrics
 
 	private final MeterRegistry meterRegistry;
 
-	private final Map<String, Consumer<?, ?>> metadataConsumers;
+	private Map<String, Consumer<?, ?>> metadataConsumers;
 
 	private int timeout = DEFAULT_TIMEOUT;
 

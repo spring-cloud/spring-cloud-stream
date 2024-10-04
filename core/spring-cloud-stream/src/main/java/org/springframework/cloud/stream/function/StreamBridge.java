@@ -85,7 +85,6 @@ import org.springframework.util.StringUtils;
  * @author Soby Chacko
  * @author Byungjun You
  * @author Michał Rowicki
- * @author Omer Celik
  * @since 3.0.3
  *
  */
@@ -129,6 +128,7 @@ public final class StreamBridge implements StreamOperations, SmartInitializingSi
 	 * @param bindingServiceProperties instance of {@link BindingServiceProperties}
 	 * @param applicationContext instance of {@link ConfigurableApplicationContext}
 	 */
+	@SuppressWarnings("serial")
 	StreamBridge(FunctionCatalog functionCatalog, BindingServiceProperties bindingServiceProperties,
 		ConfigurableApplicationContext applicationContext, @Nullable NewDestinationBindingCallback destinationBindingCallback) {
 		this.executorService = Executors.newCachedThreadPool();

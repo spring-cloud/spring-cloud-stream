@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2024 the original author or authors.
+ * Copyright 2015-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,12 +43,11 @@ import org.springframework.util.Assert;
  * @author Ilayaperumal Gopinathan
  * @author Oleg Zhurakousky
  * @author Soby Chacko
- * @author Omer Celik
  */
 public class BindableProxyFactory extends AbstractBindableProxyFactory
 		implements MethodInterceptor, FactoryBean<Object>, InitializingBean, BeanFactoryAware {
 
-	private static final Log log = LogFactory.getLog(BindableProxyFactory.class);
+	private static Log log = LogFactory.getLog(BindableProxyFactory.class);
 
 	private final Map<Method, Object> targetCache = new HashMap<>(2);
 
