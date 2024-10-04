@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2022 the original author or authors.
+ * Copyright 2019-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ import org.springframework.util.StringUtils;
  *
  * Original authors in {@link BindableProxyFactory}
  * @author Soby Chacko
+ * @author Omer Celik
  * @since 3.0.0
  */
 public class AbstractBindableProxyFactory implements Bindable {
@@ -94,9 +95,9 @@ public class AbstractBindableProxyFactory implements Bindable {
 			.entrySet()) {
 			String inputTargetName = boundTargetHolderEntry.getKey();
 			BoundTargetHolder boundTargetHolder = boundTargetHolderEntry.getValue();
-			if (boundTargetHolder.isBindable()) {
+			if (boundTargetHolder.bindable()) {
 				bindings.addAll(bindingService.bindConsumer(
-					boundTargetHolder.getBoundTarget(), inputTargetName));
+					boundTargetHolder.boundTarget(), inputTargetName));
 			}
 		}
 		return bindings;
@@ -111,9 +112,9 @@ public class AbstractBindableProxyFactory implements Bindable {
 			.entrySet()) {
 			BoundTargetHolder boundTargetHolder = boundTargetHolderEntry.getValue();
 			String outputTargetName = boundTargetHolderEntry.getKey();
-			if (boundTargetHolderEntry.getValue().isBindable()) {
+			if (boundTargetHolderEntry.getValue().bindable()) {
 				bindings.add(bindingService.bindProducer(
-					boundTargetHolder.getBoundTarget(), outputTargetName));
+					boundTargetHolder.boundTarget(), outputTargetName));
 			}
 		}
 		return bindings;
@@ -123,7 +124,7 @@ public class AbstractBindableProxyFactory implements Bindable {
 	public void unbindInputs(BindingService bindingService) {
 		for (Map.Entry<String, BoundTargetHolder> boundTargetHolderEntry : this.inputHolders
 			.entrySet()) {
-			if (boundTargetHolderEntry.getValue().isBindable()) {
+			if (boundTargetHolderEntry.getValue().bindable()) {
 				bindingService.unbindConsumers(boundTargetHolderEntry.getKey());
 			}
 		}
@@ -133,7 +134,7 @@ public class AbstractBindableProxyFactory implements Bindable {
 	public void unbindOutputs(BindingService bindingService) {
 		for (Map.Entry<String, BoundTargetHolder> boundTargetHolderEntry : this.outputHolders
 			.entrySet()) {
-			if (boundTargetHolderEntry.getValue().isBindable()) {
+			if (boundTargetHolderEntry.getValue().bindable()) {
 				bindingService.unbindProducers(boundTargetHolderEntry.getKey());
 			}
 		}

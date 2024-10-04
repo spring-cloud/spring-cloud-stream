@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2023 the original author or authors.
+ * Copyright 2019-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,6 +65,7 @@ import org.springframework.util.CollectionUtils;
  * the actual size in the returned array. That has to wait until the function is invoked and we get a result.
  *
  * @author Soby Chacko
+ * @author Omer Celik
  * @since 3.0.0
  */
 public class KafkaStreamsBindableProxyFactory extends AbstractBindableProxyFactory implements InitializingBean, BeanFactoryAware {
@@ -173,7 +174,7 @@ public class KafkaStreamsBindableProxyFactory extends AbstractBindableProxyFacto
 							.createOutput(outputBinding), true));
 			String outputBinding1 = outputBinding;
 			RootBeanDefinition rootBeanDefinition1 = new RootBeanDefinition();
-			rootBeanDefinition1.setInstanceSupplier(() -> outputHolders.get(outputBinding1).getBoundTarget());
+			rootBeanDefinition1.setInstanceSupplier(() -> outputHolders.get(outputBinding1).boundTarget());
 			BeanDefinitionRegistry registry = (BeanDefinitionRegistry) beanFactory;
 			registry.registerBeanDefinition(outputBinding1, rootBeanDefinition1);
 		}
@@ -248,7 +249,7 @@ public class KafkaStreamsBindableProxyFactory extends AbstractBindableProxyFacto
 		}
 		BeanDefinitionRegistry registry = (BeanDefinitionRegistry) beanFactory;
 		RootBeanDefinition rootBeanDefinition = new RootBeanDefinition();
-		rootBeanDefinition.setInstanceSupplier(() -> inputHolders.get(inputName).getBoundTarget());
+		rootBeanDefinition.setInstanceSupplier(() -> inputHolders.get(inputName).boundTarget());
 		registry.registerBeanDefinition(inputName, rootBeanDefinition);
 	}
 

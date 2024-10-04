@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -148,16 +148,16 @@ public class BindingProperties {
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
-		sb.append("destination=" + this.destination);
+		sb.append("destination=").append(this.destination);
 		sb.append(COMMA);
-		sb.append("group=" + this.group);
+		sb.append("group=").append(this.group);
 		sb.append(COMMA);
 		if (this.contentType != null) {
-			sb.append("contentType=" + this.contentType);
+			sb.append("contentType=").append(this.contentType);
 			sb.append(COMMA);
 		}
 		if (this.binder != null) {
-			sb.append("binder=" + this.binder);
+			sb.append("binder=").append(this.binder);
 			sb.append(COMMA);
 		}
 		sb.deleteCharAt(sb.lastIndexOf(COMMA));
