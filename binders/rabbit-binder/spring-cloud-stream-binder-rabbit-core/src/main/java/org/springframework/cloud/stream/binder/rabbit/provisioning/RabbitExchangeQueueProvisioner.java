@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2023 the original author or authors.
+ * Copyright 2016-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -79,6 +79,7 @@ import org.springframework.util.StringUtils;
  * @author Oleg Zhurakousky
  * @author Michael Michailidis
  * @author Byungjun You
+ * @author Omer Celik
  */
 // @checkstyle:off
 public class RabbitExchangeQueueProvisioner
@@ -379,8 +380,7 @@ public class RabbitExchangeQueueProvisioner
 			bindingKey = destination;
 		}
 		bindingKey += "-" + index;
-		Map<String, Object> arguments = new HashMap<>();
-		arguments.putAll(extendedProperties.getQueueBindingArguments());
+		Map<String, Object> arguments = new HashMap<>(extendedProperties.getQueueBindingArguments());
 		if (exchange instanceof TopicExchange topicExchange) {
 			Binding binding = BindingBuilder.bind(queue).to(topicExchange)
 					.with(bindingKey);
@@ -679,7 +679,7 @@ public class RabbitExchangeQueueProvisioner
 			Queue queue = new Queue(binding.getQueue());
 			String beanName = alternate.getName() + "." + binding.getQueue() + "." + beanNameQualifier;
 			declareQueue(beanName, queue);
-			Binding toBind = createBinding(exchange, queue, binding.getRoutingKey(), null, beanName);
+			createBinding(exchange, queue, binding.getRoutingKey(), null, beanName);
 		}
 	}
 

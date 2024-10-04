@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.stream.binder.rabbit;
+package org.springframework.cloud.stream.binder.rabbit.utils;
 
 import java.util.Map;
 import java.util.function.Function;
