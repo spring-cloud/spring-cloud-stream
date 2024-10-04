@@ -71,8 +71,8 @@ public class BindableProxyFactory extends AbstractBindableProxyFactory
 			Method method = invocation.getMethod();
 
 			// try to use cached target
-            return this.targetCache.get(method);
-        }
+			return this.targetCache.get(method);
+		}
 		finally {
 			lock.unlock();
 		}
