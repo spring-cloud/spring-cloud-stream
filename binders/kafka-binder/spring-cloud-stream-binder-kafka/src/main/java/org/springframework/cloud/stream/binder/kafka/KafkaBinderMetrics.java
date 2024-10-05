@@ -99,7 +99,7 @@ public class KafkaBinderMetrics
 
 	ScheduledExecutorService scheduler;
 
-	private final ReentrantLock lock = new ReentrantLock();
+	private final ReentrantLock consumerFactoryLock = new ReentrantLock();
 
 	public KafkaBinderMetrics(KafkaMessageChannelBinder binder,
 							KafkaBinderConfigurationProperties binderConfigurationProperties,
@@ -237,7 +237,7 @@ public class KafkaBinderMetrics
 
 	private ConsumerFactory<?, ?> createConsumerFactory() {
 		try {
-			lock.lock();
+			this.consumerFactoryLock.lock();
 			if (this.defaultConsumerFactory == null) {
 				Map<String, Object> props = new HashMap<>();
 				props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG,
@@ -260,7 +260,7 @@ public class KafkaBinderMetrics
 			return this.defaultConsumerFactory;
 		}
 		finally {
-			lock.unlock();
+			this.consumerFactoryLock.unlock();
 		}
 	}
 

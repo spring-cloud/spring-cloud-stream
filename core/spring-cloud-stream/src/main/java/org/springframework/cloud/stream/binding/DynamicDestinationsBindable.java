@@ -39,40 +39,40 @@ public final class DynamicDestinationsBindable implements Bindable {
 	 */
 	private final Map<String, Binding<?>> outputBindings = new HashMap<>();
 
-	private static final ReentrantLock lock = new ReentrantLock();
+	private static final ReentrantLock outputBindingsLock = new ReentrantLock();
 
 	public void addOutputBinding(String name, Binding<?> binding) {
 		try {
-			lock.lock();
+			outputBindingsLock.lock();
 			this.outputBindings.put(name, binding);
 		}
 		finally {
-			lock.unlock();
+			outputBindingsLock.unlock();
 		}
 	}
 
 	@Override
 	public Set<String> getOutputs() {
 		try {
-			lock.lock();
+			outputBindingsLock.lock();
 			return Collections.unmodifiableSet(this.outputBindings.keySet());
 		}
 		finally {
-			lock.unlock();
+			outputBindingsLock.unlock();
 		}
 	}
 
 	@Override
 	public void unbindOutputs(BindingService adapter) {
 		try {
-			lock.lock();
+			outputBindingsLock.lock();
 			for (Map.Entry<String, Binding<?>> entry : this.outputBindings.entrySet()) {
 				entry.getValue().unbind();
 			}
 			this.outputBindings.clear();
 		}
 		finally {
-			lock.unlock();
+			outputBindingsLock.unlock();
 		}
 	}
 

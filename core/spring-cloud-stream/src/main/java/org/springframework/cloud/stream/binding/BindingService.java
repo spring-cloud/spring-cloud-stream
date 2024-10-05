@@ -472,7 +472,7 @@ public class BindingService {
 
 		public void setDelegate(Binding<T> delegate) {
 			try {
-				lock.lock();
+				this.lock.lock();
 				if (this.unbound) {
 					delegate.unbind();
 				}
@@ -481,21 +481,21 @@ public class BindingService {
 				}
 			}
 			finally {
-				lock.unlock();
+				this.lock.unlock();
 			}
 		}
 
 		@Override
 		public void unbind() {
 			try {
-				lock.lock();
+				this.lock.lock();
 				this.unbound = true;
 				if (this.delegate != null) {
 					this.delegate.unbind();
 				}
 			}
 			finally {
-				lock.unlock();
+				this.lock.unlock();
 			}
 		}
 

@@ -67,14 +67,14 @@ public class BindableProxyFactory extends AbstractBindableProxyFactory
 	@Override
 	public Object invoke(MethodInvocation invocation) {
 		try {
-			lock.lock();
+			this.lock.lock();
 			Method method = invocation.getMethod();
 
 			// try to use cached target
 			return this.targetCache.get(method);
 		}
 		finally {
-			lock.unlock();
+			this.lock.unlock();
 		}
 	}
 
@@ -106,7 +106,7 @@ public class BindableProxyFactory extends AbstractBindableProxyFactory
 	@Override
 	public Object getObject() {
 		try {
-			lock.lock();
+			this.lock.lock();
 			if (this.proxy == null && this.type != null) {
 				ProxyFactory factory = new ProxyFactory(this.type, this);
 				this.proxy = factory.getProxy();
@@ -114,7 +114,7 @@ public class BindableProxyFactory extends AbstractBindableProxyFactory
 			return this.proxy;
 		}
 		finally {
-			lock.unlock();
+			this.lock.unlock();
 		}
 	}
 

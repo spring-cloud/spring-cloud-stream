@@ -107,7 +107,7 @@ public class RabbitExchangeQueueProvisioner
 
 	private final AtomicInteger producerExchangeBeanNameQualifier = new AtomicInteger();
 
-	private final ReentrantLock lock = new ReentrantLock();
+	private final ReentrantLock autoDeclareContextLock = new ReentrantLock();
 
 	public RabbitExchangeQueueProvisioner(ConnectionFactory connectionFactory) {
 		this(connectionFactory, Collections.emptyList());
@@ -325,13 +325,13 @@ public class RabbitExchangeQueueProvisioner
 						.mapToObj(j -> rk + "-" + j)
 						.collect(Collectors.toList()));
 		try {
-			lock.lock();
+			this.autoDeclareContextLock.lock();
 			if (!this.autoDeclareContext.containsBean(name + ".superStream")) {
 				this.autoDeclareContext.getBeanFactory().registerSingleton(name + ".superStream", ss);
 			}
 		}
 		finally {
-			lock.unlock();
+			this.autoDeclareContextLock.unlock();
 		}
 		try {
 			ss.getDeclarables().forEach(dec -> {
@@ -725,7 +725,7 @@ public class RabbitExchangeQueueProvisioner
 
 	private void addToAutoDeclareContext(String name, Declarable bean) {
 		try {
-			lock.lock();
+			this.autoDeclareContextLock.lock();
 			if (!this.autoDeclareContext.containsBean(name)) {
 				this.autoDeclareContext.getBeanFactory().registerSingleton(name, new Declarables(bean));
 			}
@@ -734,7 +734,7 @@ public class RabbitExchangeQueueProvisioner
 			}
 		}
 		finally {
-			lock.unlock();
+			this.autoDeclareContextLock.unlock();
 		}
 	}
 
@@ -769,7 +769,7 @@ public class RabbitExchangeQueueProvisioner
 			ExtendedConsumerProperties<RabbitConsumerProperties> consumerProperties) {
 
 		try {
-			lock.lock();
+			this.autoDeclareContextLock.lock();
 			Stream.of(StringUtils.tokenizeToStringArray(destination.getName(), ",", true,
 				true)).forEach(name -> {
 				String group = null;
@@ -789,7 +789,7 @@ public class RabbitExchangeQueueProvisioner
 			});
 		}
 		finally {
-			lock.unlock();
+			this.autoDeclareContextLock.unlock();
 		}
 	}
 
@@ -797,7 +797,7 @@ public class RabbitExchangeQueueProvisioner
 			ExtendedProducerProperties<RabbitProducerProperties> properties) {
 
 		try {
-			lock.lock();
+			this.autoDeclareContextLock.lock();
 			if (dest instanceof RabbitProducerDestination rabbitProducerDestination) {
 				String qual = rabbitProducerDestination.getBeanNameQualifier();
 				removeSingleton(dest.getName() + "." + qual + ".exchange");
@@ -829,7 +829,7 @@ public class RabbitExchangeQueueProvisioner
 			}
 		}
 		finally {
-			lock.unlock();
+			this.autoDeclareContextLock.unlock();
 		}
 	}
 

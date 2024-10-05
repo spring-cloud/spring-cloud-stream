@@ -86,7 +86,7 @@ public class KafkaStreamsBinderMetrics {
 
 	private volatile Set<MetricName> currentMeters = new HashSet<>();
 
-	private static final ReentrantLock lock = new ReentrantLock();
+	private static final ReentrantLock metricsLock = new ReentrantLock();
 
 	public KafkaStreamsBinderMetrics(MeterRegistry meterRegistry) {
 		this.meterRegistry = meterRegistry;
@@ -113,11 +113,11 @@ public class KafkaStreamsBinderMetrics {
 
 	public void addMetrics(Set<StreamsBuilderFactoryBean> streamsBuilderFactoryBeans) {
 		try {
-			lock.lock();
+			metricsLock.lock();
 			this.bindTo(streamsBuilderFactoryBeans);
 		}
 		finally {
-			lock.unlock();
+			metricsLock.unlock();
 		}
 	}
 
