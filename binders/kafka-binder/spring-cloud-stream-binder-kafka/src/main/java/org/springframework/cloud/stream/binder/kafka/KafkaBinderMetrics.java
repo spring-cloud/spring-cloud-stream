@@ -235,33 +235,38 @@ public class KafkaBinderMetrics
 		return lag;
 	}
 
+	/**
+	 * Double-Checked Locking Optimization was used to avoid unnecessary locking overhead.
+	 */
 	private ConsumerFactory<?, ?> createConsumerFactory() {
-		try {
-			this.consumerFactoryLock.lock();
-			if (this.defaultConsumerFactory == null) {
-				Map<String, Object> props = new HashMap<>();
-				props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG,
-					ByteArrayDeserializer.class);
-				props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,
-					ByteArrayDeserializer.class);
-				Map<String, Object> mergedConfig = this.binderConfigurationProperties
-					.mergedConsumerConfiguration();
-				if (!ObjectUtils.isEmpty(mergedConfig)) {
-					props.putAll(mergedConfig);
+		if (this.defaultConsumerFactory == null) {
+			try {
+				this.consumerFactoryLock.lock();
+				if (this.defaultConsumerFactory == null) {
+					Map<String, Object> props = new HashMap<>();
+					props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG,
+						ByteArrayDeserializer.class);
+					props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,
+						ByteArrayDeserializer.class);
+					Map<String, Object> mergedConfig = this.binderConfigurationProperties
+						.mergedConsumerConfiguration();
+					if (!ObjectUtils.isEmpty(mergedConfig)) {
+						props.putAll(mergedConfig);
+					}
+					if (!props.containsKey(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG)) {
+						props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG,
+							this.binderConfigurationProperties
+								.getKafkaConnectionString());
+					}
+					this.defaultConsumerFactory = new DefaultKafkaConsumerFactory<>(
+						props);
 				}
-				if (!props.containsKey(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG)) {
-					props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG,
-						this.binderConfigurationProperties
-							.getKafkaConnectionString());
-				}
-				this.defaultConsumerFactory = new DefaultKafkaConsumerFactory<>(
-					props);
 			}
-			return this.defaultConsumerFactory;
+			finally {
+				this.consumerFactoryLock.unlock();
+			}
 		}
-		finally {
-			this.consumerFactoryLock.unlock();
-		}
+		return this.defaultConsumerFactory;
 	}
 
 	@Override

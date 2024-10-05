@@ -103,19 +103,24 @@ public class BindableProxyFactory extends AbstractBindableProxyFactory
 				"'bindingTargetFactories' cannot be empty");
 	}
 
+	/**
+	 * Double-Checked Locking Optimization was used to avoid unnecessary locking overhead.
+	 */
 	@Override
 	public Object getObject() {
-		try {
-			this.lock.lock();
-			if (this.proxy == null && this.type != null) {
-				ProxyFactory factory = new ProxyFactory(this.type, this);
-				this.proxy = factory.getProxy();
+		if (this.proxy == null && this.type != null) {
+			try {
+				this.lock.lock();
+				if (this.proxy == null && this.type != null) {
+					ProxyFactory factory = new ProxyFactory(this.type, this);
+					this.proxy = factory.getProxy();
+				}
 			}
-			return this.proxy;
+			finally {
+				this.lock.unlock();
+			}
 		}
-		finally {
-			this.lock.unlock();
-		}
+		return this.proxy;
 	}
 
 	@Override
