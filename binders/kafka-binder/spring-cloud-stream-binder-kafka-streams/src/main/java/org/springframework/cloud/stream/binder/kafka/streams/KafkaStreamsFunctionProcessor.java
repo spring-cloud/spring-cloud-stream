@@ -69,6 +69,7 @@ import org.springframework.util.CollectionUtils;
  * @author Soby Chacko
  * @author Byungjun You
  * @author Georg Friedrich
+ * @author Omer Celik
  * @since 2.2.0
  */
 public class KafkaStreamsFunctionProcessor extends AbstractKafkaStreamsBinderProcessor implements BeanFactoryAware {
@@ -475,7 +476,7 @@ public class KafkaStreamsFunctionProcessor extends AbstractKafkaStreamsBinderPro
 			String next = iterator.next();
 			kafkaStreamsBindableProxyFactory.addOutputBinding(next, KStream.class);
 			RootBeanDefinition rootBeanDefinition1 = new RootBeanDefinition();
-			rootBeanDefinition1.setInstanceSupplier(() -> kafkaStreamsBindableProxyFactory.getOutputHolders().get(next).getBoundTarget());
+			rootBeanDefinition1.setInstanceSupplier(() -> kafkaStreamsBindableProxyFactory.getOutputHolders().get(next).boundTarget());
 			registry.registerBeanDefinition(next, rootBeanDefinition1);
 
 			Object targetBean = this.applicationContext.getBean(next);

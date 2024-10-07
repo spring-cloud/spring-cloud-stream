@@ -78,6 +78,7 @@ import org.springframework.util.ObjectUtils;
  * @author Oleg Zhurakousky
  * @author Soby Chacko
  * @author Chris Bono
+ * @author Omer Celik
  */
 @AutoConfiguration
 @EnableConfigurationProperties({ BindingServiceProperties.class,
@@ -132,6 +133,7 @@ public class BindingServiceConfiguration {
 				.entrySet()) {
 			if (configurationEntry.getValue().isDefaultCandidate()) {
 				defaultCandidatesExist = true;
+				break;
 			}
 		}
 		if (!defaultCandidatesExist) {

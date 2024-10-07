@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,25 +24,8 @@ package org.springframework.cloud.stream.binding;
  *
  * @author Original authors in {@link BindableProxyFactory}
  * @author Soby Chacko
+ * @author Omer Celik
  * @since 3.0.0
  */
-public final class BoundTargetHolder {
-
-	private Object boundTarget;
-
-	private boolean bindable;
-
-	public BoundTargetHolder(Object boundTarget, boolean bindable) {
-		this.boundTarget = boundTarget;
-		this.bindable = bindable;
-	}
-
-	public Object getBoundTarget() {
-		return this.boundTarget;
-	}
-
-	public boolean isBindable() {
-		return this.bindable;
-	}
-
+public record BoundTargetHolder(Object boundTarget, boolean bindable) {
 }
