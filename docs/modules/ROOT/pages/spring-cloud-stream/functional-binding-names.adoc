@@ -26,7 +26,7 @@ The naming convention used to name input and output bindings is as follows:
 
 The `in` and `out` corresponds to the type of binding (such as _input_ or _output_).
 The `index` is the index of the input or output binding. It is always 0 for typical single input/output function,
-so it's only relevant for <<Functions with multiple input and output arguments>>.
+so it's only relevant for xref:spring-cloud-stream/producing-and-consuming-messages.adoc#functions_with_multiple_input_and_output_arguments[Functions with multiple input and output arguments].
 
 So if for example you would want to map the input of this function to a remote
 destination (e.g., topic, queue etc) called "my-topic" you would do so with the following property:
@@ -54,9 +54,9 @@ properties can refer to `input` binding name instead (e.g.,  `--spring.cloud.str
 NOTE: While descriptive binding names may enhance the readability aspect of the configuration, they also create
 another level of misdirection by mapping an implicit binding name to an explicit binding name. And since all subsequent
 configuration properties will use the explicit binding name you must always refer to this 'bindings' property to
-correlate which function it actually corresponds to. We believe that for most cases (with the exception of <<Functional Composition>>)
+correlate which function it actually corresponds to. We believe that for most cases (with the exception of xref:spring-cloud-stream/producing-and-consuming-messages.adoc#functional-composition[Functional Composition])
 it may be an overkill, so, it is our recommendation to avoid using it altogether, especially
 since not using it provides a clear path between binder destination and binding name, such as `spring.cloud.stream.bindings.uppercase-in-0.destination=sample-topic`,
 where you are clearly correlating the input of `uppercase` function to `sample-topic` destination.
 
-For more on properties and other configuration options please see <<Configuration Options>> section.
+For more on properties and other configuration options please see xref:spring-cloud-stream/configuration-options.adoc#configuration-options[Configuration Options] section.

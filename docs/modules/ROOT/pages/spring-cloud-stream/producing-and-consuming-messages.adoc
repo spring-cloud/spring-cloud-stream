@@ -48,7 +48,7 @@ public class MyFunctionBootApp {
 In the preceding example, we define a bean of type `java.util.function.Function` called _toUpperCase_ to be acting as message handler
 whose 'input' and 'output' must be bound to the external destinations exposed by the provided destination binder.
 By default the 'input' and 'output' binding names will be `toUpperCase-in-0` and `toUpperCase-out-0`.
-Please see <<Functional binding names>> section for details on naming convention used to establish binding names.
+Please see xref:spring-cloud-stream/functional-binding-names.adoc#functional-binding-names[Functional Binding Names] section for details on naming convention used to establish binding names.
 
 Below are the examples of simple functional applications to support other semantics:
 
@@ -315,7 +315,7 @@ When using Observability support provided by the framework as well as supporting
 ==== StreamBridge and Dynamic Destinations
 
 `StreamBridge` can also be used for cases when output destination(s) are not known ahead of time similar to the use cases
-described in <<Routing FROM Consumer>> section.
+described in xref:spring-cloud-stream/event-routing.adoc#routing-from-consumer[Routing FROM consumer] section.
 
 Let's look at the example
 
@@ -344,7 +344,7 @@ public class WebSourceApplication {
 As you can see the preceding example is very similar to the previous one with the exception of explicit binding instruction provided via
 `spring.cloud.stream.output-bindings` property (which is not provided).
 Here we're sending data to `myDestination` name which does not exist as a binding. Therefore such name will be treated as dynamic destination
-as described in <<Routing FROM Consumer>> section.
+as described in xref:spring-cloud-stream/event-routing.adoc#routing-from-consumer[Routing FROM consumer] section.
 
 
 In the preceding example, we are using `ApplicationRunner` as a _foreign source_ to feed the stream.
@@ -399,7 +399,7 @@ Or if you send data as a `Message`, its content type will be honored.
 
 Spring Cloud Stream supports multiple binder scenarios. For example you may be receiving data from Kafka and sending it to RabbitMQ.
 
-For more information on multiple binders scenarios, please see <<Binders>> section and specifically <<Multiple Binders on the Classpath>>
+For more information on multiple binders scenarios, please see xref:spring-cloud-stream/binders.adoc#binders[Binders] section and specifically xref:spring-cloud-stream/multiple-binders.adoc#multiple-binders[Multiple Binders on the Classpath]
 
 In the event you are planning to use StreamBridge and have more then one binder configured in your application you must also tell StreamBridge 
 which binder to use. And for that there are two more variations of `send` method:
@@ -546,7 +546,7 @@ the fact that you can compose _reactive_ and _imperative_ functions.
 
 The result of a composition is a single function which, as you may guess, could have a very long and rather cryptic name (e.g., `foo|bar|baz|xyz. . .`)
 presenting a great deal of inconvenience when it comes to other configuration properties. This is where _descriptive binding names_
-feature described in <<Functional binding names>> section can help.
+feature described in xref:spring-cloud-stream/functional-binding-names.adoc#functional-binding-names[Functional Binding Names] section can help.
 
 For example, if we want to give our `toUpperCase|wrapInQuotes` a more descriptive name we can do so
 with the following property `spring.cloud.stream.function.bindings.toUpperCase|wrapInQuotes-in-0=quotedUpperCaseInput` allowing
@@ -604,8 +604,8 @@ While trivial, this example demonstrates how one function enriches the incoming 
 so the other function - `echo` - can benefit form it. The `echo` function stays clean and focused on business logic only.
 You can also see the usage of `spring.cloud.stream.function.bindings` property to simplify composed binding name. 
 
-[[functions-with-multiple-input-and-output-arguments]]
-=== Functions with multiple input and output arguments
+
+=== Functions with multiple input and output arguments [[functions_with_multiple_input_and_output_arguments]]
 
 Starting with version 3.0 spring-cloud-stream provides support for functions that
 have multiple inputs and/or multiple outputs (return values). What does this actually mean and
@@ -633,7 +633,7 @@ spring-cloud-stream and so on.
 So to accommodate all these requirements the initial support is relying on the signature which utilizes another abstraction
 provided by _Project Reactor_ - Tuples. However, we are working on allowing a more flexible signatures.
 
-IMPORTANT: Please refer to <<Binding and Binding names>> section to understand the naming convention used to establish _binding names_
+IMPORTANT: Please refer to xref:spring-cloud-stream/binding-names.adoc#binding-names[Binding and Binding names] section to understand the naming convention used to establish _binding names_
 used by such application.
 
 Let's look at the few samples:
