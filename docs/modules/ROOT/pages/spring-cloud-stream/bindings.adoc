@@ -5,7 +5,7 @@
 As stated earlier, _Bindings_ provide a bridge between the external messaging system (e.g., queue, topic etc.) and application-provided _Producers_ and _Consumers_.
 
 The following example shows a fully configured and functioning Spring Cloud Stream application that receives the payload of the message
-as a `String` type (see <<Content Type Negotiation>> section), logs it to the console and sends it down stream after converting it to upper case.
+as a `String` type (see xref:spring-cloud-stream/content-type.adoc#content_type_management[Content Type Negotiation] section), logs it to the console and sends it down stream after converting it to upper case.
 
 [source, java]
 ----
