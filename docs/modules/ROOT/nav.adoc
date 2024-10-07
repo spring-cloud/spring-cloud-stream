@@ -58,6 +58,7 @@
 **** xref:kafka/kafka-binder/tombstone.adoc[]
 **** xref:kafka/kafka-binder/rebalance_listener.adoc[]
 **** xref:kafka/kafka-binder/retry-dlq.adoc[]
+**** xref:kafka/kafka-binder/container-cust-kafka-binder.adoc[]
 **** xref:kafka/kafka-binder/cons-prod-config-cust.adoc[]
 **** xref:kafka/kafka-binder/admin-client-config-cust.adoc[]
 **** xref:kafka/kafka-binder/custom-health-ind.adoc[]

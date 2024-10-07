@@ -758,7 +758,10 @@ public class KafkaMessageChannelBinder extends
 					? createBackOff(extendedConsumerProperties)
 					: null;
 			c.configure(messageListenerContainer, destination.getName(), consumerGroup, destinationResolver,
-							createBackOff);
+							createBackOff, extendedConsumerProperties);
+		}
+		else if (customizer instanceof KafkaListenerContainerCustomizer c) {
+			c.configure(messageListenerContainer, destination.getName(), consumerGroup, extendedConsumerProperties);
 		}
 		else {
 			((ListenerContainerCustomizer<Object>) customizer)
