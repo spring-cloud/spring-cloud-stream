@@ -815,6 +815,7 @@ public class RabbitMessageChannelBinder extends
 						messageProperties.setDeliveryMode(
 								properties.getExtension().getRepublishDeliveyMode());
 					}
+					messageProperties.incrementRetryCount();
 					return messageProperties;
 				}
 
