@@ -252,7 +252,7 @@ public class RabbitMessageChannelBinder extends
 		super.onInit();
 		if (this.clustered) {
 			String[] addresses = StringUtils.commaDelimitedListToStringArray(
-					this.rabbitProperties.getAddresses());
+				StringUtils.collectionToDelimitedString(this.rabbitProperties.getAddresses(), ","));
 
 			Assert.state(
 					addresses.length == this.adminAddresses.length

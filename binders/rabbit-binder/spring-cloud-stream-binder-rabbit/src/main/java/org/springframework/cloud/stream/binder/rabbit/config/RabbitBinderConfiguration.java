@@ -72,8 +72,9 @@ public class RabbitBinderConfiguration {
 			ConfigurableApplicationContext applicationContext,
 			RabbitProperties rabbitProperties) throws Exception {
 
-		if (StringUtils.hasText(rabbitProperties.getAddresses())) {
-			connectionFactory.setAddresses(rabbitProperties.determineAddresses());
+		String addressesText = StringUtils.collectionToDelimitedString(rabbitProperties.getAddresses(), ",");
+		if (StringUtils.hasText(addressesText)) {
+			connectionFactory.setAddresses(addressesText);
 		}
 
 		connectionFactory.setPublisherConfirmType(rabbitProperties.getPublisherConfirmType() == null ? ConfirmType.NONE : rabbitProperties.getPublisherConfirmType());
