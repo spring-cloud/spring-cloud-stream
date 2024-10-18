@@ -17,6 +17,7 @@
 package org.springframework.cloud.bus.rsocket;
 
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 import io.rsocket.routing.client.spring.RoutingRSocketRequester;
@@ -60,7 +61,7 @@ public class RSocketRequesterBusBridge implements BusBridge {
 			}
 			catch (IllegalArgumentException e) {
 				try {
-					WellKnownKey wellKnownKey = WellKnownKey.valueOf(key.toUpperCase());
+					WellKnownKey wellKnownKey = WellKnownKey.valueOf(key.toUpperCase(Locale.ROOT));
 					map.put(Key.of(wellKnownKey), value);
 				}
 				catch (IllegalArgumentException e2) {
