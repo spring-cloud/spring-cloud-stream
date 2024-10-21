@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.function;
 
+import java.util.Locale;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -241,7 +242,7 @@ class FunctionPostProcessingTests {
 		public Function<String, String> uppercase() {
 			return new PostProcessingFunction<String, String>() {
 				public String apply(String input) {
-					return input.toUpperCase();
+					return input.toUpperCase(Locale.ROOT);
 				}
 
 				public void postProcess(Message<String> result) {
@@ -260,7 +261,7 @@ class FunctionPostProcessingTests {
 			if (input.equals("error")) {
 				throw new RuntimeException("intentional");
 			}
-			return input.toUpperCase();
+			return input.toUpperCase(Locale.ROOT);
 		}
 
 		@Override

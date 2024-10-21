@@ -18,6 +18,7 @@ package org.springframework.cloud.stream.function;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.Locale;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -296,7 +297,7 @@ class MultipleInputOutputFunctionTests {
 
 		@Bean
 		public Function<String, String> uppercase() {
-			return value -> value.toUpperCase();
+			return value -> value.toUpperCase(Locale.ROOT);
 		}
 
 		@Bean
@@ -378,8 +379,8 @@ class MultipleInputOutputFunctionTests {
 		@Bean
 		public Function<Tuple2<Flux<Person>, Flux<Employee>>, Flux<String>> multiInputSingleOutput() {
 			return tuple -> {
-				Flux<String> stringStream = tuple.getT1().map(p -> p.getName().toUpperCase());
-				Flux<String> intStream = tuple.getT2().map(p -> p.getName().toUpperCase());
+				Flux<String> stringStream = tuple.getT1().map(p -> p.getName().toUpperCase(Locale.ROOT));
+				Flux<String> intStream = tuple.getT2().map(p -> p.getName().toUpperCase(Locale.ROOT));
 				return Flux.merge(stringStream, intStream);
 			};
 		}

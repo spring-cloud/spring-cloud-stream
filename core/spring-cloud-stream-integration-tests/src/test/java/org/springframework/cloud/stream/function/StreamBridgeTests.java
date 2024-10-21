@@ -18,6 +18,7 @@ package org.springframework.cloud.stream.function;
 
 import java.lang.reflect.Field;
 import java.net.URI;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -819,7 +820,7 @@ class StreamBridgeTests {
 	public static class DynamicProducerDestinationConfig {
 		@Bean
 		public Function<Message<String>, Message<String>> uppercase() {
-			return msg -> MessageBuilder.withPayload(msg.getPayload().toUpperCase())
+			return msg -> MessageBuilder.withPayload(msg.getPayload().toUpperCase(Locale.ROOT))
 				.setHeader("spring.cloud.stream.sendto.destination", "dynamicTopic").build();
 		}
 	}
@@ -1003,7 +1004,7 @@ class StreamBridgeTests {
 		public IntegrationFlow transform(StreamBridge bridge) {
 			return IntegrationFlow.from("foo").transform(v -> {
 					String s = new String((byte[]) v);
-					return s.toUpperCase();
+					return s.toUpperCase(Locale.ROOT);
 				})
 				.handle(v -> bridge.send("output", v))
 				.get();

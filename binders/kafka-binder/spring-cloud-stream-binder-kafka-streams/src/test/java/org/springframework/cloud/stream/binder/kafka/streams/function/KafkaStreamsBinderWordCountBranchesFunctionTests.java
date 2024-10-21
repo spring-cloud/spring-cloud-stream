@@ -19,6 +19,7 @@ package org.springframework.cloud.stream.binder.kafka.streams.function;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.Locale;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -190,7 +191,7 @@ class KafkaStreamsBinderWordCountBranchesFunctionTests {
 
 			return input -> {
 				final Map<String, KStream<Object, WordCount>> stringKStreamMap = input
-						.flatMapValues(value -> Arrays.asList(value.toLowerCase().split("\\W+")))
+						.flatMapValues(value -> Arrays.asList(value.toLowerCase(Locale.ROOT).split("\\W+")))
 						.groupBy((key, value) -> value)
 						.windowedBy(TimeWindows.of(Duration.ofSeconds(5)))
 						.count(Materialized.as("WordCounts-branch"))

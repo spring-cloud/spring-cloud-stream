@@ -17,6 +17,7 @@
 package org.springframework.cloud.stream.binder.kafka.properties;
 
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 import javax.security.auth.login.AppConfigurationEntry;
@@ -55,7 +56,7 @@ public class JaasLoginModuleConfiguration {
 	public void setControlFlag(String controlFlag) {
 		Assert.notNull(controlFlag, "cannot be null");
 		this.controlFlag = KafkaJaasLoginModuleInitializer.ControlFlag
-				.valueOf(controlFlag.toUpperCase());
+				.valueOf(controlFlag.toUpperCase(Locale.ROOT));
 	}
 
 	public Map<String, String> getOptions() {

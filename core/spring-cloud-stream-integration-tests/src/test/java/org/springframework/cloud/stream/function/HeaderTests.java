@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.function;
 
+import java.util.Locale;
 import java.util.function.Function;
 
 import org.junit.jupiter.api.BeforeAll;
@@ -142,7 +143,7 @@ public class HeaderTests {
 	public static class FunctionMessageConfiguration {
 		@Bean
 		public Function<Message<String>, Message<String>> uppercase() {
-			return msg -> MessageBuilder.withPayload(msg.getPayload().toUpperCase()).build();
+			return msg -> MessageBuilder.withPayload(msg.getPayload().toUpperCase(Locale.ROOT)).build();
 		}
 	}
 

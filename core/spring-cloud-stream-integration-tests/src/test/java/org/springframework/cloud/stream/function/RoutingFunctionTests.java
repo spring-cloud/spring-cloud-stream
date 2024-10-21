@@ -18,6 +18,7 @@ package org.springframework.cloud.stream.function;
 
 import java.lang.reflect.Field;
 import java.util.List;
+import java.util.Locale;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -376,7 +377,6 @@ class RoutingFunctionTests {
 		@Bean
 		public Function<Message<String>, Message<String>> enrich() {
 			return x -> {
-				System.out.println("===> enrich");
 				return MessageBuilder.withPayload(x.getPayload()).setHeader("spring.cloud.function.definition", "uppercase").build();
 			};
 		}
@@ -384,8 +384,7 @@ class RoutingFunctionTests {
 		@Bean
 		public Function<String, String> uppercase() {
 			return x -> {
-				System.out.println("===> uppercase");
-				return x.toUpperCase();
+				return x.toUpperCase(Locale.ROOT);
 			};
 		}
 

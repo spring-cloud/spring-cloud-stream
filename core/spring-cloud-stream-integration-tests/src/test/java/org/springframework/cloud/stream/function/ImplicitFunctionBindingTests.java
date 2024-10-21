@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -244,7 +245,7 @@ class ImplicitFunctionBindingTests {
 				// good, we expected it
 			}
 
-			Function<byte[], String> function = v -> new String(v).toUpperCase();
+			Function<byte[], String> function = v -> new String(v).toUpperCase(Locale.ROOT);
 			FunctionBindingTestUtils.bind(context, function);
 
 			input.send(new GenericMessage<byte[]>("hello".getBytes()));
@@ -1434,7 +1435,7 @@ class ImplicitFunctionBindingTests {
 		public Function<Flux<Message<Person>>, Flux<Message<Person>>> reactivePojoMessage() {
 			return flux -> flux.map(message -> {
 				Person p = message.getPayload();
-				p.setName(p.getName().toUpperCase());
+				p.setName(p.getName().toUpperCase(Locale.ROOT));
 				return MessageBuilder.withPayload(p).copyHeaders(message.getHeaders()).build();
 			});
 		}
@@ -1636,7 +1637,7 @@ class ImplicitFunctionBindingTests {
 
 		@Bean
 		public Function<String, String> uppercase() {
-			return v -> v.toUpperCase();
+			return v -> v.toUpperCase(Locale.ROOT);
 		}
 
 		@Bean

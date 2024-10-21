@@ -18,6 +18,7 @@ package org.springframework.cloud.stream.binder.kafka.streams;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -370,7 +371,7 @@ public abstract class AbstractKafkaStreamsBinderProcessor implements Application
 				if (!concurrencyExplicitlyProvided[0]) {
 					concurrencyExplicitlyProvided[0] = name.getLastElement(ConfigurationPropertyName.Form.UNIFORM).equals("concurrency") &&
 						// name is normalized to contain only uniform elements and thus safe to call toLowerCase here.
-						ConfigurationPropertyName.of("spring.cloud.stream.bindings." + inboundName.toLowerCase() + ".consumer")
+						ConfigurationPropertyName.of("spring.cloud.stream.bindings." + inboundName.toLowerCase(Locale.ROOT) + ".consumer")
 							.isAncestorOf(name);
 				}
 				return result;

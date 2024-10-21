@@ -18,6 +18,7 @@ package org.springframework.cloud.stream.binder.reactorkafka;
 
 import java.lang.reflect.Type;
 import java.time.Duration;
+import java.util.Locale;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -147,7 +148,7 @@ public class ReactorKafkaBinderObservationTests {
 							observationRegistry);
 
 					return Mono.deferContextual(contextView -> Mono.just(record)
-							.map(rec -> new String(rec.value()).toLowerCase())
+							.map(rec -> new String(rec.value()).toLowerCase(Locale.ROOT))
 							.map(rec -> MessageBuilder.withPayload(rec).setHeader(IntegrationMessageHeaderAccessor.REACTOR_CONTEXT, contextView).build()))
 						.doOnTerminate(receiverObservation::stop)
 						.doOnError(receiverObservation::error)

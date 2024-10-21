@@ -19,6 +19,7 @@ package org.springframework.cloud.stream.binder.kafka.streams.integration;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.function.Function;
@@ -173,7 +174,7 @@ class KafkaStreamsBinderTombstoneTests {
 		public Function<KStream<Object, String>, KStream<String, WordCount>> process() {
 
 			return input -> input
-					.flatMapValues(value -> Arrays.asList(value.toLowerCase().split("\\W+")))
+					.flatMapValues(value -> Arrays.asList(value.toLowerCase(Locale.ROOT).split("\\W+")))
 					.map((key, value) -> new KeyValue<>(value, value))
 					.groupByKey(Grouped.with(Serdes.String(), Serdes.String()))
 					.windowedBy(TimeWindows.of(Duration.ofMillis(5000)))

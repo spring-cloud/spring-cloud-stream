@@ -26,6 +26,7 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
@@ -220,7 +221,7 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 	}
 
 	private <T> String getKafkaStreamsBinderSimpleName(Class<? extends T> bindingTargetType) {
-		return bindingTargetType.getSimpleName().toLowerCase();
+		return bindingTargetType.getSimpleName().toLowerCase(Locale.ROOT);
 	}
 
 	private <T> boolean isKafkaStreamsType(Class<? extends T> bindingTargetType) {
@@ -233,7 +234,7 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 
 		if (!MessageChannel.class.isAssignableFrom(bindingTargetType)
 				&& !PollableMessageSource.class.isAssignableFrom(bindingTargetType)) {
-			String bindingTargetTypeName = StringUtils.hasText(name) ? name : bindingTargetType.getSimpleName().toLowerCase();
+			String bindingTargetTypeName = StringUtils.hasText(name) ? name : bindingTargetType.getSimpleName().toLowerCase(Locale.ROOT);
 			Binder<T, ConsumerProperties, ProducerProperties> binderInstance = getBinderInstance(bindingTargetTypeName);
 			return binderInstance;
 		}

@@ -18,6 +18,7 @@ package org.springframework.cloud.stream.binder.kafka.integration2;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -130,7 +131,7 @@ class ConsumerProducerTransactionTests {
 				if (in.equals("two")) {
 					throw new RuntimeException("fail");
 				}
-				return in.toUpperCase();
+				return in.toUpperCase(Locale.ROOT);
 			};
 		}
 

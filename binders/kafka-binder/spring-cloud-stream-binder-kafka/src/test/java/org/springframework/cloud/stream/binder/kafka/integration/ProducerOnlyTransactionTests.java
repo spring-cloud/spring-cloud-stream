@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.binder.kafka.integration;
 
+import java.util.Locale;
 import java.util.Map;
 
 import org.apache.kafka.clients.consumer.Consumer;
@@ -86,7 +87,7 @@ class ProducerOnlyTransactionTests {
 		props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class);
 		props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class);
 		props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
-		props.put(ConsumerConfig.ISOLATION_LEVEL_CONFIG, IsolationLevel.READ_COMMITTED.name().toLowerCase());
+		props.put(ConsumerConfig.ISOLATION_LEVEL_CONFIG, IsolationLevel.READ_COMMITTED.name().toLowerCase(Locale.ROOT));
 		Consumer<?, ?> consumer = new KafkaConsumer<>(props);
 		embeddedKafkaBrokera.consumeFromAllEmbeddedTopics(consumer);
 		ConsumerRecord<?, ?> record = KafkaTestUtils.getSingleRecord(consumer, "output");
