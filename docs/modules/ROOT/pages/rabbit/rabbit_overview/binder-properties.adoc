@@ -29,7 +29,7 @@ The compression level for compressed bindings.
 See `java.util.zip.Deflater`.
 +
 Default: `1` (BEST_LEVEL).
-spring.cloud.stream.binder.connection-name-prefix::
+spring.cloud.stream.rabbit.binder.connection-name-prefix::
 A connection name prefix used to name the connection(s) created by this binder.
 The name is this prefix followed by `#n`, where `n` increments each time a new connection is opened.
 +
