@@ -20,6 +20,7 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -193,7 +194,7 @@ class ReactorKafkaBinderIntegrationTests {
 
 		@Bean
 		Function<Flux<ReceiverRecord<byte[], byte[]>>, Flux<String>> lowercase() {
-			return s -> s.map(rec -> new String(rec.value()).toLowerCase());
+			return s -> s.map(rec -> new String(rec.value()).toLowerCase(Locale.ROOT));
 		}
 
 		@Bean

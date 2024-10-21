@@ -21,6 +21,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
@@ -397,7 +398,7 @@ class KafkaStreamsBinderWordCountFunctionTests {
 		Function<KStream<Object, String>, KStream<String, WordCount>> process() {
 
 			return input -> input
-					.flatMapValues(value -> Arrays.asList(value.toLowerCase().split("\\W+")))
+					.flatMapValues(value -> Arrays.asList(value.toLowerCase(Locale.ROOT).split("\\W+")))
 					.map((key, value) -> new KeyValue<>(value, value))
 					.groupByKey(Grouped.with(Serdes.String(), Serdes.String()))
 					.windowedBy(TimeWindows.of(Duration.ofMillis(5000)))
@@ -439,7 +440,7 @@ class KafkaStreamsBinderWordCountFunctionTests {
 		Function<KStream<Object, String>, KStream<?, WordCount>> process() {
 			return input -> input
 					.flatMapValues(
-							value -> Arrays.asList(value.toLowerCase().split("\\W+")))
+							value -> Arrays.asList(value.toLowerCase(Locale.ROOT).split("\\W+")))
 					.map((key, value) -> new KeyValue<>(value, value))
 					.groupByKey(Grouped.with(Serdes.String(), Serdes.String()))
 					.windowedBy(TimeWindows.ofSizeWithNoGrace(Duration.ofSeconds(5))).count(Materialized.as("foobar-WordCounts"))

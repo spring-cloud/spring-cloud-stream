@@ -18,6 +18,7 @@ package org.springframework.cloud.stream.binder;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -116,7 +117,7 @@ class PollableConsumerTests {
 			@Override
 			public Message<?> preSend(Message<?> message, MessageChannel channel) {
 				return MessageBuilder
-					.withPayload(((String) message.getPayload()).toUpperCase())
+					.withPayload(((String) message.getPayload()).toUpperCase(Locale.ROOT))
 					.copyHeaders(message.getHeaders()).build();
 			}
 
@@ -301,7 +302,7 @@ class PollableConsumerTests {
 			public Message<?> preSend(Message<?> message, MessageChannel channel) {
 				return MessageBuilder
 					.withPayload(
-						new String((byte[]) message.getPayload()).toUpperCase())
+						new String((byte[]) message.getPayload()).toUpperCase(Locale.ROOT))
 					.copyHeaders(message.getHeaders()).build();
 			}
 
@@ -328,7 +329,7 @@ class PollableConsumerTests {
 			@Override
 			public Message<?> preSend(Message<?> message, MessageChannel channel) {
 				return MessageBuilder
-					.withPayload(((String) message.getPayload()).toUpperCase())
+					.withPayload(((String) message.getPayload()).toUpperCase(Locale.ROOT))
 					.copyHeaders(message.getHeaders()).build();
 			}
 
@@ -379,7 +380,7 @@ class PollableConsumerTests {
 			@Override
 			public Message<?> preSend(Message<?> message, MessageChannel channel) {
 				return MessageBuilder
-					.withPayload(((String) message.getPayload()).toUpperCase())
+					.withPayload(((String) message.getPayload()).toUpperCase(Locale.ROOT))
 					.copyHeaders(message.getHeaders()).build();
 			}
 

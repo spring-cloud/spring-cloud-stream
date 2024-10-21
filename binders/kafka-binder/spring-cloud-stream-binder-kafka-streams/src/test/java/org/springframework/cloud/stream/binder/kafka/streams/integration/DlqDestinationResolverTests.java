@@ -18,6 +18,7 @@ package org.springframework.cloud.stream.binder.kafka.streams.integration;
 
 import java.time.Duration;
 import java.util.Arrays;
+import java.util.Locale;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -124,7 +125,7 @@ class DlqDestinationResolverTests {
 
 			return input -> input
 					.flatMapValues(
-							value -> Arrays.asList(value.toLowerCase().split("\\W+")))
+							value -> Arrays.asList(value.toLowerCase(Locale.ROOT).split("\\W+")))
 					.map((key, value) -> new KeyValue<>(value, value))
 					.groupByKey(Grouped.with(Serdes.String(), Serdes.String()))
 					.windowedBy(TimeWindows.of(Duration.ofSeconds(5))).count(Materialized.as("foo-WordCounts-x"))

@@ -18,6 +18,7 @@ package org.springframework.cloud.stream.function;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
+import java.util.Locale;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -94,7 +95,7 @@ class GreenfieldFunctionEnableBindingTests {
 
 		@Bean
 		public Function<String, String> toUpperCase() {
-			return String::toUpperCase;
+			return v -> v.toUpperCase(Locale.ROOT);
 		}
 
 	}

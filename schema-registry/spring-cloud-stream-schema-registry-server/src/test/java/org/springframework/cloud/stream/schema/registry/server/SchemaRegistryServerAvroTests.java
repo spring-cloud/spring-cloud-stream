@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
@@ -81,12 +82,12 @@ class SchemaRegistryServerAvroTests {
 			.parse(resourceToString("classpath:/avro_user_definition_schema_v2.json"));
 
 	private static final String AVRO_USER_SCHEMA_DEFAULT_NAME_STRATEGY_SUBJECT = AVRO_USER_AVRO_SCHEMA_V1.getName()
-			.toLowerCase();
+			.toLowerCase(Locale.ROOT);
 
 
 	private static final String AVRO_USER_SCHEMA_QUALIFED_NAME_STRATEGY_SUBJECT = AVRO_USER_AVRO_SCHEMA_V1
 			.getFullName()
-			.toLowerCase();
+			.toLowerCase(Locale.ROOT);
 
 	private static final Schema AVRO_USER_REGISTRY_SCHEMA_V1 = toSchema(
 			AVRO_USER_SCHEMA_DEFAULT_NAME_STRATEGY_SUBJECT,
