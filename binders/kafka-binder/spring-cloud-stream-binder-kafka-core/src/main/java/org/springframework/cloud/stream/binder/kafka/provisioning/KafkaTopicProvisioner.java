@@ -1,5 +1,5 @@
 /*
- * Copyright 2014-2023 the original author or authors.
+ * Copyright 2014-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -668,6 +668,7 @@ public class KafkaTopicProvisioner implements
 					partitions = callable.call();
 				}
 				catch (Exception ex) {
+					logger.warn("Error occurred while calculating partitions for topic: " + topicName, ex);
 					// The above call can potentially throw exceptions such as timeout. If
 					// we can determine
 					// that the exception was due to an unknown topic on the broker, just
