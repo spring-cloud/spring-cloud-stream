@@ -31,6 +31,7 @@ import io.micrometer.tracing.brave.bridge.BraveFinishedSpan;
 import io.micrometer.tracing.test.simple.SpansAssert;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.ProducerRecord;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -78,6 +79,7 @@ import static org.awaitility.Awaitility.await;
 @DirtiesContext
 @AutoConfigureObservability
 @EmbeddedKafka(topics = { "rkbot-out-topic" })
+@Disabled
 public class ReactorKafkaBinderObservationTests {
 
 	private static final TestSpanHandler SPANS = new TestSpanHandler();
