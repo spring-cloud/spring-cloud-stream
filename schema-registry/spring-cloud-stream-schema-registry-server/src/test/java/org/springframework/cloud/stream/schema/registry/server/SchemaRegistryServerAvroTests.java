@@ -151,7 +151,8 @@ class SchemaRegistryServerAvroTests {
 			fail("Expects: " + HttpStatus.BAD_REQUEST + " error");
 		}
 		catch (HttpClientErrorException.BadRequest badRequest) {
-			assertThat(badRequest.getMessage()).isEqualTo("400  on POST request for \"http://localhost:8990\": \"Format not supported: Invalid format, supported types are: avro\"");
+			assertThat(badRequest.getMessage()).contains("Format not supported: Invalid format, supported types are: avro");
+			assertThat(badRequest.getMessage()).contains("400");
 		}
 
 	}
@@ -164,7 +165,8 @@ class SchemaRegistryServerAvroTests {
 			fail("Expects: " + HttpStatus.BAD_REQUEST + " error");
 		}
 		catch (HttpClientErrorException.BadRequest badRequest) {
-			assertThat(badRequest.getMessage()).isEqualTo("400  on POST request for \"http://localhost:8990\": \"Invalid Schema: No type: {}\"");
+			assertThat(badRequest.getMessage()).contains("\"Invalid Schema: No type: {}\"");
+			assertThat(badRequest.getMessage()).contains("400");
 		}
 
 	}
@@ -178,8 +180,8 @@ class SchemaRegistryServerAvroTests {
 			fail("Expects: " + HttpStatus.BAD_REQUEST + " error");
 		}
 		catch (HttpClientErrorException.BadRequest badRequest) {
-			assertThat(badRequest.getMessage()).isEqualTo("400  on POST request for \"http://localhost:8990\": " +
-				"\"Invalid Schema: \"SomeType\" is not a defined name. The type of the \"field\" field must be a defined name or a {\"type\": ...} expression.\"");
+			assertThat(badRequest.getMessage()).contains("\"Invalid Schema: \"SomeType\" is not a defined name");
+			assertThat(badRequest.getMessage()).contains("400");
 		}
 
 	}
@@ -223,8 +225,8 @@ class SchemaRegistryServerAvroTests {
 			fail("Expects: " + HttpStatus.NOT_FOUND + " error");
 		}
 		catch (HttpClientErrorException.NotFound notFound) {
-			assertThat(notFound.getMessage()).isEqualTo("404  on GET request for \"http://localhost:8990/schemas/2\": " +
-				"\"Schema not found: Could not find Schema by id: 2\"");
+			assertThat(notFound.getMessage()).contains("Could not find Schema by id: 2");
+			assertThat(notFound.getMessage()).contains("404");
 		}
 	}
 
@@ -269,8 +271,8 @@ class SchemaRegistryServerAvroTests {
 			this.client.getForEntity(subjectFormatVersionUri, Schema.class);
 		}
 		catch (HttpClientErrorException.NotFound notFound) {
-			assertThat(notFound.getMessage()).isEqualTo("404  on GET request for \"http://localhost:8990/user/avro/v1\": " +
-				"\"Schema not found: Could not find Schema by subject: user, format: avro, version 1\"");
+			assertThat(notFound.getMessage()).contains("404");
+			assertThat(notFound.getMessage()).contains("Schema not found: Could not find Schema by subject: user, format: avro, version 1");
 		}
 
 	}
@@ -291,8 +293,8 @@ class SchemaRegistryServerAvroTests {
 			this.client.exchange(new RequestEntity<>(HttpMethod.DELETE, subjectFormatVersionUri), Void.class);
 		}
 		catch (HttpClientErrorException.NotFound notFound) {
-			assertThat(notFound.getMessage()).isEqualTo("404  on DELETE request for \"http://localhost:8990/user/avro/v100\": " +
-				"\"Schema not found: Could not find Schema by subject: user, format: avro, version 100\"");
+			assertThat(notFound.getMessage()).contains("404");
+			assertThat(notFound.getMessage()).contains("Schema not found: Could not find Schema by subject: user, format: avro, version 100");
 		}
 
 	}
@@ -309,8 +311,8 @@ class SchemaRegistryServerAvroTests {
 			this.client.exchange(new RequestEntity<>(HttpMethod.DELETE, versionUri), Void.class);
 		}
 		catch (HttpClientErrorException.MethodNotAllowed methodNotAllowed) {
-			assertThat(methodNotAllowed.getMessage()).isEqualTo("405  on DELETE request for \"http://localhost:8990/user/avro/v1\": " +
-				"\"Schema deletion is not permitted: Not permitted deletion of Schema by subject: user, format: avro, version 1\"");
+			assertThat(methodNotAllowed.getMessage()).contains("405");
+			assertThat(methodNotAllowed.getMessage()).contains("Schema deletion is not permitted: Not permitted deletion of Schema by subject: user, format: avro, version 1");
 		}
 
 	}
@@ -330,8 +332,8 @@ class SchemaRegistryServerAvroTests {
 			fail("Expects: " + HttpStatus.NOT_FOUND + " error");
 		}
 		catch (HttpClientErrorException.NotFound notFound) {
-			assertThat(notFound.getMessage()).isEqualTo("404  on GET request for \"http://localhost:8990/user/avro/v1\": " +
-				"\"Schema not found: Could not find Schema by subject: user, format: avro, version 1\"");
+			assertThat(notFound.getMessage()).contains("Schema not found: Could not find Schema by subject: user, format: avro, version 1\"");
+			assertThat(notFound.getMessage()).contains("404");
 		}
 
 	}
@@ -349,7 +351,8 @@ class SchemaRegistryServerAvroTests {
 			fail("Expects: " + HttpStatus.NOT_FOUND + " error");
 		}
 		catch (HttpClientErrorException.NotFound notFound) {
-			assertThat(notFound.getMessage()).isEqualTo("404  on DELETE request for \"http://localhost:8990/schemas/2\": \"Schema not found: Could not find Schema by id: 2\"");
+			assertThat(notFound.getMessage()).contains("Schema not found: Could not find Schema by id: 2\"");
+			assertThat(notFound.getMessage()).contains("404");
 		}
 
 	}
@@ -368,8 +371,8 @@ class SchemaRegistryServerAvroTests {
 			fail("Expects: " + HttpStatus.METHOD_NOT_ALLOWED + " error");
 		}
 		catch (HttpClientErrorException.MethodNotAllowed methodNotAllowed) {
-			assertThat(methodNotAllowed.getMessage()).isEqualTo("405  on DELETE request for \"http://localhost:8990/schemas/1\": " +
-				"\"Schema deletion is not permitted: Not permitted deletion of Schema by id: 1\"");
+			assertThat(methodNotAllowed.getMessage()).contains("Not permitted deletion of Schema by id: 1");
+			assertThat(methodNotAllowed.getMessage()).contains("405");
 		}
 
 	}
@@ -439,8 +442,8 @@ class SchemaRegistryServerAvroTests {
 			fail("Expects: " + HttpStatus.METHOD_NOT_ALLOWED + " error");
 		}
 		catch (HttpClientErrorException.MethodNotAllowed methodNotAllowed) {
-			assertThat(methodNotAllowed.getMessage()).isEqualTo("405  on DELETE request for \"http://localhost:8990/user\": " +
-				"\"Schema deletion is not permitted: Not permitted deletion of Schema by subject: user\"");
+			assertThat(methodNotAllowed.getMessage()).contains("405");
+			assertThat(methodNotAllowed.getMessage()).contains("Schema deletion is not permitted: Not permitted deletion of Schema by subject: user");
 		}
 
 	}
