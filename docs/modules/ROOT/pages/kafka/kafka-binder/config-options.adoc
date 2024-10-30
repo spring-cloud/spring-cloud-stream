@@ -38,7 +38,7 @@ spring.cloud.stream.kafka.binder.healthTimeout::
 The time to wait to get partition information, in seconds.
 Health reports as down if this timer expires.
 +
-Default: 10.
+Default: 60.
 spring.cloud.stream.kafka.binder.requiredAcks::
 The number of required acks on the broker.
 See the Kafka documentation for the producer `acks` property.
