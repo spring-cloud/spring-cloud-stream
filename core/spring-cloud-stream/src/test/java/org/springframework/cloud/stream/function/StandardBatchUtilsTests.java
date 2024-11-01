@@ -18,13 +18,17 @@ package org.springframework.cloud.stream.function;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.cloud.stream.binder.BinderHeaders;
 import org.springframework.cloud.stream.function.StandardBatchUtils.BatchMessageBuilder;
 import org.springframework.messaging.Message;
+
 
 /**
  * 
@@ -36,7 +40,7 @@ public class StandardBatchUtilsTests {
 	public void testBatchMessageBuilder() {
 		BatchMessageBuilder builder = new BatchMessageBuilder();
 		builder.addMessage("foo", Collections.singletonMap("fooKey", "fooValue"));
-		builder.addHeader("a", "a");
+		builder.addRootHeader("a", "a");
 		builder.addMessage("bar", Collections.singletonMap("barKey", "barValue"));
 		builder.addMessage("baz", Collections.singletonMap("bazKey", "bazValue"));
 		
@@ -45,7 +49,7 @@ public class StandardBatchUtilsTests {
 		List<Object> payloads = batchMessage.getPayload();
 		assertThat(payloads.size()).isEqualTo(3);
 		
-		List<Map<String, Object>> batchHeaders = (List<Map<String, Object>>) batchMessage.getHeaders().get(StandardBatchUtils.BATCH_HEADERS);
+		List<Map<String, Object>> batchHeaders = (List<Map<String, Object>>) batchMessage.getHeaders().get(BinderHeaders.BATCH_HEADERS);
 		assertThat(batchHeaders.size()).isEqualTo(3);
 		
 		assertThat(payloads.get(0)).isEqualTo("foo");
@@ -55,5 +59,30 @@ public class StandardBatchUtilsTests {
 		assertThat(batchHeaders.get(1).get("barKey")).isEqualTo("barValue");
 		
 		assertThat(batchMessage.getHeaders().get("a")).isEqualTo("a");
+	}
+	
+	@Test
+	public void testIterator() {
+		BatchMessageBuilder builder = new BatchMessageBuilder();
+		builder.addMessage("foo", Collections.singletonMap("fooKey", "fooValue"));
+		builder.addRootHeader("a", "a");
+		builder.addMessage("bar", Collections.singletonMap("barKey", "barValue"));
+		builder.addMessage("baz", Collections.singletonMap("bazKey", "bazValue"));
+		
+		Message<List<Object>> batchMessage = builder.build();
+		
+		List<Entry<Object, Map<String, Object>>> entries = new ArrayList<>();
+		StandardBatchUtils.iterate(batchMessage).forEach(entry -> {
+			entries.add(entry);
+		});
+		assertThat(entries.size()).isEqualTo(3);
+		assertThat(entries.get(0).getKey()).isEqualTo("foo");
+		assertThat(entries.get(0).getValue().get("fooKey")).isEqualTo("fooValue");
+		
+		assertThat(entries.get(1).getKey()).isEqualTo("bar");
+		assertThat(entries.get(1).getValue().get("barKey")).isEqualTo("barValue");
+		
+		assertThat(entries.get(2).getKey()).isEqualTo("baz");
+		assertThat(entries.get(2).getValue().get("bazKey")).isEqualTo("bazValue");
 	}
 }
