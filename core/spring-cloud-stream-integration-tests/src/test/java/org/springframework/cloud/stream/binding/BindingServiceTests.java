@@ -90,12 +90,13 @@ import static org.mockito.Mockito.when;
  * @author Chris Bono
  * @author Artem Bilan
  * @author Kotaro Matsumoto
+ * @author Omer Celik
  */
 class BindingServiceTests {
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@Test
-	void defaultGroup() throws Exception {
+	void defaultGroup() {
 		BindingServiceProperties properties = new BindingServiceProperties();
 		Map<String, BindingProperties> bindingProperties = new HashMap<>();
 		BindingProperties props = new BindingProperties();
@@ -175,7 +176,7 @@ class BindingServiceTests {
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@Test
-	void multipleConsumerBindingsFromIndexList() throws Exception {
+	void multipleConsumerBindingsFromIndexList() {
 		BindingServiceProperties properties = new BindingServiceProperties();
 		Map<String, BindingProperties> bindingProperties = new HashMap<>();
 		BindingProperties props = new BindingProperties();
@@ -236,7 +237,7 @@ class BindingServiceTests {
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@Test
-	void consumerBindingWhenMultiplexingIsEnabled() throws Exception {
+	void consumerBindingWhenMultiplexingIsEnabled() {
 		BindingServiceProperties properties = new BindingServiceProperties();
 		Map<String, BindingProperties> bindingProperties = new HashMap<>();
 		BindingProperties props = new BindingProperties();
@@ -282,7 +283,7 @@ class BindingServiceTests {
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@Test
-	void explicitGroup() throws Exception {
+	void explicitGroup() {
 		BindingServiceProperties properties = new BindingServiceProperties();
 		Map<String, BindingProperties> bindingProperties = new HashMap<>();
 		BindingProperties props = new BindingProperties();
@@ -528,7 +529,7 @@ class BindingServiceTests {
 
 		assertThat(service.getProducerBinding("output")).isSameAs(binding);
 
-		service.unbindProducers(outputChannelName);
+		service.unbindProducers(null, outputChannelName);
 		verify(binder, times(2)).bindProducer(eq("foo"), same(outputChannel),
 			any(ProducerProperties.class));
 		verify(delegate).unbind();
@@ -552,9 +553,8 @@ class BindingServiceTests {
 		assertThat(inputBinding.isRunning()).isFalse();
 	}
 
-	@SuppressWarnings("unchecked")
 	@Test
-	void bindingNameAsTopLevelProperty() throws Exception {
+	void bindingNameAsTopLevelProperty() {
 		ApplicationContext context = new SpringApplicationBuilder(BarConfiguration.class)
 			.web(WebApplicationType.NONE).run();
 

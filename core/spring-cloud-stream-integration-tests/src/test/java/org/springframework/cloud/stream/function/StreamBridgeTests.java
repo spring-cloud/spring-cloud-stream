@@ -84,6 +84,7 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
  *
  * @author Oleg Zhurakousky
  * @author Soby Chacko
+ * @author Omer Celik
  *
  */
 class StreamBridgeTests {
@@ -384,7 +385,7 @@ class StreamBridgeTests {
 
 	// See this issue for more details: https://github.com/spring-cloud/spring-cloud-stream/issues/2805
 	@Test
-	void streamBridgeSendWithBinderNameAndCustomContentType() throws Exception {
+	void streamBridgeSendWithBinderNameAndCustomContentType() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration
 			.getCompleteConfiguration(ConsumerConfiguration.class, EmptyConfigurationWithCustomConverters.class))
 			.web(WebApplicationType.NONE).run(
@@ -765,6 +766,45 @@ class StreamBridgeTests {
 			assertThat(bindingService.getProducerBindingNames()[0]).isEqualTo("a");
 		}
 		assertThat(bindingService.getProducerBindingNames().length).isEqualTo(0);
+	}
+
+	@Test
+	void dynamicDestinationWithBinderNameDestroy() {
+		BindingService bindingService;
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration
+			.getCompleteConfiguration(InterceptorConfiguration.class))
+			.web(WebApplicationType.NONE).run(
+				"--spring.jmx.enabled=false",
+				"--spring.cloud.stream.binders.kafka1.type=kafka",
+				"--spring.cloud.stream.binders.anotherKafka.type=kafka"
+			)) {
+			StreamBridge bridge = context.getBean(StreamBridge.class);
+			bridge.send("binding1", "kafka1", "Omer Celik");
+			bridge.send("binding2", "anotherKafka", "Omer Celik");
+
+			bindingService = context.getBean(BindingService.class);
+		}
+		assertThat(bindingService.getProducerBindingNames().length).isEqualTo(0);
+	}
+
+	@Test
+	void dynamicDestinationWithBinderNameDestroyForCacheSize() {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(TestChannelBinderConfiguration
+			.getCompleteConfiguration(InterceptorConfiguration.class))
+			.web(WebApplicationType.NONE).run(
+				"--spring.jmx.enabled=false",
+				"--spring.cloud.stream.dynamic-destination-cache-size=1",
+				"--spring.cloud.stream.binders.kafka1.type=kafka",
+				"--spring.cloud.stream.binders.anotherKafka.type=kafka"
+			)) {
+			StreamBridge bridge = context.getBean(StreamBridge.class);
+			bridge.send("binding1", "kafka1", "Omer Celik");
+			bridge.send("binding2", "anotherKafka", "Omer Celik");
+
+			BindingService bindingService = context.getBean(BindingService.class);
+			assertThat(bindingService.getProducerBindingNames().length).isEqualTo(1);
+			assertThat(bindingService.getProducerBindingNames()[0]).isEqualTo("anotherKafka:binding2");
+		}
 	}
 
 	@Test
