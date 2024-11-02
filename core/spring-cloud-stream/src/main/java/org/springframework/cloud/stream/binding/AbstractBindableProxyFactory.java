@@ -135,7 +135,7 @@ public class AbstractBindableProxyFactory implements Bindable {
 		for (Map.Entry<String, BoundTargetHolder> boundTargetHolderEntry : this.outputHolders
 			.entrySet()) {
 			if (boundTargetHolderEntry.getValue().bindable()) {
-				bindingService.unbindProducers(boundTargetHolderEntry.getKey());
+				bindingService.unbindProducers(null, boundTargetHolderEntry.getKey());
 			}
 		}
 	}

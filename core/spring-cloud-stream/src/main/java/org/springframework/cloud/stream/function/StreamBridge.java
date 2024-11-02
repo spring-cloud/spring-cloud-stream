@@ -43,6 +43,7 @@ import org.springframework.cloud.function.context.message.MessageUtils;
 import org.springframework.cloud.function.core.FunctionInvocationHelper;
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.BinderFactory;
+import org.springframework.cloud.stream.binder.BinderWrapper;
 import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.cloud.stream.binding.BindingService;
 import org.springframework.cloud.stream.binding.DefaultPartitioningInterceptor;
@@ -68,6 +69,8 @@ import org.springframework.util.MimeTypeUtils;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 
+import static org.springframework.cloud.stream.utils.CacheKeyCreatorUtils.createChannelCacheKey;
+
 
 /**
  * A class which allows user to send data to an output binding.
@@ -85,6 +88,7 @@ import org.springframework.util.StringUtils;
  * @author Soby Chacko
  * @author Byungjun You
  * @author Michał Rowicki
+ * @author Omer Celik
  * @since 3.0.3
  *
  */
@@ -128,7 +132,6 @@ public final class StreamBridge implements StreamOperations, SmartInitializingSi
 	 * @param bindingServiceProperties instance of {@link BindingServiceProperties}
 	 * @param applicationContext instance of {@link ConfigurableApplicationContext}
 	 */
-	@SuppressWarnings("serial")
 	StreamBridge(FunctionCatalog functionCatalog, BindingServiceProperties bindingServiceProperties,
 		ConfigurableApplicationContext applicationContext, @Nullable NewDestinationBindingCallback destinationBindingCallback) {
 		this.executorService = Executors.newCachedThreadPool();
@@ -268,13 +271,7 @@ public final class StreamBridge implements StreamOperations, SmartInitializingSi
 	MessageChannel resolveDestination(String destinationName, ProducerProperties producerProperties, String binderName) {
 		lock.lock();
 		try {
-			MessageChannel messageChannel = null;
-			if (StringUtils.hasText(binderName)) {
-				messageChannel = this.channelCache.get(binderName + ":" + destinationName);
-			}
-			else {
-				messageChannel = this.channelCache.get(destinationName);
-			}
+			MessageChannel messageChannel = this.channelCache.get(createChannelCacheKey(binderName, destinationName, bindingServiceProperties));
 			if (messageChannel == null) {
 				if (this.applicationContext.containsBean(destinationName)) {
 					messageChannel = this.applicationContext.getBean(destinationName, MessageChannel.class);
@@ -291,28 +288,20 @@ public final class StreamBridge implements StreamOperations, SmartInitializingSi
 					messageChannel = this.isAsync() ? new ExecutorChannel(this.executorService) : new DirectWithAttributesChannel();
 					((AbstractSubscribableChannel) messageChannel).setApplicationContext(applicationContext);
 					((AbstractSubscribableChannel) messageChannel).setComponentName(destinationName);
+
+					BinderWrapper binderWrapper = bindingService.createBinderWrapper(binderName, destinationName, messageChannel.getClass());
 					if (this.destinationBindingCallback != null) {
 						Object extendedProducerProperties = this.bindingService
-								.getExtendedProducerProperties(messageChannel, destinationName);
+								.getExtendedProducerProperties(binderWrapper.binder(), destinationName);
 						this.destinationBindingCallback.configure(destinationName, messageChannel,
 								producerProperties, extendedProducerProperties);
 					}
 
-					Binder binder = null;
-					if (StringUtils.hasText(binderName)) {
-						BinderFactory binderFactory = this.applicationContext.getBean(BinderFactory.class);
-						binder = binderFactory.getBinder(binderName, messageChannel.getClass());
-					}
 					addPartitioningInterceptorIfNeedBe(producerProperties, destinationName, (AbstractMessageChannel) messageChannel);
 					addGlobalChannelInterceptorProcessor((AbstractMessageChannel) messageChannel, destinationName);
 
-					this.bindingService.bindProducer(messageChannel, destinationName, true, binder);
-					if (StringUtils.hasText(binderName)) {
-						this.channelCache.put(binderName + ":" + destinationName, messageChannel);
-					}
-					else {
-						this.channelCache.put(destinationName, messageChannel);
-					}
+					this.bindingService.bindProducer(messageChannel, true, binderWrapper);
+					this.channelCache.put(binderWrapper.cacheKey(), messageChannel);
 				}
 			}
 
