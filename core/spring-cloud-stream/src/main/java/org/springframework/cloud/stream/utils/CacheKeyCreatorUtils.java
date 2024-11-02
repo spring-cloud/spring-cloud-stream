@@ -34,13 +34,13 @@ public final class CacheKeyCreatorUtils {
 	}
 
 	public static String createChannelCacheKey(@Nullable String binderName, String outputName,
-												BindingServiceProperties bindingServiceProperties) {
+			BindingServiceProperties bindingServiceProperties) {
 		String finalBinderName = getBinderNameIfNeeded(binderName, outputName, bindingServiceProperties);
 		return createChannelCacheKey(finalBinderName, outputName);
 	}
 
 	public static String getBinderNameIfNeeded(@Nullable String binderName, String outputName,
-												BindingServiceProperties bindingServiceProperties) {
+			BindingServiceProperties bindingServiceProperties) {
 		if (Objects.isNull(binderName)) {
 			return bindingServiceProperties.getBinder(outputName);
 		}
