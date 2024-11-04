@@ -17,7 +17,6 @@
 package org.springframework.cloud.stream.function;
 
 import java.lang.reflect.Type;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -43,6 +42,7 @@ import org.springframework.cloud.function.context.message.MessageUtils;
 import org.springframework.cloud.function.core.FunctionInvocationHelper;
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.BinderFactory;
+import org.springframework.cloud.stream.binder.BinderHeaders;
 import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.cloud.stream.binding.BindingService;
 import org.springframework.cloud.stream.binding.DefaultPartitioningInterceptor;
@@ -50,6 +50,7 @@ import org.springframework.cloud.stream.binding.NewDestinationBindingCallback;
 import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.cloud.stream.messaging.DirectWithAttributesChannel;
+import org.springframework.cloud.stream.utils.BuildInformationProvider;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.ResolvableType;
 import org.springframework.integration.channel.AbstractMessageChannel;
@@ -85,6 +86,7 @@ import org.springframework.util.StringUtils;
  * @author Soby Chacko
  * @author Byungjun You
  * @author Michał Rowicki
+ * @author Omer Celik
  * @since 3.0.3
  *
  */
@@ -206,8 +208,7 @@ public final class StreamBridge implements StreamOperations, SmartInitializingSi
 			this.applicationContext.getBean(BinderFactory.class));
 
 		Message<?> messageToSend = data instanceof Message messageData
-				? MessageBuilder.fromMessage(messageData).setHeaderIfAbsent(MessageUtils.TARGET_PROTOCOL, targetType).build()
-						: new GenericMessage<>(data, Collections.singletonMap(MessageUtils.TARGET_PROTOCOL, targetType));
+			? createMessageWithHeader(messageData, targetType) : createGenericMessageWithHeader(data, targetType);
 
 		Message<?> resultMessage;
 		lock.lock();
@@ -226,6 +227,24 @@ public final class StreamBridge implements StreamOperations, SmartInitializingSi
 		resultMessage = (Message<?>) this.functionInvocationHelper.postProcessResult(resultMessage, null);
 
 		return messageChannel.send(resultMessage);
+	}
+
+	private Message<?> createMessageWithHeader(Message<?> messageData, String targetType) {
+		MessageBuilder messageBuilder = MessageBuilder.fromMessage(messageData)
+			.copyHeaders(createHeaders(targetType));
+		return messageBuilder.build();
+	}
+	private Message<?> createGenericMessageWithHeader(Object data, String targetType) {
+		return new GenericMessage<>(data, createHeaders(targetType));
+	}
+
+	private Map<String, Object> createHeaders(String targetType) {
+		Map<String, Object> headers = new HashMap<>();
+		headers.put(MessageUtils.TARGET_PROTOCOL, targetType);
+		if (BuildInformationProvider.isVersionValid()) {
+			headers.put(BinderHeaders.SCST_VERSION, BuildInformationProvider.getVersion());
+		}
+		return headers;
 	}
 
 	private int hashProducerProperties(ProducerProperties producerProperties, String outputContentType) {
