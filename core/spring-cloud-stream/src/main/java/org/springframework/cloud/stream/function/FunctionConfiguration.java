@@ -79,6 +79,7 @@ import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.cloud.stream.config.BindingServiceConfiguration;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.cloud.stream.messaging.DirectWithAttributesChannel;
+import org.springframework.cloud.stream.utils.BuildInformationProvider;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -132,6 +133,7 @@ import org.springframework.util.StringUtils;
  * @author Ivan Shapoval
  * @author Patrik Péter Süli
  * @author Artem Bilan
+ * @author Omer Celik
  * @since 2.1
  */
 @Lazy(false)
@@ -470,7 +472,7 @@ public class FunctionConfiguration {
 			if (this.functionProperties.isComposeFrom()) {
 				AbstractSubscribableChannel outputChannel = this.applicationContext.getBean(outputBindingNames.iterator().next(), AbstractSubscribableChannel.class);
 				logger.info("Composing at the head of output destination: " + outputChannel.getBeanName());
-				String outputChannelName = ((AbstractMessageChannel) outputChannel).getBeanName();
+				String outputChannelName = outputChannel.getBeanName();
 				DirectWithAttributesChannel newOutputChannel = new DirectWithAttributesChannel();
 				newOutputChannel.setAttribute("type", "output");
 				newOutputChannel.setComponentName("output.extended");
@@ -497,10 +499,13 @@ public class FunctionConfiguration {
 					headersField.setAccessible(true);
 					targetProtocolEnhancer.set(message -> {
 						Map<String, Object> headersMap = (Map<String, Object>) ReflectionUtils
-								.getField(headersField, ((Message) message).getHeaders());
+								.getField(headersField, message.getHeaders());
 						headersMap.putIfAbsent(MessageUtils.TARGET_PROTOCOL, targetProtocol);
 						if (CloudEventMessageUtils.isCloudEvent((message))) {
 							headersMap.putIfAbsent(MessageUtils.MESSAGE_TYPE, CloudEventMessageUtils.CLOUDEVENT_VALUE);
+						}
+						if (BuildInformationProvider.isVersionValid()) {
+							headersMap.putIfAbsent(BinderHeaders.SCST_VERSION, BuildInformationProvider.getVersion());
 						}
 						return message;
 					});
@@ -835,6 +840,9 @@ public class FunctionConfiguration {
 			}
 			if (CloudEventMessageUtils.isCloudEvent(message)) {
 				headersMap.putIfAbsent(MessageUtils.MESSAGE_TYPE, CloudEventMessageUtils.CLOUDEVENT_VALUE);
+			}
+			if (BuildInformationProvider.isVersionValid()) {
+				headersMap.putIfAbsent(BinderHeaders.SCST_VERSION, BuildInformationProvider.getVersion());
 			}
 		}
 
