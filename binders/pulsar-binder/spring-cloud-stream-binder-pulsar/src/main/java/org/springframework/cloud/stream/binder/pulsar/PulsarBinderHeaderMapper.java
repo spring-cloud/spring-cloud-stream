@@ -21,6 +21,7 @@ import java.util.Map;
 import org.apache.pulsar.client.api.Message;
 
 import org.springframework.cloud.stream.binder.BinderHeaders;
+import org.springframework.cloud.stream.utils.BuildInformationProvider;
 import org.springframework.integration.IntegrationMessageHeaderAccessor;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.MessageHeaderAccessor;
@@ -61,6 +62,9 @@ class PulsarBinderHeaderMapper implements PulsarHeaderMapper {
 			MessageHeaderAccessor mutableHeaders = new MessageHeaderAccessor();
 			mutableHeaders.copyHeaders(springHeaders);
 			mutableHeaders.setHeader(BinderHeaders.NATIVE_HEADERS_PRESENT, Boolean.TRUE);
+			if (BuildInformationProvider.isVersionValid()) {
+				mutableHeaders.setHeader(BinderHeaders.SCST_VERSION, BuildInformationProvider.getVersion());
+			}
 			springHeaders = mutableHeaders.getMessageHeaders();
 		}
 		return springHeaders;

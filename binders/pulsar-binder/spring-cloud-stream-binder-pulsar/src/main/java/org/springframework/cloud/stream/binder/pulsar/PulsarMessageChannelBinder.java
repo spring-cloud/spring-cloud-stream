@@ -24,6 +24,7 @@ import org.apache.pulsar.common.schema.SchemaType;
 
 import org.springframework.cloud.stream.binder.AbstractMessageChannelBinder;
 import org.springframework.cloud.stream.binder.Binder;
+import org.springframework.cloud.stream.binder.BinderHeaders;
 import org.springframework.cloud.stream.binder.BinderSpecificPropertiesProvider;
 import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
 import org.springframework.cloud.stream.binder.ExtendedProducerProperties;
@@ -36,6 +37,7 @@ import org.springframework.cloud.stream.binder.pulsar.properties.PulsarProducerP
 import org.springframework.cloud.stream.binder.pulsar.provisioning.PulsarTopicProvisioner;
 import org.springframework.cloud.stream.provisioning.ConsumerDestination;
 import org.springframework.cloud.stream.provisioning.ProducerDestination;
+import org.springframework.cloud.stream.utils.BuildInformationProvider;
 import org.springframework.integration.core.MessageProducer;
 import org.springframework.integration.endpoint.MessageProducerSupport;
 import org.springframework.integration.handler.AbstractMessageProducingHandler;
@@ -46,6 +48,7 @@ import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.MessageBuilder;
+import org.springframework.messaging.support.MessageHeaderAccessor;
 import org.springframework.pulsar.core.ProducerBuilderCustomizer;
 import org.springframework.pulsar.core.PulsarConsumerFactory;
 import org.springframework.pulsar.core.PulsarTemplate;
@@ -139,7 +142,7 @@ public class PulsarMessageChannelBinder extends
 		containerProperties.setMessageListener((PulsarRecordMessageListener<?>) (consumer, pulsarMsg) -> {
 			var springMessage = (inboundHeaderMapper != null)
 					? MessageBuilder.createMessage(pulsarMsg.getValue(), inboundHeaderMapper.toSpringHeaders(pulsarMsg))
-					: MessageBuilder.withPayload(pulsarMsg.getValue()).build();
+					: MessageBuilder.createMessage(pulsarMsg.getValue(), createMessageHeaders());
 			messageDrivenChannelAdapter.send(springMessage);
 		});
 
@@ -166,6 +169,14 @@ public class PulsarMessageChannelBinder extends
 		messageDrivenChannelAdapter.setMessageListenerContainer(container);
 
 		return messageDrivenChannelAdapter;
+	}
+
+	private MessageHeaders createMessageHeaders() {
+		MessageHeaderAccessor mutableMessageHeaderAccessor = new MessageHeaderAccessor();
+		if (BuildInformationProvider.isVersionValid()) {
+			mutableMessageHeaderAccessor.setHeader(BinderHeaders.SCST_VERSION, BuildInformationProvider.getVersion());
+		}
+		return mutableMessageHeaderAccessor.getMessageHeaders();
 	}
 
 	@Nullable

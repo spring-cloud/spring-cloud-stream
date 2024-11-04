@@ -26,6 +26,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -576,9 +577,8 @@ public class FunctionConfiguration {
 							// based on information from the correct output binding properties.
 							if (outputCount > 1) {
 								Integer partitionId = determinePartitionForOutputBinding(outputBinding, message);
-								message = MessageBuilder
-									.fromMessage((Message<?>) message)
-									.setHeader(BinderHeaders.PARTITION_HEADER, partitionId).build();
+								message = MessageBuilder.fromMessage((Message<?>) message)
+									.copyHeaders(createMessageHeadersWithVersionInfoAndPartitionId(partitionId)).build();
 							}
 							if (message instanceof Message m && m.getHeaders().get("spring.cloud.stream.sendto.destination") != null) {
 								String destinationName = (String) m.getHeaders().get("spring.cloud.stream.sendto.destination");
@@ -587,12 +587,11 @@ public class FunctionConfiguration {
 								if (logger.isInfoEnabled()) {
 									logger.info("Output message is sent to '" + destinationName + "' destination");
 								}
+								m = createMessageWithVersionInfoInHeader(m);
 								dynamicChannel.send(m);
 							}
 							else {
-								if (!(message instanceof Message)) {
-									message = MessageBuilder.withPayload(message).build();
-								}
+								message = createMessageWithVersionInfoInHeader(message);
 								if (isContextPropagationPresent && outputChannel instanceof FluxMessageChannel) {
 									ContextView reactorContext = StaticMessageHeaderAccessor.getReactorContext((Message) message);
 									try (AutoCloseable autoCloseable = ContextSnapshotHelper.setContext(reactorContext)) {
@@ -629,6 +628,31 @@ public class FunctionConfiguration {
 					}
 				}
 			}
+		}
+
+		private Message<?> createMessageWithVersionInfoInHeader(Object objectMessage) {
+			MessageBuilder<?> messageBuilder;
+			if (objectMessage instanceof Message<?> message) {
+				messageBuilder = MessageBuilder.fromMessage(message);
+			}
+			else {
+				messageBuilder = MessageBuilder.withPayload(objectMessage);
+			}
+			return messageBuilder.copyHeaders(createMessageHeadersWithVersionInfo()).build();
+		}
+
+		private Map<String, Object> createMessageHeadersWithVersionInfo() {
+			Map<String, Object> headers = new HashMap<>();
+			if (BuildInformationProvider.isVersionValid()) {
+				headers.put(BinderHeaders.SCST_VERSION, BuildInformationProvider.getVersion());
+			}
+			return headers;
+		}
+
+		private Map<String, Object> createMessageHeadersWithVersionInfoAndPartitionId(Integer partitionId) {
+			Map<String, Object> headers = createMessageHeadersWithVersionInfo();
+			headers.put(BinderHeaders.PARTITION_HEADER, partitionId);
+			return headers;
 		}
 
 		private Integer determinePartitionForOutputBinding(String outputBinding, Object message) {
