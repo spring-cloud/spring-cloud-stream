@@ -389,17 +389,13 @@ public class FunctionConfiguration {
 						: MessageBuilder.withPayload(value).build();
 	}
 
-	@SuppressWarnings({ "unchecked", "rawtypes" })
-	private static Message sanitize(Message inputMessage) {
-		MessageBuilder builder = MessageBuilder
-				.fromMessage(inputMessage)
-				.removeHeader("spring.cloud.stream.sendto.destination")
-				.removeHeader(MessageUtils.SOURCE_TYPE);
-		if (builder.getHeaders().containsKey(MessageUtils.TARGET_PROTOCOL)) {
-			builder = builder.setHeader(MessageUtils.SOURCE_TYPE, builder.getHeaders().get(MessageUtils.TARGET_PROTOCOL));
-		}
-		builder = builder.removeHeader(MessageUtils.TARGET_PROTOCOL);
-		return builder.build();
+	private static <P> Message<P> sanitize(Message<P> inputMessage) {
+		return MessageBuilder
+			.fromMessage(inputMessage)
+			.removeHeader("spring.cloud.stream.sendto.destination")
+			.setHeader(MessageUtils.SOURCE_TYPE, inputMessage.getHeaders().get(MessageUtils.TARGET_PROTOCOL))
+			.removeHeader(MessageUtils.TARGET_PROTOCOL)
+			.build();
 	}
 
 	private static class FunctionToDestinationBinder implements InitializingBean, ApplicationContextAware {
