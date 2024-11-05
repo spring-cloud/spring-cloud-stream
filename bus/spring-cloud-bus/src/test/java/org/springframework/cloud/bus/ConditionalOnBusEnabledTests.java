@@ -33,6 +33,9 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 public class ConditionalOnBusEnabledTests {
 
+	/**
+	 * {@link ExpectedException} rule for verifying thrown exceptions.
+	 */
 	@Rule
 	public ExpectedException thrown = ExpectedException.none();
 

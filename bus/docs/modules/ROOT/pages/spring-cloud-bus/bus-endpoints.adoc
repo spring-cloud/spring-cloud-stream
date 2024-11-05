@@ -2,9 +2,9 @@
 = Bus Endpoints
 :page-section-summary-toc: 1
 
-Spring Cloud Bus provides two endpoints, `/actuator/busrefresh` and `/actuator/busenv`
+Spring Cloud Bus provides three endpoints, `/actuator/busrefresh`, `/actutator/busshutdown` and `/actuator/busenv`
 that correspond to individual actuator endpoints in Spring Cloud Commons,
-`/actuator/refresh` and `/actuator/env` respectively.
+`/actuator/refresh`, `/actuator/shutdown`, and `/actuator/env` respectively.
 
 [[bus-refresh-endpoint]]
 == Bus Refresh Endpoint
@@ -41,4 +41,33 @@ The `/actuator/busenv` endpoint accepts `POST` requests with the following shape
 	"name": "key1",
 	"value": "value1"
 }
+----
+
+[[bus-shutdown-endpoint]]
+== Bus Shutdown Endpoint
+The `/actuator/busshutdown` shuts down the application https://docs.spring.io/spring-boot/reference/web/graceful-shutdown.html[gracefully].
+
+To expose the `/actuator/busshutdown` endpoint, you need to add following configuration to your
+application:
+
+[source,properties]
+----
+management.endpoints.web.exposure.include=busshutdown
+----
+
+You can make a request to the `busshutdown` endpoint by issuing a `POST` request.
+
+If you would like to target a specific application you can issue a `POST` request to `/busshutdown` and optionally
+specify the bus id:
+
+[source,bash]
+----
+$ curl -X POST http://localhost:8080/actuator/busshutdown
+----
+
+You can also target a specific application instance by specifying the bus id:
+
+[source,bash]
+----
+$ curl -X POST http://localhost:8080/actuator/busshutdown/busid:123
 ----

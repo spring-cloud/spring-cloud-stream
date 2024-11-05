@@ -107,7 +107,7 @@ public class SubtypeModuleTests {
 	}
 
 	/**
-	 * see https://github.com/spring-cloud/spring-cloud-bus/issues/74
+	 * see https://github.com/spring-cloud/spring-cloud-bus/issues/74.
 	 */
 	@Test
 	public void testDeserializeAckRemoteApplicationEventWithKnownType() throws Exception {
@@ -124,7 +124,7 @@ public class SubtypeModuleTests {
 	}
 
 	/**
-	 * see https://github.com/spring-cloud/spring-cloud-bus/issues/74
+	 * see https://github.com/spring-cloud/spring-cloud-bus/issues/74.
 	 */
 	@Test
 	public void testDeserializeAckRemoteApplicationEventWithUnknownType() throws Exception {

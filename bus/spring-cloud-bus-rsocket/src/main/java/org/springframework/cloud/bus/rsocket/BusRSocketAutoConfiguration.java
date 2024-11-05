@@ -26,6 +26,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.cloud.bus.BusAutoConfiguration;
 import org.springframework.cloud.bus.BusProperties;
 import org.springframework.cloud.bus.BusRefreshAutoConfiguration;
+import org.springframework.cloud.bus.BusShutdownAutoConfiguration;
 import org.springframework.cloud.bus.ConditionalOnBusEnabled;
 import org.springframework.cloud.bus.PathServiceMatcherAutoConfiguration;
 import org.springframework.context.annotation.Bean;
@@ -39,7 +40,7 @@ import org.springframework.context.annotation.Configuration;
 @EnableConfigurationProperties(BusRSocketProperties.class)
 @ConditionalOnClass({ RSocket.class, RoutingRSocketRequester.class })
 @AutoConfigureBefore({ BusAutoConfiguration.class, BusRefreshAutoConfiguration.class,
-		PathServiceMatcherAutoConfiguration.class })
+		PathServiceMatcherAutoConfiguration.class, BusShutdownAutoConfiguration.class })
 public class BusRSocketAutoConfiguration {
 
 	@Bean

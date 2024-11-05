@@ -136,7 +136,7 @@ public class PathServiceMatcherTests {
 	}
 
 	/**
-	 * see gh-678
+	 * see gh-678.
 	 */
 	@Test
 	public void forSelfWithMultipleProfiles() {
@@ -147,7 +147,7 @@ public class PathServiceMatcherTests {
 	}
 
 	/**
-	 * see gh-678
+	 * see gh-678.
 	 */
 	@Test
 	public void notForSelfWithMultipleProfiles() {
@@ -158,7 +158,7 @@ public class PathServiceMatcherTests {
 	}
 
 	/**
-	 * see gh-678
+	 * see gh-678.
 	 */
 	@Test
 	public void notForSelfWithMultipleProfilesDifferentPort() {
