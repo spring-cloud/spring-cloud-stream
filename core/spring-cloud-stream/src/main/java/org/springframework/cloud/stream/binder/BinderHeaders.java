@@ -39,8 +39,7 @@ public final class BinderHeaders {
 			IntegrationMessageHeaderAccessor.SEQUENCE_NUMBER, MessageHeaders.CONTENT_TYPE};
 
 	private static final String PREFIX = "scst_";
-	
-	
+
 	/**
 	 * Name of the Message header identifying structure for batch Message headers.
 	 */
