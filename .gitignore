@@ -25,7 +25,6 @@ dump.rdb
 .apt_generated
 artifacts
 **/dependency-reduced-pom.xml
-core/spring-cloud-stream/src/main/java/org/springframework/cloud/stream/utils/GeneratedBuildProperties.java
 
 node
 node_modules
