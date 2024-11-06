@@ -9,6 +9,7 @@
 |spring.cloud.bus.env.enabled | `+++true+++` | Flag to switch off environment change events (default on).
 |spring.cloud.bus.id | `+++application+++` | The identifier for this application instance.
 |spring.cloud.bus.refresh.enabled | `+++true+++` | Flag to switch off refresh events (default on).
+|spring.cloud.bus.shutdown.enabled | `+++true+++` | Flag to switch off shutdown events (default on).
 |spring.cloud.bus.trace.enabled | `+++false+++` | Flag to switch on tracing of acks (default off).
 
 |===
