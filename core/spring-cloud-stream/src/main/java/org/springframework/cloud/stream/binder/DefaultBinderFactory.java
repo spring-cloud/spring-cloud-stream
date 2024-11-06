@@ -438,23 +438,6 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 			binderProducingContext.getBeanFactory().setConversionService(this.context.getBeanFactory().getConversionService());
 		}
 
-		List<Class> sourceClasses = new ArrayList<>();
-		sourceClasses.addAll(Arrays.asList(binderType.getConfigurationClasses()));
-		if (binderProperties.containsKey("spring.main.sources")) {
-			String sources = (String) binderProperties.get("spring.main.sources");
-			if (StringUtils.hasText(sources)) {
-				Stream.of(sources.split(",")).forEach(source -> {
-					try {
-						sourceClasses.add(Thread.currentThread().getContextClassLoader().loadClass(source.trim()));
-					}
-					catch (Exception e) {
-						throw new IllegalStateException("Failed to load class " + source, e);
-					}
-				});
-			}
-		}
-
-		binderProducingContext.register(sourceClasses.toArray(new Class[] {}));
 		MapPropertySource binderPropertySource = new MapPropertySource(configurationName, binderProperties);
 		binderProducingContext.getEnvironment().getPropertySources().addFirst(binderPropertySource);
 		binderProducingContext.setDisplayName(configurationName + "_context");
@@ -493,6 +476,23 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 					Collections.singletonMap("spring.main.web-application-type", "NONE")));
 			}
 		}
+
+		// Register the sources classes to the specific binder context after configuring the environment property sources
+		List<Class> sourceClasses = new ArrayList<>(Arrays.asList(binderType.getConfigurationClasses()));
+		if (binderProperties.containsKey("spring.main.sources")) {
+			String sources = (String) binderProperties.get("spring.main.sources");
+			if (StringUtils.hasText(sources)) {
+				Stream.of(sources.split(",")).forEach(source -> {
+					try {
+						sourceClasses.add(Thread.currentThread().getContextClassLoader().loadClass(source.trim()));
+					}
+					catch (Exception e) {
+						throw new IllegalStateException("Failed to load class " + source, e);
+					}
+				});
+			}
+		}
+		binderProducingContext.register(sourceClasses.toArray(new Class[] {}));
 
 		if (refresh) {
 			if (!useApplicationContextAsParent || "integration".equals(binderType.getDefaultName())) {
