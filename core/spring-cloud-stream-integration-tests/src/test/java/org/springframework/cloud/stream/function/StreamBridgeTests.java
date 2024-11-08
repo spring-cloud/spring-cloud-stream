@@ -85,6 +85,7 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
  * @author Oleg Zhurakousky
  * @author Soby Chacko
  * @author Omer Celik
+ * @author Agustino Lim
  *
  */
 class StreamBridgeTests {
@@ -854,6 +855,21 @@ class StreamBridgeTests {
 
 		assertThat(message).isNotNull();
 		assertThat(new String(message.getPayload())).isEqualTo("JOHN DOE");
+	}
+
+	@Test
+	void test_3033() {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+			TestChannelBinderConfiguration.getCompleteConfiguration(
+				EmptyConfiguration.class)).web(WebApplicationType.NONE).run(
+			"--spring.cloud.stream.source=outputA",
+			"--spring.jmx.enabled=false")) {
+			StreamBridge streamBridge = context.getBean(StreamBridge.class);
+			streamBridge.send("outputA", MessageBuilder.withPayload("A").build());
+
+			OutputDestination output = context.getBean(OutputDestination.class);
+			assertThat(output.receive(1000, "outputA").getHeaders().containsKey("traceparent")).isTrue();
+		}
 	}
 
 	@EnableAutoConfiguration

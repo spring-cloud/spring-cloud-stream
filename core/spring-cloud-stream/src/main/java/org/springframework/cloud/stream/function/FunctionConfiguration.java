@@ -36,6 +36,7 @@ import java.util.function.Supplier;
 import java.util.stream.StreamSupport;
 
 import io.micrometer.context.ContextSnapshotFactory;
+import io.micrometer.observation.ObservationRegistry;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.reactivestreams.Publisher;
@@ -46,6 +47,7 @@ import reactor.util.function.Tuples;
 
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -132,6 +134,7 @@ import org.springframework.util.StringUtils;
  * @author Ivan Shapoval
  * @author Patrik Péter Süli
  * @author Artem Bilan
+ * @author Agustino Lim
  * @since 2.1
  */
 @Lazy(false)
@@ -151,8 +154,10 @@ public class FunctionConfiguration {
 	@Bean
 	public StreamBridge streamBridgeUtils(FunctionCatalog functionCatalog,
 			BindingServiceProperties bindingServiceProperties, ConfigurableApplicationContext applicationContext,
-			@Nullable NewDestinationBindingCallback callback) {
-		return new StreamBridge(functionCatalog, bindingServiceProperties, applicationContext, callback);
+			@Nullable NewDestinationBindingCallback callback,
+			ObjectProvider<ObservationRegistry> observationRegistries) {
+		return new StreamBridge(functionCatalog, bindingServiceProperties, applicationContext, callback,
+				observationRegistries);
 	}
 
 	@Bean
