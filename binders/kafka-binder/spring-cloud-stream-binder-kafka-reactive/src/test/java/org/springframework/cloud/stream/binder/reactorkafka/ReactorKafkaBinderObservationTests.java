@@ -100,7 +100,7 @@ public class ReactorKafkaBinderObservationTests {
 		streamBridge.send("rkbot-in-topic", MessageBuilder.withPayload("data")
 			.build());
 
-		await().timeout(Duration.ofSeconds(10)).untilAsserted(() -> assertThat(SPANS.spans()).hasSize(3));
+		await().timeout(Duration.ofSeconds(10)).untilAsserted(() -> assertThat(SPANS.spans()).hasSize(4));
 		SpansAssert.assertThat(SPANS.spans().stream().map(BraveFinishedSpan::fromBrave).collect(Collectors.toList()))
 			.haveSameTraceId();
 	}

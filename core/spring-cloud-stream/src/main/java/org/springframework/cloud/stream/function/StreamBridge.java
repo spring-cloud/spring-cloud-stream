@@ -29,10 +29,12 @@ import java.util.function.Function;
 
 import io.micrometer.context.ContextExecutorService;
 import io.micrometer.context.ContextSnapshotFactory;
+import io.micrometer.observation.ObservationRegistry;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.springframework.beans.factory.DisposableBean;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionRegistration;
@@ -126,6 +128,7 @@ public final class StreamBridge implements StreamOperations, SmartInitializingSi
 
 	private static final ReentrantLock lock = new ReentrantLock();
 
+	private ObservationRegistry observationRegistry = ObservationRegistry.NOOP;
 	/**
 	 *
 	 * @param functionCatalog instance of {@link FunctionCatalog}
@@ -133,7 +136,7 @@ public final class StreamBridge implements StreamOperations, SmartInitializingSi
 	 * @param applicationContext instance of {@link ConfigurableApplicationContext}
 	 */
 	StreamBridge(FunctionCatalog functionCatalog, BindingServiceProperties bindingServiceProperties,
-		ConfigurableApplicationContext applicationContext, @Nullable NewDestinationBindingCallback destinationBindingCallback) {
+		ConfigurableApplicationContext applicationContext, @Nullable NewDestinationBindingCallback destinationBindingCallback, ObjectProvider<ObservationRegistry> observationRegistries) {
 		this.executorService = Executors.newCachedThreadPool();
 		Assert.notNull(functionCatalog, "'functionCatalog' must not be null");
 		Assert.notNull(applicationContext, "'applicationContext' must not be null");
@@ -158,6 +161,7 @@ public final class StreamBridge implements StreamOperations, SmartInitializingSi
 		};
 		this.functionInvocationHelper = applicationContext.getBean(FunctionInvocationHelper.class);
 		this.streamBridgeFunctionCache = new HashMap<>();
+		observationRegistries.ifAvailable(registry -> this.observationRegistry = registry);
 	}
 
 	@Override
@@ -288,8 +292,12 @@ public final class StreamBridge implements StreamOperations, SmartInitializingSi
 					messageChannel = this.isAsync() ? new ExecutorChannel(this.executorService) : new DirectWithAttributesChannel();
 					((AbstractSubscribableChannel) messageChannel).setApplicationContext(applicationContext);
 					((AbstractSubscribableChannel) messageChannel).setComponentName(destinationName);
+//<<<<<<< HEAD
 
 					BinderWrapper binderWrapper = bindingService.createBinderWrapper(binderName, destinationName, messageChannel.getClass());
+//=======
+					((AbstractSubscribableChannel) messageChannel).registerObservationRegistry(observationRegistry);
+//>>>>>>> a1418283c (GH-3033: Register ObservationRegistry for Dynamic MessageChannels)
 					if (this.destinationBindingCallback != null) {
 						Object extendedProducerProperties = this.bindingService
 								.getExtendedProducerProperties(binderWrapper.binder(), destinationName);
