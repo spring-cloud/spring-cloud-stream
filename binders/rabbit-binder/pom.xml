@@ -2,16 +2,16 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<artifactId>spring-cloud-stream-binder-rabbit-parent</artifactId>
-	<version>4.2.0-SNAPSHOT</version> <!-- Do not remove. Ignore yellow warning -->
+	<version>4.2.0-RC1</version> <!-- Do not remove. Ignore yellow warning -->
 	<packaging>pom</packaging>
 	<parent>
 		<groupId>org.springframework.cloud</groupId>
 		<artifactId>spring-cloud-stream-binders</artifactId>
-		<version>4.2.0-SNAPSHOT</version>
+		<version>4.2.0-RC1</version>
 	</parent>
 	<properties>
 		<java.version>17</java.version>
-		<spring-cloud-function.version>4.2.0-SNAPSHOT</spring-cloud-function.version>
+		<spring-cloud-function.version>4.2.0-RC1</spring-cloud-function.version>
 		<maven-checkstyle-plugin.failsOnError>true</maven-checkstyle-plugin.failsOnError>
         <maven-checkstyle-plugin.failsOnViolation>true
         </maven-checkstyle-plugin.failsOnViolation>
