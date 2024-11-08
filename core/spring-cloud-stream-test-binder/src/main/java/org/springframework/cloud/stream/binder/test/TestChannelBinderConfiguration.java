@@ -20,6 +20,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import io.micrometer.observation.ObservationRegistry;
+
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.cloud.stream.binder.Binder;
@@ -107,4 +109,8 @@ public class TestChannelBinderConfiguration<T> {
 		return new TestChannelBinderProvisioner();
 	}
 
+	@Bean
+	public ObservationRegistry observationRegistry() {
+		return ObservationRegistry.create();
+	}
 }
