@@ -1,7 +1,7 @@
 [[retry-and-dlq-processing]]
 = Retry and Dead Letter Processing
 
-By default, when you configure retry (e.g. `maxAttemts`) and `enableDlq` in a consumer binding, these functions are performed within the binder, with no participation by the listener container or Kafka consumer.
+By default, when you configure retry (e.g. `maxAttempts`) and `enableDlq` in a consumer binding, these functions are performed within the binder, with no participation by the listener container or Kafka consumer.
 
 There are situations where it is preferable to move this functionality to the listener container, such as:
 

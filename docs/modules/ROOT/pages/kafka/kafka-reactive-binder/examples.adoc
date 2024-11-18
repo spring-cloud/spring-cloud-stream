@@ -50,7 +50,7 @@ In these cases, the acknowledgment header is not present.
 
 IMPORTANT: 4.0.2 also provided `reactiveAutoCommit`, but the implementation was incorrect, it behaved similarly to `reactiveAtMostOnce`.
 
-The following is an example of how to use `reaciveAutoCommit`.
+The following is an example of how to use `reactiveAutoCommit`.
 
 [source, java]
 ----
