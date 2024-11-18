@@ -2,7 +2,7 @@
 = RabbitMQ Binder Properties
 
 By default, the RabbitMQ binder uses Spring Boot's `ConnectionFactory`.
-Conseuqently, it supports all Spring Boot configuration options for RabbitMQ.
+Consequently, it supports all Spring Boot configuration options for RabbitMQ.
 (For reference, see the https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#common-application-properties[Spring Boot documentation]).
 RabbitMQ configuration options use the `spring.rabbitmq` prefix.
 

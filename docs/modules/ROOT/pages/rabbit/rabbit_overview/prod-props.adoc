@@ -10,12 +10,12 @@ in the format of `spring.cloud.stream.rabbit.default.<property>=<value>`.
 Also, keep in mind that binding specific property will override its equivalent in the default.
 
 altermateExchange.binding.queue::
-If the exchange does not already exist, and a `name` is provided, bind this queue to the alternate exhange.
+If the exchange does not already exist, and a `name` is provided, bind this queue to the alternate exchange.
 A simple durable queue with no arguments is provisioned; if more sophisticated configuration is required, you must configure and bind the queue yourself.
 +
 Default: `null`
 alternateExchange.binding.routingKey
-If the exchange does not already exist, and a `name` and `queue` is provided, bind the queue to the alternate exhange using this routing key.
+If the exchange does not already exist, and a `name` and `queue` is provided, bind the queue to the alternate exchange using this routing key.
 +
 Default: `#` (for the default `topic` alternate exchange)
 alternateExchange.exists::

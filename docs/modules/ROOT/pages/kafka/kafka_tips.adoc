@@ -101,9 +101,9 @@ By default, the binder retires for a maximum of 3 attempts with a one second ini
 You can change all these configurations as below:
 
 ```
-spring.cloud.stream.bindings.processData-in-0.consumer.maxAtttempts
+spring.cloud.stream.bindings.processData-in-0.consumer.maxAttempts
 spring.cloud.stream.bindings.processData-in-0.consumer.backOffInitialInterval
-spring.cloud.stream.bindings.processData-in-0.consumer.backOffMultipler
+spring.cloud.stream.bindings.processData-in-0.consumer.backOffMultiplier
 spring.cloud.stream.bindings.processData-in-0.consumer.backOffMaxInterval
 ```
 

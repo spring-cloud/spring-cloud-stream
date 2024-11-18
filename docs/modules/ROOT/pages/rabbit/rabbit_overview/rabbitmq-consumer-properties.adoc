@@ -15,7 +15,7 @@ The acknowledge mode.
 Default: `AUTO`.
 anonymousGroupPrefix::
 When the binding has no `group` property, an anonymous, auto-delete queue is bound to the destination exchange.
-The default naming stragegy for such queues results in a queue named `anonymous.<base64 representation of a UUID>`.
+The default naming strategy for such queues results in a queue named `anonymous.<base64 representation of a UUID>`.
 Set this property to change the prefix to something other than the default.
 +
 Default: `anonymous.`.

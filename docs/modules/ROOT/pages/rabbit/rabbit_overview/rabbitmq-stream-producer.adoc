@@ -6,7 +6,7 @@ To enable this feature, you must add the `spring-rabbit-stream` jar to the class
 
 IMPORTANT: The producer properties described above are not supported when you set the `producerType` property to `STREAM_SYNC` or `STREAM_ASYNC`.
 
-To configure the binder to use a stream `ProducerType`, Spring Boot will configure an `Environment` `@Bean` from the applicaation properties.
+To configure the binder to use a stream `ProducerType`, Spring Boot will configure an `Environment` `@Bean` from the application properties.
 You can, optionally, add a customizer to customize the message handler.
 
 [source, java]
