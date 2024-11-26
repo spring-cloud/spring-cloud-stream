@@ -6,7 +6,7 @@
     <parent>
         <artifactId>spring-cloud-stream-schema-registry</artifactId>
         <groupId>org.springframework.cloud</groupId>
-        <version>4.1.4-SNAPSHOT</version>
+        <version>4.1.5-SNAPSHOT</version>
     </parent>
 
     <dependencies>
