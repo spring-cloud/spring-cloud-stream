@@ -23,7 +23,6 @@
 	<build>
 		<sourceDirectory>src/main/asciidoc</sourceDirectory>
 	</build>
-	<!--
 	<dependencies>
 		<dependency>
 			<groupId>${project.groupId}</groupId>
@@ -34,7 +33,6 @@
 			<artifactId>spring-cloud-starter-bus-kafka</artifactId>
 		</dependency>
 	</dependencies>
-	-->
 	<profiles>
 		<profile>
 			<id>docs</id>
