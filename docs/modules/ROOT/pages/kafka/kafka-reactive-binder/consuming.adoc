@@ -53,7 +53,7 @@ spring.cloud.stream.kafka.bindings.lowercase-in-0.consumer.converterBeanName=ful
 ```
 
 `lowercase-in-0` is the input binding name for our `lowercase` function.
-For the outbound (`lowecase-out-0`), we still use the regular `MessagingMessageConverter`.
+For the outbound (`lowercase-out-0`), we still use the regular `MessagingMessageConverter`.
 
 In the `toMessage` implementation above, we receive the raw `ConsumerRecord` (`ReceiverRecord` since we are in a reactive binder context) and then wrap it inside a `Message`.
 Then that message payload which is the `ReceiverRecord` is provided to the user method.

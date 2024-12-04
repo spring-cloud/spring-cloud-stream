@@ -8,5 +8,5 @@ For Spring Boot version 2.2.x, the metrics support is provided through a custom 
 For Spring Boot version 2.3.x, the Kafka Streams metrics support is provided natively through Micrometer.
 
 When accessing metrics through the Boot actuator endpoint, make sure to add `metrics` to the property `management.endpoints.web.exposure.include`.
-Then you can access `/acutator/metrics` to get a list of all the available metrics, which then can be individually accessed through the same URI (`/actuator/metrics/<metric-name>`).
+Then you can access `/actuator/metrics` to get a list of all the available metrics, which then can be individually accessed through the same URI (`/actuator/metrics/<metric-name>`).
 

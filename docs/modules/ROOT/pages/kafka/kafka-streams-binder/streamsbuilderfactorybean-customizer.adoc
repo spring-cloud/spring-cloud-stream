@@ -104,7 +104,7 @@ If you have multiple processors, you want to attach the global state store to th
 == Using StreamsBuilderFactoryBeanConfigurer to register a production exception handler
 
 In the error handling section, we indicated that the binder does not provide a first class way to deal with production exceptions.
-Though that is the case, you can still use the `StreamsBuilderFacotryBean` customizer to register production exception handlers. See below.
+Though that is the case, you can still use the `StreamsBuilderFactoryBean` customizer to register production exception handlers. See below.
 
 ```
 @Bean

@@ -73,7 +73,7 @@ You can override this default by using the `partitionSelectorExpression` or `par
 Since partitions are natively handled by Kafka, no special configuration is needed on the consumer side.
 Kafka allocates partitions across the instances.
 
-NOTE: The partitionCount for a kafka topic may change during runtime (e.g. due to an adminstration task).
+NOTE: The partitionCount for a kafka topic may change during runtime (e.g. due to an administration task).
 The calculated partitions will be different after that (e.g. new partitions will be used then).
 Since 4.0.3 of Spring Cloud Stream runtime changes of partition count will be supported.
 See also parameter 'spring.kafka.producer.properties.metadata.max.age.ms' to configure update interval.
