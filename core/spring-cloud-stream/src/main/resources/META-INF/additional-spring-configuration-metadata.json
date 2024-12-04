@@ -43,10 +43,17 @@
 			"type": "java.lang.String"
 		},
 		{
-			"defaultValue": "none",
+			"defaultValue": "none", 
 			"name": "spring.cloud.stream.default.consumer.concurrency",
 			"description": "Default concurrency settings",
 			"type": "java.lang.String"
+		},
+		{
+			"defaultValue": "true",
+			"name": "spring.cloud.stream.function.autodetect",
+			"description": "Auto-discovers and binds a single function. However, it is primarily used to disable function auto-discovery.",
+			"type": "java.lang.Boolean"
 		}
+		
 	]
 }
