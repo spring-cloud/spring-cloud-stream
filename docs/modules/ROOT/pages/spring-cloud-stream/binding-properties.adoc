@@ -121,7 +121,7 @@ Default: empty.
 retryableExceptions::
 A map of Throwable class names in the key and a boolean in the value.
 Specify those exceptions (and subclasses) that will or won't be retried.
-Also see `defaultRetriable`.
+Also see `defaultRetryable`.
 Example: `spring.cloud.stream.bindings.input.consumer.retryable-exceptions.java.lang.IllegalStateException=false`.
 +
 Default: empty.
@@ -226,7 +226,7 @@ See the consumer property `useNativeDecoding`.
 Default: `false`.
 
 errorChannelEnabled::
-When set to true, if the binder supports asynchroous send results, send failures are sent to an error channel for the destination. See Error Handling for more information.
+When set to true, if the binder supports asynchronous send results, send failures are sent to an error channel for the destination. See Error Handling for more information.
 +
 Default: false.
 
