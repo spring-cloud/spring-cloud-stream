@@ -27,12 +27,16 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.BeansException;
 import org.springframework.boot.context.properties.bind.Bindable;
 import org.springframework.boot.context.properties.bind.Binder;
+import org.springframework.boot.context.properties.bind.PropertySourcesPlaceholdersResolver;
 import org.springframework.boot.context.properties.bind.validation.ValidationBindHandler;
+import org.springframework.boot.context.properties.source.ConfigurationPropertySource;
+import org.springframework.boot.context.properties.source.ConfigurationPropertySources;
 import org.springframework.boot.validation.MessageInterpolatorFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.support.GenericApplicationContext;
+import org.springframework.core.convert.support.GenericConversionService;
 import org.springframework.util.ClassUtils;
 import org.springframework.validation.Errors;
 import org.springframework.validation.Validator;
@@ -95,7 +99,11 @@ public abstract class AbstractExtendedBindingProperties<C, P, T extends BinderSp
 		T extendedBindingPropertiesTarget = (T) BeanUtils
 				.instantiateClass(this.getExtendedPropertiesEntryClass());
 
-		Binder binder = Binder.get(this.applicationContext.getEnvironment());
+		GenericConversionService cs = (GenericConversionService) this.applicationContext.getBeanFactory().getConversionService();
+
+		Iterable<ConfigurationPropertySource> sources = ConfigurationPropertySources.get(this.applicationContext.getEnvironment());
+		PropertySourcesPlaceholdersResolver placeholdersResolver = new PropertySourcesPlaceholdersResolver(this.applicationContext.getEnvironment());
+		Binder binder =  new Binder(sources, placeholdersResolver, cs, null, null);
 
 		if (Jsr303Validator.isJsr303Present(this.applicationContext)) {
 			Jsr303Validator validator = new Jsr303Validator(this.applicationContext);
