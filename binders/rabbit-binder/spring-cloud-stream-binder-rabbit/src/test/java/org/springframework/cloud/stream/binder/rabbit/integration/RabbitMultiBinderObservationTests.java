@@ -84,7 +84,7 @@ public class RabbitMultiBinderObservationTests {
 		// There is a race condition when we already have a reply, but the span in the
 		// Rabbit listener is not closed yet.
 		// parent -> StreamBridge -> RabbitTemplate -> Rabbit Listener -> Consumer
-		await().untilAsserted(() -> assertThat(SPANS.spans()).hasSize(5));
+		await().untilAsserted(() -> assertThat(SPANS.spans()).hasSize(6));
 		SpansAssert.assertThat(SPANS.spans().stream().map(BraveFinishedSpan::fromBrave).collect(Collectors.toList()))
 			.haveSameTraceId();
 	}
