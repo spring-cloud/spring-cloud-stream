@@ -92,7 +92,9 @@ public class BinderHeaderMapper extends AbstractKafkaHeaderMapper {
 	private static final List<String> DEFAULT_TO_STRING_CLASSES =
 			Arrays.asList(
 					"org.springframework.util.MimeType",
-					"org.springframework.http.MediaType"
+					"org.springframework.http.MediaType",
+					"java.time.OffsetDateTime",
+					"java.net.URI"
 			);
 
 	/**
