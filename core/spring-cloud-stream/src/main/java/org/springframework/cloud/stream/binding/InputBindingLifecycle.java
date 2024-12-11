@@ -21,6 +21,7 @@ import java.util.Collection;
 import java.util.Map;
 
 import org.springframework.cloud.stream.binder.Binding;
+import org.springframework.context.SmartLifecycle;
 import org.springframework.util.CollectionUtils;
 
 /**
@@ -49,7 +50,7 @@ public class InputBindingLifecycle extends AbstractBindingLifecycle {
 	 */
 	@Override
 	public int getPhase() {
-		return Integer.MAX_VALUE - 1000;
+		return SmartLifecycle.DEFAULT_PHASE - 2048;
 	}
 
 	@Override
