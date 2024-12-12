@@ -47,6 +47,7 @@ import org.springframework.cloud.stream.binder.BinderSpecificPropertiesProvider;
 import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
 import org.springframework.cloud.stream.binder.ExtendedProducerProperties;
 import org.springframework.cloud.stream.binder.ExtendedPropertiesBinder;
+import org.springframework.cloud.stream.binder.kafka.common.BinderHeaderMapper;
 import org.springframework.cloud.stream.binder.kafka.common.TopicInformation;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaBinderConfigurationProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaConsumerProperties;
@@ -399,6 +400,7 @@ public class ReactorKafkaBinder
 
 			this.senderOptions = opts;
 			this.converter = converter;
+			((MessagingMessageConverter) converter).setHeaderMapper(new BinderHeaderMapper());
 			this.topic = topic;
 			this.results = results;
 		}
