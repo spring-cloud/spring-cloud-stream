@@ -110,6 +110,7 @@ public class TestChannelBinderConfiguration<T> {
 	}
 
 	@Bean
+	@ConditionalOnMissingBean
 	public ObservationRegistry observationRegistry() {
 		return ObservationRegistry.create();
 	}
