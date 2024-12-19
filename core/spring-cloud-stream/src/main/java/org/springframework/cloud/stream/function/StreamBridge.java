@@ -53,6 +53,8 @@ import org.springframework.cloud.stream.binding.NewDestinationBindingCallback;
 import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.cloud.stream.messaging.DirectWithAttributesChannel;
+import org.springframework.context.ApplicationEvent;
+import org.springframework.context.ApplicationListener;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.ResolvableType;
 import org.springframework.integration.channel.AbstractMessageChannel;
@@ -95,7 +97,7 @@ import static org.springframework.cloud.stream.utils.CacheKeyCreatorUtils.create
  *
  */
 @SuppressWarnings("rawtypes")
-public final class StreamBridge implements StreamOperations, SmartInitializingSingleton, DisposableBean {
+public final class StreamBridge implements StreamOperations, SmartInitializingSingleton, DisposableBean, ApplicationListener<ApplicationEvent> {
 
 	private static final String STREAM_BRIDGE_FUNC_NAME = "streamBridge";
 
@@ -135,6 +137,7 @@ public final class StreamBridge implements StreamOperations, SmartInitializingSi
 	 * @param bindingServiceProperties instance of {@link BindingServiceProperties}
 	 * @param applicationContext instance of {@link ConfigurableApplicationContext}
 	 */
+	@SuppressWarnings("serial")
 	StreamBridge(FunctionCatalog functionCatalog, BindingServiceProperties bindingServiceProperties,
 		ConfigurableApplicationContext applicationContext, @Nullable NewDestinationBindingCallback destinationBindingCallback, ObjectProvider<ObservationRegistry> observationRegistries) {
 		this.executorService = Executors.newCachedThreadPool();
@@ -292,12 +295,9 @@ public final class StreamBridge implements StreamOperations, SmartInitializingSi
 					messageChannel = this.isAsync() ? new ExecutorChannel(this.executorService) : new DirectWithAttributesChannel();
 					((AbstractSubscribableChannel) messageChannel).setApplicationContext(applicationContext);
 					((AbstractSubscribableChannel) messageChannel).setComponentName(destinationName);
-//<<<<<<< HEAD
 
 					BinderWrapper binderWrapper = bindingService.createBinderWrapper(binderName, destinationName, messageChannel.getClass());
-//=======
 					((AbstractSubscribableChannel) messageChannel).registerObservationRegistry(observationRegistry);
-//>>>>>>> a1418283c (GH-3033: Register ObservationRegistry for Dynamic MessageChannels)
 					if (this.destinationBindingCallback != null) {
 						Object extendedProducerProperties = this.bindingService
 								.getExtendedProducerProperties(binderWrapper.binder(), destinationName);
@@ -367,6 +367,15 @@ public final class StreamBridge implements StreamOperations, SmartInitializingSi
 			this.executorService = ContextPropagationHelper.wrap(this.executorService);
 		}
 		this.async = async;
+	}
+
+	// see https://github.com/spring-cloud/spring-cloud-stream/issues/3054
+	@Override
+	public void onApplicationEvent(ApplicationEvent event) {
+		// we need to do it by String to avoid cloud-bus and context dependencies
+		if (event.getClass().getName().equals("org.springframework.cloud.bus.event.RefreshRemoteApplicationEvent")) {
+			this.channelCache.clear();
+		}
 	}
 
 	private static final class ContextPropagationHelper {
