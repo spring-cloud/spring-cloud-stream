@@ -48,7 +48,8 @@ While acceptable in some cases, for most cases, it is not, and we need some reco
 
 In the previous section we mentioned that by default messages that resulted in error are effectively logged and dropped. The framework also exposes mechanism for you
 to provide custom error handler (i.e., to send notification or write to database, etc). You can do so by adding `Consumer` that is specifically designed to accept `ErrorMessage` which aside from all the information about the error (e.g., stack trace etc) contains the original message (the one that triggered the error).
-NOTE: Custom error handler is mutually exclusive with framework provided error handlers (i.e., logging and binder error handler - see previous section) to ensure that they do not interfere. 
+
+NOTE: Custom error handler is mutually exclusive with framework provided error handlers (i.e., logging error handler and binder specific error handler - see previous section) to ensure that they do not interfere. When you provide a custom error handler, sending failed messages to DLQ won't work even if it is configured to do so.
 
 [source,java]
 ----
