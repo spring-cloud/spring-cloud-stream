@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021 the original author or authors.
+ * Copyright 2018-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import org.springframework.boot.context.properties.source.ConfigurationPropertyN
 import org.springframework.cloud.stream.config.BindingHandlerAdvise.MappingsProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 
 /**
  * {@link EnableAutoConfiguration Auto-configuration} for extended binding metadata for Kafka Streams.
@@ -32,6 +33,7 @@ import org.springframework.context.annotation.Configuration;
  * @since 3.2
  */
 @Configuration(proxyBeanMethods = false)
+@Lazy(false)
 public class ExtendedBindingHandlerMappingsProviderAutoConfiguration {
 
 	@Bean
