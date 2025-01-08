@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2023 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Stream;
 
@@ -47,6 +48,7 @@ import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.SmartLifecycle;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.core.convert.converter.Converter;
@@ -78,7 +80,7 @@ import org.springframework.util.StringUtils;
  * @author Byungjun You
  * @author Omer Celik
  */
-public class DefaultBinderFactory implements BinderFactory, DisposableBean, ApplicationContextAware {
+public class DefaultBinderFactory implements BinderFactory, DisposableBean, ApplicationContextAware, SmartLifecycle {
 
 	protected final Log logger = LogFactory.getLog(getClass());
 
@@ -93,6 +95,8 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 	private final BinderTypeRegistry binderTypeRegistry;
 
 	private final BinderCustomizer binderCustomizer;
+
+	private final AtomicBoolean running = new AtomicBoolean();
 
 	private volatile ConfigurableApplicationContext context;
 
@@ -142,6 +146,27 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 	public void destroy() {
 		this.binderInstanceCache.values().stream().map(Entry::getValue).forEach(ConfigurableApplicationContext::close);
 		this.defaultBinderForBindingTargetType.clear();
+	}
+
+	@Override
+	public void start() {
+		// This is essentially used when CRaC checkpoint is restored
+		if (this.running.compareAndSet(false, true)) {
+			this.binderInstanceCache.values().stream().map(Entry::getValue).forEach(ConfigurableApplicationContext::start);
+		}
+	}
+
+	@Override
+	public void stop() {
+		// Makes sense for CRaC checkpoint
+		if (this.running.compareAndSet(true, false)) {
+			this.binderInstanceCache.values().stream().map(Entry::getValue).forEach(ConfigurableApplicationContext::stop);
+		}
+	}
+
+	@Override
+	public boolean isRunning() {
+		return this.running.get();
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
