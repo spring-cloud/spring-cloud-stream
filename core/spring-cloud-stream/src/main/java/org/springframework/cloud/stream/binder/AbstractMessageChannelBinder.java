@@ -368,6 +368,14 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 				return doGetExtendedInfo(destination, producerProperties);
 			}
 
+			@SuppressWarnings({ "unchecked", "hiding" })
+			public <P> P getExtension() {
+				if (producerProperties instanceof ExtendedProducerProperties extendedProperties) {
+					return (P) extendedProperties.getExtension();
+				}
+				return null;
+			}
+
 			@Override
 			public boolean isInput() {
 				return false;
@@ -549,6 +557,14 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 				@Override
 				public Map<String, Object> getExtendedInfo() {
 					return doGetExtendedInfo(destination, properties);
+				}
+
+				@SuppressWarnings({ "unchecked", "hiding" })
+				public <P> P getExtension() {
+					if (properties instanceof ExtendedConsumerProperties extendedProperties) {
+						return (P) extendedProperties.getExtension();
+					}
+					return null;
 				}
 
 				@Override
