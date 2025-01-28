@@ -31,6 +31,7 @@ import org.springframework.beans.DirectFieldAccessor;
 import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
+import org.springframework.util.CollectionUtils;
 
 /**
  *
@@ -52,6 +53,7 @@ public class BindingsLifecycleController {
 	@SuppressWarnings("unchecked")
 	public BindingsLifecycleController(List<InputBindingLifecycle> inputBindingLifecycles,
 			List<OutputBindingLifecycle> outputBindingsLifecycles) {
+
 		Assert.notEmpty(inputBindingLifecycles,
 				"'inputBindingLifecycles' must not be null or empty");
 		this.inputBindingLifecycles = inputBindingLifecycles;
@@ -70,6 +72,21 @@ public class BindingsLifecycleController {
 		catch (ClassNotFoundException ex) {
 			// ignore; jackson-datatype-jsr310 not available
 		}
+	}
+
+	/**
+	 * Will return producer or consumer properties for a specified binding. For example, calling `getExtensionProperties("foo-in-0")`
+	 * on Kafka binding  will return an instance of KafkaConsumerProperties.
+	 * @param <T> type of producer or consumer properties for a specified binding
+	 * @param bindingName name of the binding
+	 * @return producer or consumer properties
+	 */
+	public <T> T getExtensionProperties(String bindingName) {
+		List<Binding<?>> locateBinding = BindingsLifecycleController.this.locateBinding(bindingName);
+		if (!CollectionUtils.isEmpty(locateBinding)) {
+			return locateBinding.get(0).getExtension();
+		}
+		return null;
 	}
 
 	/**
