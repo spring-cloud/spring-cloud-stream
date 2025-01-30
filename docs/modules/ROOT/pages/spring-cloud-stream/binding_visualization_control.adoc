@@ -23,6 +23,21 @@ bindingsController.changeState("echo-in-0", State.STOPPED);
 assertThat(binding.isRunning()).isFalse();
 ----
 
+
+Additionally, starting version 4.2 you can also get access to Consumer and Producer configuration properties for more dynamic management of its values. 
+You can request such properties from `BindingsLifecycleController` based on the binding name.
+For example.
+
+[source,java]
+----
+KafkaConsumerProperties properties = controller.getExtensionProperties("log-in-0”);
+RabbitProducerProperties properties = controller.getExtensionProperties(“log-out-0”);
+----
+
+The `getExtensionProperties(..)` operation is defined to ensure you get the proper type of the configuration properties class.
+
+NOTE: Depending on the type of property you change, you may need to re-start the binding for it to take effect (ass seen earlier)
+
 [[actuator]]
 == Actuator
 Since actuator and web are optional, you must first add one of the web dependencies as well as add the actuator dependency manually.
