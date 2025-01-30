@@ -13,7 +13,7 @@ we recommend using functional implementations.
 [[overview]]
 === Overview
 
-Since Spring Cloud Stream v2.1, another alternative for defining _stream handlers_ and _sources_ is to use build-in
+Since Spring Cloud Stream v2.1, another alternative for defining _stream handlers_ and _sources_ is to use built-in
 support for https://cloud.spring.io/spring-cloud-function/[Spring Cloud Function] where they can be expressed as beans of
  type `java.util.function.[Supplier/Function/Consumer]`.
 
