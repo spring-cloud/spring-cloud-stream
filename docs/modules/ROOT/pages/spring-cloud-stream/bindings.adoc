@@ -25,7 +25,7 @@ public class SampleApplication {
 	}
 }
 ----
-The above example looks no different then any vanilla spring-boot application. It defines a single bean of type `Function`
+The above example looks no different than any vanilla spring-boot application. It defines a single bean of type `Function`
 and that is it. So, how does it become a spring-cloud-stream application?
 It becomes a spring-cloud-stream application simply because of the presence of spring-cloud-stream and binder dependencies
 and auto-configuration classes on the classpath, effectively setting the context for your boot application as a spring-cloud-stream application.
