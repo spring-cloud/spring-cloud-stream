@@ -228,9 +228,13 @@ public final class StreamBridge implements StreamOperations, SmartInitializingSi
 			lock.unlock();
 		}
 
-		if (resultMessage == null
-			&& ((Message) messageToSend).getPayload().getClass().getName().equals("org.springframework.kafka.support.KafkaNull")) {
-			resultMessage = messageToSend;
+		if (resultMessage == null) {
+			if (((Message) messageToSend).getPayload().getClass().getName().equals("org.springframework.kafka.support.KafkaNull")) {
+				resultMessage = messageToSend;
+			}
+			else {
+				throw new RuntimeException(functionToInvoke.getClass().getName() + " returned null");
+			}
 		}
 
 		resultMessage = (Message<?>) this.functionInvocationHelper.postProcessResult(resultMessage, null);
