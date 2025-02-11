@@ -37,6 +37,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -57,6 +58,7 @@ import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.cloud.stream.messaging.DirectWithAttributesChannel;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
+import org.springframework.core.codec.CodecException;
 import org.springframework.integration.channel.AbstractMessageChannel;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.config.GlobalChannelInterceptor;
@@ -199,6 +201,23 @@ class StreamBridgeTests {
 			assertThat(output.receive(1000, "outputB").getHeaders().containsKey("scst_partition")).isFalse();
 			assertThat(output.receive(1000, "outputA-out-0").getHeaders().containsKey("scst_partition")).isTrue();
 			assertThat(output.receive(1000, "outputB").getHeaders().containsKey("scst_partition")).isFalse();
+		}
+	}
+
+	// For more context on this test: https://github.com/spring-cloud/spring-cloud-stream/issues/3078
+	@Test
+	void functionInvocationWrapperNullError() {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+			TestChannelBinderConfiguration.getCompleteConfiguration(
+				EmptyConfiguration.class)).web(WebApplicationType.NONE).run(
+			"--spring.cloud.stream.source=outputA",
+			"--spring.jmx.enabled=false")) {
+			StreamBridge streamBridge = context.getBean(StreamBridge.class);
+			var exception = Assertions.assertThrows(RuntimeException.class, () -> streamBridge.send("outputA-out-0",
+				new CodecException("invalidException")
+			));
+
+			assertThat(exception.getMessage()).isEqualTo("org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry$FunctionInvocationWrapper returned null");
 		}
 	}
 
