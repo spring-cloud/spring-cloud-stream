@@ -69,7 +69,7 @@ public class SpelExpressionConverterConfiguration {
 	@Bean
 	@ConfigurationPropertiesBinding
 	@IntegrationConverter
-	public Converter<Object, Expression> spelConverter(ConfigurableApplicationContext context) {
+	public Converter<String, Expression> spelConverter(ConfigurableApplicationContext context) {
 		SpelConverter converter = new SpelConverter();
 		ConfigurableConversionService cs = (ConfigurableConversionService) context.getBeanFactory().getConversionService();
 		if (cs != null) {
@@ -83,7 +83,7 @@ public class SpelExpressionConverterConfiguration {
 	 *
 	 * @author Eric Bottard
 	 */
-	public static class SpelConverter implements Converter<Object, Expression> {
+	public static class SpelConverter implements Converter<String, Expression> {
 
 		private SpelExpressionParser parser = new SpelExpressionParser();
 
@@ -93,12 +93,9 @@ public class SpelExpressionConverterConfiguration {
 		private EvaluationContext evaluationContext;
 
 		@Override
-		public Expression convert(Object source) {
+		public Expression convert(String source) {
 			try {
-				if (!(source instanceof String)) {
-					source = String.valueOf(source); // see https://github.com/spring-cloud/spring-cloud-stream/issues/2989
-				}
-				Expression expression = this.parser.parseExpression((String) source);
+				Expression expression = this.parser.parseExpression(source);
 				if (expression instanceof SpelExpression) {
 					((SpelExpression) expression)
 							.setEvaluationContext(this.evaluationContext);
