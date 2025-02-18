@@ -45,7 +45,7 @@ import org.springframework.integration.config.EnableIntegration;
  * @author Soby Chacko
  * @see TestChannelBinder
  */
-@Configuration
+@Configuration(proxyBeanMethods = false)
 @ConditionalOnMissingBean(Binder.class)
 @Import(BinderFactoryAutoConfiguration.class)
 @EnableIntegration
