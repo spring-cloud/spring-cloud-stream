@@ -31,6 +31,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.PropertySource;
 import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.Expression;
 import org.springframework.expression.PropertyAccessor;
@@ -47,8 +48,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Artem Bilan
  * @author Soby Chacko
  */
-@SpringBootTest(classes = SpelExpressionConverterConfigurationTests.Config.class, properties = {
-		"expression: a.b" })
+@SpringBootTest(classes = SpelExpressionConverterConfigurationTests.Config.class)
 class SpelExpressionConverterConfigurationTests {
 
 	@Autowired
@@ -77,12 +77,22 @@ class SpelExpressionConverterConfigurationTests {
 
 		assertThat(propertyAccessors)
 				.hasAtLeastOneElementOfType(JsonPropertyAccessor.class);
+		
+		Expression numberExpression = this.pojo.getNumberExpression();
+		assertThat(numberExpression.getValue()).isEqualTo(5);
+		
+		Expression booleanExpression = this.pojo.getBooleanExpression();
+		assertThat(booleanExpression.getValue()).isEqualTo(true);
 	}
 
 	@ConfigurationProperties
 	public static class Pojo {
 
 		private Expression expression;
+
+		private Expression numberExpression;
+
+		private Expression booleanExpression;
 
 		public Expression getExpression() {
 			return this.expression;
@@ -92,11 +102,28 @@ class SpelExpressionConverterConfigurationTests {
 			this.expression = expression;
 		}
 
+		public Expression getNumberExpression() {
+			return numberExpression;
+		}
+
+		public void setNumberExpression(Expression numberExpression) {
+			this.numberExpression = numberExpression;
+		}
+
+		public Expression getBooleanExpression() {
+			return booleanExpression;
+		}
+
+		public void setBooleanExpression(Expression booleanExpression) {
+			this.booleanExpression = booleanExpression;
+		}
+
 	}
 
 	@Configuration
 	@EnableAutoConfiguration
 	@EnableConfigurationProperties(Pojo.class)
+	@PropertySource("classpath:/application.yml")
 	public static class Config implements BeanFactoryAware {
 
 		private BeanFactory beanFactory;
