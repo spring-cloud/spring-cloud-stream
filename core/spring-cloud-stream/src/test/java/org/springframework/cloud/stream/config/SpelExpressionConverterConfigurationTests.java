@@ -77,10 +77,10 @@ class SpelExpressionConverterConfigurationTests {
 
 		assertThat(propertyAccessors)
 				.hasAtLeastOneElementOfType(JsonPropertyAccessor.class);
-		
+
 		Expression numberExpression = this.pojo.getNumberExpression();
 		assertThat(numberExpression.getValue()).isEqualTo(5);
-		
+
 		Expression booleanExpression = this.pojo.getBooleanExpression();
 		assertThat(booleanExpression.getValue()).isEqualTo(true);
 	}
