@@ -20,7 +20,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
@@ -106,8 +106,7 @@ public class BindingServiceProperties
 	 * For example; This sets the content-type for the 'input' binding of a Sink
 	 * application: 'spring.cloud.stream.bindings.input.contentType=text/plain'
 	 */
-	private Map<String, BindingProperties> bindings = new ConcurrentSkipListMap(
-		String.CASE_INSENSITIVE_ORDER);
+	private Map<String, BindingProperties> bindings = new ConcurrentHashMap<>();
 
 	/**
 	 * Additional per-binder properties (see {@link BinderProperties}) if more then one
