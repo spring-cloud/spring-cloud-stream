@@ -165,6 +165,7 @@ import org.springframework.util.backoff.FixedBackOff;
  * @author Byungjun You
  * @author Oliver Führer
  * @author Omer Celik
+ * @author Didier Loiseau
  */
 public class KafkaMessageChannelBinder extends
 		// @checkstyle:off
@@ -578,8 +579,14 @@ public class KafkaMessageChannelBinder extends
 	}
 
 	@Override
-	@SuppressWarnings("unchecked")
 	protected MessageProducer createConsumerEndpoint(
+			final ConsumerDestination destination, final String group,
+			final ExtendedConsumerProperties<KafkaConsumerProperties> extendedConsumerProperties) {
+		return createConsumerEndpointCaptureHelper(destination, group, extendedConsumerProperties);
+	}
+
+	@SuppressWarnings("unchecked")
+	private <K, V> MessageProducer createConsumerEndpointCaptureHelper(
 			final ConsumerDestination destination, final String group,
 			final ExtendedConsumerProperties<KafkaConsumerProperties> extendedConsumerProperties) {
 
@@ -589,7 +596,7 @@ public class KafkaMessageChannelBinder extends
 				"DLQ support is not available for anonymous subscriptions");
 		String consumerGroup = anonymous ? "anonymous." + UUID.randomUUID().toString()
 				: group;
-		final ConsumerFactory<?, ?> consumerFactory = createKafkaConsumerFactory(
+		final ConsumerFactory<K, V> consumerFactory = (ConsumerFactory<K, V>) createKafkaConsumerFactory(
 				anonymous, consumerGroup, extendedConsumerProperties, destination.getName() + ".consumer", destination.getName());
 		int partitionCount = extendedConsumerProperties.getInstanceCount()
 				* extendedConsumerProperties.getConcurrency();
@@ -659,9 +666,8 @@ public class KafkaMessageChannelBinder extends
 		}
 		resetOffsetsForAutoRebalance(extendedConsumerProperties, consumerFactory, containerProperties);
 		containerProperties.setAuthExceptionRetryInterval(this.configurationProperties.getAuthorizationExceptionRetryInterval());
-		@SuppressWarnings("rawtypes")
-		final ConcurrentMessageListenerContainer<?, ?> messageListenerContainer = new ConcurrentMessageListenerContainer(
-				consumerFactory, containerProperties) {
+		final ConcurrentMessageListenerContainer<K, V> messageListenerContainer =
+			new ConcurrentMessageListenerContainer<>(consumerFactory, containerProperties) {
 
 			@Override
 			public void stop(Runnable callback) {
@@ -699,8 +705,7 @@ public class KafkaMessageChannelBinder extends
 			}
 		}
 		if (ackMode != null) {
-			if ((extendedConsumerProperties.isBatchMode() && ackMode != ContainerProperties.AckMode.RECORD) ||
-					!extendedConsumerProperties.isBatchMode()) {
+			if (!extendedConsumerProperties.isBatchMode() || ackMode != ContainerProperties.AckMode.RECORD) {
 				messageListenerContainer.getContainerProperties()
 						.setAckMode(ackMode);
 			}
@@ -737,7 +742,7 @@ public class KafkaMessageChannelBinder extends
 			}
 		}
 		else if (!extendedConsumerProperties.isBatchMode() && transMan != null) {
-			messageListenerContainer.setAfterRollbackProcessor(new DefaultAfterRollbackProcessor<>(
+			var afterRollbackProcessor = new DefaultAfterRollbackProcessor<K, V>(
 					(record, exception) -> {
 						MessagingException payload =
 								new MessagingException(((RecordMessageConverter) messageConverter)
@@ -762,7 +767,31 @@ public class KafkaMessageChannelBinder extends
 						}
 					}, createBackOff(extendedConsumerProperties),
 					new KafkaTemplate<>(transMan.getProducerFactory()),
-					extendedConsumerProperties.getExtension().isTxCommitRecovered()));
+					extendedConsumerProperties.getExtension().isTxCommitRecovered());
+			if (!CollectionUtils.isEmpty(extendedConsumerProperties.getRetryableExceptions())) {
+				// mimic AbstractBinder.buildRetryTemplate(properties)’s retryPolicy
+				if (!extendedConsumerProperties.isDefaultRetryable()) {
+					afterRollbackProcessor.defaultFalse(true);
+				}
+				extendedConsumerProperties.getRetryableExceptions()
+						.forEach((t, retry) -> {
+							if (Exception.class.isAssignableFrom(t)) {
+								var ex = t.asSubclass(Exception.class);
+								if (retry) {
+									afterRollbackProcessor.addRetryableExceptions(ex);
+								}
+								else {
+									afterRollbackProcessor.addNotRetryableExceptions(ex);
+								}
+							}
+							else {
+								throw new IllegalArgumentException(
+										"Only Exception types can be configured as retryable-exceptions together with transactions. "
+												+ "Unsupported type: " + t.getName());
+							}
+						});
+			}
+			messageListenerContainer.setAfterRollbackProcessor(afterRollbackProcessor);
 		}
 		else {
 			kafkaMessageDrivenChannelAdapter.setErrorChannel(errorInfrastructure.getErrorChannel());
