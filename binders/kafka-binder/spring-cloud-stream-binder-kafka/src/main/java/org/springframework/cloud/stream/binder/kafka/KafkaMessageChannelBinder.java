@@ -1,5 +1,5 @@
 /*
- * Copyright 2014-2024 the original author or authors.
+ * Copyright 2014-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -222,9 +222,9 @@ public class KafkaMessageChannelBinder extends
 
 	private final Map<String, TopicInformation> topicsInUse = new ConcurrentHashMap<>();
 
-	private final KafkaTransactionManager<byte[], byte[]> transactionManager;
+	private KafkaTransactionManager<byte[], byte[]> transactionManager;
 
-	private final TransactionTemplate transactionTemplate;
+	private TransactionTemplate transactionTemplate;
 
 	private KafkaBindingRebalanceListener rebalanceListener;
 
@@ -278,21 +278,22 @@ public class KafkaMessageChannelBinder extends
 		super(headersToMap(configurationProperties), provisioningProvider,
 				containerCustomizer, sourceCustomizer);
 		this.configurationProperties = configurationProperties;
-		String txId = configurationProperties.getTransaction().getTransactionIdPrefix();
-		if (StringUtils.hasText(txId)) {
-			this.transactionManager = new KafkaTransactionManager<>(getProducerFactory(
-					txId, new ExtendedProducerProperties<>(configurationProperties
-							.getTransaction().getProducer().getExtension()), txId + ".producer", null));
-			this.transactionTemplate = new TransactionTemplate(this.transactionManager);
-		}
-		else {
-			this.transactionManager = null;
-			this.transactionTemplate = null;
-		}
 		this.rebalanceListener = rebalanceListener;
 		this.dlqPartitionFunction = dlqPartitionFunction;
 		this.dlqDestinationResolver = dlqDestinationResolver;
 		this.kafkaAdmin = new KafkaAdmin(new HashMap<>(provisioningProvider.getAdminClientProperties()));
+	}
+
+	@Override
+	protected void onInit() throws Exception {
+		super.onInit();
+		String txId = this.configurationProperties.getTransaction().getTransactionIdPrefix();
+		if (StringUtils.hasText(txId)) {
+			this.transactionManager = new KafkaTransactionManager<>(getProducerFactory(
+				txId, new ExtendedProducerProperties<>(configurationProperties
+					.getTransaction().getProducer().getExtension()), txId + ".producer", null));
+			this.transactionTemplate = new TransactionTemplate(this.transactionManager);
+		}
 	}
 
 	private static String[] headersToMap(
