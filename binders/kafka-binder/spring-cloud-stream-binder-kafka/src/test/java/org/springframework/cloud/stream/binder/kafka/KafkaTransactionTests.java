@@ -71,7 +71,7 @@ class KafkaTransactionTests {
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Test
-	void producerRunsInTx() {
+	void producerRunsInTx() throws Exception {
 		KafkaProperties kafkaProperties = new TestKafkaProperties();
 		kafkaProperties.setBootstrapServers(Collections
 				.singletonList(embeddedKafka.getBrokersAsString()));
@@ -111,6 +111,10 @@ class KafkaTransactionTests {
 		GenericApplicationContext applicationContext = new GenericApplicationContext();
 		applicationContext.refresh();
 		binder.setApplicationContext(applicationContext);
+
+		// Important: Initialize the binder to trigger onInit()
+		binder.afterPropertiesSet();
+
 		DirectChannel channel = new DirectChannel();
 		KafkaProducerProperties extension = new KafkaProducerProperties();
 		ExtendedProducerProperties<KafkaProducerProperties> properties = new ExtendedProducerProperties<>(
