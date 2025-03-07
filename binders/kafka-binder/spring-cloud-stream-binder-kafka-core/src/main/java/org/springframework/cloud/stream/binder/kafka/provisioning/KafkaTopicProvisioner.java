@@ -93,6 +93,7 @@ import org.springframework.util.StringUtils;
  * @author Yi Liu
  * @author Omer Celik
  * @author Byungjun You
+ * @author Roman Akentev
  */
 public class KafkaTopicProvisioner implements
 		// @checkstyle:off
@@ -638,14 +639,13 @@ public class KafkaTopicProvisioner implements
 	public Collection<PartitionInfo> getPartitionInfoForProducer(final String topicName,
 		final ProducerFactory<byte[], byte[]> producerFB,
 		final ExtendedProducerProperties<KafkaProducerProperties> producerProperties) {
-		return getPartitionsForTopic(
-			producerProperties.getPartitionCount(), false, () -> {
-				Producer<byte[], byte[]> producer = producerFB.createProducer();
-				List<PartitionInfo> partitionsFor = producer
-					.partitionsFor(topicName);
-				producer.close();
-				return partitionsFor;
-			}, topicName);
+		return getPartitionsForTopic(producerProperties.getPartitionCount(), false,
+				() -> {
+					try (Producer<byte[], byte[]> producer = producerFB
+							.createProducer()) {
+						return producer.partitionsFor(topicName);
+					}
+				}, topicName);
 	}
 
 	/**
