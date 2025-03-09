@@ -36,6 +36,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 import java.util.stream.IntStream;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -172,7 +173,8 @@ import static org.mockito.Mockito.verify;
  * @author Henryk Konsek
  * @author Gary Russell
  * @author Chris Bono
- * @Author Oliver Führer
+ * @author Oliver Führer
+ * @author Didier Loiseau
  */
 @EmbeddedKafka(count = 1, controlledShutdown = true, topics = "error.pollableDlq.group-pcWithDlq", brokerProperties = {"transaction.state.log.replication.factor=1",
 		"transaction.state.log.min.isr=1"})
@@ -1053,8 +1055,38 @@ class KafkaBinderTests extends
 	}
 
 	@Test
+	void dlqAndRetryWithNonRetryableException() throws Exception {
+		testDlqGuts(true, null, null, false, false, true, true);
+	}
+
+	@Test
+	void dlqAndRetryDefaultFalse() throws Exception {
+		testDlqGuts(true, null, null, false, false, false, false);
+	}
+
+	@Test
+	void dlqAndRetryDefaultFalseWithRetryableException() throws Exception {
+		testDlqGuts(true, null, null, false, false, false, true);
+	}
+
+	@Test
 	void dlqAndRetryTransactional() throws Exception {
 		testDlqGuts(true, null, null, true, false);
+	}
+
+	@Test
+	void dlqAndRetryWithNonRetryableExceptionTransactional() throws Exception {
+		testDlqGuts(true, null, null, true, false, true, true);
+	}
+
+	@Test
+	void dlqAndRetryDefaultFalseTransactional() throws Exception {
+		testDlqGuts(true, null, null, true, false, false, false);
+	}
+
+	@Test
+	void dlqAndRetryDefaultFalseWithRetryableExceptionTransactional() throws Exception {
+		testDlqGuts(true, null, null, true, false, false, true);
 	}
 
 	@Test
@@ -1084,6 +1116,14 @@ class KafkaBinderTests extends
 
 	private void testDlqGuts(boolean withRetry, HeaderMode headerMode, Integer dlqPartitions,
 			boolean transactional, boolean useDlqDestResolver) throws Exception {
+		testDlqGuts(withRetry, headerMode, dlqPartitions, transactional,
+				useDlqDestResolver, true, false);
+	}
+
+	private void testDlqGuts(boolean withRetry, HeaderMode headerMode,
+			Integer dlqPartitions, boolean transactional, boolean useDlqDestResolver,
+			boolean defaultRetryable, boolean useConfiguredRetryableException)
+			throws Exception {
 
 		int expectedDlqPartition = dlqPartitions == null ? 0 : dlqPartitions - 1;
 		KafkaBinderConfigurationProperties binderConfig = createConfigurationProperties();
@@ -1128,12 +1168,18 @@ class KafkaBinderTests extends
 		consumerProperties.getExtension().setDlqPartitions(dlqPartitions);
 		consumerProperties.setConcurrency(2);
 		consumerProperties.populateBindingName("foobar");
+		consumerProperties.setDefaultRetryable(defaultRetryable);
+		consumerProperties.getRetryableExceptions().put(NumberFormatException.class,
+				!defaultRetryable);
 
 		DirectChannel moduleInputChannel = createBindableChannel("input",
 				createConsumerBindingProperties(consumerProperties));
 
 		var dlqChannel = new QueueChannel();
-		var handler = new FailingInvocationCountingMessageHandler();
+		var handler = new FailingInvocationCountingMessageHandler(
+				() -> useConfiguredRetryableException
+						? new NumberFormatException("fail")
+						: new RuntimeException("fail"));
 		moduleInputChannel.subscribe(handler);
 
 		long uniqueBindingId = System.currentTimeMillis();
@@ -1253,8 +1299,10 @@ class KafkaBinderTests extends
 					.get(KafkaHeaders.RECEIVED_PARTITION)).isEqualTo(expectedDlqPartition);
 		}
 		else if (!HeaderMode.none.equals(headerMode)) {
+			boolean shouldHaveRetried = defaultRetryable != useConfiguredRetryableException;
 			assertThat(handler.getInvocationCount())
-					.isEqualTo(consumerProperties.getMaxAttempts());
+					.isEqualTo(
+							shouldHaveRetried ? consumerProperties.getMaxAttempts() : 1);
 
 			assertThat(receivedMessage.getHeaders()
 					.get(KafkaMessageChannelBinder.X_ORIGINAL_TOPIC))
@@ -4090,14 +4138,27 @@ class KafkaBinderTests extends
 	private final class FailingInvocationCountingMessageHandler
 			implements MessageHandler {
 
+		private final Supplier<? extends RuntimeException> exceptionProvider;
+
 		private volatile int invocationCount;
 
 		private final LinkedHashMap<Long, Message<?>> receivedMessages = new LinkedHashMap<>();
 
 		private final CountDownLatch latch;
 
-		private FailingInvocationCountingMessageHandler(int latchSize) {
+		private FailingInvocationCountingMessageHandler(int latchSize,
+				Supplier<? extends RuntimeException> exceptionProvider) {
 			latch = new CountDownLatch(latchSize);
+			this.exceptionProvider = exceptionProvider;
+		}
+
+		private FailingInvocationCountingMessageHandler(
+				Supplier<? extends RuntimeException> exceptionProvider) {
+			this(1, exceptionProvider);
+		}
+
+		private FailingInvocationCountingMessageHandler(int latchSize) {
+			this(latchSize, () -> new RuntimeException("fail"));
 		}
 
 		private FailingInvocationCountingMessageHandler() {
@@ -4115,7 +4176,7 @@ class KafkaBinderTests extends
 				receivedMessages.put(offset, message);
 				latch.countDown();
 			}
-			throw new RuntimeException("fail");
+			throw exceptionProvider.get();
 		}
 
 		public LinkedHashMap<Long, Message<?>> getReceivedMessages() {
