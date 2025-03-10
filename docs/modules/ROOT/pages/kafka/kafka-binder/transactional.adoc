@@ -51,3 +51,56 @@ public static class Sender {
 If you wish to synchronize producer-only transactions with those from some other transaction manager, use a `ChainedTransactionManager`.
 
 IMPORTANT: If you deploy multiple instances of your application, each instance needs a unique `transactionIdPrefix`.
+
+== Exception Retry Behavior in Kafka Transactions
+
+=== Configuring Transaction Rollback Retry Behavior
+
+When processing messages within a Kafka transaction, you can configure which exceptions should be retried after a transaction rollback using the `defaultRetryable` property and the `retryableExceptions` map.
+
+=== Default Retry Behavior
+
+The `DefaultAfterRollbackProcessor` determines which exceptions trigger a retry after a transaction rollback.
+By default, all exceptions will be retried, but you can modify this behavior:
+
+[source,yaml]
+----
+spring:
+ cloud:
+   stream:
+     kafka:
+       bindings:
+         <binding-name>:
+           consumer:
+             defaultRetryable: false  # Change default to NOT retry exceptions
+----
+
+When `defaultRetryable` is set to `false`, the `DefaultAfterRollbackProcessor` will be configured with `defaultFalse(true)`, meaning exceptions will not be retried unless explicitly configured as retryable.
+
+=== Exception-Specific Configuration
+
+For fine-grained control, you can specify retry behavior for individual exception types:
+
+[source,yaml]
+----
+spring:
+ cloud:
+   stream:
+     kafka:
+       bindings:
+         <binding-name>:
+           consumer:
+             retryableExceptions:
+               java.lang.IllegalStateException: true    # Always retry this exception
+               java.lang.IllegalArgumentException: false  # Never retry this exception
+----
+
+The `DefaultAfterRollbackProcessor` will use `addRetryableExceptions()` for exceptions marked as `true` and `addNotRetryableExceptions()` for those marked as `false`.
+These exception-specific configurations take precedence over the default behavior.
+
+=== Implementation Details
+
+* Only exception types (subclasses of `Exception`) can be configured in `retryableExceptions` when using transactions
+* An `IllegalArgumentException` will be thrown if non-Exception types are specified
+* The `DefaultAfterRollbackProcessor` is only configured when transactions are enabled and batch mode is disabled
+* This configuration ensures that the transaction retry behavior is consistent with non-transactional retry handling
