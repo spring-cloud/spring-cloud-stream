@@ -118,7 +118,7 @@ If your application uses the branching feature and has multiple output bindings,
 Once again, if the binder is capable of inferring the `Serde` types, you don't need to do this configuration.
 
 If you don't want the native encoding provided by Kafka, but want to use the framework provided message conversion, then you need to explicitly disable native encoding since since native encoding is the default.
-For e.g. if you have the same BiFunction processor as above, then `spring.cloud.stream.bindings.process-out-0.producer.nativeEncoding: false`
+For e.g. if you have the same BiFunction processor as above, then `spring.cloud.stream.bindings.process-out-0.producer.useNativeEncoding: false`
 You need to disable native encoding for all the output individually in the case of branching. Otherwise, native encoding will still be applied for those you don't disable.
 
 When conversion is done by Spring Cloud Stream, by default, it will use `application/json` as the content type and use an appropriate json message converter.
