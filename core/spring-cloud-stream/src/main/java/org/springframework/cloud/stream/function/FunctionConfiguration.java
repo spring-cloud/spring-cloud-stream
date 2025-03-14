@@ -29,6 +29,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
@@ -614,6 +615,13 @@ public class FunctionConfiguration {
 				});
 			}
 			else {
+				boolean isSplitMode = outputBindingNames.stream()
+					.map(bindingName -> this.serviceProperties.getBindings().get(bindingName).getProducer())
+					.filter(Objects::nonNull)
+					.anyMatch(ProducerProperties::isSplitMode);
+
+				function.setEnableSplitting(isSplitMode);
+
 				String outputDestinationName = this.determineOutputDestinationName(0, bindableProxyFactory, function.isConsumer());
 				if (!ObjectUtils.isEmpty(inputBindingNames)) {
 					String inputDestinationName = inputBindingNames.iterator().next();

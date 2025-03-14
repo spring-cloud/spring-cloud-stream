@@ -83,6 +83,8 @@ public class ProducerProperties {
 
 	private boolean dynamicPartitionUpdatesEnabled = false;
 
+	private boolean splitMode = false;
+
 	public String getBindingName() {
 		return bindingName;
 	}
@@ -213,6 +215,14 @@ public class ProducerProperties {
 	 */
 	public void setDynamicPartitionUpdatesEnabled(boolean enabled) {
 		this.dynamicPartitionUpdatesEnabled = enabled;
+	}
+
+	public boolean isSplitMode() {
+		return splitMode;
+	}
+
+	public void setSplitMode(boolean splitMode) {
+		this.splitMode = splitMode;
 	}
 
 	static class ExpressionSerializer extends JsonSerializer<Expression> {
