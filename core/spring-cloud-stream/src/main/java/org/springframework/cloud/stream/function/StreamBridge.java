@@ -18,7 +18,7 @@ package org.springframework.cloud.stream.function;
 
 import java.lang.reflect.Type;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -163,7 +163,7 @@ public final class StreamBridge implements StreamOperations, SmartInitializingSi
 			}
 		};
 		this.functionInvocationHelper = applicationContext.getBean(FunctionInvocationHelper.class);
-		this.streamBridgeFunctionCache = new HashMap<>();
+		this.streamBridgeFunctionCache = new ConcurrentHashMap<>();
 		observationRegistries.ifAvailable(registry -> this.observationRegistry = registry);
 	}
 
@@ -198,15 +198,7 @@ public final class StreamBridge implements StreamOperations, SmartInitializingSi
 		ProducerProperties producerProperties = this.bindingServiceProperties.getProducerProperties(bindingName);
 		MessageChannel messageChannel = this.resolveDestination(bindingName, producerProperties, binderName);
 
-		Function functionToInvoke;
-		lock.lock();
-		try {
-			functionToInvoke = this.getStreamBridgeFunction(outputContentType.toString(), producerProperties);
-		}
-		finally {
-			lock.unlock();
-		}
-
+		Function functionToInvoke = this.getStreamBridgeFunction(outputContentType.toString(), producerProperties);
 
 		if (producerProperties != null && producerProperties.isPartitioned()) {
 			functionToInvoke = new PartitionAwareFunctionWrapper(functionToInvoke, this.applicationContext, producerProperties);
@@ -253,15 +245,12 @@ public final class StreamBridge implements StreamOperations, SmartInitializingSi
 
 	private FunctionInvocationWrapper getStreamBridgeFunction(String outputContentType, ProducerProperties producerProperties) {
 		int streamBridgeFunctionKey = this.hashProducerProperties(producerProperties, outputContentType);
-		if (this.streamBridgeFunctionCache.containsKey(streamBridgeFunctionKey)) {
-			return this.streamBridgeFunctionCache.get(streamBridgeFunctionKey);
-		}
-		else {
+
+		return this.streamBridgeFunctionCache.computeIfAbsent(streamBridgeFunctionKey, key -> {
 			FunctionInvocationWrapper functionToInvoke = this.functionCatalog.lookup(STREAM_BRIDGE_FUNC_NAME, outputContentType.toString());
-			this.streamBridgeFunctionCache.put(streamBridgeFunctionKey, functionToInvoke);
 			functionToInvoke.setSkipOutputConversion(producerProperties.isUseNativeEncoding());
 			return functionToInvoke;
-		}
+		});
 	}
 
 	@Override
