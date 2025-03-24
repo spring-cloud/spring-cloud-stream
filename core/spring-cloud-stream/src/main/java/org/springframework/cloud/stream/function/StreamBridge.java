@@ -18,9 +18,9 @@ package org.springframework.cloud.stream.function;
 
 import java.lang.reflect.Type;
 import java.util.Collections;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
