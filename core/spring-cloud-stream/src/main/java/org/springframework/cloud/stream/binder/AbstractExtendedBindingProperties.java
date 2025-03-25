@@ -61,6 +61,8 @@ public abstract class AbstractExtendedBindingProperties<C, P, T extends BinderSp
 
 	private ConfigurableApplicationContext applicationContext = new GenericApplicationContext();
 
+	private volatile Binder propertiesBinder;
+
 	public void setBindings(Map<String, T> bindings) {
 		this.bindings.putAll(bindings);
 	}
@@ -83,6 +85,10 @@ public abstract class AbstractExtendedBindingProperties<C, P, T extends BinderSp
 	public void setApplicationContext(ApplicationContext applicationContext)
 			throws BeansException {
 		this.applicationContext = (ConfigurableApplicationContext) applicationContext;
+		GenericConversionService cs = (GenericConversionService) this.applicationContext.getBeanFactory().getConversionService();
+		Iterable<ConfigurationPropertySource> sources = ConfigurationPropertySources.get(this.applicationContext.getEnvironment());
+		PropertySourcesPlaceholdersResolver placeholdersResolver = new PropertySourcesPlaceholdersResolver(this.applicationContext.getEnvironment());
+		this.propertiesBinder =  new Binder(sources, placeholdersResolver, cs, null, null);
 	}
 
 	/*
@@ -99,19 +105,13 @@ public abstract class AbstractExtendedBindingProperties<C, P, T extends BinderSp
 		T extendedBindingPropertiesTarget = (T) BeanUtils
 				.instantiateClass(this.getExtendedPropertiesEntryClass());
 
-		GenericConversionService cs = (GenericConversionService) this.applicationContext.getBeanFactory().getConversionService();
-
-		Iterable<ConfigurationPropertySource> sources = ConfigurationPropertySources.get(this.applicationContext.getEnvironment());
-		PropertySourcesPlaceholdersResolver placeholdersResolver = new PropertySourcesPlaceholdersResolver(this.applicationContext.getEnvironment());
-		Binder binder =  new Binder(sources, placeholdersResolver, cs, null, null);
-
 		if (Jsr303Validator.isJsr303Present(this.applicationContext)) {
 			Jsr303Validator validator = new Jsr303Validator(this.applicationContext);
-			binder.bind(this.getDefaultsPrefix(),
+			this.propertiesBinder.bind(this.getDefaultsPrefix(),
 					Bindable.ofInstance(extendedBindingPropertiesTarget), new ValidationBindHandler(validator));
 		}
 		else {
-			binder.bind(this.getDefaultsPrefix(),
+			this.propertiesBinder.bind(this.getDefaultsPrefix(),
 					Bindable.ofInstance(extendedBindingPropertiesTarget));
 		}
 		this.bindings.put(binding, extendedBindingPropertiesTarget);
