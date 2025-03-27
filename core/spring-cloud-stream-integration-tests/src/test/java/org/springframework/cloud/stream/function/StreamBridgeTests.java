@@ -276,7 +276,7 @@ class StreamBridgeTests {
 
 	@SuppressWarnings("rawtypes")
 	@Test
-	void test_2785() throws Exception {
+	void test_2783() throws Exception {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(
 				EmptyConfiguration.class)).web(WebApplicationType.NONE).run(
@@ -301,6 +301,33 @@ class StreamBridgeTests {
 			assertThat(functionCache.size()).isEqualTo(2);
 			streamBridge.send("outputD-out-0", MessageBuilder.withPayload("A").build());
 			assertThat(functionCache.size()).isEqualTo(3);
+		}
+	}
+
+	@Test
+	void test_3105() throws Exception {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+			TestChannelBinderConfiguration.getCompleteConfiguration(
+				EmptyConfiguration.class)).web(WebApplicationType.NONE).run(
+			"--spring.cloud.stream.source=outputA;outputB",
+			"--spring.cloud.stream.bindings.outputA-out-0.producer.partition-count=2",
+			"--spring.cloud.stream.bindings.outputA-out-0.content-type=application/json",
+
+			"--spring.cloud.stream.bindings.outputB-out-0.producer.partition-count=8",
+			"--spring.cloud.stream.bindings.outputB-out-0.content-type=application/json",
+			"--spring.cloud.stream.bindings.outputB-out-0.producer.partition-key-expression=headers['partitionKey']",
+
+			"--spring.jmx.enabled=false")) {
+			StreamBridge streamBridge = context.getBean(StreamBridge.class);
+			Field field =  ReflectionUtils.findField(StreamBridge.class, "streamBridgeFunctionCache");
+			Objects.requireNonNull(field).setAccessible(true);
+
+
+			streamBridge.send("outputB-out-0", MessageBuilder.withPayload("outputB").setHeader("partitionKey", "oleg").build());
+			streamBridge.send("outputA-out-0", MessageBuilder.withPayload("outputA").build());
+			/*
+			 * Nothing to assert other than this test should not fail due to the cache collision described in GH-3105
+			 */
 		}
 	}
 
