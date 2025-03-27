@@ -23,6 +23,9 @@ import jakarta.validation.constraints.NotNull;
 
 import org.springframework.expression.Expression;
 
+import com.fasterxml.jackson.annotation.JsonGetter;
+import com.fasterxml.jackson.annotation.JsonValue;
+
 /**
  * Extended producer properties for Kafka binder.
  *
@@ -186,6 +189,14 @@ public class KafkaProducerProperties {
 	 */
 	public Expression getMessageKeyExpression() {
 		return this.messageKeyExpression;
+	}
+	
+	@JsonGetter("messageKeyExpression")
+	public String getTheMessageKeyExpression() {
+		if (this.messageKeyExpression != null) {
+			return this.messageKeyExpression.getExpressionString();
+		}
+		return null;
 	}
 
 	public void setMessageKeyExpression(Expression messageKeyExpression) {
