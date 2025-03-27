@@ -248,6 +248,10 @@ public final class StreamBridge implements StreamOperations, SmartInitializingSi
 				+ Boolean.hashCode(producerProperties.isPartitioned())
 				+ producerProperties.getPartitionCount();
 
+		if (producerProperties.getPartitionKeyExpression() != null && producerProperties.getBindingName() != null) {
+			hash += producerProperties.getBindingName().hashCode();
+		}
+
 		return hash;
 	}
 
