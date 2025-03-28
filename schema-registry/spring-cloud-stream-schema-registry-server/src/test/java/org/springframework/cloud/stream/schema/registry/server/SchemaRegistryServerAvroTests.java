@@ -69,7 +69,7 @@ import static org.springframework.test.annotation.DirtiesContext.ClassMode.AFTER
  * @author Christian Tzolov
  * @author Soby Chacko
  */
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT, properties = "spring.main.allow-bean-definition-overriding=true")
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT, properties = {"spring.main.allow-bean-definition-overriding=true", "server.port=8991"})
 @DirtiesContext(classMode = AFTER_EACH_TEST_METHOD)
 class SchemaRegistryServerAvroTests {
 
@@ -246,7 +246,7 @@ class SchemaRegistryServerAvroTests {
 
 	//@Test(expected = HttpClientErrorException.NotFound.class)
 	public void testSchemaNotfound() {
-		this.client.getForEntity("http://localhost:8990/foo/avro/v42", Schema.class);
+		this.client.getForEntity("http://localhost:8991/foo/avro/v42", Schema.class);
 	}
 
 	@Test
