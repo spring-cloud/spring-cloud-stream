@@ -27,8 +27,13 @@ import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.springframework.beans.BeanUtils;
+import org.springframework.beans.BeansException;
 import org.springframework.beans.DirectFieldAccessor;
 import org.springframework.cloud.stream.binder.Binding;
+import org.springframework.cloud.stream.function.BindableFunctionProxyFactory;
+import org.springframework.cloud.stream.function.StreamFunctionProperties;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.CollectionUtils;
@@ -42,13 +47,15 @@ import org.springframework.util.CollectionUtils;
  * @author Soby Chacko
  * @since 3.x
  */
-public class BindingsLifecycleController {
+public class BindingsLifecycleController implements ApplicationContextAware {
 
 	private final List<InputBindingLifecycle> inputBindingLifecycles;
 
 	private final List<OutputBindingLifecycle> outputBindingsLifecycles;
 
 	private final ObjectMapper objectMapper;
+
+	private ApplicationContext applicationContext;
 
 	@SuppressWarnings("unchecked")
 	public BindingsLifecycleController(List<InputBindingLifecycle> inputBindingLifecycles,
@@ -72,6 +79,28 @@ public class BindingsLifecycleController {
 		catch (ClassNotFoundException ex) {
 			// ignore; jackson-datatype-jsr310 not available
 		}
+	}
+
+	public void defineBinding(String bindingName, boolean isInputBinding) {
+		BindableFunctionProxyFactory bindingProxyFactory = new BindableFunctionProxyFactory(bindingName,
+				isInputBinding ? 1 : 0, isInputBinding ? 0 : 1, this.applicationContext.getBean(StreamFunctionProperties.class));
+		bindingProxyFactory.setApplicationContext(this.applicationContext);
+
+		bindingProxyFactory.afterPropertiesSet();
+		BindingService bindingService = this.applicationContext.getBean(BindingService.class);
+
+
+		AbstractBindingLifecycle bindingLifecycle;
+		if (isInputBinding) {
+			bindingProxyFactory.createAndBindInputs(bindingService);
+			bindingLifecycle = this.applicationContext.getBean(InputBindingLifecycle.class);
+		}
+		else {
+			bindingProxyFactory.createAndBindOutputs(bindingService);
+			bindingLifecycle = this.applicationContext.getBean(OutputBindingLifecycle.class);
+		}
+
+		bindingLifecycle.startBindable(bindingProxyFactory);
 	}
 
 	/**
@@ -171,6 +200,11 @@ public class BindingsLifecycleController {
 	public List<Binding<?>> queryState(String name) {
 		Assert.notNull(name, "'name' must not be null");
 		return this.locateBinding(name);
+	}
+
+	@Override
+	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+		this.applicationContext = applicationContext;
 	}
 
 	/**

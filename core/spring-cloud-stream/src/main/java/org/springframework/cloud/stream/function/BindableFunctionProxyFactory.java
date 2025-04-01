@@ -96,6 +96,10 @@ public class BindableFunctionProxyFactory extends BindableProxyFactory implement
 		this.functionExist = functionExist;
 	}
 
+	public String toString() {
+		return "Bindable: " + this.functionDefinition;
+	}
+
 	@Override
 	public void afterPropertiesSet() {
 		populateBindingTargetFactories(beanFactory);
@@ -125,7 +129,7 @@ public class BindableFunctionProxyFactory extends BindableProxyFactory implement
 		return true;
 	}
 
-	protected String getFunctionDefinition() {
+	public String getFunctionDefinition() {
 		return this.isFunctionExist() ? this.functionDefinition : null;
 	}
 
@@ -224,6 +228,7 @@ public class BindableFunctionProxyFactory extends BindableProxyFactory implement
 	@Override
 	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
 		this.context = (GenericApplicationContext) applicationContext;
+		this.setBeanFactory(this.context.getBeanFactory());
 	}
 
 	public boolean isFunctionExist() {
