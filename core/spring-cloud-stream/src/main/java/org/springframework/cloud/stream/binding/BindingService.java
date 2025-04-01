@@ -72,8 +72,6 @@ import static org.springframework.cloud.stream.utils.CacheKeyCreatorUtils.getBin
  */
 public class BindingService {
 
-//	private final CustomValidatorBean validator;
-
 	private final Log log = LogFactory.getLog(BindingService.class);
 
 	private final BindingServiceProperties bindingServiceProperties;
@@ -97,8 +95,6 @@ public class BindingService {
 			BinderFactory binderFactory, TaskScheduler taskScheduler, ObjectMapper objectMapper) {
 		this.bindingServiceProperties = bindingServiceProperties;
 		this.binderFactory = binderFactory;
-//		this.validator = new CustomValidatorBean();
-//		this.validator.afterPropertiesSet();
 		this.taskScheduler = taskScheduler;
 		this.objectMapper = objectMapper;
 	}

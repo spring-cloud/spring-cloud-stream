@@ -19,6 +19,7 @@ package org.springframework.cloud.stream.binding;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cloud.stream.function.BindableFunctionProxyFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.SmartLifecycle;
 
@@ -36,7 +37,7 @@ public abstract class AbstractBindingLifecycle implements SmartLifecycle {
 
 	final BindingService bindingService;
 
-	private final Map<String, Bindable> bindables;
+	final Map<String, Bindable> bindables;
 
 	@Autowired
 	private ApplicationContext context;
@@ -88,6 +89,13 @@ public abstract class AbstractBindingLifecycle implements SmartLifecycle {
 		if (callback != null) {
 			callback.run();
 		}
+	}
+
+	public void startBindable(Bindable bindable) {
+		if (bindable instanceof BindableFunctionProxyFactory functionProxy) {
+			this.bindables.put(functionProxy.getFunctionDefinition(), bindable);
+		}
+		this.doStartWithBindable(bindable);
 	}
 
 	abstract void doStartWithBindable(Bindable bindable);
