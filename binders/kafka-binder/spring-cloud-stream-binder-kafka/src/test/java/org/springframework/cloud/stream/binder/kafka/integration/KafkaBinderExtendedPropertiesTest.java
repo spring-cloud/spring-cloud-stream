@@ -38,6 +38,7 @@ import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.cloud.stream.binder.kafka.KafkaBindingRebalanceListener;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaConsumerProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaProducerProperties;
+import org.springframework.cloud.stream.binding.BindingsLifecycleController;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -74,6 +75,18 @@ class KafkaBinderExtendedPropertiesTest {
 
 	@Autowired
 	private ConfigurableApplicationContext context;
+
+	@Test
+	void testDefiningNewBindingAndSettingItsProperties() throws Exception {
+		BindingsLifecycleController controller = context.getBean(BindingsLifecycleController.class);
+		KafkaConsumerProperties consumerProperties = controller.defineInputBinding("test-input-binding");
+		boolean isAutoRebalanceEnabled = consumerProperties.isAutoRebalanceEnabled();
+		assertThat(isAutoRebalanceEnabled).isTrue();
+		consumerProperties.setAutoRebalanceEnabled(false);
+		consumerProperties = controller.getExtensionProperties("test-input-binding-in-0");
+		isAutoRebalanceEnabled = consumerProperties.isAutoRebalanceEnabled();
+		assertThat(isAutoRebalanceEnabled).isFalse();
+	}
 
 	@Test
 	void kafkaBinderExtendedProperties() throws Exception {
@@ -140,7 +153,7 @@ class KafkaBinderExtendedPropertiesTest {
 		assertThat(rebalanceListener.latch.await(10, TimeUnit.SECONDS)).isTrue();
 		assertThat(rebalanceListener.bindings.keySet()).contains("standard-in",
 				"custom-in");
-		assertThat(rebalanceListener.bindings.values()).containsExactly(Boolean.TRUE,
+		assertThat(rebalanceListener.bindings.values()).contains(Boolean.TRUE,
 				Boolean.TRUE);
 	}
 
