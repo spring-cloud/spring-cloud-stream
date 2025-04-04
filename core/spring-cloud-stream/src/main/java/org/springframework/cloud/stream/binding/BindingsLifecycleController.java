@@ -81,26 +81,30 @@ public class BindingsLifecycleController implements ApplicationContextAware {
 		}
 	}
 
-	public void defineBinding(String bindingName, boolean isInputBinding) {
-		BindableFunctionProxyFactory bindingProxyFactory = new BindableFunctionProxyFactory(bindingName,
-				isInputBinding ? 1 : 0, isInputBinding ? 0 : 1, this.applicationContext.getBean(StreamFunctionProperties.class));
-		bindingProxyFactory.setApplicationContext(this.applicationContext);
+	/**
+	 * Allows to dynamically define a new input binding returning its consumer properties for further customization.
+	 * @param <P> the type of consumer properties. For example, if binding derives from Kafka, it will return KafkaConsumerProperties.
+	 * @param bindingName the name of the binding.
+	 * @return instance of the consumer properties.
+	 */
+	public <P> P defineInputBinding(String bindingName) {
+		BindableFunctionProxyFactory bindingProxyFactory =
+				new BindableFunctionProxyFactory(bindingName, 1, 0, this.applicationContext.getBean(StreamFunctionProperties.class));
+		this.defineBinding(bindingProxyFactory);
+		return this.getExtensionProperties(bindingName + "-in-0");
+	}
 
-		bindingProxyFactory.afterPropertiesSet();
-		BindingService bindingService = this.applicationContext.getBean(BindingService.class);
-
-
-		AbstractBindingLifecycle bindingLifecycle;
-		if (isInputBinding) {
-			bindingProxyFactory.createAndBindInputs(bindingService);
-			bindingLifecycle = this.applicationContext.getBean(InputBindingLifecycle.class);
-		}
-		else {
-			bindingProxyFactory.createAndBindOutputs(bindingService);
-			bindingLifecycle = this.applicationContext.getBean(OutputBindingLifecycle.class);
-		}
-
-		bindingLifecycle.startBindable(bindingProxyFactory);
+	/**
+	 * Allows to dynamically define a new input binding returning its producer properties for further customization.
+	 * @param <P> the type of producer properties. For example, if binding derives from Kafka, it will return KafkaProducerProperties.
+	 * @param bindingName the name of the binding.
+	 * @return instance of the producer properties.
+	 */
+	public <P> P defineOutputBinding(String bindingName) {
+		BindableFunctionProxyFactory bindingProxyFactory =
+				new BindableFunctionProxyFactory(bindingName, 0, 1, this.applicationContext.getBean(StreamFunctionProperties.class));
+		this.defineBinding(bindingProxyFactory);
+		return this.getExtensionProperties(bindingName + "-out-0");
 	}
 
 	/**
@@ -206,6 +210,26 @@ public class BindingsLifecycleController implements ApplicationContextAware {
 	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
 		this.applicationContext = applicationContext;
 	}
+
+	private void defineBinding(BindableFunctionProxyFactory bindingProxyFactory) {
+		bindingProxyFactory.setApplicationContext(this.applicationContext);
+		bindingProxyFactory.afterPropertiesSet();
+
+		BindingService bindingService = this.applicationContext.getBean(BindingService.class);
+
+		AbstractBindingLifecycle bindingLifecycle;
+		if (bindingProxyFactory.getInputs().size() > 0) {
+			bindingProxyFactory.createAndBindInputs(bindingService);
+			bindingLifecycle = this.applicationContext.getBean(InputBindingLifecycle.class);
+		}
+		else {
+			bindingProxyFactory.createAndBindOutputs(bindingService);
+			bindingLifecycle = this.applicationContext.getBean(OutputBindingLifecycle.class);
+		}
+
+		bindingLifecycle.startBindable(bindingProxyFactory);
+	}
+
 
 	/**
 	 * Queries for all input {@link Binding}s.
