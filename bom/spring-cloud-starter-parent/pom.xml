@@ -11,7 +11,7 @@
 	</parent>
 	<groupId>org.springframework.cloud</groupId>
 	<artifactId>spring-cloud-stream-starter-parent</artifactId>
-	<version>4.3.0-M3</version>
+	<version>4.3.0-SNAPSHOT</version>
 	<name>spring-cloud-stream-starter-parent</name>
 	<description>Specifies Boot version for the releaser</description>
 	<packaging>pom</packaging>
