@@ -66,9 +66,9 @@ class ConfluentSchemaRegistryClientTests {
 				.andRespond(withSuccess("{\"id\":101,\"version\":1}", MediaType.APPLICATION_JSON));
 
 		this.mockRestServiceServer
-				.expect(requestTo("http://localhost:8081/subjects/user/versions"))
+				.expect(requestTo("http://localhost:8081/schemas/ids/101/versions"))
 				.andExpect(method(HttpMethod.GET))
-				.andRespond((withSuccess("[1]", MediaType.APPLICATION_JSON)));
+				.andRespond((withSuccess("[{\"subject\":\"user\",\"version\":1}]", MediaType.APPLICATION_JSON)));
 
 		ConfluentSchemaRegistryClient client = new ConfluentSchemaRegistryClient(
 				this.restTemplate);
