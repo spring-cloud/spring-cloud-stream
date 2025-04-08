@@ -16,14 +16,8 @@
 
 package org.springframework.cloud.stream.schema.registry.client;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import org.springframework.cloud.stream.schema.registry.SchemaNotFoundException;
 import org.springframework.cloud.stream.schema.registry.SchemaReference;
 import org.springframework.cloud.stream.schema.registry.SchemaRegistrationResponse;
@@ -36,6 +30,11 @@ import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
+
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author Vinicius Carvalho
@@ -102,11 +101,12 @@ public class ConfluentSchemaRegistryClient implements SchemaRegistryClient {
 
 		try {
 			ResponseEntity<List> response = this.template.getForEntity(
-					this.endpoint + "/subjects/" + subject + "/versions", List.class);
+					this.endpoint + "/schemas/ids/" + id + "/versions", List.class);
 
 			final List body = response.getBody();
 			if (!CollectionUtils.isEmpty(body)) {
-				version = (Integer) body.get(body.size() - 1);
+				// Assume only a single version is registered for this ID
+				version = (Integer) ((Map<String, Object>) body.get(0)).get("version");
 			}
 		}
 		catch (HttpStatusCodeException httpException) {
