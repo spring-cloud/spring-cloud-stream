@@ -20,12 +20,12 @@ package org.springframework.cloud.stream.binder.test.junit.rabbit;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 import org.springframework.util.Assert;
 
-import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Abstract base class for JUnit {@link Rule}s that detect the presence of some external
@@ -64,67 +64,9 @@ public abstract class AbstractExternalResourceTestSupport<R> implements BeforeEa
 		catch (Exception e) {
 			maybeCleanup();
 
-//			failOrSkip(e);
-			fail();
+			Assertions.fail();
 		}
 	}
-
-//	@Override
-//	public Statement apply(final Statement base, Description description) {
-//		try {
-//			obtainResource();
-//		}
-//		catch (Exception e) {
-//			maybeCleanup();
-//
-//			return failOrSkip(e);
-//		}
-//
-//		return new Statement() {
-//
-//			@Override
-//			public void evaluate() throws Throwable {
-//				try {
-//					base.evaluate();
-//				}
-//				finally {
-//					try {
-//						cleanupResource();
-//					}
-//					catch (Exception ignored) {
-//						AbstractExternalResourceTestSupport.this.logger.warn(
-//								"Exception while trying to cleanup proper resource",
-//								ignored);
-//					}
-//				}
-//			}
-//
-//		};
-//	}
-
-//	private Statement failOrSkip(final Exception e) {
-//		String serversRequired = System.getenv(SCS_EXTERNAL_SERVERS_REQUIRED);
-//		if ("true".equalsIgnoreCase(serversRequired)) {
-//			this.logger.error(this.resourceDescription + " IS REQUIRED BUT NOT AVAILABLE",
-//					e);
-//			fail(this.resourceDescription + " IS NOT AVAILABLE");
-//			// Never reached, here to satisfy method signature
-//			return null;
-//		}
-//		else {
-//			this.logger.error(
-//					this.resourceDescription + " IS NOT AVAILABLE, SKIPPING TESTS", e);
-//			return new Statement() {
-//
-//				@Override
-//				public void evaluate() throws Throwable {
-//					Assume.assumeTrue("Skipping test due to "
-//							+ AbstractExternalResourceTestSupport.this.resourceDescription
-//							+ " not being available " + e, false);
-//				}
-//			};
-//		}
-//	}
 
 	private void maybeCleanup() {
 		if (this.resource != null) {

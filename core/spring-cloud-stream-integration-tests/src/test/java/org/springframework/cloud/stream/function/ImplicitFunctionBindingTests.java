@@ -30,6 +30,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -80,7 +81,6 @@ import org.springframework.messaging.support.GenericMessage;
 import org.springframework.scheduling.support.PeriodicTrigger;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.fail;
 
 /**
  *
@@ -212,7 +212,7 @@ class ImplicitFunctionBindingTests {
 			InputDestination input = context.getBean(InputDestination.class);
 			try {
 				input.send(new GenericMessage<byte[]>("hello".getBytes()));
-				fail(); // it should since there are no functions and no bindings
+				Assertions.fail(); // it should since there are no functions and no bindings
 			}
 			catch (Exception e) {
 				// good, we expected it
@@ -239,7 +239,7 @@ class ImplicitFunctionBindingTests {
 			InputDestination input = context.getBean(InputDestination.class);
 			try {
 				input.send(new GenericMessage<byte[]>("hello".getBytes()));
-				fail(); // it should since there are no functions and no bindings
+				Assertions.fail(); // it should since there are no functions and no bindings
 			}
 			catch (Exception e) {
 				// good, we expected it
@@ -264,7 +264,7 @@ class ImplicitFunctionBindingTests {
 			context.getBean(InputDestination.class);
 		}
 		catch (Exception e) { // should not fail
-			fail();
+			Assertions.fail();
 		}
 	}
 
@@ -524,17 +524,6 @@ class ImplicitFunctionBindingTests {
 		}
 	}
 
-//	@Test
-//	public void testFunctionConfigDisabledIfStreamListenerIsUsed() {
-//		System.clearProperty("spring.cloud.function.definition");
-//		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
-//				TestChannelBinderConfiguration.getCompleteConfiguration(LegacyConfiguration.class))
-//						.web(WebApplicationType.NONE).run("--spring.jmx.enabled=false")) {
-//
-//			assertThat(context.getBean("supplierInitializer").getClass().getSimpleName()).isEqualTo("NullBean");
-//		}
-//	}
-
 	@Test
 	void declaredTypeVsActualInstance() {
 		System.clearProperty("spring.cloud.function.definition");
@@ -547,7 +536,7 @@ class ImplicitFunctionBindingTests {
 			Message<byte[]> inputMessageOne = MessageBuilder.withPayload("Hello".getBytes()).build();
 
 			inputDestination.send(inputMessageOne);
-			fail();
+			Assertions.fail();
 		}
 		catch (Exception ex) {
 			// good
@@ -671,7 +660,7 @@ class ImplicitFunctionBindingTests {
 
 			try {
 				context.getBean(FunctionConfiguration.class);
-				fail();
+				Assertions.fail();
 			}
 			catch (Exception e) {
 				// ignore

@@ -26,6 +26,7 @@ import java.util.UUID;
 
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.DefaultConsumer;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.testcontainers.containers.RabbitMQContainer;
@@ -48,7 +49,6 @@ import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.util.UriUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.fail;
 
 /**
  * @author Gary Russell
@@ -127,7 +127,7 @@ class RabbitBinderCleanerTests {
 				try {
 					waitForConsumerState(queueName, 1);
 					doClean(cleaner, stream1, false);
-					fail("Expected exception");
+					Assertions.fail("Expected exception");
 				}
 				catch (RabbitAdminException e) {
 					assertThat(e)
@@ -137,7 +137,7 @@ class RabbitBinderCleanerTests {
 				waitForConsumerState(queueName, 0);
 				try {
 					doClean(cleaner, stream1, false);
-					fail("Expected exception");
+					Assertions.fail("Expected exception");
 				}
 				catch (RabbitAdminException e) {
 					assertThat(e).hasMessageContaining("Cannot delete exchange ");
