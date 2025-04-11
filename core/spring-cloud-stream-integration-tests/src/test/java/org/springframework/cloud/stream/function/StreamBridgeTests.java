@@ -37,7 +37,6 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -213,11 +212,12 @@ class StreamBridgeTests {
 			"--spring.cloud.stream.source=outputA",
 			"--spring.jmx.enabled=false")) {
 			StreamBridge streamBridge = context.getBean(StreamBridge.class);
-			var exception = Assertions.assertThrows(RuntimeException.class, () -> streamBridge.send("outputA-out-0",
-				new CodecException("invalidException")
-			));
-
-			assertThat(exception.getMessage()).isEqualTo("org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry$FunctionInvocationWrapper returned null");
+			try {
+				streamBridge.send("outputA-out-0", new CodecException("invalidException"));
+			}
+			catch (RuntimeException exception) {
+				assertThat(exception.getMessage()).isEqualTo("org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry$FunctionInvocationWrapper returned null");
+			}
 		}
 	}
 

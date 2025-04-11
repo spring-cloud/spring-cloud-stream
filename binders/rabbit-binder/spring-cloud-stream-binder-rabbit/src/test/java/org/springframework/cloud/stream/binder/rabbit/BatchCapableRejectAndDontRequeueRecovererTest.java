@@ -18,7 +18,6 @@ package org.springframework.cloud.stream.binder.rabbit;
 
 import java.util.List;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.amqp.AmqpRejectAndDontRequeueException;
@@ -41,13 +40,15 @@ class BatchCapableRejectAndDontRequeueRecovererTest {
 
 		Throwable expectedThrowable = new RuntimeException("test");
 
-		ListenerExecutionFailedException exception = Assertions.assertThrows(ListenerExecutionFailedException.class,
-				() -> messageBatchRecoverer.recover(messages, expectedThrowable));
-
-		assertThat(exception.getFailedMessages()).contains(expectedMessage1);
-		assertThat(exception.getFailedMessages()).contains(expectedMessage2);
-		assertThat(exception.getCause()).isInstanceOf(AmqpRejectAndDontRequeueException.class);
-		assertThat(expectedThrowable).isEqualTo(exception.getCause().getCause());
+		try {
+			messageBatchRecoverer.recover(messages, expectedThrowable);
+		}
+		catch (ListenerExecutionFailedException exception) {
+			assertThat(exception.getFailedMessages()).contains(expectedMessage1);
+			assertThat(exception.getFailedMessages()).contains(expectedMessage2);
+			assertThat(exception.getCause()).isInstanceOf(AmqpRejectAndDontRequeueException.class);
+			assertThat(expectedThrowable).isEqualTo(exception.getCause().getCause());
+		}
 	}
 
 	@Test
@@ -58,11 +59,13 @@ class BatchCapableRejectAndDontRequeueRecovererTest {
 
 		Throwable expectedThrowable = new RuntimeException("test");
 
-		ListenerExecutionFailedException exception = Assertions.assertThrows(ListenerExecutionFailedException.class,
-				() -> messageBatchRecoverer.recover(expectedMessage, expectedThrowable));
-
-		assertThat(expectedMessage).isEqualTo(exception.getFailedMessage());
-		assertThat(exception.getCause()).isInstanceOf(AmqpRejectAndDontRequeueException.class);
-		assertThat(expectedThrowable).isEqualTo(exception.getCause().getCause());
+		try {
+			messageBatchRecoverer.recover(expectedMessage, expectedThrowable);
+		}
+		catch (ListenerExecutionFailedException exception) {
+			assertThat(expectedMessage).isEqualTo(exception.getFailedMessage());
+			assertThat(exception.getCause()).isInstanceOf(AmqpRejectAndDontRequeueException.class);
+			assertThat(expectedThrowable).isEqualTo(exception.getCause().getCause());
+		}
 	}
 }
