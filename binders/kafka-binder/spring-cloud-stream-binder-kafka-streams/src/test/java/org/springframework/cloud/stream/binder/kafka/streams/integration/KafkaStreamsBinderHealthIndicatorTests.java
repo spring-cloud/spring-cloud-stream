@@ -156,7 +156,7 @@ class KafkaStreamsBinderHealthIndicatorTests {
 				CompletableFuture<SendResult<Integer, String>> future = template.send(record);
 				future.whenComplete((result, ex) -> {
 					if (ex != null) {
-						Assertions.fail();
+						Assertions.fail("");
 					}
 					else {
 						latch.countDown();
