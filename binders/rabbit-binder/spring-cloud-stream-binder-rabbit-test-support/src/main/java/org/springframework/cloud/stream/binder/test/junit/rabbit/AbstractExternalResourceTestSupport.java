@@ -64,7 +64,7 @@ public abstract class AbstractExternalResourceTestSupport<R> implements BeforeEa
 		catch (Exception e) {
 			maybeCleanup();
 
-			Assertions.fail();
+			Assertions.fail("");
 		}
 	}
 
