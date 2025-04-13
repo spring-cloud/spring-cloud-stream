@@ -213,7 +213,7 @@ class ImplicitFunctionBindingTests {
 			InputDestination input = context.getBean(InputDestination.class);
 			try {
 				input.send(new GenericMessage<byte[]>("hello".getBytes()));
-				Assertions.fail(); // it should since there are no functions and no bindings
+				Assertions.fail(""); // it should since there are no functions and no bindings
 			}
 			catch (Exception e) {
 				// good, we expected it
@@ -240,7 +240,7 @@ class ImplicitFunctionBindingTests {
 			InputDestination input = context.getBean(InputDestination.class);
 			try {
 				input.send(new GenericMessage<byte[]>("hello".getBytes()));
-				Assertions.fail(); // it should since there are no functions and no bindings
+				Assertions.fail(""); // it should since there are no functions and no bindings
 			}
 			catch (Exception e) {
 				// good, we expected it
@@ -265,7 +265,7 @@ class ImplicitFunctionBindingTests {
 			context.getBean(InputDestination.class);
 		}
 		catch (Exception e) { // should not fail
-			Assertions.fail();
+			Assertions.fail("");
 		}
 	}
 
@@ -537,7 +537,7 @@ class ImplicitFunctionBindingTests {
 			Message<byte[]> inputMessageOne = MessageBuilder.withPayload("Hello".getBytes()).build();
 
 			inputDestination.send(inputMessageOne);
-			Assertions.fail();
+			Assertions.fail("");
 		}
 		catch (Exception ex) {
 			// good
@@ -661,7 +661,7 @@ class ImplicitFunctionBindingTests {
 
 			try {
 				context.getBean(FunctionConfiguration.class);
-				Assertions.fail();
+				Assertions.fail("");
 			}
 			catch (Exception e) {
 				// ignore
