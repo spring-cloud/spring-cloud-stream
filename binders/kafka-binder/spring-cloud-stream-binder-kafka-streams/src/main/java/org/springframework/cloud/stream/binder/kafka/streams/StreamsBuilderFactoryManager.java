@@ -25,6 +25,7 @@ import org.apache.kafka.streams.errors.StreamsUncaughtExceptionHandler;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
+import org.springframework.boot.web.context.WebServerGracefulShutdownLifecycle;
 import org.springframework.cloud.stream.binder.ConsumerProperties;
 import org.springframework.context.SmartLifecycle;
 import org.springframework.kafka.KafkaException;
@@ -127,7 +128,6 @@ public class StreamsBuilderFactoryManager implements SmartLifecycle {
 			try {
 				Set<StreamsBuilderFactoryBean> streamsBuilderFactoryBeans = this.kafkaStreamsBindingInformationCatalogue
 						.getStreamsBuilderFactoryBeans();
-				int n = 0;
 				for (StreamsBuilderFactoryBean streamsBuilderFactoryBean : streamsBuilderFactoryBeans) {
 					streamsBuilderFactoryBean.removeListener(this.listener);
 					streamsBuilderFactoryBean.stop();
@@ -152,7 +152,7 @@ public class StreamsBuilderFactoryManager implements SmartLifecycle {
 
 	@Override
 	public int getPhase() {
-		return Integer.MAX_VALUE - 100;
+		return WebServerGracefulShutdownLifecycle.SMART_LIFECYCLE_PHASE - 1;
 	}
 
 }
