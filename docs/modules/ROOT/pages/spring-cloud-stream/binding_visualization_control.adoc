@@ -23,18 +23,30 @@ bindingsController.changeState("echo-in-0", State.STOPPED);
 assertThat(binding.isRunning()).isFalse();
 ----
 
+=== Define new and manage existing bindings
 
-Additionally, starting version 4.2 you can also get access to Consumer and Producer configuration properties for more dynamic management of its values. 
-You can request such properties from `BindingsLifecycleController` based on the binding name.
+Additionally, starting version 4.2 using `BindingsLifecycleController` you can define new bindings as well as modify existing bindings configuration by accessing 
+its Consumer and Producer configuration properties for more dynamic management of its values. 
+
 For example.
+
+To define new input binding you can call `BindingsLifecycleController.defineInputBinding(..)` method (see below). There is equivalent of `defineOutputBinding(..)` method.
 
 [source,java]
 ----
-KafkaConsumerProperties properties = controller.getExtensionProperties("log-in-0”);
-RabbitProducerProperties properties = controller.getExtensionProperties(“log-out-0”);
+BindingsLifecycleController controller = context.getBean(BindingsLifecycleController.class);
+KafkaConsumerProperties consumerProperties = controller.defineInputBinding("test-input-binding"); 
 ----
 
-The `getExtensionProperties(..)` operation is defined to ensure you get the proper type of the configuration properties class.
+You can than manage its properties by calling `getExtensionProperties(..)` method.
+
+[source,java]
+----
+KafkaConsumerProperties properties = controller.getExtensionProperties("test-input-binding-in-0”);
+
+----
+
+The `getExtensionProperties(..)` operation is defined to ensure you get the proper type of the configuration properties class, so depending on the binder and binding used you can safely cast your extension properties to appropriate type. In our case it is `KafkaConsumerProperties` properties. 
 
 NOTE: Depending on the type of property you change, you may need to re-start the binding for it to take effect (ass seen earlier)
 
