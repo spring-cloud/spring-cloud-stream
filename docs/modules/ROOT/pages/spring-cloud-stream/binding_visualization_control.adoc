@@ -42,9 +42,11 @@ You can than manage its properties by calling `getExtensionProperties(..)` metho
 
 [source,java]
 ----
-KafkaConsumerProperties properties = controller.getExtensionProperties("test-input-binding-in-0”);
+KafkaConsumerProperties properties = controller.getExtensionProperties("test-input-binding”);
 
 ----
+
+NOTE: Unlike binding names derived from function definition, explicitly defined bindings do not carry the `in-0/out-0` suffix since they are not backed by an actual function. 
 
 The `getExtensionProperties(..)` operation is defined to ensure you get the proper type of the configuration properties class, so depending on the binder and binding used you can safely cast your extension properties to appropriate type. In our case it is `KafkaConsumerProperties` properties. 
 

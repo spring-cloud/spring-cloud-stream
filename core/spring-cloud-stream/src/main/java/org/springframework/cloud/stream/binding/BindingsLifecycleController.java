@@ -89,9 +89,9 @@ public class BindingsLifecycleController implements ApplicationContextAware {
 	 */
 	public <P> P defineInputBinding(String bindingName) {
 		BindableFunctionProxyFactory bindingProxyFactory =
-				new BindableFunctionProxyFactory(bindingName, 1, 0, this.applicationContext.getBean(StreamFunctionProperties.class));
+				new BindableFunctionProxyFactory(bindingName, 1, 0, this.applicationContext.getBean(StreamFunctionProperties.class), false);
 		this.defineBinding(bindingProxyFactory);
-		return this.getExtensionProperties(bindingName + "-in-0");
+		return this.getExtensionProperties(bindingName);
 	}
 
 	/**
@@ -102,9 +102,9 @@ public class BindingsLifecycleController implements ApplicationContextAware {
 	 */
 	public <P> P defineOutputBinding(String bindingName) {
 		BindableFunctionProxyFactory bindingProxyFactory =
-				new BindableFunctionProxyFactory(bindingName, 0, 1, this.applicationContext.getBean(StreamFunctionProperties.class));
+				new BindableFunctionProxyFactory(bindingName, 0, 1, this.applicationContext.getBean(StreamFunctionProperties.class), false);
 		this.defineBinding(bindingProxyFactory);
-		return this.getExtensionProperties(bindingName + "-out-0");
+		return this.getExtensionProperties(bindingName);
 	}
 
 	/**

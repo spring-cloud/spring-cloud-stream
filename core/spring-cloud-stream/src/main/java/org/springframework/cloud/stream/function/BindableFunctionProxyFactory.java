@@ -77,7 +77,7 @@ public class BindableFunctionProxyFactory extends BindableProxyFactory implement
 		this(functionDefinition, inputCount, outputCount, functionProperties, new SupportedBindableFeatures(), true);
 	}
 
-	BindableFunctionProxyFactory(String functionDefinition, int inputCount, int outputCount, StreamFunctionProperties functionProperties, boolean functionExist) {
+	public BindableFunctionProxyFactory(String functionDefinition, int inputCount, int outputCount, StreamFunctionProperties functionProperties, boolean functionExist) {
 		this(functionDefinition, inputCount, outputCount, functionProperties, new SupportedBindableFeatures(), functionExist);
 	}
 
