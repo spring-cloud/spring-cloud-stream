@@ -83,7 +83,7 @@ class KafkaBinderExtendedPropertiesTest {
 		boolean isAutoRebalanceEnabled = consumerProperties.isAutoRebalanceEnabled();
 		assertThat(isAutoRebalanceEnabled).isTrue();
 		consumerProperties.setAutoRebalanceEnabled(false);
-		consumerProperties = controller.getExtensionProperties("test-input-binding-in-0");
+		consumerProperties = controller.getExtensionProperties("test-input-binding");
 		isAutoRebalanceEnabled = consumerProperties.isAutoRebalanceEnabled();
 		assertThat(isAutoRebalanceEnabled).isFalse();
 	}
