@@ -374,7 +374,7 @@ public class FunctionConfiguration {
 			Object source = bd.getSource();
 			if (source instanceof MethodMetadata methodMetadata) {
 				Class<?> factory = ClassUtils.resolveClassName(methodMetadata.getDeclaringClassName(), null);
-				Class<?>[] params = FunctionContextUtils.getParamTypesFromBeanDefinitionFactory(factory, (RootBeanDefinition) bd);
+				Class<?>[] params = FunctionContextUtils.getParamTypesFromBeanDefinitionFactory(factory, (RootBeanDefinition) bd, methodMetadata.getMethodName());
 				factoryMethod = ReflectionUtils.findMethod(factory, methodMetadata.getMethodName(), params);
 			}
 		}
