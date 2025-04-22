@@ -282,7 +282,7 @@ Here we autowire a `StreamBridge` bean which allows us to send data to an output
 bridging non-stream application with spring-cloud-stream. Note that preceding example does not have any
 source functions defined (e.g., Supplier bean) leaving the framework with no trigger to create source bindings in advance, which would be typical for cases where configuration contains function beans. And that is fine, since `StreamBridge` will initiate creation of output bindings (as well as
 destination auto-provisioning if necessary) for non existing bindings on the first call to its `send(..)` operation caching it for 
-subsequent reuse (see <<StreamBridge and Dynamic Destinations>> for more details). 
+subsequent reuse (see xref:spring-cloud-stream/producing-and-consuming-messages.adoc#streambridge-and-dynamic-destinations[StreamBridge and Dynamic Destinations] for more details). 
 
 However, if you want to pre-create an output binding at the initialization (startup) time you can benefit from `spring.cloud.stream.output-bindings` property where you can declare the name of your sources.
 The provided name will be used as a trigger to create a source binding.
@@ -904,7 +904,7 @@ public class FunctionSampleSpringIntegrationApplication {
 For those who are familiar with SI you can see we define a bean of type `IntegrationFlow` where we
 declare an integration flow that we want to expose as a `Function<String, String>` (using SI DSL) called `uppercase`.
 The `MessageFunction` interface lets us explicitly declare the type of the inputs and outputs for proper type conversion.
-See <<Content Type Negotiation>> section for more on type conversion.
+See xref:spring-cloud-stream/content-type.adoc[Content Type Negotiation] section for more on type conversion.
 
 To receive raw input you can use `from(Function.class, ...)`.
 

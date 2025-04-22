@@ -14,7 +14,7 @@ Once enabled `RoutingFunction` will be bound to input destination
 receiving all the messages and route them to other functions based on the provided instruction.
 
 IMPORTANT: For the purposes of binding the name of the routing destination is `functionRouter-in-0`
-(see RoutingFunction.FUNCTION_NAME and binding naming convention <<Functional binding names>>).
+(see RoutingFunction.FUNCTION_NAME and binding naming convention xref:spring-cloud-stream/functional-binding-names.adoc[Functional Binding Names]).
 
 Instruction could be provided with individual messages as well as application properties.
 
