@@ -1,7 +1,7 @@
 [[consuming-records-in-the-raw-format]]
 = Consuming Records
 
-In the above `upppercase` function, we are consuming the record as `Flux<String>` and then produce it as `Flux<String>`.
+In the above `uppercase` function, we are consuming the record as `Flux<String>` and then produce it as `Flux<String>`.
 There might be occasions in which you need to receive the record in the original received format - the `ReceiverRecord`.
 Here is such a function.
 
