@@ -468,7 +468,7 @@ public class KafkaTopicProvisioner implements
 			DescribeTopicsResult describeTopicsResult = adminClient
 					.describeTopics(Collections.singletonList(topicName));
 			KafkaFuture<Map<String, TopicDescription>> topicDescriptionsFuture = describeTopicsResult
-					.all();
+					.allTopicNames();
 			Map<String, TopicDescription> topicDescriptions = topicDescriptionsFuture
 					.get(this.operationTimeout, TimeUnit.SECONDS);
 			TopicDescription topicDescription = topicDescriptions.get(topicName);
