@@ -293,6 +293,10 @@ Also, note that `streamBridge.send(..)` method takes an `Object` for data. This 
 will go through the same routine when sending output as if it was from any Function or Supplier providing the same level
 of consistency as with functions. This means the output type conversion, partitioning etc are honored as if it was from the output produced by functions.
 
+IMPORTANT: Unlike it is explained in xref:spring-cloud-stream/explicit-binding-creation.adoc[Explicit Binding Creation], _StreamBridge_ was designed with both performance in mind and ability to create as many bindings on the fly as necessary. To achieve that the actual bindings created by the _StreamBridge_ are not cached in the application context and therefore can not be managed as explained in xref:spring-cloud-stream/binding_visualization_control.html[Binding visualization and control].
+However if it is still your desire to use _StreamBridge_ to create bindings dynamically and manage them after, please use the following mechanism to create binding explicitly before using _StreamBridge_ - ref:spring-cloud-stream/binding_visualization_control.adocl#_define_new_and_manage_existing_bindings[Define New Binding Programmatically]
+
+
 
 ==== StreamBridge with async send
 
