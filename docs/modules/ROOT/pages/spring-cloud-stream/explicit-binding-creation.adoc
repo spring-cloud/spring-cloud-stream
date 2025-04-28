@@ -42,4 +42,5 @@ do not require additional suffix such as `in-0/out-0` given that:
  - it already represents _input_ or _output_ binding by definition 
  - it can not have more then one input or output. 
  
- So `spring.cloud.stream.output-bindings=hello` will result in the binding named `hello` (not `hello-out-0`) and you can further refer to it as `spring.cloud.stream.bindings.hello.destination=foobar`
+ 
+So `spring.cloud.stream.output-bindings=hello` will result in the binding named `hello` (not `hello-out-0`) and you can further refer to it as `spring.cloud.stream.bindings.hello.destination=foobar`
