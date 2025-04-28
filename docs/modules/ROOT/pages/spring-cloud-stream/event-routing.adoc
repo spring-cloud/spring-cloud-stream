@@ -166,5 +166,5 @@ public NewDestinationBindingCallback<RabbitProducerProperties> dynamicConfigurer
 
 NOTE: If you need to support dynamic destinations with multiple binder types, use `Object` for the generic type and cast the `extended` argument as needed.
 
-Also, please see <<Using StreamBridge>> section to see how yet another option (StreamBridge) can be utilized for similar cases.
+Also, please see xref:spring-cloud-stream/producing-and-consuming-messages.adoc#sending-arbitrary-data-to-an-output-e-g-foreign-event-driven-sources[Using StreamBridge] section to see how yet another option can be utilized for similar cases.
 
