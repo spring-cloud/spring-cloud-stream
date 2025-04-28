@@ -28,6 +28,8 @@ The `in` and `out` corresponds to the type of binding (such as _input_ or _outpu
 The `index` is the index of the input or output binding. It is always 0 for typical single input/output function,
 so it's only relevant for xref:spring-cloud-stream/producing-and-consuming-messages.adoc#functions_with_multiple_input_and_output_arguments[Functions with multiple input and output arguments].
 
+IMPORTANT: For xref:spring-cloud-stream/explicit-binding-creation.adoc[Explicit Binding Names], the above naming convention is not necessary (see xref:spring-cloud-stream/explicit-binding-creation.adoc[Explicit Binding Creation])
+
 So if for example you would want to map the input of this function to a remote
 destination (e.g., topic, queue etc) called "my-topic" you would do so with the following property:
 ----
