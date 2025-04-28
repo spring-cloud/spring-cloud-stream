@@ -34,3 +34,12 @@ public static class EmptyConfiguration {
 ----
 
 As you can see we have declared two input bindings and two output bindings while our configuration had no functions defined, yet we were able to successfully create these bindings and access their corresponding channels.
+
+IMPORTANT: Unlike with xref:spring-cloud-stream/functional-binding-names.adoc[Functional Binding Names], explicitly created bindings 
+do not require additional suffix such as `in-0/out-0` given that:
+
+ - the binding name is not backed by a function
+ - it already represents _input_ or _output_ binding by definition 
+ - it can not have more then one input or output. 
+ 
+ So `spring.cloud.stream.output-bindings=hello` will result in the binding named `hello` (not `hello-out-0`) and you can further refer to it as `spring.cloud.stream.bindings.hello.destination=foobar`
