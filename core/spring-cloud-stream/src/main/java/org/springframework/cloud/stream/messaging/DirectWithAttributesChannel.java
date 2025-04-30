@@ -19,6 +19,7 @@ package org.springframework.cloud.stream.messaging;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.springframework.integration.channel.AbstractMessageChannel;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.messaging.MessageHandler;
 
@@ -27,6 +28,11 @@ import org.springframework.messaging.MessageHandler;
  * @since 2.1
  */
 public class DirectWithAttributesChannel extends DirectChannel {
+
+	/**
+	 * Name of the attribute that is considered to be a companion of this channel.
+	 */
+	public static String COMPANION_ATTR = "companion";
 
 	private final Map<String, Object> attributes = new HashMap<>();
 
@@ -41,6 +47,15 @@ public class DirectWithAttributesChannel extends DirectChannel {
 	@Override
 	public String getBeanName() {
 		return this.getComponentName();
+	}
+
+	@Override
+	public void destroy() {
+		super.destroy();
+		Object companion = this.attributes.get(COMPANION_ATTR);
+		if (companion != null && companion instanceof AbstractMessageChannel companionChannel) {
+			companionChannel.destroy();
+		}
 	}
 
 	@Override

@@ -265,7 +265,9 @@ public class FunctionConfiguration {
 									.get();
 							IntegrationFlow postProcessedFlow = (IntegrationFlow) context.getAutowireCapableBeanFactory()
 									.initializeBean(integrationFlow, integrationFlowName);
-							context.registerBean(integrationFlowName, IntegrationFlow.class, () -> postProcessedFlow);
+							context.registerBean(integrationFlowName, IntegrationFlow.class, () -> {
+								return postProcessedFlow;
+							});
 						}
 						else {
 							IntegrationFlow integrationFlow = integrationFlowFromProvidedSupplier(new PartitionAwareFunctionWrapper(supplier, context, producerProperties),
@@ -311,7 +313,12 @@ public class FunctionConfiguration {
 					? ((Mono) publisher).map(this::wrapToMessageIfNecessary)
 					: ((Flux) publisher).map(this::wrapToMessageIfNecessary);
 
-			integrationFlowBuilder = IntegrationFlow.from(publisher);
+			// See https://github.com/spring-cloud/spring-cloud-stream/issues/3083 for more details
+			DirectWithAttributesChannel messageChannel = context.getBean(bindingName, DirectWithAttributesChannel.class);
+			FluxMessageChannel reactiveChannel = new FluxMessageChannel();
+			reactiveChannel.subscribeTo(publisher);
+			messageChannel.setAttribute(DirectWithAttributesChannel.COMPANION_ATTR, reactiveChannel);
+			integrationFlowBuilder = IntegrationFlow.from((MessageChannel) reactiveChannel);
 
 			// see https://github.com/spring-cloud/spring-cloud-stream/issues/1863 for details about the following code
 			taskScheduler.schedule(() -> { }, Instant.now()); // will keep AC alive

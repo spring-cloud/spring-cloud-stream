@@ -21,6 +21,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import org.springframework.cloud.stream.messaging.DirectWithAttributesChannel;
 import org.springframework.context.Lifecycle;
 import org.springframework.integration.context.IntegrationObjectSupport;
 import org.springframework.integration.core.Pausable;
@@ -151,6 +152,10 @@ public class DefaultBinding<T> implements Binding<T> {
 		}
 		if (this.isRunning()) {
 			this.lifecycle.stop();
+		}
+		// See https://github.com/spring-cloud/spring-cloud-stream/issues/3083 for more details
+		if (target instanceof DirectWithAttributesChannel attributeChannel) {
+			attributeChannel.destroy();
 		}
 	}
 
