@@ -50,7 +50,7 @@ public class InputBindingLifecycle extends AbstractBindingLifecycle {
 	 */
 	@Override
 	public int getPhase() {
-		return SmartLifecycle.DEFAULT_PHASE - 2048;
+		return SmartLifecycle.DEFAULT_PHASE - 3000;
 	}
 
 	@Override
