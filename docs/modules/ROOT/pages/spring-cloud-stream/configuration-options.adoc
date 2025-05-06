@@ -6,3 +6,31 @@ Some binders let additional binding properties support middleware-specific featu
 
 Configuration options can be provided to Spring Cloud Stream applications through any mechanism supported by Spring Boot.
 This includes application arguments, environment variables, and YAML or .properties files.
+
+IMPORTANT: Note on using Spring/Boot core property annotations.
+
+Regardless whether you are dealing with a common property or binding/binder specific property, there may be times when you may need to rely on core Spring and Boot core property annotations such as `@Value` or `@ConditionalOnProperty`. For this cases make sure you specify 
+the full name of the property.
+For example, given the current _application.yaml_
+
+[source,yaml]
+----
+my:
+  prop: foo
+spring:
+  application:
+    name: "messaging-test"
+  cloud:
+    function:
+      definition: "produce;consume"
+    stream:
+      binders:
+        rabbit:
+          environment:
+            my:
+              prop: bar
+----
+If you want to inject the value of the `my.prop` from the root using `@Value` annotation, you use `(@Value("${my.prop}") String someProperty)`. And if you want the one specific to binder’s context, then you would specify 
+full property name `(@Value(“${spring.cloud.stream.binders.rabbit.environment.my.prop}") String someProperty)` 
+The same goes for `@ConditionalOnProperty` where you would effectively do the same.
+
