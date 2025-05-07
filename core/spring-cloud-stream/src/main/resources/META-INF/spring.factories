@@ -1,5 +1,6 @@
 org.springframework.boot.env.EnvironmentPostProcessor:\
 org.springframework.cloud.stream.function.RoutingFunctionEnvironmentPostProcessor,\
+org.springframework.cloud.stream.config.VersionExtractor,\
 org.springframework.cloud.stream.config.PollerConfigEnvironmentPostProcessor
 org.springframework.context.ApplicationContextInitializer:\
 org.springframework.cloud.stream.function.PollableSourceInitializer
