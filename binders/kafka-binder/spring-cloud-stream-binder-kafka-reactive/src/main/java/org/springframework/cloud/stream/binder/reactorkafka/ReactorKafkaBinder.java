@@ -89,7 +89,12 @@ import org.springframework.util.StringUtils;
  * @author Soby Chacko
  * @since 4.0
  *
+ * @deprecated since 4.3
+ * See the updates in: <a href="https://spring.io/blog/2025/05/20/reactor-kafka-discontinued">...</a>
+ * A suggested alternative is to use the regular Kafka binder with reactive types.
+ * This approach has some limitations as the application need to handle reactive use cases explicitly.
  */
+@Deprecated(since = "4.3", forRemoval = true)
 public class ReactorKafkaBinder
 		extends AbstractMessageChannelBinder<ExtendedConsumerProperties<KafkaConsumerProperties>,
 				ExtendedProducerProperties<KafkaProducerProperties>, KafkaTopicProvisioner>

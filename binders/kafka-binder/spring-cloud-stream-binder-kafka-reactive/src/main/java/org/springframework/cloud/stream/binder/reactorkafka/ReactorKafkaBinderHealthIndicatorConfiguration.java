@@ -34,7 +34,13 @@ import org.springframework.util.ObjectUtils;
 /**
  * @author Soby Chacko
  * @since 4.1.2
+ *
+ * @deprecated since 4.3
+ * See the updates in: <a href="https://spring.io/blog/2025/05/20/reactor-kafka-discontinued">...</a>
+ * A suggested alternative is to use the regular Kafka binder with reactive types.
+ * This approach has some limitations as the application need to handle reactive use cases explicitly.
  */
+@Deprecated(since = "4.3", forRemoval = true)
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnClass(name = "org.springframework.boot.actuate.health.HealthIndicator")
 @ConditionalOnEnabledHealthIndicator("binders")

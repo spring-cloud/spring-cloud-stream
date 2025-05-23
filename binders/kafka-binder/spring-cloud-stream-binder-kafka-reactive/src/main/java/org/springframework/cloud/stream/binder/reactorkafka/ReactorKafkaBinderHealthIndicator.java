@@ -35,7 +35,13 @@ import org.springframework.scheduling.concurrent.CustomizableThreadFactory;
  * {@link org.springframework.boot.actuate.health.HealthIndicator} for Reactor Kafka Binder.
  *
  * @author Soby Chacko
+ *
+ * @deprecated since 4.3
+ * See the updates in: <a href="https://spring.io/blog/2025/05/20/reactor-kafka-discontinued">...</a>
+ * A suggested alternative is to use the regular Kafka binder with reactive types.
+ * This approach has some limitations as the application need to handle reactive use cases explicitly.
  */
+@Deprecated(since = "4.3", forRemoval = true)
 public class ReactorKafkaBinderHealthIndicator extends AbstractKafkaBinderHealthIndicator {
 
 	private final ReactorKafkaBinder binder;

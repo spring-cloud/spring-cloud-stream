@@ -41,7 +41,13 @@ import org.springframework.context.annotation.Import;
  * @author Gary Russell
  * @author Chris Bono
  * @author Soby Chacko
+ *
+ * @deprecated since 4.3
+ * See the updates in: <a href="https://spring.io/blog/2025/05/20/reactor-kafka-discontinued">...</a>
+ * A suggested alternative is to use the regular Kafka binder with reactive types.
+ * This approach has some limitations as the application need to handle reactive use cases explicitly.
  */
+@Deprecated(since = "4.3", forRemoval = true)
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnMissingBean(Binder.class)
 @EnableConfigurationProperties({ KafkaProperties.class, KafkaExtendedBindingProperties.class })
