@@ -21,7 +21,6 @@
 	<modules>
 		<module>spring-cloud-bus-dependencies</module>
 		<module>spring-cloud-bus</module>
-		<module>spring-cloud-bus-rsocket</module>
 		<module>spring-cloud-bus-tests</module>
 		<module>spring-cloud-starter-bus-amqp</module>
 		<module>spring-cloud-starter-bus-kafka</module>
