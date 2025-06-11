@@ -36,6 +36,7 @@ import org.apache.kafka.streams.kstream.Materialized;
 import org.apache.kafka.streams.kstream.TimeWindows;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -47,7 +48,7 @@ import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.test.EmbeddedKafkaBroker;
-import org.springframework.kafka.test.context.EmbeddedKafka;
+import org.springframework.kafka.test.rule.EmbeddedKafkaRule;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
@@ -65,20 +66,17 @@ import static org.mockito.Mockito.verify;
 @RunWith(SpringRunner.class)
 @ContextConfiguration
 @DirtiesContext
-@EmbeddedKafka(topics = {"decode-counts", "decode-counts-1"})
 public abstract class KafkaStreamsNativeEncodingDecodingDisabledTests {
 
-//	/**
-//	 * Kafka rule.
-//	 */
-//	@ClassRule
-//	public static EmbeddedKafkaRule embeddedKafkaRule = new EmbeddedKafkaRule(1, true,
-//		"decode-counts", "decode-counts-1");
-//
-//	private static EmbeddedKafkaBroker embeddedKafka = embeddedKafkaRule
-//		.getEmbeddedKafka();
+	/**
+	 * Kafka rule.
+	 */
+	@ClassRule
+	public static EmbeddedKafkaRule embeddedKafkaRule = new EmbeddedKafkaRule(1, true,
+		"decode-counts", "decode-counts-1");
 
-	private static EmbeddedKafkaBroker embeddedKafka;
+	private static EmbeddedKafkaBroker embeddedKafka = embeddedKafkaRule
+		.getEmbeddedKafka();
 
 	@SpyBean
 	org.springframework.cloud.stream.binder.kafka.streams.KafkaStreamsMessageConversionDelegate conversionDelegate;

@@ -72,7 +72,6 @@ import org.assertj.core.api.Condition;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 import org.mockito.ArgumentMatchers;
@@ -711,7 +710,6 @@ class KafkaBinderTests extends
 	}
 
 	@Test
-	@Disabled
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	void testSendAndReceiveBatch() throws Exception {
 		Binder binder = getBinder();
@@ -1628,7 +1626,6 @@ class KafkaBinderTests extends
 	}
 
 	@Test
-	@Disabled
 	@SuppressWarnings("unchecked")
 	void configurableDlqName() throws Exception {
 		Binder binder = getBinder();
@@ -2275,7 +2272,6 @@ class KafkaBinderTests extends
 
 	@Test
 	@Override
-	@Disabled
 	@SuppressWarnings("unchecked")
 	public void testAnonymousGroup(TestInfo testInfo) throws Exception {
 		Binder binder = getBinder();
@@ -2772,7 +2768,6 @@ class KafkaBinderTests extends
 	}
 
 	@Test
-	@Disabled
 	@SuppressWarnings("unchecked")
 	void customPartitionCountOverridesPartitioningIfLarger() throws Exception {
 		var testPayload = new byte[2048];
@@ -3558,7 +3553,7 @@ class KafkaBinderTests extends
 		Consumer consumer = cf.createConsumer();
 		consumer.subscribe(Collections.singletonList("mixed.0"));
 
-		ConsumerRecords records = consumer.poll(Duration.ofMillis(10000));
+		ConsumerRecords records = consumer.poll(10_1000);
 		Iterator<ConsumerRecord> iterator = records.iterator();
 		ConsumerRecord record = iterator.next();
 		byte[] value = (byte[]) record.value();
