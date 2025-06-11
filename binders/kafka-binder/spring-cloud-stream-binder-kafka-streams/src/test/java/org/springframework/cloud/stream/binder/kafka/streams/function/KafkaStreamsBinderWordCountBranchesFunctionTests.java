@@ -193,7 +193,7 @@ class KafkaStreamsBinderWordCountBranchesFunctionTests {
 				final Map<String, KStream<Object, WordCount>> stringKStreamMap = input
 						.flatMapValues(value -> Arrays.asList(value.toLowerCase(Locale.ROOT).split("\\W+")))
 						.groupBy((key, value) -> value)
-						.windowedBy(TimeWindows.of(Duration.ofSeconds(5)))
+						.windowedBy(TimeWindows.ofSizeWithNoGrace(Duration.ofSeconds(5)))
 						.count(Materialized.as("WordCounts-branch"))
 						.toStream()
 						.map((key, value) -> new KeyValue<>(null, new WordCount(key.key(), value,

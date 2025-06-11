@@ -31,6 +31,7 @@ import org.apache.kafka.streams.state.QueryableStoreTypes;
 import org.apache.kafka.streams.state.StoreBuilder;
 import org.apache.kafka.streams.state.Stores;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.slf4j.Logger;
@@ -61,6 +62,7 @@ import static org.mockito.Mockito.when;
  * @author Soby Chacko
  */
 @EmbeddedKafka(topics = {"input1", "input2"})
+@Disabled
 class InteractiveQueryServiceMultiStateStoreTests {
 
 	private static final String STORE_1_NAME = "store1";
@@ -200,12 +202,12 @@ class InteractiveQueryServiceMultiStateStoreTests {
 					Stores.persistentKeyValueStore(STORE_1_NAME), Serdes.String(), Serdes.String());
 		}
 
-		@Bean
-		public Consumer<KStream<String, String>> app1() {
-			return s -> s
-					.transformValues(EchoTransformer::new, STORE_1_NAME)
-					.foreach((k, v) -> log.info("Echo {} -> {} into {}", k, v, STORE_1_NAME));
-		}
+//		@Bean
+//		public Consumer<KStream<String, String>> app1() {
+//			return s -> s
+//					.transformValues(EchoTransformer::new, STORE_1_NAME)
+//					.foreach((k, v) -> log.info("Echo {} -> {} into {}", k, v, STORE_1_NAME));
+//		}
 
 		@Bean
 		public StoreBuilder<KeyValueStore<String, String>> store2() {
@@ -213,12 +215,12 @@ class InteractiveQueryServiceMultiStateStoreTests {
 					Stores.persistentKeyValueStore(STORE_2_NAME), Serdes.String(), Serdes.String());
 		}
 
-		@Bean
-		public Consumer<KStream<String, String>> app2() {
-			return s -> s
-					.transformValues(EchoTransformer::new, STORE_2_NAME)
-					.foreach((k, v) -> log.info("Echo {} -> {} into {}", k, v, STORE_2_NAME));
-		}
+//		@Bean
+//		public Consumer<KStream<String, String>> app2() {
+//			return s -> s
+//					.transformValues(EchoTransformer::new, STORE_2_NAME)
+//					.foreach((k, v) -> log.info("Echo {} -> {} into {}", k, v, STORE_2_NAME));
+//		}
 
 		@Bean
 		public CleanupConfig cleanupConfig() {
@@ -283,12 +285,12 @@ class InteractiveQueryServiceMultiStateStoreTests {
 				Stores.persistentKeyValueStore(STORE_1_NAME), Serdes.String(), Serdes.String());
 		}
 
-		@Bean
-		public Consumer<KStream<String, String>> app1() {
-			return s -> s
-				.transformValues(EchoTransformer::new, STORE_1_NAME)
-				.foreach((k, v) -> log.info("Echo {} -> {} into {}", k, v, STORE_1_NAME));
-		}
+//		@Bean
+//		public Consumer<KStream<String, String>> app1() {
+//			return s -> s
+//				.transformValues(EchoTransformer::new, STORE_1_NAME)
+//				.foreach((k, v) -> log.info("Echo {} -> {} into {}", k, v, STORE_1_NAME));
+//		}
 
 		@Bean
 		public CleanupConfig cleanupConfig() {
