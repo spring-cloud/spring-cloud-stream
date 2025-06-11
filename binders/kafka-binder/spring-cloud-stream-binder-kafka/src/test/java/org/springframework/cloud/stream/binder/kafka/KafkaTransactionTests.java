@@ -17,6 +17,7 @@
 package org.springframework.cloud.stream.binder.kafka;
 
 import java.util.Collections;
+import java.util.concurrent.CompletableFuture;
 
 import org.apache.kafka.clients.producer.Callback;
 import org.apache.kafka.clients.producer.Producer;
@@ -42,7 +43,6 @@ import org.springframework.kafka.test.condition.EmbeddedKafkaCondition;
 import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.messaging.support.GenericMessage;
 import org.springframework.retry.support.RetryTemplate;
-import org.springframework.util.concurrent.SettableListenableFuture;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -84,7 +84,7 @@ class KafkaTransactionTests {
 		});
 		provisioningProvider.setMetadataRetryOperations(new RetryTemplate());
 		final Producer mockProducer = mock(Producer.class);
-		given(mockProducer.send(any(), any())).willReturn(new SettableListenableFuture<>());
+		given(mockProducer.send(any(), any())).willReturn(new CompletableFuture<>());
 
 		KafkaProducerProperties extension1 = configurationProperties
 				.getTransaction().getProducer().getExtension();
