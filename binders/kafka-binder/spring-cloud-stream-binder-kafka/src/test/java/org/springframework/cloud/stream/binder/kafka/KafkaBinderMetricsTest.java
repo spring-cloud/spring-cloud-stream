@@ -162,10 +162,10 @@ class KafkaBinderMetricsTest {
 		meterRegistry.config().meterFilter(
 			MeterFilter.denyNameStartsWith("spring.cloud.stream.binder.kafka.offset"));
 
-		// Because we have NoopGauge for the offset metric  in the meter registry, none of these expectations matter.
+		// Because we have NoopGauge for the offset metric in the meter registry, none of these expectations matter.
 		org.mockito.BDDMockito
-			.given(consumer.committed(ArgumentMatchers.any(TopicPartition.class)))
-			.willReturn(new OffsetAndMetadata(500));
+			.given(consumer.committed(ArgumentMatchers.anySet()))
+			.willReturn(java.util.Map.of(new TopicPartition(TEST_TOPIC, 0), new OffsetAndMetadata(500)));
 		List<PartitionInfo> partitions = partitions(new Node(0, null, 0));
 		topicsInUse.put(
 			TEST_TOPIC,

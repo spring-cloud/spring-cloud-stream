@@ -63,8 +63,7 @@ class KafkaStreamsBinderWordCountBranchesFunctionTests {
 	@BeforeAll
 	public static void setUp() throws Exception {
 		embeddedKafka = EmbeddedKafkaCondition.getBroker();
-		Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("groupx", "false",
-				embeddedKafka);
+		Map<String, Object> consumerProps = KafkaTestUtils.consumerProps(embeddedKafka, "groupx", false);
 		consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
 		DefaultKafkaConsumerFactory<String, String> cf = new DefaultKafkaConsumerFactory<>(consumerProps);
 		consumer = cf.createConsumer();
@@ -77,7 +76,7 @@ class KafkaStreamsBinderWordCountBranchesFunctionTests {
 	}
 
 	@Test
-	void kstreamWordCountWithStringInputAndPojoOuput() throws Exception {
+	void kstreamWordCountWithStringInputAndPojoOuput(EmbeddedKafkaBroker embeddedKafka) throws Exception {
 		SpringApplication app = new SpringApplication(WordCountProcessorApplication.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 
@@ -100,14 +99,14 @@ class KafkaStreamsBinderWordCountBranchesFunctionTests {
 						"=KafkaStreamsBinderWordCountBranchesFunctionTests-abc",
 				"--spring.cloud.stream.kafka.streams.binder.brokers=" + embeddedKafka.getBrokersAsString());
 		try {
-			receiveAndValidate(context);
+			receiveAndValidate(embeddedKafka);
 		}
 		finally {
 			context.close();
 		}
 	}
 
-	private void receiveAndValidate(ConfigurableApplicationContext context) throws Exception {
+	private void receiveAndValidate(EmbeddedKafkaBroker embeddedKafka) throws Exception {
 		Map<String, Object> senderProps = KafkaTestUtils.producerProps(embeddedKafka);
 		DefaultKafkaProducerFactory<Integer, String> pf = new DefaultKafkaProducerFactory<>(senderProps);
 		KafkaTemplate<Integer, String> template = new KafkaTemplate<>(pf, true);
@@ -193,7 +192,7 @@ class KafkaStreamsBinderWordCountBranchesFunctionTests {
 				final Map<String, KStream<Object, WordCount>> stringKStreamMap = input
 						.flatMapValues(value -> Arrays.asList(value.toLowerCase(Locale.ROOT).split("\\W+")))
 						.groupBy((key, value) -> value)
-						.windowedBy(TimeWindows.of(Duration.ofSeconds(5)))
+						.windowedBy(TimeWindows.ofSizeWithNoGrace(Duration.ofSeconds(5)))
 						.count(Materialized.as("WordCounts-branch"))
 						.toStream()
 						.map((key, value) -> new KeyValue<>(null, new WordCount(key.key(), value,

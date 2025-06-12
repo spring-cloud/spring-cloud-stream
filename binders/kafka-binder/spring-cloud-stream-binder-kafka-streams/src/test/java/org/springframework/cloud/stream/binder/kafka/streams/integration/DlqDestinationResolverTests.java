@@ -31,7 +31,6 @@ import org.apache.kafka.streams.kstream.Grouped;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.Materialized;
 import org.apache.kafka.streams.kstream.TimeWindows;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.boot.SpringApplication;
@@ -46,7 +45,6 @@ import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.test.EmbeddedKafkaBroker;
-import org.springframework.kafka.test.condition.EmbeddedKafkaCondition;
 import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
 
@@ -58,15 +56,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 @EmbeddedKafka(topics = {"topic1-dlq", "topic2-dlq"})
 class DlqDestinationResolverTests {
 
-	private static EmbeddedKafkaBroker embeddedKafka;
-
-	@BeforeAll
-	public static void setUp() {
-		embeddedKafka = EmbeddedKafkaCondition.getBroker();
-	}
-
 	@Test
-	void dlqDestinationResolverWorks() throws Exception {
+	void dlqDestinationResolverWorks(EmbeddedKafkaBroker embeddedKafka) throws Exception {
 		SpringApplication app = new SpringApplication(WordCountProcessorApplication.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 
@@ -92,8 +83,7 @@ class DlqDestinationResolverTests {
 				template.setDefaultTopic("word2");
 				template.sendDefault("foobar");
 
-				Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("some-random-group",
-						"false", embeddedKafka);
+				Map<String, Object> consumerProps = KafkaTestUtils.consumerProps(embeddedKafka, "some-random-group", false);
 				consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
 				DefaultKafkaConsumerFactory<String, String> cf = new DefaultKafkaConsumerFactory<>(
 						consumerProps);
@@ -128,7 +118,7 @@ class DlqDestinationResolverTests {
 							value -> Arrays.asList(value.toLowerCase(Locale.ROOT).split("\\W+")))
 					.map((key, value) -> new KeyValue<>(value, value))
 					.groupByKey(Grouped.with(Serdes.String(), Serdes.String()))
-					.windowedBy(TimeWindows.of(Duration.ofSeconds(5))).count(Materialized.as("foo-WordCounts-x"))
+					.windowedBy(TimeWindows.ofSizeWithNoGrace(Duration.ofSeconds(5))).count(Materialized.as("foo-WordCounts-x"))
 					.toStream().map((key, value) -> new KeyValue<>(null,
 							"Count for " + key.key() + " : " + value));
 		}

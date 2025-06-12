@@ -63,8 +63,7 @@ class KafkaStreamsBinderPojoInputAndPrimitiveTypeOutputTests {
 	@BeforeAll
 	public static void setUp() throws Exception {
 		embeddedKafka = EmbeddedKafkaCondition.getBroker();
-		Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("group-id",
-				"false", embeddedKafka);
+		Map<String, Object> consumerProps = KafkaTestUtils.consumerProps(embeddedKafka, "group-id", false);
 		consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
 		consumerProps.put("value.deserializer", LongDeserializer.class);
 		DefaultKafkaConsumerFactory<Integer, Long> cf = new DefaultKafkaConsumerFactory<>(
@@ -79,7 +78,7 @@ class KafkaStreamsBinderPojoInputAndPrimitiveTypeOutputTests {
 	}
 
 	@Test
-	void kstreamBinderWithPojoInputAndStringOuput() throws Exception {
+	void kstreamBinderWithPojoInputAndStringOuput(EmbeddedKafkaBroker embeddedKafka) throws Exception {
 		SpringApplication app = new SpringApplication(ProductCountApplication.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 		ConfigurableApplicationContext context = app.run("--server.port=0",
@@ -98,14 +97,14 @@ class KafkaStreamsBinderPojoInputAndPrimitiveTypeOutputTests {
 				"--spring.cloud.stream.kafka.streams.binder.brokers="
 						+ embeddedKafka.getBrokersAsString());
 		try {
-			receiveAndValidateFoo();
+			receiveAndValidateFoo(embeddedKafka);
 		}
 		finally {
 			context.close();
 		}
 	}
 
-	private void receiveAndValidateFoo() {
+	private void receiveAndValidateFoo(EmbeddedKafkaBroker embeddedKafka) throws Exception {
 		Map<String, Object> senderProps = KafkaTestUtils.producerProps(embeddedKafka);
 		DefaultKafkaProducerFactory<Integer, String> pf = new DefaultKafkaProducerFactory<>(
 				senderProps);
@@ -128,7 +127,7 @@ class KafkaStreamsBinderPojoInputAndPrimitiveTypeOutputTests {
 					.map((key, value) -> new KeyValue<>(value, value))
 					.groupByKey(Grouped.with(new JsonSerde<>(Product.class),
 							new JsonSerde<>(Product.class)))
-					.windowedBy(TimeWindows.of(Duration.ofMillis(5000)))
+					.windowedBy(TimeWindows.ofSizeWithNoGrace(Duration.ofMillis(5000)))
 					.count(Materialized.as("id-count-store-x")).toStream()
 					.map((key, value) -> new KeyValue<>(key.key().id, value));
 		}

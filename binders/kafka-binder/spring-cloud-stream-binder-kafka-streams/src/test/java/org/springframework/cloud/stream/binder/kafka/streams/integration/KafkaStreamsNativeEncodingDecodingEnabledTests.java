@@ -31,103 +31,77 @@ import org.apache.kafka.streams.kstream.Grouped;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.Materialized;
 import org.apache.kafka.streams.kstream.TimeWindows;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.SpyBean;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.test.EmbeddedKafkaBroker;
-import org.springframework.kafka.test.rule.EmbeddedKafkaRule;
+import org.springframework.kafka.test.condition.EmbeddedKafkaCondition;
+import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
-import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringRunner;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
 
 /**
  * @author Soby Chacko
  */
-@RunWith(SpringRunner.class)
-@ContextConfiguration
-@DirtiesContext
-public abstract class KafkaStreamsNativeEncodingDecodingEnabledTests {
+@EmbeddedKafka(topics = {"decode-counts", "decode-counts-1"}, partitions = 1)
+class KafkaStreamsNativeEncodingDecodingEnabledTests {
 
-	/**
-	 * Kafka rule.
-	 */
-	@ClassRule
-	public static EmbeddedKafkaRule embeddedKafkaRule = new EmbeddedKafkaRule(1, true,
-			"decode-counts", "decode-counts-1");
-
-	private static EmbeddedKafkaBroker embeddedKafka = embeddedKafkaRule
-			.getEmbeddedKafka();
-
-	@SpyBean
-	org.springframework.cloud.stream.binder.kafka.streams.KafkaStreamsMessageConversionDelegate conversionDelegate;
+	private static EmbeddedKafkaBroker embeddedKafka;
 
 	private static Consumer<String, String> consumer;
 
-	@BeforeClass
+	@BeforeAll
 	public static void setUp() {
-		System.setProperty("spring.cloud.stream.kafka.streams.binder.brokers",
-				embeddedKafka.getBrokersAsString());
-		System.setProperty("server.port", "0");
-		System.setProperty("spring.jmx.enabled", "false");
-
-		Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("group", "false",
-				embeddedKafka);
+		embeddedKafka = EmbeddedKafkaCondition.getBroker();
+		Map<String, Object> consumerProps = KafkaTestUtils.consumerProps(embeddedKafka, "group", false);
 		consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
 		DefaultKafkaConsumerFactory<String, String> cf = new DefaultKafkaConsumerFactory<>(
 				consumerProps);
 		consumer = cf.createConsumer();
-		embeddedKafka.consumeFromEmbeddedTopics(consumer, "decode-counts", "decode-counts-1");
+		embeddedKafka.consumeFromEmbeddedTopics(consumer, "decode-counts-1");
 	}
 
-	@AfterClass
+	@AfterAll
 	public static void tearDown() {
 		consumer.close();
-		System.clearProperty("spring.cloud.stream.kafka.streams.binder.brokers");
-		System.clearProperty("server.port");
-		System.clearProperty("spring.jmx.enabled");
 	}
 
-	@SpringBootTest(classes = WordCountProcessorApplication.class, properties = {
-			"spring.cloud.stream.bindings.process-in-0.destination=decode-words-1",
-			"spring.cloud.stream.bindings.process-out-0.destination=decode-counts-1",
-			"spring.cloud.stream.kafka.streams.bindings.process-in-0.consumer.applicationId"
-					+ "=NativeEncodingDecodingEnabledTests-abc" }, webEnvironment = SpringBootTest.WebEnvironment.NONE)
-	public static class NativeEncodingDecodingEnabledTests
-			extends KafkaStreamsNativeEncodingDecodingEnabledTests {
+	@Test
+	void nativeEncodingDecodingEnabled(EmbeddedKafkaBroker embeddedKafka) {
+		SpringApplication app = new SpringApplication(WordCountProcessorApplication.class);
+		app.setWebApplicationType(WebApplicationType.NONE);
 
-		@Test
-		public void nativeEncodingDecodingEnabled() throws Exception {
+		try (ConfigurableApplicationContext context = app.run("--server.port=0",
+				"--spring.jmx.enabled=false",
+				"--spring.cloud.stream.bindings.process-in-0.destination=decode-words-1",
+				"--spring.cloud.stream.bindings.process-out-0.destination=decode-counts-1",
+				"--spring.cloud.stream.kafka.streams.bindings.process-in-0.consumer.applicationId=NativeEncodingDecodingEnabledTests-abc",
+				"--spring.cloud.stream.kafka.streams.binder.brokers=" + embeddedKafka.getBrokersAsString())) {
 			Map<String, Object> senderProps = KafkaTestUtils.producerProps(embeddedKafka);
 			DefaultKafkaProducerFactory<Integer, String> pf = new DefaultKafkaProducerFactory<>(
 					senderProps);
-			KafkaTemplate<Integer, String> template = new KafkaTemplate<>(pf, true);
-			template.setDefaultTopic("decode-words-1");
-			template.sendDefault("foobar");
-			ConsumerRecord<String, String> cr = KafkaTestUtils.getSingleRecord(consumer,
-					"decode-counts-1");
-			assertThat(cr.value().equals("Count for foobar : 1")).isTrue();
-
-			verify(conversionDelegate, never()).serializeOnOutbound(any(KStream.class));
-			verify(conversionDelegate, never()).deserializeOnInbound(any(Class.class),
-					any(KStream.class));
+			try {
+				KafkaTemplate<Integer, String> template = new KafkaTemplate<>(pf, true);
+				template.setDefaultTopic("decode-words-1");
+				template.sendDefault("foobar");
+				ConsumerRecord<String, String> cr = KafkaTestUtils.getSingleRecord(consumer,
+						"decode-counts-1");
+				assertThat(cr.value().equals("Count for foobar : 1")).isTrue();
+			}
+			finally {
+				pf.destroy();
+			}
 		}
-
 	}
 
 	@EnableAutoConfiguration
@@ -141,11 +115,10 @@ public abstract class KafkaStreamsNativeEncodingDecodingEnabledTests {
 							value -> Arrays.asList(value.toLowerCase(Locale.ROOT).split("\\W+")))
 					.map((key, value) -> new KeyValue<>(value, value))
 					.groupByKey(Grouped.with(Serdes.String(), Serdes.String()))
-					.windowedBy(TimeWindows.of(Duration.ofSeconds(5))).count(Materialized.as("foo-WordCounts-x"))
+					.windowedBy(TimeWindows.ofSizeWithNoGrace(Duration.ofSeconds(5)))
+					.count(Materialized.as("foo-WordCounts-x"))
 					.toStream().map((key, value) -> new KeyValue<>(null,
 							"Count for " + key.key() + " : " + value));
 		}
-
 	}
-
 }

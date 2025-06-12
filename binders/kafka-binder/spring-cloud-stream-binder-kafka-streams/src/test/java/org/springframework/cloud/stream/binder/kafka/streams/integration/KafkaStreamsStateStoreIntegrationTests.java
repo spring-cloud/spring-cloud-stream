@@ -23,8 +23,8 @@ import java.util.function.Consumer;
 
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.kstream.KStream;
-import org.apache.kafka.streams.processor.Processor;
-import org.apache.kafka.streams.processor.ProcessorContext;
+import org.apache.kafka.streams.processor.api.Processor;
+import org.apache.kafka.streams.processor.api.Record;
 import org.apache.kafka.streams.state.StoreBuilder;
 import org.apache.kafka.streams.state.Stores;
 import org.apache.kafka.streams.state.WindowStore;
@@ -160,15 +160,15 @@ class KafkaStreamsStateStoreIntegrationTests {
 		@Bean
 		public Consumer<KStream<Object, Product>> process() {
 
-			return input -> input.process(() -> new Processor<Object, Product>() {
+			return input -> input.process(() -> new Processor<Object, Product, Object, Product>() {
 
 				@Override
-				public void init(ProcessorContext processorContext) {
-					state = (WindowStore) processorContext.getStateStore("mystate");
+				public void init(org.apache.kafka.streams.processor.api.ProcessorContext<Object, Product> context) {
+					state = (WindowStore) context.getStateStore("mystate");
 				}
 
 				@Override
-				public void process(Object s, Product product) {
+				public void process(Record<Object, Product> var1) {
 					processed = true;
 				}
 
@@ -202,15 +202,15 @@ class KafkaStreamsStateStoreIntegrationTests {
 
 			return (input, input2) -> {
 
-				input.process(() -> new Processor<Object, Product>() {
+				input.process(() -> new Processor<Object, Product, Object, Product>() {
 
 					@Override
-					public void init(ProcessorContext processorContext) {
-						state = (WindowStore) processorContext.getStateStore("mystate");
+					public void init(org.apache.kafka.streams.processor.api.ProcessorContext<Object, Product> context) {
+						state = (WindowStore) context.getStateStore("mystate");
 					}
 
 					@Override
-					public void process(Object s, Product product) {
+					public void process(Record<Object, Product> var1) {
 						processed = true;
 					}
 

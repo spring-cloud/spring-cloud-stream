@@ -73,8 +73,7 @@ class KafkaStreamsBinderTombstoneTests {
 	@BeforeAll
 	public static void setUp() {
 		embeddedKafka = EmbeddedKafkaCondition.getBroker();
-		Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("group", "false",
-				embeddedKafka);
+		Map<String, Object> consumerProps = KafkaTestUtils.consumerProps(embeddedKafka, "group", false);
 		consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
 		DefaultKafkaConsumerFactory<String, String> cf = new DefaultKafkaConsumerFactory<>(
 				consumerProps);
@@ -88,8 +87,7 @@ class KafkaStreamsBinderTombstoneTests {
 	}
 
 	@Test
-	void sendToTombstone()
-			throws Exception {
+	void sendToTombstone(EmbeddedKafkaBroker embeddedKafka) throws Exception {
 		SpringApplication app = new SpringApplication(
 				WordCountProcessorApplication.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
@@ -108,7 +106,7 @@ class KafkaStreamsBinderTombstoneTests {
 				"--spring.cloud.stream.bindings.process-in-0.consumer.concurrency=2",
 				"--spring.cloud.stream.kafka.streams.binder.brokers="
 						+ embeddedKafka.getBrokersAsString())) {
-			receiveAndValidate("words-1", "counts-1");
+			receiveAndValidate(embeddedKafka, "words-1", "counts-1");
 			// Assertions on StreamBuilderFactoryBean
 			StreamsBuilderFactoryBean streamsBuilderFactoryBean = context
 					.getBean("&stream-builder-process", StreamsBuilderFactoryBean.class);
@@ -121,7 +119,7 @@ class KafkaStreamsBinderTombstoneTests {
 					.get(StreamsConfig.NUM_STREAM_THREADS_CONFIG);
 			assertThat(concurrency).isEqualTo(2);
 
-			sendTombStoneRecordsAndVerifyGracefulHandling();
+			sendTombStoneRecordsAndVerifyGracefulHandling(embeddedKafka);
 
 			CleanupConfig cleanup = TestUtils.getPropertyValue(streamsBuilderFactoryBean,
 					"cleanupConfig", CleanupConfig.class);
@@ -130,7 +128,7 @@ class KafkaStreamsBinderTombstoneTests {
 		}
 	}
 
-	private void receiveAndValidate(String in, String out) {
+	private void receiveAndValidate(EmbeddedKafkaBroker embeddedKafka, String in, String out) {
 		Map<String, Object> senderProps = KafkaTestUtils.producerProps(embeddedKafka);
 		DefaultKafkaProducerFactory<Integer, String> pf = new DefaultKafkaProducerFactory<>(
 				senderProps);
@@ -147,7 +145,7 @@ class KafkaStreamsBinderTombstoneTests {
 		}
 	}
 
-	private void sendTombStoneRecordsAndVerifyGracefulHandling() throws Exception {
+	private void sendTombStoneRecordsAndVerifyGracefulHandling(EmbeddedKafkaBroker embeddedKafka) throws Exception {
 		Map<String, Object> senderProps = KafkaTestUtils.producerProps(embeddedKafka);
 		DefaultKafkaProducerFactory<Integer, String> pf = new DefaultKafkaProducerFactory<>(
 				senderProps);
@@ -177,7 +175,7 @@ class KafkaStreamsBinderTombstoneTests {
 					.flatMapValues(value -> Arrays.asList(value.toLowerCase(Locale.ROOT).split("\\W+")))
 					.map((key, value) -> new KeyValue<>(value, value))
 					.groupByKey(Grouped.with(Serdes.String(), Serdes.String()))
-					.windowedBy(TimeWindows.of(Duration.ofMillis(5000)))
+					.windowedBy(TimeWindows.ofSizeWithNoGrace(Duration.ofMillis(5000)))
 					.count(Materialized.as("foo-WordCounts"))
 					.toStream()
 					.map((key, value) -> new KeyValue<>(null, new WordCount(key.key(), value,

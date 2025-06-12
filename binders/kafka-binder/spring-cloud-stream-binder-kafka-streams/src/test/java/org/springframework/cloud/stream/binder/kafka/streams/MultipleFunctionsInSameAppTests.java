@@ -29,7 +29,9 @@ import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.StreamsConfig;
+import org.apache.kafka.streams.kstream.Branched;
 import org.apache.kafka.streams.kstream.KStream;
+import org.apache.kafka.streams.kstream.Named;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -65,8 +67,7 @@ class MultipleFunctionsInSameAppTests {
 	@BeforeAll
 	public static void setUp() {
 		embeddedKafka = EmbeddedKafkaCondition.getBroker();
-		Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("purchase-groups", "false",
-				embeddedKafka);
+		Map<String, Object> consumerProps = KafkaTestUtils.consumerProps(embeddedKafka, "purchase-groups", false);
 		consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
 		DefaultKafkaConsumerFactory<String, String> cf = new DefaultKafkaConsumerFactory<>(consumerProps);
 		consumer = cf.createConsumer();
@@ -80,7 +81,7 @@ class MultipleFunctionsInSameAppTests {
 
 	@Test
 	@SuppressWarnings("unchecked")
-	void testMultiFunctionsInSameApp() throws InterruptedException {
+	void testMultiFunctionsInSameApp(EmbeddedKafkaBroker embeddedKafka) throws InterruptedException {
 		SpringApplication app = new SpringApplication(MultipleFunctionsInSameApp.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 
@@ -103,7 +104,7 @@ class MultipleFunctionsInSameAppTests {
 				"--spring.cloud.stream.kafka.streams.binder.functions.analyze.configuration.client.id=analyze-client",
 				"--spring.cloud.stream.kafka.streams.binder.functions.anotherProcess.configuration.client.id=anotherProcess-client",
 				"--spring.cloud.stream.kafka.streams.binder.brokers=" + embeddedKafka.getBrokersAsString())) {
-			receiveAndValidate("purchases", "coffee", "electronics");
+			receiveAndValidate(embeddedKafka, "purchases", "coffee", "electronics");
 
 			StreamsBuilderFactoryBean processStreamsBuilderFactoryBean = context
 					.getBean("&stream-builder-processItem", StreamsBuilderFactoryBean.class);
@@ -138,7 +139,7 @@ class MultipleFunctionsInSameAppTests {
 	}
 
 	@Test
-	void testMultiFunctionsInSameAppWithMultiBinders() throws Exception {
+	void testMultiFunctionsInSameAppWithMultiBinders(EmbeddedKafkaBroker embeddedKafka) throws Exception {
 		SpringApplication app = new SpringApplication(MultipleFunctionsInSameApp.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 
@@ -168,7 +169,7 @@ class MultipleFunctionsInSameAppTests {
 				"--spring.cloud.stream.binders.kafka2.environment.spring.cloud.stream.kafka.streams.binder.configuration.client.id=analyze-client")) {
 
 			Thread.sleep(1000);
-			receiveAndValidate("purchases", "coffee", "electronics");
+			receiveAndValidate(embeddedKafka, "purchases", "coffee", "electronics");
 
 			StreamsBuilderFactoryBean processStreamsBuilderFactoryBean = context
 					.getBean("&stream-builder-processItem", StreamsBuilderFactoryBean.class);
@@ -192,7 +193,7 @@ class MultipleFunctionsInSameAppTests {
 		}
 	}
 
-	private void receiveAndValidate(String in, String... out) throws InterruptedException {
+	private void receiveAndValidate(EmbeddedKafkaBroker embeddedKafka, String in, String... out) throws InterruptedException {
 		Map<String, Object> senderProps = KafkaTestUtils.producerProps(embeddedKafka);
 		DefaultKafkaProducerFactory<Integer, String> pf = new DefaultKafkaProducerFactory<>(senderProps);
 		try {
@@ -218,9 +219,16 @@ class MultipleFunctionsInSameAppTests {
 
 		@Bean
 		public Function<KStream<String, String>, KStream<String, String>[]> processItem() {
-			return input -> input.branch(
-					(s, p) -> p.equalsIgnoreCase("coffee"),
-					(s, p) -> p.equalsIgnoreCase("electronics"));
+			return input -> {
+				Map<String, KStream<String, String>> branches = input.split(Named.as("split-"))
+						.branch((s, p) -> p.equalsIgnoreCase("coffee"), Branched.as("coffee"))
+						.branch((s, p) -> p.equalsIgnoreCase("electronics"), Branched.as("electronics"))
+						.defaultBranch(Branched.as("other"));
+				return new KStream[] {
+					branches.get("split-coffee"),
+					branches.get("split-electronics")
+				};
+			};
 		}
 
 		// Testing for the scenario under https://github.com/spring-cloud/spring-cloud-stream/issues/2817

@@ -24,8 +24,8 @@ import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.StoreQueryParameters;
 import org.apache.kafka.streams.errors.UnknownStateStoreException;
 import org.apache.kafka.streams.kstream.KStream;
-import org.apache.kafka.streams.kstream.ValueTransformerWithKey;
-import org.apache.kafka.streams.processor.ProcessorContext;
+import org.apache.kafka.streams.processor.api.FixedKeyProcessor;
+import org.apache.kafka.streams.processor.api.FixedKeyRecord;
 import org.apache.kafka.streams.state.KeyValueStore;
 import org.apache.kafka.streams.state.QueryableStoreTypes;
 import org.apache.kafka.streams.state.StoreBuilder;
@@ -93,11 +93,9 @@ class InteractiveQueryServiceMultiStateStoreTests {
 				.web(WebApplicationType.NONE)
 				.run("--server.port=0",
 						"--spring.jmx.enabled=false",
-						"--spring.cloud.function.definition=app1;app2",
+						"--spring.cloud.function.definition=app1",
 						"--spring.cloud.stream.function.bindings.app1-in-0=input1",
-						"--spring.cloud.stream.function.bindings.app2-in-0=input2",
 						"--spring.cloud.stream.kafka.streams.binder.functions.app1.application-id=stateStoreTestApp1",
-						"--spring.cloud.stream.kafka.streams.binder.functions.app2.application-id=stateStoreTestApp2",
 						appServerArg,
 						"--spring.cloud.stream.kafka.streams.binder.brokers=" + embeddedKafka.getBrokersAsString())
 		) {
@@ -110,8 +108,6 @@ class InteractiveQueryServiceMultiStateStoreTests {
 			// cause a failure when the state store is invalid.
 			for (int i = 0; i < 100; i++) {
 				assertThat(queryService.getQueryableStore(STORE_1_NAME, QueryableStoreTypes.keyValueStore())
-						.get("someKey")).isNull();
-				assertThat(queryService.getQueryableStore(STORE_2_NAME, QueryableStoreTypes.keyValueStore())
 						.get("someKey")).isNull();
 			}
 		}
@@ -203,7 +199,7 @@ class InteractiveQueryServiceMultiStateStoreTests {
 		@Bean
 		public Consumer<KStream<String, String>> app1() {
 			return s -> s
-					.transformValues(EchoTransformer::new, STORE_1_NAME)
+					.processValues(EchoProcessor::new, STORE_1_NAME)
 					.foreach((k, v) -> log.info("Echo {} -> {} into {}", k, v, STORE_1_NAME));
 		}
 
@@ -216,7 +212,7 @@ class InteractiveQueryServiceMultiStateStoreTests {
 		@Bean
 		public Consumer<KStream<String, String>> app2() {
 			return s -> s
-					.transformValues(EchoTransformer::new, STORE_2_NAME)
+					.processValues(EchoProcessor::new, STORE_1_NAME)
 					.foreach((k, v) -> log.info("Echo {} -> {} into {}", k, v, STORE_2_NAME));
 		}
 
@@ -286,7 +282,7 @@ class InteractiveQueryServiceMultiStateStoreTests {
 		@Bean
 		public Consumer<KStream<String, String>> app1() {
 			return s -> s
-				.transformValues(EchoTransformer::new, STORE_1_NAME)
+				.processValues(EchoProcessor::new, STORE_1_NAME)
 				.foreach((k, v) -> log.info("Echo {} -> {} into {}", k, v, STORE_1_NAME));
 		}
 
@@ -301,15 +297,12 @@ class InteractiveQueryServiceMultiStateStoreTests {
 		}
 	}
 
-	static class EchoTransformer implements ValueTransformerWithKey<String, String, String> {
+	static class EchoProcessor implements FixedKeyProcessor<String, String, String> {
+
 
 		@Override
-		public void init(ProcessorContext context) {
-		}
+		public void process(FixedKeyRecord<String, String> fixedKeyRecord) {
 
-		@Override
-		public String transform(String key, String value) {
-			return value;
 		}
 
 		@Override

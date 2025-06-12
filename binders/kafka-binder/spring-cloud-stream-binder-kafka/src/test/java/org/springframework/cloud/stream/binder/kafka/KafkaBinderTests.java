@@ -3553,7 +3553,7 @@ class KafkaBinderTests extends
 		Consumer consumer = cf.createConsumer();
 		consumer.subscribe(Collections.singletonList("mixed.0"));
 
-		ConsumerRecords records = consumer.poll(10_1000);
+		ConsumerRecords records = consumer.poll(Duration.ofMillis(10000));
 		Iterator<ConsumerRecord> iterator = records.iterator();
 		ConsumerRecord record = iterator.next();
 		byte[] value = (byte[]) record.value();

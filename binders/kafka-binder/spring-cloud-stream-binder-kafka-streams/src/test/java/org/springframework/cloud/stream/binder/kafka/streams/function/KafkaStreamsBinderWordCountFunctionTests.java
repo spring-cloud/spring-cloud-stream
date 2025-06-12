@@ -19,6 +19,7 @@ package org.springframework.cloud.stream.binder.kafka.streams.function;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -86,8 +87,7 @@ class KafkaStreamsBinderWordCountFunctionTests {
 	@BeforeAll
 	public static void setUp() {
 		embeddedKafka = EmbeddedKafkaCondition.getBroker();
-		Map<String, Object> consumerProps = KafkaTestUtils.consumerProps("group", "false",
-				embeddedKafka);
+		Map<String, Object> consumerProps = KafkaTestUtils.consumerProps(embeddedKafka, "group", false);
 		consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
 		consumerProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer");
 		DefaultKafkaConsumerFactory<String, String> cf = new DefaultKafkaConsumerFactory<>(consumerProps);
@@ -102,7 +102,7 @@ class KafkaStreamsBinderWordCountFunctionTests {
 
 	@Test
 	@SuppressWarnings("unchecked")
-	void basicKStreamTopologyExecution() throws Exception {
+	void basicKStreamTopologyExecution(EmbeddedKafkaBroker embeddedKafka) throws Exception {
 		SpringApplication app = new SpringApplication(WordCountProcessorApplication.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 
@@ -123,7 +123,7 @@ class KafkaStreamsBinderWordCountFunctionTests {
 				"--spring.cloud.stream.kafka.streams.bindings.process-in-0.consumer.consumedAs=custom-consumer",
 				"--spring.cloud.stream.kafka.streams.bindings.process-out-0.producer.producedAs=custom-producer",
 				"--spring.cloud.stream.kafka.streams.binder.brokers=" + embeddedKafka.getBrokersAsString())) {
-			receiveAndValidate("words", "counts");
+			receiveAndValidate(embeddedKafka, "words", "counts");
 
 			final MeterRegistry meterRegistry = context.getBean(MeterRegistry.class);
 			Thread.sleep(100);
@@ -179,7 +179,7 @@ class KafkaStreamsBinderWordCountFunctionTests {
 	}
 
 	@Test
-	void kstreamWordCountWithApplicationIdSpecifiedAtDefaultConsumer() {
+	void kstreamWordCountWithApplicationIdSpecifiedAtDefaultConsumer(EmbeddedKafkaBroker embeddedKafka) throws Exception {
 		SpringApplication app = new SpringApplication(WordCountProcessorApplication.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 
@@ -195,12 +195,12 @@ class KafkaStreamsBinderWordCountFunctionTests {
 						+ "=org.apache.kafka.common.serialization.Serdes$StringSerde",
 				"--spring.cloud.stream.kafka.binder.brokers="
 						+ embeddedKafka.getBrokersAsString())) {
-			receiveAndValidate("words-5", "counts-5");
+			receiveAndValidate(embeddedKafka, "words-5", "counts-5");
 		}
 	}
 
 	@Test
-	void kstreamWordCountFunctionWithCustomProducerStreamPartitioner() throws Exception {
+	void kstreamWordCountFunctionWithCustomProducerStreamPartitioner(EmbeddedKafkaBroker embeddedKafka) throws Exception {
 		SpringApplication app = new SpringApplication(WordCountProcessorApplication.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 
@@ -240,7 +240,7 @@ class KafkaStreamsBinderWordCountFunctionTests {
 	}
 
 	@Test
-	void kstreamBinderAutoStartup() throws Exception {
+	void kstreamBinderAutoStartup(EmbeddedKafkaBroker embeddedKafka) throws Exception {
 		SpringApplication app = new SpringApplication(WordCountProcessorApplication.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 
@@ -262,7 +262,7 @@ class KafkaStreamsBinderWordCountFunctionTests {
 	}
 
 	@Test
-	void kstreamIndividualBindingAutoStartup() throws Exception {
+	void kstreamIndividualBindingAutoStartup(EmbeddedKafkaBroker embeddedKafka) throws Exception {
 		SpringApplication app = new SpringApplication(WordCountProcessorApplication.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 
@@ -287,8 +287,7 @@ class KafkaStreamsBinderWordCountFunctionTests {
 	// The following test verifies the fixes made for this issue:
 	// https://github.com/spring-cloud/spring-cloud-stream-binder-kafka/issues/774
 	@Test
-	void outboundNullValueIsHandledGracefully()
-			throws Exception {
+	void outboundNullValueIsHandledGracefully(EmbeddedKafkaBroker embeddedKafka) {
 		SpringApplication app = new SpringApplication(OutboundNullApplication.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 
@@ -323,7 +322,7 @@ class KafkaStreamsBinderWordCountFunctionTests {
 		}
 	}
 
-	private void receiveAndValidate(String in, String out) {
+	private void receiveAndValidate(EmbeddedKafkaBroker embeddedKafka, String in, String out) {
 		Map<String, Object> senderProps = KafkaTestUtils.producerProps(embeddedKafka);
 		DefaultKafkaProducerFactory<Integer, String> pf = new DefaultKafkaProducerFactory<>(senderProps);
 		try {
@@ -401,7 +400,7 @@ class KafkaStreamsBinderWordCountFunctionTests {
 					.flatMapValues(value -> Arrays.asList(value.toLowerCase(Locale.ROOT).split("\\W+")))
 					.map((key, value) -> new KeyValue<>(value, value))
 					.groupByKey(Grouped.with(Serdes.String(), Serdes.String()))
-					.windowedBy(TimeWindows.of(Duration.ofMillis(5000)))
+					.windowedBy(TimeWindows.ofSizeWithNoGrace(Duration.ofMillis(5000)))
 					.count(Materialized.as("foo-WordCounts"))
 					.toStream()
 					.map((key, value) -> new KeyValue<>(key.key(), new WordCount(key.key(), value,
@@ -429,7 +428,14 @@ class KafkaStreamsBinderWordCountFunctionTests {
 
 		@Bean
 		StreamPartitioner<String, WordCount> streamPartitioner() {
-			return (t, k, v, n) -> k.equals("foo") ? 0 : 1;
+			return (topic, key, value, numPartitions) -> {
+				if (key.equals("foo")) {
+					return Optional.of(Collections.singleton(0));
+				}
+				else {
+					return Optional.of(Collections.singleton(1));
+				}
+			};
 		}
 	}
 
