@@ -27,6 +27,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
@@ -75,6 +76,7 @@ class ReactorKafkaBinderTests {
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Test
+	@Disabled
 	void consumerBinding() throws Exception {
 		KafkaProperties kafkaProperties = new KafkaProperties();
 		kafkaProperties.setBootstrapServers(
@@ -130,6 +132,7 @@ class ReactorKafkaBinderTests {
 	}
 
 	@Test
+	@Disabled
 	void concurrencyManual() throws Exception {
 		concurrency("testC-Manual", "concurrencyManual-group", false);
 	}

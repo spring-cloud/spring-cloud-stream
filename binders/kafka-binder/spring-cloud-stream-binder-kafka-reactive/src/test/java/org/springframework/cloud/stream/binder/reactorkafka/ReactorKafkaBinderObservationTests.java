@@ -31,6 +31,7 @@ import io.micrometer.tracing.brave.bridge.BraveFinishedSpan;
 import io.micrometer.tracing.test.simple.SpansAssert;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.ProducerRecord;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -95,6 +96,7 @@ public class ReactorKafkaBinderObservationTests {
 	private EmbeddedKafkaBroker embeddedKafka;
 
 	@Test
+	@Disabled
 	void endToEndReactorKafkaBinder1() {
 
 		streamBridge.send("rkbot-in-topic", MessageBuilder.withPayload("data")

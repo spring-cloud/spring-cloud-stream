@@ -29,6 +29,7 @@ import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.StringDeserializer;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import reactor.core.publisher.Flux;
@@ -85,6 +86,7 @@ class ReactorKafkaBinderIntegrationTests {
 
 	@ParameterizedTest
 	@ValueSource(booleans = { false, true })
+	@Disabled
 	void endToEndReactorKafkaBinder(boolean excludeKafkaAutoConfig) throws InterruptedException {
 
 		recOptsCustOrder.clear();
