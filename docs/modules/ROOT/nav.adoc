@@ -163,7 +163,6 @@
 #* xref:README.adoc[]
 #* xref:configprops.adoc[]
 #* xref:intro.adoc[]
-#** xref:kafka/kafka_reactive_binder.adoc[]
 #** xref:kafka/kafka-streams.adoc[]
 #*** xref:kafka/kafka-streams-binder/usage.adoc[]
 #*** xref:kafka/kafka-streams-binder/overview.adoc[]

@@ -1,2 +1,0 @@
-reactorKafka:\
-org.springframework.cloud.stream.binder.reactorkafka.ReactorKafkaBinderConfiguration
