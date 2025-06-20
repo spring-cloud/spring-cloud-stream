@@ -184,7 +184,7 @@ public class KafkaTopicProvisioner implements
 	}
 
 	private Map<String, Object> createAdminClientProperties(KafkaProperties properties, KafkaConnectionDetails connectionDetails) {
-		Map<String, Object> adminProperties = properties.buildAdminProperties(null);
+		Map<String, Object> adminProperties = properties.buildAdminProperties();
 		if (connectionDetails != null) {
 			adminProperties.put(CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG, connectionDetails.getAdminBootstrapServers());
 		}

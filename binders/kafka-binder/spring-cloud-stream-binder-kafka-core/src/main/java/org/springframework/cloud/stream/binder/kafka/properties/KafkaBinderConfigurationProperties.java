@@ -400,7 +400,7 @@ public class KafkaBinderConfigurationProperties {
 	 * @return the merged properties.
 	 */
 	public Map<String, Object> mergedConsumerConfiguration() {
-		Map<String, Object> consumerConfiguration = new HashMap<>(this.kafkaProperties.buildConsumerProperties(null));
+		Map<String, Object> consumerConfiguration = new HashMap<>(this.kafkaProperties.buildConsumerProperties());
 		if (this.kafkaConnectionDetails != null) {
 			consumerConfiguration.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, this.kafkaConnectionDetails.getConsumerBootstrapServers());
 		}
@@ -429,7 +429,7 @@ public class KafkaBinderConfigurationProperties {
 	 * @return the merged properties.
 	 */
 	public Map<String, Object> mergedProducerConfiguration() {
-		Map<String, Object> producerConfiguration = new HashMap<>(this.kafkaProperties.buildProducerProperties(null));
+		Map<String, Object> producerConfiguration = new HashMap<>(this.kafkaProperties.buildProducerProperties());
 		if (this.kafkaConnectionDetails != null) {
 			producerConfiguration.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, this.kafkaConnectionDetails.getProducerBootstrapServers());
 		}

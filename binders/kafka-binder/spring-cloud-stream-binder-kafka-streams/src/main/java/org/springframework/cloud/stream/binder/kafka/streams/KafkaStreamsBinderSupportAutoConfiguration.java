@@ -174,7 +174,7 @@ public class KafkaStreamsBinderSupportAutoConfiguration {
 			@Qualifier("binderConfigurationProperties") KafkaStreamsBinderConfigurationProperties properties,
 			Environment environment) {
 		KafkaProperties kafkaProperties = properties.getKafkaProperties();
-		Map<String, Object> streamsProperties = kafkaProperties.buildStreamsProperties(null);
+		Map<String, Object> streamsProperties = kafkaProperties.buildStreamsProperties();
 		if (kafkaProperties.getStreams().getApplicationId() == null) {
 			String applicationName = environment.getProperty("spring.application.name");
 			if (applicationName != null) {
