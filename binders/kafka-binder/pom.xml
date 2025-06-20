@@ -134,14 +134,6 @@
 			<url>https://repo.spring.io/libs-milestone-local</url>
 		</repository>
 		<repository>
-			<id>rsocket-snapshots</id>
-			<name>RSocket Snapshots</name>
-			<url>https://oss.jfrog.org/oss-snapshot-local</url>
-			<snapshots>
-				<enabled>true</enabled>
-			</snapshots>
-		</repository>
-		<repository>
 			<id>spring-releases</id>
 			<name>Spring Releases</name>
 			<url>https://repo.spring.io/release</url>
