@@ -510,8 +510,10 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 			}
 		}
 
-		// Register the sources classes to the specific binder context after configuring the environment property sources
-		List<Class> sourceClasses = new ArrayList<>(Arrays.asList(binderType.getConfigurationClasses()));
+		// Modified registration: first user classes (spring.main.sources) and then binder classes
+		List<Class> sourceClasses = new ArrayList<>();
+
+		// First register user classes if defined in spring.main.sources
 		if (binderProperties.containsKey("spring.main.sources")) {
 			String sources = (String) binderProperties.get("spring.main.sources");
 			if (StringUtils.hasText(sources)) {
@@ -525,6 +527,10 @@ public class DefaultBinderFactory implements BinderFactory, DisposableBean, Appl
 				});
 			}
 		}
+
+		// Then add binder configuration classes
+		sourceClasses.addAll(Arrays.asList(binderType.getConfigurationClasses()));
+
 		binderProducingContext.register(sourceClasses.toArray(new Class[] {}));
 
 		if (refresh) {
