@@ -25,6 +25,7 @@ dump.rdb
 .apt_generated
 artifacts
 **/dependency-reduced-pom.xml
+.flattened-pom.xml
 
 node
 node_modules
