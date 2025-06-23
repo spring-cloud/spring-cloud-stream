@@ -8,6 +8,7 @@
 		<version>4.2.2-SNAPSHOT</version>
 	</parent>
 	<artifactId>spring-cloud-stream-binder-kafka-core</artifactId>
+	<name>${artifactId}</name>
 	<description>Spring Cloud Stream Kafka Binder Core</description>
 	<url>https://projects.spring.io/spring-cloud</url>
 	<organization>
