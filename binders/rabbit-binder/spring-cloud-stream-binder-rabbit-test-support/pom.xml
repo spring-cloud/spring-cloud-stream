@@ -7,6 +7,7 @@
         <version>4.3.1-SNAPSHOT</version>
     </parent>
     <artifactId>spring-cloud-stream-binder-rabbit-test-support</artifactId>
+	<name>${artifactId}</name>
     <description>Rabbit related test classes</description>
     <dependencies>
         <dependency>
@@ -27,6 +28,6 @@
 	      <artifactId>junit-jupiter</artifactId>
 	      <scope>compile</scope>
 	    </dependency>
-        
+
     </dependencies>
 </project>
