@@ -7,7 +7,7 @@
 		<version>5.0.0-SNAPSHOT</version>
 	</parent>
 	<artifactId>spring-cloud-starter-stream-rabbit</artifactId>
-	<name>${artifactId}</name>
+	<name>${project.artifactId}</name>
 	<description>Spring Cloud Starter Stream Rabbit</description>
 	<url>https://projects.spring.io/spring-cloud</url>
 	<organization>
