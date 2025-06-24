@@ -7,7 +7,7 @@
         <version>4.1.6-SNAPSHOT</version>
     </parent>
     <artifactId>spring-cloud-stream-binder-rabbit-test-support</artifactId>
-	<name>${artifactId}</name>
+	<name>${project.artifactId}</name>
     <description>Rabbit related test classes</description>
     <dependencies>
         <dependency>
