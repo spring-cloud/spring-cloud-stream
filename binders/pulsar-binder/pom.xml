@@ -3,12 +3,12 @@
 	<modelVersion>4.0.0</modelVersion>
 	<artifactId>spring-cloud-stream-binder-pulsar-parent</artifactId>
 	<name>${project.artifactId}</name>
-	<version>4.1.7-SNAPSHOT</version>
+	<version>4.1.6-SNAPSHOT</version>
 	<packaging>pom</packaging>
 	<parent>
 		<groupId>org.springframework.cloud</groupId>
 		<artifactId>spring-cloud-stream-binders</artifactId>
-		<version>4.1.7-SNAPSHOT</version>
+		<version>4.1.6-SNAPSHOT</version>
 	</parent>
 
 	<properties>
