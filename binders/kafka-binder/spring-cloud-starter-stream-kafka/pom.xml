@@ -9,7 +9,7 @@
 	<artifactId>spring-cloud-starter-stream-kafka</artifactId>
 	<description>Spring Cloud Starter Stream Kafka</description>
 	<url>https://projects.spring.io/spring-cloud</url>
-	<name>${artifactId}</name>
+	<name>${project.artifactId}</name>
 	<organization>
 		<name>Pivotal Software, Inc.</name>
 		<url>https://www.spring.io</url>

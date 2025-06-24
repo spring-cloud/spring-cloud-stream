@@ -5,8 +5,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<artifactId>spring-cloud-stream-parent</artifactId>
 	<version>4.2.2-SNAPSHOT</version> <!-- Do not remove. Ignore yellow warning -->
-	<name>${artifactId}</name>
-
+	<name>${project.artifactId}</name>
 	<packaging>pom</packaging>
 	<parent>
 		<groupId>org.springframework.cloud</groupId>
