@@ -1,5 +1,10 @@
 [[spring-cloud-bus]]
 = Spring Cloud Bus
 :page-section-summary-toc: 1
+:github: https://github.com/spring-cloud/spring-cloud-bus
+:githubmaster: {github}/tree/master
+:docslink: {githubmaster}/docs/src/main/asciidoc
+:nofooter:
+:special-string: _
 
 *{spring-cloud-version}*
