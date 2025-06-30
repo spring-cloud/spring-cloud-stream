@@ -1,6 +1,6 @@
-org.springframework.boot.autoconfigure.amqp.ConnectionFactoryCustomizer
-org.springframework.boot.autoconfigure.kafka.KafkaConnectionDetails
-org.springframework.boot.autoconfigure.kafka.StreamsBuilderFactoryBeanCustomizer
+org.springframework.boot.amqp.autoconfigure.ConnectionFactoryCustomizer
+org.springframework.boot.kafka.autoconfigure.StreamsBuilderFactoryBeanCustomizer
+org.springframework.boot.kafka.autoconfigure.KafkaConnectionDetails
 org.springframework.cloud.stream.config.SpelExpressionConverterConfiguration$SpelConverter
 org.springframework.cloud.stream.config.ListenerContainerCustomizer
 org.springframework.cloud.stream.binder.kafka.ListenerContainerWithDlqAndRetryCustomizer
