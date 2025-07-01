@@ -69,7 +69,7 @@ import org.springframework.kafka.support.ProducerListener;
 import org.springframework.lang.Nullable;
 import org.springframework.messaging.converter.MessageConverter;
 
-/**
+/**G©
  * Kafka binder configuration class.
  *
  * @author David Turanski
@@ -88,7 +88,7 @@ import org.springframework.messaging.converter.MessageConverter;
  */
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnMissingBean(Binder.class)
-@Import({ KafkaBinderHealthIndicatorConfiguration.class })
+@Import({ KafkaBinderHealthIndicatorConfiguration.class})
 @EnableConfigurationProperties({ KafkaProperties.class, KafkaExtendedBindingProperties.class })
 public class KafkaBinderConfiguration {
 

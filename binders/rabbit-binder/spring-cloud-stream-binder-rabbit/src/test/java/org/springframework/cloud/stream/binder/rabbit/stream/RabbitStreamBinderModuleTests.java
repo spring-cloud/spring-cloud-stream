@@ -28,6 +28,7 @@ import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.listener.MessageListenerContainer;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.autoconfigure.integration.IntegrationAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.stream.binder.BinderFactory;
 import org.springframework.cloud.stream.binder.Binding;
@@ -44,6 +45,7 @@ import org.springframework.cloud.stream.config.ProducerMessageHandlerCustomizer;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.integration.amqp.outbound.RabbitStreamMessageHandler;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.channel.QueueChannel;
@@ -117,7 +119,7 @@ class RabbitStreamBinderModuleTests {
 
 	@Test
 	void streamHandler() {
-		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(SimpleProcessor.class)
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(IntegrationAutoConfiguration.class, SimpleProcessor.class)
 				.web(WebApplicationType.NONE)
 				.run("--server.port=0")) {
 			BinderFactory binderFactory = context.getBean(BinderFactory.class);
@@ -135,6 +137,7 @@ class RabbitStreamBinderModuleTests {
 
 	@EnableAutoConfiguration
 	@Configuration
+	@Import(IntegrationAutoConfiguration.class)
 	public static class SimpleProcessor {
 
 		@Bean

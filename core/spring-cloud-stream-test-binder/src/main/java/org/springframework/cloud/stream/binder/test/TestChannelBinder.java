@@ -160,7 +160,7 @@ public class TestChannelBinder extends
 		IntegrationMessageListeningContainer messageListenerContainer = new IntegrationMessageListeningContainer();
 		IntegrationBinderInboundChannelAdapter adapter = new IntegrationBinderInboundChannelAdapter(
 			messageListenerContainer);
-
+		adapter.setBeanFactory(this.beanFactory);
 		String groupName = StringUtils.hasText(group) ? group : "anonymous";
 		ErrorInfrastructure errorInfrastructure = registerErrorInfrastructure(destination,
 			groupName, properties);

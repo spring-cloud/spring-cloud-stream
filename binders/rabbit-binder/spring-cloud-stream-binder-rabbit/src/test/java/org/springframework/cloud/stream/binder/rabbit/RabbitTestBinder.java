@@ -22,6 +22,7 @@ import java.util.Set;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.boot.autoconfigure.amqp.RabbitProperties;
+import org.springframework.boot.autoconfigure.integration.IntegrationAutoConfiguration;
 import org.springframework.cloud.stream.binder.AbstractPollableConsumerTestBinder;
 import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
@@ -69,7 +70,7 @@ class RabbitTestBinder extends
 
 	RabbitTestBinder(ConnectionFactory connectionFactory,
 			RabbitMessageChannelBinder binder) {
-		this.applicationContext = new AnnotationConfigApplicationContext(Config.class);
+		this.applicationContext = new AnnotationConfigApplicationContext(IntegrationAutoConfiguration.class, Config.class);
 		binder.setApplicationContext(this.applicationContext);
 		this.setPollableConsumerBinder(binder);
 		this.rabbitAdmin = new RabbitAdmin(connectionFactory);
