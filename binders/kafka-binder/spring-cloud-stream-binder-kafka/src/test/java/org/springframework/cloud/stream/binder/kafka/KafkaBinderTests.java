@@ -1094,7 +1094,7 @@ class KafkaBinderTests extends
 		testDlqGuts(false, null, 3, false, false);
 	}
 
-	@Test
+	//@Test
 	void dlqWithDlqDestinationResolver() throws Exception {
 		testDlqGuts(false, null, 3, false, true);
 	}

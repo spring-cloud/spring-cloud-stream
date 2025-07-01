@@ -171,6 +171,8 @@ public final class StreamUtils {
 			template.setStreamConverter(applicationContext.getBean(beanName, StreamMessageConverter.class));
 		}
 		RabbitStreamMessageHandler handler = new RabbitStreamMessageHandler(template);
+		handler.setApplicationContext(applicationContext);
+		handler.setBeanFactory(applicationContext.getBeanFactory());
 		if (errorChannel != null) {
 			handler.setSendFailureChannel(errorChannel);
 		}

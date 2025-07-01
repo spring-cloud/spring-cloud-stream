@@ -31,11 +31,13 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 
+import org.springframework.boot.autoconfigure.integration.IntegrationAutoConfiguration;
 import org.springframework.cloud.stream.binding.MessageConverterConfigurer;
 import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
 import org.springframework.context.Lifecycle;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.core.convert.support.DefaultConversionService;
 import org.springframework.integration.channel.DirectChannel;
@@ -85,8 +87,7 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 
 	@BeforeEach
 	public void before() {
-		applicationContext = new GenericApplicationContext();
-		applicationContext.refresh();
+		applicationContext = new AnnotationConfigApplicationContext(IntegrationAutoConfiguration.class);
 		this.messageConverter = new CompositeMessageConverterFactory()
 				.getMessageConverterForAllRegistered();
 	}
