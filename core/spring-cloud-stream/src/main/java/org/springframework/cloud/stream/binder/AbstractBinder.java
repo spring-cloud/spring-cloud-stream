@@ -122,10 +122,6 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 	public final void afterPropertiesSet() throws Exception {
 		Assert.notNull(this.applicationContext,
 				"The 'applicationContext' property must not be null");
-		if (this.evaluationContext == null) {
-//			this.evaluationContext = ExpressionUtils
-//					.createStandardEvaluationContext(getBeanFactory());
-		}
 		onInit();
 	}
 

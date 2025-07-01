@@ -88,7 +88,6 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 	@BeforeEach
 	public void before() {
 		applicationContext = new AnnotationConfigApplicationContext(IntegrationAutoConfiguration.class);
-//		applicationContext.refresh();
 		this.messageConverter = new CompositeMessageConverterFactory()
 				.getMessageConverterForAllRegistered();
 	}
