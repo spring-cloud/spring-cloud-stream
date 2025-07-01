@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2019 the original author or authors.
+ * Copyright 2012-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,6 @@ import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration;
 import org.springframework.cloud.bus.BusAutoConfiguration;
 import org.springframework.cloud.bus.ConditionalOnBusEnabled;
 import org.springframework.cloud.bus.endpoint.RefreshBusEndpoint;
@@ -59,7 +58,8 @@ import org.springframework.util.MimeTypeUtils;
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnBusEnabled
 @ConditionalOnClass({ RefreshBusEndpoint.class, ObjectMapper.class })
-@AutoConfigureBefore({ BusAutoConfiguration.class, JacksonAutoConfiguration.class })
+@AutoConfigureBefore(value = BusAutoConfiguration.class,
+		name = "org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration")
 public class BusJacksonAutoConfiguration {
 
 	// needed in the case where @RemoteApplicationEventScan is not used
