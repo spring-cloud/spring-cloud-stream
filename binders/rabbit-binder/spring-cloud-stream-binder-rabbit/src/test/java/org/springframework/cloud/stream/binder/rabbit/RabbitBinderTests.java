@@ -2217,6 +2217,7 @@ class RabbitBinderTests extends
 	@Test
 	void routingKeyExpression(TestInfo testInfo) throws Exception {
 		RabbitTestBinder binder = getBinder();
+
 		ExtendedProducerProperties<RabbitProducerProperties> producerProperties = createProducerProperties(testInfo);
 		producerProperties.getExtension().setRoutingKeyExpression(
 				spelExpressionParser.parseExpression("payload.field"));

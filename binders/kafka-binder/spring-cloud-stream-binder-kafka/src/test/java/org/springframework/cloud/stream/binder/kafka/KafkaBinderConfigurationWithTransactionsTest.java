@@ -23,6 +23,7 @@ import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 
+import org.springframework.boot.integration.autoconfigure.IntegrationAutoConfiguration;
 import org.springframework.boot.kafka.autoconfigure.KafkaAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
@@ -39,11 +40,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * @author Soby Chacko
  */
-@SpringBootTest(classes = { KafkaBinderConfiguration.class })
+@SpringBootTest(classes = { KafkaBinderConfiguration.class, IntegrationAutoConfiguration.class })
 public class KafkaBinderConfigurationWithTransactionsTest {
 
 	private final ApplicationContextRunner contextRunner = new ApplicationContextRunner()
-		.withUserConfiguration(KafkaBinderConfiguration.class, KafkaAutoConfiguration.class)
+		.withUserConfiguration(IntegrationAutoConfiguration.class, KafkaBinderConfiguration.class, KafkaAutoConfiguration.class)
 		.withPropertyValues(
 			"spring.cloud.stream.kafka.binder.transaction.transaction-id-prefix=test-tx-",
 			"spring.kafka.bootstrap-servers=localhost:9092");

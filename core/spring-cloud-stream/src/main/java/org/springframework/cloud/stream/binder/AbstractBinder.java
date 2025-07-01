@@ -32,7 +32,6 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.support.AbstractApplicationContext;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.expression.EvaluationContext;
-import org.springframework.integration.expression.ExpressionUtils;
 import org.springframework.retry.backoff.ExponentialBackOffPolicy;
 import org.springframework.retry.policy.SimpleRetryPolicy;
 import org.springframework.retry.support.RetryTemplate;
@@ -104,6 +103,11 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 			throws BeansException {
 		Assert.isInstanceOf(GenericApplicationContext.class, applicationContext);
 		this.applicationContext = (GenericApplicationContext) applicationContext;
+		Map<String, EvaluationContext> beansOfType = this.applicationContext.getBeansOfType(EvaluationContext.class);
+		if (beansOfType.size() > 0) {
+			this.evaluationContext = beansOfType.values().iterator().next();
+		}
+
 	}
 
 	protected ConfigurableListableBeanFactory getBeanFactory() {
@@ -118,10 +122,6 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 	public final void afterPropertiesSet() throws Exception {
 		Assert.notNull(this.applicationContext,
 				"The 'applicationContext' property must not be null");
-		if (this.evaluationContext == null) {
-			this.evaluationContext = ExpressionUtils
-					.createStandardEvaluationContext(getBeanFactory());
-		}
 		onInit();
 	}
 

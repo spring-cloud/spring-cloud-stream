@@ -164,7 +164,8 @@ public class PulsarMessageChannelBinder extends
 
 		var container = new DefaultPulsarMessageListenerContainer<>(this.pulsarConsumerFactory, containerProperties);
 		messageDrivenChannelAdapter.setMessageListenerContainer(container);
-
+		messageDrivenChannelAdapter.setApplicationContext(getApplicationContext());
+		messageDrivenChannelAdapter.setBeanFactory(getApplicationContext().getBeanFactory());
 		return messageDrivenChannelAdapter;
 	}
 

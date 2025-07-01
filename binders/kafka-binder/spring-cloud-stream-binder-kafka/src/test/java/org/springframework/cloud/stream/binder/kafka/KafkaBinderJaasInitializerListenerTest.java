@@ -26,6 +26,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import org.springframework.boot.integration.autoconfigure.IntegrationAutoConfiguration;
 import org.springframework.boot.kafka.autoconfigure.KafkaAutoConfiguration;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.cloud.stream.binder.kafka.config.KafkaBinderConfiguration;
@@ -48,7 +49,7 @@ class KafkaBinderJaasInitializerListenerTest {
 	private static String JAVA_LOGIN_CONFIG_PARAM_VALUE;
 
 	private final ApplicationContextRunner contextRunner = new ApplicationContextRunner()
-			.withUserConfiguration(KafkaBinderConfiguration.class, KafkaAutoConfiguration.class);
+			.withUserConfiguration(KafkaBinderConfiguration.class, KafkaAutoConfiguration.class, IntegrationAutoConfiguration.class);
 
 	@BeforeAll
 	public static void setup() {

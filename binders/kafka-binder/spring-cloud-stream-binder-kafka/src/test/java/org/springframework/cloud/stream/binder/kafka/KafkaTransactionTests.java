@@ -29,12 +29,13 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InOrder;
 
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.boot.integration.autoconfigure.IntegrationAutoConfiguration;
 import org.springframework.boot.kafka.autoconfigure.KafkaProperties;
 import org.springframework.cloud.stream.binder.ExtendedProducerProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaBinderConfigurationProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaProducerProperties;
 import org.springframework.cloud.stream.binder.kafka.provisioning.KafkaTopicProvisioner;
-import org.springframework.context.support.GenericApplicationContext;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.test.util.TestUtils;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
@@ -108,8 +109,7 @@ class KafkaTransactionTests {
 			}
 
 		};
-		GenericApplicationContext applicationContext = new GenericApplicationContext();
-		applicationContext.refresh();
+		AnnotationConfigApplicationContext applicationContext = new AnnotationConfigApplicationContext(IntegrationAutoConfiguration.class);
 		binder.setApplicationContext(applicationContext);
 
 		// Important: Initialize the binder to trigger onInit()
