@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2024 the original author or authors.
+ * Copyright 2018-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,8 +24,8 @@ import org.apache.kafka.streams.errors.StreamsUncaughtExceptionHandler;
 
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.SmartInitializingSingleton;
-import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
-import org.springframework.boot.web.context.WebServerGracefulShutdownLifecycle;
+import org.springframework.boot.kafka.autoconfigure.KafkaProperties;
+import org.springframework.boot.web.server.context.WebServerApplicationContext;
 import org.springframework.cloud.stream.binder.ConsumerProperties;
 import org.springframework.context.SmartLifecycle;
 import org.springframework.kafka.KafkaException;
@@ -152,7 +152,7 @@ public class StreamsBuilderFactoryManager implements SmartLifecycle {
 
 	@Override
 	public int getPhase() {
-		return WebServerGracefulShutdownLifecycle.SMART_LIFECYCLE_PHASE - 1;
+		return WebServerApplicationContext.GRACEFUL_SHUTDOWN_PHASE - 1;
 	}
 
 }
