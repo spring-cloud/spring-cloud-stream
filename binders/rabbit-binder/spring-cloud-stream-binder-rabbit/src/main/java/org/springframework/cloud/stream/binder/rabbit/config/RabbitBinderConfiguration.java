@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2021 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,15 +21,15 @@ import org.springframework.amqp.rabbit.connection.CachingConnectionFactory.Confi
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.boot.actuate.amqp.RabbitHealthIndicator;
-import org.springframework.boot.actuate.autoconfigure.health.ConditionalOnEnabledHealthIndicator;
-import org.springframework.boot.actuate.health.HealthIndicator;
-import org.springframework.boot.autoconfigure.amqp.RabbitProperties;
+import org.springframework.boot.amqp.autoconfigure.RabbitProperties;
+import org.springframework.boot.amqp.health.RabbitHealthIndicator;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.health.autoconfigure.contributor.ConditionalOnEnabledHealthIndicator;
+import org.springframework.boot.health.contributor.HealthIndicator;
 import org.springframework.cloud.Cloud;
 import org.springframework.cloud.CloudFactory;
 import org.springframework.cloud.service.messaging.RabbitConnectionFactoryConfig;
@@ -211,7 +211,7 @@ public class RabbitBinderConfiguration {
 	 *
 	 */
 	@Configuration(proxyBeanMethods = false)
-	@ConditionalOnClass(name = "org.springframework.boot.actuate.health.HealthIndicator")
+	@ConditionalOnClass(name = "org.springframework.boot.health.contributor.HealthIndicator")
 	@ConditionalOnEnabledHealthIndicator("binders")
 	public static class RabbitHealthIndicatorConfiguration {
 

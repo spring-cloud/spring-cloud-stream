@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2024 the original author or authors.
+ * Copyright 2023-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,8 +24,8 @@ import java.util.Set;
 
 import org.apache.pulsar.client.api.ProducerCryptoFailureAction;
 
-import org.springframework.boot.autoconfigure.pulsar.PulsarProperties;
 import org.springframework.boot.context.properties.PropertyMapper;
+import org.springframework.boot.pulsar.autoconfigure.PulsarProperties;
 import org.springframework.lang.Nullable;
 import org.springframework.util.unit.DataSize;
 

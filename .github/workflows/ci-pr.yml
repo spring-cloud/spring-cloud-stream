@@ -38,7 +38,7 @@ jobs:
       - name: Setup Maven
         uses: jvalkeal/setup-maven@v1
         with:
-          maven-version: 3.8.8
+          maven-version: 3.8.9
           maven-mirror: 'https://dlcdn.apache.org/maven/maven-3/'
 
       - name: Build and run unit tests

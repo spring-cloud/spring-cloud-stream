@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2023 the original author or authors.
+ * Copyright 2017-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,24 +17,24 @@
 package org.springframework.cloud.stream.config;
 
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.stream.Stream;
 
 import org.springframework.boot.actuate.autoconfigure.endpoint.EndpointAutoConfiguration;
-import org.springframework.boot.actuate.autoconfigure.health.ConditionalOnEnabledHealthIndicator;
-import org.springframework.boot.actuate.health.CompositeHealthContributor;
-import org.springframework.boot.actuate.health.Health;
-import org.springframework.boot.actuate.health.HealthContributor;
-import org.springframework.boot.actuate.health.HealthIndicator;
-import org.springframework.boot.actuate.health.NamedContributor;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.health.autoconfigure.contributor.ConditionalOnEnabledHealthIndicator;
+import org.springframework.boot.health.contributor.CompositeHealthContributor;
+import org.springframework.boot.health.contributor.Health;
+import org.springframework.boot.health.contributor.HealthContributor;
+import org.springframework.boot.health.contributor.HealthContributors;
+import org.springframework.boot.health.contributor.HealthIndicator;
 import org.springframework.cloud.stream.binder.BinderFactory;
 import org.springframework.cloud.stream.binder.DefaultBinderFactory;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -44,7 +44,7 @@ import org.springframework.context.annotation.Bean;
  * @author Ilayaperumal Gopinathan
  * @author Soby Chacko
  */
-@ConditionalOnClass(name = "org.springframework.boot.actuate.health.HealthIndicator")
+@ConditionalOnClass(name = "org.springframework.boot.health.contributor.HealthIndicator")
 @ConditionalOnEnabledHealthIndicator("binders")
 @AutoConfigureBefore(EndpointAutoConfiguration.class)
 @ConditionalOnBean(BinderFactory.class)
@@ -131,9 +131,9 @@ public class BindersHealthIndicatorAutoConfiguration {
 		}
 
 		@Override
-		public Iterator<NamedContributor<HealthContributor>> iterator() {
+		public Stream<HealthContributors.Entry> stream() {
 			return contributors.entrySet().stream()
-					.map((entry) -> NamedContributor.of(entry.getKey(), entry.getValue())).iterator();
+					.map((entry) -> new HealthContributors.Entry(entry.getKey(), entry.getValue()));
 		}
 
 	}
