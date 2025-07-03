@@ -639,7 +639,7 @@ public class KafkaMessageChannelBinder extends
 		KafkaAwareTransactionManager<byte[], byte[]> transMan = transactionManager(
 				extendedConsumerProperties.getExtension().getTransactionManager());
 		if (transMan != null) {
-			containerProperties.setTransactionManager(transMan);
+			containerProperties.setKafkaAwareTransactionManager(transMan);
 		}
 		if (this.rebalanceListener != null) {
 			setupRebalanceListener(extendedConsumerProperties, containerProperties);
