@@ -65,6 +65,7 @@ import org.springframework.cloud.stream.binder.ExtendedPropertiesBinder;
 import org.springframework.cloud.stream.binder.HeaderMode;
 import org.springframework.cloud.stream.binder.MessageValues;
 import org.springframework.cloud.stream.binder.PartitionHandler;
+import org.springframework.cloud.stream.binder.kafka.common.BinderHeaderMapper;
 import org.springframework.cloud.stream.binder.kafka.common.TopicInformation;
 import org.springframework.cloud.stream.binder.kafka.config.ClientFactoryCustomizer;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaBinderConfigurationProperties;
