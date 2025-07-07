@@ -54,6 +54,7 @@ import org.apache.kafka.common.header.internals.RecordHeaders;
 
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.boot.kafka.autoconfigure.KafkaProperties;
 import org.springframework.cloud.stream.binder.AbstractMessageChannelBinder;
 import org.springframework.cloud.stream.binder.BinderHeaders;
 import org.springframework.cloud.stream.binder.BinderSpecificPropertiesProvider;
@@ -634,6 +635,9 @@ public class KafkaMessageChannelBinder extends
 								: new ContainerProperties(topics)
 						: new ContainerProperties(topicPartitionOffsets);
 
+		// See GH-3124 - Container setting needs to be propagated
+		this.propagateContainerProperties(containerProperties);
+		// End GH-3124
 		containerProperties.setObservationEnabled(this.configurationProperties.isEnableObservation());
 
 		KafkaAwareTransactionManager<byte[], byte[]> transMan = transactionManager(
@@ -801,6 +805,50 @@ public class KafkaMessageChannelBinder extends
 		}
 		this.ackModeInfo.put(destination, messageListenerContainer.getContainerProperties().getAckMode());
 		return kafkaMessageDrivenChannelAdapter;
+	}
+
+	private void propagateContainerProperties(ContainerProperties containerProperties) {
+		KafkaProperties.Listener listener = this.configurationProperties.getKafkaProperties().getListener();
+		if (listener.getAckMode() != null) {
+			containerProperties.setAckMode(listener.getAckMode());
+		}
+		if (listener.getAsyncAcks() != null) {
+			containerProperties.setAsyncAcks(listener.getAsyncAcks());
+		}
+
+		if (listener.getAckCount() != null) {
+			containerProperties.setAckCount(listener.getAckCount());
+		}
+		if (listener.getAckTime() != null) {
+			containerProperties.setAckTime(listener.getAckTime().toMillis());
+		}
+
+		if (listener.getPollTimeout() != null) {
+			containerProperties.setPollTimeout(listener.getPollTimeout().toMillis());
+		}
+
+		if (listener.getNoPollThreshold() != null) {
+			containerProperties.setNoPollThreshold(listener.getNoPollThreshold());
+		}
+
+		if (listener.getIdleBetweenPolls() != null) {
+			containerProperties.setIdleBetweenPolls(listener.getIdleBetweenPolls().toMillis());
+		}
+
+		if (listener.getIdleEventInterval() != null) {
+			containerProperties.setIdleEventInterval(listener.getIdleEventInterval().toMillis());
+		}
+
+		if (listener.getMonitorInterval() != null) {
+			containerProperties.setMonitorInterval(Math.toIntExact(listener.getMonitorInterval().toSeconds()));
+		}
+
+		if (listener.getLogContainerConfig() != null) {
+			containerProperties.setLogContainerConfig(listener.getLogContainerConfig());
+		}
+
+		containerProperties.setMissingTopicsFatal(listener.isMissingTopicsFatal());
+		containerProperties.setStopImmediate(listener.isImmediateStop());
 	}
 
 	private BiFunction<ConsumerRecord<?, ?>, Exception, TopicPartition> createDestResolver(
