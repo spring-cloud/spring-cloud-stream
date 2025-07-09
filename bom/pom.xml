@@ -7,6 +7,7 @@
 	<packaging>pom</packaging>
 	<name>spring-cloud-stream-release-build</name>
 	<description>Spring Cloud Stream Release Build</description>
+	<url>https://github.com/spring-cloud/spring-cloud-stream</url>
 	<version>4.2.2-SNAPSHOT</version>
 	<parent>
 		<groupId>org.springframework.cloud</groupId>
@@ -25,7 +26,34 @@
 		</developerConnection>
 		<tag>HEAD</tag>
 	</scm>
-
+	<licenses>
+		<license>
+			<name>Apache License, Version 2.0</name>
+			<url>https://www.apache.org/licenses/LICENSE-2.0</url>
+		</license>
+	</licenses>
+	<developers>
+		<developer>
+			<id>olegz</id>
+			<name>Oleg Zhurakousky</name>
+			<email>oleg.zhurakousky at broadcom.com</email>
+			<organization>Broadcom, Inc.</organization>
+			<organizationUrl>https://www.spring.io</organizationUrl>
+			<roles>
+				<role>Project lead</role>
+			</roles>
+		</developer>
+		<developer>
+			<id>sobychacko</id>
+			<name>Soby Chacko</name>
+			<email>soby.chacko at broadcom.com</email>
+			<organization>Broadcom, Inc.</organization>
+			<organizationUrl>https://www.spring.io</organizationUrl>
+			<roles>
+				<role>Engineer</role>
+			</roles>
+		</developer>
+	</developers>
 	<properties>
 		<maven-checkstyle-plugin.failsOnError>true</maven-checkstyle-plugin.failsOnError>
 		<maven-checkstyle-plugin.failsOnViolation>true
