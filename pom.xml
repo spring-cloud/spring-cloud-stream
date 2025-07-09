@@ -7,6 +7,8 @@
 	<version>5.0.0-SNAPSHOT</version> <!-- Do not remove. Ignore yellow warning -->
 	<name>${project.artifactId}</name>
 	<packaging>pom</packaging>
+	<description>Spring Cloud Stream</description>
+	<url>https://github.com/spring-cloud/spring-cloud-stream</url>
 	<parent>
 		<groupId>org.springframework.cloud</groupId>
 		<artifactId>spring-cloud-build</artifactId>
@@ -22,6 +24,35 @@
 		</developerConnection>
 		<tag>HEAD</tag>
 	</scm>
+	<licenses>
+		<license>
+			<name>Apache License, Version 2.0</name>
+			<url>https://www.apache.org/licenses/LICENSE-2.0</url>
+		</license>
+	</licenses>
+	<developers>
+		<developer>
+			<id>olegz</id>
+			<name>Oleg Zhurakousky</name>
+			<email>oleg.zhurakousky at broadcom.com</email>
+			<organization>Broadcom, Inc.</organization>
+			<organizationUrl>https://www.spring.io</organizationUrl>
+			<roles>
+				<role>Project lead</role>
+			</roles>
+		</developer>
+		<developer>
+			<id>sobychacko</id>
+			<name>Soby Chacko</name>
+			<email>soby.chacko at broadcom.com</email>
+			<organization>Broadcom, Inc.</organization>
+			<organizationUrl>https://www.spring.io</organizationUrl>
+			<roles>
+				<role>Engineer</role>
+			</roles>
+		</developer>
+	</developers>
+
 	<properties>
 		<java.version>17</java.version>
 		<objenesis.version>2.1</objenesis.version>
