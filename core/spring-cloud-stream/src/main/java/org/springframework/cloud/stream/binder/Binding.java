@@ -51,6 +51,16 @@ public interface Binding<T> extends Pausable {
 	}
 
 	/**
+	 * Will return additional configuration properties associated with this binding.
+	 * Must be implemented by individual binders and is primarily designed for testing and
+	 * debugging/diagnosing issues.
+	 * @return  additional configuration properties associated with this binding.
+	 */
+	default Map<String, Object> getAdditionalConfigurationProperties() {
+		return Collections.emptyMap();
+	}
+
+	/**
 	 * Starts the target component represented by this instance. NOTE: At the time the
 	 * instance is created the component is already started. This operation is typically
 	 * used by actuator to re-bind/re-start.
