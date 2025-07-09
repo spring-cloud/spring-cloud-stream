@@ -583,6 +583,11 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 				}
 
 				@Override
+				public Map<String, Object> getAdditionalConfigurationProperties() {
+					return doGetAdditionalConfigurationProperties(this.getName());
+				}
+
+				@Override
 				protected void afterUnbind() {
 					try {
 						if (getEndpoint() instanceof DisposableBean disposableEndpoint) {
@@ -615,6 +620,17 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 				throw new BinderException("Exception thrown while starting consumer: ", e);
 			}
 		}
+	}
+
+	/**
+	 * This method must be implemented by an individual binders to produce an
+	 * immutable version of additional configuration properties primarily for testing and diagnosing/debugging issues.
+	 * @return map pf additional configuration properties as key/vaalue.
+	 */
+	protected Map<String, Object> doGetAdditionalConfigurationProperties(String name) {
+		logger.warn("This method must be implemented by an individual binders to produce " +
+			"an immutable version of additional configuration properties primarily for testing and diagnosing/debugging issues");
+		return null;
 	}
 
 	@Override

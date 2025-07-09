@@ -40,6 +40,8 @@ import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
@@ -249,6 +251,9 @@ public class KafkaMessageChannelBinder extends
 
 	private final KafkaAdmin kafkaAdmin;
 
+	// used strictly for serializeing additional configuration properties. See 'doGetAdditionalConfigurationProperties'
+	private ObjectMapper objectMapper = new ObjectMapper();
+
 	public KafkaMessageChannelBinder(
 			KafkaBinderConfigurationProperties configurationProperties,
 			KafkaTopicProvisioner provisioningProvider) {
@@ -283,6 +288,8 @@ public class KafkaMessageChannelBinder extends
 		this.dlqPartitionFunction = dlqPartitionFunction;
 		this.dlqDestinationResolver = dlqDestinationResolver;
 		this.kafkaAdmin = new KafkaAdmin(new HashMap<>(provisioningProvider.getAdminClientProperties()));
+		this.objectMapper.findAndRegisterModules();
+		this.objectMapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
 	}
 
 	@Override
@@ -850,14 +857,30 @@ public class KafkaMessageChannelBinder extends
 		containerProperties.setStopImmediate(listener.isImmediateStop());
 	}
 
+	/**
+	 * Returns an unmodifiable copy of {@link ContainerProperties} associated with the destination name
+	 * which corresponds to a particular binding which could be accessed under 'containerProperties' key.
+	 *
+	 * @param destinationName the name of the destination (or binding name if destination is not specified)
+	 * @return map of
+	 */
+	@Override
+	protected Map<String, Object> doGetAdditionalConfigurationProperties(String destinationName) {
+		ContainerProperties kafkaContainerProperties = this.kafkaMessageListenerContainers.iterator().next().getContainerProperties();
+		Map mapOfContainerProperties = this.objectMapper.convertValue(kafkaContainerProperties, Map.class);
+		Map<String, Object> additionalConfigurationProperties = new HashMap<>();
+		additionalConfigurationProperties.put("containerProperties", mapOfContainerProperties);
+		return additionalConfigurationProperties;
+	}
+
 	private BiFunction<ConsumerRecord<?, ?>, Exception, TopicPartition> createDestResolver(
-			KafkaConsumerProperties extension) {
+		KafkaConsumerProperties extension) {
 
 		Integer dlqPartitions = extension.getDlqPartitions();
 		if (extension.isEnableDlq()) {
 			return (rec, ex) -> dlqPartitions == null || dlqPartitions > 1
-						? new TopicPartition(extension.getDlqName(), rec.partition())
-						: new TopicPartition(extension.getDlqName(), 0);
+				? new TopicPartition(extension.getDlqName(), rec.partition())
+				: new TopicPartition(extension.getDlqName(), 0);
 		}
 		else {
 			return null;
