@@ -4,7 +4,7 @@
     <parent>
         <groupId>org.springframework.cloud</groupId>
         <artifactId>spring-cloud-stream-binder-rabbit-parent</artifactId>
-        <version>4.2.3-SNAPSHOT</version>
+        <version>4.2.2-SNAPSHOT</version>
     </parent>
     <artifactId>spring-cloud-stream-binder-rabbit-test-support</artifactId>
 	<name>${project.artifactId}</name>
