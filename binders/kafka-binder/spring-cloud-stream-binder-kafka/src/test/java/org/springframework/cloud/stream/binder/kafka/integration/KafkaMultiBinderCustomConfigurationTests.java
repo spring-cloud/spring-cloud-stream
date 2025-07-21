@@ -65,7 +65,7 @@ class KafkaMultiBinderCustomConfigurationTests {
 	private DefaultBinderFactory binderFactory;
 
 	/**
-	 * Verifies that the custom user configuration is loaded from spring.main.sources
+	 * Verifies that the custom user configuration is loaded from spring.main.sources.
 	 */
 	@Test
 	void binderKafka2UsesCustomConfigurationIsLoadedFromSpringMainSources() throws IllegalAccessException {
@@ -83,7 +83,7 @@ class KafkaMultiBinderCustomConfigurationTests {
 	}
 
 	/**
-	 * Verifies that the default configuration is used when no custom user configuration is provided
+	 * Verifies that the default configuration is used when no custom user configuration is provided.
 	 */
 	@Test
 	void binderKafka1UsesDefaultBeanFromKafkaBinderMetricsConfigurationWithMultiBinder() throws IllegalAccessException {
@@ -101,7 +101,7 @@ class KafkaMultiBinderCustomConfigurationTests {
 	}
 
 	/**
-	 * Helper method to get the binder context from the binderInstanceCache field in DefaultBinderFactory
+	 * Helper method to get the binder context from the binderInstanceCache field in DefaultBinderFactory.
 	 */
 	private ConfigurableApplicationContext getBinderContext(String binderName) throws IllegalAccessException {
 		Field binderInstanceCacheField = ReflectionUtils.findField(DefaultBinderFactory.class, "binderInstanceCache");
@@ -114,7 +114,7 @@ class KafkaMultiBinderCustomConfigurationTests {
 	}
 
 	/**
-	 * Custom configuration that provides a custom KafkaBinderMetrics
+	 * Custom configuration that provides a custom KafkaBinderMetrics.
 	 */
 	static class CustomConfiguration {
 
