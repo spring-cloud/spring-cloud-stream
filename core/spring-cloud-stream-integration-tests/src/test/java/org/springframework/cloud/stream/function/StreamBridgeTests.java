@@ -47,7 +47,6 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.function.cloudevent.CloudEventMessageBuilder;
 import org.springframework.cloud.function.cloudevent.CloudEventMessageUtils;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
-import org.springframework.cloud.function.context.message.MessageUtils;
 import org.springframework.cloud.stream.binder.test.InputDestination;
 import org.springframework.cloud.stream.binder.test.OutputDestination;
 import org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration;
@@ -166,7 +165,7 @@ class StreamBridgeTests {
 			streamBridge.send("myBinding-out-0",
 				CloudEventMessageBuilder.withData("hello").setSource("my-source")
 					.setId(UUID.randomUUID().toString()).setSpecVersion("1.0").setType("myType")
-					.setHeader(MessageUtils.TARGET_PROTOCOL, "kafka").build(),
+					.setHeader("kafka_foo", "kafka").build(),
 				MimeTypeUtils.APPLICATION_JSON);
 			OutputDestination output = context.getBean(OutputDestination.class);
 			Message<byte[]> result = output.receive();

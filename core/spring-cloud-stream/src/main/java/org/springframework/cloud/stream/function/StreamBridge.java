@@ -17,7 +17,6 @@
 package org.springframework.cloud.stream.function;
 
 import java.lang.reflect.Type;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -41,7 +40,6 @@ import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionRegistry;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.PassThruFunction;
-import org.springframework.cloud.function.context.message.MessageUtils;
 import org.springframework.cloud.function.core.FunctionInvocationHelper;
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.BinderFactory;
@@ -204,12 +202,12 @@ public final class StreamBridge implements StreamOperations, SmartInitializingSi
 			functionToInvoke = new PartitionAwareFunctionWrapper(functionToInvoke, this.applicationContext, producerProperties);
 		}
 
-		String targetType = this.resolveBinderTargetType(bindingName, binderName, MessageChannel.class,
-			this.applicationContext.getBean(BinderFactory.class));
+//		String targetType = this.resolveBinderTargetType(bindingName, binderName, MessageChannel.class,
+//			this.applicationContext.getBean(BinderFactory.class));
 
 		Message<?> messageToSend = data instanceof Message messageData
-				? MessageBuilder.fromMessage(messageData).setHeaderIfAbsent(MessageUtils.TARGET_PROTOCOL, targetType).build()
-						: new GenericMessage<>(data, Collections.singletonMap(MessageUtils.TARGET_PROTOCOL, targetType));
+				? MessageBuilder.fromMessage(messageData).build()
+						: new GenericMessage<>(data);
 
 		Message<?> resultMessage;
 		lock.lock();

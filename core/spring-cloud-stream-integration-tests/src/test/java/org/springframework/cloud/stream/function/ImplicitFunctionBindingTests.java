@@ -1208,7 +1208,8 @@ class ImplicitFunctionBindingTests {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(SingleFunctionConfiguration.class))
 			.web(WebApplicationType.NONE).run("--spring.jmx.enabled=false",
-				"--spring.cloud.function.definition=func")) {
+				"--spring.cloud.function.definition=func",
+				"--spring.cloud.function.configuration.func.copy-input-headers=true")) {
 
 			InputDestination inputDestination = context.getBean(InputDestination.class);
 			OutputDestination outputDestination = context.getBean(OutputDestination.class);

@@ -25,7 +25,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
-import org.springframework.cloud.function.context.message.MessageUtils;
 import org.springframework.cloud.stream.binder.test.InputDestination;
 import org.springframework.cloud.stream.binder.test.OutputDestination;
 import org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration;
@@ -65,7 +64,6 @@ public class HeaderTests {
 			Message<byte[]> messageReceived = outputDestination.receive(1000, "emptyConfigurationDestination");
 			MessageHeaders headers = messageReceived.getHeaders();
 			assertThat(headers).isNotNull();
-			assertThat(headers.get(MessageUtils.TARGET_PROTOCOL)).isEqualTo("kafka");
 			assertThat(headers.get(MessageHeaders.CONTENT_TYPE)).isEqualTo("application/json");
 		}
 	}
@@ -86,7 +84,6 @@ public class HeaderTests {
 			Message<byte[]> result = output.receive(1000, "myBinding-out-0");
 			MessageHeaders headers = result.getHeaders();
 			assertThat(headers).isNotNull();
-			assertThat(headers.get(MessageUtils.TARGET_PROTOCOL)).isEqualTo("kafka");
 			assertThat(headers.get(MessageHeaders.CONTENT_TYPE)).isEqualTo("application/json");
 			assertThat(headers.get("anyHeader")).isEqualTo("anyValue");
 		}
@@ -107,7 +104,6 @@ public class HeaderTests {
 			Message<byte[]> result = output.receive(1000, "uppercase-out-0");
 			MessageHeaders headers = result.getHeaders();
 			assertThat(headers).isNotNull();
-			assertThat(headers.get(MessageUtils.TARGET_PROTOCOL)).isEqualTo("kafka");
 			assertThat(headers.get(MessageHeaders.CONTENT_TYPE)).isEqualTo("application/json");
 		}
 	}
@@ -131,7 +127,6 @@ public class HeaderTests {
 		assertThat(headers).isNotNull();
 		assertThat(headers).isNotNull();
 		assertThat(headers.get(MessageHeaders.CONTENT_TYPE)).isEqualTo("application/json");
-		assertThat(headers.get(MessageUtils.TARGET_PROTOCOL)).isEqualTo("kafka");
 	}
 
 	@EnableAutoConfiguration
