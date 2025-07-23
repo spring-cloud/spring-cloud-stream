@@ -41,6 +41,9 @@ class RoutingFunctionEnvironmentPostProcessor implements EnvironmentPostProcesso
 			((StandardEnvironment) environment).getSystemProperties()
 				.putIfAbsent("spring.cloud.function.routing.enabled", "true");
 		}
+		// perhaps mpve it to separate class as it doesn't have much to do with RoutingFunction
+		((StandardEnvironment) environment).getSystemProperties()
+			.putIfAbsent("spring.cloud.function.configuration.default.copy-input-headers", "true");
 	}
 
 }
