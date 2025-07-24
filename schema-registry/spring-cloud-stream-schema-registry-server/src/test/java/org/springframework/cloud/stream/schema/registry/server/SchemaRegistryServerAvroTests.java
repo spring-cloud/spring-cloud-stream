@@ -100,8 +100,9 @@ class SchemaRegistryServerAvroTests {
 	private static final Schema AAVRO_USER_REGISTRY_SCHEMA_V1_WITH_QUAL_SUBJECT = toSchema(
 			AVRO_USER_SCHEMA_QUALIFED_NAME_STRATEGY_SUBJECT,
 			AVRO_FORMAT_NAME, AVRO_USER_AVRO_SCHEMA_V1.toString());
-	
-	private TestRestTemplate client = new TestRestTemplate();
+
+	@Autowired
+	private TestRestTemplate client;
 
 	@Autowired
 	private SchemaServerProperties schemaServerProperties;
