@@ -146,6 +146,19 @@ state store to materialize when using incoming KTable types
 +
 Default: `none`.
 
+cachingDisabled::
+Disable caching for materialized KTable.
+When set to `true`, calls `withCachingDisabled()` on the Materialized object.
+When set to `false`, calls `withCachingEnabled()` on the Materialized object.
++
+Default: `false`.
+
+loggingDisabled::
+Disable logging for materialized KTable.
+When set to `true`, calls `withLoggingDisabled()` on the Materialized object.
++
+Default: `false`.
+
 useNativeDecoding::
 flag to enable/disable native decoding
 +

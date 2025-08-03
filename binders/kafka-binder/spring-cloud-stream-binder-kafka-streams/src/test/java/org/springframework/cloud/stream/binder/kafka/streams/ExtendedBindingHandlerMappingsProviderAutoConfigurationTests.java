@@ -77,6 +77,85 @@ class ExtendedBindingHandlerMappingsProviderAutoConfigurationTests {
 				});
 	}
 
+	@Test
+	void cachingAndLoggingDisabledPropertiesWork() {
+		this.contextRunner
+			.withPropertyValues(
+				"spring.cloud.stream.kafka.streams.bindings.process-in-0.consumer.caching-disabled: true",
+				"spring.cloud.stream.kafka.streams.bindings.process-in-0.consumer.logging-disabled: true")
+			.run((context) -> {
+				assertThat(context)
+					.hasNotFailed()
+					.hasSingleBean(KafkaStreamsExtendedBindingProperties.class);
+				KafkaStreamsExtendedBindingProperties extendedBindingProperties = context.getBean(KafkaStreamsExtendedBindingProperties.class);
+				assertThat(extendedBindingProperties.getExtendedConsumerProperties("process-in-0"))
+					.hasFieldOrPropertyWithValue("cachingDisabled", true)
+					.hasFieldOrPropertyWithValue("loggingDisabled", true);
+			});
+	}
+
+	@Test
+	void cachingAndLoggingDefaultValues() {
+		this.contextRunner.run((context) -> {
+			assertThat(context)
+				.hasNotFailed()
+				.hasSingleBean(KafkaStreamsExtendedBindingProperties.class);
+			KafkaStreamsExtendedBindingProperties extendedBindingProperties = context.getBean(KafkaStreamsExtendedBindingProperties.class);
+			assertThat(extendedBindingProperties.getExtendedConsumerProperties("process-in-0"))
+				.hasFieldOrPropertyWithValue("cachingDisabled", false)
+				.hasFieldOrPropertyWithValue("loggingDisabled", false);
+		});
+	}
+
+	@Test
+	void onlyCachingDisabledProperty() {
+		this.contextRunner
+			.withPropertyValues(
+				"spring.cloud.stream.kafka.streams.bindings.process-in-0.consumer.caching-disabled: true")
+			.run((context) -> {
+				assertThat(context)
+					.hasNotFailed()
+					.hasSingleBean(KafkaStreamsExtendedBindingProperties.class);
+				KafkaStreamsExtendedBindingProperties extendedBindingProperties = context.getBean(KafkaStreamsExtendedBindingProperties.class);
+				assertThat(extendedBindingProperties.getExtendedConsumerProperties("process-in-0"))
+					.hasFieldOrPropertyWithValue("cachingDisabled", true)
+					.hasFieldOrPropertyWithValue("loggingDisabled", false);
+			});
+	}
+
+	@Test
+	void onlyLoggingDisabledProperty() {
+		this.contextRunner
+			.withPropertyValues(
+				"spring.cloud.stream.kafka.streams.bindings.process-in-0.consumer.logging-disabled: true")
+			.run((context) -> {
+				assertThat(context)
+					.hasNotFailed()
+					.hasSingleBean(KafkaStreamsExtendedBindingProperties.class);
+				KafkaStreamsExtendedBindingProperties extendedBindingProperties = context.getBean(KafkaStreamsExtendedBindingProperties.class);
+				assertThat(extendedBindingProperties.getExtendedConsumerProperties("process-in-0"))
+					.hasFieldOrPropertyWithValue("cachingDisabled", false)
+					.hasFieldOrPropertyWithValue("loggingDisabled", true);
+			});
+	}
+
+	@Test
+	void defaultAndBindingSpecificCachingLoggingProperties() {
+		this.contextRunner
+			.withPropertyValues(
+				"spring.cloud.stream.kafka.streams.default.consumer.caching-disabled: true",
+				"spring.cloud.stream.kafka.streams.bindings.process-in-0.consumer.logging-disabled: true")
+			.run((context) -> {
+				assertThat(context)
+					.hasNotFailed()
+					.hasSingleBean(KafkaStreamsExtendedBindingProperties.class);
+				KafkaStreamsExtendedBindingProperties extendedBindingProperties = context.getBean(KafkaStreamsExtendedBindingProperties.class);
+				assertThat(extendedBindingProperties.getExtendedConsumerProperties("process-in-0"))
+					.hasFieldOrPropertyWithValue("cachingDisabled", true)
+					.hasFieldOrPropertyWithValue("loggingDisabled", true);
+			});
+	}
+
 	@EnableAutoConfiguration
 	static class KafkaStreamsTestApp {
 	}
