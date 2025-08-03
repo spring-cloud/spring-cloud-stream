@@ -24,6 +24,7 @@ import org.springframework.cloud.stream.binder.kafka.streams.DeserializationExce
  *
  * @author Marius Bogoevici
  * @author Soby Chacko
+ * @author Gihong Park
  */
 public class KafkaStreamsConsumerProperties extends KafkaConsumerProperties {
 
@@ -43,6 +44,16 @@ public class KafkaStreamsConsumerProperties extends KafkaConsumerProperties {
 	 * Materialized as a KeyValueStore.
 	 */
 	private String materializedAs;
+
+	/**
+	 * Disable caching for materialized KTable.
+	 */
+	private boolean cachingDisabled;
+
+	/**
+	 * Disable logging for materialized KTable.
+	 */
+	private boolean loggingDisabled;
 
 	/**
 	 * Per input binding deserialization handler.
@@ -107,6 +118,22 @@ public class KafkaStreamsConsumerProperties extends KafkaConsumerProperties {
 
 	public void setMaterializedAs(String materializedAs) {
 		this.materializedAs = materializedAs;
+	}
+
+	public boolean isCachingDisabled() {
+		return this.cachingDisabled;
+	}
+
+	public void setCachingDisabled(boolean cachingDisabled) {
+		this.cachingDisabled = cachingDisabled;
+	}
+
+	public boolean isLoggingDisabled() {
+		return this.loggingDisabled;
+	}
+
+	public void setLoggingDisabled(boolean loggingDisabled) {
+		this.loggingDisabled = loggingDisabled;
 	}
 
 	public String getTimestampExtractorBeanName() {
