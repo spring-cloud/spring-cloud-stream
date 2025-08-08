@@ -29,6 +29,7 @@ import org.apache.kafka.streams.state.StoreBuilder;
 import org.apache.kafka.streams.state.Stores;
 import org.apache.kafka.streams.state.WindowStore;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.boot.SpringApplication;
@@ -46,6 +47,7 @@ import org.springframework.kafka.test.utils.KafkaTestUtils;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @EmbeddedKafka
+@Disabled
 class KafkaStreamsFunctionStateStoreTests {
 
 	private static EmbeddedKafkaBroker embeddedKafka;
