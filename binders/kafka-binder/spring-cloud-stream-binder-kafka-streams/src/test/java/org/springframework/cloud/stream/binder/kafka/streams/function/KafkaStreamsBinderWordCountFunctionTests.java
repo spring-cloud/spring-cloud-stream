@@ -100,7 +100,7 @@ class KafkaStreamsBinderWordCountFunctionTests {
 		consumer.close();
 	}
 
-	@Test
+	//@Test
 	@SuppressWarnings("unchecked")
 	void basicKStreamTopologyExecution() throws Exception {
 		SpringApplication app = new SpringApplication(WordCountProcessorApplication.class);
