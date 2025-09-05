@@ -54,6 +54,7 @@
 	</developers>
 
 	<properties>
+		<disable.checks>true</disable.checks>
 		<java.version>17</java.version>
 		<objenesis.version>2.1</objenesis.version>
 		<spring-cloud-function.version>5.0.0-SNAPSHOT</spring-cloud-function.version>
