@@ -10,6 +10,7 @@
 
 	<name>spring-cloud-bus-parent</name>
 	<description>Spring Cloud Bus Parent</description>
+	<url>https://github.com/spring-cloud/spring-cloud-bus</url>
 
 	<parent>
 		<groupId>org.springframework.cloud</groupId>
@@ -28,6 +29,34 @@
 		<module>docs</module>
 	</modules>
 
+	<licenses>
+		<license>
+			<name>Apache License, Version 2.0</name>
+			<url>https://www.apache.org/licenses/LICENSE-2.0</url>
+		</license>
+	</licenses>
+	<developers>
+		<developer>
+			<id>dsyer</id>
+			<name>Dave Syer</name>
+			<email>david.syer at broadcom.com</email>
+			<organization>Broadcom, Inc.</organization>
+			<organizationUrl>https://www.spring.io</organizationUrl>
+			<roles>
+				<role>lead</role>
+			</roles>
+		</developer>
+		<developer>
+			<id>sgibb</id>
+			<name>Spencer Gibb</name>
+			<email>spencer.gibb at broadcom.com</email>
+			<organization>Broadcom, Inc.</organization>
+			<organizationUrl>https://www.spring.io</organizationUrl>
+			<roles>
+				<role>lead</role>
+			</roles>
+		</developer>
+	</developers>
 	<properties>
 		<spring-cloud-commons.version>5.0.0-SNAPSHOT</spring-cloud-commons.version>
 		<spring-cloud-stream.version>5.0.0-SNAPSHOT</spring-cloud-stream.version>
