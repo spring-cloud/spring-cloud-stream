@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.binder.kafka.provisioning;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -70,12 +71,12 @@ import org.springframework.cloud.stream.provisioning.ConsumerDestination;
 import org.springframework.cloud.stream.provisioning.ProducerDestination;
 import org.springframework.cloud.stream.provisioning.ProvisioningException;
 import org.springframework.cloud.stream.provisioning.ProvisioningProvider;
+import org.springframework.core.retry.RetryException;
+import org.springframework.core.retry.RetryPolicy;
 import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.ProducerFactory;
-import org.springframework.retry.RetryOperations;
-import org.springframework.retry.backoff.ExponentialBackOffPolicy;
-import org.springframework.retry.policy.SimpleRetryPolicy;
-import org.springframework.retry.support.RetryTemplate;
+import org.springframework.core.retry.RetryOperations;
+import org.springframework.core.retry.RetryTemplate;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.ObjectUtils;
@@ -94,6 +95,7 @@ import org.springframework.util.StringUtils;
  * @author Omer Celik
  * @author Byungjun You
  * @author Roman Akentev
+ * @author Artem Bilan
  */
 public class KafkaTopicProvisioner implements
 		// @checkstyle:off
@@ -211,18 +213,13 @@ public class KafkaTopicProvisioner implements
 	@Override
 	public void afterPropertiesSet() {
 		if (this.metadataRetryOperations == null) {
-			RetryTemplate retryTemplate = new RetryTemplate();
-
-			SimpleRetryPolicy simpleRetryPolicy = new SimpleRetryPolicy();
-			simpleRetryPolicy.setMaxAttempts(10);
-			retryTemplate.setRetryPolicy(simpleRetryPolicy);
-
-			ExponentialBackOffPolicy backOffPolicy = new ExponentialBackOffPolicy();
-			backOffPolicy.setInitialInterval(100);
-			backOffPolicy.setMultiplier(2);
-			backOffPolicy.setMaxInterval(1000);
-			retryTemplate.setBackOffPolicy(backOffPolicy);
-			this.metadataRetryOperations = retryTemplate;
+			RetryPolicy retryPolicy = RetryPolicy.builder()
+				.maxAttempts(10)
+				.delay(Duration.ofMillis(100))
+				.multiplier(2)
+				.maxDelay(Duration.ofSeconds(1))
+				.build();
+			this.metadataRetryOperations = new RetryTemplate(retryPolicy);
 		}
 	}
 
@@ -311,21 +308,21 @@ public class KafkaTopicProvisioner implements
 	}
 
 	private Map<String, TopicDescription> retrieveTopicDescriptions(String topicName, AdminClient adminClient) {
-		return this.metadataRetryOperations.execute(context -> {
-			try {
+		try {
+			return this.metadataRetryOperations.execute(() -> {
+
 				if (logger.isDebugEnabled()) {
 					logger.debug("Attempting to retrieve the description for the topic: " + topicName);
 				}
 				DescribeTopicsResult describeTopicsResult = adminClient
 					.describeTopics(Collections.singletonList(topicName));
-				KafkaFuture<Map<String, TopicDescription>> all = describeTopicsResult
-					.allTopicNames();
+				KafkaFuture<Map<String, TopicDescription>> all = describeTopicsResult.allTopicNames();
 				return all.get(this.operationTimeout, TimeUnit.SECONDS);
-			}
-			catch (Exception ex) {
-				throw new ProvisioningException("Problems encountered with partitions finding for: " + topicName, ex);
-			}
-		});
+			});
+		}
+		catch (RetryException ex) {
+			throw new ProvisioningException("Problems encountered with partitions finding for: " + topicName, ex);
+		}
 	}
 
 	AdminClient createAdminClient() {
@@ -505,7 +502,7 @@ public class KafkaTopicProvisioner implements
 			// always consider minPartitionCount for topic creation
 			final int effectivePartitionCount = Math.max(
 					this.configurationProperties.getMinPartitionCount(), partitionCount);
-			this.metadataRetryOperations.execute((context) -> {
+			this.metadataRetryOperations.execute(() -> {
 
 				NewTopic newTopic;
 				Map<Integer, List<Integer>> replicasAssignments = topicProperties
@@ -660,7 +657,7 @@ public class KafkaTopicProvisioner implements
 			final boolean tolerateLowerPartitionsOnBroker,
 			final Callable<Collection<PartitionInfo>> callable, final String topicName) {
 		try {
-			return this.metadataRetryOperations.execute((context) -> {
+			return this.metadataRetryOperations.execute(() -> {
 				Collection<PartitionInfo> partitions = Collections.emptyList();
 
 				try {

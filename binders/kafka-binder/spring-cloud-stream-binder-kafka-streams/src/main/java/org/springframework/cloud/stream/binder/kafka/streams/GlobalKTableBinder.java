@@ -32,8 +32,8 @@ import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStr
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsConsumerProperties;
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsExtendedBindingProperties;
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsProducerProperties;
+import org.springframework.core.retry.RetryTemplate;
 import org.springframework.kafka.config.StreamsBuilderFactoryBean;
-import org.springframework.retry.support.RetryTemplate;
 import org.springframework.util.StringUtils;
 
 /**
@@ -75,7 +75,6 @@ public class GlobalKTableBinder extends
 	}
 
 	@Override
-	@SuppressWarnings("unchecked")
 	protected Binding<GlobalKTable<Object, Object>> doBindConsumer(String name,
 			String group, GlobalKTable<Object, Object> inputTarget,
 			ExtendedConsumerProperties<KafkaStreamsConsumerProperties> properties) {

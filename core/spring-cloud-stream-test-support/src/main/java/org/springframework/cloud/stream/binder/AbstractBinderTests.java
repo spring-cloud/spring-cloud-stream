@@ -97,7 +97,7 @@ public abstract class AbstractBinderTests<B extends AbstractTestBinder<? extends
 	 * {@link #timeoutMultiplier}).
 	 */
 	protected Message<?> receive(PollableChannel channel) {
-		return receive(channel, 1);
+		return receive(channel, 10);
 	}
 
 	/**

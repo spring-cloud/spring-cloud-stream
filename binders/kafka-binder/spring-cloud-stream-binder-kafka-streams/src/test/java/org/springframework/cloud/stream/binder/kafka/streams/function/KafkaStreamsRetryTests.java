@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.binder.kafka.streams.function;
 
+import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -38,17 +39,17 @@ import org.springframework.cloud.stream.annotation.StreamRetryTemplate;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.core.retry.RetryException;
+import org.springframework.core.retry.RetryPolicy;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.test.EmbeddedKafkaBroker;
 import org.springframework.kafka.test.condition.EmbeddedKafkaCondition;
 import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
-import org.springframework.retry.RetryPolicy;
-import org.springframework.retry.backoff.FixedBackOffPolicy;
-import org.springframework.retry.policy.SimpleRetryPolicy;
-import org.springframework.retry.support.RetryTemplate;
+import org.springframework.core.retry.RetryTemplate;
 import org.springframework.util.Assert;
+import org.springframework.util.ReflectionUtils;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
@@ -159,10 +160,15 @@ class KafkaStreamsRetryTests {
 
 						@Override
 						public void process(Record<Object, String> record) {
-							retryTemplate.execute(context -> {
-								LATCH1.countDown();
-								throw new RuntimeException();
-							});
+							try {
+								retryTemplate.execute(() -> {
+									LATCH1.countDown();
+									throw new RuntimeException();
+								});
+							}
+							catch (RetryException ex) {
+								ReflectionUtils.rethrowRuntimeException(ex.getCause());
+							}
 						}
 
 						@Override
@@ -184,16 +190,7 @@ class KafkaStreamsRetryTests {
 		@Bean
 		@StreamRetryTemplate
 		RetryTemplate fooRetryTemplate() {
-			RetryTemplate retryTemplate = new RetryTemplate();
-
-			RetryPolicy retryPolicy = new SimpleRetryPolicy(4);
-			FixedBackOffPolicy backOffPolicy = new FixedBackOffPolicy();
-			backOffPolicy.setBackOffPeriod(1);
-
-			retryTemplate.setBackOffPolicy(backOffPolicy);
-			retryTemplate.setRetryPolicy(retryPolicy);
-
-			return retryTemplate;
+			return new RetryTemplate(RetryPolicy.builder().maxAttempts(4).delay(Duration.ofMillis(1)).build());
 		}
 
 		@Bean
@@ -209,10 +206,15 @@ class KafkaStreamsRetryTests {
 
 						@Override
 						public void process(Record<Object, String> record) {
-							fooRetryTemplate().execute(context -> {
-								LATCH2.countDown();
-								throw new RuntimeException();
-							});
+							try {
+								fooRetryTemplate().execute(() -> {
+									LATCH2.countDown();
+									throw new RuntimeException();
+								});
+							}
+							catch (RetryException e) {
+								ReflectionUtils.rethrowRuntimeException(e.getCause());
+							}
 						}
 
 						@Override

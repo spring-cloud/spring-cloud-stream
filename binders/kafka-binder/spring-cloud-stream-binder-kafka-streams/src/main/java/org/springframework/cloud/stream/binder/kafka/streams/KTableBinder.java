@@ -35,14 +35,14 @@ import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStr
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsExtendedBindingProperties;
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsProducerProperties;
 import org.springframework.kafka.config.StreamsBuilderFactoryBean;
-import org.springframework.retry.support.RetryTemplate;
+import org.springframework.core.retry.RetryTemplate;
 import org.springframework.util.StringUtils;
 
 
 /**
  * {@link org.springframework.cloud.stream.binder.Binder} implementation for
  * {@link KTable}. This implemenation extends from the {@link AbstractBinder} directly.
- *
+ * <p>
  * Provides only consumer binding for the bound KTable as output bindings are not allowed
  * on it.
  *

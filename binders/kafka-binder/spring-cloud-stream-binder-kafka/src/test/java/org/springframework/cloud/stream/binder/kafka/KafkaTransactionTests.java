@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.binder.kafka;
 
+import java.time.Duration;
 import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
 
@@ -35,6 +36,7 @@ import org.springframework.cloud.stream.binder.kafka.properties.KafkaBinderConfi
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaProducerProperties;
 import org.springframework.cloud.stream.binder.kafka.provisioning.KafkaTopicProvisioner;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import org.springframework.core.retry.RetryPolicy;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.test.util.TestUtils;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
@@ -42,7 +44,7 @@ import org.springframework.kafka.test.EmbeddedKafkaBroker;
 import org.springframework.kafka.test.condition.EmbeddedKafkaCondition;
 import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.messaging.support.GenericMessage;
-import org.springframework.retry.support.RetryTemplate;
+import org.springframework.core.retry.RetryTemplate;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -55,6 +57,7 @@ import static org.mockito.Mockito.spy;
 
 /**
  * @author Gary Russell
+ * @author Artem Bilan
  * @since 2.0
  *
  */
@@ -82,7 +85,8 @@ class KafkaTransactionTests {
 		KafkaTopicProvisioner provisioningProvider = new KafkaTopicProvisioner(
 				configurationProperties, kafkaProperties, prop -> {
 		});
-		provisioningProvider.setMetadataRetryOperations(new RetryTemplate());
+		RetryPolicy retryPolicy = RetryPolicy.builder().maxAttempts(2).delay(Duration.ZERO).build();
+		provisioningProvider.setMetadataRetryOperations(new RetryTemplate(retryPolicy));
 		final Producer mockProducer = mock(Producer.class);
 		given(mockProducer.send(any(), any())).willReturn(new CompletableFuture<>());
 
