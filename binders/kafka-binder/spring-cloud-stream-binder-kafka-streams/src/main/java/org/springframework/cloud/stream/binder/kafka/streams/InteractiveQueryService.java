@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.binder.kafka.streams;
 
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,16 +39,16 @@ import org.apache.kafka.streams.state.HostInfo;
 import org.apache.kafka.streams.state.QueryableStoreType;
 
 import org.springframework.cloud.stream.binder.kafka.streams.properties.KafkaStreamsBinderConfigurationProperties;
-import org.springframework.retry.RetryPolicy;
-import org.springframework.retry.backoff.FixedBackOffPolicy;
-import org.springframework.retry.policy.SimpleRetryPolicy;
-import org.springframework.retry.support.RetryTemplate;
+import org.springframework.core.retry.RetryException;
+import org.springframework.core.retry.RetryPolicy;
+import org.springframework.core.retry.RetryTemplate;
+import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
 
 /**
  * Services pertinent to the interactive query capabilities of Kafka Streams. This class
  * provides services such as querying for a particular store, which instance is hosting a
- * particular store etc. This is part of the public API of the kafka streams binder and
+ * particular store etc. This is part of the public API of the kafka streams binder, and
  * the users can inject this service in their applications to make use of it.
  *
  * @author Soby Chacko
@@ -55,6 +56,7 @@ import org.springframework.util.StringUtils;
  * @author Serhii Siryi
  * @author Nico Pommerening
  * @author Chris Bono
+ * @author Artem Bilan
  * @since 2.1.0
  */
 public class InteractiveQueryService {
@@ -100,58 +102,64 @@ public class InteractiveQueryService {
 
 		AtomicReference<StoreQueryParameters<T>> storeQueryParametersAtomicReference = new AtomicReference<>(storeQueryParams);
 
-		return getRetryTemplate().execute(context -> {
-			T store = null;
-			Throwable throwable = null;
-			if (contextSpecificKafkaStreams != null) {
-				try {
-					store = contextSpecificKafkaStreams.store(storeQueryParametersAtomicReference.get());
+		try {
+			return getRetryTemplate().execute(() -> {
+				T store = null;
+				Throwable throwable = null;
+				if (contextSpecificKafkaStreams != null) {
+					try {
+						store = contextSpecificKafkaStreams.store(storeQueryParametersAtomicReference.get());
+					}
+					catch (InvalidStateStoreException e) {
+						throwable = e;
+					}
 				}
-				catch (InvalidStateStoreException e) {
-					throwable = e;
+				if (store != null) {
+					return store;
 				}
-			}
-			if (store != null) {
-				return store;
-			}
-			if (contextSpecificKafkaStreams != null) {
-				LOG.warn("Store (" + storeName + ") could not be found in Streams context, falling back to all known Streams instances");
-			}
-
-			// Find all apps that know about the store
-			Map<KafkaStreams, T> candidateStores = new HashMap<>();
-			for (KafkaStreams kafkaStreamApp : kafkaStreamsRegistry.getKafkaStreams()) {
-				try {
-					candidateStores.put(kafkaStreamApp, kafkaStreamApp.store(storeQueryParametersAtomicReference.get()));
+				if (contextSpecificKafkaStreams != null) {
+					LOG.warn("Store (" + storeName + ") could not be found in Streams context, falling back to all known Streams instances");
 				}
-				catch (Exception ex) {
-					throwable = ex;
+
+				// Find all apps that know about the store
+				Map<KafkaStreams, T> candidateStores = new HashMap<>();
+				for (KafkaStreams kafkaStreamApp : kafkaStreamsRegistry.getKafkaStreams()) {
+					try {
+						candidateStores.put(kafkaStreamApp, kafkaStreamApp.store(storeQueryParametersAtomicReference.get()));
+					}
+					catch (Exception ex) {
+						throwable = ex;
+					}
 				}
-			}
 
-			// Store exists in a single app - no further resolution required
-			if (candidateStores.size() == 1) {
-				return candidateStores.values().stream().findFirst().get();
-			}
-
-			// If the store is in multiple streams apps - discard any apps that do not actually have the store
-			if (candidateStores.size() > 1) {
-
-				candidateStores = candidateStores.entrySet().stream()
-						.filter((e) -> this.topologyInfoFacade.streamsAppActuallyHasStore(e.getKey(), storeName))
-						.collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-
+				// Store exists in a single app - no further resolution required
 				if (candidateStores.size() == 1) {
 					return candidateStores.values().stream().findFirst().get();
 				}
 
-				throwable = (candidateStores.size() == 0) ?
-						new UnknownStateStoreException("Store (" + storeName + ") not available to Streams instance") :
-						new InvalidStateStoreException("Store (" + storeName + ") available to more than one Streams instance");
+				// If the store is in multiple streams apps - discard any apps that do not actually have the store
+				if (candidateStores.size() > 1) {
 
-			}
-			throw new IllegalStateException("Error retrieving state store: " + storeName, throwable);
-		});
+					candidateStores = candidateStores.entrySet().stream()
+							.filter((e) -> this.topologyInfoFacade.streamsAppActuallyHasStore(e.getKey(), storeName))
+							.collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+					if (candidateStores.size() == 1) {
+						return candidateStores.values().stream().findFirst().get();
+					}
+
+					throwable = (candidateStores.isEmpty()) ?
+							new UnknownStateStoreException("Store (" + storeName + ") not available to Streams instance") :
+							new InvalidStateStoreException("Store (" + storeName + ") available to more than one Streams instance");
+
+				}
+				throw new IllegalStateException("Error retrieving state store: " + storeName, throwable);
+			});
+		}
+		catch (RetryException ex) {
+			ReflectionUtils.rethrowRuntimeException(ex.getCause());
+			return null;
+		}
 	}
 
 	/**
@@ -218,38 +226,40 @@ public class InteractiveQueryService {
 	public <K> HostInfo getHostInfo(String store, K key, Serializer<K> serializer) {
 		final RetryTemplate retryTemplate = getRetryTemplate();
 
-
-		return retryTemplate.execute(context -> {
-			Throwable throwable = null;
-			try {
-				final KeyQueryMetadata keyQueryMetadata = this.kafkaStreamsRegistry.getKafkaStreams()
-						.stream()
-						.map((k) -> Optional.ofNullable(k.queryMetadataForKey(store, key, serializer)))
-						.filter(Optional::isPresent).map(Optional::get).findFirst().orElse(null);
-				if (keyQueryMetadata != null) {
-					return keyQueryMetadata.activeHost();
+		try {
+			return retryTemplate.execute(() -> {
+				Throwable throwable = null;
+				try {
+					final KeyQueryMetadata keyQueryMetadata = this.kafkaStreamsRegistry.getKafkaStreams()
+							.stream()
+							.map((k) -> Optional.ofNullable(k.queryMetadataForKey(store, key, serializer)))
+							.filter(Optional::isPresent).map(Optional::get).findFirst().orElse(null);
+					if (keyQueryMetadata != null) {
+						return keyQueryMetadata.activeHost();
+					}
 				}
-			}
-			catch (Exception e) {
-				throwable = e;
-			}
-			throw new IllegalStateException(
-					"Error when retrieving state store.", throwable != null ? throwable : new Throwable("Kafka Streams is not ready."));
-		});
+				catch (Exception e) {
+					throwable = e;
+				}
+				throw new IllegalStateException(
+						"Error when retrieving state store.", throwable != null ? throwable : new Throwable("Kafka Streams is not ready."));
+			});
+		}
+		catch (RetryException ex) {
+			ReflectionUtils.rethrowRuntimeException(ex.getCause());
+			return null;
+		}
 	}
 
 	private RetryTemplate getRetryTemplate() {
-		RetryTemplate retryTemplate = new RetryTemplate();
 
-		KafkaStreamsBinderConfigurationProperties.StateStoreRetry stateStoreRetry = this.binderConfigurationProperties.getStateStoreRetry();
-		RetryPolicy retryPolicy = new SimpleRetryPolicy(stateStoreRetry.getMaxAttempts());
-		FixedBackOffPolicy backOffPolicy = new FixedBackOffPolicy();
-		backOffPolicy.setBackOffPeriod(stateStoreRetry.getBackoffPeriod());
+		var stateStoreRetry = this.binderConfigurationProperties.getStateStoreRetry();
+		RetryPolicy retryPolicy = RetryPolicy.builder()
+			.maxAttempts(stateStoreRetry.getMaxAttempts())
+			.delay(Duration.ofMillis(stateStoreRetry.getBackoffPeriod()))
+			.build();
 
-		retryTemplate.setBackOffPolicy(backOffPolicy);
-		retryTemplate.setRetryPolicy(retryPolicy);
-
-		return retryTemplate;
+		return new RetryTemplate(retryPolicy);
 	}
 
 	/**

@@ -28,7 +28,7 @@ import org.springframework.cloud.stream.binder.test.TestChannelBinderProvisioner
 import org.springframework.cloud.stream.binder.test.TestChannelBinderProvisioner.SpringIntegrationProducerDestination;
 import org.springframework.cloud.stream.provisioning.ConsumerDestination;
 import org.springframework.cloud.stream.provisioning.ProducerDestination;
-import org.springframework.core.AttributeAccessor;
+import org.springframework.core.retry.RetryException;
 import org.springframework.integration.IntegrationMessageHeaderAccessor;
 import org.springframework.integration.acks.AcknowledgmentCallback;
 import org.springframework.integration.core.MessageProducer;
@@ -37,6 +37,7 @@ import org.springframework.integration.endpoint.MessageProducerSupport;
 import org.springframework.integration.handler.BridgeHandler;
 import org.springframework.integration.support.DefaultErrorMessageStrategy;
 import org.springframework.integration.support.ErrorMessageStrategy;
+import org.springframework.integration.support.ErrorMessageUtils;
 import org.springframework.integration.support.MapBuilder;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
@@ -45,20 +46,17 @@ import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.MessagingException;
 import org.springframework.messaging.SubscribableChannel;
 import org.springframework.messaging.support.GenericMessage;
-import org.springframework.retry.RecoveryCallback;
-import org.springframework.retry.RetryCallback;
-import org.springframework.retry.RetryContext;
-import org.springframework.retry.RetryListener;
-import org.springframework.retry.support.RetryTemplate;
+import org.springframework.integration.core.RecoveryCallback;
+import org.springframework.core.retry.RetryTemplate;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
 /**
- * Implementation of {@link Binder} backed by Spring Integration framework. It is useful
+ * Implementation of {@link Binder} backed by the Spring Integration framework. It is useful
  * for localized demos and testing.
  * <p>
  * This binder extends from the same base class ({@link AbstractMessageChannelBinder}) as
- * other binders (i.e., Rabbit, Kafka etc). Interaction with this binder is done via
+ * other binders (i.e., Rabbit, Kafka etc.). Interaction with this binder is done via
  * source and target destination which emulate real binder's destinations (i.e., Kafka
  * topic) <br>
  * The destination classes are
@@ -66,7 +64,7 @@ import org.springframework.util.StringUtils;
  * <li>{@link InputDestination}</li>
  * <li>{@link OutputDestination}</li>
  * </ul>
- * Simply autowire them in your your application and send/receive messages.
+ * Simply autowire them in your application and send/receive messages.
  * </p>
  * You must also add {@link TestChannelBinderConfiguration} to your configuration. Below
  * is the example using Spring Boot test. <pre class="code">
@@ -101,6 +99,7 @@ import org.springframework.util.StringUtils;
  *
  * @author Oleg Zhurakousky
  * @author Gary Russell
+ * @author Artem Bilan
  *
  */
 public class TestChannelBinder extends
@@ -196,7 +195,7 @@ public class TestChannelBinder extends
 	}
 
 	/**
-	 * Implementation of simple message listener container modeled after AMQP
+	 * Implementation of a simple message listener container modeled after AMQP
 	 * SimpleMessageListenerContainer.
 	 */
 	private static class IntegrationMessageListeningContainer implements MessageHandler {
@@ -215,18 +214,16 @@ public class TestChannelBinder extends
 	}
 
 	/**
-	 * Implementation of inbound channel adapter modeled after AmqpInboundChannelAdapter.
+	 * Implementation of an inbound channel adapter modeled after AmqpInboundChannelAdapter.
 	 */
 	private static class IntegrationBinderInboundChannelAdapter
 		extends MessageProducerSupport {
-
-		private static final ThreadLocal<AttributeAccessor> attributesHolder = new ThreadLocal<AttributeAccessor>();
 
 		private final IntegrationMessageListeningContainer listenerContainer;
 
 		private RetryTemplate retryTemplate;
 
-		private RecoveryCallback<? extends Object> recoveryCallback;
+		private RecoveryCallback<?> recoveryCallback;
 
 		IntegrationBinderInboundChannelAdapter(
 			IntegrationMessageListeningContainer listenerContainer) {
@@ -234,8 +231,7 @@ public class TestChannelBinder extends
 		}
 
 		// Temporarily unused until DLQ strategy for this binder becomes a requirement
-		public void setRecoveryCallback(
-			RecoveryCallback<? extends Object> recoveryCallback) {
+		public void setRecoveryCallback(RecoveryCallback<?> recoveryCallback) {
 			this.recoveryCallback = recoveryCallback;
 		}
 
@@ -252,32 +248,28 @@ public class TestChannelBinder extends
 						+ "send an error message when retries are exhausted");
 			}
 			Listener messageListener = new Listener();
-			if (this.retryTemplate != null) {
-				this.retryTemplate.registerListener(messageListener);
-			}
 			this.listenerContainer.setMessageListener(messageListener);
 		}
 
-		protected class Listener implements RetryListener, Consumer<Message<?>> {
+		protected class Listener implements Consumer<Message<?>> {
 
 			@Override
-			@SuppressWarnings("unchecked")
 			public void accept(Message<?> message) {
 				try {
 					if (IntegrationBinderInboundChannelAdapter.this.retryTemplate == null) {
-						try {
-							processMessage(message);
-						}
-						finally {
-							attributesHolder.remove();
-						}
+						processMessage(message);
 					}
 					else {
-						IntegrationBinderInboundChannelAdapter.this.retryTemplate
-							.execute(context -> {
-								processMessage(message);
-								return null;
-							}, (RecoveryCallback<Object>) IntegrationBinderInboundChannelAdapter.this.recoveryCallback);
+						try {
+							IntegrationBinderInboundChannelAdapter.this.retryTemplate.execute(() -> {
+									processMessage(message);
+									return null;
+								});
+						}
+						catch (RetryException ex) {
+							IntegrationBinderInboundChannelAdapter.this.recoveryCallback
+								.recover(ErrorMessageUtils.getAttributeAccessor(message, null), ex);
+						}
 					}
 				}
 				catch (RuntimeException e) {
@@ -296,27 +288,6 @@ public class TestChannelBinder extends
 
 			private void processMessage(Message<?> message) {
 				sendMessage(message);
-			}
-
-			@Override
-			public <T, E extends Throwable> boolean open(RetryContext context,
-														RetryCallback<T, E> callback) {
-				if (IntegrationBinderInboundChannelAdapter.this.recoveryCallback != null) {
-					attributesHolder.set(context);
-				}
-				return true;
-			}
-
-			@Override
-			public <T, E extends Throwable> void close(RetryContext context,
-													RetryCallback<T, E> callback, Throwable throwable) {
-				attributesHolder.remove();
-			}
-
-			@Override
-			public <T, E extends Throwable> void onError(RetryContext context,
-														RetryCallback<T, E> callback, Throwable throwable) {
-				// Empty
 			}
 
 		}

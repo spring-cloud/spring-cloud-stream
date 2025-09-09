@@ -195,7 +195,7 @@ public class ConsumerConfigProperties extends PulsarProperties.Consumer {
 	 */
 	public Map<String, Object> toBaseConsumerPropertiesMap() {
 		var consumerProps = new ConsumerConfigProperties.Properties();
-		var map = PropertyMapper.get().alwaysApplyingWhenNonNull();
+		var map = PropertyMapper.get();
 		map.from(this::getDeadLetterPolicy).as(this::toPulsarDeadLetterPolicy).to(consumerProps.in("deadLetterPolicy"));
 		map.from(this::getName).to(consumerProps.in("consumerName"));
 		map.from(this::getPriorityLevel).to(consumerProps.in("priorityLevel"));
@@ -210,7 +210,7 @@ public class ConsumerConfigProperties extends PulsarProperties.Consumer {
 	private org.apache.pulsar.client.api.DeadLetterPolicy toPulsarDeadLetterPolicy(DeadLetterPolicy policy) {
 		Assert.state(policy.getMaxRedeliverCount() > 0,
 				"Pulsar DeadLetterPolicy must have a positive 'max-redelivery-count' property value");
-		PropertyMapper map = PropertyMapper.get().alwaysApplyingWhenNonNull();
+		PropertyMapper map = PropertyMapper.get();
 		org.apache.pulsar.client.api.DeadLetterPolicy.DeadLetterPolicyBuilder builder = org.apache.pulsar.client.api.DeadLetterPolicy
 				.builder();
 		map.from(policy::getMaxRedeliverCount).to(builder::maxRedeliverCount);
@@ -235,7 +235,7 @@ public class ConsumerConfigProperties extends PulsarProperties.Consumer {
 	 */
 	public Map<String, Object> toExtendedConsumerPropertiesMap() {
 		var consumerProps = new ConsumerConfigProperties.Properties();
-		var map = PropertyMapper.get().alwaysApplyingWhenNonNull();
+		var map = PropertyMapper.get();
 		map.from(this::getAutoUpdatePartitions).to(consumerProps.in("autoUpdatePartitions"));
 		map.from(this::getAutoUpdatePartitionsInterval).as(Duration::toSeconds)
 				.to(consumerProps.in("autoUpdatePartitionsIntervalSeconds"));

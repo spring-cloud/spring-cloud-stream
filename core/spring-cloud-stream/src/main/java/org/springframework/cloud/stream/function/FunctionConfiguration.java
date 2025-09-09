@@ -329,7 +329,7 @@ public class FunctionConfiguration {
 				PollerProperties poller = producerProperties.getPoller();
 
 				PollerMetadata pm = new PollerMetadata();
-				PropertyMapper map = PropertyMapper.get().alwaysApplyingWhenNonNull();
+				PropertyMapper map = PropertyMapper.get();
 				map.from(poller::getMaxMessagesPerPoll).to(pm::setMaxMessagesPerPoll);
 				map.from(poller).as(this::asTrigger).to(pm::setTrigger);
 				pollerMetadata.set(pm);

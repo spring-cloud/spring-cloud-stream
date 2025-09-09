@@ -64,6 +64,7 @@ import org.springframework.integration.endpoint.ReactiveStreamsConsumer;
 import org.springframework.integration.handler.AbstractMessageHandler;
 import org.springframework.integration.handler.BridgeHandler;
 import org.springframework.integration.handler.advice.ErrorMessageSendingRecoverer;
+import org.springframework.integration.support.DefaultErrorMessageStrategy;
 import org.springframework.integration.support.ErrorMessageStrategy;
 import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
@@ -73,7 +74,7 @@ import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.SubscribableChannel;
 import org.springframework.messaging.support.ChannelInterceptor;
 import org.springframework.messaging.support.ErrorMessage;
-import org.springframework.retry.RecoveryCallback;
+import org.springframework.integration.core.RecoveryCallback;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
@@ -1061,7 +1062,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 	 * @return the implementation - may be null.
 	 */
 	protected ErrorMessageStrategy getErrorMessageStrategy() {
-		return null;
+		return new DefaultErrorMessageStrategy();
 	}
 
 	protected String getErrorRecovererName(ConsumerDestination destination, String group,
