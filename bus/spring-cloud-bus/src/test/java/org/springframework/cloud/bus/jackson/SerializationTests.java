@@ -18,8 +18,9 @@ package org.springframework.cloud.bus.jackson;
 
 import java.util.Collections;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Test;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 import org.springframework.cloud.bus.event.EnvironmentChangeRemoteApplicationEvent;
 import org.springframework.cloud.bus.event.RefreshRemoteApplicationEvent;
@@ -33,12 +34,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 public class SerializationTests {
 
-	ObjectMapper mapper = new ObjectMapper();
+	ObjectMapper mapper;
 
 	@Test
 	public void vanillaDeserialize() throws Exception {
-		this.mapper.registerModule(
-				new SubtypeModule(RefreshRemoteApplicationEvent.class, EnvironmentChangeRemoteApplicationEvent.class));
+		this.mapper = JsonMapper.builder().addModule(new SubtypeModule(RefreshRemoteApplicationEvent.class, EnvironmentChangeRemoteApplicationEvent.class)).build();
 		EnvironmentChangeRemoteApplicationEvent source = new EnvironmentChangeRemoteApplicationEvent(this, "foo", "bar",
 				Collections.<String, String>emptyMap());
 		String value = this.mapper.writeValueAsString(source);
@@ -50,8 +50,7 @@ public class SerializationTests {
 
 	@Test
 	public void deserializeOldValueWithNoId() throws Exception {
-		this.mapper.registerModule(
-				new SubtypeModule(RefreshRemoteApplicationEvent.class, EnvironmentChangeRemoteApplicationEvent.class));
+		this.mapper = JsonMapper.builder().addModule(new SubtypeModule(RefreshRemoteApplicationEvent.class, EnvironmentChangeRemoteApplicationEvent.class)).build();
 		EnvironmentChangeRemoteApplicationEvent source = new EnvironmentChangeRemoteApplicationEvent(this, "foo", "bar",
 				Collections.<String, String>emptyMap());
 		String value = this.mapper.writeValueAsString(source);

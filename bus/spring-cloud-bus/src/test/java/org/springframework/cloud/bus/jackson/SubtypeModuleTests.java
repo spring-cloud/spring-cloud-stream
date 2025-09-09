@@ -17,9 +17,9 @@
 package org.springframework.cloud.bus.jackson;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import org.junit.Test;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 import org.springframework.cloud.bus.event.AckRemoteApplicationEvent;
 import org.springframework.cloud.bus.event.RemoteApplicationEvent;
@@ -38,8 +38,7 @@ public class SubtypeModuleTests {
 
 	@Test
 	public void testDeserializeSubclass() throws Exception {
-		ObjectMapper mapper = new ObjectMapper();
-		mapper.registerModule(new SubtypeModule(MyRemoteApplicationEvent.class));
+		ObjectMapper mapper = JsonMapper.builder().addModule(new SubtypeModule(MyRemoteApplicationEvent.class)).build();
 
 		RemoteApplicationEvent event = mapper.readValue(
 				"{\"type\":\"my\", \"destinationService\":\"myservice\", \"originService\":\"myorigin\"}",
@@ -60,8 +59,7 @@ public class SubtypeModuleTests {
 
 	@Test
 	public void testDeserializeCustomizedObjectMapper() throws Exception {
-		ObjectMapper mapper = new ObjectMapper();
-		mapper.setPropertyNamingStrategy(PropertyNamingStrategy.SNAKE_CASE);
+		JsonMapper.Builder mapper = JsonMapper.builder().propertyNamingStrategy(tools.jackson.databind.PropertyNamingStrategies.SNAKE_CASE);
 
 		BusJacksonMessageConverter converter = new BusJacksonMessageConverter(mapper);
 		converter.afterPropertiesSet();
