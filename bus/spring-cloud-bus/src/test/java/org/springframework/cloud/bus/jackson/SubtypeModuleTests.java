@@ -18,7 +18,7 @@ package org.springframework.cloud.bus.jackson;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.PropertyNamingStrategy;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import org.junit.Test;
 
 import org.springframework.cloud.bus.event.AckRemoteApplicationEvent;
@@ -61,7 +61,7 @@ public class SubtypeModuleTests {
 	@Test
 	public void testDeserializeCustomizedObjectMapper() throws Exception {
 		ObjectMapper mapper = new ObjectMapper();
-		mapper.setPropertyNamingStrategy(PropertyNamingStrategy.SNAKE_CASE);
+		mapper.setPropertyNamingStrategy(new PropertyNamingStrategies.SnakeCaseStrategy());
 
 		BusJacksonMessageConverter converter = new BusJacksonMessageConverter(mapper);
 		converter.afterPropertiesSet();
