@@ -16,6 +16,9 @@
 
 package org.springframework.cloud.stream.binder;
 
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.logging.Log;
@@ -31,10 +34,9 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.support.AbstractApplicationContext;
 import org.springframework.context.support.GenericApplicationContext;
+import org.springframework.core.retry.RetryPolicy;
 import org.springframework.expression.EvaluationContext;
-import org.springframework.retry.backoff.ExponentialBackOffPolicy;
-import org.springframework.retry.policy.SimpleRetryPolicy;
-import org.springframework.retry.support.RetryTemplate;
+import org.springframework.core.retry.RetryTemplate;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
@@ -104,7 +106,7 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 		Assert.isInstanceOf(GenericApplicationContext.class, applicationContext);
 		this.applicationContext = (GenericApplicationContext) applicationContext;
 		Map<String, EvaluationContext> beansOfType = this.applicationContext.getBeansOfType(EvaluationContext.class);
-		if (beansOfType.size() > 0) {
+		if (!beansOfType.isEmpty()) {
 			this.evaluationContext = beansOfType.values().iterator().next();
 		}
 
@@ -157,7 +159,7 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 			P properties);
 
 	/**
-	 * Construct a name comprised of the name and group.
+	 * Construct a name comprising the name and group.
 	 * @param name the name.
 	 * @param group the group.
 	 * @return the constructed name.
@@ -192,19 +194,29 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 		RetryTemplate rt;
 		if (CollectionUtils.isEmpty(this.consumerBindingRetryTemplates)) {
 			rt = new RetryTemplate();
-			SimpleRetryPolicy retryPolicy = CollectionUtils
-					.isEmpty(properties.getRetryableExceptions())
-							? new SimpleRetryPolicy(properties.getMaxAttempts())
-							: new SimpleRetryPolicy(properties.getMaxAttempts(),
-									properties.getRetryableExceptions(), true,
-									properties.isDefaultRetryable());
 
-			ExponentialBackOffPolicy backOffPolicy = new ExponentialBackOffPolicy();
-			backOffPolicy.setInitialInterval(properties.getBackOffInitialInterval());
-			backOffPolicy.setMultiplier(properties.getBackOffMultiplier());
-			backOffPolicy.setMaxInterval(properties.getBackOffMaxInterval());
+			Map<Class<? extends Throwable>, Boolean> retryableExceptionMapping = properties.getRetryableExceptions();
+			List<Class<? extends Throwable>> retryableExceptions = new ArrayList<>();
+			List<Class<? extends Throwable>> nonRetryableExceptions = new ArrayList<>();
+			for (var classBooleanEntry : retryableExceptionMapping.entrySet()) {
+				Class<? extends Throwable> exceptionClass = classBooleanEntry.getKey();
+				if (classBooleanEntry.getValue()) {
+					retryableExceptions.add(exceptionClass);
+				}
+				else {
+					nonRetryableExceptions.add(exceptionClass);
+				}
+			}
+			RetryPolicy retryPolicy =
+				RetryPolicy.builder()
+					.maxAttempts(properties.getMaxAttempts())
+					.delay(Duration.ofMillis(properties.getBackOffInitialInterval()))
+					.multiplier(properties.getBackOffMultiplier())
+					.maxDelay(Duration.ofMillis(properties.getBackOffMaxInterval()))
+					.includes(retryableExceptions)
+					.excludes(nonRetryableExceptions)
+				.build();
 			rt.setRetryPolicy(retryPolicy);
-			rt.setBackOffPolicy(backOffPolicy);
 		}
 		else {
 			rt = StringUtils.hasText(properties.getRetryTemplateName())

@@ -123,7 +123,7 @@ class KafkaStreamsInteractiveQueryIntegrationTests {
 		catch (Exception ignored) {
 
 		}
-		Mockito.verify(mockKafkaStreams, times(3))
+		Mockito.verify(mockKafkaStreams, times(4))
 				.store(StoreQueryParameters.fromNameAndType("foo", storeType));
 	}
 
@@ -153,7 +153,7 @@ class KafkaStreamsInteractiveQueryIntegrationTests {
 		catch (Exception ignored) {
 
 		}
-		Mockito.verify(mockKafkaStreams, times(3))
+		Mockito.verify(mockKafkaStreams, times(4))
 				.queryMetadataForKey("foo", "foobarApp-key", serializer);
 	}
 

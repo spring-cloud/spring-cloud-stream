@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.binder.kafka;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -31,12 +32,13 @@ import org.springframework.cloud.stream.binder.kafka.config.ClientFactoryCustomi
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaBinderConfigurationProperties;
 import org.springframework.cloud.stream.binder.kafka.provisioning.KafkaTopicProvisioner;
 import org.springframework.context.support.GenericApplicationContext;
+import org.springframework.core.retry.RetryPolicy;
 import org.springframework.kafka.core.ProducerFactory;
 import org.springframework.kafka.test.EmbeddedKafkaBroker;
 import org.springframework.kafka.test.condition.EmbeddedKafkaCondition;
 import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.kafka.transaction.KafkaTransactionManager;
-import org.springframework.retry.support.RetryTemplate;
+import org.springframework.core.retry.RetryTemplate;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -48,6 +50,7 @@ import static org.mockito.Mockito.verify;
 
 /**
  * @author Soby Chacko
+ * @author Artem Bilan
  */
 @EmbeddedKafka(count = 1, controlledShutdown = true, brokerProperties = {"transaction.state.log.replication.factor=1",
 	"transaction.state.log.min.isr=1"})
@@ -74,7 +77,8 @@ class KafkaBinderTransactionCustomizerTest {
 		KafkaTopicProvisioner provisioningProvider = new KafkaTopicProvisioner(
 			configurationProperties, kafkaProperties, prop -> {
 		});
-		provisioningProvider.setMetadataRetryOperations(new RetryTemplate());
+		RetryPolicy retryPolicy = RetryPolicy.builder().maxAttempts(2).delay(Duration.ZERO).build();
+		provisioningProvider.setMetadataRetryOperations(new RetryTemplate(retryPolicy));
 
 		// Create a tracking list for customized factories
 		List<ProducerFactory<?, ?>> customizedFactories = new ArrayList<>();

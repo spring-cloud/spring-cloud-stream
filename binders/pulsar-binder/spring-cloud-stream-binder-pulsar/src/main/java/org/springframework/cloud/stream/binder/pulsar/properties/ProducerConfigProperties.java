@@ -196,7 +196,7 @@ public class ProducerConfigProperties extends PulsarProperties.Producer {
 	 */
 	public Map<String, Object> toBaseProducerPropertiesMap() {
 		var producerProps = new ProducerConfigProperties.Properties();
-		var map = PropertyMapper.get().alwaysApplyingWhenNonNull();
+		var map = PropertyMapper.get();
 		map.from(this::getAccessMode).to(producerProps.in("accessMode"));
 		map.from(this::isBatchingEnabled).to(producerProps.in("batchingEnabled"));
 		map.from(this::isChunkingEnabled).to(producerProps.in("chunkingEnabled"));
@@ -216,7 +216,7 @@ public class ProducerConfigProperties extends PulsarProperties.Producer {
 	 */
 	public Map<String, Object> toExtendedProducerPropertiesMap() {
 		var producerProps = new ProducerConfigProperties.Properties();
-		var map = PropertyMapper.get().alwaysApplyingWhenNonNull();
+		var map = PropertyMapper.get();
 		map.from(this::getAutoUpdatePartitions).to(producerProps.in("autoUpdatePartitions"));
 		map.from(this::getAutoUpdatePartitionsInterval).as(Duration::toSeconds)
 				.to(producerProps.in("autoUpdatePartitionsIntervalSeconds"));

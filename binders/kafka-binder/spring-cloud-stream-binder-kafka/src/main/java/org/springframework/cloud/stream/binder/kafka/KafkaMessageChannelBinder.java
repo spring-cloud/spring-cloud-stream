@@ -88,6 +88,7 @@ import org.springframework.cloud.stream.config.MessageSourceCustomizer;
 import org.springframework.cloud.stream.provisioning.ConsumerDestination;
 import org.springframework.cloud.stream.provisioning.ProducerDestination;
 import org.springframework.context.support.AbstractApplicationContext;
+import org.springframework.core.retry.RetryException;
 import org.springframework.expression.Expression;
 import org.springframework.expression.common.LiteralExpression;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
@@ -891,7 +892,7 @@ public class KafkaMessageChannelBinder extends
 	/**
 	 * Configure a {@link BackOff} for the after rollback processor, based on the consumer
 	 * retry properties. If retry is disabled, return a {@link BackOff} that disables
-	 * retry. Otherwise use an {@link ExponentialBackOffWithMaxRetries}.
+	 * retry. Otherwise, use an {@link ExponentialBackOffWithMaxRetries}.
 	 * @param extendedConsumerProperties the properties.
 	 * @return the backoff.
 	 */
@@ -1003,7 +1004,7 @@ public class KafkaMessageChannelBinder extends
 									return shouldSeek;
 								})
 								.collect(Collectors.toList());
-							if (toSeek.size() > 0) {
+							if (!toSeek.isEmpty()) {
 								if ("earliest".equals(resetTo)) {
 									consumer.seekToBeginning(toSeek);
 								}
@@ -1241,7 +1242,7 @@ public class KafkaMessageChannelBinder extends
 				Assert.state(!configs.containsKey(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG),
 						ProducerConfig.BOOTSTRAP_SERVERS_CONFIG + " cannot be overridden at the binding level; "
 								+ "use multiple binders instead");
-				// Finally merge with dlq producer properties or the transaction producer properties.
+				// Finally, merge with dlq producer properties or the transaction producer properties.
 				configuration.putAll(configs);
 				if (record.key() != null
 						&& !record.key().getClass().isInstance(byte[].class)) {
@@ -1271,7 +1272,7 @@ public class KafkaMessageChannelBinder extends
 		if (message.getPayload() instanceof Throwable throwablePayload) {
 
 			throwable = throwablePayload;
-			String exceptionMessage = buildMessage(throwable, throwable.getCause());
+			String exceptionMessage = buildMessage(throwable);
 			HeaderMode headerMode = properties.getHeaderMode();
 
 			if (headerMode == null || HeaderMode.headers.equals(headerMode)) {
@@ -1318,8 +1319,7 @@ public class KafkaMessageChannelBinder extends
 							getStackTraceAsString(throwable));
 
 					final String[] headersToEmbed = new ArrayList<>(
-							messageValues.keySet()).toArray(
-									new String[messageValues.keySet().size()]);
+							messageValues.keySet()).toArray(new String[0]);
 					byte[] payload = EmbeddedHeaderUtils.embedHeaders(
 							messageValues,
 							EmbeddedHeaderUtils.headersToEmbed(headersToEmbed));
@@ -1365,9 +1365,15 @@ public class KafkaMessageChannelBinder extends
 	}
 
 	@Nullable
-	private String buildMessage(Throwable exception, Throwable cause) {
-		String message = exception.getMessage();
-		if (!exception.equals(cause)) {
+	private String buildMessage(Throwable exception) {
+		Throwable exceptionToUse = exception;
+		if (exception instanceof MessagingException && exception.getCause() instanceof RetryException retryException) {
+			exceptionToUse = retryException.getCause();
+		}
+
+		Throwable cause = exceptionToUse.getCause();
+		String message = exceptionToUse.getMessage();
+		if (!exceptionToUse.equals(cause)) {
 			if (message != null) {
 				message = message + "; ";
 			}
@@ -1415,8 +1421,7 @@ public class KafkaMessageChannelBinder extends
 			ConsumerRecord<?, ?> record = (ConsumerRecord<?, ?>) message.getHeaders()
 					.get(KafkaHeaders.RAW_DATA);
 			if (!(message instanceof ErrorMessage)) {
-				logger.error("Expected an ErrorMessage, not a "
-						+ message.getClass().toString() + " for: " + message);
+				logger.error("Expected an ErrorMessage, not a " + message.getClass() + " for: " + message);
 			}
 			else if (record == null) {
 				if (superHandler != null) {
@@ -1571,7 +1576,7 @@ public class KafkaMessageChannelBinder extends
 			this.producerFactory = producerFactory;
 
 			/*
-			 	Activate own instance of a PartitionHandler if necessary/possible to  override any other existing
+			 	Activate own instance of a PartitionHandler if necessary/possible to override any other existing
 			 	partition calculation (see other usages of PartitionHandler) by	using current partition count
 			 	(which may have changed at runtime) each time a message is handled.
 			 	PartitionKeyExpression 'payload' is not supported here, because of
@@ -1621,7 +1626,7 @@ public class KafkaMessageChannelBinder extends
 		@Override
 		public void handleMessage(Message<?> message) {
 
-			// if we use our own partition handler to update partition count we recalculate partition
+			// if we use our own partition handler to update the partition count, we recalculate the partition
 			if (kafkaPartitionHandler != null) {
 				kafkaPartitionHandler.setPartitionCount(getKafkaTemplate().partitionsFor(this.topic).size());
 				int partitionId = kafkaPartitionHandler.determinePartition(message);

@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.binder.kafka;
 
+import java.time.Duration;
 import java.util.Collections;
 
 import org.apache.kafka.common.errors.UnknownTopicOrPartitionException;
@@ -31,18 +32,19 @@ import org.springframework.cloud.stream.binder.kafka.properties.KafkaBinderConfi
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaConsumerProperties;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaProducerProperties;
 import org.springframework.cloud.stream.binder.kafka.provisioning.KafkaTopicProvisioner;
+import org.springframework.core.retry.RetryPolicy;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.kafka.test.EmbeddedKafkaBroker;
 import org.springframework.kafka.test.condition.EmbeddedKafkaCondition;
 import org.springframework.kafka.test.context.EmbeddedKafka;
-import org.springframework.retry.policy.SimpleRetryPolicy;
-import org.springframework.retry.support.RetryTemplate;
+import org.springframework.core.retry.RetryTemplate;
 
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.mockito.Mockito.mock;
 
 /**
  * @author Soby Chacko
+ * @author Artem Bilan
  */
 @EmbeddedKafka(brokerProperties = {"auto.create.topics.enable=false"})
 class AutoCreateTopicDisabledTests {
@@ -81,7 +83,7 @@ class AutoCreateTopicDisabledTests {
 
 		assertThatExceptionOfType(BinderException.class)
 			.isThrownBy(() -> binder.createConsumerEndpoint(() -> testTopicName, "group", properties))
-			.withCauseExactlyInstanceOf(UnknownTopicOrPartitionException.class);
+			.withRootCauseExactlyInstanceOf(UnknownTopicOrPartitionException.class);
 	}
 
 	@Test
@@ -102,10 +104,8 @@ class AutoCreateTopicDisabledTests {
 		KafkaTopicProvisioner provisioningProvider = new KafkaTopicProvisioner(
 				configurationProperties, kafkaProperties, prop -> {
 		});
-		SimpleRetryPolicy simpleRetryPolicy = new SimpleRetryPolicy(1);
-		final RetryTemplate metadataRetryOperations = new RetryTemplate();
-		metadataRetryOperations.setRetryPolicy(simpleRetryPolicy);
-		provisioningProvider.setMetadataRetryOperations(metadataRetryOperations);
+		RetryPolicy retryPolicy = RetryPolicy.builder().maxAttempts(1).delay(Duration.ZERO).build();
+		provisioningProvider.setMetadataRetryOperations(new RetryTemplate(retryPolicy));
 
 		KafkaMessageChannelBinder binder = new KafkaMessageChannelBinder(
 				configurationProperties, provisioningProvider);
@@ -117,6 +117,6 @@ class AutoCreateTopicDisabledTests {
 
 		assertThatExceptionOfType(BinderException.class)
 			.isThrownBy(() -> binder.bindProducer(testTopicName, new DirectChannel(), properties))
-			.withCauseExactlyInstanceOf(UnknownTopicOrPartitionException.class);
+			.withRootCauseExactlyInstanceOf(UnknownTopicOrPartitionException.class);
 	}
 }

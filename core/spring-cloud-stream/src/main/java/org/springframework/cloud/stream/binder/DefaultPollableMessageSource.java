@@ -31,6 +31,8 @@ import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
 import org.springframework.context.Lifecycle;
 import org.springframework.core.AttributeAccessor;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.core.retry.RetryException;
+import org.springframework.core.retry.RetryTemplate;
 import org.springframework.integration.StaticMessageHeaderAccessor;
 import org.springframework.integration.acks.AckUtils;
 import org.springframework.integration.acks.AcknowledgmentCallback;
@@ -50,12 +52,9 @@ import org.springframework.messaging.converter.MessageConversionException;
 import org.springframework.messaging.converter.SmartMessageConverter;
 import org.springframework.messaging.support.ChannelInterceptor;
 import org.springframework.messaging.support.MessageBuilder;
-import org.springframework.retry.RecoveryCallback;
-import org.springframework.retry.RetryCallback;
-import org.springframework.retry.RetryContext;
-import org.springframework.retry.RetryListener;
-import org.springframework.retry.support.RetryTemplate;
+import org.springframework.integration.core.RecoveryCallback;
 import org.springframework.util.Assert;
+import org.springframework.util.ReflectionUtils;
 
 /**
  * The default implementation of a {@link PollableMessageSource}.
@@ -67,17 +66,16 @@ import org.springframework.util.Assert;
  * @since 2.0
  *
  */
-public class DefaultPollableMessageSource
-		implements PollableMessageSource, Lifecycle, RetryListener {
+public class DefaultPollableMessageSource implements PollableMessageSource, Lifecycle {
 
 	private static final Log log = LogFactory.getLog(DefaultPollableMessageSource.class);
 
-	protected static final ThreadLocal<AttributeAccessor> attributesHolder = new ThreadLocal<AttributeAccessor>();
+	protected static final ThreadLocal<AttributeAccessor> ATTRIBUTES_HOLDER = new ThreadLocal<>();
 
-	private static final DirectChannel dummyChannel = new DirectChannel();
+	private static final DirectChannel DUMMY_CHANNEL = new DirectChannel();
 
 	static {
-		dummyChannel.setBeanName("dummy.required.by.nonnull.api");
+		DUMMY_CHANNEL.setBeanName("dummy.required.by.nonnull.api");
 	}
 
 	private final List<ChannelInterceptor> interceptors = new ArrayList<>();
@@ -119,7 +117,7 @@ public class DefaultPollableMessageSource
 				Object result = invocation.proceed();
 				if (result instanceof Message<?> received) {
 					for (ChannelInterceptor interceptor : this.interceptors) {
-						received = interceptor.preSend(received, dummyChannel);
+						received = interceptor.preSend(received, DUMMY_CHANNEL);
 						if (received == null) {
 							return null;
 						}
@@ -140,16 +138,15 @@ public class DefaultPollableMessageSource
 	}
 
 	public void setRetryTemplate(RetryTemplate retryTemplate) {
-		retryTemplate.registerListener(this);
 		this.retryTemplate = retryTemplate;
 	}
 
 	public void setRecoveryCallback(RecoveryCallback<Object> recoveryCallback) {
-		this.recoveryCallback = context -> {
-			if (!shouldRequeue((MessagingException) context.getLastThrowable())) {
-				return recoveryCallback.recover(context);
+		this.recoveryCallback = (context, cause) -> {
+			if (!shouldRequeue((MessagingException) cause)) {
+				return recoveryCallback.recover(context, cause);
 			}
-			throw (MessagingException) context.getLastThrowable();
+			throw (MessagingException) cause;
 		};
 	}
 
@@ -208,30 +205,44 @@ public class DefaultPollableMessageSource
 			return false;
 		}
 
-		AcknowledgmentCallback ackCallback = StaticMessageHeaderAccessor
-				.getAcknowledgmentCallback(message);
+		AcknowledgmentCallback ackCallback = StaticMessageHeaderAccessor.getAcknowledgmentCallback(message);
 
 		if (ackCallback == null) {
 			ackCallback = status -> log.warn("No AcknowledgementCallback defined. Status: " + status.name() + " " + message);
 		}
 
 		try {
+			setAttributesIfNecessary(message);
 			if (this.retryTemplate == null) {
-				this.handle(message, handler);
+				handle(message, handler);
 			}
 			else {
-				this.retryTemplate.execute(context -> {
-					this.handle(message, handler);
-					return null;
-				}, this.recoveryCallback);
+				try {
+					this.retryTemplate.execute(() -> {
+						handle(message, handler);
+						return null;
+					});
+				}
+				catch (RetryException ex) {
+					if (this.recoveryCallback != null) {
+						AttributeAccessor attributeAccessor = ATTRIBUTES_HOLDER.get();
+						if (attributeAccessor == null) {
+							attributeAccessor = ErrorMessageUtils.getAttributeAccessor(message, null);
+						}
+						this.recoveryCallback.recover(attributeAccessor, ex.getCause());
+					}
+					else {
+						ReflectionUtils.rethrowRuntimeException(ex.getCause());
+					}
+				}
 			}
 			return true;
 		}
 		catch (MessagingException e) {
 			if (this.retryTemplate == null && !shouldRequeue(e)) {
 				try {
-					this.messagingTemplate.send(this.errorChannel, this.errorMessageStrategy
-							.buildErrorMessage(e, attributesHolder.get()));
+					this.messagingTemplate.send(this.errorChannel,
+						this.errorMessageStrategy.buildErrorMessage(e, ATTRIBUTES_HOLDER.get()));
 				}
 				catch (MessagingException e1) {
 					requeueOrNack(message, ackCallback, e1);
@@ -252,6 +263,7 @@ public class DefaultPollableMessageSource
 			throw new MessageHandlingException(message, e);
 		}
 		finally {
+			ATTRIBUTES_HOLDER.remove();
 			AckUtils.autoAck(ackCallback);
 		}
 	}
@@ -277,27 +289,6 @@ public class DefaultPollableMessageSource
 			t = t.getCause();
 		}
 		return requeue;
-	}
-
-	@Override
-	public <T, E extends Throwable> boolean open(RetryContext context,
-			RetryCallback<T, E> callback) {
-		if (DefaultPollableMessageSource.this.recoveryCallback != null) {
-			attributesHolder.set(context);
-		}
-		return true;
-	}
-
-	@Override
-	public <T, E extends Throwable> void close(RetryContext context,
-			RetryCallback<T, E> callback, Throwable throwable) {
-		attributesHolder.remove();
-	}
-
-	@Override
-	public <T, E extends Throwable> void onError(RetryContext context,
-			RetryCallback<T, E> callback, Throwable throwable) {
-		// Empty
 	}
 
 	/**
@@ -334,32 +325,28 @@ public class DefaultPollableMessageSource
 	}
 
 	/**
-	 * If there's a retry template, it will set the attributes holder via the listener. If
-	 * there's no retry template, but there's an error channel, we create a new attributes
-	 * holder here. If an attributes holder exists (by either method), we set the
+	 * If there's a retry template, it will set the attribute holder via the listener. If
+	 * there's no retry template, but there's an error channel, we create a new attribute
+	 * holder here. If an attribute holder exists (by either method), we set the
 	 * attributes for use by the {@link ErrorMessageStrategy}.
 	 * @param message the Spring Messaging message to use.
 	 */
 	private void setAttributesIfNecessary(Message<?> message) {
-		boolean needHolder = this.errorChannel != null && this.retryTemplate == null;
-		boolean needAttributes = needHolder || this.retryTemplate != null;
+		boolean needHolder = this.errorChannel != null || this.retryTemplate != null;
 		if (needHolder) {
-			attributesHolder.set(ErrorMessageUtils.getAttributeAccessor(null, null));
-		}
-		if (needAttributes) {
-			AttributeAccessor attributes = attributesHolder.get();
-			if (attributes != null) {
-				attributes.setAttribute(ErrorMessageUtils.INPUT_MESSAGE_CONTEXT_KEY,
-						message);
-				if (this.attributesProvider != null) {
-					this.attributesProvider.accept(attributes, message);
-				}
+			AttributeAccessor attributes = ATTRIBUTES_HOLDER.get();
+			if (attributes == null) {
+				attributes = ErrorMessageUtils.getAttributeAccessor(null, null);
+				ATTRIBUTES_HOLDER.set(attributes);
+			}
+			attributes.setAttribute(ErrorMessageUtils.INPUT_MESSAGE_CONTEXT_KEY, message);
+			if (this.attributesProvider != null) {
+				this.attributesProvider.accept(attributes, message);
 			}
 		}
 	}
 
 	private void handle(Message<?> message, MessageHandler handler) {
-		setAttributesIfNecessary(message);
 		doHandleMessage(handler, message);
 	}
 

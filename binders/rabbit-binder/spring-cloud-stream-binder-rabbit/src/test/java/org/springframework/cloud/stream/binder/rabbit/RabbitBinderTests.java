@@ -133,7 +133,7 @@ import org.springframework.messaging.SubscribableChannel;
 import org.springframework.messaging.support.ChannelInterceptor;
 import org.springframework.messaging.support.ErrorMessage;
 import org.springframework.messaging.support.GenericMessage;
-import org.springframework.retry.support.RetryTemplate;
+import org.springframework.core.retry.RetryTemplate;
 import org.springframework.util.MimeTypeUtils;
 import org.springframework.util.ReflectionUtils;
 import org.springframework.web.reactive.function.client.ExchangeFilterFunctions;
@@ -477,13 +477,13 @@ class RabbitBinderTests extends
 				.isEqualTo(23);
 		RetryTemplate retry = TestUtils.getPropertyValue(endpoint, "retryTemplate",
 				RetryTemplate.class);
-		assertThat(TestUtils.getPropertyValue(retry, "retryPolicy.maxAttempts"))
-				.isEqualTo(3);
-		assertThat(TestUtils.getPropertyValue(retry, "backOffPolicy.initialInterval"))
+		assertThat(TestUtils.getPropertyValue(retry, "retryPolicy.backOff.maxAttempts"))
+				.isEqualTo(3L);
+		assertThat(TestUtils.getPropertyValue(retry, "retryPolicy.backOff.initialInterval"))
 				.isEqualTo(1000L);
-		assertThat(TestUtils.getPropertyValue(retry, "backOffPolicy.maxInterval"))
+		assertThat(TestUtils.getPropertyValue(retry, "retryPolicy.backOff.maxInterval"))
 				.isEqualTo(10000L);
-		assertThat(TestUtils.getPropertyValue(retry, "backOffPolicy.multiplier"))
+		assertThat(TestUtils.getPropertyValue(retry, "retryPolicy.backOff.multiplier"))
 				.isEqualTo(2.0);
 		consumerBinding.unbind();
 		assertThat(endpoint.isRunning()).isFalse();
@@ -2573,13 +2573,13 @@ class RabbitBinderTests extends
 		assertThat(TestUtils.getPropertyValue(container, "batchSize")).isEqualTo(10);
 		retry = TestUtils.getPropertyValue(endpoint, "retryTemplate",
 				RetryTemplate.class);
-		assertThat(TestUtils.getPropertyValue(retry, "retryPolicy.maxAttempts"))
-				.isEqualTo(23);
-		assertThat(TestUtils.getPropertyValue(retry, "backOffPolicy.initialInterval"))
+		assertThat(TestUtils.getPropertyValue(retry, "retryPolicy.backOff.maxAttempts"))
+				.isEqualTo(23L);
+		assertThat(TestUtils.getPropertyValue(retry, "retryPolicy.backOff.initialInterval"))
 				.isEqualTo(2000L);
-		assertThat(TestUtils.getPropertyValue(retry, "backOffPolicy.maxInterval"))
+		assertThat(TestUtils.getPropertyValue(retry, "retryPolicy.backOff.maxInterval"))
 				.isEqualTo(20000L);
-		assertThat(TestUtils.getPropertyValue(retry, "backOffPolicy.multiplier"))
+		assertThat(TestUtils.getPropertyValue(retry, "retryPolicy.backOff.multiplier"))
 				.isEqualTo(5.0);
 
 		List<?> requestMatchers = TestUtils.getPropertyValue(endpoint,
