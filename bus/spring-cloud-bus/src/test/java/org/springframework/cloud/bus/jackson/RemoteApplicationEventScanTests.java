@@ -21,10 +21,10 @@ import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.jsontype.NamedType;
 import org.junit.Test;
 import test.foo.bar.FooBarTestRemoteApplicationEvent;
+import tools.jackson.databind.cfg.MapperBuilder;
+import tools.jackson.databind.jsontype.NamedType;
 
 import org.springframework.boot.Banner;
 import org.springframework.boot.WebApplicationType;
@@ -96,11 +96,11 @@ public class RemoteApplicationEventScanTests {
 
 	private void assertConverterBeanAfterPropertiesSet(final String[] expectedPackageToScan,
 			final Class<?>... expectedRegisterdClasses) {
-		final ObjectMapper mapper = (ObjectMapper) ReflectionTestUtils.getField(this.converter, "mapper");
+		final MapperBuilder mapper = this.converter.getMapper();
 
 		@SuppressWarnings("unchecked")
 		final LinkedHashSet<NamedType> registeredSubtypes = (LinkedHashSet<NamedType>) ReflectionTestUtils
-			.getField(mapper.getSubtypeResolver(), "_registeredSubtypes");
+			.getField(mapper.subtypeResolver(), "_registeredSubtypes");
 
 		final List<Class<?>> expectedRegisterdClassesAsList = new ArrayList<>(Arrays.asList(expectedRegisterdClasses));
 		addStandardSpringCloudEventBusEvents(expectedRegisterdClassesAsList);

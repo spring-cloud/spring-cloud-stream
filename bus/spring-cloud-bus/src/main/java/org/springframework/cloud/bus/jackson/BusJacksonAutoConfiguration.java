@@ -69,7 +69,7 @@ public class BusJacksonAutoConfiguration {
 	// otherwise RemoteApplicationEventRegistrar will register the bean
 	@Bean
 	@ConditionalOnMissingBean(name = "busJsonConverter")
-	public AbstractMessageConverter busJsonConverter(@Autowired(required = false) MapperBuilder objectMapper) {
+	public AbstractMessageConverter busJsonConverter(@Autowired(required = false) ObjectMapper objectMapper) {
 		return new BusJacksonMessageConverter(objectMapper);
 	}
 
@@ -79,8 +79,7 @@ public class BusJacksonAutoConfiguration {
 
 		@Bean
 		public AbstractMessageConverter busCborConverter() {
-			return new BusJacksonMessageConverter(new MimeType("application", "cbor"),
-				CBORMapper.builder());
+			return new BusJacksonMessageConverter(new MimeType("application", "cbor"), CBORMapper.builder().build());
 		}
 
 	}
@@ -104,16 +103,16 @@ class BusJacksonMessageConverter extends AbstractMessageConverter implements Ini
 	}
 
 	@Autowired(required = false)
-	BusJacksonMessageConverter(@Nullable MapperBuilder objectMapper) {
+	BusJacksonMessageConverter(@Nullable ObjectMapper objectMapper) {
 		this(MimeTypeUtils.APPLICATION_JSON, objectMapper);
 	}
 
 	@Autowired(required = false)
-	BusJacksonMessageConverter(MimeType mimeType, @Nullable MapperBuilder objectMapper) {
+	BusJacksonMessageConverter(MimeType mimeType, @Nullable ObjectMapper objectMapper) {
 		super(mimeType);
 
 		if (objectMapper != null) {
-			this.mapperBuilder = objectMapper;
+			this.mapperBuilder = objectMapper.rebuild();
 			this.mapperCreated = false;
 		}
 		else {
@@ -207,8 +206,8 @@ class BusJacksonMessageConverter extends AbstractMessageConverter implements Ini
 	}
 
 	@Override
-	public void afterPropertiesSet()  {
-		this.mapperBuilder.addModule(new SubtypeModule(findSubTypes()));
+	public void afterPropertiesSet() {
+		this.mapperBuilder.subtypeResolver().registerSubtypes(findSubTypes());
 	}
 
 }

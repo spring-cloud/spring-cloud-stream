@@ -48,8 +48,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 import static tools.jackson.databind.cfg.DateTimeFeature.WRITE_DATES_AS_TIMESTAMPS;
 
-@SpringBootTest(/*properties = "spring.jackson.serialization.WRITE_DATES_AS_TIMESTAMPS:true",*/
-		webEnvironment = RANDOM_PORT)
+@SpringBootTest(properties = "spring.jackson.datetime.write-dates-as-timestamps=true", webEnvironment = RANDOM_PORT)
 @DirtiesContext
 public class BusJacksonIntegrationTests {
 
@@ -68,8 +67,8 @@ public class BusJacksonIntegrationTests {
 		assertThat(this.converter.isMapperCreated()).isFalse();
 
 		// set by configuration
-		assertThat(this.converter.getMapper().build().serializationConfig()
-			.isEnabled(WRITE_DATES_AS_TIMESTAMPS)).isTrue();
+		assertThat(this.converter.getMapper().build().serializationConfig().isEnabled(WRITE_DATES_AS_TIMESTAMPS))
+			.isTrue();
 
 		Map map = this.rest.getForObject("http://localhost:" + this.port + "/date", Map.class);
 		assertThat(map).containsOnlyKeys("date");

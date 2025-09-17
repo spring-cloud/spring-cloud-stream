@@ -41,11 +41,11 @@ public abstract class RemoteApplicationEvent extends ApplicationEvent {
 
 	protected static final PathDestinationFactory DEFAULT_DESTINATION_FACTORY = new PathDestinationFactory();
 
-	private final String originService;
+	private String originService;
 
-	private final String destinationService;
+	private String destinationService;
 
-	private final String id;
+	private String id;
 
 	protected RemoteApplicationEvent() {
 		// for serialization libs like jackson

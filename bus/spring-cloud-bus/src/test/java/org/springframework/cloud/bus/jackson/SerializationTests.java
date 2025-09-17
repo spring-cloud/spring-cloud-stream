@@ -19,6 +19,7 @@ package org.springframework.cloud.bus.jackson;
 import java.util.Collections;
 
 import org.junit.Test;
+import tools.jackson.databind.MapperFeature;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -38,7 +39,11 @@ public class SerializationTests {
 
 	@Test
 	public void vanillaDeserialize() throws Exception {
-		this.mapper = JsonMapper.builder().addModule(new SubtypeModule(RefreshRemoteApplicationEvent.class, EnvironmentChangeRemoteApplicationEvent.class)).build();
+		this.mapper = JsonMapper.builder()
+			.addModule(new SubtypeModule(RefreshRemoteApplicationEvent.class,
+					EnvironmentChangeRemoteApplicationEvent.class))
+			.configure(MapperFeature.DEFAULT_VIEW_INCLUSION, true)
+			.build();
 		EnvironmentChangeRemoteApplicationEvent source = new EnvironmentChangeRemoteApplicationEvent(this, "foo", "bar",
 				Collections.<String, String>emptyMap());
 		String value = this.mapper.writeValueAsString(source);
@@ -50,7 +55,10 @@ public class SerializationTests {
 
 	@Test
 	public void deserializeOldValueWithNoId() throws Exception {
-		this.mapper = JsonMapper.builder().addModule(new SubtypeModule(RefreshRemoteApplicationEvent.class, EnvironmentChangeRemoteApplicationEvent.class)).build();
+		this.mapper = JsonMapper.builder()
+			.addModule(new SubtypeModule(RefreshRemoteApplicationEvent.class,
+					EnvironmentChangeRemoteApplicationEvent.class))
+			.build();
 		EnvironmentChangeRemoteApplicationEvent source = new EnvironmentChangeRemoteApplicationEvent(this, "foo", "bar",
 				Collections.<String, String>emptyMap());
 		String value = this.mapper.writeValueAsString(source);

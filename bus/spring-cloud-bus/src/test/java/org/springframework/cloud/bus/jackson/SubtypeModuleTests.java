@@ -59,9 +59,10 @@ public class SubtypeModuleTests {
 
 	@Test
 	public void testDeserializeCustomizedObjectMapper() throws Exception {
-		JsonMapper.Builder mapper = JsonMapper.builder().propertyNamingStrategy(tools.jackson.databind.PropertyNamingStrategies.SNAKE_CASE);
+		JsonMapper.Builder mapper = JsonMapper.builder()
+			.propertyNamingStrategy(tools.jackson.databind.PropertyNamingStrategies.SNAKE_CASE);
 
-		BusJacksonMessageConverter converter = new BusJacksonMessageConverter(mapper);
+		BusJacksonMessageConverter converter = new BusJacksonMessageConverter(mapper.build());
 		converter.afterPropertiesSet();
 		Object event = converter.fromMessage(
 				MessageBuilder.withPayload("{\"type\":\"TestRemoteApplicationEvent\", \"origin_service\":\"myorigin\"}")

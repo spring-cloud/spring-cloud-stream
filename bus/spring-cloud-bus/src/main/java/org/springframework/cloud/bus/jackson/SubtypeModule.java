@@ -16,7 +16,6 @@
 
 package org.springframework.cloud.bus.jackson;
 
-
 import tools.jackson.databind.module.SimpleModule;
 
 /**
