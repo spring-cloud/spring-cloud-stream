@@ -36,7 +36,7 @@ import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.Expression;
 import org.springframework.expression.PropertyAccessor;
 import org.springframework.integration.expression.ExpressionUtils;
-import org.springframework.integration.json.JsonPropertyAccessor;
+import org.springframework.integration.json.JacksonPropertyAccessor;
 import org.springframework.integration.test.util.TestUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -70,13 +70,13 @@ class SpelExpressionConverterConfigurationTests {
 				this.evaluationContext, "propertyAccessors", List.class);
 
 		assertThat(propertyAccessors)
-				.hasAtLeastOneElementOfType(JsonPropertyAccessor.class);
+				.hasAtLeastOneElementOfType(JacksonPropertyAccessor.class);
 
 		propertyAccessors = TestUtils.getPropertyValue(this.config.evaluationContext,
 				"propertyAccessors", List.class);
 
 		assertThat(propertyAccessors)
-				.hasAtLeastOneElementOfType(JsonPropertyAccessor.class);
+				.hasAtLeastOneElementOfType(JacksonPropertyAccessor.class);
 
 		Expression numberExpression = this.pojo.getNumberExpression();
 		assertThat(numberExpression.getValue()).isEqualTo(5);

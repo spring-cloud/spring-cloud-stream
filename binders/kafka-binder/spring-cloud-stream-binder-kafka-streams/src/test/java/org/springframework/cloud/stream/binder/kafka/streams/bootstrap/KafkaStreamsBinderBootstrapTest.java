@@ -20,8 +20,8 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.function.Consumer;
 
-import com.fasterxml.jackson.databind.JavaType;
-import com.fasterxml.jackson.databind.type.TypeFactory;
+import tools.jackson.databind.JavaType;
+import tools.jackson.databind.type.TypeFactory;
 import org.apache.kafka.common.header.Headers;
 import org.apache.kafka.common.security.JaasUtils;
 import org.apache.kafka.streams.kstream.GlobalKTable;

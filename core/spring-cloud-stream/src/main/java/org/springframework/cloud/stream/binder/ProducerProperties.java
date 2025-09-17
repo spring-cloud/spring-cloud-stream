@@ -16,17 +16,17 @@
 
 package org.springframework.cloud.stream.binder;
 
-import java.io.IOException;
 import java.time.Duration;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.JsonGenerator;
+import tools.jackson.databind.SerializationContext;
+import tools.jackson.databind.annotation.JsonSerialize;
 
 import org.springframework.expression.Expression;
+import tools.jackson.databind.ser.std.StdSerializer;
 
 /**
  * Common producer properties.
@@ -215,16 +215,16 @@ public class ProducerProperties {
 		this.dynamicPartitionUpdatesEnabled = enabled;
 	}
 
-	static class ExpressionSerializer extends JsonSerializer<Expression> {
-
+	static class ExpressionSerializer extends StdSerializer<Expression> {
+		protected ExpressionSerializer(Class<Expression> t) {
+			super(t);
+		}
 		@Override
-		public void serialize(Expression expression, JsonGenerator jsonGenerator,
-				SerializerProvider serializerProvider) throws IOException {
+		public void serialize(Expression expression, JsonGenerator jsonGenerator, SerializationContext provider) throws JacksonException {
 			if (expression != null) {
 				jsonGenerator.writeString(expression.getExpressionString());
 			}
 		}
-
 	}
 
 	public static class PollerProperties {

@@ -20,7 +20,7 @@ import java.lang.reflect.Field;
 import java.time.Duration;
 import java.util.Map;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import jakarta.validation.constraints.NotNull;
 import org.junit.jupiter.api.Test;
 

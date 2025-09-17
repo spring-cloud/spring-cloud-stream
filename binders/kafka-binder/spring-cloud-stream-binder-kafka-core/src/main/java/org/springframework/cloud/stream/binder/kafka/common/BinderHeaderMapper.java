@@ -16,6 +16,26 @@
 
 package org.springframework.cloud.stream.binder.kafka.common;
 
+import org.apache.kafka.common.header.Header;
+import org.apache.kafka.common.header.Headers;
+import org.apache.kafka.common.header.internals.RecordHeader;
+import org.springframework.cloud.stream.binder.BinderHeaders;
+import org.springframework.integration.IntegrationMessageHeaderAccessor;
+import org.springframework.kafka.support.AbstractKafkaHeaderMapper;
+import org.springframework.kafka.support.JacksonMapperUtils;
+import org.springframework.lang.Nullable;
+import org.springframework.messaging.MessageHeaders;
+import org.springframework.util.Assert;
+import org.springframework.util.ClassUtils;
+import org.springframework.util.MimeType;
+import tools.jackson.databind.DeserializationContext;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.deser.std.StdNodeBasedDeserializer;
+import tools.jackson.databind.module.SimpleModule;
+import tools.jackson.databind.node.StringNode;
+import tools.jackson.databind.type.TypeFactory;
+
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -26,31 +46,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.deser.std.StdNodeBasedDeserializer;
-import com.fasterxml.jackson.databind.module.SimpleModule;
-import com.fasterxml.jackson.databind.node.TextNode;
-import com.fasterxml.jackson.databind.type.TypeFactory;
-import org.apache.kafka.common.header.Header;
-import org.apache.kafka.common.header.Headers;
-import org.apache.kafka.common.header.internals.RecordHeader;
-
-import org.springframework.cloud.stream.binder.BinderHeaders;
-import org.springframework.integration.IntegrationMessageHeaderAccessor;
-import org.springframework.kafka.support.AbstractKafkaHeaderMapper;
-import org.springframework.kafka.support.JacksonUtils;
-import org.springframework.lang.Nullable;
-import org.springframework.messaging.MessageHeaders;
-import org.springframework.util.Assert;
-import org.springframework.util.ClassUtils;
-import org.springframework.util.MimeType;
-
 /**
- * Custom header mapper for Apache Kafka. This is identical to the {@link org.springframework.kafka.support.DefaultKafkaHeaderMapper}
- * from spring Kafka. This is provided for addressing some interoperability issues between Spring Cloud Stream 3.0.x
+ * Custom header mapper for Apache Kafka. This is provided for addressing some interoperability issues between Spring Cloud Stream 3.0.x
  * and 2.x apps, where mime types passed as regular {@link MimeType} in the header are not de-serialized properly.
  * It also suppresses certain internal headers that should never be propagated on output.
  *
@@ -119,7 +116,7 @@ public class BinderHeaderMapper extends AbstractKafkaHeaderMapper {
 	 * @see #BinderHeaderMapper(ObjectMapper)
 	 */
 	public BinderHeaderMapper() {
-		this(JacksonUtils.enhancedObjectMapper());
+		this(JacksonMapperUtils.enhancedJsonMapper());
 	}
 
 	/**
@@ -173,9 +170,8 @@ public class BinderHeaderMapper extends AbstractKafkaHeaderMapper {
 		super(patterns);
 		Assert.notNull(objectMapper, "'objectMapper' must not be null");
 		Assert.noNullElements(patterns, "'patterns' must not have null elements");
-		this.objectMapper = objectMapper;
-		this.objectMapper
-				.registerModule(new SimpleModule().addDeserializer(MimeType.class, new MimeTypeJsonDeserializer()));
+		this.objectMapper = objectMapper.rebuild()
+				.addModule(new SimpleModule().addDeserializer(MimeType.class, new MimeTypeJsonDeserializer())).build();
 	}
 
 	/**
@@ -290,7 +286,7 @@ public class BinderHeaderMapper extends AbstractKafkaHeaderMapper {
 			try {
 				target.add(new RecordHeader(JSON_TYPES, headerObjectMapper.writeValueAsBytes(jsonHeaders)));
 			}
-			catch (IllegalStateException | JsonProcessingException e) {
+			catch (Exception e) {
 				logger.error(e, "Could not add json types header");
 			}
 		}
@@ -375,7 +371,7 @@ public class BinderHeaderMapper extends AbstractKafkaHeaderMapper {
 			try {
 				types = headerObjectMapper.readValue(jsonTypes.value(), Map.class);
 			}
-			catch (IOException e) {
+			catch (Exception e) {
 				logger.error(e, () -> "Could not decode json types: " + new String(jsonTypes.value()));
 			}
 		}
@@ -443,8 +439,8 @@ public class BinderHeaderMapper extends AbstractKafkaHeaderMapper {
 		}
 
 		@Override
-		public MimeType convert(JsonNode root, DeserializationContext ctxt) throws IOException {
-			if (root instanceof TextNode) {
+		public MimeType convert(JsonNode root, DeserializationContext ctxt)  {
+			if (root instanceof StringNode	) {
 				return MimeType.valueOf(root.asText());
 			}
 			else {
@@ -452,9 +448,8 @@ public class BinderHeaderMapper extends AbstractKafkaHeaderMapper {
 				JsonNode subType = root.get("subtype");
 				JsonNode parameters = root.get("parameters");
 				Map<String, String> params =
-						BinderHeaderMapper.this.objectMapper.readValue(parameters.traverse(),
-								TypeFactory.defaultInstance()
-										.constructMapType(HashMap.class, String.class, String.class));
+						BinderHeaderMapper.this.objectMapper.readValue(parameters.traverse(ctxt),
+								TypeFactory.createDefaultInstance().constructMapType(HashMap.class, String.class, String.class));
 				return new MimeType(type.asText(), subType.asText(), params);
 			}
 		}

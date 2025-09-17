@@ -23,7 +23,7 @@ import org.apache.avro.Schema;
  *
  * Helps to avoid unnecessary parsing of schema textual representation, as well as calls
  * to {@link org.apache.avro.Schema} toString method which is very expensive due the
- * utilization of {@link com.fasterxml.jackson.databind.ObjectMapper} to output a JSON
+ * utilization of {@link tools.jackson.databind.ObjectMapper} to output a JSON
  * representation of the schema.
  *
  * Once a schema is found for any Class, be it a POJO or a

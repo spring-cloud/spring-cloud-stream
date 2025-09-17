@@ -22,10 +22,14 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.springframework.integration.support.json.Jackson2JsonObjectMapper;
+import tools.jackson.databind.ObjectMapper;
+
+import org.springframework.cloud.function.json.JacksonMapper;
+import org.springframework.cloud.function.json.JsonMapper;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.util.ObjectUtils;
+
 
 /**
  * Encodes requested headers into payload with format
@@ -45,7 +49,8 @@ import org.springframework.util.ObjectUtils;
  */
 public abstract class EmbeddedHeaderUtils {
 
-	private static final Jackson2JsonObjectMapper objectMapper = new Jackson2JsonObjectMapper();
+	//private static final Jackson2JsonObjectMapper objectMapper = new Jackson2JsonObjectMapper();
+	private static final JsonMapper jsonMapper = new JacksonMapper(new ObjectMapper());
 
 	public static String decodeExceptionMessage(Message<?> requestMessage) {
 		return "Could not convert message: " + requestMessage;
@@ -54,8 +59,9 @@ public abstract class EmbeddedHeaderUtils {
 	/**
 	 * Return a new message where some of the original headers of {@code original} have
 	 * been embedded into the new message payload.
+	 *
 	 * @param original original message
-	 * @param headers headers to embedd
+	 * @param headers  headers to embedd
 	 * @return a new message
 	 */
 	public static byte[] embedHeaders(MessageValues original, String... headers) {
@@ -67,18 +73,17 @@ public abstract class EmbeddedHeaderUtils {
 			for (String header : headers) {
 				Object value = original.get(header);
 				if (value != null) {
-					String json = objectMapper.toJson(value);
+					String json = jsonMapper.toString(value);
 					headerValues[n] = json.getBytes(StandardCharsets.UTF_8);
 					headerCount++;
 					headersLength += header.length() + headerValues[n++].length;
-				}
-				else {
+				} else {
 					headerValues[n++] = null;
 				}
 			}
 			// 0xff, n(1), [ [lenHdr(1), hdr, lenValue(4), value] ... ]
 			byte[] newPayload = new byte[((byte[]) original.getPayload()).length
-					+ headersLength + headerCount * 5 + 2];
+				+ headersLength + headerCount * 5 + 2];
 			ByteBuffer byteBuffer = ByteBuffer.wrap(newPayload);
 			byteBuffer.put((byte) 0xff); // signal new format
 			byteBuffer.put((byte) headerCount);
@@ -93,8 +98,7 @@ public abstract class EmbeddedHeaderUtils {
 
 			byteBuffer.put((byte[]) original.getPayload());
 			return byteBuffer.array();
-		}
-		catch (Exception e) {
+		} catch (Exception e) {
 			throw new IllegalStateException(e);
 		}
 
@@ -104,20 +108,21 @@ public abstract class EmbeddedHeaderUtils {
 	 * Return a message where headers, that were originally embedded into the payload,
 	 * have been promoted back to actual headers. The new payload is now the original
 	 * payload.
-	 * @param message the message to extract headers
+	 *
+	 * @param message            the message to extract headers
 	 * @param copyRequestHeaders boolean value to specify if the request headers should be
-	 * copied
+	 *                           copied
 	 * @return wrapped message values
 	 * @throws Exception when extraction failed
 	 */
 	public static MessageValues extractHeaders(Message<byte[]> message,
-			boolean copyRequestHeaders) throws Exception {
+											   boolean copyRequestHeaders) throws Exception {
 		return extractHeaders(message.getPayload(), copyRequestHeaders,
-				message.getHeaders());
+			message.getHeaders());
 	}
 
 	private static MessageValues extractHeaders(byte[] payload,
-			boolean copyRequestHeaders, MessageHeaders requestHeaders) throws Exception {
+												boolean copyRequestHeaders, MessageHeaders requestHeaders) throws Exception {
 		ByteBuffer byteBuffer = ByteBuffer.wrap(payload);
 		int headerCount = byteBuffer.get() & 0xff;
 		if (headerCount == 0xff) {
@@ -126,23 +131,22 @@ public abstract class EmbeddedHeaderUtils {
 			for (int i = 0; i < headerCount; i++) {
 				int len = byteBuffer.get() & 0xff;
 				String headerName = new String(payload, byteBuffer.position(), len,
-						StandardCharsets.UTF_8);
+					StandardCharsets.UTF_8);
 				byteBuffer.position(byteBuffer.position() + len);
 				len = byteBuffer.getInt();
 				String headerValue = new String(payload, byteBuffer.position(), len,
-						StandardCharsets.UTF_8);
-				Object headerContent = objectMapper.fromJson(headerValue, Object.class);
+					StandardCharsets.UTF_8);
+				Object headerContent = jsonMapper.fromJson(headerValue, Object.class);
 				headers.put(headerName, headerContent);
 				byteBuffer.position(byteBuffer.position() + len);
 			}
 			byte[] newPayload = new byte[byteBuffer.remaining()];
 			byteBuffer.get(newPayload);
 			return buildMessageValues(newPayload, headers, copyRequestHeaders,
-					requestHeaders);
-		}
-		else {
+				requestHeaders);
+		} else {
 			return buildMessageValues(payload, new HashMap<>(), copyRequestHeaders,
-					requestHeaders);
+				requestHeaders);
 		}
 	}
 
@@ -150,6 +154,7 @@ public abstract class EmbeddedHeaderUtils {
 	 * Return a message where headers, that were originally embedded into the payload,
 	 * have been promoted back to actual headers. The new payload is now the original
 	 * payload.
+	 *
 	 * @param payload the message payload
 	 * @return the message with extracted headers
 	 * @throws Exception when extraction failed
@@ -159,8 +164,8 @@ public abstract class EmbeddedHeaderUtils {
 	}
 
 	private static MessageValues buildMessageValues(byte[] payload,
-			Map<String, Object> headers, boolean copyRequestHeaders,
-			MessageHeaders requestHeaders) {
+													Map<String, Object> headers, boolean copyRequestHeaders,
+													MessageHeaders requestHeaders) {
 		MessageValues messageValues = new MessageValues(payload, headers);
 		if (copyRequestHeaders && requestHeaders != null) {
 			messageValues.copyHeadersIfAbsent(requestHeaders);
@@ -172,13 +177,12 @@ public abstract class EmbeddedHeaderUtils {
 		String[] headersToMap;
 		if (ObjectUtils.isEmpty(configuredHeaders)) {
 			headersToMap = BinderHeaders.STANDARD_HEADERS;
-		}
-		else {
+		} else {
 			String[] combinedHeadersToMap = Arrays.copyOfRange(
-					BinderHeaders.STANDARD_HEADERS, 0,
-					BinderHeaders.STANDARD_HEADERS.length + configuredHeaders.length);
+				BinderHeaders.STANDARD_HEADERS, 0,
+				BinderHeaders.STANDARD_HEADERS.length + configuredHeaders.length);
 			System.arraycopy(configuredHeaders, 0, combinedHeadersToMap,
-					BinderHeaders.STANDARD_HEADERS.length, configuredHeaders.length);
+				BinderHeaders.STANDARD_HEADERS.length, configuredHeaders.length);
 			headersToMap = combinedHeadersToMap;
 		}
 		return headersToMap;
@@ -187,6 +191,7 @@ public abstract class EmbeddedHeaderUtils {
 	/**
 	 * Return true if the bytes might have embedded headers. (First byte is 0xff and long
 	 * enough for at least one header).
+	 *
 	 * @param bytes the array.
 	 * @return true if it may have embedded headers.
 	 */

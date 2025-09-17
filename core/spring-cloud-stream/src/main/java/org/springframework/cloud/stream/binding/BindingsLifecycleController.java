@@ -23,8 +23,8 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import com.fasterxml.jackson.databind.Module;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JacksonModule;
+import tools.jackson.databind.ObjectMapper;
 
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.BeansException;
@@ -37,6 +37,7 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.CollectionUtils;
+import tools.jackson.databind.json.JsonMapper;
 
 /**
  *
@@ -66,18 +67,22 @@ public class BindingsLifecycleController implements ApplicationContextAware {
 		this.inputBindingLifecycles = inputBindingLifecycles;
 		this.outputBindingsLifecycles = outputBindingsLifecycles;
 
+		JsonMapper.Builder builder = JsonMapper.builder();
 
-		this.objectMapper = new ObjectMapper(); //see https://github.com/spring-cloud/spring-cloud-stream/issues/2253
+		//this.objectMapper = new ObjectMapper(); //see https://github.com/spring-cloud/spring-cloud-stream/issues/2253
 		// we need to use ObjectMapper that could not be modified by the user.
 
 		try {
-			Class<? extends Module> javaTimeModuleClass = (Class<? extends Module>)
-					ClassUtils.forName("com.fasterxml.jackson.datatype.jsr310.JavaTimeModule", ClassUtils.getDefaultClassLoader());
-			Module javaTimeModule = BeanUtils.instantiateClass(javaTimeModuleClass);
-			this.objectMapper.registerModule(javaTimeModule);
+			Class<? extends JacksonModule> javaTimeModuleClass = (Class<? extends JacksonModule>)
+					ClassUtils.forName("tools.jackson.datatype.jsr310.JavaTimeModule", ClassUtils.getDefaultClassLoader());
+			JacksonModule javaTimeModule = BeanUtils.instantiateClass(javaTimeModuleClass);
+			builder.addModule(javaTimeModule);
 		}
 		catch (ClassNotFoundException ex) {
 			// ignore; jackson-datatype-jsr310 not available
+		}
+		finally {
+			this.objectMapper = builder.build();
 		}
 	}
 

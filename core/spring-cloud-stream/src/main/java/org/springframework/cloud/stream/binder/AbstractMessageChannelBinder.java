@@ -22,13 +22,14 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import com.fasterxml.jackson.databind.module.SimpleModule;
-import com.fasterxml.jackson.databind.ser.std.StdSerializer;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.apache.commons.logging.Log;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.JsonGenerator;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.SerializationContext;
+import tools.jackson.databind.module.SimpleModule;
+import tools.jackson.databind.ser.std.StdSerializer;
+import tools.jackson.datatype.jsr310.JavaTimeModule;
 
 import org.springframework.beans.factory.BeanFactoryAware;
 import org.springframework.beans.factory.DisposableBean;
@@ -149,7 +150,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 		}
 		SimpleModule module = new SimpleModule();
 		module.addSerializer(Expression.class, new ExpressionSerializer(Expression.class));
-		this.objectMapper.registerModules(module, new JavaTimeModule());
+		this.objectMapper = this.objectMapper.rebuild().addModule(new JavaTimeModule()).build();
 	}
 
 	public AbstractMessageChannelBinder(String[] headersToEmbed, PP provisioningProvider,
@@ -1288,8 +1289,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 			super(t);
 		}
 
-		@Override
-		public void serialize(Expression value, JsonGenerator gen, SerializerProvider provider) throws IOException {
+		public void serialize(Expression value, JsonGenerator gen, SerializationContext provider) throws JacksonException {
 			gen.writeString(value.getExpressionString());
 		}
 	}
