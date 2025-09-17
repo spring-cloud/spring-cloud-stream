@@ -33,8 +33,8 @@ import org.springframework.boot.amqp.autoconfigure.CachingConnectionFactoryConfi
 import org.springframework.boot.amqp.autoconfigure.ConnectionFactoryCustomizer;
 import org.springframework.boot.amqp.autoconfigure.RabbitConnectionFactoryBeanConfigurer;
 import org.springframework.boot.amqp.autoconfigure.RabbitProperties;
-import org.springframework.boot.amqp.autoconfigure.RabbitRetryTemplateCustomizer;
 import org.springframework.boot.amqp.autoconfigure.RabbitTemplateConfigurer;
+import org.springframework.boot.amqp.autoconfigure.RabbitTemplateRetrySettingsCustomizer;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnSingleCandidate;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -96,10 +96,10 @@ public class RabbitConfiguration {
 	@ConditionalOnMissingBean
 	public RabbitTemplateConfigurer rabbitTemplateConfigurer(RabbitProperties properties,
 			ObjectProvider<MessageConverter> messageConverter,
-			ObjectProvider<RabbitRetryTemplateCustomizer> retryTemplateCustomizers) {
+			ObjectProvider<RabbitTemplateRetrySettingsCustomizer> retryTemplateCustomizers) {
 		RabbitTemplateConfigurer configurer = new RabbitTemplateConfigurer(properties);
 		configurer.setMessageConverter(messageConverter.getIfUnique());
-		configurer.setRetryTemplateCustomizers(retryTemplateCustomizers.orderedStream().collect(Collectors.toList()));
+		configurer.setRetrySettingsCustomizers(retryTemplateCustomizers.orderedStream().collect(Collectors.toList()));
 		return configurer;
 	}
 

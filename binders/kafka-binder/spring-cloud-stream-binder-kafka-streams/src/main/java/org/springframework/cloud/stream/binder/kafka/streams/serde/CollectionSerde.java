@@ -34,6 +34,7 @@ import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.common.serialization.Serializer;
 
+import org.springframework.kafka.support.serializer.JacksonJsonSerde;
 import org.springframework.kafka.support.serializer.JsonSerde;
 
 /**
@@ -107,7 +108,7 @@ public class CollectionSerde<E> implements Serde<Collection<E>> {
 	 */
 	public CollectionSerde(Class<?> targetTypeForJsonSerde, Class<?> collectionsClass) {
 		this.collectionClass = collectionsClass;
-		try (JsonSerde<E> jsonSerde = new JsonSerde(targetTypeForJsonSerde)) {
+		try (JacksonJsonSerde<E> jsonSerde = new JacksonJsonSerde(targetTypeForJsonSerde)) {
 
 			this.inner = Serdes.serdeFrom(
 					new CollectionSerializer<>(jsonSerde.serializer()),

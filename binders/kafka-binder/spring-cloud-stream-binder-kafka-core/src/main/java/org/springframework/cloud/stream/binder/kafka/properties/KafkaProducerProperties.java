@@ -19,7 +19,7 @@ package org.springframework.cloud.stream.binder.kafka.properties;
 import java.util.HashMap;
 import java.util.Map;
 
-import tools.jackson.annotation.JsonGetter;
+import com.fasterxml.jackson.annotation.JsonGetter;
 import jakarta.validation.constraints.NotNull;
 
 import org.springframework.expression.Expression;

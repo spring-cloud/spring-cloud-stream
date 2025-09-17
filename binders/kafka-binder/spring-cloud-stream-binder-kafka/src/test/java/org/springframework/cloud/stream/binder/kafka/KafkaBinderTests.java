@@ -2171,14 +2171,7 @@ class KafkaBinderTests extends
 
 				@Override
 				public boolean matches(Message<?> value) {
-					try {
-						return om.readValue((byte[]) value.getPayload(), Integer.class)
-								.equals(2);
-					}
-					catch (IOException e) {
-						//
-					}
-					return false;
+					return om.readValue((byte[]) value.getPayload(), Integer.class).equals(2);
 				}
 			};
 			assertThat(receivedMessages).filteredOn(payloadIs2).areExactly(1,

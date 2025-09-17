@@ -174,7 +174,7 @@ class KafkaStreamsBinderBootstrapTest {
 	}
 
 	public static JavaType determineType(byte[] data, Headers headers) {
-		return TypeFactory.defaultInstance().constructParametricType(Map.class, String.class, String.class);
+		return TypeFactory.createDefaultInstance().constructParametricType(Map.class, String.class, String.class);
 	}
 
 	@EnableAutoConfiguration

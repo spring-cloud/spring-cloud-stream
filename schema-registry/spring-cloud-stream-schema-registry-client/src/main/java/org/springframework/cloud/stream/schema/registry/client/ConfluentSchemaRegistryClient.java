@@ -16,7 +16,6 @@
 
 package org.springframework.cloud.stream.schema.registry.client;
 
-import tools.jackson.core.JsonProcessingException;
 import tools.jackson.databind.ObjectMapper;
 import org.springframework.cloud.stream.schema.registry.SchemaNotFoundException;
 import org.springframework.cloud.stream.schema.registry.SchemaReference;
@@ -82,12 +81,7 @@ public class ConfluentSchemaRegistryClient implements SchemaRegistryClient {
 		String payload = null;
 		Map<String, String> maps = new HashMap<>();
 		maps.put("schema", schema);
-		try {
-			payload = this.mapper.writeValueAsString(maps);
-		}
-		catch (JsonProcessingException e) {
-			throw new RuntimeException("Could not parse schema, invalid JSON format", e);
-		}
+		payload = this.mapper.writeValueAsString(maps);
 		try {
 			HttpEntity<String> request = new HttpEntity<>(payload, headers);
 			ResponseEntity<Map> response = this.template.exchange(

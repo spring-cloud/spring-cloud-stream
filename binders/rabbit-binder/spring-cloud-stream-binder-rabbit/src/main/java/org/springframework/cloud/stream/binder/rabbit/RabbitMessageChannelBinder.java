@@ -91,6 +91,8 @@ import org.springframework.cloud.stream.provisioning.ConsumerDestination;
 import org.springframework.cloud.stream.provisioning.ProducerDestination;
 import org.springframework.context.support.AbstractApplicationContext;
 import org.springframework.context.support.GenericApplicationContext;
+import org.springframework.core.retry.RetryPolicy;
+import org.springframework.core.retry.RetryTemplate;
 import org.springframework.core.task.SimpleAsyncTaskExecutor;
 import org.springframework.expression.Expression;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
@@ -115,10 +117,6 @@ import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.MessagingException;
 import org.springframework.messaging.support.ErrorMessage;
-import org.springframework.retry.RetryPolicy;
-import org.springframework.retry.backoff.ExponentialBackOffPolicy;
-import org.springframework.retry.policy.SimpleRetryPolicy;
-import org.springframework.retry.support.RetryTemplate;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
@@ -1047,14 +1045,14 @@ public class RabbitMessageChannelBinder extends
 		if (rabbitProperties != null
 				&& rabbitProperties.getTemplate().getRetry().isEnabled()) {
 			Retry retry = rabbitProperties.getTemplate().getRetry();
-			RetryPolicy retryPolicy = new SimpleRetryPolicy(retry.getMaxAttempts());
-			ExponentialBackOffPolicy backOff = new ExponentialBackOffPolicy();
-			backOff.setInitialInterval(retry.getInitialInterval().toMillis());
-			backOff.setMultiplier(retry.getMultiplier());
-			backOff.setMaxInterval(retry.getMaxInterval().toMillis());
+			RetryPolicy retryPolicy = RetryPolicy.builder()
+				.maxAttempts(retry.getMaxAttempts())
+				.delay(retry.getInitialInterval())
+				.multiplier(retry.getMultiplier())
+				.maxDelay(retry.getMaxInterval())
+				.build();
 			RetryTemplate retryTemplate = new RetryTemplate();
 			retryTemplate.setRetryPolicy(retryPolicy);
-			retryTemplate.setBackOffPolicy(backOff);
 			rabbitTemplate.setRetryTemplate(retryTemplate);
 		}
 		// TODO until https://github.com/spring-cloud/spring-cloud-stream/issues/2902

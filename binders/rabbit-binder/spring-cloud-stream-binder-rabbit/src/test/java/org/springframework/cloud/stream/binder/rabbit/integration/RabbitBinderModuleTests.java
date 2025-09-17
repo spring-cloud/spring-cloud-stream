@@ -70,6 +70,8 @@ import org.springframework.cloud.stream.config.ProducerMessageHandlerCustomizer;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.retry.RetryPolicy;
+import org.springframework.core.retry.RetryTemplate;
 import org.springframework.integration.amqp.inbound.AmqpInboundChannelAdapter;
 import org.springframework.integration.amqp.inbound.AmqpMessageSource;
 import org.springframework.integration.channel.DirectChannel;
@@ -77,9 +79,7 @@ import org.springframework.integration.handler.AbstractMessageHandler;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.support.GenericMessage;
-import org.springframework.retry.backoff.ExponentialBackOffPolicy;
-import org.springframework.retry.policy.SimpleRetryPolicy;
-import org.springframework.retry.support.RetryTemplate;
+import org.springframework.util.backoff.ExponentialBackOff;
 import org.springframework.web.reactive.function.client.ExchangeFilterFunctions;
 import org.springframework.web.reactive.function.client.WebClient;
 
@@ -338,11 +338,10 @@ class RabbitBinderModuleTests {
 		RetryTemplate template = TestUtils.getPropertyValue(binding,
 			"lifecycle.amqpTemplate.retryTemplate", RetryTemplate.class);
 		assertThat(template).isNotNull();
-		SimpleRetryPolicy retryPolicy = TestUtils.getPropertyValue(template,
-			"retryPolicy", SimpleRetryPolicy.class);
-		ExponentialBackOffPolicy backOff = TestUtils.getPropertyValue(template,
-			"backOffPolicy", ExponentialBackOffPolicy.class);
-		assertThat(retryPolicy.getMaxAttempts()).isEqualTo(2);
+		RetryPolicy retryPolicy = template.getRetryPolicy();
+		assertThat(retryPolicy).isInstanceOf(ExponentialBackOff.class);
+		ExponentialBackOff backOff = (ExponentialBackOff) retryPolicy.getBackOff();
+		assertThat(backOff.getMaxAttempts()).isEqualTo(2);
 		assertThat(backOff.getInitialInterval()).isEqualTo(1000L);
 		assertThat(backOff.getMultiplier()).isEqualTo(1.1);
 		assertThat(backOff.getMaxInterval()).isEqualTo(3000L);

@@ -53,6 +53,7 @@ import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.header.Headers;
 import org.apache.kafka.common.header.internals.RecordHeader;
 import org.apache.kafka.common.header.internals.RecordHeaders;
+import tools.jackson.databind.json.JsonMapper;
 
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
@@ -254,7 +255,7 @@ public class KafkaMessageChannelBinder extends
 	private final KafkaAdmin kafkaAdmin;
 
 	// used strictly for serializeing additional configuration properties. See 'doGetAdditionalConfigurationProperties'
-	private ObjectMapper objectMapper = new ObjectMapper();
+	private final ObjectMapper objectMapper;
 
 	public KafkaMessageChannelBinder(
 			KafkaBinderConfigurationProperties configurationProperties,
@@ -290,8 +291,10 @@ public class KafkaMessageChannelBinder extends
 		this.dlqPartitionFunction = dlqPartitionFunction;
 		this.dlqDestinationResolver = dlqDestinationResolver;
 		this.kafkaAdmin = new KafkaAdmin(new HashMap<>(provisioningProvider.getAdminClientProperties()));
-		this.objectMapper.findAndRegisterModules();
-		this.objectMapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
+		this.objectMapper = JsonMapper.builder()
+			.findAndAddModules()
+			.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false)
+			.build();
 	}
 
 	@Override

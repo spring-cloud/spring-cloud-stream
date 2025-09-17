@@ -34,8 +34,7 @@ import org.springframework.beans.factory.BeanFactoryUtils;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.ResolvableType;
-import org.springframework.kafka.support.serializer.JsonSerde;
-import org.springframework.lang.Nullable;
+import org.springframework.kafka.support.serializer.JacksonJsonSerde;
 
 /**
  * Utility class that contains various methods to help resolve {@link Serde Serdes}.
@@ -75,7 +74,7 @@ abstract class SerdeResolverUtils {
 	 * @param fallbackSerde the serde to use when no type can be inferred
 	 * @return serde to use for the target type or {@code fallbackSerde} as outlined in the method description
 	 */
-	static Serde<?> resolveForType(ConfigurableApplicationContext context, ResolvableType targetType, @Nullable Serde<?> fallbackSerde) {
+	static Serde<?> resolveForType(ConfigurableApplicationContext context, ResolvableType targetType, /*@Nullable*/ Serde<?> fallbackSerde) {
 
 		Class<?> genericRawClazz = targetType.getRawClass();
 
@@ -103,7 +102,7 @@ abstract class SerdeResolverUtils {
 
 		// Use JsonSerde if type is not exactly Object
 		if (!genericRawClazz.isAssignableFrom((Object.class))) {
-			return new JsonSerde<>(genericRawClazz);
+			return new JacksonJsonSerde<>(genericRawClazz);
 		}
 
 		// Finally, just resort to using the fallback

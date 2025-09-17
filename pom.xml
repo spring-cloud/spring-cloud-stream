@@ -104,10 +104,6 @@
 				<artifactId>objenesis</artifactId>
 				<version>${objenesis.version}</version>
 			</dependency>
-			<dependency>
-				<groupId>tools.jackson.core</groupId>
-				<artifactId>jackson-core</artifactId>
-			</dependency>
 		</dependencies>
 	</dependencyManagement>
 	<dependencies>
