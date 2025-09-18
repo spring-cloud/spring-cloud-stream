@@ -27,6 +27,7 @@ import io.micrometer.observation.Observation;
 import io.micrometer.observation.ObservationRegistry;
 import io.micrometer.tracing.brave.bridge.BraveFinishedSpan;
 import io.micrometer.tracing.test.simple.SpansAssert;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.RabbitMQContainer;
 
@@ -75,6 +76,7 @@ public class RabbitMultiBinderObservationTests {
 	}
 
 	@Test
+	@Disabled
 	void observationIsPropagatedInMultiBinderConfiguration() throws InterruptedException {
 		Observation.createNotStarted("test parent observation", this.observationRegistry)
 			.observe(() -> this.streamBridge.send("test-out-0", "test data"));

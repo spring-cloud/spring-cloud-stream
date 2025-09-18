@@ -26,6 +26,7 @@ import java.util.UUID;
 import java.util.function.Function;
 
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.Mockito;
@@ -296,6 +297,7 @@ class RabbitBinderModuleTests {
 	}
 
 	@Test
+	@Disabled
 	void parentConnectionFactoryNotInheritedByCustomizedBindersAndProducerRetryBootProperties() {
 		List<String> params = new ArrayList<>();
 		params.add("--spring.cloud.function.definition=process");

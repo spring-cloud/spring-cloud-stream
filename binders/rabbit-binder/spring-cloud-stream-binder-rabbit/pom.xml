@@ -6,6 +6,10 @@
 	<packaging>jar</packaging>
 	<name>spring-cloud-stream-binder-rabbit</name>
 	<description>RabbitMQ binder implementation</description>
+	<properties>
+<!--		<maven.compiler.source>17</maven.compiler.source>-->
+<!--		<maven.compiler.target>17</maven.compiler.target>-->
+	</properties>
 
 	<parent>
 		<groupId>org.springframework.cloud</groupId>
