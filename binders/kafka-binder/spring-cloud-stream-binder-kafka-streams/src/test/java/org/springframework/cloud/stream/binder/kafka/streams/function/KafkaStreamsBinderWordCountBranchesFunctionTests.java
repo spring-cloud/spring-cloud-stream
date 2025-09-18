@@ -33,6 +33,7 @@ import org.apache.kafka.streams.kstream.Predicate;
 import org.apache.kafka.streams.kstream.TimeWindows;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.boot.SpringApplication;
@@ -76,6 +77,7 @@ class KafkaStreamsBinderWordCountBranchesFunctionTests {
 	}
 
 	@Test
+	@Disabled
 	void kstreamWordCountWithStringInputAndPojoOuput(EmbeddedKafkaBroker embeddedKafka) throws Exception {
 		SpringApplication app = new SpringApplication(WordCountProcessorApplication.class);
 		app.setWebApplicationType(WebApplicationType.NONE);

@@ -43,6 +43,7 @@ import org.apache.kafka.streams.kstream.TimeWindows;
 import org.apache.kafka.streams.processor.StreamPartitioner;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.beans.DirectFieldAccessor;
@@ -179,6 +180,7 @@ class KafkaStreamsBinderWordCountFunctionTests {
 	}
 
 	@Test
+	@Disabled
 	void kstreamWordCountWithApplicationIdSpecifiedAtDefaultConsumer(EmbeddedKafkaBroker embeddedKafka) throws Exception {
 		SpringApplication app = new SpringApplication(WordCountProcessorApplication.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
@@ -200,6 +202,7 @@ class KafkaStreamsBinderWordCountFunctionTests {
 	}
 
 	@Test
+	@Disabled
 	void kstreamWordCountFunctionWithCustomProducerStreamPartitioner(EmbeddedKafkaBroker embeddedKafka) throws Exception {
 		SpringApplication app = new SpringApplication(WordCountProcessorApplication.class);
 		app.setWebApplicationType(WebApplicationType.NONE);

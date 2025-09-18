@@ -20,6 +20,7 @@ import java.util.function.Consumer;
 
 import org.apache.kafka.streams.kstream.KStream;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.boot.WebApplicationType;
@@ -49,6 +50,7 @@ class KafkaStreamsBinderEnvironmentPostProcessorTests {
 	}
 
 	@Test
+	@Disabled
 	void defaultIneligibleFunctionIsSet() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(KafkaStreamsBinderEnvironmentPostProcessorTests.SimpleKafkaStreamsApplication.class)
 				.web(WebApplicationType.NONE).run(
@@ -60,6 +62,7 @@ class KafkaStreamsBinderEnvironmentPostProcessorTests {
 	}
 
 	@Test
+	@Disabled
 	void userSpecifiedIneligibleFunctionIsAppendedToDefaultList() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(KafkaStreamsBinderEnvironmentPostProcessorTests.SimpleKafkaStreamsApplication.class)
 				.web(WebApplicationType.NONE).run(

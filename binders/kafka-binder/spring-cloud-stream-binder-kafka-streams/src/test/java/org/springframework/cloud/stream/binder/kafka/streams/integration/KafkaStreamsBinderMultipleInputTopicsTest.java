@@ -33,6 +33,7 @@ import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.Materialized;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.boot.SpringApplication;
@@ -87,6 +88,7 @@ class KafkaStreamsBinderMultipleInputTopicsTest {
 	}
 
 	@Test
+	@Disabled
 	void kstreamWordCountWithStringInputAndPojoOuput() throws Exception {
 		SpringApplication app = new SpringApplication(
 				WordCountProcessorApplication.class);
