@@ -19,8 +19,8 @@ package org.springframework.cloud.bus;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.springframework.boot.EnvironmentPostProcessor;
 import org.springframework.boot.SpringApplication;
-import org.springframework.boot.env.EnvironmentPostProcessor;
 import org.springframework.cloud.commons.util.IdUtils;
 import org.springframework.cloud.function.context.FunctionProperties;
 import org.springframework.core.env.ConfigurableEnvironment;
