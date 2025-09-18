@@ -1,4 +1,4 @@
-org.springframework.boot.env.EnvironmentPostProcessor:\
+org.springframework.boot.EnvironmentPostProcessor:\
 org.springframework.cloud.stream.function.RoutingFunctionEnvironmentPostProcessor,\
 org.springframework.cloud.stream.config.VersionExtractor,\
 org.springframework.cloud.stream.config.PollerConfigEnvironmentPostProcessor

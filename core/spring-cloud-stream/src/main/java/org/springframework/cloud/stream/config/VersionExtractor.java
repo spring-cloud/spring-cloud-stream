@@ -23,8 +23,8 @@ import java.util.regex.Pattern;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import org.springframework.boot.EnvironmentPostProcessor;
 import org.springframework.boot.SpringApplication;
-import org.springframework.boot.env.EnvironmentPostProcessor;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.stream.function.FunctionConfiguration;
 import org.springframework.core.env.ConfigurableEnvironment;
