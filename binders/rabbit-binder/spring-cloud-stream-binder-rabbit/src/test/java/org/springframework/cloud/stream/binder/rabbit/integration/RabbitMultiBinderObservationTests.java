@@ -27,7 +27,6 @@ import io.micrometer.observation.Observation;
 import io.micrometer.observation.ObservationRegistry;
 import io.micrometer.tracing.brave.bridge.BraveFinishedSpan;
 import io.micrometer.tracing.test.simple.SpansAssert;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.RabbitMQContainer;
 
@@ -76,7 +75,6 @@ public class RabbitMultiBinderObservationTests {
 	}
 
 	@Test
-	@Disabled
 	void observationIsPropagatedInMultiBinderConfiguration() throws InterruptedException {
 		Observation.createNotStarted("test parent observation", this.observationRegistry)
 			.observe(() -> this.streamBridge.send("test-out-0", "test data"));
@@ -85,8 +83,8 @@ public class RabbitMultiBinderObservationTests {
 
 		// There is a race condition when we already have a reply, but the span in the
 		// Rabbit listener is not closed yet.
-		// parent -> RabbitTemplate -> Rabbit Listener -> Consumer
-		await().untilAsserted(() -> assertThat(SPANS.spans()).hasSize(4));
+		// parent -> StreamBridge -> RabbitTemplate -> Rabbit Listener -> Consumer
+		await().untilAsserted(() -> assertThat(SPANS.spans()).hasSize(6));
 		SpansAssert.assertThat(SPANS.spans().stream().map(BraveFinishedSpan::fromBrave).collect(Collectors.toList()))
 			.haveSameTraceId();
 	}
