@@ -21,11 +21,14 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.exc.InvalidTypeIdException;
-import com.fasterxml.jackson.dataformat.cbor.CBORFactory;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.cfg.MapperBuilder;
+import tools.jackson.databind.exc.InvalidTypeIdException;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.dataformat.cbor.CBORFactory;
+import tools.jackson.dataformat.cbor.CBORMapper;
 
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -76,8 +79,7 @@ public class BusJacksonAutoConfiguration {
 
 		@Bean
 		public AbstractMessageConverter busCborConverter() {
-			return new BusJacksonMessageConverter(new MimeType("application", "cbor"),
-					new ObjectMapper(new CBORFactory()));
+			return new BusJacksonMessageConverter(new MimeType("application", "cbor"), CBORMapper.builder().build());
 		}
 
 	}
@@ -90,7 +92,7 @@ class BusJacksonMessageConverter extends AbstractMessageConverter implements Ini
 
 	private static final String DEFAULT_PACKAGE = ClassUtils.getPackageName(RemoteApplicationEvent.class);
 
-	private final ObjectMapper mapper;
+	private final MapperBuilder mapperBuilder;
 
 	private final boolean mapperCreated;
 
@@ -110,11 +112,11 @@ class BusJacksonMessageConverter extends AbstractMessageConverter implements Ini
 		super(mimeType);
 
 		if (objectMapper != null) {
-			this.mapper = objectMapper;
+			this.mapperBuilder = objectMapper.rebuild();
 			this.mapperCreated = false;
 		}
 		else {
-			this.mapper = new ObjectMapper();
+			this.mapperBuilder = JsonMapper.builder();
 			this.mapperCreated = true;
 		}
 	}
@@ -123,8 +125,8 @@ class BusJacksonMessageConverter extends AbstractMessageConverter implements Ini
 		return this.mapperCreated;
 	}
 
-	/* for testing */ ObjectMapper getMapper() {
-		return this.mapper;
+	/* for testing */ MapperBuilder getMapper() {
+		return this.mapperBuilder;
 	}
 
 	public void setPackagesToScan(String[] packagesToScan) {
@@ -168,13 +170,14 @@ class BusJacksonMessageConverter extends AbstractMessageConverter implements Ini
 
 	@Override
 	public Object convertFromInternal(Message<?> message, Class<?> targetClass, Object conversionHint) {
+		ObjectMapper mapper = this.mapperBuilder.build();
 		Object result = null;
 		try {
 			Object payload = message.getPayload();
 
 			if (payload instanceof byte[]) {
 				try {
-					result = this.mapper.readValue((byte[]) payload, targetClass);
+					result = mapper.readValue((byte[]) payload, targetClass);
 				}
 				catch (InvalidTypeIdException e) {
 					return new UnknownRemoteApplicationEvent(new Object(), e.getTypeId(), (byte[]) payload);
@@ -182,7 +185,7 @@ class BusJacksonMessageConverter extends AbstractMessageConverter implements Ini
 			}
 			else if (payload instanceof String) {
 				try {
-					result = this.mapper.readValue((String) payload, targetClass);
+					result = mapper.readValue((String) payload, targetClass);
 				}
 				catch (InvalidTypeIdException e) {
 					return new UnknownRemoteApplicationEvent(new Object(), e.getTypeId(),
@@ -203,8 +206,8 @@ class BusJacksonMessageConverter extends AbstractMessageConverter implements Ini
 	}
 
 	@Override
-	public void afterPropertiesSet() throws Exception {
-		this.mapper.registerModule(new SubtypeModule(findSubTypes()));
+	public void afterPropertiesSet() {
+		this.mapperBuilder.subtypeResolver().registerSubtypes(findSubTypes());
 	}
 
 }

@@ -16,7 +16,7 @@
 
 package org.springframework.cloud.bus.jackson;
 
-import com.fasterxml.jackson.databind.module.SimpleModule;
+import tools.jackson.databind.module.SimpleModule;
 
 /**
  * @author Spencer Gibb

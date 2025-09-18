@@ -1,3 +1,3 @@
 # Environment Post Processor
-org.springframework.boot.env.EnvironmentPostProcessor=\
+org.springframework.boot.EnvironmentPostProcessor=\
 org.springframework.cloud.bus.BusEnvironmentPostProcessor
