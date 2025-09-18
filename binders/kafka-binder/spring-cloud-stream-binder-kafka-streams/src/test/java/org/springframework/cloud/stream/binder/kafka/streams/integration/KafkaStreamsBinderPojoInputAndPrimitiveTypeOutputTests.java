@@ -41,7 +41,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.kafka.support.serializer.JsonSerde;
+import org.springframework.kafka.support.serializer.JacksonJsonSerde;
 import org.springframework.kafka.test.EmbeddedKafkaBroker;
 import org.springframework.kafka.test.condition.EmbeddedKafkaCondition;
 import org.springframework.kafka.test.context.EmbeddedKafka;
@@ -125,8 +125,8 @@ class KafkaStreamsBinderPojoInputAndPrimitiveTypeOutputTests {
 		public Function<KStream<Object, Product>, KStream<Integer, Long>> process() {
 			return input -> input.filter((key, product) -> product.getId() == 123)
 					.map((key, value) -> new KeyValue<>(value, value))
-					.groupByKey(Grouped.with(new JsonSerde<>(Product.class),
-							new JsonSerde<>(Product.class)))
+					.groupByKey(Grouped.with(new JacksonJsonSerde<>(Product.class),
+							new JacksonJsonSerde<>(Product.class)))
 					.windowedBy(TimeWindows.ofSizeWithNoGrace(Duration.ofMillis(5000)))
 					.count(Materialized.as("id-count-store-x")).toStream()
 					.map((key, value) -> new KeyValue<>(key.key().id, value));

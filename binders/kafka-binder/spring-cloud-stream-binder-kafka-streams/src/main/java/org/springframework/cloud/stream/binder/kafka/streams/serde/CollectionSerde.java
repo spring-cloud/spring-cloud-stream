@@ -35,7 +35,6 @@ import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.common.serialization.Serializer;
 
 import org.springframework.kafka.support.serializer.JacksonJsonSerde;
-import org.springframework.kafka.support.serializer.JsonSerde;
 
 /**
  * A convenient {@link Serde} for {@link java.util.Collection} implementations.
@@ -46,7 +45,7 @@ import org.springframework.kafka.support.serializer.JsonSerde;
  * needs to do aggregation or reduction operations where it needs to simply hold an
  * {@link Iterable} type.
  *
- * By default, this Serde will use {@link JsonSerde} for serializing the inner objects.
+ * By default, this Serde will use {@link JacksonJsonSerde} for serializing the inner objects.
  * This can be changed by providing an explicit Serde during creation of this object.
  *
  * Here is an example of a possible use case:

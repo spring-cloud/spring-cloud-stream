@@ -39,7 +39,7 @@ Here are the Serde types that the binder will try to match from Kafka Streams.
 
 * If none of the Serdes provided by Kafka Streams don't match the types, then it will use JsonSerde provided by Spring Kafka. In this case, the binder assumes that the types are JSON friendly.
 This is useful if you have multiple value objects as inputs since the binder will internally infer them to correct Java types.
-Before falling back to the `JsonSerde` though, the binder checks at the default `Serde` s set in the Kafka Streams configuration to see if it is a `Serde` that it can match with the incoming KStream's types.
+Before falling back to the `JacksonJsonSerde` though, the binder checks at the default `Serde` s set in the Kafka Streams configuration to see if it is a `Serde` that it can match with the incoming KStream's types.
 
 If none of the above strategies worked, then the applications must provide the `Serde` s through configuration.
 This can be configured in two ways - binding or default.
@@ -96,7 +96,7 @@ If it can't infer the type of the key, then that needs to be specified using con
 Value serdes are inferred using the same rules used for inbound deserialization.
 First it matches to see if the outbound type is from a provided bean in the application.
 If not, it checks to see if it matches with a `Serde` exposed by Kafka such as - `Integer`, `Long`, `Short`, `Double`, `Float`, `byte[]`, `UUID` and `String`.
-If that doesnt't work, then it falls back to `JsonSerde` provided by the Spring Kafka project, but first look at the default `Serde` configuration to see if there is a match.
+If that doesnt't work, then it falls back to `JacksonJsonSerde` provided by the Spring Kafka project, but first look at the default `Serde` configuration to see if there is a match.
 Keep in mind that all these happen transparently to the application.
 If none of these work, then the user has to provide the `Serde` to use by configuration.
 
@@ -107,7 +107,7 @@ spring.cloud.stream.kafka.streams.bindings.process-out-0.producer.keySerde=Custo
 spring.cloud.stream.kafka.streams.bindings.process-out-0.producer.valueSerde=io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde
 ```
 
-If Serde inference fails, and no binding level Serdes are provided, then the binder falls back to the `JsonSerde`, but look at the default Serdes for a match.
+If Serde inference fails, and no binding level Serdes are provided, then the binder falls back to the `JacksonJsonSerde`, but look at the default Serdes for a match.
 
 Default serdes are configured in the same way as above where it is described under deserialization.
 

@@ -57,7 +57,7 @@ import org.springframework.kafka.core.CleanupConfig;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.kafka.support.serializer.JsonSerde;
+import org.springframework.kafka.support.serializer.JacksonJsonSerde;
 import org.springframework.kafka.test.EmbeddedKafkaBroker;
 import org.springframework.kafka.test.condition.EmbeddedKafkaCondition;
 import org.springframework.kafka.test.context.EmbeddedKafka;
@@ -281,7 +281,7 @@ class KafkaStreamsInteractiveQueryIntegrationTests {
 			return input -> input.filter((key, product) -> product.getId() == 123)
 					.map((key, value) -> new KeyValue<>(value.id, value))
 					.groupByKey(Grouped.with(new Serdes.IntegerSerde(),
-							new JsonSerde<>(Product.class)))
+							new JacksonJsonSerde<>(Product.class)))
 					.count(Materialized.as("prod-id-count-store")).toStream()
 					.map((key, value) -> new KeyValue<>(null, "Count for product with ID 123: " + value));
 		}

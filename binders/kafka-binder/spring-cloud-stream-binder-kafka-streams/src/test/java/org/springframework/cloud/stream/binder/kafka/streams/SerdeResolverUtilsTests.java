@@ -39,7 +39,7 @@ import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.core.ResolvableType;
-import org.springframework.kafka.support.serializer.JsonSerde;
+import org.springframework.kafka.support.serializer.JacksonJsonSerde;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
@@ -122,7 +122,7 @@ class SerdeResolverUtilsTests {
 				void returnsJsonSerdeWhenInvalidFallbackSpecified(Serde<?> invalidFallback) {
 					contextRunner.run((context) ->
 						assertThat(SerdeResolverUtils.resolveForType(context, ResolvableType.forClass(Foo.class), invalidFallback))
-							.isInstanceOf(JsonSerde.class));
+							.isInstanceOf(JacksonJsonSerde.class));
 				}
 
 				static Stream<Serde<?>> invalidFallbackSerdeProvider() {
@@ -144,7 +144,7 @@ class SerdeResolverUtilsTests {
 				void returnsJsonSerdeWhenFallbackNotSpecified() {
 					contextRunner.run((context ->
 						assertThat(SerdeResolverUtils.resolveForType(context, ResolvableType.forClass(Foo.class), null))
-							.isInstanceOf(JsonSerde.class)));
+							.isInstanceOf(JacksonJsonSerde.class)));
 				}
 
 				@Test
