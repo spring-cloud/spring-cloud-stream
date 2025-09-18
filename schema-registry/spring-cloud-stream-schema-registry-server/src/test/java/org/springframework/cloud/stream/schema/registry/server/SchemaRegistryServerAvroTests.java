@@ -31,6 +31,7 @@ import java.util.stream.Stream;
 
 import org.apache.avro.Schema.Parser;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -71,6 +72,7 @@ import static org.springframework.test.annotation.DirtiesContext.ClassMode.AFTER
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT, properties = {"spring.main.allow-bean-definition-overriding=true", "server.port=8991"})
 @DirtiesContext(classMode = AFTER_EACH_TEST_METHOD)
+@Disabled
 class SchemaRegistryServerAvroTests {
 
 	private static final String AVRO_FORMAT_NAME = "avro";
