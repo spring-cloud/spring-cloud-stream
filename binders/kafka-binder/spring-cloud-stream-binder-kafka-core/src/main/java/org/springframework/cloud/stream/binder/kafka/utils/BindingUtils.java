@@ -33,7 +33,7 @@ import org.springframework.cloud.stream.binder.kafka.properties.KafkaConsumerPro
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaConsumerProperties.StandardHeaders;
 import org.springframework.cloud.stream.binder.kafka.properties.KafkaProducerProperties;
 import org.springframework.context.ApplicationContext;
-import org.springframework.kafka.support.DefaultKafkaHeaderMapper;
+import org.springframework.kafka.support.JsonKafkaHeaderMapper;
 import org.springframework.kafka.support.KafkaHeaderMapper;
 import org.springframework.kafka.support.converter.MessageConverter;
 import org.springframework.kafka.support.converter.MessagingMessageConverter;
@@ -58,7 +58,7 @@ public final class BindingUtils {
 	 * the binding properties do not contain a bean name, a default
 	 * {@link MessagingMessageConverter} is returned; if the binder properties contain a
 	 * header mapper bean name, it is used in the default converter, otherwise a
-	 * {@link DefaultKafkaHeaderMapper} is used.
+	 * {@link JsonKafkaHeaderMapper} is used.
 	 * @param applicationContext the application context.
 	 * @param extendedConsumerProperties the consumer binding properties.
 	 * @param configurationProperties the binder properties.
@@ -81,7 +81,7 @@ public final class BindingUtils {
 							|| StandardHeaders.both.equals(standardHeaders));
 			KafkaHeaderMapper headerMapper = getHeaderMapper(applicationContext, configurationProperties);
 			if (headerMapper == null) {
-				headerMapper = new DefaultKafkaHeaderMapper();
+				headerMapper = new JsonKafkaHeaderMapper();
 			}
 			mmc.setHeaderMapper(headerMapper);
 			messageConverter = mmc;
