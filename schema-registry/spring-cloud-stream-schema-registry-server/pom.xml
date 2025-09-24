@@ -39,10 +39,8 @@
             <artifactId>postgresql</artifactId>
         </dependency>
 		<dependency>
-			<groupId>com.fasterxml.jackson.core</groupId>
+			<groupId>tools.jackson.core</groupId>
 			<artifactId>jackson-databind</artifactId>
-			<!--TODO: investigate why we need this hard version here and not inheriting from Spring Boot-->
-			<version>2.15.3</version>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>

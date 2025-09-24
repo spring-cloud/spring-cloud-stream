@@ -20,12 +20,11 @@ package org.springframework.cloud.stream.schema.avro;
 import java.io.File;
 import java.io.IOException;
 
-import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.avro.AvroFactory;
-import com.fasterxml.jackson.dataformat.avro.AvroMapper;
-import com.fasterxml.jackson.dataformat.avro.AvroSchema;
-import com.fasterxml.jackson.dataformat.avro.schema.AvroSchemaGenerator;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.dataformat.avro.AvroFactory;
+import tools.jackson.dataformat.avro.AvroMapper;
+import tools.jackson.dataformat.avro.AvroSchema;
+import tools.jackson.dataformat.avro.schema.AvroSchemaGenerator;
 import org.apache.avro.Schema;
 import org.apache.avro.SchemaParseException;
 import org.apache.avro.file.DataFileReader;
@@ -100,7 +99,7 @@ class AvroSchemaServiceManagerTests {
 				try {
 					mapper.acceptJsonFormatVisitor(FoodOrder.class, gen);
 				}
-				catch (JsonMappingException e) {
+				catch (Exception e) {
 					fail("Error while setting acceptJsonFormatVisitor {}", e);
 				}
 				AvroSchema schemaWrapper = gen.getGeneratedSchema();
@@ -125,7 +124,7 @@ class AvroSchemaServiceManagerTests {
 				try {
 					mapper.acceptJsonFormatVisitor(targetClass, gen);
 				}
-				catch (JsonMappingException e) {
+				catch (Exception e) {
 					fail("Error while setting acceptJsonFormatVisitor {}", e);
 				}
 				return mapper.readerFor(targetClass)
