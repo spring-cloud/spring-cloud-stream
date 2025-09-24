@@ -14,8 +14,8 @@
 	</parent>
 
 	<properties>
-		<avro.version>1.11.4</avro.version>
-		<h2.version>2.2.220</h2.version>
+		<avro.version>1.12.0</avro.version>
+		<h2.version>2.3.232</h2.version>
 	</properties>
 
 	<modules>
