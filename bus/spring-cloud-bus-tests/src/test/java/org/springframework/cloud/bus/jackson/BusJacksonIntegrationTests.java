@@ -48,7 +48,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 import static tools.jackson.databind.cfg.DateTimeFeature.WRITE_DATES_AS_TIMESTAMPS;
 
-@SpringBootTest(properties = "spring.jackson.datatype.datetime.write-dates-as-timestamps=true", webEnvironment = RANDOM_PORT)
+@SpringBootTest(properties = "spring.jackson.datetime.write-dates-as-timestamps=true", webEnvironment = RANDOM_PORT)
 @DirtiesContext
 public class BusJacksonIntegrationTests {
 
