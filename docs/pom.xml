@@ -8,7 +8,7 @@
 	<parent>
 		<groupId>org.springframework.cloud</groupId>
 		<artifactId>spring-cloud-stream-parent</artifactId>
-		<version>5.0.0-SNAPSHOT</version>
+		<version>5.0.0-M3</version>
 	</parent>
 	<packaging>jar</packaging>
 	<name>Spring Cloud Stream Docs</name>
