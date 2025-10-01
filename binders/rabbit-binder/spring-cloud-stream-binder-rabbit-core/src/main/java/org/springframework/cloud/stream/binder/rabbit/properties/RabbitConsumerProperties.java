@@ -145,6 +145,19 @@ public class RabbitConsumerProperties extends RabbitCommonProperties {
 	 */
 	private boolean superStream;
 
+	/**
+	 * Consumer priority for this consumer. Higher values indicate higher priority.
+	 * Requires the queue to be declared with x-max-priority argument.
+	 * Valid range: 0-255. Default: -1 (no priority set).
+	 */
+	private int consumerPriority = -1;
+
+	/**
+	 * Maximum priority for the queue. When set, the queue will be declared with
+	 * x-max-priority argument. Valid range: 1-255. Default: -1 (not set).
+	 */
+	private int queueMaxPriority = -1;
+
 	public boolean isTransacted() {
 		return transacted;
 	}
@@ -323,6 +336,22 @@ public class RabbitConsumerProperties extends RabbitCommonProperties {
 
 	public void setSuperStream(boolean superStream) {
 		this.superStream = superStream;
+	}
+
+	public int getConsumerPriority() {
+		return this.consumerPriority;
+	}
+
+	public void setConsumerPriority(int consumerPriority) {
+		this.consumerPriority = consumerPriority;
+	}
+
+	public int getQueueMaxPriority() {
+		return this.queueMaxPriority;
+	}
+
+	public void setQueueMaxPriority(int queueMaxPriority) {
+		this.queueMaxPriority = queueMaxPriority;
 	}
 
 	/**
