@@ -21,6 +21,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -603,6 +604,12 @@ public class RabbitMessageChannelBinder extends
 			listenerContainer.setConsumerTagStrategy(
 					q -> extension.getConsumerTagPrefix() + "#"
 							+ index.getAndIncrement());
+		}
+		// Set consumer priority if configured
+		if (extension.getConsumerPriority() >= 0) {
+			Map<String, Object> consumerArgs = new HashMap<>();
+			consumerArgs.put("x-priority", extension.getConsumerPriority());
+			listenerContainer.setConsumerArguments(consumerArgs);
 		}
 		listenerContainer.setApplicationContext(getApplicationContext());
 		return listenerContainer;

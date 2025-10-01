@@ -211,6 +211,16 @@ public class KafkaConsumerProperties {
 	private boolean reactiveAtMostOnce;
 
 	/**
+	 * Consumer priority level. NOTE: Kafka does not natively support consumer priority.
+	 * This property is provided for consistency across binders but has no effect in Kafka.
+	 * For even message distribution across servers, use partition assignment strategies
+	 * or create separate bindings with concurrency=1.
+	 * Default: -1 (not supported)
+	 * @since 4.2
+	 */
+	private int consumerPriority = -1;
+
+	/**
 	 * @return Container's ack mode.
 	 */
 	public ContainerProperties.AckMode getAckMode() {
@@ -484,6 +494,14 @@ public class KafkaConsumerProperties {
 
 	public void setReactiveAtMostOnce(boolean reactiveAtMostOnce) {
 		this.reactiveAtMostOnce = reactiveAtMostOnce;
+	}
+
+	public int getConsumerPriority() {
+		return this.consumerPriority;
+	}
+
+	public void setConsumerPriority(int consumerPriority) {
+		this.consumerPriority = consumerPriority;
 	}
 
 }

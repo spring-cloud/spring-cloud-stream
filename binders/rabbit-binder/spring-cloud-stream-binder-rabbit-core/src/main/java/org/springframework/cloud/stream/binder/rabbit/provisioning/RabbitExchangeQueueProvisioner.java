@@ -608,6 +608,15 @@ public class RabbitExchangeQueueProvisioner
 				: properties.getMaxLengthBytes();
 		Integer maxPriority = isDlq ? properties.getDlqMaxPriority()
 				: properties.getMaxPriority();
+
+		// Add queue max priority for consumer priority support
+		if (!isDlq && properties instanceof RabbitConsumerProperties) {
+			RabbitConsumerProperties consumerProps = (RabbitConsumerProperties) properties;
+			if (consumerProps.getQueueMaxPriority() > 0) {
+				maxPriority = consumerProps.getQueueMaxPriority();
+			}
+		}
+
 		Integer ttl = isDlq ? properties.getDlqTtl() : properties.getTtl();
 		boolean lazy = isDlq ? properties.isDlqLazy() : properties.isLazy();
 		String overflow = isDlq ? properties.getDlqOverflowBehavior()

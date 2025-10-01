@@ -2732,6 +2732,33 @@ class RabbitBinderTests extends
 		}
 
 	}
+
+	@Test
+	void testConsumerPriority() throws Exception {
+		RabbitTestBinder binder = getBinder();
+		ExtendedConsumerProperties<RabbitConsumerProperties> consumerProperties = createConsumerProperties();
+		consumerProperties.getExtension().setConsumerPriority(10);
+		consumerProperties.getExtension().setQueueMaxPriority(10);
+
+		DirectChannel moduleInputChannel = createBindableChannel("input", new BindingProperties());
+
+		Binding<MessageChannel> consumerBinding = binder.bindConsumer("priority.test", "priorityGroup",
+				moduleInputChannel, consumerProperties);
+
+		AbstractMessageListenerContainer container =
+				TestUtils.getPropertyValue(consumerBinding, "lifecycle.messageListenerContainer",
+						AbstractMessageListenerContainer.class);
+
+		Map<String, Object> consumerArgs = container.getConsumerArguments();
+
+		assertThat(consumerArgs).isNotNull();
+		assertThat(consumerArgs.get("x-priority")).isEqualTo(10);
+		assertThat(consumerProperties.getExtension().getConsumerPriority()).isEqualTo(10);
+		assertThat(consumerProperties.getExtension().getQueueMaxPriority()).isEqualTo(10);
+
+		consumerBinding.unbind();
+	}
+
 	// @checkstyle:on
 
 	public static class TestBatchingStrategy implements BatchingStrategy {
