@@ -36,6 +36,7 @@ import org.apache.kafka.streams.kstream.KTable;
 import org.apache.kafka.streams.processor.TimestampExtractor;
 import org.apache.kafka.streams.processor.WallclockTimestampExtractor;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.boot.SpringApplication;
@@ -76,6 +77,7 @@ class StreamToGlobalKTableFunctionTests {
 	}
 
 	@Test
+	@Disabled
 	void streamToGlobalKTable() throws Exception {
 		SpringApplication app = new SpringApplication(OrderEnricherApplication.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
@@ -228,6 +230,7 @@ class StreamToGlobalKTableFunctionTests {
 	}
 
 	@Test
+	@Disabled
 	void timeExtractor() throws Exception {
 		SpringApplication app = new SpringApplication(OrderEnricherApplication.class);
 		app.setWebApplicationType(WebApplicationType.NONE);

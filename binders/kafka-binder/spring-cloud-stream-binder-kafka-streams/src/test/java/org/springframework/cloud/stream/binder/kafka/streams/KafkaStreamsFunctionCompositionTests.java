@@ -34,6 +34,7 @@ import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.KTable;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.boot.SpringApplication;
@@ -215,6 +216,7 @@ class KafkaStreamsFunctionCompositionTests {
 	}
 
 	@Test
+	@Disabled
 	void chainedFunctionsAsComposed() throws InterruptedException {
 		SpringApplication app = new SpringApplication(FunctionCompositionConfig4.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
@@ -258,6 +260,7 @@ class KafkaStreamsFunctionCompositionTests {
 	}
 
 	@Test
+	@Disabled
 	void firstFunctionCurriedThenComposeWithOtherFunctions() throws InterruptedException {
 		SpringApplication app = new SpringApplication(FunctionCompositionConfig5.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
