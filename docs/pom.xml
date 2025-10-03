@@ -15,7 +15,7 @@
 	<description>Spring Cloud Stream Docs</description>
 
 	<properties>
-		<docs.main>spring-cloud-function</docs.main>
+		<docs.main>spring-cloud-stream</docs.main>
 		<main.basedir>${basedir}/..</main.basedir>
 		<configprops.inclusionPattern>spring.cloud.*</configprops.inclusionPattern>
 		<!-- Don't upload docs jar to central / repo.spring.io -->
