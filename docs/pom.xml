@@ -13,30 +13,16 @@
 	<packaging>jar</packaging>
 	<name>Spring Cloud Stream Docs</name>
 	<description>Spring Cloud Stream Docs</description>
+
 	<properties>
-		<docs.main>spring-cloud-stream</docs.main>
+		<docs.main>spring-cloud-function</docs.main>
 		<main.basedir>${basedir}/..</main.basedir>
-		<configprops.inclusionPattern>.*stream.*</configprops.inclusionPattern>
+		<configprops.inclusionPattern>spring.cloud.*</configprops.inclusionPattern>
 		<!-- Don't upload docs jar to central / repo.spring.io -->
 		<maven-deploy-plugin-default.phase>none</maven-deploy-plugin-default.phase>
 	</properties>
-	<dependencies>
-		<dependency>
-			<groupId>${project.groupId}</groupId>
-			<artifactId>spring-cloud-stream</artifactId>
-		</dependency>
-	</dependencies>
 	<build>
 		<sourceDirectory>src/main/asciidoc</sourceDirectory>
-		<plugins>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-javadoc-plugin</artifactId>
-				<configuration>
-					<skip>true</skip>
-				</configuration>
-			</plugin>
-		</plugins>
 	</build>
 	<profiles>
 		<profile>
@@ -68,11 +54,16 @@
 					<plugin>
 						<groupId>org.antora</groupId>
 						<artifactId>antora-maven-plugin</artifactId>
+						<configuration>
+							<additionalOptions>
+								<option>redirect-facility static</option>
+							</additionalOptions>
+						</configuration>
 					</plugin>
-<!--					<plugin>-->
-<!--						<groupId>org.apache.maven.plugins</groupId>-->
-<!--						<artifactId>maven-antrun-plugin</artifactId>-->
-<!--					</plugin>-->
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-antrun-plugin</artifactId>
+					</plugin>
 					<plugin>
 						<artifactId>maven-deploy-plugin</artifactId>
 					</plugin>
