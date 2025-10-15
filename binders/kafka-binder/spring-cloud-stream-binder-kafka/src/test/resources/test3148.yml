@@ -1,0 +1,38 @@
+spring:
+  cloud:
+    function:
+      definition: testConsumer
+    stream:
+      kafka:
+        binder:
+          brokers: localhost:9092
+      binders:
+        test-binder:
+          type: 'kafka'
+          environment:
+            spring.cloud.stream.kafka.binder:
+              consumer-properties:
+                max.poll.records: 1            # < at least one property here
+      bindings:
+        testConsumer-in-0:
+          binder: test-binder
+          group: test-group
+          destination: test-topic
+#spring:
+#  application:
+#    name: "spring-cloud-stream-multibinder"
+#  cloud:
+#    function:
+#      definition: testConsumer
+#    stream:
+#      bindings:
+#        testConsumer-in-0:
+#          destination: "foo"
+#          binder: kafka1
+#      binders:
+#        kafka1:
+#          type: kafka
+#          environment:
+#            spring.cloud.stream.kafka.binder:
+#              consumer-properties:
+#                max.poll.records: 1
