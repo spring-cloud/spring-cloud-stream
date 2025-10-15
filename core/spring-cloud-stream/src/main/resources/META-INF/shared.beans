@@ -15,3 +15,4 @@ org.springframework.cloud.stream.binder.test.InputDestination
 org.springframework.cloud.stream.binder.test.OutputDestination
 org.springframework.cloud.stream.config.BindingHandlerAdvise
 io.micrometer.observation.ObservationRegistry
+org.springframework.cloud.stream.binder.kafka.KafkaBindingRebalanceListener
