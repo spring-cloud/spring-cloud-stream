@@ -38,11 +38,11 @@ class RoutingFunctionEnvironmentPostProcessor implements EnvironmentPostProcesso
 				name.contains(RoutingFunction.FUNCTION_NAME + "|") ||
 				name.contains("|" + RoutingFunction.FUNCTION_NAME)
 			)) {
-			((StandardEnvironment) environment).getSystemProperties()
+			environment.getSystemProperties()
 				.putIfAbsent("spring.cloud.function.routing.enabled", "true");
 		}
 		// perhaps mpve it to separate class as it doesn't have much to do with RoutingFunction
-		((StandardEnvironment) environment).getSystemProperties()
+		environment.getSystemProperties()
 			.putIfAbsent("spring.cloud.function.configuration.default.copy-input-headers", "true");
 	}
 
