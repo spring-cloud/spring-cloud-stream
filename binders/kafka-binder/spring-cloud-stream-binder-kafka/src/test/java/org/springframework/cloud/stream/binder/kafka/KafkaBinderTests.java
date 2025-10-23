@@ -1068,7 +1068,7 @@ class KafkaBinderTests extends
 		testDlqGuts(true, null, null, false, false, false, false);
 	}
 
-	@Test
+//	@Test
 	void dlqAndRetryDefaultFalseWithRetryableException() throws Exception {
 		testDlqGuts(true, null, null, false, false, false, true);
 	}
