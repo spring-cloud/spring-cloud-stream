@@ -37,7 +37,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.server.autoconfigure.ServerProperties;
-import org.springframework.boot.web.server.test.client.TestRestTemplate;
 import org.springframework.cloud.stream.schema.registry.config.SchemaServerProperties;
 import org.springframework.cloud.stream.schema.registry.controllers.ServerController;
 import org.springframework.cloud.stream.schema.registry.model.Schema;
@@ -57,6 +56,7 @@ import org.springframework.util.StreamUtils;
 import org.springframework.web.client.DefaultResponseErrorHandler;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.util.UriComponentsBuilder;
+import org.springframework.boot.resttestclient.TestRestTemplate;
 
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
