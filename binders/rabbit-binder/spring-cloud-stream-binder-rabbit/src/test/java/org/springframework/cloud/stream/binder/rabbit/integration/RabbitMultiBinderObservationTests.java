@@ -28,12 +28,12 @@ import io.micrometer.observation.ObservationRegistry;
 import io.micrometer.tracing.brave.bridge.BraveFinishedSpan;
 import io.micrometer.tracing.test.simple.SpansAssert;
 import org.junit.jupiter.api.Test;
+import org.springframework.boot.micrometer.tracing.test.autoconfigure.AutoConfigureTracing;
 import org.testcontainers.containers.RabbitMQContainer;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.test.autoconfigure.actuate.observability.AutoConfigureObservability;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cloud.stream.binder.rabbit.RabbitTestContainer;
 import org.springframework.cloud.stream.function.StreamBridge;
@@ -53,7 +53,8 @@ import static org.awaitility.Awaitility.await;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE,
 		args = "--spring.config.location=classpath:/rabbit-multi-binder-observation.yml")
 @DirtiesContext
-@AutoConfigureObservability
+//@AutoConfigureMetric
+@AutoConfigureTracing
 public class RabbitMultiBinderObservationTests {
 
 	private static final TestSpanHandler SPANS = new TestSpanHandler();

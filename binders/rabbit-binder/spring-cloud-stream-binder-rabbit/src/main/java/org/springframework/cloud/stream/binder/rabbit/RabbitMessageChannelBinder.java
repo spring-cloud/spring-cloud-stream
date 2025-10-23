@@ -34,7 +34,6 @@ import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Envelope;
 import io.micrometer.observation.ObservationRegistry;
-import jakarta.validation.constraints.NotNull;
 
 import org.springframework.amqp.AmqpRejectAndDontRequeueException;
 import org.springframework.amqp.ImmediateAcknowledgeAmqpException;
@@ -802,7 +801,7 @@ public class RabbitMessageChannelBinder extends
 					}
 				}
 
-				@NotNull
+				//@NotNull
 				private MessageProperties adjustMessagePropertiesHeader(Throwable cause, String stackTraceAsString, Message amqpMessage) {
 					MessageProperties messageProperties = amqpMessage
 							.getMessageProperties();
