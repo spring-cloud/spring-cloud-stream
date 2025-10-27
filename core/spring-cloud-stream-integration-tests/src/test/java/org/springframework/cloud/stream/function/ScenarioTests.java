@@ -33,6 +33,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.GenericMessage;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.dataformat.cbor.CBORMapper;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -131,6 +133,16 @@ class ScenarioTests {
 
 
 
+	@Test
+	void testMultipleObjectMappers() {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+			TestChannelBinderConfiguration.getCompleteConfiguration(MultipleJsonConverterConfiguration.class))
+			.web(WebApplicationType.NONE)
+			.run("--spring.jmx.enabled=false")) {
+		}
+	}
+
+
 	@EnableAutoConfiguration
 	@Configuration
 	public static class TestConfiguration {
@@ -140,6 +152,19 @@ class ScenarioTests {
 			return v -> {
 				return (O) ("hello_" + new String((byte[]) v));
 			};
+		}
+	}
+
+	@EnableAutoConfiguration
+	@Configuration
+	public static class MultipleJsonConverterConfiguration {
+		@Bean
+		public ObjectMapper cborObjectMapper() {
+			return new CBORMapper();
+		}
+		@Bean
+		public ObjectMapper objectMapper() {
+			return new ObjectMapper();
 		}
 	}
 

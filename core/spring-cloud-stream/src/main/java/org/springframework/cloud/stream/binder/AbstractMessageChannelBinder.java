@@ -23,6 +23,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 import org.apache.commons.logging.Log;
+import org.springframework.cloud.function.json.JacksonMapper;
 import tools.jackson.core.JacksonException;
 import tools.jackson.core.JsonGenerator;
 import tools.jackson.databind.ObjectMapper;
@@ -141,12 +142,19 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 
 	@Override
 	protected void onInit() throws Exception {
-		if (!CollectionUtils.isEmpty(this.getApplicationContext().getBeansOfType(ObjectMapper.class))) {
-			this.objectMapper = this.getApplicationContext().getBean(ObjectMapper.class);
+		if (!CollectionUtils.isEmpty(this.getApplicationContext().getBeansOfType(JacksonMapper.class))) {
+			JacksonMapper jacksonMapper = this.getApplicationContext().getBean(JacksonMapper.class);
+			this.objectMapper = jacksonMapper.getObjectMapper();
 		}
 		else {
 			this.objectMapper = new ObjectMapper();
 		}
+//		if (!CollectionUtils.isEmpty(this.getApplicationContext().getBeansOfType(ObjectMapper.class))) {
+//			this.objectMapper = this.getApplicationContext().getBean(ObjectMapper.class);
+//		}
+//		else {
+//
+//		}
 		SimpleModule module = new SimpleModule();
 		module.addSerializer(Expression.class, new ExpressionSerializer(Expression.class));
 		this.objectMapper = this.objectMapper.rebuild().build();

@@ -50,7 +50,7 @@ class MessageConverterConfigurerTests {
 		bindingProps.setContentType("application/json");
 		props.setBindings(Collections.singletonMap("foo", bindingProps));
 		CompositeMessageConverterFactory converterFactory = new CompositeMessageConverterFactory(
-				Collections.<MessageConverter>emptyList(), null, null);
+				Collections.<MessageConverter>emptyList(), null);
 		MessageConverterConfigurer configurer = new MessageConverterConfigurer(props,
 				converterFactory.getMessageConverterForAllRegistered());
 		QueueChannel out = new QueueChannel();
@@ -82,7 +82,7 @@ class MessageConverterConfigurerTests {
 
 		};
 		CompositeMessageConverterFactory converterFactory = new CompositeMessageConverterFactory(
-				Collections.<MessageConverter>singletonList(converter), null, null);
+				Collections.<MessageConverter>singletonList(converter), null);
 		MessageConverterConfigurer configurer = new MessageConverterConfigurer(props,
 				converterFactory.getMessageConverterForAllRegistered());
 		QueueChannel out = new QueueChannel();

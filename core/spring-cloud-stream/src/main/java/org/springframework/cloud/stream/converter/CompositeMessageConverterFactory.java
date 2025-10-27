@@ -54,25 +54,22 @@ public class CompositeMessageConverterFactory {
 
 	private final Log log = LogFactory.getLog(CompositeMessageConverterFactory.class);
 
-	private final ObjectMapper objectMapper;
+	//private final ObjectMapper objectMapper;
 
 	private final List<MessageConverter> converters;
 
 	private final JsonMapper jsonMapper;
 
 	public CompositeMessageConverterFactory() {
-		this(Collections.<MessageConverter>emptyList(), new ObjectMapper(), null);
+		this(Collections.<MessageConverter>emptyList(), null);
 	}
 
 	/**
 	 * @param customConverters a list of {@link AbstractMessageConverter}
-	 * @param objectMapper object mapper for for serialization / deserialization
 	 */
 	public CompositeMessageConverterFactory(
-			List<? extends MessageConverter> customConverters,
-			ObjectMapper objectMapper, JsonMapper jsonMapper) {
-		this.objectMapper = objectMapper == null ? new ObjectMapper() : objectMapper;
-		this.jsonMapper = jsonMapper == null ? new JacksonMapper(this.objectMapper) : jsonMapper;
+			List<? extends MessageConverter> customConverters, JsonMapper jsonMapper) {
+		this.jsonMapper = jsonMapper == null ? new JacksonMapper(new ObjectMapper()) : jsonMapper;
 		if (!CollectionUtils.isEmpty(customConverters)) {
 			this.converters = new ArrayList<>(customConverters);
 		}

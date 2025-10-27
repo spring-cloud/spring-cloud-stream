@@ -51,7 +51,7 @@ class ContentTypeConfiguration {
 				.filter(c -> isConverterEligible(c)).collect(Collectors.toList());
 
 		CompositeMessageConverterFactory factory =
-				new CompositeMessageConverterFactory(customMessageConverters, objectMapperObjectProvider.getIfAvailable(ObjectMapper::new), jsonMapper);
+				new CompositeMessageConverterFactory(customMessageConverters, jsonMapper);
 
 		return factory.getMessageConverterForAllRegistered();
 	}
