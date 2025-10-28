@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.bus.event;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
@@ -37,6 +38,7 @@ public class AckRemoteApplicationEvent extends RemoteApplicationEvent {
 	private Class<? extends RemoteApplicationEvent> event;
 
 	@SuppressWarnings("unused")
+	@JsonCreator
 	private AckRemoteApplicationEvent() {
 		super();
 		this.ackDestinationService = null;

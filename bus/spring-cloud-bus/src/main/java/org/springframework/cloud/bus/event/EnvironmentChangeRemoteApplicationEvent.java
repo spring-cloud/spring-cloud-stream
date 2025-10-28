@@ -27,7 +27,8 @@ import org.springframework.util.Assert;
 @SuppressWarnings("serial")
 public class EnvironmentChangeRemoteApplicationEvent extends RemoteApplicationEvent {
 
-	private final Map<String, String> values;
+	// Do not make this final or Jackson 3 cannot set it when serializing the object
+	private Map<String, String> values;
 
 	@SuppressWarnings("unused")
 	private EnvironmentChangeRemoteApplicationEvent() {

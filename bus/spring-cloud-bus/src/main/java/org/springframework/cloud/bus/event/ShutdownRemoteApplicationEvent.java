@@ -16,6 +16,8 @@
 
 package org.springframework.cloud.bus.event;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+
 /**
  * Event which indicates the application should be shutdown.
  *
@@ -24,6 +26,7 @@ package org.springframework.cloud.bus.event;
 public class ShutdownRemoteApplicationEvent extends RemoteApplicationEvent {
 
 	@SuppressWarnings("unused")
+	@JsonCreator
 	private ShutdownRemoteApplicationEvent() {
 		// for serializers
 	}

@@ -69,7 +69,7 @@ public class BusJacksonAutoConfiguration {
 	// otherwise RemoteApplicationEventRegistrar will register the bean
 	@Bean
 	@ConditionalOnMissingBean(name = "busJsonConverter")
-	public AbstractMessageConverter busJsonConverter(@Autowired(required = false) ObjectMapper objectMapper) {
+	public AbstractMessageConverter busJsonConverter(@Autowired(required = false) JsonMapper objectMapper) {
 		return new BusJacksonMessageConverter(objectMapper);
 	}
 
@@ -78,8 +78,8 @@ public class BusJacksonAutoConfiguration {
 	protected static class CborConfiguration {
 
 		@Bean
-		public AbstractMessageConverter busCborConverter() {
-			return new BusJacksonMessageConverter(new MimeType("application", "cbor"), CBORMapper.builder().build());
+		public AbstractMessageConverter busCborConverter(CBORMapper objectMapper) {
+			return new BusJacksonMessageConverter(new MimeType("application", "cbor"), objectMapper);
 		}
 
 	}
