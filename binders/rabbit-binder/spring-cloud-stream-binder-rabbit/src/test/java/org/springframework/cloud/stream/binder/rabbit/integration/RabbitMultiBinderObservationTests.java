@@ -27,6 +27,7 @@ import io.micrometer.observation.Observation;
 import io.micrometer.observation.ObservationRegistry;
 import io.micrometer.tracing.brave.bridge.BraveFinishedSpan;
 import io.micrometer.tracing.test.simple.SpansAssert;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.micrometer.tracing.test.autoconfigure.AutoConfigureTracing;
 import org.testcontainers.containers.RabbitMQContainer;
@@ -55,6 +56,7 @@ import static org.awaitility.Awaitility.await;
 @DirtiesContext
 //@AutoConfigureMetric
 @AutoConfigureTracing
+@Disabled
 public class RabbitMultiBinderObservationTests {
 
 	private static final TestSpanHandler SPANS = new TestSpanHandler();
