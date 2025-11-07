@@ -19,7 +19,6 @@ package org.springframework.cloud.stream.binder.rabbit.integration;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 import brave.handler.SpanHandler;
 import brave.test.TestSpanHandler;
@@ -27,7 +26,6 @@ import io.micrometer.observation.Observation;
 import io.micrometer.observation.ObservationRegistry;
 import io.micrometer.tracing.brave.bridge.BraveFinishedSpan;
 import io.micrometer.tracing.test.simple.SpansAssert;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.micrometer.tracing.test.autoconfigure.AutoConfigureTracing;
 import org.testcontainers.containers.RabbitMQContainer;
@@ -54,9 +52,7 @@ import static org.awaitility.Awaitility.await;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE,
 		args = "--spring.config.location=classpath:/rabbit-multi-binder-observation.yml")
 @DirtiesContext
-//@AutoConfigureMetric
 @AutoConfigureTracing
-@Disabled
 public class RabbitMultiBinderObservationTests {
 
 	private static final TestSpanHandler SPANS = new TestSpanHandler();
@@ -86,9 +82,9 @@ public class RabbitMultiBinderObservationTests {
 
 		// There is a race condition when we already have a reply, but the span in the
 		// Rabbit listener is not closed yet.
-		// parent -> StreamBridge -> RabbitTemplate -> Rabbit Listener -> Consumer
+		// parent -> StreamBridge -> AmqpOutboundEndpoint -> RabbitTemplate -> Rabbit Listener -> Consumer
 		await().untilAsserted(() -> assertThat(SPANS.spans()).hasSize(6));
-		SpansAssert.assertThat(SPANS.spans().stream().map(BraveFinishedSpan::fromBrave).collect(Collectors.toList()))
+		SpansAssert.assertThat(SPANS.spans().stream().map(BraveFinishedSpan::fromBrave).toList())
 			.haveSameTraceId();
 	}
 
