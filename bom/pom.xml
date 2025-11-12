@@ -7,12 +7,12 @@
 	<packaging>pom</packaging>
 	<name>spring-cloud-stream-release-build</name>
 	<description>Spring Cloud Stream Release Build</description>
-	<version>5.0.0-SNAPSHOT</version>
+	<version>5.0.0-RC1</version>
 	<url>https://github.com/spring-cloud/spring-cloud-stream</url>
 	<parent>
 		<groupId>org.springframework.cloud</groupId>
 		<artifactId>spring-cloud-build</artifactId>
-		<version>5.0.0-SNAPSHOT</version>
+		<version>5.0.0-RC1</version>
 		<relativePath/>
 	</parent>
 
