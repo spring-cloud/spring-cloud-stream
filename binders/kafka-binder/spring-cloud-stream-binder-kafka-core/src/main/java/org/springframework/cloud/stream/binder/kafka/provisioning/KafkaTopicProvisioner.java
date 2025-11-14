@@ -214,7 +214,7 @@ public class KafkaTopicProvisioner implements
 	public void afterPropertiesSet() {
 		if (this.metadataRetryOperations == null) {
 			RetryPolicy retryPolicy = RetryPolicy.builder()
-				.maxAttempts(10)
+				.maxRetries(10)
 				.delay(Duration.ofMillis(100))
 				.multiplier(2)
 				.maxDelay(Duration.ofSeconds(1))

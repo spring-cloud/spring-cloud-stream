@@ -85,7 +85,7 @@ class KafkaTransactionTests {
 		KafkaTopicProvisioner provisioningProvider = new KafkaTopicProvisioner(
 				configurationProperties, kafkaProperties, prop -> {
 		});
-		RetryPolicy retryPolicy = RetryPolicy.builder().maxAttempts(2).delay(Duration.ZERO).build();
+		RetryPolicy retryPolicy = RetryPolicy.builder().maxRetries(2).delay(Duration.ZERO).build();
 		provisioningProvider.setMetadataRetryOperations(new RetryTemplate(retryPolicy));
 		final Producer mockProducer = mock(Producer.class);
 		given(mockProducer.send(any(), any())).willReturn(new CompletableFuture<>());

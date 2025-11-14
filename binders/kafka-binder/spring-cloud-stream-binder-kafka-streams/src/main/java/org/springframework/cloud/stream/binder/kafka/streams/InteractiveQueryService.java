@@ -255,7 +255,7 @@ public class InteractiveQueryService {
 
 		var stateStoreRetry = this.binderConfigurationProperties.getStateStoreRetry();
 		RetryPolicy retryPolicy = RetryPolicy.builder()
-			.maxAttempts(stateStoreRetry.getMaxAttempts())
+			.maxRetries(stateStoreRetry.getMaxAttempts())
 			.delay(Duration.ofMillis(stateStoreRetry.getBackoffPeriod()))
 			.build();
 

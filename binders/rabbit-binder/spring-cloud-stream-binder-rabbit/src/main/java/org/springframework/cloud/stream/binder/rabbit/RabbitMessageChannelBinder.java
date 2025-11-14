@@ -1052,7 +1052,7 @@ public class RabbitMessageChannelBinder extends
 				&& rabbitProperties.getTemplate().getRetry().isEnabled()) {
 			Retry retry = rabbitProperties.getTemplate().getRetry();
 			RetryPolicy retryPolicy = RetryPolicy.builder()
-				.maxAttempts(retry.getMaxAttempts())
+				.maxRetries(retry.getMaxRetries())
 				.delay(retry.getInitialInterval())
 				.multiplier(retry.getMultiplier())
 				.maxDelay(retry.getMaxInterval())

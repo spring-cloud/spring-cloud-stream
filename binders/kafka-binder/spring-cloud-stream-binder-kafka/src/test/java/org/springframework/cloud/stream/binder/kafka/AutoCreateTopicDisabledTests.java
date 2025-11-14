@@ -104,7 +104,7 @@ class AutoCreateTopicDisabledTests {
 		KafkaTopicProvisioner provisioningProvider = new KafkaTopicProvisioner(
 				configurationProperties, kafkaProperties, prop -> {
 		});
-		RetryPolicy retryPolicy = RetryPolicy.builder().maxAttempts(1).delay(Duration.ZERO).build();
+		RetryPolicy retryPolicy = RetryPolicy.builder().maxRetries(1).delay(Duration.ZERO).build();
 		provisioningProvider.setMetadataRetryOperations(new RetryTemplate(retryPolicy));
 
 		KafkaMessageChannelBinder binder = new KafkaMessageChannelBinder(

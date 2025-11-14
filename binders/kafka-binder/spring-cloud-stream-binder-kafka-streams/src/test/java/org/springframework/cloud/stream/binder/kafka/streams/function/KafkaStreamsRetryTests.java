@@ -190,7 +190,7 @@ class KafkaStreamsRetryTests {
 		@Bean
 		@StreamRetryTemplate
 		RetryTemplate fooRetryTemplate() {
-			return new RetryTemplate(RetryPolicy.builder().maxAttempts(4).delay(Duration.ofMillis(1)).build());
+			return new RetryTemplate(RetryPolicy.builder().maxRetries(4).delay(Duration.ofMillis(1)).build());
 		}
 
 		@Bean
