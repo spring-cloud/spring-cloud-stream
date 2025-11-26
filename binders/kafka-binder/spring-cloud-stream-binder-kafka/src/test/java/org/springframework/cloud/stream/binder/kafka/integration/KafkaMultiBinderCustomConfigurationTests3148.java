@@ -78,26 +78,28 @@ public class KafkaMultiBinderCustomConfigurationTests3148 {
 			Map<String, Map.Entry<Binder<?, ?, ?>, ConfigurableApplicationContext>> binderInstanceCache =
 				(Map<String, Map.Entry<Binder<?, ?, ?>, ConfigurableApplicationContext>>) binderInstanceCacheField.get(this.binderFactory);
 			return binderInstanceCache.get(binderName).getValue();
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			fail();
 		}
 		return null;
 	}
 	@Configuration
 	@EnableAutoConfiguration
-	@PropertySource(value= "classpath:test3148.yml", factory = KafkaMultiBinderCustomConfigurationTests3148.YamlPropertySourceFactory.class)
+	@PropertySource(value = "classpath:test3148.yml", factory = KafkaMultiBinderCustomConfigurationTests3148.YamlPropertySourceFactory.class)
 	public static class SampleApplication {
 
 		@Bean
 		public Consumer<String> testConsumer() {
-			return consumer -> {};
+			return consumer -> {
+
+			};
 		}
 
 		@Bean
 		public KafkaBindingRebalanceListener rebalanceListener() {
 			return new KafkaBindingRebalanceListener() {
-				public void onPartitionsAssigned(String bindingName, org.apache.kafka.clients.consumer.Consumer<?, ?> consumer,
-												 Collection<TopicPartition> partitions, boolean initial) {
+				public void onPartitionsAssigned(String bindingName, org.apache.kafka.clients.consumer.Consumer<?, ?> consumer, Collection<TopicPartition> partitions, boolean initial) {
 					// do nothing
 				}
 			};
