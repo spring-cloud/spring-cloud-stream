@@ -215,8 +215,11 @@ public class ProducerProperties {
 		this.dynamicPartitionUpdatesEnabled = enabled;
 	}
 
-	static class ExpressionSerializer extends StdSerializer<Expression> {
-		protected ExpressionSerializer(Class<Expression> t) {
+	public static class ExpressionSerializer extends StdSerializer<Expression> {
+		public ExpressionSerializer() {
+			super(Expression.class);
+		}
+		public ExpressionSerializer(Class<Expression> t) {
 			super(t);
 		}
 		@Override

@@ -25,6 +25,7 @@ import java.util.stream.Stream;
 
 import tools.jackson.databind.JacksonModule;
 import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.BeansException;
@@ -37,7 +38,7 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.CollectionUtils;
-import tools.jackson.databind.json.JsonMapper;
+
 
 /**
  *
