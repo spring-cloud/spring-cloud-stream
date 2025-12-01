@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -44,6 +45,7 @@ import org.springframework.core.convert.converter.Converter;
 import org.springframework.core.convert.support.GenericConversionService;
 import org.springframework.integration.support.utils.IntegrationUtils;
 import org.springframework.util.Assert;
+import org.springframework.util.LinkedCaseInsensitiveMap;
 
 /**
  * @author Dave Syer
@@ -106,7 +108,7 @@ public class BindingServiceProperties
 	 * For example; This sets the content-type for the 'input' binding of a Sink
 	 * application: 'spring.cloud.stream.bindings.input.contentType=text/plain'
 	 */
-	private Map<String, BindingProperties> bindings = new ConcurrentHashMap<>();
+	private Map<String, BindingProperties> bindings = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 
 	/**
 	 * Additional per-binder properties (see {@link BinderProperties}) if more then one
