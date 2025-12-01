@@ -27,6 +27,7 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.stream.binder.test.OutputDestination;
 import org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration;
+import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -49,6 +50,9 @@ class ExplicitBindingTests {
 			assertThat(context.getBean("barin", MessageChannel.class)).isNotNull();
 			assertThat(context.getBean("fooout", MessageChannel.class)).isNotNull();
 			assertThat(context.getBean("barout", MessageChannel.class)).isNotNull();
+
+			BindingServiceProperties bindingServiceProperties = context.getBean(BindingServiceProperties.class);
+			assertThat(bindingServiceProperties.getBindings().get("barOut")).isNotNull();
 		}
 	}
 
