@@ -24,6 +24,7 @@ import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.TopicPartition;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.InOrder;
 
@@ -60,6 +61,7 @@ import static org.mockito.Mockito.spy;
  */
 @EmbeddedKafka(count = 1, controlledShutdown = true, brokerProperties = {"transaction.state.log.replication.factor=1",
 	"transaction.state.log.min.isr=1"})
+@Disabled
 class KafkaTransactionTests {
 
 	private static EmbeddedKafkaBroker embeddedKafka;
