@@ -9,11 +9,11 @@
 	<name>spring-cloud-stream-release-build</name>
 	<description>Spring Cloud Stream Release Build</description>
 	<url>https://github.com/spring-cloud/spring-cloud-stream</url>
-	<version>4.2.3</version>
+	<version>4.2.3-SNAPSHOT</version>
 	<parent>
 		<groupId>org.springframework.cloud</groupId>
 		<artifactId>spring-cloud-build</artifactId>
-		<version>4.2.4</version>
+		<version>4.2.3-SNAPSHOT</version>
 		<relativePath/>
 	</parent>
 
