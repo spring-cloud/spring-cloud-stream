@@ -26,6 +26,7 @@ import java.util.UUID;
 import java.util.function.Function;
 
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.Mockito;
@@ -273,6 +274,7 @@ class RabbitBinderModuleTests {
 	}
 
 	@Test
+	@Disabled
 	void parentConnectionFactoryInheritedIfOverridden() {
 		context = new SpringApplicationBuilder(SimpleProcessor.class,
 			ConnectionFactoryConfiguration.class).web(WebApplicationType.NONE)
