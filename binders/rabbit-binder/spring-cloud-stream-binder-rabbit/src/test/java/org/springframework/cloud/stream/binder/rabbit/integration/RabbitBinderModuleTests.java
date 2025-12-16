@@ -26,7 +26,6 @@ import java.util.UUID;
 import java.util.function.Function;
 
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.Mockito;
@@ -272,7 +271,6 @@ class RabbitBinderModuleTests {
 //			.isEqualTo("setByCustomizer:someGroup");
 	}
 
-	@Disabled
 	@Test
 	void parentConnectionFactoryInheritedIfOverridden() {
 		context = new SpringApplicationBuilder(SimpleProcessor.class,
