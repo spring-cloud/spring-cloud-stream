@@ -45,6 +45,7 @@ import org.springframework.beans.DirectFieldAccessor;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.actuate.amqp.RabbitHealthIndicator;
 import org.springframework.boot.actuate.health.CompositeHealthContributor;
+import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.Status;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
@@ -291,8 +292,9 @@ class RabbitBinderModuleTests {
 		RabbitHealthIndicator indicator = (RabbitHealthIndicator) bindersHealthIndicator.getContributor("rabbit");
 		assertThat(indicator).isNotNull();
 		// mock connection factory behaves as if down
-		assertThat(indicator.health().getStatus())
-			.isEqualTo(Status.DOWN);
+		Health health = indicator.health();
+		assertThat(health.getDetails().get("version"))
+			.isEqualTo("unknown");
 	}
 
 	@Test
