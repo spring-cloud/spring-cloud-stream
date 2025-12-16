@@ -8,12 +8,12 @@
 	<packaging>pom</packaging>
 	<name>spring-cloud-stream-release-build</name>
 	<description>Spring Cloud Stream Release Build</description>
-	<version>4.3.1</version>
+	<version>4.3.1-SNAPSHOT</version>
 	<url>https://github.com/spring-cloud/spring-cloud-stream</url>
 	<parent>
 		<groupId>org.springframework.cloud</groupId>
 		<artifactId>spring-cloud-build</artifactId>
-		<version>4.3.2</version>
+		<version>4.3.2-SNAPSHOT</version>
 		<relativePath/>
 	</parent>
 
