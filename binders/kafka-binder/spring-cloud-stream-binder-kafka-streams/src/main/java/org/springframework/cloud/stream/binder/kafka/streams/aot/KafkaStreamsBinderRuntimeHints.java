@@ -77,7 +77,8 @@ public class KafkaStreamsBinderRuntimeHints implements RuntimeHintsRegistrar {
 				org.apache.kafka.streams.errors.LogAndFailExceptionHandler.class,
 				org.apache.kafka.streams.processor.FailOnInvalidTimestamp.class,
 				org.apache.kafka.streams.processor.internals.DefaultKafkaClientSupplier.class,
-				org.apache.kafka.streams.processor.internals.StreamsPartitionAssignor.class)
+				org.apache.kafka.streams.processor.internals.StreamsPartitionAssignor.class,
+				org.apache.kafka.streams.processor.internals.NoOpProcessorWrapper.class)
 			.forEach(type -> reflectionHints.registerType(type,
 				builder -> builder.withMembers(MemberCategory.INVOKE_DECLARED_METHODS)));
 
