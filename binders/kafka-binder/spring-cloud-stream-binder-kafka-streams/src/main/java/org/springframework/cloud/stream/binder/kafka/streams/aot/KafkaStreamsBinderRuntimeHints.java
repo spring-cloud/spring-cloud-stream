@@ -80,7 +80,7 @@ public class KafkaStreamsBinderRuntimeHints implements RuntimeHintsRegistrar {
 				org.apache.kafka.streams.processor.internals.StreamsPartitionAssignor.class,
 				org.apache.kafka.streams.processor.internals.NoOpProcessorWrapper.class)
 			.forEach(type -> reflectionHints.registerType(type,
-				builder -> builder.withMembers(MemberCategory.INVOKE_DECLARED_METHODS)));
+				builder -> builder.withMembers(MemberCategory.INVOKE_DECLARED_METHODS, MemberCategory.INVOKE_DECLARED_CONSTRUCTORS)));
 
 		reflectionHints.registerType(TypeReference.of("org.apache.kafka.streams.processor.internals.StateDirectory$StateDirectoryProcessFile"),
 			MemberCategory.INVOKE_DECLARED_METHODS, MemberCategory.DECLARED_FIELDS, MemberCategory.INVOKE_DECLARED_CONSTRUCTORS, MemberCategory.INVOKE_PUBLIC_CONSTRUCTORS);
