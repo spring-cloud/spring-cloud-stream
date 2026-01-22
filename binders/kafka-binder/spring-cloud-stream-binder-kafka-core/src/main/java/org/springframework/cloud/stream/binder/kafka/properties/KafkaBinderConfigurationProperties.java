@@ -110,7 +110,7 @@ public class KafkaBinderConfigurationProperties {
 
 	private boolean considerDownWhenAnyPartitionHasNoLeader = true;
 
-	private String requiredAcks = "1";
+	private String requiredAcks = "all";
 
 	private short replicationFactor = -1;
 
