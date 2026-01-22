@@ -43,7 +43,7 @@ spring.cloud.stream.kafka.binder.requiredAcks::
 The number of required acks on the broker.
 See the Kafka documentation for the producer `acks` property.
 +
-Default: `1`.
+Default: `all`.
 spring.cloud.stream.kafka.binder.minPartitionCount::
 Effective only if `autoCreateTopics` or `autoAddPartitions` is set.
 The global minimum number of partitions that the binder configures on topics on which it produces or consumes data.
