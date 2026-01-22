@@ -39,6 +39,16 @@ class KafkaBinderConfigurationPropertiesTest {
 
 	@Test
 	@SuppressWarnings("unchecked")
+	void defaultRequiredAcksIsAll() {
+		KafkaProperties kafkaProperties = new KafkaProperties();
+		KafkaBinderConfigurationProperties kafkaBinderConfigurationProperties =
+				new KafkaBinderConfigurationProperties(kafkaProperties, mock(ObjectProvider.class));
+
+		assertThat(kafkaBinderConfigurationProperties.getRequiredAcks()).isEqualTo("all");
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
 	void mergedConsumerConfigurationFiltersGroupIdFromKafkaProperties() {
 		KafkaProperties kafkaProperties = new KafkaProperties();
 		kafkaProperties.getConsumer().setGroupId("group1");
