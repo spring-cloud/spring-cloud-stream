@@ -6,11 +6,11 @@
 	<parent>
 		<artifactId>spring-cloud-dependencies-parent</artifactId>
 		<groupId>org.springframework.cloud</groupId>
-		<version>5.0.1-SNAPSHOT</version>
+		<version>5.0.1</version>
 		<relativePath/>
 	</parent>
 	<artifactId>spring-cloud-stream-dependencies</artifactId>
-	<version>5.0.1-SNAPSHOT</version>
+	<version>5.0.1</version>
 	<packaging>pom</packaging>
 	<name>spring-cloud-stream-dependencies</name>
 	<description>Spring Cloud Stream Dependencies</description>
