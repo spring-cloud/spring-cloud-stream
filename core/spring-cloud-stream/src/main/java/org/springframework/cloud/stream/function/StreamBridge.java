@@ -369,8 +369,28 @@ public final class StreamBridge implements StreamOperations, SmartInitializingSi
 	public void onApplicationEvent(ApplicationEvent event) {
 		// we need to do it by String to avoid cloud-bus and context dependencies
 		if (event.getClass().getName().equals("org.springframework.cloud.bus.event.RefreshRemoteApplicationEvent")) {
+			closeChannelsGracefully();
 			this.channelCache.clear();
 		}
+	}
+
+	private void closeChannelsGracefully() {
+		this.channelCache.values().forEach(channel -> {
+			try {
+				// First try to unbind producers (existing cleanup logic)
+				if (channel instanceof AbstractMessageChannel) {
+					String channelName = ((AbstractMessageChannel) channel).getComponentName();
+					if (channelName != null) {
+						this.bindingService.unbindProducers(channelName);
+					}
+				}
+			} catch (Exception e) {
+				// Log but don't throw to ensure all channels get cleaned up
+				if (logger.isDebugEnabled()) {
+					logger.debug("Error while unbinding channel: " + channel, e);
+				}
+			}
+		});
 	}
 
 	private static final class ContextPropagationHelper {
