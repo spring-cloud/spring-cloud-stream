@@ -18,6 +18,7 @@ package org.springframework.cloud.stream.binding;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -31,10 +32,15 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.DirectFieldAccessor;
 import org.springframework.cloud.stream.binder.Binding;
+import org.springframework.cloud.stream.binder.DefaultBinderFactory;
+import org.springframework.cloud.stream.binder.ExtendedPropertiesBinder;
+import org.springframework.cloud.stream.config.BindingProperties;
+import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.cloud.stream.function.BindableFunctionProxyFactory;
 import org.springframework.cloud.stream.function.StreamFunctionProperties;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
+import org.springframework.messaging.MessageChannel;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.CollectionUtils;
@@ -84,6 +90,57 @@ public class BindingsLifecycleController implements ApplicationContextAware {
 		}
 		finally {
 			this.objectMapper = builder.build();
+		}
+	}
+	
+	/**
+	 * Allows to dynamically create a new input binding returning its consumer properties for further customization.
+	 * Unlike {@link #defineBinding(BindableFunctionProxyFactory)} this method will not initialize the binding. 
+	 * You have to call {@link #defineBinding(BindableFunctionProxyFactory)} explicitly after you create a binding.
+	 * @param <P> the type of consumer properties. For example, if binding derives from Kafka, it will return KafkaConsumerProperties.
+	 * @param bindingName the name of the binding.
+	 * @param binderName the name of the binder.
+	 * @param bindingProperties instance of BindingProperties.
+	 * @return instance of the consumer properties.
+	 */
+	@SuppressWarnings("unchecked")
+	public <P> P createInputBinding(String bindingName, String binderName, BindingProperties bindingProperties) {
+		Assert.hasText(bindingProperties.getGroup(), "Anonymous bindings are not allowed for explicit creation. You must define 'group'");
+		DefaultBinderFactory binderFactory = this.applicationContext.getBean(DefaultBinderFactory.class);
+		Object binder = binderFactory.getBinder(binderName, MessageChannel.class);
+		BindingServiceProperties bindingServiceProperties = this.applicationContext.getBean(BindingServiceProperties.class);
+		bindingServiceProperties.setBindings(Collections.singletonMap(bindingName, bindingProperties));
+		if (binder instanceof ExtendedPropertiesBinder extendedPropertiesBinder) {
+			Object extensionPropertries = extendedPropertiesBinder.getExtendedConsumerProperties(bindingName);
+			return (P) extensionPropertries;
+		}
+		else {
+			throw new IllegalStateException("Binder must be an instance of ExtendedPropertiesBinder");
+		}
+	}
+	
+	/**
+	 * Allows to dynamically create a new input binding returning its consumer properties for further customization.
+	 * Unlike {@link #defineBinding(BindableFunctionProxyFactory)} this method will not initialize the binding. 
+	 * You have to call {@link #defineBinding(BindableFunctionProxyFactory)} explicitly after you create a binding.
+	 * @param <P> the type of consumer properties. For example, if binding derives from Kafka, it will return KafkaConsumerProperties.
+	 * @param bindingName the name of the binding.
+	 * @param binderName the name of the binder.
+	 * @param bindingProperties instance of BindingProperties.
+	 * @return instance of the consumer properties.
+	 */
+	@SuppressWarnings("unchecked")
+	public <P> P createOutputBinding(String bindingName, String binderName, BindingProperties bindingProperties) {
+		DefaultBinderFactory binderFactory = this.applicationContext.getBean(DefaultBinderFactory.class);
+		Object binder = binderFactory.getBinder(binderName, MessageChannel.class);
+		BindingServiceProperties bindingServiceProperties = this.applicationContext.getBean(BindingServiceProperties.class);
+		bindingServiceProperties.setBindings(Collections.singletonMap(bindingName, bindingProperties));
+		if (binder instanceof ExtendedPropertiesBinder extendedPropertiesBinder) {
+			Object extensionPropertries = extendedPropertiesBinder.getExtendedProducerProperties(bindingName);
+			return (P) extensionPropertries;
+		}
+		else {
+			throw new IllegalStateException("Binder must be an instance of ExtendedPropertiesBinder");
 		}
 	}
 
