@@ -278,18 +278,10 @@ public class BindingsLifecycleController implements ApplicationContextAware {
 		bindingProxyFactory.setApplicationContext(this.applicationContext);
 		bindingProxyFactory.afterPropertiesSet();
 
-		BindingService bindingService = this.applicationContext.getBean(BindingService.class);
-
-		AbstractBindingLifecycle bindingLifecycle;
-		if (bindingProxyFactory.getInputs().size() > 0) {
-			bindingProxyFactory.createAndBindInputs(bindingService);
-			bindingLifecycle = this.applicationContext.getBean(InputBindingLifecycle.class);
-		}
-		else {
-			bindingProxyFactory.createAndBindOutputs(bindingService);
-			bindingLifecycle = this.applicationContext.getBean(OutputBindingLifecycle.class);
-		}
-
+		AbstractBindingLifecycle bindingLifecycle = (bindingProxyFactory.getInputs().size() > 0) 
+				? this.applicationContext.getBean(InputBindingLifecycle.class)
+						: this.applicationContext.getBean(OutputBindingLifecycle.class);
+		
 		bindingLifecycle.startBindable(bindingProxyFactory);
 	}
 
