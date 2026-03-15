@@ -43,7 +43,7 @@ public final class BinderHeaders {
 	/**
 	 * Name of the Message header identifying structure for batch Message headers.
 	 */
-	public static String BATCH_HEADERS = PREFIX + "batchHeaders";
+	public static final String BATCH_HEADERS = PREFIX + "batchHeaders";
 
 	/**
 	 * Indicates the name of the target destination the binder should use if they
