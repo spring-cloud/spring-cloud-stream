@@ -209,7 +209,7 @@ public abstract class AbstractBinder<T, C extends ConsumerProperties, P extends 
 			}
 			RetryPolicy retryPolicy =
 				RetryPolicy.builder()
-					.maxRetries(properties.getMaxAttempts())
+					.maxRetries(Math.max(0, properties.getMaxAttempts() - 1))
 					.delay(Duration.ofMillis(properties.getBackOffInitialInterval()))
 					.multiplier(properties.getBackOffMultiplier())
 					.maxDelay(Duration.ofMillis(properties.getBackOffMaxInterval()))
