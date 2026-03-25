@@ -3,8 +3,6 @@
 
 name: Build
 on:
-    push:
-        branches: [ main, 4.1.x, 4.0.x, 3.1.x ]
     pull_request:
         branches: [ main, 4.1.x, 4.0.x, 3.1.x ]
 jobs:
