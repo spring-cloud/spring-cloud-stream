@@ -1309,8 +1309,7 @@ class KafkaBinderTests extends
 			boolean shouldHaveRetried = withRetry && !useConfiguredRetryableException;
 			assertThat(handler.getInvocationCount())
 					.isEqualTo(
-							shouldHaveRetried ? consumerProperties.getMaxAttempts() + 1 : 1);
-
+							shouldHaveRetried ? consumerProperties.getMaxAttempts() : 1);
 			assertThat(receivedMessage.getHeaders()
 					.get(KafkaMessageChannelBinder.X_ORIGINAL_TOPIC))
 							.isEqualTo(producerName.getBytes(StandardCharsets.UTF_8));
@@ -1422,7 +1421,7 @@ class KafkaBinderTests extends
 				new String((byte[]) handledMessage.getPayload(), StandardCharsets.UTF_8))
 						.isEqualTo(testMessagePayload);
 		assertThat(handler.getInvocationCount())
-				.isEqualTo(consumerProperties.getMaxAttempts() + 1);
+				.isEqualTo(consumerProperties.getMaxAttempts());
 		binderBindUnbindLatency();
 		dlqConsumerBinding.unbind();
 		consumerBinding.unbind();
@@ -1484,7 +1483,7 @@ class KafkaBinderTests extends
 		// Since we don't have a DLQ, assert that we are invoking the handler exactly the same number of times
 		// as set in consumerProperties.maxAttempt and not the default set by Spring Kafka (10 times).
 		assertThat(handler.getInvocationCount())
-				.isEqualTo(consumerProperties.getMaxAttempts() + 1);
+				.isEqualTo(consumerProperties.getMaxAttempts());
 		binderBindUnbindLatency();
 		consumerBinding.unbind();
 		producerBinding.unbind();
@@ -1609,7 +1608,7 @@ class KafkaBinderTests extends
 				new String((byte[]) handledMessage.getPayload(), StandardCharsets.UTF_8))
 				.isEqualTo(testMessagePayload);
 		assertThat(handler.getInvocationCount())
-				.isEqualTo(consumerProperties.getMaxAttempts() + 1);
+				.isEqualTo(consumerProperties.getMaxAttempts());
 		binderBindUnbindLatency();
 		dlqConsumerBinding.unbind();
 		consumerBinding.unbind();
@@ -1689,7 +1688,7 @@ class KafkaBinderTests extends
 				new String((byte[]) handledMessage.getPayload(), StandardCharsets.UTF_8))
 						.isEqualTo(testMessagePayload);
 		assertThat(handler.getInvocationCount())
-				.isEqualTo(consumerProperties.getMaxAttempts() + 1);
+				.isEqualTo(consumerProperties.getMaxAttempts());
 		binderBindUnbindLatency();
 		dlqConsumerBinding.unbind();
 		consumerBinding.unbind();
