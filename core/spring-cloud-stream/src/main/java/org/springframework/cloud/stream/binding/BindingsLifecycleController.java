@@ -95,24 +95,20 @@ public class BindingsLifecycleController implements ApplicationContextAware {
 	
 	/**
 	 * Allows to dynamically create a new input binding returning its consumer properties for further customization.
-	 * Unlike {@link #defineBinding(BindableFunctionProxyFactory)} this method will not initialize the binding. 
-	 * You have to call {@link #defineBinding(BindableFunctionProxyFactory)} explicitly after you create a binding.
 	 * @param <P> the type of consumer properties. For example, if binding derives from Kafka, it will return KafkaConsumerProperties.
 	 * @param bindingName the name of the binding.
 	 * @param binderName the name of the binder.
 	 * @param bindingProperties instance of BindingProperties.
 	 * @return instance of the consumer properties.
 	 */
-	@SuppressWarnings("unchecked")
 	public <P> P createInputBinding(String bindingName, String binderName, BindingProperties bindingProperties) {
 		Assert.hasText(bindingProperties.getGroup(), "Anonymous bindings are not allowed for explicit creation. You must define 'group'");
 		DefaultBinderFactory binderFactory = this.applicationContext.getBean(DefaultBinderFactory.class);
 		Object binder = binderFactory.getBinder(binderName, MessageChannel.class);
 		BindingServiceProperties bindingServiceProperties = this.applicationContext.getBean(BindingServiceProperties.class);
 		bindingServiceProperties.setBindings(Collections.singletonMap(bindingName, bindingProperties));
-		if (binder instanceof ExtendedPropertiesBinder extendedPropertiesBinder) {
-			Object extensionPropertries = extendedPropertiesBinder.getExtendedConsumerProperties(bindingName);
-			return (P) extensionPropertries;
+		if (binder instanceof ExtendedPropertiesBinder) {
+			return this.defineInputBinding(bindingName);
 		}
 		else {
 			throw new IllegalStateException("Binder must be an instance of ExtendedPropertiesBinder");
@@ -121,23 +117,19 @@ public class BindingsLifecycleController implements ApplicationContextAware {
 	
 	/**
 	 * Allows to dynamically create a new input binding returning its consumer properties for further customization.
-	 * Unlike {@link #defineBinding(BindableFunctionProxyFactory)} this method will not initialize the binding. 
-	 * You have to call {@link #defineBinding(BindableFunctionProxyFactory)} explicitly after you create a binding.
 	 * @param <P> the type of consumer properties. For example, if binding derives from Kafka, it will return KafkaConsumerProperties.
 	 * @param bindingName the name of the binding.
 	 * @param binderName the name of the binder.
 	 * @param bindingProperties instance of BindingProperties.
 	 * @return instance of the consumer properties.
 	 */
-	@SuppressWarnings("unchecked")
 	public <P> P createOutputBinding(String bindingName, String binderName, BindingProperties bindingProperties) {
 		DefaultBinderFactory binderFactory = this.applicationContext.getBean(DefaultBinderFactory.class);
 		Object binder = binderFactory.getBinder(binderName, MessageChannel.class);
 		BindingServiceProperties bindingServiceProperties = this.applicationContext.getBean(BindingServiceProperties.class);
 		bindingServiceProperties.setBindings(Collections.singletonMap(bindingName, bindingProperties));
-		if (binder instanceof ExtendedPropertiesBinder extendedPropertiesBinder) {
-			Object extensionPropertries = extendedPropertiesBinder.getExtendedProducerProperties(bindingName);
-			return (P) extensionPropertries;
+		if (binder instanceof ExtendedPropertiesBinder) {
+			return this.defineOutputBinding(bindingName);
 		}
 		else {
 			throw new IllegalStateException("Binder must be an instance of ExtendedPropertiesBinder");
@@ -149,7 +141,9 @@ public class BindingsLifecycleController implements ApplicationContextAware {
 	 * @param <P> the type of consumer properties. For example, if binding derives from Kafka, it will return KafkaConsumerProperties.
 	 * @param bindingName the name of the binding.
 	 * @return instance of the consumer properties.
+	 * @deprecated since 5.0.2
 	 */
+	@Deprecated
 	public <P> P defineInputBinding(String bindingName) {
 		BindableFunctionProxyFactory bindingProxyFactory =
 				new BindableFunctionProxyFactory(bindingName, 1, 0, this.applicationContext.getBean(StreamFunctionProperties.class), false);
@@ -162,7 +156,9 @@ public class BindingsLifecycleController implements ApplicationContextAware {
 	 * @param <P> the type of producer properties. For example, if binding derives from Kafka, it will return KafkaProducerProperties.
 	 * @param bindingName the name of the binding.
 	 * @return instance of the producer properties.
+	 *  @deprecated since 5.0.2
 	 */
+	@Deprecated
 	public <P> P defineOutputBinding(String bindingName) {
 		BindableFunctionProxyFactory bindingProxyFactory =
 				new BindableFunctionProxyFactory(bindingName, 0, 1, this.applicationContext.getBean(StreamFunctionProperties.class), false);

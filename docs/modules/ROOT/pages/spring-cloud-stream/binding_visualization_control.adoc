@@ -30,12 +30,24 @@ its Consumer and Producer configuration properties for more dynamic management o
 
 For example.
 
-To define new input binding you can call `BindingsLifecycleController.defineInputBinding(..)` method (see below). There is equivalent of `defineOutputBinding(..)` method.
+To define new input binding you can call `BindingsLifecycleController.createInputBinding(..)` method (see below). There is equivalent of `createOutputBinding(..)` method.
 
 [source,java]
 ----
+DefaultBinderFactory binderFactory = context.getBean(DefaultBinderFactory.class);
+Object binder = binderFactory.getBinder("rabbit", MessageChannel.class);
+		
+String inputName = "test-output-binding";
+		
 BindingsLifecycleController controller = context.getBean(BindingsLifecycleController.class);
-KafkaConsumerProperties consumerProperties = controller.defineInputBinding("test-input-binding"); 
+		
+BindingProperties bindingProperties = new BindingProperties();
+bindingProperties.setDestination("myDest");
+bindingProperties.setGroup("myGroup"); // must define group for input binding
+ConsumerProperties consumerProperties = new ConsumerProperties();
+bindingProperties.setConsumer(consumerProperties);	
+		
+RabbitConsumerProperties extendedConsumerProperties = controller.createInputBinding(inputName, "rabbit", bindingProperties);
 ----
 
 You can than manage its properties by calling `getExtensionProperties(..)` method.
