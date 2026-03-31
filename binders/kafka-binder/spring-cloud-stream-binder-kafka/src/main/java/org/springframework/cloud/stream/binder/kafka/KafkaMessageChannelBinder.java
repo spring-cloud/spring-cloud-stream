@@ -151,6 +151,10 @@ import org.springframework.util.backoff.BackOff;
 import org.springframework.util.backoff.ExponentialBackOff;
 import org.springframework.util.backoff.FixedBackOff;
 
+import io.micrometer.observation.Observation;
+import io.micrometer.observation.Observation.Scope;
+import io.micrometer.observation.ObservationRegistry;
+
 /**
  * A {@link org.springframework.cloud.stream.binder.Binder} that uses Kafka as the
  * underlying middleware.
@@ -861,6 +865,31 @@ public class KafkaMessageChannelBinder extends
 		containerProperties.setMissingTopicsFatal(listener.isMissingTopicsFatal());
 		containerProperties.setStopImmediate(listener.isImmediateStop());
 	}
+	
+	public static class NullObservationRegistry implements ObservationRegistry {
+
+		@Override
+		public @org.jspecify.annotations.Nullable Observation getCurrentObservation() {
+			return null;
+		}
+
+		@Override
+		public @org.jspecify.annotations.Nullable Scope getCurrentObservationScope() {
+			return null;
+		}
+
+		@Override
+		public void setCurrentObservationScope(@org.jspecify.annotations.Nullable Scope current) {
+			
+		}
+
+		@Override
+		public ObservationConfig observationConfig() {
+			return null;
+		}
+
+		
+	}
 
 	/**
 	 * Returns an unmodifiable copy of {@link ContainerProperties} associated with the destination name
@@ -872,6 +901,8 @@ public class KafkaMessageChannelBinder extends
 	@Override
 	protected Map<String, Object> doGetAdditionalConfigurationProperties(String destinationName) {
 		ContainerProperties kafkaContainerProperties = this.kafkaMessageListenerContainers.iterator().next().getContainerProperties();
+		// see 3167 we need to nullify ObservationRegistry to avoid jackson deserialization error
+		kafkaContainerProperties.setObservationRegistry(new NullObservationRegistry());
 		Map mapOfContainerProperties = this.objectMapper.convertValue(kafkaContainerProperties, Map.class);
 		Map<String, Object> additionalConfigurationProperties = new HashMap<>();
 		additionalConfigurationProperties.put("containerProperties", mapOfContainerProperties);

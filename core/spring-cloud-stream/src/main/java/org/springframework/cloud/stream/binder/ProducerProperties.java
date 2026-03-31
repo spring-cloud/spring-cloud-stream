@@ -215,6 +215,10 @@ public class ProducerProperties {
 		this.dynamicPartitionUpdatesEnabled = enabled;
 	}
 
+	/**
+	 * @deprecated since 5.0.2 in favor of top level class in the same package
+	 */
+	@Deprecated
 	public static class ExpressionSerializer extends StdSerializer<Expression> {
 		public ExpressionSerializer() {
 			super(Expression.class);

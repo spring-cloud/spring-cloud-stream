@@ -24,6 +24,10 @@ public class ExtendedProducerProperties<T> extends ProducerProperties {
 
 	private T extension;
 
+	public ExtendedProducerProperties() {
+
+	}
+
 	public ExtendedProducerProperties(T extension) {
 		this.extension = extension;
 	}
@@ -32,4 +36,7 @@ public class ExtendedProducerProperties<T> extends ProducerProperties {
 		return this.extension;
 	}
 
+	public void setExtension(T extension) {
+		this.extension = extension;
+	}
 }
