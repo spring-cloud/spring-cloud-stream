@@ -2574,7 +2574,7 @@ class RabbitBinderTests extends
 		retry = TestUtils.getPropertyValue(endpoint, "retryTemplate",
 				RetryTemplate.class);
 		assertThat(TestUtils.getPropertyValue(retry, "retryPolicy.backOff.maxAttempts"))
-				.isEqualTo(23L);
+				.isEqualTo(22L);
 		assertThat(TestUtils.getPropertyValue(retry, "retryPolicy.backOff.initialInterval"))
 				.isEqualTo(2000L);
 		assertThat(TestUtils.getPropertyValue(retry, "retryPolicy.backOff.maxInterval"))
