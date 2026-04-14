@@ -19,6 +19,8 @@ middleware). Normally, the defaults suffice.
 To learn more about how to customize the message broker settings, consult the Spring Cloud
 Stream documentation.
 
+NOTE: If you have enabled https://docs.spring.io/spring-cloud-config/reference/client.html#config-first-bootstrap[config first bootstrap], you should place `spring.cloud.bus.destination` within your `bootstrap.[yaml | properties]` file or else if a refresh is triggered the value will be reset to the default.
+
 [[tracing-bus-events]]
 == Tracing Bus Events
 
