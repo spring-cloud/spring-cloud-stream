@@ -157,7 +157,7 @@ public abstract class AbstractMessageChannelBinder<C extends ConsumerProperties,
 //		}
 		SimpleModule module = new SimpleModule();
 		module.addSerializer(Expression.class, new ExpressionSerializer(Expression.class));
-		this.objectMapper = this.objectMapper.rebuild().build();
+		this.objectMapper = this.objectMapper.rebuild().addModule(module).build();
 	}
 
 	public AbstractMessageChannelBinder(String[] headersToEmbed, PP provisioningProvider,
