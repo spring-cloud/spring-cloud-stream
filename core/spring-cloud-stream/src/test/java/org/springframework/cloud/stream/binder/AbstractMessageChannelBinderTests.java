@@ -27,6 +27,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.cloud.stream.provisioning.ConsumerDestination;
 import org.springframework.cloud.stream.provisioning.ProducerDestination;
 import org.springframework.context.support.GenericApplicationContext;
+import org.springframework.expression.Expression;
+import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.integration.core.MessageProducer;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
@@ -58,6 +60,24 @@ public class AbstractMessageChannelBinderTests {
 		final Map<String, Object> convertedMap = objectMapper.convertValue(properties, Map.class);
 
 		assertThat(convertedMap).isNotEmpty();
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	void serializeExpressionOnObjectMapperInAMCB() throws Exception {
+		AbstractMessageChannelBinder<?, ?, ?> binder = createBinderInstance();
+
+		Field objectMapperField = ReflectionUtils.findField(AbstractMessageChannelBinder.class, "objectMapper");
+		assertThat(objectMapperField).isNotNull();
+		ReflectionUtils.makeAccessible(objectMapperField);
+		ObjectMapper objectMapper = (ObjectMapper) ReflectionUtils.getField(objectMapperField, binder);
+		assertThat(objectMapper).isNotNull();
+
+		Expression expression = new SpelExpressionParser().parseExpression("'routing.key'");
+		Map<String, Object> properties = Map.of("routingKeyExpression", expression);
+		Map<String, Object> convertedMap = objectMapper.convertValue(properties, Map.class);
+
+		assertThat(convertedMap).containsEntry("routingKeyExpression", "'routing.key'");
 	}
 
 	@NotNull
