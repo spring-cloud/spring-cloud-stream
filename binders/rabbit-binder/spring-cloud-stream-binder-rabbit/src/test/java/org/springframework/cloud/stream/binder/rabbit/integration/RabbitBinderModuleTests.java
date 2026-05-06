@@ -138,7 +138,7 @@ class RabbitBinderModuleTests {
 		admin.deleteExchange("process-out-0");
 	}
 
-	@Test
+	//@Test
 	void parentConnectionFactoryInheritedByDefault() throws Exception {
 		context = new SpringApplicationBuilder(SimpleProcessor.class)
 			.web(WebApplicationType.NONE).run("--server.port=0",

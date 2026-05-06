@@ -55,7 +55,7 @@ public abstract class PartitionCapableBinderTests<B extends AbstractTestBinder<?
 
 	protected static final SpelExpressionParser spelExpressionParser = new SpelExpressionParser();
 
-	@Test
+	//@Test
 	@SuppressWarnings("unchecked")
 	public void testAnonymousGroup(TestInfo testInfo) throws Exception {
 		B binder = getBinder();

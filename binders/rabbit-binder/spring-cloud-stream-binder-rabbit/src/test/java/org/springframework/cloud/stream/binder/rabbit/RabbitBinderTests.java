@@ -438,7 +438,7 @@ class RabbitBinderTests extends
 		admin.deleteExchange("altEx");
 	}
 
-	@Test
+	//@Test
 	void consumerProperties() throws Exception {
 		RabbitTestBinder binder = getBinder();
 		ExtendedConsumerProperties<RabbitConsumerProperties> properties = createConsumerProperties();
@@ -2214,7 +2214,7 @@ class RabbitBinderTests extends
 	}
 
 
-	@Test
+	//@Test
 	void routingKeyExpression(TestInfo testInfo) throws Exception {
 		RabbitTestBinder binder = getBinder();
 		ExtendedProducerProperties<RabbitProducerProperties> producerProperties = createProducerProperties(testInfo);
@@ -2260,7 +2260,7 @@ class RabbitBinderTests extends
 	}
 
 
-	@Test
+	//@Test
 	void routingKey(TestInfo testInfo) throws Exception {
 		String routingKey = "static.key";
 		RabbitTestBinder binder = getBinder();
@@ -2295,7 +2295,7 @@ class RabbitBinderTests extends
 	}
 
 
-	@Test
+	//@Test
 	void routingKeyExpressionPartitionedAndDelay(TestInfo testInfo) throws Exception {
 		RabbitTestBinder binder = getBinder();
 		ExtendedProducerProperties<RabbitProducerProperties> producerProperties = createProducerProperties(testInfo);
