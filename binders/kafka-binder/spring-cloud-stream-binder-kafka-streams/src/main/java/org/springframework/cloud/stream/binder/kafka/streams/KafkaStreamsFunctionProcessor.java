@@ -87,7 +87,7 @@ public class KafkaStreamsFunctionProcessor extends AbstractKafkaStreamsBinderPro
 	private BeanFactory beanFactory;
 	private final StreamFunctionProperties streamFunctionProperties;
 	private final KafkaStreamsBinderConfigurationProperties kafkaStreamsBinderConfigurationProperties;
-	StreamsBuilderFactoryBeanConfigurer customizer;
+	final List<StreamsBuilderFactoryBeanConfigurer> customizers;
 	ConfigurableEnvironment environment;
 
 	public KafkaStreamsFunctionProcessor(BindingServiceProperties bindingServiceProperties,
@@ -98,7 +98,8 @@ public class KafkaStreamsFunctionProcessor extends AbstractKafkaStreamsBinderPro
 										CleanupConfig cleanupConfig,
 										StreamFunctionProperties streamFunctionProperties,
 										KafkaStreamsBinderConfigurationProperties kafkaStreamsBinderConfigurationProperties,
-										StreamsBuilderFactoryBeanConfigurer customizer, ConfigurableEnvironment environment) {
+										List<StreamsBuilderFactoryBeanConfigurer> customizers,
+										ConfigurableEnvironment environment) {
 		super(bindingServiceProperties, kafkaStreamsBindingInformationCatalogue, kafkaStreamsExtendedBindingProperties,
 				keyValueSerdeResolver, cleanupConfig);
 		this.bindingServiceProperties = bindingServiceProperties;
@@ -108,7 +109,7 @@ public class KafkaStreamsFunctionProcessor extends AbstractKafkaStreamsBinderPro
 		this.kafkaStreamsMessageConversionDelegate = kafkaStreamsMessageConversionDelegate;
 		this.streamFunctionProperties = streamFunctionProperties;
 		this.kafkaStreamsBinderConfigurationProperties = kafkaStreamsBinderConfigurationProperties;
-		this.customizer = customizer;
+		this.customizers = customizers != null ? customizers : List.of();
 		this.environment = environment;
 	}
 
@@ -523,7 +524,7 @@ public class KafkaStreamsFunctionProcessor extends AbstractKafkaStreamsBinderPro
 				//Otherwise, create the StreamsBuilderFactory and get the underlying config.
 				if (!this.methodStreamsBuilderFactoryBeanMap.containsKey(functionName)) {
 					StreamsBuilderFactoryBean streamsBuilderFactoryBean = buildStreamsBuilderAndRetrieveConfig(functionName, applicationContext,
-							input, kafkaStreamsBinderConfigurationProperties, customizer, this.environment, bindingProperties);
+							input, kafkaStreamsBinderConfigurationProperties, customizers, this.environment, bindingProperties);
 					this.methodStreamsBuilderFactoryBeanMap.put(functionName, streamsBuilderFactoryBean);
 				}
 				try {

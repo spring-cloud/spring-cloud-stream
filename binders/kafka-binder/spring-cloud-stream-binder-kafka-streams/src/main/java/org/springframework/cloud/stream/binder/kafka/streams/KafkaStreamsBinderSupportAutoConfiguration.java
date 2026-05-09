@@ -387,7 +387,7 @@ public class KafkaStreamsBinderSupportAutoConfiguration {
 		return new KafkaStreamsFunctionProcessor(bindingServiceProperties, kafkaStreamsExtendedBindingProperties,
 				keyValueSerdeResolver, kafkaStreamsBindingInformationCatalogue, kafkaStreamsMessageConversionDelegate,
 				cleanupConfig.getIfUnique(), streamFunctionProperties, kafkaStreamsBinderConfigurationProperties,
-				customizerProvider.getIfUnique(), environment);
+				customizerProvider.orderedStream().toList(), environment);
 	}
 
 	@Bean
