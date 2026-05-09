@@ -43,9 +43,8 @@ public StreamsBuilderFactoryBeanConfigurer streamsBuilderFactoryBeanConfigurer()
 
 `KafkaStreamsCustomizer` will be called by the `StreamsBuilderFactoryBeabn` right before the underlying `KafkaStreams` gets started.
 
-There can only be one `StreamsBuilderFactoryBeanConfigurer` in the entire application.
-Then how do we account for multiple Kafka Streams processors as each of them are backed up by individual `StreamsBuilderFactoryBean` objects?
-In that case, if the customization needs to be different for those processors, then the application needs to apply some filter based on the application ID.
+The binder invokes all `StreamsBuilderFactoryBeanConfigurer` beans in order before the factory bean is started.
+If the customization needs to be different for multiple Kafka Streams processors, each backed by its own `StreamsBuilderFactoryBean`, then the application needs to apply some filter based on the application ID.
 
 For e.g,
 

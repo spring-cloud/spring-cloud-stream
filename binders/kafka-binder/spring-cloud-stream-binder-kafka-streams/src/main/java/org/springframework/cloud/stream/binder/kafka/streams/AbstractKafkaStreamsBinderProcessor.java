@@ -18,6 +18,7 @@ package org.springframework.cloud.stream.binder.kafka.streams;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
@@ -190,7 +191,7 @@ public abstract class AbstractKafkaStreamsBinderProcessor implements Application
 	protected StreamsBuilderFactoryBean buildStreamsBuilderAndRetrieveConfig(String beanNamePostPrefix,
 																			ApplicationContext applicationContext, String inboundName,
 																			KafkaStreamsBinderConfigurationProperties kafkaStreamsBinderConfigurationProperties,
-																			StreamsBuilderFactoryBeanConfigurer customizer,
+																			List<StreamsBuilderFactoryBeanConfigurer> customizers,
 																			ConfigurableEnvironment environment, BindingProperties bindingProperties) {
 		ConfigurableListableBeanFactory beanFactory = this.applicationContext
 				.getBeanFactory();
@@ -347,8 +348,8 @@ public abstract class AbstractKafkaStreamsBinderProcessor implements Application
 
 		extendedConsumerProperties.setApplicationId((String) streamConfiguration.get(StreamsConfig.APPLICATION_ID_CONFIG));
 
-		if (customizer != null) {
-			customizer.configure(streamsBuilderFactoryBean);
+		if (!CollectionUtils.isEmpty(customizers)) {
+			customizers.forEach(customizer -> customizer.configure(streamsBuilderFactoryBean));
 		}
 		return applicationContext.getBean(
 				"&stream-builder-" + beanNamePostPrefix, StreamsBuilderFactoryBean.class);
