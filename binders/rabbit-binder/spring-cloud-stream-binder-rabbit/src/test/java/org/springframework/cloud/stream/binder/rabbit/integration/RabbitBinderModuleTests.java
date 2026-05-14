@@ -167,7 +167,7 @@ class RabbitBinderModuleTests {
 
 		ConnectionFactory publisherConnectionFactory = binderConnectionFactory
 			.getPublisherConnectionFactory();
-		assertThat(TestUtils.getPropertyValue(publisherConnectionFactory,
+		assertThat((Object) TestUtils.getPropertyValue(publisherConnectionFactory,
 			"connection.target")).isNull();
 		DirectChannel checkPf = new DirectChannel();
 		Binding<MessageChannel> binding = ((RabbitMessageChannelBinder) binder)
@@ -175,7 +175,7 @@ class RabbitBinderModuleTests {
 				new ExtendedProducerProperties<>(new RabbitProducerProperties()));
 		checkPf.send(new GenericMessage<>("foo".getBytes()));
 		binding.unbind();
-		assertThat(TestUtils.getPropertyValue(publisherConnectionFactory,
+		assertThat((Object) TestUtils.getPropertyValue(publisherConnectionFactory,
 			"connection.target")).isNotNull();
 
 		CachingConnectionFactory cf = this.context
@@ -230,12 +230,12 @@ class RabbitBinderModuleTests {
 			.getPropertyValue("consumerBindings");
 		// @checkstyle:on
 		Binding<MessageChannel> inputBinding = consumerBindings.get("process-in-0").get(0);
-		assertThat(TestUtils.getPropertyValue(inputBinding, "lifecycle.beanName"))
+		assertThat((Object) TestUtils.getPropertyValue(inputBinding, "lifecycle.beanName"))
 			.isEqualTo("setByCustomizer:someGroup");
 		SimpleMessageListenerContainer container = TestUtils.getPropertyValue(
 			inputBinding, "lifecycle.messageListenerContainer",
 			SimpleMessageListenerContainer.class);
-		assertThat(TestUtils.getPropertyValue(container, "beanName"))
+		assertThat((Object) TestUtils.getPropertyValue(container, "beanName"))
 			.isEqualTo("setByCustomizerForQueue:process-in-0.someGroup,andGroup:someGroup");
 		assertThat(TestUtils.getPropertyValue(container, "transactional", Boolean.class))
 			.isTrue();
@@ -244,7 +244,7 @@ class RabbitBinderModuleTests {
 		Binding<MessageChannel> outputBinding = producerBindings.get("process-out-0");
 		assertThat(TestUtils.getPropertyValue(outputBinding,
 			"lifecycle.amqpTemplate.transactional", Boolean.class)).isTrue();
-		assertThat(TestUtils.getPropertyValue(outputBinding, "lifecycle.beanName"))
+		assertThat((Object) TestUtils.getPropertyValue(outputBinding, "lifecycle.beanName"))
 			.isEqualTo("setByCustomizer:process-out-0");
 		DirectFieldAccessor binderFieldAccessor = new DirectFieldAccessor(binder);
 		ConnectionFactory binderConnectionFactory = (ConnectionFactory) binderFieldAccessor
@@ -368,9 +368,9 @@ class RabbitBinderModuleTests {
 
 		assertThat(binderConnectionFactory).isNotSameAs(connectionFactory);
 
-		assertThat(TestUtils.getPropertyValue(connectionFactory, "addresses"))
+		assertThat((Object) TestUtils.getPropertyValue(connectionFactory, "addresses"))
 			.isNotNull();
-		assertThat(TestUtils.getPropertyValue(binderConnectionFactory, "addresses"))
+		assertThat((Object) TestUtils.getPropertyValue(binderConnectionFactory, "addresses"))
 			.isNull();
 
 		Cloud cloud = this.context.getBean(Cloud.class);

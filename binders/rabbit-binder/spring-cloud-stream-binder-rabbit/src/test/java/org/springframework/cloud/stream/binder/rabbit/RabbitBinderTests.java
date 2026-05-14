@@ -244,7 +244,7 @@ class RabbitBinderTests extends
 		assertThat(
 				TestUtils.getPropertyValue(consumerBinding, "lifecycle.messageConverter")
 						.getClass().getName()).contains("Passthrough");
-		assertThat(TestUtils.getPropertyValue(consumerBinding,
+		assertThat((Object) TestUtils.getPropertyValue(consumerBinding,
 				"lifecycle.messageListenerContainer"))
 						.isInstanceOf(DirectMessageListenerContainer.class);
 		Message<?> message = MessageBuilder.withPayload("bad".getBytes())
@@ -320,7 +320,7 @@ class RabbitBinderTests extends
 
 		AmqpOutboundEndpoint endpoint = TestUtils.getPropertyValue(producerBinding,
 				"lifecycle", AmqpOutboundEndpoint.class);
-		assertThat(TestUtils.getPropertyValue(endpoint,
+		assertThat((Object) TestUtils.getPropertyValue(endpoint,
 				"confirmCorrelationExpression.expression")).isEqualTo("#root");
 		class WrapperAccessor extends AmqpOutboundEndpoint {
 
@@ -460,30 +460,30 @@ class RabbitBinderTests extends
 				.isTrue();
 		assertThat(TestUtils.getPropertyValue(container, "exclusive", Boolean.class))
 				.isTrue();
-		assertThat(TestUtils.getPropertyValue(container, "concurrentConsumers"))
+		assertThat((Object) TestUtils.getPropertyValue(container, "concurrentConsumers"))
 				.isEqualTo(1);
-		assertThat(TestUtils.getPropertyValue(container, "maxConcurrentConsumers"))
+		assertThat((Object) TestUtils.getPropertyValue(container, "maxConcurrentConsumers"))
 				.isNull();
 		assertThat(TestUtils.getPropertyValue(container, "defaultRequeueRejected",
 				Boolean.class)).isTrue();
-		assertThat(TestUtils.getPropertyValue(container, "prefetchCount")).isEqualTo(1);
-		assertThat(TestUtils.getPropertyValue(container, "batchSize")).isEqualTo(1);
+		assertThat((Object) TestUtils.getPropertyValue(container, "prefetchCount")).isEqualTo(1);
+		assertThat((Object) TestUtils.getPropertyValue(container, "batchSize")).isEqualTo(1);
 		assertThat(TestUtils.getPropertyValue(container, "missingQueuesFatal",
 				Boolean.class)).isTrue();
-		assertThat(
+		assertThat((Object)
 				TestUtils.getPropertyValue(container, "failedDeclarationRetryInterval"))
 						.isEqualTo(1500L);
-		assertThat(TestUtils.getPropertyValue(container, "declarationRetries"))
+		assertThat((Object) TestUtils.getPropertyValue(container, "declarationRetries"))
 				.isEqualTo(23);
 		RetryTemplate retry = TestUtils.getPropertyValue(endpoint, "retryTemplate",
 				RetryTemplate.class);
-		assertThat(TestUtils.getPropertyValue(retry, "retryPolicy.backOff.maxAttempts"))
+		assertThat((Object) TestUtils.getPropertyValue(retry, "retryPolicy.backOff.maxAttempts"))
 				.isEqualTo(2L);
-		assertThat(TestUtils.getPropertyValue(retry, "retryPolicy.backOff.initialInterval"))
+		assertThat((Object) TestUtils.getPropertyValue(retry, "retryPolicy.backOff.initialInterval"))
 				.isEqualTo(1000L);
-		assertThat(TestUtils.getPropertyValue(retry, "retryPolicy.backOff.maxInterval"))
+		assertThat((Object) TestUtils.getPropertyValue(retry, "retryPolicy.backOff.maxInterval"))
 				.isEqualTo(10000L);
-		assertThat(TestUtils.getPropertyValue(retry, "retryPolicy.backOff.multiplier"))
+		assertThat((Object) TestUtils.getPropertyValue(retry, "retryPolicy.backOff.multiplier"))
 				.isEqualTo(2.0);
 		consumerBinding.unbind();
 		assertThat(endpoint.isRunning()).isFalse();
@@ -930,7 +930,7 @@ class RabbitBinderTests extends
 		endpoint = extractEndpoint(producerBinding);
 		assertThat(getEndpointRouting(endpoint)).isEqualTo(
 				"'props.0-' + headers['" + BinderHeaders.PARTITION_HEADER + "']");
-		assertThat(TestUtils
+		assertThat((Object) TestUtils
 				.getPropertyValue(endpoint, "delayExpression", SpelExpression.class)
 				.getExpressionString()).isEqualTo("42");
 		mode = TestUtils.getPropertyValue(endpoint, "defaultDeliveryMode",
@@ -1677,7 +1677,7 @@ class RabbitBinderTests extends
 			.collect(Collectors.toList());
 		assertThat(errorHandler).hasSize(1);
 		assertThat(TestUtils.getPropertyValue(errorHandler.get(0), "template.transactional", Boolean.class)).isTrue();
-		assertThat(TestUtils.getPropertyValue(errorHandler.get(0), "confirmType", ConfirmType.class))
+		assertThat((Object) TestUtils.getPropertyValue(errorHandler.get(0), "confirmType", ConfirmType.class))
 				.isEqualTo(ConfirmType.NONE);
 		consumerBinding.unbind();
 
@@ -1728,7 +1728,7 @@ class RabbitBinderTests extends
 			.filter(handler -> !handler.getClass().equals(BridgeHandler.class))
 			.collect(Collectors.toList());
 		assertThat(errorHandler).hasSize(1);
-		assertThat(TestUtils.getPropertyValue(errorHandler.get(0), "confirmType", ConfirmType.class))
+		assertThat((Object) TestUtils.getPropertyValue(errorHandler.get(0), "confirmType", ConfirmType.class))
 				.isEqualTo(ConfirmType.SIMPLE);
 		consumerBinding.unbind();
 
@@ -1779,7 +1779,7 @@ class RabbitBinderTests extends
 			.filter(handler -> !handler.getClass().equals(BridgeHandler.class))
 			.collect(Collectors.toList());
 		assertThat(errorHandler).hasSize(1);
-		assertThat(TestUtils.getPropertyValue(errorHandler.get(0), "confirmType", ConfirmType.class))
+		assertThat((Object) TestUtils.getPropertyValue(errorHandler.get(0), "confirmType", ConfirmType.class))
 				.isEqualTo(ConfirmType.CORRELATED);
 		consumerBinding.unbind();
 
@@ -1814,7 +1814,7 @@ class RabbitBinderTests extends
 						.setPropertyValue("logger", logger);
 		when(logger.isTraceEnabled()).thenReturn(true);
 
-		assertThat(TestUtils.getPropertyValue(binder,
+		assertThat((Object) TestUtils.getPropertyValue(binder,
 				"binder.compressingPostProcessor.level")).isEqualTo(Deflater.BEST_SPEED);
 
 		output.send(new GenericMessage<>("foo".getBytes()));
@@ -2535,7 +2535,7 @@ class RabbitBinderTests extends
 				.setPropertyValue("logger", logger);
 		when(logger.isTraceEnabled()).thenReturn(true);
 
-		assertThat(TestUtils.getPropertyValue(binder, "binder.compressingPostProcessor.level"))
+		assertThat((Object) TestUtils.getPropertyValue(binder, "binder.compressingPostProcessor.level"))
 				.isEqualTo(Deflater.BEST_SPEED);
 
 		output.send(new GenericMessage<>("0".getBytes()));
@@ -2563,29 +2563,29 @@ class RabbitBinderTests extends
 		assertThat(container.getQueueNames()[0]).startsWith("foo.props.0");
 		assertThat(TestUtils.getPropertyValue(container, "transactional", Boolean.class))
 				.isFalse();
-		assertThat(TestUtils.getPropertyValue(container, "concurrentConsumers"))
+		assertThat((Object) TestUtils.getPropertyValue(container, "concurrentConsumers"))
 				.isEqualTo(2);
-		assertThat(TestUtils.getPropertyValue(container, "maxConcurrentConsumers"))
+		assertThat((Object) TestUtils.getPropertyValue(container, "maxConcurrentConsumers"))
 				.isEqualTo(3);
 		assertThat(TestUtils.getPropertyValue(container, "defaultRequeueRejected",
 				Boolean.class)).isFalse();
-		assertThat(TestUtils.getPropertyValue(container, "prefetchCount")).isEqualTo(20);
-		assertThat(TestUtils.getPropertyValue(container, "batchSize")).isEqualTo(10);
+		assertThat((Object) TestUtils.getPropertyValue(container, "prefetchCount")).isEqualTo(20);
+		assertThat((Object) TestUtils.getPropertyValue(container, "batchSize")).isEqualTo(10);
 		retry = TestUtils.getPropertyValue(endpoint, "retryTemplate",
 				RetryTemplate.class);
-		assertThat(TestUtils.getPropertyValue(retry, "retryPolicy.backOff.maxAttempts"))
+		assertThat((Object) TestUtils.getPropertyValue(retry, "retryPolicy.backOff.maxAttempts"))
 				.isEqualTo(22L);
-		assertThat(TestUtils.getPropertyValue(retry, "retryPolicy.backOff.initialInterval"))
+		assertThat((Object) TestUtils.getPropertyValue(retry, "retryPolicy.backOff.initialInterval"))
 				.isEqualTo(2000L);
-		assertThat(TestUtils.getPropertyValue(retry, "retryPolicy.backOff.maxInterval"))
+		assertThat((Object) TestUtils.getPropertyValue(retry, "retryPolicy.backOff.maxInterval"))
 				.isEqualTo(20000L);
-		assertThat(TestUtils.getPropertyValue(retry, "retryPolicy.backOff.multiplier"))
+		assertThat((Object) TestUtils.getPropertyValue(retry, "retryPolicy.backOff.multiplier"))
 				.isEqualTo(5.0);
 
 		List<?> requestMatchers = TestUtils.getPropertyValue(endpoint,
 				"headerMapper.requestHeaderMatcher.matchers", List.class);
 		assertThat(requestMatchers).hasSize(1);
-		assertThat(TestUtils.getPropertyValue(requestMatchers.get(0), "pattern"))
+		assertThat((Object) TestUtils.getPropertyValue(requestMatchers.get(0), "pattern"))
 				.isEqualTo("foo");
 
 		return container;
@@ -2595,7 +2595,7 @@ class RabbitBinderTests extends
 		List<?> requestMatchers = TestUtils.getPropertyValue(endpoint,
 				"headerMapper.requestHeaderMatcher.matchers", List.class);
 		assertThat(requestMatchers).hasSize(5);
-		assertThat(TestUtils.getPropertyValue(requestMatchers.get(4), "pattern"))
+		assertThat((Object) TestUtils.getPropertyValue(requestMatchers.get(4), "pattern"))
 				.isEqualTo("foo");
 	}
 
