@@ -59,6 +59,7 @@ import org.springframework.pulsar.core.ProducerBuilderCustomizer;
 import org.springframework.pulsar.core.PulsarConsumerFactory;
 import org.springframework.pulsar.core.PulsarProducerFactory;
 import org.springframework.pulsar.core.SchemaResolver.SchemaResolverCustomizer;
+import org.springframework.pulsar.support.header.JsonPulsarHeaderMapper;
 import org.springframework.pulsar.support.header.PulsarHeaderMapper;
 import org.springframework.pulsar.support.header.ToStringPulsarHeaderMapper;
 
@@ -519,6 +520,13 @@ class PulsarBinderIntegrationTests implements PulsarTestContainerSupport {
 			private final Logger logger = LoggerFactory.getLogger(getClass());
 
 			private int msgCount = 0;
+
+			@Bean
+			public PulsarHeaderMapper pulsarHeaderMapper() {
+				return JsonPulsarHeaderMapper.builder()
+						.trustedPackages("org.springframework.cloud.stream.binder.pulsar")
+						.build();
+			}
 
 			@Bean
 			public Supplier<Message<String>> springMessageSupplier() {
