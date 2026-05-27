@@ -105,11 +105,13 @@
 				<groupId>org.jetbrains.kotlin</groupId>
 				<artifactId>kotlin-reflect</artifactId>
 				<scope>runtime</scope>
+				<optional>true</optional>
 			</dependency>
 			<dependency>
 				<groupId>org.jetbrains.kotlinx</groupId>
 				<artifactId>kotlinx-coroutines-reactor</artifactId>
 				<scope>runtime</scope>
+				<optional>true</optional>
 			</dependency>
     </dependencies>
 
