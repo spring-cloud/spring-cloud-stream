@@ -53,6 +53,8 @@ import org.springframework.cloud.Cloud;
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.BinderFactory;
 import org.springframework.cloud.stream.binder.Binding;
+import org.springframework.cloud.stream.binder.ConsumerProperties;
+import org.springframework.cloud.stream.binder.DefaultBinderFactory;
 import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
 import org.springframework.cloud.stream.binder.ExtendedProducerProperties;
 import org.springframework.cloud.stream.binder.ExtendedPropertiesBinder;
@@ -64,6 +66,8 @@ import org.springframework.cloud.stream.binder.rabbit.properties.RabbitProducerP
 import org.springframework.cloud.stream.binder.rabbit.properties.RabbitProducerProperties.AlternateExchange;
 import org.springframework.cloud.stream.binder.test.junit.rabbit.RabbitTestSupport;
 import org.springframework.cloud.stream.binding.BindingService;
+import org.springframework.cloud.stream.binding.BindingsLifecycleController;
+import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.cloud.stream.config.ConsumerEndpointCustomizer;
 import org.springframework.cloud.stream.config.ListenerContainerCustomizer;
 import org.springframework.cloud.stream.config.MessageSourceCustomizer;
@@ -398,6 +402,7 @@ class RabbitBinderModuleTests {
 		Binder<?, ?, ?> rabbitBinder = binderFactory.getBinder(null,
 			MessageChannel.class);
 
+		@SuppressWarnings("rawtypes")
 		RabbitProducerProperties rabbitProducerProperties = (RabbitProducerProperties) ((ExtendedPropertiesBinder) rabbitBinder)
 			.getExtendedProducerProperties("process-out-0");
 
@@ -412,12 +417,63 @@ class RabbitBinderModuleTests {
 		assertThat(alternate.getBinding().getQueue()).isEqualTo("altQ");
 		assertThat(alternate.getBinding().getRoutingKey()).isEqualTo("altRK");
 
+		@SuppressWarnings("rawtypes")
 		RabbitConsumerProperties rabbitConsumerProperties = (RabbitConsumerProperties) ((ExtendedPropertiesBinder) rabbitBinder)
 			.getExtendedConsumerProperties("process-in-0");
 
 		assertThat(rabbitConsumerProperties.getExchangeType())
 			.isEqualTo(ExchangeTypes.FANOUT);
 		assertThat(rabbitConsumerProperties.getMaxConcurrency()).isEqualTo(4);
+	}
+
+
+	@Test
+	void testDynamicBindingCreation() {
+		context = new SpringApplicationBuilder(EmptyConfiguration.class).web(WebApplicationType.NONE)
+				.run("--server.port=0", "--spring.rabbitmq.port=" + RABBITMQ.getAmqpPort());
+		DefaultBinderFactory binderFactory = context.getBean(DefaultBinderFactory.class);
+
+		String inputName = "test-input-binding";
+		String outputName = "test-output-binding";
+
+		BindingsLifecycleController controller = context.getBean(BindingsLifecycleController.class);
+		List<Map<String, Object>> bindings = controller.queryStates();
+		assertThat(bindings).isEmpty();
+
+		BindingProperties bindingProperties = new BindingProperties();
+		bindingProperties.setDestination("myDest");
+		bindingProperties.setGroup("myGroup"); // must define group for input binding
+		ConsumerProperties consumerProperties = new ConsumerProperties();
+		bindingProperties.setConsumer(consumerProperties);
+
+		RabbitConsumerProperties extendedConsumerProperties = controller.createInputBinding(inputName, "rabbit",
+				bindingProperties);
+		bindings = controller.queryStates();
+		assertThat(bindings).isEmpty();
+
+		extendedConsumerProperties = controller.initializeInputBinding(inputName);
+
+		bindings = controller.queryStates();
+
+		assertThat(bindings.size()).isEqualTo(1);
+		Map<String, Object> binding = bindings.get(0);
+		assertThat(binding.get("bindingName")).isEqualTo("test-input-binding");
+		assertThat(binding.get("group")).isEqualTo("myGroup");
+		assertThat(binding.get("name")).isEqualTo("myDest");
+
+		RabbitProducerProperties extendedProducerproperties = controller.createOutputBinding(outputName, "rabbit",
+				bindingProperties);
+		bindings = controller.queryStates();
+		assertThat(bindings.size()).isEqualTo(1);
+		extendedProducerproperties = controller.initializeOutputBinding(outputName);
+		bindings = controller.queryStates();
+		assertThat(bindings.size()).isEqualTo(2);
+	}
+
+	@EnableAutoConfiguration
+	@Configuration
+	public static class EmptyConfiguration {
+
 	}
 
 	@EnableAutoConfiguration

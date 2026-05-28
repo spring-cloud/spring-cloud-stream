@@ -92,7 +92,7 @@ public class BindingsLifecycleController implements ApplicationContextAware {
 			this.objectMapper = builder.build();
 		}
 	}
-	
+
 	/**
 	 * Allows to dynamically create a new input binding returning its consumer properties for further customization.
 	 * @param <P> the type of consumer properties. For example, if binding derives from Kafka, it will return KafkaConsumerProperties.
@@ -107,17 +107,15 @@ public class BindingsLifecycleController implements ApplicationContextAware {
 		Object binder = binderFactory.getBinder(binderName, MessageChannel.class);
 		BindingServiceProperties bindingServiceProperties = this.applicationContext.getBean(BindingServiceProperties.class);
 		bindingServiceProperties.setBindings(Collections.singletonMap(bindingName, bindingProperties));
-		if (binder instanceof ExtendedPropertiesBinder) {
-			return this.defineInputBinding(bindingName);
-		}
-		else {
+		if (!(binder instanceof ExtendedPropertiesBinder)) {
 			throw new IllegalStateException("Binder must be an instance of ExtendedPropertiesBinder");
 		}
+		return this.getExtensionProperties(bindingName); 
 	}
 	
 	/**
-	 * Allows to dynamically create a new input binding returning its consumer properties for further customization.
-	 * @param <P> the type of consumer properties. For example, if binding derives from Kafka, it will return KafkaConsumerProperties.
+	 * Allows to dynamically create a new output binding returning its producer properties for further customization.
+	 * @param <P> the type of producer properties. For example, if binding derives from Kafka, it will return KafkaProducerProperties.
 	 * @param bindingName the name of the binding.
 	 * @param binderName the name of the binder.
 	 * @param bindingProperties instance of BindingProperties.
@@ -128,12 +126,10 @@ public class BindingsLifecycleController implements ApplicationContextAware {
 		Object binder = binderFactory.getBinder(binderName, MessageChannel.class);
 		BindingServiceProperties bindingServiceProperties = this.applicationContext.getBean(BindingServiceProperties.class);
 		bindingServiceProperties.setBindings(Collections.singletonMap(bindingName, bindingProperties));
-		if (binder instanceof ExtendedPropertiesBinder) {
-			return this.defineOutputBinding(bindingName);
-		}
-		else {
+		if (!(binder instanceof ExtendedPropertiesBinder)) {
 			throw new IllegalStateException("Binder must be an instance of ExtendedPropertiesBinder");
 		}
+		return this.getExtensionProperties(bindingName);
 	}
 
 	/**
@@ -151,6 +147,13 @@ public class BindingsLifecycleController implements ApplicationContextAware {
 		return this.getExtensionProperties(bindingName);
 	}
 
+	public <P> P initializeInputBinding(String bindingName) {
+		BindableFunctionProxyFactory bindingProxyFactory =
+				new BindableFunctionProxyFactory(bindingName, 1, 0, this.applicationContext.getBean(StreamFunctionProperties.class), false);
+		this.defineBinding(bindingProxyFactory);
+		return this.getExtensionProperties(bindingName);
+	}
+
 	/**
 	 * Allows to dynamically define a new input binding returning its producer properties for further customization.
 	 * @param <P> the type of producer properties. For example, if binding derives from Kafka, it will return KafkaProducerProperties.
@@ -160,6 +163,13 @@ public class BindingsLifecycleController implements ApplicationContextAware {
 	 */
 	@Deprecated
 	public <P> P defineOutputBinding(String bindingName) {
+		BindableFunctionProxyFactory bindingProxyFactory =
+				new BindableFunctionProxyFactory(bindingName, 0, 1, this.applicationContext.getBean(StreamFunctionProperties.class), false);
+		this.defineBinding(bindingProxyFactory);
+		return this.getExtensionProperties(bindingName);
+	}
+
+	public <P> P initializeOutputBinding(String bindingName) {
 		BindableFunctionProxyFactory bindingProxyFactory =
 				new BindableFunctionProxyFactory(bindingName, 0, 1, this.applicationContext.getBean(StreamFunctionProperties.class), false);
 		this.defineBinding(bindingProxyFactory);

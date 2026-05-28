@@ -130,7 +130,8 @@ public class BindableFunctionProxyFactory extends BindableProxyFactory implement
 	}
 
 	public String getFunctionDefinition() {
-		return this.isFunctionExist() ? this.functionDefinition : null;
+		//return this.isFunctionExist() ? this.functionDefinition : null;
+		return this.functionDefinition;
 	}
 
 	protected String getInputName(int index) {
