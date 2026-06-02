@@ -46,6 +46,7 @@ import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.Resource;
 import org.springframework.expression.Expression;
 import org.springframework.util.Assert;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 
@@ -400,9 +401,9 @@ public class KafkaBinderConfigurationProperties {
 	 * @return the merged properties.
 	 */
 	public Map<String, Object> mergedConsumerConfiguration() {
-		Map<String, Object> consumerConfiguration = new HashMap<>(this.kafkaProperties.buildConsumerProperties(null));
-		if (this.kafkaConnectionDetails != null) {
-			consumerConfiguration.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, this.kafkaConnectionDetails.getConsumerBootstrapServers());
+		Map<String, Object> consumerConfiguration = new HashMap<>(this.kafkaProperties.buildConsumerProperties());
+		if (!consumerConfiguration.containsKey(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG) && this.kafkaConnectionDetails != null) {
+			consumerConfiguration.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, this.kafkaConnectionDetails.getConsumer().getBootstrapServers());
 		}
 		// Copy configured binder properties that apply to consumers
 		// allow schema registry properties to be propagated to consumer configuration
@@ -429,9 +430,9 @@ public class KafkaBinderConfigurationProperties {
 	 * @return the merged properties.
 	 */
 	public Map<String, Object> mergedProducerConfiguration() {
-		Map<String, Object> producerConfiguration = new HashMap<>(this.kafkaProperties.buildProducerProperties(null));
-		if (this.kafkaConnectionDetails != null) {
-			producerConfiguration.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, this.kafkaConnectionDetails.getProducerBootstrapServers());
+		Map<String, Object> producerConfiguration = new HashMap<>(this.kafkaProperties.buildProducerProperties());
+		if (!producerConfiguration.containsKey(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG) && this.kafkaConnectionDetails != null) {
+			producerConfiguration.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, this.kafkaConnectionDetails.getProducer().getBootstrapServers());
 		}
 		// Copy configured binder properties that apply to producers
 		for (Map.Entry<String, String> configurationEntry : this.configuration
