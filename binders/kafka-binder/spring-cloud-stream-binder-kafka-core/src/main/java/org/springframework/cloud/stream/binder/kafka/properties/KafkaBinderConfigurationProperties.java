@@ -46,6 +46,7 @@ import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.Resource;
 import org.springframework.expression.Expression;
 import org.springframework.util.Assert;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 
@@ -401,7 +402,7 @@ public class KafkaBinderConfigurationProperties {
 	 */
 	public Map<String, Object> mergedConsumerConfiguration() {
 		Map<String, Object> consumerConfiguration = new HashMap<>(this.kafkaProperties.buildConsumerProperties());
-		if (this.kafkaConnectionDetails != null) {
+		if (!consumerConfiguration.containsKey(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG) && this.kafkaConnectionDetails != null) {
 			consumerConfiguration.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, this.kafkaConnectionDetails.getConsumer().getBootstrapServers());
 		}
 		// Copy configured binder properties that apply to consumers
@@ -430,7 +431,7 @@ public class KafkaBinderConfigurationProperties {
 	 */
 	public Map<String, Object> mergedProducerConfiguration() {
 		Map<String, Object> producerConfiguration = new HashMap<>(this.kafkaProperties.buildProducerProperties());
-		if (this.kafkaConnectionDetails != null) {
+		if (!producerConfiguration.containsKey(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG) && this.kafkaConnectionDetails != null) {
 			producerConfiguration.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, this.kafkaConnectionDetails.getProducer().getBootstrapServers());
 		}
 		// Copy configured binder properties that apply to producers

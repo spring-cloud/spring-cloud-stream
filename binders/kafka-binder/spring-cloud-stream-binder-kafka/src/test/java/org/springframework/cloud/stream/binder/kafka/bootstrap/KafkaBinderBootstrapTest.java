@@ -16,6 +16,9 @@
 
 package org.springframework.cloud.stream.binder.kafka.bootstrap;
 
+import java.beans.BeanProperty;
+import java.util.function.Function;
+
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -24,6 +27,7 @@ import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.test.EmbeddedKafkaBroker;
 import org.springframework.kafka.test.condition.EmbeddedKafkaCondition;
@@ -35,6 +39,7 @@ import org.springframework.kafka.test.context.EmbeddedKafka;
  * @author Marius Bogoevici
  * @author Chris Bono
  * @author Soby Chacko
+ * @author Oleg Zhurakousky
  */
 @EmbeddedKafka(controlledShutdown = true)
 class KafkaBinderBootstrapTest {
@@ -78,6 +83,28 @@ class KafkaBinderBootstrapTest {
 
 	}
 
+	@ParameterizedTest
+	@ValueSource(booleans = { false, true })
+	void validateDoNotOverrideBootstrap(boolean excludeKafkaAutoConfig) {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(ApplicationConfiguration.class)
+			.web(WebApplicationType.NONE).run(
+				"--spring.kafka.bootstrap-servers=foo:8907", // something that would have fail
+				"--spring.cloud.stream.bindings.uppercase-in-0.destination=inputTopic",
+				"--spring.cloud.stream.bindings.uppercase-in-0.group=inputGroup",
+				"--spring.cloud.stream.bindings.uppercase-in-0.binder=kafka1",
+				"--spring.cloud.stream.bindings.uppercase-out-0.destination=outputTopic",
+				"--spring.cloud.stream.bindings.uppercase-out-0.binder=kafka2",
+				"--spring.cloud.stream.binders.kafka1.type=kafka",
+				"--spring.cloud.stream.binders.kafka2.type=kafka",
+				"--spring.cloud.stream.binders.kafka1.environment"
+					+ ".spring.cloud.stream.kafka.binder.brokers=" + embeddedKafka.getBrokersAsString(),
+				"--spring.cloud.stream.binders.kafka2.environment"
+					+ ".spring.cloud.stream.kafka.binder.brokers=" + embeddedKafka.getBrokersAsString(),
+				excludeKafkaAutoConfigParam(excludeKafkaAutoConfig))) { // @checkstyle:off
+		} // @checkstyle:on
+
+	}
+
 	private String excludeKafkaAutoConfigParam(boolean excludeKafkaAutoConfig) {
 		return excludeKafkaAutoConfig ?
 			"--spring.autoconfigure.exclude=org.springframework.boot.kafka.autoconfigure.KafkaAutoConfiguration" : "a=a";
@@ -87,6 +114,16 @@ class KafkaBinderBootstrapTest {
 	@Configuration
 	static class SimpleApplication {
 
+	}
+
+	@EnableAutoConfiguration
+	@Configuration
+	static class ApplicationConfiguration {
+
+		@Bean
+		public Function<String, String> uppercase() {
+			return v -> v;
+		}
 	}
 
 }
