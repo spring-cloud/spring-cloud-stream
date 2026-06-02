@@ -94,6 +94,7 @@ import org.springframework.util.StringUtils;
  * @author Soby Chacko
  * @author Ralf Wiedmann
  * @author Gihong Park
+ * @author Nikita Kibitkin
  * @since 3.0.0
  */
 public abstract class AbstractKafkaStreamsBinderProcessor implements ApplicationContextAware {
@@ -447,6 +448,7 @@ public abstract class AbstractKafkaStreamsBinderProcessor implements Application
 			stream = streamsBuilder.stream(Arrays.asList(bindingTargets),
 					consumed);
 		}
+		applyKafkaStreamsRecordInterceptors(inboundName, stream);
 		//Check to see if event type based routing is enabled.
 		//See this issue for more context: https://github.com/spring-cloud/spring-cloud-stream-binder-kafka/issues/1003
 		if (StringUtils.hasText(kafkaStreamsConsumerProperties.getEventTypes())) {
@@ -472,6 +474,37 @@ public abstract class AbstractKafkaStreamsBinderProcessor implements Application
 			return getkStream(bindingProperties, deserializedKStream, nativeDecoding);
 		}
 		return getkStream(bindingProperties, stream, nativeDecoding);
+	}
+
+	private void applyKafkaStreamsRecordInterceptors(String inboundName, KStream<?, ?> stream) {
+		List<KafkaStreamsRecordInterceptor> kafkaStreamsRecordInterceptors =
+				this.applicationContext.getBeanProvider(KafkaStreamsRecordInterceptor.class).orderedStream().toList();
+		if (!kafkaStreamsRecordInterceptors.isEmpty()) {
+			stream.process((ProcessorSupplier<Object, Object, Void, Void>) () -> new Processor<Object, Object, Void, Void>() {
+
+				ProcessorContext<Void, Void> context;
+
+				@Override
+				public void init(ProcessorContext<Void, Void> context) {
+					Processor.super.init(context);
+					this.context = context;
+				}
+
+				@Override
+				public void process(Record<Object, Object> record) {
+					KafkaStreamsRecordInterceptorContext interceptorContext =
+							new KafkaStreamsRecordInterceptorContext(inboundName, this.context.recordMetadata());
+					for (KafkaStreamsRecordInterceptor interceptor : kafkaStreamsRecordInterceptors) {
+						interceptor.intercept(record, interceptorContext);
+					}
+				}
+
+				@Override
+				public void close() {
+					Processor.super.close();
+				}
+			});
+		}
 	}
 
 	private Serde<?> getValueSerdeToUse(KafkaStreamsConsumerProperties kafkaStreamsConsumerProperties, Serde<?> valueSerde) {
