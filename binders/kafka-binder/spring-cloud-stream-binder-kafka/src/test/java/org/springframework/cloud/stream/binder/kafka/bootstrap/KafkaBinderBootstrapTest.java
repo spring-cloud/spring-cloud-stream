@@ -16,7 +16,6 @@
 
 package org.springframework.cloud.stream.binder.kafka.bootstrap;
 
-import java.beans.BeanProperty;
 import java.util.function.Function;
 
 import org.junit.jupiter.api.BeforeAll;
