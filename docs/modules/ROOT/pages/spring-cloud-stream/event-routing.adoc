@@ -86,6 +86,58 @@ public class RoutingStreamApplication {
 IMPORTANT: Passing instructions via application properties is especially important for reactive functions given that a reactive
 function is only invoked once to pass the Publisher, so access to the individual items is limited.
 
+[[using-message-routing-callback]]
+=== Using MessageRoutingCallback
+
+For more complex routing logic that cannot easily be expressed as a SpEL expression or an application property,
+you can implement `MessageRoutingCallback` from `spring-cloud-function` and register it as a Spring bean.
+Once registered, it is automatically picked up by `RoutingFunction` and takes *precedence over all other routing mechanisms*.
+
+`MessageRoutingCallback` has a single method:
+
+[source,java]
+----
+String routingResult(Message<?> message);
+----
+
+The returned value must be a function definition (i.e. the name of a `Function` or `Consumer` bean, optionally composed with `|`).
+
+The following example routes messages to either `evenHandler` or `oddHandler` based on message payload:
+
+[source,java]
+----
+@SpringBootApplication
+public class SampleApplication {
+
+    public static void main(String[] args) {
+        SpringApplication.run(SampleApplication.class,
+                "--spring.cloud.stream.function.routing.enabled=true");
+    }
+
+    @Bean
+    public MessageRoutingCallback customRouter() {
+        return message -> {
+            Integer payload = (Integer) message.getPayload();
+            return payload % 2 == 0 ? "evenHandler" : "oddHandler";
+        };
+    }
+
+    @Bean
+    public Consumer<Integer> evenHandler() {
+        return value -> System.out.println("EVEN: " + value);
+    }
+
+    @Bean
+    public Consumer<Integer> oddHandler() {
+        return value -> System.out.println("ODD: " + value);
+    }
+}
+----
+
+NOTE: Because `MessageRoutingCallback` takes precedence over header- and property-based routing, any
+`spring.cloud.function.definition` or `spring.cloud.function.routing-expression` settings are ignored when a
+`MessageRoutingCallback` bean is present.
+
 [[routing-function-and-output-binding]]
 === Routing Function and output binding
 
