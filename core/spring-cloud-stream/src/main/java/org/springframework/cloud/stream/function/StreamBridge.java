@@ -430,7 +430,8 @@ public final class StreamBridge implements StreamOperations, SmartInitializingSi
 				TimeUnit.SECONDS,
 				new LinkedBlockingQueue<>(queueCapacity),
 				runnable -> {
-					Thread thread = new Thread(runnable, "stream-bridge-" + threadCount.incrementAndGet());
+					Thread thread = new Thread(runnable,
+						"stream-bridge-" + threadCount.incrementAndGet());
 					thread.setDaemon(true);
 					return thread;
 				},
