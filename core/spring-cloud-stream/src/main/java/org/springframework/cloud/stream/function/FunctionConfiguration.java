@@ -565,8 +565,15 @@ public class FunctionConfiguration {
 				if (!(resultPublishers instanceof Iterable)) {
 					resultPublishers = Collections.singletonList(resultPublishers);
 				}
-				Iterator<String> outputBindingIter = outputBindingNames.iterator();
 				long outputCount = StreamSupport.stream(((Iterable) resultPublishers).spliterator(), false).count();
+				if (!CollectionUtils.isEmpty(outputBindingNames) && outputCount != outputBindingNames.size()) {
+					throw new IllegalStateException("Reactive function '" + functionDefinition
+							+ "' produced " + outputCount + " output publisher(s) but " + outputBindingNames.size()
+							+ " output binding(s) are configured " + outputBindingNames
+							+ ". Each configured output binding must have a corresponding publisher; "
+							+ "return a Tuple of Flux/Publisher when binding multiple outputs.");
+				}
+				Iterator<String> outputBindingIter = outputBindingNames.iterator();
 
 				((Iterable) resultPublishers).forEach(publisher -> {
 					Flux flux = Flux.from((Publisher) publisher);
@@ -584,7 +591,7 @@ public class FunctionConfiguration {
 							}
 							if (message instanceof Message m && m.getHeaders().get("spring.cloud.stream.sendto.destination") != null) {
 								String destinationName = (String) m.getHeaders().get("spring.cloud.stream.sendto.destination");
-								ProducerProperties producerProperties = this.serviceProperties.getBindings().get(outputBindingNames.iterator().next()).getProducer();
+								ProducerProperties producerProperties = this.serviceProperties.getBindings().get(outputBinding).getProducer();
 								MessageChannel dynamicChannel = streamBridge.resolveDestination(destinationName, producerProperties, null);
 								if (logger.isInfoEnabled()) {
 									logger.info("Output message is sent to '" + destinationName + "' destination");
