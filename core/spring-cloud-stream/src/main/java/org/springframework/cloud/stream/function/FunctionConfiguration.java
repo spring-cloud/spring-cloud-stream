@@ -190,6 +190,14 @@ public class FunctionConfiguration {
 
 		return () -> {
 			for (BindableFunctionProxyFactory proxyFactory : proxyFactories) {
+				// see https://github.com/spring-cloud/spring-cloud-stream/issues/3203
+				// A standalone output-/input-binding has no backing function, yet its
+				// function definition is now the binding name (since gh-3166 stopped
+				// null-ing it out in getFunctionDefinition()). Skip such bindings here so
+				// that a plain output channel is never resolved and treated as a Supplier.
+				if (!proxyFactory.isFunctionExist()) {
+					continue;
+				}
 				FunctionInvocationWrapper functionWrapper = functionCatalog.lookup(proxyFactory.getFunctionDefinition());
 				if (functionWrapper != null && functionWrapper.isSupplier()) {
 					// gather output content types
