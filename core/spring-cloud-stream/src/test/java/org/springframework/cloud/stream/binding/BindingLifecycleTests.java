@@ -18,7 +18,9 @@ package org.springframework.cloud.stream.binding;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.junit.jupiter.api.Test;
@@ -27,7 +29,10 @@ import org.springframework.beans.DirectFieldAccessor;
 import org.springframework.cloud.stream.binder.Binding;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * @author Oleg Zhurakousky
@@ -68,6 +73,32 @@ class BindingLifecycleTests {
 				lifecycle).getPropertyValue("inputBindings");
 		assertThat(lifecycleInputBindings.size() == 5).isTrue();
 		lifecycle.stop();
+	}
+
+	@Test
+	void inputBindingLifecycleUnbindsStartedBindablesAfterStartFailure() {
+		Map<String, Bindable> bindables = new LinkedHashMap<>();
+		BindingService bindingService = mock(BindingService.class);
+		Binding<Object> binding = mock(Binding.class);
+		Bindable started = mock(Bindable.class);
+		Bindable failing = mock(Bindable.class);
+		RuntimeException failure = new RuntimeException("fail");
+
+		when(started.createAndBindInputs(bindingService))
+				.thenReturn(Collections.singletonList(binding));
+		when(failing.createAndBindInputs(bindingService)).thenThrow(failure);
+
+		bindables.put("started", started);
+		bindables.put("failing", failing);
+
+		InputBindingLifecycle lifecycle = new InputBindingLifecycle(bindingService,
+				bindables);
+
+		assertThatThrownBy(lifecycle::start).isSameAs(failure);
+
+		verify(failing).unbindInputs(bindingService);
+		verify(started).unbindInputs(bindingService);
+		assertThat(lifecycle.isRunning()).isFalse();
 	}
 
 	@Test

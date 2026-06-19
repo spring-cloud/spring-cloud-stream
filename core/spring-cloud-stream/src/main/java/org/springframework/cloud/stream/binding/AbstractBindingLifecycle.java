@@ -16,6 +16,8 @@
 
 package org.springframework.cloud.stream.binding;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -57,7 +59,17 @@ public abstract class AbstractBindingLifecycle implements SmartLifecycle {
 				this.bindables.putAll(context.getBeansOfType(Bindable.class));
 			}
 
-			this.bindables.values().forEach(this::doStartWithBindable);
+			List<Bindable> startedBindables = new ArrayList<>();
+			try {
+				for (Bindable bindable : this.bindables.values()) {
+					startedBindables.add(bindable);
+					this.doStartWithBindable(bindable);
+				}
+			}
+			catch (RuntimeException ex) {
+				this.stopStartedBindables(startedBindables, ex);
+				throw ex;
+			}
 			this.running = true;
 		}
 	}
@@ -95,7 +107,25 @@ public abstract class AbstractBindingLifecycle implements SmartLifecycle {
 		if (bindable instanceof BindableFunctionProxyFactory functionProxy) {
 			this.bindables.put(functionProxy.getFunctionDefinition(), bindable);
 		}
-		this.doStartWithBindable(bindable);
+		try {
+			this.doStartWithBindable(bindable);
+		}
+		catch (RuntimeException ex) {
+			this.stopStartedBindables(List.of(bindable), ex);
+			throw ex;
+		}
+	}
+
+	private void stopStartedBindables(List<Bindable> startedBindables,
+			RuntimeException exception) {
+		for (int i = startedBindables.size() - 1; i >= 0; i--) {
+			try {
+				this.doStopWithBindable(startedBindables.get(i));
+			}
+			catch (RuntimeException stopException) {
+				exception.addSuppressed(stopException);
+			}
+		}
 	}
 
 	abstract void doStartWithBindable(Bindable bindable);
