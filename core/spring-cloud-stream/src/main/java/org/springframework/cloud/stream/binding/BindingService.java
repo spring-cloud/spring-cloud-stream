@@ -126,48 +126,54 @@ public class BindingService {
 		String bindingTarget = this.bindingServiceProperties
 				.getBindingDestination(inputName);
 
-		if (consumerProperties.isMultiplex()) {
-			bindings.add(doBindConsumer(input, inputName, binder, consumerProperties,
-					bindingTarget));
-		}
-		else {
-			String[] bindingTargets = StringUtils
-					.commaDelimitedListToStringArray(bindingTarget);
-			for (String target : bindingTargets) {
-				if (!consumerProperties.isPartitioned() || consumerProperties.getInstanceIndexList().isEmpty()) {
-					Binding<T> binding = input instanceof PollableSource
-						? doBindPollableConsumer(input, inputName, binder,
-						consumerProperties, target)
-						: doBindConsumer(input, inputName, binder, consumerProperties,
-						target);
-
-					bindings.add(binding);
-				}
-				else {
-					for (Integer index : consumerProperties.getInstanceIndexList()) {
-						if (index < 0) {
-							continue;
-						}
-
-						Object extension = consumerProperties instanceof ExtendedConsumerProperties extendedProperties
-								? extendedProperties.getExtension()
-										: null;
-
-						ConsumerProperties consumerPropertiesTemp = new ExtendedConsumerProperties<>(extension);
-						BeanUtils.copyProperties(consumerProperties, consumerPropertiesTemp);
-
-						consumerPropertiesTemp.setInstanceIndex(index);
-
+		try {
+			if (consumerProperties.isMultiplex()) {
+				bindings.add(doBindConsumer(input, inputName, binder, consumerProperties,
+						bindingTarget));
+			}
+			else {
+				String[] bindingTargets = StringUtils
+						.commaDelimitedListToStringArray(bindingTarget);
+				for (String target : bindingTargets) {
+					if (!consumerProperties.isPartitioned() || consumerProperties.getInstanceIndexList().isEmpty()) {
 						Binding<T> binding = input instanceof PollableSource
 							? doBindPollableConsumer(input, inputName, binder,
-							consumerPropertiesTemp, target)
-							: doBindConsumer(input, inputName, binder, consumerPropertiesTemp,
+							consumerProperties, target)
+							: doBindConsumer(input, inputName, binder, consumerProperties,
 							target);
 
 						bindings.add(binding);
 					}
+					else {
+						for (Integer index : consumerProperties.getInstanceIndexList()) {
+							if (index < 0) {
+								continue;
+							}
+
+							Object extension = consumerProperties instanceof ExtendedConsumerProperties extendedProperties
+									? extendedProperties.getExtension()
+											: null;
+
+							ConsumerProperties consumerPropertiesTemp = new ExtendedConsumerProperties<>(extension);
+							BeanUtils.copyProperties(consumerProperties, consumerPropertiesTemp);
+
+							consumerPropertiesTemp.setInstanceIndex(index);
+
+							Binding<T> binding = input instanceof PollableSource
+								? doBindPollableConsumer(input, inputName, binder,
+								consumerPropertiesTemp, target)
+								: doBindConsumer(input, inputName, binder, consumerPropertiesTemp,
+								target);
+
+							bindings.add(binding);
+						}
+					}
 				}
 			}
+		}
+		catch (RuntimeException ex) {
+			this.unbindConsumerBindings(bindings, ex);
+			throw ex;
 		}
 		bindings = Collections.unmodifiableCollection(bindings);
 		this.consumerBindings.put(inputName, new ArrayList<>(bindings));
@@ -383,14 +389,28 @@ public class BindingService {
 	public void unbindConsumers(String inputName) {
 		List<Binding<?>> bindings = this.consumerBindings.remove(inputName);
 		if (bindings != null && !CollectionUtils.isEmpty(bindings)) {
-			for (Binding<?> binding : bindings) {
+			this.unbindConsumerBindings(bindings, null);
+		}
+		else if (this.log.isWarnEnabled()) {
+			this.log.warn("Trying to unbind '" + inputName + "', but no binding found.");
+		}
+	}
+
+	private void unbindConsumerBindings(
+			Collection<? extends Binding<?>> bindings,
+			@Nullable RuntimeException exception) {
+		for (Binding<?> binding : bindings) {
+			try {
 				binding.stop();
 				//then
 				binding.unbind();
 			}
-		}
-		else if (this.log.isWarnEnabled()) {
-			this.log.warn("Trying to unbind '" + inputName + "', but no binding found.");
+			catch (RuntimeException unbindException) {
+				if (exception == null) {
+					throw unbindException;
+				}
+				exception.addSuppressed(unbindException);
+			}
 		}
 	}
 
