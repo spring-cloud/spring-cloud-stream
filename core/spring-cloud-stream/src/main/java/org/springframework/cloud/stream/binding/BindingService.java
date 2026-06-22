@@ -20,10 +20,11 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Stream;
 
@@ -76,9 +77,9 @@ public class BindingService {
 
 	private final BindingServiceProperties bindingServiceProperties;
 
-	private final Map<String, Binding<?>> producerBindings = new HashMap<>();
+	private final Map<String, Binding<?>> producerBindings = new ConcurrentHashMap<>();
 
-	private final Map<String, List<Binding<?>>> consumerBindings = new HashMap<>();
+	private final Map<String, List<Binding<?>>> consumerBindings = new ConcurrentHashMap<>();
 
 	private final TaskScheduler taskScheduler;
 
@@ -170,7 +171,7 @@ public class BindingService {
 			throw ex;
 		}
 		bindings = Collections.unmodifiableCollection(bindings);
-		this.consumerBindings.put(inputName, new ArrayList<>(bindings));
+		this.consumerBindings.put(inputName, new CopyOnWriteArrayList<>(bindings));
 		return bindings;
 	}
 
@@ -194,7 +195,7 @@ public class BindingService {
 						e.getCause() == null ? e.toString() : e.getCause().getMessage(), consumerProperties, true, this.objectMapper);
 				rescheduleConsumerBinding(input, inputName, binder, consumerProperties,
 						target, late, e);
-				this.consumerBindings.put(inputName, Collections.singletonList(late));
+				this.consumerBindings.put(inputName, new CopyOnWriteArrayList<>(Collections.singletonList(late)));
 				return late;
 			}
 		}
