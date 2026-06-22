@@ -138,18 +138,13 @@ public class BindingService {
 					if (!consumerProperties.isPartitioned() || consumerProperties.getInstanceIndexList().isEmpty()) {
 						Binding<T> binding = input instanceof PollableSource
 							? doBindPollableConsumer(input, inputName, binder,
-							consumerProperties, target)
-							: doBindConsumer(input, inputName, binder, consumerProperties,
-							target);
+									consumerProperties, target)
+										: doBindConsumer(input, inputName, binder, consumerProperties, target);
 
 						bindings.add(binding);
 					}
 					else {
 						for (Integer index : consumerProperties.getInstanceIndexList()) {
-							if (index < 0) {
-								continue;
-							}
-
 							Object extension = consumerProperties instanceof ExtendedConsumerProperties extendedProperties
 									? extendedProperties.getExtension()
 											: null;
@@ -161,9 +156,8 @@ public class BindingService {
 
 							Binding<T> binding = input instanceof PollableSource
 								? doBindPollableConsumer(input, inputName, binder,
-								consumerPropertiesTemp, target)
-								: doBindConsumer(input, inputName, binder, consumerPropertiesTemp,
-								target);
+										consumerPropertiesTemp, target)
+											: doBindConsumer(input, inputName, binder, consumerPropertiesTemp, target);
 
 							bindings.add(binding);
 						}
