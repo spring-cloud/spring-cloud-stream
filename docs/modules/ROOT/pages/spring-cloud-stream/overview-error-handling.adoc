@@ -9,7 +9,7 @@ Errors happen, and Spring Cloud Stream provides several flexible mechanisms to d
 capability of the underlying messaging middleware as well as programming model (more on this later).
 
 Whenever Message handler (function) throws an exception, it is propagated back to the binder, at which point binder will make several attempts at re-trying
-the same message (3 by default) using `RetryTemplate` provided by the https://github.com/spring-projects/spring-retry[Spring Retry] library.
+the same message (3 by default) using `RetryTemplate` provided by https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/core/retry/package-summary.html[Spring Framework].
 If retries are unsuccessful it is up to the error handling mechanism which may _drop_ the message, _re-queue_ the message for re-processing or _send the failed message to DLQ_.
 
 Both Rabbit and Kafka support these concepts (especially DLQ). However, other binders may not, so refer to your individual binder’s documentation for details on supported
@@ -154,7 +154,7 @@ You can also facilitate immediate dispatch to DLQ (without re-tries) by setting 
 
 In this section we cover configuration properties relevant to configuration of retry capabilities.
 
-The `RetryTemplate` is part of the https://github.com/spring-projects/spring-retry[Spring Retry] library.
+The `RetryTemplate` is part of the https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/core/retry/package-summary.html[Spring Framework].
 While it is out of scope of this document to cover all of the capabilities of the `RetryTemplate`, we 
 will mention the following consumer properties that are specifically related to
 the `RetryTemplate`:
