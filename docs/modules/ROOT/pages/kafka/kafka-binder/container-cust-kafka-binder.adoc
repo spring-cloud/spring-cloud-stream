@@ -51,24 +51,22 @@ To use the `KafkaListenerContainerCustomizer`, create a bean that implements thi
 [source,java]
 ----
 @Bean
-public KafkaListenerContainerCustomizer<AbstractMessageListenerContainer<?, ?>> kafkaCustomizer() {
+public KafkaListenerContainerCustomizer kafkaCustomizer() {
     return (container, destinationName, group, properties) -> {
         // Customize the Kafka container here
     };
 }
 ----
 
-The `KafkaListenerContainerCustomizer` interface adds the following method:
+The `KafkaListenerContainerCustomizer` interface makes the base three-argument `configure` method a no-op default (so it can be implemented as a lambda) and adds the following method:
 
 [source,java]
 ----
-default void configureKafkaListenerContainer(
-    C container,
+void configure(
+    AbstractMessageListenerContainer<?, ?> container,
     String destinationName,
     String group,
-    ExtendedConsumerProperties<KafkaConsumerProperties> extendedConsumerProperties) {
-        configure(container, destinationName, group);
-}
+    ExtendedConsumerProperties<KafkaConsumerProperties> extendedConsumerProperties);
 ----
 
 This method extends the base `configure` method with an additional parameter:

@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.binder.kafka;
 
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 import org.junit.jupiter.api.Test;
@@ -62,6 +63,25 @@ class KafkaListenerContainerCustomizerTests {
 
 	@Autowired
 	private KafkaListenerContainerCustomizer compositeCustomizer;
+
+	@Test
+	@SuppressWarnings("unchecked")
+	void canBeImplementedAsLambdaWithExtendedProperties() {
+		AtomicReference<ExtendedConsumerProperties<KafkaConsumerProperties>> captured = new AtomicReference<>();
+		KafkaListenerContainerCustomizer customizer = (container, destinationName, group, properties) ->
+			captured.set(properties);
+
+		KafkaConsumerProperties kafkaConsumerProperties = new KafkaConsumerProperties();
+		kafkaConsumerProperties.setEnableDlq(true);
+		ExtendedConsumerProperties<KafkaConsumerProperties> properties =
+			new ExtendedConsumerProperties<>(kafkaConsumerProperties);
+		AbstractMessageListenerContainer<?, ?> container = mock(AbstractMessageListenerContainer.class);
+
+		customizer.configure(container, "topic", "group", properties);
+
+		assertThat(captured.get()).isSameAs(properties);
+		assertThat(captured.get().getExtension().isEnableDlq()).isTrue();
+	}
 
 	@Test
 	@SuppressWarnings("unchecked")
@@ -151,11 +171,6 @@ class KafkaListenerContainerCustomizerTests {
 
 			public ListenerContainerWithDlqAndRetryCustomizer getDlqCustomizer() {
 				return dlqCustomizer;
-			}
-
-			@Override
-			public void configure(AbstractMessageListenerContainer<?, ?> container, String destinationName, String group) {
-
 			}
 		}
 	}
