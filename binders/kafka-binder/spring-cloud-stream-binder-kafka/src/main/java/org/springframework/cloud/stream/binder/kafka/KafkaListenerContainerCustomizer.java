@@ -32,6 +32,19 @@ import org.springframework.kafka.listener.AbstractMessageListenerContainer;
 public interface KafkaListenerContainerCustomizer extends ListenerContainerCustomizer<AbstractMessageListenerContainer<?, ?>> {
 
 	/**
+	 * No-op override of {@link ListenerContainerCustomizer#configure(Object, String, String)}.
+	 * Implementations should override
+	 * {@link #configure(AbstractMessageListenerContainer, String, String, ExtendedConsumerProperties)}
+	 * instead, which is the method invoked by the Kafka binder.
+	 * @param container the Kafka message listener container to configure
+	 * @param destinationName the name of the destination (topic) that this listener container is associated with
+	 * @param group the consumer group name
+	 */
+	@Override
+	default void configure(AbstractMessageListenerContainer<?, ?> container, String destinationName, String group) {
+	}
+
+	/**
 	 * Configure the Kafka listener container with access to extended consumer properties.
 	 *
 	 * @param container the Kafka message listener container to configure
@@ -39,8 +52,6 @@ public interface KafkaListenerContainerCustomizer extends ListenerContainerCusto
 	 * @param group the consumer group name
 	 * @param extendedConsumerProperties the extended consumer properties specific to Kafka
 	 */
-	default void configure(AbstractMessageListenerContainer<?, ?> container, String destinationName, String group,
-						ExtendedConsumerProperties<KafkaConsumerProperties> extendedConsumerProperties) {
-		configure(container, destinationName, group);
-	}
+	void configure(AbstractMessageListenerContainer<?, ?> container, String destinationName, String group,
+			ExtendedConsumerProperties<KafkaConsumerProperties> extendedConsumerProperties);
 }
