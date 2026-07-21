@@ -16,8 +16,8 @@
 
 package org.springframework.cloud.stream.schema.registry.avro;
 
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.converter.ContentTypeResolver;
@@ -35,7 +35,14 @@ class OriginalContentTypeResolver implements ContentTypeResolver {
 
 	private static final String BINDER_ORIGINAL_CONTENT_TYPE = "originalContentType";
 
-	private ConcurrentMap<String, MimeType> mimeTypeCache = new ConcurrentHashMap<>();
+	//private ConcurrentMap<String, MimeType> mimeTypeCache = new ConcurrentHashMap<>();
+	private LinkedHashMap<String, MimeType> mimeTypeCache = new LinkedHashMap<String, MimeType>() {
+		@Override
+		protected boolean removeEldestEntry(Map.Entry<String, MimeType> eldest) {
+			boolean remove = size() > 100;
+			return remove;
+		}
+	};
 
 	@Override
 	public MimeType resolve(MessageHeaders headers) {
