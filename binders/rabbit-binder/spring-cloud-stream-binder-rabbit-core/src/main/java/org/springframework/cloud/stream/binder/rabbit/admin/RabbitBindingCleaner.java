@@ -116,7 +116,8 @@ public class RabbitBindingCleaner implements BindingCleaner {
 
 	private void deleteQueue(WebClient client, URI uri, String vhost, String q) {
 		URI deleteURI = uri
-				.resolve("/api/queues/" + UriUtils.encodePathSegment(vhost, StandardCharsets.UTF_8) + "/" + q);
+				.resolve("/api/queues/" + UriUtils.encodePathSegment(vhost, StandardCharsets.UTF_8) + "/" 
+						+ UriUtils.encodePathSegment(q, StandardCharsets.UTF_8));
 		client.delete()
 				.uri(deleteURI)
 				.retrieve()
@@ -126,7 +127,8 @@ public class RabbitBindingCleaner implements BindingCleaner {
 
 	private void deleteExchange(WebClient client, URI uri, String vhost, String ex) {
 		URI deleteURI = uri
-				.resolve("/api/exchanges/" + UriUtils.encodePathSegment(vhost, StandardCharsets.UTF_8) + "/" + ex);
+				.resolve("/api/exchanges/" + UriUtils.encodePathSegment(vhost, StandardCharsets.UTF_8) + "/" 
+						+ UriUtils.encodePathSegment(ex, StandardCharsets.UTF_8));
 		client.delete()
 				.uri(deleteURI)
 				.retrieve()
