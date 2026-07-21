@@ -81,7 +81,6 @@ public class BinderHeaderMapper extends AbstractKafkaHeaderMapper {
 	private static final List<String> DEFAULT_TRUSTED_PACKAGES =
 			Arrays.asList(
 					"java.lang",
-					"java.net",
 					"java.util",
 					"org.springframework.util"
 			);
