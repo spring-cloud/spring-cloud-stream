@@ -575,6 +575,9 @@ class StreamBridgeTests {
 			BindingService bindingService = context.getBean(BindingService.class);
 			assertThat(bindingService.getProducerBindingNames().length).isEqualTo(1);
 			assertThat(bindingService.getProducerBindingNames()[0]).isEqualTo("d");
+			BindingServiceProperties bindingServiceProp = context.getBean(BindingServiceProperties.class);
+			assertThat(bindingServiceProp.getBindings().size()).isEqualTo(1);
+			assertThat(bindingServiceProp.getBindings().keySet().iterator().next()).isEqualTo("d");
 		}
 	}
 

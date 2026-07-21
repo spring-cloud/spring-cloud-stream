@@ -155,6 +155,7 @@ public final class StreamBridge implements StreamOperations, SmartInitializingSi
 					if (logger.isDebugEnabled()) {
 						logger.debug("Removing message channel from cache " + eldest.getKey());
 					}
+					bindingServiceProperties.getBindings().remove(eldest.getKey());
 					bindingService.unbindProducers(eldest.getKey());
 				}
 				return remove;
