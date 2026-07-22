@@ -30,7 +30,7 @@ jobs:
             ${{ runner.os }}-m2-
 
       - name: Setup Java 17
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v5
         with:
           java-version: '17'
           distribution: 'liberica'
