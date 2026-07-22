@@ -1,0 +1,34 @@
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    target-branch: "main"
+    exclude-paths:
+      - ".github/workflows/release-train-test.yml"
+      - ".github/workflows/release-train-build.yml"
+    schedule:
+      interval: "weekly"
+    ignore:
+      - dependency-name: "spring-cloud/spring-cloud-build-commercial"
+  - package-ecosystem: maven
+    directory: /
+    schedule:
+      interval: daily
+    target-branch: main
+    ignore:
+      - dependency-name: "org.eclipse.m2e:lifecycle-mapping"
+      # only upgrade patch versions for maintenance branch
+      - dependency-name: "*"
+        update-types:
+          - version-update:semver-major
+          - version-update:semver-minor
+  - package-ecosystem: npm
+    target-branch: docs-build
+    directory: /
+    schedule:
+      interval: weekly
+  - package-ecosystem: npm
+    target-branch: main
+    directory: /docs
+    schedule:
+      interval: weekly
