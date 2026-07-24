@@ -693,6 +693,15 @@ public class FunctionConfiguration {
 					}
 				}
 
+				private boolean containsPartitionInterceptor(AbstractMessageChannel channel) {
+					for (ChannelInterceptor channelInterceptor : channel.getInterceptors()) {
+						if (channelInterceptor instanceof DefaultPartitioningInterceptor) {
+							return true;
+						}
+					}
+					return false;
+				}
+
 				private void doSendMessage(Object result, Message<?> requestMessage) {
 					if (result instanceof Message<?> messageResult && messageResult.getHeaders().get("spring.cloud.stream.sendto.destination") != null) {
 						String destinationName = (String) messageResult.getHeaders().get("spring.cloud.stream.sendto.destination");
@@ -700,8 +709,10 @@ public class FunctionConfiguration {
 						BindingProperties bindingProperties = serviceProperties.getBindingProperties(destinationName);
 						ProducerProperties sendToBindingProducerProperties = bindingProperties.getProducer();
 						if (sendToBindingProducerProperties != null && sendToBindingProducerProperties.isPartitioned()) {
-							((AbstractMessageChannel) outputChannel)
+							if (!containsPartitionInterceptor(((AbstractMessageChannel) outputChannel))) {
+								((AbstractMessageChannel) outputChannel)
 								.addInterceptor(new DefaultPartitioningInterceptor(bindingProperties, applicationContext.getBeanFactory()));
+							}
 						}
 						if (logger.isInfoEnabled()) {
 							logger.info("Output message is sent to '" + destinationName + "' destination");
