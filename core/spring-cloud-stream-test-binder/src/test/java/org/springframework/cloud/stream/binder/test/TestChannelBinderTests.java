@@ -17,19 +17,27 @@
 package org.springframework.cloud.stream.binder.test;
 
 import java.lang.reflect.Method;
+import java.util.function.Function;
 
 import org.junit.jupiter.api.Test;
 
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.cloud.stream.binding.BindingsLifecycleController;
+import org.springframework.cloud.stream.binding.BindingsLifecycleController.State;
 import org.springframework.cloud.stream.provisioning.ProducerDestination;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.annotation.Bean;
+import org.springframework.messaging.support.GenericMessage;
 import org.springframework.util.ReflectionUtils;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  *
  * @author Oleg Zhurakousky
+ * @author Mattia Gualtieri
  *
  */
 class TestChannelBinderTests {
@@ -72,8 +80,48 @@ class TestChannelBinderTests {
 		}
 	}
 
+	@Test
+	void stoppedBindingDoesNotConsumeAndRestartedBindingConsumesAgain() {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+			TestChannelBinderConfiguration.getCompleteConfiguration(EchoConfiguration.class))
+			.web(WebApplicationType.NONE).run("--spring.jmx.enabled=false",
+				"--spring.cloud.function.definition=echo",
+				"--spring.cloud.stream.bindings.echo-in-0.group=test-group")) {
+
+			InputDestination input = context.getBean(InputDestination.class);
+			OutputDestination output = context.getBean(OutputDestination.class);
+			BindingsLifecycleController controller = context.getBean(BindingsLifecycleController.class);
+
+			input.send(new GenericMessage<>("first".getBytes()), "echo-in-0");
+			assertThat(output.receive(1000, "echo-out-0").getPayload()).isEqualTo("first".getBytes());
+
+			controller.changeState("echo-in-0", State.STOPPED);
+			assertThat(controller.queryState("echo-in-0").get(0).isRunning()).isFalse();
+
+			input.send(new GenericMessage<>("while-stopped".getBytes()), "echo-in-0");
+			// A stale subscription left behind by an incomplete stop() would still deliver
+			// this message and produce an echo, even though the binding is reported as stopped.
+			assertThat(output.receive(200, "echo-out-0")).isNull();
+
+			controller.changeState("echo-in-0", State.STARTED);
+			assertThat(controller.queryState("echo-in-0").get(0).isRunning()).isTrue();
+
+			input.send(new GenericMessage<>("after-restart".getBytes()), "echo-in-0");
+			assertThat(output.receive(1000, "echo-out-0").getPayload()).isEqualTo("after-restart".getBytes());
+		}
+	}
+
 	@EnableAutoConfiguration
 	public static class SampleConfiguration {
 
+	}
+
+	@EnableAutoConfiguration
+	public static class EchoConfiguration {
+
+		@Bean
+		public Function<String, String> echo() {
+			return value -> value;
+		}
 	}
 }
