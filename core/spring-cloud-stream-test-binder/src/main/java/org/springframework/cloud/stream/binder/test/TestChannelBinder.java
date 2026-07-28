@@ -100,6 +100,7 @@ import org.springframework.util.StringUtils;
  * @author Oleg Zhurakousky
  * @author Gary Russell
  * @author Artem Bilan
+ * @author Mattia Gualtieri
  *
  */
 public class TestChannelBinder extends
@@ -158,7 +159,7 @@ public class TestChannelBinder extends
 
 		IntegrationMessageListeningContainer messageListenerContainer = new IntegrationMessageListeningContainer();
 		IntegrationBinderInboundChannelAdapter adapter = new IntegrationBinderInboundChannelAdapter(
-			messageListenerContainer);
+			siBinderInputChannel, messageListenerContainer);
 		adapter.setBeanFactory(this.beanFactory);
 		String groupName = StringUtils.hasText(group) ? group : "anonymous";
 		ErrorInfrastructure errorInfrastructure = registerErrorInfrastructure(destination,
@@ -171,8 +172,6 @@ public class TestChannelBinder extends
 			adapter.setErrorMessageStrategy(errorMessageStrategy);
 			adapter.setErrorChannel(errorInfrastructure.getErrorChannel());
 		}
-
-		siBinderInputChannel.subscribe(messageListenerContainer);
 
 		return adapter;
 	}
@@ -219,6 +218,7 @@ public class TestChannelBinder extends
 	private static class IntegrationBinderInboundChannelAdapter
 		extends MessageProducerSupport {
 
+		private final SubscribableChannel siBinderInputChannel;
 		private final IntegrationMessageListeningContainer listenerContainer;
 
 		private RetryTemplate retryTemplate;
@@ -226,7 +226,9 @@ public class TestChannelBinder extends
 		private RecoveryCallback<?> recoveryCallback;
 
 		IntegrationBinderInboundChannelAdapter(
+			SubscribableChannel siBinderInputChannel,
 			IntegrationMessageListeningContainer listenerContainer) {
+			this.siBinderInputChannel = siBinderInputChannel;
 			this.listenerContainer = listenerContainer;
 		}
 
@@ -237,6 +239,17 @@ public class TestChannelBinder extends
 
 		public void setRetryTemplate(RetryTemplate retryTemplate) {
 			this.retryTemplate = retryTemplate;
+		}
+
+		@Override
+		protected void doStart() {
+			this.siBinderInputChannel.subscribe(this.listenerContainer);
+		}
+
+		@Override
+		protected void doStop() {
+			super.doStop();
+			this.siBinderInputChannel.unsubscribe(this.listenerContainer);
 		}
 
 		@Override
