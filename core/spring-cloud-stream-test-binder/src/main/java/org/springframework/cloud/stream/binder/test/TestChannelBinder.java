@@ -18,6 +18,7 @@ package org.springframework.cloud.stream.binder.test;
 
 import java.util.function.Consumer;
 
+import org.reactivestreams.Subscription;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.stream.binder.AbstractMessageChannelBinder;
@@ -28,6 +29,8 @@ import org.springframework.cloud.stream.binder.test.TestChannelBinderProvisioner
 import org.springframework.cloud.stream.binder.test.TestChannelBinderProvisioner.SpringIntegrationProducerDestination;
 import org.springframework.cloud.stream.provisioning.ConsumerDestination;
 import org.springframework.cloud.stream.provisioning.ProducerDestination;
+import org.springframework.context.ApplicationEvent;
+import org.springframework.context.ApplicationListener;
 import org.springframework.core.retry.RetryException;
 import org.springframework.integration.IntegrationMessageHeaderAccessor;
 import org.springframework.integration.acks.AcknowledgmentCallback;
@@ -157,7 +160,7 @@ public class TestChannelBinder extends
 			.getChannel();
 
 		IntegrationMessageListeningContainer messageListenerContainer = new IntegrationMessageListeningContainer();
-		IntegrationBinderInboundChannelAdapter adapter = new IntegrationBinderInboundChannelAdapter(
+		IntegrationBinderInboundChannelAdapter adapter = new IntegrationBinderInboundChannelAdapter(siBinderInputChannel,
 			messageListenerContainer);
 		adapter.setBeanFactory(this.beanFactory);
 		String groupName = StringUtils.hasText(group) ? group : "anonymous";
@@ -173,7 +176,6 @@ public class TestChannelBinder extends
 		}
 
 		siBinderInputChannel.subscribe(messageListenerContainer);
-
 		return adapter;
 	}
 
@@ -225,9 +227,12 @@ public class TestChannelBinder extends
 
 		private RecoveryCallback<?> recoveryCallback;
 
-		IntegrationBinderInboundChannelAdapter(
+		private final SubscribableChannel subscribableChannel;
+
+		IntegrationBinderInboundChannelAdapter(SubscribableChannel subscribableChannel,
 			IntegrationMessageListeningContainer listenerContainer) {
 			this.listenerContainer = listenerContainer;
+			this.subscribableChannel = subscribableChannel;
 		}
 
 		// Temporarily unused until DLQ strategy for this binder becomes a requirement
@@ -237,6 +242,12 @@ public class TestChannelBinder extends
 
 		public void setRetryTemplate(RetryTemplate retryTemplate) {
 			this.retryTemplate = retryTemplate;
+		}
+
+		@Override
+		protected void doStop() {
+			super.doStop();
+			this.subscribableChannel.unsubscribe(listenerContainer);
 		}
 
 		@Override
