@@ -233,7 +233,6 @@ public class TestChannelBinder extends
 			IntegrationMessageListeningContainer listenerContainer) {
 			this.siBinderInputChannel = siBinderInputChannel;
 			this.listenerContainer = listenerContainer;
-			this.subscribableChannel = subscribableChannel;
 		}
 
 		// Temporarily unused until DLQ strategy for this binder becomes a requirement
@@ -247,6 +246,7 @@ public class TestChannelBinder extends
 
 		@Override
 		protected void doStart() {
+			super.doStart();
 			this.siBinderInputChannel.subscribe(this.listenerContainer);
 		}
 
