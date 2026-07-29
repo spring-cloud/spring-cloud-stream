@@ -158,7 +158,7 @@ public class TestChannelBinder extends
 			.getChannel();
 
 		IntegrationMessageListeningContainer messageListenerContainer = new IntegrationMessageListeningContainer();
-		IntegrationBinderInboundChannelAdapter adapter = new IntegrationBinderInboundChannelAdapter(
+		IntegrationBinderInboundChannelAdapter adapter = new IntegrationBinderInboundChannelAdapter(siBinderInputChannel,
 			messageListenerContainer);
 
 		String groupName = StringUtils.hasText(group) ? group : "anonymous";
@@ -228,9 +228,12 @@ public class TestChannelBinder extends
 
 		private RecoveryCallback<? extends Object> recoveryCallback;
 
-		IntegrationBinderInboundChannelAdapter(
+		private final SubscribableChannel subscribableChannel;
+
+		IntegrationBinderInboundChannelAdapter(SubscribableChannel subscribableChannel,
 			IntegrationMessageListeningContainer listenerContainer) {
 			this.listenerContainer = listenerContainer;
+			this.subscribableChannel = subscribableChannel;
 		}
 
 		// Temporarily unused until DLQ strategy for this binder becomes a requirement
@@ -241,6 +244,12 @@ public class TestChannelBinder extends
 
 		public void setRetryTemplate(RetryTemplate retryTemplate) {
 			this.retryTemplate = retryTemplate;
+		}
+
+		@Override
+		protected void doStop() {
+			super.doStop();
+			this.subscribableChannel.unsubscribe(listenerContainer);
 		}
 
 		@Override
