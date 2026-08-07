@@ -117,7 +117,7 @@ public final class StreamBridge implements StreamOperations, SmartInitializingSi
 
 	private final BindingService bindingService;
 
-	private final Map<Integer, FunctionInvocationWrapper> streamBridgeFunctionCache;
+	private final Map<StreamBridgeFunctionKey, FunctionInvocationWrapper> streamBridgeFunctionCache;
 
 	private final FunctionInvocationHelper<?> functionInvocationHelper;
 
@@ -197,7 +197,7 @@ public final class StreamBridge implements StreamOperations, SmartInitializingSi
 		ProducerProperties producerProperties = this.bindingServiceProperties.getProducerProperties(bindingName);
 		MessageChannel messageChannel = this.resolveDestination(bindingName, producerProperties, binderName);
 
-		Function functionToInvoke = this.getStreamBridgeFunction(outputContentType.toString(), producerProperties);
+		Function functionToInvoke = this.getStreamBridgeFunction(bindingName, outputContentType.toString(), producerProperties);
 
 		if (producerProperties != null && producerProperties.isPartitioned()) {
 			functionToInvoke = new PartitionAwareFunctionWrapper(functionToInvoke, this.applicationContext, producerProperties);
@@ -233,21 +233,12 @@ public final class StreamBridge implements StreamOperations, SmartInitializingSi
 		return messageChannel.send(resultMessage);
 	}
 
-	private int hashProducerProperties(ProducerProperties producerProperties, String outputContentType) {
-		int hash = outputContentType.hashCode()
-				+ Boolean.hashCode(producerProperties.isUseNativeEncoding())
-				+ Boolean.hashCode(producerProperties.isPartitioned())
-				+ producerProperties.getPartitionCount();
-
-		if (producerProperties.getPartitionKeyExpression() != null && producerProperties.getBindingName() != null) {
-			hash += producerProperties.getBindingName().hashCode();
-		}
-
-		return hash;
-	}
-
-	private FunctionInvocationWrapper getStreamBridgeFunction(String outputContentType, ProducerProperties producerProperties) {
-		int streamBridgeFunctionKey = this.hashProducerProperties(producerProperties, outputContentType);
+	private FunctionInvocationWrapper getStreamBridgeFunction(String bindingName, String outputContentType, ProducerProperties producerProperties) {
+		StreamBridgeFunctionKey streamBridgeFunctionKey = new StreamBridgeFunctionKey(outputContentType,
+				producerProperties.isUseNativeEncoding(),
+				producerProperties.isPartitioned(),
+				producerProperties.getPartitionCount(),
+				producerProperties.isPartitioned() ? bindingName : null);
 
 		return this.streamBridgeFunctionCache.computeIfAbsent(streamBridgeFunctionKey, key -> {
 			FunctionInvocationWrapper functionToInvoke = this.functionCatalog.lookup(STREAM_BRIDGE_FUNC_NAME, outputContentType.toString());
@@ -392,6 +383,19 @@ public final class StreamBridge implements StreamOperations, SmartInitializingSi
 				}
 			}
 		});
+	}
+
+	/*
+	 * Identifies the function cached for a send(..). A partitioned binding mutates the cached
+	 * function by setting the partition enhancer on it, so it must not share that function with
+	 * another binding; its binding name is therefore part of the key. The name is taken from the
+	 * send(..) argument, since ProducerProperties#getBindingName() is only populated for binders
+	 * that are not an ExtendedPropertiesBinder (see GH-3242). Non-partitioned bindings leave it
+	 * null and keep sharing a single function. Equality rather than a computed hash decides cache
+	 * hits, so two distinct bindings can never be conflated by a hash collision.
+	 */
+	private record StreamBridgeFunctionKey(String outputContentType, boolean useNativeEncoding,
+			boolean partitioned, int partitionCount, String bindingName) {
 	}
 
 	private static final class ContextPropagationHelper {
