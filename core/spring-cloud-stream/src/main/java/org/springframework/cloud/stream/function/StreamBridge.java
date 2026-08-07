@@ -19,6 +19,7 @@ package org.springframework.cloud.stream.function;
 import java.lang.reflect.Type;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -196,7 +197,7 @@ public final class StreamBridge implements StreamOperations, SmartInitializingSi
 		ProducerProperties producerProperties = this.bindingServiceProperties.getProducerProperties(bindingName);
 		MessageChannel messageChannel = this.resolveDestination(bindingName, producerProperties, binderName);
 
-		Function functionToInvoke = this.getStreamBridgeFunction(outputContentType.toString(), producerProperties);
+		Function functionToInvoke = this.getStreamBridgeFunction(bindingName, outputContentType.toString(), producerProperties);
 
 		if (producerProperties != null && producerProperties.isPartitioned()) {
 			functionToInvoke = new PartitionAwareFunctionWrapper(functionToInvoke, this.applicationContext, producerProperties);
@@ -232,21 +233,22 @@ public final class StreamBridge implements StreamOperations, SmartInitializingSi
 		return messageChannel.send(resultMessage);
 	}
 
-	private int hashProducerProperties(ProducerProperties producerProperties, String outputContentType) {
-		int hash = outputContentType.hashCode()
-				+ Boolean.hashCode(producerProperties.isUseNativeEncoding())
-				+ Boolean.hashCode(producerProperties.isPartitioned())
-				+ producerProperties.getPartitionCount();
-
-		if (producerProperties.getPartitionKeyExpression() != null && producerProperties.getBindingName() != null) {
-			hash += producerProperties.getBindingName().hashCode();
-		}
-
-		return hash;
+	private int hashProducerProperties(String bindingName, ProducerProperties producerProperties, String outputContentType) {
+		/*
+		 * A partitioned binding mutates the cached function by setting the partition enhancer on it,
+		 * so it must never share a cached function with another binding. The binding name is taken
+		 * from the send(..) argument, since ProducerProperties#getBindingName() is only populated for
+		 * binders that are not ExtendedPropertiesBinder (see GH-3242).
+		 */
+		return Objects.hash(outputContentType,
+				producerProperties.isUseNativeEncoding(),
+				producerProperties.isPartitioned(),
+				producerProperties.getPartitionCount(),
+				producerProperties.isPartitioned() ? bindingName : null);
 	}
 
-	private FunctionInvocationWrapper getStreamBridgeFunction(String outputContentType, ProducerProperties producerProperties) {
-		int streamBridgeFunctionKey = this.hashProducerProperties(producerProperties, outputContentType);
+	private FunctionInvocationWrapper getStreamBridgeFunction(String bindingName, String outputContentType, ProducerProperties producerProperties) {
+		int streamBridgeFunctionKey = this.hashProducerProperties(bindingName, producerProperties, outputContentType);
 
 		return this.streamBridgeFunctionCache.computeIfAbsent(streamBridgeFunctionKey, key -> {
 			FunctionInvocationWrapper functionToInvoke = this.functionCatalog.lookup(STREAM_BRIDGE_FUNC_NAME, outputContentType.toString());
