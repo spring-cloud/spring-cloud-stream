@@ -36,10 +36,13 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.ResolvableType;
 import org.springframework.kafka.support.serializer.JacksonJsonSerde;
 
+import tools.jackson.databind.json.JsonMapper;
+
 /**
  * Utility class that contains various methods to help resolve {@link Serde Serdes}.
  *
  * @author Chris Bono
+ * @author adityaanikam
  * @since 4.0
  */
 abstract class SerdeResolverUtils {
@@ -102,7 +105,8 @@ abstract class SerdeResolverUtils {
 
 		// Use JsonSerde if type is not exactly Object
 		if (!genericRawClazz.isAssignableFrom((Object.class))) {
-			return new JacksonJsonSerde<>(genericRawClazz);
+			JsonMapper jsonMapper = context.getBeanProvider(JsonMapper.class).getIfUnique();
+			return jsonMapper != null ? new JacksonJsonSerde<>(genericRawClazz, jsonMapper) : new JacksonJsonSerde<>(genericRawClazz);
 		}
 
 		// Finally, just resort to using the fallback
