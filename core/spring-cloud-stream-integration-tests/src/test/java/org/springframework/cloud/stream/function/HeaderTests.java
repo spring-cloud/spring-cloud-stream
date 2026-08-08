@@ -129,6 +129,24 @@ public class HeaderTests {
 		assertThat(headers.get(MessageHeaders.CONTENT_TYPE)).isEqualTo("application/json");
 	}
 
+	@Test
+	void timestampHeaderIsPresentOnConsumedMessage() {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+			TestChannelBinderConfiguration.getCompleteConfiguration(FunctionUpperCaseConfiguration.class))
+			.web(WebApplicationType.NONE)
+			.run("--spring.jmx.enabled=false",
+				"--spring.cloud.function.definition=uppercase")) {
+
+			InputDestination input = context.getBean(InputDestination.class);
+			input.send(new GenericMessage<>("hello".getBytes()), "uppercase-in-0");
+
+			OutputDestination output = context.getBean(OutputDestination.class);
+			Message<byte[]> result = output.receive(1000, "uppercase-out-0");
+
+			assertThat(result.getHeaders().getTimestamp()).isNotNull();
+		}
+	}
+
 	@EnableAutoConfiguration
 	public static class EmptyConfiguration {
 

@@ -113,6 +113,7 @@ import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.MessagingException;
 import org.springframework.messaging.SubscribableChannel;
 import org.springframework.messaging.support.ChannelInterceptor;
+import org.springframework.messaging.support.GenericMessage;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.Trigger;
 import org.springframework.scheduling.support.CronTrigger;
@@ -409,12 +410,19 @@ public class FunctionConfiguration {
 	}
 
 	private static <P> Message<P> sanitize(Message<P> inputMessage) {
-		return MessageBuilder
+		Message<P> sanitized = MessageBuilder
 			.fromMessage(inputMessage)
 			.removeHeader("spring.cloud.stream.sendto.destination")
-//			.setHeader(MessageUtils.SOURCE_TYPE, inputMessage.getHeaders().get(MessageUtils.TARGET_PROTOCOL))
-//			.removeHeader(MessageUtils.TARGET_PROTOCOL)
 			.build();
+		if (sanitized == inputMessage) {
+			// MessageBuilder.build() returns the same instance when no header was
+			// actually modified (fast-path in BaseMessageBuilder), which skips the
+			// GenericMessage constructor and therefore skips stamping a "timestamp"
+			// header. Force a fresh GenericMessage so the header is always present,
+			// restoring pre-4.3.3 behavior. See GH-3211.
+			sanitized = new GenericMessage<>(inputMessage.getPayload(), inputMessage.getHeaders());
+		}
+		return sanitized;
 	}
 
 	private static class FunctionToDestinationBinder implements InitializingBean, ApplicationContextAware {
